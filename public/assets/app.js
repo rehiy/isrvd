@@ -46,6 +46,13 @@ createApp({
             chmodForm: {
                 path: '',
                 mode: ''
+            },
+
+            // 压缩目录表单
+            zipForm: {
+                path: '',
+                name: '',
+                zipName: ''
             }
         };
     },
@@ -413,20 +420,32 @@ createApp({
             }
         },
 
-        // 压缩目录
-        async zipDirectory(file) {
-            const zipName = prompt(`请输入压缩包名称:`, `${file.name}.zip`);
-            if (!zipName) return;
+        // 显示压缩目录模态框
+        showZipModal(file) {
+            this.zipForm = {
+                path: file.path,
+                name: file.name,
+                zipName: file.name + '.zip'
+            };
+            const modal = new bootstrap.Modal(document.getElementById('zipModal'));
+            modal.show();
+        },
 
+        // 压缩目录
+        async zipDirectory() {
+            if (!this.zipForm.zipName.trim()) {
+                this.error = '压缩包名称不能为空';
+                return;
+            }
             try {
                 await axios.post('/api/zip', {
-                    path: file.path,
-                    zipName: zipName
+                    path: this.zipForm.path,
+                    zipName: this.zipForm.zipName
                 });
-
                 this.success = '压缩成功';
+                const modal = bootstrap.Modal.getInstance(document.getElementById('zipModal'));
+                modal.hide();
                 this.loadFiles();
-
             } catch (error) {
                 this.error = error.response?.data?.error || '压缩失败';
             }
