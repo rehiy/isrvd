@@ -1,4 +1,3 @@
-
 const { createApp } = Vue;
 
 createApp({
@@ -55,6 +54,25 @@ createApp({
                 zipName: ''
             }
         };
+    },
+
+    watch: {
+        // 自动清除提示信息
+        error(newVal) {
+            if (newVal) {
+                setTimeout(() => {
+                    this.error = '';
+                }, 5000);
+            }
+        },
+
+        success(newVal) {
+            if (newVal) {
+                setTimeout(() => {
+                    this.success = '';
+                }, 3000);
+            }
+        }
     },
 
     computed: {
@@ -532,25 +550,6 @@ createApp({
         formatTime(timeString) {
             const date = new Date(timeString);
             return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', { hour12: false });
-        }
-    },
-
-    watch: {
-        // 自动清除提示信息
-        error(newVal) {
-            if (newVal) {
-                setTimeout(() => {
-                    this.error = '';
-                }, 5000);
-            }
-        },
-
-        success(newVal) {
-            if (newVal) {
-                setTimeout(() => {
-                    this.success = '';
-                }, 3000);
-            }
         }
     }
 }).mount('app');
