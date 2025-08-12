@@ -1,0 +1,66 @@
+pre {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+textarea {
+    font-family: 'Courier New', monospace;
+}
+
+app-loading {
+    display: none;
+}
+
+[v-cloak]+app-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem;
+}
+
+.breadcrumb-item a {
+    text-decoration: none;
+}
+
+.modal-backdrop.show {
+    opacity: 0.5;
+}
+
+.file-icon {
+    width: 20px;
+    margin-right: 4px;
+}
+
+.file-size {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.file-time {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.file-action {
+    text-align: end;
+}
+
+.file-action button {
+    margin: 0 2px;
+    padding: 2px 6px;
+}
