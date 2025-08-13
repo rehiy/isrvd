@@ -1,20 +1,26 @@
+/* ==================== 基础样式 ==================== */
+
+/* 代码块样式 */
 pre {
     background: #f8f9fa;
     padding: 1rem;
     border-radius: 0.375rem;
     max-height: 400px;
     overflow-y: auto;
+    border: 1px solid #dee2e6;
 }
 
+/* 文本域样式 */
 textarea {
-    font-family: 'Courier New', monospace;
+    font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
 }
 
-app-loading {
-    display: none;
-}
+/* ==================== 应用布局样式 ==================== */
 
-[v-cloak]+app-loading {
+/* 应用加载状态 */
+.app-wait {
     position: fixed;
     top: 0;
     left: 0;
@@ -28,39 +34,266 @@ app-loading {
     justify-content: center;
 }
 
+/* 加载动画 */
 .loading {
     text-align: center;
     padding: 2rem;
+    color: #6c757d;
 }
 
+.loading i {
+    margin-bottom: 1rem;
+}
+
+/* ==================== 导航相关样式 ==================== */
+
+/* 面包屑样式优化 */
 .breadcrumb-item a {
     text-decoration: none;
+    color: #0d6efd;
+    transition: color 0.15s ease-in-out;
 }
 
+.breadcrumb-item a:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+}
+
+/* 导航栏响应式 */
+.navbar-brand {
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .navbar-text {
+        font-size: 0.875rem;
+    }
+}
+
+/* ==================== 模态框样式 ==================== */
+
+/* 模态框背景 */
 .modal-backdrop.show {
     opacity: 0.5;
 }
 
-.file-icon {
-    width: 20px;
-    margin-right: 4px;
+/* 模态框头部 */
+.modal-header {
+    border-bottom: 1px solid #dee2e6;
+    background-color: #f8f9fa;
 }
 
+/* 模态框按钮组 */
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+/* ==================== 文件列表样式 ==================== */
+
+/* 文件图标 */
+.file-icon {
+    width: 20px;
+    margin-right: 8px;
+    text-align: center;
+    display: inline-block;
+}
+
+/* 文件大小显示 */
 .file-size {
     color: #6c757d;
     font-size: 0.875rem;
+    font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
 }
 
+/* 文件时间显示 */
 .file-time {
     color: #6c757d;
     font-size: 0.875rem;
+    white-space: nowrap;
 }
 
+/* 文件操作按钮 */
 .file-action {
     text-align: end;
 }
 
 .file-action button {
     margin: 0 2px;
-    padding: 2px 6px;
+    padding: 4px 8px;
+    font-size: 0.875rem;
+    border-radius: 0.25rem;
+    transition: all 0.15s ease-in-out;
+}
+
+.file-action button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 表格响应式 */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .file-action button {
+        padding: 2px 6px;
+        font-size: 0.75rem;
+        margin: 0 1px;
+    }
+    
+    .file-action {
+        white-space: nowrap;
+    }
+}
+
+/* ==================== 表单样式 ==================== */
+
+/* 表单控件增强 */
+.form-control:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* 按钮加载状态 */
+.btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.btn .fa-spinner {
+    margin-right: 0.5rem;
+}
+
+/* ==================== 操作按钮组样式 ==================== */
+
+/* 操作按钮容器 */
+.action-buttons {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+    margin-bottom: 1rem;
+}
+
+/* 按钮组间距 */
+.gap-2 > * {
+    margin: 0.25rem;
+}
+
+@media (max-width: 576px) {
+    .gap-2 {
+        justify-content: center;
+    }
+    
+    .gap-2 > * {
+        margin: 0.125rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* ==================== 通知样式 ==================== */
+
+/* 通知消息定位 */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d1e7dd 0%, #a3d5ba 100%);
+    color: #0f5132;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f1aeb5 100%);
+    color: #842029;
+}
+
+/* ==================== 终端相关样式 ==================== */
+
+/* 终端容器 */
+#xterm-container {
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+/* 终端模态框特殊样式 */
+.modal-content.bg-dark {
+    border: none;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.5);
+}
+
+/* ==================== 工具类样式 ==================== */
+
+/* 文本选择样式 */
+::selection {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* ==================== 动画效果 ==================== */
+
+/* 淡入动画 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* 按钮点击反馈 */
+.btn:active {
+    transform: translateY(1px);
+}
+
+/* ==================== 无障碍支持 ==================== */
+
+/* 聚焦状态增强 */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+    .table {
+        border: 2px solid #000;
+    }
+    
+    .btn {
+        border-width: 2px;
+    }
 }
