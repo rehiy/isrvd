@@ -115,31 +115,6 @@ export const createAppActions = (state) => {
             } finally {
                 this.setLoading(false);
             }
-        },
-
-        async deleteFile(file) {
-            try {
-                await axios.delete('/api/delete', {
-                    params: { file: file.path }
-                });
-                this.showSuccess('删除成功');
-                this.loadFiles();
-            } catch (error) {
-                this.showError(error.response?.data?.error || '删除失败');
-            }
-        },
-
-        async unzipFile(file) {
-            try {
-                await axios.post('/api/unzip', {
-                    path: state.currentPath,
-                    zipName: file.name
-                });
-                this.showSuccess('解压成功');
-                this.loadFiles();
-            } catch (error) {
-                this.showError(error.response?.data?.error || '解压失败');
-            }
         }
     };
 };

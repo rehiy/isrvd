@@ -8,3 +8,5 @@ export { EditModal } from './modals/edit-modal.js';
 export { RenameModal } from './modals/rename-modal.js';
 export { ChmodModal } from './modals/chmod-modal.js';
 export { ZipModal } from './modals/zip-modal.js';
+export { DeleteModal } from './modals/delete-modal.js';
+export { UnzipModal } from './modals/unzip-modal.js';

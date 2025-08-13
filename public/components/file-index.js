@@ -4,7 +4,7 @@ const { defineComponent, inject, ref } = Vue;
 
 import { APP_STATE_KEY, APP_ACTIONS_KEY } from '../helpers/state.js';
 import { isEditableFile, getFileIcon, formatFileSize, formatTime } from '../helpers/utils.js';
-import { EditModal, RenameModal, ChmodModal, ZipModal } from './modal-index.js';
+import { EditModal, RenameModal, ChmodModal, ZipModal, DeleteModal, UnzipModal } from './modal-index.js';
 
 // 文件列表组件
 export const FileIndex = defineComponent({
@@ -13,7 +13,9 @@ export const FileIndex = defineComponent({
         EditModal,
         RenameModal,
         ChmodModal,
-        ZipModal
+        ZipModal,
+        DeleteModal,
+        UnzipModal
     },
     setup() {
         const state = inject(APP_STATE_KEY);
@@ -23,6 +25,8 @@ export const FileIndex = defineComponent({
         const renameModalRef = ref(null);
         const chmodModalRef = ref(null);
         const zipModalRef = ref(null);
+        const deleteModalRef = ref(null);
+        const unzipModalRef = ref(null);
 
         const navigateTo = (path) => {
             actions.loadFiles(path);
@@ -34,21 +38,19 @@ export const FileIndex = defineComponent({
         };
 
         const deleteFile = (file) => {
-            if (confirm(`确定要删除 "${file.name}" 吗？`)) {
-                actions.deleteFile(file);
-            }
+            deleteModalRef.value.show(file);
         };
 
         const unzipFile = (file) => {
-            if (confirm(`确定要解压 "${file.name}" 吗？`)) {
-                actions.unzipFile(file);
-            }
+            unzipModalRef.value.show(file);
         };
 
         const editFile = (file) => editModalRef.value.show(file);
         const showRenameModal = (file) => renameModalRef.value.show(file);
         const showChmodModal = (file) => chmodModalRef.value.show(file);
         const showZipModal = (file) => zipModalRef.value.show(file);
+        const showDeleteModal = (file) => deleteModalRef.value.show(file);
+        const showUnzipModal = (file) => unzipModalRef.value.show(file);
 
         return {
             state,
@@ -56,6 +58,8 @@ export const FileIndex = defineComponent({
             renameModalRef,
             chmodModalRef,
             zipModalRef,
+            deleteModalRef,
+            unzipModalRef,
             isEditableFile,
             getFileIcon,
             formatFileSize,
@@ -67,7 +71,9 @@ export const FileIndex = defineComponent({
             editFile,
             showRenameModal,
             showChmodModal,
-            showZipModal
+            showZipModal,
+            showDeleteModal,
+            showUnzipModal
         };
     },
     template: `
@@ -153,6 +159,8 @@ export const FileIndex = defineComponent({
             <RenameModal ref="renameModalRef" />
             <ChmodModal ref="chmodModalRef" />
             <ZipModal ref="zipModalRef" />
+            <DeleteModal ref="deleteModalRef" />
+            <UnzipModal ref="unzipModalRef" />
         </div>
     `
 });

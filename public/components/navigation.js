@@ -70,7 +70,7 @@ export const NavigationBar = defineComponent({
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand" href="#" @click="goHome">
-                    <i class="fas fa-folder-open"></i> 文件管理器
+                    <i class="fas fa-folder-open"></i> 服务器管理
                 </a>
                 <div v-if="state.user">
                     <span class="navbar-text me-3">欢迎, {{ state.user }}</span>
