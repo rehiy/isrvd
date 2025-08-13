@@ -80,7 +80,7 @@ export const EditModal = defineComponent({
             :loading="formData.loading"
             @confirm="handleConfirm"
         >
-            <textarea class="form-control" rows="20" v-model="formData.content" :disabled="formData.loading" style="font-family: 'Courier New', monospace;"></textarea>
+            <textarea class="form-control" rows="20" v-model="formData.content" :disabled="formData.loading"></textarea>
             <div v-if="formData.error" class="alert alert-danger mt-3">
                 {{ formData.error }}
             </div>

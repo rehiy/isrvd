@@ -19,7 +19,7 @@ export const NotificationManager = defineComponent({
                  class="position-fixed top-0 start-50 translate-middle-x mt-3"
                  style="z-index: 1060;">
                 <div :class="[
-                    'alert alert-dismissible fade show',
+                    'alert alert-dismissible fade show shadow',
                     state.notification.type === 'error' ? 'alert-danger' : 'alert-success'
                 ]">
                     {{ state.notification.message }}

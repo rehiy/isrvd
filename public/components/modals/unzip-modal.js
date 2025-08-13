@@ -73,11 +73,6 @@ export const UnzipModal = defineComponent({
             @confirm="handleConfirm"
             @cancel="handleCancel"
         >
-            <template #confirm-text>
-                <i class="fas fa-expand-arrows-alt me-1"></i>
-                解压
-            </template>
-
             <div v-if="formData.error" class="alert alert-danger">
                 <i class="fas fa-exclamation-triangle me-2"></i>
                 {{ formData.error }}
@@ -85,12 +80,15 @@ export const UnzipModal = defineComponent({
 
             <div v-if="formData.file" class="text-center">
                 <div class="mb-3">
-                    <i class="fas fa-file-archive text-warning" style="font-size: 3rem;"></i>
+                    <i class="fas fa-file-archive text-warning display-1"></i>
                 </div>
                 <p class="mb-3">
                     确定要解压 <strong>{{ formData.file.name }}</strong> 到当前目录吗？
                 </p>
             </div>
+            <template #confirm-text>
+                {{ formData.loading ? '解压中...' : '解压' }}
+            </template>
         </BaseModal>
     `
 });

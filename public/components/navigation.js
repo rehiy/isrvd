@@ -32,12 +32,12 @@ export const BreadcrumbNav = defineComponent({
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
-                    <a href="#" @click="navigateTo('/')">
-                        <i class="fas fa-home"></i> 首页
+                    <a href="#" class="text-decoration-none" @click="navigateTo('/')">
+                        <i class="fas fa-home me-1"></i> 首页
                     </a>
                 </li>
                 <li v-for="(part, index) in pathParts" :key="index" class="breadcrumb-item" :class="{ active: index === pathParts.length - 1 }">
-                    <a v-if="index < pathParts.length - 1" href="#" @click="navigateTo('/' + pathParts.slice(0, index + 1).join('/'))">
+                    <a class="text-decoration-none" v-if="index < pathParts.length - 1" href="#" @click="navigateTo('/' + pathParts.slice(0, index + 1).join('/'))">
                         {{ part }}
                     </a>
                     <span v-else>{{ part }}</span>
@@ -69,10 +69,10 @@ export const NavigationBar = defineComponent({
     template: `
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" href="#" @click="goHome">
-                    <i class="fas fa-folder-open"></i> 服务器管理
+                <a class="navbar-brand fw-semibold" href="#" @click="goHome">
+                    <i class="fas fa-folder-open me-2"></i>服务器管理
                 </a>
-                <div v-if="state.user">
+                <div v-if="state.user" class="d-flex align-items-center">
                     <span class="navbar-text me-3">欢迎, {{ state.user }}</span>
                     <LogoutButton />
                 </div>
@@ -120,19 +120,19 @@ export const ActionButtons = defineComponent({
         <div>
             <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
                 <button class="btn btn-success btn-sm" @click="showMkdirModal">
-                    <i class="fas fa-folder"></i> 新建目录
+                    <i class="fas fa-folder me-1"></i>新建目录
                 </button>
                 <button class="btn btn-primary btn-sm" @click="showNewFileModal">
-                    <i class="fas fa-file"></i> 新建文件
+                    <i class="fas fa-file me-1"></i>新建文件
                 </button>
                 <button class="btn btn-info btn-sm" @click="showUploadModal">
-                    <i class="fas fa-upload"></i> 上传文件
+                    <i class="fas fa-upload me-1"></i>上传文件
                 </button>
                 <button class="btn btn-secondary btn-sm" @click="refreshFiles">
-                    <i class="fas fa-sync-alt"></i> 刷新
+                    <i class="fas fa-sync-alt me-1"></i>刷新
                 </button>
                 <button class="btn btn-dark btn-sm ms-auto" @click="showShellModal">
-                    <i class="fas fa-terminal"></i> 终端
+                    <i class="fas fa-terminal me-1"></i>终端
                 </button>
             </div>
 
