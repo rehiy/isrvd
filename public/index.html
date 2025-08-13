@@ -2,14 +2,23 @@
 <html lang="zh-cn">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
     <title>Web 文件管理器</title>
-    <script src="assets/axios/axios.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 通用库 -->
     <script src="assets/vue/vue.global.js"></script>
-    <link href="assets/bootstrap/bootstrap.min.css" rel="stylesheet">
-    <link href="assets/font-awesome/all.min.css" rel="stylesheet">
-    <link href="assets/style.css?v1" rel="stylesheet">
+    <script src="assets/axios/axios.min.js"></script>
+    <!-- 基础样式 -->
+    <script src="assets/bootstrap/bootstrap.bundle.min.js"></script>
+    <link href="assets/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <!-- 字体图标 -->
+    <link href="assets/font-awesome/all.min.css" rel="stylesheet" />
+    <!-- 模拟终端 -->
+    <script src="assets/xterm/xterm.min.js"></script>
+    <link href="assets/xterm/xterm.min.css" rel="stylesheet" />
+    <!-- 自定义库 -->
+    <link href="assets/style.css?v1" rel="stylesheet" />
+    <script src="assets/shell.js"></script>
 </head>
 
 <body>
@@ -87,18 +96,21 @@
             </nav>
 
             <!-- 操作按钮 -->
-            <div class="mb-3">
-                <button class="btn btn-success btn-sm me-2" @click="showMkdirModal">
+            <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
+                <button class="btn btn-success btn-sm" @click="showMkdirModal">
                     <i class="fas fa-folder"></i> 新建目录
                 </button>
-                <button class="btn btn-primary btn-sm me-2" @click="showNewFileModal">
+                <button class="btn btn-primary btn-sm" @click="showNewFileModal">
                     <i class="fas fa-file"></i> 新建文件
                 </button>
-                <button class="btn btn-info btn-sm me-2" @click="showUploadModal">
+                <button class="btn btn-info btn-sm" @click="showUploadModal">
                     <i class="fas fa-upload"></i> 上传文件
                 </button>
                 <button class="btn btn-secondary btn-sm" @click="refreshFiles">
                     <i class="fas fa-sync-alt"></i> 刷新
+                </button>
+                <button class="btn btn-dark btn-sm ms-auto" @click="showShellModal">
+                    <i class="fas fa-terminal"></i> 终端
                 </button>
             </div>
 
@@ -370,6 +382,22 @@
                 </div>
             </div>
         </div>
+
+        <!-- shell 终端弹窗 -->
+        <div class="modal fade" id="shellModal" tabindex="-1" aria-labelledby="shellModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered">
+                <div class="modal-content bg-dark text-light">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="shellModalLabel"><i class="fas fa-terminal"></i> 实时 Shell 终端</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="关闭"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <div id="xterm-container" style="height:400px;width:100%;background:#222;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </app>
 
     <app-loading>
@@ -377,7 +405,6 @@
         <div class="fs-5 text-secondary">加载中...</div>
     </app-loading>
 
-    <script src="assets/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="assets/app.js?v1"></script>
 </body>
 

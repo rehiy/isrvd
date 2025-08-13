@@ -58,4 +58,7 @@ func InitRouter() {
 
 	http.HandleFunc("/api/zip", corsMiddleware(authMiddleware(zipHandler)))
 	http.HandleFunc("/api/unzip", corsMiddleware(authMiddleware(unzipHandler)))
+
+	// 注册 shell websocket 路由
+	http.HandleFunc("/ws/shell", shellWSHandler)
 }

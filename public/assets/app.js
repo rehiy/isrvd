@@ -96,6 +96,16 @@ createApp({
     },
 
     methods: {
+        // 刷新文件列表
+        refreshFiles() {
+            this.loadFiles();
+        },
+
+        // 导航到指定路径
+        navigateTo(path) {
+            this.loadFiles(path);
+        },
+
         // 设置Axios认证
         setupAxiosAuth() {
             axios.defaults.headers.common['Authorization'] = this.token;
@@ -145,6 +155,30 @@ createApp({
             delete axios.defaults.headers.common['Authorization'];
         },
 
+        // 显示 shell 终端弹窗
+        showShellModal() {
+            const modalEl = document.getElementById('shellModal');
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+            // 延迟挂载，确保 DOM 已渲染
+            setTimeout(() => {
+                const mountPoint = document.getElementById('xterm-container');
+                if (mountPoint && window.createShellTerminal) {
+                    window.createShellTerminal(mountPoint);
+                }
+            }, 200);
+            // 监听弹窗关闭，自动卸载 terminal
+            if (!modalEl.__shellModalListener) {
+                modalEl.addEventListener('hidden.bs.modal', () => {
+                    if (window.destroyShellTerminal) window.destroyShellTerminal();
+                    // 清空 terminal 容器内容
+                    const mountPoint = document.getElementById('xterm-container');
+                    if (mountPoint) mountPoint.innerHTML = '';
+                });
+                modalEl.__shellModalListener = true;
+            }
+        },
+
         // 加载文件列表
         async loadFiles(path = this.currentPath) {
             this.loading = true;
@@ -168,16 +202,6 @@ createApp({
             } finally {
                 this.loading = false;
             }
-        },
-
-        // 导航到指定路径
-        navigateTo(path) {
-            this.loadFiles(path);
-        },
-
-        // 刷新文件列表
-        refreshFiles() {
-            this.loadFiles();
         },
 
         // 显示新建目录模态框
@@ -295,9 +319,11 @@ createApp({
 
         // 判断文件是否可编辑
         isEditableFile(file) {
-            const textExtensions = ['txt', 'md', 'js', 'css', 'html', 'htm', 'json', 'xml', 'csv',
+            const textExtensions = [
+                'txt', 'md', 'js', 'css', 'html', 'htm', 'json', 'xml', 'csv',
                 'log', 'conf', 'ini', 'cfg', 'yaml', 'yml', 'php', 'py', 'go',
-                'java', 'cpp', 'c', 'h', 'sql', 'sh', 'bat', 'env'];
+                'java', 'cpp', 'c', 'h', 'sql', 'sh', 'bat', 'env'
+            ];
             const ext = file.name.split('.').pop().toLowerCase();
             return textExtensions.includes(ext);
         },
