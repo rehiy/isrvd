@@ -38,7 +38,7 @@
 
 ## 依赖
 
-- Go 1.18+
+- Go 1.21+
 - Vue.js (前端)
 - Bootstrap, Font Awesome, Axios (前端依赖)
 
