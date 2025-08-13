@@ -64,12 +64,6 @@ textarea {
     font-weight: 600;
 }
 
-@media (max-width: 768px) {
-    .navbar-text {
-        font-size: 0.875rem;
-    }
-}
-
 /* ==================== 模态框样式 ==================== */
 
 /* 模态框背景 */
@@ -131,23 +125,6 @@ textarea {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* 表格响应式 */
-@media (max-width: 768px) {
-    .table-responsive {
-        font-size: 0.875rem;
-    }
-    
-    .file-action button {
-        padding: 2px 6px;
-        font-size: 0.75rem;
-        margin: 0 1px;
-    }
-    
-    .file-action {
-        white-space: nowrap;
-    }
-}
-
 /* ==================== 表单样式 ==================== */
 
 /* 表单控件增强 */
@@ -182,17 +159,6 @@ textarea {
     margin: 0.25rem;
 }
 
-@media (max-width: 576px) {
-    .gap-2 {
-        justify-content: center;
-    }
-    
-    .gap-2 > * {
-        margin: 0.125rem;
-        font-size: 0.875rem;
-    }
-}
-
 /* ==================== 通知样式 ==================== */
 
 /* 通知消息定位 */
@@ -210,90 +176,4 @@ textarea {
 .alert-danger {
     background: linear-gradient(135deg, #f8d7da 0%, #f1aeb5 100%);
     color: #842029;
-}
-
-/* ==================== 终端相关样式 ==================== */
-
-/* 终端容器 */
-#xterm-container {
-    border-radius: 0.375rem;
-    overflow: hidden;
-}
-
-/* 终端模态框特殊样式 */
-.modal-content.bg-dark {
-    border: none;
-    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.5);
-}
-
-/* ==================== 工具类样式 ==================== */
-
-/* 文本选择样式 */
-::selection {
-    background-color: #0d6efd;
-    color: white;
-}
-
-/* 滚动条样式 */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
-}
-
-/* ==================== 动画效果 ==================== */
-
-/* 淡入动画 */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.fade-in {
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-/* 按钮点击反馈 */
-.btn:active {
-    transform: translateY(1px);
-}
-
-/* ==================== 无障碍支持 ==================== */
-
-/* 聚焦状态增强 */
-.btn:focus,
-.form-control:focus,
-.form-select:focus {
-    outline: 2px solid #0d6efd;
-    outline-offset: 2px;
-}
-
-/* 高对比度模式支持 */
-@media (prefers-contrast: high) {
-    .table {
-        border: 2px solid #000;
-    }
-    
-    .btn {
-        border-width: 2px;
-    }
 }
