@@ -14,9 +14,9 @@ export const createAppState = () => {
         token: null,
 
         // 文件管理状态
+        loading: false,
         currentPath: '/',
         files: [],
-        loading: false,
 
         // 通知状态
         notification: {
@@ -30,7 +30,7 @@ export const createAppState = () => {
 // 全局操作方法
 export const createAppActions = (state) => {
     return {
-        // 用户认证操作
+        // 认证操作
         setAuth(userData) {
             state.user = userData.user;
             state.token = userData.token;
@@ -49,35 +49,22 @@ export const createAppActions = (state) => {
             delete axios.defaults.headers.common['Authorization'];
         },
 
-        // 路径导航操作
-        setPath(path) {
-            state.currentPath = path;
-        },
-
-        setFiles(files) {
-            state.files = files || [];
-        },
-
-        setLoading(loading) {
-            state.loading = loading;
-        },
-
         // 文件操作
         async loadFiles(path = state.currentPath) {
-            this.setLoading(true);
+            state.loading = true;
             try {
                 const response = await axios.get('/api/files', {
                     params: { path }
                 });
-                this.setFiles(response.data.files);
-                this.setPath(response.data.path);
+                state.files = response.data.files || [];
+                state.currentPath = response.data.path;
             } catch (error) {
                 this.showError(error.response?.data?.error || '加载文件列表失败');
                 if (error.response?.status === 401) {
                     this.clearAuth();
                 }
             } finally {
-                this.setLoading(false);
+               state.loading = false;
             }
         },
 
