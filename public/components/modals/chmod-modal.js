@@ -53,7 +53,6 @@ export const ChmodModal = defineComponent({
                 actions.showSuccess('权限修改成功');
                 actions.loadFiles();
                 modalRef.value.hide();
-
             } catch (error) {
                 actions.showError(error.response?.data?.error || '修改权限失败');
             } finally {
