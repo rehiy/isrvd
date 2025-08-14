@@ -15,8 +15,7 @@ export const NewFileModal = defineComponent({
         const formData = reactive({
             name: '',
             content: '',
-            loading: false,
-            error: ''
+            loading: false
         });
 
         const modalRef = ref(null);
@@ -24,7 +23,6 @@ export const NewFileModal = defineComponent({
         const show = () => {
             formData.name = '';
             formData.content = '';
-            formData.error = '';
             formData.loading = false;
             modalRef.value.show();
         };
@@ -33,7 +31,6 @@ export const NewFileModal = defineComponent({
             if (!formData.name.trim()) return;
 
             formData.loading = true;
-            formData.error = '';
 
             try {
                 await axios.post('/api/newfile', {
@@ -47,7 +44,7 @@ export const NewFileModal = defineComponent({
                 modalRef.value.hide();
 
             } catch (error) {
-                formData.error = error.response?.data?.error || '创建文件失败';
+                actions.showError(error.response?.data?.error || '创建文件失败');
             } finally {
                 formData.loading = false;
             }
@@ -78,9 +75,6 @@ export const NewFileModal = defineComponent({
                 <div class="mb-3">
                     <label for="fileContent" class="form-label">文件内容</label>
                     <textarea class="form-control" id="fileContent" rows="10" v-model="formData.content" :disabled="formData.loading"></textarea>
-                </div>
-                <div v-if="formData.error" class="alert alert-danger">
-                    {{ formData.error }}
                 </div>
             </form>
             <template #confirm-text>

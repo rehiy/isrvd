@@ -15,8 +15,7 @@ export const ZipModal = defineComponent({
             path: '',
             name: '',
             zipName: '',
-            loading: false,
-            error: ''
+            loading: false
         });
 
         const modalRef = ref(null);
@@ -25,7 +24,6 @@ export const ZipModal = defineComponent({
             formData.path = file.path;
             formData.name = file.name;
             formData.zipName = file.name + '.zip';
-            formData.error = '';
             formData.loading = false;
             modalRef.value.show();
         };
@@ -34,7 +32,6 @@ export const ZipModal = defineComponent({
             if (!formData.zipName.trim()) return;
 
             formData.loading = true;
-            formData.error = '';
 
             try {
                 await axios.post('/api/zip', {
@@ -47,7 +44,7 @@ export const ZipModal = defineComponent({
                 modalRef.value.hide();
 
             } catch (error) {
-                formData.error = error.response?.data?.error || '压缩失败';
+                actions.showError(error.response?.data?.error || '压缩失败');
             } finally {
                 formData.loading = false;
             }
@@ -73,9 +70,6 @@ export const ZipModal = defineComponent({
                 <div class="mb-3">
                     <label for="zipName" class="form-label">压缩包名称</label>
                     <input type="text" class="form-control" id="zipName" v-model="formData.zipName" :disabled="formData.loading" required>
-                </div>
-                <div v-if="formData.error" class="alert alert-danger">
-                    {{ formData.error }}
                 </div>
             </form>
             <template #confirm-text>

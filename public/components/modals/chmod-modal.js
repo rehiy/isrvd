@@ -14,14 +14,12 @@ export const ChmodModal = defineComponent({
         const formData = reactive({
             path: '',
             mode: '',
-            loading: false,
-            error: ''
+            loading: false
         });
 
         const modalRef = ref(null);
 
         const show = async (file) => {
-            formData.error = '';
             formData.loading = true;
 
             try {
@@ -45,7 +43,6 @@ export const ChmodModal = defineComponent({
             if (!formData.mode.trim()) return;
 
             formData.loading = true;
-            formData.error = '';
 
             try {
                 await axios.post('/api/chmod', {
@@ -59,7 +56,7 @@ export const ChmodModal = defineComponent({
                 modalRef.value.hide();
 
             } catch (error) {
-                formData.error = error.response?.data?.error || '修改权限失败';
+                actions.showError(error.response?.data?.error || '修改权限失败');
             } finally {
                 formData.loading = false;
             }
@@ -88,9 +85,6 @@ export const ChmodModal = defineComponent({
                     <div class="form-text">
                         常用权限: 755 (rwxr-xr-x), 644 (rw-r--r--), 777 (rwxrwxrwx)
                     </div>
-                </div>
-                <div v-if="formData.error" class="alert alert-danger">
-                    {{ formData.error }}
                 </div>
             </form>
             <template #confirm-text>

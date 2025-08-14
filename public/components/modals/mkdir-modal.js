@@ -14,15 +14,13 @@ export const MkdirModal = defineComponent({
 
         const formData = reactive({
             name: '',
-            loading: false,
-            error: ''
+            loading: false
         });
 
         const modalRef = ref(null);
 
         const show = () => {
             formData.name = '';
-            formData.error = '';
             formData.loading = false;
             modalRef.value.show();
         };
@@ -31,7 +29,6 @@ export const MkdirModal = defineComponent({
             if (!formData.name.trim()) return;
 
             formData.loading = true;
-            formData.error = '';
 
             try {
                 await axios.post('/api/mkdir', {
@@ -44,7 +41,7 @@ export const MkdirModal = defineComponent({
                 modalRef.value.hide();
 
             } catch (error) {
-                formData.error = error.response?.data?.error || '创建目录失败';
+                actions.showError(error.response?.data?.error || '创建目录失败');
             } finally {
                 formData.loading = false;
             }
@@ -70,9 +67,6 @@ export const MkdirModal = defineComponent({
                 <div class="mb-3">
                     <label for="dirName" class="form-label">目录名称</label>
                     <input type="text" class="form-control" id="dirName" v-model="formData.name" :disabled="formData.loading" required>
-                </div>
-                <div v-if="formData.error" class="alert alert-danger">
-                    {{ formData.error }}
                 </div>
             </form>
             <template #confirm-text>

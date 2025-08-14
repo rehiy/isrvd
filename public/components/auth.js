@@ -16,11 +16,9 @@ export const LoginForm = defineComponent({
         });
 
         const loading = ref(false);
-        const error = ref('');
 
         const handleLogin = async () => {
             loading.value = true;
-            error.value = '';
 
             try {
                 const response = await axios.post('/api/login', loginForm);
@@ -38,7 +36,7 @@ export const LoginForm = defineComponent({
                 loginForm.password = '';
 
             } catch (err) {
-                error.value = err.response?.data?.error || '登录失败';
+                actions.showError(err.response?.data?.error || '登录失败');
             } finally {
                 loading.value = false;
             }
@@ -47,7 +45,6 @@ export const LoginForm = defineComponent({
         return {
             loginForm,
             loading,
-            error,
             handleLogin
         };
     },
@@ -76,9 +73,6 @@ export const LoginForm = defineComponent({
                                     {{ loading ? '登录中...' : '登录' }}
                                 </button>
                             </form>
-                            <div v-if="error" class="alert alert-danger mt-3">
-                                {{ error }}
-                            </div>
                         </div>
                     </div>
                 </div>

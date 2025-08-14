@@ -15,14 +15,12 @@ export const EditModal = defineComponent({
             filename: '',
             content: '',
             filePath: '',
-            loading: false,
-            error: ''
+            loading: false
         });
 
         const modalRef = ref(null);
 
         const show = async (file) => {
-            formData.error = '';
             formData.loading = true;
 
             try {
@@ -45,7 +43,6 @@ export const EditModal = defineComponent({
 
         const handleConfirm = async () => {
             formData.loading = true;
-            formData.error = '';
 
             try {
                 await axios.post('/api/edit', {
@@ -58,7 +55,7 @@ export const EditModal = defineComponent({
                 modalRef.value.hide();
 
             } catch (error) {
-                formData.error = error.response?.data?.error || '保存文件失败';
+                actions.showError(error.response?.data?.error || '保存文件失败');
             } finally {
                 formData.loading = false;
             }
@@ -81,9 +78,6 @@ export const EditModal = defineComponent({
             @confirm="handleConfirm"
         >
             <textarea class="form-control" rows="20" v-model="formData.content" :disabled="formData.loading"></textarea>
-            <div v-if="formData.error" class="alert alert-danger mt-3">
-                {{ formData.error }}
-            </div>
             <template #confirm-text>
                 {{ formData.loading ? '保存中...' : '保存' }}
             </template>

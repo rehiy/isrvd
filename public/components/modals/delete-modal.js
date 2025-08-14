@@ -13,15 +13,13 @@ export const DeleteModal = defineComponent({
 
         const formData = reactive({
             file: null,
-            loading: false,
-            error: ''
+            loading: false
         });
 
         const modalRef = ref(null);
 
         const show = (file) => {
             formData.file = file;
-            formData.error = '';
             formData.loading = false;
             modalRef.value.show();
         };
@@ -30,7 +28,6 @@ export const DeleteModal = defineComponent({
             if (!formData.file) return;
 
             formData.loading = true;
-            formData.error = '';
 
             try {
                 await axios.delete('/api/delete', {
@@ -42,14 +39,14 @@ export const DeleteModal = defineComponent({
                 modalRef.value.hide();
 
             } catch (error) {
-                formData.error = error.response?.data?.error || '删除失败';
+                actions.showError(error.response?.data?.error || '删除失败');
             } finally {
                 formData.loading = false;
             }
         };
 
         const handleCancel = () => {
-            formData.error = '';
+            // 取消操作
         };
 
         return {
@@ -71,11 +68,6 @@ export const DeleteModal = defineComponent({
             @confirm="handleConfirm"
             @cancel="handleCancel"
         >
-            <div v-if="formData.error" class="alert alert-danger">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                {{ formData.error }}
-            </div>
-
             <div v-if="formData.file" class="text-center">
                 <div class="mb-3">
                     <i class="fas fa-exclamation-triangle text-warning display-1"></i>

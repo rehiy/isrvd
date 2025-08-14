@@ -14,15 +14,13 @@ export const UnzipModal = defineComponent({
 
         const formData = reactive({
             file: null,
-            loading: false,
-            error: ''
+            loading: false
         });
 
         const modalRef = ref(null);
 
         const show = (file) => {
             formData.file = file;
-            formData.error = '';
             formData.loading = false;
             modalRef.value.show();
         };
@@ -31,7 +29,6 @@ export const UnzipModal = defineComponent({
             if (!formData.file) return;
 
             formData.loading = true;
-            formData.error = '';
 
             try {
                 await axios.post('/api/unzip', {
@@ -44,14 +41,14 @@ export const UnzipModal = defineComponent({
                 modalRef.value.hide();
 
             } catch (error) {
-                formData.error = error.response?.data?.error || '解压失败';
+                actions.showError(error.response?.data?.error || '解压失败');
             } finally {
                 formData.loading = false;
             }
         };
 
         const handleCancel = () => {
-            formData.error = '';
+            // 取消操作
         };
 
         return {
@@ -73,11 +70,6 @@ export const UnzipModal = defineComponent({
             @confirm="handleConfirm"
             @cancel="handleCancel"
         >
-            <div v-if="formData.error" class="alert alert-danger">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                {{ formData.error }}
-            </div>
-
             <div v-if="formData.file" class="text-center">
                 <div class="mb-3">
                     <i class="fas fa-file-archive text-warning display-1"></i>

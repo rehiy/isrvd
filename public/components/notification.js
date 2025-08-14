@@ -11,19 +11,30 @@ export const NotificationManager = defineComponent({
         const state = inject(APP_STATE_KEY);
         const actions = inject(APP_ACTIONS_KEY);
 
-        return { state, actions };
+        const toastClass = () => {
+            return state.notification.type === 'error' ? 'text-bg-danger' : 'text-bg-success';
+        }
+
+        const toastIcon = () => {
+            return state.notification.type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check';
+        }
+
+        return { state, actions, toastClass, toastIcon };
     },
     template: `
         <Teleport to="body">
-            <div v-if="state.notification.type" 
-                 class="position-fixed top-0 start-50 translate-middle-x mt-3"
-                 style="z-index: 1060;">
-                <div :class="[
-                    'alert alert-dismissible fade show shadow',
-                    state.notification.type === 'error' ? 'alert-danger' : 'alert-success'
-                ]">
-                    {{ state.notification.message }}
-                    <button type="button" class="btn-close" @click="actions.clearNotification()"></button>
+            <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1060;">
+                <div v-if="state.notification.type" :class="['toast show', toastClass()]">
+                    <div class="toast-header">
+                        <i :class="['fas', toastIcon(), 'me-2']"></i>
+                        <strong class="me-auto">
+                            {{ state.notification.type === 'error' ? '错误' : '成功' }}
+                        </strong>
+                        <button type="button" class="btn-close" @click="actions.clearNotification()"></button>
+                    </div>
+                    <div class="toast-body">
+                        {{ state.notification.message }}
+                    </div>
                 </div>
             </div>
         </Teleport>

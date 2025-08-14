@@ -14,7 +14,6 @@ export const UploadModal = defineComponent({
 
         const formData = reactive({
             loading: false,
-            error: '',
             selectedFile: null
         });
 
@@ -22,7 +21,6 @@ export const UploadModal = defineComponent({
         const modalRef = ref(null);
 
         const show = () => {
-            formData.error = '';
             formData.loading = false;
             formData.selectedFile = null;
             modalRef.value.show();
@@ -36,7 +34,6 @@ export const UploadModal = defineComponent({
             if (!formData.selectedFile) return;
 
             formData.loading = true;
-            formData.error = '';
 
             const formDataToSend = new FormData();
             formDataToSend.append('file', formData.selectedFile);
@@ -58,7 +55,7 @@ export const UploadModal = defineComponent({
                 modalRef.value.hide();
 
             } catch (error) {
-                formData.error = error.response?.data?.error || '上传文件失败';
+                actions.showError(error.response?.data?.error || '上传文件失败');
             } finally {
                 formData.loading = false;
             }
@@ -91,9 +88,6 @@ export const UploadModal = defineComponent({
                 <div class="mb-3">
                     <label for="uploadFile" class="form-label">选择文件</label>
                     <input type="file" class="form-control" id="uploadFile" ref="fileInput" @change="handleFileChange" :disabled="formData.loading" required>
-                </div>
-                <div v-if="formData.error" class="alert alert-danger">
-                    {{ formData.error }}
                 </div>
             </form>
             <template #confirm-text>

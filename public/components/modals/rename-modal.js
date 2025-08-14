@@ -14,8 +14,7 @@ export const RenameModal = defineComponent({
         const formData = reactive({
             oldPath: '',
             newName: '',
-            loading: false,
-            error: ''
+            loading: false
         });
 
         const modalRef = ref(null);
@@ -23,7 +22,6 @@ export const RenameModal = defineComponent({
         const show = (file) => {
             formData.oldPath = file.path;
             formData.newName = file.name;
-            formData.error = '';
             formData.loading = false;
             modalRef.value.show();
         };
@@ -32,7 +30,6 @@ export const RenameModal = defineComponent({
             if (!formData.newName.trim()) return;
 
             formData.loading = true;
-            formData.error = '';
 
             try {
                 await axios.post('/api/rename', {
@@ -45,7 +42,7 @@ export const RenameModal = defineComponent({
                 modalRef.value.hide();
 
             } catch (error) {
-                formData.error = error.response?.data?.error || '重命名失败';
+                actions.showError(error.response?.data?.error || '重命名失败');
             } finally {
                 formData.loading = false;
             }
@@ -71,9 +68,6 @@ export const RenameModal = defineComponent({
                 <div class="mb-3">
                     <label for="newName" class="form-label">新名称</label>
                     <input type="text" class="form-control" id="newName" v-model="formData.newName" :disabled="formData.loading" required>
-                </div>
-                <div v-if="formData.error" class="alert alert-danger">
-                    {{ formData.error }}
                 </div>
             </form>
             <template #confirm-text>
