@@ -1,13 +1,23 @@
 // ==================== 状态管理 ====================
 
-const { reactive } = Vue;
+const { provide, reactive } = Vue;
 
 // Provide/Inject keys
 export const APP_STATE_KEY = Symbol('appState');
 export const APP_ACTIONS_KEY = Symbol('appActions');
 
+export const initProvider = () => {
+    const state = createAppState();
+    const actions = createAppActions(state);
+
+    provide(APP_STATE_KEY, state);
+    provide(APP_ACTIONS_KEY, actions);
+
+    return { state, actions };
+};
+
 // 全局状态管理
-export const createAppState = () => {
+function createAppState() {
     return reactive({
         // 用户认证状态
         user: null,
@@ -28,7 +38,7 @@ export const createAppState = () => {
 };
 
 // 全局操作方法
-export const createAppActions = (state) => {
+function createAppActions(state) {
     return {
         // 认证操作
         setAuth(userData) {
@@ -64,7 +74,7 @@ export const createAppActions = (state) => {
                     this.clearAuth();
                 }
             } finally {
-               state.loading = false;
+                state.loading = false;
             }
         },
 

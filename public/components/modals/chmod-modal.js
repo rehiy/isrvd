@@ -31,7 +31,6 @@ export const ChmodModal = defineComponent({
                 formData.mode = response.data.mode;
 
                 modalRef.value.show();
-
             } catch (error) {
                 actions.showError(error.response?.data?.error || '无法获取文件权限');
             } finally {

@@ -40,7 +40,6 @@ export const RenameModal = defineComponent({
                 actions.showSuccess('重命名成功');
                 actions.loadFiles();
                 modalRef.value.hide();
-
             } catch (error) {
                 actions.showError(error.response?.data?.error || '重命名失败');
             } finally {

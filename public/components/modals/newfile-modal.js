@@ -42,7 +42,6 @@ export const NewFileModal = defineComponent({
                 actions.showSuccess('文件创建成功');
                 actions.loadFiles();
                 modalRef.value.hide();
-
             } catch (error) {
                 actions.showError(error.response?.data?.error || '创建文件失败');
             } finally {

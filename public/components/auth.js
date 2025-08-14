@@ -34,7 +34,6 @@ export const LoginForm = defineComponent({
                 // 清空表单
                 loginForm.username = '';
                 loginForm.password = '';
-
             } catch (err) {
                 actions.showError(err.response?.data?.error || '登录失败');
             } finally {

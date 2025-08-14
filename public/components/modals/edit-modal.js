@@ -33,7 +33,6 @@ export const EditModal = defineComponent({
                 formData.content = response.data.content;
 
                 modalRef.value.show();
-
             } catch (error) {
                 actions.showError(error.response?.data?.error || '无法打开文件');
             } finally {

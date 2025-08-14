@@ -39,7 +39,6 @@ export const UnzipModal = defineComponent({
                 actions.showSuccess('解压成功');
                 actions.loadFiles();
                 modalRef.value.hide();
-
             } catch (error) {
                 actions.showError(error.response?.data?.error || '解压失败');
             } finally {

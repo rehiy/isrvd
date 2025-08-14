@@ -1,8 +1,8 @@
 // ==================== 主应用模块化入口 ====================
 
-const { createApp, defineComponent, provide, onMounted } = Vue;
+const { createApp, defineComponent, onMounted } = Vue;
 
-import { createAppState, createAppActions, APP_STATE_KEY, APP_ACTIONS_KEY } from './helpers/state.js';
+import { initProvider } from './helpers/state.js';
 import { LoginForm } from './components/auth.js';
 import { NotificationManager } from './components/notification.js';
 import { NavigationBar, BreadcrumbNav, ActionButtons } from './components/navigation.js';
@@ -20,11 +20,7 @@ const FilerApp = defineComponent({
         NotificationManager
     },
     setup() {
-        const state = createAppState();
-        const actions = createAppActions(state);
-
-        provide(APP_STATE_KEY, state);
-        provide(APP_ACTIONS_KEY, actions);
+        const { state, actions } = initProvider();
 
         onMounted(() => {
             // 检查本地存储的认证信息

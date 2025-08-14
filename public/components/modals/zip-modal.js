@@ -42,7 +42,6 @@ export const ZipModal = defineComponent({
                 actions.showSuccess('压缩成功');
                 actions.loadFiles();
                 modalRef.value.hide();
-
             } catch (error) {
                 actions.showError(error.response?.data?.error || '压缩失败');
             } finally {

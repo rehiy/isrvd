@@ -39,7 +39,6 @@ export const MkdirModal = defineComponent({
                 actions.showSuccess('目录创建成功');
                 actions.loadFiles();
                 modalRef.value.hide();
-
             } catch (error) {
                 actions.showError(error.response?.data?.error || '创建目录失败');
             } finally {

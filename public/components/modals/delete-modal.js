@@ -37,7 +37,6 @@ export const DeleteModal = defineComponent({
                 actions.showSuccess('删除成功');
                 actions.loadFiles();
                 modalRef.value.hide();
-
             } catch (error) {
                 actions.showError(error.response?.data?.error || '删除失败');
             } finally {

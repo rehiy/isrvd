@@ -53,7 +53,6 @@ export const UploadModal = defineComponent({
                     fileInput.value.value = '';
                 }
                 modalRef.value.hide();
-
             } catch (error) {
                 actions.showError(error.response?.data?.error || '上传文件失败');
             } finally {
