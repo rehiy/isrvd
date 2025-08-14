@@ -23,7 +23,7 @@ export const NotificationManager = defineComponent({
     },
     template: `
         <Teleport to="body">
-            <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1060;">
+            <div class="toast-container position-fixed top-0 end-0 p-3">
                 <div v-if="state.notification.type" :class="['toast show', toastClass()]">
                     <div class="toast-header">
                         <i :class="['fas', toastIcon(), 'me-2']"></i>

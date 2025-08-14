@@ -36,7 +36,9 @@ export const createAppActions = (state) => {
             state.token = userData.token;
             localStorage.setItem('file-manager-token', userData.token);
             localStorage.setItem('file-manager-user', userData.user);
-            this.setupAxios();
+            if (state.token) {
+                axios.defaults.headers.common['Authorization'] = state.token;
+            }
         },
 
         clearAuth() {
@@ -45,12 +47,6 @@ export const createAppActions = (state) => {
             localStorage.removeItem('file-manager-token');
             localStorage.removeItem('file-manager-user');
             delete axios.defaults.headers.common['Authorization'];
-        },
-
-        setupAxios() {
-            if (state.token) {
-                axios.defaults.headers.common['Authorization'] = state.token;
-            }
         },
 
         // 路径导航操作
@@ -64,6 +60,25 @@ export const createAppActions = (state) => {
 
         setLoading(loading) {
             state.loading = loading;
+        },
+
+        // 文件操作
+        async loadFiles(path = state.currentPath) {
+            this.setLoading(true);
+            try {
+                const response = await axios.get('/api/files', {
+                    params: { path }
+                });
+                this.setFiles(response.data.files);
+                this.setPath(response.data.path);
+            } catch (error) {
+                this.showError(error.response?.data?.error || '加载文件列表失败');
+                if (error.response?.status === 401) {
+                    this.clearAuth();
+                }
+            } finally {
+                this.setLoading(false);
+            }
         },
 
         // 通知操作
@@ -97,24 +112,5 @@ export const createAppActions = (state) => {
         showError(message) {
             this.showNotification('error', message);
         },
-
-        // 文件操作
-        async loadFiles(path = state.currentPath) {
-            this.setLoading(true);
-            try {
-                const response = await axios.get('/api/files', {
-                    params: { path }
-                });
-                this.setFiles(response.data.files);
-                this.setPath(response.data.path);
-            } catch (error) {
-                this.showError(error.response?.data?.error || '加载文件列表失败');
-                if (error.response?.status === 401) {
-                    this.clearAuth();
-                }
-            } finally {
-                this.setLoading(false);
-            }
-        }
     };
 };
