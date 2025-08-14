@@ -41,13 +41,17 @@ const FilerApp = defineComponent({
         return { state, actions };
     },
     template: `
-        <NavigationBar />
-        <LoginForm v-if="!state.user"  />
-        <div v-else class="container-fluid">
-            <BreadcrumbNav />
-            <ActionButtons />
-            <FileIndex />
-        </div>
+        <template v-if="state.user">
+            <NavigationBar />
+            <div class="container-fluid">
+                <BreadcrumbNav />
+                <ActionButtons />
+                <FileIndex />
+            </div>
+        </template>
+
+        <LoginForm v-else />
+
         <NotificationManager />
     `
 });

@@ -52,7 +52,7 @@ export const LoginForm = defineComponent({
         };
     },
     template: `
-        <div class="container" style="margin-top: 40%">
+        <div class="container" style="margin-top: 25%">
             <div class="row justify-content-center">
                 <div class="col-md-6">
                     <div class="card">
