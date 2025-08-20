@@ -1,0 +1,88 @@
+package auth
+
+import (
+	"crypto/md5"
+	"encoding/hex"
+	"sync"
+	"time"
+)
+
+// Session 会话管理器
+type Session struct {
+	sessions map[string]time.Time
+	mutex    sync.RWMutex
+}
+
+// NewSession 创建新的会话管理器
+func NewSession() *Session {
+	return &Session{
+		sessions: make(map[string]time.Time),
+	}
+}
+
+// CreateToken 创建会话令牌
+func (s *Session) CreateToken(username string) string {
+	token := md5sum(username + time.Now().String())
+	s.mutex.Lock()
+	s.sessions[token] = time.Now().Add(24 * time.Hour)
+	s.mutex.Unlock()
+	return token
+}
+
+// ValidateToken 验证令牌
+func (s *Session) ValidateToken(token string) bool {
+	s.mutex.RLock()
+	expiry, exists := s.sessions[token]
+	s.mutex.RUnlock()
+
+	if !exists {
+		return false
+	}
+
+	if expiry.Before(time.Now()) {
+		s.DeleteToken(token)
+		return false
+	}
+
+	return true
+}
+
+// DeleteToken 删除令牌
+func (s *Session) DeleteToken(token string) {
+	s.mutex.Lock()
+	delete(s.sessions, token)
+	s.mutex.Unlock()
+}
+
+// CleanupExpired 清理过期的会话
+func (s *Session) CleanupExpired() {
+	s.mutex.Lock()
+	now := time.Now()
+	for token, expiry := range s.sessions {
+		if expiry.Before(now) {
+			delete(s.sessions, token)
+		}
+	}
+	s.mutex.Unlock()
+}
+
+// md5sum 计算MD5哈希
+func md5sum(s string) string {
+	h := md5.New()
+	h.Write([]byte(s))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+// Manager 全局会话管理器
+var Manager = NewSession()
+
+// init 初始化定时清理
+func init() {
+	go func() {
+		ticker := time.NewTicker(time.Hour)
+		defer ticker.Stop()
+		for range ticker.C {
+			Manager.CleanupExpired()
+		}
+	}()
+}

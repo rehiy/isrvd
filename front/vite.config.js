@@ -18,7 +18,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: '../public-vite',
+    outDir: '../public',
     emptyOutDir: true
   }
 })

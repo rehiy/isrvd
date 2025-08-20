@@ -64,8 +64,8 @@ function createAppActions(state) {
                 const response = await axios.get('/api/files', {
                     params: { path }
                 })
-                state.files = response.data.files || []
-                state.currentPath = response.data.path
+                state.files = response.data.payload.files || []
+                state.currentPath = response.data.payload.path
             } catch (error) {
                 this.showError(error.response?.data?.error || '加载文件列表失败')
                 if (error.response?.status === 401) {

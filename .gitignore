@@ -64,6 +64,7 @@ coverage/
 *.lcov
 
 # Runtime data
+public/
 pids/
 *.pid
 *.seed
