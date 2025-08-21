@@ -3,9 +3,9 @@ package services
 import (
 	"errors"
 
-	"filer/internal/config"
-	"filer/internal/models"
-	"filer/pkg/auth"
+	"isrvd/internal/config"
+	"isrvd/internal/models"
+	"isrvd/pkg/auth"
 )
 
 // AuthService 认证服务
@@ -18,7 +18,7 @@ func NewAuthService() *AuthService {
 
 // Login 用户登录
 func (as *AuthService) Login(req models.LoginRequest) (*models.LoginResponse, error) {
-	cfg := config.GetConfig()
+	cfg := config.GetGlobal()
 
 	// 验证用户名和密码
 	if password, exists := cfg.UserMap[req.Username]; exists && password == req.Password {

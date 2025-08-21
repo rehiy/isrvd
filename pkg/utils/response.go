@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"filer/internal/config"
-	"filer/internal/models"
-
 	"github.com/gin-gonic/gin"
+
+	"isrvd/internal/config"
+	"isrvd/internal/models"
 )
 
 // RespondSuccess 返回成功响应
@@ -30,7 +30,7 @@ func RespondError(c *gin.Context, statusCode int, message string) {
 
 // GetAbsolutePath 获取绝对路径
 func GetAbsolutePath(path string) string {
-	cfg := config.GetConfig()
+	cfg := config.GetGlobal()
 	return filepath.Join(cfg.BaseDir, filepath.Clean(path))
 }
 

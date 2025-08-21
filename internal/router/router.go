@@ -1,10 +1,10 @@
 package router
 
 import (
-	"filer/internal/handlers"
-	"filer/internal/middleware"
-
 	"github.com/gin-gonic/gin"
+
+	"isrvd/internal/handlers"
+	"isrvd/internal/middleware"
 )
 
 // SetupRouter 设置路由
