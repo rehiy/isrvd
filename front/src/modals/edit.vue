@@ -1,7 +1,7 @@
 <script setup>
-import axios from 'axios'
 import { inject, reactive, ref } from 'vue'
 
+import api from '@/services/api.js'
 import { APP_ACTIONS_KEY } from '@/stores/state.js'
 
 import BaseModal from '@/components/modal-base.vue'
@@ -21,17 +21,12 @@ const show = async (file) => {
   formData.loading = true
 
   try {
-    const response = await axios.get('/api/edit', {
-      params: { file: file.path }
-    })
-
+    const data = await api.getFileContent(file.path)
     formData.filePath = file.path
     formData.filename = file.name
-    formData.content = response.data.payload.content
-
+    formData.content = data.payload.content
     modalRef.value.show()
   } catch (error) {
-    actions.showError(error.response?.data?.error || '无法打开文件')
   } finally {
     formData.loading = false
   }
@@ -41,16 +36,11 @@ const handleConfirm = async () => {
   formData.loading = true
 
   try {
-    await axios.post('/api/edit', {
-      content: formData.content
-    }, {
-      params: { file: formData.filePath }
-    })
-
+    await api.saveFileContent(formData.filePath, formData.content)
     actions.showSuccess('文件保存成功')
+    actions.loadFiles()
     modalRef.value.hide()
   } catch (error) {
-    actions.showError(error.response?.data?.error || '保存文件失败')
   } finally {
     formData.loading = false
   }

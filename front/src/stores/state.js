@@ -1,6 +1,6 @@
 // ==================== 状态管理 ====================
 
-import { provide, reactive } from 'vue'
+import { reactive } from 'vue'
 import axios from 'axios'
 
 // Provide/Inject keys
@@ -10,6 +10,36 @@ export const APP_ACTIONS_KEY = Symbol('appActions')
 export const initProvider = () => {
     const state = createAppState()
     const actions = createAppActions(state)
+
+    // 注册 axios 全局错误处理器
+    axios.interceptors.response.use(
+        response => {
+            const message = response.data?.message || ''
+            if (message) actions.showSuccess(message)
+            return response.data
+        },
+        error => {
+            // 处理未授权错误
+            if (error.response?.status === 401) {
+                actions.clearAuth()
+                actions.showError('登录已过期，请重新登录')
+            }
+            // 处理其他 HTTP 错误
+            else if (error.response) {
+                const message = error.response.data?.message || `请求失败: ${error.response.status}`
+                actions.showError(message)
+            }
+            // 处理网络错误
+            else if (error.request) {
+                actions.showError('网络连接失败，请检查网络')
+            }
+            // 处理其他错误
+            else {
+                actions.showError('发生未知错误')
+            }
+            return Promise.reject(error)
+        }
+    )
 
     return { state, actions }
 }
@@ -59,21 +89,7 @@ function createAppActions(state) {
 
         // 文件操作
         async loadFiles(path = state.currentPath) {
-            state.loading = true
-            try {
-                const response = await axios.get('/api/files', {
-                    params: { path }
-                })
-                state.files = response.data.payload.files || []
-                state.currentPath = response.data.payload.path
-            } catch (error) {
-                this.showError(error.response?.data?.error || '加载文件列表失败')
-                if (error.response?.status === 401) {
-                    this.clearAuth()
-                }
-            } finally {
-                state.loading = false
-            }
+            console.log('wait for loadFiles', path)
         },
 
         // 通知操作

@@ -1,7 +1,7 @@
 <script setup>
-import axios from 'axios'
 import { inject, reactive, ref } from 'vue'
 
+import api from '@/services/api.js'
 import { APP_ACTIONS_KEY } from '@/stores/state.js'
 
 import BaseModal from '@/components/modal-base.vue'
@@ -29,16 +29,11 @@ const handleConfirm = async () => {
   formData.loading = true
 
   try {
-    await axios.post('/api/rename', {
-      oldPath: formData.file.path,
-      newName: formData.name
-    })
-
+    await api.renameFile(formData.file.path, formData.name)
     actions.showSuccess('重命名成功')
     actions.loadFiles()
     modalRef.value.hide()
   } catch (error) {
-    actions.showError(error.response?.data?.error || '重命名失败')
   } finally {
     formData.loading = false
   }

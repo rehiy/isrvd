@@ -1,7 +1,7 @@
 <script setup>
-import axios from 'axios'
 import { inject, reactive, ref } from 'vue'
 
+import api from '@/services/api.js'
 import { APP_ACTIONS_KEY } from '@/stores/state.js'
 
 const actions = inject(APP_ACTIONS_KEY)
@@ -17,10 +17,9 @@ const handleLogin = async () => {
   loading.value = true
 
   try {
-    const response = await axios.post('/api/login', loginForm)
-
-    const token = response.data.payload.token
-    const user = response.data.payload.user
+    const data = await api.login(loginForm)
+    const token = data.payload.token
+    const user = data.payload.user
 
     actions.setAuth({ token, user })
 
@@ -31,7 +30,6 @@ const handleLogin = async () => {
     loginForm.username = ''
     loginForm.password = ''
   } catch (err) {
-    actions.showError(err.response?.data?.error || '登录失败')
   } finally {
     loading.value = false
   }

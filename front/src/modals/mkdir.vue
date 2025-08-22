@@ -1,7 +1,7 @@
 <script setup>
-import axios from 'axios'
 import { inject, reactive, ref } from 'vue'
 
+import api from '@/services/api.js'
 import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
 
 import BaseModal from '@/components/modal-base.vue'
@@ -28,16 +28,11 @@ const handleConfirm = async () => {
   formData.loading = true
 
   try {
-    await axios.post('/api/mkdir', {
-      path: state.currentPath,
-      name: formData.name
-    })
-
+    await api.createDirectory(state.currentPath, formData.name)
     actions.showSuccess('目录创建成功')
     actions.loadFiles()
     modalRef.value.hide()
   } catch (error) {
-    actions.showError(error.response?.data?.error || '创建目录失败')
   } finally {
     formData.loading = false
   }

@@ -1,7 +1,7 @@
 <script setup>
-import axios from 'axios'
 import { inject, ref } from 'vue'
 
+import api from '@/services/api.js'
 import { APP_ACTIONS_KEY } from '@/stores/state.js'
 
 import BaseModal from '@/components/modal-base.vue'
@@ -24,15 +24,11 @@ const handleConfirm = async () => {
   loading.value = true
 
   try {
-    await axios.delete('/api/delete', {
-      params: { file: file.value.path }
-    })
-
+    await api.deleteFile(file.value.path)
     actions.showSuccess(file.value.isDir ? '目录删除成功' : '文件删除成功')
     actions.loadFiles()
     modalRef.value.hide()
   } catch (error) {
-    actions.showError(error.response?.data?.error || '删除失败')
   } finally {
     loading.value = false
   }

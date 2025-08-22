@@ -1,6 +1,7 @@
 <script setup>
 import { inject, ref } from 'vue'
 
+import api from '@/services/api.js'
 import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
 import { isEditableFile, getFileIcon, formatFileSize, formatTime } from '@/utils/utils.js'
 
@@ -25,6 +26,25 @@ const navigateTo = (path) => {
   actions.loadFiles(path)
 }
 
+const loading = ref(false)
+
+const files = ref([])
+const currentPath = ref('')
+
+actions.loadFiles = async (path) => {
+  loading.value = true
+  try {
+    const data = await api.getFiles(path)
+    files.value = data.payload.files || []
+    currentPath.value = data.payload.path
+  } catch (error) {
+  } finally {
+    loading.value = false
+  }
+}
+
+actions.loadFiles('/');
+
 const downloadFile = (file) => {
   const url = `/api/download?file=${encodeURIComponent(file.path)}&token=${state.token}`
   window.open(url, '_blank')
@@ -33,7 +53,7 @@ const downloadFile = (file) => {
 
 <template>
   <div>
-    <div v-if="state.loading" class="text-center p-4">
+    <div v-if="loading" class="text-center p-4">
       <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
       <p class="mt-3 text-muted">加载中...</p>
     </div>
@@ -50,7 +70,7 @@ const downloadFile = (file) => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="file in state.files" :key="file.name">
+          <tr v-for="file in files" :key="file.name">
             <td>
               <i :class="getFileIcon(file)" class="me-2"></i>
               <a v-if="file.isDir" href="#" @click="navigateTo(file.path)" class="text-decoration-none">
@@ -103,7 +123,7 @@ const downloadFile = (file) => {
         </tbody>
       </table>
 
-      <div v-if="state.files.length === 0" class="text-center text-muted py-4">
+      <div v-if="files.length === 0" class="text-center text-muted py-4">
         <i class="fas fa-folder-open fa-3x mb-3"></i>
         <p>此目录为空</p>
       </div>

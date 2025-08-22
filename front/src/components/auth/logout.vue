@@ -1,7 +1,7 @@
 <script setup>
-import axios from 'axios'
 import { inject, ref } from 'vue'
 
+import api from '@/services/api.js'
 import { APP_ACTIONS_KEY } from '@/stores/state.js'
 
 const actions = inject(APP_ACTIONS_KEY)
@@ -11,7 +11,7 @@ const handleLogout = async () => {
   loading.value = true
 
   try {
-    await axios.post('/api/logout')
+    await api.logout()
   } catch (error) {
     console.warn('Logout request failed:', error)
   }

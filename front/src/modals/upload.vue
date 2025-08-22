@@ -1,7 +1,7 @@
 <script setup>
-import axios from 'axios'
 import { inject, reactive, ref, computed } from 'vue'
 
+import api from '@/services/api.js'
 import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
 
 import BaseModal from '@/components/modal-base.vue'
@@ -37,12 +37,7 @@ const handleConfirm = async () => {
   formDataToSend.append('path', state.currentPath)
 
   try {
-    await axios.post('/api/upload', formDataToSend, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
-
+    await api.uploadFile(formDataToSend)
     actions.showSuccess('文件上传成功')
     actions.loadFiles()
     formData.selectedFile = null
@@ -51,7 +46,6 @@ const handleConfirm = async () => {
     }
     modalRef.value.hide()
   } catch (error) {
-    actions.showError(error.response?.data?.error || '上传文件失败')
   } finally {
     formData.loading = false
   }

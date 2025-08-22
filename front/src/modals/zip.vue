@@ -1,7 +1,7 @@
 <script setup>
-import axios from 'axios'
 import { inject, reactive, ref } from 'vue'
 
+import api from '@/services/api.js'
 import { APP_ACTIONS_KEY } from '@/stores/state.js'
 
 import BaseModal from '@/components/modal-base.vue'
@@ -31,16 +31,11 @@ const handleConfirm = async () => {
   formData.loading = true
 
   try {
-    await axios.post('/api/zip', {
-      path: formData.path,
-      zipName: formData.zipName
-    })
-
+    await api.zipFiles(formData.path, formData.zipName)
     actions.showSuccess('压缩成功')
     actions.loadFiles()
     modalRef.value.hide()
   } catch (error) {
-    actions.showError(error.response?.data?.error || '压缩失败')
   } finally {
     formData.loading = false
   }

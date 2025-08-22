@@ -1,7 +1,7 @@
 <script setup>
-import axios from 'axios'
 import { inject, reactive, ref } from 'vue'
 
+import api from '@/services/api.js'
 import { APP_ACTIONS_KEY } from '@/stores/state.js'
 
 import BaseModal from '@/components/modal-base.vue'
@@ -20,16 +20,11 @@ const show = async (file) => {
   formData.loading = true
 
   try {
-    const response = await axios.get('/api/chmod', {
-      params: { file: file.path }
-    })
-
+    const data = await api.getFilePermissions(file.path)
     formData.path = file.path
-    formData.mode = response.data.payload.mode
-
+    formData.mode = data.payload.mode
     modalRef.value.show()
   } catch (error) {
-    actions.showError(error.response?.data?.error || '无法获取文件权限')
   } finally {
     formData.loading = false
   }
@@ -41,17 +36,11 @@ const handleConfirm = async () => {
   formData.loading = true
 
   try {
-    await axios.post('/api/chmod', {
-      mode: formData.mode
-    }, {
-      params: { file: formData.path }
-    })
-
+    await api.setFilePermissions(formData.path, formData.mode)
     actions.showSuccess('权限修改成功')
     actions.loadFiles()
     modalRef.value.hide()
   } catch (error) {
-    actions.showError(error.response?.data?.error || '修改权限失败')
   } finally {
     formData.loading = false
   }
