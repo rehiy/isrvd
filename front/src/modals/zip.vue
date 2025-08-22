@@ -1,22 +1,10 @@
-<template>
-  <BaseModal ref="modalRef" id="zipModal" title="压缩目录" :loading="formData.loading" :confirm-disabled="!formData.zipName.trim()" @confirm="handleConfirm">
-    <form @submit.prevent="handleConfirm">
-      <div class="mb-3">
-        <label for="zipName" class="form-label">压缩包名称</label>
-        <input type="text" class="form-control" id="zipName" v-model="formData.zipName" :disabled="formData.loading" required>
-      </div>
-    </form>
-    <template #confirm-text>
-      {{ formData.loading ? '压缩中...' : '压缩' }}
-    </template>
-  </BaseModal>
-</template>
-
 <script setup>
-import { inject, reactive, ref } from 'vue'
 import axios from 'axios'
+import { inject, reactive, ref } from 'vue'
+
 import { APP_ACTIONS_KEY } from '@/stores/state.js'
-import BaseModal from '@/components/base/base-modal.vue'
+
+import BaseModal from '@/components/modal-base.vue'
 
 const actions = inject(APP_ACTIONS_KEY)
 
@@ -60,3 +48,17 @@ const handleConfirm = async () => {
 
 defineExpose({ show })
 </script>
+
+<template>
+  <BaseModal ref="modalRef" id="zipModal" title="压缩目录" :loading="formData.loading" :confirm-disabled="!formData.zipName.trim()" @confirm="handleConfirm">
+    <form @submit.prevent="handleConfirm">
+      <div class="mb-3">
+        <label for="zipName" class="form-label">压缩包名称</label>
+        <input type="text" class="form-control" id="zipName" v-model="formData.zipName" :disabled="formData.loading" required>
+      </div>
+    </form>
+    <template #confirm-text>
+      {{ formData.loading ? '压缩中...' : '压缩' }}
+    </template>
+  </BaseModal>
+</template>

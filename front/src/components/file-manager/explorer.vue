@@ -1,13 +1,15 @@
 <script setup>
 import { inject, ref } from 'vue'
+
 import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
 import { isEditableFile, getFileIcon, formatFileSize, formatTime } from '@/utils/utils.js'
-import EditModal from '@/components/modals/edit.vue'
-import RenameModal from '@/components/modals/rename.vue'
-import ChmodModal from '@/components/modals/chmod.vue'
-import ZipModal from '@/components/modals/zip.vue'
-import DeleteModal from '@/components/modals/delete.vue'
-import UnzipModal from '@/components/modals/unzip.vue'
+
+import EditModal from '@/modals/edit.vue'
+import RenameModal from '@/modals/rename.vue'
+import ChmodModal from '@/modals/chmod.vue'
+import ZipModal from '@/modals/zip.vue'
+import DeleteModal from '@/modals/delete.vue'
+import UnzipModal from '@/modals/unzip.vue'
 
 const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)
@@ -44,7 +46,7 @@ const downloadFile = (file) => {
             <th>大小</th>
             <th>权限</th>
             <th>修改时间</th>
-            <th style="width: 220px;">操作</th>
+            <th class="actions-column">操作</th>
           </tr>
         </thead>
         <tbody>
@@ -65,7 +67,6 @@ const downloadFile = (file) => {
             <td><code class="small">{{ file.mode }}</code></td>
             <td class="text-muted small text-nowrap">{{ formatTime(file.modTime) }}</td>
             <td class="text-end">
-              <!-- 目录操作 -->
               <!-- 目录操作 -->
               <template v-if="file.isDir">
                 <button class="btn btn-outline-primary btn-sm me-1" @click="navigateTo(file.path)" title="进入目录">
@@ -117,3 +118,10 @@ const downloadFile = (file) => {
     <UnzipModal ref="unzipModalRef" />
   </div>
 </template>
+
+<style scoped>
+.actions-column {
+  width: 220px;
+  text-align: center;
+}
+</style>

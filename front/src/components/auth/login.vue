@@ -1,6 +1,7 @@
 <script setup>
-import { inject, reactive, ref } from 'vue'
 import axios from 'axios'
+import { inject, reactive, ref } from 'vue'
+
 import { APP_ACTIONS_KEY } from '@/stores/state.js'
 
 const actions = inject(APP_ACTIONS_KEY)
@@ -38,7 +39,7 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="container" style="margin-top: 25%">
+  <div class="login-container">
     <div class="row justify-content-center">
       <div class="col-md-6">
         <div class="card">
@@ -68,3 +69,9 @@ const handleLogin = async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.login-container {
+  margin-top: 25%;
+}
+</style>

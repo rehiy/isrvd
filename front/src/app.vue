@@ -1,27 +1,15 @@
-<template>
-  <template v-if="state.user">
-    <NavigationBar />
-    <div class="container-fluid">
-      <BreadcrumbNav />
-      <FileActions />
-      <FileExplorer />
-    </div>
-  </template>
-
-  <LoginForm v-else />
-
-  <NotificationManager />
-</template>
-
 <script setup>
 import { onMounted, provide } from 'vue'
+
 import { initProvider, APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
-import LoginForm from '@/components/auth/auth.vue'
-import NotificationManager from '@/components/base/notification.vue'
+
 import NavigationBar from '@/layouts/navigation.vue'
 import BreadcrumbNav from '@/layouts/breadcrumb.vue'
-import FileActions from '@/components/file-manager/file-actions.vue'
-import FileExplorer from '@/components/file-manager/file-explorer.vue'
+
+import AuthLogin from '@/components/auth/login.vue'
+import NotificationManager from '@/components/notification.vue'
+import FileActions from '@/components/file-manager/actions.vue'
+import FileExplorer from '@/components/file-manager/explorer.vue'
 
 const { state, actions } = initProvider()
 
@@ -41,3 +29,18 @@ onMounted(() => {
   }
 })
 </script>
+
+<template>
+  <template v-if="state.user">
+    <NavigationBar />
+    <div class="container-fluid">
+      <BreadcrumbNav />
+      <FileActions />
+      <FileExplorer />
+    </div>
+  </template>
+
+  <AuthLogin v-else />
+
+  <NotificationManager />
+</template>

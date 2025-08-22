@@ -1,16 +1,9 @@
-<template>
-  <BaseModal ref="modalRef" id="shellModal" title="实时 Shell 终端" size="modal-xl" :show-footer="false" body-class="bg-dark pe-0" @shown="handleShown" @hidden="handleHidden">
-    <template #title>
-      <i class="fas fa-terminal"></i> 实时 Shell 终端
-    </template>
-    <div id="xterm-container"></div>
-  </BaseModal>
-</template>
-
 <script setup>
 import { ref } from 'vue'
+
 import * as ShellTerminal from '@/utils/shell.js'
-import BaseModal from '@/components/base/base-modal.vue'
+
+import BaseModal from '@/components/modal-base.vue'
 
 const modalRef = ref(null)
 
@@ -39,3 +32,12 @@ const handleHidden = () => {
 
 defineExpose({ show, hide })
 </script>
+
+<template>
+  <BaseModal ref="modalRef" id="shellModal" title="实时 Shell 终端" size="modal-xl" :show-footer="false" body-class="bg-dark pe-0" @shown="handleShown" @hidden="handleHidden">
+    <template #title>
+      <i class="fas fa-terminal"></i> 实时 Shell 终端
+    </template>
+    <div id="xterm-container"></div>
+  </BaseModal>
+</template>

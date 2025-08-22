@@ -1,8 +1,10 @@
 <script setup>
-import { inject, reactive, ref } from 'vue'
 import axios from 'axios'
+import { inject, reactive, ref } from 'vue'
+
 import { APP_ACTIONS_KEY } from '@/stores/state.js'
-import BaseModal from '@/components/base/base-modal.vue'
+
+import BaseModal from '@/components/modal-base.vue'
 
 const actions = inject(APP_ACTIONS_KEY)
 

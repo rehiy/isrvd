@@ -1,20 +1,11 @@
-<template>
-  <BaseModal ref="modalRef" id="deleteModal" title="确认删除" header-class="text-bg-danger" :loading="loading" @confirm="handleConfirm">
-    <p>确定要删除 <strong>{{ file?.name }}</strong> 吗？</p>
-    <p class="text-danger mb-0">此操作不可恢复！</p>
-    <template #confirm-text>
-      {{ loading ? '删除中...' : '删除' }}
-    </template>
-  </BaseModal>
-</template>
-
 <script setup>
-import { inject, ref } from 'vue'
 import axios from 'axios'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
-import BaseModal from '@/components/base/base-modal.vue'
+import { inject, ref } from 'vue'
 
-const state = inject(APP_STATE_KEY)
+import { APP_ACTIONS_KEY } from '@/stores/state.js'
+
+import BaseModal from '@/components/modal-base.vue'
+
 const actions = inject(APP_ACTIONS_KEY)
 
 const loading = ref(false)
@@ -49,3 +40,13 @@ const handleConfirm = async () => {
 
 defineExpose({ show })
 </script>
+
+<template>
+  <BaseModal ref="modalRef" id="deleteModal" title="确认删除" header-class="text-bg-danger" :loading="loading" @confirm="handleConfirm">
+    <p>确定要删除 <strong>{{ file?.name }}</strong> 吗？</p>
+    <p class="text-danger mb-0">此操作不可恢复！</p>
+    <template #confirm-text>
+      {{ loading ? '删除中...' : '删除' }}
+    </template>
+  </BaseModal>
+</template>

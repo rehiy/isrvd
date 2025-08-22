@@ -1,14 +1,7 @@
-<template>
-  <button class="btn btn-outline-light btn-sm" @click="handleLogout" :disabled="loading">
-    <i class="fas fa-spinner fa-spin" v-if="loading"></i>
-    <i class="fas fa-sign-out-alt" v-else></i>
-    {{ loading ? '注销中...' : '注销' }}
-  </button>
-</template>
-
 <script setup>
-import { inject, ref } from 'vue'
 import axios from 'axios'
+import { inject, ref } from 'vue'
+
 import { APP_ACTIONS_KEY } from '@/stores/state.js'
 
 const actions = inject(APP_ACTIONS_KEY)
@@ -27,3 +20,11 @@ const handleLogout = async () => {
   loading.value = false
 }
 </script>
+
+<template>
+  <button class="btn btn-outline-light btn-sm" @click="handleLogout" :disabled="loading">
+    <i class="fas fa-spinner fa-spin" v-if="loading"></i>
+    <i class="fas fa-sign-out-alt" v-else></i>
+    {{ loading ? '注销中...' : '注销' }}
+  </button>
+</template>
