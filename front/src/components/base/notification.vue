@@ -1,3 +1,19 @@
+<script setup>
+import { inject } from 'vue'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
+
+const state = inject(APP_STATE_KEY)
+const actions = inject(APP_ACTIONS_KEY)
+
+const toastClass = () => {
+  return state.notification.type === 'error' ? 'text-bg-danger' : 'text-bg-success'
+}
+
+const toastIcon = () => {
+  return state.notification.type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'
+}
+</script>
+
 <template>
   <Teleport to="body">
     <div class="toast-container position-fixed top-0 end-0 p-3">
@@ -16,26 +32,3 @@
     </div>
   </Teleport>
 </template>
-
-<script>
-import { defineComponent, inject } from 'vue'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '../helpers/state.js'
-
-export default defineComponent({
-  name: 'NotificationManager',
-  setup() {
-    const state = inject(APP_STATE_KEY)
-    const actions = inject(APP_ACTIONS_KEY)
-
-    const toastClass = () => {
-      return state.notification.type === 'error' ? 'text-bg-danger' : 'text-bg-success'
-    }
-
-    const toastIcon = () => {
-      return state.notification.type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'
-    }
-
-    return { state, actions, toastClass, toastIcon }
-  }
-})
-</script>

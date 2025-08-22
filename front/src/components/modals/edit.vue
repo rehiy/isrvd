@@ -7,16 +7,11 @@
   </BaseModal>
 </template>
 
-<script>
-import { defineComponent, inject, reactive, ref } from 'vue'
+<script setup>
+import { inject, reactive, ref } from 'vue'
 import axios from 'axios'
-import { APP_ACTIONS_KEY } from '../../helpers/state.js'
-import BaseModal from '../base_modal.vue'
-
-export default defineComponent({
-  name: 'EditModal',
-  components: { BaseModal },
-  setup(props, { expose }) {
+import { APP_ACTIONS_KEY } from '@/stores/state.js'
+import BaseModal from '@/components/base/base-modal.vue'
     const actions = inject(APP_ACTIONS_KEY)
 
     const formData = reactive({
@@ -67,14 +62,5 @@ export default defineComponent({
       }
     }
 
-    expose({ show })
-
-    return {
-      formData,
-      show,
-      handleConfirm,
-      modalRef
-    }
-  }
-})
+defineExpose({ show })
 </script>

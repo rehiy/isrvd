@@ -1,3 +1,42 @@
+<script setup>
+import { inject, reactive, ref } from 'vue'
+import axios from 'axios'
+import { APP_ACTIONS_KEY } from '@/stores/state.js'
+
+const actions = inject(APP_ACTIONS_KEY)
+
+const loginForm = reactive({
+  username: '',
+  password: ''
+})
+
+const loading = ref(false)
+
+const handleLogin = async () => {
+  loading.value = true
+
+  try {
+    const response = await axios.post('/api/login', loginForm)
+
+    const token = response.data.payload.token
+    const user = response.data.payload.user
+
+    actions.setAuth({ token, user })
+
+    // 登录成功后加载文件
+    actions.loadFiles()
+
+    // 清空表单
+    loginForm.username = ''
+    loginForm.password = ''
+  } catch (err) {
+    actions.showError(err.response?.data?.error || '登录失败')
+  } finally {
+    loading.value = false
+  }
+}
+</script>
+
 <template>
   <div class="container" style="margin-top: 25%">
     <div class="row justify-content-center">
@@ -29,53 +68,3 @@
     </div>
   </div>
 </template>
-
-<script>
-import { defineComponent, inject, reactive, ref } from 'vue'
-import axios from 'axios'
-import { APP_ACTIONS_KEY } from '../helpers/state.js'
-
-export default defineComponent({
-  name: 'LoginForm',
-  setup() {
-    const actions = inject(APP_ACTIONS_KEY)
-
-    const loginForm = reactive({
-      username: '',
-      password: ''
-    })
-
-    const loading = ref(false)
-
-    const handleLogin = async () => {
-      loading.value = true
-
-      try {
-        const response = await axios.post('/api/login', loginForm)
-
-        const token = response.data.payload.token
-        const user = response.data.payload.user
-
-        actions.setAuth({ token, user })
-
-        // 登录成功后加载文件
-        actions.loadFiles()
-
-        // 清空表单
-        loginForm.username = ''
-        loginForm.password = ''
-      } catch (err) {
-        actions.showError(err.response?.data?.error || '登录失败')
-      } finally {
-        loading.value = false
-      }
-    }
-
-    return {
-      loginForm,
-      loading,
-      handleLogin
-    }
-  }
-})
-</script>

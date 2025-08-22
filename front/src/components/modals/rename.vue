@@ -12,63 +12,50 @@
   </BaseModal>
 </template>
 
-<script>
-import { defineComponent, inject, reactive, ref } from 'vue'
+<script setup>
+import { inject, reactive, ref } from 'vue'
 import axios from 'axios'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '../../helpers/state.js'
-import BaseModal from '../base_modal.vue'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
+import BaseModal from '@/components/base/base-modal.vue'
 
-export default defineComponent({
-  name: 'RenameModal',
-  components: { BaseModal },
-  setup(props, { expose }) {
-    const state = inject(APP_STATE_KEY)
-    const actions = inject(APP_ACTIONS_KEY)
+const state = inject(APP_STATE_KEY)
+const actions = inject(APP_ACTIONS_KEY)
 
-    const formData = reactive({
-      name: '',
-      loading: false,
-      file: null
+const formData = reactive({
+  name: '',
+  loading: false,
+  file: null
+})
+
+const modalRef = ref(null)
+
+const show = (file) => {
+  formData.file = file
+  formData.name = file.name
+  formData.loading = false
+  modalRef.value.show()
+}
+
+const handleConfirm = async () => {
+  if (!formData.name.trim() || !formData.file) return
+
+  formData.loading = true
+
+  try {
+    await axios.post('/api/rename', {
+      oldPath: formData.file.path,
+      newName: formData.name
     })
 
-    const modalRef = ref(null)
-
-    const show = (file) => {
-      formData.file = file
-      formData.name = file.name
-      formData.loading = false
-      modalRef.value.show()
-    }
-
-    const handleConfirm = async () => {
-      if (!formData.name.trim() || !formData.file) return
-
-      formData.loading = true
-
-      try {
-        await axios.post('/api/rename', {
-          oldPath: formData.file.path,
-          newName: formData.name
-        })
-
-        actions.showSuccess('重命名成功')
-        actions.loadFiles()
-        modalRef.value.hide()
-      } catch (error) {
-        actions.showError(error.response?.data?.error || '重命名失败')
-      } finally {
-        formData.loading = false
-      }
-    }
-
-    expose({ show })
-
-    return {
-      formData,
-      show,
-      handleConfirm,
-      modalRef
-    }
+    actions.showSuccess('重命名成功')
+    actions.loadFiles()
+    modalRef.value.hide()
+  } catch (error) {
+    actions.showError(error.response?.data?.error || '重命名失败')
+  } finally {
+    formData.loading = false
   }
-})
+}
+
+defineExpose({ show })
 </script>

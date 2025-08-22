@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import App from './app.vue'
+import App from '@/app.vue'
 
 // 导入全局样式
 import 'bootstrap/dist/css/bootstrap.min.css'

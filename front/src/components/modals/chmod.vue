@@ -1,3 +1,63 @@
+<script setup>
+import { inject, reactive, ref } from 'vue'
+import axios from 'axios'
+import { APP_ACTIONS_KEY } from '@/stores/state.js'
+import BaseModal from '@/components/base/base-modal.vue'
+
+const actions = inject(APP_ACTIONS_KEY)
+
+const formData = reactive({
+  path: '',
+  mode: '',
+  loading: false
+})
+
+const modalRef = ref(null)
+
+const show = async (file) => {
+  formData.loading = true
+
+  try {
+    const response = await axios.get('/api/chmod', {
+      params: { file: file.path }
+    })
+
+    formData.path = file.path
+    formData.mode = response.data.payload.mode
+
+    modalRef.value.show()
+  } catch (error) {
+    actions.showError(error.response?.data?.error || '无法获取文件权限')
+  } finally {
+    formData.loading = false
+  }
+}
+
+const handleConfirm = async () => {
+  if (!formData.mode.trim()) return
+
+  formData.loading = true
+
+  try {
+    await axios.post('/api/chmod', {
+      mode: formData.mode
+    }, {
+      params: { file: formData.path }
+    })
+
+    actions.showSuccess('权限修改成功')
+    actions.loadFiles()
+    modalRef.value.hide()
+  } catch (error) {
+    actions.showError(error.response?.data?.error || '修改权限失败')
+  } finally {
+    formData.loading = false
+  }
+}
+
+defineExpose({ show })
+</script>
+
 <template>
   <BaseModal ref="modalRef" id="chmodModal" title="修改权限" :loading="formData.loading" :confirm-disabled="!formData.mode.trim()" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm">
@@ -14,76 +74,3 @@
     </template>
   </BaseModal>
 </template>
-
-<script>
-import { defineComponent, inject, reactive, ref } from 'vue'
-import axios from 'axios'
-import { APP_ACTIONS_KEY } from '../../helpers/state.js'
-import BaseModal from '../base_modal.vue'
-
-export default defineComponent({
-  name: 'ChmodModal',
-  components: { BaseModal },
-  setup(props, { expose }) {
-    const actions = inject(APP_ACTIONS_KEY)
-
-    const formData = reactive({
-      path: '',
-      mode: '',
-      loading: false
-    })
-
-    const modalRef = ref(null)
-
-    const show = async (file) => {
-      formData.loading = true
-
-      try {
-        const response = await axios.get('/api/chmod', {
-          params: { file: file.path }
-        })
-
-        formData.path = file.path
-        formData.mode = response.data.payload.mode
-
-        modalRef.value.show()
-      } catch (error) {
-        actions.showError(error.response?.data?.error || '无法获取文件权限')
-      } finally {
-        formData.loading = false
-      }
-    }
-
-    const handleConfirm = async () => {
-      if (!formData.mode.trim()) return
-
-      formData.loading = true
-
-      try {
-        await axios.post('/api/chmod', {
-          mode: formData.mode
-        }, {
-          params: { file: formData.path }
-        })
-
-        actions.showSuccess('权限修改成功')
-        actions.loadFiles()
-        modalRef.value.hide()
-      } catch (error) {
-        actions.showError(error.response?.data?.error || '修改权限失败')
-      } finally {
-        formData.loading = false
-      }
-    }
-
-    expose({ show })
-
-    return {
-      formData,
-      show,
-      handleConfirm,
-      modalRef
-    }
-  }
-})
-</script>

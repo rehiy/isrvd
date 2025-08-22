@@ -8,58 +8,44 @@
   </BaseModal>
 </template>
 
-<script>
-import { defineComponent, inject, ref } from 'vue'
+<script setup>
+import { inject, ref } from 'vue'
 import axios from 'axios'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '../../helpers/state.js'
-import BaseModal from '../base_modal.vue'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
+import BaseModal from '@/components/base/base-modal.vue'
 
-export default defineComponent({
-  name: 'DeleteModal',
-  components: { BaseModal },
-  setup(props, { expose }) {
-    const state = inject(APP_STATE_KEY)
-    const actions = inject(APP_ACTIONS_KEY)
+const state = inject(APP_STATE_KEY)
+const actions = inject(APP_ACTIONS_KEY)
 
-    const loading = ref(false)
-    const file = ref(null)
-    const modalRef = ref(null)
+const loading = ref(false)
+const file = ref(null)
+const modalRef = ref(null)
 
-    const show = (fileData) => {
-      file.value = fileData
-      loading.value = false
-      modalRef.value.show()
-    }
+const show = (fileData) => {
+  file.value = fileData
+  loading.value = false
+  modalRef.value.show()
+}
 
-    const handleConfirm = async () => {
-      if (!file.value) return
+const handleConfirm = async () => {
+  if (!file.value) return
 
-      loading.value = true
+  loading.value = true
 
-      try {
-        await axios.delete('/api/delete', {
-          params: { file: file.value.path }
-        })
+  try {
+    await axios.delete('/api/delete', {
+      params: { file: file.value.path }
+    })
 
-        actions.showSuccess(file.value.isDir ? '目录删除成功' : '文件删除成功')
-        actions.loadFiles()
-        modalRef.value.hide()
-      } catch (error) {
-        actions.showError(error.response?.data?.error || '删除失败')
-      } finally {
-        loading.value = false
-      }
-    }
-
-    expose({ show })
-
-    return {
-      loading,
-      file,
-      show,
-      handleConfirm,
-      modalRef
-    }
+    actions.showSuccess(file.value.isDir ? '目录删除成功' : '文件删除成功')
+    actions.loadFiles()
+    modalRef.value.hide()
+  } catch (error) {
+    actions.showError(error.response?.data?.error || '删除失败')
+  } finally {
+    loading.value = false
   }
-})
+}
+
+defineExpose({ show })
 </script>

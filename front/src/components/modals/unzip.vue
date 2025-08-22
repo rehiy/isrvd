@@ -14,61 +14,48 @@
   </BaseModal>
 </template>
 
-<script>
-import { defineComponent, inject, reactive, ref } from 'vue'
+<script setup>
+import { inject, reactive, ref } from 'vue'
 import axios from 'axios'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '../../helpers/state.js'
-import BaseModal from '../base_modal.vue'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
+import BaseModal from '@/components/base/base-modal.vue'
 
-export default defineComponent({
-  name: 'UnzipModal',
-  components: { BaseModal },
-  setup(props, { expose }) {
-    const state = inject(APP_STATE_KEY)
-    const actions = inject(APP_ACTIONS_KEY)
+const state = inject(APP_STATE_KEY)
+const actions = inject(APP_ACTIONS_KEY)
 
-    const formData = reactive({
-      file: null,
-      loading: false
+const formData = reactive({
+  file: null,
+  loading: false
+})
+
+const modalRef = ref(null)
+
+const show = (file) => {
+  formData.file = file
+  formData.loading = false
+  modalRef.value.show()
+}
+
+const handleConfirm = async () => {
+  if (!formData.file) return
+
+  formData.loading = true
+
+  try {
+    await axios.post('/api/unzip', {
+      path: state.currentPath,
+      zipName: formData.file.name
     })
 
-    const modalRef = ref(null)
-
-    const show = (file) => {
-      formData.file = file
-      formData.loading = false
-      modalRef.value.show()
-    }
-
-    const handleConfirm = async () => {
-      if (!formData.file) return
-
-      formData.loading = true
-
-      try {
-        await axios.post('/api/unzip', {
-          path: state.currentPath,
-          zipName: formData.file.name
-        })
-
-        actions.showSuccess('解压成功')
-        actions.loadFiles()
-        modalRef.value.hide()
-      } catch (error) {
-        actions.showError(error.response?.data?.error || '解压失败')
-      } finally {
-        formData.loading = false
-      }
-    }
-
-    expose({ show })
-
-    return {
-      formData,
-      modalRef,
-      show,
-      handleConfirm
-    }
+    actions.showSuccess('解压成功')
+    actions.loadFiles()
+    modalRef.value.hide()
+  } catch (error) {
+    actions.showError(error.response?.data?.error || '解压失败')
+  } finally {
+    formData.loading = false
   }
-})
+}
+
+defineExpose({ show })
 </script>

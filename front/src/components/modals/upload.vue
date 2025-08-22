@@ -12,82 +12,66 @@
   </BaseModal>
 </template>
 
-<script>
-import { defineComponent, inject, reactive, ref, computed } from 'vue'
+<script setup>
+import { inject, reactive, ref, computed } from 'vue'
 import axios from 'axios'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '../../helpers/state.js'
-import BaseModal from '../base_modal.vue'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
+import BaseModal from '@/components/base/base-modal.vue'
 
-export default defineComponent({
-  name: 'UploadModal',
-  components: { BaseModal },
-  setup(props, { expose }) {
-    const state = inject(APP_STATE_KEY)
-    const actions = inject(APP_ACTIONS_KEY)
+const state = inject(APP_STATE_KEY)
+const actions = inject(APP_ACTIONS_KEY)
 
-    const formData = reactive({
-      loading: false,
-      selectedFile: null
-    })
-
-    const fileInput = ref(null)
-    const modalRef = ref(null)
-
-    const show = () => {
-      formData.loading = false
-      formData.selectedFile = null
-      modalRef.value.show()
-    }
-
-    const handleFileChange = (event) => {
-      formData.selectedFile = event.target.files[0] || null
-    }
-
-    const handleConfirm = async () => {
-      if (!formData.selectedFile) return
-
-      formData.loading = true
-
-      const formDataToSend = new FormData()
-      formDataToSend.append('file', formData.selectedFile)
-      formDataToSend.append('path', state.currentPath)
-
-      try {
-        await axios.post('/api/upload', formDataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        })
-
-        actions.showSuccess('文件上传成功')
-        actions.loadFiles()
-        formData.selectedFile = null
-        if (fileInput.value) {
-          fileInput.value.value = ''
-        }
-        modalRef.value.hide()
-      } catch (error) {
-        actions.showError(error.response?.data?.error || '上传文件失败')
-      } finally {
-        formData.loading = false
-      }
-    }
-
-    const hasFile = computed(() => {
-      return formData.selectedFile !== null
-    })
-
-    expose({ show })
-
-    return {
-      formData,
-      fileInput,
-      show,
-      handleConfirm,
-      handleFileChange,
-      modalRef,
-      hasFile
-    }
-  }
+const formData = reactive({
+  loading: false,
+  selectedFile: null
 })
+
+const fileInput = ref(null)
+const modalRef = ref(null)
+
+const show = () => {
+  formData.loading = false
+  formData.selectedFile = null
+  modalRef.value.show()
+}
+
+const handleFileChange = (event) => {
+  formData.selectedFile = event.target.files[0] || null
+}
+
+const handleConfirm = async () => {
+  if (!formData.selectedFile) return
+
+  formData.loading = true
+
+  const formDataToSend = new FormData()
+  formDataToSend.append('file', formData.selectedFile)
+  formDataToSend.append('path', state.currentPath)
+
+  try {
+    await axios.post('/api/upload', formDataToSend, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+
+    actions.showSuccess('文件上传成功')
+    actions.loadFiles()
+    formData.selectedFile = null
+    if (fileInput.value) {
+      fileInput.value.value = ''
+    }
+    modalRef.value.hide()
+  } catch (error) {
+    actions.showError(error.response?.data?.error || '上传文件失败')
+  } finally {
+    formData.loading = false
+  }
+}
+
+const hasFile = computed(() => {
+  return formData.selectedFile !== null
+})
+
+defineExpose({ show })
 </script>

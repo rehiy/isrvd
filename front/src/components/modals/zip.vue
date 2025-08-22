@@ -12,64 +12,51 @@
   </BaseModal>
 </template>
 
-<script>
-import { defineComponent, inject, reactive, ref } from 'vue'
+<script setup>
+import { inject, reactive, ref } from 'vue'
 import axios from 'axios'
-import { APP_ACTIONS_KEY } from '../../helpers/state.js'
-import BaseModal from '../base_modal.vue'
+import { APP_ACTIONS_KEY } from '@/stores/state.js'
+import BaseModal from '@/components/base/base-modal.vue'
 
-export default defineComponent({
-  name: 'ZipModal',
-  components: { BaseModal },
-  setup(props, { expose }) {
-    const actions = inject(APP_ACTIONS_KEY)
+const actions = inject(APP_ACTIONS_KEY)
 
-    const formData = reactive({
-      path: '',
-      name: '',
-      zipName: '',
-      loading: false
+const formData = reactive({
+  path: '',
+  name: '',
+  zipName: '',
+  loading: false
+})
+
+const modalRef = ref(null)
+
+const show = (file) => {
+  formData.path = file.path
+  formData.name = file.name
+  formData.zipName = file.name + '.zip'
+  formData.loading = false
+  modalRef.value.show()
+}
+
+const handleConfirm = async () => {
+  if (!formData.zipName.trim()) return
+
+  formData.loading = true
+
+  try {
+    await axios.post('/api/zip', {
+      path: formData.path,
+      zipName: formData.zipName
     })
 
-    const modalRef = ref(null)
-
-    const show = (file) => {
-      formData.path = file.path
-      formData.name = file.name
-      formData.zipName = file.name + '.zip'
-      formData.loading = false
-      modalRef.value.show()
-    }
-
-    const handleConfirm = async () => {
-      if (!formData.zipName.trim()) return
-
-      formData.loading = true
-
-      try {
-        await axios.post('/api/zip', {
-          path: formData.path,
-          zipName: formData.zipName
-        })
-
-        actions.showSuccess('压缩成功')
-        actions.loadFiles()
-        modalRef.value.hide()
-      } catch (error) {
-        actions.showError(error.response?.data?.error || '压缩失败')
-      } finally {
-        formData.loading = false
-      }
-    }
-
-    expose({ show })
-
-    return {
-      formData,
-      show,
-      handleConfirm,
-      modalRef
-    }
+    actions.showSuccess('压缩成功')
+    actions.loadFiles()
+    modalRef.value.hide()
+  } catch (error) {
+    actions.showError(error.response?.data?.error || '压缩失败')
+  } finally {
+    formData.loading = false
   }
-})
+}
+
+defineExpose({ show })
 </script>

@@ -7,49 +7,35 @@
   </BaseModal>
 </template>
 
-<script>
-import { defineComponent, ref } from 'vue'
-import * as ShellTerminal from '../../helpers/shell.js'
-import BaseModal from '../base_modal.vue'
+<script setup>
+import { ref } from 'vue'
+import * as ShellTerminal from '@/utils/shell.js'
+import BaseModal from '@/components/base/base-modal.vue'
 
-export default defineComponent({
-  name: 'ShellModal',
-  components: { BaseModal },
-  setup(props, { expose }) {
-    const modalRef = ref(null)
+const modalRef = ref(null)
 
-    const show = () => {
-      modalRef.value.show()
-    }
+const show = () => {
+  modalRef.value.show()
+}
 
-    const hide = () => {
-      modalRef.value.hide()
-    }
+const hide = () => {
+  modalRef.value.hide()
+}
 
-    const handleShown = () => {
-      const mountPoint = document.getElementById('xterm-container')
-      if (mountPoint) {
-        ShellTerminal.create(mountPoint)
-      }
-    }
-
-    const handleHidden = () => {
-      ShellTerminal.destroy()
-      const mountPoint = document.getElementById('xterm-container')
-      if (mountPoint) {
-        mountPoint.innerHTML = ''
-      }
-    }
-
-    expose({ show, hide })
-
-    return {
-      show,
-      hide,
-      modalRef,
-      handleShown,
-      handleHidden
-    }
+const handleShown = () => {
+  const mountPoint = document.getElementById('xterm-container')
+  if (mountPoint) {
+    ShellTerminal.create(mountPoint)
   }
-})
+}
+
+const handleHidden = () => {
+  ShellTerminal.destroy()
+  const mountPoint = document.getElementById('xterm-container')
+  if (mountPoint) {
+    mountPoint.innerHTML = ''
+  }
+}
+
+defineExpose({ show, hide })
 </script>

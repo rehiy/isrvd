@@ -16,30 +16,19 @@
   </nav>
 </template>
 
-<script>
-import { defineComponent, inject, computed } from 'vue'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '../helpers/state.js'
+<script setup>
+import { inject, computed } from 'vue'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
 
-export default defineComponent({
-  name: 'BreadcrumbNav',
-  setup() {
-    const state = inject(APP_STATE_KEY)
-    const actions = inject(APP_ACTIONS_KEY)
+const state = inject(APP_STATE_KEY)
+const actions = inject(APP_ACTIONS_KEY)
 
-    const pathParts = computed(() => {
-      if (state.currentPath === '/') return []
-      return state.currentPath.split('/').filter(part => part)
-    })
-
-    const navigateTo = (path) => {
-      actions.loadFiles(path)
-    }
-
-    return {
-      state,
-      pathParts,
-      navigateTo
-    }
-  }
+const pathParts = computed(() => {
+  if (state.currentPath === '/') return []
+  return state.currentPath.split('/').filter(part => part)
 })
+
+const navigateTo = (path) => {
+  actions.loadFiles(path)
+}
 </script>
