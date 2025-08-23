@@ -37,7 +37,6 @@ const handleConfirm = async () => {
 
   try {
     await api.setFilePermissions(formData.path, formData.mode)
-    actions.showSuccess('权限修改成功')
     actions.loadFiles()
     modalRef.value.hide()
   } catch (error) {

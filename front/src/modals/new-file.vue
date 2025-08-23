@@ -31,7 +31,6 @@ const handleConfirm = async () => {
 
   try {
     await api.createFile(state.currentPath, formData.name, formData.content)
-    actions.showSuccess('文件创建成功')
     actions.loadFiles()
     modalRef.value.hide()
   } catch (error) {

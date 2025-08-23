@@ -29,7 +29,6 @@ const handleConfirm = async () => {
 
   try {
     await api.unzipFile(formData.file.name, state.currentPath)
-    actions.showSuccess('解压成功')
     actions.loadFiles()
     modalRef.value.hide()
   } catch (error) {

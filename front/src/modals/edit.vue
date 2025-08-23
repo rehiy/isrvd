@@ -37,7 +37,6 @@ const handleConfirm = async () => {
 
   try {
     await api.saveFileContent(formData.filePath, formData.content)
-    actions.showSuccess('文件保存成功')
     actions.loadFiles()
     modalRef.value.hide()
   } catch (error) {

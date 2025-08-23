@@ -29,7 +29,6 @@ const handleConfirm = async () => {
 
   try {
     await api.createDirectory(state.currentPath, formData.name)
-    actions.showSuccess('目录创建成功')
     actions.loadFiles()
     modalRef.value.hide()
   } catch (error) {

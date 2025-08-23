@@ -25,7 +25,6 @@ const handleConfirm = async () => {
 
   try {
     await api.deleteFile(file.value.path)
-    actions.showSuccess(file.value.isDir ? '目录删除成功' : '文件删除成功')
     actions.loadFiles()
     modalRef.value.hide()
   } catch (error) {

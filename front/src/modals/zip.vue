@@ -32,7 +32,6 @@ const handleConfirm = async () => {
 
   try {
     await api.zipFiles(formData.path, formData.zipName)
-    actions.showSuccess('压缩成功')
     actions.loadFiles()
     modalRef.value.hide()
   } catch (error) {

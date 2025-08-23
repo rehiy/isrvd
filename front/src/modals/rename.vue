@@ -30,7 +30,6 @@ const handleConfirm = async () => {
 
   try {
     await api.renameFile(formData.file.path, formData.name)
-    actions.showSuccess('重命名成功')
     actions.loadFiles()
     modalRef.value.hide()
   } catch (error) {

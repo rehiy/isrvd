@@ -38,7 +38,6 @@ const handleConfirm = async () => {
 
   try {
     await api.uploadFile(formDataToSend)
-    actions.showSuccess('文件上传成功')
     actions.loadFiles()
     formData.selectedFile = null
     if (fileInput.value) {

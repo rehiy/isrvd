@@ -4,49 +4,11 @@ import { reactive } from 'vue'
 import axios from 'axios'
 
 // Provide/Inject keys
-export const APP_STATE_KEY = Symbol('appState')
-export const APP_ACTIONS_KEY = Symbol('appActions')
+export const APP_STATE_KEY = Symbol('app.state')
+export const APP_ACTIONS_KEY = Symbol('app.actions')
 
 export const initProvider = () => {
-    const state = createAppState()
-    const actions = createAppActions(state)
-
-    // 注册 axios 全局错误处理器
-    axios.interceptors.response.use(
-        response => {
-            const message = response.data?.message || ''
-            if (message) actions.showSuccess(message)
-            return response.data
-        },
-        error => {
-            // 处理未授权错误
-            if (error.response?.status === 401) {
-                actions.clearAuth()
-                actions.showError('登录已过期，请重新登录')
-            }
-            // 处理其他 HTTP 错误
-            else if (error.response) {
-                const message = error.response.data?.message || `请求失败: ${error.response.status}`
-                actions.showError(message)
-            }
-            // 处理网络错误
-            else if (error.request) {
-                actions.showError('网络连接失败，请检查网络')
-            }
-            // 处理其他错误
-            else {
-                actions.showError('发生未知错误')
-            }
-            return Promise.reject(error)
-        }
-    )
-
-    return { state, actions }
-}
-
-// 全局状态管理
-function createAppState() {
-    return reactive({
+    const state = reactive({
         // 用户认证状态
         user: null,
         token: null,
@@ -63,11 +25,8 @@ function createAppState() {
             timer: null
         }
     })
-}
 
-// 全局操作方法
-function createAppActions(state) {
-    return {
+    const actions = {
         // 认证操作
         setAuth(userData) {
             state.user = userData.user
@@ -94,6 +53,10 @@ function createAppActions(state) {
 
         // 通知操作
         showNotification(type, message) {
+            if (!message) {
+                return
+            }
+
             if (state.notification.timer) {
                 clearTimeout(state.notification.timer)
             }
@@ -102,9 +65,7 @@ function createAppActions(state) {
             state.notification.message = message
 
             const duration = type === 'error' ? 5000 : 3000
-            state.notification.timer = setTimeout(() => {
-                this.clearNotification()
-            }, duration)
+            state.notification.timer = setTimeout(() => this.clearNotification(), duration)
         },
 
         clearNotification() {
@@ -112,16 +73,46 @@ function createAppActions(state) {
                 clearTimeout(state.notification.timer)
                 state.notification.timer = null
             }
+
             state.notification.type = null
             state.notification.message = ''
         },
-
-        showSuccess(message) {
-            this.showNotification('success', message)
-        },
-
-        showError(message) {
-            this.showNotification('error', message)
-        },
     }
+
+    axiosRegister(state, actions)
+
+    return { state, actions }
+}
+
+export const axiosRegister = (state, actions) => {
+    axios.interceptors.response.use(
+        value => {
+            if (value.data?.message) {
+                const message = value.data?.message
+                actions.showNotification(value.data.success ? 'success' : 'error', message)
+            }
+            return value.data
+        },
+        error => {
+            // 处理未授权错误
+            if (error.response?.status === 401) {
+                actions.showNotification('error', '登录已过期，请重新登录')
+                actions.clearAuth()
+            }
+            // 处理其他 HTTP 错误
+            else if (error.response) {
+                const message = error.response.data?.message
+                actions.showNotification('error', message || `请求失败: ${error.response.status}`)
+            }
+            // 处理网络错误
+            else if (error.request) {
+                actions.showNotification('error', '网络连接失败，请检查网络')
+            }
+            // 处理其他错误
+            else {
+                actions.showNotification('error', '发生未知错误')
+            }
+            return Promise.reject(error)
+        }
+    )
 }
