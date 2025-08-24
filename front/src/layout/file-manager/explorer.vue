@@ -26,31 +26,19 @@ const navigateTo = (path) => {
   actions.loadFiles(path)
 }
 
-const loading = ref(false)
-
 const files = ref([])
 const currentPath = ref('')
 
 const download = async (file) => {
-  try {
-    const response = await api.downloadFile(file.path)
-    downloadFile(file.name, response.data)
-  } catch (error) {
-    console.error('Download failed:', error)
-  }
+  const response = await api.downloadFile(file.path)
+  downloadFile(file.name, response.data)
 }
 
 actions.loadFiles = async (path) => {
-  loading.value = true
-  try {
-    const data = await api.getFiles(path)
-    files.value = data.payload.files || []
-    currentPath.value = data.payload.path
-    state.currentPath = path
-  } catch (error) {
-  } finally {
-    loading.value = false
-  }
+  const data = await api.getFiles(path)
+  files.value = data.payload.files || []
+  currentPath.value = data.payload.path
+  state.currentPath = path
 }
 
 actions.loadFiles('/');
@@ -58,7 +46,7 @@ actions.loadFiles('/');
 
 <template>
   <div>
-    <div v-if="loading" class="text-center p-4">
+    <div v-if="state.loading" class="text-center p-4">
       <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
       <p class="mt-3 text-muted">加载中...</p>
     </div>

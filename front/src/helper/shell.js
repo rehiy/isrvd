@@ -64,5 +64,5 @@ const destroyTerminal = () => {
 // ES Module 导出
 export {
     createTerminal as create,
-    destroyTerminal as destroy,
+    destroyTerminal as destroy
 }

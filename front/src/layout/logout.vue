@@ -1,30 +1,22 @@
 <script setup>
-import { inject, ref } from 'vue'
+import { inject } from 'vue'
 
 import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
 
+const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)
-const loading = ref(false)
 
 const handleLogout = async () => {
-  loading.value = true
-
-  try {
-    await api.logout()
-  } catch (error) {
-    console.warn('Logout request failed:', error)
-  }
-
+  await api.logout()
   actions.clearAuth()
-  loading.value = false
 }
 </script>
 
 <template>
-  <button class="btn btn-outline-light btn-sm" @click="handleLogout" :disabled="loading">
-    <i class="fas fa-spinner fa-spin" v-if="loading"></i>
+  <button class="btn btn-outline-light btn-sm" @click="handleLogout" :disabled="state.loading">
+    <i class="fas fa-spinner fa-spin" v-if="state.loading"></i>
     <i class="fas fa-sign-out-alt" v-else></i>
-    {{ loading ? '注销中...' : '注销' }}
+    {{ state.loading ? '注销中...' : '注销' }}
   </button>
 </template>

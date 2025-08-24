@@ -6,9 +6,12 @@ export const interceptors = (state, actions) => {
             if (state.token) {
                 config.headers['Authorization'] = state.token
             }
+            // 返回结果
+            state.loading = true
             return config
         },
         error => {
+            // 返回结果
             return Promise.reject(error)
         }
     )
@@ -19,6 +22,8 @@ export const interceptors = (state, actions) => {
                 const message = value.data?.message
                 actions.showNotification(value.data.success ? 'success' : 'error', message)
             }
+            // 返回结果
+            state.loading = false
             return value.data
         },
         error => {
@@ -40,6 +45,8 @@ export const interceptors = (state, actions) => {
             else {
                 actions.showNotification('error', '发生未知错误')
             }
+            // 返回结果
+            state.loading = false
             return Promise.reject(error)
         }
     )

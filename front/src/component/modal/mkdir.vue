@@ -10,46 +10,36 @@ const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)
 
 const formData = reactive({
-  name: '',
-  loading: false
+  name: ''
 })
 
 const modalRef = ref(null)
 
 const show = () => {
   formData.name = ''
-  formData.loading = false
   modalRef.value?.show()
 }
 
 const handleConfirm = async () => {
   if (!formData.name.trim()) return
-
-  formData.loading = true
-
-  try {
-    await api.createDirectory(state.currentPath, formData.name)
-    actions.loadFiles()
-    modalRef.value.hide()
-  } catch (error) {
-  } finally {
-    formData.loading = false
-  }
+  await api.createDirectory(state.currentPath, formData.name)
+  actions.loadFiles()
+  modalRef.value.hide()
 }
 
 defineExpose({ show })
 </script>
 
 <template>
-  <BaseModal ref="modalRef" id="mkdirModal" title="新建目录" :loading="formData.loading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
+  <BaseModal ref="modalRef" id="mkdirModal" title="新建目录" :loading="state.loading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm">
       <div class="mb-3">
         <label for="dirName" class="form-label">目录名称</label>
-        <input type="text" class="form-control" id="dirName" v-model="formData.name" :disabled="formData.loading" required>
+        <input type="text" class="form-control" id="dirName" v-model="formData.name" :disabled="state.loading" required>
       </div>
     </form>
     <template #confirm-text>
-      {{ formData.loading ? '创建中...' : '创建' }}
+      {{ state.loading ? '创建中...' : '创建' }}
     </template>
   </BaseModal>
 </template>

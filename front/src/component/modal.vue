@@ -10,7 +10,7 @@ const props = defineProps({
   headerClass: { type: String, default: '' },
   bodyClass: { type: String, default: '' },
   showFooter: { type: Boolean, default: true },
-  confirmDisabled: { type: Boolean, default: false },
+  confirmDisabled: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['confirm', 'cancel', 'shown', 'hidden'])

@@ -13,9 +13,11 @@ export const initProvider = () => {
         username: null,
 
         // 文件管理状态
-        loading: false,
         currentPath: '/',
         files: [],
+
+        // 网络请求状态
+        loading: false,
 
         // 通知状态
         notification: {

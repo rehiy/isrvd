@@ -1,9 +1,10 @@
 <script setup>
-import { inject, reactive, ref } from 'vue'
+import { inject, reactive } from 'vue'
 
 import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
 
+const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)
 
 const loginForm = reactive({
@@ -11,21 +12,12 @@ const loginForm = reactive({
   password: ''
 })
 
-const loading = ref(false)
-
 const handleLogin = async () => {
-  loading.value = true
-
-  try {
     const data = await api.login(loginForm)
     actions.setAuth(data.payload)
 
     loginForm.username = ''
     loginForm.password = ''
-  } catch (err) {
-  } finally {
-    loading.value = false
-  }
 }
 </script>
 
@@ -43,15 +35,15 @@ const handleLogin = async () => {
             <form @submit.prevent="handleLogin">
               <div class="mb-3">
                 <label for="username" class="form-label">用户名</label>
-                <input type="text" class="form-control" id="username" v-model="loginForm.username" :disabled="loading" required>
+                <input type="text" class="form-control" id="username" v-model="loginForm.username" required>
               </div>
               <div class="mb-3">
                 <label for="password" class="form-label">密码</label>
-                <input type="password" class="form-control" id="password" v-model="loginForm.password" :disabled="loading" required>
+                <input type="password" class="form-control" id="password" v-model="loginForm.password" required>
               </div>
-              <button type="submit" class="btn btn-primary w-100" :disabled="loading">
-                <i class="fas fa-spinner fa-spin" v-if="loading"></i>
-                {{ loading ? '登录中...' : '登录' }}
+              <button type="submit" class="btn btn-primary w-100" :disabled="state.loading">
+                <i class="fas fa-spinner fa-spin" v-if="state.loading"></i>
+                {{ state.loading ? '登录中...' : '登录' }}
               </button>
             </form>
           </div>
