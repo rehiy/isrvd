@@ -4,12 +4,10 @@ import { onMounted, provide } from 'vue'
 import { initProvider, APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
 
 import NavigationBar from '@/layouts/navigation.vue'
-import BreadcrumbNav from '@/layouts/breadcrumb.vue'
 
 import AuthLogin from '@/components/auth/login.vue'
+import FileManager from '@/components/file-manager/index.vue'
 import NotificationManager from '@/components/notification.vue'
-import FileActions from '@/components/file-manager/actions.vue'
-import FileExplorer from '@/components/file-manager/explorer.vue'
 
 const { state, actions } = initProvider()
 
@@ -18,13 +16,11 @@ provide(APP_STATE_KEY, state)
 provide(APP_ACTIONS_KEY, actions)
 
 onMounted(() => {
-  // 检查本地存储的认证信息
-  const savedToken = localStorage.getItem('file-manager-token')
-  const savedUser = localStorage.getItem('file-manager-user')
+  const savedToken = localStorage.getItem('app-token')
+  const savedUsername = localStorage.getItem('app-username')
 
-  if (savedToken && savedUser) {
-    actions.setAuth({ token: savedToken, user: savedUser })
-    // 认证状态恢复后立即加载文件
+  if (savedToken && savedUsername) {
+    actions.setAuth({ token: savedToken, user: savedUsername })
     actions.loadFiles()
   }
 })
@@ -34,9 +30,7 @@ onMounted(() => {
   <template v-if="state.user">
     <NavigationBar />
     <div class="container-fluid">
-      <BreadcrumbNav />
-      <FileActions />
-      <FileExplorer />
+      <FileManager />
     </div>
   </template>
 

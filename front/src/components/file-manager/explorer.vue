@@ -2,7 +2,7 @@
 import { inject, ref } from 'vue'
 
 import api from '@/services/api.js'
-import { APP_ACTIONS_KEY } from '@/stores/state.js'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
 import { isEditableFile, getFileIcon, formatFileSize, formatTime, downloadFile } from '@/helpers/utils.js'
 
 import ModifyModal from '@/modals/modify.vue'
@@ -12,6 +12,7 @@ import DeleteModal from '@/modals/delete.vue'
 import ZipModal from '@/modals/zip.vue'
 import UnzipModal from '@/modals/unzip.vue'
 
+const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)
 
 const modifyModalRef = ref(null)
@@ -45,6 +46,7 @@ actions.loadFiles = async (path) => {
     const data = await api.getFiles(path)
     files.value = data.payload.files || []
     currentPath.value = data.payload.path
+    state.currentPath = path
   } catch (error) {
   } finally {
     loading.value = false

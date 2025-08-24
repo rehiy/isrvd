@@ -31,8 +31,8 @@ export const initProvider = () => {
         setAuth(userData) {
             state.user = userData.user
             state.token = userData.token
-            localStorage.setItem('file-manager-token', userData.token)
-            localStorage.setItem('file-manager-user', userData.user)
+            localStorage.setItem('app-token', userData.token)
+            localStorage.setItem('app-username', userData.user)
             if (state.token) {
                 axios.defaults.headers.common['Authorization'] = state.token
             }
@@ -41,8 +41,8 @@ export const initProvider = () => {
         clearAuth() {
             state.user = null
             state.token = null
-            localStorage.removeItem('file-manager-token')
-            localStorage.removeItem('file-manager-user')
+            localStorage.removeItem('app-token')
+            localStorage.removeItem('app-username')
             delete axios.defaults.headers.common['Authorization']
         },
 
