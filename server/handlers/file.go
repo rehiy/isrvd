@@ -9,24 +9,24 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"isrvd/internal/models"
-	"isrvd/internal/services"
-	"isrvd/pkg/utils"
+	"isrvd/server/helpers/utils"
+	"isrvd/server/models"
+	"isrvd/server/services"
 )
 
-// FileHandler 文件处理器
+// 文件处理器
 type FileHandler struct {
 	fileService *services.FileService
 }
 
-// NewFileHandler 创建文件处理器
+// 创建文件处理器
 func NewFileHandler() *FileHandler {
 	return &FileHandler{
-		fileService: services.FileServiceInstance,
+		fileService: services.NewFileService(),
 	}
 }
 
-// ListFiles 文件列表
+// 文件列表
 func (h *FileHandler) ListFiles(c *gin.Context) {
 	var req models.ListFilesRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -46,72 +46,7 @@ func (h *FileHandler) ListFiles(c *gin.Context) {
 	})
 }
 
-// Upload 上传文件
-func (h *FileHandler) Upload(c *gin.Context) {
-	file, header, err := c.Request.FormFile("file")
-	if err != nil {
-		utils.RespondError(c, http.StatusBadRequest, "No file uploaded")
-		return
-	}
-	defer file.Close()
-
-	path := c.PostForm("path")
-	if path == "" {
-		path = "/"
-	}
-
-	if !utils.ValidatePath(path) {
-		utils.RespondError(c, http.StatusBadRequest, "Invalid path")
-		return
-	}
-
-	absPath := filepath.Join(utils.GetAbsolutePath(path), header.Filename)
-	f, err := os.Create(absPath)
-	if err != nil {
-		utils.RespondError(c, http.StatusInternalServerError, "Cannot create file")
-		return
-	}
-	defer f.Close()
-
-	_, err = io.Copy(f, file)
-	if err != nil {
-		utils.RespondError(c, http.StatusInternalServerError, "Cannot write file")
-		return
-	}
-
-	utils.RespondSuccess(c, "File uploaded successfully", nil)
-}
-
-// Download 下载文件
-func (h *FileHandler) Download(c *gin.Context) {
-	var req models.DownloadRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.RespondError(c, http.StatusBadRequest, "Invalid JSON")
-		return
-	}
-
-	if req.Path == "" {
-		utils.RespondError(c, http.StatusBadRequest, "No file specified")
-		return
-	}
-
-	if !utils.ValidatePath(req.Path) {
-		utils.RespondError(c, http.StatusBadRequest, "Invalid path")
-		return
-	}
-
-	f, err := os.Open(utils.GetAbsolutePath(req.Path))
-	if err != nil {
-		utils.RespondError(c, http.StatusNotFound, "File not found")
-		return
-	}
-	defer f.Close()
-
-	c.Header("Content-Disposition", "attachment; filename="+filepath.Base(req.Path))
-	io.Copy(c.Writer, f)
-}
-
-// Delete 删除文件
+// 删除文件
 func (h *FileHandler) Delete(c *gin.Context) {
 	var req models.DeleteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -133,7 +68,7 @@ func (h *FileHandler) Delete(c *gin.Context) {
 	utils.RespondSuccess(c, "File deleted successfully", nil)
 }
 
-// CreateDirectory 创建目录
+// 创建目录
 func (h *FileHandler) CreateDirectory(c *gin.Context) {
 	var req models.MkdirRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -150,7 +85,7 @@ func (h *FileHandler) CreateDirectory(c *gin.Context) {
 	utils.RespondSuccess(c, "Directory created successfully", nil)
 }
 
-// CreateFile 新建文件
+// 新建文件
 func (h *FileHandler) CreateFile(c *gin.Context) {
 	var req models.NewFileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -167,7 +102,7 @@ func (h *FileHandler) CreateFile(c *gin.Context) {
 	utils.RespondSuccess(c, "File created successfully", nil)
 }
 
-// ReadFile 读取文件内容
+// 读取文件内容
 func (h *FileHandler) ReadFile(c *gin.Context) {
 	var req models.ReadFileHandlerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -192,7 +127,7 @@ func (h *FileHandler) ReadFile(c *gin.Context) {
 	})
 }
 
-// WriteFile 写入文件内容
+// 写入文件内容
 func (h *FileHandler) WriteFile(c *gin.Context) {
 	var req models.WriteFileHandlerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -218,7 +153,7 @@ func (h *FileHandler) WriteFile(c *gin.Context) {
 	utils.RespondSuccess(c, "File saved successfully", nil)
 }
 
-// Rename 重命名
+// 重命名
 func (h *FileHandler) Rename(c *gin.Context) {
 	var req models.RenameRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -235,7 +170,7 @@ func (h *FileHandler) Rename(c *gin.Context) {
 	utils.RespondSuccess(c, "File renamed successfully", nil)
 }
 
-// ChangeMode 修改权限
+// 修改权限
 func (h *FileHandler) ChangeMode(c *gin.Context) {
 	var req models.ChmodHandlerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -277,4 +212,69 @@ func (h *FileHandler) ChangeMode(c *gin.Context) {
 	}
 
 	utils.RespondSuccess(c, "Permissions changed successfully", nil)
+}
+
+// 上传文件
+func (h *FileHandler) Upload(c *gin.Context) {
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		utils.RespondError(c, http.StatusBadRequest, "No file uploaded")
+		return
+	}
+	defer file.Close()
+
+	path := c.PostForm("path")
+	if path == "" {
+		path = "/"
+	}
+
+	if !utils.ValidatePath(path) {
+		utils.RespondError(c, http.StatusBadRequest, "Invalid path")
+		return
+	}
+
+	absPath := filepath.Join(utils.GetAbsolutePath(path), header.Filename)
+	f, err := os.Create(absPath)
+	if err != nil {
+		utils.RespondError(c, http.StatusInternalServerError, "Cannot create file")
+		return
+	}
+	defer f.Close()
+
+	_, err = io.Copy(f, file)
+	if err != nil {
+		utils.RespondError(c, http.StatusInternalServerError, "Cannot write file")
+		return
+	}
+
+	utils.RespondSuccess(c, "File uploaded successfully", nil)
+}
+
+// 下载文件
+func (h *FileHandler) Download(c *gin.Context) {
+	var req models.DownloadRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	if req.Path == "" {
+		utils.RespondError(c, http.StatusBadRequest, "No file specified")
+		return
+	}
+
+	if !utils.ValidatePath(req.Path) {
+		utils.RespondError(c, http.StatusBadRequest, "Invalid path")
+		return
+	}
+
+	f, err := os.Open(utils.GetAbsolutePath(req.Path))
+	if err != nil {
+		utils.RespondError(c, http.StatusNotFound, "File not found")
+		return
+	}
+	defer f.Close()
+
+	c.Header("Content-Disposition", "attachment; filename="+filepath.Base(req.Path))
+	io.Copy(c.Writer, f)
 }

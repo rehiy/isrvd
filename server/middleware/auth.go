@@ -5,11 +5,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"isrvd/pkg/auth"
-	"isrvd/pkg/utils"
+	"isrvd/server/helpers/auth"
+	"isrvd/server/helpers/utils"
 )
 
-// Auth 认证中间件
+// 认证中间件
 func Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := utils.GetTokenFromRequest(c)

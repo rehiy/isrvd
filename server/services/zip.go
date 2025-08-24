@@ -7,22 +7,19 @@ import (
 	"path/filepath"
 	"strings"
 
-	"isrvd/internal/models"
-	"isrvd/pkg/utils"
+	"isrvd/server/helpers/utils"
+	"isrvd/server/models"
 )
 
-// ZipService zip服务
+// zip服务
 type ZipService struct{}
 
-// ZipServiceInstance zip服务实例
-var ZipServiceInstance = &ZipService{}
-
-// NewZipService 创建zip服务
+// 创建zip服务
 func NewZipService() *ZipService {
 	return &ZipService{}
 }
 
-// CreateZip 创建压缩文件
+// 创建压缩文件
 func (zs *ZipService) CreateZip(path, zipName string) error {
 	if !utils.ValidatePath(path) || !utils.ValidatePath(zipName) {
 		return os.ErrPermission
@@ -81,7 +78,7 @@ func (zs *ZipService) CreateZip(path, zipName string) error {
 	})
 }
 
-// ExtractZip 解压文件
+// 解压文件
 func (zs *ZipService) ExtractZip(path, zipName string) error {
 	if !utils.ValidatePath(path) || !utils.ValidatePath(zipName) {
 		return os.ErrPermission
@@ -134,13 +131,13 @@ func (zs *ZipService) ExtractZip(path, zipName string) error {
 	return nil
 }
 
-// IsZipFile 判断文件是否为zip文件
+// 判断文件是否为zip文件
 func (zs *ZipService) IsZipFile(filePath string) bool {
 	ext := strings.ToLower(filepath.Ext(filePath))
 	return ext == ".zip"
 }
 
-// GetZipInfo 获取zip文件信息
+// 获取zip文件信息
 func (zs *ZipService) GetZipInfo(zipPath string) ([]models.ZipFileInfo, error) {
 	if !utils.ValidatePath(zipPath) {
 		return nil, os.ErrPermission

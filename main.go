@@ -6,10 +6,10 @@ import (
 	"log"
 	"net/http"
 
-	"isrvd/internal/config"
-	"isrvd/internal/router"
-
 	"github.com/gin-gonic/gin"
+
+	"isrvd/server/config"
+	"isrvd/server/router"
 )
 
 //go:embed public/*

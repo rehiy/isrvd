@@ -3,11 +3,11 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 
-	"isrvd/internal/handlers"
-	"isrvd/internal/middleware"
+	"isrvd/server/handlers"
+	"isrvd/server/middleware"
 )
 
-// SetupRouter 设置路由
+// 设置路由
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 

@@ -5,24 +5,24 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"isrvd/internal/models"
-	"isrvd/internal/services"
-	"isrvd/pkg/utils"
+	"isrvd/server/helpers/utils"
+	"isrvd/server/models"
+	"isrvd/server/services"
 )
 
-// AuthHandler 认证处理器
+// 认证处理器
 type AuthHandler struct {
 	authService *services.AuthService
 }
 
-// NewAuthHandler 创建认证处理器
+// 创建认证处理器
 func NewAuthHandler() *AuthHandler {
 	return &AuthHandler{
-		authService: services.AuthServiceInstance,
+		authService: services.NewAuthService(),
 	}
 }
 
-// Login 登录处理
+// 登录处理
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req models.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -39,7 +39,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	utils.RespondSuccess(c, "Login successful", resp)
 }
 
-// Logout 登出处理
+// 登出处理
 func (h *AuthHandler) Logout(c *gin.Context) {
 	token := utils.GetTokenFromRequest(c)
 	h.authService.Logout(token)

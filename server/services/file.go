@@ -5,19 +5,19 @@ import (
 	"path/filepath"
 	"sort"
 
-	"isrvd/internal/models"
-	"isrvd/pkg/utils"
+	"isrvd/server/helpers/utils"
+	"isrvd/server/models"
 )
 
-// FileService 文件服务
+// 文件服务
 type FileService struct{}
 
-// NewFileService 创建文件服务实例
+// 创建文件服务实例
 func NewFileService() *FileService {
 	return &FileService{}
 }
 
-// ListFiles 获取文件列表
+// 获取文件列表
 func (fs *FileService) ListFiles(path string) ([]models.FileInfo, error) {
 	if !utils.ValidatePath(path) {
 		return nil, os.ErrPermission
@@ -56,7 +56,7 @@ func (fs *FileService) ListFiles(path string) ([]models.FileInfo, error) {
 	return fileList, nil
 }
 
-// DeleteFile 删除文件或目录
+// 删除文件或目录
 func (fs *FileService) DeleteFile(path string) error {
 	if !utils.ValidatePath(path) {
 		return os.ErrPermission
@@ -66,7 +66,7 @@ func (fs *FileService) DeleteFile(path string) error {
 	return os.RemoveAll(absPath)
 }
 
-// CreateDirectory 创建目录
+// 创建目录
 func (fs *FileService) CreateDirectory(path, name string) error {
 	if !utils.ValidatePath(path) || !utils.ValidatePath(name) {
 		return os.ErrPermission
@@ -76,7 +76,7 @@ func (fs *FileService) CreateDirectory(path, name string) error {
 	return os.Mkdir(absPath, 0755)
 }
 
-// CreateFile 创建文件
+// 创建文件
 func (fs *FileService) CreateFile(path, name, content string) error {
 	if !utils.ValidatePath(path) || !utils.ValidatePath(name) {
 		return os.ErrPermission
@@ -86,7 +86,7 @@ func (fs *FileService) CreateFile(path, name, content string) error {
 	return os.WriteFile(absPath, []byte(content), 0644)
 }
 
-// ReadFile 读取文件内容
+// 读取文件内容
 func (fs *FileService) ReadFile(path string) (string, error) {
 	if !utils.ValidatePath(path) {
 		return "", os.ErrPermission
@@ -100,7 +100,7 @@ func (fs *FileService) ReadFile(path string) (string, error) {
 	return string(content), nil
 }
 
-// WriteFile 写入文件内容
+// 写入文件内容
 func (fs *FileService) WriteFile(path, content string) error {
 	if !utils.ValidatePath(path) {
 		return os.ErrPermission
@@ -110,7 +110,7 @@ func (fs *FileService) WriteFile(path, content string) error {
 	return os.WriteFile(absPath, []byte(content), 0644)
 }
 
-// RenameFile 重命名文件
+// 重命名文件
 func (fs *FileService) RenameFile(path, newPath string) error {
 	if !utils.ValidatePath(path) || !utils.ValidatePath(newPath) {
 		return os.ErrPermission
@@ -121,7 +121,7 @@ func (fs *FileService) RenameFile(path, newPath string) error {
 	return os.Rename(oldAbsPath, newAbsPath)
 }
 
-// ChangeMode 修改文件权限
+// 修改文件权限
 func (fs *FileService) ChangeMode(path string, mode os.FileMode) error {
 	if !utils.ValidatePath(path) {
 		return os.ErrPermission
@@ -131,7 +131,7 @@ func (fs *FileService) ChangeMode(path string, mode os.FileMode) error {
 	return os.Chmod(absPath, mode)
 }
 
-// GetFileInfo 获取文件信息
+// 获取文件信息
 func (fs *FileService) GetFileInfo(path string) (os.FileInfo, error) {
 	if !utils.ValidatePath(path) {
 		return nil, os.ErrPermission
@@ -140,6 +140,3 @@ func (fs *FileService) GetFileInfo(path string) (os.FileInfo, error) {
 	absPath := utils.GetAbsolutePath(path)
 	return os.Stat(absPath)
 }
-
-// Global file service instance
-var FileServiceInstance = NewFileService()

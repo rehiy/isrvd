@@ -5,24 +5,24 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"isrvd/internal/models"
-	"isrvd/internal/services"
-	"isrvd/pkg/utils"
+	"isrvd/server/helpers/utils"
+	"isrvd/server/models"
+	"isrvd/server/services"
 )
 
-// ZipHandler zip处理器
+// zip处理器
 type ZipHandler struct {
 	zipService *services.ZipService
 }
 
-// NewZipHandler 创建zip处理器
+// 创建zip处理器
 func NewZipHandler() *ZipHandler {
 	return &ZipHandler{
-		zipService: services.ZipServiceInstance,
+		zipService: services.NewZipService(),
 	}
 }
 
-// CreateZip 创建压缩文件
+// 创建压缩文件
 func (h *ZipHandler) CreateZip(c *gin.Context) {
 	var req models.ZipRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -39,7 +39,7 @@ func (h *ZipHandler) CreateZip(c *gin.Context) {
 	utils.RespondSuccess(c, "Archive created successfully", nil)
 }
 
-// ExtractZip 解压文件
+// 解压文件
 func (h *ZipHandler) ExtractZip(c *gin.Context) {
 	var req models.UnzipRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -56,7 +56,7 @@ func (h *ZipHandler) ExtractZip(c *gin.Context) {
 	utils.RespondSuccess(c, "Archive extracted successfully", nil)
 }
 
-// GetZipInfo 获取zip文件信息
+// 获取zip文件信息
 func (h *ZipHandler) GetZipInfo(c *gin.Context) {
 	var req models.GetZipInfoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -80,7 +80,7 @@ func (h *ZipHandler) GetZipInfo(c *gin.Context) {
 	})
 }
 
-// IsZipFile 判断文件是否为zip文件
+// 判断文件是否为zip文件
 func (h *ZipHandler) IsZipFile(c *gin.Context) {
 	var req models.IsZipFileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

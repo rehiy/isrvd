@@ -16,15 +16,15 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-// ShellHandler Shell处理器
+// Shell处理器
 type ShellHandler struct{}
 
-// NewShellHandler 创建Shell处理器
+// 创建Shell处理器
 func NewShellHandler() *ShellHandler {
 	return &ShellHandler{}
 }
 
-// HandleWebSocket Shell WebSocket处理
+// Shell WebSocket处理
 func (h *ShellHandler) HandleWebSocket(c *gin.Context) {
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {

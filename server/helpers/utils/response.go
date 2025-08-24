@@ -7,40 +7,62 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"isrvd/internal/config"
-	"isrvd/internal/models"
+	"isrvd/server/config"
 )
 
-// RespondSuccess 返回成功响应
+// 通用API响应结构
+type APIResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message,omitempty"`
+	Payload any    `json:"payload,omitempty"`
+}
+
+// 分页响应结构
+type PaginationResponse struct {
+	Total      int64 `json:"total"`
+	Page       int   `json:"page"`
+	PageSize   int   `json:"pageSize"`
+	TotalPages int   `json:"totalPages"`
+	Payload    any   `json:"payload,omitempty"`
+}
+
+// 错误响应结构
+type ErrorResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Details string `json:"details,omitempty"`
+}
+
+// 返回成功响应
 func RespondSuccess(c *gin.Context, message string, data any) {
-	c.JSON(http.StatusOK, models.APIResponse{
+	c.JSON(http.StatusOK, APIResponse{
 		Success: true,
 		Message: message,
 		Payload: data,
 	})
 }
 
-// RespondError 返回错误响应
+// 返回错误响应
 func RespondError(c *gin.Context, statusCode int, message string) {
-	c.JSON(statusCode, models.APIResponse{
+	c.JSON(statusCode, APIResponse{
 		Success: false,
 		Message: message,
 	})
 }
 
-// GetAbsolutePath 获取绝对路径
+// 获取绝对路径
 func GetAbsolutePath(path string) string {
 	cfg := config.GetGlobal()
 	return filepath.Join(cfg.BaseDir, filepath.Clean(path))
 }
 
-// ValidatePath 验证路径安全性，防止目录遍历攻击
+// 验证路径安全性，防止目录遍历攻击
 func ValidatePath(path string) bool {
 	cleanPath := filepath.Clean(path)
 	return !strings.Contains(cleanPath, "..")
 }
 
-// GetTokenFromRequest 从请求中获取令牌
+// 从请求中获取令牌
 func GetTokenFromRequest(c *gin.Context) string {
 	// 优先从 Authorization 头获取
 	token := c.GetHeader("Authorization")

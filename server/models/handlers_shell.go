@@ -1,6 +1,6 @@
 package models
 
-// ShellMessage WebSocket shell消息结构
+// shell消息结构
 type ShellMessage struct {
 	Type string `json:"type"`           // "input", "output", "error", "resize"
 	Data string `json:"data"`           // 消息内容
@@ -8,7 +8,7 @@ type ShellMessage struct {
 	Rows int    `json:"rows,omitempty"` // 终端行数 (resize时使用)
 }
 
-// ShellSession shell会话信息
+// shell会话信息
 type ShellSession struct {
 	ID        string `json:"id"`
 	StartTime string `json:"startTime"`
