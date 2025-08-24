@@ -28,19 +28,20 @@ func NewFileHandler() *FileHandler {
 
 // ListFiles 文件列表
 func (h *FileHandler) ListFiles(c *gin.Context) {
-	path := c.Query("path")
-	if path == "" {
-		path = "/"
+	var req models.ListFilesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		return
 	}
 
-	files, err := h.fileService.ListFiles(path)
+	files, err := h.fileService.ListFiles(req.Path)
 	if err != nil {
 		utils.RespondError(c, http.StatusNotFound, "Directory not found")
 		return
 	}
 
 	utils.RespondSuccess(c, "Files listed successfully", gin.H{
-		"path":  path,
+		"path":  req.Path,
 		"files": files,
 	})
 }
@@ -83,38 +84,47 @@ func (h *FileHandler) Upload(c *gin.Context) {
 
 // Download 下载文件
 func (h *FileHandler) Download(c *gin.Context) {
-	path := c.Query("file")
-	if path == "" {
+	var req models.DownloadRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	if req.Path == "" {
 		utils.RespondError(c, http.StatusBadRequest, "No file specified")
 		return
 	}
 
-	if !utils.ValidatePath(path) {
+	if !utils.ValidatePath(req.Path) {
 		utils.RespondError(c, http.StatusBadRequest, "Invalid path")
 		return
 	}
 
-	absPath := utils.GetAbsolutePath(path)
-	f, err := os.Open(absPath)
+	f, err := os.Open(utils.GetAbsolutePath(req.Path))
 	if err != nil {
 		utils.RespondError(c, http.StatusNotFound, "File not found")
 		return
 	}
 	defer f.Close()
 
-	c.Header("Content-Disposition", "attachment; filename="+filepath.Base(absPath))
+	c.Header("Content-Disposition", "attachment; filename="+filepath.Base(req.Path))
 	io.Copy(c.Writer, f)
 }
 
 // Delete 删除文件
 func (h *FileHandler) Delete(c *gin.Context) {
-	path := c.Query("file")
-	if path == "" {
+	var req models.DeleteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	if req.Path == "" {
 		utils.RespondError(c, http.StatusBadRequest, "No file specified")
 		return
 	}
 
-	err := h.fileService.DeleteFile(path)
+	err := h.fileService.DeleteFile(req.Path)
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "Cannot delete file")
 		return
@@ -157,48 +167,55 @@ func (h *FileHandler) CreateFile(c *gin.Context) {
 	utils.RespondSuccess(c, "File created successfully", nil)
 }
 
-// EditFile 编辑文件
-func (h *FileHandler) EditFile(c *gin.Context) {
-	path := c.Query("file")
-	if path == "" {
+// ReadFile 读取文件内容
+func (h *FileHandler) ReadFile(c *gin.Context) {
+	var req models.ReadFileHandlerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	if req.Path == "" {
 		utils.RespondError(c, http.StatusBadRequest, "No file specified")
 		return
 	}
 
-	// 读取文件内容
-	if c.Request.Method == "GET" {
-		content, err := h.fileService.ReadFile(path)
-		if err != nil {
-			utils.RespondError(c, http.StatusNotFound, "File not found")
-			return
-		}
-
-		utils.RespondSuccess(c, "File content retrieved", gin.H{
-			"path":    path,
-			"content": content,
-		})
+	content, err := h.fileService.ReadFile(req.Path)
+	if err != nil {
+		utils.RespondError(c, http.StatusNotFound, "File not found")
 		return
 	}
 
-	// 保存文件内容
-	if c.Request.Method == "PUT" {
-		var req models.EditFileRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			utils.RespondError(c, http.StatusBadRequest, "Invalid JSON")
-			return
-		}
+	utils.RespondSuccess(c, "File content retrieved", gin.H{
+		"path":    req.Path,
+		"content": content,
+	})
+}
 
-		err := h.fileService.WriteFile(path, req.Content)
-		if err != nil {
-			utils.RespondError(c, http.StatusInternalServerError, "Cannot save file")
-			return
-		}
-
-		utils.RespondSuccess(c, "File saved successfully", nil)
+// WriteFile 写入文件内容
+func (h *FileHandler) WriteFile(c *gin.Context) {
+	var req models.WriteFileHandlerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
-	utils.RespondError(c, http.StatusMethodNotAllowed, "Method not allowed")
+	if req.Path == "" {
+		utils.RespondError(c, http.StatusBadRequest, "No file specified")
+		return
+	}
+	if req.Content == "" {
+		utils.RespondError(c, http.StatusBadRequest, "No content provided")
+		return
+	}
+
+	err := h.fileService.WriteFile(req.Path, req.Content)
+	if err != nil {
+		utils.RespondError(c, http.StatusInternalServerError, "Cannot save file")
+		return
+	}
+
+	utils.RespondSuccess(c, "File saved successfully", nil)
 }
 
 // Rename 重命名
@@ -209,7 +226,7 @@ func (h *FileHandler) Rename(c *gin.Context) {
 		return
 	}
 
-	err := h.fileService.RenameFile(req.OldPath, req.NewName)
+	err := h.fileService.RenameFile(req.Path, req.NewPath)
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "Cannot rename file")
 		return
@@ -220,50 +237,44 @@ func (h *FileHandler) Rename(c *gin.Context) {
 
 // ChangeMode 修改权限
 func (h *FileHandler) ChangeMode(c *gin.Context) {
-	path := c.Query("file")
-	if path == "" {
+	var req models.ChmodHandlerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	if req.Path == "" {
 		utils.RespondError(c, http.StatusBadRequest, "No file specified")
 		return
 	}
 
-	// 获取当前权限
-	if c.Request.Method == "GET" {
-		info, err := h.fileService.GetFileInfo(path)
+	// 如果没有提供 mode，则获取当前权限
+	if req.Mode == "" {
+		info, err := h.fileService.GetFileInfo(req.Path)
 		if err != nil {
 			utils.RespondError(c, http.StatusNotFound, "File not found")
 			return
 		}
 
 		utils.RespondSuccess(c, "File mode retrieved", gin.H{
-			"file": filepath.Base(path),
+			"file": filepath.Base(req.Path),
 			"mode": strconv.FormatUint(uint64(info.Mode().Perm()), 8),
 		})
 		return
 	}
 
-	// 修改权限
-	if c.Request.Method == "PUT" {
-		var req models.ChmodRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			utils.RespondError(c, http.StatusBadRequest, "Invalid JSON")
-			return
-		}
-
-		mode, err := strconv.ParseUint(req.Mode, 8, 32)
-		if err != nil {
-			utils.RespondError(c, http.StatusBadRequest, "Invalid mode")
-			return
-		}
-
-		err = h.fileService.ChangeMode(path, os.FileMode(mode))
-		if err != nil {
-			utils.RespondError(c, http.StatusInternalServerError, "Cannot change permissions")
-			return
-		}
-
-		utils.RespondSuccess(c, "Permissions changed successfully", nil)
+	// 如果提供了 mode，则修改权限
+	mode, err := strconv.ParseUint(req.Mode, 8, 32)
+	if err != nil {
+		utils.RespondError(c, http.StatusBadRequest, "Invalid mode")
 		return
 	}
 
-	utils.RespondError(c, http.StatusMethodNotAllowed, "Method not allowed")
+	err = h.fileService.ChangeMode(path, os.FileMode(mode))
+	if err != nil {
+		utils.RespondError(c, http.StatusInternalServerError, "Cannot change permissions")
+		return
+	}
+
+	utils.RespondSuccess(c, "Permissions changed successfully", nil)
 }

@@ -30,27 +30,21 @@ func SetupRouter() *gin.Engine {
 		auth := api.Group("")
 		auth.Use(middleware.Auth())
 		{
-			// 认证相关
 			auth.POST("/logout", authHandler.Logout)
-
-			// 文件操作
-			auth.GET("/files", fileHandler.ListFiles)
+			auth.POST("/files", fileHandler.ListFiles)
 			auth.POST("/upload", fileHandler.Upload)
-			auth.GET("/download", fileHandler.Download)
-			auth.DELETE("/delete", fileHandler.Delete)
+			auth.POST("/download", fileHandler.Download)
+			auth.POST("/delete", fileHandler.Delete)
 			auth.POST("/mkdir", fileHandler.CreateDirectory)
 			auth.POST("/newfile", fileHandler.CreateFile)
-			auth.PUT("/edit", fileHandler.EditFile)
-			auth.GET("/edit", fileHandler.EditFile) // 支持GET读取文件内容
-			auth.PUT("/rename", fileHandler.Rename)
-			auth.PUT("/chmod", fileHandler.ChangeMode)
-			auth.GET("/chmod", fileHandler.ChangeMode) // 支持GET获取当前权限
-
-			// Zip 操作
+			auth.POST("/cat", fileHandler.ReadFile)
+			auth.POST("/edit", fileHandler.WriteFile)
+			auth.POST("/rename", fileHandler.Rename)
+			auth.POST("/chmod", fileHandler.ChangeMode)
 			auth.POST("/zip", zipHandler.CreateZip)
 			auth.POST("/unzip", zipHandler.ExtractZip)
-			auth.GET("/zip/info", zipHandler.GetZipInfo)
-			auth.GET("/zip/check", zipHandler.IsZipFile)
+			auth.POST("/zip/info", zipHandler.GetZipInfo)
+			auth.POST("/zip/check", zipHandler.IsZipFile)
 		}
 	}
 

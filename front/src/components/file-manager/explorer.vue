@@ -45,9 +45,20 @@ actions.loadFiles = async (path) => {
 
 actions.loadFiles('/');
 
-const downloadFile = (file) => {
-  const url = `/api/download?file=${encodeURIComponent(file.path)}&token=${state.token}`
-  window.open(url, '_blank')
+const downloadFile = async (file) => {
+  try {
+    const response = await api.downloadFile(file.path)
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = file.name
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Download failed:', error)
+  }
 }
 </script>
 

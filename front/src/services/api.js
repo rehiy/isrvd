@@ -13,82 +13,64 @@ class ApiService {
 
   // 文件管理相关
   getFiles(path) {
-    return axios.get('/api/files', {
-      params: { path }
-    })
+    return axios.post('/api/files', { path })
   }
 
-  deleteFile(filePath) {
-    return axios.delete('/api/delete', {
-      params: { file: filePath }
-    })
+  deleteFile(path) {
+    return axios.post('/api/delete', { path })
   }
 
-  renameFile(oldPath, newName) {
-    return axios.put('/api/rename', {
-      oldPath: oldPath,
-      newName: newName
-    })
+  renameFile(path, newPath) {
+    return axios.post('/api/rename', { path, newPath })
   }
 
   createDirectory(path, name) {
-    return axios.post('/api/mkdir', {
-      path: path,
-      name: name
-    })
+    return axios.post('/api/mkdir', { path, name })
   }
 
   createFile(path, name, content = '') {
-    return axios.post('/api/newfile', {
-      path: path,
-      name: name,
-      content: content
-    })
+    return axios.post('/api/newfile', { path, name, content })
   }
 
   // 文件编辑相关
-  getFileContent(filePath) {
-    return axios.get('/api/edit', {
-      params: { file: filePath }
-    })
+  getFileContent(path) {
+    return axios.post('/api/cat', { path })
   }
 
-  saveFileContent(filePath, content) {
-    return axios.put('/api/edit', {
-      content: content
-    }, {
-      params: { file: filePath }
-    })
+  saveFileContent(path, content) {
+    return axios.post('/api/edit', { path, content })
   }
 
   // 权限管理
-  getFilePermissions(filePath) {
-    return axios.get('/api/chmod', {
-      params: { file: filePath }
-    })
+  getFilePermissions(path) {
+    return axios.post('/api/chmod', { path })
   }
 
-  setFilePermissions(filePath, mode) {
-    return axios.put('/api/chmod', {
-      mode: mode
-    }, {
-      params: { file: filePath }
-    })
+  setFilePermissions(path, mode) {
+    return axios.post('/api/chmod', { path, mode })
   }
 
   // 压缩解压
-  zipFiles(filePath, zipName) {
-    return axios.post('/api/zip', {
-      path: filePath,
-      zipName: zipName
-    })
+  zipFiles(path, zipName) {
+    return axios.post('/api/zip', { path, zipName })
   }
 
-  unzipFile(filePath, targetPath) {
-    return axios.post('/api/unzip', {
-      path: targetPath,
-      zipName: filePath
-    })
+  unzipFile(path, zipName) {
+    return axios.post('/api/unzip', { path, zipName })
+  }
+
+  // Zip 信息和检查
+  getZipInfo(path) {
+    return axios.post('/api/zip/info', { path })
+  }
+
+  isZipFile(path) {
+    return axios.post('/api/zip/check', { path })
+  }
+
+  // 文件下载
+  downloadFile(path) {
+    return axios.post('/api/download', { path }, { responseType: 'blob' })
   }
 
   // 文件上传

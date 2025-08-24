@@ -111,13 +111,13 @@ func (fs *FileService) WriteFile(path, content string) error {
 }
 
 // RenameFile 重命名文件
-func (fs *FileService) RenameFile(oldPath, newName string) error {
-	if !utils.ValidatePath(oldPath) || !utils.ValidatePath(newName) {
+func (fs *FileService) RenameFile(path, newPath string) error {
+	if !utils.ValidatePath(path) || !utils.ValidatePath(newPath) {
 		return os.ErrPermission
 	}
 
-	oldAbsPath := utils.GetAbsolutePath(oldPath)
-	newAbsPath := filepath.Join(filepath.Dir(oldAbsPath), newName)
+	oldAbsPath := utils.GetAbsolutePath(path)
+	newAbsPath := filepath.Join(filepath.Dir(oldAbsPath), newPath)
 	return os.Rename(oldAbsPath, newAbsPath)
 }
 

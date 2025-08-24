@@ -25,15 +25,10 @@ type NewFileRequest struct {
 	Content string `json:"content"`
 }
 
-// EditFileRequest 编辑文件请求
-type EditFileRequest struct {
-	Content string `json:"content" binding:"required"`
-}
-
 // RenameRequest 重命名请求
 type RenameRequest struct {
-	OldPath string `json:"oldPath" binding:"required"`
-	NewName string `json:"newName" binding:"required"`
+	Path    string `json:"path" binding:"required"`
+	NewPath string `json:"newPath" binding:"required"`
 }
 
 // ChmodRequest 修改权限请求

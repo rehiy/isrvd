@@ -58,13 +58,18 @@ func (h *ZipHandler) ExtractZip(c *gin.Context) {
 
 // GetZipInfo 获取zip文件信息
 func (h *ZipHandler) GetZipInfo(c *gin.Context) {
-	zipPath := c.Query("path")
-	if zipPath == "" {
+	var req models.GetZipInfoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	if req.Path == "" {
 		utils.RespondError(c, http.StatusBadRequest, "Path is required")
 		return
 	}
 
-	files, err := h.zipService.GetZipInfo(zipPath)
+	files, err := h.zipService.GetZipInfo(req.Path)
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "Cannot read zip file")
 		return
@@ -77,13 +82,18 @@ func (h *ZipHandler) GetZipInfo(c *gin.Context) {
 
 // IsZipFile 判断文件是否为zip文件
 func (h *ZipHandler) IsZipFile(c *gin.Context) {
-	filePath := c.Query("path")
-	if filePath == "" {
+	var req models.IsZipFileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	if req.Path == "" {
 		utils.RespondError(c, http.StatusBadRequest, "Path is required")
 		return
 	}
 
-	isZip := h.zipService.IsZipFile(filePath)
+	isZip := h.zipService.IsZipFile(req.Path)
 	utils.RespondSuccess(c, "File type checked successfully", gin.H{
 		"isZip": isZip,
 	})

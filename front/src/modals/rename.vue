@@ -45,8 +45,8 @@ defineExpose({ show })
   <BaseModal ref="modalRef" id="renameModal" title="重命名" :loading="formData.loading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm">
       <div class="mb-3">
-        <label for="newName" class="form-label">新名称</label>
-        <input type="text" class="form-control" id="newName" v-model="formData.name" :disabled="formData.loading" required>
+        <label for="newPath" class="form-label">新名称</label>
+        <input type="text" class="form-control" id="newPath" v-model="formData.name" :disabled="formData.loading" required>
       </div>
     </form>
     <template #confirm-text>
