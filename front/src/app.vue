@@ -16,12 +16,11 @@ provide(APP_STATE_KEY, state)
 provide(APP_ACTIONS_KEY, actions)
 
 onMounted(() => {
-  const savedToken = localStorage.getItem('app-token')
-  const savedUsername = localStorage.getItem('app-username')
+  const token = localStorage.getItem('app-token')
+  const username = localStorage.getItem('app-username')
 
-  if (savedToken && savedUsername) {
-    actions.setAuth({ token: savedToken, user: savedUsername })
-    actions.loadFiles()
+  if (token && username) {
+    actions.setAuth({ token, username })
   }
 })
 </script>

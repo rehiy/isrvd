@@ -6,8 +6,8 @@ import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
 const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)
 
-const pathParts = computed(() => {
-  if (state.currentPath === '/') return []
+const paths = computed(() => {
+  if (!state.currentPath || state.currentPath === '/') return []
   return state.currentPath.split('/').filter(part => part)
 })
 
@@ -20,12 +20,12 @@ const navigateTo = (path) => {
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
       <li class="breadcrumb-item">
-        <a href="#" class="text-decoration-none" @click="navigateTo('/')">
+        <a class="text-decoration-none" href="#" @click="navigateTo('/')">
           <i class="fas fa-home me-1"></i> 首页
         </a>
       </li>
-      <li v-for="(part, index) in pathParts" :key="index" class="breadcrumb-item" :class="{ active: index === pathParts.length - 1 }">
-        <a class="text-decoration-none" v-if="index < pathParts.length - 1" href="#" @click="navigateTo('/' + pathParts.slice(0, index + 1).join('/'))">
+      <li v-for="(part, index) in paths" :key="index" class="breadcrumb-item" :class="{ active: index === paths.length - 1 }">
+        <a class="text-decoration-none" v-if="index < paths.length - 1" href="#" @click="navigateTo('/' + paths.slice(0, index + 1).join('/'))">
           {{ part }}
         </a>
         <span v-else>{{ part }}</span>

@@ -1,12 +1,12 @@
 import axios from 'axios'
 
 export const interceptors = (state, actions) => {
-    axios.interceptors.response.use(
-        value => {
+    axios.interceptors.request.use(
+        config => {
             if (state.token) {
-                value.config.headers['Authorization'] = state.token
+                config.headers['Authorization'] = state.token
             }
-            return value
+            return config
         },
         error => {
             return Promise.reject(error)

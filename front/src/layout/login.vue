@@ -7,8 +7,8 @@ import { APP_ACTIONS_KEY } from '@/store/state.js'
 const actions = inject(APP_ACTIONS_KEY)
 
 const loginForm = reactive({
-  username: 'admin',
-  password: 'admin'
+  username: '',
+  password: ''
 })
 
 const loading = ref(false)
@@ -20,8 +20,8 @@ const handleLogin = async () => {
     const data = await api.login(loginForm)
     actions.setAuth(data.payload)
 
-   // loginForm.username = ''
-   // loginForm.password = ''
+    loginForm.username = ''
+    loginForm.password = ''
   } catch (err) {
   } finally {
     loading.value = false
