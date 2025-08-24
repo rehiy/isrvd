@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 
-import * as ShellTerminal from '@/utils/shell.js'
+import * as ShellTerminal from '@/helpers/shell.js'
 
 import BaseModal from '@/components/modal-base.vue'
 

@@ -3,7 +3,7 @@ import { inject, ref } from 'vue'
 
 import api from '@/services/api.js'
 import { APP_ACTIONS_KEY } from '@/stores/state.js'
-import { isEditableFile, getFileIcon, formatFileSize, formatTime } from '@/utils/utils.js'
+import { isEditableFile, getFileIcon, formatFileSize, formatTime, downloadFile } from '@/helpers/utils.js'
 
 import ModifyModal from '@/modals/modify.vue'
 import RenameModal from '@/modals/rename.vue'
@@ -30,6 +30,15 @@ const loading = ref(false)
 const files = ref([])
 const currentPath = ref('')
 
+const download = async (file) => {
+  try {
+    const response = await api.downloadFile(file.path)
+    downloadFile(file.name, response.data)
+  } catch (error) {
+    console.error('Download failed:', error)
+  }
+}
+
 actions.loadFiles = async (path) => {
   loading.value = true
   try {
@@ -43,22 +52,6 @@ actions.loadFiles = async (path) => {
 }
 
 actions.loadFiles('/');
-
-const downloadFile = async (file) => {
-  try {
-    const response = await api.downloadFile(file.path)
-    const url = window.URL.createObjectURL(new Blob([response.data]))
-    const link = document.createElement('a')
-    link.href = url
-    link.download = file.name
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-  } catch (error) {
-    console.error('Download failed:', error)
-  }
-}
 </script>
 
 <template>
@@ -108,7 +101,7 @@ const downloadFile = async (file) => {
               </template>
               <!-- 文件操作 -->
               <template v-else>
-                <button class="btn btn-outline-success btn-sm me-1" @click="downloadFile(file)" title="下载">
+                <button class="btn btn-outline-success btn-sm me-1" @click="download(file)" title="下载">
                   <i class="fas fa-download"></i>
                 </button>
                 <button v-if="isEditableFile(file)" class="btn btn-outline-info btn-sm me-1" @click="modifyModalRef.show(file)" title="编辑">
