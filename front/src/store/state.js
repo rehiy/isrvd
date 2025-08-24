@@ -12,19 +12,15 @@ export const initProvider = () => {
         token: null,
         username: null,
 
+        // 网络请求状态
+        loading: false,
+
         // 文件管理状态
         currentPath: '/',
         files: [],
 
-        // 网络请求状态
-        loading: false,
-
         // 通知状态
-        notification: {
-            type: null, // 'success' | 'error' | null
-            message: '',
-            timer: null
-        }
+        notifications: []
     })
 
     const actions = {
@@ -50,29 +46,21 @@ export const initProvider = () => {
 
         // 通知操作
         showNotification(type, message) {
-            if (!message) {
-                return
-            }
-
-            if (state.notification.timer) {
-                clearTimeout(state.notification.timer)
-            }
-
-            state.notification.type = type
-            state.notification.message = message
-
-            const duration = type === 'error' ? 5000 : 3000
-            state.notification.timer = setTimeout(() => this.clearNotification(), duration)
+            if (!message) return;
+            const id = Date.now() + Math.random();
+            const timer = setTimeout(() => this.clearNotification(id), 5000);
+            state.notifications.push({ id, type, message, timer });
         },
 
-        clearNotification() {
-            if (state.notification.timer) {
-                clearTimeout(state.notification.timer)
-                state.notification.timer = null
+        clearNotification(id) {
+            const idx = state.notifications.findIndex(n => n.id === id);
+            if (idx !== -1) {
+                const item = state.notifications[idx];
+                state.notifications.splice(idx, 1);
+                if (item && item.timer) {
+                    clearTimeout(item.timer);
+                }
             }
-
-            state.notification.type = null
-            state.notification.message = ''
         },
     }
 
