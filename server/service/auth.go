@@ -35,8 +35,8 @@ func (as *AuthService) Login(req model.LoginRequest) (*model.LoginResponse, erro
 	// 验证用户名和密码
 	if password, exists := config.UserMap[req.Username]; exists && password == req.Password {
 		return &model.LoginResponse{
-			Token: as.CreateToken(req.Username),
-			User:  req.Username,
+			Token:    as.CreateToken(req.Username),
+			Username: req.Username,
 		}, nil
 	}
 

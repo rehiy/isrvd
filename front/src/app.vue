@@ -1,13 +1,13 @@
 <script setup>
 import { onMounted, provide } from 'vue'
 
-import { initProvider, APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
+import { initProvider, APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
 
-import NavigationBar from '@/layouts/navigation.vue'
-import NotificationManager from '@/layouts/notification.vue'
+import NavigationBar from '@/layout/navigation.vue'
+import NotificationManager from '@/layout/notification.vue'
 
-import AuthLogin from '@/layouts/login.vue'
-import FileManager from '@/layouts/file-manager/index.vue'
+import AuthLogin from '@/layout/login.vue'
+import FileManager from '@/layout/file-manager/index.vue'
 
 const { state, actions } = initProvider()
 
@@ -27,7 +27,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <template v-if="state.user">
+  <template v-if="state.username">
     <NavigationBar />
     <div class="container-fluid">
       <FileManager />

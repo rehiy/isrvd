@@ -1,10 +1,10 @@
 <script setup>
 import { inject, reactive, ref } from 'vue'
 
-import api from '@/services/api.js'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
+import api from '@/service/api.js'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
 
-import BaseModal from '@/components/modal.vue'
+import BaseModal from '@/component/modal.vue'
 
 const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)

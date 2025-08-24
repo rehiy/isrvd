@@ -1,14 +1,14 @@
 <script setup>
 import { inject, reactive, ref } from 'vue'
 
-import api from '@/services/api.js'
-import { APP_ACTIONS_KEY } from '@/stores/state.js'
+import api from '@/service/api.js'
+import { APP_ACTIONS_KEY } from '@/store/state.js'
 
 const actions = inject(APP_ACTIONS_KEY)
 
 const loginForm = reactive({
-  username: '',
-  password: ''
+  username: 'admin',
+  password: 'admin'
 })
 
 const loading = ref(false)
@@ -18,17 +18,10 @@ const handleLogin = async () => {
 
   try {
     const data = await api.login(loginForm)
-    const token = data.payload.token
-    const user = data.payload.user
+    actions.setAuth(data.payload)
 
-    actions.setAuth({ token, user })
-
-    // 登录成功后加载文件
-    actions.loadFiles()
-
-    // 清空表单
-    loginForm.username = ''
-    loginForm.password = ''
+   // loginForm.username = ''
+   // loginForm.password = ''
   } catch (err) {
   } finally {
     loading.value = false

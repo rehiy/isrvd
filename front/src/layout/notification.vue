@@ -1,7 +1,7 @@
 <script setup>
 import { inject } from 'vue'
 
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
 
 const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)

@@ -1,8 +1,8 @@
 <script setup>
 import { inject, ref } from 'vue'
 
-import api from '@/services/api.js'
-import { APP_ACTIONS_KEY } from '@/stores/state.js'
+import api from '@/service/api.js'
+import { APP_ACTIONS_KEY } from '@/store/state.js'
 
 const actions = inject(APP_ACTIONS_KEY)
 const loading = ref(false)

@@ -8,6 +8,6 @@ type LoginRequest struct {
 
 // 登录响应结构
 type LoginResponse struct {
-	Token string `json:"token"`
-	User  string `json:"user"`
+	Token    string `json:"token"`
+	Username string `json:"username"`
 }

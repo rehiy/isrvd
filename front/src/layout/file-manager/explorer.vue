@@ -1,16 +1,16 @@
 <script setup>
 import { inject, ref } from 'vue'
 
-import api from '@/services/api.js'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
-import { isEditableFile, getFileIcon, formatFileSize, formatTime, downloadFile } from '@/helpers/utils.js'
+import api from '@/service/api.js'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
+import { isEditableFile, getFileIcon, formatFileSize, formatTime, downloadFile } from '@/helper/utils.js'
 
-import ModifyModal from '@/modals/modify.vue'
-import RenameModal from '@/modals/rename.vue'
-import ChmodModal from '@/modals/chmod.vue'
-import DeleteModal from '@/modals/delete.vue'
-import ZipModal from '@/modals/zip.vue'
-import UnzipModal from '@/modals/unzip.vue'
+import ModifyModal from '@/component/modal/modify.vue'
+import RenameModal from '@/component/modal/rename.vue'
+import ChmodModal from '@/component/modal/chmod.vue'
+import DeleteModal from '@/component/modal/delete.vue'
+import ZipModal from '@/component/modal/zip.vue'
+import UnzipModal from '@/component/modal/unzip.vue'
 
 const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)
