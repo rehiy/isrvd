@@ -6,11 +6,12 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"isrvd/server/helper"
+	"isrvd/server/service"
 )
 
 // 认证中间件
 func Auth() gin.HandlerFunc {
-	var session = helper.NewSession()
+	var session = service.NewAuthService()
 
 	return func(c *gin.Context) {
 		token := helper.GetTokenFromRequest(c)

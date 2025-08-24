@@ -14,9 +14,15 @@ import (
 // zip服务
 type ZipService struct{}
 
-// 创建zip服务
+// zip服务实例
+var ZipServiceInstance *ZipService
+
+// 创建zip服务实例
 func NewZipService() *ZipService {
-	return &ZipService{}
+	if ZipServiceInstance == nil {
+		ZipServiceInstance = &ZipService{}
+	}
+	return ZipServiceInstance
 }
 
 // 创建压缩文件
