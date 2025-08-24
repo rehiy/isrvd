@@ -3,7 +3,7 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 
-	"isrvd/server/handlers"
+	"isrvd/server/handler"
 	"isrvd/server/middleware"
 )
 
@@ -15,10 +15,10 @@ func SetupRouter() *gin.Engine {
 	r.Use(middleware.CORS())
 
 	// 创建处理器实例
-	authHandler := handlers.NewAuthHandler()
-	fileHandler := handlers.NewFileHandler()
-	shellHandler := handlers.NewShellHandler()
-	zipHandler := handlers.NewZipHandler()
+	authHandler := handler.NewAuthHandler()
+	fileHandler := handler.NewFileHandler()
+	shellHandler := handler.NewShellHandler()
+	zipHandler := handler.NewZipHandler()
 
 	// API 路由组
 	api := r.Group("/api")

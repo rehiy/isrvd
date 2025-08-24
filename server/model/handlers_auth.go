@@ -1,4 +1,4 @@
-package models
+package model
 
 // 登录请求结构
 type LoginRequest struct {

@@ -1,4 +1,4 @@
-package auth
+package helper
 
 import (
 	"crypto/md5"
@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 )
+
+var session *Session
 
 // 会话管理器
 type Session struct {
@@ -15,9 +17,23 @@ type Session struct {
 
 // 创建新的会话管理器
 func NewSession() *Session {
-	return &Session{
+	if session != nil {
+		return session
+	}
+
+	session = &Session{
 		sessions: make(map[string]time.Time),
 	}
+
+	go func() {
+		ticker := time.NewTicker(time.Hour)
+		defer ticker.Stop()
+		for range ticker.C {
+			session.CleanupExpired()
+		}
+	}()
+
+	return session
 }
 
 // 创建会话令牌
@@ -71,18 +87,4 @@ func md5sum(s string) string {
 	h := md5.New()
 	h.Write([]byte(s))
 	return hex.EncodeToString(h.Sum(nil))
-}
-
-// 全局会话管理器
-var Manager = NewSession()
-
-// 初始化定时清理
-func init() {
-	go func() {
-		ticker := time.NewTicker(time.Hour)
-		defer ticker.Stop()
-		for range ticker.C {
-			Manager.CleanupExpired()
-		}
-	}()
 }

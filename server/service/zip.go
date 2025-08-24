@@ -1,4 +1,4 @@
-package services
+package service
 
 import (
 	"archive/zip"
@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"isrvd/server/helpers/utils"
-	"isrvd/server/models"
+	"isrvd/server/helper"
+	"isrvd/server/model"
 )
 
 // zip服务
@@ -21,11 +21,11 @@ func NewZipService() *ZipService {
 
 // 创建压缩文件
 func (zs *ZipService) CreateZip(path, zipName string) error {
-	if !utils.ValidatePath(path) || !utils.ValidatePath(zipName) {
+	if !helper.ValidatePath(path) || !helper.ValidatePath(zipName) {
 		return os.ErrPermission
 	}
 
-	srcPath := utils.GetAbsolutePath(path)
+	srcPath := helper.GetAbsolutePath(path)
 
 	// 确保zipName有.zip扩展名
 	if !strings.HasSuffix(strings.ToLower(zipName), ".zip") {
@@ -80,12 +80,12 @@ func (zs *ZipService) CreateZip(path, zipName string) error {
 
 // 解压文件
 func (zs *ZipService) ExtractZip(path, zipName string) error {
-	if !utils.ValidatePath(path) || !utils.ValidatePath(zipName) {
+	if !helper.ValidatePath(path) || !helper.ValidatePath(zipName) {
 		return os.ErrPermission
 	}
 
-	zipPath := filepath.Join(utils.GetAbsolutePath(path), zipName)
-	extractDir := utils.GetAbsolutePath(path)
+	zipPath := filepath.Join(helper.GetAbsolutePath(path), zipName)
+	extractDir := helper.GetAbsolutePath(path)
 
 	reader, err := zip.OpenReader(zipPath)
 	if err != nil {
@@ -138,21 +138,21 @@ func (zs *ZipService) IsZipFile(filePath string) bool {
 }
 
 // 获取zip文件信息
-func (zs *ZipService) GetZipInfo(zipPath string) ([]models.ZipFileInfo, error) {
-	if !utils.ValidatePath(zipPath) {
+func (zs *ZipService) GetZipInfo(zipPath string) ([]model.ZipFileInfo, error) {
+	if !helper.ValidatePath(zipPath) {
 		return nil, os.ErrPermission
 	}
 
-	fullPath := utils.GetAbsolutePath(zipPath)
+	fullPath := helper.GetAbsolutePath(zipPath)
 	reader, err := zip.OpenReader(fullPath)
 	if err != nil {
 		return nil, err
 	}
 	defer reader.Close()
 
-	var files []models.ZipFileInfo
+	var files []model.ZipFileInfo
 	for _, f := range reader.File {
-		fileInfo := models.ZipFileInfo{
+		fileInfo := model.ZipFileInfo{
 			Name:           f.Name,
 			Size:           int64(f.UncompressedSize64),
 			CompressedSize: int64(f.CompressedSize64),

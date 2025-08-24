@@ -1,4 +1,4 @@
-package models
+package model
 
 // shell消息结构
 type ShellMessage struct {

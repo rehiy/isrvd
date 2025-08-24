@@ -1,47 +1,47 @@
-package handlers
+package handler
 
 import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
-	"isrvd/server/helpers/utils"
-	"isrvd/server/models"
-	"isrvd/server/services"
+	"isrvd/server/helper"
+	"isrvd/server/model"
+	"isrvd/server/service"
 )
 
 // 认证处理器
 type AuthHandler struct {
-	authService *services.AuthService
+	authService *service.AuthService
 }
 
 // 创建认证处理器
 func NewAuthHandler() *AuthHandler {
 	return &AuthHandler{
-		authService: services.NewAuthService(),
+		authService: service.NewAuthService(),
 	}
 }
 
 // 登录处理
 func (h *AuthHandler) Login(c *gin.Context) {
-	var req models.LoginRequest
+	var req model.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	resp, err := h.authService.Login(req)
 	if err != nil {
-		utils.RespondError(c, http.StatusUnauthorized, err.Error())
+		helper.RespondError(c, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-	utils.RespondSuccess(c, "Login successful", resp)
+	helper.RespondSuccess(c, "Login successful", resp)
 }
 
 // 登出处理
 func (h *AuthHandler) Logout(c *gin.Context) {
-	token := utils.GetTokenFromRequest(c)
+	token := helper.GetTokenFromRequest(c)
 	h.authService.Logout(token)
-	utils.RespondSuccess(c, "Logged out successfully", nil)
+	helper.RespondSuccess(c, "Logged out successfully", nil)
 }
