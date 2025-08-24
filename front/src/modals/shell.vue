@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 import * as ShellTerminal from '@/helpers/shell.js'
 
-import BaseModal from '@/components/modal-base.vue'
+import BaseModal from '@/components/modal.vue'
 
 const modalRef = ref(null)
 

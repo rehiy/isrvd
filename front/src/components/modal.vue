@@ -26,9 +26,7 @@ const show = () => {
 }
 
 const hide = () => {
-  if (modalInstance) {
-    modalInstance.hide()
-  }
+  modalInstance && modalInstance.hide()
 }
 
 const handleConfirm = () => {

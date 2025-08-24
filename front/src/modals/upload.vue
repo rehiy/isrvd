@@ -4,7 +4,7 @@ import { inject, reactive, ref, computed } from 'vue'
 import api from '@/services/api.js'
 import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
 
-import BaseModal from '@/components/modal-base.vue'
+import BaseModal from '@/components/modal.vue'
 
 const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)

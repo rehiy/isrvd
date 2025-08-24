@@ -4,10 +4,10 @@ import { onMounted, provide } from 'vue'
 import { initProvider, APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
 
 import NavigationBar from '@/layouts/navigation.vue'
+import NotificationManager from '@/layouts/notification.vue'
 
-import AuthLogin from '@/components/auth/login.vue'
-import FileManager from '@/components/file-manager/index.vue'
-import NotificationManager from '@/components/notification.vue'
+import AuthLogin from '@/layouts/login.vue'
+import FileManager from '@/layouts/file-manager/index.vue'
 
 const { state, actions } = initProvider()
 

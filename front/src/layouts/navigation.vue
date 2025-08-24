@@ -3,7 +3,7 @@ import { inject, ref } from 'vue'
 
 import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
 
-import AuthLogout from '@/components/auth/logout.vue'
+import AuthLogout from '@/layouts/logout.vue'
 import ShellModal from '@/modals/shell.vue'
 
 const state = inject(APP_STATE_KEY)
