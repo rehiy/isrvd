@@ -12,33 +12,33 @@ class ApiService {
   }
 
   // 文件管理相关
-  getFiles(path) {
+  list(path) {
     return axios.post('/api/list', { path })
   }
 
-  deleteFile(path) {
+  delete(path) {
     return axios.post('/api/delete', { path })
   }
 
-  renameFile(path, newPath) {
-    return axios.post('/api/rename', { path, newPath })
+  rename(path, target) {
+    return axios.post('/api/rename', { path, target })
   }
 
-  createDirectory(path, name) {
+  mkdir(path, name) {
     return axios.post('/api/mkdir', { path, name })
   }
 
-  createFile(path, name, content = '') {
+  create(path, name, content = '') {
     return axios.post('/api/create', { path, name, content })
   }
 
   // 文件编辑相关
-  getFileContent(path) {
+  read(path) {
     return axios.post('/api/read', { path })
   }
 
-  saveFileContent(path, content) {
-    return axios.post('/api/write', { path, content })
+  modify(path, content) {
+    return axios.post('/api/modify', { path, content })
   }
 
   // 权限管理
@@ -46,41 +46,32 @@ class ApiService {
     return axios.post('/api/chmod', { path })
   }
 
-  setFilePermissions(path, mode) {
+  chmod(path, mode) {
     return axios.post('/api/chmod', { path, mode })
   }
 
   // 压缩解压
-  zipFiles(path, zipName) {
+  zip(path, zipName) {
     return axios.post('/api/zip', { path, zipName })
   }
 
-  unzipFile(path, zipName) {
+  unzip(path, zipName) {
     return axios.post('/api/unzip', { path, zipName })
   }
 
-  // Zip 信息和检查
-  getZipInfo(path) {
-    return axios.post('/api/zip/info', { path })
-  }
-
-  isZipFile(path) {
-    return axios.post('/api/zip/check', { path })
-  }
-
-  // 文件下载
-  downloadFile(path) {
-    return axios.post('/api/download', { path }, { responseType: 'blob' })
-  }
-
   // 文件上传
-  uploadFile(formData, config = {}) {
+  upload(formData, config = {}) {
     return axios.post('/api/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       },
       ...config
     })
+  }
+
+  // 文件下载
+  download(path) {
+    return axios.post('/api/download', { path }, { responseType: 'blob' })
   }
 }
 

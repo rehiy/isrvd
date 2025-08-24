@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"isrvd/server/helper"
-	"isrvd/server/model"
 )
 
 // 归档服务
@@ -26,7 +25,7 @@ func GetZipService() *ZipService {
 }
 
 // 创建归档文件
-func (zs *ZipService) CreateZip(path, zipName string) error {
+func (zs *ZipService) Zip(path, zipName string) error {
 	if !helper.ValidatePath(path) || !helper.ValidatePath(zipName) {
 		return os.ErrPermission
 	}
@@ -85,7 +84,7 @@ func (zs *ZipService) CreateZip(path, zipName string) error {
 }
 
 // 解压归档文件
-func (zs *ZipService) ExtractZip(path, zipName string) error {
+func (zs *ZipService) Unzip(path, zipName string) error {
 	if !helper.ValidatePath(path) || !helper.ValidatePath(zipName) {
 		return os.ErrPermission
 	}
@@ -135,39 +134,4 @@ func (zs *ZipService) ExtractZip(path, zipName string) error {
 	}
 
 	return nil
-}
-
-// 判断是否为归档文件
-func (zs *ZipService) IsZipFile(filePath string) bool {
-	ext := strings.ToLower(filepath.Ext(filePath))
-	return ext == ".zip"
-}
-
-// 获取归档文件信息
-func (zs *ZipService) GetZipInfo(zipPath string) ([]model.ZipFileInfo, error) {
-	if !helper.ValidatePath(zipPath) {
-		return nil, os.ErrPermission
-	}
-
-	fullPath := helper.GetAbsolutePath(zipPath)
-	reader, err := zip.OpenReader(fullPath)
-	if err != nil {
-		return nil, err
-	}
-	defer reader.Close()
-
-	var files []model.ZipFileInfo
-	for _, f := range reader.File {
-		fileInfo := model.ZipFileInfo{
-			Name:           f.Name,
-			Size:           int64(f.UncompressedSize64),
-			CompressedSize: int64(f.CompressedSize64),
-			ModTime:        f.Modified,
-			IsDir:          f.FileInfo().IsDir(),
-			CRC32:          f.CRC32,
-		}
-		files = append(files, fileInfo)
-	}
-
-	return files, nil
 }

@@ -31,20 +31,18 @@ func Setup() *gin.Engine {
 		auth.Use(middleware.Auth())
 		{
 			auth.POST("/logout", authHandler.Logout)
-			auth.POST("/list", fileHandler.ListFiles)
+			auth.POST("/list", fileHandler.List)
 			auth.POST("/upload", fileHandler.Upload)
 			auth.POST("/download", fileHandler.Download)
 			auth.POST("/delete", fileHandler.Delete)
-			auth.POST("/mkdir", fileHandler.CreateDirectory)
-			auth.POST("/create", fileHandler.CreateFile)
-			auth.POST("/read", fileHandler.ReadFile)
+			auth.POST("/mkdir", fileHandler.Mkdir)
+			auth.POST("/create", fileHandler.Create)
+			auth.POST("/read", fileHandler.Read)
 			auth.POST("/modify", fileHandler.Modify)
 			auth.POST("/rename", fileHandler.Rename)
-			auth.POST("/chmod", fileHandler.ChangeMode)
-			auth.POST("/zip", zipHandler.CreateZip)
-			auth.POST("/unzip", zipHandler.ExtractZip)
-			auth.POST("/zip/info", zipHandler.GetZipInfo)
-			auth.POST("/zip/check", zipHandler.IsZipFile)
+			auth.POST("/chmod", fileHandler.Chmod)
+			auth.POST("/zip", zipHandler.Zip)
+			auth.POST("/unzip", zipHandler.Unzip)
 		}
 	}
 

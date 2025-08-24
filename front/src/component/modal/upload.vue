@@ -32,7 +32,7 @@ const handleConfirm = async () => {
   formDataToSend.append('file', formData.selectedFile)
   formDataToSend.append('path', state.currentPath)
 
-  await api.uploadFile(formDataToSend)
+  await api.upload(formDataToSend)
   actions.loadFiles()
 
   formData.selectedFile = null

@@ -24,7 +24,7 @@ const show = () => {
 
 const handleConfirm = async () => {
   if (!formData.name.trim()) return
-  await api.createFile(state.currentPath, formData.name, formData.content)
+  await api.create(state.currentPath, formData.name, formData.content)
   actions.loadFiles()
   modalRef.value.hide()
 }

@@ -25,7 +25,7 @@ const show = async (file) => {
 
 const handleConfirm = async () => {
   if (!formData.mode.trim()) return
-  await api.setFilePermissions(formData.path, formData.mode)
+  await api.chmod(formData.path, formData.mode)
   actions.loadFiles()
   modalRef.value.hide()
 }

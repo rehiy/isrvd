@@ -12,21 +12,21 @@ const actions = inject(APP_ACTIONS_KEY)
 const formData = reactive({
   filename: '',
   content: '',
-  filePath: ''
+  path: ''
 })
 
 const modalRef = ref(null)
 
 const show = async (file) => {
-  const data = await api.getFileContent(file.path)
-  formData.filePath = file.path
+  const data = await api.read(file.path)
+  formData.path = file.path
   formData.filename = file.name
   formData.content = data.payload.content
   modalRef.value.show()
 }
 
 const handleConfirm = async () => {
-  await api.saveFileContent(formData.filePath, formData.content)
+  await api.modify(formData.path, formData.content)
   actions.loadFiles()
   modalRef.value.hide()
 }

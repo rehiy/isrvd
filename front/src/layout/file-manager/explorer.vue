@@ -30,12 +30,12 @@ const files = ref([])
 const currentPath = ref('')
 
 const download = async (file) => {
-  const response = await api.downloadFile(file.path)
+  const response = await api.download(file.path)
   downloadFile(file.name, response.data)
 }
 
 actions.loadFiles = async (path) => {
-  const data = await api.getFiles(path)
+  const data = await api.list(path)
   files.value = data.payload.files || []
   currentPath.value = data.payload.path
   state.currentPath = path

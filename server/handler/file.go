@@ -27,14 +27,14 @@ func NewFileHandler() *FileHandler {
 }
 
 // 文件列表
-func (h *FileHandler) ListFiles(c *gin.Context) {
-	var req model.ListFilesRequest
+func (h *FileHandler) List(c *gin.Context) {
+	var req model.ListRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
-	files, err := h.fileService.ListFiles(req.Path)
+	files, err := h.fileService.List(req.Path)
 	if err != nil {
 		helper.RespondError(c, http.StatusNotFound, "Directory not found")
 		return
@@ -69,14 +69,14 @@ func (h *FileHandler) Delete(c *gin.Context) {
 }
 
 // 创建目录
-func (h *FileHandler) CreateDirectory(c *gin.Context) {
+func (h *FileHandler) Mkdir(c *gin.Context) {
 	var req model.MkdirRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
-	err := h.fileService.CreateDirectory(req.Path, req.Name)
+	err := h.fileService.Mkdir(req.Path, req.Name)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot create directory")
 		return
@@ -86,14 +86,14 @@ func (h *FileHandler) CreateDirectory(c *gin.Context) {
 }
 
 // 新建文件
-func (h *FileHandler) CreateFile(c *gin.Context) {
-	var req model.NewFileRequest
+func (h *FileHandler) Create(c *gin.Context) {
+	var req model.CreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
-	err := h.fileService.CreateFile(req.Path, req.Name, req.Content)
+	err := h.fileService.Create(req.Path, req.Name, req.Content)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot create file")
 		return
@@ -103,8 +103,8 @@ func (h *FileHandler) CreateFile(c *gin.Context) {
 }
 
 // 读取文件内容
-func (h *FileHandler) ReadFile(c *gin.Context) {
-	var req model.ReadFileHandlerRequest
+func (h *FileHandler) Read(c *gin.Context) {
+	var req model.ReadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
@@ -115,7 +115,7 @@ func (h *FileHandler) ReadFile(c *gin.Context) {
 		return
 	}
 
-	content, err := h.fileService.ReadFile(req.Path)
+	content, err := h.fileService.Read(req.Path)
 	if err != nil {
 		helper.RespondError(c, http.StatusNotFound, "File not found")
 		return
@@ -129,7 +129,7 @@ func (h *FileHandler) ReadFile(c *gin.Context) {
 
 // 写入文件内容
 func (h *FileHandler) Modify(c *gin.Context) {
-	var req model.ModifyHandlerRequest
+	var req model.ModifyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
@@ -161,7 +161,7 @@ func (h *FileHandler) Rename(c *gin.Context) {
 		return
 	}
 
-	err := h.fileService.RenameFile(req.Path, req.NewPath)
+	err := h.fileService.Rename(req.Path, req.Target)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot rename file")
 		return
@@ -171,8 +171,8 @@ func (h *FileHandler) Rename(c *gin.Context) {
 }
 
 // 修改权限
-func (h *FileHandler) ChangeMode(c *gin.Context) {
-	var req model.ChmodHandlerRequest
+func (h *FileHandler) Chmod(c *gin.Context) {
+	var req model.ChmodRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
@@ -205,7 +205,7 @@ func (h *FileHandler) ChangeMode(c *gin.Context) {
 		return
 	}
 
-	err = h.fileService.ChangeMode(req.Path, os.FileMode(mode))
+	err = h.fileService.Chmod(req.Path, os.FileMode(mode))
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot change permissions")
 		return

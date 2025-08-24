@@ -24,7 +24,7 @@ const show = (file) => {
 
 const handleConfirm = async () => {
   if (!formData.name.trim() || !formData.file) return
-  await api.renameFile(formData.file.path, formData.name)
+  await api.rename(formData.file.path, formData.name)
   actions.loadFiles()
   modalRef.value.hide()
 }
@@ -36,8 +36,8 @@ defineExpose({ show })
   <BaseModal ref="modalRef" id="renameModal" title="重命名" :loading="state.loading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm">
       <div class="mb-3">
-        <label for="newPath" class="form-label">新名称</label>
-        <input type="text" class="form-control" id="newPath" v-model="formData.name" :disabled="state.loading" required>
+        <label for="target" class="form-label">新名称</label>
+        <input type="text" class="form-control" id="target" v-model="formData.name" :disabled="state.loading" required>
       </div>
     </form>
     <template #confirm-text>

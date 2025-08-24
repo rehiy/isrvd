@@ -26,7 +26,7 @@ const show = (file) => {
 
 const handleConfirm = async () => {
   if (!formData.zipName.trim()) return
-  await api.zipFiles(formData.path, formData.zipName)
+  await api.zip(formData.path, formData.zipName)
   actions.loadFiles()
   modalRef.value.hide()
 }

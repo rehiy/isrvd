@@ -24,7 +24,7 @@ func GetFileService() *FileService {
 }
 
 // 获取文件列表
-func (fs *FileService) ListFiles(path string) ([]model.FileInfo, error) {
+func (fs *FileService) List(path string) ([]model.FileInfo, error) {
 	if !helper.ValidatePath(path) {
 		return nil, os.ErrPermission
 	}
@@ -73,7 +73,7 @@ func (fs *FileService) DeleteFile(path string) error {
 }
 
 // 创建目录
-func (fs *FileService) CreateDirectory(path, name string) error {
+func (fs *FileService) Mkdir(path, name string) error {
 	if !helper.ValidatePath(path) || !helper.ValidatePath(name) {
 		return os.ErrPermission
 	}
@@ -83,7 +83,7 @@ func (fs *FileService) CreateDirectory(path, name string) error {
 }
 
 // 创建文件
-func (fs *FileService) CreateFile(path, name, content string) error {
+func (fs *FileService) Create(path, name, content string) error {
 	if !helper.ValidatePath(path) || !helper.ValidatePath(name) {
 		return os.ErrPermission
 	}
@@ -93,7 +93,7 @@ func (fs *FileService) CreateFile(path, name, content string) error {
 }
 
 // 读取文件内容
-func (fs *FileService) ReadFile(path string) (string, error) {
+func (fs *FileService) Read(path string) (string, error) {
 	if !helper.ValidatePath(path) {
 		return "", os.ErrPermission
 	}
@@ -117,18 +117,18 @@ func (fs *FileService) Modify(path, content string) error {
 }
 
 // 重命名文件
-func (fs *FileService) RenameFile(path, newPath string) error {
-	if !helper.ValidatePath(path) || !helper.ValidatePath(newPath) {
+func (fs *FileService) Rename(path, target string) error {
+	if !helper.ValidatePath(path) || !helper.ValidatePath(target) {
 		return os.ErrPermission
 	}
 
 	oldAbsPath := helper.GetAbsolutePath(path)
-	newAbsPath := filepath.Join(filepath.Dir(oldAbsPath), newPath)
+	newAbsPath := filepath.Join(filepath.Dir(oldAbsPath), target)
 	return os.Rename(oldAbsPath, newAbsPath)
 }
 
 // 修改文件权限
-func (fs *FileService) ChangeMode(path string, mode os.FileMode) error {
+func (fs *FileService) Chmod(path string, mode os.FileMode) error {
 	if !helper.ValidatePath(path) {
 		return os.ErrPermission
 	}

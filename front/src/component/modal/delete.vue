@@ -20,7 +20,7 @@ const show = (fileData) => {
 const handleConfirm = async () => {
   if (!file.value) return
 
-  await api.deleteFile(file.value.path)
+  await api.delete(file.value.path)
   actions.loadFiles()
   modalRef.value.hide()
 }

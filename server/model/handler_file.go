@@ -19,7 +19,7 @@ type MkdirRequest struct {
 }
 
 // 新建文件请求
-type NewFileRequest struct {
+type CreateRequest struct {
 	Path    string `json:"path"`
 	Name    string `json:"name" binding:"required"`
 	Content string `json:"content" binding:"required"`
@@ -27,17 +27,18 @@ type NewFileRequest struct {
 
 // 重命名请求
 type RenameRequest struct {
-	Path    string `json:"path" binding:"required"`
-	NewPath string `json:"newPath" binding:"required"`
+	Path   string `json:"path" binding:"required"`
+	Target string `json:"target" binding:"required"`
 }
 
-// 修改权限请求
+// 修改权限处理器请求
 type ChmodRequest struct {
-	Mode string `json:"mode" binding:"required"`
+	Path string `json:"path"`
+	Mode string `json:"mode,omitempty"`
 }
 
 // 文件列表请求
-type ListFilesRequest struct {
+type ListRequest struct {
 	Path string `json:"path"`
 }
 
@@ -52,18 +53,12 @@ type DeleteRequest struct {
 }
 
 // 读取文件处理器请求
-type ReadFileHandlerRequest struct {
+type ReadRequest struct {
 	Path string `json:"path"`
 }
 
 // 写入文件处理器请求
-type ModifyHandlerRequest struct {
+type ModifyRequest struct {
 	Path    string `json:"path"`
 	Content string `json:"content"`
-}
-
-// 修改权限处理器请求
-type ChmodHandlerRequest struct {
-	Path string `json:"path"`
-	Mode string `json:"mode,omitempty"`
 }
