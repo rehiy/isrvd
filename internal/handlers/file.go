@@ -270,7 +270,7 @@ func (h *FileHandler) ChangeMode(c *gin.Context) {
 		return
 	}
 
-	err = h.fileService.ChangeMode(path, os.FileMode(mode))
+	err = h.fileService.ChangeMode(req.Path, os.FileMode(mode))
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "Cannot change permissions")
 		return
