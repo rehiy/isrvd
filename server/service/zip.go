@@ -18,7 +18,7 @@ type ZipService struct{}
 var ZipInstance *ZipService
 
 // 创建归档服务实例
-func NewZipService() *ZipService {
+func GetZipService() *ZipService {
 	if ZipInstance == nil {
 		ZipInstance = &ZipService{}
 	}

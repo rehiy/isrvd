@@ -20,7 +20,7 @@ type AuthService struct {
 var AuthInstance *AuthService
 
 // 创建认证服务实例
-func NewAuthService() *AuthService {
+func GetAuthService() *AuthService {
 	if AuthInstance == nil {
 		AuthInstance = &AuthService{
 			sessions: make(map[string]time.Time),

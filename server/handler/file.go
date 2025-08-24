@@ -22,7 +22,7 @@ type FileHandler struct {
 // 创建文件处理器
 func NewFileHandler() *FileHandler {
 	return &FileHandler{
-		fileService: service.NewFileService(),
+		fileService: service.GetFileService(),
 	}
 }
 

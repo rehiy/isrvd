@@ -5,9 +5,6 @@ import (
 	"strings"
 )
 
-// 全局配置实例
-var global *Global
-
 // 全局配置结构
 type Global struct {
 	Addr    string            // 监听地址
@@ -15,16 +12,19 @@ type Global struct {
 	UserMap map[string]string // 用户名:明文密码
 }
 
-// 获取全局配置
+// 全局配置实例
+var globalInstance *Global
+
+// 创建全局配置实例
 func GetGlobal() *Global {
-	if global == nil {
-		initGlobal()
+	if globalInstance == nil {
+		globalInstance = setupGlobal()
 	}
-	return global
+	return globalInstance
 }
 
 // 初始化全局配置
-func initGlobal() {
+func setupGlobal() *Global {
 	cfg := &Global{
 		Addr:    ":8080",
 		BaseDir: ".",
@@ -53,5 +53,5 @@ func initGlobal() {
 		cfg.UserMap["admin"] = "admin"
 	}
 
-	global = cfg
+	return cfg
 }

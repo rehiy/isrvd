@@ -18,7 +18,7 @@ type AuthHandler struct {
 // 创建认证处理器
 func NewAuthHandler() *AuthHandler {
 	return &AuthHandler{
-		authService: service.NewAuthService(),
+		authService: service.GetAuthService(),
 	}
 }
 

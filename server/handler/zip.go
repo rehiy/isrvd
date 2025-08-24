@@ -18,7 +18,7 @@ type ZipHandler struct {
 // 创建zip处理器
 func NewZipHandler() *ZipHandler {
 	return &ZipHandler{
-		zipService: service.NewZipService(),
+		zipService: service.GetZipService(),
 	}
 }
 

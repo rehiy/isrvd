@@ -11,7 +11,7 @@ import (
 
 // 认证中间件
 func Auth() gin.HandlerFunc {
-	var session = service.NewAuthService()
+	var session = service.GetAuthService()
 
 	return func(c *gin.Context) {
 		token := helper.GetTokenFromRequest(c)

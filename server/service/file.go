@@ -16,7 +16,7 @@ type FileService struct{}
 var FileInstance *FileService
 
 // 创建文件服务实例
-func NewFileService() *FileService {
+func GetFileService() *FileService {
 	if FileInstance == nil {
 		FileInstance = &FileService{}
 	}
