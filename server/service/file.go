@@ -13,14 +13,14 @@ import (
 type FileService struct{}
 
 // 文件服务实例
-var FileServiceInstance *FileService
+var FileInstance *FileService
 
 // 创建文件服务实例
 func NewFileService() *FileService {
-	if FileServiceInstance == nil {
-		FileServiceInstance = &FileService{}
+	if FileInstance == nil {
+		FileInstance = &FileService{}
 	}
-	return FileServiceInstance
+	return FileInstance
 }
 
 // 获取文件列表

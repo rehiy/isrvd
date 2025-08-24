@@ -17,17 +17,17 @@ type AuthService struct {
 }
 
 // 认证服务实例
-var AuthServiceInstance *AuthService
+var AuthInstance *AuthService
 
 // 创建认证服务实例
 func NewAuthService() *AuthService {
-	if AuthServiceInstance == nil {
-		AuthServiceInstance = &AuthService{
+	if AuthInstance == nil {
+		AuthInstance = &AuthService{
 			sessions: make(map[string]time.Time),
 		}
-		go AuthServiceInstance.CleanupExpired()
+		go AuthInstance.CleanupExpired()
 	}
-	return AuthServiceInstance
+	return AuthInstance
 }
 
 // 用户登录

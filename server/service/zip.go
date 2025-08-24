@@ -11,34 +11,34 @@ import (
 	"isrvd/server/model"
 )
 
-// zip服务
+// 归档服务
 type ZipService struct{}
 
-// zip服务实例
-var ZipServiceInstance *ZipService
+// 归档服务实例
+var ZipInstance *ZipService
 
-// 创建zip服务实例
+// 创建归档服务实例
 func NewZipService() *ZipService {
-	if ZipServiceInstance == nil {
-		ZipServiceInstance = &ZipService{}
+	if ZipInstance == nil {
+		ZipInstance = &ZipService{}
 	}
-	return ZipServiceInstance
+	return ZipInstance
 }
 
-// 创建压缩文件
+// 创建归档文件
 func (zs *ZipService) CreateZip(path, zipName string) error {
 	if !helper.ValidatePath(path) || !helper.ValidatePath(zipName) {
 		return os.ErrPermission
 	}
 
-	srcPath := helper.GetAbsolutePath(path)
-
-	// 确保zipName有.zip扩展名
+	// 确保 zipName 有 .zip 扩展名
 	if !strings.HasSuffix(strings.ToLower(zipName), ".zip") {
 		zipName += ".zip"
 	}
 
-	// 在源路径的父目录中创建zip文件
+	srcPath := helper.GetAbsolutePath(path)
+
+	// 在源路径的父目录中创建归档文件
 	parentDir := filepath.Dir(srcPath)
 	zipPath := filepath.Join(parentDir, zipName)
 
@@ -84,7 +84,7 @@ func (zs *ZipService) CreateZip(path, zipName string) error {
 	})
 }
 
-// 解压文件
+// 解压归档文件
 func (zs *ZipService) ExtractZip(path, zipName string) error {
 	if !helper.ValidatePath(path) || !helper.ValidatePath(zipName) {
 		return os.ErrPermission
@@ -137,13 +137,13 @@ func (zs *ZipService) ExtractZip(path, zipName string) error {
 	return nil
 }
 
-// 判断文件是否为zip文件
+// 判断是否为归档文件
 func (zs *ZipService) IsZipFile(filePath string) bool {
 	ext := strings.ToLower(filepath.Ext(filePath))
 	return ext == ".zip"
 }
 
-// 获取zip文件信息
+// 获取归档文件信息
 func (zs *ZipService) GetZipInfo(zipPath string) ([]model.ZipFileInfo, error) {
 	if !helper.ValidatePath(zipPath) {
 		return nil, os.ErrPermission
