@@ -20,8 +20,7 @@ func Md5sum(s string) string {
 
 // 获取绝对路径
 func GetAbsolutePath(path string) string {
-	cfg := config.GetGlobal()
-	return filepath.Join(cfg.BaseDir, filepath.Clean(path))
+	return filepath.Join(config.BaseDir, filepath.Clean(path))
 }
 
 // 验证路径安全性，防止目录遍历攻击

@@ -8,6 +8,7 @@ import ShellModal from '@/modals/shell.vue'
 
 const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)
+
 const shellModalRef = ref(null)
 
 const goHome = () => {

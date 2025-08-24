@@ -128,8 +128,8 @@ func (h *FileHandler) ReadFile(c *gin.Context) {
 }
 
 // 写入文件内容
-func (h *FileHandler) WriteFile(c *gin.Context) {
-	var req model.WriteFileHandlerRequest
+func (h *FileHandler) Modify(c *gin.Context) {
+	var req model.ModifyHandlerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
@@ -144,7 +144,7 @@ func (h *FileHandler) WriteFile(c *gin.Context) {
 		return
 	}
 
-	err := h.fileService.WriteFile(req.Path, req.Content)
+	err := h.fileService.Modify(req.Path, req.Content)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot save file")
 		return

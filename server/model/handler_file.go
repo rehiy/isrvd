@@ -57,7 +57,7 @@ type ReadFileHandlerRequest struct {
 }
 
 // 写入文件处理器请求
-type WriteFileHandlerRequest struct {
+type ModifyHandlerRequest struct {
 	Path    string `json:"path"`
 	Content string `json:"content"`
 }

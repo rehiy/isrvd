@@ -8,7 +8,7 @@ import (
 )
 
 // 设置路由
-func SetupRouter() *gin.Engine {
+func Setup() *gin.Engine {
 	r := gin.Default()
 
 	// 设置 CORS 中间件
@@ -26,19 +26,19 @@ func SetupRouter() *gin.Engine {
 		// 公开路由
 		api.POST("/login", authHandler.Login)
 
-		// 需要认证的路由组
+		// 需认证的路由组
 		auth := api.Group("")
 		auth.Use(middleware.Auth())
 		{
 			auth.POST("/logout", authHandler.Logout)
-			auth.POST("/files", fileHandler.ListFiles)
+			auth.POST("/list", fileHandler.ListFiles)
 			auth.POST("/upload", fileHandler.Upload)
 			auth.POST("/download", fileHandler.Download)
 			auth.POST("/delete", fileHandler.Delete)
 			auth.POST("/mkdir", fileHandler.CreateDirectory)
-			auth.POST("/newfile", fileHandler.CreateFile)
-			auth.POST("/cat", fileHandler.ReadFile)
-			auth.POST("/edit", fileHandler.WriteFile)
+			auth.POST("/create", fileHandler.CreateFile)
+			auth.POST("/read", fileHandler.ReadFile)
+			auth.POST("/modify", fileHandler.Modify)
 			auth.POST("/rename", fileHandler.Rename)
 			auth.POST("/chmod", fileHandler.ChangeMode)
 			auth.POST("/zip", zipHandler.CreateZip)

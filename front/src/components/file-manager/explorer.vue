@@ -2,20 +2,19 @@
 import { inject, ref } from 'vue'
 
 import api from '@/services/api.js'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/stores/state.js'
+import { APP_ACTIONS_KEY } from '@/stores/state.js'
 import { isEditableFile, getFileIcon, formatFileSize, formatTime } from '@/utils/utils.js'
 
-import EditModal from '@/modals/edit.vue'
+import ModifyModal from '@/modals/modify.vue'
 import RenameModal from '@/modals/rename.vue'
 import ChmodModal from '@/modals/chmod.vue'
-import ZipModal from '@/modals/zip.vue'
 import DeleteModal from '@/modals/delete.vue'
+import ZipModal from '@/modals/zip.vue'
 import UnzipModal from '@/modals/unzip.vue'
 
-const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)
 
-const editModalRef = ref(null)
+const modifyModalRef = ref(null)
 const renameModalRef = ref(null)
 const chmodModalRef = ref(null)
 const zipModalRef = ref(null)
@@ -112,7 +111,7 @@ const downloadFile = async (file) => {
                 <button class="btn btn-outline-success btn-sm me-1" @click="downloadFile(file)" title="下载">
                   <i class="fas fa-download"></i>
                 </button>
-                <button v-if="isEditableFile(file)" class="btn btn-outline-info btn-sm me-1" @click="editModalRef.show(file)" title="编辑">
+                <button v-if="isEditableFile(file)" class="btn btn-outline-info btn-sm me-1" @click="modifyModalRef.show(file)" title="编辑">
                   <i class="fas fa-edit"></i>
                 </button>
                 <button v-if="file.name.endsWith('.zip')" class="btn btn-outline-warning btn-sm me-1" @click="unzipModalRef.show(file)" title="解压">
@@ -141,11 +140,11 @@ const downloadFile = async (file) => {
     </div>
 
     <!-- 模态框组件 -->
-    <EditModal ref="editModalRef" />
+    <ModifyModal ref="modifyModalRef" />
     <RenameModal ref="renameModalRef" />
     <ChmodModal ref="chmodModalRef" />
-    <ZipModal ref="zipModalRef" />
     <DeleteModal ref="deleteModalRef" />
+    <ZipModal ref="zipModalRef" />
     <UnzipModal ref="unzipModalRef" />
   </div>
 </template>

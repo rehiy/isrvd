@@ -107,7 +107,7 @@ func (fs *FileService) ReadFile(path string) (string, error) {
 }
 
 // 写入文件内容
-func (fs *FileService) WriteFile(path, content string) error {
+func (fs *FileService) Modify(path, content string) error {
 	if !helper.ValidatePath(path) {
 		return os.ErrPermission
 	}

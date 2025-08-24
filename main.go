@@ -4,11 +4,13 @@ import (
 	"embed"
 
 	"isrvd/server"
+	"isrvd/server/config"
 )
 
 //go:embed public/*
 var publicFS embed.FS
 
 func main() {
-	server.StartHTTP(publicFS)
+	config.PublicFS = publicFS
+	server.StartHTTP()
 }

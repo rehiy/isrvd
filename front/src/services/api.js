@@ -13,7 +13,7 @@ class ApiService {
 
   // 文件管理相关
   getFiles(path) {
-    return axios.post('/api/files', { path })
+    return axios.post('/api/list', { path })
   }
 
   deleteFile(path) {
@@ -29,16 +29,16 @@ class ApiService {
   }
 
   createFile(path, name, content = '') {
-    return axios.post('/api/newfile', { path, name, content })
+    return axios.post('/api/create', { path, name, content })
   }
 
   // 文件编辑相关
   getFileContent(path) {
-    return axios.post('/api/cat', { path })
+    return axios.post('/api/read', { path })
   }
 
   saveFileContent(path, content) {
-    return axios.post('/api/edit', { path, content })
+    return axios.post('/api/write', { path, content })
   }
 
   // 权限管理
