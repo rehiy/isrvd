@@ -115,13 +115,13 @@ func (zs *ZipService) Unzip(path, zipName string) error {
 
 		rc, err := f.Open()
 		if err != nil {
-			continue
+			return err
 		}
 
 		outFile, err := os.Create(destPath)
 		if err != nil {
 			rc.Close()
-			continue
+			return err
 		}
 
 		_, err = io.Copy(outFile, rc)
@@ -129,7 +129,7 @@ func (zs *ZipService) Unzip(path, zipName string) error {
 		rc.Close()
 
 		if err != nil {
-			continue
+			return err
 		}
 	}
 

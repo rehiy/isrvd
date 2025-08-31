@@ -22,9 +22,9 @@ const show = (file) => {
 
 const handleConfirm = async () => {
   if (!formData.file) return
-  await api.unzip(formData.file.name, state.currentPath)
-  actions.loadFiles()
-  modalRef.value.hide()
+    await api.unzip(state.currentPath, formData.file.name)
+    actions.loadFiles()
+    modalRef.value.hide()
 }
 
 defineExpose({ show })
@@ -32,7 +32,7 @@ defineExpose({ show })
 
 <template>
   <BaseModal ref="modalRef" id="unzipModal" title="解压确认" header-class="bg-warning text-dark" :loading="state.loading" :confirm-disabled="!formData.file" @confirm="handleConfirm">
-    <div v-if="formData.file" class="text-center">s
+    <div v-if="formData.file" class="text-center">
       <div class="mb-3">
         <i class="fas fa-file-archive text-warning display-1"></i>
       </div>
