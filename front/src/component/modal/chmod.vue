@@ -17,9 +17,8 @@ const formData = reactive({
 const modalRef = ref(null)
 
 const show = async (file) => {
-  const data = await api.getFilePermissions(file.path)
   formData.path = file.path
-  formData.mode = data.payload.mode
+  formData.mode = file.modeO
   modalRef.value.show()
 }
 

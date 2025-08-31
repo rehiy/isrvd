@@ -41,11 +41,6 @@ class ApiService {
     return axios.post('/api/modify', { path, content })
   }
 
-  // 权限管理
-  getFilePermissions(path) {
-    return axios.post('/api/chmod', { path })
-  }
-
   chmod(path, mode) {
     return axios.post('/api/chmod', { path, mode })
   }

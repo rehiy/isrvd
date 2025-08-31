@@ -43,5 +43,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) Logout(c *gin.Context) {
 	token := helper.GetTokenFromRequest(c)
 	h.authService.DeleteToken(token)
+
 	helper.RespondSuccess(c, "Logged out successfully", nil)
 }

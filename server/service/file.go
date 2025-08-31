@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 
 	"isrvd/server/helper"
 	"isrvd/server/model"
@@ -39,12 +40,13 @@ func (fs *FileService) List(path string) ([]model.FileInfo, error) {
 	for _, f := range files {
 		info, _ := f.Info()
 		fileList = append(fileList, model.FileInfo{
+			Path:    filepath.Join(path, info.Name()),
 			Name:    info.Name(),
 			Size:    info.Size(),
 			IsDir:   info.IsDir(),
 			Mode:    info.Mode().Perm().String(),
+			ModeO:   strconv.FormatInt(int64(info.Mode()), 8),
 			ModTime: info.ModTime(),
-			Path:    filepath.Join(path, info.Name()),
 		})
 	}
 

@@ -54,11 +54,6 @@ func (h *FileHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if req.Path == "" {
-		helper.RespondError(c, http.StatusBadRequest, "No file specified")
-		return
-	}
-
 	err := h.fileService.DeleteFile(req.Path)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot delete file")
@@ -110,11 +105,6 @@ func (h *FileHandler) Read(c *gin.Context) {
 		return
 	}
 
-	if req.Path == "" {
-		helper.RespondError(c, http.StatusBadRequest, "No file specified")
-		return
-	}
-
 	content, err := h.fileService.Read(req.Path)
 	if err != nil {
 		helper.RespondError(c, http.StatusNotFound, "File not found")
@@ -132,15 +122,6 @@ func (h *FileHandler) Modify(c *gin.Context) {
 	var req model.ModifyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
-		return
-	}
-
-	if req.Path == "" {
-		helper.RespondError(c, http.StatusBadRequest, "No file specified")
-		return
-	}
-	if req.Content == "" {
-		helper.RespondError(c, http.StatusBadRequest, "No content provided")
 		return
 	}
 
@@ -178,27 +159,6 @@ func (h *FileHandler) Chmod(c *gin.Context) {
 		return
 	}
 
-	if req.Path == "" {
-		helper.RespondError(c, http.StatusBadRequest, "No file specified")
-		return
-	}
-
-	// 如果没有提供 mode，则获取当前权限
-	if req.Mode == "" {
-		info, err := h.fileService.GetFileInfo(req.Path)
-		if err != nil {
-			helper.RespondError(c, http.StatusNotFound, "File not found")
-			return
-		}
-
-		helper.RespondSuccess(c, "File mode retrieved", gin.H{
-			"file": filepath.Base(req.Path),
-			"mode": strconv.FormatUint(uint64(info.Mode().Perm()), 8),
-		})
-		return
-	}
-
-	// 如果提供了 mode，则修改权限
 	mode, err := strconv.ParseUint(req.Mode, 8, 32)
 	if err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid mode")
@@ -255,11 +215,6 @@ func (h *FileHandler) Download(c *gin.Context) {
 	var req model.DownloadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
-		return
-	}
-
-	if req.Path == "" {
-		helper.RespondError(c, http.StatusBadRequest, "No file specified")
 		return
 	}
 

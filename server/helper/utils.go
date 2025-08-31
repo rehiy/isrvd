@@ -25,8 +25,7 @@ func GetAbsolutePath(path string) string {
 
 // 验证路径安全性，防止目录遍历攻击
 func ValidatePath(path string) bool {
-	cleanPath := filepath.Clean(path)
-	return !strings.Contains(cleanPath, "..")
+	return !strings.Contains(filepath.Clean(path), "..")
 }
 
 // 从请求中获取令牌
