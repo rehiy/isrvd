@@ -25,17 +25,13 @@ func GetZipService() *ZipService {
 }
 
 // 创建归档文件
-func (zs *ZipService) Zip(path, zipName string) error {
-	if !helper.ValidatePath(path) || !helper.ValidatePath(zipName) {
+func (zs *ZipService) Zip(path string) error {
+	if !helper.ValidatePath(path) {
 		return os.ErrPermission
 	}
 
-	// 确保 zipName 有 .zip 扩展名
-	if !strings.HasSuffix(strings.ToLower(zipName), ".zip") {
-		zipName += ".zip"
-	}
-
 	srcPath := helper.GetAbsolutePath(path)
+	zipName := filepath.Base(srcPath) + ".zip"
 
 	// 在源路径的父目录中创建归档文件
 	parentDir := filepath.Dir(srcPath)
@@ -84,13 +80,13 @@ func (zs *ZipService) Zip(path, zipName string) error {
 }
 
 // 解压归档文件
-func (zs *ZipService) Unzip(path, zipName string) error {
-	if !helper.ValidatePath(path) || !helper.ValidatePath(zipName) {
+func (zs *ZipService) Unzip(path string) error {
+	if !helper.ValidatePath(path) {
 		return os.ErrPermission
 	}
 
-	zipPath := filepath.Join(helper.GetAbsolutePath(path), zipName)
-	extractDir := helper.GetAbsolutePath(path)
+	zipPath := helper.GetAbsolutePath(path)
+	extractDir := filepath.Dir(zipPath)
 
 	reader, err := zip.OpenReader(zipPath)
 	if err != nil {

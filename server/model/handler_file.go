@@ -15,14 +15,12 @@ type FileInfo struct {
 
 // 创建目录请求
 type MkdirRequest struct {
-	Path string `json:"path"`
-	Name string `json:"name" binding:"required"`
+	Path string `json:"path" binding:"required"`
 }
 
 // 新建文件请求
 type CreateRequest struct {
-	Path    string `json:"path"`
-	Name    string `json:"name" binding:"required"`
+	Path    string `json:"path" binding:"required"`
 	Content string `json:"content" binding:"required"`
 }
 

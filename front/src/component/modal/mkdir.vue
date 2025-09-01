@@ -22,7 +22,7 @@ const show = () => {
 
 const handleConfirm = async () => {
   if (!formData.name.trim()) return
-  await api.mkdir(state.currentPath, formData.name)
+  await api.mkdir(state.currentPath + '/' + formData.name)
   actions.loadFiles()
   modalRef.value.hide()
 }

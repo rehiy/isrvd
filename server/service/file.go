@@ -75,22 +75,22 @@ func (fs *FileService) DeleteFile(path string) error {
 }
 
 // 创建目录
-func (fs *FileService) Mkdir(path, name string) error {
-	if !helper.ValidatePath(path) || !helper.ValidatePath(name) {
+func (fs *FileService) Mkdir(path string) error {
+	if !helper.ValidatePath(path) {
 		return os.ErrPermission
 	}
 
-	absPath := filepath.Join(helper.GetAbsolutePath(path), name)
+	absPath := helper.GetAbsolutePath(path)
 	return os.Mkdir(absPath, 0755)
 }
 
 // 创建文件
-func (fs *FileService) Create(path, name, content string) error {
-	if !helper.ValidatePath(path) || !helper.ValidatePath(name) {
+func (fs *FileService) Create(path, content string) error {
+	if !helper.ValidatePath(path) {
 		return os.ErrPermission
 	}
 
-	absPath := filepath.Join(helper.GetAbsolutePath(path), name)
+	absPath := helper.GetAbsolutePath(path)
 	return os.WriteFile(absPath, []byte(content), 0644)
 }
 

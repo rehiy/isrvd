@@ -10,23 +10,18 @@ const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)
 
 const formData = reactive({
-  path: '',
-  name: '',
-  zipName: ''
+  file: null
 })
 
 const modalRef = ref(null)
 
 const show = (file) => {
-  formData.path = file.path
-  formData.name = file.name
-  formData.zipName = file.name + '.zip'
+  formData.file = file
   modalRef.value.show()
 }
 
 const handleConfirm = async () => {
-  if (!formData.zipName.trim()) return
-  await api.zip(formData.path, formData.zipName)
+  await api.zip(state.currentPath + '/' + formData.file.name)
   actions.loadFiles()
   modalRef.value.hide()
 }
@@ -35,13 +30,15 @@ defineExpose({ show })
 </script>
 
 <template>
-  <BaseModal ref="modalRef" id="zipModal" title="压缩目录" :loading="state.loading" :confirm-disabled="!formData.zipName.trim()" @confirm="handleConfirm">
-    <form @submit.prevent="handleConfirm">
+  <BaseModal ref="modalRef" id="zipModal" title="压缩确认" header-class="bg-warning text-dark" :loading="state.loading" :confirm-disabled="!formData.file" @confirm="handleConfirm">
+    <div v-if="formData.file" class="text-center">
       <div class="mb-3">
-        <label for="zipName" class="form-label">压缩包名称</label>
-        <input type="text" class="form-control" id="zipName" v-model="formData.zipName" :disabled="state.loading" required>
+        <i class="fas fa-file-archive text-warning display-1"></i>
       </div>
-    </form>
+      <p class="mb-3">
+        确定要压缩 <strong>{{ formData.file.name }}</strong> 到当前目录吗？
+      </p>
+    </div>
     <template #confirm-text>
       {{ state.loading ? '压缩中...' : '压缩' }}
     </template>

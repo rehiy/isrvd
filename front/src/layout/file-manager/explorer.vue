@@ -27,18 +27,16 @@ const navigateTo = (path) => {
 }
 
 const files = ref([])
-const currentPath = ref('')
 
 const download = async (file) => {
   const response = await api.download(file.path)
   downloadFile(file.name, response.data)
 }
 
-actions.loadFiles = async (path) => {
+actions.loadFiles = async (path = state.currentPath) => {
   const data = await api.list(path)
   files.value = data.payload.files || []
-  currentPath.value = data.payload.path
-  state.currentPath = path
+  state.currentPath = data.payload.path
 }
 
 actions.loadFiles('/');

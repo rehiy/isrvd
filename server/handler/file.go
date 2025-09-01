@@ -71,7 +71,7 @@ func (h *FileHandler) Mkdir(c *gin.Context) {
 		return
 	}
 
-	err := h.fileService.Mkdir(req.Path, req.Name)
+	err := h.fileService.Mkdir(req.Path)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot create directory")
 		return
@@ -88,7 +88,7 @@ func (h *FileHandler) Create(c *gin.Context) {
 		return
 	}
 
-	err := h.fileService.Create(req.Path, req.Name, req.Content)
+	err := h.fileService.Create(req.Path, req.Content)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot create file")
 		return

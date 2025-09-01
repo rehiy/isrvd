@@ -21,10 +21,9 @@ const show = (file) => {
 }
 
 const handleConfirm = async () => {
-  if (!formData.file) return
-    await api.unzip(state.currentPath, formData.file.name)
-    actions.loadFiles()
-    modalRef.value.hide()
+  await api.unzip(state.currentPath + '/' + formData.file.name)
+  actions.loadFiles()
+  modalRef.value.hide()
 }
 
 defineExpose({ show })

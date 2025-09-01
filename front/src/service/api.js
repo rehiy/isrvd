@@ -3,8 +3,8 @@ import axios from 'axios'
 // API服务类，统一管理所有API请求
 class ApiService {
   // 认证相关
-  login(loginData) {
-    return axios.post('/api/login', loginData)
+  login(data) {
+    return axios.post('/api/login', data)
   }
 
   logout() {
@@ -24,12 +24,12 @@ class ApiService {
     return axios.post('/api/rename', { path, target })
   }
 
-  mkdir(path, name) {
-    return axios.post('/api/mkdir', { path, name })
+  mkdir(path) {
+    return axios.post('/api/mkdir', { path })
   }
 
-  create(path, name, content = '') {
-    return axios.post('/api/create', { path, name, content })
+  create(path, content = '') {
+    return axios.post('/api/create', { path, content })
   }
 
   // 文件编辑相关
@@ -46,12 +46,12 @@ class ApiService {
   }
 
   // 压缩解压
-  zip(path, zipName) {
-    return axios.post('/api/zip', { path, zipName })
+  zip(path) {
+    return axios.post('/api/zip', { path })
   }
 
-  unzip(path, zipName) {
-    return axios.post('/api/unzip', { path, zipName })
+  unzip(path) {
+    return axios.post('/api/unzip', { path })
   }
 
   // 文件上传
