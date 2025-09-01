@@ -10,32 +10,32 @@ const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)
 
 const formData = reactive({
-  selectedFile: null
+  uploadFile: null
 })
 
 const fileInput = ref(null)
 const modalRef = ref(null)
 
 const show = () => {
-  formData.selectedFile = null
+  formData.uploadFile = null
   modalRef.value.show()
 }
 
 const handleFileChange = (event) => {
-  formData.selectedFile = event.target.files[0] || null
+  formData.uploadFile = event.target.files[0] || null
 }
 
 const handleConfirm = async () => {
-  if (!formData.selectedFile) return
+  if (!formData.uploadFile) return
 
   const formDataToSend = new FormData()
-  formDataToSend.append('file', formData.selectedFile)
+  formDataToSend.append('file', formData.uploadFile)
   formDataToSend.append('path', state.currentPath)
 
   await api.upload(formDataToSend)
   actions.loadFiles()
 
-  formData.selectedFile = null
+  formData.uploadFile = null
   if (fileInput.value) {
     fileInput.value.value = ''
   }
@@ -43,7 +43,7 @@ const handleConfirm = async () => {
 }
 
 const hasFile = computed(() => {
-  return formData.selectedFile !== null
+  return formData.uploadFile !== null
 })
 
 defineExpose({ show })

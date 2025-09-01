@@ -17,7 +17,7 @@ const modalRef = ref(null)
 
 const show = () => {
   formData.name = ''
-  modalRef.value?.show()
+  modalRef.value.show()
 }
 
 const handleConfirm = async () => {
