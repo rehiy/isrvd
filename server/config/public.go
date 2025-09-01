@@ -4,8 +4,16 @@ import (
 	"embed"
 )
 
-var Addr = ":8080"                // 监听地址
-var BaseDir = "."                 // 基础目录
-var UserMap = map[string]string{} // 用户名:明文密码
+// 静态文件
+var PublicFS embed.FS
 
-var PublicFS embed.FS // 静态文件
+// 监听地址
+var ListenAddr = ":8080"
+
+// 基础目录
+var BaseDirectory = "."
+
+// 用户名:明文密码
+var Administrators = map[string]string{
+	"admin": "admin",
+}

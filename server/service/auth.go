@@ -33,7 +33,7 @@ func GetAuthService() *AuthService {
 // 用户登录
 func (as *AuthService) Login(req model.LoginRequest) (*model.LoginResponse, error) {
 	// 验证用户名和密码
-	if password, exists := config.UserMap[req.Username]; exists && password == req.Password {
+	if password, exists := config.Administrators[req.Username]; exists && password == req.Password {
 		return &model.LoginResponse{
 			Token:    as.CreateToken(req.Username),
 			Username: req.Username,

@@ -1,13 +1,41 @@
-# Web File Manager
+# Isrvd - Web Server Manager
 
-一个基于 Go 和 Vue.js 的现代化文件管理器，提供完整的文件系统操作和终端交互功能。
+一个基于 Go 和 Vue.js 的轻量级服务器管理工具，支持文件操作、在线编辑、文件传输、压缩解压和实时终端。
 
 ## 功能特性
 
-- 🗂️ 文件浏览和管理（创建、删除、重命名、权限修改）
-- 📤 文件上传和下载
-- 📝 在线文件编辑
-- 🗜️ 文件压缩和解压
-- 🖥️ Web终端（支持Shell交互）
-- 🔐 用户认证和会话管理
-- 🌐 现代化的响应式界面
+- 📁 **文件管理** - 浏览、创建、删除、重命名、权限修改
+- 📤 **文件传输** - 上传下载文件
+- 📝 **在线编辑** - 直接编辑文本文件
+- 🗜️ **压缩解压** - ZIP 文件打包和解压
+- 🖥️ **Web 终端** - 实时 Shell 交互
+- 🔐 **用户认证** - 安全的登录系统
+
+## 快速开始
+
+### 编译环境
+
+- Go 1.21+
+- Node.js 16+
+
+### 编译打包
+
+```shell
+chmod +x build.sh && ./build.sh
+```
+
+## 启动服务
+
+```bash
+export LISTEN_ADDR=":8080"                  # 监听端口
+export BASE_DIRECTORY="/home/data"          # 文件根目录
+export ADMINISTRATORS="admin:pass,user:123" # 管理员配置
+
+./isrvd
+```
+
+访问 `http://localhost:8080`
+
+## 许可证
+
+MIT License
