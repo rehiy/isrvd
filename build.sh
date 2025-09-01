@@ -20,6 +20,15 @@ build() {
 
 ####################################################################
 
+last_tag=`git tag | sort -V | tail -n 1`
+prev_tag=`git tag | sort -V | tail -n 2 | head -n 1`
+
+if [ -n "$last_tag$prev_tag" ]; then
+    git log $prev_tag..$last_tag --pretty=format:"%s" | grep -v "^release" | sed 's/^/- /' | sort > RELEASE.md
+fi
+
+####################################################################
+
 cd front/
 
 npm i
