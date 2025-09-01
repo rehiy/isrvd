@@ -24,7 +24,7 @@ func NewZipHandler() *ZipHandler {
 
 // 创建压缩文件
 func (h *ZipHandler) Zip(c *gin.Context) {
-	var req model.ZipRequest
+	var req model.FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
@@ -41,7 +41,7 @@ func (h *ZipHandler) Zip(c *gin.Context) {
 
 // 解压文件
 func (h *ZipHandler) Unzip(c *gin.Context) {
-	var req model.UnzipRequest
+	var req model.FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return

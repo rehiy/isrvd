@@ -28,7 +28,7 @@ func NewFileHandler() *FileHandler {
 
 // 文件列表
 func (h *FileHandler) List(c *gin.Context) {
-	var req model.ListRequest
+	var req model.FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
@@ -48,7 +48,7 @@ func (h *FileHandler) List(c *gin.Context) {
 
 // 删除文件
 func (h *FileHandler) Delete(c *gin.Context) {
-	var req model.DeleteRequest
+	var req model.FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
@@ -65,7 +65,7 @@ func (h *FileHandler) Delete(c *gin.Context) {
 
 // 创建目录
 func (h *FileHandler) Mkdir(c *gin.Context) {
-	var req model.MkdirRequest
+	var req model.FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
@@ -82,7 +82,7 @@ func (h *FileHandler) Mkdir(c *gin.Context) {
 
 // 新建文件
 func (h *FileHandler) Create(c *gin.Context) {
-	var req model.CreateRequest
+	var req model.FileContentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
@@ -99,7 +99,7 @@ func (h *FileHandler) Create(c *gin.Context) {
 
 // 读取文件内容
 func (h *FileHandler) Read(c *gin.Context) {
-	var req model.ReadRequest
+	var req model.FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
@@ -119,7 +119,7 @@ func (h *FileHandler) Read(c *gin.Context) {
 
 // 写入文件内容
 func (h *FileHandler) Modify(c *gin.Context) {
-	var req model.ModifyRequest
+	var req model.FileContentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
@@ -136,7 +136,7 @@ func (h *FileHandler) Modify(c *gin.Context) {
 
 // 重命名
 func (h *FileHandler) Rename(c *gin.Context) {
-	var req model.RenameRequest
+	var req model.FileRenameRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
@@ -153,7 +153,7 @@ func (h *FileHandler) Rename(c *gin.Context) {
 
 // 修改权限
 func (h *FileHandler) Chmod(c *gin.Context) {
-	var req model.ChmodRequest
+	var req model.FileChmodRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
@@ -212,7 +212,7 @@ func (h *FileHandler) Upload(c *gin.Context) {
 
 // 下载文件
 func (h *FileHandler) Download(c *gin.Context) {
-	var req model.DownloadRequest
+	var req model.FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
