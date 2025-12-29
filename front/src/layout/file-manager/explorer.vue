@@ -30,7 +30,7 @@ const files = ref([])
 
 const download = async (file) => {
   const response = await api.download(file.path)
-  downloadFile(file.name, response.data)
+  downloadFile(file.name, response)
 }
 
 actions.loadFiles = async (path = state.currentPath) => {
