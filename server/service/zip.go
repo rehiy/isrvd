@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"isrvd/server/helper"
 )
 
 // 归档服务
@@ -26,18 +24,11 @@ func GetZipService() *ZipService {
 
 // 创建归档文件
 func (zs *ZipService) Zip(path string) error {
-	if !helper.ValidatePath(path) {
-		return os.ErrPermission
-	}
-
 	srcPath := path
 	zipName := filepath.Base(srcPath) + ".zip"
 
 	// 在源路径的父目录中创建归档文件
-	parentDir := filepath.Dir(srcPath)
-	zipPath := filepath.Join(parentDir, zipName)
-
-	f, err := os.Create(zipPath)
+	f, err := os.Create(filepath.Join(filepath.Dir(srcPath), zipName))
 	if err != nil {
 		return err
 	}
@@ -62,7 +53,6 @@ func (zs *ZipService) Zip(path string) error {
 		}
 
 		zipPath := filepath.Join(baseName, relPath)
-
 		w, err := zipWriter.Create(zipPath)
 		if err != nil {
 			return err
@@ -81,14 +71,8 @@ func (zs *ZipService) Zip(path string) error {
 
 // 解压归档文件
 func (zs *ZipService) Unzip(path string) error {
-	if !helper.ValidatePath(path) {
-		return os.ErrPermission
-	}
-
-	zipPath := path
-	extractDir := filepath.Dir(zipPath)
-
-	reader, err := zip.OpenReader(zipPath)
+	extractDir := filepath.Dir(path)
+	reader, err := zip.OpenReader(path)
 	if err != nil {
 		return err
 	}
