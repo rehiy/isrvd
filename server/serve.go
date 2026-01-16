@@ -26,7 +26,7 @@ func StartHTTP() {
 		fileServer.ServeHTTP(c.Writer, c.Request)
 	})
 
-	log.Printf("Administrators: %d", len(config.Administrators))
+	log.Printf("Members: %d", len(config.Members))
 	log.Printf("Base directory: %s", config.BaseDirectory)
 	log.Printf("Server started at %s", config.ListenAddr)
 
