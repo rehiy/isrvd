@@ -30,7 +30,7 @@ func NewShellHandler() *ShellHandler {
 // Shell WebSocket处理
 func (h *ShellHandler) HandleWebSocket(c *gin.Context) {
 	// 检查用户是否允许使用终端
-	username := helper.GetCurrentUser(c)
+	username := c.GetString("username")
 	member, exists := config.Members[username]
 	if !exists || !member.AllowTerminal {
 		helper.RespondError(c, http.StatusForbidden, "Terminal access denied")

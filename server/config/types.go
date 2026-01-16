@@ -11,6 +11,7 @@ type Server struct {
 	Debug         bool   `yaml:"debug"`
 	ListenAddr    string `yaml:"listenAddr"`
 	RootDirectory string `yaml:"baseDirectory"`
+	JWTSecret     string `yaml:"jwtSecret"`
 }
 
 // 成员配置

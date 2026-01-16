@@ -16,8 +16,11 @@ var ListenAddr = ":8080"
 // 基础目录
 var RootDirectory = "."
 
+// JWT 密钥
+var JWTSecret = "default-secret-key"
+
 // 成员配置
-var Members = make(map[string]*Member)
+var Members = map[string]*Member{}
 
 // 加载配置文件
 func Load() error {
@@ -50,6 +53,10 @@ func Load() error {
 	RootDirectory = conf.Server.RootDirectory
 	if value := os.Getenv("ROOT_DIRECTORY"); value != "" {
 		RootDirectory = value
+	}
+	JWTSecret = conf.Server.JWTSecret
+	if value := os.Getenv("JWT_SECRET"); value != "" {
+		JWTSecret = value
 	}
 
 	// 更新成员配置

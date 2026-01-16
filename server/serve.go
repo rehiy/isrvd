@@ -30,7 +30,7 @@ func Start() {
 // 设置路由
 func (app *App) create() {
 	// 注册中间件
-	app.Use(middleware.CORS())
+	app.Use(middleware.CORSMiddleware())
 
 	// 注册模块路由
 	app.setupRouter()
@@ -62,7 +62,7 @@ func (app *App) setupRouter() {
 
 		// 需认证的路由组
 		auth := api.Group("")
-		auth.Use(middleware.Auth())
+		auth.Use(middleware.AuthMiddleware())
 		{
 			auth.POST("/logout", authHandler.Logout)
 			auth.POST("/list", fileHandler.List)
@@ -81,5 +81,5 @@ func (app *App) setupRouter() {
 	}
 
 	// WebSocket 路由
-	app.GET("/ws/shell", middleware.Auth(), shellHandler.HandleWebSocket)
+	app.GET("/ws/shell", middleware.AuthMiddleware(), shellHandler.HandleWebSocket)
 }

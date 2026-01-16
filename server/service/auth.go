@@ -2,19 +2,16 @@ package service
 
 import (
 	"errors"
-	"sync"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
+
 	"isrvd/server/config"
-	"isrvd/server/helper"
 	"isrvd/server/model"
 )
 
 // 认证服务
-type AuthService struct {
-	mutex    sync.RWMutex
-	sessions map[string]time.Time
-}
+type AuthService struct{}
 
 // 认证服务实例
 var AuthInstance *AuthService
@@ -22,67 +19,36 @@ var AuthInstance *AuthService
 // 创建认证服务实例
 func GetAuthService() *AuthService {
 	if AuthInstance == nil {
-		AuthInstance = &AuthService{
-			sessions: make(map[string]time.Time),
-		}
-		go AuthInstance.CleanupExpired()
+		AuthInstance = &AuthService{}
 	}
 	return AuthInstance
 }
 
-// 用户登录
+// 验证用户名和密码
 func (as *AuthService) Login(req model.LoginRequest) (*model.LoginResponse, error) {
-	// 验证用户名和密码
-	if member, exists := config.Members[req.Username]; exists && member.Password == req.Password {
-		token := helper.Md5sum(req.Username + ":" + time.Now().String())
-		as.mutex.Lock()
-		as.sessions[token] = time.Now().Add(24 * time.Hour)
-		as.mutex.Unlock()
-		return &model.LoginResponse{
-			Token:    token,
-			Username: req.Username,
-		}, nil
-	}
-	return nil, errors.New("invalid credentials")
-}
+	member, exists := config.Members[req.Username]
 
-// 删除令牌
-func (as *AuthService) DeleteToken(token string) {
-	as.mutex.Lock()
-	delete(as.sessions, token)
-	as.mutex.Unlock()
-}
-
-// 验证令牌
-func (as *AuthService) ValidateToken(token string) bool {
-	as.mutex.RLock()
-	expiry, exists := as.sessions[token]
-	as.mutex.RUnlock()
-
-	if !exists {
-		return false
+	// 验证用户凭据
+	if !exists || member.Password != req.Password {
+		return nil, errors.New("invalid credentials")
 	}
 
-	if expiry.Before(time.Now()) {
-		as.DeleteToken(token)
-		return false
+	// 生成 token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": req.Username,
+		"iat": time.Now().Unix(),
+		"exp": time.Now().Add(24 * time.Hour).Unix(),
+	})
+
+	// 签名 token
+	tokenString, err := token.SignedString([]byte(config.JWTSecret))
+	if err != nil {
+		return nil, err
 	}
 
-	return true
-}
-
-// 清理过期的会话
-func (as *AuthService) CleanupExpired() {
-	ticker := time.NewTicker(time.Hour)
-	defer ticker.Stop()
-	for range ticker.C {
-		as.mutex.Lock()
-		now := time.Now()
-		for token, expiry := range as.sessions {
-			if expiry.Before(now) {
-				delete(as.sessions, token)
-			}
-		}
-		as.mutex.Unlock()
-	}
+	// 返回 token
+	return &model.LoginResponse{
+		Username: req.Username,
+		Token:    tokenString,
+	}, nil
 }

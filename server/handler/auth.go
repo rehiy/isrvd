@@ -41,8 +41,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 // 登出处理
 func (h *AuthHandler) Logout(c *gin.Context) {
-	token := helper.GetTokenFromRequest(c)
-	h.authService.DeleteToken(token)
+	username := c.GetString("username")
+	if username == "" {
+		helper.RespondError(c, http.StatusUnauthorized, "Not logged in")
+		return
+	}
 
-	helper.RespondSuccess(c, "Logged out successfully", nil)
+	helper.RespondSuccess(c, "Logout successful", nil)
 }
