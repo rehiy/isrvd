@@ -27,9 +27,8 @@ chmod +x build.sh && ./build.sh
 ## 启动服务
 
 ```bash
-export LISTEN_ADDR=":8080"           # 监听端口
-export BASE_DIRECTORY="/home/data"   # 管理目录
-export MEMBERS="admin:pass,user:123" # 成员配置
+export LISTEN_ADDR=":8080"     # 监听端口
+export ROOT_DIRECTORY="public" # 管理目录
 
 ./isrvd
 ```

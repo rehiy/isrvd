@@ -1,16 +1,13 @@
 package main
 
 import (
-	"embed"
-
 	"isrvd/server"
 	"isrvd/server/config"
 )
 
-//go:embed public/*
-var publicFS embed.FS
-
 func main() {
-	config.PublicFS = publicFS
-	server.StartHTTP()
+	if err := config.Load(); err != nil {
+		panic(err)
+	}
+	server.Start()
 }

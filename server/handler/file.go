@@ -34,7 +34,8 @@ func (h *FileHandler) List(c *gin.Context) {
 		return
 	}
 
-	files, err := h.fileService.List(req.Path)
+	abs := helper.GetAbsolutePath(c, req.Path)
+	files, err := h.fileService.List(abs)
 	if err != nil {
 		helper.RespondError(c, http.StatusNotFound, "Directory not found")
 		return
@@ -54,7 +55,8 @@ func (h *FileHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	err := h.fileService.DeleteFile(req.Path)
+	abs := helper.GetAbsolutePath(c, req.Path)
+	err := h.fileService.DeleteFile(abs)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot delete file")
 		return
@@ -71,7 +73,8 @@ func (h *FileHandler) Mkdir(c *gin.Context) {
 		return
 	}
 
-	err := h.fileService.Mkdir(req.Path)
+	abs := helper.GetAbsolutePath(c, req.Path)
+	err := h.fileService.Mkdir(abs)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot create directory")
 		return
@@ -88,7 +91,8 @@ func (h *FileHandler) Create(c *gin.Context) {
 		return
 	}
 
-	err := h.fileService.Create(req.Path, req.Content)
+	abs := helper.GetAbsolutePath(c, req.Path)
+	err := h.fileService.Create(abs, req.Content)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot create file")
 		return
@@ -105,7 +109,8 @@ func (h *FileHandler) Read(c *gin.Context) {
 		return
 	}
 
-	content, err := h.fileService.Read(req.Path)
+	abs := helper.GetAbsolutePath(c, req.Path)
+	content, err := h.fileService.Read(abs)
 	if err != nil {
 		helper.RespondError(c, http.StatusNotFound, "File not found")
 		return
@@ -125,7 +130,8 @@ func (h *FileHandler) Modify(c *gin.Context) {
 		return
 	}
 
-	err := h.fileService.Modify(req.Path, req.Content)
+	abs := helper.GetAbsolutePath(c, req.Path)
+	err := h.fileService.Modify(abs, req.Content)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot save file")
 		return
@@ -142,7 +148,8 @@ func (h *FileHandler) Rename(c *gin.Context) {
 		return
 	}
 
-	err := h.fileService.Rename(req.Path, req.Target)
+	abs := helper.GetAbsolutePath(c, req.Path)
+	err := h.fileService.Rename(abs, req.Target)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot rename file")
 		return
@@ -165,7 +172,8 @@ func (h *FileHandler) Chmod(c *gin.Context) {
 		return
 	}
 
-	err = h.fileService.Chmod(req.Path, os.FileMode(mode))
+	abs := helper.GetAbsolutePath(c, req.Path)
+	err = h.fileService.Chmod(abs, os.FileMode(mode))
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot change permissions")
 		return
@@ -193,8 +201,8 @@ func (h *FileHandler) Upload(c *gin.Context) {
 		return
 	}
 
-	absPath := filepath.Join(helper.GetAbsolutePath(path), header.Filename)
-	f, err := os.Create(absPath)
+	abs := filepath.Join(helper.GetAbsolutePath(c, path), header.Filename)
+	f, err := os.Create(abs)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot create file")
 		return
@@ -223,7 +231,8 @@ func (h *FileHandler) Download(c *gin.Context) {
 		return
 	}
 
-	f, err := os.Open(helper.GetAbsolutePath(req.Path))
+	abs := helper.GetAbsolutePath(c, req.Path)
+	f, err := os.Open(abs)
 	if err != nil {
 		helper.RespondError(c, http.StatusNotFound, "File not found")
 		return

@@ -33,23 +33,17 @@ func GetAuthService() *AuthService {
 // 用户登录
 func (as *AuthService) Login(req model.LoginRequest) (*model.LoginResponse, error) {
 	// 验证用户名和密码
-	if password, exists := config.Members[req.Username]; exists && password == req.Password {
+	if member, exists := config.Members[req.Username]; exists && member.Password == req.Password {
+		token := helper.Md5sum(req.Username + ":" + time.Now().String())
+		as.mutex.Lock()
+		as.sessions[token] = time.Now().Add(24 * time.Hour)
+		as.mutex.Unlock()
 		return &model.LoginResponse{
-			Token:    as.CreateToken(req.Username),
+			Token:    token,
 			Username: req.Username,
 		}, nil
 	}
-
 	return nil, errors.New("invalid credentials")
-}
-
-// 创建令牌
-func (as *AuthService) CreateToken(username string) string {
-	token := helper.Md5sum(username + time.Now().String())
-	as.mutex.Lock()
-	as.sessions[token] = time.Now().Add(24 * time.Hour)
-	as.mutex.Unlock()
-	return token
 }
 
 // 删除令牌

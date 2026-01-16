@@ -30,7 +30,8 @@ func (h *ZipHandler) Zip(c *gin.Context) {
 		return
 	}
 
-	err := h.zipService.Zip(req.Path)
+	abs := helper.GetAbsolutePath(c, req.Path)
+	err := h.zipService.Zip(abs)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot create zip archive")
 		return
@@ -47,7 +48,8 @@ func (h *ZipHandler) Unzip(c *gin.Context) {
 		return
 	}
 
-	err := h.zipService.Unzip(req.Path)
+	abs := helper.GetAbsolutePath(c, req.Path)
+	err := h.zipService.Unzip(abs)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot extract archive")
 		return

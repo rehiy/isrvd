@@ -30,8 +30,7 @@ func (fs *FileService) List(path string) ([]model.FileInfo, error) {
 		return nil, os.ErrPermission
 	}
 
-	absPath := helper.GetAbsolutePath(path)
-	files, err := os.ReadDir(absPath)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +68,7 @@ func (fs *FileService) DeleteFile(path string) error {
 	if !helper.ValidatePath(path) {
 		return os.ErrPermission
 	}
-
-	absPath := helper.GetAbsolutePath(path)
-	return os.RemoveAll(absPath)
+	return os.RemoveAll(path)
 }
 
 // 创建目录
@@ -79,9 +76,7 @@ func (fs *FileService) Mkdir(path string) error {
 	if !helper.ValidatePath(path) {
 		return os.ErrPermission
 	}
-
-	absPath := helper.GetAbsolutePath(path)
-	return os.Mkdir(absPath, 0755)
+	return os.Mkdir(path, 0755)
 }
 
 // 创建文件
@@ -89,9 +84,7 @@ func (fs *FileService) Create(path, content string) error {
 	if !helper.ValidatePath(path) {
 		return os.ErrPermission
 	}
-
-	absPath := helper.GetAbsolutePath(path)
-	return os.WriteFile(absPath, []byte(content), 0644)
+	return os.WriteFile(path, []byte(content), 0644)
 }
 
 // 读取文件内容
@@ -99,13 +92,11 @@ func (fs *FileService) Read(path string) (string, error) {
 	if !helper.ValidatePath(path) {
 		return "", os.ErrPermission
 	}
-
-	absPath := helper.GetAbsolutePath(path)
-	content, err := os.ReadFile(absPath)
-	if err != nil {
+	if content, err := os.ReadFile(path); err == nil {
+		return string(content), nil
+	} else {
 		return "", err
 	}
-	return string(content), nil
 }
 
 // 写入文件内容
@@ -113,20 +104,16 @@ func (fs *FileService) Modify(path, content string) error {
 	if !helper.ValidatePath(path) {
 		return os.ErrPermission
 	}
-
-	absPath := helper.GetAbsolutePath(path)
-	return os.WriteFile(absPath, []byte(content), 0644)
+	return os.WriteFile(path, []byte(content), 0644)
 }
 
 // 重命名文件
 func (fs *FileService) Rename(path, target string) error {
+	target = filepath.Join(filepath.Dir(path), target)
 	if !helper.ValidatePath(path) || !helper.ValidatePath(target) {
 		return os.ErrPermission
 	}
-
-	oldAbsPath := helper.GetAbsolutePath(path)
-	newAbsPath := filepath.Join(filepath.Dir(oldAbsPath), target)
-	return os.Rename(oldAbsPath, newAbsPath)
+	return os.Rename(path, target)
 }
 
 // 修改文件权限
@@ -134,9 +121,7 @@ func (fs *FileService) Chmod(path string, mode os.FileMode) error {
 	if !helper.ValidatePath(path) {
 		return os.ErrPermission
 	}
-
-	absPath := helper.GetAbsolutePath(path)
-	return os.Chmod(absPath, mode)
+	return os.Chmod(path, mode)
 }
 
 // 获取文件信息
@@ -144,7 +129,5 @@ func (fs *FileService) GetFileInfo(path string) (os.FileInfo, error) {
 	if !helper.ValidatePath(path) {
 		return nil, os.ErrPermission
 	}
-
-	absPath := helper.GetAbsolutePath(path)
-	return os.Stat(absPath)
+	return os.Stat(path)
 }

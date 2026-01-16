@@ -30,7 +30,7 @@ func (zs *ZipService) Zip(path string) error {
 		return os.ErrPermission
 	}
 
-	srcPath := helper.GetAbsolutePath(path)
+	srcPath := path
 	zipName := filepath.Base(srcPath) + ".zip"
 
 	// 在源路径的父目录中创建归档文件
@@ -85,7 +85,7 @@ func (zs *ZipService) Unzip(path string) error {
 		return os.ErrPermission
 	}
 
-	zipPath := helper.GetAbsolutePath(path)
+	zipPath := path
 	extractDir := filepath.Dir(zipPath)
 
 	reader, err := zip.OpenReader(zipPath)

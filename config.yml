@@ -1,0 +1,19 @@
+server:
+  listenAddr: ":8080"
+  baseDirectory: "."
+
+members:
+  - username: admin
+    password: admin
+    homeDirectory: public
+    allowTerminal: true
+
+  - username: user1
+    password: password1
+    homeDirectory: public/user1
+    allowTerminal: false
+
+  - username: user2
+    password: password2
+    homeDirectory: public/user2
+    allowTerminal: false

@@ -10,6 +10,9 @@ import (
 	"github.com/creack/pty"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+
+	"isrvd/server/config"
+	"isrvd/server/helper"
 )
 
 var upgrader = websocket.Upgrader{
@@ -26,6 +29,14 @@ func NewShellHandler() *ShellHandler {
 
 // Shell WebSocket处理
 func (h *ShellHandler) HandleWebSocket(c *gin.Context) {
+	// 检查用户是否允许使用终端
+	username := helper.GetCurrentUser(c)
+	member, exists := config.Members[username]
+	if !exists || !member.AllowTerminal {
+		helper.RespondError(c, http.StatusForbidden, "Terminal access denied")
+		return
+	}
+
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Println("WebSocket upgrade error:", err)
@@ -36,12 +47,14 @@ func (h *ShellHandler) HandleWebSocket(c *gin.Context) {
 	// 启动 shell 进程，优先 bash，失败降级 sh
 	// 使用 pty 启动 shell，支持交互
 	cmd := exec.Command("bash")
+	cmd.Dir = member.HomeDirectory
 	cmd.Env = append(cmd.Env, "TERM=xterm-256color")
 	cmd.Env = append(cmd.Env, os.Environ()...)
 	ptmx, err := pty.Start(cmd)
 	if err != nil {
 		log.Println("start bash error, try sh:", err)
 		cmd = exec.Command("sh")
+		cmd.Dir = member.HomeDirectory
 		cmd.Env = append(cmd.Env, os.Environ()...)
 		ptmx, err = pty.Start(cmd)
 		if err != nil {
@@ -79,8 +92,7 @@ func (h *ShellHandler) HandleWebSocket(c *gin.Context) {
 			log.Println("WebSocket read error:", err)
 			break
 		}
-		_, err = ptmx.Write(msg)
-		if err != nil {
+		if _, err = ptmx.Write(msg); err != nil {
 			log.Println("pty write error:", err)
 			break
 		}
