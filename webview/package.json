@@ -17,6 +17,8 @@
     "@xterm/xterm": "^5.5.0",
     "axios": "^1.11.0",
     "bootstrap": "^5.3.7",
+    "monaco-editor": "^0.55.1",
+    "monaco-editor-vue3": "^1.0.5",
     "vite": "^7.1.2",
     "vue": "^3.5.18"
   }

@@ -1,5 +1,6 @@
 <script setup>
 import { inject, reactive, ref } from 'vue'
+import { CodeEditor } from 'monaco-editor-vue3';
 
 import api from '@/service/api.js'
 import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
@@ -31,12 +32,20 @@ const handleConfirm = async () => {
   modalRef.value.hide()
 }
 
+const editorOptions = {
+  fontSize: 14,
+  minimap: { enabled: false },
+  automaticLayout: true
+};
+
 defineExpose({ show })
 </script>
 
 <template>
   <BaseModal ref="modalRef" id="editModal" :title="'编辑文件: ' + formData.filename" size="modal-xl" :loading="state.loading" @confirm="handleConfirm">
-    <textarea class="form-control editor-textarea" rows="20" v-model="formData.content" :disabled="state.loading"></textarea>
+    <div class="editor-container">
+      <CodeEditor language="javascript" theme="vs" v-model:value="formData.content" :options="editorOptions" :disabled="state.loading" />
+    </div>
     <template #confirm-text>
       {{ state.loading ? '保存中...' : '保存' }}
     </template>
@@ -44,7 +53,7 @@ defineExpose({ show })
 </template>
 
 <style scoped>
-.editor-textarea {
-  font-family: 'Courier New', monospace;
+.editor-container {
+  height: 60vh;
 }
 </style>
