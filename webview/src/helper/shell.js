@@ -5,11 +5,11 @@ import { Terminal } from '@xterm/xterm'
 let termInstance = null
 let socketInstance = null
 
-const createTerminal = (mountEl) => {
+export function create(mountEl, token) {
     if (!mountEl) return
 
     // 清理已存在的实例
-    destroyTerminal()
+    destroy()
 
     // 创建新的终端实例
     termInstance = new Terminal({
@@ -22,7 +22,7 @@ const createTerminal = (mountEl) => {
 
     // 创建 WebSocket 连接
     const protocol = location.protocol === 'https:' ? 'wss://' : 'ws://'
-    socketInstance = new WebSocket(protocol + location.host + '/ws/shell')
+    socketInstance = new WebSocket(protocol + location.host + '/ws/shell?token=' + token)
 
     termInstance.focus()
 
@@ -50,7 +50,7 @@ const createTerminal = (mountEl) => {
     }
 }
 
-const destroyTerminal = () => {
+export function destroy() {
     if (termInstance) {
         termInstance.dispose()
         termInstance = null
@@ -59,10 +59,4 @@ const destroyTerminal = () => {
         socketInstance.close()
         socketInstance = null
     }
-}
-
-// ES Module 导出
-export {
-    createTerminal as create,
-    destroyTerminal as destroy
 }

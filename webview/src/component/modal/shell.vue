@@ -1,9 +1,12 @@
 <script setup>
-import { ref } from 'vue'
+import { inject, ref } from 'vue'
 
 import * as ShellTerminal from '@/helper/shell.js'
+import { APP_STATE_KEY } from '@/store/state.js'
 
 import BaseModal from '@/component/modal.vue'
+
+const state = inject(APP_STATE_KEY)
 
 const modalRef = ref(null)
 
@@ -18,7 +21,7 @@ const hide = () => {
 const handleShown = () => {
   const mountPoint = document.getElementById('xterm-container')
   if (mountPoint) {
-    ShellTerminal.create(mountPoint)
+    ShellTerminal.create(mountPoint, state.token)
   }
 }
 
