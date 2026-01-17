@@ -10,7 +10,7 @@ type Config struct {
 type Server struct {
 	Debug         bool   `yaml:"debug"`
 	ListenAddr    string `yaml:"listenAddr"`
-	RootDirectory string `yaml:"baseDirectory"`
+	RootDirectory string `yaml:"rootDirectory"`
 	JWTSecret     string `yaml:"jwtSecret"`
 }
 
