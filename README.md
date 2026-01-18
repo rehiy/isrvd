@@ -37,4 +37,4 @@ export ROOT_DIRECTORY="public" # 管理目录
 
 ## 许可证
 
-MIT License
+GPLv3 License
