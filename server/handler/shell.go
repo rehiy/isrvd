@@ -28,15 +28,16 @@ func NewShellHandler() *ShellHandler {
 }
 
 // Shell WebSocket处理
-func (h *ShellHandler) HandleWebSocket(c *gin.Context) {
+func (h *ShellHandler) WebSocket(c *gin.Context) {
 	// 检查用户是否允许使用终端
 	username := c.GetString("username")
-	member, exists := config.Members[username]
-	if !exists || !member.AllowTerminal {
+	member, ok := config.Members[username]
+	if !ok || !member.AllowTerminal {
 		helper.RespondError(c, http.StatusForbidden, "Terminal access denied")
 		return
 	}
 
+	shell := c.DefaultQuery("shell", "bash")
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Println("WebSocket upgrade error:", err)
@@ -44,57 +45,67 @@ func (h *ShellHandler) HandleWebSocket(c *gin.Context) {
 	}
 	defer conn.Close()
 
-	// 启动 shell 进程，优先 bash，失败降级 sh
-	// 使用 pty 启动 shell，支持交互
-	cmd := exec.Command("bash")
-	cmd.Dir = member.HomeDirectory
-	cmd.Env = append(cmd.Env, "TERM=xterm-256color")
-	cmd.Env = append(cmd.Env, os.Environ()...)
-	ptmx, err := pty.Start(cmd)
+	cmd, ptmx, err := h.startShell(shell, member.HomeDirectory)
 	if err != nil {
-		log.Println("start bash error, try sh:", err)
-		cmd = exec.Command("sh")
-		cmd.Dir = member.HomeDirectory
-		cmd.Env = append(cmd.Env, os.Environ()...)
-		ptmx, err = pty.Start(cmd)
-		if err != nil {
-			log.Println("start shell error:", err)
-			return
-		}
+		log.Printf("start %s error: %v", shell, err)
+		h.sendMessage(conn, "[启动 "+shell+" 失败]\r\n")
+		return
 	}
-	defer cmd.Process.Kill()
-	defer ptmx.Close()
-
-	// 读取 shell 输出并发给前端
-	go func() {
-		buf := make([]byte, 1024)
-		for {
-			n, err := ptmx.Read(buf)
-			if n > 0 {
-				conn.WriteMessage(websocket.TextMessage, buf[:n])
-			}
-			if err != nil {
-				if err != io.EOF {
-					log.Println("pty read error:", err)
-				}
-				break
-			}
-		}
+	defer func() {
+		cmd.Process.Kill()
+		ptmx.Close()
 	}()
 
-	// 连接成功后，主动推送一条欢迎信息
-	conn.WriteMessage(websocket.TextMessage, []byte("[终端已连接，输入命令后回车]\r\n"))
+	go h.forwardShellOutput(conn, ptmx)
+	h.sendMessage(conn, "[终端已连接，输入命令后回车]\r\n")
+	h.handleUserInput(conn, ptmx)
+}
 
-	// 读取前端输入并写入 shell
+// sendMessage 发送消息到WebSocket
+func (h *ShellHandler) sendMessage(conn *websocket.Conn, msg string) {
+	conn.WriteMessage(websocket.TextMessage, []byte(msg))
+}
+
+// startShell 启动shell进程
+func (h *ShellHandler) startShell(shell, homeDir string) (*exec.Cmd, *os.File, error) {
+	cmd := exec.Command(shell)
+	cmd.Dir = homeDir
+	cmd.Env = append([]string{"TERM=xterm-256color"}, os.Environ()...)
+	ptmx, err := pty.Start(cmd)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cmd, ptmx, nil
+}
+
+// forwardShellOutput 将shell输出转发到WebSocket
+func (h *ShellHandler) forwardShellOutput(conn *websocket.Conn, ptmx *os.File) {
+	buf := make([]byte, 1024)
+	for {
+		n, err := ptmx.Read(buf)
+		if err != nil {
+			if err != io.EOF {
+				log.Println("pty read error:", err)
+			}
+			return
+		}
+		if n > 0 {
+			h.sendMessage(conn, string(buf[:n]))
+		}
+	}
+}
+
+// handleUserInput 处理用户输入并写入shell
+func (h *ShellHandler) handleUserInput(conn *websocket.Conn, ptmx *os.File) {
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("WebSocket read error:", err)
-			break
+			return
 		}
 		if _, err = ptmx.Write(msg); err != nil {
 			log.Println("pty write error:", err)
-			break
+			return
 		}
 	}
 }

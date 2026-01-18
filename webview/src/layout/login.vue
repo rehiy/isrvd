@@ -13,11 +13,11 @@ const loginForm = reactive({
 })
 
 const handleLogin = async () => {
-    const data = await api.login(loginForm)
-    actions.setAuth(data.payload)
+  const data = await api.login(loginForm)
+  actions.setAuth(data.payload)
 
-    loginForm.username = ''
-    loginForm.password = ''
+  loginForm.username = ''
+  loginForm.password = ''
 }
 </script>
 

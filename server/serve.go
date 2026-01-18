@@ -81,5 +81,5 @@ func (app *App) setupRouter() {
 	}
 
 	// WebSocket 路由
-	app.GET("/ws/shell", middleware.AuthMiddleware(), shellHandler.HandleWebSocket)
+	app.GET("/ws/shell", middleware.AuthMiddleware(), shellHandler.WebSocket)
 }

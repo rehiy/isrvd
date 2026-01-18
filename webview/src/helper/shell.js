@@ -5,7 +5,7 @@ import { Terminal } from '@xterm/xterm'
 let termInstance = null
 let socketInstance = null
 
-export function create(mountEl, token) {
+export function create(mountEl, token, shellType = 'bash') {
     if (!mountEl) return
 
     // 清理已存在的实例
@@ -20,9 +20,9 @@ export function create(mountEl, token) {
 
     termInstance.open(mountEl)
 
-    // 创建 WebSocket 连接
+    // 创建 WebSocket 连接，传递shell类型参数
     const protocol = location.protocol === 'https:' ? 'wss://' : 'ws://'
-    socketInstance = new WebSocket(protocol + location.host + '/ws/shell?token=' + token)
+    socketInstance = new WebSocket(protocol + location.host + '/ws/shell?token=' + token + '&shell=' + encodeURIComponent(shellType))
 
     termInstance.focus()
 
