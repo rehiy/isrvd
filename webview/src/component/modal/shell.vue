@@ -1,5 +1,6 @@
 <script setup>
 import { inject, ref } from 'vue'
+
 import * as ShellTerminal from '@/helper/shell.js'
 import { APP_STATE_KEY } from '@/store/state.js'
 import BaseModal from '@/component/modal.vue'

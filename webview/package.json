@@ -12,14 +12,24 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@codemirror/lang-css": "^6.3.1",
+    "@codemirror/lang-go": "^6.0.1",
+    "@codemirror/lang-html": "^6.4.11",
+    "@codemirror/lang-javascript": "^6.2.4",
+    "@codemirror/lang-json": "^6.0.2",
+    "@codemirror/lang-markdown": "^6.5.0",
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/lang-sql": "^6.10.0",
+    "@codemirror/lang-xml": "^6.1.0",
+    "@codemirror/lang-yaml": "^6.1.2",
     "@fortawesome/fontawesome-free": "^7.0.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "@xterm/xterm": "^5.5.0",
     "axios": "^1.11.0",
     "bootstrap": "^5.3.7",
-    "monaco-editor": "^0.55.1",
-    "monaco-editor-vue3": "^1.0.5",
+    "codemirror": "^6.0.2",
     "vite": "^7.1.2",
-    "vue": "^3.5.18"
+    "vue": "^3.5.18",
+    "vue-codemirror": "^6.1.1"
   }
 }
