@@ -7,20 +7,18 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-// 模式
-var Debug = false
-
-// 监听地址
-var ListenAddr = ":8080"
-
-// 基础目录
-var RootDirectory = "."
-
-// JWT 密钥
-var JWTSecret = "default-secret-key"
-
-// 成员配置
-var Members = map[string]*Member{}
+var (
+	// 模式
+	Debug = false
+	// 监听地址
+	ListenAddr = ":8080"
+	// 基础目录
+	RootDirectory = "."
+	// JWT 密钥
+	JWTSecret = "default-secret-key"
+	// 成员配置
+	Members = map[string]*Member{}
+)
 
 // 加载配置文件
 func Load() error {
