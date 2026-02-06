@@ -8,6 +8,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rehiy/pango/filer"
+	"github.com/rehiy/pango/logman"
 
 	"isrvd/server/helper"
 	"isrvd/server/model"
@@ -52,6 +54,7 @@ func (h *FileHandler) Delete(c *gin.Context) {
 
 	path := helper.GetAbsolutePath(c, req.Path)
 	if err := os.RemoveAll(path); err != nil {
+		logman.Error("Delete file failed", "path", path, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot delete file")
 		return
 	}
@@ -69,6 +72,7 @@ func (h *FileHandler) Mkdir(c *gin.Context) {
 
 	path := helper.GetAbsolutePath(c, req.Path)
 	if err := os.Mkdir(path, 0755); err != nil {
+		logman.Error("Create directory failed", "path", path, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot create directory")
 		return
 	}
@@ -85,7 +89,8 @@ func (h *FileHandler) Create(c *gin.Context) {
 	}
 
 	path := helper.GetAbsolutePath(c, req.Path)
-	if err := os.WriteFile(path, []byte(req.Content), 0644); err != nil {
+	if err := filer.Write(path, []byte(req.Content)); err != nil {
+		logman.Error("Create file failed", "path", path, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot create file")
 		return
 	}
@@ -104,6 +109,7 @@ func (h *FileHandler) Read(c *gin.Context) {
 	path := helper.GetAbsolutePath(c, req.Path)
 	content, err := os.ReadFile(path)
 	if err != nil {
+		logman.Error("Read file failed", "path", path, "error", err)
 		helper.RespondError(c, http.StatusNotFound, "File not found")
 		return
 	}
@@ -124,6 +130,7 @@ func (h *FileHandler) Modify(c *gin.Context) {
 
 	path := helper.GetAbsolutePath(c, req.Path)
 	if err := os.WriteFile(path, []byte(req.Content), 0644); err != nil {
+		logman.Error("Modify file failed", "path", path, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot save file")
 		return
 	}
@@ -176,6 +183,7 @@ func (h *FileHandler) Chmod(c *gin.Context) {
 func (h *FileHandler) Upload(c *gin.Context) {
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
+		logman.Error("Upload file failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "No file uploaded")
 		return
 	}
@@ -190,12 +198,14 @@ func (h *FileHandler) Upload(c *gin.Context) {
 
 	f, err := os.Create(path)
 	if err != nil {
+		logman.Error("Create upload file failed", "path", path, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot create file")
 		return
 	}
 	defer f.Close()
 
 	if _, err = io.Copy(f, file); err != nil {
+		logman.Error("Write upload file failed", "path", path, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot write file")
 		return
 	}

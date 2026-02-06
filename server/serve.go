@@ -1,10 +1,9 @@
 package server
 
 import (
-	"log"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"github.com/rehiy/pango/httpd"
+	"github.com/rehiy/pango/logman"
 
 	"isrvd/public"
 	"isrvd/server/config"
@@ -17,13 +16,7 @@ type App struct {
 }
 
 func Start() {
-	if config.Debug {
-		gin.SetMode(gin.DebugMode)
-	} else {
-		gin.SetMode(gin.ReleaseMode)
-	}
-
-	app := &App{gin.Default()}
+	app := &App{httpd.Engine(config.Debug)}
 	app.create()
 }
 
@@ -31,20 +24,20 @@ func Start() {
 func (app *App) create() {
 	// 注册中间件
 	app.Use(middleware.CORSMiddleware())
+	app.Use(middleware.RecoveryMiddleware())
 
 	// 注册模块路由
 	app.setupRouter()
 
-	// 静态文件服务
-	hfs := http.FileServer(http.FS(public.Efs))
-	app.NoRoute(func(c *gin.Context) {
-		hfs.ServeHTTP(c.Writer, c.Request)
-	})
+	// 输出服务器信息
+	logman.Info("Server starting",
+		"members", len(config.Members),
+		"rootDirectory", config.RootDirectory,
+		"listenAddr", config.ListenAddr,
+	)
 
-	log.Printf("Members: %d", len(config.Members))
-	log.Printf("Root directory: %s", config.RootDirectory)
-	log.Printf("Server started at %s", config.ListenAddr)
-	app.Run(config.ListenAddr)
+	httpd.StaticEmbed(public.Efs, "", "")
+	httpd.Server(config.ListenAddr, config.Debug)
 }
 
 // 设置管理器路由

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rehiy/pango/logman"
 
 	"isrvd/server/helper"
 	"isrvd/server/model"
@@ -33,10 +34,12 @@ func (h *ZipHandler) Zip(c *gin.Context) {
 	abs := helper.GetAbsolutePath(c, req.Path)
 	err := h.zipService.Zip(abs)
 	if err != nil {
+		logman.Error("Create zip failed", "path", abs, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot create zip archive")
 		return
 	}
 
+	logman.Info("Zip created", "path", abs)
 	helper.RespondSuccess(c, "Archive created successfully", nil)
 }
 
@@ -51,9 +54,11 @@ func (h *ZipHandler) Unzip(c *gin.Context) {
 	abs := helper.GetAbsolutePath(c, req.Path)
 	err := h.zipService.Unzip(abs)
 	if err != nil {
+		logman.Error("Unzip failed", "path", abs, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot extract archive")
 		return
 	}
 
+	logman.Info("Archive extracted", "path", abs)
 	helper.RespondSuccess(c, "Archive extracted successfully", nil)
 }

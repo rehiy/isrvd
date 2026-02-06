@@ -10,7 +10,10 @@ require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/gorilla/websocket v1.5.3
+	github.com/rehiy/pango v0.9.0
 )
+
+// replace github.com/rehiy/pango => ../pango
 
 require (
 	github.com/bytedance/gopkg v0.1.3 // indirect
@@ -41,4 +44,5 @@ require (
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )

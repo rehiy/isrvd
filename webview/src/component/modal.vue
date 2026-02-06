@@ -81,9 +81,3 @@ defineExpose({ show, hide })
     </div>
   </div>
 </template>
-
-<style scoped>
-.modal-body {
-  padding: 0 !important;
-}
-</style>

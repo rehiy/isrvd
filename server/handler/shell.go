@@ -2,7 +2,6 @@ package handler
 
 import (
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -10,6 +9,7 @@ import (
 	"github.com/creack/pty"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/rehiy/pango/logman"
 
 	"isrvd/server/config"
 	"isrvd/server/helper"
@@ -40,14 +40,14 @@ func (h *ShellHandler) WebSocket(c *gin.Context) {
 	shell := c.DefaultQuery("shell", "bash")
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		log.Println("WebSocket upgrade error:", err)
+		logman.Error("WebSocket upgrade error", "error", err)
 		return
 	}
 	defer conn.Close()
 
 	cmd, ptmx, err := h.startShell(shell, member.HomeDirectory)
 	if err != nil {
-		log.Printf("start %s error: %v", shell, err)
+		logman.Error("Start shell error", "shell", shell, "error", err)
 		h.sendMessage(conn, "[启动 "+shell+" 失败]\r\n")
 		return
 	}
@@ -85,7 +85,7 @@ func (h *ShellHandler) forwardShellOutput(conn *websocket.Conn, ptmx *os.File) {
 		n, err := ptmx.Read(buf)
 		if err != nil {
 			if err != io.EOF {
-				log.Println("pty read error:", err)
+				logman.Error("PTY read error", "error", err)
 			}
 			return
 		}
@@ -100,11 +100,11 @@ func (h *ShellHandler) handleUserInput(conn *websocket.Conn, ptmx *os.File) {
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
-			log.Println("WebSocket read error:", err)
+			logman.Error("WebSocket read error", "error", err)
 			return
 		}
 		if _, err = ptmx.Write(msg); err != nil {
-			log.Println("pty write error:", err)
+			logman.Error("PTY write error", "error", err)
 			return
 		}
 	}

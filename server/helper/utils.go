@@ -3,14 +3,14 @@ package helper
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"log"
-	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rehiy/pango/filer"
 
 	"isrvd/server/config"
 	"isrvd/server/model"
@@ -37,7 +37,6 @@ func GetAbsolutePath(c *gin.Context, path string) string {
 	// 验证最终路径是否在允许的基础目录下（防止目录遍历攻击）
 	abs := filepath.Clean(filepath.Join(home, path))
 	if strings.HasPrefix(abs, home) && !strings.Contains(abs, "..") {
-		log.Printf("path: %s, abs: %s", path, abs)
 		return abs
 	}
 
@@ -46,22 +45,21 @@ func GetAbsolutePath(c *gin.Context, path string) string {
 
 // 获取目录下的文件列表
 func FileList(path, rely string) ([]*model.FileInfo, error) {
-	files, err := os.ReadDir(path)
+	list, err := filer.List(path)
 	if err != nil {
 		return nil, err
 	}
 
 	var fileList []*model.FileInfo
-	for _, f := range files {
-		info, _ := f.Info()
+	for _, f := range list {
 		fileList = append(fileList, &model.FileInfo{
-			Path:    filepath.Join(rely, info.Name()),
-			Name:    info.Name(),
-			Size:    info.Size(),
-			IsDir:   info.IsDir(),
-			Mode:    info.Mode().Perm().String(),
-			ModeO:   strconv.FormatInt(int64(info.Mode()), 8),
-			ModTime: info.ModTime(),
+			Path:    filepath.Join(rely, f.Name),
+			Name:    f.Name,
+			Size:    f.Size,
+			IsDir:   f.IsDir,
+			Mode:    f.Mode.String(),
+			ModeO:   strconv.FormatInt(int64(f.Mode), 8),
+			ModTime: time.Unix(f.ModTime, 0),
 		})
 	}
 
