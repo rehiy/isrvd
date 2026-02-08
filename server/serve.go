@@ -37,7 +37,7 @@ func (app *App) create() {
 	)
 
 	httpd.StaticEmbed(public.Efs, "", "")
-	httpd.Server(config.ListenAddr, config.Debug)
+	httpd.Server(config.ListenAddr)
 }
 
 // 设置管理器路由
