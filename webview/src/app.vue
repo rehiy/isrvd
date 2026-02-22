@@ -7,7 +7,6 @@ import NavigationBar from '@/layout/navigation.vue'
 import NotificationManager from '@/layout/notification.vue'
 
 import AuthLogin from '@/layout/login.vue'
-import FileManager from '@/layout/file-manager/index.vue'
 
 const { state, actions } = initProvider()
 
@@ -29,7 +28,7 @@ onMounted(() => {
   <template v-if="state.username">
     <NavigationBar />
     <div class="container-fluid">
-      <FileManager />
+      <router-view />
     </div>
   </template>
 

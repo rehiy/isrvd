@@ -24,6 +24,12 @@ const goHome = () => {
       </a>
 
       <div v-if="state.username" class="navbar-nav me-auto">
+        <router-link to="/explorer" class="nav-link">
+          <i class="fas fa-folder-open me-1"></i> 文件管理
+        </router-link>
+        <router-link to="/markdown" class="nav-link">
+          <i class="fas fa-edit me-1"></i> Markdown
+        </router-link>
         <a class="nav-link" href="#" @click="shellModalRef.show">
           <i class="fas fa-terminal me-1"></i> 终端
         </a>

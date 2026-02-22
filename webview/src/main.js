@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import App from '@/app.vue'
+import router from '@/router'
 
 // 导入全局样式
 import * as bootstrap from 'bootstrap'
@@ -14,4 +15,4 @@ import './assets/style.css'
 window.bootstrap = bootstrap
 
 // 创建并挂载应用
-createApp(App).mount('#app')
+createApp(App).use(router).mount('#app')
