@@ -17,11 +17,11 @@ const state = inject(APP_STATE_KEY)
         <router-link to="/explorer" class="nav-link" active-class="active">
           <i class="fas fa-folder-open me-1"></i> 文件管理
         </router-link>
-        <router-link to="/shell" class="nav-link" active-class="active">
-          <i class="fas fa-terminal me-1"></i> 超级终端
-        </router-link>
         <router-link to="/markdown" class="nav-link" active-class="active">
           <i class="fas fa-edit me-1"></i> Markdown
+        </router-link>
+        <router-link to="/shell" class="nav-link" active-class="active">
+          <i class="fas fa-terminal me-1"></i> Shell 终端
         </router-link>
       </div>
 

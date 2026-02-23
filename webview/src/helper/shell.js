@@ -1,62 +1,40 @@
-// ==================== Shell 终端管理器 ====================
-
 import { Terminal } from '@xterm/xterm'
+import { FitAddon } from '@xterm/addon-fit'
 
-let termInstance = null
-let socketInstance = null
+let term = null
+let socket = null
+let fitAddon = null
+let resizeHandler = null
 
-export function create(mountEl, token, shellType = 'bash') {
-    if (!mountEl) return
+export function create(el, token, shell = 'bash') {
+  if (!el) return
+  destroy()
 
-    // 清理已存在的实例
-    destroy()
+  term = new Terminal({ theme: { background: '#222' }, fontSize: 15, cursorBlink: true })
+  fitAddon = new FitAddon()
+  term.loadAddon(fitAddon)
+  term.open(el)
+  fitAddon.fit()
 
-    // 创建新的终端实例
-    termInstance = new Terminal({
-        theme: { background: '#222' },
-        fontSize: 15,
-        cursorBlink: true,
-    })
+  resizeHandler = () => fitAddon?.fit()
+  window.addEventListener('resize', resizeHandler)
 
-    termInstance.open(mountEl)
+  const protocol = location.protocol === 'https:' ? 'wss://' : 'ws://'
+  socket = new WebSocket(`${protocol}${location.host}/ws/shell?token=${token}&shell=${encodeURIComponent(shell)}`)
 
-    // 创建 WebSocket 连接，传递shell类型参数
-    const protocol = location.protocol === 'https:' ? 'wss://' : 'ws://'
-    socketInstance = new WebSocket(protocol + location.host + '/ws/shell?token=' + token + '&shell=' + encodeURIComponent(shellType))
+  term.onData(data => socket?.readyState === WebSocket.OPEN && socket.send(data))
+  socket.onopen = () => term.write('[连接中...]\r\n')
+  socket.onmessage = e => term.write(e.data)
+  socket.onclose = () => term.write('\r\n[连接已关闭]\r\n')
+  socket.onerror = e => term.write(`\r\n[连接错误: ${e.message}]\r\n`)
 
-    termInstance.focus()
-
-    // 设置事件监听
-    termInstance.onData(data => {
-        if (socketInstance && socketInstance.readyState === WebSocket.OPEN) {
-            socketInstance.send(data)
-        }
-    })
-
-    socketInstance.onopen = () => {
-        termInstance.write('[等待终端连接...]\r\n')
-    }
-
-    socketInstance.onmessage = (e) => {
-        termInstance.write(e.data)
-    }
-
-    socketInstance.onclose = () => {
-        termInstance.write('\r\n[终端连接已关闭]\r\n')
-    }
-
-    socketInstance.onerror = (error) => {
-        termInstance.write('\r\n[终端连接错误: ' + error.message + ']\r\n')
-    }
+  term.focus()
 }
 
 export function destroy() {
-    if (termInstance) {
-        termInstance.dispose()
-        termInstance = null
-    }
-    if (socketInstance) {
-        socketInstance.close()
-        socketInstance = null
-    }
+  resizeHandler && window.removeEventListener('resize', resizeHandler)
+  fitAddon = resizeHandler = null
+  term?.dispose()
+  socket?.close()
+  term = socket = null
 }
