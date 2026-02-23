@@ -9,13 +9,18 @@ const routes = [
   {
     path: '/explorer',
     name: 'explorer',
-    component: () => import('@/layout/file-manager/index.vue')
+    component: () => import('@/views/file-manager/index.vue')
   },
   {
     path: '/markdown',
     name: 'markdown',
-    component: () => import('@/layout/markdown-editor/index.vue')
-  }
+    component: () => import('@/views/markdown.vue')
+  },
+  {
+    path: '/shell',
+    name: 'shell',
+    component: () => import('@/views/shell.vue')
+  },
 ]
 
 const router = createRouter({
