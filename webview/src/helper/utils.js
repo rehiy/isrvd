@@ -1,5 +1,3 @@
-// ==================== 工具函数 ====================
-
 export const TEXT_EXTENSIONS = [
     'txt', 'md', 'js', 'css', 'html', 'htm', 'json', 'xml', 'csv',
     'log', 'conf', 'ini', 'cfg', 'yaml', 'yml', 'php', 'py', 'go',

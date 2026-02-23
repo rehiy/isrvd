@@ -23,10 +23,10 @@ export function create(el, token, shell = 'bash') {
   socket = new WebSocket(`${protocol}${location.host}/ws/shell?token=${token}&shell=${encodeURIComponent(shell)}`)
 
   term.onData(data => socket?.readyState === WebSocket.OPEN && socket.send(data))
-  socket.onopen = () => term.write('[连接中...]\r\n')
-  socket.onmessage = e => term.write(e.data)
-  socket.onclose = () => term.write('\r\n[连接已关闭]\r\n')
-  socket.onerror = e => term.write(`\r\n[连接错误: ${e.message}]\r\n`)
+  socket.onopen = () => term && term.write('[连接中...]\r\n')
+  socket.onmessage = e => term && term.write(e.data)
+  socket.onclose = () => term && term.write('\r\n[连接已关闭]\r\n')
+  socket.onerror = e => term && term.write(`\r\n[连接错误: ${e.message}]\r\n`)
 
   term.focus()
 }
