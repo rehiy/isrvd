@@ -25,14 +25,16 @@ onMounted(() => {
 </script>
 
 <template>
-  <template v-if="state.username">
-    <NavigationBar />
-    <div class="container-fluid">
-      <router-view />
-    </div>
-  </template>
+  <div class="min-h-screen bg-slate-50">
+    <template v-if="state.username">
+      <NavigationBar />
+      <main class="px-6 py-6">
+        <router-view />
+      </main>
+    </template>
 
-  <AuthLogin v-else />
+    <AuthLogin v-else />
 
-  <NotificationManager />
+    <NotificationManager />
+  </div>
 </template>

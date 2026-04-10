@@ -32,29 +32,33 @@ const formData = reactive({
 })
 
 const modalRef = ref(null)
+const isOpen = ref(false)
 
 const show = async (file) => {
   const data = await api.read(file.path)
   formData.path = file.path
   formData.filename = file.name
   formData.content = data.payload.content
-  modalRef.value.show()
+  isOpen.value = true
 }
 
 const handleConfirm = async () => {
   await api.modify(formData.path, formData.content)
   actions.loadFiles()
-  modalRef.value.hide()
+  isOpen.value = false
 }
 
 defineExpose({ show })
 </script>
 
 <template>
-  <BaseModal ref="modalRef" id="editModal" :title="'编辑文件: ' + formData.filename" size="modal-xl" :loading="state.loading" @confirm="handleConfirm">
-    <Codemirror v-model="formData.content" :style="{ height: '60vh' }" :extensions="extensions" :disabled="state.loading" />
+  <BaseModal ref="modalRef" v-model="isOpen" :title="'编辑: ' + formData.filename" size="xl" :loading="state.loading" @confirm="handleConfirm">
+    <div class="rounded-xl overflow-hidden border border-slate-200">
+      <Codemirror v-model="formData.content" :style="{ height: '60vh' }" :extensions="extensions" :disabled="state.loading" />
+    </div>
     <template #confirm-text>
-      {{ state.loading ? '保存中...' : '保存' }}
+      <i class="fas fa-save mr-2" v-if="!state.loading"></i>
+      {{ state.loading ? '保存中...' : '保存文件' }}
     </template>
   </BaseModal>
 </template>

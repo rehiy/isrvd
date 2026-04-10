@@ -6,31 +6,46 @@ import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
 const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)
 
-const toastClass = (type) => {
-  return type === 'error' ? 'text-bg-danger' : 'text-bg-success'
+const notificationStyle = (type) => {
+  return type === 'error' 
+    ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' 
+    : 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
 }
 
-const toastIcon = (type) => {
+const notificationIcon = (type) => {
   return type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'
 }
 </script>
 
 <template>
-  <Teleport v-if="state.notifications.length" to="body">
-    <div class="toast-container position-fixed top-0 end-0 p-3">
-      <div v-for="item in state.notifications" :key="item.id" :class="['toast show mb-2', toastClass(item.type)]">
-        <div class="d-flex align-items-center p-3">
-          <i :class="['fas', toastIcon(item.type), 'me-2']"></i>
-          <span class="flex-grow-1">{{ item.message }}</span>
-          <button type="button" class="btn-close ms-2" @click="actions.clearNotification(item.id)"></button>
+  <Teleport to="body">
+    <div v-if="state.notifications.length" class="fixed top-6 right-6 z-[9999] space-y-3">
+      <TransitionGroup
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 translate-x-4"
+        enter-to-class="opacity-100 translate-x-0"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 translate-x-0"
+        leave-to-class="opacity-0 translate-x-4"
+      >
+        <div 
+          v-for="item in state.notifications" 
+          :key="item.id" 
+          :class="['flex items-center px-5 py-4 rounded-2xl min-w-80 animate-slide-down', notificationStyle(item.type)]"
+        >
+          <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mr-3">
+            <i :class="['fas', notificationIcon(item.type)]"></i>
+          </div>
+          <span class="flex-1 font-medium">{{ item.message }}</span>
+          <button 
+            type="button" 
+            class="ml-4 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/20 transition-colors"
+            @click="actions.clearNotification(item.id)"
+          >
+            <i class="fas fa-times"></i>
+          </button>
         </div>
-      </div>
+      </TransitionGroup>
     </div>
   </Teleport>
 </template>
-
-<style scoped>
-.toast-container {
-  z-index: 9999;
-}
-</style>

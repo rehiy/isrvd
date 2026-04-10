@@ -22,39 +22,81 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="login-container">
-    <div class="row justify-content-center">
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-header">
-            <h5 class="mb-0">
-              <i class="fas fa-sign-in-alt"></i> 用户登录
-            </h5>
+  <div class="min-h-screen flex items-center justify-center p-6">
+    <!-- Background Decoration -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+      <div class="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-primary-300/20 blur-3xl"></div>
+      <div class="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-primary-300/20 blur-3xl"></div>
+    </div>
+
+    <!-- Login Card -->
+    <div class="w-full max-w-md relative animate-fade-in">
+      <div class="card p-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-500 mb-4 shadow-glow">
+            <i class="fas fa-server text-white text-2xl"></i>
           </div>
-          <div class="card-body">
-            <form @submit.prevent="handleLogin">
-              <div class="mb-3">
-                <label for="username" class="form-label">用户名</label>
-                <input type="text" class="form-control" id="username" v-model="loginForm.username" required>
-              </div>
-              <div class="mb-3">
-                <label for="password" class="form-label">密码</label>
-                <input type="password" class="form-control" id="password" v-model="loginForm.password" required>
-              </div>
-              <button type="submit" class="btn btn-primary w-100" :disabled="state.loading">
-                <i class="fas fa-spinner fa-spin" v-if="state.loading"></i>
-                {{ state.loading ? '登录中...' : '登录' }}
-              </button>
-            </form>
-          </div>
+          <h1 class="text-2xl font-bold text-slate-800 mb-2">欢迎回来</h1>
+          <p class="text-slate-500">登录到 Isrvd 管理面板</p>
         </div>
+
+        <!-- Form -->
+        <form @submit.prevent="handleLogin" class="space-y-5">
+          <div>
+            <label for="username" class="block text-sm font-medium text-slate-700 mb-2">
+              用户名
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i class="fas fa-user text-slate-400"></i>
+              </div>
+              <input 
+                type="text" 
+                id="username" 
+                v-model="loginForm.username" 
+                required
+                class="input pl-11"
+                placeholder="请输入用户名"
+              >
+            </div>
+          </div>
+
+          <div>
+            <label for="password" class="block text-sm font-medium text-slate-700 mb-2">
+              密码
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i class="fas fa-lock text-slate-400"></i>
+              </div>
+              <input 
+                type="password" 
+                id="password" 
+                v-model="loginForm.password" 
+                required
+                class="input pl-11"
+                placeholder="请输入密码"
+              >
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            :disabled="state.loading"
+            class="btn-primary w-full py-3 text-base font-semibold mt-6"
+          >
+            <i class="fas fa-spinner fa-spin mr-2" v-if="state.loading"></i>
+            <i class="fas fa-sign-in-alt mr-2" v-else></i>
+            {{ state.loading ? '登录中...' : '登录' }}
+          </button>
+        </form>
       </div>
+
+      <!-- Footer -->
+      <p class="text-center text-sm text-slate-400 mt-6">
+        © 2024 Isrvd. All rights reserved.
+      </p>
     </div>
   </div>
 </template>
-
-<style scoped>
-.login-container {
-  margin-top: 25%;
-}
-</style>

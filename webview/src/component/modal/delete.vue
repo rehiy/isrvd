@@ -15,29 +15,41 @@ const formData = reactive({
 })
 
 const modalRef = ref(null)
+const isOpen = ref(false)
 
 const show = (file) => {
   formData.path = file.path
   formData.name = file.name
-  modalRef.value.show()
+  isOpen.value = true
 }
 
 const handleConfirm = async () => {
   if (!formData.path) return
   await api.delete(formData.path)
   actions.loadFiles()
-  modalRef.value.hide()
+  isOpen.value = false
 }
 
 defineExpose({ show })
 </script>
 
 <template>
-  <BaseModal ref="modalRef" id="deleteModal" title="确认删除" header-class="text-bg-danger" :loading="state.loading" @confirm="handleConfirm">
-    <p>确定要删除 <strong>{{ formData.name }}</strong> 吗？</p>
-    <p class="text-danger mb-0">此操作不可恢复！</p>
+  <BaseModal ref="modalRef" v-model="isOpen" title="确认删除" :loading="state.loading" @confirm="handleConfirm">
+    <div class="text-center py-6">
+      <div class="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-trash text-3xl text-red-500"></i>
+      </div>
+      <p class="text-lg text-slate-700 mb-2">
+        确定要删除 <strong class="text-slate-900">{{ formData.name }}</strong> 吗？
+      </p>
+      <p class="text-sm text-red-600 flex items-center justify-center">
+        <i class="fas fa-exclamation-triangle mr-2"></i>
+        此操作不可恢复！
+      </p>
+    </div>
     <template #confirm-text>
-      {{ state.loading ? '删除中...' : '删除' }}
+      <i class="fas fa-trash mr-2" v-if="!state.loading"></i>
+      {{ state.loading ? '删除中...' : '确认删除' }}
     </template>
   </BaseModal>
 </template>

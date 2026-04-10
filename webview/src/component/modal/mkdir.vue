@@ -14,32 +14,49 @@ const formData = reactive({
 })
 
 const modalRef = ref(null)
+const isOpen = ref(false)
 
 const show = () => {
   formData.name = ''
-  modalRef.value.show()
+  isOpen.value = true
 }
 
 const handleConfirm = async () => {
   if (!formData.name.trim()) return
   await api.mkdir(state.currentPath + '/' + formData.name)
   actions.loadFiles()
-  modalRef.value.hide()
+  isOpen.value = false
 }
 
 defineExpose({ show })
 </script>
 
 <template>
-  <BaseModal ref="modalRef" id="mkdirModal" title="新建目录" :loading="state.loading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" title="新建目录" :loading="state.loading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm">
-      <div class="mb-3">
-        <label for="dirName" class="form-label">目录名称</label>
-        <input type="text" class="form-control" id="dirName" v-model="formData.name" :disabled="state.loading" required>
+      <div>
+        <label for="dirName" class="block text-sm font-medium text-slate-700 mb-2">
+          目录名称
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <i class="fas fa-folder text-slate-400"></i>
+          </div>
+          <input 
+            type="text" 
+            id="dirName" 
+            v-model="formData.name" 
+            :disabled="state.loading" 
+            required
+            class="input pl-11"
+            placeholder="请输入目录名称"
+          >
+        </div>
       </div>
     </form>
     <template #confirm-text>
-      {{ state.loading ? '创建中...' : '创建' }}
+      <i class="fas fa-folder mr-2" v-if="!state.loading"></i>
+      {{ state.loading ? '创建中...' : '创建目录' }}
     </template>
   </BaseModal>
 </template>

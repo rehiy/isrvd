@@ -17,19 +17,36 @@ const navigateTo = (path) => {
 </script>
 
 <template>
-  <nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-      <li class="breadcrumb-item">
-        <a class="text-decoration-none" href="#" @click="navigateTo('/')">
-          <i class="fas fa-home me-1"></i> 首页
+  <nav class="mb-4" aria-label="breadcrumb">
+    <ol class="flex items-center space-x-1 text-sm">
+      <li>
+        <a 
+          class="flex items-center px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200"
+          href="#" 
+          @click="navigateTo('/')"
+        >
+          <i class="fas fa-home mr-1.5"></i>
+          <span>首页</span>
         </a>
       </li>
-      <li v-for="(part, index) in paths" :key="index" class="breadcrumb-item" :class="{ active: index === paths.length - 1 }">
-        <a class="text-decoration-none" v-if="index < paths.length - 1" href="#" @click="navigateTo('/' + paths.slice(0, index + 1).join('/'))">
+      
+      <template v-for="(part, index) in paths" :key="index">
+        <li class="flex items-center">
+          <i class="fas fa-chevron-right text-slate-300 text-xs mx-1"></i>
+        </li>
+        <li v-if="index < paths.length - 1">
+          <a 
+            class="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200"
+            href="#" 
+            @click="navigateTo('/' + paths.slice(0, index + 1).join('/'))"
+          >
+            {{ part }}
+          </a>
+        </li>
+        <li v-else class="px-3 py-1.5 rounded-lg bg-primary-50 text-primary-700 font-medium">
           {{ part }}
-        </a>
-        <span v-else>{{ part }}</span>
-      </li>
+        </li>
+      </template>
     </ol>
   </nav>
 </template>

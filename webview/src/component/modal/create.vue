@@ -15,37 +15,63 @@ const formData = reactive({
 })
 
 const modalRef = ref(null)
+const isOpen = ref(false)
 
 const show = () => {
   formData.name = ''
   formData.content = ''
-  modalRef.value.show()
+  isOpen.value = true
 }
 
 const handleConfirm = async () => {
   if (!formData.name.trim()) return
   await api.create(state.currentPath + '/' + formData.name, formData.content)
   actions.loadFiles()
-  modalRef.value.hide()
+  isOpen.value = false
 }
 
 defineExpose({ show })
 </script>
 
 <template>
-  <BaseModal ref="modalRef" id="newFileModal" title="新建文件" size="modal-lg" :loading="state.loading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
-    <form @submit.prevent="handleConfirm">
-      <div class="mb-3">
-        <label for="fileName" class="form-label">文件名称</label>
-        <input type="text" class="form-control" id="fileName" v-model="formData.name" :disabled="state.loading" required>
+  <BaseModal ref="modalRef" v-model="isOpen" title="新建文件" size="lg" :loading="state.loading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
+    <form @submit.prevent="handleConfirm" class="space-y-5">
+      <div>
+        <label for="fileName" class="block text-sm font-medium text-slate-700 mb-2">
+          文件名称
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <i class="fas fa-file text-slate-400"></i>
+          </div>
+          <input 
+            type="text" 
+            id="fileName" 
+            v-model="formData.name" 
+            :disabled="state.loading" 
+            required
+            class="input pl-11"
+            placeholder="请输入文件名称"
+          >
+        </div>
       </div>
-      <div class="mb-3">
-        <label for="fileContent" class="form-label">文件内容</label>
-        <textarea class="form-control" id="fileContent" rows="10" v-model="formData.content" :disabled="state.loading"></textarea>
+      <div>
+        <label for="fileContent" class="block text-sm font-medium text-slate-700 mb-2">
+          文件内容
+        </label>
+        <textarea 
+          id="fileContent" 
+          rows="10" 
+          v-model="formData.content" 
+          :disabled="state.loading"
+          class="input font-mono text-sm"
+          placeholder="请输入文件内容..."
+        ></textarea>
       </div>
     </form>
     <template #confirm-text>
-      {{ state.loading ? '创建中...' : '创建' }}
+      <i class="fas fa-file-circle-plus mr-2" v-if="!state.loading"></i>
+      {{ state.loading ? '创建中...' : '创建文件' }}
     </template>
   </BaseModal>
 </template>

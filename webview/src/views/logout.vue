@@ -14,7 +14,11 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <button class="btn btn-outline-light btn-sm" @click="handleLogout" :disabled="state.loading">
+  <button 
+    class="btn-ghost px-4 py-2 text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 flex items-center gap-2"
+    @click="handleLogout" 
+    :disabled="state.loading"
+  >
     <i class="fas fa-spinner fa-spin" v-if="state.loading"></i>
     <i class="fas fa-sign-out-alt" v-else></i>
     {{ state.loading ? '注销中...' : '注销' }}

@@ -1,32 +1,36 @@
 <script setup>
-import { onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({
-  id: { type: String, required: true },
-  title: { type: String, required: true },
-  size: { type: String, default: '' }, // '' | 'modal-lg' | 'modal-xl'
+  modelValue: { type: Boolean, default: false },
+  title: { type: String, default: '' },
+  size: { type: String, default: '' },
   loading: { type: Boolean, default: false },
-  centered: { type: Boolean, default: true },
-  headerClass: { type: String, default: '' },
-  bodyClass: { type: String, default: '' },
   showFooter: { type: Boolean, default: true },
   confirmDisabled: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['confirm', 'cancel', 'shown', 'hidden'])
+const emit = defineEmits(['update:modelValue', 'confirm', 'cancel'])
 
-let modalInstance = null
+const modalRef = ref(null)
+const isOpen = ref(props.modelValue)
 
-const show = () => {
-  const el = document.getElementById(props.id)
-  if (el && window.bootstrap) {
-    modalInstance = new window.bootstrap.Modal(el)
-    modalInstance.show()
-  }
+const sizeClasses = {
+  '': 'max-w-lg',
+  'sm': 'max-w-sm',
+  'lg': 'max-w-2xl',
+  'xl': 'max-w-4xl',
+  'full': 'max-w-full mx-4'
 }
 
-const hide = () => {
-  modalInstance && modalInstance.hide()
+const open = () => {
+  isOpen.value = true
+  emit('update:modelValue', true)
+}
+
+const close = () => {
+  isOpen.value = false
+  emit('update:modelValue', false)
 }
 
 const handleConfirm = () => {
@@ -35,49 +39,100 @@ const handleConfirm = () => {
 
 const handleCancel = () => {
   emit('cancel')
-  hide()
+  close()
 }
 
-onMounted(() => {
-  const el = document.getElementById(props.id)
-  if (el) {
-    el.addEventListener('shown.bs.modal', () => {
-      emit('shown')
-    })
-    el.addEventListener('hidden.bs.modal', () => {
-      emit('hidden')
-    })
+const handleBackdropClick = (e) => {
+  if (e.target === modalRef.value) {
+    handleCancel()
   }
+}
+
+const handleEscape = (e) => {
+  if (e.key === 'Escape' && isOpen.value) {
+    handleCancel()
+  }
+}
+
+watch(() => props.modelValue, (val) => {
+  isOpen.value = val
 })
 
-defineExpose({ show, hide })
+onMounted(() => {
+  document.addEventListener('keydown', handleEscape)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleEscape)
+})
+
+defineExpose({ open, close })
 </script>
 
 <template>
-  <div class="modal fade" :id="id" tabindex="-1">
-    <div class="modal-dialog" :class="[size, { 'modal-dialog-centered': centered }]">
-      <div class="modal-content">
-        <div class="modal-header" :class="headerClass">
-          <h5 class="modal-title">
-            <slot name="title">{{ title }}</slot>
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" :disabled="loading"></button>
-        </div>
-        <div class="modal-body" :class="bodyClass">
-          <slot></slot>
-        </div>
-        <div class="modal-footer" v-if="showFooter">
-          <slot name="footer">
-            <button type="button" class="btn btn-secondary" @click.stop="handleCancel" :disabled="loading">
-              <slot name="cancel-text">取消</slot>
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div 
+        v-if="isOpen" 
+        ref="modalRef"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+        @click="handleBackdropClick"
+      >
+        <div 
+          v-if="isOpen"
+          :class="['w-full modal-card animate-scale-in', sizeClasses[size]]"
+        >
+          <!-- Header -->
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200/50">
+            <h3 class="text-lg font-semibold text-slate-800">
+              <slot name="title">{{ title }}</slot>
+            </h3>
+            <button 
+              type="button" 
+              class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200"
+              @click="handleCancel"
+              :disabled="loading"
+            >
+              <i class="fas fa-times"></i>
             </button>
-            <button type="button" class="btn btn-primary" @click.stop="handleConfirm" :disabled="loading || confirmDisabled">
-              <i class="fas fa-spinner fa-spin" v-if="loading"></i>
-              <slot name="confirm-text">确认</slot>
-            </button>
-          </slot>
+          </div>
+
+          <!-- Body -->
+          <div class="px-6 py-6 max-h-[70vh] overflow-y-auto">
+            <slot></slot>
+          </div>
+
+          <!-- Footer -->
+          <div v-if="showFooter" class="flex justify-end gap-3 px-6 py-4 border-t border-slate-200/50 bg-slate-50/50">
+            <slot name="footer">
+              <button 
+                type="button" 
+                class="btn-secondary"
+                @click="handleCancel"
+                :disabled="loading"
+              >
+                <slot name="cancel-text">取消</slot>
+              </button>
+              <button 
+                type="button" 
+                class="btn-primary"
+                @click="handleConfirm"
+                :disabled="loading || confirmDisabled"
+              >
+                <i class="fas fa-spinner fa-spin mr-2" v-if="loading"></i>
+                <slot name="confirm-text">确认</slot>
+              </button>
+            </slot>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
+    </Transition>
+  </Teleport>
 </template>
