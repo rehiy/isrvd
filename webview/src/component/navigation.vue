@@ -1,12 +1,31 @@
 <script setup>
-import { inject } from 'vue'
+import { computed, inject, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
-import { APP_STATE_KEY } from '@/store/state.js'
-
-import AuthLogout from '@/views/logout.vue'
+import { APP_STATE_KEY } from '@/store/state.js';
 
 const state = inject(APP_STATE_KEY)
 const collapsed = defineModel('collapsed', { type: Boolean, default: false })
+const route = useRoute()
+
+// Docker 子菜单展开状态
+const dockerExpanded = ref(false)
+
+// 判断当前是否在 Docker 相关路由下
+const isDockerActive = computed(() => {
+  return route.path.startsWith('/docker/')
+})
+
+// 切换 Docker 子菜单
+const toggleDocker = () => {
+  if (collapsed.value) {
+    // 侧边栏折叠时，展开侧边栏并展开子菜单
+    collapsed.value = false
+    dockerExpanded.value = true
+  } else {
+    dockerExpanded.value = !dockerExpanded.value
+  }
+}
 </script>
 
 <template>
@@ -53,46 +72,79 @@ const collapsed = defineModel('collapsed', { type: Boolean, default: false })
         <i class="fas fa-terminal"></i>
         <span v-if="!collapsed">Shell 终端</span>
       </router-link>
+      
+      <!-- Docker 折叠子菜单 -->
+      <div v-if="!collapsed">
+        <button 
+          @click="toggleDocker"
+          class="nav-link w-full"
+          :class="{ 'nav-link-active': isDockerActive }"
+        >
+          <i class="fab fa-docker"></i>
+          <span>Docker</span>
+          <i 
+            class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200"
+            :class="{ 'rotate-180': dockerExpanded }"
+          ></i>
+        </button>
+        <div v-show="dockerExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+          <router-link 
+            to="/docker/containers" 
+            class="nav-link text-sm"
+            active-class="nav-link-active"
+          >
+            <i class="fas fa-cube"></i>
+            <span>容器</span>
+          </router-link>
+          <router-link 
+            to="/docker/images" 
+            class="nav-link text-sm"
+            active-class="nav-link-active"
+          >
+            <i class="fas fa-layer-group"></i>
+            <span>镜像</span>
+          </router-link>
+          <router-link 
+            to="/docker/networks" 
+            class="nav-link text-sm"
+            active-class="nav-link-active"
+          >
+            <i class="fas fa-network-wired"></i>
+            <span>网络</span>
+          </router-link>
+          <router-link 
+            to="/docker/volumes" 
+            class="nav-link text-sm"
+            active-class="nav-link-active"
+          >
+            <i class="fas fa-database"></i>
+            <span>卷</span>
+          </router-link>
+        </div>
+      </div>
+      
+      <!-- 折叠状态下的 Docker 菜单 -->
       <router-link 
-        to="/docker" 
+        v-if="collapsed"
+        to="/docker/containers" 
         class="nav-link"
-        active-class="nav-link-active"
-        :title="collapsed ? 'Docker' : ''"
+        :class="{ 'nav-link-active': isDockerActive }"
+        title="Docker"
       >
         <i class="fab fa-docker"></i>
-        <span v-if="!collapsed">Docker</span>
       </router-link>
     </nav>
 
-    <!-- 底部区域 -->
-    <div class="border-t border-slate-200">
-      <!-- 折叠按钮 -->
-      <div class="p-3">
-        <button 
-          @click="collapsed = !collapsed"
-          class="w-full nav-link justify-center"
-          :title="collapsed ? '展开菜单' : '收起菜单'"
-        >
-          <i :class="collapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"></i>
-          <span v-if="!collapsed">收起菜单</span>
-        </button>
-      </div>
-
-      <!-- 用户信息 -->
-      <div v-if="state.username" class="p-3 border-t border-slate-100">
-        <div 
-          class="flex items-center p-2 rounded-xl bg-slate-50"
-          :class="collapsed ? 'justify-center' : 'space-x-3'"
-        >
-          <div class="w-8 h-8 rounded-full bg-primary-400 flex items-center justify-center flex-shrink-0">
-            <i class="fas fa-user text-white text-sm"></i>
-          </div>
-          <div v-if="!collapsed" class="flex-1 min-w-0">
-            <div class="text-sm font-medium text-slate-700 truncate">{{ state.username }}</div>
-          </div>
-          <AuthLogout v-if="!collapsed" />
-        </div>
-      </div>
+    <!-- 底部折叠按钮 -->
+    <div class="border-t border-slate-200 p-3">
+      <button 
+        @click="collapsed = !collapsed"
+        class="w-full nav-link justify-center"
+        :title="collapsed ? '展开菜单' : '收起菜单'"
+      >
+        <i :class="collapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"></i>
+        <span v-if="!collapsed">收起菜单</span>
+      </button>
     </div>
   </aside>
 </template>
