@@ -1,19 +1,19 @@
 <script setup>
-import { inject, ref, computed } from 'vue'
+import { computed, inject, ref } from 'vue'
 
+import { downloadFile, formatFileSize, formatTime, getFileIcon, isEditableFile } from '@/helper/utils.js'
 import api from '@/service/api.js'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
-import { isEditableFile, getFileIcon, formatFileSize, formatTime, downloadFile } from '@/helper/utils.js'
+import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state.js'
 
+import ChmodModal from '@/component/modal/chmod.vue'
+import CreateModal from '@/component/modal/create.vue'
+import DeleteModal from '@/component/modal/delete.vue'
+import MkdirModal from '@/component/modal/mkdir.vue'
 import ModifyModal from '@/component/modal/modify.vue'
 import RenameModal from '@/component/modal/rename.vue'
-import ChmodModal from '@/component/modal/chmod.vue'
-import DeleteModal from '@/component/modal/delete.vue'
-import ZipModal from '@/component/modal/zip.vue'
 import UnzipModal from '@/component/modal/unzip.vue'
-import MkdirModal from '@/component/modal/mkdir.vue'
-import CreateModal from '@/component/modal/create.vue'
 import UploadModal from '@/component/modal/upload.vue'
+import ZipModal from '@/component/modal/zip.vue'
 
 const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)
@@ -95,35 +95,31 @@ actions.loadFiles('/')
 
           <div class="flex items-center gap-2">
             <button 
-              class="btn-icon text-slate-500 hover:text-primary-600 hover:bg-white"
-              @click="refreshFiles"
-              title="刷新"
+              @click="refreshFiles()"
+              class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
             >
-              <i class="fas fa-rotate"></i>
+              <i class="fas fa-rotate"></i>刷新
             </button>
 
             <button 
-              class="btn bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm"
+              class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
               @click="mkdirModalRef.show"
             >
-              <i class="fas fa-folder-plus mr-1.5"></i>
-              新建目录
+              <i class="fas fa-folder"></i>新建目录
             </button>
 
             <button 
-              class="btn bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm"
+              class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
               @click="createModalRef.show"
             >
-              <i class="fas fa-file-plus mr-1.5"></i>
-              新建文件
+              <i class="fas fa-file"></i>新建文件
             </button>
 
             <button 
-              class="btn bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm"
+              class="px-3 py-1.5 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors"
               @click="uploadModal.show"
             >
-              <i class="fas fa-upload mr-1.5"></i>
-              上传文件
+              <i class="fas fa-upload"></i>上传文件
             </button>
           </div>
         </div>
@@ -137,19 +133,19 @@ actions.loadFiles('/')
 
       <!-- File List -->
       <div v-else class="overflow-x-auto">
-        <table class="table-modern">
+        <table class="w-full border-collapse">
           <thead>
-            <tr>
-              <th class="w-1/2">名称</th>
-              <th class="w-24">大小</th>
-              <th class="w-32">权限</th>
-              <th class="w-40">修改时间</th>
-              <th class="w-40 text-center">操作</th>
+            <tr class="bg-slate-50 border-b border-slate-200">
+              <th class="w-1/3 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+              <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">大小</th>
+              <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">权限</th>
+              <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">修改时间</th>
+              <th class="w-40 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="file in files" :key="file.name">
-              <td>
+          <tbody class="bg-white divide-y divide-slate-100">
+            <tr v-for="file in files" :key="file.name" class="hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3">
                 <div class="flex items-center">
                   <div :class="[
                     'w-9 h-9 rounded-lg flex items-center justify-center mr-3',
@@ -173,26 +169,26 @@ actions.loadFiles('/')
                 </div>
               </td>
               
-              <td>
+              <td class="px-4 py-3">
                 <span v-if="!file.isDir" class="text-sm text-slate-600">
                   {{ formatFileSize(file.size) }}
                 </span>
                 <span v-else class="text-slate-400">—</span>
               </td>
               
-              <td>
+              <td class="px-4 py-3">
                 <code class="px-2 py-1 bg-slate-100 rounded text-xs text-slate-700 font-mono">
                   {{ file.mode }}
                 </code>
               </td>
               
-              <td>
+              <td class="px-4 py-3">
                 <span class="text-sm text-slate-500 whitespace-nowrap">
                   {{ formatTime(file.modTime) }}
                 </span>
               </td>
               
-              <td>
+              <td class="px-4 py-3">
                 <div class="flex justify-center items-center gap-0.5">
                   <!-- Directory Actions -->
                   <template v-if="file.isDir">

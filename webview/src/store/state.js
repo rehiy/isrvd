@@ -20,7 +20,20 @@ export const initProvider = () => {
         files: [],
 
         // 通知状态
-        notifications: []
+        notifications: [],
+
+        // 确认模态框状态
+        confirm: {
+            show: false,
+            title: '',
+            message: '',
+            icon: '',
+            iconColor: 'blue',
+            confirmText: '确认',
+            danger: false,
+            loading: false,
+            onConfirm: null
+        }
     })
 
     const actions = {
@@ -62,6 +75,43 @@ export const initProvider = () => {
                 }
             }
         },
+
+        // 确认模态框操作
+        showConfirm(options) {
+            state.confirm = {
+                show: true,
+                title: options.title || '确认操作',
+                message: options.message || '',
+                icon: options.icon || 'fa-question-circle',
+                iconColor: options.iconColor || 'blue',
+                confirmText: options.confirmText || '确认',
+                danger: options.danger || false,
+                loading: false,
+                onConfirm: options.onConfirm || null
+            }
+        },
+
+        confirmLoading(loading) {
+            state.confirm.loading = loading
+        },
+
+        closeConfirm() {
+            state.confirm.show = false
+            state.confirm.loading = false
+            state.confirm.onConfirm = null
+        },
+
+        async handleConfirm() {
+            if (state.confirm.onConfirm) {
+                state.confirm.loading = true
+                try {
+                    await state.confirm.onConfirm()
+                } finally {
+                    state.confirm.loading = false
+                }
+            }
+            this.closeConfirm()
+        }
     }
 
     interceptors(state, actions)
