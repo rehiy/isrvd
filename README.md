@@ -26,6 +26,7 @@ server:
   listenAddr: ":8080"        # 监听地址
   rootDirectory: "."         # 根目录
   jwtSecret: your-secret-key # JWT 密钥
+  proxyHeaderName: ""        # 内网代理认证 Header 名（可选，见下方说明）
 
 members:
   - username: admin
@@ -34,7 +35,18 @@ members:
     allowTerminal: true      # 允许终端访问
 ```
 
-支持环境变量覆盖：`DEBUG`、`LISTEN_ADDR`、`ROOT_DIRECTORY`、`JWT_SECRET`
+支持环境变量覆盖：`DEBUG`、`LISTEN_ADDR`、`ROOT_DIRECTORY`、`JWT_SECRET`、`PROXY_HEADER_NAME`
+
+#### 内网代理 Header 认证
+
+当服务运行在内网反向代理（如 Nginx、Apisix、Traefik）之后时，可由代理在请求头中注入已认证的用户名，isrvd 直接信任该 Header，跳过 JWT 验证。
+
+```yaml
+server:
+  proxyHeaderName: X-Remote-User  # 与代理配置的 Header 名保持一致
+```
+
+> **安全提示**：启用此功能时，请确保 isrvd 不对外网直接暴露，并在代理层严格过滤或覆盖该 Header，防止客户端伪造。
 
 ### 运行
 
@@ -121,6 +133,7 @@ chmod +x build.sh
 - **用户隔离** - 每个用户独立家目录
 - **路径验证** - 防止目录遍历攻击
 - **JWT 认证** - Token 有效期 24 小时
+- **内网代理认证** - 可配置信任代理注入的用户名 Header，适用于 SSO/零信任网络
 - **Zip Slip 防护** - 解压路径验证
 - **终端权限控制** - 可配置禁止终端访问
 
