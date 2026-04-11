@@ -262,11 +262,15 @@ const selectImage = (imageName) => {
 }
 
 // 创建容器弹窗
-const createContainerModal = () => {
+const createContainerModal = async () => {
   formData.value = { image: '', name: '', env: [], ports: {}, cmd: '' }
   modalTitle.value = '创建容器'
   modalOpen.value = true
   logContent.value = ''
+  // 确保镜像列表已加载
+  if (images.value.length === 0) {
+    await loadImages()
+  }
 }
 
 const handleCreateContainer = async () => {
