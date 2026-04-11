@@ -16,6 +16,8 @@ var (
 	RootDirectory = "."
 	// JWT 密钥
 	JWTSecret = "default-secret-key"
+	// 内网代理用户名 Header 名（为空则不启用）
+	ProxyHeaderName = ""
 	// 成员配置
 	Members = map[string]*Member{}
 )
@@ -55,6 +57,10 @@ func Load() error {
 	JWTSecret = conf.Server.JWTSecret
 	if value := os.Getenv("JWT_SECRET"); value != "" {
 		JWTSecret = value
+	}
+	ProxyHeaderName = conf.Server.ProxyHeaderName
+	if value := os.Getenv("PROXY_HEADER_NAME"); value != "" {
+		ProxyHeaderName = value
 	}
 
 	// 更新成员配置
