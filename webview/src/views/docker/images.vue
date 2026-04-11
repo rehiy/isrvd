@@ -72,33 +72,36 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 space-y-4">
-    <!-- 页面标题 -->
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
-          <i class="fas fa-compact-disc text-white"></i>
-        </div>
-        <div>
-          <h1 class="text-lg font-semibold text-slate-800">镜像管理</h1>
-          <p class="text-xs text-slate-500">管理 Docker 镜像</p>
+  <div>
+    <div class="card mb-4">
+      <!-- Toolbar Bar -->
+      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-6 py-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
+              <i class="fas fa-compact-disc text-white"></i>
+            </div>
+            <div>
+              <h1 class="text-lg font-semibold text-slate-800">镜像管理</h1>
+              <p class="text-xs text-slate-500">管理 Docker 镜像</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
+              <input type="checkbox" v-model="showAllImages" @change="loadImages()" class="rounded border-slate-300">
+              显示全部
+            </label>
+            <div class="flex items-center gap-2 ml-2">
+              <button @click="loadImages()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
+                <i class="fas fa-rotate"></i>刷新
+              </button>
+              <button @click="pullImageModal()" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+                <i class="fas fa-download"></i>拉取
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="flex items-center gap-2">
-        <label class="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
-          <input type="checkbox" v-model="showAllImages" @change="loadImages()" class="rounded border-slate-300">
-          显示全部
-        </label>
-<div class="flex items-center gap-2 ml-2">
-          <button @click="loadImages()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium flex items-center gap-1.5 transition-colors">
-            <i class="fas fa-rotate"></i>刷新
-          </button>
-          <button @click="pullImageModal()" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-            <i class="fas fa-download"></i>拉取
-          </button>
-        </div>
-      </div>
-    </div>
 
     <!-- Loading -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-20">
@@ -107,19 +110,19 @@ onMounted(() => {
     </div>
 
     <!-- Image Table -->
-    <div v-else-if="images.length > 0" class="overflow-x-auto rounded-xl border border-slate-200">
-      <table class="w-full">
-        <thead class="bg-slate-50">
-          <tr>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">镜像</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">ID</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase w-32">大小</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase w-36">创建时间</th>
-            <th class="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase w-24">操作</th>
+    <div v-else-if="images.length > 0" class="overflow-x-auto">
+      <table class="w-full border-collapse">
+        <thead>
+          <tr class="bg-slate-50 border-b border-slate-200">
+            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">镜像</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ID</th>
+            <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">大小</th>
+            <th class="w-36 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
+            <th class="w-40 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100">
-          <tr v-for="img in images" :key="img.id" class="hover:bg-slate-50/50 transition-colors">
+        <tbody class="bg-white divide-y divide-slate-100">
+          <tr v-for="img in images" :key="img.id" class="hover:bg-slate-50 transition-colors">
             <td class="px-4 py-3">
               <div class="flex items-center gap-2">
                 <div class="w-8 h-8 rounded-lg bg-blue-400 flex items-center justify-center">
@@ -130,9 +133,9 @@ onMounted(() => {
             </td>
             <td class="px-4 py-3"><code class="text-xs text-slate-500 font-mono">{{ img.shortId }}</code></td>
             <td class="px-4 py-3 text-sm text-slate-600">{{ formatFileSize(img.size) }}</td>
-            <td class="px-4 py-3 text-sm text-slate-500 whitespace-nowrap">{{ formatTime(new Date(img.created * 1000).toISOString()) }}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(img.created * 1000).toISOString()) }}</td>
             <td class="px-4 py-3">
-              <div class="flex items-center justify-end">
+              <div class="flex justify-center items-center gap-0.5">
                 <button @click="handleImageAction(img, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                   <i class="fas fa-trash text-xs"></i>
                 </button>
@@ -149,6 +152,7 @@ onMounted(() => {
       </div>
       <p class="text-slate-600 font-medium mb-1">暂无镜像</p>
       <p class="text-sm text-slate-400">点击「拉取镜像」从 Registry 获取镜像</p>
+    </div>
     </div>
 
     <!-- 拉取镜像模态框 -->

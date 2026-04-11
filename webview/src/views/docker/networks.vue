@@ -72,71 +72,82 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 space-y-4">
-    <!-- 页面标题 -->
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-lg bg-purple-500 flex items-center justify-center">
-          <i class="fas fa-network-wired text-white"></i>
-        </div>
-        <div>
-          <h1 class="text-lg font-semibold text-slate-800">网络管理</h1>
-          <p class="text-xs text-slate-500">管理 Docker 网络</p>
+  <div>
+    <!-- Toolbar Bar -->
+    <div class="card mb-4">
+      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-6 py-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-purple-500 flex items-center justify-center">
+              <i class="fas fa-network-wired text-white"></i>
+            </div>
+            <div>
+              <h1 class="text-lg font-semibold text-slate-800">网络管理</h1>
+              <p class="text-xs text-slate-500">管理 Docker 网络</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button @click="loadNetworks()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-rotate"></i>刷新
+            </button>
+            <button @click="createNetworkModal()" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-plus"></i>创建
+            </button>
+          </div>
         </div>
       </div>
-<div class="flex items-center gap-2">
-        <button @click="loadNetworks()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium flex items-center gap-1.5 transition-colors">
-          <i class="fas fa-rotate"></i>刷新
-        </button>
-        <button @click="createNetworkModal()" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-          <i class="fas fa-plus"></i>创建
-        </button>
-      </div>
-    </div>
 
-    <!-- Network Table -->
-    <div v-if="networks.length > 0" class="overflow-x-auto rounded-xl border border-slate-200">
-      <table class="w-full">
-        <thead class="bg-slate-50">
-          <tr>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">名称</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase w-28">驱动</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase w-44">子网</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase w-24">范围</th>
-            <th class="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase w-24">操作</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          <tr v-for="net in networks" :key="net.id" class="hover:bg-slate-50/50 transition-colors">
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-purple-400 flex items-center justify-center">
-                  <i class="fas fa-network-wired text-white text-sm"></i>
+      <!-- Loading State -->
+      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
+
+      <!-- Network Table -->
+      <div v-else-if="networks.length > 0" class="overflow-x-auto">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200">
+              <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+              <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">驱动</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">子网</th>
+              <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">范围</th>
+              <th class="w-24 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-slate-100">
+            <tr v-for="net in networks" :key="net.id" class="hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-purple-400 flex items-center justify-center">
+                    <i class="fas fa-network-wired text-white text-sm"></i>
+                  </div>
+                  <span class="font-medium text-slate-800">{{ net.name }}</span>
                 </div>
-                <span class="font-medium text-slate-800">{{ net.name }}</span>
-              </div>
-            </td>
-            <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ net.driver }}</code></td>
-            <td class="px-4 py-3 text-sm text-slate-600 font-mono">{{ net.subnet || '-' }}</td>
-            <td class="px-4 py-3 text-sm text-slate-500">{{ net.scope }}</td>
-            <td class="px-4 py-3">
-              <div class="flex items-center justify-end">
-                <button v-if="net.driver !== 'bridge' && net.driver !== 'host' && net.driver !== 'none'" @click="handleNetworkAction(net, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
-                  <i class="fas fa-trash text-xs"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div v-else class="flex flex-col items-center justify-center py-20">
-      <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-        <i class="fas fa-network-wired text-4xl text-slate-300"></i>
+              </td>
+              <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ net.driver }}</code></td>
+              <td class="px-4 py-3 font-mono text-sm text-slate-600">{{ net.subnet || '-' }}</td>
+              <td class="px-4 py-3 text-sm text-slate-600">{{ net.scope }}</td>
+              <td class="px-4 py-3">
+                <div class="flex justify-center items-center gap-0.5">
+                  <button v-if="net.driver !== 'bridge' && net.driver !== 'host' && net.driver !== 'none'" @click="handleNetworkAction(net, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                    <i class="fas fa-trash text-xs"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <p class="text-slate-600 font-medium mb-1">暂无自定义网络</p>
-      <p class="text-sm text-slate-400">点击「创建网络」添加自定义网络</p>
+
+      <!-- Empty State -->
+      <div v-else class="flex flex-col items-center justify-center py-20">
+        <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+          <i class="fas fa-network-wired text-4xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-600 font-medium mb-1">暂无自定义网络</p>
+        <p class="text-sm text-slate-400">点击「创建网络」添加自定义网络</p>
+      </div>
     </div>
 
     <!-- 创建网络模态框 -->

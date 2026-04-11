@@ -1,8 +1,8 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
-import 'cherry-markdown/dist/cherry-markdown.css'
 import Cherry from 'cherry-markdown'
+import 'cherry-markdown/dist/cherry-markdown.css'
 
 const cherryInstance = ref(null)
 
@@ -22,7 +22,7 @@ onUnmounted(() => {
 
 <template>
   <div class="h-[calc(100vh-100px)]">
-    <div class="h-full card overflow-hidden">
+    <div class="h-full bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden">
       <!-- Toolbar Bar -->
       <div class="bg-slate-50 border-b border-slate-200 px-6 py-3">
         <div class="flex items-center justify-between">

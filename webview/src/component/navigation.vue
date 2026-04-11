@@ -1,5 +1,5 @@
 <script setup>
-import { computed, inject, ref } from 'vue';
+import { computed, inject, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { APP_STATE_KEY } from '@/store/state.js';
@@ -8,13 +8,20 @@ const state = inject(APP_STATE_KEY)
 const collapsed = defineModel('collapsed', { type: Boolean, default: false })
 const route = useRoute()
 
-// Docker 子菜单展开状态
-const dockerExpanded = ref(false)
+// Docker 子菜单展开状态 - 初始化时根据当前路由判断
+const dockerExpanded = ref(route.path.startsWith('/docker/'))
 
 // 判断当前是否在 Docker 相关路由下
 const isDockerActive = computed(() => {
   return route.path.startsWith('/docker/')
 })
+
+// 监听路由变化，自动展开子菜单
+watch(isDockerActive, (isActive) => {
+  if (isActive && !collapsed.value) {
+    dockerExpanded.value = true
+  }
+}, { immediate: true })
 
 // 切换 Docker 子菜单
 const toggleDocker = () => {

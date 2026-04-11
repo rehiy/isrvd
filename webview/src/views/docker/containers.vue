@@ -48,30 +48,32 @@ const res = await api.listImages(false)
   }
 }
 
-// 容器操作
-const handleContainerAction = async (container, action) => {
-  if (!confirm(`确定要${getActionName(action)}容器 "${container.name}" 吗？`)) return
-  
-  try {
-    await api.containerAction(container.id, action)
-    actions.showNotification('success', `容器 ${getActionName(action)} 成功`)
-    loadContainers()
-  } catch (e) {
-    // error handled by interceptor
-  }
+// 操作配置
+const actionConfigs = {
+  start: { icon: 'fa-play', iconColor: 'emerald', title: '启动容器', confirmText: '启动' },
+  stop: { icon: 'fa-stop', iconColor: 'amber', title: '停止容器', confirmText: '停止' },
+  restart: { icon: 'fa-redo', iconColor: 'blue', title: '重启容器', confirmText: '重启' },
+  remove: { icon: 'fa-trash', iconColor: 'red', title: '删除容器', confirmText: '删除', danger: true },
+  pause: { icon: 'fa-pause', iconColor: 'amber', title: '暂停容器', confirmText: '暂停' },
+  unpause: { icon: 'fa-play', iconColor: 'emerald', title: '恢复容器', confirmText: '恢复' }
 }
 
-const getActionName = (action) => {
-  return { start: '启动', stop: '停止', restart: '重启', remove: '删除', pause: '暂停', unpause: '恢复' }[action] || action
-}
-
-const getStateBadgeClass = (state) => {
-  switch (state) {
-    case 'running': return 'bg-emerald-100 text-emerald-700 border-emerald-200'
-    case 'exited': case 'dead': return 'bg-red-100 text-red-700 border-red-200'
-    case 'paused': return 'bg-amber-100 text-amber-700 border-amber-200'
-    default: return 'bg-slate-100 text-slate-700 border-slate-200'
-  }
+// 容器操作 - 显示确认模态框
+const handleContainerAction = (container, action) => {
+  const config = actionConfigs[action] || {}
+  actions.showConfirm({
+    title: config.title,
+    message: `确定要${config.confirmText}容器 <strong class="text-slate-900">${container.name || container.id}</strong> 吗？`,
+    icon: config.icon,
+    iconColor: config.iconColor,
+    confirmText: `确认${config.confirmText}`,
+    danger: config.danger,
+    onConfirm: async () => {
+      await api.containerAction(container.id, action)
+      actions.showNotification('success', `容器 ${config.confirmText} 成功`)
+      loadContainers()
+    }
+  })
 }
 
 // 查看日志
@@ -156,114 +158,116 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 space-y-4">
-    <!-- 页面标题 -->
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
-          <i class="fab fa-docker text-white"></i>
-        </div>
-        <div>
-          <h1 class="text-lg font-semibold text-slate-800">容器管理</h1>
-          <p class="text-xs text-slate-500">管理 Docker 容器</p>
+  <div>
+    <!-- Toolbar Bar -->
+    <div class="card mb-4">
+      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-6 py-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
+              <i class="fab fa-docker text-white"></i>
+            </div>
+            <div>
+              <h1 class="text-lg font-semibold text-slate-800">容器管理</h1>
+              <p class="text-xs text-slate-500">管理 Docker 容器</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
+              <input type="checkbox" v-model="showAll" @change="loadContainers()" class="rounded border-slate-300">
+              显示全部
+            </label>
+            <div class="flex items-center gap-2 ml-2">
+              <button @click="loadContainers()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
+                <i class="fas fa-rotate"></i>刷新
+              </button>
+              <button @click="createContainerModal()" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+                <i class="fas fa-plus"></i>创建
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="flex items-center gap-2">
-        <label class="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
-          <input type="checkbox" v-model="showAll" @change="loadContainers()" class="rounded border-slate-300">
-          显示全部
-        </label>
-<div class="flex items-center gap-2 ml-2">
-          <button @click="loadContainers()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium flex items-center gap-1.5 transition-colors">
-            <i class="fas fa-rotate"></i>刷新
-          </button>
-          <button @click="createContainerModal()" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-            <i class="fas fa-plus"></i>创建
-          </button>
-        </div>
+
+      <!-- Loading -->
+      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
       </div>
-    </div>
 
-    <!-- Loading -->
-    <div v-if="loading" class="flex flex-col items-center justify-center py-20">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
-    </div>
-
-    <!-- Container Table -->
-    <div v-else-if="containers.length > 0" class="overflow-x-auto rounded-xl border border-slate-200">
-      <table class="w-full">
-        <thead class="bg-slate-50">
-          <tr>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">名称</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">镜像</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase w-24">状态</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase w-40">端口</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase w-32">创建时间</th>
-            <th class="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase w-56">操作</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          <tr v-for="ct in containers" :key="ct.id" class="hover:bg-slate-50/50 transition-colors">
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2">
-                <div :class="['w-8 h-8 rounded-lg flex items-center justify-center', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
-                  <i class="fas fa-box text-white text-sm"></i>
+      <!-- Container Table -->
+      <div v-if="containers.length > 0" class="overflow-x-auto">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200">
+              <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">镜像</th>
+              <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
+              <th class="w-40 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
+              <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
+              <th class="w-56 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-slate-100">
+            <tr v-for="ct in containers" :key="ct.id" class="hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <div :class="['w-8 h-8 rounded-lg flex items-center justify-center', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+                    <i class="fas fa-box text-white text-sm"></i>
+                  </div>
+                  <span class="font-medium text-slate-800">{{ ct.name || ct.id }}</span>
                 </div>
-                <span class="font-medium text-slate-800">{{ ct.name || ct.id }}</span>
-              </div>
-            </td>
-            <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ ct.image }}</code></td>
-            <td class="px-4 py-3">
-              <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border', getStateBadgeClass(ct.state)]">
-                {{ ct.status }}
-              </span>
-            </td>
-            <td class="px-4 py-3 text-sm text-slate-600 font-mono">{{ ct.ports || '-' }}</td>
-            <td class="px-4 py-3 text-sm text-slate-500 whitespace-nowrap">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</td>
-            <td class="px-4 py-3">
-              <div class="flex items-center justify-end gap-1">
-                <button v-if="ct.state !== 'running'" @click="handleContainerAction(ct, 'start')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动">
-                  <i class="fas fa-play text-xs"></i>
-                </button>
-                <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
-                  <i class="fas fa-stop text-xs"></i>
-                </button>
-                <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'restart')" class="btn-icon text-blue-600 hover:bg-blue-50" title="重启">
-                  <i class="fas fa-redo text-xs"></i>
-                </button>
-                <button v-if="ct.state === 'running'" @click="viewLogs(ct)" class="btn-icon text-cyan-600 hover:bg-cyan-50" title="日志">
-                  <i class="fas fa-file-alt text-xs"></i>
-                </button>
-                <button @click="handleContainerAction(ct, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
-                  <i class="fas fa-trash text-xs"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div v-else class="flex flex-col items-center justify-center py-20">
-      <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-        <i class="fab fa-docker text-4xl text-slate-300"></i>
+              </td>
+              <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ ct.image }}</code></td>
+              <td class="px-4 py-3 text-sm text-slate-600">{{ ct.status }}</td>
+              <td class="px-4 py-3 font-mono text-sm text-slate-600">{{ ct.ports || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</td>
+              <td class="px-4 py-3">
+                <div class="flex justify-center items-center gap-1">
+                  <button v-if="ct.state !== 'running'" @click="handleContainerAction(ct, 'start')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动">
+                    <i class="fas fa-play text-xs"></i>
+                  </button>
+                  <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
+                    <i class="fas fa-stop text-xs"></i>
+                  </button>
+                  <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'restart')" class="btn-icon text-blue-600 hover:bg-blue-50" title="重启">
+                    <i class="fas fa-redo text-xs"></i>
+                  </button>
+                  <button v-if="ct.state === 'running'" @click="viewLogs(ct)" class="btn-icon text-cyan-600 hover:bg-cyan-50" title="日志">
+                    <i class="fas fa-file-alt text-xs"></i>
+                  </button>
+                  <button @click="handleContainerAction(ct, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                    <i class="fas fa-trash text-xs"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <p class="text-slate-600 font-medium mb-1">暂无容器</p>
-      <p class="text-sm text-slate-400">点击「创建容器」开始使用 Docker</p>
+
+      <!-- Empty State -->
+      <div v-else class="flex flex-col items-center justify-center py-20">
+        <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+          <i class="fab fa-docker text-4xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-600 font-medium mb-1">暂无容器</p>
+        <p class="text-sm text-slate-400">点击「创建容器」开始使用 Docker</p>
+      </div>
     </div>
 
     <!-- 创建容器模态框 -->
-    <BaseModal 
+    <BaseModal
       v-model="modalOpen" 
       :title="modalTitle" 
+      :size="logContent ? 'xl' : ''"
       :loading="modalLoading"
       :show-footer="modalTitle === '创建容器' || !!logContent"
       @confirm="handleCreateContainer"
     >
       <!-- 日志查看 -->
       <template v-if="logContent && modalTitle !== '创建容器'">
-        <pre class="bg-slate-900 text-green-400 p-4 rounded-xl overflow-auto max-h-96 text-sm font-mono whitespace-pre-wrap">{{ logContent }}</pre>
+        <pre class="bg-slate-900 text-green-400 p-4 rounded-xl overflow-auto max-h-[60vh] text-sm font-mono whitespace-pre-wrap">{{ logContent }}</pre>
       </template>
 
       <!-- 创建容器表单 -->

@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 
 import { APP_ACTIONS_KEY, APP_STATE_KEY, initProvider } from '@/store/state.js'
 
+import ConfirmModal from '@/component/confirm.vue'
 import NavigationBar from '@/component/navigation.vue'
 import NotificationManager from '@/component/notification.vue'
 
@@ -113,5 +114,6 @@ onMounted(() => {
     <AuthLogin v-else />
 
     <NotificationManager />
+    <ConfirmModal />
   </div>
 </template>
