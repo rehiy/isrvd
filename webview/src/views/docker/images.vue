@@ -55,15 +55,20 @@ const handlePullImage = async () => {
 }
 
 // 删除镜像
-const handleImageAction = async (image, action) => {
-  if (!confirm(`确定要删除镜像 "${image.repoTags[0] || image.id}" 吗？`)) return
-  try {
-    await api.imageAction(image.id, action)
-    actions.showNotification('success', '镜像删除成功')
-    loadImages()
-  } catch (e) {
-    // error handled
-  }
+const handleImageAction = (image, action) => {
+  actions.showConfirm({
+    title: '删除镜像',
+    message: `确定要删除镜像 <strong class="text-slate-900">${image.repoTags[0] || image.id}</strong> 吗？`,
+    icon: 'fas fa-trash',
+    iconColor: 'text-red-500',
+    confirmText: '确认删除',
+    danger: true,
+    onConfirm: async () => {
+      await api.imageAction(image.id, action)
+      actions.showNotification('success', '镜像删除成功')
+      loadImages()
+    }
+  })
 }
 
 onMounted(() => {
@@ -87,10 +92,30 @@ onMounted(() => {
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <label class="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
-              <input type="checkbox" v-model="showAllImages" @change="loadImages()" class="rounded border-slate-300">
-              显示全部
-            </label>
+          <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+            <button 
+              @click="showAllImages = false; loadImages()" 
+              :class="[
+                'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200',
+                !showAllImages 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-700'
+              ]"
+            >
+              <i class="fas fa-cube mr-1"></i>顶层
+            </button>
+            <button 
+              @click="showAllImages = true; loadImages()" 
+              :class="[
+                'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200',
+                showAllImages 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-700'
+              ]"
+            >
+              <i class="fas fa-layer-group mr-1"></i>全部
+            </button>
+          </div>
             <div class="flex items-center gap-2 ml-2">
               <button @click="loadImages()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
                 <i class="fas fa-rotate"></i>刷新

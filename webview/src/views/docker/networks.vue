@@ -51,13 +51,20 @@ const handleCreateNetwork = async () => {
 }
 
 // 删除网络
-const handleNetworkAction = async (net, action) => {
-  if (!confirm(`确定要删除网络 "${net.name}" 吗？`)) return
-  try {
-    await api.networkAction(net.id, action)
-    actions.showNotification('success', '网络删除成功')
-    loadNetworks()
-  } catch (e) {}
+const handleNetworkAction = (net, action) => {
+  actions.showConfirm({
+    title: '删除网络',
+    message: `确定要删除网络 <strong class="text-slate-900">${net.name}</strong> 吗？`,
+    icon: 'fas fa-trash',
+    iconColor: 'red',
+    confirmText: '确认删除',
+    danger: true,
+    onConfirm: async () => {
+      await api.networkAction(net.id, action)
+      actions.showNotification('success', '网络删除成功')
+      loadNetworks()
+    }
+  })
 }
 
 // 暴露方法给 toolbar 使用
