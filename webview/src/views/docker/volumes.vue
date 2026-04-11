@@ -48,13 +48,20 @@ const handleCreateVolume = async () => {
 }
 
 // 删除卷
-const handleVolumeAction = async (vol, action) => {
-  if (!confirm(`确定要删除卷 "${vol.name}" 吗？`)) return
-  try {
-    await api.volumeAction(vol.name, action)
-    actions.showNotification('success', '卷删除成功')
-    loadVolumes()
-  } catch (e) {}
+const handleVolumeAction = (vol, action) => {
+  actions.showConfirm({
+    title: '删除卷',
+    message: `确定要删除卷 <strong class="text-slate-900">${vol.name}</strong> 吗？`,
+    icon: 'fas fa-trash',
+    iconColor: 'text-red-500',
+    confirmText: '确认删除',
+    danger: true,
+    onConfirm: async () => {
+      await api.volumeAction(vol.name, action)
+      actions.showNotification('success', '卷删除成功')
+      loadVolumes()
+    }
+  })
 }
 
 // 暴露方法给 toolbar

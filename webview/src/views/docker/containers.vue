@@ -173,10 +173,30 @@ onMounted(() => {
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <label class="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
-              <input type="checkbox" v-model="showAll" @change="loadContainers()" class="rounded border-slate-300">
-              显示全部
-            </label>
+          <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+            <button 
+              @click="showAll = false; loadContainers()" 
+              :class="[
+                'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200',
+                !showAll 
+                  ? 'bg-white text-emerald-600 shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-700'
+              ]"
+            >
+              <i class="fas fa-play mr-1"></i>运行中
+            </button>
+            <button 
+              @click="showAll = true; loadContainers()" 
+              :class="[
+                'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200',
+                showAll 
+                  ? 'bg-white text-emerald-600 shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-700'
+              ]"
+            >
+              <i class="fas fa-layer-group mr-1"></i>全部
+            </button>
+          </div>
             <div class="flex items-center gap-2 ml-2">
               <button @click="loadContainers()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
                 <i class="fas fa-rotate"></i>刷新
