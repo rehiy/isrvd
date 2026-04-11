@@ -12,6 +12,11 @@ const routes = [
     component: () => import('@/views/file-manager/index.vue')
   },
   {
+    path: '/docker',
+    name: 'docker',
+    component: () => import('@/views/docker.vue')
+  },
+  {
     path: '/markdown',
     name: 'markdown',
     component: () => import('@/views/markdown.vue')

@@ -68,6 +68,60 @@ class ApiService {
   download(path) {
     return axios.post('/api/download', { path }, { responseType: 'blob' })
   }
+
+  // ==================== Docker 管理相关 ====================
+  
+  // Docker 概览信息
+  dockerInfo() {
+    return axios.get('/api/docker/info')
+  }
+
+  // 容器管理
+  listContainers(all = false) {
+    return axios.get('/api/docker/containers', { params: { all } })
+  }
+  containerAction(id, action) {
+    return axios.post('/api/docker/containers/action', { id, action })
+  }
+  createContainer(data) {
+    return axios.post('/api/docker/containers/create', data)
+  }
+  containerLogs(id, tail = '100') {
+    return axios.post('/api/docker/containers/logs', { id, tail })
+  }
+
+  // 镜像管理
+  listImages(all = false) {
+    return axios.get('/api/docker/images', { params: { all } })
+  }
+  imageAction(id, action) {
+    return axios.post('/api/docker/images/action', { id, action })
+  }
+  pullImage(image, tag = '') {
+    return axios.post('/api/docker/images/pull', { image, tag })
+  }
+
+  // 网络管理
+  listNetworks() {
+    return axios.get('/api/docker/networks')
+  }
+  networkAction(id, action) {
+    return axios.post('/api/docker/networks/action', { id, action })
+  }
+  createNetwork(data) {
+    return axios.post('/api/docker/networks/create', data)
+  }
+
+  // 卷管理
+  listVolumes() {
+    return axios.get('/api/docker/volumes')
+  }
+  volumeAction(name, action) {
+    return axios.post('/api/docker/volumes/action', { name, action })
+  }
+  createVolume(data) {
+    return axios.post('/api/docker/volumes/create', data)
+  }
 }
 
 // 导出单例实例

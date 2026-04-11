@@ -47,6 +47,11 @@ func (app *App) setupRouter() {
 	shellHandler := handler.NewShellHandler()
 	zipHandler := handler.NewZipHandler()
 
+	dockerHandler, err := handler.NewDockerHandler()
+	if err != nil {
+		logman.Warn("Docker client init failed, Docker features disabled", "error", err)
+	}
+
 	// API 路由组
 	api := app.Group("/api")
 	{
@@ -70,6 +75,36 @@ func (app *App) setupRouter() {
 			auth.POST("/chmod", fileHandler.Chmod)
 			auth.POST("/zip", zipHandler.Zip)
 			auth.POST("/unzip", zipHandler.Unzip)
+
+			// Docker API 路由
+			if dockerHandler != nil {
+				docker := auth.Group("/docker")
+				{
+					// 概览
+					docker.GET("/info", dockerHandler.Info)
+
+					// 容器管理
+					docker.GET("/containers", dockerHandler.ListContainers)
+					docker.POST("/containers/action", dockerHandler.ContainerAction)
+					docker.POST("/containers/create", dockerHandler.CreateContainer)
+					docker.POST("/containers/logs", dockerHandler.ContainerLogs)
+
+					// 镜像管理
+					docker.GET("/images", dockerHandler.ListImages)
+					docker.POST("/images/action", dockerHandler.ImageAction)
+					docker.POST("/images/pull", dockerHandler.PullImage)
+
+					// 网络管理
+					docker.GET("/networks", dockerHandler.ListNetworks)
+					docker.POST("/networks/action", dockerHandler.NetworkAction)
+					docker.POST("/networks/create", dockerHandler.CreateNetwork)
+
+					// 卷管理
+					docker.GET("/volumes", dockerHandler.ListVolumes)
+					docker.POST("/volumes/action", dockerHandler.VolumeAction)
+					docker.POST("/volumes/create", dockerHandler.CreateVolume)
+				}
+			}
 		}
 	}
 

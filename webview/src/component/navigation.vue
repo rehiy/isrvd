@@ -47,6 +47,14 @@ const state = inject(APP_STATE_KEY)
               <i class="fas fa-terminal"></i>
               <span>Shell 终端</span>
             </router-link>
+            <router-link 
+              to="/docker" 
+              class="nav-link"
+              active-class="nav-link-active"
+            >
+              <i class="fab fa-docker"></i>
+              <span>Docker</span>
+            </router-link>
           </div>
         </div>
 
