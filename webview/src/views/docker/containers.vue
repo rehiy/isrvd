@@ -1,5 +1,5 @@
 <script setup>
-import { inject, onMounted, ref } from 'vue'
+import { computed, inject, onMounted, ref } from 'vue'
 
 import { useRouter } from 'vue-router'
 
@@ -17,6 +17,7 @@ const router = useRouter()
 // 自己管理数据
 const containers = ref([])
 const images = ref([])
+const networks = ref([])
 const loading = ref(false)
 const showAll = ref(false)
 
@@ -50,6 +51,16 @@ const loadImages = async () => {
   try {
 const res = await api.listImages(false)
     images.value = res.payload || []
+  } catch (e) {
+    // 静默失败
+  }
+}
+
+// 加载网络列表（用于创建容器时选择网络）
+const loadNetworks = async () => {
+  try {
+    const res = await api.listNetworks()
+    networks.value = res.payload || []
   } catch (e) {
     // 静默失败
   }
@@ -92,13 +103,14 @@ const restartOptions = [
   { value: 'no', label: '不重启' }
 ]
 
-// 网络模式选项
-const networkOptions = [
-  { value: '', label: '默认 (bridge)' },
-  { value: 'bridge', label: 'bridge' },
-  { value: 'host', label: 'host' },
-  { value: 'none', label: 'none' }
-]
+// 网络模式选项（从加载的网络列表生成）
+const networkOptions = computed(() => {
+  const options = [{ value: '', label: '默认网络' }]
+  networks.value.forEach(net => {
+    options.push({ value: net.name, label: net.name })
+  })
+  return options
+})
 
 const createContainerModal = () => {
   isEditMode.value = false
@@ -123,6 +135,7 @@ const createContainerModal = () => {
   modalTitle.value = '创建容器'
   modalOpen.value = true
   loadImages()
+  loadNetworks()
 }
 
 // 编辑容器配置
@@ -166,6 +179,7 @@ const editContainerModal = async (container) => {
     }
 
     loadImages()
+    loadNetworks()
   } catch (e) {
     actions.showNotification('error', '加载容器配置失败: ' + (e.response?.data?.message || e.message))
     modalOpen.value = false
