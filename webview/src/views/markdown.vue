@@ -3,77 +3,54 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import Cherry from 'cherry-markdown'
 import 'cherry-markdown/dist/cherry-markdown.css'
 import api from '@/service/api.js'
+import FilePicker from '@/component/modal/picker.vue'
 
 const cherryInstance = ref(null)
 
 // 文件状态
-const currentPath = ref('')      // 当前打开的文件路径（相对 home）
-const isDirty = ref(false)       // 是否有未保存的修改
-const saveStatus = ref('')       // 保存状态提示
+const currentPath = ref('')
+const isDirty = ref(false)
+const saveStatus = ref('')
 
-// 文件浏览器弹窗
-const showFilePicker = ref(false)
-const browseDir = ref('')        // 当前浏览目录
-const dirFiles = ref([])         // 当前目录文件列表
-const pickerLoading = ref(false)
+// 文件选择器状态
+const pickerMode = ref('open')
+const pickerOpen = ref(false)
 
-// 打开文件浏览器
-async function openPicker() {
-  browseDir.value = '/'
-  showFilePicker.value = true
-  await loadDir('/')
+// 打开文件选择器
+function openFilePicker(mode = 'open') {
+  pickerMode.value = mode
+  pickerOpen.value = true
 }
 
-// 加载目录
-async function loadDir(path) {
-  pickerLoading.value = true
-  try {
-    const res = await api.list(path)
-    browseDir.value = path
-    dirFiles.value = res.payload?.files || []
-    browseDir.value = res.payload?.path ?? path
-  } catch (e) {
-    dirFiles.value = []
-  } finally {
-    pickerLoading.value = false
-  }
-}
-
-// 进入子目录
-async function enterDir(file) {
-  if (!file.isDir) return
-  await loadDir(file.path)
-}
-
-// 返回上级目录
-async function goUp() {
-  if (!browseDir.value || browseDir.value === '/') return
-  const parts = browseDir.value.replace(/\/$/, '').split('/')
-  parts.pop()
-  await loadDir(parts.join('/') || '/')
-}
-
-// 选择文件打开
-async function selectFileToOpen(file) {
-  if (file.isDir) {
-    await enterDir(file)
-    return
-  }
+// 选择文件（打开模式）
+async function onFileSelect(file) {
   try {
     const res = await api.read(file.path)
     cherryInstance.value.setValue(res.payload?.content || '')
     currentPath.value = file.path
     isDirty.value = false
     saveStatus.value = ''
-    showFilePicker.value = false
   } catch (e) {
     alert('读取文件失败：' + e.message)
   }
 }
 
-// 保存到当前路径
+// 保存文件（保存模式）
+async function onFileSave(fullPath) {
+  try {
+    await saveToPath(fullPath)
+    pickerOpen.value = false
+  } catch (e) {
+    alert('保存失败：' + e.message)
+  }
+}
+
+// 保存
 async function save() {
-  if (!currentPath.value) return
+  if (!currentPath.value) {
+    openFilePicker('save')
+    return
+  }
   await saveToPath(currentPath.value)
 }
 
@@ -87,7 +64,6 @@ async function saveToPath(path) {
     saveStatus.value = '已保存'
     setTimeout(() => { saveStatus.value = '' }, 2000)
   } catch (e) {
-    // 文件不存在时尝试 create
     try {
       await api.create(path, content)
       currentPath.value = path
@@ -95,7 +71,7 @@ async function saveToPath(path) {
       saveStatus.value = '已保存'
       setTimeout(() => { saveStatus.value = '' }, 2000)
     } catch (e2) {
-      alert('保存失败：' + e2.message)
+      throw e2
     }
   }
 }
@@ -154,7 +130,7 @@ onUnmounted(() => {
           <button @click="newFile" class="btn-secondary text-sm px-3 py-1.5">
             <i class="fas fa-file mr-1"></i>新建
           </button>
-          <button @click="openPicker()" class="btn-secondary text-sm px-3 py-1.5">
+          <button @click="openFilePicker('open')" class="btn-secondary text-sm px-3 py-1.5">
             <i class="fas fa-folder-open mr-1"></i>打开
           </button>
           <button @click="save" class="btn-success text-sm px-3 py-1.5">
@@ -166,67 +142,14 @@ onUnmounted(() => {
       <!-- Editor -->
       <div id="markdown-editor" class="flex-1 min-h-0"></div>
     </div>
+
+    <!-- File Picker -->
+    <FilePicker 
+      v-model="pickerOpen" 
+      :mode="pickerMode" 
+      filter=".md"
+      @select="onFileSelect"
+      @save="onFileSave"
+    />
   </div>
-
-  <!-- File Picker Modal -->
-  <Teleport to="body">
-    <div v-if="showFilePicker" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div class="bg-white rounded-2xl shadow-2xl w-[520px] max-h-[70vh] flex flex-col">
-        <!-- Modal Header -->
-        <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-          <div class="flex items-center space-x-2">
-            <i class="fas fa-folder-open text-amber-500"></i>
-            <span class="font-semibold text-slate-800">打开文件</span>
-          </div>
-          <button @click="showFilePicker = false" class="text-slate-400 hover:text-slate-600 transition-colors">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-
-        <!-- Path Bar -->
-        <div class="px-5 py-2 bg-slate-50 border-b border-slate-100 flex items-center space-x-2 text-sm text-slate-500">
-          <button @click="loadDir('/')" class="hover:text-slate-800 transition-colors">
-            <i class="fas fa-home"></i>
-          </button>
-          <i class="fas fa-chevron-right text-xs text-slate-300"></i>
-          <span class="truncate">{{ browseDir || '/' }}</span>
-          <button v-if="browseDir" @click="goUp" class="ml-auto hover:text-slate-800 transition-colors flex-shrink-0">
-            <i class="fas fa-level-up-alt mr-1"></i>上级
-          </button>
-        </div>
-
-        <!-- File List -->
-        <div class="flex-1 overflow-y-auto px-3 py-2">
-          <div v-if="pickerLoading" class="flex items-center justify-center py-10 text-slate-400">
-            <i class="fas fa-spinner fa-spin mr-2"></i>加载中...
-          </div>
-          <div v-else-if="!dirFiles || dirFiles.length === 0" class="flex items-center justify-center py-10 text-slate-400 text-sm">
-            目录为空
-          </div>
-          <div v-else>
-            <div
-              v-for="file in dirFiles"
-              :key="file.path"
-              @click="selectFileToOpen(file)"
-              class="flex items-center space-x-3 px-3 py-2 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors group"
-              :class="{'opacity-40': !file.isDir && !file.name.endsWith('.md')}"
-            >
-              <i 
-                :class="file.isDir ? 'fas fa-folder text-amber-400' : (file.name.endsWith('.md') ? 'fas fa-file-alt text-emerald-500' : 'fas fa-file text-slate-300')"
-                class="w-4 text-center"
-              ></i>
-              <span class="text-sm text-slate-700 flex-1 truncate">{{ file.name }}</span>
-              <span v-if="!file.isDir" class="text-xs text-slate-400 flex-shrink-0">{{ (file.size / 1024).toFixed(1) }} KB</span>
-              <i v-if="file.isDir" class="fas fa-chevron-right text-xs text-slate-300 group-hover:text-slate-500 transition-colors flex-shrink-0"></i>
-            </div>
-          </div>
-        </div>
-
-        <!-- Modal Footer -->
-        <div class="px-5 py-3 border-t border-slate-100 flex justify-end">
-          <button @click="showFilePicker = false" class="btn-secondary text-sm px-3 py-1.5">取消</button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
 </template>
