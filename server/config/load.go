@@ -12,12 +12,14 @@ var (
 	Debug = false
 	// 监听地址
 	ListenAddr = ":8080"
-	// 基础目录
-	RootDirectory = "."
 	// JWT 密钥
 	JWTSecret = "default-secret-key"
 	// 内网代理用户名 Header 名（为空则不启用）
 	ProxyHeaderName = ""
+	// 基础目录
+	RootDirectory = "."
+	// 容器数据根目录
+	ContainerRoot = ""
 	// 成员配置
 	Members = map[string]*Member{}
 )
@@ -50,10 +52,6 @@ func Load() error {
 	if value := os.Getenv("LISTEN_ADDR"); value != "" {
 		ListenAddr = value
 	}
-	RootDirectory = conf.Server.RootDirectory
-	if value := os.Getenv("ROOT_DIRECTORY"); value != "" {
-		RootDirectory = value
-	}
 	JWTSecret = conf.Server.JWTSecret
 	if value := os.Getenv("JWT_SECRET"); value != "" {
 		JWTSecret = value
@@ -62,10 +60,23 @@ func Load() error {
 	if value := os.Getenv("PROXY_HEADER_NAME"); value != "" {
 		ProxyHeaderName = value
 	}
+	RootDirectory = conf.Server.RootDirectory
+	if value := os.Getenv("ROOT_DIRECTORY"); value != "" {
+		RootDirectory = value
+	}
+	ContainerRoot = conf.Server.ContainerRoot
+	if value := os.Getenv("CONTAINER_ROOT"); value != "" {
+		ContainerRoot = value
+	}
+	if !filepath.IsAbs(ContainerRoot) {
+		ContainerRoot = filepath.Join(RootDirectory, ContainerRoot)
+	}
 
 	// 更新成员配置
 	for _, m := range conf.Members {
-		m.HomeDirectory = filepath.Join(RootDirectory, m.HomeDirectory)
+		if !filepath.IsAbs(m.HomeDirectory) {
+			m.HomeDirectory = filepath.Join(RootDirectory, m.HomeDirectory)
+		}
 		Members[m.Username] = m
 	}
 

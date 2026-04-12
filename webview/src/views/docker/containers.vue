@@ -346,8 +346,8 @@ onMounted(() => {
           <!-- 目录映射 -->
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-2">目录映射</label>
-            <textarea v-model="formData.volumesStr" rows="2" placeholder="/host:/container:ro" class="input font-mono text-sm"></textarea>
-            <p class="mt-1 text-xs text-slate-400">主机路径:容器路径[:ro]</p>
+            <textarea v-model="formData.volumesStr" rows="2" placeholder="data:/app/data:ro" class="input font-mono text-sm"></textarea>
+            <p class="mt-1 text-xs text-slate-400">主机路径:容器路径[:ro]，相对路径自动补全</p>
           </div>
 
           <!-- 环境变量 -->

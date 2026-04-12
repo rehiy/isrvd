@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/logman"
 
+	"isrvd/server/config"
 	"isrvd/server/helper"
 	"isrvd/server/model"
 )
@@ -189,13 +191,13 @@ func (h *DockerHandler) CreateContainer(c *gin.Context) {
 
 	ctx := context.Background()
 
-	config := &container.Config{
-		Image:        req.Image,
-		Cmd:          req.Cmd,
-		Env:          req.Env,
-		WorkingDir:   req.Workdir,
-		User:         req.User,
-		Hostname:     req.Hostname,
+	containerConfig := &container.Config{
+		Image:      req.Image,
+		Cmd:        req.Cmd,
+		Env:        req.Env,
+		WorkingDir: req.Workdir,
+		User:       req.User,
+		Hostname:   req.Hostname,
 	}
 
 	hostConfig := &container.HostConfig{}
@@ -235,9 +237,9 @@ func (h *DockerHandler) CreateContainer(c *gin.Context) {
 			}
 		}
 		hostConfig.PortBindings = portBindings
-		config.ExposedPorts = make(nat.PortSet)
+		containerConfig.ExposedPorts = make(nat.PortSet)
 		for _, containerPort := range req.Ports {
-			config.ExposedPorts[nat.Port(containerPort+"/tcp")] = struct{}{}
+			containerConfig.ExposedPorts[nat.Port(containerPort+"/tcp")] = struct{}{}
 		}
 	}
 
@@ -245,7 +247,12 @@ func (h *DockerHandler) CreateContainer(c *gin.Context) {
 	if len(req.Volumes) > 0 {
 		hostConfig.Binds = make([]string, 0, len(req.Volumes))
 		for _, vol := range req.Volumes {
-			bind := vol.HostPath + ":" + vol.ContainerPath
+			hostPath := vol.HostPath
+			// 如果配置了容器数据根目录且 hostPath 是相对路径，则补全为容器专属目录
+			if config.ContainerRoot != "" && !filepath.IsAbs(hostPath) {
+				hostPath = filepath.Join(config.ContainerRoot, req.Name, hostPath)
+			}
+			bind := hostPath + ":" + vol.ContainerPath
 			if vol.ReadOnly {
 				bind += ":ro"
 			}
@@ -253,7 +260,7 @@ func (h *DockerHandler) CreateContainer(c *gin.Context) {
 		}
 	}
 
-	resp, err := h.dockerClient.ContainerCreate(ctx, config, hostConfig, nil, nil, req.Name)
+	resp, err := h.dockerClient.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, req.Name)
 	if err != nil {
 		logman.Error("Create container failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "创建容器失败: "+err.Error())

@@ -24,9 +24,9 @@
 ```yaml
 server:
   listenAddr: ":8080"        # 监听地址
-  rootDirectory: "."         # 根目录
   jwtSecret: your-secret-key # JWT 密钥
   proxyHeaderName: ""        # 内网代理认证 Header 名（可选，见下方说明）
+  rootDirectory: "."         # 根目录
 
 members:
   - username: admin

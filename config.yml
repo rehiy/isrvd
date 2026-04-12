@@ -1,8 +1,9 @@
 server:
   debug: false
   listenAddr: ":8080"
-  rootDirectory: "."
   jwtSecret: default-secret-key
+  rootDirectory: "."
+  containerRoot: ""
 
 members:
   - username: admin

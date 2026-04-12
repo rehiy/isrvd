@@ -31,9 +31,9 @@ func (app *App) create() {
 
 	// 输出服务器信息
 	logman.Info("Server starting",
-		"members", len(config.Members),
-		"rootDirectory", config.RootDirectory,
 		"listenAddr", config.ListenAddr,
+		"rootDirectory", config.RootDirectory,
+		"members", len(config.Members),
 	)
 
 	httpd.StaticEmbed(public.Efs, "", "")
