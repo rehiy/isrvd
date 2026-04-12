@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/logman"
 
@@ -193,7 +194,38 @@ func (h *DockerHandler) CreateContainer(c *gin.Context) {
 		Cmd:   req.Cmd,
 		Env:   req.Env,
 	}
-	hostConfig := &container.HostConfig{AutoRemove: req.Remove}
+
+	hostConfig := &container.HostConfig{
+		AutoRemove: req.Remove,
+	}
+
+	// 处理端口映射
+	if len(req.Ports) > 0 {
+		portBindings := make(nat.PortMap)
+		for hostPort, containerPort := range req.Ports {
+			port := nat.Port(containerPort + "/tcp")
+			portBindings[port] = []nat.PortBinding{
+				{HostIP: "0.0.0.0", HostPort: hostPort},
+			}
+		}
+		hostConfig.PortBindings = portBindings
+		config.ExposedPorts = make(nat.PortSet)
+		for _, containerPort := range req.Ports {
+			config.ExposedPorts[nat.Port(containerPort+"/tcp")] = struct{}{}
+		}
+	}
+
+	// 处理目录映射
+	if len(req.Volumes) > 0 {
+		hostConfig.Binds = make([]string, 0, len(req.Volumes))
+		for _, vol := range req.Volumes {
+			bind := vol.HostPath + ":" + vol.ContainerPath
+			if vol.ReadOnly {
+				bind += ":ro"
+			}
+			hostConfig.Binds = append(hostConfig.Binds, bind)
+		}
+	}
 
 	resp, err := h.dockerClient.ContainerCreate(ctx, config, hostConfig, nil, nil, req.Name)
 	if err != nil {

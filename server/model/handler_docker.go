@@ -60,12 +60,20 @@ type ContainerActionRequest struct {
 
 // 创建容器请求
 type ContainerCreateRequest struct {
-	Image  string            `json:"image" binding:"required"`
-	Name   string            `json:"name"`
-	Cmd    []string          `json:"cmd"`
-	Env    []string          `json:"env"`
-	Ports  map[string]string `json:"ports"` // e.g., {"8080": "80"}
-	Remove bool              `json:"remove"`
+	Image   string            `json:"image" binding:"required"`
+	Name    string            `json:"name"`
+	Cmd     []string          `json:"cmd"`
+	Env     []string          `json:"env"`
+	Ports   map[string]string `json:"ports"`   // e.g., {"8080": "80"}
+	Volumes []VolumeMapping   `json:"volumes"` // 目录映射
+	Remove  bool              `json:"remove"`
+}
+
+// 目录映射
+type VolumeMapping struct {
+	HostPath      string `json:"hostPath"`      // 主机路径
+	ContainerPath string `json:"containerPath"` // 容器路径
+	ReadOnly      bool   `json:"readOnly"`      // 只读
 }
 
 // 镜像操作请求

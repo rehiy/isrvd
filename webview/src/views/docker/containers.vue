@@ -114,11 +114,29 @@ const selectImage = (imageName) => {
 
 // 创建容器弹窗
 const createContainerModal = () => {
-  formData.value = { image: '', name: '', env: [], ports: {}, cmd: '' }
+  formData.value = { 
+    image: '', 
+    name: '', 
+    env: [], 
+    ports: {}, 
+    cmd: '',
+    volumes: []
+  }
   modalTitle.value = '创建容器'
   modalOpen.value = true
   logContent.value = ''
   loadImages() // 加载镜像列表供选择
+}
+
+const addVolume = () => {
+  if (!formData.value.volumes) {
+    formData.value.volumes = []
+  }
+  formData.value.volumes.push({ hostPath: '', containerPath: '', readOnly: false })
+}
+
+const removeVolume = (index) => {
+  formData.value.volumes.splice(index, 1)
 }
 
 const handleCreateContainer = async () => {
@@ -130,6 +148,7 @@ const handleCreateContainer = async () => {
       name: formData.value.name || undefined,
       env: formData.value.envStr ? formData.value.envStr.split('\n').filter(e => e.trim()) : [],
       ports: {},
+      volumes: formData.value.volumes ? formData.value.volumes.filter(v => v.hostPath && v.containerPath) : [],
       remove: formData.value.remove || false,
     }
     if (formData.value.hostPort && formData.value.containerPort) {
@@ -322,6 +341,28 @@ onMounted(() => {
               <input type="text" v-model="formData.hostPort" placeholder="主机端口 (如 8080)" class="input text-sm" />
             </div>
             <p class="mt-1 text-xs text-slate-400">将主机端口映射到容器端口</p>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-sm font-medium text-slate-700">目录映射（可选）</label>
+              <button type="button" @click="addVolume" class="text-xs text-primary-600 hover:text-primary-700 flex items-center gap-1">
+                <i class="fas fa-plus"></i>添加
+              </button>
+            </div>
+            <div v-if="formData.volumes && formData.volumes.length > 0" class="space-y-2">
+              <div v-for="(vol, index) in formData.volumes" :key="index" class="flex items-center gap-2">
+                <input type="text" v-model="vol.hostPath" placeholder="主机路径 (如 /host/data)" class="input text-sm flex-1" />
+                <input type="text" v-model="vol.containerPath" placeholder="容器路径 (如 /data)" class="input text-sm flex-1" />
+                <label class="flex items-center gap-1 text-xs text-slate-500 whitespace-nowrap">
+                  <input type="checkbox" v-model="vol.readOnly" class="rounded border-slate-300" />
+                  只读
+                </label>
+                <button type="button" @click="removeVolume(index)" class="p-1.5 text-red-500 hover:bg-red-50 rounded">
+                  <i class="fas fa-times text-xs"></i>
+                </button>
+              </div>
+            </div>
+            <p v-else class="text-xs text-slate-400">点击「添加」创建目录映射</p>
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-2">环境变量（可选，每行一个）</label>
