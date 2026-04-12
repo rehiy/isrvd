@@ -9,6 +9,14 @@ import (
 	"isrvd/server/config"
 )
 
+// 认证中间件工厂
+func AuthMiddleware() gin.HandlerFunc {
+	if config.ProxyHeaderName == "" {
+		return JwtAuthMiddleware()
+	}
+	return ProxyHeaderAuthMiddleware()
+}
+
 // JWT 认证中间件
 func JwtAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -65,12 +73,4 @@ func ProxyHeaderAuthMiddleware() gin.HandlerFunc {
 		c.Set("username", username)
 		c.Next()
 	}
-}
-
-// 认证中间件工厂：根据配置自动选择 Header 或 JWT 模式
-func AuthMiddleware() gin.HandlerFunc {
-	if config.ProxyHeaderName != "" {
-		return ProxyHeaderAuthMiddleware()
-	}
-	return JwtAuthMiddleware()
 }
