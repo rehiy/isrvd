@@ -151,13 +151,13 @@ onUnmounted(() => {
         </div>
         <!-- 操作按钮 -->
         <div class="flex items-center space-x-2">
-          <button @click="newFile" class="btn-sm">
+          <button @click="newFile" class="btn-secondary text-sm px-3 py-1.5">
             <i class="fas fa-file mr-1"></i>新建
           </button>
-          <button @click="openPicker()" class="btn-sm">
+          <button @click="openPicker()" class="btn-secondary text-sm px-3 py-1.5">
             <i class="fas fa-folder-open mr-1"></i>打开
           </button>
-          <button @click="save" class="btn-sm btn-primary">
+          <button @click="save" class="btn-success text-sm px-3 py-1.5">
             <i class="fas fa-save mr-1"></i>保存
           </button>
         </div>
@@ -224,40 +224,9 @@ onUnmounted(() => {
 
         <!-- Modal Footer -->
         <div class="px-5 py-3 border-t border-slate-100 flex justify-end">
-          <button @click="showFilePicker = false" class="btn-sm">取消</button>
+          <button @click="showFilePicker = false" class="btn-secondary text-sm px-3 py-1.5">取消</button>
         </div>
       </div>
     </div>
   </Teleport>
 </template>
-
-<style scoped>
-.btn-sm {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.375rem 0.75rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: #475569;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.625rem;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-.btn-sm:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #0f172a;
-}
-.btn-primary {
-  color: white;
-  background: #10b981;
-  border-color: #10b981;
-}
-.btn-primary:hover {
-  background: #059669;
-  border-color: #059669;
-}
-</style>

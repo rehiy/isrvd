@@ -54,8 +54,8 @@ const toggleDocker = () => {
     <nav v-if="state.username" class="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
       <router-link 
         to="/explorer" 
-        class="nav-link"
-        active-class="nav-link-active"
+        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
         :title="collapsed ? '文件管理' : ''"
       >
         <i class="fas fa-folder-open"></i>
@@ -63,8 +63,8 @@ const toggleDocker = () => {
       </router-link>
       <router-link 
         to="/markdown" 
-        class="nav-link"
-        active-class="nav-link-active"
+        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
         :title="collapsed ? 'Markdown' : ''"
       >
         <i class="fas fa-edit"></i>
@@ -72,8 +72,8 @@ const toggleDocker = () => {
       </router-link>
       <router-link 
         to="/shell" 
-        class="nav-link"
-        active-class="nav-link-active"
+        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
         :title="collapsed ? 'Shell 终端' : ''"
       >
         <i class="fas fa-terminal"></i>
@@ -84,8 +84,8 @@ const toggleDocker = () => {
       <div v-if="!collapsed">
         <button 
           @click="toggleDocker"
-          class="nav-link w-full"
-          :class="{ 'nav-link-active': isDockerActive }"
+          class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isDockerActive }"
         >
           <i class="fab fa-docker"></i>
           <span>Docker</span>
@@ -97,32 +97,32 @@ const toggleDocker = () => {
         <div v-show="dockerExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
           <router-link 
             to="/docker/containers" 
-            class="nav-link text-sm"
-            active-class="nav-link-active"
+            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
           >
             <i class="fas fa-cube"></i>
             <span>容器</span>
           </router-link>
           <router-link 
             to="/docker/images" 
-            class="nav-link text-sm"
-            active-class="nav-link-active"
+            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
           >
             <i class="fas fa-layer-group"></i>
             <span>镜像</span>
           </router-link>
           <router-link 
             to="/docker/networks" 
-            class="nav-link text-sm"
-            active-class="nav-link-active"
+            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
           >
             <i class="fas fa-network-wired"></i>
             <span>网络</span>
           </router-link>
           <router-link 
             to="/docker/volumes" 
-            class="nav-link text-sm"
-            active-class="nav-link-active"
+            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
           >
             <i class="fas fa-database"></i>
             <span>卷</span>
@@ -134,8 +134,8 @@ const toggleDocker = () => {
       <router-link 
         v-if="collapsed"
         to="/docker/containers" 
-        class="nav-link"
-        :class="{ 'nav-link-active': isDockerActive }"
+        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isDockerActive }"
         title="Docker"
       >
         <i class="fab fa-docker"></i>
@@ -146,7 +146,7 @@ const toggleDocker = () => {
     <div class="border-t border-slate-200 p-3">
       <button 
         @click="collapsed = !collapsed"
-        class="w-full nav-link justify-center"
+        class="flex items-center justify-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
         :title="collapsed ? '展开菜单' : '收起菜单'"
       >
         <i :class="collapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"></i>
@@ -155,28 +155,3 @@ const toggleDocker = () => {
     </div>
   </aside>
 </template>
-
-<style scoped>
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #475569;
-  border-radius: 0.75rem;
-  transition: all 0.2s;
-}
-.nav-link:hover {
-  background-color: #f1f5f9;
-  color: #0f172a;
-}
-.nav-link-active {
-  background-color: #eff6ff;
-  color: #1d4ed8;
-}
-.nav-link-active:hover {
-  background-color: #dbeafe;
-}
-</style>
