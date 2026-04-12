@@ -9,25 +9,31 @@ import (
 	"isrvd/server/config"
 )
 
-// JWT 认证中间件
+// 认证中间件工厂
 func AuthMiddleware() gin.HandlerFunc {
+	if config.ProxyHeaderName == "" {
+		return JwtAuthMiddleware()
+	}
+	return ProxyHeaderAuthMiddleware()
+}
+
+// JWT 认证中间件
+func JwtAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 
-		// WebSocket 连接时才允许从 query 参数获取 token
+		// WebSocket 连接时允许从 query 参数获取 token
 		if tokenStr == "" && c.GetHeader("Upgrade") == "websocket" {
 			tokenStr = c.Query("token")
 		}
 
-		// 如果没有获取到 token，则拒绝请求
 		if tokenStr == "" {
 			c.JSON(401, gin.H{"error": "未提供认证令牌"})
 			c.Abort()
 			return
 		}
 
-		// 验证JWT令牌
 		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (any, error) {
 			return []byte(config.JWTSecret), nil
 		})
@@ -37,7 +43,6 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// 解析JWT声明
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			if sub, exists := claims["sub"].(string); exists {
 				if _, memberExists := config.Members[sub]; memberExists {
@@ -45,6 +50,27 @@ func AuthMiddleware() gin.HandlerFunc {
 				}
 			}
 		}
+		c.Next()
+	}
+}
+
+// 内网代理 Header 认证中间件
+// 启用条件：config.ProxyHeaderName 非空
+// Header 缺失或用户不存在时返回 403，不回退到 JWT
+func ProxyHeaderAuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		username := c.GetHeader(config.ProxyHeaderName)
+		if username == "" {
+			c.JSON(403, gin.H{"error": "代理 Header 缺失"})
+			c.Abort()
+			return
+		}
+		if _, exists := config.Members[username]; !exists {
+			c.JSON(403, gin.H{"error": "用户不存在"})
+			c.Abort()
+			return
+		}
+		c.Set("username", username)
 		c.Next()
 	}
 }

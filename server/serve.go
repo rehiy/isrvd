@@ -31,9 +31,9 @@ func (app *App) create() {
 
 	// 输出服务器信息
 	logman.Info("Server starting",
-		"members", len(config.Members),
-		"rootDirectory", config.RootDirectory,
 		"listenAddr", config.ListenAddr,
+		"rootDirectory", config.RootDirectory,
+		"members", len(config.Members),
 	)
 
 	httpd.StaticEmbed(public.Efs, "", "")
@@ -46,6 +46,12 @@ func (app *App) setupRouter() {
 	fileHandler := handler.NewFileHandler()
 	shellHandler := handler.NewShellHandler()
 	zipHandler := handler.NewZipHandler()
+
+	// 注册 Docker Handler
+	dockerHandler, err := handler.NewDockerHandler()
+	if err != nil {
+		logman.Fatal("Docker client init failed, Docker features disabled", "error", err)
+	}
 
 	// API 路由组
 	api := app.Group("/api")
@@ -70,9 +76,50 @@ func (app *App) setupRouter() {
 			auth.POST("/chmod", fileHandler.Chmod)
 			auth.POST("/zip", zipHandler.Zip)
 			auth.POST("/unzip", zipHandler.Unzip)
+
+			// Docker API 路由
+			docker := auth.Group("/docker")
+			{
+				// 概览
+				docker.GET("/info", dockerHandler.Info)
+
+				// 容器管理
+				docker.GET("/containers", dockerHandler.ListContainers)
+				docker.POST("/container/action", dockerHandler.ContainerAction)
+				docker.POST("/container/create", dockerHandler.CreateContainer)
+				docker.POST("/container/logs", dockerHandler.ContainerLogs)
+				docker.GET("/container/stats", dockerHandler.ContainerStats)
+				docker.GET("/container/config", dockerHandler.GetContainerConfig)
+				docker.POST("/container/update", dockerHandler.UpdateContainerConfig)
+
+				// 镜像管理
+				docker.GET("/images", dockerHandler.ListImages)
+				docker.POST("/image/action", dockerHandler.ImageAction)
+				docker.POST("/image/pull", dockerHandler.PullImage)
+				docker.POST("/image/tag", dockerHandler.ImageTag)
+				docker.GET("/image/search", dockerHandler.ImageSearch)
+				docker.POST("/image/build", dockerHandler.ImageBuild)
+
+				// 网络管理
+				docker.GET("/networks", dockerHandler.ListNetworks)
+				docker.GET("/network/inspect", dockerHandler.NetworkInspect)
+				docker.POST("/network/action", dockerHandler.NetworkAction)
+				docker.POST("/network/create", dockerHandler.CreateNetwork)
+
+				// 卷管理
+				docker.GET("/volumes", dockerHandler.ListVolumes)
+				docker.GET("/volume/inspect", dockerHandler.VolumeInspect)
+				docker.POST("/volume/action", dockerHandler.VolumeAction)
+				docker.POST("/volume/create", dockerHandler.CreateVolume)
+			}
 		}
 	}
 
 	// WebSocket 路由
-	app.GET("/ws/shell", middleware.AuthMiddleware(), shellHandler.WebSocket)
+	ws := app.Group("/ws")
+	ws.Use(middleware.AuthMiddleware())
+	{
+		ws.GET("/shell", shellHandler.WebSocket)
+		ws.GET("/docker/container/exec", dockerHandler.ContainerExec)
+	}
 }

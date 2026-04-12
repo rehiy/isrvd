@@ -8,10 +8,12 @@ type Config struct {
 
 // 服务器配置
 type Server struct {
-	Debug         bool   `yaml:"debug"`
-	ListenAddr    string `yaml:"listenAddr"`
-	RootDirectory string `yaml:"rootDirectory"`
-	JWTSecret     string `yaml:"jwtSecret"`
+	Debug           bool   `yaml:"debug"`
+	ListenAddr      string `yaml:"listenAddr"`
+	JWTSecret       string `yaml:"jwtSecret"`
+	ProxyHeaderName string `yaml:"proxyHeaderName"`
+	RootDirectory   string `yaml:"rootDirectory"`
+	ContainerRoot   string `yaml:"containerRoot"` // 容器数据根目录
 }
 
 // 成员配置
