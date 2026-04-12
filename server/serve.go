@@ -8,6 +8,7 @@ import (
 	"isrvd/public"
 	"isrvd/server/config"
 	"isrvd/server/handler"
+	"isrvd/server/handler/docker"
 	"isrvd/server/middleware"
 )
 
@@ -48,7 +49,7 @@ func (app *App) setupRouter() {
 	zipHandler := handler.NewZipHandler()
 
 	// 注册 Docker Handler
-	dockerHandler, err := handler.NewDockerHandler()
+	dockerHandler, err := docker.NewDockerHandler()
 	if err != nil {
 		logman.Fatal("Docker client init failed, Docker features disabled", "error", err)
 	}
