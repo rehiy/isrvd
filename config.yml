@@ -1,21 +1,22 @@
 server:
   debug: false
   listenAddr: ":8080"
-  rootDirectory: "."
   jwtSecret: default-secret-key
+  rootDirectory: data/
+  containerRoot: container/
 
 members:
   - username: admin
     password: admin
-    homeDirectory: public
+    homeDirectory: .
     allowTerminal: true
 
   - username: user1
     password: password1
-    homeDirectory: public/user1
+    homeDirectory: user1/
     allowTerminal: false
 
   - username: user2
     password: password2
-    homeDirectory: public/user2
+    homeDirectory: user2/
     allowTerminal: false

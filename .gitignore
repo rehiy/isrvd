@@ -65,6 +65,7 @@ coverage/
 
 # Runtime data
 public/
+data/
 pids/
 *.pid
 *.seed
