@@ -89,6 +89,12 @@ class ApiService {
   containerLogs(id, tail = '100') {
     return axios.post('/api/docker/containers/logs', { id, tail })
   }
+  getContainerConfig(name) {
+    return axios.get('/api/docker/containers/config', { params: { name } })
+  }
+  updateContainerConfig(data) {
+    return axios.post('/api/docker/containers/update', data)
+  }
 
   // 镜像管理
   listImages(all = false) {

@@ -5,11 +5,13 @@ go 1.25.0
 require (
 	github.com/creack/pty v1.1.24
 	github.com/docker/docker v24.0.9+incompatible
+	github.com/docker/go-connections v0.6.0
 	github.com/gin-gonic/gin v1.11.0
 	github.com/goccy/go-yaml v1.19.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/rehiy/pango v0.11.2
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -19,7 +21,6 @@ require (
 	github.com/bytedance/sonic/loader v0.5.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/go-connections v0.6.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
@@ -54,6 +55,5 @@ require (
 	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.2 // indirect
 )

@@ -125,3 +125,37 @@ type ContainerLogsRequest struct {
 	Tail   string `json:"tail"`   // 默认 "100"
 	Follow bool   `json:"follow"` // 是否跟随
 }
+
+// 容器配置响应（从 compose 文件读取）
+type ContainerConfigResponse struct {
+	Image    string            `json:"image"`
+	Name     string            `json:"name"`
+	Cmd      []string          `json:"cmd,omitempty"`
+	Env      []string          `json:"env,omitempty"`
+	Ports    map[string]string `json:"ports,omitempty"`
+	Volumes  []VolumeMapping   `json:"volumes,omitempty"`
+	Network  string            `json:"network,omitempty"`
+	Restart  string            `json:"restart,omitempty"`
+	Memory   int64             `json:"memory,omitempty"`
+	Cpus     float64           `json:"cpus,omitempty"`
+	Workdir  string            `json:"workdir,omitempty"`
+	User     string            `json:"user,omitempty"`
+	Hostname string            `json:"hostname,omitempty"`
+}
+
+// 容器配置更新请求
+type ContainerUpdateRequest struct {
+	Name     string            `json:"name" binding:"required"`
+	Image    string            `json:"image" binding:"required"`
+	Cmd      []string          `json:"cmd"`
+	Env      []string          `json:"env"`
+	Ports    map[string]string `json:"ports"`
+	Volumes  []VolumeMapping   `json:"volumes"`
+	Network  string            `json:"network"`
+	Restart  string            `json:"restart"`
+	Memory   int64             `json:"memory"`
+	Cpus     float64           `json:"cpus"`
+	Workdir  string            `json:"workdir"`
+	User     string            `json:"user"`
+	Hostname string            `json:"hostname"`
+}

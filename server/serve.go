@@ -88,6 +88,8 @@ func (app *App) setupRouter() {
 					docker.POST("/containers/action", dockerHandler.ContainerAction)
 					docker.POST("/containers/create", dockerHandler.CreateContainer)
 					docker.POST("/containers/logs", dockerHandler.ContainerLogs)
+					docker.GET("/containers/config", dockerHandler.GetContainerConfig)
+					docker.POST("/containers/update", dockerHandler.UpdateContainerConfig)
 
 					// 镜像管理
 					docker.GET("/images", dockerHandler.ListImages)

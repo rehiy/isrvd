@@ -24,6 +24,7 @@ const formData = ref({})
 const logContent = ref('')
 const selectedContainer = ref(null)
 const showAdvanced = ref(false)
+const isEditMode = ref(false)
 
 // 加载容器列表
 const loadContainers = async () => {
@@ -110,9 +111,10 @@ const networkOptions = [
 ]
 
 const createContainerModal = () => {
-  formData.value = { 
-    image: '', 
-    name: '', 
+  isEditMode.value = false
+  formData.value = {
+    image: '',
+    name: '',
     envStr: '',
     portsStr: '',
     cmd: '',
@@ -128,7 +130,53 @@ const createContainerModal = () => {
   modalTitle.value = '创建容器'
   modalOpen.value = true
   logContent.value = ''
-  loadImages() // 加载镜像列表供选择
+  loadImages()
+}
+
+// 编辑容器配置
+const editContainerModal = async (container) => {
+  if (!container.name) {
+    actions.showNotification('error', '只能编辑有名称的容器')
+    return
+  }
+
+  isEditMode.value = true
+  modalLoading.value = true
+  modalTitle.value = '编辑容器配置'
+  modalOpen.value = true
+  logContent.value = ''
+  showAdvanced.value = true
+
+  try {
+    const res = await api.getContainerConfig(container.name)
+    const config = res.payload
+
+    formData.value = {
+      name: config.name,
+      image: config.image,
+      envStr: (config.env || []).join('\n'),
+      portsStr: Object.entries(config.ports || {}).map(([h, c]) => `${h}:${c}`).join('\n'),
+      volumesStr: (config.volumes || []).map(v => {
+        let s = `${v.hostPath}:${v.containerPath}`
+        if (v.readOnly) s += ':ro'
+        return s
+      }).join('\n'),
+      cmd: (config.cmd || []).join(' '),
+      restart: config.restart || 'always',
+      network: config.network || '',
+      memory: config.memory || '',
+      cpus: config.cpus || '',
+      workdir: config.workdir || '',
+      user: config.user || '',
+      hostname: config.hostname || ''
+    }
+
+    loadImages()
+  } catch (e) {
+    actions.showNotification('error', '加载容器配置失败: ' + (e.response?.data?.message || e.message))
+    modalOpen.value = false
+  }
+  modalLoading.value = false
 }
 
 const handleCreateContainer = async () => {
@@ -165,6 +213,47 @@ const handleCreateContainer = async () => {
     }
     await api.createContainer(data)
     actions.showNotification('success', '容器创建成功')
+    modalOpen.value = false
+    loadContainers()
+  } catch (e) {}
+  modalLoading.value = false
+}
+
+// 更新容器配置
+const handleUpdateContainer = async () => {
+  if (!formData.value.image.trim() || !formData.value.name) return
+  modalLoading.value = true
+  try {
+    const data = {
+      name: formData.value.name,
+      image: formData.value.image,
+      env: formData.value.envStr ? formData.value.envStr.split('\n').filter(e => e.trim()) : [],
+      ports: formData.value.portsStr ? Object.fromEntries(
+        formData.value.portsStr.split('\n').filter(p => p.trim()).map(p => {
+          const [hostPort, containerPort] = p.split(':').map(s => s.trim())
+          return [hostPort, containerPort]
+        })
+      ) : {},
+      volumes: formData.value.volumesStr ? formData.value.volumesStr.split('\n').filter(v => v.trim()).map(v => {
+        const parts = v.split(':').map(s => s.trim())
+        const hostPath = parts[0]
+        const containerPath = parts[1]
+        const readOnly = parts[2] === 'ro'
+        return { hostPath, containerPath, readOnly }
+      }) : [],
+      restart: formData.value.restart || 'always',
+      network: formData.value.network || undefined,
+      memory: formData.value.memory ? parseInt(formData.value.memory) : undefined,
+      cpus: formData.value.cpus ? parseFloat(formData.value.cpus) : undefined,
+      workdir: formData.value.workdir || undefined,
+      user: formData.value.user || undefined,
+      hostname: formData.value.hostname || undefined,
+    }
+    if (formData.value.cmd && formData.value.cmd.trim()) {
+      data.cmd = formData.value.cmd.trim().split(/\s+/)
+    }
+    await api.updateContainerConfig(data)
+    actions.showNotification('success', '容器配置更新成功，已重建容器')
     modalOpen.value = false
     loadContainers()
   } catch (e) {}
@@ -269,6 +358,9 @@ onMounted(() => {
               <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</td>
               <td class="px-4 py-3">
                 <div class="flex justify-center items-center gap-1">
+                  <button v-if="ct.name" @click="editContainerModal(ct)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑配置">
+                    <i class="fas fa-cog text-xs"></i>
+                  </button>
                   <button v-if="ct.state !== 'running'" @click="handleContainerAction(ct, 'start')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动">
                     <i class="fas fa-play text-xs"></i>
                   </button>
@@ -303,21 +395,30 @@ onMounted(() => {
 
     <!-- 创建容器模态框 -->
     <BaseModal
-      v-model="modalOpen" 
-      :title="modalTitle" 
+      v-model="modalOpen"
+      :title="modalTitle"
       :size="logContent ? 'xl' : ''"
       :loading="modalLoading"
-      :show-footer="modalTitle === '创建容器' || !!logContent"
-      @confirm="handleCreateContainer"
+      :show-footer="modalTitle === '创建容器' || modalTitle === '编辑容器配置' || !!logContent"
+      :confirm-text="isEditMode ? '更新并重建' : '创建'"
+      @confirm="isEditMode ? handleUpdateContainer() : handleCreateContainer()"
     >
       <!-- 日志查看 -->
-      <template v-if="logContent && modalTitle !== '创建容器'">
+      <template v-if="logContent && modalTitle !== '创建容器' && modalTitle !== '编辑容器配置'">
         <pre class="bg-slate-900 text-green-400 p-4 rounded-xl overflow-auto max-h-[60vh] text-sm font-mono whitespace-pre-wrap">{{ logContent }}</pre>
       </template>
 
-      <!-- 创建容器表单 -->
-      <template v-else-if="modalTitle === '创建容器'">
-        <form @submit.prevent="handleCreateContainer" class="space-y-4">
+      <!-- 创建/编辑容器表单 -->
+      <template v-else-if="modalTitle === '创建容器' || modalTitle === '编辑容器配置'">
+        <form @submit.prevent="isEditMode ? handleUpdateContainer() : handleCreateContainer()" class="space-y-4">
+          <!-- 编辑模式提示 -->
+          <div v-if="isEditMode" class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+            <p class="text-sm text-amber-700">
+              <i class="fas fa-exclamation-triangle mr-1"></i>
+              更新配置后将会重建容器，旧容器将被停止并删除
+            </p>
+          </div>
+
           <!-- 基础设置 -->
           <div class="grid grid-cols-2 gap-3">
             <div class="col-span-2">
@@ -326,7 +427,7 @@ onMounted(() => {
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-2">容器名称</label>
-              <input type="text" v-model="formData.name" placeholder="my-container" class="input" />
+              <input type="text" v-model="formData.name" placeholder="my-container" class="input" :disabled="isEditMode" />
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-2">网络模式</label>
