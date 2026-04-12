@@ -92,30 +92,28 @@ const viewLogs = async (container) => {
 }
 
 // 创建容器弹窗
+// 重启策略选项
+const restartOptions = [
+  { value: 'always', label: '总是重启' },
+  { value: 'unless-stopped', label: '除非手动停止' },
+  { value: 'on-failure', label: '失败时重启' },
+  { value: 'no', label: '不重启' }
+]
+
 const createContainerModal = () => {
   formData.value = { 
     image: '', 
     name: '', 
-    env: [], 
-    ports: {}, 
+    envStr: '',
+    portsStr: '',
     cmd: '',
-    volumes: []
+    volumesStr: '',
+    restart: 'always'
   }
   modalTitle.value = '创建容器'
   modalOpen.value = true
   logContent.value = ''
   loadImages() // 加载镜像列表供选择
-}
-
-const addVolume = () => {
-  if (!formData.value.volumes) {
-    formData.value.volumes = []
-  }
-  formData.value.volumes.push({ hostPath: '', containerPath: '', readOnly: false })
-}
-
-const removeVolume = (index) => {
-  formData.value.volumes.splice(index, 1)
 }
 
 const handleCreateContainer = async () => {
@@ -126,12 +124,17 @@ const handleCreateContainer = async () => {
       image: formData.value.image,
       name: formData.value.name || undefined,
       env: formData.value.envStr ? formData.value.envStr.split('\n').filter(e => e.trim()) : [],
-      ports: {},
-      volumes: formData.value.volumes ? formData.value.volumes.filter(v => v.hostPath && v.containerPath) : [],
-      remove: formData.value.remove || false,
-    }
-    if (formData.value.hostPort && formData.value.containerPort) {
-      data.ports[formData.value.hostPort] = formData.value.containerPort
+      ports: formData.value.portsStr ? Object.fromEntries(
+        formData.value.portsStr.split('\n').filter(p => p.trim()).map(p => {
+          const [hostPort, containerPort] = p.split(':').map(s => s.trim())
+          return [hostPort, containerPort]
+        })
+      ) : {},
+      volumes: formData.value.volumesStr ? formData.value.volumesStr.split('\n').filter(v => v.trim()).map(v => {
+        const [hostPath, containerPath] = v.split(':').map(s => s.trim())
+        return { hostPath, containerPath }
+      }) : [],
+      restart: formData.value.restart || 'always',
     }
     if (formData.value.cmd && formData.value.cmd.trim()) {
       data.cmd = formData.value.cmd.trim().split(/\s+/)
@@ -305,34 +308,14 @@ onMounted(() => {
             <input type="text" v-model="formData.name" placeholder="例如: my-web-server" class="input" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">端口映射（可选）</label>
-            <div class="grid grid-cols-2 gap-3">
-              <input type="text" v-model="formData.containerPort" placeholder="容器端口 (如 80)" class="input text-sm" />
-              <input type="text" v-model="formData.hostPort" placeholder="主机端口 (如 8080)" class="input text-sm" />
-            </div>
-            <p class="mt-1 text-xs text-slate-400">将主机端口映射到容器端口</p>
+            <label class="block text-sm font-medium text-slate-700 mb-2">端口映射（可选，每行一个）</label>
+            <textarea v-model="formData.portsStr" rows="3" placeholder="8080:80&#10;443:443" class="input font-mono text-sm"></textarea>
+            <p class="mt-1 text-xs text-slate-400">格式: 主机端口:容器端口</p>
           </div>
           <div>
-            <div class="flex items-center justify-between mb-2">
-              <label class="text-sm font-medium text-slate-700">目录映射（可选）</label>
-              <button type="button" @click="addVolume" class="text-xs text-primary-600 hover:text-primary-700 flex items-center gap-1">
-                <i class="fas fa-plus"></i>添加
-              </button>
-            </div>
-            <div v-if="formData.volumes && formData.volumes.length > 0" class="space-y-2">
-              <div v-for="(vol, index) in formData.volumes" :key="index" class="flex items-center gap-2">
-                <input type="text" v-model="vol.hostPath" placeholder="主机路径 (如 /host/data)" class="input text-sm flex-1" />
-                <input type="text" v-model="vol.containerPath" placeholder="容器路径 (如 /data)" class="input text-sm flex-1" />
-                <label class="flex items-center gap-1 text-xs text-slate-500 whitespace-nowrap">
-                  <input type="checkbox" v-model="vol.readOnly" class="rounded border-slate-300" />
-                  只读
-                </label>
-                <button type="button" @click="removeVolume(index)" class="p-1.5 text-red-500 hover:bg-red-50 rounded">
-                  <i class="fas fa-times text-xs"></i>
-                </button>
-              </div>
-            </div>
-            <p v-else class="text-xs text-slate-400">点击「添加」创建目录映射</p>
+            <label class="block text-sm font-medium text-slate-700 mb-2">目录映射（可选，每行一个）</label>
+            <textarea v-model="formData.volumesStr" rows="3" placeholder="/host/path:/container/path&#10;/data:/app/data" class="input font-mono text-sm"></textarea>
+            <p class="mt-1 text-xs text-slate-400">格式: 主机路径:容器路径</p>
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-2">环境变量（可选，每行一个）</label>
@@ -343,9 +326,12 @@ onMounted(() => {
             <input type="text" v-model="formData.cmd" placeholder="例如: nginx -g 'daemon off;'" class="input font-mono text-sm" />
             <p class="mt-1 text-xs text-slate-400">覆盖镜像默认的启动命令</p>
           </div>
-          <div class="flex items-center gap-2">
-            <input type="checkbox" id="autoRemove" v-model="formData.remove" class="rounded border-slate-300" />
-            <label for="autoRemove" class="text-sm text-slate-600">容器停止后自动删除</label>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">重启策略</label>
+            <select v-model="formData.restart" class="input">
+              <option v-for="opt in restartOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
+            <p class="mt-1 text-xs text-slate-400">容器退出后的重启行为</p>
           </div>
         </form>
       </template>
