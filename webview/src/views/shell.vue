@@ -1,5 +1,5 @@
 <script setup>
-import { inject, ref, onUnmounted } from 'vue'
+import { inject, onUnmounted, ref } from 'vue'
 
 import * as ShellTerminal from '@/helper/shell.js'
 import { APP_STATE_KEY } from '@/store/state.js'
@@ -27,7 +27,7 @@ onUnmounted(() => ShellTerminal.destroy())
 
 <template>
   <div class="h-[calc(100vh-100px)]">
-    <div class="h-full card flex flex-col overflow-hidden">
+    <div class="h-full bg-white rounded-2xl shadow-lg border border-slate-200/60 flex flex-col overflow-hidden">
       <!-- Toolbar Bar -->
       <div class="bg-slate-50 border-b border-slate-200 px-6 py-3">
         <div class="flex items-center justify-between">
@@ -45,7 +45,7 @@ onUnmounted(() => ShellTerminal.destroy())
             <select 
               v-model="shellType" 
               :disabled="connected" 
-              class="input w-28 text-sm"
+              class="w-28 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 hover:border-slate-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="bash">bash</option>
               <option value="sh">sh</option>
@@ -56,13 +56,13 @@ onUnmounted(() => ShellTerminal.destroy())
             <button 
               @click="connected ? handleDisconnect() : handleConnect()" 
               :class="[
-                'btn text-sm',
+                'px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors',
                 connected 
-                  ? 'bg-white border border-red-200 text-red-600 hover:bg-red-50' 
-                  : 'btn-primary'
+                  ? 'bg-white border border-slate-200 hover:bg-slate-50 text-slate-700' 
+                  : 'bg-primary-500 hover:bg-primary-600 text-white'
               ]"
             >
-              <i :class="['fas mr-1.5', connected ? 'fa-plug-circle-xmark' : 'fa-plug']"></i>
+              <i :class="['fas', connected ? 'fa-plug-circle-xmark' : 'fa-plug']"></i>
               {{ connected ? '断开连接' : '连接' }}
             </button>
           </div>
