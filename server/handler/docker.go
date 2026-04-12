@@ -190,13 +190,39 @@ func (h *DockerHandler) CreateContainer(c *gin.Context) {
 	ctx := context.Background()
 
 	config := &container.Config{
-		Image: req.Image,
-		Cmd:   req.Cmd,
-		Env:   req.Env,
+		Image:        req.Image,
+		Cmd:          req.Cmd,
+		Env:          req.Env,
+		WorkingDir:   req.Workdir,
+		User:         req.User,
+		Hostname:     req.Hostname,
 	}
 
-	hostConfig := &container.HostConfig{
-		AutoRemove: req.Remove,
+	hostConfig := &container.HostConfig{}
+
+	// 处理重启策略
+	switch req.Restart {
+	case "always":
+		hostConfig.RestartPolicy = container.RestartPolicy{Name: "always"}
+	case "on-failure":
+		hostConfig.RestartPolicy = container.RestartPolicy{Name: "on-failure"}
+	case "unless-stopped":
+		hostConfig.RestartPolicy = container.RestartPolicy{Name: "unless-stopped"}
+	default:
+		hostConfig.RestartPolicy = container.RestartPolicy{Name: "no"}
+	}
+
+	// 处理网络模式
+	if req.Network != "" {
+		hostConfig.NetworkMode = container.NetworkMode(req.Network)
+	}
+
+	// 处理资源限制
+	if req.Memory > 0 {
+		hostConfig.Memory = req.Memory * 1024 * 1024 // MB to Bytes
+	}
+	if req.Cpus > 0 {
+		hostConfig.NanoCPUs = int64(req.Cpus * 1e9)
 	}
 
 	// 处理端口映射

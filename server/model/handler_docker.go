@@ -60,13 +60,19 @@ type ContainerActionRequest struct {
 
 // 创建容器请求
 type ContainerCreateRequest struct {
-	Image   string            `json:"image" binding:"required"`
-	Name    string            `json:"name"`
-	Cmd     []string          `json:"cmd"`
-	Env     []string          `json:"env"`
-	Ports   map[string]string `json:"ports"`   // e.g., {"8080": "80"}
-	Volumes []VolumeMapping   `json:"volumes"` // 目录映射
-	Remove  bool              `json:"remove"`
+	Image    string            `json:"image" binding:"required"`
+	Name     string            `json:"name"`
+	Cmd      []string          `json:"cmd"`
+	Env      []string          `json:"env"`
+	Ports    map[string]string `json:"ports"`    // e.g., {"8080": "80"}
+	Volumes  []VolumeMapping   `json:"volumes"`  // 目录映射
+	Network  string            `json:"network"`  // 网络模式: bridge, host, none
+	Restart  string            `json:"restart"`  // 重启策略: no, always, on-failure, unless-stopped
+	Memory   int64             `json:"memory"`   // 内存限制 (MB)
+	Cpus     float64           `json:"cpus"`     // CPU 限制 (核心数)
+	Workdir  string            `json:"workdir"`  // 工作目录
+	User     string            `json:"user"`     // 用户
+	Hostname string            `json:"hostname"` // 主机名
 }
 
 // 目录映射

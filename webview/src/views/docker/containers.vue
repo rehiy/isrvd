@@ -23,6 +23,7 @@ const modalLoading = ref(false)
 const formData = ref({})
 const logContent = ref('')
 const selectedContainer = ref(null)
+const showAdvanced = ref(false)
 
 // 加载容器列表
 const loadContainers = async () => {
@@ -100,6 +101,14 @@ const restartOptions = [
   { value: 'no', label: '不重启' }
 ]
 
+// 网络模式选项
+const networkOptions = [
+  { value: '', label: '默认 (bridge)' },
+  { value: 'bridge', label: 'bridge' },
+  { value: 'host', label: 'host' },
+  { value: 'none', label: 'none' }
+]
+
 const createContainerModal = () => {
   formData.value = { 
     image: '', 
@@ -108,7 +117,13 @@ const createContainerModal = () => {
     portsStr: '',
     cmd: '',
     volumesStr: '',
-    restart: 'always'
+    restart: 'always',
+    network: '',
+    memory: '',
+    cpus: '',
+    workdir: '',
+    user: '',
+    hostname: ''
   }
   modalTitle.value = '创建容器'
   modalOpen.value = true
@@ -131,10 +146,19 @@ const handleCreateContainer = async () => {
         })
       ) : {},
       volumes: formData.value.volumesStr ? formData.value.volumesStr.split('\n').filter(v => v.trim()).map(v => {
-        const [hostPath, containerPath] = v.split(':').map(s => s.trim())
-        return { hostPath, containerPath }
+        const parts = v.split(':').map(s => s.trim())
+        const hostPath = parts[0]
+        const containerPath = parts[1]
+        const readOnly = parts[2] === 'ro'
+        return { hostPath, containerPath, readOnly }
       }) : [],
       restart: formData.value.restart || 'always',
+      network: formData.value.network || undefined,
+      memory: formData.value.memory ? parseInt(formData.value.memory) : undefined,
+      cpus: formData.value.cpus ? parseFloat(formData.value.cpus) : undefined,
+      workdir: formData.value.workdir || undefined,
+      user: formData.value.user || undefined,
+      hostname: formData.value.hostname || undefined,
     }
     if (formData.value.cmd && formData.value.cmd.trim()) {
       data.cmd = formData.value.cmd.trim().split(/\s+/)
@@ -294,44 +318,88 @@ onMounted(() => {
       <!-- 创建容器表单 -->
       <template v-else-if="modalTitle === '创建容器'">
         <form @submit.prevent="handleCreateContainer" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">镜像 <span class="text-red-500">*</span></label>
-            <ImageSelect
-              v-model="formData.image"
-              :images="images"
-              placeholder="选择或输入镜像名称"
-            />
-            <p class="mt-1 text-xs text-slate-400">可从下拉列表选择已有镜像,或手动输入新镜像</p>
+          <!-- 基础设置 -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-slate-700 mb-2">镜像 <span class="text-red-500">*</span></label>
+              <ImageSelect v-model="formData.image" :images="images" placeholder="选择或输入镜像名称" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">容器名称</label>
+              <input type="text" v-model="formData.name" placeholder="my-container" class="input" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">网络模式</label>
+              <select v-model="formData.network" class="input">
+                <option v-for="opt in networkOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </select>
+            </div>
           </div>
+
+          <!-- 端口映射 -->
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">容器名称（可选）</label>
-            <input type="text" v-model="formData.name" placeholder="例如: my-web-server" class="input" />
+            <label class="block text-sm font-medium text-slate-700 mb-2">端口映射</label>
+            <textarea v-model="formData.portsStr" rows="2" placeholder="8080:80" class="input font-mono text-sm"></textarea>
+            <p class="mt-1 text-xs text-slate-400">主机端口:容器端口</p>
           </div>
+
+          <!-- 目录映射 -->
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">端口映射（可选，每行一个）</label>
-            <textarea v-model="formData.portsStr" rows="3" placeholder="8080:80&#10;443:443" class="input font-mono text-sm"></textarea>
-            <p class="mt-1 text-xs text-slate-400">格式: 主机端口:容器端口</p>
+            <label class="block text-sm font-medium text-slate-700 mb-2">目录映射</label>
+            <textarea v-model="formData.volumesStr" rows="2" placeholder="/host:/container:ro" class="input font-mono text-sm"></textarea>
+            <p class="mt-1 text-xs text-slate-400">主机路径:容器路径[:ro]</p>
           </div>
+
+          <!-- 环境变量 -->
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">目录映射（可选，每行一个）</label>
-            <textarea v-model="formData.volumesStr" rows="3" placeholder="/host/path:/container/path&#10;/data:/app/data" class="input font-mono text-sm"></textarea>
-            <p class="mt-1 text-xs text-slate-400">格式: 主机路径:容器路径</p>
+            <label class="block text-sm font-medium text-slate-700 mb-2">环境变量</label>
+            <textarea v-model="formData.envStr" rows="2" placeholder="KEY=value" class="input font-mono text-sm"></textarea>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">环境变量（可选，每行一个）</label>
-            <textarea v-model="formData.envStr" rows="3" placeholder="MYSQL_ROOT_PASSWORD=secret&#10;APP_ENV=production" class="input font-mono text-sm"></textarea>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">启动命令（可选）</label>
-            <input type="text" v-model="formData.cmd" placeholder="例如: nginx -g 'daemon off;'" class="input font-mono text-sm" />
-            <p class="mt-1 text-xs text-slate-400">覆盖镜像默认的启动命令</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">重启策略</label>
-            <select v-model="formData.restart" class="input">
-              <option v-for="opt in restartOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-            </select>
-            <p class="mt-1 text-xs text-slate-400">容器退出后的重启行为</p>
+
+          <!-- 高级选项 -->
+          <div class="border-t border-slate-200 pt-4">
+            <button type="button" @click="showAdvanced = !showAdvanced" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800">
+              <i :class="['fas fa-chevron-down text-xs transition-transform', showAdvanced ? 'rotate-180' : '']"></i>
+              高级选项
+            </button>
+            <div v-if="showAdvanced" class="mt-4 space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">启动命令</label>
+                <input type="text" v-model="formData.cmd" placeholder="覆盖默认命令" class="input font-mono text-sm" />
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">重启策略</label>
+                  <select v-model="formData.restart" class="input">
+                    <option v-for="opt in restartOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">主机名</label>
+                  <input type="text" v-model="formData.hostname" placeholder="容器主机名" class="input" />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">内存限制 (MB)</label>
+                  <input type="number" v-model="formData.memory" placeholder="512" class="input" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">CPU 限制 (核心)</label>
+                  <input type="number" step="0.1" v-model="formData.cpus" placeholder="1.5" class="input" />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">工作目录</label>
+                  <input type="text" v-model="formData.workdir" placeholder="/app" class="input" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">运行用户</label>
+                  <input type="text" v-model="formData.user" placeholder="root" class="input" />
+                </div>
+              </div>
+            </div>
           </div>
         </form>
       </template>
