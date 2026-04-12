@@ -2,8 +2,9 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import Cherry from 'cherry-markdown'
 import 'cherry-markdown/dist/cherry-markdown.css'
+
 import api from '@/service/api.js'
-import FilePicker from '@/component/modal/picker.vue'
+import FilePicker from '@/component/markdown/picker.vue'
 
 const cherryInstance = ref(null)
 

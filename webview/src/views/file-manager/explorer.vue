@@ -5,15 +5,15 @@ import { downloadFile, formatFileSize, formatTime, getFileIcon, isEditableFile }
 import api from '@/service/api.js'
 import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state.js'
 
-import ChmodModal from '@/component/modal/chmod.vue'
-import CreateModal from '@/component/modal/create.vue'
-import DeleteModal from '@/component/modal/delete.vue'
-import MkdirModal from '@/component/modal/mkdir.vue'
-import ModifyModal from '@/component/modal/modify.vue'
-import RenameModal from '@/component/modal/rename.vue'
-import UnzipModal from '@/component/modal/unzip.vue'
-import UploadModal from '@/component/modal/upload.vue'
-import ZipModal from '@/component/modal/zip.vue'
+import ChmodModal from '@/component/file-manager/chmod.vue'
+import CreateModal from '@/component/file-manager/create.vue'
+import DeleteModal from '@/component/file-manager/delete.vue'
+import MkdirModal from '@/component/file-manager/mkdir.vue'
+import ModifyModal from '@/component/file-manager/modify.vue'
+import RenameModal from '@/component/file-manager/rename.vue'
+import UnzipModal from '@/component/file-manager/unzip.vue'
+import UploadModal from '@/component/file-manager/upload.vue'
+import ZipModal from '@/component/file-manager/zip.vue'
 
 const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)
