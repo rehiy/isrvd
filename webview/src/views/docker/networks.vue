@@ -86,6 +86,22 @@ const viewNetworkDetail = async (net) => {
   detailLoading.value = false
 }
 
+// 判断网络是否可删除
+const canDeleteNetwork = (net) => {
+  const undeletableDrivers = ['bridge', 'host', 'none']
+  return !undeletableDrivers.includes(net.driver)
+}
+
+// 获取不可删除原因
+const getDeleteDisabledReason = (net) => {
+  const driverNames = {
+    bridge: '默认桥接网络',
+    host: '主机网络',
+    none: '空网络'
+  }
+  return `${driverNames[net.driver] || '系统网络'}不可删除`
+}
+
 // 暴露方法给 toolbar 使用
 defineExpose({
   loadNetworks,
@@ -159,7 +175,20 @@ onMounted(() => {
                   <button @click="viewNetworkDetail(net)" class="btn-icon text-purple-600 hover:bg-purple-50" title="详情">
                     <i class="fas fa-info-circle text-xs"></i>
                   </button>
-                  <button v-if="net.driver !== 'bridge' && net.driver !== 'host' && net.driver !== 'none'" @click="handleNetworkAction(net, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                  <button
+                    v-if="canDeleteNetwork(net)"
+                    @click="handleNetworkAction(net, 'remove')"
+                    class="btn-icon text-red-600 hover:bg-red-50"
+                    title="删除"
+                  >
+                    <i class="fas fa-trash text-xs"></i>
+                  </button>
+                  <button
+                    v-else
+                    disabled
+                    class="btn-icon text-slate-300 cursor-not-allowed"
+                    :title="getDeleteDisabledReason(net)"
+                  >
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
