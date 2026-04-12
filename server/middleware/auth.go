@@ -12,15 +12,22 @@ import (
 // JWT 认证中间件
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 内网代理 Header 认证（优先级高于 JWT）
+		// 内网代理 Header 认证模式（启用后完全替代 JWT，不回退）
 		if config.ProxyHeaderName != "" {
-			if username := c.GetHeader(config.ProxyHeaderName); username != "" {
-				if _, exists := config.Members[username]; exists {
-					c.Set("username", username)
-					c.Next()
-					return
-				}
+			username := c.GetHeader(config.ProxyHeaderName)
+			if username == "" {
+				c.JSON(403, gin.H{"error": "代理 Header 缺失"})
+				c.Abort()
+				return
 			}
+			if _, exists := config.Members[username]; !exists {
+				c.JSON(403, gin.H{"error": "用户不存在"})
+				c.Abort()
+				return
+			}
+			c.Set("username", username)
+			c.Next()
+			return
 		}
 
 		authHeader := c.GetHeader("Authorization")
