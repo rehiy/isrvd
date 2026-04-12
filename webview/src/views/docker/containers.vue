@@ -6,6 +6,7 @@ import api from '@/service/api.js'
 import { APP_ACTIONS_KEY } from '@/store/state.js'
 
 import BaseModal from '@/component/modal.vue'
+import ImageSelect from '@/component/docker/image-select.vue'
 
 const actions = inject(APP_ACTIONS_KEY)
 
@@ -22,9 +23,6 @@ const modalLoading = ref(false)
 const formData = ref({})
 const logContent = ref('')
 const selectedContainer = ref(null)
-const showImageDropdown = ref(false)
-const imageInputRef = ref(null)
-const dropdownPosition = ref({ top: 0, left: 0, width: 0 })
 
 // 加载容器列表
 const loadContainers = async () => {
@@ -91,25 +89,6 @@ const viewLogs = async (container) => {
     logContent.value = '加载日志失败'
   }
   modalLoading.value = false
-}
-
-// 打开镜像下拉菜单
-const openImageDropdown = () => {
-  if (imageInputRef.value) {
-    const rect = imageInputRef.value.getBoundingClientRect()
-    dropdownPosition.value = {
-      top: rect.bottom + window.scrollY,
-      left: rect.left + window.scrollX,
-      width: rect.width
-    }
-  }
-  showImageDropdown.value = true
-}
-
-// 选择镜像
-const selectImage = (imageName) => {
-  formData.value.image = imageName
-  showImageDropdown.value = false
 }
 
 // 创建容器弹窗
@@ -314,21 +293,12 @@ onMounted(() => {
         <form @submit.prevent="handleCreateContainer" class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-2">镜像 <span class="text-red-500">*</span></label>
-            <div class="relative" ref="imageInputRef">
-              <input 
-                type="text" 
-                v-model="formData.image" 
-                @focus="openImageDropdown"
-                @blur="showImageDropdown = false"
-                placeholder="选择或输入镜像名称" 
-                required 
-                class="input pr-10" 
-              />
-              <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <i class="fas fa-chevron-down text-slate-400 text-sm"></i>
-              </div>
-            </div>
-            <p class="mt-1 text-xs text-slate-400">可从下拉列表选择已有镜像，或手动输入新镜像</p>
+            <ImageSelect
+              v-model="formData.image"
+              :images="images"
+              placeholder="选择或输入镜像名称"
+            />
+            <p class="mt-1 text-xs text-slate-400">可从下拉列表选择已有镜像,或手动输入新镜像</p>
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-2">容器名称（可选）</label>
@@ -380,27 +350,5 @@ onMounted(() => {
         </form>
       </template>
     </BaseModal>
-
-    <!-- 镜像下拉列表 -->
-    <Teleport to="body">
-      <div 
-        v-if="showImageDropdown && images.length > 0" 
-        class="fixed bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-auto"
-        :style="{ top: dropdownPosition.top + 'px', left: dropdownPosition.left + 'px', width: dropdownPosition.width + 'px', zIndex: 9999 }"
-        @mousedown.prevent
-      >
-        <div 
-          v-for="img in images.filter(i => i.repoTags && i.repoTags[0] && (!formData.image || i.repoTags[0].toLowerCase().includes(formData.image.toLowerCase())))" 
-          :key="img.id"
-          @click="selectImage(img.repoTags[0])"
-          class="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center justify-between text-sm"
-        >
-          <span class="font-medium text-slate-700">{{ img.repoTags[0] }}</span>
-        </div>
-        <div v-if="!images.filter(i => i.repoTags && i.repoTags[0] && (!formData.image || i.repoTags[0].toLowerCase().includes(formData.image.toLowerCase()))).length" class="px-3 py-2 text-sm text-slate-400 text-center">
-          无匹配镜像
-        </div>
-      </div>
-    </Teleport>
   </div>
 </template>
