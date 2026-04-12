@@ -151,16 +151,17 @@ defineExpose({ loadDir })
         @click="$emit('update:modelValue', false)"
         :disabled="loading"
       >
-        取消
+        <slot name="cancel-text">取消</slot>
       </button>
       <button 
         v-if="mode === 'save'"
         type="button" 
-        class="btn-success"
+        class="btn-primary"
         @click="confirmSave"
         :disabled="loading || !fileName.trim()"
       >
-        <i class="fas fa-save mr-2"></i>保存
+        <i class="fas fa-spinner fa-spin mr-2" v-if="loading"></i>
+        <slot name="confirm-text">保存</slot>
       </button>
     </template>
   </BaseModal>
