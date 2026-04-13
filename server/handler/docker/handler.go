@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/rehiy/pango/logman"
 
+	"isrvd/server/config"
 	"isrvd/server/helper"
 	"isrvd/server/model"
 )
@@ -21,7 +22,13 @@ type DockerHandler struct {
 
 // NewDockerHandler 创建Docker处理器
 func NewDockerHandler() (*DockerHandler, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	opts := []client.Opt{client.WithAPIVersionNegotiation()}
+	if config.Docker.Host != "" {
+		opts = append(opts, client.WithHost(config.Docker.Host))
+	} else {
+		opts = append(opts, client.FromEnv)
+	}
+	cli, err := client.NewClientWithOpts(opts...)
 	if err != nil {
 		return nil, err
 	}

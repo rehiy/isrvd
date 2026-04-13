@@ -205,11 +205,11 @@ func (h *DockerHandler) autoCreateComposeFile(ctx context.Context, name string) 
 	}
 
 	// 创建 compose 文件
-	if err := helper.CreateComposeFile(config.ContainerRoot, name, service); err != nil {
+	if err := helper.CreateComposeFile(config.Docker.ContainerRoot, name, service); err != nil {
 		return nil, fmt.Errorf("自动创建 compose 文件失败: %w", err)
 	}
 
-	return helper.ReadComposeFile(config.ContainerRoot, name)
+	return helper.ReadComposeFile(config.Docker.ContainerRoot, name)
 }
 
 // createComposeFile 根据 ContainerCreateRequest 生成 compose 配置文件
@@ -249,8 +249,8 @@ func (h *DockerHandler) createComposeFile(req model.ContainerCreateRequest) erro
 		for _, vol := range req.Volumes {
 			hostPath := vol.HostPath
 			// 如果配置了容器数据根目录且 hostPath 是相对路径，则补全为容器专属目录
-			if config.ContainerRoot != "" && !filepath.IsAbs(hostPath) {
-				hostPath = filepath.Join(config.ContainerRoot, req.Name, hostPath)
+			if config.Docker.ContainerRoot != "" && !filepath.IsAbs(hostPath) {
+				hostPath = filepath.Join(config.Docker.ContainerRoot, req.Name, hostPath)
 			}
 			bind := hostPath + ":" + vol.ContainerPath
 			if vol.ReadOnly {
@@ -286,5 +286,5 @@ func (h *DockerHandler) createComposeFile(req model.ContainerCreateRequest) erro
 		service.CapDrop = req.CapDrop
 	}
 
-	return helper.CreateComposeFile(config.ContainerRoot, req.Name, service)
+	return helper.CreateComposeFile(config.Docker.ContainerRoot, req.Name, service)
 }

@@ -84,8 +84,8 @@ func (h *DockerHandler) CreateContainer(c *gin.Context) {
 		for _, vol := range req.Volumes {
 			hostPath := vol.HostPath
 			// 如果配置了容器数据根目录且 hostPath 是相对路径，则补全为容器专属目录
-			if config.ContainerRoot != "" && !filepath.IsAbs(hostPath) {
-				hostPath = filepath.Join(config.ContainerRoot, req.Name, hostPath)
+			if config.Docker.ContainerRoot != "" && !filepath.IsAbs(hostPath) {
+				hostPath = filepath.Join(config.Docker.ContainerRoot, req.Name, hostPath)
 			}
 			bind := hostPath + ":" + vol.ContainerPath
 			if vol.ReadOnly {
@@ -116,7 +116,7 @@ func (h *DockerHandler) CreateContainer(c *gin.Context) {
 	h.dockerClient.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{})
 
 	// 生成 docker-compose.yml 配置文件
-	if req.Name != "" && config.ContainerRoot != "" {
+	if req.Name != "" && config.Docker.ContainerRoot != "" {
 		if err := h.createComposeFile(req); err != nil {
 			logman.Warn("Failed to create compose file", "error", err)
 		}
@@ -225,8 +225,8 @@ func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
 		hostConfig.Binds = make([]string, 0, len(req.Volumes))
 		for _, vol := range req.Volumes {
 			hostPath := vol.HostPath
-			if config.ContainerRoot != "" && !filepath.IsAbs(hostPath) {
-				hostPath = filepath.Join(config.ContainerRoot, req.Name, hostPath)
+			if config.Docker.ContainerRoot != "" && !filepath.IsAbs(hostPath) {
+				hostPath = filepath.Join(config.Docker.ContainerRoot, req.Name, hostPath)
 			}
 			bind := hostPath + ":" + vol.ContainerPath
 			if vol.ReadOnly {
@@ -259,7 +259,7 @@ func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
 	h.dockerClient.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{})
 
 	// 更新 compose 配置文件
-	if config.ContainerRoot != "" {
+	if config.Docker.ContainerRoot != "" {
 		createReq := model.ContainerCreateRequest{
 			Image:      req.Image,
 			Name:       req.Name,
@@ -295,7 +295,7 @@ func (h *DockerHandler) GetContainerConfig(c *gin.Context) {
 		return
 	}
 
-	compose, err := helper.ReadComposeFile(config.ContainerRoot, name)
+	compose, err := helper.ReadComposeFile(config.Docker.ContainerRoot, name)
 	if err != nil {
 		// compose 文件不存在，尝试根据容器当前配置自动创建
 		compose, err = h.autoCreateComposeFile(c.Request.Context(), name)

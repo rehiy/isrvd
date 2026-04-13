@@ -18,10 +18,10 @@ var (
 	ProxyHeaderName = ""
 	// 基础目录
 	RootDirectory = "."
-	// 容器数据根目录
-	ContainerRoot = ""
+	// Docker 配置
+	Docker = &DockerConfig{}
 	// 成员配置
-	Members = map[string]*Member{}
+	Members = map[string]*MemberConfig{}
 )
 
 // 加载配置文件
@@ -64,12 +64,17 @@ func Load() error {
 	if value := os.Getenv("ROOT_DIRECTORY"); value != "" {
 		RootDirectory = value
 	}
-	ContainerRoot = conf.Server.ContainerRoot
-	if value := os.Getenv("CONTAINER_ROOT"); value != "" {
-		ContainerRoot = value
+
+	// 更新 Docker 配置
+	Docker = conf.Docker
+	if value := os.Getenv("DOCKER_HOST"); value != "" {
+		Docker.Host = value
 	}
-	if !filepath.IsAbs(ContainerRoot) {
-		ContainerRoot = filepath.Join(RootDirectory, ContainerRoot)
+	if value := os.Getenv("DOCKER_CONTAINER_ROOT"); value != "" {
+		Docker.ContainerRoot = value
+	}
+	if !filepath.IsAbs(Docker.ContainerRoot) {
+		Docker.ContainerRoot = filepath.Join(RootDirectory, Docker.ContainerRoot)
 	}
 
 	// 更新成员配置
@@ -77,14 +82,10 @@ func Load() error {
 		if !filepath.IsAbs(m.HomeDirectory) {
 			m.HomeDirectory = filepath.Join(RootDirectory, m.HomeDirectory)
 		}
-		Members[m.Username] = m
-	}
-
-	// 自动创建用户目录
-	for _, m := range Members {
 		if err := os.MkdirAll(m.HomeDirectory, 0755); err != nil {
 			return err
 		}
+		Members[m.Username] = m
 	}
 
 	return nil

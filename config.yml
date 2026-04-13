@@ -3,6 +3,10 @@ server:
   listenAddr: ":8080"
   jwtSecret: default-secret-key
   rootDirectory: data/
+
+docker:
+  # host: unix:///var/run/docker.sock
+  # host: tcp://127.0.0.1:2375
   containerRoot: container/
 
 members:
