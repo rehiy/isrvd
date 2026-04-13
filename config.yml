@@ -7,7 +7,12 @@ server:
 docker:
   # host: unix:///var/run/docker.sock
   # host: tcp://127.0.0.1:2375
-  containerRoot: container/
+  containerRoot: srv/
+  registries:
+     - name: CSIG Hub
+       url: hub.example.com
+       username: debug
+       password: 123
 
 apisix:
   # adminUrl: http://127.0.0.1:9180

@@ -278,6 +278,28 @@ type ContainerConfigResponse struct {
 	CapDrop    []string          `json:"capDrop,omitempty"`
 }
 
+// ==================== 镜像仓库模型 ====================
+
+// 镜像仓库信息
+type RegistryInfo struct {
+	Name     string `json:"name"`     // 仓库名称
+	URL      string `json:"url"`      // 仓库地址
+	Username string `json:"username"` // 用户名
+}
+
+// 从仓库拉取镜像请求
+type ImagePullFromRegistryRequest struct {
+	Image       string `json:"image" binding:"required"`       // 仓库中的镜像名称，如 myapp:latest
+	RegistryURL string `json:"registryUrl" binding:"required"` // 源仓库地址
+}
+
+// 镜像推送请求
+type ImagePushRequest struct {
+	Image       string `json:"image" binding:"required"`       // 镜像名称（含标签）
+	RegistryURL string `json:"registryUrl" binding:"required"` // 目标仓库地址
+	Namespace   string `json:"namespace"`                      // 目标命名空间（可选，如 myteam）
+}
+
 // 容器配置更新请求
 type ContainerUpdateRequest struct {
 	Name       string            `json:"name" binding:"required"`

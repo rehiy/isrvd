@@ -147,6 +147,17 @@ class ApiService {
     return axios.post('/api/docker/volume/create', data)
   }
 
+  // 镜像仓库管理
+  listRegistries() {
+    return axios.get('/api/docker/registries')
+  }
+  pushImage(image, registryUrl, namespace) {
+    return axios.post('/api/docker/registry/push', { image, registryUrl, namespace })
+  }
+  pullFromRegistry(image, registryUrl) {
+    return axios.post('/api/docker/registry/pull', { image, registryUrl })
+  }
+
   // ==================== Apisix 管理相关 ====================
 
   // 路由管理

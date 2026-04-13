@@ -132,14 +132,6 @@ const toggleApisix = () => {
             <span>容器</span>
           </router-link>
           <router-link 
-            to="/docker/images" 
-            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
-          >
-            <i class="fas fa-layer-group"></i>
-            <span>镜像</span>
-          </router-link>
-          <router-link 
             to="/docker/networks" 
             class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
             active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
@@ -148,12 +140,28 @@ const toggleApisix = () => {
             <span>网络</span>
           </router-link>
           <router-link 
+            to="/docker/images" 
+            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+          >
+            <i class="fas fa-layer-group"></i>
+            <span>镜像</span>
+          </router-link>
+          <router-link 
+            to="/docker/registries" 
+            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+          >
+            <i class="fas fa-warehouse"></i>
+            <span>镜像源</span>
+          </router-link>
+          <router-link 
             to="/docker/volumes" 
             class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
             active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
           >
             <i class="fas fa-database"></i>
-            <span>卷</span>
+            <span>存储卷</span>
           </router-link>
         </div>
       </div>

@@ -67,6 +67,11 @@ const routes = [
     component: () => import('@/views/docker/volumes.vue')
   },
   {
+    path: '/docker/registries',
+    name: 'docker-registries',
+    component: () => import('@/views/docker/registries.vue')
+  },
+  {
     path: '/apisix',
     name: 'apisix',
     redirect: '/apisix/routes'

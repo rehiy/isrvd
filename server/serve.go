@@ -151,6 +151,11 @@ func (app *App) setupRouter() {
 				docker.GET("/volume/inspect", dockerHandler.VolumeInspect)
 				docker.POST("/volume/action", dockerHandler.VolumeAction)
 				docker.POST("/volume/create", dockerHandler.CreateVolume)
+
+				// 镜像仓库管理
+				docker.GET("/registries", dockerHandler.ListRegistries)
+				docker.POST("/registry/push", dockerHandler.PushImage)
+				docker.POST("/registry/pull", dockerHandler.PullFromRegistry)
 			}
 		}
 	}

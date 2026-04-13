@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/goccy/go-yaml"
-	"github.com/joho/godotenv"
 )
 
 var (
@@ -19,18 +18,16 @@ var (
 	ProxyHeaderName = ""
 	// 基础目录
 	RootDirectory = "."
-	// Docker 配置
-	Docker = &DockerConfig{}
 	// Apisix 配置
 	Apisix = &ApisixConfig{}
+	// Docker 配置
+	Docker = &DockerConfig{}
 	// 成员配置
 	Members = map[string]*MemberConfig{}
 )
 
 // 加载配置文件
 func Load() error {
-	_ = godotenv.Load()
-
 	file := os.Getenv("CONFIG_PATH")
 	if file == "" {
 		file = "config.yml"
@@ -50,47 +47,22 @@ func Load() error {
 
 	// 更新全局变量
 	Debug = conf.Server.Debug
-	if value := os.Getenv("DEBUG"); value != "" {
-		Debug = value == "true"
-	}
 	ListenAddr = conf.Server.ListenAddr
-	if value := os.Getenv("LISTEN_ADDR"); value != "" {
-		ListenAddr = value
-	}
 	JWTSecret = conf.Server.JWTSecret
-	if value := os.Getenv("JWT_SECRET"); value != "" {
-		JWTSecret = value
-	}
 	ProxyHeaderName = conf.Server.ProxyHeaderName
-	if value := os.Getenv("PROXY_HEADER_NAME"); value != "" {
-		ProxyHeaderName = value
-	}
 	RootDirectory = conf.Server.RootDirectory
-	if value := os.Getenv("ROOT_DIRECTORY"); value != "" {
-		RootDirectory = value
-	}
-
-	// 更新 Docker 配置
-	Docker = conf.Docker
-	if value := os.Getenv("DOCKER_HOST"); value != "" {
-		Docker.Host = value
-	}
-	if value := os.Getenv("DOCKER_CONTAINER_ROOT"); value != "" {
-		Docker.ContainerRoot = value
-	}
-	if !filepath.IsAbs(Docker.ContainerRoot) {
-		Docker.ContainerRoot = filepath.Join(RootDirectory, Docker.ContainerRoot)
-	}
 
 	// 更新 Apisix 配置
 	if conf.Apisix != nil {
 		Apisix = conf.Apisix
 	}
-	if value := os.Getenv("Apisix_ADMIN_URL"); value != "" {
-		Apisix.AdminURL = value
+
+	// 更新 Docker 配置
+	if conf.Docker != nil {
+		Docker = conf.Docker
 	}
-	if value := os.Getenv("Apisix_ADMIN_KEY"); value != "" {
-		Apisix.AdminKey = value
+	if !filepath.IsAbs(Docker.ContainerRoot) {
+		Docker.ContainerRoot = filepath.Join(RootDirectory, Docker.ContainerRoot)
 	}
 
 	// 更新 Member 配置

@@ -20,7 +20,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # 启动 Go 服务
-go run main.go &
+CONFIG_PATH=.local.yml go run main.go &
 GO_PID=$!
 
 # 启动 NPM 服务
