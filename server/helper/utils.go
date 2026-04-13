@@ -52,8 +52,10 @@ func FileList(path, rely string) ([]*model.FileInfo, error) {
 
 	var fileList []*model.FileInfo
 	for _, f := range list {
+		// 统一使用正斜杠，保证跨平台前端路径一致
+		p := filepath.ToSlash(filepath.Join(rely, f.Name))
 		fileList = append(fileList, &model.FileInfo{
-			Path:    filepath.Join(rely, f.Name),
+			Path:    p,
 			Name:    f.Name,
 			Size:    f.Size,
 			IsDir:   f.IsDir,

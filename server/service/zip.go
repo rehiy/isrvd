@@ -52,7 +52,8 @@ func (zs *ZipService) Zip(path string) error {
 			return err
 		}
 
-		zipPath := filepath.Join(baseName, relPath)
+		// zip 规范要求内部路径使用正斜杠
+		zipPath := filepath.ToSlash(filepath.Join(baseName, relPath))
 		w, err := zipWriter.Create(zipPath)
 		if err != nil {
 			return err
@@ -79,8 +80,11 @@ func (zs *ZipService) Unzip(path string) error {
 	defer reader.Close()
 
 	for _, f := range reader.File {
+		// 将 zip 内路径分隔符统一为系统分隔符，防止 Windows 下路径拼接异常
+		name := filepath.FromSlash(f.Name)
+
 		// 防止 Zip Slip 攻击
-		destPath := filepath.Join(extractDir, f.Name)
+		destPath := filepath.Join(extractDir, name)
 		rel, err := filepath.Rel(extractDir, destPath)
 		if err != nil || strings.HasPrefix(rel, "..") || filepath.IsAbs(rel) {
 			continue
