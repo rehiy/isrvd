@@ -174,9 +174,10 @@ func (h *Handler) CreateConsumer(c *gin.Context) {
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	helper.RespondSuccess(c, "Consumer created successfully",		Username:    req.Username,
-		APIKey:      apiKey,
-		Description: req.Description,
+	helper.RespondSuccess(c, "Consumer created successfully", gin.H{
+		"username":    req.Username,
+		"api_key":     apiKey,
+		"description": req.Description,
 	})
 }
 
@@ -208,8 +209,9 @@ func (h *Handler) UpdateConsumer(c *gin.Context) {
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	helper.RespondSuccess(c, "Consumer updated successfully",		Username:    username,
-		Description: req.Description,
+	helper.RespondSuccess(c, "Consumer updated successfully", gin.H{
+		"username":    username,
+		"description": req.Description,
 	})
 }
 

@@ -123,7 +123,6 @@ func (h *DockerHandler) ContainerLogs(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	tailStr
 	tailStr := req.Tail
 	if tailStr == "" {
 		tailStr = "100"

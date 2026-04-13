@@ -119,7 +119,8 @@ func (h *DockerHandler) PushImage(c *gin.Context) {
 	}
 
 	logman.Info("Image pushed", "image", req.Image, "target", targetRef)
-	helper.RespondSuccess(c, "Image pushed successfully",		"image":  req.Image,
+	helper.RespondSuccess(c, "Image pushed successfully", gin.H{
+		"image":  req.Image,
 		"target": targetRef,
 		"status": lastMessage,
 	})
@@ -184,7 +185,8 @@ func (h *DockerHandler) PullFromRegistry(c *gin.Context) {
 	}
 
 	logman.Info("Image pulled from registry", "image", imageRef, "registry", req.RegistryURL)
-	helper.RespondSuccess(c, "Image pulled successfully",		"image":    imageRef,
+	helper.RespondSuccess(c, "Image pulled successfully", gin.H{
+		"image":    imageRef,
 		"registry": req.RegistryURL,
 		"status":   lastMessage,
 	})
