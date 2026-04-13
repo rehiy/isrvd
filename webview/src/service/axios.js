@@ -18,7 +18,12 @@ export const interceptors = (state, actions) => {
 
     axios.interceptors.response.use(
         value => {
-            if (value.data?.message) {
+            // 过滤逻辑：不显示GET请求和HTTP 200状态码的消息
+            const isGetRequest = value.config?.method?.toLowerCase() === 'get'
+            const isSuccessStatus = value.status === 200
+            
+            // 只有当不是GET请求且不是200状态码时才显示消息
+            if (!isGetRequest && !isSuccessStatus && value.data?.message) {
                 const message = value.data?.message
                 actions.showNotification(value.data.success ? 'success' : 'error', message)
             }

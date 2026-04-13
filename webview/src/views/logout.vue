@@ -2,7 +2,7 @@
 import { inject } from 'vue'
 
 import api from '@/service/api.js'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
+import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state.js'
 
 const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)
@@ -21,6 +21,6 @@ const handleLogout = async () => {
   >
     <i class="fas fa-spinner fa-spin" v-if="state.loading"></i>
     <i class="fas fa-sign-out-alt" v-else></i>
-    {{ state.loading ? '注销中...' : '注销' }}
+    {{ state.loading ? '请求...' : '注销' }}
   </button>
 </template>
