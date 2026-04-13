@@ -162,7 +162,10 @@ func (app *App) setupRouter() {
 				docker.GET("/swarm/nodes", dockerHandler.SwarmListNodes)
 				docker.POST("/swarm/node/action", dockerHandler.SwarmNodeAction)
 				docker.GET("/swarm/services", dockerHandler.SwarmListServices)
+				docker.POST("/swarm/service/create", dockerHandler.SwarmCreateService)
 				docker.POST("/swarm/service/action", dockerHandler.SwarmServiceAction)
+				docker.POST("/swarm/service/redeploy", dockerHandler.SwarmForceUpdateService)
+				docker.GET("/swarm/service/logs", dockerHandler.SwarmServiceLogs)
 				docker.GET("/swarm/tasks", dockerHandler.SwarmListTasks)
 			}
 		}

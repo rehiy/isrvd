@@ -1,11 +1,15 @@
 package docker
 
 import (
+	"context"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/logman"
@@ -267,4 +271,159 @@ func (h *DockerHandler) SwarmListTasks(c *gin.Context) {
 	}
 
 	helper.RespondSuccess(c, "Tasks listed", result)
+}
+
+// SwarmCreateService 创建服务
+func (h *DockerHandler) SwarmCreateService(c *gin.Context) {
+	var req model.SwarmCreateServiceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	spec := swarm.ServiceSpec{
+		Annotations: swarm.Annotations{Name: req.Name},
+		TaskTemplate: swarm.TaskSpec{
+			ContainerSpec: &swarm.ContainerSpec{
+				Image: req.Image,
+				Env:   req.Env,
+				Args:  req.Args,
+			},
+		},
+		EndpointSpec: &swarm.EndpointSpec{},
+	}
+
+	// 副本数
+	if req.Mode == "global" {
+		spec.Mode = swarm.ServiceMode{Global: &swarm.GlobalService{}}
+	} else {
+		replicas := uint64(req.Replicas)
+		if replicas == 0 {
+			replicas = 1
+		}
+		spec.Mode = swarm.ServiceMode{Replicated: &swarm.ReplicatedService{Replicas: &replicas}}
+	}
+
+	// 端口映射
+	for _, p := range req.Ports {
+		proto := swarm.PortConfigProtocolTCP
+		if strings.EqualFold(p.Protocol, "udp") {
+			proto = swarm.PortConfigProtocolUDP
+		}
+		spec.EndpointSpec.Ports = append(spec.EndpointSpec.Ports, swarm.PortConfig{
+			Protocol:      proto,
+			PublishedPort: uint32(p.Published),
+			TargetPort:    uint32(p.Target),
+		})
+	}
+
+	// 挂载卷
+	for _, m := range req.Mounts {
+		mt := mount.TypeBind
+		if m.Type == "volume" {
+			mt = mount.TypeVolume
+		}
+		spec.TaskTemplate.ContainerSpec.Mounts = append(spec.TaskTemplate.ContainerSpec.Mounts, mount.Mount{
+			Type:   mt,
+			Source: m.Source,
+			Target: m.Target,
+		})
+	}
+
+	// 网络
+	for _, n := range req.Networks {
+		spec.Networks = append(spec.Networks, swarm.NetworkAttachmentConfig{Target: n})
+	}
+
+	resp, err := h.dockerClient.ServiceCreate(ctx, spec, types.ServiceCreateOptions{})
+	if err != nil {
+		logman.Error("ServiceCreate failed", "error", err)
+		helper.RespondError(c, http.StatusInternalServerError, "服务创建失败: "+err.Error())
+		return
+	}
+
+	helper.RespondSuccess(c, "Service created", gin.H{"id": resp.ID})
+}
+
+// SwarmForceUpdateService 强制重新部署服务（不改配置，仅 force update）
+func (h *DockerHandler) SwarmForceUpdateService(c *gin.Context) {
+	var req struct {
+		ID string `json:"id"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	ctx := c.Request.Context()
+	svc, _, err := h.dockerClient.ServiceInspectWithRaw(ctx, req.ID, types.ServiceInspectOptions{InsertDefaults: true})
+	if err != nil {
+		helper.RespondError(c, http.StatusNotFound, "服务不存在")
+		return
+	}
+
+	// 触发 force update：将 ForceUpdate 字段 +1
+	svc.Spec.TaskTemplate.ForceUpdate++
+
+	if _, err := h.dockerClient.ServiceUpdate(ctx, req.ID, svc.Version, svc.Spec, types.ServiceUpdateOptions{}); err != nil {
+		logman.Error("ServiceForceUpdate failed", "error", err)
+		helper.RespondError(c, http.StatusInternalServerError, "强制重部署失败: "+err.Error())
+		return
+	}
+
+	helper.RespondSuccess(c, "Service force updated", nil)
+}
+
+// SwarmServiceLogs 获取服务日志
+func (h *DockerHandler) SwarmServiceLogs(c *gin.Context) {
+	serviceID := c.Query("id")
+	tail := c.DefaultQuery("tail", "100")
+	if serviceID == "" {
+		helper.RespondError(c, http.StatusBadRequest, "缺少服务 ID")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+	defer cancel()
+
+	reader, err := h.dockerClient.ServiceLogs(ctx, serviceID, types.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Tail:       tail,
+		Timestamps: true,
+	})
+	if err != nil {
+		logman.Error("ServiceLogs failed", "error", err)
+		helper.RespondError(c, http.StatusInternalServerError, "获取日志失败: "+err.Error())
+		return
+	}
+	defer reader.Close()
+
+	raw, err := io.ReadAll(reader)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, "读取日志失败")
+		return
+	}
+
+	// 去除 Docker multiplexed stream 头部（每行前 8 字节）
+	lines := cleanDockerLogs(raw)
+
+	helper.RespondSuccess(c, "Logs retrieved", gin.H{"logs": lines})
+}
+
+// cleanDockerLogs 移除 docker multiplexed stream header（每帧前 8 字节）
+func cleanDockerLogs(raw []byte) string {
+	var sb strings.Builder
+	for len(raw) > 8 {
+		frameSize := int(raw[4])<<24 | int(raw[5])<<16 | int(raw[6])<<8 | int(raw[7])
+		raw = raw[8:]
+		if frameSize > len(raw) {
+			frameSize = len(raw)
+		}
+		sb.Write(raw[:frameSize])
+		raw = raw[frameSize:]
+	}
+	return sb.String()
 }

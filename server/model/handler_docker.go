@@ -342,6 +342,31 @@ type SwarmTask struct {
 	UpdatedAt   string `json:"updatedAt"`
 }
 
+// Swarm 创建服务请求
+type SwarmCreateServiceRequest struct {
+	Name     string            `json:"name" binding:"required"`
+	Image    string            `json:"image" binding:"required"`
+	Mode     string            `json:"mode"`     // replicated | global
+	Replicas int               `json:"replicas"` // mode=replicated 时有效
+	Env      []string          `json:"env"`
+	Args     []string          `json:"args"`
+	Networks []string          `json:"networks"`
+	Ports    []SwarmPortConfig `json:"ports"`
+	Mounts   []SwarmMount      `json:"mounts"`
+}
+
+type SwarmPortConfig struct {
+	Published int    `json:"published"`
+	Target    int    `json:"target"`
+	Protocol  string `json:"protocol"` // tcp | udp
+}
+
+type SwarmMount struct {
+	Type   string `json:"type"`   // bind | volume
+	Source string `json:"source"`
+	Target string `json:"target"`
+}
+
 // 容器配置更新请求
 type ContainerUpdateRequest struct {
 	Name       string            `json:"name" binding:"required"`

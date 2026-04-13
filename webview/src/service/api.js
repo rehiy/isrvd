@@ -178,6 +178,16 @@ class ApiService {
   swarmListTasks(serviceID = '') {
     return axios.get('/api/docker/swarm/tasks', { params: serviceID ? { serviceID } : {} })
   }
+  swarmCreateService(data) {
+    return axios.post('/api/docker/swarm/service/create', data)
+  }
+  swarmRedeployService(id) {
+    return axios.post('/api/docker/swarm/service/redeploy', { id })
+  }
+  swarmServiceLogs(id, tail = '100') {
+    return axios.get('/api/docker/swarm/service/logs', { params: { id, tail } })
+  }
+
 
   // ==================== Apisix 管理相关 ====================
 
