@@ -86,20 +86,20 @@ const viewNetworkDetail = async (net) => {
   detailLoading.value = false
 }
 
-// 判断网络是否可删除
+// 判断网络是否可删除（仅 Docker 默认预置网络不可删除）
 const canDeleteNetwork = (net) => {
-  const undeletableDrivers = ['bridge', 'host', 'none']
-  return !undeletableDrivers.includes(net.driver)
+  const undeletableNames = ['bridge', 'host', 'none']
+  return !undeletableNames.includes(net.name)
 }
 
 // 获取不可删除原因
 const getDeleteDisabledReason = (net) => {
-  const driverNames = {
+  const networkNames = {
     bridge: '默认桥接网络',
     host: '主机网络',
     none: '空网络'
   }
-  return `${driverNames[net.driver] || '系统网络'}不可删除`
+  return `${networkNames[net.name] || '系统网络'}不可删除`
 }
 
 // 暴露方法给 toolbar 使用
