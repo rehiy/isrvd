@@ -258,9 +258,9 @@ onMounted(() => {
               <span class="text-xs text-slate-500">名称</span>
               <p class="text-sm font-medium text-slate-800 mt-0.5">{{ detailData.name }}</p>
             </div>
-            <div>
+            <div class="overflow-hidden">
               <span class="text-xs text-slate-500">ID</span>
-              <p class="text-xs font-mono text-slate-600 mt-0.5">{{ detailData.id }}</p>
+              <p class="text-xs font-mono text-slate-600 mt-0.5 truncate" :title="detailData.id">{{ detailData.id }}</p>
             </div>
             <div>
               <span class="text-xs text-slate-500">驱动</span>
