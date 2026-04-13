@@ -71,8 +71,8 @@ onUnmounted(() => {
         {{ terminalConnected ? '断开连接' : '连接' }}
       </button>
     </div>
-    <div class="bg-slate-900 rounded-xl p-4" style="min-height: 500px;">
-      <div ref="xtermRef" class="h-full rounded-lg overflow-hidden" style="min-height: 480px;"></div>
+    <div class="bg-slate-900 rounded-xl p-4 min-h-[500px]">
+      <div ref="xtermRef" class="h-full rounded-lg overflow-hidden min-h-[480px]"></div>
     </div>
   </div>
 </template>

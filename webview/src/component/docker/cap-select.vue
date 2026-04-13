@@ -149,7 +149,7 @@ const filteredCategories = computed(() => {
               ? 'hover:bg-emerald-200 text-emerald-500'
               : 'hover:bg-red-200 text-red-500'
           ]">
-            <i class="fas fa-times" style="font-size:8px"></i>
+            <i class="fas fa-times text-[8px]"></i>
           </button>
         </span>
         <input ref="inputRef" v-model="searchQuery" type="text" class="flex-1 min-w-[80px] border-0 outline-none bg-transparent text-sm text-slate-700 placeholder:text-slate-400 p-0 focus:ring-0 focus:border-0 focus:shadow-none" :placeholder="selectedCaps.length === 0 ? '点击选择或输入权限名称...' : '搜索...'" @focus="dropdownOpen = true" @keydown.enter.prevent="addCustomCap" />
@@ -191,7 +191,7 @@ const filteredCategories = computed(() => {
                   : 'bg-red-500 border-red-500'
                 : 'border-slate-300 group-hover:border-slate-400'
             ]">
-              <i v-if="isSelected(cap.name)" class="fas fa-check text-white" style="font-size:9px"></i>
+              <i v-if="isSelected(cap.name)" class="fas fa-check text-white text-[9px]"></i>
             </span>
             <div class="flex-1 min-w-0">
               <div class="text-sm font-medium" :class="isSelected(cap.name) ? 'text-slate-800' : 'text-slate-700'">{{ cap.name }}</div>

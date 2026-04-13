@@ -3,8 +3,8 @@ import { inject, ref } from 'vue'
 
 import { APP_ACTIONS_KEY } from '@/store/state.js'
 
-import MkdirModal from '@/component/file-manager/mkdir.vue'
 import CreateModal from '@/component/file-manager/create.vue'
+import MkdirModal from '@/component/file-manager/mkdir.vue'
 import UploadModal from '@/component/file-manager/upload.vue'
 
 const actions = inject(APP_ACTIONS_KEY)
@@ -36,8 +36,7 @@ const refreshFiles = () => actions.loadFiles()
       </button>
 
       <button 
-        class="btn bg-cyan-500 text-white hover:bg-cyan-600 focus:ring-cyan-500"
-        style="box-shadow: 0 4px 14px 0 rgba(6, 182, 212, 0.39)"
+        class="btn-cyan"
         @click="uploadModal.show"
       >
         <i class="fas fa-cloud-arrow-up mr-2"></i>

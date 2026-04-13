@@ -64,10 +64,6 @@
     @apply bg-white rounded-2xl shadow-soft border border-slate-200/60;
   }
 
-  .card-hover {
-    @apply card transition-all duration-300 hover:shadow-soft-lg hover:-translate-y-1;
-  }
-
   /* 模态框样式 */
   .modal-card {
     @apply bg-white rounded-2xl shadow-2xl border border-slate-200;
@@ -108,6 +104,13 @@
     box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.39);
   }
 
+  .btn-cyan {
+    @apply btn bg-cyan-500 text-white;
+    @apply hover:bg-cyan-600;
+    @apply focus:ring-cyan-500;
+    box-shadow: 0 4px 14px 0 rgba(6, 182, 212, 0.39);
+  }
+
   .btn-ghost {
     @apply btn bg-transparent hover:bg-slate-100 text-slate-700;
     @apply focus:ring-slate-500;
@@ -125,11 +128,6 @@
     @apply hover:border-slate-300;
   }
 
-  /* 导航栏样式 */
-  .navbar {
-    @apply bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm;
-  }
-
   /* 徽章样式 */
   .badge {
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
@@ -139,25 +137,8 @@
     @apply badge bg-primary-100 text-primary-700;
   }
 
-  .badge-success {
-    @apply badge bg-emerald-100 text-emerald-700;
-  }
-
   .badge-warning {
     @apply badge bg-amber-100 text-amber-700;
-  }
-
-  .badge-danger {
-    @apply badge bg-red-100 text-red-700;
-  }
-
-  /* 玻璃态效果 */
-  .glass {
-    @apply bg-white/60 backdrop-blur-xl border border-white/20 shadow-soft;
-  }
-
-  .glass-dark {
-    @apply bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 shadow-soft;
   }
 
   /* 渐变文字 */
@@ -168,40 +149,5 @@
   /* 加载动画 */
   .spinner {
     @apply animate-spin rounded-full border-4 border-slate-200 border-t-primary-500;
-  }
-}
-
-@layer utilities {
-
-  /* 文字阴影 */
-  .text-shadow {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .text-shadow-lg {
-    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  /* 渐变边框 */
-  .gradient-border {
-    background: linear-gradient(white, white) padding-box,
-      linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) border-box;
-    border: 2px solid transparent;
-  }
-
-  /* 悬浮效果 */
-  .float {
-    animation: float 3s ease-in-out infinite;
-  }
-
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-
-    50% {
-      transform: translateY(-10px);
-    }
   }
 }
