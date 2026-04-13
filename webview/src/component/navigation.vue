@@ -11,6 +11,9 @@ const route = useRoute()
 // Docker 子菜单展开状态 - 初始化时根据当前路由判断
 const dockerExpanded = ref(route.path.startsWith('/docker/'))
 
+// Apisix 子菜单展开状态
+const apisixExpanded = ref(route.path.startsWith('/apisix/'))
+
 // 判断当前是否在 Docker 相关路由下
 const isDockerActive = computed(() => {
   return route.path.startsWith('/docker/')
@@ -21,6 +24,11 @@ const isContainersActive = computed(() => {
   return route.path.startsWith('/docker/container')
 })
 
+// 判断当前是否在 Apisix 相关路由下
+const isApisixActive = computed(() => {
+  return route.path.startsWith('/apisix/')
+})
+
 // 监听路由变化，自动展开子菜单
 watch(isDockerActive, (isActive) => {
   if (isActive && !collapsed.value) {
@@ -28,14 +36,29 @@ watch(isDockerActive, (isActive) => {
   }
 }, { immediate: true })
 
+watch(isApisixActive, (isActive) => {
+  if (isActive && !collapsed.value) {
+    apisixExpanded.value = true
+  }
+}, { immediate: true })
+
 // 切换 Docker 子菜单
 const toggleDocker = () => {
   if (collapsed.value) {
-    // 侧边栏折叠时，展开侧边栏并展开子菜单
     collapsed.value = false
     dockerExpanded.value = true
   } else {
     dockerExpanded.value = !dockerExpanded.value
+  }
+}
+
+// 切换 Apisix 子菜单
+const toggleApisix = () => {
+  if (collapsed.value) {
+    collapsed.value = false
+    apisixExpanded.value = true
+  } else {
+    apisixExpanded.value = !apisixExpanded.value
   }
 }
 </script>
@@ -84,7 +107,7 @@ const toggleDocker = () => {
           :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isDockerActive }"
         >
           <i class="fab fa-docker"></i>
-          <span>Docker</span>
+          <span>Docker 管理</span>
           <i 
             class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200"
             :class="{ 'rotate-180': dockerExpanded }"
@@ -144,6 +167,59 @@ const toggleDocker = () => {
         title="Docker"
       >
         <i class="fab fa-docker"></i>
+      </router-link>
+
+      <!-- Apisix 折叠子菜单 -->
+      <div v-if="!collapsed">
+        <button 
+          @click="toggleApisix"
+          class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isApisixActive }"
+        >
+          <i class="fas fa-cloud"></i>
+          <span>Apisix 管理</span>
+          <i 
+            class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200"
+            :class="{ 'rotate-180': apisixExpanded }"
+          ></i>
+        </button>
+        <div v-show="apisixExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+          <router-link 
+            to="/apisix/routes" 
+            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+          >
+            <i class="fas fa-route"></i>
+            <span>路由</span>
+          </router-link>
+          <router-link 
+            to="/apisix/consumers" 
+            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+          >
+            <i class="fas fa-users"></i>
+            <span>用户</span>
+          </router-link>
+          <router-link 
+            to="/apisix/whitelist" 
+            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+          >
+            <i class="fas fa-shield-halved"></i>
+            <span>白名单</span>
+          </router-link>
+        </div>
+      </div>
+
+      <!-- 折叠状态下的 Apisix 菜单 -->
+      <router-link 
+        v-if="collapsed"
+        to="/apisix/routes"
+        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isApisixActive }"
+        title="Apisix"
+      >
+        <i class="fas fa-cloud"></i>
       </router-link>
     </nav>
 

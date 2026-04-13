@@ -146,6 +146,61 @@ class ApiService {
   createVolume(data) {
     return axios.post('/api/docker/volume/create', data)
   }
+
+  // ==================== Apisix 管理相关 ====================
+
+  // 路由管理
+  apisixListRoutes() {
+    return axios.get('/api/apisix/routes')
+  }
+  apisixGetRoute(id) {
+    return axios.get(`/api/apisix/routes/${id}`)
+  }
+  apisixCreateRoute(data) {
+    return axios.post('/api/apisix/routes', data)
+  }
+  apisixUpdateRoute(id, data) {
+    return axios.put(`/api/apisix/routes/${id}`, data)
+  }
+  apisixPatchRouteStatus(id, status) {
+    return axios.patch(`/api/apisix/routes/${id}/status`, { status })
+  }
+  apisixDeleteRoute(id) {
+    return axios.delete(`/api/apisix/routes/${id}`)
+  }
+
+  // Consumer 管理
+  apisixListConsumers() {
+    return axios.get('/api/apisix/consumers')
+  }
+  apisixCreateConsumer(data) {
+    return axios.post('/api/apisix/consumers', data)
+  }
+  apisixUpdateConsumer(username, data) {
+    return axios.put(`/api/apisix/consumers/${username}`, data)
+  }
+  apisixDeleteConsumer(username) {
+    return axios.delete(`/api/apisix/consumers/${username}`)
+  }
+
+  // 白名单管理
+  apisixGetWhitelist() {
+    return axios.get('/api/apisix/whitelist')
+  }
+  apisixRevokeWhitelist(routeId, consumerName) {
+    return axios.put('/api/apisix/whitelist/revoke', { route_id: routeId, consumer_name: consumerName })
+  }
+
+  // 辅助资源
+  apisixListPluginConfigs() {
+    return axios.get('/api/apisix/plugin_configs')
+  }
+  apisixListUpstreams() {
+    return axios.get('/api/apisix/upstreams')
+  }
+  apisixListPlugins() {
+    return axios.get('/api/apisix/plugins')
+  }
 }
 
 // 导出单例实例

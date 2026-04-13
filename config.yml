@@ -9,6 +9,10 @@ docker:
   # host: tcp://127.0.0.1:2375
   containerRoot: container/
 
+apisix:
+  # adminUrl: http://127.0.0.1:9180
+  # adminKey: your-admin-key
+
 members:
   - username: admin
     password: admin

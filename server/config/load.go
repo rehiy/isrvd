@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/goccy/go-yaml"
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -20,12 +21,16 @@ var (
 	RootDirectory = "."
 	// Docker 配置
 	Docker = &DockerConfig{}
+	// Apisix 配置
+	Apisix = &ApisixConfig{}
 	// 成员配置
 	Members = map[string]*MemberConfig{}
 )
 
 // 加载配置文件
 func Load() error {
+	_ = godotenv.Load()
+
 	file := os.Getenv("CONFIG_PATH")
 	if file == "" {
 		file = "config.yml"
@@ -77,7 +82,18 @@ func Load() error {
 		Docker.ContainerRoot = filepath.Join(RootDirectory, Docker.ContainerRoot)
 	}
 
-	// 更新成员配置
+	// 更新 Apisix 配置
+	if conf.Apisix != nil {
+		Apisix = conf.Apisix
+	}
+	if value := os.Getenv("Apisix_ADMIN_URL"); value != "" {
+		Apisix.AdminURL = value
+	}
+	if value := os.Getenv("Apisix_ADMIN_KEY"); value != "" {
+		Apisix.AdminKey = value
+	}
+
+	// 更新 Member 配置
 	for _, m := range conf.Members {
 		if !filepath.IsAbs(m.HomeDirectory) {
 			m.HomeDirectory = filepath.Join(RootDirectory, m.HomeDirectory)

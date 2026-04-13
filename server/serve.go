@@ -8,6 +8,7 @@ import (
 	"isrvd/public"
 	"isrvd/server/config"
 	"isrvd/server/handler"
+	"isrvd/server/handler/apisix"
 	"isrvd/server/handler/docker"
 	"isrvd/server/middleware"
 )
@@ -51,7 +52,13 @@ func (app *App) setupRouter() {
 	// 注册 Docker Handler
 	dockerHandler, err := docker.NewDockerHandler()
 	if err != nil {
-		logman.Fatal("Docker client init failed, Docker features disabled", "error", err)
+		logman.Error("Docker client init failed, Docker features disabled", "error", err)
+	}
+
+	// 注册 Apisix Handler（可选，配置了才启用）
+	apisixHandler, err := apisix.NewHandler()
+	if err != nil {
+		logman.Error("Apisix client init failed, Apisix features disabled", "error", err)
 	}
 
 	// API 路由组
@@ -77,6 +84,33 @@ func (app *App) setupRouter() {
 			auth.POST("/chmod", fileHandler.Chmod)
 			auth.POST("/zip", zipHandler.Zip)
 			auth.POST("/unzip", zipHandler.Unzip)
+
+			// Apisix API 路由
+			apisix := auth.Group("/apisix")
+			{
+				// 路由管理
+				apisix.GET("/routes", apisixHandler.ListRoutes)
+				apisix.GET("/routes/:id", apisixHandler.GetRoute)
+				apisix.POST("/routes", apisixHandler.CreateRoute)
+				apisix.PUT("/routes/:id", apisixHandler.UpdateRoute)
+				apisix.PATCH("/routes/:id/status", apisixHandler.PatchRouteStatus)
+				apisix.DELETE("/routes/:id", apisixHandler.DeleteRoute)
+
+				// Consumer 管理
+				apisix.GET("/consumers", apisixHandler.ListConsumers)
+				apisix.POST("/consumers", apisixHandler.CreateConsumer)
+				apisix.PUT("/consumers/:username", apisixHandler.UpdateConsumer)
+				apisix.DELETE("/consumers/:username", apisixHandler.DeleteConsumer)
+
+				// 白名单管理
+				apisix.GET("/whitelist", apisixHandler.GetWhitelist)
+				apisix.PUT("/whitelist/revoke", apisixHandler.RevokeWhitelist)
+
+				// 辅助资源
+				apisix.GET("/plugin_configs", apisixHandler.ListPluginConfigs)
+				apisix.GET("/upstreams", apisixHandler.ListUpstreams)
+				apisix.GET("/plugins", apisixHandler.ListPlugins)
+			}
 
 			// Docker API 路由
 			docker := auth.Group("/docker")
