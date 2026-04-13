@@ -67,15 +67,6 @@ const toggleDocker = () => {
         <span v-if="!collapsed">文件管理</span>
       </router-link>
       <router-link 
-        to="/markdown" 
-        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-        active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
-        :title="collapsed ? 'Markdown' : ''"
-      >
-        <i class="fas fa-edit"></i>
-        <span v-if="!collapsed">Markdown</span>
-      </router-link>
-      <router-link 
         to="/shell" 
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
         active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"

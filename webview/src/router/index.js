@@ -67,11 +67,6 @@ const routes = [
     component: () => import('@/views/docker/volumes.vue')
   },
   {
-    path: '/markdown',
-    name: 'markdown',
-    component: () => import('@/views/markdown.vue')
-  },
-  {
     path: '/shell',
     name: 'shell',
     component: () => import('@/views/shell.vue')
