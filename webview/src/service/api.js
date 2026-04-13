@@ -158,6 +158,27 @@ class ApiService {
     return axios.post('/api/docker/registry/pull', { image, registryUrl, namespace })
   }
 
+  // ==================== Docker Swarm 管理相关 ====================
+
+  swarmInfo() {
+    return axios.get('/api/docker/swarm/info')
+  }
+  swarmListNodes() {
+    return axios.get('/api/docker/swarm/nodes')
+  }
+  swarmNodeAction(id, action) {
+    return axios.post('/api/docker/swarm/node/action', { id, action })
+  }
+  swarmListServices() {
+    return axios.get('/api/docker/swarm/services')
+  }
+  swarmServiceAction(id, action, replicas) {
+    return axios.post('/api/docker/swarm/service/action', { id, action, replicas })
+  }
+  swarmListTasks(serviceID = '') {
+    return axios.get('/api/docker/swarm/tasks', { params: serviceID ? { serviceID } : {} })
+  }
+
   // ==================== Apisix 管理相关 ====================
 
   // 路由管理

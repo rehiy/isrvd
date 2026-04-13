@@ -301,6 +301,47 @@ type ImagePushRequest struct {
 	Namespace   string `json:"namespace"`                      // 目标命名空间（可选，如 myteam）
 }
 
+// ==================== Swarm 模型 ====================
+
+// Swarm 节点信息
+type SwarmNode struct {
+	ID            string `json:"id"`
+	Hostname      string `json:"hostname"`
+	Role          string `json:"role"`          // manager / worker
+	Availability  string `json:"availability"`  // active / pause / drain
+	State         string `json:"state"`         // ready / down / unknown
+	Addr          string `json:"addr"`
+	EngineVersion string `json:"engineVersion"`
+	Leader        bool   `json:"leader"`
+}
+
+// Swarm 服务信息
+type SwarmService struct {
+	ID           string      `json:"id"`
+	Name         string      `json:"name"`
+	Image        string      `json:"image"`
+	Mode         string      `json:"mode"`         // replicated / global
+	Replicas     *uint64     `json:"replicas"`
+	RunningTasks int         `json:"runningTasks"`
+	Ports        interface{} `json:"ports"`
+	CreatedAt    string      `json:"createdAt"`
+	UpdatedAt    string      `json:"updatedAt"`
+}
+
+// Swarm 任务信息
+type SwarmTask struct {
+	ID          string `json:"id"`
+	ServiceID   string `json:"serviceID"`
+	ServiceName string `json:"serviceName"`
+	NodeID      string `json:"nodeID"`
+	Slot        int    `json:"slot"`
+	Image       string `json:"image"`
+	State       string `json:"state"`
+	Message     string `json:"message"`
+	Err         string `json:"err"`
+	UpdatedAt   string `json:"updatedAt"`
+}
+
 // 容器配置更新请求
 type ContainerUpdateRequest struct {
 	Name       string            `json:"name" binding:"required"`

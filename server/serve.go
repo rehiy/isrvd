@@ -156,6 +156,14 @@ func (app *App) setupRouter() {
 				docker.GET("/registries", dockerHandler.ListRegistries)
 				docker.POST("/registry/push", dockerHandler.PushImage)
 				docker.POST("/registry/pull", dockerHandler.PullFromRegistry)
+
+				// Swarm 集群管理
+				docker.GET("/swarm/info", dockerHandler.SwarmInfo)
+				docker.GET("/swarm/nodes", dockerHandler.SwarmListNodes)
+				docker.POST("/swarm/node/action", dockerHandler.SwarmNodeAction)
+				docker.GET("/swarm/services", dockerHandler.SwarmListServices)
+				docker.POST("/swarm/service/action", dockerHandler.SwarmServiceAction)
+				docker.GET("/swarm/tasks", dockerHandler.SwarmListTasks)
 			}
 		}
 	}

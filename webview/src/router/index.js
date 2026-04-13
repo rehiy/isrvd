@@ -72,6 +72,11 @@ const routes = [
     component: () => import('@/views/docker/registries.vue')
   },
   {
+    path: '/docker/swarm',
+    name: 'docker-swarm',
+    component: () => import('@/views/docker/swarm.vue')
+  },
+  {
     path: '/apisix',
     name: 'apisix',
     redirect: '/apisix/routes'
