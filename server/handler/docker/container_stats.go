@@ -13,6 +13,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/gin-gonic/gin"
+	"github.com/rehiy/pango/logman"
 	"github.com/shirou/gopsutil/v3/cpu"
 
 	"isrvd/server/helper"
@@ -52,7 +53,8 @@ func getCpuFreq() float64 {
 func (h *DockerHandler) ContainerStats(c *gin.Context) {
 	id := c.Query("id")
 	if id == "" {
-		helper.RespondError(c, http.StatusBadRequest, "容器ID不能为空")
+		logman.Error("Container stats failed", "error", "container ID is empty")
+		helper.RespondError(c, http.StatusBadRequest, "容器 ID 不能为空")
 		return
 	}
 
@@ -60,6 +62,7 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 
 	stats, err := h.dockerClient.ContainerStats(ctx, id, false)
 	if err != nil {
+		logman.Error("Get container stats failed", "id", id, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "获取容器统计信息失败: "+err.Error())
 		return
 	}
@@ -67,12 +70,14 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 
 	data, err := io.ReadAll(stats.Body)
 	if err != nil {
+		logman.Error("Read container stats failed", "id", id, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "读取统计信息失败")
 		return
 	}
 
 	var v types.StatsJSON
 	if err := json.Unmarshal(data, &v); err != nil {
+		logman.Error("Parse container stats failed", "id", id, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "解析统计信息失败")
 		return
 	}
@@ -198,5 +203,5 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 		ProcessList:   processList,
 	}
 
-	helper.RespondSuccess(c, "容器统计信息获取成功", result)
+	helper.RespondSuccess(c, "Container stats retrieved successfully", result)
 }

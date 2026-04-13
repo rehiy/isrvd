@@ -28,7 +28,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	var req model.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Warn("Login request invalid", "error", err)
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
@@ -48,7 +48,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	username := c.GetString("username")
 	if username == "" {
 		logman.Warn("Logout attempt without authentication")
-		helper.RespondError(c, http.StatusUnauthorized, "Not logged in")
+		helper.RespondError(c, http.StatusUnauthorized, "未登录")
 		return
 	}
 

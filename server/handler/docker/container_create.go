@@ -20,7 +20,8 @@ import (
 func (h *DockerHandler) CreateContainer(c *gin.Context) {
 	var req model.ContainerCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Create container failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
@@ -130,11 +131,13 @@ func (h *DockerHandler) CreateContainer(c *gin.Context) {
 func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
 	var req model.ContainerUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Update container config failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
 	if req.Name == "" {
+		logman.Error("Update container config failed", "error", "container name is empty")
 		helper.RespondError(c, http.StatusBadRequest, "容器名称不能为空")
 		return
 	}
@@ -144,6 +147,7 @@ func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
 	// 查找并停止旧容器
 	containers, err := h.dockerClient.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
+		logman.Error("List containers failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "获取容器列表失败: "+err.Error())
 		return
 	}
@@ -291,6 +295,7 @@ func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
 func (h *DockerHandler) GetContainerConfig(c *gin.Context) {
 	name := c.Query("name")
 	if name == "" {
+		logman.Error("Get container config failed", "error", "container name is empty")
 		helper.RespondError(c, http.StatusBadRequest, "容器名称不能为空")
 		return
 	}
@@ -300,7 +305,8 @@ func (h *DockerHandler) GetContainerConfig(c *gin.Context) {
 		// compose 文件不存在，尝试根据容器当前配置自动创建
 		compose, err = h.autoCreateComposeFile(c.Request.Context(), name)
 		if err != nil {
-			helper.RespondError(c, http.StatusNotFound, "未找到容器配置文件且无法自动生成: "+err.Error())
+			logman.Error("Get container config failed", "name", name, "error", err)
+			helper.RespondError(c, http.StatusNotFound, "容器配置未找到且无法自动生成: "+err.Error())
 			return
 		}
 		logman.Info("Auto-created compose file for container", "name", name)
@@ -308,6 +314,7 @@ func (h *DockerHandler) GetContainerConfig(c *gin.Context) {
 
 	service, ok := compose.Services[name]
 	if !ok {
+		logman.Error("Get container config failed", "name", name, "error", "container not found in config file")
 		helper.RespondError(c, http.StatusNotFound, "配置文件中未找到该容器")
 		return
 	}

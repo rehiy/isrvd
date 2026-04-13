@@ -54,7 +54,7 @@ func (h *DockerHandler) Info(c *gin.Context) {
 	info, err := h.dockerClient.Info(ctx)
 	if err != nil {
 		logman.Error("Docker info failed", "error", err)
-		helper.RespondError(c, http.StatusInternalServerError, "无法连接到 Docker 服务: "+err.Error())
+		helper.RespondError(c, http.StatusInternalServerError, "连接 Docker 失败: "+err.Error())
 		return
 	}
 	_ = info

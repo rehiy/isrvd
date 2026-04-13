@@ -52,13 +52,13 @@ func (app *App) setupRouter() {
 	// 注册 Docker Handler
 	dockerHandler, err := docker.NewDockerHandler()
 	if err != nil {
-		logman.Error("Docker client init failed, Docker features disabled", "error", err)
+		logman.Error("Docker client init failed", "error", err)
 	}
 
 	// 注册 Apisix Handler（可选，配置了才启用）
 	apisixHandler, err := apisix.NewHandler()
 	if err != nil {
-		logman.Error("Apisix client init failed, Apisix features disabled", "error", err)
+		logman.Error("Apisix client init failed", "error", err)
 	}
 
 	// API 路由组

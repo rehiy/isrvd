@@ -33,7 +33,8 @@ func (h *ShellHandler) WebSocket(c *gin.Context) {
 	username := c.GetString("username")
 	member, ok := config.Members[username]
 	if !ok || !member.AllowTerminal {
-		helper.RespondError(c, http.StatusForbidden, "Terminal access denied")
+		logman.Warn("Terminal access denied", "username", username)
+		helper.RespondError(c, http.StatusForbidden, "终端访问被拒绝")
 		return
 	}
 

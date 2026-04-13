@@ -50,7 +50,8 @@ func (h *DockerHandler) ListContainers(c *gin.Context) {
 func (h *DockerHandler) ContainerAction(c *gin.Context) {
 	var req model.ContainerActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Container action failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return
 	}
 
@@ -60,6 +61,7 @@ func (h *DockerHandler) ContainerAction(c *gin.Context) {
 	case "start":
 		err := h.dockerClient.ContainerStart(ctx, req.ID, types.ContainerStartOptions{})
 		if err != nil {
+			logman.Error("Start container failed", "id", req.ID, "error", err)
 			helper.RespondError(c, http.StatusInternalServerError, "启动容器失败: "+err.Error())
 			return
 		}
@@ -67,6 +69,7 @@ func (h *DockerHandler) ContainerAction(c *gin.Context) {
 		timeout := 10
 		err := h.dockerClient.ContainerStop(ctx, req.ID, container.StopOptions{Timeout: &timeout})
 		if err != nil {
+			logman.Error("Stop container failed", "id", req.ID, "error", err)
 			helper.RespondError(c, http.StatusInternalServerError, "停止容器失败: "+err.Error())
 			return
 		}
@@ -74,51 +77,53 @@ func (h *DockerHandler) ContainerAction(c *gin.Context) {
 		timeout := 10
 		err := h.dockerClient.ContainerRestart(ctx, req.ID, container.StopOptions{Timeout: &timeout})
 		if err != nil {
+			logman.Error("Restart container failed", "id", req.ID, "error", err)
 			helper.RespondError(c, http.StatusInternalServerError, "重启容器失败: "+err.Error())
 			return
 		}
 	case "remove":
 		err := h.dockerClient.ContainerRemove(ctx, req.ID, types.ContainerRemoveOptions{Force: true})
 		if err != nil {
+			logman.Error("Remove container failed", "id", req.ID, "error", err)
 			helper.RespondError(c, http.StatusInternalServerError, "删除容器失败: "+err.Error())
 			return
 		}
 	case "pause":
 		err := h.dockerClient.ContainerPause(ctx, req.ID)
 		if err != nil {
+			logman.Error("Pause container failed", "id", req.ID, "error", err)
 			helper.RespondError(c, http.StatusInternalServerError, "暂停容器失败: "+err.Error())
 			return
 		}
 	case "unpause":
 		err := h.dockerClient.ContainerUnpause(ctx, req.ID)
 		if err != nil {
+			logman.Error("Unpause container failed", "id", req.ID, "error", err)
 			helper.RespondError(c, http.StatusInternalServerError, "恢复容器失败: "+err.Error())
 			return
 		}
 	default:
+		logman.Error("Unsupported container action", "action", req.Action, "id", req.ID)
 		helper.RespondError(c, http.StatusBadRequest, "不支持的操作: "+req.Action)
 		return
 	}
 
-	actionName := map[string]string{
-		"start": "启动", "stop": "停止", "restart": "重启",
-		"remove": "删除", "pause": "暂停", "unpause": "恢复",
-	}[req.Action]
-
 	logman.Info("Container action performed", "action", req.Action, "id", req.ID)
-	helper.RespondSuccess(c, actionName+"操作成功", nil)
+	helper.RespondSuccess(c, "Container "+req.Action+" successfully", nil)
 }
 
 // ContainerLogs 获取容器日志
 func (h *DockerHandler) ContainerLogs(c *gin.Context) {
 	var req model.ContainerLogsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Container logs failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return
 	}
 
 	ctx := c.Request.Context()
 
+	tailStr
 	tailStr := req.Tail
 	if tailStr == "" {
 		tailStr = "100"
@@ -131,6 +136,7 @@ func (h *DockerHandler) ContainerLogs(c *gin.Context) {
 
 	reader, err := h.dockerClient.ContainerLogs(ctx, req.ID, options)
 	if err != nil {
+		logman.Error("Get container logs failed", "id", req.ID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "获取日志失败: "+err.Error())
 		return
 	}
@@ -138,6 +144,7 @@ func (h *DockerHandler) ContainerLogs(c *gin.Context) {
 
 	data, err := readAll(reader)
 	if err != nil {
+		logman.Error("Read container logs failed", "id", req.ID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "读取日志失败")
 		return
 	}

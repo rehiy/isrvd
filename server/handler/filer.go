@@ -27,6 +27,7 @@ func NewFileHandler() *FileHandler {
 func (h *FileHandler) List(c *gin.Context) {
 	var req model.FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logman.Error("List files failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
@@ -34,6 +35,7 @@ func (h *FileHandler) List(c *gin.Context) {
 	path := helper.GetAbsolutePath(c, req.Path)
 	fileList, err := helper.FileList(path, req.Path)
 	if err != nil {
+		logman.Error("List files failed", "path", path, "error", err)
 		helper.RespondError(c, http.StatusNotFound, "Directory not found")
 		return
 	}
@@ -48,6 +50,7 @@ func (h *FileHandler) List(c *gin.Context) {
 func (h *FileHandler) Delete(c *gin.Context) {
 	var req model.FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logman.Error("Delete file failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
@@ -66,6 +69,7 @@ func (h *FileHandler) Delete(c *gin.Context) {
 func (h *FileHandler) Mkdir(c *gin.Context) {
 	var req model.FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logman.Error("Create directory failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
@@ -84,6 +88,7 @@ func (h *FileHandler) Mkdir(c *gin.Context) {
 func (h *FileHandler) Create(c *gin.Context) {
 	var req model.FileContentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logman.Error("Create file failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
@@ -102,6 +107,7 @@ func (h *FileHandler) Create(c *gin.Context) {
 func (h *FileHandler) Read(c *gin.Context) {
 	var req model.FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logman.Error("Read file failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
@@ -124,6 +130,7 @@ func (h *FileHandler) Read(c *gin.Context) {
 func (h *FileHandler) Modify(c *gin.Context) {
 	var req model.FileContentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logman.Error("Modify file failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
@@ -142,6 +149,7 @@ func (h *FileHandler) Modify(c *gin.Context) {
 func (h *FileHandler) Rename(c *gin.Context) {
 	var req model.FileRenameRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logman.Error("Rename file failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
@@ -149,6 +157,7 @@ func (h *FileHandler) Rename(c *gin.Context) {
 	path := helper.GetAbsolutePath(c, req.Path)
 	target := helper.GetAbsolutePath(c, filepath.Join(filepath.Dir(req.Path), req.Target))
 	if err := os.Rename(path, target); err != nil {
+		logman.Error("Rename file failed", "path", path, "target", target, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot rename file")
 		return
 	}
@@ -160,18 +169,21 @@ func (h *FileHandler) Rename(c *gin.Context) {
 func (h *FileHandler) Chmod(c *gin.Context) {
 	var req model.FileChmodRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logman.Error("Chmod file failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
 	mode, err := strconv.ParseUint(req.Mode, 8, 32)
 	if err != nil {
+		logman.Error("Chmod file failed", "mode", req.Mode, "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid mode")
 		return
 	}
 
 	path := helper.GetAbsolutePath(c, req.Path)
 	if err = os.Chmod(path, os.FileMode(mode)); err != nil {
+		logman.Error("Chmod file failed", "path", path, "mode", mode, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot change permissions")
 		return
 	}
@@ -217,6 +229,7 @@ func (h *FileHandler) Upload(c *gin.Context) {
 func (h *FileHandler) Download(c *gin.Context) {
 	var req model.FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logman.Error("Download file failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
@@ -224,6 +237,7 @@ func (h *FileHandler) Download(c *gin.Context) {
 	path := helper.GetAbsolutePath(c, req.Path)
 	f, err := os.Open(path)
 	if err != nil {
+		logman.Error("Download file failed", "path", path, "error", err)
 		helper.RespondError(c, http.StatusNotFound, "File not found")
 		return
 	}

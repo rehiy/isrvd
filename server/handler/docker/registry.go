@@ -25,7 +25,7 @@ func (h *DockerHandler) ListRegistries(c *gin.Context) {
 			Username: r.Username,
 		})
 	}
-	helper.RespondSuccess(c, "获取仓库列表成功", registries)
+	helper.RespondSuccess(c, "Registries listed successfully", registries)
 }
 
 // getRegistryAuth 获取仓库认证信息
@@ -51,12 +51,14 @@ func (h *DockerHandler) getRegistryAuth(registryURL string) string {
 func (h *DockerHandler) PushImage(c *gin.Context) {
 	var req model.ImagePushRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Push image failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
 	ctx := c.Request.Context()
 
+	// 提取镜像的短名称
 	// 提取镜像的短名称（去掉仓库前缀，只保留镜像名和标签）
 	imageName := req.Image
 	// 如果镜像名包含 /，取最后的部分作为短名称（如 csighub.com/ns/app:tag -> app:tag）
@@ -77,6 +79,7 @@ func (h *DockerHandler) PushImage(c *gin.Context) {
 
 	// 先给镜像打标签
 	if err := h.dockerClient.ImageTag(ctx, req.Image, targetRef); err != nil {
+		logman.Error("Tag image for push failed", "image", req.Image, "target", targetRef, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "镜像打标签失败: "+err.Error())
 		return
 	}
@@ -89,6 +92,7 @@ func (h *DockerHandler) PushImage(c *gin.Context) {
 		RegistryAuth: authStr,
 	})
 	if err != nil {
+		logman.Error("Push image failed", "image", targetRef, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "推送镜像失败: "+err.Error())
 		return
 	}
@@ -105,6 +109,7 @@ func (h *DockerHandler) PushImage(c *gin.Context) {
 			break
 		}
 		if msg.Error != "" {
+			logman.Error("Push image stream error", "image", targetRef, "error", msg.Error)
 			helper.RespondError(c, http.StatusInternalServerError, "推送失败: "+msg.Error)
 			return
 		}
@@ -114,8 +119,7 @@ func (h *DockerHandler) PushImage(c *gin.Context) {
 	}
 
 	logman.Info("Image pushed", "image", req.Image, "target", targetRef)
-	helper.RespondSuccess(c, "镜像推送成功", gin.H{
-		"image":  req.Image,
+	helper.RespondSuccess(c, "Image pushed successfully",		"image":  req.Image,
 		"target": targetRef,
 		"status": lastMessage,
 	})
@@ -125,12 +129,14 @@ func (h *DockerHandler) PushImage(c *gin.Context) {
 func (h *DockerHandler) PullFromRegistry(c *gin.Context) {
 	var req model.ImagePullFromRegistryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Pull image from registry failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
 	ctx := c.Request.Context()
 
+	// 构建完整的镜像引用
 	// 构建完整的镜像引用: registry.example.com/[namespace/]image:tag
 	var imageRef string
 	if req.Namespace != "" {
@@ -150,6 +156,7 @@ func (h *DockerHandler) PullFromRegistry(c *gin.Context) {
 		RegistryAuth: authStr,
 	})
 	if err != nil {
+		logman.Error("Pull image from registry failed", "image", imageRef, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "拉取镜像失败: "+err.Error())
 		return
 	}
@@ -167,6 +174,7 @@ func (h *DockerHandler) PullFromRegistry(c *gin.Context) {
 			break
 		}
 		if msg.Error != "" {
+			logman.Error("Pull image stream error", "image", imageRef, "error", msg.Error)
 			helper.RespondError(c, http.StatusInternalServerError, "拉取镜像失败: "+msg.Error)
 			return
 		}
@@ -176,8 +184,7 @@ func (h *DockerHandler) PullFromRegistry(c *gin.Context) {
 	}
 
 	logman.Info("Image pulled from registry", "image", imageRef, "registry", req.RegistryURL)
-	helper.RespondSuccess(c, "镜像拉取成功", gin.H{
-		"image":    imageRef,
+	helper.RespondSuccess(c, "Image pulled successfully",		"image":    imageRef,
 		"registry": req.RegistryURL,
 		"status":   lastMessage,
 	})

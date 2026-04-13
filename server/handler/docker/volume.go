@@ -37,7 +37,8 @@ func (h *DockerHandler) ListVolumes(c *gin.Context) {
 func (h *DockerHandler) VolumeAction(c *gin.Context) {
 	var req model.VolumeActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Volume action failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
@@ -45,22 +46,25 @@ func (h *DockerHandler) VolumeAction(c *gin.Context) {
 	switch req.Action {
 	case "remove":
 		if err := h.dockerClient.VolumeRemove(ctx, req.Name, true); err != nil {
+			logman.Error("Remove volume failed", "name", req.Name, "error", err)
 			helper.RespondError(c, http.StatusInternalServerError, "删除卷失败: "+err.Error())
 			return
 		}
 	default:
+		logman.Error("Unsupported volume action", "action", req.Action)
 		helper.RespondError(c, http.StatusBadRequest, "不支持的操作: "+req.Action)
 		return
 	}
 	logman.Info("Volume action performed", "action", req.Action, "name", req.Name)
-	helper.RespondSuccess(c, "卷操作成功", nil)
+	helper.RespondSuccess(c, "Volume action performed successfully", nil)
 }
 
 // CreateVolume 创建卷
 func (h *DockerHandler) CreateVolume(c *gin.Context) {
 	var req model.VolumeCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Create volume failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
@@ -77,13 +81,14 @@ func (h *DockerHandler) CreateVolume(c *gin.Context) {
 		return
 	}
 	logman.Info("Volume created", "name", req.Name)
-	helper.RespondSuccess(c, "卷创建成功", gin.H{"name": resp.Name, "mountpoint": resp.Mountpoint})
+	helper.RespondSuccess(c, "Volume created successfully", gin.H{"name": resp.Name, "mountpoint": resp.Mountpoint})
 }
 
 // VolumeInspect 获取卷详情
 func (h *DockerHandler) VolumeInspect(c *gin.Context) {
 	name := c.Query("name")
 	if name == "" {
+		logman.Error("Volume inspect failed", "error", "volume name is empty")
 		helper.RespondError(c, http.StatusBadRequest, "卷名称不能为空")
 		return
 	}
@@ -92,6 +97,7 @@ func (h *DockerHandler) VolumeInspect(c *gin.Context) {
 
 	volInfo, err := h.dockerClient.VolumeInspect(ctx, name)
 	if err != nil {
+		logman.Error("Volume inspect failed", "name", name, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "获取卷详情失败: "+err.Error())
 		return
 	}
@@ -132,5 +138,5 @@ func (h *DockerHandler) VolumeInspect(c *gin.Context) {
 		result.RefCount = volInfo.UsageData.RefCount
 	}
 
-	helper.RespondSuccess(c, "卷详情获取成功", result)
+	helper.RespondSuccess(c, "Volume details retrieved successfully", result)
 }

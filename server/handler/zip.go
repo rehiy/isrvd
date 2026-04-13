@@ -27,7 +27,8 @@ func NewZipHandler() *ZipHandler {
 func (h *ZipHandler) Zip(c *gin.Context) {
 	var req model.FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Zip request invalid", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
@@ -35,7 +36,7 @@ func (h *ZipHandler) Zip(c *gin.Context) {
 	err := h.zipService.Zip(abs)
 	if err != nil {
 		logman.Error("Create zip failed", "path", abs, "error", err)
-		helper.RespondError(c, http.StatusInternalServerError, "Cannot create zip archive")
+		helper.RespondError(c, http.StatusInternalServerError, "无法创建压缩文件")
 		return
 	}
 
@@ -47,7 +48,8 @@ func (h *ZipHandler) Zip(c *gin.Context) {
 func (h *ZipHandler) Unzip(c *gin.Context) {
 	var req model.FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Unzip request invalid", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
@@ -55,7 +57,7 @@ func (h *ZipHandler) Unzip(c *gin.Context) {
 	err := h.zipService.Unzip(abs)
 	if err != nil {
 		logman.Error("Unzip failed", "path", abs, "error", err)
-		helper.RespondError(c, http.StatusInternalServerError, "Cannot extract archive")
+		helper.RespondError(c, http.StatusInternalServerError, "无法解压文件")
 		return
 	}
 

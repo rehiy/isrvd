@@ -43,7 +43,8 @@ func (h *DockerHandler) ListNetworks(c *gin.Context) {
 func (h *DockerHandler) NetworkAction(c *gin.Context) {
 	var req model.NetworkActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Network action failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
@@ -51,22 +52,25 @@ func (h *DockerHandler) NetworkAction(c *gin.Context) {
 	switch req.Action {
 	case "remove":
 		if err := h.dockerClient.NetworkRemove(ctx, req.ID); err != nil {
+			logman.Error("Remove network failed", "id", req.ID, "error", err)
 			helper.RespondError(c, http.StatusInternalServerError, "删除网络失败: "+err.Error())
 			return
 		}
 	default:
+		logman.Error("Unsupported network action", "action", req.Action)
 		helper.RespondError(c, http.StatusBadRequest, "不支持的操作: "+req.Action)
 		return
 	}
 	logman.Info("Network action performed", "action", req.Action, "id", req.ID)
-	helper.RespondSuccess(c, "网络操作成功", nil)
+	helper.RespondSuccess(c, "Network action performed successfully", nil)
 }
 
 // CreateNetwork 创建网络
 func (h *DockerHandler) CreateNetwork(c *gin.Context) {
 	var req model.NetworkCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Create network failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
@@ -87,14 +91,15 @@ func (h *DockerHandler) CreateNetwork(c *gin.Context) {
 		id = id[:12]
 	}
 	logman.Info("Network created", "name", req.Name, "id", id)
-	helper.RespondSuccess(c, "网络创建成功", gin.H{"id": id, "name": req.Name})
+	helper.RespondSuccess(c, "Network created successfully", gin.H{"id": id, "name": req.Name})
 }
 
 // NetworkInspect 获取网络详情
 func (h *DockerHandler) NetworkInspect(c *gin.Context) {
 	id := c.Query("id")
 	if id == "" {
-		helper.RespondError(c, http.StatusBadRequest, "网络ID不能为空")
+		logman.Error("Network inspect failed", "error", "empty network ID")
+		helper.RespondError(c, http.StatusBadRequest, "网络 ID 不能为空")
 		return
 	}
 
@@ -102,6 +107,7 @@ func (h *DockerHandler) NetworkInspect(c *gin.Context) {
 
 	networkInfo, err := h.dockerClient.NetworkInspect(ctx, id, types.NetworkInspectOptions{})
 	if err != nil {
+		logman.Error("Network inspect failed", "id", id, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "获取网络详情失败: "+err.Error())
 		return
 	}
@@ -142,5 +148,5 @@ func (h *DockerHandler) NetworkInspect(c *gin.Context) {
 		result.Gateway = networkInfo.IPAM.Config[0].Gateway
 	}
 
-	helper.RespondSuccess(c, "网络详情获取成功", result)
+	helper.RespondSuccess(c, "Network details retrieved successfully", result)
 }

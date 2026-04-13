@@ -16,7 +16,8 @@ import (
 func (h *DockerHandler) ContainerExec(c *gin.Context) {
 	containerID := c.Query("id")
 	if containerID == "" {
-		helper.RespondError(c, http.StatusBadRequest, "容器ID不能为空")
+		logman.Error("Container exec failed", "error", "container ID is required")
+		helper.RespondError(c, http.StatusBadRequest, "容器 ID 不能为空")
 		return
 	}
 

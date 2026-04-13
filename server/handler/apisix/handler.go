@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rehiy/pango/logman"
 
 	"isrvd/server/config"
 	"isrvd/server/helper"
@@ -33,6 +34,7 @@ func NewHandler() (*Handler, error) {
 func (h *Handler) ListRoutes(c *gin.Context) {
 	routes, err := h.client.ListRoutes(c.Request.Context())
 	if err != nil {
+		logman.Error("List routes failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -43,11 +45,13 @@ func (h *Handler) ListRoutes(c *gin.Context) {
 func (h *Handler) GetRoute(c *gin.Context) {
 	routeID := c.Param("id")
 	if routeID == "" {
+		logman.Error("Get route failed", "error", "route ID is empty")
 		helper.RespondError(c, http.StatusBadRequest, "路由 ID 不能为空")
 		return
 	}
 	route, err := h.client.GetRoute(c.Request.Context(), routeID)
 	if err != nil {
+		logman.Error("Get route failed", "routeID", routeID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -58,53 +62,62 @@ func (h *Handler) GetRoute(c *gin.Context) {
 func (h *Handler) CreateRoute(c *gin.Context) {
 	var req RouteUpsertRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "参数格式错误: "+err.Error())
+		logman.Error("Create route failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数: "+err.Error())
 		return
 	}
 	if req.Name == "" {
+		logman.Error("Create route failed", "error", "route name is empty")
 		helper.RespondError(c, http.StatusBadRequest, "路由名称不能为空")
 		return
 	}
 	if req.URI == "" && len(req.URIs) == 0 {
-		helper.RespondError(c, http.StatusBadRequest, "URI 或 URIs 至少填写一个")
+		logman.Error("Create route failed", "error", "URI or URIs is required")
+		helper.RespondError(c, http.StatusBadRequest, "URI 或 URIs 不能为空")
 		return
 	}
 	route, err := h.client.CreateRoute(c.Request.Context(), req)
 	if err != nil {
+		logman.Error("Create route failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	helper.RespondSuccess(c, "创建成功", route)
+	helper.RespondSuccess(c, "Route created successfully", route)
 }
 
 // UpdateRoute 更新路由
 func (h *Handler) UpdateRoute(c *gin.Context) {
 	routeID := c.Param("id")
 	if routeID == "" {
+		logman.Error("Update route failed", "error", "route ID is empty")
 		helper.RespondError(c, http.StatusBadRequest, "路由 ID 不能为空")
 		return
 	}
 	var req RouteUpsertRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "参数格式错误: "+err.Error())
+		logman.Error("Update route failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数: "+err.Error())
 		return
 	}
 	if req.Name == "" {
+		logman.Error("Update route failed", "error", "route name is empty")
 		helper.RespondError(c, http.StatusBadRequest, "路由名称不能为空")
 		return
 	}
 	route, err := h.client.UpdateRoute(c.Request.Context(), routeID, req)
 	if err != nil {
+		logman.Error("Update route failed", "routeID", routeID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	helper.RespondSuccess(c, "更新成功", route)
+	helper.RespondSuccess(c, "Route updated successfully", route)
 }
 
 // PatchRouteStatus 更新路由启用/禁用状态
 func (h *Handler) PatchRouteStatus(c *gin.Context) {
 	routeID := c.Param("id")
 	if routeID == "" {
+		logman.Error("Patch route status failed", "error", "route ID is empty")
 		helper.RespondError(c, http.StatusBadRequest, "路由 ID 不能为空")
 		return
 	}
@@ -112,18 +125,21 @@ func (h *Handler) PatchRouteStatus(c *gin.Context) {
 		Status int `json:"status"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "参数格式错误: "+err.Error())
+		logman.Error("Patch route status failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数: "+err.Error())
 		return
 	}
 	if req.Status != 0 && req.Status != 1 {
-		helper.RespondError(c, http.StatusBadRequest, "status 只能为 1（启用）或 0（禁用）")
+		logman.Error("Patch route status failed", "error", "invalid status value", "status", req.Status)
+		helper.RespondError(c, http.StatusBadRequest, "状态值必须为 1（启用）或 0（禁用）")
 		return
 	}
 	if err := h.client.PatchRouteStatus(c.Request.Context(), routeID, req.Status); err != nil {
+		logman.Error("Patch route status failed", "routeID", routeID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	helper.RespondSuccess(c, "状态更新成功", nil)
+	helper.RespondSuccess(c, "Route status updated successfully", nil)
 }
 
 // ========================
@@ -134,6 +150,7 @@ func (h *Handler) PatchRouteStatus(c *gin.Context) {
 func (h *Handler) ListConsumers(c *gin.Context) {
 	consumers, err := h.client.ListConsumers(c.Request.Context())
 	if err != nil {
+		logman.Error("List consumers failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -147,16 +164,17 @@ func (h *Handler) CreateConsumer(c *gin.Context) {
 		Description string `json:"description"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "用户名为必填项")
+		logman.Error("Create consumer failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "用户名不能为空")
 		return
 	}
 	apiKey := generateAPIKey()
 	if err := h.client.CreateOrUpdateConsumer(c.Request.Context(), req.Username, apiKey, req.Description); err != nil {
+		logman.Error("Create consumer failed", "username", req.Username, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	helper.RespondSuccess(c, "创建成功", ConsumerDTO{
-		Username:    req.Username,
+	helper.RespondSuccess(c, "Consumer created successfully",		Username:    req.Username,
 		APIKey:      apiKey,
 		Description: req.Description,
 	})
@@ -166,6 +184,7 @@ func (h *Handler) CreateConsumer(c *gin.Context) {
 func (h *Handler) UpdateConsumer(c *gin.Context) {
 	username := c.Param("username")
 	if username == "" {
+		logman.Error("Update consumer failed", "error", "username is empty")
 		helper.RespondError(c, http.StatusBadRequest, "用户名不能为空")
 		return
 	}
@@ -173,21 +192,23 @@ func (h *Handler) UpdateConsumer(c *gin.Context) {
 		Description string `json:"description"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "参数格式错误: "+err.Error())
+		logman.Error("Update consumer failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数: "+err.Error())
 		return
 	}
 	// 保持原有的 API Key 不变
 	apiKey, err := h.client.GetConsumerRawKey(c.Request.Context(), username)
 	if err != nil {
-		helper.RespondError(c, http.StatusInternalServerError, "获取用户信息失败: "+err.Error())
+		logman.Error("Get consumer key failed", "username", username, "error", err)
+		helper.RespondError(c, http.StatusInternalServerError, "获取消费者信息失败: "+err.Error())
 		return
 	}
 	if err := h.client.CreateOrUpdateConsumer(c.Request.Context(), username, apiKey, req.Description); err != nil {
+		logman.Error("Update consumer failed", "username", username, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	helper.RespondSuccess(c, "更新成功", ConsumerDTO{
-		Username:    username,
+	helper.RespondSuccess(c, "Consumer updated successfully",		Username:    username,
 		Description: req.Description,
 	})
 }
@@ -196,28 +217,32 @@ func (h *Handler) UpdateConsumer(c *gin.Context) {
 func (h *Handler) DeleteConsumer(c *gin.Context) {
 	username := c.Param("username")
 	if username == "" {
+		logman.Error("Delete consumer failed", "error", "username is empty")
 		helper.RespondError(c, http.StatusBadRequest, "用户名不能为空")
 		return
 	}
 	if err := h.client.DeleteConsumer(c.Request.Context(), username); err != nil {
+		logman.Error("Delete consumer failed", "username", username, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	helper.RespondSuccess(c, "删除成功", nil)
+	helper.RespondSuccess(c, "Consumer deleted successfully", nil)
 }
 
 // DeleteRoute 删除路由
 func (h *Handler) DeleteRoute(c *gin.Context) {
 	routeID := c.Param("id")
 	if routeID == "" {
+		logman.Error("Delete route failed", "error", "route ID is empty")
 		helper.RespondError(c, http.StatusBadRequest, "路由 ID 不能为空")
 		return
 	}
 	if err := h.client.DeleteRoute(c.Request.Context(), routeID); err != nil {
+		logman.Error("Delete route failed", "routeID", routeID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	helper.RespondSuccess(c, "删除成功", nil)
+	helper.RespondSuccess(c, "Route deleted successfully", nil)
 }
 
 // ========================
@@ -228,6 +253,7 @@ func (h *Handler) DeleteRoute(c *gin.Context) {
 func (h *Handler) GetWhitelist(c *gin.Context) {
 	result, err := h.client.GetRouteWhitelist(c.Request.Context())
 	if err != nil {
+		logman.Error("Get whitelist failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -241,14 +267,16 @@ func (h *Handler) RevokeWhitelist(c *gin.Context) {
 		ConsumerName string `json:"consumer_name" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "路由 ID 和用户名为必填项")
+		logman.Error("Revoke whitelist failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "路由 ID 和消费者名称不能为空")
 		return
 	}
 	if err := h.client.RemoveConsumerFromRouteWhitelist(c.Request.Context(), req.RouteID, req.ConsumerName); err != nil {
+		logman.Error("Revoke whitelist failed", "routeID", req.RouteID, "consumer", req.ConsumerName, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	helper.RespondSuccess(c, "撤销成功", nil)
+	helper.RespondSuccess(c, "Whitelist revoked successfully", nil)
 }
 
 // ========================
@@ -259,6 +287,7 @@ func (h *Handler) RevokeWhitelist(c *gin.Context) {
 func (h *Handler) ListPluginConfigs(c *gin.Context) {
 	list, err := h.client.ListPluginConfigs(c.Request.Context())
 	if err != nil {
+		logman.Error("List plugin configs failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -269,6 +298,7 @@ func (h *Handler) ListPluginConfigs(c *gin.Context) {
 func (h *Handler) ListUpstreams(c *gin.Context) {
 	list, err := h.client.ListUpstreams(c.Request.Context())
 	if err != nil {
+		logman.Error("List upstreams failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -279,6 +309,7 @@ func (h *Handler) ListUpstreams(c *gin.Context) {
 func (h *Handler) ListPlugins(c *gin.Context) {
 	list, err := h.client.ListPlugins(c.Request.Context())
 	if err != nil {
+		logman.Error("List plugins failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}

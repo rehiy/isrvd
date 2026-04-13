@@ -53,7 +53,8 @@ func (h *DockerHandler) ListImages(c *gin.Context) {
 func (h *DockerHandler) ImageAction(c *gin.Context) {
 	var req model.ImageActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Image action failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
@@ -68,22 +69,25 @@ func (h *DockerHandler) ImageAction(c *gin.Context) {
 			PruneChildren: true,
 		})
 		if err != nil {
+			logman.Error("Remove image failed", "id", req.ID, "error", err)
 			helper.RespondError(c, http.StatusInternalServerError, "删除镜像失败: "+err.Error())
 			return
 		}
 	default:
+		logman.Error("Unsupported image action", "action", req.Action)
 		helper.RespondError(c, http.StatusBadRequest, "不支持的操作: "+req.Action)
 		return
 	}
 	logman.Info("Image action performed", "action", req.Action, "id", req.ID)
-	helper.RespondSuccess(c, "镜像操作成功", nil)
+	helper.RespondSuccess(c, "Image action performed successfully", nil)
 }
 
 // PullImage 拉取镜像
 func (h *DockerHandler) PullImage(c *gin.Context) {
 	var req model.ImagePullRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Pull image failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
@@ -97,6 +101,7 @@ func (h *DockerHandler) PullImage(c *gin.Context) {
 
 	reader, err := h.dockerClient.ImagePull(ctx, imageRef, types.ImagePullOptions{})
 	if err != nil {
+		logman.Error("Pull image failed", "image", imageRef, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "拉取镜像失败: "+err.Error())
 		return
 	}
@@ -117,7 +122,8 @@ func (h *DockerHandler) PullImage(c *gin.Context) {
 			break
 		}
 		if msg.Error != "" {
-			helper.RespondError(c, http.StatusInternalServerError, "拉取失败: "+msg.Error)
+			logman.Error("Pull image stream error", "image", imageRef, "error", msg.Error)
+			helper.RespondError(c, http.StatusInternalServerError, "拉取镜像失败: "+msg.Error)
 			return
 		}
 		if msg.Status != "" {
@@ -126,32 +132,35 @@ func (h *DockerHandler) PullImage(c *gin.Context) {
 	}
 
 	logman.Info("Image pulled", "image", imageRef)
-	helper.RespondSuccess(c, "镜像拉取成功", gin.H{"image": imageRef, "status": lastMessage})
+	helper.RespondSuccess(c, "Image pulled successfully", gin.H{"image": imageRef, "status": lastMessage})
 }
 
 // ImageTag 镜像打标签
 func (h *DockerHandler) ImageTag(c *gin.Context) {
 	var req model.ImageTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Tag image failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
 	ctx := c.Request.Context()
 
 	if err := h.dockerClient.ImageTag(ctx, req.ID, req.RepoTag); err != nil {
+		logman.Error("Tag image failed", "id", req.ID, "tag", req.RepoTag, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "镜像打标签失败: "+err.Error())
 		return
 	}
 
 	logman.Info("Image tagged", "id", req.ID, "tag", req.RepoTag)
-	helper.RespondSuccess(c, "镜像标签添加成功", nil)
+	helper.RespondSuccess(c, "Image tagged successfully", nil)
 }
 
 // ImageSearch 搜索镜像
 func (h *DockerHandler) ImageSearch(c *gin.Context) {
 	term := c.Query("term")
 	if term == "" {
+		logman.Error("Search image failed", "error", "search term is empty")
 		helper.RespondError(c, http.StatusBadRequest, "搜索关键词不能为空")
 		return
 	}
@@ -160,6 +169,7 @@ func (h *DockerHandler) ImageSearch(c *gin.Context) {
 
 	results, err := h.dockerClient.ImageSearch(ctx, term, types.ImageSearchOptions{Limit: 25})
 	if err != nil {
+		logman.Error("Search image failed", "term", term, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "搜索镜像失败: "+err.Error())
 		return
 	}
@@ -175,14 +185,15 @@ func (h *DockerHandler) ImageSearch(c *gin.Context) {
 		})
 	}
 
-	helper.RespondSuccess(c, "搜索完成", searchResults)
+	helper.RespondSuccess(c, "Image search completed", searchResults)
 }
 
 // ImageBuild 构建镜像
 func (h *DockerHandler) ImageBuild(c *gin.Context) {
 	var req model.ImageBuildRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
+		logman.Error("Build image failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
@@ -191,6 +202,7 @@ func (h *DockerHandler) ImageBuild(c *gin.Context) {
 	// 构建 Dockerfile 的 tar 包
 	tarBuf, err := buildDockerfileTar(req.Dockerfile)
 	if err != nil {
+		logman.Error("Build dockerfile tar failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "构建 Dockerfile 包失败: "+err.Error())
 		return
 	}
@@ -204,6 +216,7 @@ func (h *DockerHandler) ImageBuild(c *gin.Context) {
 		Tags: []string{tag},
 	})
 	if err != nil {
+		logman.Error("Build image failed", "tag", tag, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "构建镜像失败: "+err.Error())
 		return
 	}
@@ -220,7 +233,8 @@ func (h *DockerHandler) ImageBuild(c *gin.Context) {
 			break
 		}
 		if msg.Error != "" {
-			helper.RespondError(c, http.StatusInternalServerError, "构建失败: "+msg.Error)
+			logman.Error("Build image stream error", "tag", tag, "error", msg.Error)
+			helper.RespondError(c, http.StatusInternalServerError, "构建镜像失败: "+msg.Error)
 			return
 		}
 		if msg.Stream != "" {
@@ -229,5 +243,5 @@ func (h *DockerHandler) ImageBuild(c *gin.Context) {
 	}
 
 	logman.Info("Image built", "tag", tag)
-	helper.RespondSuccess(c, "镜像构建成功", gin.H{"tag": tag, "status": lastMessage})
+	helper.RespondSuccess(c, "Image built successfully", gin.H{"tag": tag, "status": lastMessage})
 }
