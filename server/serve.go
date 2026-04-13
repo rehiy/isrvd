@@ -72,18 +72,23 @@ func (app *App) setupRouter() {
 		auth.Use(middleware.AuthMiddleware())
 		{
 			auth.POST("/logout", authHandler.Logout)
-			auth.POST("/list", fileHandler.List)
-			auth.POST("/upload", fileHandler.Upload)
-			auth.POST("/download", fileHandler.Download)
-			auth.POST("/delete", fileHandler.Delete)
-			auth.POST("/mkdir", fileHandler.Mkdir)
-			auth.POST("/create", fileHandler.Create)
-			auth.POST("/read", fileHandler.Read)
-			auth.POST("/modify", fileHandler.Modify)
-			auth.POST("/rename", fileHandler.Rename)
-			auth.POST("/chmod", fileHandler.Chmod)
-			auth.POST("/zip", zipHandler.Zip)
-			auth.POST("/unzip", zipHandler.Unzip)
+
+			// 文件管理 API 路由
+			filer := auth.Group("/filer")
+			{
+				filer.POST("/list", fileHandler.List)
+				filer.POST("/upload", fileHandler.Upload)
+				filer.POST("/download", fileHandler.Download)
+				filer.POST("/delete", fileHandler.Delete)
+				filer.POST("/mkdir", fileHandler.Mkdir)
+				filer.POST("/create", fileHandler.Create)
+				filer.POST("/read", fileHandler.Read)
+				filer.POST("/modify", fileHandler.Modify)
+				filer.POST("/rename", fileHandler.Rename)
+				filer.POST("/chmod", fileHandler.Chmod)
+				filer.POST("/zip", zipHandler.Zip)
+				filer.POST("/unzip", zipHandler.Unzip)
+			}
 
 			// Apisix API 路由
 			apisix := auth.Group("/apisix")
