@@ -2,7 +2,6 @@
 #
 
 set -e
-set -o noglob
 
 ###########################################
 
@@ -43,6 +42,15 @@ build linux arm64
 
 ####################################################################
 
-for app in `ls build`; do
-    gzip build/$app
+cp config.yml build/
+
+####################################################################
+
+cd build/
+for app in isrvd-*; do
+    tar czf ${app}.tar.gz $app config.yml
+    rm -f $app
 done
+
+rm -f config.yml
+cd ../

@@ -2,6 +2,7 @@ server:
   debug: false
   listenAddr: ":8080"
   jwtSecret: default-secret-key
+  # proxyHeaderName: X-Username
   rootDirectory: data/
 
 docker:
@@ -9,10 +10,10 @@ docker:
   # host: tcp://127.0.0.1:2375
   containerRoot: srv/
   registries:
-     - name: CSIG Hub
-       url: hub.example.com
-       username: debug
-       password: 123
+     # - name: CSIG Hub
+     #   url: hub.example.com
+     #   username: debug
+     #   password: 123
 
 apisix:
   # adminUrl: http://127.0.0.1:9180
