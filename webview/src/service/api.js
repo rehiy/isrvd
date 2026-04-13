@@ -154,8 +154,8 @@ class ApiService {
   pushImage(image, registryUrl, namespace) {
     return axios.post('/api/docker/registry/push', { image, registryUrl, namespace })
   }
-  pullFromRegistry(image, registryUrl) {
-    return axios.post('/api/docker/registry/pull', { image, registryUrl })
+  pullFromRegistry(image, registryUrl, namespace) {
+    return axios.post('/api/docker/registry/pull', { image, registryUrl, namespace })
   }
 
   // ==================== Apisix 管理相关 ====================

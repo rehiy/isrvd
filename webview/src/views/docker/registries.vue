@@ -24,7 +24,7 @@ const pushForm = ref({ image: '', registryUrl: '', namespace: '' })
 // 拉取镜像模态框（从仓库拉取到本地）
 const pullOpen = ref(false)
 const pullLoading = ref(false)
-const pullForm = ref({ image: '', registryUrl: '' })
+const pullForm = ref({ image: '', registryUrl: '', namespace: '' })
 
 // 加载仓库列表
 const loadRegistries = async () => {
@@ -99,7 +99,8 @@ const handlePush = async () => {
 const openPullModal = (registry = null) => {
   pullForm.value = {
     image: '',
-    registryUrl: registry ? registry.url : ''
+    registryUrl: registry ? registry.url : '',
+    namespace: ''
   }
   pullOpen.value = true
 }
@@ -109,7 +110,7 @@ const handlePull = async () => {
   if (!pullForm.value.image.trim() || !pullForm.value.registryUrl.trim()) return
   pullLoading.value = true
   try {
-    await api.pullFromRegistry(pullForm.value.image, pullForm.value.registryUrl)
+    await api.pullFromRegistry(pullForm.value.image, pullForm.value.registryUrl, pullForm.value.namespace.trim() || undefined)
     actions.showNotification('success', '镜像拉取成功')
     pullOpen.value = false
   } catch (e) {}
@@ -253,10 +254,6 @@ onMounted(() => {
       @confirm="handlePull"
     >
       <form @submit.prevent="handlePull" class="space-y-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
-          <i class="fas fa-info-circle mr-1"></i>
-          从指定镜像仓库拉取镜像到本地（自动使用仓库认证信息）
-        </div>
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">源仓库地址</label>
           <select v-model="pullForm.registryUrl" class="input" required>
@@ -265,10 +262,14 @@ onMounted(() => {
           </select>
         </div>
         <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">命名空间 <span class="text-slate-400 font-normal">(可选)</span></label>
+          <input type="text" v-model="pullForm.namespace" placeholder="例如: myteam" class="input" />
+        </div>
+        <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">镜像名称</label>
           <input type="text" v-model="pullForm.image" placeholder="输入镜像名称，如 myapp:latest" class="input" required />
           <p class="mt-1 text-xs text-slate-400">
-            将拉取: {{ pullForm.registryUrl || 'registry' }}/{{ pullForm.image || 'image:tag' }}
+            将拉取: {{ pullForm.registryUrl || 'registry' }}/{{ pullForm.namespace ? pullForm.namespace + '/' : '' }}{{ pullForm.image || 'image:tag' }}
           </p>
         </div>
       </form>

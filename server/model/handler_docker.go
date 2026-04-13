@@ -291,6 +291,7 @@ type RegistryInfo struct {
 type ImagePullFromRegistryRequest struct {
 	Image       string `json:"image" binding:"required"`       // 仓库中的镜像名称，如 myapp:latest
 	RegistryURL string `json:"registryUrl" binding:"required"` // 源仓库地址
+	Namespace   string `json:"namespace"`                      // 命名空间（可选，如 myteam）
 }
 
 // 镜像推送请求

@@ -131,8 +131,13 @@ func (h *DockerHandler) PullFromRegistry(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// 构建完整的镜像引用: registry.example.com/image:tag
-	imageRef := req.RegistryURL + "/" + req.Image
+	// 构建完整的镜像引用: registry.example.com/[namespace/]image:tag
+	var imageRef string
+	if req.Namespace != "" {
+		imageRef = req.RegistryURL + "/" + req.Namespace + "/" + req.Image
+	} else {
+		imageRef = req.RegistryURL + "/" + req.Image
+	}
 	if !strings.Contains(req.Image, ":") && !strings.Contains(req.Image, "@") {
 		imageRef += ":latest"
 	}
