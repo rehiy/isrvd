@@ -431,7 +431,12 @@ onMounted(() => {
               </td>
               <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ ct.image }}</code></td>
               <td class="px-4 py-3 text-sm text-slate-600">{{ ct.status }}</td>
-              <td class="px-4 py-3 font-mono text-sm text-slate-600">{{ ct.ports || '-' }}</td>
+              <td class="px-4 py-3 font-mono text-sm text-slate-600">
+                <template v-if="ct.ports && ct.ports.length > 0">
+                  <div v-for="port in ct.ports" :key="port">{{ port }}</div>
+                </template>
+                <template v-else>-</template>
+              </td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</td>
               <td class="px-4 py-3">
                 <div class="flex justify-center items-center gap-1">

@@ -3,24 +3,24 @@ package docker
 import (
 	"archive/tar"
 	"bytes"
+	"fmt"
 	"io"
 	"strconv"
-	"strings"
 
 	"github.com/docker/docker/api/types"
 )
 
 // formatPorts 格式化端口列表
-func formatPorts(ports []types.Port) string {
+func formatPorts(ports []types.Port) []string {
 	var result []string
 	for _, p := range ports {
 		if p.PublicPort > 0 {
-			result = append(result, strconv.Itoa(int(p.PublicPort))+"/"+p.Type+"->"+p.IP+":"+strconv.Itoa(int(p.PrivatePort)))
+			result = append(result, fmt.Sprintf("%d/%s->%s:%d", p.PublicPort, p.Type, p.IP, p.PrivatePort))
 		} else {
-			result = append(result, strconv.Itoa(int(p.PrivatePort))+"/"+p.Type)
+			result = append(result, fmt.Sprintf("%d/%s", p.PrivatePort, p.Type))
 		}
 	}
-	return strings.Join(result, ", ")
+	return result
 }
 
 // parseDockerLogs 解析 Docker 日志格式

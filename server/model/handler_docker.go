@@ -7,7 +7,7 @@ type ContainerInfo struct {
 	Image   string            `json:"image"`
 	State   string            `json:"state"`
 	Status  string            `json:"status"`
-	Ports   string            `json:"ports"`
+	Ports   []string          `json:"ports"`
 	Created int64             `json:"created"`
 	Labels  map[string]string `json:"labels,omitempty"`
 }
