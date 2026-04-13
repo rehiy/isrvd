@@ -51,6 +51,8 @@ onUnmounted(() => ShellTerminal.destroy())
               <option value="sh">sh</option>
               <option value="zsh">zsh</option>
               <option value="fish">fish</option>
+              <option value="powershell">powershell</option>
+              <option value="cmd">cmd</option>
             </select>
 
             <button 
