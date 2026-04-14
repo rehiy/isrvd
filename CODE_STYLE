@@ -181,7 +181,7 @@ if err := c.BindJSON(&body); err != nil { ... }
 id := body["id"].(string) // 不安全的类型断言
 ```
 
-请求模型统一在 `server/model/` 包中定义，绑定标签使用 `binding:"required"` 等验证规则。
+请求模型统一在各 handler 子包的 `model.go` 中定义（如 `handler/docker/model.go`），绑定标签使用 `binding:"required"` 等验证规则。业务数据模型定义在对应的 `pkgs/` 子包中（如 `pkgs/docker/types.go`）。
 
 ### WebSocket 升级器
 
@@ -198,16 +198,13 @@ conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 
 ### 类型定义
 
-数据模型统一在 `server/model/` 包中定义，禁止在其他包中重复定义相同结构体：
+类型定义按职责分层：
 
-```go
-// ✅ 正确 — model 包定义，其他包引用
-type VolumeMapping struct { ... }  // model/handler_docker.go
-var list []model.VolumeMapping     // helper/compose.go
+- **请求/响应结构体**：定义在各 handler 子包的 `model.go` 中（如 `handler/apisix/model.go`、`handler/filer/model.go`）
+- **业务数据模型**：定义在对应的 `pkgs/` 子包的 `types.go` 中（如 `pkgs/docker/types.go`、`pkgs/swarm/types.go`）
+- **配置类型**：定义在 `server/config/types.go` 中
 
-// ❌ 错误 — helper 包中重复定义
-type VolumeMapping struct { ... }  // helper/compose.go（重复）
-```
+禁止在不同包中重复定义相同结构体。handler 层可直接引用 pkgs 层的请求类型（如 `dockerPkg.ContainerCreateRequest`）。
 
 ### 日志规范
 
@@ -244,13 +241,13 @@ logman.Info("Container created: name=" + req.Name + ", id=" + resp.ID)
 
 ### 工具函数
 
-通用工具函数统一放在 `server/helper/` 包中：
+工具函数按作用域分层：
 
-- Docker 多路复用日志解析统一使用 `helper.ParseDockerLogs`
-- 文件列表获取统一使用 `helper.FileList`
-- 用户绝对路径获取统一使用 `helper.GetAbsolutePath`
-- Docker Compose 文件操作统一使用 `helper.CreateComposeFile`、`helper.ReadComposeFile`、`helper.UpdateComposeFile`
-- 禁止在不同 handler 包中重复定义功能相同的函数
+- **跨包通用工具**：放在 `server/helper/` 包中（如 `response.go`、`websocket.go`）
+- **业务包内私有工具**：放在各 `pkgs/` 子包的 `helper.go` 中（如 `pkgs/docker/helper.go`），设为包内私有
+- **handler 包内私有工具**：放在各 handler 子包的 `helper.go` 中（如 `handler/filer/helper.go`），设为包内私有
+
+禁止在不同包中重复定义功能相同的函数。
 
 ### 中间件规范
 
@@ -262,74 +259,93 @@ logman.Info("Container created: name=" + req.Name + ", id=" + resp.ID)
 
 ### 服务层规范
 
-业务逻辑层统一在 `server/service/` 包中，handler 层不包含业务逻辑：
+复杂业务逻辑在 `pkgs/` 下独立包中实现（如 `pkgs/docker/`、`pkgs/swarm/`、`pkgs/apisix/`），handler 层通过构造函数注入 service 实例：
 
 ```go
-// ✅ 正确 — handler 调用 service，service 处理业务逻辑
-func (h *AuthHandler) Login(c *gin.Context) {
-    var req model.LoginRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
-        return
-    }
-    resp, err := h.authService.Login(req) // service 层处理逻辑
-    if err != nil {
-        helper.RespondError(c, http.StatusUnauthorized, err.Error())
-        return
-    }
-    helper.RespondSuccess(c, "Login successful", resp)
+// ✅ 正确 — handler 持有 service 引用，调用 service 处理业务逻辑
+type DockerHandler struct {
+    service *dockerPkg.DockerService
 }
 
-// ❌ 错误 — handler 中包含业务逻辑
-func (h *AuthHandler) Login(c *gin.Context) {
-    // 直接在 handler 中验证密码、生成 token...
+func (h *DockerHandler) ListContainers(c *gin.Context) {
+    result, err := h.service.ListContainers(c.Request.Context(), all)
+    // ...
 }
 ```
 
-服务单例模式统一使用 `GetXxxService()` 函数获取：
+简单业务（如 auth）直接在 handler 内实现，不需要独立 pkgs 包。
 
-```go
-// ✅ 正确
-authService := service.GetAuthService()
-
-// ❌ 错误
-authService := &service.AuthService{}
-```
+**依赖方向**：`pkgs/` 层是纯业务逻辑层，禁止依赖 `server/` 包（server/config、server/helper 等）。配置信息通过构造函数参数注入（如 `NewDockerService(cfg *DockerConfig)`），由 handler 层负责从 `server/config` 读取并传入。
 
 ### 项目结构
 
 ```
 server/
-├── config/      # 配置加载与类型定义
-│   ├── load.go      # 配置加载逻辑与环境变量处理
-│   └── types.go     # 配置结构体定义
-├── handler/     # HTTP 请求处理（调用 service/helper，不含业务逻辑）
-│   ├── auth.go      # 认证处理器
-│   ├── filer.go     # 文件管理处理器
-│   ├── shell.go     # 终端连接处理器
-│   ├── zip.go       # 压缩/解压处理器
-│   ├── apisix/      # Apisix 相关处理器
-│   ├── docker/      # Docker 相关处理器
-│   └── swarm/       # Swarm 相关处理器
-├── helper/      # 通用工具函数（无状态的纯函数）
-│   ├── compose.go   # Docker Compose 文件操作
-│   ├── response.go  # API 响应封装（RespondSuccess、RespondError）
-│   ├── utils.go     # 通用工具（MD5、文件列表、路径处理等）
-│   └── websocket.go # WebSocket 升级器
-├── middleware/   # Gin 中间件
-│   ├── auth.go      # 认证中间件（JWT / 代理 Header）
-│   ├── cors.go      # 跨域中间件
-│   └── recovery.go  # Panic 恢复中间件
-├── model/       # 数据结构定义（请求/响应/实体）
-│   └── handler_docker.go  # Docker 相关数据模型
-└── service/     # 业务逻辑层
-    ├── auth.go      # 认证服务（凭据验证、token 生成）
-    └── zip.go       # 压缩/解压服务
+├── config/          # 配置加载与类型定义
+│   ├── load.go          # 配置加载逻辑与环境变量处理
+│   └── types.go         # 配置结构体定义
+├── handler/         # HTTP 请求处理（调用 pkgs 层，薄 handler）
+│   ├── auth/            # 认证处理器（简单业务，直接在 handler 内实现）
+│   │   ├── handler.go
+│   │   └── model.go
+│   ├── filer/           # 文件管理处理器
+│   │   ├── handler.go
+│   │   ├── helper.go    # 包内私有工具（getAbsolutePath、fileList）
+│   │   ├── model.go
+│   │   └── zip.go       # 压缩/解压处理器
+│   ├── shell/           # 终端连接处理器
+│   │   └── handler.go
+│   ├── apisix/          # Apisix 相关处理器
+│   │   ├── handler.go
+│   │   └── model.go
+│   ├── docker/          # Docker 相关处理器
+│   │   ├── handler.go
+│   │   ├── container.go
+│   │   ├── image.go
+│   │   ├── network.go
+│   │   ├── volume.go
+│   │   └── registry.go
+│   └── swarm/           # Swarm 相关处理器
+│       └── handler.go
+├── helper/          # 跨包通用工具函数
+│   ├── response.go      # API 响应封装（RespondSuccess、RespondError）
+│   └── websocket.go     # WebSocket 升级器
+├── middleware/      # Gin 中间件
+│   ├── auth.go          # 认证中间件（JWT / 代理 Header）
+│   ├── cors.go          # 跨域中间件
+│   └── recovery.go      # Panic 恢复中间件
+└── serve.go         # 路由注册与服务启动
+
+pkgs/
+├── apisix/          # APISIX 业务逻辑
+│   ├── client.go        # HTTP 客户端
+│   ├── route.go         # 路由管理
+│   ├── consumer.go      # Consumer 管理
+│   ├── upstream.go      # Upstream 管理
+│   ├── plugin.go        # 插件管理
+│   └── plugin_config.go # Plugin Config 管理
+├── archive/         # 压缩/解压服务
+│   └── zip.go
+├── docker/          # Docker 业务逻辑
+│   ├── client.go        # Docker 客户端 + DockerConfig 注入
+│   ├── types.go         # 类型定义 + 配置类型
+│   ├── container.go     # 容器管理
+│   ├── image.go         # 镜像管理
+│   ├── network.go       # 网络管理
+│   ├── volume.go        # 卷管理
+│   ├── stats.go         # 容器统计
+│   ├── compose.go       # Compose 文件操作
+│   ├── exec.go          # 容器终端
+│   ├── registry.go      # 镜像仓库操作
+│   └── helper.go        # 包内私有工具
+└── swarm/           # Swarm 业务逻辑
+    ├── client.go        # Swarm 管理器 + 所有操作
+    └── types.go         # 类型定义
 ```
 
 ### 安全规范
 
-- 文件路径操作统一使用 `helper.GetAbsolutePath` 防止目录遍历攻击
+- 文件路径操作统一使用 `getAbsolutePath`（filer 包内私有）防止目录遍历攻击
 - 压缩文件解压统一进行 Zip Slip 防护（检查解压路径不超出目标目录）
 - WebSocket 连接统一通过认证中间件校验 token
 - 文件权限修改统一解析八进制模式并校验有效性

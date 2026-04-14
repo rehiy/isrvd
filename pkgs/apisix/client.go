@@ -10,9 +10,8 @@ import (
 
 // Client APISIX Admin API 客户端
 type Client struct {
-	baseURL    string
-	adminKey   string
-	httpClient *request.Client
+	baseURL  string
+	adminKey string
 }
 
 // NewClient 创建 APISIX Admin API 客户端
@@ -20,9 +19,6 @@ func NewClient(baseURL, adminKey string) *Client {
 	return &Client{
 		baseURL:  baseURL,
 		adminKey: adminKey,
-		httpClient: &request.Client{
-			Timeout: 30 * time.Second,
-		},
 	}
 }
 

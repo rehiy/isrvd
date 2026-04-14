@@ -95,7 +95,7 @@ func (s *DockerService) GetContainerStats(ctx context.Context, id string) (*Cont
 		}
 	}
 
-	cpuThrottled := &CpuThrottledData{
+	cpuThrottled := &CPUThrottledData{
 		Periods:          v.CPUStats.ThrottlingData.Periods,
 		ThrottledPeriods: v.CPUStats.ThrottlingData.ThrottledPeriods,
 		ThrottledTime:    v.CPUStats.ThrottlingData.ThrottledTime,
@@ -156,8 +156,8 @@ func (s *DockerService) GetContainerStats(ctx context.Context, id string) (*Cont
 		ID:            id,
 		Name:          name,
 		CPUPercent:    math.Round(cpuPercent*100) / 100,
-		CpuCores:      cpuCores,
-		CpuFreq:       math.Round(cpuFreq*100) / 100,
+		CPUCores:      cpuCores,
+		CPUFreq:       math.Round(cpuFreq*100) / 100,
 		MemoryUsage:   int64(memoryUsage),
 		MemoryLimit:   int64(v.MemoryStats.Limit),
 		MemoryPercent: math.Round(memoryPercent*100) / 100,
@@ -167,7 +167,7 @@ func (s *DockerService) GetContainerStats(ctx context.Context, id string) (*Cont
 		BlockWrite:    blockWrite,
 		Pids:          int64(v.PidsStats.Current),
 		PidsLimit:     int64(v.PidsStats.Limit),
-		CpuThrottled:  cpuThrottled,
+		CPUThrottled:  cpuThrottled,
 		NetworkDetail: networkDetail,
 		BlockDetail:   blockDetail,
 		ProcessList:   processList,

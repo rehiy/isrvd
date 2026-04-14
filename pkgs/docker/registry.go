@@ -93,7 +93,7 @@ func (s *DockerService) PushImage(ctx context.Context, req ImagePushRequest) (st
 		}
 		if msg.Error != "" {
 			logman.Error("Push image stream error", "image", targetRef, "error", msg.Error)
-			return "", targetRef, fmt.Errorf(msg.Error)
+			return "", targetRef, fmt.Errorf("%s", msg.Error)
 		}
 		if msg.Status != "" {
 			lastMessage = msg.Status
@@ -142,7 +142,7 @@ func (s *DockerService) PullFromRegistry(ctx context.Context, req ImagePullFromR
 		}
 		if msg.Error != "" {
 			logman.Error("Pull image stream error", "image", imageRef, "error", msg.Error)
-			return "", imageRef, fmt.Errorf(msg.Error)
+			return "", imageRef, fmt.Errorf("%s", msg.Error)
 		}
 		if msg.Status != "" {
 			lastMessage = msg.Status

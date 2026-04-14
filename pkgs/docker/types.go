@@ -230,8 +230,8 @@ type ContainerStatsResponse struct {
 	ID            string                `json:"id"`
 	Name          string                `json:"name"`
 	CPUPercent    float64               `json:"cpuPercent"`
-	CpuCores      int                   `json:"cpuCores"`
-	CpuFreq       float64               `json:"cpuFreq"`
+	CPUCores      int                   `json:"cpuCores"`
+	CPUFreq       float64               `json:"cpuFreq"`
 	MemoryUsage   int64                 `json:"memoryUsage"`
 	MemoryLimit   int64                 `json:"memoryLimit"`
 	MemoryPercent float64               `json:"memoryPercent"`
@@ -241,14 +241,14 @@ type ContainerStatsResponse struct {
 	BlockWrite    int64                 `json:"blockWrite"`
 	Pids          int64                 `json:"pids"`
 	PidsLimit     int64                 `json:"pidsLimit"`
-	CpuThrottled  *CpuThrottledData     `json:"cpuThrottled"`
+	CPUThrottled  *CPUThrottledData     `json:"cpuThrottled"`
 	NetworkDetail map[string]*NetDetail `json:"networkDetail"`
 	BlockDetail   []*BlockDetail        `json:"blockDetail"`
 	ProcessList   *ContainerProcessList `json:"processList"`
 }
 
-// CpuThrottledData CPU 节流数据
-type CpuThrottledData struct {
+// CPUThrottledData CPU 节流数据
+type CPUThrottledData struct {
 	Periods          uint64 `json:"periods"`
 	ThrottledPeriods uint64 `json:"throttledPeriods"`
 	ThrottledTime    uint64 `json:"throttledTime"`
