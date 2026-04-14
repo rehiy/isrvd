@@ -19,11 +19,10 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
-if [ -f .local.yml ]; then
+# 启动 Go 服务
+if [ ! -f .local.yml ]; then
     cp config.yml .local.yml
 fi
-
-# 启动 Go 服务
 CONFIG_PATH=.local.yml go run main.go &
 GO_PID=$!
 
