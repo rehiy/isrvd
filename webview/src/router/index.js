@@ -72,9 +72,29 @@ const routes = [
     component: () => import('@/views/docker/registries.vue')
   },
   {
-    path: '/docker/swarm',
-    name: 'docker-swarm',
-    component: () => import('@/views/docker/swarm.vue')
+    path: '/swarm',
+    name: 'swarm',
+    redirect: '/swarm/overview'
+  },
+  {
+    path: '/swarm/overview',
+    name: 'swarm-overview',
+    component: () => import('@/views/swarm/overview.vue')
+  },
+  {
+    path: '/swarm/nodes',
+    name: 'swarm-nodes',
+    component: () => import('@/views/swarm/nodes.vue')
+  },
+  {
+    path: '/swarm/services',
+    name: 'swarm-services',
+    component: () => import('@/views/swarm/services.vue')
+  },
+  {
+    path: '/swarm/tasks',
+    name: 'swarm-tasks',
+    component: () => import('@/views/swarm/tasks.vue')
   },
   {
     path: '/apisix',

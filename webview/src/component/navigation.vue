@@ -11,12 +11,25 @@ const route = useRoute()
 // Docker 子菜单展开状态 - 初始化时根据当前路由判断
 const dockerExpanded = ref(route.path.startsWith('/docker/'))
 
+// Swarm 子菜单展开状态
+const swarmExpanded = ref(route.path.startsWith('/swarm/'))
+
 // Apisix 子菜单展开状态
 const apisixExpanded = ref(route.path.startsWith('/apisix/'))
 
 // 判断当前是否在 Docker 相关路由下
 const isDockerActive = computed(() => {
   return route.path.startsWith('/docker/')
+})
+
+// 判断当前是否在 Swarm 相关路由下
+const isSwarmActive = computed(() => {
+  return route.path.startsWith('/swarm')
+})
+
+// 判断当前是否在 Swarm 相关路由下（子路由）
+const isSwarmSubActive = computed(() => {
+  return route.path.startsWith('/swarm/')
 })
 
 // 判断当前是否在容器相关路由下（/docker/containers 或 /docker/container/:id）
@@ -36,6 +49,12 @@ watch(isDockerActive, (isActive) => {
   }
 }, { immediate: true })
 
+watch(isSwarmSubActive, (isActive) => {
+  if (isActive && !collapsed.value) {
+    swarmExpanded.value = true
+  }
+}, { immediate: true })
+
 watch(isApisixActive, (isActive) => {
   if (isActive && !collapsed.value) {
     apisixExpanded.value = true
@@ -49,6 +68,16 @@ const toggleDocker = () => {
     dockerExpanded.value = true
   } else {
     dockerExpanded.value = !dockerExpanded.value
+  }
+}
+
+// 切换 Swarm 子菜单
+const toggleSwarm = () => {
+  if (collapsed.value) {
+    collapsed.value = false
+    swarmExpanded.value = true
+  } else {
+    swarmExpanded.value = !swarmExpanded.value
   }
 }
 
@@ -163,14 +192,6 @@ const toggleApisix = () => {
             <i class="fas fa-database"></i>
             <span>存储卷</span>
           </router-link>
-          <router-link 
-            to="/docker/swarm" 
-            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
-          >
-            <i class="fas fa-circle-nodes"></i>
-            <span>Swarm</span>
-          </router-link>
         </div>
       </div>
       
@@ -183,6 +204,66 @@ const toggleApisix = () => {
         title="Docker"
       >
         <i class="fab fa-docker"></i>
+      </router-link>
+
+      <!-- Swarm 折叠子菜单 -->
+      <div v-if="!collapsed">
+        <button
+          @click="toggleSwarm"
+          class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isSwarmActive }"
+        >
+          <i class="fas fa-circle-nodes"></i>
+          <span>Swarm 集群</span>
+          <i
+            class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200"
+            :class="{ 'rotate-180': swarmExpanded }"
+          ></i>
+        </button>
+        <div v-show="swarmExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+          <router-link
+            to="/swarm/overview"
+            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+          >
+            <i class="fas fa-tachometer-alt"></i>
+            <span>概览</span>
+          </router-link>
+          <router-link
+            to="/swarm/nodes"
+            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+          >
+            <i class="fas fa-server"></i>
+            <span>节点</span>
+          </router-link>
+          <router-link
+            to="/swarm/services"
+            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+          >
+            <i class="fas fa-cubes"></i>
+            <span>服务</span>
+          </router-link>
+          <router-link
+            to="/swarm/tasks"
+            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+          >
+            <i class="fas fa-tasks"></i>
+            <span>任务</span>
+          </router-link>
+        </div>
+      </div>
+      <!-- 折叠状态下的 Swarm 菜单 -->
+      <router-link
+        v-if="collapsed"
+        to="/swarm/overview"
+        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isSwarmActive }"
+        title="Swarm 集群"
+      >
+        <i class="fas fa-circle-nodes"></i>
       </router-link>
 
       <!-- Apisix 折叠子菜单 -->

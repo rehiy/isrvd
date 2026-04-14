@@ -10,6 +10,7 @@ import (
 	"isrvd/server/handler"
 	"isrvd/server/handler/apisix"
 	"isrvd/server/handler/docker"
+	"isrvd/server/handler/swarm"
 	"isrvd/server/middleware"
 )
 
@@ -54,6 +55,9 @@ func (app *App) setupRouter() {
 	if err != nil {
 		logman.Error("Docker client init failed", "error", err)
 	}
+
+	// 注册 Swarm Handler（复用 Docker client）
+	swarmHandler := swarm.NewSwarmHandler(dockerHandler.GetClient())
 
 	// 注册 Apisix Handler（可选，配置了才启用）
 	apisixHandler, err := apisix.NewHandler()
@@ -157,16 +161,20 @@ func (app *App) setupRouter() {
 				docker.POST("/registry/push", dockerHandler.PushImage)
 				docker.POST("/registry/pull", dockerHandler.PullFromRegistry)
 
-				// Swarm 集群管理
-				docker.GET("/swarm/info", dockerHandler.SwarmInfo)
-				docker.GET("/swarm/nodes", dockerHandler.SwarmListNodes)
-				docker.POST("/swarm/node/action", dockerHandler.SwarmNodeAction)
-				docker.GET("/swarm/services", dockerHandler.SwarmListServices)
-				docker.POST("/swarm/service/create", dockerHandler.SwarmCreateService)
-				docker.POST("/swarm/service/action", dockerHandler.SwarmServiceAction)
-				docker.POST("/swarm/service/redeploy", dockerHandler.SwarmForceUpdateService)
-				docker.GET("/swarm/service/logs", dockerHandler.SwarmServiceLogs)
-				docker.GET("/swarm/tasks", dockerHandler.SwarmListTasks)
+			}
+
+			// Swarm API 路由
+			swarmGroup := auth.Group("/swarm")
+			{
+				swarmGroup.GET("/info", swarmHandler.SwarmInfo)
+				swarmGroup.GET("/nodes", swarmHandler.SwarmListNodes)
+				swarmGroup.POST("/node/action", swarmHandler.SwarmNodeAction)
+				swarmGroup.GET("/services", swarmHandler.SwarmListServices)
+				swarmGroup.POST("/service/create", swarmHandler.SwarmCreateService)
+				swarmGroup.POST("/service/action", swarmHandler.SwarmServiceAction)
+				swarmGroup.POST("/service/redeploy", swarmHandler.SwarmForceUpdateService)
+				swarmGroup.GET("/service/logs", swarmHandler.SwarmServiceLogs)
+				swarmGroup.GET("/tasks", swarmHandler.SwarmListTasks)
 			}
 		}
 	}

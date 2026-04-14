@@ -161,31 +161,31 @@ class ApiService {
   // ==================== Docker Swarm 管理相关 ====================
 
   swarmInfo() {
-    return axios.get('/api/docker/swarm/info')
+    return axios.get('/api/swarm/info')
   }
   swarmListNodes() {
-    return axios.get('/api/docker/swarm/nodes')
+    return axios.get('/api/swarm/nodes')
   }
   swarmNodeAction(id, action) {
-    return axios.post('/api/docker/swarm/node/action', { id, action })
+    return axios.post('/api/swarm/node/action', { id, action })
   }
   swarmListServices() {
-    return axios.get('/api/docker/swarm/services')
+    return axios.get('/api/swarm/services')
   }
   swarmServiceAction(id, action, replicas) {
-    return axios.post('/api/docker/swarm/service/action', { id, action, replicas })
+    return axios.post('/api/swarm/service/action', { id, action, replicas })
   }
   swarmListTasks(serviceID = '') {
-    return axios.get('/api/docker/swarm/tasks', { params: serviceID ? { serviceID } : {} })
+    return axios.get('/api/swarm/tasks', { params: serviceID ? { serviceID } : {} })
   }
   swarmCreateService(data) {
-    return axios.post('/api/docker/swarm/service/create', data)
+    return axios.post('/api/swarm/service/create', data)
   }
   swarmRedeployService(id) {
-    return axios.post('/api/docker/swarm/service/redeploy', { id })
+    return axios.post('/api/swarm/service/redeploy', { id })
   }
   swarmServiceLogs(id, tail = '100') {
-    return axios.get('/api/docker/swarm/service/logs', { params: { id, tail } })
+    return axios.get('/api/swarm/service/logs', { params: { id, tail } })
   }
 
 
