@@ -1,15 +1,18 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 
+import ApisixOverview from '@/views/apisix/overview.vue'
 import DockerOverview from '@/views/docker/overview.vue'
 import SwarmOverview from '@/views/swarm/overview.vue'
 
 const dockerRef = ref(null)
 const swarmRef = ref(null)
+const apisixRef = ref(null)
 
 const refreshAll = () => {
   dockerRef.value?.load()
   swarmRef.value?.load()
+  apisixRef.value?.load()
 }
 
 onMounted(() => refreshAll())
@@ -25,8 +28,8 @@ onMounted(() => refreshAll())
             <i class="fas fa-gauge-high text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">整体概览</h1>
-            <p class="text-xs text-slate-500">Docker 与 Swarm 集群状态总览</p>
+            <h1 class="text-lg font-semibold text-slate-800">概览</h1>
+        <p class="text-xs text-slate-500">服务状态总览</p>
           </div>
         </div>
         <button @click="refreshAll" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
@@ -38,18 +41,27 @@ onMounted(() => refreshAll())
       <div class="p-6 border-b border-slate-100">
         <div class="flex items-center gap-2 mb-4">
           <i class="fab fa-docker text-blue-500 text-lg"></i>
-          <h2 class="text-base font-semibold text-slate-700">Docker</h2>
+          <h2 class="text-base font-semibold text-slate-700">Docker 服务</h2>
         </div>
         <DockerOverview ref="dockerRef" />
       </div>
 
       <!-- Swarm 概览区块 -->
-      <div class="p-6">
+      <div class="p-6 border-b border-slate-100">
         <div class="flex items-center gap-2 mb-4">
           <i class="fas fa-circle-nodes text-cyan-600 text-lg"></i>
           <h2 class="text-base font-semibold text-slate-700">Swarm 集群</h2>
         </div>
         <SwarmOverview ref="swarmRef" />
+      </div>
+
+      <!-- APISIX 概览区块 -->
+      <div class="p-6">
+        <div class="flex items-center gap-2 mb-4">
+          <i class="fas fa-route text-orange-500 text-lg"></i>
+          <h2 class="text-base font-semibold text-slate-700">APISIX 网关</h2>
+        </div>
+        <ApisixOverview ref="apisixRef" />
       </div>
     </div>
   </div>
