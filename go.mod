@@ -10,7 +10,6 @@ require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/websocket v1.5.3
-	github.com/joho/godotenv v1.5.1
 	github.com/rehiy/pango v0.11.2
 	github.com/shirou/gopsutil/v3 v3.24.5
 	gopkg.in/yaml.v3 v3.0.1
