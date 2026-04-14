@@ -10,7 +10,7 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/server/helper"
-	"isrvd/server/model"
+
 )
 
 // ListVolumes 列出卷
@@ -23,9 +23,9 @@ func (h *DockerHandler) ListVolumes(c *gin.Context) {
 		return
 	}
 
-	var result []*model.VolumeInfo
+	var result []*VolumeInfo
 	for _, vol := range volumes.Volumes {
-		result = append(result, &model.VolumeInfo{
+		result = append(result, &VolumeInfo{
 			Name: vol.Name, Driver: vol.Driver,
 			Mountpoint: vol.Mountpoint, CreatedAt: vol.CreatedAt,
 		})
@@ -35,7 +35,7 @@ func (h *DockerHandler) ListVolumes(c *gin.Context) {
 
 // VolumeAction 卷操作
 func (h *DockerHandler) VolumeAction(c *gin.Context) {
-	var req model.VolumeActionRequest
+	var req VolumeActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Volume action failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
@@ -61,7 +61,7 @@ func (h *DockerHandler) VolumeAction(c *gin.Context) {
 
 // CreateVolume 创建卷
 func (h *DockerHandler) CreateVolume(c *gin.Context) {
-	var req model.VolumeCreateRequest
+	var req VolumeCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Create volume failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
@@ -103,7 +103,7 @@ func (h *DockerHandler) VolumeInspect(c *gin.Context) {
 	}
 
 	// 查找使用此卷的容器
-	var usedBy []*model.VolumeUsedByContainer
+	var usedBy []*VolumeUsedByContainer
 	containers, err := h.dockerClient.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err == nil {
 		for _, ct := range containers {
@@ -113,7 +113,7 @@ func (h *DockerHandler) VolumeInspect(c *gin.Context) {
 					if len(ct.Names) > 0 {
 						ctName = strings.TrimPrefix(ct.Names[0], "/")
 					}
-					usedBy = append(usedBy, &model.VolumeUsedByContainer{
+					usedBy = append(usedBy, &VolumeUsedByContainer{
 						ID:        ct.ID[:12],
 						Name:      ctName,
 						MountPath: mount.Destination,
@@ -124,7 +124,7 @@ func (h *DockerHandler) VolumeInspect(c *gin.Context) {
 		}
 	}
 
-	result := model.VolumeInspectResponse{
+	result := VolumeInspectResponse{
 		Name:       volInfo.Name,
 		Driver:     volInfo.Driver,
 		Mountpoint: volInfo.Mountpoint,

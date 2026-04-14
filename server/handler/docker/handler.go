@@ -12,7 +12,7 @@ import (
 
 	"isrvd/server/config"
 	"isrvd/server/helper"
-	"isrvd/server/model"
+
 )
 
 // DockerHandler Docker处理器
@@ -75,7 +75,7 @@ func (h *DockerHandler) Info(c *gin.Context) {
 	volList, _ := h.dockerClient.VolumeList(ctx, volume.ListOptions{})
 	networks, _ := h.dockerClient.NetworkList(ctx, types.NetworkListOptions{})
 
-	helper.RespondSuccess(c, "Docker info retrieved", model.DockerInfo{
+	helper.RespondSuccess(c, "Docker info retrieved", DockerInfo{
 		ContainersRunning: running,
 		ContainersStopped: stopped,
 		ContainersPaused:  paused,

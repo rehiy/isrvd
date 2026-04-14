@@ -1,4 +1,4 @@
-package handler
+package auth
 
 import (
 	"net/http"
@@ -7,32 +7,31 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/server/helper"
-	"isrvd/server/model"
 	"isrvd/server/service"
 )
 
-// 认证处理器
+// AuthHandler 认证处理器
 type AuthHandler struct {
 	authService *service.AuthService
 }
 
-// 创建认证处理器
+// NewAuthHandler 创建认证处理器
 func NewAuthHandler() *AuthHandler {
 	return &AuthHandler{
 		authService: service.GetAuthService(),
 	}
 }
 
-// 登录处理
+// Login 登录处理
 func (h *AuthHandler) Login(c *gin.Context) {
-	var req model.LoginRequest
+	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Warn("Login request invalid", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
-	resp, err := h.authService.Login(req)
+	result, err := h.authService.Login(req.Username, req.Password)
 	if err != nil {
 		logman.Warn("Login failed", "username", req.Username, "error", err)
 		helper.RespondError(c, http.StatusUnauthorized, err.Error())
@@ -40,10 +39,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	logman.Info("User logged in", "username", req.Username)
-	helper.RespondSuccess(c, "Login successful", resp)
+	helper.RespondSuccess(c, "Login successful", LoginResponse{
+		Token:    result.Token,
+		Username: result.Username,
+	})
 }
 
-// 登出处理
+// Logout 登出处理
 func (h *AuthHandler) Logout(c *gin.Context) {
 	username := c.GetString("username")
 	if username == "" {

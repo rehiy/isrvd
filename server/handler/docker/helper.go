@@ -1,8 +1,7 @@
-package helper
+package docker
 
 import (
 	"fmt"
-	"isrvd/server/model"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,8 +9,8 @@ import (
 	yaml "gopkg.in/yaml.v3"
 )
 
-// ComposeService 定义 docker-compose service 配置
-type ComposeService struct {
+// composeService 定义 docker-compose service 配置
+type composeService struct {
 	Image         string            `yaml:"image"`
 	ContainerName string            `yaml:"container_name,omitempty"`
 	Environment   []string          `yaml:"environment,omitempty"`
@@ -27,34 +26,34 @@ type ComposeService struct {
 	Privileged    bool              `yaml:"privileged,omitempty"`
 	CapAdd        []string          `yaml:"cap_add,omitempty"`
 	CapDrop       []string          `yaml:"cap_drop,omitempty"`
-	Deploy        *ComposeDeploy    `yaml:"deploy,omitempty"`
+	Deploy        *composeDeploy    `yaml:"deploy,omitempty"`
 	Labels        map[string]string `yaml:"labels,omitempty"`
 }
 
-// ComposeDeploy 定义资源限制配置
-type ComposeDeploy struct {
-	Resources *ComposeResources `yaml:"resources,omitempty"`
+// composeDeploy 定义资源限制配置
+type composeDeploy struct {
+	Resources *composeResources `yaml:"resources,omitempty"`
 }
 
-// ComposeResources 定义资源配置
-type ComposeResources struct {
-	Limits *ComposeLimit `yaml:"limits,omitempty"`
+// composeResources 定义资源配置
+type composeResources struct {
+	Limits *composeLimit `yaml:"limits,omitempty"`
 }
 
-// ComposeLimit 定义资源限制
-type ComposeLimit struct {
+// composeLimit 定义资源限制
+type composeLimit struct {
 	Cpus   string `yaml:"cpus,omitempty"`
 	Memory string `yaml:"memory,omitempty"`
 }
 
-// ComposeFile 定义 docker-compose 文件结构
-type ComposeFile struct {
+// composeFile 定义 docker-compose 文件结构
+type composeFile struct {
 	Version  string                    `yaml:"version"`
-	Services map[string]ComposeService `yaml:"services"`
+	Services map[string]composeService `yaml:"services"`
 }
 
-// CreateComposeFile 创建 compose 配置文件
-func CreateComposeFile(containerRoot, containerName string, service ComposeService) error {
+// createComposeFileOnDisk 创建 compose 配置文件
+func createComposeFileOnDisk(containerRoot, containerName string, service composeService) error {
 	if containerRoot == "" || containerName == "" {
 		return nil
 	}
@@ -64,9 +63,9 @@ func CreateComposeFile(containerRoot, containerName string, service ComposeServi
 		return fmt.Errorf("创建容器目录失败: %w", err)
 	}
 
-	compose := ComposeFile{
+	compose := composeFile{
 		Version: "3.8",
-		Services: map[string]ComposeService{
+		Services: map[string]composeService{
 			containerName: service,
 		},
 	}
@@ -87,8 +86,8 @@ func CreateComposeFile(containerRoot, containerName string, service ComposeServi
 	return nil
 }
 
-// ReadComposeFile 读取 compose 配置文件
-func ReadComposeFile(containerRoot, containerName string) (*ComposeFile, error) {
+// readComposeFileFromDisk 读取 compose 配置文件
+func readComposeFileFromDisk(containerRoot, containerName string) (*composeFile, error) {
 	if containerRoot == "" || containerName == "" {
 		return nil, fmt.Errorf("容器目录未配置")
 	}
@@ -99,7 +98,7 @@ func ReadComposeFile(containerRoot, containerName string) (*ComposeFile, error) 
 		return nil, fmt.Errorf("读取 compose 文件失败: %w", err)
 	}
 
-	var compose ComposeFile
+	var compose composeFile
 	if err := yaml.Unmarshal(data, &compose); err != nil {
 		return nil, fmt.Errorf("解析 compose 文件失败: %w", err)
 	}
@@ -107,8 +106,8 @@ func ReadComposeFile(containerRoot, containerName string) (*ComposeFile, error) 
 	return &compose, nil
 }
 
-// UpdateComposeFile 更新 compose 配置文件
-func UpdateComposeFile(containerRoot, containerName string, service ComposeService) error {
+// updateComposeFileOnDisk 更新 compose 配置文件
+func updateComposeFileOnDisk(containerRoot, containerName string, service composeService) error {
 	if containerRoot == "" || containerName == "" {
 		return fmt.Errorf("容器目录未配置")
 	}
@@ -118,9 +117,9 @@ func UpdateComposeFile(containerRoot, containerName string, service ComposeServi
 		return fmt.Errorf("创建容器目录失败: %w", err)
 	}
 
-	compose := ComposeFile{
+	compose := composeFile{
 		Version: "3.8",
-		Services: map[string]ComposeService{
+		Services: map[string]composeService{
 			containerName: service,
 		},
 	}
@@ -141,15 +140,14 @@ func UpdateComposeFile(containerRoot, containerName string, service ComposeServi
 	return nil
 }
 
-// ParsePortsToMap 解析端口列表为 map
-func ParsePortsToMap(ports []string) map[string]string {
+// parsePortsToMap 解析端口列表为 map
+func parsePortsToMap(ports []string) map[string]string {
 	result := make(map[string]string)
 	for _, p := range ports {
 		parts := strings.Split(p, ":")
 		if len(parts) >= 2 {
 			hostPort := parts[0]
 			containerPort := parts[1]
-			// 处理 IP:port:port 格式
 			if strings.Contains(hostPort, ".") && len(parts) >= 3 {
 				hostPort = parts[1]
 				containerPort = parts[2]
@@ -161,13 +159,13 @@ func ParsePortsToMap(ports []string) map[string]string {
 	return result
 }
 
-// ParseVolumesToList 解析卷列表
-func ParseVolumesToList(volumes []string) []model.VolumeMapping {
-	var result []model.VolumeMapping
+// parseVolumesToList 解析卷列表
+func parseVolumesToList(volumes []string) []VolumeMapping {
+	var result []VolumeMapping
 	for _, v := range volumes {
 		parts := strings.Split(v, ":")
 		if len(parts) >= 2 {
-			info := model.VolumeMapping{
+			info := VolumeMapping{
 				HostPath:      parts[0],
 				ContainerPath: parts[1],
 			}

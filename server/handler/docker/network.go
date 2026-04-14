@@ -9,7 +9,7 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/server/helper"
-	"isrvd/server/model"
+
 )
 
 // ListNetworks 列出网络
@@ -22,7 +22,7 @@ func (h *DockerHandler) ListNetworks(c *gin.Context) {
 		return
 	}
 
-	var result []*model.NetworkInfo
+	var result []*NetworkInfo
 	for _, net := range networks {
 		subnet := ""
 		if len(net.IPAM.Config) > 0 && net.IPAM.Config[0].Subnet != "" {
@@ -32,7 +32,7 @@ func (h *DockerHandler) ListNetworks(c *gin.Context) {
 		if len(id) > 12 {
 			id = id[:12]
 		}
-		result = append(result, &model.NetworkInfo{
+		result = append(result, &NetworkInfo{
 			ID: id, Name: net.Name, Driver: net.Driver, Subnet: subnet, Scope: net.Scope,
 		})
 	}
@@ -41,7 +41,7 @@ func (h *DockerHandler) ListNetworks(c *gin.Context) {
 
 // NetworkAction 网络操作
 func (h *DockerHandler) NetworkAction(c *gin.Context) {
-	var req model.NetworkActionRequest
+	var req NetworkActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Network action failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
@@ -67,7 +67,7 @@ func (h *DockerHandler) NetworkAction(c *gin.Context) {
 
 // CreateNetwork 创建网络
 func (h *DockerHandler) CreateNetwork(c *gin.Context) {
-	var req model.NetworkCreateRequest
+	var req NetworkCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Create network failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
@@ -113,7 +113,7 @@ func (h *DockerHandler) NetworkInspect(c *gin.Context) {
 	}
 
 	// 提取已连接的容器信息
-	var containers []*model.NetworkContainerInfo
+	var containers []*NetworkContainerInfo
 	for endpointID, ep := range networkInfo.Containers {
 		name := ep.Name
 		if name == "" {
@@ -124,7 +124,7 @@ func (h *DockerHandler) NetworkInspect(c *gin.Context) {
 		if err == nil && len(containerJSON.Name) > 0 {
 			name = strings.TrimPrefix(containerJSON.Name, "/")
 		}
-		containers = append(containers, &model.NetworkContainerInfo{
+		containers = append(containers, &NetworkContainerInfo{
 			ID:         endpointID[:12],
 			Name:       name,
 			IPv4:       ep.IPv4Address,
@@ -133,7 +133,7 @@ func (h *DockerHandler) NetworkInspect(c *gin.Context) {
 		})
 	}
 
-	result := model.NetworkInspectResponse{
+	result := NetworkInspectResponse{
 		ID:         networkInfo.ID,
 		Name:       networkInfo.Name,
 		Driver:     networkInfo.Driver,

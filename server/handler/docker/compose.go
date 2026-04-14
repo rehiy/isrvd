@@ -9,12 +9,10 @@ import (
 	"github.com/docker/docker/api/types"
 
 	"isrvd/server/config"
-	"isrvd/server/helper"
-	"isrvd/server/model"
 )
 
 // autoCreateComposeFile 根据容器当前运行配置自动生成 compose 文件
-func (h *DockerHandler) autoCreateComposeFile(ctx context.Context, name string) (*helper.ComposeFile, error) {
+func (h *DockerHandler) autoCreateComposeFile(ctx context.Context, name string) (*composeFile, error) {
 	// 通过容器名查找容器
 	containers, err := h.dockerClient.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
@@ -77,7 +75,7 @@ func (h *DockerHandler) autoCreateComposeFile(ctx context.Context, name string) 
 		hostname = ""
 	}
 
-	service := helper.ComposeService{
+	service := composeService{
 		Image:         inspect.Config.Image,
 		ContainerName: name,
 		Environment:   filteredEnv,
@@ -176,9 +174,9 @@ func (h *DockerHandler) autoCreateComposeFile(ctx context.Context, name string) 
 
 	// 处理资源限制
 	if inspect.HostConfig.Memory > 0 || inspect.HostConfig.NanoCPUs > 0 {
-		service.Deploy = &helper.ComposeDeploy{
-			Resources: &helper.ComposeResources{
-				Limits: &helper.ComposeLimit{},
+		service.Deploy = &composeDeploy{
+			Resources: &composeResources{
+				Limits: &composeLimit{},
 			},
 		}
 		if inspect.HostConfig.Memory > 0 {
@@ -205,16 +203,16 @@ func (h *DockerHandler) autoCreateComposeFile(ctx context.Context, name string) 
 	}
 
 	// 创建 compose 文件
-	if err := helper.CreateComposeFile(config.Docker.ContainerRoot, name, service); err != nil {
+	if err := createComposeFileOnDisk(config.Docker.ContainerRoot, name, service); err != nil {
 		return nil, fmt.Errorf("自动创建 compose 文件失败: %w", err)
 	}
 
-	return helper.ReadComposeFile(config.Docker.ContainerRoot, name)
+	return readComposeFileFromDisk(config.Docker.ContainerRoot, name)
 }
 
 // createComposeFile 根据 ContainerCreateRequest 生成 compose 配置文件
-func (h *DockerHandler) createComposeFile(req model.ContainerCreateRequest) error {
-	service := helper.ComposeService{
+func (h *DockerHandler) createComposeFile(req ContainerCreateRequest) error {
+	service := composeService{
 		Image:         req.Image,
 		ContainerName: req.Name,
 		Environment:   req.Env,
@@ -262,9 +260,9 @@ func (h *DockerHandler) createComposeFile(req model.ContainerCreateRequest) erro
 
 	// 处理资源限制
 	if req.Memory > 0 || req.Cpus > 0 {
-		service.Deploy = &helper.ComposeDeploy{
-			Resources: &helper.ComposeResources{
-				Limits: &helper.ComposeLimit{},
+		service.Deploy = &composeDeploy{
+			Resources: &composeResources{
+				Limits: &composeLimit{},
 			},
 		}
 		if req.Memory > 0 {
@@ -286,5 +284,5 @@ func (h *DockerHandler) createComposeFile(req model.ContainerCreateRequest) erro
 		service.CapDrop = req.CapDrop
 	}
 
-	return helper.CreateComposeFile(config.Docker.ContainerRoot, req.Name, service)
+	return createComposeFileOnDisk(config.Docker.ContainerRoot, req.Name, service)
 }

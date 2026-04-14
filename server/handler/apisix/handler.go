@@ -10,7 +10,7 @@ import (
 	"isrvd/pkgs/apisix"
 	"isrvd/server/config"
 	"isrvd/server/helper"
-	"isrvd/server/model"
+
 )
 
 // Handler Apisix 管理处理器
@@ -123,7 +123,7 @@ func (h *Handler) PatchRouteStatus(c *gin.Context) {
 		helper.RespondError(c, http.StatusBadRequest, "路由 ID 不能为空")
 		return
 	}
-	var req model.PatchRouteStatusRequest
+	var req PatchRouteStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Patch route status failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数: "+err.Error())
@@ -159,7 +159,7 @@ func (h *Handler) ListConsumers(c *gin.Context) {
 
 // CreateConsumer 创建 Consumer
 func (h *Handler) CreateConsumer(c *gin.Context) {
-	var req model.CreateConsumerRequest
+	var req CreateConsumerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Create consumer failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "用户名不能为空")
@@ -182,7 +182,7 @@ func (h *Handler) UpdateConsumer(c *gin.Context) {
 		helper.RespondError(c, http.StatusBadRequest, "用户名不能为空")
 		return
 	}
-	var req model.UpdateConsumerRequest
+	var req UpdateConsumerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Update consumer failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数: "+err.Error())
@@ -248,7 +248,7 @@ func (h *Handler) GetWhitelist(c *gin.Context) {
 
 // RevokeWhitelist 从 Apisix 路由白名单中移除 consumer
 func (h *Handler) RevokeWhitelist(c *gin.Context) {
-	var req model.RevokeWhitelistRequest
+	var req RevokeWhitelistRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Revoke whitelist failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "路由 ID 和消费者名称不能为空")

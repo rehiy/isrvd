@@ -10,7 +10,7 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/server/helper"
-	"isrvd/server/model"
+
 )
 
 // ListImages 列出镜像
@@ -25,7 +25,7 @@ func (h *DockerHandler) ListImages(c *gin.Context) {
 		return
 	}
 
-	var result []*model.ImageInfo
+	var result []*ImageInfo
 	for _, img := range images {
 		// 过滤掉中间层镜像（没有 RepoTags 的镜像）
 		if !all && len(img.RepoTags) == 0 {
@@ -40,7 +40,7 @@ func (h *DockerHandler) ListImages(c *gin.Context) {
 		} else if len(id) > 12 {
 			shortID = id[:12]
 		}
-		result = append(result, &model.ImageInfo{
+		result = append(result, &ImageInfo{
 			ID: id, ShortID: shortID, RepoTags: img.RepoTags,
 			Size: img.Size, Created: img.Created,
 		})
@@ -51,7 +51,7 @@ func (h *DockerHandler) ListImages(c *gin.Context) {
 
 // ImageAction 镜像操作
 func (h *DockerHandler) ImageAction(c *gin.Context) {
-	var req model.ImageActionRequest
+	var req ImageActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Image action failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
@@ -84,7 +84,7 @@ func (h *DockerHandler) ImageAction(c *gin.Context) {
 
 // PullImage 拉取镜像
 func (h *DockerHandler) PullImage(c *gin.Context) {
-	var req model.ImagePullRequest
+	var req ImagePullRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Pull image failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
@@ -137,7 +137,7 @@ func (h *DockerHandler) PullImage(c *gin.Context) {
 
 // ImageTag 镜像打标签
 func (h *DockerHandler) ImageTag(c *gin.Context) {
-	var req model.ImageTagRequest
+	var req ImageTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Tag image failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
@@ -174,9 +174,9 @@ func (h *DockerHandler) ImageSearch(c *gin.Context) {
 		return
 	}
 
-	var searchResults []*model.ImageSearchResult
+	var searchResults []*ImageSearchResult
 	for _, r := range results {
-		searchResults = append(searchResults, &model.ImageSearchResult{
+		searchResults = append(searchResults, &ImageSearchResult{
 			Name:        r.Name,
 			Description: r.Description,
 			IsOfficial:  r.IsOfficial,
@@ -190,7 +190,7 @@ func (h *DockerHandler) ImageSearch(c *gin.Context) {
 
 // ImageBuild 构建镜像
 func (h *DockerHandler) ImageBuild(c *gin.Context) {
-	var req model.ImageBuildRequest
+	var req ImageBuildRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Build image failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")

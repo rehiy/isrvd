@@ -15,7 +15,7 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/server/helper"
-	"isrvd/server/model"
+
 )
 
 // SwarmInfo 获取 Swarm 集群概览
@@ -63,9 +63,9 @@ func (h *SwarmHandler) SwarmListNodes(c *gin.Context) {
 		return
 	}
 
-	var result []model.SwarmNode
+	var result []SwarmNode
 	for _, n := range nodes {
-		result = append(result, model.SwarmNode{
+		result = append(result, SwarmNode{
 			ID:            n.ID,
 			Hostname:      n.Description.Hostname,
 			Role:          string(n.Spec.Role),
@@ -148,9 +148,9 @@ func (h *SwarmHandler) SwarmListServices(c *gin.Context) {
 		}
 	}
 
-	var result []model.SwarmService
+	var result []SwarmService
 	for _, s := range services {
-		svc := model.SwarmService{
+		svc := SwarmService{
 			ID:           s.ID,
 			Name:         s.Spec.Name,
 			Image:        s.Spec.TaskTemplate.ContainerSpec.Image,
@@ -254,9 +254,9 @@ func (h *SwarmHandler) SwarmListTasks(c *gin.Context) {
 		svcNameMap[s.ID] = s.Spec.Name
 	}
 
-	var result []model.SwarmTask
+	var result []SwarmTask
 	for _, t := range tasks {
-		result = append(result, model.SwarmTask{
+		result = append(result, SwarmTask{
 			ID:          t.ID,
 			ServiceID:   t.ServiceID,
 			ServiceName: svcNameMap[t.ServiceID],
@@ -275,7 +275,7 @@ func (h *SwarmHandler) SwarmListTasks(c *gin.Context) {
 
 // SwarmCreateService 创建服务
 func (h *SwarmHandler) SwarmCreateService(c *gin.Context) {
-	var req model.SwarmCreateServiceRequest
+	var req SwarmCreateServiceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return

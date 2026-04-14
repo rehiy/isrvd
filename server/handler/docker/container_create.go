@@ -13,12 +13,11 @@ import (
 
 	"isrvd/server/config"
 	"isrvd/server/helper"
-	"isrvd/server/model"
 )
 
 // CreateContainer 创建容器
 func (h *DockerHandler) CreateContainer(c *gin.Context) {
-	var req model.ContainerCreateRequest
+	var req ContainerCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Create container failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
@@ -129,7 +128,7 @@ func (h *DockerHandler) CreateContainer(c *gin.Context) {
 
 // UpdateContainerConfig 更新容器配置并重建
 func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
-	var req model.ContainerUpdateRequest
+	var req ContainerUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Update container config failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
@@ -264,7 +263,7 @@ func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
 
 	// 更新 compose 配置文件
 	if config.Docker.ContainerRoot != "" {
-		createReq := model.ContainerCreateRequest{
+		createReq := ContainerCreateRequest{
 			Image:      req.Image,
 			Name:       req.Name,
 			Cmd:        req.Cmd,
@@ -300,7 +299,7 @@ func (h *DockerHandler) GetContainerConfig(c *gin.Context) {
 		return
 	}
 
-	compose, err := helper.ReadComposeFile(config.Docker.ContainerRoot, name)
+	compose, err := readComposeFileFromDisk(config.Docker.ContainerRoot, name)
 	if err != nil {
 		// compose 文件不存在，尝试根据容器当前配置自动创建
 		compose, err = h.autoCreateComposeFile(c.Request.Context(), name)
@@ -320,21 +319,21 @@ func (h *DockerHandler) GetContainerConfig(c *gin.Context) {
 	}
 
 	// 转换为前端需要的格式
-	volumes := helper.ParseVolumesToList(service.Volumes)
-	modelVolumes := make([]model.VolumeMapping, len(volumes))
+	volumes := parseVolumesToList(service.Volumes)
+	modelVolumes := make([]VolumeMapping, len(volumes))
 	for i, v := range volumes {
-		modelVolumes[i] = model.VolumeMapping{
+		modelVolumes[i] = VolumeMapping{
 			HostPath:      v.HostPath,
 			ContainerPath: v.ContainerPath,
 			ReadOnly:      v.ReadOnly,
 		}
 	}
 
-	result := model.ContainerConfigResponse{
+	result := ContainerConfigResponse{
 		Image:      service.Image,
 		Name:       name,
 		Env:        service.Environment,
-		Ports:      helper.ParsePortsToMap(service.Ports),
+		Ports:      parsePortsToMap(service.Ports),
 		Volumes:    modelVolumes,
 		Network:    service.NetworkMode,
 		Restart:    service.Restart,

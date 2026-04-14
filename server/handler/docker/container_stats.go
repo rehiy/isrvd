@@ -17,7 +17,7 @@ import (
 	"github.com/shirou/gopsutil/v3/cpu"
 
 	"isrvd/server/helper"
-	"isrvd/server/model"
+
 )
 
 // CPU 主频缓存（不频繁变化，5分钟刷新一次）
@@ -102,11 +102,11 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 
 	// 计算网络 I/O
 	var networkRx, networkTx int64
-	networkDetail := make(map[string]*model.NetDetail)
+	networkDetail := make(map[string]*NetDetail)
 	for name, netStats := range v.Networks {
 		networkRx += int64(netStats.RxBytes)
 		networkTx += int64(netStats.TxBytes)
-		networkDetail[name] = &model.NetDetail{
+		networkDetail[name] = &NetDetail{
 			RxBytes:   netStats.RxBytes,
 			RxPackets: netStats.RxPackets,
 			RxErrors:  netStats.RxErrors,
@@ -119,17 +119,17 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 	}
 
 	// CPU 节流数据
-	cpuThrottled := &model.CpuThrottledData{
+	cpuThrottled := &CpuThrottledData{
 		Periods:          v.CPUStats.ThrottlingData.Periods,
 		ThrottledPeriods: v.CPUStats.ThrottlingData.ThrottledPeriods,
 		ThrottledTime:    v.CPUStats.ThrottlingData.ThrottledTime,
 	}
 
 	// 获取进程列表
-	var processList *model.ContainerProcessList
+	var processList *ContainerProcessList
 	topResult, err := h.dockerClient.ContainerTop(ctx, id, nil)
 	if err == nil {
-		processList = &model.ContainerProcessList{
+		processList = &ContainerProcessList{
 			Titles:    topResult.Titles,
 			Processes: topResult.Processes,
 		}
@@ -137,7 +137,7 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 
 	// 计算磁盘 I/O
 	var blockRead, blockWrite int64
-	blockDetailMap := make(map[string]*model.BlockDetail)
+	blockDetailMap := make(map[string]*BlockDetail)
 	for _, blkStats := range v.BlkioStats.IoServiceBytesRecursive {
 		switch blkStats.Op {
 		case "read":
@@ -149,7 +149,7 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 		if blkStats.Op == "read" || blkStats.Op == "write" {
 			key := fmt.Sprintf("%d:%d", blkStats.Major, blkStats.Minor)
 			if _, ok := blockDetailMap[key]; !ok {
-				blockDetailMap[key] = &model.BlockDetail{
+				blockDetailMap[key] = &BlockDetail{
 					Major: blkStats.Major,
 					Minor: blkStats.Minor,
 				}
@@ -162,7 +162,7 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 		}
 	}
 	// 转换为有序列表
-	var blockDetail []*model.BlockDetail
+	var blockDetail []*BlockDetail
 	for _, detail := range blockDetailMap {
 		blockDetail = append(blockDetail, detail)
 	}
@@ -182,7 +182,7 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 	// 获取 CPU 主频（使用缓存）
 	cpuFreq := getCpuFreq()
 
-	result := model.ContainerStatsResponse{
+	result := ContainerStatsResponse{
 		ID:            id,
 		Name:          name,
 		CPUPercent:    math.Round(cpuPercent*100) / 100,

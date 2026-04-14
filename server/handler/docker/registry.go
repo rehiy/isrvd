@@ -12,14 +12,14 @@ import (
 
 	"isrvd/server/config"
 	"isrvd/server/helper"
-	"isrvd/server/model"
+
 )
 
 // ListRegistries 列出已配置的镜像仓库
 func (h *DockerHandler) ListRegistries(c *gin.Context) {
-	var registries []*model.RegistryInfo
+	var registries []*RegistryInfo
 	for _, r := range config.Docker.Registries {
-		registries = append(registries, &model.RegistryInfo{
+		registries = append(registries, &RegistryInfo{
 			Name:     r.Name,
 			URL:      r.URL,
 			Username: r.Username,
@@ -49,7 +49,7 @@ func (h *DockerHandler) getRegistryAuth(registryURL string) string {
 
 // PushImage 推送镜像到仓库
 func (h *DockerHandler) PushImage(c *gin.Context) {
-	var req model.ImagePushRequest
+	var req ImagePushRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Push image failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
@@ -128,7 +128,7 @@ func (h *DockerHandler) PushImage(c *gin.Context) {
 
 // PullFromRegistry 从仓库拉取镜像到本地
 func (h *DockerHandler) PullFromRegistry(c *gin.Context) {
-	var req model.ImagePullFromRegistryRequest
+	var req ImagePullFromRegistryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Pull image from registry failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")

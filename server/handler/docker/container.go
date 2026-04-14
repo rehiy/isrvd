@@ -11,7 +11,7 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/server/helper"
-	"isrvd/server/model"
+
 )
 
 // ListContainers 列出容器
@@ -26,13 +26,13 @@ func (h *DockerHandler) ListContainers(c *gin.Context) {
 		return
 	}
 
-	var result []*model.ContainerInfo
+	var result []*ContainerInfo
 	for _, ct := range containers {
 		name := ""
 		if len(ct.Names) > 0 {
 			name = strings.TrimPrefix(ct.Names[0], "/")
 		}
-		result = append(result, &model.ContainerInfo{
+		result = append(result, &ContainerInfo{
 			ID:      ct.ID[:12],
 			Name:    name,
 			Image:   ct.Image,
@@ -49,7 +49,7 @@ func (h *DockerHandler) ListContainers(c *gin.Context) {
 
 // ContainerAction 容器操作
 func (h *DockerHandler) ContainerAction(c *gin.Context) {
-	var req model.ContainerActionRequest
+	var req ContainerActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Container action failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
@@ -115,7 +115,7 @@ func (h *DockerHandler) ContainerAction(c *gin.Context) {
 
 // ContainerLogs 获取容器日志
 func (h *DockerHandler) ContainerLogs(c *gin.Context) {
-	var req model.ContainerLogsRequest
+	var req ContainerLogsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Container logs failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")

@@ -249,7 +249,6 @@ logman.Info("Container created: name=" + req.Name + ", id=" + resp.ID)
 - Docker 多路复用日志解析统一使用 `helper.ParseDockerLogs`
 - 文件列表获取统一使用 `helper.FileList`
 - 用户绝对路径获取统一使用 `helper.GetAbsolutePath`
-- MD5 哈希计算统一使用 `helper.Md5sum`
 - Docker Compose 文件操作统一使用 `helper.CreateComposeFile`、`helper.ReadComposeFile`、`helper.UpdateComposeFile`
 - 禁止在不同 handler 包中重复定义功能相同的函数
 

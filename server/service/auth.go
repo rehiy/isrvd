@@ -7,16 +7,15 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"isrvd/server/config"
-	"isrvd/server/model"
 )
 
-// 认证服务
+// AuthService 认证服务
 type AuthService struct{}
 
-// 认证服务实例
+// AuthInstance 认证服务实例
 var AuthInstance *AuthService
 
-// 创建认证服务实例
+// GetAuthService 创建认证服务实例
 func GetAuthService() *AuthService {
 	if AuthInstance == nil {
 		AuthInstance = &AuthService{}
@@ -24,18 +23,24 @@ func GetAuthService() *AuthService {
 	return AuthInstance
 }
 
-// 验证用户名和密码
-func (as *AuthService) Login(req model.LoginRequest) (*model.LoginResponse, error) {
-	member, exists := config.Members[req.Username]
+// LoginResult 登录结果
+type LoginResult struct {
+	Token    string
+	Username string
+}
+
+// Login 验证用户名和密码，返回 token
+func (as *AuthService) Login(username, password string) (*LoginResult, error) {
+	member, exists := config.Members[username]
 
 	// 验证用户凭据
-	if !exists || member.Password != req.Password {
+	if !exists || member.Password != password {
 		return nil, errors.New("invalid credentials")
 	}
 
 	// 生成 token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": req.Username,
+		"sub": username,
 		"iat": time.Now().Unix(),
 		"exp": time.Now().Add(24 * time.Hour).Unix(),
 	})
@@ -46,9 +51,8 @@ func (as *AuthService) Login(req model.LoginRequest) (*model.LoginResponse, erro
 		return nil, err
 	}
 
-	// 返回 token
-	return &model.LoginResponse{
-		Username: req.Username,
+	return &LoginResult{
+		Username: username,
 		Token:    tokenString,
 	}, nil
 }

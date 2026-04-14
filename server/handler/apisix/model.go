@@ -1,4 +1,4 @@
-package model
+package apisix
 
 // PatchRouteStatusRequest 更新路由状态请求
 type PatchRouteStatusRequest struct {

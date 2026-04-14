@@ -1,8 +1,6 @@
-package model
+package swarm
 
-// ==================== Swarm 模型 ====================
-
-// Swarm 节点信息
+// SwarmNode Swarm 节点信息
 type SwarmNode struct {
 	ID            string `json:"id"`
 	Hostname      string `json:"hostname"`
@@ -14,7 +12,7 @@ type SwarmNode struct {
 	Leader        bool   `json:"leader"`
 }
 
-// Swarm 服务信息
+// SwarmService Swarm 服务信息
 type SwarmService struct {
 	ID           string      `json:"id"`
 	Name         string      `json:"name"`
@@ -27,7 +25,7 @@ type SwarmService struct {
 	UpdatedAt    string      `json:"updatedAt"`
 }
 
-// Swarm 任务信息
+// SwarmTask Swarm 任务信息
 type SwarmTask struct {
 	ID          string `json:"id"`
 	ServiceID   string `json:"serviceID"`
@@ -41,7 +39,7 @@ type SwarmTask struct {
 	UpdatedAt   string `json:"updatedAt"`
 }
 
-// Swarm 创建服务请求
+// SwarmCreateServiceRequest Swarm 创建服务请求
 type SwarmCreateServiceRequest struct {
 	Name     string            `json:"name" binding:"required"`
 	Image    string            `json:"image" binding:"required"`
@@ -54,12 +52,14 @@ type SwarmCreateServiceRequest struct {
 	Mounts   []SwarmMount      `json:"mounts"`
 }
 
+// SwarmPortConfig Swarm 端口配置
 type SwarmPortConfig struct {
 	Published int    `json:"published"`
 	Target    int    `json:"target"`
 	Protocol  string `json:"protocol"` // tcp | udp
 }
 
+// SwarmMount Swarm 挂载配置
 type SwarmMount struct {
 	Type   string `json:"type"` // bind | volume
 	Source string `json:"source"`

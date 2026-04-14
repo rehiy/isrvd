@@ -1,4 +1,4 @@
-package handler
+package filer
 
 import (
 	"io"
@@ -12,28 +12,27 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/server/helper"
-	"isrvd/server/model"
 )
 
-// 文件处理器
+// FileHandler 文件处理器
 type FileHandler struct{}
 
-// 创建文件处理器
+// NewFileHandler 创建文件处理器
 func NewFileHandler() *FileHandler {
 	return &FileHandler{}
 }
 
-// 文件列表
+// List 文件列表
 func (h *FileHandler) List(c *gin.Context) {
-	var req model.FileRequest
+	var req FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("List files failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
-	path := helper.GetAbsolutePath(c, req.Path)
-	fileList, err := helper.FileList(path, req.Path)
+	path := getAbsolutePath(c, req.Path)
+	fileList, err := fileList(path, req.Path)
 	if err != nil {
 		logman.Error("List files failed", "path", path, "error", err)
 		helper.RespondError(c, http.StatusNotFound, "Directory not found")
@@ -46,16 +45,16 @@ func (h *FileHandler) List(c *gin.Context) {
 	})
 }
 
-// 删除文件
+// Delete 删除文件
 func (h *FileHandler) Delete(c *gin.Context) {
-	var req model.FileRequest
+	var req FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Delete file failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
-	path := helper.GetAbsolutePath(c, req.Path)
+	path := getAbsolutePath(c, req.Path)
 	if err := os.RemoveAll(path); err != nil {
 		logman.Error("Delete file failed", "path", path, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot delete file")
@@ -65,16 +64,16 @@ func (h *FileHandler) Delete(c *gin.Context) {
 	helper.RespondSuccess(c, "File deleted successfully", nil)
 }
 
-// 创建目录
+// Mkdir 创建目录
 func (h *FileHandler) Mkdir(c *gin.Context) {
-	var req model.FileRequest
+	var req FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Create directory failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
-	path := helper.GetAbsolutePath(c, req.Path)
+	path := getAbsolutePath(c, req.Path)
 	if err := os.Mkdir(path, 0755); err != nil {
 		logman.Error("Create directory failed", "path", path, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot create directory")
@@ -84,16 +83,16 @@ func (h *FileHandler) Mkdir(c *gin.Context) {
 	helper.RespondSuccess(c, "Directory created successfully", nil)
 }
 
-// 新建文件
+// Create 新建文件
 func (h *FileHandler) Create(c *gin.Context) {
-	var req model.FileContentRequest
+	var req FileContentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Create file failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
-	path := helper.GetAbsolutePath(c, req.Path)
+	path := getAbsolutePath(c, req.Path)
 	if err := filer.Write(path, []byte(req.Content)); err != nil {
 		logman.Error("Create file failed", "path", path, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot create file")
@@ -103,16 +102,16 @@ func (h *FileHandler) Create(c *gin.Context) {
 	helper.RespondSuccess(c, "File created successfully", nil)
 }
 
-// 读取文件内容
+// Read 读取文件内容
 func (h *FileHandler) Read(c *gin.Context) {
-	var req model.FileRequest
+	var req FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Read file failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
-	path := helper.GetAbsolutePath(c, req.Path)
+	path := getAbsolutePath(c, req.Path)
 	content, err := os.ReadFile(path)
 	if err != nil {
 		logman.Error("Read file failed", "path", path, "error", err)
@@ -126,16 +125,16 @@ func (h *FileHandler) Read(c *gin.Context) {
 	})
 }
 
-// 写入文件内容
+// Modify 写入文件内容
 func (h *FileHandler) Modify(c *gin.Context) {
-	var req model.FileContentRequest
+	var req FileContentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Modify file failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
-	path := helper.GetAbsolutePath(c, req.Path)
+	path := getAbsolutePath(c, req.Path)
 	if err := os.WriteFile(path, []byte(req.Content), 0644); err != nil {
 		logman.Error("Modify file failed", "path", path, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot save file")
@@ -145,17 +144,17 @@ func (h *FileHandler) Modify(c *gin.Context) {
 	helper.RespondSuccess(c, "File saved successfully", nil)
 }
 
-// 重命名
+// Rename 重命名
 func (h *FileHandler) Rename(c *gin.Context) {
-	var req model.FileRenameRequest
+	var req FileRenameRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Rename file failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
-	path := helper.GetAbsolutePath(c, req.Path)
-	target := helper.GetAbsolutePath(c, filepath.Join(filepath.Dir(req.Path), req.Target))
+	path := getAbsolutePath(c, req.Path)
+	target := getAbsolutePath(c, filepath.Join(filepath.Dir(req.Path), req.Target))
 	if err := os.Rename(path, target); err != nil {
 		logman.Error("Rename file failed", "path", path, "target", target, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot rename file")
@@ -165,9 +164,9 @@ func (h *FileHandler) Rename(c *gin.Context) {
 	helper.RespondSuccess(c, "File renamed successfully", nil)
 }
 
-// 修改权限
+// Chmod 修改权限
 func (h *FileHandler) Chmod(c *gin.Context) {
-	var req model.FileChmodRequest
+	var req FileChmodRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Chmod file failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
@@ -181,7 +180,7 @@ func (h *FileHandler) Chmod(c *gin.Context) {
 		return
 	}
 
-	path := helper.GetAbsolutePath(c, req.Path)
+	path := getAbsolutePath(c, req.Path)
 	if err = os.Chmod(path, os.FileMode(mode)); err != nil {
 		logman.Error("Chmod file failed", "path", path, "mode", mode, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "Cannot change permissions")
@@ -191,7 +190,7 @@ func (h *FileHandler) Chmod(c *gin.Context) {
 	helper.RespondSuccess(c, "Permissions changed successfully", nil)
 }
 
-// 上传文件
+// Upload 上传文件
 func (h *FileHandler) Upload(c *gin.Context) {
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
@@ -203,9 +202,9 @@ func (h *FileHandler) Upload(c *gin.Context) {
 
 	path := c.PostForm("path")
 	if path == "" {
-		path = helper.GetAbsolutePath(c, header.Filename)
+		path = getAbsolutePath(c, header.Filename)
 	} else {
-		path = helper.GetAbsolutePath(c, filepath.Join(path, header.Filename))
+		path = getAbsolutePath(c, filepath.Join(path, header.Filename))
 	}
 
 	f, err := os.Create(path)
@@ -225,16 +224,16 @@ func (h *FileHandler) Upload(c *gin.Context) {
 	helper.RespondSuccess(c, "File uploaded successfully", nil)
 }
 
-// 下载文件
+// Download 下载文件
 func (h *FileHandler) Download(c *gin.Context) {
-	var req model.FileRequest
+	var req FileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Download file failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
-	path := helper.GetAbsolutePath(c, req.Path)
+	path := getAbsolutePath(c, req.Path)
 	f, err := os.Open(path)
 	if err != nil {
 		logman.Error("Download file failed", "path", path, "error", err)
