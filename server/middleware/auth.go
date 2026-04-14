@@ -8,6 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"isrvd/server/config"
+	"isrvd/server/helper"
 )
 
 // 认证中间件工厂
@@ -30,7 +31,7 @@ func JwtAuthMiddleware() gin.HandlerFunc {
 		}
 
 		if tokenStr == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "未提供认证令牌"})
+			helper.RespondError(c, http.StatusUnauthorized, "未提供认证令牌")
 			c.Abort()
 			return
 		}
@@ -39,7 +40,7 @@ func JwtAuthMiddleware() gin.HandlerFunc {
 			return []byte(config.JWTSecret), nil
 		})
 		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "认证令牌无效"})
+			helper.RespondError(c, http.StatusUnauthorized, "认证令牌无效")
 			c.Abort()
 			return
 		}
@@ -62,12 +63,12 @@ func ProxyHeaderAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.GetHeader(config.ProxyHeaderName)
 		if username == "" {
-			c.JSON(http.StatusForbidden, gin.H{"error": "代理 Header 缺失"})
+			helper.RespondError(c, http.StatusForbidden, "代理 Header 缺失")
 			c.Abort()
 			return
 		}
 		if _, exists := config.Members[username]; !exists {
-			c.JSON(http.StatusForbidden, gin.H{"error": "用户不存在"})
+			helper.RespondError(c, http.StatusForbidden, "用户不存在")
 			c.Abort()
 			return
 		}

@@ -97,8 +97,8 @@ const handleImageAction = (image, action) => {
   actions.showConfirm({
     title: '删除镜像',
     message: `确定要删除镜像 <strong class="text-slate-900">${image.repoTags[0] || image.id}</strong> 吗？`,
-    icon: 'fas fa-trash',
-    iconColor: 'text-red-500',
+    icon: 'fa-trash',
+    iconColor: 'red',
     confirmText: '确认删除',
     danger: true,
     onConfirm: async () => {
@@ -196,7 +196,7 @@ onMounted(() => {
               <button @click="loadImages()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
                 <i class="fas fa-rotate"></i>刷新
               </button>
-              <button @click="openBuildModal()" class="px-3 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+<button @click="openBuildModal()" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
                 <i class="fas fa-hammer"></i>构建
               </button>
               <button @click="pullImageModal()" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">

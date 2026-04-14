@@ -141,10 +141,10 @@ onMounted(() => {
             <button @click="loadRegistries()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button @click="openPullModal()" class="px-3 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <button @click="openPullModal()" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-download"></i>拉取
             </button>
-            <button @click="openPushModal()" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <button @click="openPushModal()" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-upload"></i>推送
             </button>
           </div>
@@ -189,7 +189,7 @@ onMounted(() => {
               </td>
               <td class="px-4 py-3">
                 <div class="flex justify-center items-center gap-0.5">
-                  <button @click="openPullModal(reg)" class="btn-icon text-teal-600 hover:bg-teal-50" title="拉取镜像">
+                  <button @click="openPullModal(reg)" class="btn-icon text-slate-600 hover:bg-slate-100" title="拉取镜像">
                     <i class="fas fa-download text-xs"></i>
                   </button>
                   <button @click="openPushModal(reg)" class="btn-icon text-blue-600 hover:bg-blue-50" title="推送镜像">

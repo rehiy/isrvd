@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"isrvd/server/helper"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,10 +14,7 @@ func RecoveryMiddleware() gin.HandlerFunc {
 		defer func() {
 			if err := recover(); err != nil {
 				logman.Error("Panic recovered", "error", err, "path", c.Request.URL.Path)
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"success": false,
-					"message": "Internal server error",
-				})
+				helper.RespondError(c, http.StatusInternalServerError, "Internal server error")
 				c.Abort()
 			}
 		}()

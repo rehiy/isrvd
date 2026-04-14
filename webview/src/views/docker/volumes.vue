@@ -61,7 +61,7 @@ const handleVolumeAction = (vol, action) => {
   actions.showConfirm({
     title: '删除数据卷',
     message: `确定要删除数据卷 <strong class="text-slate-900">${vol.name}</strong> 吗？`,
-    icon: 'fas fa-trash',
+    icon: 'fa-trash',
     iconColor: 'red',
     confirmText: '确认删除',
     danger: true,

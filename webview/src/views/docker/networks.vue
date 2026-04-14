@@ -60,7 +60,7 @@ const handleNetworkAction = (net, action) => {
   actions.showConfirm({
     title: '删除网络',
     message: `确定要删除网络 <strong class="text-slate-900">${net.name}</strong> 吗？`,
-    icon: 'fas fa-trash',
+    icon: 'fa-trash',
     iconColor: 'red',
     confirmText: '确认删除',
     danger: true,
