@@ -166,7 +166,7 @@ onMounted(() => loadServices())
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <button @click="openCreateModal" class="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+          <button @click="openCreateModal" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
             <i class="fas fa-plus"></i>创建服务
           </button>
           <button @click="loadServices" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
@@ -176,55 +176,55 @@ onMounted(() => loadServices())
       </div>
 
       <div v-if="servicesLoading" class="flex flex-col items-center justify-center py-20">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
-    </div>
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
       <div v-else-if="services.length > 0" class="overflow-x-auto">
-      <table class="w-full border-collapse">
-        <thead>
-          <tr class="bg-slate-50 border-b border-slate-200">
-            <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">服务名</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">镜像</th>
-            <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">模式</th>
-            <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">副本</th>
-            <th class="w-36 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
-            <th class="w-44 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-slate-100">
-          <tr v-for="svc in services" :key="svc.id" class="hover:bg-slate-50 transition-colors">
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-emerald-400 flex items-center justify-center">
-                  <i class="fas fa-cubes text-white text-sm"></i>
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200">
+              <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">服务名</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">镜像</th>
+              <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">模式</th>
+              <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">副本</th>
+              <th class="w-36 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
+              <th class="w-44 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-slate-100">
+            <tr v-for="svc in services" :key="svc.id" class="hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-emerald-400 flex items-center justify-center">
+                    <i class="fas fa-cubes text-white text-sm"></i>
+                  </div>
+                  <span class="font-medium text-slate-800">{{ svc.name }}</span>
                 </div>
-                <span class="font-medium text-slate-800">{{ svc.name }}</span>
-              </div>
-            </td>
-            <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ svc.image }}</code></td>
-            <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 capitalize">{{ svc.mode }}</span></td>
-            <td class="px-4 py-3 text-sm text-slate-600">
-              <span class="text-emerald-600 font-medium">{{ svc.runningTasks }}</span>
-              <span v-if="svc.mode === 'replicated'" class="text-slate-400"> / {{ svc.replicas ?? '?' }}</span>
-            </td>
-            <td class="px-4 py-3 font-mono text-xs text-slate-500">
-              <template v-if="svc.ports && svc.ports.length">
-                <div v-for="p in svc.ports" :key="p.published">{{ p.published }}:{{ p.target }}/{{ p.protocol }}</div>
-              </template>
-              <template v-else>-</template>
-            </td>
-            <td class="px-4 py-3">
-              <div class="flex justify-center items-center gap-0.5">
-                <button @click="openLogsModal(svc)"      class="btn-icon text-slate-600 hover:bg-slate-100"  title="查看日志"><i class="fas fa-file-lines text-xs"></i></button>
-                <button @click="handleRedeploy(svc)"     class="btn-icon text-blue-600 hover:bg-blue-50"     title="强制重部署"><i class="fas fa-rotate text-xs"></i></button>
-                <button v-if="svc.mode === 'replicated'" @click="openScaleModal(svc)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="扩缩容"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>
-                <button @click="handleServiceRemove(svc)" class="btn-icon text-red-600 hover:bg-red-50"      title="删除"><i class="fas fa-trash text-xs"></i></button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+              </td>
+              <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ svc.image }}</code></td>
+              <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 capitalize">{{ svc.mode }}</span></td>
+              <td class="px-4 py-3 text-sm text-slate-600">
+                <span class="text-emerald-600 font-medium">{{ svc.runningTasks }}</span>
+                <span v-if="svc.mode === 'replicated'" class="text-slate-400"> / {{ svc.replicas ?? '?' }}</span>
+              </td>
+              <td class="px-4 py-3 font-mono text-xs text-slate-500">
+                <template v-if="svc.ports && svc.ports.length">
+                  <div v-for="p in svc.ports" :key="p.published">{{ p.published }}:{{ p.target }}/{{ p.protocol }}</div>
+                </template>
+                <template v-else>-</template>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex justify-center items-center gap-0.5">
+                  <button @click="openLogsModal(svc)"      class="btn-icon text-slate-600 hover:bg-slate-100"  title="查看日志"><i class="fas fa-file-lines text-xs"></i></button>
+                  <button @click="handleRedeploy(svc)"     class="btn-icon text-blue-600 hover:bg-blue-50"     title="强制重部署"><i class="fas fa-rotate text-xs"></i></button>
+                  <button v-if="svc.mode === 'replicated'" @click="openScaleModal(svc)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="扩缩容"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>
+                  <button @click="handleServiceRemove(svc)" class="btn-icon text-red-600 hover:bg-red-50"      title="删除"><i class="fas fa-trash text-xs"></i></button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <div v-else class="flex flex-col items-center justify-center py-20">
         <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
           <i class="fas fa-cubes text-4xl text-slate-300"></i>

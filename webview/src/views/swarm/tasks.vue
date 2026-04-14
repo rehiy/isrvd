@@ -57,7 +57,6 @@ onMounted(async () => {
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <label class="text-xs text-slate-500">过滤服务</label>
           <select v-model="filterServiceID" @change="loadTasks" class="w-44 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 hover:border-slate-300 focus:outline-none">
             <option value="">全部服务</option>
             <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>

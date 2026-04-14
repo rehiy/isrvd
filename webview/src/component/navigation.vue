@@ -199,7 +199,7 @@ const toggleApisix = () => {
       <!-- 折叠状态下的 Docker 菜单 -->
       <router-link 
         v-if="collapsed"
-        to="/docker/overview"
+        to="/overview"
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
         :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isDockerActive }"
         title="Docker"
@@ -251,7 +251,7 @@ const toggleApisix = () => {
       <!-- 折叠状态下的 Swarm 菜单 -->
       <router-link
         v-if="collapsed"
-        to="/swarm/overview"
+        to="/overview"
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
         :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isSwarmActive }"
         title="Swarm 集群"
