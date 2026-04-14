@@ -7,13 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/logman"
 
+	"isrvd/pkgs/apisix"
 	"isrvd/server/config"
 	"isrvd/server/helper"
+	"isrvd/server/model"
 )
 
 // Handler Apisix 管理处理器
 type Handler struct {
-	client *Client
+	client *apisix.Client
 }
 
 // NewHandler 创建 Apisix 处理器
@@ -22,7 +24,7 @@ func NewHandler() (*Handler, error) {
 		return nil, fmt.Errorf("Apisix adminUrl 未配置")
 	}
 	return &Handler{
-		client: NewClient(config.Apisix),
+		client: apisix.NewClient(config.Apisix.AdminURL, config.Apisix.AdminKey),
 	}, nil
 }
 
@@ -32,7 +34,7 @@ func NewHandler() (*Handler, error) {
 
 // ListRoutes 获取所有路由列表
 func (h *Handler) ListRoutes(c *gin.Context) {
-	routes, err := h.client.ListRoutes(c.Request.Context())
+	routes, err := h.client.ListRoutes()
 	if err != nil {
 		logman.Error("List routes failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
@@ -49,7 +51,7 @@ func (h *Handler) GetRoute(c *gin.Context) {
 		helper.RespondError(c, http.StatusBadRequest, "路由 ID 不能为空")
 		return
 	}
-	route, err := h.client.GetRoute(c.Request.Context(), routeID)
+	route, err := h.client.GetRoute(routeID)
 	if err != nil {
 		logman.Error("Get route failed", "routeID", routeID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
@@ -60,7 +62,7 @@ func (h *Handler) GetRoute(c *gin.Context) {
 
 // CreateRoute 创建路由
 func (h *Handler) CreateRoute(c *gin.Context) {
-	var req RouteUpsertRequest
+	var req apisix.Route
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Create route failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数: "+err.Error())
@@ -76,7 +78,7 @@ func (h *Handler) CreateRoute(c *gin.Context) {
 		helper.RespondError(c, http.StatusBadRequest, "URI 或 URIs 不能为空")
 		return
 	}
-	route, err := h.client.CreateRoute(c.Request.Context(), req)
+	route, err := h.client.CreateRoute(req)
 	if err != nil {
 		logman.Error("Create route failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
@@ -93,7 +95,7 @@ func (h *Handler) UpdateRoute(c *gin.Context) {
 		helper.RespondError(c, http.StatusBadRequest, "路由 ID 不能为空")
 		return
 	}
-	var req RouteUpsertRequest
+	var req apisix.Route
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Update route failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数: "+err.Error())
@@ -104,7 +106,7 @@ func (h *Handler) UpdateRoute(c *gin.Context) {
 		helper.RespondError(c, http.StatusBadRequest, "路由名称不能为空")
 		return
 	}
-	route, err := h.client.UpdateRoute(c.Request.Context(), routeID, req)
+	route, err := h.client.UpdateRoute(routeID, req)
 	if err != nil {
 		logman.Error("Update route failed", "routeID", routeID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
@@ -121,9 +123,7 @@ func (h *Handler) PatchRouteStatus(c *gin.Context) {
 		helper.RespondError(c, http.StatusBadRequest, "路由 ID 不能为空")
 		return
 	}
-	var req struct {
-		Status int `json:"status"`
-	}
+	var req model.PatchRouteStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Patch route status failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数: "+err.Error())
@@ -134,7 +134,7 @@ func (h *Handler) PatchRouteStatus(c *gin.Context) {
 		helper.RespondError(c, http.StatusBadRequest, "状态值必须为 1（启用）或 0（禁用）")
 		return
 	}
-	if err := h.client.PatchRouteStatus(c.Request.Context(), routeID, req.Status); err != nil {
+	if err := h.client.PatchRouteStatus(routeID, req.Status); err != nil {
 		logman.Error("Patch route status failed", "routeID", routeID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -148,7 +148,7 @@ func (h *Handler) PatchRouteStatus(c *gin.Context) {
 
 // ListConsumers 获取 Consumer 列表
 func (h *Handler) ListConsumers(c *gin.Context) {
-	consumers, err := h.client.ListConsumers(c.Request.Context())
+	consumers, err := h.client.ListConsumers()
 	if err != nil {
 		logman.Error("List consumers failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
@@ -159,26 +159,19 @@ func (h *Handler) ListConsumers(c *gin.Context) {
 
 // CreateConsumer 创建 Consumer
 func (h *Handler) CreateConsumer(c *gin.Context) {
-	var req struct {
-		Username    string `json:"username" binding:"required"`
-		Description string `json:"description"`
-	}
+	var req model.CreateConsumerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Create consumer failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "用户名不能为空")
 		return
 	}
-	apiKey := generateAPIKey()
-	if err := h.client.CreateOrUpdateConsumer(c.Request.Context(), req.Username, apiKey, req.Description); err != nil {
+	consumer, err := h.client.CreateConsumer(req.Username, req.Desc)
+	if err != nil {
 		logman.Error("Create consumer failed", "username", req.Username, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	helper.RespondSuccess(c, "Consumer created successfully", gin.H{
-		"username":    req.Username,
-		"api_key":     apiKey,
-		"description": req.Description,
-	})
+	helper.RespondSuccess(c, "Consumer created successfully", consumer)
 }
 
 // UpdateConsumer 更新 Consumer 描述
@@ -189,29 +182,20 @@ func (h *Handler) UpdateConsumer(c *gin.Context) {
 		helper.RespondError(c, http.StatusBadRequest, "用户名不能为空")
 		return
 	}
-	var req struct {
-		Description string `json:"description"`
-	}
+	var req model.UpdateConsumerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Update consumer failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数: "+err.Error())
 		return
 	}
-	// 保持原有的 API Key 不变
-	apiKey, err := h.client.GetConsumerRawKey(c.Request.Context(), username)
-	if err != nil {
-		logman.Error("Get consumer key failed", "username", username, "error", err)
-		helper.RespondError(c, http.StatusInternalServerError, "获取消费者信息失败: "+err.Error())
-		return
-	}
-	if err := h.client.CreateOrUpdateConsumer(c.Request.Context(), username, apiKey, req.Description); err != nil {
+	if err := h.client.UpdateConsumerDesc(username, req.Desc); err != nil {
 		logman.Error("Update consumer failed", "username", username, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	helper.RespondSuccess(c, "Consumer updated successfully", gin.H{
-		"username":    username,
-		"description": req.Description,
+		"username": username,
+		"desc":     req.Desc,
 	})
 }
 
@@ -223,7 +207,7 @@ func (h *Handler) DeleteConsumer(c *gin.Context) {
 		helper.RespondError(c, http.StatusBadRequest, "用户名不能为空")
 		return
 	}
-	if err := h.client.DeleteConsumer(c.Request.Context(), username); err != nil {
+	if err := h.client.DeleteConsumer(username); err != nil {
 		logman.Error("Delete consumer failed", "username", username, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -239,7 +223,7 @@ func (h *Handler) DeleteRoute(c *gin.Context) {
 		helper.RespondError(c, http.StatusBadRequest, "路由 ID 不能为空")
 		return
 	}
-	if err := h.client.DeleteRoute(c.Request.Context(), routeID); err != nil {
+	if err := h.client.DeleteRoute(routeID); err != nil {
 		logman.Error("Delete route failed", "routeID", routeID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -253,7 +237,7 @@ func (h *Handler) DeleteRoute(c *gin.Context) {
 
 // GetWhitelist 获取 Apisix 中实际生效的 consumer-restriction 白名单
 func (h *Handler) GetWhitelist(c *gin.Context) {
-	result, err := h.client.GetRouteWhitelist(c.Request.Context())
+	result, err := h.client.GetRouteWhitelist()
 	if err != nil {
 		logman.Error("Get whitelist failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
@@ -264,16 +248,13 @@ func (h *Handler) GetWhitelist(c *gin.Context) {
 
 // RevokeWhitelist 从 Apisix 路由白名单中移除 consumer
 func (h *Handler) RevokeWhitelist(c *gin.Context) {
-	var req struct {
-		RouteID      string `json:"route_id" binding:"required"`
-		ConsumerName string `json:"consumer_name" binding:"required"`
-	}
+	var req model.RevokeWhitelistRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Revoke whitelist failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "路由 ID 和消费者名称不能为空")
 		return
 	}
-	if err := h.client.RemoveConsumerFromRouteWhitelist(c.Request.Context(), req.RouteID, req.ConsumerName); err != nil {
+	if err := h.client.RemoveConsumerFromRouteWhitelist(req.RouteID, req.ConsumerName); err != nil {
 		logman.Error("Revoke whitelist failed", "routeID", req.RouteID, "consumer", req.ConsumerName, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -287,7 +268,7 @@ func (h *Handler) RevokeWhitelist(c *gin.Context) {
 
 // ListPluginConfigs 获取 Plugin Config 列表
 func (h *Handler) ListPluginConfigs(c *gin.Context) {
-	list, err := h.client.ListPluginConfigs(c.Request.Context())
+	list, err := h.client.ListPluginConfigs()
 	if err != nil {
 		logman.Error("List plugin configs failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
@@ -298,7 +279,7 @@ func (h *Handler) ListPluginConfigs(c *gin.Context) {
 
 // ListUpstreams 获取 Upstream 列表
 func (h *Handler) ListUpstreams(c *gin.Context) {
-	list, err := h.client.ListUpstreams(c.Request.Context())
+	list, err := h.client.ListUpstreams()
 	if err != nil {
 		logman.Error("List upstreams failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
@@ -309,7 +290,7 @@ func (h *Handler) ListUpstreams(c *gin.Context) {
 
 // ListPlugins 获取可用插件列表
 func (h *Handler) ListPlugins(c *gin.Context) {
-	list, err := h.client.ListPlugins(c.Request.Context())
+	list, err := h.client.ListPlugins()
 	if err != nil {
 		logman.Error("List plugins failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())

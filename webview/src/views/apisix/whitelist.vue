@@ -12,8 +12,8 @@ const filteredWhitelist = computed(() => {
   if (!searchText.value) return whitelist.value
   const s = searchText.value.toLowerCase()
   return whitelist.value.filter(r =>
-    (r.route_name || '').toLowerCase().includes(s) ||
-    (r.route_id || '').toLowerCase().includes(s) ||
+    (r.name || '').toLowerCase().includes(s) ||
+    (r.id || '').toLowerCase().includes(s) ||
     (r.consumers || []).some(c => c.toLowerCase().includes(s))
   )
 })
@@ -31,10 +31,10 @@ const getRouteHost = (r) => r.hosts?.length ? r.hosts.join(', ') : (r.host || '*
 const revokeConsumer = (route, consumer) => {
   actions.showConfirm({
     title: '撤销白名单',
-    message: `确定要将用户 <strong class="text-slate-900">${consumer}</strong> 从路由 <strong class="text-slate-900">${route.route_name || route.route_id}</strong> 的白名单中移除吗？`,
+    message: `确定要将用户 <strong class="text-slate-900">${consumer}</strong> 从路由 <strong class="text-slate-900">${route.name || route.id}</strong> 的白名单中移除吗？`,
     icon: 'fa-user-minus', iconColor: 'red', confirmText: '确认撤销', danger: true,
     onConfirm: async () => {
-      await api.apisixRevokeWhitelist(route.route_id, consumer)
+      await api.apisixRevokeWhitelist(route.id, consumer)
       actions.showNotification('success', '撤销成功')
       loadWhitelist()
     }
@@ -71,10 +71,10 @@ onMounted(() => { loadWhitelist() })
         <p class="text-sm text-slate-400">配置路由的 Consumer 白名单后将在此显示</p>
       </div>
       <div v-else class="divide-y divide-slate-100">
-        <div v-for="route in filteredWhitelist" :key="route.route_id" class="px-6 py-4 hover:bg-slate-50/50 transition-colors">
+        <div v-for="route in filteredWhitelist" :key="route.id" class="px-6 py-4 hover:bg-slate-50/50 transition-colors">
           <div class="flex items-start justify-between mb-2">
             <div>
-              <div class="font-medium text-sm text-slate-800">{{ route.route_name || route.route_id }}</div>
+              <div class="font-medium text-sm text-slate-800">{{ route.name || route.id }}</div>
               <div class="flex items-center gap-3 mt-1">
                 <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">{{ getRouteUri(route) }}</code>
                 <span class="text-xs text-slate-400">{{ getRouteHost(route) }}</span>

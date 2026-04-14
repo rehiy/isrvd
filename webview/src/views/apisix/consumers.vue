@@ -23,7 +23,7 @@ const isEditMode = ref(false)
 // 表单数据
 const formData = ref({
   username: '',
-  description: '',
+  desc: '',
 })
 
 // 过滤后的用户列表
@@ -32,7 +32,7 @@ const filteredConsumers = computed(() => {
   const s = searchText.value.toLowerCase()
   return consumers.value.filter(c =>
     (c.username || '').toLowerCase().includes(s) ||
-    (c.description || '').toLowerCase().includes(s)
+    (c.desc || '').toLowerCase().includes(s)
   )
 })
 
@@ -51,7 +51,7 @@ const loadConsumers = async () => {
 
 // 获取用户关联的路由列表
 const getConsumerRoutes = (username) => {
-  return whitelist.value.filter(r => (r.consumers || []).includes(username)).map(r => r.route_name || r.route_id)
+  return whitelist.value.filter(r => (r.consumers || []).includes(username)).map(r => r.name || r.id)
 }
 
 // 格式化时间
@@ -64,7 +64,7 @@ const formatTs = (ts) => {
 const openCreateModal = () => {
   isEditMode.value = false
   modalTitle.value = '创建用户'
-  formData.value = { username: '', description: '' }
+  formData.value = { username: '', desc: '' }
   modalOpen.value = true
 }
 
@@ -74,7 +74,7 @@ const openEditModal = (consumer) => {
   modalTitle.value = '编辑用户'
   formData.value = {
     username: consumer.username,
-    description: consumer.description || '',
+    desc: consumer.desc || '',
   }
   modalOpen.value = true
 }
@@ -88,7 +88,7 @@ const submitForm = async () => {
   modalLoading.value = true
   try {
     if (isEditMode.value) {
-      await api.apisixUpdateConsumer(formData.value.username, { description: formData.value.description })
+      await api.apisixUpdateConsumer(formData.value.username, { desc: formData.value.desc })
     } else {
       await api.apisixCreateConsumer(formData.value)
     }
@@ -196,10 +196,10 @@ onMounted(() => {
                 </div>
               </td>
               <td class="px-4 py-3">
-                <span class="text-sm text-slate-600">{{ consumer.description || '-' }}</span>
+                <span class="text-sm text-slate-600">{{ consumer.desc || '-' }}</span>
               </td>
               <td class="px-4 py-3">
-                <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{{ consumer.api_key || '-' }}</code>
+                <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{{ consumer.plugins?.['key-auth']?.key || '-' }}</code>
               </td>
               <td class="px-4 py-3">
                 <div v-if="getConsumerRoutes(consumer.username).length > 0" class="flex flex-wrap gap-1">
@@ -243,7 +243,7 @@ onMounted(() => {
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">描述</label>
           <input
-            v-model="formData.description"
+            v-model="formData.desc"
             type="text"
             class="input"
             placeholder="用户描述"

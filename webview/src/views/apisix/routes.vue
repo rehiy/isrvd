@@ -49,11 +49,11 @@ const filteredRoutes = computed(() => {
   if (!searchText.value) return routes.value
   const s = searchText.value.toLowerCase()
   return routes.value.filter(r =>
-    (r.route_name || '').toLowerCase().includes(s) ||
-    (r.route_id || '').toLowerCase().includes(s) ||
+    (r.name || '').toLowerCase().includes(s) ||
+    (r.id || '').toLowerCase().includes(s) ||
     (r.uri || '').toLowerCase().includes(s) ||
     (r.uris || []).some(u => u.toLowerCase().includes(s)) ||
-    (r.description || '').toLowerCase().includes(s)
+    (r.desc || '').toLowerCase().includes(s)
   )
 })
 
@@ -89,12 +89,12 @@ const resetForm = () => {
 const openCreateModal = () => { isEditMode.value = false; modalTitle.value = '创建路由'; resetForm(); modalOpen.value = true }
 
 const openEditModal = async (route) => {
-  isEditMode.value = true; editingRouteId.value = route.route_id; modalTitle.value = '编辑路由'; resetForm(); modalLoading.value = true; modalOpen.value = true
+  isEditMode.value = true; editingRouteId.value = route.id; modalTitle.value = '编辑路由'; resetForm(); modalLoading.value = true; modalOpen.value = true
   try {
-    const r = (await api.apisixGetRoute(route.route_id)).payload
+    const r = (await api.apisixGetRoute(route.id)).payload
     const plugins = r.plugins || {}; const { host: uH, port: uP } = parseUpstreamNode(r.upstream)
-    Object.assign(formData, { name: r.route_name || '', desc: r.description || '', uris: (r.uris?.length ? r.uris : [r.uri || '']).join('\n'), hosts: (r.hosts?.length ? r.hosts : [r.host || '']).join('\n'), status: r.status ?? 0, priority: r.priority ?? 0, enable_websocket: r.enable_websocket || false, plugin_config_id: r.plugin_config_id || '', upstream_host: uH, upstream_port: uP, plugins, pluginsJson: JSON.stringify(plugins, null, 2), pluginsJsonError: '' })
-    editingRouteId.value = route.route_id
+    Object.assign(formData, { name: r.name || '', desc: r.desc || '', uris: (r.uris?.length ? r.uris : [r.uri || '']).join('\n'), hosts: (r.hosts?.length ? r.hosts : [r.host || '']).join('\n'), status: r.status ?? 0, priority: r.priority ?? 0, enable_websocket: r.enable_websocket || false, plugin_config_id: r.plugin_config_id || '', upstream_host: uH, upstream_port: uP, plugins, pluginsJson: JSON.stringify(plugins, null, 2), pluginsJsonError: '' })
+    editingRouteId.value = route.id
   } catch (e) { actions.showNotification('error', '加载路由详情失败'); modalOpen.value = false }
   modalLoading.value = false
 }
@@ -163,13 +163,13 @@ const submitForm = async () => {
 
 const toggleStatus = (route) => {
   const ns = route.status === 1 ? 0 : 1; const label = ns === 1 ? '启用' : '禁用'
-  actions.showConfirm({ title: `${label}路由`, message: `确定要${label}路由 <strong class="text-slate-900">${route.route_name}</strong> 吗？`, icon: ns === 1 ? 'fa-toggle-on' : 'fa-toggle-off', iconColor: ns === 1 ? 'emerald' : 'amber', confirmText: `确认${label}`,
-    onConfirm: async () => { await api.apisixPatchRouteStatus(route.route_id, ns); actions.showNotification('success', `路由已${label}`); loadRoutes() } })
+  actions.showConfirm({ title: `${label}路由`, message: `确定要${label}路由 <strong class="text-slate-900">${route.name}</strong> 吗？`, icon: ns === 1 ? 'fa-toggle-on' : 'fa-toggle-off', iconColor: ns === 1 ? 'emerald' : 'amber', confirmText: `确认${label}`,
+    onConfirm: async () => { await api.apisixPatchRouteStatus(route.id, ns); actions.showNotification('success', `路由已${label}`); loadRoutes() } })
 }
 
 const deleteRoute = (route) => {
-  actions.showConfirm({ title: '删除路由', message: `确定要删除路由 <strong class="text-slate-900">${route.route_name || route.route_id}</strong> 吗？此操作不可恢复。`, icon: 'fa-trash', iconColor: 'red', confirmText: '确认删除', danger: true,
-    onConfirm: async () => { await api.apisixDeleteRoute(route.route_id); actions.showNotification('success', '删除成功'); loadRoutes() } })
+  actions.showConfirm({ title: '删除路由', message: `确定要删除路由 <strong class="text-slate-900">${route.name || route.id}</strong> 吗？此操作不可恢复。`, icon: 'fa-trash', iconColor: 'red', confirmText: '确认删除', danger: true,
+    onConfirm: async () => { await api.apisixDeleteRoute(route.id); actions.showNotification('success', '删除成功'); loadRoutes() } })
 }
 
 onMounted(() => { loadRoutes(); loadResources() })
@@ -210,10 +210,10 @@ onMounted(() => { loadRoutes(); loadResources() })
             <th class="w-32 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
           </tr></thead>
           <tbody class="bg-white divide-y divide-slate-100">
-            <tr v-for="route in filteredRoutes" :key="route.route_id" class="hover:bg-slate-50 transition-colors">
+            <tr v-for="route in filteredRoutes" :key="route.id" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3">
-                <div class="font-medium text-sm text-slate-800">{{ route.route_name || route.route_id }}</div>
-                <div v-if="route.description" class="text-xs text-slate-400 mt-0.5 truncate max-w-xs">{{ route.description }}</div>
+                <div class="font-medium text-sm text-slate-800">{{ route.name || route.id }}</div>
+                <div v-if="route.desc" class="text-xs text-slate-400 mt-0.5 truncate max-w-xs">{{ route.desc }}</div>
               </td>
               <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-700">{{ getRouteUri(route) }}</code></td>
               <td class="px-4 py-3"><span class="text-sm text-slate-600">{{ getRouteHost(route) }}</span></td>
@@ -282,7 +282,7 @@ onMounted(() => { loadRoutes(); loadResources() })
             </div>
           </div>
           <div v-if="showImportPanel" class="mb-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
-            <div class="mb-2"><select v-model="importRouteId" @change="onImportRouteChange" class="input text-xs"><option value="">选择来源路由...</option><option v-for="r in routes" :key="r.route_id" :value="r.route_id">{{ r.route_name || r.route_id }}</option></select></div>
+            <div class="mb-2"><select v-model="importRouteId" @change="onImportRouteChange" class="input text-xs"><option value="">选择来源路由...</option><option v-for="r in routes" :key="r.id" :value="r.id">{{ r.name || r.id }}</option></select></div>
             <div v-if="importRoutePluginsLoading" class="text-xs text-slate-500 text-center py-2">加载中...</div>
             <div v-else-if="Object.keys(importRoutePlugins).length > 0">
               <div class="max-h-32 overflow-y-auto space-y-1 mb-2"><label v-for="(_, name) in importRoutePlugins" :key="name" class="flex items-center gap-2 text-xs cursor-pointer"><input type="checkbox" :checked="selectedImportPlugins.has(name)" @change="toggleImportPlugin(name)" class="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500" /><span>{{ name }}</span></label></div>
