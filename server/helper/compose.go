@@ -2,6 +2,7 @@ package helper
 
 import (
 	"fmt"
+	"isrvd/server/model"
 	"os"
 	"path/filepath"
 	"strings"
@@ -161,12 +162,12 @@ func ParsePortsToMap(ports []string) map[string]string {
 }
 
 // ParseVolumesToList 解析卷列表
-func ParseVolumesToList(volumes []string) []VolumeMapping {
-	var result []VolumeMapping
+func ParseVolumesToList(volumes []string) []model.VolumeMapping {
+	var result []model.VolumeMapping
 	for _, v := range volumes {
 		parts := strings.Split(v, ":")
 		if len(parts) >= 2 {
-			info := VolumeMapping{
+			info := model.VolumeMapping{
 				HostPath:      parts[0],
 				ContainerPath: parts[1],
 			}
@@ -177,18 +178,4 @@ func ParseVolumesToList(volumes []string) []VolumeMapping {
 		}
 	}
 	return result
-}
-
-// VolumeMapping 卷映射（与 model.VolumeMapping 保持一致）
-type VolumeMapping struct {
-	HostPath      string `json:"hostPath"`
-	ContainerPath string `json:"containerPath"`
-	ReadOnly      bool   `json:"readOnly"`
-}
-
-// VolumeInfo 卷信息
-type VolumeInfo struct {
-	HostPath      string `json:"hostPath"`
-	ContainerPath string `json:"containerPath"`
-	ReadOnly      bool   `json:"readOnly"`
 }

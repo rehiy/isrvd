@@ -63,6 +63,27 @@ export const formatFileSize = (bytes) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
+export const parseUpstreamNode = (upstream) => {
+  const nodes = upstream?.nodes
+  if (!nodes) return {}
+  if (Array.isArray(nodes) && nodes.length > 0) return { host: nodes[0].host || '', port: nodes[0].port || '' }
+  if (typeof nodes === 'object') {
+    const k = Object.keys(nodes)[0] || ''
+    if (k) { const i = k.lastIndexOf(':'); return { host: i > 0 ? k.slice(0, i) : k, port: i > 0 ? Number(k.slice(i + 1)) : '' } }
+  }
+  return {}
+}
+
+export const buildRoutePayload = (formData) => {
+  const payload = { name: formData.name.trim(), desc: formData.desc.trim(), status: formData.status, priority: formData.priority ?? 0, enable_websocket: formData.enable_websocket, plugin_config_id: formData.plugin_config_id || '', plugins: formData.plugins || {} }
+  const urisArr = formData.uris.split('\n').map(s => s.trim()).filter(Boolean)
+  if (urisArr.length > 1) payload.uris = urisArr; else if (urisArr.length === 1) payload.uri = urisArr[0]
+  const hostsArr = formData.hosts.split('\n').map(s => s.trim()).filter(Boolean)
+  if (hostsArr.length > 1) payload.hosts = hostsArr; else if (hostsArr.length === 1) payload.host = hostsArr[0]
+  if (formData.upstream_host && formData.upstream_port) payload.upstream = { type: 'roundrobin', nodes: [{ host: formData.upstream_host, port: Number(formData.upstream_port), weight: 1 }] }
+  return payload
+}
+
 export const formatTime = (timeString) => {
     const date = new Date(timeString);
     return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', { hour12: false });

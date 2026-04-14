@@ -23,7 +23,7 @@ func (h *DockerHandler) ContainerExec(c *gin.Context) {
 
 	shell := c.DefaultQuery("shell", "/bin/sh")
 
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	conn, err := helper.WsUpgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		logman.Error("WebSocket upgrade error", "error", err)
 		return

@@ -408,22 +408,7 @@ func (h *SwarmHandler) SwarmServiceLogs(c *gin.Context) {
 	}
 
 	// 去除 Docker multiplexed stream 头部（每行前 8 字节）
-	lines := cleanDockerLogs(raw)
+	lines := helper.ParseDockerLogs(raw)
 
 	helper.RespondSuccess(c, "Logs retrieved", gin.H{"logs": lines})
-}
-
-// cleanDockerLogs 移除 docker multiplexed stream header（每帧前 8 字节）
-func cleanDockerLogs(raw []byte) string {
-	var sb strings.Builder
-	for len(raw) > 8 {
-		frameSize := int(raw[4])<<24 | int(raw[5])<<16 | int(raw[6])<<8 | int(raw[7])
-		raw = raw[8:]
-		if frameSize > len(raw) {
-			frameSize = len(raw)
-		}
-		sb.Write(raw[:frameSize])
-		raw = raw[frameSize:]
-	}
-	return sb.String()
 }

@@ -4,6 +4,7 @@ import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 
 import api from '@/service/api.js'
+import { formatFileSize } from '@/helper/utils.js'
 
 Chart.register(...registerables)
 
@@ -51,15 +52,6 @@ const cpuRef = ref(null)
 const memRef = ref(null)
 const netRef = ref(null)
 const blkRef = ref(null)
-
-// ========== 格式化工具 ==========
-
-const formatBytes = (bytes) => {
-  if (!bytes || bytes === 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return (bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i]
-}
 
 // ========== 统计定时器 ==========
 
@@ -227,14 +219,13 @@ const initCharts = () => {
         ]
       },
       options: {
-        ...baseOptions({}, ctx => ctx.dataset.label + ': ' + formatBytes(ctx.parsed.y) + '/s'),
+        ...baseOptions({}, ctx => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s'),
         plugins: {
           ...baseOptions().plugins,
           legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
           tooltip: {
             backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-            callbacks: { label: ctx => ctx.dataset.label + ': ' + formatBytes(ctx.parsed.y) + '/s' }
-          }
+            callbacks: { label: ctx => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s' }          }
         }
       }
     })
@@ -251,23 +242,20 @@ const initCharts = () => {
         ]
       },
       options: {
-        ...baseOptions({}, ctx => ctx.dataset.label + ': ' + formatBytes(ctx.parsed.y) + '/s'),
+        ...baseOptions({}, ctx => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s'),
         plugins: {
           ...baseOptions().plugins,
           legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
           tooltip: {
             backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-            callbacks: { label: ctx => ctx.dataset.label + ': ' + formatBytes(ctx.parsed.y) + '/s' }
-          }
+            callbacks: { label: ctx => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s' }          }
         }
       }
     })
   }
 }
 
-const renderCharts = () => {
-  const snap = [...labels]
-  if (cpuChart) { cpuChart.data.labels = snap; cpuChart.data.datasets[0].data = [...cpuData]; cpuChart.update('none') }
+const renderCharts = () => {  if (cpuChart) { cpuChart.data.labels = snap; cpuChart.data.datasets[0].data = [...cpuData]; cpuChart.update('none') }
   if (memChart) { memChart.data.labels = snap; memChart.data.datasets[0].data = [...memData]; memChart.update('none') }
   if (netChart) { netChart.data.labels = snap; netChart.data.datasets[0].data = [...netRxData]; netChart.data.datasets[1].data = [...netTxData]; netChart.update('none') }
   if (blkChart) { blkChart.data.labels = snap; blkChart.data.datasets[0].data = [...blkRData]; blkChart.data.datasets[1].data = [...blkWData]; blkChart.update('none') }
@@ -363,8 +351,8 @@ onUnmounted(() => {
             </span>
           </div>
           <div class="flex items-center gap-3 mb-3 text-[10px] text-slate-400">
-            <span>内存 <span class="text-slate-600 font-medium">{{ formatBytes(statsData.memoryUsage) }}</span></span>
-            <span>限制 <span class="text-slate-600 font-medium">{{ formatBytes(statsData.memoryLimit) }}</span></span>
+            <span>内存 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryUsage) }}</span></span>
+            <span>限制 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryLimit) }}</span></span>
           </div>
           <div class="h-28"><canvas ref="memRef"></canvas></div>
         </div>
@@ -381,15 +369,15 @@ onUnmounted(() => {
             </div>
             <span class="text-sm font-semibold text-slate-700">网络</span>
             <span class="ml-auto text-xs font-mono text-teal-600">
-              <span class="text-teal-500">↓</span> {{ formatBytes(netRxRate) }}/s
+              <span class="text-teal-500">↓</span> {{ formatFileSize(netRxRate) }}/s
               <span class="mx-1 text-slate-300">·</span>
-              <span class="text-teal-700">↑</span> {{ formatBytes(netTxRate) }}/s
+              <span class="text-teal-700">↑</span> {{ formatFileSize(netTxRate) }}/s
             </span>
           </div>
           <div class="flex items-center gap-3 mb-3 text-[10px] text-slate-400">
             <span v-if="statsData.networkDetail">网卡 <span class="text-slate-600 font-medium">{{ Object.keys(statsData.networkDetail).length }} 块</span></span>
-            <span>累计收 <span class="text-slate-600 font-medium">{{ formatBytes(statsData.networkRx) }}</span></span>
-            <span>累计发 <span class="text-slate-600 font-medium">{{ formatBytes(statsData.networkTx) }}</span></span>
+            <span>累计收 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkRx) }}</span></span>
+            <span>累计发 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkTx) }}</span></span>
           </div>
           <div class="h-28"><canvas ref="netRef"></canvas></div>
         </div>
@@ -403,15 +391,15 @@ onUnmounted(() => {
             </div>
             <span class="text-sm font-semibold text-slate-700">磁盘</span>
             <span class="ml-auto text-xs font-mono text-amber-600">
-              <span class="text-amber-500">↓</span> {{ formatBytes(blkRRate) }}/s
+              <span class="text-amber-500">↓</span> {{ formatFileSize(blkRRate) }}/s
               <span class="mx-1 text-slate-300">·</span>
-              <span class="text-amber-700">↑</span> {{ formatBytes(blkWRate) }}/s
+              <span class="text-amber-700">↑</span> {{ formatFileSize(blkWRate) }}/s
             </span>
           </div>
           <div class="flex items-center gap-3 mb-3 text-[10px] text-slate-400">
             <span v-if="statsData.blockDetail">设备 <span class="text-slate-600 font-medium">{{ statsData.blockDetail.length }} 块</span></span>
-            <span>累计读 <span class="text-slate-600 font-medium">{{ formatBytes(statsData.blockRead) }}</span></span>
-            <span>累计写 <span class="text-slate-600 font-medium">{{ formatBytes(statsData.blockWrite) }}</span></span>
+            <span>累计读 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockRead) }}</span></span>
+            <span>累计写 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockWrite) }}</span></span>
           </div>
           <div class="h-28"><canvas ref="blkRef"></canvas></div>
         </div>

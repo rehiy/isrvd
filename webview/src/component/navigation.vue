@@ -302,9 +302,9 @@ const toggleApisix = () => {
       </div>
 
       <!-- 折叠状态下的 Apisix 菜单 -->
-      <router-link 
+      <router-link
         v-if="collapsed"
-        to="/apisix/routes"
+        to="/overview"
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
         :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isApisixActive }"
         title="Apisix"

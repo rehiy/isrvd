@@ -2,6 +2,7 @@
 import BaseModal from '@/component/modal.vue'
 import api from '@/service/api.js'
 import { APP_ACTIONS_KEY } from '@/store/state.js'
+import { parseUpstreamNode, buildRoutePayload } from '@/helper/utils.js'
 import { computed, inject, onMounted, reactive, ref } from 'vue'
 
 const actions = inject(APP_ACTIONS_KEY)
@@ -80,17 +81,6 @@ const loadResources = async () => {
 const getRouteUri = (r) => r.uris?.length ? r.uris.join(', ') : (r.uri || '-')
 const getRouteHost = (r) => r.hosts?.length ? r.hosts.join(', ') : (r.host || '*')
 
-const parseUpstreamNode = (upstream) => {
-  const nodes = upstream?.nodes
-  if (!nodes) return {}
-  if (Array.isArray(nodes) && nodes.length > 0) return { host: nodes[0].host || '', port: nodes[0].port || '' }
-  if (typeof nodes === 'object') {
-    const k = Object.keys(nodes)[0] || ''
-    if (k) { const i = k.lastIndexOf(':'); return { host: i > 0 ? k.slice(0, i) : k, port: i > 0 ? Number(k.slice(i + 1)) : '' } }
-  }
-  return {}
-}
-
 const resetForm = () => {
   Object.assign(formData, { name: '', desc: '', uris: '', hosts: '', status: 1, priority: 0, enable_websocket: false, plugin_config_id: '', upstream_host: '', upstream_port: '', plugins: {}, pluginsJson: '{}', pluginsJsonError: '' })
   editingRouteId.value = ''; showPluginPanel.value = false; showImportPanel.value = false; importRouteId.value = ''; importRoutePlugins.value = {}; selectedImportPlugins.value = new Set()
@@ -157,23 +147,13 @@ const importPluginsFromRoute = () => {
   actions.showNotification('success', `已导入 ${Object.keys(toImport).length} 个插件`)
 }
 
-const buildPayload = () => {
-  const payload = { name: formData.name.trim(), desc: formData.desc.trim(), status: formData.status, priority: formData.priority ?? 0, enable_websocket: formData.enable_websocket, plugin_config_id: formData.plugin_config_id || '', plugins: formData.plugins || {} }
-  const urisArr = formData.uris.split('\n').map(s => s.trim()).filter(Boolean)
-  if (urisArr.length > 1) payload.uris = urisArr; else if (urisArr.length === 1) payload.uri = urisArr[0]
-  const hostsArr = formData.hosts.split('\n').map(s => s.trim()).filter(Boolean)
-  if (hostsArr.length > 1) payload.hosts = hostsArr; else if (hostsArr.length === 1) payload.host = hostsArr[0]
-  if (formData.upstream_host && formData.upstream_port) payload.upstream = { type: 'roundrobin', nodes: [{ host: formData.upstream_host, port: Number(formData.upstream_port), weight: 1 }] }
-  return payload
-}
-
 const submitForm = async () => {
   if (!formData.name.trim()) return actions.showNotification('error', '路由名称不能为空')
   if (!formData.uris.split('\n').map(s => s.trim()).filter(Boolean).length) return actions.showNotification('error', 'URI 不能为空')
   if (formData.pluginsJsonError) return actions.showNotification('error', '请修正 Plugin JSON 格式错误')
   modalLoading.value = true
   try {
-    const payload = buildPayload()
+    const payload = buildRoutePayload(formData)
     if (isEditMode.value) { await api.apisixUpdateRoute(editingRouteId.value, payload); actions.showNotification('success', '路由更新成功') }
     else { await api.apisixCreateRoute(payload); actions.showNotification('success', '路由创建成功') }
     modalOpen.value = false; resetForm(); loadRoutes()

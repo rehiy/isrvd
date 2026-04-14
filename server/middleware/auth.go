@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -29,7 +30,7 @@ func JwtAuthMiddleware() gin.HandlerFunc {
 		}
 
 		if tokenStr == "" {
-			c.JSON(401, gin.H{"error": "未提供认证令牌"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "未提供认证令牌"})
 			c.Abort()
 			return
 		}
@@ -38,7 +39,7 @@ func JwtAuthMiddleware() gin.HandlerFunc {
 			return []byte(config.JWTSecret), nil
 		})
 		if err != nil || !token.Valid {
-			c.JSON(401, gin.H{"error": "认证令牌无效"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "认证令牌无效"})
 			c.Abort()
 			return
 		}
@@ -61,12 +62,12 @@ func ProxyHeaderAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.GetHeader(config.ProxyHeaderName)
 		if username == "" {
-			c.JSON(403, gin.H{"error": "代理 Header 缺失"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "代理 Header 缺失"})
 			c.Abort()
 			return
 		}
 		if _, exists := config.Members[username]; !exists {
-			c.JSON(403, gin.H{"error": "用户不存在"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "用户不存在"})
 			c.Abort()
 			return
 		}

@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"io"
 	"net/http"
 	"strings"
 
@@ -141,12 +142,12 @@ func (h *DockerHandler) ContainerLogs(c *gin.Context) {
 	}
 	defer reader.Close()
 
-	data, err := readAll(reader)
+	data, err := io.ReadAll(reader)
 	if err != nil {
 		logman.Error("Read container logs failed", "id", req.ID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "读取日志失败")
 		return
 	}
 
-	helper.RespondSuccess(c, "Container logs retrieved", gin.H{"id": req.ID, "logs": parseDockerLogs(data)})
+	helper.RespondSuccess(c, "Container logs retrieved", gin.H{"id": req.ID, "logs": helper.ParseDockerLogs(data)})
 }

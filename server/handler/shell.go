@@ -16,10 +16,6 @@ import (
 	"isrvd/server/helper"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
-}
-
 // Shell处理器
 type ShellHandler struct{}
 
@@ -39,7 +35,7 @@ func (h *ShellHandler) WebSocket(c *gin.Context) {
 	}
 
 	shell := c.DefaultQuery("shell", "bash")
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	conn, err := helper.WsUpgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		logman.Error("WebSocket 升级错误", "error", err)
 		return

@@ -40,13 +40,6 @@ func (h *DockerHandler) GetClient() *client.Client {
 	return h.dockerClient
 }
 
-// WebSocket 升级器
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
-
 // Info 获取Docker概览信息
 func (h *DockerHandler) Info(c *gin.Context) {
 	ctx := c.Request.Context()
