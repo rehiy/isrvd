@@ -1,111 +1,131 @@
 package docker
 
 import (
-	"io"
 	"net/http"
-	"strings"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/logman"
 
+	dockerPkg "isrvd/pkgs/docker"
 	"isrvd/server/helper"
-
 )
 
 // ListContainers 列出容器
 func (h *DockerHandler) ListContainers(c *gin.Context) {
-	ctx := c.Request.Context()
 	all := c.DefaultQuery("all", "false") == "true"
 
-	containers, err := h.dockerClient.ContainerList(ctx, types.ContainerListOptions{All: all})
+	result, err := h.service.ListContainers(c.Request.Context(), all)
 	if err != nil {
-		logman.Error("List containers failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "获取容器列表失败")
 		return
-	}
-
-	var result []*ContainerInfo
-	for _, ct := range containers {
-		name := ""
-		if len(ct.Names) > 0 {
-			name = strings.TrimPrefix(ct.Names[0], "/")
-		}
-		result = append(result, &ContainerInfo{
-			ID:      ct.ID[:12],
-			Name:    name,
-			Image:   ct.Image,
-			State:   ct.State,
-			Status:  ct.Status,
-			Ports:   formatPorts(ct.Ports),
-			Created: ct.Created,
-			Labels:  ct.Labels,
-		})
 	}
 
 	helper.RespondSuccess(c, "Containers listed successfully", result)
 }
 
+// CreateContainer 创建容器
+func (h *DockerHandler) CreateContainer(c *gin.Context) {
+	var req dockerPkg.ContainerCreateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logman.Error("Create container failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
+		return
+	}
+
+	id, err := h.service.CreateContainer(c.Request.Context(), req)
+	if err != nil {
+		logman.Error("Create container failed", "error", err)
+		helper.RespondError(c, http.StatusInternalServerError, "创建容器失败: "+err.Error())
+		return
+	}
+
+	shortID := id
+	if len(id) > 12 {
+		shortID = id[:12]
+	}
+
+	logman.Info("Container created", "id", shortID, "name", req.Name)
+	helper.RespondSuccess(c, "容器创建成功", gin.H{"id": shortID, "name": req.Name})
+}
+
+// UpdateContainerConfig 更新容器配置并重建
+func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
+	var req dockerPkg.ContainerUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logman.Error("Update container config failed", "error", err)
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
+		return
+	}
+
+	if req.Name == "" {
+		helper.RespondError(c, http.StatusBadRequest, "容器名称不能为空")
+		return
+	}
+
+	id, err := h.service.UpdateContainer(c.Request.Context(), req)
+	if err != nil {
+		logman.Error("Update container failed", "error", err)
+		helper.RespondError(c, http.StatusInternalServerError, "重建容器失败: "+err.Error())
+		return
+	}
+
+	shortID := id
+	if len(id) > 12 {
+		shortID = id[:12]
+	}
+
+	logman.Info("Container recreated", "id", shortID, "name", req.Name)
+	helper.RespondSuccess(c, "容器配置更新成功，已重建容器", gin.H{"id": shortID, "name": req.Name})
+}
+
+// GetContainerConfig 获取容器配置
+func (h *DockerHandler) GetContainerConfig(c *gin.Context) {
+	name := c.Query("name")
+	if name == "" {
+		helper.RespondError(c, http.StatusBadRequest, "容器名称不能为空")
+		return
+	}
+
+	result, err := h.service.GetContainerConfig(c.Request.Context(), name)
+	if err != nil {
+		logman.Error("Get container config failed", "name", name, "error", err)
+		helper.RespondError(c, http.StatusNotFound, "容器配置未找到: "+err.Error())
+		return
+	}
+
+	helper.RespondSuccess(c, "获取容器配置成功", result)
+}
+
+// ContainerStats 获取容器统计信息
+func (h *DockerHandler) ContainerStats(c *gin.Context) {
+	id := c.Query("id")
+	if id == "" {
+		helper.RespondError(c, http.StatusBadRequest, "容器ID不能为空")
+		return
+	}
+
+	result, err := h.service.GetContainerStats(c.Request.Context(), id)
+	if err != nil {
+		logman.Error("Get container stats failed", "id", id, "error", err)
+		helper.RespondError(c, http.StatusInternalServerError, "获取容器统计信息失败: "+err.Error())
+		return
+	}
+
+	helper.RespondSuccess(c, "Container stats retrieved", result)
+}
+
 // ContainerAction 容器操作
 func (h *DockerHandler) ContainerAction(c *gin.Context) {
-	var req ContainerActionRequest
+	var req dockerPkg.ContainerActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Container action failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return
 	}
 
-	ctx := c.Request.Context()
-
-	switch req.Action {
-	case "start":
-		err := h.dockerClient.ContainerStart(ctx, req.ID, types.ContainerStartOptions{})
-		if err != nil {
-			logman.Error("Start container failed", "id", req.ID, "error", err)
-			helper.RespondError(c, http.StatusInternalServerError, "启动容器失败: "+err.Error())
-			return
-		}
-	case "stop":
-		timeout := 10
-		err := h.dockerClient.ContainerStop(ctx, req.ID, container.StopOptions{Timeout: &timeout})
-		if err != nil {
-			logman.Error("Stop container failed", "id", req.ID, "error", err)
-			helper.RespondError(c, http.StatusInternalServerError, "停止容器失败: "+err.Error())
-			return
-		}
-	case "restart":
-		timeout := 10
-		err := h.dockerClient.ContainerRestart(ctx, req.ID, container.StopOptions{Timeout: &timeout})
-		if err != nil {
-			logman.Error("Restart container failed", "id", req.ID, "error", err)
-			helper.RespondError(c, http.StatusInternalServerError, "重启容器失败: "+err.Error())
-			return
-		}
-	case "remove":
-		err := h.dockerClient.ContainerRemove(ctx, req.ID, types.ContainerRemoveOptions{Force: true})
-		if err != nil {
-			logman.Error("Remove container failed", "id", req.ID, "error", err)
-			helper.RespondError(c, http.StatusInternalServerError, "删除容器失败: "+err.Error())
-			return
-		}
-	case "pause":
-		err := h.dockerClient.ContainerPause(ctx, req.ID)
-		if err != nil {
-			logman.Error("Pause container failed", "id", req.ID, "error", err)
-			helper.RespondError(c, http.StatusInternalServerError, "暂停容器失败: "+err.Error())
-			return
-		}
-	case "unpause":
-		err := h.dockerClient.ContainerUnpause(ctx, req.ID)
-		if err != nil {
-			logman.Error("Unpause container failed", "id", req.ID, "error", err)
-			helper.RespondError(c, http.StatusInternalServerError, "恢复容器失败: "+err.Error())
-			return
-		}
-	default:
-		logman.Error("Unsupported container action", "action", req.Action, "id", req.ID)
-		helper.RespondError(c, http.StatusBadRequest, "不支持的操作: "+req.Action)
+	if err := h.service.ContainerAction(c.Request.Context(), req.ID, req.Action); err != nil {
+		logman.Error("Container action failed", "action", req.Action, "id", req.ID, "error", err)
+		helper.RespondError(c, http.StatusInternalServerError, req.Action+"容器失败: "+err.Error())
 		return
 	}
 
@@ -115,39 +135,39 @@ func (h *DockerHandler) ContainerAction(c *gin.Context) {
 
 // ContainerLogs 获取容器日志
 func (h *DockerHandler) ContainerLogs(c *gin.Context) {
-	var req ContainerLogsRequest
+	var req dockerPkg.ContainerLogsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logman.Error("Container logs failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return
 	}
 
-	ctx := c.Request.Context()
-
-	tailStr := req.Tail
-	if tailStr == "" {
-		tailStr = "100"
-	}
-
-	options := types.ContainerLogsOptions{
-		ShowStdout: true, ShowStderr: true,
-		Tail: tailStr, Follow: false, Timestamps: true,
-	}
-
-	reader, err := h.dockerClient.ContainerLogs(ctx, req.ID, options)
+	logs, err := h.service.GetContainerLogs(c.Request.Context(), req.ID, req.Tail)
 	if err != nil {
-		logman.Error("Get container logs failed", "id", req.ID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "获取日志失败: "+err.Error())
 		return
 	}
-	defer reader.Close()
 
-	data, err := io.ReadAll(reader)
+	helper.RespondSuccess(c, "Container logs retrieved", gin.H{"id": req.ID, "logs": logs})
+}
+
+// ContainerExec 容器终端 WebSocket 处理
+func (h *DockerHandler) ContainerExec(c *gin.Context) {
+	conn, err := helper.WsUpgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		logman.Error("Read container logs failed", "id", req.ID, "error", err)
-		helper.RespondError(c, http.StatusInternalServerError, "读取日志失败")
+		logman.Error("WebSocket upgrade failed", "error", err)
+		helper.RespondError(c, http.StatusInternalServerError, "WebSocket 升级失败")
+		return
+	}
+	defer conn.Close()
+
+	containerID := c.Query("id")
+	shell := c.DefaultQuery("shell", "/bin/sh")
+
+	if containerID == "" {
+		h.sendWsMessage(conn, "[错误: 缺少容器ID]\r\n")
 		return
 	}
 
-	helper.RespondSuccess(c, "Container logs retrieved", gin.H{"id": req.ID, "logs": helper.ParseDockerLogs(data)})
+	h.service.ContainerExec(conn, containerID, shell)
 }

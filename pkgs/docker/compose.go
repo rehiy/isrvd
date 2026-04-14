@@ -7,14 +7,12 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
-
-	"isrvd/server/config"
 )
 
-// autoCreateComposeFile 根据容器当前运行配置自动生成 compose 文件
-func (h *DockerHandler) autoCreateComposeFile(ctx context.Context, name string) (*composeFile, error) {
+// AutoCreateComposeFile 根据容器当前运行配置自动生成 compose 文件
+func (s *DockerService) AutoCreateComposeFile(ctx context.Context, name string) (*composeFile, error) {
 	// 通过容器名查找容器
-	containers, err := h.dockerClient.ContainerList(ctx, types.ContainerListOptions{All: true})
+	containers, err := s.client.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
 		return nil, fmt.Errorf("获取容器列表失败: %w", err)
 	}
@@ -36,21 +34,19 @@ func (h *DockerHandler) autoCreateComposeFile(ctx context.Context, name string) 
 	}
 
 	// 检查容器详细配置
-	inspect, err := h.dockerClient.ContainerInspect(ctx, containerID)
+	inspect, err := s.client.ContainerInspect(ctx, containerID)
 	if err != nil {
 		return nil, fmt.Errorf("检查容器配置失败: %w", err)
 	}
 
 	// 过滤掉镜像内置的默认环境变量，只保留用户自定义的
 	var filteredEnv []string
-	imageInspect, _, imgErr := h.dockerClient.ImageInspectWithRaw(ctx, inspect.Config.Image)
+	imageInspect, _, imgErr := s.client.ImageInspectWithRaw(ctx, inspect.Config.Image)
 	if imgErr == nil {
-		// 构建镜像默认环境变量的集合（完整 KEY=VALUE 匹配）
 		defaultEnvSet := make(map[string]bool, len(imageInspect.Config.Env))
 		for _, env := range imageInspect.Config.Env {
 			defaultEnvSet[env] = true
 		}
-		// 过滤：只保留不在镜像默认环境变量中的条目
 		for _, env := range inspect.Config.Env {
 			if strings.HasPrefix(env, "HOSTNAME=") {
 				continue
@@ -60,7 +56,6 @@ func (h *DockerHandler) autoCreateComposeFile(ctx context.Context, name string) 
 			}
 		}
 	} else {
-		// 如果无法检查镜像，则仅排除 HOSTNAME
 		for _, env := range inspect.Config.Env {
 			if strings.HasPrefix(env, "HOSTNAME=") {
 				continue
@@ -105,13 +100,11 @@ func (h *DockerHandler) autoCreateComposeFile(ctx context.Context, name string) 
 
 	// 处理 Labels：过滤掉 Docker 自动添加的内部标签
 	for k, v := range inspect.Config.Labels {
-		// 跳过 Docker 自动添加的标签
 		if strings.HasPrefix(k, "com.docker.") || strings.HasPrefix(k, "org.opencontainers.") {
 			continue
 		}
 		service.Labels[k] = v
 	}
-	// 如果过滤后没有标签，置为 nil 避免输出空 map
 	if len(service.Labels) == 0 {
 		service.Labels = nil
 	}
@@ -159,7 +152,6 @@ func (h *DockerHandler) autoCreateComposeFile(ctx context.Context, name string) 
 				}
 				service.Volumes = append(service.Volumes, bind)
 			} else if mount.Type == "volume" {
-				// 命名卷格式：volume_name:container_path
 				if mount.Name == "" {
 					continue
 				}
@@ -203,15 +195,15 @@ func (h *DockerHandler) autoCreateComposeFile(ctx context.Context, name string) 
 	}
 
 	// 创建 compose 文件
-	if err := createComposeFileOnDisk(config.Docker.ContainerRoot, name, service); err != nil {
+	if err := createComposeFileOnDisk(s.config.ContainerRoot, name, service); err != nil {
 		return nil, fmt.Errorf("自动创建 compose 文件失败: %w", err)
 	}
 
-	return readComposeFileFromDisk(config.Docker.ContainerRoot, name)
+	return readComposeFileFromDisk(s.config.ContainerRoot, name)
 }
 
-// createComposeFile 根据 ContainerCreateRequest 生成 compose 配置文件
-func (h *DockerHandler) createComposeFile(req ContainerCreateRequest) error {
+// CreateComposeFile 根据 ContainerCreateRequest 生成 compose 配置文件
+func (s *DockerService) CreateComposeFile(req ContainerCreateRequest) error {
 	service := composeService{
 		Image:         req.Image,
 		ContainerName: req.Name,
@@ -246,9 +238,8 @@ func (h *DockerHandler) createComposeFile(req ContainerCreateRequest) error {
 		service.Volumes = make([]string, 0, len(req.Volumes))
 		for _, vol := range req.Volumes {
 			hostPath := vol.HostPath
-			// 如果配置了容器数据根目录且 hostPath 是相对路径，则补全为容器专属目录
-			if config.Docker.ContainerRoot != "" && !filepath.IsAbs(hostPath) {
-				hostPath = filepath.Join(config.Docker.ContainerRoot, req.Name, hostPath)
+			if s.config.ContainerRoot != "" && !filepath.IsAbs(hostPath) {
+				hostPath = filepath.Join(s.config.ContainerRoot, req.Name, hostPath)
 			}
 			bind := hostPath + ":" + vol.ContainerPath
 			if vol.ReadOnly {
@@ -284,5 +275,62 @@ func (h *DockerHandler) createComposeFile(req ContainerCreateRequest) error {
 		service.CapDrop = req.CapDrop
 	}
 
-	return createComposeFileOnDisk(config.Docker.ContainerRoot, req.Name, service)
+	return createComposeFileOnDisk(s.config.ContainerRoot, req.Name, service)
+}
+
+// GetContainerConfig 获取容器配置（从 compose 文件读取）
+func (s *DockerService) GetContainerConfig(ctx context.Context, name string) (*ContainerConfigResponse, error) {
+	compose, err := readComposeFileFromDisk(s.config.ContainerRoot, name)
+	if err != nil {
+		// compose 文件不存在，尝试根据容器当前配置自动创建
+		compose, err = s.AutoCreateComposeFile(ctx, name)
+		if err != nil {
+			return nil, fmt.Errorf("容器配置未找到且无法自动生成: %w", err)
+		}
+	}
+
+	service, ok := compose.Services[name]
+	if !ok {
+		return nil, fmt.Errorf("配置文件中未找到该容器")
+	}
+
+	// 转换为前端需要的格式
+	volumes := parseVolumesToList(service.Volumes)
+
+	result := &ContainerConfigResponse{
+		Image:      service.Image,
+		Name:       name,
+		Env:        service.Environment,
+		Ports:      parsePortsToMap(service.Ports),
+		Volumes:    volumes,
+		Network:    service.NetworkMode,
+		Restart:    service.Restart,
+		Workdir:    service.WorkingDir,
+		User:       service.User,
+		Hostname:   service.Hostname,
+		Privileged: service.Privileged,
+		CapAdd:     service.CapAdd,
+		CapDrop:    service.CapDrop,
+	}
+
+	if service.Command != "" {
+		result.Cmd = strings.Fields(service.Command)
+	}
+
+	if service.Deploy != nil && service.Deploy.Resources != nil && service.Deploy.Resources.Limits != nil {
+		if service.Deploy.Resources.Limits.Memory != "" {
+			memStr := strings.TrimSuffix(service.Deploy.Resources.Limits.Memory, "M")
+			memStr = strings.TrimSuffix(memStr, "Mi")
+			if mem, err := parseInt(memStr); err == nil {
+				result.Memory = mem
+			}
+		}
+		if service.Deploy.Resources.Limits.Cpus != "" {
+			if cpus, err := parseFloat(service.Deploy.Resources.Limits.Cpus); err == nil {
+				result.Cpus = cpus
+			}
+		}
+	}
+
+	return result, nil
 }

@@ -1,4 +1,4 @@
-package service
+package archive
 
 import (
 	"archive/zip"
@@ -9,21 +9,14 @@ import (
 )
 
 // 归档服务
-type ZipService struct{}
+type Zipper struct{}
 
-// 归档服务实例
-var ZipInstance *ZipService
-
-// 创建归档服务实例
-func GetZipService() *ZipService {
-	if ZipInstance == nil {
-		ZipInstance = &ZipService{}
-	}
-	return ZipInstance
+func NewZipper() *Zipper {
+	return &Zipper{}
 }
 
 // 创建归档文件
-func (zs *ZipService) Zip(path string) error {
+func (zs *Zipper) Zip(path string) error {
 	srcPath := path
 	zipName := filepath.Base(srcPath) + ".zip"
 
@@ -71,7 +64,7 @@ func (zs *ZipService) Zip(path string) error {
 }
 
 // 解压归档文件
-func (zs *ZipService) Unzip(path string) error {
+func (zs *Zipper) Unzip(path string) error {
 	extractDir := filepath.Dir(path)
 	reader, err := zip.OpenReader(path)
 	if err != nil {

@@ -3,32 +3,17 @@ package docker
 import (
 	"context"
 	"io"
-	"net/http"
 
 	"github.com/docker/docker/api/types"
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"github.com/rehiy/pango/logman"
-
-	"isrvd/server/helper"
 )
 
-// ContainerExec 容器终端 WebSocket 处理
-func (h *DockerHandler) ContainerExec(c *gin.Context) {
-	containerID := c.Query("id")
-	if containerID == "" {
-		logman.Error("Container exec failed", "error", "container ID is required")
-		helper.RespondError(c, http.StatusBadRequest, "容器 ID 不能为空")
-		return
+// ContainerExec 容器终端 WebSocket 处理（业务逻辑层）
+func (s *DockerService) ContainerExec(conn *websocket.Conn, containerID, shell string) {
+	if shell == "" {
+		shell = "/bin/sh"
 	}
-
-	shell := c.DefaultQuery("shell", "/bin/sh")
-
-	conn, err := helper.WsUpgrader.Upgrade(c.Writer, c.Request, nil)
-	if err != nil {
-		logman.Error("WebSocket upgrade error", "error", err)
-		return
-	}
-	defer conn.Close()
 
 	ctx := context.Background()
 
@@ -41,22 +26,22 @@ func (h *DockerHandler) ContainerExec(c *gin.Context) {
 		Cmd:          []string{shell},
 	}
 
-	execResp, err := h.dockerClient.ContainerExecCreate(ctx, containerID, execConfig)
+	execResp, err := s.client.ContainerExecCreate(ctx, containerID, execConfig)
 	if err != nil {
-		h.sendWsMessage(conn, "[创建终端会话失败: "+err.Error()+"]\r\n")
+		sendWsMessage(conn, "[创建终端会话失败: "+err.Error()+"]\r\n")
 		return
 	}
 
 	// 连接到 exec 实例
 	attachConfig := types.ExecStartCheck{Tty: true}
-	hijackedResp, err := h.dockerClient.ContainerExecAttach(ctx, execResp.ID, attachConfig)
+	hijackedResp, err := s.client.ContainerExecAttach(ctx, execResp.ID, attachConfig)
 	if err != nil {
-		h.sendWsMessage(conn, "[连接终端失败: "+err.Error()+"]\r\n")
+		sendWsMessage(conn, "[连接终端失败: "+err.Error()+"]\r\n")
 		return
 	}
 	defer hijackedResp.Close()
 
-	h.sendWsMessage(conn, "[容器终端已连接]\r\n")
+	sendWsMessage(conn, "[容器终端已连接]\r\n")
 
 	// 转发容器输出到 WebSocket
 	done := make(chan struct{})
@@ -72,7 +57,7 @@ func (h *DockerHandler) ContainerExec(c *gin.Context) {
 				return
 			}
 			if n > 0 {
-				h.sendWsMessage(conn, string(buf[:n]))
+				sendWsMessage(conn, string(buf[:n]))
 			}
 		}
 	}()
@@ -89,4 +74,9 @@ func (h *DockerHandler) ContainerExec(c *gin.Context) {
 			return
 		}
 	}
+}
+
+// sendWsMessage 发送 WebSocket 消息
+func sendWsMessage(conn *websocket.Conn, msg string) {
+	conn.WriteMessage(websocket.TextMessage, []byte(msg))
 }

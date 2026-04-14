@@ -1,23 +1,19 @@
 package docker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"math"
-	"net/http"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/docker/docker/api/types"
-	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/logman"
 	"github.com/shirou/gopsutil/v3/cpu"
-
-	"isrvd/server/helper"
-
 )
 
 // CPU 主频缓存（不频繁变化，5分钟刷新一次）
@@ -32,14 +28,11 @@ func getCpuFreq() float64 {
 	cpuFreqMu.Lock()
 	defer cpuFreqMu.Unlock()
 
-	// 5分钟内使用缓存
 	if time.Since(cpuFreqLastUpdate) < 5*time.Minute && cpuFreqCache > 0 {
 		return cpuFreqCache
 	}
 
 	cpuFreqCache = 0
-
-	// 使用 gopsutil 获取 CPU 主频
 	cpuInfos, err := cpu.Info()
 	if err == nil && len(cpuInfos) > 0 {
 		cpuFreqCache = cpuInfos[0].Mhz
@@ -49,43 +42,29 @@ func getCpuFreq() float64 {
 	return cpuFreqCache
 }
 
-// ContainerStats 获取容器统计信息
-func (h *DockerHandler) ContainerStats(c *gin.Context) {
-	id := c.Query("id")
-	if id == "" {
-		logman.Error("Container stats failed", "error", "container ID is empty")
-		helper.RespondError(c, http.StatusBadRequest, "容器 ID 不能为空")
-		return
-	}
-
-	ctx := c.Request.Context()
-
-	stats, err := h.dockerClient.ContainerStats(ctx, id, false)
+// GetContainerStats 获取容器统计信息
+func (s *DockerService) GetContainerStats(ctx context.Context, id string) (*ContainerStatsResponse, error) {
+	stats, err := s.client.ContainerStats(ctx, id, false)
 	if err != nil {
 		logman.Error("Get container stats failed", "id", id, "error", err)
-		helper.RespondError(c, http.StatusInternalServerError, "获取容器统计信息失败: "+err.Error())
-		return
+		return nil, err
 	}
 	defer stats.Body.Close()
 
 	data, err := io.ReadAll(stats.Body)
 	if err != nil {
 		logman.Error("Read container stats failed", "id", id, "error", err)
-		helper.RespondError(c, http.StatusInternalServerError, "读取统计信息失败")
-		return
+		return nil, err
 	}
 
 	var v types.StatsJSON
 	if err := json.Unmarshal(data, &v); err != nil {
 		logman.Error("Parse container stats failed", "id", id, "error", err)
-		helper.RespondError(c, http.StatusInternalServerError, "解析统计信息失败")
-		return
+		return nil, err
 	}
 
-	// 从 Docker Stats API 获取 CPU 核心数
 	cpuCores := len(v.CPUStats.CPUUsage.PercpuUsage)
 
-	// 计算 CPU 使用率
 	cpuDelta := float64(v.CPUStats.CPUUsage.TotalUsage - v.PreCPUStats.CPUUsage.TotalUsage)
 	systemDelta := float64(v.CPUStats.SystemUsage - v.PreCPUStats.SystemUsage)
 	var cpuPercent float64
@@ -93,14 +72,12 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 		cpuPercent = (cpuDelta / systemDelta) * float64(cpuCores) * 100.0
 	}
 
-	// 计算内存使用率
 	memoryUsage := v.MemoryStats.Usage - v.MemoryStats.Stats["cache"]
 	var memoryPercent float64
 	if v.MemoryStats.Limit > 0 {
 		memoryPercent = float64(memoryUsage) / float64(v.MemoryStats.Limit) * 100.0
 	}
 
-	// 计算网络 I/O
 	var networkRx, networkTx int64
 	networkDetail := make(map[string]*NetDetail)
 	for name, netStats := range v.Networks {
@@ -118,16 +95,14 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 		}
 	}
 
-	// CPU 节流数据
 	cpuThrottled := &CpuThrottledData{
 		Periods:          v.CPUStats.ThrottlingData.Periods,
 		ThrottledPeriods: v.CPUStats.ThrottlingData.ThrottledPeriods,
 		ThrottledTime:    v.CPUStats.ThrottlingData.ThrottledTime,
 	}
 
-	// 获取进程列表
 	var processList *ContainerProcessList
-	topResult, err := h.dockerClient.ContainerTop(ctx, id, nil)
+	topResult, err := s.client.ContainerTop(ctx, id, nil)
 	if err == nil {
 		processList = &ContainerProcessList{
 			Titles:    topResult.Titles,
@@ -135,7 +110,6 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 		}
 	}
 
-	// 计算磁盘 I/O
 	var blockRead, blockWrite int64
 	blockDetailMap := make(map[string]*BlockDetail)
 	for _, blkStats := range v.BlkioStats.IoServiceBytesRecursive {
@@ -145,7 +119,6 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 		case "write":
 			blockWrite += int64(blkStats.Value)
 		}
-		// 按设备聚合详情
 		if blkStats.Op == "read" || blkStats.Op == "write" {
 			key := fmt.Sprintf("%d:%d", blkStats.Major, blkStats.Minor)
 			if _, ok := blockDetailMap[key]; !ok {
@@ -161,12 +134,10 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 			}
 		}
 	}
-	// 转换为有序列表
 	var blockDetail []*BlockDetail
 	for _, detail := range blockDetailMap {
 		blockDetail = append(blockDetail, detail)
 	}
-	// 按主设备号排序
 	sort.Slice(blockDetail, func(i, j int) bool {
 		if blockDetail[i].Major != blockDetail[j].Major {
 			return blockDetail[i].Major < blockDetail[j].Major
@@ -179,10 +150,9 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 		name = strings.TrimPrefix(v.Name, "/")
 	}
 
-	// 获取 CPU 主频（使用缓存）
 	cpuFreq := getCpuFreq()
 
-	result := ContainerStatsResponse{
+	result := &ContainerStatsResponse{
 		ID:            id,
 		Name:          name,
 		CPUPercent:    math.Round(cpuPercent*100) / 100,
@@ -203,5 +173,5 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 		ProcessList:   processList,
 	}
 
-	helper.RespondSuccess(c, "Container stats retrieved successfully", result)
+	return result, nil
 }

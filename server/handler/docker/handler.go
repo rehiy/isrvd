@@ -3,89 +3,65 @@ package docker
 import (
 	"net/http"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/volume"
-	"github.com/docker/docker/client"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/rehiy/pango/logman"
 
+	dockerPkg "isrvd/pkgs/docker"
 	"isrvd/server/config"
 	"isrvd/server/helper"
-
 )
 
-// DockerHandler Docker处理器
+// DockerHandler Docker 处理器
 type DockerHandler struct {
-	dockerClient *client.Client
+	service *dockerPkg.DockerService
 }
 
-// NewDockerHandler 创建Docker处理器
+// NewDockerHandler 创建 Docker 处理器
 func NewDockerHandler() (*DockerHandler, error) {
-	opts := []client.Opt{client.WithAPIVersionNegotiation()}
-	if config.Docker.Host != "" {
-		opts = append(opts, client.WithHost(config.Docker.Host))
-	} else {
-		opts = append(opts, client.FromEnv)
+	// 将 server/config 转换为 pkgs 层的配置类型
+	var registries []*dockerPkg.RegistryConfig
+	for _, r := range config.Docker.Registries {
+		registries = append(registries, &dockerPkg.RegistryConfig{
+			Name:     r.Name,
+			URL:      r.URL,
+			Username: r.Username,
+			Password: r.Password,
+		})
 	}
-	cli, err := client.NewClientWithOpts(opts...)
+
+	cfg := &dockerPkg.DockerConfig{
+		Host:          config.Docker.Host,
+		ContainerRoot: config.Docker.ContainerRoot,
+		Registries:    registries,
+	}
+
+	svc, err := dockerPkg.NewDockerService(cfg)
 	if err != nil {
 		return nil, err
 	}
-	return &DockerHandler{dockerClient: cli}, nil
+	return &DockerHandler{service: svc}, nil
 }
 
-// GetClient 获取Docker客户端
-func (h *DockerHandler) GetClient() *client.Client {
-	return h.dockerClient
+// GetClient 获取 Docker 服务（供 Swarm Handler 复用）
+func (h *DockerHandler) GetClient() *dockerPkg.DockerService {
+	return h.service
 }
 
-// Info 获取Docker概览信息
+// Info 获取 Docker 概览信息
 func (h *DockerHandler) Info(c *gin.Context) {
-	ctx := c.Request.Context()
-
-	info, err := h.dockerClient.Info(ctx)
+	info, err := h.service.GetInfo(c.Request.Context())
 	if err != nil {
-		logman.Error("Docker info failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "连接 Docker 失败: "+err.Error())
 		return
 	}
-	_ = info
 
-	containers, err := h.dockerClient.ContainerList(ctx, types.ContainerListOptions{All: true})
-	if err != nil {
-		logman.Error("Container list failed", "error", err)
-		helper.RespondError(c, http.StatusInternalServerError, "获取容器列表失败")
-		return
-	}
-
-	var running, stopped, paused int64
-	for _, ct := range containers {
-		switch ct.State {
-		case "running":
-			running++
-		case "paused":
-			paused++
-		default:
-			stopped++
-		}
-	}
-
-	images, _ := h.dockerClient.ImageList(ctx, types.ImageListOptions{All: true})
-	volList, _ := h.dockerClient.VolumeList(ctx, volume.ListOptions{})
-	networks, _ := h.dockerClient.NetworkList(ctx, types.NetworkListOptions{})
-
-	helper.RespondSuccess(c, "Docker info retrieved", DockerInfo{
-		ContainersRunning: running,
-		ContainersStopped: stopped,
-		ContainersPaused:  paused,
-		ImagesTotal:       int64(len(images)),
-		VolumesTotal:      int64(len(volList.Volumes)),
-		NetworksTotal:     int64(len(networks)),
-	})
+	helper.RespondSuccess(c, "Docker info retrieved", info)
 }
 
 // sendWsMessage 发送消息到 WebSocket
 func (h *DockerHandler) sendWsMessage(conn *websocket.Conn, msg string) {
-	conn.WriteMessage(websocket.TextMessage, []byte(msg))
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
+		logman.Error("WebSocket write error", "error", err)
+	}
 }

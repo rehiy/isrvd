@@ -4,9 +4,9 @@ package swarm
 type SwarmNode struct {
 	ID            string `json:"id"`
 	Hostname      string `json:"hostname"`
-	Role          string `json:"role"`         // manager / worker
-	Availability  string `json:"availability"` // active / pause / drain
-	State         string `json:"state"`        // ready / down / unknown
+	Role          string `json:"role"`
+	Availability  string `json:"availability"`
+	State         string `json:"state"`
 	Addr          string `json:"addr"`
 	EngineVersion string `json:"engineVersion"`
 	Leader        bool   `json:"leader"`
@@ -17,7 +17,7 @@ type SwarmService struct {
 	ID           string      `json:"id"`
 	Name         string      `json:"name"`
 	Image        string      `json:"image"`
-	Mode         string      `json:"mode"` // replicated / global
+	Mode         string      `json:"mode"`
 	Replicas     *uint64     `json:"replicas"`
 	RunningTasks int         `json:"runningTasks"`
 	Ports        interface{} `json:"ports"`
@@ -43,8 +43,8 @@ type SwarmTask struct {
 type SwarmCreateServiceRequest struct {
 	Name     string            `json:"name" binding:"required"`
 	Image    string            `json:"image" binding:"required"`
-	Mode     string            `json:"mode"`     // replicated | global
-	Replicas int               `json:"replicas"` // mode=replicated 时有效
+	Mode     string            `json:"mode"`
+	Replicas int               `json:"replicas"`
 	Env      []string          `json:"env"`
 	Args     []string          `json:"args"`
 	Networks []string          `json:"networks"`
@@ -56,12 +56,12 @@ type SwarmCreateServiceRequest struct {
 type SwarmPortConfig struct {
 	Published int    `json:"published"`
 	Target    int    `json:"target"`
-	Protocol  string `json:"protocol"` // tcp | udp
+	Protocol  string `json:"protocol"`
 }
 
 // SwarmMount Swarm 挂载配置
 type SwarmMount struct {
-	Type   string `json:"type"` // bind | volume
+	Type   string `json:"type"`
 	Source string `json:"source"`
 	Target string `json:"target"`
 }

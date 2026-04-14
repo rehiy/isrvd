@@ -59,7 +59,7 @@ func (app *App) setupRouter() {
 	}
 
 	// 注册 Swarm Handler（复用 Docker client）
-	swh := swarmHandler.NewSwarmHandler(dh.GetClient())
+	swh := swarmHandler.NewSwarmHandler(dh.GetClient().GetClient())
 
 	// 注册 Apisix Handler（可选，配置了才启用）
 	apih, err := apisixHandler.NewHandler()
@@ -142,9 +142,9 @@ func (app *App) setupRouter() {
 				docker.GET("/images", dh.ListImages)
 				docker.POST("/image/action", dh.ImageAction)
 				docker.POST("/image/pull", dh.PullImage)
-				docker.POST("/image/tag", dh.ImageTag)
-				docker.GET("/image/search", dh.ImageSearch)
-				docker.POST("/image/build", dh.ImageBuild)
+				docker.POST("/image/tag", dh.TagImage)
+				docker.GET("/image/search", dh.SearchImages)
+				docker.POST("/image/build", dh.BuildImage)
 
 				// 网络管理
 				docker.GET("/networks", dh.ListNetworks)

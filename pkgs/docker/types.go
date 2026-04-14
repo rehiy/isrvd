@@ -1,5 +1,20 @@
 package docker
 
+// DockerConfig Docker 配置（由外部注入，解除对 server/config 的依赖）
+type DockerConfig struct {
+	Host          string            // Docker 连接地址
+	ContainerRoot string            // 容器数据根目录
+	Registries    []*RegistryConfig // 镜像仓库配置列表
+}
+
+// RegistryConfig 镜像仓库配置
+type RegistryConfig struct {
+	Name     string // 仓库名称
+	URL      string // 仓库地址
+	Username string // 用户名
+	Password string // 密码
+}
+
 // ContainerInfo Docker 容器信息
 type ContainerInfo struct {
 	ID      string            `json:"id"`
@@ -53,7 +68,7 @@ type DockerInfo struct {
 // ContainerActionRequest 容器操作请求
 type ContainerActionRequest struct {
 	ID     string `json:"id" binding:"required"`
-	Action string `json:"action" binding:"required"` // start, stop, restart, remove, pause, unpause
+	Action string `json:"action" binding:"required"`
 }
 
 // ContainerCreateRequest 创建容器请求
@@ -62,74 +77,152 @@ type ContainerCreateRequest struct {
 	Name       string            `json:"name"`
 	Cmd        []string          `json:"cmd"`
 	Env        []string          `json:"env"`
-	Ports      map[string]string `json:"ports"`      // e.g., {"8080": "80"}
-	Volumes    []VolumeMapping   `json:"volumes"`    // 目录映射
-	Network    string            `json:"network"`    // 网络模式: bridge, host, none
-	Restart    string            `json:"restart"`    // 重启策略: no, always, on-failure, unless-stopped
-	Memory     int64             `json:"memory"`     // 内存限制 (MB)
-	Cpus       float64           `json:"cpus"`       // CPU 限制 (核心数)
-	Workdir    string            `json:"workdir"`    // 工作目录
-	User       string            `json:"user"`       // 用户
-	Hostname   string            `json:"hostname"`   // 主机名
-	Privileged bool              `json:"privileged"` // 特权模式
-	CapAdd     []string          `json:"capAdd"`     // 添加 Linux 能力
-	CapDrop    []string          `json:"capDrop"`    // 移除 Linux 能力
+	Ports      map[string]string `json:"ports"`
+	Volumes    []VolumeMapping   `json:"volumes"`
+	Network    string            `json:"network"`
+	Restart    string            `json:"restart"`
+	Memory     int64             `json:"memory"`
+	Cpus       float64           `json:"cpus"`
+	Workdir    string            `json:"workdir"`
+	User       string            `json:"user"`
+	Hostname   string            `json:"hostname"`
+	Privileged bool              `json:"privileged"`
+	CapAdd     []string          `json:"capAdd"`
+	CapDrop    []string          `json:"capDrop"`
+}
+
+// ContainerUpdateRequest 容器配置更新请求
+type ContainerUpdateRequest struct {
+	Name       string            `json:"name" binding:"required"`
+	Image      string            `json:"image" binding:"required"`
+	Cmd        []string          `json:"cmd"`
+	Env        []string          `json:"env"`
+	Ports      map[string]string `json:"ports"`
+	Volumes    []VolumeMapping   `json:"volumes"`
+	Network    string            `json:"network"`
+	Restart    string            `json:"restart"`
+	Memory     int64             `json:"memory"`
+	Cpus       float64           `json:"cpus"`
+	Workdir    string            `json:"workdir"`
+	User       string            `json:"user"`
+	Hostname   string            `json:"hostname"`
+	Privileged bool              `json:"privileged"`
+	CapAdd     []string          `json:"capAdd"`
+	CapDrop    []string          `json:"capDrop"`
 }
 
 // VolumeMapping 目录映射
 type VolumeMapping struct {
-	HostPath      string `json:"hostPath"`      // 主机路径
-	ContainerPath string `json:"containerPath"` // 容器路径
-	ReadOnly      bool   `json:"readOnly"`      // 只读
+	HostPath      string `json:"hostPath"`
+	ContainerPath string `json:"containerPath"`
+	ReadOnly      bool   `json:"readOnly"`
 }
 
 // ImageActionRequest 镜像操作请求
 type ImageActionRequest struct {
 	ID     string `json:"id" binding:"required"`
-	Action string `json:"action" binding:"required"` // remove
+	Action string `json:"action" binding:"required"`
 }
 
 // ImagePullRequest 拉取镜像请求
 type ImagePullRequest struct {
 	Image string `json:"image" binding:"required"`
-	Tag   string `json:"tag"` // 默认 latest
+	Tag   string `json:"tag"`
+}
+
+// ImageTagRequest 镜像标签请求
+type ImageTagRequest struct {
+	ID      string `json:"id" binding:"required"`
+	RepoTag string `json:"repoTag" binding:"required"`
+}
+
+// ImageSearchResult 镜像搜索结果
+type ImageSearchResult struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	IsOfficial  bool   `json:"isOfficial"`
+	IsAutomated bool   `json:"isAutomated"`
+	StarCount   int    `json:"starCount"`
+}
+
+// ImageBuildRequest 镜像构建请求
+type ImageBuildRequest struct {
+	Dockerfile string `json:"dockerfile" binding:"required"`
+	Tag        string `json:"tag"`
 }
 
 // NetworkActionRequest 网络操作请求
 type NetworkActionRequest struct {
 	ID     string `json:"id" binding:"required"`
-	Action string `json:"action" binding:"required"` // remove
+	Action string `json:"action" binding:"required"`
 }
 
 // NetworkCreateRequest 创建网络请求
 type NetworkCreateRequest struct {
 	Name   string `json:"name" binding:"required"`
-	Driver string `json:"driver"` // 默认 bridge
+	Driver string `json:"driver"`
 	Subnet string `json:"subnet"`
+}
+
+// NetworkContainerInfo 网络中的容器信息
+type NetworkContainerInfo struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	IPv4       string `json:"ipv4"`
+	IPv6       string `json:"ipv6"`
+	MacAddress string `json:"macAddress"`
+}
+
+// NetworkInspectResponse 网络详情响应
+type NetworkInspectResponse struct {
+	ID         string                  `json:"id"`
+	Name       string                  `json:"name"`
+	Driver     string                  `json:"driver"`
+	Scope      string                  `json:"scope"`
+	Subnet     string                  `json:"subnet"`
+	Gateway    string                  `json:"gateway"`
+	Internal   bool                    `json:"internal"`
+	EnableIPv6 bool                    `json:"enableIPv6"`
+	Containers []*NetworkContainerInfo `json:"containers"`
 }
 
 // VolumeActionRequest 卷操作请求
 type VolumeActionRequest struct {
 	Name   string `json:"name" binding:"required"`
-	Action string `json:"action" binding:"required"` // remove
+	Action string `json:"action" binding:"required"`
 }
 
 // VolumeCreateRequest 创建卷请求
 type VolumeCreateRequest struct {
 	Name   string `json:"name" binding:"required"`
-	Driver string `json:"driver"` // 默认 local
+	Driver string `json:"driver"`
+}
+
+// VolumeUsedByContainer 使用卷的容器信息
+type VolumeUsedByContainer struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	MountPath string `json:"mountPath"`
+	ReadOnly  bool   `json:"readOnly"`
+}
+
+// VolumeInspectResponse 数据卷详情响应
+type VolumeInspectResponse struct {
+	Name       string                   `json:"name"`
+	Driver     string                   `json:"driver"`
+	Mountpoint string                   `json:"mountpoint"`
+	CreatedAt  string                   `json:"createdAt"`
+	Scope      string                   `json:"scope"`
+	Size       int64                    `json:"size"`
+	RefCount   int64                    `json:"refCount"`
+	UsedBy     []*VolumeUsedByContainer `json:"usedBy"`
 }
 
 // ContainerLogsRequest 日志请求
 type ContainerLogsRequest struct {
 	ID     string `json:"id" binding:"required"`
-	Tail   string `json:"tail"`   // 默认 "100"
-	Follow bool   `json:"follow"` // 是否跟随
-}
-
-// ContainerStatsRequest 容器统计信息请求
-type ContainerStatsRequest struct {
-	ID string `json:"id" binding:"required"`
+	Tail   string `json:"tail"`
+	Follow bool   `json:"follow"`
 }
 
 // ContainerStatsResponse 容器统计信息响应
@@ -187,74 +280,6 @@ type ContainerProcessList struct {
 	Processes [][]string `json:"processes"`
 }
 
-// NetworkContainerInfo 网络中的容器信息
-type NetworkContainerInfo struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	IPv4       string `json:"ipv4"`
-	IPv6       string `json:"ipv6"`
-	MacAddress string `json:"macAddress"`
-}
-
-// NetworkInspectResponse 网络详情响应
-type NetworkInspectResponse struct {
-	ID         string                  `json:"id"`
-	Name       string                  `json:"name"`
-	Driver     string                  `json:"driver"`
-	Scope      string                  `json:"scope"`
-	Subnet     string                  `json:"subnet"`
-	Gateway    string                  `json:"gateway"`
-	Internal   bool                    `json:"internal"`
-	EnableIPv6 bool                    `json:"enableIPv6"`
-	Containers []*NetworkContainerInfo `json:"containers"`
-}
-
-// VolumeUsedByContainer 使用卷的容器信息
-type VolumeUsedByContainer struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	MountPath string `json:"mountPath"`
-	ReadOnly  bool   `json:"readOnly"`
-}
-
-// VolumeInspectResponse 数据卷详情响应
-type VolumeInspectResponse struct {
-	Name       string                   `json:"name"`
-	Driver     string                   `json:"driver"`
-	Mountpoint string                   `json:"mountpoint"`
-	CreatedAt  string                   `json:"createdAt"`
-	Scope      string                   `json:"scope"`
-	Size       int64                    `json:"size"`
-	RefCount   int64                    `json:"refCount"`
-	UsedBy     []*VolumeUsedByContainer `json:"usedBy"`
-}
-
-// ImageTagRequest 镜像标签请求
-type ImageTagRequest struct {
-	ID      string `json:"id" binding:"required"`
-	RepoTag string `json:"repoTag" binding:"required"`
-}
-
-// ImageSearchRequest 镜像搜索请求
-type ImageSearchRequest struct {
-	Term string `json:"term" binding:"required"`
-}
-
-// ImageSearchResult 镜像搜索结果
-type ImageSearchResult struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	IsOfficial  bool   `json:"isOfficial"`
-	IsAutomated bool   `json:"isAutomated"`
-	StarCount   int    `json:"starCount"`
-}
-
-// ImageBuildRequest 镜像构建请求
-type ImageBuildRequest struct {
-	Dockerfile string `json:"dockerfile" binding:"required"`
-	Tag        string `json:"tag"`
-}
-
 // ContainerConfigResponse 容器配置响应（从 compose 文件读取）
 type ContainerConfigResponse struct {
 	Image      string            `json:"image"`
@@ -296,22 +321,45 @@ type ImagePushRequest struct {
 	Namespace   string `json:"namespace"`
 }
 
-// ContainerUpdateRequest 容器配置更新请求
-type ContainerUpdateRequest struct {
-	Name       string            `json:"name" binding:"required"`
-	Image      string            `json:"image" binding:"required"`
-	Cmd        []string          `json:"cmd"`
-	Env        []string          `json:"env"`
-	Ports      map[string]string `json:"ports"`
-	Volumes    []VolumeMapping   `json:"volumes"`
-	Network    string            `json:"network"`
-	Restart    string            `json:"restart"`
-	Memory     int64             `json:"memory"`
-	Cpus       float64           `json:"cpus"`
-	Workdir    string            `json:"workdir"`
-	User       string            `json:"user"`
-	Hostname   string            `json:"hostname"`
-	Privileged bool              `json:"privileged"`
-	CapAdd     []string          `json:"capAdd"`
-	CapDrop    []string          `json:"capDrop"`
+// composeService 定义 docker-compose service 配置（包内私有）
+type composeService struct {
+	Image         string            `yaml:"image"`
+	ContainerName string            `yaml:"container_name,omitempty"`
+	Environment   []string          `yaml:"environment,omitempty"`
+	Ports         []string          `yaml:"ports,omitempty"`
+	Volumes       []string          `yaml:"volumes,omitempty"`
+	NetworkMode   string            `yaml:"network_mode,omitempty"`
+	Restart       string            `yaml:"restart,omitempty"`
+	Command       string            `yaml:"command,omitempty"`
+	Entrypoint    string            `yaml:"entrypoint,omitempty"`
+	WorkingDir    string            `yaml:"working_dir,omitempty"`
+	User          string            `yaml:"user,omitempty"`
+	Hostname      string            `yaml:"hostname,omitempty"`
+	Privileged    bool              `yaml:"privileged,omitempty"`
+	CapAdd        []string          `yaml:"cap_add,omitempty"`
+	CapDrop       []string          `yaml:"cap_drop,omitempty"`
+	Deploy        *composeDeploy    `yaml:"deploy,omitempty"`
+	Labels        map[string]string `yaml:"labels,omitempty"`
+}
+
+// composeDeploy 定义资源限制配置
+type composeDeploy struct {
+	Resources *composeResources `yaml:"resources,omitempty"`
+}
+
+// composeResources 定义资源配置
+type composeResources struct {
+	Limits *composeLimit `yaml:"limits,omitempty"`
+}
+
+// composeLimit 定义资源限制
+type composeLimit struct {
+	Cpus   string `yaml:"cpus,omitempty"`
+	Memory string `yaml:"memory,omitempty"`
+}
+
+// composeFile 定义 docker-compose 文件结构
+type composeFile struct {
+	Version  string                    `yaml:"version"`
+	Services map[string]composeService `yaml:"services"`
 }

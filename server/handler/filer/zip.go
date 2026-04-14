@@ -6,19 +6,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/logman"
 
+	"isrvd/pkgs/archive"
 	"isrvd/server/helper"
-	"isrvd/server/service"
 )
 
 // ZipHandler zip处理器
 type ZipHandler struct {
-	zipService *service.ZipService
+	zipper *archive.Zipper
 }
 
 // NewZipHandler 创建zip处理器
 func NewZipHandler() *ZipHandler {
 	return &ZipHandler{
-		zipService: service.GetZipService(),
+		zipper: archive.NewZipper(),
 	}
 }
 
@@ -32,7 +32,7 @@ func (h *ZipHandler) Zip(c *gin.Context) {
 	}
 
 	abs := getAbsolutePath(c, req.Path)
-	err := h.zipService.Zip(abs)
+	err := h.zipper.Zip(abs)
 	if err != nil {
 		logman.Error("Create zip failed", "path", abs, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "无法创建压缩文件")
@@ -53,7 +53,7 @@ func (h *ZipHandler) Unzip(c *gin.Context) {
 	}
 
 	abs := getAbsolutePath(c, req.Path)
-	err := h.zipService.Unzip(abs)
+	err := h.zipper.Unzip(abs)
 	if err != nil {
 		logman.Error("Unzip failed", "path", abs, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "无法解压文件")
