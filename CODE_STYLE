@@ -1,0 +1,367 @@
+# isrvd 代码规范
+
+## 整体要求
+
+- 确保每个模块或包都符合高内聚、低耦合设计特性
+- 确保代码中变量命名、方法签名、实现逻辑等一致性
+- 所有代码提交必须通过 lint 检查，不引入新的 warning
+
+---
+
+## 前端规范（webview/src）
+
+### 卡片结构
+
+所有列表页使用 `.card mb-4` 包裹，标题栏统一使用：
+
+```
+bg-slate-50 border-b border-slate-200 rounded-t-2xl px-6 py-3 flex items-center justify-between
+```
+
+### 标题图标
+
+```
+w-9 h-9 rounded-lg bg-{模块主色}-500 flex items-center justify-center
+```
+
+图标用 `text-white`。
+
+### 主操作按钮（创建/拉取等）
+
+颜色必须与本页标题图标的模块主色保持一致：
+
+```
+px-3 py-1.5 rounded-lg bg-{模块主色}-500 hover:bg-{模块主色}-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors
+```
+
+### 刷新按钮（统一）
+
+```
+px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors
+```
+
+### 表格
+
+| 区域 | 样式 |
+|------|------|
+| thead | `bg-slate-50 border-b border-slate-200` |
+| 表头文字 | `text-xs font-semibold text-slate-600 uppercase tracking-wider` |
+| tbody | `bg-white divide-y divide-slate-100` |
+| 行 hover | `hover:bg-slate-50 transition-colors` |
+
+### Loading 状态
+
+```html
+<div class="flex flex-col items-center justify-center py-20">
+  <div class="w-12 h-12 spinner mb-3"></div>
+  <p class="text-slate-500">加载中...</p>
+</div>
+```
+
+### 空状态
+
+```html
+<div class="flex flex-col items-center justify-center py-20">
+  <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+    <i class="fas fa-{icon} text-4xl text-slate-300"></i>
+  </div>
+  <p class="text-slate-600 font-medium mb-1">暂无数据</p>
+</div>
+```
+
+### 操作按钮语义色
+
+| 操作 | 样式 |
+|------|------|
+| 查看日志/详情 | `text-slate-600 hover:bg-slate-100` |
+| 重启/重部署 | `text-blue-600 hover:bg-blue-50` |
+| 启动 | `text-emerald-600 hover:bg-emerald-50` |
+| 停止/警告 | `text-amber-600 hover:bg-amber-50` |
+| 删除 | `text-red-600 hover:bg-red-50` |
+
+### confirm 弹窗
+
+icon 参数只传图标名（不含 `fas` 前缀），如 `icon: 'fa-trash'`，颜色用语义词如 `iconColor: 'red'`。
+
+### 导航折叠状态
+
+侧边栏折叠时，Docker 和 Swarm 的图标链接统一跳转到 `/overview`（整体概览页），不跳转各自的子路由。
+
+### 路由结构
+
+- `/overview`：整体概览（引入 docker/overview 和 swarm/overview 组件）
+- docker/overview 和 swarm/overview 仅作为组件使用，不提供独立路由入口和菜单项
+
+### 工具函数
+
+通用工具函数统一放在 `webview/src/helper/utils.js` 中：
+
+- 文件大小格式化统一使用 `formatFileSize`
+- Apisix upstream 节点解析统一使用 `parseUpstreamNode`
+- Apisix 路由 payload 构建统一使用 `buildRoutePayload`
+- 时间格式化统一使用 `formatTime`
+- 文件下载统一使用 `downloadFile`
+- 文件图标获取统一使用 `getFileIcon`
+- 可编辑文件判断统一使用 `isEditableFile`
+- 禁止在页面组件中重复定义与 utils.js 功能相同的函数
+
+### 终端组件
+
+终端（Shell/Container Exec）相关功能统一放在 `webview/src/helper/` 下：
+
+- 系统终端统一使用 `shell.js` 中的 `create` 和 `destroy`
+- 容器终端统一使用 `container-exec.js` 中的 `create` 和 `destroy`
+- 终端配置统一：`{ theme: { background: '#222' }, fontSize: 15, cursorBlink: true }`
+- WebSocket 协议：根据页面协议自动选择 `ws://` 或 `wss://`
+- 终端适配统一使用 `@xterm/addon-fit`，窗口 resize 时自动 fit
+- 禁止在页面组件中直接创建 Terminal 实例或 WebSocket 连接
+
+---
+
+## 后端规范（server/）
+
+### HTTP 状态码
+
+使用 Go 标准库常量，禁止硬编码数字：
+
+```go
+// ✅ 正确
+helper.RespondSuccess(c, "登录成功", resp)
+helper.RespondError(c, http.StatusUnauthorized, "未提供认证令牌")
+helper.RespondError(c, http.StatusForbidden, "权限不足")
+helper.RespondError(c, http.StatusBadRequest, "参数错误")
+helper.RespondError(c, http.StatusInternalServerError, "内部错误")
+helper.RespondError(c, http.StatusNotFound, "资源不存在")
+
+// ❌ 错误
+c.JSON(401, gin.H{"error": "未提供认证令牌"})
+c.JSON(403, gin.H{"error": "权限不足"})
+```
+
+### 成功响应
+
+统一使用 `helper.RespondSuccess` 返回成功，避免在 handler 中直接拼接 `gin.H`：
+
+```go
+// ✅ 正确
+helper.RespondSuccess(c, "操作成功", nil)
+helper.RespondSuccess(c, "创建成功", gin.H{"id": "123"})
+
+// ❌ 错误
+c.JSON(http.StatusOK, gin.H{"success": true, "message": "操作成功"})
+```
+
+### 错误响应
+
+统一使用 `helper.RespondError` 返回错误，避免在 handler 中直接拼接 `gin.H`：
+
+```go
+// ✅ 正确
+helper.RespondError(c, http.StatusBadRequest, "参数错误")
+
+// ❌ 错误
+c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+```
+
+### 参数校验
+
+使用 Gin 的 `ShouldBindJSON`（或 `ShouldBindQuery`、`ShouldBindURI`）进行请求参数绑定和校验：
+
+```go
+// ✅ 正确 — 使用 ShouldBindJSON 并校验错误
+var req model.ContainerActionRequest
+if err := c.ShouldBindJSON(&req); err != nil {
+    helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
+    return
+}
+
+// ❌ 错误 — 手动解析 JSON
+var body map[string]any
+if err := c.BindJSON(&body); err != nil { ... }
+id := body["id"].(string) // 不安全的类型断言
+```
+
+请求模型统一在 `server/model/` 包中定义，绑定标签使用 `binding:"required"` 等验证规则。
+
+### WebSocket 升级器
+
+全局统一使用 `helper.WsUpgrader`，禁止在 handler 中定义本地 upgrader：
+
+```go
+// ✅ 正确
+conn, err := helper.WsUpgrader.Upgrade(c.Writer, c.Request, nil)
+
+// ❌ 错误
+var upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
+conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+```
+
+### 类型定义
+
+数据模型统一在 `server/model/` 包中定义，禁止在其他包中重复定义相同结构体：
+
+```go
+// ✅ 正确 — model 包定义，其他包引用
+type VolumeMapping struct { ... }  // model/handler_docker.go
+var list []model.VolumeMapping     // helper/compose.go
+
+// ❌ 错误 — helper 包中重复定义
+type VolumeMapping struct { ... }  // helper/compose.go（重复）
+```
+
+### 日志规范
+
+统一使用 `github.com/rehiy/pango/logman` 进行日志记录，禁止使用标准库 `log` 或 `fmt.Println`：
+
+```go
+// ✅ 正确
+logman.Info("User logged in", "username", username)
+logman.Warn("Terminal access denied", "username", username)
+logman.Error("WebSocket 升级错误", "error", err)
+
+// ❌ 错误
+log.Println("User logged in:", username)
+fmt.Printf("Error: %v\n", err)
+```
+
+日志级别使用规范：
+
+| 级别 | 使用场景 |
+|------|----------|
+| `logman.Info` | 正常业务流程（登录、创建、删除等） |
+| `logman.Warn` | 非致命异常（权限不足、降级操作等） |
+| `logman.Error` | 错误与异常（操作失败、连接错误等） |
+
+日志键值对格式：`"key", value`，禁止拼接字符串：
+
+```go
+// ✅ 正确
+logman.Info("Container created", "name", req.Name, "id", resp.ID)
+
+// ❌ 错误
+logman.Info("Container created: name=" + req.Name + ", id=" + resp.ID)
+```
+
+### 工具函数
+
+通用工具函数统一放在 `server/helper/` 包中：
+
+- Docker 多路复用日志解析统一使用 `helper.ParseDockerLogs`
+- 文件列表获取统一使用 `helper.FileList`
+- 用户绝对路径获取统一使用 `helper.GetAbsolutePath`
+- MD5 哈希计算统一使用 `helper.Md5sum`
+- Docker Compose 文件操作统一使用 `helper.CreateComposeFile`、`helper.ReadComposeFile`、`helper.UpdateComposeFile`
+- 禁止在不同 handler 包中重复定义功能相同的函数
+
+### 中间件规范
+
+所有中间件统一在 `server/middleware/` 包中定义，禁止在 handler 或其他包中定义中间件逻辑：
+
+- 认证中间件：`middleware.AuthMiddleware()` — 自动根据配置选择 JWT 或代理 Header 认证
+- 跨域中间件：`middleware.CORSMiddleware()` — 统一的 CORS 处理
+- 恢复中间件：`middleware.RecoveryMiddleware()` — panic 恢复，统一使用 `helper.RespondError` 返回 500
+
+### 服务层规范
+
+业务逻辑层统一在 `server/service/` 包中，handler 层不包含业务逻辑：
+
+```go
+// ✅ 正确 — handler 调用 service，service 处理业务逻辑
+func (h *AuthHandler) Login(c *gin.Context) {
+    var req model.LoginRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
+        return
+    }
+    resp, err := h.authService.Login(req) // service 层处理逻辑
+    if err != nil {
+        helper.RespondError(c, http.StatusUnauthorized, err.Error())
+        return
+    }
+    helper.RespondSuccess(c, "Login successful", resp)
+}
+
+// ❌ 错误 — handler 中包含业务逻辑
+func (h *AuthHandler) Login(c *gin.Context) {
+    // 直接在 handler 中验证密码、生成 token...
+}
+```
+
+服务单例模式统一使用 `GetXxxService()` 函数获取：
+
+```go
+// ✅ 正确
+authService := service.GetAuthService()
+
+// ❌ 错误
+authService := &service.AuthService{}
+```
+
+### 项目结构
+
+```
+server/
+├── config/      # 配置加载与类型定义
+│   ├── load.go      # 配置加载逻辑与环境变量处理
+│   └── types.go     # 配置结构体定义
+├── handler/     # HTTP 请求处理（调用 service/helper，不含业务逻辑）
+│   ├── auth.go      # 认证处理器
+│   ├── filer.go     # 文件管理处理器
+│   ├── shell.go     # 终端连接处理器
+│   ├── zip.go       # 压缩/解压处理器
+│   ├── apisix/      # Apisix 相关处理器
+│   ├── docker/      # Docker 相关处理器
+│   └── swarm/       # Swarm 相关处理器
+├── helper/      # 通用工具函数（无状态的纯函数）
+│   ├── compose.go   # Docker Compose 文件操作
+│   ├── response.go  # API 响应封装（RespondSuccess、RespondError）
+│   ├── utils.go     # 通用工具（MD5、文件列表、路径处理等）
+│   └── websocket.go # WebSocket 升级器
+├── middleware/   # Gin 中间件
+│   ├── auth.go      # 认证中间件（JWT / 代理 Header）
+│   ├── cors.go      # 跨域中间件
+│   └── recovery.go  # Panic 恢复中间件
+├── model/       # 数据结构定义（请求/响应/实体）
+│   └── handler_docker.go  # Docker 相关数据模型
+└── service/     # 业务逻辑层
+    ├── auth.go      # 认证服务（凭据验证、token 生成）
+    └── zip.go       # 压缩/解压服务
+```
+
+### 安全规范
+
+- 文件路径操作统一使用 `helper.GetAbsolutePath` 防止目录遍历攻击
+- 压缩文件解压统一进行 Zip Slip 防护（检查解压路径不超出目标目录）
+- WebSocket 连接统一通过认证中间件校验 token
+- 文件权限修改统一解析八进制模式并校验有效性
+- 禁止在代码中硬编码密码或密钥
+
+---
+
+## Git 规范
+
+### 提交信息格式
+
+```
+<type>: <subject>
+
+<body>
+```
+
+type 可选值：
+
+| 类型 | 说明 |
+|------|------|
+| feat | 新功能 |
+| fix | 修复 bug |
+| refactor | 重构（不改变功能） |
+| style | 格式调整（不影响逻辑） |
+| docs | 文档更新 |
+| chore | 构建或辅助工具变更 |
+
+### 分支规范
+
+- `main`：生产分支
+- `dev`：开发分支
+- `feature/<name>`：功能分支
+- `fix/<name>`：修复分支
