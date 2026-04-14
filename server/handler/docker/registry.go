@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rehiy/pango/logman"
 
 	dockerPkg "isrvd/pkgs/docker"
 	"isrvd/server/helper"
@@ -26,7 +25,6 @@ func (h *DockerHandler) PushImage(c *gin.Context) {
 
 	msg, targetRef, err := h.service.PushImage(c.Request.Context(), req)
 	if err != nil {
-		logman.Error("Push image failed", "image", targetRef, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "推送镜像失败: "+err.Error())
 		return
 	}
@@ -44,7 +42,6 @@ func (h *DockerHandler) PullFromRegistry(c *gin.Context) {
 
 	msg, imageRef, err := h.service.PullFromRegistry(c.Request.Context(), req)
 	if err != nil {
-		logman.Error("Pull from registry failed", "image", imageRef, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "从仓库拉取镜像失败: "+err.Error())
 		return
 	}

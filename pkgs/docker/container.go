@@ -44,24 +44,33 @@ func (s *DockerService) ListContainers(ctx context.Context, all bool) ([]*Contai
 
 // ContainerAction 容器操作（start/stop/restart/remove/pause/unpause）
 func (s *DockerService) ContainerAction(ctx context.Context, id, action string) error {
+	var err error
 	switch action {
 	case "start":
-		return s.client.ContainerStart(ctx, id, types.ContainerStartOptions{})
+		err = s.client.ContainerStart(ctx, id, types.ContainerStartOptions{})
 	case "stop":
 		timeout := 10
-		return s.client.ContainerStop(ctx, id, container.StopOptions{Timeout: &timeout})
+		err = s.client.ContainerStop(ctx, id, container.StopOptions{Timeout: &timeout})
 	case "restart":
 		timeout := 10
-		return s.client.ContainerRestart(ctx, id, container.StopOptions{Timeout: &timeout})
+		err = s.client.ContainerRestart(ctx, id, container.StopOptions{Timeout: &timeout})
 	case "remove":
-		return s.client.ContainerRemove(ctx, id, types.ContainerRemoveOptions{Force: true})
+		err = s.client.ContainerRemove(ctx, id, types.ContainerRemoveOptions{Force: true})
 	case "pause":
-		return s.client.ContainerPause(ctx, id)
+		err = s.client.ContainerPause(ctx, id)
 	case "unpause":
-		return s.client.ContainerUnpause(ctx, id)
+		err = s.client.ContainerUnpause(ctx, id)
 	default:
 		return fmt.Errorf("不支持的操作: %s", action)
 	}
+
+	if err != nil {
+		logman.Error("Container action failed", "action", action, "id", id, "error", err)
+		return err
+	}
+
+	logman.Info("Container action performed", "action", action, "id", id)
+	return nil
 }
 
 // GetContainerLogs 获取容器日志
@@ -174,6 +183,7 @@ func (s *DockerService) CreateContainer(ctx context.Context, req ContainerCreate
 
 	resp, err := s.client.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, req.Name)
 	if err != nil {
+		logman.Error("Create container failed", "name", req.Name, "error", err)
 		return "", err
 	}
 
@@ -186,6 +196,12 @@ func (s *DockerService) CreateContainer(ctx context.Context, req ContainerCreate
 			logman.Warn("Failed to create compose file", "error", err)
 		}
 	}
+
+	shortID := resp.ID
+	if len(shortID) > 12 {
+		shortID = shortID[:12]
+	}
+	logman.Info("Container created", "id", shortID, "name", req.Name)
 
 	return resp.ID, nil
 }

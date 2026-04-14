@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rehiy/pango/logman"
 
 	dockerPkg "isrvd/pkgs/docker"
 	"isrvd/server/helper"
@@ -30,7 +29,6 @@ func (h *DockerHandler) VolumeAction(c *gin.Context) {
 	}
 
 	if err := h.service.VolumeAction(c.Request.Context(), req.Name, req.Action); err != nil {
-		logman.Error("Volume action failed", "action", req.Action, "name", req.Name, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, req.Action+"卷失败: "+err.Error())
 		return
 	}
@@ -65,7 +63,6 @@ func (h *DockerHandler) VolumeInspect(c *gin.Context) {
 
 	result, err := h.service.InspectVolume(c.Request.Context(), name)
 	if err != nil {
-		logman.Error("Volume inspect failed", "name", name, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "获取卷详情失败: "+err.Error())
 		return
 	}

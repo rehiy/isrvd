@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rehiy/pango/logman"
 
 	dockerPkg "isrvd/pkgs/docker"
 	"isrvd/server/helper"
@@ -32,7 +31,6 @@ func (h *DockerHandler) ImageAction(c *gin.Context) {
 	}
 
 	if err := h.service.ImageAction(c.Request.Context(), req.ID, req.Action); err != nil {
-		logman.Error("Image action failed", "action", req.Action, "id", req.ID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, req.Action+"镜像失败: "+err.Error())
 		return
 	}
@@ -50,7 +48,6 @@ func (h *DockerHandler) PullImage(c *gin.Context) {
 
 	msg, imageRef, err := h.service.PullImage(c.Request.Context(), req.Image, req.Tag)
 	if err != nil {
-		logman.Error("Pull image failed", "image", imageRef, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "拉取镜像失败: "+err.Error())
 		return
 	}
@@ -101,7 +98,6 @@ func (h *DockerHandler) BuildImage(c *gin.Context) {
 
 	msg, err := h.service.BuildImage(c.Request.Context(), req.Dockerfile, req.Tag)
 	if err != nil {
-		logman.Error("Build image failed", "tag", req.Tag, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "构建镜像失败: "+err.Error())
 		return
 	}

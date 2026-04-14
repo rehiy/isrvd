@@ -27,14 +27,12 @@ func (h *DockerHandler) ListContainers(c *gin.Context) {
 func (h *DockerHandler) CreateContainer(c *gin.Context) {
 	var req dockerPkg.ContainerCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		logman.Error("Create container failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
 
 	id, err := h.service.CreateContainer(c.Request.Context(), req)
 	if err != nil {
-		logman.Error("Create container failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "创建容器失败: "+err.Error())
 		return
 	}
@@ -44,7 +42,6 @@ func (h *DockerHandler) CreateContainer(c *gin.Context) {
 		shortID = id[:12]
 	}
 
-	logman.Info("Container created", "id", shortID, "name", req.Name)
 	helper.RespondSuccess(c, "容器创建成功", gin.H{"id": shortID, "name": req.Name})
 }
 
@@ -52,7 +49,6 @@ func (h *DockerHandler) CreateContainer(c *gin.Context) {
 func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
 	var req dockerPkg.ContainerUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		logman.Error("Update container config failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
@@ -64,7 +60,6 @@ func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
 
 	id, err := h.service.UpdateContainer(c.Request.Context(), req)
 	if err != nil {
-		logman.Error("Update container failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "重建容器失败: "+err.Error())
 		return
 	}
@@ -74,7 +69,6 @@ func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
 		shortID = id[:12]
 	}
 
-	logman.Info("Container recreated", "id", shortID, "name", req.Name)
 	helper.RespondSuccess(c, "容器配置更新成功，已重建容器", gin.H{"id": shortID, "name": req.Name})
 }
 
@@ -88,7 +82,6 @@ func (h *DockerHandler) GetContainerConfig(c *gin.Context) {
 
 	result, err := h.service.GetContainerConfig(c.Request.Context(), name)
 	if err != nil {
-		logman.Error("Get container config failed", "name", name, "error", err)
 		helper.RespondError(c, http.StatusNotFound, "容器配置未找到: "+err.Error())
 		return
 	}
@@ -106,7 +99,6 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 
 	result, err := h.service.GetContainerStats(c.Request.Context(), id)
 	if err != nil {
-		logman.Error("Get container stats failed", "id", id, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "获取容器统计信息失败: "+err.Error())
 		return
 	}
@@ -118,18 +110,15 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 func (h *DockerHandler) ContainerAction(c *gin.Context) {
 	var req dockerPkg.ContainerActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		logman.Error("Container action failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return
 	}
 
 	if err := h.service.ContainerAction(c.Request.Context(), req.ID, req.Action); err != nil {
-		logman.Error("Container action failed", "action", req.Action, "id", req.ID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, req.Action+"容器失败: "+err.Error())
 		return
 	}
 
-	logman.Info("Container action performed", "action", req.Action, "id", req.ID)
 	helper.RespondSuccess(c, "Container "+req.Action+" successfully", nil)
 }
 
@@ -137,7 +126,6 @@ func (h *DockerHandler) ContainerAction(c *gin.Context) {
 func (h *DockerHandler) ContainerLogs(c *gin.Context) {
 	var req dockerPkg.ContainerLogsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		logman.Error("Container logs failed", "error", err)
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return
 	}

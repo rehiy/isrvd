@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
+	"github.com/rehiy/pango/logman"
 )
 
 // AutoCreateComposeFile 根据容器当前运行配置自动生成 compose 文件
@@ -285,6 +286,7 @@ func (s *DockerService) GetContainerConfig(ctx context.Context, name string) (*C
 		// compose 文件不存在，尝试根据容器当前配置自动创建
 		compose, err = s.AutoCreateComposeFile(ctx, name)
 		if err != nil {
+			logman.Error("Get container config failed", "name", name, "error", err)
 			return nil, fmt.Errorf("容器配置未找到且无法自动生成: %w", err)
 		}
 	}

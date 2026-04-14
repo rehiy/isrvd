@@ -5,7 +5,6 @@ import (
 
 	"github.com/docker/docker/client"
 	"github.com/gin-gonic/gin"
-	"github.com/rehiy/pango/logman"
 
 	"isrvd/pkgs/swarm"
 	"isrvd/server/helper"
@@ -57,7 +56,6 @@ func (h *SwarmHandler) SwarmNodeAction(c *gin.Context) {
 	}
 
 	if err := h.manager.NodeAction(c.Request.Context(), req.ID, req.Action); err != nil {
-		logman.Error("NodeAction failed", "action", req.Action, "id", req.ID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "节点操作失败: "+err.Error())
 		return
 	}
@@ -89,7 +87,6 @@ func (h *SwarmHandler) SwarmServiceAction(c *gin.Context) {
 	}
 
 	if err := h.manager.ServiceAction(c.Request.Context(), req.ID, req.Action, req.Replicas); err != nil {
-		logman.Error("ServiceAction failed", "action", req.Action, "id", req.ID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "服务操作失败: "+err.Error())
 		return
 	}
@@ -120,7 +117,6 @@ func (h *SwarmHandler) SwarmCreateService(c *gin.Context) {
 
 	id, err := h.manager.CreateService(c.Request.Context(), req)
 	if err != nil {
-		logman.Error("CreateService failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "服务创建失败: "+err.Error())
 		return
 	}
@@ -139,7 +135,6 @@ func (h *SwarmHandler) SwarmForceUpdateService(c *gin.Context) {
 	}
 
 	if err := h.manager.ForceUpdateService(c.Request.Context(), req.ID); err != nil {
-		logman.Error("ForceUpdateService failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "强制重部署失败: "+err.Error())
 		return
 	}
@@ -158,7 +153,6 @@ func (h *SwarmHandler) SwarmServiceLogs(c *gin.Context) {
 
 	logs, err := h.manager.GetServiceLogs(c.Request.Context(), serviceID, tail)
 	if err != nil {
-		logman.Error("ServiceLogs failed", "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "获取日志失败: "+err.Error())
 		return
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/rehiy/pango/logman"
 	"github.com/rehiy/pango/request"
 )
 
@@ -47,6 +48,7 @@ func (c *Client) doRequest(method, path string, body any) ([]byte, error) {
 
 	respData, err := client.Request()
 	if err != nil {
+		logman.Error("APISIX request failed", "method", method, "path", path, "error", err)
 		return nil, fmt.Errorf("请求 APISIX 失败: %w", err)
 	}
 

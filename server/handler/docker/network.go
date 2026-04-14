@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rehiy/pango/logman"
 
 	dockerPkg "isrvd/pkgs/docker"
 	"isrvd/server/helper"
@@ -30,7 +29,6 @@ func (h *DockerHandler) NetworkAction(c *gin.Context) {
 	}
 
 	if err := h.service.NetworkAction(c.Request.Context(), req.ID, req.Action); err != nil {
-		logman.Error("Network action failed", "action", req.Action, "id", req.ID, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, req.Action+"网络失败: "+err.Error())
 		return
 	}
@@ -65,7 +63,6 @@ func (h *DockerHandler) NetworkInspect(c *gin.Context) {
 
 	result, err := h.service.InspectNetwork(c.Request.Context(), id)
 	if err != nil {
-		logman.Error("Network inspect failed", "id", id, "error", err)
 		helper.RespondError(c, http.StatusInternalServerError, "获取网络详情失败: "+err.Error())
 		return
 	}
