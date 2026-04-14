@@ -110,6 +110,15 @@ const toggleApisix = () => {
     <!-- 导航链接 -->
     <nav v-if="state.username" class="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
       <router-link 
+        to="/overview" 
+        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+        :title="collapsed ? '概览' : ''"
+      >
+        <i class="fas fa-gauge-high"></i>
+        <span v-if="!collapsed">概览</span>
+      </router-link>
+      <router-link 
         to="/explorer" 
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
         active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
@@ -143,14 +152,6 @@ const toggleApisix = () => {
           ></i>
         </button>
         <div v-show="dockerExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
-          <router-link 
-            to="/docker/overview" 
-            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
-          >
-            <i class="fas fa-tachometer-alt"></i>
-            <span>概览</span>
-          </router-link>
           <router-link
             to="/docker/containers" 
             class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
@@ -221,14 +222,6 @@ const toggleApisix = () => {
           ></i>
         </button>
         <div v-show="swarmExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
-          <router-link
-            to="/swarm/overview"
-            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
-          >
-            <i class="fas fa-tachometer-alt"></i>
-            <span>概览</span>
-          </router-link>
           <router-link
             to="/swarm/nodes"
             class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"

@@ -107,7 +107,7 @@ onMounted(() => {
         class="px-6 py-6 pt-20 transition-all duration-300"
         :class="sidebarCollapsed ? 'ml-16' : 'ml-64'"
       >
-<router-view @vue:mounted="clearToolbarOnRouteChange" />
+        <router-view @vue:mounted="clearToolbarOnRouteChange" />
       </main>
     </template>
 

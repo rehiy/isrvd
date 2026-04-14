@@ -4,7 +4,12 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    redirect: '/explorer'
+    redirect: '/overview'
+  },
+  {
+    path: '/overview',
+    name: 'overview',
+    component: () => import('@/views/overview.vue')
   },
   {
     path: '/explorer',
@@ -14,12 +19,7 @@ const routes = [
   {
     path: '/docker',
     name: 'docker',
-    redirect: '/docker/overview'
-  },
-  {
-    path: '/docker/overview',
-    name: 'docker-overview',
-    component: () => import('@/views/docker/overview.vue')
+    redirect: '/docker/containers'
   },
   {
     path: '/docker/containers',
@@ -74,12 +74,7 @@ const routes = [
   {
     path: '/swarm',
     name: 'swarm',
-    redirect: '/swarm/overview'
-  },
-  {
-    path: '/swarm/overview',
-    name: 'swarm-overview',
-    component: () => import('@/views/swarm/overview.vue')
+    redirect: '/swarm/nodes'
   },
   {
     path: '/swarm/nodes',
