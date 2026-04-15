@@ -1,5 +1,6 @@
 <script setup>
 import { inject, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 import api from '@/service/api.js'
 import { APP_ACTIONS_KEY } from '@/store/state.js'
@@ -7,21 +8,16 @@ import { APP_ACTIONS_KEY } from '@/store/state.js'
 import BaseModal from '@/component/modal.vue'
 
 const actions = inject(APP_ACTIONS_KEY)
+const router = useRouter()
 
 // 网络数据
 const networks = ref([])
 const loading = ref(false)
 
-// 模态框状态
+// 创建网络模态框
 const modalOpen = ref(false)
-const modalTitle = ref('')
 const modalLoading = ref(false)
 const formData = ref({})
-
-// 详情状态
-const detailOpen = ref(false)
-const detailData = ref(null)
-const detailLoading = ref(false)
 
 // 加载网络列表
 const loadNetworks = async () => {
@@ -38,7 +34,6 @@ const res = await api.listNetworks()
 // 创建网络弹窗
 const createNetworkModal = () => {
   formData.value = { name: '', driver: 'bridge', subnet: '' }
-  modalTitle.value = '创建网络'
   modalOpen.value = true
 }
 
@@ -73,17 +68,8 @@ const handleNetworkAction = (net, action) => {
 }
 
 // 查看网络详情
-const viewNetworkDetail = async (net) => {
-  detailOpen.value = true
-  detailData.value = null
-  detailLoading.value = true
-  try {
-    const res = await api.networkInspect(net.id)
-    detailData.value = res.payload
-  } catch (e) {
-    actions.showNotification('error', '获取网络详情失败')
-  }
-  detailLoading.value = false
+const viewNetworkDetail = (net) => {
+  router.push('/docker/network/' + net.id)
 }
 
 // 判断网络是否可删除（仅 Docker 默认预置网络不可删除）
@@ -209,122 +195,33 @@ onMounted(() => {
     </div>
 
     <!-- 创建网络模态框 -->
-    <BaseModal 
-      v-model="modalOpen" 
-      :title="modalTitle" 
+    <BaseModal
+      v-model="modalOpen"
+      title="创建网络"
       :loading="modalLoading"
-      :show-footer="modalTitle === '创建网络'"
+      show-footer
+      confirm-text="确认创建"
       @confirm="handleCreateNetwork"
     >
-      <template v-if="modalTitle === '创建网络'">
-        <form @submit.prevent="handleCreateNetwork" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">网络名称</label>
-            <input type="text" v-model="formData.name" placeholder="例如: my-network" required class="input" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">驱动类型</label>
-            <select v-model="formData.driver" class="input">
-              <option value="bridge">bridge (桥接)</option>
-              <option value="host">host (主机)</option>
-              <option value="overlay">overlay (覆盖)</option>
-              <option value="macvlan">macvlan</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">子网 CIDR（可选）</label>
-            <input type="text" v-model="formData.subnet" placeholder="例如: 172.20.0.0/16" class="input" />
-          </div>
-        </form>
-      </template>
-    </BaseModal>
-
-    <!-- 网络详情模态框 -->
-    <BaseModal
-      v-model="detailOpen"
-      title="网络详情"
-      size="lg"
-      :show-footer="false"
-    >
-      <div v-if="detailLoading" class="flex items-center justify-center py-10">
-        <div class="w-8 h-8 spinner"></div>
-      </div>
-
-      <div v-else-if="detailData" class="space-y-4">
-        <!-- 基本信息 -->
-        <div class="bg-slate-50 rounded-xl p-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <span class="text-xs text-slate-500">名称</span>
-              <p class="text-sm font-medium text-slate-800 mt-0.5">{{ detailData.name }}</p>
-            </div>
-            <div class="overflow-hidden">
-              <span class="text-xs text-slate-500">ID</span>
-              <p class="text-xs font-mono text-slate-600 mt-0.5 truncate" :title="detailData.id">{{ detailData.id }}</p>
-            </div>
-            <div>
-              <span class="text-xs text-slate-500">驱动</span>
-              <p class="text-sm font-medium text-slate-800 mt-0.5"><code class="bg-slate-100 px-2 py-0.5 rounded">{{ detailData.driver }}</code></p>
-            </div>
-            <div>
-              <span class="text-xs text-slate-500">范围</span>
-              <p class="text-sm font-medium text-slate-800 mt-0.5">{{ detailData.scope }}</p>
-            </div>
-            <div>
-              <span class="text-xs text-slate-500">子网</span>
-              <p class="text-sm font-mono text-slate-800 mt-0.5">{{ detailData.subnet || '-' }}</p>
-            </div>
-            <div>
-              <span class="text-xs text-slate-500">网关</span>
-              <p class="text-sm font-mono text-slate-800 mt-0.5">{{ detailData.gateway || '-' }}</p>
-            </div>
-            <div>
-              <span class="text-xs text-slate-500">内部网络</span>
-              <p class="text-sm font-medium text-slate-800 mt-0.5">{{ detailData.internal ? '是' : '否' }}</p>
-            </div>
-            <div>
-              <span class="text-xs text-slate-500">IPv6</span>
-              <p class="text-sm font-medium text-slate-800 mt-0.5">{{ detailData.enableIPv6 ? '已启用' : '未启用' }}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 已连接的容器 -->
+      <form @submit.prevent="handleCreateNetwork" class="space-y-4">
         <div>
-          <h3 class="text-sm font-medium text-slate-700 mb-2">
-            已连接容器
-            <span v-if="detailData.containers" class="text-xs text-slate-400 ml-1">({{ detailData.containers.length }})</span>
-          </h3>
-          <div v-if="detailData.containers && detailData.containers.length > 0" class="border border-slate-200 rounded-xl overflow-hidden">
-            <table class="w-full">
-              <thead>
-                <tr class="bg-slate-50 border-b border-slate-200">
-                  <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600">名称</th>
-                  <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600">IPv4</th>
-                  <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600">MAC 地址</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100">
-                <tr v-for="ct in detailData.containers" :key="ct.id" class="hover:bg-slate-50">
-                  <td class="px-3 py-2">
-                    <div class="flex items-center gap-1.5">
-                      <div class="w-6 h-6 rounded bg-purple-100 flex items-center justify-center">
-                        <i class="fas fa-box text-purple-500 text-xs"></i>
-                      </div>
-                      <span class="text-sm text-slate-800">{{ ct.name || ct.id }}</span>
-                    </div>
-                  </td>
-                  <td class="px-3 py-2 font-mono text-xs text-slate-600">{{ ct.ipv4 || '-' }}</td>
-                  <td class="px-3 py-2 font-mono text-xs text-slate-600">{{ ct.macAddress || '-' }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div v-else class="text-sm text-slate-400 py-4 text-center bg-slate-50 rounded-xl">
-            暂无容器连接到此网络
-          </div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">网络名称</label>
+          <input type="text" v-model="formData.name" placeholder="例如: my-network" required class="input" />
         </div>
-      </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">驱动类型</label>
+          <select v-model="formData.driver" class="input">
+            <option value="bridge">bridge (桥接)</option>
+            <option value="host">host (主机)</option>
+            <option value="overlay">overlay (覆盖)</option>
+            <option value="macvlan">macvlan</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">子网 CIDR（可选）</label>
+          <input type="text" v-model="formData.subnet" placeholder="例如: 172.20.0.0/16" class="input" />
+        </div>
+      </form>
     </BaseModal>
   </div>
 </template>

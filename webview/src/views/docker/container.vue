@@ -2,6 +2,9 @@
 import { inject, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import ContainerLogs from '@/views/docker/container_logs.vue'
+import ContainerStats from '@/views/docker/container_stats.vue'
+import ContainerTerminal from '@/views/docker/container_terminal.vue'
 import api from '@/service/api.js'
 import { APP_ACTIONS_KEY } from '@/store/state.js'
 
@@ -16,8 +19,16 @@ const loading = ref(true)
 // 从路由获取容器 ID
 const containerId = ref(route.params.id)
 
-// 当前激活的 Tab（根据子路由名称判断）
+// 当前激活的 Tab（根据路由名称判断）
 const activeTab = () => route.name
+
+// 当前渲染的子组件
+const currentComponent = () => {
+  const name = route.name
+  if (name === 'docker-container-logs') return ContainerLogs
+  if (name === 'docker-container-terminal') return ContainerTerminal
+  return ContainerStats
+}
 
 // ========== 加载容器信息 ==========
 
@@ -136,8 +147,8 @@ onMounted(async () => {
         <p class="text-sm text-slate-400">请先启动容器后再查看监控或终端</p>
       </div>
 
-      <!-- 子路由内容 -->
-      <router-view v-else-if="container" :container-id="containerId" :container="container" />
+      <!-- 子组件内容 -->
+      <component v-else-if="container" :is="currentComponent()" :container-id="containerId" :container="container" />
     </div>
   </div>
 </template>

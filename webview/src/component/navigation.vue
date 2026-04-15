@@ -17,30 +17,13 @@ const swarmExpanded = ref(route.path.startsWith('/swarm/'))
 // Apisix 子菜单展开状态
 const apisixExpanded = ref(route.path.startsWith('/apisix/'))
 
-// 判断当前是否在 Docker 相关路由下
-const isDockerActive = computed(() => {
-  return route.path.startsWith('/docker/')
-})
+// 统一高亮判断：当前路由是否以指定前缀开头
+const isActive = (prefix) => route.path.startsWith(prefix)
 
-// 判断当前是否在 Swarm 相关路由下
-const isSwarmActive = computed(() => {
-  return route.path.startsWith('/swarm')
-})
-
-// 判断当前是否在 Swarm 相关路由下（子路由）
-const isSwarmSubActive = computed(() => {
-  return route.path.startsWith('/swarm/')
-})
-
-// 判断当前是否在容器相关路由下（/docker/containers 或 /docker/container/:id）
-const isContainersActive = computed(() => {
-  return route.path.startsWith('/docker/container')
-})
-
-// 判断当前是否在 Apisix 相关路由下
-const isApisixActive = computed(() => {
-  return route.path.startsWith('/apisix/')
-})
+// 用于 watch 的 computed（仍需响应式）
+const isDockerActive = computed(() => isActive('/docker/'))
+const isSwarmSubActive = computed(() => isActive('/swarm/'))
+const isApisixActive = computed(() => isActive('/apisix/'))
 
 // 监听路由变化，自动展开子菜单
 watch(isDockerActive, (isActive) => {
@@ -142,7 +125,7 @@ const toggleApisix = () => {
         <button 
           @click="toggleDocker"
           class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isDockerActive }"
+          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/') }"
         >
           <i class="fab fa-docker"></i>
           <span>Docker 管理</span>
@@ -155,8 +138,7 @@ const toggleApisix = () => {
           <router-link
             to="/docker/containers" 
             class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
-            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isContainersActive }"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/container') }"
           >
             <i class="fas fa-cube"></i>
             <span>容器</span>
@@ -164,7 +146,7 @@ const toggleApisix = () => {
           <router-link 
             to="/docker/networks" 
             class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/network') }"
           >
             <i class="fas fa-network-wired"></i>
             <span>网络</span>
@@ -172,23 +154,23 @@ const toggleApisix = () => {
           <router-link 
             to="/docker/images" 
             class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/image') }"
           >
             <i class="fas fa-layer-group"></i>
             <span>镜像</span>
           </router-link>
           <router-link 
-            to="/docker/registries" 
+            to="/docker/registries"
             class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/registr') }"
           >
             <i class="fas fa-warehouse"></i>
             <span>镜像源</span>
           </router-link>
           <router-link 
-            to="/docker/volumes" 
+            to="/docker/volumes"
             class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/volume') }"
           >
             <i class="fas fa-database"></i>
             <span>存储卷</span>
@@ -201,7 +183,7 @@ const toggleApisix = () => {
         v-if="collapsed"
         to="/overview"
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-        :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isDockerActive }"
+          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/') }"
         title="Docker"
       >
         <i class="fab fa-docker"></i>
@@ -212,7 +194,7 @@ const toggleApisix = () => {
         <button
           @click="toggleSwarm"
           class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isSwarmActive }"
+          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm') }"
         >
           <i class="fas fa-circle-nodes"></i>
           <span>Swarm 集群</span>
@@ -225,7 +207,7 @@ const toggleApisix = () => {
           <router-link
             to="/swarm/nodes"
             class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm/node') }"
           >
             <i class="fas fa-server"></i>
             <span>节点</span>
@@ -233,7 +215,7 @@ const toggleApisix = () => {
           <router-link
             to="/swarm/services"
             class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm/service') }"
           >
             <i class="fas fa-cubes"></i>
             <span>服务</span>
@@ -241,7 +223,7 @@ const toggleApisix = () => {
           <router-link
             to="/swarm/tasks"
             class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm/task') }"
           >
             <i class="fas fa-tasks"></i>
             <span>任务</span>
@@ -253,7 +235,7 @@ const toggleApisix = () => {
         v-if="collapsed"
         to="/overview"
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-        :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isSwarmActive }"
+          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm') }"
         title="Swarm 集群"
       >
         <i class="fas fa-circle-nodes"></i>
@@ -264,7 +246,7 @@ const toggleApisix = () => {
         <button 
           @click="toggleApisix"
           class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isApisixActive }"
+          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/') }"
         >
           <i class="fas fa-cloud"></i>
           <span>Apisix 管理</span>
@@ -277,7 +259,7 @@ const toggleApisix = () => {
           <router-link 
             to="/apisix/routes" 
             class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/route') }"
           >
             <i class="fas fa-route"></i>
             <span>路由</span>
@@ -285,7 +267,7 @@ const toggleApisix = () => {
           <router-link 
             to="/apisix/consumers" 
             class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/consumer') }"
           >
             <i class="fas fa-users"></i>
             <span>用户</span>
@@ -293,7 +275,7 @@ const toggleApisix = () => {
           <router-link 
             to="/apisix/whitelist" 
             class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/whitelist') }"
           >
             <i class="fas fa-shield-halved"></i>
             <span>白名单</span>
@@ -306,7 +288,7 @@ const toggleApisix = () => {
         v-if="collapsed"
         to="/overview"
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-        :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isApisixActive }"
+          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/') }"
         title="Apisix"
       >
         <i class="fas fa-cloud"></i>

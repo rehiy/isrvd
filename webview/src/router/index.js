@@ -28,28 +28,22 @@ const routes = [
   },
   {
     path: '/docker/container/:id',
-    component: () => import('@/views/docker/container.vue'),
-    children: [
-      {
-        path: '',
-        redirect: to => ({ name: 'docker-container-stats', params: { id: to.params.id } })
-      },
-      {
-        path: 'stats',
-        name: 'docker-container-stats',
-        component: () => import('@/views/docker/container_stats.vue')
-      },
-      {
-        path: 'logs',
-        name: 'docker-container-logs',
-        component: () => import('@/views/docker/container_logs.vue')
-      },
-      {
-        path: 'terminal',
-        name: 'docker-container-terminal',
-        component: () => import('@/views/docker/container_terminal.vue')
-      }
-    ]
+    redirect: to => ({ name: 'docker-container-stats', params: { id: to.params.id } })
+  },
+  {
+    path: '/docker/container/:id/stats',
+    name: 'docker-container-stats',
+    component: () => import('@/views/docker/container.vue')
+  },
+  {
+    path: '/docker/container/:id/logs',
+    name: 'docker-container-logs',
+    component: () => import('@/views/docker/container.vue')
+  },
+  {
+    path: '/docker/container/:id/terminal',
+    name: 'docker-container-terminal',
+    component: () => import('@/views/docker/container.vue')
   },
   {
     path: '/docker/images',
@@ -57,9 +51,19 @@ const routes = [
     component: () => import('@/views/docker/images.vue')
   },
   {
+    path: '/docker/image/:id',
+    name: 'docker-image-detail',
+    component: () => import('@/views/docker/image_detail.vue')
+  },
+  {
     path: '/docker/networks',
     name: 'docker-networks',
     component: () => import('@/views/docker/networks.vue')
+  },
+  {
+    path: '/docker/network/:id',
+    name: 'docker-network-detail',
+    component: () => import('@/views/docker/network_detail.vue')
   },
   {
     path: '/docker/volumes',
