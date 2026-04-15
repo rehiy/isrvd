@@ -286,7 +286,7 @@ conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 
 - **请求/响应结构体**：定义在各 handler 子包的 `model.go` 中（如 `handler/apisix/model.go`、`handler/filer/model.go`）
 - **业务数据模型**：定义在对应的 `pkgs/` 子包的 `types.go` 中（如 `pkgs/docker/types.go`、`pkgs/swarm/types.go`）
-- **配置类型**：定义在 `server/config/types.go` 中
+- **配置类型**：定义在 `config/types.go` 中
 
 禁止在不同包中重复定义相同结构体。handler 层可直接引用 pkgs 层的请求类型（如 `dockerPkg.ContainerCreateRequest`）。
 
@@ -359,7 +359,7 @@ func (h *DockerHandler) ListContainers(c *gin.Context) {
 
 简单业务（如 auth）直接在 handler 内实现，不需要独立 pkgs 包。
 
-**依赖方向**：`pkgs/` 层是纯业务逻辑层，禁止依赖 `server/` 包（server/config、server/helper 等）。配置信息通过构造函数参数注入（如 `NewDockerService(cfg *DockerConfig)`），由 handler 层负责从 `server/config` 读取并传入。
+**依赖方向**：`pkgs/` 层是纯业务逻辑层，禁止依赖 `server/` 包（config、server/helper 等）。配置信息通过构造函数参数注入（如 `NewDockerService(cfg *DockerConfig)`），由 handler 层负责从 `config` 读取并传入。
 
 ### 项目结构
 

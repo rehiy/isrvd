@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/rehiy/pango/logman"
 
-	"isrvd/server/config"
+	"isrvd/config"
 	"isrvd/server/helper"
 )
 

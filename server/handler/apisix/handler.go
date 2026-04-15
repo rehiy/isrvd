@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/logman"
 
+	"isrvd/config"
 	"isrvd/pkgs/apisix"
-	"isrvd/server/config"
 	"isrvd/server/helper"
 )
 

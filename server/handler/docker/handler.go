@@ -8,8 +8,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/rehiy/pango/logman"
 
+	"isrvd/config"
 	dockerPkg "isrvd/pkgs/docker"
-	"isrvd/server/config"
 	"isrvd/server/helper"
 )
 

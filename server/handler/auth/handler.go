@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rehiy/pango/logman"
 
-	"isrvd/server/config"
+	"isrvd/config"
 	"isrvd/server/helper"
 )
 

@@ -10,11 +10,11 @@ export GO111MODULE=on
 
 build() {
     echo building for $1/$2
-    target=build/isrvd-$1-$2
+    target=dist/isrvd-$1-$2
     if [ x"$1" = x"windows" ]; then
         target="${target}.exe"
     fi
-    GOOS=$1 GOARCH=$2 go build -ldflags="-s -w" -o $target main.go
+    GOOS=$1 GOARCH=$2 go build -ldflags="-s -w" -o $target cmd/server/main.go
 }
 
 ####################################################################
@@ -42,11 +42,11 @@ build linux arm64
 
 ####################################################################
 
-cp config.yml build/
+cp config.yml dist/
 
 ####################################################################
 
-cd build/
+cd dist/
 for app in isrvd-*; do
     tar czf ${app}.tar.gz $app config.yml
     rm -f $app

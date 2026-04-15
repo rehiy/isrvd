@@ -1,8 +1,8 @@
 package main
 
 import (
+	"isrvd/config"
 	"isrvd/server"
-	"isrvd/server/config"
 )
 
 func main() {

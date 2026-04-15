@@ -5,8 +5,8 @@ import (
 	"github.com/rehiy/pango/httpd"
 	"github.com/rehiy/pango/logman"
 
+	"isrvd/config"
 	"isrvd/public"
-	"isrvd/server/config"
 	"isrvd/server/handler/apisix"
 	"isrvd/server/handler/auth"
 	"isrvd/server/handler/docker"

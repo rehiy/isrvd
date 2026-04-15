@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/filer"
 
-	"isrvd/server/config"
+	"isrvd/config"
 )
 
 // FileInfo 文件信息结构

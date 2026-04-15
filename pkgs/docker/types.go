@@ -1,6 +1,6 @@
 package docker
 
-// DockerConfig Docker 配置（由外部注入，解除对 server/config 的依赖）
+// DockerConfig Docker 配置（由外部注入，解除对 config 的依赖）
 type DockerConfig struct {
 	Host          string            // Docker 连接地址
 	ContainerRoot string            // 容器数据根目录
