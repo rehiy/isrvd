@@ -1,10 +1,14 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { inject, onMounted, onUnmounted, ref } from 'vue'
+
+import { APP_STATE_KEY } from '@/store/state.js'
 
 import ApisixOverview from '@/views/apisix/overview.vue'
 import DockerOverview from '@/views/docker/overview.vue'
 import SwarmOverview from '@/views/swarm/overview.vue'
 import SystemOverview from '@/views/system/overview.vue'
+
+const state = inject(APP_STATE_KEY)
 
 const dockerRef = ref(null)
 const swarmRef = ref(null)
@@ -13,9 +17,15 @@ const systemRef = ref(null)
 
 const refreshAll = () => {
   systemRef.value?.load()
-  dockerRef.value?.load()
-  swarmRef.value?.load()
-  apisixRef.value?.load()
+  if (state.serviceAvailability.docker) {
+    dockerRef.value?.load()
+  }
+  if (state.serviceAvailability.swarm) {
+    swarmRef.value?.load()
+  }
+  if (state.serviceAvailability.apisix) {
+    apisixRef.value?.load()
+  }
 }
 
 onMounted(() => refreshAll())
@@ -51,7 +61,7 @@ onUnmounted(() => systemRef.value?.stopPoll?.())
       </div>
 
       <!-- Docker 概览区块 -->
-      <div class="p-6 border-b border-slate-100">
+      <div v-if="state.serviceAvailability.docker" class="p-6 border-b border-slate-100">
         <div class="flex items-center gap-2 mb-4">
           <i class="fab fa-docker text-blue-500 text-lg"></i>
           <h2 class="text-base font-semibold text-slate-700">Docker 服务</h2>
@@ -60,7 +70,7 @@ onUnmounted(() => systemRef.value?.stopPoll?.())
       </div>
 
       <!-- Swarm 概览区块 -->
-      <div class="p-6 border-b border-slate-100">
+      <div v-if="state.serviceAvailability.swarm" class="p-6 border-b border-slate-100">
         <div class="flex items-center gap-2 mb-4">
           <i class="fas fa-circle-nodes text-cyan-600 text-lg"></i>
           <h2 class="text-base font-semibold text-slate-700">Swarm 集群</h2>
@@ -69,7 +79,7 @@ onUnmounted(() => systemRef.value?.stopPoll?.())
       </div>
 
       <!-- APISIX 概览区块 -->
-      <div class="p-6">
+      <div v-if="state.serviceAvailability.apisix" class="p-6">
         <div class="flex items-center gap-2 mb-4">
           <i class="fas fa-route text-orange-500 text-lg"></i>
           <h2 class="text-base font-semibold text-slate-700">APISIX 网关</h2>

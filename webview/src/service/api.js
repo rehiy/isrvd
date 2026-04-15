@@ -69,6 +69,12 @@ class ApiService {
     return axios.post('/api/filer/download', { path }, { responseType: 'blob' })
   }
 
+  // ==================== 服务探测相关 ====================
+
+  serviceProbe() {
+    return axios.get('/api/system/probe')
+  }
+
   // ==================== 系统信息相关 ====================
 
   systemStat() {

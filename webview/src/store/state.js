@@ -33,6 +33,13 @@ export const initProvider = () => {
             danger: false,
             loading: false,
             onConfirm: null
+        },
+
+        // 服务可用性状态
+        serviceAvailability: {
+            docker: false,
+            swarm: false,
+            apisix: false
         }
     })
 
@@ -111,6 +118,15 @@ export const initProvider = () => {
                 }
             }
             this.closeConfirm()
+        },
+
+        // 服务可用性操作
+        updateServiceAvailability(availability) {
+            state.serviceAvailability = {
+                docker: availability.docker?.available || false,
+                swarm: availability.swarm?.available || false,
+                apisix: availability.apisix?.available || false
+            }
         }
     }
 

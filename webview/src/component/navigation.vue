@@ -177,170 +177,177 @@ onUnmounted(() => {
       </router-link>
       
       <!-- Docker 折叠子菜单 -->
-      <div v-if="!collapsed">
-        <button 
-          @click.stop="toggleDocker"
-          class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+      <div v-if="state.serviceAvailability.docker">
+        <!-- 折叠状态：只显示图标 -->
+        <router-link
+          v-if="collapsed"
+          to="/overview"
+          class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
           :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/') }"
+          title="Docker"
         >
           <i class="fab fa-docker"></i>
-          <span>Docker 管理</span>
-          <i 
-            class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200"
-            :class="{ 'rotate-180': dockerExpanded }"
-          ></i>
-        </button>
-        <div v-show="dockerExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
-          <router-link
-            to="/docker/containers" 
-            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/container') }"
+        </router-link>
+        <!-- 展开状态：显示完整子菜单 -->
+        <template v-else>
+          <button
+            @click.stop="toggleDocker"
+            class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/') }"
           >
-            <i class="fas fa-cube"></i>
-            <span>容器</span>
-          </router-link>
-          <router-link 
-            to="/docker/networks" 
-            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/network') }"
-          >
-            <i class="fas fa-network-wired"></i>
-            <span>网络</span>
-          </router-link>
-          <router-link 
-            to="/docker/images" 
-            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/image') }"
-          >
-            <i class="fas fa-layer-group"></i>
-            <span>镜像</span>
-          </router-link>
-          <router-link 
-            to="/docker/registries"
-            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/registr') }"
-          >
-            <i class="fas fa-warehouse"></i>
-            <span>镜像源</span>
-          </router-link>
-          <router-link 
-            to="/docker/volumes"
-            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/volume') }"
-          >
-            <i class="fas fa-database"></i>
-            <span>存储卷</span>
-          </router-link>
-        </div>
+            <i class="fab fa-docker"></i>
+            <span>Docker 管理</span>
+            <i
+              class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200"
+              :class="{ 'rotate-180': dockerExpanded }"
+            ></i>
+          </button>
+          <div v-show="dockerExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+            <router-link
+              to="/docker/containers"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/container') }"
+            >
+              <i class="fas fa-cube"></i>
+              <span>容器</span>
+            </router-link>
+            <router-link
+              to="/docker/networks"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/network') }"
+            >
+              <i class="fas fa-network-wired"></i>
+              <span>网络</span>
+            </router-link>
+            <router-link
+              to="/docker/images"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/image') }"
+            >
+              <i class="fas fa-layer-group"></i>
+              <span>镜像</span>
+            </router-link>
+            <router-link
+              to="/docker/registries"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/registr') }"
+            >
+              <i class="fas fa-warehouse"></i>
+              <span>镜像源</span>
+            </router-link>
+            <router-link
+              to="/docker/volumes"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/volume') }"
+            >
+              <i class="fas fa-database"></i>
+              <span>存储卷</span>
+            </router-link>
+          </div>
+        </template>
       </div>
-      
-      <!-- 折叠状态下的 Docker 菜单 -->
-      <router-link 
-        v-if="collapsed"
-        to="/overview"
-        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/') }"
-        title="Docker"
-      >
-        <i class="fab fa-docker"></i>
-      </router-link>
 
       <!-- Swarm 折叠子菜单 -->
-      <div v-if="!collapsed">
-        <button
-          @click.stop="toggleSwarm"
-          class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+      <div v-if="state.serviceAvailability.swarm">
+        <!-- 折叠状态：只显示图标 -->
+        <router-link
+          v-if="collapsed"
+          to="/overview"
+          class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
           :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm') }"
+          title="Swarm 集群"
         >
           <i class="fas fa-circle-nodes"></i>
-          <span>Swarm 集群</span>
-          <i
-            class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200"
-            :class="{ 'rotate-180': swarmExpanded }"
-          ></i>
-        </button>
-        <div v-show="swarmExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
-          <router-link
-            to="/swarm/nodes"
-            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm/node') }"
+        </router-link>
+        <!-- 展开状态：显示完整子菜单 -->
+        <template v-else>
+          <button
+            @click.stop="toggleSwarm"
+            class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm') }"
           >
-            <i class="fas fa-server"></i>
-            <span>节点</span>
-          </router-link>
-          <router-link
-            to="/swarm/services"
-            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm/service') }"
-          >
-            <i class="fas fa-cubes"></i>
-            <span>服务</span>
-          </router-link>
-        </div>
+            <i class="fas fa-circle-nodes"></i>
+            <span>Swarm 集群</span>
+            <i
+              class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200"
+              :class="{ 'rotate-180': swarmExpanded }"
+            ></i>
+          </button>
+          <div v-show="swarmExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+            <router-link
+              to="/swarm/nodes"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm/node') }"
+            >
+              <i class="fas fa-server"></i>
+              <span>节点</span>
+            </router-link>
+            <router-link
+              to="/swarm/services"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm/service') }"
+            >
+              <i class="fas fa-cubes"></i>
+              <span>服务</span>
+            </router-link>
+          </div>
+        </template>
       </div>
-      <!-- 折叠状态下的 Swarm 菜单 -->
-      <router-link
-        v-if="collapsed"
-        to="/overview"
-        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm') }"
-        title="Swarm 集群"
-      >
-        <i class="fas fa-circle-nodes"></i>
-      </router-link>
 
       <!-- Apisix 折叠子菜单 -->
-      <div v-if="!collapsed">
-        <button 
-          @click.stop="toggleApisix"
-          class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+      <div v-if="state.serviceAvailability.apisix">
+        <!-- 折叠状态：只显示图标 -->
+        <router-link
+          v-if="collapsed"
+          to="/overview"
+          class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
           :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/') }"
+          title="Apisix"
         >
           <i class="fas fa-cloud"></i>
-          <span>Apisix 管理</span>
-          <i 
-            class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200"
-            :class="{ 'rotate-180': apisixExpanded }"
-          ></i>
-        </button>
-        <div v-show="apisixExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
-          <router-link 
-            to="/apisix/routes" 
-            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/route') }"
+        </router-link>
+        <!-- 展开状态：显示完整子菜单 -->
+        <template v-else>
+          <button
+            @click.stop="toggleApisix"
+            class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/') }"
           >
-            <i class="fas fa-route"></i>
-            <span>路由</span>
-          </router-link>
-          <router-link 
-            to="/apisix/consumers" 
-            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/consumer') }"
-          >
-            <i class="fas fa-users"></i>
-            <span>用户</span>
-          </router-link>
-          <router-link 
-            to="/apisix/whitelist" 
-            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/whitelist') }"
-          >
-            <i class="fas fa-shield-halved"></i>
-            <span>白名单</span>
-          </router-link>
-        </div>
+            <i class="fas fa-cloud"></i>
+            <span>Apisix 管理</span>
+            <i
+              class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200"
+              :class="{ 'rotate-180': apisixExpanded }"
+            ></i>
+          </button>
+          <div v-show="apisixExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+            <router-link
+              to="/apisix/routes"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/route') }"
+            >
+              <i class="fas fa-route"></i>
+              <span>路由</span>
+            </router-link>
+            <router-link
+              to="/apisix/consumers"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/consumer') }"
+            >
+              <i class="fas fa-users"></i>
+              <span>用户</span>
+            </router-link>
+            <router-link
+              to="/apisix/whitelist"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/whitelist') }"
+            >
+              <i class="fas fa-shield-halved"></i>
+              <span>白名单</span>
+            </router-link>
+          </div>
+        </template>
       </div>
-
-      <!-- 折叠状态下的 Apisix 菜单 -->
-      <router-link
-        v-if="collapsed"
-        to="/overview"
-        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/') }"
-        title="Apisix"
-      >
-        <i class="fas fa-cloud"></i>
-      </router-link>
     </nav>
 
     <!-- 底部折叠按钮 -->

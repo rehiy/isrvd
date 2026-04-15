@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, provide, ref } from 'vue'
+import { onMounted, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { APP_ACTIONS_KEY, APP_STATE_KEY, initProvider } from '@/store/state.js'
@@ -10,6 +10,8 @@ import NotificationManager from '@/component/notification.vue'
 
 import AuthLogin from '@/views/login.vue'
 import AuthLogout from '@/views/logout.vue'
+
+import { fetchServiceProbe } from '@/service/probe.js'
 
 const { state, actions } = initProvider()
 
@@ -68,12 +70,30 @@ const toggleMobileMenu = () => {
   }
 }
 
+// 加载服务可用性
+const loadServiceAvailability = async () => {
+  try {
+    const availability = await fetchServiceProbe()
+    actions.updateServiceAvailability(availability)
+  } catch (e) {
+    console.warn('Failed to load service probe:', e)
+  }
+}
+
 onMounted(() => {
   const token = localStorage.getItem('app-token')
   const username = localStorage.getItem('app-username')
 
   if (token && username) {
     actions.setAuth({ token, username })
+    loadServiceAvailability()
+  }
+})
+
+// 登录成功后加载服务可用性
+watch(() => state.username, (username, oldUsername) => {
+  if (username && !oldUsername) {
+    loadServiceAvailability()
   }
 })
 </script>

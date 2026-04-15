@@ -200,7 +200,7 @@ func (app *App) setupRouter() {
 			systemGroup := authGroup.Group("/system")
 			{
 				systemGroup.GET("/stat", systemHandler.Stat)
-				systemGroup.GET("/availability", func(c *gin.Context) {
+				systemGroup.GET("/probe", func(c *gin.Context) {
 					ctx := c.Request.Context()
 					dockerOK, swarmOK, apisixOK := false, false, false
 					if dockerHandler != nil {
