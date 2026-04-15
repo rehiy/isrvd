@@ -207,7 +207,7 @@ onMounted(() => { loadRoutes(); loadResources() })
             <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">URI</th>
             <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Host</th>
             <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
-            <th class="w-32 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+<th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
           </tr></thead>
           <tbody class="bg-white divide-y divide-slate-100">
             <tr v-for="route in filteredRoutes" :key="route.id" class="hover:bg-slate-50 transition-colors">
@@ -224,7 +224,7 @@ onMounted(() => { loadRoutes(); loadResources() })
                 </button>
               </td>
               <td class="px-4 py-3">
-                <div class="flex justify-center items-center gap-1">
+<div class="flex justify-end items-center gap-1">
                   <button @click="openEditModal(route)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="编辑"><i class="fas fa-pen-to-square text-xs"></i></button>
                   <button @click="deleteRoute(route)" class="btn-icon text-red-600 hover:bg-red-50" title="删除"><i class="fas fa-trash text-xs"></i></button>
                 </div>

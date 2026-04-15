@@ -140,7 +140,7 @@ onMounted(() => {
               <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">驱动</th>
               <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">子网</th>
               <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">范围</th>
-              <th class="w-32 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+<th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-slate-100">
@@ -157,7 +157,7 @@ onMounted(() => {
               <td class="px-4 py-3 font-mono text-sm text-slate-600">{{ net.subnet || '-' }}</td>
               <td class="px-4 py-3 text-sm text-slate-600">{{ net.scope }}</td>
               <td class="px-4 py-3">
-                <div class="flex justify-center items-center gap-0.5">
+<div class="flex justify-end items-center gap-0.5">
                   <button @click="viewNetworkDetail(net)" class="btn-icon text-purple-600 hover:bg-purple-50" title="详情">
                     <i class="fas fa-info-circle text-xs"></i>
                   </button>

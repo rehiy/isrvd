@@ -182,7 +182,7 @@ onMounted(() => {
               <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">API Key</th>
               <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">关联路由</th>
               <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
-              <th class="w-32 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+<th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-slate-100">
@@ -211,7 +211,7 @@ onMounted(() => {
                 {{ formatTs(consumer.create_time) }}
               </td>
               <td class="px-4 py-3">
-                <div class="flex justify-center items-center gap-0.5">
+<div class="flex justify-end items-center gap-0.5">
                   <button @click="openEditModal(consumer)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑">
                     <i class="fas fa-pen-to-square text-xs"></i>
                   </button>

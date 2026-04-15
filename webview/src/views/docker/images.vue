@@ -238,7 +238,7 @@ onMounted(() => {
             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ID</th>
             <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">大小</th>
             <th class="w-36 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
-            <th class="w-40 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+<th class="w-40 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-slate-100">
@@ -262,7 +262,7 @@ onMounted(() => {
             <td class="px-4 py-3 text-sm text-slate-600">{{ formatFileSize(img.size) }}</td>
             <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(img.created * 1000).toISOString()) }}</td>
             <td class="px-4 py-3">
-              <div class="flex justify-center items-center gap-0.5">
+<div class="flex justify-end items-center gap-0.5">
                 <button @click="router.push('/docker/image/' + img.id)" class="btn-icon text-slate-600 hover:bg-slate-100" title="查看详情">
                   <i class="fas fa-circle-info text-xs"></i>
                 </button>

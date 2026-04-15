@@ -180,7 +180,7 @@ onMounted(() => {
               <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
               <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">地址</th>
               <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">认证</th>
-              <th class="w-32 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+<th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-slate-100">
@@ -232,7 +232,7 @@ onMounted(() => {
                 </span>
               </td>
               <td class="px-4 py-3">
-                <div class="flex justify-center items-center gap-0.5">
+<div class="flex justify-end items-center gap-0.5">
                   <button @click="openPullModal(reg)" class="btn-icon text-slate-600 hover:bg-slate-100" title="拉取镜像">
                     <i class="fas fa-download text-xs"></i>
                   </button>

@@ -214,7 +214,7 @@ onMounted(() => loadServices())
               <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">模式</th>
               <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">副本</th>
               <th class="w-36 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
-              <th class="w-44 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+<th class="w-44 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-slate-100">
@@ -240,7 +240,7 @@ onMounted(() => loadServices())
                 <template v-else>-</template>
               </td>
               <td class="px-4 py-3">
-                <div class="flex justify-center items-center gap-0.5">
+<div class="flex justify-end items-center gap-0.5">
                   <button @click="router.push(`/swarm/service/${svc.id}`)" class="btn-icon text-slate-600 hover:bg-slate-100"  title="查看详情"><i class="fas fa-circle-info text-xs"></i></button>
                   <button @click="handleRedeploy(svc)"     class="btn-icon text-blue-600 hover:bg-blue-50"     title="强制重部署"><i class="fas fa-rotate text-xs"></i></button>
                   <button v-if="svc.mode === 'replicated'" @click="openScaleModal(svc)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="扩缩容"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>

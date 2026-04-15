@@ -140,7 +140,7 @@ actions.loadFiles('/')
               <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">大小</th>
               <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">权限</th>
               <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">修改时间</th>
-              <th class="w-40 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+<th class="w-40 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-slate-100">
@@ -189,7 +189,7 @@ actions.loadFiles('/')
               </td>
               
               <td class="px-4 py-3">
-                <div class="flex justify-center items-center gap-0.5">
+<div class="flex justify-end items-center gap-0.5">
                   <!-- Directory Actions -->
                   <template v-if="file.isDir">
                     <button 

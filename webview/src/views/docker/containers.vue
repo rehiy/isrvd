@@ -421,7 +421,7 @@ onMounted(() => {
               <th class="w-48 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
               <th class="w-56 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
               <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
-              <th class="w-56 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+<th class="w-56 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-slate-100">
@@ -453,7 +453,7 @@ onMounted(() => {
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</td>
               <td class="px-4 py-3">
-                <div class="flex justify-center items-center gap-1">
+<div class="flex justify-end items-center gap-1">
                   <button v-if="ct.name && !ct.isSwarm" @click="editContainerModal(ct)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑配置">
                     <i class="fas fa-cog text-xs"></i>
                   </button>
