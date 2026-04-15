@@ -36,6 +36,15 @@ type ImageInfo struct {
 	Created  int64    `json:"created"`
 }
 
+// ImageLayerInfo 镜像层信息
+type ImageLayerInfo struct {
+	Digest    string `json:"digest"`    // 层 digest（sha256:...）
+	CreatedBy string `json:"createdBy"` // 构建命令
+	Created   string `json:"created"`   // 创建时间
+	Size      int64  `json:"size"`      // 层大小（字节），-1 表示空层
+	Empty     bool   `json:"empty"`     // 是否为空层（无文件变更）
+}
+
 // ImageInspectResponse 镜像详情响应
 type ImageInspectResponse struct {
 	ID           string            `json:"id"`
@@ -55,6 +64,7 @@ type ImageInspectResponse struct {
 	ExposedPorts []string          `json:"exposedPorts"`
 	Labels       map[string]string `json:"labels"`
 	Layers       int               `json:"layers"`
+	LayerDetails []*ImageLayerInfo `json:"layerDetails"`
 }
 
 // NetworkInfo Docker 网络信息

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	yaml "gopkg.in/yaml.v3"
@@ -192,4 +193,9 @@ func registryHost(registryURL string) string {
 		host = host[:idx]
 	}
 	return host
+}
+
+// formatUnixTime 将 Unix 时间戳格式化为 RFC3339 字符串
+func formatUnixTime(ts int64) string {
+	return time.Unix(ts, 0).UTC().Format(time.RFC3339)
 }

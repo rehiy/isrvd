@@ -165,6 +165,43 @@ onMounted(() => {
             </div>
           </div>
         </div>
+
+        <!-- 层信息 -->
+        <div v-if="inspectData.layerDetails && inspectData.layerDetails.length > 0">
+          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+            层信息（{{ inspectData.layers }} 个实际层，共 {{ inspectData.layerDetails.length }} 步）
+          </h2>
+          <div class="border border-slate-200 rounded-lg divide-y divide-slate-100 overflow-hidden">
+            <div
+              v-for="(layer, idx) in inspectData.layerDetails"
+              :key="idx"
+              class="px-3 py-2"
+              :class="layer.empty ? 'bg-slate-50/50' : 'bg-white'"
+            >
+              <div class="flex items-start gap-2">
+                <!-- 层序号 + 类型标记 -->
+                <div class="flex items-center gap-1.5 shrink-0 mt-0.5">
+                  <span class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold"
+                    :class="layer.empty ? 'bg-slate-100 text-slate-400' : 'bg-blue-50 text-blue-600'"
+                  >{{ inspectData.layerDetails.length - idx }}</span>
+                  <span v-if="!layer.empty" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700">
+                    {{ formatFileSize(layer.size) }}
+                  </span>
+                  <span v-else class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-400">
+                    空层
+                  </span>
+                </div>
+                <!-- 构建命令 -->
+                <div class="flex-1 min-w-0">
+                  <code class="text-xs font-mono text-slate-700 break-all leading-relaxed">{{ layer.createdBy || '(无命令)' }}</code>
+                  <div v-if="!layer.empty && layer.digest" class="mt-1">
+                    <code class="text-xs font-mono text-slate-400 break-all">{{ layer.digest }}</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Empty -->

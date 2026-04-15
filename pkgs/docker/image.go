@@ -201,6 +201,32 @@ func (s *DockerService) InspectImage(ctx context.Context, id string) (*ImageInsp
 		layers = len(img.RootFS.Layers)
 	}
 
+	// 获取层历史
+	history, err := s.client.ImageHistory(ctx, id)
+	if err != nil {
+		logman.Warn("Get image history failed", "id", id, "error", err)
+	}
+
+	// 构建层详情：history 顺序为最新层在前，倒序后从底层开始编号
+	var layerDetails []*ImageLayerInfo
+	digestIdx := 0
+	for i := len(history) - 1; i >= 0; i-- {
+		h := history[i]
+		cmd := strings.TrimPrefix(h.CreatedBy, "/bin/sh -c #(nop) ")
+		isEmpty := h.Size == 0 && strings.Contains(h.CreatedBy, "#(nop)")
+		info := &ImageLayerInfo{
+			CreatedBy: cmd,
+			Created:   formatUnixTime(h.Created),
+			Empty:     isEmpty,
+			Size:      h.Size,
+		}
+		if !isEmpty && digestIdx < len(img.RootFS.Layers) {
+			info.Digest = img.RootFS.Layers[digestIdx]
+			digestIdx++
+		}
+		layerDetails = append(layerDetails, info)
+	}
+
 	result := &ImageInspectResponse{
 		ID:           img.ID,
 		ShortID:      shortID,
@@ -219,6 +245,7 @@ func (s *DockerService) InspectImage(ctx context.Context, id string) (*ImageInsp
 		ExposedPorts: exposedPorts,
 		Labels:       img.Config.Labels,
 		Layers:       layers,
+		LayerDetails: layerDetails,
 	}
 
 	return result, nil
