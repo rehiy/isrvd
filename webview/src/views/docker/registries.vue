@@ -193,10 +193,10 @@ onMounted(() => {
                     <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
                       <i class="fab fa-docker text-white text-sm"></i>
                     </div>
-                    <div>
+                  <div class="flex flex-col">
                       <span class="font-medium text-slate-800">Docker Hub</span>
-                      <span class="ml-1.5 text-xs text-slate-400 font-normal">默认</span>
-                    </div>
+                      <span class="text-xs text-slate-400 font-normal">默认</span>
+                  </div>
                   </div>
                 </td>
                 <td class="px-4 py-3">
@@ -221,7 +221,10 @@ onMounted(() => {
                     <div class="w-8 h-8 rounded-lg bg-purple-400 flex items-center justify-center">
                       <i class="fas fa-warehouse text-white text-sm"></i>
                     </div>
-                    <span class="font-medium text-slate-800">{{ reg.name }}</span>
+                    <div class="flex flex-col">
+                      <span class="font-medium text-slate-800">{{ reg.name }}</span>
+                      <span v-if="reg.description" class="text-xs text-slate-400 font-normal">{{ reg.description }}</span>
+                    </div>
                   </div>
                 </td>
                 <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ reg.url }}</code></td>
@@ -256,9 +259,9 @@ onMounted(() => {
               <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center">
                 <i class="fab fa-docker text-white text-base"></i>
               </div>
-              <div>
-                <h3 class="font-medium text-slate-800 text-sm">Docker Hub</h3>
-                <span class="text-xs text-slate-400">默认</span>
+              <div class="flex flex-col">
+                  <h3 class="font-medium text-slate-800 text-sm">Docker Hub</h3>
+                  <span class="text-xs text-slate-400">默认</span>
               </div>
             </div>
             
@@ -289,8 +292,9 @@ onMounted(() => {
                 <div class="w-10 h-10 rounded-lg bg-purple-400 flex items-center justify-center">
                   <i class="fas fa-warehouse text-white text-base"></i>
                 </div>
-                <div>
+                <div class="flex flex-col">
                   <h3 class="font-medium text-slate-800 text-sm">{{ reg.name }}</h3>
+                  <span v-if="reg.description" class="text-xs text-slate-400">{{ reg.description }}</span>
                 </div>
               </div>
             </div>
@@ -346,7 +350,7 @@ onMounted(() => {
           <label class="block text-sm font-medium text-slate-700 mb-2">目标仓库地址</label>
           <select v-model="pushForm.registryUrl" class="input" required>
             <option value="" disabled>请选择仓库</option>
-            <option v-for="reg in registries" :key="reg.url" :value="reg.url">{{ reg.name }} ({{ reg.url }})</option>
+            <option v-for="reg in registries" :key="reg.url" :value="reg.url">{{ reg.name }} ({{ reg.url }}){{ reg.description ? ' - ' + reg.description : '' }}</option>
           </select>
         </div>
         <div>
@@ -371,7 +375,7 @@ onMounted(() => {
           <label class="block text-sm font-medium text-slate-700 mb-2">源仓库地址</label>
           <select v-model="pullForm.registryUrl" class="input" required>
             <option value="" disabled>请选择仓库</option>
-            <option v-for="reg in registries" :key="reg.url" :value="reg.url">{{ reg.name }} ({{ reg.url }})</option>
+            <option v-for="reg in registries" :key="reg.url" :value="reg.url">{{ reg.name }} ({{ reg.url }}){{ reg.description ? ' - ' + reg.description : '' }}</option>
           </select>
         </div>
         <div>

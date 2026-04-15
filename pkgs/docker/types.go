@@ -9,10 +9,11 @@ type DockerConfig struct {
 
 // RegistryConfig 镜像仓库配置
 type RegistryConfig struct {
-	Name     string // 仓库名称
-	URL      string // 仓库地址
-	Username string // 用户名
-	Password string // 密码
+	Name        string // 仓库名称
+	URL         string // 仓库地址
+	Username    string // 用户名
+	Password    string // 密码
+	Description string // 仓库描述
 }
 
 // ContainerInfo Docker 容器信息
@@ -336,9 +337,10 @@ type ContainerConfigResponse struct {
 
 // RegistryInfo 镜像仓库信息
 type RegistryInfo struct {
-	Name     string `json:"name"`
-	URL      string `json:"url"`
-	Username string `json:"username"`
+	Name        string `json:"name"`
+	URL         string `json:"url"`
+	Username    string `json:"username"`
+	Description string `json:"description"`
 }
 
 // ImagePullFromRegistryRequest 从仓库拉取镜像请求

@@ -11,6 +11,7 @@ docker:
   containerRoot: srv/
   registries:
      # - name: CSIG Hub
+     #   description: 公司内部镜像仓库
      #   url: hub.example.com
      #   username: debug
      #   password: 123

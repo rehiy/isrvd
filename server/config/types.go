@@ -32,10 +32,11 @@ type DockerConfig struct {
 
 // 镜像仓库配置
 type DockerRegistry struct {
-	Name     string `yaml:"name"`     // 仓库名称（用于显示）
-	URL      string `yaml:"url"`      // 仓库地址，如 registry.example.com
-	Username string `yaml:"username"` // 用户名（可选）
-	Password string `yaml:"password"` // 密码（可选）
+	Name        string `yaml:"name"`        // 仓库名称（用于显示）
+	Description string `yaml:"description"` // 仓库描述（可选）
+	URL         string `yaml:"url"`         // 仓库地址，如 registry.example.com
+	Username    string `yaml:"username"`    // 用户名（可选）
+	Password    string `yaml:"password"`    // 密码（可选）
 }
 
 // 成员配置

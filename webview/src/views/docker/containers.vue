@@ -416,8 +416,8 @@ onMounted(() => {
                 <th v-if="batchMode" class="w-10 px-4 py-3 text-left text-xs font-semibold text-slate-600">
                   <input type="checkbox" :checked="selectedIds.length === containers.length && containers.length > 0" @change="selectAll" class="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500" />
                 </th>
-                <th class="w-auto px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
-                <th class="w-auto px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">镜像</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">镜像</th>
                 <th class="w-48 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
                 <th class="w-56 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
                 <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
@@ -434,7 +434,7 @@ onMounted(() => {
                     <div :class="['w-8 h-8 rounded-lg flex items-center justify-center', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
                       <i class="fas fa-box text-white text-sm"></i>
                     </div>
-                    <span class="font-medium text-slate-800">{{ ct.name || ct.id }}</span>
+                    <span class="font-medium text-slate-800 truncate max-w-[160px]">{{ ct.name || ct.id }}</span>
                   </div>
                 </td>
                 <td class="px-4 py-3">
@@ -468,11 +468,11 @@ onMounted(() => {
                     <button v-if="ct.state !== 'running'" @click="handleContainerAction(ct, 'start')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动">
                       <i class="fas fa-play text-xs"></i>
                     </button>
-                    <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
-                      <i class="fas fa-stop text-xs"></i>
-                    </button>
                     <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'restart')" class="btn-icon text-blue-600 hover:bg-blue-50" title="重启">
                       <i class="fas fa-redo text-xs"></i>
+                    </button>
+                    <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
+                      <i class="fas fa-stop text-xs"></i>
                     </button>
                     <button @click="handleContainerAction(ct, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                       <i class="fas fa-trash text-xs"></i>
@@ -555,13 +555,13 @@ onMounted(() => {
                 <i class="fas fa-play text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">启动</span>
               </button>
-              <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
-                <i class="fas fa-stop text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">停止</span>
-              </button>
               <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'restart')" class="btn-icon text-blue-600 hover:bg-blue-50" title="重启">
                 <i class="fas fa-redo text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">重启</span>
+              </button>
+              <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
+                <i class="fas fa-stop text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">停止</span>
               </button>
               <button @click="handleContainerAction(ct, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                 <i class="fas fa-trash text-xs"></i>

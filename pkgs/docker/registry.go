@@ -16,9 +16,10 @@ func (s *DockerService) ListRegistries() []*RegistryInfo {
 	var registries []*RegistryInfo
 	for _, r := range s.config.Registries {
 		registries = append(registries, &RegistryInfo{
-			Name:     r.Name,
-			URL:      r.URL,
-			Username: r.Username,
+			Name:        r.Name,
+			URL:         r.URL,
+			Username:    r.Username,
+			Description: r.Description,
 		})
 	}
 	return registries

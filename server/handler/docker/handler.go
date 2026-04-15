@@ -23,10 +23,11 @@ func NewDockerHandler() (*DockerHandler, error) {
 	var registries []*dockerPkg.RegistryConfig
 	for _, r := range config.Docker.Registries {
 		registries = append(registries, &dockerPkg.RegistryConfig{
-			Name:     r.Name,
-			URL:      r.URL,
-			Username: r.Username,
-			Password: r.Password,
+			Name:        r.Name,
+			Description: r.Description,
+			URL:         r.URL,
+			Username:    r.Username,
+			Password:    r.Password,
 		})
 	}
 
