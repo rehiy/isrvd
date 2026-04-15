@@ -1,21 +1,25 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 import ApisixOverview from '@/views/apisix/overview.vue'
 import DockerOverview from '@/views/docker/overview.vue'
 import SwarmOverview from '@/views/swarm/overview.vue'
+import SystemOverview from '@/views/system/overview.vue'
 
 const dockerRef = ref(null)
 const swarmRef = ref(null)
 const apisixRef = ref(null)
+const systemRef = ref(null)
 
 const refreshAll = () => {
+  systemRef.value?.load()
   dockerRef.value?.load()
   swarmRef.value?.load()
   apisixRef.value?.load()
 }
 
 onMounted(() => refreshAll())
+onUnmounted(() => systemRef.value?.stopPoll?.())
 </script>
 
 <template>
@@ -35,6 +39,15 @@ onMounted(() => refreshAll())
         <button @click="refreshAll" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
           <i class="fas fa-rotate"></i>刷新
         </button>
+      </div>
+
+      <!-- 系统信息区块 -->
+      <div class="p-6 border-b border-slate-100">
+        <div class="flex items-center gap-2 mb-4">
+          <i class="fas fa-server text-slate-500 text-lg"></i>
+          <h2 class="text-base font-semibold text-slate-700">系统信息</h2>
+        </div>
+        <SystemOverview ref="systemRef" />
       </div>
 
       <!-- Docker 概览区块 -->

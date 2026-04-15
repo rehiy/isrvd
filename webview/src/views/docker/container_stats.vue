@@ -255,10 +255,11 @@ const initCharts = () => {
   }
 }
 
-const renderCharts = () => {  if (cpuChart) { cpuChart.data.labels = snap; cpuChart.data.datasets[0].data = [...cpuData]; cpuChart.update('none') }
-  if (memChart) { memChart.data.labels = snap; memChart.data.datasets[0].data = [...memData]; memChart.update('none') }
-  if (netChart) { netChart.data.labels = snap; netChart.data.datasets[0].data = [...netRxData]; netChart.data.datasets[1].data = [...netTxData]; netChart.update('none') }
-  if (blkChart) { blkChart.data.labels = snap; blkChart.data.datasets[0].data = [...blkRData]; blkChart.data.datasets[1].data = [...blkWData]; blkChart.update('none') }
+const renderCharts = () => {
+  if (cpuChart) { cpuChart.data.labels = [...labels]; cpuChart.data.datasets[0].data = [...cpuData]; cpuChart.update('none') }
+  if (memChart) { memChart.data.labels = [...labels]; memChart.data.datasets[0].data = [...memData]; memChart.update('none') }
+  if (netChart) { netChart.data.labels = [...labels]; netChart.data.datasets[0].data = [...netRxData]; netChart.data.datasets[1].data = [...netTxData]; netChart.update('none') }
+  if (blkChart) { blkChart.data.labels = [...labels]; blkChart.data.datasets[0].data = [...blkRData]; blkChart.data.datasets[1].data = [...blkWData]; blkChart.update('none') }
 }
 
 const destroyCharts = () => {

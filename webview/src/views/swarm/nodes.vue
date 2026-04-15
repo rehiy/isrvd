@@ -118,7 +118,7 @@ onMounted(() => loadNodes())
               <td class="px-4 py-3 font-mono text-xs text-slate-500">{{ n.addr || '-' }}</td>
               <td class="px-4 py-3 text-xs text-slate-500">{{ n.engineVersion || '-' }}</td>
               <td class="px-4 py-3">
-<div class="flex justify-end items-center gap-0.5">
+                <div class="flex justify-end items-center gap-0.5">
                   <button @click="router.push(`/swarm/node/${n.id}`)" class="btn-icon text-slate-600 hover:bg-slate-100" title="查看详情"><i class="fas fa-circle-info text-xs"></i></button>
                   <button v-if="n.availability !== 'active'" @click="handleNodeAction(n, 'active')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="激活"><i class="fas fa-play text-xs"></i></button>
                   <button v-if="n.availability !== 'drain'"  @click="handleNodeAction(n, 'drain')"  class="btn-icon text-amber-600 hover:bg-amber-50"   title="排空"><i class="fas fa-arrow-down text-xs"></i></button>

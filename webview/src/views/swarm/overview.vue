@@ -53,10 +53,6 @@ defineExpose({ load })
           </div>
         </div>
       </div>
-      <div class="grid grid-cols-2 gap-4 text-sm text-slate-600 pt-2 border-t border-slate-100">
-        <div><span class="text-xs text-slate-400">Cluster ID</span><p class="font-mono text-xs mt-0.5 truncate">{{ swarmInfo.clusterID || '-' }}</p></div>
-        <div><span class="text-xs text-slate-400">创建时间</span><p class="mt-0.5">{{ swarmInfo.createdAt || '-' }}</p></div>
-      </div>
     </div>
     <div v-else class="flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50">
       <i class="fas fa-circle-nodes text-2xl text-slate-300"></i>

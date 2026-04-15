@@ -56,7 +56,7 @@ onMounted(() => loadDetail())
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">节点详情</h1>
-              <p class="text-xs text-slate-500 font-mono truncate max-w-xs">{{ nodeId }}</p>
+              <p class="text-xs text-slate-500 font-mono truncate max-w-xs">Node ID: {{ nodeId }}</p>
             </div>
           </div>
           <button @click="loadDetail()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">

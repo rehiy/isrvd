@@ -69,6 +69,12 @@ class ApiService {
     return axios.post('/api/filer/download', { path }, { responseType: 'blob' })
   }
 
+  // ==================== 系统信息相关 ====================
+
+  systemStat() {
+    return axios.get('/api/system/stat')
+  }
+
   // ==================== Docker 管理相关 ====================
   
   // Docker 概览信息

@@ -13,6 +13,7 @@ import (
 	filerHandler "isrvd/server/handler/filer"
 	shellHandler "isrvd/server/handler/shell"
 	swarmHandler "isrvd/server/handler/swarm"
+	systemHandler "isrvd/server/handler/system"
 	"isrvd/server/middleware"
 )
 
@@ -51,6 +52,7 @@ func (app *App) setupRouter() {
 	fh := filerHandler.NewFileHandler()
 	sh := shellHandler.NewShellHandler()
 	zh := filerHandler.NewZipHandler()
+	sysh := systemHandler.NewSystemHandler()
 
 	// 注册 Docker Handler
 	dh, err := dockerHandler.NewDockerHandler()
@@ -78,6 +80,12 @@ func (app *App) setupRouter() {
 		auth.Use(middleware.AuthMiddleware())
 		{
 			auth.POST("/logout", ah.Logout)
+
+			// 系统信息 API 路由
+			system := auth.Group("/system")
+			{
+				system.GET("/stat", sysh.Stat)
+			}
 
 			// 文件管理 API 路由
 			filer := auth.Group("/filer")
