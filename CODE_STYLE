@@ -40,6 +40,90 @@ px-3 py-1.5 rounded-lg bg-{模块主色}-500 hover:bg-{模块主色}-600 text-wh
 px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors
 ```
 
+### Toolbar 按钮区
+
+统一用单层 `<div class="flex items-center gap-2">`，**禁止**在内部再嵌套额外的 `<div class="flex items-center gap-2 ml-2">`：
+
+```html
+<!-- ✅ 正确 -->
+<div class="flex items-center gap-2">
+  <button>刷新</button>
+  <button>创建</button>
+</div>
+
+<!-- ❌ 错误 -->
+<div class="flex items-center gap-2">
+  <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">...</div>
+  <div class="flex items-center gap-2 ml-2">  <!-- 多余嵌套 -->
+    <button>刷新</button>
+    <button>创建</button>
+  </div>
+</div>
+```
+
+### 自动刷新间隔
+
+全局统一使用 `POLL_INTERVAL` 常量，定义在 `webview/src/helper/utils.js`（当前值 `3000` ms）。所有 `setInterval` 轮询定时器必须从 `utils.js` 导入此常量，**禁止**在组件内硬编码刷新间隔数字：
+
+```js
+// ✅ 正确
+import { POLL_INTERVAL } from '@/helper/utils'
+this.timer = setInterval(() => this.loadData(), POLL_INTERVAL)
+
+// ❌ 错误
+this.timer = setInterval(() => this.loadData(), 3000)
+```
+
+### 响应式布局规范
+
+所有列表页统一采用**双视图**结构：桌面端表格 + 移动端卡片。
+
+#### 双视图结构
+
+```html
+<!-- 桌面端表格 -->
+<div class="hidden md:block overflow-x-auto">
+  <table>...</table>
+</div>
+
+<!-- 移动端卡片列表 -->
+<div class="md:hidden space-y-3">
+  <div v-for="item in list" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
+    ...
+  </div>
+</div>
+```
+
+> **注意**：移动端卡片列表外层 div 只用 `md:hidden space-y-3`，**禁止**添加 `p-4`（卡片本身已有 `p-4`，外层加 padding 会导致双重间距）。
+
+#### 移动端卡片规范
+
+- 卡片容器：`rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm`
+- 卡片图标：`w-10 h-10 rounded-lg`（比桌面端 `w-8 h-8` 大一号，适合触摸操作）
+- 操作按钮区：`flex flex-wrap gap-1 pt-2 border-t border-slate-100`
+
+#### 搜索框规范
+
+有搜索功能的页面，搜索框需同时提供桌面端和移动端两个入口：
+
+```html
+<!-- 桌面端搜索框（在 toolbar 内） -->
+<div class="relative hidden md:block">
+  <input v-model="searchText" type="text" placeholder="搜索..." class="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg ... w-48" />
+  <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+</div>
+
+<!-- 移动端搜索框（在 toolbar 下方单独一行） -->
+<div class="md:hidden px-4 py-2 border-b border-slate-100">
+  <div class="relative">
+    <input v-model="searchText" type="text" placeholder="搜索..." class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg ..." />
+    <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+  </div>
+</div>
+```
+
+> 移动端搜索框宽度必须为 `w-full`，桌面端固定 `w-48`。两者共用同一个 `v-model`，无需额外逻辑。
+
 ### 表格
 
 | 区域 | 样式 |
