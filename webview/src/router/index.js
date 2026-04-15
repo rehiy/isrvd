@@ -28,25 +28,22 @@ const routes = [
   },
   {
     path: '/docker/container/:id',
-    component: () => import('@/views/docker/container.vue'),
-    redirect: to => ({ name: 'docker-container-stats', params: { id: to.params.id } }),
-    children: [
-      {
-        path: 'stats',
-        name: 'docker-container-stats',
-        component: () => import('@/views/docker/container_stats.vue')
-      },
-      {
-        path: 'logs',
-        name: 'docker-container-logs',
-        component: () => import('@/views/docker/container_logs.vue')
-      },
-      {
-        path: 'terminal',
-        name: 'docker-container-terminal',
-        component: () => import('@/views/docker/container_terminal.vue')
-      }
-    ]
+    redirect: to => ({ name: 'docker-container-stats', params: { id: to.params.id } })
+  },
+  {
+    path: '/docker/container/:id/stats',
+    name: 'docker-container-stats',
+    component: () => import('@/views/docker/container_stats.vue')
+  },
+  {
+    path: '/docker/container/:id/logs',
+    name: 'docker-container-logs',
+    component: () => import('@/views/docker/container_logs.vue')
+  },
+  {
+    path: '/docker/container/:id/terminal',
+    name: 'docker-container-terminal',
+    component: () => import('@/views/docker/container_terminal.vue')
   },
   {
     path: '/docker/images',
@@ -100,30 +97,22 @@ const routes = [
   },
   {
     path: '/swarm/service/:id',
-    component: () => import('@/views/swarm/service_detail.vue'),
-    redirect: to => ({ name: 'swarm-service-detail-info', params: { id: to.params.id } }),
-    children: [
-      {
-        path: 'info',
-        name: 'swarm-service-detail-info',
-        component: () => import('@/views/swarm/service_detail_info.vue')
-      },
-      {
-        path: 'logs',
-        name: 'swarm-service-detail-logs',
-        component: () => import('@/views/swarm/service_detail_logs.vue')
-      },
-      {
-        path: 'tasks',
-        name: 'swarm-service-detail-tasks',
-        component: () => import('@/views/swarm/service_detail_tasks.vue')
-      }
-    ]
+    redirect: to => ({ name: 'swarm-service-info', params: { id: to.params.id } })
   },
   {
-    path: '/swarm/tasks',
-    name: 'swarm-tasks',
-    component: () => import('@/views/swarm/tasks.vue')
+    path: '/swarm/service/:id/info',
+    name: 'swarm-service-info',
+component: () => import('@/views/swarm/service_info.vue')
+  },
+  {
+    path: '/swarm/service/:id/logs',
+    name: 'swarm-service-logs',
+component: () => import('@/views/swarm/service_logs.vue')
+  },
+  {
+    path: '/swarm/service/:id/tasks',
+    name: 'swarm-service-tasks',
+component: () => import('@/views/swarm/service_tasks.vue')
   },
   {
     path: '/apisix',

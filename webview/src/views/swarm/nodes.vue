@@ -27,8 +27,10 @@ const availabilityClass = (avail) => {
 const loadNodes = async () => {
   nodesLoading.value = true
   try {
-    const res = await api.swarmListNodes()
-    nodes.value = res.payload || []
+  const res = await api.swarmListNodes()
+    const list = res.payload || []
+    // leader 节点排最前
+    nodes.value = list.sort((a, b) => (b.leader ? 1 : 0) - (a.leader ? 1 : 0))
   } catch (e) {
     actions.showNotification('error', '获取节点列表失败')
   }
@@ -125,7 +127,7 @@ onMounted(() => loadNodes())
                     <button v-if="n.availability !== 'active'" @click="handleNodeAction(n, 'active')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="激活"><i class="fas fa-play text-xs"></i></button>
                     <button v-if="n.availability !== 'drain'"  @click="handleNodeAction(n, 'drain')"  class="btn-icon text-amber-600 hover:bg-amber-50"   title="排空"><i class="fas fa-arrow-down text-xs"></i></button>
                     <button v-if="n.availability !== 'pause'"  @click="handleNodeAction(n, 'pause')"  class="btn-icon text-slate-600 hover:bg-slate-100"   title="暂停"><i class="fas fa-pause text-xs"></i></button>
-                    <button v-if="n.role !== 'manager'"        @click="handleNodeAction(n, 'remove')" class="btn-icon text-red-600 hover:bg-red-50"         title="移除"><i class="fas fa-trash text-xs"></i></button>
+                    <button @click="n.leader ? null : handleNodeAction(n, 'remove')" :disabled="n.leader" :class="n.leader ? 'btn-icon text-slate-300 cursor-not-allowed' : 'btn-icon text-red-600 hover:bg-red-50'" :title="n.leader ? '不能移除 Leader 节点' : '移除'"><i class="fas fa-trash text-xs"></i></button>
                   </div>
                 </td>
               </tr>
@@ -196,7 +198,7 @@ onMounted(() => loadNodes())
                 <i class="fas fa-pause text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">暂停</span>
               </button>
-              <button v-if="n.role !== 'manager'"        @click="handleNodeAction(n, 'remove')" class="btn-icon text-red-600 hover:bg-red-50"         title="移除">
+              <button @click="n.leader ? null : handleNodeAction(n, 'remove')" :disabled="n.leader" :class="n.leader ? 'btn-icon text-slate-300 cursor-not-allowed' : 'btn-icon text-red-600 hover:bg-red-50'" :title="n.leader ? '不能移除 Leader 节点' : '移除'">
                 <i class="fas fa-trash text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">移除</span>
               </button>

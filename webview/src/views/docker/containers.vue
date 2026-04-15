@@ -435,7 +435,6 @@ onMounted(() => {
                       <i class="fas fa-box text-white text-sm"></i>
                     </div>
                     <span class="font-medium text-slate-800">{{ ct.name || ct.id }}</span>
-                    <span v-if="ct.isSwarm" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-cyan-50 text-cyan-600" title="由 Docker Swarm 管理">swarm</span>
                   </div>
                 </td>
                 <td class="px-4 py-3">
@@ -454,7 +453,7 @@ onMounted(() => {
                 <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button v-if="ct.name && !ct.isSwarm" @click="editContainerModal(ct)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑配置">
+                    <button @click="!ct.isSwarm && editContainerModal(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-violet-600 hover:bg-violet-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
                       <i class="fas fa-cog text-xs"></i>
                     </button>
                     <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/stats' })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
@@ -501,7 +500,6 @@ onMounted(() => {
                 <div>
                   <div class="flex items-center gap-2">
                     <span class="font-medium text-slate-800 text-sm">{{ ct.name || ct.id }}</span>
-                    <span v-if="ct.isSwarm" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-cyan-50 text-cyan-600">swarm</span>
                   </div>
                   <div class="flex items-center gap-2 mt-1">
                     <span :class="['text-xs px-2 py-0.5 rounded-full', ct.state === 'running' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600']">
@@ -537,7 +535,7 @@ onMounted(() => {
             
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
-              <button v-if="ct.name && !ct.isSwarm" @click="editContainerModal(ct)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑配置">
+              <button @click="!ct.isSwarm && editContainerModal(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-violet-600 hover:bg-violet-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
                 <i class="fas fa-cog text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">配置</span>
               </button>

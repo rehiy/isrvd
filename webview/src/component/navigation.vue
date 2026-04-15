@@ -276,14 +276,6 @@ onUnmounted(() => {
             <i class="fas fa-cubes"></i>
             <span>服务</span>
           </router-link>
-          <router-link
-            to="/swarm/tasks"
-            class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm/task') }"
-          >
-            <i class="fas fa-tasks"></i>
-            <span>任务</span>
-          </router-link>
         </div>
       </div>
       <!-- 折叠状态下的 Swarm 菜单 -->
