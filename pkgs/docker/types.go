@@ -36,6 +36,27 @@ type ImageInfo struct {
 	Created  int64    `json:"created"`
 }
 
+// ImageInspectResponse 镜像详情响应
+type ImageInspectResponse struct {
+	ID           string            `json:"id"`
+	ShortID      string            `json:"shortId"`
+	RepoTags     []string          `json:"repoTags"`
+	RepoDigests  []string          `json:"repoDigests"`
+	Size         int64             `json:"size"`
+	VirtualSize  int64             `json:"virtualSize"`
+	Created      string            `json:"created"`
+	Author       string            `json:"author"`
+	Architecture string            `json:"architecture"`
+	OS           string            `json:"os"`
+	Cmd          []string          `json:"cmd"`
+	Entrypoint   []string          `json:"entrypoint"`
+	Env          []string          `json:"env"`
+	WorkingDir   string            `json:"workingDir"`
+	ExposedPorts []string          `json:"exposedPorts"`
+	Labels       map[string]string `json:"labels"`
+	Layers       int               `json:"layers"`
+}
+
 // NetworkInfo Docker 网络信息
 type NetworkInfo struct {
 	ID      string   `json:"id"`

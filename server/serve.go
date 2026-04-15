@@ -141,6 +141,7 @@ func (app *App) setupRouter() {
 				// 镜像管理
 				docker.GET("/images", dh.ListImages)
 				docker.POST("/image/action", dh.ImageAction)
+				docker.GET("/image/inspect", dh.InspectImage)
 				docker.POST("/image/pull", dh.PullImage)
 				docker.POST("/image/tag", dh.TagImage)
 				docker.GET("/image/search", dh.SearchImages)

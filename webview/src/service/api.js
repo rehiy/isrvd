@@ -103,6 +103,9 @@ class ApiService {
   listImages(all = false) {
     return axios.get('/api/docker/images', { params: { all } })
   }
+  imageInspect(id) {
+    return axios.get('/api/docker/image/inspect', { params: { id } })
+  }
   imageAction(id, action) {
     return axios.post('/api/docker/image/action', { id, action })
   }

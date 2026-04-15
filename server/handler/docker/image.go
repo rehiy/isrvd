@@ -104,3 +104,20 @@ func (h *DockerHandler) BuildImage(c *gin.Context) {
 
 	helper.RespondSuccess(c, "镜像构建成功", gin.H{"tag": req.Tag, "message": msg})
 }
+
+// InspectImage 获取镜像详情
+func (h *DockerHandler) InspectImage(c *gin.Context) {
+	id := c.Query("id")
+	if id == "" {
+		helper.RespondError(c, http.StatusBadRequest, "镜像ID不能为空")
+		return
+	}
+
+	result, err := h.service.InspectImage(c.Request.Context(), id)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, "获取镜像详情失败: "+err.Error())
+		return
+	}
+
+	helper.RespondSuccess(c, "Image inspected successfully", result)
+}

@@ -176,6 +176,54 @@ func (s *DockerService) BuildImage(ctx context.Context, dockerfile, tag string) 
 	return lastMessage, nil
 }
 
+// InspectImage 获取镜像详情
+func (s *DockerService) InspectImage(ctx context.Context, id string) (*ImageInspectResponse, error) {
+	img, _, err := s.client.ImageInspectWithRaw(ctx, id)
+	if err != nil {
+		logman.Error("Inspect image failed", "id", id, "error", err)
+		return nil, err
+	}
+
+	shortID := img.ID
+	if strings.HasPrefix(shortID, "sha256:") && len(shortID) > 19 {
+		shortID = shortID[7:19]
+	}
+
+	// 提取暴露端口列表
+	var exposedPorts []string
+	for port := range img.Config.ExposedPorts {
+		exposedPorts = append(exposedPorts, string(port))
+	}
+
+	// 统计层数
+	layers := 0
+	if img.RootFS.Type == "layers" {
+		layers = len(img.RootFS.Layers)
+	}
+
+	result := &ImageInspectResponse{
+		ID:           img.ID,
+		ShortID:      shortID,
+		RepoTags:     img.RepoTags,
+		RepoDigests:  img.RepoDigests,
+		Size:         img.Size,
+		VirtualSize:  img.VirtualSize, //nolint:staticcheck
+		Created:      img.Created,
+		Author:       img.Author,
+		Architecture: img.Architecture,
+		OS:           img.Os,
+		Cmd:          img.Config.Cmd,
+		Entrypoint:   img.Config.Entrypoint,
+		Env:          img.Config.Env,
+		WorkingDir:   img.Config.WorkingDir,
+		ExposedPorts: exposedPorts,
+		Labels:       img.Config.Labels,
+		Layers:       layers,
+	}
+
+	return result, nil
+}
+
 // min 返回两个整数中的较小值
 func min(a, b int) int {
 	if a < b {
