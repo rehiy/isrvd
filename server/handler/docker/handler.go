@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +20,6 @@ type DockerHandler struct {
 
 // NewDockerHandler 创建 Docker 处理器
 func NewDockerHandler() (*DockerHandler, error) {
-	// 将 server/config 转换为 pkgs 层的配置类型
 	var registries []*dockerPkg.RegistryConfig
 	for _, r := range config.Docker.Registries {
 		registries = append(registries, &dockerPkg.RegistryConfig{
@@ -39,14 +39,25 @@ func NewDockerHandler() (*DockerHandler, error) {
 
 	svc, err := dockerPkg.NewDockerService(cfg)
 	if err != nil {
+		logman.Error("Docker client init failed", "error", err)
 		return nil, err
 	}
+
 	return &DockerHandler{service: svc}, nil
 }
 
-// GetClient 获取 Docker 服务（供 Swarm Handler 复用）
+// GetClient 获取 Docker 服务
 func (h *DockerHandler) GetClient() *dockerPkg.DockerService {
 	return h.service
+}
+
+// CheckAvailability 检测 Docker 可用性
+func (h *DockerHandler) CheckAvailability(ctx context.Context) bool {
+	if h.service == nil {
+		return false
+	}
+	_, err := h.service.GetInfo(ctx)
+	return err == nil
 }
 
 // Info 获取 Docker 概览信息

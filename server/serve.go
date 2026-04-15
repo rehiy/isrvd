@@ -7,13 +7,14 @@ import (
 
 	"isrvd/public"
 	"isrvd/server/config"
-	apisixHandler "isrvd/server/handler/apisix"
-	authHandler "isrvd/server/handler/auth"
-	dockerHandler "isrvd/server/handler/docker"
-	filerHandler "isrvd/server/handler/filer"
-	shellHandler "isrvd/server/handler/shell"
-	swarmHandler "isrvd/server/handler/swarm"
-	systemHandler "isrvd/server/handler/system"
+	"isrvd/server/handler/apisix"
+	"isrvd/server/handler/auth"
+	"isrvd/server/handler/docker"
+	"isrvd/server/handler/filer"
+	"isrvd/server/handler/shell"
+	"isrvd/server/handler/swarm"
+	"isrvd/server/handler/system"
+	"isrvd/server/helper"
 	"isrvd/server/middleware"
 )
 
@@ -48,146 +49,175 @@ func (app *App) create() {
 
 // 设置管理器路由
 func (app *App) setupRouter() {
-	ah := authHandler.NewAuthHandler()
-	fh := filerHandler.NewFileHandler()
-	sh := shellHandler.NewShellHandler()
-	zh := filerHandler.NewZipHandler()
-	sysh := systemHandler.NewSystemHandler()
+	authHandler := auth.NewAuthHandler()
+	fileHandler := filer.NewFileHandler()
+	zipHandler := filer.NewZipHandler()
+	shellHandler := shell.NewShellHandler()
+	systemHandler := system.NewSystemHandler()
+
+	// 注册 Apisix Handler
+	apisixHandler, _ := apisix.NewHandler()
 
 	// 注册 Docker Handler
-	dh, err := dockerHandler.NewDockerHandler()
-	if err != nil {
-		logman.Error("Docker client init failed", "error", err)
-	}
+	dockerHandler, _ := docker.NewDockerHandler()
 
-	// 注册 Swarm Handler（复用 Docker client）
-	swh := swarmHandler.NewSwarmHandler(dh.GetClient().GetClient())
-
-	// 注册 Apisix Handler（可选，配置了才启用）
-	apih, err := apisixHandler.NewHandler()
-	if err != nil {
-		logman.Error("Apisix client init failed", "error", err)
+	// 注册 Swarm Handler
+	var swarmHandler *swarm.SwarmHandler
+	if dockerHandler != nil {
+		swarmHandler = swarm.NewSwarmHandler(dockerHandler.GetClient().GetClient())
 	}
 
 	// API 路由组
 	api := app.Group("/api")
 	{
 		// 无需认证的路由
-		api.POST("/login", ah.Login)
+		api.POST("/login", authHandler.Login)
 
 		// 需认证的路由组
-		auth := api.Group("")
-		auth.Use(middleware.AuthMiddleware())
+		authGroup := api.Group("")
+		authGroup.Use(middleware.AuthMiddleware())
 		{
-			auth.POST("/logout", ah.Logout)
-
-			// 系统信息 API 路由
-			system := auth.Group("/system")
-			{
-				system.GET("/stat", sysh.Stat)
-			}
+			authGroup.POST("/logout", authHandler.Logout)
 
 			// 文件管理 API 路由
-			filer := auth.Group("/filer")
+			filerGroup := authGroup.Group("/filer")
 			{
-				filer.POST("/list", fh.List)
-				filer.POST("/upload", fh.Upload)
-				filer.POST("/download", fh.Download)
-				filer.POST("/delete", fh.Delete)
-				filer.POST("/mkdir", fh.Mkdir)
-				filer.POST("/create", fh.Create)
-				filer.POST("/read", fh.Read)
-				filer.POST("/modify", fh.Modify)
-				filer.POST("/rename", fh.Rename)
-				filer.POST("/chmod", fh.Chmod)
-				filer.POST("/zip", zh.Zip)
-				filer.POST("/unzip", zh.Unzip)
+				filerGroup.POST("/list", fileHandler.List)
+				filerGroup.POST("/upload", fileHandler.Upload)
+				filerGroup.POST("/download", fileHandler.Download)
+				filerGroup.POST("/delete", fileHandler.Delete)
+				filerGroup.POST("/mkdir", fileHandler.Mkdir)
+				filerGroup.POST("/create", fileHandler.Create)
+				filerGroup.POST("/read", fileHandler.Read)
+				filerGroup.POST("/modify", fileHandler.Modify)
+				filerGroup.POST("/rename", fileHandler.Rename)
+				filerGroup.POST("/chmod", fileHandler.Chmod)
+				filerGroup.POST("/zip", zipHandler.Zip)
+				filerGroup.POST("/unzip", zipHandler.Unzip)
 			}
 
 			// Apisix API 路由
-			apisix := auth.Group("/apisix")
-			{
-				// 路由管理
-				apisix.GET("/routes", apih.ListRoutes)
-				apisix.GET("/routes/:id", apih.GetRoute)
-				apisix.POST("/routes", apih.CreateRoute)
-				apisix.PUT("/routes/:id", apih.UpdateRoute)
-				apisix.PATCH("/routes/:id/status", apih.PatchRouteStatus)
-				apisix.DELETE("/routes/:id", apih.DeleteRoute)
+			if apisixHandler != nil {
+				apisixGroup := authGroup.Group("/apisix")
+				{
+					// 路由管理
+					apisixGroup.GET("/routes", apisixHandler.ListRoutes)
+					apisixGroup.GET("/routes/:id", apisixHandler.GetRoute)
+					apisixGroup.POST("/routes", apisixHandler.CreateRoute)
+					apisixGroup.PUT("/routes/:id", apisixHandler.UpdateRoute)
+					apisixGroup.PATCH("/routes/:id/status", apisixHandler.PatchRouteStatus)
+					apisixGroup.DELETE("/routes/:id", apisixHandler.DeleteRoute)
 
-				// Consumer 管理
-				apisix.GET("/consumers", apih.ListConsumers)
-				apisix.POST("/consumers", apih.CreateConsumer)
-				apisix.PUT("/consumers/:username", apih.UpdateConsumer)
-				apisix.DELETE("/consumers/:username", apih.DeleteConsumer)
+					// Consumer 管理
+					apisixGroup.GET("/consumers", apisixHandler.ListConsumers)
+					apisixGroup.POST("/consumers", apisixHandler.CreateConsumer)
+					apisixGroup.PUT("/consumers/:username", apisixHandler.UpdateConsumer)
+					apisixGroup.DELETE("/consumers/:username", apisixHandler.DeleteConsumer)
 
-				// 白名单管理
-				apisix.GET("/whitelist", apih.GetWhitelist)
-				apisix.PUT("/whitelist/revoke", apih.RevokeWhitelist)
+					// 插件管理
+					apisixGroup.GET("/plugin_configs", apisixHandler.ListPluginConfigs)
+					apisixGroup.GET("/plugins", apisixHandler.ListPlugins)
 
-				// 辅助资源
-				apisix.GET("/plugin_configs", apih.ListPluginConfigs)
-				apisix.GET("/upstreams", apih.ListUpstreams)
-				apisix.GET("/plugins", apih.ListPlugins)
+					// 上游管理
+					apisixGroup.GET("/upstreams", apisixHandler.ListUpstreams)
+
+					// 白名单管理
+					apisixGroup.GET("/whitelist", apisixHandler.GetWhitelist)
+					apisixGroup.PUT("/whitelist/revoke", apisixHandler.RevokeWhitelist)
+				}
 			}
 
 			// Docker API 路由
-			docker := auth.Group("/docker")
-			{
-				// 概览
-				docker.GET("/info", dh.Info)
+			if dockerHandler != nil {
+				dockerGroup := authGroup.Group("/docker")
+				{
+					// 概览
+					dockerGroup.GET("/info", dockerHandler.Info)
 
-				// 容器管理
-				docker.GET("/containers", dh.ListContainers)
-				docker.POST("/container/action", dh.ContainerAction)
-				docker.POST("/container/create", dh.CreateContainer)
-				docker.POST("/container/logs", dh.ContainerLogs)
-				docker.GET("/container/stats", dh.ContainerStats)
-				docker.GET("/container/config", dh.GetContainerConfig)
-				docker.POST("/container/update", dh.UpdateContainerConfig)
+					// 容器管理
+					dockerGroup.GET("/containers", dockerHandler.ListContainers)
+					dockerGroup.POST("/container/action", dockerHandler.ContainerAction)
+					dockerGroup.POST("/container/create", dockerHandler.CreateContainer)
+					dockerGroup.POST("/container/logs", dockerHandler.ContainerLogs)
+					dockerGroup.GET("/container/stats", dockerHandler.ContainerStats)
+					dockerGroup.GET("/container/config", dockerHandler.GetContainerConfig)
+					dockerGroup.POST("/container/update", dockerHandler.UpdateContainerConfig)
 
-				// 镜像管理
-				docker.GET("/images", dh.ListImages)
-				docker.POST("/image/action", dh.ImageAction)
-				docker.GET("/image/inspect", dh.InspectImage)
-				docker.POST("/image/pull", dh.PullImage)
-				docker.POST("/image/tag", dh.TagImage)
-				docker.GET("/image/search", dh.SearchImages)
-				docker.POST("/image/build", dh.BuildImage)
+					// 镜像管理
+					dockerGroup.GET("/images", dockerHandler.ListImages)
+					dockerGroup.POST("/image/action", dockerHandler.ImageAction)
+					dockerGroup.GET("/image/inspect", dockerHandler.InspectImage)
+					dockerGroup.POST("/image/pull", dockerHandler.PullImage)
+					dockerGroup.POST("/image/tag", dockerHandler.TagImage)
+					dockerGroup.GET("/image/search", dockerHandler.SearchImages)
+					dockerGroup.POST("/image/build", dockerHandler.BuildImage)
 
-				// 网络管理
-				docker.GET("/networks", dh.ListNetworks)
-				docker.GET("/network/inspect", dh.NetworkInspect)
-				docker.POST("/network/action", dh.NetworkAction)
-				docker.POST("/network/create", dh.CreateNetwork)
+					// 网络管理
+					dockerGroup.GET("/networks", dockerHandler.ListNetworks)
+					dockerGroup.GET("/network/inspect", dockerHandler.NetworkInspect)
+					dockerGroup.POST("/network/action", dockerHandler.NetworkAction)
+					dockerGroup.POST("/network/create", dockerHandler.CreateNetwork)
 
-				// 卷管理
-				docker.GET("/volumes", dh.ListVolumes)
-				docker.GET("/volume/inspect", dh.VolumeInspect)
-				docker.POST("/volume/action", dh.VolumeAction)
-				docker.POST("/volume/create", dh.CreateVolume)
+					// 卷管理
+					dockerGroup.GET("/volumes", dockerHandler.ListVolumes)
+					dockerGroup.GET("/volume/inspect", dockerHandler.VolumeInspect)
+					dockerGroup.POST("/volume/action", dockerHandler.VolumeAction)
+					dockerGroup.POST("/volume/create", dockerHandler.CreateVolume)
 
-				// 镜像仓库管理
-				docker.GET("/registries", dh.ListRegistries)
-				docker.POST("/registry/push", dh.PushImage)
-				docker.POST("/registry/pull", dh.PullFromRegistry)
-
+					// 镜像仓库管理
+					dockerGroup.GET("/registries", dockerHandler.ListRegistries)
+					dockerGroup.POST("/registry/push", dockerHandler.PushImage)
+					dockerGroup.POST("/registry/pull", dockerHandler.PullFromRegistry)
+				}
 			}
 
 			// Swarm API 路由
-			swarmGroup := auth.Group("/swarm")
+			if swarmHandler != nil {
+				swarmGroup := authGroup.Group("/swarm")
+				{
+					// 概览
+					swarmGroup.GET("/info", swarmHandler.SwarmInfo)
+
+					// 节点管理
+					swarmGroup.GET("/nodes", swarmHandler.SwarmListNodes)
+					swarmGroup.GET("/node/inspect", swarmHandler.SwarmInspectNode)
+					swarmGroup.POST("/node/action", swarmHandler.SwarmNodeAction)
+
+					// 服务管理
+					swarmGroup.GET("/services", swarmHandler.SwarmListServices)
+					swarmGroup.GET("/service/inspect", swarmHandler.SwarmInspectService)
+					swarmGroup.POST("/service/create", swarmHandler.SwarmCreateService)
+					swarmGroup.POST("/service/action", swarmHandler.SwarmServiceAction)
+					swarmGroup.POST("/service/redeploy", swarmHandler.SwarmForceUpdateService)
+					swarmGroup.GET("/service/logs", swarmHandler.SwarmServiceLogs)
+
+					// 任务管理
+					swarmGroup.GET("/tasks", swarmHandler.SwarmListTasks)
+				}
+			}
+
+			// 系统信息 API 路由
+			systemGroup := authGroup.Group("/system")
 			{
-				swarmGroup.GET("/info", swh.SwarmInfo)
-				swarmGroup.GET("/nodes", swh.SwarmListNodes)
-				swarmGroup.GET("/node/inspect", swh.SwarmInspectNode)
-				swarmGroup.POST("/node/action", swh.SwarmNodeAction)
-				swarmGroup.GET("/services", swh.SwarmListServices)
-				swarmGroup.GET("/service/inspect", swh.SwarmInspectService)
-				swarmGroup.POST("/service/create", swh.SwarmCreateService)
-				swarmGroup.POST("/service/action", swh.SwarmServiceAction)
-				swarmGroup.POST("/service/redeploy", swh.SwarmForceUpdateService)
-				swarmGroup.GET("/service/logs", swh.SwarmServiceLogs)
-				swarmGroup.GET("/tasks", swh.SwarmListTasks)
+				systemGroup.GET("/stat", systemHandler.Stat)
+				systemGroup.GET("/availability", func(c *gin.Context) {
+					ctx := c.Request.Context()
+					dockerOK, swarmOK, apisixOK := false, false, false
+					if dockerHandler != nil {
+						dockerOK = dockerHandler.CheckAvailability(ctx)
+					}
+					if swarmHandler != nil {
+						swarmOK = swarmHandler.CheckAvailability(ctx)
+					}
+					if apisixHandler != nil {
+						apisixOK = apisixHandler.CheckAvailability()
+					}
+					helper.RespondSuccess(c, "ok", gin.H{
+						"docker": gin.H{"available": dockerOK},
+						"swarm":  gin.H{"available": swarmOK},
+						"apisix": gin.H{"available": apisixOK},
+					})
+				})
 			}
 		}
 	}
@@ -196,7 +226,9 @@ func (app *App) setupRouter() {
 	ws := app.Group("/ws")
 	ws.Use(middleware.AuthMiddleware())
 	{
-		ws.GET("/shell", sh.WebSocket)
-		ws.GET("/docker/container/exec", dh.ContainerExec)
+		ws.GET("/shell", shellHandler.WebSocket)
+		if dockerHandler != nil {
+			ws.GET("/docker/container/exec", dockerHandler.ContainerExec)
+		}
 	}
 }

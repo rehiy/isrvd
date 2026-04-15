@@ -1,6 +1,7 @@
 package swarm
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/docker/docker/client"
@@ -20,6 +21,15 @@ func NewSwarmHandler(dockerClient *client.Client) *SwarmHandler {
 	return &SwarmHandler{
 		manager: swarm.NewSwarmManager(dockerClient),
 	}
+}
+
+// CheckAvailability 检测 Swarm 可用性，实现 system.SwarmAvailabilityChecker 接口
+func (h *SwarmHandler) CheckAvailability(ctx context.Context) bool {
+	if h.manager == nil {
+		return false
+	}
+	_, err := h.manager.GetClient().SwarmInspect(ctx)
+	return err == nil
 }
 
 // SwarmInfo 获取 Swarm 集群概览

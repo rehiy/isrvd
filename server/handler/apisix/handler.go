@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rehiy/pango/logman"
 
 	"isrvd/pkgs/apisix"
 	"isrvd/server/config"
@@ -19,11 +20,22 @@ type Handler struct {
 // NewHandler 创建 Apisix 处理器
 func NewHandler() (*Handler, error) {
 	if config.Apisix.AdminURL == "" {
+		logman.Error("Apisix adminUrl Is Empty")
 		return nil, fmt.Errorf("Apisix adminUrl 未配置")
 	}
+
 	return &Handler{
 		client: apisix.NewClient(config.Apisix.AdminURL, config.Apisix.AdminKey),
 	}, nil
+}
+
+// CheckAvailability 检测 APISIX 可用性，实现 system.ApisixAvailabilityChecker 接口
+func (h *Handler) CheckAvailability() bool {
+	if h.client == nil {
+		return false
+	}
+	_, err := h.client.ListRoutes()
+	return err == nil
 }
 
 // ========================
