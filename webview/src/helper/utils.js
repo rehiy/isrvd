@@ -45,8 +45,9 @@ export const FILE_ICON_MAP = {
     'sql': 'fas fa-database text-secondary'
 };
 
-export const isEditableFile = (file) => {
-    const ext = file.name.split('.').pop().toLowerCase();
+export const isEditableFile = (filename) => {
+    if (!filename) return false;
+    const ext = filename.split('.').pop().toLowerCase();
     return TEXT_EXTENSIONS.includes(ext);
 };
 
