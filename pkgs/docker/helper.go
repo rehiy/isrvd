@@ -36,9 +36,9 @@ func formatPorts(ports []types.Port) []string {
 				continue
 			}
 			if isWildcardIP(p.IP) {
-				entry = fmt.Sprintf("%d->%d/%s", p.PublicPort, p.PrivatePort, p.Type)
+				entry = fmt.Sprintf("%d:%d/%s", p.PublicPort, p.PrivatePort, p.Type)
 			} else {
-				entry = fmt.Sprintf("%s:%d->%d/%s", p.IP, p.PublicPort, p.PrivatePort, p.Type)
+				entry = fmt.Sprintf("%s:%d:%d/%s", p.IP, p.PublicPort, p.PrivatePort, p.Type)
 			}
 		} else {
 			key = fmt.Sprintf("%d/%s", p.PrivatePort, p.Type)
