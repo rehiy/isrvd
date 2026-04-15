@@ -40,7 +40,7 @@ func (s *DockerService) GetClient() *client.Client {
 
 // GetInfo 获取 Docker 概览信息
 func (s *DockerService) GetInfo(ctx context.Context) (*DockerInfo, error) {
-	_, err := s.client.Info(ctx)
+	daemonInfo, err := s.client.Info(ctx)
 	if err != nil {
 		logman.Error("Docker info failed", "error", err)
 		return nil, err
@@ -68,12 +68,20 @@ func (s *DockerService) GetInfo(ctx context.Context) (*DockerInfo, error) {
 	volList, _ := s.client.VolumeList(ctx, volume.ListOptions{})
 	networks, _ := s.client.NetworkList(ctx, types.NetworkListOptions{})
 
+	// 读取镜像加速器配置
+	var mirrors []string
+	if daemonInfo.RegistryConfig != nil {
+		mirrors = daemonInfo.RegistryConfig.Mirrors
+	}
+
 	return &DockerInfo{
-		ContainersRunning: running,
-		ContainersStopped: stopped,
-		ContainersPaused:  paused,
-		ImagesTotal:       int64(len(images)),
-		VolumesTotal:      int64(len(volList.Volumes)),
-		NetworksTotal:     int64(len(networks)),
+		ContainersRunning:  running,
+		ContainersStopped:  stopped,
+		ContainersPaused:   paused,
+		ImagesTotal:        int64(len(images)),
+		VolumesTotal:       int64(len(volList.Volumes)),
+		NetworksTotal:      int64(len(networks)),
+		RegistryMirrors:    mirrors,
+		IndexServerAddress: daemonInfo.IndexServerAddress,
 	}, nil
 }

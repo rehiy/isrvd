@@ -182,3 +182,14 @@ func ParseDockerLogs(data []byte) []string {
 	}
 	return logs
 }
+
+// registryHost 从仓库 URL 中提取 host 部分（去掉协议前缀和路径），用于拼接镜像引用
+// 例如：https://csighub.tencentyun.com -> csighub.tencentyun.com
+func registryHost(registryURL string) string {
+	host := strings.TrimPrefix(registryURL, "https://")
+	host = strings.TrimPrefix(host, "http://")
+	if idx := strings.Index(host, "/"); idx >= 0 {
+		host = host[:idx]
+	}
+	return host
+}

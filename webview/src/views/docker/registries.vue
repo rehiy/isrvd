@@ -9,6 +9,20 @@ import BaseModal from '@/component/modal.vue'
 
 const actions = inject(APP_ACTIONS_KEY)
 
+// 镜像加速器（来自 Docker daemon）
+const daemonMirrors = ref([])
+const indexServerAddress = ref('')
+
+// 加载 daemon 镜像源信息
+const loadDaemonInfo = async () => {
+  try {
+    const res = await api.dockerInfo()
+    const info = res.payload || {}
+    daemonMirrors.value = info.registryMirrors || []
+    indexServerAddress.value = info.indexServerAddress || ''
+  } catch (e) {}
+}
+
 // 仓库列表
 const registries = ref([])
 const loading = ref(false)
@@ -118,6 +132,7 @@ const handlePull = async () => {
 }
 
 onMounted(() => {
+  loadDaemonInfo()
   loadRegistries()
 })
 </script>
@@ -158,7 +173,7 @@ onMounted(() => {
       </div>
 
       <!-- Registry Table -->
-      <div v-else-if="registries.length > 0" class="overflow-x-auto">
+      <div v-else class="overflow-x-auto">
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
@@ -169,6 +184,35 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-slate-100">
+            <!-- Docker Hub 行（始终显示） -->
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                    <i class="fab fa-docker text-white text-sm"></i>
+                  </div>
+                  <div>
+                    <span class="font-medium text-slate-800">Docker Hub</span>
+                    <span class="ml-1.5 text-xs text-slate-400 font-normal">默认</span>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ indexServerAddress || 'https://index.docker.io/v1/' }}</code>
+                <template v-if="daemonMirrors.length > 0">
+                  <code v-for="mirror in daemonMirrors" :key="mirror" class="ml-1 text-xs bg-sky-50 text-sky-700 px-2 py-1 rounded inline-flex items-center gap-1">
+                    <i class="fas fa-bolt text-sky-400 text-xs"></i>{{ mirror }}
+                  </code>
+                </template>
+              </td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
+                  <i class="fas fa-lock-open mr-1"></i>匿名
+                </span>
+              </td>
+              <td class="px-4 py-3"></td>
+            </tr>
+            <!-- 私有仓库行 -->
             <tr v-for="reg in registries" :key="reg.url" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
@@ -200,15 +244,6 @@ onMounted(() => {
             </tr>
           </tbody>
         </table>
-      </div>
-
-      <!-- Empty State -->
-      <div v-else class="flex flex-col items-center justify-center py-20">
-        <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-          <i class="fas fa-warehouse text-4xl text-slate-300"></i>
-        </div>
-        <p class="text-slate-600 font-medium mb-1">暂无镜像仓库</p>
-        <p class="text-sm text-slate-400">请在 config.yml 中配置 docker.registries</p>
       </div>
     </div>
 

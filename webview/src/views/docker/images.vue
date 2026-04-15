@@ -26,6 +26,19 @@ const searchResults = ref([])
 const searchLoading = ref(false)
 const searchKeyword = ref('')
 
+// 镜像加速器（来自 Docker daemon）
+const daemonMirrors = ref([])
+const indexServerAddress = ref('')
+
+const loadDaemonInfo = async () => {
+  try {
+    const res = await api.dockerInfo()
+    const info = res.payload || {}
+    daemonMirrors.value = info.registryMirrors || []
+    indexServerAddress.value = info.indexServerAddress || ''
+  } catch (e) {}
+}
+
 // 详情状态
 const inspectOpen = ref(false)
 const inspectData = ref(null)
@@ -75,6 +88,7 @@ const pullImageModal = () => {
   formData.value = { image: '', tag: '' }
   searchResults.value = []
   searchKeyword.value = ''
+  loadDaemonInfo()
   modalTitle.value = '拉取镜像'
   modalOpen.value = true
 }
@@ -454,6 +468,25 @@ onMounted(() => {
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-2">Tag（可选）</label>
               <input type="text" v-model="formData.tag" placeholder="默认 latest" class="input" />
+            </div>
+          </div>
+
+          <!-- 镜像源提示 -->
+          <div class="border-t border-slate-200 pt-4">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">当前镜像源</p>
+            <div v-if="daemonMirrors.length > 0" class="flex flex-wrap gap-1.5">
+              <code
+                v-for="mirror in daemonMirrors"
+                :key="mirror"
+                class="inline-flex items-center gap-1 px-2 py-1 bg-sky-50 border border-sky-200 rounded-lg text-xs font-mono text-sky-700"
+              >
+                <i class="fas fa-bolt text-sky-400 text-xs"></i>{{ mirror }}
+              </code>
+            </div>
+            <div v-else class="flex items-center gap-1.5 text-xs text-slate-400">
+              <i class="fab fa-docker text-blue-400"></i>
+              {{ indexServerAddress || 'https://index.docker.io/v1/' }}
+              <span class="text-slate-300">（未配置加速器）</span>
             </div>
           </div>
         </form>

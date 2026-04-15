@@ -78,12 +78,14 @@ type VolumeInfo struct {
 
 // DockerInfo Docker 信息概览
 type DockerInfo struct {
-	ContainersRunning int64 `json:"containersRunning"`
-	ContainersStopped int64 `json:"containersStopped"`
-	ContainersPaused  int64 `json:"containersPaused"`
-	ImagesTotal       int64 `json:"imagesTotal"`
-	VolumesTotal      int64 `json:"volumesTotal"`
-	NetworksTotal     int64 `json:"networksTotal"`
+	ContainersRunning  int64    `json:"containersRunning"`
+	ContainersStopped  int64    `json:"containersStopped"`
+	ContainersPaused   int64    `json:"containersPaused"`
+	ImagesTotal        int64    `json:"imagesTotal"`
+	VolumesTotal       int64    `json:"volumesTotal"`
+	NetworksTotal      int64    `json:"networksTotal"`
+	RegistryMirrors    []string `json:"registryMirrors"`
+	IndexServerAddress string   `json:"indexServerAddress"`
 }
 
 // ContainerActionRequest 容器操作请求

@@ -52,11 +52,12 @@ func (s *DockerService) PushImage(ctx context.Context, req ImagePushRequest) (st
 	}
 
 	// 构建完整的目标镜像引用
+	host := registryHost(req.RegistryURL)
 	var targetRef string
 	if req.Namespace != "" {
-		targetRef = req.RegistryURL + "/" + req.Namespace + "/" + imageName
+		targetRef = host + "/" + req.Namespace + "/" + imageName
 	} else {
-		targetRef = req.RegistryURL + "/" + imageName
+		targetRef = host + "/" + imageName
 	}
 	if !strings.Contains(targetRef, ":") {
 		targetRef += ":latest"
@@ -107,11 +108,12 @@ func (s *DockerService) PushImage(ctx context.Context, req ImagePushRequest) (st
 // PullFromRegistry 从仓库拉取镜像到本地
 func (s *DockerService) PullFromRegistry(ctx context.Context, req ImagePullFromRegistryRequest) (string, string, error) {
 	// 构建完整的镜像引用
+	host := registryHost(req.RegistryURL)
 	var imageRef string
 	if req.Namespace != "" {
-		imageRef = req.RegistryURL + "/" + req.Namespace + "/" + req.Image
+		imageRef = host + "/" + req.Namespace + "/" + req.Image
 	} else {
-		imageRef = req.RegistryURL + "/" + req.Image
+		imageRef = host + "/" + req.Image
 	}
 	if !strings.Contains(req.Image, ":") && !strings.Contains(req.Image, "@") {
 		imageRef += ":latest"
