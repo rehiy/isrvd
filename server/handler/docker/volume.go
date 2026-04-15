@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	dockerPkg "isrvd/pkgs/docker"
+	"isrvd/pkgs/docker"
 	"isrvd/server/helper"
 )
 
@@ -22,7 +22,7 @@ func (h *DockerHandler) ListVolumes(c *gin.Context) {
 
 // VolumeAction 卷操作
 func (h *DockerHandler) VolumeAction(c *gin.Context) {
-	var req dockerPkg.VolumeActionRequest
+	var req docker.VolumeActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return
@@ -38,7 +38,7 @@ func (h *DockerHandler) VolumeAction(c *gin.Context) {
 
 // CreateVolume 创建卷
 func (h *DockerHandler) CreateVolume(c *gin.Context) {
-	var req dockerPkg.VolumeCreateRequest
+	var req docker.VolumeCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return

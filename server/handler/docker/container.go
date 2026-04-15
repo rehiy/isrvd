@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/logman"
 
-	dockerPkg "isrvd/pkgs/docker"
+	"isrvd/pkgs/docker"
 	"isrvd/server/helper"
 )
 
@@ -25,7 +25,7 @@ func (h *DockerHandler) ListContainers(c *gin.Context) {
 
 // CreateContainer 创建容器
 func (h *DockerHandler) CreateContainer(c *gin.Context) {
-	var req dockerPkg.ContainerCreateRequest
+	var req docker.ContainerCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
@@ -47,7 +47,7 @@ func (h *DockerHandler) CreateContainer(c *gin.Context) {
 
 // UpdateContainerConfig 更新容器配置并重建
 func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
-	var req dockerPkg.ContainerUpdateRequest
+	var req docker.ContainerUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
 		return
@@ -108,7 +108,7 @@ func (h *DockerHandler) ContainerStats(c *gin.Context) {
 
 // ContainerAction 容器操作
 func (h *DockerHandler) ContainerAction(c *gin.Context) {
-	var req dockerPkg.ContainerActionRequest
+	var req docker.ContainerActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return
@@ -124,7 +124,7 @@ func (h *DockerHandler) ContainerAction(c *gin.Context) {
 
 // ContainerLogs 获取容器日志
 func (h *DockerHandler) ContainerLogs(c *gin.Context) {
-	var req dockerPkg.ContainerLogsRequest
+	var req docker.ContainerLogsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return

@@ -9,20 +9,20 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/config"
-	dockerPkg "isrvd/pkgs/docker"
+	"isrvd/pkgs/docker"
 	"isrvd/server/helper"
 )
 
 // DockerHandler Docker 处理器
 type DockerHandler struct {
-	service *dockerPkg.DockerService
+	service *docker.DockerService
 }
 
 // NewDockerHandler 创建 Docker 处理器
 func NewDockerHandler() (*DockerHandler, error) {
-	var registries []*dockerPkg.RegistryConfig
+	var registries []*docker.RegistryConfig
 	for _, r := range config.Docker.Registries {
-		registries = append(registries, &dockerPkg.RegistryConfig{
+		registries = append(registries, &docker.RegistryConfig{
 			Name:        r.Name,
 			Description: r.Description,
 			URL:         r.URL,
@@ -31,13 +31,13 @@ func NewDockerHandler() (*DockerHandler, error) {
 		})
 	}
 
-	cfg := &dockerPkg.DockerConfig{
+	cfg := &docker.DockerConfig{
 		Host:          config.Docker.Host,
 		ContainerRoot: config.Docker.ContainerRoot,
 		Registries:    registries,
 	}
 
-	svc, err := dockerPkg.NewDockerService(cfg)
+	svc, err := docker.NewDockerService(cfg)
 	if err != nil {
 		logman.Error("Docker client init failed", "error", err)
 		return nil, err
@@ -47,7 +47,7 @@ func NewDockerHandler() (*DockerHandler, error) {
 }
 
 // GetClient 获取 Docker 服务
-func (h *DockerHandler) GetClient() *dockerPkg.DockerService {
+func (h *DockerHandler) GetClient() *docker.DockerService {
 	return h.service
 }
 

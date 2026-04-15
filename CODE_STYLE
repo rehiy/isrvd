@@ -288,7 +288,7 @@ conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 - **业务数据模型**：定义在对应的 `pkgs/` 子包的 `types.go` 中（如 `pkgs/docker/types.go`、`pkgs/swarm/types.go`）
 - **配置类型**：定义在 `config/types.go` 中
 
-禁止在不同包中重复定义相同结构体。handler 层可直接引用 pkgs 层的请求类型（如 `dockerPkg.ContainerCreateRequest`）。
+禁止在不同包中重复定义相同结构体。handler 层可直接引用 pkgs 层的请求类型（如 `docker.ContainerCreateRequest`）。
 
 ### 日志规范
 
@@ -348,7 +348,7 @@ logman.Info("Container created: name=" + req.Name + ", id=" + resp.ID)
 ```go
 // ✅ 正确 — handler 持有 service 引用，调用 service 处理业务逻辑
 type DockerHandler struct {
-    service *dockerPkg.DockerService
+    service *docker.DockerService
 }
 
 func (h *DockerHandler) ListContainers(c *gin.Context) {

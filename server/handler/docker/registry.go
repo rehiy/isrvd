@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	dockerPkg "isrvd/pkgs/docker"
+	"isrvd/pkgs/docker"
 	"isrvd/server/helper"
 )
 
@@ -17,7 +17,7 @@ func (h *DockerHandler) ListRegistries(c *gin.Context) {
 
 // PushImage 推送镜像到仓库
 func (h *DockerHandler) PushImage(c *gin.Context) {
-	var req dockerPkg.ImagePushRequest
+	var req docker.ImagePushRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return
@@ -34,7 +34,7 @@ func (h *DockerHandler) PushImage(c *gin.Context) {
 
 // PullFromRegistry 从仓库拉取镜像
 func (h *DockerHandler) PullFromRegistry(c *gin.Context) {
-	var req dockerPkg.ImagePullFromRegistryRequest
+	var req docker.ImagePullFromRegistryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return

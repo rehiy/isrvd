@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	dockerPkg "isrvd/pkgs/docker"
+	"isrvd/pkgs/docker"
 	"isrvd/server/helper"
 )
 
@@ -22,7 +22,7 @@ func (h *DockerHandler) ListNetworks(c *gin.Context) {
 
 // NetworkAction 网络操作
 func (h *DockerHandler) NetworkAction(c *gin.Context) {
-	var req dockerPkg.NetworkActionRequest
+	var req docker.NetworkActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return
@@ -38,7 +38,7 @@ func (h *DockerHandler) NetworkAction(c *gin.Context) {
 
 // CreateNetwork 创建网络
 func (h *DockerHandler) CreateNetwork(c *gin.Context) {
-	var req dockerPkg.NetworkCreateRequest
+	var req docker.NetworkCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return

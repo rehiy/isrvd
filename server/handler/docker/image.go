@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	dockerPkg "isrvd/pkgs/docker"
+	"isrvd/pkgs/docker"
 	"isrvd/server/helper"
 )
 
@@ -24,7 +24,7 @@ func (h *DockerHandler) ListImages(c *gin.Context) {
 
 // ImageAction 镜像操作
 func (h *DockerHandler) ImageAction(c *gin.Context) {
-	var req dockerPkg.ImageActionRequest
+	var req docker.ImageActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return
@@ -40,7 +40,7 @@ func (h *DockerHandler) ImageAction(c *gin.Context) {
 
 // PullImage 拉取镜像
 func (h *DockerHandler) PullImage(c *gin.Context) {
-	var req dockerPkg.ImagePullRequest
+	var req docker.ImagePullRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return
@@ -57,7 +57,7 @@ func (h *DockerHandler) PullImage(c *gin.Context) {
 
 // TagImage 镜像打标签
 func (h *DockerHandler) TagImage(c *gin.Context) {
-	var req dockerPkg.ImageTagRequest
+	var req docker.ImageTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return
@@ -90,7 +90,7 @@ func (h *DockerHandler) SearchImages(c *gin.Context) {
 
 // BuildImage 构建镜像
 func (h *DockerHandler) BuildImage(c *gin.Context) {
-	var req dockerPkg.ImageBuildRequest
+	var req docker.ImageBuildRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return
