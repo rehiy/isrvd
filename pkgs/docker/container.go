@@ -35,6 +35,7 @@ func (s *DockerService) ListContainers(ctx context.Context, all bool) ([]*Contai
 			Status:  ct.Status,
 			Ports:   formatPorts(ct.Ports),
 			Created: ct.Created,
+			IsSwarm: ct.Labels["com.docker.swarm.service.id"] != "",
 			Labels:  ct.Labels,
 		})
 	}

@@ -41,6 +41,11 @@ func (s *DockerService) AutoCreateComposeFile(ctx context.Context, name string) 
 		return nil, fmt.Errorf("检查容器配置失败: %w", err)
 	}
 
+	// 拒绝为 Swarm 管理的容器生成 compose 文件
+	if inspect.Config.Labels["com.docker.swarm.service.id"] != "" {
+		return nil, fmt.Errorf("容器 %s 由 Docker Swarm 管理，不支持生成 compose 文件", name)
+	}
+
 	// 过滤掉镜像内置的默认环境变量，只保留用户自定义的
 	var filteredEnv []string
 	imageInspect, _, imgErr := s.client.ImageInspectWithRaw(ctx, inspect.Config.Image)

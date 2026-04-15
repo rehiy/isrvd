@@ -24,6 +24,7 @@ type ContainerInfo struct {
 	Status  string            `json:"status"`
 	Ports   []string          `json:"ports"`
 	Created int64             `json:"created"`
+	IsSwarm bool              `json:"isSwarm,omitempty"`
 	Labels  map[string]string `json:"labels,omitempty"`
 }
 

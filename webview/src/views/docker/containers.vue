@@ -435,6 +435,7 @@ onMounted(() => {
                     <i class="fas fa-box text-white text-sm"></i>
                   </div>
                   <span class="font-medium text-slate-800">{{ ct.name || ct.id }}</span>
+                  <span v-if="ct.isSwarm" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-cyan-50 text-cyan-600" title="由 Docker Swarm 管理">swarm</span>
                 </div>
               </td>
               <td class="px-4 py-3">
@@ -453,11 +454,17 @@ onMounted(() => {
               <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</td>
               <td class="px-4 py-3">
                 <div class="flex justify-center items-center gap-1">
-                  <button v-if="ct.name" @click="editContainerModal(ct)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑配置">
+                  <button v-if="ct.name && !ct.isSwarm" @click="editContainerModal(ct)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑配置">
                     <i class="fas fa-cog text-xs"></i>
                   </button>
-                  <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
+                  <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/stats' })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
                     <i class="fas fa-chart-bar text-xs"></i>
+                  </button>
+                  <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/logs' })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
+                    <i class="fas fa-file-alt text-xs"></i>
+                  </button>
+                  <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="登录终端">
+                    <i class="fas fa-terminal text-xs"></i>
                   </button>
                   <button v-if="ct.state !== 'running'" @click="handleContainerAction(ct, 'start')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动">
                     <i class="fas fa-play text-xs"></i>
