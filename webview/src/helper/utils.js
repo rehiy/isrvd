@@ -1,3 +1,6 @@
+// 全局自动刷新间隔（毫秒），所有轮询定时器统一使用此常量
+export const POLL_INTERVAL = 3000
+
 export const TEXT_EXTENSIONS = [
     'txt', 'md', 'js', 'css', 'html', 'htm', 'json', 'xml', 'csv',
     'log', 'conf', 'ini', 'cfg', 'yaml', 'yml', 'php', 'py', 'go',

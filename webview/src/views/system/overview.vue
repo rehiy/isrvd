@@ -2,6 +2,7 @@
 import { Chart, registerables } from 'chart.js'
 import { nextTick, ref, computed, onUnmounted } from 'vue'
 import api from '@/service/api.js'
+import { POLL_INTERVAL } from '@/helper/utils.js'
 
 Chart.register(...registerables)
 
@@ -482,8 +483,6 @@ const updateNetHistory = (interfaces, intervalSec) => {
 
 // ── 数据加载 & 轮询 ───────────────────────────────────────
 
-const POLL_INTERVAL = 2000
-
 // 首次加载：重置所有状态，拉取数据，初始化图表
 const load = async () => {
   loading.value = true
@@ -707,7 +706,6 @@ defineExpose({
             <i class="fas fa-network-wired text-white text-xs"></i>
           </div>
           <span class="text-sm font-semibold text-slate-700">网络接口</span>
-          <span class="ml-auto text-xs text-slate-400">每 2s 刷新</span>
         </div>
         <div ref="netContainerRef" class="divide-y divide-slate-50">
           <div

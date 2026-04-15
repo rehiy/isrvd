@@ -4,7 +4,7 @@ import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 
 import api from '@/service/api.js'
-import { formatFileSize } from '@/helper/utils.js'
+import { formatFileSize, POLL_INTERVAL } from '@/helper/utils.js'
 
 Chart.register(...registerables)
 
@@ -57,7 +57,7 @@ const blkRef = ref(null)
 
 const startStatsTimer = () => {
   stopStatsTimer()
-  statsTimer = setInterval(() => loadStats(), 3000)
+  statsTimer = setInterval(() => loadStats(), POLL_INTERVAL)
 }
 
 const stopStatsTimer = () => {
