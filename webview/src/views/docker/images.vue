@@ -371,9 +371,9 @@ onMounted(() => {
       title="添加镜像标签"
       :loading="tagLoading"
       show-footer
-      confirm-text="确认添加"
       @confirm="handleTag"
     >
+      <template #confirm-text>确认添加</template>
       <div v-if="tagImage" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">当前镜像</label>
@@ -401,10 +401,10 @@ onMounted(() => {
       title="构建镜像"
       :loading="buildLoading"
       show-footer
-      confirm-text="开始构建"
       @confirm="handleBuild"
       size="lg"
     >
+      <template #confirm-text>开始构建</template>
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">镜像标签</label>

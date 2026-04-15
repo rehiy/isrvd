@@ -200,9 +200,9 @@ onMounted(() => {
       title="创建网络"
       :loading="modalLoading"
       show-footer
-      confirm-text="确认创建"
       @confirm="handleCreateNetwork"
     >
+      <template #confirm-text>确认创建</template>
       <form @submit.prevent="handleCreateNetwork" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">网络名称</label>

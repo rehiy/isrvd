@@ -259,7 +259,8 @@ onMounted(() => loadServices())
       </div>
 
     <!-- 扩缩容模态框 -->
-    <BaseModal v-model="scaleOpen" title="服务扩缩容" :loading="scaleLoading" show-footer confirm-text="确认扩缩容" @confirm="handleScale">
+    <BaseModal v-model="scaleOpen" title="服务扩缩容" :loading="scaleLoading" show-footer @confirm="handleScale">
+      <template #confirm-text>确认扩缩容</template>
       <div v-if="scaleService" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">服务</label>
@@ -274,7 +275,8 @@ onMounted(() => loadServices())
     </BaseModal>
 
     <!-- 创建服务模态框 -->
-    <BaseModal v-model="createOpen" title="创建服务" :loading="createLoading" show-footer confirm-text="创建" @confirm="handleCreate">
+    <BaseModal v-model="createOpen" title="创建服务" :loading="createLoading" show-footer @confirm="handleCreate">
+      <template #confirm-text>创建</template>
       <form @submit.prevent="handleCreate" class="space-y-4">
         <!-- 基础设置 -->
         <div class="grid grid-cols-2 gap-3">
@@ -347,7 +349,8 @@ onMounted(() => loadServices())
     </BaseModal>
 
     <!-- 日志模态框 -->
-    <BaseModal v-model="logsOpen" :title="`服务日志 - ${logsService?.name || ''}`" :loading="logsLoading" show-footer confirm-text="刷新" @confirm="fetchLogs(logsService?.id)">
+    <BaseModal v-model="logsOpen" :title="`服务日志 - ${logsService?.name || ''}`" :loading="logsLoading" show-footer @confirm="fetchLogs(logsService?.id)">
+      <template #confirm-text>刷新</template>
       <div class="space-y-3">
         <div class="flex items-center gap-2">
           <label class="text-xs text-slate-500 flex-shrink-0">最近行数</label>

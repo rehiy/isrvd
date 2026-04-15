@@ -253,9 +253,9 @@ onMounted(() => {
       title="推送镜像到仓库"
       :loading="pushLoading"
       show-footer
-      confirm-text="开始推送"
       @confirm="handlePush"
     >
+      <template #confirm-text>开始推送</template>
       <form @submit.prevent="handlePush" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">本地镜像</label>
@@ -285,9 +285,9 @@ onMounted(() => {
       title="从仓库拉取镜像"
       :loading="pullLoading"
       show-footer
-      confirm-text="开始拉取"
       @confirm="handlePull"
     >
+      <template #confirm-text>开始拉取</template>
       <form @submit.prevent="handlePull" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">源仓库地址</label>

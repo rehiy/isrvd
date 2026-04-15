@@ -501,9 +501,9 @@ onMounted(() => {
       :title="modalTitle"
       :loading="modalLoading"
       :show-footer="modalTitle === '创建容器' || modalTitle === '编辑容器配置'"
-      :confirm-text="isEditMode ? '更新并重建' : '创建'"
       @confirm="isEditMode ? handleUpdateContainer() : handleCreateContainer()"
     >
+      <template #confirm-text>{{ isEditMode ? '更新并重建' : '创建' }}</template>
       <!-- 创建/编辑容器表单 -->
       <template v-if="modalTitle === '创建容器' || modalTitle === '编辑容器配置'">
         <form @submit.prevent="isEditMode ? handleUpdateContainer() : handleCreateContainer()" class="space-y-4">
