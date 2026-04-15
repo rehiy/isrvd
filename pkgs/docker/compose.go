@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -323,12 +324,12 @@ func (s *DockerService) GetContainerConfig(ctx context.Context, name string) (*C
 		if service.Deploy.Resources.Limits.Memory != "" {
 			memStr := strings.TrimSuffix(service.Deploy.Resources.Limits.Memory, "M")
 			memStr = strings.TrimSuffix(memStr, "Mi")
-			if mem, err := parseInt(memStr); err == nil {
+			if mem, err := strconv.ParseInt(memStr, 10, 64); err == nil {
 				result.Memory = mem
 			}
 		}
 		if service.Deploy.Resources.Limits.Cpus != "" {
-			if cpus, err := parseFloat(service.Deploy.Resources.Limits.Cpus); err == nil {
+			if cpus, err := strconv.ParseFloat(service.Deploy.Resources.Limits.Cpus, 64); err == nil {
 				result.Cpus = cpus
 			}
 		}

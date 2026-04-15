@@ -295,10 +295,11 @@ const selectAll = () => {
   if (selectedIds.value.length === containers.value.length) {
     selectedIds.value = []
   } else {
-    selectedIds.value = containers.value.map(c => c.id)
+    selectedIds.value = containers.value.map(ct => ct.id)
   }
 }
 
+// 批量操作
 const batchAction = (action) => {
   if (selectedIds.value.length === 0) return
   const config = actionConfigs[action] || {}
@@ -317,6 +318,13 @@ const batchAction = (action) => {
       loadContainers()
     }
   })
+}
+
+// 处理镜像名称，去掉域名部分
+const formatImageName = (image) => {
+  if (!image) return ''
+  // 去掉域名部分，保留镜像名和标签
+  return image.replace(/^[^\\/]+\//, '')
 }
 
 // 暴露方法给 toolbar 使用
@@ -409,9 +417,9 @@ onMounted(() => {
                 <input type="checkbox" :checked="selectedIds.length === containers.length && containers.length > 0" @change="selectAll" class="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500" />
               </th>
               <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">镜像</th>
+              <th class="w-auto px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">镜像</th>
               <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
-              <th class="w-40 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
+              <th class="w-72 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
               <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
               <th class="w-56 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
             </tr>
@@ -429,7 +437,12 @@ onMounted(() => {
                   <span class="font-medium text-slate-800">{{ ct.name || ct.id }}</span>
                 </div>
               </td>
-              <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ ct.image }}</code></td>
+              <td class="px-4 py-3">
+                <code 
+                  class="text-xs bg-slate-100 px-2 py-1 rounded" 
+                  :title="ct.image"
+                >{{ formatImageName(ct.image) }}</code>
+              </td>
               <td class="px-4 py-3 text-sm text-slate-600">{{ ct.status }}</td>
               <td class="px-4 py-3 font-mono text-sm text-slate-600">
                 <template v-if="ct.ports && ct.ports.length > 0">

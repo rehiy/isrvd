@@ -6,31 +6,48 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/docker/docker/api/types"
 	yaml "gopkg.in/yaml.v3"
 )
 
-// parseInt 解析整数
-func parseInt(s string) (int64, error) {
-	return strconv.ParseInt(s, 10, 64)
+// isWildcardIP 判断 IP 是否为通配地址（0.0.0.0 或 ::）
+func isWildcardIP(ip string) bool {
+	return ip == "" || ip == "0.0.0.0" || ip == "::"
 }
 
-// parseFloat 解析浮点数
-func parseFloat(s string) (float64, error) {
-	return strconv.ParseFloat(s, 64)
-}
-
-// formatPorts 格式化端口列表
+// formatPorts 格式化端口列表：IPv4 优先、去重、通配地址省略 IP
+//
+// 算法：单次遍历，用 seen map 记录已输出的 key；
+// IPv6 条目若已有对应 IPv4 条目则跳过，否则正常输出。
 func formatPorts(ports []types.Port) []string {
-	var result []string
+	seen := make(map[string]bool, len(ports))
+	result := make([]string, 0, len(ports))
+
 	for _, p := range ports {
+		var entry, key string
+		isIPv6 := strings.Contains(p.IP, ":")
+
 		if p.PublicPort > 0 {
-			result = append(result, fmt.Sprintf("%d/%s->%s:%d", p.PublicPort, p.Type, p.IP, p.PrivatePort))
+			key = fmt.Sprintf("%d:%d/%s", p.PublicPort, p.PrivatePort, p.Type)
+			// IPv6 且已有 IPv4 同 key，跳过
+			if isIPv6 && seen[key] {
+				continue
+			}
+			if isWildcardIP(p.IP) {
+				entry = fmt.Sprintf("%d->%d/%s", p.PublicPort, p.PrivatePort, p.Type)
+			} else {
+				entry = fmt.Sprintf("%s:%d->%d/%s", p.IP, p.PublicPort, p.PrivatePort, p.Type)
+			}
 		} else {
-			result = append(result, fmt.Sprintf("%d/%s", p.PrivatePort, p.Type))
+			key = fmt.Sprintf("%d/%s", p.PrivatePort, p.Type)
+			entry = key
+		}
+
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, entry)
 		}
 	}
 	return result
