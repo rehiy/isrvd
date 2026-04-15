@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/psutil"
+	"github.com/shirou/gopsutil/v3/disk"
 
 	"isrvd/server/helper"
 )
@@ -17,9 +18,19 @@ func NewSystemHandler() *SystemHandler {
 	return &SystemHandler{}
 }
 
+// DiskIOStat 磁盘 IO 统计
+type DiskIOStat struct {
+	Name       string `json:"Name"`
+	ReadBytes  uint64 `json:"ReadBytes"`
+	WriteBytes uint64 `json:"WriteBytes"`
+	ReadCount  uint64 `json:"ReadCount"`
+	WriteCount uint64 `json:"WriteCount"`
+}
+
 // SystemStatResponse 系统统计响应
 type SystemStatResponse struct {
 	System *psutil.DetailStat `json:"system"`
+	DiskIO []*DiskIOStat      `json:"diskIO"`
 	Go     *GoRuntimeStat     `json:"go"`
 }
 
@@ -35,6 +46,19 @@ type GoRuntimeStat struct {
 func (h *SystemHandler) Stat(c *gin.Context) {
 	detail := psutil.Detail(false)
 
+	// 采集磁盘 IO 数据
+	ioCounters, _ := disk.IOCounters()
+	diskIO := make([]*DiskIOStat, 0, len(ioCounters))
+	for name, counter := range ioCounters {
+		diskIO = append(diskIO, &DiskIOStat{
+			Name:       name,
+			ReadBytes:  counter.ReadBytes,
+			WriteBytes: counter.WriteBytes,
+			ReadCount:  counter.ReadCount,
+			WriteCount: counter.WriteCount,
+		})
+	}
+
 	goStat := &GoRuntimeStat{
 		Version:      runtime.Version(),
 		NumCPU:       runtime.NumCPU(),
@@ -44,6 +68,7 @@ func (h *SystemHandler) Stat(c *gin.Context) {
 
 	helper.RespondSuccess(c, "ok", &SystemStatResponse{
 		System: detail,
+		DiskIO: diskIO,
 		Go:     goStat,
 	})
 }
