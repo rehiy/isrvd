@@ -48,7 +48,7 @@ defineExpose({ load })
       <span class="text-slate-400 text-sm">加载中...</span>
     </div>
 
-    <div v-else-if="info" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div v-else-if="info" class="grid grid-cols-2 md:grid-cols-3 gap-3">
       <div
         v-for="card in statCards"
         :key="card.key"
