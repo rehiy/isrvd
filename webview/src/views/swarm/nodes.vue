@@ -1,10 +1,12 @@
 <script setup>
 import { inject, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 import api from '@/service/api.js'
 import { APP_ACTIONS_KEY } from '@/store/state.js'
 
 const actions = inject(APP_ACTIONS_KEY)
+const router = useRouter()
 
 const nodes = ref([])
 const nodesLoading = ref(false)
@@ -117,6 +119,7 @@ onMounted(() => loadNodes())
               <td class="px-4 py-3 text-xs text-slate-500">{{ n.engineVersion || '-' }}</td>
               <td class="px-4 py-3">
                 <div class="flex justify-center items-center gap-0.5">
+                  <button @click="router.push(`/swarm/node/${n.id}`)" class="btn-icon text-slate-600 hover:bg-slate-100" title="查看详情"><i class="fas fa-circle-info text-xs"></i></button>
                   <button v-if="n.availability !== 'active'" @click="handleNodeAction(n, 'active')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="激活"><i class="fas fa-play text-xs"></i></button>
                   <button v-if="n.availability !== 'drain'"  @click="handleNodeAction(n, 'drain')"  class="btn-icon text-amber-600 hover:bg-amber-50"   title="排空"><i class="fas fa-arrow-down text-xs"></i></button>
                   <button v-if="n.availability !== 'pause'"  @click="handleNodeAction(n, 'pause')"  class="btn-icon text-slate-600 hover:bg-slate-100"   title="暂停"><i class="fas fa-pause text-xs"></i></button>

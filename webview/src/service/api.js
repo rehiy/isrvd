@@ -169,11 +169,17 @@ class ApiService {
   swarmListNodes() {
     return axios.get('/api/swarm/nodes')
   }
+  swarmInspectNode(id) {
+    return axios.get('/api/swarm/node/inspect', { params: { id } })
+  }
   swarmNodeAction(id, action) {
     return axios.post('/api/swarm/node/action', { id, action })
   }
   swarmListServices() {
     return axios.get('/api/swarm/services')
+  }
+  swarmInspectService(id) {
+    return axios.get('/api/swarm/service/inspect', { params: { id } })
   }
   swarmServiceAction(id, action, replicas) {
     return axios.post('/api/swarm/service/action', { id, action, replicas })

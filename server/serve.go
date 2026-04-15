@@ -171,8 +171,10 @@ func (app *App) setupRouter() {
 			{
 				swarmGroup.GET("/info", swh.SwarmInfo)
 				swarmGroup.GET("/nodes", swh.SwarmListNodes)
+				swarmGroup.GET("/node/inspect", swh.SwarmInspectNode)
 				swarmGroup.POST("/node/action", swh.SwarmNodeAction)
 				swarmGroup.GET("/services", swh.SwarmListServices)
+				swarmGroup.GET("/service/inspect", swh.SwarmInspectService)
 				swarmGroup.POST("/service/create", swh.SwarmCreateService)
 				swarmGroup.POST("/service/action", swh.SwarmServiceAction)
 				swarmGroup.POST("/service/redeploy", swh.SwarmForceUpdateService)

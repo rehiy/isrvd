@@ -2,9 +2,6 @@
 import { inject, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import ContainerLogs from '@/views/docker/container_logs.vue'
-import ContainerStats from '@/views/docker/container_stats.vue'
-import ContainerTerminal from '@/views/docker/container_terminal.vue'
 import api from '@/service/api.js'
 import { APP_ACTIONS_KEY } from '@/store/state.js'
 
@@ -21,14 +18,6 @@ const containerId = ref(route.params.id)
 
 // 当前激活的 Tab（根据路由名称判断）
 const activeTab = () => route.name
-
-// 当前渲染的子组件
-const currentComponent = () => {
-  const name = route.name
-  if (name === 'docker-container-logs') return ContainerLogs
-  if (name === 'docker-container-terminal') return ContainerTerminal
-  return ContainerStats
-}
 
 // ========== 加载容器信息 ==========
 
@@ -138,17 +127,8 @@ onMounted(async () => {
         <p class="text-slate-500">加载中...</p>
       </div>
 
-      <!-- 容器未运行提示（仅 stats/terminal 时显示） -->
-      <div v-else-if="container && container.state !== 'running' && activeTab() !== 'docker-container-logs'" class="flex flex-col items-center justify-center py-12">
-        <div class="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mb-4">
-          <i class="fas fa-pause text-2xl text-amber-400"></i>
-        </div>
-        <p class="text-slate-600 font-medium mb-1">容器未运行</p>
-        <p class="text-sm text-slate-400">请先启动容器后再查看监控或终端</p>
-      </div>
-
-      <!-- 子组件内容 -->
-      <component v-else-if="container" :is="currentComponent()" :container-id="containerId" :container="container" />
+      <!-- 子路由内容 -->
+      <router-view v-else-if="container" :container-id="containerId" :container="container" />
     </div>
   </div>
 </template>

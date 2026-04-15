@@ -159,3 +159,37 @@ func (h *SwarmHandler) SwarmServiceLogs(c *gin.Context) {
 
 	helper.RespondSuccess(c, "Logs retrieved", gin.H{"logs": logs})
 }
+
+// SwarmInspectNode 获取节点详情
+func (h *SwarmHandler) SwarmInspectNode(c *gin.Context) {
+	id := c.Query("id")
+	if id == "" {
+		helper.RespondError(c, http.StatusBadRequest, "缺少节点 ID")
+		return
+	}
+
+	result, err := h.manager.InspectNode(c.Request.Context(), id)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, "获取节点详情失败: "+err.Error())
+		return
+	}
+
+	helper.RespondSuccess(c, "Node inspected", result)
+}
+
+// SwarmInspectService 获取服务详情
+func (h *SwarmHandler) SwarmInspectService(c *gin.Context) {
+	id := c.Query("id")
+	if id == "" {
+		helper.RespondError(c, http.StatusBadRequest, "缺少服务 ID")
+		return
+	}
+
+	result, err := h.manager.InspectService(c.Request.Context(), id)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, "获取服务详情失败: "+err.Error())
+		return
+	}
+
+	helper.RespondSuccess(c, "Service inspected", result)
+}

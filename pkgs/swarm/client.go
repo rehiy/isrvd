@@ -353,3 +353,103 @@ func (m *SwarmManager) ListTasks(ctx context.Context, serviceID string) ([]Swarm
 
 	return result, nil
 }
+
+// InspectNode 获取节点详情
+func (m *SwarmManager) InspectNode(ctx context.Context, id string) (*SwarmNodeInspect, error) {
+	node, _, err := m.client.NodeInspectWithRaw(ctx, id)
+	if err != nil {
+		logman.Error("NodeInspect failed", "id", id, "error", err)
+		return nil, err
+	}
+
+	result := &SwarmNodeInspect{
+		ID:            node.ID,
+		Hostname:      node.Description.Hostname,
+		Role:          string(node.Spec.Role),
+		Availability:  string(node.Spec.Availability),
+		State:         string(node.Status.State),
+		Addr:          node.Status.Addr,
+		EngineVersion: node.Description.Engine.EngineVersion,
+		Leader:        node.ManagerStatus != nil && node.ManagerStatus.Leader,
+		OS:            node.Description.Platform.OS,
+		Architecture:  node.Description.Platform.Architecture,
+		CPUs:          node.Description.Resources.NanoCPUs / 1e9,
+		MemoryBytes:   node.Description.Resources.MemoryBytes,
+		Labels:        node.Spec.Labels,
+		CreatedAt:     node.Meta.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:     node.Meta.UpdatedAt.Format(time.RFC3339),
+	}
+
+	return result, nil
+}
+
+// InspectService 获取服务详情
+func (m *SwarmManager) InspectService(ctx context.Context, id string) (*SwarmServiceInspect, error) {
+	svc, _, err := m.client.ServiceInspectWithRaw(ctx, id, types.ServiceInspectOptions{InsertDefaults: true})
+	if err != nil {
+		logman.Error("ServiceInspect failed", "id", id, "error", err)
+		return nil, err
+	}
+
+	// 统计运行中任务数
+	f := filters.NewArgs()
+	f.Add("service", svc.ID)
+	tasks, _ := m.client.TaskList(ctx, types.TaskListOptions{Filters: f})
+	runningTasks := 0
+	for _, t := range tasks {
+		if t.Status.State == swarm.TaskStateRunning {
+			runningTasks++
+		}
+	}
+
+	result := &SwarmServiceInspect{
+		ID:           svc.ID,
+		Name:         svc.Spec.Name,
+		Image:        svc.Spec.TaskTemplate.ContainerSpec.Image,
+		Mode:         "replicated",
+		RunningTasks: runningTasks,
+		Env:          svc.Spec.TaskTemplate.ContainerSpec.Env,
+		Args:         svc.Spec.TaskTemplate.ContainerSpec.Args,
+		Labels:       svc.Spec.Labels,
+		CreatedAt:    svc.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:    svc.UpdatedAt.Format(time.RFC3339),
+	}
+
+	if svc.Spec.Mode.Global != nil {
+		result.Mode = "global"
+	} else if svc.Spec.Mode.Replicated != nil {
+		result.Replicas = svc.Spec.Mode.Replicated.Replicas
+	}
+
+	// 端口
+	for _, p := range svc.Endpoint.Ports {
+		result.Ports = append(result.Ports, SwarmServicePort{
+			Protocol:      string(p.Protocol),
+			TargetPort:    p.TargetPort,
+			PublishedPort: p.PublishedPort,
+			PublishMode:   string(p.PublishMode),
+		})
+	}
+
+	// 挂载
+	for _, mt := range svc.Spec.TaskTemplate.ContainerSpec.Mounts {
+		result.Mounts = append(result.Mounts, SwarmServiceMount{
+			Type:     string(mt.Type),
+			Source:   mt.Source,
+			Target:   mt.Target,
+			ReadOnly: mt.ReadOnly,
+		})
+	}
+
+	// 网络
+	for _, n := range svc.Spec.Networks {
+		result.Networks = append(result.Networks, n.Target)
+	}
+
+	// 约束
+	if svc.Spec.TaskTemplate.Placement != nil {
+		result.Constraints = svc.Spec.TaskTemplate.Placement.Constraints
+	}
+
+	return result, nil
+}

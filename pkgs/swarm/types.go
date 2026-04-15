@@ -65,3 +65,57 @@ type SwarmMount struct {
 	Source string `json:"source"`
 	Target string `json:"target"`
 }
+
+// SwarmNodeInspect 节点详情
+type SwarmNodeInspect struct {
+	ID            string            `json:"id"`
+	Hostname      string            `json:"hostname"`
+	Role          string            `json:"role"`
+	Availability  string            `json:"availability"`
+	State         string            `json:"state"`
+	Addr          string            `json:"addr"`
+	EngineVersion string            `json:"engineVersion"`
+	Leader        bool              `json:"leader"`
+	OS            string            `json:"os"`
+	Architecture  string            `json:"architecture"`
+	CPUs          int64             `json:"cpus"`
+	MemoryBytes   int64             `json:"memoryBytes"`
+	Labels        map[string]string `json:"labels"`
+	CreatedAt     string            `json:"createdAt"`
+	UpdatedAt     string            `json:"updatedAt"`
+}
+
+// SwarmServicePort 服务端口信息
+type SwarmServicePort struct {
+	Protocol      string `json:"protocol"`
+	TargetPort    uint32 `json:"targetPort"`
+	PublishedPort uint32 `json:"publishedPort"`
+	PublishMode   string `json:"publishMode"`
+}
+
+// SwarmServiceMount 服务挂载信息
+type SwarmServiceMount struct {
+	Type     string `json:"type"`
+	Source   string `json:"source"`
+	Target   string `json:"target"`
+	ReadOnly bool   `json:"readOnly"`
+}
+
+// SwarmServiceInspect 服务详情
+type SwarmServiceInspect struct {
+	ID           string              `json:"id"`
+	Name         string              `json:"name"`
+	Image        string              `json:"image"`
+	Mode         string              `json:"mode"`
+	Replicas     *uint64             `json:"replicas"`
+	RunningTasks int                 `json:"runningTasks"`
+	Ports        []SwarmServicePort  `json:"ports"`
+	Env          []string            `json:"env"`
+	Args         []string            `json:"args"`
+	Networks     []string            `json:"networks"`
+	Mounts       []SwarmServiceMount `json:"mounts"`
+	Labels       map[string]string   `json:"labels"`
+	Constraints  []string            `json:"constraints"`
+	CreatedAt    string              `json:"createdAt"`
+	UpdatedAt    string              `json:"updatedAt"`
+}
