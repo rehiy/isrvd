@@ -4,6 +4,7 @@ import { inject, onMounted, ref } from 'vue'
 import api from '@/service/api.js'
 import { APP_ACTIONS_KEY } from '@/store/state.js'
 
+import ImageSelect from '@/component/docker/image-select.vue'
 import BaseModal from '@/component/modal.vue'
 
 const actions = inject(APP_ACTIONS_KEY)
@@ -22,8 +23,29 @@ const createOpen = ref(false)
 const createLoading = ref(false)
 const createForm = ref({
   name: '', image: '', mode: 'replicated', replicas: 1,
-  env: '', args: '', networks: '', ports: '', mounts: ''
+  env: '', args: '', network: '', ports: '', mounts: ''
 })
+
+// 镜像和网络列表（创建服务时加载）
+const createImages = ref([])
+const createNetworks = ref([])
+const showCreateAdvanced = ref(false)
+
+const loadCreateResources = async () => {
+  try {
+    const [imgRes, netRes] = await Promise.all([
+      api.listImages(false),
+      api.listNetworks()
+    ])
+    createImages.value = imgRes.payload || []
+    // 只保留 overlay 和 host 网络（适合 Swarm 服务）
+    createNetworks.value = (netRes.payload || []).filter(n =>
+      n.driver === 'overlay' || n.driver === 'host' || n.driver === 'bridge'
+    )
+  } catch (e) {
+    // 静默失败
+  }
+}
 
 // 日志
 const logsOpen = ref(false)
@@ -93,8 +115,10 @@ const handleRedeploy = (svc) => {
 }
 
 const openCreateModal = () => {
-  createForm.value = { name: '', image: '', mode: 'replicated', replicas: 1, env: '', args: '', networks: '', ports: '', mounts: '' }
+  createForm.value = { name: '', image: '', mode: 'replicated', replicas: 1, env: '', args: '', network: '', ports: '', mounts: '' }
+  showCreateAdvanced.value = false
   createOpen.value = true
+  loadCreateResources()
 }
 
 const handleCreate = async () => {
@@ -118,7 +142,7 @@ const handleCreate = async () => {
       replicas: createForm.value.replicas,
       env: parseLines(createForm.value.env),
       args: parseLines(createForm.value.args),
-      networks: parseLines(createForm.value.networks),
+      networks: createForm.value.network ? [createForm.value.network] : [],
       ports: parsePorts(createForm.value.ports),
       mounts: parseMounts(createForm.value.mounts),
     })
@@ -166,11 +190,11 @@ onMounted(() => loadServices())
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <button @click="openCreateModal" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-            <i class="fas fa-plus"></i>创建服务
-          </button>
           <button @click="loadServices" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
             <i class="fas fa-rotate"></i>刷新
+          </button>
+          <button @click="openCreateModal" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <i class="fas fa-plus"></i>创建服务
           </button>
         </div>
       </div>
@@ -249,47 +273,75 @@ onMounted(() => loadServices())
 
     <!-- 创建服务模态框 -->
     <BaseModal v-model="createOpen" title="创建服务" :loading="createLoading" show-footer confirm-text="创建" @confirm="handleCreate">
-      <div class="space-y-4">
-        <div class="grid grid-cols-2 gap-4">
+      <form @submit.prevent="handleCreate" class="space-y-4">
+        <!-- 基础设置 -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-slate-700 mb-2">镜像 <span class="text-red-500">*</span></label>
+            <ImageSelect v-model="createForm.image" :images="createImages" placeholder="选择或输入镜像名称" />
+          </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">服务名 <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-slate-700 mb-2">服务名 <span class="text-red-500">*</span></label>
             <input v-model="createForm.name" type="text" placeholder="my-service" class="input" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">镜像 <span class="text-red-500">*</span></label>
-            <input v-model="createForm.image" type="text" placeholder="nginx:latest" class="input" />
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">模式</label>
-            <select v-model="createForm.mode" class="input">
-              <option value="replicated">Replicated</option>
-              <option value="global">Global</option>
+            <label class="block text-sm font-medium text-slate-700 mb-2">网络</label>
+            <select v-model="createForm.network" class="input">
+              <option value="">不指定</option>
+              <option v-for="net in createNetworks" :key="net.id" :value="net.name">
+                {{ net.name }} ({{ net.driver }})
+              </option>
             </select>
           </div>
-          <div v-if="createForm.mode === 'replicated'">
-            <label class="block text-sm font-medium text-slate-700 mb-1">副本数</label>
-            <input v-model.number="createForm.replicas" type="number" min="1" class="input" />
+        </div>
+
+        <!-- 端口映射 -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">端口映射</label>
+          <textarea v-model="createForm.ports" rows="2" placeholder="8080:80/tcp" class="input font-mono text-sm"></textarea>
+          <p class="mt-1 text-xs text-slate-400">每行一条，格式：宿主端口:容器端口/协议</p>
+        </div>
+
+        <!-- 目录挂载 -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">目录挂载</label>
+          <textarea v-model="createForm.mounts" rows="2" placeholder="/data:/app/data" class="input font-mono text-sm"></textarea>
+          <p class="mt-1 text-xs text-slate-400">每行一条，格式：宿主路径:容器路径</p>
+        </div>
+
+        <!-- 环境变量 -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">环境变量</label>
+          <textarea v-model="createForm.env" rows="2" placeholder="KEY=value" class="input font-mono text-sm"></textarea>
+        </div>
+
+        <!-- 高级选项 -->
+        <div class="border-t border-slate-200 pt-4">
+          <button type="button" @click="showCreateAdvanced = !showCreateAdvanced" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800">
+            <i :class="['fas fa-chevron-down text-xs transition-transform', showCreateAdvanced ? 'rotate-180' : '']"></i>
+            高级选项
+          </button>
+          <div v-if="showCreateAdvanced" class="mt-4 space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">模式</label>
+                <select v-model="createForm.mode" class="input">
+                  <option value="replicated">Replicated</option>
+                  <option value="global">Global</option>
+                </select>
+              </div>
+              <div v-if="createForm.mode === 'replicated'">
+                <label class="block text-sm font-medium text-slate-700 mb-2">副本数</label>
+                <input v-model.number="createForm.replicas" type="number" min="1" class="input" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">启动参数</label>
+              <input v-model="createForm.args" type="text" placeholder="覆盖默认启动参数" class="input font-mono text-sm" />
+            </div>
           </div>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">端口映射 <span class="text-xs text-slate-400">每行一条，格式：8080:80/tcp</span></label>
-          <textarea v-model="createForm.ports" rows="2" placeholder="8080:80/tcp&#10;9000:9000/udp" class="input font-mono text-xs"></textarea>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">环境变量 <span class="text-xs text-slate-400">每行一条，KEY=VALUE</span></label>
-          <textarea v-model="createForm.env" rows="2" placeholder="NODE_ENV=production&#10;PORT=8080" class="input font-mono text-xs"></textarea>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">挂载卷 <span class="text-xs text-slate-400">每行一条，/host:/container</span></label>
-          <textarea v-model="createForm.mounts" rows="2" placeholder="/data:/app/data" class="input font-mono text-xs"></textarea>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">网络 <span class="text-xs text-slate-400">每行一个网络名</span></label>
-          <textarea v-model="createForm.networks" rows="1" placeholder="my-overlay-network" class="input font-mono text-xs"></textarea>
-        </div>
-      </div>
+      </form>
     </BaseModal>
 
     <!-- 日志模态框 -->

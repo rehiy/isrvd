@@ -105,9 +105,9 @@ const restartOptions = [
 
 // 网络模式选项（从加载的网络列表生成）
 const networkOptions = computed(() => {
-  const options = [{ value: '', label: '默认网络' }]
+  const options = [{ value: '', label: '不指定' }]
   networks.value.forEach(net => {
-    options.push({ value: net.name, label: net.name })
+    options.push({ value: net.name, label: `${net.name} (${net.driver})` })
   })
   return options
 })
