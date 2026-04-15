@@ -416,10 +416,10 @@ onMounted(() => {
               <th v-if="batchMode" class="w-10 px-4 py-3 text-left text-xs font-semibold text-slate-600">
                 <input type="checkbox" :checked="selectedIds.length === containers.length && containers.length > 0" @change="selectAll" class="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500" />
               </th>
-              <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+              <th class="w-auto px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
               <th class="w-auto px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">镜像</th>
-              <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
-              <th class="w-72 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
+              <th class="w-48 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
+              <th class="w-56 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
               <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
               <th class="w-56 px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
             </tr>
