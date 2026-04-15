@@ -179,7 +179,7 @@ onUnmounted(() => {
       <!-- Docker 折叠子菜单 -->
       <div v-if="!collapsed">
         <button 
-          @click="toggleDocker"
+          @click.stop="toggleDocker"
           class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
           :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/') }"
         >
@@ -248,7 +248,7 @@ onUnmounted(() => {
       <!-- Swarm 折叠子菜单 -->
       <div v-if="!collapsed">
         <button
-          @click="toggleSwarm"
+          @click.stop="toggleSwarm"
           class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
           :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm') }"
         >
@@ -300,7 +300,7 @@ onUnmounted(() => {
       <!-- Apisix 折叠子菜单 -->
       <div v-if="!collapsed">
         <button 
-          @click="toggleApisix"
+          @click.stop="toggleApisix"
           class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
           :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/') }"
         >
