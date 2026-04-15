@@ -130,44 +130,94 @@ onMounted(() => {
         <p class="text-slate-500">加载中...</p>
       </div>
 
-      <!-- Volume Table -->
-      <div v-else-if="volumes.length > 0" class="overflow-x-auto">
-        <table class="w-full border-collapse">
-          <thead>
-            <tr class="bg-slate-50 border-b border-slate-200">
-              <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
-              <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">驱动</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">挂载点</th>
-              <th class="w-36 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
-<th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-slate-100">
-            <tr v-for="vol in volumes" :key="vol.name" class="hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3">
-                <div class="flex items-center gap-2">
-                  <div class="w-8 h-8 rounded-lg bg-amber-400 flex items-center justify-center">
-                    <i class="fas fa-database text-white text-sm"></i>
+      <!-- Volume List -->
+      <div v-else-if="volumes.length > 0" class="space-y-3">
+        <!-- 桌面端表格视图 -->
+        <div class="hidden md:block overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+                <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">驱动</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">挂载点</th>
+                <th class="w-36 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
+                <th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-slate-100">
+              <tr v-for="vol in volumes" :key="vol.name" class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-amber-400 flex items-center justify-center">
+                      <i class="fas fa-database text-white text-sm"></i>
+                    </div>
+                    <span class="font-medium text-slate-800">{{ vol.name }}</span>
                   </div>
-                  <span class="font-medium text-slate-800">{{ vol.name }}</span>
+                </td>
+                <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ vol.driver }}</code></td>
+                <td class="px-4 py-3 font-mono text-xs text-slate-500 truncate max-w-xs" :title="vol.mountpoint">{{ vol.mountpoint }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(vol.createdAt) }}</td>
+                <td class="px-4 py-3">
+                  <div class="flex justify-end items-center gap-0.5">
+                    <button @click="viewVolumeDetail(vol)" class="btn-icon text-amber-600 hover:bg-amber-50" title="详情">
+                      <i class="fas fa-info-circle text-xs"></i>
+                    </button>
+                    <button @click="handleVolumeAction(vol, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                      <i class="fas fa-trash text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 移动端卡片视图 -->
+        <div class="md:hidden space-y-3">
+          <div 
+            v-for="vol in volumes" 
+            :key="vol.name"
+            class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
+          >
+            <!-- 顶部：卷信息和图标 -->
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-amber-400 flex items-center justify-center">
+                  <i class="fas fa-database text-white text-base"></i>
                 </div>
-              </td>
-              <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ vol.driver }}</code></td>
-              <td class="px-4 py-3 font-mono text-xs text-slate-500 truncate max-w-xs" :title="vol.mountpoint">{{ vol.mountpoint }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(vol.createdAt) }}</td>
-              <td class="px-4 py-3">
-<div class="flex justify-end items-center gap-0.5">
-                  <button @click="viewVolumeDetail(vol)" class="btn-icon text-amber-600 hover:bg-amber-50" title="详情">
-                    <i class="fas fa-info-circle text-xs"></i>
-                  </button>
-                  <button @click="handleVolumeAction(vol, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
-                    <i class="fas fa-trash text-xs"></i>
-                  </button>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="font-medium text-slate-800 text-sm">{{ vol.name }}</span>
+                  </div>
+                  <div class="flex items-center gap-3 mt-1">
+                    <span class="text-xs text-slate-500">{{ vol.driver }}</span>
+                    <span class="text-xs text-slate-500">{{ formatTime(vol.createdAt) }}</span>
+                  </div>
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+            </div>
+            
+            <!-- 中间：挂载点信息 -->
+            <div class="mb-3">
+              <p class="text-xs text-slate-500 mb-1">挂载点</p>
+              <code class="font-mono text-xs text-slate-500 break-all" :title="vol.mountpoint">
+                {{ vol.mountpoint }}
+              </code>
+            </div>
+            
+            <!-- 底部：操作按钮 -->
+            <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
+              <button @click="viewVolumeDetail(vol)" class="btn-icon text-amber-600 hover:bg-amber-50" title="详情">
+                <i class="fas fa-info-circle text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">详情</span>
+              </button>
+              <button @click="handleVolumeAction(vol, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                <i class="fas fa-trash text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">删除</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Empty State -->

@@ -354,50 +354,48 @@ onMounted(() => {
             </div>
           </div>
           <div class="flex items-center gap-2">
-          <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
-            <button 
-              @click="showAll = false; loadContainers()" 
-              :class="[
-                'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200',
-                !showAll 
-                  ? 'bg-white text-emerald-600 shadow-sm' 
-                  : 'text-slate-500 hover:text-slate-700'
-              ]"
-            >
-              <i class="fas fa-play mr-1"></i>运行中
-            </button>
-            <button 
-              @click="showAll = true; loadContainers()" 
-              :class="[
-                'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200',
-                showAll 
-                  ? 'bg-white text-emerald-600 shadow-sm' 
-                  : 'text-slate-500 hover:text-slate-700'
-              ]"
-            >
-              <i class="fas fa-layer-group mr-1"></i>全部
-            </button>
-          </div>
-            <div class="flex items-center gap-2 ml-2">
-              <button v-if="batchMode && selectedIds.length > 0" @click="batchAction('start')" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" title="批量启动">
-                <i class="fas fa-play"></i>
+            <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+              <button 
+                @click="showAll = false; loadContainers()" 
+                :class="[
+                  'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200',
+                  !showAll 
+                    ? 'bg-white text-emerald-600 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700'
+                ]"
+              >
+                <i class="fas fa-play mr-1"></i><span class="hidden sm:inline">运行中</span>
               </button>
-              <button v-if="batchMode && selectedIds.length > 0" @click="batchAction('stop')" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" title="批量停止">
-                <i class="fas fa-stop"></i>
-              </button>
-              <button v-if="batchMode && selectedIds.length > 0" @click="batchAction('remove')" class="px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" title="批量删除">
-                <i class="fas fa-trash"></i>
-              </button>
-              <button @click="toggleBatchMode()" :class="['px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors', batchMode ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700']">
-                <i class="fas fa-check-double"></i>{{ batchMode ? '取消多选' : '多选' }}
-              </button>
-              <button @click="loadContainers()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
-                <i class="fas fa-rotate"></i>刷新
-              </button>
-              <button @click="createContainerModal()" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-                <i class="fas fa-plus"></i>创建
+              <button 
+                @click="showAll = true; loadContainers()" 
+                :class="[
+                  'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200',
+                  showAll 
+                    ? 'bg-white text-emerald-600 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700'
+                ]"
+              >
+                <i class="fas fa-layer-group mr-1"></i><span class="hidden sm:inline">全部</span>
               </button>
             </div>
+            <button v-if="batchMode && selectedIds.length > 0" @click="batchAction('start')" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" title="批量启动">
+              <i class="fas fa-play"></i>
+            </button>
+            <button v-if="batchMode && selectedIds.length > 0" @click="batchAction('stop')" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" title="批量停止">
+              <i class="fas fa-stop"></i>
+            </button>
+            <button v-if="batchMode && selectedIds.length > 0" @click="batchAction('remove')" class="px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" title="批量删除">
+              <i class="fas fa-trash"></i>
+            </button>
+            <button @click="toggleBatchMode()" :class="['px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors', batchMode ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700']">
+              <i class="fas fa-check-double"></i><span class="hidden sm:inline">{{ batchMode ? '取消多选' : '多选' }}</span>
+            </button>
+            <button @click="loadContainers()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-rotate"></i>刷新
+            </button>
+            <button @click="createContainerModal()" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-plus"></i>创建
+            </button>
           </div>
         </div>
       </div>
@@ -408,81 +406,172 @@ onMounted(() => {
         <p class="text-slate-500">加载中...</p>
       </div>
 
-      <!-- Container Table -->
-      <div v-if="containers.length > 0" class="overflow-x-auto">
-        <table class="w-full border-collapse">
-          <thead>
-            <tr class="bg-slate-50 border-b border-slate-200">
-              <th v-if="batchMode" class="w-10 px-4 py-3 text-left text-xs font-semibold text-slate-600">
-                <input type="checkbox" :checked="selectedIds.length === containers.length && containers.length > 0" @change="selectAll" class="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500" />
-              </th>
-              <th class="w-auto px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
-              <th class="w-auto px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">镜像</th>
-              <th class="w-48 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
-              <th class="w-56 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
-              <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
-<th class="w-56 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-slate-100">
-            <tr v-for="ct in containers" :key="ct.id" :class="['hover:bg-slate-50 transition-colors', selectedIds.includes(ct.id) ? 'bg-blue-50' : '']">
-              <td v-if="batchMode" class="px-4 py-3">
-                <input type="checkbox" :checked="selectedIds.includes(ct.id)" @change="toggleSelect(ct.id)" class="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500" />
-              </td>
-              <td class="px-4 py-3">
-                <div class="flex items-center gap-2">
-                  <div :class="['w-8 h-8 rounded-lg flex items-center justify-center', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
-                    <i class="fas fa-box text-white text-sm"></i>
+      <!-- Container List -->
+      <div v-if="containers.length > 0" class="space-y-3">
+        <!-- 桌面端表格视图 -->
+        <div class="hidden md:block overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th v-if="batchMode" class="w-10 px-4 py-3 text-left text-xs font-semibold text-slate-600">
+                  <input type="checkbox" :checked="selectedIds.length === containers.length && containers.length > 0" @change="selectAll" class="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500" />
+                </th>
+                <th class="w-auto px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+                <th class="w-auto px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">镜像</th>
+                <th class="w-48 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
+                <th class="w-56 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
+                <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
+                <th class="w-56 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-slate-100">
+              <tr v-for="ct in containers" :key="ct.id" :class="['hover:bg-slate-50 transition-colors', selectedIds.includes(ct.id) ? 'bg-blue-50' : '']">
+                <td v-if="batchMode" class="px-4 py-3">
+                  <input type="checkbox" :checked="selectedIds.includes(ct.id)" @change="toggleSelect(ct.id)" class="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500" />
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <div :class="['w-8 h-8 rounded-lg flex items-center justify-center', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+                      <i class="fas fa-box text-white text-sm"></i>
+                    </div>
+                    <span class="font-medium text-slate-800">{{ ct.name || ct.id }}</span>
+                    <span v-if="ct.isSwarm" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-cyan-50 text-cyan-600" title="由 Docker Swarm 管理">swarm</span>
                   </div>
-                  <span class="font-medium text-slate-800">{{ ct.name || ct.id }}</span>
-                  <span v-if="ct.isSwarm" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-cyan-50 text-cyan-600" title="由 Docker Swarm 管理">swarm</span>
+                </td>
+                <td class="px-4 py-3">
+                  <code 
+                    class="text-xs bg-slate-100 px-2 py-1 rounded" 
+                    :title="ct.image"
+                  >{{ formatImageName(ct.image) }}</code>
+                </td>
+                <td class="px-4 py-3 text-sm text-slate-600">{{ ct.status }}</td>
+                <td class="px-4 py-3 font-mono text-sm text-slate-600">
+                  <template v-if="ct.ports && ct.ports.length > 0">
+                    <div v-for="port in ct.ports" :key="port">{{ port }}</div>
+                  </template>
+                  <template v-else>-</template>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</td>
+                <td class="px-4 py-3">
+                  <div class="flex justify-end items-center gap-1">
+                    <button v-if="ct.name && !ct.isSwarm" @click="editContainerModal(ct)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑配置">
+                      <i class="fas fa-cog text-xs"></i>
+                    </button>
+                    <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/stats' })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
+                      <i class="fas fa-chart-bar text-xs"></i>
+                    </button>
+                    <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/logs' })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
+                      <i class="fas fa-file-alt text-xs"></i>
+                    </button>
+                    <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="登录终端">
+                      <i class="fas fa-terminal text-xs"></i>
+                    </button>
+                    <button v-if="ct.state !== 'running'" @click="handleContainerAction(ct, 'start')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动">
+                      <i class="fas fa-play text-xs"></i>
+                    </button>
+                    <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
+                      <i class="fas fa-stop text-xs"></i>
+                    </button>
+                    <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'restart')" class="btn-icon text-blue-600 hover:bg-blue-50" title="重启">
+                      <i class="fas fa-redo text-xs"></i>
+                    </button>
+                    <button @click="handleContainerAction(ct, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                      <i class="fas fa-trash text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 移动端卡片视图 -->
+        <div class="md:hidden space-y-3">
+          <div 
+            v-for="ct in containers" 
+            :key="ct.id"
+            :class="['rounded-xl border border-slate-200 bg-white p-4 transition-all', selectedIds.includes(ct.id) ? 'border-blue-300 bg-blue-50' : '']"
+          >
+            <!-- 顶部：名称和状态 -->
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div :class="['w-8 h-8 rounded-lg flex items-center justify-center', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+                  <i class="fas fa-box text-white text-sm"></i>
                 </div>
-              </td>
-              <td class="px-4 py-3">
-                <code 
-                  class="text-xs bg-slate-100 px-2 py-1 rounded" 
-                  :title="ct.image"
-                >{{ formatImageName(ct.image) }}</code>
-              </td>
-              <td class="px-4 py-3 text-sm text-slate-600">{{ ct.status }}</td>
-              <td class="px-4 py-3 font-mono text-sm text-slate-600">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-medium text-slate-800 text-sm">{{ ct.name || ct.id }}</span>
+                    <span v-if="ct.isSwarm" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-cyan-50 text-cyan-600">swarm</span>
+                  </div>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span :class="['text-xs px-2 py-0.5 rounded-full', ct.state === 'running' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600']">
+                      {{ ct.status }}
+                    </span>
+                    <span class="text-xs text-slate-400">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</span>
+                  </div>
+                </div>
+              </div>
+              <div v-if="batchMode" class="ml-2">
+                <input type="checkbox" :checked="selectedIds.includes(ct.id)" @change="toggleSelect(ct.id)" class="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500" />
+              </div>
+            </div>
+            
+            <!-- 中间：镜像信息 -->
+            <div class="mb-3">
+              <p class="text-xs text-slate-500 mb-1">镜像</p>
+              <code class="text-xs bg-slate-100 px-2 py-1 rounded break-all" :title="ct.image">
+                {{ formatImageName(ct.image) }}
+              </code>
+            </div>
+            
+            <!-- 端口信息 -->
+            <div class="mb-3">
+              <p class="text-xs text-slate-500 mb-1">端口映射</p>
+              <div class="font-mono text-xs text-slate-600">
                 <template v-if="ct.ports && ct.ports.length > 0">
-                  <div v-for="port in ct.ports" :key="port">{{ port }}</div>
+                  <div v-for="port in ct.ports" :key="port" class="truncate">{{ port }}</div>
                 </template>
                 <template v-else>-</template>
-              </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</td>
-              <td class="px-4 py-3">
-<div class="flex justify-end items-center gap-1">
-                  <button v-if="ct.name && !ct.isSwarm" @click="editContainerModal(ct)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑配置">
-                    <i class="fas fa-cog text-xs"></i>
-                  </button>
-                  <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/stats' })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
-                    <i class="fas fa-chart-bar text-xs"></i>
-                  </button>
-                  <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/logs' })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
-                    <i class="fas fa-file-alt text-xs"></i>
-                  </button>
-                  <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="登录终端">
-                    <i class="fas fa-terminal text-xs"></i>
-                  </button>
-                  <button v-if="ct.state !== 'running'" @click="handleContainerAction(ct, 'start')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动">
-                    <i class="fas fa-play text-xs"></i>
-                  </button>
-                  <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
-                    <i class="fas fa-stop text-xs"></i>
-                  </button>
-                  <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'restart')" class="btn-icon text-blue-600 hover:bg-blue-50" title="重启">
-                    <i class="fas fa-redo text-xs"></i>
-                  </button>
-                  <button @click="handleContainerAction(ct, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
-                    <i class="fas fa-trash text-xs"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+            </div>
+            
+            <!-- 底部：操作按钮 -->
+            <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
+              <button v-if="ct.name && !ct.isSwarm" @click="editContainerModal(ct)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑配置">
+                <i class="fas fa-cog text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">配置</span>
+              </button>
+              <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/stats' })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
+                <i class="fas fa-chart-bar text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">统计</span>
+              </button>
+              <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/logs' })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
+                <i class="fas fa-file-alt text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">日志</span>
+              </button>
+              <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="终端">
+                <i class="fas fa-terminal text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">终端</span>
+              </button>
+              <button v-if="ct.state !== 'running'" @click="handleContainerAction(ct, 'start')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动">
+                <i class="fas fa-play text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">启动</span>
+              </button>
+              <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
+                <i class="fas fa-stop text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">停止</span>
+              </button>
+              <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'restart')" class="btn-icon text-blue-600 hover:bg-blue-50" title="重启">
+                <i class="fas fa-redo text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">重启</span>
+              </button>
+              <button @click="handleContainerAction(ct, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                <i class="fas fa-trash text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">删除</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Empty State -->

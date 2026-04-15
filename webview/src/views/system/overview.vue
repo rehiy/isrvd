@@ -564,7 +564,7 @@ defineExpose({
 
     <div v-else-if="stat" class="space-y-5">
       <!-- 主机基本信息 -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-3">
         <div class="rounded-xl border border-slate-200 bg-white p-4">
           <p class="text-xs text-slate-400 mb-1">主机名</p>
           <p class="text-sm font-semibold text-slate-800 truncate">{{ stat.system.HostName }}</p>
@@ -651,8 +651,8 @@ defineExpose({
             class="px-4 py-3"
           >
             <!-- 第一行：挂载点 + 容量 -->
-            <div class="flex items-center gap-3 mb-2">
-              <div class="w-24 shrink-0">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+              <div class="w-full sm:w-24 shrink-0">
                 <p class="text-xs font-semibold text-slate-700 truncate">{{ dp.Mountpoint }}</p>
                 <p class="text-xs text-slate-400">{{ dp.Device }} · {{ dp.Fstype }}</p>
               </div>
@@ -664,14 +664,14 @@ defineExpose({
                   ></div>
                 </div>
               </div>
-              <div class="text-right shrink-0 w-28">
+              <div class="text-right shrink-0 w-full sm:w-28">
                 <p class="text-xs text-slate-600">{{ fmtBytes(dp.Used) }} / {{ fmtBytes(dp.Total) }}</p>
                 <p class="text-xs text-slate-400">{{ memPercent(dp.Used, dp.Total) }}%</p>
               </div>
             </div>
             <!-- 第二行：IO 速率折线图（仅当有对应设备 IO 数据时显示） -->
             <template v-if="diskIOByDevice(dp.Device)">
-              <div class="flex items-center justify-between mb-1.5">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-1.5 gap-1">
                 <span class="text-xs text-slate-400">IO 速率</span>
                 <div class="flex items-center gap-4 text-xs">
                   <span class="flex items-center gap-1">
@@ -690,7 +690,7 @@ defineExpose({
                   <span class="text-xs text-slate-300">等待数据...</span>
                 </div>
               </div>
-              <div class="flex gap-4 mt-1.5 text-xs text-slate-400">
+              <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-1.5 text-xs text-slate-400">
                 <span>累计读: {{ fmtBytes(diskIOByDevice(dp.Device).ReadBytes) }}</span>
                 <span>累计写: {{ fmtBytes(diskIOByDevice(dp.Device).WriteBytes) }}</span>
               </div>
@@ -714,7 +714,7 @@ defineExpose({
             class="px-4 py-3"
           >
             <!-- 接口名 + 当前速率 -->
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-1">
               <p class="text-xs font-semibold text-slate-700">{{ ni.Name }}</p>
               <div class="flex items-center gap-4 text-xs">
                 <span class="flex items-center gap-1">
@@ -735,7 +735,7 @@ defineExpose({
               </div>
             </div>
             <!-- 累计流量 -->
-            <div class="flex gap-4 mt-1.5 text-xs text-slate-400">
+            <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-1.5 text-xs text-slate-400">
               <span>累计收: {{ fmtBytes(ni.BytesRecv) }}</span>
               <span>累计发: {{ fmtBytes(ni.BytesSent) }}</span>
             </div>
@@ -752,7 +752,7 @@ defineExpose({
           <span class="text-sm font-semibold text-slate-700">Go 运行态</span>
           <span class="ml-2 text-xs text-slate-400 font-mono">{{ stat.go.version }}</span>
         </div>
-        <div class="grid grid-cols-2 md:grid-cols-4 divide-x divide-y divide-slate-100">
+        <div class="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 divide-x divide-y divide-slate-100">
           <div class="px-4 py-3">
             <p class="text-xs text-slate-400 mb-1">Goroutine 数</p>
             <p class="text-sm font-bold text-slate-800">{{ stat.go.numGoroutine }}</p>

@@ -138,7 +138,7 @@ onMounted(() => {
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <div class="relative">
+            <div class="relative hidden md:block">
               <input
                 v-model="searchText"
                 type="text"
@@ -154,6 +154,18 @@ onMounted(() => {
               <i class="fas fa-plus"></i>创建
             </button>
           </div>
+        </div>
+      </div>
+      <!-- 移动端搜索栏 -->
+      <div class="md:hidden px-4 py-2 border-b border-slate-100">
+        <div class="relative">
+          <input
+            v-model="searchText"
+            type="text"
+            placeholder="搜索用户..."
+            class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+          <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
         </div>
       </div>
 
@@ -173,56 +185,115 @@ onMounted(() => {
       </div>
 
       <!-- 用户列表 -->
-      <div v-else class="overflow-x-auto">
-        <table class="w-full border-collapse">
-          <thead>
-            <tr class="bg-slate-50 border-b border-slate-200">
-              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">用户名</th>
-              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">描述</th>
-              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">API Key</th>
-              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">关联路由</th>
-              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
-<th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-slate-100">
-            <tr v-for="consumer in filteredConsumers" :key="consumer.username" class="hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3">
-                <div class="flex items-center gap-2">
-                  <div class="w-8 h-8 rounded-lg bg-violet-400 flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-user text-white text-sm"></i>
+      <div v-else class="space-y-3">
+        <!-- 桌面端表格视图 -->
+        <div class="hidden md:block overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">用户名</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">描述</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">API Key</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">关联路由</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
+                <th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-slate-100">
+              <tr v-for="consumer in filteredConsumers" :key="consumer.username" class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-violet-400 flex items-center justify-center flex-shrink-0">
+                      <i class="fas fa-user text-white text-sm"></i>
+                    </div>
+                    <span class="font-medium text-slate-800">{{ consumer.username }}</span>
                   </div>
-                  <span class="font-medium text-slate-800">{{ consumer.username }}</span>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="text-sm text-slate-600">{{ consumer.desc || '-' }}</span>
+                </td>
+                <td class="px-4 py-3">
+                  <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{{ consumer.plugins?.['key-auth']?.key || '-' }}</code>
+                </td>
+                <td class="px-4 py-3">
+                  <div v-if="getConsumerRoutes(consumer.username).length > 0" class="flex flex-wrap gap-1">
+                    <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-violet-50 text-violet-700 rounded text-xs">{{ name }}</span>
+                  </div>
+                  <span v-else class="text-xs text-slate-400">-</span>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
+                  {{ formatTs(consumer.create_time) }}
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex justify-end items-center gap-0.5">
+                    <button @click="openEditModal(consumer)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑">
+                      <i class="fas fa-pen-to-square text-xs"></i>
+                    </button>
+                    <button @click="deleteConsumer(consumer)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                      <i class="fas fa-trash text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 移动端卡片视图 -->
+        <div class="md:hidden space-y-3">
+          <div 
+            v-for="consumer in filteredConsumers" 
+            :key="consumer.username"
+            class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
+          >
+            <!-- 顶部：用户信息和图标 -->
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-violet-400 flex items-center justify-center">
+                  <i class="fas fa-user text-white text-base"></i>
                 </div>
-              </td>
-              <td class="px-4 py-3">
-                <span class="text-sm text-slate-600">{{ consumer.desc || '-' }}</span>
-              </td>
-              <td class="px-4 py-3">
-                <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{{ consumer.plugins?.['key-auth']?.key || '-' }}</code>
-              </td>
-              <td class="px-4 py-3">
-                <div v-if="getConsumerRoutes(consumer.username).length > 0" class="flex flex-wrap gap-1">
-                  <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-violet-50 text-violet-700 rounded text-xs">{{ name }}</span>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="font-medium text-slate-800 text-sm">{{ consumer.username }}</span>
+                  </div>
+                  <div class="text-xs text-slate-500 mt-1">{{ formatTs(consumer.create_time) }}</div>
                 </div>
-                <span v-else class="text-xs text-slate-400">-</span>
-              </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
-                {{ formatTs(consumer.create_time) }}
-              </td>
-              <td class="px-4 py-3">
-<div class="flex justify-end items-center gap-0.5">
-                  <button @click="openEditModal(consumer)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑">
-                    <i class="fas fa-pen-to-square text-xs"></i>
-                  </button>
-                  <button @click="deleteConsumer(consumer)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
-                    <i class="fas fa-trash text-xs"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+            </div>
+            
+            <!-- 中间：描述和API Key信息 -->
+            <div class="mb-3">
+              <p class="text-xs text-slate-500 mb-1">描述</p>
+              <span class="text-sm text-slate-600">{{ consumer.desc || '-' }}</span>
+            </div>
+            
+            <div class="mb-3">
+              <p class="text-xs text-slate-500 mb-1">API Key</p>
+              <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600 break-all">{{ consumer.plugins?.['key-auth']?.key || '-' }}</code>
+            </div>
+            
+            <!-- 关联路由 -->
+            <div class="mb-3">
+              <p class="text-xs text-slate-500 mb-1">关联路由</p>
+              <div v-if="getConsumerRoutes(consumer.username).length > 0" class="flex flex-wrap gap-1">
+                <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-violet-50 text-violet-700 rounded text-xs">{{ name }}</span>
+              </div>
+              <span v-else class="text-xs text-slate-400">-</span>
+            </div>
+            
+            <!-- 底部：操作按钮 -->
+            <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
+              <button @click="openEditModal(consumer)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑">
+                <i class="fas fa-pen-to-square text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">编辑</span>
+              </button>
+              <button @click="deleteConsumer(consumer)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                <i class="fas fa-trash text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">删除</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

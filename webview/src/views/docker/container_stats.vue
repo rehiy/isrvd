@@ -316,9 +316,9 @@ onUnmounted(() => {
 
     <template v-else-if="statsData">
       <!-- 核心指标：CPU 和 内存 -->
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- CPU 使用率 -->
-        <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200/60 relative overflow-hidden">
+        <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-transparent"></div>
           <div class="flex items-center gap-2 mb-1">
             <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
@@ -329,7 +329,7 @@ onUnmounted(() => {
               {{ statsData.cpuPercent }}%
             </span>
           </div>
-          <div class="flex items-center gap-3 mb-3 text-[10px] text-slate-400">
+          <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
             <span v-if="statsData.cpuCores">核心 <span class="text-slate-600 font-medium">{{ statsData.cpuCores }} 核</span></span>
             <span v-if="statsData.cpuFreq">频率 <span class="text-slate-600 font-medium">{{ statsData.cpuFreq.toFixed(0) }} MHz</span></span>
             <span v-if="statsData.cpuThrottled && statsData.cpuThrottled.throttledPeriods > 0" class="text-amber-500">
@@ -340,7 +340,7 @@ onUnmounted(() => {
         </div>
 
         <!-- 内存使用 -->
-        <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200/60 relative overflow-hidden">
+        <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-transparent"></div>
           <div class="flex items-center gap-2 mb-1">
             <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
@@ -351,7 +351,7 @@ onUnmounted(() => {
               {{ statsData.memoryPercent }}%
             </span>
           </div>
-          <div class="flex items-center gap-3 mb-3 text-[10px] text-slate-400">
+          <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
             <span>内存 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryUsage) }}</span></span>
             <span>限制 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryLimit) }}</span></span>
           </div>
@@ -360,9 +360,9 @@ onUnmounted(() => {
       </div>
 
       <!-- I/O 指标卡片 -->
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- 网络 I/O -->
-        <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200/60 relative overflow-hidden">
+        <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-400 to-transparent"></div>
           <div class="flex items-center gap-2 mb-1">
             <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
@@ -375,7 +375,7 @@ onUnmounted(() => {
               <span class="text-teal-700">↑</span> {{ formatFileSize(netTxRate) }}/s
             </span>
           </div>
-          <div class="flex items-center gap-3 mb-3 text-[10px] text-slate-400">
+          <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
             <span v-if="statsData.networkDetail">网卡 <span class="text-slate-600 font-medium">{{ Object.keys(statsData.networkDetail).length }} 块</span></span>
             <span>累计收 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkRx) }}</span></span>
             <span>累计发 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkTx) }}</span></span>
@@ -384,7 +384,7 @@ onUnmounted(() => {
         </div>
 
         <!-- 磁盘 I/O -->
-        <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200/60 relative overflow-hidden">
+        <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-transparent"></div>
           <div class="flex items-center gap-2 mb-1">
             <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
@@ -397,10 +397,10 @@ onUnmounted(() => {
               <span class="text-amber-700">↑</span> {{ formatFileSize(blkWRate) }}/s
             </span>
           </div>
-          <div class="flex items-center gap-3 mb-3 text-[10px] text-slate-400">
-            <span v-if="statsData.blockDetail">设备 <span class="text-slate-600 font-medium">{{ statsData.blockDetail.length }} 块</span></span>
-            <span>累计读 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockRead) }}</span></span>
-            <span>累计写 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockWrite) }}</span></span>
+          <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
+            <span v-if="statsData.blockDetail">设备 <span class="text-slate-600 font-medium">{{ Object.keys(statsData.blockDetail).length }} 个</span></span>
+            <span>累计读 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockR) }}</span></span>
+            <span>累计写 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockW) }}</span></span>
           </div>
           <div class="h-28"><canvas ref="blkRef"></canvas></div>
         </div>

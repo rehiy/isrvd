@@ -78,57 +78,131 @@ onMounted(() => loadNodes())
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
-      <div v-else-if="nodes.length > 0" class="overflow-x-auto">
-        <table class="w-full border-collapse">
-          <thead>
-            <tr class="bg-slate-50 border-b border-slate-200">
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">主机名</th>
-              <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">角色</th>
-              <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
-              <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">可用性</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">地址</th>
-              <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">引擎版本</th>
-<th class="w-44 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-slate-100">
-            <tr v-for="n in nodes" :key="n.id" class="hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3">
-                <div class="flex items-center gap-2">
-                  <div class="w-8 h-8 rounded-lg bg-blue-400 flex items-center justify-center">
-                    <i class="fas fa-server text-white text-sm"></i>
+      <div v-else-if="nodes.length > 0" class="space-y-3">
+        <!-- 桌面端表格视图 -->
+        <div class="hidden md:block overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">主机名</th>
+                <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">角色</th>
+                <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
+                <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">可用性</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">地址</th>
+                <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">引擎版本</th>
+                <th class="w-44 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-slate-100">
+              <tr v-for="n in nodes" :key="n.id" class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-blue-400 flex items-center justify-center">
+                      <i class="fas fa-server text-white text-sm"></i>
+                    </div>
+                    <div>
+                      <span class="font-medium text-slate-800">{{ n.hostname }}</span>
+                      <span v-if="n.leader" class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
+                        <i class="fas fa-crown mr-1 text-[10px]"></i>Leader
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span class="font-medium text-slate-800">{{ n.hostname }}</span>
-                    <span v-if="n.leader" class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
+                </td>
+                <td class="px-4 py-3">
+                  <span :class="n.role === 'manager' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.role }}</span>
+                </td>
+                <td class="px-4 py-3">
+                  <span :class="nodeStateClass(n.state)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.state }}</span>
+                </td>
+                <td class="px-4 py-3">
+                  <span :class="availabilityClass(n.availability)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.availability }}</span>
+                </td>
+                <td class="px-4 py-3 font-mono text-xs text-slate-500">{{ n.addr || '-' }}</td>
+                <td class="px-4 py-3 text-xs text-slate-500">{{ n.engineVersion || '-' }}</td>
+                <td class="px-4 py-3">
+                  <div class="flex justify-end items-center gap-0.5">
+                    <button @click="router.push(`/swarm/node/${n.id}`)" class="btn-icon text-slate-600 hover:bg-slate-100" title="查看详情"><i class="fas fa-circle-info text-xs"></i></button>
+                    <button v-if="n.availability !== 'active'" @click="handleNodeAction(n, 'active')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="激活"><i class="fas fa-play text-xs"></i></button>
+                    <button v-if="n.availability !== 'drain'"  @click="handleNodeAction(n, 'drain')"  class="btn-icon text-amber-600 hover:bg-amber-50"   title="排空"><i class="fas fa-arrow-down text-xs"></i></button>
+                    <button v-if="n.availability !== 'pause'"  @click="handleNodeAction(n, 'pause')"  class="btn-icon text-slate-600 hover:bg-slate-100"   title="暂停"><i class="fas fa-pause text-xs"></i></button>
+                    <button v-if="n.role !== 'manager'"        @click="handleNodeAction(n, 'remove')" class="btn-icon text-red-600 hover:bg-red-50"         title="移除"><i class="fas fa-trash text-xs"></i></button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 移动端卡片视图 -->
+        <div class="md:hidden space-y-3">
+          <div 
+            v-for="n in nodes" 
+            :key="n.id"
+            class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
+          >
+            <!-- 顶部：主机名和图标 -->
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-400 flex items-center justify-center">
+                  <i class="fas fa-server text-white text-base"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="font-medium text-slate-800 text-sm">{{ n.hostname }}</span>
+                    <span v-if="n.leader" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
                       <i class="fas fa-crown mr-1 text-[10px]"></i>Leader
                     </span>
                   </div>
+                  <div class="text-xs text-slate-500 mt-1">{{ n.addr || '-' }}</div>
                 </div>
-              </td>
-              <td class="px-4 py-3">
+              </div>
+            </div>
+            
+            <!-- 中间：角色、状态、可用性信息 -->
+            <div class="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <p class="text-xs text-slate-500 mb-1">角色</p>
                 <span :class="n.role === 'manager' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.role }}</span>
-              </td>
-              <td class="px-4 py-3">
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 mb-1">状态</p>
                 <span :class="nodeStateClass(n.state)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.state }}</span>
-              </td>
-              <td class="px-4 py-3">
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 mb-1">可用性</p>
                 <span :class="availabilityClass(n.availability)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.availability }}</span>
-              </td>
-              <td class="px-4 py-3 font-mono text-xs text-slate-500">{{ n.addr || '-' }}</td>
-              <td class="px-4 py-3 text-xs text-slate-500">{{ n.engineVersion || '-' }}</td>
-              <td class="px-4 py-3">
-                <div class="flex justify-end items-center gap-0.5">
-                  <button @click="router.push(`/swarm/node/${n.id}`)" class="btn-icon text-slate-600 hover:bg-slate-100" title="查看详情"><i class="fas fa-circle-info text-xs"></i></button>
-                  <button v-if="n.availability !== 'active'" @click="handleNodeAction(n, 'active')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="激活"><i class="fas fa-play text-xs"></i></button>
-                  <button v-if="n.availability !== 'drain'"  @click="handleNodeAction(n, 'drain')"  class="btn-icon text-amber-600 hover:bg-amber-50"   title="排空"><i class="fas fa-arrow-down text-xs"></i></button>
-                  <button v-if="n.availability !== 'pause'"  @click="handleNodeAction(n, 'pause')"  class="btn-icon text-slate-600 hover:bg-slate-100"   title="暂停"><i class="fas fa-pause text-xs"></i></button>
-                  <button v-if="n.role !== 'manager'"        @click="handleNodeAction(n, 'remove')" class="btn-icon text-red-600 hover:bg-red-50"         title="移除"><i class="fas fa-trash text-xs"></i></button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 mb-1">引擎版本</p>
+                <span class="text-xs text-slate-600">{{ n.engineVersion || '-' }}</span>
+              </div>
+            </div>
+            
+            <!-- 底部：操作按钮 -->
+            <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
+              <button @click="router.push(`/swarm/node/${n.id}`)" class="btn-icon text-slate-600 hover:bg-slate-100" title="查看详情">
+                <i class="fas fa-circle-info text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">详情</span>
+              </button>
+              <button v-if="n.availability !== 'active'" @click="handleNodeAction(n, 'active')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="激活">
+                <i class="fas fa-play text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">激活</span>
+              </button>
+              <button v-if="n.availability !== 'drain'"  @click="handleNodeAction(n, 'drain')"  class="btn-icon text-amber-600 hover:bg-amber-50"   title="排空">
+                <i class="fas fa-arrow-down text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">排空</span>
+              </button>
+              <button v-if="n.availability !== 'pause'"  @click="handleNodeAction(n, 'pause')"  class="btn-icon text-slate-600 hover:bg-slate-100"   title="暂停">
+                <i class="fas fa-pause text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">暂停</span>
+              </button>
+              <button v-if="n.role !== 'manager'"        @click="handleNodeAction(n, 'remove')" class="btn-icon text-red-600 hover:bg-red-50"         title="移除">
+                <i class="fas fa-trash text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">移除</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
       <div v-else class="flex flex-col items-center justify-center py-20">
         <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">

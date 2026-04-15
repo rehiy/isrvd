@@ -185,7 +185,7 @@ onMounted(() => { loadRoutes(); loadResources() })
             <div><h1 class="text-lg font-semibold text-slate-800">路由管理</h1><p class="text-xs text-slate-500">管理 Apisix 路由（共 {{ routes.length }} 条）</p></div>
           </div>
           <div class="flex items-center gap-2">
-            <div class="relative">
+            <div class="relative hidden md:block">
               <input v-model="searchText" type="text" placeholder="搜索路由..." class="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-48" />
               <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
             </div>
@@ -194,44 +194,98 @@ onMounted(() => { loadRoutes(); loadResources() })
           </div>
         </div>
       </div>
+      <!-- 移动端搜索栏 -->
+      <div class="md:hidden px-4 py-2 border-b border-slate-100">
+        <div class="relative">
+          <input v-model="searchText" type="text" placeholder="搜索路由..." class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+          <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+        </div>
+      </div>
       <div v-if="loading" class="flex flex-col items-center justify-center py-20"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
       <div v-else-if="filteredRoutes.length === 0" class="flex flex-col items-center justify-center py-20">
         <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4"><i class="fas fa-route text-4xl text-slate-300"></i></div>
         <p class="text-slate-600 font-medium mb-1">暂无路由</p>
         <p class="text-sm text-slate-400">点击「创建」添加新路由</p>
       </div>
-      <div v-else class="overflow-x-auto">
-        <table class="w-full border-collapse">
-          <thead><tr class="bg-slate-50 border-b border-slate-200">
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">URI</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Host</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
-<th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
-          </tr></thead>
-          <tbody class="bg-white divide-y divide-slate-100">
-            <tr v-for="route in filteredRoutes" :key="route.id" class="hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3">
+      <div v-else class="space-y-3">
+        <!-- 桌面端表格视图 -->
+        <div class="hidden md:block overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead><tr class="bg-slate-50 border-b border-slate-200">
+              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">URI</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Host</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
+              <th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+            </tr></thead>
+            <tbody class="bg-white divide-y divide-slate-100">
+              <tr v-for="route in filteredRoutes" :key="route.id" class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3">
+                  <div class="font-medium text-sm text-slate-800">{{ route.name || route.id }}</div>
+                  <div v-if="route.desc" class="text-xs text-slate-400 mt-0.5 truncate max-w-xs">{{ route.desc }}</div>
+                </td>
+                <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-700">{{ getRouteUri(route) }}</code></td>
+                <td class="px-4 py-3"><span class="text-sm text-slate-600">{{ getRouteHost(route) }}</span></td>
+                <td class="px-4 py-3">
+                  <button @click="toggleStatus(route)" :class="['inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors', route.status === 1 ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200']">
+                    <i :class="route.status === 1 ? 'fas fa-circle text-emerald-500' : 'fas fa-circle text-slate-400'" class="text-[6px]"></i>
+                    {{ route.status === 1 ? '启用' : '禁用' }}
+                  </button>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex justify-end items-center gap-1">
+                    <button @click="openEditModal(route)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="编辑"><i class="fas fa-pen-to-square text-xs"></i></button>
+                    <button @click="deleteRoute(route)" class="btn-icon text-red-600 hover:bg-red-50" title="删除"><i class="fas fa-trash text-xs"></i></button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 移动端卡片视图 -->
+        <div class="md:hidden space-y-3">
+          <div 
+            v-for="route in filteredRoutes" 
+            :key="route.id"
+            class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
+          >
+            <!-- 顶部：路由信息和状态 -->
+            <div class="flex items-center justify-between mb-3">
+              <div class="min-w-0">
                 <div class="font-medium text-sm text-slate-800">{{ route.name || route.id }}</div>
-                <div v-if="route.desc" class="text-xs text-slate-400 mt-0.5 truncate max-w-xs">{{ route.desc }}</div>
-              </td>
-              <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-700">{{ getRouteUri(route) }}</code></td>
-              <td class="px-4 py-3"><span class="text-sm text-slate-600">{{ getRouteHost(route) }}</span></td>
-              <td class="px-4 py-3">
-                <button @click="toggleStatus(route)" :class="['inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors', route.status === 1 ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200']">
-                  <i :class="route.status === 1 ? 'fas fa-circle text-emerald-500' : 'fas fa-circle text-slate-400'" class="text-[6px]"></i>
-                  {{ route.status === 1 ? '启用' : '禁用' }}
-                </button>
-              </td>
-              <td class="px-4 py-3">
-<div class="flex justify-end items-center gap-1">
-                  <button @click="openEditModal(route)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="编辑"><i class="fas fa-pen-to-square text-xs"></i></button>
-                  <button @click="deleteRoute(route)" class="btn-icon text-red-600 hover:bg-red-50" title="删除"><i class="fas fa-trash text-xs"></i></button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                <div v-if="route.desc" class="text-xs text-slate-400 mt-0.5 truncate">{{ route.desc }}</div>
+              </div>
+              <button @click="toggleStatus(route)" :class="['inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors', route.status === 1 ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200']">
+                <i :class="route.status === 1 ? 'fas fa-circle text-emerald-500' : 'fas fa-circle text-slate-400'" class="text-[6px]"></i>
+                {{ route.status === 1 ? '启用' : '禁用' }}
+              </button>
+            </div>
+            
+            <!-- 中间：URI和Host信息 -->
+            <div class="mb-3">
+              <p class="text-xs text-slate-500 mb-1">URI</p>
+              <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-700 break-all">{{ getRouteUri(route) }}</code>
+            </div>
+            
+            <div class="mb-3">
+              <p class="text-xs text-slate-500 mb-1">Host</p>
+              <span class="text-sm text-slate-600 break-all">{{ getRouteHost(route) }}</span>
+            </div>
+            
+            <!-- 底部：操作按钮 -->
+            <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
+              <button @click="openEditModal(route)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="编辑">
+                <i class="fas fa-pen-to-square text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">编辑</span>
+              </button>
+              <button @click="deleteRoute(route)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                <i class="fas fa-trash text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">删除</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

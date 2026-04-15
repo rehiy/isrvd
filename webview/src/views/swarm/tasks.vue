@@ -57,7 +57,7 @@ onMounted(async () => {
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <select v-model="filterServiceID" @change="loadTasks" class="w-44 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 hover:border-slate-300 focus:outline-none">
+          <select v-model="filterServiceID" @change="loadTasks" class="w-32 md:w-44 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 hover:border-slate-300 focus:outline-none">
             <option value="">全部服务</option>
             <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>
           </select>
@@ -71,31 +71,73 @@ onMounted(async () => {
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
-      <div v-else-if="tasks.length > 0" class="overflow-x-auto">
-        <table class="w-full border-collapse">
-          <thead>
-            <tr class="bg-slate-50 border-b border-slate-200">
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">服务名</th>
-              <th class="w-16 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Slot</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">镜像</th>
-              <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">消息</th>
-              <th class="w-40 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">更新时间</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-slate-100">
-            <tr v-for="t in tasks" :key="t.id" class="hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3 font-medium text-slate-800">{{ t.serviceName || t.serviceID }}</td>
-              <td class="px-4 py-3 text-sm text-slate-500">{{ t.slot || '-' }}</td>
-              <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ t.image }}</code></td>
-              <td class="px-4 py-3">
-                <span :class="taskStateClass(t.state)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ t.state }}</span>
-              </td>
-              <td class="px-4 py-3 text-xs text-slate-500 max-w-xs truncate" :title="t.err || t.message">{{ t.err || t.message || '-' }}</td>
-              <td class="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">{{ t.updatedAt }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div v-else-if="tasks.length > 0">
+        <!-- 桌面端表格视图 -->
+        <div class="hidden md:block overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">服务名</th>
+                <th class="w-16 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Slot</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">镜像</th>
+                <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">消息</th>
+                <th class="w-40 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">更新时间</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-slate-100">
+              <tr v-for="t in tasks" :key="t.id" class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 font-medium text-slate-800">{{ t.serviceName || t.serviceID }}</td>
+                <td class="px-4 py-3 text-sm text-slate-500">{{ t.slot || '-' }}</td>
+                <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ t.image }}</code></td>
+                <td class="px-4 py-3">
+                  <span :class="taskStateClass(t.state)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ t.state }}</span>
+                </td>
+                <td class="px-4 py-3 text-xs text-slate-500 max-w-xs truncate" :title="t.err || t.message">{{ t.err || t.message || '-' }}</td>
+                <td class="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">{{ t.updatedAt }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 移动端卡片视图 -->
+        <div class="md:hidden space-y-3">
+          <div v-for="t in tasks" :key="t.id" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
+            <!-- 顶部：服务名和状态 -->
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-amber-400 flex items-center justify-center">
+                  <i class="fas fa-tasks text-white text-base"></i>
+                </div>
+                <div class="min-w-0">
+                  <span class="font-medium text-slate-800 text-sm">{{ t.serviceName || t.serviceID }}</span>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span class="text-xs text-slate-500">Slot: {{ t.slot || '-' }}</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize" :class="taskStateClass(t.state)">{{ t.state }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 镜像信息 -->
+            <div class="mb-3">
+              <p class="text-xs text-slate-500 mb-1">镜像</p>
+              <code class="text-xs bg-slate-100 px-2 py-1 rounded break-all">{{ t.image }}</code>
+            </div>
+            
+            <!-- 消息和时间 -->
+            <div class="grid grid-cols-2 gap-3">
+              <div v-if="t.err || t.message" class="col-span-2">
+                <p class="text-xs text-slate-500 mb-1">消息</p>
+                <span class="text-xs break-words" :class="t.err ? 'text-red-500' : 'text-slate-500'">{{ t.err || t.message }}</span>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 mb-1">更新时间</p>
+                <span class="text-xs text-slate-500">{{ t.updatedAt }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div v-else class="flex flex-col items-center justify-center py-20">
         <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">

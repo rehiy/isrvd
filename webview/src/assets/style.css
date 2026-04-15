@@ -12,6 +12,38 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
+  /* 移动端优化：防止文本选择 */
+  @media (max-width: 768px) {
+    body {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    
+    /* 允许输入框和按钮文本选择 */
+    input, textarea, button {
+      -webkit-user-select: text;
+      -khtml-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+    }
+  }
+
+  /* 移动端优化：改善触摸体验 */
+  @media (hover: none) and (pointer: coarse) {
+    .btn, button, .btn-primary, .btn-secondary {
+      @apply min-h-[44px] min-w-[44px];
+    }
+    
+    .router-link, a {
+      @apply min-h-[44px];
+    }
+  }
+
   /* 应用加载状态 */
   .app-wait {
     @apply fixed inset-0 z-[9999] flex flex-col items-center justify-center;
@@ -42,6 +74,13 @@
     @apply bg-slate-400;
   }
 
+  /* 移动端滚动条优化 */
+  @media (max-width: 768px) {
+    ::-webkit-scrollbar {
+      @apply w-1 h-1;
+    }
+  }
+
   /* 表单样式 */
   input,
   textarea,
@@ -55,6 +94,22 @@
     @apply outline-none ring-2 ring-primary-500/50 border-primary-400;
     box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
   }
+
+  /* 移动端输入框优化 */
+  @media (max-width: 768px) {
+    input, textarea, select {
+      @apply text-base; /* 防止 iOS 缩放 */
+    }
+    
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    input[type="number"],
+    input[type="tel"],
+    textarea {
+      font-size: 16px !important; /* 防止 iOS 缩放 */
+    }
+  }
 }
 
 @layer components {
@@ -64,9 +119,23 @@
     @apply bg-white rounded-2xl shadow-soft border border-slate-200/60;
   }
 
+  /* 移动端卡片优化 */
+  @media (max-width: 768px) {
+    .card {
+      @apply rounded-xl; /* 移动端圆角稍小 */
+    }
+  }
+
   /* 模态框样式 */
   .modal-card {
     @apply bg-white rounded-2xl shadow-2xl border border-slate-200;
+  }
+
+  /* 移动端模态框优化 */
+  @media (max-width: 768px) {
+    .modal-card {
+      @apply rounded-xl m-4; /* 移动端边距和圆角优化 */
+    }
   }
 
   /* 按钮样式 */
@@ -121,6 +190,17 @@
     @apply focus:outline-none focus:ring-2 focus:ring-primary-500;
   }
 
+  /* 移动端按钮优化 */
+  @media (max-width: 768px) {
+    .btn {
+      @apply min-h-[44px]; /* 触摸友好高度 */
+    }
+    
+    .btn-icon {
+      @apply min-h-[44px] min-w-[44px]; /* 触摸友好尺寸 */
+    }
+  }
+
   /* 输入框样式 */
   .input {
     @apply w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl;
@@ -132,6 +212,13 @@
   select.input {
     @apply pr-8 truncate;
     background-position: right 0.5rem center;
+  }
+
+  /* 移动端输入框优化 */
+  @media (max-width: 768px) {
+    .input {
+      @apply py-3; /* 移动端触摸友好 */
+    }
   }
 
   /* 徽章样式 */

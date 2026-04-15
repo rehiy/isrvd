@@ -32,8 +32,8 @@ onUnmounted(() => systemRef.value?.stopPoll?.())
             <i class="fas fa-gauge-high text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">概览</h1>
-        <p class="text-xs text-slate-500">服务状态总览</p>
+          <h1 class="text-lg font-semibold text-slate-800">概览</h1>
+          <p class="text-xs text-slate-500">服务状态总览</p>
           </div>
         </div>
         <button @click="refreshAll" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">

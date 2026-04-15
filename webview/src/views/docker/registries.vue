@@ -173,77 +173,155 @@ onMounted(() => {
       </div>
 
       <!-- Registry Table -->
-      <div v-else class="overflow-x-auto">
-        <table class="w-full border-collapse">
-          <thead>
-            <tr class="bg-slate-50 border-b border-slate-200">
-              <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">地址</th>
-              <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">认证</th>
-<th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-slate-100">
-            <!-- Docker Hub 行（始终显示） -->
-            <tr class="hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3">
-                <div class="flex items-center gap-2">
-                  <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
-                    <i class="fab fa-docker text-white text-sm"></i>
+      <div v-else>
+        <!-- 桌面端表格视图 -->
+        <div class="hidden md:block overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">地址</th>
+                <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">认证</th>
+                <th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-slate-100">
+              <!-- Docker Hub 行（始终显示） -->
+              <tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                      <i class="fab fa-docker text-white text-sm"></i>
+                    </div>
+                    <div>
+                      <span class="font-medium text-slate-800">Docker Hub</span>
+                      <span class="ml-1.5 text-xs text-slate-400 font-normal">默认</span>
+                    </div>
                   </div>
-                  <div>
-                    <span class="font-medium text-slate-800">Docker Hub</span>
-                    <span class="ml-1.5 text-xs text-slate-400 font-normal">默认</span>
+                </td>
+                <td class="px-4 py-3">
+                  <code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ indexServerAddress || 'https://index.docker.io/v1/' }}</code>
+                  <template v-if="daemonMirrors.length > 0">
+                    <code v-for="mirror in daemonMirrors" :key="mirror" class="ml-1 text-xs bg-sky-50 text-sky-700 px-2 py-1 rounded inline-flex items-center gap-1">
+                      <i class="fas fa-bolt text-sky-400 text-xs"></i>{{ mirror }}
+                    </code>
+                  </template>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
+                    <i class="fas fa-lock-open mr-1"></i>匿名
+                  </span>
+                </td>
+                <td class="px-4 py-3"></td>
+              </tr>
+              <!-- 私有仓库行 -->
+              <tr v-for="reg in registries" :key="reg.url" class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-purple-400 flex items-center justify-center">
+                      <i class="fas fa-warehouse text-white text-sm"></i>
+                    </div>
+                    <span class="font-medium text-slate-800">{{ reg.name }}</span>
                   </div>
-                </div>
-              </td>
-              <td class="px-4 py-3">
-                <code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ indexServerAddress || 'https://index.docker.io/v1/' }}</code>
+                </td>
+                <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ reg.url }}</code></td>
+                <td class="px-4 py-3">
+                  <span v-if="reg.username" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
+                    <i class="fas fa-user mr-1"></i>{{ reg.username }}
+                  </span>
+                  <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
+                    <i class="fas fa-lock-open mr-1"></i>匿名
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex justify-end items-center gap-0.5">
+                    <button @click="openPullModal(reg)" class="btn-icon text-slate-600 hover:bg-slate-100" title="拉取镜像">
+                      <i class="fas fa-download text-xs"></i>
+                    </button>
+                    <button @click="openPushModal(reg)" class="btn-icon text-blue-600 hover:bg-blue-50" title="推送镜像">
+                      <i class="fas fa-upload text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 移动端卡片视图 -->
+        <div class="md:hidden space-y-3">
+          <!-- Docker Hub 卡片 -->
+          <div class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center">
+                <i class="fab fa-docker text-white text-base"></i>
+              </div>
+              <div>
+                <h3 class="font-medium text-slate-800 text-sm">Docker Hub</h3>
+                <span class="text-xs text-slate-400">默认</span>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <p class="text-xs text-slate-500 mb-1">地址</p>
+              <div class="flex flex-col gap-1">
+                <code class="text-xs bg-slate-100 px-2 py-1 rounded break-all">{{ indexServerAddress || 'https://index.docker.io/v1/' }}</code>
                 <template v-if="daemonMirrors.length > 0">
-                  <code v-for="mirror in daemonMirrors" :key="mirror" class="ml-1 text-xs bg-sky-50 text-sky-700 px-2 py-1 rounded inline-flex items-center gap-1">
+                  <code v-for="mirror in daemonMirrors" :key="mirror" class="text-xs bg-sky-50 text-sky-700 px-2 py-1 rounded inline-flex items-center gap-1">
                     <i class="fas fa-bolt text-sky-400 text-xs"></i>{{ mirror }}
                   </code>
                 </template>
-              </td>
-              <td class="px-4 py-3">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
-                  <i class="fas fa-lock-open mr-1"></i>匿名
-                </span>
-              </td>
-              <td class="px-4 py-3"></td>
-            </tr>
-            <!-- 私有仓库行 -->
-            <tr v-for="reg in registries" :key="reg.url" class="hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3">
-                <div class="flex items-center gap-2">
-                  <div class="w-8 h-8 rounded-lg bg-purple-400 flex items-center justify-center">
-                    <i class="fas fa-warehouse text-white text-sm"></i>
-                  </div>
-                  <span class="font-medium text-slate-800">{{ reg.name }}</span>
+              </div>
+            </div>
+            
+            <div class="pt-2 border-t border-slate-100">
+              <p class="text-xs text-slate-500 mb-1">认证</p>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
+                <i class="fas fa-lock-open mr-1"></i>匿名
+              </span>
+            </div>
+          </div>
+
+          <!-- 私有仓库卡片 -->
+          <div v-for="reg in registries" :key="reg.url" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-purple-400 flex items-center justify-center">
+                  <i class="fas fa-warehouse text-white text-base"></i>
                 </div>
-              </td>
-              <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ reg.url }}</code></td>
-              <td class="px-4 py-3">
-                <span v-if="reg.username" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
-                  <i class="fas fa-user mr-1"></i>{{ reg.username }}
-                </span>
-                <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
-                  <i class="fas fa-lock-open mr-1"></i>匿名
-                </span>
-              </td>
-              <td class="px-4 py-3">
-<div class="flex justify-end items-center gap-0.5">
-                  <button @click="openPullModal(reg)" class="btn-icon text-slate-600 hover:bg-slate-100" title="拉取镜像">
-                    <i class="fas fa-download text-xs"></i>
-                  </button>
-                  <button @click="openPushModal(reg)" class="btn-icon text-blue-600 hover:bg-blue-50" title="推送镜像">
-                    <i class="fas fa-upload text-xs"></i>
-                  </button>
+                <div>
+                  <h3 class="font-medium text-slate-800 text-sm">{{ reg.name }}</h3>
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <p class="text-xs text-slate-500 mb-1">地址</p>
+              <code class="text-xs bg-slate-100 px-2 py-1 rounded break-all">{{ reg.url }}</code>
+            </div>
+            
+            <div class="mb-3">
+              <p class="text-xs text-slate-500 mb-1">认证</p>
+              <span v-if="reg.username" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
+                <i class="fas fa-user mr-1"></i>{{ reg.username }}
+              </span>
+              <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
+                <i class="fas fa-lock-open mr-1"></i>匿名
+              </span>
+            </div>
+            
+            <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
+              <button @click="openPullModal(reg)" class="btn-icon text-slate-600 hover:bg-slate-100" title="拉取镜像">
+                <i class="fas fa-download text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">拉取</span>
+              </button>
+              <button @click="openPushModal(reg)" class="btn-icon text-blue-600 hover:bg-blue-50" title="推送镜像">
+                <i class="fas fa-upload text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">推送</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

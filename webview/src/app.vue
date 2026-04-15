@@ -21,6 +21,9 @@ provide(APP_ACTIONS_KEY, actions)
 const sidebarCollapsed = ref(false)
 provide('sidebarCollapsed', sidebarCollapsed)
 
+// 导航组件引用
+const navigationRef = ref(null)
+
 // 工具栏按钮管理
 const toolbarButtons = ref([])
 const route = useRoute()
@@ -58,6 +61,13 @@ const clearToolbarOnRouteChange = () => {
   clearToolbar()
 }
 
+// 移动端菜单切换
+const toggleMobileMenu = () => {
+  if (navigationRef.value) {
+    navigationRef.value.toggleMobileSidebar()
+  }
+}
+
 onMounted(() => {
   const token = localStorage.getItem('app-token')
   const username = localStorage.getItem('app-username')
@@ -71,24 +81,32 @@ onMounted(() => {
 <template>
   <div class="min-h-screen bg-slate-50">
     <template v-if="state.username">
-      <!-- 顶部菜单栏 -->
+      <!-- 移动端顶部菜单栏 -->
       <header 
-        class="fixed top-0 right-0 h-16 bg-white border-b border-slate-200 z-40 flex items-center justify-between px-6 transition-all duration-300"
-        :class="sidebarCollapsed ? 'left-16' : 'left-64'"
+        class="fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-40 flex items-center justify-between px-4 transition-all duration-300"
+        :class="sidebarCollapsed ? 'md:left-16' : 'md:left-64'"
       >
+        <!-- 移动端菜单切换按钮 -->
+        <button
+          @click="toggleMobileMenu"
+          class="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
+        >
+          <i class="fas fa-bars text-slate-600"></i>
+        </button>
+        
         <!-- 工具栏按钮区域 -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 overflow-x-auto flex-1 mx-2">
           <button
             v-for="btn in toolbarButtons"
             :key="btn.id"
             @click="btn.onClick"
             :class="btn.variant === 'primary' ? 'btn-primary' : 'btn-secondary'"
-            class="text-sm py-2"
+            class="text-sm py-2 px-3 whitespace-nowrap"
             :disabled="btn.loading"
           >
             <i v-if="btn.loading" class="fas fa-spinner fa-spin mr-1.5"></i>
             <i v-else-if="btn.icon" :class="btn.icon" class="mr-1.5"></i>
-            {{ btn.label }}
+            <span class="hidden sm:inline">{{ btn.label }}</span>
           </button>
         </div>
         
@@ -97,15 +115,15 @@ onMounted(() => {
           <div class="w-8 h-8 rounded-full bg-primary-400 flex items-center justify-center flex-shrink-0">
             <i class="fas fa-user text-white text-sm"></i>
           </div>
-          <div class="text-sm font-medium text-slate-700">{{ state.username }}</div>
+          <div class="hidden sm:block text-sm font-medium text-slate-700">{{ state.username }}</div>
           <AuthLogout />
         </div>
       </header>
 
-      <NavigationBar v-model:collapsed="sidebarCollapsed" />
+      <NavigationBar ref="navigationRef" v-model:collapsed="sidebarCollapsed" />
       <main 
-        class="px-6 py-6 pt-20 transition-all duration-300"
-        :class="sidebarCollapsed ? 'ml-16' : 'ml-64'"
+        class="px-4 py-6 pt-20 transition-all duration-300"
+        :class="sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'"
       >
         <router-view @vue:mounted="clearToolbarOnRouteChange" />
       </main>

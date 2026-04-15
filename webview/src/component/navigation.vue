@@ -1,5 +1,5 @@
 <script setup>
-import { computed, inject, ref, watch } from 'vue';
+import { computed, inject, ref, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { APP_STATE_KEY } from '@/store/state.js';
@@ -7,6 +7,9 @@ import { APP_STATE_KEY } from '@/store/state.js';
 const state = inject(APP_STATE_KEY)
 const collapsed = defineModel('collapsed', { type: Boolean, default: false })
 const route = useRoute()
+
+// 移动端侧边栏显示状态
+const mobileSidebarVisible = ref(false)
 
 // Docker 子菜单展开状态 - 初始化时根据当前路由判断
 const dockerExpanded = ref(route.path.startsWith('/docker/'))
@@ -73,15 +76,58 @@ const toggleApisix = () => {
     apisixExpanded.value = !apisixExpanded.value
   }
 }
+
+// 移动端侧边栏控制
+const toggleMobileSidebar = () => {
+  mobileSidebarVisible.value = !mobileSidebarVisible.value
+}
+
+const closeMobileSidebar = () => {
+  mobileSidebarVisible.value = false
+}
+
+// 提供给父组件调用的方法
+const openMobileSidebar = () => {
+  mobileSidebarVisible.value = true
+}
+
+// 暴露方法给父组件
+defineExpose({
+  openMobileSidebar,
+  closeMobileSidebar,
+  toggleMobileSidebar
+})
+
+// 监听窗口大小变化，自动关闭移动端侧边栏
+const handleResize = () => {
+  if (window.innerWidth >= 768) {
+    mobileSidebarVisible.value = false
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
 </script>
 
 <template>
+  <!-- 移动端遮罩层 -->
+  <div 
+    v-if="mobileSidebarVisible"
+    class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+    @click="closeMobileSidebar"
+  ></div>
+  
   <aside 
     class="fixed left-0 top-0 h-screen bg-white border-r border-slate-200 z-50 flex flex-col transition-all duration-300"
-    :class="collapsed ? 'w-16' : 'w-64'"
+    :class="[collapsed ? 'w-16' : 'w-64', mobileSidebarVisible ? 'translate-x-0' : '-translate-x-full md:translate-x-0']"
   >
     <!-- Logo 区域 -->
-    <div class="h-16 flex items-center border-b border-slate-200" :class="collapsed ? 'justify-center' : 'px-4'">
+    <div class="h-16 flex items-center border-b border-slate-200" :class="collapsed ? 'justify-center' : 'px-4'" @click="closeMobileSidebar">
       <div class="flex items-center" :class="collapsed ? '' : 'space-x-3'">
         <div class="w-10 h-10 rounded-xl bg-primary-500 flex items-center justify-center shadow-glow">
           <i class="fas fa-server text-white text-lg"></i>
@@ -90,8 +136,18 @@ const toggleApisix = () => {
       </div>
     </div>
 
+    <!-- 移动端关闭按钮 -->
+    <div class="md:hidden absolute top-4 right-4">
+      <button 
+        @click="closeMobileSidebar"
+        class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors"
+      >
+        <i class="fas fa-times text-sm"></i>
+      </button>
+    </div>
+
     <!-- 导航链接 -->
-    <nav v-if="state.username" class="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+    <nav v-if="state.username" class="flex-1 py-4 px-3 space-y-1 overflow-y-auto" @click="closeMobileSidebar">
       <router-link 
         to="/overview" 
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"

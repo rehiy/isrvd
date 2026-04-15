@@ -33,8 +33,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-6">
-    <div class="flex items-center justify-between mb-4">
+  <div class="p-4 md:p-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
       <div class="flex items-center gap-3">
         <label class="text-sm text-slate-600">显示行数</label>
         <select v-model="logTail" class="w-28 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 hover:border-slate-300 focus:outline-none focus:border-slate-400">
@@ -54,6 +54,6 @@ onMounted(() => {
       <div class="w-8 h-8 spinner"></div>
       <span>加载日志中...</span>
     </div>
-    <pre v-else class="bg-slate-900 text-green-400 p-4 rounded-xl overflow-auto max-h-[70vh] text-sm font-mono whitespace-pre-wrap">{{ logContent || '暂无日志' }}</pre>
+    <pre v-else class="bg-slate-900 text-green-400 p-3 md:p-4 rounded-xl overflow-auto max-h-[70vh] text-xs md:text-sm font-mono whitespace-pre-wrap">{{ logContent || '暂无日志' }}</pre>
   </div>
 </template>
