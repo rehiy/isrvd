@@ -14,7 +14,7 @@ const routes = [
   {
     path: '/explorer',
     name: 'explorer',
-    component: () => import('@/views/file-manager/index.vue')
+    component: () => import('@/views/filer/index.vue')
   },
   {
     path: '/docker',

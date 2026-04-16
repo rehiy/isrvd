@@ -10,8 +10,8 @@ import { APP_ACTIONS_KEY } from '@/store/state.js'
 import { Codemirror } from 'vue-codemirror'
 import { yaml } from '@codemirror/lang-yaml'
 
-import CapSelect from '@/component/docker/cap-select.vue'
-import ImageSelect from '@/component/docker/image-select.vue'
+import CapSelect from '@/views/docker/widget/cap-select.vue'
+import ImageSelect from '@/views/docker/widget/image-select.vue'
 import BaseModal from '@/component/modal.vue'
 
 const actions = inject(APP_ACTIONS_KEY)

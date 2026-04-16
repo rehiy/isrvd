@@ -3,9 +3,9 @@ import { inject, ref } from 'vue'
 
 import { APP_ACTIONS_KEY } from '@/store/state.js'
 
-import CreateModal from '@/component/file-manager/create.vue'
-import MkdirModal from '@/component/file-manager/mkdir.vue'
-import UploadModal from '@/component/file-manager/upload.vue'
+import CreateModal from '@/views/filer/widget/create_modal.vue'
+import MkdirModal from '@/views/filer/widget/mkdir_modal.vue'
+import UploadModal from '@/views/filer/widget/upload_modal.vue'
 
 const actions = inject(APP_ACTIONS_KEY)
 
