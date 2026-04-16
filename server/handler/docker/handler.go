@@ -21,7 +21,7 @@ type DockerHandler struct {
 
 // NewDockerHandler 创建 Docker 处理器
 func NewDockerHandler() (*DockerHandler, error) {
-	svc := registry.DefaultRegistry.GetDocker()
+	svc := registry.DockerService
 	if svc == nil {
 		logman.Error("Docker service not initialized")
 		return nil, fmt.Errorf("Docker 服务未初始化")

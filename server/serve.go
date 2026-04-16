@@ -14,7 +14,6 @@ import (
 	"isrvd/server/handler/shell"
 	"isrvd/server/handler/swarm"
 	"isrvd/server/handler/system"
-	"isrvd/server/helper"
 	"isrvd/server/middleware"
 )
 
@@ -197,24 +196,8 @@ func (app *App) setupRouter() {
 			systemGroup := authGroup.Group("/system")
 			{
 				systemGroup.GET("/stat", systemHandler.Stat)
-				systemGroup.GET("/probe", func(c *gin.Context) {
-					ctx := c.Request.Context()
-					dockerOK, swarmOK, apisixOK := false, false, false
-					if dockerHandler != nil {
-						dockerOK = dockerHandler.CheckAvailability(ctx)
-					}
-					if swarmHandler != nil {
-						swarmOK = swarmHandler.CheckAvailability(ctx)
-					}
-					if apisixHandler != nil {
-						apisixOK = apisixHandler.CheckAvailability()
-					}
-					helper.RespondSuccess(c, "ok", gin.H{
-						"docker": gin.H{"available": dockerOK},
-						"swarm":  gin.H{"available": swarmOK},
-						"apisix": gin.H{"available": apisixOK},
-					})
-				})
+				systemGroup.GET("/probe", systemHandler.Probe)
+				systemGroup.GET("/health", systemHandler.Health)
 			}
 		}
 	}

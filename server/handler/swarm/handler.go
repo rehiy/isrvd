@@ -19,7 +19,7 @@ type SwarmHandler struct {
 // NewSwarmHandler 创建 Swarm 处理器
 func NewSwarmHandler() *SwarmHandler {
 	return &SwarmHandler{
-		manager: registry.DefaultRegistry.GetSwarm(),
+		manager: registry.SwarmManager,
 	}
 }
 

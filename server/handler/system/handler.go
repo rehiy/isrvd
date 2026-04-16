@@ -9,6 +9,7 @@ import (
 	"github.com/rehiy/pango/psutil"
 	"github.com/shirou/gopsutil/v3/disk"
 
+	"isrvd/internal/registry"
 	"isrvd/server/helper"
 )
 
@@ -70,6 +71,16 @@ func (h *SystemHandler) Stat(c *gin.Context) {
 		System: detail,
 		DiskIO: diskIO,
 		Go:     goStat,
+	})
+}
+
+// Probe 探活
+func (h *SystemHandler) Probe(c *gin.Context) {
+	ctx := c.Request.Context()
+	helper.RespondSuccess(c, "ok", gin.H{
+		"docker": gin.H{"available": registry.IsDockerAvailable(ctx)},
+		"swarm":  gin.H{"available": registry.IsSwarmAvailable(ctx)},
+		"apisix": gin.H{"available": registry.IsApisixAvailable()},
 	})
 }
 

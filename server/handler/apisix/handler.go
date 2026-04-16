@@ -19,7 +19,7 @@ type Handler struct {
 
 // NewHandler 创建 Apisix 处理器
 func NewHandler() (*Handler, error) {
-	client := registry.DefaultRegistry.GetApisix()
+	client := registry.ApisixClient
 	if client == nil {
 		logman.Error("Apisix client not initialized")
 		return nil, fmt.Errorf("Apisix 未配置")
