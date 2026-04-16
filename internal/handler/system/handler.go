@@ -9,8 +9,8 @@ import (
 	"github.com/rehiy/pango/psutil"
 	"github.com/shirou/gopsutil/v3/disk"
 
+	"isrvd/internal/helper"
 	"isrvd/internal/registry"
-	"isrvd/server/helper"
 )
 
 type SystemHandler struct{}

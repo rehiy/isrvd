@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"isrvd/internal/helper"
 	"isrvd/pkgs/docker"
-	"isrvd/server/helper"
 )
 
 // ListRegistries 列出已配置的镜像仓库

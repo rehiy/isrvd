@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/logman"
 
+	"isrvd/internal/helper"
 	"isrvd/pkgs/archive"
-	"isrvd/server/helper"
 )
 
 // ZipHandler zip处理器

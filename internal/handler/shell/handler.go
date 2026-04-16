@@ -13,7 +13,7 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/config"
-	"isrvd/server/helper"
+	"isrvd/internal/helper"
 )
 
 // ShellHandler Shell处理器

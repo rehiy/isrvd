@@ -6,31 +6,22 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/config"
+	"isrvd/internal/handler/apisix"
+	"isrvd/internal/handler/auth"
+	"isrvd/internal/handler/docker"
+	"isrvd/internal/handler/filer"
+	"isrvd/internal/handler/shell"
+	"isrvd/internal/handler/swarm"
+	"isrvd/internal/handler/system"
 	"isrvd/public"
-	"isrvd/server/handler/apisix"
-	"isrvd/server/handler/auth"
-	"isrvd/server/handler/docker"
-	"isrvd/server/handler/filer"
-	"isrvd/server/handler/shell"
-	"isrvd/server/handler/swarm"
-	"isrvd/server/handler/system"
-	"isrvd/server/middleware"
 )
 
 type App struct {
 	*gin.Engine
 }
 
-func Start() {
+func NewApp() *App {
 	app := &App{httpd.Engine(config.Debug)}
-	app.create()
-}
-
-// 设置路由
-func (app *App) create() {
-	// 注册中间件
-	app.Use(middleware.CORSMiddleware())
-	app.Use(middleware.RecoveryMiddleware())
 
 	// 注册模块路由
 	app.setupRouter()
@@ -44,6 +35,8 @@ func (app *App) create() {
 
 	httpd.StaticEmbed(public.Efs, "", "")
 	httpd.Server(config.ListenAddr)
+
+	return app
 }
 
 // 设置管理器路由
@@ -71,7 +64,7 @@ func (app *App) setupRouter() {
 
 		// 需认证的路由组
 		authGroup := api.Group("")
-		authGroup.Use(middleware.AuthMiddleware())
+		authGroup.Use(AuthMiddleware())
 		{
 			authGroup.POST("/logout", authHandler.Logout)
 
@@ -204,7 +197,7 @@ func (app *App) setupRouter() {
 
 	// WebSocket 路由
 	ws := app.Group("/ws")
-	ws.Use(middleware.AuthMiddleware())
+	ws.Use(AuthMiddleware())
 	{
 		ws.GET("/shell", shellHandler.WebSocket)
 		if dockerHandler != nil {

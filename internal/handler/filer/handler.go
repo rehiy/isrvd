@@ -11,7 +11,7 @@ import (
 	"github.com/rehiy/pango/filer"
 	"github.com/rehiy/pango/logman"
 
-	"isrvd/server/helper"
+	"isrvd/internal/helper"
 )
 
 // FileHandler 文件处理器

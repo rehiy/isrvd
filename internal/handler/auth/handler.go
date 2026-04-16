@@ -9,7 +9,7 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/config"
-	"isrvd/server/helper"
+	"isrvd/internal/helper"
 )
 
 // AuthHandler 认证处理器

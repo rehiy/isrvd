@@ -3,7 +3,7 @@ package main
 import (
 	"isrvd/config"
 	"isrvd/internal/registry"
-	"isrvd/server"
+	"isrvd/internal/server"
 )
 
 func main() {
@@ -12,5 +12,5 @@ func main() {
 	}
 
 	registry.Init()
-	server.Start()
+	server.NewApp()
 }

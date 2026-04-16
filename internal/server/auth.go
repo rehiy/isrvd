@@ -1,4 +1,4 @@
-package middleware
+package server
 
 import (
 	"net/http"
@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"isrvd/config"
-	"isrvd/server/helper"
+	"isrvd/internal/helper"
 )
 
 // 认证中间件工厂

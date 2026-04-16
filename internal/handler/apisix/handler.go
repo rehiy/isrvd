@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/logman"
 
+	"isrvd/internal/helper"
 	"isrvd/internal/registry"
 	"isrvd/pkgs/apisix"
-	"isrvd/server/helper"
 )
 
 // Handler Apisix 管理处理器
