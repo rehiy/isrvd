@@ -1,6 +1,7 @@
 package system
 
 import (
+	"fmt"
 	"net/http"
 	"runtime"
 	"time"
@@ -43,9 +44,35 @@ type GoRuntimeStat struct {
 	*psutil.GoMemoryStat
 }
 
+// filterDiskPartitions 过滤磁盘分区，去除容器中的重复单文件挂载
+// 同一设备+相同容量的分区只保留挂载点路径最短的那个
+func filterDiskPartitions(partitions []psutil.DiskPartition) []psutil.DiskPartition {
+	type bestEntry struct {
+		index int
+		mpLen int
+	}
+	best := make(map[string]*bestEntry)
+
+	for i, dp := range partitions {
+		key := fmt.Sprintf("%s:%d", dp.Device, dp.Total)
+		if b, ok := best[key]; !ok || len(dp.Mountpoint) < b.mpLen {
+			best[key] = &bestEntry{index: i, mpLen: len(dp.Mountpoint)}
+		}
+	}
+
+	result := make([]psutil.DiskPartition, 0, len(best))
+	for _, b := range best {
+		result = append(result, partitions[b.index])
+	}
+	return result
+}
+
 // Stat 获取系统统计信息
 func (h *SystemHandler) Stat(c *gin.Context) {
 	detail := psutil.Detail(false)
+
+	// 过滤容器中的单文件挂载项，按 "设备+容量" 去重，只保留挂载点最短的
+	detail.DiskPartition = filterDiskPartitions(detail.DiskPartition)
 
 	// 采集硬盘 IO 数据
 	ioCounters, _ := disk.IOCounters()

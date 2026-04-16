@@ -639,7 +639,7 @@ defineExpose({
           <div class="w-6 h-6 rounded-md bg-amber-500 flex items-center justify-center">
             <i class="fas fa-hard-drive text-white text-xs"></i>
           </div>
-          <span class="text-sm font-semibold text-slate-700">硬盘</span>
+          <span class="text-sm font-semibold text-slate-700">硬盘 I/O</span>
           <span class="ml-auto text-xs text-slate-400">
             总计 {{ fmtBytes(stat.system.DiskTotal) }}，已用 {{ fmtBytes(stat.system.DiskUsed) }}
           </span>
