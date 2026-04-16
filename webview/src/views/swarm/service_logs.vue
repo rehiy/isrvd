@@ -70,9 +70,6 @@ onMounted(() => {
               <button @click="switchTab('swarm-service-logs')" :class="['px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'swarm-service-logs' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
                 <i class="fas fa-file-lines"></i><span>日志</span>
               </button>
-              <button @click="switchTab('swarm-service-tasks')" :class="['px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'swarm-service-tasks' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
-                <i class="fas fa-list-check"></i><span>任务</span>
-              </button>
             </div>
             <button @click="loadLogs()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
@@ -104,9 +101,6 @@ onMounted(() => {
             </button>
             <button @click="switchTab('swarm-service-logs')" :class="['px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'swarm-service-logs' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
               <i class="fas fa-file-lines"></i><span class="hidden sm:inline">日志</span>
-            </button>
-            <button @click="switchTab('swarm-service-tasks')" :class="['px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'swarm-service-tasks' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
-              <i class="fas fa-list-check"></i><span class="hidden sm:inline">任务</span>
             </button>
           </div>
         </div>

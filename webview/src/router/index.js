@@ -110,9 +110,9 @@ component: () => import('@/views/swarm/service_info.vue')
 component: () => import('@/views/swarm/service_logs.vue')
   },
   {
-    path: '/swarm/service/:id/tasks',
-    name: 'swarm-service-tasks',
-component: () => import('@/views/swarm/service_tasks.vue')
+    path: '/swarm/tasks',
+    name: 'swarm-tasks',
+    component: () => import('@/views/swarm/tasks.vue')
   },
   {
     path: '/apisix',
