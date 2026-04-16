@@ -15,6 +15,22 @@ type DockerService struct {
 	config *DockerConfig
 }
 
+// DockerConfig Docker 配置（由外部注入，解除对 config 的依赖）
+type DockerConfig struct {
+	Host          string            // Docker 连接地址
+	ContainerRoot string            // 容器数据根目录
+	Registries    []*RegistryConfig // 镜像仓库配置列表
+}
+
+// RegistryConfig 镜像仓库配置
+type RegistryConfig struct {
+	Name        string // 仓库名称
+	URL         string // 仓库地址
+	Username    string // 用户名
+	Password    string // 密码
+	Description string // 仓库描述
+}
+
 // NewDockerService 创建 Docker 服务
 func NewDockerService(cfg *DockerConfig) (*DockerService, error) {
 	opts := []client.Opt{client.WithAPIVersionNegotiation()}
@@ -36,6 +52,18 @@ func NewDockerService(cfg *DockerConfig) (*DockerService, error) {
 // GetClient 获取 Docker 客户端
 func (s *DockerService) GetClient() *client.Client {
 	return s.client
+}
+
+// DockerInfo Docker 信息概览
+type DockerInfo struct {
+	ContainersRunning  int64    `json:"containersRunning"`
+	ContainersStopped  int64    `json:"containersStopped"`
+	ContainersPaused   int64    `json:"containersPaused"`
+	ImagesTotal        int64    `json:"imagesTotal"`
+	VolumesTotal       int64    `json:"volumesTotal"`
+	NetworksTotal      int64    `json:"networksTotal"`
+	RegistryMirrors    []string `json:"registryMirrors"`
+	IndexServerAddress string   `json:"indexServerAddress"`
 }
 
 // GetInfo 获取 Docker 概览信息

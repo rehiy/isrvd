@@ -42,6 +42,61 @@ func getCpuFreq() float64 {
 	return cpuFreqCache
 }
 
+// CPUThrottledData CPU 节流数据
+type CPUThrottledData struct {
+	Periods          uint64 `json:"periods"`
+	ThrottledPeriods uint64 `json:"throttledPeriods"`
+	ThrottledTime    uint64 `json:"throttledTime"`
+}
+
+// NetDetail 网卡详细统计
+type NetDetail struct {
+	RxBytes   uint64 `json:"rxBytes"`
+	RxPackets uint64 `json:"rxPackets"`
+	RxErrors  uint64 `json:"rxErrors"`
+	RxDropped uint64 `json:"rxDropped"`
+	TxBytes   uint64 `json:"txBytes"`
+	TxPackets uint64 `json:"txPackets"`
+	TxErrors  uint64 `json:"txErrors"`
+	TxDropped uint64 `json:"txDropped"`
+}
+
+// BlockDetail 磁盘设备详细统计
+type BlockDetail struct {
+	Major uint64 `json:"major"`
+	Minor uint64 `json:"minor"`
+	Read  uint64 `json:"read"`
+	Write uint64 `json:"write"`
+}
+
+// ContainerProcessList 容器进程列表
+type ContainerProcessList struct {
+	Titles    []string   `json:"titles"`
+	Processes [][]string `json:"processes"`
+}
+
+// ContainerStatsResponse 容器统计信息响应
+type ContainerStatsResponse struct {
+	ID            string                `json:"id"`
+	Name          string                `json:"name"`
+	CPUPercent    float64               `json:"cpuPercent"`
+	CPUCores      int                   `json:"cpuCores"`
+	CPUFreq       float64               `json:"cpuFreq"`
+	MemoryUsage   int64                 `json:"memoryUsage"`
+	MemoryLimit   int64                 `json:"memoryLimit"`
+	MemoryPercent float64               `json:"memoryPercent"`
+	NetworkRx     int64                 `json:"networkRx"`
+	NetworkTx     int64                 `json:"networkTx"`
+	BlockRead     int64                 `json:"blockRead"`
+	BlockWrite    int64                 `json:"blockWrite"`
+	Pids          int64                 `json:"pids"`
+	PidsLimit     int64                 `json:"pidsLimit"`
+	CPUThrottled  *CPUThrottledData     `json:"cpuThrottled"`
+	NetworkDetail map[string]*NetDetail `json:"networkDetail"`
+	BlockDetail   []*BlockDetail        `json:"blockDetail"`
+	ProcessList   *ContainerProcessList `json:"processList"`
+}
+
 // GetContainerStats 获取容器统计信息
 func (s *DockerService) GetContainerStats(ctx context.Context, id string) (*ContainerStatsResponse, error) {
 	stats, err := s.client.ContainerStats(ctx, id, false)

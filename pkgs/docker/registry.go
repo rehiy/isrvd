@@ -11,6 +11,14 @@ import (
 	"github.com/rehiy/pango/logman"
 )
 
+// RegistryInfo 镜像仓库信息
+type RegistryInfo struct {
+	Name        string `json:"name"`
+	URL         string `json:"url"`
+	Username    string `json:"username"`
+	Description string `json:"description"`
+}
+
 // ListRegistries 列出已配置的镜像仓库
 func (s *DockerService) ListRegistries() []*RegistryInfo {
 	var registries []*RegistryInfo
@@ -42,6 +50,13 @@ func (s *DockerService) getRegistryAuth(registryURL string) string {
 		}
 	}
 	return ""
+}
+
+// ImagePushRequest 镜像推送请求
+type ImagePushRequest struct {
+	Image       string `json:"image" binding:"required"`
+	RegistryURL string `json:"registryUrl" binding:"required"`
+	Namespace   string `json:"namespace"`
 }
 
 // PushImage 推送镜像到仓库
@@ -104,6 +119,13 @@ func (s *DockerService) PushImage(ctx context.Context, req ImagePushRequest) (st
 
 	logman.Info("Image pushed", "image", req.Image, "target", targetRef)
 	return lastMessage, targetRef, nil
+}
+
+// ImagePullFromRegistryRequest 从仓库拉取镜像请求
+type ImagePullFromRegistryRequest struct {
+	Image       string `json:"image" binding:"required"`
+	RegistryURL string `json:"registryUrl" binding:"required"`
+	Namespace   string `json:"namespace"`
 }
 
 // PullFromRegistry 从仓库拉取镜像到本地

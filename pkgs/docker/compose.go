@@ -11,6 +11,56 @@ import (
 	"github.com/rehiy/pango/logman"
 )
 
+// VolumeMapping 目录映射
+type VolumeMapping struct {
+	HostPath      string `json:"hostPath"`
+	ContainerPath string `json:"containerPath"`
+	ReadOnly      bool   `json:"readOnly"`
+}
+
+// composeService 定义 docker-compose service 配置（包内私有）
+type composeService struct {
+	Image         string            `yaml:"image"`
+	ContainerName string            `yaml:"container_name,omitempty"`
+	Environment   []string          `yaml:"environment,omitempty"`
+	Ports         []string          `yaml:"ports,omitempty"`
+	Volumes       []string          `yaml:"volumes,omitempty"`
+	NetworkMode   string            `yaml:"network_mode,omitempty"`
+	Restart       string            `yaml:"restart,omitempty"`
+	Command       string            `yaml:"command,omitempty"`
+	Entrypoint    string            `yaml:"entrypoint,omitempty"`
+	WorkingDir    string            `yaml:"working_dir,omitempty"`
+	User          string            `yaml:"user,omitempty"`
+	Hostname      string            `yaml:"hostname,omitempty"`
+	Privileged    bool              `yaml:"privileged,omitempty"`
+	CapAdd        []string          `yaml:"cap_add,omitempty"`
+	CapDrop       []string          `yaml:"cap_drop,omitempty"`
+	Deploy        *composeDeploy    `yaml:"deploy,omitempty"`
+	Labels        map[string]string `yaml:"labels,omitempty"`
+}
+
+// composeDeploy 定义资源限制配置
+type composeDeploy struct {
+	Resources *composeResources `yaml:"resources,omitempty"`
+}
+
+// composeResources 定义资源配置
+type composeResources struct {
+	Limits *composeLimit `yaml:"limits,omitempty"`
+}
+
+// composeLimit 定义资源限制
+type composeLimit struct {
+	Cpus   string `yaml:"cpus,omitempty"`
+	Memory string `yaml:"memory,omitempty"`
+}
+
+// composeFile 定义 docker-compose 文件结构
+type composeFile struct {
+	Version  string                    `yaml:"version"`
+	Services map[string]composeService `yaml:"services"`
+}
+
 // AutoCreateComposeFile 根据容器当前运行配置自动生成 compose 文件
 func (s *DockerService) AutoCreateComposeFile(ctx context.Context, name string) (*composeFile, error) {
 	// 通过容器名查找容器
@@ -283,6 +333,26 @@ func (s *DockerService) CreateComposeFile(req ContainerCreateRequest) error {
 	}
 
 	return createComposeFileOnDisk(s.config.ContainerRoot, req.Name, service)
+}
+
+// ContainerConfigResponse 容器配置响应（从 compose 文件读取）
+type ContainerConfigResponse struct {
+	Image      string            `json:"image"`
+	Name       string            `json:"name"`
+	Cmd        []string          `json:"cmd,omitempty"`
+	Env        []string          `json:"env,omitempty"`
+	Ports      map[string]string `json:"ports,omitempty"`
+	Volumes    []VolumeMapping   `json:"volumes,omitempty"`
+	Network    string            `json:"network,omitempty"`
+	Restart    string            `json:"restart,omitempty"`
+	Memory     int64             `json:"memory,omitempty"`
+	Cpus       float64           `json:"cpus,omitempty"`
+	Workdir    string            `json:"workdir,omitempty"`
+	User       string            `json:"user,omitempty"`
+	Hostname   string            `json:"hostname,omitempty"`
+	Privileged bool              `json:"privileged,omitempty"`
+	CapAdd     []string          `json:"capAdd,omitempty"`
+	CapDrop    []string          `json:"capDrop,omitempty"`
 }
 
 // GetContainerConfig 获取容器配置（从 compose 文件读取）

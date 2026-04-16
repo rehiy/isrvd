@@ -13,6 +13,19 @@ import (
 	"github.com/rehiy/pango/logman"
 )
 
+// ContainerInfo Docker 容器信息
+type ContainerInfo struct {
+	ID      string            `json:"id"`
+	Name    string            `json:"name"`
+	Image   string            `json:"image"`
+	State   string            `json:"state"`
+	Status  string            `json:"status"`
+	Ports   []string          `json:"ports"`
+	Created int64             `json:"created"`
+	IsSwarm bool              `json:"isSwarm,omitempty"`
+	Labels  map[string]string `json:"labels,omitempty"`
+}
+
 // ListContainers 获取容器列表
 func (s *DockerService) ListContainers(ctx context.Context, all bool) ([]*ContainerInfo, error) {
 	containers, err := s.client.ContainerList(ctx, types.ContainerListOptions{All: all})
@@ -41,6 +54,12 @@ func (s *DockerService) ListContainers(ctx context.Context, all bool) ([]*Contai
 	}
 
 	return result, nil
+}
+
+// ContainerActionRequest 容器操作请求
+type ContainerActionRequest struct {
+	ID     string `json:"id" binding:"required"`
+	Action string `json:"action" binding:"required"`
 }
 
 // ContainerAction 容器操作（start/stop/restart/remove/pause/unpause）
@@ -99,6 +118,33 @@ func (s *DockerService) GetContainerLogs(ctx context.Context, id, tail string) (
 	}
 
 	return ParseDockerLogs(data), nil
+}
+
+// ContainerLogsRequest 日志请求
+type ContainerLogsRequest struct {
+	ID     string `json:"id" binding:"required"`
+	Tail   string `json:"tail"`
+	Follow bool   `json:"follow"`
+}
+
+// ContainerCreateRequest 创建容器请求
+type ContainerCreateRequest struct {
+	Image      string            `json:"image" binding:"required"`
+	Name       string            `json:"name"`
+	Cmd        []string          `json:"cmd"`
+	Env        []string          `json:"env"`
+	Ports      map[string]string `json:"ports"`
+	Volumes    []VolumeMapping   `json:"volumes"`
+	Network    string            `json:"network"`
+	Restart    string            `json:"restart"`
+	Memory     int64             `json:"memory"`
+	Cpus       float64           `json:"cpus"`
+	Workdir    string            `json:"workdir"`
+	User       string            `json:"user"`
+	Hostname   string            `json:"hostname"`
+	Privileged bool              `json:"privileged"`
+	CapAdd     []string          `json:"capAdd"`
+	CapDrop    []string          `json:"capDrop"`
 }
 
 // CreateContainer 创建容器
@@ -205,6 +251,26 @@ func (s *DockerService) CreateContainer(ctx context.Context, req ContainerCreate
 	logman.Info("Container created", "id", shortID, "name", req.Name)
 
 	return resp.ID, nil
+}
+
+// ContainerUpdateRequest 容器配置更新请求
+type ContainerUpdateRequest struct {
+	Name       string            `json:"name" binding:"required"`
+	Image      string            `json:"image" binding:"required"`
+	Cmd        []string          `json:"cmd"`
+	Env        []string          `json:"env"`
+	Ports      map[string]string `json:"ports"`
+	Volumes    []VolumeMapping   `json:"volumes"`
+	Network    string            `json:"network"`
+	Restart    string            `json:"restart"`
+	Memory     int64             `json:"memory"`
+	Cpus       float64           `json:"cpus"`
+	Workdir    string            `json:"workdir"`
+	User       string            `json:"user"`
+	Hostname   string            `json:"hostname"`
+	Privileged bool              `json:"privileged"`
+	CapAdd     []string          `json:"capAdd"`
+	CapDrop    []string          `json:"capDrop"`
 }
 
 // UpdateContainer 更新容器配置并重建

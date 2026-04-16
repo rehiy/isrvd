@@ -9,6 +9,16 @@ import (
 	"github.com/rehiy/pango/logman"
 )
 
+// NetworkInfo Docker 网络信息
+type NetworkInfo struct {
+	ID      string   `json:"id"`
+	Name    string   `json:"name"`
+	Driver  string   `json:"driver"`
+	Subnet  string   `json:"subnet"`
+	Scope   string   `json:"scope"`
+	Network []string `json:"networks,omitempty"`
+}
+
 // ListNetworks 列出网络
 func (s *DockerService) ListNetworks(ctx context.Context) ([]*NetworkInfo, error) {
 	networks, err := s.client.NetworkList(ctx, types.NetworkListOptions{})
@@ -35,6 +45,12 @@ func (s *DockerService) ListNetworks(ctx context.Context) ([]*NetworkInfo, error
 	return result, nil
 }
 
+// NetworkActionRequest 网络操作请求
+type NetworkActionRequest struct {
+	ID     string `json:"id" binding:"required"`
+	Action string `json:"action" binding:"required"`
+}
+
 // NetworkAction 网络操作
 func (s *DockerService) NetworkAction(ctx context.Context, id, action string) error {
 	switch action {
@@ -49,6 +65,13 @@ func (s *DockerService) NetworkAction(ctx context.Context, id, action string) er
 
 	logman.Info("Network action performed", "action", action, "id", id)
 	return nil
+}
+
+// NetworkCreateRequest 创建网络请求
+type NetworkCreateRequest struct {
+	Name   string `json:"name" binding:"required"`
+	Driver string `json:"driver"`
+	Subnet string `json:"subnet"`
 }
 
 // CreateNetwork 创建网络
@@ -70,6 +93,28 @@ func (s *DockerService) CreateNetwork(ctx context.Context, name, driver string) 
 
 	logman.Info("Network created", "name", name, "id", id)
 	return id, nil
+}
+
+// NetworkContainerInfo 网络中的容器信息
+type NetworkContainerInfo struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	IPv4       string `json:"ipv4"`
+	IPv6       string `json:"ipv6"`
+	MacAddress string `json:"macAddress"`
+}
+
+// NetworkInspectResponse 网络详情响应
+type NetworkInspectResponse struct {
+	ID         string                  `json:"id"`
+	Name       string                  `json:"name"`
+	Driver     string                  `json:"driver"`
+	Scope      string                  `json:"scope"`
+	Subnet     string                  `json:"subnet"`
+	Gateway    string                  `json:"gateway"`
+	Internal   bool                    `json:"internal"`
+	EnableIPv6 bool                    `json:"enableIPv6"`
+	Containers []*NetworkContainerInfo `json:"containers"`
 }
 
 // InspectNetwork 获取网络详情

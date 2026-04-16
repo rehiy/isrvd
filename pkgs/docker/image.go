@@ -10,6 +10,15 @@ import (
 	"github.com/rehiy/pango/logman"
 )
 
+// ImageInfo Docker 镜像信息
+type ImageInfo struct {
+	ID       string   `json:"id"`
+	ShortID  string   `json:"shortId"`
+	RepoTags []string `json:"repoTags"`
+	Size     int64    `json:"size"`
+	Created  int64    `json:"created"`
+}
+
 // ListImages 列出镜像
 func (s *DockerService) ListImages(ctx context.Context, all bool) ([]*ImageInfo, error) {
 	images, err := s.client.ImageList(ctx, types.ImageListOptions{All: all})
@@ -40,6 +49,12 @@ func (s *DockerService) ListImages(ctx context.Context, all bool) ([]*ImageInfo,
 	return result, nil
 }
 
+// ImageActionRequest 镜像操作请求
+type ImageActionRequest struct {
+	ID     string `json:"id" binding:"required"`
+	Action string `json:"action" binding:"required"`
+}
+
 // ImageAction 镜像操作
 func (s *DockerService) ImageAction(ctx context.Context, id, action string) error {
 	switch action {
@@ -58,6 +73,12 @@ func (s *DockerService) ImageAction(ctx context.Context, id, action string) erro
 
 	logman.Info("Image action performed", "action", action, "id", id)
 	return nil
+}
+
+// ImagePullRequest 拉取镜像请求
+type ImagePullRequest struct {
+	Image string `json:"image" binding:"required"`
+	Tag   string `json:"tag"`
 }
 
 // PullImage 拉取镜像
@@ -99,6 +120,12 @@ func (s *DockerService) PullImage(ctx context.Context, image, tag string) (strin
 	return lastMessage, imageRef, nil
 }
 
+// ImageTagRequest 镜像标签请求
+type ImageTagRequest struct {
+	ID      string `json:"id" binding:"required"`
+	RepoTag string `json:"repoTag" binding:"required"`
+}
+
 // TagImage 镜像打标签
 func (s *DockerService) TagImage(ctx context.Context, id, repoTag string) error {
 	if err := s.client.ImageTag(ctx, id, repoTag); err != nil {
@@ -108,6 +135,15 @@ func (s *DockerService) TagImage(ctx context.Context, id, repoTag string) error 
 
 	logman.Info("Image tagged", "id", id, "tag", repoTag)
 	return nil
+}
+
+// ImageSearchResult 镜像搜索结果
+type ImageSearchResult struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	IsOfficial  bool   `json:"isOfficial"`
+	IsAutomated bool   `json:"isAutomated"`
+	StarCount   int    `json:"starCount"`
 }
 
 // SearchImages 搜索镜像
@@ -130,6 +166,12 @@ func (s *DockerService) SearchImages(ctx context.Context, term string) ([]*Image
 	}
 
 	return searchResults, nil
+}
+
+// ImageBuildRequest 镜像构建请求
+type ImageBuildRequest struct {
+	Dockerfile string `json:"dockerfile" binding:"required"`
+	Tag        string `json:"tag"`
 }
 
 // BuildImage 构建镜像
@@ -174,6 +216,37 @@ func (s *DockerService) BuildImage(ctx context.Context, dockerfile, tag string) 
 
 	logman.Info("Image built", "tag", tag)
 	return lastMessage, nil
+}
+
+// ImageLayerInfo 镜像层信息
+type ImageLayerInfo struct {
+	Digest    string `json:"digest"`    // 层 digest（sha256:...）
+	CreatedBy string `json:"createdBy"` // 构建命令
+	Created   string `json:"created"`   // 创建时间
+	Size      int64  `json:"size"`      // 层大小（字节），-1 表示空层
+	Empty     bool   `json:"empty"`     // 是否为空层（无文件变更）
+}
+
+// ImageInspectResponse 镜像详情响应
+type ImageInspectResponse struct {
+	ID           string            `json:"id"`
+	ShortID      string            `json:"shortId"`
+	RepoTags     []string          `json:"repoTags"`
+	RepoDigests  []string          `json:"repoDigests"`
+	Size         int64             `json:"size"`
+	VirtualSize  int64             `json:"virtualSize"`
+	Created      string            `json:"created"`
+	Author       string            `json:"author"`
+	Architecture string            `json:"architecture"`
+	OS           string            `json:"os"`
+	Cmd          []string          `json:"cmd"`
+	Entrypoint   []string          `json:"entrypoint"`
+	Env          []string          `json:"env"`
+	WorkingDir   string            `json:"workingDir"`
+	ExposedPorts []string          `json:"exposedPorts"`
+	Labels       map[string]string `json:"labels"`
+	Layers       int               `json:"layers"`
+	LayerDetails []*ImageLayerInfo `json:"layerDetails"`
 }
 
 // InspectImage 获取镜像详情
