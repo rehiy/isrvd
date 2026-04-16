@@ -23,7 +23,7 @@ docker run -d \
   -p 8080:8080 \
   -p 9080:9080 \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -v isrvd-data:/data \
+  -v /mnt/isrvd:/data \
   rehiy/isrvd:latest
 ```
 
@@ -42,10 +42,7 @@ services:
       - "9080:9080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - isrvd-data:/data
-
-volumes:
-  isrvd-data:
+      - /mnt/isrvd:/data
 ```
 
 ### 端口说明
