@@ -289,7 +289,7 @@ onMounted(() => { loadRoutes(); loadResources() })
       </div>
     </div>
 
-    <BaseModal v-model="modalOpen" :title="modalTitle" size="lg">
+    <BaseModal v-model="modalOpen" :title="modalTitle">
       <div class="space-y-4 p-1">
         <div class="grid grid-cols-2 gap-3">
           <div><label class="block text-sm font-medium text-slate-700 mb-2">路由名称 <span class="text-red-500">*</span></label><input v-model="formData.name" type="text" class="input" placeholder="路由名称" /></div>

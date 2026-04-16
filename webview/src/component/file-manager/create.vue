@@ -34,7 +34,7 @@ defineExpose({ show })
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" title="新建文件" size="lg" :loading="state.loading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" title="新建文件" :loading="state.loading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm" class="space-y-5">
       <div>
         <label for="fileName" class="block text-sm font-medium text-slate-700 mb-2">

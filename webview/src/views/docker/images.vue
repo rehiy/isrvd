@@ -462,7 +462,6 @@ onMounted(() => {
       :loading="buildLoading"
       show-footer
       @confirm="handleBuild"
-      size="lg"
     >
       <template #confirm-text>开始构建</template>
       <div class="space-y-4">

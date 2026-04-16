@@ -52,7 +52,7 @@ defineExpose({ show })
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" :title="'编辑: ' + formData.filename" size="xl" :loading="state.loading" @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" :title="'编辑: ' + formData.filename" :loading="state.loading" @confirm="handleConfirm">
     <div class="rounded-xl overflow-hidden border border-slate-200">
       <Codemirror v-model="formData.content" :style="{ height: '60vh' }" :extensions="extensions" :disabled="state.loading" />
     </div>

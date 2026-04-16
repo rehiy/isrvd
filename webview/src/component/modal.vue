@@ -4,7 +4,6 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   title: { type: String, default: '' },
-  size: { type: String, default: '' },
   loading: { type: Boolean, default: false },
   showFooter: { type: Boolean, default: true },
   confirmDisabled: { type: Boolean, default: false }
@@ -14,14 +13,6 @@ const emit = defineEmits(['update:modelValue', 'confirm', 'cancel'])
 
 const modalRef = ref(null)
 const isOpen = ref(props.modelValue)
-
-const sizeClasses = {
-  '': 'max-w-lg',
-  'sm': 'max-w-sm',
-  'lg': 'max-w-2xl',
-  'xl': 'max-w-4xl',
-  'full': 'max-w-full mx-4'
-}
 
 const open = () => {
   isOpen.value = true
@@ -87,7 +78,7 @@ defineExpose({ open, close })
       >
         <div 
           v-if="isOpen"
-          :class="['w-full modal-card animate-scale-in', sizeClasses[size]]"
+          :class="['w-full modal-card animate-scale-in', 'max-w-3xl']"
         >
           <!-- Header -->
           <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200/50">
