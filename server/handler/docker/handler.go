@@ -2,13 +2,14 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/rehiy/pango/logman"
 
-	"isrvd/config"
+	"isrvd/internal/registry"
 	"isrvd/pkgs/docker"
 	"isrvd/server/helper"
 )
@@ -20,27 +21,10 @@ type DockerHandler struct {
 
 // NewDockerHandler 创建 Docker 处理器
 func NewDockerHandler() (*DockerHandler, error) {
-	var registries []*docker.RegistryConfig
-	for _, r := range config.Docker.Registries {
-		registries = append(registries, &docker.RegistryConfig{
-			Name:        r.Name,
-			Description: r.Description,
-			URL:         r.URL,
-			Username:    r.Username,
-			Password:    r.Password,
-		})
-	}
-
-	cfg := &docker.DockerConfig{
-		Host:          config.Docker.Host,
-		ContainerRoot: config.Docker.ContainerRoot,
-		Registries:    registries,
-	}
-
-	svc, err := docker.NewDockerService(cfg)
-	if err != nil {
-		logman.Error("Docker client init failed", "error", err)
-		return nil, err
+	svc := registry.DefaultRegistry.GetDocker()
+	if svc == nil {
+		logman.Error("Docker service not initialized")
+		return nil, fmt.Errorf("Docker 服务未初始化")
 	}
 
 	return &DockerHandler{service: svc}, nil

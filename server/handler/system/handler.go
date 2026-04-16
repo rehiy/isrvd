@@ -18,7 +18,7 @@ func NewSystemHandler() *SystemHandler {
 	return &SystemHandler{}
 }
 
-// DiskIOStat 磁盘 IO 统计
+// DiskIOStat 硬盘 IO 统计
 type DiskIOStat struct {
 	Name       string `json:"Name"`
 	ReadBytes  uint64 `json:"ReadBytes"`
@@ -46,7 +46,7 @@ type GoRuntimeStat struct {
 func (h *SystemHandler) Stat(c *gin.Context) {
 	detail := psutil.Detail(false)
 
-	// 采集磁盘 IO 数据
+	// 采集硬盘 IO 数据
 	ioCounters, _ := disk.IOCounters()
 	diskIO := make([]*DiskIOStat, 0, len(ioCounters))
 	for name, counter := range ioCounters {

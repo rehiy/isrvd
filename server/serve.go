@@ -62,10 +62,7 @@ func (app *App) setupRouter() {
 	dockerHandler, _ := docker.NewDockerHandler()
 
 	// 注册 Swarm Handler
-	var swarmHandler *swarm.SwarmHandler
-	if dockerHandler != nil {
-		swarmHandler = swarm.NewSwarmHandler(dockerHandler.GetClient().GetClient())
-	}
+	swarmHandler := swarm.NewSwarmHandler()
 
 	// API 路由组
 	api := app.Group("/api")

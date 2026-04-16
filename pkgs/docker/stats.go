@@ -61,7 +61,7 @@ type NetDetail struct {
 	TxDropped uint64 `json:"txDropped"`
 }
 
-// BlockDetail 磁盘设备详细统计
+// BlockDetail 硬盘设备详细统计
 type BlockDetail struct {
 	Major uint64 `json:"major"`
 	Minor uint64 `json:"minor"`

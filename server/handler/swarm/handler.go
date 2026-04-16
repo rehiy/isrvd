@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/docker/docker/client"
 	"github.com/gin-gonic/gin"
 
+	"isrvd/internal/registry"
 	"isrvd/pkgs/swarm"
 	"isrvd/server/helper"
 )
@@ -17,9 +17,9 @@ type SwarmHandler struct {
 }
 
 // NewSwarmHandler 创建 Swarm 处理器
-func NewSwarmHandler(dockerClient *client.Client) *SwarmHandler {
+func NewSwarmHandler() *SwarmHandler {
 	return &SwarmHandler{
-		manager: swarm.NewSwarmManager(dockerClient),
+		manager: registry.DefaultRegistry.GetSwarm(),
 	}
 }
 

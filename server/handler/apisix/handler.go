@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/logman"
 
-	"isrvd/config"
+	"isrvd/internal/registry"
 	"isrvd/pkgs/apisix"
 	"isrvd/server/helper"
 )
@@ -19,13 +19,14 @@ type Handler struct {
 
 // NewHandler 创建 Apisix 处理器
 func NewHandler() (*Handler, error) {
-	if config.Apisix.AdminURL == "" {
-		logman.Error("Apisix adminUrl Is Empty")
-		return nil, fmt.Errorf("Apisix adminUrl 未配置")
+	client := registry.DefaultRegistry.GetApisix()
+	if client == nil {
+		logman.Error("Apisix client not initialized")
+		return nil, fmt.Errorf("Apisix 未配置")
 	}
 
 	return &Handler{
-		client: apisix.NewClient(config.Apisix.AdminURL, config.Apisix.AdminKey),
+		client: client,
 	}, nil
 }
 
