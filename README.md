@@ -5,173 +5,102 @@
 ## 特性
 
 - **系统概览** - CPU、内存、硬盘、网络实时监控
-- **文件管理** - 浏览、上传、下载、创建、删除、重命名、权限修改
-- **在线编辑** - CodeMirror 6 编辑器，支持多种语言语法高亮
-- **压缩解压** - ZIP 打包和解压
-- **Docker 管理** - 容器、镜像、网络、卷的完整管理，支持容器终端和实时统计
+- **文件管理** - 浏览、上传、下载、在线编辑、压缩解压、权限修改
+- **Docker 管理** - 容器、镜像、网络、卷的完整管理，支持终端和实时统计
 - **Docker Swarm** - 服务、节点、任务的完整管理
 - **APISIX 管理** - 路由、Consumer、Upstream、IP 白名单管理
-- **镜像仓库** - 私有镜像仓库配置与管理
 - **Web 终端** - xterm.js 实时 Shell 交互
 - **多用户** - 用户隔离、独立家目录、权限控制
-- **移动端适配** - 响应式布局，支持手机和平板访问
+- **移动端适配** - 响应式布局
 
-## 快速开始
+## Docker 部署
 
-### 安装
+镜像将 **APISIX + etcd + isrvd** 打包为 All-in-One 容器，由 supervisord 管理所有服务。
 
-从 [Releases](https://github.com/rehiy/isrvd/releases) 下载对应平台二进制文件。
+```bash
+docker run -d \
+  --name isrvd \
+  -p 8080:8080 \
+  -p 9080:9080 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v isrvd-data:/data \
+  rehiy/isrvd:latest
+```
 
-### 配置
+首次启动会自动生成随机密码，通过 `docker logs isrvd` 查看。
 
-编辑 `config.yml`：
+### Docker Compose
+
+```yaml
+services:
+  isrvd:
+    image: rehiy/isrvd:latest
+    container_name: isrvd
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "9080:9080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - isrvd-data:/data
+
+volumes:
+  isrvd-data:
+```
+
+### 端口说明
+
+| 端口 | 服务 | 说明 |
+|------|------|------|
+| 8080 | isrvd | Web 管理界面 |
+| 9080 | APISIX | HTTP 代理端口 |
+| 9180 | APISIX | Admin API（默认不对外暴露） |
+
+### 数据与配置
+
+容器使用 `/data` 作为数据根目录，包含以下子目录：
+
+| 路径 | 说明 |
+|------|------|
+| `/data/conf/` | 配置文件（apisix.yaml、isrvd.yml） |
+| `/data/etcd/` | etcd 数据 |
+| `/data/storage/` | 文件管理根目录 |
+| `/data/container/` | 容器数据目录 |
+
+首次启动后配置文件自动生成到 `/data/conf/`，编辑后重启容器即可生效。也可预先准备配置文件放到本地 `data/conf/` 目录再挂载。
+
+> **注意**：请始终挂载整个 `/data` 目录，不要单独挂载子目录，否则未挂载的数据会在容器重建时丢失。
+
+## 二进制部署
+
+从 [Releases](https://github.com/rehiy/isrvd/releases) 下载对应平台二进制文件，编辑 `config.yml` 后运行：
 
 ```yaml
 server:
-  listenAddr: ":8080"        # 监听地址
-  jwtSecret: your-secret-key # JWT 密钥
-  proxyHeaderName: ""        # 内网代理认证 Header 名（可选，见下方说明）
-  rootDirectory: "."         # 根目录
+  listenAddr: ":8080"
+  jwtSecret: your-secret-key
+  rootDirectory: "."
 
 members:
   - username: admin
     password: admin123
     homeDirectory: public
-    allowTerminal: true      # 允许终端访问
+    allowTerminal: true
 ```
-
-支持环境变量覆盖：`DEBUG`、`LISTEN_ADDR`、`ROOT_DIRECTORY`、`JWT_SECRET`、`PROXY_HEADER_NAME`
-
-#### 内网代理 Header 认证
-
-当服务运行在内网反向代理（如 Nginx、Apisix、Traefik）之后时，可由代理在请求头中注入已认证的用户名，isrvd 直接信任该 Header，跳过 JWT 验证。
-
-```yaml
-server:
-  proxyHeaderName: X-Remote-User  # 与代理配置的 Header 名保持一致
-```
-
-> **安全提示**：启用此功能时，请确保 isrvd 不对外网直接暴露，并在代理层严格过滤或覆盖该 Header，防止客户端伪造。
-
-### 运行
 
 ```bash
 ./isrvd
 ```
 
-访问 http://localhost:8080
-
-## 功能详情
-
-### 系统概览
-
-实时展示主机资源使用情况：
-
-| 指标 | 说明 |
-|------|------|
-| CPU | 使用率、核心数、负载均衡 |
-| 内存 | 使用量、可用量、使用率 |
-| 硬盘 | 各挂载点使用情况 |
-| 网络 | 各网卡流量统计 |
-| Docker | 容器/镜像/网络/卷数量概览 |
-| Swarm | 服务/节点/任务数量概览 |
-
-### 文件管理
-
-| 操作 | 说明 |
-|------|------|
-| 浏览 | 目录列表，面包屑导航 |
-| 上传 | 支持拖拽上传 |
-| 下载 | 文件流下载 |
-| 编辑 | 在线编辑文本文件 |
-| 压缩 | 打包为 ZIP |
-| 解压 | 解压 ZIP 文件 |
-| 权限 | 修改文件权限 |
-
-### Docker 管理
-
-| 模块 | 功能 |
-|------|------|
-| 容器 | 列表、创建、启动、停止、重启、删除、日志、终端、实时统计 |
-| 镜像 | 列表、拉取、删除、详情查看 |
-| 网络 | 列表、创建、删除、详情查看 |
-| 卷 | 列表、创建、删除 |
-| 镜像仓库 | 私有仓库配置、登录凭证管理 |
-
-### Docker Swarm 管理
-
-| 模块 | 功能 |
-|------|------|
-| 服务 | 列表、创建、更新、扩缩容、删除、日志、任务详情 |
-| 节点 | 列表、详情查看、角色与可用性管理 |
-| 任务 | 全局任务列表，支持按服务/状态筛选 |
-
-### APISIX 管理
-
-| 模块 | 功能 |
-|------|------|
-| 路由 | 列表、创建、编辑、删除，支持插件配置 |
-| Consumer | 列表、创建、编辑、删除，支持认证插件 |
-| Upstream | 列表、创建、编辑、删除，支持负载均衡配置 |
-| IP 白名单 | 全局 IP 白名单配置 |
-
-### 在线编辑
-
-支持语言：CSS、Go、HTML、JavaScript、JSON、Markdown、Python、SQL、XML、YAML
-
-### Web 终端
-
-支持 Shell：bash、sh、zsh、fish
+支持环境变量覆盖：`DEBUG`、`LISTEN_ADDR`、`ROOT_DIRECTORY`、`JWT_SECRET`、`PROXY_HEADER_NAME`
 
 ## 编译
 
-### 环境要求
-
-- Go 1.21+
-- Node.js 16+
-
-### 构建
+需要 Go 1.21+ 和 Node.js 16+：
 
 ```bash
-chmod +x build.sh
 ./build.sh
 ```
-
-构建产物位于 `build/` 目录。
-
-## 技术栈
-
-**后端**
-
-| 技术 | 用途 |
-|------|------|
-| Go 1.25 | 服务端语言 |
-| Gin | Web 框架 |
-| JWT | 身份认证 |
-| WebSocket | 终端通信 |
-| Docker SDK | Docker 管理 |
-
-**前端**
-
-| 技术 | 用途 |
-|------|------|
-| Vue 3 | 前端框架 |
-| Vue Router | 路由管理 |
-| Vite 7 | 构建工具 |
-| Tailwind CSS | 样式框架 |
-| Axios | HTTP 客户端 |
-| CodeMirror 6 | 代码编辑器 |
-| xterm.js | 终端模拟器 |
-| Cherry Markdown | Markdown 编辑器 |
-
-## 安全特性
-
-- **用户隔离** - 每个用户独立家目录
-- **路径验证** - 防止目录遍历攻击
-- **JWT 认证** - Token 有效期 24 小时
-- **内网代理认证** - 可配置信任代理注入的用户名 Header，适用于 SSO/零信任网络
-- **Zip Slip 防护** - 解压路径验证
-- **终端权限控制** - 可配置禁止终端访问
 
 ## 许可证
 
