@@ -245,7 +245,7 @@ onMounted(() => loadServices())
                   <div class="flex justify-end items-center gap-0.5">
                     <button @click="router.push({ name: 'swarm-service-info', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-100" title="详情"><i class="fas fa-circle-info text-xs"></i></button>
                     <button @click="router.push({ name: 'swarm-service-logs', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-100" title="日志"><i class="fas fa-file-lines text-xs"></i></button>
-                    <button @click="router.push({ name: 'swarm-service-tasks', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-100" title="任务"><i class="fas fa-list-check text-xs"></i></button>
+
                     <button @click="handleRedeploy(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="强制重部署"><i class="fas fa-rotate text-xs"></i></button>
                     <button v-if="svc.mode === 'replicated'" @click="openScaleModal(svc)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="扩缩容"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>
                     <button @click="handleServiceRemove(svc)" class="btn-icon text-red-600 hover:bg-red-50" title="删除"><i class="fas fa-trash text-xs"></i></button>
@@ -311,10 +311,7 @@ onMounted(() => loadServices())
                 <i class="fas fa-file-lines text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">日志</span>
               </button>
-              <button @click="router.push({ name: 'swarm-service-tasks', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="任务">
-                <i class="fas fa-list-check text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">任务</span>
-              </button>
+
               <button @click="handleRedeploy(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="强制重部署">
                 <i class="fas fa-rotate text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">重部署</span>

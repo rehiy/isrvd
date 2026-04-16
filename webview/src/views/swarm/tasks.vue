@@ -73,7 +73,10 @@ onMounted(() => {
             <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
               <i class="fas fa-list-check text-white"></i>
             </div>
-            <h1 class="text-lg font-semibold text-slate-800">任务列表</h1>
+            <div>
+              <h1 class="text-lg font-semibold text-slate-800">任务列表</h1>
+              <p class="text-xs text-slate-500">查看 Swarm 集群任务状态</p>
+            </div>
           </div>
           <div class="flex items-center gap-2">
             <select v-model="selectedServiceId" class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 min-w-[160px]">
@@ -92,7 +95,10 @@ onMounted(() => {
               <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
                 <i class="fas fa-list-check text-white"></i>
               </div>
-              <h1 class="text-lg font-semibold text-slate-800">任务列表</h1>
+              <div class="min-w-0">
+                <h1 class="text-lg font-semibold text-slate-800">任务列表</h1>
+                <p class="text-xs text-slate-500">查看 Swarm 集群任务状态</p>
+              </div>
             </div>
             <button @click="loadTasks()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors">
               <i class="fas fa-rotate text-sm"></i>
