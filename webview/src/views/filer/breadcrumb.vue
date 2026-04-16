@@ -1,19 +1,26 @@
-<script setup>
-import { inject, computed } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
 
-const state = inject(APP_STATE_KEY)
-const actions = inject(APP_ACTIONS_KEY)
+@Component
+class Breadcrumb extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const paths = computed(() => {
-  if (!state.currentPath || state.currentPath === '/') return []
-  return state.currentPath.split('/').filter(part => part)
-})
+    // ─── 计算属性 ───
+    get paths() {
+        if (!this.state.currentPath || this.state.currentPath === '/') return []
+        return this.state.currentPath.split('/').filter((part: string) => part)
+    }
 
-const navigateTo = (path) => {
-  actions.loadFiles(path)
+    // ─── 方法 ───
+    navigateTo(path: string) {
+        this.actions.loadFiles(path)
+    }
 }
+
+export default toNative(Breadcrumb)
 </script>
 
 <template>

@@ -1,53 +1,54 @@
-<script setup>
-import { inject, reactive, ref, computed } from 'vue'
+<script lang="ts">
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
-const state = inject(APP_STATE_KEY)
-const actions = inject(APP_ACTIONS_KEY)
-
-const formData = reactive({
-  uploadFile: null
+@Component({
+    expose: ['show'],
+    components: { BaseModal }
 })
+class UploadModal extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const fileInput = ref(null)
-const modalRef = ref(null)
-const isOpen = ref(false)
+    // ─── Refs ───
+    @Ref readonly fileInput!: HTMLInputElement
 
-const show = () => {
-  formData.uploadFile = null
-  isOpen.value = true
+    // ─── 数据属性 ───
+    isOpen = false
+    uploadFile: File | null = null
+
+    // ─── 计算属性 ───
+    get hasFile() { return this.uploadFile !== null }
+
+    // ─── 方法 ───
+    show() {
+        this.uploadFile = null
+        this.isOpen = true
+    }
+
+    handleFileChange(event: Event) {
+        const target = event.target as HTMLInputElement
+        this.uploadFile = target.files?.[0] || null
+    }
+
+    async handleConfirm() {
+        if (!this.uploadFile) return
+        const formDataToSend = new FormData()
+        formDataToSend.append('file', this.uploadFile)
+        formDataToSend.append('path', this.state.currentPath)
+        await api.upload(formDataToSend)
+        this.actions.loadFiles()
+        this.uploadFile = null
+        if (this.fileInput) this.fileInput.value = ''
+        this.isOpen = false
+    }
 }
 
-const handleFileChange = (event) => {
-  formData.uploadFile = event.target.files[0] || null
-}
-
-const handleConfirm = async () => {
-  if (!formData.uploadFile) return
-
-  const formDataToSend = new FormData()
-  formDataToSend.append('file', formData.uploadFile)
-  formDataToSend.append('path', state.currentPath)
-
-  await api.upload(formDataToSend)
-  actions.loadFiles()
-
-  formData.uploadFile = null
-  if (fileInput.value) {
-    fileInput.value.value = ''
-  }
-  isOpen.value = false
-}
-
-const hasFile = computed(() => {
-  return formData.uploadFile !== null
-})
-
-defineExpose({ show })
+export default toNative(UploadModal)
 </script>
 
 <template>
@@ -68,14 +69,14 @@ defineExpose({ show })
             class="input file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
           >
         </div>
-        <div v-if="formData.uploadFile" class="mt-3 p-3 bg-primary-50 rounded-lg border border-primary-200">
+        <div v-if="uploadFile" class="mt-3 p-3 bg-primary-50 rounded-lg border border-primary-200">
           <div class="flex items-center">
             <div class="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center mr-3">
               <i class="fas fa-file text-primary-600"></i>
             </div>
             <div>
-              <p class="text-sm font-medium text-slate-700">{{ formData.uploadFile.name }}</p>
-              <p class="text-xs text-slate-500">{{ (formData.uploadFile.size / 1024).toFixed(2) }} KB</p>
+              <p class="text-sm font-medium text-slate-700">{{ uploadFile.name }}</p>
+              <p class="text-xs text-slate-500">{{ (uploadFile.size / 1024).toFixed(2) }} KB</p>
             </div>
           </div>
         </div>

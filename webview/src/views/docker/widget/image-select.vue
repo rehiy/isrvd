@@ -1,154 +1,135 @@
-<script setup>
-import { computed, ref, watch } from 'vue'
+<script lang="ts">
+import { Component, Prop, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import Dropdown from '@/component/dropdown.vue'
 
-const props = defineProps({
-  modelValue: { type: String, default: '' },
-  images: { type: Array, default: () => [] },
-  placeholder: { type: String, default: '选择或输入镜像名称' },
-  disabled: { type: Boolean, default: false },
+@Component({
+    components: { Dropdown },
+    emits: ['update:modelValue']
 })
+class ImageSelect extends Vue {
+    @Prop({ type: String, default: '' }) readonly modelValue!: string
+    @Prop({ type: Array, default: () => [] }) readonly images!: any[]
+    @Prop({ type: String, default: '选择或输入镜像名称' }) readonly placeholder!: string
+    @Prop({ type: Boolean, default: false }) readonly disabled!: boolean
 
-const emit = defineEmits(['update:modelValue'])
+    // ─── 数据属性 ───
+    dropdownOpen = false
+    searchQuery = ''
+    justSelected = false
 
-const dropdownOpen = ref(false)
-const searchQuery = ref(props.modelValue)
-const inputRef = ref(null)
-const justSelected = ref(false)
-
-// 当外部设置 modelValue 时（如编辑容器），同步到输入框
-watch(() => props.modelValue, (val) => {
-  if (val !== searchQuery.value) {
-    searchQuery.value = val
-  }
-})
-
-// 打开下拉时清空搜索词，显示全部镜像；取消关闭时恢复显示
-watch(dropdownOpen, (open) => {
-  if (open) {
-    searchQuery.value = ''
-  } else if (!justSelected.value) {
-    searchQuery.value = props.modelValue
-  }
-  justSelected.value = false
-})
-
-// Tailwind 标准色 500 色阶，与项目 badge/button 色彩体系一致
-const colorPalette = [
-  '#0ea5e9', // sky-500    (与项目 primary 一致)
-  '#6366f1', // indigo-500
-  '#10b981', // emerald-500
-  '#f59e0b', // amber-500
-  '#ef4444', // red-500
-  '#8b5cf6', // violet-500
-  '#ec4899', // pink-500
-  '#14b8a6', // teal-500
-  '#f97316', // orange-500
-  '#06b6d4', // cyan-500
-  '#84cc16', // lime-500
-  '#e11d48', // rose-500
-  '#a855f7', // purple-500
-  '#3b82f6', // blue-500
-  '#d946ef', // fuchsia-500
-]
-
-// 根据字符串生成稳定的索引（同一域名始终映射同一颜色）
-const stringToIndex = (str) => {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0
-  }
-  return Math.abs(hash) % colorPalette.length
-}
-
-// 获取域名颜色
-const getDomainColor = (domain) => colorPalette[stringToIndex(domain)]
-
-// 提取镜像域名
-const getDomain = (repoTag) => {
-  if (!repoTag) return '本地镜像'
-  const parts = repoTag.split('/')
-  if (parts.length >= 3) return parts[0]
-  if (parts.length === 2 && parts[0].includes('.')) return parts[0]
-  return 'docker.io'
-}
-
-// 获取域名图标
-const getDomainIcon = (domain) => {
-  if (domain === 'docker.io') return 'fa-docker fab'
-  if (domain.includes('aliyuncs.com')) return 'fa-cloud fas'
-  if (domain.includes('tencentyun.com')) return 'fa-cloud fas'
-  if (domain === 'ghcr.io') return 'fa-github fab'
-  if (domain === 'gcr.io') return 'fa-google fab'
-  if (domain === 'quay.io') return 'fa-ship fas'
-  if (domain === '本地镜像') return 'fa-home fas'
-  return 'fa-server fas'
-}
-
-// 获取域名显示名称
-const getDomainLabel = (domain) => {
-  if (domain === 'docker.io') return 'Docker Hub'
-  if (domain.includes('aliyuncs.com')) return '阿里云'
-  if (domain.includes('tencentyun.com')) return '腾讯云'
-  if (domain === 'ghcr.io') return 'GitHub'
-  if (domain === 'gcr.io') return 'Google'
-  if (domain === 'quay.io') return 'Quay'
-  if (domain === '本地镜像') return '本地镜像'
-  return domain
-}
-
-// 搜索过滤
-const filteredImages = computed(() => {
-  if (!searchQuery.value.trim()) return props.images
-  const query = searchQuery.value.toLowerCase()
-  return props.images.filter(img =>
-    img.repoTags && img.repoTags.some(tag => tag.toLowerCase().includes(query))
-  )
-})
-
-// 按域名分组的镜像
-const groupedImages = computed(() => {
-  const groups = {}
-  const images = filteredImages.value
-  for (const img of images) {
-    const tag = img.repoTags?.[0] || ''
-    const domain = getDomain(tag)
-    if (!groups[domain]) {
-      groups[domain] = { domain, images: [] }
+    // ─── 生命周期 ───
+    mounted() {
+        this.searchQuery = this.modelValue
     }
-    groups[domain].images.push(img)
-  }
-  const sorted = Object.values(groups).sort((a, b) => {
-    if (a.domain === 'docker.io') return -1
-    if (b.domain === 'docker.io') return 1
-    if (a.domain === '本地镜像') return 1
-    if (b.domain === '本地镜像') return -1
-    return a.domain.localeCompare(b.domain)
-  })
-  return sorted
-})
 
-// 格式化镜像大小
-const formatSize = (bytes) => {
-  if (!bytes) return ''
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
-  return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB'
+    // ─── 监听器 ───
+    @Watch('modelValue')
+    onModelValueChange(val: string) {
+        if (val !== this.searchQuery) this.searchQuery = val
+    }
+
+    @Watch('dropdownOpen')
+    onDropdownOpenChange(open: boolean) {
+        if (open) {
+            this.searchQuery = ''
+        } else if (!this.justSelected) {
+            this.searchQuery = this.modelValue
+        }
+        this.justSelected = false
+    }
+
+    // ─── 常量 ───
+    readonly colorPalette = [
+        '#0ea5e9', '#6366f1', '#10b981', '#f59e0b', '#ef4444',
+        '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#06b6d4',
+        '#84cc16', '#e11d48', '#a855f7', '#3b82f6', '#d946ef'
+    ]
+
+    // ─── 方法 ───
+    stringToIndex(str: string) {
+        let hash = 0
+        for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0
+        return Math.abs(hash) % this.colorPalette.length
+    }
+
+    getDomainColor(domain: string) { return this.colorPalette[this.stringToIndex(domain)] }
+
+    getDomain(repoTag: string) {
+        if (!repoTag) return '本地镜像'
+        const parts = repoTag.split('/')
+        if (parts.length >= 3) return parts[0]
+        if (parts.length === 2 && parts[0].includes('.')) return parts[0]
+        return 'docker.io'
+    }
+
+    getDomainIcon(domain: string) {
+        if (domain === 'docker.io') return 'fa-docker fab'
+        if (domain.includes('aliyuncs.com')) return 'fa-cloud fas'
+        if (domain.includes('tencentyun.com')) return 'fa-cloud fas'
+        if (domain === 'ghcr.io') return 'fa-github fab'
+        if (domain === 'gcr.io') return 'fa-google fab'
+        if (domain === 'quay.io') return 'fa-ship fas'
+        if (domain === '本地镜像') return 'fa-home fas'
+        return 'fa-server fas'
+    }
+
+    getDomainLabel(domain: string) {
+        if (domain === 'docker.io') return 'Docker Hub'
+        if (domain.includes('aliyuncs.com')) return '阿里云'
+        if (domain.includes('tencentyun.com')) return '腾讯云'
+        if (domain === 'ghcr.io') return 'GitHub'
+        if (domain === 'gcr.io') return 'Google'
+        if (domain === 'quay.io') return 'Quay'
+        if (domain === '本地镜像') return '本地镜像'
+        return domain
+    }
+
+    get filteredImages() {
+        if (!this.searchQuery.trim()) return this.images
+        const query = this.searchQuery.toLowerCase()
+        return this.images.filter((img: any) =>
+            img.repoTags && img.repoTags.some((tag: string) => tag.toLowerCase().includes(query))
+        )
+    }
+
+    get groupedImages() {
+        const groups: Record<string, any> = {}
+        for (const img of this.filteredImages) {
+            const tag = img.repoTags?.[0] || ''
+            const domain = this.getDomain(tag)
+            if (!groups[domain]) groups[domain] = { domain, images: [] }
+            groups[domain].images.push(img)
+        }
+        return Object.values(groups).sort((a: any, b: any) => {
+            if (a.domain === 'docker.io') return -1
+            if (b.domain === 'docker.io') return 1
+            if (a.domain === '本地镜像') return 1
+            if (b.domain === '本地镜像') return -1
+            return a.domain.localeCompare(b.domain)
+        })
+    }
+
+    formatSize(bytes: number) {
+        if (!bytes) return ''
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+        if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+        return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB'
+    }
+
+    selectImage(imageName: string) {
+        this.$emit('update:modelValue', imageName)
+        this.searchQuery = imageName
+        this.justSelected = true
+        this.dropdownOpen = false
+    }
+
+    handleInput() {
+        if (!this.dropdownOpen) this.dropdownOpen = true
+    }
 }
 
-// 选择镜像
-const selectImage = (imageName) => {
-  emit('update:modelValue', imageName)
-  searchQuery.value = imageName
-  justSelected.value = true
-  dropdownOpen.value = false
-}
-
-// 处理输入 - 仅用于搜索，不更新 modelValue
-const handleInput = () => {
-  if (!dropdownOpen.value) dropdownOpen.value = true
-}
+export default toNative(ImageSelect)
 </script>
 
 <template>

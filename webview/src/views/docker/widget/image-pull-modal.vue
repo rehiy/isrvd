@@ -1,79 +1,80 @@
-<script setup>
-import { inject, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
+@Component({
+    expose: ['show'],
+    components: { BaseModal },
+    emits: ['success']
+})
+class ImagePullModal extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const emit = defineEmits(['success'])
+    // ─── 数据属性 ───
+    isOpen = false
+    modalLoading = false
+    formData = { image: '', tag: '' }
+    searchResults: any[] = []
+    searchLoading = false
+    searchKeyword = ''
+    daemonMirrors: string[] = []
+    indexServerAddress = ''
 
-const modalRef = ref(null)
-const isOpen = ref(false)
-const modalLoading = ref(false)
+    // ─── 方法 ───
+    async loadDaemonInfo() {
+        try {
+            const res = await api.dockerInfo()
+            const info = res.payload || {}
+            this.daemonMirrors = info.registryMirrors || []
+            this.indexServerAddress = info.indexServerAddress || ''
+        } catch (e) {}
+    }
 
-const formData = ref({ image: '', tag: '' })
+    show() {
+        this.formData = { image: '', tag: '' }
+        this.searchResults = []
+        this.searchKeyword = ''
+        this.loadDaemonInfo()
+        this.isOpen = true
+    }
 
-// 搜索状态
-const searchResults = ref([])
-const searchLoading = ref(false)
-const searchKeyword = ref('')
+    async handleConfirm() {
+        if (!this.formData.image.trim()) return
+        this.modalLoading = true
+        try {
+            await api.pullImage(this.formData.image, this.formData.tag)
+            this.actions.showNotification('success', '镜像拉取成功')
+            this.isOpen = false
+            this.$emit('success')
+        } catch (e) {}
+        this.modalLoading = false
+    }
 
-// 镜像加速器（来自 Docker daemon）
-const daemonMirrors = ref([])
-const indexServerAddress = ref('')
+    async handleSearchImage() {
+        if (!this.searchKeyword.trim()) return
+        this.searchLoading = true
+        try {
+            const res = await api.imageSearch(this.searchKeyword.trim())
+            this.searchResults = res.payload || []
+        } catch (e) {
+            this.actions.showNotification('error', '搜索镜像失败')
+        }
+        this.searchLoading = false
+    }
 
-const loadDaemonInfo = async () => {
-  try {
-    const res = await api.dockerInfo()
-    const info = res.payload || {}
-    daemonMirrors.value = info.registryMirrors || []
-    indexServerAddress.value = info.indexServerAddress || ''
-  } catch (e) {}
+    selectSearchResult(item: any) {
+        this.formData.image = item.name
+        this.formData.tag = 'latest'
+        this.searchResults = []
+        this.searchKeyword = ''
+    }
 }
 
-const show = () => {
-  formData.value = { image: '', tag: '' }
-  searchResults.value = []
-  searchKeyword.value = ''
-  loadDaemonInfo()
-  isOpen.value = true
-}
-
-const handleConfirm = async () => {
-  if (!formData.value.image.trim()) return
-  modalLoading.value = true
-  try {
-    await api.pullImage(formData.value.image, formData.value.tag)
-    actions.showNotification('success', '镜像拉取成功')
-    isOpen.value = false
-    emit('success')
-  } catch (e) {}
-  modalLoading.value = false
-}
-
-const handleSearchImage = async () => {
-  if (!searchKeyword.value.trim()) return
-  searchLoading.value = true
-  try {
-    const res = await api.imageSearch(searchKeyword.value.trim())
-    searchResults.value = res.payload || []
-  } catch (e) {
-    actions.showNotification('error', '搜索镜像失败')
-  }
-  searchLoading.value = false
-}
-
-const selectSearchResult = (item) => {
-  formData.value.image = item.name
-  formData.value.tag = 'latest'
-  searchResults.value = []
-  searchKeyword.value = ''
-}
-
-defineExpose({ show })
+export default toNative(ImagePullModal)
 </script>
 
 <template>

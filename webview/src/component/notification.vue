@@ -1,20 +1,26 @@
-<script setup>
-import { inject } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
 
-const state = inject(APP_STATE_KEY)
-const actions = inject(APP_ACTIONS_KEY)
+@Component
+class NotificationManager extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const notificationStyle = (type) => {
-  return type === 'error' 
-    ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' 
-    : 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+    // ─── 方法 ───
+    notificationStyle(type: string) {
+        return type === 'error'
+            ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
+            : 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+    }
+
+    notificationIcon(type: string) {
+        return type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'
+    }
 }
 
-const notificationIcon = (type) => {
-  return type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'
-}
+export default toNative(NotificationManager)
 </script>
 
 <template>

@@ -1,65 +1,72 @@
-<script setup>
-import { inject, onMounted, ref, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import { formatTime } from '@/helper/utils.js'
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import { formatTime } from '@/helper/utils'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
-const route = useRoute()
-const router = useRouter()
-const actions = inject(APP_ACTIONS_KEY)
+@Component
+class Tasks extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const tasks = ref([])
-const services = ref([])
-const tasksLoading = ref(false)
-const selectedServiceId = ref('')
+    // ─── 数据属性 ───
+    tasks: any[] = []
+    services: any[] = []
+    tasksLoading = false
+    selectedServiceId = ''
+    formatTime = formatTime
 
-const taskStateClass = (state) => {
-  if (state === 'running') return 'bg-emerald-100 text-emerald-700'
-  if (state === 'failed' || state === 'rejected') return 'bg-red-100 text-red-700'
-  if (state === 'complete') return 'bg-blue-100 text-blue-700'
-  if (state === 'shutdown') return 'bg-slate-100 text-slate-500'
-  return 'bg-amber-100 text-amber-700'
+    // ─── 计算属性 ───
+    get filteredTasks() {
+        if (!this.selectedServiceId) return this.tasks
+        return this.tasks.filter((t: any) => t.serviceID === this.selectedServiceId)
+    }
+
+    // ─── 方法 ───
+    taskStateClass(state: string) {
+        if (state === 'running') return 'bg-emerald-100 text-emerald-700'
+        if (state === 'failed' || state === 'rejected') return 'bg-red-100 text-red-700'
+        if (state === 'complete') return 'bg-blue-100 text-blue-700'
+        if (state === 'shutdown') return 'bg-slate-100 text-slate-500'
+        return 'bg-amber-100 text-amber-700'
+    }
+
+    async loadServices() {
+        try {
+            const res = await api.swarmListServices()
+            this.services = res.payload || []
+        } catch (e) {
+            this.actions.showNotification('error', '获取服务列表失败')
+        }
+    }
+
+    async loadTasks() {
+        this.tasksLoading = true
+        try {
+            const res = await api.swarmListTasks()
+            this.tasks = res.payload || []
+        } catch (e) {
+            this.actions.showNotification('error', '获取任务列表失败')
+        }
+        this.tasksLoading = false
+    }
+
+    goServiceDetail(serviceId: string) {
+        this.$router.push({ name: 'swarm-service-info', params: { id: serviceId } })
+    }
+
+    goNodeDetail(nodeId: string) {
+        this.$router.push({ name: 'swarm-node', params: { id: nodeId } })
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadServices()
+        this.loadTasks()
+    }
 }
 
-const filteredTasks = computed(() => {
-  if (!selectedServiceId.value) return tasks.value
-  return tasks.value.filter(t => t.serviceID === selectedServiceId.value)
-})
-
-const loadServices = async () => {
-  try {
-    const res = await api.swarmListServices()
-    services.value = res.payload || []
-  } catch (e) {
-    actions.showNotification('error', '获取服务列表失败')
-  }
-}
-
-const loadTasks = async () => {
-  tasksLoading.value = true
-  try {
-    const res = await api.swarmListTasks()
-    tasks.value = res.payload || []
-  } catch (e) {
-    actions.showNotification('error', '获取任务列表失败')
-  }
-  tasksLoading.value = false
-}
-
-const goServiceDetail = (serviceId) => {
-  router.push({ name: 'swarm-service-info', params: { id: serviceId } })
-}
-
-const goNodeDetail = (nodeId) => {
-  router.push({ name: 'swarm-node', params: { id: nodeId } })
-}
-
-onMounted(() => {
-  loadServices()
-  loadTasks()
-})
+export default toNative(Tasks)
 </script>
 
 <template>

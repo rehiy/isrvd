@@ -1,33 +1,37 @@
-<script setup>
-import { inject, reactive, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
-const state = inject(APP_STATE_KEY)
-const actions = inject(APP_ACTIONS_KEY)
-
-const formData = reactive({
-  file: null
+@Component({
+    expose: ['show'],
+    components: { BaseModal }
 })
+class ZipModal extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const modalRef = ref(null)
-const isOpen = ref(false)
+    // ─── 数据属性 ───
+    isOpen = false
+    formData = { file: null as any }
 
-const show = (file) => {
-  formData.file = file
-  isOpen.value = true
+    // ─── 方法 ───
+    show(file: any) {
+        this.formData.file = file
+        this.isOpen = true
+    }
+
+    async handleConfirm() {
+        await api.zip(this.state.currentPath + '/' + this.formData.file.name)
+        this.actions.loadFiles()
+        this.isOpen = false
+    }
 }
 
-const handleConfirm = async () => {
-  await api.zip(state.currentPath + '/' + formData.file.name)
-  actions.loadFiles()
-  isOpen.value = false
-}
-
-defineExpose({ show })
+export default toNative(ZipModal)
 </script>
 
 <template>

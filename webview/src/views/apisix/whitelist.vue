@@ -1,47 +1,71 @@
-<script setup>
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
-import { computed, inject, onMounted, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-const actions = inject(APP_ACTIONS_KEY)
-const whitelist = ref([])
-const loading = ref(false)
-const searchText = ref('')
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
-const filteredWhitelist = computed(() => {
-  if (!searchText.value) return whitelist.value
-  const s = searchText.value.toLowerCase()
-  return whitelist.value.filter(r =>
-    (r.name || '').toLowerCase().includes(s) ||
-    (r.id || '').toLowerCase().includes(s) ||
-    (r.consumers || []).some(c => c.toLowerCase().includes(s))
-  )
-})
+@Component
+class Whitelist extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const loadWhitelist = async () => {
-  loading.value = true
-  try { whitelist.value = (await api.apisixGetWhitelist()).payload || [] }
-  catch { actions.showNotification('error', '加载白名单失败') }
-  loading.value = false
-}
+    // ─── 数据属性 ───
+    whitelist: any[] = []
+    loading = false
+    searchText = ''
 
-const getRouteUri = (r) => r.uris?.length ? r.uris.join(', ') : (r.uri || '-')
-const getRouteHost = (r) => r.hosts?.length ? r.hosts.join(', ') : (r.host || '*')
-
-const revokeConsumer = (route, consumer) => {
-  actions.showConfirm({
-    title: '撤销白名单',
-    message: `确定要将用户 <strong class="text-slate-900">${consumer}</strong> 从路由 <strong class="text-slate-900">${route.name || route.id}</strong> 的白名单中移除吗？`,
-    icon: 'fa-user-minus', iconColor: 'red', confirmText: '确认撤销', danger: true,
-    onConfirm: async () => {
-      await api.apisixRevokeWhitelist(route.id, consumer)
-      actions.showNotification('success', '撤销成功')
-      loadWhitelist()
+    // ─── 计算属性 ───
+    get filteredWhitelist() {
+        if (!this.searchText) return this.whitelist
+        const s = this.searchText.toLowerCase()
+        return this.whitelist.filter((r: any) =>
+            (r.name || '').toLowerCase().includes(s) ||
+            (r.id || '').toLowerCase().includes(s) ||
+            (r.consumers || []).some((c: string) => c.toLowerCase().includes(s))
+        )
     }
-  })
+
+    // ─── 方法 ───
+    async loadWhitelist() {
+        this.loading = true
+        try {
+            this.whitelist = (await api.apisixGetWhitelist()).payload || []
+        } catch {
+            this.actions.showNotification('error', '加载白名单失败')
+        }
+        this.loading = false
+    }
+
+    getRouteUri(r: any) {
+        return r.uris?.length ? r.uris.join(', ') : (r.uri || '-')
+    }
+
+    getRouteHost(r: any) {
+        return r.hosts?.length ? r.hosts.join(', ') : (r.host || '*')
+    }
+
+    revokeConsumer(route: any, consumer: string) {
+        this.actions.showConfirm({
+            title: '撤销白名单',
+            message: `确定要将用户 <strong class="text-slate-900">${consumer}</strong> 从路由 <strong class="text-slate-900">${route.name || route.id}</strong> 的白名单中移除吗？`,
+            icon: 'fa-user-minus',
+            iconColor: 'red',
+            confirmText: '确认撤销',
+            danger: true,
+            onConfirm: async () => {
+                await api.apisixRevokeWhitelist(route.id, consumer)
+                this.actions.showNotification('success', '撤销成功')
+                this.loadWhitelist()
+            }
+        })
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadWhitelist()
+    }
 }
 
-onMounted(() => { loadWhitelist() })
+export default toNative(Whitelist)
 </script>
 
 <template>

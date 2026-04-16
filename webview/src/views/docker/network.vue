@@ -1,32 +1,40 @@
-<script setup>
-import { inject, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
-const route = useRoute()
-const router = useRouter()
-const actions = inject(APP_ACTIONS_KEY)
+@Component
+class NetworkDetail extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const networkId = route.params.id
-const detailData = ref(null)
-const loading = ref(false)
+    // ─── 数据属性 ───
+    detailData: any = null
+    loading = false
 
-const loadDetail = async () => {
-  loading.value = true
-  try {
-    const res = await api.networkInspect(networkId)
-    detailData.value = res.payload
-  } catch (e) {
-    actions.showNotification('error', '获取网络详情失败')
-  }
-  loading.value = false
+    get networkId() {
+        return this.$route.params.id as string
+    }
+
+    // ─── 方法 ───
+    async loadDetail() {
+        this.loading = true
+        try {
+            const res = await api.networkInspect(this.networkId)
+            this.detailData = res.payload
+        } catch (e) {
+            this.actions.showNotification('error', '获取网络详情失败')
+        }
+        this.loading = false
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadDetail()
+    }
 }
 
-onMounted(() => {
-  loadDetail()
-})
+export default toNative(NetworkDetail)
 </script>
 
 <template>
@@ -48,7 +56,7 @@ onMounted(() => {
             <button @click="loadDetail()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button @click="router.back()" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <button @click="$router.back()" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-arrow-left"></i>返回
             </button>
           </div>

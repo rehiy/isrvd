@@ -1,34 +1,41 @@
-<script setup>
-import { ref } from 'vue'
+<script lang="ts">
+import { Component, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
+import api from '@/service/api'
 import BaseModal from '@/component/modal.vue'
 
-const emit = defineEmits(['success'])
+@Component({
+    expose: ['show'],
+    components: { BaseModal },
+    emits: ['success']
+})
+class ServiceScaleModal extends Vue {
+    // ─── 数据属性 ───
+    isOpen = false
+    loading = false
+    service: any = null
+    replicas = 1
 
-const isOpen = ref(false)
-const loading = ref(false)
-const service = ref(null)
-const replicas = ref(1)
+    // ─── 方法 ───
+    show(svc: any) {
+        this.service = svc
+        this.replicas = svc.replicas ?? 1
+        this.isOpen = true
+    }
 
-const show = (svc) => {
-  service.value = svc
-  replicas.value = svc.replicas ?? 1
-  isOpen.value = true
+    async handleConfirm() {
+        if (!this.service) return
+        this.loading = true
+        try {
+            await api.swarmServiceAction(this.service.id, 'scale', this.replicas)
+            this.isOpen = false
+            this.$emit('success')
+        } catch (e) {}
+        this.loading = false
+    }
 }
 
-const handleConfirm = async () => {
-  if (!service.value) return
-  loading.value = true
-  try {
-    await api.swarmServiceAction(service.value.id, 'scale', replicas.value)
-    isOpen.value = false
-    emit('success')
-  } catch (e) {}
-  loading.value = false
-}
-
-defineExpose({ show })
+export default toNative(ServiceScaleModal)
 </script>
 
 <template>

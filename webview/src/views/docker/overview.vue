@@ -1,36 +1,41 @@
-<script setup>
-import { inject, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
-const actions = inject(APP_ACTIONS_KEY)
+@Component
+class DockerOverview extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const info = ref(null)
-const loading = ref(false)
+    // ─── 数据属性 ───
+    info: any = null
+    loading = false
 
-const statCards = [
-  { key: 'containersRunning', label: '运行中容器', icon: 'fa-play',          bgColor: 'bg-emerald-500' },
-  { key: 'containersStopped', label: '已停止容器', icon: 'fa-stop',          bgColor: 'bg-amber-500' },
-  { key: 'containersPaused',  label: '已暂停容器', icon: 'fa-pause',         bgColor: 'bg-slate-400' },
-  { key: 'imagesTotal',       label: '镜像总数',   icon: 'fa-compact-disc',  bgColor: 'bg-blue-500' },
-  { key: 'volumesTotal',      label: '数据卷总数', icon: 'fa-database',      bgColor: 'bg-indigo-500' },
-  { key: 'networksTotal',     label: '网络总数',   icon: 'fa-network-wired', bgColor: 'bg-purple-500' },
-]
+    readonly statCards = [
+        { key: 'containersRunning', label: '运行中容器', icon: 'fa-play',          bgColor: 'bg-emerald-500' },
+        { key: 'containersStopped', label: '已停止容器', icon: 'fa-stop',          bgColor: 'bg-amber-500' },
+        { key: 'containersPaused',  label: '已暂停容器', icon: 'fa-pause',         bgColor: 'bg-slate-400' },
+        { key: 'imagesTotal',       label: '镜像总数',   icon: 'fa-compact-disc',  bgColor: 'bg-blue-500' },
+        { key: 'volumesTotal',      label: '数据卷总数', icon: 'fa-database',      bgColor: 'bg-indigo-500' },
+        { key: 'networksTotal',     label: '网络总数',   icon: 'fa-network-wired', bgColor: 'bg-purple-500' },
+    ]
 
-const load = async () => {
-  loading.value = true
-  try {
-    const res = await api.dockerInfo()
-    info.value = res.payload || {}
-  } catch (e) {
-    actions.showNotification('error', '加载 Docker 信息失败')
-    info.value = null
-  }
-  loading.value = false
+    // ─── 方法 ───
+    async load() {
+        this.loading = true
+        try {
+            const res = await api.dockerInfo()
+            this.info = res.payload || {}
+        } catch (e) {
+            this.actions.showNotification('error', '加载 Docker 信息失败')
+            this.info = null
+        }
+        this.loading = false
+    }
 }
 
-defineExpose({ load })
+export default toNative(DockerOverview)
 </script>
 
 <template>

@@ -1,46 +1,59 @@
-<script setup>
-import { inject, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
-const route = useRoute()
-const router = useRouter()
-const actions = inject(APP_ACTIONS_KEY)
+@Component
+class ServiceLogs extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const serviceId = route.params.id
-const serviceName = ref('')
-const logsContent = ref([])
-const logsLoading = ref(false)
-const logsTail = ref('200')
+    // ─── 数据属性 ───
+    serviceName = ''
+    logsContent: string[] = []
+    logsLoading = false
+    logsTail = '200'
 
-const activeTab = () => route.name
-const switchTab = (name) => router.push({ name, params: { id: serviceId } })
+    get serviceId() {
+        return this.$route.params.id as string
+    }
 
-const loadLogs = async () => {
-  logsLoading.value = true
-  try {
-    const res = await api.swarmServiceLogs(serviceId, logsTail.value)
-    logsContent.value = res.payload?.logs || []
-  } catch (e) {
-    logsContent.value = []
-    actions.showNotification('error', '获取日志失败')
-  }
-  logsLoading.value = false
+    // ─── 方法 ───
+    activeTab() {
+        return this.$route.name
+    }
+
+    switchTab(name: string) {
+        this.$router.push({ name, params: { id: this.serviceId } })
+    }
+
+    async loadLogs() {
+        this.logsLoading = true
+        try {
+            const res = await api.swarmServiceLogs(this.serviceId, this.logsTail)
+            this.logsContent = res.payload?.logs || []
+        } catch (e) {
+            this.logsContent = []
+            this.actions.showNotification('error', '获取日志失败')
+        }
+        this.logsLoading = false
+    }
+
+    async loadServiceName() {
+        try {
+            const res = await api.swarmInspectService(this.serviceId)
+            this.serviceName = res.payload?.name || ''
+        } catch (e) { /* 忽略，名称仅用于展示 */ }
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadServiceName()
+        this.loadLogs()
+    }
 }
 
-const loadServiceName = async () => {
-  try {
-    const res = await api.swarmInspectService(serviceId)
-    serviceName.value = res.payload?.name || ''
-  } catch (e) { /* 忽略，名称仅用于展示 */ }
-}
-
-onMounted(() => {
-  loadServiceName()
-  loadLogs()
-})
+export default toNative(ServiceLogs)
 </script>
 
 <template>
@@ -51,7 +64,7 @@ onMounted(() => {
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <button @click="router.back()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors" title="返回服务列表">
+            <button @click="$router.back()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors" title="返回服务列表">
               <i class="fas fa-arrow-left text-sm"></i>
             </button>
             <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
@@ -80,7 +93,7 @@ onMounted(() => {
         <div class="block md:hidden">
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-3">
-              <button @click="router.back()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors">
+              <button @click="$router.back()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors">
                 <i class="fas fa-arrow-left text-sm"></i>
               </button>
               <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">

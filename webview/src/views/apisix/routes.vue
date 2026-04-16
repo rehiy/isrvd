@@ -1,66 +1,117 @@
-<script setup>
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+<script lang="ts">
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
+
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 import RouteEditModal from '@/views/apisix/widget/route-edit-modal.vue'
-import { computed, inject, onMounted, ref } from 'vue'
 
-const actions = inject(APP_ACTIONS_KEY)
-const routes = ref([])
-const loading = ref(false)
-const searchText = ref('')
-
-const editModalRef = ref(null)
-
-const sortRoutes = (data) => {
-  data.sort((a, b) => {
-    const hostA = (a.hosts?.[0]) || a.host || ''
-    const hostB = (b.hosts?.[0]) || b.host || ''
-    const hc = hostA.localeCompare(hostB)
-    if (hc !== 0) return hc
-    const uriA = (a.uris?.[0]) || a.uri || ''
-    const uriB = (b.uris?.[0]) || b.uri || ''
-    return uriA.localeCompare(uriB)
-  })
-  return data
-}
-
-const filteredRoutes = computed(() => {
-  if (!searchText.value) return routes.value
-  const s = searchText.value.toLowerCase()
-  return routes.value.filter(r =>
-    (r.name || '').toLowerCase().includes(s) ||
-    (r.id || '').toLowerCase().includes(s) ||
-    (r.uri || '').toLowerCase().includes(s) ||
-    (r.uris || []).some(u => u.toLowerCase().includes(s)) ||
-    (r.desc || '').toLowerCase().includes(s)
-  )
+@Component({
+    components: { RouteEditModal }
 })
+class Routes extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const loadRoutes = async () => {
-  loading.value = true
-  try { routes.value = sortRoutes((await api.apisixListRoutes()).payload || []) }
-  catch { actions.showNotification('error', '加载路由列表失败') }
-  loading.value = false
+    // ─── Refs ───
+    @Ref readonly editModalRef!: InstanceType<typeof RouteEditModal>
+
+    // ─── 数据属性 ───
+    routes: any[] = []
+    loading = false
+    searchText = ''
+
+    // ─── 计算属性 ───
+    get filteredRoutes() {
+        if (!this.searchText) return this.routes
+        const s = this.searchText.toLowerCase()
+        return this.routes.filter((r: any) =>
+            (r.name || '').toLowerCase().includes(s) ||
+            (r.id || '').toLowerCase().includes(s) ||
+            (r.uri || '').toLowerCase().includes(s) ||
+            (r.uris || []).some((u: string) => u.toLowerCase().includes(s)) ||
+            (r.desc || '').toLowerCase().includes(s)
+        )
+    }
+
+    // ─── 方法 ───
+    sortRoutes(data: any[]) {
+        data.sort((a: any, b: any) => {
+            const hostA = (a.hosts?.[0]) || a.host || ''
+            const hostB = (b.hosts?.[0]) || b.host || ''
+            const hc = hostA.localeCompare(hostB)
+            if (hc !== 0) return hc
+            const uriA = (a.uris?.[0]) || a.uri || ''
+            const uriB = (b.uris?.[0]) || b.uri || ''
+            return uriA.localeCompare(uriB)
+        })
+        return data
+    }
+
+    async loadRoutes() {
+        this.loading = true
+        try {
+            this.routes = this.sortRoutes((await api.apisixListRoutes()).payload || [])
+        } catch {
+            this.actions.showNotification('error', '加载路由列表失败')
+        }
+        this.loading = false
+    }
+
+    openCreateModal() {
+        this.editModalRef?.show(null, this.routes)
+    }
+
+    openEditModal(route: any) {
+        this.editModalRef?.show(route, this.routes)
+    }
+
+    getRouteUri(r: any) {
+        return r.uris?.length ? r.uris.join(', ') : (r.uri || '-')
+    }
+
+    getRouteHost(r: any) {
+        return r.hosts?.length ? r.hosts.join(', ') : (r.host || '*')
+    }
+
+    toggleStatus(route: any) {
+        const ns = route.status === 1 ? 0 : 1
+        const label = ns === 1 ? '启用' : '禁用'
+        this.actions.showConfirm({
+            title: `${label}路由`,
+            message: `确定要${label}路由 <strong class="text-slate-900">${route.name}</strong> 吗？`,
+            icon: ns === 1 ? 'fa-toggle-on' : 'fa-toggle-off',
+            iconColor: ns === 1 ? 'emerald' : 'amber',
+            confirmText: `确认${label}`,
+            onConfirm: async () => {
+                await api.apisixPatchRouteStatus(route.id, ns)
+                this.actions.showNotification('success', `路由已${label}`)
+                this.loadRoutes()
+            }
+        })
+    }
+
+    deleteRoute(route: any) {
+        this.actions.showConfirm({
+            title: '删除路由',
+            message: `确定要删除路由 <strong class="text-slate-900">${route.name || route.id}</strong> 吗？此操作不可恢复。`,
+            icon: 'fa-trash',
+            iconColor: 'red',
+            confirmText: '确认删除',
+            danger: true,
+            onConfirm: async () => {
+                await api.apisixDeleteRoute(route.id)
+                this.actions.showNotification('success', '删除成功')
+                this.loadRoutes()
+            }
+        })
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadRoutes()
+    }
 }
 
-const openCreateModal = () => editModalRef.value?.show(null, routes.value)
-const openEditModal = (route) => editModalRef.value?.show(route, routes.value)
-
-const getRouteUri = (r) => r.uris?.length ? r.uris.join(', ') : (r.uri || '-')
-const getRouteHost = (r) => r.hosts?.length ? r.hosts.join(', ') : (r.host || '*')
-
-const toggleStatus = (route) => {
-  const ns = route.status === 1 ? 0 : 1; const label = ns === 1 ? '启用' : '禁用'
-  actions.showConfirm({ title: `${label}路由`, message: `确定要${label}路由 <strong class="text-slate-900">${route.name}</strong> 吗？`, icon: ns === 1 ? 'fa-toggle-on' : 'fa-toggle-off', iconColor: ns === 1 ? 'emerald' : 'amber', confirmText: `确认${label}`,
-    onConfirm: async () => { await api.apisixPatchRouteStatus(route.id, ns); actions.showNotification('success', `路由已${label}`); loadRoutes() } })
-}
-
-const deleteRoute = (route) => {
-  actions.showConfirm({ title: '删除路由', message: `确定要删除路由 <strong class="text-slate-900">${route.name || route.id}</strong> 吗？此操作不可恢复。`, icon: 'fa-trash', iconColor: 'red', confirmText: '确认删除', danger: true,
-    onConfirm: async () => { await api.apisixDeleteRoute(route.id); actions.showNotification('success', '删除成功'); loadRoutes() } })
-}
-
-onMounted(() => { loadRoutes() })
+export default toNative(Routes)
 </script>
 
 <template>

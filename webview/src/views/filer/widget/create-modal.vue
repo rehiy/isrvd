@@ -1,36 +1,38 @@
-<script setup>
-import { inject, reactive, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
-const state = inject(APP_STATE_KEY)
-const actions = inject(APP_ACTIONS_KEY)
-
-const formData = reactive({
-  name: '',
-  content: ''
+@Component({
+    expose: ['show'],
+    components: { BaseModal }
 })
+class CreateModal extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const modalRef = ref(null)
-const isOpen = ref(false)
+    // ─── 数据属性 ───
+    isOpen = false
+    formData = { name: '', content: '' }
 
-const show = () => {
-  formData.name = ''
-  formData.content = ''
-  isOpen.value = true
+    // ─── 方法 ───
+    show() {
+        this.formData = { name: '', content: '' }
+        this.isOpen = true
+    }
+
+    async handleConfirm() {
+        if (!this.formData.name.trim()) return
+        await api.create(this.state.currentPath + '/' + this.formData.name, this.formData.content)
+        this.actions.loadFiles()
+        this.isOpen = false
+    }
 }
 
-const handleConfirm = async () => {
-  if (!formData.name.trim()) return
-  await api.create(state.currentPath + '/' + formData.name, formData.content)
-  actions.loadFiles()
-  isOpen.value = false
-}
-
-defineExpose({ show })
+export default toNative(CreateModal)
 </script>
 
 <template>

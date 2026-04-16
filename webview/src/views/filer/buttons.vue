@@ -1,19 +1,30 @@
-<script setup>
-import { inject, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import CreateModal from '@/views/filer/widget/create-modal.vue'
 import MkdirModal from '@/views/filer/widget/mkdir-modal.vue'
 import UploadModal from '@/views/filer/widget/upload-modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
+@Component({
+    components: { CreateModal, MkdirModal, UploadModal }
+})
+class FilerButtons extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const mkdirModalRef = ref(null)
-const createModalRef = ref(null)
-const uploadModal = ref(null)
+    // ─── Refs ───
+    @Ref readonly mkdirModalRef!: InstanceType<typeof MkdirModal>
+    @Ref readonly createModalRef!: InstanceType<typeof CreateModal>
+    @Ref readonly uploadModal!: InstanceType<typeof UploadModal>
 
-const refreshFiles = () => actions.loadFiles()
+    // ─── 方法 ───
+    refreshFiles() {
+        this.actions.loadFiles()
+    }
+}
+
+export default toNative(FilerButtons)
 </script>
 
 <template>
@@ -21,7 +32,7 @@ const refreshFiles = () => actions.loadFiles()
     <div class="flex items-center gap-3">
       <button 
         class="btn-success"
-        @click="mkdirModalRef.show"
+        @click="mkdirModalRef.show()"
       >
         <i class="fas fa-folder mr-2"></i>
         新建目录
@@ -29,7 +40,7 @@ const refreshFiles = () => actions.loadFiles()
 
       <button 
         class="btn-primary"
-        @click="createModalRef.show"
+        @click="createModalRef.show()"
       >
         <i class="fas fa-file-circle-plus mr-2"></i>
         新建文件
@@ -37,7 +48,7 @@ const refreshFiles = () => actions.loadFiles()
 
       <button 
         class="btn-cyan"
-        @click="uploadModal.show"
+        @click="uploadModal.show()"
       >
         <i class="fas fa-cloud-arrow-up mr-2"></i>
         上传文件

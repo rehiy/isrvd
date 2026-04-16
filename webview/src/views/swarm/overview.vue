@@ -1,35 +1,40 @@
-<script setup>
-import { inject, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
-const actions = inject(APP_ACTIONS_KEY)
+@Component
+class SwarmOverview extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const swarmInfo = ref(null)
-const loading = ref(false)
+    // ─── 数据属性 ───
+    swarmInfo: any = null
+    loading = false
 
-const statCards = [
-  { key: 'nodes',    label: '总节点数', icon: 'fa-server',       bgColor: 'bg-blue-500' },
-  { key: 'managers', label: 'Manager', icon: 'fa-crown',        bgColor: 'bg-indigo-500' },
-  { key: 'workers',  label: 'Worker',  icon: 'fa-circle-nodes', bgColor: 'bg-slate-400' },
-  { key: 'services', label: '服务总数', icon: 'fa-cubes',        bgColor: 'bg-emerald-500' },
-  { key: 'tasks',    label: '任务总数', icon: 'fa-tasks',        bgColor: 'bg-amber-500' },
-]
+    readonly statCards = [
+        { key: 'nodes',    label: '总节点数', icon: 'fa-server',       bgColor: 'bg-blue-500' },
+        { key: 'managers', label: 'Manager', icon: 'fa-crown',        bgColor: 'bg-indigo-500' },
+        { key: 'workers',  label: 'Worker',  icon: 'fa-circle-nodes', bgColor: 'bg-slate-400' },
+        { key: 'services', label: '服务总数', icon: 'fa-cubes',        bgColor: 'bg-emerald-500' },
+        { key: 'tasks',    label: '任务总数', icon: 'fa-tasks',        bgColor: 'bg-amber-500' },
+    ]
 
-const load = async () => {
-  loading.value = true
-  try {
-    const res = await api.swarmInfo()
-    swarmInfo.value = res.payload || {}
-  } catch (e) {
-    actions.showNotification('error', '获取 Swarm 信息失败，请确认集群已初始化')
-    swarmInfo.value = null
-  }
-  loading.value = false
+    // ─── 方法 ───
+    async load() {
+        this.loading = true
+        try {
+            const res = await api.swarmInfo()
+            this.swarmInfo = res.payload || {}
+        } catch (e) {
+            this.actions.showNotification('error', '获取 Swarm 信息失败，请确认集群已初始化')
+            this.swarmInfo = null
+        }
+        this.loading = false
+    }
 }
 
-defineExpose({ load })
+export default toNative(SwarmOverview)
 </script>
 
 <template>

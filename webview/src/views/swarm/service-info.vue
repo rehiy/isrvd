@@ -1,34 +1,50 @@
-<script setup>
-import { inject, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import { formatTime } from '@/helper/utils.js'
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import { formatTime } from '@/helper/utils'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
-const route = useRoute()
-const router = useRouter()
-const actions = inject(APP_ACTIONS_KEY)
+@Component
+class ServiceInfo extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const serviceId = route.params.id
-const serviceData = ref(null)
-const loading = ref(false)
+    // ─── 数据属性 ───
+    serviceData: any = null
+    loading = false
+    formatTime = formatTime
 
-const activeTab = () => route.name
-const switchTab = (name) => router.push({ name, params: { id: serviceId } })
+    get serviceId() {
+        return this.$route.params.id as string
+    }
 
-const loadDetail = async () => {
-  loading.value = true
-  try {
-    const res = await api.swarmInspectService(serviceId)
-    serviceData.value = res.payload
-  } catch (e) {
-    actions.showNotification('error', '获取服务详情失败')
-  }
-  loading.value = false
+    // ─── 方法 ───
+    activeTab() {
+        return this.$route.name
+    }
+
+    switchTab(name: string) {
+        this.$router.push({ name, params: { id: this.serviceId } })
+    }
+
+    async loadDetail() {
+        this.loading = true
+        try {
+            const res = await api.swarmInspectService(this.serviceId)
+            this.serviceData = res.payload
+        } catch (e) {
+            this.actions.showNotification('error', '获取服务详情失败')
+        }
+        this.loading = false
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadDetail()
+    }
 }
 
-onMounted(() => loadDetail())
+export default toNative(ServiceInfo)
 </script>
 
 <template>
@@ -39,7 +55,7 @@ onMounted(() => loadDetail())
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <button @click="router.back()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors" title="返回服务列表">
+            <button @click="$router.back()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors" title="返回服务列表">
               <i class="fas fa-arrow-left text-sm"></i>
             </button>
             <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
@@ -68,7 +84,7 @@ onMounted(() => loadDetail())
         <div class="block md:hidden">
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-3">
-              <button @click="router.back()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors">
+              <button @click="$router.back()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors">
                 <i class="fas fa-arrow-left text-sm"></i>
               </button>
               <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">

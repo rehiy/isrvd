@@ -1,16 +1,22 @@
-<script setup>
-import { inject } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
 
-const state = inject(APP_STATE_KEY)
-const actions = inject(APP_ACTIONS_KEY)
+@Component
+class Logout extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const handleLogout = async () => {
-  await api.logout()
-  actions.clearAuth()
+    // ─── 方法 ───
+    async handleLogout() {
+        await api.logout()
+        this.actions.clearAuth()
+    }
 }
+
+export default toNative(Logout)
 </script>
 
 <template>

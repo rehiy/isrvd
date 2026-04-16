@@ -1,28 +1,40 @@
-<script setup>
-import { inject, onUnmounted, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import * as ShellTerminal from '@/helper/shell.js'
-import { APP_STATE_KEY } from '@/store/state.js'
+import * as ShellTerminal from '@/helper/shell'
+import { APP_STATE_KEY } from '@/store/state'
 
-const state = inject(APP_STATE_KEY)
+@Component
+class Shell extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
 
-const xtermRef = ref(null)
-const shellType = ref('bash')
-const connected = ref(false)
+    // ─── Refs ───
+    @Ref readonly xtermRef!: HTMLDivElement
 
-const handleConnect = () => {
-  if (connected.value) return
-  connected.value = true
-  ShellTerminal.create(xtermRef.value, state.token, shellType.value)
+    // ─── 数据属性 ───
+    shellType = 'bash'
+    connected = false
+
+    // ─── 方法 ───
+    handleConnect() {
+        if (this.connected) return
+        this.connected = true
+        ShellTerminal.create(this.xtermRef, this.state.token, this.shellType)
+    }
+
+    handleDisconnect() {
+        ShellTerminal.destroy()
+        this.xtermRef.innerHTML = ''
+        this.connected = false
+    }
+
+    // ─── 生命周期 ───
+    unmounted() {
+        ShellTerminal.destroy()
+    }
 }
 
-const handleDisconnect = () => {
-  ShellTerminal.destroy()
-  xtermRef.value.innerHTML = ''
-  connected.value = false
-}
-
-onUnmounted(() => ShellTerminal.destroy())
+export default toNative(Shell)
 </script>
 
 <template>

@@ -1,76 +1,75 @@
-<script setup>
-import { ref } from 'vue'
+<script lang="ts">
+import { Component, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
+import api from '@/service/api'
 import ImageSelect from '@/views/docker/widget/image-select.vue'
 import BaseModal from '@/component/modal.vue'
 
-const emit = defineEmits(['success'])
-
-const isOpen = ref(false)
-const loading = ref(false)
-const showAdvanced = ref(false)
-
-const form = ref({
-  name: '', image: '', mode: 'replicated', replicas: 1,
-  env: '', args: '', network: '', ports: '', mounts: ''
+@Component({
+    expose: ['show'],
+    components: { BaseModal, ImageSelect },
+    emits: ['success']
 })
+class ServiceCreateModal extends Vue {
+    // ─── 数据属性 ───
+    isOpen = false
+    loading = false
+    showAdvanced = false
+    form = { name: '', image: '', mode: 'replicated', replicas: 1, env: '', args: '', network: '', ports: '', mounts: '' }
+    images: any[] = []
+    networks: any[] = []
 
-const images = ref([])
-const networks = ref([])
+    // ─── 方法 ───
+    async loadResources() {
+        try {
+            const [imgRes, netRes] = await Promise.all([api.listImages(false), api.listNetworks()])
+            this.images = imgRes.payload || []
+            this.networks = (netRes.payload || []).filter((n: any) =>
+                n.driver === 'overlay' || n.driver === 'host' || n.driver === 'bridge'
+            )
+        } catch (e) {}
+    }
 
-const loadResources = async () => {
-  try {
-    const [imgRes, netRes] = await Promise.all([
-      api.listImages(false),
-      api.listNetworks()
-    ])
-    images.value = imgRes.payload || []
-    networks.value = (netRes.payload || []).filter(n =>
-      n.driver === 'overlay' || n.driver === 'host' || n.driver === 'bridge'
-    )
-  } catch (e) {}
+    show() {
+        this.form = { name: '', image: '', mode: 'replicated', replicas: 1, env: '', args: '', network: '', ports: '', mounts: '' }
+        this.showAdvanced = false
+        this.isOpen = true
+        this.loadResources()
+    }
+
+    async handleConfirm() {
+        this.loading = true
+        try {
+            const parseLines = (s: string) => s.split('\n').map(l => l.trim()).filter(Boolean)
+            const parsePorts = (s: string) => parseLines(s).map(l => {
+                const [pub, rest] = l.split(':')
+                const [tgt, proto] = (rest || pub).split('/')
+                return { published: parseInt(pub) || 0, target: parseInt(tgt), protocol: proto || 'tcp' }
+            })
+            const parseMounts = (s: string) => parseLines(s).map(l => {
+                const parts = l.split(':')
+                return { type: 'bind', source: parts[0], target: parts[1] || parts[0] }
+            })
+
+            await api.swarmCreateService({
+                name: this.form.name,
+                image: this.form.image,
+                mode: this.form.mode,
+                replicas: this.form.replicas,
+                env: parseLines(this.form.env),
+                args: parseLines(this.form.args),
+                networks: this.form.network ? [this.form.network] : [],
+                ports: parsePorts(this.form.ports),
+                mounts: parseMounts(this.form.mounts)
+            })
+            this.isOpen = false
+            this.$emit('success')
+        } catch (e) {}
+        this.loading = false
+    }
 }
 
-const show = () => {
-  form.value = { name: '', image: '', mode: 'replicated', replicas: 1, env: '', args: '', network: '', ports: '', mounts: '' }
-  showAdvanced.value = false
-  isOpen.value = true
-  loadResources()
-}
-
-const handleConfirm = async () => {
-  loading.value = true
-  try {
-    const parseLines = (s) => s.split('\n').map(l => l.trim()).filter(Boolean)
-    const parsePorts = (s) => parseLines(s).map(l => {
-      const [pub, rest] = l.split(':')
-      const [tgt, proto] = (rest || pub).split('/')
-      return { published: parseInt(pub) || 0, target: parseInt(tgt), protocol: proto || 'tcp' }
-    })
-    const parseMounts = (s) => parseLines(s).map(l => {
-      const parts = l.split(':')
-      return { type: 'bind', source: parts[0], target: parts[1] || parts[0] }
-    })
-
-    await api.swarmCreateService({
-      name: form.value.name,
-      image: form.value.image,
-      mode: form.value.mode,
-      replicas: form.value.replicas,
-      env: parseLines(form.value.env),
-      args: parseLines(form.value.args),
-      networks: form.value.network ? [form.value.network] : [],
-      ports: parsePorts(form.value.ports),
-      mounts: parseMounts(form.value.mounts),
-    })
-    isOpen.value = false
-    emit('success')
-  } catch (e) {}
-  loading.value = false
-}
-
-defineExpose({ show })
+export default toNative(ServiceCreateModal)
 </script>
 
 <template>

@@ -1,71 +1,86 @@
-<script setup>
-import { inject, onMounted, onUnmounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+<script lang="ts">
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import * as ContainerExec from '@/helper/container-exec.js'
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state.js'
+import * as ContainerExec from '@/helper/container-exec'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
 
-const route = useRoute()
-const router = useRouter()
-const actions = inject(APP_ACTIONS_KEY)
-const state = inject(APP_STATE_KEY)
+@Component
+class ContainerTerminal extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
 
-// 容器信息
-const containerId = ref(route.params.id)
-const container = ref(null)
+    // ─── Refs ───
+    @Ref readonly xtermRef!: HTMLDivElement
 
-const loadContainer = async () => {
-  try {
-    const res = await api.listContainers(true)
-    const list = res.payload || []
-    container.value = list.find(c => c.id === containerId.value)
-    if (!container.value) {
-      actions.showNotification('error', '容器不存在')
-      router.push('/docker/containers')
+    // ─── 数据属性 ───
+    container: any = null
+    terminalConnected = false
+    terminalShell = '/bin/sh'
+
+    get containerId() {
+        return this.$route.params.id as string
     }
-  } catch (e) {
-    actions.showNotification('error', '加载容器信息失败')
-    router.push('/docker/containers')
-  }
+
+    // ─── 方法 ───
+    goBack() {
+        this.$router.push('/docker/containers')
+    }
+
+    switchTab(name: string) {
+        this.$router.push({ name, params: { id: this.containerId } })
+    }
+
+    activeTab() {
+        return this.$route.name
+    }
+
+    async loadContainer() {
+        try {
+            const res = await api.listContainers(true)
+            const list = res.payload || []
+            this.container = list.find((c: any) => c.id === this.containerId)
+            if (!this.container) {
+                this.actions.showNotification('error', '容器不存在')
+                this.$router.push('/docker/containers')
+            }
+        } catch (e) {
+            this.actions.showNotification('error', '加载容器信息失败')
+            this.$router.push('/docker/containers')
+        }
+    }
+
+    handleTerminalConnect() {
+        if (this.terminalConnected || !this.container) return
+        this.terminalConnected = true
+        ContainerExec.create(this.xtermRef, this.state.token, this.containerId, this.terminalShell)
+    }
+
+    handleTerminalDisconnect() {
+        ContainerExec.destroy()
+        if (this.xtermRef) this.xtermRef.innerHTML = ''
+        this.terminalConnected = false
+    }
+
+    handleShellChange() {
+        if (this.terminalConnected) {
+            this.handleTerminalDisconnect()
+            setTimeout(() => this.handleTerminalConnect(), 100)
+        }
+    }
+
+    // ─── 生命周期 ───
+    async mounted() {
+        await this.loadContainer()
+        setTimeout(() => this.handleTerminalConnect(), 200)
+    }
+
+    unmounted() {
+        this.handleTerminalDisconnect()
+    }
 }
 
-const goBack = () => router.push('/docker/containers')
-const switchTab = (name) => router.push({ name, params: { id: containerId.value } })
-const activeTab = () => route.name
-
-// 终端
-const terminalConnected = ref(false)
-const terminalShell = ref('/bin/sh')
-const xtermRef = ref(null)
-
-const handleTerminalConnect = () => {
-  if (terminalConnected.value || !container.value) return
-  terminalConnected.value = true
-  ContainerExec.create(xtermRef.value, state.token, containerId.value, terminalShell.value)
-}
-
-const handleTerminalDisconnect = () => {
-  ContainerExec.destroy()
-  if (xtermRef.value) xtermRef.value.innerHTML = ''
-  terminalConnected.value = false
-}
-
-const handleShellChange = () => {
-  if (terminalConnected.value) {
-    handleTerminalDisconnect()
-    setTimeout(() => handleTerminalConnect(), 100)
-  }
-}
-
-onMounted(async () => {
-  await loadContainer()
-  setTimeout(() => handleTerminalConnect(), 200)
-})
-
-onUnmounted(() => {
-  handleTerminalDisconnect()
-})
+export default toNative(ContainerTerminal)
 </script>
 
 <template>

@@ -1,117 +1,122 @@
-<script setup>
-import { computed, inject, ref, watch, onMounted, onUnmounted } from 'vue';
-import { useRoute } from 'vue-router';
+<script lang="ts">
+import { Component, Inject, Prop, Vue, Watch, toNative } from 'vue-facing-decorator'
 
-import { APP_STATE_KEY } from '@/store/state.js';
+import { APP_STATE_KEY } from '@/store/state'
 
-const state = inject(APP_STATE_KEY)
-const collapsed = defineModel('collapsed', { type: Boolean, default: false })
-const route = useRoute()
-
-// 移动端侧边栏显示状态
-const mobileSidebarVisible = ref(false)
-
-// Docker 子菜单展开状态 - 初始化时根据当前路由判断
-const dockerExpanded = ref(route.path.startsWith('/docker/'))
-
-// Swarm 子菜单展开状态
-const swarmExpanded = ref(route.path.startsWith('/swarm/'))
-
-// Apisix 子菜单展开状态
-const apisixExpanded = ref(route.path.startsWith('/apisix/'))
-
-// 统一高亮判断：当前路由是否以指定前缀开头
-const isActive = (prefix) => route.path.startsWith(prefix)
-
-// 用于 watch 的 computed（仍需响应式）
-const isDockerActive = computed(() => isActive('/docker/'))
-const isSwarmSubActive = computed(() => isActive('/swarm/'))
-const isApisixActive = computed(() => isActive('/apisix/'))
-
-// 监听路由变化，自动展开子菜单
-watch(isDockerActive, (isActive) => {
-  if (isActive && !collapsed.value) {
-    dockerExpanded.value = true
-  }
-}, { immediate: true })
-
-watch(isSwarmSubActive, (isActive) => {
-  if (isActive && !collapsed.value) {
-    swarmExpanded.value = true
-  }
-}, { immediate: true })
-
-watch(isApisixActive, (isActive) => {
-  if (isActive && !collapsed.value) {
-    apisixExpanded.value = true
-  }
-}, { immediate: true })
-
-// 切换 Docker 子菜单
-const toggleDocker = () => {
-  if (collapsed.value) {
-    collapsed.value = false
-    dockerExpanded.value = true
-  } else {
-    dockerExpanded.value = !dockerExpanded.value
-  }
-}
-
-// 切换 Swarm 子菜单
-const toggleSwarm = () => {
-  if (collapsed.value) {
-    collapsed.value = false
-    swarmExpanded.value = true
-  } else {
-    swarmExpanded.value = !swarmExpanded.value
-  }
-}
-
-// 切换 Apisix 子菜单
-const toggleApisix = () => {
-  if (collapsed.value) {
-    collapsed.value = false
-    apisixExpanded.value = true
-  } else {
-    apisixExpanded.value = !apisixExpanded.value
-  }
-}
-
-// 移动端侧边栏控制
-const toggleMobileSidebar = () => {
-  mobileSidebarVisible.value = !mobileSidebarVisible.value
-}
-
-const closeMobileSidebar = () => {
-  mobileSidebarVisible.value = false
-}
-
-// 提供给父组件调用的方法
-const openMobileSidebar = () => {
-  mobileSidebarVisible.value = true
-}
-
-// 暴露方法给父组件
-defineExpose({
-  openMobileSidebar,
-  closeMobileSidebar,
-  toggleMobileSidebar
+@Component({
+    expose: ['toggleMobileSidebar', 'closeMobileSidebar', 'openMobileSidebar'],
+    emits: ['update:collapsed']
 })
+class NavigationBar extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Prop({ type: Boolean, default: false }) readonly collapsed!: boolean
 
-// 监听窗口大小变化，自动关闭移动端侧边栏
-const handleResize = () => {
-  if (window.innerWidth >= 768) {
-    mobileSidebarVisible.value = false
-  }
+    // ─── 数据属性 ───
+    mobileSidebarVisible = false
+    dockerExpanded = false
+    swarmExpanded = false
+    apisixExpanded = false
+
+    // ─── 计算属性 ───
+    get isDockerActive() {
+        return this.isActive('/docker/')
+    }
+
+    get isSwarmSubActive() {
+        return this.isActive('/swarm/')
+    }
+
+    get isApisixActive() {
+        return this.isActive('/apisix/')
+    }
+
+    // ─── 监听器 ───
+    @Watch('isDockerActive', { immediate: true })
+    onDockerActiveChange(isActive: boolean) {
+        if (isActive && !this.collapsed) {
+            this.dockerExpanded = true
+        }
+    }
+
+    @Watch('isSwarmSubActive', { immediate: true })
+    onSwarmActiveChange(isActive: boolean) {
+        if (isActive && !this.collapsed) {
+            this.swarmExpanded = true
+        }
+    }
+
+    @Watch('isApisixActive', { immediate: true })
+    onApisixActiveChange(isActive: boolean) {
+        if (isActive && !this.collapsed) {
+            this.apisixExpanded = true
+        }
+    }
+
+    // ─── 方法 ───
+    isActive(prefix: string) {
+        return this.$route.path.startsWith(prefix)
+    }
+
+    toggleDocker() {
+        if (this.collapsed) {
+            this.$emit('update:collapsed', false)
+            this.dockerExpanded = true
+        } else {
+            this.dockerExpanded = !this.dockerExpanded
+        }
+    }
+
+    toggleSwarm() {
+        if (this.collapsed) {
+            this.$emit('update:collapsed', false)
+            this.swarmExpanded = true
+        } else {
+            this.swarmExpanded = !this.swarmExpanded
+        }
+    }
+
+    toggleApisix() {
+        if (this.collapsed) {
+            this.$emit('update:collapsed', false)
+            this.apisixExpanded = true
+        } else {
+            this.apisixExpanded = !this.apisixExpanded
+        }
+    }
+
+    toggleMobileSidebar() {
+        this.mobileSidebarVisible = !this.mobileSidebarVisible
+    }
+
+    closeMobileSidebar() {
+        this.mobileSidebarVisible = false
+    }
+
+    openMobileSidebar() {
+        this.mobileSidebarVisible = true
+    }
+
+    handleResize() {
+        if (window.innerWidth >= 768) {
+            this.mobileSidebarVisible = false
+        }
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        // 根据当前路由初始化子菜单展开状态
+        this.dockerExpanded = this.$route.path.startsWith('/docker/')
+        this.swarmExpanded = this.$route.path.startsWith('/swarm/')
+        this.apisixExpanded = this.$route.path.startsWith('/apisix/')
+        window.addEventListener('resize', this.handleResize)
+    }
+
+    unmounted() {
+        window.removeEventListener('resize', this.handleResize)
+    }
 }
 
-onMounted(() => {
-  window.addEventListener('resize', handleResize)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
-})
+export default toNative(NavigationBar)
 </script>
 
 <template>
@@ -293,7 +298,7 @@ onUnmounted(() => {
             <router-link
               to="/swarm/tasks"
               class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': route.path === '/swarm/tasks' }"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': $route.path === '/swarm/tasks' }"
             >
               <i class="fas fa-list-check"></i>
               <span>任务</span>
@@ -361,7 +366,7 @@ onUnmounted(() => {
     <!-- 底部折叠按钮 -->
     <div class="border-t border-slate-200 p-3">
       <button 
-        @click="collapsed = !collapsed"
+        @click="$emit('update:collapsed', !collapsed)"
         class="flex items-center justify-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
         :title="collapsed ? '展开菜单' : '收起菜单'"
       >

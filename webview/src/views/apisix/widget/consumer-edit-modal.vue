@@ -1,52 +1,59 @@
-<script setup>
-import { inject, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
+@Component({
+    expose: ['show'],
+    components: { BaseModal },
+    emits: ['success']
+})
+class ConsumerEditModal extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const emit = defineEmits(['success'])
+    // ─── 数据属性 ───
+    isOpen = false
+    modalLoading = false
+    isEditMode = false
+    formData = { username: '', desc: '' }
 
-const isOpen = ref(false)
-const modalLoading = ref(false)
-const isEditMode = ref(false)
-const formData = ref({ username: '', desc: '' })
-
-const show = (consumer = null) => {
-  if (consumer) {
-    isEditMode.value = true
-    formData.value = { username: consumer.username, desc: consumer.desc || '' }
-  } else {
-    isEditMode.value = false
-    formData.value = { username: '', desc: '' }
-  }
-  isOpen.value = true
-}
-
-const handleConfirm = async () => {
-  if (!formData.value.username) {
-    actions.showNotification('error', '用户名不能为空')
-    return
-  }
-  modalLoading.value = true
-  try {
-    if (isEditMode.value) {
-      await api.apisixUpdateConsumer(formData.value.username, { desc: formData.value.desc })
-    } else {
-      await api.apisixCreateConsumer(formData.value)
+    // ─── 方法 ───
+    show(consumer: any = null) {
+        if (consumer) {
+            this.isEditMode = true
+            this.formData = { username: consumer.username, desc: consumer.desc || '' }
+        } else {
+            this.isEditMode = false
+            this.formData = { username: '', desc: '' }
+        }
+        this.isOpen = true
     }
-    isOpen.value = false
-    emit('success')
-  } catch (e) {
-    actions.showNotification('error', e.message || '操作失败')
-  }
-  modalLoading.value = false
+
+    async handleConfirm() {
+        if (!this.formData.username) {
+            this.actions.showNotification('error', '用户名不能为空')
+            return
+        }
+        this.modalLoading = true
+        try {
+            if (this.isEditMode) {
+                await api.apisixUpdateConsumer(this.formData.username, { desc: this.formData.desc })
+            } else {
+                await api.apisixCreateConsumer(this.formData)
+            }
+            this.isOpen = false
+            this.$emit('success')
+        } catch (e: any) {
+            this.actions.showNotification('error', e.message || '操作失败')
+        }
+        this.modalLoading = false
+    }
 }
 
-defineExpose({ show })
+export default toNative(ConsumerEditModal)
 </script>
 
 <template>

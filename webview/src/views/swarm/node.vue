@@ -1,44 +1,56 @@
-<script setup>
-import { inject, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import { formatFileSize, formatTime } from '@/helper/utils.js'
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import { formatFileSize, formatTime } from '@/helper/utils'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
-const route = useRoute()
-const router = useRouter()
-const actions = inject(APP_ACTIONS_KEY)
+@Component
+class NodeDetail extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const nodeId = route.params.id
-const nodeData = ref(null)
-const loading = ref(false)
+    // ─── 数据属性 ───
+    nodeData: any = null
+    loading = false
+    formatFileSize = formatFileSize
+    formatTime = formatTime
 
-const nodeStateClass = (state) => {
-  if (state === 'ready') return 'bg-emerald-100 text-emerald-700'
-  if (state === 'down') return 'bg-red-100 text-red-700'
-  return 'bg-slate-100 text-slate-600'
+    get nodeId() {
+        return this.$route.params.id as string
+    }
+
+    // ─── 方法 ───
+    nodeStateClass(state: string) {
+        if (state === 'ready') return 'bg-emerald-100 text-emerald-700'
+        if (state === 'down') return 'bg-red-100 text-red-700'
+        return 'bg-slate-100 text-slate-600'
+    }
+
+    availabilityClass(avail: string) {
+        if (avail === 'active') return 'bg-emerald-100 text-emerald-700'
+        if (avail === 'drain') return 'bg-amber-100 text-amber-700'
+        if (avail === 'pause') return 'bg-slate-100 text-slate-600'
+        return 'bg-slate-100 text-slate-500'
+    }
+
+    async loadDetail() {
+        this.loading = true
+        try {
+            const res = await api.swarmInspectNode(this.nodeId)
+            this.nodeData = res.payload
+        } catch (e) {
+            this.actions.showNotification('error', '获取节点详情失败')
+        }
+        this.loading = false
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadDetail()
+    }
 }
 
-const availabilityClass = (avail) => {
-  if (avail === 'active') return 'bg-emerald-100 text-emerald-700'
-  if (avail === 'drain') return 'bg-amber-100 text-amber-700'
-  if (avail === 'pause') return 'bg-slate-100 text-slate-600'
-  return 'bg-slate-100 text-slate-500'
-}
-
-const loadDetail = async () => {
-  loading.value = true
-  try {
-    const res = await api.swarmInspectNode(nodeId)
-    nodeData.value = res.payload
-  } catch (e) {
-    actions.showNotification('error', '获取节点详情失败')
-  }
-  loading.value = false
-}
-
-onMounted(() => loadDetail())
+export default toNative(NodeDetail)
 </script>
 
 <template>
@@ -48,7 +60,7 @@ onMounted(() => loadDetail())
       <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-6 py-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <button @click="router.back()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors" title="返回节点列表">
+            <button @click="$router.back()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors" title="返回节点列表">
               <i class="fas fa-arrow-left text-sm"></i>
             </button>
             <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">

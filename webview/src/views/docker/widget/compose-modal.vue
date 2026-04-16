@@ -1,45 +1,51 @@
-<script setup>
-import { inject, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import { Codemirror } from 'vue-codemirror'
 import { yaml } from '@codemirror/lang-yaml'
 
 import BaseModal from '@/component/modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
+@Component({
+    expose: ['show'],
+    components: { BaseModal, Codemirror },
+    emits: ['success']
+})
+class ComposeModal extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const emit = defineEmits(['success'])
+    // ─── 数据属性 ───
+    isOpen = false
+    composeLoading = false
+    composeContent = ''
+    readonly composeExtensions = [yaml()]
 
-const modalRef = ref(null)
-const isOpen = ref(false)
-const composeLoading = ref(false)
-const composeContent = ref('')
-const composeExtensions = [yaml()]
+    // ─── 方法 ───
+    show() {
+        this.composeContent = ''
+        this.isOpen = true
+    }
 
-const show = () => {
-  composeContent.value = ''
-  isOpen.value = true
+    async handleConfirm() {
+        if (!this.composeContent.trim()) return
+        this.composeLoading = true
+        try {
+            const res = await api.deployCompose(this.composeContent)
+            const created = res.payload || []
+            this.actions.showNotification('success', `Compose 部署成功，已创建 ${created.length} 个容器`)
+            this.isOpen = false
+            this.$emit('success')
+        } catch (e) {
+            this.actions.showNotification('error', 'Compose 部署失败')
+        }
+        this.composeLoading = false
+    }
 }
 
-const handleConfirm = async () => {
-  if (!composeContent.value.trim()) return
-  composeLoading.value = true
-  try {
-    const res = await api.deployCompose(composeContent.value)
-    const created = res.payload || []
-    actions.showNotification('success', `Compose 部署成功，已创建 ${created.length} 个容器`)
-    isOpen.value = false
-    emit('success')
-  } catch (e) {
-    actions.showNotification('error', 'Compose 部署失败')
-  }
-  composeLoading.value = false
-}
-
-defineExpose({ show })
+export default toNative(ComposeModal)
 </script>
 
 <template>

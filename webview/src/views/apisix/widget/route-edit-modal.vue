@@ -1,151 +1,222 @@
-<script setup>
-import { computed, inject, reactive, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
-import { parseUpstreamNode, buildRoutePayload } from '@/helper/utils.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
+import { parseUpstreamNode, buildRoutePayload } from '@/helper/utils'
 
 import BaseModal from '@/component/modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
-
-const emit = defineEmits(['success'])
-
-const isOpen = ref(false)
-const modalLoading = ref(false)
-const isEditMode = ref(false)
-const editingRouteId = ref('')
-const showPluginPanel = ref(false)
-const showImportPanel = ref(false)
-const importRouteId = ref('')
-const importRoutePlugins = ref({})
-const importRoutePluginsLoading = ref(false)
-const selectedImportPlugins = ref(new Set())
-const pluginSearchKeyword = ref('')
-
-const pluginConfigs = ref([])
-const upstreams = ref([])
-const availablePlugins = ref({})
-const routes = ref([])
-
-const formData = reactive({
-  name: '', desc: '', uris: '', hosts: '',
-  status: 1, priority: 0, enable_websocket: false,
-  plugin_config_id: '', upstream_host: '', upstream_port: '',
-  plugins: {}, pluginsJson: '{}', pluginsJsonError: '',
+@Component({
+    expose: ['show'],
+    components: { BaseModal },
+    emits: ['success']
 })
+class RouteEditModal extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const currentPluginNames = computed(() => Object.keys(formData.plugins || {}))
-const filteredAvailablePlugins = computed(() => {
-  const all = Object.keys(availablePlugins.value)
-  if (!pluginSearchKeyword.value) return all
-  return all.filter(n => n.toLowerCase().includes(pluginSearchKeyword.value.toLowerCase()))
-})
+    // ─── 数据属性 ───
+    isOpen = false
+    modalLoading = false
+    isEditMode = false
+    editingRouteId = ''
+    showPluginPanel = false
+    showImportPanel = false
+    importRouteId = ''
+    importRoutePlugins: Record<string, any> = {}
+    importRoutePluginsLoading = false
+    selectedImportPlugins: Set<string> = new Set()
+    pluginSearchKeyword = ''
 
-const resetForm = () => {
-  Object.assign(formData, { name: '', desc: '', uris: '', hosts: '', status: 1, priority: 0, enable_websocket: false, plugin_config_id: '', upstream_host: '', upstream_port: '', plugins: {}, pluginsJson: '{}', pluginsJsonError: '' })
-  editingRouteId.value = ''; showPluginPanel.value = false; showImportPanel.value = false; importRouteId.value = ''; importRoutePlugins.value = {}; selectedImportPlugins.value = new Set()
-}
+    pluginConfigs: any[] = []
+    upstreams: any[] = []
+    availablePlugins: Record<string, any> = {}
+    routes: any[] = []
 
-const loadResources = async (allRoutes) => {
-  routes.value = allRoutes || []
-  try {
-    const [pc, us, pl] = await Promise.all([api.apisixListPluginConfigs(), api.apisixListUpstreams(), api.apisixListPlugins()])
-    pluginConfigs.value = pc.payload || []; upstreams.value = us.payload || []; availablePlugins.value = pl.payload || {}
-  } catch {}
-}
-
-const show = async (route, allRoutes) => {
-  await loadResources(allRoutes)
-  if (route) {
-    isEditMode.value = true
-    editingRouteId.value = route.id
-    resetForm()
-    modalLoading.value = true
-    isOpen.value = true
-    try {
-      const r = (await api.apisixGetRoute(route.id)).payload
-      const plugins = r.plugins || {}
-      const { host: uH, port: uP } = parseUpstreamNode(r.upstream)
-      Object.assign(formData, { name: r.name || '', desc: r.desc || '', uris: (r.uris?.length ? r.uris : [r.uri || '']).join('\n'), hosts: (r.hosts?.length ? r.hosts : [r.host || '']).join('\n'), status: r.status ?? 0, priority: r.priority ?? 0, enable_websocket: r.enable_websocket || false, plugin_config_id: r.plugin_config_id || '', upstream_host: uH, upstream_port: uP, plugins, pluginsJson: JSON.stringify(plugins, null, 2), pluginsJsonError: '' })
-      editingRouteId.value = route.id
-    } catch (e) {
-      actions.showNotification('error', '加载路由详情失败')
-      isOpen.value = false
+    formData = {
+        name: '', desc: '', uris: '', hosts: '',
+        status: 1, priority: 0, enable_websocket: false,
+        plugin_config_id: '', upstream_host: '', upstream_port: '',
+        plugins: {} as Record<string, any>, pluginsJson: '{}', pluginsJsonError: ''
     }
-    modalLoading.value = false
-  } else {
-    isEditMode.value = false
-    resetForm()
-    isOpen.value = true
-  }
+
+    // ─── 计算属性 ───
+    get currentPluginNames() { return Object.keys(this.formData.plugins || {}) }
+
+    get filteredAvailablePlugins() {
+        const all = Object.keys(this.availablePlugins)
+        if (!this.pluginSearchKeyword) return all
+        return all.filter(n => n.toLowerCase().includes(this.pluginSearchKeyword.toLowerCase()))
+    }
+
+    // ─── 方法 ───
+    resetForm() {
+        Object.assign(this.formData, {
+            name: '', desc: '', uris: '', hosts: '', status: 1, priority: 0,
+            enable_websocket: false, plugin_config_id: '', upstream_host: '', upstream_port: '',
+            plugins: {}, pluginsJson: '{}', pluginsJsonError: ''
+        })
+        this.editingRouteId = ''
+        this.showPluginPanel = false
+        this.showImportPanel = false
+        this.importRouteId = ''
+        this.importRoutePlugins = {}
+        this.selectedImportPlugins = new Set()
+    }
+
+    async loadResources(allRoutes: any[]) {
+        this.routes = allRoutes || []
+        try {
+            const [pc, us, pl] = await Promise.all([
+                api.apisixListPluginConfigs(), api.apisixListUpstreams(), api.apisixListPlugins()
+            ])
+            this.pluginConfigs = pc.payload || []
+            this.upstreams = us.payload || []
+            this.availablePlugins = pl.payload || {}
+        } catch {}
+    }
+
+    async show(route: any, allRoutes: any[]) {
+        await this.loadResources(allRoutes)
+        if (route) {
+            this.isEditMode = true
+            this.editingRouteId = route.id
+            this.resetForm()
+            this.modalLoading = true
+            this.isOpen = true
+            try {
+                const r = (await api.apisixGetRoute(route.id)).payload
+                const plugins = r.plugins || {}
+                const { host: uH, port: uP } = parseUpstreamNode(r.upstream)
+                Object.assign(this.formData, {
+                    name: r.name || '', desc: r.desc || '',
+                    uris: (r.uris?.length ? r.uris : [r.uri || '']).join('\n'),
+                    hosts: (r.hosts?.length ? r.hosts : [r.host || '']).join('\n'),
+                    status: r.status ?? 0, priority: r.priority ?? 0,
+                    enable_websocket: r.enable_websocket || false,
+                    plugin_config_id: r.plugin_config_id || '',
+                    upstream_host: uH, upstream_port: uP,
+                    plugins, pluginsJson: JSON.stringify(plugins, null, 2), pluginsJsonError: ''
+                })
+                this.editingRouteId = route.id
+            } catch (e) {
+                this.actions.showNotification('error', '加载路由详情失败')
+                this.isOpen = false
+            }
+            this.modalLoading = false
+        } else {
+            this.isEditMode = false
+            this.resetForm()
+            this.isOpen = true
+        }
+    }
+
+    syncPluginsFromJson() {
+        try {
+            this.formData.plugins = JSON.parse(this.formData.pluginsJson || '{}')
+            this.formData.pluginsJsonError = ''
+        } catch (e: any) {
+            this.formData.pluginsJsonError = 'JSON 格式错误: ' + e.message
+        }
+    }
+
+    removePlugin(name: string) {
+        const p = { ...this.formData.plugins }
+        delete p[name]
+        this.formData.plugins = p
+        this.formData.pluginsJson = JSON.stringify(p, null, 2)
+    }
+
+    readonly TYPE_DEFAULTS: Record<string, any> = { string: '', integer: 0, number: 0, boolean: false, array: [], object: {} }
+
+    buildPluginDefault(schema: any) {
+        if (!schema?.properties) return {}
+        const required = new Set(schema.required || [])
+        const result: Record<string, any> = {}
+        for (const [key, def] of Object.entries(schema.properties) as any[]) {
+            if (key === 'disable') continue
+            if (required.has(key) || def.default !== undefined) {
+                result[key] = def.default !== undefined ? def.default : (this.TYPE_DEFAULTS[def.type] ?? null)
+            }
+        }
+        return result
+    }
+
+    addPresetPlugin(name: string) {
+        if (this.formData.plugins[name] !== undefined) {
+            return this.actions.showNotification('warning', `插件 ${name} 已存在`)
+        }
+        const schema = this.availablePlugins[name]?.schema
+        const p = { ...this.formData.plugins, [name]: this.buildPluginDefault(schema) }
+        this.formData.plugins = p
+        this.formData.pluginsJson = JSON.stringify(p, null, 2)
+        this.showPluginPanel = false
+        this.pluginSearchKeyword = ''
+    }
+
+    async onImportRouteChange() {
+        this.importRoutePlugins = {}
+        this.selectedImportPlugins = new Set()
+        if (!this.importRouteId) return
+        this.importRoutePluginsLoading = true
+        try {
+            const src = (await api.apisixGetRoute(this.importRouteId)).payload?.plugins || {}
+            this.importRoutePlugins = src
+            this.selectedImportPlugins = new Set(Object.keys(src))
+        } catch (e) {
+            this.actions.showNotification('error', '加载路由插件失败')
+        }
+        this.importRoutePluginsLoading = false
+    }
+
+    toggleImportPlugin(name: string) {
+        const s = new Set(this.selectedImportPlugins)
+        s.has(name) ? s.delete(name) : s.add(name)
+        this.selectedImportPlugins = s
+    }
+
+    importPluginsFromRoute() {
+        if (!this.importRouteId) return this.actions.showNotification('warning', '请先选择要导入的路由')
+        if (this.selectedImportPlugins.size === 0) return this.actions.showNotification('warning', '请至少勾选一个插件')
+        const toImport: Record<string, any> = {}
+        for (const name of this.selectedImportPlugins) {
+            if (this.importRoutePlugins[name] !== undefined) toImport[name] = this.importRoutePlugins[name]
+        }
+        const merged = { ...this.formData.plugins, ...toImport }
+        this.formData.plugins = merged
+        this.formData.pluginsJson = JSON.stringify(merged, null, 2)
+        this.showImportPanel = false
+        this.importRouteId = ''
+        this.importRoutePlugins = {}
+        this.selectedImportPlugins = new Set()
+        this.actions.showNotification('success', `已导入 ${Object.keys(toImport).length} 个插件`)
+    }
+
+    async handleConfirm() {
+        if (!this.formData.name.trim()) return this.actions.showNotification('error', '路由名称不能为空')
+        if (!this.formData.uris.split('\n').map((s: string) => s.trim()).filter(Boolean).length) return this.actions.showNotification('error', 'URI 不能为空')
+        if (this.formData.pluginsJsonError) return this.actions.showNotification('error', '请修正 Plugin JSON 格式错误')
+        this.modalLoading = true
+        try {
+            const payload = buildRoutePayload(this.formData)
+            if (this.isEditMode) {
+                await api.apisixUpdateRoute(this.editingRouteId, payload)
+                this.actions.showNotification('success', '路由更新成功')
+            } else {
+                await api.apisixCreateRoute(payload)
+                this.actions.showNotification('success', '路由创建成功')
+            }
+            this.isOpen = false
+            this.resetForm()
+            this.$emit('success')
+        } catch (e: any) {
+            this.actions.showNotification('error', e.message || '操作失败')
+        }
+        this.modalLoading = false
+    }
 }
 
-const syncPluginsFromJson = () => {
-  try { formData.plugins = JSON.parse(formData.pluginsJson || '{}'); formData.pluginsJsonError = '' }
-  catch (e) { formData.pluginsJsonError = 'JSON 格式错误: ' + e.message }
-}
-
-const removePlugin = (name) => { const p = { ...formData.plugins }; delete p[name]; formData.plugins = p; formData.pluginsJson = JSON.stringify(p, null, 2) }
-
-const TYPE_DEFAULTS = { string: '', integer: 0, number: 0, boolean: false, array: [], object: {} }
-const buildPluginDefault = (schema) => {
-  if (!schema?.properties) return {}
-  const required = new Set(schema.required || [])
-  const result = {}
-  for (const [key, def] of Object.entries(schema.properties)) {
-    if (key === 'disable') continue
-    if (required.has(key) || def.default !== undefined) result[key] = def.default !== undefined ? def.default : (TYPE_DEFAULTS[def.type] ?? null)
-  }
-  return result
-}
-
-const addPresetPlugin = (name) => {
-  if (formData.plugins[name] !== undefined) return actions.showNotification('warning', `插件 ${name} 已存在`)
-  const schema = availablePlugins.value[name]?.schema
-  const p = { ...formData.plugins, [name]: buildPluginDefault(schema) }
-  formData.plugins = p; formData.pluginsJson = JSON.stringify(p, null, 2); showPluginPanel.value = false; pluginSearchKeyword.value = ''
-}
-
-const onImportRouteChange = async () => {
-  importRoutePlugins.value = {}; selectedImportPlugins.value = new Set()
-  if (!importRouteId.value) return
-  importRoutePluginsLoading.value = true
-  try { const src = (await api.apisixGetRoute(importRouteId.value)).payload?.plugins || {}; importRoutePlugins.value = src; selectedImportPlugins.value = new Set(Object.keys(src)) }
-  catch (e) { actions.showNotification('error', '加载路由插件失败') }
-  importRoutePluginsLoading.value = false
-}
-
-const toggleImportPlugin = (name) => { const s = new Set(selectedImportPlugins.value); s.has(name) ? s.delete(name) : s.add(name); selectedImportPlugins.value = s }
-
-const importPluginsFromRoute = () => {
-  if (!importRouteId.value) return actions.showNotification('warning', '请先选择要导入的路由')
-  if (selectedImportPlugins.value.size === 0) return actions.showNotification('warning', '请至少勾选一个插件')
-  const toImport = {}
-  for (const name of selectedImportPlugins.value) { if (importRoutePlugins.value[name] !== undefined) toImport[name] = importRoutePlugins.value[name] }
-  const merged = { ...formData.plugins, ...toImport }
-  formData.plugins = merged; formData.pluginsJson = JSON.stringify(merged, null, 2)
-  showImportPanel.value = false; importRouteId.value = ''; importRoutePlugins.value = {}; selectedImportPlugins.value = new Set()
-  actions.showNotification('success', `已导入 ${Object.keys(toImport).length} 个插件`)
-}
-
-const handleConfirm = async () => {
-  if (!formData.name.trim()) return actions.showNotification('error', '路由名称不能为空')
-  if (!formData.uris.split('\n').map(s => s.trim()).filter(Boolean).length) return actions.showNotification('error', 'URI 不能为空')
-  if (formData.pluginsJsonError) return actions.showNotification('error', '请修正 Plugin JSON 格式错误')
-  modalLoading.value = true
-  try {
-    const payload = buildRoutePayload(formData)
-    if (isEditMode.value) { await api.apisixUpdateRoute(editingRouteId.value, payload); actions.showNotification('success', '路由更新成功') }
-    else { await api.apisixCreateRoute(payload); actions.showNotification('success', '路由创建成功') }
-    isOpen.value = false
-    resetForm()
-    emit('success')
-  } catch (e) { actions.showNotification('error', e.message || '操作失败') }
-  modalLoading.value = false
-}
-
-defineExpose({ show })
+export default toNative(RouteEditModal)
 </script>
 
 <template>

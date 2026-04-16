@@ -1,137 +1,135 @@
-<script setup>
-import { inject, onMounted, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import { useRouter } from 'vue-router'
-
-import { formatTime } from '@/helper/utils.js'
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import { formatTime } from '@/helper/utils'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import ContainerEditModal from '@/views/docker/widget/container-edit-modal.vue'
 import ComposeModal from '@/views/docker/widget/compose-modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
-const router = useRouter()
-
-const containers = ref([])
-const loading = ref(false)
-const showAll = ref(false)
-
-const containerModalRef = ref(null)
-const composeModalRef = ref(null)
-
-// 批量操作状态
-const selectedIds = ref([])
-const batchMode = ref(false)
-
-// 加载容器列表
-const loadContainers = async () => {
-  loading.value = true
-  try {
-    const res = await api.listContainers(showAll.value)
-    containers.value = res.payload || []
-  } catch (e) {
-    actions.showNotification('error', '加载容器列表失败')
-  }
-  loading.value = false
-}
-
-// 操作配置
-const actionConfigs = {
-  start: { icon: 'fa-play', iconColor: 'emerald', title: '启动容器', confirmText: '启动' },
-  stop: { icon: 'fa-stop', iconColor: 'amber', title: '停止容器', confirmText: '停止' },
-  restart: { icon: 'fa-redo', iconColor: 'blue', title: '重启容器', confirmText: '重启' },
-  remove: { icon: 'fa-trash', iconColor: 'red', title: '删除容器', confirmText: '删除', danger: true },
-  pause: { icon: 'fa-pause', iconColor: 'amber', title: '暂停容器', confirmText: '暂停' },
-  unpause: { icon: 'fa-play', iconColor: 'emerald', title: '恢复容器', confirmText: '恢复' }
-}
-
-// 容器操作 - 显示确认模态框
-const handleContainerAction = (container, action) => {
-  const config = actionConfigs[action] || {}
-  actions.showConfirm({
-    title: config.title,
-    message: `确定要${config.confirmText}容器 <strong class="text-slate-900">${container.name || container.id}</strong> 吗？`,
-    icon: config.icon,
-    iconColor: config.iconColor,
-    confirmText: `确认${config.confirmText}`,
-    danger: config.danger,
-    onConfirm: async () => {
-      await api.containerAction(container.id, action)
-      actions.showNotification('success', `容器 ${config.confirmText} 成功`)
-      loadContainers()
-    }
-  })
-}
-
-// 创建容器弹窗
-const createContainerModal = () => containerModalRef.value?.show()
-
-// Compose 部署弹窗
-const openComposeModal = () => composeModalRef.value?.show()
-
-// 批量操作
-const toggleBatchMode = () => {
-  batchMode.value = !batchMode.value
-  if (!batchMode.value) {
-    selectedIds.value = []
-  }
-}
-
-const toggleSelect = (id) => {
-  const idx = selectedIds.value.indexOf(id)
-  if (idx >= 0) {
-    selectedIds.value.splice(idx, 1)
-  } else {
-    selectedIds.value.push(id)
-  }
-}
-
-const selectAll = () => {
-  if (selectedIds.value.length === containers.value.length) {
-    selectedIds.value = []
-  } else {
-    selectedIds.value = containers.value.map(ct => ct.id)
-  }
-}
-
-// 批量操作
-const batchAction = (action) => {
-  if (selectedIds.value.length === 0) return
-  const config = actionConfigs[action] || {}
-  actions.showConfirm({
-    title: `批量${config.confirmText}`,
-    message: `确定要批量${config.confirmText} <strong class="text-slate-900">${selectedIds.value.length}</strong> 个容器吗？`,
-    icon: config.icon,
-    iconColor: config.iconColor,
-    confirmText: `确认批量${config.confirmText}`,
-    danger: config.danger,
-    onConfirm: async () => {
-      const promises = selectedIds.value.map(id => api.containerAction(id, action))
-      await Promise.allSettled(promises)
-      actions.showNotification('success', `批量${config.confirmText}操作完成`)
-      selectedIds.value = []
-      loadContainers()
-    }
-  })
-}
-
-// 处理镜像名称，去掉域名部分
-const formatImageName = (image) => {
-  if (!image) return ''
-  // 去掉域名部分，保留镜像名和标签
-  return image.replace(/^[^\\/]+\//, '')
-}
-
-// 暴露方法给 toolbar 使用
-defineExpose({
-  loadContainers,
-  createContainerModal
+@Component({
+    expose: ['load', 'show'],
+    components: { ContainerEditModal, ComposeModal }
 })
+class Containers extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-onMounted(() => {
-  loadContainers()
-})
+    // ─── Refs ───
+    @Ref readonly containerModalRef!: InstanceType<typeof ContainerEditModal>
+    @Ref readonly composeModalRef!: InstanceType<typeof ComposeModal>
+
+    // ─── 数据属性 ───
+    containers: any[] = []
+    loading = false
+    showAll = false
+    selectedIds: string[] = []
+    batchMode = false
+
+    readonly actionConfigs: Record<string, any> = {
+        start: { icon: 'fa-play', iconColor: 'emerald', title: '启动容器', confirmText: '启动' },
+        stop: { icon: 'fa-stop', iconColor: 'amber', title: '停止容器', confirmText: '停止' },
+        restart: { icon: 'fa-redo', iconColor: 'blue', title: '重启容器', confirmText: '重启' },
+        remove: { icon: 'fa-trash', iconColor: 'red', title: '删除容器', confirmText: '删除', danger: true },
+        pause: { icon: 'fa-pause', iconColor: 'amber', title: '暂停容器', confirmText: '暂停' },
+        unpause: { icon: 'fa-play', iconColor: 'emerald', title: '恢复容器', confirmText: '恢复' }
+    }
+
+    // ─── 方法 ───
+    async loadContainers() {
+        this.loading = true
+        try {
+            const res = await api.listContainers(this.showAll)
+            this.containers = res.payload || []
+        } catch (e) {
+            this.actions.showNotification('error', '加载容器列表失败')
+        }
+        this.loading = false
+    }
+
+    handleContainerAction(container: any, action: string) {
+        const config = this.actionConfigs[action] || {}
+        this.actions.showConfirm({
+            title: config.title,
+            message: `确定要${config.confirmText}容器 <strong class="text-slate-900">${container.name || container.id}</strong> 吗？`,
+            icon: config.icon,
+            iconColor: config.iconColor,
+            confirmText: `确认${config.confirmText}`,
+            danger: config.danger,
+            onConfirm: async () => {
+                await api.containerAction(container.id, action)
+                this.actions.showNotification('success', `容器 ${config.confirmText} 成功`)
+                this.loadContainers()
+            }
+        })
+    }
+
+    createContainerModal() {
+        this.containerModalRef?.show()
+    }
+
+    openComposeModal() {
+        this.composeModalRef?.show()
+    }
+
+    toggleBatchMode() {
+        this.batchMode = !this.batchMode
+        if (!this.batchMode) {
+            this.selectedIds = []
+        }
+    }
+
+    toggleSelect(id: string) {
+        const idx = this.selectedIds.indexOf(id)
+        if (idx >= 0) {
+            this.selectedIds.splice(idx, 1)
+        } else {
+            this.selectedIds.push(id)
+        }
+    }
+
+    selectAll() {
+        if (this.selectedIds.length === this.containers.length) {
+            this.selectedIds = []
+        } else {
+            this.selectedIds = this.containers.map((ct: any) => ct.id)
+        }
+    }
+
+    batchAction(action: string) {
+        if (this.selectedIds.length === 0) return
+        const config = this.actionConfigs[action] || {}
+        this.actions.showConfirm({
+            title: `批量${config.confirmText}`,
+            message: `确定要批量${config.confirmText} <strong class="text-slate-900">${this.selectedIds.length}</strong> 个容器吗？`,
+            icon: config.icon,
+            iconColor: config.iconColor,
+            confirmText: `确认批量${config.confirmText}`,
+            danger: config.danger,
+            onConfirm: async () => {
+                const promises = this.selectedIds.map((id: string) => api.containerAction(id, action))
+                await Promise.allSettled(promises)
+                this.actions.showNotification('success', `批量${config.confirmText}操作完成`)
+                this.selectedIds = []
+                this.loadContainers()
+            }
+        })
+    }
+
+    formatImageName(image: string) {
+        if (!image) return ''
+        return image.replace(/^[^\\/]+\//, '')
+    }
+
+    formatTime = formatTime
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadContainers()
+    }
+}
+
+export default toNative(Containers)
 </script>
 
 <template>
@@ -255,13 +253,13 @@ onMounted(() => {
                     <button @click="!ct.isSwarm && containerModalRef?.show(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-violet-600 hover:bg-violet-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
                       <i class="fas fa-cog text-xs"></i>
                     </button>
-                    <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/stats' })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
+                    <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats' })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
                       <i class="fas fa-chart-bar text-xs"></i>
                     </button>
-                    <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/logs' })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
+                    <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/logs' })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
                       <i class="fas fa-file-alt text-xs"></i>
                     </button>
-                    <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="登录终端">
+                    <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="登录终端">
                       <i class="fas fa-terminal text-xs"></i>
                     </button>
                     <button v-if="ct.state !== 'running'" @click="handleContainerAction(ct, 'start')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动">
@@ -338,15 +336,15 @@ onMounted(() => {
                 <i class="fas fa-cog text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">配置</span>
               </button>
-              <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/stats' })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
+              <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats' })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
                 <i class="fas fa-chart-bar text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">统计</span>
               </button>
-              <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/logs' })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
+              <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/logs' })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
                 <i class="fas fa-file-alt text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">日志</span>
               </button>
-              <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="终端">
+              <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="终端">
                 <i class="fas fa-terminal text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">终端</span>
               </button>

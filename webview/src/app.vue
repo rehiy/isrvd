@@ -1,8 +1,7 @@
-<script setup>
-import { onMounted, provide, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+<script lang="ts">
+import { Component, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
-import { APP_ACTIONS_KEY, APP_STATE_KEY, initProvider } from '@/store/state.js'
+import { APP_ACTIONS_KEY, APP_STATE_KEY, initProvider } from '@/store/state'
 
 import ConfirmModal from '@/component/confirm.vue'
 import NavigationBar from '@/component/navigation.vue'
@@ -11,91 +10,81 @@ import NotificationManager from '@/component/notification.vue'
 import AuthLogin from '@/views/login.vue'
 import AuthLogout from '@/views/logout.vue'
 
-import { fetchServiceProbe } from '@/service/probe.js'
+import { fetchServiceProbe } from '@/service/probe'
 
 const { state, actions } = initProvider()
 
-// 提供状态和动作给子组件
-provide(APP_STATE_KEY, state)
-provide(APP_ACTIONS_KEY, actions)
-
-// 侧边栏折叠状态
-const sidebarCollapsed = ref(false)
-provide('sidebarCollapsed', sidebarCollapsed)
-
-// 导航组件引用
-const navigationRef = ref(null)
-
-// 工具栏按钮管理
-const toolbarButtons = ref([])
-const route = useRoute()
-
-// 清空按钮（路由变化时自动调用）
-const clearToolbar = () => {
-  toolbarButtons.value = []
-}
-
-// 注册按钮
-const registerToolbarButton = (button) => {
-  const existing = toolbarButtons.value.find(b => b.id === button.id)
-  if (existing) {
-    Object.assign(existing, button)
-  } else {
-    toolbarButtons.value.push(button)
-  }
-}
-
-// 注册多个按钮
-const registerToolbarButtons = (buttons) => {
-  buttons.forEach(btn => registerToolbarButton(btn))
-}
-
-// 提供给子组件使用
-provide('toolbar', {
-  buttons: toolbarButtons,
-  clear: clearToolbar,
-  register: registerToolbarButton,
-  registerAll: registerToolbarButtons
+@Component({
+    components: { ConfirmModal, NavigationBar, NotificationManager, AuthLogin, AuthLogout },
+    provide: {
+        [APP_STATE_KEY]: state,
+        [APP_ACTIONS_KEY]: actions,
+    }
 })
+class App extends Vue {
+    // ─── 数据属性 ───
+    state = state
+    actions = actions
+    sidebarCollapsed = false
+    toolbarButtons: any[] = []
 
-// 路由变化时清空按钮
-const clearToolbarOnRouteChange = () => {
-  clearToolbar()
+    // ─── Refs ───
+    @Ref readonly navigationRef!: InstanceType<typeof NavigationBar>
+
+    // ─── 方法 ───
+    clearToolbar() {
+        this.toolbarButtons = []
+    }
+
+    registerToolbarButton(button: any) {
+        const existing = this.toolbarButtons.find((b: any) => b.id === button.id)
+        if (existing) {
+            Object.assign(existing, button)
+        } else {
+            this.toolbarButtons.push(button)
+        }
+    }
+
+    clearToolbarOnRouteChange() {
+        this.clearToolbar()
+    }
+
+    toggleMobileMenu() {
+        if (this.navigationRef) {
+            this.navigationRef.toggleMobileSidebar()
+        }
+    }
+
+    async loadServiceAvailability() {
+        try {
+            const availability = await fetchServiceProbe()
+            this.actions.updateServiceAvailability(availability)
+        } catch (e) {
+            console.warn('Failed to load service probe:', e)
+        }
+    }
+
+    // ─── 侦听器 ───
+    @Watch('state.username')
+    onUsernameChange(username: string, oldUsername: string) {
+        if (username && !oldUsername) {
+            this.loadServiceAvailability()
+        }
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        const token = localStorage.getItem('app-token')
+        const username = localStorage.getItem('app-username')
+
+        if (token && username) {
+            this.actions.setAuth({ token, username })
+            this.loadServiceAvailability()
+        }
+    }
 }
 
-// 移动端菜单切换
-const toggleMobileMenu = () => {
-  if (navigationRef.value) {
-    navigationRef.value.toggleMobileSidebar()
-  }
-}
-
-// 加载服务可用性
-const loadServiceAvailability = async () => {
-  try {
-    const availability = await fetchServiceProbe()
-    actions.updateServiceAvailability(availability)
-  } catch (e) {
-    console.warn('Failed to load service probe:', e)
-  }
-}
-
-onMounted(() => {
-  const token = localStorage.getItem('app-token')
-  const username = localStorage.getItem('app-username')
-
-  if (token && username) {
-    actions.setAuth({ token, username })
-    loadServiceAvailability()
-  }
-})
-
-// 登录成功后加载服务可用性
-watch(() => state.username, (username, oldUsername) => {
-  if (username && !oldUsername) {
-    loadServiceAvailability()
-  }
-})
+export default toNative(App)
 </script>
 
 <template>

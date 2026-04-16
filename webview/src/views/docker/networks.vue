@@ -1,78 +1,82 @@
-<script setup>
-import { inject, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+<script lang="ts">
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import NetworkCreateModal from '@/views/docker/widget/network-create-modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
-const router = useRouter()
+@Component({
+    expose: ['load', 'show'],
+    components: { NetworkCreateModal }
+})
+class Networks extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const networks = ref([])
-const loading = ref(false)
+    // ─── Refs ───
+    @Ref readonly createModalRef!: InstanceType<typeof NetworkCreateModal>
 
-const createModalRef = ref(null)
+    // ─── 数据属性 ───
+    networks: any[] = []
+    loading = false
 
-// 加载网络列表
-const loadNetworks = async () => {
-  loading.value = true
-  try {
-const res = await api.listNetworks()
-    networks.value = res.payload || []
-  } catch (e) {
-    actions.showNotification('error', '加载网络列表失败')
-  }
-  loading.value = false
-}
-
-// 删除网络
-const handleNetworkAction = (net, action) => {
-  actions.showConfirm({
-    title: '删除网络',
-    message: `确定要删除网络 <strong class="text-slate-900">${net.name}</strong> 吗？`,
-    icon: 'fa-trash',
-    iconColor: 'red',
-    confirmText: '确认删除',
-    danger: true,
-    onConfirm: async () => {
-      await api.networkAction(net.id, action)
-      actions.showNotification('success', '网络删除成功')
-      loadNetworks()
+    // ─── 方法 ───
+    async loadNetworks() {
+        this.loading = true
+        try {
+            const res = await api.listNetworks()
+            this.networks = res.payload || []
+        } catch (e) {
+            this.actions.showNotification('error', '加载网络列表失败')
+        }
+        this.loading = false
     }
-  })
+
+    handleNetworkAction(net: any, action: string) {
+        this.actions.showConfirm({
+            title: '删除网络',
+            message: `确定要删除网络 <strong class="text-slate-900">${net.name}</strong> 吗？`,
+            icon: 'fa-trash',
+            iconColor: 'red',
+            confirmText: '确认删除',
+            danger: true,
+            onConfirm: async () => {
+                await api.networkAction(net.id, action)
+                this.actions.showNotification('success', '网络删除成功')
+                this.loadNetworks()
+            }
+        })
+    }
+
+    viewNetworkDetail(net: any) {
+        this.$router.push('/docker/network/' + net.id)
+    }
+
+    canDeleteNetwork(net: any) {
+        const undeletableNames = ['bridge', 'host', 'none']
+        return !undeletableNames.includes(net.name)
+    }
+
+    getDeleteDisabledReason(net: any) {
+        const networkNames: Record<string, string> = {
+            bridge: '默认桥接网络',
+            host: '主机网络',
+            none: '空网络'
+        }
+        return `${networkNames[net.name] || '系统网络'}不可删除`
+    }
+
+    createNetworkModal() {
+        this.createModalRef?.show()
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadNetworks()
+    }
 }
 
-// 查看网络详情
-const viewNetworkDetail = (net) => {
-  router.push('/docker/network/' + net.id)
-}
-
-// 判断网络是否可删除（仅 Docker 默认预置网络不可删除）
-const canDeleteNetwork = (net) => {
-  const undeletableNames = ['bridge', 'host', 'none']
-  return !undeletableNames.includes(net.name)
-}
-
-// 获取不可删除原因
-const getDeleteDisabledReason = (net) => {
-  const networkNames = {
-    bridge: '默认桥接网络',
-    host: '主机网络',
-    none: '空网络'
-  }
-  return `${networkNames[net.name] || '系统网络'}不可删除`
-}
-
-defineExpose({
-  loadNetworks,
-  createNetworkModal: () => createModalRef.value?.show()
-})
-
-onMounted(() => {
-  loadNetworks()
-})
+export default toNative(Networks)
 </script>
 
 <template>

@@ -1,36 +1,39 @@
-<script setup>
-import { inject, reactive, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
-const state = inject(APP_STATE_KEY)
-const actions = inject(APP_ACTIONS_KEY)
-
-const formData = reactive({
-  path: '',
-  mode: ''
+@Component({
+    expose: ['show'],
+    components: { BaseModal }
 })
+class ChmodModal extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const modalRef = ref(null)
-const isOpen = ref(false)
+    // ─── 数据属性 ───
+    isOpen = false
+    formData = { path: '', mode: '' }
 
-const show = async (file) => {
-  formData.path = file.path
-  formData.mode = file.modeO
-  isOpen.value = true
+    // ─── 方法 ───
+    show(file: any) {
+        this.formData.path = file.path
+        this.formData.mode = file.modeO
+        this.isOpen = true
+    }
+
+    async handleConfirm() {
+        if (!this.formData.mode.trim()) return
+        await api.chmod(this.formData.path, this.formData.mode)
+        this.actions.loadFiles()
+        this.isOpen = false
+    }
 }
 
-const handleConfirm = async () => {
-  if (!formData.mode.trim()) return
-  await api.chmod(formData.path, formData.mode)
-  actions.loadFiles()
-  isOpen.value = false
-}
-
-defineExpose({ show })
+export default toNative(ChmodModal)
 </script>
 
 <template>

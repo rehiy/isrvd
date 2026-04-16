@@ -1,38 +1,44 @@
-<script setup>
-import { ref } from 'vue'
-import { inject } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
+@Component({
+    expose: ['show'],
+    components: { BaseModal },
+    emits: ['success']
+})
+class VolumeCreateModal extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const emit = defineEmits(['success'])
+    // ─── 数据属性 ───
+    isOpen = false
+    modalLoading = false
+    formData = { name: '', driver: 'local' }
 
-const isOpen = ref(false)
-const modalLoading = ref(false)
-const formData = ref({ name: '', driver: 'local' })
+    // ─── 方法 ───
+    show() {
+        this.formData = { name: '', driver: 'local' }
+        this.isOpen = true
+    }
 
-const show = () => {
-  formData.value = { name: '', driver: 'local' }
-  isOpen.value = true
+    async handleConfirm() {
+        if (!this.formData.name.trim()) return
+        this.modalLoading = true
+        try {
+            await api.createVolume(this.formData)
+            this.actions.showNotification('success', '数据卷创建成功')
+            this.isOpen = false
+            this.$emit('success')
+        } catch (e) {}
+        this.modalLoading = false
+    }
 }
 
-const handleConfirm = async () => {
-  if (!formData.value.name.trim()) return
-  modalLoading.value = true
-  try {
-    await api.createVolume(formData.value)
-    actions.showNotification('success', '数据卷创建成功')
-    isOpen.value = false
-    emit('success')
-  } catch (e) {}
-  modalLoading.value = false
-}
-
-defineExpose({ show })
+export default toNative(VolumeCreateModal)
 </script>
 
 <template>

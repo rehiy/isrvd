@@ -1,336 +1,346 @@
-<script setup>
+<script lang="ts">
 import { Chart, registerables } from 'chart.js'
-import { inject, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import { nextTick } from 'vue'
+import { Component, Inject, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { formatFileSize, POLL_INTERVAL } from '@/helper/utils.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { formatFileSize, POLL_INTERVAL } from '@/helper/utils'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 Chart.register(...registerables)
 
-const route = useRoute()
-const router = useRouter()
-const actions = inject(APP_ACTIONS_KEY)
-
-// 容器信息
-const containerId = ref(route.params.id)
-const container = ref(null)
-
-const loadContainer = async () => {
-  try {
-    const res = await api.listContainers(true)
-    const list = res.payload || []
-    container.value = list.find(c => c.id === containerId.value)
-    if (!container.value) {
-      actions.showNotification('error', '容器不存在')
-      router.push('/docker/containers')
+@Component({
+    beforeRouteLeave() {
+        (this as any).stopStatsTimer()
     }
-  } catch (e) {
-    actions.showNotification('error', '加载容器信息失败')
-    router.push('/docker/containers')
-  }
-}
-
-const goBack = () => router.push('/docker/containers')
-const switchTab = (name) => router.push({ name, params: { id: containerId.value } })
-const activeTab = () => route.name
-
-// 统计状态
-const statsData = ref(null)
-const statsLoading = ref(true)
-let statsTimer = null
-
-// 历史数据
-const MAX_POINTS = 60
-const labels = []
-const cpuData = []
-const memData = []
-const netRxData = []
-const netTxData = []
-const blkRData = []
-const blkWData = []
-
-// 上一次累计值
-let prevNetRx = 0
-let prevNetTx = 0
-let prevBlkR = 0
-let prevBlkW = 0
-let prevTime = 0
-
-// 实时速率
-const netRxRate = ref(0)
-const netTxRate = ref(0)
-const blkRRate = ref(0)
-const blkWRate = ref(0)
-
-// Chart 实例
-let cpuChart = null
-let memChart = null
-let netChart = null
-let blkChart = null
-
-// Canvas refs
-const cpuRef = ref(null)
-const memRef = ref(null)
-const netRef = ref(null)
-const blkRef = ref(null)
-
-// ========== 统计定时器 ==========
-
-let destroyed = false
-
-const startStatsTimer = () => {
-  stopStatsTimer()
-  statsTimer = setInterval(() => loadStats(), POLL_INTERVAL)
-}
-
-const stopStatsTimer = () => {
-  if (statsTimer) {
-    clearInterval(statsTimer)
-    statsTimer = null
-  }
-}
-
-const handleVisibilityChange = () => {
-  if (document.hidden) {
-    stopStatsTimer()
-  } else if (container.value?.state === 'running') {
-    startStatsTimer()
-  }
-}
-
-// ========== 统计数据加载 ==========
-
-const loadStats = async () => {
-  try {
-    const res = await api.containerStats(containerId.value)
-    if (destroyed || !res.payload) return
-    statsData.value = res.payload
-    pushPoint(res.payload)
-    renderCharts()
-  } catch (e) {
-    // 静默失败
-  }
-}
-
-// 追加一个数据点
-const pushPoint = (data) => {
-  const now = new Date()
-  const label = now.getHours().toString().padStart(2, '0') + ':' +
-    now.getMinutes().toString().padStart(2, '0') + ':' +
-    now.getSeconds().toString().padStart(2, '0')
-
-  const now_ms = Date.now()
-  const elapsed = prevTime > 0 ? (now_ms - prevTime) / 1000 : 0
-
-  labels.push(label)
-  cpuData.push(+(data.cpuPercent || 0).toFixed(2))
-  memData.push(+(data.memoryPercent || 0).toFixed(2))
-
-  if (elapsed > 0) {
-    const rxRate = +Math.max(0, ((data.networkRx || 0) - prevNetRx) / elapsed).toFixed(0)
-    const txRate = +Math.max(0, ((data.networkTx || 0) - prevNetTx) / elapsed).toFixed(0)
-    const brRate = +Math.max(0, ((data.blockRead || 0) - prevBlkR) / elapsed).toFixed(0)
-    const bwRate = +Math.max(0, ((data.blockWrite || 0) - prevBlkW) / elapsed).toFixed(0)
-    netRxData.push(rxRate)
-    netTxData.push(txRate)
-    blkRData.push(brRate)
-    blkWData.push(bwRate)
-    netRxRate.value = rxRate
-    netTxRate.value = txRate
-    blkRRate.value = brRate
-    blkWRate.value = bwRate
-  } else {
-    netRxData.push(0)
-    netTxData.push(0)
-    blkRData.push(0)
-    blkWData.push(0)
-  }
-
-  prevNetRx = data.networkRx || 0
-  prevNetTx = data.networkTx || 0
-  prevBlkR = data.blockRead || 0
-  prevBlkW = data.blockWrite || 0
-  prevTime = now_ms
-
-  if (labels.length > MAX_POINTS) {
-    labels.shift()
-    cpuData.shift()
-    memData.shift()
-    netRxData.shift()
-    netTxData.shift()
-    blkRData.shift()
-    blkWData.shift()
-  }
-}
-
-// ========== 折线图 ==========
-
-const baseOptions = (yOptions = {}, tooltipCb = null) => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  animation: false,
-  interaction: { intersect: false, mode: 'index' },
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      backgroundColor: 'rgba(15,23,42,0.9)',
-      titleFont: { size: 10 },
-      bodyFont: { size: 10 },
-      padding: 8,
-      cornerRadius: 6,
-      callbacks: tooltipCb ? { label: tooltipCb } : {}
-    }
-  },
-  scales: {
-    x: { display: false },
-    y: {
-      display: true,
-      beginAtZero: true,
-      grid: { color: 'rgba(148,163,184,0.08)' },
-      border: { display: false },
-      ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4 },
-      ...yOptions
-    }
-  },
-  elements: {
-    point: { radius: 0, hoverRadius: 3 },
-    line: { tension: 0.4, borderWidth: 1.5 }
-  }
 })
+class ContainerStats extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const makeDataset = (data, color, label = '') => ({
-  label,
-  data: [...data],
-  borderColor: color,
-  backgroundColor: color.replace(')', ', 0.08)').replace('rgb', 'rgba'),
-  fill: true
-})
+    // ─── Refs ───
+    @Ref readonly cpuRef!: HTMLCanvasElement
+    @Ref readonly memRef!: HTMLCanvasElement
+    @Ref readonly netRef!: HTMLCanvasElement
+    @Ref readonly blkRef!: HTMLCanvasElement
 
-const initCharts = () => {
-  destroyCharts()
+    // ─── 数据属性 ───
+    container: any = null
+    statsData: any = null
+    statsLoading = true
+    netRxRate = 0
+    netTxRate = 0
+    blkRRate = 0
+    blkWRate = 0
+    formatFileSize = formatFileSize
 
-  if (cpuRef.value) {
-    cpuChart = new Chart(cpuRef.value, {
-      type: 'line',
-      data: { labels: [...labels], datasets: [makeDataset(cpuData, '#3b82f6')] },
-      options: baseOptions(
-        { max: 100, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: v => v + '%' } },
-        ctx => ctx.parsed.y.toFixed(1) + '%'
-      )
-    })
-  }
+    // ─── 私有属性（非响应式） ───
+    private statsTimer: any = null
+    private destroyed = false
+    private readonly MAX_POINTS = 60
+    private labels: string[] = []
+    private cpuData: number[] = []
+    private memData: number[] = []
+    private netRxData: number[] = []
+    private netTxData: number[] = []
+    private blkRData: number[] = []
+    private blkWData: number[] = []
+    private prevNetRx = 0
+    private prevNetTx = 0
+    private prevBlkR = 0
+    private prevBlkW = 0
+    private prevTime = 0
+    private cpuChart: any = null
+    private memChart: any = null
+    private netChart: any = null
+    private blkChart: any = null
 
-  if (memRef.value) {
-    memChart = new Chart(memRef.value, {
-      type: 'line',
-      data: { labels: [...labels], datasets: [makeDataset(memData, '#8b5cf6')] },
-      options: baseOptions(
-        { max: 100, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: v => v + '%' } },
-        ctx => ctx.parsed.y.toFixed(1) + '%'
-      )
-    })
-  }
+    get containerId() {
+        return this.$route.params.id as string
+    }
 
-  if (netRef.value) {
-    netChart = new Chart(netRef.value, {
-      type: 'line',
-      data: {
-        labels: [...labels],
-        datasets: [
-          { ...makeDataset(netRxData, '#14b8a6'), label: '接收' },
-          { ...makeDataset(netTxData, '#0d9488'), label: '发送' }
-        ]
-      },
-      options: {
-        ...baseOptions({}, ctx => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s'),
-        plugins: {
-          ...baseOptions().plugins,
-          legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
-          tooltip: {
-            backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-            callbacks: { label: ctx => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s' }          }
+    // ─── 方法 ───
+    goBack() {
+        this.$router.push('/docker/containers')
+    }
+
+    switchTab(name: string) {
+        this.$router.push({ name, params: { id: this.containerId } })
+    }
+
+    activeTab() {
+        return this.$route.name
+    }
+
+    async loadContainer() {
+        try {
+            const res = await api.listContainers(true)
+            const list = res.payload || []
+            this.container = list.find((c: any) => c.id === this.containerId)
+            if (!this.container) {
+                this.actions.showNotification('error', '容器不存在')
+                this.$router.push('/docker/containers')
+            }
+        } catch (e) {
+            this.actions.showNotification('error', '加载容器信息失败')
+            this.$router.push('/docker/containers')
         }
-      }
-    })
-  }
+    }
 
-  if (blkRef.value) {
-    blkChart = new Chart(blkRef.value, {
-      type: 'line',
-      data: {
-        labels: [...labels],
-        datasets: [
-          { ...makeDataset(blkRData, '#f59e0b'), label: '读取' },
-          { ...makeDataset(blkWData, '#d97706'), label: '写入' }
-        ]
-      },
-      options: {
-        ...baseOptions({}, ctx => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s'),
-        plugins: {
-          ...baseOptions().plugins,
-          legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
-          tooltip: {
-            backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-            callbacks: { label: ctx => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s' }          }
+    startStatsTimer() {
+        this.stopStatsTimer()
+        this.statsTimer = setInterval(() => this.loadStats(), POLL_INTERVAL)
+    }
+
+    stopStatsTimer() {
+        if (this.statsTimer) {
+            clearInterval(this.statsTimer)
+            this.statsTimer = null
         }
-      }
-    })
-  }
+    }
+
+    handleVisibilityChange() {
+        if (document.hidden) {
+            this.stopStatsTimer()
+        } else if (this.container?.state === 'running') {
+            this.startStatsTimer()
+        }
+    }
+
+    async loadStats() {
+        try {
+            const res = await api.containerStats(this.containerId)
+            if (this.destroyed || !res.payload) return
+            this.statsData = res.payload
+            this.pushPoint(res.payload)
+            this.renderCharts()
+        } catch (e) {
+            // 静默失败
+        }
+    }
+
+    pushPoint(data: any) {
+        const now = new Date()
+        const label = now.getHours().toString().padStart(2, '0') + ':' +
+            now.getMinutes().toString().padStart(2, '0') + ':' +
+            now.getSeconds().toString().padStart(2, '0')
+
+        const nowMs = Date.now()
+        const elapsed = this.prevTime > 0 ? (nowMs - this.prevTime) / 1000 : 0
+
+        this.labels.push(label)
+        this.cpuData.push(+(data.cpuPercent || 0).toFixed(2))
+        this.memData.push(+(data.memoryPercent || 0).toFixed(2))
+
+        if (elapsed > 0) {
+            const rxRate = +Math.max(0, ((data.networkRx || 0) - this.prevNetRx) / elapsed).toFixed(0)
+            const txRate = +Math.max(0, ((data.networkTx || 0) - this.prevNetTx) / elapsed).toFixed(0)
+            const brRate = +Math.max(0, ((data.blockRead || 0) - this.prevBlkR) / elapsed).toFixed(0)
+            const bwRate = +Math.max(0, ((data.blockWrite || 0) - this.prevBlkW) / elapsed).toFixed(0)
+            this.netRxData.push(rxRate)
+            this.netTxData.push(txRate)
+            this.blkRData.push(brRate)
+            this.blkWData.push(bwRate)
+            this.netRxRate = rxRate
+            this.netTxRate = txRate
+            this.blkRRate = brRate
+            this.blkWRate = bwRate
+        } else {
+            this.netRxData.push(0)
+            this.netTxData.push(0)
+            this.blkRData.push(0)
+            this.blkWData.push(0)
+        }
+
+        this.prevNetRx = data.networkRx || 0
+        this.prevNetTx = data.networkTx || 0
+        this.prevBlkR = data.blockRead || 0
+        this.prevBlkW = data.blockWrite || 0
+        this.prevTime = nowMs
+
+        if (this.labels.length > this.MAX_POINTS) {
+            this.labels.shift()
+            this.cpuData.shift()
+            this.memData.shift()
+            this.netRxData.shift()
+            this.netTxData.shift()
+            this.blkRData.shift()
+            this.blkWData.shift()
+        }
+    }
+
+    baseOptions(yOptions: any = {}, tooltipCb: any = null) {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15,23,42,0.9)',
+                    titleFont: { size: 10 },
+                    bodyFont: { size: 10 },
+                    padding: 8,
+                    cornerRadius: 6,
+                    callbacks: tooltipCb ? { label: tooltipCb } : {}
+                }
+            },
+            scales: {
+                x: { display: false },
+                y: {
+                    display: true,
+                    beginAtZero: true,
+                    grid: { color: 'rgba(148,163,184,0.08)' },
+                    border: { display: false },
+                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4 },
+                    ...yOptions
+                }
+            },
+            elements: {
+                point: { radius: 0, hoverRadius: 3 },
+                line: { tension: 0.4, borderWidth: 1.5 }
+            }
+        }
+    }
+
+    makeDataset(data: number[], color: string, label = '') {
+        return {
+            label,
+            data: [...data],
+            borderColor: color,
+            backgroundColor: color.replace(')', ', 0.08)').replace('rgb', 'rgba'),
+            fill: true
+        }
+    }
+
+    initCharts() {
+        this.destroyCharts()
+
+        if (this.cpuRef) {
+            this.cpuChart = new Chart(this.cpuRef, {
+                type: 'line',
+                data: { labels: [...this.labels], datasets: [this.makeDataset(this.cpuData, '#3b82f6')] },
+                options: this.baseOptions(
+                    { max: 100, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: any) => v + '%' } },
+                    (ctx: any) => ctx.parsed.y.toFixed(1) + '%'
+                )
+            })
+        }
+
+        if (this.memRef) {
+            this.memChart = new Chart(this.memRef, {
+                type: 'line',
+                data: { labels: [...this.labels], datasets: [this.makeDataset(this.memData, '#8b5cf6')] },
+                options: this.baseOptions(
+                    { max: 100, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: any) => v + '%' } },
+                    (ctx: any) => ctx.parsed.y.toFixed(1) + '%'
+                )
+            })
+        }
+
+        if (this.netRef) {
+            this.netChart = new Chart(this.netRef, {
+                type: 'line',
+                data: {
+                    labels: [...this.labels],
+                    datasets: [
+                        { ...this.makeDataset(this.netRxData, '#14b8a6'), label: '接收' },
+                        { ...this.makeDataset(this.netTxData, '#0d9488'), label: '发送' }
+                    ]
+                },
+                options: {
+                    ...this.baseOptions({}, (ctx: any) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s'),
+                    plugins: {
+                        ...this.baseOptions().plugins,
+                        legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
+                        tooltip: {
+                            backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
+                            callbacks: { label: (ctx: any) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s' }
+                        }
+                    }
+                }
+            })
+        }
+
+        if (this.blkRef) {
+            this.blkChart = new Chart(this.blkRef, {
+                type: 'line',
+                data: {
+                    labels: [...this.labels],
+                    datasets: [
+                        { ...this.makeDataset(this.blkRData, '#f59e0b'), label: '读取' },
+                        { ...this.makeDataset(this.blkWData, '#d97706'), label: '写入' }
+                    ]
+                },
+                options: {
+                    ...this.baseOptions({}, (ctx: any) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s'),
+                    plugins: {
+                        ...this.baseOptions().plugins,
+                        legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
+                        tooltip: {
+                            backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
+                            callbacks: { label: (ctx: any) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s' }
+                        }
+                    }
+                }
+            })
+        }
+    }
+
+    renderCharts() {
+        if (this.cpuChart) { this.cpuChart.data.labels = [...this.labels]; this.cpuChart.data.datasets[0].data = [...this.cpuData]; this.cpuChart.update('none') }
+        if (this.memChart) { this.memChart.data.labels = [...this.labels]; this.memChart.data.datasets[0].data = [...this.memData]; this.memChart.update('none') }
+        if (this.netChart) { this.netChart.data.labels = [...this.labels]; this.netChart.data.datasets[0].data = [...this.netRxData]; this.netChart.data.datasets[1].data = [...this.netTxData]; this.netChart.update('none') }
+        if (this.blkChart) { this.blkChart.data.labels = [...this.labels]; this.blkChart.data.datasets[0].data = [...this.blkRData]; this.blkChart.data.datasets[1].data = [...this.blkWData]; this.blkChart.update('none') }
+    }
+
+    destroyCharts() {
+        if (this.cpuChart) { this.cpuChart.destroy(); this.cpuChart = null }
+        if (this.memChart) { this.memChart.destroy(); this.memChart = null }
+        if (this.netChart) { this.netChart.destroy(); this.netChart = null }
+        if (this.blkChart) { this.blkChart.destroy(); this.blkChart = null }
+    }
+
+    clearHistory() {
+        this.labels.length = 0; this.cpuData.length = 0; this.memData.length = 0
+        this.netRxData.length = 0; this.netTxData.length = 0; this.blkRData.length = 0; this.blkWData.length = 0
+        this.prevNetRx = this.prevNetTx = this.prevBlkR = this.prevBlkW = this.prevTime = 0
+        this.netRxRate = this.netTxRate = this.blkRRate = this.blkWRate = 0
+    }
+
+    // ─── 侦听器 ───
+    @Watch('statsData')
+    async onStatsDataChange(val: any, old: any) {
+        if (val && !old) {
+            await nextTick()
+            this.initCharts()
+        }
+    }
+
+    // ─── 生命周期 ───
+    async mounted() {
+        await this.loadContainer()
+        document.addEventListener('visibilitychange', this.handleVisibilityChange)
+
+        if (this.container?.state === 'running') {
+            await this.loadStats()
+            this.statsLoading = false
+            this.startStatsTimer()
+        } else {
+            this.statsLoading = false
+        }
+    }
+
+    unmounted() {
+        this.destroyed = true
+        this.stopStatsTimer()
+        this.destroyCharts()
+        this.clearHistory()
+        document.removeEventListener('visibilitychange', this.handleVisibilityChange)
+    }
 }
 
-const renderCharts = () => {
-  if (cpuChart) { cpuChart.data.labels = [...labels]; cpuChart.data.datasets[0].data = [...cpuData]; cpuChart.update('none') }
-  if (memChart) { memChart.data.labels = [...labels]; memChart.data.datasets[0].data = [...memData]; memChart.update('none') }
-  if (netChart) { netChart.data.labels = [...labels]; netChart.data.datasets[0].data = [...netRxData]; netChart.data.datasets[1].data = [...netTxData]; netChart.update('none') }
-  if (blkChart) { blkChart.data.labels = [...labels]; blkChart.data.datasets[0].data = [...blkRData]; blkChart.data.datasets[1].data = [...blkWData]; blkChart.update('none') }
-}
-
-const destroyCharts = () => {
-  if (cpuChart) { cpuChart.destroy(); cpuChart = null }
-  if (memChart) { memChart.destroy(); memChart = null }
-  if (netChart) { netChart.destroy(); netChart = null }
-  if (blkChart) { blkChart.destroy(); blkChart = null }
-}
-
-const clearHistory = () => {
-  labels.length = 0; cpuData.length = 0; memData.length = 0
-  netRxData.length = 0; netTxData.length = 0; blkRData.length = 0; blkWData.length = 0
-  prevNetRx = prevNetTx = prevBlkR = prevBlkW = prevTime = 0
-  netRxRate.value = netTxRate.value = blkRRate.value = blkWRate.value = 0
-}
-
-watch(statsData, async (val, old) => {
-  if (val && !old) {
-    await nextTick()
-    initCharts()
-  }
-}, { immediate: false })
-
-onMounted(async () => {
-  await loadContainer()
-  document.addEventListener('visibilitychange', handleVisibilityChange)
-  if (container.value?.state === 'running') {
-    await loadStats()
-    statsLoading.value = false
-    startStatsTimer()
-  } else {
-    statsLoading.value = false
-  }
-})
-
-onBeforeRouteLeave(() => {
-  stopStatsTimer()
-})
-
-onUnmounted(() => {
-  destroyed = true
-  stopStatsTimer()
-  destroyCharts()
-  clearHistory()
-  document.removeEventListener('visibilitychange', handleVisibilityChange)
-})
+export default toNative(ContainerStats)
 </script>
 
 <template>

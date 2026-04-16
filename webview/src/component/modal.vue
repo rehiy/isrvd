@@ -1,63 +1,72 @@
-<script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+<script lang="ts">
+import { Component, Prop, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
-const props = defineProps({
-  modelValue: { type: Boolean, default: false },
-  title: { type: String, default: '' },
-  loading: { type: Boolean, default: false },
-  showFooter: { type: Boolean, default: true },
-  confirmDisabled: { type: Boolean, default: false }
+@Component({
+    expose: ['open', 'close'],
+    emits: ['update:modelValue', 'confirm', 'cancel']
 })
+class BaseModal extends Vue {
+    @Prop({ type: Boolean, default: false }) readonly modelValue!: boolean
+    @Prop({ type: String, default: '' }) readonly title!: string
+    @Prop({ type: Boolean, default: false }) readonly loading!: boolean
+    @Prop({ type: Boolean, default: true }) readonly showFooter!: boolean
+    @Prop({ type: Boolean, default: false }) readonly confirmDisabled!: boolean
 
-const emit = defineEmits(['update:modelValue', 'confirm', 'cancel'])
+    // ─── Refs ───
+    @Ref readonly modalRef!: HTMLDivElement
 
-const modalRef = ref(null)
-const isOpen = ref(props.modelValue)
+    // ─── 数据属性 ───
+    isOpen = this.modelValue
 
-const open = () => {
-  isOpen.value = true
-  emit('update:modelValue', true)
+    // ─── 监听器 ───
+    @Watch('modelValue')
+    onModelValueChange(val: boolean) {
+        this.isOpen = val
+    }
+
+    // ─── 方法 ───
+    open() {
+        this.isOpen = true
+        this.$emit('update:modelValue', true)
+    }
+
+    close() {
+        this.isOpen = false
+        this.$emit('update:modelValue', false)
+    }
+
+    handleConfirm() {
+        this.$emit('confirm')
+    }
+
+    handleCancel() {
+        this.$emit('cancel')
+        this.close()
+    }
+
+    handleBackdropClick(e: MouseEvent) {
+        if (e.target === this.modalRef) {
+            this.handleCancel()
+        }
+    }
+
+    handleEscape(e: KeyboardEvent) {
+        if (e.key === 'Escape' && this.isOpen) {
+            this.handleCancel()
+        }
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        document.addEventListener('keydown', this.handleEscape)
+    }
+
+    unmounted() {
+        document.removeEventListener('keydown', this.handleEscape)
+    }
 }
 
-const close = () => {
-  isOpen.value = false
-  emit('update:modelValue', false)
-}
-
-const handleConfirm = () => {
-  emit('confirm')
-}
-
-const handleCancel = () => {
-  emit('cancel')
-  close()
-}
-
-const handleBackdropClick = (e) => {
-  if (e.target === modalRef.value) {
-    handleCancel()
-  }
-}
-
-const handleEscape = (e) => {
-  if (e.key === 'Escape' && isOpen.value) {
-    handleCancel()
-  }
-}
-
-watch(() => props.modelValue, (val) => {
-  isOpen.value = val
-})
-
-onMounted(() => {
-  document.addEventListener('keydown', handleEscape)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleEscape)
-})
-
-defineExpose({ open, close })
+export default toNative(BaseModal)
 </script>
 
 <template>

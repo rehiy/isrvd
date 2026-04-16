@@ -1,80 +1,89 @@
-<script setup>
-import { computed, inject, onMounted, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import ConsumerEditModal from '@/views/apisix/widget/consumer-edit-modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
-
-const consumers = ref([])
-const whitelist = ref([])
-const loading = ref(false)
-const searchText = ref('')
-
-const editModalRef = ref(null)
-
-// 过滤后的用户列表
-const filteredConsumers = computed(() => {
-  if (!searchText.value) return consumers.value
-  const s = searchText.value.toLowerCase()
-  return consumers.value.filter(c =>
-    (c.username || '').toLowerCase().includes(s) ||
-    (c.desc || '').toLowerCase().includes(s)
-  )
+@Component({
+    components: { ConsumerEditModal }
 })
+class Consumers extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-// 加载用户列表
-const loadConsumers = async () => {
-  loading.value = true
-  try {
-    const [consRes, wlRes] = await Promise.all([api.apisixListConsumers(), api.apisixGetWhitelist()])
-    consumers.value = consRes.payload || []
-    whitelist.value = wlRes.payload || []
-  } catch (e) {
-    actions.showNotification('error', '加载用户列表失败')
-  }
-  loading.value = false
-}
+    // ─── Refs ───
+    @Ref readonly editModalRef!: InstanceType<typeof ConsumerEditModal>
 
-// 获取用户关联的路由列表
-const getConsumerRoutes = (username) => {
-  return whitelist.value.filter(r => (r.consumers || []).includes(username)).map(r => r.name || r.id)
-}
+    // ─── 数据属性 ───
+    consumers: any[] = []
+    whitelist: any[] = []
+    loading = false
+    searchText = ''
 
-// 格式化时间
-const formatTs = (ts) => {
-  if (!ts) return '-'
-  return new Date(ts * 1000).toLocaleString()
-}
-
-// 打开创建弹窗
-const openCreateModal = () => editModalRef.value?.show()
-
-// 打开编辑弹窗
-const openEditModal = (consumer) => editModalRef.value?.show(consumer)
-
-// 删除用户
-const deleteConsumer = (consumer) => {
-  actions.showConfirm({
-    title: '删除用户',
-    message: `确定要删除用户 <strong class="text-slate-900">${consumer.username}</strong> 吗？此操作不可恢复。`,
-    icon: 'fa-trash',
-    iconColor: 'red',
-    confirmText: '确认删除',
-    danger: true,
-    onConfirm: async () => {
-      await api.apisixDeleteConsumer(consumer.username)
-      actions.showNotification('success', '删除成功')
-      loadConsumers()
+    // ─── 计算属性 ───
+    get filteredConsumers() {
+        if (!this.searchText) return this.consumers
+        const s = this.searchText.toLowerCase()
+        return this.consumers.filter((c: any) =>
+            (c.username || '').toLowerCase().includes(s) ||
+            (c.desc || '').toLowerCase().includes(s)
+        )
     }
-  })
+
+    // ─── 方法 ───
+    async loadConsumers() {
+        this.loading = true
+        try {
+            const [consRes, wlRes] = await Promise.all([api.apisixListConsumers(), api.apisixGetWhitelist()])
+            this.consumers = consRes.payload || []
+            this.whitelist = wlRes.payload || []
+        } catch (e) {
+            this.actions.showNotification('error', '加载用户列表失败')
+        }
+        this.loading = false
+    }
+
+    getConsumerRoutes(username: string) {
+        return this.whitelist.filter((r: any) => (r.consumers || []).includes(username)).map((r: any) => r.name || r.id)
+    }
+
+    formatTs(ts: number) {
+        if (!ts) return '-'
+        return new Date(ts * 1000).toLocaleString()
+    }
+
+    openCreateModal() {
+        this.editModalRef?.show()
+    }
+
+    openEditModal(consumer: any) {
+        this.editModalRef?.show(consumer)
+    }
+
+    deleteConsumer(consumer: any) {
+        this.actions.showConfirm({
+            title: '删除用户',
+            message: `确定要删除用户 <strong class="text-slate-900">${consumer.username}</strong> 吗？此操作不可恢复。`,
+            icon: 'fa-trash',
+            iconColor: 'red',
+            confirmText: '确认删除',
+            danger: true,
+            onConfirm: async () => {
+                await api.apisixDeleteConsumer(consumer.username)
+                this.actions.showNotification('success', '删除成功')
+                this.loadConsumers()
+            }
+        })
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadConsumers()
+    }
 }
 
-onMounted(() => {
-  loadConsumers()
-})
+export default toNative(Consumers)
 </script>
 
 <template>

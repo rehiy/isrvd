@@ -1,44 +1,50 @@
-<script setup>
-import { ref } from 'vue'
-import { inject } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
+@Component({
+    expose: ['show'],
+    components: { BaseModal },
+    emits: ['success']
+})
+class RegistryPullModal extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const emit = defineEmits(['success'])
+    // ─── 数据属性 ───
+    isOpen = false
+    modalLoading = false
+    registries: any[] = []
+    pullForm = { image: '', registryUrl: '', namespace: '' }
 
-const isOpen = ref(false)
-const modalLoading = ref(false)
-const registries = ref([])
-const pullForm = ref({ image: '', registryUrl: '', namespace: '' })
+    // ─── 方法 ───
+    show(allRegistries: any[], registry: any = null) {
+        this.registries = allRegistries
+        this.pullForm = {
+            image: '',
+            registryUrl: registry ? registry.url : '',
+            namespace: ''
+        }
+        this.isOpen = true
+    }
 
-const show = (allRegistries, registry = null) => {
-  registries.value = allRegistries
-  pullForm.value = {
-    image: '',
-    registryUrl: registry ? registry.url : '',
-    namespace: ''
-  }
-  isOpen.value = true
+    async handleConfirm() {
+        if (!this.pullForm.image.trim() || !this.pullForm.registryUrl.trim()) return
+        this.modalLoading = true
+        try {
+            await api.pullFromRegistry(this.pullForm.image, this.pullForm.registryUrl, this.pullForm.namespace.trim() || undefined)
+            this.actions.showNotification('success', '镜像拉取成功')
+            this.isOpen = false
+            this.$emit('success')
+        } catch (e) {}
+        this.modalLoading = false
+    }
 }
 
-const handleConfirm = async () => {
-  if (!pullForm.value.image.trim() || !pullForm.value.registryUrl.trim()) return
-  modalLoading.value = true
-  try {
-    await api.pullFromRegistry(pullForm.value.image, pullForm.value.registryUrl, pullForm.value.namespace.trim() || undefined)
-    actions.showNotification('success', '镜像拉取成功')
-    isOpen.value = false
-    emit('success')
-  } catch (e) {}
-  modalLoading.value = false
-}
-
-defineExpose({ show })
+export default toNative(RegistryPullModal)
 </script>
 
 <template>

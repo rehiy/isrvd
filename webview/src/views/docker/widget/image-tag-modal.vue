@@ -1,40 +1,46 @@
-<script setup>
-import { ref } from 'vue'
-import { inject } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
+@Component({
+    expose: ['show'],
+    components: { BaseModal },
+    emits: ['success']
+})
+class ImageTagModal extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const emit = defineEmits(['success'])
+    // ─── 数据属性 ───
+    isOpen = false
+    modalLoading = false
+    tagImage: any = null
+    tagRepoTag = ''
 
-const isOpen = ref(false)
-const modalLoading = ref(false)
-const tagImage = ref(null)
-const tagRepoTag = ref('')
+    // ─── 方法 ───
+    show(image: any) {
+        this.tagImage = image
+        this.tagRepoTag = ''
+        this.isOpen = true
+    }
 
-const show = (image) => {
-  tagImage.value = image
-  tagRepoTag.value = ''
-  isOpen.value = true
+    async handleConfirm() {
+        if (!this.tagRepoTag.trim() || !this.tagImage) return
+        this.modalLoading = true
+        try {
+            await api.imageTag(this.tagImage.id, this.tagRepoTag.trim())
+            this.actions.showNotification('success', '镜像标签添加成功')
+            this.isOpen = false
+            this.$emit('success')
+        } catch (e) {}
+        this.modalLoading = false
+    }
 }
 
-const handleConfirm = async () => {
-  if (!tagRepoTag.value.trim() || !tagImage.value) return
-  modalLoading.value = true
-  try {
-    await api.imageTag(tagImage.value.id, tagRepoTag.value.trim())
-    actions.showNotification('success', '镜像标签添加成功')
-    isOpen.value = false
-    emit('success')
-  } catch (e) {}
-  modalLoading.value = false
-}
-
-defineExpose({ show })
+export default toNative(ImageTagModal)
 </script>
 
 <template>

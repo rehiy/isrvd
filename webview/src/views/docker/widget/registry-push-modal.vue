@@ -1,76 +1,79 @@
-<script setup>
-import { computed, ref } from 'vue'
-import { inject } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
+@Component({
+    expose: ['show'],
+    components: { BaseModal },
+    emits: ['success']
+})
+class RegistryPushModal extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const emit = defineEmits(['success'])
+    // ─── 数据属性 ───
+    isOpen = false
+    modalLoading = false
+    registries: any[] = []
+    localImages: any[] = []
+    pushForm = { image: '', registryUrl: '', namespace: '' }
 
-const isOpen = ref(false)
-const modalLoading = ref(false)
-const registries = ref([])
-const localImages = ref([])
-const pushForm = ref({ image: '', registryUrl: '', namespace: '' })
-
-const imageTagOptions = computed(() => {
-  const tags = []
-  for (const img of localImages.value) {
-    for (const tag of img.repoTags) {
-      if (tag !== '<none>:<none>') {
-        tags.push(tag)
-      }
+    // ─── 计算属性 ───
+    get imageTagOptions() {
+        const tags: string[] = []
+        for (const img of this.localImages) {
+            for (const tag of img.repoTags) {
+                if (tag !== '<none>:<none>') tags.push(tag)
+            }
+        }
+        return tags
     }
-  }
-  return tags
-})
 
-const pushTargetPreview = computed(() => {
-  const registry = pushForm.value.registryUrl || 'registry'
-  const ns = pushForm.value.namespace ? pushForm.value.namespace + '/' : ''
-  let imageName = pushForm.value.image || 'image:tag'
-  const lastSlash = imageName.lastIndexOf('/')
-  if (lastSlash >= 0) {
-    imageName = imageName.substring(lastSlash + 1)
-  }
-  return registry + '/' + ns + imageName
-})
+    get pushTargetPreview() {
+        const registry = this.pushForm.registryUrl || 'registry'
+        const ns = this.pushForm.namespace ? this.pushForm.namespace + '/' : ''
+        let imageName = this.pushForm.image || 'image:tag'
+        const lastSlash = imageName.lastIndexOf('/')
+        if (lastSlash >= 0) imageName = imageName.substring(lastSlash + 1)
+        return registry + '/' + ns + imageName
+    }
 
-const loadLocalImages = async () => {
-  try {
-    const res = await api.listImages(false)
-    localImages.value = (res.payload || []).filter(img => img.repoTags && img.repoTags.length > 0)
-  } catch (e) {}
+    // ─── 方法 ───
+    async loadLocalImages() {
+        try {
+            const res = await api.listImages(false)
+            this.localImages = (res.payload || []).filter((img: any) => img.repoTags && img.repoTags.length > 0)
+        } catch (e) {}
+    }
+
+    show(allRegistries: any[], registry: any = null) {
+        this.registries = allRegistries
+        this.pushForm = {
+            image: '',
+            registryUrl: registry ? registry.url : '',
+            namespace: ''
+        }
+        this.loadLocalImages()
+        this.isOpen = true
+    }
+
+    async handleConfirm() {
+        if (!this.pushForm.image.trim() || !this.pushForm.registryUrl.trim()) return
+        this.modalLoading = true
+        try {
+            await api.pushImage(this.pushForm.image, this.pushForm.registryUrl, this.pushForm.namespace.trim() || undefined)
+            this.actions.showNotification('success', '镜像推送成功')
+            this.isOpen = false
+            this.$emit('success')
+        } catch (e) {}
+        this.modalLoading = false
+    }
 }
 
-const show = (allRegistries, registry = null) => {
-  registries.value = allRegistries
-  pushForm.value = {
-    image: '',
-    registryUrl: registry ? registry.url : '',
-    namespace: ''
-  }
-  loadLocalImages()
-  isOpen.value = true
-}
-
-const handleConfirm = async () => {
-  if (!pushForm.value.image.trim() || !pushForm.value.registryUrl.trim()) return
-  modalLoading.value = true
-  try {
-    await api.pushImage(pushForm.value.image, pushForm.value.registryUrl, pushForm.value.namespace.trim() || undefined)
-    actions.showNotification('success', '镜像推送成功')
-    isOpen.value = false
-    emit('success')
-  } catch (e) {}
-  modalLoading.value = false
-}
-
-defineExpose({ show })
+export default toNative(RegistryPushModal)
 </script>
 
 <template>

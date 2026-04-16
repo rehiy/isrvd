@@ -1,20 +1,27 @@
-<script setup>
-import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state.js'
-import { computed, inject } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-const state = inject(APP_STATE_KEY)
-const actions = inject(APP_ACTIONS_KEY)
+import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
 
-const iconColorClass = computed(() => {
-  const colors = {
-    blue: 'bg-blue-100 text-blue-500',
-    emerald: 'bg-emerald-100 text-emerald-500',
-    amber: 'bg-amber-100 text-amber-500',
-    red: 'bg-red-100 text-red-500',
-    slate: 'bg-slate-100 text-slate-500'
-  }
-  return colors[state.confirm.iconColor] || colors.blue
-})
+@Component
+class ConfirmModal extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+
+    // ─── 计算属性 ───
+    get iconColorClass() {
+        const colors: Record<string, string> = {
+            blue: 'bg-blue-100 text-blue-500',
+            emerald: 'bg-emerald-100 text-emerald-500',
+            amber: 'bg-amber-100 text-amber-500',
+            red: 'bg-red-100 text-red-500',
+            slate: 'bg-slate-100 text-slate-500'
+        }
+        return colors[this.state.confirm.iconColor] || colors.blue
+    }
+}
+
+export default toNative(ConfirmModal)
 </script>
 
 <template>

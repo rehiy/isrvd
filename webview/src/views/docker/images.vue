@@ -1,59 +1,67 @@
-<script setup>
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+<script lang="ts">
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import { formatFileSize, formatTime } from '@/helper/utils.js'
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
-import { inject } from 'vue'
+import { formatFileSize, formatTime } from '@/helper/utils'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import ImagePullModal from '@/views/docker/widget/image-pull-modal.vue'
 import ImageTagModal from '@/views/docker/widget/image-tag-modal.vue'
 import ImageBuildModal from '@/views/docker/widget/image-build-modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
-const router = useRouter()
-
-const images = ref([])
-const loading = ref(false)
-const showAllImages = ref(false)
-
-const pullModalRef = ref(null)
-const tagModalRef = ref(null)
-const buildModalRef = ref(null)
-
-// 加载镜像列表
-const loadImages = async () => {
-  loading.value = true
-  try {
-    const res = await api.listImages(showAllImages.value)
-    images.value = res.payload || []
-  } catch (e) {
-    actions.showNotification('error', '加载镜像列表失败')
-  }
-  loading.value = false
-}
-
-// 删除镜像
-const handleImageAction = (image, action) => {
-  actions.showConfirm({
-    title: '删除镜像',
-    message: `确定要删除镜像 <strong class="text-slate-900">${image.repoTags[0] || image.id}</strong> 吗？`,
-    icon: 'fa-trash',
-    iconColor: 'red',
-    confirmText: '确认删除',
-    danger: true,
-    onConfirm: async () => {
-      await api.imageAction(image.id, action)
-      actions.showNotification('success', '镜像删除成功')
-      loadImages()
-    }
-  })
-}
-
-onMounted(() => {
-  loadImages()
+@Component({
+    components: { ImagePullModal, ImageTagModal, ImageBuildModal }
 })
+class Images extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+
+    // ─── Refs ───
+    @Ref readonly pullModalRef!: InstanceType<typeof ImagePullModal>
+    @Ref readonly tagModalRef!: InstanceType<typeof ImageTagModal>
+    @Ref readonly buildModalRef!: InstanceType<typeof ImageBuildModal>
+
+    // ─── 数据属性 ───
+    images: any[] = []
+    loading = false
+    showAllImages = false
+    formatFileSize = formatFileSize
+    formatTime = formatTime
+
+    // ─── 方法 ───
+    async loadImages() {
+        this.loading = true
+        try {
+            const res = await api.listImages(this.showAllImages)
+            this.images = res.payload || []
+        } catch (e) {
+            this.actions.showNotification('error', '加载镜像列表失败')
+        }
+        this.loading = false
+    }
+
+    handleImageAction(image: any, action: string) {
+        this.actions.showConfirm({
+            title: '删除镜像',
+            message: `确定要删除镜像 <strong class="text-slate-900">${image.repoTags[0] || image.id}</strong> 吗？`,
+            icon: 'fa-trash',
+            iconColor: 'red',
+            confirmText: '确认删除',
+            danger: true,
+            onConfirm: async () => {
+                await api.imageAction(image.id, action)
+                this.actions.showNotification('success', '镜像删除成功')
+                this.loadImages()
+            }
+        })
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadImages()
+    }
+}
+
+export default toNative(Images)
 </script>
 
 <template>
@@ -151,7 +159,7 @@ onMounted(() => {
               <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(img.created * 1000).toISOString()) }}</td>
               <td class="px-4 py-3">
                 <div class="flex justify-end items-center gap-0.5">
-                  <button @click="router.push('/docker/image/' + img.id)" class="btn-icon text-slate-600 hover:bg-slate-100" title="查看详情">
+                  <button @click="$router.push('/docker/image/' + img.id)" class="btn-icon text-slate-600 hover:bg-slate-100" title="查看详情">
                     <i class="fas fa-circle-info text-xs"></i>
                   </button>
                   <button @click="tagModalRef?.show(img)" class="btn-icon text-blue-600 hover:bg-blue-50" title="打标签">
@@ -210,7 +218,7 @@ onMounted(() => {
           
           <!-- 底部：操作按钮 -->
           <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
-            <button @click="router.push('/docker/image/' + img.id)" class="btn-icon text-slate-600 hover:bg-slate-50" title="查看详情">
+            <button @click="$router.push('/docker/image/' + img.id)" class="btn-icon text-slate-600 hover:bg-slate-50" title="查看详情">
               <i class="fas fa-circle-info text-xs"></i>
               <span class="text-xs ml-1 hidden xs:inline">详情</span>
             </button>

@@ -1,44 +1,49 @@
-<script setup>
-import { inject, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
-const actions = inject(APP_ACTIONS_KEY)
+@Component
+class ApisixOverview extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const info = ref(null)
-const loading = ref(false)
+    // ─── 数据属性 ───
+    info: any = null
+    loading = false
 
-const statCards = [
-  { key: 'routes',    label: '路由总数',   icon: 'fa-route',       bgColor: 'bg-orange-500' },
-  { key: 'consumers', label: '消费者总数', icon: 'fa-user-tag',    bgColor: 'bg-amber-500' },
-  { key: 'whitelist', label: '白名单授权', icon: 'fa-shield-halved', bgColor: 'bg-emerald-500' },
-]
+    readonly statCards = [
+        { key: 'routes',    label: '路由总数',   icon: 'fa-route',         bgColor: 'bg-orange-500' },
+        { key: 'consumers', label: '消费者总数', icon: 'fa-user-tag',      bgColor: 'bg-amber-500' },
+        { key: 'whitelist', label: '白名单授权', icon: 'fa-shield-halved', bgColor: 'bg-emerald-500' },
+    ]
 
-const load = async () => {
-  loading.value = true
-  try {
-    const [routesRes, consumersRes, whitelistRes] = await Promise.all([
-      api.apisixListRoutes(),
-      api.apisixListConsumers(),
-      api.apisixGetWhitelist(),
-    ])
-    const routes = routesRes.payload || []
-    const consumers = consumersRes.payload || []
-    const whitelist = whitelistRes.payload || []
-    info.value = {
-      routes: routes.length,
-      consumers: consumers.length,
-      whitelist: whitelist.length,
+    // ─── 方法 ───
+    async load() {
+        this.loading = true
+        try {
+            const [routesRes, consumersRes, whitelistRes] = await Promise.all([
+                api.apisixListRoutes(),
+                api.apisixListConsumers(),
+                api.apisixGetWhitelist(),
+            ])
+            const routes = routesRes.payload || []
+            const consumers = consumersRes.payload || []
+            const whitelist = whitelistRes.payload || []
+            this.info = {
+                routes: routes.length,
+                consumers: consumers.length,
+                whitelist: whitelist.length,
+            }
+        } catch (e) {
+            this.actions.showNotification('error', '获取 APISIX 信息失败')
+            this.info = null
+        }
+        this.loading = false
     }
-  } catch (e) {
-    actions.showNotification('error', '获取 APISIX 信息失败')
-    info.value = null
-  }
-  loading.value = false
 }
 
-defineExpose({ load })
+export default toNative(ApisixOverview)
 </script>
 
 <template>

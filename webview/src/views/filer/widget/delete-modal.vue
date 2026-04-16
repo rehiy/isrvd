@@ -1,36 +1,39 @@
-<script setup>
-import { inject, ref, reactive } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
-const state = inject(APP_STATE_KEY)
-const actions = inject(APP_ACTIONS_KEY)
-
-const formData = reactive({
-  path: '',
-  name: ''
+@Component({
+    expose: ['show'],
+    components: { BaseModal }
 })
+class DeleteModal extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const modalRef = ref(null)
-const isOpen = ref(false)
+    // ─── 数据属性 ───
+    isOpen = false
+    formData = { path: '', name: '' }
 
-const show = (file) => {
-  formData.path = file.path
-  formData.name = file.name
-  isOpen.value = true
+    // ─── 方法 ───
+    show(file: any) {
+        this.formData.path = file.path
+        this.formData.name = file.name
+        this.isOpen = true
+    }
+
+    async handleConfirm() {
+        if (!this.formData.path) return
+        await api.delete(this.formData.path)
+        this.actions.loadFiles()
+        this.isOpen = false
+    }
 }
 
-const handleConfirm = async () => {
-  if (!formData.path) return
-  await api.delete(formData.path)
-  actions.loadFiles()
-  isOpen.value = false
-}
-
-defineExpose({ show })
+export default toNative(DeleteModal)
 </script>
 
 <template>

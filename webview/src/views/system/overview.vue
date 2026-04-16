@@ -1,557 +1,426 @@
-<script setup>
+<script lang="ts">
 import { Chart, registerables } from 'chart.js'
-import { nextTick, ref, computed, onUnmounted } from 'vue'
-import api from '@/service/api.js'
-import { POLL_INTERVAL } from '@/helper/utils.js'
+import { nextTick } from 'vue'
+import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+
+import api from '@/service/api'
+import { POLL_INTERVAL } from '@/helper/utils'
 
 Chart.register(...registerables)
 
-const stat = ref(null)
-const loading = ref(false)
+@Component
+class SystemOverview extends Vue {
+    // ─── Refs ───
+    @Ref readonly netContainerRef!: HTMLDivElement
+    @Ref readonly diskIOContainerRef!: HTMLDivElement
+    @Ref readonly cpuCanvasRef!: HTMLCanvasElement
+    @Ref readonly memCanvasRef!: HTMLCanvasElement
 
-// 网络速率历史数据
-const NET_POINTS = 45
-const MAX_STAT_POINTS = 45
-let netHistory = {}
-let lastNetSnapshot = {}
-let pollTimer = null
-let netCharts = {}
-const netContainerRef = ref(null)
+    // ─── 数据属性 ───
+    stat: any = null
+    loading = false
 
-// 硬盘 IO 历史数据
-let diskIOHistory = {}
-let lastDiskIOSnapshot = {}
-let diskIOCharts = {}
-const diskIOContainerRef = ref(null)
+    // ─── 私有属性（非响应式） ───
+    private readonly NET_POINTS = 45
+    private readonly MAX_STAT_POINTS = 45
+    private netHistory: Record<string, any> = {}
+    private lastNetSnapshot: Record<string, any> = {}
+    private pollTimer: any = null
+    private netCharts: Record<string, any> = {}
+    private diskIOHistory: Record<string, any> = {}
+    private lastDiskIOSnapshot: Record<string, any> = {}
+    private diskIOCharts: Record<string, any> = {}
+    private cpuHistory = { labels: [] as string[], data: [] as number[] }
+    private memHistory = { labels: [] as string[], data: [] as number[] }
+    private cpuChart: any = null
+    private memChart: any = null
 
-// CPU / 内存折线图
-const cpuHistory = { labels: [], data: [] }
-const memHistory = { labels: [], data: [] }
-const cpuCanvasRef = ref(null)
-const memCanvasRef = ref(null)
-let cpuChart = null
-let memChart = null
-
-// ── 计算属性：避免模板中重复调用 ──────────────────────────
-const cpuVal = computed(() => stat.value ? cpuPercent(stat.value.system.CpuPercent) : 0)
-const memVal = computed(() => stat.value ? memPercent(stat.value.system.MemoryUsed, stat.value.system.MemoryTotal) : 0)
-
-// ── 工具函数 ──────────────────────────────────────────────
-
-// 通用字节格式化（rates=true 时单位加 /s）
-const fmtSize = (bytes, rates = false) => {
-  if (!bytes || bytes < 0) return rates ? '0 B/s' : '0 B'
-  const units = rates
-    ? ['B/s', 'KB/s', 'MB/s', 'GB/s']
-    : ['B', 'KB', 'MB', 'GB', 'TB']
-  let i = 0, v = bytes
-  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++ }
-  return `${v.toFixed(1)} ${units[i]}`
-}
-const fmtBytes = (b) => fmtSize(b, false)
-const fmtRate = (b) => fmtSize(b, true)
-
-// 当前时间标签 HH:MM:SS
-const timeLabel = () => {
-  const now = new Date()
-  return [now.getHours(), now.getMinutes(), now.getSeconds()]
-    .map(n => n.toString().padStart(2, '0')).join(':')
-}
-
-// 格式化运行时间
-const fmtUptime = (seconds) => {
-  if (!seconds) return '0s'
-  const d = Math.floor(seconds / 86400)
-  const h = Math.floor((seconds % 86400) / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const parts = []
-  if (d) parts.push(`${d}d`)
-  if (h) parts.push(`${h}h`)
-  if (m) parts.push(`${m}m`)
-  if (!parts.length) parts.push(`${seconds % 60}s`)
-  return parts.join(' ')
-}
-
-// CPU 使用率（取各核心平均值）
-const cpuPercent = (arr) => {
-  if (!arr || !arr.length) return 0
-  return (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1)
-}
-
-// 内存使用率
-const memPercent = (used, total) => {
-  if (!total) return 0
-  return ((used / total) * 100).toFixed(1)
-}
-
-// 过滤物理网络接口（排除虚拟接口）
-const physicalInterfaces = (list) => {
-  if (!list) return []
-  const virtualPrefixes = ['lo', 'docker', 'veth', 'br-', 'overlay', 'flannel', 'cni', 'tunl', 'dummy', 'virbr']
-  return list.filter(ni => !virtualPrefixes.some(p => ni.Name.startsWith(p)))
-}
-
-// 语义颜色（bg- / text- 两用，根据使用率高低返回不同颜色）
-const semanticColor = (pct, prefix = 'bg') => {
-  const p = parseFloat(pct)
-  if (p >= 90) return `${prefix}-red-500`
-  if (p >= 70) return `${prefix}-amber-500`
-  return `${prefix}-emerald-500`
-}
-const barColor = (pct) => semanticColor(pct, 'bg')
-const textColor = (pct) => semanticColor(pct, 'text')
-
-// GC 时间格式化（Unix 时间戳 → 本地时间字符串）
-const fmtGCTime = (ts) => {
-  if (!ts) return '从未'
-  return new Date(ts * 1000).toLocaleString('zh-CN')
-}
-
-// 获取网卡当前速率（取历史数组最后一个点）
-const currentRate = (name, dir) => {
-  const h = netHistory[name]
-  if (!h || !h[dir] || !h[dir].length) return 0
-  return h[dir][h[dir].length - 1]
-}
-
-// 获取硬盘 IO 当前速率（取历史数组最后一个点）
-const currentDiskRate = (name, dir) => {
-  const h = diskIOHistory[name]
-  if (!h || !h[dir] || !h[dir].length) return 0
-  return h[dir][h[dir].length - 1]
-}
-
-// 获取设备短名（去掉 /dev/ 前缀）
-const devShortName = (device) => device.split('/').pop()
-
-// 根据设备名（如 /dev/sda1 → sda1 或 sda）查找 diskIO 数据
-const diskIOByDevice = (device) => {
-  if (!stat.value?.diskIO) return null
-  // 设备路径可能是 /dev/sda1，取最后一段
-  const devName = device.split('/').pop()
-  // 先精确匹配，再尝试去掉末尾数字匹配父设备（如 sda1 → sda）
-  return stat.value.diskIO.find(d => d.Name === devName)
-    || stat.value.diskIO.find(d => devName.startsWith(d.Name))
-    || null
-}
-
-// ── 图表配置 ──────────────────────────────────────────────
-
-// CPU/内存背景折线图配置（无坐标轴，铺满卡片）
-const bgChartOptions = () => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  animation: false,
-  interaction: { intersect: false, mode: 'index' },
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      backgroundColor: 'rgba(15,23,42,0.85)',
-      titleFont: { size: 10 },
-      bodyFont: { size: 10 },
-      padding: 6,
-      cornerRadius: 6,
-      callbacks: { label: ctx => ctx.parsed.y.toFixed(1) + '%' }
+    // ─── 计算属性 ───
+    get cpuVal() {
+        return this.stat ? this.cpuPercent(this.stat.system.CpuPercent) : 0
     }
-  },
-  scales: {
-    x: { display: false },
-    y: {
-      display: false,
-      beginAtZero: true,
-      max: 100,
-      grid: { display: false },
-      border: { display: false }
+
+    get memVal() {
+        return this.stat ? this.memPercent(this.stat.system.MemoryUsed, this.stat.system.MemoryTotal) : 0
     }
-  },
-  elements: {
-    point: { radius: 0, hoverRadius: 3 },
-    line: { tension: 0.4, borderWidth: 2 }
-  }
-})
 
-// 网络接口折线图配置（显示图例和 Y 轴）
-const netChartOptions = () => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  animation: false,
-  interaction: { intersect: false, mode: 'index' },
-  plugins: {
-    legend: {
-      display: true,
-      position: 'bottom',
-      labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' }
-    },
-    tooltip: {
-      backgroundColor: 'rgba(15,23,42,0.9)',
-      titleFont: { size: 10 },
-      bodyFont: { size: 10 },
-      padding: 8,
-      cornerRadius: 6,
-      callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtRate(ctx.parsed.y) }
+    // ─── 工具方法 ───
+    fmtSize(bytes: number, rates = false) {
+        if (!bytes || bytes < 0) return rates ? '0 B/s' : '0 B'
+        const units = rates ? ['B/s', 'KB/s', 'MB/s', 'GB/s'] : ['B', 'KB', 'MB', 'GB', 'TB']
+        let i = 0, v = bytes
+        while (v >= 1024 && i < units.length - 1) { v /= 1024; i++ }
+        return `${v.toFixed(1)} ${units[i]}`
     }
-  },
-  scales: {
-    x: { display: false },
-    y: {
-      display: true,
-      beginAtZero: true,
-      grid: { color: 'rgba(148,163,184,0.08)' },
-      border: { display: false },
-      ticks: {
-        font: { size: 9 },
-        color: '#94a3b8',
-        maxTicksLimit: 4,
-        padding: 4,
-        callback: v => fmtRate(v)
-      }
+
+    fmtBytes(b: number) { return this.fmtSize(b, false) }
+    fmtRate(b: number) { return this.fmtSize(b, true) }
+
+    timeLabel() {
+        const now = new Date()
+        return [now.getHours(), now.getMinutes(), now.getSeconds()]
+            .map(n => n.toString().padStart(2, '0')).join(':')
     }
-  },
-  elements: {
-    point: { radius: 0, hoverRadius: 3 },
-    line: { tension: 0.4, borderWidth: 1.5 }
-  }
-})
 
-// hex 颜色转 rgba（用于图表背景色）
-const hexToRgba = (hex, alpha) => {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return `rgba(${r},${g},${b},${alpha})`
-}
-
-// 创建网络图表数据集
-const makeDataset = (data, color, label) => ({
-  label,
-  data: [...data],
-  borderColor: color,
-  backgroundColor: hexToRgba(color, 0.1),
-  fill: true
-})
-
-// 硬盘 IO 图表配置（与网络图表相同）
-const diskChartOptions = () => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  animation: false,
-  interaction: { intersect: false, mode: 'index' },
-  plugins: {
-    legend: {
-      display: true,
-      position: 'bottom',
-      labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' }
-    },
-    tooltip: {
-      backgroundColor: 'rgba(15,23,42,0.9)',
-      titleFont: { size: 10 },
-      bodyFont: { size: 10 },
-      padding: 8,
-      cornerRadius: 6,
-      callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtRate(ctx.parsed.y) }
+    fmtUptime(seconds: number) {
+        if (!seconds) return '0s'
+        const d = Math.floor(seconds / 86400)
+        const h = Math.floor((seconds % 86400) / 3600)
+        const m = Math.floor((seconds % 3600) / 60)
+        const parts: string[] = []
+        if (d) parts.push(`${d}d`)
+        if (h) parts.push(`${h}h`)
+        if (m) parts.push(`${m}m`)
+        if (!parts.length) parts.push(`${seconds % 60}s`)
+        return parts.join(' ')
     }
-  },
-  scales: {
-    x: { display: false },
-    y: {
-      display: true,
-      beginAtZero: true,
-      grid: { color: 'rgba(148,163,184,0.08)' },
-      border: { display: false },
-      ticks: {
-        font: { size: 9 },
-        color: '#94a3b8',
-        maxTicksLimit: 4,
-        padding: 4,
-        callback: v => fmtRate(v)
-      }
+
+    cpuPercent(arr: number[]) {
+        if (!arr || !arr.length) return 0
+        return (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1)
     }
-  },
-  elements: {
-    point: { radius: 0, hoverRadius: 3 },
-    line: { tension: 0.4, borderWidth: 1.5 }
-  }
-})
 
-// ── CPU/内存图表 ──────────────────────────────────────────
-
-// 通用：创建单个背景折线图
-const makeStatChart = (canvas, history, borderColor, bgColor) => {
-  if (!canvas) return null
-  return new Chart(canvas, {
-    type: 'line',
-    data: {
-      labels: [...history.labels],
-      datasets: [{ data: [...history.data], borderColor, backgroundColor: bgColor, fill: true }]
-    },
-    options: bgChartOptions()
-  })
-}
-
-const initStatCharts = () => {
-  if (cpuChart) { cpuChart.destroy(); cpuChart = null }
-  if (memChart) { memChart.destroy(); memChart = null }
-  cpuChart = makeStatChart(cpuCanvasRef.value, cpuHistory, 'rgba(59,130,246,0.6)', 'rgba(59,130,246,0.08)')
-  memChart = makeStatChart(memCanvasRef.value, memHistory, 'rgba(99,102,241,0.6)', 'rgba(99,102,241,0.08)')
-}
-
-// 向历史数组追加一个时间点
-const pushStatPoint = (cpuV, memV) => {
-  const label = timeLabel()
-  cpuHistory.labels.push(label)
-  cpuHistory.data.push(+parseFloat(cpuV).toFixed(1))
-  memHistory.labels.push(label)
-  memHistory.data.push(+parseFloat(memV).toFixed(1))
-  if (cpuHistory.labels.length > MAX_STAT_POINTS) {
-    cpuHistory.labels.shift()
-    cpuHistory.data.shift()
-    memHistory.labels.shift()
-    memHistory.data.shift()
-  }
-}
-
-// 将最新历史数据同步到图表
-const updateStatCharts = () => {
-  for (const [chart, history] of [[cpuChart, cpuHistory], [memChart, memHistory]]) {
-    if (!chart) continue
-    chart.data.labels = [...history.labels]
-    chart.data.datasets[0].data = [...history.data]
-    chart.update('none')
-  }
-}
-
-const destroyStatCharts = () => {
-  cpuChart?.destroy()
-  cpuChart = null
-  memChart?.destroy()
-  memChart = null
-}
-
-// ── 网络图表 ──────────────────────────────────────────────
-
-const getNetCanvas = (name) =>
-  netContainerRef.value?.querySelector(`[data-iface="${name}"]`) ?? null
-
-const initNetChart = (name) => {
-  const canvas = getNetCanvas(name)
-  if (!canvas) return
-  netCharts[name]?.destroy()
-  const h = netHistory[name] || { labels: [], recv: [], sent: [] }
-  netCharts[name] = new Chart(canvas, {
-    type: 'line',
-    data: {
-      labels: [...h.labels],
-      datasets: [
-        makeDataset(h.recv, '#10b981', '下行'),
-        makeDataset(h.sent, '#3b82f6', '上行')
-      ]
-    },
-    options: netChartOptions()
-  })
-}
-
-const initAllNetCharts = () => {
-  if (!stat.value) return
-  physicalInterfaces(stat.value.system.NetInterface).forEach(ni => {
-    if (!netHistory[ni.Name]) netHistory[ni.Name] = { labels: [], recv: [], sent: [] }
-    initNetChart(ni.Name)
-  })
-}
-
-const updateNetChart = (name) => {
-  const chart = netCharts[name]
-  const h = netHistory[name]
-  if (!chart || !h) return
-  chart.data.labels = [...h.labels]
-  chart.data.datasets[0].data = [...h.recv]
-  chart.data.datasets[1].data = [...h.sent]
-  chart.update('none')
-}
-
-const destroyNetCharts = () => {
-  Object.values(netCharts).forEach(c => c.destroy())
-  netCharts = {}
-}
-
-// ── 硬盘 IO 图表 ──────────────────────────────────────────
-
-const getDiskCanvas = (name) =>
-  diskIOContainerRef.value?.querySelector(`[data-disk="${name}"]`) ?? null
-
-const initDiskChart = (name) => {
-  const canvas = getDiskCanvas(name)
-  if (!canvas) return
-  diskIOCharts[name]?.destroy()
-  const h = diskIOHistory[name] || { labels: [], read: [], write: [] }
-  diskIOCharts[name] = new Chart(canvas, {
-    type: 'line',
-    data: {
-      labels: [...h.labels],
-      datasets: [
-        makeDataset(h.read, '#f59e0b', '读取'),
-        makeDataset(h.write, '#8b5cf6', '写入')
-      ]
-    },
-    options: diskChartOptions()
-  })
-}
-
-const initAllDiskCharts = () => {
-  if (!stat.value?.system?.DiskPartition) return
-  // 以分区设备名为 key 初始化图表
-  stat.value.system.DiskPartition.forEach(dp => {
-    const devName = dp.Device.split('/').pop()
-    if (!diskIOHistory[devName]) diskIOHistory[devName] = { labels: [], read: [], write: [] }
-    initDiskChart(devName)
-  })
-}
-
-const updateDiskChart = (name) => {
-  const chart = diskIOCharts[name]
-  const h = diskIOHistory[name]
-  if (!chart || !h) return
-  chart.data.labels = [...h.labels]
-  chart.data.datasets[0].data = [...h.read]
-  chart.data.datasets[1].data = [...h.write]
-  chart.update('none')
-}
-
-const destroyDiskCharts = () => {
-  Object.values(diskIOCharts).forEach(c => c.destroy())
-  diskIOCharts = {}
-}
-
-// 根据前后两次快照计算硬盘 IO 速率，并追加到历史数组
-// diskList 中的 Name 是 gopsutil 返回的设备名（如 sda、sda1）
-const updateDiskIOHistory = (diskList, intervalSec) => {
-  const snapshot = {}
-  diskList.forEach(d => {
-    snapshot[d.Name] = { read: d.ReadBytes, write: d.WriteBytes }
-  })
-
-  if (Object.keys(lastDiskIOSnapshot).length > 0) {
-    const label = timeLabel()
-    diskList.forEach(d => {
-      const prev = lastDiskIOSnapshot[d.Name]
-      if (!prev) return
-      // 确保 history 存在（可能在 initAllDiskCharts 之后才有新设备）
-      if (!diskIOHistory[d.Name]) diskIOHistory[d.Name] = { labels: [], read: [], write: [] }
-      const h = diskIOHistory[d.Name]
-      h.labels.push(label)
-      h.read.push(+Math.max(0, (d.ReadBytes - prev.read) / intervalSec).toFixed(0))
-      h.write.push(+Math.max(0, (d.WriteBytes - prev.write) / intervalSec).toFixed(0))
-      if (h.labels.length > NET_POINTS) {
-        h.labels.shift()
-        h.read.shift()
-        h.write.shift()
-      }
-      updateDiskChart(d.Name)
-    })
-  }
-
-  lastDiskIOSnapshot = snapshot
-}
-
-// 根据前后两次快照计算速率，并追加到历史数组
-const updateNetHistory = (interfaces, intervalSec) => {
-  const snapshot = {}
-  interfaces.forEach(ni => {
-    snapshot[ni.Name] = { recv: ni.BytesRecv, sent: ni.BytesSent }
-  })
-
-  if (Object.keys(lastNetSnapshot).length > 0) {
-    const label = timeLabel()
-    interfaces.forEach(ni => {
-      const prev = lastNetSnapshot[ni.Name]
-      if (!prev) return
-      if (!netHistory[ni.Name]) netHistory[ni.Name] = { labels: [], recv: [], sent: [] }
-      const h = netHistory[ni.Name]
-      h.labels.push(label)
-      h.recv.push(+Math.max(0, (ni.BytesRecv - prev.recv) / intervalSec).toFixed(0))
-      h.sent.push(+Math.max(0, (ni.BytesSent - prev.sent) / intervalSec).toFixed(0))
-      if (h.labels.length > NET_POINTS) {
-        h.labels.shift()
-        h.recv.shift()
-        h.sent.shift()
-      }
-      updateNetChart(ni.Name)
-    })
-  }
-
-  lastNetSnapshot = snapshot
-}
-
-// ── 数据加载 & 轮询 ───────────────────────────────────────
-
-// 首次加载：重置所有状态，拉取数据，初始化图表
-const load = async () => {
-  loading.value = true
-  destroyNetCharts()
-  destroyStatCharts()
-  destroyDiskCharts()
-  netHistory = {}
-  lastNetSnapshot = {}
-  diskIOHistory = {}
-  lastDiskIOSnapshot = {}
-  cpuHistory.labels.length = 0
-  cpuHistory.data.length = 0
-  memHistory.labels.length = 0
-  memHistory.data.length = 0
-  try {
-    const res = await api.systemStat()
-    stat.value = res.payload || null
-  } catch (e) {
-    stat.value = null
-  }
-  loading.value = false
-  await nextTick()
-  initAllNetCharts()
-  initAllDiskCharts()
-  initStatCharts()
-}
-
-// 轮询：更新 CPU、内存、网络数据及图表
-const pollNet = async () => {
-  try {
-    const res = await api.systemStat()
-    const payload = res.payload
-    if (!payload || !stat.value) return
-    stat.value.system.NetInterface = payload.system.NetInterface
-    stat.value.system.CpuPercent = payload.system.CpuPercent
-    stat.value.system.MemoryUsed = payload.system.MemoryUsed
-    stat.value.system.MemoryTotal = payload.system.MemoryTotal
-    pushStatPoint(
-      cpuPercent(payload.system.CpuPercent),
-      memPercent(payload.system.MemoryUsed, payload.system.MemoryTotal)
-    )
-    updateStatCharts()
-    updateNetHistory(physicalInterfaces(payload.system.NetInterface), POLL_INTERVAL / 1000)
-    if (payload.diskIO?.length) {
-      stat.value.diskIO = payload.diskIO
-      updateDiskIOHistory(payload.diskIO, POLL_INTERVAL / 1000)
+    memPercent(used: number, total: number) {
+        if (!total) return 0
+        return ((used / total) * 100).toFixed(1)
     }
-  } catch (e) { /* ignore */ }
+
+    physicalInterfaces(list: any[]) {
+        if (!list) return []
+        const virtualPrefixes = ['lo', 'docker', 'veth', 'br-', 'overlay', 'flannel', 'cni', 'tunl', 'dummy', 'virbr']
+        return list.filter(ni => !virtualPrefixes.some(p => ni.Name.startsWith(p)))
+    }
+
+    semanticColor(pct: any, prefix = 'bg') {
+        const p = parseFloat(pct)
+        if (p >= 90) return `${prefix}-red-500`
+        if (p >= 70) return `${prefix}-amber-500`
+        return `${prefix}-emerald-500`
+    }
+
+    barColor(pct: any) { return this.semanticColor(pct, 'bg') }
+    textColor(pct: any) { return this.semanticColor(pct, 'text') }
+
+    fmtGCTime(ts: number) {
+        if (!ts) return '从未'
+        return new Date(ts * 1000).toLocaleString('zh-CN')
+    }
+
+    currentRate(name: string, dir: string) {
+        const h = this.netHistory[name]
+        if (!h || !h[dir] || !h[dir].length) return 0
+        return h[dir][h[dir].length - 1]
+    }
+
+    currentDiskRate(name: string, dir: string) {
+        const h = this.diskIOHistory[name]
+        if (!h || !h[dir] || !h[dir].length) return 0
+        return h[dir][h[dir].length - 1]
+    }
+
+    devShortName(device: string) { return device.split('/').pop() }
+
+    diskIOByDevice(device: string) {
+        if (!this.stat?.diskIO) return null
+        const devName = device.split('/').pop()
+        return this.stat.diskIO.find((d: any) => d.Name === devName)
+            || this.stat.diskIO.find((d: any) => devName!.startsWith(d.Name))
+            || null
+    }
+
+    // ─── 图表配置 ───
+    bgChartOptions() {
+        return {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15,23,42,0.85)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 6, cornerRadius: 6,
+                    callbacks: { label: (ctx: any) => ctx.parsed.y.toFixed(1) + '%' }
+                }
+            },
+            scales: {
+                x: { display: false },
+                y: { display: false, beginAtZero: true, max: 100, grid: { display: false }, border: { display: false } }
+            },
+            elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 2 } }
+        }
+    }
+
+    netChartOptions() {
+        const fmtRate = (v: number) => this.fmtRate(v)
+        return {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
+                tooltip: {
+                    backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
+                    callbacks: { label: (ctx: any) => ctx.dataset.label + ': ' + fmtRate(ctx.parsed.y) }
+                }
+            },
+            scales: {
+                x: { display: false },
+                y: {
+                    display: true, beginAtZero: true, grid: { color: 'rgba(148,163,184,0.08)' }, border: { display: false },
+                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: number) => fmtRate(v) }
+                }
+            },
+            elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 1.5 } }
+        }
+    }
+
+    diskChartOptions() { return this.netChartOptions() }
+
+    hexToRgba(hex: string, alpha: number) {
+        const r = parseInt(hex.slice(1, 3), 16)
+        const g = parseInt(hex.slice(3, 5), 16)
+        const b = parseInt(hex.slice(5, 7), 16)
+        return `rgba(${r},${g},${b},${alpha})`
+    }
+
+    makeDataset(data: number[], color: string, label: string) {
+        return { label, data: [...data], borderColor: color, backgroundColor: this.hexToRgba(color, 0.1), fill: true }
+    }
+
+    // ─── CPU/内存图表 ───
+    makeStatChart(canvas: HTMLCanvasElement, history: any, borderColor: string, bgColor: string) {
+        if (!canvas) return null
+        return new Chart(canvas, {
+            type: 'line',
+            data: { labels: [...history.labels], datasets: [{ data: [...history.data], borderColor, backgroundColor: bgColor, fill: true }] },
+            options: this.bgChartOptions() as any
+        })
+    }
+
+    initStatCharts() {
+        if (this.cpuChart) { this.cpuChart.destroy(); this.cpuChart = null }
+        if (this.memChart) { this.memChart.destroy(); this.memChart = null }
+        this.cpuChart = this.makeStatChart(this.cpuCanvasRef, this.cpuHistory, 'rgba(59,130,246,0.6)', 'rgba(59,130,246,0.08)')
+        this.memChart = this.makeStatChart(this.memCanvasRef, this.memHistory, 'rgba(99,102,241,0.6)', 'rgba(99,102,241,0.08)')
+    }
+
+    pushStatPoint(cpuV: any, memV: any) {
+        const label = this.timeLabel()
+        this.cpuHistory.labels.push(label)
+        this.cpuHistory.data.push(+parseFloat(cpuV).toFixed(1))
+        this.memHistory.labels.push(label)
+        this.memHistory.data.push(+parseFloat(memV).toFixed(1))
+        if (this.cpuHistory.labels.length > this.MAX_STAT_POINTS) {
+            this.cpuHistory.labels.shift(); this.cpuHistory.data.shift()
+            this.memHistory.labels.shift(); this.memHistory.data.shift()
+        }
+    }
+
+    updateStatCharts() {
+        for (const [chart, history] of [[this.cpuChart, this.cpuHistory], [this.memChart, this.memHistory]] as any[]) {
+            if (!chart) continue
+            chart.data.labels = [...history.labels]
+            chart.data.datasets[0].data = [...history.data]
+            chart.update('none')
+        }
+    }
+
+    destroyStatCharts() {
+        this.cpuChart?.destroy(); this.cpuChart = null
+        this.memChart?.destroy(); this.memChart = null
+    }
+
+    // ─── 网络图表 ───
+    getNetCanvas(name: string) {
+        return this.netContainerRef?.querySelector(`[data-iface="${name}"]`) ?? null
+    }
+
+    initNetChart(name: string) {
+        const canvas = this.getNetCanvas(name)
+        if (!canvas) return
+        this.netCharts[name]?.destroy()
+        const h = this.netHistory[name] || { labels: [], recv: [], sent: [] }
+        this.netCharts[name] = new Chart(canvas as HTMLCanvasElement, {
+            type: 'line',
+            data: { labels: [...h.labels], datasets: [this.makeDataset(h.recv, '#10b981', '下行'), this.makeDataset(h.sent, '#3b82f6', '上行')] },
+            options: this.netChartOptions() as any
+        })
+    }
+
+    initAllNetCharts() {
+        if (!this.stat) return
+        this.physicalInterfaces(this.stat.system.NetInterface).forEach((ni: any) => {
+            if (!this.netHistory[ni.Name]) this.netHistory[ni.Name] = { labels: [], recv: [], sent: [] }
+            this.initNetChart(ni.Name)
+        })
+    }
+
+    updateNetChart(name: string) {
+        const chart = this.netCharts[name]
+        const h = this.netHistory[name]
+        if (!chart || !h) return
+        chart.data.labels = [...h.labels]
+        chart.data.datasets[0].data = [...h.recv]
+        chart.data.datasets[1].data = [...h.sent]
+        chart.update('none')
+    }
+
+    destroyNetCharts() {
+        Object.values(this.netCharts).forEach((c: any) => c.destroy())
+        this.netCharts = {}
+    }
+
+    // ─── 硬盘 IO 图表 ───
+    getDiskCanvas(name: string) {
+        return this.diskIOContainerRef?.querySelector(`[data-disk="${name}"]`) ?? null
+    }
+
+    initDiskChart(name: string) {
+        const canvas = this.getDiskCanvas(name)
+        if (!canvas) return
+        this.diskIOCharts[name]?.destroy()
+        const h = this.diskIOHistory[name] || { labels: [], read: [], write: [] }
+        this.diskIOCharts[name] = new Chart(canvas as HTMLCanvasElement, {
+            type: 'line',
+            data: { labels: [...h.labels], datasets: [this.makeDataset(h.read, '#f59e0b', '读取'), this.makeDataset(h.write, '#8b5cf6', '写入')] },
+            options: this.diskChartOptions() as any
+        })
+    }
+
+    initAllDiskCharts() {
+        if (!this.stat?.system?.DiskPartition) return
+        this.stat.system.DiskPartition.forEach((dp: any) => {
+            const devName = dp.Device.split('/').pop()
+            if (!this.diskIOHistory[devName]) this.diskIOHistory[devName] = { labels: [], read: [], write: [] }
+            this.initDiskChart(devName)
+        })
+    }
+
+    updateDiskChart(name: string) {
+        const chart = this.diskIOCharts[name]
+        const h = this.diskIOHistory[name]
+        if (!chart || !h) return
+        chart.data.labels = [...h.labels]
+        chart.data.datasets[0].data = [...h.read]
+        chart.data.datasets[1].data = [...h.write]
+        chart.update('none')
+    }
+
+    destroyDiskCharts() {
+        Object.values(this.diskIOCharts).forEach((c: any) => c.destroy())
+        this.diskIOCharts = {}
+    }
+
+    updateDiskIOHistory(diskList: any[], intervalSec: number) {
+        const snapshot: Record<string, any> = {}
+        diskList.forEach(d => { snapshot[d.Name] = { read: d.ReadBytes, write: d.WriteBytes } })
+        if (Object.keys(this.lastDiskIOSnapshot).length > 0) {
+            const label = this.timeLabel()
+            diskList.forEach(d => {
+                const prev = this.lastDiskIOSnapshot[d.Name]
+                if (!prev) return
+                if (!this.diskIOHistory[d.Name]) this.diskIOHistory[d.Name] = { labels: [], read: [], write: [] }
+                const h = this.diskIOHistory[d.Name]
+                h.labels.push(label)
+                h.read.push(+Math.max(0, (d.ReadBytes - prev.read) / intervalSec).toFixed(0))
+                h.write.push(+Math.max(0, (d.WriteBytes - prev.write) / intervalSec).toFixed(0))
+                if (h.labels.length > this.NET_POINTS) { h.labels.shift(); h.read.shift(); h.write.shift() }
+                this.updateDiskChart(d.Name)
+            })
+        }
+        this.lastDiskIOSnapshot = snapshot
+    }
+
+    updateNetHistory(interfaces: any[], intervalSec: number) {
+        const snapshot: Record<string, any> = {}
+        interfaces.forEach(ni => { snapshot[ni.Name] = { recv: ni.BytesRecv, sent: ni.BytesSent } })
+        if (Object.keys(this.lastNetSnapshot).length > 0) {
+            const label = this.timeLabel()
+            interfaces.forEach(ni => {
+                const prev = this.lastNetSnapshot[ni.Name]
+                if (!prev) return
+                if (!this.netHistory[ni.Name]) this.netHistory[ni.Name] = { labels: [], recv: [], sent: [] }
+                const h = this.netHistory[ni.Name]
+                h.labels.push(label)
+                h.recv.push(+Math.max(0, (ni.BytesRecv - prev.recv) / intervalSec).toFixed(0))
+                h.sent.push(+Math.max(0, (ni.BytesSent - prev.sent) / intervalSec).toFixed(0))
+                if (h.labels.length > this.NET_POINTS) { h.labels.shift(); h.recv.shift(); h.sent.shift() }
+                this.updateNetChart(ni.Name)
+            })
+        }
+        this.lastNetSnapshot = snapshot
+    }
+
+    // ─── 数据加载 & 轮询 ───
+    async loadData() {
+        this.loading = true
+        this.destroyNetCharts()
+        this.destroyStatCharts()
+        this.destroyDiskCharts()
+        this.netHistory = {}
+        this.lastNetSnapshot = {}
+        this.diskIOHistory = {}
+        this.lastDiskIOSnapshot = {}
+        this.cpuHistory.labels.length = 0
+        this.cpuHistory.data.length = 0
+        this.memHistory.labels.length = 0
+        this.memHistory.data.length = 0
+        try {
+            const res = await api.systemStat()
+            this.stat = res.payload || null
+        } catch (e) {
+            this.stat = null
+        }
+        this.loading = false
+        await nextTick()
+        this.initAllNetCharts()
+        this.initAllDiskCharts()
+        this.initStatCharts()
+    }
+
+    async pollNet() {
+        try {
+            const res = await api.systemStat()
+            const payload = res.payload
+            if (!payload || !this.stat) return
+            this.stat.system.NetInterface = payload.system.NetInterface
+            this.stat.system.CpuPercent = payload.system.CpuPercent
+            this.stat.system.MemoryUsed = payload.system.MemoryUsed
+            this.stat.system.MemoryTotal = payload.system.MemoryTotal
+            this.pushStatPoint(
+                this.cpuPercent(payload.system.CpuPercent),
+                this.memPercent(payload.system.MemoryUsed, payload.system.MemoryTotal)
+            )
+            this.updateStatCharts()
+            this.updateNetHistory(this.physicalInterfaces(payload.system.NetInterface), POLL_INTERVAL / 1000)
+            if (payload.diskIO?.length) {
+                this.stat.diskIO = payload.diskIO
+                this.updateDiskIOHistory(payload.diskIO, POLL_INTERVAL / 1000)
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    startPoll() {
+        this.pollTimer = setInterval(() => this.pollNet(), POLL_INTERVAL)
+    }
+
+    stopPoll() {
+        if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer = null }
+    }
+
+    async load() {
+        this.stopPoll()
+        await this.loadData()
+        this.startPoll()
+    }
+
+    // ─── 生命周期 ───
+    unmounted() {
+        this.stopPoll()
+        this.destroyNetCharts()
+        this.destroyDiskCharts()
+        this.destroyStatCharts()
+    }
 }
 
-const startPoll = () => { pollTimer = setInterval(pollNet, POLL_INTERVAL) }
-const stopPoll = () => {
-  if (pollTimer) {
-    clearInterval(pollTimer)
-    pollTimer = null
-  }
-}
-
-onUnmounted(() => {
-  stopPoll()
-  destroyNetCharts()
-  destroyDiskCharts()
-  destroyStatCharts()
-})
-
-defineExpose({
-  load: async () => { stopPoll(); await load(); startPoll() },
-  stopPoll
-})
+export default toNative(SystemOverview)
 </script>
 
 <template>

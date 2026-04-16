@@ -1,5 +1,5 @@
-<script setup>
-import { inject, reactive, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import { Codemirror } from 'vue-codemirror'
 import { css } from '@codemirror/lang-css'
@@ -13,42 +13,41 @@ import { sql } from '@codemirror/lang-sql'
 import { xml } from '@codemirror/lang-xml'
 import { yaml } from '@codemirror/lang-yaml'
 
-import api from '@/service/api.js'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
-const state = inject(APP_STATE_KEY)
-const actions = inject(APP_ACTIONS_KEY)
-
-const extensions = [
-  css(), go(), html(), javascript(), json(), markdown(), python(), sql(), xml(), yaml()
-]
-
-const formData = reactive({
-  filename: '',
-  content: '',
-  path: ''
+@Component({
+    expose: ['show'],
+    components: { BaseModal, Codemirror }
 })
+class ModifyModal extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const modalRef = ref(null)
-const isOpen = ref(false)
+    // ─── 数据属性 ───
+    isOpen = false
+    formData = { filename: '', content: '', path: '' }
+    readonly extensions = [css(), go(), html(), javascript(), json(), markdown(), python(), sql(), xml(), yaml()]
 
-const show = async (file) => {
-  const data = await api.read(file.path)
-  formData.path = file.path
-  formData.filename = file.name
-  formData.content = data.payload.content
-  isOpen.value = true
+    // ─── 方法 ───
+    async show(file: any) {
+        const data = await api.read(file.path)
+        this.formData.path = file.path
+        this.formData.filename = file.name
+        this.formData.content = data.payload.content
+        this.isOpen = true
+    }
+
+    async handleConfirm() {
+        await api.modify(this.formData.path, this.formData.content)
+        this.actions.loadFiles()
+        this.isOpen = false
+    }
 }
 
-const handleConfirm = async () => {
-  await api.modify(formData.path, formData.content)
-  actions.loadFiles()
-  isOpen.value = false
-}
-
-defineExpose({ show })
+export default toNative(ModifyModal)
 </script>
 
 <template>

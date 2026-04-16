@@ -1,65 +1,70 @@
-<script setup>
-import { inject, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+<script lang="ts">
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import { formatTime } from '@/helper/utils.js'
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import { formatTime } from '@/helper/utils'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import VolumeCreateModal from '@/views/docker/widget/volume-create-modal.vue'
 
-const router = useRouter()
+@Component({
+    expose: ['load', 'show'],
+    components: { VolumeCreateModal }
+})
+class Volumes extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const actions = inject(APP_ACTIONS_KEY)
+    // ─── Refs ───
+    @Ref readonly createModalRef!: InstanceType<typeof VolumeCreateModal>
 
-const volumes = ref([])
-const loading = ref(false)
+    // ─── 数据属性 ───
+    volumes: any[] = []
+    loading = false
+    formatTime = formatTime
 
-const createModalRef = ref(null)
-
-
-// 加载卷列表
-const loadVolumes = async () => {
-  loading.value = true
-  try {
-const res = await api.listVolumes()
-    volumes.value = res.payload || []
-  } catch (e) {
-    actions.showNotification('error', '加载卷列表失败')
-  }
-  loading.value = false
-}
-
-// 删除卷
-const handleVolumeAction = (vol, action) => {
-  actions.showConfirm({
-    title: '删除数据卷',
-    message: `确定要删除数据卷 <strong class="text-slate-900">${vol.name}</strong> 吗？`,
-    icon: 'fa-trash',
-    iconColor: 'red',
-    confirmText: '确认删除',
-    danger: true,
-    onConfirm: async () => {
-      await api.volumeAction(vol.name, action)
-      actions.showNotification('success', '数据卷删除成功')
-      loadVolumes()
+    // ─── 方法 ───
+    async loadVolumes() {
+        this.loading = true
+        try {
+            const res = await api.listVolumes()
+            this.volumes = res.payload || []
+        } catch (e) {
+            this.actions.showNotification('error', '加载卷列表失败')
+        }
+        this.loading = false
     }
-  })
+
+    handleVolumeAction(vol: any, action: string) {
+        this.actions.showConfirm({
+            title: '删除数据卷',
+            message: `确定要删除数据卷 <strong class="text-slate-900">${vol.name}</strong> 吗？`,
+            icon: 'fa-trash',
+            iconColor: 'red',
+            confirmText: '确认删除',
+            danger: true,
+            onConfirm: async () => {
+                await api.volumeAction(vol.name, action)
+                this.actions.showNotification('success', '数据卷删除成功')
+                this.loadVolumes()
+            }
+        })
+    }
+
+    viewVolumeDetail(vol: any) {
+        this.$router.push({ name: 'docker-volume', params: { name: vol.name } })
+    }
+
+    createVolumeModal() {
+        this.createModalRef?.show()
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadVolumes()
+    }
 }
 
-// 查看卷详情
-const viewVolumeDetail = (vol) => {
-  router.push({ name: 'docker-volume', params: { name: vol.name } })
-}
-
-defineExpose({
-  loadVolumes,
-  createVolumeModal: () => createModalRef.value?.show()
-})
-
-onMounted(() => {
-  loadVolumes()
-})
+export default toNative(Volumes)
 </script>
 
 <template>

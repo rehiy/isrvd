@@ -1,35 +1,50 @@
-<script setup>
-import { inject, onMounted, onUnmounted, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import { APP_STATE_KEY } from '@/store/state.js'
+import { APP_STATE_KEY } from '@/store/state'
 
 import ApisixOverview from '@/views/apisix/overview.vue'
 import DockerOverview from '@/views/docker/overview.vue'
 import SwarmOverview from '@/views/swarm/overview.vue'
 import SystemOverview from '@/views/system/overview.vue'
 
-const state = inject(APP_STATE_KEY)
+@Component({
+    components: { ApisixOverview, DockerOverview, SwarmOverview, SystemOverview }
+})
+class Overview extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
 
-const dockerRef = ref(null)
-const swarmRef = ref(null)
-const apisixRef = ref(null)
-const systemRef = ref(null)
+    // ─── Refs ───
+    @Ref readonly dockerRef!: InstanceType<typeof DockerOverview>
+    @Ref readonly swarmRef!: InstanceType<typeof SwarmOverview>
+    @Ref readonly apisixRef!: InstanceType<typeof ApisixOverview>
+    @Ref readonly systemRef!: InstanceType<typeof SystemOverview>
 
-const refreshAll = () => {
-  systemRef.value?.load()
-  if (state.serviceAvailability.docker) {
-    dockerRef.value?.load()
-  }
-  if (state.serviceAvailability.swarm) {
-    swarmRef.value?.load()
-  }
-  if (state.serviceAvailability.apisix) {
-    apisixRef.value?.load()
-  }
+    // ─── 方法 ───
+    refreshAll() {
+        this.systemRef?.load()
+        if (this.state.serviceAvailability.docker) {
+            this.dockerRef?.load()
+        }
+        if (this.state.serviceAvailability.swarm) {
+            this.swarmRef?.load()
+        }
+        if (this.state.serviceAvailability.apisix) {
+            this.apisixRef?.load()
+        }
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.refreshAll()
+    }
+
+    unmounted() {
+        this.systemRef?.stopPoll?.()
+    }
 }
 
-onMounted(() => refreshAll())
-onUnmounted(() => systemRef.value?.stopPoll?.())
+export default toNative(Overview)
 </script>
 
 <template>

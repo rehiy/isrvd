@@ -1,50 +1,57 @@
-<script setup>
-import { onMounted, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
-import { inject } from 'vue'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import RegistryPushModal from '@/views/docker/widget/registry-push-modal.vue'
 import RegistryPullModal from '@/views/docker/widget/registry-pull-modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
-
-const daemonMirrors = ref([])
-const indexServerAddress = ref('')
-
-const loadDaemonInfo = async () => {
-  try {
-    const res = await api.dockerInfo()
-    const info = res.payload || {}
-    daemonMirrors.value = info.registryMirrors || []
-    indexServerAddress.value = info.indexServerAddress || ''
-  } catch (e) {}
-}
-
-const registries = ref([])
-const loading = ref(false)
-
-const pushModalRef = ref(null)
-const pullModalRef = ref(null)
-
-// 加载仓库列表
-const loadRegistries = async () => {
-  loading.value = true
-  try {
-    const res = await api.listRegistries()
-    registries.value = res.payload || []
-  } catch (e) {
-    actions.showNotification('error', '加载仓库列表失败')
-  }
-  loading.value = false
-}
-
-// 加载仓库列表
-onMounted(() => {
-  loadDaemonInfo()
-  loadRegistries()
+@Component({
+    components: { RegistryPushModal, RegistryPullModal }
 })
+class Registries extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+
+    // ─── Refs ───
+    @Ref readonly pushModalRef!: InstanceType<typeof RegistryPushModal>
+    @Ref readonly pullModalRef!: InstanceType<typeof RegistryPullModal>
+
+    // ─── 数据属性 ───
+    daemonMirrors: string[] = []
+    indexServerAddress = ''
+    registries: any[] = []
+    loading = false
+
+    // ─── 方法 ───
+    async loadDaemonInfo() {
+        try {
+            const res = await api.dockerInfo()
+            const info = res.payload || {}
+            this.daemonMirrors = info.registryMirrors || []
+            this.indexServerAddress = info.indexServerAddress || ''
+        } catch (e) {}
+    }
+
+    async loadRegistries() {
+        this.loading = true
+        try {
+            const res = await api.listRegistries()
+            this.registries = res.payload || []
+        } catch (e) {
+            this.actions.showNotification('error', '加载仓库列表失败')
+        }
+        this.loading = false
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadDaemonInfo()
+        this.loadRegistries()
+    }
+}
+
+export default toNative(Registries)
 </script>
 
 <template>

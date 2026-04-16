@@ -1,185 +1,173 @@
-<script setup>
-import { inject, reactive, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
 
 import CapSelect from '@/views/docker/widget/cap-select.vue'
 import ImageSelect from '@/views/docker/widget/image-select.vue'
 import BaseModal from '@/component/modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
-const state = inject(APP_STATE_KEY)
-
-const emit = defineEmits(['success'])
-
-const modalRef = ref(null)
-const isOpen = ref(false)
-const modalLoading = ref(false)
-const isEditMode = ref(false)
-const showAdvanced = ref(false)
-const showSecurity = ref(false)
-
-const formData = reactive({
-  image: '',
-  name: '',
-  envStr: '',
-  portsStr: '',
-  cmd: '',
-  volumesStr: '',
-  restart: 'always',
-  network: '',
-  memory: '',
-  cpus: '',
-  workdir: '',
-  user: '',
-  hostname: '',
-  privileged: false,
-  capAdd: [],
-  capDrop: [],
+@Component({
+    expose: ['show'],
+    components: { BaseModal, CapSelect, ImageSelect },
+    emits: ['success']
 })
+class ContainerEditModal extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
 
-const images = ref([])
-const networks = ref([])
+    // ─── 数据属性 ───
+    isOpen = false
+    modalLoading = false
+    isEditMode = false
+    showAdvanced = false
+    showSecurity = false
 
-const restartOptions = [
-  { value: 'always', label: '总是重启' },
-  { value: 'unless-stopped', label: '除非手动停止' },
-  { value: 'on-failure', label: '失败时重启' },
-  { value: 'no', label: '不重启' }
-]
-
-const networkOptions = computed(() => {
-  const options = [{ value: '', label: '不指定' }]
-  networks.value.forEach(net => {
-    options.push({ value: net.name, label: `${net.name} (${net.driver})` })
-  })
-  return options
-})
-
-import { computed } from 'vue'
-
-const loadImages = async () => {
-  try {
-    const res = await api.listImages(false)
-    images.value = res.payload || []
-  } catch (e) {}
-}
-
-const loadNetworks = async () => {
-  try {
-    const res = await api.listNetworks()
-    networks.value = res.payload || []
-  } catch (e) {}
-}
-
-const show = async (container) => {
-  if (container) {
-    // 编辑模式
-    isEditMode.value = true
-    modalLoading.value = true
-    showAdvanced.value = true
-    try {
-      const res = await api.getContainerConfig(container.name)
-      const config = res.payload
-      Object.assign(formData, {
-        name: config.name,
-        image: config.image,
-        envStr: (config.env || []).join('\n'),
-        portsStr: Object.entries(config.ports || {}).map(([h, c]) => `${h}:${c}`).join('\n'),
-        volumesStr: (config.volumes || []).map(v => {
-          let s = `${v.hostPath}:${v.containerPath}`
-          if (v.readOnly) s += ':ro'
-          return s
-        }).join('\n'),
-        cmd: (config.cmd || []).join(' '),
-        restart: config.restart || 'always',
-        network: config.network || '',
-        memory: config.memory || '',
-        cpus: config.cpus || '',
-        workdir: config.workdir || '',
-        user: config.user || '',
-        hostname: config.hostname || '',
-        privileged: config.privileged || false,
-        capAdd: config.capAdd || [],
-        capDrop: config.capDrop || [],
-      })
-    } catch (e) {
-      actions.showNotification('error', '加载容器配置失败: ' + (e.response?.data?.message || e.message))
-      return
-    } finally {
-      modalLoading.value = false
+    formData = {
+        image: '', name: '', envStr: '', portsStr: '', cmd: '',
+        volumesStr: '', restart: 'always', network: '', memory: '',
+        cpus: '', workdir: '', user: '', hostname: '',
+        privileged: false, capAdd: [] as string[], capDrop: [] as string[]
     }
-  } else {
-    // 创建模式
-    isEditMode.value = false
-    Object.assign(formData, {
-      image: '', name: '', envStr: '', portsStr: '', cmd: '',
-      volumesStr: '', restart: 'always', network: '', memory: '',
-      cpus: '', workdir: '', user: '', hostname: '',
-      privileged: false, capAdd: [], capDrop: [],
-    })
-  }
-  isOpen.value = true
-  loadImages()
-  loadNetworks()
-}
 
-const buildRequestData = () => {
-  const data = {
-    image: formData.image,
-    name: formData.name || undefined,
-    env: formData.envStr ? formData.envStr.split('\n').filter(e => e.trim()) : [],
-    ports: formData.portsStr ? Object.fromEntries(
-      formData.portsStr.split('\n').filter(p => p.trim()).map(p => {
-        const [hostPort, containerPort] = p.split(':').map(s => s.trim())
-        return [hostPort, containerPort]
-      })
-    ) : {},
-    volumes: formData.volumesStr ? formData.volumesStr.split('\n').filter(v => v.trim()).map(v => {
-      const parts = v.split(':').map(s => s.trim())
-      const hostPath = parts[0]
-      const containerPath = parts[1]
-      const readOnly = parts[2] === 'ro'
-      return { hostPath, containerPath, readOnly }
-    }) : [],
-    restart: formData.restart || 'always',
-    network: formData.network || undefined,
-    memory: formData.memory ? parseInt(formData.memory) : undefined,
-    cpus: formData.cpus ? parseFloat(formData.cpus) : undefined,
-    workdir: formData.workdir || undefined,
-    user: formData.user || undefined,
-    hostname: formData.hostname || undefined,
-    privileged: formData.privileged || undefined,
-    capAdd: formData.capAdd.length > 0 ? formData.capAdd : undefined,
-    capDrop: formData.capDrop.length > 0 ? formData.capDrop : undefined,
-  }
-  if (formData.cmd && formData.cmd.trim()) {
-    data.cmd = formData.cmd.trim().split(/\s+/)
-  }
-  return data
-}
+    images: any[] = []
+    networks: any[] = []
 
-const handleConfirm = async () => {
-  if (!formData.image.trim()) return
-  modalLoading.value = true
-  try {
-    if (isEditMode.value) {
-      const data = buildRequestData()
-      data.name = formData.name
-      await api.updateContainerConfig(data)
-      actions.showNotification('success', '容器配置更新成功，已重建容器')
-    } else {
-      await api.createContainer(buildRequestData())
-      actions.showNotification('success', '容器创建成功')
+    readonly restartOptions = [
+        { value: 'always', label: '总是重启' },
+        { value: 'unless-stopped', label: '除非手动停止' },
+        { value: 'on-failure', label: '失败时重启' },
+        { value: 'no', label: '不重启' }
+    ]
+
+    // ─── 计算属性 ───
+    get networkOptions() {
+        const options: any[] = [{ value: '', label: '不指定' }]
+        this.networks.forEach(net => {
+            options.push({ value: net.name, label: `${net.name} (${net.driver})` })
+        })
+        return options
     }
-    isOpen.value = false
-    emit('success')
-  } catch (e) {}
-  modalLoading.value = false
+
+    // ─── 方法 ───
+    async loadImages() {
+        try {
+            const res = await api.listImages(false)
+            this.images = res.payload || []
+        } catch (e) {}
+    }
+
+    async loadNetworks() {
+        try {
+            const res = await api.listNetworks()
+            this.networks = res.payload || []
+        } catch (e) {}
+    }
+
+    async show(container?: any) {
+        if (container) {
+            this.isEditMode = true
+            this.modalLoading = true
+            this.showAdvanced = true
+            try {
+                const res = await api.getContainerConfig(container.name)
+                const config = res.payload
+                Object.assign(this.formData, {
+                    name: config.name,
+                    image: config.image,
+                    envStr: (config.env || []).join('\n'),
+                    portsStr: Object.entries(config.ports || {}).map(([h, c]) => `${h}:${c}`).join('\n'),
+                    volumesStr: (config.volumes || []).map((v: any) => {
+                        let s = `${v.hostPath}:${v.containerPath}`
+                        if (v.readOnly) s += ':ro'
+                        return s
+                    }).join('\n'),
+                    cmd: (config.cmd || []).join(' '),
+                    restart: config.restart || 'always',
+                    network: config.network || '',
+                    memory: config.memory || '',
+                    cpus: config.cpus || '',
+                    workdir: config.workdir || '',
+                    user: config.user || '',
+                    hostname: config.hostname || '',
+                    privileged: config.privileged || false,
+                    capAdd: config.capAdd || [],
+                    capDrop: config.capDrop || []
+                })
+            } catch (e: any) {
+                this.actions.showNotification('error', '加载容器配置失败: ' + (e.response?.data?.message || e.message))
+                return
+            } finally {
+                this.modalLoading = false
+            }
+        } else {
+            this.isEditMode = false
+            Object.assign(this.formData, {
+                image: '', name: '', envStr: '', portsStr: '', cmd: '',
+                volumesStr: '', restart: 'always', network: '', memory: '',
+                cpus: '', workdir: '', user: '', hostname: '',
+                privileged: false, capAdd: [], capDrop: []
+            })
+        }
+        this.isOpen = true
+        this.loadImages()
+        this.loadNetworks()
+    }
+
+    buildRequestData() {
+        const data: any = {
+            image: this.formData.image,
+            name: this.formData.name || undefined,
+            env: this.formData.envStr ? this.formData.envStr.split('\n').filter(e => e.trim()) : [],
+            ports: this.formData.portsStr ? Object.fromEntries(
+                this.formData.portsStr.split('\n').filter(p => p.trim()).map(p => {
+                    const [hostPort, containerPort] = p.split(':').map(s => s.trim())
+                    return [hostPort, containerPort]
+                })
+            ) : {},
+            volumes: this.formData.volumesStr ? this.formData.volumesStr.split('\n').filter(v => v.trim()).map(v => {
+                const parts = v.split(':').map(s => s.trim())
+                return { hostPath: parts[0], containerPath: parts[1], readOnly: parts[2] === 'ro' }
+            }) : [],
+            restart: this.formData.restart || 'always',
+            network: this.formData.network || undefined,
+            memory: this.formData.memory ? parseInt(this.formData.memory) : undefined,
+            cpus: this.formData.cpus ? parseFloat(this.formData.cpus) : undefined,
+            workdir: this.formData.workdir || undefined,
+            user: this.formData.user || undefined,
+            hostname: this.formData.hostname || undefined,
+            privileged: this.formData.privileged || undefined,
+            capAdd: this.formData.capAdd.length > 0 ? this.formData.capAdd : undefined,
+            capDrop: this.formData.capDrop.length > 0 ? this.formData.capDrop : undefined
+        }
+        if (this.formData.cmd && this.formData.cmd.trim()) {
+            data.cmd = this.formData.cmd.trim().split(/\s+/)
+        }
+        return data
+    }
+
+    async handleConfirm() {
+        if (!this.formData.image.trim()) return
+        this.modalLoading = true
+        try {
+            if (this.isEditMode) {
+                const data = this.buildRequestData()
+                data.name = this.formData.name
+                await api.updateContainerConfig(data)
+                this.actions.showNotification('success', '容器配置更新成功，已重建容器')
+            } else {
+                await api.createContainer(this.buildRequestData())
+                this.actions.showNotification('success', '容器创建成功')
+            }
+            this.isOpen = false
+            this.$emit('success')
+        } catch (e) {}
+        this.modalLoading = false
+    }
 }
 
-defineExpose({ show })
+export default toNative(ContainerEditModal)
 </script>
 
 <template>

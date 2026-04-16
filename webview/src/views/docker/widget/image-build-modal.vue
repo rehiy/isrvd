@@ -1,40 +1,46 @@
-<script setup>
-import { ref } from 'vue'
-import { inject } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
+@Component({
+    expose: ['show'],
+    components: { BaseModal },
+    emits: ['success']
+})
+class ImageBuildModal extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const emit = defineEmits(['success'])
+    // ─── 数据属性 ───
+    isOpen = false
+    modalLoading = false
+    buildTag = ''
+    buildDockerfile = 'FROM alpine:latest\nCMD ["echo", "Hello World"]'
 
-const isOpen = ref(false)
-const modalLoading = ref(false)
-const buildTag = ref('')
-const buildDockerfile = ref('FROM alpine:latest\nCMD ["echo", "Hello World"]')
+    // ─── 方法 ───
+    show() {
+        this.buildTag = ''
+        this.buildDockerfile = 'FROM alpine:latest\nCMD ["echo", "Hello World"]'
+        this.isOpen = true
+    }
 
-const show = () => {
-  buildTag.value = ''
-  buildDockerfile.value = 'FROM alpine:latest\nCMD ["echo", "Hello World"]'
-  isOpen.value = true
+    async handleConfirm() {
+        if (!this.buildDockerfile.trim()) return
+        this.modalLoading = true
+        try {
+            await api.imageBuild(this.buildDockerfile, this.buildTag)
+            this.actions.showNotification('success', '镜像构建成功')
+            this.isOpen = false
+            this.$emit('success')
+        } catch (e) {}
+        this.modalLoading = false
+    }
 }
 
-const handleConfirm = async () => {
-  if (!buildDockerfile.value.trim()) return
-  modalLoading.value = true
-  try {
-    await api.imageBuild(buildDockerfile.value, buildTag.value)
-    actions.showNotification('success', '镜像构建成功')
-    isOpen.value = false
-    emit('success')
-  } catch (e) {}
-  modalLoading.value = false
-}
-
-defineExpose({ show })
+export default toNative(ImageBuildModal)
 </script>
 
 <template>

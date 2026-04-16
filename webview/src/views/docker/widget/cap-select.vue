@@ -1,134 +1,116 @@
-<script setup>
-import { computed, ref } from 'vue'
+<script lang="ts">
+import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
 import Dropdown from '@/component/dropdown.vue'
 
-const props = defineProps({
-  modelValue: { type: Array, default: () => [] },
-  type: { type: String, default: 'add' }, // 'add' or 'drop'
+@Component({
+    components: { Dropdown },
+    emits: ['update:modelValue']
 })
+class CapSelect extends Vue {
+    @Prop({ type: Array, default: () => [] }) readonly modelValue!: string[]
+    @Prop({ type: String, default: 'add' }) readonly type!: string
 
-const emit = defineEmits(['update:modelValue'])
+    // ─── 数据属性 ───
+    dropdownOpen = false
+    searchQuery = ''
 
-const dropdownOpen = ref(false)
-const searchQuery = ref('')
-const inputRef = ref(null)
+    readonly capabilityCategories = [
+        {
+            name: '网络', icon: 'fa-network-wired', color: '#3b82f6',
+            caps: [
+                { name: 'NET_ADMIN', desc: '网络管理（配置接口、路由等）' },
+                { name: 'NET_BIND_SERVICE', desc: '绑定 1024 以下端口' },
+                { name: 'NET_BROADCAST', desc: '广播监听' },
+                { name: 'NET_RAW', desc: '原始套接字（ping 等）' }
+            ]
+        },
+        {
+            name: '文件系统', icon: 'fa-folder-open', color: '#10b981',
+            caps: [
+                { name: 'DAC_OVERRIDE', desc: '绕过文件读写执行权限检查' },
+                { name: 'DAC_READ_SEARCH', desc: '绕过文件读和目录搜索权限' },
+                { name: 'FOWNER', desc: '绕过文件属主权限检查' },
+                { name: 'FSETID', desc: '修改文件 set-ID 位' },
+                { name: 'CHOWN', desc: '修改文件属主' },
+                { name: 'SETFCAP', desc: '设置文件能力' }
+            ]
+        },
+        {
+            name: '用户与进程', icon: 'fa-user-shield', color: '#8b5cf6',
+            caps: [
+                { name: 'SETUID', desc: '修改进程 UID' },
+                { name: 'SETGID', desc: '修改进程 GID' },
+                { name: 'SETPCAP', desc: '修改进程能力' },
+                { name: 'SYS_ADMIN', desc: '系统管理（万能权限，谨慎使用）' },
+                { name: 'KILL', desc: '向任意进程发送信号' },
+                { name: 'AUDIT_WRITE', desc: '写入审计日志' }
+            ]
+        },
+        {
+            name: '系统控制', icon: 'fa-cogs', color: '#f59e0b',
+            caps: [
+                { name: 'SYS_CHROOT', desc: '使用 chroot' },
+                { name: 'SYS_PTRACE', desc: '进程跟踪调试' },
+                { name: 'SYS_RESOURCE', desc: '修改系统资源限制' },
+                { name: 'SYS_TIME', desc: '修改系统时钟' },
+                { name: 'SYS_NICE', desc: '修改进程优先级' },
+                { name: 'MKNOD', desc: '创建设备文件' },
+                { name: 'LINUX_IMMUTABLE', desc: '修改文件不可变属性' }
+            ]
+        },
+        {
+            name: '设备与内核', icon: 'fa-microchip', color: '#f43f5e',
+            caps: [
+                { name: 'SYS_MODULE', desc: '加载/卸载内核模块' },
+                { name: 'SYS_RAWIO', desc: '原始 I/O 端口访问' },
+                { name: 'SYS_BOOT', desc: '重启系统' },
+                { name: 'SYSLOG', desc: '内核日志访问' },
+                { name: 'LEASE', desc: '获取文件租约' },
+                { name: 'BLOCK_SUSPEND', desc: '阻止系统挂起' }
+            ]
+        }
+    ]
 
-// 常用 Linux 能力分类
-const capabilityCategories = [
-  {
-    name: '网络',
-    icon: 'fa-network-wired',
-    color: '#3b82f6',
-    caps: [
-      { name: 'NET_ADMIN', desc: '网络管理（配置接口、路由等）' },
-      { name: 'NET_BIND_SERVICE', desc: '绑定 1024 以下端口' },
-      { name: 'NET_BROADCAST', desc: '广播监听' },
-      { name: 'NET_RAW', desc: '原始套接字（ping 等）' },
-    ],
-  },
-  {
-    name: '文件系统',
-    icon: 'fa-folder-open',
-    color: '#10b981',
-    caps: [
-      { name: 'DAC_OVERRIDE', desc: '绕过文件读写执行权限检查' },
-      { name: 'DAC_READ_SEARCH', desc: '绕过文件读和目录搜索权限' },
-      { name: 'FOWNER', desc: '绕过文件属主权限检查' },
-      { name: 'FSETID', desc: '修改文件 set-ID 位' },
-      { name: 'CHOWN', desc: '修改文件属主' },
-      { name: 'SETFCAP', desc: '设置文件能力' },
-    ],
-  },
-  {
-    name: '用户与进程',
-    icon: 'fa-user-shield',
-    color: '#8b5cf6',
-    caps: [
-      { name: 'SETUID', desc: '修改进程 UID' },
-      { name: 'SETGID', desc: '修改进程 GID' },
-      { name: 'SETPCAP', desc: '修改进程能力' },
-      { name: 'SYS_ADMIN', desc: '系统管理（万能权限，谨慎使用）' },
-      { name: 'KILL', desc: '向任意进程发送信号' },
-      { name: 'AUDIT_WRITE', desc: '写入审计日志' },
-    ],
-  },
-  {
-    name: '系统控制',
-    icon: 'fa-cogs',
-    color: '#f59e0b',
-    caps: [
-      { name: 'SYS_CHROOT', desc: '使用 chroot' },
-      { name: 'SYS_PTRACE', desc: '进程跟踪调试' },
-      { name: 'SYS_RESOURCE', desc: '修改系统资源限制' },
-      { name: 'SYS_TIME', desc: '修改系统时钟' },
-      { name: 'SYS_NICE', desc: '修改进程优先级' },
-      { name: 'MKNOD', desc: '创建设备文件' },
-      { name: 'LINUX_IMMUTABLE', desc: '修改文件不可变属性' },
-    ],
-  },
-  {
-    name: '设备与内核',
-    icon: 'fa-microchip',
-    color: '#f43f5e',
-    caps: [
-      { name: 'SYS_MODULE', desc: '加载/卸载内核模块' },
-      { name: 'SYS_RAWIO', desc: '原始 I/O 端口访问' },
-      { name: 'SYS_BOOT', desc: '重启系统' },
-      { name: 'SYSLOG', desc: '内核日志访问' },
-      { name: 'LEASE', desc: '获取文件租约' },
-      { name: 'BLOCK_SUSPEND', desc: '阻止系统挂起' },
-    ],
-  },
-]
+    // ─── 计算属性 ───
+    get selectedCaps() { return this.modelValue || [] }
+    set selectedCaps(val: string[]) { this.$emit('update:modelValue', val) }
 
-// 已选中的能力
-const selectedCaps = computed({
-  get: () => props.modelValue || [],
-  set: (val) => emit('update:modelValue', val),
-})
+    get filteredCategories() {
+        if (!this.searchQuery.trim()) return this.capabilityCategories
+        const query = this.searchQuery.toUpperCase()
+        return this.capabilityCategories.map(cat => ({
+            ...cat,
+            caps: cat.caps.filter(cap => cap.name.includes(query) || cap.desc.includes(this.searchQuery.trim()))
+        })).filter(cat => cat.caps.length > 0)
+    }
 
-// 判断能力是否已选中
-const isSelected = (capName) => selectedCaps.value.includes(capName)
+    // ─── 方法 ───
+    isSelected(capName: string) { return this.selectedCaps.includes(capName) }
 
-// 切换能力选择
-const toggleCap = (capName) => {
-  if (isSelected(capName)) {
-    selectedCaps.value = selectedCaps.value.filter(c => c !== capName)
-  } else {
-    selectedCaps.value = [...selectedCaps.value, capName]
-  }
+    toggleCap(capName: string) {
+        if (this.isSelected(capName)) {
+            this.selectedCaps = this.selectedCaps.filter(c => c !== capName)
+        } else {
+            this.selectedCaps = [...this.selectedCaps, capName]
+        }
+    }
+
+    removeCap(capName: string) {
+        this.selectedCaps = this.selectedCaps.filter(c => c !== capName)
+    }
+
+    addCustomCap() {
+        const cap = this.searchQuery.trim().toUpperCase()
+        if (!cap) return
+        if (!this.isSelected(cap) && cap.length > 0) {
+            this.selectedCaps = [...this.selectedCaps, cap]
+        }
+        this.searchQuery = ''
+    }
 }
 
-// 移除已选能力
-const removeCap = (capName) => {
-  selectedCaps.value = selectedCaps.value.filter(c => c !== capName)
-}
-
-// 添加自定义能力
-const addCustomCap = () => {
-  const cap = searchQuery.value.trim().toUpperCase()
-  if (!cap) return
-  if (cap.startsWith('CAP_')) {
-    // 去掉 CAP_ 前缀，Docker compose 会自动加
-  }
-  if (!isSelected(cap) && cap.length > 0) {
-    selectedCaps.value = [...selectedCaps.value, cap]
-  }
-  searchQuery.value = ''
-}
-
-// 过滤后的分类（搜索用）
-const filteredCategories = computed(() => {
-  if (!searchQuery.value.trim()) return capabilityCategories
-  const query = searchQuery.value.toUpperCase()
-  return capabilityCategories.map(cat => ({
-    ...cat,
-    caps: cat.caps.filter(cap =>
-      cap.name.includes(query) || cap.desc.includes(searchQuery.value.trim())
-    ),
-  })).filter(cat => cat.caps.length > 0)
-})
+export default toNative(CapSelect)
 </script>
 
 <template>

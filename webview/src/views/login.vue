@@ -1,24 +1,31 @@
-<script setup>
-import { inject, reactive } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
 
-const state = inject(APP_STATE_KEY)
-const actions = inject(APP_ACTIONS_KEY)
+@Component
+class Login extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const loginForm = reactive({
-  username: '',
-  password: ''
-})
+    // ─── 数据属性 ───
+    loginForm = {
+        username: '',
+        password: ''
+    }
 
-const handleLogin = async () => {
-  const data = await api.login(loginForm)
-  actions.setAuth(data.payload)
+    // ─── 方法 ───
+    async handleLogin() {
+        const data = await api.login(this.loginForm)
+        this.actions.setAuth(data.payload)
 
-  loginForm.username = ''
-  loginForm.password = ''
+        this.loginForm.username = ''
+        this.loginForm.password = ''
+    }
 }
+
+export default toNative(Login)
 </script>
 
 <template>

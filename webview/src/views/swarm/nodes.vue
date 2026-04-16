@@ -1,61 +1,69 @@
-<script setup>
-import { inject, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
-const actions = inject(APP_ACTIONS_KEY)
-const router = useRouter()
+@Component
+class Nodes extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const nodes = ref([])
-const nodesLoading = ref(false)
+    // ─── 数据属性 ───
+    nodes: any[] = []
+    nodesLoading = false
 
-const nodeStateClass = (state) => {
-  if (state === 'ready') return 'bg-emerald-100 text-emerald-700'
-  if (state === 'down') return 'bg-red-100 text-red-700'
-  return 'bg-slate-100 text-slate-600'
-}
-
-const availabilityClass = (avail) => {
-  if (avail === 'active') return 'bg-emerald-100 text-emerald-700'
-  if (avail === 'drain') return 'bg-amber-100 text-amber-700'
-  if (avail === 'pause') return 'bg-slate-100 text-slate-600'
-  return 'bg-slate-100 text-slate-500'
-}
-
-const loadNodes = async () => {
-  nodesLoading.value = true
-  try {
-  const res = await api.swarmListNodes()
-    const list = res.payload || []
-    // leader 节点排最前
-    nodes.value = list.sort((a, b) => (b.leader ? 1 : 0) - (a.leader ? 1 : 0))
-  } catch (e) {
-    actions.showNotification('error', '获取节点列表失败')
-  }
-  nodesLoading.value = false
-}
-
-const handleNodeAction = (node, action) => {
-  const labels = { drain: '排空', active: '激活', pause: '暂停', remove: '移除' }
-  const label = labels[action] || action
-  actions.showConfirm({
-    title: `${label}节点`,
-    message: `确定要${label}节点 <strong class="text-slate-900">${node.hostname}</strong> 吗？`,
-    icon: action === 'remove' ? 'fa-trash' : 'fa-server',
-    iconColor: action === 'remove' ? 'red' : 'amber',
-    confirmText: `确认${label}`,
-    danger: action === 'remove',
-    onConfirm: async () => {
-      await api.swarmNodeAction(node.id, action)
-      actions.showNotification('success', `节点${label}成功`)
-      loadNodes()
+    // ─── 方法 ───
+    nodeStateClass(state: string) {
+        if (state === 'ready') return 'bg-emerald-100 text-emerald-700'
+        if (state === 'down') return 'bg-red-100 text-red-700'
+        return 'bg-slate-100 text-slate-600'
     }
-  })
+
+    availabilityClass(avail: string) {
+        if (avail === 'active') return 'bg-emerald-100 text-emerald-700'
+        if (avail === 'drain') return 'bg-amber-100 text-amber-700'
+        if (avail === 'pause') return 'bg-slate-100 text-slate-600'
+        return 'bg-slate-100 text-slate-500'
+    }
+
+    async loadNodes() {
+        this.nodesLoading = true
+        try {
+            const res = await api.swarmListNodes()
+            const list = res.payload || []
+            // leader 节点排最前
+            this.nodes = list.sort((a: any, b: any) => (b.leader ? 1 : 0) - (a.leader ? 1 : 0))
+        } catch (e) {
+            this.actions.showNotification('error', '获取节点列表失败')
+        }
+        this.nodesLoading = false
+    }
+
+    handleNodeAction(node: any, action: string) {
+        const labels: Record<string, string> = { drain: '排空', active: '激活', pause: '暂停', remove: '移除' }
+        const label = labels[action] || action
+        this.actions.showConfirm({
+            title: `${label}节点`,
+            message: `确定要${label}节点 <strong class="text-slate-900">${node.hostname}</strong> 吗？`,
+            icon: action === 'remove' ? 'fa-trash' : 'fa-server',
+            iconColor: action === 'remove' ? 'red' : 'amber',
+            confirmText: `确认${label}`,
+            danger: action === 'remove',
+            onConfirm: async () => {
+                await api.swarmNodeAction(node.id, action)
+                this.actions.showNotification('success', `节点${label}成功`)
+                this.loadNodes()
+            }
+        })
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadNodes()
+    }
 }
 
-onMounted(() => loadNodes())
+export default toNative(Nodes)
 </script>
 
 <template>
@@ -123,7 +131,7 @@ onMounted(() => loadNodes())
                 <td class="px-4 py-3 text-xs text-slate-500">{{ n.engineVersion || '-' }}</td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-0.5">
-                    <button @click="router.push(`/swarm/node/${n.id}`)" class="btn-icon text-slate-600 hover:bg-slate-100" title="查看详情"><i class="fas fa-circle-info text-xs"></i></button>
+                    <button @click="$router.push(`/swarm/node/${n.id}`)" class="btn-icon text-slate-600 hover:bg-slate-100" title="查看详情"><i class="fas fa-circle-info text-xs"></i></button>
                     <button v-if="n.availability !== 'active'" @click="handleNodeAction(n, 'active')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="激活"><i class="fas fa-play text-xs"></i></button>
                     <button v-if="n.availability !== 'drain'"  @click="handleNodeAction(n, 'drain')"  class="btn-icon text-amber-600 hover:bg-amber-50"   title="排空"><i class="fas fa-arrow-down text-xs"></i></button>
                     <button v-if="n.availability !== 'pause'"  @click="handleNodeAction(n, 'pause')"  class="btn-icon text-slate-600 hover:bg-slate-100"   title="暂停"><i class="fas fa-pause text-xs"></i></button>
@@ -182,7 +190,7 @@ onMounted(() => loadNodes())
             
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
-              <button @click="router.push(`/swarm/node/${n.id}`)" class="btn-icon text-slate-600 hover:bg-slate-100" title="查看详情">
+              <button @click="$router.push(`/swarm/node/${n.id}`)" class="btn-icon text-slate-600 hover:bg-slate-100" title="查看详情">
                 <i class="fas fa-circle-info text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">详情</span>
               </button>

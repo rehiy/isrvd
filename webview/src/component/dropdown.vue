@@ -1,80 +1,87 @@
-<script setup>
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+<script lang="ts">
+import { nextTick } from 'vue'
+import { Component, Prop, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
-const props = defineProps({
-  open: { type: Boolean, default: false },
-  placement: { type: String, default: 'auto' }, // 'auto' | 'bottom' | 'top'
-  offset: { type: Number, default: 6 },
-  maxWidth: { type: String, default: undefined },
-  maxHeight: { type: String, default: '360px' },
-  closeOnClick: { type: Boolean, default: false },
+@Component({
+    emits: ['update:open']
 })
+class Dropdown extends Vue {
+    @Prop({ type: Boolean, default: false }) readonly open!: boolean
+    @Prop({ type: String, default: 'auto' }) readonly placement!: string
+    @Prop({ type: Number, default: 6 }) readonly offset!: number
+    @Prop({ type: String, default: undefined }) readonly maxWidth!: string | undefined
+    @Prop({ type: String, default: '360px' }) readonly maxHeight!: string
+    @Prop({ type: Boolean, default: false }) readonly closeOnClick!: boolean
 
-const emit = defineEmits(['update:open'])
+    // ─── Refs ───
+    @Ref readonly containerRef!: HTMLDivElement
 
-const containerRef = ref(null)
-const actualPlacement = ref('bottom')
+    // ─── 数据属性 ───
+    actualPlacement = 'bottom'
 
-// 双向绑定 open
-const isOpen = computed({
-  get: () => props.open,
-  set: (val) => emit('update:open', val),
-})
+    // ─── 计算属性 ───
+    get isOpen() {
+        return this.open
+    }
 
-// 计算实际显示方向
-const computePlacement = async () => {
-  if (props.placement !== 'auto') {
-    actualPlacement.value = props.placement
-    return
-  }
+    set isOpen(val: boolean) {
+        this.$emit('update:open', val)
+    }
 
-  await nextTick()
+    // ─── 监听器 ───
+    @Watch('open')
+    onOpenChange(val: boolean) {
+        if (val) this.computePlacement()
+    }
 
-  if (!containerRef.value) {
-    actualPlacement.value = 'bottom'
-    return
-  }
+    // ─── 方法 ───
+    async computePlacement() {
+        if (this.placement !== 'auto') {
+            this.actualPlacement = this.placement
+            return
+        }
 
-  const rect = containerRef.value.getBoundingClientRect()
-  const viewportHeight = window.innerHeight
-  const spaceBelow = viewportHeight - rect.bottom
-  const spaceAbove = rect.top
+        await nextTick()
 
-  // 下方空间不足 200px 且上方空间更充足时，显示在上方
-  if (spaceBelow < 200 && spaceAbove > spaceBelow) {
-    actualPlacement.value = 'top'
-  } else {
-    actualPlacement.value = 'bottom'
-  }
+        if (!this.containerRef) {
+            this.actualPlacement = 'bottom'
+            return
+        }
+
+        const rect = this.containerRef.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        const spaceBelow = viewportHeight - rect.bottom
+        const spaceAbove = rect.top
+
+        if (spaceBelow < 200 && spaceAbove > spaceBelow) {
+            this.actualPlacement = 'top'
+        } else {
+            this.actualPlacement = 'bottom'
+        }
+    }
+
+    handleClickOutside(e: MouseEvent) {
+        if (!this.containerRef) return
+        if (!this.containerRef.contains(e.target as Node)) {
+            this.isOpen = false
+        }
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        document.addEventListener('click', this.handleClickOutside, true)
+        window.addEventListener('resize', this.computePlacement)
+        window.addEventListener('scroll', this.computePlacement, true)
+    }
+
+    unmounted() {
+        document.removeEventListener('click', this.handleClickOutside, true)
+        window.removeEventListener('resize', this.computePlacement)
+        window.removeEventListener('scroll', this.computePlacement, true)
+    }
 }
 
-// 打开时计算方向
-watch(() => props.open, (val) => {
-  if (val) computePlacement()
-})
-
-// 点击外部关闭
-const handleClickOutside = (e) => {
-  if (!containerRef.value) return
-  if (!containerRef.value.contains(e.target)) {
-    isOpen.value = false
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside, true)
-  window.addEventListener('resize', computePlacement)
-  window.addEventListener('scroll', computePlacement, true)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside, true)
-  window.removeEventListener('resize', computePlacement)
-  window.removeEventListener('scroll', computePlacement, true)
-})
-
-// 暴露方法
-defineExpose({ containerRef })
+export default toNative(Dropdown)
 </script>
 
 <template>

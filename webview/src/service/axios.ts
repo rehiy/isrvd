@@ -1,8 +1,8 @@
-import axios from 'axios'
+import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 
-export const interceptors = (state, actions) => {
+export const interceptors = (state: { token: string | null; loading: boolean }, actions: { showNotification: (type: string, message: string) => void; clearAuth: () => void }) => {
     axios.interceptors.request.use(
-        config => {
+        (config: InternalAxiosRequestConfig) => {
             if (state.token) {
                 config.headers['Authorization'] = state.token
             }
@@ -10,19 +10,19 @@ export const interceptors = (state, actions) => {
             state.loading = true
             return config
         },
-        error => {
+        (error: any) => {
             // 返回结果
             return Promise.reject(error)
         }
     )
 
     axios.interceptors.response.use(
-        value => {
-            // 过滤逻辑：不显示GET请求和HTTP 200状态码的消息
+        (value: AxiosResponse) => {
+            // 过滤逻辑：不显示 GET 请求和 HTTP 200 状态码的消息
             const isGetRequest = value.config?.method?.toLowerCase() === 'get'
             const isSuccessStatus = value.status === 200
-            
-            // 只有当不是GET请求且不是200状态码时才显示消息
+
+            // 只有当不是 GET 请求且不是 200 状态码时才显示消息
             if (!isGetRequest && !isSuccessStatus && value.data?.message) {
                 const message = value.data?.message
                 actions.showNotification(value.data.success ? 'success' : 'error', message)
@@ -31,7 +31,7 @@ export const interceptors = (state, actions) => {
             state.loading = false
             return value.data
         },
-        error => {
+        (error: any) => {
             // 处理未授权错误
             if (error.response?.status === 401) {
                 actions.showNotification('error', '登录已过期，请重新登录')

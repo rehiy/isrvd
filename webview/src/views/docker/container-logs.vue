@@ -1,61 +1,76 @@
-<script setup>
-import { inject, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
-const route = useRoute()
-const router = useRouter()
-const actions = inject(APP_ACTIONS_KEY)
+@Component
+class ContainerLogs extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-// 容器信息
-const containerId = ref(route.params.id)
-const container = ref(null)
+    // ─── 数据属性 ───
+    container: any = null
+    logLoading = false
+    logContent = ''
+    logTail = '100'
 
-const loadContainer = async () => {
-  try {
-    const res = await api.listContainers(true)
-    const list = res.payload || []
-    container.value = list.find(c => c.id === containerId.value)
-    if (!container.value) {
-      actions.showNotification('error', '容器不存在')
-      router.push('/docker/containers')
+    get containerId() {
+        return this.$route.params.id as string
     }
-  } catch (e) {
-    actions.showNotification('error', '加载容器信息失败')
-    router.push('/docker/containers')
-  }
+
+    // ─── 方法 ───
+    goBack() {
+        this.$router.push('/docker/containers')
+    }
+
+    switchTab(name: string) {
+        this.$router.push({ name, params: { id: this.containerId } })
+    }
+
+    activeTab() {
+        return this.$route.name
+    }
+
+    async loadContainer() {
+        try {
+            const res = await api.listContainers(true)
+            const list = res.payload || []
+            this.container = list.find((c: any) => c.id === this.containerId)
+            if (!this.container) {
+                this.actions.showNotification('error', '容器不存在')
+                this.$router.push('/docker/containers')
+            }
+        } catch (e) {
+            this.actions.showNotification('error', '加载容器信息失败')
+            this.$router.push('/docker/containers')
+        }
+    }
+
+    async loadLogs() {
+        if (!this.container) return
+        this.logLoading = true
+        this.logContent = ''
+        try {
+            const data = await api.containerLogs(this.containerId, this.logTail)
+            this.logContent = (data.payload.logs || []).join('\n')
+        } catch (e) {
+            this.logContent = '加载日志失败'
+        }
+        this.logLoading = false
+    }
+
+    refreshLogs() {
+        this.loadLogs()
+    }
+
+    // ─── 生命周期 ───
+    async mounted() {
+        await this.loadContainer()
+        await this.loadLogs()
+    }
 }
 
-const goBack = () => router.push('/docker/containers')
-const switchTab = (name) => router.push({ name, params: { id: containerId.value } })
-const activeTab = () => route.name
-
-// 日志
-const logLoading = ref(false)
-const logContent = ref('')
-const logTail = ref('100')
-
-const loadLogs = async () => {
-  if (!container.value) return
-  logLoading.value = true
-  logContent.value = ''
-  try {
-    const data = await api.containerLogs(containerId.value, logTail.value)
-    logContent.value = (data.payload.logs || []).join('\n')
-  } catch (e) {
-    logContent.value = '加载日志失败'
-  }
-  logLoading.value = false
-}
-
-const refreshLogs = () => loadLogs()
-
-onMounted(async () => {
-  await loadContainer()
-  await loadLogs()
-})
+export default toNative(ContainerLogs)
 </script>
 
 <template>

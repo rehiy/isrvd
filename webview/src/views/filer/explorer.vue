@@ -1,9 +1,9 @@
-<script setup>
-import { computed, inject, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import { downloadFile, formatFileSize, formatTime, getFileIcon, isEditableFile } from '@/helper/utils.js'
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state.js'
+import { downloadFile, formatFileSize, formatTime, getFileIcon, isEditableFile } from '@/helper/utils'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
 
 import ChmodModal from '@/views/filer/widget/chmod-modal.vue'
 import CreateModal from '@/views/filer/widget/create-modal.vue'
@@ -15,44 +15,68 @@ import UnzipModal from '@/views/filer/widget/unzip-modal.vue'
 import UploadModal from '@/views/filer/widget/upload-modal.vue'
 import ZipModal from '@/views/filer/widget/zip-modal.vue'
 
-const state = inject(APP_STATE_KEY)
-const actions = inject(APP_ACTIONS_KEY)
-
-const modifyModalRef = ref(null)
-const renameModalRef = ref(null)
-const chmodModalRef = ref(null)
-const zipModalRef = ref(null)
-const deleteModalRef = ref(null)
-const unzipModalRef = ref(null)
-const mkdirModalRef = ref(null)
-const createModalRef = ref(null)
-const uploadModal = ref(null)
-
-const navigateTo = (path) => {
-  actions.loadFiles(path)
-}
-
-const files = ref([])
-
-const download = async (file) => {
-  const response = await api.download(file.path)
-  downloadFile(file.name, response)
-}
-
-const refreshFiles = () => actions.loadFiles()
-
-const paths = computed(() => {
-  if (!state.currentPath || state.currentPath === '/') return []
-  return state.currentPath.split('/').filter(part => part)
+@Component({
+    components: {
+        ChmodModal, CreateModal, DeleteModal, MkdirModal,
+        ModifyModal, RenameModal, UnzipModal, UploadModal, ZipModal
+    }
 })
+class FileExplorer extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-actions.loadFiles = async (path = state.currentPath) => {
-  const data = await api.list(path)
-  files.value = data.payload.files || []
-  state.currentPath = data.payload.path
+    // ─── Refs ───
+    @Ref readonly modifyModalRef!: InstanceType<typeof ModifyModal>
+    @Ref readonly renameModalRef!: InstanceType<typeof RenameModal>
+    @Ref readonly chmodModalRef!: InstanceType<typeof ChmodModal>
+    @Ref readonly zipModalRef!: InstanceType<typeof ZipModal>
+    @Ref readonly deleteModalRef!: InstanceType<typeof DeleteModal>
+    @Ref readonly unzipModalRef!: InstanceType<typeof UnzipModal>
+    @Ref readonly mkdirModalRef!: InstanceType<typeof MkdirModal>
+    @Ref readonly createModalRef!: InstanceType<typeof CreateModal>
+    @Ref readonly uploadModal!: InstanceType<typeof UploadModal>
+
+    // ─── 数据属性 ───
+    files: any[] = []
+    formatFileSize = formatFileSize
+    formatTime = formatTime
+    getFileIcon = getFileIcon
+    isEditableFile = isEditableFile
+
+    // ─── 计算属性 ───
+    get paths() {
+        if (!this.state.currentPath || this.state.currentPath === '/') return []
+        return this.state.currentPath.split('/').filter((part: string) => part)
+    }
+
+    // ─── 方法 ───
+    navigateTo(path: string) {
+        this.actions.loadFiles(path)
+    }
+
+    async download(file: any) {
+        const response = await api.download(file.path)
+        downloadFile(file.name, response)
+    }
+
+    refreshFiles() {
+        this.actions.loadFiles()
+    }
+
+    async loadFiles(path: string = this.state.currentPath) {
+        const data = await api.list(path)
+        this.files = data.payload.files || []
+        this.state.currentPath = data.payload.path
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.actions.loadFiles = (path?: string) => this.loadFiles(path)
+        this.loadFiles('/')
+    }
 }
 
-actions.loadFiles('/')
+export default toNative(FileExplorer)
 </script>
 
 <template>
@@ -103,21 +127,21 @@ actions.loadFiles('/')
 
             <button 
               class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
-              @click="mkdirModalRef.show"
+              @click="mkdirModalRef.show()"
             >
               <i class="fas fa-folder"></i><span class="hidden sm:inline">新建目录</span>
             </button>
 
             <button 
               class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
-              @click="createModalRef.show"
+              @click="createModalRef.show()"
             >
               <i class="fas fa-file"></i><span class="hidden sm:inline">新建文件</span>
             </button>
 
             <button 
               class="px-3 py-1.5 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors"
-              @click="uploadModal.show"
+              @click="uploadModal.show()"
             >
               <i class="fas fa-upload"></i><span class="hidden sm:inline">上传文件</span>
             </button>

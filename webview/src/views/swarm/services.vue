@@ -1,86 +1,105 @@
-<script setup>
-import { inject, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+<script lang="ts">
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_ACTIONS_KEY } from '@/store/state'
 
 import ScaleModal from '@/views/swarm/widget/service-scale-modal.vue'
 import CreateServiceModal from '@/views/swarm/widget/service-create-modal.vue'
 import ComposeModal from '@/views/swarm/widget/compose-modal.vue'
 
-const actions = inject(APP_ACTIONS_KEY)
-const router = useRouter()
+@Component({
+    components: { ScaleModal, CreateServiceModal, ComposeModal }
+})
+class Services extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const services = ref([])
-const servicesLoading = ref(false)
+    // ─── Refs ───
+    @Ref readonly scaleModalRef!: InstanceType<typeof ScaleModal>
+    @Ref readonly createServiceModalRef!: InstanceType<typeof CreateServiceModal>
+    @Ref readonly composeModalRef!: InstanceType<typeof ComposeModal>
 
-const scaleModalRef = ref(null)
-const createServiceModalRef = ref(null)
-const composeModalRef = ref(null)
+    // ─── 数据属性 ───
+    services: any[] = []
+    servicesLoading = false
 
-const openScaleModal = (svc) => scaleModalRef.value?.show(svc)
-const openCreateModal = () => createServiceModalRef.value?.show()
-const openComposeModal = () => composeModalRef.value?.show()
-
-const loadServices = async () => {
-  servicesLoading.value = true
-  try {
-    const res = await api.swarmListServices()
-    services.value = res.payload || []
-  } catch (e) {
-    actions.showNotification('error', '获取服务列表失败')
-  }
-  servicesLoading.value = false
-}
-
-const handleScaleSuccess = () => {
-  actions.showNotification('success', '服务扩缩容成功')
-  loadServices()
-}
-
-const handleCreateSuccess = () => {
-  actions.showNotification('success', '服务创建成功')
-  loadServices()
-}
-
-const handleComposeSuccess = (count) => {
-  actions.showNotification('success', `Compose 部署成功，已创建 ${count} 个服务`)
-  loadServices()
-}
-
-const handleServiceRemove = (svc) => {
-  actions.showConfirm({
-    title: '删除服务',
-    message: `确定要删除服务 <strong class="text-slate-900">${svc.name}</strong> 吗？`,
-    icon: 'fa-trash',
-    iconColor: 'red',
-    confirmText: '确认删除',
-    danger: true,
-    onConfirm: async () => {
-      await api.swarmServiceAction(svc.id, 'remove')
-      actions.showNotification('success', '服务删除成功')
-      loadServices()
+    // ─── 方法 ───
+    openScaleModal(svc: any) {
+        this.scaleModalRef?.show(svc)
     }
-  })
-}
 
-const handleRedeploy = (svc) => {
-  actions.showConfirm({
-    title: '强制重部署',
-    message: `重新拉取并部署服务 <strong class="text-slate-900">${svc.name}</strong>，正在运行的副本会滚动更新。`,
-    icon: 'fa-rotate',
-    iconColor: 'blue',
-    confirmText: '确认重部署',
-    onConfirm: async () => {
-      await api.swarmRedeployService(svc.id)
-      actions.showNotification('success', '已触发强制重部署')
-      loadServices()
+    openCreateModal() {
+        this.createServiceModalRef?.show()
     }
-  })
+
+    openComposeModal() {
+        this.composeModalRef?.show()
+    }
+
+    async loadServices() {
+        this.servicesLoading = true
+        try {
+            const res = await api.swarmListServices()
+            this.services = res.payload || []
+        } catch (e) {
+            this.actions.showNotification('error', '获取服务列表失败')
+        }
+        this.servicesLoading = false
+    }
+
+    handleScaleSuccess() {
+        this.actions.showNotification('success', '服务扩缩容成功')
+        this.loadServices()
+    }
+
+    handleCreateSuccess() {
+        this.actions.showNotification('success', '服务创建成功')
+        this.loadServices()
+    }
+
+    handleComposeSuccess(count: number) {
+        this.actions.showNotification('success', `Compose 部署成功，已创建 ${count} 个服务`)
+        this.loadServices()
+    }
+
+    handleServiceRemove(svc: any) {
+        this.actions.showConfirm({
+            title: '删除服务',
+            message: `确定要删除服务 <strong class="text-slate-900">${svc.name}</strong> 吗？`,
+            icon: 'fa-trash',
+            iconColor: 'red',
+            confirmText: '确认删除',
+            danger: true,
+            onConfirm: async () => {
+                await api.swarmServiceAction(svc.id, 'remove')
+                this.actions.showNotification('success', '服务删除成功')
+                this.loadServices()
+            }
+        })
+    }
+
+    handleRedeploy(svc: any) {
+        this.actions.showConfirm({
+            title: '强制重部署',
+            message: `重新拉取并部署服务 <strong class="text-slate-900">${svc.name}</strong>，正在运行的副本会滚动更新。`,
+            icon: 'fa-rotate',
+            iconColor: 'blue',
+            confirmText: '确认重部署',
+            onConfirm: async () => {
+                await api.swarmRedeployService(svc.id)
+                this.actions.showNotification('success', '已触发强制重部署')
+                this.loadServices()
+            }
+        })
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadServices()
+    }
 }
 
-onMounted(() => loadServices())
+export default toNative(Services)
 </script>
 
 <template>
@@ -151,8 +170,8 @@ onMounted(() => loadServices())
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-0.5">
-                    <button @click="router.push({ name: 'swarm-service-info', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-100" title="详情"><i class="fas fa-circle-info text-xs"></i></button>
-                    <button @click="router.push({ name: 'swarm-service-logs', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-100" title="日志"><i class="fas fa-file-lines text-xs"></i></button>
+                    <button @click="$router.push({ name: 'swarm-service-info', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-100" title="详情"><i class="fas fa-circle-info text-xs"></i></button>
+                    <button @click="$router.push({ name: 'swarm-service-logs', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-100" title="日志"><i class="fas fa-file-lines text-xs"></i></button>
 
                     <button @click="handleRedeploy(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="强制重部署"><i class="fas fa-rotate text-xs"></i></button>
                     <button v-if="svc.mode === 'replicated'" @click="openScaleModal(svc)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="扩缩容"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>
@@ -211,11 +230,11 @@ onMounted(() => loadServices())
             
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
-              <button @click="router.push({ name: 'swarm-service-info', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="详情">
+              <button @click="$router.push({ name: 'swarm-service-info', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="详情">
                 <i class="fas fa-circle-info text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">详情</span>
               </button>
-              <button @click="router.push({ name: 'swarm-service-logs', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
+              <button @click="$router.push({ name: 'swarm-service-logs', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
                 <i class="fas fa-file-lines text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">日志</span>
               </button>

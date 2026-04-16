@@ -1,36 +1,39 @@
-<script setup>
-import { inject, reactive, ref } from 'vue'
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state.js'
+import api from '@/service/api'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
-const state = inject(APP_STATE_KEY)
-const actions = inject(APP_ACTIONS_KEY)
-
-const formData = reactive({
-  name: '',
-  file: null
+@Component({
+    expose: ['show'],
+    components: { BaseModal }
 })
+class RenameModal extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
 
-const modalRef = ref(null)
-const isOpen = ref(false)
+    // ─── 数据属性 ───
+    isOpen = false
+    formData = { name: '', file: null as any }
 
-const show = (file) => {
-  formData.file = file
-  formData.name = file.name
-  isOpen.value = true
+    // ─── 方法 ───
+    show(file: any) {
+        this.formData.file = file
+        this.formData.name = file.name
+        this.isOpen = true
+    }
+
+    async handleConfirm() {
+        if (!this.formData.name.trim() || !this.formData.file) return
+        await api.rename(this.formData.file.path, this.formData.name)
+        this.actions.loadFiles()
+        this.isOpen = false
+    }
 }
 
-const handleConfirm = async () => {
-  if (!formData.name.trim() || !formData.file) return
-  await api.rename(formData.file.path, formData.name)
-  actions.loadFiles()
-  isOpen.value = false
-}
-
-defineExpose({ show })
+export default toNative(RenameModal)
 </script>
 
 <template>

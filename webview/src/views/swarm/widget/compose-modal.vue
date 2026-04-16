@@ -1,37 +1,44 @@
-<script setup>
-import { ref } from 'vue'
+<script lang="ts">
+import { Component, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api.js'
+import api from '@/service/api'
 import { Codemirror } from 'vue-codemirror'
 import { yaml } from '@codemirror/lang-yaml'
 
 import BaseModal from '@/component/modal.vue'
 
-const emit = defineEmits(['success'])
+@Component({
+    expose: ['show'],
+    components: { BaseModal, Codemirror },
+    emits: ['success']
+})
+class SwarmComposeModal extends Vue {
+    // ─── 数据属性 ───
+    isOpen = false
+    loading = false
+    content = ''
+    readonly extensions = [yaml()]
 
-const isOpen = ref(false)
-const loading = ref(false)
-const content = ref('')
-const extensions = [yaml()]
+    // ─── 方法 ───
+    show() {
+        this.content = ''
+        this.isOpen = true
+    }
 
-const show = () => {
-  content.value = ''
-  isOpen.value = true
+    async handleConfirm() {
+        if (!this.content.trim()) return
+        this.loading = true
+        try {
+            const res = await api.swarmDeployComposeService(this.content)
+            const created = res.payload || []
+            this.isOpen = false
+            this.$emit('success', created.length)
+        } catch (e) {}
+        this.loading = false
+    }
 }
 
-const handleConfirm = async () => {
-  if (!content.value.trim()) return
-  loading.value = true
-  try {
-    const res = await api.swarmDeployComposeService(content.value)
-    const created = res.payload || []
-    isOpen.value = false
-    emit('success', created.length)
-  } catch (e) {}
-  loading.value = false
-}
-
-defineExpose({ show })
+export default toNative(SwarmComposeModal)
 </script>
 
 <template>
