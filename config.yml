@@ -8,7 +8,7 @@ server:
 docker:
   # host: unix:///var/run/docker.sock
   # host: tcp://127.0.0.1:2375
-  containerRoot: srv/
+  containerRoot: container/
   registries:
      # - name: CSIG Hub
      #   description: 公司内部镜像仓库

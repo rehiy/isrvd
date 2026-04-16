@@ -1,0 +1,19 @@
+server:
+  debug: false
+  listenAddr: ":8080"
+  jwtSecret: __JWT_SECRET__
+  rootDirectory: /data/storage/
+
+docker:
+  host: unix:///var/run/docker.sock
+  containerRoot: /data/container/
+
+apisix:
+  adminUrl: http://127.0.0.1:9180/apisix/admin
+  adminKey: __APISIX_ADMIN_KEY__
+
+members:
+  - username: admin
+    password: __ISRVD_PASSWORD__
+    homeDirectory: .
+    allowTerminal: true
