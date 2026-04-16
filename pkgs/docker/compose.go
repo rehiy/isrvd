@@ -9,6 +9,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/rehiy/pango/logman"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // VolumeMapping 目录映射
@@ -410,4 +411,95 @@ func (s *DockerService) GetContainerConfig(ctx context.Context, name string) (*C
 	}
 
 	return result, nil
+}
+
+// ComposeDeployRequest 通过 Compose 部署请求
+type ComposeDeployRequest struct {
+	Content string `json:"content" binding:"required"`
+}
+
+// DeployCompose 通过 docker-compose.yml 内容创建容器
+func (s *DockerService) DeployCompose(ctx context.Context, content string) ([]string, error) {
+	var compose composeFile
+	if err := yaml.Unmarshal([]byte(content), &compose); err != nil {
+		return nil, fmt.Errorf("解析 compose 文件失败: %w", err)
+	}
+
+	if len(compose.Services) == 0 {
+		return nil, fmt.Errorf("compose 文件中没有定义服务")
+	}
+
+	var created []string
+
+	for name, svc := range compose.Services {
+		req := ContainerCreateRequest{
+			Image:      svc.Image,
+			Name:       name,
+			Env:        svc.Environment,
+			Network:    svc.NetworkMode,
+			Workdir:    svc.WorkingDir,
+			User:       svc.User,
+			Hostname:   svc.Hostname,
+			Privileged: svc.Privileged,
+			CapAdd:     svc.CapAdd,
+			CapDrop:    svc.CapDrop,
+		}
+
+		// 处理容器名（优先使用 compose 中的 container_name）
+		if svc.ContainerName != "" {
+			req.Name = svc.ContainerName
+		}
+
+		// 处理命令
+		if svc.Command != "" {
+			req.Cmd = strings.Fields(svc.Command)
+		}
+
+		// 处理重启策略
+		if svc.Restart != "" {
+			req.Restart = svc.Restart
+		} else {
+			req.Restart = "no"
+		}
+
+		// 处理端口映射
+		if len(svc.Ports) > 0 {
+			req.Ports = parsePortsToMap(svc.Ports)
+		}
+
+		// 处理卷映射
+		if len(svc.Volumes) > 0 {
+			req.Volumes = parseVolumesToList(svc.Volumes)
+		}
+
+		// 处理资源限制
+		if svc.Deploy != nil && svc.Deploy.Resources != nil && svc.Deploy.Resources.Limits != nil {
+			if svc.Deploy.Resources.Limits.Memory != "" {
+				memStr := strings.TrimSuffix(svc.Deploy.Resources.Limits.Memory, "M")
+				memStr = strings.TrimSuffix(memStr, "Mi")
+				if mem, err := strconv.ParseInt(memStr, 10, 64); err == nil {
+					req.Memory = mem
+				}
+			}
+			if svc.Deploy.Resources.Limits.Cpus != "" {
+				if cpus, err := strconv.ParseFloat(svc.Deploy.Resources.Limits.Cpus, 64); err == nil {
+					req.Cpus = cpus
+				}
+			}
+		}
+
+		id, err := s.CreateContainer(ctx, req)
+		if err != nil {
+			return created, fmt.Errorf("创建容器 %s 失败: %w", name, err)
+		}
+
+		shortID := id
+		if len(shortID) > 12 {
+			shortID = shortID[:12]
+		}
+
+		created = append(created, fmt.Sprintf("%s (%s)", req.Name, shortID))
+	}
+
+	return created, nil
 }

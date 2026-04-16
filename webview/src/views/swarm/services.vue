@@ -5,6 +5,9 @@ import { useRouter } from 'vue-router'
 import api from '@/service/api.js'
 import { APP_ACTIONS_KEY } from '@/store/state.js'
 
+import { Codemirror } from 'vue-codemirror'
+import { yaml } from '@codemirror/lang-yaml'
+
 import ImageSelect from '@/component/docker/image-select.vue'
 import BaseModal from '@/component/modal.vue'
 
@@ -32,6 +35,12 @@ const createForm = ref({
 const createImages = ref([])
 const createNetworks = ref([])
 const showCreateAdvanced = ref(false)
+
+// Compose 部署状态
+const composeOpen = ref(false)
+const composeLoading = ref(false)
+const composeContent = ref('')
+const composeExtensions = [yaml()]
 
 const loadCreateResources = async () => {
   try {
@@ -123,6 +132,27 @@ const openCreateModal = () => {
   loadCreateResources()
 }
 
+// Compose 部署弹窗
+const openComposeModal = () => {
+  composeContent.value = ''
+  composeOpen.value = true
+}
+
+const handleDeployCompose = async () => {
+  if (!composeContent.value.trim()) return
+  composeLoading.value = true
+  try {
+    const res = await api.swarmDeployComposeService(composeContent.value)
+    const created = res.payload || []
+    actions.showNotification('success', `Compose 部署成功，已创建 ${created.length} 个服务`)
+    composeOpen.value = false
+    loadServices()
+  } catch (e) {
+    actions.showNotification('error', 'Compose 部署失败')
+  }
+  composeLoading.value = false
+}
+
 const handleCreate = async () => {
   createLoading.value = true
   try {
@@ -197,6 +227,9 @@ onMounted(() => loadServices())
           </button>
           <button @click="openCreateModal" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
             <i class="fas fa-plus"></i>创建服务
+          </button>
+          <button @click="openComposeModal" class="px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <i class="fas fa-file-code"></i>Compose
           </button>
         </div>
       </div>
@@ -442,6 +475,26 @@ onMounted(() => loadServices())
           <div class="w-8 h-8 spinner"></div>
         </div>
         <pre v-else class="bg-slate-900 text-slate-100 rounded-xl p-4 text-xs font-mono overflow-auto max-h-[420px] whitespace-pre-wrap break-all">{{ logsContent }}</pre>
+      </div>
+    </BaseModal>
+
+    <!-- Compose 部署模态框 -->
+    <BaseModal
+      v-model="composeOpen"
+      title="通过 Compose 创建服务"
+      :loading="composeLoading"
+      show-footer
+      @confirm="handleDeployCompose"
+    >
+      <template #confirm-text>部署</template>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">Compose 内容 <span class="text-red-500">*</span></label>
+          <div class="rounded-xl overflow-hidden border border-slate-200">
+            <Codemirror v-model="composeContent" :style="{ height: '50vh' }" :extensions="composeExtensions" :disabled="composeLoading" />
+          </div>
+          <p class="mt-1 text-xs text-slate-400">粘贴 docker-compose.yml 内容，将按照服务定义逐个创建 Swarm 服务</p>
+        </div>
       </div>
     </BaseModal>
     </div>

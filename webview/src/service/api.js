@@ -98,6 +98,9 @@ class ApiService {
   createContainer(data) {
     return axios.post('/api/docker/container/create', data)
   }
+  deployCompose(content) {
+    return axios.post('/api/docker/container/deploy-compose', { content })
+  }
   containerLogs(id, tail = '100') {
     return axios.post('/api/docker/container/logs', { id, tail })
   }
@@ -201,6 +204,9 @@ class ApiService {
   }
   swarmCreateService(data) {
     return axios.post('/api/swarm/service/create', data)
+  }
+  swarmDeployComposeService(content) {
+    return axios.post('/api/swarm/service/deploy-compose', { content })
   }
   swarmRedeployService(id) {
     return axios.post('/api/swarm/service/redeploy', { id })

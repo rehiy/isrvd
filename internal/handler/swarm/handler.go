@@ -203,3 +203,20 @@ func (h *SwarmHandler) SwarmInspectService(c *gin.Context) {
 
 	helper.RespondSuccess(c, "Service inspected", result)
 }
+
+// SwarmDeployComposeService 通过 Compose 文件创建 Swarm 服务
+func (h *SwarmHandler) SwarmDeployComposeService(c *gin.Context) {
+	var req swarm.SwarmComposeDeployRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
+		return
+	}
+
+	result, err := h.manager.DeployComposeService(c.Request.Context(), req.Content)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, "部署 Compose 服务失败: "+err.Error())
+		return
+	}
+
+	helper.RespondSuccess(c, "Compose 服务部署成功", result)
+}

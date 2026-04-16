@@ -159,3 +159,20 @@ func (h *DockerHandler) ContainerExec(c *gin.Context) {
 
 	h.service.ContainerExec(conn, containerID, shell)
 }
+
+// DeployCompose 通过 Compose 文件创建容器
+func (h *DockerHandler) DeployCompose(c *gin.Context) {
+	var req docker.ComposeDeployRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
+		return
+	}
+
+	result, err := h.service.DeployCompose(c.Request.Context(), req.Content)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, "部署 Compose 失败: "+err.Error())
+		return
+	}
+
+	helper.RespondSuccess(c, "Compose 部署成功", result)
+}
