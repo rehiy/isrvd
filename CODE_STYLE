@@ -265,7 +265,7 @@ if err := c.BindJSON(&body); err != nil { ... }
 id := body["id"].(string) // 不安全的类型断言
 ```
 
-请求模型统一在各 handler 子包的 `model.go` 中定义（如 `handler/docker/model.go`），绑定标签使用 `binding:"required"` 等验证规则。业务数据模型定义在对应的 `pkgs/` 子包中（如 `pkgs/docker/types.go`）。
+请求模型统一在各 handler 子包的 `model.go` 中定义（如 `handler/docker/model.go`），绑定标签使用 `binding:"required"` 等验证规则。业务数据模型定义在对应的 `pkgs/` 子包中，**struct 就近放置在使用它的第一个方法上方**。
 
 ### WebSocket 升级器
 
@@ -285,8 +285,35 @@ conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 类型定义按职责分层：
 
 - **请求/响应结构体**：定义在各 handler 子包的 `model.go` 中（如 `handler/apisix/model.go`、`handler/filer/model.go`）
-- **业务数据模型**：定义在对应的 `pkgs/` 子包的 `types.go` 中（如 `pkgs/docker/types.go`、`pkgs/swarm/types.go`）
+- **业务数据模型**：定义在 `pkgs/` 子包中，**struct 应就近放置在使用它的第一个方法上方**，禁止集中放在单独的 `types.go` 文件中
 - **配置类型**：定义在 `config/types.go` 中
+
+**pkgs 层 struct 放置规范**（参照 apisix 包）：
+
+```go
+// ✅ 正确 — struct 放在使用它的第一个方法上方
+// ContainerInfo 放在 ListContainers 上方
+type ContainerInfo struct {
+    ID     string
+    Names  []string
+    Image  string
+    Status string
+}
+
+func (s *DockerService) ListContainers(ctx context.Context, all bool) ([]*ContainerInfo, error) {
+    // ...
+}
+
+// ContainerActionRequest 放在 ContainerAction 上方
+type ContainerActionRequest struct {
+    ID     string `json:"id" binding:"required"`
+    Action string `json:"action" binding:"required"`
+}
+
+func (s *DockerService) ContainerAction(ctx context.Context, req *ContainerActionRequest) error {
+    // ...
+}
+```
 
 禁止在不同包中重复定义相同结构体。handler 层可直接引用 pkgs 层的请求类型（如 `docker.ContainerCreateRequest`）。
 
@@ -359,7 +386,46 @@ func (h *DockerHandler) ListContainers(c *gin.Context) {
 
 简单业务（如 auth）直接在 handler 内实现，不需要独立 pkgs 包。
 
-**依赖方向**：`pkgs/` 层是纯业务逻辑层，禁止依赖 `server/` 包（config、server/helper 等）。配置信息通过构造函数参数注入（如 `NewDockerService(cfg *DockerConfig)`），由 handler 层负责从 `config` 读取并传入。
+**依赖方向**：
+- `pkgs/` 层是纯业务逻辑层，禁止依赖 `server/` 包（config、server/helper 等）
+- `internal/registry` 层负责从 `config` 读取配置并初始化 `pkgs/` 层服务
+- `handler` 层从 `internal/registry` 获取已初始化的服务实例
+
+```
+依赖流向：config → internal/registry → pkgs/
+                    ↓
+                 handler
+```
+
+### 服务注册中心规范
+
+所有外部服务（Docker、Apisix 等）的连接统一管理在 `internal/registry/` 包中，禁止 handler 直接从 `pkgs/` 或 `config` 创建服务实例：
+
+```go
+// ✅ 正确 — 从 registry 获取已初始化的服务实例
+func NewDockerHandler() (*DockerHandler, error) {
+    svc := registry.DefaultRegistry.GetDocker()
+    if svc == nil {
+        return nil, fmt.Errorf("Docker 服务未初始化")
+    }
+    return &DockerHandler{service: svc}, nil
+}
+
+// ❌ 错误 — handler 直接创建服务实例
+func NewDockerHandler() (*DockerHandler, error) {
+    cfg := &docker.DockerConfig{
+        Host: config.Docker.Host,  // 直接依赖 config
+        // ...
+    }
+    svc, err := docker.NewDockerService(cfg)
+    // ...
+}
+```
+
+**设计原则**：
+- `internal/registry` 负责所有外部服务的生命周期管理（初始化、连接复用、可用性检查）
+- handler 只负责从 registry 获取已初始化的服务实例，处理 HTTP 层逻辑
+- 服务初始化失败不应阻止应用启动（可选服务），handler 中通过 nil 检查处理未配置的情况
 
 ### 项目结构
 
@@ -412,7 +478,6 @@ pkgs/
 │   └── zip.go
 ├── docker/          # Docker 业务逻辑
 │   ├── client.go        # Docker 客户端 + DockerConfig 注入
-│   ├── types.go         # 类型定义 + 配置类型
 │   ├── container.go     # 容器管理
 │   ├── image.go         # 镜像管理
 │   ├── network.go       # 网络管理
@@ -423,8 +488,16 @@ pkgs/
 │   ├── registry.go      # 镜像仓库操作
 │   └── helper.go        # 包内私有工具
 └── swarm/           # Swarm 业务逻辑
-    ├── client.go        # Swarm 管理器 + 所有操作
-    └── types.go         # 类型定义
+    ├── client.go        # Swarm 管理器 + 构造函数
+    ├── node.go          # 节点管理
+    ├── service.go       # 服务管理
+    └── task.go          # 任务管理
+
+internal/
+└── registry/        # 服务注册中心（统一管理外部服务连接）
+    ├── client.go        # Registry 结构定义和初始化
+    ├── docker.go        # Docker/Swarm 服务管理
+    └── apisix.go        # Apisix 服务管理
 ```
 
 ### 安全规范
