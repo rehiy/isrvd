@@ -5,19 +5,15 @@ import { useRouter } from 'vue-router'
 import api from '@/service/api.js'
 import { APP_ACTIONS_KEY } from '@/store/state.js'
 
-import BaseModal from '@/component/modal.vue'
+import NetworkCreateModal from '@/views/docker/widget/network-create-modal.vue'
 
 const actions = inject(APP_ACTIONS_KEY)
 const router = useRouter()
 
-// 网络数据
 const networks = ref([])
 const loading = ref(false)
 
-// 创建网络模态框
-const modalOpen = ref(false)
-const modalLoading = ref(false)
-const formData = ref({})
+const createModalRef = ref(null)
 
 // 加载网络列表
 const loadNetworks = async () => {
@@ -29,25 +25,6 @@ const res = await api.listNetworks()
     actions.showNotification('error', '加载网络列表失败')
   }
   loading.value = false
-}
-
-// 创建网络弹窗
-const createNetworkModal = () => {
-  formData.value = { name: '', driver: 'bridge', subnet: '' }
-  modalOpen.value = true
-}
-
-// 创建网络
-const handleCreateNetwork = async () => {
-  if (!formData.value.name.trim()) return
-  modalLoading.value = true
-  try {
-    await api.createNetwork(formData.value)
-    actions.showNotification('success', '网络创建成功')
-    modalOpen.value = false
-    loadNetworks()
-  } catch (e) {}
-  modalLoading.value = false
 }
 
 // 删除网络
@@ -88,10 +65,9 @@ const getDeleteDisabledReason = (net) => {
   return `${networkNames[net.name] || '系统网络'}不可删除`
 }
 
-// 暴露方法给 toolbar 使用
 defineExpose({
   loadNetworks,
-  createNetworkModal
+  createNetworkModal: () => createModalRef.value?.show()
 })
 
 onMounted(() => {
@@ -118,7 +94,7 @@ onMounted(() => {
             <button @click="loadNetworks()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button @click="createNetworkModal()" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <button @click="createModalRef?.show()" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-plus"></i>创建
             </button>
           </div>
@@ -256,34 +232,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 创建网络模态框 -->
-    <BaseModal
-      v-model="modalOpen"
-      title="创建网络"
-      :loading="modalLoading"
-      show-footer
-      @confirm="handleCreateNetwork"
-    >
-      <template #confirm-text>确认创建</template>
-      <form @submit.prevent="handleCreateNetwork" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">网络名称</label>
-          <input type="text" v-model="formData.name" placeholder="例如: my-network" required class="input" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">驱动类型</label>
-          <select v-model="formData.driver" class="input">
-            <option value="bridge">bridge (桥接)</option>
-            <option value="host">host (主机)</option>
-            <option value="overlay">overlay (覆盖)</option>
-            <option value="macvlan">macvlan</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">子网 CIDR（可选）</label>
-          <input type="text" v-model="formData.subnet" placeholder="例如: 172.20.0.0/16" class="input" />
-        </div>
-      </form>
-    </BaseModal>
+    <NetworkCreateModal ref="createModalRef" @success="loadNetworks" />
   </div>
 </template>

@@ -78,6 +78,8 @@ const blkRef = ref(null)
 
 // ========== 统计定时器 ==========
 
+let destroyed = false
+
 const startStatsTimer = () => {
   stopStatsTimer()
   statsTimer = setInterval(() => loadStats(), POLL_INTERVAL)
@@ -103,7 +105,7 @@ const handleVisibilityChange = () => {
 const loadStats = async () => {
   try {
     const res = await api.containerStats(containerId.value)
-    if (!res.payload) return
+    if (destroyed || !res.payload) return
     statsData.value = res.payload
     pushPoint(res.payload)
     renderCharts()
@@ -323,6 +325,7 @@ onBeforeRouteLeave(() => {
 })
 
 onUnmounted(() => {
+  destroyed = true
   stopStatsTimer()
   destroyCharts()
   clearHistory()
@@ -358,13 +361,13 @@ onUnmounted(() => {
             </template>
           </div>
           <div v-if="container" class="flex gap-1 bg-slate-100 p-1 rounded-lg">
-            <button @click="switchTab('docker-container-stats')" :class="['px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-stats' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+            <button @click="switchTab('docker-container-stats')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-stats' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
               <i class="fas fa-chart-line"></i><span>监控</span>
             </button>
-            <button @click="switchTab('docker-container-logs')" :class="['px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-logs' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+            <button @click="switchTab('docker-container-logs')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-logs' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
               <i class="fas fa-file-lines"></i><span>日志</span>
             </button>
-            <button @click="switchTab('docker-container-terminal')" :class="['px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-terminal' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+            <button @click="switchTab('docker-container-terminal')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-terminal' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
               <i class="fas fa-terminal"></i><span>终端</span>
             </button>
           </div>
@@ -394,13 +397,13 @@ onUnmounted(() => {
             </div>
           </div>
           <div v-if="container" class="flex justify-center gap-1 bg-slate-100 p-1 rounded-lg">
-            <button @click="switchTab('docker-container-stats')" :class="['px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-stats' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+            <button @click="switchTab('docker-container-stats')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-stats' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
               <i class="fas fa-chart-line"></i><span class="hidden sm:inline">监控</span>
             </button>
-            <button @click="switchTab('docker-container-logs')" :class="['px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-logs' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+            <button @click="switchTab('docker-container-logs')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-logs' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
               <i class="fas fa-file-lines"></i><span class="hidden sm:inline">日志</span>
             </button>
-            <button @click="switchTab('docker-container-terminal')" :class="['px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-terminal' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+            <button @click="switchTab('docker-container-terminal')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-terminal' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
               <i class="fas fa-terminal"></i><span class="hidden sm:inline">终端</span>
             </button>
           </div>

@@ -53,7 +53,7 @@ const goServiceDetail = (serviceId) => {
 }
 
 const goNodeDetail = (nodeId) => {
-  router.push({ name: 'swarm-node-detail', params: { id: nodeId } })
+  router.push({ name: 'swarm-node', params: { id: nodeId } })
 }
 
 onMounted(() => {

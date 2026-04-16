@@ -1,19 +1,18 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 
 import api from '@/service/api.js'
 import { APP_ACTIONS_KEY } from '@/store/state.js'
 import { inject } from 'vue'
 
-import BaseModal from '@/component/modal.vue'
+import RegistryPushModal from '@/views/docker/widget/registry-push-modal.vue'
+import RegistryPullModal from '@/views/docker/widget/registry-pull-modal.vue'
 
 const actions = inject(APP_ACTIONS_KEY)
 
-// 镜像加速器（来自 Docker daemon）
 const daemonMirrors = ref([])
 const indexServerAddress = ref('')
 
-// 加载 daemon 镜像源信息
 const loadDaemonInfo = async () => {
   try {
     const res = await api.dockerInfo()
@@ -23,22 +22,11 @@ const loadDaemonInfo = async () => {
   } catch (e) {}
 }
 
-// 仓库列表
 const registries = ref([])
 const loading = ref(false)
 
-// 本地镜像列表（用于选择推送/同步的镜像）
-const localImages = ref([])
-
-// 推送镜像模态框
-const pushOpen = ref(false)
-const pushLoading = ref(false)
-const pushForm = ref({ image: '', registryUrl: '', namespace: '' })
-
-// 拉取镜像模态框（从仓库拉取到本地）
-const pullOpen = ref(false)
-const pullLoading = ref(false)
-const pullForm = ref({ image: '', registryUrl: '', namespace: '' })
+const pushModalRef = ref(null)
+const pullModalRef = ref(null)
 
 // 加载仓库列表
 const loadRegistries = async () => {
@@ -52,85 +40,7 @@ const loadRegistries = async () => {
   loading.value = false
 }
 
-// 加载本地镜像列表
-const loadLocalImages = async () => {
-  try {
-    const res = await api.listImages(false)
-    localImages.value = (res.payload || []).filter(img => img.repoTags && img.repoTags.length > 0)
-  } catch (e) {}
-}
-
-// 可选的镜像标签列表（扁平化）
-const imageTagOptions = computed(() => {
-  const tags = []
-  for (const img of localImages.value) {
-    for (const tag of img.repoTags) {
-      if (tag !== '<none>:<none>') {
-        tags.push(tag)
-      }
-    }
-  }
-  return tags
-})
-
-// 打开推送模态框
-const openPushModal = (registry = null) => {
-  pushForm.value = {
-    image: '',
-    registryUrl: registry ? registry.url : '',
-    namespace: ''
-  }
-  loadLocalImages()
-  pushOpen.value = true
-}
-
-// 计算推送目标引用预览
-const pushTargetPreview = computed(() => {
-  const registry = pushForm.value.registryUrl || 'registry'
-  const ns = pushForm.value.namespace ? pushForm.value.namespace + '/' : ''
-  // 从镜像名中提取短名称（去掉仓库前缀）
-  let imageName = pushForm.value.image || 'image:tag'
-  const lastSlash = imageName.lastIndexOf('/')
-  if (lastSlash >= 0) {
-    imageName = imageName.substring(lastSlash + 1)
-  }
-  return registry + '/' + ns + imageName
-})
-
-// 执行推送
-const handlePush = async () => {
-  if (!pushForm.value.image.trim() || !pushForm.value.registryUrl.trim()) return
-  pushLoading.value = true
-  try {
-    await api.pushImage(pushForm.value.image, pushForm.value.registryUrl, pushForm.value.namespace.trim() || undefined)
-    actions.showNotification('success', '镜像推送成功')
-    pushOpen.value = false
-  } catch (e) {}
-  pushLoading.value = false
-}
-
-// 打开拉取镜像模态框（从仓库拉取到本地）
-const openPullModal = (registry = null) => {
-  pullForm.value = {
-    image: '',
-    registryUrl: registry ? registry.url : '',
-    namespace: ''
-  }
-  pullOpen.value = true
-}
-
-// 执行拉取（从仓库拉取到本地）
-const handlePull = async () => {
-  if (!pullForm.value.image.trim() || !pullForm.value.registryUrl.trim()) return
-  pullLoading.value = true
-  try {
-    await api.pullFromRegistry(pullForm.value.image, pullForm.value.registryUrl, pullForm.value.namespace.trim() || undefined)
-    actions.showNotification('success', '镜像拉取成功')
-    pullOpen.value = false
-  } catch (e) {}
-  pullLoading.value = false
-}
-
+// 加载仓库列表
 onMounted(() => {
   loadDaemonInfo()
   loadRegistries()
@@ -156,10 +66,10 @@ onMounted(() => {
             <button @click="loadRegistries()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button @click="openPullModal()" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <button @click="pullModalRef?.show(registries)" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-download"></i>拉取
             </button>
-            <button @click="openPushModal()" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <button @click="pushModalRef?.show(registries)" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-upload"></i>推送
             </button>
           </div>
@@ -238,10 +148,10 @@ onMounted(() => {
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-0.5">
-                    <button @click="openPullModal(reg)" class="btn-icon text-slate-600 hover:bg-slate-100" title="拉取镜像">
+                    <button @click="pullModalRef?.show(registries, reg)" class="btn-icon text-slate-600 hover:bg-slate-100" title="拉取镜像">
                       <i class="fas fa-download text-xs"></i>
                     </button>
-                    <button @click="openPushModal(reg)" class="btn-icon text-blue-600 hover:bg-blue-50" title="推送镜像">
+                    <button @click="pushModalRef?.show(registries, reg)" class="btn-icon text-blue-600 hover:bg-blue-50" title="推送镜像">
                       <i class="fas fa-upload text-xs"></i>
                     </button>
                   </div>
@@ -315,11 +225,11 @@ onMounted(() => {
             </div>
             
             <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
-              <button @click="openPullModal(reg)" class="btn-icon text-slate-600 hover:bg-slate-100" title="拉取镜像">
+              <button @click="pullModalRef?.show(registries, reg)" class="btn-icon text-slate-600 hover:bg-slate-100" title="拉取镜像">
                 <i class="fas fa-download text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">拉取</span>
               </button>
-              <button @click="openPushModal(reg)" class="btn-icon text-blue-600 hover:bg-blue-50" title="推送镜像">
+              <button @click="pushModalRef?.show(registries, reg)" class="btn-icon text-blue-600 hover:bg-blue-50" title="推送镜像">
                 <i class="fas fa-upload text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">推送</span>
               </button>
@@ -329,67 +239,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 推送镜像模态框 -->
-    <BaseModal
-      v-model="pushOpen"
-      title="推送镜像到仓库"
-      :loading="pushLoading"
-      show-footer
-      @confirm="handlePush"
-    >
-      <template #confirm-text>开始推送</template>
-      <form @submit.prevent="handlePush" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">本地镜像</label>
-          <select v-model="pushForm.image" class="input" required>
-            <option value="" disabled>请选择镜像</option>
-            <option v-for="tag in imageTagOptions" :key="tag" :value="tag">{{ tag }}</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">目标仓库地址</label>
-          <select v-model="pushForm.registryUrl" class="input" required>
-            <option value="" disabled>请选择仓库</option>
-            <option v-for="reg in registries" :key="reg.url" :value="reg.url">{{ reg.name }} ({{ reg.url }}){{ reg.description ? ' - ' + reg.description : '' }}</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">命名空间 <span class="text-slate-400 font-normal">(可选)</span></label>
-          <input type="text" v-model="pushForm.namespace" placeholder="例如: myteam" class="input" />
-          <p class="mt-1 text-xs text-slate-400">镜像将被推送为: {{ pushTargetPreview }}</p>
-        </div>
-      </form>
-    </BaseModal>
-
-    <!-- 拉取镜像模态框（从仓库拉取到本地） -->
-    <BaseModal
-      v-model="pullOpen"
-      title="从仓库拉取镜像"
-      :loading="pullLoading"
-      show-footer
-      @confirm="handlePull"
-    >
-      <template #confirm-text>开始拉取</template>
-      <form @submit.prevent="handlePull" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">源仓库地址</label>
-          <select v-model="pullForm.registryUrl" class="input" required>
-            <option value="" disabled>请选择仓库</option>
-            <option v-for="reg in registries" :key="reg.url" :value="reg.url">{{ reg.name }} ({{ reg.url }}){{ reg.description ? ' - ' + reg.description : '' }}</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">命名空间 <span class="text-slate-400 font-normal">(可选)</span></label>
-          <input type="text" v-model="pullForm.namespace" placeholder="例如: myteam" class="input" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">镜像名称</label>
-          <input type="text" v-model="pullForm.image" placeholder="输入镜像名称，如 myapp:latest" class="input" required />
-          <p class="mt-1 text-xs text-slate-400">
-            将拉取: {{ pullForm.registryUrl || 'registry' }}/{{ pullForm.namespace ? pullForm.namespace + '/' : '' }}{{ pullForm.image || 'image:tag' }}
-          </p>
-        </div>
-      </form>
-    </BaseModal>
+    <RegistryPushModal ref="pushModalRef" />
+    <RegistryPullModal ref="pullModalRef" />
   </div>
 </template>

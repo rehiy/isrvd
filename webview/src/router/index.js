@@ -33,17 +33,17 @@ const routes = [
   {
     path: '/docker/container/:id/stats',
     name: 'docker-container-stats',
-    component: () => import('@/views/docker/container_stats.vue')
+    component: () => import('@/views/docker/container-stats.vue')
   },
   {
     path: '/docker/container/:id/logs',
     name: 'docker-container-logs',
-    component: () => import('@/views/docker/container_logs.vue')
+    component: () => import('@/views/docker/container-logs.vue')
   },
   {
     path: '/docker/container/:id/terminal',
     name: 'docker-container-terminal',
-    component: () => import('@/views/docker/container_terminal.vue')
+    component: () => import('@/views/docker/container-terminal.vue')
   },
   {
     path: '/docker/images',
@@ -52,8 +52,8 @@ const routes = [
   },
   {
     path: '/docker/image/:id',
-    name: 'docker-image-detail',
-    component: () => import('@/views/docker/image_detail.vue')
+    name: 'docker-image',
+    component: () => import('@/views/docker/image.vue')
   },
   {
     path: '/docker/networks',
@@ -62,8 +62,8 @@ const routes = [
   },
   {
     path: '/docker/network/:id',
-    name: 'docker-network-detail',
-    component: () => import('@/views/docker/network_detail.vue')
+    name: 'docker-network',
+    component: () => import('@/views/docker/network.vue')
   },
   {
     path: '/docker/volumes',
@@ -72,8 +72,8 @@ const routes = [
   },
   {
     path: '/docker/volume/:name',
-    name: 'docker-volume-detail',
-    component: () => import('@/views/docker/volume_detail.vue')
+    name: 'docker-volume',
+    component: () => import('@/views/docker/volume.vue')
   },
   {
     path: '/docker/registries',
@@ -92,8 +92,8 @@ const routes = [
   },
   {
     path: '/swarm/node/:id',
-    name: 'swarm-node-detail',
-    component: () => import('@/views/swarm/node_detail.vue')
+    name: 'swarm-node',
+    component: () => import('@/views/swarm/node.vue')
   },
   {
     path: '/swarm/services',
@@ -107,12 +107,12 @@ const routes = [
   {
     path: '/swarm/service/:id/info',
     name: 'swarm-service-info',
-component: () => import('@/views/swarm/service_info.vue')
+component: () => import('@/views/swarm/service-info.vue')
   },
   {
     path: '/swarm/service/:id/logs',
     name: 'swarm-service-logs',
-component: () => import('@/views/swarm/service_logs.vue')
+component: () => import('@/views/swarm/service-logs.vue')
   },
   {
     path: '/swarm/tasks',

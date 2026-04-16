@@ -5,15 +5,15 @@ import { downloadFile, formatFileSize, formatTime, getFileIcon, isEditableFile }
 import api from '@/service/api.js'
 import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state.js'
 
-import ChmodModal from '@/views/filer/widget/chmod_modal.vue'
-import CreateModal from '@/views/filer/widget/create_modal.vue'
-import DeleteModal from '@/views/filer/widget/delete_modal.vue'
-import MkdirModal from '@/views/filer/widget/mkdir_modal.vue'
-import ModifyModal from '@/views/filer/widget/modify_modal.vue'
-import RenameModal from '@/views/filer/widget/rename_modal.vue'
-import UnzipModal from '@/views/filer/widget/unzip_modal.vue'
-import UploadModal from '@/views/filer/widget/upload_modal.vue'
-import ZipModal from '@/views/filer/widget/zip_modal.vue'
+import ChmodModal from '@/views/filer/widget/chmod-modal.vue'
+import CreateModal from '@/views/filer/widget/create-modal.vue'
+import DeleteModal from '@/views/filer/widget/delete-modal.vue'
+import MkdirModal from '@/views/filer/widget/mkdir-modal.vue'
+import ModifyModal from '@/views/filer/widget/modify-modal.vue'
+import RenameModal from '@/views/filer/widget/rename-modal.vue'
+import UnzipModal from '@/views/filer/widget/unzip-modal.vue'
+import UploadModal from '@/views/filer/widget/upload-modal.vue'
+import ZipModal from '@/views/filer/widget/zip-modal.vue'
 
 const state = inject(APP_STATE_KEY)
 const actions = inject(APP_ACTIONS_KEY)

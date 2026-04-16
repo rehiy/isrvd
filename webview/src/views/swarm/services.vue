@@ -5,11 +5,9 @@ import { useRouter } from 'vue-router'
 import api from '@/service/api.js'
 import { APP_ACTIONS_KEY } from '@/store/state.js'
 
-import { Codemirror } from 'vue-codemirror'
-import { yaml } from '@codemirror/lang-yaml'
-
-import ImageSelect from '@/views/docker/widget/image-select.vue'
-import BaseModal from '@/component/modal.vue'
+import ScaleModal from '@/views/swarm/widget/service-scale-modal.vue'
+import CreateServiceModal from '@/views/swarm/widget/service-create-modal.vue'
+import ComposeModal from '@/views/swarm/widget/compose-modal.vue'
 
 const actions = inject(APP_ACTIONS_KEY)
 const router = useRouter()
@@ -17,53 +15,13 @@ const router = useRouter()
 const services = ref([])
 const servicesLoading = ref(false)
 
-// 扩缩容
-const scaleOpen = ref(false)
-const scaleService = ref(null)
-const scaleReplicas = ref(1)
-const scaleLoading = ref(false)
+const scaleModalRef = ref(null)
+const createServiceModalRef = ref(null)
+const composeModalRef = ref(null)
 
-// 创建服务
-const createOpen = ref(false)
-const createLoading = ref(false)
-const createForm = ref({
-  name: '', image: '', mode: 'replicated', replicas: 1,
-  env: '', args: '', network: '', ports: '', mounts: ''
-})
-
-// 镜像和网络列表（创建服务时加载）
-const createImages = ref([])
-const createNetworks = ref([])
-const showCreateAdvanced = ref(false)
-
-// Compose 部署状态
-const composeOpen = ref(false)
-const composeLoading = ref(false)
-const composeContent = ref('')
-const composeExtensions = [yaml()]
-
-const loadCreateResources = async () => {
-  try {
-    const [imgRes, netRes] = await Promise.all([
-      api.listImages(false),
-      api.listNetworks()
-    ])
-    createImages.value = imgRes.payload || []
-    // 只保留 overlay 和 host 网络（适合 Swarm 服务）
-    createNetworks.value = (netRes.payload || []).filter(n =>
-      n.driver === 'overlay' || n.driver === 'host' || n.driver === 'bridge'
-    )
-  } catch (e) {
-    // 静默失败
-  }
-}
-
-// 日志（已移至服务详情页，保留变量避免模板报错）
-const logsOpen = ref(false)
-const logsLoading = ref(false)
-const logsContent = ref('')
-const logsService = ref(null)
-const logsTail = ref('200')
+const openScaleModal = (svc) => scaleModalRef.value?.show(svc)
+const openCreateModal = () => createServiceModalRef.value?.show()
+const openComposeModal = () => composeModalRef.value?.show()
 
 const loadServices = async () => {
   servicesLoading.value = true
@@ -76,22 +34,19 @@ const loadServices = async () => {
   servicesLoading.value = false
 }
 
-const openScaleModal = (svc) => {
-  scaleService.value = svc
-  scaleReplicas.value = svc.replicas ?? 1
-  scaleOpen.value = true
+const handleScaleSuccess = () => {
+  actions.showNotification('success', '服务扩缩容成功')
+  loadServices()
 }
 
-const handleScale = async () => {
-  if (!scaleService.value) return
-  scaleLoading.value = true
-  try {
-    await api.swarmServiceAction(scaleService.value.id, 'scale', scaleReplicas.value)
-    actions.showNotification('success', '服务扩缩容成功')
-    scaleOpen.value = false
-    loadServices()
-  } catch (e) {}
-  scaleLoading.value = false
+const handleCreateSuccess = () => {
+  actions.showNotification('success', '服务创建成功')
+  loadServices()
+}
+
+const handleComposeSuccess = (count) => {
+  actions.showNotification('success', `Compose 部署成功，已创建 ${count} 个服务`)
+  loadServices()
 }
 
 const handleServiceRemove = (svc) => {
@@ -123,86 +78,6 @@ const handleRedeploy = (svc) => {
       loadServices()
     }
   })
-}
-
-const openCreateModal = () => {
-  createForm.value = { name: '', image: '', mode: 'replicated', replicas: 1, env: '', args: '', network: '', ports: '', mounts: '' }
-  showCreateAdvanced.value = false
-  createOpen.value = true
-  loadCreateResources()
-}
-
-// Compose 部署弹窗
-const openComposeModal = () => {
-  composeContent.value = ''
-  composeOpen.value = true
-}
-
-const handleDeployCompose = async () => {
-  if (!composeContent.value.trim()) return
-  composeLoading.value = true
-  try {
-    const res = await api.swarmDeployComposeService(composeContent.value)
-    const created = res.payload || []
-    actions.showNotification('success', `Compose 部署成功，已创建 ${created.length} 个服务`)
-    composeOpen.value = false
-    loadServices()
-  } catch (e) {
-    actions.showNotification('error', 'Compose 部署失败')
-  }
-  composeLoading.value = false
-}
-
-const handleCreate = async () => {
-  createLoading.value = true
-  try {
-    const parseLines = (s) => s.split('\n').map(l => l.trim()).filter(Boolean)
-    const parsePorts = (s) => parseLines(s).map(l => {
-      const [pub, rest] = l.split(':')
-      const [tgt, proto] = (rest || pub).split('/')
-      return { published: parseInt(pub) || 0, target: parseInt(tgt), protocol: proto || 'tcp' }
-    })
-    const parseMounts = (s) => parseLines(s).map(l => {
-      const parts = l.split(':')
-      return { type: 'bind', source: parts[0], target: parts[1] || parts[0] }
-    })
-
-    await api.swarmCreateService({
-      name: createForm.value.name,
-      image: createForm.value.image,
-      mode: createForm.value.mode,
-      replicas: createForm.value.replicas,
-      env: parseLines(createForm.value.env),
-      args: parseLines(createForm.value.args),
-      networks: createForm.value.network ? [createForm.value.network] : [],
-      ports: parsePorts(createForm.value.ports),
-      mounts: parseMounts(createForm.value.mounts),
-    })
-    actions.showNotification('success', '服务创建成功')
-    createOpen.value = false
-    loadServices()
-  } catch (e) {
-    actions.showNotification('error', '服务创建失败')
-  }
-  createLoading.value = false
-}
-
-const openLogsModal = async (svc) => {
-  logsService.value = svc
-  logsContent.value = ''
-  logsOpen.value = true
-  await fetchLogs(svc.id)
-}
-
-const fetchLogs = async (id) => {
-  logsLoading.value = true
-  try {
-    const res = await api.swarmServiceLogs(id, logsTail.value)
-    logsContent.value = res.payload?.logs || '（暂无日志）'
-  } catch (e) {
-    logsContent.value = '获取日志失败'
-  }
-  logsLoading.value = false
 }
 
 onMounted(() => loadServices())
@@ -368,135 +243,9 @@ onMounted(() => loadServices())
         <p class="text-slate-600 font-medium mb-1">暂无服务</p>
       </div>
 
-    <!-- 扩缩容模态框 -->
-    <BaseModal v-model="scaleOpen" title="服务扩缩容" :loading="scaleLoading" show-footer @confirm="handleScale">
-      <template #confirm-text>确认扩缩容</template>
-      <div v-if="scaleService" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">服务</label>
-          <div class="px-3 py-2 bg-slate-50 rounded-lg text-sm text-slate-600">{{ scaleService.name }}</div>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">目标副本数</label>
-          <input type="number" v-model.number="scaleReplicas" min="0" max="100" class="input" />
-          <p class="mt-1 text-xs text-slate-400">当前运行中副本：{{ scaleService.runningTasks }} / {{ scaleService.replicas }}</p>
-        </div>
-      </div>
-    </BaseModal>
-
-    <!-- 创建服务模态框 -->
-    <BaseModal v-model="createOpen" title="创建服务" :loading="createLoading" show-footer @confirm="handleCreate">
-      <template #confirm-text>创建</template>
-      <form @submit.prevent="handleCreate" class="space-y-4">
-        <!-- 基础设置 -->
-        <div class="grid grid-cols-2 gap-3">
-          <div class="col-span-2">
-            <label class="block text-sm font-medium text-slate-700 mb-2">镜像 <span class="text-red-500">*</span></label>
-            <ImageSelect v-model="createForm.image" :images="createImages" placeholder="选择或输入镜像名称" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">服务名 <span class="text-red-500">*</span></label>
-            <input v-model="createForm.name" type="text" placeholder="my-service" class="input" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">网络</label>
-            <select v-model="createForm.network" class="input">
-              <option value="">不指定</option>
-              <option v-for="net in createNetworks" :key="net.id" :value="net.name">
-                {{ net.name }} ({{ net.driver }})
-              </option>
-            </select>
-          </div>
-        </div>
-
-        <!-- 端口映射 -->
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">端口映射</label>
-          <textarea v-model="createForm.ports" rows="2" placeholder="8080:80/tcp" class="input font-mono text-sm"></textarea>
-          <p class="mt-1 text-xs text-slate-400">每行一条，格式：宿主端口:容器端口/协议</p>
-        </div>
-
-        <!-- 目录挂载 -->
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">目录挂载</label>
-          <textarea v-model="createForm.mounts" rows="2" placeholder="/data:/app/data" class="input font-mono text-sm"></textarea>
-          <p class="mt-1 text-xs text-slate-400">每行一条，格式：宿主路径:容器路径</p>
-        </div>
-
-        <!-- 环境变量 -->
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">环境变量</label>
-          <textarea v-model="createForm.env" rows="2" placeholder="KEY=value" class="input font-mono text-sm"></textarea>
-        </div>
-
-        <!-- 高级选项 -->
-        <div class="border-t border-slate-200 pt-4">
-          <button type="button" @click="showCreateAdvanced = !showCreateAdvanced" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800">
-            <i :class="['fas fa-chevron-down text-xs transition-transform', showCreateAdvanced ? 'rotate-180' : '']"></i>
-            高级选项
-          </button>
-          <div v-if="showCreateAdvanced" class="mt-4 space-y-4">
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">模式</label>
-                <select v-model="createForm.mode" class="input">
-                  <option value="replicated">Replicated</option>
-                  <option value="global">Global</option>
-                </select>
-              </div>
-              <div v-if="createForm.mode === 'replicated'">
-                <label class="block text-sm font-medium text-slate-700 mb-2">副本数</label>
-                <input v-model.number="createForm.replicas" type="number" min="1" class="input" />
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">启动参数</label>
-              <input v-model="createForm.args" type="text" placeholder="覆盖默认启动参数" class="input font-mono text-sm" />
-            </div>
-          </div>
-        </div>
-      </form>
-    </BaseModal>
-
-    <!-- 日志模态框 -->
-    <BaseModal v-model="logsOpen" :title="`服务日志 - ${logsService?.name || ''}`" :loading="logsLoading" show-footer @confirm="fetchLogs(logsService?.id)">
-      <template #confirm-text>刷新</template>
-      <div class="space-y-3">
-        <div class="flex items-center gap-2">
-          <label class="text-xs text-slate-500 flex-shrink-0">最近行数</label>
-          <select v-model="logsTail" @change="fetchLogs(logsService?.id)" class="w-24 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-700">
-            <option value="50">50</option>
-            <option value="100">100</option>
-            <option value="200">200</option>
-            <option value="500">500</option>
-          </select>
-        </div>
-        <div v-if="logsLoading" class="flex items-center justify-center py-10">
-          <div class="w-8 h-8 spinner"></div>
-        </div>
-        <pre v-else class="bg-slate-900 text-slate-100 rounded-xl p-4 text-xs font-mono overflow-auto max-h-[420px] whitespace-pre-wrap break-all">{{ logsContent }}</pre>
-      </div>
-    </BaseModal>
-
-    <!-- Compose 部署模态框 -->
-    <BaseModal
-      v-model="composeOpen"
-      title="通过 Compose 创建服务"
-      :loading="composeLoading"
-      show-footer
-      @confirm="handleDeployCompose"
-    >
-      <template #confirm-text>部署</template>
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">Compose 内容 <span class="text-red-500">*</span></label>
-          <div class="rounded-xl overflow-hidden border border-slate-200">
-            <Codemirror v-model="composeContent" :style="{ height: '50vh' }" :extensions="composeExtensions" :disabled="composeLoading" />
-          </div>
-          <p class="mt-1 text-xs text-slate-400">粘贴 docker-compose.yml 内容，将按照服务定义逐个创建 Swarm 服务</p>
-        </div>
-      </div>
-    </BaseModal>
+    <ScaleModal ref="scaleModalRef" @success="handleScaleSuccess" />
+    <CreateServiceModal ref="createServiceModalRef" @success="handleCreateSuccess" />
+    <ComposeModal ref="composeModalRef" @success="handleComposeSuccess" />
     </div>
   </div>
 </template>

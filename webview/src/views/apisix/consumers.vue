@@ -4,27 +4,16 @@ import { computed, inject, onMounted, ref } from 'vue'
 import api from '@/service/api.js'
 import { APP_ACTIONS_KEY } from '@/store/state.js'
 
-import BaseModal from '@/component/modal.vue'
+import ConsumerEditModal from '@/views/apisix/widget/consumer-edit-modal.vue'
 
 const actions = inject(APP_ACTIONS_KEY)
 
-// 数据
 const consumers = ref([])
 const whitelist = ref([])
 const loading = ref(false)
 const searchText = ref('')
 
-// 编辑弹窗
-const modalOpen = ref(false)
-const modalTitle = ref('')
-const modalLoading = ref(false)
-const isEditMode = ref(false)
-
-// 表单数据
-const formData = ref({
-  username: '',
-  desc: '',
-})
+const editModalRef = ref(null)
 
 // 过滤后的用户列表
 const filteredConsumers = computed(() => {
@@ -61,44 +50,10 @@ const formatTs = (ts) => {
 }
 
 // 打开创建弹窗
-const openCreateModal = () => {
-  isEditMode.value = false
-  modalTitle.value = '创建用户'
-  formData.value = { username: '', desc: '' }
-  modalOpen.value = true
-}
+const openCreateModal = () => editModalRef.value?.show()
 
 // 打开编辑弹窗
-const openEditModal = (consumer) => {
-  isEditMode.value = true
-  modalTitle.value = '编辑用户'
-  formData.value = {
-    username: consumer.username,
-    desc: consumer.desc || '',
-  }
-  modalOpen.value = true
-}
-
-// 提交表单
-const submitForm = async () => {
-  if (!formData.value.username) {
-    actions.showNotification('error', '用户名不能为空')
-    return
-  }
-  modalLoading.value = true
-  try {
-    if (isEditMode.value) {
-      await api.apisixUpdateConsumer(formData.value.username, { desc: formData.value.desc })
-    } else {
-      await api.apisixCreateConsumer(formData.value)
-    }
-    modalOpen.value = false
-    loadConsumers()
-  } catch (e) {
-    actions.showNotification('error', e.message || '操作失败')
-  }
-  modalLoading.value = false
-}
+const openEditModal = (consumer) => editModalRef.value?.show(consumer)
 
 // 删除用户
 const deleteConsumer = (consumer) => {
@@ -297,31 +252,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 创建/编辑弹窗 -->
-    <BaseModal v-model="modalOpen" :title="modalTitle" :loading="modalLoading" @confirm="submitForm">
-      <form @submit.prevent="submitForm" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">用户名 <span class="text-red-500">*</span></label>
-          <input
-            v-model="formData.username"
-            type="text"
-            :disabled="isEditMode"
-            class="input"
-            :class="{ 'disabled:bg-slate-50 disabled:text-slate-500': isEditMode }"
-            placeholder="输入用户名"
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">描述</label>
-          <input
-            v-model="formData.desc"
-            type="text"
-            class="input"
-            placeholder="用户描述"
-          />
-        </div>
-      </form>
-      <template #confirm-text>{{ isEditMode ? '保存' : '创建' }}</template>
-    </BaseModal>
+    <ConsumerEditModal ref="editModalRef" @success="loadConsumers" />
   </div>
 </template>

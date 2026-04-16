@@ -6,22 +6,16 @@ import { formatTime } from '@/helper/utils.js'
 import api from '@/service/api.js'
 import { APP_ACTIONS_KEY } from '@/store/state.js'
 
-import BaseModal from '@/component/modal.vue'
+import VolumeCreateModal from '@/views/docker/widget/volume-create-modal.vue'
 
 const router = useRouter()
 
 const actions = inject(APP_ACTIONS_KEY)
 
-// 卷数据
 const volumes = ref([])
 const loading = ref(false)
 
-// 模态框状态
-const modalOpen = ref(false)
-const modalTitle = ref('')
-const modalLoading = ref(false)
-const formData = ref({})
-
+const createModalRef = ref(null)
 
 
 // 加载卷列表
@@ -34,26 +28,6 @@ const res = await api.listVolumes()
     actions.showNotification('error', '加载卷列表失败')
   }
   loading.value = false
-}
-
-// 创建卷弹窗
-const createVolumeModal = () => {
-  formData.value = { name: '', driver: 'local' }
-  modalTitle.value = '创建数据卷'
-  modalOpen.value = true
-}
-
-// 创建卷
-const handleCreateVolume = async () => {
-  if (!formData.value.name.trim()) return
-  modalLoading.value = true
-  try {
-    await api.createVolume(formData.value)
-    actions.showNotification('success', '数据卷创建成功')
-    modalOpen.value = false
-    loadVolumes()
-  } catch (e) {}
-  modalLoading.value = false
 }
 
 // 删除卷
@@ -75,13 +49,12 @@ const handleVolumeAction = (vol, action) => {
 
 // 查看卷详情
 const viewVolumeDetail = (vol) => {
-  router.push({ name: 'docker-volume-detail', params: { name: vol.name } })
+  router.push({ name: 'docker-volume', params: { name: vol.name } })
 }
 
-// 暴露方法给 toolbar 使用
 defineExpose({
   loadVolumes,
-  createVolumeModal
+  createVolumeModal: () => createModalRef.value?.show()
 })
 
 onMounted(() => {
@@ -108,7 +81,7 @@ onMounted(() => {
             <button @click="loadVolumes()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button @click="createVolumeModal()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <button @click="createModalRef?.show()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-plus"></i>创建
             </button>
           </div>
@@ -221,29 +194,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 创建数据卷模态框 -->
-    <BaseModal 
-      v-model="modalOpen" 
-      :title="modalTitle" 
-      :loading="modalLoading"
-      :show-footer="modalTitle === '创建数据卷'"
-      @confirm="handleCreateVolume"
-    >
-      <template v-if="modalTitle === '创建数据卷'">
-        <form @submit.prevent="handleCreateVolume" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">卷名称</label>
-            <input type="text" v-model="formData.name" placeholder="例如: my-data" required class="input" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">驱动类型</label>
-            <select v-model="formData.driver" class="input">
-              <option value="local">local (本地)</option>
-            </select>
-          </div>
-        </form>
-      </template>
-    </BaseModal>
+    <VolumeCreateModal ref="createModalRef" @success="loadVolumes" />
 
 
   </div>

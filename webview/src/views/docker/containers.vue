@@ -1,5 +1,5 @@
 <script setup>
-import { computed, inject, onMounted, ref } from 'vue'
+import { inject, onMounted, ref } from 'vue'
 
 import { useRouter } from 'vue-router'
 
@@ -7,37 +7,18 @@ import { formatTime } from '@/helper/utils.js'
 import api from '@/service/api.js'
 import { APP_ACTIONS_KEY } from '@/store/state.js'
 
-import { Codemirror } from 'vue-codemirror'
-import { yaml } from '@codemirror/lang-yaml'
-
-import CapSelect from '@/views/docker/widget/cap-select.vue'
-import ImageSelect from '@/views/docker/widget/image-select.vue'
-import BaseModal from '@/component/modal.vue'
+import ContainerEditModal from '@/views/docker/widget/container-edit-modal.vue'
+import ComposeModal from '@/views/docker/widget/compose-modal.vue'
 
 const actions = inject(APP_ACTIONS_KEY)
 const router = useRouter()
 
-// 自己管理数据
 const containers = ref([])
-const images = ref([])
-const networks = ref([])
 const loading = ref(false)
 const showAll = ref(false)
 
-// 模态框状态
-const modalOpen = ref(false)
-const modalTitle = ref('')
-const modalLoading = ref(false)
-const formData = ref({})
-const showAdvanced = ref(false)
-const showSecurity = ref(false)
-const isEditMode = ref(false)
-
-// Compose 部署状态
-const composeOpen = ref(false)
-const composeLoading = ref(false)
-const composeContent = ref('')
-const composeExtensions = [yaml()]
+const containerModalRef = ref(null)
+const composeModalRef = ref(null)
 
 // 批量操作状态
 const selectedIds = ref([])
@@ -47,32 +28,12 @@ const batchMode = ref(false)
 const loadContainers = async () => {
   loading.value = true
   try {
-const res = await api.listContainers(showAll.value)
+    const res = await api.listContainers(showAll.value)
     containers.value = res.payload || []
   } catch (e) {
     actions.showNotification('error', '加载容器列表失败')
   }
   loading.value = false
-}
-
-// 加载镜像列表（用于创建容器时选择镜像）
-const loadImages = async () => {
-  try {
-const res = await api.listImages(false)
-    images.value = res.payload || []
-  } catch (e) {
-    // 静默失败
-  }
-}
-
-// 加载网络列表（用于创建容器时选择网络）
-const loadNetworks = async () => {
-  try {
-    const res = await api.listNetworks()
-    networks.value = res.payload || []
-  } catch (e) {
-    // 静默失败
-  }
 }
 
 // 操作配置
@@ -104,205 +65,10 @@ const handleContainerAction = (container, action) => {
 }
 
 // 创建容器弹窗
-// 重启策略选项
-const restartOptions = [
-  { value: 'always', label: '总是重启' },
-  { value: 'unless-stopped', label: '除非手动停止' },
-  { value: 'on-failure', label: '失败时重启' },
-  { value: 'no', label: '不重启' }
-]
-
-// 网络模式选项（从加载的网络列表生成）
-const networkOptions = computed(() => {
-  const options = [{ value: '', label: '不指定' }]
-  networks.value.forEach(net => {
-    options.push({ value: net.name, label: `${net.name} (${net.driver})` })
-  })
-  return options
-})
-
-const createContainerModal = () => {
-  isEditMode.value = false
-  formData.value = {
-    image: '',
-    name: '',
-    envStr: '',
-    portsStr: '',
-    cmd: '',
-    volumesStr: '',
-    restart: 'always',
-    network: '',
-    memory: '',
-    cpus: '',
-    workdir: '',
-    user: '',
-    hostname: '',
-    privileged: false,
-    capAdd: [],
-    capDrop: [],
-  }
-  modalTitle.value = '创建容器'
-  modalOpen.value = true
-  loadImages()
-  loadNetworks()
-}
+const createContainerModal = () => containerModalRef.value?.show()
 
 // Compose 部署弹窗
-const openComposeModal = () => {
-  composeContent.value = ''
-  composeOpen.value = true
-}
-
-const handleDeployCompose = async () => {
-  if (!composeContent.value.trim()) return
-  composeLoading.value = true
-  try {
-    const res = await api.deployCompose(composeContent.value)
-    const created = res.payload || []
-    actions.showNotification('success', `Compose 部署成功，已创建 ${created.length} 个容器`)
-    composeOpen.value = false
-    loadContainers()
-  } catch (e) {
-    actions.showNotification('error', 'Compose 部署失败')
-  }
-  composeLoading.value = false
-}
-
-// 编辑容器配置
-const editContainerModal = async (container) => {
-  if (!container.name) {
-    actions.showNotification('error', '只能编辑有名称的容器')
-    return
-  }
-
-  isEditMode.value = true
-  modalLoading.value = true
-  modalTitle.value = '编辑容器配置'
-  modalOpen.value = true
-  showAdvanced.value = true
-
-  try {
-    const res = await api.getContainerConfig(container.name)
-    const config = res.payload
-
-    formData.value = {
-      name: config.name,
-      image: config.image,
-      envStr: (config.env || []).join('\n'),
-      portsStr: Object.entries(config.ports || {}).map(([h, c]) => `${h}:${c}`).join('\n'),
-      volumesStr: (config.volumes || []).map(v => {
-        let s = `${v.hostPath}:${v.containerPath}`
-        if (v.readOnly) s += ':ro'
-        return s
-      }).join('\n'),
-      cmd: (config.cmd || []).join(' '),
-      restart: config.restart || 'always',
-      network: config.network || '',
-      memory: config.memory || '',
-      cpus: config.cpus || '',
-      workdir: config.workdir || '',
-      user: config.user || '',
-      hostname: config.hostname || '',
-      privileged: config.privileged || false,
-      capAdd: config.capAdd || [],
-      capDrop: config.capDrop || [],
-    }
-
-    loadImages()
-    loadNetworks()
-  } catch (e) {
-    actions.showNotification('error', '加载容器配置失败: ' + (e.response?.data?.message || e.message))
-    modalOpen.value = false
-  }
-  modalLoading.value = false
-}
-
-const handleCreateContainer = async () => {
-  if (!formData.value.image.trim()) return
-  modalLoading.value = true
-  try {
-    const data = {
-      image: formData.value.image,
-      name: formData.value.name || undefined,
-      env: formData.value.envStr ? formData.value.envStr.split('\n').filter(e => e.trim()) : [],
-      ports: formData.value.portsStr ? Object.fromEntries(
-        formData.value.portsStr.split('\n').filter(p => p.trim()).map(p => {
-          const [hostPort, containerPort] = p.split(':').map(s => s.trim())
-          return [hostPort, containerPort]
-        })
-      ) : {},
-      volumes: formData.value.volumesStr ? formData.value.volumesStr.split('\n').filter(v => v.trim()).map(v => {
-        const parts = v.split(':').map(s => s.trim())
-        const hostPath = parts[0]
-        const containerPath = parts[1]
-        const readOnly = parts[2] === 'ro'
-        return { hostPath, containerPath, readOnly }
-      }) : [],
-      restart: formData.value.restart || 'always',
-      network: formData.value.network || undefined,
-      memory: formData.value.memory ? parseInt(formData.value.memory) : undefined,
-      cpus: formData.value.cpus ? parseFloat(formData.value.cpus) : undefined,
-      workdir: formData.value.workdir || undefined,
-      user: formData.value.user || undefined,
-      hostname: formData.value.hostname || undefined,
-      privileged: formData.value.privileged || undefined,
-      capAdd: formData.value.capAdd.length > 0 ? formData.value.capAdd : undefined,
-      capDrop: formData.value.capDrop.length > 0 ? formData.value.capDrop : undefined,
-    }
-    if (formData.value.cmd && formData.value.cmd.trim()) {
-      data.cmd = formData.value.cmd.trim().split(/\s+/)
-    }
-    await api.createContainer(data)
-    actions.showNotification('success', '容器创建成功')
-    modalOpen.value = false
-    loadContainers()
-  } catch (e) {}
-  modalLoading.value = false
-}
-
-// 更新容器配置
-const handleUpdateContainer = async () => {
-  if (!formData.value.image.trim() || !formData.value.name) return
-  modalLoading.value = true
-  try {
-    const data = {
-      name: formData.value.name,
-      image: formData.value.image,
-      env: formData.value.envStr ? formData.value.envStr.split('\n').filter(e => e.trim()) : [],
-      ports: formData.value.portsStr ? Object.fromEntries(
-        formData.value.portsStr.split('\n').filter(p => p.trim()).map(p => {
-          const [hostPort, containerPort] = p.split(':').map(s => s.trim())
-          return [hostPort, containerPort]
-        })
-      ) : {},
-      volumes: formData.value.volumesStr ? formData.value.volumesStr.split('\n').filter(v => v.trim()).map(v => {
-        const parts = v.split(':').map(s => s.trim())
-        const hostPath = parts[0]
-        const containerPath = parts[1]
-        const readOnly = parts[2] === 'ro'
-        return { hostPath, containerPath, readOnly }
-      }) : [],
-      restart: formData.value.restart || 'always',
-      network: formData.value.network || undefined,
-      memory: formData.value.memory ? parseInt(formData.value.memory) : undefined,
-      cpus: formData.value.cpus ? parseFloat(formData.value.cpus) : undefined,
-      workdir: formData.value.workdir || undefined,
-      user: formData.value.user || undefined,
-      hostname: formData.value.hostname || undefined,
-      privileged: formData.value.privileged || undefined,
-      capAdd: formData.value.capAdd.length > 0 ? formData.value.capAdd : undefined,
-      capDrop: formData.value.capDrop.length > 0 ? formData.value.capDrop : undefined,
-    }
-    if (formData.value.cmd && formData.value.cmd.trim()) {
-      data.cmd = formData.value.cmd.trim().split(/\s+/)
-    }
-    await api.updateContainerConfig(data)
-    actions.showNotification('success', '容器配置更新成功，已重建容器')
-    modalOpen.value = false
-    loadContainers()
-  } catch (e) {}
-  modalLoading.value = false
-}
+const openComposeModal = () => composeModalRef.value?.show()
 
 // 批量操作
 const toggleBatchMode = () => {
@@ -486,7 +252,7 @@ onMounted(() => {
                 <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button @click="!ct.isSwarm && editContainerModal(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-violet-600 hover:bg-violet-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
+                    <button @click="!ct.isSwarm && containerModalRef?.show(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-violet-600 hover:bg-violet-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
                       <i class="fas fa-cog text-xs"></i>
                     </button>
                     <button v-if="ct.state === 'running'" @click="router.push({ path: '/docker/container/' + ct.id + '/stats' })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
@@ -568,7 +334,7 @@ onMounted(() => {
             
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
-              <button @click="!ct.isSwarm && editContainerModal(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-violet-600 hover:bg-violet-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
+              <button @click="!ct.isSwarm && containerModalRef?.show(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-violet-600 hover:bg-violet-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
                 <i class="fas fa-cog text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">配置</span>
               </button>
@@ -615,161 +381,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 创建容器模态框 -->
-    <BaseModal
-      v-model="modalOpen"
-      :title="modalTitle"
-      :loading="modalLoading"
-      :show-footer="modalTitle === '创建容器' || modalTitle === '编辑容器配置'"
-      @confirm="isEditMode ? handleUpdateContainer() : handleCreateContainer()"
-    >
-      <template #confirm-text>{{ isEditMode ? '更新并重建' : '创建' }}</template>
-      <!-- 创建/编辑容器表单 -->
-      <template v-if="modalTitle === '创建容器' || modalTitle === '编辑容器配置'">
-        <form @submit.prevent="isEditMode ? handleUpdateContainer() : handleCreateContainer()" class="space-y-4">
-          <!-- 编辑模式提示 -->
-          <div v-if="isEditMode" class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-            <p class="text-sm text-amber-700">
-              <i class="fas fa-exclamation-triangle mr-1"></i>
-              更新配置后将会重建容器，旧容器将被停止并删除
-            </p>
-          </div>
-
-          <!-- 基础设置 -->
-          <div class="grid grid-cols-2 gap-3">
-            <div class="col-span-2">
-              <label class="block text-sm font-medium text-slate-700 mb-2">镜像 <span class="text-red-500">*</span></label>
-              <ImageSelect v-model="formData.image" :images="images" placeholder="选择或输入镜像名称" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">容器名称</label>
-              <input type="text" v-model="formData.name" placeholder="my-container" class="input" :disabled="isEditMode" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">网络模式</label>
-              <select v-model="formData.network" class="input">
-                <option v-for="opt in networkOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- 端口映射 -->
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">端口映射</label>
-            <textarea v-model="formData.portsStr" rows="2" placeholder="8080:80" class="input font-mono text-sm"></textarea>
-            <p class="mt-1 text-xs text-slate-400">主机端口:容器端口</p>
-          </div>
-
-          <!-- 目录映射 -->
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">目录映射</label>
-            <textarea v-model="formData.volumesStr" rows="2" placeholder="data:/app/data:ro" class="input font-mono text-sm"></textarea>
-            <p class="mt-1 text-xs text-slate-400">主机路径:容器路径[:ro]，相对路径自动补全</p>
-          </div>
-
-          <!-- 环境变量 -->
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">环境变量</label>
-            <textarea v-model="formData.envStr" rows="2" placeholder="KEY=value" class="input font-mono text-sm"></textarea>
-          </div>
-
-          <!-- 高级选项 -->
-          <div class="border-t border-slate-200 pt-4">
-            <button type="button" @click="showAdvanced = !showAdvanced" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800">
-              <i :class="['fas fa-chevron-down text-xs transition-transform', showAdvanced ? 'rotate-180' : '']"></i>
-              高级选项
-            </button>
-            <div v-if="showAdvanced" class="mt-4 space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">启动命令</label>
-                <input type="text" v-model="formData.cmd" placeholder="覆盖默认命令" class="input font-mono text-sm" />
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-2">重启策略</label>
-                  <select v-model="formData.restart" class="input">
-                    <option v-for="opt in restartOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-2">主机名</label>
-                  <input type="text" v-model="formData.hostname" placeholder="容器主机名" class="input" />
-                </div>
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-2">内存限制 (MB)</label>
-                  <input type="number" v-model="formData.memory" placeholder="512" class="input" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-2">CPU 限制 (核心)</label>
-                  <input type="number" step="0.1" v-model="formData.cpus" placeholder="1.5" class="input" />
-                </div>
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-2">工作目录</label>
-                  <input type="text" v-model="formData.workdir" placeholder="/app" class="input" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-2">运行用户</label>
-                  <input type="text" v-model="formData.user" placeholder="root" class="input" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 安全配置 -->
-          <div class="border-t border-slate-200 pt-4">
-            <button type="button" @click="showSecurity = !showSecurity" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800">
-              <i :class="['fas fa-chevron-down text-xs transition-transform', showSecurity ? 'rotate-180' : '']"></i>
-              安全配置
-              <span v-if="formData.privileged || formData.capAdd?.length || formData.capDrop?.length" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                {{ [formData.privileged ? '特权' : '', formData.capAdd?.length ? `+${formData.capAdd.length}` : '', formData.capDrop?.length ? `-${formData.capDrop.length}` : ''].filter(Boolean).join(' ') }}
-              </span>
-            </button>
-            <div v-if="showSecurity" class="mt-4 space-y-4">
-              <div class="flex items-center gap-3">
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" v-model="formData.privileged" class="sr-only peer" />
-                  <div class="w-10 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
-                  <span class="ml-2 text-sm text-slate-700">特权模式</span>
-                </label>
-                <span class="text-xs text-slate-400">⚠️ 赋予容器所有主机权限，谨慎使用</span>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">添加权限 (CapAdd)</label>
-                <CapSelect v-model="formData.capAdd" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">移除权限 (CapDrop)</label>
-                <CapSelect v-model="formData.capDrop" type="drop" />
-              </div>
-            </div>
-          </div>
-        </form>
-      </template>
-    </BaseModal>
-
-    <!-- Compose 部署模态框 -->
-    <BaseModal
-      v-model="composeOpen"
-      title="通过 Compose 创建容器"
-      :loading="composeLoading"
-      show-footer
-      @confirm="handleDeployCompose"
-    >
-      <template #confirm-text>部署</template>
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">Compose 内容 <span class="text-red-500">*</span></label>
-          <div class="rounded-xl overflow-hidden border border-slate-200">
-            <Codemirror v-model="composeContent" :style="{ height: '50vh' }" :extensions="composeExtensions" :disabled="composeLoading" />
-          </div>
-          <p class="mt-1 text-xs text-slate-400">粘贴 docker-compose.yml 内容，将按照服务定义逐个创建容器</p>
-        </div>
-      </div>
-    </BaseModal>
-
+    <ContainerEditModal ref="containerModalRef" @success="loadContainers" />
+    <ComposeModal ref="composeModalRef" @success="loadContainers" />
   </div>
 </template>
