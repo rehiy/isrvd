@@ -71,6 +71,11 @@ const routes = [
     component: () => import('@/views/docker/volumes.vue')
   },
   {
+    path: '/docker/volume/:name',
+    name: 'docker-volume-detail',
+    component: () => import('@/views/docker/volume_detail.vue')
+  },
+  {
     path: '/docker/registries',
     name: 'docker-registries',
     component: () => import('@/views/docker/registries.vue')
