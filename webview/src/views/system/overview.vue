@@ -18,7 +18,7 @@ let pollTimer = null
 let netCharts = {}
 const netContainerRef = ref(null)
 
-// 磁盘 IO 历史数据
+// 硬盘 IO 历史数据
 let diskIOHistory = {}
 let lastDiskIOSnapshot = {}
 let diskIOCharts = {}
@@ -114,7 +114,7 @@ const currentRate = (name, dir) => {
   return h[dir][h[dir].length - 1]
 }
 
-// 获取磁盘 IO 当前速率（取历史数组最后一个点）
+// 获取硬盘 IO 当前速率（取历史数组最后一个点）
 const currentDiskRate = (name, dir) => {
   const h = diskIOHistory[name]
   if (!h || !h[dir] || !h[dir].length) return 0
@@ -230,7 +230,7 @@ const makeDataset = (data, color, label) => ({
   fill: true
 })
 
-// 磁盘 IO 图表配置（与网络图表相同）
+// 硬盘 IO 图表配置（与网络图表相同）
 const diskChartOptions = () => ({
   responsive: true,
   maintainAspectRatio: false,
@@ -373,7 +373,7 @@ const destroyNetCharts = () => {
   netCharts = {}
 }
 
-// ── 磁盘 IO 图表 ──────────────────────────────────────────
+// ── 硬盘 IO 图表 ──────────────────────────────────────────
 
 const getDiskCanvas = (name) =>
   diskIOContainerRef.value?.querySelector(`[data-disk="${name}"]`) ?? null
@@ -421,7 +421,7 @@ const destroyDiskCharts = () => {
   diskIOCharts = {}
 }
 
-// 根据前后两次快照计算磁盘 IO 速率，并追加到历史数组
+// 根据前后两次快照计算硬盘 IO 速率，并追加到历史数组
 // diskList 中的 Name 是 gopsutil 返回的设备名（如 sda、sda1）
 const updateDiskIOHistory = (diskList, intervalSec) => {
   const snapshot = {}
@@ -633,13 +633,13 @@ defineExpose({
         </div>
       </div>
 
-      <!-- 磁盘（容量 + IO 融合卡片） -->
+      <!-- 硬盘（容量 + IO 融合卡片） -->
       <div v-if="stat.system.DiskPartition?.length" class="rounded-xl border border-slate-200 bg-white overflow-hidden">
         <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
           <div class="w-6 h-6 rounded-md bg-amber-500 flex items-center justify-center">
             <i class="fas fa-hard-drive text-white text-xs"></i>
           </div>
-          <span class="text-sm font-semibold text-slate-700">磁盘</span>
+          <span class="text-sm font-semibold text-slate-700">硬盘</span>
           <span class="ml-auto text-xs text-slate-400">
             总计 {{ fmtBytes(stat.system.DiskTotal) }}，已用 {{ fmtBytes(stat.system.DiskUsed) }}
           </span>

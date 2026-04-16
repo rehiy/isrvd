@@ -483,14 +483,14 @@ onUnmounted(() => {
               <div class="h-28"><canvas ref="netRef"></canvas></div>
             </div>
 
-            <!-- 磁盘 I/O -->
+            <!-- 硬盘 I/O -->
             <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
               <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-transparent"></div>
               <div class="flex items-center gap-2 mb-1">
                 <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
                   <i class="fas fa-hard-drive text-white text-[9px]"></i>
                 </div>
-                <span class="text-sm font-semibold text-slate-700">磁盘</span>
+                <span class="text-sm font-semibold text-slate-700">硬盘</span>
                 <span class="ml-auto text-xs font-mono text-amber-600">
                   <span class="text-amber-500">↓</span> {{ formatFileSize(blkRRate) }}/s
                   <span class="mx-1 text-slate-300">·</span>
