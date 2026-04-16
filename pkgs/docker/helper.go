@@ -85,7 +85,6 @@ func createComposeFileOnDisk(containerRoot, containerName string, service compos
 	}
 
 	compose := composeFile{
-		Version: "3.8",
 		Services: map[string]composeService{
 			containerName: service,
 		},

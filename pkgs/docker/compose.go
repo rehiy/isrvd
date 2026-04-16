@@ -57,7 +57,6 @@ type composeLimit struct {
 
 // composeFile 定义 docker-compose 文件结构
 type composeFile struct {
-	Version  string                    `yaml:"version"`
 	Services map[string]composeService `yaml:"services"`
 }
 
