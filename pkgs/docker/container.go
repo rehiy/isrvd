@@ -15,15 +15,16 @@ import (
 
 // ContainerInfo Docker 容器信息
 type ContainerInfo struct {
-	ID      string            `json:"id"`
-	Name    string            `json:"name"`
-	Image   string            `json:"image"`
-	State   string            `json:"state"`
-	Status  string            `json:"status"`
-	Ports   []string          `json:"ports"`
-	Created int64             `json:"created"`
-	IsSwarm bool              `json:"isSwarm,omitempty"`
-	Labels  map[string]string `json:"labels,omitempty"`
+	ID       string            `json:"id"`
+	Name     string            `json:"name"`
+	Image    string            `json:"image"`
+	State    string            `json:"state"`
+	Status   string            `json:"status"`
+	Ports    []string          `json:"ports"`
+	Networks []string          `json:"networks,omitempty"`
+	Created  int64             `json:"created"`
+	IsSwarm  bool              `json:"isSwarm,omitempty"`
+	Labels   map[string]string `json:"labels,omitempty"`
 }
 
 // ListContainers 获取容器列表
@@ -40,16 +41,23 @@ func (s *DockerService) ListContainers(ctx context.Context, all bool) ([]*Contai
 		if len(ct.Names) > 0 {
 			name = strings.TrimPrefix(ct.Names[0], "/")
 		}
+		var networks []string
+		if ct.NetworkSettings != nil {
+			for netName := range ct.NetworkSettings.Networks {
+				networks = append(networks, netName)
+			}
+		}
 		result = append(result, &ContainerInfo{
-			ID:      ct.ID[:12],
-			Name:    name,
-			Image:   ct.Image,
-			State:   ct.State,
-			Status:  ct.Status,
-			Ports:   formatPorts(ct.Ports),
-			Created: ct.Created,
-			IsSwarm: ct.Labels["com.docker.swarm.service.id"] != "",
-			Labels:  ct.Labels,
+			ID:       ct.ID[:12],
+			Name:     name,
+			Image:    ct.Image,
+			State:    ct.State,
+			Status:   ct.Status,
+			Ports:    formatPorts(ct.Ports),
+			Networks: networks,
+			Created:  ct.Created,
+			IsSwarm:  ct.Labels["com.docker.swarm.service.id"] != "",
+			Labels:   ct.Labels,
 		})
 	}
 
