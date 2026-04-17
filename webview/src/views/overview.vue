@@ -36,12 +36,8 @@ class Overview extends Vue {
     }
 
     // ─── 生命周期 ───
-    mounted() {
-        this.refreshAll()
-    }
-
     unmounted() {
-        this.systemRef?.stopPoll?.()
+        this.systemRef?.stopPoll()
     }
 }
 
@@ -65,15 +61,6 @@ export default toNative(Overview)
         <button @click="refreshAll" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
           <i class="fas fa-rotate"></i>刷新
         </button>
-      </div>
-
-      <!-- 系统信息区块 -->
-      <div class="p-6 border-b border-slate-100">
-        <div class="flex items-center gap-2 mb-4">
-          <i class="fas fa-server text-slate-500 text-lg"></i>
-          <h2 class="text-base font-semibold text-slate-700">系统信息</h2>
-        </div>
-        <SystemOverview ref="systemRef" />
       </div>
 
       <!-- Docker 概览区块 -->
@@ -101,6 +88,15 @@ export default toNative(Overview)
           <h2 class="text-base font-semibold text-slate-700">APISIX 网关</h2>
         </div>
         <ApisixOverview ref="apisixRef" />
+      </div>
+
+      <!-- 系统信息区块 -->
+      <div class="p-6 border-b border-slate-100">
+        <div class="flex items-center gap-2 mb-4">
+          <i class="fas fa-server text-slate-500 text-lg"></i>
+          <h2 class="text-base font-semibold text-slate-700">系统信息</h2>
+        </div>
+        <SystemOverview ref="systemRef" />
       </div>
     </div>
   </div>

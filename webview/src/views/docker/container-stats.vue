@@ -6,7 +6,7 @@ import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
 import type { ContainerInfo, ContainerStatsResponse } from '@/service/types'
-import { formatFileSize, POLL_INTERVAL } from '@/helper/utils'
+import { formatFileSize, hexToRgba, POLL_INTERVAL } from '@/helper/utils'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -190,35 +190,40 @@ class ContainerStats extends Vue {
     }
 
     makeDataset(data: number[], color: string, label = '') {
-        let bgColor: string
-        if (color.startsWith('#')) {
-            const r = parseInt(color.slice(1, 3), 16)
-            const g = parseInt(color.slice(3, 5), 16)
-            const b = parseInt(color.slice(5, 7), 16)
-            bgColor = `rgba(${r},${g},${b},0.08)`
-        } else {
-            bgColor = color.replace(')', ', 0.08)').replace('rgb', 'rgba')
-        }
         return {
             label,
             data: [...data],
             borderColor: color,
-            backgroundColor: bgColor,
+            backgroundColor: hexToRgba(color, 0.08),
             fill: true
+        }
+    }
+
+    makeIOChartOptions(tooltipCb: (ctx: ChartCallbackContext) => string): ChartOptions<'line'> {
+        return {
+            ...this.baseOptions({}),
+            plugins: {
+                legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
+                tooltip: {
+                    backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
+                    callbacks: { label: tooltipCb }
+                }
+            }
         }
     }
 
     initCharts() {
         this.destroyCharts()
 
+        const pctYOptions = { max: 100, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => v + '%' } }
+        const pctTooltipCb = (ctx: ChartCallbackContext) => (ctx.parsed.y ?? 0).toFixed(1) + '%'
+        const ioTooltipCb = (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y ?? 0) + '/s'
+
         if (this.cpuRef) {
             this.cpuChart = markRaw(new Chart(this.cpuRef, {
                 type: 'line' as const,
                 data: { labels: [...this.labels], datasets: [this.makeDataset(this.cpuData, '#3b82f6')] },
-                options: this.baseOptions(
-                    { max: 100, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => v + '%' } },
-                    (ctx: ChartCallbackContext) => (ctx.parsed.y ?? 0).toFixed(1) + '%'
-                )
+                options: this.baseOptions(pctYOptions, pctTooltipCb)
             }))
         }
 
@@ -226,25 +231,11 @@ class ContainerStats extends Vue {
             this.memChart = markRaw(new Chart(this.memRef, {
                 type: 'line' as const,
                 data: { labels: [...this.labels], datasets: [this.makeDataset(this.memData, '#8b5cf6')] },
-                options: this.baseOptions(
-                    { max: 100, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => v + '%' } },
-                    (ctx: ChartCallbackContext) => (ctx.parsed.y ?? 0).toFixed(1) + '%'
-                )
+                options: this.baseOptions(pctYOptions, pctTooltipCb)
             }))
         }
 
         if (this.netRef) {
-            const netTooltipCb = (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y ?? 0) + '/s'
-            const netOptions: ChartOptions<'line'> = {
-                ...this.baseOptions({}, netTooltipCb),
-                plugins: {
-                    legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
-                    tooltip: {
-                        backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-                        callbacks: { label: netTooltipCb }
-                    }
-                }
-            }
             this.netChart = markRaw(new Chart(this.netRef, {
                 type: 'line' as const,
                 data: {
@@ -254,22 +245,11 @@ class ContainerStats extends Vue {
                         { ...this.makeDataset(this.netTxData, '#0d9488'), label: '发送' }
                     ]
                 },
-                options: netOptions
+                options: this.makeIOChartOptions(ioTooltipCb)
             }))
         }
 
         if (this.blkRef) {
-            const blkTooltipCb = (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y ?? 0) + '/s'
-            const blkOptions: ChartOptions<'line'> = {
-                ...this.baseOptions({}, blkTooltipCb),
-                plugins: {
-                    legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
-                    tooltip: {
-                        backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-                        callbacks: { label: blkTooltipCb }
-                    }
-                }
-            }
             this.blkChart = markRaw(new Chart(this.blkRef, {
                 type: 'line' as const,
                 data: {
@@ -279,7 +259,7 @@ class ContainerStats extends Vue {
                         { ...this.makeDataset(this.blkWData, '#d97706'), label: '写入' }
                     ]
                 },
-                options: blkOptions
+                options: this.makeIOChartOptions(ioTooltipCb)
             }))
         }
     }

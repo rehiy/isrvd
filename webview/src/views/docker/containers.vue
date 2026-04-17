@@ -83,20 +83,17 @@ class Containers extends Vue {
     }
 
     toggleSelect(id: string) {
-        const idx = this.selectedIds.indexOf(id)
-        if (idx >= 0) {
-            this.selectedIds.splice(idx, 1)
+        if (this.selectedIds.includes(id)) {
+            this.selectedIds = this.selectedIds.filter(i => i !== id)
         } else {
             this.selectedIds.push(id)
         }
     }
 
     selectAll() {
-        if (this.selectedIds.length === this.containers.length) {
-            this.selectedIds = []
-        } else {
-            this.selectedIds = this.containers.map((ct: ContainerInfo) => ct.id)
-        }
+        this.selectedIds = this.selectedIds.length === this.containers.length
+            ? []
+            : this.containers.map(ct => ct.id)
     }
 
     batchAction(action: string) {
@@ -111,7 +108,7 @@ class Containers extends Vue {
             confirmText: `确认批量${config.confirmText}`,
             danger: config.danger,
             onConfirm: async () => {
-                const promises = this.selectedIds.map((id: string) => api.containerAction(id, action))
+                const promises = this.selectedIds.map(id => api.containerAction(id, action))
                 await Promise.allSettled(promises)
                 this.actions.showNotification('success', `批量${config.confirmText}操作完成`)
                 this.selectedIds = []
@@ -122,7 +119,8 @@ class Containers extends Vue {
 
     formatImageName(image: string) {
         if (!image) return ''
-        return image.replace(/^[^\\/]+\//, '')
+        // 去掉 registry host（含端口）前缀，只保留 name:tag 部分
+        return image.replace(/^[^/]+\.[^/]+\//, '').replace(/^[^/]+:[0-9]+\//, '')
     }
 
     formatTime = formatTime

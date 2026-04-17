@@ -22,6 +22,11 @@ class SwarmOverview extends Vue {
         { key: 'tasks',    label: '任务总数', icon: 'fa-tasks',        bgColor: 'bg-amber-500' },
     ]
 
+    // ─── 生命周期 ───
+    mounted() {
+        this.load()
+    }
+
     // ─── 方法 ───
     async load() {
         this.loading = true

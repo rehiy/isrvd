@@ -5,7 +5,7 @@ import { markRaw, nextTick } from 'vue'
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import { POLL_INTERVAL } from '@/helper/utils'
+import { hexToRgba, POLL_INTERVAL } from '@/helper/utils'
 
 Chart.register(...registerables)
 
@@ -191,18 +191,19 @@ class SystemOverview extends Vue {
         return new Date(ts * 1000).toLocaleString('zh-CN')
     }
 
-    currentRate(name: string, dir: string): number {
-        const h = this.netHistory[name]
+    currentIORate(history: Record<string, TimeSeriesHistory | DiskIOSeriesHistory>, name: string, dir: string): number {
+        const h = history[name]
         if (!h || !h[dir] || !(h[dir] as number[]).length) return 0
         const arr = h[dir] as number[]
         return arr[arr.length - 1]
     }
 
+    currentRate(name: string, dir: string): number {
+        return this.currentIORate(this.netHistory, name, dir)
+    }
+
     currentDiskRate(name: string, dir: string): number {
-        const h = this.diskIOHistory[name]
-        if (!h || !h[dir] || !(h[dir] as number[]).length) return 0
-        const arr = h[dir] as number[]
-        return arr[arr.length - 1]
+        return this.currentIORate(this.diskIOHistory, name, dir)
     }
 
     devShortName(device: string): string { return device.split('/').pop() || device }
@@ -210,9 +211,8 @@ class SystemOverview extends Vue {
     diskIOByDevice(device: string) {
         if (!this.stat?.diskIO) return null
         const devName = device.split('/').pop()
-        return this.stat.diskIO.find((d: DiskIO) => d.Name === devName)
-            || this.stat.diskIO.find((d: DiskIO) => devName!.startsWith(d.Name))
-            || null
+        return this.stat.diskIO.find(d => d.Name === devName)
+            || this.stat.diskIO.find(d => devName!.startsWith(d.Name))            || null
     }
 
     // ─── 图表配置 ───
@@ -258,17 +258,8 @@ class SystemOverview extends Vue {
         }
     }
 
-    diskChartOptions() { return this.netChartOptions() }
-
-    hexToRgba(hex: string, alpha: number) {
-        const r = parseInt(hex.slice(1, 3), 16)
-        const g = parseInt(hex.slice(3, 5), 16)
-        const b = parseInt(hex.slice(5, 7), 16)
-        return `rgba(${r},${g},${b},${alpha})`
-    }
-
     makeDataset(data: number[], color: string, label: string) {
-        return { label, data: [...data], borderColor: color, backgroundColor: this.hexToRgba(color, 0.1), fill: true }
+        return { label, data: [...data], borderColor: color, backgroundColor: hexToRgba(color, 0.1), fill: true }
     }
 
     // ─── CPU/内存图表 ───
@@ -333,7 +324,7 @@ class SystemOverview extends Vue {
 
     initAllNetCharts() {
         if (!this.stat) return
-        this.physicalInterfaces(this.stat.system.NetInterface).forEach((ni: NetInterface) => {
+        this.physicalInterfaces(this.stat.system.NetInterface).forEach(ni => {
             if (!this.netHistory[ni.Name]) this.netHistory[ni.Name] = { labels: [], recv: [], sent: [] }
             this.initNetChart(ni.Name)
         })
@@ -367,13 +358,13 @@ class SystemOverview extends Vue {
         this.diskIOCharts[name] = markRaw(new Chart(canvas as HTMLCanvasElement, {
             type: 'line' as const,
             data: { labels: [...h.labels], datasets: [this.makeDataset(h.read, '#f59e0b', '读取'), this.makeDataset(h.write, '#8b5cf6', '写入')] },
-            options: this.diskChartOptions()
+            options: this.netChartOptions()
         }))
     }
 
     initAllDiskCharts() {
         if (!this.stat?.system?.DiskPartition) return
-        this.stat.system.DiskPartition.forEach((dp: DiskPartition) => {
+        this.stat.system.DiskPartition.forEach(dp => {
             const devName = dp.Device.split('/').pop() || dp.Device
             if (!this.diskIOHistory[devName]) this.diskIOHistory[devName] = { labels: [], read: [], write: [] }
             this.initDiskChart(devName)
@@ -435,6 +426,13 @@ class SystemOverview extends Vue {
         this.lastNetSnapshot = snapshot
     }
 
+    clearHistory() {
+        this.cpuHistory.labels.length = 0
+        this.cpuHistory.data.length = 0
+        this.memHistory.labels.length = 0
+        this.memHistory.data.length = 0
+    }
+
     // ─── 数据加载 & 轮询 ───
     async loadData() {
         this.loading = true
@@ -445,10 +443,7 @@ class SystemOverview extends Vue {
         this.lastNetSnapshot = markRaw({})
         this.diskIOHistory = markRaw({})
         this.lastDiskIOSnapshot = markRaw({})
-        this.cpuHistory.labels.length = 0
-        this.cpuHistory.data.length = 0
-        this.memHistory.labels.length = 0
-        this.memHistory.data.length = 0
+        this.clearHistory()
         try {
             const res = await api.systemStat()
             const payload = res.payload as SystemStat | undefined

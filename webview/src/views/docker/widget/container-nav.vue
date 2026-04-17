@@ -32,7 +32,7 @@ class ContainerNav extends Vue {
         try {
             const res = await api.listContainers(true)
             const list = res.payload || []
-            this.container = list.find((c: ContainerInfo) => c.id === this.containerId) || null
+            this.container = list.find(c => c.id === this.containerId) ?? null
             if (!this.container) {
                 this.actions.showNotification('error', '容器不存在')
                 this.$router.push('/docker/containers')
