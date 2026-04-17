@@ -181,7 +181,7 @@ export default toNative(NavigationBar)
         <i class="fas fa-terminal"></i>
         <span v-if="!collapsed">Shell 终端</span>
       </router-link>
-      
+
       <!-- Docker 折叠子菜单 -->
       <div v-if="state.serviceAvailability.docker">
         <!-- 折叠状态：只显示图标 -->
@@ -226,6 +226,14 @@ export default toNative(NavigationBar)
               <span>网络</span>
             </router-link>
             <router-link
+              to="/docker/volumes"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/volume') }"
+            >
+              <i class="fas fa-database"></i>
+              <span>存储</span>
+            </router-link>
+            <router-link
               to="/docker/images"
               class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/image') }"
@@ -240,14 +248,6 @@ export default toNative(NavigationBar)
             >
               <i class="fas fa-warehouse"></i>
               <span>镜像源</span>
-            </router-link>
-            <router-link
-              to="/docker/volumes"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/volume') }"
-            >
-              <i class="fas fa-database"></i>
-              <span>存储卷</span>
             </router-link>
           </div>
         </template>
@@ -362,6 +362,28 @@ export default toNative(NavigationBar)
           </div>
         </template>
       </div>
+
+      <!-- 用户管理（放在系统设置上方） -->
+      <router-link
+        to="/members"
+        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+        :title="collapsed ? '用户管理' : ''"
+      >
+        <i class="fas fa-users"></i>
+        <span v-if="!collapsed">用户管理</span>
+      </router-link>
+
+      <!-- 系统设置（放在最后） -->
+      <router-link
+        to="/settings"
+        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+        :title="collapsed ? '系统设置' : ''"
+      >
+        <i class="fas fa-gear"></i>
+        <span v-if="!collapsed">系统设置</span>
+      </router-link>
     </nav>
 
     <!-- 底部折叠按钮 -->

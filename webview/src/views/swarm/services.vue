@@ -122,7 +122,7 @@ export default toNative(Services)
             <i class="fas fa-rotate"></i>刷新
           </button>
           <button @click="openCreateModal" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-            <i class="fas fa-plus"></i>创建服务
+            <i class="fas fa-plus"></i>创建
           </button>
           <button @click="openComposeModal" class="px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
             <i class="fas fa-file-code"></i>Compose

@@ -6,7 +6,7 @@ import type {
     ImageInfo, ImageInspectResponse, ImageSearchResult,
     NetworkInfo, NetworkInspectResponse, NetworkCreateRequest,
     VolumeInfo, VolumeInspectResponse, VolumeCreateRequest,
-    RegistryInfo,
+    RegistryInfo, RegistryUpsertRequest,
     SwarmInfo, SwarmNode, SwarmNodeInspect,
     SwarmService, SwarmServiceInspect, SwarmTask,
     SwarmCreateServiceRequest,
@@ -14,7 +14,9 @@ import type {
     ApisixPluginConfig, ApisixUpstream,
     ServiceProbeResponse, DockerInfo,
     FileListResponse, FileReadResponse,
-    LoginResponse
+    LoginResponse,
+    AllSettings, ServerSettings, ApisixSettings, DockerSettings,
+    MemberInfo, MemberUpsertRequest
 } from './types'
 
 // API 服务类，统一管理所有 API 请求
@@ -206,6 +208,18 @@ class ApiService {
         return http.get<RegistryInfo[]>('/api/docker/registries')
     }
 
+    createRegistry(data: RegistryUpsertRequest) {
+        return http.post<void>('/api/docker/registries', data)
+    }
+
+    updateRegistry(url: string, data: RegistryUpsertRequest) {
+        return http.put<void>('/api/docker/registries', data, { params: { url } })
+    }
+
+    deleteRegistry(url: string) {
+        return http.delete<void>('/api/docker/registries', { params: { url } })
+    }
+
     pushImage(image: string, registryUrl: string, namespace: string) {
         return http.post<void>('/api/docker/registry/push', { image, registryUrl, namespace })
     }
@@ -328,6 +342,41 @@ class ApiService {
 
     apisixListPlugins() {
         return http.get<Record<string, { schema: Record<string, unknown> }>>('/api/apisix/plugins')
+    }
+
+    // ==================== 系统设置 ====================
+
+    getSettings() {
+        return http.get<AllSettings>('/api/settings')
+    }
+
+    updateServerSettings(data: ServerSettings) {
+        return http.put<void>('/api/settings/server', data)
+    }
+
+    updateApisixSettings(data: ApisixSettings) {
+        return http.put<void>('/api/settings/apisix', data)
+    }
+
+    updateDockerSettings(data: DockerSettings) {
+        return http.put<void>('/api/settings/docker', data)
+    }
+
+    // 成员管理
+    listMembers() {
+        return http.get<MemberInfo[]>('/api/settings/members')
+    }
+
+    createMember(data: MemberUpsertRequest) {
+        return http.post<void>('/api/settings/members', data)
+    }
+
+    updateMember(username: string, data: MemberUpsertRequest) {
+        return http.put<void>(`/api/settings/members/${encodeURIComponent(username)}`, data)
+    }
+
+    deleteMember(username: string) {
+        return http.delete<void>(`/api/settings/members/${encodeURIComponent(username)}`)
     }
 }
 

@@ -24,6 +24,10 @@ var (
 	Docker = &DockerConfig{}
 	// 成员配置
 	Members = map[string]*MemberConfig{}
+	// 主成员（配置文件中第一个成员，禁止删除）
+	PrimaryMember = ""
+	// 当前加载的配置文件路径
+	ConfigPath = ""
 )
 
 // 加载配置文件
@@ -32,6 +36,7 @@ func Load() error {
 	if file == "" {
 		file = "config.yml"
 	}
+	ConfigPath = file
 
 	// 读取配置文件
 	data, err := os.ReadFile(file)
@@ -66,7 +71,7 @@ func Load() error {
 	}
 
 	// 更新 Member 配置
-	for _, m := range conf.Members {
+	for i, m := range conf.Members {
 		if !filepath.IsAbs(m.HomeDirectory) {
 			m.HomeDirectory = filepath.Join(RootDirectory, m.HomeDirectory)
 		}
@@ -74,6 +79,9 @@ func Load() error {
 			return err
 		}
 		Members[m.Username] = m
+		if i == 0 {
+			PrimaryMember = m.Username
+		}
 	}
 
 	return nil

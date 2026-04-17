@@ -313,6 +313,14 @@ export interface RegistryInfo {
     description: string
 }
 
+export interface RegistryUpsertRequest {
+    name: string
+    url: string
+    username?: string
+    password?: string
+    description?: string
+}
+
 // ─── Docker Swarm ───
 
 export interface SwarmInfo {
@@ -514,4 +522,54 @@ export interface ApisixInfo {
     consumers: number
     whitelist: number
     [key: string]: number
+}
+
+// ─── 系统设置 ───
+
+export interface ServerSettings {
+    debug: boolean
+    listenAddr: string
+    // 写入时为空表示保留原值
+    jwtSecret: string
+    // 读取时后端返回，标识是否已设置
+    jwtSecretSet?: boolean
+    proxyHeaderName: string
+    rootDirectory: string
+}
+
+export interface ApisixSettings {
+    adminUrl: string
+    // 写入时为空表示保留原值
+    adminKey: string
+    // 读取时后端返回，标识是否已设置
+    adminKeySet?: boolean
+}
+
+export interface DockerSettings {
+    host: string
+    containerRoot: string
+}
+
+export interface AllSettings {
+    server: ServerSettings
+    apisix: ApisixSettings
+    docker: DockerSettings
+}
+
+// ─── 成员管理 ───
+
+export interface MemberInfo {
+    username: string
+    homeDirectory: string
+    allowTerminal: boolean
+    passwordSet: boolean
+    isPrimary: boolean
+}
+
+export interface MemberUpsertRequest {
+    username: string
+    // 写入时为空表示保留原值（仅更新场景）
+    password: string
+    homeDirectory: string
+    allowTerminal: boolean
 }

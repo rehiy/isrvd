@@ -1,14 +1,20 @@
 <script lang="ts">
-import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
 import type { RegistryInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
-@Component({})
+import RegistryEditModal from '@/views/docker/widget/registry-edit-modal.vue'
+
+@Component({
+    components: { RegistryEditModal }
+})
 class Registries extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
+
+    @Ref readonly editModalRef!: InstanceType<typeof RegistryEditModal>
 
     // ─── 数据属性 ───
     daemonMirrors: string[] = []
@@ -20,9 +26,9 @@ class Registries extends Vue {
     async loadDaemonInfo() {
         try {
             const res = await api.dockerInfo()
-            const info = res.payload || {}
-            this.daemonMirrors = info.registryMirrors || []
-            this.indexServerAddress = info.indexServerAddress || ''
+            const info = res.payload
+            this.daemonMirrors = info?.registryMirrors || []
+            this.indexServerAddress = info?.indexServerAddress || ''
         } catch (e) {}
     }
 
@@ -35,6 +41,32 @@ class Registries extends Vue {
             this.actions.showNotification('error', '加载仓库列表失败')
         }
         this.loading = false
+    }
+
+    openAdd() {
+        this.editModalRef?.show(null)
+    }
+
+    openEdit(reg: RegistryInfo) {
+        this.editModalRef?.show(reg)
+    }
+
+    handleDelete(reg: RegistryInfo) {
+        this.actions.showConfirm({
+            title: '删除镜像仓库',
+            message: `确定要删除仓库 <strong class="text-slate-900">${reg.name}</strong> (${reg.url}) 吗？`,
+            icon: 'fa-trash',
+            iconColor: 'red',
+            confirmText: '确认删除',
+            danger: true,
+            onConfirm: async () => {
+                try {
+                    await api.deleteRegistry(reg.url)
+                    this.actions.showNotification('success', '仓库删除成功')
+                    this.loadRegistries()
+                } catch (e) {}
+            }
+        })
     }
 
     // ─── 生命周期 ───
@@ -66,6 +98,9 @@ export default toNative(Registries)
             <button @click="loadRegistries()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
             </button>
+            <button @click="openAdd" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-plus"></i>添加
+            </button>
           </div>
         </div>
       </div>
@@ -86,6 +121,7 @@ export default toNative(Registries)
                 <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">地址</th>
                 <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">认证</th>
+                <th class="w-28 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
@@ -96,10 +132,10 @@ export default toNative(Registries)
                     <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
                       <i class="fab fa-docker text-white text-sm"></i>
                     </div>
-                  <div class="flex flex-col">
+                    <div class="flex flex-col">
                       <span class="font-medium text-slate-800">Docker Hub</span>
                       <span class="text-xs text-slate-400 font-normal">默认</span>
-                  </div>
+                    </div>
                   </div>
                 </td>
                 <td class="px-4 py-3">
@@ -115,6 +151,7 @@ export default toNative(Registries)
                     <i class="fas fa-lock-open mr-1"></i>匿名
                   </span>
                 </td>
+                <td class="px-4 py-3 text-right text-xs text-slate-400">—</td>
               </tr>
               <!-- 私有仓库行 -->
               <tr v-for="reg in registries" :key="reg.url" class="hover:bg-slate-50 transition-colors">
@@ -138,6 +175,16 @@ export default toNative(Registries)
                     <i class="fas fa-lock-open mr-1"></i>匿名
                   </span>
                 </td>
+                <td class="px-4 py-3">
+                  <div class="flex justify-end items-center gap-0.5">
+                    <button @click="openEdit(reg)" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑">
+                      <i class="fas fa-pen text-xs"></i>
+                    </button>
+                    <button @click="handleDelete(reg)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                      <i class="fas fa-trash text-xs"></i>
+                    </button>
+                  </div>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -152,11 +199,11 @@ export default toNative(Registries)
                 <i class="fab fa-docker text-white text-base"></i>
               </div>
               <div class="flex flex-col">
-                  <h3 class="font-medium text-slate-800 text-sm">Docker Hub</h3>
-                  <span class="text-xs text-slate-400">默认</span>
+                <h3 class="font-medium text-slate-800 text-sm">Docker Hub</h3>
+                <span class="text-xs text-slate-400">默认</span>
               </div>
             </div>
-            
+
             <div class="mb-3">
               <p class="text-xs text-slate-500 mb-1">地址</p>
               <div class="flex flex-col gap-1">
@@ -168,7 +215,7 @@ export default toNative(Registries)
                 </template>
               </div>
             </div>
-            
+
             <div class="pt-2 border-t border-slate-100">
               <p class="text-xs text-slate-500 mb-1">认证</p>
               <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
@@ -190,24 +237,36 @@ export default toNative(Registries)
                 </div>
               </div>
             </div>
-            
+
             <div class="mb-3">
               <p class="text-xs text-slate-500 mb-1">地址</p>
               <code class="text-xs bg-slate-100 px-2 py-1 rounded break-all">{{ reg.url }}</code>
             </div>
-            
-            <div class="pt-2 border-t border-slate-100">
-              <p class="text-xs text-slate-500 mb-1">认证</p>
-              <span v-if="reg.username" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
-                <i class="fas fa-user mr-1"></i>{{ reg.username }}
-              </span>
-              <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
-                <i class="fas fa-lock-open mr-1"></i>匿名
-              </span>
+
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <div>
+                <p class="text-xs text-slate-500 mb-1">认证</p>
+                <span v-if="reg.username" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
+                  <i class="fas fa-user mr-1"></i>{{ reg.username }}
+                </span>
+                <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
+                  <i class="fas fa-lock-open mr-1"></i>匿名
+                </span>
+              </div>
+              <div class="flex items-center gap-1">
+                <button @click="openEdit(reg)" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑">
+                  <i class="fas fa-pen text-xs"></i>
+                </button>
+                <button @click="handleDelete(reg)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                  <i class="fas fa-trash text-xs"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <RegistryEditModal ref="editModalRef" @success="loadRegistries" />
   </div>
 </template>

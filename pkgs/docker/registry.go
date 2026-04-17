@@ -33,6 +33,72 @@ func (s *DockerService) ListRegistries() []*RegistryInfo {
 	return registries
 }
 
+// findRegistryIndex 查找仓库索引
+func (s *DockerService) findRegistryIndex(url string) int {
+	for i, r := range s.config.Registries {
+		if r.URL == url {
+			return i
+		}
+	}
+	return -1
+}
+
+// GetRegistryConfigs 返回全量仓库配置（包含密码），仅供上层持久化使用
+func (s *DockerService) GetRegistryConfigs() []*RegistryConfig {
+	return s.config.Registries
+}
+
+// AddRegistry 添加仓库
+func (s *DockerService) AddRegistry(reg *RegistryConfig) error {
+	if reg == nil {
+		return fmt.Errorf("registry config is nil")
+	}
+	if reg.Name == "" || reg.URL == "" {
+		return fmt.Errorf("仓库名称和地址不能为空")
+	}
+	if s.findRegistryIndex(reg.URL) >= 0 {
+		return fmt.Errorf("仓库地址已存在: %s", reg.URL)
+	}
+	s.config.Registries = append(s.config.Registries, reg)
+	return nil
+}
+
+// UpdateRegistry 更新仓库（根据 originalURL 定位）
+func (s *DockerService) UpdateRegistry(originalURL string, reg *RegistryConfig) error {
+	if reg == nil {
+		return fmt.Errorf("registry config is nil")
+	}
+	if reg.Name == "" || reg.URL == "" {
+		return fmt.Errorf("仓库名称和地址不能为空")
+	}
+	idx := s.findRegistryIndex(originalURL)
+	if idx < 0 {
+		return fmt.Errorf("仓库不存在: %s", originalURL)
+	}
+	// URL 变更时需检查新 URL 冲突
+	if reg.URL != originalURL {
+		if s.findRegistryIndex(reg.URL) >= 0 {
+			return fmt.Errorf("仓库地址已存在: %s", reg.URL)
+		}
+	}
+	// 密码为空时保留原密码
+	if reg.Password == "" {
+		reg.Password = s.config.Registries[idx].Password
+	}
+	s.config.Registries[idx] = reg
+	return nil
+}
+
+// DeleteRegistry 删除仓库
+func (s *DockerService) DeleteRegistry(url string) error {
+	idx := s.findRegistryIndex(url)
+	if idx < 0 {
+		return fmt.Errorf("仓库不存在: %s", url)
+	}
+	s.config.Registries = append(s.config.Registries[:idx], s.config.Registries[idx+1:]...)
+	return nil
+}
+
 // getRegistryAuth 获取仓库认证信息
 func (s *DockerService) getRegistryAuth(registryURL string) string {
 	for _, r := range s.config.Registries {

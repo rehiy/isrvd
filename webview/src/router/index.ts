@@ -144,6 +144,16 @@ const routes: RouteRecordRaw[] = [
     name: 'shell',
     component: () => import('@/views/shell.vue')
   },
+  {
+    path: '/members',
+    name: 'members',
+    component: () => import('@/views/settings/members.vue')
+  },
+  {
+    path: '/settings',
+    name: 'settings',
+    component: () => import('@/views/settings/settings.vue')
+  },
 ]
 
 const router = createRouter({

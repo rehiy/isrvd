@@ -10,6 +10,7 @@ import (
 	"isrvd/internal/handler/auth"
 	"isrvd/internal/handler/docker"
 	"isrvd/internal/handler/filer"
+	"isrvd/internal/handler/settings"
 	"isrvd/internal/handler/shell"
 	"isrvd/internal/handler/swarm"
 	"isrvd/internal/handler/system"
@@ -45,6 +46,7 @@ func (app *App) setupRouter() {
 	fileHandler := filer.NewFileHandler()
 	zipHandler := filer.NewZipHandler()
 	shellHandler := shell.NewShellHandler()
+	settingsHandler := settings.NewSettingsHandler()
 	systemHandler := system.NewSystemHandler()
 
 	// 注册 Apisix Handler
@@ -156,6 +158,9 @@ func (app *App) setupRouter() {
 
 					// 镜像仓库管理
 					dockerGroup.GET("/registries", dockerHandler.ListRegistries)
+					dockerGroup.POST("/registries", dockerHandler.CreateRegistry)
+					dockerGroup.PUT("/registries", dockerHandler.UpdateRegistry)
+					dockerGroup.DELETE("/registries", dockerHandler.DeleteRegistry)
 					dockerGroup.POST("/registry/push", dockerHandler.PushImage)
 					dockerGroup.POST("/registry/pull", dockerHandler.PullFromRegistry)
 				}
@@ -193,6 +198,21 @@ func (app *App) setupRouter() {
 				systemGroup.GET("/stat", systemHandler.Stat)
 				systemGroup.GET("/probe", systemHandler.Probe)
 				systemGroup.GET("/health", systemHandler.Health)
+			}
+
+			// 系统设置 API 路由
+			settingsGroup := authGroup.Group("/settings")
+			{
+				settingsGroup.GET("", settingsHandler.GetAll)
+				settingsGroup.PUT("/server", settingsHandler.UpdateServer)
+				settingsGroup.PUT("/apisix", settingsHandler.UpdateApisix)
+				settingsGroup.PUT("/docker", settingsHandler.UpdateDocker)
+
+				// 成员账号
+				settingsGroup.GET("/members", settingsHandler.ListMembers)
+				settingsGroup.POST("/members", settingsHandler.CreateMember)
+				settingsGroup.PUT("/members/:username", settingsHandler.UpdateMember)
+				settingsGroup.DELETE("/members/:username", settingsHandler.DeleteMember)
 			}
 		}
 	}
