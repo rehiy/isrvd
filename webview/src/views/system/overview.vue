@@ -1,7 +1,7 @@
 <script lang="ts">
-import type { ChartOptions, ChartTypeRegistry } from 'chart.js'
+import type { ChartOptions } from 'chart.js'
 import { Chart, registerables } from 'chart.js'
-import { nextTick } from 'vue'
+import { markRaw, nextTick } from 'vue'
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
@@ -108,15 +108,15 @@ class SystemOverview extends Vue {
     // ─── 私有属性（非响应式） ───
     private readonly NET_POINTS = 45
     private readonly MAX_STAT_POINTS = 45
-    netHistory: Record<string, TimeSeriesHistory> = {}
-    private lastNetSnapshot: Record<string, IOSnapshot> = {}
+    netHistory: Record<string, TimeSeriesHistory> = markRaw({})
+    private lastNetSnapshot: Record<string, IOSnapshot> = markRaw({})
     private pollTimer: ReturnType<typeof setInterval> | null = null
-    private netCharts: Record<string, Chart<keyof ChartTypeRegistry>> = {}
-    diskIOHistory: Record<string, DiskIOSeriesHistory> = {}
-    private lastDiskIOSnapshot: Record<string, IOSnapshot> = {}
-    private diskIOCharts: Record<string, Chart<keyof ChartTypeRegistry>> = {}
-    private cpuHistory = { labels: [] as string[], data: [] as number[] }
-    private memHistory = { labels: [] as string[], data: [] as number[] }
+    private netCharts: Record<string, Chart<'line'>> = markRaw({})
+    diskIOHistory: Record<string, DiskIOSeriesHistory> = markRaw({})
+    private lastDiskIOSnapshot: Record<string, IOSnapshot> = markRaw({})
+    private diskIOCharts: Record<string, Chart<'line'>> = markRaw({})
+    private cpuHistory = markRaw({ labels: [] as string[], data: [] as number[] })
+    private memHistory = markRaw({ labels: [] as string[], data: [] as number[] })
     private cpuChart: Chart<'line'> | null = null
     private memChart: Chart<'line'> | null = null
 
@@ -160,14 +160,14 @@ class SystemOverview extends Vue {
         return parts.join(' ')
     }
 
-    cpuPercent(arr: number[]): string | number {
+    cpuPercent(arr: number[]): number {
         if (!arr || !arr.length) return 0
-        return (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1)
+        return +((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1))
     }
 
-    memPercent(used: number, total: number): string | number {
+    memPercent(used: number, total: number): number {
         if (!total) return 0
-        return ((used / total) * 100).toFixed(1)
+        return +((used / total) * 100).toFixed(1)
     }
 
     physicalInterfaces(list: NetInterface[]) {
@@ -176,15 +176,15 @@ class SystemOverview extends Vue {
         return list.filter(ni => !virtualPrefixes.some(p => ni.Name.startsWith(p)))
     }
 
-    semanticColor(pct: number | string, prefix = 'bg') {
-        const p = parseFloat(String(pct))
+    semanticColor(pct: number, prefix = 'bg') {
+        const p = pct
         if (p >= 90) return `${prefix}-red-500`
         if (p >= 70) return `${prefix}-amber-500`
         return `${prefix}-emerald-500`
     }
 
-    barColor(pct: number | string) { return this.semanticColor(pct, 'bg') }
-    textColor(pct: number | string) { return this.semanticColor(pct, 'text') }
+    barColor(pct: number) { return this.semanticColor(pct, 'bg') }
+    textColor(pct: number) { return this.semanticColor(pct, 'text') }
 
     fmtGCTime(ts: number) {
         if (!ts) return '从未'
@@ -274,11 +274,11 @@ class SystemOverview extends Vue {
     // ─── CPU/内存图表 ───
     makeStatChart(canvas: HTMLCanvasElement, history: { labels: string[]; data: number[] }, borderColor: string, bgColor: string): Chart<'line'> | null {
         if (!canvas) return null
-        return new Chart(canvas, {
+        return markRaw(new Chart(canvas, {
             type: 'line' as const,
             data: { labels: [...history.labels], datasets: [{ data: [...history.data], borderColor, backgroundColor: bgColor, fill: true }] },
             options: this.bgChartOptions()
-        })
+        }))
     }
 
     initStatCharts() {
@@ -288,12 +288,12 @@ class SystemOverview extends Vue {
         this.memChart = this.makeStatChart(this.memCanvasRef, this.memHistory, 'rgba(99,102,241,0.6)', 'rgba(99,102,241,0.08)')
     }
 
-    pushStatPoint(cpuV: string | number, memV: string | number) {
+    pushStatPoint(cpuV: number, memV: number) {
         const label = this.timeLabel()
         this.cpuHistory.labels.push(label)
-        this.cpuHistory.data.push(+parseFloat(String(cpuV)).toFixed(1))
+        this.cpuHistory.data.push(cpuV)
         this.memHistory.labels.push(label)
-        this.memHistory.data.push(+parseFloat(String(memV)).toFixed(1))
+        this.memHistory.data.push(memV)
         if (this.cpuHistory.labels.length > this.MAX_STAT_POINTS) {
             this.cpuHistory.labels.shift(); this.cpuHistory.data.shift()
             this.memHistory.labels.shift(); this.memHistory.data.shift()
@@ -324,11 +324,11 @@ class SystemOverview extends Vue {
         if (!canvas) return
         this.netCharts[name]?.destroy()
         const h = this.netHistory[name] || { labels: [], recv: [], sent: [] }
-        this.netCharts[name] = new Chart(canvas as HTMLCanvasElement, {
+        this.netCharts[name] = markRaw(new Chart(canvas as HTMLCanvasElement, {
             type: 'line' as const,
             data: { labels: [...h.labels], datasets: [this.makeDataset(h.recv, '#10b981', '下行'), this.makeDataset(h.sent, '#3b82f6', '上行')] },
             options: this.netChartOptions()
-        })
+        }))
     }
 
     initAllNetCharts() {
@@ -364,11 +364,11 @@ class SystemOverview extends Vue {
         if (!canvas) return
         this.diskIOCharts[name]?.destroy()
         const h = this.diskIOHistory[name] || { labels: [], read: [], write: [] }
-        this.diskIOCharts[name] = new Chart(canvas as HTMLCanvasElement, {
+        this.diskIOCharts[name] = markRaw(new Chart(canvas as HTMLCanvasElement, {
             type: 'line' as const,
             data: { labels: [...h.labels], datasets: [this.makeDataset(h.read, '#f59e0b', '读取'), this.makeDataset(h.write, '#8b5cf6', '写入')] },
             options: this.diskChartOptions()
-        })
+        }))
     }
 
     initAllDiskCharts() {
@@ -441,17 +441,37 @@ class SystemOverview extends Vue {
         this.destroyNetCharts()
         this.destroyStatCharts()
         this.destroyDiskCharts()
-        this.netHistory = {}
-        this.lastNetSnapshot = {}
-        this.diskIOHistory = {}
-        this.lastDiskIOSnapshot = {}
+        this.netHistory = markRaw({})
+        this.lastNetSnapshot = markRaw({})
+        this.diskIOHistory = markRaw({})
+        this.lastDiskIOSnapshot = markRaw({})
         this.cpuHistory.labels.length = 0
         this.cpuHistory.data.length = 0
         this.memHistory.labels.length = 0
         this.memHistory.data.length = 0
         try {
             const res = await api.systemStat()
-            this.stat = (res.payload as SystemStat | undefined) ?? null
+            const payload = res.payload as SystemStat | undefined
+            this.stat = payload ?? null
+            if (payload) {
+                // 推入第一个数据点，图表初始化时即有数据
+                this.pushStatPoint(
+                    this.cpuPercent(payload.system.CpuPercent),
+                    this.memPercent(payload.system.MemoryUsed, payload.system.MemoryTotal)
+                )
+                // 初始化网络/磁盘快照，并推入速率为 0 的初始点，图表初始化时即有数据
+                const initLabel = this.timeLabel()
+                this.physicalInterfaces(payload.system.NetInterface).forEach(ni => {
+                    this.lastNetSnapshot[ni.Name] = { recv: ni.BytesRecv, sent: ni.BytesSent }
+                    this.netHistory[ni.Name] = { labels: [initLabel], recv: [0], sent: [0] }
+                })
+                if (payload.diskIO?.length) {
+                    payload.diskIO.forEach(d => {
+                        this.lastDiskIOSnapshot[d.Name] = { read: d.ReadBytes, write: d.WriteBytes }
+                        this.diskIOHistory[d.Name] = { labels: [initLabel], read: [0], write: [0] }
+                    })
+                }
+            }
         } catch (e) {
             this.stat = null
         }
@@ -499,6 +519,10 @@ class SystemOverview extends Vue {
     }
 
     // ─── 生命周期 ───
+    mounted() {
+        this.load()
+    }
+
     unmounted() {
         this.stopPoll()
         this.destroyNetCharts()
@@ -544,7 +568,7 @@ export default toNative(SystemOverview)
         <!-- CPU 使用率卡片：背景折线图 + 顶部进度条 -->
         <div class="relative rounded-xl border border-slate-200 bg-white overflow-hidden">
           <div class="absolute inset-0 pointer-events-none">
-            <canvas ref="cpuCanvasRef"></canvas>
+            <canvas ref="cpuCanvasRef" class="w-full h-full"></canvas>
           </div>
           <div class="relative p-4">
             <div class="flex items-center justify-between">
@@ -568,7 +592,7 @@ export default toNative(SystemOverview)
         <!-- 内存使用卡片：背景折线图 + 顶部进度条 -->
         <div class="relative rounded-xl border border-slate-200 bg-white overflow-hidden">
           <div class="absolute inset-0 pointer-events-none">
-            <canvas ref="memCanvasRef"></canvas>
+            <canvas ref="memCanvasRef" class="w-full h-full"></canvas>
           </div>
           <div class="relative p-4">
             <div class="flex items-center justify-between">
@@ -641,8 +665,8 @@ export default toNative(SystemOverview)
                 </div>
               </div>
               <div class="relative h-16 bg-slate-50 rounded-lg overflow-hidden">
-                <canvas :data-disk="devShortName(dp.Device)"></canvas>
-                <div v-if="!diskIOHistory[devShortName(dp.Device)]?.read?.length" class="absolute inset-0 flex items-center justify-center">
+                <canvas :data-disk="devShortName(dp.Device)" class="w-full h-full"></canvas>
+              <div v-if="!diskIOHistory[devShortName(dp.Device)]?.read?.length" class="absolute inset-0 flex items-center justify-center">
                   <span class="text-xs text-slate-300">等待数据...</span>
                 </div>
               </div>
@@ -685,8 +709,8 @@ export default toNative(SystemOverview)
             </div>
             <!-- 速率折线图 -->
             <div class="relative h-20 bg-slate-50 rounded-lg overflow-hidden">
-              <canvas :data-iface="ni.Name"></canvas>
-              <div v-if="!netHistory[ni.Name]" class="absolute inset-0 flex items-center justify-center">
+              <canvas :data-iface="ni.Name" class="w-full h-full"></canvas>
+              <div v-if="!netHistory[ni.Name]?.labels?.length" class="absolute inset-0 flex items-center justify-center">
                 <span class="text-xs text-slate-300">等待数据...</span>
               </div>
             </div>

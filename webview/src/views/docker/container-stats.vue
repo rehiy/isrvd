@@ -1,8 +1,8 @@
 <script lang="ts">
-import type { ChartOptions } from 'chart.js'
+import type { ChartOptions, TooltipItem } from 'chart.js'
 import { Chart, registerables } from 'chart.js'
-import { nextTick } from 'vue'
-import { Component, Inject, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
+import { markRaw, nextTick } from 'vue'
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
 import type { ContainerInfo, ContainerStatsResponse } from '@/service/types'
@@ -10,18 +10,17 @@ import { formatFileSize, POLL_INTERVAL } from '@/helper/utils'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
+import ContainerNav from '@/views/docker/widget/container-nav.vue'
+
 Chart.register(...registerables)
 
-// ─── Chart.js 回调类型 ───
-interface ChartCallbackContext {
-    parsed: { y: number | null }
-    dataset: { label: string }
-}
+type ChartCallbackContext = TooltipItem<'line'>
 
 @Component({
     beforeRouteLeave(this: unknown) {
         (this as InstanceType<typeof ContainerStats>).stopStatsTimer()
-    }
+    },
+    components: { ContainerNav }
 } as Record<string, unknown>)
 class ContainerStats extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
@@ -68,33 +67,6 @@ class ContainerStats extends Vue {
     }
 
     // ─── 方法 ───
-    goBack() {
-        this.$router.push('/docker/containers')
-    }
-
-    switchTab(name: string) {
-        this.$router.push({ name, params: { id: this.containerId } })
-    }
-
-    activeTab() {
-        return this.$route.name
-    }
-
-    async loadContainer() {
-        try {
-            const res = await api.listContainers(true)
-            const list = res.payload || []
-            this.container = list.find((c: ContainerInfo) => c.id === this.containerId) || null
-            if (!this.container) {
-                this.actions.showNotification('error', '容器不存在')
-                this.$router.push('/docker/containers')
-            }
-        } catch (e) {
-            this.actions.showNotification('error', '加载容器信息失败')
-            this.$router.push('/docker/containers')
-        }
-    }
-
     startStatsTimer() {
         this.stopStatsTimer()
         this.statsTimer = setInterval(() => this.loadStats(), POLL_INTERVAL)
@@ -119,8 +91,13 @@ class ContainerStats extends Vue {
         try {
             const res = await api.containerStats(this.containerId)
             if (this.destroyed || !res.payload) return
-            this.statsData = res.payload ?? null
+            const isFirst = !this.statsData
+            this.statsData = res.payload
             this.pushPoint(res.payload)
+            if (isFirst) {
+                await nextTick()
+                this.initCharts()
+            }
             this.renderCharts()
         } catch (e) {
             // 静默失败
@@ -191,7 +168,7 @@ class ContainerStats extends Vue {
                     bodyFont: { size: 10 },
                     padding: 8,
                     cornerRadius: 6,
-                    callbacks: tooltipCb ? { label: tooltipCb as unknown as (this: unknown, tooltipItem: unknown) => string | void | string[] } : {}
+                    callbacks: tooltipCb ? { label: tooltipCb } : {}
                 }
             },
             scales: {
@@ -213,11 +190,20 @@ class ContainerStats extends Vue {
     }
 
     makeDataset(data: number[], color: string, label = '') {
+        let bgColor: string
+        if (color.startsWith('#')) {
+            const r = parseInt(color.slice(1, 3), 16)
+            const g = parseInt(color.slice(3, 5), 16)
+            const b = parseInt(color.slice(5, 7), 16)
+            bgColor = `rgba(${r},${g},${b},0.08)`
+        } else {
+            bgColor = color.replace(')', ', 0.08)').replace('rgb', 'rgba')
+        }
         return {
             label,
             data: [...data],
             borderColor: color,
-            backgroundColor: color.replace(')', ', 0.08)').replace('rgb', 'rgba'),
+            backgroundColor: bgColor,
             fill: true
         }
     }
@@ -226,29 +212,40 @@ class ContainerStats extends Vue {
         this.destroyCharts()
 
         if (this.cpuRef) {
-            this.cpuChart = new Chart(this.cpuRef, {
+            this.cpuChart = markRaw(new Chart(this.cpuRef, {
                 type: 'line' as const,
                 data: { labels: [...this.labels], datasets: [this.makeDataset(this.cpuData, '#3b82f6')] },
                 options: this.baseOptions(
                     { max: 100, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => v + '%' } },
                     (ctx: ChartCallbackContext) => (ctx.parsed.y ?? 0).toFixed(1) + '%'
                 )
-            })
+            }))
         }
 
         if (this.memRef) {
-            this.memChart = new Chart(this.memRef, {
+            this.memChart = markRaw(new Chart(this.memRef, {
                 type: 'line' as const,
                 data: { labels: [...this.labels], datasets: [this.makeDataset(this.memData, '#8b5cf6')] },
                 options: this.baseOptions(
                     { max: 100, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => v + '%' } },
                     (ctx: ChartCallbackContext) => (ctx.parsed.y ?? 0).toFixed(1) + '%'
                 )
-            })
+            }))
         }
 
         if (this.netRef) {
-            this.netChart = new Chart(this.netRef, {
+            const netTooltipCb = (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y ?? 0) + '/s'
+            const netOptions: ChartOptions<'line'> = {
+                ...this.baseOptions({}, netTooltipCb),
+                plugins: {
+                    legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
+                    tooltip: {
+                        backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
+                        callbacks: { label: netTooltipCb }
+                    }
+                }
+            }
+            this.netChart = markRaw(new Chart(this.netRef, {
                 type: 'line' as const,
                 data: {
                     labels: [...this.labels],
@@ -257,22 +254,23 @@ class ContainerStats extends Vue {
                         { ...this.makeDataset(this.netTxData, '#0d9488'), label: '发送' }
                     ]
                 },
-                options: {
-                    ...this.baseOptions({}, (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y ?? 0) + '/s'),
-                    plugins: {
-                        ...this.baseOptions().plugins,
-                        legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
-                        tooltip: {
-                            backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-                            callbacks: { label: (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y ?? 0) + '/s' }
-                        }
-                    }
-                } as ChartOptions<'line'>
-            })
+                options: netOptions
+            }))
         }
 
         if (this.blkRef) {
-            this.blkChart = new Chart(this.blkRef, {
+            const blkTooltipCb = (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y ?? 0) + '/s'
+            const blkOptions: ChartOptions<'line'> = {
+                ...this.baseOptions({}, blkTooltipCb),
+                plugins: {
+                    legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
+                    tooltip: {
+                        backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
+                        callbacks: { label: blkTooltipCb }
+                    }
+                }
+            }
+            this.blkChart = markRaw(new Chart(this.blkRef, {
                 type: 'line' as const,
                 data: {
                     labels: [...this.labels],
@@ -281,18 +279,8 @@ class ContainerStats extends Vue {
                         { ...this.makeDataset(this.blkWData, '#d97706'), label: '写入' }
                     ]
                 },
-                options: {
-                    ...this.baseOptions({}, (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y ?? 0) + '/s'),
-                    plugins: {
-                        ...this.baseOptions().plugins,
-                        legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
-                        tooltip: {
-                            backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-                            callbacks: { label: (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y ?? 0) + '/s' }
-                        }
-                    }
-                } as ChartOptions<'line'>
-            })
+                options: blkOptions
+            }))
         }
     }
 
@@ -317,24 +305,18 @@ class ContainerStats extends Vue {
         this.netRxRate = this.netTxRate = this.blkRRate = this.blkWRate = 0
     }
 
-    // ─── 侦听器 ───
-    @Watch('statsData')
-    async onStatsDataChange(val: ContainerStatsResponse | null, old: ContainerStatsResponse | null) {
-        if (val && !old) {
-            await nextTick()
-            this.initCharts()
-        }
+    // ─── 生命周期 ───
+    mounted() {
+        document.addEventListener('visibilitychange', this.handleVisibilityChange)
     }
 
-    // ─── 生命周期 ───
-    async mounted() {
-        await this.loadContainer()
-        document.addEventListener('visibilitychange', this.handleVisibilityChange)
-
-        if (this.container?.state === 'running') {
-            await this.loadStats()
-            this.statsLoading = false
-            this.startStatsTimer()
+    onContainerLoaded(ct: ContainerInfo) {
+        this.container = ct
+        if (ct.state === 'running') {
+            this.loadStats().then(() => {
+                this.statsLoading = false
+                this.startStatsTimer()
+            })
         } else {
             this.statsLoading = false
         }
@@ -354,80 +336,8 @@ export default toNative(ContainerStats)
 
 <template>
   <div>
-    <!-- 顶部导航栏 -->
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
-        <!-- 桌面端布局 -->
-        <div class="hidden md:flex md:items-center justify-between">
-          <div class="flex items-center gap-3">
-            <button @click="goBack" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors" title="返回容器列表">
-              <i class="fas fa-arrow-left text-sm"></i>
-            </button>
-            <template v-if="container">
-              <div :class="['w-9 h-9 rounded-lg flex items-center justify-center', container.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
-                <i class="fas fa-cube text-white"></i>
-              </div>
-              <div class="min-w-0">
-                <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container.name || container.id }}</h1>
-                <p class="text-xs text-slate-500 font-mono truncate">{{ container.image }}</p>
-              </div>
-            </template>
-            <template v-else>
-              <div class="w-9 h-9 rounded-lg bg-slate-300 flex items-center justify-center animate-pulse">
-                <i class="fas fa-cube text-white"></i>
-              </div>
-              <div><h1 class="text-lg font-semibold text-slate-800">加载中...</h1></div>
-            </template>
-          </div>
-          <div v-if="container" class="flex gap-1 bg-slate-100 p-1 rounded-lg">
-            <button @click="switchTab('docker-container-stats')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-stats' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
-              <i class="fas fa-chart-line"></i><span>监控</span>
-            </button>
-            <button @click="switchTab('docker-container-logs')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-logs' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
-              <i class="fas fa-file-lines"></i><span>日志</span>
-            </button>
-            <button @click="switchTab('docker-container-terminal')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-terminal' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
-              <i class="fas fa-terminal"></i><span>终端</span>
-            </button>
-          </div>
-        </div>
-        <!-- 移动端布局 -->
-        <div class="block md:hidden">
-          <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3">
-              <button @click="goBack" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors">
-                <i class="fas fa-arrow-left text-sm"></i>
-              </button>
-              <template v-if="container">
-                <div :class="['w-9 h-9 rounded-lg flex items-center justify-center', container.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
-                  <i class="fas fa-cube text-white"></i>
-                </div>
-                <div class="min-w-0">
-                  <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container.name || container.id }}</h1>
-                  <p class="text-xs text-slate-500 font-mono truncate">{{ container.image }}</p>
-                </div>
-              </template>
-              <template v-else>
-                <div class="w-9 h-9 rounded-lg bg-slate-300 flex items-center justify-center animate-pulse">
-                  <i class="fas fa-cube text-white"></i>
-                </div>
-                <div><h1 class="text-lg font-semibold text-slate-800">加载中...</h1></div>
-              </template>
-            </div>
-          </div>
-          <div v-if="container" class="flex justify-center gap-1 bg-slate-100 p-1 rounded-lg">
-            <button @click="switchTab('docker-container-stats')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-stats' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
-              <i class="fas fa-chart-line"></i><span class="hidden sm:inline">监控</span>
-            </button>
-            <button @click="switchTab('docker-container-logs')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-logs' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
-              <i class="fas fa-file-lines"></i><span class="hidden sm:inline">日志</span>
-            </button>
-            <button @click="switchTab('docker-container-terminal')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab() === 'docker-container-terminal' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
-              <i class="fas fa-terminal"></i><span class="hidden sm:inline">终端</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <ContainerNav :container-id="containerId" @loaded="onContainerLoaded" />
       <!-- 内容区域 -->
       <div class="p-4 md:p-6 space-y-4">
         <!-- 加载状态 -->
@@ -458,7 +368,7 @@ export default toNative(ContainerStats)
                   <i class="fas fa-bolt"></i> 节流 <span class="font-medium">{{ statsData.cpuThrottled.throttledPeriods }}</span>
                 </span>
               </div>
-              <div class="h-28"><canvas ref="cpuRef"></canvas></div>
+              <div class="h-28"><canvas ref="cpuRef" class="w-full h-full"></canvas></div>
             </div>
 
             <!-- 内存使用 -->
@@ -477,7 +387,7 @@ export default toNative(ContainerStats)
                 <span>内存 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryUsage) }}</span></span>
                 <span>限制 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryLimit) }}</span></span>
               </div>
-              <div class="h-28"><canvas ref="memRef"></canvas></div>
+              <div class="h-28"><canvas ref="memRef" class="w-full h-full"></canvas></div>
             </div>
           </div>
 
@@ -502,7 +412,7 @@ export default toNative(ContainerStats)
                 <span>累计收 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkRx) }}</span></span>
                 <span>累计发 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkTx) }}</span></span>
               </div>
-              <div class="h-28"><canvas ref="netRef"></canvas></div>
+              <div class="h-28"><canvas ref="netRef" class="w-full h-full"></canvas></div>
             </div>
 
             <!-- 硬盘 I/O -->
@@ -524,7 +434,7 @@ export default toNative(ContainerStats)
                 <span>累计读 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockRead) }}</span></span>
                 <span>累计写 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockWrite) }}</span></span>
               </div>
-              <div class="h-28"><canvas ref="blkRef"></canvas></div>
+              <div class="h-28"><canvas ref="blkRef" class="w-full h-full"></canvas></div>
             </div>
           </div>
 

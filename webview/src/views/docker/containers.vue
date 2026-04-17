@@ -50,7 +50,8 @@ class Containers extends Vue {
     }
 
     handleContainerAction(container: ContainerInfo, action: string) {
-        const config = this.actionConfigs[action] || {}
+        const config = this.actionConfigs[action]
+        if (!config) return
         this.actions.showConfirm({
             title: config.title,
             message: `确定要${config.confirmText}容器 <strong class="text-slate-900">${container.name || container.id}</strong> 吗？`,
@@ -100,7 +101,8 @@ class Containers extends Vue {
 
     batchAction(action: string) {
         if (this.selectedIds.length === 0) return
-        const config = this.actionConfigs[action] || {}
+        const config = this.actionConfigs[action]
+        if (!config) return
         this.actions.showConfirm({
             title: `批量${config.confirmText}`,
             message: `确定要批量${config.confirmText} <strong class="text-slate-900">${this.selectedIds.length}</strong> 个容器吗？`,
