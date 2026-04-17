@@ -2,7 +2,9 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { ImageInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -12,16 +14,16 @@ import BaseModal from '@/component/modal.vue'
     emits: ['success']
 })
 class ImageTagModal extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
     isOpen = false
     modalLoading = false
-    tagImage: any = null
+    tagImage: ImageInfo | null = null
     tagRepoTag = ''
 
     // ─── 方法 ───
-    show(image: any) {
+    show(image: ImageInfo) {
         this.tagImage = image
         this.tagRepoTag = ''
         this.isOpen = true

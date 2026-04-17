@@ -2,6 +2,7 @@
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { APP_STATE_KEY } from '@/store/state'
+import type { AppState } from '@/store/state'
 
 import ApisixOverview from '@/views/apisix/overview.vue'
 import DockerOverview from '@/views/docker/overview.vue'
@@ -12,7 +13,7 @@ import SystemOverview from '@/views/system/overview.vue'
     components: { ApisixOverview, DockerOverview, SwarmOverview, SystemOverview }
 })
 class Overview extends Vue {
-    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_STATE_KEY }) readonly state!: AppState
 
     // ─── Refs ───
     @Ref readonly dockerRef!: InstanceType<typeof DockerOverview>

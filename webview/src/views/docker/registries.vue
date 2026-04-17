@@ -2,7 +2,9 @@
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { RegistryInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 import RegistryPushModal from '@/views/docker/widget/registry-push-modal.vue'
 import RegistryPullModal from '@/views/docker/widget/registry-pull-modal.vue'
@@ -11,7 +13,7 @@ import RegistryPullModal from '@/views/docker/widget/registry-pull-modal.vue'
     components: { RegistryPushModal, RegistryPullModal }
 })
 class Registries extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── Refs ───
     @Ref readonly pushModalRef!: InstanceType<typeof RegistryPushModal>
@@ -20,7 +22,7 @@ class Registries extends Vue {
     // ─── 数据属性 ───
     daemonMirrors: string[] = []
     indexServerAddress = ''
-    registries: any[] = []
+    registries: RegistryInfo[] = []
     loading = false
 
     // ─── 方法 ───

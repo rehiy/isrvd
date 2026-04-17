@@ -3,7 +3,9 @@ import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { downloadFile, formatFileSize, formatTime, getFileIcon, isEditableFile } from '@/helper/utils'
 import api from '@/service/api'
+import type { FileInfo } from '@/service/types'
 import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
+import type { AppActions, AppState } from '@/store/state'
 
 import ChmodModal from '@/views/filer/widget/chmod-modal.vue'
 import CreateModal from '@/views/filer/widget/create-modal.vue'
@@ -22,8 +24,8 @@ import ZipModal from '@/views/filer/widget/zip-modal.vue'
     }
 })
 class FileExplorer extends Vue {
-    @Inject({ from: APP_STATE_KEY }) readonly state!: any
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_STATE_KEY }) readonly state!: AppState
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── Refs ───
     @Ref readonly modifyModalRef!: InstanceType<typeof ModifyModal>
@@ -37,7 +39,7 @@ class FileExplorer extends Vue {
     @Ref readonly uploadModal!: InstanceType<typeof UploadModal>
 
     // ─── 数据属性 ───
-    files: any[] = []
+    files: FileInfo[] = []
     formatFileSize = formatFileSize
     formatTime = formatTime
     getFileIcon = getFileIcon
@@ -54,7 +56,7 @@ class FileExplorer extends Vue {
         this.actions.loadFiles(path)
     }
 
-    async download(file: any) {
+    async download(file: FileInfo) {
         const response = await api.download(file.path)
         downloadFile(file.name, response)
     }
@@ -65,8 +67,8 @@ class FileExplorer extends Vue {
 
     async loadFiles(path: string = this.state.currentPath) {
         const data = await api.list(path)
-        this.files = data.payload.files || []
-        this.state.currentPath = data.payload.path
+        this.files = data.payload?.files || []
+        this.state.currentPath = data.payload?.path ?? '/'
     }
 
     // ─── 生命周期 ───
@@ -101,11 +103,11 @@ export default toNative(FileExplorer)
                 <li class="text-slate-300 flex-shrink-0">
                   <i class="fas fa-chevron-right text-xs"></i>
                 </li>
-                <li v-if="index < paths.length - 1" class="flex-shrink-0">
+                <li v-if="Number(index) < paths.length - 1" class="flex-shrink-0">
                   <a 
                     class="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-white hover:text-primary-600 transition-all"
                     href="#" 
-                    @click="navigateTo('/' + paths.slice(0, index + 1).join('/'))"
+                    @click="navigateTo('/' + paths.slice(0, Number(index) + 1).join('/'))"
                   >
                     {{ part }}
                   </a>

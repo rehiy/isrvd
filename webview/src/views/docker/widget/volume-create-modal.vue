@@ -3,6 +3,7 @@ import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -12,7 +13,7 @@ import BaseModal from '@/component/modal.vue'
     emits: ['success']
 })
 class VolumeCreateModal extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
     isOpen = false

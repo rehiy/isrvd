@@ -3,14 +3,16 @@ import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import { formatFileSize, formatTime } from '@/helper/utils'
 import api from '@/service/api'
+import type { SwarmNodeInspect } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 @Component
 class NodeDetail extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
-    nodeData: any = null
+    nodeData: SwarmNodeInspect | null = null
     loading = false
     formatFileSize = formatFileSize
     formatTime = formatTime
@@ -37,7 +39,7 @@ class NodeDetail extends Vue {
         this.loading = true
         try {
             const res = await api.swarmInspectNode(this.nodeId)
-            this.nodeData = res.payload
+            this.nodeData = res.payload ?? null
         } catch (e) {
             this.actions.showNotification('error', '获取节点详情失败')
         }

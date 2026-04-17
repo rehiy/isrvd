@@ -2,7 +2,9 @@
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { NetworkInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 import NetworkCreateModal from '@/views/docker/widget/network-create-modal.vue'
 
@@ -11,13 +13,13 @@ import NetworkCreateModal from '@/views/docker/widget/network-create-modal.vue'
     components: { NetworkCreateModal }
 })
 class Networks extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── Refs ───
     @Ref readonly createModalRef!: InstanceType<typeof NetworkCreateModal>
 
     // ─── 数据属性 ───
-    networks: any[] = []
+    networks: NetworkInfo[] = []
     loading = false
 
     // ─── 方法 ───
@@ -32,7 +34,7 @@ class Networks extends Vue {
         this.loading = false
     }
 
-    handleNetworkAction(net: any, action: string) {
+    handleNetworkAction(net: NetworkInfo, action: string) {
         this.actions.showConfirm({
             title: '删除网络',
             message: `确定要删除网络 <strong class="text-slate-900">${net.name}</strong> 吗？`,
@@ -48,16 +50,16 @@ class Networks extends Vue {
         })
     }
 
-    viewNetworkDetail(net: any) {
+    viewNetworkDetail(net: NetworkInfo) {
         this.$router.push('/docker/network/' + net.id)
     }
 
-    canDeleteNetwork(net: any) {
+    canDeleteNetwork(net: NetworkInfo) {
         const undeletableNames = ['bridge', 'host', 'none']
         return !undeletableNames.includes(net.name)
     }
 
-    getDeleteDisabledReason(net: any) {
+    getDeleteDisabledReason(net: NetworkInfo) {
         const networkNames: Record<string, string> = {
             bridge: '默认桥接网络',
             host: '主机网络',

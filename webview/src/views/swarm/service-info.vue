@@ -3,14 +3,16 @@ import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import { formatTime } from '@/helper/utils'
 import api from '@/service/api'
+import type { SwarmServiceInspect } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 @Component
 class ServiceInfo extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
-    serviceData: any = null
+    serviceData: SwarmServiceInspect | null = null
     loading = false
     formatTime = formatTime
 
@@ -31,7 +33,7 @@ class ServiceInfo extends Vue {
         this.loading = true
         try {
             const res = await api.swarmInspectService(this.serviceId)
-            this.serviceData = res.payload
+            this.serviceData = res.payload ?? null
         } catch (e) {
             this.actions.showNotification('error', '获取服务详情失败')
         }

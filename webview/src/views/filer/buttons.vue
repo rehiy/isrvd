@@ -2,6 +2,7 @@
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 import CreateModal from '@/views/filer/widget/create-modal.vue'
 import MkdirModal from '@/views/filer/widget/mkdir-modal.vue'
@@ -11,7 +12,7 @@ import UploadModal from '@/views/filer/widget/upload-modal.vue'
     components: { CreateModal, MkdirModal, UploadModal }
 })
 class FilerButtons extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── Refs ───
     @Ref readonly mkdirModalRef!: InstanceType<typeof MkdirModal>

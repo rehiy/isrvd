@@ -2,7 +2,9 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { ApisixConsumer } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -12,7 +14,7 @@ import BaseModal from '@/component/modal.vue'
     emits: ['success']
 })
 class ConsumerEditModal extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
     isOpen = false
@@ -21,7 +23,7 @@ class ConsumerEditModal extends Vue {
     formData = { username: '', desc: '' }
 
     // ─── 方法 ───
-    show(consumer: any = null) {
+    show(consumer: ApisixConsumer | null = null) {
         if (consumer) {
             this.isEditMode = true
             this.formData = { username: consumer.username, desc: consumer.desc || '' }
@@ -46,8 +48,8 @@ class ConsumerEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch (e: any) {
-            this.actions.showNotification('error', e.message || '操作失败')
+        } catch (e: unknown) {
+            this.actions.showNotification('error', (e instanceof Error ? e.message : '') || '操作失败')
         }
         this.modalLoading = false
     }

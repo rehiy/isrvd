@@ -98,15 +98,15 @@ interface RouteFormData {
     priority?: number
     enable_websocket: boolean
     plugin_config_id?: string
-    plugins?: Record<string, any>
+    plugins?: Record<string, unknown>
     uris: string
     hosts: string
     upstream_host?: string
     upstream_port?: string | number
 }
 
-export const buildRoutePayload = (formData: RouteFormData): Record<string, any> => {
-    const payload: Record<string, any> = {
+export const buildRoutePayload = (formData: RouteFormData): Record<string, unknown> => {
+    const payload: Record<string, unknown> = {
         name: formData.name.trim(),
         desc: formData.desc.trim(),
         status: formData.status,

@@ -3,10 +3,11 @@ import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import * as ShellTerminal from '@/helper/shell'
 import { APP_STATE_KEY } from '@/store/state'
+import type { AppState } from '@/store/state'
 
 @Component
 class Shell extends Vue {
-    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_STATE_KEY }) readonly state!: AppState
 
     // ─── Refs ───
     @Ref readonly xtermRef!: HTMLDivElement

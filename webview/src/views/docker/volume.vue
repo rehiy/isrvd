@@ -3,14 +3,16 @@ import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import { formatFileSize, formatTime } from '@/helper/utils'
 import api from '@/service/api'
+import type { VolumeInspectResponse } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 @Component
 class VolumeDetail extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
-    detailData: any = null
+    detailData: VolumeInspectResponse | null = null
     loading = false
     formatFileSize = formatFileSize
     formatTime = formatTime
@@ -24,7 +26,7 @@ class VolumeDetail extends Vue {
         this.loading = true
         try {
             const res = await api.volumeInspect(this.volumeName)
-            this.detailData = res.payload
+            this.detailData = res.payload ?? null
         } catch (e) {
             this.actions.showNotification('error', '获取卷详情失败')
         }

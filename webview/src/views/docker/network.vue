@@ -2,14 +2,16 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { NetworkInspectResponse } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 @Component
 class NetworkDetail extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
-    detailData: any = null
+    detailData: NetworkInspectResponse | null = null
     loading = false
 
     get networkId() {
@@ -21,7 +23,7 @@ class NetworkDetail extends Vue {
         this.loading = true
         try {
             const res = await api.networkInspect(this.networkId)
-            this.detailData = res.payload
+            this.detailData = res.payload ?? null
         } catch (e) {
             this.actions.showNotification('error', '获取网络详情失败')
         }

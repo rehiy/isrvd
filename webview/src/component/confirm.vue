@@ -2,11 +2,12 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
+import type { AppActions, AppState } from '@/store/state'
 
 @Component
 class ConfirmModal extends Vue {
-    @Inject({ from: APP_STATE_KEY }) readonly state!: any
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_STATE_KEY }) readonly state!: AppState
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 计算属性 ───
     get iconColorClass() {

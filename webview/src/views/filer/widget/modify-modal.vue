@@ -14,7 +14,9 @@ import { xml } from '@codemirror/lang-xml'
 import { yaml } from '@codemirror/lang-yaml'
 
 import api from '@/service/api'
+import type { FileInfo } from '@/service/types'
 import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions, AppState } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -23,8 +25,8 @@ import BaseModal from '@/component/modal.vue'
     components: { BaseModal, Codemirror }
 })
 class ModifyModal extends Vue {
-    @Inject({ from: APP_STATE_KEY }) readonly state!: any
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_STATE_KEY }) readonly state!: AppState
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
     isOpen = false
@@ -32,7 +34,7 @@ class ModifyModal extends Vue {
     readonly extensions = [css(), go(), html(), javascript(), json(), markdown(), python(), sql(), xml(), yaml()]
 
     // ─── 方法 ───
-    async show(file: any) {
+    async show(file: FileInfo) {
         const data = await api.read(file.path)
         this.formData.path = file.path
         this.formData.filename = file.name

@@ -3,11 +3,12 @@ import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
 import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
+import type { AppActions, AppState } from '@/store/state'
 
 @Component
 class Logout extends Vue {
-    @Inject({ from: APP_STATE_KEY }) readonly state!: any
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_STATE_KEY }) readonly state!: AppState
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 方法 ───
     async handleLogout() {
@@ -27,6 +28,6 @@ export default toNative(Logout)
   >
     <i class="fas fa-spinner fa-spin" v-if="state.loading"></i>
     <i class="fas fa-sign-out-alt" v-else></i>
-    {{ state.loading ? '请求...' : '注销' }}
+    {{ state.loading ? '刷新' : '注销' }}
   </button>
 </template>

@@ -1,21 +1,30 @@
 <script lang="ts">
+import type { ChartOptions } from 'chart.js'
 import { Chart, registerables } from 'chart.js'
 import { nextTick } from 'vue'
 import { Component, Inject, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { ContainerInfo, ContainerStatsResponse } from '@/service/types'
 import { formatFileSize, POLL_INTERVAL } from '@/helper/utils'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 Chart.register(...registerables)
 
+// ─── Chart.js 回调类型 ───
+interface ChartCallbackContext {
+    parsed: { y: number | null }
+    dataset: { label: string }
+}
+
 @Component({
-    beforeRouteLeave() {
-        (this as any).stopStatsTimer()
+    beforeRouteLeave(this: unknown) {
+        (this as InstanceType<typeof ContainerStats>).stopStatsTimer()
     }
-})
+} as Record<string, unknown>)
 class ContainerStats extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── Refs ───
     @Ref readonly cpuRef!: HTMLCanvasElement
@@ -24,8 +33,8 @@ class ContainerStats extends Vue {
     @Ref readonly blkRef!: HTMLCanvasElement
 
     // ─── 数据属性 ───
-    container: any = null
-    statsData: any = null
+    container: ContainerInfo | null = null
+    statsData: ContainerStatsResponse | null = null
     statsLoading = true
     netRxRate = 0
     netTxRate = 0
@@ -34,7 +43,7 @@ class ContainerStats extends Vue {
     formatFileSize = formatFileSize
 
     // ─── 私有属性（非响应式） ───
-    private statsTimer: any = null
+    private statsTimer: ReturnType<typeof setInterval> | null = null
     private destroyed = false
     private readonly MAX_POINTS = 60
     private labels: string[] = []
@@ -49,10 +58,10 @@ class ContainerStats extends Vue {
     private prevBlkR = 0
     private prevBlkW = 0
     private prevTime = 0
-    private cpuChart: any = null
-    private memChart: any = null
-    private netChart: any = null
-    private blkChart: any = null
+    private cpuChart: Chart<'line'> | null = null
+    private memChart: Chart<'line'> | null = null
+    private netChart: Chart<'line'> | null = null
+    private blkChart: Chart<'line'> | null = null
 
     get containerId() {
         return this.$route.params.id as string
@@ -75,7 +84,7 @@ class ContainerStats extends Vue {
         try {
             const res = await api.listContainers(true)
             const list = res.payload || []
-            this.container = list.find((c: any) => c.id === this.containerId)
+            this.container = list.find((c: ContainerInfo) => c.id === this.containerId) || null
             if (!this.container) {
                 this.actions.showNotification('error', '容器不存在')
                 this.$router.push('/docker/containers')
@@ -110,7 +119,7 @@ class ContainerStats extends Vue {
         try {
             const res = await api.containerStats(this.containerId)
             if (this.destroyed || !res.payload) return
-            this.statsData = res.payload
+            this.statsData = res.payload ?? null
             this.pushPoint(res.payload)
             this.renderCharts()
         } catch (e) {
@@ -118,7 +127,7 @@ class ContainerStats extends Vue {
         }
     }
 
-    pushPoint(data: any) {
+    pushPoint(data: ContainerStatsResponse) {
         const now = new Date()
         const label = now.getHours().toString().padStart(2, '0') + ':' +
             now.getMinutes().toString().padStart(2, '0') + ':' +
@@ -168,12 +177,12 @@ class ContainerStats extends Vue {
         }
     }
 
-    baseOptions(yOptions: any = {}, tooltipCb: any = null) {
+    baseOptions(yOptions: Record<string, unknown> = {}, tooltipCb: ((ctx: ChartCallbackContext) => string) | null = null): ChartOptions<'line'> {
         return {
             responsive: true,
             maintainAspectRatio: false,
             animation: false,
-            interaction: { intersect: false, mode: 'index' },
+            interaction: { intersect: false, mode: 'index' as const },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -182,7 +191,7 @@ class ContainerStats extends Vue {
                     bodyFont: { size: 10 },
                     padding: 8,
                     cornerRadius: 6,
-                    callbacks: tooltipCb ? { label: tooltipCb } : {}
+                    callbacks: tooltipCb ? { label: tooltipCb as unknown as (this: unknown, tooltipItem: unknown) => string | void | string[] } : {}
                 }
             },
             scales: {
@@ -218,29 +227,29 @@ class ContainerStats extends Vue {
 
         if (this.cpuRef) {
             this.cpuChart = new Chart(this.cpuRef, {
-                type: 'line',
+                type: 'line' as const,
                 data: { labels: [...this.labels], datasets: [this.makeDataset(this.cpuData, '#3b82f6')] },
                 options: this.baseOptions(
-                    { max: 100, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: any) => v + '%' } },
-                    (ctx: any) => ctx.parsed.y.toFixed(1) + '%'
+                    { max: 100, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => v + '%' } },
+                    (ctx: ChartCallbackContext) => (ctx.parsed.y ?? 0).toFixed(1) + '%'
                 )
             })
         }
 
         if (this.memRef) {
             this.memChart = new Chart(this.memRef, {
-                type: 'line',
+                type: 'line' as const,
                 data: { labels: [...this.labels], datasets: [this.makeDataset(this.memData, '#8b5cf6')] },
                 options: this.baseOptions(
-                    { max: 100, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: any) => v + '%' } },
-                    (ctx: any) => ctx.parsed.y.toFixed(1) + '%'
+                    { max: 100, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => v + '%' } },
+                    (ctx: ChartCallbackContext) => (ctx.parsed.y ?? 0).toFixed(1) + '%'
                 )
             })
         }
 
         if (this.netRef) {
             this.netChart = new Chart(this.netRef, {
-                type: 'line',
+                type: 'line' as const,
                 data: {
                     labels: [...this.labels],
                     datasets: [
@@ -249,22 +258,22 @@ class ContainerStats extends Vue {
                     ]
                 },
                 options: {
-                    ...this.baseOptions({}, (ctx: any) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s'),
+                    ...this.baseOptions({}, (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y ?? 0) + '/s'),
                     plugins: {
                         ...this.baseOptions().plugins,
                         legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
                         tooltip: {
                             backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-                            callbacks: { label: (ctx: any) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s' }
+                            callbacks: { label: (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y ?? 0) + '/s' }
                         }
                     }
-                }
+                } as ChartOptions<'line'>
             })
         }
 
         if (this.blkRef) {
             this.blkChart = new Chart(this.blkRef, {
-                type: 'line',
+                type: 'line' as const,
                 data: {
                     labels: [...this.labels],
                     datasets: [
@@ -273,16 +282,16 @@ class ContainerStats extends Vue {
                     ]
                 },
                 options: {
-                    ...this.baseOptions({}, (ctx: any) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s'),
+                    ...this.baseOptions({}, (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y ?? 0) + '/s'),
                     plugins: {
                         ...this.baseOptions().plugins,
                         legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
                         tooltip: {
                             backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-                            callbacks: { label: (ctx: any) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y) + '/s' }
+                            callbacks: { label: (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y ?? 0) + '/s' }
                         }
                     }
-                }
+                } as ChartOptions<'line'>
             })
         }
     }
@@ -310,7 +319,7 @@ class ContainerStats extends Vue {
 
     // ─── 侦听器 ───
     @Watch('statsData')
-    async onStatsDataChange(val: any, old: any) {
+    async onStatsDataChange(val: ContainerStatsResponse | null, old: ContainerStatsResponse | null) {
         if (val && !old) {
             await nextTick()
             this.initCharts()
@@ -512,8 +521,8 @@ export default toNative(ContainerStats)
               </div>
               <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
                 <span v-if="statsData.blockDetail">设备 <span class="text-slate-600 font-medium">{{ Object.keys(statsData.blockDetail).length }} 个</span></span>
-                <span>累计读 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockR) }}</span></span>
-                <span>累计写 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockW) }}</span></span>
+                <span>累计读 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockRead) }}</span></span>
+                <span>累计写 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockWrite) }}</span></span>
               </div>
               <div class="h-28"><canvas ref="blkRef"></canvas></div>
             </div>

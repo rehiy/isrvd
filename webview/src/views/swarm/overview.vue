@@ -2,17 +2,19 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { SwarmInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 @Component
 class SwarmOverview extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
-    swarmInfo: any = null
+    swarmInfo: SwarmInfo | null = null
     loading = false
 
-    readonly statCards = [
+    readonly statCards: { key: keyof SwarmInfo; label: string; icon: string; bgColor: string }[] = [
         { key: 'nodes',    label: '总节点数', icon: 'fa-server',       bgColor: 'bg-blue-500' },
         { key: 'managers', label: 'Manager', icon: 'fa-crown',        bgColor: 'bg-indigo-500' },
         { key: 'workers',  label: 'Worker',  icon: 'fa-circle-nodes', bgColor: 'bg-slate-400' },
@@ -25,7 +27,7 @@ class SwarmOverview extends Vue {
         this.loading = true
         try {
             const res = await api.swarmInfo()
-            this.swarmInfo = res.payload || {}
+            this.swarmInfo = res.payload ?? null
         } catch (e) {
             this.actions.showNotification('error', '获取 Swarm 信息失败，请确认集群已初始化')
             this.swarmInfo = null

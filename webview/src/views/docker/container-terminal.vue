@@ -3,18 +3,20 @@ import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import * as ContainerExec from '@/helper/container-exec'
 import api from '@/service/api'
+import type { ContainerInfo } from '@/service/types'
 import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
+import type { AppActions, AppState } from '@/store/state'
 
 @Component
 class ContainerTerminal extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
-    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
+    @Inject({ from: APP_STATE_KEY }) readonly state!: AppState
 
     // ─── Refs ───
     @Ref readonly xtermRef!: HTMLDivElement
 
     // ─── 数据属性 ───
-    container: any = null
+    container: ContainerInfo | null = null
     terminalConnected = false
     terminalShell = '/bin/sh'
 
@@ -39,7 +41,7 @@ class ContainerTerminal extends Vue {
         try {
             const res = await api.listContainers(true)
             const list = res.payload || []
-            this.container = list.find((c: any) => c.id === this.containerId)
+            this.container = list.find((c: ContainerInfo) => c.id === this.containerId) || null
             if (!this.container) {
                 this.actions.showNotification('error', '容器不存在')
                 this.$router.push('/docker/containers')

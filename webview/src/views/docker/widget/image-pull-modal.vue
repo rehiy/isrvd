@@ -2,7 +2,9 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { ImageSearchResult } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -12,13 +14,13 @@ import BaseModal from '@/component/modal.vue'
     emits: ['success']
 })
 class ImagePullModal extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
     isOpen = false
     modalLoading = false
     formData = { image: '', tag: '' }
-    searchResults: any[] = []
+    searchResults: ImageSearchResult[] = []
     searchLoading = false
     searchKeyword = ''
     daemonMirrors: string[] = []
@@ -28,9 +30,9 @@ class ImagePullModal extends Vue {
     async loadDaemonInfo() {
         try {
             const res = await api.dockerInfo()
-            const info = res.payload || {}
-            this.daemonMirrors = info.registryMirrors || []
-            this.indexServerAddress = info.indexServerAddress || ''
+            const info = res.payload
+            this.daemonMirrors = info?.registryMirrors || []
+            this.indexServerAddress = info?.indexServerAddress || ''
         } catch (e) {}
     }
 
@@ -66,7 +68,7 @@ class ImagePullModal extends Vue {
         this.searchLoading = false
     }
 
-    selectSearchResult(item: any) {
+    selectSearchResult(item: ImageSearchResult) {
         this.formData.image = item.name
         this.formData.tag = 'latest'
         this.searchResults = []

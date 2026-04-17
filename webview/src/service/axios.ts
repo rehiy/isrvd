@@ -1,4 +1,23 @@
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import type { APIResponse } from './types'
+
+// 类型安全的 HTTP 客户端接口（响应拦截器已将 AxiosResponse 解包为 APIResponse）
+export interface HttpClient {
+    get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<APIResponse<T>>
+    post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<APIResponse<T>>
+    put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<APIResponse<T>>
+    patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<APIResponse<T>>
+    delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<APIResponse<T>>
+}
+
+// Blob 下载专用客户端接口（responseType: 'blob' 时拦截器解包后直接是 Blob）
+export interface HttpBlobClient {
+    post(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<Blob>
+}
+
+// 导出类型安全的 HTTP 客户端（实际使用 axios 实例，通过类型断言修正拦截器解包后的返回类型）
+export const http = axios as unknown as HttpClient
+export const httpBlob = axios as unknown as HttpBlobClient
 
 export const interceptors = (state: { token: string | null; loading: boolean }, actions: { showNotification: (type: string, message: string) => void; clearAuth: () => void }) => {
     axios.interceptors.request.use(
@@ -10,7 +29,7 @@ export const interceptors = (state: { token: string | null; loading: boolean }, 
             state.loading = true
             return config
         },
-        (error: any) => {
+        (error: unknown) => {
             // 返回结果
             return Promise.reject(error)
         }
@@ -31,19 +50,20 @@ export const interceptors = (state: { token: string | null; loading: boolean }, 
             state.loading = false
             return value.data
         },
-        (error: any) => {
+        (error: unknown) => {
+            const err = error as { response?: { status?: number; data?: { message?: string } }; request?: unknown }
             // 处理未授权错误
-            if (error.response?.status === 401) {
+            if (err.response?.status === 401) {
                 actions.showNotification('error', '登录已过期，请重新登录')
                 actions.clearAuth()
             }
             // 处理其他 HTTP 错误
-            else if (error.response) {
-                const message = error.response.data?.message
-                actions.showNotification('error', message || `请求失败: ${error.response.status}`)
+            else if (err.response) {
+                const message = err.response.data?.message
+                actions.showNotification('error', message || `请求失败: ${err.response.status}`)
             }
             // 处理网络错误
-            else if (error.request) {
+            else if (err.request) {
                 actions.showNotification('error', '网络连接失败，请检查网络')
             }
             // 处理其他错误

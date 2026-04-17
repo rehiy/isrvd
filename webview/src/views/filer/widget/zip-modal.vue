@@ -2,7 +2,9 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { FileInfo } from '@/service/types'
 import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions, AppState } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -11,15 +13,15 @@ import BaseModal from '@/component/modal.vue'
     components: { BaseModal }
 })
 class ZipModal extends Vue {
-    @Inject({ from: APP_STATE_KEY }) readonly state!: any
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_STATE_KEY }) readonly state!: AppState
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
     isOpen = false
-    formData = { file: null as any }
+    formData = { file: null as FileInfo | null }
 
     // ─── 方法 ───
-    show(file: any) {
+    show(file: FileInfo) {
         this.formData.file = file
         this.isOpen = true
     }

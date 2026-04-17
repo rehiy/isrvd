@@ -2,6 +2,7 @@
 import { Component, Prop, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import Dropdown from '@/component/dropdown.vue'
+import type { ImageInfo } from '@/service/types'
 
 @Component({
     components: { Dropdown },
@@ -9,7 +10,7 @@ import Dropdown from '@/component/dropdown.vue'
 })
 class ImageSelect extends Vue {
     @Prop({ type: String, default: '' }) readonly modelValue!: string
-    @Prop({ type: Array, default: () => [] }) readonly images!: any[]
+    @Prop({ type: Array, default: () => [] }) readonly images!: ImageInfo[]
     @Prop({ type: String, default: '选择或输入镜像名称' }) readonly placeholder!: string
     @Prop({ type: Boolean, default: false }) readonly disabled!: boolean
 
@@ -88,20 +89,20 @@ class ImageSelect extends Vue {
     get filteredImages() {
         if (!this.searchQuery.trim()) return this.images
         const query = this.searchQuery.toLowerCase()
-        return this.images.filter((img: any) =>
+        return this.images.filter((img: ImageInfo) =>
             img.repoTags && img.repoTags.some((tag: string) => tag.toLowerCase().includes(query))
         )
     }
 
     get groupedImages() {
-        const groups: Record<string, any> = {}
+        const groups: Record<string, { domain: string; images: ImageInfo[] }> = {}
         for (const img of this.filteredImages) {
             const tag = img.repoTags?.[0] || ''
             const domain = this.getDomain(tag)
             if (!groups[domain]) groups[domain] = { domain, images: [] }
             groups[domain].images.push(img)
         }
-        return Object.values(groups).sort((a: any, b: any) => {
+        return Object.values(groups).sort((a, b) => {
             if (a.domain === 'docker.io') return -1
             if (b.domain === 'docker.io') return 1
             if (a.domain === '本地镜像') return 1

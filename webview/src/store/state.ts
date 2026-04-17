@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 
 import { interceptors } from '@/service/axios'
+import type { FileInfo } from '@/service/types'
 
 // Provide/Inject keys
 export const APP_STATE_KEY = Symbol('app.state')
@@ -43,15 +44,28 @@ interface ServiceAvailability {
     apisix: boolean
 }
 
-interface AppState {
+export interface AppState {
     token: string | null
     username: string | null
     loading: boolean
     currentPath: string
-    files: any[]
+    files: FileInfo[]
     notifications: Notification[]
     confirm: ConfirmState
     serviceAvailability: ServiceAvailability
+}
+
+export interface AppActions {
+    setAuth(data: { token: string; username: string }): void
+    clearAuth(): void
+    loadFiles(path?: string): Promise<void>
+    showNotification(type: string, message: string): void
+    clearNotification(id: number): void
+    showConfirm(options: ConfirmOptions): void
+    confirmLoading(loading: boolean): void
+    closeConfirm(): void
+    handleConfirm(): Promise<void>
+    updateServiceAvailability(availability: { docker?: { available?: boolean }; swarm?: { available?: boolean }; apisix?: { available?: boolean } }): void
 }
 
 export const initProvider = () => {
@@ -91,7 +105,7 @@ export const initProvider = () => {
         }
     })
 
-    const actions = {
+    const actions: AppActions = {
         // 认证操作
         setAuth(data: { token: string; username: string }) {
             state.token = data.token

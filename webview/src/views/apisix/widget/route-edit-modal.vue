@@ -2,7 +2,9 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { ApisixRoute, ApisixPluginConfig, ApisixUpstream } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 import { parseUpstreamNode, buildRoutePayload } from '@/helper/utils'
 
 import BaseModal from '@/component/modal.vue'
@@ -13,7 +15,7 @@ import BaseModal from '@/component/modal.vue'
     emits: ['success']
 })
 class RouteEditModal extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
     isOpen = false
@@ -23,21 +25,21 @@ class RouteEditModal extends Vue {
     showPluginPanel = false
     showImportPanel = false
     importRouteId = ''
-    importRoutePlugins: Record<string, any> = {}
+    importRoutePlugins: Record<string, unknown> = {}
     importRoutePluginsLoading = false
     selectedImportPlugins: Set<string> = new Set()
     pluginSearchKeyword = ''
 
-    pluginConfigs: any[] = []
-    upstreams: any[] = []
-    availablePlugins: Record<string, any> = {}
-    routes: any[] = []
+    pluginConfigs: ApisixPluginConfig[] = []
+    upstreams: ApisixUpstream[] = []
+    availablePlugins: Record<string, { schema: Record<string, unknown> }> = {}
+    routes: ApisixRoute[] = []
 
     formData = {
         name: '', desc: '', uris: '', hosts: '',
         status: 1, priority: 0, enable_websocket: false,
         plugin_config_id: '', upstream_host: '', upstream_port: '',
-        plugins: {} as Record<string, any>, pluginsJson: '{}', pluginsJsonError: ''
+        plugins: {} as Record<string, unknown>, pluginsJson: '{}', pluginsJsonError: ''
     }
 
     // ─── 计算属性 ───
@@ -64,7 +66,7 @@ class RouteEditModal extends Vue {
         this.selectedImportPlugins = new Set()
     }
 
-    async loadResources(allRoutes: any[]) {
+    async loadResources(allRoutes: ApisixRoute[]) {
         this.routes = allRoutes || []
         try {
             const [pc, us, pl] = await Promise.all([
@@ -76,7 +78,7 @@ class RouteEditModal extends Vue {
         } catch {}
     }
 
-    async show(route: any, allRoutes: any[]) {
+    async show(route: ApisixRoute | null, allRoutes: ApisixRoute[]) {
         await this.loadResources(allRoutes)
         if (route) {
             this.isEditMode = true
@@ -115,8 +117,8 @@ class RouteEditModal extends Vue {
         try {
             this.formData.plugins = JSON.parse(this.formData.pluginsJson || '{}')
             this.formData.pluginsJsonError = ''
-        } catch (e: any) {
-            this.formData.pluginsJsonError = 'JSON 格式错误: ' + e.message
+        } catch (e: unknown) {
+            this.formData.pluginsJsonError = 'JSON 格式错误: ' + (e instanceof Error ? e.message : String(e))
         }
     }
 
@@ -127,13 +129,13 @@ class RouteEditModal extends Vue {
         this.formData.pluginsJson = JSON.stringify(p, null, 2)
     }
 
-    readonly TYPE_DEFAULTS: Record<string, any> = { string: '', integer: 0, number: 0, boolean: false, array: [], object: {} }
+    readonly TYPE_DEFAULTS: Record<string, string | number | boolean | unknown[] | Record<string, unknown>> = { string: '', integer: 0, number: 0, boolean: false, array: [], object: {} }
 
-    buildPluginDefault(schema: any) {
+    buildPluginDefault(schema: { properties?: Record<string, { type: string; default?: unknown }>; required?: string[] }) {
         if (!schema?.properties) return {}
         const required = new Set(schema.required || [])
-        const result: Record<string, any> = {}
-        for (const [key, def] of Object.entries(schema.properties) as any[]) {
+        const result: Record<string, unknown> = {}
+        for (const [key, def] of Object.entries(schema.properties)) {
             if (key === 'disable') continue
             if (required.has(key) || def.default !== undefined) {
                 result[key] = def.default !== undefined ? def.default : (this.TYPE_DEFAULTS[def.type] ?? null)
@@ -178,7 +180,7 @@ class RouteEditModal extends Vue {
     importPluginsFromRoute() {
         if (!this.importRouteId) return this.actions.showNotification('warning', '请先选择要导入的路由')
         if (this.selectedImportPlugins.size === 0) return this.actions.showNotification('warning', '请至少勾选一个插件')
-        const toImport: Record<string, any> = {}
+        const toImport: Record<string, unknown> = {}
         for (const name of this.selectedImportPlugins) {
             if (this.importRoutePlugins[name] !== undefined) toImport[name] = this.importRoutePlugins[name]
         }
@@ -209,8 +211,8 @@ class RouteEditModal extends Vue {
             this.isOpen = false
             this.resetForm()
             this.$emit('success')
-        } catch (e: any) {
-            this.actions.showNotification('error', e.message || '操作失败')
+        } catch (e: unknown) {
+            this.actions.showNotification('error', (e instanceof Error ? e.message : '') || '操作失败')
         }
         this.modalLoading = false
     }

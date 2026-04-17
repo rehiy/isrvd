@@ -2,7 +2,9 @@
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { ApisixConsumer, ApisixRoute } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 import ConsumerEditModal from '@/views/apisix/widget/consumer-edit-modal.vue'
 
@@ -10,14 +12,14 @@ import ConsumerEditModal from '@/views/apisix/widget/consumer-edit-modal.vue'
     components: { ConsumerEditModal }
 })
 class Consumers extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── Refs ───
     @Ref readonly editModalRef!: InstanceType<typeof ConsumerEditModal>
 
     // ─── 数据属性 ───
-    consumers: any[] = []
-    whitelist: any[] = []
+    consumers: ApisixConsumer[] = []
+    whitelist: ApisixRoute[] = []
     loading = false
     searchText = ''
 
@@ -25,7 +27,7 @@ class Consumers extends Vue {
     get filteredConsumers() {
         if (!this.searchText) return this.consumers
         const s = this.searchText.toLowerCase()
-        return this.consumers.filter((c: any) =>
+        return this.consumers.filter((c: ApisixConsumer) =>
             (c.username || '').toLowerCase().includes(s) ||
             (c.desc || '').toLowerCase().includes(s)
         )
@@ -45,7 +47,7 @@ class Consumers extends Vue {
     }
 
     getConsumerRoutes(username: string) {
-        return this.whitelist.filter((r: any) => (r.consumers || []).includes(username)).map((r: any) => r.name || r.id)
+        return this.whitelist.filter((r: ApisixRoute) => (r.consumers || []).includes(username)).map((r: ApisixRoute) => r.name || r.id)
     }
 
     formatTs(ts: number) {
@@ -57,11 +59,11 @@ class Consumers extends Vue {
         this.editModalRef?.show()
     }
 
-    openEditModal(consumer: any) {
+    openEditModal(consumer: ApisixConsumer | null) {
         this.editModalRef?.show(consumer)
     }
 
-    deleteConsumer(consumer: any) {
+    deleteConsumer(consumer: ApisixConsumer) {
         this.actions.showConfirm({
             title: '删除用户',
             message: `确定要删除用户 <strong class="text-slate-900">${consumer.username}</strong> 吗？此操作不可恢复。`,
@@ -177,7 +179,7 @@ export default toNative(Consumers)
                   <span class="text-sm text-slate-600">{{ consumer.desc || '-' }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{{ consumer.plugins?.['key-auth']?.key || '-' }}</code>
+                  <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{{ (consumer.plugins?.['key-auth'] as Record<string, unknown>)?.key || '-' }}</code>
                 </td>
                 <td class="px-4 py-3">
                   <div v-if="getConsumerRoutes(consumer.username).length > 0" class="flex flex-wrap gap-1">
@@ -233,7 +235,7 @@ export default toNative(Consumers)
             
             <div class="mb-3">
               <p class="text-xs text-slate-500 mb-1">API Key</p>
-              <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600 break-all">{{ consumer.plugins?.['key-auth']?.key || '-' }}</code>
+              <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600 break-all">{{ (consumer.plugins?.['key-auth'] as Record<string, unknown>)?.key || '-' }}</code>
             </div>
             
             <!-- 关联路由 -->

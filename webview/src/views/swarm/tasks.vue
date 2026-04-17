@@ -3,15 +3,17 @@ import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import { formatTime } from '@/helper/utils'
 import api from '@/service/api'
+import type { SwarmTask, SwarmService } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 @Component
 class Tasks extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
-    tasks: any[] = []
-    services: any[] = []
+    tasks: SwarmTask[] = []
+    services: SwarmService[] = []
     tasksLoading = false
     selectedServiceId = ''
     formatTime = formatTime
@@ -19,7 +21,7 @@ class Tasks extends Vue {
     // ─── 计算属性 ───
     get filteredTasks() {
         if (!this.selectedServiceId) return this.tasks
-        return this.tasks.filter((t: any) => t.serviceID === this.selectedServiceId)
+        return this.tasks.filter((t: SwarmTask) => t.serviceID === this.selectedServiceId)
     }
 
     // ─── 方法 ───

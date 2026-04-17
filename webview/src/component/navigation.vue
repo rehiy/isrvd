@@ -2,13 +2,14 @@
 import { Component, Inject, Prop, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { APP_STATE_KEY } from '@/store/state'
+import type { AppState } from '@/store/state'
 
 @Component({
     expose: ['toggleMobileSidebar', 'closeMobileSidebar', 'openMobileSidebar'],
     emits: ['update:collapsed']
 })
 class NavigationBar extends Vue {
-    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_STATE_KEY }) readonly state!: AppState
     @Prop({ type: Boolean, default: false }) readonly collapsed!: boolean
 
     // ─── 数据属性 ───

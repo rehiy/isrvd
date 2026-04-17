@@ -2,7 +2,9 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { RegistryInfo, ImageInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -12,13 +14,13 @@ import BaseModal from '@/component/modal.vue'
     emits: ['success']
 })
 class RegistryPushModal extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
     isOpen = false
     modalLoading = false
-    registries: any[] = []
-    localImages: any[] = []
+    registries: RegistryInfo[] = []
+    localImages: ImageInfo[] = []
     pushForm = { image: '', registryUrl: '', namespace: '' }
 
     // ─── 计算属性 ───
@@ -45,11 +47,11 @@ class RegistryPushModal extends Vue {
     async loadLocalImages() {
         try {
             const res = await api.listImages(false)
-            this.localImages = (res.payload || []).filter((img: any) => img.repoTags && img.repoTags.length > 0)
+            this.localImages = (res.payload || []).filter((img: ImageInfo) => img.repoTags && img.repoTags.length > 0)
         } catch (e) {}
     }
 
-    show(allRegistries: any[], registry: any = null) {
+    show(allRegistries: RegistryInfo[], registry: RegistryInfo | null = null) {
         this.registries = allRegistries
         this.pushForm = {
             image: '',
@@ -64,7 +66,7 @@ class RegistryPushModal extends Vue {
         if (!this.pushForm.image.trim() || !this.pushForm.registryUrl.trim()) return
         this.modalLoading = true
         try {
-            await api.pushImage(this.pushForm.image, this.pushForm.registryUrl, this.pushForm.namespace.trim() || undefined)
+            await api.pushImage(this.pushForm.image, this.pushForm.registryUrl, this.pushForm.namespace.trim())
             this.actions.showNotification('success', '镜像推送成功')
             this.isOpen = false
             this.$emit('success')

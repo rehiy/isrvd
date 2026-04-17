@@ -2,20 +2,22 @@
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { ApisixRoute } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 import RouteEditModal from '@/views/apisix/widget/route-edit-modal.vue'
 
 @Component({
     components: { RouteEditModal }
 })
 class Routes extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── Refs ───
     @Ref readonly editModalRef!: InstanceType<typeof RouteEditModal>
 
     // ─── 数据属性 ───
-    routes: any[] = []
+    routes: ApisixRoute[] = []
     loading = false
     searchText = ''
 
@@ -23,7 +25,7 @@ class Routes extends Vue {
     get filteredRoutes() {
         if (!this.searchText) return this.routes
         const s = this.searchText.toLowerCase()
-        return this.routes.filter((r: any) =>
+        return this.routes.filter((r: ApisixRoute) =>
             (r.name || '').toLowerCase().includes(s) ||
             (r.id || '').toLowerCase().includes(s) ||
             (r.uri || '').toLowerCase().includes(s) ||
@@ -33,8 +35,8 @@ class Routes extends Vue {
     }
 
     // ─── 方法 ───
-    sortRoutes(data: any[]) {
-        data.sort((a: any, b: any) => {
+    sortRoutes(data: ApisixRoute[]) {
+        data.sort((a: ApisixRoute, b: ApisixRoute) => {
             const hostA = (a.hosts?.[0]) || a.host || ''
             const hostB = (b.hosts?.[0]) || b.host || ''
             const hc = hostA.localeCompare(hostB)
@@ -60,19 +62,21 @@ class Routes extends Vue {
         this.editModalRef?.show(null, this.routes)
     }
 
-    openEditModal(route: any) {
+    openEditModal(route: ApisixRoute | null) {
         this.editModalRef?.show(route, this.routes)
     }
 
-    getRouteUri(r: any) {
+    getRouteUri(r: ApisixRoute) {
         return r.uris?.length ? r.uris.join(', ') : (r.uri || '-')
     }
 
-    getRouteHost(r: any) {
+    getRouteHost(r: ApisixRoute) {
         return r.hosts?.length ? r.hosts.join(', ') : (r.host || '*')
     }
 
-    toggleStatus(route: any) {
+    toggleStatus(route: ApisixRoute) {
+        const id = route.id
+        if (!id) return
         const ns = route.status === 1 ? 0 : 1
         const label = ns === 1 ? '启用' : '禁用'
         this.actions.showConfirm({
@@ -82,23 +86,25 @@ class Routes extends Vue {
             iconColor: ns === 1 ? 'emerald' : 'amber',
             confirmText: `确认${label}`,
             onConfirm: async () => {
-                await api.apisixPatchRouteStatus(route.id, ns)
+                await api.apisixPatchRouteStatus(id, ns)
                 this.actions.showNotification('success', `路由已${label}`)
                 this.loadRoutes()
             }
         })
     }
 
-    deleteRoute(route: any) {
+    deleteRoute(route: ApisixRoute) {
+        const id = route.id
+        if (!id) return
         this.actions.showConfirm({
             title: '删除路由',
-            message: `确定要删除路由 <strong class="text-slate-900">${route.name || route.id}</strong> 吗？此操作不可恢复。`,
+            message: `确定要删除路由 <strong class="text-slate-900">${route.name || id}</strong> 吗？此操作不可恢复。`,
             icon: 'fa-trash',
             iconColor: 'red',
             confirmText: '确认删除',
             danger: true,
             onConfirm: async () => {
-                await api.apisixDeleteRoute(route.id)
+                await api.apisixDeleteRoute(id)
                 this.actions.showNotification('success', '删除成功')
                 this.loadRoutes()
             }

@@ -3,7 +3,9 @@ import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { formatFileSize, formatTime } from '@/helper/utils'
 import api from '@/service/api'
+import type { ImageInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 import ImagePullModal from '@/views/docker/widget/image-pull-modal.vue'
 import ImageTagModal from '@/views/docker/widget/image-tag-modal.vue'
@@ -13,7 +15,7 @@ import ImageBuildModal from '@/views/docker/widget/image-build-modal.vue'
     components: { ImagePullModal, ImageTagModal, ImageBuildModal }
 })
 class Images extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── Refs ───
     @Ref readonly pullModalRef!: InstanceType<typeof ImagePullModal>
@@ -21,7 +23,7 @@ class Images extends Vue {
     @Ref readonly buildModalRef!: InstanceType<typeof ImageBuildModal>
 
     // ─── 数据属性 ───
-    images: any[] = []
+    images: ImageInfo[] = []
     loading = false
     showAllImages = false
     formatFileSize = formatFileSize
@@ -39,7 +41,7 @@ class Images extends Vue {
         this.loading = false
     }
 
-    handleImageAction(image: any, action: string) {
+    handleImageAction(image: ImageInfo, action: string) {
         this.actions.showConfirm({
             title: '删除镜像',
             message: `确定要删除镜像 <strong class="text-slate-900">${image.repoTags[0] || image.id}</strong> 吗？`,

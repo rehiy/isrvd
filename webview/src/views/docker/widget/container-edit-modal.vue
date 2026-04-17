@@ -2,7 +2,9 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { ContainerInfo, ImageInfo, NetworkInfo, ContainerCreateRequest, ContainerUpdateRequest, VolumeMapping } from '@/service/types'
 import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
+import type { AppActions, AppState } from '@/store/state'
 
 import CapSelect from '@/views/docker/widget/cap-select.vue'
 import ImageSelect from '@/views/docker/widget/image-select.vue'
@@ -14,8 +16,8 @@ import BaseModal from '@/component/modal.vue'
     emits: ['success']
 })
 class ContainerEditModal extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
-    @Inject({ from: APP_STATE_KEY }) readonly state!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
+    @Inject({ from: APP_STATE_KEY }) readonly state!: AppState
 
     // ─── 数据属性 ───
     isOpen = false
@@ -31,8 +33,8 @@ class ContainerEditModal extends Vue {
         privileged: false, capAdd: [] as string[], capDrop: [] as string[]
     }
 
-    images: any[] = []
-    networks: any[] = []
+    images: ImageInfo[] = []
+    networks: NetworkInfo[] = []
 
     readonly restartOptions = [
         { value: 'always', label: '总是重启' },
@@ -43,7 +45,7 @@ class ContainerEditModal extends Vue {
 
     // ─── 计算属性 ───
     get networkOptions() {
-        const options: any[] = [{ value: '', label: '不指定' }]
+        const options: { value: string; label: string }[] = [{ value: '', label: '不指定' }]
         this.networks.forEach(net => {
             options.push({ value: net.name, label: `${net.name} (${net.driver})` })
         })
@@ -65,7 +67,7 @@ class ContainerEditModal extends Vue {
         } catch (e) {}
     }
 
-    async show(container?: any) {
+    async show(container?: ContainerInfo) {
         if (container) {
             this.isEditMode = true
             this.modalLoading = true
@@ -73,12 +75,16 @@ class ContainerEditModal extends Vue {
             try {
                 const res = await api.getContainerConfig(container.name)
                 const config = res.payload
+                if (!config) {
+                    this.actions.showNotification('error', '加载容器配置失败: 未获取到配置数据')
+                    return
+                }
                 Object.assign(this.formData, {
                     name: config.name,
                     image: config.image,
                     envStr: (config.env || []).join('\n'),
                     portsStr: Object.entries(config.ports || {}).map(([h, c]) => `${h}:${c}`).join('\n'),
-                    volumesStr: (config.volumes || []).map((v: any) => {
+                    volumesStr: (config.volumes || []).map((v: VolumeMapping) => {
                         let s = `${v.hostPath}:${v.containerPath}`
                         if (v.readOnly) s += ':ro'
                         return s
@@ -95,8 +101,9 @@ class ContainerEditModal extends Vue {
                     capAdd: config.capAdd || [],
                     capDrop: config.capDrop || []
                 })
-            } catch (e: any) {
-                this.actions.showNotification('error', '加载容器配置失败: ' + (e.response?.data?.message || e.message))
+            } catch (e: unknown) {
+                const err = e as { response?: { data?: { message?: string } }; message?: string }
+                this.actions.showNotification('error', '加载容器配置失败: ' + (err.response?.data?.message || err.message))
                 return
             } finally {
                 this.modalLoading = false
@@ -115,8 +122,8 @@ class ContainerEditModal extends Vue {
         this.loadNetworks()
     }
 
-    buildRequestData() {
-        const data: any = {
+    buildRequestData(): ContainerCreateRequest | ContainerUpdateRequest {
+        const data: ContainerCreateRequest = {
             image: this.formData.image,
             name: this.formData.name || undefined,
             env: this.formData.envStr ? this.formData.envStr.split('\n').filter(e => e.trim()) : [],
@@ -152,7 +159,7 @@ class ContainerEditModal extends Vue {
         this.modalLoading = true
         try {
             if (this.isEditMode) {
-                const data = this.buildRequestData()
+                const data = this.buildRequestData() as ContainerUpdateRequest
                 data.name = this.formData.name
                 await api.updateContainerConfig(data)
                 this.actions.showNotification('success', '容器配置更新成功，已重建容器')

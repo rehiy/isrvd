@@ -2,14 +2,16 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { ApisixRoute } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 @Component
 class Whitelist extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
-    whitelist: any[] = []
+    whitelist: ApisixRoute[] = []
     loading = false
     searchText = ''
 
@@ -17,7 +19,7 @@ class Whitelist extends Vue {
     get filteredWhitelist() {
         if (!this.searchText) return this.whitelist
         const s = this.searchText.toLowerCase()
-        return this.whitelist.filter((r: any) =>
+        return this.whitelist.filter((r: ApisixRoute) =>
             (r.name || '').toLowerCase().includes(s) ||
             (r.id || '').toLowerCase().includes(s) ||
             (r.consumers || []).some((c: string) => c.toLowerCase().includes(s))
@@ -35,24 +37,26 @@ class Whitelist extends Vue {
         this.loading = false
     }
 
-    getRouteUri(r: any) {
+    getRouteUri(r: ApisixRoute) {
         return r.uris?.length ? r.uris.join(', ') : (r.uri || '-')
     }
 
-    getRouteHost(r: any) {
+    getRouteHost(r: ApisixRoute) {
         return r.hosts?.length ? r.hosts.join(', ') : (r.host || '*')
     }
 
-    revokeConsumer(route: any, consumer: string) {
+    revokeConsumer(route: ApisixRoute, consumer: string) {
+        const routeId = route.id
+        if (!routeId) return
         this.actions.showConfirm({
             title: '撤销白名单',
-            message: `确定要将用户 <strong class="text-slate-900">${consumer}</strong> 从路由 <strong class="text-slate-900">${route.name || route.id}</strong> 的白名单中移除吗？`,
+            message: `确定要将用户 <strong class="text-slate-900">${consumer}</strong> 从路由 <strong class="text-slate-900">${route.name || routeId}</strong> 的白名单中移除吗？`,
             icon: 'fa-user-minus',
             iconColor: 'red',
             confirmText: '确认撤销',
             danger: true,
             onConfirm: async () => {
-                await api.apisixRevokeWhitelist(route.id, consumer)
+                await api.apisixRevokeWhitelist(routeId, consumer)
                 this.actions.showNotification('success', '撤销成功')
                 this.loadWhitelist()
             }

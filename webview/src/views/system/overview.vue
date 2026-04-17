@@ -1,4 +1,5 @@
 <script lang="ts">
+import type { ChartOptions, ChartTypeRegistry } from 'chart.js'
 import { Chart, registerables } from 'chart.js'
 import { nextTick } from 'vue'
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
@@ -7,6 +8,90 @@ import api from '@/service/api'
 import { POLL_INTERVAL } from '@/helper/utils'
 
 Chart.register(...registerables)
+
+// ─── 本地类型定义 ───
+interface NetInterface {
+    Name: string
+    BytesRecv: number
+    BytesSent: number
+}
+
+interface DiskPartition {
+    Device: string
+    Mountpoint: string
+    Fstype: string
+    Used: number
+    Total: number
+}
+
+interface DiskIO {
+    Name: string
+    ReadBytes: number
+    WriteBytes: number
+}
+
+interface GoRuntimeStat {
+    version: string
+    numCPU: number
+    numGoroutine: number
+    HeapAlloc: number
+    HeapInuse: number
+    Sys: number
+    StackInuse: number
+    TotalAlloc: number
+    NumGC: number
+    LastGC: number
+}
+
+interface SystemInfo {
+    HostName: string
+    Platform: string
+    KernelArch: string
+    Uptime: number
+    CpuCore: number
+    CpuCoreLogic: number
+    CpuModel: string[]
+    CpuPercent: number[]
+    MemoryUsed: number
+    MemoryTotal: number
+    DiskTotal: number
+    DiskUsed: number
+    NetInterface: NetInterface[]
+    DiskPartition: DiskPartition[]
+    [key: string]: unknown
+}
+
+interface SystemStat {
+    system: SystemInfo
+    diskIO: DiskIO[]
+    go: GoRuntimeStat
+}
+
+interface TimeSeriesHistory {
+    labels: string[]
+    recv: number[]
+    sent: number[]
+    [key: string]: string[] | number[]
+}
+
+interface DiskIOSeriesHistory {
+    labels: string[]
+    read: number[]
+    write: number[]
+    [key: string]: string[] | number[]
+}
+
+interface IOSnapshot {
+    recv?: number
+    sent?: number
+    read?: number
+    write?: number
+}
+
+interface ChartCallbackContext {
+    parsed: { y: number | null }
+    dataset: { label?: string }
+}
 
 @Component
 class SystemOverview extends Vue {
@@ -17,23 +102,23 @@ class SystemOverview extends Vue {
     @Ref readonly memCanvasRef!: HTMLCanvasElement
 
     // ─── 数据属性 ───
-    stat: any = null
+    stat: SystemStat | null = null
     loading = false
 
     // ─── 私有属性（非响应式） ───
     private readonly NET_POINTS = 45
     private readonly MAX_STAT_POINTS = 45
-    private netHistory: Record<string, any> = {}
-    private lastNetSnapshot: Record<string, any> = {}
-    private pollTimer: any = null
-    private netCharts: Record<string, any> = {}
-    private diskIOHistory: Record<string, any> = {}
-    private lastDiskIOSnapshot: Record<string, any> = {}
-    private diskIOCharts: Record<string, any> = {}
+    netHistory: Record<string, TimeSeriesHistory> = {}
+    private lastNetSnapshot: Record<string, IOSnapshot> = {}
+    private pollTimer: ReturnType<typeof setInterval> | null = null
+    private netCharts: Record<string, Chart<keyof ChartTypeRegistry>> = {}
+    diskIOHistory: Record<string, DiskIOSeriesHistory> = {}
+    private lastDiskIOSnapshot: Record<string, IOSnapshot> = {}
+    private diskIOCharts: Record<string, Chart<keyof ChartTypeRegistry>> = {}
     private cpuHistory = { labels: [] as string[], data: [] as number[] }
     private memHistory = { labels: [] as string[], data: [] as number[] }
-    private cpuChart: any = null
-    private memChart: any = null
+    private cpuChart: Chart<'line'> | null = null
+    private memChart: Chart<'line'> | null = null
 
     // ─── 计算属性 ───
     get cpuVal() {
@@ -75,69 +160,71 @@ class SystemOverview extends Vue {
         return parts.join(' ')
     }
 
-    cpuPercent(arr: number[]) {
+    cpuPercent(arr: number[]): string | number {
         if (!arr || !arr.length) return 0
         return (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1)
     }
 
-    memPercent(used: number, total: number) {
+    memPercent(used: number, total: number): string | number {
         if (!total) return 0
         return ((used / total) * 100).toFixed(1)
     }
 
-    physicalInterfaces(list: any[]) {
+    physicalInterfaces(list: NetInterface[]) {
         if (!list) return []
         const virtualPrefixes = ['lo', 'docker', 'veth', 'br-', 'overlay', 'flannel', 'cni', 'tunl', 'dummy', 'virbr']
         return list.filter(ni => !virtualPrefixes.some(p => ni.Name.startsWith(p)))
     }
 
-    semanticColor(pct: any, prefix = 'bg') {
-        const p = parseFloat(pct)
+    semanticColor(pct: number | string, prefix = 'bg') {
+        const p = parseFloat(String(pct))
         if (p >= 90) return `${prefix}-red-500`
         if (p >= 70) return `${prefix}-amber-500`
         return `${prefix}-emerald-500`
     }
 
-    barColor(pct: any) { return this.semanticColor(pct, 'bg') }
-    textColor(pct: any) { return this.semanticColor(pct, 'text') }
+    barColor(pct: number | string) { return this.semanticColor(pct, 'bg') }
+    textColor(pct: number | string) { return this.semanticColor(pct, 'text') }
 
     fmtGCTime(ts: number) {
         if (!ts) return '从未'
         return new Date(ts * 1000).toLocaleString('zh-CN')
     }
 
-    currentRate(name: string, dir: string) {
+    currentRate(name: string, dir: string): number {
         const h = this.netHistory[name]
-        if (!h || !h[dir] || !h[dir].length) return 0
-        return h[dir][h[dir].length - 1]
+        if (!h || !h[dir] || !(h[dir] as number[]).length) return 0
+        const arr = h[dir] as number[]
+        return arr[arr.length - 1]
     }
 
-    currentDiskRate(name: string, dir: string) {
+    currentDiskRate(name: string, dir: string): number {
         const h = this.diskIOHistory[name]
-        if (!h || !h[dir] || !h[dir].length) return 0
-        return h[dir][h[dir].length - 1]
+        if (!h || !h[dir] || !(h[dir] as number[]).length) return 0
+        const arr = h[dir] as number[]
+        return arr[arr.length - 1]
     }
 
-    devShortName(device: string) { return device.split('/').pop() }
+    devShortName(device: string): string { return device.split('/').pop() || device }
 
     diskIOByDevice(device: string) {
         if (!this.stat?.diskIO) return null
         const devName = device.split('/').pop()
-        return this.stat.diskIO.find((d: any) => d.Name === devName)
-            || this.stat.diskIO.find((d: any) => devName!.startsWith(d.Name))
+        return this.stat.diskIO.find((d: DiskIO) => d.Name === devName)
+            || this.stat.diskIO.find((d: DiskIO) => devName!.startsWith(d.Name))
             || null
     }
 
     // ─── 图表配置 ───
-    bgChartOptions() {
+    bgChartOptions(): ChartOptions<'line'> {
         return {
             responsive: true, maintainAspectRatio: false, animation: false,
-            interaction: { intersect: false, mode: 'index' },
+            interaction: { intersect: false, mode: 'index' as const },
             plugins: {
                 legend: { display: false },
                 tooltip: {
                     backgroundColor: 'rgba(15,23,42,0.85)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 6, cornerRadius: 6,
-                    callbacks: { label: (ctx: any) => ctx.parsed.y.toFixed(1) + '%' }
+                    callbacks: { label: (ctx: ChartCallbackContext) => (ctx.parsed.y ?? 0).toFixed(1) + '%' }
                 }
             },
             scales: {
@@ -148,23 +235,23 @@ class SystemOverview extends Vue {
         }
     }
 
-    netChartOptions() {
+    netChartOptions(): ChartOptions<'line'> {
         const fmtRate = (v: number) => this.fmtRate(v)
         return {
             responsive: true, maintainAspectRatio: false, animation: false,
-            interaction: { intersect: false, mode: 'index' },
+            interaction: { intersect: false, mode: 'index' as const },
             plugins: {
-                legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
+                legend: { display: true, position: 'bottom' as const, labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
                 tooltip: {
                     backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-                    callbacks: { label: (ctx: any) => ctx.dataset.label + ': ' + fmtRate(ctx.parsed.y) }
+                    callbacks: { label: (ctx: ChartCallbackContext) => (ctx.dataset.label ?? '') + ': ' + fmtRate(ctx.parsed.y ?? 0) }
                 }
             },
             scales: {
                 x: { display: false },
                 y: {
                     display: true, beginAtZero: true, grid: { color: 'rgba(148,163,184,0.08)' }, border: { display: false },
-                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: number) => fmtRate(v) }
+                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => fmtRate(Number(v)) }
                 }
             },
             elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 1.5 } }
@@ -185,12 +272,12 @@ class SystemOverview extends Vue {
     }
 
     // ─── CPU/内存图表 ───
-    makeStatChart(canvas: HTMLCanvasElement, history: any, borderColor: string, bgColor: string) {
+    makeStatChart(canvas: HTMLCanvasElement, history: { labels: string[]; data: number[] }, borderColor: string, bgColor: string): Chart<'line'> | null {
         if (!canvas) return null
         return new Chart(canvas, {
-            type: 'line',
+            type: 'line' as const,
             data: { labels: [...history.labels], datasets: [{ data: [...history.data], borderColor, backgroundColor: bgColor, fill: true }] },
-            options: this.bgChartOptions() as any
+            options: this.bgChartOptions()
         })
     }
 
@@ -201,12 +288,12 @@ class SystemOverview extends Vue {
         this.memChart = this.makeStatChart(this.memCanvasRef, this.memHistory, 'rgba(99,102,241,0.6)', 'rgba(99,102,241,0.08)')
     }
 
-    pushStatPoint(cpuV: any, memV: any) {
+    pushStatPoint(cpuV: string | number, memV: string | number) {
         const label = this.timeLabel()
         this.cpuHistory.labels.push(label)
-        this.cpuHistory.data.push(+parseFloat(cpuV).toFixed(1))
+        this.cpuHistory.data.push(+parseFloat(String(cpuV)).toFixed(1))
         this.memHistory.labels.push(label)
-        this.memHistory.data.push(+parseFloat(memV).toFixed(1))
+        this.memHistory.data.push(+parseFloat(String(memV)).toFixed(1))
         if (this.cpuHistory.labels.length > this.MAX_STAT_POINTS) {
             this.cpuHistory.labels.shift(); this.cpuHistory.data.shift()
             this.memHistory.labels.shift(); this.memHistory.data.shift()
@@ -214,7 +301,7 @@ class SystemOverview extends Vue {
     }
 
     updateStatCharts() {
-        for (const [chart, history] of [[this.cpuChart, this.cpuHistory], [this.memChart, this.memHistory]] as any[]) {
+        for (const [chart, history] of [[this.cpuChart, this.cpuHistory], [this.memChart, this.memHistory]] as [Chart<'line'> | null, { labels: string[]; data: number[] }][]) {
             if (!chart) continue
             chart.data.labels = [...history.labels]
             chart.data.datasets[0].data = [...history.data]
@@ -238,15 +325,15 @@ class SystemOverview extends Vue {
         this.netCharts[name]?.destroy()
         const h = this.netHistory[name] || { labels: [], recv: [], sent: [] }
         this.netCharts[name] = new Chart(canvas as HTMLCanvasElement, {
-            type: 'line',
+            type: 'line' as const,
             data: { labels: [...h.labels], datasets: [this.makeDataset(h.recv, '#10b981', '下行'), this.makeDataset(h.sent, '#3b82f6', '上行')] },
-            options: this.netChartOptions() as any
+            options: this.netChartOptions()
         })
     }
 
     initAllNetCharts() {
         if (!this.stat) return
-        this.physicalInterfaces(this.stat.system.NetInterface).forEach((ni: any) => {
+        this.physicalInterfaces(this.stat.system.NetInterface).forEach((ni: NetInterface) => {
             if (!this.netHistory[ni.Name]) this.netHistory[ni.Name] = { labels: [], recv: [], sent: [] }
             this.initNetChart(ni.Name)
         })
@@ -263,7 +350,7 @@ class SystemOverview extends Vue {
     }
 
     destroyNetCharts() {
-        Object.values(this.netCharts).forEach((c: any) => c.destroy())
+        Object.values(this.netCharts).forEach(c => c.destroy())
         this.netCharts = {}
     }
 
@@ -278,16 +365,16 @@ class SystemOverview extends Vue {
         this.diskIOCharts[name]?.destroy()
         const h = this.diskIOHistory[name] || { labels: [], read: [], write: [] }
         this.diskIOCharts[name] = new Chart(canvas as HTMLCanvasElement, {
-            type: 'line',
+            type: 'line' as const,
             data: { labels: [...h.labels], datasets: [this.makeDataset(h.read, '#f59e0b', '读取'), this.makeDataset(h.write, '#8b5cf6', '写入')] },
-            options: this.diskChartOptions() as any
+            options: this.diskChartOptions()
         })
     }
 
     initAllDiskCharts() {
         if (!this.stat?.system?.DiskPartition) return
-        this.stat.system.DiskPartition.forEach((dp: any) => {
-            const devName = dp.Device.split('/').pop()
+        this.stat.system.DiskPartition.forEach((dp: DiskPartition) => {
+            const devName = dp.Device.split('/').pop() || dp.Device
             if (!this.diskIOHistory[devName]) this.diskIOHistory[devName] = { labels: [], read: [], write: [] }
             this.initDiskChart(devName)
         })
@@ -304,12 +391,12 @@ class SystemOverview extends Vue {
     }
 
     destroyDiskCharts() {
-        Object.values(this.diskIOCharts).forEach((c: any) => c.destroy())
+        Object.values(this.diskIOCharts).forEach(c => c.destroy())
         this.diskIOCharts = {}
     }
 
-    updateDiskIOHistory(diskList: any[], intervalSec: number) {
-        const snapshot: Record<string, any> = {}
+    updateDiskIOHistory(diskList: DiskIO[], intervalSec: number) {
+        const snapshot: Record<string, IOSnapshot> = {}
         diskList.forEach(d => { snapshot[d.Name] = { read: d.ReadBytes, write: d.WriteBytes } })
         if (Object.keys(this.lastDiskIOSnapshot).length > 0) {
             const label = this.timeLabel()
@@ -319,8 +406,8 @@ class SystemOverview extends Vue {
                 if (!this.diskIOHistory[d.Name]) this.diskIOHistory[d.Name] = { labels: [], read: [], write: [] }
                 const h = this.diskIOHistory[d.Name]
                 h.labels.push(label)
-                h.read.push(+Math.max(0, (d.ReadBytes - prev.read) / intervalSec).toFixed(0))
-                h.write.push(+Math.max(0, (d.WriteBytes - prev.write) / intervalSec).toFixed(0))
+                h.read.push(+Math.max(0, (d.ReadBytes - (prev.read ?? 0)) / intervalSec).toFixed(0))
+                h.write.push(+Math.max(0, (d.WriteBytes - (prev.write ?? 0)) / intervalSec).toFixed(0))
                 if (h.labels.length > this.NET_POINTS) { h.labels.shift(); h.read.shift(); h.write.shift() }
                 this.updateDiskChart(d.Name)
             })
@@ -328,8 +415,8 @@ class SystemOverview extends Vue {
         this.lastDiskIOSnapshot = snapshot
     }
 
-    updateNetHistory(interfaces: any[], intervalSec: number) {
-        const snapshot: Record<string, any> = {}
+    updateNetHistory(interfaces: NetInterface[], intervalSec: number) {
+        const snapshot: Record<string, IOSnapshot> = {}
         interfaces.forEach(ni => { snapshot[ni.Name] = { recv: ni.BytesRecv, sent: ni.BytesSent } })
         if (Object.keys(this.lastNetSnapshot).length > 0) {
             const label = this.timeLabel()
@@ -339,8 +426,8 @@ class SystemOverview extends Vue {
                 if (!this.netHistory[ni.Name]) this.netHistory[ni.Name] = { labels: [], recv: [], sent: [] }
                 const h = this.netHistory[ni.Name]
                 h.labels.push(label)
-                h.recv.push(+Math.max(0, (ni.BytesRecv - prev.recv) / intervalSec).toFixed(0))
-                h.sent.push(+Math.max(0, (ni.BytesSent - prev.sent) / intervalSec).toFixed(0))
+                h.recv.push(+Math.max(0, (ni.BytesRecv - (prev.recv ?? 0)) / intervalSec).toFixed(0))
+                h.sent.push(+Math.max(0, (ni.BytesSent - (prev.sent ?? 0)) / intervalSec).toFixed(0))
                 if (h.labels.length > this.NET_POINTS) { h.labels.shift(); h.recv.shift(); h.sent.shift() }
                 this.updateNetChart(ni.Name)
             })
@@ -364,7 +451,7 @@ class SystemOverview extends Vue {
         this.memHistory.data.length = 0
         try {
             const res = await api.systemStat()
-            this.stat = res.payload || null
+            this.stat = (res.payload as SystemStat | undefined) ?? null
         } catch (e) {
             this.stat = null
         }
@@ -378,7 +465,7 @@ class SystemOverview extends Vue {
     async pollNet() {
         try {
             const res = await api.systemStat()
-            const payload = res.payload
+            const payload = res.payload as SystemStat | undefined
             if (!payload || !this.stat) return
             this.stat.system.NetInterface = payload.system.NetInterface
             this.stat.system.CpuPercent = payload.system.CpuPercent
@@ -560,8 +647,8 @@ export default toNative(SystemOverview)
                 </div>
               </div>
               <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-1.5 text-xs text-slate-400">
-                <span>累计读: {{ fmtBytes(diskIOByDevice(dp.Device).ReadBytes) }}</span>
-                <span>累计写: {{ fmtBytes(diskIOByDevice(dp.Device).WriteBytes) }}</span>
+                <span>累计读: {{ fmtBytes(diskIOByDevice(dp.Device)?.ReadBytes ?? 0) }}</span>
+                <span>累计写: {{ fmtBytes(diskIOByDevice(dp.Device)?.WriteBytes ?? 0) }}</span>
               </div>
             </template>
           </div>

@@ -26,7 +26,7 @@ class App extends Vue {
     state = state
     actions = actions
     sidebarCollapsed = false
-    toolbarButtons: any[] = []
+    toolbarButtons: { id: string; label?: string; icon?: string; onClick?: () => void }[] = []
 
     // ─── Refs ───
     @Ref readonly navigationRef!: InstanceType<typeof NavigationBar>
@@ -36,8 +36,8 @@ class App extends Vue {
         this.toolbarButtons = []
     }
 
-    registerToolbarButton(button: any) {
-        const existing = this.toolbarButtons.find((b: any) => b.id === button.id)
+    registerToolbarButton(button: { id: string; label?: string; icon?: string; onClick?: () => void }) {
+        const existing = this.toolbarButtons.find((b) => b.id === button.id)
         if (existing) {
             Object.assign(existing, button)
         } else {

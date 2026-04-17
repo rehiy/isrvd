@@ -2,17 +2,19 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { DockerInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 @Component
 class DockerOverview extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
-    info: any = null
+    info: DockerInfo | null = null
     loading = false
 
-    readonly statCards = [
+    readonly statCards: { key: keyof DockerInfo; label: string; icon: string; bgColor: string }[] = [
         { key: 'containersRunning', label: '运行中容器', icon: 'fa-play',          bgColor: 'bg-emerald-500' },
         { key: 'containersStopped', label: '已停止容器', icon: 'fa-stop',          bgColor: 'bg-amber-500' },
         { key: 'containersPaused',  label: '已暂停容器', icon: 'fa-pause',         bgColor: 'bg-slate-400' },
@@ -26,7 +28,7 @@ class DockerOverview extends Vue {
         this.loading = true
         try {
             const res = await api.dockerInfo()
-            this.info = res.payload || {}
+            this.info = res.payload ?? null
         } catch (e) {
             this.actions.showNotification('error', '加载 Docker 信息失败')
             this.info = null

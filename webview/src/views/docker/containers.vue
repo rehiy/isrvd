@@ -3,7 +3,9 @@ import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { formatTime } from '@/helper/utils'
 import api from '@/service/api'
+import type { ContainerInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 import ContainerEditModal from '@/views/docker/widget/container-edit-modal.vue'
 import ComposeModal from '@/views/docker/widget/compose-modal.vue'
@@ -13,20 +15,20 @@ import ComposeModal from '@/views/docker/widget/compose-modal.vue'
     components: { ContainerEditModal, ComposeModal }
 })
 class Containers extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── Refs ───
     @Ref readonly containerModalRef!: InstanceType<typeof ContainerEditModal>
     @Ref readonly composeModalRef!: InstanceType<typeof ComposeModal>
 
     // ─── 数据属性 ───
-    containers: any[] = []
+    containers: ContainerInfo[] = []
     loading = false
     showAll = false
     selectedIds: string[] = []
     batchMode = false
 
-    readonly actionConfigs: Record<string, any> = {
+    readonly actionConfigs: Record<string, { icon: string; iconColor: string; title: string; confirmText: string; danger?: boolean }> = {
         start: { icon: 'fa-play', iconColor: 'emerald', title: '启动容器', confirmText: '启动' },
         stop: { icon: 'fa-stop', iconColor: 'amber', title: '停止容器', confirmText: '停止' },
         restart: { icon: 'fa-redo', iconColor: 'blue', title: '重启容器', confirmText: '重启' },
@@ -47,7 +49,7 @@ class Containers extends Vue {
         this.loading = false
     }
 
-    handleContainerAction(container: any, action: string) {
+    handleContainerAction(container: ContainerInfo, action: string) {
         const config = this.actionConfigs[action] || {}
         this.actions.showConfirm({
             title: config.title,
@@ -92,7 +94,7 @@ class Containers extends Vue {
         if (this.selectedIds.length === this.containers.length) {
             this.selectedIds = []
         } else {
-            this.selectedIds = this.containers.map((ct: any) => ct.id)
+            this.selectedIds = this.containers.map((ct: ContainerInfo) => ct.id)
         }
     }
 

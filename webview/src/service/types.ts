@@ -1,6 +1,6 @@
 // ─── 通用 API 响应 ───
 
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> {
     success: boolean
     message?: string
     payload?: T
@@ -372,7 +372,7 @@ export interface SwarmService {
     mode: string
     replicas: number | null
     runningTasks: number
-    ports: any
+    ports: SwarmServicePort[]
     createdAt: string
     updatedAt: string
 }
@@ -449,8 +449,8 @@ export interface ApisixRoute {
     enable_websocket: boolean
     plugin_config_id?: string
     upstream_id?: string
-    upstream?: Record<string, any>
-    plugins?: Record<string, any>
+    upstream?: Record<string, unknown>
+    plugins?: Record<string, unknown>
     consumers?: string[]
     create_time: number
     update_time: number
@@ -459,7 +459,7 @@ export interface ApisixRoute {
 export interface ApisixConsumer {
     username: string
     desc: string
-    plugins?: Record<string, any>
+    plugins?: Record<string, unknown>
     create_time: number
     update_time: number
 }
@@ -476,7 +476,7 @@ export interface ApisixUpdateConsumerRequest {
 export interface ApisixPluginConfig {
     id: string
     desc: string
-    plugins?: Record<string, any>
+    plugins?: Record<string, unknown>
     create_time: number
     update_time: number
 }
@@ -491,6 +491,14 @@ export interface ApisixUpstream {
 }
 
 export interface ApisixRevokeWhitelistRequest {
-    route_id: string
-    consumer_name: string
+    routeId: string
+    consumer: string
+}
+
+// Apisix 概览统计
+export interface ApisixInfo {
+    routes: number
+    consumers: number
+    whitelist: number
+    [key: string]: number
 }

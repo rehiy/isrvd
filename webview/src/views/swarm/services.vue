@@ -2,7 +2,9 @@
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { SwarmService } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 import ScaleModal from '@/views/swarm/widget/service-scale-modal.vue'
 import CreateServiceModal from '@/views/swarm/widget/service-create-modal.vue'
@@ -12,7 +14,7 @@ import ComposeModal from '@/views/swarm/widget/compose-modal.vue'
     components: { ScaleModal, CreateServiceModal, ComposeModal }
 })
 class Services extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── Refs ───
     @Ref readonly scaleModalRef!: InstanceType<typeof ScaleModal>
@@ -20,11 +22,11 @@ class Services extends Vue {
     @Ref readonly composeModalRef!: InstanceType<typeof ComposeModal>
 
     // ─── 数据属性 ───
-    services: any[] = []
+    services: SwarmService[] = []
     servicesLoading = false
 
     // ─── 方法 ───
-    openScaleModal(svc: any) {
+    openScaleModal(svc: SwarmService) {
         this.scaleModalRef?.show(svc)
     }
 
@@ -62,7 +64,7 @@ class Services extends Vue {
         this.loadServices()
     }
 
-    handleServiceRemove(svc: any) {
+    handleServiceRemove(svc: SwarmService) {
         this.actions.showConfirm({
             title: '删除服务',
             message: `确定要删除服务 <strong class="text-slate-900">${svc.name}</strong> 吗？`,
@@ -78,7 +80,7 @@ class Services extends Vue {
         })
     }
 
-    handleRedeploy(svc: any) {
+    handleRedeploy(svc: SwarmService) {
         this.actions.showConfirm({
             title: '强制重部署',
             message: `重新拉取并部署服务 <strong class="text-slate-900">${svc.name}</strong>，正在运行的副本会滚动更新。`,
@@ -164,7 +166,7 @@ export default toNative(Services)
                 </td>
                 <td class="px-4 py-3 font-mono text-xs text-slate-500">
                   <template v-if="svc.ports && svc.ports.length">
-                    <div v-for="p in svc.ports" :key="p.published">{{ p.published }}:{{ p.target }}/{{ p.protocol }}</div>
+                    <div v-for="p in svc.ports" :key="p.publishedPort">{{ p.publishedPort }}:{{ p.targetPort }}/{{ p.protocol }}</div>
                   </template>
                   <template v-else>-</template>
                 </td>
@@ -222,7 +224,7 @@ export default toNative(Services)
               <p class="text-xs text-slate-500 mb-1">端口映射</p>
               <div class="font-mono text-xs text-slate-500">
                 <template v-if="svc.ports && svc.ports.length">
-                  <div v-for="p in svc.ports" :key="p.published" class="truncate">{{ p.published }}:{{ p.target }}/{{ p.protocol }}</div>
+                  <div v-for="p in svc.ports" :key="p.publishedPort" class="truncate">{{ p.publishedPort }}:{{ p.targetPort }}/{{ p.protocol }}</div>
                 </template>
                 <template v-else>-</template>
               </div>

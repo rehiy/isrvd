@@ -2,7 +2,9 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { RegistryInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -12,16 +14,16 @@ import BaseModal from '@/component/modal.vue'
     emits: ['success']
 })
 class RegistryPullModal extends Vue {
-    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: any
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
     isOpen = false
     modalLoading = false
-    registries: any[] = []
+    registries: RegistryInfo[] = []
     pullForm = { image: '', registryUrl: '', namespace: '' }
 
     // ─── 方法 ───
-    show(allRegistries: any[], registry: any = null) {
+    show(allRegistries: RegistryInfo[], registry: RegistryInfo | null = null) {
         this.registries = allRegistries
         this.pullForm = {
             image: '',
