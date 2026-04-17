@@ -93,12 +93,12 @@ export default toNative(App)
       <!-- 移动端顶部菜单栏 -->
       <header 
         class="fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-40 flex items-center justify-between px-4 transition-all duration-300"
-        :class="sidebarCollapsed ? 'md:left-16' : 'md:left-64'"
+        :class="sidebarCollapsed ? 'lg:left-16' : 'lg:left-64'"
       >
         <!-- 移动端菜单切换按钮 -->
         <button
           @click="toggleMobileMenu"
-          class="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
+          class="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
         >
           <i class="fas fa-bars text-slate-600"></i>
         </button>
@@ -132,7 +132,7 @@ export default toNative(App)
       <NavigationBar ref="navigationRef" v-model:collapsed="sidebarCollapsed" />
       <main 
         class="px-4 py-6 pt-20 transition-all duration-300"
-        :class="sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'"
+        :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'"
       >
         <router-view @vue:mounted="clearToolbarOnRouteChange" />
       </main>

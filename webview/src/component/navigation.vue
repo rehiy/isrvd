@@ -98,7 +98,7 @@ class NavigationBar extends Vue {
     }
 
     handleResize() {
-        if (window.innerWidth >= 768) {
+        if (window.innerWidth >= 1024) {
             this.mobileSidebarVisible = false
         }
     }
@@ -124,13 +124,13 @@ export default toNative(NavigationBar)
   <!-- 移动端遮罩层 -->
   <div 
     v-if="mobileSidebarVisible"
-    class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+    class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
     @click="closeMobileSidebar"
   ></div>
   
   <aside 
     class="fixed left-0 top-0 h-screen bg-white border-r border-slate-200 z-50 flex flex-col transition-all duration-300"
-    :class="[collapsed ? 'w-16' : 'w-64', mobileSidebarVisible ? 'translate-x-0' : '-translate-x-full md:translate-x-0']"
+    :class="[collapsed ? 'w-16' : 'w-64', mobileSidebarVisible ? 'translate-x-0' : '-translate-x-full lg:translate-x-0']"
   >
     <!-- Logo 区域 -->
     <div class="h-16 flex items-center border-b border-slate-200" :class="collapsed ? 'justify-center' : 'px-4'" @click="closeMobileSidebar">
@@ -143,7 +143,7 @@ export default toNative(NavigationBar)
     </div>
 
     <!-- 移动端关闭按钮 -->
-    <div class="md:hidden absolute top-4 right-4">
+    <div class="lg:hidden absolute top-4 right-4">
       <button 
         @click="closeMobileSidebar"
         class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors"
