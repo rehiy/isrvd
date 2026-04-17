@@ -169,7 +169,7 @@ export default toNative(Tasks)
         </div>
 
         <!-- 移动端卡片视图 -->
-        <div class="md:hidden space-y-3">
+        <div class="md:hidden space-y-3 p-4">
           <div v-for="t in filteredTasks" :key="t.id" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-3">

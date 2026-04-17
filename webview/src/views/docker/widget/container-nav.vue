@@ -58,9 +58,6 @@ export default toNative(ContainerNav)
     <!-- 桌面端布局 -->
     <div class="hidden md:flex md:items-center justify-between">
       <div class="flex items-center gap-3">
-        <button @click="goBack" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors" title="返回容器列表">
-          <i class="fas fa-arrow-left text-sm"></i>
-        </button>
         <template v-if="container">
           <div :class="['w-9 h-9 rounded-lg flex items-center justify-center', container.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
             <i class="fas fa-cube text-white"></i>
@@ -77,27 +74,27 @@ export default toNative(ContainerNav)
           <div><h1 class="text-lg font-semibold text-slate-800">加载中...</h1></div>
         </template>
       </div>
-      <div v-if="container" class="flex gap-1 bg-slate-100 p-1 rounded-lg">
-        <button @click="switchTab('docker-container-stats')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab === 'docker-container-stats' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
-          <i class="fas fa-chart-line"></i><span>监控</span>
-        </button>
-        <button @click="switchTab('docker-container-logs')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab === 'docker-container-logs' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
-          <i class="fas fa-file-lines"></i><span>日志</span>
-        </button>
-        <button @click="switchTab('docker-container-terminal')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab === 'docker-container-terminal' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
-          <i class="fas fa-terminal"></i><span>终端</span>
-        </button>
+      <div v-if="container" class="flex items-center gap-2">
+        <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+          <button @click="switchTab('docker-container-stats')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab === 'docker-container-stats' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+            <i class="fas fa-chart-line"></i><span>监控</span>
+          </button>
+          <button @click="switchTab('docker-container-logs')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab === 'docker-container-logs' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+            <i class="fas fa-file-lines"></i><span>日志</span>
+          </button>
+          <button @click="switchTab('docker-container-terminal')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab === 'docker-container-terminal' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+            <i class="fas fa-terminal"></i><span>终端</span>
+          </button>
+        </div>
+
       </div>
     </div>
     <!-- 移动端布局 -->
     <div class="block md:hidden">
       <div class="flex items-center justify-between mb-3">
-        <div class="flex items-center gap-3">
-          <button @click="goBack" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors">
-            <i class="fas fa-arrow-left text-sm"></i>
-          </button>
+        <div class="flex items-center gap-3 min-w-0 flex-1">
           <template v-if="container">
-            <div :class="['w-9 h-9 rounded-lg flex items-center justify-center', container.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+            <div :class="['w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', container.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
               <i class="fas fa-cube text-white"></i>
             </div>
             <div class="min-w-0">
@@ -106,12 +103,13 @@ export default toNative(ContainerNav)
             </div>
           </template>
           <template v-else>
-            <div class="w-9 h-9 rounded-lg bg-slate-300 flex items-center justify-center animate-pulse">
+            <div class="w-9 h-9 rounded-lg bg-slate-300 flex items-center justify-center animate-pulse flex-shrink-0">
               <i class="fas fa-cube text-white"></i>
             </div>
             <div><h1 class="text-lg font-semibold text-slate-800">加载中...</h1></div>
           </template>
         </div>
+
       </div>
       <div v-if="container" class="flex justify-center gap-1 bg-slate-100 p-1 rounded-lg">
         <button @click="switchTab('docker-container-stats')" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', activeTab === 'docker-container-stats' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">

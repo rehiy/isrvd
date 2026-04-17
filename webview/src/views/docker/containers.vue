@@ -138,8 +138,9 @@ export default toNative(Containers)
   <div>
     <!-- Toolbar Bar -->
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-6 py-3">
-        <div class="flex items-center justify-between">
+      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+        <!-- 桌面端 -->
+        <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
               <i class="fab fa-docker text-white"></i>
@@ -150,28 +151,12 @@ export default toNative(Containers)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
-              <button 
-                @click="showAll = false; loadContainers()" 
-                :class="[
-                  'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200',
-                  !showAll 
-                    ? 'bg-white text-emerald-600 shadow-sm' 
-                    : 'text-slate-500 hover:text-slate-700'
-                ]"
-              >
-                <i class="fas fa-play mr-1"></i><span class="hidden sm:inline">运行中</span>
+            <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+              <button @click="showAll = false; loadContainers()" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', !showAll ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+                <i class="fas fa-play"></i><span>运行中</span>
               </button>
-              <button 
-                @click="showAll = true; loadContainers()" 
-                :class="[
-                  'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200',
-                  showAll 
-                    ? 'bg-white text-emerald-600 shadow-sm' 
-                    : 'text-slate-500 hover:text-slate-700'
-                ]"
-              >
-                <i class="fas fa-layer-group mr-1"></i><span class="hidden sm:inline">全部</span>
+              <button @click="showAll = true; loadContainers()" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', showAll ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+                <i class="fas fa-layer-group"></i><span>全部</span>
               </button>
             </div>
             <button v-if="batchMode && selectedIds.length > 0" @click="batchAction('start')" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" title="批量启动">
@@ -184,7 +169,7 @@ export default toNative(Containers)
               <i class="fas fa-trash"></i>
             </button>
             <button @click="toggleBatchMode()" :class="['px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors', batchMode ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700']">
-              <i class="fas fa-check-double"></i><span class="hidden sm:inline">{{ batchMode ? '取消多选' : '多选' }}</span>
+              <i class="fas fa-check-double"></i><span>{{ batchMode ? '取消多选' : '多选' }}</span>
             </button>
             <button @click="loadContainers()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
@@ -197,8 +182,55 @@ export default toNative(Containers)
             </button>
           </div>
         </div>
+        <!-- 移动端 -->
+        <div class="block md:hidden">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                <i class="fab fa-docker text-white"></i>
+              </div>
+              <div class="min-w-0">
+                <h1 class="text-lg font-semibold text-slate-800 truncate">容器管理</h1>
+                <p class="text-xs text-slate-500 truncate">管理 Docker 容器</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <button @click="toggleBatchMode()" :class="['w-9 h-9 rounded-lg border flex items-center justify-center transition-colors', batchMode ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700']" :title="batchMode ? '取消多选' : '多选'">
+                <i class="fas fa-check-double text-sm"></i>
+              </button>
+              <button @click="loadContainers()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
+                <i class="fas fa-rotate text-sm"></i>
+              </button>
+              <button @click="createContainerModal()" class="w-9 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-colors" title="创建">
+                <i class="fas fa-plus text-sm"></i>
+              </button>
+              <button @click="openComposeModal" class="w-9 h-9 rounded-lg bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white transition-colors" title="Compose">
+                <i class="fas fa-file-code text-sm"></i>
+              </button>
+            </div>
+          </div>
+          <!-- 批量操作（移动端） -->
+          <div v-if="batchMode && selectedIds.length > 0" class="flex items-center gap-1 mb-2">
+            <button @click="batchAction('start')" class="flex-1 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-colors">
+              <i class="fas fa-play"></i>批量启动
+            </button>
+            <button @click="batchAction('stop')" class="flex-1 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-colors">
+              <i class="fas fa-stop"></i>批量停止
+            </button>
+            <button @click="batchAction('remove')" class="flex-1 px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-colors">
+              <i class="fas fa-trash"></i>批量删除
+            </button>
+          </div>
+          <div class="flex justify-center gap-1 bg-slate-100 p-1 rounded-lg">
+            <button @click="showAll = false; loadContainers()" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', !showAll ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+              <i class="fas fa-play"></i><span>运行中</span>
+            </button>
+            <button @click="showAll = true; loadContainers()" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', showAll ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+              <i class="fas fa-layer-group"></i><span>全部</span>
+            </button>
+          </div>
+        </div>
       </div>
-
       <!-- Loading -->
       <div v-if="loading" class="flex flex-col items-center justify-center py-20">
         <div class="w-12 h-12 spinner mb-3"></div>
@@ -284,7 +316,7 @@ export default toNative(Containers)
         </div>
 
         <!-- 移动端卡片视图 -->
-        <div class="md:hidden space-y-3">
+        <div class="md:hidden space-y-3 p-4">
           <div 
             v-for="ct in containers" 
             :key="ct.id"

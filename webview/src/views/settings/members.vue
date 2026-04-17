@@ -71,7 +71,7 @@ export default toNative(Members)
   <div>
     <div class="card mb-4">
       <!-- Toolbar Bar -->
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-6 py-3">
+      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
@@ -168,7 +168,7 @@ export default toNative(Members)
           </div>
 
         <!-- 移动端卡片 -->
-        <div class="md:hidden space-y-3">
+        <div class="md:hidden space-y-3 p-4">
           <div v-for="m in members" :key="m.username" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
             <!-- 顶部：用户信息 -->
             <div class="flex items-center justify-between mb-3">

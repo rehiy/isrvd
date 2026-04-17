@@ -85,7 +85,7 @@ export default toNative(FileExplorer)
   <div>
     <!-- Toolbar Bar -->
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-6 py-3">
+      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
         <div class="flex items-center justify-between gap-3">
           <nav aria-label="breadcrumb" class="flex-1 min-w-0">
             <ol class="flex items-center space-x-2 text-sm overflow-x-auto">
@@ -290,7 +290,7 @@ export default toNative(FileExplorer)
         </div>
 
         <!-- 移动端卡片视图 -->
-        <div class="md:hidden space-y-3">
+        <div class="md:hidden space-y-3 p-4">
           <div 
             v-for="file in files" 
             :key="file.name"

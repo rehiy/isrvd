@@ -86,8 +86,9 @@ export default toNative(Images)
   <div>
     <div class="card mb-4">
       <!-- Toolbar Bar -->
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-6 py-3">
-        <div class="flex items-center justify-between">
+      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+        <!-- 桌面端 -->
+        <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
               <i class="fas fa-compact-disc text-white"></i>
@@ -98,28 +99,12 @@ export default toNative(Images)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
-              <button 
-                @click="showAllImages = false; loadImages()" 
-                :class="[
-                  'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200',
-                  !showAllImages 
-                    ? 'bg-white text-blue-600 shadow-sm' 
-                    : 'text-slate-500 hover:text-slate-700'
-                ]"
-              >
-                <i class="fas fa-cube mr-1"></i><span class="hidden sm:inline">顶层</span>
+            <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+              <button @click="showAllImages = false; loadImages()" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', !showAllImages ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+                <i class="fas fa-cube"></i><span>顶层</span>
               </button>
-              <button 
-                @click="showAllImages = true; loadImages()" 
-                :class="[
-                  'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200',
-                  showAllImages 
-                    ? 'bg-white text-blue-600 shadow-sm' 
-                    : 'text-slate-500 hover:text-slate-700'
-                ]"
-              >
-                <i class="fas fa-layer-group mr-1"></i><span class="hidden sm:inline">全部</span>
+              <button @click="showAllImages = true; loadImages()" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', showAllImages ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+                <i class="fas fa-layer-group"></i><span>全部</span>
               </button>
             </div>
             <button @click="loadImages()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
@@ -130,6 +115,39 @@ export default toNative(Images)
             </button>
             <button @click="pullModalRef?.show()" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-download"></i>拉取
+            </button>
+          </div>
+        </div>
+        <!-- 移动端 -->
+        <div class="block md:hidden">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-compact-disc text-white"></i>
+              </div>
+              <div class="min-w-0">
+                <h1 class="text-lg font-semibold text-slate-800 truncate">镜像管理</h1>
+                <p class="text-xs text-slate-500 truncate">管理 Docker 镜像</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <button @click="loadImages()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
+                <i class="fas fa-rotate text-sm"></i>
+              </button>
+              <button @click="buildModalRef?.show()" class="w-9 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-white transition-colors" title="构建">
+                <i class="fas fa-hammer text-sm"></i>
+              </button>
+              <button @click="pullModalRef?.show()" class="w-9 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-white transition-colors" title="拉取">
+                <i class="fas fa-download text-sm"></i>
+              </button>
+            </div>
+          </div>
+          <div class="flex justify-center gap-1 bg-slate-100 p-1 rounded-lg">
+            <button @click="showAllImages = false; loadImages()" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', !showAllImages ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+              <i class="fas fa-cube"></i><span>顶层</span>
+            </button>
+            <button @click="showAllImages = true; loadImages()" :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', showAllImages ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+              <i class="fas fa-layer-group"></i><span>全部</span>
             </button>
           </div>
         </div>
@@ -197,7 +215,7 @@ export default toNative(Images)
       </div>
 
       <!-- 移动端卡片视图 -->
-      <div class="md:hidden space-y-3">
+        <div class="md:hidden space-y-3 p-4">
         <div 
           v-for="img in images" 
           :key="img.id"

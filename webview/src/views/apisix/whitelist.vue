@@ -75,22 +75,61 @@ export default toNative(Whitelist)
 <template>
   <div>
     <div class="card mb-4">
+      <!-- Toolbar -->
       <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <!-- 桌面端 -->
+        <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center"><i class="fas fa-shield-halved text-white"></i></div>
-            <div><h1 class="text-lg font-semibold text-slate-800">白名单管理</h1><p class="text-xs text-slate-500">管理路由的 Consumer 白名单</p></div>
+            <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center">
+              <i class="fas fa-shield-halved text-white"></i>
+            </div>
+            <div>
+              <h1 class="text-lg font-semibold text-slate-800">白名单管理</h1>
+              <p class="text-xs text-slate-500">管理路由的 Consumer 白名单</p>
+            </div>
           </div>
-          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+          <div class="flex items-center gap-2">
             <div class="relative">
-              <input v-model="searchText" type="text" placeholder="搜索路由或用户..." class="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent w-full sm:w-48" />
+              <input v-model="searchText" type="text" placeholder="搜索路由或用户..." class="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent w-48" />
               <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
             </div>
-            <button @click="loadWhitelist()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors"><i class="fas fa-rotate"></i>刷新</button>
+            <button @click="loadWhitelist()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-rotate"></i>刷新
+            </button>
           </div>
         </div>
+        <!-- 移动端 -->
+        <div class="flex md:hidden items-center justify-between gap-2">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-shield-halved text-white"></i>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-lg font-semibold text-slate-800 truncate">白名单管理</h1>
+              <p class="text-xs text-slate-500 truncate">管理路由的 Consumer 白名单</p>
+            </div>
+          </div>
+          <button @click="loadWhitelist()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0" title="刷新">
+            <i class="fas fa-rotate text-sm"></i>
+          </button>
+        </div>
       </div>
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
+
+      <!-- 移动端搜索 -->
+      <div class="md:hidden px-4 py-2 border-b border-slate-100">
+        <div class="relative">
+          <input v-model="searchText" type="text" placeholder="搜索路由或用户..." class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent" />
+          <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
+
+      <!-- Empty -->
       <div v-else-if="filteredWhitelist.length === 0" class="flex flex-col items-center justify-center py-20">
         <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
           <i class="fas fa-shield-halved text-4xl text-slate-300"></i>
@@ -98,24 +137,85 @@ export default toNative(Whitelist)
         <p class="text-slate-600 font-medium mb-1">暂无白名单数据</p>
         <p class="text-sm text-slate-400">配置路由的 Consumer 白名单后将在此显示</p>
       </div>
-      <div v-else class="divide-y divide-slate-100">
-        <div v-for="route in filteredWhitelist" :key="route.id" class="px-4 md:px-6 py-4 hover:bg-slate-50/50 transition-colors">
-          <div class="flex flex-col md:flex-row md:items-start justify-between gap-2 mb-2">
-            <div class="flex-1">
-              <div class="font-medium text-sm text-slate-800">{{ route.name || route.id }}</div>
-              <div class="flex flex-col sm:flex-row sm:items-center gap-2 mt-1">
-                <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 break-all">{{ getRouteUri(route) }}</code>
-                <span class="text-xs text-slate-400">{{ getRouteHost(route) }}</span>
+
+      <!-- 列表 -->
+      <div v-else>
+        <!-- 桌面端表格 -->
+        <div class="hidden md:block overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">路由</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">URI / 主机</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">白名单用户</th>
+                <th class="w-24 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">用户数</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-slate-100">
+              <tr v-for="route in filteredWhitelist" :key="route.id" class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-amber-400 flex items-center justify-center flex-shrink-0">
+                      <i class="fas fa-shield-halved text-white text-sm"></i>
+                    </div>
+                    <span class="font-medium text-slate-800 truncate max-w-[200px]">{{ route.name || route.id }}</span>
+                  </div>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex flex-col gap-1">
+                    <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 break-all max-w-[320px]">{{ getRouteUri(route) }}</code>
+                    <span class="text-xs text-slate-400">{{ getRouteHost(route) }}</span>
+                  </div>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex flex-wrap gap-1.5">
+                    <span v-for="consumer in (route.consumers || [])" :key="consumer" class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 text-amber-800 rounded-lg text-xs group">
+                      <i class="fas fa-user text-amber-500 text-[10px]"></i>
+                      <span class="break-all">{{ consumer }}</span>
+                      <button @click="revokeConsumer(route, consumer)" class="opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all" title="撤销"><i class="fas fa-xmark text-[10px]"></i></button>
+                    </span>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-right text-xs text-slate-500">{{ (route.consumers || []).length }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 移动端卡片 -->
+        <div class="md:hidden space-y-3 p-4">
+          <div v-for="route in filteredWhitelist" :key="route.id" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
+            <!-- 顶部：路由标识 -->
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-lg bg-amber-400 flex items-center justify-center flex-shrink-0">
+                  <i class="fas fa-shield-halved text-white text-base"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="font-medium text-slate-800 text-sm truncate">{{ route.name || route.id }}</div>
+                  <div class="text-xs text-slate-400 mt-0.5">{{ (route.consumers || []).length }} 个用户</div>
+                </div>
               </div>
             </div>
-            <span class="text-xs text-slate-400">{{ (route.consumers || []).length }} 个用户</span>
-          </div>
-          <div class="flex flex-wrap gap-1.5">
-            <span v-for="consumer in (route.consumers || [])" :key="consumer" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-800 rounded-lg text-xs group">
-              <i class="fas fa-user text-amber-500 text-[10px]"></i>
-              <span class="break-all">{{ consumer }}</span>
-              <button @click="revokeConsumer(route, consumer)" class="opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all" title="撤销"><i class="fas fa-xmark text-[10px]"></i></button>
-            </span>
+
+            <!-- 中间：URI/Host -->
+            <div class="mb-3">
+              <p class="text-xs text-slate-500 mb-1">URI / 主机</p>
+              <code class="block text-xs bg-slate-100 px-2 py-1 rounded text-slate-600 break-all">{{ getRouteUri(route) }}</code>
+              <span class="text-xs text-slate-400 mt-1 inline-block">{{ getRouteHost(route) }}</span>
+            </div>
+
+            <!-- 用户列表 -->
+            <div>
+              <p class="text-xs text-slate-500 mb-1">白名单用户</p>
+              <div class="flex flex-wrap gap-1.5">
+                <span v-for="consumer in (route.consumers || [])" :key="consumer" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-800 rounded-lg text-xs">
+                  <i class="fas fa-user text-amber-500 text-[10px]"></i>
+                  <span class="break-all">{{ consumer }}</span>
+                  <button @click="revokeConsumer(route, consumer)" class="hover:text-red-500 transition-colors" title="撤销"><i class="fas fa-xmark text-[10px]"></i></button>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

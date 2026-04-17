@@ -12,11 +12,58 @@
 
 ### 卡片结构
 
-所有列表页使用 `.card mb-4` 包裹，标题栏统一使用：
+所有列表页/详情页使用 `.card mb-4` 包裹，标题栏容器统一使用：
 
 ```
-bg-slate-50 border-b border-slate-200 rounded-t-2xl px-6 py-3 flex items-center justify-between
+bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3
 ```
+
+- 移动端左右内边距 `px-4`（16px），桌面端 `md:px-6`（24px）
+- 容器本身 **不写** `flex items-center justify-between`，由下面桌面/移动两个子 div 各自 `hidden md:flex` / `flex md:hidden` 控制布局
+- 所有标题栏必须同时提供桌面版 + 移动版两套子 div（详见下方「列表页标题栏双布局」与「详情页标题栏」）
+
+### 列表页标题栏双布局
+
+```html
+<div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+  <!-- 桌面端 -->
+  <div class="hidden md:flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-{模块主色}-500 flex items-center justify-center">
+        <i class="fas fa-{icon} text-white"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-semibold text-slate-800">页面标题</h1>
+        <p class="text-xs text-slate-500">页面描述</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button>刷新</button>
+      <button>创建</button>
+    </div>
+  </div>
+  <!-- 移动端 -->
+  <div class="flex md:hidden items-center justify-between gap-2">
+    <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="w-9 h-9 rounded-lg bg-{模块主色}-500 flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-{icon} text-white"></i>
+      </div>
+      <div class="min-w-0">
+        <h1 class="text-lg font-semibold text-slate-800 truncate">页面标题</h1>
+      </div>
+    </div>
+    <div class="flex items-center gap-1 flex-shrink-0">
+      <!-- 9x9 图标按钮（刷新/创建等） -->
+    </div>
+  </div>
+</div>
+```
+
+移动端要点：外层 `gap-2` 避免文字组挤压按钮；文字组必须 `min-w-0 flex-1`、标题加 `truncate`；按钮组 `flex-shrink-0`。
+
+### 详情页标题栏
+
+详情页（`xxx/image.vue`、`network.vue`、`volume.vue`、`swarm/node.vue`、`swarm/service-*.vue`、`widget/container-nav.vue` 等）与列表页使用相同的标题栏结构，右侧仅保留刷新等功能按钮。**不添加返回按钮**，用户通过侧边栏菜单导航即可。
 
 ### 标题图标
 
@@ -61,6 +108,99 @@ px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-s
 </div>
 ```
 
+### Tab 切换组件
+
+同一页面内多个子视图切换统一使用 **卡片头部 tab 组**（容器类顶部 toolbar 已有示例），不在内容区单独做 tab 条：
+
+```html
+<!-- 桡面端：toolbar 右侧 -->
+<div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+  <button
+    v-for="tab in tabs"
+    :key="tab.key"
+    @click="activeTab = tab.key"
+    :class="[
+      'px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5',
+      activeTab === tab.key ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+    ]"
+  >
+    <i :class="['fas', tab.icon]"></i><span>{{ tab.label }}</span>
+  </button>
+</div>
+
+<!-- 移动端：toolbar 下方独立一行，同样的胶囊式容器，justify-center -->
+<div class="flex justify-center gap-1 bg-slate-100 p-1 rounded-lg">
+  <!-- 同上 -->
+</div>
+```
+
+> 标题所属的描述文案按 `activeTab` 动态切换，不要写死一句总述。Tab 数量多于 3 个时优先拆为独立路由（见 Settings 模块化规范）。
+
+### 表单布局
+
+表单容器统一 `max-w-3xl space-y-4`；每个字段三段式：`<label>` + `<input class="input">` + `<p class="mt-1 text-xs text-slate-400">说明</p>`。不要使用自定义的 input 样式，统一使用 `.input` 类。
+
+### 保存按钮 + 说明文字的响应式布局
+
+表单底部的保存按钮常需搭配一段说明文字（如“重启后生效”等），窄屏下需防止按钮被按压换行：
+
+```html
+<!-- ✅ 正确 -->
+<div class="pt-2 flex flex-col sm:flex-row sm:items-center gap-3">
+  <button type="submit" :disabled="saving"
+          class="self-start px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap flex-shrink-0">
+    <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save']"></i>{{ saving ? '保存中...' : '保存配置' }}
+  </button>
+  <p class="text-xs text-slate-400 flex items-start gap-1">
+    <i class="fas fa-circle-info mt-0.5"></i>
+    <span>说明文字，可能很长。</span>
+  </p>
+</div>
+```
+
+要点：
+- 容器：`flex flex-col sm:flex-row sm:items-center gap-3` — 窄屏竖向堆叠，`sm` 以上水平
+- 按钮：必须加 `whitespace-nowrap flex-shrink-0 self-start` — 文字不换行、不被压缩、竖向时不拉伸全宽
+- 说明：`flex items-start`，图标加 `mt-0.5` 对齐首行，文字用 `<span>` 包裹避免分行错位
+
+### 敏感字段（密码/密钥）回显规范
+
+后端返回配置时 **绝不回流明文密码/密钥**，改为同时返回一个布尔标志位（如 `jwtSecretSet`、`adminKeySet`）表示是否已设置。前端按以下规则展示与提交：
+
+- 表单字段统一 `type="password"` + `autocomplete="new-password"`，v-model 绑定的字段加载后置空，仅用标志驱动 placeholder：
+  - 已设置：`已设置（留空保持不变）`
+  - 未设置：`尚未设置`
+- label 旁加状态徽标：`bg-green-50 text-green-700` 已设置 / `bg-slate-100 text-slate-500` 未设置
+- 保存时 **留空即保留原值**，后端应跳过空字段，避免覆盖掉已有密钥
+
+```html
+<label class="block text-sm font-medium text-slate-700 mb-2">
+  JWT 密钥
+  <span v-if="jwtSecretSet" class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-50 text-green-700">
+    <i class="fas fa-check mr-0.5"></i>已设置
+  </span>
+  <span v-else class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500">未设置</span>
+</label>
+<input type="password" v-model="form.jwtSecret" :placeholder="jwtSecretPlaceholder" class="input" autocomplete="new-password" />
+```
+
+### Settings 模块化
+
+`/settings` 下属的功能拆为独立路由与页面，而非单页多 tab：
+
+- `webview/src/views/settings/settings.vue` — 服务器 / Docker / APISIX 基础配置（内部 3 tab）
+- `webview/src/views/settings/members.vue` — 成员（用户）管理，从系统设置中拆出，作为独立主导航“用户管理”
+- 侧边栏菜单中“系统设置”项统一排在 **最后**
+- 系统账号（用户列表中 `id === 1` 或第一个帐号）**禁止删除**，按钮置灰并使用 `title` 提示“系统账号不允许删除”
+
+路由示例：
+
+```js
+{ path: '/settings', component: () => import('@/views/settings/settings.vue') }
+{ path: '/settings/members', component: () => import('@/views/settings/members.vue') }
+{ path: '/docker/registries', component: () => import('@/views/docker/registries.vue') }
+```
+
 ### 自动刷新间隔
 
 全局统一使用 `POLL_INTERVAL` 常量，定义在 `webview/src/helper/utils.js`（当前值 `3000` ms）。所有 `setInterval` 轮询定时器必须从 `utils.js` 导入此常量，**禁止**在组件内硬编码刷新间隔数字：
@@ -87,14 +227,14 @@ this.timer = setInterval(() => this.loadData(), 3000)
 </div>
 
 <!-- 移动端卡片列表 -->
-<div class="md:hidden space-y-3">
+<div class="md:hidden space-y-3 p-4">
   <div v-for="item in list" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
     ...
   </div>
 </div>
 ```
 
-> **注意**：移动端卡片列表外层 div 只用 `md:hidden space-y-3`，**禁止**添加 `p-4`（卡片本身已有 `p-4`，外层加 padding 会导致双重间距）。
+> **注意**：移动端卡片列表外层 div **必须**使用 `md:hidden space-y-3 p-4`，**不得省略 `p-4`**。列表被 `.card` 包裹时，外层卡片的圆角背景会紧贴子卡片边缘，`p-4` 提供的 16px 内边距用于与卡片头部、左右两侧之间形成呼吸空间；`space-y-3` 仅控制子卡片之间的垂直间距，无法替代外层 padding。间距模型：`.card` → `md:hidden space-y-3 p-4`（16px 四边留白）→ 子卡片 `rounded-xl border p-4`（12px 卡片间距、16px 卡片内边距）。
 
 #### 移动端卡片规范
 
@@ -545,7 +685,6 @@ pkgs/
     └── task.go          # 任务管理
 ```
 
-**pkgs 内部引用规则**
 **pkgs 内部引用规则**：pkgs 内部子包之间可以互相引用（如 `swarm` 引用 `docker` 的 `ParseDockerLogs`），但需保持合理的依赖方向，避免循环依赖。auth 逻辑简单，直接在 handler/auth 内实现，不放 pkgs/。
 
 ### 安全规范
@@ -555,6 +694,8 @@ pkgs/
 - WebSocket 连接统一通过认证中间件校验 token
 - 文件权限修改统一解析八进制模式并校验有效性
 - 禁止在代码中硬编码密码或密钥
+- 敏感配置（JWT、Admin Key 等）后端 **禁止向前端回流明文**，仅返回 `xxxSet` 布尔标志位
+- 关键资源保护：第一个系统账号、内置角色等 **前后端双重校验**，前端按钮置灰 + 后端返回 400/403
 
 ---
 

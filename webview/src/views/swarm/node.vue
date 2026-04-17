@@ -59,12 +59,10 @@ export default toNative(NodeDetail)
   <div>
     <div class="card mb-4">
       <!-- Toolbar -->
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-6 py-3">
-        <div class="flex items-center justify-between">
+      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+        <!-- 桌面端 -->
+        <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <button @click="$router.back()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors" title="返回节点列表">
-              <i class="fas fa-arrow-left text-sm"></i>
-            </button>
             <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
               <i class="fas fa-server text-white"></i>
             </div>
@@ -75,6 +73,21 @@ export default toNative(NodeDetail)
           </div>
           <button @click="loadDetail()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
             <i class="fas fa-rotate"></i>刷新
+          </button>
+        </div>
+        <!-- 移动端 -->
+        <div class="flex md:hidden items-center justify-between gap-2">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-server text-white"></i>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-lg font-semibold text-slate-800 truncate">节点详情</h1>
+              <p class="text-xs text-slate-500 font-mono truncate">{{ nodeId }}</p>
+            </div>
+          </div>
+          <button @click="loadDetail()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0" title="刷新">
+            <i class="fas fa-rotate text-sm"></i>
           </button>
         </div>
       </div>

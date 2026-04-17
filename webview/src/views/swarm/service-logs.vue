@@ -65,9 +65,6 @@ export default toNative(ServiceLogs)
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <button @click="$router.back()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors" title="返回服务列表">
-              <i class="fas fa-arrow-left text-sm"></i>
-            </button>
             <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
               <i class="fas fa-cubes text-white"></i>
             </div>
@@ -93,11 +90,8 @@ export default toNative(ServiceLogs)
         <!-- 移动端 -->
         <div class="block md:hidden">
           <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3">
-              <button @click="$router.back()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors">
-                <i class="fas fa-arrow-left text-sm"></i>
-              </button>
-              <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
                 <i class="fas fa-cubes text-white"></i>
               </div>
               <div class="min-w-0">
@@ -105,7 +99,7 @@ export default toNative(ServiceLogs)
                 <p class="text-xs text-slate-500 font-mono truncate">{{ serviceId.slice(0, 12) }}</p>
               </div>
             </div>
-            <button @click="loadLogs()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors">
+            <button @click="loadLogs()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0" title="刷新">
               <i class="fas fa-rotate text-sm"></i>
             </button>
           </div>

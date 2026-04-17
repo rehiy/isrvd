@@ -71,7 +71,7 @@ export default toNative(Nodes)
 <template>
   <div>
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-6 py-3 flex items-center justify-between">
+      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
             <i class="fas fa-server text-white"></i>
@@ -146,7 +146,7 @@ export default toNative(Nodes)
         </div>
 
         <!-- 移动端卡片视图 -->
-        <div class="md:hidden space-y-3">
+        <div class="md:hidden space-y-3 p-4">
           <div 
             v-for="n in nodes" 
             :key="n.id"
