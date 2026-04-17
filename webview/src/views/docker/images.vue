@@ -3,16 +3,17 @@ import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { formatFileSize, formatTime } from '@/helper/utils'
 import api from '@/service/api'
-import type { ImageInfo } from '@/service/types'
+import type { ImageInfo, RegistryInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
 import ImagePullModal from '@/views/docker/widget/image-pull-modal.vue'
 import ImageTagModal from '@/views/docker/widget/image-tag-modal.vue'
 import ImageBuildModal from '@/views/docker/widget/image-build-modal.vue'
+import RegistryPushModal from '@/views/docker/widget/registry-push-modal.vue'
 
 @Component({
-    components: { ImagePullModal, ImageTagModal, ImageBuildModal }
+    components: { ImagePullModal, ImageTagModal, ImageBuildModal, RegistryPushModal }
 })
 class Images extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
@@ -21,9 +22,11 @@ class Images extends Vue {
     @Ref readonly pullModalRef!: InstanceType<typeof ImagePullModal>
     @Ref readonly tagModalRef!: InstanceType<typeof ImageTagModal>
     @Ref readonly buildModalRef!: InstanceType<typeof ImageBuildModal>
+    @Ref readonly registryPushModalRef!: InstanceType<typeof RegistryPushModal>
 
     // ─── 数据属性 ───
     images: ImageInfo[] = []
+    registries: RegistryInfo[] = []
     loading = false
     showAllImages = false
     formatFileSize = formatFileSize
@@ -39,6 +42,18 @@ class Images extends Vue {
             this.actions.showNotification('error', '加载镜像列表失败')
         }
         this.loading = false
+    }
+
+    async loadRegistries() {
+        try {
+            const res = await api.listRegistries()
+            this.registries = res.payload || []
+        } catch (e) {}
+    }
+
+    openPush(image: ImageInfo) {
+        const tag = image.repoTags.find(t => t !== '<none>:<none>') || ''
+        this.registryPushModalRef?.show(this.registries, null, tag)
     }
 
     handleImageAction(image: ImageInfo, action: string) {
@@ -60,6 +75,7 @@ class Images extends Vue {
     // ─── 生命周期 ───
     mounted() {
         this.loadImages()
+        this.loadRegistries()
     }
 }
 
@@ -167,6 +183,9 @@ export default toNative(Images)
                   <button @click="tagModalRef?.show(img)" class="btn-icon text-blue-600 hover:bg-blue-50" title="打标签">
                     <i class="fas fa-tag text-xs"></i>
                   </button>
+                  <button @click="openPush(img)" :disabled="registries.length === 0" class="btn-icon text-purple-600 hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'">
+                    <i class="fas fa-upload text-xs"></i>
+                  </button>
                   <button @click="handleImageAction(img, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
@@ -228,6 +247,10 @@ export default toNative(Images)
               <i class="fas fa-tag text-xs"></i>
               <span class="text-xs ml-1 hidden xs:inline">标签</span>
             </button>
+            <button @click="openPush(img)" :disabled="registries.length === 0" class="btn-icon text-purple-600 hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'">
+              <i class="fas fa-upload text-xs"></i>
+              <span class="text-xs ml-1 hidden xs:inline">推送</span>
+            </button>
             <button @click="handleImageAction(img, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
               <i class="fas fa-trash text-xs"></i>
               <span class="text-xs ml-1 hidden xs:inline">删除</span>
@@ -249,5 +272,6 @@ export default toNative(Images)
     <ImagePullModal ref="pullModalRef" @success="loadImages" />
     <ImageTagModal ref="tagModalRef" @success="loadImages" />
     <ImageBuildModal ref="buildModalRef" @success="loadImages" />
+    <RegistryPushModal ref="registryPushModalRef" />
   </div>
 </template>

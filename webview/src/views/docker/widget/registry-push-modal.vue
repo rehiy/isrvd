@@ -51,10 +51,10 @@ class RegistryPushModal extends Vue {
         } catch (e) {}
     }
 
-    show(allRegistries: RegistryInfo[], registry: RegistryInfo | null = null) {
+    show(allRegistries: RegistryInfo[], registry: RegistryInfo | null = null, prefillImage = '') {
         this.registries = allRegistries
         this.pushForm = {
-            image: '',
+            image: prefillImage,
             registryUrl: registry ? registry.url : '',
             namespace: ''
         }

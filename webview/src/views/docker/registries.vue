@@ -1,23 +1,14 @@
 <script lang="ts">
-import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
 import type { RegistryInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
-import RegistryPushModal from '@/views/docker/widget/registry-push-modal.vue'
-import RegistryPullModal from '@/views/docker/widget/registry-pull-modal.vue'
-
-@Component({
-    components: { RegistryPushModal, RegistryPullModal }
-})
+@Component({})
 class Registries extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
-
-    // ─── Refs ───
-    @Ref readonly pushModalRef!: InstanceType<typeof RegistryPushModal>
-    @Ref readonly pullModalRef!: InstanceType<typeof RegistryPullModal>
 
     // ─── 数据属性 ───
     daemonMirrors: string[] = []
@@ -68,18 +59,12 @@ export default toNative(Registries)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">镜像仓库</h1>
-              <p class="text-xs text-slate-500">管理镜像仓库，同步和推送镜像</p>
+              <p class="text-xs text-slate-500">管理镜像仓库账号与加速器</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
             <button @click="loadRegistries()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
-            </button>
-            <button @click="pullModalRef?.show(registries)" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-              <i class="fas fa-download"></i>拉取
-            </button>
-            <button @click="pushModalRef?.show(registries)" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-              <i class="fas fa-upload"></i>推送
             </button>
           </div>
         </div>
@@ -101,7 +86,6 @@ export default toNative(Registries)
                 <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">地址</th>
                 <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">认证</th>
-                <th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
@@ -131,7 +115,6 @@ export default toNative(Registries)
                     <i class="fas fa-lock-open mr-1"></i>匿名
                   </span>
                 </td>
-                <td class="px-4 py-3"></td>
               </tr>
               <!-- 私有仓库行 -->
               <tr v-for="reg in registries" :key="reg.url" class="hover:bg-slate-50 transition-colors">
@@ -154,16 +137,6 @@ export default toNative(Registries)
                   <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
                     <i class="fas fa-lock-open mr-1"></i>匿名
                   </span>
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex justify-end items-center gap-0.5">
-                    <button @click="pullModalRef?.show(registries, reg)" class="btn-icon text-slate-600 hover:bg-slate-100" title="拉取镜像">
-                      <i class="fas fa-download text-xs"></i>
-                    </button>
-                    <button @click="pushModalRef?.show(registries, reg)" class="btn-icon text-blue-600 hover:bg-blue-50" title="推送镜像">
-                      <i class="fas fa-upload text-xs"></i>
-                    </button>
-                  </div>
                 </td>
               </tr>
             </tbody>
@@ -223,7 +196,7 @@ export default toNative(Registries)
               <code class="text-xs bg-slate-100 px-2 py-1 rounded break-all">{{ reg.url }}</code>
             </div>
             
-            <div class="mb-3">
+            <div class="pt-2 border-t border-slate-100">
               <p class="text-xs text-slate-500 mb-1">认证</p>
               <span v-if="reg.username" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
                 <i class="fas fa-user mr-1"></i>{{ reg.username }}
@@ -232,23 +205,9 @@ export default toNative(Registries)
                 <i class="fas fa-lock-open mr-1"></i>匿名
               </span>
             </div>
-            
-            <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
-              <button @click="pullModalRef?.show(registries, reg)" class="btn-icon text-slate-600 hover:bg-slate-100" title="拉取镜像">
-                <i class="fas fa-download text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">拉取</span>
-              </button>
-              <button @click="pushModalRef?.show(registries, reg)" class="btn-icon text-blue-600 hover:bg-blue-50" title="推送镜像">
-                <i class="fas fa-upload text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">推送</span>
-              </button>
-            </div>
           </div>
         </div>
       </div>
     </div>
-
-    <RegistryPushModal ref="pushModalRef" />
-    <RegistryPullModal ref="pullModalRef" />
   </div>
 </template>
