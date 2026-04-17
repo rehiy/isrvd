@@ -386,11 +386,22 @@ export default toNative(NavigationBar)
       </router-link>
     </nav>
 
-    <!-- 底部折叠按钮 -->
-    <div class="border-t border-slate-200 p-3">
+    <!-- 底部工具条：GitHub 链接 + 折叠按钮 -->
+    <div class="border-t border-slate-200 p-3" :class="collapsed ? 'space-y-1' : 'flex items-center gap-2'">
+      <a
+        href="https://github.com/rehiy/isrvd"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+        :class="collapsed ? 'w-full h-10' : 'w-10 h-10 flex-shrink-0'"
+        title="GitHub 仓库"
+      >
+        <i class="fab fa-github text-base"></i>
+      </a>
       <button 
         @click="$emit('update:collapsed', !collapsed)"
-        class="flex items-center justify-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        class="flex items-center justify-center gap-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+        :class="collapsed ? 'w-full h-10' : 'flex-1 h-10 text-xs font-medium'"
         :title="collapsed ? '展开菜单' : '收起菜单'"
       >
         <i :class="collapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"></i>

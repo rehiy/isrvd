@@ -103,8 +103,17 @@ export default toNative(Login)
       </div>
 
       <!-- Footer -->
-      <p class="text-center text-sm text-slate-400 mt-6">
-        © 2024 Isrvd. All rights reserved.
+      <p class="text-center text-sm text-slate-400 mt-6 flex items-center justify-center gap-2">
+        <span>© 2024 - {{ new Date().getFullYear() }} Isrvd. All rights reserved.</span>
+        <a
+          href="https://github.com/rehiy/isrvd"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+          title="GitHub"
+        >
+          <i class="fab fa-github"></i>
+        </a>
       </p>
     </div>
   </div>

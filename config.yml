@@ -10,7 +10,7 @@ docker:
   # host: tcp://127.0.0.1:2375
   containerRoot: container/
   registries:
-     # - name: CSIG Hub
+     # - name: Company Hub
      #   description: 公司内部镜像仓库
      #   url: hub.example.com
      #   username: debug

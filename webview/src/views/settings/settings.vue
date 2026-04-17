@@ -200,9 +200,9 @@ export default toNative(Settings)
             <p class="mt-1 text-xs text-slate-400">用于签名登录令牌，修改后所有用户需要重新登录</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">代理用户名 Header</label>
+            <label class="block text-sm font-medium text-slate-700 mb-2">内网代理认证 Header</label>
             <input type="text" v-model="server.proxyHeaderName" placeholder="例如 X-Auth-User（留空禁用）" class="input" />
-            <p class="mt-1 text-xs text-slate-400">启用内网代理认证时使用，网关会注入该 Header 作为登录用户</p>
+            <p class="mt-1 text-xs text-slate-400">启用时，将使用上游传入的 Header {{ server.proxyHeaderName }} 值作为登录用户</p>
           </div>
           <div class="flex items-center gap-2">
             <input id="debugSwitch" type="checkbox" v-model="server.debug" class="w-4 h-4" />
