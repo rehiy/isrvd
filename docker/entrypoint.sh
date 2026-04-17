@@ -2,7 +2,7 @@
 set -e
 
 echo "=========================================="
-echo "  APISIX + etcd + isrvd  All-in-One"
+echo "  Apisix + etcd + isrvd  All-in-One"
 echo "=========================================="
 
 # ------------------------------------------
@@ -41,11 +41,11 @@ replace_placeholder() {
     done
 }
 
-# 生成随机 APISIX Admin Key（32 位十六进制）
-if grep -rq '__APISIX_ADMIN_KEY__' "$CONF_DIR/" 2>/dev/null; then
-    APISIX_ADMIN_KEY=$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')
-    replace_placeholder '__APISIX_ADMIN_KEY__' "$APISIX_ADMIN_KEY"
-    echo "[init] Generated random APISIX admin key"
+# 生成随机 Apisix Admin Key（32 位十六进制）
+if grep -rq '__Apisix_ADMIN_KEY__' "$CONF_DIR/" 2>/dev/null; then
+    Apisix_ADMIN_KEY=$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')
+    replace_placeholder '__Apisix_ADMIN_KEY__' "$Apisix_ADMIN_KEY"
+    echo "[init] Generated random Apisix admin key"
 fi
 
 # 生成随机 JWT Secret（32 位十六进制）
@@ -63,7 +63,7 @@ if grep -rq '__ISRVD_PASSWORD__' "$CONF_DIR/" 2>/dev/null; then
 fi
 
 # ------------------------------------------
-# 将 APISIX 配置链接到标准位置
+# 将 Apisix 配置链接到标准位置
 # ------------------------------------------
 ln -sf "$CONF_DIR/apisix.yaml" /usr/local/apisix/conf/config.yaml
 
@@ -76,7 +76,7 @@ for required in apisix.yaml isrvd.yml; do
 done
 
 # ------------------------------------------
-# 初始化 APISIX（需要 etcd 就绪）
+# 初始化 Apisix（需要 etcd 就绪）
 # ------------------------------------------
 cd /usr/local/apisix
 /usr/local/openresty/luajit/bin/luajit apisix/cli/apisix.lua init
@@ -90,7 +90,7 @@ fi
 echo "[init] etcd cluster state: $ETCD_CLUSTER_STATE"
 
 # 临时启动 etcd，等待就绪后执行 init_etcd
-echo "[init] Starting temporary etcd for APISIX init..."
+echo "[init] Starting temporary etcd for Apisix init..."
 /usr/local/bin/etcd \
     --name=apisix-etcd \
     --data-dir=/data/etcd \

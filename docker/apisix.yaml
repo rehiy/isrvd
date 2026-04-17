@@ -1,5 +1,5 @@
 #
-# APISIX 配置 - All-in-One 模式
+# Apisix 配置 - All-in-One 模式
 #
 apisix:
   node_listen: 9080
@@ -15,7 +15,7 @@ deployment:
       - 0.0.0.0/0
     admin_key:
       - name: "admin"
-        key: __APISIX_ADMIN_KEY__
+        key: __Apisix_ADMIN_KEY__
         role: admin
     admin_listen:
       ip: 0.0.0.0

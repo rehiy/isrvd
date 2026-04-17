@@ -10,7 +10,7 @@ docker:
 
 apisix:
   adminUrl: http://127.0.0.1:9180/apisix/admin
-  adminKey: __APISIX_ADMIN_KEY__
+  adminKey: __Apisix_ADMIN_KEY__
 
 members:
   - username: admin

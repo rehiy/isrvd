@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// Upstream APISIX Upstream 信息
+// Upstream Apisix Upstream 信息
 type Upstream struct {
 	ID         string `json:"id"`
 	Name       string `json:"name"`
@@ -25,7 +25,7 @@ func (c *Client) ListUpstreams() ([]Upstream, error) {
 	return parseUpstreamList(data)
 }
 
-// parseUpstreamList 解析 APISIX Upstream 列表响应
+// parseUpstreamList 解析 Apisix Upstream 列表响应
 func parseUpstreamList(data []byte) ([]Upstream, error) {
 	var raw struct {
 		List []struct {

@@ -264,7 +264,7 @@ class ApiService {
         return http.get<{ logs: string[] }>('/api/swarm/service/logs', { params: { id, tail } })
     }
 
-    // ==================== Apisix 管理相关 ====================
+    // ==================== APISIX 管理相关 ====================
 
     // 路由管理
     apisixListRoutes() {

@@ -8,7 +8,7 @@ import (
 	"github.com/rehiy/pango/strutil"
 )
 
-// Consumer APISIX Consumer 信息
+// Consumer Apisix Consumer 信息
 type Consumer struct {
 	Username   string         `json:"username"`
 	Desc       string         `json:"desc"`

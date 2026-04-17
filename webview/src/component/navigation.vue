@@ -308,7 +308,7 @@ export default toNative(NavigationBar)
         </template>
       </div>
 
-      <!-- Apisix 折叠子菜单 -->
+      <!-- APISIX 折叠子菜单 -->
       <div v-if="state.serviceAvailability.apisix">
         <!-- 折叠状态：只显示图标 -->
         <router-link
@@ -316,7 +316,7 @@ export default toNative(NavigationBar)
           to="/overview"
           class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
           :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/') }"
-          title="Apisix"
+          title="APISIX"
         >
           <i class="fas fa-cloud"></i>
         </router-link>
@@ -328,7 +328,7 @@ export default toNative(NavigationBar)
             :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/') }"
           >
             <i class="fas fa-cloud"></i>
-            <span>Apisix 管理</span>
+            <span>APISIX 网关</span>
             <i
               class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200"
               :class="{ 'rotate-180': apisixExpanded }"

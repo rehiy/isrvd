@@ -214,7 +214,7 @@ func (c *Client) UpdateRouteConsumerRestriction(routeID string, consumers []stri
 
 // --- 辅助函数 ---
 
-// buildRouteBody 将 Route 转换为 APISIX API 请求体
+// buildRouteBody 将 Route 转换为 Apisix API 请求体
 func buildRouteBody(req Route) map[string]any {
 	body := map[string]any{
 		"name":     req.Name,
@@ -256,7 +256,7 @@ func buildRouteBody(req Route) map[string]any {
 	return body
 }
 
-// parseRouteList 解析 APISIX 路由列表响应
+// parseRouteList 解析 Apisix 路由列表响应
 func parseRouteList(data []byte) ([]Route, error) {
 	var raw struct {
 		List []struct {

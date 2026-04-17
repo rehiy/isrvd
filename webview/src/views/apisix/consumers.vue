@@ -100,7 +100,7 @@ export default toNative(Consumers)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">用户管理</h1>
-              <p class="text-xs text-slate-500">管理 Apisix Consumer</p>
+              <p class="text-xs text-slate-500">管理 APISIX Consumer</p>
             </div>
           </div>
           <div class="flex items-center gap-2">

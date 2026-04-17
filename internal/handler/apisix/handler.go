@@ -30,7 +30,7 @@ func NewHandler() (*Handler, error) {
 	}, nil
 }
 
-// CheckAvailability 检测 APISIX 可用性，实现 system.ApisixAvailabilityChecker 接口
+// CheckAvailability 检测 Apisix 可用性，实现 system.ApisixAvailabilityChecker 接口
 func (h *Handler) CheckAvailability() bool {
 	if h.client == nil {
 		return false

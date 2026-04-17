@@ -31,7 +31,7 @@ RUN apt-get update && apt-get install -y curl tar \
          etcd-${ETCD_VERSION}-linux-${TARGETARCH}/etcdctl
 
 ###############################################
-# 阶段 3: 最终镜像（基于 APISIX）
+# 阶段 3: 最终镜像（基于 Apisix）
 ###############################################
 FROM apache/apisix:3.16.0-debian
 
@@ -60,8 +60,8 @@ RUN chmod +x /entrypoint.sh
 
 # 暴露端口
 # 8080: isrvd Web UI
-# 9080: APISIX 代理端口
-# 9180: APISIX Admin API
+# 9080: Apisix 代理端口
+# 9180: Apisix Admin API
 EXPOSE 8080 9080 9180
 
 # 数据卷

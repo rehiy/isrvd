@@ -127,7 +127,7 @@ export default toNative(Routes)
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-lg bg-indigo-500 flex items-center justify-center"><i class="fas fa-route text-white"></i></div>
-            <div><h1 class="text-lg font-semibold text-slate-800">路由管理</h1><p class="text-xs text-slate-500">管理 Apisix 路由（共 {{ routes.length }} 条）</p></div>
+            <div><h1 class="text-lg font-semibold text-slate-800">路由管理</h1><p class="text-xs text-slate-500">管理 APISIX 路由（共 {{ routes.length }} 条）</p></div>
           </div>
           <div class="flex items-center gap-2">
             <div class="relative hidden md:block">

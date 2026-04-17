@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// PluginConfig APISIX Plugin Config 信息
+// PluginConfig Apisix Plugin Config 信息
 type PluginConfig struct {
 	ID         string         `json:"id"`
 	Desc       string         `json:"desc"`
@@ -24,7 +24,7 @@ func (c *Client) ListPluginConfigs() ([]PluginConfig, error) {
 	return parsePluginConfigList(data)
 }
 
-// parsePluginConfigList 解析 APISIX Plugin Config 列表响应
+// parsePluginConfigList 解析 Apisix Plugin Config 列表响应
 func parsePluginConfigList(data []byte) ([]PluginConfig, error) {
 	var raw struct {
 		List []struct {

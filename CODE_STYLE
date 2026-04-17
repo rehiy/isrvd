@@ -518,7 +518,7 @@ config/             # 配置加载与类型定义
 └── types.go            # 配置结构体定义
 
 pkgs/
-├── apisix/          # APISIX 业务逻辑
+├── apisix/          # Apisix 业务逻辑
 │   ├── client.go        # HTTP 客户端
 │   ├── route.go         # 路由管理
 │   ├── consumer.go      # Consumer 管理

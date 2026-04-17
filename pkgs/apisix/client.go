@@ -9,13 +9,13 @@ import (
 	"github.com/rehiy/pango/request"
 )
 
-// Client APISIX Admin API 客户端
+// Client Apisix Admin API 客户端
 type Client struct {
 	baseURL  string
 	adminKey string
 }
 
-// NewClient 创建 APISIX Admin API 客户端
+// NewClient 创建 Apisix Admin API 客户端
 func NewClient(baseURL, adminKey string) *Client {
 	return &Client{
 		baseURL:  baseURL,
@@ -23,7 +23,7 @@ func NewClient(baseURL, adminKey string) *Client {
 	}
 }
 
-// doRequest 发送请求到 APISIX Admin API
+// doRequest 发送请求到 Apisix Admin API
 func (c *Client) doRequest(method, path string, body any) ([]byte, error) {
 	var dataStr string
 	if body != nil {
@@ -48,8 +48,8 @@ func (c *Client) doRequest(method, path string, body any) ([]byte, error) {
 
 	respData, err := client.Request()
 	if err != nil {
-		logman.Error("APISIX request failed", "method", method, "path", path, "error", err)
-		return nil, fmt.Errorf("请求 APISIX 失败: %w", err)
+		logman.Error("Apisix request failed", "method", method, "path", path, "error", err)
+		return nil, fmt.Errorf("请求 Apisix 失败: %w", err)
 	}
 
 	return respData, nil
