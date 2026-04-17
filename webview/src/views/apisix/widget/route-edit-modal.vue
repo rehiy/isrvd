@@ -1,17 +1,19 @@
 <script lang="ts">
-import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Inject, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { ApisixRoute, ApisixPluginConfig, ApisixUpstream } from '@/service/types'
+import type { ApisixRoute, ApisixPluginConfig, ApisixUpstream, ContainerInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 import { parseUpstreamNode, buildRoutePayload } from '@/helper/utils'
 
 import BaseModal from '@/component/modal.vue'
+import HostSelect from './host-select.vue'
+import PortSelect from './port-select.vue'
 
 @Component({
     expose: ['show'],
-    components: { BaseModal },
+    components: { BaseModal, HostSelect, PortSelect },
     emits: ['success']
 })
 class RouteEditModal extends Vue {
@@ -29,9 +31,11 @@ class RouteEditModal extends Vue {
     importRoutePluginsLoading = false
     selectedImportPlugins: Set<string> = new Set()
     pluginSearchKeyword = ''
+    suppressPortAutofill = false
 
     pluginConfigs: ApisixPluginConfig[] = []
     upstreams: ApisixUpstream[] = []
+    containers: ContainerInfo[] = []
     availablePlugins: Record<string, { schema: Record<string, unknown> }> = {}
     routes: ApisixRoute[] = []
 
@@ -49,6 +53,28 @@ class RouteEditModal extends Vue {
         const all = Object.keys(this.availablePlugins)
         if (!this.pluginSearchKeyword) return all
         return all.filter(n => n.toLowerCase().includes(this.pluginSearchKeyword.toLowerCase()))
+    }
+
+    get selectedContainer(): ContainerInfo | undefined {
+        const host = this.formData.upstream_host.trim()
+        return host ? this.containers.find(c => c.name === host) : undefined
+    }
+
+    get selectedContainerPorts(): string[] {
+        return this.selectedContainer?.ports || []
+    }
+
+    // ─── 监听器 ───
+    // 切换到匹配的容器时，自动同步该容器的第一个端口（若未暴露则清空让用户填）
+    @Watch('formData.upstream_host')
+    onUpstreamHostChange() {
+        if (this.suppressPortAutofill) {
+            this.suppressPortAutofill = false
+            return
+        }
+        if (!this.selectedContainer) return
+        const first = this.selectedContainerPorts[0] || ''
+        this.formData.upstream_port = first.split('/')[0].split(':').pop() || ''
     }
 
     // ─── 方法 ───
@@ -69,27 +95,37 @@ class RouteEditModal extends Vue {
     async loadResources(allRoutes: ApisixRoute[]) {
         this.routes = allRoutes || []
         try {
-            const [pc, us, pl] = await Promise.all([
-                api.apisixListPluginConfigs(), api.apisixListUpstreams(), api.apisixListPlugins()
+            const [pc, us, pl, ct] = await Promise.all([
+                api.apisixListPluginConfigs(), api.apisixListUpstreams(), api.apisixListPlugins(),
+                api.listContainers()
             ])
             this.pluginConfigs = pc.payload || []
             this.upstreams = us.payload || []
             this.availablePlugins = pl.payload || {}
+            this.containers = (ct.payload || []).filter(c => c.state === 'running')
         } catch {}
     }
 
     async show(route: ApisixRoute | null, allRoutes: ApisixRoute[]) {
         await this.loadResources(allRoutes)
-        if (route) {
+        if (route && route.id) {
+            const routeId = route.id
             this.isEditMode = true
-            this.editingRouteId = route.id
+            this.editingRouteId = routeId
             this.resetForm()
             this.modalLoading = true
             this.isOpen = true
             try {
-                const r = (await api.apisixGetRoute(route.id)).payload
+                const r = (await api.apisixGetRoute(routeId)).payload
+                if (!r) {
+                    this.actions.showNotification('error', '加载路由详情失败')
+                    this.isOpen = false
+                    this.modalLoading = false
+                    return
+                }
                 const plugins = r.plugins || {}
                 const { host: uH, port: uP } = parseUpstreamNode(r.upstream)
+                this.suppressPortAutofill = true
                 Object.assign(this.formData, {
                     name: r.name || '', desc: r.desc || '',
                     uris: (r.uris?.length ? r.uris : [r.uri || '']).join('\n'),
@@ -100,7 +136,6 @@ class RouteEditModal extends Vue {
                     upstream_host: uH, upstream_port: uP,
                     plugins, pluginsJson: JSON.stringify(plugins, null, 2), pluginsJsonError: ''
                 })
-                this.editingRouteId = route.id
             } catch (e) {
                 this.actions.showNotification('error', '加载路由详情失败')
                 this.isOpen = false
@@ -232,8 +267,14 @@ export default toNative(RouteEditModal)
       <div><label class="block text-sm font-medium text-slate-700 mb-2">URI（每行一个）<span class="text-red-500">*</span></label><textarea v-model="formData.uris" rows="3" class="input font-mono text-sm" placeholder="/api/v1/*&#10;/api/v2/*"></textarea></div>
       <div><label class="block text-sm font-medium text-slate-700 mb-2">Host（每行一个，留空匹配所有）</label><textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="example.com"></textarea></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="block text-sm font-medium text-slate-700 mb-2">上游主机</label><input v-model="formData.upstream_host" type="text" class="input" placeholder="127.0.0.1" /></div>
-        <div><label class="block text-sm font-medium text-slate-700 mb-2">上游端口</label><input v-model="formData.upstream_port" type="text" class="input" placeholder="8080" /></div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">上游主机</label>
+          <HostSelect v-model="formData.upstream_host" :containers="containers" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">上游端口</label>
+          <PortSelect v-model="formData.upstream_port" :ports="selectedContainerPorts" />
+        </div>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div>

@@ -67,6 +67,7 @@ export interface ContainerInfo {
     state: string
     status: string
     ports: string[]
+    networks?: string[]
     created: number
     isSwarm?: boolean
     labels?: Record<string, string>
@@ -436,6 +437,18 @@ export interface SwarmTask {
 
 // ─── Apisix 相关 ───
 
+export interface ApisixUpstreamNode {
+    host?: string
+    port?: number | string
+    weight?: number
+}
+
+export interface ApisixUpstreamConfig {
+    type?: string
+    nodes?: ApisixUpstreamNode[] | Record<string, number>
+    [key: string]: unknown
+}
+
 export interface ApisixRoute {
     id?: string
     name: string
@@ -449,7 +462,7 @@ export interface ApisixRoute {
     enable_websocket: boolean
     plugin_config_id?: string
     upstream_id?: string
-    upstream?: Record<string, unknown>
+    upstream?: ApisixUpstreamConfig
     plugins?: Record<string, unknown>
     consumers?: string[]
     create_time: number

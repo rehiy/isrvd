@@ -1,3 +1,5 @@
+import type { ApisixRoute, ApisixUpstreamConfig } from '@/service/types'
+
 // 全局自动刷新间隔（毫秒），所有轮询定时器统一使用此常量
 export const POLL_INTERVAL = 3000
 
@@ -67,17 +69,7 @@ export const formatFileSize = (bytes: number): string => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-interface UpstreamNode {
-    host?: string
-    port?: number | string
-    weight?: number
-}
-
-interface Upstream {
-    nodes?: UpstreamNode[] | Record<string, number>
-}
-
-export const parseUpstreamNode = (upstream: Upstream): { host: string; port: number | string } => {
+export const parseUpstreamNode = (upstream?: ApisixUpstreamConfig): { host: string; port: number | string } => {
     const nodes = upstream?.nodes
     if (!nodes) return { host: '', port: '' }
     if (Array.isArray(nodes) && nodes.length > 0) return { host: nodes[0].host || '', port: nodes[0].port || '' }
@@ -105,15 +97,17 @@ interface RouteFormData {
     upstream_port?: string | number
 }
 
-export const buildRoutePayload = (formData: RouteFormData): Record<string, unknown> => {
-    const payload: Record<string, unknown> = {
+export const buildRoutePayload = (formData: RouteFormData): ApisixRoute => {
+    const payload: ApisixRoute = {
         name: formData.name.trim(),
         desc: formData.desc.trim(),
         status: formData.status,
         priority: formData.priority ?? 0,
         enable_websocket: formData.enable_websocket,
         plugin_config_id: formData.plugin_config_id || '',
-        plugins: formData.plugins || {}
+        plugins: formData.plugins || {},
+        create_time: 0,
+        update_time: 0
     }
     const urisArr = formData.uris.split('\n').map((s: string) => s.trim()).filter(Boolean)
     if (urisArr.length > 1) payload.uris = urisArr
