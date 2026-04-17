@@ -4,8 +4,8 @@ import { interceptors } from '@/service/axios'
 import type { FileInfo } from '@/service/types'
 
 // Provide/Inject keys
-export const APP_STATE_KEY = Symbol('app.state')
-export const APP_ACTIONS_KEY = Symbol('app.actions')
+export const APP_STATE_KEY = 'app.state'
+export const APP_ACTIONS_KEY = 'app.actions'
 
 // ─── 类型定义 ───
 
@@ -39,6 +39,7 @@ interface ConfirmState {
 }
 
 interface ServiceAvailability {
+    agent: boolean
     docker: boolean
     swarm: boolean
     apisix: boolean
@@ -65,7 +66,7 @@ export interface AppActions {
     confirmLoading(loading: boolean): void
     closeConfirm(): void
     handleConfirm(): Promise<void>
-    updateServiceAvailability(availability: { docker?: { available?: boolean }; swarm?: { available?: boolean }; apisix?: { available?: boolean } }): void
+        updateServiceAvailability(availability: { agent?: { available?: boolean }; docker?: { available?: boolean }; swarm?: { available?: boolean }; apisix?: { available?: boolean } }): void
 }
 
 export const initProvider = () => {
@@ -99,6 +100,7 @@ export const initProvider = () => {
 
         // 服务可用性状态
         serviceAvailability: {
+            agent: false,
             docker: false,
             swarm: false,
             apisix: false
@@ -183,8 +185,9 @@ export const initProvider = () => {
         },
 
         // 服务可用性操作
-        updateServiceAvailability(availability: { docker?: { available?: boolean }; swarm?: { available?: boolean }; apisix?: { available?: boolean } }) {
+        updateServiceAvailability(availability: { agent?: { available?: boolean }; docker?: { available?: boolean }; swarm?: { available?: boolean }; apisix?: { available?: boolean } }) {
             state.serviceAvailability = {
+                agent: availability.agent?.available || false,
                 docker: availability.docker?.available || false,
                 swarm: availability.swarm?.available || false,
                 apisix: availability.apisix?.available || false

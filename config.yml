@@ -5,6 +5,15 @@ server:
   # proxyHeaderName: X-Username
   rootDirectory: storage/
 
+agent:
+  # model: your-model
+  # baseUrl: https://ai.rehiy.wang/v1
+  # apiKey: your-api-key
+
+apisix:
+  # adminUrl: http://127.0.0.1:9180
+  # adminKey: your-admin-key
+
 docker:
   # host: unix:///var/run/docker.sock
   # host: tcp://127.0.0.1:2375
@@ -15,10 +24,6 @@ docker:
      #   url: hub.example.com
      #   username: debug
      #   password: 123
-
-apisix:
-  # adminUrl: http://127.0.0.1:9180
-  # adminKey: your-admin-key
 
 members:
   - username: admin

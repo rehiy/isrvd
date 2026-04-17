@@ -15,5 +15,5 @@ interface ServiceProbeResult {
  */
 export const fetchServiceProbe = async (): Promise<ServiceProbeResult> => {
     const response = await api.serviceProbe()
-    return response.payload
+    return response.payload || {}
 }

@@ -12,12 +12,14 @@ var (
 	Debug = false
 	// 监听地址
 	ListenAddr = ":8080"
-	// JWT 密钥
+	// JWT 密鑰
 	JWTSecret = "default-secret-key"
 	// 内网代理用户名 Header 名（为空则不启用）
 	ProxyHeaderName = ""
 	// 基础目录
 	RootDirectory = "."
+	// Agent LLM 配置
+	Agent = &AgentConfig{}
 	// Apisix 配置
 	Apisix = &ApisixConfig{}
 	// Docker 配置
@@ -56,6 +58,11 @@ func Load() error {
 	JWTSecret = conf.Server.JWTSecret
 	ProxyHeaderName = conf.Server.ProxyHeaderName
 	RootDirectory = conf.Server.RootDirectory
+
+	// 更新 Agent 配置
+	if conf.Agent != nil {
+		Agent = conf.Agent
+	}
 
 	// 更新 Apisix 配置
 	if conf.Apisix != nil {

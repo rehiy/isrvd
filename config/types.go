@@ -3,6 +3,7 @@ package config
 // 配置结构
 type Config struct {
 	Server  *Server         `yaml:"server"`
+	Agent   *AgentConfig    `yaml:"agent"`
 	Apisix  *ApisixConfig   `yaml:"apisix"`
 	Docker  *DockerConfig   `yaml:"docker"`
 	Members []*MemberConfig `yaml:"members"`
@@ -15,6 +16,13 @@ type Server struct {
 	JWTSecret       string `yaml:"jwtSecret"`
 	ProxyHeaderName string `yaml:"proxyHeaderName"`
 	RootDirectory   string `yaml:"rootDirectory"`
+}
+
+// Agent LLM 配置
+type AgentConfig struct {
+	Model   string `yaml:"model"`   // 模型名称
+	BaseURL string `yaml:"baseUrl"` // LLM API 基础地址（OpenAI 兼容）
+	APIKey  string `yaml:"apiKey"`  // API 密钥（不回流到前端）
 }
 
 // Apisix 配置

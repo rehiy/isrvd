@@ -1,11 +1,12 @@
 <script lang="ts">
-import { Component, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
+import { Component, Provide, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { APP_ACTIONS_KEY, APP_STATE_KEY, initProvider } from '@/store/state'
 
 import ConfirmModal from '@/component/confirm.vue'
 import NavigationBar from '@/component/navigation.vue'
 import NotificationManager from '@/component/notification.vue'
+import PageAgent from '@/component/page-agent.vue'
 
 import AuthLogin from '@/views/login.vue'
 import AuthLogout from '@/views/logout.vue'
@@ -15,39 +16,16 @@ import { fetchServiceProbe } from '@/service/probe'
 const { state, actions } = initProvider()
 
 @Component({
-    components: { ConfirmModal, NavigationBar, NotificationManager, AuthLogin, AuthLogout },
-    provide: {
-        [APP_STATE_KEY]: state,
-        [APP_ACTIONS_KEY]: actions,
-    }
+    components: { ConfirmModal, NavigationBar, NotificationManager, PageAgent, AuthLogin, AuthLogout }
 })
 class App extends Vue {
     // ─── 数据属性 ───
-    state = state
-    actions = actions
+    @Provide(APP_STATE_KEY) state = state
+    @Provide(APP_ACTIONS_KEY) actions = actions
     sidebarCollapsed = false
-    toolbarButtons: { id: string; label?: string; icon?: string; onClick?: () => void }[] = []
 
     // ─── Refs ───
     @Ref readonly navigationRef!: InstanceType<typeof NavigationBar>
-
-    // ─── 方法 ───
-    clearToolbar() {
-        this.toolbarButtons = []
-    }
-
-    registerToolbarButton(button: { id: string; label?: string; icon?: string; onClick?: () => void }) {
-        const existing = this.toolbarButtons.find((b) => b.id === button.id)
-        if (existing) {
-            Object.assign(existing, button)
-        } else {
-            this.toolbarButtons.push(button)
-        }
-    }
-
-    clearToolbarOnRouteChange() {
-        this.clearToolbar()
-    }
 
     toggleMobileMenu() {
         if (this.navigationRef) {
@@ -105,18 +83,6 @@ export default toNative(App)
         
         <!-- 工具栏按钮区域 -->
         <div class="flex items-center gap-2 overflow-x-auto flex-1 mx-2">
-          <button
-            v-for="btn in toolbarButtons"
-            :key="btn.id"
-            @click="btn.onClick"
-            :class="btn.variant === 'primary' ? 'btn-primary' : 'btn-secondary'"
-            class="text-sm py-2 px-3 whitespace-nowrap"
-            :disabled="btn.loading"
-          >
-            <i v-if="btn.loading" class="fas fa-spinner fa-spin mr-1.5"></i>
-            <i v-else-if="btn.icon" :class="btn.icon" class="mr-1.5"></i>
-            <span class="hidden sm:inline">{{ btn.label }}</span>
-          </button>
         </div>
         
         <!-- 用户信息 -->
@@ -130,12 +96,11 @@ export default toNative(App)
       </header>
 
       <NavigationBar ref="navigationRef" v-model:collapsed="sidebarCollapsed" />
-      <main 
-        class="px-4 py-6 pt-20 transition-all duration-300"
-        :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'"
-      >
-        <router-view @vue:mounted="clearToolbarOnRouteChange" />
+      <main class="px-4 py-6 pt-20 transition-all duration-300" :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'">
+        <router-view />
       </main>
+
+      <PageAgent v-if="state.serviceAvailability.agent" />
     </template>
 
     <AuthLogin v-else />

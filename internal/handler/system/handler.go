@@ -10,6 +10,7 @@ import (
 	"github.com/rehiy/pango/psutil"
 	"github.com/shirou/gopsutil/v3/disk"
 
+	"isrvd/config"
 	"isrvd/internal/helper"
 	"isrvd/internal/registry"
 )
@@ -105,6 +106,7 @@ func (h *SystemHandler) Stat(c *gin.Context) {
 func (h *SystemHandler) Probe(c *gin.Context) {
 	ctx := c.Request.Context()
 	helper.RespondSuccess(c, "ok", gin.H{
+		"agent":  gin.H{"available": config.Agent.BaseURL != "" && config.Agent.APIKey != ""},
 		"docker": gin.H{"available": registry.IsDockerAvailable(ctx)},
 		"swarm":  gin.H{"available": registry.IsSwarmAvailable(ctx)},
 		"apisix": gin.H{"available": registry.IsApisixAvailable()},

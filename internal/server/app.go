@@ -6,6 +6,7 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/config"
+	"isrvd/internal/handler/agent"
 	"isrvd/internal/handler/apisix"
 	"isrvd/internal/handler/auth"
 	"isrvd/internal/handler/docker"
@@ -49,6 +50,9 @@ func (app *App) setupRouter() {
 	settingsHandler := settings.NewSettingsHandler()
 	systemHandler := system.NewSystemHandler()
 
+	// 注册 Agent Handler
+	agentHandler := agent.NewAgentHandler()
+
 	// 注册 Apisix Handler
 	apisixHandler, _ := apisix.NewHandler()
 
@@ -85,6 +89,12 @@ func (app *App) setupRouter() {
 				filerGroup.POST("/chmod", fileHandler.Chmod)
 				filerGroup.POST("/zip", zipHandler.Zip)
 				filerGroup.POST("/unzip", zipHandler.Unzip)
+			}
+
+			// Agent LLM 代理路由
+			agentGroup := authGroup.Group("/agent")
+			{
+				agentGroup.Any("/proxy/*path", agentHandler.Proxy)
 			}
 
 			// Apisix API 路由

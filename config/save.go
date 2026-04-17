@@ -32,6 +32,7 @@ func Save() error {
 			ProxyHeaderName: ProxyHeaderName,
 			RootDirectory:   RootDirectory,
 		},
+		Agent:   Agent,
 		Apisix:  Apisix,
 		Docker:  Docker,
 		Members: members,
