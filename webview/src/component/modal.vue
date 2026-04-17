@@ -85,10 +85,7 @@ export default toNative(BaseModal)
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
         @click="handleBackdropClick"
       >
-        <div 
-          v-if="isOpen"
-          :class="['w-full modal-card animate-scale-in', 'max-w-3xl']"
-        >
+        <div :class="['w-full modal-card animate-scale-in', 'max-w-3xl']">
           <!-- Header -->
           <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200/50">
             <h3 class="text-lg font-semibold text-slate-800">

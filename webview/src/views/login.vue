@@ -18,9 +18,10 @@ class Login extends Vue {
 
     // ─── 方法 ───
     async handleLogin() {
-        const data = await api.login(this.loginForm)
-        this.actions.setAuth(data.payload)
-
+        const { payload } = await api.login(this.loginForm)
+        if (!payload) return
+        
+        this.actions.setAuth(payload)
         this.loginForm.username = ''
         this.loginForm.password = ''
     }

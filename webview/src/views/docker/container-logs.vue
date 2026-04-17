@@ -35,8 +35,8 @@ class ContainerLogs extends Vue {
         this.logLoading = true
         this.logContent = ''
         try {
-            const data = await api.containerLogs(this.containerId, this.logTail)
-            this.logContent = (data.payload?.logs || []).join('\n')
+            const res = await api.containerLogs(this.containerId, this.logTail)
+            this.logContent = (res.payload?.logs || []).join('\n')
         } catch (e) {
             this.logContent = '加载日志失败'
         }

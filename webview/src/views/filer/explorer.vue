@@ -66,9 +66,9 @@ class FileExplorer extends Vue {
     }
 
     async loadFiles(path: string = this.state.currentPath) {
-        const data = await api.list(path)
-        this.files = data.payload?.files || []
-        this.state.currentPath = data.payload?.path ?? '/'
+        const res = await api.list(path)
+        this.files = res.payload?.files || []
+        this.state.currentPath = res.payload?.path ?? '/'
     }
 
     // ─── 生命周期 ───

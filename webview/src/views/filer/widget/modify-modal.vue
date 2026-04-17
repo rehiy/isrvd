@@ -35,10 +35,10 @@ class ModifyModal extends Vue {
 
     // ─── 方法 ───
     async show(file: FileInfo) {
-        const data = await api.read(file.path)
+        const res = await api.read(file.path)
         this.formData.path = file.path
         this.formData.filename = file.name
-        this.formData.content = data.payload.content
+        this.formData.content = res.payload?.content ?? ''
         this.isOpen = true
     }
 
