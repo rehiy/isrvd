@@ -208,13 +208,13 @@ export default toNative(Settings)
             <input id="debugSwitch" type="checkbox" v-model="server.debug" class="w-4 h-4" />
             <label for="debugSwitch" class="text-sm text-slate-700">启用 Debug 模式</label>
           </div>
-          <div class="pt-2 flex items-center gap-3">
-            <button type="submit" :disabled="saving" class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+          <div class="pt-2 flex flex-col sm:flex-row sm:items-center gap-3">
+            <button type="submit" :disabled="saving" class="self-start px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap flex-shrink-0">
               <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save']"></i>{{ saving ? '保存中...' : '保存服务器配置' }}
             </button>
-            <p class="text-xs text-slate-400 flex items-center gap-1">
-              <i class="fas fa-circle-info"></i>
-              保存后立即写入配置文件，监听地址及 JWT 密钥修改需重启服务生效；密钥留空即保留原值。
+            <p class="text-xs text-slate-400 flex items-start gap-1">
+              <i class="fas fa-circle-info mt-0.5"></i>
+              <span>保存后立即写入配置文件，监听地址及 JWT 密钥修改需重启服务生效；密钥留空即保留原值。</span>
             </p>
           </div>
         </form>
@@ -231,13 +231,13 @@ export default toNative(Settings)
             <input type="text" v-model="docker.containerRoot" placeholder="containers" class="input" />
             <p class="mt-1 text-xs text-slate-400">用于存放容器数据卷的基础目录（相对于基础目录）</p>
           </div>
-          <div class="pt-2 flex items-center gap-3">
-            <button type="submit" :disabled="saving" class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+          <div class="pt-2 flex flex-col sm:flex-row sm:items-center gap-3">
+            <button type="submit" :disabled="saving" class="self-start px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap flex-shrink-0">
               <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save']"></i>{{ saving ? '保存中...' : '保存 Docker 配置' }}
             </button>
-            <p class="text-xs text-slate-400 flex items-center gap-1">
-              <i class="fas fa-circle-info"></i>
-              保存后立即写入配置文件，Docker Host 变更需重启服务后才能连接新地址。
+            <p class="text-xs text-slate-400 flex items-start gap-1">
+              <i class="fas fa-circle-info mt-0.5"></i>
+              <span>保存后立即写入配置文件，Docker Host 变更需重启服务后才能连接新地址。</span>
             </p>
           </div>
 
@@ -274,13 +274,13 @@ export default toNative(Settings)
             <input type="password" v-model="apisix.adminKey" :placeholder="adminKeyPlaceholder" class="input" autocomplete="new-password" />
             <p class="mt-1 text-xs text-slate-400">访问 APISIX Admin API 的密钥</p>
           </div>
-          <div class="pt-2 flex items-center gap-3">
-            <button type="submit" :disabled="saving" class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+          <div class="pt-2 flex flex-col sm:flex-row sm:items-center gap-3">
+            <button type="submit" :disabled="saving" class="self-start px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap flex-shrink-0">
               <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save']"></i>{{ saving ? '保存中...' : '保存 APISIX 配置' }}
             </button>
-            <p class="text-xs text-slate-400 flex items-center gap-1">
-              <i class="fas fa-circle-info"></i>
-              保存后立即写入配置文件，Admin URL 及 Admin Key 变更需重启服务生效；密钥留空即保留原值。
+            <p class="text-xs text-slate-400 flex items-start gap-1">
+              <i class="fas fa-circle-info mt-0.5"></i>
+              <span>保存后立即写入配置文件，Admin URL 及 Admin Key 变更需重启服务生效；密钥留空即保留原值。</span>
             </p>
           </div>
         </form>

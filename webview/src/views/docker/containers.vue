@@ -292,19 +292,19 @@ export default toNative(Containers)
           >
             <!-- 顶部：名称和状态 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-2">
-                <div :class="['w-8 h-8 rounded-lg flex items-center justify-center', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
-                  <i class="fas fa-box text-white text-sm"></i>
+              <div class="flex items-center gap-3">
+                <div :class="['w-10 h-10 rounded-lg flex items-center justify-center', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+                  <i class="fas fa-box text-white text-base"></i>
                 </div>
-                <div>
+                <div class="min-w-0">
                   <div class="flex items-center gap-2">
                     <span class="font-medium text-slate-800 text-sm">{{ ct.name || ct.id }}</span>
                   </div>
-                  <div class="flex items-center gap-2 mt-1">
+                  <div class="flex items-center gap-3 mt-1">
                     <span :class="['text-xs px-2 py-0.5 rounded-full', ct.state === 'running' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600']">
                       {{ ct.status }}
                     </span>
-                    <span class="text-xs text-slate-400">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</span>
+                    <span class="text-xs text-slate-500">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</span>
                   </div>
                 </div>
               </div>

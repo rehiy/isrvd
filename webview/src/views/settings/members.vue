@@ -93,24 +93,26 @@ export default toNative(Members)
         </div>
       </div>
 
-      <div class="p-6">
-        <!-- Loading -->
-        <div v-if="membersLoading" class="flex flex-col items-center justify-center py-16">
-          <div class="w-10 h-10 spinner mb-3"></div>
-          <p class="text-slate-500 text-sm">加载中...</p>
-        </div>
+      <!-- Loading -->
+      <div v-if="membersLoading" class="flex flex-col items-center justify-center py-20">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
 
-        <!-- Empty -->
-        <div v-else-if="members.length === 0" class="flex flex-col items-center justify-center py-16 text-slate-400">
-          <i class="fas fa-users text-3xl mb-3"></i>
-          <p class="text-sm">暂无成员，点击右上角添加。</p>
+      <!-- Empty -->
+      <div v-else-if="members.length === 0" class="flex flex-col items-center justify-center py-20">
+        <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+          <i class="fas fa-users text-4xl text-slate-300"></i>
         </div>
+        <p class="text-slate-600 font-medium mb-1">暂无成员</p>
+        <p class="text-sm text-slate-400">点击右上角「添加」创建成员</p>
+      </div>
 
-        <!-- Table -->
-        <div v-else>
-          <!-- 桌面端表格 -->
-          <div class="hidden md:block overflow-x-auto rounded-xl border border-slate-200">
-            <table class="w-full border-collapse">
+      <!-- Table -->
+      <div v-else class="space-y-3">
+        <!-- 桌面端表格 -->
+        <div class="hidden md:block overflow-x-auto">
+          <table class="w-full border-collapse">
               <thead>
                 <tr class="bg-slate-50 border-b border-slate-200">
                   <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">用户名</th>
@@ -165,48 +167,54 @@ export default toNative(Members)
             </table>
           </div>
 
-          <!-- 移动端卡片 -->
-          <div class="md:hidden space-y-3">
-            <div v-for="m in members" :key="m.username" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
-              <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center">
-                    <i class="fas fa-user text-white text-base"></i>
-                  </div>
+        <!-- 移动端卡片 -->
+        <div class="md:hidden space-y-3">
+          <div v-for="m in members" :key="m.username" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
+            <!-- 顶部：用户信息 -->
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center">
+                  <i class="fas fa-user text-white text-base"></i>
+                </div>
+                <div class="min-w-0">
                   <div class="flex items-center gap-2">
-                    <h3 class="font-medium text-slate-800 text-sm">{{ m.username }}</h3>
+                    <span class="font-medium text-slate-800 text-sm">{{ m.username }}</span>
                     <span v-if="m.isPrimary" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-purple-50 text-purple-700">
                       <i class="fas fa-crown mr-1"></i>主账号
                     </span>
                   </div>
+                  <div class="flex flex-wrap items-center gap-2 mt-1">
+                    <span v-if="m.allowTerminal" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
+                      <i class="fas fa-terminal mr-1"></i>终端
+                    </span>
+                    <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
+                      <i class="fas fa-ban mr-1"></i>无终端
+                    </span>
+                    <span v-if="m.passwordSet" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
+                      <i class="fas fa-check mr-1"></i>密码已设
+                    </span>
+                    <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-amber-50 text-amber-700">
+                      <i class="fas fa-exclamation mr-1"></i>无密码
+                    </span>
+                  </div>
                 </div>
-                <div class="flex items-center gap-1">
-                  <button @click="openEditMember(m)" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑">
-                    <i class="fas fa-pen text-xs"></i>
-                  </button>
-                  <button v-if="!m.isPrimary" @click="handleDeleteMember(m)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
-                    <i class="fas fa-trash text-xs"></i>
-                  </button>
-                </div>
               </div>
-              <div class="mb-2">
-                <p class="text-xs text-slate-500 mb-1">Home 目录</p>
-                <code class="text-xs bg-slate-100 px-2 py-1 rounded break-all">{{ m.homeDirectory }}</code>
-              </div>
-              <div class="pt-2 border-t border-slate-100 flex items-center gap-3">
-                <span v-if="m.allowTerminal" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
-                  <i class="fas fa-terminal mr-1"></i>终端
-                </span>
-                <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
-                  <i class="fas fa-ban mr-1"></i>无终端
-                </span>
-                <span v-if="m.passwordSet" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
-                  <i class="fas fa-check mr-1"></i>密码已设
-                </span>
-                <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-amber-50 text-amber-700">
-                  <i class="fas fa-exclamation mr-1"></i>无密码
-                </span>
-              </div>
+            </div>
+            <!-- 中间：Home 目录 -->
+            <div class="mb-3">
+              <p class="text-xs text-slate-500 mb-1">Home 目录</p>
+              <code class="text-xs bg-slate-100 px-2 py-1 rounded break-all">{{ m.homeDirectory }}</code>
+            </div>
+            <!-- 底部：操作按钮 -->
+            <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
+              <button @click="openEditMember(m)" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑">
+                <i class="fas fa-pen text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">编辑</span>
+              </button>
+              <button v-if="!m.isPrimary" @click="handleDeleteMember(m)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                <i class="fas fa-trash text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">删除</span>
+              </button>
             </div>
           </div>
         </div>

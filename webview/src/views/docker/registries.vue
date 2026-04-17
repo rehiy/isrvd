@@ -243,24 +243,26 @@ export default toNative(Registries)
               <code class="text-xs bg-slate-100 px-2 py-1 rounded break-all">{{ reg.url }}</code>
             </div>
 
-            <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
-              <div>
-                <p class="text-xs text-slate-500 mb-1">认证</p>
-                <span v-if="reg.username" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
-                  <i class="fas fa-user mr-1"></i>{{ reg.username }}
-                </span>
-                <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
-                  <i class="fas fa-lock-open mr-1"></i>匿名
-                </span>
-              </div>
-              <div class="flex items-center gap-1">
-                <button @click="openEdit(reg)" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑">
-                  <i class="fas fa-pen text-xs"></i>
-                </button>
-                <button @click="handleDelete(reg)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
-                  <i class="fas fa-trash text-xs"></i>
-                </button>
-              </div>
+            <div class="mb-3">
+              <p class="text-xs text-slate-500 mb-1">认证</p>
+              <span v-if="reg.username" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
+                <i class="fas fa-user mr-1"></i>{{ reg.username }}
+              </span>
+              <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
+                <i class="fas fa-lock-open mr-1"></i>匿名
+              </span>
+            </div>
+
+            <!-- 底部：操作按钮 -->
+            <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
+              <button @click="openEdit(reg)" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑">
+                <i class="fas fa-pen text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">编辑</span>
+              </button>
+              <button @click="handleDelete(reg)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                <i class="fas fa-trash text-xs"></i>
+                <span class="text-xs ml-1 hidden xs:inline">删除</span>
+              </button>
             </div>
           </div>
         </div>

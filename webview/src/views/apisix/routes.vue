@@ -197,11 +197,16 @@ export default toNative(Routes)
           >
             <!-- 顶部：路由信息和状态 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="min-w-0">
-                <div class="font-medium text-sm text-slate-800">{{ route.name || route.id }}</div>
-                <div v-if="route.desc" class="text-xs text-slate-400 mt-0.5 truncate">{{ route.desc }}</div>
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-lg bg-indigo-400 flex items-center justify-center flex-shrink-0">
+                  <i class="fas fa-route text-white text-base"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="font-medium text-sm text-slate-800 truncate">{{ route.name || route.id }}</div>
+                  <div v-if="route.desc" class="text-xs text-slate-400 mt-0.5 truncate">{{ route.desc }}</div>
+                </div>
               </div>
-              <button @click="toggleStatus(route)" :class="['inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors', route.status === 1 ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200']">
+              <button @click="toggleStatus(route)" :class="['inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors flex-shrink-0', route.status === 1 ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200']">
                 <i :class="route.status === 1 ? 'fas fa-circle text-emerald-500' : 'fas fa-circle text-slate-400'" class="text-[6px]"></i>
                 {{ route.status === 1 ? '启用' : '禁用' }}
               </button>
