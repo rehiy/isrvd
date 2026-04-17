@@ -1,23 +1,21 @@
 <script lang="ts">
 import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
-import Dropdown from '@/component/dropdown.vue'
+import Combobox from '@/component/combobox.vue'
+
+interface CapItem { name: string; desc: string }
+interface CapCategory { name: string; icon: string; color: string; tone: string; caps: CapItem[] }
 
 @Component({
-    components: { Dropdown },
+    components: { Combobox },
     emits: ['update:modelValue']
 })
 class CapSelect extends Vue {
     @Prop({ type: Array, default: () => [] }) readonly modelValue!: string[]
-    @Prop({ type: String, default: 'add' }) readonly type!: string
 
-    // ─── 数据属性 ───
-    dropdownOpen = false
-    searchQuery = ''
-
-    readonly capabilityCategories = [
+    readonly capabilityCategories: CapCategory[] = [
         {
-            name: '网络', icon: 'fa-network-wired', color: '#3b82f6',
+            name: '网络', icon: 'fa-network-wired', color: '#3b82f6', tone: 'blue',
             caps: [
                 { name: 'NET_ADMIN', desc: '网络管理（配置接口、路由等）' },
                 { name: 'NET_BIND_SERVICE', desc: '绑定 1024 以下端口' },
@@ -26,7 +24,7 @@ class CapSelect extends Vue {
             ]
         },
         {
-            name: '文件系统', icon: 'fa-folder-open', color: '#10b981',
+            name: '文件系统', icon: 'fa-folder-open', color: '#10b981', tone: 'emerald',
             caps: [
                 { name: 'DAC_OVERRIDE', desc: '绕过文件读写执行权限检查' },
                 { name: 'DAC_READ_SEARCH', desc: '绕过文件读和目录搜索权限' },
@@ -37,7 +35,7 @@ class CapSelect extends Vue {
             ]
         },
         {
-            name: '用户与进程', icon: 'fa-user-shield', color: '#8b5cf6',
+            name: '用户与进程', icon: 'fa-user-shield', color: '#8b5cf6', tone: 'violet',
             caps: [
                 { name: 'SETUID', desc: '修改进程 UID' },
                 { name: 'SETGID', desc: '修改进程 GID' },
@@ -48,7 +46,7 @@ class CapSelect extends Vue {
             ]
         },
         {
-            name: '系统控制', icon: 'fa-cogs', color: '#f59e0b',
+            name: '系统控制', icon: 'fa-cogs', color: '#f59e0b', tone: 'amber',
             caps: [
                 { name: 'SYS_CHROOT', desc: '使用 chroot' },
                 { name: 'SYS_PTRACE', desc: '进程跟踪调试' },
@@ -60,7 +58,7 @@ class CapSelect extends Vue {
             ]
         },
         {
-            name: '设备与内核', icon: 'fa-microchip', color: '#f43f5e',
+            name: '设备与内核', icon: 'fa-microchip', color: '#f43f5e', tone: 'rose',
             caps: [
                 { name: 'SYS_MODULE', desc: '加载/卸载内核模块' },
                 { name: 'SYS_RAWIO', desc: '原始 I/O 端口访问' },
@@ -72,41 +70,63 @@ class CapSelect extends Vue {
         }
     ]
 
-    // ─── 计算属性 ───
-    get selectedCaps() { return this.modelValue || [] }
-    set selectedCaps(val: string[]) { this.$emit('update:modelValue', val) }
-
-    get filteredCategories() {
-        if (!this.searchQuery.trim()) return this.capabilityCategories
-        const query = this.searchQuery.toUpperCase()
-        return this.capabilityCategories.map(cat => ({
-            ...cat,
-            caps: cat.caps.filter(cap => cap.name.includes(query) || cap.desc.includes(this.searchQuery.trim()))
-        })).filter(cat => cat.caps.length > 0)
-    }
-
-    // ─── 方法 ───
-    isSelected(capName: string) { return this.selectedCaps.includes(capName) }
-
-    toggleCap(capName: string) {
-        if (this.isSelected(capName)) {
-            this.selectedCaps = this.selectedCaps.filter(c => c !== capName)
-        } else {
-            this.selectedCaps = [...this.selectedCaps, capName]
+    // cap 名称 → 所属分类 的索引
+    get capIndex(): Record<string, CapCategory> {
+        const map: Record<string, CapCategory> = {}
+        for (const cat of this.capabilityCategories) {
+            for (const c of cat.caps) map[c.name] = cat
         }
+        return map
     }
 
-    removeCap(capName: string) {
-        this.selectedCaps = this.selectedCaps.filter(c => c !== capName)
+    // tone → 选中态样式（背景/文字/边框）
+    readonly toneMap: Record<string, { tag: string; item: string; box: string }> = {
+        blue:    { tag: 'bg-blue-50 text-blue-700 border border-blue-200',
+                   item: 'bg-blue-50 border border-blue-200',
+                   box: 'bg-blue-500 border-blue-500' },
+        emerald: { tag: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+                   item: 'bg-emerald-50 border border-emerald-200',
+                   box: 'bg-emerald-500 border-emerald-500' },
+        violet:  { tag: 'bg-violet-50 text-violet-700 border border-violet-200',
+                   item: 'bg-violet-50 border border-violet-200',
+                   box: 'bg-violet-500 border-violet-500' },
+        amber:   { tag: 'bg-amber-50 text-amber-700 border border-amber-200',
+                   item: 'bg-amber-50 border border-amber-200',
+                   box: 'bg-amber-500 border-amber-500' },
+        rose:    { tag: 'bg-rose-50 text-rose-700 border border-rose-200',
+                   item: 'bg-rose-50 border border-rose-200',
+                   box: 'bg-rose-500 border-rose-500' }
     }
 
-    addCustomCap() {
-        const cap = this.searchQuery.trim().toUpperCase()
-        if (!cap) return
-        if (!this.isSelected(cap) && cap.length > 0) {
-            this.selectedCaps = [...this.selectedCaps, cap]
-        }
-        this.searchQuery = ''
+    readonly fallbackTone = {
+        tag: 'bg-slate-100 text-slate-700 border border-slate-200',
+        item: 'bg-slate-50 border border-slate-200',
+        box: 'bg-slate-500 border-slate-500'
+    }
+
+    toneFor(capName: string) {
+        const cat = this.capIndex[capName]
+        return cat ? this.toneMap[cat.tone] : this.fallbackTone
+    }
+
+    get placeholder() {
+        return (this.modelValue?.length ?? 0) === 0 ? '点击选择或输入权限名称...' : ''
+    }
+
+    get tagClass() {
+        return (val: string) => this.toneFor(val).tag
+    }
+
+    filteredCategories(query: string): CapCategory[] {
+        if (!query) return this.capabilityCategories
+        const upper = query.toUpperCase()
+        return this.capabilityCategories
+            .map(cat => ({ ...cat, caps: cat.caps.filter(c => c.name.includes(upper) || c.desc.includes(query)) }))
+            .filter(cat => cat.caps.length > 0)
+    }
+
+    selectedCountIn(cat: CapCategory, selected: string[]) {
+        return cat.caps.filter(c => selected.includes(c.name)).length
     }
 }
 
@@ -114,63 +134,39 @@ export default toNative(CapSelect)
 </script>
 
 <template>
-  <Dropdown v-model:open="dropdownOpen" max-height="320px">
-    <!-- 触发区域：已选标签 + 搜索输入 -->
-    <template #trigger="{ open }">
-      <div class="input min-h-[42px] !px-3 !py-2 cursor-text flex flex-wrap gap-1.5 items-center" :class="open ? '!border-primary-400' : ''" @click="inputRef?.focus(); dropdownOpen = true">
-        <span v-for="cap in selectedCaps" :key="cap" :class="[
-          'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
-          type === 'add'
-            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-            : 'bg-red-50 text-red-700 border border-red-200'
-        ]">
-          {{ cap }}
-          <button type="button" @click.stop="removeCap(cap)" :class="[
-            'w-3.5 h-3.5 flex items-center justify-center rounded-full transition-colors',
-            type === 'add'
-              ? 'hover:bg-emerald-200 text-emerald-500'
-              : 'hover:bg-red-200 text-red-500'
-          ]">
-            <i class="fas fa-times text-[8px]"></i>
-          </button>
-        </span>
-        <input ref="inputRef" v-model="searchQuery" type="text" class="flex-1 min-w-[80px] border-0 outline-none bg-transparent text-sm text-slate-700 placeholder:text-slate-400 p-0 focus:ring-0 focus:border-0 focus:shadow-none" :placeholder="selectedCaps.length === 0 ? '点击选择或输入权限名称...' : '搜索...'" @focus="dropdownOpen = true" @keydown.enter.prevent="addCustomCap" />
-      </div>
-    </template>
-
-    <!-- 搜索提示 -->
-    <template #search-hint>
-      <div v-if="searchQuery.trim()" class="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-        <span class="text-xs text-slate-500">按 Enter 添加自定义权限: <code class="bg-slate-200 px-1.5 py-0.5 rounded text-slate-700">{{ searchQuery.trim().toUpperCase() }}</code></span>
-        <button type="button" class="text-xs text-primary-600 hover:text-primary-700 font-medium" @click="addCustomCap">
-          <i class="fas fa-plus mr-1"></i>添加
-        </button>
-      </div>
-    </template>
-
-    <!-- 分类列表 -->
-    <template #default>
-      <div v-for="cat in filteredCategories" :key="cat.name" class="border-b border-slate-100 last:border-0">
+  <Combobox
+    multiple
+    :model-value="modelValue"
+    :placeholder="placeholder"
+    search-placeholder="搜索..."
+    :tag-class="tagClass"
+    max-height="320px"
+    @update:model-value="$emit('update:modelValue', $event)"
+  >
+    <template #default="{ query, select, selected, isSelected }">
+      <div v-for="cat in filteredCategories(query)" :key="cat.name" class="border-b border-slate-100 last:border-0">
         <div class="px-3 py-2 bg-slate-50/80 flex items-center gap-2 sticky top-0 z-10">
           <i :class="['fas text-xs', cat.icon]" :style="{ color: cat.color }"></i>
           <span class="text-xs font-semibold text-slate-600">{{ cat.name }}</span>
-          <span class="text-xs text-slate-400">{{cat.caps.filter(c => isSelected(c.name)).length}}/{{ cat.caps.length }}</span>
+          <span class="text-xs text-slate-400">{{ selectedCountIn(cat, selected) }}/{{ cat.caps.length }}</span>
         </div>
         <div class="px-2 py-1.5 grid grid-cols-1 gap-0.5">
-          <button v-for="cap in cat.caps" :key="cap.name" type="button" @click="toggleCap(cap.name)" :class="[
-            'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all duration-150 group',
-            isSelected(cap.name)
-              ? type === 'add'
-                ? 'bg-emerald-50 border border-emerald-200'
-                : 'bg-red-50 border border-red-200'
-              : 'hover:bg-slate-50 border border-transparent'
-          ]">
+          <button
+            v-for="cap in cat.caps"
+            :key="cap.name"
+            type="button"
+            @click="select(cap.name)"
+            :class="[
+              'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all duration-150 group',
+              isSelected(cap.name)
+                ? toneFor(cap.name).item
+                : 'hover:bg-slate-50 border border-transparent'
+            ]"
+          >
             <span :class="[
               'w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all border',
               isSelected(cap.name)
-                ? type === 'add'
-                  ? 'bg-emerald-500 border-emerald-500'
-                  : 'bg-red-500 border-red-500'
+                ? toneFor(cap.name).box
                 : 'border-slate-300 group-hover:border-slate-400'
             ]">
               <i v-if="isSelected(cap.name)" class="fas fa-check text-white text-[9px]"></i>
@@ -184,25 +180,28 @@ export default toNative(CapSelect)
       </div>
     </template>
 
-    <!-- 空状态 -->
-    <template #empty>
-      <div v-if="filteredCategories.length === 0" class="py-8 text-center">
+    <template #empty="{ query }">
+      <div v-if="filteredCategories(query.toLowerCase()).length === 0" class="py-8 text-center">
         <i class="fas fa-search text-slate-300 text-2xl mb-2"></i>
         <p class="text-sm text-slate-400">未找到匹配的权限</p>
         <p class="text-xs text-slate-400 mt-1">按 Enter 可添加自定义权限</p>
       </div>
     </template>
 
-    <!-- 底部统计 -->
-    <template #footer>
+    <template #footer="{ selected, clearAll }">
       <div class="px-3 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
         <span class="text-xs text-slate-400">
-          已选 <strong :class="selectedCaps.length > 0 ? 'text-slate-700' : 'text-slate-400'">{{ selectedCaps.length }}</strong> 项权限
+          已选 <strong :class="selected.length > 0 ? 'text-slate-700' : 'text-slate-400'">{{ selected.length }}</strong> 项权限
         </span>
-        <button v-if="selectedCaps.length > 0" type="button" class="text-xs text-red-500 hover:text-red-600 font-medium" @click="selectedCaps = []">
+        <button
+          v-if="selected.length > 0"
+          type="button"
+          class="text-xs text-red-500 hover:text-red-600 font-medium"
+          @click="clearAll"
+        >
           <i class="fas fa-trash-alt mr-1"></i>清空
         </button>
       </div>
     </template>
-  </Dropdown>
+  </Combobox>
 </template>

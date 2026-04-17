@@ -304,7 +304,7 @@ export default toNative(ContainerEditModal)
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-2">移除权限 (CapDrop)</label>
-            <CapSelect v-model="formData.capDrop" type="drop" />
+            <CapSelect v-model="formData.capDrop" />
           </div>
         </div>
       </div>
