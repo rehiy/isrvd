@@ -2,6 +2,8 @@
 .git/
 
 # Build and output directories
+build/appstore/download/
+build/appstore/index.json
 dist/
 out/
 
