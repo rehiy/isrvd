@@ -18,70 +18,70 @@ export const systemInstruction = `
 
 export function getPageInstruction(url: string): string | null {
     const path = new URL(url).pathname
-    if (path === '/overview' || path === '/') {
+    if (path.includes('/overview') || path === '/') {
         return '当前页面：系统概览。可查看 CPU、内存、磁盘、网络等实时监控指标。'
     }
-    if (path.startsWith('/explorer')) {
+    if (path.includes('/explorer')) {
         return '当前页面：文件管理器。支持浏览目录、上传/下载文件、在线编辑、创建/删除/重命名、压缩/解压（zip）、修改权限（chmod）等操作。'
     }
-    if (path.startsWith('/apisix/routes')) {
+    if (path.includes('/apisix/routes')) {
         return '当前页面：APISIX 路由管理。可新建、编辑、删除路由规则，配置上游、插件等。'
     }
-    if (path.startsWith('/apisix/consumers')) {
+    if (path.includes('/apisix/consumers')) {
         return '当前页面：APISIX 消费者管理。可管理 API 消费者及其认证凭据。'
     }
-    if (path.startsWith('/apisix/whitelist')) {
+    if (path.includes('/apisix/whitelist')) {
         return '当前页面：APISIX IP 白名单管理。可配置允许访问的 IP 地址段。'
     }
-    if (path.startsWith('/docker/container') && path.endsWith('/terminal')) {
+    if (path.includes('/docker/container') && path.includes('/terminal')) {
         return '当前页面：容器终端。可在容器内执行 Shell 命令，注意操作风险。'
     }
-    if (path.startsWith('/docker/container') && path.endsWith('/logs')) {
+    if (path.includes('/docker/container') && path.includes('/logs')) {
         return '当前页面：容器日志。可实时查看容器标准输出/错误日志，支持搜索过滤。'
     }
-    if (path.startsWith('/docker/container') && path.endsWith('/stats')) {
+    if (path.includes('/docker/container') && path.includes('/stats')) {
         return '当前页面：容器监控。可查看容器 CPU、内存、网络、磁盘 IO 实时指标。'
     }
-    if (path.startsWith('/docker/containers')) {
+    if (path.includes('/docker/containers')) {
         return '当前页面：Docker 容器列表。可启动、停止、重启、删除容器，也可通过 Compose 批量部署。'
     }
-    if (path.startsWith('/docker/image')) {
+    if (path.includes('/docker/image')) {
         return '当前页面：Docker 镜像管理。可拉取、构建、打标签、推送、删除镜像。'
     }
-    if (path.startsWith('/docker/network')) {
+    if (path.includes('/docker/network')) {
         return '当前页面：Docker 网络管理。可创建、查看、删除网络，查看网络内的容器连接情况。'
     }
-    if (path.startsWith('/docker/volume')) {
+    if (path.includes('/docker/volume')) {
         return '当前页面：Docker 数据卷管理。可创建、查看、删除数据卷。'
     }
-    if (path.startsWith('/docker/registries')) {
+    if (path.includes('/docker/registries')) {
         return '当前页面：镜像仓库管理。可配置私有镜像仓库的认证信息。'
     }
-    if (path.startsWith('/swarm/nodes')) {
+    if (path.includes('/swarm/nodes')) {
         return '当前页面：Swarm 节点列表。可查看集群各节点状态、角色、资源使用情况。'
     }
-    if (path.startsWith('/swarm/node/')) {
+    if (path.includes('/swarm/node/')) {
         return '当前页面：Swarm 节点详情。可查看节点标签、资源、运行中的任务。'
     }
-    if (path.startsWith('/swarm/services')) {
+    if (path.includes('/swarm/services')) {
         return '当前页面：Swarm 服务列表。可创建、扩缩容、更新、删除 Swarm 服务。'
     }
-    if (path.startsWith('/swarm/service') && path.endsWith('/logs')) {
+    if (path.includes('/swarm/service') && path.includes('/logs')) {
         return '当前页面：Swarm 服务日志。可查看服务所有任务的聚合日志。'
     }
-    if (path.startsWith('/swarm/service/')) {
+    if (path.includes('/swarm/service/')) {
         return '当前页面：Swarm 服务详情。可查看服务配置、副本状态、滚动更新历史。'
     }
-    if (path.startsWith('/swarm/tasks')) {
+    if (path.includes('/swarm/tasks')) {
         return '当前页面：Swarm 任务列表。可查看所有服务任务的运行状态和调度信息。'
     }
-    if (path.startsWith('/shell')) {
+    if (path.includes('/shell')) {
         return '当前页面：Web 终端。可直接在服务器上执行 Shell 命令，请谨慎操作，避免执行破坏性命令。'
     }
-    if (path.startsWith('/members')) {
+    if (path.includes('/members')) {
         return '当前页面：成员管理。可添加、编辑、删除系统用户，管理用户角色权限。注意：首个系统账号不可删除。'
     }
-    if (path.startsWith('/settings')) {
+    if (path.includes('/settings')) {
         return '当前页面：系统设置。可配置系统参数，包括 JWT 密钥、管理员密钥等敏感配置，修改后需重启服务生效。'
     }
     return null
