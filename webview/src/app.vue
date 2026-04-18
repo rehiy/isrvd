@@ -86,11 +86,17 @@ export default toNative(App)
         </div>
         
         <!-- 用户信息 -->
-        <div class="flex items-center space-x-3">
-          <div class="w-8 h-8 rounded-full bg-primary-400 flex items-center justify-center flex-shrink-0">
-            <i class="fas fa-user text-white text-sm"></i>
+        <div class="flex items-center gap-1">
+          <PageAgent v-if="state.serviceAvailability.agent" />
+          <div class="hidden sm:block w-px h-5 bg-slate-200 mx-1" v-if="state.serviceAvailability.agent"></div>
+          <div
+            class="px-2 py-2 text-sm font-medium text-slate-500 flex items-center gap-2 cursor-default select-none"
+            :title="state.username"
+          >
+            <i class="fas fa-user-tie"></i>
+            <span class="hidden sm:inline">{{ state.username }}</span>
           </div>
-          <div class="hidden sm:block text-sm font-medium text-slate-700">{{ state.username }}</div>
+          <div class="hidden sm:block w-px h-5 bg-slate-200 mx-1"></div>
           <AuthLogout />
         </div>
       </header>
@@ -99,8 +105,6 @@ export default toNative(App)
       <main class="px-4 py-6 pt-20 transition-all duration-300" :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'">
         <router-view />
       </main>
-
-      <PageAgent v-if="state.serviceAvailability.agent" />
     </template>
 
     <AuthLogin v-else />

@@ -182,7 +182,7 @@
 
   .btn-ghost {
     @apply btn bg-transparent hover:bg-slate-100 text-slate-700;
-    @apply focus:ring-slate-500;
+    @apply focus:ring-0 focus:ring-offset-0;
   }
 
   .btn-icon {
