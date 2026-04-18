@@ -2,6 +2,8 @@
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { PageAgent } from 'page-agent'
 
+import { systemInstruction, getPageInstruction } from '@/helper/instructions'
+
 @Component
 class PageAgentModal extends Vue {
     agent = null as PageAgent | null
@@ -59,7 +61,11 @@ class PageAgentModal extends Vue {
             baseURL: '/api/agent/proxy',
             apiKey: token,
             model: 'proxy',
-            language: 'zh-CN'
+            language: 'zh-CN',
+            instructions: {
+                system: systemInstruction.trim(),
+                getPageInstructions: getPageInstruction,
+            },
         })
 
         this.boundOnDispose = this.onAgentDispose.bind(this)
