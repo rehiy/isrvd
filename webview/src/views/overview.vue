@@ -63,6 +63,15 @@ export default toNative(Overview)
         </button>
       </div>
 
+      <!-- APISIX 概览区块 -->
+      <div v-if="state.serviceAvailability.apisix" class="p-6 border-b border-slate-100">
+        <div class="flex items-center gap-2 mb-4">
+          <i class="fas fa-route text-orange-500 text-lg"></i>
+          <h2 class="text-base font-semibold text-slate-700">APISIX 网关</h2>
+        </div>
+        <ApisixOverview ref="apisixRef" />
+      </div>
+
       <!-- Docker 概览区块 -->
       <div v-if="state.serviceAvailability.docker" class="p-6 border-b border-slate-100">
         <div class="flex items-center gap-2 mb-4">
@@ -79,15 +88,6 @@ export default toNative(Overview)
           <h2 class="text-base font-semibold text-slate-700">Swarm 集群</h2>
         </div>
         <SwarmOverview ref="swarmRef" />
-      </div>
-
-      <!-- APISIX 概览区块 -->
-      <div v-if="state.serviceAvailability.apisix" class="p-6">
-        <div class="flex items-center gap-2 mb-4">
-          <i class="fas fa-route text-orange-500 text-lg"></i>
-          <h2 class="text-base font-semibold text-slate-700">APISIX 网关</h2>
-        </div>
-        <ApisixOverview ref="apisixRef" />
       </div>
 
       <!-- 系统信息区块 -->

@@ -11,7 +11,6 @@ import (
 	"isrvd/internal/handler/auth"
 	"isrvd/internal/handler/docker"
 	"isrvd/internal/handler/filer"
-	"isrvd/internal/handler/settings"
 	"isrvd/internal/handler/shell"
 	"isrvd/internal/handler/swarm"
 	"isrvd/internal/handler/system"
@@ -47,8 +46,8 @@ func (app *App) setupRouter() {
 	fileHandler := filer.NewFileHandler()
 	zipHandler := filer.NewZipHandler()
 	shellHandler := shell.NewShellHandler()
-	settingsHandler := settings.NewSettingsHandler()
 	systemHandler := system.NewSystemHandler()
+	settingsHandler := system.NewSettingsHandler()
 
 	// 注册 Agent Handler
 	agentHandler := agent.NewAgentHandler()
@@ -202,28 +201,23 @@ func (app *App) setupRouter() {
 				}
 			}
 
-			// 系统信息 API 路由
+			// 系统 API 路由（含只读信息与配置管理）
 			systemGroup := authGroup.Group("/system")
 			{
-				systemGroup.GET("/stat", systemHandler.Stat)
+				// 只读系统信息
+				systemGroup.GET("/stats", systemHandler.Stat)
 				systemGroup.GET("/probe", systemHandler.Probe)
 				systemGroup.GET("/health", systemHandler.Health)
-			}
 
-			// 系统设置 API 路由
-			settingsGroup := authGroup.Group("/settings")
-			{
-				settingsGroup.GET("", settingsHandler.GetAll)
-				settingsGroup.PUT("/server", settingsHandler.UpdateServer)
-				settingsGroup.PUT("/agent", settingsHandler.UpdateAgent)
-				settingsGroup.PUT("/apisix", settingsHandler.UpdateApisix)
-				settingsGroup.PUT("/docker", settingsHandler.UpdateDocker)
+				// 系统配置
+				systemGroup.GET("/settings", settingsHandler.GetAll)
+				systemGroup.PUT("/settings", settingsHandler.UpdateAll)
 
 				// 成员账号
-				settingsGroup.GET("/members", settingsHandler.ListMembers)
-				settingsGroup.POST("/members", settingsHandler.CreateMember)
-				settingsGroup.PUT("/members/:username", settingsHandler.UpdateMember)
-				settingsGroup.DELETE("/members/:username", settingsHandler.DeleteMember)
+				systemGroup.GET("/members", settingsHandler.ListMembers)
+				systemGroup.POST("/members", settingsHandler.CreateMember)
+				systemGroup.PUT("/members/:username", settingsHandler.UpdateMember)
+				systemGroup.DELETE("/members/:username", settingsHandler.DeleteMember)
 			}
 		}
 	}

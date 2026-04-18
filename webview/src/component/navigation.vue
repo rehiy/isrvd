@@ -182,6 +182,61 @@ export default toNative(NavigationBar)
         <span v-if="!collapsed">Shell 终端</span>
       </router-link>
 
+      <!-- APISIX 折叠子菜单 -->
+      <div v-if="state.serviceAvailability.apisix">
+        <!-- 折叠状态：只显示图标 -->
+        <router-link
+          v-if="collapsed"
+          to="/overview"
+          class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/') }"
+          title="APISIX"
+        >
+          <i class="fas fa-cloud"></i>
+        </router-link>
+        <!-- 展开状态：显示完整子菜单 -->
+        <template v-else>
+          <button
+            @click.stop="toggleApisix"
+            class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/') }"
+          >
+            <i class="fas fa-cloud"></i>
+            <span>APISIX 网关</span>
+            <i
+              class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200"
+              :class="{ 'rotate-180': apisixExpanded }"
+            ></i>
+          </button>
+          <div v-show="apisixExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+            <router-link
+              to="/apisix/routes"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/route') }"
+            >
+              <i class="fas fa-route"></i>
+              <span>路由</span>
+            </router-link>
+            <router-link
+              to="/apisix/consumers"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/consumer') }"
+            >
+              <i class="fas fa-users"></i>
+              <span>用户</span>
+            </router-link>
+            <router-link
+              to="/apisix/whitelist"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/whitelist') }"
+            >
+              <i class="fas fa-shield-halved"></i>
+              <span>白名单</span>
+            </router-link>
+          </div>
+        </template>
+      </div>
+
       <!-- Docker 折叠子菜单 -->
       <div v-if="state.serviceAvailability.docker">
         <!-- 折叠状态：只显示图标 -->
@@ -202,7 +257,7 @@ export default toNative(NavigationBar)
             :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/') }"
           >
             <i class="fab fa-docker"></i>
-            <span>Docker 管理</span>
+            <span>Docker 服务</span>
             <i
               class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200"
               :class="{ 'rotate-180': dockerExpanded }"
@@ -303,61 +358,6 @@ export default toNative(NavigationBar)
             >
               <i class="fas fa-list-check"></i>
               <span>任务</span>
-            </router-link>
-          </div>
-        </template>
-      </div>
-
-      <!-- APISIX 折叠子菜单 -->
-      <div v-if="state.serviceAvailability.apisix">
-        <!-- 折叠状态：只显示图标 -->
-        <router-link
-          v-if="collapsed"
-          to="/overview"
-          class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/') }"
-          title="APISIX"
-        >
-          <i class="fas fa-cloud"></i>
-        </router-link>
-        <!-- 展开状态：显示完整子菜单 -->
-        <template v-else>
-          <button
-            @click.stop="toggleApisix"
-            class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/') }"
-          >
-            <i class="fas fa-cloud"></i>
-            <span>APISIX 网关</span>
-            <i
-              class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200"
-              :class="{ 'rotate-180': apisixExpanded }"
-            ></i>
-          </button>
-          <div v-show="apisixExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
-            <router-link
-              to="/apisix/routes"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/route') }"
-            >
-              <i class="fas fa-route"></i>
-              <span>路由</span>
-            </router-link>
-            <router-link
-              to="/apisix/consumers"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/consumer') }"
-            >
-              <i class="fas fa-users"></i>
-              <span>用户</span>
-            </router-link>
-            <router-link
-              to="/apisix/whitelist"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/whitelist') }"
-            >
-              <i class="fas fa-shield-halved"></i>
-              <span>白名单</span>
             </router-link>
           </div>
         </template>

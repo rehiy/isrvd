@@ -17,6 +17,26 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/filer/explorer.vue')
   },
   {
+    path: '/apisix',
+    name: 'apisix',
+    redirect: '/apisix/routes'
+  },
+  {
+    path: '/apisix/routes',
+    name: 'apisix-routes',
+    component: () => import('@/views/apisix/routes.vue')
+  },
+  {
+    path: '/apisix/consumers',
+    name: 'apisix-consumers',
+    component: () => import('@/views/apisix/consumers.vue')
+  },
+  {
+    path: '/apisix/whitelist',
+    name: 'apisix-whitelist',
+    component: () => import('@/views/apisix/whitelist.vue')
+  },
+  {
     path: '/docker',
     name: 'docker',
     redirect: '/docker/containers'
@@ -118,26 +138,6 @@ const routes: RouteRecordRaw[] = [
     path: '/swarm/tasks',
     name: 'swarm-tasks',
     component: () => import('@/views/swarm/tasks.vue')
-  },
-  {
-    path: '/apisix',
-    name: 'apisix',
-    redirect: '/apisix/routes'
-  },
-  {
-    path: '/apisix/routes',
-    name: 'apisix-routes',
-    component: () => import('@/views/apisix/routes.vue')
-  },
-  {
-    path: '/apisix/consumers',
-    name: 'apisix-consumers',
-    component: () => import('@/views/apisix/consumers.vue')
-  },
-  {
-    path: '/apisix/whitelist',
-    name: 'apisix-whitelist',
-    component: () => import('@/views/apisix/whitelist.vue')
   },
   {
     path: '/shell',

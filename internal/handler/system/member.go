@@ -1,5 +1,5 @@
-// Package settings 成员账号管理
-package settings
+// Package system 成员账号管理
+package system
 
 import (
 	"net/http"

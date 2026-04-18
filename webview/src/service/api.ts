@@ -15,7 +15,7 @@ import type {
     ServiceProbeResponse, DockerInfo,
     FileListResponse, FileReadResponse,
     LoginResponse,
-    AllSettings, ServerSettings, AgentSettings, ApisixSettings, DockerSettings,
+    AllSettings,
     MemberInfo, MemberUpsertRequest
 } from './types'
 
@@ -97,10 +97,10 @@ class ApiService {
     // ==================== 系统信息相关 ====================
 
     systemStat() {
-        return http.get<Record<string, unknown>>('/api/system/stat')
+        return http.get<Record<string, unknown>>('/api/system/stats')
     }
 
-    // ==================== Docker 管理相关 ====================
+    // ==================== Docker 服务相关 ====================
 
     // Docker 概览信息
     dockerInfo() {
@@ -347,40 +347,28 @@ class ApiService {
     // ==================== 系统设置 ====================
 
     getSettings() {
-        return http.get<AllSettings>('/api/settings')
+        return http.get<AllSettings>('/api/system/settings')
     }
 
-    updateServerSettings(data: ServerSettings) {
-        return http.put<void>('/api/settings/server', data)
-    }
-
-    updateAgentSettings(data: AgentSettings) {
-        return http.put<void>('/api/settings/agent', data)
-    }
-
-    updateApisixSettings(data: ApisixSettings) {
-        return http.put<void>('/api/settings/apisix', data)
-    }
-
-    updateDockerSettings(data: DockerSettings) {
-        return http.put<void>('/api/settings/docker', data)
+    updateAllSettings(data: Partial<AllSettings>) {
+        return http.put<void>('/api/system/settings', data)
     }
 
     // 成员管理
     listMembers() {
-        return http.get<MemberInfo[]>('/api/settings/members')
+        return http.get<MemberInfo[]>('/api/system/members')
     }
 
     createMember(data: MemberUpsertRequest) {
-        return http.post<void>('/api/settings/members', data)
+        return http.post<void>('/api/system/members', data)
     }
 
     updateMember(username: string, data: MemberUpsertRequest) {
-        return http.put<void>(`/api/settings/members/${encodeURIComponent(username)}`, data)
+        return http.put<void>(`/api/system/members/${encodeURIComponent(username)}`, data)
     }
 
     deleteMember(username: string) {
-        return http.delete<void>(`/api/settings/members/${encodeURIComponent(username)}`)
+        return http.delete<void>(`/api/system/members/${encodeURIComponent(username)}`)
     }
 }
 

@@ -1,5 +1,5 @@
-// Package settings 提供系统配置查询与修改接口
-package settings
+// Package system 系统配置查询与修改
+package system
 
 import (
 	"net/http"
@@ -56,6 +56,14 @@ type AllSettings struct {
 	Docker *DockerSettings `json:"docker"`
 }
 
+// UpdateAllRequest 全量更新请求（各分区均可选，nil 表示该分区不更新）
+type UpdateAllRequest struct {
+	Server *ServerSettings `json:"server"`
+	Agent  *AgentSettings  `json:"agent"`
+	Apisix *ApisixSettings `json:"apisix"`
+	Docker *DockerSettings `json:"docker"`
+}
+
 // pickSecret 新值为空时保留原值，否则用新值
 func pickSecret(newVal, oldVal string) string {
 	if newVal == "" {
@@ -90,70 +98,36 @@ func (h *SettingsHandler) GetAll(c *gin.Context) {
 	})
 }
 
-// UpdateServer 更新服务器配置
-func (h *SettingsHandler) UpdateServer(c *gin.Context) {
-	var req ServerSettings
+// UpdateAll 一次性更新全部配置（任何 nil 分区将跳过）
+func (h *SettingsHandler) UpdateAll(c *gin.Context) {
+	var req UpdateAllRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
 		return
 	}
-	config.Debug = req.Debug
-	config.ListenAddr = req.ListenAddr
-	config.JWTSecret = pickSecret(req.JWTSecret, config.JWTSecret)
-	config.ProxyHeaderName = req.ProxyHeaderName
-	config.RootDirectory = req.RootDirectory
+	if req.Server != nil {
+		config.Debug = req.Server.Debug
+		config.ListenAddr = req.Server.ListenAddr
+		config.JWTSecret = pickSecret(req.Server.JWTSecret, config.JWTSecret)
+		config.ProxyHeaderName = req.Server.ProxyHeaderName
+		config.RootDirectory = req.Server.RootDirectory
+	}
+	if req.Agent != nil {
+		config.Agent.Model = req.Agent.Model
+		config.Agent.BaseURL = req.Agent.BaseURL
+		config.Agent.APIKey = pickSecret(req.Agent.APIKey, config.Agent.APIKey)
+	}
+	if req.Apisix != nil {
+		config.Apisix.AdminURL = req.Apisix.AdminURL
+		config.Apisix.AdminKey = pickSecret(req.Apisix.AdminKey, config.Apisix.AdminKey)
+	}
+	if req.Docker != nil {
+		config.Docker.Host = req.Docker.Host
+		config.Docker.ContainerRoot = req.Docker.ContainerRoot
+	}
 	if err := config.Save(); err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "保存配置失败: "+err.Error())
 		return
 	}
-	helper.RespondSuccess(c, "服务器配置已保存，重启后完全生效", nil)
-}
-
-// UpdateAgent 更新 Agent LLM 配置
-func (h *SettingsHandler) UpdateAgent(c *gin.Context) {
-	var req AgentSettings
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
-		return
-	}
-	config.Agent.Model = req.Model
-	config.Agent.BaseURL = req.BaseURL
-	config.Agent.APIKey = pickSecret(req.APIKey, config.Agent.APIKey)
-	if err := config.Save(); err != nil {
-		helper.RespondError(c, http.StatusInternalServerError, "保存配置失败: "+err.Error())
-		return
-	}
-	helper.RespondSuccess(c, "Agent 配置已保存", nil)
-}
-
-// UpdateApisix 更新 Apisix 配置
-func (h *SettingsHandler) UpdateApisix(c *gin.Context) {
-	var req ApisixSettings
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
-		return
-	}
-	config.Apisix.AdminURL = req.AdminURL
-	config.Apisix.AdminKey = pickSecret(req.AdminKey, config.Apisix.AdminKey)
-	if err := config.Save(); err != nil {
-		helper.RespondError(c, http.StatusInternalServerError, "保存配置失败: "+err.Error())
-		return
-	}
-	helper.RespondSuccess(c, "Apisix 配置已保存，重启后生效", nil)
-}
-
-// UpdateDocker 更新 Docker 配置
-func (h *SettingsHandler) UpdateDocker(c *gin.Context) {
-	var req DockerSettings
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
-		return
-	}
-	config.Docker.Host = req.Host
-	config.Docker.ContainerRoot = req.ContainerRoot
-	if err := config.Save(); err != nil {
-		helper.RespondError(c, http.StatusInternalServerError, "保存配置失败: "+err.Error())
-		return
-	}
-	helper.RespondSuccess(c, "Docker 配置已保存，重启后生效", nil)
+	helper.RespondSuccess(c, "全部配置已保存，部分项需重启生效", nil)
 }
