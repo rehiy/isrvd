@@ -16,7 +16,7 @@ export const systemInstruction = `
 4. 如遇权限不足，提示用户检查账号角色
 `
 
-export function getPageInstruction(url: string): string | null {
+export function getPageInstruction(url: string): string {
     const path = new URL(url).pathname
     if (path.includes('/overview') || path === '/') {
         return '当前页面：系统概览。可查看 CPU、内存、磁盘、网络等实时监控指标。'
@@ -84,5 +84,5 @@ export function getPageInstruction(url: string): string | null {
     if (path.includes('/system/settings')) {
         return '当前页面：系统设置。可配置系统参数，包括 JWT 密钥、管理员密钥等敏感配置，修改后需重启服务生效。'
     }
-    return null
+    return ''
 }
