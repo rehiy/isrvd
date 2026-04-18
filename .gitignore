@@ -3,7 +3,6 @@
 
 # Build and output directories
 dist/
-build/
 out/
 
 # Dependency directories

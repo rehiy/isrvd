@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Docker 应用商店</title>
+  <script src="https://jscdn.rehi.org/npm/tailwindcss-cdn@3/tailwindcss.min.js"></script>
+  <script src="https://jscdn.rehi.org/npm/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://jscdn.rehi.org/npm/marked@15/marked.min.js"></script>
+  <link rel="stylesheet" href="https://jscdn.rehi.org/npm/@fortawesome/fontawesome-free@6/css/all.min.css">
+  <style>
+    [v-cloak] { display: none; }
+    .app-icon { width: 56px; height: 56px; object-fit: contain; }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .lazy-img { background: #e2e8f0; }
+    .md-body h1,.md-body h2,.md-body h3{font-weight:600;margin:1em 0 .4em}
+    .md-body h1{font-size:1.25rem;color:#1e293b}
+    .md-body h2{font-size:1.1rem;color:#1e293b;border-bottom:1px solid #e2e8f0;padding-bottom:.3em}
+    .md-body h3{font-size:1rem;color:#334155}
+    .md-body p{margin:.5em 0;line-height:1.7;color:#475569}
+    .md-body ul,.md-body ol{margin:.5em 0 .5em 1.5em;color:#475569}
+    .md-body li{margin:.2em 0;line-height:1.6}
+    .md-body code{background:#f1f5f9;color:#0f172a;padding:.1em .35em;border-radius:.3em;font-size:.85em;font-family:monospace}
+    .md-body pre{background:#f1f5f9;border-radius:.75rem;padding:1em;overflow-x:auto;margin:.75em 0}
+    .md-body pre code{background:none;padding:0;font-size:.82em}
+    .md-body a{color:#2563eb;text-decoration:underline}
+    .md-body blockquote{border-left:3px solid #cbd5e1;padding-left:.75em;color:#64748b;margin:.5em 0}
+    .md-body strong{font-weight:600;color:#1e293b}
+    .md-body hr{border:none;border-top:1px solid #e2e8f0;margin:1em 0}
+    .md-body table{width:100%;border-collapse:collapse;font-size:.85em;margin:.75em 0}
+    .md-body th,.md-body td{border:1px solid #e2e8f0;padding:.4em .75em;text-align:left}
+    .md-body th{background:#f8fafc;font-weight:600}
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+<div id="app" v-cloak>
+
+  <!-- 顶部导航 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center gap-3">
+      <i class="fa-solid fa-store text-blue-600 text-lg"></i>
+      <span class="font-semibold text-slate-800 text-base">Docker 应用商店</span>
+      <span v-if="storeVersion" class="text-xs text-slate-400 hidden sm:inline">{{ storeVersion }}</span>
+      <div class="flex-1"></div>
+      <!-- 搜索框 -->
+      <div class="relative w-48 md:w-64">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="搜索应用..."
+          class="w-full pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+      </div>
+      <span class="text-xs text-slate-400 hidden md:inline">{{ filteredApps.length }} 个应用</span>
+    </div>
+  </header>
+
+  <!-- 主体 -->
+  <div class="max-w-7xl mx-auto px-4 md:px-6 py-6 flex gap-6">
+
+    <!-- 左侧分类 -->
+    <aside class="hidden md:block w-44 flex-shrink-0">
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div class="bg-slate-50 border-b border-slate-200 px-4 py-3">
+          <span class="text-sm font-medium text-slate-700">分类</span>
+        </div>
+        <nav class="p-2">
+          <button
+            @click="activeTag = ''"
+            :class="['w-full text-left px-3 py-2 rounded-lg text-sm transition-colors', activeTag === '' ? 'bg-blue-50 text-blue-600 font-medium' : 'text-slate-600 hover:bg-slate-50']"
+          >
+            <i class="fa-solid fa-border-all mr-2 text-xs"></i>全部
+          </button>
+          <button
+            v-for="tag in tags"
+            :key="tag.key"
+            @click="activeTag = tag.key"
+            :class="['w-full text-left px-3 py-2 rounded-lg text-sm transition-colors', activeTag === tag.key ? 'bg-blue-50 text-blue-600 font-medium' : 'text-slate-600 hover:bg-slate-50']"
+          >
+            <i :class="['mr-2 text-xs', tagIcon(tag.key)]"></i>{{ tag.name }}
+          </button>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- 右侧内容 -->
+    <main class="flex-1 min-w-0">
+
+      <!-- 移动端分类横滚 -->
+      <div class="md:hidden mb-4 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+        <div class="flex gap-2 pb-1">
+          <button
+            @click="activeTag = ''"
+            :class="['flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors', activeTag === '' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-600']"
+          >全部</button>
+          <button
+            v-for="tag in tags"
+            :key="tag.key"
+            @click="activeTag = tag.key"
+            :class="['flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors', activeTag === tag.key ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-600']"
+          >{{ tag.name }}</button>
+        </div>
+      </div>
+
+      <!-- 加载中 -->
+      <div v-if="loading" class="flex flex-col items-center justify-center py-24 text-slate-400">
+        <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-blue-400"></i>
+        <span class="text-sm">加载中...</span>
+      </div>
+
+      <!-- 加载失败 -->
+      <div v-else-if="error" class="flex flex-col items-center justify-center py-24 text-slate-400">
+        <i class="fa-solid fa-triangle-exclamation text-4xl mb-3 text-red-400"></i>
+        <span class="text-sm text-red-500">{{ error }}</span>
+        <p class="text-xs text-slate-400 mt-1">请通过 HTTP 服务器访问此页面</p>
+      </div>
+
+      <!-- 空状态 -->
+      <div v-else-if="filteredApps.length === 0" class="flex flex-col items-center justify-center py-24 text-slate-400">
+        <i class="fa-solid fa-box-open text-4xl mb-3"></i>
+        <span class="text-sm">没有找到相关应用</span>
+      </div>
+
+      <!-- 应用网格 -->
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div
+          v-for="app in filteredApps"
+          :key="app.key"
+          @click="openDetail(app)"
+          class="bg-white rounded-2xl border border-slate-200 p-4 cursor-pointer hover:shadow-md hover:border-blue-200 transition-all group"
+        >
+          <div class="flex items-start gap-3">
+            <img
+              :data-src="appIconUrl(app.key)"
+              :alt="app.name"
+              class="app-icon rounded-xl flex-shrink-0 lazy-img"
+              :class="{ 'hidden': imgErrors[app.key] }"
+              :ref="el => lazyImg(el)"
+              @error="imgErrors[app.key] = true; $event.target.classList.add('hidden')"
+            >
+            <div v-if="imgErrors[app.key]" class="app-icon rounded-xl flex-shrink-0 bg-slate-100 flex items-center justify-center">
+              <i class="fa-solid fa-cube text-slate-400 text-xl"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5 mb-1">
+                <h3 class="font-semibold text-slate-800 text-sm truncate group-hover:text-blue-600 transition-colors">{{ app.name }}</h3>
+              </div>
+              <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">{{ app.shortDescZh || app.title }}</p>
+            </div>
+          </div>
+          <div class="mt-3 flex items-center justify-between">
+            <div class="flex flex-wrap gap-1">
+              <span
+                v-for="tag in (app.tags || []).slice(0, 2)"
+                :key="tag"
+                class="px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-xs"
+              >{{ tagName(tag) }}</span>
+            </div>
+            <span class="text-xs text-slate-400">{{ latestVersion(app) }}</span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 详情弹窗 -->
+  <div v-if="detail" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" @click.self="detail = null">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="detail = null"></div>
+    <div class="relative bg-white w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl max-h-[90vh] flex flex-col z-10">
+
+      <!-- 弹窗头部 -->
+      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3 flex-shrink-0">
+        <!-- 桌面 -->
+        <div class="hidden md:flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <img
+              :src="appIconUrl(detail.key)"
+              :alt="detail.name"
+              class="w-10 h-10 rounded-xl bg-slate-100"
+              :class="{ 'hidden': imgErrors[detail.key] }"
+              @error="imgErrors[detail.key] = true; $event.target.classList.add('hidden')"
+            >
+            <div v-if="imgErrors[detail.key]" class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-cube text-slate-400 text-lg"></i>
+            </div>
+            <div>
+              <h2 class="font-semibold text-slate-800">{{ detail.name }}</h2>
+              <div class="flex gap-1 mt-0.5">
+                <span v-for="tag in (detail.tags || [])" :key="tag" class="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-xs">{{ tagName(tag) }}</span>
+              </div>
+            </div>
+          </div>
+          <button @click="detail = null" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 text-slate-500 transition-colors">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <!-- 移动端 -->
+        <div class="flex md:hidden items-center">
+            <img
+              :src="appIconUrl(detail.key)"
+              :alt="detail.name"
+              class="w-9 h-9 rounded-xl bg-slate-100 flex-shrink-0"
+              :class="{ 'hidden': imgErrors[detail.key] }"
+              @error="imgErrors[detail.key] = true; $event.target.classList.add('hidden')"
+            >
+            <div v-if="imgErrors[detail.key]" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-cube text-slate-400"></i>
+            </div>
+          <div class="min-w-0 flex-1 ml-3">
+            <h2 class="font-semibold text-slate-800 truncate">{{ detail.name }}</h2>
+          </div>
+          <button @click="detail = null" class="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-200 text-slate-500 ml-2">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 弹窗内容 -->
+      <div class="overflow-y-auto flex-1 p-4 md:p-6 space-y-5">
+
+        <!-- 描述 -->
+        <p class="text-sm text-slate-600 leading-relaxed">{{ detail.shortDescZh || detail.title }}</p>
+
+        <!-- 链接 -->
+        <div v-if="detail.website || detail.github || detail.document" class="flex flex-wrap gap-2">
+          <a v-if="detail.website" :href="detail.website" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs transition-colors">
+            <i class="fa-solid fa-globe"></i>官网
+          </a>
+          <a v-if="detail.github" :href="detail.github" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs transition-colors">
+            <i class="fa-brands fa-github"></i>GitHub
+          </a>
+          <a v-if="detail.document" :href="detail.document" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs transition-colors">
+            <i class="fa-solid fa-book"></i>文档
+          </a>
+        </div>
+
+        <!-- 架构支持 -->
+        <div v-if="detail.architectures && detail.architectures.length">
+          <h4 class="text-xs font-medium text-slate-500 mb-2 uppercase tracking-wide">支持架构</h4>
+          <div class="flex flex-wrap gap-1.5">
+            <span v-for="arch in detail.architectures" :key="arch" class="px-2 py-1 bg-green-50 text-green-700 rounded-md text-xs font-mono">{{ arch }}</span>
+          </div>
+        </div>
+
+        <!-- 版本列表 -->
+        <div>
+          <h4 class="text-xs font-medium text-slate-500 mb-2 uppercase tracking-wide">可用版本</h4>
+          <div class="flex flex-wrap gap-1.5">
+            <a
+              v-for="(versionData, version) in detail.versions"
+              :key="version"
+              :href="`./storage/${detail.key}/${version}.zip`"
+              download
+              class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md text-xs font-mono transition-colors"
+              @click.stop
+            ><i class="fa-solid fa-download text-blue-400 text-xs"></i>{{ version }}</a>
+          </div>
+        </div>
+
+        <!-- README -->
+        <div v-if="readmeHtml || readmeLoading" class="border-t border-slate-200 pt-5 -mx-4 md:-mx-6 px-4 md:px-6 bg-slate-50 rounded-b-2xl pb-4">
+          <div class="flex items-center gap-2 mb-3">
+            <i class="fa-solid fa-file-lines text-slate-400 text-xs"></i>
+            <h4 class="text-xs font-medium text-slate-500 uppercase tracking-wide">README</h4>
+          </div>
+          <div v-if="readmeLoading" class="flex items-center justify-center py-10 text-slate-400">
+            <i class="fa-solid fa-circle-notch fa-spin mr-2"></i>加载中...
+          </div>
+          <div v-else class="md-body text-sm" v-html="readmeHtml"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted } = Vue;
+
+// 配置 marked：链接在新标签页打开
+marked.use({
+  renderer: {
+    link({ href, title, text }) {
+      const t = title ? ` title="${title}"` : '';
+      return `<a href="${href}"${t} target="_blank" rel="noopener">${text}</a>`;
+    }
+  }
+});
+
+createApp({
+  setup() {
+    const loading = ref(true);
+    const error = ref('');
+    const storeVersion = ref('');
+    const tags = ref([]);
+    const allApps = ref([]);
+    const activeTag = ref('');
+    const searchQuery = ref('');
+    const detail = ref(null);
+    const readmeHtml = ref('');
+    const readmeLoading = ref(false);
+    const imgErrors = ref({});
+
+    const tagMap = computed(() => {
+      const m = {};
+      tags.value.forEach(t => { m[t.key] = t.name; });
+      return m;
+    });
+
+    const tagName = (key) => tagMap.value[key] || key;
+
+    const tagIcon = (key) => {
+      const icons = {
+        AI: 'fa-solid fa-robot',
+        Website: 'fa-solid fa-globe',
+        Database: 'fa-solid fa-database',
+        Server: 'fa-solid fa-server',
+        Runtime: 'fa-solid fa-layer-group',
+        Tool: 'fa-solid fa-wrench',
+        Storage: 'fa-solid fa-hard-drive',
+        BI: 'fa-solid fa-chart-bar',
+        CRM: 'fa-solid fa-users',
+        Security: 'fa-solid fa-shield-halved',
+        DevTool: 'fa-solid fa-code',
+        DevOps: 'fa-solid fa-gears',
+        Middleware: 'fa-solid fa-puzzle-piece',
+        Media: 'fa-solid fa-photo-film',
+        Email: 'fa-solid fa-envelope',
+        Local: 'fa-solid fa-house',
+      };
+      return icons[key] || 'fa-solid fa-tag';
+    };
+
+    const appIconUrl = (key) => `./storage/${key}/logo.png`;
+
+    // 懒加载：IntersectionObserver，避免重复 observe
+    const lazyObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const img = entry.target;
+        if (img.dataset.src) {
+          img.src = img.dataset.src;
+          delete img.dataset.src;
+        }
+        lazyObserver.unobserve(img);
+      });
+    }, { rootMargin: '100px' });
+
+    // :ref 回调：仅在元素存在且尚未被 observe 时注册
+    const lazyImg = (el) => {
+      if (el && el.dataset.src) lazyObserver.observe(el);
+    };
+
+    // 取最新版本：按语义化版本排序后取最大值，fallback 取最后一个 key
+    const latestVersion = (app) => {
+      const versions = Object.keys(app.versions || {});
+      if (!versions.length) return '';
+      return versions.reduce((a, b) => {
+        const pa = a.replace(/[^0-9.]/g, '').split('.').map(Number);
+        const pb = b.replace(/[^0-9.]/g, '').split('.').map(Number);
+        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+          const diff = (pa[i] || 0) - (pb[i] || 0);
+          if (diff !== 0) return diff > 0 ? a : b;
+        }
+        return a;
+      });
+    };
+
+    const filteredApps = computed(() => {
+      let list = allApps.value;
+      if (activeTag.value) {
+        list = list.filter(a => (a.tags || []).includes(activeTag.value));
+      }
+      if (searchQuery.value.trim()) {
+        const q = searchQuery.value.trim().toLowerCase();
+        list = list.filter(a =>
+          a.name.toLowerCase().includes(q) ||
+          a.key.toLowerCase().includes(q) ||
+          (a.shortDescZh || '').toLowerCase().includes(q) ||
+          (a.title || '').toLowerCase().includes(q)
+        );
+      }
+      return list;
+    });
+
+    const loadReadme = async (key) => {
+      readmeLoading.value = true;
+      readmeHtml.value = '';
+      try {
+        const res = await fetch(`./storage/${key}/README.md`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+        readmeHtml.value = marked.parse(text);
+      } catch (e) {
+        // 404 静默不显示，其他错误提示
+        if (!e.message.includes('404') && !e.message.includes('HTTP 404')) {
+          readmeHtml.value = `<p class="text-slate-400 text-sm">README 加载失败</p>`;
+        }
+      } finally {
+        readmeLoading.value = false;
+      }
+    };
+
+    const openDetail = (app) => {
+      detail.value = app;
+      loadReadme(app.key);
+    };
+
+    onMounted(async () => {
+      try {
+        const res = await fetch('./index.json');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        storeVersion.value = data.additionalProperties?.version || '';
+        tags.value = (data.additionalProperties?.tags || []).sort((a, b) => a.sort - b.sort);
+
+        const apps = [];
+        for (const [key, appData] of Object.entries(data.apps || {})) {
+          const ap = appData.additionalProperties || {};
+          apps.push({
+            key,
+            name: appData.name || ap.name || key,
+            title: appData.title || '',
+            shortDescZh: ap.shortDescZh || appData.description || '',
+            // tags 统一使用英文 key（与 tagMap 保持一致）
+            tags: ap.tags?.length ? ap.tags : [],
+            website: ap.website || '',
+            github: ap.github || '',
+            document: ap.document || '',
+            architectures: ap.architectures || [],
+            versions: appData.versions || {},
+          });
+        }
+        allApps.value = apps.sort((a, b) => a.name.localeCompare(b.name));
+      } catch (e) {
+        console.error('加载 index.json 失败', e);
+        error.value = '加载数据失败：' + (e.message || String(e));
+      } finally {
+        loading.value = false;
+      }
+    });
+
+    return {
+      loading, error, storeVersion, tags, activeTag, searchQuery,
+      filteredApps, detail, readmeHtml, readmeLoading, imgErrors,
+      tagName, tagIcon, appIconUrl, latestVersion, openDetail, lazyImg,
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

@@ -50,12 +50,12 @@ COPY --from=builder-etcd /usr/local/bin/etcdctl /usr/local/bin/etcdctl
 COPY --from=builder-isrvd /src/dist/isrvd /usr/local/bin/isrvd
 
 # 拷贝默认配置模板（entrypoint 启动时自动填充到 /data/conf/）
-COPY docker/apisix.yaml /etc/defaults/apisix.yaml
-COPY docker/isrvd.yml /etc/defaults/isrvd.yml
+COPY build/docker/apisix.yaml /etc/defaults/apisix.yaml
+COPY build/docker/isrvd.yml /etc/defaults/isrvd.yml
 
 # 拷贝 supervisord 配置和启动脚本
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY docker/entrypoint.sh /entrypoint.sh
+COPY build/docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY build/docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # 暴露端口
