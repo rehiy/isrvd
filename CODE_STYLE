@@ -186,18 +186,18 @@ px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-s
 
 ### Settings 模块化
 
-`/settings` 下属的功能拆为独立路由与页面，而非单页多 tab：
+`/system/settings` 和 `/system/members` 拆为独立路由与页面，而非单页多 tab：
 
-- `webview/src/views/settings/settings.vue` — 服务器 / Docker / APISIX 基础配置（内部 3 tab）
-- `webview/src/views/settings/members.vue` — 成员（用户）管理，从系统设置中拆出，作为独立主导航“用户管理”
+- `webview/src/views/system/settings.vue` — 服务器 / Docker / APISIX 基础配置（内部 3 tab）
+- `webview/src/views/system/members.vue` — 成员（用户）管理，从系统设置中拆出，作为独立主导航
 - 侧边栏菜单中“系统设置”项统一排在 **最后**
 - 系统账号（用户列表中 `id === 1` 或第一个帐号）**禁止删除**，按钮置灰并使用 `title` 提示“系统账号不允许删除”
 
 路由示例：
 
 ```js
-{ path: '/settings', component: () => import('@/views/settings/settings.vue') }
-{ path: '/settings/members', component: () => import('@/views/settings/members.vue') }
+{ path: '/system/members', component: () => import('@/views/system/members.vue') }
+{ path: '/system/settings', component: () => import('@/views/system/settings.vue') }
 { path: '/docker/registries', component: () => import('@/views/docker/registries.vue') }
 ```
 

@@ -84,39 +84,23 @@ export default toNative(Settings)
 <template>
   <div>
     <div class="card mb-4">
-      <!-- Toolbar Bar -->
+      <!-- Toolbar -->
       <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
-        <!-- 桌面端 -->
-        <div class="hidden md:flex md:items-center justify-between">
+        <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center">
               <i class="fas fa-gear text-white"></i>
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">系统设置</h1>
-              <p class="text-xs text-slate-500">服务器、Agent、Docker、APISIX 全部配置</p>
+              <p class="text-xs text-slate-500">服务器、Agent、APISIX、Docker 配置</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <button @click="loadSettings()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <button type="button" @click="loadSettings()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
             </button>
           </div>
-        </div>
-        <!-- 移动端 -->
-        <div class="flex md:hidden items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0">
-              <i class="fas fa-gear text-white"></i>
-            </div>
-            <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800">系统设置</h1>
-              <p class="text-xs text-slate-500 truncate">全部配置</p>
-            </div>
-          </div>
-          <button @click="loadSettings()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0">
-            <i class="fas fa-rotate text-sm"></i>
-          </button>
         </div>
       </div>
 
@@ -126,7 +110,8 @@ export default toNative(Settings)
         <p class="text-slate-500">加载中...</p>
       </div>
 
-      <form v-else @submit.prevent="saveAll" class="p-6 space-y-8">
+      <form v-else @submit.prevent="saveAll" class="p-4 md:p-6 space-y-6">
+
         <!-- 服务器配置 -->
         <section class="max-w-3xl">
           <div class="flex items-center gap-2 mb-4 pb-2 border-b border-slate-200">
@@ -138,32 +123,32 @@ export default toNative(Settings)
           </div>
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">监听地址</label>
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">监听地址</label>
               <input type="text" v-model="server.listenAddr" placeholder=":8080" class="input" />
               <p class="mt-1 text-xs text-slate-400">HTTP 服务监听端口，例如 :8080 或 127.0.0.1:8080（重启生效）</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">基础目录</label>
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">基础目录</label>
               <input type="text" v-model="server.rootDirectory" placeholder="." class="input" />
               <p class="mt-1 text-xs text-slate-400">成员 home 目录及容器数据的基础目录</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">
                 JWT 密钥
-                <span v-if="jwtSecretSet" class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-50 text-green-700"><i class="fas fa-check mr-0.5"></i>已设置</span>
-                <span v-else class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500">未设置</span>
+                <span v-if="jwtSecretSet" class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-50 text-green-700"><i class="fas fa-check mr-0.5"></i>已设置</span>
+                <span v-else class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500">未设置</span>
               </label>
               <input type="password" v-model="server.jwtSecret" :placeholder="jwtSecretPlaceholder" class="input" autocomplete="new-password" />
               <p class="mt-1 text-xs text-slate-400">用于签名登录令牌，修改后所有用户需要重新登录</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">内网代理认证 Header</label>
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">内网代理认证 Header</label>
               <input type="text" v-model="server.proxyHeaderName" placeholder="例如 X-Auth-User（留空禁用）" class="input" />
               <p class="mt-1 text-xs text-slate-400">启用时，将使用上游传入的 Header {{ server.proxyHeaderName }} 值作为登录用户</p>
             </div>
             <div class="flex items-center gap-2">
-              <input id="debugSwitch" type="checkbox" v-model="server.debug" class="w-4 h-4" />
-              <label for="debugSwitch" class="text-sm text-slate-700">启用 Debug 模式</label>
+              <input id="debugSwitch" type="checkbox" v-model="server.debug" class="w-4 h-4 rounded" />
+              <label for="debugSwitch" class="text-sm text-slate-700 cursor-pointer">启用 Debug 模式</label>
             </div>
           </div>
         </section>
@@ -179,20 +164,20 @@ export default toNative(Settings)
           </div>
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">模型名称</label>
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">模型名称</label>
               <input type="text" v-model="agent.model" placeholder="例如 gpt-4o-mini" class="input" />
               <p class="mt-1 text-xs text-slate-400">代理转发时强制改写请求体中的 model 字段，留空则不改写</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">基础地址</label>
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">基础地址</label>
               <input type="text" v-model="agent.baseUrl" placeholder="https://api.openai.com/v1" class="input" />
               <p class="mt-1 text-xs text-slate-400">OpenAI 兼容的 LLM API 基础地址，留空则禁用代理</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">
                 API 密钥
-                <span v-if="agentApiKeySet" class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-50 text-green-700"><i class="fas fa-check mr-0.5"></i>已设置</span>
-                <span v-else class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500">未设置</span>
+                <span v-if="agentApiKeySet" class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-50 text-green-700"><i class="fas fa-check mr-0.5"></i>已设置</span>
+                <span v-else class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500">未设置</span>
               </label>
               <input type="password" v-model="agent.apiKey" :placeholder="agentApiKeyPlaceholder" class="input" autocomplete="new-password" />
               <p class="mt-1 text-xs text-slate-400">代理转发时以 Bearer 形式注入 Authorization 请求头</p>
@@ -211,15 +196,15 @@ export default toNative(Settings)
           </div>
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">Admin URL</label>
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">Admin URL</label>
               <input type="text" v-model="apisix.adminUrl" placeholder="http://127.0.0.1:9180" class="input" />
               <p class="mt-1 text-xs text-slate-400">APISIX Admin API 地址</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">
                 Admin Key
-                <span v-if="adminKeySet" class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-50 text-green-700"><i class="fas fa-check mr-0.5"></i>已设置</span>
-                <span v-else class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500">未设置</span>
+                <span v-if="adminKeySet" class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-50 text-green-700"><i class="fas fa-check mr-0.5"></i>已设置</span>
+                <span v-else class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500">未设置</span>
               </label>
               <input type="password" v-model="apisix.adminKey" :placeholder="adminKeyPlaceholder" class="input" autocomplete="new-password" />
               <p class="mt-1 text-xs text-slate-400">访问 APISIX Admin API 的密钥</p>
@@ -238,12 +223,12 @@ export default toNative(Settings)
           </div>
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">Docker Host</label>
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">Docker Host</label>
               <input type="text" v-model="docker.host" placeholder="unix:///var/run/docker.sock 或 tcp://host:2375" class="input" />
               <p class="mt-1 text-xs text-slate-400">Docker 守护进程地址，留空则使用环境变量</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">容器数据根目录</label>
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">容器数据根目录</label>
               <input type="text" v-model="docker.containerRoot" placeholder="containers" class="input" />
               <p class="mt-1 text-xs text-slate-400">用于存放容器数据卷的基础目录（相对于基础目录）</p>
             </div>
@@ -256,10 +241,11 @@ export default toNative(Settings)
             <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save']"></i>{{ saving ? '保存中...' : '保存配置' }}
           </button>
           <p class="text-xs text-slate-400 flex items-start gap-1">
-            <i class="fas fa-circle-info mt-0.5"></i>
-            <span>保存后立即写入配置文件，监听地址/JWT 密钥/Docker Host/APISIX Admin 等项需重启服务生效；所有密钥留空即保留原值。</span>
+            <i class="fas fa-circle-info mt-0.5 flex-shrink-0"></i>
+            <span>保存后立即写入配置文件，监听地址 / JWT 密钥 / Docker Host / APISIX Admin 等项需重启服务生效。</span>
           </p>
         </div>
+
       </form>
     </div>
   </div>

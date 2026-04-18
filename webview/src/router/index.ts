@@ -145,14 +145,14 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/shell.vue')
   },
   {
-    path: '/members',
-    name: 'members',
-    component: () => import('@/views/settings/members.vue')
+    path: '/system/members',
+    name: 'system-members',
+    component: () => import('@/views/system/members.vue')
   },
   {
-    path: '/settings',
-    name: 'settings',
-    component: () => import('@/views/settings/settings.vue')
+    path: '/system/settings',
+    name: 'system-settings',
+    component: () => import('@/views/system/settings.vue')
   },
 ]
 

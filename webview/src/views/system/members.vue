@@ -6,7 +6,7 @@ import type { MemberInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
-import MemberEditModal from '@/views/settings/widget/member-edit-modal.vue'
+import MemberEditModal from '@/views/system/widget/member-edit-modal.vue'
 
 @Component({
     components: { MemberEditModal }
@@ -79,7 +79,7 @@ export default toNative(Members)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">用户管理</h1>
-              <p class="text-xs text-slate-500">管理可登录系统的成员，设置 home 目录与终端访问权限</p>
+              <p class="text-xs text-slate-500">管理可登录系统的成员与权限</p>
             </div>
           </div>
           <div class="flex items-center gap-2">

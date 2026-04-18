@@ -6,8 +6,8 @@ export const systemInstruction = `
 - Docker（/docker）：管理容器、镜像、网络、数据卷、镜像仓库
 - Docker Swarm（/swarm）：管理集群节点、服务、任务
 - 终端（/shell）：在线 Web 终端，直接执行 Shell 命令
-- 成员管理（/members）：管理系统用户账号
-- 系统设置（/settings）：配置系统参数
+- 成员管理（/system/members）：管理系统用户账号
+- 系统设置（/system/settings）：配置系统参数
 
 操作规范：
 1. 执行破坏性操作（删除、停止、重启等）前，必须先向用户确认
@@ -78,10 +78,10 @@ export function getPageInstruction(url: string): string | null {
     if (path.includes('/shell')) {
         return '当前页面：Web 终端。可直接在服务器上执行 Shell 命令，请谨慎操作，避免执行破坏性命令。'
     }
-    if (path.includes('/members')) {
+    if (path.includes('/system/members')) {
         return '当前页面：成员管理。可添加、编辑、删除系统用户，管理用户角色权限。注意：首个系统账号不可删除。'
     }
-    if (path.includes('/settings')) {
+    if (path.includes('/system/settings')) {
         return '当前页面：系统设置。可配置系统参数，包括 JWT 密钥、管理员密钥等敏感配置，修改后需重启服务生效。'
     }
     return null
