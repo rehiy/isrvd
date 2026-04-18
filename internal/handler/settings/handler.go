@@ -34,6 +34,14 @@ type ApisixSettings struct {
 	AdminKeySet bool   `json:"adminKeySet"`
 }
 
+// AgentSettings Agent LLM 配置
+type AgentSettings struct {
+	Model     string `json:"model"`
+	BaseURL   string `json:"baseUrl"`
+	APIKey    string `json:"apiKey"`
+	APIKeySet bool   `json:"apiKeySet"`
+}
+
 // DockerSettings Docker 配置
 type DockerSettings struct {
 	Host          string `json:"host"`
@@ -43,6 +51,7 @@ type DockerSettings struct {
 // AllSettings 全部配置聚合
 type AllSettings struct {
 	Server *ServerSettings `json:"server"`
+	Agent  *AgentSettings  `json:"agent"`
 	Apisix *ApisixSettings `json:"apisix"`
 	Docker *DockerSettings `json:"docker"`
 }
@@ -64,6 +73,11 @@ func (h *SettingsHandler) GetAll(c *gin.Context) {
 			JWTSecretSet:    config.JWTSecret != "",
 			ProxyHeaderName: config.ProxyHeaderName,
 			RootDirectory:   config.RootDirectory,
+		},
+		Agent: &AgentSettings{
+			Model:     config.Agent.Model,
+			BaseURL:   config.Agent.BaseURL,
+			APIKeySet: config.Agent.APIKey != "",
 		},
 		Apisix: &ApisixSettings{
 			AdminURL:    config.Apisix.AdminURL,
@@ -93,6 +107,23 @@ func (h *SettingsHandler) UpdateServer(c *gin.Context) {
 		return
 	}
 	helper.RespondSuccess(c, "服务器配置已保存，重启后完全生效", nil)
+}
+
+// UpdateAgent 更新 Agent LLM 配置
+func (h *SettingsHandler) UpdateAgent(c *gin.Context) {
+	var req AgentSettings
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
+		return
+	}
+	config.Agent.Model = req.Model
+	config.Agent.BaseURL = req.BaseURL
+	config.Agent.APIKey = pickSecret(req.APIKey, config.Agent.APIKey)
+	if err := config.Save(); err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, "保存配置失败: "+err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Agent 配置已保存", nil)
 }
 
 // UpdateApisix 更新 Apisix 配置

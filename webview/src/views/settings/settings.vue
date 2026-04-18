@@ -2,11 +2,11 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { AllSettings, ServerSettings, ApisixSettings, DockerSettings } from '@/service/types'
+import type { AllSettings, ServerSettings, AgentSettings, ApisixSettings, DockerSettings } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
-type TabKey = 'server' | 'apisix' | 'docker'
+type TabKey = 'server' | 'agent' | 'apisix' | 'docker'
 
 @Component({})
 class Settings extends Vue {
@@ -18,12 +18,14 @@ class Settings extends Vue {
     activeTab: TabKey = 'server'
 
     server: ServerSettings = { debug: false, listenAddr: '', jwtSecret: '', proxyHeaderName: '', rootDirectory: '' }
+    agent: AgentSettings = { model: '', baseUrl: '', apiKey: '' }
     apisix: ApisixSettings = { adminUrl: '', adminKey: '' }
     docker: DockerSettings = { host: '', containerRoot: '' }
 
     // 敏感字段当前是否已设置（后端返回）
     jwtSecretSet = false
     adminKeySet = false
+    agentApiKeySet = false
 
     // 敏感字段 placeholder
     get jwtSecretPlaceholder() {
@@ -34,8 +36,13 @@ class Settings extends Vue {
         return this.adminKeySet ? '已设置（留空保持不变）' : '尚未设置'
     }
 
+    get agentApiKeyPlaceholder() {
+        return this.agentApiKeySet ? '已设置（留空保持不变）' : '尚未设置'
+    }
+
     tabs: { key: TabKey; label: string; icon: string; desc: string }[] = [
         { key: 'server', label: '服务器', icon: 'fa-server', desc: '修改服务器监听地址、JWT 密钥及代理配置' },
+        { key: 'agent', label: 'Agent', icon: 'fa-robot', desc: '修改 LLM 模型、API 地址及密钥' },
         { key: 'docker', label: 'Docker', icon: 'fa-cube', desc: '修改 Docker 守护进程及容器数据目录' },
         { key: 'apisix', label: 'APISIX', icon: 'fa-cloud', desc: '修改 APISIX Admin API 连接信息' }
     ]
@@ -52,10 +59,12 @@ class Settings extends Vue {
             const payload = res.payload as AllSettings
             // 敏感字段统一置空，仅用标志位驱动 placeholder
             this.server = { ...payload.server, jwtSecret: '' }
+            this.agent = { ...payload.agent, apiKey: '' }
             this.apisix = { ...payload.apisix, adminKey: '' }
             this.docker = { ...payload.docker }
             this.jwtSecretSet = !!payload.server.jwtSecretSet
             this.adminKeySet = !!payload.apisix.adminKeySet
+            this.agentApiKeySet = !!payload.agent.apiKeySet
         } catch (e) {
             this.actions.showNotification('error', '加载配置失败')
         }
@@ -67,6 +76,16 @@ class Settings extends Vue {
         try {
             await api.updateServerSettings(this.server)
             this.actions.showNotification('success', '服务器配置已保存，部分项需重启生效')
+            this.loadSettings()
+        } catch (e) {}
+        this.saving = false
+    }
+
+    async saveAgent() {
+        this.saving = true
+        try {
+            await api.updateAgentSettings(this.agent)
+            this.actions.showNotification('success', 'Agent 配置已保存')
             this.loadSettings()
         } catch (e) {}
         this.saving = false
@@ -215,6 +234,38 @@ export default toNative(Settings)
             <p class="text-xs text-slate-400 flex items-start gap-1">
               <i class="fas fa-circle-info mt-0.5"></i>
               <span>保存后立即写入配置文件，监听地址及 JWT 密钥修改需重启服务生效；密钥留空即保留原值。</span>
+            </p>
+          </div>
+        </form>
+
+        <!-- Agent 配置 -->
+        <form v-else-if="activeTab === 'agent'" @submit.prevent="saveAgent" class="max-w-3xl space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">模型名称</label>
+            <input type="text" v-model="agent.model" placeholder="例如 gpt-4o-mini" class="input" />
+            <p class="mt-1 text-xs text-slate-400">代理转发时强制改写请求体中的 model 字段，留空则不改写</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">基础地址</label>
+            <input type="text" v-model="agent.baseUrl" placeholder="https://api.openai.com/v1" class="input" />
+            <p class="mt-1 text-xs text-slate-400">OpenAI 兼容的 LLM API 基础地址，留空则禁用代理</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">
+              API 密钥
+              <span v-if="agentApiKeySet" class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-50 text-green-700"><i class="fas fa-check mr-0.5"></i>已设置</span>
+              <span v-else class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500">未设置</span>
+            </label>
+            <input type="password" v-model="agent.apiKey" :placeholder="agentApiKeyPlaceholder" class="input" autocomplete="new-password" />
+            <p class="mt-1 text-xs text-slate-400">代理转发时以 Bearer 形式注入 Authorization 请求头</p>
+          </div>
+          <div class="pt-2 flex flex-col sm:flex-row sm:items-center gap-3">
+            <button type="submit" :disabled="saving" class="self-start px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap flex-shrink-0">
+              <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save']"></i>{{ saving ? '保存中...' : '保存 Agent 配置' }}
+            </button>
+            <p class="text-xs text-slate-400 flex items-start gap-1">
+              <i class="fas fa-circle-info mt-0.5"></i>
+              <span>保存后立即生效，下一次代理请求即采用新配置；密钥留空即保留原值。</span>
             </p>
           </div>
         </form>

@@ -545,6 +545,15 @@ export interface ApisixSettings {
     adminKeySet?: boolean
 }
 
+export interface AgentSettings {
+    model: string
+    baseUrl: string
+    // 写入时为空表示保留原值
+    apiKey: string
+    // 读取时后端返回，标识是否已设置
+    apiKeySet?: boolean
+}
+
 export interface DockerSettings {
     host: string
     containerRoot: string
@@ -552,6 +561,7 @@ export interface DockerSettings {
 
 export interface AllSettings {
     server: ServerSettings
+    agent: AgentSettings
     apisix: ApisixSettings
     docker: DockerSettings
 }

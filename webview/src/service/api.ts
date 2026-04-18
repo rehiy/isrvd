@@ -15,7 +15,7 @@ import type {
     ServiceProbeResponse, DockerInfo,
     FileListResponse, FileReadResponse,
     LoginResponse,
-    AllSettings, ServerSettings, ApisixSettings, DockerSettings,
+    AllSettings, ServerSettings, AgentSettings, ApisixSettings, DockerSettings,
     MemberInfo, MemberUpsertRequest
 } from './types'
 
@@ -352,6 +352,10 @@ class ApiService {
 
     updateServerSettings(data: ServerSettings) {
         return http.put<void>('/api/settings/server', data)
+    }
+
+    updateAgentSettings(data: AgentSettings) {
+        return http.put<void>('/api/settings/agent', data)
     }
 
     updateApisixSettings(data: ApisixSettings) {

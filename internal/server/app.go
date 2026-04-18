@@ -215,6 +215,7 @@ func (app *App) setupRouter() {
 			{
 				settingsGroup.GET("", settingsHandler.GetAll)
 				settingsGroup.PUT("/server", settingsHandler.UpdateServer)
+				settingsGroup.PUT("/agent", settingsHandler.UpdateAgent)
 				settingsGroup.PUT("/apisix", settingsHandler.UpdateApisix)
 				settingsGroup.PUT("/docker", settingsHandler.UpdateDocker)
 
