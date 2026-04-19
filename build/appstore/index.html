@@ -157,7 +157,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-slate-800 text-sm truncate mb-1 group-hover:text-blue-600 transition-colors">{{ app.name }}</h3>
-              <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">{{ app.shortDescZh || app.title }}</p>
+              <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">{{ app.description?.zh || app.description || app.title }}</p>
             </div>
           </div>
           <div class="mt-3 flex flex-wrap gap-1 pt-2 border-t border-slate-100 items-center justify-between">
@@ -231,7 +231,7 @@
       <div class="overflow-y-auto flex-1 p-4 md:p-6 space-y-5">
 
         <!-- 描述 -->
-        <p class="text-sm text-slate-600 leading-relaxed">{{ detail.shortDescZh || detail.title }}</p>
+        <p class="text-sm text-slate-600 leading-relaxed">{{ detail.description?.zh || detail.description || detail.title }}</p>
 
         <!-- 链接 -->
         <div v-if="detail.website || detail.github || detail.document" class="flex flex-wrap gap-2">
@@ -349,7 +349,7 @@
             <!-- 密码字段 -->
             <div v-if="field.type === 'password'">
               <label class="block text-sm font-medium text-slate-700 mb-1">
-                <span v-if="field.required" class="text-red-500 mr-0.5">*</span>{{ field.label?.zh || field.labelZh || field.labelEn }}
+                <span v-if="field.required" class="text-red-500 mr-0.5">*</span>{{ field.label?.zh || field.label?.en || field.label }}
               </label>
               <div class="relative">
                 <input
@@ -369,7 +369,7 @@
             <!-- 数字字段 -->
             <div v-else-if="field.type === 'number'">
               <label class="block text-sm font-medium text-slate-700 mb-1">
-                <span v-if="field.required" class="text-red-500 mr-0.5">*</span>{{ field.label?.zh || field.labelZh || field.labelEn }}
+                <span v-if="field.required" class="text-red-500 mr-0.5">*</span>{{ field.label?.zh || field.label?.en || field.label }}
               </label>
               <input
                 v-model.number="installForm.fields[field.envKey]"
@@ -382,20 +382,20 @@
             <!-- service 字段（暂显示为只读提示） -->
             <div v-else-if="field.type === 'service'">
               <label class="block text-sm font-medium text-slate-700 mb-1">
-                <span v-if="field.required" class="text-red-500 mr-0.5">*</span>{{ field.label?.zh || field.labelZh || field.labelEn }}
+                <span v-if="field.required" class="text-red-500 mr-0.5">*</span>{{ field.label?.zh || field.label?.en || field.label }}
               </label>
               <input
                 v-model="installForm.fields[field.envKey]"
                 type="text"
                 class="input"
-                :placeholder="`请输入 ${field.label?.zh || field.labelZh || field.labelEn}`"
+                :placeholder="`请输入 ${field.label?.zh || field.label?.en || field.label}`"
               />
             </div>
 
             <!-- 文本字段（默认） -->
             <div v-else>
               <label class="block text-sm font-medium text-slate-700 mb-1">
-                <span v-if="field.required" class="text-red-500 mr-0.5">*</span>{{ field.label?.zh || field.labelZh || field.labelEn }}
+                <span v-if="field.required" class="text-red-500 mr-0.5">*</span>{{ field.label?.zh || field.label?.en || field.label }}
               </label>
               <input
                 v-model="installForm.fields[field.envKey]"
@@ -521,7 +521,7 @@ createApp({
         list = list.filter(a =>
           a.name.toLowerCase().includes(q) ||
           a.key.toLowerCase().includes(q) ||
-          (a.shortDescZh || '').toLowerCase().includes(q) ||
+          (a.description?.zh || a.description || '').toLowerCase().includes(q) ||
           (a.title || '').toLowerCase().includes(q)
         );
       }
@@ -556,23 +556,22 @@ createApp({
         const res = await fetch('./index.json');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        storeVersion.value = data.additionalProperties?.version || '';
-        tags.value = (data.additionalProperties?.tags || []).sort((a, b) => a.sort - b.sort);
+        storeVersion.value = data.version || '';
+        tags.value = (data.tags || []).sort((a, b) => a.sort - b.sort);
 
         const apps = [];
         for (const [key, appData] of Object.entries(data.apps || {})) {
-          const ap = appData.additionalProperties || {};
           apps.push({
             key,
-            name: appData.name || ap.name || key,
+            name: appData.name || key,
             title: appData.title || '',
-            shortDescZh: ap.shortDescZh || appData.description || '',
+            shortDescZh: appData.description?.zh || appData.description || '',
             // tags 统一使用英文 key（与 tagMap 保持一致）
-            tags: ap.tags?.length ? ap.tags : [],
-            website: ap.website || '',
-            github: ap.github || '',
-            document: ap.document || '',
-            architectures: ap.architectures || [],
+            tags: appData.tags || [],
+            website: appData.website || '',
+            github: appData.github || '',
+            document: appData.document || '',
+            architectures: appData.architectures || [],
             versions: appData.versions || {},
           });
         }
@@ -594,7 +593,7 @@ createApp({
     const currentFormFields = computed(() => {
       if (!installPanel.value || !installForm.value.version) return [];
       const versionData = installPanel.value.versions[installForm.value.version];
-      return versionData?.additionalProperties?.formFields || [];
+      return versionData?.formFields || [];
     });
 
     // 根据 formFields 初始化表单字段默认值
@@ -613,7 +612,7 @@ createApp({
     const openInstall = (app) => {
       const ver = latestVersion(app);
       installPanel.value = app;
-      const fields = app.versions[ver]?.additionalProperties?.formFields || [];
+      const fields = app.versions[ver]?.formFields || [];
       installForm.value = {
         name: app.key,
         version: ver,
@@ -628,7 +627,7 @@ createApp({
         f => f.required && !f.disabled && (installForm.value.fields[f.envKey] === '' || installForm.value.fields[f.envKey] == null)
       );
       if (missing) {
-        alert(`请填写「${missing.label?.zh || missing.labelZh || missing.labelEn}」`);
+        alert(`请填写「${missing.label?.zh || missing.label?.en || missing.label}」`);
         return;
       }
       window.parent.postMessage({

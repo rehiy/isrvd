@@ -64,15 +64,82 @@ def load_yaml(path: Path) -> dict:
         return {}
 
 
+def filter_chinese_content(data: dict) -> dict:
+    """多语言处理，默认保留中文和英文内容，移除冗余字段"""
+    if not isinstance(data, dict):
+        return data
+    
+    result = {}
+    for key, value in data.items():
+        if key in ['locales', 'label', 'description'] and isinstance(value, dict):
+            # 多语言字段
+            filtered_value = {}
+            # 处理中文版本
+            if 'zh' in value:
+                filtered_value['zh'] = value['zh']
+            # 处理英文版本
+            if 'en' in value:
+                filtered_value['en'] = value['en']
+            result[key] = filtered_value if filtered_value else value
+        elif key == 'description' and isinstance(value, str):
+            # 将单语言 description 转换为多语言格式
+            result[key] = {
+                'zh': value,
+                'en': value
+            }
+        elif key in ['labelZh', 'labelEn', 'shortDescZh', 'shortDescEn']:
+            # 跳过冗余字段
+            continue
+        elif isinstance(value, dict):
+            result[key] = filter_chinese_content(value)
+        elif isinstance(value, list):
+            result[key] = [filter_chinese_content(item) if isinstance(item, dict) else item for item in value]
+        else:
+            result[key] = value
+    
+    return result
+
+
+def merge_additional_properties(data: dict) -> dict:
+    """合并 additionalProperties 到上层"""
+    if not isinstance(data, dict):
+        return data
+    
+    result = dict(data)
+    
+    # 如果存在 additionalProperties，将其内容合并到当前层级
+    if 'additionalProperties' in result and isinstance(result['additionalProperties'], dict):
+        additional_props = result.pop('additionalProperties')
+        # 合并 additionalProperties 的内容，覆盖已有字段
+        for key, value in additional_props.items():
+            result[key] = value
+        
+        # 递归处理嵌套的 additionalProperties
+        for key, value in result.items():
+            if isinstance(value, dict):
+                result[key] = merge_additional_properties(value)
+            elif isinstance(value, list):
+                result[key] = [merge_additional_properties(item) if isinstance(item, dict) else item for item in value]
+    else:
+        # 递归处理所有嵌套字典
+        for key, value in result.items():
+            if isinstance(value, dict):
+                result[key] = merge_additional_properties(value)
+            elif isinstance(value, list):
+                result[key] = [merge_additional_properties(item) if isinstance(item, dict) else item for item in value]
+    
+    return result
+
+
 def build_version_zip(app_name: str, version: str, version_dir: Path):
-    """将版本目录中的非 yml 文件打包为 zip"""
+    """将版本目录中的文件打包为 zip，仅排除 data.yml/data.yaml"""
     zip_dir = OUTPUT_DOWNLOAD / app_name
     zip_dir.mkdir(parents=True, exist_ok=True)
     zip_path = zip_dir / f"{version}.zip"
 
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for file_path in sorted(version_dir.rglob("*")):
-            if file_path.is_file() and file_path.suffix.lower() not in (".yml", ".yaml"):
+            if file_path.is_file() and file_path.name.lower() not in ("data.yml", "data.yaml"):
                 arcname = file_path.relative_to(version_dir)
                 zf.write(file_path, arcname)
 
@@ -88,7 +155,7 @@ def build_index(source_dir: Path) -> dict:
     for name in ("data.yaml", "data.yml"):
         candidate = source_dir / name
         if candidate.exists():
-            root_data = load_yaml(candidate)
+            root_data = filter_chinese_content(load_yaml(candidate))
             print(f"[根] 读取 {name}")
             break
 
@@ -111,7 +178,7 @@ def build_index(source_dir: Path) -> dict:
 
         app_data = {}
         if app_data_file.exists():
-            app_data = load_yaml(app_data_file)
+            app_data = filter_chinese_content(load_yaml(app_data_file))
             print(f"[应用] {app_name}")
 
         app_entry = dict(app_data)
@@ -140,7 +207,7 @@ def build_index(source_dir: Path) -> dict:
 
             version_data = {}
             if version_data_file.exists():
-                version_data = load_yaml(version_data_file)
+                version_data = filter_chinese_content(load_yaml(version_data_file))
                 print(f"  [版本] {app_name}/{version}")
 
             version_entry = dict(version_data)
@@ -152,6 +219,8 @@ def build_index(source_dir: Path) -> dict:
 
         index["apps"][app_name] = app_entry
 
+    # 合并所有层级的 additionalProperties
+    index = merge_additional_properties(index)
     return index
 
 
