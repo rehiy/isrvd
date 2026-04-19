@@ -25,6 +25,9 @@ docker:
      #   username: debug
      #   password: 123
 
+marketplace:
+  baseUrl: https://appstore.rehi.org
+
 members:
   - username: admin
     password: admin
