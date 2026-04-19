@@ -311,7 +311,7 @@
   <!-- 安装表单面板 -->
   <div v-if="installPanel" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" @click.self="installPanel = null">
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="installPanel = null"></div>
-    <div class="relative bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl max-h-[90vh] flex flex-col z-10">
+    <div class="relative bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl max-h-[90vh] flex flex-col m-2 z-10">
 
       <!-- 安装面板头部 -->
       <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3 flex-shrink-0">
@@ -427,7 +427,7 @@
 
       <!-- 底部按钮 -->
       <div class="flex-shrink-0 border-t border-slate-200 px-4 md:px-6 py-3 bg-white rounded-b-2xl">
-    <!-- 错误提示 -->
+        <!-- 错误提示 -->
         <div v-if="installError" class="relative flex items-start gap-2.5 pl-4 pr-3 py-2.5 mb-3 rounded-xl text-xs text-red-600 bg-gradient-to-br from-red-50 to-red-50/60 border border-red-200 shadow-[0_1px_2px_rgba(239,68,68,0.06)] animate-[slideDownFade_.22s_ease-out] before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:bg-red-500 before:rounded-r-sm">
           <span class="flex-shrink-0 w-5 h-5 rounded-full bg-red-100 text-red-600 inline-flex items-center justify-center text-[0.7rem]"><i class="fa-solid fa-exclamation"></i></span>
           <span class="flex-1 pt-0.5 leading-relaxed">{{ installError }}</span>
@@ -444,7 +444,7 @@
   <!-- 安装脚本预览（非 iframe 环境） -->
   <div v-if="scriptPreview" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" @click.self="scriptPreview = null">
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="scriptPreview = null"></div>
-    <div class="relative bg-white w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl max-h-[90vh] flex flex-col z-10">
+    <div class="relative bg-white w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl max-h-[90vh] flex flex-col m-2 z-10">
 
       <!-- 头部 -->
       <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3 flex-shrink-0 flex items-center justify-between">
