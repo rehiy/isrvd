@@ -2,11 +2,17 @@ package config
 
 // 配置结构
 type Config struct {
-	Server  *Server         `yaml:"server"`
-	Agent   *AgentConfig    `yaml:"agent"`
-	Apisix  *ApisixConfig   `yaml:"apisix"`
-	Docker  *DockerConfig   `yaml:"docker"`
-	Members []*MemberConfig `yaml:"members"`
+	Server      *Server            `yaml:"server"`
+	Agent       *AgentConfig       `yaml:"agent"`
+	Apisix      *ApisixConfig      `yaml:"apisix"`
+	Docker      *DockerConfig      `yaml:"docker"`
+	Marketplace *MarketplaceConfig `yaml:"marketplace"`
+	Members     []*MemberConfig    `yaml:"members"`
+}
+
+// 应用市场配置
+type MarketplaceConfig struct {
+	URL string `yaml:"url"` // 应用市场站点地址，通过 iframe 嵌入
 }
 
 // 服务器配置

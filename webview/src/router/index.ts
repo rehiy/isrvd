@@ -145,6 +145,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/shell.vue')
   },
   {
+    path: '/marketplace',
+    name: 'marketplace',
+    component: () => import('@/views/marketplace.vue')
+  },
+  {
     path: '/system/members',
     name: 'system-members',
     component: () => import('@/views/system/members.vue')

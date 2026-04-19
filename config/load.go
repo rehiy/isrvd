@@ -24,6 +24,8 @@ var (
 	Apisix = &ApisixConfig{}
 	// Docker 配置
 	Docker = &DockerConfig{}
+	// 应用市场配置
+	Marketplace = &MarketplaceConfig{}
 	// 成员配置
 	Members = map[string]*MemberConfig{}
 	// 主成员（配置文件中第一个成员，禁止删除）
@@ -75,6 +77,11 @@ func Load() error {
 	}
 	if !filepath.IsAbs(Docker.ContainerRoot) {
 		Docker.ContainerRoot = filepath.Join(RootDirectory, Docker.ContainerRoot)
+	}
+
+	// 更新应用市场配置
+	if conf.Marketplace != nil {
+		Marketplace = conf.Marketplace
 	}
 
 	// 更新 Member 配置

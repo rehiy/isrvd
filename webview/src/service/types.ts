@@ -559,11 +559,16 @@ export interface DockerSettings {
     containerRoot: string
 }
 
+export interface MarketplaceSettings {
+    url: string
+}
+
 export interface AllSettings {
     server: ServerSettings
     agent: AgentSettings
     apisix: ApisixSettings
     docker: DockerSettings
+    marketplace: MarketplaceSettings
 }
 
 // ─── 成员管理 ───

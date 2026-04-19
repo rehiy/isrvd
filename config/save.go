@@ -32,10 +32,11 @@ func Save() error {
 			ProxyHeaderName: ProxyHeaderName,
 			RootDirectory:   RootDirectory,
 		},
-		Agent:   Agent,
-		Apisix:  Apisix,
-		Docker:  Docker,
-		Members: members,
+		Agent:       Agent,
+		Apisix:      Apisix,
+		Docker:      Docker,
+		Marketplace: Marketplace,
+		Members:     members,
 	}
 
 	data, err := yaml.Marshal(conf)

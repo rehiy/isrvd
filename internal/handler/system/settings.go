@@ -48,20 +48,27 @@ type DockerSettings struct {
 	ContainerRoot string `json:"containerRoot"`
 }
 
+// MarketplaceSettings 应用市场配置
+type MarketplaceSettings struct {
+	URL string `json:"url"`
+}
+
 // AllSettings 全部配置聚合
 type AllSettings struct {
-	Server *ServerSettings `json:"server"`
-	Agent  *AgentSettings  `json:"agent"`
-	Apisix *ApisixSettings `json:"apisix"`
-	Docker *DockerSettings `json:"docker"`
+	Server      *ServerSettings      `json:"server"`
+	Agent       *AgentSettings       `json:"agent"`
+	Apisix      *ApisixSettings      `json:"apisix"`
+	Docker      *DockerSettings      `json:"docker"`
+	Marketplace *MarketplaceSettings `json:"marketplace"`
 }
 
 // UpdateAllRequest 全量更新请求（各分区均可选，nil 表示该分区不更新）
 type UpdateAllRequest struct {
-	Server *ServerSettings `json:"server"`
-	Agent  *AgentSettings  `json:"agent"`
-	Apisix *ApisixSettings `json:"apisix"`
-	Docker *DockerSettings `json:"docker"`
+	Server      *ServerSettings      `json:"server"`
+	Agent       *AgentSettings       `json:"agent"`
+	Apisix      *ApisixSettings      `json:"apisix"`
+	Docker      *DockerSettings      `json:"docker"`
+	Marketplace *MarketplaceSettings `json:"marketplace"`
 }
 
 // pickSecret 新值为空时保留原值，否则用新值
@@ -95,6 +102,9 @@ func (h *SettingsHandler) GetAll(c *gin.Context) {
 			Host:          config.Docker.Host,
 			ContainerRoot: config.Docker.ContainerRoot,
 		},
+		Marketplace: &MarketplaceSettings{
+			URL: config.Marketplace.URL,
+		},
 	})
 }
 
@@ -124,6 +134,9 @@ func (h *SettingsHandler) UpdateAll(c *gin.Context) {
 	if req.Docker != nil {
 		config.Docker.Host = req.Docker.Host
 		config.Docker.ContainerRoot = req.Docker.ContainerRoot
+	}
+	if req.Marketplace != nil {
+		config.Marketplace.URL = req.Marketplace.URL
 	}
 	if err := config.Save(); err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, "保存配置失败: "+err.Error())

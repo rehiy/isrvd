@@ -365,6 +365,16 @@ export default toNative(NavigationBar)
 
       <!-- 用户管理（放在系统设置上方） -->
       <router-link
+        to="/marketplace"
+        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+        :title="collapsed ? '应用市场' : ''"
+      >
+        <i class="fas fa-store"></i>
+        <span v-if="!collapsed">应用市场</span>
+      </router-link>
+
+      <router-link
         to="/system/members"
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
         active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"

@@ -2,7 +2,7 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { AllSettings, ServerSettings, AgentSettings, ApisixSettings, DockerSettings } from '@/service/types'
+import type { AllSettings, ServerSettings, AgentSettings, ApisixSettings, DockerSettings, MarketplaceSettings } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -18,6 +18,7 @@ class Settings extends Vue {
   agent: AgentSettings = { model: '', baseUrl: '', apiKey: '' }
   apisix: ApisixSettings = { adminUrl: '', adminKey: '' }
   docker: DockerSettings = { host: '', containerRoot: '' }
+  marketplace: MarketplaceSettings = { url: '' }
 
   // 敏感字段当前是否已设置（后端返回）
   jwtSecretSet = false
@@ -48,6 +49,7 @@ class Settings extends Vue {
       this.agent = { ...payload.agent, apiKey: '' }
       this.apisix = { ...payload.apisix, adminKey: '' }
       this.docker = { ...payload.docker }
+      this.marketplace = { ...(payload.marketplace || { url: '' }) }
       this.jwtSecretSet = !!payload.server.jwtSecretSet
       this.adminKeySet = !!payload.apisix.adminKeySet
       this.agentApiKeySet = !!payload.agent.apiKeySet
@@ -65,6 +67,7 @@ class Settings extends Vue {
         agent: this.agent,
         apisix: this.apisix,
         docker: this.docker,
+        marketplace: this.marketplace,
       })
       this.actions.showNotification('success', '全部配置已保存，部分项需重启生效')
       this.loadSettings()
@@ -231,6 +234,24 @@ export default toNative(Settings)
               <label class="block text-sm font-medium text-slate-700 mb-1.5">容器数据根目录</label>
               <input type="text" v-model="docker.containerRoot" placeholder="containers" class="input" />
               <p class="mt-1 text-xs text-slate-400">用于存放容器数据卷的基础目录（相对于基础目录）</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 应用市场配置 -->
+        <section class="max-w-3xl">
+          <div class="flex items-center gap-2 mb-4 pb-2 border-b border-slate-200">
+            <div class="w-7 h-7 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-store text-white text-xs"></i>
+            </div>
+            <h2 class="text-sm font-semibold text-slate-800">应用市场</h2>
+            <span class="text-xs text-slate-400">嵌入式应用市场站点地址</span>
+          </div>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">站点 URL</label>
+              <input type="text" v-model="marketplace.url" placeholder="例如 http://21.214.54.113:8000/" class="input" />
+              <p class="mt-1 text-xs text-slate-400">应用市场页面以 iframe 方式嵌入，并通过 postMessage 协议接收安装事件</p>
             </div>
           </div>
         </section>

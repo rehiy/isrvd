@@ -6,6 +6,7 @@ export const systemInstruction = `
 - Docker（/docker）：管理容器、镜像、网络、数据卷、镜像仓库
 - Docker Swarm（/swarm）：管理集群节点、服务、任务
 - 终端（/shell）：在线 Web 终端，直接执行 Shell 命令
+- 应用市场（/marketplace）：通过嵌入式应用市场浏览与安装容器化应用
 - 成员管理（/system/members）：管理系统用户账号
 - 系统设置（/system/settings）：配置系统参数
 
@@ -77,6 +78,9 @@ export function getPageInstruction(url: string): string {
     }
     if (path.includes('/shell')) {
         return '当前页面：Web 终端。可直接在服务器上执行 Shell 命令，请谨慎操作，避免执行破坏性命令。'
+    }
+    if (path.includes('/marketplace')) {
+        return '当前页面：应用市场。以 iframe 方式嵌入外部应用市场，点击安装按钮后面板会接收安装事件并生成部署脚本。'
     }
     if (path.includes('/system/members')) {
         return '当前页面：成员管理。可添加、编辑、删除系统用户，管理用户角色权限。注意：首个系统账号不可删除。'
