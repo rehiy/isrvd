@@ -61,7 +61,7 @@ jobs:
           push: true
           tags: rehiy/isrvd:latest
 
-  appstore:
+  marketplace:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -82,7 +82,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: build/appstore/Dockerfile
+          file: build/marketplace/Dockerfile
           platforms: linux/amd64
           push: true
           tags: rehiy/appstore:latest

@@ -30,84 +30,127 @@
     select.input { cursor: pointer; padding-right: 2rem; }
     .markdown-body { font-size: 0.875rem; background: transparent; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes slideDownFade {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .alert-error {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.625rem;
+      padding: 0.625rem 0.75rem 0.625rem 1rem;
+      border-radius: 0.75rem;
+      background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
+      border: 1px solid #fecaca;
+      box-shadow: 0 1px 2px rgba(239, 68, 68, 0.06);
+      color: #dc2626;
+      font-size: 0.75rem;
+      line-height: 1.5;
+      animation: slideDownFade 0.22s ease-out;
+    }
+    .alert-error::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0.5rem; bottom: 0.5rem;
+      width: 3px;
+      background: #ef4444;
+      border-radius: 0 2px 2px 0;
+    }
+    .alert-error-icon {
+      flex-shrink: 0;
+      width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 9999px;
+      background: #fee2e2;
+      color: #dc2626;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+    }
+    .alert-error-close {
+      flex-shrink: 0;
+      width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 9999px;
+      color: #f87171;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.15s, color 0.15s;
+      font-size: 0.7rem;
+    }
+    .alert-error-close:hover { background: #fee2e2; color: #dc2626; }
     @media (max-width: 768px) { .input { padding-top: 0.75rem; padding-bottom: 0.75rem; } }
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
 <div id="app" v-cloak>
 
-  <!-- 顶部导航 -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
-    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center gap-3">
-      <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
-        <i class="fa-solid fa-store text-white"></i>
-      </div>
-      <span class="font-semibold text-slate-800 text-base">Docker 应用商店</span>
-      <span v-if="storeVersion" class="text-xs text-slate-400 hidden sm:inline">{{ storeVersion }}</span>
-      <div class="flex-1"></div>
+  <!-- 主体 -->
+  <div class="max-w-7xl mx-auto px-4 py-4 flex gap-4">
+
+    <!-- 左侧分类（包含搜索框） -->
+    <aside class="hidden md:block w-48 flex-shrink-0 self-start sticky top-4 space-y-3">
       <!-- 搜索框 -->
-      <div class="relative w-48 md:w-64">
-        <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
         <input
           v-model="searchQuery"
           type="text"
           placeholder="搜索应用..."
-          class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          class="w-full pl-9 pr-3 py-2.5 text-xs text-slate-700 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100 transition-all"
         >
       </div>
-      <span class="text-xs text-slate-400 hidden md:inline">{{ filteredApps.length }} 个应用</span>
-    </div>
-  </header>
-
-  <!-- 主体 -->
-  <div class="max-w-7xl mx-auto px-4 py-4 flex gap-4">
-
-    <!-- 左侧分类 -->
-    <aside class="hidden md:block w-44 flex-shrink-0 sticky top-[74px] self-start">
-      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-        <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 py-3">
-          <div class="flex items-center gap-2">
-            <div class="w-6 h-6 rounded-md bg-blue-500 flex items-center justify-center">
-              <i class="fa-solid fa-layer-group text-white text-xs"></i>
-            </div>
-            <span class="text-sm font-medium text-slate-700">分类</span>
-          </div>
-        </div>
-        <nav class="p-2">
-          <button
-            @click="activeTag = ''"
-            :class="['w-full text-left px-3 py-2 rounded-lg text-sm transition-colors', activeTag === '' ? 'bg-blue-50 text-blue-600 font-medium' : 'text-slate-600 hover:bg-slate-50']"
-          >
-            <i class="fa-solid fa-border-all mr-2 text-xs"></i>全部
-          </button>
-          <button
-            v-for="tag in tags"
-            :key="tag.key"
-            @click="activeTag = tag.key"
-            :class="['w-full text-left px-3 py-2 rounded-lg text-sm transition-colors', activeTag === tag.key ? 'bg-blue-50 text-blue-600 font-medium' : 'text-slate-600 hover:bg-slate-50']"
-          >
-            <i :class="['mr-2 text-xs', tagIcon(tag.key)]"></i>{{ tag.name }}
-          </button>
-        </nav>
-      </div>
+      <!-- 分类 -->
+      <nav class="bg-white rounded-2xl border border-slate-200 p-2 space-y-0.5">
+        <button
+          @click="activeTag = ''"
+          :class="['w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-2', activeTag === '' ? 'bg-sky-50 text-sky-600 font-medium' : 'text-slate-600 hover:bg-slate-50']"
+        >
+          <i class="fa-solid fa-border-all text-xs w-4 text-center"></i><span>全部</span>
+        </button>
+        <button
+          v-for="tag in tags"
+          :key="tag.key"
+          @click="activeTag = tag.key"
+          :class="['w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-2', activeTag === tag.key ? 'bg-sky-50 text-sky-600 font-medium' : 'text-slate-600 hover:bg-slate-50']"
+        >
+          <i :class="['text-xs w-4 text-center', tagIcon(tag.key)]"></i><span class="truncate">{{ tag.name }}</span>
+        </button>
+      </nav>
     </aside>
 
     <!-- 右侧内容 -->
     <main class="flex-1 min-w-0">
 
-      <!-- 移动端分类横滚 -->
-      <div class="md:hidden sticky top-14 z-20 bg-slate-50 -mx-4 -mt-4 p-4 overflow-x-auto scrollbar-hide">
-        <div class="flex gap-2 pb-1">
-          <button
-            @click="activeTag = ''"
-            :class="['flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors', activeTag === '' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-600']"
-          >全部</button>
-          <button
-            v-for="tag in tags"
-            :key="tag.key"
-            @click="activeTag = tag.key"
-            :class="['flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors', activeTag === tag.key ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-600']"
-          >{{ tag.name }}</button>
+      <!-- 移动端：搜索框 + 分类横滚（sticky 固定到顶部） -->
+      <div class="md:hidden sticky top-0 z-20 -mx-4 -mt-4 px-4 pt-3 pb-2 bg-slate-50/90 backdrop-blur border-b border-slate-200 mb-3 space-y-2">
+        <!-- 搜索框 -->
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="搜索应用..."
+            class="w-full pl-9 pr-3 py-2.5 text-xs text-slate-700 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100 transition-all"
+          >
+        </div>
+        <!-- 分类横滚 -->
+        <div class="overflow-x-auto scrollbar-hide -mx-4 px-4">
+          <div class="flex gap-2 pb-1">
+            <button
+              @click="activeTag = ''"
+              :class="['flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all', activeTag === '' ? 'bg-sky-500 text-white shadow-sm shadow-sky-500/30' : 'bg-white border border-slate-200 text-slate-600']"
+            >全部</button>
+            <button
+              v-for="tag in tags"
+              :key="tag.key"
+              @click="activeTag = tag.key"
+              :class="['flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all', activeTag === tag.key ? 'bg-sky-500 text-white shadow-sm shadow-sky-500/30' : 'bg-white border border-slate-200 text-slate-600']"
+            >{{ tag.name }}</button>
+          </div>
         </div>
       </div>
 
@@ -141,8 +184,7 @@
           v-for="app in filteredApps"
           :key="app.key"
           @click="openDetail(app)"
-          class="bg-white rounded-2xl border border-slate-200 p-4 cursor-pointer hover:shadow-md hover:border-blue-200 transition-all group"
-        >
+          class="bg-white rounded-2xl border border-slate-200 p-4 cursor-pointer hover:shadow-lg hover:shadow-sky-500/5 hover:border-sky-200 transition-all group"        >
           <div class="flex items-start gap-3">
             <img
               :data-src="appIconUrl(app.key)"
@@ -410,9 +452,17 @@
       </div>
 
       <!-- 底部按钮 -->
-      <div class="flex-shrink-0 border-t border-slate-200 px-4 md:px-6 py-3 flex justify-end gap-3 bg-white rounded-b-2xl">
-        <button @click="installPanel = null" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-transparent hover:bg-slate-100 rounded-xl transition-all duration-200">取消</button>
-        <button @click="confirmInstall" class="inline-flex items-center justify-center px-5 py-2 text-sm font-medium text-white bg-sky-500 hover:bg-sky-600 rounded-xl transition-all duration-200">确认安装</button>
+      <div class="flex-shrink-0 border-t border-slate-200 px-4 md:px-6 py-3 bg-white rounded-b-2xl">
+        <!-- 错误提示 -->
+        <div v-if="installError" class="mb-3 alert-error">
+          <span class="alert-error-icon"><i class="fa-solid fa-exclamation"></i></span>
+          <span class="flex-1 pt-0.5">{{ installError }}</span>
+          <button type="button" @click="installError = ''" class="alert-error-close" aria-label="关闭"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="flex justify-end gap-3">
+          <button @click="installPanel = null" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-transparent hover:bg-slate-100 rounded-xl transition-all duration-200">取消</button>
+          <button @click="confirmInstall" class="inline-flex items-center justify-center px-5 py-2 text-sm font-medium text-white bg-sky-500 hover:bg-sky-600 rounded-xl transition-all duration-200">确认安装</button>
+        </div>
       </div>
     </div>
   </div>
@@ -447,12 +497,19 @@
       </div>
 
       <!-- 底部按钮 -->
-      <div class="flex-shrink-0 border-t border-slate-200 px-4 md:px-6 py-3 flex justify-end gap-3 bg-white rounded-b-2xl">
-        <button @click="scriptPreview = null" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-transparent hover:bg-slate-100 rounded-xl transition-all duration-200">关闭</button>
-        <button @click="copyScript" class="inline-flex items-center justify-center gap-2 px-5 py-2 text-sm font-medium text-white bg-sky-500 hover:bg-sky-600 rounded-xl transition-all duration-200">
-          <i :class="scriptCopied ? 'fa-solid fa-check' : 'fa-solid fa-copy'" class="text-xs"></i>
-          {{ scriptCopied ? '已复制' : '复制脚本' }}
-        </button>
+      <div class="flex-shrink-0 border-t border-slate-200 px-4 md:px-6 py-3 bg-white rounded-b-2xl">
+        <div v-if="scriptError" class="mb-3 alert-error">
+          <span class="alert-error-icon"><i class="fa-solid fa-exclamation"></i></span>
+          <span class="flex-1 pt-0.5">{{ scriptError }}</span>
+          <button type="button" @click="scriptError = ''" class="alert-error-close" aria-label="关闭"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="flex justify-end gap-3">
+          <button @click="scriptPreview = null" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-transparent hover:bg-slate-100 rounded-xl transition-all duration-200">关闭</button>
+          <button @click="copyScript" class="inline-flex items-center justify-center gap-2 px-5 py-2 text-sm font-medium text-white bg-sky-500 hover:bg-sky-600 rounded-xl transition-all duration-200">
+            <i :class="scriptCopied ? 'fa-solid fa-check' : 'fa-solid fa-copy'" class="text-xs"></i>
+            {{ scriptCopied ? '已复制' : '复制脚本' }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -628,8 +685,10 @@ createApp({
     const installPanel = ref(null);
     const installForm = ref({ name: '', version: '', fields: {} });
     const showPasswords = ref({});
+    const installError = ref('');
     const scriptPreview = ref(null);
     const scriptCopied = ref(false);
+    const scriptError = ref('');
 
     // 当前版本的 formFields
     const currentFormFields = computed(() => {
@@ -648,6 +707,7 @@ createApp({
     // 切换版本时重新初始化字段
     const onVersionChange = () => {
       showPasswords.value = {};
+      installError.value = '';
       installForm.value.fields = initFormFields(currentFormFields.value);
     };
 
@@ -661,6 +721,7 @@ createApp({
         fields: initFormFields(fields),
       };
       showPasswords.value = {};
+      installError.value = '';
     };
 
     // 实例名清洗：仅保留 docker 容器名允许的字符 [a-zA-Z0-9_.-]
@@ -688,9 +749,11 @@ createApp({
       const zipPath = `./storage/${app.key}/${version}.zip`;
       const absUrl = new URL(zipPath, window.location.href).href;
 
-      return {
+      // 原始对象：app/formFields 等是 Vue 响应式 Proxy，postMessage 的结构化克隆
+      // 无法序列化 Proxy，需通过 JSON 深拷贝一次性剥离响应式包装
+      const raw = {
         // 协议识别
-        source: 'appstore',
+        source: 'marketplace',
         protocol: 1,
         type: 'install',
         timestamp: Date.now(),
@@ -736,6 +799,9 @@ createApp({
           network: NETWORK_NAME,
         },
       };
+
+      // 深拷贝为纯 JSON 对象，确保 postMessage 可序列化
+      return JSON.parse(JSON.stringify(raw));
     };
 
     // 生成安装 shell 脚本（非 iframe 环境使用）
@@ -799,9 +865,9 @@ createApp({
         ``,
         `# ============ 写入 .env ============`,
         `echo "==> 写入 .env"`,
-        `cat > .env <<'APPSTORE_ENV_EOF'`,
+        `cat > .env <<'MARKETPLACE_ENV_EOF'`,
         envLines,
-        `APPSTORE_ENV_EOF`,
+        `MARKETPLACE_ENV_EOF`,
         `chmod 600 .env`,
         ``,
         `# ============ 启动 ============`,
@@ -819,6 +885,7 @@ createApp({
 
     const copyScript = async () => {
       if (!scriptPreview.value) return;
+      scriptError.value = '';
       try {
         await navigator.clipboard.writeText(scriptPreview.value.script);
         scriptCopied.value = true;
@@ -829,24 +896,27 @@ createApp({
         ta.value = scriptPreview.value.script;
         document.body.appendChild(ta);
         ta.select();
-        try { document.execCommand('copy'); scriptCopied.value = true; setTimeout(() => { scriptCopied.value = false; }, 1500); } catch (_) { alert('复制失败，请手动选中复制'); }
+        try { document.execCommand('copy'); scriptCopied.value = true; scriptError.value = ''; setTimeout(() => { scriptCopied.value = false; }, 1500); } catch (_) { scriptError.value = '复制失败，请手动选中复制'; }
         document.body.removeChild(ta);
       }
     };
 
     const confirmInstall = () => {
-      if (!installForm.value.name.trim()) { alert('请填写名称'); return; }
+      installError.value = '';
+      if (!installForm.value.name.trim()) { installError.value = '请填写名称'; return; }
       const missing = currentFormFields.value.find(
         f => f.required && !f.disabled && (installForm.value.fields[f.envKey] === '' || installForm.value.fields[f.envKey] == null)
       );
       if (missing) {
-        alert(`请填写「${missing.label?.zh || missing.label?.en || missing.label}」`);
+        installError.value = `请填写「${missing.label?.zh || missing.label?.en || missing.label}」`;
         return;
       }
 
       const payload = buildInstallPayload();
 
-      const inIframe = window.self !== window.top;
+      // 嵌入 iframe 时直接向父窗口投递安装指令，独立访问时弹出 shell 脚本供用户复制执行
+      let inIframe = false;
+      try { inIframe = window.self !== window.top; } catch (_) { inIframe = true; }
       if (inIframe) {
         window.parent.postMessage(payload, '*');
         installPanel.value = null;
@@ -861,6 +931,7 @@ createApp({
         script,
       };
       scriptCopied.value = false;
+      scriptError.value = '';
       installPanel.value = null;
     };
 
@@ -868,9 +939,9 @@ createApp({
       loading, error, storeVersion, tags, activeTag, searchQuery,
       filteredApps, detail, readmeHtml, readmeLoading, imgErrors,
       tagName, tagIcon, appIconUrl, latestVersion, openDetail, lazyImg,
-      installPanel, installForm, showPasswords, currentFormFields,
+      installPanel, installForm, showPasswords, currentFormFields, installError,
       onVersionChange, openInstall, confirmInstall,
-      scriptPreview, scriptCopied, copyScript,
+      scriptPreview, scriptCopied, scriptError, copyScript,
     };
   }
 }).mount('#app');
