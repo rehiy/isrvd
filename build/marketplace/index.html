@@ -9,84 +9,58 @@
   <script src="https://jscdn.rehi.org/npm/marked@15/marked.min.js"></script>
   <link rel="stylesheet" href="https://jscdn.rehi.org/npm/@fortawesome/fontawesome-free@6/css/all.min.css">
   <link rel="stylesheet" href="https://jscdn.rehi.org/npm/github-markdown-css/github-markdown-light.min.css">
+  <script>
+    // 被宿主 iframe 嵌入时（同源 self!==top、跨源访问 top 抛异常）首屏前打标
+    try { window.self !== window.top && document.documentElement.classList.add('embed'); }
+    catch (_) { document.documentElement.classList.add('embed'); }
+  </script>
   <style>
     [v-cloak] { display: none; }
-    .app-icon { width: 56px; height: 56px; object-fit: contain; }
-    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    html.embed .app-header { display: none; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    .lazy-img { background: #e2e8f0; }
-    .spinner {
-      border: 3px solid #e2e8f0;
-      border-top-color: #3b82f6;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
+    /* 表单输入框：多处复用，原子类写法过长，保留语义类 */
     .input { width: 100%; padding: 0.625rem 1rem; font-size: 0.875rem; border: 1px solid #e2e8f0; border-radius: 0.75rem; background: #fff; color: #334155; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
     .input::placeholder { color: #94a3b8; }
     .input:hover { border-color: #cbd5e1; }
     .input:focus { border-color: #38bdf8; box-shadow: 0 0 0 4px rgba(14,165,233,0.1); }
     .input:disabled { opacity: 0.5; cursor: not-allowed; }
     select.input { cursor: pointer; padding-right: 2rem; }
-    .markdown-body { font-size: 0.875rem; background: transparent; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 768px) { .input { padding-top: 0.75rem; padding-bottom: 0.75rem; } }
+    /* alert 入场动画：Tailwind CDN 无法扩展 theme，keyframes 需保留 */
     @keyframes slideDownFade {
       from { opacity: 0; transform: translateY(-6px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-    .alert-error {
-      position: relative;
-      display: flex;
-      align-items: flex-start;
-      gap: 0.625rem;
-      padding: 0.625rem 0.75rem 0.625rem 1rem;
-      border-radius: 0.75rem;
-      background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
-      border: 1px solid #fecaca;
-      box-shadow: 0 1px 2px rgba(239, 68, 68, 0.06);
-      color: #dc2626;
-      font-size: 0.75rem;
-      line-height: 1.5;
-      animation: slideDownFade 0.22s ease-out;
-    }
-    .alert-error::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 0.5rem; bottom: 0.5rem;
-      width: 3px;
-      background: #ef4444;
-      border-radius: 0 2px 2px 0;
-    }
-    .alert-error-icon {
-      flex-shrink: 0;
-      width: 1.25rem;
-      height: 1.25rem;
-      border-radius: 9999px;
-      background: #fee2e2;
-      color: #dc2626;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-    }
-    .alert-error-close {
-      flex-shrink: 0;
-      width: 1.25rem;
-      height: 1.25rem;
-      border-radius: 9999px;
-      color: #f87171;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.15s, color 0.15s;
-      font-size: 0.7rem;
-    }
-    .alert-error-close:hover { background: #fee2e2; color: #dc2626; }
-    @media (max-width: 768px) { .input { padding-top: 0.75rem; padding-bottom: 0.75rem; } }
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
 <div id="app" v-cloak>
+
+  <!-- 顶部导航 -->
+  <header class="app-header bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <!-- 左侧：品牌 -->
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-sky-500/30">
+          <i class="fa-brands fa-docker text-white text-base"></i>
+        </div>
+        <h1 class="text-base md:text-lg font-semibold text-slate-800 truncate">Docker 应用市场</h1>
+      </div>
+
+      <!-- 右侧：GitHub -->
+      <a
+        href="https://github.com/rehiy/isrvd"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="GitHub"
+        class="inline-flex items-center gap-2 px-3 h-9 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors flex-shrink-0"
+      >
+        <i class="fa-brands fa-github text-base"></i>
+        <span class="hidden sm:inline">GitHub</span>
+      </a>
+    </div>
+  </header>
 
   <!-- 主体 -->
   <div class="max-w-7xl mx-auto px-4 py-4 flex gap-4">
@@ -154,9 +128,9 @@
         </div>
       </div>
 
-      <!-- 加载中 -->
+  <!-- 加载中 -->
       <div v-if="loading" class="flex flex-col items-center justify-center py-20">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="w-12 h-12 border-[3px] border-slate-200 border-t-sky-500 rounded-full animate-spin mb-3"></div>
         <p class="text-slate-500 text-sm">加载中...</p>
       </div>
 
@@ -186,15 +160,15 @@
           @click="openDetail(app)"
           class="bg-white rounded-2xl border border-slate-200 p-4 cursor-pointer hover:shadow-lg hover:shadow-sky-500/5 hover:border-sky-200 transition-all group"        >
           <div class="flex items-start gap-3">
-            <img
+      <img
               :data-src="appIconUrl(app.key)"
               :alt="app.name"
-              class="app-icon rounded-xl flex-shrink-0 lazy-img"
+              class="w-14 h-14 object-contain rounded-xl flex-shrink-0 bg-slate-200"
               :class="{ 'hidden': imgErrors[app.key] }"
               :ref="el => lazyImg(el)"
               @error="imgErrors[app.key] = true; $event.target.classList.add('hidden')"
             >
-            <div v-if="imgErrors[app.key]" class="app-icon rounded-xl flex-shrink-0 bg-slate-100 flex items-center justify-center">
+            <div v-if="imgErrors[app.key]" class="w-14 h-14 object-contain rounded-xl flex-shrink-0 bg-slate-100 flex items-center justify-center">
               <i class="fa-solid fa-cube text-slate-400 text-xl"></i>
             </div>
             <div class="flex-1 min-w-0">
@@ -317,10 +291,10 @@
             <i class="fa-solid fa-file-lines text-slate-400 text-xs"></i>
             <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">README</h4>
           </div>
-          <div v-if="readmeLoading" class="flex items-center justify-center py-10 text-slate-400">
-            <div class="w-6 h-6 spinner mr-2"></div>加载中...
+      <div v-if="readmeLoading" class="flex items-center justify-center py-10 text-slate-400">
+            <div class="w-6 h-6 border-[3px] border-slate-200 border-t-sky-500 rounded-full animate-spin mr-2"></div>加载中...
           </div>
-          <div v-else class="markdown-body" v-html="readmeHtml"></div>
+          <div v-else class="markdown-body text-sm !bg-transparent" v-html="readmeHtml"></div>
         </div>
 
       </div>
@@ -453,11 +427,11 @@
 
       <!-- 底部按钮 -->
       <div class="flex-shrink-0 border-t border-slate-200 px-4 md:px-6 py-3 bg-white rounded-b-2xl">
-        <!-- 错误提示 -->
-        <div v-if="installError" class="mb-3 alert-error">
-          <span class="alert-error-icon"><i class="fa-solid fa-exclamation"></i></span>
-          <span class="flex-1 pt-0.5">{{ installError }}</span>
-          <button type="button" @click="installError = ''" class="alert-error-close" aria-label="关闭"><i class="fa-solid fa-xmark"></i></button>
+    <!-- 错误提示 -->
+        <div v-if="installError" class="relative flex items-start gap-2.5 pl-4 pr-3 py-2.5 mb-3 rounded-xl text-xs text-red-600 bg-gradient-to-br from-red-50 to-red-50/60 border border-red-200 shadow-[0_1px_2px_rgba(239,68,68,0.06)] animate-[slideDownFade_.22s_ease-out] before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:bg-red-500 before:rounded-r-sm">
+          <span class="flex-shrink-0 w-5 h-5 rounded-full bg-red-100 text-red-600 inline-flex items-center justify-center text-[0.7rem]"><i class="fa-solid fa-exclamation"></i></span>
+          <span class="flex-1 pt-0.5 leading-relaxed">{{ installError }}</span>
+          <button type="button" @click="installError = ''" class="flex-shrink-0 w-5 h-5 rounded-full text-red-400 hover:bg-red-100 hover:text-red-600 inline-flex items-center justify-center text-[0.7rem] transition-colors" aria-label="关闭"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="flex justify-end gap-3">
           <button @click="installPanel = null" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-transparent hover:bg-slate-100 rounded-xl transition-all duration-200">取消</button>
@@ -498,10 +472,10 @@
 
       <!-- 底部按钮 -->
       <div class="flex-shrink-0 border-t border-slate-200 px-4 md:px-6 py-3 bg-white rounded-b-2xl">
-        <div v-if="scriptError" class="mb-3 alert-error">
-          <span class="alert-error-icon"><i class="fa-solid fa-exclamation"></i></span>
-          <span class="flex-1 pt-0.5">{{ scriptError }}</span>
-          <button type="button" @click="scriptError = ''" class="alert-error-close" aria-label="关闭"><i class="fa-solid fa-xmark"></i></button>
+    <div v-if="scriptError" class="relative flex items-start gap-2.5 pl-4 pr-3 py-2.5 mb-3 rounded-xl text-xs text-red-600 bg-gradient-to-br from-red-50 to-red-50/60 border border-red-200 shadow-[0_1px_2px_rgba(239,68,68,0.06)] animate-[slideDownFade_.22s_ease-out] before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:bg-red-500 before:rounded-r-sm">
+          <span class="flex-shrink-0 w-5 h-5 rounded-full bg-red-100 text-red-600 inline-flex items-center justify-center text-[0.7rem]"><i class="fa-solid fa-exclamation"></i></span>
+          <span class="flex-1 pt-0.5 leading-relaxed">{{ scriptError }}</span>
+          <button type="button" @click="scriptError = ''" class="flex-shrink-0 w-5 h-5 rounded-full text-red-400 hover:bg-red-100 hover:text-red-600 inline-flex items-center justify-center text-[0.7rem] transition-colors" aria-label="关闭"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="flex justify-end gap-3">
           <button @click="scriptPreview = null" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-transparent hover:bg-slate-100 rounded-xl transition-all duration-200">关闭</button>
@@ -913,26 +887,20 @@ createApp({
       }
 
       const payload = buildInstallPayload();
+      installPanel.value = null;
 
-      // 嵌入 iframe 时直接向父窗口投递安装指令，独立访问时弹出 shell 脚本供用户复制执行
-      let inIframe = false;
-      try { inIframe = window.self !== window.top; } catch (_) { inIframe = true; }
-      if (inIframe) {
+      // 嵌入时投递给父窗口，独立访问时弹 shell 脚本（标记见 <head> 内联脚本）
+      if (document.documentElement.classList.contains('embed')) {
         window.parent.postMessage(payload, '*');
-        installPanel.value = null;
         return;
       }
-
-      // 非 iframe：弹出 shell 脚本预览
-      const script = buildInstallScript(payload);
       scriptPreview.value = {
         key: payload.app.key,
         name: payload.instance.name,
-        script,
+        script: buildInstallScript(payload),
       };
       scriptCopied.value = false;
       scriptError.value = '';
-      installPanel.value = null;
     };
 
     return {
