@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""
-编译脚本：
-1. 从 GitHub 下载 appstore 源码 zip
-2. 解压到临时目录
-3. 生成 index.json：按层级包含所有 data.yml 内容
-4. 生成 storage/软件名/版本号.zip：每个版本目录的非 yml 文件
-"""
 
 import json
 import shutil
@@ -52,7 +45,7 @@ def extract_source(zip_path: Path, extract_dir: Path) -> Path:
     print(f"[解压] {zip_path.name} -> {extract_dir}")
     with zipfile.ZipFile(zip_path, "r") as zf:
         zf.extractall(extract_dir)
-        # zip 内通常有一个顶层目录，如 appstore-dev/
+        # zip 内通常有一个顶层目录，如 master/ 或 dev/ 等
         top_dirs = {Path(name).parts[0] for name in zf.namelist() if name.strip("/")}
         if len(top_dirs) == 1:
             return extract_dir / top_dirs.pop()
@@ -248,7 +241,7 @@ def build_index(source_dir: Path) -> dict:
 
 def main():
     print("=" * 50)
-    print("开始编译 appstore...")
+    print("开始构建应用市场...")
     print("=" * 50)
 
     # 清理并重建 download 目录
@@ -259,7 +252,7 @@ def main():
     # 使用临时目录下载并解压
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
-        zip_path = tmp_path / "appstore.zip"
+        zip_path = tmp_path / "applist.zip"
 
         # 下载
         download_source(SOURCE_URL, zip_path)
