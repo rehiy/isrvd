@@ -22,6 +22,11 @@ OUTPUT_DOWNLOAD = BASE_DIR / "storage"
 
 SOURCE_URL = "https://github.com/1Panel-dev/appstore/archive/refs/heads/dev.zip"
 
+# 构建阶段将 compose 文件中原始网络名替换为此值
+# 若修改此值，请同步修改 index.html 中 buildInstallScript 的 NETWORK_NAME 默认值
+ORIGINAL_NETWORK_NAME = "1panel-network"
+NETWORK_NAME = "app-network"
+
 
 def download_source(url: str, dest: Path):
     """下载源码 zip 到指定路径"""
@@ -137,10 +142,27 @@ def build_version_zip(app_name: str, version: str, version_dir: Path):
     zip_dir.mkdir(parents=True, exist_ok=True)
     zip_path = zip_dir / f"{version}.zip"
 
+    compose_names = ("docker-compose.yml", "docker-compose.yaml")
+
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for file_path in sorted(version_dir.rglob("*")):
-            if file_path.is_file() and file_path.name.lower() not in ("data.yml", "data.yaml"):
-                arcname = file_path.relative_to(version_dir)
+            if not file_path.is_file():
+                continue
+            if file_path.name.lower() in ("data.yml", "data.yaml"):
+                continue
+            arcname = file_path.relative_to(version_dir)
+            # compose 文件做网络名字面量替换
+            if file_path.name.lower() in compose_names:
+                try:
+                    text = file_path.read_text(encoding="utf-8")
+                except UnicodeDecodeError:
+                    zf.write(file_path, arcname)
+                    continue
+                if ORIGINAL_NETWORK_NAME in text:
+                    text = text.replace(ORIGINAL_NETWORK_NAME, NETWORK_NAME)
+                    print(f"  [网络] {app_name}/{version}/{arcname}: {ORIGINAL_NETWORK_NAME} -> {NETWORK_NAME}")
+                zf.writestr(str(arcname), text)
+            else:
                 zf.write(file_path, arcname)
 
     print(f"  [zip] {zip_path.relative_to(BASE_DIR)}")

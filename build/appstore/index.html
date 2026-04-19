@@ -417,6 +417,46 @@
     </div>
   </div>
 
+  <!-- 安装脚本预览（非 iframe 环境） -->
+  <div v-if="scriptPreview" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" @click.self="scriptPreview = null">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="scriptPreview = null"></div>
+    <div class="relative bg-white w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl max-h-[90vh] flex flex-col z-10">
+
+      <!-- 头部 -->
+      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3 flex-shrink-0 flex items-center justify-between">
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="w-7 h-7 rounded-md bg-sky-500 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-terminal text-white text-xs"></i>
+          </div>
+          <span class="font-semibold text-slate-800 truncate">安装脚本 - {{ scriptPreview.name }}</span>
+        </div>
+        <button @click="scriptPreview = null" class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 text-slate-500 transition-colors">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- 内容 -->
+      <div class="overflow-y-auto flex-1 p-4 md:p-6 space-y-3">
+        <p class="text-xs text-slate-500 leading-relaxed">
+          复制下方脚本到已安装 Docker 的 Linux 主机（需 root 权限）执行即可，脚本将自动：
+          确保所需的 Docker 网络存在、把应用安装到
+          <code class="px-1 bg-slate-100 rounded">/opt/apps/{{ scriptPreview.key }}/{{ scriptPreview.name }}</code>
+          目录，并通过 <code class="px-1 bg-slate-100 rounded">docker compose up -d</code> 启动。
+        </p>
+        <pre class="bg-slate-900 text-slate-100 rounded-xl p-4 text-xs font-mono overflow-x-auto leading-relaxed max-h-[50vh] overflow-y-auto"><code>{{ scriptPreview.script }}</code></pre>
+      </div>
+
+      <!-- 底部按钮 -->
+      <div class="flex-shrink-0 border-t border-slate-200 px-4 md:px-6 py-3 flex justify-end gap-3 bg-white rounded-b-2xl">
+        <button @click="scriptPreview = null" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-transparent hover:bg-slate-100 rounded-xl transition-all duration-200">关闭</button>
+        <button @click="copyScript" class="inline-flex items-center justify-center gap-2 px-5 py-2 text-sm font-medium text-white bg-sky-500 hover:bg-sky-600 rounded-xl transition-all duration-200">
+          <i :class="scriptCopied ? 'fa-solid fa-check' : 'fa-solid fa-copy'" class="text-xs"></i>
+          {{ scriptCopied ? '已复制' : '复制脚本' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -588,6 +628,8 @@ createApp({
     const installPanel = ref(null);
     const installForm = ref({ name: '', version: '', fields: {} });
     const showPasswords = ref({});
+    const scriptPreview = ref(null);
+    const scriptCopied = ref(false);
 
     // 当前版本的 formFields
     const currentFormFields = computed(() => {
@@ -621,6 +663,177 @@ createApp({
       showPasswords.value = {};
     };
 
+    // 实例名清洗：仅保留 docker 容器名允许的字符 [a-zA-Z0-9_.-]
+    const sanitizeName = (name, fallback) => {
+      const s = String(name || '').replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/^[_.-]+/, '');
+      return s || fallback;
+    };
+
+    // 此处网络名必须与 build.py 中的 NETWORK_NAME 保持一致
+    // 网络名是 compose 文件里写死的外部依赖，父程序必须知道才能保证容器互通
+    const NETWORK_NAME = 'app-network';
+    // 仅 shell 脚本预览使用的本地安装根目录，不随 payload 提交
+    // 父程序（面板/运维平台）通常有自己的安装位置策略，由其自行决定
+    const LOCAL_INSTALL_ROOT = '/opt/apps';
+
+    // 构造结构化安装 payload，postMessage 与 shell 脚本生成共用此数据
+    const buildInstallPayload = () => {
+      const app = installPanel.value;
+      const version = installForm.value.version;
+      const versionData = app.versions[version] || {};
+      const formFields = versionData.formFields || [];
+      const rawName = installForm.value.name;
+      const safeName = sanitizeName(rawName, app.key);
+      const userFields = JSON.parse(JSON.stringify(installForm.value.fields));
+      const zipPath = `./storage/${app.key}/${version}.zip`;
+      const absUrl = new URL(zipPath, window.location.href).href;
+
+      return {
+        // 协议识别
+        source: 'appstore',
+        protocol: 1,
+        type: 'install',
+        timestamp: Date.now(),
+
+        // 应用元信息
+        app: {
+          key: app.key,
+          name: app.name,
+          title: app.title || '',
+          tags: app.tags || [],
+          architectures: app.architectures || [],
+          icon: new URL(appIconUrl(app.key), window.location.href).href,
+        },
+
+        // 版本与包信息
+        version: {
+          value: version,
+          url: absUrl,
+          path: zipPath,
+        },
+
+        // 实例信息
+        instance: {
+          name: rawName,
+          safeName,
+        },
+
+        // 环境变量分层：system 由实例名派生，user 为表单填写
+        env: {
+          system: {
+            CONTAINER_NAME: safeName,
+            APP_NAME: safeName,
+          },
+          user: userFields,
+        },
+
+        // 表单 schema，方便父页面校验或再渲染
+        formFields,
+
+        // 部署约定：仅包含与应用本身强相关的契约字段
+        // 不包含安装目录等部署决策，交由父程序自行处理
+        deploy: {
+          network: NETWORK_NAME,
+        },
+      };
+    };
+
+    // 生成安装 shell 脚本（非 iframe 环境使用）
+    const buildInstallScript = (payload) => {
+      // 转义 shell 单引号：a'b -> 'a'\\''b'
+      const shq = (v) => `'${String(v).replace(/'/g, `'\\''`)}'`;
+      // 转义 .env 值：docker compose env_file 语法 —— 用双引号包裹，转义 " \\ $ `
+      // 参考 https://docs.docker.com/compose/environment-variables/env-file/
+      const envEsc = (v) => `"${String(v).replace(/[\\"`$]/g, '\\$&')}"`;
+
+      const { app, version, instance, env, deploy } = payload;
+
+      // 用户字段优先级最低，系统字段后写入会覆盖（正常情况下 formFields 不会包含这些系统 key）
+      const mergedEnv = { ...env.user, ...env.system };
+
+      const envLines = Object.entries(mergedEnv)
+        .map(([k, v]) => `${k}=${envEsc(v == null ? '' : v)}`)
+        .join('\n');
+
+      return [
+        `#!/usr/bin/env bash`,
+        `# ${app.key} ${version.value} 安装脚本`,
+        `set -euo pipefail`,
+        ``,
+        `# ============ 基础依赖检查 ============`,
+        `command -v docker >/dev/null 2>&1 || { echo "✗ 未检测到 docker，请先安装 Docker" >&2; exit 1; }`,
+        `docker compose version >/dev/null 2>&1 || { echo "✗ 未检测到 docker compose 插件（docker compose v2）" >&2; exit 1; }`,
+        `command -v curl  >/dev/null 2>&1 || { echo "✗ 未检测到 curl"  >&2; exit 1; }`,
+        `command -v unzip >/dev/null 2>&1 || { echo "✗ 未检测到 unzip" >&2; exit 1; }`,
+        ``,
+        `# ============ 配置 ============`,
+        `APP_KEY=${shq(app.key)}`,
+        `APP_NAME=${shq(instance.safeName)}`,
+        `APP_VERSION=${shq(version.value)}`,
+        `ZIP_URL=${shq(version.url)}`,
+        `INSTALL_ROOT=${shq(LOCAL_INSTALL_ROOT)}`,
+        `INSTALL_DIR="$INSTALL_ROOT/$APP_KEY/$APP_NAME"`,
+        `NETWORK_NAME=${shq(deploy.network)}`,
+        ``,
+        `# ============ 确保应用所需网络存在 ============`,
+        `if ! docker network inspect "$NETWORK_NAME" >/dev/null 2>&1; then`,
+        `  echo "==> 创建网络 $NETWORK_NAME"`,
+        `  docker network create "$NETWORK_NAME" >/dev/null`,
+        `fi`,
+        ``,
+        `# ============ 准备目录 ============`,
+        `if [ -d "$INSTALL_DIR" ]; then`,
+        `  echo "✗ 目录已存在：$INSTALL_DIR" >&2`,
+        `  echo "  请先移除或使用其它实例名" >&2`,
+        `  exit 1`,
+        `fi`,
+        `mkdir -p "$INSTALL_DIR"`,
+        `cd "$INSTALL_DIR"`,
+        ``,
+        `# ============ 下载并解压应用包 ============`,
+        `echo "==> 下载 $APP_KEY:$APP_VERSION"`,
+        `curl -fL --retry 3 -o app.zip "$ZIP_URL"`,
+        `echo "==> 解压"`,
+        `unzip -oq app.zip`,
+        `rm -f app.zip`,
+        ``,
+        `# ============ 写入 .env ============`,
+        `echo "==> 写入 .env"`,
+        `cat > .env <<'APPSTORE_ENV_EOF'`,
+        envLines,
+        `APPSTORE_ENV_EOF`,
+        `chmod 600 .env`,
+        ``,
+        `# ============ 启动 ============`,
+        `echo "==> docker compose up -d"`,
+        `docker compose -p "$APP_NAME" up -d`,
+        ``,
+        `echo ""`,
+        `echo "✓ 安装完成"`,
+        `echo "  应用：$APP_KEY ($APP_VERSION)"`,
+        `echo "  实例：$APP_NAME"`,
+        `echo "  目录：$INSTALL_DIR"`,
+        ``,
+      ].join('\n');
+    };
+
+    const copyScript = async () => {
+      if (!scriptPreview.value) return;
+      try {
+        await navigator.clipboard.writeText(scriptPreview.value.script);
+        scriptCopied.value = true;
+        setTimeout(() => { scriptCopied.value = false; }, 1500);
+      } catch (e) {
+        // 兼容：fallback 选中
+        const ta = document.createElement('textarea');
+        ta.value = scriptPreview.value.script;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); scriptCopied.value = true; setTimeout(() => { scriptCopied.value = false; }, 1500); } catch (_) { alert('复制失败，请手动选中复制'); }
+        document.body.removeChild(ta);
+      }
+    };
+
     const confirmInstall = () => {
       if (!installForm.value.name.trim()) { alert('请填写名称'); return; }
       const missing = currentFormFields.value.find(
@@ -630,14 +843,24 @@ createApp({
         alert(`请填写「${missing.label?.zh || missing.label?.en || missing.label}」`);
         return;
       }
-      window.parent.postMessage({
-        type: 'install',
-        app: installPanel.value.key,
-        name: installForm.value.name,
-        version: installForm.value.version,
-        url: `./storage/${installPanel.value.key}/${installForm.value.version}.zip`,
-        fields: JSON.parse(JSON.stringify(installForm.value.fields)),
-      }, '*');
+
+      const payload = buildInstallPayload();
+
+      const inIframe = window.self !== window.top;
+      if (inIframe) {
+        window.parent.postMessage(payload, '*');
+        installPanel.value = null;
+        return;
+      }
+
+      // 非 iframe：弹出 shell 脚本预览
+      const script = buildInstallScript(payload);
+      scriptPreview.value = {
+        key: payload.app.key,
+        name: payload.instance.name,
+        script,
+      };
+      scriptCopied.value = false;
       installPanel.value = null;
     };
 
@@ -647,6 +870,7 @@ createApp({
       tagName, tagIcon, appIconUrl, latestVersion, openDetail, lazyImg,
       installPanel, installForm, showPasswords, currentFormFields,
       onVersionChange, openInstall, confirmInstall,
+      scriptPreview, scriptCopied, copyScript,
     };
   }
 }).mount('#app');
