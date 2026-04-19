@@ -63,7 +63,7 @@
   <div class="max-w-7xl mx-auto px-4 py-4 flex gap-4">
 
     <!-- 左侧分类 -->
-    <aside class="hidden md:block w-44 flex-shrink-0">
+    <aside class="hidden md:block w-44 flex-shrink-0 sticky top-[74px] self-start">
       <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 py-3">
           <div class="flex items-center gap-2">
@@ -96,7 +96,7 @@
     <main class="flex-1 min-w-0">
 
       <!-- 移动端分类横滚 -->
-      <div class="md:hidden mb-4 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+      <div class="md:hidden sticky top-14 z-20 bg-slate-50 -mx-4 -mt-4 p-4 overflow-x-auto scrollbar-hide">
         <div class="flex gap-2 pb-1">
           <button
             @click="activeTag = ''"
