@@ -26,7 +26,7 @@ docker:
      #   password: 123
 
 marketplace:
-  baseUrl: https://apps.rehi.org
+  url: https://apps.rehi.org
 
 members:
   - username: admin

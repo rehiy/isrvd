@@ -10,11 +10,6 @@ type Config struct {
 	Members     []*MemberConfig    `yaml:"members"`
 }
 
-// 应用市场配置
-type MarketplaceConfig struct {
-	URL string `yaml:"url"` // 应用市场站点地址，通过 iframe 嵌入
-}
-
 // 服务器配置
 type Server struct {
 	Debug           bool   `yaml:"debug"`
@@ -51,6 +46,11 @@ type DockerRegistry struct {
 	URL         string `yaml:"url"`         // 仓库地址，如 registry.example.com
 	Username    string `yaml:"username"`    // 用户名（可选）
 	Password    string `yaml:"password"`    // 密码（可选）
+}
+
+// 应用市场配置
+type MarketplaceConfig struct {
+	URL string `yaml:"url"` // 应用市场站点地址，通过 iframe 嵌入
 }
 
 // 成员配置
