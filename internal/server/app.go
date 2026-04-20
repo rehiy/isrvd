@@ -64,7 +64,7 @@ func (app *App) setupRouter() {
 	swarmHandler := swarm.NewSwarmHandler()
 
 	// 注册 Compose Handler（统一的 compose 部署入口）
-	composeHandler := compose.NewComposeHandler()
+	composeHandler, _ := compose.NewComposeHandler()
 
 	// API 路由组
 	api := app.Group("/api")
@@ -205,9 +205,11 @@ func (app *App) setupRouter() {
 			}
 
 			// Compose API 路由
-			composeGroup := authGroup.Group("/compose")
-			{
-				composeGroup.POST("/deploy", composeHandler.Deploy)
+			if composeHandler != nil {
+				composeGroup := authGroup.Group("/compose")
+				{
+					composeGroup.POST("/deploy", composeHandler.Deploy)
+				}
 			}
 
 			// 系统 API 路由（含只读信息与配置管理）

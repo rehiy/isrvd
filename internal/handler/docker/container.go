@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/logman"
 
+	composeh "isrvd/internal/handler/compose"
 	"isrvd/internal/helper"
-	"isrvd/internal/registry"
 	"isrvd/pkgs/docker"
 )
 
@@ -39,8 +39,8 @@ func (h *DockerHandler) CreateContainer(c *gin.Context) {
 	}
 
 	// 写入 compose 快照（安静失败，不影响创建成功结果）
-	if registry.SnapshotService != nil {
-		registry.SnapshotService.Save(req)
+	if snap := composeh.GetSnapshotService(); snap != nil {
+		snap.Save(req)
 	}
 
 	shortID := id
@@ -71,8 +71,8 @@ func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
 	}
 
 	// 更新 compose 快照（安静失败）
-	if registry.SnapshotService != nil {
-		registry.SnapshotService.Save(req.ToCreateRequest())
+	if snap := composeh.GetSnapshotService(); snap != nil {
+		snap.Save(req.ToCreateRequest())
 	}
 
 	shortID := id
@@ -91,12 +91,13 @@ func (h *DockerHandler) GetContainerConfig(c *gin.Context) {
 		return
 	}
 
-	if registry.SnapshotService == nil {
+	snap := composeh.GetSnapshotService()
+	if snap == nil {
 		helper.RespondError(c, http.StatusServiceUnavailable, "快照服务未初始化")
 		return
 	}
 
-	result, err := registry.SnapshotService.GetContainerConfig(c.Request.Context(), name)
+	result, err := snap.GetContainerConfig(c.Request.Context(), name)
 	if err != nil {
 		helper.RespondError(c, http.StatusNotFound, "容器配置未找到: "+err.Error())
 		return

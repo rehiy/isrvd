@@ -1,4 +1,3 @@
-// Package compose 业务层：组合 pkgs/compose 通用能力 + 项目约定路径。
 package compose
 
 import (
