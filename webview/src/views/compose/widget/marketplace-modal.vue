@@ -176,25 +176,48 @@ export default toNative(MarketplaceModal)
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
         @click="handleBackdropClick"
       >
-        <div class="w-full max-w-6xl modal-card animate-scale-in flex flex-col" style="height: calc(100vh - 4rem);">
+        <div class="w-full max-w-5xl modal-card animate-scale-in flex flex-col" style="height: calc(100vh - 4rem);">
           <!-- Header -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200/50 flex-shrink-0">
-            <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center">
-                <i class="fas fa-store text-white"></i>
+          <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3 flex-shrink-0">
+            <!-- 桌面端 -->
+            <div class="hidden md:flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center">
+                  <i class="fas fa-store text-white"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-800">应用市场</h3>
+                  <p class="text-xs text-slate-500">选择应用后将自动回填到部署表单</p>
+                </div>
               </div>
-              <div>
-                <h3 class="text-lg font-semibold text-slate-800">应用市场</h3>
-                <p class="text-xs text-slate-500">选择应用后将自动回填到部署表单</p>
+              <div class="flex items-center gap-2">
+                <button type="button" @click="loadUrl()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
+                  <i class="fas fa-rotate"></i>刷新
+                </button>
+                <button type="button" @click="close()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
+                  <i class="fas fa-times"></i>关闭
+                </button>
               </div>
             </div>
-            <div class="flex items-center gap-2">
-              <button type="button" @click="loadUrl()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 flex items-center justify-center transition-colors" title="刷新">
-                <i class="fas fa-rotate"></i>
-              </button>
-              <button type="button" @click="close()" class="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200" title="关闭">
-                <i class="fas fa-times"></i>
-              </button>
+            <!-- 移动端 -->
+            <div class="flex md:hidden items-center justify-between">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+                  <i class="fas fa-store text-white"></i>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="text-lg font-semibold text-slate-800 truncate">应用市场</h3>
+                  <p class="text-xs text-slate-500 truncate">选择应用后将自动回填到部署表单</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 flex-shrink-0">
+                <button type="button" @click="loadUrl()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
+                  <i class="fas fa-rotate text-sm"></i>
+                </button>
+                <button type="button" @click="close()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="关闭">
+                  <i class="fas fa-times text-sm"></i>
+                </button>
+              </div>
             </div>
           </div>
 
