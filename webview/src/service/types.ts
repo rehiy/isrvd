@@ -588,3 +588,34 @@ export interface MemberUpsertRequest {
     homeDirectory: string
     allowTerminal: boolean
 }
+
+// ─── Compose 统一部署 ───
+
+export type ComposeDeployTarget = 'docker' | 'swarm'
+
+// 基于 compose 文本的部署（docker 容器 / swarm 服务）
+export interface ComposeDeployYmlRequest {
+    target: ComposeDeployTarget
+    content: string
+    env?: Record<string, string | number | boolean>
+    projectName?: string
+    internalOnly?: boolean                             // 仅内网模式：剥离宿主机端口映射，由 APISIX 等网关代理访问
+}
+
+export interface ComposeDeployYmlResult {
+    target: ComposeDeployTarget
+    items: string[]
+}
+
+// 基于 zip 压缩包的部署（仅 docker 单机容器）
+export interface ComposeDeployZipRequest {
+    url: string                                        // 应用安装包（zip）下载地址
+    name: string                                       // 实例名（作为目录名 / compose project 名）
+    env?: Record<string, string | number | boolean>
+    internalOnly?: boolean                             // 仅内网模式：剥离宿主机端口映射，由 APISIX 等网关代理访问
+}
+
+export interface ComposeDeployZipResult {
+    installDir: string
+    items: string[]
+}

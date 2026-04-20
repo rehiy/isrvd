@@ -422,6 +422,23 @@
             </div>
           </template>
 
+          <!-- 仅内网模式（可选）：勾选后剥离 compose 的宿主机端口映射，避免端口冲突 -->
+          <div class="mt-2 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
+            <label class="flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                v-model="installForm.internalOnly"
+                class="mt-0.5 w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+              />
+              <span class="flex-1 min-w-0">
+                <span class="block text-sm font-medium text-slate-700">仅内网模式</span>
+                <span class="block text-xs text-slate-500 mt-0.5 leading-relaxed">
+                  勾选后容器不占用宿主机端口，仅暴露到容器网络。适用于通过 APISIX 等反向代理访问的场景，可避免端口冲突。
+                </span>
+              </span>
+            </label>
+          </div>
+
         </div>
       </div>
 
@@ -466,6 +483,10 @@
           确保所需的 Docker 网络存在、把应用安装到
           <code class="px-1 bg-slate-100 rounded">/opt/apps/{{ scriptPreview.key }}/{{ scriptPreview.name }}</code>
           目录，并通过 <code class="px-1 bg-slate-100 rounded">docker compose up -d</code> 启动。
+        </p>
+        <p v-if="scriptPreview.internalOnly" class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed">
+          <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+          你勾选了「仅内网模式」，该选项仅在通过面板（iframe）安装时生效；下方脚本仍按原 compose 中的端口映射启动。如需在脚本模式下实现"仅内网"，请安装后自行编辑 <code class="px-1 bg-white rounded">docker-compose.yml</code> 移除 <code class="px-1 bg-white rounded">ports</code> 段。
         </p>
         <pre class="bg-slate-900 text-slate-100 rounded-xl p-4 text-xs font-mono overflow-x-auto leading-relaxed max-h-[50vh] overflow-y-auto"><code>{{ scriptPreview.script }}</code></pre>
       </div>
@@ -657,7 +678,7 @@ createApp({
 
     // 安装表单
     const installPanel = ref(null);
-    const installForm = ref({ name: '', version: '', fields: {} });
+    const installForm = ref({ name: '', version: '', fields: {}, internalOnly: false });
     const showPasswords = ref({});
     const installError = ref('');
     const scriptPreview = ref(null);
@@ -693,6 +714,7 @@ createApp({
         name: app.key,
         version: ver,
         fields: initFormFields(fields),
+        internalOnly: false,
       };
       showPasswords.value = {};
       installError.value = '';
@@ -723,59 +745,37 @@ createApp({
       const zipPath = `./storage/${app.key}/${version}.zip`;
       const absUrl = new URL(zipPath, window.location.href).href;
 
-      // 原始对象：app/formFields 等是 Vue 响应式 Proxy，postMessage 的结构化克隆
-      // 无法序列化 Proxy，需通过 JSON 深拷贝一次性剥离响应式包装
+      // 精简协议：仅保留 url / name / env 三个业务字段
+      // - url  : 应用安装包下载地址
+      // - name : 实例名（作为目录名 / compose project 名）
+      // - env  : 所有 compose 插值变量（用户表单 + 系统派生）
+      // - internalOnly : 可选，仅内网模式（剥离宿主机端口映射，由 APISIX 代理）
+      // 系统变量后写入，确保覆盖用户同名字段（正常情况下 formFields 不会包含这些系统 key）
       const raw = {
-        // 协议识别
         source: 'marketplace',
-        protocol: 1,
         type: 'install',
-        timestamp: Date.now(),
-
-        // 应用元信息
-        app: {
-          key: app.key,
-          name: app.name,
-          title: app.title || '',
-          tags: app.tags || [],
-          architectures: app.architectures || [],
-          icon: new URL(appIconUrl(app.key), window.location.href).href,
-        },
-
-        // 版本与包信息
-        version: {
-          value: version,
-          url: absUrl,
-          path: zipPath,
-        },
-
-        // 实例信息
-        instance: {
-          name: rawName,
-          safeName,
-        },
-
-        // 环境变量分层：system 由实例名派生，user 为表单填写
+        url: absUrl,
+        name: safeName,
         env: {
-          system: {
-            CONTAINER_NAME: safeName,
-            APP_NAME: safeName,
-          },
-          user: userFields,
+          ...userFields,
+          APP_NAME: safeName,
+          CONTAINER_NAME: safeName,
+          NETWORK_NAME,
         },
-
-        // 表单 schema，方便父页面校验或再渲染
-        formFields,
-
-        // 部署约定：仅包含与应用本身强相关的契约字段
-        // 不包含安装目录等部署决策，交由父程序自行处理
-        deploy: {
-          network: NETWORK_NAME,
-        },
+        internalOnly: !!installForm.value.internalOnly,
       };
 
-      // 深拷贝为纯 JSON 对象，确保 postMessage 可序列化
-      return JSON.parse(JSON.stringify(raw));
+      // 附加：shell 脚本生成需要的上下文（不参与 postMessage 协议）
+      Object.defineProperty(raw, '__scriptContext', {
+        enumerable: false,
+        value: {
+          appKey: app.key,
+          versionValue: version,
+          formFields,
+        },
+      });
+
+      return raw;
     };
 
     // 生成安装 shell 脚本（非 iframe 环境使用）
@@ -786,18 +786,19 @@ createApp({
       // 参考 https://docs.docker.com/compose/environment-variables/env-file/
       const envEsc = (v) => `"${String(v).replace(/[\\"`$]/g, '\\$&')}"`;
 
-      const { app, version, instance, env, deploy } = payload;
+      const { url, name, env } = payload;
+      const ctx = payload.__scriptContext || {};
+      const appKey = ctx.appKey || name;
+      const versionValue = ctx.versionValue || '';
+      const networkName = env.NETWORK_NAME || 'app-network';
 
-      // 用户字段优先级最低，系统字段后写入会覆盖（正常情况下 formFields 不会包含这些系统 key）
-      const mergedEnv = { ...env.user, ...env.system };
-
-      const envLines = Object.entries(mergedEnv)
+      const envLines = Object.entries(env)
         .map(([k, v]) => `${k}=${envEsc(v == null ? '' : v)}`)
         .join('\n');
 
       return [
         `#!/usr/bin/env bash`,
-        `# ${app.key} ${version.value} 安装脚本`,
+        `# ${appKey} ${versionValue} 安装脚本`,
         `set -euo pipefail`,
         ``,
         `# ============ 基础依赖检查 ============`,
@@ -807,13 +808,13 @@ createApp({
         `command -v unzip >/dev/null 2>&1 || { echo "✗ 未检测到 unzip" >&2; exit 1; }`,
         ``,
         `# ============ 配置 ============`,
-        `APP_KEY=${shq(app.key)}`,
-        `APP_NAME=${shq(instance.safeName)}`,
-        `APP_VERSION=${shq(version.value)}`,
-        `ZIP_URL=${shq(version.url)}`,
+        `APP_KEY=${shq(appKey)}`,
+        `APP_NAME=${shq(name)}`,
+        `APP_VERSION=${shq(versionValue)}`,
+        `ZIP_URL=${shq(url)}`,
         `INSTALL_ROOT=${shq(LOCAL_INSTALL_ROOT)}`,
         `INSTALL_DIR="$INSTALL_ROOT/$APP_KEY/$APP_NAME"`,
-        `NETWORK_NAME=${shq(deploy.network)}`,
+        `NETWORK_NAME=${shq(networkName)}`,
         ``,
         `# ============ 确保应用所需网络存在 ============`,
         `if ! docker network inspect "$NETWORK_NAME" >/dev/null 2>&1; then`,
@@ -895,9 +896,10 @@ createApp({
         return;
       }
       scriptPreview.value = {
-        key: payload.app.key,
-        name: payload.instance.name,
+        key: (payload.__scriptContext && payload.__scriptContext.appKey) || payload.name,
+        name: payload.name,
         script: buildInstallScript(payload),
+        internalOnly: !!payload.internalOnly,
       };
       scriptCopied.value = false;
       scriptError.value = '';

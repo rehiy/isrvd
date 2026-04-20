@@ -54,6 +54,14 @@ func (s *DockerService) GetClient() *client.Client {
 	return s.client
 }
 
+// ContainerRoot 获取容器数据根目录
+func (s *DockerService) ContainerRoot() string {
+	if s.config == nil {
+		return ""
+	}
+	return s.config.ContainerRoot
+}
+
 // DockerInfo Docker 信息概览
 type DockerInfo struct {
 	ContainersRunning  int64    `json:"containersRunning"`

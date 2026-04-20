@@ -7,6 +7,7 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/internal/helper"
+	"isrvd/internal/registry"
 	"isrvd/pkgs/docker"
 )
 
@@ -37,6 +38,11 @@ func (h *DockerHandler) CreateContainer(c *gin.Context) {
 		return
 	}
 
+	// 写入 compose 快照（安静失败，不影响创建成功结果）
+	if registry.SnapshotService != nil {
+		registry.SnapshotService.Save(req)
+	}
+
 	shortID := id
 	if len(id) > 12 {
 		shortID = id[:12]
@@ -64,6 +70,11 @@ func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
 		return
 	}
 
+	// 更新 compose 快照（安静失败）
+	if registry.SnapshotService != nil {
+		registry.SnapshotService.Save(req.ToCreateRequest())
+	}
+
 	shortID := id
 	if len(id) > 12 {
 		shortID = id[:12]
@@ -74,13 +85,18 @@ func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
 
 // GetContainerConfig 获取容器配置
 func (h *DockerHandler) GetContainerConfig(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 	if name == "" {
 		helper.RespondError(c, http.StatusBadRequest, "容器名称不能为空")
 		return
 	}
 
-	result, err := h.service.GetContainerConfig(c.Request.Context(), name)
+	if registry.SnapshotService == nil {
+		helper.RespondError(c, http.StatusServiceUnavailable, "快照服务未初始化")
+		return
+	}
+
+	result, err := registry.SnapshotService.GetContainerConfig(c.Request.Context(), name)
 	if err != nil {
 		helper.RespondError(c, http.StatusNotFound, "容器配置未找到: "+err.Error())
 		return
@@ -158,21 +174,4 @@ func (h *DockerHandler) ContainerExec(c *gin.Context) {
 	}
 
 	h.service.ContainerExec(conn, containerID, shell)
-}
-
-// DeployCompose 通过 Compose 文件创建容器
-func (h *DockerHandler) DeployCompose(c *gin.Context) {
-	var req docker.ComposeDeployRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
-		return
-	}
-
-	result, err := h.service.DeployCompose(c.Request.Context(), req.Content)
-	if err != nil {
-		helper.RespondError(c, http.StatusInternalServerError, "部署 Compose 失败: "+err.Error())
-		return
-	}
-
-	helper.RespondSuccess(c, "Compose 部署成功", result)
 }

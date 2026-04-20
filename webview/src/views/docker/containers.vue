@@ -8,18 +8,16 @@ import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
 import ContainerEditModal from '@/views/docker/widget/container-edit-modal.vue'
-import ComposeModal from '@/views/docker/widget/compose-modal.vue'
 
 @Component({
     expose: ['load', 'show'],
-    components: { ContainerEditModal, ComposeModal }
+    components: { ContainerEditModal }
 })
 class Containers extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── Refs ───
     @Ref readonly containerModalRef!: InstanceType<typeof ContainerEditModal>
-    @Ref readonly composeModalRef!: InstanceType<typeof ComposeModal>
 
     // ─── 数据属性 ───
     containers: ContainerInfo[] = []
@@ -69,10 +67,6 @@ class Containers extends Vue {
 
     createContainerModal() {
         this.containerModalRef?.show()
-    }
-
-    openComposeModal() {
-        this.composeModalRef?.show()
     }
 
     toggleBatchMode() {
@@ -177,9 +171,6 @@ export default toNative(Containers)
             <button @click="createContainerModal()" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-plus"></i>创建
             </button>
-            <button @click="openComposeModal" class="px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-              <i class="fas fa-file-code"></i>Compose
-            </button>
           </div>
         </div>
         <!-- 移动端 -->
@@ -203,9 +194,6 @@ export default toNative(Containers)
               </button>
               <button @click="createContainerModal()" class="w-9 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-colors" title="创建">
                 <i class="fas fa-plus text-sm"></i>
-              </button>
-              <button @click="openComposeModal" class="w-9 h-9 rounded-lg bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white transition-colors" title="Compose">
-                <i class="fas fa-file-code text-sm"></i>
               </button>
             </div>
           </div>
@@ -414,6 +402,5 @@ export default toNative(Containers)
     </div>
 
     <ContainerEditModal ref="containerModalRef" @success="loadContainers" />
-    <ComposeModal ref="composeModalRef" @success="loadContainers" />
   </div>
 </template>

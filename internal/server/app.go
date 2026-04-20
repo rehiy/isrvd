@@ -9,11 +9,13 @@ import (
 	"isrvd/internal/handler/agent"
 	"isrvd/internal/handler/apisix"
 	"isrvd/internal/handler/auth"
+	"isrvd/internal/handler/compose"
 	"isrvd/internal/handler/docker"
 	"isrvd/internal/handler/filer"
 	"isrvd/internal/handler/shell"
 	"isrvd/internal/handler/swarm"
 	"isrvd/internal/handler/system"
+
 	"isrvd/public"
 )
 
@@ -60,6 +62,9 @@ func (app *App) setupRouter() {
 
 	// 注册 Swarm Handler
 	swarmHandler := swarm.NewSwarmHandler()
+
+	// 注册 Compose Handler（统一的 compose 部署入口）
+	composeHandler := compose.NewComposeHandler()
 
 	// API 路由组
 	api := app.Group("/api")
@@ -138,10 +143,9 @@ func (app *App) setupRouter() {
 					dockerGroup.GET("/containers", dockerHandler.ListContainers)
 					dockerGroup.POST("/container/action", dockerHandler.ContainerAction)
 					dockerGroup.POST("/container/create", dockerHandler.CreateContainer)
-					dockerGroup.POST("/container/deploy-compose", dockerHandler.DeployCompose)
 					dockerGroup.POST("/container/logs", dockerHandler.ContainerLogs)
 					dockerGroup.GET("/container/:id/stats", dockerHandler.ContainerStats)
-					dockerGroup.GET("/container/:name/config", dockerHandler.GetContainerConfig)
+					dockerGroup.GET("/container/:id/config", dockerHandler.GetContainerConfig)
 					dockerGroup.POST("/container/update", dockerHandler.UpdateContainerConfig)
 
 					// 镜像管理
@@ -191,7 +195,6 @@ func (app *App) setupRouter() {
 					swarmGroup.GET("/services", swarmHandler.SwarmListServices)
 					swarmGroup.GET("/service/:id", swarmHandler.SwarmInspectService)
 					swarmGroup.POST("/service/create", swarmHandler.SwarmCreateService)
-					swarmGroup.POST("/service/deploy-compose", swarmHandler.SwarmDeployComposeService)
 					swarmGroup.POST("/service/action", swarmHandler.SwarmServiceAction)
 					swarmGroup.POST("/service/redeploy", swarmHandler.SwarmForceUpdateService)
 					swarmGroup.GET("/service/:id/logs", swarmHandler.SwarmServiceLogs)
@@ -199,6 +202,13 @@ func (app *App) setupRouter() {
 					// 任务管理
 					swarmGroup.GET("/tasks", swarmHandler.SwarmListTasks)
 				}
+			}
+
+			// Compose API 路由
+			composeGroup := authGroup.Group("/compose")
+			{
+				composeGroup.POST("/deploy/yml", composeHandler.DeployYml)
+				composeGroup.POST("/deploy/zip", composeHandler.DeployZip)
 			}
 
 			// 系统 API 路由（含只读信息与配置管理）

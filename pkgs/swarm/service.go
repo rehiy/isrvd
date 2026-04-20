@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strconv"
 	"strings"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
-	"github.com/goccy/go-yaml"
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/pkgs/docker"
@@ -345,140 +343,4 @@ func (m *SwarmManager) InspectService(ctx context.Context, id string) (*SwarmSer
 	}
 
 	return result, nil
-}
-
-// SwarmComposeDeployRequest 通过 Compose 部署 Swarm 服务请求
-type SwarmComposeDeployRequest struct {
-	Content string `json:"content" binding:"required"`
-}
-
-// DeployComposeService 通过 docker-compose.yml 内容创建 Swarm 服务
-func (m *SwarmManager) DeployComposeService(ctx context.Context, content string) ([]string, error) {
-	var compose struct {
-		Services map[string]struct {
-			Image    string   `yaml:"image"`
-			Env      []string `yaml:"environment,omitempty"`
-			Args     []string `yaml:"args,omitempty"`
-			Networks []string `yaml:"networks,omitempty"`
-			Ports    []string `yaml:"ports,omitempty"`
-			Volumes  []string `yaml:"volumes,omitempty"`
-			Deploy   *struct {
-				Replicas *int   `yaml:"replicas,omitempty"`
-				Mode     string `yaml:"mode,omitempty"`
-			} `yaml:"deploy,omitempty"`
-		} `yaml:"services"`
-	}
-
-	if err := yaml.Unmarshal([]byte(content), &compose); err != nil {
-		return nil, fmt.Errorf("解析 compose 文件失败: %w", err)
-	}
-
-	if len(compose.Services) == 0 {
-		return nil, fmt.Errorf("compose 文件中没有定义服务")
-	}
-
-	var created []string
-
-	for name, svc := range compose.Services {
-		req := SwarmCreateServiceRequest{
-			Name:  name,
-			Image: svc.Image,
-			Env:   svc.Env,
-			Args:  svc.Args,
-		}
-
-		// 处理部署配置
-		if svc.Deploy != nil {
-			if svc.Deploy.Mode == "global" {
-				req.Mode = "global"
-			} else {
-				req.Mode = "replicated"
-				if svc.Deploy.Replicas != nil && *svc.Deploy.Replicas > 0 {
-					req.Replicas = *svc.Deploy.Replicas
-				} else {
-					req.Replicas = 1
-				}
-			}
-		} else {
-			req.Mode = "replicated"
-			req.Replicas = 1
-		}
-
-		// 处理网络
-		req.Networks = svc.Networks
-
-		// 处理端口映射
-		for _, p := range svc.Ports {
-			parts := strings.Split(p, ":")
-			var published, target int
-			var proto string
-
-			switch len(parts) {
-			case 1:
-				// 仅容器端口
-				targetAndProto := strings.Split(parts[0], "/")
-				target, _ = strconv.Atoi(targetAndProto[0])
-				if len(targetAndProto) > 1 {
-					proto = targetAndProto[1]
-				}
-				published = target
-			case 2:
-				// 主机端口:容器端口
-				published, _ = strconv.Atoi(parts[0])
-				targetAndProto := strings.Split(parts[1], "/")
-				target, _ = strconv.Atoi(targetAndProto[0])
-				if len(targetAndProto) > 1 {
-					proto = targetAndProto[1]
-				}
-			case 3:
-				// IP:主机端口:容器端口
-				published, _ = strconv.Atoi(parts[1])
-				targetAndProto := strings.Split(parts[2], "/")
-				target, _ = strconv.Atoi(targetAndProto[0])
-				if len(targetAndProto) > 1 {
-					proto = targetAndProto[1]
-				}
-			}
-
-			if proto == "" {
-				proto = "tcp"
-			}
-
-			req.Ports = append(req.Ports, SwarmPortConfig{
-				Published: published,
-				Target:    target,
-				Protocol:  proto,
-			})
-		}
-
-		// 处理挂载
-		for _, v := range svc.Volumes {
-			volParts := strings.Split(v, ":")
-			if len(volParts) >= 2 {
-				mountType := "bind"
-				source := volParts[0]
-				target := volParts[1]
-
-				// 判断是否为命名卷（不以 / 或 . 开头的为命名卷）
-				if !strings.HasPrefix(source, "/") && !strings.HasPrefix(source, ".") {
-					mountType = "volume"
-				}
-
-				req.Mounts = append(req.Mounts, SwarmMount{
-					Type:   mountType,
-					Source: source,
-					Target: target,
-				})
-			}
-		}
-
-		id, err := m.CreateService(ctx, req)
-		if err != nil {
-			return created, fmt.Errorf("创建服务 %s 失败: %w", name, err)
-		}
-
-		created = append(created, fmt.Sprintf("%s (%s)", name, id[:12]))
-	}
-
-	return created, nil
 }

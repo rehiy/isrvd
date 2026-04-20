@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+import re
 import shutil
 import tempfile
 import urllib.request
@@ -19,6 +20,21 @@ SOURCE_URL = "https://github.com/1Panel-dev/appstore/archive/refs/heads/dev.zip"
 # 若修改此值，请同步修改 index.html 中 buildInstallScript 的 NETWORK_NAME 默认值
 ORIGINAL_NETWORK_NAME = "1panel-network"
 NETWORK_NAME = "app-network"
+
+# 系统注入的环境变量，不需要纳入 formFields（与 index.html env.system 对齐）
+SYSTEM_ENV_KEYS = {"CONTAINER_NAME", "APP_NAME"}
+
+# compose 插值变量正则：
+#   ${VAR}                 - 简单插值
+#   ${VAR:-default}        - 默认值（未设置或为空时使用）
+#   ${VAR-default}         - 默认值（未设置时使用）
+#   ${VAR:?err} / ${VAR?}  - 必填
+#   ${VAR:+alt} / ${VAR+}  - 替换值（不作为默认值）
+# 使用前先把 $$ 替换掉以避免转义干扰
+COMPOSE_VAR_BRACE_RE = re.compile(
+    r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::?([-?+=])([^}]*))?\}"
+)
+COMPOSE_VAR_PLAIN_RE = re.compile(r"\$([A-Za-z_][A-Za-z0-9_]*)")
 
 
 def download_source(url: str, dest: Path):
@@ -129,6 +145,85 @@ def merge_additional_properties(data: dict) -> dict:
     return result
 
 
+def extract_compose_variables(version_dir: Path) -> dict:
+    """扫描版本目录下的 docker-compose 文件，提取所有插值变量及其默认值
+
+    返回 {VAR: default_str_or_None}，同名变量以首次出现为准，
+    但若后续出现了默认值且首次未带默认值，则补全默认值。
+    """
+    variables: dict = {}
+    compose_names = ("docker-compose.yml", "docker-compose.yaml")
+
+    for file_path in sorted(version_dir.rglob("*")):
+        if not file_path.is_file():
+            continue
+        if file_path.name.lower() not in compose_names:
+            continue
+        try:
+            text = file_path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+
+        # 先移除转义的 $$，避免 $$VAR 被误识别
+        stripped = text.replace("$$", "")
+
+        # ${VAR:-default} / ${VAR} / ${VAR:?err}
+        for match in COMPOSE_VAR_BRACE_RE.finditer(stripped):
+            name = match.group(1)
+            op = match.group(2)
+            val = match.group(3)
+            default = val if op in ("-", "=") and val is not None else None
+            if name not in variables:
+                variables[name] = default
+            elif variables[name] is None and default is not None:
+                variables[name] = default
+
+        # 去除已匹配的 ${...} 后再扫描 $VAR 形式，避免重复
+        plain_text = COMPOSE_VAR_BRACE_RE.sub("", stripped)
+        for match in COMPOSE_VAR_PLAIN_RE.finditer(plain_text):
+            name = match.group(1)
+            if name not in variables:
+                variables[name] = None
+
+    return variables
+
+
+def merge_form_fields(existing_fields: list, compose_vars: dict) -> list:
+    """将 compose 中发现的变量合并到 data.yml 的 formFields
+
+    - 以 envKey 为键；data.yml 中已定义的字段保留原样（优先级高）
+    - compose 中存在但 data.yml 未定义的字段自动补齐，标记 auto: true
+    - 系统注入变量（CONTAINER_NAME、APP_NAME 等）不参与合并
+    """
+    if not isinstance(existing_fields, list):
+        existing_fields = []
+
+    # 现有字段 envKey 集合
+    existing_keys = set()
+    merged = []
+    for field in existing_fields:
+        if isinstance(field, dict) and field.get("envKey"):
+            existing_keys.add(field["envKey"])
+        merged.append(field)
+
+    # 按 compose 中出现顺序追加新字段
+    for var_name, default in compose_vars.items():
+        if var_name in SYSTEM_ENV_KEYS:
+            continue
+        if var_name in existing_keys:
+            continue
+        merged.append({
+            "type": "text",
+            "label": {"zh": var_name, "en": var_name},
+            "envKey": var_name,
+            "default": default if default is not None else "",
+            "required": default is None,
+            "auto": True,
+        })
+
+    return merged
+
+
 def build_version_zip(app_name: str, version: str, version_dir: Path):
     """将版本目录中的文件打包为 zip，仅排除 data.yml/data.yaml"""
     zip_dir = OUTPUT_DOWNLOAD / app_name
@@ -229,6 +324,19 @@ def build_index(source_dir: Path) -> dict:
 
             # 打包 zip
             build_version_zip(app_name, version, version_dir)
+
+            # 扫描 compose 文件中的插值变量，并合并到 formFields
+            compose_vars = extract_compose_variables(version_dir)
+            if compose_vars:
+                existing_fields = version_entry.get("formFields") or []
+                merged_fields = merge_form_fields(existing_fields, compose_vars)
+                auto_keys = [
+                    f["envKey"] for f in merged_fields
+                    if isinstance(f, dict) and f.get("auto") and f.get("envKey")
+                ]
+                if auto_keys:
+                    print(f"  [变量] 自动补充: {', '.join(auto_keys)}")
+                version_entry["formFields"] = merged_fields
 
             app_entry["versions"][version] = version_entry
 

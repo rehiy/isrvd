@@ -8,10 +8,9 @@ import type { AppActions } from '@/store/state'
 
 import ScaleModal from '@/views/swarm/widget/service-scale-modal.vue'
 import CreateServiceModal from '@/views/swarm/widget/service-create-modal.vue'
-import ComposeModal from '@/views/swarm/widget/compose-modal.vue'
 
 @Component({
-    components: { ScaleModal, CreateServiceModal, ComposeModal }
+    components: { ScaleModal, CreateServiceModal }
 })
 class Services extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
@@ -19,7 +18,6 @@ class Services extends Vue {
     // ─── Refs ───
     @Ref readonly scaleModalRef!: InstanceType<typeof ScaleModal>
     @Ref readonly createServiceModalRef!: InstanceType<typeof CreateServiceModal>
-    @Ref readonly composeModalRef!: InstanceType<typeof ComposeModal>
 
     // ─── 数据属性 ───
     services: SwarmService[] = []
@@ -32,10 +30,6 @@ class Services extends Vue {
 
     openCreateModal() {
         this.createServiceModalRef?.show()
-    }
-
-    openComposeModal() {
-        this.composeModalRef?.show()
     }
 
     async loadServices() {
@@ -56,11 +50,6 @@ class Services extends Vue {
 
     handleCreateSuccess() {
         this.actions.showNotification('success', '服务创建成功')
-        this.loadServices()
-    }
-
-    handleComposeSuccess(count: number) {
-        this.actions.showNotification('success', `Compose 部署成功，已创建 ${count} 个服务`)
         this.loadServices()
     }
 
@@ -126,9 +115,6 @@ export default toNative(Services)
             <button @click="openCreateModal" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-plus"></i>创建
             </button>
-            <button @click="openComposeModal" class="px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-              <i class="fas fa-file-code"></i>Compose
-            </button>
           </div>
         </div>
         <!-- 移动端 -->
@@ -148,9 +134,6 @@ export default toNative(Services)
             </button>
             <button @click="openCreateModal" class="w-9 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-colors" title="创建">
               <i class="fas fa-plus text-sm"></i>
-            </button>
-            <button @click="openComposeModal" class="w-9 h-9 rounded-lg bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white transition-colors" title="Compose">
-              <i class="fas fa-file-code text-sm"></i>
             </button>
           </div>
         </div>
@@ -292,7 +275,6 @@ export default toNative(Services)
 
     <ScaleModal ref="scaleModalRef" @success="handleScaleSuccess" />
     <CreateServiceModal ref="createServiceModalRef" @success="handleCreateSuccess" />
-    <ComposeModal ref="composeModalRef" @success="handleComposeSuccess" />
     </div>
   </div>
 </template>

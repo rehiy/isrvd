@@ -16,7 +16,9 @@ import type {
     FileListResponse, FileReadResponse,
     LoginResponse,
     AllSettings,
-    MemberInfo, MemberUpsertRequest
+    MemberInfo, MemberUpsertRequest,
+    ComposeDeployYmlRequest, ComposeDeployYmlResult,
+    ComposeDeployZipRequest, ComposeDeployZipResult
 } from './types'
 
 // API 服务类，统一管理所有 API 请求
@@ -118,10 +120,6 @@ class ApiService {
 
     createContainer(data: ContainerCreateRequest) {
         return http.post('/api/docker/container/create', data)
-    }
-
-    deployCompose(content: string) {
-        return http.post<string[]>('/api/docker/container/deploy-compose', { content })
     }
 
     containerLogs(id: string, tail = '100') {
@@ -266,10 +264,6 @@ class ApiService {
         return http.post('/api/swarm/service/create', data)
     }
 
-    swarmDeployComposeService(content: string) {
-        return http.post<string[]>('/api/swarm/service/deploy-compose', { content })
-    }
-
     swarmRedeployService(id: string) {
         return http.post<void>('/api/swarm/service/redeploy', { id })
     }
@@ -369,6 +363,16 @@ class ApiService {
 
     deleteMember(username: string) {
         return http.delete<void>(`/api/system/member/${encodeURIComponent(username)}`)
+    }
+
+    // ==================== Compose 部署 ====================
+
+    composeDeployYml(data: ComposeDeployYmlRequest) {
+        return http.post<ComposeDeployYmlResult>('/api/compose/deploy/yml', data)
+    }
+
+    composeDeployZip(data: ComposeDeployZipRequest) {
+        return http.post<ComposeDeployZipResult>('/api/compose/deploy/zip', data)
     }
 }
 

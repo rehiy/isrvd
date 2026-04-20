@@ -13,6 +13,13 @@ import (
 	"github.com/rehiy/pango/logman"
 )
 
+// VolumeMapping 目录映射
+type VolumeMapping struct {
+	HostPath      string `json:"hostPath"`
+	ContainerPath string `json:"containerPath"`
+	ReadOnly      bool   `json:"readOnly"`
+}
+
 // ContainerInfo Docker 容器信息
 type ContainerInfo struct {
 	ID       string            `json:"id"`
@@ -62,6 +69,16 @@ func (s *DockerService) ListContainers(ctx context.Context, all bool) ([]*Contai
 	}
 
 	return result, nil
+}
+
+// InspectContainer 获取容器详细配置（运行态快照依赖此接口）
+func (s *DockerService) InspectContainer(ctx context.Context, id string) (types.ContainerJSON, error) {
+	info, err := s.client.ContainerInspect(ctx, id)
+	if err != nil {
+		logman.Error("Inspect container failed", "id", id, "error", err)
+		return types.ContainerJSON{}, err
+	}
+	return info, nil
 }
 
 // ContainerActionRequest 容器操作请求
@@ -245,13 +262,6 @@ func (s *DockerService) CreateContainer(ctx context.Context, req ContainerCreate
 	// 启动容器
 	s.client.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{})
 
-	// 生成 docker-compose.yml 配置文件
-	if req.Name != "" && s.config.ContainerRoot != "" {
-		if err := s.CreateComposeFile(req); err != nil {
-			logman.Warn("Failed to create compose file", "error", err)
-		}
-	}
-
 	shortID := resp.ID
 	if len(shortID) > 12 {
 		shortID = shortID[:12]
@@ -281,6 +291,28 @@ type ContainerUpdateRequest struct {
 	CapDrop    []string          `json:"capDrop"`
 }
 
+// ToCreateRequest 将更新请求转换为创建请求，复用创建逻辑（供 UpdateContainer 和快照服务等共用）
+func (req ContainerUpdateRequest) ToCreateRequest() ContainerCreateRequest {
+	return ContainerCreateRequest{
+		Image:      req.Image,
+		Name:       req.Name,
+		Cmd:        req.Cmd,
+		Env:        req.Env,
+		Ports:      req.Ports,
+		Volumes:    req.Volumes,
+		Network:    req.Network,
+		Restart:    req.Restart,
+		Memory:     req.Memory,
+		Cpus:       req.Cpus,
+		Workdir:    req.Workdir,
+		User:       req.User,
+		Hostname:   req.Hostname,
+		Privileged: req.Privileged,
+		CapAdd:     req.CapAdd,
+		CapDrop:    req.CapDrop,
+	}
+}
+
 // UpdateContainer 更新容器配置并重建
 func (s *DockerService) UpdateContainer(ctx context.Context, req ContainerUpdateRequest) (string, error) {
 	// 查找并停止旧容器
@@ -308,25 +340,5 @@ func (s *DockerService) UpdateContainer(ctx context.Context, req ContainerUpdate
 		_ = s.client.ContainerRemove(ctx, oldContainerID, types.ContainerRemoveOptions{Force: true})
 	}
 
-	// 转换为 CreateRequest 复用创建逻辑
-	createReq := ContainerCreateRequest{
-		Image:      req.Image,
-		Name:       req.Name,
-		Cmd:        req.Cmd,
-		Env:        req.Env,
-		Ports:      req.Ports,
-		Volumes:    req.Volumes,
-		Network:    req.Network,
-		Restart:    req.Restart,
-		Memory:     req.Memory,
-		Cpus:       req.Cpus,
-		Workdir:    req.Workdir,
-		User:       req.User,
-		Hostname:   req.Hostname,
-		Privileged: req.Privileged,
-		CapAdd:     req.CapAdd,
-		CapDrop:    req.CapDrop,
-	}
-
-	return s.CreateContainer(ctx, createReq)
+	return s.CreateContainer(ctx, req.ToCreateRequest())
 }

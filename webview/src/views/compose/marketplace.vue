@@ -1,34 +1,52 @@
 <script lang="ts">
-import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
 import type { AllSettings } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
-import { buildInstallScript, isMarketplaceInstallPayload } from '@/helper/marketplace'
-import type { MarketplaceInstallPayload } from '@/helper/marketplace'
 
-interface ScriptPreview {
-    appKey: string
-    appTitle: string
-    instance: string
-    version: string
-    script: string
+import ComposeModal from '@/views/compose/widget/compose-modal.vue'
+
+// 应用市场 postMessage 协议：仅本页使用，故就近定义
+interface MarketplaceInstallPayload {
+    // 协议识别
+    source: 'marketplace'
+    type: 'install'
+
+    // 业务字段
+    url: string                                           // 应用安装包（zip）下载地址
+    name: string                                          // 实例名（作为目录名 / compose project 名，需满足 [a-zA-Z0-9][a-zA-Z0-9_.-]*）
+    env: Record<string, string | number | boolean>       // 所有 compose 插值变量（含 CONTAINER_NAME / APP_NAME / NETWORK_NAME 等）
+    internalOnly?: boolean                                // 可选：仅内网模式，剥离宿主机端口映射（由 APISIX 等网关代理访问）
 }
 
-@Component({})
+// 校验 postMessage 数据是否为合法的安装 payload
+function isMarketplaceInstallPayload(data: unknown): data is MarketplaceInstallPayload {
+    if (!data || typeof data !== 'object') return false
+    const d = data as Record<string, unknown>
+    if (d.source !== 'marketplace' || d.type !== 'install') return false
+    if (typeof d.url !== 'string' || !d.url) return false
+    if (typeof d.name !== 'string' || !d.name) return false
+    if (typeof d.env !== 'object' || d.env === null) return false
+    return true
+}
+
+@Component({
+    components: { ComposeModal }
+})
 class Marketplace extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── Refs ───
     declare $refs: { iframe?: HTMLIFrameElement }
+    @Ref readonly composeModalRef!: InstanceType<typeof ComposeModal>
 
     // ─── 数据属性 ───
     loading = true
+    installing = false
     iframeUrl = ''
     iframeOrigin = ''
-    preview: ScriptPreview | null = null
-    copied = false
 
     private messageHandler: ((e: MessageEvent) => void) | null = null
 
@@ -83,47 +101,41 @@ class Marketplace extends Vue {
             console.warn('[marketplace] message origin mismatch:', e.origin, 'expected:', this.iframeOrigin)
         }
 
-        const payload = e.data as MarketplaceInstallPayload
-        const script = buildInstallScript(payload)
-        this.preview = {
-            appKey: payload.app.key,
-            appTitle: payload.app.title || payload.app.name || payload.app.key,
-            instance: payload.instance.name,
-            version: payload.version.value,
-            script,
-        }
-        this.copied = false
+        this.installFromPayload(e.data as MarketplaceInstallPayload)
     }
 
-    async copyScript() {
-        if (!this.preview) return
+    async installFromPayload(payload: MarketplaceInstallPayload) {
+        if (this.installing) {
+            this.actions.showNotification('error', '已有安装任务进行中，请稍候')
+            return
+        }
+        const appTitle = payload.name
+        this.installing = true
         try {
-            await navigator.clipboard.writeText(this.preview.script)
-            this.copied = true
-            setTimeout(() => { this.copied = false }, 1500)
-        } catch {
-            const ta = document.createElement('textarea')
-            ta.value = this.preview.script
-            document.body.appendChild(ta)
-            ta.select()
-            try {
-                document.execCommand('copy')
-                this.copied = true
-                setTimeout(() => { this.copied = false }, 1500)
-            } catch {
-                this.actions.showNotification('error', '复制失败，请手动选中复制')
-            }
-            document.body.removeChild(ta)
+            const res = await api.composeDeployZip({
+                url: payload.url,
+                name: payload.name,
+                env: payload.env,
+                internalOnly: payload.internalOnly,
+            })
+            const items = res.payload?.items || []
+            this.actions.showNotification(
+                'success',
+                `${appTitle} 安装成功，已创建 ${items.length} 个容器`
+            )
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e)
+            this.actions.showNotification('error', `${appTitle} 安装失败：${msg}`)
         }
-    }
-
-    closePreview() {
-        this.preview = null
-        this.copied = false
+        this.installing = false
     }
 
     openSettings() {
         this.$router.push('/system/settings')
+    }
+
+    openComposeModal() {
+        this.composeModalRef?.show()
     }
 }
 
@@ -149,6 +161,9 @@ export default toNative(Marketplace)
             <button type="button" @click="loadUrl()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
             </button>
+            <button type="button" @click="openComposeModal()" class="px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-file-code"></i>Compose 部署
+            </button>
           </div>
         </div>
         <div class="flex md:hidden items-center justify-between">
@@ -163,6 +178,9 @@ export default toNative(Marketplace)
           <div class="flex items-center gap-2 flex-shrink-0">
             <button type="button" @click="loadUrl()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 flex items-center justify-center transition-colors" title="刷新">
               <i class="fas fa-rotate"></i>
+            </button>
+            <button type="button" @click="openComposeModal()" class="w-9 h-9 rounded-lg bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white transition-colors" title="Compose 部署">
+              <i class="fas fa-file-code"></i>
             </button>
             <button type="button" @click="openSettings()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 flex items-center justify-center transition-colors" title="配置">
               <i class="fas fa-gear"></i>
@@ -190,7 +208,7 @@ export default toNative(Marketplace)
       </div>
 
       <!-- Iframe -->
-      <div v-else class="p-0">
+      <div v-else class="p-0 relative">
         <iframe
           ref="iframe"
           :src="iframeUrl"
@@ -199,46 +217,16 @@ export default toNative(Marketplace)
           referrerpolicy="no-referrer"
           sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-modals"
         ></iframe>
-      </div>
-    </div>
-
-    <!-- 安装脚本预览弹窗 -->
-    <div v-if="preview" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @click.self="closePreview()">
-      <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-        <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
-              <i class="fas fa-terminal text-white"></i>
-            </div>
-            <div class="min-w-0">
-              <h2 class="text-base font-semibold text-slate-800 truncate">安装 {{ preview.appTitle }}</h2>
-              <p class="text-xs text-slate-500 truncate">实例 {{ preview.instance }} · 版本 {{ preview.version }}</p>
-            </div>
+        <div v-if="installing" class="absolute inset-0 bg-black/30 flex items-center justify-center rounded-b-2xl pointer-events-none">
+          <div class="bg-white rounded-xl shadow-lg px-4 py-3 flex items-center gap-3">
+            <div class="w-6 h-6 spinner"></div>
+            <span class="text-sm text-slate-700">正在安装，请稍候...</span>
           </div>
-            <button type="button" @click="closePreview()" class="w-8 h-8 rounded-lg hover:bg-slate-50 text-slate-500 flex items-center justify-center">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-
-        <div class="px-5 py-3 bg-amber-50 border-b border-amber-100 text-xs text-amber-800 flex items-start gap-2">
-          <i class="fas fa-triangle-exclamation mt-0.5 flex-shrink-0"></i>
-          <span>复制下方脚本到目标服务器以 <code class="px-1 py-0.5 rounded bg-white/60">bash</code> 执行即可完成安装；脚本依赖 <code class="px-1 py-0.5 rounded bg-white/60">docker</code> / <code class="px-1 py-0.5 rounded bg-white/60">curl</code> / <code class="px-1 py-0.5 rounded bg-white/60">unzip</code>。</span>
-        </div>
-
-        <div class="flex-1 overflow-auto p-4">
-          <pre class="text-xs font-mono bg-slate-900 text-slate-100 rounded-lg p-4 whitespace-pre overflow-auto leading-5">{{ preview.script }}</pre>
-        </div>
-
-        <div class="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-200">
-          <button type="button" @click="closePreview()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors">
-            关闭
-          </button>
-          <button type="button" @click="copyScript()" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-            <i :class="['fas', copied ? 'fa-check' : 'fa-copy']"></i>
-            {{ copied ? '已复制' : '复制脚本' }}
-          </button>
         </div>
       </div>
     </div>
+
+    <!-- Compose 部署弹窗 -->
+    <ComposeModal ref="composeModalRef" />
   </div>
 </template>

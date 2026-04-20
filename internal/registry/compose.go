@@ -1,0 +1,58 @@
+package registry
+
+import (
+	"context"
+
+	"github.com/rehiy/pango/logman"
+
+	composesvc "isrvd/internal/service/compose"
+	"isrvd/pkgs/compose"
+)
+
+// ComposeService 全局 compose 基础服务实例（通用部署能力）
+var ComposeService *compose.ComposeService
+
+// SnapshotService 全局容器 compose 快照业务服务
+var SnapshotService *composesvc.SnapshotService
+
+// ComposeDeployService 全局 compose 统一部署业务服务（支持 docker / swarm）
+var ComposeDeployService *composesvc.DeployService
+
+// initCompose 初始化 compose 服务（依赖 DockerService 先完成初始化）
+func initCompose() error {
+	if DockerService == nil {
+		logman.Warn("Compose service skipped: docker service not initialized")
+		return nil
+	}
+
+	svc, err := compose.NewComposeService(DockerService)
+	if err != nil {
+		logman.Warn("Compose service initialization failed", "error", err)
+		return err
+	}
+	ComposeService = svc
+
+	// 业务服务：容器快照
+	if snap, err := composesvc.NewSnapshotService(DockerService); err != nil {
+		logman.Warn("Snapshot service initialization failed", "error", err)
+	} else {
+		SnapshotService = snap
+	}
+
+	// 业务服务：统一 compose 部署（docker + 可选 swarm）
+	if dp, err := composesvc.NewDeployService(DockerService, ComposeService, SwarmManager); err != nil {
+		logman.Warn("ComposeDeploy service initialization failed", "error", err)
+	} else {
+		ComposeDeployService = dp
+	}
+
+	return nil
+}
+
+// IsComposeAvailable 检查 compose 服务是否可用
+func IsComposeAvailable(ctx context.Context) bool {
+	if ComposeService == nil {
+		return false
+	}
+	return IsDockerAvailable(ctx)
+}

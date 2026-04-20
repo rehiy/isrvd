@@ -145,9 +145,9 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/shell.vue')
   },
   {
-    path: '/marketplace',
-    name: 'marketplace',
-    component: () => import('@/views/marketplace.vue')
+    path: '/compose/marketplace',
+    name: 'compose-marketplace',
+    component: () => import('@/views/compose/marketplace.vue')
   },
   {
     path: '/system/members',
