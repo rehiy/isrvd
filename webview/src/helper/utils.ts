@@ -105,9 +105,7 @@ export const buildRoutePayload = (formData: RouteFormData): ApisixRoute => {
         priority: formData.priority ?? 0,
         enable_websocket: formData.enable_websocket,
         plugin_config_id: formData.plugin_config_id || '',
-        plugins: formData.plugins || {},
-        create_time: 0,
-        update_time: 0
+        plugins: formData.plugins || {}
     }
     const urisArr = formData.uris.split('\n').map((s: string) => s.trim()).filter(Boolean)
     if (urisArr.length > 1) payload.uris = urisArr

@@ -473,8 +473,8 @@ export interface ApisixRoute {
     upstream?: ApisixUpstreamConfig
     plugins?: Record<string, unknown>
     consumers?: string[]
-    create_time: number
-    update_time: number
+    create_time?: number
+    update_time?: number
 }
 
 export interface ApisixConsumer {

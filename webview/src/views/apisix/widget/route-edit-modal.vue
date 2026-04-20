@@ -32,6 +32,7 @@ class RouteEditModal extends Vue {
     selectedImportPlugins: Set<string> = new Set()
     pluginSearchKeyword = ''
     suppressPortAutofill = false
+    originalUpstream: Record<string, unknown> | null = null
 
     pluginConfigs: ApisixPluginConfig[] = []
     upstreams: ApisixUpstream[] = []
@@ -85,6 +86,7 @@ class RouteEditModal extends Vue {
             plugins: {}, pluginsJson: '{}', pluginsJsonError: ''
         })
         this.editingRouteId = ''
+        this.originalUpstream = null
         this.showPluginPanel = false
         this.showImportPanel = false
         this.importRouteId = ''
@@ -111,8 +113,8 @@ class RouteEditModal extends Vue {
         if (route && route.id) {
             const routeId = route.id
             this.isEditMode = true
-            this.editingRouteId = routeId
             this.resetForm()
+            this.editingRouteId = routeId
             this.modalLoading = true
             this.isOpen = true
             try {
@@ -125,6 +127,8 @@ class RouteEditModal extends Vue {
                 }
                 const plugins = r.plugins || {}
                 const { host: uH, port: uP } = parseUpstreamNode(r.upstream)
+                // 保存原始 upstream 配置，提交时若 upstream_host 为空则保留
+                this.originalUpstream = r.upstream ? { ...r.upstream as Record<string, unknown> } : null
                 this.suppressPortAutofill = true
                 Object.assign(this.formData, {
                     name: r.name || '', desc: r.desc || '',
@@ -133,9 +137,11 @@ class RouteEditModal extends Vue {
                     status: r.status ?? 0, priority: r.priority ?? 0,
                     enable_websocket: r.enable_websocket || false,
                     plugin_config_id: r.plugin_config_id || '',
-                    upstream_host: uH, upstream_port: uP,
+                    upstream_host: uH, upstream_port: String(uP),
                     plugins, pluginsJson: JSON.stringify(plugins, null, 2), pluginsJsonError: ''
                 })
+                // 若 uH 为空，watch 不会触发，手动重置标志避免影响后续用户操作
+                if (!uH) this.suppressPortAutofill = false
             } catch (e) {
                 this.actions.showNotification('error', '加载路由详情失败')
                 this.isOpen = false
@@ -236,6 +242,10 @@ class RouteEditModal extends Vue {
         this.modalLoading = true
         try {
             const payload = buildRoutePayload(this.formData)
+            // 编辑模式下，若 upstream_host 为空但原路由有 upstream 配置，则保留原始配置
+            if (this.isEditMode && !this.formData.upstream_host && this.originalUpstream) {
+                payload.upstream = this.originalUpstream as typeof payload.upstream
+            }
             if (this.isEditMode) {
                 await api.apisixUpdateRoute(this.editingRouteId, payload)
                 this.actions.showNotification('success', '路由更新成功')
