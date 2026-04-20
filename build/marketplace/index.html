@@ -7,6 +7,7 @@
   <script src="https://jscdn.rehi.org/npm/tailwindcss-cdn@3/tailwindcss.min.js"></script>
   <script src="https://jscdn.rehi.org/npm/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://jscdn.rehi.org/npm/marked@15/marked.min.js"></script>
+  <script src="https://jscdn.rehi.org/npm/js-yaml@4/dist/js-yaml.min.js"></script>
   <link rel="stylesheet" href="https://jscdn.rehi.org/npm/@fortawesome/fontawesome-free@6/css/all.min.css">
   <link rel="stylesheet" href="https://jscdn.rehi.org/npm/github-markdown-css/github-markdown-light.min.css">
   <script>
@@ -274,14 +275,11 @@
         <div>
           <h4 class="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">可用版本</h4>
           <div class="flex flex-wrap gap-1.5">
-            <a
+            <span
               v-for="(versionData, version) in detail.versions"
               :key="version"
-              :href="`./storage/${detail.key}/${version}.zip`"
-              download
-              class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md text-xs font-mono transition-colors"
-              @click.stop
-            ><i class="fa-solid fa-download text-blue-400 text-xs"></i>{{ version }}</a>
+              class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-mono"
+            >{{ version }}</span>
           </div>
         </div>
 
@@ -422,21 +420,13 @@
             </div>
           </template>
 
-          <!-- 仅内网模式（可选）：勾选后剥离 compose 的宿主机端口映射，避免端口冲突 -->
-          <div class="mt-2 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
-            <label class="flex items-start gap-2.5 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                v-model="installForm.internalOnly"
-                class="mt-0.5 w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-              />
-              <span class="flex-1 min-w-0">
-                <span class="block text-sm font-medium text-slate-700">仅内网模式</span>
-                <span class="block text-xs text-slate-500 mt-0.5 leading-relaxed">
-                  勾选后容器不占用宿主机端口，仅暴露到容器网络。适用于通过 APISIX 等反向代理访问的场景，可避免端口冲突。
-                </span>
-              </span>
-            </label>
+          <!-- meta.yml 加载状态提示 -->
+          <div v-if="metaLoading" class="flex items-center gap-2 text-xs text-slate-500 py-2">
+            <div class="w-4 h-4 border-2 border-slate-200 border-t-sky-500 rounded-full animate-spin"></div>
+            正在加载版本信息...
+          </div>
+          <div v-else-if="metaError" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <i class="fa-solid fa-triangle-exclamation mr-1"></i>{{ metaError }}
           </div>
 
         </div>
@@ -483,10 +473,6 @@
           确保所需的 Docker 网络存在、把应用安装到
           <code class="px-1 bg-slate-100 rounded">/opt/apps/{{ scriptPreview.key }}/{{ scriptPreview.name }}</code>
           目录，并通过 <code class="px-1 bg-slate-100 rounded">docker compose up -d</code> 启动。
-        </p>
-        <p v-if="scriptPreview.internalOnly" class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed">
-          <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-          你勾选了「仅内网模式」，该选项仅在通过面板（iframe）安装时生效；下方脚本仍按原 compose 中的端口映射启动。如需在脚本模式下实现"仅内网"，请安装后自行编辑 <code class="px-1 bg-white rounded">docker-compose.yml</code> 移除 <code class="px-1 bg-white rounded">ports</code> 段。
         </p>
         <pre class="bg-slate-900 text-slate-100 rounded-xl p-4 text-xs font-mono overflow-x-auto leading-relaxed max-h-[50vh] overflow-y-auto"><code>{{ scriptPreview.script }}</code></pre>
       </div>
@@ -678,46 +664,81 @@ createApp({
 
     // 安装表单
     const installPanel = ref(null);
-    const installForm = ref({ name: '', version: '', fields: {}, internalOnly: false });
+    const installForm = ref({ name: '', version: '', fields: {} });
     const showPasswords = ref({});
     const installError = ref('');
     const scriptPreview = ref(null);
     const scriptCopied = ref(false);
     const scriptError = ref('');
 
-    // 当前版本的 formFields
+    // 版本级 meta.yml 缓存：{ 'key@version': { compose, init?, formFields } }
+    const metaCache = new Map();
+    const metaLoading = ref(false);
+    const metaError = ref('');
+    // 当前加载好的 meta（响应式）
+    const currentMeta = ref(null);
+
+    // 当前版本的 formFields（来自 meta.yml）
     const currentFormFields = computed(() => {
-      if (!installPanel.value || !installForm.value.version) return [];
-      const versionData = installPanel.value.versions[installForm.value.version];
-      return versionData?.formFields || [];
+      return currentMeta.value?.formFields || [];
     });
 
     // 根据 formFields 初始化表单字段默认值
     const initFormFields = (fields) => {
       const result = {};
-      fields.forEach(f => { result[f.envKey] = f.default ?? ''; });
+      (fields || []).forEach(f => { result[f.envKey] = f.default ?? ''; });
       return result;
     };
 
-    // 切换版本时重新初始化字段
+    // 加载指定 app/version 的 meta.yml（带缓存）
+    const loadMeta = async (appKey, version) => {
+      const cacheKey = `${appKey}@${version}`;
+      if (metaCache.has(cacheKey)) {
+        return metaCache.get(cacheKey);
+      }
+      const res = await fetch(`./storage/${appKey}/${version}/meta.yml`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      const meta = jsyaml.load(text) || {};
+      metaCache.set(cacheKey, meta);
+      return meta;
+    };
+
+    // 加载当前选中版本的 meta.yml 并初始化表单
+    const loadCurrentMeta = async () => {
+      if (!installPanel.value || !installForm.value.version) return;
+      metaLoading.value = true;
+      metaError.value = '';
+      currentMeta.value = null;
+      try {
+        const meta = await loadMeta(installPanel.value.key, installForm.value.version);
+        currentMeta.value = meta;
+        installForm.value.fields = initFormFields(meta.formFields);
+      } catch (e) {
+        metaError.value = '加载版本信息失败：' + (e.message || String(e));
+      } finally {
+        metaLoading.value = false;
+      }
+    };
+
+    // 切换版本时重新拉 meta
     const onVersionChange = () => {
       showPasswords.value = {};
       installError.value = '';
-      installForm.value.fields = initFormFields(currentFormFields.value);
+      loadCurrentMeta();
     };
 
     const openInstall = (app) => {
       const ver = latestVersion(app);
       installPanel.value = app;
-      const fields = app.versions[ver]?.formFields || [];
       installForm.value = {
         name: app.key,
         version: ver,
-        fields: initFormFields(fields),
-        internalOnly: false,
+        fields: {},
       };
       showPasswords.value = {};
       installError.value = '';
+      loadCurrentMeta();
     };
 
     // 实例名清洗：仅保留 docker 容器名允许的字符 [a-zA-Z0-9_.-]
@@ -733,37 +754,73 @@ createApp({
     // 父程序（面板/运维平台）通常有自己的安装位置策略，由其自行决定
     const LOCAL_INSTALL_ROOT = '/opt/apps';
 
+    // 前端 compose 插值：支持 ${VAR} / ${VAR:-default} / ${VAR-default} / ${VAR:?err} / $VAR
+    // 与 build.py 的变量扫描规则保持一致；未知变量保留为空串
+    const interpolateCompose = (template, env) => {
+      if (!template) return '';
+      // 先保护 $$ 转义
+      const DOLLAR = '\u0000DOLLAR\u0000';
+      let text = template.replace(/\$\$/g, DOLLAR);
+      // ${VAR(:?[-?+=]value)?}
+      text = text.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)(?::?([-?+=])([^}]*))?\}/g, (_, name, op, val) => {
+        const v = env[name];
+        if (op === '-' || op === '=') {
+          // 默认值：:- / :=（未设置或为空） 或 - / =（未设置）
+          if (v === undefined || v === null || v === '') return val != null ? val : '';
+          return String(v);
+        }
+        if (op === '+') {
+          return (v !== undefined && v !== null && v !== '') ? (val || '') : '';
+        }
+        // ?：未设置则必填（此处不抛错，按空串处理）
+        return v !== undefined && v !== null ? String(v) : '';
+      });
+      // $VAR（简单形式）
+      text = text.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) => {
+        const v = env[name];
+        return v !== undefined && v !== null ? String(v) : '';
+      });
+      return text.replace(new RegExp(DOLLAR, 'g'), '$');
+    };
+
     // 构造结构化安装 payload，postMessage 与 shell 脚本生成共用此数据
     const buildInstallPayload = () => {
       const app = installPanel.value;
       const version = installForm.value.version;
-      const versionData = app.versions[version] || {};
-      const formFields = versionData.formFields || [];
+      const meta = currentMeta.value || {};
       const rawName = installForm.value.name;
       const safeName = sanitizeName(rawName, app.key);
       const userFields = JSON.parse(JSON.stringify(installForm.value.fields));
-      const zipPath = `./storage/${app.key}/${version}.zip`;
-      const absUrl = new URL(zipPath, window.location.href).href;
 
-      // 精简协议：仅保留 url / name / env 三个业务字段
-      // - url  : 应用安装包下载地址
-      // - name : 实例名（作为目录名 / compose project 名）
-      // - env  : 所有 compose 插值变量（用户表单 + 系统派生）
-      // - internalOnly : 可选，仅内网模式（剥离宿主机端口映射，由 APISIX 代理）
-      // 系统变量后写入，确保覆盖用户同名字段（正常情况下 formFields 不会包含这些系统 key）
+      // 合并 env：用户表单 + 系统派生（系统变量覆盖同名用户输入）
+      const env = {
+        ...userFields,
+        APP_NAME: safeName,
+        CONTAINER_NAME: safeName,
+        NETWORK_NAME,
+      };
+
+      // 前端做 compose 插值
+      const composeText = interpolateCompose(meta.compose || '', env);
+
+      // init.zip 绝对 URL（仅当该版本存在时）
+      let initURL;
+      if (meta.init) {
+        const rel = `./storage/${app.key}/${version}/${meta.init}`;
+        initURL = new URL(rel, window.location.href).href;
+      }
+
+      // 精简协议：
+      // - name     : 实例名（作为目录名 / compose project 名）
+      // - compose  : 已插值完毕的完整 yml（直接落盘即可启动）
+      // - initURL  : 可选，附加运行文件 zip 下载地址
       const raw = {
         source: 'marketplace',
         type: 'install',
-        url: absUrl,
         name: safeName,
-        env: {
-          ...userFields,
-          APP_NAME: safeName,
-          CONTAINER_NAME: safeName,
-          NETWORK_NAME,
-        },
-        internalOnly: !!installForm.value.internalOnly,
+        compose: composeText,
       };
+      if (initURL) raw.initURL = initURL;
 
       // 附加：shell 脚本生成需要的上下文（不参与 postMessage 协议）
       Object.defineProperty(raw, '__scriptContext', {
@@ -771,7 +828,7 @@ createApp({
         value: {
           appKey: app.key,
           versionValue: version,
-          formFields,
+          networkName: env.NETWORK_NAME,
         },
       });
 
@@ -779,24 +836,18 @@ createApp({
     };
 
     // 生成安装 shell 脚本（非 iframe 环境使用）
+    // 脚本直接嵌入已插值的 compose 文本；如有 initURL 则先下载并解压 init.zip 到目录
     const buildInstallScript = (payload) => {
       // 转义 shell 单引号：a'b -> 'a'\\''b'
       const shq = (v) => `'${String(v).replace(/'/g, `'\\''`)}'`;
-      // 转义 .env 值：docker compose env_file 语法 —— 用双引号包裹，转义 " \\ $ `
-      // 参考 https://docs.docker.com/compose/environment-variables/env-file/
-      const envEsc = (v) => `"${String(v).replace(/[\\"`$]/g, '\\$&')}"`;
 
-      const { url, name, env } = payload;
+      const { name, compose, initURL } = payload;
       const ctx = payload.__scriptContext || {};
       const appKey = ctx.appKey || name;
       const versionValue = ctx.versionValue || '';
-      const networkName = env.NETWORK_NAME || 'app-network';
+      const networkName = ctx.networkName || 'app-network';
 
-      const envLines = Object.entries(env)
-        .map(([k, v]) => `${k}=${envEsc(v == null ? '' : v)}`)
-        .join('\n');
-
-      return [
+      const lines = [
         `#!/usr/bin/env bash`,
         `# ${appKey} ${versionValue} 安装脚本`,
         `set -euo pipefail`,
@@ -804,14 +855,19 @@ createApp({
         `# ============ 基础依赖检查 ============`,
         `command -v docker >/dev/null 2>&1 || { echo "✗ 未检测到 docker，请先安装 Docker" >&2; exit 1; }`,
         `docker compose version >/dev/null 2>&1 || { echo "✗ 未检测到 docker compose 插件（docker compose v2）" >&2; exit 1; }`,
-        `command -v curl  >/dev/null 2>&1 || { echo "✗ 未检测到 curl"  >&2; exit 1; }`,
-        `command -v unzip >/dev/null 2>&1 || { echo "✗ 未检测到 unzip" >&2; exit 1; }`,
+      ];
+      if (initURL) {
+        lines.push(
+          `command -v curl  >/dev/null 2>&1 || { echo "✗ 未检测到 curl"  >&2; exit 1; }`,
+          `command -v unzip >/dev/null 2>&1 || { echo "✗ 未检测到 unzip" >&2; exit 1; }`,
+        );
+      }
+      lines.push(
         ``,
         `# ============ 配置 ============`,
         `APP_KEY=${shq(appKey)}`,
         `APP_NAME=${shq(name)}`,
         `APP_VERSION=${shq(versionValue)}`,
-        `ZIP_URL=${shq(url)}`,
         `INSTALL_ROOT=${shq(LOCAL_INSTALL_ROOT)}`,
         `INSTALL_DIR="$INSTALL_ROOT/$APP_KEY/$APP_NAME"`,
         `NETWORK_NAME=${shq(networkName)}`,
@@ -831,19 +887,25 @@ createApp({
         `mkdir -p "$INSTALL_DIR"`,
         `cd "$INSTALL_DIR"`,
         ``,
-        `# ============ 下载并解压应用包 ============`,
-        `echo "==> 下载 $APP_KEY:$APP_VERSION"`,
-        `curl -fL --retry 3 -o app.zip "$ZIP_URL"`,
-        `echo "==> 解压"`,
-        `unzip -oq app.zip`,
-        `rm -f app.zip`,
-        ``,
-        `# ============ 写入 .env ============`,
-        `echo "==> 写入 .env"`,
-        `cat > .env <<'MARKETPLACE_ENV_EOF'`,
-        envLines,
-        `MARKETPLACE_ENV_EOF`,
-        `chmod 600 .env`,
+      );
+      if (initURL) {
+        lines.push(
+          `# ============ 下载并解压附加运行文件 ============`,
+          `INIT_URL=${shq(initURL)}`,
+          `echo "==> 下载附加文件"`,
+          `curl -fL --retry 3 -o init.zip "$INIT_URL"`,
+          `echo "==> 解压"`,
+          `unzip -oq init.zip`,
+          `rm -f init.zip`,
+          ``,
+        );
+      }
+      lines.push(
+        `# ============ 写入 docker-compose.yml ============`,
+        `echo "==> 写入 docker-compose.yml"`,
+        `cat > docker-compose.yml <<'MARKETPLACE_COMPOSE_EOF'`,
+        compose.replace(/\r\n/g, '\n').replace(/\n+$/, ''),
+        `MARKETPLACE_COMPOSE_EOF`,
         ``,
         `# ============ 启动 ============`,
         `echo "==> docker compose up -d"`,
@@ -855,7 +917,8 @@ createApp({
         `echo "  实例：$APP_NAME"`,
         `echo "  目录：$INSTALL_DIR"`,
         ``,
-      ].join('\n');
+      );
+      return lines.join('\n');
     };
 
     const copyScript = async () => {
@@ -879,6 +942,8 @@ createApp({
     const confirmInstall = () => {
       installError.value = '';
       if (!installForm.value.name.trim()) { installError.value = '请填写名称'; return; }
+      if (metaLoading.value) { installError.value = '版本信息加载中，请稍候'; return; }
+      if (!currentMeta.value) { installError.value = '版本信息加载失败，请刷新重试'; return; }
       const missing = currentFormFields.value.find(
         f => f.required && !f.disabled && (installForm.value.fields[f.envKey] === '' || installForm.value.fields[f.envKey] == null)
       );
@@ -892,6 +957,7 @@ createApp({
 
       // 嵌入时投递给父窗口，独立访问时弹 shell 脚本（标记见 <head> 内联脚本）
       if (document.documentElement.classList.contains('embed')) {
+        // 传给父窗口的对象需为纯结构化数据，去掉 __scriptContext（不可枚举，天然不会序列化）
         window.parent.postMessage(payload, '*');
         return;
       }
@@ -899,7 +965,6 @@ createApp({
         key: (payload.__scriptContext && payload.__scriptContext.appKey) || payload.name,
         name: payload.name,
         script: buildInstallScript(payload),
-        internalOnly: !!payload.internalOnly,
       };
       scriptCopied.value = false;
       scriptError.value = '';
@@ -910,6 +975,7 @@ createApp({
       filteredApps, detail, readmeHtml, readmeLoading, imgErrors,
       tagName, tagIcon, appIconUrl, latestVersion, openDetail, lazyImg,
       installPanel, installForm, showPasswords, currentFormFields, installError,
+      metaLoading, metaError,
       onVersionChange, openInstall, confirmInstall,
       scriptPreview, scriptCopied, scriptError, copyScript,
     };

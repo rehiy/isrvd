@@ -17,8 +17,7 @@ import type {
     LoginResponse,
     AllSettings,
     MemberInfo, MemberUpsertRequest,
-    ComposeDeployYmlRequest, ComposeDeployYmlResult,
-    ComposeDeployZipRequest, ComposeDeployZipResult
+    ComposeDeployRequest, ComposeDeployResult
 } from './types'
 
 // API 服务类，统一管理所有 API 请求
@@ -367,12 +366,8 @@ class ApiService {
 
     // ==================== Compose 部署 ====================
 
-    composeDeployYml(data: ComposeDeployYmlRequest) {
-        return http.post<ComposeDeployYmlResult>('/api/compose/deploy/yml', data)
-    }
-
-    composeDeployZip(data: ComposeDeployZipRequest) {
-        return http.post<ComposeDeployZipResult>('/api/compose/deploy/zip', data)
+    composeDeploy(data: ComposeDeployRequest) {
+        return http.post<ComposeDeployResult>('/api/compose/deploy', data)
     }
 }
 

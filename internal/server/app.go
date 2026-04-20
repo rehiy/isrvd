@@ -207,8 +207,7 @@ func (app *App) setupRouter() {
 			// Compose API 路由
 			composeGroup := authGroup.Group("/compose")
 			{
-				composeGroup.POST("/deploy/yml", composeHandler.DeployYml)
-				composeGroup.POST("/deploy/zip", composeHandler.DeployZip)
+				composeGroup.POST("/deploy", composeHandler.Deploy)
 			}
 
 			// 系统 API 路由（含只读信息与配置管理）

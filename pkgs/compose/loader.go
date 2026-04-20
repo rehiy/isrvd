@@ -39,7 +39,7 @@ func LoadProject(ctx context.Context, opts LoadOptions) (*types.Project, error) 
 
 	configFiles := opts.ConfigFiles
 	if len(configFiles) == 0 {
-		found, err := locateComposeFile(opts.WorkingDir)
+		found, err := LocateComposeFile(opts.WorkingDir)
 		if err != nil {
 			return nil, err
 		}
@@ -139,9 +139,9 @@ func loadHostEnv() map[string]string {
 	return env
 }
 
-// locateComposeFile 在指定目录下查找 compose 文件
+// LocateComposeFile 在指定目录下查找 compose 文件
 // 查找顺序：根目录 → 一级子目录（处理 zip 解压后外层多一层目录的情况）
-func locateComposeFile(dir string) (string, error) {
+func LocateComposeFile(dir string) (string, error) {
 	for _, name := range composeFileCandidates {
 		p := filepath.Join(dir, name)
 		if st, err := os.Stat(p); err == nil && !st.IsDir() {

@@ -58,8 +58,10 @@ window.addEventListener('message', (event) => {
 运行 `build.py` 会：
 
 1. 从 GitHub 下载 1Panel appstore 源码
-2. 解析 `data.yml` 文件生成 `index.json`
-3. 打包各版本文件到 `storage/应用名/版本号.zip`
+2. 解析 `data.yml` 文件生成 `index.json`（仅含应用元信息与版本号，不再携带 formFields 等详情）
+3. 为每个版本在 `storage/应用名/版本号/` 下生成：
+   - `meta.yml`：包含 `compose`（原始模板，含 `${VAR}` 占位，使用 YAML `|` 块字面量样式保持源文件可读性）、`formFields`（表单字段定义）、可选 `init`（附加运行文件 zip 相对路径）
+   - `init.zip`：仅当存在 compose 以外的运行时文件（如配置脚本、SQL 等）时生成
 
 ```bash
 pip install pyyaml
@@ -68,7 +70,7 @@ python build.py
 
 ## 数据结构
 
-### index.json
+### index.json（轻量，仅元信息）
 
 ```json
 {
@@ -79,31 +81,62 @@ python build.py
       "name": "MySQL",
       "description": { "zh": "开源关系型数据库" },
       "versions": {
-        "8.0": {
-          "formFields": [
-            { "envKey": "MYSQL_ROOT_PASSWORD", "type": "password", "required": true }
-          ]
-        }
+        "8.0": { "architectures": ["amd64", "arm64"] }
       }
     }
   }
 }
 ```
 
-### 安装 Payload
+### storage/{app}/{version}/meta.yml（表单与 compose）
+
+```yaml
+compose: |
+  version: '3.8'
+  services:
+    mysql:
+      image: mysql:8.0
+      environment:
+        MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      networks:
+        - app-network
+  networks:
+    app-network:
+      external: true
+formFields:
+  - envKey: MYSQL_ROOT_PASSWORD
+    type: password
+    required: true
+    label:
+      zh: Root 密码
+init: init.zip
+```
+
+### 安装 postMessage Payload
+
+前端已在浏览器端对 `compose` 完成 `${VAR}` 插值，父窗口拿到即可直接落盘启动：
 
 ```json
 {
   "source": "marketplace",
-  "protocol": 1,
   "type": "install",
-  "app": { "key": "mysql", "name": "MySQL" },
-  "version": { "value": "8.0", "url": "..." },
-  "instance": { "name": "my-mysql", "safeName": "my-mysql" },
-  "env": { "system": {...}, "user": {...} },
-  "deploy": { "network": "app-network" }
+  "name": "my-mysql",
+  "compose": "version: '3.8'\nservices:\n  mysql:\n    image: mysql:8.0\n    environment:\n      MYSQL_ROOT_PASSWORD: s3cret\n    networks:\n      - app-network\n...",
+  "initURL": "https://marketplace.example.com/storage/mysql/8.0/init.zip"
 }
 ```
+
+字段说明：
+
+| 字段 | 类型 | 是否必填 | 说明 |
+| --- | --- | --- | --- |
+| `source` | string | 是 | 固定为 `marketplace` |
+| `type` | string | 是 | 固定为 `install` |
+| `name` | string | 是 | 实例名，作为目录名 / compose project 名，匹配 `[a-zA-Z0-9][a-zA-Z0-9_.-]*` |
+| `compose` | string | 是 | 前端插值完毕的完整 `docker-compose.yml` 文本 |
+| `initURL` | string | 否 | 附加运行文件 `init.zip` 的绝对下载地址；无附加文件时字段省略 |
+
+系统变量 `APP_NAME` / `CONTAINER_NAME` / `NETWORK_NAME`（默认 `app-network`）由前端自动注入到插值过程中，父窗口无需关心。
 
 ---
 

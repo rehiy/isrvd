@@ -4,16 +4,13 @@ package compose
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
-	"time"
 
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/rehiy/pango/logman"
+	"github.com/rehiy/pango/request"
 
 	"isrvd/pkgs/archive"
 	"isrvd/pkgs/compose"
@@ -26,9 +23,11 @@ var safeName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]*$`)
 
 // DeployService 统一的 Compose 部署业务服务
 //
-// 提供两种独立的部署入口：
-//   - DeployYml：基于 compose 文本直接部署（docker 容器 / swarm 服务）
-//   - DeployZip：下载 zip → 解压 → 写 .env → 部署为单机容器（仅 docker）
+// 统一入口 Deploy 根据参数决定行为：
+//   - ProjectName 为空：临时部署，不落盘（compose 在线编辑场景）
+//   - ProjectName 非空 + Target=docker：落盘到 {ContainerRoot}/{ProjectName}，
+//     可选下载 InitURL 指向的附加运行文件 zip（应用市场一键安装场景）
+//   - ProjectName 非空 + Target=swarm：仅作为 compose project 名使用，不落盘
 type DeployService struct {
 	docker  *docker.DockerService
 	compose *compose.ComposeService
@@ -52,69 +51,69 @@ const (
 	TargetSwarm  ComposeDeployTarget = "swarm"
 )
 
-// DeployYmlRequest 基于 compose 文本的部署请求
-type DeployYmlRequest struct {
-	Target       ComposeDeployTarget `json:"target" binding:"required"` // docker | swarm
-	Content      string              `json:"content" binding:"required"`
-	Env          map[string]any      `json:"env"`          // 可选：注入 compose 解析期的环境变量
-	ProjectName  string              `json:"projectName"`  // 可选：compose project 名
-	InternalOnly bool                `json:"internalOnly"` // 可选：仅内网模式，剥离所有 ports 宿主机映射
+// DeployRequest 统一的 compose 部署请求
+//
+//   - Target      : docker | swarm（必填）
+//   - Content     : 完整 compose yaml 文本（必填；前端已完成变量插值）
+//   - ProjectName : 可选 compose project 名；
+//     Target=docker 且非空时走落盘模式：安装到 {ContainerRoot}/{ProjectName}
+//   - InitURL     : 可选，仅落盘模式生效；附加运行文件 zip 下载地址
+type DeployRequest struct {
+	Target      ComposeDeployTarget `json:"target" binding:"required"`
+	Content     string              `json:"content" binding:"required"`
+	ProjectName string              `json:"projectName"`
+	InitURL     string              `json:"initURL"`
 }
 
-// DeployYmlResult 文本部署结果
-type DeployYmlResult struct {
-	Target ComposeDeployTarget `json:"target"` // 部署目标
-	Items  []string            `json:"items"`  // 容器名 / swarm 服务名，格式 "name (shortId)"
+// DeployResult 部署结果
+type DeployResult struct {
+	Target     ComposeDeployTarget `json:"target"`               // 部署目标
+	Items      []string            `json:"items"`                // 容器名 / swarm 服务名，格式 "name (shortId)"
+	InstallDir string              `json:"installDir,omitempty"` // 仅落盘模式返回
 }
 
-// DeployZipRequest 基于 zip 压缩包的部署请求（仅 docker）
-type DeployZipRequest struct {
-	URL          string         `json:"url" binding:"required"`  // 远程 zip 地址
-	Name         string         `json:"name" binding:"required"` // 实例名（作为目录名与 compose project 名）
-	Env          map[string]any `json:"env"`                     // 可选：写入 .env 的变量（CONTAINER_NAME / APP_NAME / NETWORK_NAME 等）
-	InternalOnly bool           `json:"internalOnly"`            // 可选：仅内网模式，剥离所有 ports 宿主机映射
-}
-
-// DeployZipResult zip 部署结果
-type DeployZipResult struct {
-	InstallDir string   `json:"installDir"` // 安装目录
-	Items      []string `json:"items"`      // 容器名，格式 "name (shortId)"
-}
-
-// DeployYml 基于 compose 文本直接部署
-func (s *DeployService) DeployYml(ctx context.Context, req DeployYmlRequest) (*DeployYmlResult, error) {
+// Deploy 统一的 compose 部署入口
+func (s *DeployService) Deploy(ctx context.Context, req DeployRequest) (*DeployResult, error) {
 	if req.Content == "" {
 		return nil, fmt.Errorf("compose 内容不能为空")
 	}
+
+	// 判定是否走落盘模式（应用市场一键安装）
+	persist := req.ProjectName != "" && req.Target == TargetDocker
+	if persist {
+		return s.deployPersistent(ctx, req)
+	}
+
+	// 临时部署：直接从文本加载并部署
 	project, err := compose.LoadProjectFromContent(ctx, req.Content, req.ProjectName)
 	if err != nil {
 		return nil, err
-	}
-	if req.InternalOnly {
-		stripProjectPorts(project)
 	}
 	items, err := s.deployProject(ctx, req.Target, project)
 	if err != nil {
 		return nil, err
 	}
-	return &DeployYmlResult{Target: req.Target, Items: items}, nil
+	return &DeployResult{Target: req.Target, Items: items}, nil
 }
 
-// DeployZip 下载 zip → 解压 → 写 .env → 加载并部署（仅 docker）
-func (s *DeployService) DeployZip(ctx context.Context, req DeployZipRequest) (*DeployZipResult, error) {
+// deployPersistent 落盘部署（应用市场一键安装场景，仅 docker）
+//
+// 流程：
+//  1. 在 {ContainerRoot}/{ProjectName} 下建目录
+//  2. 可选：下载 InitURL 指向的 zip 并解压
+//  3. 将已插值的 compose 文本落盘为 docker-compose.yml
+//  4. 加载并部署为单机容器
+func (s *DeployService) deployPersistent(ctx context.Context, req DeployRequest) (*DeployResult, error) {
 	root := s.docker.ContainerRoot()
 	if root == "" {
 		return nil, fmt.Errorf("未配置容器数据根目录")
 	}
-	if !safeName.MatchString(req.Name) {
+	if !safeName.MatchString(req.ProjectName) {
 		return nil, fmt.Errorf("非法的实例名")
 	}
-	if req.URL == "" {
-		return nil, fmt.Errorf("缺少安装包下载地址")
-	}
 
-	// 安装目录约定：{ContainerRoot}/{name}
-	installDir := filepath.Join(root, req.Name)
+	// 安装目录约定：{ContainerRoot}/{ProjectName}
+	installDir := filepath.Join(root, req.ProjectName)
 	if _, err := os.Stat(installDir); err == nil {
 		return nil, fmt.Errorf("目录已存在：%s，请先移除或使用其它实例名", installDir)
 	}
@@ -130,48 +129,44 @@ func (s *DeployService) DeployZip(ctx context.Context, req DeployZipRequest) (*D
 		}
 	}()
 
-	// 下载并解压
-	zipPath := filepath.Join(installDir, ".app.zip")
-	if err := downloadFile(ctx, req.URL, zipPath); err != nil {
-		return nil, fmt.Errorf("下载安装包失败: %w", err)
+	// 下载并解压附加运行文件
+	if req.InitURL != "" {
+		zipPath := filepath.Join(installDir, "init.zip")
+		if _, err := request.Download(req.InitURL, zipPath, false); err != nil {
+			return nil, fmt.Errorf("下载附加文件失败: %w", err)
+		}
+		if err := archive.NewZipper().Unzip(zipPath); err != nil {
+			return nil, fmt.Errorf("解压附加文件失败: %w", err)
+		}
+		_ = os.Remove(zipPath)
 	}
-	if err := archive.NewZipper().Unzip(zipPath); err != nil {
-		return nil, fmt.Errorf("解压安装包失败: %w", err)
-	}
-	_ = os.Remove(zipPath)
 
-	// 组装 env：所有变量均来自用户表单
-	env := map[string]string{}
-	for k, v := range req.Env {
-		env[k] = fmt.Sprintf("%v", v)
-	}
-	if err := writeDotEnv(filepath.Join(installDir, ".env"), env); err != nil {
-		return nil, fmt.Errorf("写入 .env 失败: %w", err)
+	// 将已插值的 compose 落盘（前端已完成变量替换，后端无需再做 env 处理）
+	composeFile := filepath.Join(installDir, "docker-compose.yml")
+	if err := os.WriteFile(composeFile, []byte(req.Content), 0644); err != nil {
+		return nil, fmt.Errorf("写入 compose 文件失败: %w", err)
 	}
 
 	// 加载并部署，项目名与实例名保持一致
 	project, err := compose.LoadProject(ctx, compose.LoadOptions{
 		WorkingDir:  installDir,
-		ProjectName: req.Name,
-		Environment: env,
+		ProjectName: req.ProjectName,
 	})
 	if err != nil {
 		return nil, err
 	}
-	if req.InternalOnly {
-		stripProjectPorts(project)
-	}
+
 	items, err := s.deployProject(ctx, TargetDocker, project)
 	if err != nil {
-		return nil, fmt.Errorf("部署失败: %w", err)
+		return nil, err
 	}
 
 	ok = true
-	logman.Info("Compose archive deployed",
-		"name", req.Name,
+	logman.Info("Compose app deployed",
+		"name", req.ProjectName,
 		"installDir", installDir,
 	)
-	return &DeployZipResult{InstallDir: installDir, Items: items}, nil
+	return &DeployResult{Target: TargetDocker, Items: items, InstallDir: installDir}, nil
 }
 
 // deployProject 根据 target 分发到 docker / swarm 部署
@@ -206,63 +201,4 @@ func (s *DeployService) deployProject(ctx context.Context, target ComposeDeployT
 	default:
 		return nil, fmt.Errorf("不支持的部署目标: %s", target)
 	}
-}
-
-// downloadFile 下载 URL 到目标路径
-func downloadFile(ctx context.Context, url, dest string) error {
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return err
-	}
-	resp, err := (&http.Client{Timeout: 5 * time.Minute}).Do(httpReq)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode/100 != 2 {
-		return fmt.Errorf("HTTP %d", resp.StatusCode)
-	}
-	f, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	_, err = io.Copy(f, resp.Body)
-	return err
-}
-
-// stripProjectPorts 剥离 compose 项目中所有服务的宿主机端口映射
-// 用于"仅内网模式"：容器仍可通过 docker 网络被其它容器 / APISIX 访问，但不占用宿主机端口
-func stripProjectPorts(project *types.Project) {
-	if project == nil {
-		return
-	}
-	for name, svc := range project.Services {
-		if len(svc.Ports) == 0 {
-			continue
-		}
-		svc.Ports = nil
-		project.Services[name] = svc
-	}
-}
-
-// writeDotEnv 按 KEY=VALUE 纯文本写入 .env，由 compose-go 负责解析
-func writeDotEnv(path string, env map[string]string) error {
-	keys := make([]string, 0, len(env))
-	for k := range env {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	for _, k := range keys {
-		if _, err := fmt.Fprintf(f, "%s=%s\n", k, env[k]); err != nil {
-			return err
-		}
-	}
-	return nil
 }

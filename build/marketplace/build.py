@@ -10,6 +10,19 @@ import yaml
 from pathlib import Path
 
 
+# 让 YAML dump 时使用 | 块字面量样式输出多行字符串（如 compose 全文）
+class LiteralStr(str):
+    """标记一个字符串在 YAML 输出时使用 | 字面量块样式"""
+    pass
+
+
+def _literal_str_representer(dumper, data):
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+
+
+yaml.add_representer(LiteralStr, _literal_str_representer, Dumper=yaml.SafeDumper)
+
+
 BASE_DIR = Path(__file__).parent
 OUTPUT_INDEX = BASE_DIR / "index.json"
 OUTPUT_DOWNLOAD = BASE_DIR / "storage"
@@ -17,25 +30,46 @@ OUTPUT_DOWNLOAD = BASE_DIR / "storage"
 SOURCE_URL = "https://github.com/1Panel-dev/appstore/archive/refs/heads/dev.zip"
 
 # 构建阶段将 compose 文件中原始网络名替换为此值
-# 若修改此值，请同步修改 index.html 中 buildInstallScript 的 NETWORK_NAME 默认值
+# 若修改此值，请同步修改 index.html 中 NETWORK_NAME 默认值
 ORIGINAL_NETWORK_NAME = "1panel-network"
 NETWORK_NAME = "app-network"
 
-# 系统注入的环境变量，不需要纳入 formFields（与 index.html env.system 对齐）
-SYSTEM_ENV_KEYS = {"CONTAINER_NAME", "APP_NAME"}
+# 系统注入的环境变量，不需要纳入 formFields（与 index.html env 对齐）
+SYSTEM_ENV_KEYS = {"CONTAINER_NAME", "APP_NAME", "NETWORK_NAME"}
 
-# compose 插值变量正则：
-#   ${VAR}                 - 简单插值
-#   ${VAR:-default}        - 默认值（未设置或为空时使用）
-#   ${VAR-default}         - 默认值（未设置时使用）
-#   ${VAR:?err} / ${VAR?}  - 必填
-#   ${VAR:+alt} / ${VAR+}  - 替换值（不作为默认值）
-# 使用前先把 $$ 替换掉以避免转义干扰
-COMPOSE_VAR_BRACE_RE = re.compile(
+# 统一小写比对
+COMPOSE_FILE_NAMES = ("docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml")
+DATA_FILE_NAMES = ("data.yml", "data.yaml")
+
+# compose 插值变量（仅处理 ${VAR} / ${VAR:-default} / ${VAR?} 等大括号形式，
+# 1Panel 模板不使用裸 $VAR 形式；扫描前先移除 $$ 转义）
+COMPOSE_VAR_RE = re.compile(
     r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::?([-?+=])([^}]*))?\}"
 )
-COMPOSE_VAR_PLAIN_RE = re.compile(r"\$([A-Za-z_][A-Za-z0-9_]*)")
 
+
+# ---------- 通用 helper ----------
+
+def find_first(directory: Path, names) -> Path | None:
+    """在目录下按候选名顺序查找第一个存在的文件（不递归）"""
+    for name in names:
+        p = directory / name
+        if p.is_file():
+            return p
+    return None
+
+
+def load_yaml(path: Path) -> dict:
+    """加载 YAML 文件，失败返回空字典"""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except Exception as e:
+        print(f"  [警告] 读取 {path} 失败: {e}")
+        return {}
+
+
+# ---------- 下载 / 解压 ----------
 
 def download_source(url: str, dest: Path):
     """下载源码 zip 到指定路径"""
@@ -61,129 +95,83 @@ def extract_source(zip_path: Path, extract_dir: Path) -> Path:
     print(f"[解压] {zip_path.name} -> {extract_dir}")
     with zipfile.ZipFile(zip_path, "r") as zf:
         zf.extractall(extract_dir)
-        # zip 内通常有一个顶层目录，如 master/ 或 dev/ 等
         top_dirs = {Path(name).parts[0] for name in zf.namelist() if name.strip("/")}
         if len(top_dirs) == 1:
             return extract_dir / top_dirs.pop()
         return extract_dir
 
 
-def load_yaml(path: Path) -> dict:
-    """加载 YAML 文件，失败返回空字典"""
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return yaml.safe_load(f) or {}
-    except Exception as e:
-        print(f"  [警告] 读取 {path} 失败: {e}")
-        return {}
+# ---------- 元数据清洗 ----------
 
-
-def filter_chinese_content(data: dict) -> dict:
-    """多语言处理，默认保留中文和英文内容，移除冗余字段"""
+def filter_chinese_content(data):
+    """递归处理：
+    - locales / label / description 多语言字典仅保留 zh / en
+    - 移除冗余 *Zh / *En 字段
+    - 字符串 description 自动升级为多语言 dict
+    """
     if not isinstance(data, dict):
         return data
-    
+
     result = {}
     for key, value in data.items():
-        if key in ['locales', 'label', 'description'] and isinstance(value, dict):
-            # 多语言字段
-            filtered_value = {}
-            # 处理中文版本
-            if 'zh' in value:
-                filtered_value['zh'] = value['zh']
-            # 处理英文版本
-            if 'en' in value:
-                filtered_value['en'] = value['en']
-            result[key] = filtered_value if filtered_value else value
-        elif key == 'description' and isinstance(value, str):
-            # 将单语言 description 转换为多语言格式
-            result[key] = {
-                'zh': value,
-                'en': value
-            }
-        elif key in ['labelZh', 'labelEn', 'shortDescZh', 'shortDescEn']:
-            # 跳过冗余字段
+        if key in ("locales", "label", "description") and isinstance(value, dict):
+            picked = {k: value[k] for k in ("zh", "en") if k in value}
+            result[key] = picked if picked else value
+        elif key == "description" and isinstance(value, str):
+            result[key] = {"zh": value, "en": value}
+        elif key in ("labelZh", "labelEn", "shortDescZh", "shortDescEn"):
             continue
         elif isinstance(value, dict):
             result[key] = filter_chinese_content(value)
         elif isinstance(value, list):
-            result[key] = [filter_chinese_content(item) if isinstance(item, dict) else item for item in value]
+            result[key] = [filter_chinese_content(v) for v in value]
         else:
             result[key] = value
-    
+
     return result
 
 
-def merge_additional_properties(data: dict) -> dict:
-    """合并 additionalProperties 到上层"""
+def merge_additional_properties(data):
+    """递归把任意层级的 additionalProperties 展平到父级"""
     if not isinstance(data, dict):
+        if isinstance(data, list):
+            return [merge_additional_properties(v) for v in data]
         return data
-    
-    result = dict(data)
-    
-    # 如果存在 additionalProperties，将其内容合并到当前层级
-    if 'additionalProperties' in result and isinstance(result['additionalProperties'], dict):
-        additional_props = result.pop('additionalProperties')
-        # 合并 additionalProperties 的内容，覆盖已有字段
-        for key, value in additional_props.items():
-            result[key] = value
-        
-        # 递归处理嵌套的 additionalProperties
-        for key, value in result.items():
-            if isinstance(value, dict):
-                result[key] = merge_additional_properties(value)
-            elif isinstance(value, list):
-                result[key] = [merge_additional_properties(item) if isinstance(item, dict) else item for item in value]
-    else:
-        # 递归处理所有嵌套字典
-        for key, value in result.items():
-            if isinstance(value, dict):
-                result[key] = merge_additional_properties(value)
-            elif isinstance(value, list):
-                result[key] = [merge_additional_properties(item) if isinstance(item, dict) else item for item in value]
-    
+
+    result = {}
+    for key, value in data.items():
+        if key == "additionalProperties" and isinstance(value, dict):
+            # 展平到父级（当前 result）；同名则被 additionalProperties 覆盖
+            for k, v in value.items():
+                result[k] = merge_additional_properties(v)
+        else:
+            result[key] = merge_additional_properties(value)
     return result
 
 
-def extract_compose_variables(version_dir: Path) -> dict:
-    """扫描版本目录下的 docker-compose 文件，提取所有插值变量及其默认值
+# ---------- compose 变量提取与 formFields 合并 ----------
 
-    返回 {VAR: default_str_or_None}，同名变量以首次出现为准，
-    但若后续出现了默认值且首次未带默认值，则补全默认值。
+def extract_compose_variables(compose_path: Path) -> dict:
+    """扫描单个 compose 文件，返回 {VAR: default_or_None}
+
+    - 仅识别 ${VAR} / ${VAR:-default} 等大括号形式
+    - 先去除 $$ 转义，避免干扰
+    - 同名变量：首次不带默认值、后续带默认值时补全
     """
     variables: dict = {}
-    compose_names = ("docker-compose.yml", "docker-compose.yaml")
+    try:
+        text = compose_path.read_text(encoding="utf-8")
+    except (UnicodeDecodeError, OSError):
+        return variables
 
-    for file_path in sorted(version_dir.rglob("*")):
-        if not file_path.is_file():
-            continue
-        if file_path.name.lower() not in compose_names:
-            continue
-        try:
-            text = file_path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            continue
-
-        # 先移除转义的 $$，避免 $$VAR 被误识别
-        stripped = text.replace("$$", "")
-
-        # ${VAR:-default} / ${VAR} / ${VAR:?err}
-        for match in COMPOSE_VAR_BRACE_RE.finditer(stripped):
-            name = match.group(1)
-            op = match.group(2)
-            val = match.group(3)
-            default = val if op in ("-", "=") and val is not None else None
-            if name not in variables:
-                variables[name] = default
-            elif variables[name] is None and default is not None:
-                variables[name] = default
-
-        # 去除已匹配的 ${...} 后再扫描 $VAR 形式，避免重复
-        plain_text = COMPOSE_VAR_BRACE_RE.sub("", stripped)
-        for match in COMPOSE_VAR_PLAIN_RE.finditer(plain_text):
-            name = match.group(1)
-            if name not in variables:
-                variables[name] = None
+    stripped = text.replace("$$", "")
+    for match in COMPOSE_VAR_RE.finditer(stripped):
+        name, op, val = match.group(1), match.group(2), match.group(3)
+        default = val if op in ("-", "=") and val is not None else None
+        if name not in variables:
+            variables[name] = default
+        elif variables[name] is None and default is not None:
+            variables[name] = default
 
     return variables
 
@@ -191,26 +179,18 @@ def extract_compose_variables(version_dir: Path) -> dict:
 def merge_form_fields(existing_fields: list, compose_vars: dict) -> list:
     """将 compose 中发现的变量合并到 data.yml 的 formFields
 
-    - 以 envKey 为键；data.yml 中已定义的字段保留原样（优先级高）
+    - data.yml 中已定义的字段保留原样（优先级高）
     - compose 中存在但 data.yml 未定义的字段自动补齐，标记 auto: true
     - 系统注入变量（CONTAINER_NAME、APP_NAME 等）不参与合并
     """
-    if not isinstance(existing_fields, list):
-        existing_fields = []
+    existing_keys = {
+        f["envKey"] for f in existing_fields
+        if isinstance(f, dict) and f.get("envKey")
+    }
+    merged = list(existing_fields)
 
-    # 现有字段 envKey 集合
-    existing_keys = set()
-    merged = []
-    for field in existing_fields:
-        if isinstance(field, dict) and field.get("envKey"):
-            existing_keys.add(field["envKey"])
-        merged.append(field)
-
-    # 按 compose 中出现顺序追加新字段
     for var_name, default in compose_vars.items():
-        if var_name in SYSTEM_ENV_KEYS:
-            continue
-        if var_name in existing_keys:
+        if var_name in SYSTEM_ENV_KEYS or var_name in existing_keys:
             continue
         merged.append({
             "type": "text",
@@ -224,36 +204,99 @@ def merge_form_fields(existing_fields: list, compose_vars: dict) -> list:
     return merged
 
 
-def build_version_zip(app_name: str, version: str, version_dir: Path):
-    """将版本目录中的文件打包为 zip，仅排除 data.yml/data.yaml"""
-    zip_dir = OUTPUT_DOWNLOAD / app_name
-    zip_dir.mkdir(parents=True, exist_ok=True)
-    zip_path = zip_dir / f"{version}.zip"
+# ---------- 版本级输出（meta.yml + 可选 init.zip） ----------
 
-    compose_names = ("docker-compose.yml", "docker-compose.yaml")
+def build_version_meta(
+    app_name: str,
+    version: str,
+    version_dir: Path,
+    compose_path: Path | None,
+    form_fields: list,
+):
+    """生成 meta.yml + 可选 init.zip
 
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        for file_path in sorted(version_dir.rglob("*")):
-            if not file_path.is_file():
-                continue
-            if file_path.name.lower() in ("data.yml", "data.yaml"):
-                continue
-            arcname = file_path.relative_to(version_dir)
-            # compose 文件做网络名字面量替换
-            if file_path.name.lower() in compose_names:
-                try:
-                    text = file_path.read_text(encoding="utf-8")
-                except UnicodeDecodeError:
-                    zf.write(file_path, arcname)
-                    continue
-                if ORIGINAL_NETWORK_NAME in text:
-                    text = text.replace(ORIGINAL_NETWORK_NAME, NETWORK_NAME)
-                    print(f"  [网络] {app_name}/{version}/{arcname}: {ORIGINAL_NETWORK_NAME} -> {NETWORK_NAME}")
-                zf.writestr(str(arcname), text)
-            else:
-                zf.write(file_path, arcname)
+    - compose 原文做网络名字面量替换后以 YAML | 块样式写入 meta.yml
+    - 除 data.yml / compose 以外的文件打入 init.zip（无则不生成）
+    """
+    out_dir = OUTPUT_DOWNLOAD / app_name / version
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"  [zip] {zip_path.relative_to(BASE_DIR)}")
+    # 1) 读取并处理 compose 文本
+    # - 网络名字面量替换
+    # - 去除每行行尾空格（部分源文件存在尾空格，会让 PyYAML 判断无法往返而 fallback
+    #   到双引号样式，破坏可读性；尾空格对 compose 语义无影响）
+    # - 统一以换行符结尾，便于 | 块样式输出
+    compose_text = ""
+    if compose_path is not None:
+        try:
+            raw = compose_path.read_text(encoding="utf-8")
+            if ORIGINAL_NETWORK_NAME in raw:
+                raw = raw.replace(ORIGINAL_NETWORK_NAME, NETWORK_NAME)
+                print(f"  [网络] {app_name}/{version}/{compose_path.name}: {ORIGINAL_NETWORK_NAME} -> {NETWORK_NAME}")
+            compose_text = "\n".join(line.rstrip() for line in raw.splitlines())
+            if compose_text and not compose_text.endswith("\n"):
+                compose_text += "\n"
+        except UnicodeDecodeError:
+            print(f"  [警告] compose 文件读取失败（非 UTF-8）：{compose_path}")
+
+    # 2) 收集除 data / compose 外的其他文件，非空才打包
+    skip = set(DATA_FILE_NAMES) | set(COMPOSE_FILE_NAMES)
+    extras = [
+        p for p in sorted(version_dir.rglob("*"))
+        if p.is_file() and p.name.lower() not in skip
+    ]
+    has_init = bool(extras)
+    if has_init:
+        with zipfile.ZipFile(out_dir / "init.zip", "w", zipfile.ZIP_DEFLATED) as zf:
+            for file_path in extras:
+                zf.write(file_path, file_path.relative_to(version_dir))
+
+    # 3) 写 meta.yml
+    meta = {
+        "compose": LiteralStr(compose_text) if compose_text else "",
+        "formFields": form_fields,
+    }
+    if has_init:
+        meta["init"] = "init.zip"
+
+    meta_path = out_dir / "meta.yml"
+    with open(meta_path, "w", encoding="utf-8") as f:
+        yaml.safe_dump(
+            meta, f,
+            allow_unicode=True,
+            sort_keys=False,
+            default_flow_style=False,
+            width=4096,
+        )
+
+    print(f"  [meta] {meta_path.relative_to(BASE_DIR)}" + (" (+init.zip)" if has_init else ""))
+
+
+# ---------- 主构建流程 ----------
+
+def _load_data_yaml(directory: Path) -> dict:
+    """查找并加载目录下的 data.yml/data.yaml：做中英文过滤并就地展平 additionalProperties
+
+    展平放在加载阶段，好处是后续对 formFields 等字段的 pop / 读取不会漏掉被藏在
+    additionalProperties 里的情况。
+    """
+    path = find_first(directory, DATA_FILE_NAMES)
+    if not path:
+        return {}
+    return merge_additional_properties(filter_chinese_content(load_yaml(path)))
+
+
+def _copy_app_static_files(app_dir: Path, app_out_dir: Path):
+    """复制应用级静态文件：logo.png、README*.md"""
+    app_out_dir.mkdir(parents=True, exist_ok=True)
+    for src in app_dir.iterdir():
+        if not src.is_file():
+            continue
+        is_logo = src.name == "logo.png"
+        is_readme = src.name.startswith("README") and src.suffix.lower() == ".md"
+        if is_logo or is_readme:
+            shutil.copy2(src, app_out_dir / src.name)
+            print(f"  [复制] {app_dir.name}/{src.name}")
 
 
 def build_index(source_dir: Path) -> dict:
@@ -261,89 +304,58 @@ def build_index(source_dir: Path) -> dict:
     apps_dir = source_dir / "apps"
 
     # 根层级 data.yaml / data.yml
-    root_data = {}
-    for name in ("data.yaml", "data.yml"):
-        candidate = source_dir / name
-        if candidate.exists():
-            root_data = filter_chinese_content(load_yaml(candidate))
-            print(f"[根] 读取 {name}")
-            break
-
-    index = dict(root_data)
+    index = _load_data_yaml(source_dir)
+    if index:
+        print("[根] 读取 data.yml")
     index["apps"] = {}
 
     if not apps_dir.exists():
         print(f"[警告] apps 目录不存在: {apps_dir}")
         return index
 
-    # 遍历每个软件目录
     for app_dir in sorted(apps_dir.iterdir()):
         if not app_dir.is_dir():
             continue
 
         app_name = app_dir.name
-        app_data_file = app_dir / "data.yml"
-        if not app_data_file.exists():
-            app_data_file = app_dir / "data.yaml"
-
-        app_data = {}
-        if app_data_file.exists():
-            app_data = filter_chinese_content(load_yaml(app_data_file))
+        app_entry = _load_data_yaml(app_dir)
+        if app_entry:
             print(f"[应用] {app_name}")
-
-        app_entry = dict(app_data)
         app_entry["versions"] = {}
 
-        # 复制应用级静态文件：logo.png、README*.md
-        app_out_dir = OUTPUT_DOWNLOAD / app_name
-        app_out_dir.mkdir(parents=True, exist_ok=True)
-        for src_file in app_dir.iterdir():
-            if src_file.is_file() and (
-                src_file.name == "logo.png"
-                or (src_file.name.startswith("README") and src_file.suffix.lower() == ".md")
-            ):
-                shutil.copy2(src_file, app_out_dir / src_file.name)
-                print(f"  [复制] {app_name}/{src_file.name}")
+        _copy_app_static_files(app_dir, OUTPUT_DOWNLOAD / app_name)
 
-        # 遍历每个版本目录
         for version_dir in sorted(app_dir.iterdir()):
             if not version_dir.is_dir():
                 continue
 
             version = version_dir.name
-            version_data_file = version_dir / "data.yml"
-            if not version_data_file.exists():
-                version_data_file = version_dir / "data.yaml"
-
-            version_data = {}
-            if version_data_file.exists():
-                version_data = filter_chinese_content(load_yaml(version_data_file))
+            version_entry = _load_data_yaml(version_dir)
+            if version_entry:
                 print(f"  [版本] {app_name}/{version}")
 
-            version_entry = dict(version_data)
+            # 扫描 compose 文件（一次性查找，后续 meta/变量提取共用）
+            compose_path = find_first(version_dir, COMPOSE_FILE_NAMES)
+            compose_vars = extract_compose_variables(compose_path) if compose_path else {}
 
-            # 打包 zip
-            build_version_zip(app_name, version, version_dir)
+            existing_fields = version_entry.get("formFields") or []
+            merged_fields = merge_form_fields(existing_fields, compose_vars) if compose_vars else existing_fields
+            auto_keys = [
+                f["envKey"] for f in merged_fields
+                if isinstance(f, dict) and f.get("auto") and f.get("envKey")
+            ]
+            if auto_keys:
+                print(f"  [变量] 自动补充: {', '.join(auto_keys)}")
 
-            # 扫描 compose 文件中的插值变量，并合并到 formFields
-            compose_vars = extract_compose_variables(version_dir)
-            if compose_vars:
-                existing_fields = version_entry.get("formFields") or []
-                merged_fields = merge_form_fields(existing_fields, compose_vars)
-                auto_keys = [
-                    f["envKey"] for f in merged_fields
-                    if isinstance(f, dict) and f.get("auto") and f.get("envKey")
-                ]
-                if auto_keys:
-                    print(f"  [变量] 自动补充: {', '.join(auto_keys)}")
-                version_entry["formFields"] = merged_fields
+            # 输出 meta.yml + 可选 init.zip（formFields 不再回写 index.json）
+            build_version_meta(app_name, version, version_dir, compose_path, merged_fields)
 
+            # index.json 只保留轻量版本节点（不含 formFields / compose 内容）
+            version_entry.pop("formFields", None)
             app_entry["versions"][version] = version_entry
 
         index["apps"][app_name] = app_entry
 
-    # 合并所有层级的 additionalProperties
-    index = merge_additional_properties(index)
     return index
 
 
@@ -352,27 +364,20 @@ def main():
     print("开始构建应用市场...")
     print("=" * 50)
 
-    # 清理并重建 download 目录
     if OUTPUT_DOWNLOAD.exists():
         shutil.rmtree(OUTPUT_DOWNLOAD)
     OUTPUT_DOWNLOAD.mkdir(parents=True)
 
-    # 使用临时目录下载并解压
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
         zip_path = tmp_path / "applist.zip"
 
-        # 下载
         download_source(SOURCE_URL, zip_path)
-
-        # 解压
         source_dir = extract_source(zip_path, tmp_path / "src")
         print(f"[源码] {source_dir}")
 
-        # 构建 index
         index = build_index(source_dir)
 
-    # 写出 index.json
     with open(OUTPUT_INDEX, "w", encoding="utf-8") as f:
         json.dump(index, f, ensure_ascii=False, indent=2)
 

@@ -593,29 +593,19 @@ export interface MemberUpsertRequest {
 
 export type ComposeDeployTarget = 'docker' | 'swarm'
 
-// 基于 compose 文本的部署（docker 容器 / swarm 服务）
-export interface ComposeDeployYmlRequest {
+// 统一的 compose 部署请求
+//   - target=docker/swarm + projectName 为空：临时部署（compose 在线编辑）
+//   - target=docker + projectName 非空：落盘到 {ContainerRoot}/{projectName}
+//     可选 initURL 指定附加运行文件 zip（应用市场一键安装）
+export interface ComposeDeployRequest {
     target: ComposeDeployTarget
-    content: string
-    env?: Record<string, string | number | boolean>
-    projectName?: string
-    internalOnly?: boolean                             // 仅内网模式：剥离宿主机端口映射，由 APISIX 等网关代理访问
+    content: string                                    // 完整 compose yaml 文本（前端已完成 ${VAR} 插值）
+    projectName?: string                               // 可选：compose project 名；docker 下非空即落盘
+    initURL?: string                                   // 可选：附加运行文件 zip 下载地址（仅落盘模式生效）
 }
 
-export interface ComposeDeployYmlResult {
+export interface ComposeDeployResult {
     target: ComposeDeployTarget
     items: string[]
-}
-
-// 基于 zip 压缩包的部署（仅 docker 单机容器）
-export interface ComposeDeployZipRequest {
-    url: string                                        // 应用安装包（zip）下载地址
-    name: string                                       // 实例名（作为目录名 / compose project 名）
-    env?: Record<string, string | number | boolean>
-    internalOnly?: boolean                             // 仅内网模式：剥离宿主机端口映射，由 APISIX 等网关代理访问
-}
-
-export interface ComposeDeployZipResult {
-    installDir: string
-    items: string[]
+    installDir?: string                                // 仅落盘模式返回
 }

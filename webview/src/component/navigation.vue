@@ -363,15 +363,15 @@ export default toNative(NavigationBar)
         </template>
       </div>
 
-      <!-- 用户管理（放在系统设置上方） -->
+      <!-- Compose 部署 -->
       <router-link
-        to="/compose/marketplace"
+        to="/compose/deploy"
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
         active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
-        :title="collapsed ? '应用市场' : ''"
+        :title="collapsed ? 'Compose 部署' : ''"
       >
-        <i class="fas fa-store"></i>
-        <span v-if="!collapsed">应用市场</span>
+        <i class="fas fa-file-code"></i>
+        <span v-if="!collapsed">Compose 部署</span>
       </router-link>
 
       <router-link
