@@ -55,7 +55,7 @@ func (h *DockerHandler) CreateNetwork(c *gin.Context) {
 
 // NetworkInspect 获取网络详情
 func (h *DockerHandler) NetworkInspect(c *gin.Context) {
-	id := c.Query("id")
+	id := c.Param("id")
 	if id == "" {
 		helper.RespondError(c, http.StatusBadRequest, "网络ID不能为空")
 		return

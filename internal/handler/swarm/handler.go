@@ -154,7 +154,7 @@ func (h *SwarmHandler) SwarmForceUpdateService(c *gin.Context) {
 
 // SwarmServiceLogs 获取服务日志
 func (h *SwarmHandler) SwarmServiceLogs(c *gin.Context) {
-	serviceID := c.Query("id")
+	serviceID := c.Param("id")
 	tail := c.DefaultQuery("tail", "100")
 	if serviceID == "" {
 		helper.RespondError(c, http.StatusBadRequest, "缺少服务 ID")
@@ -172,7 +172,7 @@ func (h *SwarmHandler) SwarmServiceLogs(c *gin.Context) {
 
 // SwarmInspectNode 获取节点详情
 func (h *SwarmHandler) SwarmInspectNode(c *gin.Context) {
-	id := c.Query("id")
+	id := c.Param("id")
 	if id == "" {
 		helper.RespondError(c, http.StatusBadRequest, "缺少节点 ID")
 		return
@@ -189,7 +189,7 @@ func (h *SwarmHandler) SwarmInspectNode(c *gin.Context) {
 
 // SwarmInspectService 获取服务详情
 func (h *SwarmHandler) SwarmInspectService(c *gin.Context) {
-	id := c.Query("id")
+	id := c.Param("id")
 	if id == "" {
 		helper.RespondError(c, http.StatusBadRequest, "缺少服务 ID")
 		return

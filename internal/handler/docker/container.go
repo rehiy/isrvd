@@ -74,7 +74,7 @@ func (h *DockerHandler) UpdateContainerConfig(c *gin.Context) {
 
 // GetContainerConfig 获取容器配置
 func (h *DockerHandler) GetContainerConfig(c *gin.Context) {
-	name := c.Query("name")
+	name := c.Param("name")
 	if name == "" {
 		helper.RespondError(c, http.StatusBadRequest, "容器名称不能为空")
 		return
@@ -91,7 +91,7 @@ func (h *DockerHandler) GetContainerConfig(c *gin.Context) {
 
 // ContainerStats 获取容器统计信息
 func (h *DockerHandler) ContainerStats(c *gin.Context) {
-	id := c.Query("id")
+	id := c.Param("id")
 	if id == "" {
 		helper.RespondError(c, http.StatusBadRequest, "容器ID不能为空")
 		return

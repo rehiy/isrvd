@@ -102,17 +102,17 @@ func (app *App) setupRouter() {
 				{
 					// 路由管理
 					apisixGroup.GET("/routes", apisixHandler.ListRoutes)
-					apisixGroup.GET("/routes/:id", apisixHandler.GetRoute)
+					apisixGroup.GET("/route/:id", apisixHandler.GetRoute)
 					apisixGroup.POST("/routes", apisixHandler.CreateRoute)
-					apisixGroup.PUT("/routes/:id", apisixHandler.UpdateRoute)
-					apisixGroup.PATCH("/routes/:id/status", apisixHandler.PatchRouteStatus)
-					apisixGroup.DELETE("/routes/:id", apisixHandler.DeleteRoute)
+					apisixGroup.PUT("/route/:id", apisixHandler.UpdateRoute)
+					apisixGroup.PATCH("/route/:id/status", apisixHandler.PatchRouteStatus)
+					apisixGroup.DELETE("/route/:id", apisixHandler.DeleteRoute)
 
 					// Consumer 管理
 					apisixGroup.GET("/consumers", apisixHandler.ListConsumers)
 					apisixGroup.POST("/consumers", apisixHandler.CreateConsumer)
-					apisixGroup.PUT("/consumers/:username", apisixHandler.UpdateConsumer)
-					apisixGroup.DELETE("/consumers/:username", apisixHandler.DeleteConsumer)
+					apisixGroup.PUT("/consumer/:username", apisixHandler.UpdateConsumer)
+					apisixGroup.DELETE("/consumer/:username", apisixHandler.DeleteConsumer)
 
 					// 插件管理
 					apisixGroup.GET("/plugin_configs", apisixHandler.ListPluginConfigs)
@@ -140,28 +140,28 @@ func (app *App) setupRouter() {
 					dockerGroup.POST("/container/create", dockerHandler.CreateContainer)
 					dockerGroup.POST("/container/deploy-compose", dockerHandler.DeployCompose)
 					dockerGroup.POST("/container/logs", dockerHandler.ContainerLogs)
-					dockerGroup.GET("/container/stats", dockerHandler.ContainerStats)
-					dockerGroup.GET("/container/config", dockerHandler.GetContainerConfig)
+					dockerGroup.GET("/container/:id/stats", dockerHandler.ContainerStats)
+					dockerGroup.GET("/container/:name/config", dockerHandler.GetContainerConfig)
 					dockerGroup.POST("/container/update", dockerHandler.UpdateContainerConfig)
 
 					// 镜像管理
 					dockerGroup.GET("/images", dockerHandler.ListImages)
 					dockerGroup.POST("/image/action", dockerHandler.ImageAction)
-					dockerGroup.GET("/image/inspect", dockerHandler.InspectImage)
+					dockerGroup.GET("/image/:id", dockerHandler.InspectImage)
 					dockerGroup.POST("/image/pull", dockerHandler.PullImage)
 					dockerGroup.POST("/image/tag", dockerHandler.TagImage)
-					dockerGroup.GET("/image/search", dockerHandler.SearchImages)
+					dockerGroup.GET("/image/search/:term", dockerHandler.SearchImages)
 					dockerGroup.POST("/image/build", dockerHandler.BuildImage)
 
 					// 网络管理
 					dockerGroup.GET("/networks", dockerHandler.ListNetworks)
-					dockerGroup.GET("/network/inspect", dockerHandler.NetworkInspect)
+					dockerGroup.GET("/network/:id", dockerHandler.NetworkInspect)
 					dockerGroup.POST("/network/action", dockerHandler.NetworkAction)
 					dockerGroup.POST("/network/create", dockerHandler.CreateNetwork)
 
 					// 卷管理
 					dockerGroup.GET("/volumes", dockerHandler.ListVolumes)
-					dockerGroup.GET("/volume/inspect", dockerHandler.VolumeInspect)
+					dockerGroup.GET("/volume/:name", dockerHandler.VolumeInspect)
 					dockerGroup.POST("/volume/action", dockerHandler.VolumeAction)
 					dockerGroup.POST("/volume/create", dockerHandler.CreateVolume)
 
@@ -184,17 +184,17 @@ func (app *App) setupRouter() {
 
 					// 节点管理
 					swarmGroup.GET("/nodes", swarmHandler.SwarmListNodes)
-					swarmGroup.GET("/node/inspect", swarmHandler.SwarmInspectNode)
+					swarmGroup.GET("/node/:id", swarmHandler.SwarmInspectNode)
 					swarmGroup.POST("/node/action", swarmHandler.SwarmNodeAction)
 
 					// 服务管理
 					swarmGroup.GET("/services", swarmHandler.SwarmListServices)
-					swarmGroup.GET("/service/inspect", swarmHandler.SwarmInspectService)
+					swarmGroup.GET("/service/:id", swarmHandler.SwarmInspectService)
 					swarmGroup.POST("/service/create", swarmHandler.SwarmCreateService)
 					swarmGroup.POST("/service/deploy-compose", swarmHandler.SwarmDeployComposeService)
 					swarmGroup.POST("/service/action", swarmHandler.SwarmServiceAction)
 					swarmGroup.POST("/service/redeploy", swarmHandler.SwarmForceUpdateService)
-					swarmGroup.GET("/service/logs", swarmHandler.SwarmServiceLogs)
+					swarmGroup.GET("/service/:id/logs", swarmHandler.SwarmServiceLogs)
 
 					// 任务管理
 					swarmGroup.GET("/tasks", swarmHandler.SwarmListTasks)
@@ -216,8 +216,8 @@ func (app *App) setupRouter() {
 				// 成员账号
 				systemGroup.GET("/members", settingsHandler.ListMembers)
 				systemGroup.POST("/members", settingsHandler.CreateMember)
-				systemGroup.PUT("/members/:username", settingsHandler.UpdateMember)
-				systemGroup.DELETE("/members/:username", settingsHandler.DeleteMember)
+				systemGroup.PUT("/member/:username", settingsHandler.UpdateMember)
+				systemGroup.DELETE("/member/:username", settingsHandler.DeleteMember)
 			}
 		}
 	}

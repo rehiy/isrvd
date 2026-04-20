@@ -129,11 +129,11 @@ class ApiService {
     }
 
     containerStats(id: string) {
-        return http.get<ContainerStatsResponse>('/api/docker/container/stats', { params: { id } })
+        return http.get<ContainerStatsResponse>(`/api/docker/container/${id}/stats`)
     }
 
     getContainerConfig(name: string) {
-        return http.get<ContainerConfigResponse>('/api/docker/container/config', { params: { name } })
+        return http.get<ContainerConfigResponse>(`/api/docker/container/${name}/config`)
     }
 
     updateContainerConfig(data: ContainerUpdateRequest) {
@@ -146,7 +146,7 @@ class ApiService {
     }
 
     imageInspect(id: string) {
-        return http.get<ImageInspectResponse>('/api/docker/image/inspect', { params: { id } })
+        return http.get<ImageInspectResponse>(`/api/docker/image/${id}`)
     }
 
     imageAction(id: string, action: string) {
@@ -162,7 +162,7 @@ class ApiService {
     }
 
     imageSearch(term: string) {
-        return http.get<ImageSearchResult[]>('/api/docker/image/search', { params: { term } })
+        return http.get<ImageSearchResult[]>(`/api/docker/image/search/${encodeURIComponent(term)}`)
     }
 
     imageBuild(dockerfile: string, tag = '') {
@@ -175,7 +175,7 @@ class ApiService {
     }
 
     networkInspect(id: string) {
-        return http.get<NetworkInspectResponse>('/api/docker/network/inspect', { params: { id } })
+        return http.get<NetworkInspectResponse>(`/api/docker/network/${id}`)
     }
 
     networkAction(id: string, action: string) {
@@ -192,7 +192,7 @@ class ApiService {
     }
 
     volumeInspect(name: string) {
-        return http.get<VolumeInspectResponse>('/api/docker/volume/inspect', { params: { name } })
+        return http.get<VolumeInspectResponse>(`/api/docker/volume/${encodeURIComponent(name)}`)
     }
 
     volumeAction(name: string, action: string) {
@@ -239,7 +239,7 @@ class ApiService {
     }
 
     swarmInspectNode(id: string) {
-        return http.get<SwarmNodeInspect>('/api/swarm/node/inspect', { params: { id } })
+        return http.get<SwarmNodeInspect>(`/api/swarm/node/${id}`)
     }
 
     swarmNodeAction(id: string, action: string) {
@@ -251,7 +251,7 @@ class ApiService {
     }
 
     swarmInspectService(id: string) {
-        return http.get<SwarmServiceInspect>('/api/swarm/service/inspect', { params: { id } })
+        return http.get<SwarmServiceInspect>(`/api/swarm/service/${id}`)
     }
 
     swarmServiceAction(id: string, action: string, replicas?: number) {
@@ -275,7 +275,7 @@ class ApiService {
     }
 
     swarmServiceLogs(id: string, tail = '100') {
-        return http.get<{ logs: string[] }>('/api/swarm/service/logs', { params: { id, tail } })
+        return http.get<{ logs: string[] }>(`/api/swarm/service/${id}/logs`, { params: { tail } })
     }
 
     // ==================== APISIX 管理相关 ====================
@@ -286,7 +286,7 @@ class ApiService {
     }
 
     apisixGetRoute(id: string) {
-        return http.get<ApisixRoute>(`/api/apisix/routes/${id}`)
+        return http.get<ApisixRoute>(`/api/apisix/route/${id}`)
     }
 
     apisixCreateRoute(data: ApisixRoute) {
@@ -294,15 +294,15 @@ class ApiService {
     }
 
     apisixUpdateRoute(id: string, data: ApisixRoute) {
-        return http.put(`/api/apisix/routes/${id}`, data)
+        return http.put(`/api/apisix/route/${id}`, data)
     }
 
     apisixPatchRouteStatus(id: string, status: number) {
-        return http.patch<void>(`/api/apisix/routes/${id}/status`, { status })
+        return http.patch<void>(`/api/apisix/route/${id}/status`, { status })
     }
 
     apisixDeleteRoute(id: string) {
-        return http.delete<void>(`/api/apisix/routes/${id}`)
+        return http.delete<void>(`/api/apisix/route/${id}`)
     }
 
     // Consumer 管理
@@ -315,11 +315,11 @@ class ApiService {
     }
 
     apisixUpdateConsumer(username: string, data: ApisixUpdateConsumerRequest) {
-        return http.put(`/api/apisix/consumers/${username}`, data)
+        return http.put(`/api/apisix/consumer/${username}`, data)
     }
 
     apisixDeleteConsumer(username: string) {
-        return http.delete<void>(`/api/apisix/consumers/${username}`)
+        return http.delete<void>(`/api/apisix/consumer/${username}`)
     }
 
     // 白名单管理
@@ -364,11 +364,11 @@ class ApiService {
     }
 
     updateMember(username: string, data: MemberUpsertRequest) {
-        return http.put<void>(`/api/system/members/${encodeURIComponent(username)}`, data)
+        return http.put<void>(`/api/system/member/${encodeURIComponent(username)}`, data)
     }
 
     deleteMember(username: string) {
-        return http.delete<void>(`/api/system/members/${encodeURIComponent(username)}`)
+        return http.delete<void>(`/api/system/member/${encodeURIComponent(username)}`)
     }
 }
 

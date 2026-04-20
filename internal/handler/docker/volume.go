@@ -55,7 +55,7 @@ func (h *DockerHandler) CreateVolume(c *gin.Context) {
 
 // VolumeInspect 获取卷详情
 func (h *DockerHandler) VolumeInspect(c *gin.Context) {
-	name := c.Query("name")
+	name := c.Param("name")
 	if name == "" {
 		helper.RespondError(c, http.StatusBadRequest, "卷名称不能为空")
 		return

@@ -73,7 +73,7 @@ func (h *DockerHandler) TagImage(c *gin.Context) {
 
 // SearchImages 搜索镜像
 func (h *DockerHandler) SearchImages(c *gin.Context) {
-	term := c.Query("term")
+	term := c.Param("term")
 	if term == "" {
 		helper.RespondError(c, http.StatusBadRequest, "搜索关键词不能为空")
 		return
@@ -107,7 +107,7 @@ func (h *DockerHandler) BuildImage(c *gin.Context) {
 
 // InspectImage 获取镜像详情
 func (h *DockerHandler) InspectImage(c *gin.Context) {
-	id := c.Query("id")
+	id := c.Param("id")
 	if id == "" {
 		helper.RespondError(c, http.StatusBadRequest, "镜像ID不能为空")
 		return
