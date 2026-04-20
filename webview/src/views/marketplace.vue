@@ -149,9 +149,6 @@ export default toNative(Marketplace)
             <button type="button" @click="loadUrl()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button type="button" @click="openSettings()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
-              <i class="fas fa-gear"></i>配置
-            </button>
           </div>
         </div>
         <div class="flex md:hidden items-center justify-between">
