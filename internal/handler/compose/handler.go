@@ -23,10 +23,10 @@ func NewComposeHandler() *ComposeHandler {
 // Deploy 统一的 compose 部署入口
 // POST /api/compose/deploy
 //
-// 行为由请求字段决定：
-//   - target=docker/swarm + projectName 为空：临时部署（compose 在线编辑）
-//   - target=docker + projectName 非空：落盘到 {ContainerRoot}/{projectName}
+// 行为由 target 决定：
+//   - target=docker：落盘到 {ContainerRoot}/{projectName}
 //     可选 initURL 指定附加运行文件 zip（应用市场一键安装）
+//   - target=swarm ：不落盘，projectName 仅作 compose project 名
 func (h *ComposeHandler) Deploy(c *gin.Context) {
 	var req composesvc.DeployRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

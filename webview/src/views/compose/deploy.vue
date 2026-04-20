@@ -37,9 +37,17 @@ class ComposeDeploy extends Vue {
 
     readonly extensions = [yaml()]
 
+    // 实例名合法性校验（与后端 safeName 保持一致）
+    readonly nameRegex = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/
+
     // ─── 计算属性 ───
+    get projectNameValid(): boolean {
+        const name = this.projectName.trim()
+        return !!name && this.nameRegex.test(name)
+    }
+
     get canSubmit(): boolean {
-        return !this.loading && !!this.content.trim()
+        return !this.loading && !!this.content.trim() && this.projectNameValid
     }
 
     get targetLabel(): string {
@@ -78,21 +86,21 @@ class ComposeDeploy extends Vue {
     async handleDeploy() {
         if (!this.canSubmit) return
 
-        // swarm 下不支持 projectName/initURL 落盘
-        const isPersist = this.target === 'docker' && !!this.projectName.trim()
+        const projectName = this.projectName.trim()
+        // initURL 仅在 docker 目标下生效（swarm 集群自管，不落盘）
+        const initURL = this.target === 'docker' ? this.initURL.trim() : ''
 
         this.loading = true
         try {
             const res = await api.composeDeploy({
                 target: this.target,
                 content: this.content,
-                projectName: this.projectName.trim() || undefined,
-                initURL: isPersist && this.initURL.trim() ? this.initURL.trim() : undefined,
+                projectName,
+                initURL: initURL || undefined,
             })
             const created = res.payload?.items || []
             const label = this.target === 'swarm' ? '服务' : '容器'
-            const prefix = isPersist ? `${this.projectName} 安装成功` : 'Compose 部署成功'
-            this.actions.showNotification('success', `${prefix}，已创建 ${created.length} 个${label}`)
+            this.actions.showNotification('success', `${projectName} 部署成功，已创建 ${created.length} 个${label}`)
 
             // 成功后跳转到对应列表页
             if (this.target === 'swarm') {
@@ -198,26 +206,28 @@ export default toNative(ComposeDeploy)
           </div>
         </div>
 
-        <!-- 实例名（落盘模式，仅 docker） -->
-        <div v-if="target === 'docker'">
+        <!-- 实例名（必填；docker 落盘到 数据目录/实例名，swarm 仅作 compose project 名） -->
+        <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">
-            实例名
-            <span class="text-xs font-normal text-slate-400">（选填，非空时落盘到 数据目录/实例名）</span>
+            实例名 <span class="text-red-500">*</span>
           </label>
           <input
             type="text"
             v-model="projectName"
-            placeholder="留空则为临时部署（不落盘）"
+            placeholder="例如 my-app"
             class="input"
             :disabled="loading"
           />
           <p class="mt-1 text-xs text-slate-400">
-            需满足 <code class="px-1 bg-slate-100 rounded">[a-zA-Z0-9][a-zA-Z0-9_.-]*</code>，同时作为 compose project 名
+            需满足 <code class="px-1 bg-slate-100 rounded">[a-zA-Z0-9][a-zA-Z0-9_.-]*</code>，同时作为 compose project 名<span v-if="target === 'docker'">；docker 部署会在 数据目录/实例名 下保存 compose 文件以便后续管理</span>
+          </p>
+          <p v-if="projectName.trim() && !projectNameValid" class="mt-1 text-xs text-red-500">
+            实例名不符合命名规则
           </p>
         </div>
 
-        <!-- initURL（仅 docker + 实例名非空） -->
-        <div v-if="target === 'docker' && projectName.trim()">
+        <!-- initURL（仅 docker） -->
+        <div v-if="target === 'docker'">
           <label class="block text-sm font-medium text-slate-700 mb-2">
             附加文件 URL
             <span class="text-xs font-normal text-slate-400">（选填，指向 init.zip 下载地址）</span>
