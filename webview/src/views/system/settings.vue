@@ -89,7 +89,8 @@ export default toNative(Settings)
     <div class="card mb-4">
       <!-- Toolbar -->
       <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
-        <div class="flex items-center justify-between">
+        <!-- 桌面端 -->
+        <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center">
               <i class="fas fa-gear text-white"></i>
@@ -104,6 +105,21 @@ export default toNative(Settings)
               <i class="fas fa-rotate"></i>刷新
             </button>
           </div>
+        </div>
+        <!-- 移动端 -->
+        <div class="flex md:hidden items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-gear text-white"></i>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-lg font-semibold text-slate-800 truncate">系统设置</h1>
+              <p class="text-xs text-slate-500 truncate">服务器、Agent、APISIX、Docker 配置</p>
+            </div>
+          </div>
+          <button type="button" @click="loadSettings()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0" title="刷新">
+            <i class="fas fa-rotate text-sm"></i>
+          </button>
         </div>
       </div>
 

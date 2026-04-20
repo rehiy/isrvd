@@ -107,26 +107,52 @@ export default toNative(Services)
 <template>
   <div>
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
-            <i class="fas fa-cubes text-white"></i>
+      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+        <!-- 桌面端 -->
+        <div class="hidden md:flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
+              <i class="fas fa-cubes text-white"></i>
+            </div>
+            <div>
+              <h1 class="text-lg font-semibold text-slate-800">服务管理</h1>
+              <p class="text-xs text-slate-500">管理 Swarm 服务</p>
+            </div>
           </div>
-          <div>
-            <h1 class="text-lg font-semibold text-slate-800">服务管理</h1>
-            <p class="text-xs text-slate-500">管理 Swarm 服务</p>
+          <div class="flex items-center gap-2">
+            <button @click="loadServices" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-rotate"></i>刷新
+            </button>
+            <button @click="openCreateModal" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-plus"></i>创建
+            </button>
+            <button @click="openComposeModal" class="px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-file-code"></i>Compose
+            </button>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <button @click="loadServices" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
-            <i class="fas fa-rotate"></i>刷新
-          </button>
-          <button @click="openCreateModal" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-            <i class="fas fa-plus"></i>创建
-          </button>
-          <button @click="openComposeModal" class="px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-            <i class="fas fa-file-code"></i>Compose
-          </button>
+        <!-- 移动端 -->
+        <div class="flex md:hidden items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-cubes text-white"></i>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-lg font-semibold text-slate-800 truncate">服务管理</h1>
+              <p class="text-xs text-slate-500 truncate">管理 Swarm 服务</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <button @click="loadServices" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
+              <i class="fas fa-rotate text-sm"></i>
+            </button>
+            <button @click="openCreateModal" class="w-9 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-colors" title="创建">
+              <i class="fas fa-plus text-sm"></i>
+            </button>
+            <button @click="openComposeModal" class="w-9 h-9 rounded-lg bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white transition-colors" title="Compose">
+              <i class="fas fa-file-code text-sm"></i>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -172,8 +198,8 @@ export default toNative(Services)
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-0.5">
-                    <button @click="$router.push({ name: 'swarm-service-info', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-100" title="详情"><i class="fas fa-circle-info text-xs"></i></button>
-                    <button @click="$router.push({ name: 'swarm-service-logs', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-100" title="日志"><i class="fas fa-file-lines text-xs"></i></button>
+                    <button @click="$router.push({ name: 'swarm-service-info', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="详情"><i class="fas fa-circle-info text-xs"></i></button>
+                    <button @click="$router.push({ name: 'swarm-service-logs', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志"><i class="fas fa-file-lines text-xs"></i></button>
 
                     <button @click="handleRedeploy(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="强制重部署"><i class="fas fa-rotate text-xs"></i></button>
                     <button v-if="svc.mode === 'replicated'" @click="openScaleModal(svc)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="扩缩容"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>
@@ -194,13 +220,13 @@ export default toNative(Services)
           >
             <!-- 顶部：服务信息和图标 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-emerald-400 flex items-center justify-center">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div class="w-10 h-10 rounded-lg bg-emerald-400 flex items-center justify-center flex-shrink-0">
                   <i class="fas fa-cubes text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
-                    <span class="font-medium text-slate-800 text-sm">{{ svc.name }}</span>
+                    <span class="font-medium text-slate-800 text-sm truncate">{{ svc.name }}</span>
                   </div>
                   <div class="flex items-center gap-3 mt-1">
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 capitalize">{{ svc.mode }}</span>

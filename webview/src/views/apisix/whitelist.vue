@@ -187,7 +187,7 @@ export default toNative(Whitelist)
           <div v-for="route in filteredWhitelist" :key="route.id" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
             <!-- 顶部：路由标识 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3 min-w-0">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
                 <div class="w-10 h-10 rounded-lg bg-amber-400 flex items-center justify-center flex-shrink-0">
                   <i class="fas fa-shield-halved text-white text-base"></i>
                 </div>

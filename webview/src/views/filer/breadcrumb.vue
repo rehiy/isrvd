@@ -29,7 +29,7 @@ export default toNative(Breadcrumb)
     <ol class="flex items-center space-x-1 text-sm">
       <li>
         <a 
-          class="flex items-center px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200"
+            class="flex items-center px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200"
           href="#" 
           @click="navigateTo('/')"
         >
@@ -44,7 +44,7 @@ export default toNative(Breadcrumb)
         </li>
         <li v-if="index < paths.length - 1">
           <a 
-            class="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200"
+            class="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200"
             href="#" 
             @click="navigateTo('/' + paths.slice(0, index + 1).join('/'))"
           >

@@ -300,7 +300,7 @@ export default toNative(RouteEditModal)
           <label class="text-sm font-medium text-slate-700">独立插件配置</label>
           <div class="flex items-center gap-1">
             <button @click="showPluginPanel = !showPluginPanel; showImportPanel = false" class="px-2 py-0.5 text-xs rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"><i class="fas fa-puzzle-piece mr-1"></i>添加插件</button>
-            <button @click="showImportPanel = !showImportPanel; showPluginPanel = false" class="px-2 py-0.5 text-xs rounded bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors"><i class="fas fa-file-import mr-1"></i>从路由导入</button>
+            <button @click="showImportPanel = !showImportPanel; showPluginPanel = false" class="px-2 py-0.5 text-xs rounded bg-slate-50 text-slate-600 hover:bg-slate-50 transition-colors"><i class="fas fa-file-import mr-1"></i>从路由导入</button>
           </div>
         </div>
         <div v-if="showPluginPanel" class="mb-2 p-3 bg-slate-50 rounded-lg border border-slate-200">

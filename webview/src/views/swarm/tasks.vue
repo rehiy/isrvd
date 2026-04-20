@@ -100,16 +100,16 @@ export default toNative(Tasks)
         <!-- 移动端 -->
         <div class="block md:hidden">
           <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
                 <i class="fas fa-list-check text-white"></i>
               </div>
               <div class="min-w-0">
-                <h1 class="text-lg font-semibold text-slate-800">任务列表</h1>
-                <p class="text-xs text-slate-500">查看 Swarm 集群任务状态</p>
+                <h1 class="text-lg font-semibold text-slate-800 truncate">任务列表</h1>
+                <p class="text-xs text-slate-500 truncate">查看 Swarm 集群任务状态</p>
               </div>
             </div>
-            <button @click="loadTasks()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors">
+            <button @click="loadTasks()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0">
               <i class="fas fa-rotate text-sm"></i>
             </button>
           </div>
@@ -172,8 +172,8 @@ export default toNative(Tasks)
         <div class="md:hidden space-y-3 p-4">
           <div v-for="t in filteredTasks" :key="t.id" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3">
-                <div :class="['w-10 h-10 rounded-lg flex items-center justify-center', taskStateClass(t.state).includes('emerald') ? 'bg-emerald-400' : taskStateClass(t.state).includes('red') ? 'bg-red-400' : 'bg-slate-400']">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div :class="['w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0', taskStateClass(t.state).includes('emerald') ? 'bg-emerald-400' : taskStateClass(t.state).includes('red') ? 'bg-red-400' : 'bg-slate-400']">
                   <i class="fas fa-list-check text-white text-base"></i>
                 </div>
                 <div class="min-w-0">

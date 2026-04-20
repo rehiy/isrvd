@@ -71,19 +71,37 @@ export default toNative(Nodes)
 <template>
   <div>
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
-            <i class="fas fa-server text-white"></i>
+      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+        <!-- 桌面端 -->
+        <div class="hidden md:flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
+              <i class="fas fa-server text-white"></i>
+            </div>
+            <div>
+              <h1 class="text-lg font-semibold text-slate-800">节点管理</h1>
+              <p class="text-xs text-slate-500">管理 Swarm 集群节点</p>
+            </div>
           </div>
-          <div>
-            <h1 class="text-lg font-semibold text-slate-800">节点管理</h1>
-            <p class="text-xs text-slate-500">管理 Swarm 集群节点</p>
-          </div>
+          <button @click="loadNodes" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <i class="fas fa-rotate"></i>刷新
+          </button>
         </div>
-        <button @click="loadNodes" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
-          <i class="fas fa-rotate"></i>刷新
-        </button>
+        <!-- 移动端 -->
+        <div class="flex md:hidden items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-server text-white"></i>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-lg font-semibold text-slate-800 truncate">节点管理</h1>
+              <p class="text-xs text-slate-500 truncate">管理 Swarm 集群节点</p>
+            </div>
+          </div>
+          <button @click="loadNodes" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0" title="刷新">
+            <i class="fas fa-rotate text-sm"></i>
+          </button>
+        </div>
       </div>
 
       <div v-if="nodesLoading" class="flex flex-col items-center justify-center py-20">
@@ -133,10 +151,10 @@ export default toNative(Nodes)
                 <td class="px-4 py-3 text-xs text-slate-500">{{ n.engineVersion || '-' }}</td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-0.5">
-                    <button @click="$router.push(`/swarm/node/${n.id}`)" class="btn-icon text-slate-600 hover:bg-slate-100" title="查看详情"><i class="fas fa-circle-info text-xs"></i></button>
-                    <button v-if="n.availability !== 'active'" @click="handleNodeAction(n, 'active')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="激活"><i class="fas fa-play text-xs"></i></button>
+                    <button @click="$router.push(`/swarm/node/${n.id}`)" class="btn-icon text-slate-600 hover:bg-slate-50" title="查看详情"><i class="fas fa-circle-info text-xs"></i></button>
+                    <button v-if="n.availability !== 'active'"  @click="handleNodeAction(n, 'active')"  class="btn-icon text-emerald-600 hover:bg-emerald-50"   title="激活"><i class="fas fa-play text-xs"></i></button>
                     <button v-if="n.availability !== 'drain'"  @click="handleNodeAction(n, 'drain')"  class="btn-icon text-amber-600 hover:bg-amber-50"   title="排空"><i class="fas fa-arrow-down text-xs"></i></button>
-                    <button v-if="n.availability !== 'pause'"  @click="handleNodeAction(n, 'pause')"  class="btn-icon text-slate-600 hover:bg-slate-100"   title="暂停"><i class="fas fa-pause text-xs"></i></button>
+                    <button v-if="n.availability !== 'pause'"  @click="handleNodeAction(n, 'pause')"  class="btn-icon text-slate-600 hover:bg-slate-50"   title="暂停"><i class="fas fa-pause text-xs"></i></button>
                     <button @click="n.leader ? null : handleNodeAction(n, 'remove')" :disabled="n.leader" :class="n.leader ? 'btn-icon text-slate-300 cursor-not-allowed' : 'btn-icon text-red-600 hover:bg-red-50'" :title="n.leader ? '不能移除 Leader 节点' : '移除'"><i class="fas fa-trash text-xs"></i></button>
                   </div>
                 </td>
@@ -154,13 +172,13 @@ export default toNative(Nodes)
           >
             <!-- 顶部：主机名和图标 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-blue-400 flex items-center justify-center">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div class="w-10 h-10 rounded-lg bg-blue-400 flex items-center justify-center flex-shrink-0">
                   <i class="fas fa-server text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
-                    <span class="font-medium text-slate-800 text-sm">{{ n.hostname }}</span>
+                    <span class="font-medium text-slate-800 text-sm truncate">{{ n.hostname }}</span>
                     <span v-if="n.leader" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
                       <i class="fas fa-crown mr-1 text-[10px]"></i>Leader
                     </span>
@@ -192,11 +210,11 @@ export default toNative(Nodes)
             
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
-              <button @click="$router.push(`/swarm/node/${n.id}`)" class="btn-icon text-slate-600 hover:bg-slate-100" title="查看详情">
+              <button @click="$router.push(`/swarm/node/${n.id}`)" class="btn-icon text-slate-600 hover:bg-slate-50" title="查看详情">
                 <i class="fas fa-circle-info text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">详情</span>
               </button>
-              <button v-if="n.availability !== 'active'" @click="handleNodeAction(n, 'active')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="激活">
+              <button v-if="n.availability !== 'active'"  @click="handleNodeAction(n, 'active')"  class="btn-icon text-emerald-600 hover:bg-emerald-50"   title="激活">
                 <i class="fas fa-play text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">激活</span>
               </button>
@@ -204,7 +222,7 @@ export default toNative(Nodes)
                 <i class="fas fa-arrow-down text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">排空</span>
               </button>
-              <button v-if="n.availability !== 'pause'"  @click="handleNodeAction(n, 'pause')"  class="btn-icon text-slate-600 hover:bg-slate-100"   title="暂停">
+              <button v-if="n.availability !== 'pause'"  @click="handleNodeAction(n, 'pause')"  class="btn-icon text-slate-600 hover:bg-slate-50"   title="暂停">
                 <i class="fas fa-pause text-xs"></i>
                 <span class="text-xs ml-1 hidden xs:inline">暂停</span>
               </button>

@@ -93,7 +93,8 @@ export default toNative(Consumers)
     <!-- Toolbar -->
     <div class="card mb-4">
       <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
-        <div class="flex items-center justify-between">
+        <!-- 桌面端 -->
+        <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-lg bg-violet-500 flex items-center justify-center">
               <i class="fas fa-users text-white"></i>
@@ -104,7 +105,7 @@ export default toNative(Consumers)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <div class="relative hidden md:block">
+            <div class="relative">
               <input
                 v-model="searchText"
                 type="text"
@@ -118,6 +119,26 @@ export default toNative(Consumers)
             </button>
             <button @click="openCreateModal()" class="px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-plus"></i>创建
+            </button>
+          </div>
+        </div>
+        <!-- 移动端 -->
+        <div class="flex md:hidden items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-9 h-9 rounded-lg bg-violet-500 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-users text-white"></i>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-lg font-semibold text-slate-800 truncate">用户管理</h1>
+              <p class="text-xs text-slate-500 truncate">管理 APISIX Consumer</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <button @click="loadConsumers()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
+              <i class="fas fa-rotate text-sm"></i>
+            </button>
+            <button @click="openCreateModal()" class="w-9 h-9 rounded-lg bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white transition-colors" title="创建">
+              <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
         </div>
@@ -214,13 +235,13 @@ export default toNative(Consumers)
           >
             <!-- 顶部：用户信息和图标 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-violet-400 flex items-center justify-center">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div class="w-10 h-10 rounded-lg bg-violet-400 flex items-center justify-center flex-shrink-0">
                   <i class="fas fa-user text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
-                    <span class="font-medium text-slate-800 text-sm">{{ consumer.username }}</span>
+                    <span class="font-medium text-slate-800 text-sm truncate">{{ consumer.username }}</span>
                   </div>
                   <div class="text-xs text-slate-500 mt-1">{{ formatTs(consumer.create_time) }}</div>
                 </div>

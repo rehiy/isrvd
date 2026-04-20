@@ -218,7 +218,7 @@ export default toNative(Marketplace)
               <p class="text-xs text-slate-500 truncate">实例 {{ preview.instance }} · 版本 {{ preview.version }}</p>
             </div>
           </div>
-          <button type="button" @click="closePreview()" class="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-500 flex items-center justify-center">
+            <button type="button" @click="closePreview()" class="w-8 h-8 rounded-lg hover:bg-slate-50 text-slate-500 flex items-center justify-center">
             <i class="fas fa-times"></i>
           </button>
         </div>

@@ -119,33 +119,43 @@ export default toNative(FileExplorer)
             </ol>
           </nav>
 
-          <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="flex items-center gap-1 flex-shrink-0">
             <button 
               @click="refreshFiles()"
-              class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
+              class="hidden md:flex px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium items-center gap-1.5 transition-colors"
             >
-              <i class="fas fa-rotate"></i><span class="hidden sm:inline">刷新</span>
+              <i class="fas fa-rotate"></i><span>刷新</span>
             </button>
-
             <button 
-              class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
+              class="hidden md:flex px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium items-center gap-1.5 transition-colors"
               @click="mkdirModalRef.show()"
             >
-              <i class="fas fa-folder"></i><span class="hidden sm:inline">新建目录</span>
+              <i class="fas fa-folder"></i><span>新建目录</span>
             </button>
-
             <button 
-              class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
+              class="hidden md:flex px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium items-center gap-1.5 transition-colors"
               @click="createModalRef.show()"
             >
-              <i class="fas fa-file"></i><span class="hidden sm:inline">新建文件</span>
+              <i class="fas fa-file"></i><span>新建文件</span>
             </button>
-
             <button 
-              class="px-3 py-1.5 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors"
+              class="hidden md:flex px-3 py-1.5 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-xs font-medium items-center gap-1.5 transition-colors"
               @click="uploadModal.show()"
             >
-              <i class="fas fa-upload"></i><span class="hidden sm:inline">上传文件</span>
+              <i class="fas fa-upload"></i><span>上传文件</span>
+            </button>
+            <!-- 移动端图标按鈕 -->
+            <button @click="refreshFiles()" class="md:hidden w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
+              <i class="fas fa-rotate text-sm"></i>
+            </button>
+            <button @click="mkdirModalRef.show()" class="md:hidden w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="新建目录">
+              <i class="fas fa-folder text-sm"></i>
+            </button>
+            <button @click="createModalRef.show()" class="md:hidden w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="新建文件">
+              <i class="fas fa-file text-sm"></i>
+            </button>
+            <button @click="uploadModal.show()" class="md:hidden w-9 h-9 rounded-lg bg-primary-500 hover:bg-primary-600 flex items-center justify-center text-white transition-colors" title="上传文件">
+              <i class="fas fa-upload text-sm"></i>
             </button>
           </div>
         </div>
@@ -298,9 +308,9 @@ export default toNative(FileExplorer)
           >
             <!-- 顶部：文件信息和图标 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
                 <div :class="[
-                  'w-10 h-10 rounded-lg flex items-center justify-center',
+                  'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
                   file.isDir 
                     ? 'bg-amber-400' 
                     : 'bg-blue-400'
@@ -308,16 +318,16 @@ export default toNative(FileExplorer)
                   <i :class="getFileIcon(file)" class="text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2 min-w-0">
                     <a 
                       v-if="file.isDir" 
                       href="#" 
                       @click="navigateTo(file.path)" 
-                      class="font-medium text-slate-800 hover:text-primary-600 transition-colors text-sm"
+                      class="font-medium text-slate-800 hover:text-primary-600 transition-colors text-sm truncate"
                     >
                       {{ file.name }}
                     </a>
-                    <span v-else class="font-medium text-slate-800 text-sm">{{ file.name }}</span>
+                    <span v-else class="font-medium text-slate-800 text-sm truncate">{{ file.name }}</span>
                   </div>
                   <div class="flex items-center gap-3 mt-1">
                     <span v-if="!file.isDir" class="text-xs text-slate-500">

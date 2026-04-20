@@ -88,7 +88,7 @@ export default toNative(Shell)
         <div class="block md:hidden">
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-xl bg-slate-700 flex items-center justify-center">
+              <div class="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center">
                 <i class="fas fa-terminal text-white text-sm"></i>
               </div>
               <div>

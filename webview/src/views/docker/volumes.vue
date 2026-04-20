@@ -74,7 +74,8 @@ export default toNative(Volumes)
     <!-- Toolbar Bar -->
     <div class="card mb-4">
       <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
-        <div class="flex items-center justify-between">
+        <!-- 桌面端 -->
+        <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center">
               <i class="fas fa-database text-white"></i>
@@ -90,6 +91,26 @@ export default toNative(Volumes)
             </button>
             <button @click="createModalRef?.show()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-plus"></i>创建
+            </button>
+          </div>
+        </div>
+        <!-- 移动端 -->
+        <div class="flex md:hidden items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-database text-white"></i>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-lg font-semibold text-slate-800 truncate">数据卷管理</h1>
+              <p class="text-xs text-slate-500 truncate">管理 Docker 数据卷</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <button @click="loadVolumes()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
+              <i class="fas fa-rotate text-sm"></i>
+            </button>
+            <button @click="createModalRef?.show()" class="w-9 h-9 rounded-lg bg-amber-500 hover:bg-amber-600 flex items-center justify-center text-white transition-colors" title="创建">
+              <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
         </div>
@@ -152,13 +173,13 @@ export default toNative(Volumes)
           >
             <!-- 顶部：卷信息和图标 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-amber-400 flex items-center justify-center">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div class="w-10 h-10 rounded-lg bg-amber-400 flex items-center justify-center flex-shrink-0">
                   <i class="fas fa-database text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
-                    <span class="font-medium text-slate-800 text-sm">{{ vol.name }}</span>
+                    <span class="font-medium text-slate-800 text-sm truncate">{{ vol.name }}</span>
                   </div>
                   <div class="flex items-center gap-3 mt-1">
                     <span class="text-xs text-slate-500">{{ vol.driver }}</span>

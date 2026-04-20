@@ -324,13 +324,13 @@ export default toNative(Containers)
           >
             <!-- 顶部：名称和状态 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3">
-                <div :class="['w-10 h-10 rounded-lg flex items-center justify-center', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div :class="['w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
                   <i class="fas fa-box text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
-                    <span class="font-medium text-slate-800 text-sm">{{ ct.name || ct.id }}</span>
+                    <span class="font-medium text-slate-800 text-sm truncate">{{ ct.name || ct.id }}</span>
                   </div>
                   <div class="flex items-center gap-3 mt-1">
                     <span :class="['text-xs px-2 py-0.5 rounded-full', ct.state === 'running' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600']">

@@ -72,7 +72,8 @@ export default toNative(Members)
     <div class="card mb-4">
       <!-- Toolbar Bar -->
       <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
-        <div class="flex items-center justify-between">
+        <!-- 桌面端 -->
+        <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
               <i class="fas fa-users text-white"></i>
@@ -88,6 +89,26 @@ export default toNative(Members)
             </button>
             <button type="button" @click="openAddMember" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-plus"></i>添加
+            </button>
+          </div>
+        </div>
+        <!-- 移动端 -->
+        <div class="flex md:hidden items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-users text-white"></i>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-lg font-semibold text-slate-800 truncate">用户管理</h1>
+              <p class="text-xs text-slate-500 truncate">管理可登录系统的成员与权限</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <button type="button" @click="loadMembers" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
+              <i class="fas fa-rotate text-sm"></i>
+            </button>
+            <button type="button" @click="openAddMember" class="w-9 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-white transition-colors" title="添加">
+              <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
         </div>
@@ -172,13 +193,13 @@ export default toNative(Members)
           <div v-for="m in members" :key="m.username" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
             <!-- 顶部：用户信息 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
                   <i class="fas fa-user text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
-                    <span class="font-medium text-slate-800 text-sm">{{ m.username }}</span>
+                    <span class="font-medium text-slate-800 text-sm truncate">{{ m.username }}</span>
                     <span v-if="m.isPrimary" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-purple-50 text-purple-700">
                       <i class="fas fa-crown mr-1"></i>主账号
                     </span>

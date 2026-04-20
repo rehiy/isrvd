@@ -195,7 +195,7 @@ export default toNative(Images)
               <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(img.created * 1000).toISOString()) }}</td>
               <td class="px-4 py-3">
                 <div class="flex justify-end items-center gap-0.5">
-                  <button @click="$router.push('/docker/image/' + img.id)" class="btn-icon text-slate-600 hover:bg-slate-100" title="查看详情">
+              <button @click="$router.push('/docker/image/' + img.id)" class="btn-icon text-slate-600 hover:bg-slate-50" title="查看详情">
                     <i class="fas fa-circle-info text-xs"></i>
                   </button>
                   <button @click="tagModalRef?.show(img)" class="btn-icon text-blue-600 hover:bg-blue-50" title="打标签">
@@ -223,13 +223,13 @@ export default toNative(Images)
         >
           <!-- 顶部：镜像信息和图标 -->
           <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
               <div class="w-10 h-10 rounded-lg bg-blue-400 flex items-center justify-center flex-shrink-0">
                 <i class="fas fa-compact-disc text-white text-base"></i>
               </div>
               <div class="min-w-0">
                 <div class="flex items-center gap-2">
-                  <span class="font-medium text-slate-800 text-sm">{{ img.repoTags[0] || '<none>' }}</span>
+                  <span class="font-medium text-slate-800 text-sm truncate">{{ img.repoTags[0] || '&lt;none&gt;' }}</span>
                 </div>
                 <div class="flex items-center gap-3 mt-1">
                   <span class="text-xs text-slate-500">{{ formatFileSize(img.size) }}</span>
