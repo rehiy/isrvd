@@ -3,7 +3,9 @@ package docker
 import (
 	"context"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 	"github.com/rehiy/pango/logman"
@@ -82,7 +84,7 @@ func (s *DockerService) GetInfo(ctx context.Context) (*DockerInfo, error) {
 		return nil, err
 	}
 
-	containers, err := s.client.ContainerList(ctx, types.ContainerListOptions{All: true})
+	containers, err := s.client.ContainerList(ctx, container.ListOptions{All: true})
 	if err != nil {
 		logman.Error("Container list failed", "error", err)
 		return nil, err
@@ -100,9 +102,9 @@ func (s *DockerService) GetInfo(ctx context.Context) (*DockerInfo, error) {
 		}
 	}
 
-	images, _ := s.client.ImageList(ctx, types.ImageListOptions{All: true})
+	images, _ := s.client.ImageList(ctx, image.ListOptions{All: true})
 	volList, _ := s.client.VolumeList(ctx, volume.ListOptions{})
-	networks, _ := s.client.NetworkList(ctx, types.NetworkListOptions{})
+	networks, _ := s.client.NetworkList(ctx, network.ListOptions{})
 
 	// 读取镜像加速器配置
 	var mirrors []string

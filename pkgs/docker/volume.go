@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/rehiy/pango/logman"
 )
@@ -112,7 +112,7 @@ func (s *DockerService) InspectVolume(ctx context.Context, name string) (*Volume
 
 	// 查找使用此卷的容器
 	var usedBy []*VolumeUsedByContainer
-	containers, err := s.client.ContainerList(ctx, types.ContainerListOptions{All: true})
+	containers, err := s.client.ContainerList(ctx, container.ListOptions{All: true})
 	if err == nil {
 		for _, ct := range containers {
 			for _, mount := range ct.Mounts {

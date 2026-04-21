@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/network"
 	"github.com/rehiy/pango/logman"
 )
 
@@ -21,7 +21,7 @@ type NetworkInfo struct {
 
 // ListNetworks 列出网络
 func (s *DockerService) ListNetworks(ctx context.Context) ([]*NetworkInfo, error) {
-	networks, err := s.client.NetworkList(ctx, types.NetworkListOptions{})
+	networks, err := s.client.NetworkList(ctx, network.ListOptions{})
 	if err != nil {
 		logman.Error("List networks failed", "error", err)
 		return nil, err
@@ -80,7 +80,7 @@ func (s *DockerService) CreateNetwork(ctx context.Context, name, driver string) 
 		driver = "bridge"
 	}
 
-	resp, err := s.client.NetworkCreate(ctx, name, types.NetworkCreate{Driver: driver})
+	resp, err := s.client.NetworkCreate(ctx, name, network.CreateOptions{Driver: driver})
 	if err != nil {
 		logman.Error("Create network failed", "error", err)
 		return "", err
@@ -119,7 +119,7 @@ type NetworkInspectResponse struct {
 
 // InspectNetwork 获取网络详情
 func (s *DockerService) InspectNetwork(ctx context.Context, id string) (*NetworkInspectResponse, error) {
-	networkInfo, err := s.client.NetworkInspect(ctx, id, types.NetworkInspectOptions{})
+	networkInfo, err := s.client.NetworkInspect(ctx, id, network.InspectOptions{})
 	if err != nil {
 		logman.Error("Network inspect failed", "id", id, "error", err)
 		return nil, err

@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/rehiy/pango/logman"
 )
 
@@ -104,7 +105,7 @@ func (s *DockerService) getRegistryAuth(registryURL string) string {
 	for _, r := range s.config.Registries {
 		if r.URL == registryURL {
 			if r.Username != "" && r.Password != "" {
-				authConfig := types.AuthConfig{
+				authConfig := registry.AuthConfig{
 					Username:      r.Username,
 					Password:      r.Password,
 					ServerAddress: r.URL,
@@ -155,7 +156,7 @@ func (s *DockerService) PushImage(ctx context.Context, req ImagePushRequest) (st
 	authStr := s.getRegistryAuth(req.RegistryURL)
 
 	// 推送镜像
-	reader, err := s.client.ImagePush(ctx, targetRef, types.ImagePushOptions{
+	reader, err := s.client.ImagePush(ctx, targetRef, image.PushOptions{
 		RegistryAuth: authStr,
 	})
 	if err != nil {
@@ -212,7 +213,7 @@ func (s *DockerService) PullFromRegistry(ctx context.Context, req ImagePullFromR
 	authStr := s.getRegistryAuth(req.RegistryURL)
 
 	// 从仓库拉取镜像到本地
-	reader, err := s.client.ImagePull(ctx, imageRef, types.ImagePullOptions{
+	reader, err := s.client.ImagePull(ctx, imageRef, image.PullOptions{
 		RegistryAuth: authStr,
 	})
 	if err != nil {

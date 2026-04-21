@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/gorilla/websocket"
 	"github.com/rehiy/pango/logman"
 )
@@ -18,7 +18,7 @@ func (s *DockerService) ContainerExec(conn *websocket.Conn, containerID, shell s
 	ctx := context.Background()
 
 	// 创建 exec 实例
-	execConfig := types.ExecConfig{
+	execConfig := container.ExecOptions{
 		AttachStdin:  true,
 		AttachStdout: true,
 		AttachStderr: true,
@@ -33,7 +33,7 @@ func (s *DockerService) ContainerExec(conn *websocket.Conn, containerID, shell s
 	}
 
 	// 连接到 exec 实例
-	attachConfig := types.ExecStartCheck{Tty: true}
+	attachConfig := container.ExecStartOptions{Tty: true}
 	hijackedResp, err := s.client.ContainerExecAttach(ctx, execResp.ID, attachConfig)
 	if err != nil {
 		sendWsMessage(conn, "[连接终端失败: "+err.Error()+"]\r\n")

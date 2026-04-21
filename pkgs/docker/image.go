@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
+	dockerimage "github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/rehiy/pango/logman"
 )
 
@@ -21,7 +23,7 @@ type ImageInfo struct {
 
 // ListImages 列出镜像
 func (s *DockerService) ListImages(ctx context.Context, all bool) ([]*ImageInfo, error) {
-	images, err := s.client.ImageList(ctx, types.ImageListOptions{All: all})
+	images, err := s.client.ImageList(ctx, dockerimage.ListOptions{All: all})
 	if err != nil {
 		logman.Error("List images failed", "error", err)
 		return nil, err
@@ -59,7 +61,7 @@ type ImageActionRequest struct {
 func (s *DockerService) ImageAction(ctx context.Context, id, action string) error {
 	switch action {
 	case "remove":
-		_, err := s.client.ImageRemove(ctx, id, types.ImageRemoveOptions{
+		_, err := s.client.ImageRemove(ctx, id, dockerimage.RemoveOptions{
 			Force:         true,
 			PruneChildren: true,
 		})
@@ -90,7 +92,7 @@ func (s *DockerService) PullImage(ctx context.Context, image, tag string) (strin
 		imageRef = image + ":latest"
 	}
 
-	reader, err := s.client.ImagePull(ctx, imageRef, types.ImagePullOptions{})
+	reader, err := s.client.ImagePull(ctx, imageRef, dockerimage.PullOptions{})
 	if err != nil {
 		logman.Error("Pull image failed", "image", imageRef, "error", err)
 		return "", imageRef, err
@@ -148,7 +150,7 @@ type ImageSearchResult struct {
 
 // SearchImages 搜索镜像
 func (s *DockerService) SearchImages(ctx context.Context, term string) ([]*ImageSearchResult, error) {
-	results, err := s.client.ImageSearch(ctx, term, types.ImageSearchOptions{Limit: 25})
+	results, err := s.client.ImageSearch(ctx, term, registry.SearchOptions{Limit: 25})
 	if err != nil {
 		logman.Error("Search image failed", "term", term, "error", err)
 		return nil, err

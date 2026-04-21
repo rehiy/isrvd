@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/rehiy/pango/logman"
 	"github.com/shirou/gopsutil/v3/cpu"
 )
@@ -93,7 +93,7 @@ func (s *DockerService) GetContainerStats(ctx context.Context, id string) (*Cont
 		return nil, err
 	}
 
-	var v types.StatsJSON
+	var v container.StatsResponse
 	if err := json.Unmarshal(data, &v); err != nil {
 		logman.Error("Parse container stats failed", "id", id, "error", err)
 		return nil, err

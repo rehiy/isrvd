@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
@@ -221,7 +222,7 @@ func (m *SwarmManager) ForceUpdateService(ctx context.Context, id string) error 
 
 // GetServiceLogs 获取服务日志
 func (m *SwarmManager) GetServiceLogs(ctx context.Context, serviceID, tail string) ([]string, error) {
-	reader, err := m.client.ServiceLogs(ctx, serviceID, types.ContainerLogsOptions{
+	reader, err := m.client.ServiceLogs(ctx, serviceID, container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Tail:       tail,

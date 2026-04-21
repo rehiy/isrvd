@@ -36,7 +36,7 @@ type ContainerInfo struct {
 
 // ListContainers 获取容器列表
 func (s *DockerService) ListContainers(ctx context.Context, all bool) ([]*ContainerInfo, error) {
-	containers, err := s.client.ContainerList(ctx, types.ContainerListOptions{All: all})
+	containers, err := s.client.ContainerList(ctx, container.ListOptions{All: all})
 	if err != nil {
 		logman.Error("List containers failed", "error", err)
 		return nil, err
@@ -92,7 +92,7 @@ func (s *DockerService) ContainerAction(ctx context.Context, id, action string) 
 	var err error
 	switch action {
 	case "start":
-		err = s.client.ContainerStart(ctx, id, types.ContainerStartOptions{})
+		err = s.client.ContainerStart(ctx, id, container.StartOptions{})
 	case "stop":
 		timeout := 10
 		err = s.client.ContainerStop(ctx, id, container.StopOptions{Timeout: &timeout})
@@ -100,7 +100,7 @@ func (s *DockerService) ContainerAction(ctx context.Context, id, action string) 
 		timeout := 10
 		err = s.client.ContainerRestart(ctx, id, container.StopOptions{Timeout: &timeout})
 	case "remove":
-		err = s.client.ContainerRemove(ctx, id, types.ContainerRemoveOptions{Force: true})
+		err = s.client.ContainerRemove(ctx, id, container.RemoveOptions{Force: true})
 	case "pause":
 		err = s.client.ContainerPause(ctx, id)
 	case "unpause":
@@ -124,7 +124,7 @@ func (s *DockerService) GetContainerLogs(ctx context.Context, id, tail string) (
 		tail = "100"
 	}
 
-	options := types.ContainerLogsOptions{
+	options := container.LogsOptions{
 		ShowStdout: true, ShowStderr: true,
 		Tail: tail, Follow: false, Timestamps: true,
 	}
@@ -260,7 +260,7 @@ func (s *DockerService) CreateContainer(ctx context.Context, req ContainerCreate
 	}
 
 	// 启动容器
-	s.client.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{})
+	s.client.ContainerStart(ctx, resp.ID, container.StartOptions{})
 
 	shortID := resp.ID
 	if len(shortID) > 12 {
@@ -316,7 +316,7 @@ func (req ContainerUpdateRequest) ToCreateRequest() ContainerCreateRequest {
 // UpdateContainer 更新容器配置并重建
 func (s *DockerService) UpdateContainer(ctx context.Context, req ContainerUpdateRequest) (string, error) {
 	// 查找并停止旧容器
-	containers, err := s.client.ContainerList(ctx, types.ContainerListOptions{All: true})
+	containers, err := s.client.ContainerList(ctx, container.ListOptions{All: true})
 	if err != nil {
 		return "", err
 	}
@@ -337,7 +337,7 @@ func (s *DockerService) UpdateContainer(ctx context.Context, req ContainerUpdate
 	if oldContainerID != "" {
 		timeout := 10
 		_ = s.client.ContainerStop(ctx, oldContainerID, container.StopOptions{Timeout: &timeout})
-		_ = s.client.ContainerRemove(ctx, oldContainerID, types.ContainerRemoveOptions{Force: true})
+		_ = s.client.ContainerRemove(ctx, oldContainerID, container.RemoveOptions{Force: true})
 	}
 
 	return s.CreateContainer(ctx, req.ToCreateRequest())
