@@ -2,7 +2,7 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { SwarmService } from '@/service/types'
+import type { SwarmServiceInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -24,7 +24,7 @@ class ServiceEditModal extends Vue {
     serviceName = ''
 
     // ─── 方法 ───
-    async show(svc: SwarmService) {
+    async show(svc: SwarmServiceInfo) {
         this.serviceName = svc.name
         this.composeContent = ''
         this.modalLoading = true

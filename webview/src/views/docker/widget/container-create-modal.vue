@@ -134,7 +134,7 @@ class ContainerCreateModal extends Vue {
 
         this.modalLoading = true
         try {
-            await api.composeDeploy({ target: 'docker', content, projectName })
+            await api.composeDeployDocker({ content, projectName })
             this.actions.showNotification('success', '容器创建成功')
             this.isOpen = false
             this.$emit('success')

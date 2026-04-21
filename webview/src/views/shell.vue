@@ -20,7 +20,7 @@ class Shell extends Vue {
     handleConnect() {
         if (this.connected) return
         this.connected = true
-        ShellTerminal.create(this.xtermRef, this.state.token, this.shellType)
+        ShellTerminal.create(this.xtermRef, this.state.token || '', this.shellType)
     }
 
     handleDisconnect() {

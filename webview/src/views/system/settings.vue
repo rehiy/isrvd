@@ -63,7 +63,7 @@ class Settings extends Vue {
   async saveAll() {
     this.saving = true
     try {
-      await api.updateSystemAllSettings({
+      await api.updateAllSettings({
         server: this.server,
         agent: this.agent,
         apisix: this.apisix,

@@ -2,7 +2,7 @@
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { SwarmService } from '@/service/types'
+import type { SwarmServiceInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -22,11 +22,11 @@ class Services extends Vue {
     @Ref readonly editServiceModalRef!: InstanceType<typeof ServiceEditModal>
 
     // ─── 数据属性 ───
-    services: SwarmService[] = []
+    services: SwarmServiceInfo[] = []
     servicesLoading = false
 
     // ─── 方法 ───
-    openScaleModal(svc: SwarmService) {
+    openScaleModal(svc: SwarmServiceInfo) {
         this.scaleModalRef?.show(svc)
     }
 
@@ -34,7 +34,7 @@ class Services extends Vue {
         this.createServiceModalRef?.show()
     }
 
-    openEditModal(svc: SwarmService) {
+    openEditModal(svc: SwarmServiceInfo) {
         this.editServiceModalRef?.show(svc)
     }
 
@@ -63,7 +63,7 @@ class Services extends Vue {
         this.loadServices()
     }
 
-    handleServiceRemove(svc: SwarmService) {
+    handleServiceRemove(svc: SwarmServiceInfo) {
         this.actions.showConfirm({
             title: '删除服务',
             message: `确定要删除服务 <strong class="text-slate-900">${svc.name}</strong> 吗？`,
@@ -79,7 +79,7 @@ class Services extends Vue {
         })
     }
 
-    handleRedeploy(svc: SwarmService) {
+    handleRedeploy(svc: SwarmServiceInfo) {
         this.actions.showConfirm({
             title: '强制重部署',
             message: `重新拉取并部署服务 <strong class="text-slate-900">${svc.name}</strong>，正在运行的副本会滚动更新。`,

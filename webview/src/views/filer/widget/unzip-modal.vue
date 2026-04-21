@@ -27,7 +27,7 @@ class UnzipModal extends Vue {
     }
 
     async handleConfirm() {
-        await api.unzip(this.state.currentPath + '/' + this.formData.file.name)
+        await api.unzip(this.state.currentPath + '/' + this.formData.file!.name)
         this.actions.loadFiles()
         this.isOpen = false
     }

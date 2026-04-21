@@ -45,11 +45,13 @@ class ServiceCreateModal extends Vue {
             const parsePorts = (s: string) => parseLines(s).map(l => {
                 const [pub, rest] = l.split(':')
                 const [tgt, proto] = (rest || pub).split('/')
-                return { published: parseInt(pub) || 0, target: parseInt(tgt), protocol: proto || 'tcp' }
+                const publishedPort = parseInt(pub) || 0
+                const targetPort = parseInt(tgt)
+                return { protocol: proto || 'tcp', targetPort, publishedPort, publishMode: 'ingress' }
             })
             const parseMounts = (s: string) => parseLines(s).map(l => {
                 const parts = l.split(':')
-                return { type: 'bind', source: parts[0], target: parts[1] || parts[0] }
+                return { type: 'bind', source: parts[0], target: parts[1] || parts[0], readOnly: false }
             })
 
             await api.swarmCreateService({

@@ -27,7 +27,7 @@ class ZipModal extends Vue {
     }
 
     async handleConfirm() {
-        await api.zip(this.state.currentPath + '/' + this.formData.file.name)
+        await api.zip(this.state.currentPath + '/' + this.formData.file!.name)
         this.actions.loadFiles()
         this.isOpen = false
     }

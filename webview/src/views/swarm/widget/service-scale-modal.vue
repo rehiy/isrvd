@@ -2,7 +2,7 @@
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { SwarmService } from '@/service/types'
+import type { SwarmServiceInfo } from '@/service/types'
 import BaseModal from '@/component/modal.vue'
 
 @Component({
@@ -14,11 +14,11 @@ class ServiceScaleModal extends Vue {
     // ─── 数据属性 ───
     isOpen = false
     loading = false
-    service: SwarmService | null = null
+    service: SwarmServiceInfo | null = null
     replicas = 1
 
     // ─── 方法 ───
-    show(svc: SwarmService) {
+    show(svc: SwarmServiceInfo) {
         this.service = svc
         this.replicas = svc.replicas ?? 1
         this.isOpen = true
