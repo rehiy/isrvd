@@ -1,7 +1,7 @@
 import type { AxiosRequestConfig } from 'axios'
 import { http, httpBlob } from './axios'
 import type {
-    ContainerCreateRequest, ContainerUpdateRequest, ContainerConfigResponse,
+    ContainerCreateRequest,
     ContainerInfo, ContainerStatsResponse,
     ImageInfo, ImageInspectResponse, ImageSearchResult,
     NetworkInfo, NetworkInspectResponse, NetworkCreateRequest,
@@ -17,7 +17,7 @@ import type {
     LoginResponse,
     AllSettings,
     MemberInfo, MemberUpsertRequest,
-    ComposeDeployRequest, ComposeDeployResult
+    ComposeDeployResult
 } from './types'
 
 // API 服务类，统一管理所有 API 请求
@@ -129,16 +129,8 @@ class ApiService {
         return http.get<ContainerStatsResponse>(`/api/docker/container/${id}/stats`)
     }
 
-    getContainerConfig(name: string) {
-        return http.get<ContainerConfigResponse>(`/api/docker/container/${name}/config`)
-    }
-
     getContainerCompose(name: string) {
-        return http.get<{ content: string }>(`/api/docker/container/${name}/compose`)
-    }
-
-    updateContainerConfig(data: ContainerUpdateRequest) {
-        return http.post('/api/docker/container/update', data)
+        return http.get<{ content: string }>(`/api/compose/docker/${name}`)
     }
 
     // 镜像管理
@@ -275,6 +267,10 @@ class ApiService {
         return http.post<void>('/api/swarm/service/redeploy', { id })
     }
 
+    swarmGetServiceCompose(id: string) {
+        return http.get<{ content: string }>(`/api/compose/swarm/${id}`)
+    }
+
     swarmServiceLogs(id: string, tail = '100') {
         return http.get<{ logs: string[] }>(`/api/swarm/service/${id}/logs`, { params: { tail } })
     }
@@ -374,12 +370,20 @@ class ApiService {
 
     // ==================== Compose 部署 ====================
 
-    composeDeploy(data: ComposeDeployRequest) {
-        return http.post<ComposeDeployResult>('/api/compose/deploy', data)
+    composeDeployDocker(data: { content: string; projectName: string; initURL?: string }) {
+        return http.post<ComposeDeployResult>('/api/compose/docker', data)
     }
 
-    composeRedeploy(data: { content: string; projectName: string }) {
-        return http.post<ComposeDeployResult>('/api/compose/redeploy', data)
+    composeDeploySwarm(data: { content: string; projectName: string }) {
+        return http.post<ComposeDeployResult>('/api/compose/swarm', data)
+    }
+
+    composeRedeployDocker(name: string, data: { content: string }) {
+        return http.put<ComposeDeployResult>(`/api/compose/docker/${name}`, data)
+    }
+
+    composeRedeploySwarm(name: string, data: { content: string }) {
+        return http.put<ComposeDeployResult>(`/api/compose/swarm/${name}`, data)
     }
 }
 

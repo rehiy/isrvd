@@ -98,44 +98,6 @@ export interface ContainerCreateRequest {
     capDrop?: string[]
 }
 
-export interface ContainerUpdateRequest {
-    name: string
-    image: string
-    cmd?: string[]
-    env?: string[]
-    ports?: Record<string, string>
-    volumes?: VolumeMapping[]
-    network?: string
-    restart?: string
-    memory?: number
-    cpus?: number
-    workdir?: string
-    user?: string
-    hostname?: string
-    privileged?: boolean
-    capAdd?: string[]
-    capDrop?: string[]
-}
-
-export interface ContainerConfigResponse {
-    image: string
-    name: string
-    cmd?: string[]
-    env?: string[]
-    ports?: Record<string, string>
-    volumes?: VolumeMapping[]
-    network?: string
-    restart?: string
-    memory?: number
-    cpus?: number
-    workdir?: string
-    user?: string
-    hostname?: string
-    privileged?: boolean
-    capAdd?: string[]
-    capDrop?: string[]
-}
-
 // ─── Docker 容器统计 ───
 
 export interface CPUThrottledData {

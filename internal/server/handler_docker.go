@@ -46,40 +46,6 @@ func (app *App) dockerCreateContainer(c *gin.Context) {
 	helper.RespondSuccess(c, "容器创建成功", result)
 }
 
-func (app *App) dockerUpdateContainerConfig(c *gin.Context) {
-	var req pkgdocker.ContainerUpdateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, err.Error())
-		return
-	}
-	result, err := app.dockerSvc.UpdateContainerConfig(c.Request.Context(), req)
-	if err != nil {
-		helper.RespondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	helper.RespondSuccess(c, "容器配置更新成功，已重建容器", result)
-}
-
-func (app *App) dockerGetContainerConfig(c *gin.Context) {
-	name := c.Param("id")
-	result, err := app.dockerSvc.GetContainerConfig(c.Request.Context(), name)
-	if err != nil {
-		helper.RespondError(c, http.StatusNotFound, err.Error())
-		return
-	}
-	helper.RespondSuccess(c, "获取容器配置成功", result)
-}
-
-func (app *App) dockerGetContainerCompose(c *gin.Context) {
-	name := c.Param("id")
-	content, err := app.dockerSvc.GetContainerCompose(c.Request.Context(), name)
-	if err != nil {
-		helper.RespondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	helper.RespondSuccess(c, "获取 compose 文件成功", gin.H{"content": content})
-}
-
 func (app *App) dockerContainerStats(c *gin.Context) {
 	id := c.Param("id")
 	result, err := app.dockerSvc.ContainerStats(c.Request.Context(), id)

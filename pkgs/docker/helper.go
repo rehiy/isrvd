@@ -15,6 +15,11 @@ func isWildcardIP(ip string) bool {
 	return ip == "" || ip == "0.0.0.0" || ip == "::"
 }
 
+// formatUnixTime 将 Unix 时间戳格式化为 RFC3339 字符串
+func formatUnixTime(ts int64) string {
+	return time.Unix(ts, 0).UTC().Format(time.RFC3339)
+}
+
 // formatPorts 格式化端口列表：IPv4 优先、去重、通配地址省略 IP
 //
 // 算法：单次遍历，用 seen map 记录已输出的 key；
@@ -98,9 +103,4 @@ func registryHost(registryURL string) string {
 		host = host[:idx]
 	}
 	return host
-}
-
-// formatUnixTime 将 Unix 时间戳格式化为 RFC3339 字符串
-func formatUnixTime(ts int64) string {
-	return time.Unix(ts, 0).UTC().Format(time.RFC3339)
 }

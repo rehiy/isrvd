@@ -8,7 +8,7 @@ import (
 	"github.com/rehiy/pango/logman"
 )
 
-// DeployContent 通过 docker-compose.yml 文本内容部署容器
+// DeployContent 通过 compose yaml 文本部署容器
 // 使用 compose-go 官方加载器完成变量插值、校验，然后按 services 逐个创建容器
 // 返回已创建的容器描述列表，格式 "name (shortId)"
 func (s *ComposeService) DeployContent(ctx context.Context, content string) ([]string, error) {
@@ -28,8 +28,7 @@ func (s *ComposeService) DeployProject(ctx context.Context, project *types.Proje
 	}
 
 	// 先确保所有用到的外部网络存在
-	networks := collectNetworks(project)
-	for _, name := range networks {
+	for _, name := range collectNetworks(project) {
 		if err := s.ensureNetwork(ctx, name); err != nil {
 			return nil, fmt.Errorf("确保网络 %s 存在失败: %w", name, err)
 		}

@@ -11,16 +11,9 @@ import (
 )
 
 var (
-	once            sync.Once
-	snapshotService *SnapshotService
-	deployService   *DeployService
+	once          sync.Once
+	deployService *DeployService
 )
-
-// GetSnapshotService 返回全局快照服务实例（供 docker service 使用）
-func GetSnapshotService() *SnapshotService {
-	initServices()
-	return snapshotService
-}
 
 // GetDeployService 返回全局部署服务实例
 func GetDeployService() *DeployService {
@@ -38,12 +31,6 @@ func initServices() {
 		if d == nil {
 			logman.Warn("Compose service: docker service not available")
 			return
-		}
-
-		if snap, err := NewSnapshotService(d); err != nil {
-			logman.Warn("Snapshot service init failed", "error", err)
-		} else {
-			snapshotService = snap
 		}
 
 		if c != nil {

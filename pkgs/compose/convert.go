@@ -11,11 +11,10 @@ import (
 	"isrvd/pkgs/swarm"
 )
 
-// ServiceToCreateRequest 将 compose-spec 的 ServiceConfig 转换为 docker.ContainerCreateRequest
+// ServiceToCreateRequest 将 compose ServiceConfig 转换为 docker.ContainerCreateRequest
 //
-// 这里刻意只覆盖 docker.ContainerCreateRequest 已有的字段，未覆盖的 compose 特性
-// (healthcheck / ulimits / sysctls 等) 保持忽略，后续按需扩展 ContainerCreateRequest 即可
-//
+// 只覆盖 ContainerCreateRequest 已有的字段，未覆盖的 compose 特性
+// (healthcheck / ulimits / sysctls 等) 保持忽略，后续按需扩展即可。
 // project 用于将 service.Networks 的 key 解析为顶层 networks.<key>.name 指定的真实 docker 网络名。
 func ServiceToCreateRequest(project *types.Project, svc types.ServiceConfig) (docker.ContainerCreateRequest, error) {
 	if svc.Image == "" {
@@ -39,20 +38,18 @@ func ServiceToCreateRequest(project *types.Project, svc types.ServiceConfig) (do
 		Privileged: svc.Privileged,
 		CapAdd:     svc.CapAdd,
 		CapDrop:    svc.CapDrop,
+		Restart:    svc.Restart,
+	}
+	if req.Restart == "" {
+		req.Restart = "no"
 	}
 
 	// 网络：优先 network_mode，其次取 networks 映射的第一个 key（解析为真实 docker 网络名）
-	if req.Network == "" && len(svc.Networks) > 0 {
+	if req.Network == "" {
 		for k := range svc.Networks {
 			req.Network = resolveNetworkName(project, k)
 			break
 		}
-	}
-
-	// 重启策略：compose-go 已经把 restart / deploy.restart_policy 归一到 svc.Restart
-	req.Restart = svc.Restart
-	if req.Restart == "" {
-		req.Restart = "no"
 	}
 
 	// 端口：types.ServicePortConfig → map[hostPort]containerPort
@@ -71,18 +68,15 @@ func ServiceToCreateRequest(project *types.Project, svc types.ServiceConfig) (do
 	}
 
 	// 卷映射：只处理 bind 和 volume，tmpfs/image 暂不支持
-	if len(svc.Volumes) > 0 {
-		req.Volumes = make([]docker.VolumeMapping, 0, len(svc.Volumes))
-		for _, v := range svc.Volumes {
-			if v.Source == "" || v.Target == "" {
-				continue
-			}
-			req.Volumes = append(req.Volumes, docker.VolumeMapping{
-				HostPath:      v.Source,
-				ContainerPath: v.Target,
-				ReadOnly:      v.ReadOnly,
-			})
+	for _, v := range svc.Volumes {
+		if v.Source == "" || v.Target == "" {
+			continue
 		}
+		req.Volumes = append(req.Volumes, docker.VolumeMapping{
+			HostPath:      v.Source,
+			ContainerPath: v.Target,
+			ReadOnly:      v.ReadOnly,
+		})
 	}
 
 	// 资源限制：优先读 deploy.resources.limits，其次读顶层 mem_limit/cpus
@@ -185,22 +179,6 @@ func ServiceToSwarmRequest(project *types.Project, svc types.ServiceConfig) (swa
 	return req, nil
 }
 
-// environmentToSlice 将 compose 的 MappingWithEquals 转为 KEY=VALUE 列表
-// MappingWithEquals 的 value 为 nil 表示"不显式赋值"，此处跳过
-func environmentToSlice(env types.MappingWithEquals) []string {
-	if len(env) == 0 {
-		return nil
-	}
-	result := make([]string, 0, len(env))
-	for k, v := range env {
-		if v == nil {
-			continue
-		}
-		result = append(result, k+"="+*v)
-	}
-	return result
-}
-
 // extractNetworks 提取 service 使用的所有网络（用于在部署前确保网络存在）
 // 返回解析后的真实 docker 网络名（应用 project.Networks[key].Name 覆盖）。
 func extractNetworks(project *types.Project, svc types.ServiceConfig) []string {
@@ -237,4 +215,60 @@ func isBuiltinNetworkMode(mode string) bool {
 		return true
 	}
 	return strings.HasPrefix(m, "container:") || strings.HasPrefix(m, "service:")
+}
+
+// environmentToSlice 将 compose MappingWithEquals 转为 KEY=VALUE 列表
+// value 为 nil 表示"不显式赋值"，此处跳过
+func environmentToSlice(env types.MappingWithEquals) []string {
+	if len(env) == 0 {
+		return nil
+	}
+	result := make([]string, 0, len(env))
+	for k, v := range env {
+		if v == nil {
+			continue
+		}
+		result = append(result, k+"="+*v)
+	}
+	return result
+}
+
+// sliceToEnv 将 KEY=VALUE 列表转成 MappingWithEquals
+func sliceToEnv(env []string) types.MappingWithEquals {
+	if len(env) == 0 {
+		return nil
+	}
+	result := make(types.MappingWithEquals, len(env))
+	for _, e := range env {
+		if e == "" {
+			continue
+		}
+		if idx := strings.Index(e, "="); idx > 0 {
+			v := e[idx+1:]
+			result[e[:idx]] = &v
+		} else {
+			result[e] = nil
+		}
+	}
+	return result
+}
+
+// parsePort 解析 "8080" 或 "8080/tcp" 为端口号
+func parsePort(s string) uint32 {
+	if i := strings.Index(s, "/"); i >= 0 {
+		s = s[:i]
+	}
+	n, _ := strconv.Atoi(s)
+	if n < 0 {
+		return 0
+	}
+	return uint32(n)
+}
+
+// defaultString 若 v 为空则返回 def
+func defaultString(v, def string) string {
+	if v == "" {
+		return def
+	}
+	return v
 }

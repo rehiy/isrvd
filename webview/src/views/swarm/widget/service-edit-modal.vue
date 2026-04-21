@@ -2,7 +2,7 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { ContainerInfo } from '@/service/types'
+import type { SwarmService } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -14,23 +14,23 @@ import ComposeEditor from '@/views/compose/widget/compose-editor.vue'
     components: { BaseModal, ComposeEditor },
     emits: ['success']
 })
-class ContainerEditModal extends Vue {
+class ServiceEditModal extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
     isOpen = false
     modalLoading = false
-    projectName = ''
     composeContent = ''
+    serviceName = ''
 
     // ─── 方法 ───
-    async show(container: ContainerInfo) {
-        this.projectName = container.name
+    async show(svc: SwarmService) {
+        this.serviceName = svc.name
         this.composeContent = ''
         this.modalLoading = true
         this.isOpen = true
         try {
-            const res = await api.getContainerCompose(container.name)
+            const res = await api.swarmGetServiceCompose(svc.id)
             this.composeContent = res.payload?.content || ''
         } catch (e) {
             this.isOpen = false
@@ -43,8 +43,8 @@ class ContainerEditModal extends Vue {
         if (!this.composeContent.trim()) return
         this.modalLoading = true
         try {
-            await api.composeRedeployDocker(this.projectName, { content: this.composeContent })
-            this.actions.showNotification('success', '容器配置更新成功，已重建容器')
+            await api.composeRedeploySwarm(this.serviceName, { content: this.composeContent })
+            this.actions.showNotification('success', 'Swarm 服务配置更新成功，已重建服务')
             this.isOpen = false
             this.$emit('success')
         } catch (e) {}
@@ -52,13 +52,13 @@ class ContainerEditModal extends Vue {
     }
 }
 
-export default toNative(ContainerEditModal)
+export default toNative(ServiceEditModal)
 </script>
 
 <template>
   <BaseModal
     v-model="isOpen"
-    title="编辑容器配置"
+    :title="`编辑服务：${serviceName}`"
     :loading="modalLoading"
     show-footer
     @confirm="handleConfirm"
@@ -66,8 +66,7 @@ export default toNative(ContainerEditModal)
     <template #confirm-text>更新并重建</template>
     <ComposeEditor
       v-model="composeContent"
-      warning="更新配置后将会重建容器，旧容器将被停止并删除"
-      height="400px"
+      warning="更新配置后将会删除旧服务并重新创建，期间服务短暂不可用"
     />
   </BaseModal>
 </template>

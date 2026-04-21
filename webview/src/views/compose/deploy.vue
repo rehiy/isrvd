@@ -88,12 +88,9 @@ class ComposeDeploy extends Vue {
 
         this.loading = true
         try {
-            const res = await api.composeDeploy({
-                target: this.target,
-                content: this.content,
-                projectName,
-                initURL: initURL || undefined,
-            })
+            const res = this.target === 'swarm'
+                ? await api.composeDeploySwarm({ content: this.content, projectName })
+                : await api.composeDeployDocker({ content: this.content, projectName, initURL: initURL || undefined })
             const created = res.payload?.items || []
             const label = this.target === 'swarm' ? '服务' : '容器'
             this.actions.showNotification('success', `${projectName} 部署成功，已创建 ${created.length} 个${label}`)

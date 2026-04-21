@@ -23,25 +23,6 @@ var (
 	cpuFreqLastUpdate time.Time
 )
 
-// getCpuFreq 获取 CPU 主频（使用 gopsutil，跨平台兼容）
-func getCpuFreq() float64 {
-	cpuFreqMu.Lock()
-	defer cpuFreqMu.Unlock()
-
-	if time.Since(cpuFreqLastUpdate) < 5*time.Minute && cpuFreqCache > 0 {
-		return cpuFreqCache
-	}
-
-	cpuFreqCache = 0
-	cpuInfos, err := cpu.Info()
-	if err == nil && len(cpuInfos) > 0 {
-		cpuFreqCache = cpuInfos[0].Mhz
-	}
-
-	cpuFreqLastUpdate = time.Now()
-	return cpuFreqCache
-}
-
 // CPUThrottledData CPU 节流数据
 type CPUThrottledData struct {
 	Periods          uint64 `json:"periods"`
@@ -229,4 +210,23 @@ func (s *DockerService) GetContainerStats(ctx context.Context, id string) (*Cont
 	}
 
 	return result, nil
+}
+
+// getCpuFreq 获取 CPU 主频（使用 gopsutil，跨平台兼容）
+func getCpuFreq() float64 {
+	cpuFreqMu.Lock()
+	defer cpuFreqMu.Unlock()
+
+	if time.Since(cpuFreqLastUpdate) < 5*time.Minute && cpuFreqCache > 0 {
+		return cpuFreqCache
+	}
+
+	cpuFreqCache = 0
+	cpuInfos, err := cpu.Info()
+	if err == nil && len(cpuInfos) > 0 {
+		cpuFreqCache = cpuInfos[0].Mhz
+	}
+
+	cpuFreqLastUpdate = time.Now()
+	return cpuFreqCache
 }

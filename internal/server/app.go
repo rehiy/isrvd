@@ -36,17 +36,10 @@ func NewApp() *App {
 	app.memberSvc = svcSystem.NewMemberService()
 	app.swarmSvc = svcSwarm.NewService()
 
-	// compose snapshot service 先初始化，供 docker service 注入
-	snapSvc := svcCompose.GetSnapshotService()
-
-	if dockerSvc, err := svcDocker.NewService(snapSvc); err != nil {
+	if dockerSvc, err := svcDocker.NewService(); err != nil {
 		logman.Warn("Docker service unavailable", "error", err)
 	} else {
 		app.dockerSvc = dockerSvc
-		// 注入 compose 读取器（snapSvc 同时实现了 ComposeReader 接口）
-		if snapSvc != nil {
-			dockerSvc.SetComposeReader(snapSvc)
-		}
 	}
 
 	if apisixSvc, err := svcApisix.NewService(); err != nil {
@@ -139,9 +132,6 @@ func (app *App) setupRouter() {
 					d.POST("/container/create", app.dockerCreateContainer)
 					d.POST("/container/logs", app.dockerContainerLogs)
 					d.GET("/container/:id/stats", app.dockerContainerStats)
-					d.GET("/container/:id/config", app.dockerGetContainerConfig)
-					d.GET("/container/:id/compose", app.dockerGetContainerCompose)
-					d.POST("/container/update", app.dockerUpdateContainerConfig)
 					d.GET("/images", app.dockerListImages)
 					d.POST("/image/action", app.dockerImageAction)
 					d.GET("/image/:id", app.dockerInspectImage)
@@ -167,26 +157,35 @@ func (app *App) setupRouter() {
 			}
 
 			// Swarm
-			sw := auth.Group("/swarm")
-			{
-				sw.GET("/info", app.swarmInfo)
-				sw.GET("/nodes", app.swarmListNodes)
-				sw.GET("/node/:id", app.swarmInspectNode)
-				sw.POST("/node/action", app.swarmNodeAction)
-				sw.GET("/join-tokens", app.swarmGetJoinTokens)
-				sw.GET("/services", app.swarmListServices)
-				sw.GET("/service/:id", app.swarmInspectService)
-				sw.POST("/service/create", app.swarmCreateService)
-				sw.POST("/service/action", app.swarmServiceAction)
-				sw.POST("/service/redeploy", app.swarmForceUpdateService)
-				sw.GET("/service/:id/logs", app.swarmServiceLogs)
-				sw.GET("/tasks", app.swarmListTasks)
+			if app.swarmSvc != nil {
+				sw := auth.Group("/swarm")
+				{
+					sw.GET("/info", app.swarmInfo)
+					sw.GET("/nodes", app.swarmListNodes)
+					sw.GET("/node/:id", app.swarmInspectNode)
+					sw.POST("/node/action", app.swarmNodeAction)
+					sw.GET("/join-tokens", app.swarmGetJoinTokens)
+					sw.GET("/services", app.swarmListServices)
+					sw.GET("/service/:id", app.swarmInspectService)
+					sw.POST("/service/create", app.swarmCreateService)
+					sw.POST("/service/action", app.swarmServiceAction)
+					sw.POST("/service/redeploy", app.swarmForceUpdateService)
+					sw.GET("/service/:id/logs", app.swarmServiceLogs)
+					sw.GET("/tasks", app.swarmListTasks)
+				}
 			}
 
 			// Compose
 			if app.composeSvc != nil {
-				auth.POST("/compose/deploy", app.composeDeploy)
-				auth.POST("/compose/redeploy", app.composeRedeploy)
+				c := auth.Group("/compose")
+				{
+					c.GET("/docker/:name", app.composeGetDockerContent)
+					c.POST("/docker", app.composeDeployDocker)
+					c.PUT("/docker/:name", app.composeRedeployDocker)
+					c.GET("/swarm/:id", app.composeGetSwarmContent)
+					c.POST("/swarm", app.composeDeploySwarm)
+					c.PUT("/swarm/:name", app.composeRedeploySwarm)
+				}
 			}
 
 			// 系统

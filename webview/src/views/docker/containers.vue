@@ -7,17 +7,19 @@ import type { ContainerInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
+import ContainerCreateModal from '@/views/docker/widget/container-create-modal.vue'
 import ContainerEditModal from '@/views/docker/widget/container-edit-modal.vue'
 
 @Component({
     expose: ['load', 'show'],
-    components: { ContainerEditModal }
+    components: { ContainerCreateModal, ContainerEditModal }
 })
 class Containers extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── Refs ───
-    @Ref readonly containerModalRef!: InstanceType<typeof ContainerEditModal>
+    @Ref readonly containerCreateModalRef!: InstanceType<typeof ContainerCreateModal>
+    @Ref readonly containerEditModalRef!: InstanceType<typeof ContainerEditModal>
 
     // ─── 数据属性 ───
     containers: ContainerInfo[] = []
@@ -66,7 +68,7 @@ class Containers extends Vue {
     }
 
     createContainerModal() {
-        this.containerModalRef?.show()
+        this.containerCreateModalRef?.show()
     }
 
     toggleBatchMode() {
@@ -271,14 +273,11 @@ export default toNative(Containers)
                 <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button @click="!ct.isSwarm && containerModalRef?.show(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-violet-600 hover:bg-violet-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
-                      <i class="fas fa-cog text-xs"></i>
-                    </button>
                     <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats' })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
                       <i class="fas fa-chart-bar text-xs"></i>
                     </button>
                     <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/logs' })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
-                      <i class="fas fa-file-alt text-xs"></i>
+                      <i class="fas fa-file-lines text-xs"></i>
                     </button>
                     <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="登录终端">
                       <i class="fas fa-terminal text-xs"></i>
@@ -291,6 +290,9 @@ export default toNative(Containers)
                     </button>
                     <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
                       <i class="fas fa-stop text-xs"></i>
+                    </button>
+                    <button @click="!ct.isSwarm && containerEditModalRef?.show(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-amber-600 hover:bg-amber-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
+                      <i class="fas fa-pen text-xs"></i>
                     </button>
                     <button @click="handleContainerAction(ct, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                       <i class="fas fa-trash text-xs"></i>
@@ -344,14 +346,11 @@ export default toNative(Containers)
 
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
-              <button @click="!ct.isSwarm && containerModalRef?.show(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-violet-600 hover:bg-violet-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
-                <i class="fas fa-cog text-xs"></i><span class="text-xs ml-1">配置</span>
+              <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/logs' })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
+                <i class="fas fa-file-lines text-xs"></i><span class="text-xs ml-1">日志</span>
               </button>
               <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats' })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
                 <i class="fas fa-chart-bar text-xs"></i><span class="text-xs ml-1">统计</span>
-              </button>
-              <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/logs' })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
-                <i class="fas fa-file-alt text-xs"></i><span class="text-xs ml-1">日志</span>
               </button>
               <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="终端">
                 <i class="fas fa-terminal text-xs"></i><span class="text-xs ml-1">终端</span>
@@ -364,6 +363,9 @@ export default toNative(Containers)
               </button>
               <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
                 <i class="fas fa-stop text-xs"></i><span class="text-xs ml-1">停止</span>
+              </button>
+              <button @click="!ct.isSwarm && containerEditModalRef?.show(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-amber-600 hover:bg-amber-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
+                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
               <button @click="handleContainerAction(ct, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
@@ -383,6 +385,7 @@ export default toNative(Containers)
       </div>
     </div>
 
-    <ContainerEditModal ref="containerModalRef" @success="loadContainers" />
+    <ContainerCreateModal ref="containerCreateModalRef" @success="loadContainers" />
+    <ContainerEditModal ref="containerEditModalRef" @success="loadContainers" />
   </div>
 </template>

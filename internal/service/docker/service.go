@@ -11,36 +11,19 @@ import (
 	pkgdocker "isrvd/pkgs/docker"
 )
 
-// SnapshotSaver 快照保存接口，解耦对 compose service 的直接依赖
-type SnapshotSaver interface {
-	Save(req pkgdocker.ContainerCreateRequest)
-}
-
-// ComposeReader compose 文件读取接口
-type ComposeReader interface {
-	GetComposeContent(ctx context.Context, name string) (string, error)
-}
-
 // Service Docker 业务服务
 type Service struct {
-	docker        *pkgdocker.DockerService
-	snapshot      SnapshotSaver // 可为 nil，创建/更新容器时安静跳过
-	composeReader ComposeReader // 可为 nil，读取 compose 文件时跳过
+	docker *pkgdocker.DockerService
 }
 
 // NewService 创建 Docker 业务服务
-func NewService(snapshot SnapshotSaver) (*Service, error) {
+func NewService() (*Service, error) {
 	svc := registry.DockerService
 	if svc == nil {
 		logman.Error("Docker service not initialized")
 		return nil, fmt.Errorf("Docker 服务未初始化")
 	}
-	return &Service{docker: svc, snapshot: snapshot}, nil
-}
-
-// SetComposeReader 注入 compose 读取器（在 NewService 后调用）
-func (s *Service) SetComposeReader(r ComposeReader) {
-	s.composeReader = r
+	return &Service{docker: svc}, nil
 }
 
 // CheckAvailability 检测 Docker 可用性
@@ -55,11 +38,4 @@ func (s *Service) CheckAvailability(ctx context.Context) bool {
 // GetDockerService 返回底层 pkgs/docker.DockerService（供 WebSocket exec 使用）
 func (s *Service) GetDockerService() *pkgdocker.DockerService {
 	return s.docker
-}
-
-// saveSnapshot 安静地保存快照（失败仅记日志）
-func (s *Service) saveSnapshot(req pkgdocker.ContainerCreateRequest) {
-	if s.snapshot != nil {
-		s.snapshot.Save(req)
-	}
 }

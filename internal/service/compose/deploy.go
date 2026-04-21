@@ -17,6 +17,75 @@ import (
 	"isrvd/pkgs/swarm"
 )
 
+// GetContent 统一获取 compose 文件内容
+//   - target=docker：从磁盘读取 compose 文件（缺失时从运行态 inspect 反推）
+//   - target=swarm ：从运行态 inspect 反推
+func (s *DeployService) GetContent(ctx context.Context, target ComposeDeployTarget, name string) (string, error) {
+	if name == "" {
+		return "", fmt.Errorf("名称不能为空")
+	}
+	switch target {
+	case TargetDocker:
+		return s.getDockerContent(ctx, name)
+	case TargetSwarm:
+		if s.swarm == nil {
+			return "", fmt.Errorf("swarm manager 未初始化")
+		}
+		info, err := s.swarm.InspectService(ctx, name)
+		if err != nil {
+			return "", err
+		}
+		project, err := compose.ProjectFromSwarmInspect(info)
+		if err != nil {
+			return "", err
+		}
+		data, err := compose.ProjectToYAML(project)
+		return string(data), err
+	default:
+		return "", fmt.Errorf("不支持的目标: %s", target)
+	}
+}
+
+// getDockerContent 读取 docker compose 文件内容；
+// 快照缺失时自动从运行态 inspect 反推并写入，然后返回内容。
+func (s *DeployService) getDockerContent(ctx context.Context, name string) (string, error) {
+	root := s.docker.ContainerRoot()
+	if root == "" {
+		return "", fmt.Errorf("未配置容器数据根目录")
+	}
+	path := filepath.Join(root, name, composeFileName)
+
+	if _, err := os.Stat(path); err != nil {
+		info, err := s.docker.InspectContainer(ctx, name)
+		if err != nil {
+			return "", fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
+		}
+		project, err := compose.ProjectFromInspect(info)
+		if err != nil {
+			return "", err
+		}
+		data, err := compose.ProjectToYAML(project)
+		if err != nil {
+			return "", err
+		}
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			return "", fmt.Errorf("创建目录失败: %w", err)
+		}
+		if err := os.WriteFile(path, data, 0644); err != nil {
+			return "", fmt.Errorf("写入 compose 文件失败: %w", err)
+		}
+		return string(data), nil
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("读取 compose 文件失败: %w", err)
+	}
+	return string(data), nil
+}
+
+const composeFileName = "docker-compose.yml"
+
 // safeName 校验实例名，防止路径穿越
 var safeName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]*$`)
 
@@ -49,18 +118,24 @@ const (
 	TargetSwarm  ComposeDeployTarget = "swarm"
 )
 
-// DeployRequest 统一的 compose 部署请求
+// DeployDockerRequest docker compose 部署请求
 //
-//   - Target      : docker | swarm（必填）
 //   - Content     : 完整 compose yaml 文本（必填；前端已完成变量插值）
-//   - ProjectName : 实例名（必填），同时作为 compose project 名；
-//     Target=docker 时落盘安装到 {ContainerRoot}/{ProjectName}
-//   - InitURL     : 可选，仅 Target=docker 时生效；附加运行文件 zip 下载地址
-type DeployRequest struct {
-	Target      ComposeDeployTarget `json:"target" binding:"required"`
-	Content     string              `json:"content" binding:"required"`
-	ProjectName string              `json:"projectName" binding:"required"`
-	InitURL     string              `json:"initURL"`
+//   - ProjectName : 实例名（必填），同时作为 compose project 名；落盘到 {ContainerRoot}/{ProjectName}
+//   - InitURL     : 可选；附加运行文件 zip 下载地址
+type DeployDockerRequest struct {
+	Content     string `json:"content" binding:"required"`
+	ProjectName string `json:"projectName" binding:"required"`
+	InitURL     string `json:"initURL"`
+}
+
+// DeploySwarmRequest swarm compose 部署请求
+//
+//   - Content     : 完整 compose yaml 文本（必填；前端已完成变量插值）
+//   - ProjectName : 实例名（必填），同时作为 compose project 名
+type DeploySwarmRequest struct {
+	Content     string `json:"content" binding:"required"`
+	ProjectName string `json:"projectName" binding:"required"`
 }
 
 // DeployResult 部署结果
@@ -70,50 +145,54 @@ type DeployResult struct {
 	InstallDir string              `json:"installDir,omitempty"` // 仅 docker 落盘时返回
 }
 
-// Deploy 统一的 compose 部署入口
-func (s *DeployService) Deploy(ctx context.Context, req DeployRequest) (*DeployResult, error) {
-	if req.Content == "" {
-		return nil, fmt.Errorf("compose 内容不能为空")
-	}
+// DeployDocker docker compose 部署入口
+func (s *DeployService) DeployDocker(ctx context.Context, req DeployDockerRequest) (*DeployResult, error) {
 	if !safeName.MatchString(req.ProjectName) {
 		return nil, fmt.Errorf("非法的实例名")
 	}
-
-	switch req.Target {
-	case TargetDocker:
-		return s.deployDocker(ctx, req)
-	case TargetSwarm:
-		return s.deploySwarm(ctx, req)
-	default:
-		return nil, fmt.Errorf("不支持的部署目标: %s", req.Target)
-	}
+	return s.deployDocker(ctx, req)
 }
 
-// RedeployRequest compose 重建请求（用于编辑已有容器的 compose 文件后重建）
+// DeploySwarm swarm compose 部署入口
+func (s *DeployService) DeploySwarm(ctx context.Context, req DeploySwarmRequest) (*DeployResult, error) {
+	if !safeName.MatchString(req.ProjectName) {
+		return nil, fmt.Errorf("非法的实例名")
+	}
+	return s.deploySwarm(ctx, req)
+}
+
+// RedeployRequest compose 重建请求
 type RedeployRequest struct {
-	Content     string `json:"content" binding:"required"`
-	ProjectName string `json:"projectName" binding:"required"`
+	Content string `json:"content" binding:"required"`
+}
+
+// validateRedeploy 校验重建请求公共参数
+func (s *DeployService) validateRedeploy(name, content string) error {
+	if content == "" {
+		return fmt.Errorf("compose 内容不能为空")
+	}
+	if !safeName.MatchString(name) {
+		return fmt.Errorf("非法的实例名")
+	}
+	return nil
 }
 
 // RedeployDocker 更新已有容器的 compose 文件并重建
 // 先停止并删除旧容器，再用新内容重新部署
-func (s *DeployService) RedeployDocker(ctx context.Context, req RedeployRequest) (*DeployResult, error) {
-	if req.Content == "" {
-		return nil, fmt.Errorf("compose 内容不能为空")
-	}
-	if !safeName.MatchString(req.ProjectName) {
-		return nil, fmt.Errorf("非法的实例名")
+func (s *DeployService) RedeployDocker(ctx context.Context, name string, req RedeployRequest) (*DeployResult, error) {
+	if err := s.validateRedeploy(name, req.Content); err != nil {
+		return nil, err
 	}
 
 	root := s.docker.ContainerRoot()
 	installDir := ""
 	if root != "" {
-		installDir = filepath.Join(root, req.ProjectName)
+		installDir = filepath.Join(root, name)
 	}
 
 	// 停止并删除旧容器（忽略不存在的错误）
-	_ = s.docker.ContainerAction(ctx, req.ProjectName, "stop")
-	_ = s.docker.ContainerAction(ctx, req.ProjectName, "remove")
+	_ = s.docker.ContainerAction(ctx, name, "stop")
+	_ = s.docker.ContainerAction(ctx, name, "remove")
 
 	// 如果有安装目录，更新 compose 文件
 	if installDir != "" {
@@ -127,7 +206,7 @@ func (s *DeployService) RedeployDocker(ctx context.Context, req RedeployRequest)
 	}
 
 	// 加载并重新部署
-	project, err := compose.LoadProjectFromContent(ctx, req.Content, req.ProjectName)
+	project, err := compose.LoadProjectFromContent(ctx, req.Content, name)
 	if err != nil {
 		return nil, err
 	}
@@ -137,13 +216,13 @@ func (s *DeployService) RedeployDocker(ctx context.Context, req RedeployRequest)
 		return nil, err
 	}
 
-	logman.Info("Compose app redeployed", "name", req.ProjectName)
+	logman.Info("Compose app redeployed", "name", name)
 	return &DeployResult{Target: TargetDocker, Items: items, InstallDir: installDir}, nil
 }
 
 // deployDocker 单机 docker 部署：落盘到 {ContainerRoot}/{ProjectName}，
 // 可选下载并解压 InitURL 指向的附加运行文件 zip。
-func (s *DeployService) deployDocker(ctx context.Context, req DeployRequest) (*DeployResult, error) {
+func (s *DeployService) deployDocker(ctx context.Context, req DeployDockerRequest) (*DeployResult, error) {
 	root := s.docker.ContainerRoot()
 	if root == "" {
 		return nil, fmt.Errorf("未配置容器数据根目录")
@@ -208,7 +287,7 @@ func (s *DeployService) deployDocker(ctx context.Context, req DeployRequest) (*D
 
 // deploySwarm swarm 部署：不落盘，仅将 ProjectName 作为 compose project 名
 // 用于生成服务默认前缀，实际状态由 swarm 集群管理。
-func (s *DeployService) deploySwarm(ctx context.Context, req DeployRequest) (*DeployResult, error) {
+func (s *DeployService) deploySwarm(ctx context.Context, req DeploySwarmRequest) (*DeployResult, error) {
 	if s.swarm == nil {
 		return nil, fmt.Errorf("swarm manager 未初始化")
 	}
@@ -247,4 +326,36 @@ func (s *DeployService) deploySwarmProject(ctx context.Context, project *types.P
 		logman.Info("Swarm compose service deployed", "service", svc.Name, "id", id)
 	}
 	return services, nil
+}
+
+// RedeploySwarm 更新 swarm 服务：先删除旧服务，再用新 compose 内容重建
+// name 用于匹配并删除旧服务（按 {name}_{serviceName} 前缀匹配）
+func (s *DeployService) RedeploySwarm(ctx context.Context, name string, req RedeployRequest) (*DeployResult, error) {
+	if err := s.validateRedeploy(name, req.Content); err != nil {
+		return nil, err
+	}
+	if s.swarm == nil {
+		return nil, fmt.Errorf("swarm manager 未初始化")
+	}
+
+	project, err := compose.LoadProjectFromContent(ctx, req.Content, name)
+	if err != nil {
+		return nil, err
+	}
+	if len(project.Services) == 0 {
+		return nil, fmt.Errorf("compose 文件中没有定义服务")
+	}
+
+	// 删除旧服务（按服务名匹配，忽略不存在的错误）
+	for _, svc := range project.Services {
+		_ = s.swarm.ServiceAction(ctx, svc.Name, "remove", nil)
+	}
+
+	items, err := s.deploySwarmProject(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+
+	logman.Info("Swarm compose redeployed", "name", name)
+	return &DeployResult{Target: TargetSwarm, Items: items}, nil
 }

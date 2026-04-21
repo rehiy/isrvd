@@ -62,7 +62,7 @@ func (s *Service) ListServices(ctx context.Context) (any, error) {
 }
 
 // InspectService 获取服务详情
-func (s *Service) InspectService(ctx context.Context, id string) (any, error) {
+func (s *Service) InspectService(ctx context.Context, id string) (*pkgswarm.SwarmServiceInspect, error) {
 	if id == "" {
 		return nil, fmt.Errorf("缺少服务 ID")
 	}

@@ -8,9 +8,10 @@ import type { AppActions } from '@/store/state'
 
 import ScaleModal from '@/views/swarm/widget/service-scale-modal.vue'
 import CreateServiceModal from '@/views/swarm/widget/service-create-modal.vue'
+import ServiceEditModal from '@/views/swarm/widget/service-edit-modal.vue'
 
 @Component({
-    components: { ScaleModal, CreateServiceModal }
+    components: { ScaleModal, CreateServiceModal, ServiceEditModal }
 })
 class Services extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
@@ -18,6 +19,7 @@ class Services extends Vue {
     // ─── Refs ───
     @Ref readonly scaleModalRef!: InstanceType<typeof ScaleModal>
     @Ref readonly createServiceModalRef!: InstanceType<typeof CreateServiceModal>
+    @Ref readonly editServiceModalRef!: InstanceType<typeof ServiceEditModal>
 
     // ─── 数据属性 ───
     services: SwarmService[] = []
@@ -30,6 +32,10 @@ class Services extends Vue {
 
     openCreateModal() {
         this.createServiceModalRef?.show()
+    }
+
+    openEditModal(svc: SwarmService) {
+        this.editServiceModalRef?.show(svc)
     }
 
     async loadServices() {
@@ -50,6 +56,10 @@ class Services extends Vue {
 
     handleCreateSuccess() {
         this.actions.showNotification('success', '服务创建成功')
+        this.loadServices()
+    }
+
+    handleEditSuccess() {
         this.loadServices()
     }
 
@@ -183,9 +193,9 @@ export default toNative(Services)
                   <div class="flex justify-end items-center gap-0.5">
                     <button @click="$router.push({ name: 'swarm-service-info', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="详情"><i class="fas fa-circle-info text-xs"></i></button>
                     <button @click="$router.push({ name: 'swarm-service-logs', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志"><i class="fas fa-file-lines text-xs"></i></button>
-
-                    <button @click="handleRedeploy(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="强制重部署"><i class="fas fa-rotate text-xs"></i></button>
                     <button v-if="svc.mode === 'replicated'" @click="openScaleModal(svc)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="扩缩容"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>
+                    <button @click="handleRedeploy(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="强制重部署"><i class="fas fa-rotate text-xs"></i></button>
+                    <button @click="openEditModal(svc)" class="btn-icon text-amber-600 hover:bg-amber-50" title="编辑"><i class="fas fa-pen text-xs"></i></button>
                     <button @click="handleServiceRemove(svc)" class="btn-icon text-red-600 hover:bg-red-50" title="删除"><i class="fas fa-trash text-xs"></i></button>
                   </div>
                 </td>
@@ -245,11 +255,14 @@ export default toNative(Services)
               <button @click="$router.push({ name: 'swarm-service-logs', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
                 <i class="fas fa-file-lines text-xs"></i><span class="text-xs ml-1">日志</span>
               </button>
+              <button v-if="svc.mode === 'replicated'" @click="openScaleModal(svc)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="扩缩容">
+                <i class="fas fa-up-right-and-down-left-from-center text-xs"></i><span class="text-xs ml-1">扩缩容</span>
+              </button>
               <button @click="handleRedeploy(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="强制重部署">
                 <i class="fas fa-rotate text-xs"></i><span class="text-xs ml-1">重部署</span>
               </button>
-              <button v-if="svc.mode === 'replicated'" @click="openScaleModal(svc)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="扩缩容">
-                <i class="fas fa-up-right-and-down-left-from-center text-xs"></i><span class="text-xs ml-1">扩缩容</span>
+              <button @click="openEditModal(svc)" class="btn-icon text-amber-600 hover:bg-amber-50" title="编辑">
+                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
               <button @click="handleServiceRemove(svc)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
@@ -264,9 +277,10 @@ export default toNative(Services)
         </div>
         <p class="text-slate-600 font-medium mb-1">暂无服务</p>
       </div>
+    </div>
 
     <ScaleModal ref="scaleModalRef" @success="handleScaleSuccess" />
     <CreateServiceModal ref="createServiceModalRef" @success="handleCreateSuccess" />
-    </div>
+    <ServiceEditModal ref="editServiceModalRef" @success="handleEditSuccess" />
   </div>
 </template>
