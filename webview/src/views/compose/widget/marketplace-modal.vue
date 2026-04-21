@@ -194,8 +194,8 @@ export default toNative(MarketplaceModal)
                 <button type="button" @click="loadUrl()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
                   <i class="fas fa-rotate"></i>刷新
                 </button>
-                <button type="button" @click="close()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
-                  <i class="fas fa-times"></i>关闭
+                <button type="button" @click="close()" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200">
+                  <i class="fas fa-times"></i>
                 </button>
               </div>
             </div>
