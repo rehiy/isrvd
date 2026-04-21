@@ -2,18 +2,16 @@
 package system
 
 import (
-	"net/http"
+	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/config"
-	"isrvd/internal/helper"
 )
 
-// MemberInfo 成员信息（GET 时返回，不包含密码明文）
+// MemberInfo 成员信息（不包含密码明文）
 type MemberInfo struct {
 	Username      string `json:"username"`
 	HomeDirectory string `json:"homeDirectory"`
@@ -30,8 +28,16 @@ type MemberUpsertRequest struct {
 	AllowTerminal bool   `json:"allowTerminal"`
 }
 
+// MemberService 成员账号业务服务
+type MemberService struct{}
+
+// NewMemberService 创建成员账号业务服务
+func NewMemberService() *MemberService {
+	return &MemberService{}
+}
+
 // ListMembers 列出所有成员
-func (h *SettingsHandler) ListMembers(c *gin.Context) {
+func (s *MemberService) ListMembers() []*MemberInfo {
 	list := make([]*MemberInfo, 0, len(config.Members))
 	for _, m := range config.Members {
 		list = append(list, &MemberInfo{
@@ -42,7 +48,7 @@ func (h *SettingsHandler) ListMembers(c *gin.Context) {
 			IsPrimary:     m.Username == config.PrimaryMember,
 		})
 	}
-	helper.RespondSuccess(c, "ok", list)
+	return list
 }
 
 // ensureHomeDir 生成并创建成员 home 目录（空值时使用基础目录 + 用户名）
@@ -60,29 +66,20 @@ func ensureHomeDir(home, username string) (string, error) {
 }
 
 // CreateMember 新建成员
-func (h *SettingsHandler) CreateMember(c *gin.Context) {
-	var req MemberUpsertRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
-		return
-	}
+func (s *MemberService) CreateMember(req MemberUpsertRequest) error {
 	if req.Username == "" {
-		helper.RespondError(c, http.StatusBadRequest, "用户名不能为空")
-		return
+		return fmt.Errorf("用户名不能为空")
 	}
 	if req.Password == "" {
-		helper.RespondError(c, http.StatusBadRequest, "密码不能为空")
-		return
+		return fmt.Errorf("密码不能为空")
 	}
 	if _, exists := config.Members[req.Username]; exists {
-		helper.RespondError(c, http.StatusBadRequest, "用户名已存在")
-		return
+		return fmt.Errorf("用户名已存在")
 	}
 
 	home, err := ensureHomeDir(req.HomeDirectory, req.Username)
 	if err != nil {
-		helper.RespondError(c, http.StatusInternalServerError, "创建 home 目录失败: "+err.Error())
-		return
+		return fmt.Errorf("创建 home 目录失败: %w", err)
 	}
 
 	config.Members[req.Username] = &config.MemberConfig{
@@ -91,36 +88,26 @@ func (h *SettingsHandler) CreateMember(c *gin.Context) {
 		HomeDirectory: home,
 		AllowTerminal: req.AllowTerminal,
 	}
-	// 首个成员设为主账号（不可删除）
 	if config.PrimaryMember == "" {
 		config.PrimaryMember = req.Username
 	}
 	if err := config.Save(); err != nil {
-		helper.RespondError(c, http.StatusInternalServerError, "保存配置失败: "+err.Error())
-		return
+		return fmt.Errorf("保存配置失败: %w", err)
 	}
 	logman.Info("Member created", "username", req.Username)
-	helper.RespondSuccess(c, "成员添加成功", nil)
+	return nil
 }
 
 // UpdateMember 更新成员
-func (h *SettingsHandler) UpdateMember(c *gin.Context) {
-	username := c.Param("username")
+func (s *MemberService) UpdateMember(username string, req MemberUpsertRequest) error {
 	member, exists := config.Members[username]
 	if !exists {
-		helper.RespondError(c, http.StatusNotFound, "成员不存在")
-		return
-	}
-	var req MemberUpsertRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
-		return
+		return fmt.Errorf("成员不存在")
 	}
 
 	home, err := ensureHomeDir(req.HomeDirectory, username)
 	if err != nil {
-		helper.RespondError(c, http.StatusInternalServerError, "创建 home 目录失败: "+err.Error())
-		return
+		return fmt.Errorf("创建 home 目录失败: %w", err)
 	}
 
 	member.Password = pickSecret(req.Password, member.Password)
@@ -128,29 +115,24 @@ func (h *SettingsHandler) UpdateMember(c *gin.Context) {
 	member.AllowTerminal = req.AllowTerminal
 
 	if err := config.Save(); err != nil {
-		helper.RespondError(c, http.StatusInternalServerError, "保存配置失败: "+err.Error())
-		return
+		return fmt.Errorf("保存配置失败: %w", err)
 	}
 	logman.Info("Member updated", "username", username)
-	helper.RespondSuccess(c, "成员更新成功", nil)
+	return nil
 }
 
 // DeleteMember 删除成员
-func (h *SettingsHandler) DeleteMember(c *gin.Context) {
-	username := c.Param("username")
+func (s *MemberService) DeleteMember(username string) error {
 	if _, exists := config.Members[username]; !exists {
-		helper.RespondError(c, http.StatusNotFound, "成员不存在")
-		return
+		return fmt.Errorf("成员不存在")
 	}
 	if username == config.PrimaryMember {
-		helper.RespondError(c, http.StatusForbidden, "主账号禁止删除")
-		return
+		return fmt.Errorf("主账号禁止删除")
 	}
 	delete(config.Members, username)
 	if err := config.Save(); err != nil {
-		helper.RespondError(c, http.StatusInternalServerError, "保存配置失败: "+err.Error())
-		return
+		return fmt.Errorf("保存配置失败: %w", err)
 	}
 	logman.Info("Member deleted", "username", username)
-	helper.RespondSuccess(c, "成员删除成功", nil)
+	return nil
 }

@@ -1,25 +1,18 @@
+// Package system 提供系统信息业务服务层
 package system
 
 import (
+	"context"
 	"fmt"
-	"net/http"
 	"runtime"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/psutil"
 	"github.com/shirou/gopsutil/v3/disk"
 
 	"isrvd/config"
-	"isrvd/internal/helper"
 	"isrvd/internal/registry"
 )
-
-type SystemHandler struct{}
-
-func NewSystemHandler() *SystemHandler {
-	return &SystemHandler{}
-}
 
 // DiskIOStat 硬盘 IO 统计
 type DiskIOStat struct {
@@ -30,13 +23,6 @@ type DiskIOStat struct {
 	WriteCount uint64 `json:"WriteCount"`
 }
 
-// SystemStatResponse 系统统计响应
-type SystemStatResponse struct {
-	System *psutil.DetailStat `json:"system"`
-	DiskIO []*DiskIOStat      `json:"diskIO"`
-	Go     *GoRuntimeStat     `json:"go"`
-}
-
 // GoRuntimeStat Go 运行态统计
 type GoRuntimeStat struct {
 	Version      string `json:"version"`
@@ -45,22 +31,50 @@ type GoRuntimeStat struct {
 	*psutil.GoMemoryStat
 }
 
+// SystemStatResponse 系统统计响应
+type SystemStatResponse struct {
+	System *psutil.DetailStat `json:"system"`
+	DiskIO []*DiskIOStat      `json:"diskIO"`
+	Go     *GoRuntimeStat     `json:"go"`
+}
+
+// ProbeResponse 探活响应
+type ProbeResponse struct {
+	Agent  map[string]bool `json:"agent"`
+	Docker map[string]bool `json:"docker"`
+	Swarm  map[string]bool `json:"swarm"`
+	Apisix map[string]bool `json:"apisix"`
+}
+
+// UptimeResponse 服务启动时间响应
+type UptimeResponse struct {
+	StartTime int64 `json:"startTime"`
+	Uptime    int64 `json:"uptime"`
+}
+
+var startTime = time.Now()
+
+// Service 系统信息业务服务
+type Service struct{}
+
+// NewService 创建系统信息业务服务
+func NewService() *Service {
+	return &Service{}
+}
+
 // filterDiskPartitions 过滤磁盘分区，去除容器中的重复单文件挂载
-// 同一设备+相同容量的分区只保留挂载点路径最短的那个
 func filterDiskPartitions(partitions []psutil.DiskPartition) []psutil.DiskPartition {
 	type bestEntry struct {
 		index int
 		mpLen int
 	}
 	best := make(map[string]*bestEntry)
-
 	for i, dp := range partitions {
 		key := fmt.Sprintf("%s:%d", dp.Device, dp.Total)
 		if b, ok := best[key]; !ok || len(dp.Mountpoint) < b.mpLen {
 			best[key] = &bestEntry{index: i, mpLen: len(dp.Mountpoint)}
 		}
 	}
-
 	result := make([]psutil.DiskPartition, 0, len(best))
 	for _, b := range best {
 		result = append(result, partitions[b.index])
@@ -69,13 +83,10 @@ func filterDiskPartitions(partitions []psutil.DiskPartition) []psutil.DiskPartit
 }
 
 // Stat 获取系统统计信息
-func (h *SystemHandler) Stat(c *gin.Context) {
+func (s *Service) Stat() *SystemStatResponse {
 	detail := psutil.Detail(false)
-
-	// 过滤容器中的单文件挂载项，按 "设备+容量" 去重，只保留挂载点最短的
 	detail.DiskPartition = filterDiskPartitions(detail.DiskPartition)
 
-	// 采集硬盘 IO 数据
 	ioCounters, _ := disk.IOCounters()
 	diskIO := make([]*DiskIOStat, 0, len(ioCounters))
 	for name, counter := range ioCounters {
@@ -95,35 +106,23 @@ func (h *SystemHandler) Stat(c *gin.Context) {
 		GoMemoryStat: psutil.GoMemory(),
 	}
 
-	helper.RespondSuccess(c, "ok", &SystemStatResponse{
-		System: detail,
-		DiskIO: diskIO,
-		Go:     goStat,
-	})
+	return &SystemStatResponse{System: detail, DiskIO: diskIO, Go: goStat}
 }
 
 // Probe 探活
-func (h *SystemHandler) Probe(c *gin.Context) {
-	ctx := c.Request.Context()
-	helper.RespondSuccess(c, "ok", gin.H{
-		"agent":  gin.H{"available": config.Agent.BaseURL != "" && config.Agent.APIKey != ""},
-		"docker": gin.H{"available": registry.IsDockerAvailable(ctx)},
-		"swarm":  gin.H{"available": registry.IsSwarmAvailable(ctx)},
-		"apisix": gin.H{"available": registry.IsApisixAvailable()},
-	})
+func (s *Service) Probe(ctx context.Context) *ProbeResponse {
+	return &ProbeResponse{
+		Agent:  map[string]bool{"available": config.Agent.BaseURL != "" && config.Agent.APIKey != ""},
+		Docker: map[string]bool{"available": registry.IsDockerAvailable(ctx)},
+		Swarm:  map[string]bool{"available": registry.IsSwarmAvailable(ctx)},
+		Apisix: map[string]bool{"available": registry.IsApisixAvailable()},
+	}
 }
 
-// UpTime 获取服务启动时间（秒级时间戳）
-var startTime = time.Now()
-
-func (h *SystemHandler) Uptime(c *gin.Context) {
-	helper.RespondSuccess(c, "ok", gin.H{
-		"startTime": startTime.Unix(),
-		"uptime":    int64(time.Since(startTime).Seconds()),
-	})
-}
-
-// Health 健康检查
-func (h *SystemHandler) Health(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+// Uptime 获取服务启动时间
+func (s *Service) Uptime() *UptimeResponse {
+	return &UptimeResponse{
+		StartTime: startTime.Unix(),
+		Uptime:    int64(time.Since(startTime).Seconds()),
+	}
 }

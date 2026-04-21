@@ -21,7 +21,7 @@ type Consumer struct {
 func (c *Client) ListConsumers() ([]Consumer, error) {
 	data, err := c.doRequest(http.MethodGet, "/consumers", nil)
 	if err != nil {
-		return nil, fmt.Errorf("获取 Consumers 失败: %w", err)
+		return nil, err
 	}
 
 	var raw struct {
@@ -87,7 +87,7 @@ func (c *Client) CreateConsumer(username, desc string) (*Consumer, error) {
 func (c *Client) UpdateConsumerDesc(username, desc string) error {
 	apiKey, err := c.GetConsumerRawKey(username)
 	if err != nil {
-		return fmt.Errorf("获取消费者信息失败: %w", err)
+		return err
 	}
 	return c.CreateOrUpdateConsumer(username, apiKey, desc)
 }
@@ -105,7 +105,7 @@ func (c *Client) CreateOrUpdateConsumer(username, apiKey, desc string) error {
 	}
 	_, err := c.doRequest(http.MethodPut, "/consumers/"+username, body)
 	if err != nil {
-		return fmt.Errorf("创建/更新 Consumer 失败: %w", err)
+		return err
 	}
 	return nil
 }
@@ -114,7 +114,7 @@ func (c *Client) CreateOrUpdateConsumer(username, apiKey, desc string) error {
 func (c *Client) DeleteConsumer(username string) error {
 	_, err := c.doRequest(http.MethodDelete, "/consumers/"+username, nil)
 	if err != nil {
-		return fmt.Errorf("删除 Consumer 失败: %w", err)
+		return err
 	}
 	return nil
 }

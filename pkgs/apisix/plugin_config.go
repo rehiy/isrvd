@@ -19,7 +19,7 @@ type PluginConfig struct {
 func (c *Client) ListPluginConfigs() ([]PluginConfig, error) {
 	data, err := c.doRequest(http.MethodGet, "/plugin_configs", nil)
 	if err != nil {
-		return nil, fmt.Errorf("获取 Plugin Config 列表失败: %w", err)
+		return nil, err
 	}
 	return parsePluginConfigList(data)
 }

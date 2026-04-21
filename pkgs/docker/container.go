@@ -318,7 +318,7 @@ func (s *DockerService) UpdateContainer(ctx context.Context, req ContainerUpdate
 	// 查找并停止旧容器
 	containers, err := s.client.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
-		return "", fmt.Errorf("获取容器列表失败: %w", err)
+		return "", err
 	}
 
 	var oldContainerID string

@@ -27,8 +27,8 @@ var safeName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]*$`)
 //     指向的附加运行文件 zip；实例名即 compose project 名
 //   - Target=swarm ：仅作为 compose project 名使用，不落盘（由 swarm 集群管理）
 type DeployService struct {
-	docker  *docker.DockerService
 	compose *compose.ComposeService
+	docker  *docker.DockerService
 	swarm   *swarm.SwarmManager
 }
 
@@ -38,7 +38,7 @@ func NewDeployService(d *docker.DockerService, c *compose.ComposeService, s *swa
 	if d == nil || c == nil {
 		return nil, fmt.Errorf("docker 或 compose 服务未提供")
 	}
-	return &DeployService{docker: d, compose: c, swarm: s}, nil
+	return &DeployService{compose: c, docker: d, swarm: s}, nil
 }
 
 // ComposeDeployTarget 部署目标

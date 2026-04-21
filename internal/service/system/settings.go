@@ -2,22 +2,12 @@
 package system
 
 import (
-	"net/http"
-
-	"github.com/gin-gonic/gin"
+	"fmt"
 
 	"isrvd/config"
-	"isrvd/internal/helper"
 )
 
-type SettingsHandler struct{}
-
-func NewSettingsHandler() *SettingsHandler {
-	return &SettingsHandler{}
-}
-
 // ServerSettings 服务器配置
-// 敏感字段：GET 时值为空，仅通过 *Set 标志位告知是否已设置；PUT 时值为空表示保留原值
 type ServerSettings struct {
 	Debug           bool   `json:"debug"`
 	ListenAddr      string `json:"listenAddr"`
@@ -71,6 +61,14 @@ type UpdateAllRequest struct {
 	Marketplace *MarketplaceSettings `json:"marketplace"`
 }
 
+// SettingsService 系统配置业务服务
+type SettingsService struct{}
+
+// NewSettingsService 创建系统配置业务服务
+func NewSettingsService() *SettingsService {
+	return &SettingsService{}
+}
+
 // pickSecret 新值为空时保留原值，否则用新值
 func pickSecret(newVal, oldVal string) string {
 	if newVal == "" {
@@ -80,8 +78,8 @@ func pickSecret(newVal, oldVal string) string {
 }
 
 // GetAll 获取全部配置
-func (h *SettingsHandler) GetAll(c *gin.Context) {
-	helper.RespondSuccess(c, "ok", &AllSettings{
+func (s *SettingsService) GetAll() *AllSettings {
+	return &AllSettings{
 		Server: &ServerSettings{
 			Debug:           config.Debug,
 			ListenAddr:      config.ListenAddr,
@@ -105,16 +103,11 @@ func (h *SettingsHandler) GetAll(c *gin.Context) {
 		Marketplace: &MarketplaceSettings{
 			URL: config.Marketplace.URL,
 		},
-	})
+	}
 }
 
 // UpdateAll 一次性更新全部配置（任何 nil 分区将跳过）
-func (h *SettingsHandler) UpdateAll(c *gin.Context) {
-	var req UpdateAllRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "无效的JSON")
-		return
-	}
+func (s *SettingsService) UpdateAll(req UpdateAllRequest) error {
 	if req.Server != nil {
 		config.Debug = req.Server.Debug
 		config.ListenAddr = req.Server.ListenAddr
@@ -139,8 +132,7 @@ func (h *SettingsHandler) UpdateAll(c *gin.Context) {
 		config.Marketplace.URL = req.Marketplace.URL
 	}
 	if err := config.Save(); err != nil {
-		helper.RespondError(c, http.StatusInternalServerError, "保存配置失败: "+err.Error())
-		return
+		return fmt.Errorf("保存配置失败: %w", err)
 	}
-	helper.RespondSuccess(c, "全部配置已保存，部分项需重启生效", nil)
+	return nil
 }

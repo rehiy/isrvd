@@ -446,10 +446,10 @@ c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
 使用 Gin 的 `ShouldBindJSON`（或 `ShouldBindQuery`、`ShouldBindURI`）进行请求参数绑定和校验：
 
 ```go
-// ✅ 正确 — 使用 ShouldBindJSON 并校验错误
+// ✅ 正确 — 使用 ShouldBindJSON，失败时透传 err.Error()
 var req model.ContainerActionRequest
 if err := c.ShouldBindJSON(&req); err != nil {
-    helper.RespondError(c, http.StatusBadRequest, "无效的请求参数")
+    helper.RespondError(c, http.StatusBadRequest, err.Error())
     return
 }
 
@@ -457,9 +457,15 @@ if err := c.ShouldBindJSON(&req); err != nil {
 var body map[string]any
 if err := c.BindJSON(&body); err != nil { ... }
 id := body["id"].(string) // 不安全的类型断言
+
+// ❌ 错误 — 丢弃具体错误信息，使用固定字符串
+if err := c.ShouldBindJSON(&req); err != nil {
+    helper.RespondError(c, http.StatusBadRequest, "无效的JSON") // 丢失字段级错误
+    return
+}
 ```
 
-请求模型统一在各 handler 子包中按需定义，可内联在 `handler.go` 中，也可单独放在 `model.go`（如 `internal/handler/docker/model.go`、`internal/handler/apisix/model.go`），绑定标签使用 `binding:"required"` 等验证规则。简单模块（如 system）类型较少时直接内联在 `handler.go` 即可。业务数据模型定义在对应的 `pkgs/` 子包中，**struct 就近放置在使用它的第一个方法上方**。
+请求模型统一在各 handler 子包中按需定义，可内联在 `handler.go` 中，也可单独放在 `model.go`，绑定标签使用 `binding:"required"` 等验证规则。业务数据模型定义在对应的 `pkgs/` 子包中，**struct 就近放置在使用它的第一个方法上方**。
 
 ### WebSocket 升级器
 
@@ -578,42 +584,7 @@ logman.Info("Container created", "name", req.Name, "id", resp.ID)
 logman.Info("Container created: name=" + req.Name + ", id=" + resp.ID)
 ```
 
-### Go 命名规范
-
-缩写词统一全大写（如 CPU、ID、URL、HTTP、API 等），禁止大小写混合：
-
-```go
-// ✅ 正确
-type ContainerInfo struct {
-    CPUCores    float64 `json:"cpuCores"`
-    ContainerID string  `json:"containerID"`
-    APIVersion  string  `json:"apiVersion"`
-}
-
-// ❌ 错误
-type ContainerInfo struct {
-    CpuCores    float64 `json:"cpuCores"`    // 应为 CPUCores
-    ContainerId string  `json:"containerId"` // 应为 ContainerID
-    ApiVersion  string  `json:"apiVersion"`  // 应为 APIVersion
-}
-```
-
-### fmt.Errorf 规范
-
-禁止将变量字符串直接作为格式字符串传入，必须使用格式化占位符，避免格式化注入风险：
-
-```go
-// ✅ 正确
-return nil, fmt.Errorf("create container failed: %w", err)
-return nil, fmt.Errorf("service %s not found", name)
-
-// ❌ 错误 — 变量字符串可能包含 % 导致意外格式化
-return nil, fmt.Errorf(err.Error())
-return nil, fmt.Errorf(msg)
-```
-
 ### 工具函数
-
 工具函数按作用域分层：
 
 - **跨包通用工具**：放在 `internal/helper/` 包中（如 `response.go`、`websocket.go`）
@@ -639,55 +610,59 @@ authGroup.Use(middleware.AuthMiddleware())
 
 ### 服务层规范
 
-复杂业务逻辑在 `pkgs/` 下独立包中实现（如 `pkgs/docker/`、`pkgs/swarm/`、`pkgs/apisix/`），handler 层通过构造函数注入 service 实例：
+业务逻辑分两层实现：
+
+- **`pkgs/` 层**：纯业务逻辑，返回原生类型（如 Docker SDK 类型、Apisix 原始结构），不感知 HTTP 框架
+- **`internal/service/` 层**：负责类型转换、业务组合、参数校验等，不感知 HTTP 框架
+- **`internal/server/handler_*.go`**：轻量 handler，只负责解析请求、调用 service、返回响应
 
 ```go
-// ✅ 正确 — handler 持有 service 引用，调用 service 处理业务逻辑
-type DockerHandler struct {
-    service *docker.DockerService
-}
-
-func (h *DockerHandler) ListContainers(c *gin.Context) {
-    result, err := h.service.ListContainers(c.Request.Context(), all)
-    // ...
+// ✅ 正确 — handler 调用 service，service 调用 pkgs
+// internal/server/handler_docker.go
+func (app *App) dockerListContainers(c *gin.Context) {
+    result, err := app.dockerSvc.ListContainers(c.Request.Context())
+    if err != nil {
+        helper.RespondError(c, http.StatusInternalServerError, err.Error())
+        return
+    }
+    helper.RespondSuccess(c, "ok", result)
 }
 ```
 
-简单业务（如 auth）直接在 handler 内实现，不需要独立 pkgs 包。
+简单业务（如 auth）直接在 handler 内实现，不需要独立 service 层。
 
 **依赖方向**：
-- `pkgs/` 层是纯业务逻辑层，禁止依赖 `internal/` 包（handler、helper、server 等）
+- `pkgs/` 层禁止依赖 `internal/` 包（handler、helper、server 等）
 - `internal/registry` 层负责从 `config` 读取配置并初始化 `pkgs/` 层服务
-- `handler` 层从 `internal/registry` 获取已初始化的服务实例
-- `internal/server` 层负责路由注册和中间件配置
+- `internal/service/` 层从 `internal/registry` 获取已初始化的 pkgs 实例，处理业务逻辑
+- `internal/server/` 层负责路由注册、中间件配置，handler 调用 service
 
 ```
 依赖流向：config → internal/registry → pkgs/
                     ↓
-                 internal/handler
+                 internal/service/
                     ↓
-                 internal/server
+                 internal/server/
 ```
 
 ### 服务注册中心规范
 
-所有外部服务（Docker、Apisix 等）的连接统一管理在 `internal/registry/` 包中，禁止 handler 直接从 `pkgs/` 或 `config` 创建服务实例：
+所有外部服务（Docker、Apisix 等）的连接统一管理在 `internal/registry/` 包中，禁止 service/handler 直接从 `pkgs/` 或 `config` 创建服务实例：
 
 ```go
-// ✅ 正确 — 从 registry 获取已初始化的服务实例
-func NewDockerHandler() (*DockerHandler, error) {
+// ✅ 正确 — service 从 registry 获取已初始化的 pkgs 实例
+func NewDockerService() (*DockerService, error) {
     svc := registry.DockerService
     if svc == nil {
         return nil, fmt.Errorf("Docker 服务未初始化")
     }
-    return &DockerHandler{service: svc}, nil
+    return &DockerService{client: svc}, nil
 }
 
-// ❌ 错误 — handler 直接创建服务实例
-func NewDockerHandler() (*DockerHandler, error) {
+// ❌ 错误 — 直接创建 pkgs 实例
+func NewDockerService() (*DockerService, error) {
     cfg := &docker.DockerConfig{
         Host: config.Docker.Host,  // 直接依赖 config
-        // ...
     }
     svc, err := docker.NewDockerService(cfg)
     // ...
@@ -698,77 +673,106 @@ func NewDockerHandler() (*DockerHandler, error) {
 
 **设计原则**：
 - `internal/registry` 负责所有外部服务的生命周期管理（初始化、连接复用、可用性检查）
-- handler 只负责从 registry 获取已初始化的服务实例，处理 HTTP 层逻辑
-- 服务初始化失败不应阻止应用启动（可选服务），handler 中通过 nil 检查处理未配置的情况
+- `internal/service/` 从 registry 获取 pkgs 实例，处理业务逻辑与类型转换
+- `internal/server/` handler 调用 service，只处理 HTTP 层逻辑
+- 服务初始化失败不应阻止应用启动（可选服务），service 中通过 nil 检查处理未配置的情况
 
 ### 服务注册与依赖注入规范（internal/registry/）
 
-- registry.go（Init 函数）、docker.go、apisix.go
+- registry.go（Init 函数）、docker.go、apisix.go、compose.go
 - 全局实例：registry.DockerService/SwarmManager/ApisixClient
 - 可用性检查：IsDockerAvailable/IsSwarmAvailable/IsApisixAvailable
-- Handler 通过 registry 获取实例；启动流程：main → config.Load → registry.Init → server.NewApp
+- Service 通过 registry 获取实例；启动流程：main → config.Load → registry.Init → server.NewApp
 
 ### 应用入口（internal/server/）
 
 - app.go：路由注册与应用启动（NewApp 函数）
 - auth.go：认证中间件（AuthMiddleware，JWT / 代理 Header）
+- handler_*.go：轻量 handler，只负责解析请求、调用 service、返回响应
 - 无独立 middleware 包，CORS/Recovery 由 pango/httpd 框架内置处理
 
 ### pkgs 包规范
 
 - 禁止依赖 internal/ 包，配置通过构造函数注入
 - pkgs 内部子包可互相引用（如 swarm 引用 docker 的 ParseDockerLogs），避免循环依赖
-- docker/：client.go(container.go+types)+container.go+image.go+network.go+volume.go+stats.go+compose.go+exec.go+registry.go+helper.go（无 types.go）
+- **返回原生类型**：pkgs 层方法尽可能返回 SDK 原生类型，不做业务层的类型转换
+- **错误透传原则**：pkgs 层调用外部 SDK/API 失败时，直接透传原始错误，不套操作前缀；仅在 pkgs 层自身逻辑（如 JSON 解析）失败时才添加描述前缀
+- docker/：client.go+container.go+image.go+network.go+volume.go+stats.go+compose.go+exec.go+registry.go+helper.go（无 types.go）
 - swarm/：client.go+node.go+service.go+task.go（无 types.go，类型分散到各文件）
 - apisix/：client.go+route.go+consumer.go+upstream.go+plugin.go+plugin_config.go
 - archive/：zip.go；auth 直接在 handler 内实现
+
+```go
+// ✅ 正确 — pkgs 层直接透传 SDK 错误
+func (c *Client) ListRoutes() ([]Route, error) {
+    data, err := c.doRequest(http.MethodGet, "/routes", nil)
+    if err != nil {
+        return nil, err  // 直接透传，不套 "获取路由失败: %w"
+    }
+    // ...
+}
+
+// ✅ 正确 — pkgs 层自身逻辑失败时才加描述
+if err := json.Unmarshal(data, &raw); err != nil {
+    return nil, fmt.Errorf("解析路由详情失败: %w", err)
+}
+
+// ❌ 错误 — 套操作前缀导致多层嵌套
+if err != nil {
+    return nil, fmt.Errorf("获取路由失败: %w", err)  // 最终错误变成 "获取路由失败: 请求 Apisix 失败: ..."
+}
+```
 
 ### 项目结构
 
 ```
 internal/
-├── handler/         # HTTP 请求处理（调用 pkgs 层，薄 handler）
-│   ├── auth/            # 认证处理器（简单业务，直接在 handler 内实现）
-│   │   ├── handler.go
-│   │   └── model.go
-│   ├── filer/           # 文件管理处理器
-│   │   ├── handler.go
-│   │   ├── helper.go    # 包内私有工具（getAbsolutePath、fileList）
-│   │   ├── model.go
-│   │   └── zip.go       # 压缩/解压处理器
-│   ├── shell/           # 终端连接处理器
-│   │   └── handler.go
-│   ├── apisix/          # Apisix 相关处理器
-│   │   ├── handler.go
-│   │   └── model.go
-│   ├── docker/          # Docker 相关处理器
-│   │   ├── handler.go
+├── service/         # 业务逻辑层（类型转换、业务组合、参数校验，不感知 HTTP 框架）
+│   ├── apisix/          # Apisix 业务逻辑
+│   │   └── service.go
+│   ├── compose/         # Compose 业务逻辑
+│   │   ├── service.go
+│   │   ├── deploy.go
+│   │   └── snapshot.go
+│   ├── docker/          # Docker 业务逻辑
+│   │   ├── service.go   # Service 构造函数
 │   │   ├── container.go
 │   │   ├── image.go
 │   │   ├── network.go
-│   │   ├── volume.go
 │   │   └── registry.go
-│   ├── swarm/           # Swarm 相关处理器
-│   │   └── handler.go
-│   └── system/          # 系统信息处理器（探活、系统统计）
-│       └── handler.go
+│   ├── swarm/           # Swarm 业务逻辑
+│   │   └── service.go
+│   └── system/          # 系统业务逻辑
+│       ├── member.go
+│       ├── settings.go
+│       └── stat.go
 ├── helper/          # 跨包通用工具函数
 │   ├── response.go      # API 响应封装（RespondSuccess、RespondError）
 │   └── websocket.go     # WebSocket 升级器
 ├── registry/        # 服务注册中心（统一管理外部服务连接）
 │   ├── registry.go      # Registry 入口（Init 函数）
 │   ├── docker.go        # Docker/Swarm 服务管理
-│   └── apisix.go        # Apisix 服务管理
-└── server/          # 应用入口与核心逻辑
+│   ├── apisix.go        # Apisix 服务管理
+│   └── compose.go       # Compose 服务管理
+└── server/          # 应用入口与轻量 handler
     ├── app.go           # 路由注册与应用启动（NewApp 函数）
-    └── auth.go          # 认证中间件（AuthMiddleware）
+    ├── auth.go          # 认证中间件（AuthMiddleware）
+    ├── handler_agent.go
+    ├── handler_apisix.go
+    ├── handler_auth.go
+    ├── handler_compose.go
+    ├── handler_docker.go
+    ├── handler_filer.go
+    ├── handler_shell.go
+    ├── handler_swarm.go
+    └── handler_system.go
 
 config/             # 配置加载与类型定义
 ├── load.go             # 配置加载逻辑与环境变量处理
 └── types.go            # 配置结构体定义
 
 pkgs/
-├── apisix/          # Apisix 业务逻辑
+├── apisix/          # Apisix 原生客户端（返回原生类型）
 │   ├── client.go        # HTTP 客户端
 │   ├── route.go         # 路由管理
 │   ├── consumer.go      # Consumer 管理
@@ -777,7 +781,7 @@ pkgs/
 │   └── plugin_config.go # Plugin Config 管理
 ├── archive/         # 压缩/解压服务
 │   └── zip.go
-├── docker/          # Docker 业务逻辑
+├── docker/          # Docker 原生客户端（返回原生类型）
 │   ├── client.go        # Docker 客户端 + DockerConfig 注入
 │   ├── container.go     # 容器管理
 │   ├── image.go         # 镜像管理
@@ -788,24 +792,14 @@ pkgs/
 │   ├── exec.go          # 容器终端
 │   ├── registry.go      # 镜像仓库操作
 │   └── helper.go        # 包内私有工具
-└── swarm/           # Swarm 业务逻辑
+└── swarm/           # Swarm 原生客户端（返回原生类型）
     ├── client.go        # Swarm 管理器 + 构造函数
     ├── node.go          # 节点管理
     ├── service.go       # 服务管理
     └── task.go          # 任务管理
 ```
 
-**pkgs 内部引用规则**：pkgs 内部子包之间可以互相引用（如 `swarm` 引用 `docker` 的 `ParseDockerLogs`），但需保持合理的依赖方向，避免循环依赖。auth 逻辑简单，直接在 handler/auth 内实现，不放 pkgs/。
-
-### 安全规范
-
-- 文件路径操作统一使用 `getAbsolutePath`（filer 包内私有）防止目录遍历攻击
-- 压缩文件解压统一进行 Zip Slip 防护（检查解压路径不超出目标目录）
-- WebSocket 连接统一通过认证中间件校验 token
-- 文件权限修改统一解析八进制模式并校验有效性
-- 禁止在代码中硬编码密码或密钥
-- 敏感配置（JWT、Admin Key 等）后端 **禁止向前端回流明文**，仅返回 `xxxSet` 布尔标志位
-- 关键资源保护：第一个系统账号、内置角色等 **前后端双重校验**，前端按钮置灰 + 后端返回 400/403
+**pkgs 内部引用规则**：pkgs 内部子包之间可以互相引用（如 `swarm` 引用 `docker` 的 `ParseDockerLogs`），但需保持合理的依赖方向，避免循环依赖。auth 逻辑简单，直接在 handler 内实现，不放 pkgs/。
 
 ### 安全规范
 
@@ -844,8 +838,6 @@ type 可选值：
 - `dev`：开发分支
 - `feature/<name>`：功能分支
 - `fix/<name>`：修复分支
-
-#### 安全规范 & Git 规范 — 详见 CODE_STYLE (ID: m67w5bbf)
 
 ### 样式一致性检查要求
 

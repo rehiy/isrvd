@@ -20,7 +20,7 @@ type Upstream struct {
 func (c *Client) ListUpstreams() ([]Upstream, error) {
 	data, err := c.doRequest(http.MethodGet, "/upstreams", nil)
 	if err != nil {
-		return nil, fmt.Errorf("获取 Upstream 列表失败: %w", err)
+		return nil, err
 	}
 	return parseUpstreamList(data)
 }

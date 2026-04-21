@@ -1,0 +1,181 @@
+package server
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+
+	"isrvd/internal/helper"
+	pkgapisix "isrvd/pkgs/apisix"
+)
+
+func (app *App) apisixListRoutes(c *gin.Context) {
+	result, err := app.apisixSvc.ListRoutes()
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "", result)
+}
+
+func (app *App) apisixGetRoute(c *gin.Context) {
+	result, err := app.apisixSvc.GetRoute(c.Param("id"))
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "", result)
+}
+
+func (app *App) apisixCreateRoute(c *gin.Context) {
+	var req pkgapisix.Route
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := app.apisixSvc.CreateRoute(req)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Route created successfully", result)
+}
+
+func (app *App) apisixUpdateRoute(c *gin.Context) {
+	var req pkgapisix.Route
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := app.apisixSvc.UpdateRoute(c.Param("id"), req)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Route updated successfully", result)
+}
+
+func (app *App) apisixPatchRouteStatus(c *gin.Context) {
+	var req struct {
+		Status int `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := app.apisixSvc.PatchRouteStatus(c.Param("id"), req.Status); err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Route status updated successfully", nil)
+}
+
+func (app *App) apisixDeleteRoute(c *gin.Context) {
+	if err := app.apisixSvc.DeleteRoute(c.Param("id")); err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Route deleted successfully", nil)
+}
+
+func (app *App) apisixListConsumers(c *gin.Context) {
+	result, err := app.apisixSvc.ListConsumers()
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "", result)
+}
+
+func (app *App) apisixCreateConsumer(c *gin.Context) {
+	var req struct {
+		Username string `json:"username" binding:"required"`
+		Desc     string `json:"desc"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, "用户名不能为空")
+		return
+	}
+	result, err := app.apisixSvc.CreateConsumer(req.Username, req.Desc)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Consumer created successfully", result)
+}
+
+func (app *App) apisixUpdateConsumer(c *gin.Context) {
+	username := c.Param("username")
+	var req struct {
+		Desc string `json:"desc"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := app.apisixSvc.UpdateConsumerDesc(username, req.Desc); err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Consumer updated successfully", gin.H{"username": username, "desc": req.Desc})
+}
+
+func (app *App) apisixDeleteConsumer(c *gin.Context) {
+	if err := app.apisixSvc.DeleteConsumer(c.Param("username")); err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Consumer deleted successfully", nil)
+}
+
+func (app *App) apisixGetWhitelist(c *gin.Context) {
+	result, err := app.apisixSvc.GetWhitelist()
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "", result)
+}
+
+func (app *App) apisixRevokeWhitelist(c *gin.Context) {
+	var req struct {
+		RouteID      string `json:"route_id" binding:"required"`
+		ConsumerName string `json:"consumer_name" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, "路由 ID 和消费者名称不能为空")
+		return
+	}
+	if err := app.apisixSvc.RevokeWhitelist(req.RouteID, req.ConsumerName); err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Whitelist revoked successfully", nil)
+}
+
+func (app *App) apisixListPluginConfigs(c *gin.Context) {
+	result, err := app.apisixSvc.ListPluginConfigs()
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "", result)
+}
+
+func (app *App) apisixListUpstreams(c *gin.Context) {
+	result, err := app.apisixSvc.ListUpstreams()
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "", result)
+}
+
+func (app *App) apisixListPlugins(c *gin.Context) {
+	result, err := app.apisixSvc.ListPlugins()
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "", result)
+}

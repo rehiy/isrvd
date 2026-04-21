@@ -10,7 +10,7 @@ import (
 func (c *Client) ListPlugins() (map[string]any, error) {
 	data, err := c.doRequest(http.MethodGet, "/plugins?all=true", nil)
 	if err != nil {
-		return nil, fmt.Errorf("获取插件列表失败: %w", err)
+		return nil, err
 	}
 
 	var result map[string]any

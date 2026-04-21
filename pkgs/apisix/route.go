@@ -31,7 +31,7 @@ type Route struct {
 func (c *Client) ListRoutes() ([]Route, error) {
 	data, err := c.doRequest(http.MethodGet, "/routes", nil)
 	if err != nil {
-		return nil, fmt.Errorf("获取路由失败: %w", err)
+		return nil, err
 	}
 
 	routes, err := parseRouteList(data)
@@ -50,7 +50,7 @@ func (c *Client) ListRoutes() ([]Route, error) {
 func (c *Client) GetRoute(routeID string) (*Route, error) {
 	data, err := c.doRequest(http.MethodGet, "/routes/"+routeID, nil)
 	if err != nil {
-		return nil, fmt.Errorf("获取路由详情失败: %w", err)
+		return nil, err
 	}
 	return parseSingleRoute(data)
 }
@@ -59,7 +59,7 @@ func (c *Client) GetRoute(routeID string) (*Route, error) {
 func (c *Client) CreateRoute(req Route) (*Route, error) {
 	data, err := c.doRequest(http.MethodPost, "/routes", buildRouteBody(req))
 	if err != nil {
-		return nil, fmt.Errorf("创建路由失败: %w", err)
+		return nil, err
 	}
 	return parseSingleRoute(data)
 }
@@ -68,7 +68,7 @@ func (c *Client) CreateRoute(req Route) (*Route, error) {
 func (c *Client) UpdateRoute(routeID string, req Route) (*Route, error) {
 	data, err := c.doRequest(http.MethodPut, "/routes/"+routeID, buildRouteBody(req))
 	if err != nil {
-		return nil, fmt.Errorf("更新路由失败: %w", err)
+		return nil, err
 	}
 	return parseSingleRoute(data)
 }
@@ -78,7 +78,7 @@ func (c *Client) PatchRouteStatus(routeID string, status int) error {
 	body := map[string]any{"status": status}
 	_, err := c.doRequest(http.MethodPatch, "/routes/"+routeID, body)
 	if err != nil {
-		return fmt.Errorf("更新路由状态失败: %w", err)
+		return err
 	}
 	return nil
 }
@@ -87,7 +87,7 @@ func (c *Client) PatchRouteStatus(routeID string, status int) error {
 func (c *Client) DeleteRoute(routeID string) error {
 	_, err := c.doRequest(http.MethodDelete, "/routes/"+routeID, nil)
 	if err != nil {
-		return fmt.Errorf("删除路由失败: %w", err)
+		return err
 	}
 	return nil
 }
@@ -96,7 +96,7 @@ func (c *Client) DeleteRoute(routeID string) error {
 func (c *Client) WhitelistRoutes() ([]Route, error) {
 	data, err := c.doRequest(http.MethodGet, "/routes", nil)
 	if err != nil {
-		return nil, fmt.Errorf("获取路由失败: %w", err)
+		return nil, err
 	}
 
 	routes, err := parseRouteList(data)
@@ -118,7 +118,7 @@ func (c *Client) WhitelistRoutes() ([]Route, error) {
 func (c *Client) GetRouteWhitelist() ([]Route, error) {
 	data, err := c.doRequest(http.MethodGet, "/routes", nil)
 	if err != nil {
-		return nil, fmt.Errorf("获取路由列表失败: %w", err)
+		return nil, err
 	}
 
 	routes, err := parseRouteList(data)
@@ -179,7 +179,7 @@ func (c *Client) RemoveConsumerFromRouteWhitelist(routeID, consumerName string) 
 func (c *Client) UpdateRouteConsumerRestriction(routeID string, consumers []string) error {
 	routeData, err := c.doRequest(http.MethodGet, "/routes/"+routeID, nil)
 	if err != nil {
-		return fmt.Errorf("获取路由详情失败: %w", err)
+		return err
 	}
 
 	var raw struct {
@@ -207,7 +207,7 @@ func (c *Client) UpdateRouteConsumerRestriction(routeID string, consumers []stri
 
 	_, err = c.doRequest(http.MethodPut, "/routes/"+routeID, route)
 	if err != nil {
-		return fmt.Errorf("更新路由白名单失败: %w", err)
+		return err
 	}
 	return nil
 }
