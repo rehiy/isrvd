@@ -99,7 +99,7 @@ export default toNative(NodeDetail)
       </div>
 
       <!-- Detail -->
-      <div v-else-if="nodeData" class="p-6 space-y-6 text-sm">
+      <div v-else-if="nodeData" class="p-4 md:p-6 space-y-6 text-sm">
         <!-- 基本信息 -->
         <div>
           <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">基本信息</h2>
@@ -112,7 +112,7 @@ export default toNative(NodeDetail)
               <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">主机名</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 flex items-center gap-2">
                 {{ nodeData.hostname }}
-                <span v-if="nodeData.leader" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
+                <span v-if="nodeData.leader" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium bg-indigo-100 text-indigo-700">
                   <i class="fas fa-crown mr-1 text-[10px]"></i>Leader
                 </span>
               </div>
@@ -124,19 +124,19 @@ export default toNative(NodeDetail)
             <div>
               <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">角色</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg">
-                <span :class="nodeData.role === 'manager' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ nodeData.role }}</span>
+                <span :class="nodeData.role === 'manager' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ nodeData.role }}</span>
               </div>
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">状态</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg">
-                <span :class="nodeStateClass(nodeData.state)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ nodeData.state }}</span>
+                <span :class="nodeStateClass(nodeData.state)" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ nodeData.state }}</span>
               </div>
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">可用性</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg">
-                <span :class="availabilityClass(nodeData.availability)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ nodeData.availability }}</span>
+                <span :class="availabilityClass(nodeData.availability)" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ nodeData.availability }}</span>
               </div>
             </div>
             <div>

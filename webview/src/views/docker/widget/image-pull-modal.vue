@@ -148,7 +148,7 @@ export default toNative(ImagePullModal)
                 <span class="text-sm font-medium text-slate-800">{{ item.name }}</span>
               </div>
               <div class="flex items-center gap-2">
-                <span v-if="item.isOfficial" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">官方</span>
+                <span v-if="item.isOfficial" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium bg-blue-100 text-blue-700">官方</span>
                 <span class="text-xs text-slate-400"><i class="fas fa-star text-amber-400 mr-0.5"></i>{{ item.starCount }}</span>
               </div>
             </div>

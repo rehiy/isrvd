@@ -150,7 +150,7 @@ export default toNative(Tasks)
                 </td>
                 <td class="px-4 py-3 text-sm text-slate-600">{{ t.slot || '-' }}</td>
                 <td class="px-4 py-3">
-                  <span :class="taskStateClass(t.state)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ t.state }}</span>
+                  <span :class="taskStateClass(t.state)" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ t.state }}</span>
                 </td>
                 <td class="px-4 py-3">
                   <button v-if="t.nodeID" @click="goNodeDetail(t.nodeID)" class="font-mono text-xs text-blue-600 hover:text-blue-700 hover:underline">
@@ -179,7 +179,7 @@ export default toNative(Tasks)
               <div class="min-w-0">
                 <code class="font-mono text-xs text-slate-500">{{ t.id.slice(0, 12) }}</code>
                 <div class="flex items-center gap-1.5 mt-0.5">
-                  <span :class="taskStateClass(t.state)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ t.state }}</span>
+                  <span :class="taskStateClass(t.state)" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ t.state }}</span>
                   <span class="text-xs text-slate-400">Slot: {{ t.slot || '-' }}</span>
                 </div>
               </div>

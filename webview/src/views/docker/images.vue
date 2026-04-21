@@ -184,7 +184,7 @@ export default toNative(Images)
                     <span class="font-medium text-slate-800">{{ img.repoTags[0] || '<none>' }}</span>
                   </div>
                   <div v-if="img.repoTags.length > 1" class="ml-10 flex flex-wrap gap-1">
-                    <span v-for="(tag, idx) in img.repoTags.slice(1)" :key="idx" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600">
+                    <span v-for="(tag, idx) in img.repoTags.slice(1)" :key="idx" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-600">
                       {{ tag }}
                     </span>
                   </div>
@@ -246,7 +246,7 @@ export default toNative(Images)
           
           <!-- 其他标签 -->
           <div v-if="img.repoTags.length > 1" class="flex flex-wrap gap-1 mb-3">
-            <span v-for="(tag, idx) in img.repoTags.slice(1)" :key="idx" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600">
+            <span v-for="(tag, idx) in img.repoTags.slice(1)" :key="idx" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-600">
               {{ tag }}
             </span>
           </div>

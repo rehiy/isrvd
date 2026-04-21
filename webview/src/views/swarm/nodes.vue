@@ -189,20 +189,20 @@ export default toNative(Nodes)
                     </div>
                     <div>
                       <span class="font-medium text-slate-800">{{ n.hostname }}</span>
-                      <span v-if="n.leader" class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
+                      <span v-if="n.leader" class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium bg-indigo-100 text-indigo-700">
                         <i class="fas fa-crown mr-1 text-[10px]"></i>Leader
                       </span>
                     </div>
                   </div>
                 </td>
                 <td class="px-4 py-3">
-                  <span :class="n.role === 'manager' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.role }}</span>
+                  <span :class="n.role === 'manager' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ n.role }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <span :class="nodeStateClass(n.state)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.state }}</span>
+                  <span :class="nodeStateClass(n.state)" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ n.state }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <span :class="availabilityClass(n.availability)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.availability }}</span>
+                  <span :class="availabilityClass(n.availability)" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ n.availability }}</span>
                 </td>
                 <td class="px-4 py-3 font-mono text-xs text-slate-500">{{ n.addr || '-' }}</td>
                 <td class="px-4 py-3 text-xs text-slate-500">{{ n.engineVersion || '-' }}</td>
@@ -236,7 +236,7 @@ export default toNative(Nodes)
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
                     <span class="font-medium text-slate-800 text-sm truncate">{{ n.hostname }}</span>
-                    <span v-if="n.leader" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
+                    <span v-if="n.leader" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium bg-indigo-100 text-indigo-700">
                       <i class="fas fa-crown mr-1 text-[10px]"></i>Leader
                     </span>
                   </div>
@@ -248,13 +248,13 @@ export default toNative(Nodes)
             <!-- 中间：角色、状态、可用性信息 -->
             <div class="flex items-center gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0">角色</span>
-              <span :class="n.role === 'manager' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.role }}</span>
+              <span :class="n.role === 'manager' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ n.role }}</span>
               <span class="text-xs text-slate-300">|</span>
               <span class="text-xs text-slate-400 flex-shrink-0">状态</span>
-              <span :class="nodeStateClass(n.state)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.state }}</span>
+              <span :class="nodeStateClass(n.state)" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ n.state }}</span>
               <span class="text-xs text-slate-300">|</span>
               <span class="text-xs text-slate-400 flex-shrink-0">可用性</span>
-              <span :class="availabilityClass(n.availability)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.availability }}</span>
+              <span :class="availabilityClass(n.availability)" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ n.availability }}</span>
             </div>
             <div class="flex items-center gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0">引擎</span>

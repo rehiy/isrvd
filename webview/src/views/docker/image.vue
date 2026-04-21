@@ -62,9 +62,6 @@ export default toNative(ImageDetail)
             <button @click="loadDetail()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button @click="$router.back()" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-              <i class="fas fa-arrow-left"></i>返回
-            </button>
           </div>
         </div>
         <!-- 移动端 -->
@@ -82,9 +79,6 @@ export default toNative(ImageDetail)
             <button @click="loadDetail()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button @click="$router.back()" class="w-9 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-white transition-colors" title="返回">
-              <i class="fas fa-arrow-left text-sm"></i>
-            </button>
           </div>
         </div>
       </div>
@@ -96,7 +90,7 @@ export default toNative(ImageDetail)
       </div>
 
       <!-- Detail Content -->
-      <div v-else-if="inspectData" class="p-6 space-y-6 text-sm">
+      <div v-else-if="inspectData" class="p-4 md:p-6 space-y-6 text-sm">
         <!-- 基本信息 -->
         <div>
           <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">基本信息</h2>
@@ -216,10 +210,10 @@ export default toNative(ImageDetail)
                   <span class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold"
                     :class="layer.empty ? 'bg-slate-100 text-slate-400' : 'bg-blue-50 text-blue-600'"
                   >{{ inspectData.layerDetails.length - idx }}</span>
-                  <span v-if="!layer.empty" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700">
+            <span v-if="!layer.empty" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700">
                     {{ formatFileSize(layer.size) }}
                   </span>
-                  <span v-else class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-400">
+                  <span v-else class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-400">
                     空层
                   </span>
                 </div>

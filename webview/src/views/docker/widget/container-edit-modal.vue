@@ -67,7 +67,6 @@ export default toNative(ContainerEditModal)
     <ComposeEditor
       v-model="composeContent"
       warning="更新配置后将会重建容器，旧容器将被停止并删除"
-      height="400px"
     />
   </BaseModal>
 </template>
