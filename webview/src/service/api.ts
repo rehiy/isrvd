@@ -114,7 +114,7 @@ class ApiService {
     }
 
     containerAction(id: string, action: string) {
-        return http.post<void>('/api/docker/container/action', { id, action })
+        return http.post<void>(`/api/docker/container/${id}/action`, { action })
     }
 
     createContainer(data: ContainerCreateRequest) {
@@ -122,7 +122,7 @@ class ApiService {
     }
 
     containerLogs(id: string, tail = '100') {
-        return http.post<{ logs: string[] }>('/api/docker/container/logs', { id, tail })
+        return http.get<{ logs: string[] }>(`/api/docker/container/${id}/logs`, { params: { tail } })
     }
 
     containerStats(id: string) {
@@ -143,7 +143,7 @@ class ApiService {
     }
 
     imageAction(id: string, action: string) {
-        return http.post<void>('/api/docker/image/action', { id, action })
+        return http.post<void>(`/api/docker/image/${id}/action`, { action })
     }
 
     pullImage(image: string, tag = '') {
@@ -172,7 +172,7 @@ class ApiService {
     }
 
     networkAction(id: string, action: string) {
-        return http.post<void>('/api/docker/network/action', { id, action })
+        return http.post<void>(`/api/docker/network/${id}/action`, { action })
     }
 
     createNetwork(data: NetworkCreateRequest) {
@@ -189,7 +189,7 @@ class ApiService {
     }
 
     volumeAction(name: string, action: string) {
-        return http.post<void>('/api/docker/volume/action', { name, action })
+        return http.post<void>(`/api/docker/volume/${encodeURIComponent(name)}/action`, { action })
     }
 
     createVolume(data: VolumeCreateRequest) {
@@ -240,7 +240,7 @@ class ApiService {
     }
 
     swarmNodeAction(id: string, action: string) {
-        return http.post<void>('/api/swarm/node/action', { id, action })
+        return http.post<void>(`/api/swarm/node/${id}/action`, { action })
     }
 
     swarmListServices() {
@@ -252,7 +252,7 @@ class ApiService {
     }
 
     swarmServiceAction(id: string, action: string, replicas?: number) {
-        return http.post<void>('/api/swarm/service/action', { id, action, replicas })
+        return http.post<void>(`/api/swarm/service/${id}/action`, { action, replicas })
     }
 
     swarmListTasks(serviceID = '') {
@@ -264,11 +264,11 @@ class ApiService {
     }
 
     swarmRedeployService(id: string) {
-        return http.post<void>('/api/swarm/service/redeploy', { id })
+        return http.post<void>(`/api/swarm/service/${id}/redeploy`)
     }
 
-    swarmGetServiceCompose(id: string) {
-        return http.get<{ content: string }>(`/api/compose/swarm/${id}`)
+    swarmGetServiceCompose(name: string) {
+        return http.get<{ content: string }>(`/api/compose/swarm/${name}`)
     }
 
     swarmServiceLogs(id: string, tail = '100') {
@@ -371,11 +371,11 @@ class ApiService {
     // ==================== Compose 部署 ====================
 
     composeDeployDocker(data: { content: string; projectName: string; initURL?: string }) {
-        return http.post<ComposeDeployResult>('/api/compose/docker', data)
+        return http.post<ComposeDeployResult>('/api/compose/docker/deploy', data)
     }
 
     composeDeploySwarm(data: { content: string; projectName: string }) {
-        return http.post<ComposeDeployResult>('/api/compose/swarm', data)
+        return http.post<ComposeDeployResult>('/api/compose/swarm/deploy', data)
     }
 
     composeRedeployDocker(name: string, data: { content: string }) {

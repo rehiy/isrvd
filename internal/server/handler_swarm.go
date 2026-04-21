@@ -39,14 +39,13 @@ func (app *App) swarmInspectNode(c *gin.Context) {
 
 func (app *App) swarmNodeAction(c *gin.Context) {
 	var req struct {
-		ID     string `json:"id"`
 		Action string `json:"action"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.swarmSvc.NodeAction(c.Request.Context(), req.ID, req.Action); err != nil {
+	if err := app.swarmSvc.NodeAction(c.Request.Context(), c.Param("id"), req.Action); err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -88,7 +87,6 @@ func (app *App) swarmCreateService(c *gin.Context) {
 
 func (app *App) swarmServiceAction(c *gin.Context) {
 	var req struct {
-		ID       string  `json:"id"`
 		Action   string  `json:"action"`
 		Replicas *uint64 `json:"replicas,omitempty"`
 	}
@@ -96,7 +94,7 @@ func (app *App) swarmServiceAction(c *gin.Context) {
 		helper.RespondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.swarmSvc.ServiceAction(c.Request.Context(), req.ID, req.Action, req.Replicas); err != nil {
+	if err := app.swarmSvc.ServiceAction(c.Request.Context(), c.Param("id"), req.Action, req.Replicas); err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -104,14 +102,7 @@ func (app *App) swarmServiceAction(c *gin.Context) {
 }
 
 func (app *App) swarmForceUpdateService(c *gin.Context) {
-	var req struct {
-		ID string `json:"id"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, err.Error())
-		return
-	}
-	if err := app.swarmSvc.ForceUpdateService(c.Request.Context(), req.ID); err != nil {
+	if err := app.swarmSvc.ForceUpdateService(c.Request.Context(), c.Param("id")); err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}

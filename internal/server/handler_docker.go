@@ -57,7 +57,9 @@ func (app *App) dockerContainerStats(c *gin.Context) {
 }
 
 func (app *App) dockerContainerAction(c *gin.Context) {
-	var req pkgdocker.ContainerActionRequest
+	req := pkgdocker.ContainerActionRequest{
+		ID: c.Param("id"),
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -70,9 +72,13 @@ func (app *App) dockerContainerAction(c *gin.Context) {
 }
 
 func (app *App) dockerContainerLogs(c *gin.Context) {
-	var req pkgdocker.ContainerLogsRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, err.Error())
+	req := pkgdocker.ContainerLogsRequest{
+		ID:     c.Param("id"),
+		Tail:   c.DefaultQuery("tail", "100"),
+		Follow: c.DefaultQuery("follow", "false") == "true",
+	}
+	if req.ID == "" {
+		helper.RespondError(c, http.StatusBadRequest, "container id is required")
 		return
 	}
 	result, err := app.dockerSvc.ContainerLogs(c.Request.Context(), req)
@@ -113,7 +119,9 @@ func (app *App) dockerListImages(c *gin.Context) {
 }
 
 func (app *App) dockerImageAction(c *gin.Context) {
-	var req pkgdocker.ImageActionRequest
+	req := pkgdocker.ImageActionRequest{
+		ID: c.Param("id"),
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -198,7 +206,9 @@ func (app *App) dockerListNetworks(c *gin.Context) {
 }
 
 func (app *App) dockerNetworkAction(c *gin.Context) {
-	var req pkgdocker.NetworkActionRequest
+	req := pkgdocker.NetworkActionRequest{
+		ID: c.Param("id"),
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -246,7 +256,9 @@ func (app *App) dockerListVolumes(c *gin.Context) {
 }
 
 func (app *App) dockerVolumeAction(c *gin.Context) {
-	var req pkgdocker.VolumeActionRequest
+	req := pkgdocker.VolumeActionRequest{
+		Name: c.Param("name"),
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, err.Error())
 		return

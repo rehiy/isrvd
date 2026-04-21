@@ -30,7 +30,7 @@ class ServiceEditModal extends Vue {
         this.modalLoading = true
         this.isOpen = true
         try {
-            const res = await api.swarmGetServiceCompose(svc.id)
+            const res = await api.swarmGetServiceCompose(svc.name)
             this.composeContent = res.payload?.content || ''
         } catch (e) {
             this.isOpen = false

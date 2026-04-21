@@ -20,8 +20,8 @@ func (app *App) composeGetDockerContent(c *gin.Context) {
 }
 
 func (app *App) composeGetSwarmContent(c *gin.Context) {
-	id := c.Param("id")
-	content, err := app.composeSvc.GetContent(c.Request.Context(), svcCompose.TargetSwarm, id)
+	name := c.Param("name")
+	content, err := app.composeSvc.GetContent(c.Request.Context(), svcCompose.TargetSwarm, name)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
