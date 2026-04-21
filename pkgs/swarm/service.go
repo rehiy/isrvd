@@ -63,15 +63,17 @@ func (m *SwarmManager) ListServices(ctx context.Context) ([]SwarmService, error)
 			svc.Replicas = s.Spec.Mode.Replicated.Replicas
 		}
 
-		var ports []interface{}
+		var ports []SwarmServicePort
 		for _, p := range s.Endpoint.Ports {
-			if p.PublishedPort > 0 {
-				ports = append(ports, map[string]interface{}{
-					"published": p.PublishedPort,
-					"target":    p.TargetPort,
-					"protocol":  string(p.Protocol),
-				})
+			if p.PublishedPort == 0 && p.TargetPort == 0 {
+				continue
 			}
+			ports = append(ports, SwarmServicePort{
+				Protocol:      string(p.Protocol),
+				TargetPort:    p.TargetPort,
+				PublishedPort: p.PublishedPort,
+				PublishMode:   string(p.PublishMode),
+			})
 		}
 		svc.Ports = ports
 
