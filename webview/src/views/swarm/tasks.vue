@@ -3,7 +3,7 @@ import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import { formatTime } from '@/helper/utils'
 import api from '@/service/api'
-import type { SwarmTask, SwarmService } from '@/service/types'
+import type { SwarmTask, SwarmServiceInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -13,7 +13,7 @@ class Tasks extends Vue {
 
     // ─── 数据属性 ───
     tasks: SwarmTask[] = []
-    services: SwarmService[] = []
+    services: SwarmServiceInfo[] = []
     tasksLoading = false
     selectedServiceId = ''
     formatTime = formatTime

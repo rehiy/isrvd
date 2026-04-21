@@ -1,37 +1,23 @@
 ###############################################
-# 阶段 1: 编译 isrvd（Go 后端 + Vue 前端）
+# 阶段 1: 下载 isrvd 和 etcd
 ###############################################
-FROM golang:1.25-bookworm AS builder-isrvd
+FROM alpine:3 AS builder-etcd
 
-# 安装 Node.js 用于前端构建
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get install -y nodejs
-
-WORKDIR /src
-COPY . .
-
-# 构建前端
-RUN cd webview && npm ci && npm run build
-
-# 构建后端（静态资源已通过 embed 嵌入）
-RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /src/dist/isrvd cmd/server/main.go
-
-###############################################
-# 阶段 2: 下载 etcd
-###############################################
-FROM debian:bookworm-slim AS builder-etcd
-
+ARG ISRVD_VERSION
 ARG ETCD_VERSION=v3.5.29
 ARG TARGETARCH
 
-RUN apt-get update && apt-get install -y curl tar \
+RUN apk add --no-cache curl tar \
+    && curl -fsSL "https://github.com/rehiy/isrvd/releases/download/${ISRVD_VERSION}/isrvd-linux-${TARGETARCH}.tar.gz" \
+       | tar xz -C /usr/local/bin/ isrvd-linux-${TARGETARCH} \
+    && mv /usr/local/bin/isrvd-linux-${TARGETARCH} /usr/local/bin/isrvd \
     && curl -fsSL "https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-${TARGETARCH}.tar.gz" \
        | tar xz --strip-components=1 -C /usr/local/bin/ \
          etcd-${ETCD_VERSION}-linux-${TARGETARCH}/etcd \
          etcd-${ETCD_VERSION}-linux-${TARGETARCH}/etcdctl
 
 ###############################################
-# 阶段 3: 最终镜像（基于 Apisix）
+# 阶段 2: 最终镜像（基于 Apisix）
 ###############################################
 FROM apache/apisix:3.16.0-debian
 
@@ -47,7 +33,7 @@ COPY --from=builder-etcd /usr/local/bin/etcd /usr/local/bin/etcd
 COPY --from=builder-etcd /usr/local/bin/etcdctl /usr/local/bin/etcdctl
 
 # 拷贝 isrvd
-COPY --from=builder-isrvd /src/dist/isrvd /usr/local/bin/isrvd
+COPY --from=builder-etcd /usr/local/bin/isrvd /usr/local/bin/isrvd
 
 # 拷贝默认配置模板（entrypoint 启动时自动填充到 /data/conf/）
 COPY build/docker/apisix.yaml /etc/defaults/apisix.yaml

@@ -1,0 +1,33 @@
+server:
+  debug: false
+  listenAddr: ":8080"
+  jwtSecret: __JWT_SECRET__
+  rootDirectory: /data/
+
+agent:
+  model: your-model
+  baseUrl: https://ai.rehiy.wang/v1
+  apiKey: your-api-key
+
+apisix:
+  # adminUrl: http://127.0.0.1:9180/apisix/admin
+  # adminKey: __APISIX_ADMIN_KEY__
+
+docker:
+  # host: unix:///var/run/docker.sock
+  # containerRoot: container/
+  # registries:
+     # - name: Company Hub
+     #   description: 公司内部镜像仓库
+     #   url: hub.example.com
+     #   username: debug
+     #   password: 123
+
+marketplace:
+  url: https://apps.rehi.org
+
+members:
+  - username: admin
+    password: __ISRVD_PASSWORD__
+    homeDirectory: .
+    allowTerminal: true

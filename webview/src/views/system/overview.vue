@@ -267,7 +267,7 @@ class SystemOverview extends Vue {
 
     initAllNetCharts() {
         if (!this.stat) return
-        this.physicalInterfaces(this.stat.system.SystemNetInterface).forEach(ni => {
+        this.physicalInterfaces(this.stat.system.NetInterface).forEach(ni => {
             if (!this.netHistory[ni.Name]) this.netHistory[ni.Name] = { labels: [], recv: [], sent: [] }
             this.initNetChart(ni.Name)
         })
@@ -399,7 +399,7 @@ class SystemOverview extends Vue {
                 )
                 // 初始化网络/磁盘快照，并推入速率为 0 的初始点，图表初始化时即有数据
                 const initLabel = this.timeLabel()
-                this.physicalInterfaces(payload.system.SystemNetInterface).forEach(ni => {
+                this.physicalInterfaces(payload.system.NetInterface).forEach(ni => {
                     this.lastNetSnapshot[ni.Name] = { recv: ni.BytesRecv, sent: ni.BytesSent }
                     this.netHistory[ni.Name] = { labels: [initLabel], recv: [0], sent: [0] }
                 })
@@ -425,7 +425,7 @@ class SystemOverview extends Vue {
             const res = await api.systemStat()
             const payload = res.payload as SystemStat | undefined
             if (!payload || !this.stat) return
-            this.stat.system.SystemNetInterface = payload.system.SystemNetInterface
+    this.stat.system.NetInterface = payload.system.NetInterface
             this.stat.system.CpuPercent = payload.system.CpuPercent
             this.stat.system.MemoryUsed = payload.system.MemoryUsed
             this.stat.system.MemoryTotal = payload.system.MemoryTotal
@@ -434,7 +434,7 @@ class SystemOverview extends Vue {
                 this.memPercent(payload.system.MemoryUsed, payload.system.MemoryTotal)
             )
             this.updateStatCharts()
-            this.updateNetHistory(this.physicalInterfaces(payload.system.SystemNetInterface), POLL_INTERVAL / 1000)
+            this.updateNetHistory(this.physicalInterfaces(payload.system.NetInterface), POLL_INTERVAL / 1000)
             if (payload.diskIO?.length) {
                 this.stat.diskIO = payload.diskIO
                 this.updateDiskIOHistory(payload.diskIO, POLL_INTERVAL / 1000)
@@ -618,7 +618,7 @@ export default toNative(SystemOverview)
       </div>
 
       <!-- 网络接口 -->
-      <div v-if="physicalInterfaces(stat.system.SystemNetInterface).length" class="rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <div v-if="physicalInterfaces(stat.system.NetInterface).length" class="rounded-xl border border-slate-200 bg-white overflow-hidden">
         <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
           <div class="w-6 h-6 rounded-md bg-cyan-500 flex items-center justify-center">
             <i class="fas fa-network-wired text-white text-xs"></i>
@@ -627,7 +627,7 @@ export default toNative(SystemOverview)
         </div>
         <div ref="netContainerRef" class="divide-y divide-slate-50">
           <div
-            v-for="ni in physicalInterfaces(stat.system.SystemNetInterface)"
+            v-for="ni in physicalInterfaces(stat.system.NetInterface)"
             :key="ni.Name"
             class="px-4 py-3"
           >

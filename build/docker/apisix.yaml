@@ -1,5 +1,5 @@
 #
-# Apisix 配置 - All-in-One 模式
+# Apisix 配置
 #
 apisix:
   node_listen: 9080

@@ -121,7 +121,6 @@ export interface SystemInfo {
     DiskUsed: number
     NetInterface: SystemNetInterface[]
     DiskPartition: SystemDiskPartition[]
-    [key: string]: unknown
 }
 
 export interface SystemStat {
