@@ -35,6 +35,7 @@ type GoRuntimeStat struct {
 type SystemStatResponse struct {
 	System *psutil.DetailStat `json:"system"`
 	DiskIO []*DiskIOStat      `json:"diskIO"`
+	GPU    []*GPUStat         `json:"gpu"`
 	Go     *GoRuntimeStat     `json:"go"`
 }
 
@@ -107,7 +108,7 @@ func (s *Service) Stat() *SystemStatResponse {
 		GoMemoryStat: psutil.GoMemory(),
 	}
 
-	return &SystemStatResponse{System: detail, DiskIO: diskIO, Go: goStat}
+	return &SystemStatResponse{System: detail, DiskIO: diskIO, GPU: GetGPUStats(), Go: goStat}
 }
 
 // Probe 探活

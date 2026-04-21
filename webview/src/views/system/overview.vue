@@ -5,7 +5,7 @@ import { markRaw, nextTick } from 'vue'
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { SystemStat, SystemNetInterface, SystemDiskIO } from '@/service/types'
+import type { SystemStat, SystemNetInterface, SystemDiskIO, SystemGPU } from '@/service/types'
 import { hexToRgba, POLL_INTERVAL } from '@/helper/utils'
 
 Chart.register(...registerables)
@@ -62,6 +62,10 @@ class SystemOverview extends Vue {
     private memHistory = markRaw({ labels: [] as string[], data: [] as number[] })
     private cpuChart: Chart<'line'> | null = null
     private memChart: Chart<'line'> | null = null
+    // GPU
+    @Ref readonly gpuContainerRef!: HTMLDivElement
+    private gpuHistories: Record<number, { labels: string[]; data: number[] }> = markRaw({})
+    private gpuCharts: Record<number, Chart<'line'>> = markRaw({})
 
     // ─── 计算属性 ───
     get cpuVal() {
@@ -369,6 +373,74 @@ class SystemOverview extends Vue {
         this.lastNetSnapshot = snapshot
     }
 
+    // ─── GPU 图表 ───
+    gpuVendorColor(vendor: string): { border: string; bg: string; iconBg: string } {
+        switch (vendor) {
+            case 'nvidia': return { border: 'rgba(118,185,0,0.6)', bg: 'rgba(118,185,0,0.08)', iconBg: 'bg-[#76b900]' }
+            case 'amd': return { border: 'rgba(237,28,36,0.6)', bg: 'rgba(237,28,36,0.08)', iconBg: 'bg-[#ed1c24]' }
+            case 'intel': return { border: 'rgba(0,104,181,0.6)', bg: 'rgba(0,104,181,0.08)', iconBg: 'bg-[#0068b5]' }
+            default: return { border: 'rgba(100,116,139,0.6)', bg: 'rgba(100,116,139,0.08)', iconBg: 'bg-slate-500' }
+        }
+    }
+
+    gpuTempColor(temp: number): string {
+        if (temp < 0) return 'text-slate-400'
+        if (temp >= 80) return 'text-red-500'
+        if (temp >= 60) return 'text-amber-500'
+        return 'text-emerald-500'
+    }
+
+    getGpuCanvas(index: number): HTMLCanvasElement | null {
+        return this.gpuContainerRef?.querySelector(`[data-gpu="${index}"]`) ?? null
+    }
+
+    initGpuChart(gpu: SystemGPU) {
+        const canvas = this.getGpuCanvas(gpu.index)
+        if (!canvas) return
+        this.gpuCharts[gpu.index]?.destroy()
+        const h = this.gpuHistories[gpu.index] || { labels: [], data: [] }
+        const color = this.gpuVendorColor(gpu.vendor)
+        this.gpuCharts[gpu.index] = markRaw(new Chart(canvas, {
+            type: 'line' as const,
+            data: { labels: [...h.labels], datasets: [{ data: [...h.data], borderColor: color.border, backgroundColor: color.bg, fill: true }] },
+            options: this.bgChartOptions()
+        }))
+    }
+
+    initAllGpuCharts() {
+        if (!this.stat?.gpu?.length) return
+        this.stat.gpu.forEach(gpu => {
+            if (!this.gpuHistories[gpu.index]) this.gpuHistories[gpu.index] = { labels: [], data: [] }
+            this.initGpuChart(gpu)
+        })
+    }
+
+    updateGpuChart(index: number) {
+        const chart = this.gpuCharts[index]
+        const h = this.gpuHistories[index]
+        if (!chart || !h) return
+        chart.data.labels = [...h.labels]
+        chart.data.datasets[0].data = [...h.data]
+        chart.update('none')
+    }
+
+    pushGpuPoints(gpus: SystemGPU[]) {
+        const label = this.timeLabel()
+        gpus.forEach(gpu => {
+            if (!this.gpuHistories[gpu.index]) this.gpuHistories[gpu.index] = { labels: [], data: [] }
+            const h = this.gpuHistories[gpu.index]
+            h.labels.push(label)
+            h.data.push(gpu.utilization)
+            if (h.labels.length > this.MAX_STAT_POINTS) { h.labels.shift(); h.data.shift() }
+            this.updateGpuChart(gpu.index)
+        })
+    }
+
+    destroyGpuCharts() {
+        Object.values(this.gpuCharts).forEach(c => c.destroy())
+        this.gpuCharts = {}
+    }
+
     clearHistory() {
         this.cpuHistory.labels.length = 0
         this.cpuHistory.data.length = 0
@@ -382,10 +454,12 @@ class SystemOverview extends Vue {
         this.destroyNetCharts()
         this.destroyStatCharts()
         this.destroyDiskCharts()
+        this.destroyGpuCharts()
         this.netHistory = markRaw({})
         this.lastNetSnapshot = markRaw({})
         this.diskIOHistory = markRaw({})
         this.lastDiskIOSnapshot = markRaw({})
+        this.gpuHistories = markRaw({})
         this.clearHistory()
         try {
             const res = await api.systemStat()
@@ -409,6 +483,11 @@ class SystemOverview extends Vue {
                         this.diskIOHistory[d.Name] = { labels: [initLabel], read: [0], write: [0] }
                     })
                 }
+                if (payload.gpu?.length) {
+                    payload.gpu.forEach(gpu => {
+                        this.gpuHistories[gpu.index] = { labels: [initLabel], data: [gpu.utilization] }
+                    })
+                }
             }
         } catch (e) {
             this.stat = null
@@ -418,6 +497,7 @@ class SystemOverview extends Vue {
         this.initAllNetCharts()
         this.initAllDiskCharts()
         this.initStatCharts()
+        this.initAllGpuCharts()
     }
 
     async pollNet() {
@@ -438,6 +518,10 @@ class SystemOverview extends Vue {
             if (payload.diskIO?.length) {
                 this.stat.diskIO = payload.diskIO
                 this.updateDiskIOHistory(payload.diskIO, POLL_INTERVAL / 1000)
+            }
+            if (payload.gpu?.length) {
+                this.stat.gpu = payload.gpu
+                this.pushGpuPoints(payload.gpu)
             }
         } catch (e) { /* ignore */ }
     }
@@ -466,6 +550,7 @@ class SystemOverview extends Vue {
         this.destroyNetCharts()
         this.destroyDiskCharts()
         this.destroyStatCharts()
+        this.destroyGpuCharts()
     }
 }
 
@@ -547,6 +632,65 @@ export default toNative(SystemOverview)
             <p class="text-xs text-slate-400 mt-3">
               {{ fmtBytes(stat.system.MemoryUsed) }} / {{ fmtBytes(stat.system.MemoryTotal) }}
             </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- GPU -->
+      <div v-if="stat.gpu?.length" ref="gpuContainerRef" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div
+          v-for="gpu in stat.gpu"
+          :key="gpu.index"
+          class="relative rounded-xl border border-slate-200 bg-white overflow-hidden"
+        >
+          <!-- 背景使用率折线图 -->
+          <div class="absolute inset-0 pointer-events-none">
+            <canvas :data-gpu="gpu.index" class="w-full h-full"></canvas>
+          </div>
+          <!-- 前景信息 -->
+          <div class="relative p-4">
+            <!-- 第一行：厂商图标 + 名称 + 使用率 -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 min-w-0">
+                <div :class="['w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0', gpuVendorColor(gpu.vendor).iconBg]">
+                  <i class="fas fa-bolt text-white text-xs"></i>
+                </div>
+                <span class="text-sm font-semibold text-slate-700 truncate">GPU 使用率</span>
+              </div>
+              <span :class="['text-2xl font-bold tabular-nums flex-shrink-0', textColor(gpu.utilization)]">
+                {{ gpu.utilization.toFixed(1) }}<span class="text-sm font-medium ml-0.5">%</span>
+              </span>
+            </div>
+            <!-- 第二行：GPU 名称 + 厂商 badge -->
+            <div class="flex items-center gap-2 mt-3">
+              <span class="text-xs text-slate-400 truncate">{{ gpu.name }}</span>
+              <span class="text-xs text-slate-300 font-mono uppercase flex-shrink-0">{{ gpu.vendor }}</span>
+            </div>
+            <!-- 第三行：显存条 -->
+            <div v-if="gpu.memoryTotal > 0" class="mt-3">
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="text-slate-400">显存</span>
+                <span class="text-slate-500 font-mono">{{ fmtBytes(gpu.memoryUsed) }} / {{ fmtBytes(gpu.memoryTotal) }}</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-1.5">
+                <div
+                  :class="['h-1.5 rounded-full transition-all', barColor(memPercent(gpu.memoryUsed, gpu.memoryTotal))]"
+                  :style="{ width: memPercent(gpu.memoryUsed, gpu.memoryTotal) + '%' }"
+                ></div>
+              </div>
+            </div>
+            <!-- 第四行：温度 + 功耗 + 风扇 -->
+            <div class="flex items-center gap-4 mt-3 text-xs">
+              <span v-if="gpu.temperature >= 0" :class="['flex items-center gap-1', gpuTempColor(gpu.temperature)]">
+                <i class="fas fa-temperature-half"></i>{{ gpu.temperature }}°C
+              </span>
+              <span v-if="gpu.powerUsage >= 0" class="flex items-center gap-1 text-slate-500">
+                <i class="fas fa-bolt"></i>{{ gpu.powerUsage.toFixed(1) }}W
+              </span>
+              <span v-if="gpu.fanSpeed >= 0" class="flex items-center gap-1 text-slate-500">
+                <i class="fas fa-fan"></i>{{ gpu.fanSpeed }}%
+              </span>
+            </div>
           </div>
         </div>
       </div>
