@@ -22,7 +22,7 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /src/dist/isrvd cmd/server/main.g
 FROM debian:bookworm-slim AS builder-etcd
 
 ARG ETCD_VERSION=v3.5.29
-ARG TARGETARCH=amd64
+ARG TARGETARCH
 
 RUN apt-get update && apt-get install -y curl tar \
     && curl -fsSL "https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-${TARGETARCH}.tar.gz" \
