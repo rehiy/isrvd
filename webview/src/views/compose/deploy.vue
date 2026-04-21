@@ -142,11 +142,11 @@ export default toNative(ComposeDeploy)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <button type="button" @click="openMarketplace()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-              <i class="fas fa-store"></i>从应用市场选择
-            </button>
             <button type="button" @click="resetForm()" :disabled="loading" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50">
               <i class="fas fa-rotate-left"></i>清空
+            </button>
+            <button type="button" @click="openMarketplace()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-store"></i>从应用市场选择
             </button>
           </div>
         </div>
@@ -219,10 +219,10 @@ export default toNative(ComposeDeploy)
             :disabled="loading"
           />
           <p class="mt-1 text-xs text-slate-400">
-            需满足 <code class="px-1 bg-slate-100 rounded">[a-zA-Z0-9][a-zA-Z0-9_.-]*</code>，同时作为 compose project 名<span v-if="target === 'docker'">；docker 部署会在 数据目录/实例名 下保存 compose 文件以便后续管理</span>
+            同时作为 compose project 名<span v-if="target === 'docker'">，将在同名目录下保存 compose.yaml</span>
           </p>
           <p v-if="projectName.trim() && !projectNameValid" class="mt-1 text-xs text-red-500">
-            实例名不符合命名规则
+            实例名不符合命名规则 <code class="px-1 bg-slate-100 rounded">[a-zA-Z0-9][a-zA-Z0-9_.-]*</code>
           </p>
         </div>
 
@@ -239,7 +239,7 @@ export default toNative(ComposeDeploy)
             class="input"
             :disabled="loading"
           />
-          <p class="mt-1 text-xs text-slate-400">部署前下载 zip 并解压到实例目录，随后写入 compose 并启动</p>
+          <p class="mt-1 text-xs text-slate-400">部署前下载 zip 并解压到实例目录，随后写入 compose.yaml 并启动</p>
         </div>
 
         <!-- Compose 内容 -->
@@ -251,7 +251,7 @@ export default toNative(ComposeDeploy)
             <Codemirror v-model="content" :style="{ height: '50vh' }" :extensions="extensions" :disabled="loading" />
           </div>
           <p class="mt-1 text-xs text-slate-400">
-            粘贴 docker-compose.yml 内容，按服务定义逐个创建{{ targetLabel }}
+            变量插值需在客户端完成，后端仅按原文落盘与加载
           </p>
         </div>
 
@@ -267,10 +267,6 @@ export default toNative(ComposeDeploy)
             <i v-else class="fas fa-rocket"></i>
             <span>{{ loading ? '部署中...' : '部署' }}</span>
           </button>
-          <div class="flex items-start gap-2 text-xs text-slate-500">
-            <i class="fas fa-circle-info mt-0.5"></i>
-            <span>变量插值需在客户端完成，后端仅按原文落盘与加载</span>
-          </div>
         </div>
       </div>
     </div>
