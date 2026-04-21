@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 )
 
 // isWildcardIP 判断 IP 是否为通配地址（0.0.0.0 或 ::）
@@ -24,7 +24,7 @@ func formatUnixTime(ts int64) string {
 //
 // 算法：单次遍历，用 seen map 记录已输出的 key；
 // IPv6 条目若已有对应 IPv4 条目则跳过，否则正常输出。
-func formatPorts(ports []types.Port) []string {
+func formatPorts(ports []container.Port) []string {
 	seen := make(map[string]bool, len(ports))
 	result := make([]string, 0, len(ports))
 

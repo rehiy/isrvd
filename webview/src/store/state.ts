@@ -40,9 +40,10 @@ interface ConfirmState {
 
 interface ServiceAvailability {
     agent: boolean
+    apisix: boolean
     docker: boolean
     swarm: boolean
-    apisix: boolean
+    compose: boolean
 }
 
 export interface AppState {
@@ -66,7 +67,13 @@ export interface AppActions {
     confirmLoading(loading: boolean): void
     closeConfirm(): void
     handleConfirm(): Promise<void>
-        updateServiceAvailability(availability: { agent?: { available?: boolean }; docker?: { available?: boolean }; swarm?: { available?: boolean }; apisix?: { available?: boolean } }): void
+    updateServiceAvailability(availability: {
+        agent?: { available?: boolean };
+        apisix?: { available?: boolean };
+        docker?: { available?: boolean };
+        swarm?: { available?: boolean };
+        compose?: { available?: boolean }
+    }): void
 }
 
 export const initProvider = () => {
@@ -101,9 +108,10 @@ export const initProvider = () => {
         // 服务可用性状态
         serviceAvailability: {
             agent: false,
+            apisix: false,
             docker: false,
             swarm: false,
-            apisix: false
+            compose: false
         }
     })
 
@@ -185,12 +193,13 @@ export const initProvider = () => {
         },
 
         // 服务可用性操作
-        updateServiceAvailability(availability: { agent?: { available?: boolean }; docker?: { available?: boolean }; swarm?: { available?: boolean }; apisix?: { available?: boolean } }) {
+        updateServiceAvailability(availability: { agent?: { available?: boolean }; docker?: { available?: boolean }; swarm?: { available?: boolean }; compose?: { available?: boolean }; apisix?: { available?: boolean } }) {
             state.serviceAvailability = {
                 agent: availability.agent?.available || false,
+                apisix: availability.apisix?.available || false,
                 docker: availability.docker?.available || false,
                 swarm: availability.swarm?.available || false,
-                apisix: availability.apisix?.available || false
+                compose: availability.compose?.available || false
             }
         }
     }

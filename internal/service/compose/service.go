@@ -15,18 +15,12 @@ var (
 	deployService *DeployService
 )
 
-// GetDeployService 返回全局部署服务实例
-func GetDeployService() *DeployService {
-	initServices()
-	return deployService
-}
-
-// initServices 懒初始化业务服务（只执行一次）
-func initServices() {
+// NewComposeService 创建 compose 服务（供 server 层调用）
+func NewComposeService() (*DeployService, error) {
 	once.Do(func() {
 		d := registry.DockerService
+		s := registry.SwarmService
 		c := registry.ComposeService
-		s := registry.SwarmManager
 
 		if d == nil {
 			logman.Warn("Compose service: docker service not available")
@@ -43,11 +37,7 @@ func initServices() {
 			logman.Warn("Compose service: compose pkg service not available, deploy disabled")
 		}
 	})
-}
 
-// NewComposeService 创建 compose 服务（供 server 层调用）
-func NewComposeService() (*DeployService, error) {
-	initServices()
 	if deployService == nil {
 		return nil, fmt.Errorf("Compose 部署服务未初始化")
 	}

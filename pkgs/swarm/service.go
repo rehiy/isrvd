@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
@@ -17,29 +16,56 @@ import (
 	"isrvd/pkgs/docker"
 )
 
-// SwarmService Swarm 服务信息
-type SwarmService struct {
-	ID           string      `json:"id"`
-	Name         string      `json:"name"`
-	Image        string      `json:"image"`
-	Mode         string      `json:"mode"`
-	Replicas     *uint64     `json:"replicas"`
-	RunningTasks int         `json:"runningTasks"`
-	Ports        interface{} `json:"ports"`
-	CreatedAt    string      `json:"createdAt"`
-	UpdatedAt    string      `json:"updatedAt"`
+// ServiceInfo 服务详情
+type ServiceInfo struct {
+	ServiceSpec
+	ID           string `json:"id"`
+	RunningTasks int    `json:"runningTasks"`
+	CreatedAt    string `json:"createdAt"`
+	UpdatedAt    string `json:"updatedAt"`
+}
+
+// ServiceSpec 服务可写配置（创建/更新共用）
+type ServiceSpec struct {
+	Name        string            `json:"name"`
+	Image       string            `json:"image"`
+	Mode        string            `json:"mode"`
+	Replicas    *uint64           `json:"replicas"`
+	Env         []string          `json:"env"`
+	Args        []string          `json:"args"`
+	Networks    []string          `json:"networks"`
+	Ports       []ServicePort     `json:"ports"`
+	Mounts      []ServiceMount    `json:"mounts"`
+	Labels      map[string]string `json:"labels"`
+	Constraints []string          `json:"constraints"`
+}
+
+// ServicePort 服务端口信息
+type ServicePort struct {
+	Protocol      string `json:"protocol"`
+	TargetPort    uint32 `json:"targetPort"`
+	PublishedPort uint32 `json:"publishedPort"`
+	PublishMode   string `json:"publishMode"`
+}
+
+// ServiceMount 服务挂载信息
+type ServiceMount struct {
+	Type     string `json:"type"`
+	Source   string `json:"source"`
+	Target   string `json:"target"`
+	ReadOnly bool   `json:"readOnly"`
 }
 
 // ListServices 获取服务列表
-func (m *SwarmManager) ListServices(ctx context.Context) ([]SwarmService, error) {
-	services, err := m.client.ServiceList(ctx, types.ServiceListOptions{})
+func (m *SwarmService) ListServices(ctx context.Context) ([]ServiceInfo, error) {
+	services, err := m.client.ServiceList(ctx, swarm.ServiceListOptions{})
 	if err != nil {
 		logman.Error("ServiceList failed", "error", err)
 		return nil, err
 	}
 
 	// 统计各服务运行中的任务数
-	tasks, _ := m.client.TaskList(ctx, types.TaskListOptions{})
+	tasks, _ := m.client.TaskList(ctx, swarm.TaskListOptions{})
 	runningMap := map[string]int{}
 	for _, t := range tasks {
 		if t.Status.State == swarm.TaskStateRunning {
@@ -47,13 +73,15 @@ func (m *SwarmManager) ListServices(ctx context.Context) ([]SwarmService, error)
 		}
 	}
 
-	var result []SwarmService
+	var result []ServiceInfo
 	for _, s := range services {
-		svc := SwarmService{
+		svc := ServiceInfo{
+			ServiceSpec: ServiceSpec{
+				Name:  s.Spec.Name,
+				Image: s.Spec.TaskTemplate.ContainerSpec.Image,
+				Mode:  "replicated",
+			},
 			ID:           s.ID,
-			Name:         s.Spec.Name,
-			Image:        s.Spec.TaskTemplate.ContainerSpec.Image,
-			Mode:         "replicated",
 			RunningTasks: runningMap[s.ID],
 			CreatedAt:    s.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:    s.UpdatedAt.Format(time.RFC3339),
@@ -64,12 +92,12 @@ func (m *SwarmManager) ListServices(ctx context.Context) ([]SwarmService, error)
 			svc.Replicas = s.Spec.Mode.Replicated.Replicas
 		}
 
-		var ports []SwarmServicePort
+		var ports []ServicePort
 		for _, p := range s.Endpoint.Ports {
 			if p.PublishedPort == 0 && p.TargetPort == 0 {
 				continue
 			}
-			ports = append(ports, SwarmServicePort{
+			ports = append(ports, ServicePort{
 				Protocol:      string(p.Protocol),
 				TargetPort:    p.TargetPort,
 				PublishedPort: p.PublishedPort,
@@ -85,7 +113,7 @@ func (m *SwarmManager) ListServices(ctx context.Context) ([]SwarmService, error)
 }
 
 // ServiceAction 服务操作（scale/remove）
-func (m *SwarmManager) ServiceAction(ctx context.Context, id, action string, replicas *uint64) error {
+func (m *SwarmService) ServiceAction(ctx context.Context, id, action string, replicas *uint64) error {
 	if action == "remove" {
 		if err := m.client.ServiceRemove(ctx, id); err != nil {
 			return err
@@ -94,7 +122,7 @@ func (m *SwarmManager) ServiceAction(ctx context.Context, id, action string, rep
 	}
 
 	if action == "scale" && replicas != nil {
-		svc, _, err := m.client.ServiceInspectWithRaw(ctx, id, types.ServiceInspectOptions{InsertDefaults: true})
+		svc, _, err := m.client.ServiceInspectWithRaw(ctx, id, swarm.ServiceInspectOptions{InsertDefaults: true})
 		if err != nil {
 			return err
 		}
@@ -102,7 +130,7 @@ func (m *SwarmManager) ServiceAction(ctx context.Context, id, action string, rep
 			return fmt.Errorf("仅 replicated 模式服务支持 scale")
 		}
 		svc.Spec.Mode.Replicated.Replicas = replicas
-		if _, err := m.client.ServiceUpdate(ctx, id, svc.Version, svc.Spec, types.ServiceUpdateOptions{}); err != nil {
+		if _, err := m.client.ServiceUpdate(ctx, id, svc.Version, svc.Spec, swarm.ServiceUpdateOptions{}); err != nil {
 			return err
 		}
 		return nil
@@ -111,35 +139,8 @@ func (m *SwarmManager) ServiceAction(ctx context.Context, id, action string, rep
 	return fmt.Errorf("不支持的操作: %s", action)
 }
 
-// SwarmPortConfig Swarm 端口配置
-type SwarmPortConfig struct {
-	Published int    `json:"published"`
-	Target    int    `json:"target"`
-	Protocol  string `json:"protocol"`
-}
-
-// SwarmMount Swarm 挂载配置
-type SwarmMount struct {
-	Type   string `json:"type"`
-	Source string `json:"source"`
-	Target string `json:"target"`
-}
-
-// SwarmCreateServiceRequest Swarm 创建服务请求
-type SwarmCreateServiceRequest struct {
-	Name     string            `json:"name" binding:"required"`
-	Image    string            `json:"image" binding:"required"`
-	Mode     string            `json:"mode"`
-	Replicas int               `json:"replicas"`
-	Env      []string          `json:"env"`
-	Args     []string          `json:"args"`
-	Networks []string          `json:"networks"`
-	Ports    []SwarmPortConfig `json:"ports"`
-	Mounts   []SwarmMount      `json:"mounts"`
-}
-
 // CreateService 创建服务
-func (m *SwarmManager) CreateService(ctx context.Context, req SwarmCreateServiceRequest) (string, error) {
+func (m *SwarmService) CreateService(ctx context.Context, req ServiceSpec) (string, error) {
 	spec := swarm.ServiceSpec{
 		Annotations: swarm.Annotations{Name: req.Name},
 		TaskTemplate: swarm.TaskSpec{
@@ -156,9 +157,9 @@ func (m *SwarmManager) CreateService(ctx context.Context, req SwarmCreateService
 	if req.Mode == "global" {
 		spec.Mode = swarm.ServiceMode{Global: &swarm.GlobalService{}}
 	} else {
-		replicas := uint64(req.Replicas)
-		if replicas == 0 {
-			replicas = 1
+		replicas := uint64(1)
+		if req.Replicas != nil && *req.Replicas > 0 {
+			replicas = *req.Replicas
 		}
 		spec.Mode = swarm.ServiceMode{Replicated: &swarm.ReplicatedService{Replicas: &replicas}}
 	}
@@ -171,8 +172,8 @@ func (m *SwarmManager) CreateService(ctx context.Context, req SwarmCreateService
 		}
 		spec.EndpointSpec.Ports = append(spec.EndpointSpec.Ports, swarm.PortConfig{
 			Protocol:      proto,
-			PublishedPort: uint32(p.Published),
-			TargetPort:    uint32(p.Target),
+			PublishedPort: p.PublishedPort,
+			TargetPort:    p.TargetPort,
 		})
 	}
 
@@ -183,9 +184,10 @@ func (m *SwarmManager) CreateService(ctx context.Context, req SwarmCreateService
 			mountType = mount.TypeVolume
 		}
 		spec.TaskTemplate.ContainerSpec.Mounts = append(spec.TaskTemplate.ContainerSpec.Mounts, mount.Mount{
-			Type:   mountType,
-			Source: mt.Source,
-			Target: mt.Target,
+			Type:     mountType,
+			Source:   mt.Source,
+			Target:   mt.Target,
+			ReadOnly: mt.ReadOnly,
 		})
 	}
 
@@ -194,7 +196,19 @@ func (m *SwarmManager) CreateService(ctx context.Context, req SwarmCreateService
 		spec.Networks = append(spec.Networks, swarm.NetworkAttachmentConfig{Target: n})
 	}
 
-	resp, err := m.client.ServiceCreate(ctx, spec, types.ServiceCreateOptions{})
+	// 标签
+	if len(req.Labels) > 0 {
+		spec.Annotations.Labels = req.Labels
+	}
+
+	// 约束
+	if len(req.Constraints) > 0 {
+		spec.TaskTemplate.Placement = &swarm.Placement{
+			Constraints: req.Constraints,
+		}
+	}
+
+	resp, err := m.client.ServiceCreate(ctx, spec, swarm.ServiceCreateOptions{})
 	if err != nil {
 		logman.Error("ServiceCreate failed", "error", err)
 		return "", err
@@ -204,15 +218,15 @@ func (m *SwarmManager) CreateService(ctx context.Context, req SwarmCreateService
 }
 
 // ForceUpdateService 强制重新部署服务
-func (m *SwarmManager) ForceUpdateService(ctx context.Context, id string) error {
-	svc, _, err := m.client.ServiceInspectWithRaw(ctx, id, types.ServiceInspectOptions{InsertDefaults: true})
+func (m *SwarmService) ForceUpdateService(ctx context.Context, id string) error {
+	svc, _, err := m.client.ServiceInspectWithRaw(ctx, id, swarm.ServiceInspectOptions{InsertDefaults: true})
 	if err != nil {
 		return err
 	}
 
 	svc.Spec.TaskTemplate.ForceUpdate++
 
-	if _, err := m.client.ServiceUpdate(ctx, id, svc.Version, svc.Spec, types.ServiceUpdateOptions{}); err != nil {
+	if _, err := m.client.ServiceUpdate(ctx, id, svc.Version, svc.Spec, swarm.ServiceUpdateOptions{}); err != nil {
 		logman.Error("ServiceForceUpdate failed", "error", err)
 		return err
 	}
@@ -221,7 +235,7 @@ func (m *SwarmManager) ForceUpdateService(ctx context.Context, id string) error 
 }
 
 // GetServiceLogs 获取服务日志
-func (m *SwarmManager) GetServiceLogs(ctx context.Context, serviceID, tail string) ([]string, error) {
+func (m *SwarmService) GetServiceLogs(ctx context.Context, serviceID, tail string) ([]string, error) {
 	reader, err := m.client.ServiceLogs(ctx, serviceID, container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
@@ -242,53 +256,18 @@ func (m *SwarmManager) GetServiceLogs(ctx context.Context, serviceID, tail strin
 	return docker.ParseDockerLogs(raw), nil
 }
 
-// SwarmServicePort 服务端口信息
-type SwarmServicePort struct {
-	Protocol      string `json:"protocol"`
-	TargetPort    uint32 `json:"targetPort"`
-	PublishedPort uint32 `json:"publishedPort"`
-	PublishMode   string `json:"publishMode"`
-}
-
-// SwarmServiceMount 服务挂载信息
-type SwarmServiceMount struct {
-	Type     string `json:"type"`
-	Source   string `json:"source"`
-	Target   string `json:"target"`
-	ReadOnly bool   `json:"readOnly"`
-}
-
-// SwarmServiceInspect 服务详情
-type SwarmServiceInspect struct {
-	ID           string              `json:"id"`
-	Name         string              `json:"name"`
-	Image        string              `json:"image"`
-	Mode         string              `json:"mode"`
-	Replicas     *uint64             `json:"replicas"`
-	RunningTasks int                 `json:"runningTasks"`
-	Ports        []SwarmServicePort  `json:"ports"`
-	Env          []string            `json:"env"`
-	Args         []string            `json:"args"`
-	Networks     []string            `json:"networks"`
-	Mounts       []SwarmServiceMount `json:"mounts"`
-	Labels       map[string]string   `json:"labels"`
-	Constraints  []string            `json:"constraints"`
-	CreatedAt    string              `json:"createdAt"`
-	UpdatedAt    string              `json:"updatedAt"`
-}
-
 // InspectService 获取服务详情
-func (m *SwarmManager) InspectService(ctx context.Context, id string) (*SwarmServiceInspect, error) {
-	svc, _, err := m.client.ServiceInspectWithRaw(ctx, id, types.ServiceInspectOptions{InsertDefaults: true})
+func (m *SwarmService) InspectService(ctx context.Context, id string) (*ServiceInfo, error) {
+	svc, _, err := m.client.ServiceInspectWithRaw(ctx, id, swarm.ServiceInspectOptions{InsertDefaults: true})
 	if err != nil {
-		logman.Error("ServiceInspect failed", "id", id, "error", err)
+		logman.Error("InspectService failed", "id", id, "error", err)
 		return nil, err
 	}
 
 	// 统计运行中任务数
 	f := filters.NewArgs()
 	f.Add("service", svc.ID)
-	tasks, _ := m.client.TaskList(ctx, types.TaskListOptions{Filters: f})
+	tasks, _ := m.client.TaskList(ctx, swarm.TaskListOptions{Filters: f})
 	runningTasks := 0
 	for _, t := range tasks {
 		if t.Status.State == swarm.TaskStateRunning {
@@ -296,15 +275,17 @@ func (m *SwarmManager) InspectService(ctx context.Context, id string) (*SwarmSer
 		}
 	}
 
-	result := &SwarmServiceInspect{
+	result := &ServiceInfo{
+		ServiceSpec: ServiceSpec{
+			Name:   svc.Spec.Name,
+			Image:  svc.Spec.TaskTemplate.ContainerSpec.Image,
+			Mode:   "replicated",
+			Env:    svc.Spec.TaskTemplate.ContainerSpec.Env,
+			Args:   svc.Spec.TaskTemplate.ContainerSpec.Args,
+			Labels: svc.Spec.Labels,
+		},
 		ID:           svc.ID,
-		Name:         svc.Spec.Name,
-		Image:        svc.Spec.TaskTemplate.ContainerSpec.Image,
-		Mode:         "replicated",
 		RunningTasks: runningTasks,
-		Env:          svc.Spec.TaskTemplate.ContainerSpec.Env,
-		Args:         svc.Spec.TaskTemplate.ContainerSpec.Args,
-		Labels:       svc.Spec.Labels,
 		CreatedAt:    svc.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:    svc.UpdatedAt.Format(time.RFC3339),
 	}
@@ -317,7 +298,7 @@ func (m *SwarmManager) InspectService(ctx context.Context, id string) (*SwarmSer
 
 	// 端口
 	for _, p := range svc.Endpoint.Ports {
-		result.Ports = append(result.Ports, SwarmServicePort{
+		result.Ports = append(result.Ports, ServicePort{
 			Protocol:      string(p.Protocol),
 			TargetPort:    p.TargetPort,
 			PublishedPort: p.PublishedPort,
@@ -327,7 +308,7 @@ func (m *SwarmManager) InspectService(ctx context.Context, id string) (*SwarmSer
 
 	// 挂载
 	for _, mt := range svc.Spec.TaskTemplate.ContainerSpec.Mounts {
-		result.Mounts = append(result.Mounts, SwarmServiceMount{
+		result.Mounts = append(result.Mounts, ServiceMount{
 			Type:     string(mt.Type),
 			Source:   mt.Source,
 			Target:   mt.Target,

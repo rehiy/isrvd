@@ -99,12 +99,12 @@ func ServiceToCreateRequest(project *types.Project, svc types.ServiceConfig) (do
 	return req, nil
 }
 
-// ServiceToSwarmRequest 将 compose ServiceConfig 转为 swarm.SwarmCreateServiceRequest
+// ServiceToSwarmRequest 将 compose ServiceConfig 转为 swarm.CreateServiceRequest
 //
 // project 用于将 service.Networks 的 key 解析为顶层 networks.<key>.name 指定的真实 docker 网络名。
-func ServiceToSwarmRequest(project *types.Project, svc types.ServiceConfig) (swarm.SwarmCreateServiceRequest, error) {
+func ServiceToSwarmRequest(project *types.Project, svc types.ServiceConfig) (swarm.ServiceSpec, error) {
 	if svc.Image == "" {
-		return swarm.SwarmCreateServiceRequest{}, fmt.Errorf("service %q 缺少 image", svc.Name)
+		return swarm.ServiceSpec{}, fmt.Errorf("service %q 缺少 image", svc.Name)
 	}
 
 	name := svc.Name
@@ -112,23 +112,30 @@ func ServiceToSwarmRequest(project *types.Project, svc types.ServiceConfig) (swa
 		name = svc.ContainerName
 	}
 
-	req := swarm.SwarmCreateServiceRequest{
-		Name:     name,
-		Image:    svc.Image,
-		Env:      environmentToSlice(svc.Environment),
-		Args:     []string(svc.Command),
-		Mode:     "replicated",
-		Replicas: 1,
-	}
+	replicas := uint64(1)
+	mode := "replicated"
 
 	// 部署模式
 	if svc.Deploy != nil {
 		if svc.Deploy.Mode == "global" {
-			req.Mode = "global"
-			req.Replicas = 0
+			mode = "global"
+			replicas = 0
 		} else if svc.Deploy.Replicas != nil && *svc.Deploy.Replicas > 0 {
-			req.Replicas = *svc.Deploy.Replicas
+			replicas = uint64(*svc.Deploy.Replicas)
 		}
+	}
+
+	req := swarm.ServiceSpec{
+		Name:     name,
+		Image:    svc.Image,
+		Env:      environmentToSlice(svc.Environment),
+		Args:     []string(svc.Command),
+		Mode:     mode,
+		Replicas: &replicas,
+	}
+
+	if mode == "global" {
+		req.Replicas = nil
 	}
 
 	// 网络：解析为真实 docker 网络名
@@ -149,10 +156,10 @@ func ServiceToSwarmRequest(project *types.Project, svc types.ServiceConfig) (swa
 		if proto == "" {
 			proto = "tcp"
 		}
-		req.Ports = append(req.Ports, swarm.SwarmPortConfig{
-			Published: published,
-			Target:    int(p.Target),
-			Protocol:  proto,
+		req.Ports = append(req.Ports, swarm.ServicePort{
+			PublishedPort: uint32(published),
+			TargetPort:    p.Target,
+			Protocol:      proto,
 		})
 	}
 
@@ -169,10 +176,11 @@ func ServiceToSwarmRequest(project *types.Project, svc types.ServiceConfig) (swa
 				mountType = types.VolumeTypeVolume
 			}
 		}
-		req.Mounts = append(req.Mounts, swarm.SwarmMount{
-			Type:   mountType,
-			Source: v.Source,
-			Target: v.Target,
+		req.Mounts = append(req.Mounts, swarm.ServiceMount{
+			Type:     mountType,
+			Source:   v.Source,
+			Target:   v.Target,
+			ReadOnly: v.ReadOnly,
 		})
 	}
 

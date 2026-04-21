@@ -3,7 +3,7 @@ import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import { formatTime } from '@/helper/utils'
 import api from '@/service/api'
-import type { SwarmServiceInspect } from '@/service/types'
+import type { ServiceInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -12,7 +12,7 @@ class ServiceInfo extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
-    serviceData: SwarmServiceInspect | null = null
+  serviceData: ServiceInfo | null = null
     loading = false
     formatTime = formatTime
 

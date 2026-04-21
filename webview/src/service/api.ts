@@ -7,9 +7,9 @@ import type {
     NetworkInfo, NetworkInspectResponse, NetworkCreateRequest,
     VolumeInfo, VolumeInspectResponse, VolumeCreateRequest,
     RegistryInfo, RegistryUpsertRequest,
-    SwarmInfo, SwarmNode, SwarmNodeInspect,
-    SwarmService, SwarmServiceInspect, SwarmTask,
-    SwarmCreateServiceRequest,
+    SwarmInfo, NodeDTO, NodeInspect,
+    SwarmServiceInfo, ServiceInfo, SwarmTask,
+    CreateServiceRequest,
     ApisixRoute, ApisixConsumer, ApisixCreateConsumerRequest, ApisixUpdateConsumerRequest,
     ApisixPluginConfig, ApisixUpstream,
     ServiceProbeResponse, DockerInfo,
@@ -228,7 +228,7 @@ class ApiService {
     }
 
     swarmListNodes() {
-        return http.get<SwarmNode[]>('/api/swarm/nodes')
+        return http.get<NodeDTO[]>('/api/swarm/nodes')
     }
 
     swarmGetJoinTokens() {
@@ -236,19 +236,19 @@ class ApiService {
     }
 
     swarmInspectNode(id: string) {
-        return http.get<SwarmNodeInspect>(`/api/swarm/node/${id}`)
+        return http.get<NodeInspect>(`/api/swarm/node/${id}`)
     }
 
-    swarmNodeAction(id: string, action: string) {
+    NodeDTOAction(id: string, action: string) {
         return http.post<void>(`/api/swarm/node/${id}/action`, { action })
     }
 
     swarmListServices() {
-        return http.get<SwarmService[]>('/api/swarm/services')
+        return http.get<SwarmServiceInfo[]>('/api/swarm/services')
     }
 
     swarmInspectService(id: string) {
-        return http.get<SwarmServiceInspect>(`/api/swarm/service/${id}`)
+  return http.get<ServiceInfo>(`/api/swarm/service/${id}`)
     }
 
     swarmServiceAction(id: string, action: string, replicas?: number) {
@@ -259,7 +259,7 @@ class ApiService {
         return http.get<SwarmTask[]>('/api/swarm/tasks', { params: serviceID ? { serviceID } : {} })
     }
 
-    swarmCreateService(data: SwarmCreateServiceRequest) {
+    swarmCreateService(data: CreateServiceRequest) {
         return http.post('/api/swarm/service/create', data)
     }
 

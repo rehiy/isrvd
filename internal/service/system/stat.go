@@ -40,10 +40,11 @@ type SystemStatResponse struct {
 
 // ProbeResponse 探活响应
 type ProbeResponse struct {
-	Agent  map[string]bool `json:"agent"`
-	Docker map[string]bool `json:"docker"`
-	Swarm  map[string]bool `json:"swarm"`
-	Apisix map[string]bool `json:"apisix"`
+	Agent   map[string]bool `json:"agent"`
+	Apisix  map[string]bool `json:"apisix"`
+	Docker  map[string]bool `json:"docker"`
+	Swarm   map[string]bool `json:"swarm"`
+	Compose map[string]bool `json:"compose"`
 }
 
 // UptimeResponse 服务启动时间响应
@@ -112,10 +113,11 @@ func (s *Service) Stat() *SystemStatResponse {
 // Probe 探活
 func (s *Service) Probe(ctx context.Context) *ProbeResponse {
 	return &ProbeResponse{
-		Agent:  map[string]bool{"available": config.Agent.BaseURL != "" && config.Agent.APIKey != ""},
-		Docker: map[string]bool{"available": registry.IsDockerAvailable(ctx)},
-		Swarm:  map[string]bool{"available": registry.IsSwarmAvailable(ctx)},
-		Apisix: map[string]bool{"available": registry.IsApisixAvailable()},
+		Agent:   map[string]bool{"available": config.Agent.BaseURL != "" && config.Agent.APIKey != ""},
+		Apisix:  map[string]bool{"available": registry.IsApisixAvailable()},
+		Docker:  map[string]bool{"available": registry.IsDockerAvailable(ctx)},
+		Swarm:   map[string]bool{"available": registry.IsSwarmAvailable(ctx)},
+		Compose: map[string]bool{"available": registry.IsComposeAvailable(ctx)},
 	}
 }
 

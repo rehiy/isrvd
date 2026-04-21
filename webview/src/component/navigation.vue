@@ -365,6 +365,7 @@ export default toNative(NavigationBar)
 
       <!-- Compose 部署 -->
       <router-link
+        v-if="state.serviceAvailability.compose"
         to="/compose/deploy"
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
         active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"

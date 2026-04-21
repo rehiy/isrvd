@@ -37,7 +37,7 @@ func (app *App) swarmInspectNode(c *gin.Context) {
 	helper.RespondSuccess(c, "Node inspected", result)
 }
 
-func (app *App) swarmNodeAction(c *gin.Context) {
+func (app *App) NodeDTOAction(c *gin.Context) {
 	var req struct {
 		Action string `json:"action"`
 	}
@@ -72,7 +72,7 @@ func (app *App) swarmInspectService(c *gin.Context) {
 }
 
 func (app *App) swarmCreateService(c *gin.Context) {
-	var req pkgswarm.SwarmCreateServiceRequest
+	var req pkgswarm.ServiceSpec
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, err.Error())
 		return

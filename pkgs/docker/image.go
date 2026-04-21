@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/build"
 	dockerimage "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/rehiy/pango/logman"
@@ -188,7 +188,7 @@ func (s *DockerService) BuildImage(ctx context.Context, dockerfile, tag string) 
 		tag = "custom:latest"
 	}
 
-	resp, err := s.client.ImageBuild(ctx, tarBuf, types.ImageBuildOptions{
+	resp, err := s.client.ImageBuild(ctx, tarBuf, build.ImageBuildOptions{
 		Tags: []string{tag},
 	})
 	if err != nil {

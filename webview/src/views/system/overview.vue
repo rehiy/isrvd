@@ -5,67 +5,10 @@ import { markRaw, nextTick } from 'vue'
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
+import type { SystemStat, NetInterface, DiskIO } from '@/service/types'
 import { hexToRgba, POLL_INTERVAL } from '@/helper/utils'
 
 Chart.register(...registerables)
-
-// ─── 本地类型定义 ───
-interface NetInterface {
-    Name: string
-    BytesRecv: number
-    BytesSent: number
-}
-
-interface DiskPartition {
-    Device: string
-    Mountpoint: string
-    Fstype: string
-    Used: number
-    Total: number
-}
-
-interface DiskIO {
-    Name: string
-    ReadBytes: number
-    WriteBytes: number
-}
-
-interface GoRuntimeStat {
-    version: string
-    numCPU: number
-    numGoroutine: number
-    HeapAlloc: number
-    HeapInuse: number
-    Sys: number
-    StackInuse: number
-    TotalAlloc: number
-    NumGC: number
-    LastGC: number
-}
-
-interface SystemInfo {
-    HostName: string
-    Platform: string
-    KernelArch: string
-    Uptime: number
-    CpuCore: number
-    CpuCoreLogic: number
-    CpuModel: string[]
-    CpuPercent: number[]
-    MemoryUsed: number
-    MemoryTotal: number
-    DiskTotal: number
-    DiskUsed: number
-    NetInterface: NetInterface[]
-    DiskPartition: DiskPartition[]
-    [key: string]: unknown
-}
-
-interface SystemStat {
-    system: SystemInfo
-    diskIO: DiskIO[]
-    go: GoRuntimeStat
-}
 
 interface TimeSeriesHistory {
     labels: string[]

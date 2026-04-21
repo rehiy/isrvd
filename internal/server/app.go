@@ -34,18 +34,18 @@ func NewApp() *App {
 	app.systemSvc = svcSystem.NewService()
 	app.settingsSvc = svcSystem.NewSettingsService()
 	app.memberSvc = svcSystem.NewMemberService()
-	app.swarmSvc = svcSwarm.NewService()
-
-	if dockerSvc, err := svcDocker.NewService(); err != nil {
-		logman.Warn("Docker service unavailable", "error", err)
-	} else {
-		app.dockerSvc = dockerSvc
-	}
 
 	if apisixSvc, err := svcApisix.NewService(); err != nil {
 		logman.Warn("Apisix service unavailable", "error", err)
 	} else {
 		app.apisixSvc = apisixSvc
+	}
+
+	if dockerSvc, err := svcDocker.NewService(); err != nil {
+		logman.Warn("Docker service unavailable", "error", err)
+	} else {
+		app.dockerSvc = dockerSvc
+		app.swarmSvc = svcSwarm.NewService()
 	}
 
 	if composeSvc, err := svcCompose.NewComposeService(); err != nil {
@@ -156,14 +156,14 @@ func (app *App) setupRouter() {
 				}
 			}
 
-			// Swarm
-			if app.swarmSvc != nil {
+			// Swarm（依赖 Docker）
+			if app.dockerSvc != nil && app.swarmSvc != nil {
 				sw := auth.Group("/swarm")
 				{
 					sw.GET("/info", app.swarmInfo)
 					sw.GET("/nodes", app.swarmListNodes)
 					sw.GET("/node/:id", app.swarmInspectNode)
-					sw.POST("/node/:id/action", app.swarmNodeAction)
+					sw.POST("/node/:id/action", app.NodeDTOAction)
 					sw.GET("/join-tokens", app.swarmGetJoinTokens)
 					sw.GET("/services", app.swarmListServices)
 					sw.GET("/service/:id", app.swarmInspectService)
@@ -175,8 +175,8 @@ func (app *App) setupRouter() {
 				}
 			}
 
-			// Compose
-			if app.composeSvc != nil {
+			// Compose（依赖 Docker）
+			if app.dockerSvc != nil && app.composeSvc != nil {
 				c := auth.Group("/compose")
 				{
 					c.GET("/docker/:name", app.composeGetDockerContent)

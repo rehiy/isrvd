@@ -2,17 +2,18 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { ComposeDeployTarget } from '@/service/types'
-import { APP_ACTIONS_KEY } from '@/store/state'
-import type { AppActions } from '@/store/state'
+import type { ComposeDeployTarget, MarketplacePick } from '@/service/types'
+import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
+import type { AppActions, AppState } from '@/store/state'
 
-import MarketplaceModal, { type MarketplacePick } from './widget/marketplace-modal.vue'
+import MarketplaceModal from './widget/marketplace-modal.vue'
 import ComposeEditor from './widget/compose-editor.vue'
 
 @Component({
     components: { ComposeEditor, MarketplaceModal }
 })
 class ComposeDeploy extends Vue {
+    @Inject({ from: APP_STATE_KEY }) readonly state!: AppState
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
@@ -24,8 +25,10 @@ class ComposeDeploy extends Vue {
     initURL = ''
     content = ''
 
-    // swarm 可用性（通过探测接口得出，不可用则禁用 swarm 选项）
-    swarmAvailable = false
+    // ─── 计算属性 ───
+    get swarmAvailable(): boolean {
+        return this.state.serviceAvailability.swarm
+    }
 
     // 应用市场 modal 开关
     marketplaceVisible = false
@@ -48,17 +51,6 @@ class ComposeDeploy extends Vue {
 
     get targetLabel(): string {
         return this.target === 'swarm' ? 'Swarm 服务' : '单机容器'
-    }
-
-    // ─── 生命周期 ───
-    async mounted() {
-        // 探测 swarm 能力
-        try {
-            const res = await api.swarmInfo()
-            this.swarmAvailable = !!res.payload
-        } catch {
-            this.swarmAvailable = false
-        }
     }
 
     // ─── 方法 ───

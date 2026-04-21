@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/rehiy/pango/logman"
 )
 
-// SwarmNode Swarm 节点信息
-type SwarmNode struct {
+// NodeDTO Swarm 节点信息
+type NodeDTO struct {
 	ID            string `json:"id"`
 	Hostname      string `json:"hostname"`
 	Role          string `json:"role"`
@@ -23,16 +22,16 @@ type SwarmNode struct {
 }
 
 // ListNodes 获取节点列表
-func (m *SwarmManager) ListNodes(ctx context.Context) ([]SwarmNode, error) {
-	nodes, err := m.client.NodeList(ctx, types.NodeListOptions{})
+func (m *SwarmService) ListNodes(ctx context.Context) ([]NodeDTO, error) {
+	nodes, err := m.client.NodeList(ctx, swarm.NodeListOptions{})
 	if err != nil {
 		logman.Error("NodeList failed", "error", err)
 		return nil, err
 	}
 
-	var result []SwarmNode
+	var result []NodeDTO
 	for _, n := range nodes {
-		result = append(result, SwarmNode{
+		result = append(result, NodeDTO{
 			ID:            n.ID,
 			Hostname:      n.Description.Hostname,
 			Role:          string(n.Spec.Role),
@@ -48,9 +47,9 @@ func (m *SwarmManager) ListNodes(ctx context.Context) ([]SwarmNode, error) {
 }
 
 // NodeAction 节点操作（drain/active/pause/remove）
-func (m *SwarmManager) NodeAction(ctx context.Context, id, action string) error {
+func (m *SwarmService) NodeAction(ctx context.Context, id, action string) error {
 	if action == "remove" {
-		if err := m.client.NodeRemove(ctx, id, types.NodeRemoveOptions{Force: true}); err != nil {
+		if err := m.client.NodeRemove(ctx, id, swarm.NodeRemoveOptions{Force: true}); err != nil {
 			return err
 		}
 		return nil
@@ -80,8 +79,8 @@ func (m *SwarmManager) NodeAction(ctx context.Context, id, action string) error 
 	return nil
 }
 
-// SwarmNodeInspect 节点详情
-type SwarmNodeInspect struct {
+// NodeInspect 节点详情
+type NodeInspect struct {
 	ID            string            `json:"id"`
 	Hostname      string            `json:"hostname"`
 	Role          string            `json:"role"`
@@ -100,14 +99,14 @@ type SwarmNodeInspect struct {
 }
 
 // InspectNode 获取节点详情
-func (m *SwarmManager) InspectNode(ctx context.Context, id string) (*SwarmNodeInspect, error) {
+func (m *SwarmService) InspectNode(ctx context.Context, id string) (*NodeInspect, error) {
 	node, _, err := m.client.NodeInspectWithRaw(ctx, id)
 	if err != nil {
 		logman.Error("NodeInspect failed", "id", id, "error", err)
 		return nil, err
 	}
 
-	result := &SwarmNodeInspect{
+	result := &NodeInspect{
 		ID:            node.ID,
 		Hostname:      node.Description.Hostname,
 		Role:          string(node.Spec.Role),

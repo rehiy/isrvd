@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/compose-spec/compose-go/v2/types"
-	dockertypes "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 
 	"isrvd/pkgs/docker"
 	"isrvd/pkgs/swarm"
@@ -68,7 +68,7 @@ func ProjectFromCreateRequest(req docker.ContainerCreateRequest) (*types.Project
 }
 
 // ProjectFromInspect 将 docker inspect 结果反推为单服务 compose Project
-func ProjectFromInspect(info dockertypes.ContainerJSON) (*types.Project, error) {
+func ProjectFromInspect(info container.InspectResponse) (*types.Project, error) {
 	if info.Config == nil || info.HostConfig == nil {
 		return nil, fmt.Errorf("容器 inspect 数据不完整")
 	}
@@ -164,8 +164,8 @@ func ProjectFromInspect(info dockertypes.ContainerJSON) (*types.Project, error) 
 	}, nil
 }
 
-// ProjectFromSwarmInspect 将 SwarmServiceInspect 反推为单服务 compose Project
-func ProjectFromSwarmInspect(info *swarm.SwarmServiceInspect) (*types.Project, error) {
+// ProjectFromSwarmInspect 将 ServiceInfo 反推为单服务 compose Project
+func ProjectFromSwarmInspect(info *swarm.ServiceInfo) (*types.Project, error) {
 	if info == nil || info.Image == "" {
 		return nil, fmt.Errorf("swarm 服务数据不完整")
 	}

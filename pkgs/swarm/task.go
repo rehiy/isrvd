@@ -4,13 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/swarm"
 	"github.com/rehiy/pango/logman"
 )
 
-// SwarmTask Swarm 任务信息
-type SwarmTask struct {
+// Task Swarm 任务信息
+type Task struct {
 	ID          string `json:"id"`
 	ServiceID   string `json:"serviceID"`
 	ServiceName string `json:"serviceName"`
@@ -24,8 +24,8 @@ type SwarmTask struct {
 }
 
 // ListTasks 获取任务列表
-func (m *SwarmManager) ListTasks(ctx context.Context, serviceID string) ([]SwarmTask, error) {
-	opts := types.TaskListOptions{}
+func (m *SwarmService) ListTasks(ctx context.Context, serviceID string) ([]Task, error) {
+	opts := swarm.TaskListOptions{}
 	if serviceID != "" {
 		f := filters.NewArgs()
 		f.Add("service", serviceID)
@@ -39,15 +39,15 @@ func (m *SwarmManager) ListTasks(ctx context.Context, serviceID string) ([]Swarm
 	}
 
 	// 建立服务 ID→名称 映射
-	services, _ := m.client.ServiceList(ctx, types.ServiceListOptions{})
+	services, _ := m.client.ServiceList(ctx, swarm.ServiceListOptions{})
 	svcNameMap := map[string]string{}
 	for _, s := range services {
 		svcNameMap[s.ID] = s.Spec.Name
 	}
 
-	var result []SwarmTask
+	var result []Task
 	for _, t := range tasks {
-		result = append(result, SwarmTask{
+		result = append(result, Task{
 			ID:          t.ID,
 			ServiceID:   t.ServiceID,
 			ServiceName: svcNameMap[t.ServiceID],

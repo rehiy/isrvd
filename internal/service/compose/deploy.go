@@ -98,12 +98,12 @@ var safeName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]*$`)
 type DeployService struct {
 	compose *compose.ComposeService
 	docker  *docker.DockerService
-	swarm   *swarm.SwarmManager
+	swarm   *swarm.SwarmService
 }
 
 // NewDeployService 创建 compose 部署服务
 // swarm 可为 nil，此时 target="swarm" 的请求会返回未初始化错误
-func NewDeployService(d *docker.DockerService, c *compose.ComposeService, s *swarm.SwarmManager) (*DeployService, error) {
+func NewDeployService(d *docker.DockerService, c *compose.ComposeService, s *swarm.SwarmService) (*DeployService, error) {
 	if d == nil || c == nil {
 		return nil, fmt.Errorf("docker 或 compose 服务未提供")
 	}

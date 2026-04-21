@@ -2,12 +2,12 @@
 import { Component, Inject, Prop, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { AllSettings } from '@/service/types'
+import type { AllSettings, MarketplacePick } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
 // 应用市场 postMessage 协议：仅本组件使用，故就近定义
-export interface MarketplaceInstallPayload {
+interface MarketplaceInstallPayload {
     // 协议识别
     source: 'marketplace'
     type: 'install'
@@ -16,13 +16,6 @@ export interface MarketplaceInstallPayload {
     name: string                                          // 实例名（作为目录名 / compose project 名，需满足 [a-zA-Z0-9][a-zA-Z0-9_.-]*）
     compose: string                                       // 已完成 ${VAR} 插值的完整 docker-compose.yml 文本
     initURL?: string                                      // 可选：附加运行文件 zip 下载地址
-}
-
-// 回传给父组件的精简 payload
-export interface MarketplacePick {
-    name: string
-    compose: string
-    initURL?: string
 }
 
 // 校验 postMessage 数据是否为合法的安装 payload

@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/go-connections/nat"
 	"github.com/rehiy/pango/logman"
@@ -72,11 +71,11 @@ func (s *DockerService) ListContainers(ctx context.Context, all bool) ([]*Contai
 }
 
 // InspectContainer 获取容器详细配置（运行态快照依赖此接口）
-func (s *DockerService) InspectContainer(ctx context.Context, id string) (types.ContainerJSON, error) {
+func (s *DockerService) InspectContainer(ctx context.Context, id string) (container.InspectResponse, error) {
 	info, err := s.client.ContainerInspect(ctx, id)
 	if err != nil {
 		logman.Error("Inspect container failed", "id", id, "error", err)
-		return types.ContainerJSON{}, err
+		return container.InspectResponse{}, err
 	}
 	return info, nil
 }

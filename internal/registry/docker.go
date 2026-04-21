@@ -12,7 +12,7 @@ import (
 )
 
 var DockerService *docker.DockerService
-var SwarmManager *swarm.SwarmManager
+var SwarmService *swarm.SwarmService
 
 // initDocker 初始化 Docker 服务
 func initDocker() error {
@@ -40,7 +40,7 @@ func initDocker() error {
 	}
 
 	DockerService = svc
-	SwarmManager = swarm.NewSwarmManager(svc.GetClient())
+	SwarmService = swarm.NewSwarmService(svc.GetClient())
 
 	return nil
 }
@@ -62,12 +62,12 @@ func IsDockerAvailable(ctx context.Context) bool {
 
 // IsSwarmAvailable 检查 Swarm 是否可用
 func IsSwarmAvailable(ctx context.Context) bool {
-	if SwarmManager == nil {
-		logman.Warn("Swarm manager not initialized")
+	if SwarmService == nil {
+		logman.Warn("Swarm service not initialized")
 		return false
 	}
 
-	_, err := SwarmManager.GetClient().SwarmInspect(ctx)
+	_, err := SwarmService.GetClient().SwarmInspect(ctx)
 	if err != nil {
 		logman.Error("Swarm not available", "error", err)
 		return false
