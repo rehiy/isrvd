@@ -1,22 +1,25 @@
-# Isrvd
+# isrvd
 
-轻量级 Web 服务器管理工具，基于 Go + Vue 3 构建，提供文件管理、在线编辑、Docker/Swarm 管理、APISIX 管理和实时终端功能。
+轻量级 Web 服务器管理工具，基于 Go + Vue 3 构建，集成 APISIX + etcd，提供文件管理、在线编辑、Docker/Swarm/Compose 管理、APISIX 管理和实时终端功能。
 
-## 特性
+## 功能特性
 
-- **系统概览** - CPU、内存、硬盘、网络实时监控
-- **文件管理** - 浏览、上传、下载、在线编辑、压缩解压、权限修改
-- **Docker 服务** - 容器、镜像、网络、卷的完整管理，支持终端和实时统计
-- **Docker Swarm** - 服务、节点、任务的完整管理
-- **APISIX 管理** - 路由、Consumer、Upstream、IP 白名单管理
-- **Web 终端** - xterm.js 实时 Shell 交互
-- **成员管理** - 多用户支持，用户隔离、独立家目录、权限控制
-- **AI 助手** - 内置 Page-Agent，支持自然语言操作与页面感知
-- **移动端适配** - 响应式布局
+| 模块 | 功能 |
+|------|------|
+| 系统概览 | CPU、内存、硬盘、网络实时监控 |
+| 文件管理 | 浏览、上传、下载、在线编辑、压缩解压、权限修改 |
+| Docker | 容器、镜像、网络、卷的完整管理，支持终端和实时统计 |
+| Docker Swarm | 服务、节点、任务的完整管理 |
+| Docker Compose | Compose 文件编辑、Docker/Swarm 一键部署与重新部署 |
+| APISIX | 路由、Consumer、Upstream、Plugin Config、IP 白名单管理 |
+| Web 终端 | 基于 xterm.js 的实时 Shell 交互与容器终端 |
+| 成员管理 | 多用户支持，用户隔离、独立家目录、权限控制 |
+| AI 助手 | 内置 Page-Agent，支持自然语言操作与页面感知 |
+| 移动端 | 响应式布局，全面适配移动设备 |
 
-## Docker 部署
+## Docker 部署（推荐）
 
-镜像将 **APISIX + etcd + isrvd** 打包为 All-in-One 容器，由 supervisord 管理所有服务。
+All-in-One 镜像将 **APISIX + etcd + isrvd** 打包为单一容器，由 supervisord 管理所有服务。
 
 ```bash
 docker run -d \
@@ -28,7 +31,7 @@ docker run -d \
   rehiy/isrvd:latest
 ```
 
-首次启动会自动生成随机密码，通过 `docker logs isrvd` 查看。
+首次启动自动生成随机密码，通过 `docker logs isrvd` 查看。
 
 ### Docker Compose
 
@@ -54,9 +57,9 @@ services:
 | 9080 | APISIX | HTTP 代理端口 |
 | 9180 | APISIX | Admin API（默认不对外暴露） |
 
-### 数据与配置
+### 数据目录
 
-容器使用 `/data` 作为数据根目录，包含以下子目录：
+容器使用 `/data` 作为数据根目录：
 
 | 路径 | 说明 |
 |------|------|
@@ -65,7 +68,7 @@ services:
 | `/data/storage/` | 文件管理根目录 |
 | `/data/container/` | 容器数据目录 |
 
-首次启动后配置文件自动生成到 `/data/conf/`，编辑后重启容器即可生效。也可预先准备配置文件放到本地 `data/conf/` 目录再挂载。
+首次启动后配置文件自动生成到 `/data/conf/`，编辑后重启容器生效。也可预先准备配置文件放到本地 `data/conf/` 目录再挂载。
 
 > **注意**：请始终挂载整个 `/data` 目录，不要单独挂载子目录，否则未挂载的数据会在容器重建时丢失。
 
@@ -94,7 +97,7 @@ members:
 
 ## 编译
 
-需要 Go 1.21+ 和 Node.js 16+：
+需要 Go 1.25+ 和 Node.js 16+：
 
 ```bash
 ./build.sh
