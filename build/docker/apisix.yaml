@@ -15,7 +15,7 @@ deployment:
       - 0.0.0.0/0
     admin_key:
       - name: "admin"
-        key: __Apisix_ADMIN_KEY__
+        key: __APISIX_ADMIN_KEY__
         role: admin
     admin_listen:
       ip: 0.0.0.0

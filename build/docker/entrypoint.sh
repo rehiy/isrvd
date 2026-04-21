@@ -42,9 +42,9 @@ replace_placeholder() {
 }
 
 # 生成随机 Apisix Admin Key（32 位十六进制）
-if grep -rq '__Apisix_ADMIN_KEY__' "$CONF_DIR/" 2>/dev/null; then
+if grep -rq '__APISIX_ADMIN_KEY__' "$CONF_DIR/" 2>/dev/null; then
     Apisix_ADMIN_KEY=$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')
-    replace_placeholder '__Apisix_ADMIN_KEY__' "$Apisix_ADMIN_KEY"
+    replace_placeholder '__APISIX_ADMIN_KEY__' "$Apisix_ADMIN_KEY"
     echo "[init] Generated random Apisix admin key"
 fi
 
