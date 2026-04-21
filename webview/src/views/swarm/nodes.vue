@@ -13,6 +13,12 @@ class Nodes extends Vue {
     // ─── 数据属性 ───
     nodes: SwarmNode[] = []
     nodesLoading = false
+    showJoinModal = false
+    joinTokens: { worker: string; manager: string } | null = null
+    joinTokensLoading = false
+    joinTokenRole: 'worker' | 'manager' = 'worker'
+    joinAddr = ''
+    copied = false
 
     // ─── 方法 ───
     nodeStateClass(state: string) {
@@ -59,6 +65,44 @@ class Nodes extends Vue {
         })
     }
 
+    async openJoinModal() {
+        this.showJoinModal = true
+        this.joinTokensLoading = true
+        this.joinTokens = null
+        this.copied = false
+        try {
+            const res = await api.swarmGetJoinTokens()
+            this.joinTokens = res.payload || null
+        } catch (e) {
+            this.actions.showNotification('error', '获取加入令牌失败')
+            this.showJoinModal = false
+        }
+        this.joinTokensLoading = false
+    }
+
+    get joinCommand() {
+        if (!this.joinTokens) return ''
+        const token = this.joinRole === 'worker' ? this.joinTokens.worker : this.joinTokens.manager
+        const addr = this.joinAddr.trim()
+        return addr
+            ? `docker swarm join --token ${token} ${addr}`
+            : `docker swarm join --token ${token} <manager-addr>:2377`
+    }
+
+    get joinRole() {
+        return this.joinTokenRole
+    }
+
+    async copyJoinCommand() {
+        try {
+            await navigator.clipboard.writeText(this.joinCommand)
+            this.copied = true
+            setTimeout(() => { this.copied = false }, 2000)
+        } catch (e) {
+            this.actions.showNotification('error', '复制失败，请手动复制')
+        }
+    }
+
     // ─── 生命周期 ───
     mounted() {
         this.loadNodes()
@@ -83,9 +127,14 @@ export default toNative(Nodes)
               <p class="text-xs text-slate-500">管理 Swarm 集群节点</p>
             </div>
           </div>
-          <button @click="loadNodes" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
-            <i class="fas fa-rotate"></i>刷新
-          </button>
+          <div class="flex items-center gap-2">
+            <button @click="loadNodes" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-rotate"></i>刷新
+            </button>
+            <button @click="openJoinModal" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-plus"></i>加入
+            </button>
+          </div>
         </div>
         <!-- 移动端 -->
         <div class="flex md:hidden items-center justify-between">
@@ -98,9 +147,14 @@ export default toNative(Nodes)
               <p class="text-xs text-slate-500 truncate">管理 Swarm 集群节点</p>
             </div>
           </div>
-          <button @click="loadNodes" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0" title="刷新">
-            <i class="fas fa-rotate text-sm"></i>
-          </button>
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button @click="openJoinModal" class="w-9 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-white transition-colors" title="加入集群">
+              <i class="fas fa-plus text-sm"></i>
+            </button>
+            <button @click="loadNodes" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
+              <i class="fas fa-rotate text-sm"></i>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -233,4 +287,80 @@ export default toNative(Nodes)
       </div>
     </div>
   </div>
+
+  <!-- 加入集群弹窗 -->
+  <Teleport to="body">
+    <div v-if="showJoinModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/40" @click="showJoinModal = false"></div>
+      <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg">
+        <!-- 弹窗头部 -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+              <i class="fas fa-plus text-white text-sm"></i>
+            </div>
+            <h2 class="text-base font-semibold text-slate-800">加入集群</h2>
+          </div>
+          <button @click="showJoinModal = false" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">
+            <i class="fas fa-xmark"></i>
+          </button>
+        </div>
+        <!-- 弹窗内容 -->
+        <div class="px-6 py-5 space-y-4">
+          <div v-if="joinTokensLoading" class="flex flex-col items-center justify-center py-8">
+            <div class="w-10 h-10 spinner mb-3"></div>
+            <p class="text-slate-500 text-sm">加载中...</p>
+          </div>
+          <template v-else-if="joinTokens">
+            <!-- 角色选择 -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">节点角色</label>
+              <div class="flex gap-2">
+                <button
+                  @click="joinTokenRole = 'worker'"
+                  :class="joinTokenRole === 'worker' ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+                  class="flex-1 px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
+                >Worker</button>
+                <button
+                  @click="joinTokenRole = 'manager'"
+                  :class="joinTokenRole === 'manager' ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+                  class="flex-1 px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
+                >Manager</button>
+              </div>
+            </div>
+            <!-- Manager 地址 -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Manager 地址</label>
+              <input
+                v-model="joinAddr"
+                type="text"
+                class="input w-full"
+                placeholder="例如：192.168.1.100:2377"
+              />
+              <p class="mt-1 text-xs text-slate-400">留空则使用占位符，填写后命令可直接使用</p>
+            </div>
+            <!-- 加入命令 -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">加入命令</label>
+              <div class="relative">
+                <pre class="bg-slate-900 text-emerald-400 rounded-xl p-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all pr-12">{{ joinCommand }}</pre>
+                <button
+                  @click="copyJoinCommand"
+                  :class="copied ? 'text-emerald-400' : 'text-slate-400 hover:text-white'"
+                  class="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded transition-colors"
+                  :title="copied ? '已复制' : '复制命令'"
+                >
+                  <i :class="copied ? 'fas fa-check' : 'fas fa-copy'" class="text-xs"></i>
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+        <!-- 弹窗底部 -->
+        <div class="flex justify-end px-6 py-4 border-t border-slate-100">
+          <button @click="showJoinModal = false" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-colors">关闭</button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>

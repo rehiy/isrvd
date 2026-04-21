@@ -25,6 +25,19 @@ func (m *SwarmManager) GetClient() *client.Client {
 	return m.client
 }
 
+// GetJoinTokens 获取加入集群的 token
+func (m *SwarmManager) GetJoinTokens(ctx context.Context) (map[string]string, error) {
+	info, err := m.client.SwarmInspect(ctx)
+	if err != nil {
+		logman.Error("SwarmInspect failed", "error", err)
+		return nil, err
+	}
+	return map[string]string{
+		"worker":  info.JoinTokens.Worker,
+		"manager": info.JoinTokens.Manager,
+	}, nil
+}
+
 // GetSwarmInfo 获取 Swarm 集群概览
 func (m *SwarmManager) GetSwarmInfo(ctx context.Context) (map[string]interface{}, error) {
 	info, err := m.client.SwarmInspect(ctx)

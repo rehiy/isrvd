@@ -33,6 +33,11 @@ func (s *Service) SwarmInfo(ctx context.Context) (any, error) {
 	return s.manager.GetSwarmInfo(ctx)
 }
 
+// GetJoinTokens 获取加入集群的 token
+func (s *Service) GetJoinTokens(ctx context.Context) (any, error) {
+	return s.manager.GetJoinTokens(ctx)
+}
+
 // ListNodes 获取节点列表
 func (s *Service) ListNodes(ctx context.Context) (any, error) {
 	return s.manager.ListNodes(ctx)
