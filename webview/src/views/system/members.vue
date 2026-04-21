@@ -135,10 +135,11 @@ export default toNative(Members)
         <div class="hidden md:block overflow-x-auto">
           <table class="w-full border-collapse">
               <thead>
-                <tr class="bg-slate-50 border-b border-slate-200">
+              <tr class="bg-slate-50 border-b border-slate-200">
                   <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">用户名</th>
                   <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Home 目录</th>
                   <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">终端</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">模块权限</th>
                   <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">密码</th>
                   <th class="w-28 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
                 </tr>
@@ -164,6 +165,16 @@ export default toNative(Members)
                     <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
                       <i class="fas fa-ban mr-1"></i>禁用
                     </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div v-if="m.isPrimary" class="text-xs text-purple-600 font-medium">全部权限</div>
+                    <div v-else class="flex flex-wrap gap-1">
+                      <template v-for="(perm, mod) in m.permissions" :key="mod">
+                        <span v-if="perm === 'rw'" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700">{{ mod }}<span class="ml-0.5 opacity-60">rw</span></span>
+                        <span v-else-if="perm === 'r'" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600">{{ mod }}<span class="ml-0.5 opacity-60">r</span></span>
+                      </template>
+                      <span v-if="!Object.values(m.permissions || {}).some(p => p)" class="text-xs text-slate-400">无权限</span>
+                    </div>
                   </td>
                   <td class="px-4 py-3">
                     <span v-if="m.passwordSet" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
@@ -226,7 +237,19 @@ export default toNative(Members)
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">Home</span>
               <code class="text-xs bg-slate-100 px-2 py-1 rounded break-all">{{ m.homeDirectory }}</code>
             </div>
-            <!-- 底部：操作按钮 -->
+            <!-- 模块权限 -->
+            <div class="mb-3">
+              <span class="text-xs text-slate-400 mr-2">权限</span>
+              <span v-if="m.isPrimary" class="text-xs text-purple-600 font-medium">全部权限</span>
+              <span v-else class="inline-flex flex-wrap gap-1">
+                <template v-for="(perm, mod) in m.permissions" :key="mod">
+                  <span v-if="perm === 'rw'" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700">{{ mod }}<span class="ml-0.5 opacity-60">rw</span></span>
+                  <span v-else-if="perm === 'r'" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600">{{ mod }}<span class="ml-0.5 opacity-60">r</span></span>
+                </template>
+                <span v-if="!Object.values(m.permissions || {}).some(p => p)" class="text-xs text-slate-400">无权限</span>
+              </span>
+            </div>
+            <!-- 底部：操作按鈕 -->
             <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
               <button @click="openEditMember(m)" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>

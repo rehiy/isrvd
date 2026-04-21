@@ -122,7 +122,7 @@ export default toNative(Services)
             <button @click="loadServices" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button @click="openCreateModal" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <button v-if="actions.hasPerm('swarm', true)" @click="openCreateModal" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-plus"></i>创建
             </button>
           </div>
@@ -142,7 +142,7 @@ export default toNative(Services)
             <button @click="loadServices" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button @click="openCreateModal" class="w-9 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-colors" title="创建">
+            <button v-if="actions.hasPerm('swarm', true)" @click="openCreateModal" class="w-9 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-colors" title="创建">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
@@ -193,10 +193,10 @@ export default toNative(Services)
                   <div class="flex justify-end items-center gap-0.5">
                     <button @click="$router.push({ name: 'swarm-service-info', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="详情"><i class="fas fa-circle-info text-xs"></i></button>
                     <button @click="$router.push({ name: 'swarm-service-logs', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志"><i class="fas fa-file-lines text-xs"></i></button>
-                    <button v-if="svc.mode === 'replicated'" @click="openScaleModal(svc)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="扩缩容"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>
-                    <button @click="handleRedeploy(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="强制重部署"><i class="fas fa-rotate text-xs"></i></button>
-                    <button @click="openEditModal(svc)" class="btn-icon text-amber-600 hover:bg-amber-50" title="编辑"><i class="fas fa-pen text-xs"></i></button>
-                    <button @click="handleServiceRemove(svc)" class="btn-icon text-red-600 hover:bg-red-50" title="删除"><i class="fas fa-trash text-xs"></i></button>
+                    <button v-if="svc.mode === 'replicated' && actions.hasPerm('swarm', true)" @click="openScaleModal(svc)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="扩缩容"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>
+                    <button v-if="actions.hasPerm('swarm', true)" @click="handleRedeploy(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="强制重部署"><i class="fas fa-rotate text-xs"></i></button>
+                    <button v-if="actions.hasPerm('swarm', true)" @click="openEditModal(svc)" class="btn-icon text-amber-600 hover:bg-amber-50" title="编辑"><i class="fas fa-pen text-xs"></i></button>
+                    <button v-if="actions.hasPerm('swarm', true)" @click="handleServiceRemove(svc)" class="btn-icon text-red-600 hover:bg-red-50" title="删除"><i class="fas fa-trash text-xs"></i></button>
                   </div>
                 </td>
               </tr>
@@ -255,16 +255,16 @@ export default toNative(Services)
               <button @click="$router.push({ name: 'swarm-service-logs', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
                 <i class="fas fa-file-lines text-xs"></i><span class="text-xs ml-1">日志</span>
               </button>
-              <button v-if="svc.mode === 'replicated'" @click="openScaleModal(svc)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="扩缩容">
+              <button v-if="svc.mode === 'replicated' && actions.hasPerm('swarm', true)" @click="openScaleModal(svc)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="扩缩容">
                 <i class="fas fa-up-right-and-down-left-from-center text-xs"></i><span class="text-xs ml-1">扩缩容</span>
               </button>
-              <button @click="handleRedeploy(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="强制重部署">
+              <button v-if="actions.hasPerm('swarm', true)" @click="handleRedeploy(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="强制重部署">
                 <i class="fas fa-rotate text-xs"></i><span class="text-xs ml-1">重部署</span>
               </button>
-              <button @click="openEditModal(svc)" class="btn-icon text-amber-600 hover:bg-amber-50" title="编辑">
+              <button v-if="actions.hasPerm('swarm', true)" @click="openEditModal(svc)" class="btn-icon text-amber-600 hover:bg-amber-50" title="编辑">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
-              <button @click="handleServiceRemove(svc)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+              <button v-if="actions.hasPerm('swarm', true)" @click="handleServiceRemove(svc)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>

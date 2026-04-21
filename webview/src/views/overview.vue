@@ -1,8 +1,8 @@
 <script lang="ts">
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import { APP_STATE_KEY } from '@/store/state'
-import type { AppState } from '@/store/state'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
+import type { AppState, AppActions } from '@/store/state'
 
 import ApisixOverview from '@/views/apisix/overview.vue'
 import DockerOverview from '@/views/docker/overview.vue'
@@ -14,6 +14,7 @@ import SystemOverview from '@/views/system/overview.vue'
 })
 class Overview extends Vue {
     @Inject({ from: APP_STATE_KEY }) readonly state!: AppState
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── Refs ───
     @Ref readonly dockerRef!: InstanceType<typeof DockerOverview>
@@ -24,13 +25,13 @@ class Overview extends Vue {
     // ─── 方法 ───
     refreshAll() {
         this.systemRef?.load()
-        if (this.state.serviceAvailability.docker) {
+        if (this.state.serviceAvailability.docker && this.actions.hasPerm('docker')) {
             this.dockerRef?.load()
         }
-        if (this.state.serviceAvailability.swarm) {
+        if (this.state.serviceAvailability.swarm && this.actions.hasPerm('swarm')) {
             this.swarmRef?.load()
         }
-        if (this.state.serviceAvailability.apisix) {
+        if (this.state.serviceAvailability.apisix && this.actions.hasPerm('apisix')) {
             this.apisixRef?.load()
         }
     }
@@ -82,7 +83,7 @@ export default toNative(Overview)
       </div>
 
       <!-- APISIX 概览区块 -->
-      <div v-if="state.serviceAvailability.apisix" class="p-6 border-b border-slate-100">
+      <div v-if="state.serviceAvailability.apisix && actions.hasPerm('apisix')" class="p-6 border-b border-slate-100">
         <div class="flex items-center gap-2 mb-4">
           <i class="fas fa-route text-orange-500 text-lg"></i>
           <h2 class="text-base font-semibold text-slate-700">APISIX 网关</h2>
@@ -91,7 +92,7 @@ export default toNative(Overview)
       </div>
 
       <!-- Docker 概览区块 -->
-      <div v-if="state.serviceAvailability.docker" class="p-6 border-b border-slate-100">
+      <div v-if="state.serviceAvailability.docker && actions.hasPerm('docker')" class="p-6 border-b border-slate-100">
         <div class="flex items-center gap-2 mb-4">
           <i class="fab fa-docker text-blue-500 text-lg"></i>
           <h2 class="text-base font-semibold text-slate-700">Docker 服务</h2>
@@ -100,7 +101,7 @@ export default toNative(Overview)
       </div>
 
       <!-- Swarm 概览区块 -->
-      <div v-if="state.serviceAvailability.swarm" class="p-6 border-b border-slate-100">
+      <div v-if="state.serviceAvailability.swarm && actions.hasPerm('swarm')" class="p-6 border-b border-slate-100">
         <div class="flex items-center gap-2 mb-4">
           <i class="fas fa-circle-nodes text-cyan-600 text-lg"></i>
           <h2 class="text-base font-semibold text-slate-700">Swarm 集群</h2>

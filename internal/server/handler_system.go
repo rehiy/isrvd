@@ -9,6 +9,16 @@ import (
 	svcSystem "isrvd/internal/service/system"
 )
 
+func (app *App) systemMe(c *gin.Context) {
+	username := c.GetString("username")
+	info := app.memberSvc.GetMember(username)
+	if info == nil {
+		helper.RespondError(c, http.StatusNotFound, "用户不存在")
+		return
+	}
+	helper.RespondSuccess(c, "ok", info)
+}
+
 func (app *App) systemStat(c *gin.Context) {
 	helper.RespondSuccess(c, "ok", app.systemSvc.Stat())
 }

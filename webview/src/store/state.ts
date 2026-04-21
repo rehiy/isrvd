@@ -49,6 +49,9 @@ interface ServiceAvailability {
 export interface AppState {
     token: string | null
     username: string | null
+    isPrimary: boolean
+    allowTerminal: boolean
+    permissions: Record<string, string>
     loading: boolean
     currentPath: string
     files: FilerFileInfo[]
@@ -60,6 +63,8 @@ export interface AppState {
 export interface AppActions {
     setAuth(data: { token: string; username: string }): void
     clearAuth(): void
+    setPermissions(data: { isPrimary: boolean; allowTerminal: boolean; permissions: Record<string, string> }): void
+    hasPerm(module: string, write?: boolean): boolean
     loadFiles(path?: string): Promise<void>
     showNotification(type: string, message: string): void
     clearNotification(id: number): void
@@ -76,11 +81,22 @@ export interface AppActions {
     }): void
 }
 
+// 全局权限状态（响应式），供 router 守卫使用（避免循环依赖）
+export const permState = reactive({
+    loaded: false,
+    isPrimary: false,
+    allowTerminal: false,
+    permissions: {} as Record<string, string>
+})
+
 export const initProvider = () => {
     const state = reactive<AppState>({
         // 用户认证状态
         token: null,
         username: null,
+        isPrimary: false,
+        allowTerminal: false,
+        permissions: {},
 
         // 网络请求状态
         loading: false,
@@ -127,8 +143,31 @@ export const initProvider = () => {
         clearAuth() {
             state.token = null
             state.username = null
+            state.isPrimary = false
+            state.allowTerminal = false
+            state.permissions = {}
+            permState.loaded = false
+            permState.isPrimary = false
+            permState.allowTerminal = false
+            permState.permissions = {}
             localStorage.removeItem('app-token')
             localStorage.removeItem('app-username')
+        },
+
+        setPermissions(data: { isPrimary: boolean; allowTerminal: boolean; permissions: Record<string, string> }) {
+            state.isPrimary = data.isPrimary
+            state.allowTerminal = data.allowTerminal
+            state.permissions = data.permissions || {}
+            permState.loaded = true
+            permState.isPrimary = data.isPrimary
+            permState.allowTerminal = data.allowTerminal
+            permState.permissions = data.permissions || {}
+        },
+
+        hasPerm(module: string, write = false): boolean {
+            if (state.isPrimary) return true
+            const perm = state.permissions[module] || ''
+            return write ? perm === 'rw' : (perm === 'r' || perm === 'rw')
         },
 
         // 文件操作

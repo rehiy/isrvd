@@ -80,126 +80,171 @@ func (app *App) setupRouter() {
 		{
 			auth.POST("/logout", app.logout)
 
-			// 文件管理
-			f := auth.Group("/filer")
+			// 文件管理（只读）
+			fr := auth.Group("/filer")
+			fr.Use(PermMiddleware("filer", false))
 			{
-				f.POST("/list", app.filerList)
-				f.POST("/upload", app.filerUpload)
-				f.POST("/download", app.filerDownload)
-				f.POST("/delete", app.filerDelete)
-				f.POST("/mkdir", app.filerMkdir)
-				f.POST("/create", app.filerCreate)
-				f.POST("/read", app.filerRead)
-				f.POST("/modify", app.filerModify)
-				f.POST("/rename", app.filerRename)
-				f.POST("/chmod", app.filerChmod)
-				f.POST("/zip", app.filerZip)
-				f.POST("/unzip", app.filerUnzip)
+				fr.POST("/list", app.filerList)
+				fr.POST("/download", app.filerDownload)
+				fr.POST("/read", app.filerRead)
+			}
+			// 文件管理（读写）
+			fw := auth.Group("/filer")
+			fw.Use(PermMiddleware("filer", true))
+			{
+				fw.POST("/upload", app.filerUpload)
+				fw.POST("/delete", app.filerDelete)
+				fw.POST("/mkdir", app.filerMkdir)
+				fw.POST("/create", app.filerCreate)
+				fw.POST("/modify", app.filerModify)
+				fw.POST("/rename", app.filerRename)
+				fw.POST("/chmod", app.filerChmod)
+				fw.POST("/zip", app.filerZip)
+				fw.POST("/unzip", app.filerUnzip)
 			}
 
 			// Agent LLM 代理
-			auth.Any("/agent/proxy/*path", app.agentProxy)
+			agentGroup := auth.Group("/agent")
+			agentGroup.Use(PermMiddleware("agent", false))
+			{
+				agentGroup.Any("/proxy/*path", app.agentProxy)
+			}
 
 			// Apisix
 			if app.apisixSvc != nil {
-				a := auth.Group("/apisix")
+				// Apisix 只读
+				ar := auth.Group("/apisix")
+				ar.Use(PermMiddleware("apisix", false))
 				{
-					a.GET("/routes", app.apisixListRoutes)
-					a.GET("/route/:id", app.apisixGetRoute)
-					a.POST("/routes", app.apisixCreateRoute)
-					a.PUT("/route/:id", app.apisixUpdateRoute)
-					a.PATCH("/route/:id/status", app.apisixPatchRouteStatus)
-					a.DELETE("/route/:id", app.apisixDeleteRoute)
-					a.GET("/consumers", app.apisixListConsumers)
-					a.POST("/consumers", app.apisixCreateConsumer)
-					a.PUT("/consumer/:username", app.apisixUpdateConsumer)
-					a.DELETE("/consumer/:username", app.apisixDeleteConsumer)
-					a.GET("/plugin_configs", app.apisixListPluginConfigs)
-					a.GET("/plugins", app.apisixListPlugins)
-					a.GET("/upstreams", app.apisixListUpstreams)
-					a.GET("/whitelist", app.apisixGetWhitelist)
-					a.PUT("/whitelist/revoke", app.apisixRevokeWhitelist)
+					ar.GET("/routes", app.apisixListRoutes)
+					ar.GET("/route/:id", app.apisixGetRoute)
+					ar.GET("/consumers", app.apisixListConsumers)
+					ar.GET("/plugin_configs", app.apisixListPluginConfigs)
+					ar.GET("/plugins", app.apisixListPlugins)
+					ar.GET("/upstreams", app.apisixListUpstreams)
+					ar.GET("/whitelist", app.apisixGetWhitelist)
+				}
+				// Apisix 读写
+				aw := auth.Group("/apisix")
+				aw.Use(PermMiddleware("apisix", true))
+				{
+					aw.POST("/routes", app.apisixCreateRoute)
+					aw.PUT("/route/:id", app.apisixUpdateRoute)
+					aw.PATCH("/route/:id/status", app.apisixPatchRouteStatus)
+					aw.DELETE("/route/:id", app.apisixDeleteRoute)
+					aw.POST("/consumers", app.apisixCreateConsumer)
+					aw.PUT("/consumer/:username", app.apisixUpdateConsumer)
+					aw.DELETE("/consumer/:username", app.apisixDeleteConsumer)
+					aw.PUT("/whitelist/revoke", app.apisixRevokeWhitelist)
 				}
 			}
 
 			// Docker
 			if app.dockerSvc != nil {
-				d := auth.Group("/docker")
+				// Docker 只读
+				dr := auth.Group("/docker")
+				dr.Use(PermMiddleware("docker", false))
 				{
-					d.GET("/info", app.dockerInfo)
-					d.GET("/containers", app.dockerListContainers)
-					d.POST("/container/:id/action", app.dockerContainerAction)
-					d.POST("/container/create", app.dockerCreateContainer)
-					d.GET("/container/:id/logs", app.dockerContainerLogs)
-					d.GET("/container/:id/stats", app.dockerContainerStats)
-					d.GET("/images", app.dockerListImages)
-					d.POST("/image/:id/action", app.dockerImageAction)
-					d.GET("/image/:id", app.dockerInspectImage)
-					d.POST("/image/pull", app.dockerPullImage)
-					d.POST("/image/tag", app.dockerTagImage)
-					d.GET("/image/search/:term", app.dockerSearchImages)
-					d.POST("/image/build", app.dockerBuildImage)
-					d.GET("/networks", app.dockerListNetworks)
-					d.GET("/network/:id", app.dockerNetworkInspect)
-					d.POST("/network/:id/action", app.dockerNetworkAction)
-					d.POST("/network/create", app.dockerCreateNetwork)
-					d.GET("/volumes", app.dockerListVolumes)
-					d.GET("/volume/:name", app.dockerVolumeInspect)
-					d.POST("/volume/:name/action", app.dockerVolumeAction)
-					d.POST("/volume/create", app.dockerCreateVolume)
-					d.GET("/registries", app.dockerListRegistries)
-					d.POST("/registries", app.dockerCreateRegistry)
-					d.PUT("/registries", app.dockerUpdateRegistry)
-					d.DELETE("/registries", app.dockerDeleteRegistry)
-					d.POST("/registry/push", app.dockerPushImage)
-					d.POST("/registry/pull", app.dockerPullFromRegistry)
+					dr.GET("/info", app.dockerInfo)
+					dr.GET("/containers", app.dockerListContainers)
+					dr.GET("/container/:id/logs", app.dockerContainerLogs)
+					dr.GET("/container/:id/stats", app.dockerContainerStats)
+					dr.GET("/images", app.dockerListImages)
+					dr.GET("/image/:id", app.dockerInspectImage)
+					dr.GET("/image/search/:term", app.dockerSearchImages)
+					dr.GET("/networks", app.dockerListNetworks)
+					dr.GET("/network/:id", app.dockerNetworkInspect)
+					dr.GET("/volumes", app.dockerListVolumes)
+					dr.GET("/volume/:name", app.dockerVolumeInspect)
+					dr.GET("/registries", app.dockerListRegistries)
+				}
+				// Docker 读写
+				dw := auth.Group("/docker")
+				dw.Use(PermMiddleware("docker", true))
+				{
+					dw.POST("/container/:id/action", app.dockerContainerAction)
+					dw.POST("/container/create", app.dockerCreateContainer)
+					dw.POST("/image/:id/action", app.dockerImageAction)
+					dw.POST("/image/pull", app.dockerPullImage)
+					dw.POST("/image/tag", app.dockerTagImage)
+					dw.POST("/image/build", app.dockerBuildImage)
+					dw.POST("/network/:id/action", app.dockerNetworkAction)
+					dw.POST("/network/create", app.dockerCreateNetwork)
+					dw.POST("/volume/:name/action", app.dockerVolumeAction)
+					dw.POST("/volume/create", app.dockerCreateVolume)
+					dw.POST("/registries", app.dockerCreateRegistry)
+					dw.PUT("/registries", app.dockerUpdateRegistry)
+					dw.DELETE("/registries", app.dockerDeleteRegistry)
+					dw.POST("/registry/push", app.dockerPushImage)
+					dw.POST("/registry/pull", app.dockerPullFromRegistry)
 				}
 			}
 
 			// Swarm（依赖 Docker）
 			if app.dockerSvc != nil && app.swarmSvc != nil {
-				sw := auth.Group("/swarm")
+				// Swarm 只读
+				swr := auth.Group("/swarm")
+				swr.Use(PermMiddleware("swarm", false))
 				{
-					sw.GET("/info", app.swarmInfo)
-					sw.GET("/nodes", app.swarmListNodes)
-					sw.GET("/node/:id", app.swarmInspectNode)
-					sw.POST("/node/:id/action", app.NodeDTOAction)
-					sw.GET("/join-tokens", app.swarmGetJoinTokens)
-					sw.GET("/services", app.swarmListServices)
-					sw.GET("/service/:id", app.swarmInspectService)
-					sw.POST("/service/create", app.swarmCreateService)
-					sw.POST("/service/:id/action", app.swarmServiceAction)
-					sw.POST("/service/:id/redeploy", app.swarmForceUpdateService)
-					sw.GET("/service/:id/logs", app.swarmServiceLogs)
-					sw.GET("/tasks", app.swarmListTasks)
+					swr.GET("/info", app.swarmInfo)
+					swr.GET("/nodes", app.swarmListNodes)
+					swr.GET("/node/:id", app.swarmInspectNode)
+					swr.GET("/join-tokens", app.swarmGetJoinTokens)
+					swr.GET("/services", app.swarmListServices)
+					swr.GET("/service/:id", app.swarmInspectService)
+					swr.GET("/service/:id/logs", app.swarmServiceLogs)
+					swr.GET("/tasks", app.swarmListTasks)
+				}
+				// Swarm 读写
+				sww := auth.Group("/swarm")
+				sww.Use(PermMiddleware("swarm", true))
+				{
+					sww.POST("/node/:id/action", app.NodeDTOAction)
+					sww.POST("/service/create", app.swarmCreateService)
+					sww.POST("/service/:id/action", app.swarmServiceAction)
+					sww.POST("/service/:id/redeploy", app.swarmForceUpdateService)
 				}
 			}
 
 			// Compose（依赖 Docker）
 			if app.dockerSvc != nil && app.composeSvc != nil {
-				c := auth.Group("/compose")
+				// Compose 只读
+				cr := auth.Group("/compose")
+				cr.Use(PermMiddleware("compose", false))
 				{
-					c.GET("/docker/:name", app.composeGetDockerContent)
-					c.POST("/docker/deploy", app.composeDeployDocker)
-					c.PUT("/docker/:name", app.composeRedeployDocker)
-					c.GET("/swarm/:name", app.composeGetSwarmContent)
-					c.POST("/swarm/deploy", app.composeDeploySwarm)
-					c.PUT("/swarm/:name", app.composeRedeploySwarm)
+					cr.GET("/docker/:name", app.composeGetDockerContent)
+					cr.GET("/swarm/:name", app.composeGetSwarmContent)
+				}
+				// Compose 读写
+				cw := auth.Group("/compose")
+				cw.Use(PermMiddleware("compose", true))
+				{
+					cw.POST("/docker/deploy", app.composeDeployDocker)
+					cw.PUT("/docker/:name", app.composeRedeployDocker)
+					cw.POST("/swarm/deploy", app.composeDeploySwarm)
+					cw.PUT("/swarm/:name", app.composeRedeploySwarm)
 				}
 			}
 
-			// 系统
-			sys := auth.Group("/system")
+			// 系统（stats/probe/health/me 所有登录用户可访问）
+			auth.GET("/system/stats", app.systemStat)
+			auth.GET("/system/probe", app.systemProbe)
+			auth.GET("/system/health", app.systemHealth)
+			auth.GET("/system/me", app.systemMe)
+			// 系统设置与成员管理需要 system 权限
+			sysr := auth.Group("/system")
+			sysr.Use(PermMiddleware("system", false))
 			{
-				sys.GET("/stats", app.systemStat)
-				sys.GET("/probe", app.systemProbe)
-				sys.GET("/health", app.systemHealth)
-				sys.GET("/settings", app.systemGetSettings)
-				sys.PUT("/settings", app.systemUpdateSettings)
-				sys.GET("/members", app.systemListMembers)
-				sys.POST("/members", app.systemCreateMember)
-				sys.PUT("/member/:username", app.systemUpdateMember)
-				sys.DELETE("/member/:username", app.systemDeleteMember)
+				sysr.GET("/settings", app.systemGetSettings)
+				sysr.GET("/members", app.systemListMembers)
+			}
+			sysw := auth.Group("/system")
+			sysw.Use(PermMiddleware("system", true))
+			{
+				sysw.PUT("/settings", app.systemUpdateSettings)
+				sysw.POST("/members", app.systemCreateMember)
+				sysw.PUT("/member/:username", app.systemUpdateMember)
+				sysw.DELETE("/member/:username", app.systemDeleteMember)
 			}
 		}
 	}
@@ -208,9 +253,10 @@ func (app *App) setupRouter() {
 	ws := app.Group("/ws")
 	ws.Use(AuthMiddleware())
 	{
+		// shell 权限由 handler 内部的 allowTerminal 控制，无需额外 perm 中间件
 		ws.GET("/shell", app.shellWebSocket)
 		if app.dockerSvc != nil {
-			ws.GET("/docker/container/exec", app.dockerContainerExec)
+			ws.GET("/docker/container/exec", PermMiddleware("docker", true), app.dockerContainerExec)
 		}
 	}
 }

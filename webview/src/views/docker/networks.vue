@@ -101,7 +101,7 @@ export default toNative(Networks)
             <button @click="loadNetworks()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button @click="createModalRef?.show()" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <button v-if="actions.hasPerm('docker', true)" @click="createModalRef?.show()" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-plus"></i>创建
             </button>
           </div>
@@ -121,7 +121,7 @@ export default toNative(Networks)
             <button @click="loadNetworks()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button @click="createModalRef?.show()" class="w-9 h-9 rounded-lg bg-purple-500 hover:bg-purple-600 flex items-center justify-center text-white transition-colors" title="创建">
+            <button v-if="actions.hasPerm('docker', true)" @click="createModalRef?.show()" class="w-9 h-9 rounded-lg bg-purple-500 hover:bg-purple-600 flex items-center justify-center text-white transition-colors" title="创建">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
@@ -167,7 +167,7 @@ export default toNative(Networks)
                       <i class="fas fa-info-circle text-xs"></i>
                     </button>
                     <button
-                      v-if="canDeleteNetwork(net)"
+                      v-if="canDeleteNetwork(net) && actions.hasPerm('docker', true)"
                       @click="handleNetworkAction(net, 'remove')"
                       class="btn-icon text-red-600 hover:bg-red-50"
                       title="删除"
@@ -222,7 +222,7 @@ export default toNative(Networks)
                 <i class="fas fa-info-circle text-xs"></i><span class="text-xs ml-1">详情</span>
               </button>
               <button
-                v-if="canDeleteNetwork(net)"
+                v-if="canDeleteNetwork(net) && actions.hasPerm('docker', true)"
                 @click="handleNetworkAction(net, 'remove')"
                 class="btn-icon text-red-600 hover:bg-red-50"
                 title="删除"

@@ -1,4 +1,15 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import { permState } from '@/store/state'
+
+// 路由前缀与权限模块的映射
+const routePermMap: Array<[string, string]> = [
+  ['/explorer', 'filer'],
+  ['/apisix', 'apisix'],
+  ['/docker', 'docker'],
+  ['/swarm', 'swarm'],
+  ['/compose', 'compose'],
+  ['/system', 'system'],
+]
 
 const routes: RouteRecordRaw[] = [
   {
@@ -164,6 +175,30 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// 路由守卫：根据权限控制页面访问
+router.beforeEach((to) => {
+  // 未登录时放行（由 app.vue 的 v-if 控制显示登录页）
+  if (!localStorage.getItem('app-token')) return true
+  // 权限尚未加载完成时放行（刷新页面场景，等 loadMe 完成后由导航菜单 v-if 控制）
+  if (!permState.loaded) return true
+  // 主账号不受限
+  if (permState.isPrimary) return true
+
+  // shell 终端单独用 allowTerminal 控制
+  if (to.path === '/shell') {
+    return permState.allowTerminal ? true : { path: '/overview' }
+  }
+
+  for (const [prefix, module] of routePermMap) {
+    if (to.path.startsWith(prefix)) {
+      const perm = permState.permissions[module] || ''
+      if (!perm) return { path: '/overview' }
+      break
+    }
+  }
+  return true
 })
 
 export default router

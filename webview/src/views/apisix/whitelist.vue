@@ -172,7 +172,7 @@ export default toNative(Whitelist)
                     <span v-for="consumer in (route.consumers || [])" :key="consumer" class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 text-amber-800 rounded-lg text-xs group">
                       <i class="fas fa-user text-amber-500 text-[10px]"></i>
                       <span class="break-all">{{ consumer }}</span>
-                      <button @click="revokeConsumer(route, consumer)" class="opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all" title="撤销"><i class="fas fa-xmark text-[10px]"></i></button>
+                      <button v-if="actions.hasPerm('apisix', true)" @click="revokeConsumer(route, consumer)" class="opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all" title="撤销"><i class="fas fa-xmark text-[10px]"></i></button>
                     </span>
                   </div>
                 </td>
@@ -215,7 +215,7 @@ export default toNative(Whitelist)
                 <span v-for="consumer in (route.consumers || [])" :key="consumer" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-800 rounded-lg text-xs">
                   <i class="fas fa-user text-amber-500 text-[10px]"></i>
                   <span class="break-all">{{ consumer }}</span>
-                  <button @click="revokeConsumer(route, consumer)" class="hover:text-red-500 transition-colors" title="撤销"><i class="fas fa-xmark text-[10px]"></i></button>
+                  <button v-if="actions.hasPerm('apisix', true)" @click="revokeConsumer(route, consumer)" class="hover:text-red-500 transition-colors" title="撤销"><i class="fas fa-xmark text-[10px]"></i></button>
                 </span>
               </div>
             </div>

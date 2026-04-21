@@ -8,6 +8,23 @@ import type { AppActions } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 
+// 可配置的模块列表
+const MODULES = [
+    { key: 'filer',   label: '文件管理', icon: 'fa-folder' },
+    { key: 'docker',  label: 'Docker',   icon: 'fa-brands fa-docker' },
+    { key: 'swarm',   label: 'Swarm',    icon: 'fa-layer-group' },
+    { key: 'compose', label: 'Compose',  icon: 'fa-cubes' },
+    { key: 'apisix',  label: 'APISIX',   icon: 'fa-route' },
+    { key: 'agent',   label: 'AI Agent', icon: 'fa-robot' },
+    { key: 'system',  label: '系统管理', icon: 'fa-gear' },
+]
+
+function emptyPermissions(): Record<string, string> {
+    const p: Record<string, string> = {}
+    for (const m of MODULES) p[m.key] = ''
+    return p
+}
+
 @Component({
     expose: ['show'],
     components: { BaseModal },
@@ -19,10 +36,14 @@ class MemberEditModal extends Vue {
     // ─── 数据属性 ───
     isOpen = false
     modalLoading = false
+    modules = MODULES
     // 编辑时保存原始用户名，用于后端定位
     originalUsername = ''
     passwordSet = false
-    formData: SystemMemberUpsertRequest = { username: '', password: '', homeDirectory: '', allowTerminal: false }
+    formData: SystemMemberUpsertRequest = {
+        username: '', password: '', homeDirectory: '', allowTerminal: false,
+        permissions: emptyPermissions()
+    }
 
     // ─── 计算属性 ───
     get isEdit() {
@@ -43,18 +64,32 @@ class MemberEditModal extends Vue {
         if (member) {
             this.originalUsername = member.username
             this.passwordSet = member.passwordSet
+            const perms = emptyPermissions()
+            if (member.permissions) {
+                for (const k of Object.keys(perms)) {
+                    perms[k] = member.permissions[k] || ''
+                }
+            }
             this.formData = {
                 username: member.username,
                 password: '',
                 homeDirectory: member.homeDirectory,
-                allowTerminal: member.allowTerminal
+                allowTerminal: member.allowTerminal,
+                permissions: perms
             }
         } else {
             this.originalUsername = ''
             this.passwordSet = false
-            this.formData = { username: '', password: '', homeDirectory: '', allowTerminal: false }
+            this.formData = {
+                username: '', password: '', homeDirectory: '', allowTerminal: false,
+                permissions: emptyPermissions()
+            }
         }
         this.isOpen = true
+    }
+
+    setPermission(moduleKey: string, value: string) {
+        this.formData.permissions = { ...this.formData.permissions, [moduleKey]: value }
     }
 
     async handleConfirm() {
@@ -112,6 +147,43 @@ export default toNative(MemberEditModal)
       <div class="flex items-center gap-2">
         <input id="allowTerminalSwitch" type="checkbox" v-model="formData.allowTerminal" class="w-4 h-4" />
         <label for="allowTerminalSwitch" class="text-sm text-slate-700">允许访问 Shell 终端</label>
+      </div>
+
+      <!-- 模块权限 -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-2">模块权限</label>
+        <p class="mb-2 text-xs text-slate-400">主账号始终拥有全部权限，此处设置对主账号无效</p>
+        <div class="rounded-lg border border-slate-200 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600">模块</th>
+                <th class="px-3 py-2 text-center text-xs font-semibold text-slate-600 w-20">无权限</th>
+                <th class="px-3 py-2 text-center text-xs font-semibold text-slate-600 w-20">只读</th>
+                <th class="px-3 py-2 text-center text-xs font-semibold text-slate-600 w-20">读写</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr v-for="mod in modules" :key="mod.key" class="hover:bg-slate-50">
+                <td class="px-3 py-2">
+                  <div class="flex items-center gap-2">
+                    <i :class="['fas', mod.icon, 'text-slate-400 w-4 text-center']"></i>
+                    <span class="text-slate-700">{{ mod.label }}</span>
+                  </div>
+                </td>
+                <td class="px-3 py-2 text-center">
+                  <input type="radio" :name="'perm-' + mod.key" value="" :checked="!formData.permissions[mod.key]" @change="setPermission(mod.key, '')" class="w-4 h-4 accent-slate-400" />
+                </td>
+                <td class="px-3 py-2 text-center">
+                  <input type="radio" :name="'perm-' + mod.key" value="r" :checked="formData.permissions[mod.key] === 'r'" @change="setPermission(mod.key, 'r')" class="w-4 h-4 accent-blue-500" />
+                </td>
+                <td class="px-3 py-2 text-center">
+                  <input type="radio" :name="'perm-' + mod.key" value="rw" :checked="formData.permissions[mod.key] === 'rw'" @change="setPermission(mod.key, 'rw')" class="w-4 h-4 accent-green-500" />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </form>
   </BaseModal>

@@ -126,37 +126,41 @@ export default toNative(FileExplorer)
             >
               <i class="fas fa-rotate"></i><span>刷新</span>
             </button>
-            <button 
-              class="hidden md:flex px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium items-center gap-1.5 transition-colors"
-              @click="mkdirModalRef.show()"
-            >
-              <i class="fas fa-folder"></i><span>新建目录</span>
-            </button>
-            <button 
-              class="hidden md:flex px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium items-center gap-1.5 transition-colors"
-              @click="createModalRef.show()"
-            >
-              <i class="fas fa-file"></i><span>新建文件</span>
-            </button>
-            <button 
-              class="hidden md:flex px-3 py-1.5 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-xs font-medium items-center gap-1.5 transition-colors"
-              @click="uploadModal.show()"
-            >
-              <i class="fas fa-upload"></i><span>上传文件</span>
-            </button>
+            <template v-if="actions.hasPerm('filer', true)">
+              <button 
+                class="hidden md:flex px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium items-center gap-1.5 transition-colors"
+                @click="mkdirModalRef.show()"
+              >
+                <i class="fas fa-folder"></i><span>新建目录</span>
+              </button>
+              <button 
+                class="hidden md:flex px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium items-center gap-1.5 transition-colors"
+                @click="createModalRef.show()"
+              >
+                <i class="fas fa-file"></i><span>新建文件</span>
+              </button>
+              <button 
+                class="hidden md:flex px-3 py-1.5 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-xs font-medium items-center gap-1.5 transition-colors"
+                @click="uploadModal.show()"
+              >
+                <i class="fas fa-upload"></i><span>上传文件</span>
+              </button>
+            </template>
             <!-- 移动端图标按鈕 -->
             <button @click="refreshFiles()" class="md:hidden w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button @click="mkdirModalRef.show()" class="md:hidden w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="新建目录">
-              <i class="fas fa-folder text-sm"></i>
-            </button>
-            <button @click="createModalRef.show()" class="md:hidden w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="新建文件">
-              <i class="fas fa-file text-sm"></i>
-            </button>
-            <button @click="uploadModal.show()" class="md:hidden w-9 h-9 rounded-lg bg-primary-500 hover:bg-primary-600 flex items-center justify-center text-white transition-colors" title="上传文件">
-              <i class="fas fa-upload text-sm"></i>
-            </button>
+            <template v-if="actions.hasPerm('filer', true)">
+              <button @click="mkdirModalRef.show()" class="md:hidden w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="新建目录">
+                <i class="fas fa-folder text-sm"></i>
+              </button>
+              <button @click="createModalRef.show()" class="md:hidden w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="新建文件">
+                <i class="fas fa-file text-sm"></i>
+              </button>
+              <button @click="uploadModal.show()" class="md:hidden w-9 h-9 rounded-lg bg-primary-500 hover:bg-primary-600 flex items-center justify-center text-white transition-colors" title="上传文件">
+                <i class="fas fa-upload text-sm"></i>
+              </button>
+            </template>
           </div>
         </div>
       </div>
@@ -237,27 +241,29 @@ export default toNative(FileExplorer)
                       >
                         <i class="fas fa-folder-open"></i>
                       </button>
-                      <button 
-                        class="btn-icon text-amber-600 hover:bg-amber-50"
-                        @click="zipModalRef.show(file)" 
-                        title="压缩"
-                      >
-                        <i class="fas fa-file-zipper"></i>
-                      </button>
-                      <button 
-                        class="btn-icon text-slate-600 hover:bg-slate-50"
-                        @click="renameModalRef.show(file)" 
-                        title="重命名"
-                      >
-                        <i class="fas fa-pen"></i>
-                      </button>
-                      <button 
-                        class="btn-icon text-red-600 hover:bg-red-50"
-                        @click="deleteModalRef.show(file)" 
-                        title="删除"
-                      >
-                        <i class="fas fa-trash"></i>
-                      </button>
+                      <template v-if="actions.hasPerm('filer', true)">
+                        <button 
+                          class="btn-icon text-amber-600 hover:bg-amber-50"
+                          @click="zipModalRef.show(file)" 
+                          title="压缩"
+                        >
+                          <i class="fas fa-file-zipper"></i>
+                        </button>
+                        <button 
+                          class="btn-icon text-slate-600 hover:bg-slate-50"
+                          @click="renameModalRef.show(file)" 
+                          title="重命名"
+                        >
+                          <i class="fas fa-pen"></i>
+                        </button>
+                        <button 
+                          class="btn-icon text-red-600 hover:bg-red-50"
+                          @click="deleteModalRef.show(file)" 
+                          title="删除"
+                        >
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </template>
                     </template>
                     
                     <!-- File Actions -->
@@ -269,28 +275,30 @@ export default toNative(FileExplorer)
                       >
                         <i class="fas fa-download"></i>
                       </button>
-                      <button 
-                        v-if="isEditableFile(file.name)"
-                        class="btn-icon text-violet-600 hover:bg-violet-50"
-                        @click="modifyModalRef.show(file)" 
-                        title="编辑"
-                      >
-                        <i class="fas fa-edit"></i>
-                      </button>
-                      <button 
-                        class="btn-icon text-slate-600 hover:bg-slate-50"
-                        @click="renameModalRef.show(file)" 
-                        title="重命名"
-                      >
-                        <i class="fas fa-pen"></i>
-                      </button>
-                      <button 
-                        class="btn-icon text-red-600 hover:bg-red-50"
-                        @click="deleteModalRef.show(file)" 
-                        title="删除"
-                      >
-                        <i class="fas fa-trash"></i>
-                      </button>
+                      <template v-if="actions.hasPerm('filer', true)">
+                        <button 
+                          v-if="isEditableFile(file.name)"
+                          class="btn-icon text-violet-600 hover:bg-violet-50"
+                          @click="modifyModalRef.show(file)" 
+                          title="编辑"
+                        >
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button 
+                          class="btn-icon text-slate-600 hover:bg-slate-50"
+                          @click="renameModalRef.show(file)" 
+                          title="重命名"
+                        >
+                          <i class="fas fa-pen"></i>
+                        </button>
+                        <button 
+                          class="btn-icon text-red-600 hover:bg-red-50"
+                          @click="deleteModalRef.show(file)" 
+                          title="删除"
+                        >
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </template>
                     </template>
                   </div>
                 </td>
@@ -360,30 +368,32 @@ export default toNative(FileExplorer)
                   <i class="fas fa-folder-open text-xs"></i>
                   <span class="text-xs ml-1 hidden xs:inline">进入</span>
                 </button>
-                <button 
-                  class="btn-icon text-amber-600 hover:bg-amber-50"
-                  @click="zipModalRef.show(file)" 
-                  title="压缩"
-                >
-                  <i class="fas fa-file-zipper text-xs"></i>
-                  <span class="text-xs ml-1 hidden xs:inline">压缩</span>
-                </button>
-                <button 
-                  class="btn-icon text-slate-600 hover:bg-slate-50"
-                  @click="renameModalRef.show(file)" 
-                  title="重命名"
-                >
-                  <i class="fas fa-pen text-xs"></i>
-                  <span class="text-xs ml-1 hidden xs:inline">重命名</span>
-                </button>
-                <button 
-                  class="btn-icon text-red-600 hover:bg-red-50"
-                  @click="deleteModalRef.show(file)" 
-                  title="删除"
-                >
-                  <i class="fas fa-trash text-xs"></i>
-                  <span class="text-xs ml-1 hidden xs:inline">删除</span>
-                </button>
+                <template v-if="actions.hasPerm('filer', true)">
+                  <button 
+                    class="btn-icon text-amber-600 hover:bg-amber-50"
+                    @click="zipModalRef.show(file)" 
+                    title="压缩"
+                  >
+                    <i class="fas fa-file-zipper text-xs"></i>
+                    <span class="text-xs ml-1 hidden xs:inline">压缩</span>
+                  </button>
+                  <button 
+                    class="btn-icon text-slate-600 hover:bg-slate-50"
+                    @click="renameModalRef.show(file)" 
+                    title="重命名"
+                  >
+                    <i class="fas fa-pen text-xs"></i>
+                    <span class="text-xs ml-1 hidden xs:inline">重命名</span>
+                  </button>
+                  <button 
+                    class="btn-icon text-red-600 hover:bg-red-50"
+                    @click="deleteModalRef.show(file)" 
+                    title="删除"
+                  >
+                    <i class="fas fa-trash text-xs"></i>
+                    <span class="text-xs ml-1 hidden xs:inline">删除</span>
+                  </button>
+                </template>
               </template>
               
               <!-- File Actions -->
@@ -396,31 +406,33 @@ export default toNative(FileExplorer)
                   <i class="fas fa-download text-xs"></i>
                   <span class="text-xs ml-1 hidden xs:inline">下载</span>
                 </button>
-                <button 
-                  v-if="isEditableFile(file.name)"
-                  class="btn-icon text-violet-600 hover:bg-violet-50"
-                  @click="modifyModalRef.show(file)" 
-                  title="编辑"
-                >
-                  <i class="fas fa-edit text-xs"></i>
-                  <span class="text-xs ml-1 hidden xs:inline">编辑</span>
-                </button>
-                <button 
-                  class="btn-icon text-slate-600 hover:bg-slate-50"
-                  @click="renameModalRef.show(file)" 
-                  title="重命名"
-                >
-                  <i class="fas fa-pen text-xs"></i>
-                  <span class="text-xs ml-1 hidden xs:inline">重命名</span>
-                </button>
-                <button 
-                  class="btn-icon text-red-600 hover:bg-red-50"
-                  @click="deleteModalRef.show(file)" 
-                  title="删除"
-                >
-                  <i class="fas fa-trash text-xs"></i>
-                  <span class="text-xs ml-1 hidden xs:inline">删除</span>
-                </button>
+                <template v-if="actions.hasPerm('filer', true)">
+                  <button 
+                    v-if="isEditableFile(file.name)"
+                    class="btn-icon text-violet-600 hover:bg-violet-50"
+                    @click="modifyModalRef.show(file)" 
+                    title="编辑"
+                  >
+                    <i class="fas fa-edit text-xs"></i>
+                    <span class="text-xs ml-1 hidden xs:inline">编辑</span>
+                  </button>
+                  <button 
+                    class="btn-icon text-slate-600 hover:bg-slate-50"
+                    @click="renameModalRef.show(file)" 
+                    title="重命名"
+                  >
+                    <i class="fas fa-pen text-xs"></i>
+                    <span class="text-xs ml-1 hidden xs:inline">重命名</span>
+                  </button>
+                  <button 
+                    class="btn-icon text-red-600 hover:bg-red-50"
+                    @click="deleteModalRef.show(file)" 
+                    title="删除"
+                  >
+                    <i class="fas fa-trash text-xs"></i>
+                    <span class="text-xs ml-1 hidden xs:inline">删除</span>
+                  </button>
+                </template>
               </template>
             </div>
           </div>

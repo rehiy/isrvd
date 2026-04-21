@@ -110,10 +110,10 @@ export default toNative(Images)
             <button @click="loadImages()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button @click="buildModalRef?.show()" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <button v-if="actions.hasPerm('docker', true)" @click="buildModalRef?.show()" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-hammer"></i>构建
             </button>
-            <button @click="pullModalRef?.show()" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <button v-if="actions.hasPerm('docker', true)" @click="pullModalRef?.show()" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-download"></i>拉取
             </button>
           </div>
@@ -134,10 +134,10 @@ export default toNative(Images)
               <button @click="loadImages()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
                 <i class="fas fa-rotate text-sm"></i>
               </button>
-              <button @click="buildModalRef?.show()" class="w-9 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-white transition-colors" title="构建">
+              <button v-if="actions.hasPerm('docker', true)" @click="buildModalRef?.show()" class="w-9 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-white transition-colors" title="构建">
                 <i class="fas fa-hammer text-sm"></i>
               </button>
-              <button @click="pullModalRef?.show()" class="w-9 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-white transition-colors" title="拉取">
+              <button v-if="actions.hasPerm('docker', true)" @click="pullModalRef?.show()" class="w-9 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-white transition-colors" title="拉取">
                 <i class="fas fa-download text-sm"></i>
               </button>
             </div>
@@ -198,13 +198,13 @@ export default toNative(Images)
               <button @click="$router.push('/docker/image/' + img.id)" class="btn-icon text-slate-600 hover:bg-slate-50" title="查看详情">
                     <i class="fas fa-circle-info text-xs"></i>
                   </button>
-                  <button @click="tagModalRef?.show(img)" class="btn-icon text-blue-600 hover:bg-blue-50" title="打标签">
+                  <button @click="tagModalRef?.show(img)" v-if="actions.hasPerm('docker', true)" class="btn-icon text-blue-600 hover:bg-blue-50" title="打标签">
                     <i class="fas fa-tag text-xs"></i>
                   </button>
-                  <button @click="openPush(img)" :disabled="registries.length === 0" class="btn-icon text-purple-600 hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'">
+                  <button @click="openPush(img)" v-if="actions.hasPerm('docker', true)" :disabled="registries.length === 0" class="btn-icon text-purple-600 hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'">
                     <i class="fas fa-upload text-xs"></i>
                   </button>
-                  <button @click="handleImageAction(img, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                  <button @click="handleImageAction(img, 'remove')" v-if="actions.hasPerm('docker', true)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
@@ -256,13 +256,13 @@ export default toNative(Images)
             <button @click="$router.push('/docker/image/' + img.id)" class="btn-icon text-slate-600 hover:bg-slate-50" title="查看详情">
               <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
             </button>
-            <button @click="tagModalRef?.show(img)" class="btn-icon text-blue-600 hover:bg-blue-50" title="打标签">
+            <button @click="tagModalRef?.show(img)" v-if="actions.hasPerm('docker', true)" class="btn-icon text-blue-600 hover:bg-blue-50" title="打标签">
               <i class="fas fa-tag text-xs"></i><span class="text-xs ml-1">标签</span>
             </button>
-            <button @click="openPush(img)" :disabled="registries.length === 0" class="btn-icon text-purple-600 hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'">
+            <button @click="openPush(img)" v-if="actions.hasPerm('docker', true)" :disabled="registries.length === 0" class="btn-icon text-purple-600 hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'">
               <i class="fas fa-upload text-xs"></i><span class="text-xs ml-1">推送</span>
             </button>
-            <button @click="handleImageAction(img, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+            <button @click="handleImageAction(img, 'remove')" v-if="actions.hasPerm('docker', true)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
               <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
             </button>
           </div>

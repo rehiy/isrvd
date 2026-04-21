@@ -1,8 +1,8 @@
 <script lang="ts">
 import { Component, Inject, Prop, Vue, Watch, toNative } from 'vue-facing-decorator'
 
-import { APP_STATE_KEY } from '@/store/state'
-import type { AppState } from '@/store/state'
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
+import type { AppState, AppActions } from '@/store/state'
 
 @Component({
     expose: ['toggleMobileSidebar', 'closeMobileSidebar', 'openMobileSidebar'],
@@ -10,6 +10,7 @@ import type { AppState } from '@/store/state'
 })
 class NavigationBar extends Vue {
     @Inject({ from: APP_STATE_KEY }) readonly state!: AppState
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
     @Prop({ type: Boolean, default: false }) readonly collapsed!: boolean
 
     // ─── 数据属性 ───
@@ -17,6 +18,19 @@ class NavigationBar extends Vue {
     dockerExpanded = false
     swarmExpanded = false
     apisixExpanded = false
+
+    // ─── 权限计算属性 ───
+    get canFiler() { return this.actions.hasPerm('filer') }
+    get canDocker() { return this.state.serviceAvailability.docker && this.actions.hasPerm('docker') }
+    get canSwarm() { return this.state.serviceAvailability.swarm && this.actions.hasPerm('swarm') }
+    get canCompose() { return this.state.serviceAvailability.compose && this.actions.hasPerm('compose') }
+    get canApisix() { return this.state.serviceAvailability.apisix && this.actions.hasPerm('apisix') }
+    get canSystem() { return this.actions.hasPerm('system') }
+    get canShell() { return this.state.isPrimary || this.state.allowTerminal }
+
+    // 服务是否可用（不考虑权限）
+    get hasDocker() { return this.state.serviceAvailability.docker }
+    get hasSwarm() { return this.state.serviceAvailability.swarm }
 
     // ─── 计算属性 ───
     get isDockerActive() {
@@ -164,6 +178,7 @@ export default toNative(NavigationBar)
         <span v-if="!collapsed">概览</span>
       </router-link>
       <router-link 
+        v-if="canFiler"
         to="/explorer" 
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
         active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
@@ -173,6 +188,7 @@ export default toNative(NavigationBar)
         <span v-if="!collapsed">文件管理</span>
       </router-link>
       <router-link 
+        v-if="canShell"
         to="/shell" 
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
         active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
@@ -183,8 +199,8 @@ export default toNative(NavigationBar)
       </router-link>
 
       <!-- APISIX 折叠子菜单 -->
-      <div v-if="state.serviceAvailability.apisix">
-        <!-- 折叠状态：只显示图标 -->
+      <div v-if="canApisix">
+        <!-- 折叠状态只显示图标 -->
         <router-link
           v-if="collapsed"
           to="/overview"
@@ -194,7 +210,7 @@ export default toNative(NavigationBar)
         >
           <i class="fas fa-cloud"></i>
         </router-link>
-        <!-- 展开状态：显示完整子菜单 -->
+        <!-- 有权限：展开状态显示完整子菜单 -->
         <template v-else>
           <button
             @click.stop="toggleApisix"
@@ -238,8 +254,8 @@ export default toNative(NavigationBar)
       </div>
 
       <!-- Docker 折叠子菜单 -->
-      <div v-if="state.serviceAvailability.docker">
-        <!-- 折叠状态：只显示图标 -->
+      <div v-if="canDocker">
+        <!-- 折叠状态只显示图标 -->
         <router-link
           v-if="collapsed"
           to="/overview"
@@ -309,8 +325,8 @@ export default toNative(NavigationBar)
       </div>
 
       <!-- Swarm 折叠子菜单 -->
-      <div v-if="state.serviceAvailability.swarm">
-        <!-- 折叠状态：只显示图标 -->
+      <div v-if="canSwarm">
+        <!-- 折叠状态只显示图标 -->
         <router-link
           v-if="collapsed"
           to="/overview"
@@ -320,7 +336,7 @@ export default toNative(NavigationBar)
         >
           <i class="fas fa-circle-nodes"></i>
         </router-link>
-        <!-- 展开状态：显示完整子菜单 -->
+        <!-- 有权限：展开状态显示完整子菜单 -->
         <template v-else>
           <button
             @click.stop="toggleSwarm"
@@ -365,7 +381,7 @@ export default toNative(NavigationBar)
 
       <!-- Compose 部署 -->
       <router-link
-        v-if="state.serviceAvailability.compose"
+        v-if="canCompose"
         to="/compose/deploy"
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
         active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
@@ -376,6 +392,7 @@ export default toNative(NavigationBar)
       </router-link>
 
       <router-link
+        v-if="canSystem"
         to="/system/members"
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
         active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
@@ -387,6 +404,7 @@ export default toNative(NavigationBar)
 
       <!-- 系统设置（放在最后） -->
       <router-link
+        v-if="canSystem"
         to="/system/settings"
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
         active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"

@@ -76,3 +76,54 @@ func ProxyHeaderAuthMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// moduleLabel 模块显示名映射，统一错误提示中的大小写与空格
+var moduleLabel = map[string]string{
+	"filer":   "文件管理",
+	"docker":  "Docker",
+	"swarm":   "Swarm",
+	"compose": "Compose",
+	"apisix":  "APISIX",
+	"agent":   "AI Agent",
+	"system":  "系统管理",
+}
+
+// PermMiddleware 模块权限检查中间件
+// module: 模块名（filer/docker/swarm/compose/apisix/agent/system）
+// write: true 表示需要写权限（rw），false 表示只需读权限（r 或 rw）
+// 主账号（PrimaryMember）始终放行
+func PermMiddleware(module string, write bool) gin.HandlerFunc {
+	label := moduleLabel[module]
+	if label == "" {
+		label = module
+	}
+	return func(c *gin.Context) {
+		username := c.GetString("username")
+		// 主账号始终拥有全部权限
+		if username == config.PrimaryMember {
+			c.Next()
+			return
+		}
+		member, exists := config.Members[username]
+		if !exists {
+			helper.RespondError(c, http.StatusForbidden, "用户不存在")
+			c.Abort()
+			return
+		}
+		perm := member.Permissions[module]
+		if write {
+			if perm != "rw" {
+				helper.RespondError(c, http.StatusForbidden, "无 "+label+" 模块写权限")
+				c.Abort()
+				return
+			}
+		} else {
+			if perm != "r" && perm != "rw" {
+				helper.RespondError(c, http.StatusForbidden, "无 "+label+" 模块访问权限")
+				c.Abort()
+				return
+			}
+		}
+		c.Next()
+	}
+}

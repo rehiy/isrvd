@@ -343,6 +343,10 @@ class ApiService {
 
     // ==================== 系统设置 ====================
 
+    getMe() {
+        return http.get<SystemMemberInfo>('/api/system/me')
+    }
+
     getSettings() {
         return http.get<SystemAllSettings>('/api/system/settings')
     }

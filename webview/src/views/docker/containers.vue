@@ -155,13 +155,13 @@ export default toNative(Containers)
                 <i class="fas fa-layer-group"></i><span>全部</span>
               </button>
             </div>
-            <button v-if="batchMode && selectedIds.length > 0" @click="batchAction('start')" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" title="批量启动">
+            <button v-if="batchMode && selectedIds.length > 0 && actions.hasPerm('docker', true)" @click="batchAction('start')" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" title="批量启动">
               <i class="fas fa-play"></i>
             </button>
-            <button v-if="batchMode && selectedIds.length > 0" @click="batchAction('stop')" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" title="批量停止">
+            <button v-if="batchMode && selectedIds.length > 0 && actions.hasPerm('docker', true)" @click="batchAction('stop')" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" title="批量停止">
               <i class="fas fa-stop"></i>
             </button>
-            <button v-if="batchMode && selectedIds.length > 0" @click="batchAction('remove')" class="px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" title="批量删除">
+            <button v-if="batchMode && selectedIds.length > 0 && actions.hasPerm('docker', true)" @click="batchAction('remove')" class="px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" title="批量删除">
               <i class="fas fa-trash"></i>
             </button>
             <button @click="toggleBatchMode()" :class="['px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors', batchMode ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700']">
@@ -170,7 +170,7 @@ export default toNative(Containers)
             <button @click="loadContainers()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button @click="createContainerModal()" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <button v-if="actions.hasPerm('docker', true)" @click="createContainerModal()" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-plus"></i>创建
             </button>
           </div>
@@ -194,13 +194,13 @@ export default toNative(Containers)
               <button @click="loadContainers()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
                 <i class="fas fa-rotate text-sm"></i>
               </button>
-              <button @click="createContainerModal()" class="w-9 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-colors" title="创建">
+              <button v-if="actions.hasPerm('docker', true)" @click="createContainerModal()" class="w-9 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-colors" title="创建">
                 <i class="fas fa-plus text-sm"></i>
               </button>
             </div>
           </div>
           <!-- 批量操作（移动端） -->
-          <div v-if="batchMode && selectedIds.length > 0" class="flex items-center gap-1 mb-2">
+          <div v-if="batchMode && selectedIds.length > 0 && actions.hasPerm('docker', true)" class="flex items-center gap-1 mb-2">
             <button @click="batchAction('start')" class="flex-1 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-colors">
               <i class="fas fa-play"></i>批量启动
             </button>
@@ -282,19 +282,19 @@ export default toNative(Containers)
                     <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="登录终端">
                       <i class="fas fa-terminal text-xs"></i>
                     </button>
-                    <button v-if="ct.state !== 'running'" @click="handleContainerAction(ct, 'start')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动">
+                    <button v-if="ct.state !== 'running' && actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'start')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动">
                       <i class="fas fa-play text-xs"></i>
                     </button>
-                    <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'restart')" class="btn-icon text-blue-600 hover:bg-blue-50" title="重启">
+                    <button v-if="ct.state === 'running' && actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'restart')" class="btn-icon text-blue-600 hover:bg-blue-50" title="重启">
                       <i class="fas fa-redo text-xs"></i>
                     </button>
-                    <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
+                    <button v-if="ct.state === 'running' && actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
                       <i class="fas fa-stop text-xs"></i>
                     </button>
-                    <button @click="!ct.isSwarm && containerEditModalRef?.show(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-amber-600 hover:bg-amber-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
+                    <button v-if="actions.hasPerm('docker', true)" @click="!ct.isSwarm && containerEditModalRef?.show(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-amber-600 hover:bg-amber-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
                       <i class="fas fa-pen text-xs"></i>
                     </button>
-                    <button @click="handleContainerAction(ct, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                    <button v-if="actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                       <i class="fas fa-trash text-xs"></i>
                     </button>
                   </div>
@@ -355,19 +355,19 @@ export default toNative(Containers)
               <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="终端">
                 <i class="fas fa-terminal text-xs"></i><span class="text-xs ml-1">终端</span>
               </button>
-              <button v-if="ct.state !== 'running'" @click="handleContainerAction(ct, 'start')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动">
+              <button v-if="ct.state !== 'running' && actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'start')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动">
                 <i class="fas fa-play text-xs"></i><span class="text-xs ml-1">启动</span>
               </button>
-              <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'restart')" class="btn-icon text-blue-600 hover:bg-blue-50" title="重启">
+              <button v-if="ct.state === 'running' && actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'restart')" class="btn-icon text-blue-600 hover:bg-blue-50" title="重启">
                 <i class="fas fa-redo text-xs"></i><span class="text-xs ml-1">重启</span>
               </button>
-              <button v-if="ct.state === 'running'" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
+              <button v-if="ct.state === 'running' && actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
                 <i class="fas fa-stop text-xs"></i><span class="text-xs ml-1">停止</span>
               </button>
-              <button @click="!ct.isSwarm && containerEditModalRef?.show(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-amber-600 hover:bg-amber-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
+              <button v-if="actions.hasPerm('docker', true)" @click="!ct.isSwarm && containerEditModalRef?.show(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-amber-600 hover:bg-amber-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
-              <button @click="handleContainerAction(ct, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+              <button v-if="actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>

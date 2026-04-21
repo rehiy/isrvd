@@ -127,10 +127,10 @@ export default toNative(ComposeDeploy)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <button type="button" @click="resetForm()" :disabled="loading" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50">
+          <button type="button" @click="resetForm()" :disabled="loading" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50">
               <i class="fas fa-rotate-left"></i>清空
             </button>
-            <button type="button" @click="openMarketplace()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <button v-if="actions.hasPerm('compose', true)" type="button" @click="openMarketplace()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
               <i class="fas fa-store"></i>从应用市场选择
             </button>
           </div>
@@ -145,7 +145,7 @@ export default toNative(ComposeDeploy)
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
-            <button type="button" @click="openMarketplace()" class="w-9 h-9 rounded-lg bg-amber-500 hover:bg-amber-600 flex items-center justify-center text-white transition-colors" title="从应用市场选择">
+            <button v-if="actions.hasPerm('compose', true)" type="button" @click="openMarketplace()" class="w-9 h-9 rounded-lg bg-amber-500 hover:bg-amber-600 flex items-center justify-center text-white transition-colors" title="从应用市场选择">
               <i class="fas fa-store"></i>
             </button>
             <button type="button" @click="resetForm()" :disabled="loading" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 flex items-center justify-center transition-colors disabled:opacity-50" title="清空">
@@ -155,8 +155,8 @@ export default toNative(ComposeDeploy)
         </div>
       </div>
 
-      <!-- 表单 -->
-      <div class="p-4 md:p-6 space-y-4 max-w-5xl">
+        <!-- 表单 -->
+        <div class="p-4 md:p-6 space-y-4 max-w-5xl">
         <!-- 应用市场预填提示 -->
         <div v-if="fromMarketplace" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-2 text-xs">
           <i class="fas fa-circle-info text-amber-500 mt-0.5"></i>

@@ -13,19 +13,21 @@ import (
 
 // MemberInfo 成员信息（不包含密码明文）
 type MemberInfo struct {
-	Username      string `json:"username"`
-	HomeDirectory string `json:"homeDirectory"`
-	AllowTerminal bool   `json:"allowTerminal"`
-	PasswordSet   bool   `json:"passwordSet"`
-	IsPrimary     bool   `json:"isPrimary"`
+	Username      string            `json:"username"`
+	HomeDirectory string            `json:"homeDirectory"`
+	AllowTerminal bool              `json:"allowTerminal"`
+	PasswordSet   bool              `json:"passwordSet"`
+	IsPrimary     bool              `json:"isPrimary"`
+	Permissions   map[string]string `json:"permissions"`
 }
 
 // MemberUpsertRequest 成员新建/更新请求
 type MemberUpsertRequest struct {
-	Username      string `json:"username"`
-	Password      string `json:"password"`
-	HomeDirectory string `json:"homeDirectory"`
-	AllowTerminal bool   `json:"allowTerminal"`
+	Username      string            `json:"username"`
+	Password      string            `json:"password"`
+	HomeDirectory string            `json:"homeDirectory"`
+	AllowTerminal bool              `json:"allowTerminal"`
+	Permissions   map[string]string `json:"permissions"`
 }
 
 // MemberService 成员账号业务服务
@@ -36,16 +38,41 @@ func NewMemberService() *MemberService {
 	return &MemberService{}
 }
 
+// GetMember 获取单个成员信息
+func (s *MemberService) GetMember(username string) *MemberInfo {
+	m, exists := config.Members[username]
+	if !exists {
+		return nil
+	}
+	perms := m.Permissions
+	if perms == nil {
+		perms = map[string]string{}
+	}
+	return &MemberInfo{
+		Username:      m.Username,
+		HomeDirectory: m.HomeDirectory,
+		AllowTerminal: m.AllowTerminal,
+		PasswordSet:   m.Password != "",
+		IsPrimary:     m.Username == config.PrimaryMember,
+		Permissions:   perms,
+	}
+}
+
 // ListMembers 列出所有成员
 func (s *MemberService) ListMembers() []*MemberInfo {
 	list := make([]*MemberInfo, 0, len(config.Members))
 	for _, m := range config.Members {
+		perms := m.Permissions
+		if perms == nil {
+			perms = map[string]string{}
+		}
 		list = append(list, &MemberInfo{
 			Username:      m.Username,
 			HomeDirectory: m.HomeDirectory,
 			AllowTerminal: m.AllowTerminal,
 			PasswordSet:   m.Password != "",
 			IsPrimary:     m.Username == config.PrimaryMember,
+			Permissions:   perms,
 		})
 	}
 	return list
@@ -87,6 +114,7 @@ func (s *MemberService) CreateMember(req MemberUpsertRequest) error {
 		Password:      req.Password,
 		HomeDirectory: home,
 		AllowTerminal: req.AllowTerminal,
+		Permissions:   req.Permissions,
 	}
 	if config.PrimaryMember == "" {
 		config.PrimaryMember = req.Username
@@ -113,6 +141,7 @@ func (s *MemberService) UpdateMember(username string, req MemberUpsertRequest) e
 	member.Password = pickSecret(req.Password, member.Password)
 	member.HomeDirectory = home
 	member.AllowTerminal = req.AllowTerminal
+	member.Permissions = req.Permissions
 
 	if err := config.Save(); err != nil {
 		return fmt.Errorf("保存配置失败: %w", err)

@@ -12,6 +12,8 @@ import AuthLogin from '@/views/login.vue'
 import AuthLogout from '@/views/logout.vue'
 
 import { fetchServiceProbe } from '@/service/probe'
+import api from '@/service/api'
+import router from '@/router'
 
 const { state, actions } = initProvider()
 
@@ -42,11 +44,29 @@ class App extends Vue {
         }
     }
 
+    async loadMe() {
+        try {
+            const res = await api.getMe()
+            if (res?.payload) {
+                this.actions.setPermissions({
+                    isPrimary: res.payload.isPrimary,
+                    allowTerminal: res.payload.allowTerminal ?? false,
+                    permissions: res.payload.permissions || {}
+                })
+                // 权限加载完成后重新触发路由守卫（处理刷新页面场景）
+                router.replace(router.currentRoute.value.fullPath).catch(() => {})
+            }
+        } catch (e) {
+            console.warn('Failed to load user permissions:', e)
+        }
+    }
+
     // ─── 侦听器 ───
     @Watch('state.username')
     onUsernameChange(username: string, oldUsername: string) {
         if (username && !oldUsername) {
             this.loadServiceAvailability()
+            this.loadMe()
         }
     }
 
@@ -58,6 +78,7 @@ class App extends Vue {
         if (token && username) {
             this.actions.setAuth({ token, username })
             this.loadServiceAvailability()
+            this.loadMe()
         }
     }
 }
