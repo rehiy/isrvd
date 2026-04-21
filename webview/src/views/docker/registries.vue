@@ -160,12 +160,14 @@ export default toNative(Registries)
                   </div>
                 </td>
                 <td class="px-4 py-3">
-                  <code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ indexServerAddress || 'https://index.docker.io/v1/' }}</code>
-                  <template v-if="daemonMirrors.length > 0">
-                    <code v-for="mirror in daemonMirrors" :key="mirror" class="ml-1 text-xs bg-sky-50 text-sky-700 px-2 py-1 rounded inline-flex items-center gap-1">
-                      <i class="fas fa-bolt text-sky-400 text-xs"></i>{{ mirror }}
-                    </code>
-                  </template>
+                  <div class="flex flex-col gap-1">
+                    <code class="text-xs bg-slate-100 px-2 py-1 rounded self-start">{{ indexServerAddress || 'https://index.docker.io/v1/' }}</code>
+                    <template v-if="daemonMirrors.length > 0">
+                      <code v-for="mirror in daemonMirrors" :key="mirror" class="text-xs bg-sky-50 text-sky-700 px-2 py-1 rounded self-start inline-flex items-center gap-1">
+                        <i class="fas fa-bolt text-sky-400 text-xs"></i>{{ mirror }}
+                      </code>
+                    </template>
+                  </div>
                 </td>
                 <td class="px-4 py-3">
                   <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
