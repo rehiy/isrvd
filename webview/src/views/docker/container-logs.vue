@@ -36,7 +36,7 @@ class ContainerLogs extends Vue {
         this.logContent = ''
         try {
             const res = await api.containerLogs(this.containerId, this.logTail)
-            this.logContent = (res.payload?.logs || []).join('\n')
+            this.logContent = (res.payload?.logs || []).join('')
         } catch (e) {
             this.logContent = '加载日志失败'
         }
@@ -72,7 +72,13 @@ export default toNative(ContainerLogs)
           <div class="w-8 h-8 spinner"></div>
           <span>加载日志中...</span>
         </div>
-        <pre v-else class="bg-slate-900 text-green-400 p-3 md:p-4 rounded-xl overflow-auto max-h-[70vh] text-xs md:text-sm font-mono whitespace-pre-wrap">{{ logContent || '暂无日志' }}</pre>
+        <pre v-else-if="logContent" class="bg-slate-900 text-slate-100 rounded-xl p-3 md:p-4 text-xs font-mono overflow-auto max-h-[600px] whitespace-pre-wrap break-all">{{ logContent }}</pre>
+        <div v-else class="flex flex-col items-center justify-center py-16">
+          <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+            <i class="fas fa-file-lines text-2xl text-slate-300"></i>
+          </div>
+          <p class="text-slate-500 text-sm">暂无日志</p>
+        </div>
       </div>
     </div>
   </div>
