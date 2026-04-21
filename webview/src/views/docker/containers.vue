@@ -279,7 +279,7 @@ export default toNative(Containers)
                     <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/logs' })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
                       <i class="fas fa-file-lines text-xs"></i>
                     </button>
-                    <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="登录终端">
+                    <button v-if="ct.state === 'running' && actions.hasPerm('docker', true)" @click="$router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="登录终端">
                       <i class="fas fa-terminal text-xs"></i>
                     </button>
                     <button v-if="ct.state !== 'running' && actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'start')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动">
@@ -352,7 +352,7 @@ export default toNative(Containers)
               <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats' })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
                 <i class="fas fa-chart-bar text-xs"></i><span class="text-xs ml-1">统计</span>
               </button>
-              <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="终端">
+              <button v-if="ct.state === 'running' && actions.hasPerm('docker', true)" @click="$router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="终端">
                 <i class="fas fa-terminal text-xs"></i><span class="text-xs ml-1">终端</span>
               </button>
               <button v-if="ct.state !== 'running' && actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'start')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动">
