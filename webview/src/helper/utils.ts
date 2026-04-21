@@ -141,3 +141,28 @@ export const downloadFile = (filename: string, data: BlobPart): void => {
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
 }
+
+/**
+ * 复制文本到剪贴板
+ * 优先使用 Clipboard API，降级到 execCommand
+ * @returns 是否复制成功
+ */
+export const copyToClipboard = async (text: string): Promise<boolean> => {
+    try {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text)
+            return true
+        }
+        // 降级方案
+        const el = document.createElement('textarea')
+        el.value = text
+        el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0'
+        document.body.appendChild(el)
+        el.select()
+        const ok = document.execCommand('copy')
+        document.body.removeChild(el)
+        return ok
+    } catch {
+        return false
+    }
+}

@@ -138,3 +138,12 @@ func (app *App) swarmListTasks(c *gin.Context) {
 	}
 	helper.RespondSuccess(c, "Tasks listed", result)
 }
+
+func (app *App) swarmGetJoinTokens(c *gin.Context) {
+	result, err := app.swarmSvc.GetJoinTokens(c.Request.Context())
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Join tokens retrieved", result)
+}

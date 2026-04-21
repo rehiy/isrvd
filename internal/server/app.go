@@ -43,6 +43,10 @@ func NewApp() *App {
 		logman.Warn("Docker service unavailable", "error", err)
 	} else {
 		app.dockerSvc = dockerSvc
+		// 注入 compose 读取器（snapSvc 同时实现了 ComposeReader 接口）
+		if snapSvc != nil {
+			dockerSvc.SetComposeReader(snapSvc)
+		}
 	}
 
 	if apisixSvc, err := svcApisix.NewService(); err != nil {
@@ -136,6 +140,7 @@ func (app *App) setupRouter() {
 					d.POST("/container/logs", app.dockerContainerLogs)
 					d.GET("/container/:id/stats", app.dockerContainerStats)
 					d.GET("/container/:id/config", app.dockerGetContainerConfig)
+					d.GET("/container/:id/compose", app.dockerGetContainerCompose)
 					d.POST("/container/update", app.dockerUpdateContainerConfig)
 					d.GET("/images", app.dockerListImages)
 					d.POST("/image/action", app.dockerImageAction)
@@ -168,6 +173,7 @@ func (app *App) setupRouter() {
 				sw.GET("/nodes", app.swarmListNodes)
 				sw.GET("/node/:id", app.swarmInspectNode)
 				sw.POST("/node/action", app.swarmNodeAction)
+				sw.GET("/join-tokens", app.swarmGetJoinTokens)
 				sw.GET("/services", app.swarmListServices)
 				sw.GET("/service/:id", app.swarmInspectService)
 				sw.POST("/service/create", app.swarmCreateService)
@@ -180,6 +186,7 @@ func (app *App) setupRouter() {
 			// Compose
 			if app.composeSvc != nil {
 				auth.POST("/compose/deploy", app.composeDeploy)
+				auth.POST("/compose/redeploy", app.composeRedeploy)
 			}
 
 			// 系统

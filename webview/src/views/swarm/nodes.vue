@@ -1,6 +1,7 @@
 <script lang="ts">
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
+import { copyToClipboard } from '@/helper/utils'
 import api from '@/service/api'
 import type { SwarmNode } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
@@ -94,11 +95,11 @@ class Nodes extends Vue {
     }
 
     async copyJoinCommand() {
-        try {
-            await navigator.clipboard.writeText(this.joinCommand)
+        const ok = await copyToClipboard(this.joinCommand)
+        if (ok) {
             this.copied = true
             setTimeout(() => { this.copied = false }, 2000)
-        } catch (e) {
+        } else {
             this.actions.showNotification('error', '复制失败，请手动复制')
         }
     }

@@ -6,13 +6,11 @@ import type { ComposeDeployTarget } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
-import { Codemirror } from 'vue-codemirror'
-import { yaml } from '@codemirror/lang-yaml'
-
 import MarketplaceModal, { type MarketplacePick } from './widget/marketplace-modal.vue'
+import ComposeEditor from './widget/compose-editor.vue'
 
 @Component({
-    components: { Codemirror, MarketplaceModal }
+    components: { ComposeEditor, MarketplaceModal }
 })
 class ComposeDeploy extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
@@ -34,8 +32,6 @@ class ComposeDeploy extends Vue {
 
     // 预填态（来自应用市场一键选择）：仅用于头部提示徽章，不锁定输入
     fromMarketplace = false
-
-    readonly extensions = [yaml()]
 
     // 实例名合法性校验（与后端 safeName 保持一致）
     readonly nameRegex = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/
@@ -247,9 +243,7 @@ export default toNative(ComposeDeploy)
           <label class="block text-sm font-medium text-slate-700 mb-2">
             Compose 内容 <span class="text-red-500">*</span>
           </label>
-          <div class="rounded-xl overflow-hidden border border-slate-200">
-            <Codemirror v-model="content" :style="{ height: '50vh' }" :extensions="extensions" :disabled="loading" />
-          </div>
+          <ComposeEditor v-model="content" :disabled="loading" />
           <p class="mt-1 text-xs text-slate-400">
             变量插值需在客户端完成，后端仅按原文落盘与加载
           </p>

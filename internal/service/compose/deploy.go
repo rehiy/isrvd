@@ -89,6 +89,58 @@ func (s *DeployService) Deploy(ctx context.Context, req DeployRequest) (*DeployR
 	}
 }
 
+// RedeployRequest compose 重建请求（用于编辑已有容器的 compose 文件后重建）
+type RedeployRequest struct {
+	Content     string `json:"content" binding:"required"`
+	ProjectName string `json:"projectName" binding:"required"`
+}
+
+// RedeployDocker 更新已有容器的 compose 文件并重建
+// 先停止并删除旧容器，再用新内容重新部署
+func (s *DeployService) RedeployDocker(ctx context.Context, req RedeployRequest) (*DeployResult, error) {
+	if req.Content == "" {
+		return nil, fmt.Errorf("compose 内容不能为空")
+	}
+	if !safeName.MatchString(req.ProjectName) {
+		return nil, fmt.Errorf("非法的实例名")
+	}
+
+	root := s.docker.ContainerRoot()
+	installDir := ""
+	if root != "" {
+		installDir = filepath.Join(root, req.ProjectName)
+	}
+
+	// 停止并删除旧容器（忽略不存在的错误）
+	_ = s.docker.ContainerAction(ctx, req.ProjectName, "stop")
+	_ = s.docker.ContainerAction(ctx, req.ProjectName, "remove")
+
+	// 如果有安装目录，更新 compose 文件
+	if installDir != "" {
+		if err := os.MkdirAll(installDir, 0755); err != nil {
+			return nil, fmt.Errorf("创建安装目录失败: %w", err)
+		}
+		composeFile := filepath.Join(installDir, "docker-compose.yml")
+		if err := os.WriteFile(composeFile, []byte(req.Content), 0644); err != nil {
+			return nil, fmt.Errorf("写入 compose 文件失败: %w", err)
+		}
+	}
+
+	// 加载并重新部署
+	project, err := compose.LoadProjectFromContent(ctx, req.Content, req.ProjectName)
+	if err != nil {
+		return nil, err
+	}
+
+	items, err := s.compose.DeployProject(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+
+	logman.Info("Compose app redeployed", "name", req.ProjectName)
+	return &DeployResult{Target: TargetDocker, Items: items, InstallDir: installDir}, nil
+}
+
 // deployDocker 单机 docker 部署：落盘到 {ContainerRoot}/{ProjectName}，
 // 可选下载并解压 InitURL 指向的附加运行文件 zip。
 func (s *DeployService) deployDocker(ctx context.Context, req DeployRequest) (*DeployResult, error) {

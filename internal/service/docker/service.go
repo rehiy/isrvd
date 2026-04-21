@@ -16,10 +16,16 @@ type SnapshotSaver interface {
 	Save(req pkgdocker.ContainerCreateRequest)
 }
 
+// ComposeReader compose 文件读取接口
+type ComposeReader interface {
+	GetComposeContent(ctx context.Context, name string) (string, error)
+}
+
 // Service Docker 业务服务
 type Service struct {
-	docker   *pkgdocker.DockerService
-	snapshot SnapshotSaver // 可为 nil，创建/更新容器时安静跳过
+	docker        *pkgdocker.DockerService
+	snapshot      SnapshotSaver // 可为 nil，创建/更新容器时安静跳过
+	composeReader ComposeReader // 可为 nil，读取 compose 文件时跳过
 }
 
 // NewService 创建 Docker 业务服务
@@ -30,6 +36,11 @@ func NewService(snapshot SnapshotSaver) (*Service, error) {
 		return nil, fmt.Errorf("Docker 服务未初始化")
 	}
 	return &Service{docker: svc, snapshot: snapshot}, nil
+}
+
+// SetComposeReader 注入 compose 读取器（在 NewService 后调用）
+func (s *Service) SetComposeReader(r ComposeReader) {
+	s.composeReader = r
 }
 
 // CheckAvailability 检测 Docker 可用性

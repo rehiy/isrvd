@@ -70,6 +70,16 @@ func (app *App) dockerGetContainerConfig(c *gin.Context) {
 	helper.RespondSuccess(c, "获取容器配置成功", result)
 }
 
+func (app *App) dockerGetContainerCompose(c *gin.Context) {
+	name := c.Param("id")
+	content, err := app.dockerSvc.GetContainerCompose(c.Request.Context(), name)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "获取 compose 文件成功", gin.H{"content": content})
+}
+
 func (app *App) dockerContainerStats(c *gin.Context) {
 	id := c.Param("id")
 	result, err := app.dockerSvc.ContainerStats(c.Request.Context(), id)

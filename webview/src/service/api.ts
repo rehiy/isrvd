@@ -133,6 +133,10 @@ class ApiService {
         return http.get<ContainerConfigResponse>(`/api/docker/container/${name}/config`)
     }
 
+    getContainerCompose(name: string) {
+        return http.get<{ content: string }>(`/api/docker/container/${name}/compose`)
+    }
+
     updateContainerConfig(data: ContainerUpdateRequest) {
         return http.post('/api/docker/container/update', data)
     }
@@ -233,6 +237,10 @@ class ApiService {
 
     swarmListNodes() {
         return http.get<SwarmNode[]>('/api/swarm/nodes')
+    }
+
+    swarmGetJoinTokens() {
+        return http.get<{ worker: string; manager: string }>('/api/swarm/join-tokens')
     }
 
     swarmInspectNode(id: string) {
@@ -368,6 +376,10 @@ class ApiService {
 
     composeDeploy(data: ComposeDeployRequest) {
         return http.post<ComposeDeployResult>('/api/compose/deploy', data)
+    }
+
+    composeRedeploy(data: { content: string; projectName: string }) {
+        return http.post<ComposeDeployResult>('/api/compose/redeploy', data)
     }
 }
 

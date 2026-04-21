@@ -9,10 +9,11 @@ import type { AppActions, AppState } from '@/store/state'
 import CapSelect from '@/views/docker/widget/cap-select.vue'
 import ImageSelect from '@/views/docker/widget/image-select.vue'
 import BaseModal from '@/component/modal.vue'
+import ComposeEditor from '@/views/compose/widget/compose-editor.vue'
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, CapSelect, ImageSelect },
+    components: { BaseModal, CapSelect, ImageSelect, ComposeEditor },
     emits: ['success']
 })
 class ContainerEditModal extends Vue {
@@ -25,6 +26,9 @@ class ContainerEditModal extends Vue {
     isEditMode = false
     showAdvanced = false
     showSecurity = false
+    editMode: 'ui' | 'compose' = 'ui'
+    composeContent = ''
+    composeLoading = false
 
     formData = {
         image: '', name: '', envStr: '', portsStr: '', cmd: '',
@@ -70,6 +74,8 @@ class ContainerEditModal extends Vue {
     async show(container?: ContainerInfo) {
         if (container) {
             this.isEditMode = true
+            this.editMode = 'ui'
+            this.composeContent = ''
             this.modalLoading = true
             this.showAdvanced = true
             try {
@@ -102,8 +108,6 @@ class ContainerEditModal extends Vue {
                     capDrop: config.capDrop || []
                 })
             } catch (e: unknown) {
-                const err = e as { response?: { data?: { message?: string } }; message?: string }
-                this.actions.showNotification('error', '加载容器配置失败: ' + (err.response?.data?.message || err.message))
                 return
             } finally {
                 this.modalLoading = false
@@ -154,7 +158,35 @@ class ContainerEditModal extends Vue {
         return data
     }
 
+    async switchToCompose() {
+        if (this.composeContent) return
+        this.composeLoading = true
+        try {
+            const res = await api.getContainerCompose(this.formData.name)
+            this.composeContent = res.payload?.content || ''
+        } catch (e) {
+            this.actions.showNotification('error', '加载 Compose 文件失败')
+        } finally {
+            this.composeLoading = false
+        }
+    }
+
     async handleConfirm() {
+        if (this.isEditMode && this.editMode === 'compose') {
+            if (!this.composeContent.trim()) return
+            this.modalLoading = true
+            try {
+                await api.composeRedeploy({
+                    content: this.composeContent,
+                    projectName: this.formData.name
+                })
+                this.actions.showNotification('success', '容器配置更新成功，已重建容器')
+                this.isOpen = false
+                this.$emit('success')
+            } catch (e) {}
+            this.modalLoading = false
+            return
+        }
         if (!this.formData.image.trim()) return
         this.modalLoading = true
         try {
@@ -187,9 +219,49 @@ export default toNative(ContainerEditModal)
     @confirm="handleConfirm"
   >
     <template #confirm-text>{{ isEditMode ? '更新并重建' : '创建' }}</template>
-    <form @submit.prevent="handleConfirm" class="space-y-4">
+
+    <!-- 编辑模式：UI / Compose 切换 Tab -->
+    <div v-if="isEditMode" class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg mb-4">
+      <button
+        type="button"
+        :class="['flex-1 text-sm px-3 py-1.5 rounded-md transition-colors', editMode === 'ui' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-slate-500 hover:text-slate-700']"
+        @click="editMode = 'ui'"
+      >
+        <i class="fas fa-sliders-h mr-1.5"></i>表单模式
+      </button>
+      <button
+        type="button"
+        :class="['flex-1 text-sm px-3 py-1.5 rounded-md transition-colors', editMode === 'compose' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-slate-500 hover:text-slate-700']"
+        @click="editMode = 'compose'; switchToCompose()"
+      >
+        <i class="fas fa-file-code mr-1.5"></i>Compose 模式
+      </button>
+    </div>
+
+    <!-- Compose 编辑器 -->
+    <div v-if="isEditMode && editMode === 'compose'" class="space-y-3">
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <p class="text-sm text-amber-700">
+          <i class="fas fa-exclamation-triangle mr-1"></i>
+          更新配置后将会重建容器，旧容器将被停止并删除
+        </p>
+      </div>
+      <div v-if="composeLoading" class="flex items-center justify-center py-12 text-slate-400">
+        <i class="fas fa-spinner fa-spin mr-2"></i>加载 Compose 文件中...
+      </div>
+      <div v-else>
+        <label class="block text-sm font-medium text-slate-700 mb-2">
+          <i class="fas fa-file-code mr-1 text-slate-400"></i>docker-compose.yml
+        </label>
+        <ComposeEditor v-model="composeContent" height="400px" />
+        <p class="mt-1 text-xs text-slate-400">直接编辑 Compose 文件内容，保存后将重建容器</p>
+      </div>
+    </div>
+
+    <!-- 表单模式 -->
+    <form v-if="!isEditMode || editMode === 'ui'" @submit.prevent="handleConfirm" class="space-y-4">
       <!-- 编辑模式提示 -->
-      <div v-if="isEditMode" class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+      <div v-if="isEditMode" class="bg-amber-50 border border-amber-200 rounded-lg p-3">
         <p class="text-sm text-amber-700">
           <i class="fas fa-exclamation-triangle mr-1"></i>
           更新配置后将会重建容器，旧容器将被停止并删除
