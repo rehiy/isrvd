@@ -2,7 +2,7 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { NetworkInspectResponse } from '@/service/types'
+import type { DockerNetworkInspectResponse } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -11,7 +11,7 @@ class NetworkDetail extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
-    detailData: NetworkInspectResponse | null = null
+    detailData: DockerNetworkInspectResponse | null = null
     loading = false
 
     get networkId() {

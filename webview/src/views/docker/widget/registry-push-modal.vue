@@ -2,7 +2,7 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { RegistryInfo, ImageInfo } from '@/service/types'
+import type { DockerRegistryInfo, DockerImageInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -19,8 +19,8 @@ class RegistryPushModal extends Vue {
     // ─── 数据属性 ───
     isOpen = false
     modalLoading = false
-    registries: RegistryInfo[] = []
-    localImages: ImageInfo[] = []
+    registries: DockerRegistryInfo[] = []
+    localImages: DockerImageInfo[] = []
     pushForm = { image: '', registryUrl: '', namespace: '' }
 
     // ─── 计算属性 ───
@@ -47,11 +47,11 @@ class RegistryPushModal extends Vue {
     async loadLocalImages() {
         try {
             const res = await api.listImages(false)
-            this.localImages = (res.payload || []).filter((img: ImageInfo) => img.repoTags && img.repoTags.length > 0)
+            this.localImages = (res.payload || []).filter((img: DockerImageInfo) => img.repoTags && img.repoTags.length > 0)
         } catch (e) {}
     }
 
-    show(allRegistries: RegistryInfo[], registry: RegistryInfo | null = null, prefillImage = '') {
+    show(allRegistries: DockerRegistryInfo[], registry: DockerRegistryInfo | null = null, prefillImage = '') {
         this.registries = allRegistries
         this.pushForm = {
             image: prefillImage,

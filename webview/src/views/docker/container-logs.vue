@@ -2,7 +2,7 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { ContainerInfo } from '@/service/types'
+import type { DockerContainerInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -15,7 +15,7 @@ class ContainerLogs extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
-    container: ContainerInfo | null = null
+    container: DockerContainerInfo | null = null
     logLoading = false
     logContent = ''
     logTail = '100'
@@ -25,7 +25,7 @@ class ContainerLogs extends Vue {
     }
 
     // ─── 方法 ───
-    onContainerLoaded(ct: ContainerInfo) {
+    onContainerLoaded(ct: DockerContainerInfo) {
         this.container = ct
         this.loadLogs()
     }

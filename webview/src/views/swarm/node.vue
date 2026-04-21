@@ -3,7 +3,7 @@ import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import { formatFileSize, formatTime } from '@/helper/utils'
 import api from '@/service/api'
-import type { NodeInspect } from '@/service/types'
+import type { SwarmNodeInspect } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -12,7 +12,7 @@ class NodeDetail extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
-    nodeData: NodeInspect | null = null
+    nodeData: SwarmNodeInspect | null = null
     loading = false
     formatFileSize = formatFileSize
     formatTime = formatTime

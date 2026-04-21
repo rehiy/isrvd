@@ -10,7 +10,7 @@ export interface SwarmInfo {
     tasks: number
 }
 
-export interface NodeDTO {
+export interface SwarmNodeDTO {
     id: string
     hostname: string
     role: string
@@ -21,7 +21,7 @@ export interface NodeDTO {
     leader: boolean
 }
 
-export interface NodeInspect {
+export interface SwarmNodeInspect {
     id: string
     hostname: string
     role: string
@@ -39,22 +39,22 @@ export interface NodeInspect {
     updatedAt: string
 }
 
-export interface ServicePort {
+export interface SwarmServicePort {
     protocol: string
     targetPort: number
     publishedPort: number
     publishMode: string
 }
 
-export interface ServiceMount {
+export interface SwarmServiceMount {
     type: string
     source: string
     target: string
     readOnly: boolean
 }
 
-// ServiceSpec 服务可写配置（创建/更新共用）
-export interface ServiceSpec {
+// SwarmServiceSpec 服务可写配置（创建/更新共用）
+export interface SwarmServiceSpec {
     name: string
     image: string
     mode?: string
@@ -62,14 +62,14 @@ export interface ServiceSpec {
     env?: string[]
     args?: string[]
     networks?: string[]
-    ports?: ServicePort[]
-    mounts?: ServiceMount[]
+    ports?: SwarmServicePort[]
+    mounts?: SwarmServiceMount[]
     labels?: Record<string, string>
     constraints?: string[]
 }
 
-// ServiceInfo 服务详情（ServiceSpec + 运行时信息）
-export interface ServiceInfo extends ServiceSpec {
+// SwarmServiceDetail 服务详情（SwarmServiceSpec + 运行时信息）
+export interface SwarmServiceDetail extends SwarmServiceSpec {
     id: string
     runningTasks: number
     createdAt: string
@@ -84,13 +84,13 @@ export interface SwarmServiceInfo {
     mode: string
     replicas: number | null
     runningTasks: number
-    ports: ServicePort[]
+    ports: SwarmServicePort[]
     createdAt: string
     updatedAt: string
 }
 
-// CreateServiceRequest 直接复用 ServiceSpec
-export type CreateServiceRequest = ServiceSpec
+// SwarmCreateServiceRequest 直接复用 SwarmServiceSpec
+export type SwarmCreateServiceRequest = SwarmServiceSpec
 
 export interface SwarmTask {
     id: string

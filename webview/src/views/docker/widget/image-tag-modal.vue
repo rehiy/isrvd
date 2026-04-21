@@ -2,7 +2,7 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { ImageInfo } from '@/service/types'
+import type { DockerImageInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -19,11 +19,11 @@ class ImageTagModal extends Vue {
     // ─── 数据属性 ───
     isOpen = false
     modalLoading = false
-    tagImage: ImageInfo | null = null
+    tagImage: DockerImageInfo | null = null
     tagRepoTag = ''
 
     // ─── 方法 ───
-    show(image: ImageInfo) {
+    show(image: DockerImageInfo) {
         this.tagImage = image
         this.tagRepoTag = ''
         this.isOpen = true

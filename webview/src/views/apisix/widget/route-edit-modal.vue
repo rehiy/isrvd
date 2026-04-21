@@ -2,7 +2,7 @@
 import { Component, Inject, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { ApisixRoute, ApisixPluginConfig, ApisixUpstream, ContainerInfo } from '@/service/types'
+import type { ApisixRoute, ApisixPluginConfig, ApisixUpstream, DockerContainerInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 import { parseUpstreamNode, buildRoutePayload } from '@/helper/utils'
@@ -36,7 +36,7 @@ class RouteEditModal extends Vue {
 
     pluginConfigs: ApisixPluginConfig[] = []
     upstreams: ApisixUpstream[] = []
-    containers: ContainerInfo[] = []
+    containers: DockerContainerInfo[] = []
     availablePlugins: Record<string, { schema: Record<string, unknown> }> = {}
     routes: ApisixRoute[] = []
 
@@ -56,7 +56,7 @@ class RouteEditModal extends Vue {
         return all.filter(n => n.toLowerCase().includes(this.pluginSearchKeyword.toLowerCase()))
     }
 
-    get selectedContainer(): ContainerInfo | undefined {
+    get selectedContainer(): DockerContainerInfo | undefined {
         const host = this.formData.upstream_host.trim()
         return host ? this.containers.find(c => c.name === host) : undefined
     }

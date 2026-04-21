@@ -2,7 +2,7 @@
 import { Component, Inject, Prop, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { AllSettings, MarketplacePick } from '@/service/types'
+import type { SystemAllSettings, ComposeMarketplacePick } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -69,7 +69,7 @@ class MarketplaceModal extends Vue {
         this.loading = true
         try {
             const res = await api.getSettings()
-            const payload = res.payload as AllSettings
+            const payload = res.payload as SystemAllSettings
             const url = payload.marketplace?.url || ''
             this.iframeUrl = url
             if (url) {
@@ -131,7 +131,7 @@ class MarketplaceModal extends Vue {
             name: payload.name,
             compose: payload.compose,
             initURL: payload.initURL,
-        } satisfies MarketplacePick)
+        } satisfies ComposeMarketplacePick)
         this.close()
     }
 

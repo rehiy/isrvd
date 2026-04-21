@@ -2,7 +2,7 @@
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { MemberInfo } from '@/service/types'
+import type { SystemMemberInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -17,7 +17,7 @@ class Members extends Vue {
     @Ref readonly memberEditModalRef!: InstanceType<typeof MemberEditModal>
 
     // ─── 数据属性 ───
-    members: MemberInfo[] = []
+    members: SystemMemberInfo[] = []
     membersLoading = false
 
     // ─── 方法 ───
@@ -36,11 +36,11 @@ class Members extends Vue {
         this.memberEditModalRef?.show(null)
     }
 
-    openEditMember(m: MemberInfo) {
+    openEditMember(m: SystemMemberInfo) {
         this.memberEditModalRef?.show(m)
     }
 
-    handleDeleteMember(m: MemberInfo) {
+    handleDeleteMember(m: SystemMemberInfo) {
         this.actions.showConfirm({
             title: '删除成员',
             message: `确定要删除成员 <strong class="text-slate-900">${m.username}</strong> 吗？此操作仅从配置文件移除，不删除 home 目录。`,

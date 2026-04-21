@@ -3,7 +3,7 @@ import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { formatFileSize, formatTime } from '@/helper/utils'
 import api from '@/service/api'
-import type { ImageInfo, RegistryInfo } from '@/service/types'
+import type { DockerImageInfo, DockerRegistryInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -25,8 +25,8 @@ class Images extends Vue {
     @Ref readonly registryPushModalRef!: InstanceType<typeof RegistryPushModal>
 
     // ─── 数据属性 ───
-    images: ImageInfo[] = []
-    registries: RegistryInfo[] = []
+    images: DockerImageInfo[] = []
+    registries: DockerRegistryInfo[] = []
     loading = false
     showAllImages = false
     formatFileSize = formatFileSize
@@ -51,12 +51,12 @@ class Images extends Vue {
         } catch (e) {}
     }
 
-    openPush(image: ImageInfo) {
+    openPush(image: DockerImageInfo) {
         const tag = image.repoTags.find(t => t !== '<none>:<none>') || ''
         this.registryPushModalRef?.show(this.registries, null, tag)
     }
 
-    handleImageAction(image: ImageInfo, action: string) {
+    handleImageAction(image: DockerImageInfo, action: string) {
         this.actions.showConfirm({
             title: '删除镜像',
             message: `确定要删除镜像 <strong class="text-slate-900">${image.repoTags[0] || image.id}</strong> 吗？`,

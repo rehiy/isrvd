@@ -2,11 +2,11 @@
 import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
 import Combobox from '@/component/combobox.vue'
-import type { ImageInfo } from '@/service/types'
+import type { DockerImageInfo } from '@/service/types'
 
 interface ImageGroup {
     domain: string
-    images: ImageInfo[]
+    images: DockerImageInfo[]
 }
 
 @Component({
@@ -15,7 +15,7 @@ interface ImageGroup {
 })
 class ImageSelect extends Vue {
     @Prop({ type: String, default: '' }) readonly modelValue!: string
-    @Prop({ type: Array, default: () => [] }) readonly images!: ImageInfo[]
+    @Prop({ type: Array, default: () => [] }) readonly images!: DockerImageInfo[]
     @Prop({ type: String, default: '选择或输入镜像名称' }) readonly placeholder!: string
     @Prop({ type: Boolean, default: false }) readonly disabled!: boolean
 

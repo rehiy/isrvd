@@ -2,7 +2,7 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { ComposeDeployTarget, MarketplacePick } from '@/service/types'
+import type { ComposeDeployTarget, ComposeMarketplacePick } from '@/service/types'
 import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
 import type { AppActions, AppState } from '@/store/state'
 
@@ -63,7 +63,7 @@ class ComposeDeploy extends Vue {
         this.marketplaceVisible = true
     }
 
-    onMarketplacePick(payload: MarketplacePick) {
+    onMarketplacePick(payload: ComposeMarketplacePick) {
         this.content = payload.compose
         this.projectName = payload.name
         this.initURL = payload.initURL || ''

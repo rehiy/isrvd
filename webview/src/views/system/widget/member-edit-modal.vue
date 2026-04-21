@@ -2,7 +2,7 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { MemberInfo, MemberUpsertRequest } from '@/service/types'
+import type { SystemMemberInfo, SystemMemberUpsertRequest } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -22,7 +22,7 @@ class MemberEditModal extends Vue {
     // 编辑时保存原始用户名，用于后端定位
     originalUsername = ''
     passwordSet = false
-    formData: MemberUpsertRequest = { username: '', password: '', homeDirectory: '', allowTerminal: false }
+    formData: SystemMemberUpsertRequest = { username: '', password: '', homeDirectory: '', allowTerminal: false }
 
     // ─── 计算属性 ───
     get isEdit() {
@@ -39,7 +39,7 @@ class MemberEditModal extends Vue {
     }
 
     // ─── 方法 ───
-    show(member: MemberInfo | null = null) {
+    show(member: SystemMemberInfo | null = null) {
         if (member) {
             this.originalUsername = member.username
             this.passwordSet = member.passwordSet

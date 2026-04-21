@@ -2,11 +2,11 @@
 import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
 import Combobox from '@/component/combobox.vue'
-import type { ContainerInfo } from '@/service/types'
+import type { DockerContainerInfo } from '@/service/types'
 
 interface HostGroup {
     network: string
-    containers: ContainerInfo[]
+    containers: DockerContainerInfo[]
 }
 
 @Component({
@@ -15,7 +15,7 @@ interface HostGroup {
 })
 class HostSelect extends Vue {
     @Prop({ type: String, default: '' }) readonly modelValue!: string
-    @Prop({ type: Array, default: () => [] }) readonly containers!: ContainerInfo[]
+    @Prop({ type: Array, default: () => [] }) readonly containers!: DockerContainerInfo[]
     @Prop({ type: String, default: '127.0.0.1 或 容器名' }) readonly placeholder!: string
     @Prop({ type: Boolean, default: false }) readonly disabled!: boolean
 

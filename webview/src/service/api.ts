@@ -1,22 +1,22 @@
 import type { AxiosRequestConfig } from 'axios'
 import { http, httpBlob } from './axios'
 import type {
-    ContainerCreateRequest,
-    ContainerInfo, ContainerStatsResponse,
-    ImageInfo, ImageInspectResponse, ImageSearchResult,
-    NetworkInfo, NetworkInspectResponse, NetworkCreateRequest,
-    VolumeInfo, VolumeInspectResponse, VolumeCreateRequest,
-    RegistryInfo, RegistryUpsertRequest,
-    SwarmInfo, NodeDTO, NodeInspect,
-    SwarmServiceInfo, ServiceInfo, SwarmTask,
-    CreateServiceRequest,
+    DockerContainerCreateRequest,
+    DockerContainerInfo, DockerContainerStatsResponse,
+    DockerImageInfo, DockerImageInspectResponse, DockerImageSearchResult,
+    DockerNetworkInfo, DockerNetworkInspectResponse, DockerNetworkCreateRequest,
+    DockerVolumeInfo, DockerVolumeInspectResponse, DockerVolumeCreateRequest,
+    DockerRegistryInfo, DockerRegistryUpsertRequest,
+    SwarmInfo, SwarmNodeDTO, SwarmNodeInspect,
+    SwarmServiceInfo, SwarmServiceDetail, SwarmTask,
+    SwarmCreateServiceRequest,
     ApisixRoute, ApisixConsumer, ApisixCreateConsumerRequest, ApisixUpdateConsumerRequest,
     ApisixPluginConfig, ApisixUpstream,
-    ServiceProbeResponse, DockerInfo,
-    FileListResponse, FileReadResponse,
-    LoginResponse,
-    AllSettings,
-    MemberInfo, MemberUpsertRequest,
+    SystemProbeResponse, DockerInfo,
+    FilerListResponse, FilerReadResponse,
+    AuthLoginResponse,
+    SystemAllSettings,
+    SystemMemberInfo, SystemMemberUpsertRequest,
     ComposeDeployResult
 } from './types'
 
@@ -24,7 +24,7 @@ import type {
 class ApiService {
     // 认证相关
     login(data: { username: string; password: string }) {
-        return http.post<LoginResponse>('/api/login', data)
+        return http.post<AuthLoginResponse>('/api/login', data)
     }
 
     logout() {
@@ -33,7 +33,7 @@ class ApiService {
 
     // 文件管理相关
     list(path: string) {
-        return http.post<FileListResponse>('/api/filer/list', { path })
+        return http.post<FilerListResponse>('/api/filer/list', { path })
     }
 
     delete(path: string) {
@@ -54,7 +54,7 @@ class ApiService {
 
     // 文件编辑相关
     read(path: string) {
-        return http.post<FileReadResponse>('/api/filer/read', { path })
+        return http.post<FilerReadResponse>('/api/filer/read', { path })
     }
 
     modify(path: string, content: string) {
@@ -92,7 +92,7 @@ class ApiService {
     // ==================== 服务探测相关 ====================
 
     serviceProbe() {
-        return http.get<ServiceProbeResponse>('/api/system/probe')
+        return http.get<SystemProbeResponse>('/api/system/probe')
     }
 
     // ==================== 系统信息相关 ====================
@@ -110,14 +110,14 @@ class ApiService {
 
     // 容器管理
     listContainers(all = false) {
-        return http.get<ContainerInfo[]>('/api/docker/containers', { params: { all } })
+        return http.get<DockerContainerInfo[]>('/api/docker/containers', { params: { all } })
     }
 
     containerAction(id: string, action: string) {
         return http.post<void>(`/api/docker/container/${id}/action`, { action })
     }
 
-    createContainer(data: ContainerCreateRequest) {
+    createContainer(data: DockerContainerCreateRequest) {
         return http.post('/api/docker/container/create', data)
     }
 
@@ -126,7 +126,7 @@ class ApiService {
     }
 
     containerStats(id: string) {
-        return http.get<ContainerStatsResponse>(`/api/docker/container/${id}/stats`)
+        return http.get<DockerContainerStatsResponse>(`/api/docker/container/${id}/stats`)
     }
 
     getContainerCompose(name: string) {
@@ -135,11 +135,11 @@ class ApiService {
 
     // 镜像管理
     listImages(all = false) {
-        return http.get<ImageInfo[]>('/api/docker/images', { params: { all } })
+        return http.get<DockerImageInfo[]>('/api/docker/images', { params: { all } })
     }
 
     imageInspect(id: string) {
-        return http.get<ImageInspectResponse>(`/api/docker/image/${id}`)
+        return http.get<DockerImageInspectResponse>(`/api/docker/image/${id}`)
     }
 
     imageAction(id: string, action: string) {
@@ -155,7 +155,7 @@ class ApiService {
     }
 
     imageSearch(term: string) {
-        return http.get<ImageSearchResult[]>(`/api/docker/image/search/${encodeURIComponent(term)}`)
+        return http.get<DockerImageSearchResult[]>(`/api/docker/image/search/${encodeURIComponent(term)}`)
     }
 
     imageBuild(dockerfile: string, tag = '') {
@@ -164,48 +164,48 @@ class ApiService {
 
     // 网络管理
     listNetworks() {
-        return http.get<NetworkInfo[]>('/api/docker/networks')
+        return http.get<DockerNetworkInfo[]>('/api/docker/networks')
     }
 
     networkInspect(id: string) {
-        return http.get<NetworkInspectResponse>(`/api/docker/network/${id}`)
+        return http.get<DockerNetworkInspectResponse>(`/api/docker/network/${id}`)
     }
 
     networkAction(id: string, action: string) {
         return http.post<void>(`/api/docker/network/${id}/action`, { action })
     }
 
-    createNetwork(data: NetworkCreateRequest) {
+    createNetwork(data: DockerNetworkCreateRequest) {
         return http.post('/api/docker/network/create', data)
     }
 
     // 卷管理
     listVolumes() {
-        return http.get<VolumeInfo[]>('/api/docker/volumes')
+        return http.get<DockerVolumeInfo[]>('/api/docker/volumes')
     }
 
     volumeInspect(name: string) {
-        return http.get<VolumeInspectResponse>(`/api/docker/volume/${encodeURIComponent(name)}`)
+        return http.get<DockerVolumeInspectResponse>(`/api/docker/volume/${encodeURIComponent(name)}`)
     }
 
     volumeAction(name: string, action: string) {
         return http.post<void>(`/api/docker/volume/${encodeURIComponent(name)}/action`, { action })
     }
 
-    createVolume(data: VolumeCreateRequest) {
+    createVolume(data: DockerVolumeCreateRequest) {
         return http.post('/api/docker/volume/create', data)
     }
 
     // 镜像仓库管理
     listRegistries() {
-        return http.get<RegistryInfo[]>('/api/docker/registries')
+        return http.get<DockerRegistryInfo[]>('/api/docker/registries')
     }
 
-    createRegistry(data: RegistryUpsertRequest) {
+    createRegistry(data: DockerRegistryUpsertRequest) {
         return http.post<void>('/api/docker/registries', data)
     }
 
-    updateRegistry(url: string, data: RegistryUpsertRequest) {
+    updateRegistry(url: string, data: DockerRegistryUpsertRequest) {
         return http.put<void>('/api/docker/registries', data, { params: { url } })
     }
 
@@ -228,7 +228,7 @@ class ApiService {
     }
 
     swarmListNodes() {
-        return http.get<NodeDTO[]>('/api/swarm/nodes')
+        return http.get<SwarmNodeDTO[]>('/api/swarm/nodes')
     }
 
     swarmGetJoinTokens() {
@@ -236,7 +236,7 @@ class ApiService {
     }
 
     swarmInspectNode(id: string) {
-        return http.get<NodeInspect>(`/api/swarm/node/${id}`)
+        return http.get<SwarmNodeInspect>(`/api/swarm/node/${id}`)
     }
 
     NodeDTOAction(id: string, action: string) {
@@ -248,7 +248,7 @@ class ApiService {
     }
 
     swarmInspectService(id: string) {
-  return http.get<ServiceInfo>(`/api/swarm/service/${id}`)
+        return http.get<SwarmServiceDetail>(`/api/swarm/service/${id}`)
     }
 
     swarmServiceAction(id: string, action: string, replicas?: number) {
@@ -259,7 +259,7 @@ class ApiService {
         return http.get<SwarmTask[]>('/api/swarm/tasks', { params: serviceID ? { serviceID } : {} })
     }
 
-    swarmCreateService(data: CreateServiceRequest) {
+    swarmCreateService(data: SwarmCreateServiceRequest) {
         return http.post('/api/swarm/service/create', data)
     }
 
@@ -344,23 +344,23 @@ class ApiService {
     // ==================== 系统设置 ====================
 
     getSettings() {
-        return http.get<AllSettings>('/api/system/settings')
+        return http.get<SystemAllSettings>('/api/system/settings')
     }
 
-    updateAllSettings(data: Partial<AllSettings>) {
+    updateAllSettings(data: Partial<SystemAllSettings>) {
         return http.put<void>('/api/system/settings', data)
     }
 
     // 成员管理
     listMembers() {
-        return http.get<MemberInfo[]>('/api/system/members')
+        return http.get<SystemMemberInfo[]>('/api/system/members')
     }
 
-    createMember(data: MemberUpsertRequest) {
+    createMember(data: SystemMemberUpsertRequest) {
         return http.post<void>('/api/system/members', data)
     }
 
-    updateMember(username: string, data: MemberUpsertRequest) {
+    updateMember(username: string, data: SystemMemberUpsertRequest) {
         return http.put<void>(`/api/system/member/${encodeURIComponent(username)}`, data)
     }
 

@@ -2,7 +2,7 @@
 import { Component, Inject, Prop, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { ContainerInfo } from '@/service/types'
+import type { DockerContainerInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -14,7 +14,7 @@ class ContainerNav extends Vue {
 
     @Prop({ type: String, required: true }) readonly containerId!: string
 
-    container: ContainerInfo | null = null
+    container: DockerContainerInfo | null = null
 
     get activeTab() {
         return this.$route.name

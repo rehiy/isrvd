@@ -2,7 +2,7 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { AllSettings, ServerSettings, AgentSettings, ApisixSettings, DockerSettings, MarketplaceSettings } from '@/service/types'
+import type { SystemAllSettings, SystemServerSettings, SystemAgentSettings, SystemApisixSettings, SystemDockerSettings, SystemMarketplaceSettings } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -15,11 +15,11 @@ class Settings extends Vue {
   saving = false
   activeTab: 'server' | 'agent' | 'apisix' | 'docker' | 'marketplace' = 'server'
 
-  server: ServerSettings = { debug: false, listenAddr: '', jwtSecret: '', proxyHeaderName: '', rootDirectory: '' }
-  agent: AgentSettings = { model: '', baseUrl: '', apiKey: '' }
-  apisix: ApisixSettings = { adminUrl: '', adminKey: '' }
-  docker: DockerSettings = { host: '', containerRoot: '' }
-  marketplace: MarketplaceSettings = { url: '' }
+  server: SystemServerSettings = { debug: false, listenAddr: '', jwtSecret: '', proxyHeaderName: '', rootDirectory: '' }
+  agent: SystemAgentSettings = { model: '', baseUrl: '', apiKey: '' }
+  apisix: SystemApisixSettings = { adminUrl: '', adminKey: '' }
+  docker: SystemDockerSettings = { host: '', containerRoot: '' }
+  marketplace: SystemMarketplaceSettings = { url: '' }
 
   // 敏感字段当前是否已设置（后端返回）
   jwtSecretSet = false
@@ -44,7 +44,7 @@ class Settings extends Vue {
     this.loading = true
     try {
       const res = await api.getSettings()
-      const payload = res.payload as AllSettings
+      const payload = res.payload as SystemAllSettings
       // 敏感字段统一置空，仅用标志位驱动 placeholder
       this.server = { ...payload.server, jwtSecret: '' }
       this.agent = { ...payload.agent, apiKey: '' }
@@ -63,7 +63,7 @@ class Settings extends Vue {
   async saveAll() {
     this.saving = true
     try {
-      await api.updateAllSettings({
+      await api.updateSystemAllSettings({
         server: this.server,
         agent: this.agent,
         apisix: this.apisix,

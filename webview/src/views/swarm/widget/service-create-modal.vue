@@ -2,7 +2,7 @@
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { ImageInfo, NetworkInfo } from '@/service/types'
+import type { DockerImageInfo, DockerNetworkInfo } from '@/service/types'
 import ImageSelect from '@/views/docker/widget/image-select.vue'
 import BaseModal from '@/component/modal.vue'
 
@@ -17,15 +17,15 @@ class ServiceCreateModal extends Vue {
     loading = false
     showAdvanced = false
     form = { name: '', image: '', mode: 'replicated', replicas: 1, env: '', args: '', network: '', ports: '', mounts: '' }
-    images: ImageInfo[] = []
-    networks: NetworkInfo[] = []
+    images: DockerImageInfo[] = []
+    networks: DockerNetworkInfo[] = []
 
     // ─── 方法 ───
     async loadResources() {
         try {
             const [imgRes, netRes] = await Promise.all([api.listImages(false), api.listNetworks()])
             this.images = imgRes.payload || []
-            this.networks = (netRes.payload || []).filter((n: NetworkInfo) =>
+            this.networks = (netRes.payload || []).filter((n: DockerNetworkInfo) =>
                 n.driver === 'overlay' || n.driver === 'host' || n.driver === 'bridge'
             )
         } catch (e) {}

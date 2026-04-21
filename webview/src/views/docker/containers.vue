@@ -3,7 +3,7 @@ import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { formatTime } from '@/helper/utils'
 import api from '@/service/api'
-import type { ContainerInfo } from '@/service/types'
+import type { DockerContainerInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -22,7 +22,7 @@ class Containers extends Vue {
     @Ref readonly containerEditModalRef!: InstanceType<typeof ContainerEditModal>
 
     // ─── 数据属性 ───
-    containers: ContainerInfo[] = []
+    containers: DockerContainerInfo[] = []
     loading = false
     showAll = false
     selectedIds: string[] = []
@@ -49,7 +49,7 @@ class Containers extends Vue {
         this.loading = false
     }
 
-    handleContainerAction(container: ContainerInfo, action: string) {
+    handleContainerAction(container: DockerContainerInfo, action: string) {
         const config = this.actionConfigs[action]
         if (!config) return
         this.actions.showConfirm({

@@ -2,7 +2,7 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { ImageSearchResult, RegistryInfo } from '@/service/types'
+import type { DockerImageSearchResult, DockerRegistryInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -21,8 +21,8 @@ class ImagePullModal extends Vue {
     modalLoading = false
     // source 为 '' 时表示 Docker Hub/默认源；否则为私有仓库 URL
     formData = { source: '', image: '', tag: '', namespace: '' }
-    registries: RegistryInfo[] = []
-    searchResults: ImageSearchResult[] = []
+    registries: DockerRegistryInfo[] = []
+    searchResults: DockerImageSearchResult[] = []
     searchLoading = false
     searchKeyword = ''
     daemonMirrors: string[] = []
@@ -90,7 +90,7 @@ class ImagePullModal extends Vue {
         this.searchLoading = false
     }
 
-    selectSearchResult(item: ImageSearchResult) {
+    selectSearchResult(item: DockerImageSearchResult) {
         this.formData.image = item.name
         this.formData.tag = 'latest'
         this.searchResults = []

@@ -3,7 +3,7 @@ import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { formatTime } from '@/helper/utils'
 import api from '@/service/api'
-import type { VolumeInfo } from '@/service/types'
+import type { DockerVolumeInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -20,7 +20,7 @@ class Volumes extends Vue {
     @Ref readonly createModalRef!: InstanceType<typeof VolumeCreateModal>
 
     // ─── 数据属性 ───
-    volumes: VolumeInfo[] = []
+    volumes: DockerVolumeInfo[] = []
     loading = false
     formatTime = formatTime
 
@@ -36,7 +36,7 @@ class Volumes extends Vue {
         this.loading = false
     }
 
-    handleVolumeAction(vol: VolumeInfo, action: string) {
+    handleVolumeAction(vol: DockerVolumeInfo, action: string) {
         this.actions.showConfirm({
             title: '删除数据卷',
             message: `确定要删除数据卷 <strong class="text-slate-900">${vol.name}</strong> 吗？`,
@@ -52,7 +52,7 @@ class Volumes extends Vue {
         })
     }
 
-    viewVolumeDetail(vol: VolumeInfo) {
+    viewVolumeDetail(vol: DockerVolumeInfo) {
         this.$router.push({ name: 'docker-volume', params: { name: vol.name } })
     }
 

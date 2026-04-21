@@ -2,7 +2,7 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { RegistryInfo, RegistryUpsertRequest } from '@/service/types'
+import type { DockerRegistryInfo, DockerRegistryUpsertRequest } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -21,7 +21,7 @@ class RegistryEditModal extends Vue {
     modalLoading = false
     // 编辑时保存原始 URL，用于后端定位
     originalUrl = ''
-    formData: RegistryUpsertRequest = { name: '', url: '', username: '', password: '', description: '' }
+    formData: DockerRegistryUpsertRequest = { name: '', url: '', username: '', password: '', description: '' }
 
     // ─── 计算属性 ───
     get isEdit() {
@@ -33,7 +33,7 @@ class RegistryEditModal extends Vue {
     }
 
     // ─── 方法 ───
-    show(registry: RegistryInfo | null = null) {
+    show(registry: DockerRegistryInfo | null = null) {
         if (registry) {
             this.originalUrl = registry.url
             this.formData = {

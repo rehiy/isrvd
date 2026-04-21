@@ -13,7 +13,7 @@ export interface DockerInfo {
 
 // ─── 容器 ───
 
-export interface ContainerInfo {
+export interface DockerContainerInfo {
     id: string
     name: string
     image: string
@@ -26,19 +26,19 @@ export interface ContainerInfo {
     labels?: Record<string, string>
 }
 
-export interface VolumeMapping {
+export interface DockerVolumeMapping {
     hostPath: string
     containerPath: string
     readOnly: boolean
 }
 
-export interface ContainerCreateRequest {
+export interface DockerContainerCreateRequest {
     image: string
     name?: string
     cmd?: string[]
     env?: string[]
     ports?: Record<string, string>
-    volumes?: VolumeMapping[]
+    volumes?: DockerVolumeMapping[]
     network?: string
     restart?: string
     memory?: number
@@ -53,13 +53,13 @@ export interface ContainerCreateRequest {
 
 // ─── 容器统计 ───
 
-export interface CPUThrottledData {
+export interface DockerCPUThrottledData {
     periods: number
     throttledPeriods: number
     throttledTime: number
 }
 
-export interface NetDetail {
+export interface DockerNetDetail {
     rxBytes: number
     rxPackets: number
     rxErrors: number
@@ -70,19 +70,19 @@ export interface NetDetail {
     txDropped: number
 }
 
-export interface BlockDetail {
+export interface DockerBlockDetail {
     major: number
     minor: number
     read: number
     write: number
 }
 
-export interface ContainerProcessList {
+export interface DockerContainerProcessList {
     titles: string[]
     processes: string[][]
 }
 
-export interface ContainerStatsResponse {
+export interface DockerContainerStatsResponse {
     id: string
     name: string
     cpuPercent: number
@@ -97,15 +97,15 @@ export interface ContainerStatsResponse {
     blockWrite: number
     pids: number
     pidsLimit: number
-    cpuThrottled: CPUThrottledData
-    networkDetail: Record<string, NetDetail>
-    blockDetail: BlockDetail[]
-    processList: ContainerProcessList | null
+    cpuThrottled: DockerCPUThrottledData
+    networkDetail: Record<string, DockerNetDetail>
+    blockDetail: DockerBlockDetail[]
+    processList: DockerContainerProcessList | null
 }
 
 // ─── 镜像 ───
 
-export interface ImageInfo {
+export interface DockerImageInfo {
     id: string
     shortId: string
     repoTags: string[]
@@ -113,7 +113,7 @@ export interface ImageInfo {
     created: number
 }
 
-export interface ImageLayerInfo {
+export interface DockerImageLayerInfo {
     digest: string
     createdBy: string
     created: string
@@ -121,7 +121,7 @@ export interface ImageLayerInfo {
     empty: boolean
 }
 
-export interface ImageInspectResponse {
+export interface DockerImageInspectResponse {
     id: string
     shortId: string
     repoTags: string[]
@@ -139,10 +139,10 @@ export interface ImageInspectResponse {
     exposedPorts: string[]
     labels: Record<string, string>
     layers: number
-    layerDetails: ImageLayerInfo[]
+    layerDetails: DockerImageLayerInfo[]
 }
 
-export interface ImageSearchResult {
+export interface DockerImageSearchResult {
     name: string
     description: string
     isOfficial: boolean
@@ -152,7 +152,7 @@ export interface ImageSearchResult {
 
 // ─── 网络 ───
 
-export interface NetworkInfo {
+export interface DockerNetworkInfo {
     id: string
     name: string
     driver: string
@@ -160,7 +160,7 @@ export interface NetworkInfo {
     scope: string
 }
 
-export interface NetworkContainerInfo {
+export interface DockerNetworkContainerInfo {
     id: string
     name: string
     ipv4: string
@@ -168,7 +168,7 @@ export interface NetworkContainerInfo {
     macAddress: string
 }
 
-export interface NetworkInspectResponse {
+export interface DockerNetworkInspectResponse {
     id: string
     name: string
     driver: string
@@ -177,10 +177,10 @@ export interface NetworkInspectResponse {
     gateway: string
     internal: boolean
     enableIPv6: boolean
-    containers: NetworkContainerInfo[]
+    containers: DockerNetworkContainerInfo[]
 }
 
-export interface NetworkCreateRequest {
+export interface DockerNetworkCreateRequest {
     name: string
     driver?: string
     subnet?: string
@@ -188,7 +188,7 @@ export interface NetworkCreateRequest {
 
 // ─── 卷 ───
 
-export interface VolumeInfo {
+export interface DockerVolumeInfo {
     name: string
     driver: string
     mountpoint: string
@@ -196,14 +196,14 @@ export interface VolumeInfo {
     size: number
 }
 
-export interface VolumeUsedByContainer {
+export interface DockerVolumeUsedByContainer {
     id: string
     name: string
     mountPath: string
     readOnly: boolean
 }
 
-export interface VolumeInspectResponse {
+export interface DockerVolumeInspectResponse {
     name: string
     driver: string
     mountpoint: string
@@ -211,24 +211,24 @@ export interface VolumeInspectResponse {
     scope: string
     size: number
     refCount: number
-    usedBy: VolumeUsedByContainer[]
+    usedBy: DockerVolumeUsedByContainer[]
 }
 
-export interface VolumeCreateRequest {
+export interface DockerVolumeCreateRequest {
     name: string
     driver?: string
 }
 
 // ─── 镜像仓库 ───
 
-export interface RegistryInfo {
+export interface DockerRegistryInfo {
     name: string
     url: string
     username: string
     description: string
 }
 
-export interface RegistryUpsertRequest {
+export interface DockerRegistryUpsertRequest {
     name: string
     url: string
     username?: string

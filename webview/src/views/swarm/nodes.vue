@@ -3,7 +3,7 @@ import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import { copyToClipboard } from '@/helper/utils'
 import api from '@/service/api'
-import type { NodeDTO } from '@/service/types'
+import type { SwarmNodeDTO } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -14,7 +14,7 @@ class Nodes extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
-    nodes: NodeDTO[] = []
+    nodes: SwarmNodeDTO[] = []
     nodesLoading = false
     showJoinModal = false
     joinTokens: { worker: string; manager: string } | null = null
@@ -43,14 +43,14 @@ class Nodes extends Vue {
             const res = await api.swarmListNodes()
             const list = res.payload || []
             // leader 节点排最前
-            this.nodes = list.sort((a: NodeDTO, b: NodeDTO) => (b.leader ? 1 : 0) - (a.leader ? 1 : 0))
+            this.nodes = list.sort((a: SwarmNodeDTO, b: SwarmNodeDTO) => (b.leader ? 1 : 0) - (a.leader ? 1 : 0))
         } catch (e) {
             this.actions.showNotification('error', '获取节点列表失败')
         }
         this.nodesLoading = false
     }
 
-    handleNodeAction(node: NodeDTO, action: string) {
+    handleNodeAction(node: SwarmNodeDTO, action: string) {
         const labels: Record<string, string> = { drain: '排空', active: '激活', pause: '暂停', remove: '移除' }
         const label = labels[action] || action
         this.actions.showConfirm({

@@ -3,7 +3,7 @@ import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { downloadFile, formatFileSize, formatTime, getFileIcon, isEditableFile } from '@/helper/utils'
 import api from '@/service/api'
-import type { FileInfo } from '@/service/types'
+import type { FilerFileInfo } from '@/service/types'
 import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
 import type { AppActions, AppState } from '@/store/state'
 
@@ -39,7 +39,7 @@ class FileExplorer extends Vue {
     @Ref readonly uploadModal!: InstanceType<typeof UploadModal>
 
     // ─── 数据属性 ───
-    files: FileInfo[] = []
+    files: FilerFileInfo[] = []
     formatFileSize = formatFileSize
     formatTime = formatTime
     getFileIcon = getFileIcon
@@ -56,7 +56,7 @@ class FileExplorer extends Vue {
         this.actions.loadFiles(path)
     }
 
-    async download(file: FileInfo) {
+    async download(file: FilerFileInfo) {
         const response = await api.download(file.path)
         downloadFile(file.name, response)
     }

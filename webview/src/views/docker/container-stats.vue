@@ -5,7 +5,7 @@ import { markRaw, nextTick } from 'vue'
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { ContainerInfo, ContainerStatsResponse } from '@/service/types'
+import type { DockerContainerInfo, DockerContainerStatsResponse } from '@/service/types'
 import { formatFileSize, hexToRgba, POLL_INTERVAL } from '@/helper/utils'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
@@ -32,8 +32,8 @@ class ContainerStats extends Vue {
     @Ref readonly blkRef!: HTMLCanvasElement
 
     // ─── 数据属性 ───
-    container: ContainerInfo | null = null
-    statsData: ContainerStatsResponse | null = null
+    container: DockerContainerInfo | null = null
+    statsData: DockerContainerStatsResponse | null = null
     statsLoading = true
     netRxRate = 0
     netTxRate = 0
@@ -104,7 +104,7 @@ class ContainerStats extends Vue {
         }
     }
 
-    pushPoint(data: ContainerStatsResponse) {
+    pushPoint(data: DockerContainerStatsResponse) {
         const now = new Date()
         const label = now.getHours().toString().padStart(2, '0') + ':' +
             now.getMinutes().toString().padStart(2, '0') + ':' +
@@ -290,7 +290,7 @@ class ContainerStats extends Vue {
         document.addEventListener('visibilitychange', this.handleVisibilityChange)
     }
 
-    onContainerLoaded(ct: ContainerInfo) {
+    onContainerLoaded(ct: DockerContainerInfo) {
         this.container = ct
         if (ct.state === 'running') {
             this.loadStats().then(() => {

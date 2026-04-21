@@ -1,6 +1,6 @@
 // ─── 系统探测 ───
 
-export interface ServiceProbeResponse {
+export interface SystemProbeResponse {
     docker: { available: boolean }
     swarm: { available: boolean }
     apisix: { available: boolean }
@@ -8,7 +8,7 @@ export interface ServiceProbeResponse {
 
 // ─── 系统设置 ───
 
-export interface ServerSettings {
+export interface SystemServerSettings {
     debug: boolean
     listenAddr: string
     // 写入时为空表示保留原值
@@ -19,7 +19,7 @@ export interface ServerSettings {
     rootDirectory: string
 }
 
-export interface ApisixSettings {
+export interface SystemApisixSettings {
     adminUrl: string
     // 写入时为空表示保留原值
     adminKey: string
@@ -27,7 +27,7 @@ export interface ApisixSettings {
     adminKeySet?: boolean
 }
 
-export interface AgentSettings {
+export interface SystemAgentSettings {
     model: string
     baseUrl: string
     // 写入时为空表示保留原值
@@ -36,26 +36,26 @@ export interface AgentSettings {
     apiKeySet?: boolean
 }
 
-export interface DockerSettings {
+export interface SystemDockerSettings {
     host: string
     containerRoot: string
 }
 
-export interface MarketplaceSettings {
+export interface SystemMarketplaceSettings {
     url: string
 }
 
-export interface AllSettings {
-    server: ServerSettings
-    agent: AgentSettings
-    apisix: ApisixSettings
-    docker: DockerSettings
-    marketplace: MarketplaceSettings
+export interface SystemAllSettings {
+    server: SystemServerSettings
+    agent: SystemAgentSettings
+    apisix: SystemApisixSettings
+    docker: SystemDockerSettings
+    marketplace: SystemMarketplaceSettings
 }
 
 // ─── 成员管理 ───
 
-export interface MemberInfo {
+export interface SystemMemberInfo {
     username: string
     homeDirectory: string
     allowTerminal: boolean
@@ -63,7 +63,7 @@ export interface MemberInfo {
     isPrimary: boolean
 }
 
-export interface MemberUpsertRequest {
+export interface SystemMemberUpsertRequest {
     username: string
     // 写入时为空表示保留原值（仅更新场景）
     password: string
@@ -73,13 +73,13 @@ export interface MemberUpsertRequest {
 
 // ─── 系统统计（/api/system/stats 响应） ───
 
-export interface NetInterface {
+export interface SystemNetInterface {
     Name: string
     BytesRecv: number
     BytesSent: number
 }
 
-export interface DiskPartition {
+export interface SystemDiskPartition {
     Device: string
     Mountpoint: string
     Fstype: string
@@ -87,13 +87,13 @@ export interface DiskPartition {
     Total: number
 }
 
-export interface DiskIO {
+export interface SystemDiskIO {
     Name: string
     ReadBytes: number
     WriteBytes: number
 }
 
-export interface GoRuntimeStat {
+export interface SystemGoRuntimeStat {
     version: string
     numCPU: number
     numGoroutine: number
@@ -119,13 +119,13 @@ export interface SystemInfo {
     MemoryTotal: number
     DiskTotal: number
     DiskUsed: number
-    NetInterface: NetInterface[]
-    DiskPartition: DiskPartition[]
+    NetInterface: SystemNetInterface[]
+    DiskPartition: SystemDiskPartition[]
     [key: string]: unknown
 }
 
 export interface SystemStat {
     system: SystemInfo
-    diskIO: DiskIO[]
-    go: GoRuntimeStat
+    diskIO: SystemDiskIO[]
+    go: SystemGoRuntimeStat
 }

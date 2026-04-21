@@ -1,7 +1,7 @@
 import { reactive } from 'vue'
 
 import { interceptors } from '@/service/axios'
-import type { FileInfo } from '@/service/types'
+import type { FilerFileInfo } from '@/service/types'
 
 // Provide/Inject keys
 export const APP_STATE_KEY = 'app.state'
@@ -51,7 +51,7 @@ export interface AppState {
     username: string | null
     loading: boolean
     currentPath: string
-    files: FileInfo[]
+    files: FilerFileInfo[]
     notifications: Notification[]
     confirm: ConfirmState
     serviceAvailability: ServiceAvailability

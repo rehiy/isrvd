@@ -2,7 +2,7 @@
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import * as ContainerExec from '@/helper/container-exec'
-import type { ContainerInfo } from '@/service/types'
+import type { DockerContainerInfo } from '@/service/types'
 import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
 import type { AppActions, AppState } from '@/store/state'
 
@@ -19,7 +19,7 @@ class ContainerTerminal extends Vue {
     @Ref readonly xtermRef!: HTMLDivElement
 
     // ─── 数据属性 ───
-    container: ContainerInfo | null = null
+    container: DockerContainerInfo | null = null
     terminalConnected = false
     terminalShell = '/bin/sh'
 
@@ -28,7 +28,7 @@ class ContainerTerminal extends Vue {
     }
 
     // ─── 方法 ───
-    onContainerLoaded(ct: ContainerInfo) {
+    onContainerLoaded(ct: DockerContainerInfo) {
         this.container = ct
         setTimeout(() => this.handleTerminalConnect(), 200)
     }

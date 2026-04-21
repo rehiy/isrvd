@@ -2,7 +2,7 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { ContainerInfo } from '@/service/types'
+import type { DockerContainerInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -24,7 +24,7 @@ class ContainerEditModal extends Vue {
     composeContent = ''
 
     // ─── 方法 ───
-    async show(container: ContainerInfo) {
+    async show(container: DockerContainerInfo) {
         this.projectName = container.name
         this.composeContent = ''
         this.modalLoading = true

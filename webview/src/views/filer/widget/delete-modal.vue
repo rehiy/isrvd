@@ -2,7 +2,7 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { FileInfo } from '@/service/types'
+import type { FilerFileInfo } from '@/service/types'
 import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions, AppState } from '@/store/state'
 
@@ -21,7 +21,7 @@ class DeleteModal extends Vue {
     formData = { path: '', name: '' }
 
     // ─── 方法 ───
-    show(file: FileInfo) {
+    show(file: FilerFileInfo) {
         this.formData.path = file.path
         this.formData.name = file.name
         this.isOpen = true

@@ -3,7 +3,7 @@ import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 import * as yaml from 'js-yaml'
 
 import api from '@/service/api'
-import type { ImageInfo, NetworkInfo } from '@/service/types'
+import type { DockerImageInfo, DockerNetworkInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -32,8 +32,8 @@ class ContainerCreateModal extends Vue {
         privileged: false, capAdd: [] as string[], capDrop: [] as string[]
     }
 
-    images: ImageInfo[] = []
-    networks: NetworkInfo[] = []
+    images: DockerImageInfo[] = []
+    networks: DockerNetworkInfo[] = []
 
     readonly restartOptions = [
         { value: 'always', label: '总是重启' },

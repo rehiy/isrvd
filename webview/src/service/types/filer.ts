@@ -1,6 +1,6 @@
 // ─── 文件管理相关 ───
 
-export interface FileInfo {
+export interface FilerFileInfo {
     name: string
     path: string
     size: number
@@ -9,12 +9,12 @@ export interface FileInfo {
     isDir: boolean
 }
 
-export interface FileListResponse {
+export interface FilerListResponse {
     path: string
-    files: FileInfo[]
+    files: FilerFileInfo[]
 }
 
-export interface FileReadResponse {
+export interface FilerReadResponse {
     path: string
     content: string
 }

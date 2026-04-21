@@ -1,11 +1,11 @@
 // ─── 认证相关 ───
 
-export interface LoginRequest {
+export interface AuthLoginRequest {
     username: string
     password: string
 }
 
-export interface LoginResponse {
+export interface AuthLoginResponse {
     token: string
     username: string
 }

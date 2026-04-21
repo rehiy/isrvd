@@ -2,7 +2,7 @@
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { RegistryInfo } from '@/service/types'
+import type { DockerRegistryInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
@@ -19,7 +19,7 @@ class Registries extends Vue {
     // ─── 数据属性 ───
     daemonMirrors: string[] = []
     indexServerAddress = ''
-    registries: RegistryInfo[] = []
+    registries: DockerRegistryInfo[] = []
     loading = false
 
     // ─── 方法 ───
@@ -47,11 +47,11 @@ class Registries extends Vue {
         this.editModalRef?.show(null)
     }
 
-    openEdit(reg: RegistryInfo) {
+    openEdit(reg: DockerRegistryInfo) {
         this.editModalRef?.show(reg)
     }
 
-    handleDelete(reg: RegistryInfo) {
+    handleDelete(reg: DockerRegistryInfo) {
         this.actions.showConfirm({
             title: '删除镜像仓库',
             message: `确定要删除仓库 <strong class="text-slate-900">${reg.name}</strong> (${reg.url}) 吗？`,
