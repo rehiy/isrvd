@@ -2,7 +2,7 @@ server:
   debug: false
   listenAddr: ":8080"
   jwtSecret: __JWT_SECRET__
-  rootDirectory: /data/storage/
+  rootDirectory: /data/
 
 agent:
   model: your-model
@@ -15,7 +15,7 @@ apisix:
 
 docker:
   host: unix:///var/run/docker.sock
-  containerRoot: /data/container/
+  containerRoot: container/
   registries:
      # - name: Company Hub
      #   description: 公司内部镜像仓库

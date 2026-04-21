@@ -65,8 +65,8 @@ services:
 |------|------|
 | `/data/conf/` | 配置文件（apisix.yaml、isrvd.yml） |
 | `/data/etcd/` | etcd 数据 |
-| `/data/storage/` | 文件管理根目录 |
 | `/data/container/` | 容器数据目录 |
+| `/data/{member}/` | 用户数据目录 |
 
 首次启动后配置文件自动生成到 `/data/conf/`，编辑后重启容器生效。也可预先准备配置文件放到本地 `data/conf/` 目录再挂载。
 
