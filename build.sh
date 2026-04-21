@@ -3,6 +3,8 @@
 
 set -e
 
+rm -rf dist
+
 ###########################################
 
 export CGO_ENABLED=0
