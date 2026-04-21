@@ -222,19 +222,17 @@ export default toNative(Members)
               </div>
             </div>
             <!-- 中间：Home 目录 -->
-            <div class="mb-3">
-              <p class="text-xs text-slate-500 mb-1">Home 目录</p>
+            <div class="flex items-start gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">Home</span>
               <code class="text-xs bg-slate-100 px-2 py-1 rounded break-all">{{ m.homeDirectory }}</code>
             </div>
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
               <button @click="openEditMember(m)" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑">
-                <i class="fas fa-pen text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">编辑</span>
+                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
               <button v-if="!m.isPrimary" @click="handleDeleteMember(m)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
-                <i class="fas fa-trash text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">删除</span>
+                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>
           </div>

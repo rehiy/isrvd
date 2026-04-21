@@ -189,46 +189,37 @@ export default toNative(Nodes)
             </div>
             
             <!-- 中间：角色、状态、可用性信息 -->
-            <div class="grid grid-cols-2 gap-3 mb-3">
-              <div>
-                <p class="text-xs text-slate-500 mb-1">角色</p>
-                <span :class="n.role === 'manager' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.role }}</span>
-              </div>
-              <div>
-                <p class="text-xs text-slate-500 mb-1">状态</p>
-                <span :class="nodeStateClass(n.state)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.state }}</span>
-              </div>
-              <div>
-                <p class="text-xs text-slate-500 mb-1">可用性</p>
-                <span :class="availabilityClass(n.availability)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.availability }}</span>
-              </div>
-              <div>
-                <p class="text-xs text-slate-500 mb-1">引擎版本</p>
-                <span class="text-xs text-slate-600">{{ n.engineVersion || '-' }}</span>
-              </div>
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0">角色</span>
+              <span :class="n.role === 'manager' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.role }}</span>
+              <span class="text-xs text-slate-300">|</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">状态</span>
+              <span :class="nodeStateClass(n.state)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.state }}</span>
+              <span class="text-xs text-slate-300">|</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">可用性</span>
+              <span :class="availabilityClass(n.availability)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ n.availability }}</span>
+            </div>
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0">引擎</span>
+              <span class="text-xs text-slate-600">{{ n.engineVersion || '-' }}</span>
             </div>
             
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
               <button @click="$router.push(`/swarm/node/${n.id}`)" class="btn-icon text-slate-600 hover:bg-slate-50" title="查看详情">
-                <i class="fas fa-circle-info text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">详情</span>
+                <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
               </button>
               <button v-if="n.availability !== 'active'"  @click="handleNodeAction(n, 'active')"  class="btn-icon text-emerald-600 hover:bg-emerald-50"   title="激活">
-                <i class="fas fa-play text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">激活</span>
+                <i class="fas fa-play text-xs"></i><span class="text-xs ml-1">激活</span>
               </button>
               <button v-if="n.availability !== 'drain'"  @click="handleNodeAction(n, 'drain')"  class="btn-icon text-amber-600 hover:bg-amber-50"   title="排空">
-                <i class="fas fa-arrow-down text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">排空</span>
+                <i class="fas fa-arrow-down text-xs"></i><span class="text-xs ml-1">排空</span>
               </button>
               <button v-if="n.availability !== 'pause'"  @click="handleNodeAction(n, 'pause')"  class="btn-icon text-slate-600 hover:bg-slate-50"   title="暂停">
-                <i class="fas fa-pause text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">暂停</span>
+                <i class="fas fa-pause text-xs"></i><span class="text-xs ml-1">暂停</span>
               </button>
               <button @click="n.leader ? null : handleNodeAction(n, 'remove')" :disabled="n.leader" :class="n.leader ? 'btn-icon text-slate-300 cursor-not-allowed' : 'btn-icon text-red-600 hover:bg-red-50'" :title="n.leader ? '不能移除 Leader 节点' : '移除'">
-                <i class="fas fa-trash text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">移除</span>
+                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">移除</span>
               </button>
             </div>
           </div>

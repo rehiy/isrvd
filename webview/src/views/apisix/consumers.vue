@@ -239,29 +239,31 @@ export default toNative(Consumers)
                 <div class="w-10 h-10 rounded-lg bg-violet-400 flex items-center justify-center flex-shrink-0">
                   <i class="fas fa-user text-white text-base"></i>
                 </div>
-                <div class="min-w-0">
+              <div class="min-w-0">
                   <div class="flex items-center gap-2">
                     <span class="font-medium text-slate-800 text-sm truncate">{{ consumer.username }}</span>
                   </div>
-                  <div class="text-xs text-slate-500 mt-1">{{ formatTs(consumer.create_time) }}</div>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="text-xs text-slate-400">{{ formatTs(consumer.create_time) }}</span>
+                  </div>
                 </div>
               </div>
             </div>
             
             <!-- 中间：描述和API Key信息 -->
-            <div class="mb-3">
-              <p class="text-xs text-slate-500 mb-1">描述</p>
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0">描述</span>
               <span class="text-sm text-slate-600">{{ consumer.desc || '-' }}</span>
             </div>
             
-            <div class="mb-3">
-              <p class="text-xs text-slate-500 mb-1">API Key</p>
+            <div class="flex items-start gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">API Key</span>
               <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600 break-all">{{ (consumer.plugins?.['key-auth'] as Record<string, unknown>)?.key || '-' }}</code>
             </div>
             
             <!-- 关联路由 -->
-            <div class="mb-3">
-              <p class="text-xs text-slate-500 mb-1">关联路由</p>
+            <div class="flex items-start gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">路由</span>
               <div v-if="getConsumerRoutes(consumer.username).length > 0" class="flex flex-wrap gap-1">
                 <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-violet-50 text-violet-700 rounded text-xs">{{ name }}</span>
               </div>
@@ -271,12 +273,10 @@ export default toNative(Consumers)
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
               <button @click="openEditModal(consumer)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑">
-                <i class="fas fa-pen-to-square text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">编辑</span>
+                <i class="fas fa-pen-to-square text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
               <button @click="deleteConsumer(consumer)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
-                <i class="fas fa-trash text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">删除</span>
+                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>
           </div>

@@ -143,10 +143,10 @@ export default toNative(Volumes)
                     <div class="w-8 h-8 rounded-lg bg-amber-400 flex items-center justify-center">
                       <i class="fas fa-database text-white text-sm"></i>
                     </div>
-                    <span class="font-medium text-slate-800">{{ vol.name }}</span>
+                    <span class="font-medium text-slate-800 truncate max-w-[200px] block" :title="vol.name">{{ vol.name }}</span>
                   </div>
                 </td>
-                <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ vol.driver }}</code></td>
+                <td class="px-4 py-3 text-sm text-slate-600">{{ vol.driver }}</td>
                 <td class="px-4 py-3 font-mono text-xs text-slate-500 truncate max-w-xs" :title="vol.mountpoint">{{ vol.mountpoint }}</td>
                 <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(vol.createdAt) }}</td>
                 <td class="px-4 py-3">
@@ -172,40 +172,35 @@ export default toNative(Volumes)
             class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
           >
             <!-- 顶部：卷信息和图标 -->
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div class="w-10 h-10 rounded-lg bg-amber-400 flex items-center justify-center flex-shrink-0">
-                  <i class="fas fa-database text-white text-base"></i>
-                </div>
-                <div class="min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="font-medium text-slate-800 text-sm truncate">{{ vol.name }}</span>
-                  </div>
-                  <div class="flex items-center gap-3 mt-1">
-                    <span class="text-xs text-slate-500">{{ vol.driver }}</span>
-                    <span class="text-xs text-slate-500">{{ formatTime(vol.createdAt) }}</span>
-                  </div>
-                </div>
+            <div class="flex items-center gap-3 min-w-0 mb-3">
+              <div class="w-10 h-10 rounded-lg bg-amber-400 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-database text-white text-base"></i>
+              </div>
+              <div class="min-w-0">
+                <span class="font-medium text-slate-800 text-sm truncate block" :title="vol.name">{{ vol.name }}</span>
+                <span class="text-xs text-slate-500 mt-0.5 block">{{ vol.driver }}</span>
               </div>
             </div>
-            
-            <!-- 中间：挂载点信息 -->
-            <div class="mb-3">
-              <p class="text-xs text-slate-500 mb-1">挂载点</p>
-              <code class="font-mono text-xs text-slate-500 break-all" :title="vol.mountpoint">
-                {{ vol.mountpoint }}
-              </code>
+
+            <!-- 挂载点 -->
+            <div class="flex items-start gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">挂载点</span>
+              <code class="font-mono text-xs text-slate-500 break-all" :title="vol.mountpoint">{{ vol.mountpoint }}</code>
+            </div>
+
+            <!-- 创建时间 -->
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0">创建</span>
+              <span class="text-xs text-slate-500">{{ formatTime(vol.createdAt) }}</span>
             </div>
             
             <!-- 底部：操作按钮 -->
-            <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
+            <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
               <button @click="viewVolumeDetail(vol)" class="btn-icon text-amber-600 hover:bg-amber-50" title="详情">
-                <i class="fas fa-info-circle text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">详情</span>
+                <i class="fas fa-info-circle text-xs"></i><span class="text-xs ml-1">详情</span>
               </button>
               <button @click="handleVolumeAction(vol, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
-                <i class="fas fa-trash text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">删除</span>
+                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>
           </div>

@@ -171,41 +171,37 @@ export default toNative(Tasks)
         <!-- 移动端卡片视图 -->
         <div class="md:hidden space-y-3 p-4">
           <div v-for="t in filteredTasks" :key="t.id" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div :class="['w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0', taskStateClass(t.state).includes('emerald') ? 'bg-emerald-400' : taskStateClass(t.state).includes('red') ? 'bg-red-400' : 'bg-slate-400']">
-                  <i class="fas fa-list-check text-white text-base"></i>
-                </div>
-                <div class="min-w-0">
-                  <code class="font-mono text-xs text-slate-500">{{ t.id.slice(0, 12) }}</code>
-                  <div class="flex items-center gap-2 mt-1">
-                    <span class="text-xs text-slate-500">Slot: {{ t.slot || '-' }}</span>
-                    <span :class="taskStateClass(t.state)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ t.state }}</span>
-                  </div>
+            <!-- 顶部：图标 + ID -->
+            <div class="flex items-center gap-3 min-w-0 mb-3">
+              <div :class="['w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0', taskStateClass(t.state).includes('emerald') ? 'bg-emerald-400' : taskStateClass(t.state).includes('red') ? 'bg-red-400' : 'bg-slate-400']">
+                <i class="fas fa-list-check text-white text-base"></i>
+              </div>
+              <div class="min-w-0">
+                <code class="font-mono text-xs text-slate-500">{{ t.id.slice(0, 12) }}</code>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span :class="taskStateClass(t.state)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize">{{ t.state }}</span>
+                  <span class="text-xs text-slate-400">Slot: {{ t.slot || '-' }}</span>
                 </div>
               </div>
             </div>
-            <div class="grid grid-cols-2 gap-3 mb-3">
-              <div>
-                <p class="text-xs text-slate-500 mb-1">服务</p>
-                <button @click="goServiceDetail(t.serviceID)" class="text-xs text-emerald-600 hover:text-emerald-700 hover:underline truncate">
-                  {{ t.serviceName || t.serviceID?.slice(0, 12) }}
-                </button>
-              </div>
-              <div>
-                <p class="text-xs text-slate-500 mb-1">节点</p>
-                <button v-if="t.nodeID" @click="goNodeDetail(t.nodeID)" class="text-xs text-blue-600 hover:text-blue-700 hover:underline font-mono">
-                  {{ t.nodeID.slice(0, 12) }}
-                </button>
-                <span v-else class="text-xs text-slate-400">-</span>
-              </div>
-              <div class="col-span-2">
-                <p class="text-xs text-slate-500 mb-1">更新时间</p>
-                <span class="text-xs text-slate-400">{{ formatTime(t.updatedAt) }}</span>
-              </div>
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0">服务</span>
+              <button @click="goServiceDetail(t.serviceID)" class="text-xs text-emerald-600 hover:text-emerald-700 hover:underline truncate">
+                {{ t.serviceName || t.serviceID?.slice(0, 12) }}
+              </button>
+              <span class="text-xs text-slate-300">|</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">节点</span>
+              <button v-if="t.nodeID" @click="goNodeDetail(t.nodeID)" class="text-xs text-blue-600 hover:text-blue-700 hover:underline font-mono">
+                {{ t.nodeID.slice(0, 12) }}
+              </button>
+              <span v-else class="text-xs text-slate-400">-</span>
             </div>
-            <div v-if="t.err || t.message" class="pt-2 border-t border-slate-100">
-              <p class="text-xs text-slate-500 mb-1">消息</p>
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0">更新</span>
+              <span class="text-xs text-slate-400">{{ formatTime(t.updatedAt) }}</span>
+            </div>
+            <div v-if="t.err || t.message" class="flex items-start gap-2 pt-2 border-t border-slate-100">
+              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">消息</span>
               <span class="text-xs break-words" :class="t.err ? 'text-red-500' : 'text-slate-500'">{{ t.err || t.message }}</span>
             </div>
           </div>

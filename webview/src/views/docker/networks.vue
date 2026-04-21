@@ -158,7 +158,7 @@ export default toNative(Networks)
                     <span class="font-medium text-slate-800">{{ net.name }}</span>
                   </div>
                 </td>
-                <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ net.driver }}</code></td>
+                <td class="px-4 py-3 text-sm text-slate-600">{{ net.driver }}</td>
                 <td class="px-4 py-3 font-mono text-sm text-slate-600">{{ net.subnet || '-' }}</td>
                 <td class="px-4 py-3 text-sm text-slate-600">{{ net.scope }}</td>
                 <td class="px-4 py-3">
@@ -197,34 +197,29 @@ export default toNative(Networks)
             class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
           >
             <!-- 顶部：网络信息和图标 -->
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div class="w-10 h-10 rounded-lg bg-purple-400 flex items-center justify-center flex-shrink-0">
-                  <i class="fas fa-network-wired text-white text-base"></i>
-                </div>
-                <div class="min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="font-medium text-slate-800 text-sm truncate">{{ net.name }}</span>
-                  </div>
-                  <div class="flex items-center gap-3 mt-1">
-                    <span class="text-xs text-slate-500">{{ net.scope }}</span>
-                    <span class="text-xs text-slate-500">{{ net.driver }}</span>
-                  </div>
-                </div>
+            <div class="flex items-center gap-3 min-w-0 mb-3">
+              <div class="w-10 h-10 rounded-lg bg-purple-400 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-network-wired text-white text-base"></i>
+              </div>
+              <div class="min-w-0">
+                <span class="font-medium text-slate-800 text-sm truncate block">{{ net.name }}</span>
+                <span class="text-xs text-slate-500 mt-0.5 block">{{ net.driver }}</span>
               </div>
             </div>
-            
-            <!-- 中间：子网信息 -->
-            <div class="mb-3">
-              <p class="text-xs text-slate-500 mb-1">子网</p>
-              <code class="font-mono text-sm text-slate-600 break-all">{{ net.subnet || '-' }}</code>
+
+            <!-- 范围 / 子网 -->
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0">范围</span>
+              <span class="text-xs text-slate-600">{{ net.scope }}</span>
+              <span class="text-xs text-slate-300">|</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">子网</span>
+              <code class="font-mono text-xs text-slate-600">{{ net.subnet || '-' }}</code>
             </div>
             
             <!-- 底部：操作按钮 -->
-            <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
+            <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
               <button @click="viewNetworkDetail(net)" class="btn-icon text-purple-600 hover:bg-purple-50" title="详情">
-                <i class="fas fa-info-circle text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">详情</span>
+                <i class="fas fa-info-circle text-xs"></i><span class="text-xs ml-1">详情</span>
               </button>
               <button
                 v-if="canDeleteNetwork(net)"
@@ -232,8 +227,7 @@ export default toNative(Networks)
                 class="btn-icon text-red-600 hover:bg-red-50"
                 title="删除"
               >
-                <i class="fas fa-trash text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">删除</span>
+                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
               <button
                 v-else
@@ -241,8 +235,7 @@ export default toNative(Networks)
                 class="btn-icon text-slate-300 cursor-not-allowed"
                 :title="getDeleteDisabledReason(net)"
               >
-                <i class="fas fa-trash text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">删除</span>
+                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>
           </div>

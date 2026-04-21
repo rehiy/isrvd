@@ -199,15 +199,18 @@ export default toNative(Whitelist)
             </div>
 
             <!-- 中间：URI/Host -->
-            <div class="mb-3">
-              <p class="text-xs text-slate-500 mb-1">URI / 主机</p>
+            <div class="flex items-start gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">URI</span>
               <code class="block text-xs bg-slate-100 px-2 py-1 rounded text-slate-600 break-all">{{ getRouteUri(route) }}</code>
-              <span class="text-xs text-slate-400 mt-1 inline-block">{{ getRouteHost(route) }}</span>
+            </div>
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0">Host</span>
+              <span class="text-xs text-slate-400">{{ getRouteHost(route) }}</span>
             </div>
 
             <!-- 用户列表 -->
-            <div>
-              <p class="text-xs text-slate-500 mb-1">白名单用户</p>
+            <div class="flex items-start gap-2">
+              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">用户</span>
               <div class="flex flex-wrap gap-1.5">
                 <span v-for="consumer in (route.consumers || [])" :key="consumer" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-800 rounded-lg text-xs">
                   <i class="fas fa-user text-amber-500 text-[10px]"></i>

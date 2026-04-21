@@ -167,8 +167,8 @@ export default toNative(Services)
                     <span class="font-medium text-slate-800">{{ svc.name }}</span>
                   </div>
                 </td>
-                <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ svc.image }}</code></td>
-                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 capitalize">{{ svc.mode }}</span></td>
+                <td class="px-4 py-3"><code class="text-xs text-slate-500 font-mono">{{ svc.image }}</code></td>
+                <td class="px-4 py-3 text-sm text-slate-600 capitalize">{{ svc.mode }}</td>
                 <td class="px-4 py-3 text-sm text-slate-600">
                   <span class="text-emerald-600 font-medium">{{ svc.runningTasks }}</span>
                   <span v-if="svc.mode === 'replicated'" class="text-slate-400"> / {{ svc.replicas ?? '?' }}</span>
@@ -208,59 +208,51 @@ export default toNative(Services)
                   <i class="fas fa-cubes text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="font-medium text-slate-800 text-sm truncate">{{ svc.name }}</span>
-                  </div>
-                  <div class="flex items-center gap-3 mt-1">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 capitalize">{{ svc.mode }}</span>
-                    <span class="text-xs text-slate-500">
-                      <span class="text-emerald-600 font-medium">{{ svc.runningTasks }}</span>
-                      <span v-if="svc.mode === 'replicated'" class="text-slate-400"> / {{ svc.replicas ?? '?' }}</span>
-                    </span>
-                  </div>
+                  <span class="font-medium text-slate-800 text-sm truncate block">{{ svc.name }}</span>
+                  <span class="text-xs text-slate-500 mt-0.5 block capitalize">{{ svc.mode }}</span>
                 </div>
               </div>
             </div>
-            
-            <!-- 中间：镜像和端口信息 -->
-            <div class="mb-3">
-              <p class="text-xs text-slate-500 mb-1">镜像</p>
-              <code class="text-xs bg-slate-100 px-2 py-1 rounded break-all">{{ svc.image }}</code>
+
+            <!-- 副本数 -->
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0">副本</span>
+              <span class="text-xs text-slate-500">
+                <span class="text-emerald-600 font-medium">{{ svc.runningTasks }}</span>
+                <span v-if="svc.mode === 'replicated'" class="text-slate-400"> / {{ svc.replicas ?? '?' }}</span>
+              </span>
+            </div>
+
+            <!-- 镜像 -->
+            <div class="flex items-start gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">镜像</span>
+              <code class="text-xs text-slate-500 font-mono break-all">{{ svc.image }}</code>
             </div>
             
             <!-- 端口信息 -->
-            <div class="mb-3">
-              <p class="text-xs text-slate-500 mb-1">端口映射</p>
+            <div v-if="svc.ports && svc.ports.length" class="flex items-start gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">端口</span>
               <div class="font-mono text-xs text-slate-500">
-                <template v-if="svc.ports && svc.ports.length">
-                  <div v-for="p in svc.ports" :key="p.publishedPort" class="truncate">{{ p.publishedPort }}:{{ p.targetPort }}/{{ p.protocol }}</div>
-                </template>
-                <template v-else>-</template>
+                <div v-for="p in svc.ports" :key="p.publishedPort">{{ p.publishedPort }}:{{ p.targetPort }}/{{ p.protocol }}</div>
               </div>
             </div>
             
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
               <button @click="$router.push({ name: 'swarm-service-info', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="详情">
-                <i class="fas fa-circle-info text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">详情</span>
+                <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
               </button>
               <button @click="$router.push({ name: 'swarm-service-logs', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
-                <i class="fas fa-file-lines text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">日志</span>
+                <i class="fas fa-file-lines text-xs"></i><span class="text-xs ml-1">日志</span>
               </button>
-
               <button @click="handleRedeploy(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="强制重部署">
-                <i class="fas fa-rotate text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">重部署</span>
+                <i class="fas fa-rotate text-xs"></i><span class="text-xs ml-1">重部署</span>
               </button>
               <button v-if="svc.mode === 'replicated'" @click="openScaleModal(svc)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="扩缩容">
-                <i class="fas fa-up-right-and-down-left-from-center text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">扩缩容</span>
+                <i class="fas fa-up-right-and-down-left-from-center text-xs"></i><span class="text-xs ml-1">扩缩容</span>
               </button>
               <button @click="handleServiceRemove(svc)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
-                <i class="fas fa-trash text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">删除</span>
+                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>
           </div>

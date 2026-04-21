@@ -232,25 +232,23 @@ export default toNative(Routes)
             </div>
             
             <!-- 中间：URI和Host信息 -->
-            <div class="mb-3">
-              <p class="text-xs text-slate-500 mb-1">URI</p>
+            <div class="flex items-start gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">URI</span>
               <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-700 break-all">{{ getRouteUri(route) }}</code>
             </div>
             
-            <div class="mb-3">
-              <p class="text-xs text-slate-500 mb-1">Host</p>
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0">Host</span>
               <span class="text-sm text-slate-600 break-all">{{ getRouteHost(route) }}</span>
             </div>
             
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
               <button @click="openEditModal(route)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="编辑">
-                <i class="fas fa-pen-to-square text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">编辑</span>
+                <i class="fas fa-pen-to-square text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
               <button @click="deleteRoute(route)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
-                <i class="fas fa-trash text-xs"></i>
-                <span class="text-xs ml-1 hidden xs:inline">删除</span>
+                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>
           </div>

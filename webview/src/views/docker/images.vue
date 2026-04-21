@@ -222,56 +222,48 @@ export default toNative(Images)
           class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
         >
           <!-- 顶部：镜像信息和图标 -->
-          <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3 min-w-0 flex-1">
-              <div class="w-10 h-10 rounded-lg bg-blue-400 flex items-center justify-center flex-shrink-0">
-                <i class="fas fa-compact-disc text-white text-base"></i>
-              </div>
-              <div class="min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="font-medium text-slate-800 text-sm truncate">{{ img.repoTags[0] || '&lt;none&gt;' }}</span>
-                </div>
-                <div class="flex items-center gap-3 mt-1">
-                  <span class="text-xs text-slate-500">{{ formatFileSize(img.size) }}</span>
-                  <span class="text-xs text-slate-500">{{ formatTime(new Date(img.created * 1000).toISOString()) }}</span>
-                </div>
-              </div>
+          <div class="flex items-center gap-3 min-w-0 mb-3">
+            <div class="w-10 h-10 rounded-lg bg-blue-400 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-compact-disc text-white text-base"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="font-medium text-slate-800 text-sm truncate block">{{ img.repoTags[0] || '&lt;none&gt;' }}</span>
+              <span class="text-xs text-slate-500 mt-0.5 block">{{ formatFileSize(img.size) }}</span>
             </div>
           </div>
-          
-          <!-- 中间：镜像ID和标签 -->
-          <div class="mb-3">
-            <p class="text-xs text-slate-500 mb-1">镜像ID</p>
-            <code class="text-xs text-slate-500 font-mono break-all">{{ img.shortId }}</code>
+
+          <!-- 镜像ID -->
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs text-slate-400 flex-shrink-0">ID</span>
+            <code class="text-xs text-slate-500 font-mono truncate">{{ img.shortId }}</code>
+          </div>
+
+          <!-- 创建时间 -->
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs text-slate-400 flex-shrink-0">创建</span>
+            <span class="text-xs text-slate-500">{{ formatTime(new Date(img.created * 1000).toISOString()) }}</span>
           </div>
           
           <!-- 其他标签 -->
-          <div v-if="img.repoTags.length > 1" class="mb-3">
-            <p class="text-xs text-slate-500 mb-1">其他标签</p>
-            <div class="flex flex-wrap gap-1">
-              <span v-for="(tag, idx) in img.repoTags.slice(1)" :key="idx" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600">
-                {{ tag }}
-              </span>
-            </div>
+          <div v-if="img.repoTags.length > 1" class="flex flex-wrap gap-1 mb-3">
+            <span v-for="(tag, idx) in img.repoTags.slice(1)" :key="idx" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600">
+              {{ tag }}
+            </span>
           </div>
           
           <!-- 底部：操作按钮 -->
-          <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
+          <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
             <button @click="$router.push('/docker/image/' + img.id)" class="btn-icon text-slate-600 hover:bg-slate-50" title="查看详情">
-              <i class="fas fa-circle-info text-xs"></i>
-              <span class="text-xs ml-1 hidden xs:inline">详情</span>
+              <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
             </button>
             <button @click="tagModalRef?.show(img)" class="btn-icon text-blue-600 hover:bg-blue-50" title="打标签">
-              <i class="fas fa-tag text-xs"></i>
-              <span class="text-xs ml-1 hidden xs:inline">标签</span>
+              <i class="fas fa-tag text-xs"></i><span class="text-xs ml-1">标签</span>
             </button>
             <button @click="openPush(img)" :disabled="registries.length === 0" class="btn-icon text-purple-600 hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'">
-              <i class="fas fa-upload text-xs"></i>
-              <span class="text-xs ml-1 hidden xs:inline">推送</span>
+              <i class="fas fa-upload text-xs"></i><span class="text-xs ml-1">推送</span>
             </button>
             <button @click="handleImageAction(img, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
-              <i class="fas fa-trash text-xs"></i>
-              <span class="text-xs ml-1 hidden xs:inline">删除</span>
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
             </button>
           </div>
         </div>
