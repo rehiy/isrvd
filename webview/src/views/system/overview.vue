@@ -610,7 +610,14 @@ export default toNative(SystemOverview)
       <div class="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-5 gap-3">
         <div class="rounded-xl border border-slate-200 bg-white p-4">
           <p class="text-xs text-slate-400 mb-1">程序版本</p>
-          <p class="text-sm font-semibold text-slate-800 truncate">{{ stat.version }}</p>
+          <div class="flex items-center gap-2">
+            <p class="text-sm font-semibold text-slate-800 truncate">{{ stat.version }}</p>
+            <a v-if="stat.versionCheck?.update" :href="stat.versionCheck.release" target="_blank" rel="noopener noreferrer"
+              class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-full hover:bg-emerald-100 transition-colors">
+              <i class="fas fa-arrow-up text-[10px]"></i>
+              更新 {{ stat.versionCheck.latest }}
+            </a>
+          </div>
         </div>
         <div class="rounded-xl border border-slate-200 bg-white p-4">
           <p class="text-xs text-slate-400 mb-1">主机名</p>
@@ -630,13 +637,6 @@ export default toNative(SystemOverview)
         </div>
       </div>
 
-      <!-- 版本更新提示 -->
-      <div v-if="stat.versionCheck?.update" class="flex items-center gap-2 text-xs text-slate-400">
-        <a :href="stat.versionCheck.release" target="_blank" rel="noopener noreferrer"
-          class="text-emerald-600 hover:text-emerald-700 font-medium">
-          {{ stat.versionCheck.latest }} 可更新
-        </a>
-      </div>
       <!-- CPU & 内存 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <!-- CPU 使用率卡片：背景折线图 + 顶部进度条 -->
