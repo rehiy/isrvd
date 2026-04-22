@@ -20,7 +20,7 @@ func (app *App) systemMe(c *gin.Context) {
 }
 
 func (app *App) systemStat(c *gin.Context) {
-	helper.RespondSuccess(c, "ok", app.systemSvc.Stat())
+	helper.RespondSuccess(c, "ok", app.systemSvc.Stat(c.Request.Context()))
 }
 
 func (app *App) systemProbe(c *gin.Context) {

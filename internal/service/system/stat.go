@@ -33,10 +33,12 @@ type GoRuntimeStat struct {
 
 // SystemStatResponse 系统统计响应
 type SystemStatResponse struct {
-	System *psutil.DetailStat `json:"system"`
-	DiskIO []*DiskIOStat      `json:"diskIO"`
-	GPU    []*GPUStat         `json:"gpu"`
-	Go     *GoRuntimeStat     `json:"go"`
+	System       *psutil.DetailStat `json:"system"`
+	DiskIO       []*DiskIOStat      `json:"diskIO"`
+	GPU          []*GPUStat         `json:"gpu"`
+	Go           *GoRuntimeStat     `json:"go"`
+	Version      string             `json:"version"`
+	VersionCheck *VersionCheck      `json:"versionCheck,omitempty"`
 }
 
 // ProbeResponse 探活响应
@@ -85,7 +87,7 @@ func filterDiskPartitions(partitions []psutil.DiskPartition) []psutil.DiskPartit
 }
 
 // Stat 获取系统统计信息
-func (s *Service) Stat() *SystemStatResponse {
+func (s *Service) Stat(ctx context.Context) *SystemStatResponse {
 	detail := psutil.Detail(false)
 	detail.DiskPartition = filterDiskPartitions(detail.DiskPartition)
 
@@ -108,7 +110,14 @@ func (s *Service) Stat() *SystemStatResponse {
 		GoMemoryStat: psutil.GoMemory(),
 	}
 
-	return &SystemStatResponse{System: detail, DiskIO: diskIO, GPU: GetGPUStats(), Go: goStat}
+	return &SystemStatResponse{
+		System:       detail,
+		DiskIO:       diskIO,
+		GPU:          GetGPUStats(),
+		Go:           goStat,
+		Version:      config.Version,
+		VersionCheck: s.CheckVersion(ctx),
+	}
 }
 
 // Probe 探活

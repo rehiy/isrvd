@@ -17,7 +17,8 @@ import type {
     AuthLoginResponse,
     SystemAllSettings,
     SystemMemberInfo, SystemMemberUpsertRequest,
-    ComposeDeployResult
+    ComposeDeployResult,
+    SystemStat
 } from './types'
 
 // API 服务类，统一管理所有 API 请求
@@ -98,7 +99,7 @@ class ApiService {
     // ==================== 系统信息相关 ====================
 
     systemStat() {
-        return http.get<Record<string, unknown>>('/api/system/stats')
+        return http.get<SystemStat>('/api/system/stats')
     }
 
     // ==================== Docker 服务相关 ====================

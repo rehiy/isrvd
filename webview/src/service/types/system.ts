@@ -88,6 +88,12 @@ export interface SystemMemberUpsertRequest {
 
 // ─── 系统统计（/api/system/stats 响应） ───
 
+export interface SystemVersionCheck {
+    latest: string
+    update: boolean
+    release: string
+}
+
 export interface SystemNetInterface {
     Name: string
     BytesRecv: number
@@ -155,4 +161,6 @@ export interface SystemStat {
     diskIO: SystemDiskIO[]
     gpu: SystemGPU[]
     go: SystemGoRuntimeStat
+    version: string
+    versionCheck: SystemVersionCheck
 }
