@@ -62,9 +62,8 @@ class SystemOverview extends Vue {
     private memHistory = markRaw({ labels: [] as string[], data: [] as number[] })
     private cpuChart: Chart<'line'> | null = null
     private memChart: Chart<'line'> | null = null
-    // GPU
     @Ref readonly gpuContainerRef!: HTMLDivElement
-    private gpuHistories: Record<number, { labels: string[]; data: number[] }> = markRaw({})
+    gpuHistories: Record<number, { labels: string[]; util: number[]; vram: number[]; power: number[] }> = markRaw({})
     private gpuCharts: Record<number, Chart<'line'>> = markRaw({})
 
     // ─── 计算属性 ───
@@ -373,13 +372,14 @@ class SystemOverview extends Vue {
         this.lastNetSnapshot = snapshot
     }
 
-    // ─── GPU 图表 ───
-    gpuVendorColor(vendor: string): { border: string; bg: string; iconBg: string } {
+    // ─── GPU 图表（一图三线：使用率 / 显存 / 功耗） ───
+
+    gpuVendorColor(vendor: string): { iconBg: string } {
         switch (vendor) {
-            case 'nvidia': return { border: 'rgba(118,185,0,0.6)', bg: 'rgba(118,185,0,0.08)', iconBg: 'bg-[#76b900]' }
-            case 'amd': return { border: 'rgba(237,28,36,0.6)', bg: 'rgba(237,28,36,0.08)', iconBg: 'bg-[#ed1c24]' }
-            case 'intel': return { border: 'rgba(0,104,181,0.6)', bg: 'rgba(0,104,181,0.08)', iconBg: 'bg-[#0068b5]' }
-            default: return { border: 'rgba(100,116,139,0.6)', bg: 'rgba(100,116,139,0.08)', iconBg: 'bg-slate-500' }
+            case 'nvidia': return { iconBg: 'bg-[#76b900]' }
+            case 'amd': return { iconBg: 'bg-[#ed1c24]' }
+            case 'intel': return { iconBg: 'bg-[#0068b5]' }
+            default: return { iconBg: 'bg-slate-500' }
         }
     }
 
@@ -390,49 +390,83 @@ class SystemOverview extends Vue {
         return 'text-emerald-500'
     }
 
-    getGpuCanvas(index: number): HTMLCanvasElement | null {
-        return this.gpuContainerRef?.querySelector(`[data-gpu="${index}"]`) ?? null
+    gpuChartOptions(): ChartOptions<'line'> {
+        return {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            interaction: { intersect: false, mode: 'index' as const },
+            plugins: {
+                legend: { display: true, position: 'bottom' as const, labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
+                tooltip: {
+                    backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
+                    callbacks: {
+                        label: (ctx: ChartCallbackContext) => {
+                            const v = (ctx.parsed.y ?? 0).toFixed(1)
+                            const label = ctx.dataset.label ?? ''
+                            const unit = label === '功耗' ? 'W' : '%'
+                            return label + ': ' + v + unit
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { display: false },
+                y: {
+                    display: true, beginAtZero: true, max: 100,
+                    grid: { color: 'rgba(148,163,184,0.08)' }, border: { display: false },
+                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => Number(v).toFixed(0) + '%' }
+                }
+            },
+            elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 1.5 } }
+        }
     }
 
     initGpuChart(gpu: SystemGPU) {
-        const canvas = this.getGpuCanvas(gpu.index)
+        const canvas = this.gpuContainerRef?.querySelector(`[data-gpu="${gpu.index}"]`) as HTMLCanvasElement | null
         if (!canvas) return
         this.gpuCharts[gpu.index]?.destroy()
-        const h = this.gpuHistories[gpu.index] || { labels: [], data: [] }
-        const color = this.gpuVendorColor(gpu.vendor)
+        const h = this.gpuHistories[gpu.index] || { labels: [], util: [], vram: [], power: [] }
         this.gpuCharts[gpu.index] = markRaw(new Chart(canvas, {
             type: 'line' as const,
-            data: { labels: [...h.labels], datasets: [{ data: [...h.data], borderColor: color.border, backgroundColor: color.bg, fill: true }] },
-            options: this.bgChartOptions()
+            data: {
+                labels: [...h.labels],
+                datasets: [
+                    this.makeDataset(h.util, '#10b981', '使用率'),
+                    this.makeDataset(h.vram, '#8b5cf6', '显存'),
+                    this.makeDataset(h.power, '#f59e0b', '功耗')
+                ]
+            },
+            options: this.gpuChartOptions()
         }))
     }
 
     initAllGpuCharts() {
         if (!this.stat?.gpu?.length) return
         this.stat.gpu.forEach(gpu => {
-            if (!this.gpuHistories[gpu.index]) this.gpuHistories[gpu.index] = { labels: [], data: [] }
+            if (!this.gpuHistories[gpu.index]) this.gpuHistories[gpu.index] = { labels: [], util: [], vram: [], power: [] }
             this.initGpuChart(gpu)
         })
-    }
-
-    updateGpuChart(index: number) {
-        const chart = this.gpuCharts[index]
-        const h = this.gpuHistories[index]
-        if (!chart || !h) return
-        chart.data.labels = [...h.labels]
-        chart.data.datasets[0].data = [...h.data]
-        chart.update('none')
     }
 
     pushGpuPoints(gpus: SystemGPU[]) {
         const label = this.timeLabel()
         gpus.forEach(gpu => {
-            if (!this.gpuHistories[gpu.index]) this.gpuHistories[gpu.index] = { labels: [], data: [] }
+            if (!this.gpuHistories[gpu.index]) this.gpuHistories[gpu.index] = { labels: [], util: [], vram: [], power: [] }
             const h = this.gpuHistories[gpu.index]
             h.labels.push(label)
-            h.data.push(gpu.utilization)
-            if (h.labels.length > this.MAX_STAT_POINTS) { h.labels.shift(); h.data.shift() }
-            this.updateGpuChart(gpu.index)
+            h.util.push(gpu.utilization)
+            h.vram.push(gpu.memoryTotal > 0 ? this.memPercent(gpu.memoryUsed, gpu.memoryTotal) : 0)
+            h.power.push(gpu.powerUsage >= 0 ? gpu.powerUsage : 0)
+            if (h.labels.length > this.MAX_STAT_POINTS) {
+                h.labels.shift(); h.util.shift(); h.vram.shift(); h.power.shift()
+            }
+            const chart = this.gpuCharts[gpu.index]
+            if (chart) {
+                chart.data.labels = [...h.labels]
+                chart.data.datasets[0].data = [...h.util]
+                chart.data.datasets[1].data = [...h.vram]
+                chart.data.datasets[2].data = [...h.power]
+                chart.update('none')
+            }
         })
     }
 
@@ -485,7 +519,12 @@ class SystemOverview extends Vue {
                 }
                 if (payload.gpu?.length) {
                     payload.gpu.forEach(gpu => {
-                        this.gpuHistories[gpu.index] = { labels: [initLabel], data: [gpu.utilization] }
+                        this.gpuHistories[gpu.index] = {
+                            labels: [initLabel],
+                            util: [gpu.utilization],
+                            vram: [gpu.memoryTotal > 0 ? this.memPercent(gpu.memoryUsed, gpu.memoryTotal) : 0],
+                            power: [gpu.powerUsage >= 0 ? gpu.powerUsage : 0]
+                        }
                     })
                 }
             }
@@ -649,59 +688,42 @@ export default toNative(SystemOverview)
       </div>
 
       <!-- GPU -->
-      <div v-if="stat.gpu?.length" ref="gpuContainerRef" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div
-          v-for="gpu in stat.gpu"
-          :key="gpu.index"
-          class="relative rounded-xl border border-slate-200 bg-white overflow-hidden"
-        >
-          <!-- 背景使用率折线图 -->
-          <div class="absolute inset-0 pointer-events-none">
-            <canvas :data-gpu="gpu.index" class="w-full h-full"></canvas>
+      <div v-if="stat.gpu?.length" ref="gpuContainerRef" class="space-y-3">
+        <div v-for="gpu in stat.gpu" :key="gpu.index" class="rounded-xl border border-slate-200 bg-white overflow-hidden">
+          <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+            <div class="w-6 h-6 rounded-md bg-emerald-500 flex items-center justify-center">
+              <i class="fas fa-microchip text-white text-xs"></i>
+            </div>
+            <span class="text-sm font-semibold text-slate-700">GPU 加速卡 <template v-if="stat.gpu!.length > 1">{{ gpu.index }} </template>· {{ gpu.name }}</span>
           </div>
-          <!-- 前景信息 -->
-          <div class="relative p-4">
-            <!-- 第一行：厂商图标 + 名称 + 使用率 -->
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2 min-w-0">
-                <div :class="['w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0', gpuVendorColor(gpu.vendor).iconBg]">
-                  <i class="fas fa-bolt text-white text-xs"></i>
-                </div>
-                <span class="text-sm font-semibold text-slate-700 truncate">GPU 使用率</span>
-              </div>
-              <span :class="['text-2xl font-bold tabular-nums flex-shrink-0', textColor(gpu.utilization)]">
-                {{ gpu.utilization.toFixed(1) }}<span class="text-sm font-medium ml-0.5">%</span>
+          <div class="px-4 py-3">
+            <!-- 实时指标 -->
+            <div class="flex items-center justify-end mb-2 gap-4 text-xs">
+              <span class="flex items-center gap-1">
+                <i class="fas fa-gauge text-emerald-500"></i>
+                <span :class="['font-mono w-12 text-right tabular-nums', textColor(gpu.utilization)]">{{ gpu.utilization.toFixed(1) }}%</span>
               </span>
-            </div>
-            <!-- 第二行：GPU 名称 + 厂商 badge -->
-            <div class="flex items-center gap-2 mt-3">
-              <span class="text-xs text-slate-400 truncate">{{ gpu.name }}</span>
-              <span class="text-xs text-slate-300 font-mono uppercase flex-shrink-0">{{ gpu.vendor }}</span>
-            </div>
-            <!-- 第三行：显存条 -->
-            <div v-if="gpu.memoryTotal > 0" class="mt-3">
-              <div class="flex items-center justify-between text-xs mb-1">
-                <span class="text-slate-400">显存</span>
-                <span class="text-slate-500 font-mono">{{ fmtBytes(gpu.memoryUsed) }} / {{ fmtBytes(gpu.memoryTotal) }}</span>
-              </div>
-              <div class="w-full bg-slate-100 rounded-full h-1.5">
-                <div
-                  :class="['h-1.5 rounded-full transition-all', barColor(memPercent(gpu.memoryUsed, gpu.memoryTotal))]"
-                  :style="{ width: memPercent(gpu.memoryUsed, gpu.memoryTotal) + '%' }"
-                ></div>
-              </div>
-            </div>
-            <!-- 第四行：温度 + 功耗 + 风扇 -->
-            <div class="flex items-center gap-4 mt-3 text-xs">
+              <span v-if="gpu.memoryTotal > 0" class="flex items-center gap-1">
+                <i class="fas fa-memory text-violet-500"></i>
+                <span class="font-mono text-slate-600 w-12 text-right tabular-nums">{{ memPercent(gpu.memoryUsed, gpu.memoryTotal) }}%</span>
+              </span>
+              <span v-if="gpu.powerUsage >= 0" class="flex items-center gap-1">
+                <i class="fas fa-bolt text-amber-500"></i>
+                <span class="font-mono text-slate-600 w-14 text-right tabular-nums">{{ gpu.powerUsage.toFixed(1) }}W</span>
+              </span>
               <span v-if="gpu.temperature >= 0" :class="['flex items-center gap-1', gpuTempColor(gpu.temperature)]">
                 <i class="fas fa-temperature-half"></i>{{ gpu.temperature }}°C
               </span>
-              <span v-if="gpu.powerUsage >= 0" class="flex items-center gap-1 text-slate-500">
-                <i class="fas fa-bolt"></i>{{ gpu.powerUsage.toFixed(1) }}W
-              </span>
-              <span v-if="gpu.fanSpeed >= 0" class="flex items-center gap-1 text-slate-500">
+              <span v-if="gpu.fanSpeed >= 0" class="flex items-center gap-1 text-slate-400">
                 <i class="fas fa-fan"></i>{{ gpu.fanSpeed }}%
               </span>
+            </div>
+            <!-- 一图三线时序图 -->
+            <div class="relative h-20 bg-slate-50 rounded-lg overflow-hidden">
+              <canvas :data-gpu="gpu.index" class="w-full h-full"></canvas>
+              <div v-if="!gpuHistories[gpu.index]?.labels?.length" class="absolute inset-0 flex items-center justify-center">
+                <span class="text-xs text-slate-300">等待数据...</span>
+              </div>
             </div>
           </div>
         </div>

@@ -14,7 +14,7 @@ import type {
     ApisixPluginConfig, ApisixUpstream,
     SystemProbeResponse, DockerInfo,
     FilerListResponse, FilerReadResponse,
-    AuthLoginResponse,
+    AuthLoginResponse, AuthInfoResponse,
     SystemAllSettings,
     SystemMemberInfo, SystemMemberUpsertRequest,
     ComposeDeployResult,
@@ -24,12 +24,16 @@ import type {
 // API 服务类，统一管理所有 API 请求
 class ApiService {
     // 认证相关
+    authInfo() {
+        return http.get<AuthInfoResponse>('/api/auth/info')
+    }
+
     login(data: { username: string; password: string }) {
-        return http.post<AuthLoginResponse>('/api/login', data)
+        return http.post<AuthLoginResponse>('/api/auth/login', data)
     }
 
     logout() {
-        return http.post<void>('/api/logout')
+        return http.post<void>('/api/auth/logout')
     }
 
     // 文件管理相关
@@ -345,7 +349,7 @@ class ApiService {
     // ==================== 系统设置 ====================
 
     getMe() {
-        return http.get<SystemMemberInfo>('/api/system/me')
+        return http.get<AuthInfoResponse>('/api/auth/info')
     }
 
     getSettings() {
