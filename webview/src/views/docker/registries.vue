@@ -18,9 +18,15 @@ class Registries extends Vue {
 
     // ─── 数据属性 ───
     daemonMirrors: string[] = []
+    configMirrors: string[] = []
     indexServerAddress = ''
     registries: DockerRegistryInfo[] = []
     loading = false
+
+    get allMirrors(): string[] {
+        const set = new Set([...this.configMirrors, ...this.daemonMirrors])
+        return [...set]
+    }
 
     // ─── 方法 ───
     async loadDaemonInfo() {
@@ -29,6 +35,14 @@ class Registries extends Vue {
             const info = res.payload
             this.daemonMirrors = info?.registryMirrors || []
             this.indexServerAddress = info?.indexServerAddress || ''
+        } catch (e) {}
+    }
+
+    async loadConfigMirrors() {
+        try {
+            const res = await api.getSettings()
+            const settings = res.payload
+            this.configMirrors = settings?.docker?.mirrors || []
         } catch (e) {}
     }
 
@@ -72,6 +86,7 @@ class Registries extends Vue {
     // ─── 生命周期 ───
     mounted() {
         this.loadDaemonInfo()
+        this.loadConfigMirrors()
         this.loadRegistries()
     }
 }
@@ -162,8 +177,8 @@ export default toNative(Registries)
                 <td class="px-4 py-3">
                   <div class="flex flex-col gap-1">
                     <code class="text-xs bg-slate-100 px-2 py-1 rounded self-start">{{ indexServerAddress || 'https://index.docker.io/v1/' }}</code>
-                    <template v-if="daemonMirrors.length > 0">
-                      <code v-for="mirror in daemonMirrors" :key="mirror" class="text-xs bg-sky-50 text-sky-700 px-2 py-1 rounded self-start inline-flex items-center gap-1">
+                    <template v-if="allMirrors.length > 0">
+                      <code v-for="mirror in allMirrors" :key="mirror" class="text-xs bg-sky-50 text-sky-700 px-2 py-1 rounded self-start inline-flex items-center gap-1">
                         <i class="fas fa-bolt text-sky-400 text-xs"></i>{{ mirror }}
                       </code>
                     </template>
@@ -232,8 +247,8 @@ export default toNative(Registries)
                 <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">地址</span>
                 <code class="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded break-all">{{ indexServerAddress || 'https://index.docker.io/v1/' }}</code>
               </div>
-              <template v-if="daemonMirrors.length > 0">
-                <div v-for="mirror in daemonMirrors" :key="mirror" class="flex items-center gap-2">
+              <template v-if="allMirrors.length > 0">
+                <div v-for="mirror in allMirrors" :key="mirror" class="flex items-center gap-2">
                   <span class="text-xs text-slate-400 flex-shrink-0">加速</span>
                   <code class="text-xs bg-sky-50 text-sky-700 px-1.5 py-0.5 rounded truncate flex items-center gap-1">
                     <i class="fas fa-bolt text-sky-400 text-xs"></i>{{ mirror }}

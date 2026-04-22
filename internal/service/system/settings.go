@@ -34,8 +34,9 @@ type AgentSettings struct {
 
 // DockerSettings Docker 配置
 type DockerSettings struct {
-	Host          string `json:"host"`
-	ContainerRoot string `json:"containerRoot"`
+	Host          string   `json:"host"`
+	ContainerRoot string   `json:"containerRoot"`
+	Mirrors       []string `json:"mirrors"`
 }
 
 // MarketplaceSettings 应用市场配置
@@ -99,6 +100,7 @@ func (s *SettingsService) GetAll() *AllSettings {
 		Docker: &DockerSettings{
 			Host:          config.Docker.Host,
 			ContainerRoot: config.Docker.ContainerRoot,
+			Mirrors:       config.Docker.Mirrors,
 		},
 		Marketplace: &MarketplaceSettings{
 			URL: config.Marketplace.URL,
@@ -127,6 +129,7 @@ func (s *SettingsService) UpdateAll(req UpdateAllRequest) error {
 	if req.Docker != nil {
 		config.Docker.Host = req.Docker.Host
 		config.Docker.ContainerRoot = req.Docker.ContainerRoot
+		config.Docker.Mirrors = req.Docker.Mirrors
 	}
 	if req.Marketplace != nil {
 		config.Marketplace.URL = req.Marketplace.URL

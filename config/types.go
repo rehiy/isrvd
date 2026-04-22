@@ -36,6 +36,7 @@ type ApisixConfig struct {
 type DockerConfig struct {
 	Host          string            `yaml:"host"`          // Docker 连接地址
 	ContainerRoot string            `yaml:"containerRoot"` // 容器数据根目录
+	Mirrors       []string          `yaml:"mirrors"`       // Docker Hub 加速地址列表
 	Registries    []*DockerRegistry `yaml:"registries"`    // 镜像仓库配置列表
 }
 

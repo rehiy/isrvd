@@ -39,6 +39,7 @@ export interface SystemAgentSettings {
 export interface SystemDockerSettings {
     host: string
     containerRoot: string
+    mirrors: string[]
 }
 
 export interface SystemMarketplaceSettings {
