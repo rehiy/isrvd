@@ -13,7 +13,7 @@ class Settings extends Vue {
   // ─── 数据属性 ───
   loading = false
   saving = false
-  activeTab: 'server' | 'agent' | 'apisix' | 'docker' | 'marketplace' = 'server'
+  activeTab: 'server' | 'agent' | 'app' = 'server'
 
   server: SystemServerSettings = { debug: false, listenAddr: '', jwtSecret: '', proxyHeaderName: '', rootDirectory: '' }
   agent: SystemAgentSettings = { model: '', baseUrl: '', apiKey: '' }
@@ -110,14 +110,8 @@ export default toNative(Settings)
               <button type="button" @click="activeTab = 'agent'" :class="['px-3 py-1 rounded-md text-xs font-medium transition-colors', activeTab === 'agent' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
                 <i class="fas fa-robot mr-1"></i>Agent
               </button>
-              <button type="button" @click="activeTab = 'apisix'" :class="['px-3 py-1 rounded-md text-xs font-medium transition-colors', activeTab === 'apisix' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
-                <i class="fas fa-cloud mr-1"></i>APISIX
-              </button>
-              <button type="button" @click="activeTab = 'docker'" :class="['px-3 py-1 rounded-md text-xs font-medium transition-colors', activeTab === 'docker' ? 'bg-white text-sky-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
-                <i class="fas fa-cube mr-1"></i>Docker
-              </button>
-              <button type="button" @click="activeTab = 'marketplace'" :class="['px-3 py-1 rounded-md text-xs font-medium transition-colors', activeTab === 'marketplace' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
-                <i class="fas fa-store mr-1"></i>市场
+              <button type="button" @click="activeTab = 'app'" :class="['px-3 py-1 rounded-md text-xs font-medium transition-colors', activeTab === 'app' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+                <i class="fas fa-layer-group mr-1"></i>应用
               </button>
             </div>
             <button type="button" @click="loadSettings()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
@@ -148,14 +142,8 @@ export default toNative(Settings)
           <button type="button" @click="activeTab = 'agent'" :class="['flex-1 min-w-0 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap', activeTab === 'agent' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500']">
             <i class="fas fa-robot mr-1"></i>Agent
           </button>
-          <button type="button" @click="activeTab = 'apisix'" :class="['flex-1 min-w-0 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap', activeTab === 'apisix' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500']">
-            <i class="fas fa-cloud mr-1"></i>APISIX
-          </button>
-          <button type="button" @click="activeTab = 'docker'" :class="['flex-1 min-w-0 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap', activeTab === 'docker' ? 'bg-white text-sky-600 shadow-sm' : 'text-slate-500']">
-            <i class="fas fa-cube mr-1"></i>Docker
-          </button>
-          <button type="button" @click="activeTab = 'marketplace'" :class="['flex-1 min-w-0 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap', activeTab === 'marketplace' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500']">
-            <i class="fas fa-store mr-1"></i>市场
+          <button type="button" @click="activeTab = 'app'" :class="['flex-1 min-w-0 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap', activeTab === 'app' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500']">
+            <i class="fas fa-layer-group mr-1"></i>应用
           </button>
         </div>
       </div>
@@ -226,8 +214,9 @@ export default toNative(Settings)
           </div>
         </section>
 
-        <!-- APISIX 配置 -->
-        <section v-if="activeTab === 'apisix'" class="max-w-3xl space-y-4">
+        <!-- 应用配置（APISIX + Docker） -->
+        <section v-if="activeTab === 'app'" class="max-w-3xl space-y-4">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">APISIX</p>
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1.5">Admin URL</label>
             <input type="text" v-model="apisix.adminUrl" placeholder="http://127.0.0.1:9180" class="input" />
@@ -242,28 +231,28 @@ export default toNative(Settings)
             <input type="password" v-model="apisix.adminKey" :placeholder="adminKeyPlaceholder" class="input" autocomplete="new-password" />
             <p class="mt-1 text-xs text-slate-400">访问 APISIX Admin API 的密钥</p>
           </div>
-        </section>
-
-        <!-- Docker 配置 -->
-        <section v-if="activeTab === 'docker'" class="max-w-3xl space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1.5">Docker Host</label>
-            <input type="text" v-model="docker.host" placeholder="unix:///var/run/docker.sock 或 tcp://host:2375" class="input" />
-            <p class="mt-1 text-xs text-slate-400">Docker 守护进程地址，留空则使用环境变量</p>
+          <div class="border-t border-slate-200 pt-4">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">Docker</p>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Docker Host</label>
+                <input type="text" v-model="docker.host" placeholder="unix:///var/run/docker.sock 或 tcp://host:2375" class="input" />
+                <p class="mt-1 text-xs text-slate-400">Docker 守护进程地址，留空则使用环境变量</p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">容器数据根目录</label>
+                <input type="text" v-model="docker.containerRoot" placeholder="containers" class="input" />
+                <p class="mt-1 text-xs text-slate-400">用于存放容器数据卷的基础目录（相对于基础目录）</p>
+              </div>
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1.5">容器数据根目录</label>
-            <input type="text" v-model="docker.containerRoot" placeholder="containers" class="input" />
-            <p class="mt-1 text-xs text-slate-400">用于存放容器数据卷的基础目录（相对于基础目录）</p>
-          </div>
-        </section>
-
-        <!-- 应用市场配置 -->
-        <section v-if="activeTab === 'marketplace'" class="max-w-3xl space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1.5">站点 URL</label>
-            <input type="text" v-model="marketplace.url" placeholder="例如 http://21.214.54.113:8000/" class="input" />
-            <p class="mt-1 text-xs text-slate-400">应用市场页面以 iframe 方式嵌入，并通过 postMessage 协议接收安装事件</p>
+          <div class="border-t border-slate-200 pt-4">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">应用市场</p>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">站点 URL</label>
+              <input type="text" v-model="marketplace.url" placeholder="例如 http://21.214.54.113:8000/" class="input" />
+              <p class="mt-1 text-xs text-slate-400">应用市场页面以 iframe 方式嵌入，并通过 postMessage 协议接收安装事件</p>
+            </div>
           </div>
         </section>
 
