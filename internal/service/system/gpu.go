@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NVIDIA/go-nvml/pkg/nvml"
 	"github.com/jaypipes/ghw"
 	ghwgpu "github.com/jaypipes/ghw/pkg/gpu"
 )
@@ -127,76 +126,7 @@ func collectNvidiaCards(cards []*ghwgpu.GraphicsCard) []*GPUStat {
 	if len(cards) == 0 {
 		return nil
 	}
-	if stats := collectNvidiaNVML(); len(stats) > 0 {
-		return stats
-	}
 	return collectNvidiaSmi(cards)
-}
-
-// go-nvml 直接读取 NVIDIA 驱动
-func collectNvidiaNVML() []*GPUStat {
-	ret := nvml.Init()
-	if ret != nvml.SUCCESS {
-		return nil
-	}
-	defer nvml.Shutdown()
-
-	count, ret := nvml.DeviceGetCount()
-	if ret != nvml.SUCCESS || count == 0 {
-		return nil
-	}
-
-	stats := make([]*GPUStat, 0, count)
-	for i := 0; i < count; i++ {
-		device, ret := nvml.DeviceGetHandleByIndex(i)
-		if ret != nvml.SUCCESS {
-			continue
-		}
-
-		name := "NVIDIA GPU"
-		if n, r := device.GetName(); r == nvml.SUCCESS {
-			name = n
-		}
-
-		var memUsed, memTotal uint64
-		if mem, r := device.GetMemoryInfo(); r == nvml.SUCCESS {
-			memUsed = mem.Used
-			memTotal = mem.Total
-		}
-
-		var util float64
-		if u, r := device.GetUtilizationRates(); r == nvml.SUCCESS {
-			util = float64(u.Gpu)
-		}
-
-		temp := -1
-		if t, r := device.GetTemperature(nvml.TEMPERATURE_GPU); r == nvml.SUCCESS {
-			temp = int(t)
-		}
-
-		powerW := -1.0
-		if p, r := device.GetPowerUsage(); r == nvml.SUCCESS {
-			powerW = float64(p) / 1000 // mW → W
-		}
-
-		fan := -1
-		if f, r := device.GetFanSpeed(); r == nvml.SUCCESS {
-			fan = int(f)
-		}
-
-		stats = append(stats, &GPUStat{
-			Index:       i,
-			Name:        name,
-			Vendor:      "nvidia",
-			MemoryUsed:  memUsed,
-			MemoryTotal: memTotal,
-			Utilization: util,
-			Temperature: temp,
-			PowerUsage:  powerW,
-			FanSpeed:    fan,
-		})
-	}
-	return stats
 }
 
 // nvidia-smi fallback

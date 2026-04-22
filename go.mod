@@ -3,7 +3,6 @@ module isrvd
 go 1.25.0
 
 require (
-	github.com/NVIDIA/go-nvml v0.12.4-0
 	github.com/compose-spec/compose-go/v2 v2.10.2
 	github.com/creack/pty v1.1.24
 	github.com/docker/docker v28.5.2+incompatible
