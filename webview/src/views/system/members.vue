@@ -138,7 +138,6 @@ export default toNative(Members)
               <tr class="bg-slate-50 border-b border-slate-200">
                   <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">用户名</th>
                   <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Home 目录</th>
-                  <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">终端</th>
                   <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">模块权限</th>
                   <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">密码</th>
                   <th class="w-28 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
@@ -155,14 +154,6 @@ export default toNative(Members)
                     </div>
                   </td>
                   <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ m.homeDirectory }}</code></td>
-                  <td class="px-4 py-3">
-                    <span v-if="m.permissions?.shell" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
-                      <i class="fas fa-terminal mr-1"></i>允许
-                    </span>
-                    <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
-                      <i class="fas fa-ban mr-1"></i>禁用
-                    </span>
-                  </td>
                   <td class="px-4 py-3">
                     <div class="flex flex-wrap gap-1">
                       <template v-for="(perm, mod) in m.permissions" :key="mod">
@@ -209,12 +200,6 @@ export default toNative(Members)
                     <span class="font-medium text-slate-800 text-sm truncate">{{ m.username }}</span>
                   </div>
                   <div class="flex flex-wrap items-center gap-2 mt-1">
-                    <span v-if="m.permissions?.shell" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
-                      <i class="fas fa-terminal mr-1"></i>终端
-                    </span>
-                    <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
-                      <i class="fas fa-ban mr-1"></i>无终端
-                    </span>
                     <span v-if="m.passwordSet" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
                       <i class="fas fa-check mr-1"></i>密码已设
                     </span>
