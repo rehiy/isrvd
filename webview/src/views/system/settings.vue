@@ -2,26 +2,28 @@
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { SystemAllSettings, SystemServerSettings, SystemAgentSettings, SystemApisixSettings, SystemDockerSettings, SystemMarketplaceSettings } from '@/service/types'
+import type { SystemAllSettings, SystemServerSettings, SystemAgentSettings, SystemApisixSettings, SystemDockerSettings, SystemMarketplaceSettings, SystemLinkSetting } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
-@Component({})
+import IconSelect from '@/component/icon-select.vue'
+
+@Component({ components: { IconSelect } })
 class Settings extends Vue {
   @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
   // ─── 数据属性 ───
   loading = false
   saving = false
-  activeTab: 'server' | 'agent' | 'app' = 'server'
+  activeTab: 'server' | 'agent' | 'app' | 'links' = 'server'
 
   server: SystemServerSettings = { debug: false, listenAddr: '', jwtSecret: '', proxyHeaderName: '', rootDirectory: '' }
   agent: SystemAgentSettings = { model: '', baseUrl: '', apiKey: '' }
   apisix: SystemApisixSettings = { adminUrl: '', adminKey: '' }
   docker: SystemDockerSettings = { host: '', containerRoot: '' }
   marketplace: SystemMarketplaceSettings = { url: '' }
-
-  // 敏感字段当前是否已设置（后端返回）
+  links: SystemLinkSetting[] = []
+  // 敏感字段当前是否已设置
   jwtSecretSet = false
   adminKeySet = false
   agentApiKeySet = false
@@ -51,6 +53,7 @@ class Settings extends Vue {
       this.apisix = { ...payload.apisix, adminKey: '' }
       this.docker = { ...payload.docker }
       this.marketplace = { ...(payload.marketplace || { url: '' }) }
+      this.links = payload.links ? payload.links.map(l => ({ ...l })) : []
       this.jwtSecretSet = !!payload.server.jwtSecretSet
       this.adminKeySet = !!payload.apisix.adminKeySet
       this.agentApiKeySet = !!payload.agent.apiKeySet
@@ -69,11 +72,20 @@ class Settings extends Vue {
         apisix: this.apisix,
         docker: this.docker,
         marketplace: this.marketplace,
+        links: this.links,
       })
       this.actions.showNotification('success', '全部配置已保存，部分项需重启生效')
       this.loadSettings()
     } catch (e) { }
     this.saving = false
+  }
+
+  addLink() {
+    this.links.push({ label: '', url: '', icon: 'fa-link' })
+  }
+
+  removeLink(index: number) {
+    this.links.splice(index, 1)
   }
 
   // ─── 生命周期 ───
@@ -105,13 +117,16 @@ export default toNative(Settings)
             <!-- Tab 切换 -->
             <div class="bg-slate-100 p-1 rounded-lg flex items-center gap-0.5">
               <button type="button" @click="activeTab = 'server'" :class="['px-3 py-1 rounded-md text-xs font-medium transition-colors', activeTab === 'server' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
-                <i class="fas fa-server mr-1"></i>服务器
+                <i class="fas fa-server mr-1"></i>全局
               </button>
               <button type="button" @click="activeTab = 'agent'" :class="['px-3 py-1 rounded-md text-xs font-medium transition-colors', activeTab === 'agent' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
                 <i class="fas fa-robot mr-1"></i>Agent
               </button>
               <button type="button" @click="activeTab = 'app'" :class="['px-3 py-1 rounded-md text-xs font-medium transition-colors', activeTab === 'app' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
                 <i class="fas fa-layer-group mr-1"></i>应用
+              </button>
+              <button type="button" @click="activeTab = 'links'" :class="['px-3 py-1 rounded-md text-xs font-medium transition-colors', activeTab === 'links' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']">
+                <i class="fas fa-link mr-1"></i>导航
               </button>
             </div>
             <button type="button" @click="loadSettings()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
@@ -137,13 +152,16 @@ export default toNative(Settings)
         <!-- 移动端 Tab -->
         <div class="flex md:hidden mt-3 bg-slate-100 p-1 rounded-lg gap-0.5 overflow-x-auto">
           <button type="button" @click="activeTab = 'server'" :class="['flex-1 min-w-0 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap', activeTab === 'server' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500']">
-            <i class="fas fa-server mr-1"></i>服务器
+            <i class="fas fa-server mr-1"></i>全局
           </button>
           <button type="button" @click="activeTab = 'agent'" :class="['flex-1 min-w-0 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap', activeTab === 'agent' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500']">
             <i class="fas fa-robot mr-1"></i>Agent
           </button>
           <button type="button" @click="activeTab = 'app'" :class="['flex-1 min-w-0 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap', activeTab === 'app' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500']">
             <i class="fas fa-layer-group mr-1"></i>应用
+          </button>
+          <button type="button" @click="activeTab = 'links'" :class="['flex-1 min-w-0 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap', activeTab === 'links' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500']">
+            <i class="fas fa-link mr-1"></i>导航
           </button>
         </div>
       </div>
@@ -216,7 +234,7 @@ export default toNative(Settings)
 
         <!-- 应用配置（APISIX + Docker） -->
         <section v-if="activeTab === 'app'" class="max-w-3xl space-y-4">
-          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">APISIX</p>
+          <p class="text-sm font-medium text-slate-500">APISIX</p>
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1.5">Admin URL</label>
             <input type="text" v-model="apisix.adminUrl" placeholder="http://127.0.0.1:9180" class="input" />
@@ -232,7 +250,7 @@ export default toNative(Settings)
             <p class="mt-1 text-xs text-slate-400">访问 APISIX Admin API 的密钥</p>
           </div>
           <div class="border-t border-slate-200 pt-4">
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">Docker</p>
+            <p class="text-sm font-medium text-slate-500 mb-4">Docker</p>
             <div class="space-y-4">
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">Docker Host</label>
@@ -247,7 +265,7 @@ export default toNative(Settings)
             </div>
           </div>
           <div class="border-t border-slate-200 pt-4">
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">应用市场</p>
+            <p class="text-sm font-medium text-slate-500 mb-4">应用市场</p>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1.5">站点 URL</label>
               <input type="text" v-model="marketplace.url" placeholder="例如 http://21.214.54.113:8000/" class="input" />
@@ -256,14 +274,40 @@ export default toNative(Settings)
           </div>
         </section>
 
+        <!-- Links 配置 -->
+        <section v-if="activeTab === 'links'" class="max-w-3xl space-y-3">
+          <!-- 列标题（仅在有数据时显示） -->
+          <div v-if="links.length" class="hidden sm:grid sm:grid-cols-[1fr_2fr_1.2fr_auto] gap-3 px-0.5">
+            <span class="text-xs font-medium text-slate-500">名称</span>
+            <span class="text-xs font-medium text-slate-500">URL</span>
+            <span class="text-xs font-medium text-slate-500">图标</span>
+            <span></span>
+          </div>
+          <div v-for="(link, index) in links" :key="index" class="grid grid-cols-1 sm:grid-cols-[1fr_2fr_1.2fr_auto] gap-3 items-center">
+            <input type="text" v-model="link.label" placeholder="例如 Grafana" class="input" />
+            <input type="text" v-model="link.url" placeholder="https://example.com" class="input" />
+            <!-- 图标选择器 -->
+            <IconSelect v-model="link.icon" />
+            <button type="button" @click="removeLink(index)" class="px-3 py-2.5 rounded-xl border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors">
+              <i class="fas fa-trash-can text-sm"></i>
+            </button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-[1fr_2fr_1.2fr_auto] gap-3 items-center">
+            <div class="hidden sm:block sm:col-span-3"></div>
+            <button type="button" @click="addLink()" class="px-3 py-2.5 rounded-xl border border-dashed border-slate-300 text-slate-400 hover:border-slate-400 hover:text-slate-600 transition-colors">
+              <i class="fas fa-plus text-sm"></i>
+            </button>
+          </div>
+        </section>
+
         <!-- 统一保存 -->
         <div class="max-w-3xl mt-6 pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center gap-3">
-          <button type="submit" :disabled="saving" class="self-start px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap flex-shrink-0">
-            <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save']"></i>{{ saving ? '保存中...' : '保存配置' }}
+          <button type="submit" :disabled="saving" class="btn-primary self-start text-sm flex-shrink-0">
+            <i :class="['fas mr-1.5', saving ? 'fa-spinner fa-spin' : 'fa-save']"></i>{{ saving ? '保存中...' : '保存配置' }}
           </button>
           <p class="text-xs text-slate-400 flex items-start gap-1">
             <i class="fas fa-circle-info mt-0.5 flex-shrink-0"></i>
-            <span>保存后立即写入配置文件，监听地址 / JWT 密钥 / Docker Host / APISIX Admin 等项需重启服务生效。</span>
+            <span>保存后立即写入配置文件，部分选项需重启服务生效。</span>
           </p>
         </div>
 

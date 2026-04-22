@@ -7,6 +7,7 @@ type Config struct {
 	Apisix      *ApisixConfig      `yaml:"apisix"`
 	Docker      *DockerConfig      `yaml:"docker"`
 	Marketplace *MarketplaceConfig `yaml:"marketplace"`
+	Links       []*LinkConfig      `yaml:"links"`
 	Members     []*MemberConfig    `yaml:"members"`
 }
 
@@ -51,6 +52,13 @@ type DockerRegistry struct {
 // 应用市场配置
 type MarketplaceConfig struct {
 	URL string `yaml:"url"` // 应用市场站点地址，通过 iframe 嵌入
+}
+
+// 工具栏链接配置
+type LinkConfig struct {
+	Label string `yaml:"label"` // 显示名称
+	URL   string `yaml:"url"`   // 链接地址
+	Icon  string `yaml:"icon"`  // Font Awesome 图标类名（可选，如 fa-link）
 }
 
 // 成员配置

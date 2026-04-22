@@ -28,6 +28,11 @@ docker:
 marketplace:
   url: https://apps.rehi.org
 
+links:
+- label: 工具
+  url: https://api.rehi.org
+  icon: fa-rocket
+
 members:
   - username: admin
     password: admin

@@ -45,12 +45,19 @@ export interface SystemMarketplaceSettings {
     url: string
 }
 
+export interface SystemLinkSetting {
+    label: string
+    url: string
+    icon: string
+}
+
 export interface SystemAllSettings {
     server: SystemServerSettings
     agent: SystemAgentSettings
     apisix: SystemApisixSettings
     docker: SystemDockerSettings
     marketplace: SystemMarketplaceSettings
+    links: SystemLinkSetting[]
 }
 
 // ─── 成员管理 ───

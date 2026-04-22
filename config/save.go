@@ -36,6 +36,7 @@ func Save() error {
 		Apisix:      Apisix,
 		Docker:      Docker,
 		Marketplace: Marketplace,
+		Links:       Links,
 		Members:     members,
 	}
 

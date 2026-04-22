@@ -43,6 +43,13 @@ type MarketplaceSettings struct {
 	URL string `json:"url"`
 }
 
+// LinkConfig 工具栏链接
+type LinkConfig struct {
+	Label string `json:"label"`
+	URL   string `json:"url"`
+	Icon  string `json:"icon"`
+}
+
 // AllSettings 全部配置聚合
 type AllSettings struct {
 	Server      *ServerSettings      `json:"server"`
@@ -50,6 +57,7 @@ type AllSettings struct {
 	Apisix      *ApisixSettings      `json:"apisix"`
 	Docker      *DockerSettings      `json:"docker"`
 	Marketplace *MarketplaceSettings `json:"marketplace"`
+	Links       []*LinkConfig        `json:"links"`
 }
 
 // UpdateAllRequest 全量更新请求（各分区均可选，nil 表示该分区不更新）
@@ -59,6 +67,7 @@ type UpdateAllRequest struct {
 	Apisix      *ApisixSettings      `json:"apisix"`
 	Docker      *DockerSettings      `json:"docker"`
 	Marketplace *MarketplaceSettings `json:"marketplace"`
+	Links       []*LinkConfig        `json:"links"`
 }
 
 // SettingsService 系统配置业务服务
@@ -103,6 +112,13 @@ func (s *SettingsService) GetAll() *AllSettings {
 		Marketplace: &MarketplaceSettings{
 			URL: config.Marketplace.URL,
 		},
+		Links: func() []*LinkConfig {
+			links := make([]*LinkConfig, 0, len(config.Links))
+			for _, l := range config.Links {
+				links = append(links, &LinkConfig{Label: l.Label, URL: l.URL, Icon: l.Icon})
+			}
+			return links
+		}(),
 	}
 }
 
@@ -130,6 +146,13 @@ func (s *SettingsService) UpdateAll(req UpdateAllRequest) error {
 	}
 	if req.Marketplace != nil {
 		config.Marketplace.URL = req.Marketplace.URL
+	}
+	if req.Links != nil {
+		links := make([]*config.LinkConfig, 0, len(req.Links))
+		for _, l := range req.Links {
+			links = append(links, &config.LinkConfig{Label: l.Label, URL: l.URL, Icon: l.Icon})
+		}
+		config.Links = links
 	}
 	if err := config.Save(); err != nil {
 		return fmt.Errorf("保存配置失败: %w", err)

@@ -26,6 +26,8 @@ var (
 	Docker = &DockerConfig{}
 	// 应用市场配置
 	Marketplace = &MarketplaceConfig{}
+	// 工具栏链接配置
+	Links []*LinkConfig
 	// 成员配置
 	Members = map[string]*MemberConfig{}
 	// 当前加载的配置文件路径
@@ -83,6 +85,11 @@ func Load() error {
 	// 更新应用市场配置
 	if conf.Marketplace != nil {
 		Marketplace = conf.Marketplace
+	}
+
+	// 更新工具栏链接配置
+	if conf.Links != nil {
+		Links = conf.Links
 	}
 
 	// 更新 Member 配置

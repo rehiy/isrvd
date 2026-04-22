@@ -15,6 +15,8 @@ import AuthLogin from '@/views/login.vue'
 import { fetchServiceProbe } from '@/service/probe'
 import api from '@/service/api'
 import router from '@/router'
+import type { SystemLinkSetting } from '@/service/types'
+import { FA_ICONS } from '@/helper/icons'
 
 const { state, actions } = initProvider()
 setRouterGuard(actions.hasPerm, () => state.permissionsLoaded)
@@ -27,6 +29,8 @@ class App extends Vue {
     @Provide(APP_STATE_KEY) state = state
     @Provide(APP_ACTIONS_KEY) actions = actions
     sidebarCollapsed = false
+    readonly FA_ICONS = FA_ICONS
+    toolbarLinks: SystemLinkSetting[] = []
 
     // ─── Refs ───
     @Ref readonly navigationRef!: InstanceType<typeof NavigationBar>
@@ -43,6 +47,15 @@ class App extends Vue {
             this.actions.updateServiceAvailability(availability)
         } catch (e) {
             console.warn('Failed to load service probe:', e)
+        }
+    }
+
+    async loadLinks() {
+        try {
+            const res = await api.getSettings()
+            this.toolbarLinks = res?.payload?.links || []
+        } catch (e) {
+            console.warn('Failed to load toolbar links:', e)
         }
     }
 
@@ -68,6 +81,7 @@ class App extends Vue {
         if (username && !oldUsername) {
             this.loadServiceAvailability()
             this.loadMe()
+            this.loadLinks()
         }
     }
 
@@ -116,7 +130,18 @@ export default toNative(App)
         </button>
         
         <!-- 工具栏按钮区域 -->
-        <div class="flex items-center gap-2 overflow-x-auto flex-1 mx-2">
+        <div class="flex items-center gap-2 overflow-x-auto ml-auto">
+          <a
+            v-for="link in toolbarLinks"
+            :key="link.url"
+            :href="link.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center gap-2 px-2 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-100 transition-colors whitespace-nowrap flex-shrink-0"
+          >
+            <i v-if="link.icon" :class="[FA_ICONS.find(i => i.name === link.icon)?.prefix ?? 'fas', link.icon]"></i>
+            <span>{{ link.label }}</span>
+          </a>
         </div>
         
         <!-- 用户信息 -->
