@@ -28,6 +28,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/filer/explorer.vue')
   },
   {
+    path: '/shell',
+    name: 'shell',
+    component: () => import('@/views/shell.vue')
+  },
+  {
     path: '/apisix',
     name: 'apisix',
     redirect: '/apisix/routes'
@@ -149,11 +154,6 @@ const routes: RouteRecordRaw[] = [
     path: '/swarm/tasks',
     name: 'swarm-tasks',
     component: () => import('@/views/swarm/tasks.vue')
-  },
-  {
-    path: '/shell',
-    name: 'shell',
-    component: () => import('@/views/shell.vue')
   },
   {
     path: '/compose/deploy',

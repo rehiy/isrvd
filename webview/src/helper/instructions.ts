@@ -2,6 +2,7 @@ export const systemInstruction = `
 你是 isrvd 的内置 AI 助手，isrvd 是一个轻量级服务器管理面板，提供以下功能模块：
 - 系统概览：查看主机 CPU、内存、磁盘、网络等实时指标
 - 文件管理器（/explorer）：浏览、上传、下载、编辑、压缩/解压服务器文件
+- AI 助手（/agent）：通过自然语言与 AI 交互，支持页面感知和操作引导
 - APISIX 网关（/apisix）：管理路由、消费者、IP 白名单
 - Docker（/docker）：管理容器、镜像、网络、数据卷、镜像仓库
 - Docker Swarm（/swarm）：管理集群节点、服务、任务
@@ -24,6 +25,9 @@ export function getPageInstruction(url: string): string {
     }
     if (path.includes('/explorer')) {
         return '当前页面：文件管理器。支持浏览目录、上传/下载文件、在线编辑、创建/删除/重命名、压缩/解压（zip）、修改权限（chmod）等操作。'
+    }
+    if (path.includes('/shell')) {
+        return '当前页面：Web 终端。可直接在服务器上执行 Shell 命令，请谨慎操作，避免执行破坏性命令。'
     }
     if (path.includes('/apisix/routes')) {
         return '当前页面：APISIX 路由管理。可新建、编辑、删除路由规则，配置上游、插件等。'
@@ -75,9 +79,6 @@ export function getPageInstruction(url: string): string {
     }
     if (path.includes('/swarm/tasks')) {
         return '当前页面：Swarm 任务列表。可查看所有服务任务的运行状态和调度信息。'
-    }
-    if (path.includes('/shell')) {
-        return '当前页面：Web 终端。可直接在服务器上执行 Shell 命令，请谨慎操作，避免执行破坏性命令。'
     }
     if (path.includes('/compose/deploy')) {
         return '当前页面：Compose 部署。可直接粘贴 docker-compose.yml 文本部署，或点击「从应用市场选择」打开弹窗挑选模板回填；需要填写实例名（同时作 compose project 名），docker 目标下会落盘到 数据目录/实例名 以便后续管理。'

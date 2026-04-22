@@ -49,5 +49,5 @@ members:
     homeDirectory: user2/
     allowTerminal: false
     # permissions 未配置则所有模块无权限
-    # 可用模块: filer, docker, swarm, compose, apisix, agent, system
+    # 可用模块: filer, agent, apisix, docker, swarm, compose, system
     # 可用値: r（只读）, rw（读写），留空或不填表示无权限

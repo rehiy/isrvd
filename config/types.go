@@ -61,6 +61,6 @@ type MemberConfig struct {
 	AllowTerminal bool   `yaml:"allowTerminal"`
 	// Permissions 各模块权限，key 为模块名，value 为 "r"（只读）或 "rw"（读写），空字符串或缺失表示无权限
 	// 主账号（PrimaryMember）始终拥有全部权限，忽略此字段
-	// 可用模块：filer, docker, swarm, compose, apisix, agent, system
+	// 可用模块：filer, agent, apisix, docker, swarm, compose, system
 	Permissions map[string]string `yaml:"permissions,omitempty"`
 }

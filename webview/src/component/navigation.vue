@@ -15,16 +15,16 @@ class NavigationBar extends Vue {
 
     // ─── 数据属性 ───
     mobileSidebarVisible = false
+    apisixExpanded = false
     dockerExpanded = false
     swarmExpanded = false
-    apisixExpanded = false
 
     // ─── 权限计算属性 ───
     get canFiler() { return this.actions.hasPerm('filer') }
+    get canApisix() { return this.state.serviceAvailability.apisix && this.actions.hasPerm('apisix') }
     get canDocker() { return this.state.serviceAvailability.docker && this.actions.hasPerm('docker') }
     get canSwarm() { return this.state.serviceAvailability.swarm && this.actions.hasPerm('swarm') }
     get canCompose() { return this.state.serviceAvailability.compose && this.actions.hasPerm('compose') }
-    get canApisix() { return this.state.serviceAvailability.apisix && this.actions.hasPerm('apisix') }
     get canSystem() { return this.actions.hasPerm('system') }
     get canShell() { return this.state.isPrimary || this.state.allowTerminal }
 
@@ -33,6 +33,10 @@ class NavigationBar extends Vue {
     get hasSwarm() { return this.state.serviceAvailability.swarm }
 
     // ─── 计算属性 ───
+    get isApisixActive() {
+        return this.isActive('/apisix/')
+    }
+
     get isDockerActive() {
         return this.isActive('/docker/')
     }
@@ -41,11 +45,14 @@ class NavigationBar extends Vue {
         return this.isActive('/swarm/')
     }
 
-    get isApisixActive() {
-        return this.isActive('/apisix/')
+    // ─── 监听器 ───
+    @Watch('isApisixActive', { immediate: true })
+    onApisixActiveChange(isActive: boolean) {
+        if (isActive && !this.collapsed) {
+            this.apisixExpanded = true
+        }
     }
 
-    // ─── 监听器 ───
     @Watch('isDockerActive', { immediate: true })
     onDockerActiveChange(isActive: boolean) {
         if (isActive && !this.collapsed) {
@@ -60,16 +67,18 @@ class NavigationBar extends Vue {
         }
     }
 
-    @Watch('isApisixActive', { immediate: true })
-    onApisixActiveChange(isActive: boolean) {
-        if (isActive && !this.collapsed) {
-            this.apisixExpanded = true
-        }
-    }
-
     // ─── 方法 ───
     isActive(prefix: string) {
         return this.$route.path.startsWith(prefix)
+    }
+
+    toggleApisix() {
+        if (this.collapsed) {
+            this.$emit('update:collapsed', false)
+            this.apisixExpanded = true
+        } else {
+            this.apisixExpanded = !this.apisixExpanded
+        }
     }
 
     toggleDocker() {
@@ -87,15 +96,6 @@ class NavigationBar extends Vue {
             this.swarmExpanded = true
         } else {
             this.swarmExpanded = !this.swarmExpanded
-        }
-    }
-
-    toggleApisix() {
-        if (this.collapsed) {
-            this.$emit('update:collapsed', false)
-            this.apisixExpanded = true
-        } else {
-            this.apisixExpanded = !this.apisixExpanded
         }
     }
 
@@ -120,9 +120,9 @@ class NavigationBar extends Vue {
     // ─── 生命周期 ───
     mounted() {
         // 根据当前路由初始化子菜单展开状态
+        this.apisixExpanded = this.$route.path.startsWith('/apisix/')
         this.dockerExpanded = this.$route.path.startsWith('/docker/')
         this.swarmExpanded = this.$route.path.startsWith('/swarm/')
-        this.apisixExpanded = this.$route.path.startsWith('/apisix/')
         window.addEventListener('resize', this.handleResize)
     }
 

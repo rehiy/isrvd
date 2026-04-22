@@ -80,16 +80,16 @@ func ProxyHeaderAuthMiddleware() gin.HandlerFunc {
 // moduleLabel 模块显示名映射，统一错误提示中的大小写与空格
 var moduleLabel = map[string]string{
 	"filer":   "文件管理",
+	"agent":   "AI Agent",
+	"apisix":  "APISIX",
 	"docker":  "Docker",
 	"swarm":   "Swarm",
 	"compose": "Compose",
-	"apisix":  "APISIX",
-	"agent":   "AI Agent",
 	"system":  "系统管理",
 }
 
 // PermMiddleware 模块权限检查中间件
-// module: 模块名（filer/docker/swarm/compose/apisix/agent/system）
+// module: 模块名（filer/agent/apisix/docker/swarm/compose/system）
 // write: true 表示需要写权限（rw），false 表示只需读权限（r 或 rw）
 // 主账号（PrimaryMember）始终放行
 func PermMiddleware(module string, write bool) gin.HandlerFunc {
