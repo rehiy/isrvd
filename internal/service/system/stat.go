@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/rehiy/pango/psutil"
@@ -12,6 +13,7 @@ import (
 
 	"isrvd/config"
 	"isrvd/internal/registry"
+	pkggpu "isrvd/pkgs/gpu"
 )
 
 // DiskIOStat 硬盘 IO 统计
@@ -31,11 +33,28 @@ type GoRuntimeStat struct {
 	*psutil.GoMemoryStat
 }
 
+// SystemGPU 系统统计接口使用的 GPU 响应结构
+// index 仅用于展示排序；deviceKey 用于稳定标识设备
+// deviceKey 优先使用 PCI 地址，无法获取时退化为 vendor/name/index 组合
+// 这样前端图表与列表 key 不会因过滤顺序变化而漂移
+type SystemGPU struct {
+	Index       int     `json:"index"`
+	DeviceKey   string  `json:"deviceKey"`
+	Name        string  `json:"name"`
+	Vendor      string  `json:"vendor"`
+	MemoryUsed  uint64  `json:"memoryUsed"`
+	MemoryTotal uint64  `json:"memoryTotal"`
+	Utilization float64 `json:"utilization"`
+	Temperature int     `json:"temperature"`
+	PowerUsage  float64 `json:"powerUsage"`
+	FanSpeed    int     `json:"fanSpeed"`
+}
+
 // SystemStatResponse 系统统计响应
 type SystemStatResponse struct {
 	System       *psutil.DetailStat `json:"system"`
 	DiskIO       []*DiskIOStat      `json:"diskIO"`
-	GPU          []*GPUStat         `json:"gpu"`
+	GPU          []*SystemGPU       `json:"gpu"`
 	Go           *GoRuntimeStat     `json:"go"`
 	Version      string             `json:"version"`
 	VersionCheck *VersionCheck      `json:"versionCheck,omitempty"`
@@ -86,6 +105,48 @@ func filterDiskPartitions(partitions []psutil.DiskPartition) []psutil.DiskPartit
 	return result
 }
 
+func buildGPUDeviceKey(vendor, address, name string, index int) string {
+	address = strings.TrimSpace(strings.ToLower(address))
+	if address != "" {
+		return vendor + ":" + address
+	}
+
+	name = strings.ToLower(strings.TrimSpace(name))
+	if name == "" {
+		name = "gpu"
+	}
+	name = strings.NewReplacer(" ", "-", "/", "-", "\\", "-", ":", "-", ".", "-", "\"", "", "'", "").Replace(name)
+	for strings.Contains(name, "--") {
+		name = strings.ReplaceAll(name, "--", "-")
+	}
+	name = strings.Trim(name, "-")
+	return fmt.Sprintf("%s:%s:%d", vendor, name, index)
+}
+
+func buildSystemGPUs(ctx context.Context) []*SystemGPU {
+	deviceStats, err := pkggpu.GetGPUStats(ctx)
+	if err != nil && len(deviceStats) == 0 {
+		return nil
+	}
+
+	systemGPUs := make([]*SystemGPU, 0, len(deviceStats))
+	for i, stat := range deviceStats {
+		systemGPUs = append(systemGPUs, &SystemGPU{
+			Index:       i,
+			DeviceKey:   buildGPUDeviceKey(stat.Vendor, stat.Address, stat.Name, i),
+			Name:        stat.Name,
+			Vendor:      stat.Vendor,
+			MemoryUsed:  stat.MemoryUsed,
+			MemoryTotal: stat.MemoryTotal,
+			Utilization: stat.Utilization,
+			Temperature: stat.Temperature,
+			PowerUsage:  stat.PowerUsage,
+			FanSpeed:    stat.FanSpeed,
+		})
+	}
+	return systemGPUs
+}
+
 // Stat 获取系统统计信息
 func (s *Service) Stat(ctx context.Context) *SystemStatResponse {
 	detail := psutil.Detail(false)
@@ -113,7 +174,7 @@ func (s *Service) Stat(ctx context.Context) *SystemStatResponse {
 	return &SystemStatResponse{
 		System:       detail,
 		DiskIO:       diskIO,
-		GPU:          GetGPUStats(),
+		GPU:          buildSystemGPUs(ctx),
 		Go:           goStat,
 		Version:      config.Version,
 		VersionCheck: s.CheckVersion(ctx),

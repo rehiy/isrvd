@@ -63,8 +63,8 @@ class SystemOverview extends Vue {
     private cpuChart: Chart<'line'> | null = null
     private memChart: Chart<'line'> | null = null
     @Ref readonly gpuContainerRef!: HTMLDivElement
-    gpuHistories: Record<number, { labels: string[]; util: number[]; vram: number[]; power: number[] }> = markRaw({})
-    private gpuCharts: Record<number, Chart<'line'>> = markRaw({})
+    gpuHistories: Record<string, { labels: string[]; util: number[]; vram: number[]; power: number[] }> = markRaw({})
+    private gpuCharts: Record<string, Chart<'line'>> = markRaw({})
 
     // ─── 计算属性 ───
     get cpuVal() {
@@ -390,6 +390,10 @@ class SystemOverview extends Vue {
         return 'text-emerald-500'
     }
 
+    gpuKey(gpu: SystemGPU): string {
+        return gpu.deviceKey || `gpu-${gpu.index}`
+    }
+
     gpuChartOptions(): ChartOptions<'line'> {
         return {
             responsive: true, maintainAspectRatio: false, animation: false,
@@ -421,11 +425,12 @@ class SystemOverview extends Vue {
     }
 
     initGpuChart(gpu: SystemGPU) {
-        const canvas = this.gpuContainerRef?.querySelector(`[data-gpu="${gpu.index}"]`) as HTMLCanvasElement | null
+        const key = this.gpuKey(gpu)
+        const canvas = this.gpuContainerRef?.querySelector(`[data-gpu="${key}"]`) as HTMLCanvasElement | null
         if (!canvas) return
-        this.gpuCharts[gpu.index]?.destroy()
-        const h = this.gpuHistories[gpu.index] || { labels: [], util: [], vram: [], power: [] }
-        this.gpuCharts[gpu.index] = markRaw(new Chart(canvas, {
+        this.gpuCharts[key]?.destroy()
+        const h = this.gpuHistories[key] || { labels: [], util: [], vram: [], power: [] }
+        this.gpuCharts[key] = markRaw(new Chart(canvas, {
             type: 'line' as const,
             data: {
                 labels: [...h.labels],
@@ -442,7 +447,8 @@ class SystemOverview extends Vue {
     initAllGpuCharts() {
         if (!this.stat?.gpu?.length) return
         this.stat.gpu.forEach(gpu => {
-            if (!this.gpuHistories[gpu.index]) this.gpuHistories[gpu.index] = { labels: [], util: [], vram: [], power: [] }
+            const key = this.gpuKey(gpu)
+            if (!this.gpuHistories[key]) this.gpuHistories[key] = { labels: [], util: [], vram: [], power: [] }
             this.initGpuChart(gpu)
         })
     }
@@ -450,8 +456,9 @@ class SystemOverview extends Vue {
     pushGpuPoints(gpus: SystemGPU[]) {
         const label = this.timeLabel()
         gpus.forEach(gpu => {
-            if (!this.gpuHistories[gpu.index]) this.gpuHistories[gpu.index] = { labels: [], util: [], vram: [], power: [] }
-            const h = this.gpuHistories[gpu.index]
+            const key = this.gpuKey(gpu)
+            if (!this.gpuHistories[key]) this.gpuHistories[key] = { labels: [], util: [], vram: [], power: [] }
+            const h = this.gpuHistories[key]
             h.labels.push(label)
             h.util.push(gpu.utilization)
             h.vram.push(gpu.memoryTotal > 0 ? this.memPercent(gpu.memoryUsed, gpu.memoryTotal) : 0)
@@ -459,7 +466,7 @@ class SystemOverview extends Vue {
             if (h.labels.length > this.MAX_STAT_POINTS) {
                 h.labels.shift(); h.util.shift(); h.vram.shift(); h.power.shift()
             }
-            const chart = this.gpuCharts[gpu.index]
+            const chart = this.gpuCharts[key]
             if (chart) {
                 chart.data.labels = [...h.labels]
                 chart.data.datasets[0].data = [...h.util]
@@ -519,7 +526,7 @@ class SystemOverview extends Vue {
                 }
                 if (payload.gpu?.length) {
                     payload.gpu.forEach(gpu => {
-                        this.gpuHistories[gpu.index] = {
+                        this.gpuHistories[this.gpuKey(gpu)] = {
                             labels: [initLabel],
                             util: [gpu.utilization],
                             vram: [gpu.memoryTotal > 0 ? this.memPercent(gpu.memoryUsed, gpu.memoryTotal) : 0],
@@ -689,7 +696,7 @@ export default toNative(SystemOverview)
 
       <!-- GPU -->
       <div v-if="stat.gpu?.length" ref="gpuContainerRef" class="space-y-3">
-        <div v-for="gpu in stat.gpu" :key="gpu.index" class="rounded-xl border border-slate-200 bg-white overflow-hidden">
+        <div v-for="gpu in stat.gpu" :key="gpuKey(gpu)" class="rounded-xl border border-slate-200 bg-white overflow-hidden">
           <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
             <div class="w-6 h-6 rounded-md bg-emerald-500 flex items-center justify-center">
               <i class="fas fa-microchip text-white text-xs"></i>
@@ -720,8 +727,8 @@ export default toNative(SystemOverview)
             </div>
             <!-- 一图三线时序图 -->
             <div class="relative h-20 bg-slate-50 rounded-lg overflow-hidden">
-              <canvas :data-gpu="gpu.index" class="w-full h-full"></canvas>
-              <div v-if="!gpuHistories[gpu.index]?.labels?.length" class="absolute inset-0 flex items-center justify-center">
+              <canvas :data-gpu="gpuKey(gpu)" class="w-full h-full"></canvas>
+              <div v-if="!gpuHistories[gpuKey(gpu)]?.labels?.length" class="absolute inset-0 flex items-center justify-center">
                 <span class="text-xs text-slate-300">等待数据...</span>
               </div>
             </div>

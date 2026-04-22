@@ -143,6 +143,7 @@ export interface SystemInfo {
 
 export interface SystemGPU {
     index: number
+    deviceKey?: string
     name: string
     vendor: string         // "nvidia" | "amd" | "intel"
     memoryUsed: number
