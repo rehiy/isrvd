@@ -6,15 +6,17 @@ import type { DockerRegistryInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
+import MirrorEditModal from '@/views/docker/widget/mirror-edit-modal.vue'
 import RegistryEditModal from '@/views/docker/widget/registry-edit-modal.vue'
 
 @Component({
-    components: { RegistryEditModal }
+    components: { RegistryEditModal, MirrorEditModal }
 })
 class Registries extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     @Ref readonly editModalRef!: InstanceType<typeof RegistryEditModal>
+    @Ref readonly mirrorModalRef!: InstanceType<typeof MirrorEditModal>
 
     // ─── 数据属性 ───
     daemonMirrors: string[] = []
@@ -59,6 +61,14 @@ class Registries extends Vue {
 
     openAdd() {
         this.editModalRef?.show(null)
+    }
+
+    openMirrorEdit() {
+        this.mirrorModalRef?.show(this.allMirrors)
+    }
+
+    handleMirrorSuccess() {
+        this.loadConfigMirrors()
     }
 
     openEdit(reg: DockerRegistryInfo) {
@@ -189,7 +199,13 @@ export default toNative(Registries)
                     <i class="fas fa-lock-open mr-1"></i>匿名
                   </span>
                 </td>
-                <td class="px-4 py-3 text-right text-xs text-slate-400">—</td>
+                <td class="px-4 py-3">
+                  <div class="flex justify-end items-center gap-0.5">
+                    <button v-if="actions.hasPerm('docker', true)" @click="openMirrorEdit" class="btn-icon text-sky-600 hover:bg-sky-50" title="管理加速器">
+                      <i class="fas fa-bolt text-xs"></i>
+                    </button>
+                  </div>
+                </td>
               </tr>
               <!-- 私有仓库行 -->
               <tr v-for="reg in registries" :key="reg.url" class="hover:bg-slate-50 transition-colors">
@@ -262,6 +278,12 @@ export default toNative(Registries)
                 </span>
               </div>
             </div>
+
+            <div v-if="actions.hasPerm('docker', true)" class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
+              <button @click="openMirrorEdit" class="btn-icon text-sky-600 hover:bg-sky-50" title="管理加速器">
+                <i class="fas fa-bolt text-xs"></i><span class="text-xs ml-1">加速器</span>
+              </button>
+            </div>
           </div>
 
           <!-- 私有仓库卡片 -->
@@ -307,5 +329,6 @@ export default toNative(Registries)
     </div>
 
     <RegistryEditModal ref="editModalRef" @success="loadRegistries" />
+    <MirrorEditModal ref="mirrorModalRef" @success="handleMirrorSuccess" />
   </div>
 </template>
