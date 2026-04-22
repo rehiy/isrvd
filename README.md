@@ -114,7 +114,7 @@ services:
 | `apisix` | APISIX Admin API 地址和密钥 |
 | `docker` | Docker 守护进程地址、容器数据目录、镜像仓库账号 |
 | `marketplace` | 应用市场地址 |
-| `members` | 用户账号、家目录、终端权限、模块权限（主账号拥有全部权限） |
+| `members` | 用户账号、家目录、终端权限、模块权限 |
 
 支持环境变量 `CONFIG_PATH` 指定配置文件路径（默认 `config.yml`）。
 

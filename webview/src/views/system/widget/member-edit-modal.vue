@@ -147,7 +147,6 @@ export default toNative(MemberEditModal)
       <!-- 模块权限 -->
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-2">模块权限</label>
-        <p class="mb-2 text-xs text-slate-400">主账号始终拥有全部权限，此处设置对主账号无效</p>
         <div class="rounded-lg border border-slate-200 overflow-hidden">
           <table class="w-full text-sm">
             <thead>
