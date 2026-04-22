@@ -31,7 +31,7 @@ marketplace:
 links:
 - label: 工具
   url: https://api.rehi.org
-  icon: fa-rocket
+  icon: fa-bolt
 
 members:
   - username: admin
