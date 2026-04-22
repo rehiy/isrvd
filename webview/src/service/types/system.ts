@@ -138,8 +138,21 @@ export interface SystemInfo {
     DiskPartition: SystemDiskPartition[]
 }
 
+export interface SystemGPU {
+    index: number
+    name: string
+    vendor: string         // "nvidia" | "amd" | "intel"
+    memoryUsed: number
+    memoryTotal: number
+    utilization: number    // 0-100
+    temperature: number    // -1 = N/A
+    powerUsage: number     // watts, -1 = N/A
+    fanSpeed: number       // percent, -1 = N/A
+}
+
 export interface SystemStat {
     system: SystemInfo
     diskIO: SystemDiskIO[]
+    gpu: SystemGPU[]
     go: SystemGoRuntimeStat
 }
