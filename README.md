@@ -6,7 +6,7 @@
 
 | 模块 | 功能 |
 |------|------|
-| 系统概览 | CPU、内存、硬盘、网络实时监控 |
+| 系统概览 | CPU、内存、硬盘、网络、GPU 实时监控 |
 | 文件管理 | 浏览、上传、下载、在线编辑、压缩解压、权限修改 |
 | Web 终端 | 基于 xterm.js 的实时 Shell 交互与容器终端 |
 | APISIX | 路由、Consumer、IP 白名单管理 |
@@ -117,6 +117,56 @@ services:
 | `members` | 用户账号、家目录、终端权限、模块权限（主账号拥有全部权限） |
 
 支持环境变量 `CONFIG_PATH` 指定配置文件路径（默认 `config.yml`）。
+
+## GPU 监控
+
+系统概览页面支持自动检测并显示 NVIDIA、AMD、Intel 独立显卡的实时指标，包括使用率、显存、温度、功耗和风扇转速。
+
+### 支持的厂商与采集方式
+
+| 厂商 | 首选方式 | 回退方式 | 显示指标 |
+|------|---------|---------|---------|
+| NVIDIA | go-nvml（直读驱动） | nvidia-smi CLI | 使用率、显存、温度、功耗、风扇 |
+| AMD | sysfs（/sys/class/drm） | rocm-smi CLI | 使用率、显存、温度、功耗、风扇 |
+| Intel | sysfs（/sys/class/drm） | — | 使用率、显存、温度、功耗 |
+
+### 自动过滤
+
+以下设备会被自动跳过，不在页面上显示：
+
+- **虚拟显卡**：VMware、QEMU/Bochs、VirtIO、Hyper-V、VirtualBox
+- **Intel 核显**：HD Graphics、UHD Graphics、Iris 系列（Intel Arc 独显保留）
+- **AMD APU 核显**：无独立 VRAM 的集成显卡
+
+### Docker 部署注意事项
+
+容器内需要访问 GPU 设备和驱动才能采集数据：
+
+**NVIDIA**：使用 `--gpus all` 或安装 NVIDIA Container Toolkit：
+
+```bash
+docker run -d \
+  --name isrvd \
+  --gpus all \
+  -p 8080:8080 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /mnt/isrvd:/data \
+  rehiy/isrvd:slim
+```
+
+**AMD / Intel**：挂载 DRM 设备：
+
+```bash
+docker run -d \
+  --name isrvd \
+  --device /dev/dri:/dev/dri \
+  -p 8080:8080 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /mnt/isrvd:/data \
+  rehiy/isrvd:slim
+```
+
+> 无 GPU 或驱动未安装的环境下，GPU 区域不会显示，不影响其他功能。
 
 ## 编译
 
