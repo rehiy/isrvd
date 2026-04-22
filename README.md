@@ -132,4 +132,10 @@ members:
 
 ## 许可证
 
-GPL-3.0
+本项目基于 **GNU General Public License v3.0** 发布，详见 [LICENSE](LICENSE)。
+
+### 第三方组件
+
+本软件使用了多个第三方开源组件，各组件的授权协议详见 [NOTICE](NOTICE)。
+
+所有第三方依赖均采用宽松型开源协议（MIT、Apache-2.0、BSD-2-Clause、BSD-3-Clause、CC-BY-4.0、OFL-1.1），与 GPL-3.0 完全兼容。
