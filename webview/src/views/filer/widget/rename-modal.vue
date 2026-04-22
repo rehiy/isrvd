@@ -47,7 +47,7 @@ export default toNative(RenameModal)
         </label>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <i class="fas fa-pen text-slate-400"></i>
+            <i class="fas fa-tag text-slate-400"></i>
           </div>
           <input 
             type="text" 
