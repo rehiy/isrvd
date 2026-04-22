@@ -175,7 +175,7 @@ export default toNative(ImageDetail)
           <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">环境变量</h2>
           <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
             <div v-for="(env, idx) in inspectData.env" :key="idx" class="px-3 py-1.5">
-              <code class="text-xs font-mono text-slate-600">{{ env }}</code>
+              <code class="text-xs font-mono text-slate-600 break-all">{{ env }}</code>
             </div>
           </div>
         </div>
