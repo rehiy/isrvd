@@ -8,9 +8,9 @@ import ConfirmModal from '@/component/confirm.vue'
 import NavigationBar from '@/component/navigation.vue'
 import NotificationManager from '@/component/notification.vue'
 import PageAgent from '@/component/page-agent.vue'
+import UserMenu from '@/component/user-menu.vue'
 
 import AuthLogin from '@/views/login.vue'
-import AuthLogout from '@/views/logout.vue'
 
 import { fetchServiceProbe } from '@/service/probe'
 import api from '@/service/api'
@@ -20,7 +20,7 @@ const { state, actions } = initProvider()
 setRouterGuard(actions.hasPerm, () => state.permissionsLoaded)
 
 @Component({
-    components: { ConfirmModal, NavigationBar, NotificationManager, PageAgent, AuthLogin, AuthLogout }
+    components: { ConfirmModal, NavigationBar, NotificationManager, PageAgent, UserMenu, AuthLogin }
 })
 class App extends Vue {
     // ─── 数据属性 ───
@@ -123,15 +123,7 @@ export default toNative(App)
         <div class="flex items-center gap-1">
           <PageAgent v-if="state.serviceAvailability.agent" />
           <div class="hidden sm:block w-px h-5 bg-slate-200 mx-1" v-if="state.serviceAvailability.agent"></div>
-          <div
-            class="px-2 py-2 text-sm font-medium text-slate-500 flex items-center gap-2 cursor-default select-none"
-            :title="state.username"
-          >
-            <i class="fas fa-user-tie"></i>
-            <span class="hidden sm:inline">{{ state.username }}</span>
-          </div>
-          <div class="hidden sm:block w-px h-5 bg-slate-200 mx-1" v-if="state.authMode !== 'header'"></div>
-          <AuthLogout v-if="state.authMode !== 'header'" />
+          <UserMenu />
         </div>
       </header>
 
