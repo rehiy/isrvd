@@ -256,13 +256,12 @@ export default toNative(ContainerCreateModal)
           </span>
         </button>
         <div v-if="showSecurity" class="mt-4 space-y-4">
-          <div class="flex items-center gap-3">
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" v-model="formData.privileged" class="sr-only peer" />
-              <div class="w-10 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
-              <span class="ml-2 text-sm text-slate-700">特权模式</span>
-            </label>
-            <span class="text-xs text-slate-400">⚠️ 赋予容器所有主机权限，谨慎使用</span>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">特权模式</label>
+            <select v-model="formData.privileged" class="input">
+              <option :value="false">禁用</option>
+              <option :value="true">启用（⚠️ 赋予容器所有主机权限，谨慎使用）</option>
+            </select>
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-2">添加权限 (CapAdd)</label>

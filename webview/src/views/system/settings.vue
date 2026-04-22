@@ -171,6 +171,13 @@ export default toNative(Settings)
         <!-- 服务器配置 -->
         <section v-if="activeTab === 'server'" class="max-w-3xl space-y-4">
           <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">Debug 模式</label>
+            <select v-model="server.debug" class="input">
+              <option :value="false">禁用</option>
+              <option :value="true">启用</option>
+            </select>
+          </div>
+          <div>
             <label class="block text-sm font-medium text-slate-700 mb-1.5">监听地址</label>
             <input type="text" v-model="server.listenAddr" placeholder=":8080" class="input" />
             <p class="mt-1 text-xs text-slate-400">HTTP 服务监听端口，例如 :8080 或 127.0.0.1:8080（重启生效）</p>
@@ -193,10 +200,6 @@ export default toNative(Settings)
             <label class="block text-sm font-medium text-slate-700 mb-1.5">内网代理认证 Header</label>
             <input type="text" v-model="server.proxyHeaderName" placeholder="例如 X-Auth-User（留空禁用）" class="input" />
             <p class="mt-1 text-xs text-slate-400">启用时，将使用上游传入的 Header {{ server.proxyHeaderName }} 值作为登录用户</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <input id="debugSwitch" type="checkbox" v-model="server.debug" class="w-4 h-4 rounded" />
-            <label for="debugSwitch" class="text-sm text-slate-700 cursor-pointer">启用 Debug 模式</label>
           </div>
         </section>
 
