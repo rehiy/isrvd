@@ -47,6 +47,7 @@ interface ServiceAvailability {
 }
 
 export interface AppState {
+    authMode: 'jwt' | 'header' | null
     token: string | null
     username: string | null
     isPrimary: boolean
@@ -61,7 +62,7 @@ export interface AppState {
 }
 
 export interface AppActions {
-    setAuth(data: { token: string; username: string }): void
+    setAuth(data: { authMode: 'jwt' | 'header'; token: string; username: string }): void
     clearAuth(): void
     setPermissions(data: { isPrimary: boolean; allowTerminal: boolean; permissions: Record<string, string> }): void
     hasPerm(module: string, write?: boolean): boolean
@@ -92,6 +93,7 @@ export const permState = reactive({
 export const initProvider = () => {
     const state = reactive<AppState>({
         // 用户认证状态
+        authMode: null,
         token: null,
         username: null,
         isPrimary: false,
@@ -133,14 +135,19 @@ export const initProvider = () => {
 
     const actions: AppActions = {
         // 认证操作
-        setAuth(data: { token: string; username: string }) {
+        setAuth(data: { authMode: 'jwt' | 'header'; token: string; username: string }) {
+            state.authMode = data.authMode
             state.token = data.token
             state.username = data.username
-            localStorage.setItem('app-token', data.token)
-            localStorage.setItem('app-username', data.username)
+            // header 模式无需持久化 token，刷新后重新从代理 Header 获取
+            if (data.authMode === 'jwt') {
+                localStorage.setItem('app-token', data.token)
+                localStorage.setItem('app-username', data.username)
+            }
         },
 
         clearAuth() {
+            state.authMode = null
             state.token = null
             state.username = null
             state.isPrimary = false

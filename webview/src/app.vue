@@ -47,11 +47,12 @@ class App extends Vue {
     async loadMe() {
         try {
             const res = await api.getMe()
-            if (res?.payload) {
+            const member = res?.payload?.member
+            if (member) {
                 this.actions.setPermissions({
-                    isPrimary: res.payload.isPrimary,
-                    allowTerminal: res.payload.allowTerminal ?? false,
-                    permissions: res.payload.permissions || {}
+                    isPrimary: member.isPrimary,
+                    allowTerminal: member.allowTerminal ?? false,
+                    permissions: member.permissions || {}
                 })
                 // 权限加载完成后重新触发路由守卫（处理刷新页面场景）
                 router.replace(router.currentRoute.value.fullPath).catch(() => {})
@@ -71,14 +72,26 @@ class App extends Vue {
     }
 
     // ─── 生命周期 ───
-    mounted() {
-        const token = localStorage.getItem('app-token')
-        const username = localStorage.getItem('app-username')
-
-        if (token && username) {
-            this.actions.setAuth({ token, username })
-            this.loadServiceAvailability()
-            this.loadMe()
+    async mounted() {
+        try {
+            const res = await api.authInfo()
+            const mode = res?.payload?.mode
+            if (mode === 'header') {
+                // header 认证模式：直接使用代理注入的用户名，无需登录
+                const username = res.payload?.username || ''
+                if (username) {
+                    this.actions.setAuth({ authMode: 'header', token: '', username })
+                }
+            } else {
+                // jwt 认证模式：从 localStorage 恢复登录状态
+                const token = localStorage.getItem('app-token')
+                const username = localStorage.getItem('app-username')
+                if (token && username) {
+                    this.actions.setAuth({ authMode: 'jwt', token, username })
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to load auth info:', e)
         }
     }
 }
