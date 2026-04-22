@@ -10,14 +10,14 @@ import BaseModal from '@/component/modal.vue'
 
 // 可配置的模块列表
 const MODULES = [
-    { key: 'filer',   label: '文件管理', icon: 'fa-folder' },
-    { key: 'docker',  label: 'Docker',   icon: 'fa-brands fa-docker' },
-    { key: 'swarm',   label: 'Swarm',    icon: 'fa-layer-group' },
-    { key: 'compose', label: 'Compose',  icon: 'fa-cubes' },
-    { key: 'apisix',  label: 'APISIX',   icon: 'fa-route' },
-    { key: 'agent',   label: 'AI Agent', icon: 'fa-robot' },
-    { key: 'system',  label: '系统管理', icon: 'fa-gear' },
-    { key: 'shell',   label: 'Shell终端', icon: 'fa-terminal' },
+    { key: 'filer',   label: '文件管理', icon: 'fas fa-folder' },
+    { key: 'docker',  label: 'Docker',   icon: 'fab fa-docker' },
+    { key: 'swarm',   label: 'Swarm',    icon: 'fas fa-layer-group' },
+    { key: 'compose', label: 'Compose',  icon: 'fas fa-cubes' },
+    { key: 'apisix',  label: 'APISIX',   icon: 'fas fa-route' },
+    { key: 'agent',   label: 'AI Agent', icon: 'fas fa-robot' },
+    { key: 'system',  label: '系统管理', icon: 'fas fa-gear' },
+    { key: 'shell',   label: 'Shell终端', icon: 'fas fa-terminal' },
 ]
 
 function emptyPermissions(): Record<string, string> {
@@ -161,7 +161,7 @@ export default toNative(MemberEditModal)
               <tr v-for="mod in modules" :key="mod.key" class="hover:bg-slate-50">
                 <td class="px-3 py-2">
                   <div class="flex items-center gap-2">
-                    <i :class="['fas', mod.icon, 'text-slate-400 w-4 text-center']"></i>
+                    <i :class="[mod.icon, 'text-slate-400 w-4 text-center']"></i>
                     <span class="text-slate-700">{{ mod.label }}</span>
                   </div>
                 </td>
