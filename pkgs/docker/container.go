@@ -154,7 +154,7 @@ type ContainerLogsRequest struct {
 // ContainerCreateRequest 创建容器请求
 type ContainerCreateRequest struct {
 	Image      string            `json:"image" binding:"required"`
-	Name       string            `json:"name"`
+	Name       string            `json:"name" binding:"required"`
 	Cmd        []string          `json:"cmd"`
 	Env        []string          `json:"env"`
 	Ports      map[string]string `json:"ports"`
