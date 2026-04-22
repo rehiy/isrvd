@@ -32,13 +32,19 @@ members:
   - username: admin
     password: admin
     homeDirectory: .
-    allowTerminal: true
-    # 主账号始终拥有全部权限，permissions 字段对主账号无效
+    permissions:
+      filer: rw
+      agent: rw
+      apisix: rw
+      docker: rw
+      swarm: rw
+      compose: rw
+      system: rw
+      shell: rw
 
   - username: user1
     password: password1
     homeDirectory: user1/
-    allowTerminal: false
     permissions:
       filer: rw
       docker: r
@@ -47,7 +53,6 @@ members:
   - username: user2
     password: password2
     homeDirectory: user2/
-    allowTerminal: false
     # permissions 未配置则所有模块无权限
-    # 可用模块: filer, agent, apisix, docker, swarm, compose, system
+    # 可用模块: filer, agent, apisix, docker, swarm, compose, system, shell
     # 可用値: r（只读）, rw（读写），留空或不填表示无权限

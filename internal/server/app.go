@@ -229,14 +229,12 @@ func (app *App) setupRouter() {
 		}
 	}
 
-	// 系统（stats/probe/health 所有登录用户可访问）
-	authApi.GET("/system/stats", app.systemStat)
-	authApi.GET("/system/probe", app.systemProbe)
-	authApi.GET("/system/health", app.systemHealth)
-	// 系统设置与成员管理需要 system 权限
+	// 系统（system 只读权限）
 	sysr := authApi.Group("/system")
 	sysr.Use(PermMiddleware("system", false))
 	{
+		sysr.GET("/stats", app.systemStat)
+		sysr.GET("/probe", app.systemProbe)
 		sysr.GET("/settings", app.systemGetSettings)
 		sysr.GET("/members", app.systemListMembers)
 	}
@@ -253,7 +251,6 @@ func (app *App) setupRouter() {
 	ws := app.Group("/ws")
 	ws.Use(AuthMiddleware())
 	{
-		// shell 权限由 handler 内部的 allowTerminal 控制，无需额外 perm 中间件
 		ws.GET("/shell", app.shellWebSocket)
 		if app.dockerSvc != nil {
 			ws.GET("/docker/container/exec", PermMiddleware("docker", true), app.dockerContainerExec)

@@ -14,8 +14,7 @@ import (
 
 // 哨兵错误，供 handler 层进行错误类型判断
 var (
-	ErrMemberNotFound        = errors.New("成员不存在")
-	ErrPrimaryMemberNoDelete = errors.New("主账号禁止删除")
+	ErrMemberNotFound = errors.New("成员不存在")
 )
 
 // MemberInfo 成员信息（不包含密码明文）
@@ -23,7 +22,6 @@ type MemberInfo struct {
 	Username      string            `json:"username"`
 	HomeDirectory string            `json:"homeDirectory"`
 	PasswordSet   bool              `json:"passwordSet"`
-	IsPrimary     bool              `json:"isPrimary"`
 	Permissions   map[string]string `json:"permissions"`
 }
 
@@ -57,7 +55,6 @@ func (s *MemberService) GetMember(username string) *MemberInfo {
 		Username:      m.Username,
 		HomeDirectory: m.HomeDirectory,
 		PasswordSet:   m.Password != "",
-		IsPrimary:     m.Username == config.PrimaryMember,
 		Permissions:   perms,
 	}
 }
@@ -74,7 +71,6 @@ func (s *MemberService) ListMembers() []*MemberInfo {
 			Username:      m.Username,
 			HomeDirectory: m.HomeDirectory,
 			PasswordSet:   m.Password != "",
-			IsPrimary:     m.Username == config.PrimaryMember,
 			Permissions:   perms,
 		})
 	}
@@ -118,9 +114,6 @@ func (s *MemberService) CreateMember(req MemberUpsertRequest) error {
 		HomeDirectory: home,
 		Permissions:   req.Permissions,
 	}
-	if config.PrimaryMember == "" {
-		config.PrimaryMember = req.Username
-	}
 	if err := config.Save(); err != nil {
 		return fmt.Errorf("保存配置失败: %w", err)
 	}
@@ -155,9 +148,6 @@ func (s *MemberService) UpdateMember(username string, req MemberUpsertRequest) e
 func (s *MemberService) DeleteMember(username string) error {
 	if _, exists := config.Members[username]; !exists {
 		return ErrMemberNotFound
-	}
-	if username == config.PrimaryMember {
-		return ErrPrimaryMemberNoDelete
 	}
 	delete(config.Members, username)
 	if err := config.Save(); err != nil {

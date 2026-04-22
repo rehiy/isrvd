@@ -50,20 +50,20 @@ export interface AppState {
     authMode: 'jwt' | 'header' | null
     token: string | null
     username: string | null
-    isPrimary: boolean
-    permissions: Record<string, string>
     loading: boolean
     currentPath: string
     files: FilerFileInfo[]
     notifications: Notification[]
     confirm: ConfirmState
     serviceAvailability: ServiceAvailability
+    permissionsLoaded: boolean
+    permissions: Record<string, string>
 }
 
 export interface AppActions {
     setAuth(data: { authMode: 'jwt' | 'header'; token: string; username: string }): void
     clearAuth(): void
-    setPermissions(data: { isPrimary: boolean; permissions: Record<string, string> }): void
+    setPermissions(data: { permissions: Record<string, string> }): void
     hasPerm(module: string, write?: boolean): boolean
     loadFiles(path?: string): Promise<void>
     showNotification(type: string, message: string): void
@@ -81,24 +81,19 @@ export interface AppActions {
     }): void
 }
 
-// 全局权限状态（响应式），供 router 守卫使用（避免循环依赖）
-export const permState = reactive({
-    loaded: false,
-    isPrimary: false,
-    permissions: {} as Record<string, string>
-})
-
 export const initProvider = () => {
     const state = reactive<AppState>({
         // 用户认证状态
         authMode: null,
         token: null,
         username: null,
-        isPrimary: false,
-        permissions: {},
 
         // 网络请求状态
         loading: false,
+
+        // 权限状态
+        permissionsLoaded: false,
+        permissions: {},
 
         // 文件管理状态
         currentPath: '/',
@@ -147,25 +142,18 @@ export const initProvider = () => {
             state.authMode = null
             state.token = null
             state.username = null
-            state.isPrimary = false
+            state.permissionsLoaded = false
             state.permissions = {}
-            permState.loaded = false
-            permState.isPrimary = false
-            permState.permissions = {}
             localStorage.removeItem('app-token')
             localStorage.removeItem('app-username')
         },
 
-        setPermissions(data: { isPrimary: boolean; permissions: Record<string, string> }) {
-            state.isPrimary = data.isPrimary
+        setPermissions(data: { permissions: Record<string, string> }) {
+            state.permissionsLoaded = true
             state.permissions = data.permissions || {}
-            permState.loaded = true
-            permState.isPrimary = data.isPrimary
-            permState.permissions = data.permissions || {}
         },
 
         hasPerm(module: string, write = false): boolean {
-            if (state.isPrimary) return true
             const perm = state.permissions[module] || ''
             return write ? perm === 'rw' : (perm === 'r' || perm === 'rw')
         },

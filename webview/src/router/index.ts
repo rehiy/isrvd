@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import { permState } from '@/store/state'
 
 // 路由前缀与权限模块的映射
 const routePermMap: Array<[string, string]> = [
@@ -178,27 +177,33 @@ const router = createRouter({
   routes
 })
 
+// 由 app.vue 在 initProvider 后注入，避免循环依赖
+let _hasPerm: ((module: string, write?: boolean) => boolean) | null = null
+let _permsLoaded: (() => boolean) | null = null
+
+export const setRouterGuard = (
+    hasPerm: (module: string, write?: boolean) => boolean,
+    permsLoaded: () => boolean
+) => {
+    _hasPerm = hasPerm
+    _permsLoaded = permsLoaded
+}
+
 // 路由守卫：根据权限控制页面访问
 router.beforeEach((to) => {
   // 未登录时放行（由 app.vue 的 v-if 控制显示登录页）
   if (!localStorage.getItem('app-token')) return true
   // 权限尚未加载完成时放行（刷新页面场景，等 loadMe 完成后由导航菜单 v-if 控制）
-  if (!permState.loaded) return true
-  // 主账号不受限
-  if (permState.isPrimary) return true
-
-
+  if (!_permsLoaded?.()) return true
 
   // 容器终端需要 docker 写权限
   if (to.name === 'docker-container-terminal') {
-    const perm = permState.permissions['docker'] || ''
-    return perm === 'rw' ? true : { path: '/overview' }
+    return _hasPerm?.('docker', true) ? true : { path: '/overview' }
   }
 
   for (const [prefix, module] of routePermMap) {
     if (to.path.startsWith(prefix)) {
-      const perm = permState.permissions[module] || ''
-      if (!perm) return { path: '/overview' }
+      if (!_hasPerm?.(module)) return { path: '/overview' }
       break
     }
   }

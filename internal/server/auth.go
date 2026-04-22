@@ -91,12 +91,12 @@ var moduleLabel = map[string]string{
 	"swarm":   "Swarm",
 	"compose": "Compose",
 	"system":  "系统管理",
+	"shell":   "Shell终端",
 }
 
 // PermMiddleware 模块权限检查中间件
-// module: 模块名（filer/agent/apisix/docker/swarm/compose/system）
+// module: 模块名（filer/agent/apisix/docker/swarm/compose/system/shell）
 // write: true 表示需要写权限（rw），false 表示只需读权限（r 或 rw）
-// 主账号（PrimaryMember）始终放行
 func PermMiddleware(module string, write bool) gin.HandlerFunc {
 	label := moduleLabel[module]
 	if label == "" {
@@ -104,11 +104,6 @@ func PermMiddleware(module string, write bool) gin.HandlerFunc {
 	}
 	return func(c *gin.Context) {
 		username := c.GetString("username")
-		// 主账号始终拥有全部权限
-		if username == config.PrimaryMember {
-			c.Next()
-			return
-		}
 		member, exists := config.Members[username]
 		if !exists {
 			helper.RespondError(c, http.StatusForbidden, "用户不存在")

@@ -152,14 +152,11 @@ export default toNative(Members)
                         <i class="fas fa-user text-white text-sm"></i>
                       </div>
                       <span class="font-medium text-slate-800">{{ m.username }}</span>
-                      <span v-if="m.isPrimary" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-purple-50 text-purple-700" title="主账号禁止删除">
-                        <i class="fas fa-crown mr-1"></i>主账号
-                      </span>
                     </div>
                   </td>
                   <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ m.homeDirectory }}</code></td>
                   <td class="px-4 py-3">
-                    <span v-if="m.allowTerminal" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
+                    <span v-if="m.permissions?.shell" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
                       <i class="fas fa-terminal mr-1"></i>允许
                     </span>
                     <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
@@ -167,8 +164,7 @@ export default toNative(Members)
                     </span>
                   </td>
                   <td class="px-4 py-3">
-                    <div v-if="m.isPrimary" class="text-xs text-purple-600 font-medium">全部权限</div>
-                    <div v-else class="flex flex-wrap gap-1">
+                    <div class="flex flex-wrap gap-1">
                       <template v-for="(perm, mod) in m.permissions" :key="mod">
                         <span v-if="perm === 'rw'" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700">{{ mod }}<span class="ml-0.5 opacity-60">rw</span></span>
                         <span v-else-if="perm === 'r'" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600">{{ mod }}<span class="ml-0.5 opacity-60">r</span></span>
@@ -189,7 +185,7 @@ export default toNative(Members)
                       <button @click="openEditMember(m)" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑">
                         <i class="fas fa-pen text-xs"></i>
                       </button>
-                      <button v-if="!m.isPrimary" @click="handleDeleteMember(m)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+                      <button @click="handleDeleteMember(m)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                         <i class="fas fa-trash text-xs"></i>
                       </button>
                     </div>
@@ -204,19 +200,16 @@ export default toNative(Members)
           <div v-for="m in members" :key="m.username" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
             <!-- 顶部：用户信息 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div class="flex items-center gap-3 min-w-0 flex-1">
                 <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
                   <i class="fas fa-user text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
                     <span class="font-medium text-slate-800 text-sm truncate">{{ m.username }}</span>
-                    <span v-if="m.isPrimary" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-purple-50 text-purple-700">
-                      <i class="fas fa-crown mr-1"></i>主账号
-                    </span>
                   </div>
                   <div class="flex flex-wrap items-center gap-2 mt-1">
-                    <span v-if="m.allowTerminal" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
+                    <span v-if="m.permissions?.shell" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700">
                       <i class="fas fa-terminal mr-1"></i>终端
                     </span>
                     <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500">
@@ -240,8 +233,7 @@ export default toNative(Members)
             <!-- 模块权限 -->
             <div class="mb-3">
               <span class="text-xs text-slate-400 mr-2">权限</span>
-              <span v-if="m.isPrimary" class="text-xs text-purple-600 font-medium">全部权限</span>
-              <span v-else class="inline-flex flex-wrap gap-1">
+              <span class="inline-flex flex-wrap gap-1">
                 <template v-for="(perm, mod) in m.permissions" :key="mod">
                   <span v-if="perm === 'rw'" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700">{{ mod }}<span class="ml-0.5 opacity-60">rw</span></span>
                   <span v-else-if="perm === 'r'" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600">{{ mod }}<span class="ml-0.5 opacity-60">r</span></span>
@@ -254,7 +246,7 @@ export default toNative(Members)
               <button @click="openEditMember(m)" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
-              <button v-if="!m.isPrimary" @click="handleDeleteMember(m)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+              <button @click="handleDeleteMember(m)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>

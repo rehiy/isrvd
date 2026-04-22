@@ -2,6 +2,7 @@
 import { Component, Provide, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { APP_ACTIONS_KEY, APP_STATE_KEY, initProvider } from '@/store/state'
+import { setRouterGuard } from '@/router'
 
 import ConfirmModal from '@/component/confirm.vue'
 import NavigationBar from '@/component/navigation.vue'
@@ -16,6 +17,7 @@ import api from '@/service/api'
 import router from '@/router'
 
 const { state, actions } = initProvider()
+setRouterGuard(actions.hasPerm, () => state.permissionsLoaded)
 
 @Component({
     components: { ConfirmModal, NavigationBar, NotificationManager, PageAgent, AuthLogin, AuthLogout }
@@ -50,7 +52,6 @@ class App extends Vue {
             const member = res?.payload?.member
             if (member) {
                 this.actions.setPermissions({
-                    isPrimary: member.isPrimary,
                     permissions: member.permissions || {}
                 })
                 // 权限加载完成后重新触发路由守卫（处理刷新页面场景）

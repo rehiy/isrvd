@@ -18,10 +18,6 @@ func (app *App) systemProbe(c *gin.Context) {
 	helper.RespondSuccess(c, "ok", app.systemSvc.Probe(c.Request.Context()))
 }
 
-func (app *App) systemHealth(c *gin.Context) {
-	helper.RespondSuccess(c, "ok", nil)
-}
-
 func (app *App) systemGetSettings(c *gin.Context) {
 	helper.RespondSuccess(c, "ok", app.settingsSvc.GetAll())
 }
@@ -80,8 +76,6 @@ func (app *App) systemDeleteMember(c *gin.Context) {
 		switch {
 		case errors.Is(err, svcSystem.ErrMemberNotFound):
 			helper.RespondError(c, http.StatusNotFound, err.Error())
-		case errors.Is(err, svcSystem.ErrPrimaryMemberNoDelete):
-			helper.RespondError(c, http.StatusForbidden, err.Error())
 		default:
 			helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		}

@@ -71,9 +71,7 @@ export interface MemberPermissions {
 export interface SystemMemberInfo {
     username: string
     homeDirectory: string
-    allowTerminal: boolean
     passwordSet: boolean
-    isPrimary: boolean
     permissions: Record<string, string>
 }
 
@@ -82,7 +80,6 @@ export interface SystemMemberUpsertRequest {
     // 写入时为空表示保留原値（仅更新场景）
     password: string
     homeDirectory: string
-    allowTerminal: boolean
     permissions: Record<string, string>
 }
 

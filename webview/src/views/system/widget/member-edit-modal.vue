@@ -43,7 +43,6 @@ class MemberEditModal extends Vue {
     passwordSet = false
     formData: SystemMemberUpsertRequest = {
         username: '', password: '', homeDirectory: '',
-        allowTerminal: false,
         permissions: emptyPermissions()
     }
 
@@ -76,7 +75,6 @@ class MemberEditModal extends Vue {
                 username: member.username,
                 password: '',
                 homeDirectory: member.homeDirectory,
-                allowTerminal: member.allowTerminal,
                 permissions: perms
             }
         } else {
@@ -84,7 +82,6 @@ class MemberEditModal extends Vue {
             this.passwordSet = false
             this.formData = {
                 username: '', password: '', homeDirectory: '',
-                allowTerminal: false,
                 permissions: emptyPermissions()
             }
         }

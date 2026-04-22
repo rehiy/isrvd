@@ -28,8 +28,6 @@ var (
 	Marketplace = &MarketplaceConfig{}
 	// 成员配置
 	Members = map[string]*MemberConfig{}
-	// 主成员（配置文件中第一个成员，禁止删除）
-	PrimaryMember = ""
 	// 当前加载的配置文件路径
 	ConfigPath = ""
 	// 版本信息，通过 -ldflags 在编译时注入
@@ -88,7 +86,7 @@ func Load() error {
 	}
 
 	// 更新 Member 配置
-	for i, m := range conf.Members {
+	for _, m := range conf.Members {
 		if !filepath.IsAbs(m.HomeDirectory) {
 			m.HomeDirectory = filepath.Join(RootDirectory, m.HomeDirectory)
 		}
@@ -96,9 +94,6 @@ func Load() error {
 			return err
 		}
 		Members[m.Username] = m
-		if i == 0 {
-			PrimaryMember = m.Username
-		}
 	}
 
 	return nil

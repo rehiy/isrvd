@@ -22,6 +22,16 @@ class Overview extends Vue {
     @Ref readonly swarmRef!: InstanceType<typeof SwarmOverview>
     @Ref readonly systemRef!: InstanceType<typeof SystemOverview>
 
+    // ─── 计算属性 ───
+    get hasAnyBlock() {
+        return (
+            (this.state.serviceAvailability.apisix && this.actions.hasPerm('apisix')) ||
+            (this.state.serviceAvailability.docker && this.actions.hasPerm('docker')) ||
+            (this.state.serviceAvailability.swarm && this.actions.hasPerm('swarm')) ||
+            this.actions.hasPerm('system')
+        )
+    }
+
     // ─── 方法 ───
     refreshAll() {
         if (this.state.serviceAvailability.apisix && this.actions.hasPerm('apisix')) {
@@ -33,12 +43,16 @@ class Overview extends Vue {
         if (this.state.serviceAvailability.swarm && this.actions.hasPerm('swarm')) {
             this.swarmRef?.load()
         }
-        this.systemRef?.load()
+        if (this.actions.hasPerm('system')) {
+            this.systemRef?.load()
+        }
     }
 
     // ─── 生命周期 ───
     unmounted() {
-        this.systemRef?.stopPoll()
+        if (this.actions.hasPerm('system')) {
+            this.systemRef?.stopPoll()
+        }
     }
 }
 
@@ -110,12 +124,19 @@ export default toNative(Overview)
       </div>
 
       <!-- 系统信息区块 -->
-      <div class="p-6 border-b border-slate-100">
+      <div v-if="actions.hasPerm('system')" class="p-6 border-b border-slate-100">
         <div class="flex items-center gap-2 mb-4">
           <i class="fas fa-server text-slate-500 text-lg"></i>
           <h2 class="text-base font-semibold text-slate-700">系统信息</h2>
         </div>
         <SystemOverview ref="systemRef" />
+      </div>
+
+      <!-- 无任何权限时的空状态 -->
+      <div v-if="!hasAnyBlock" class="flex flex-col items-center justify-center py-16 text-slate-400">
+        <i class="fas fa-lock text-4xl mb-4"></i>
+        <p class="text-sm font-medium">暂无可查看的模块</p>
+        <p class="text-xs mt-1">当前账号未分配任何模块权限</p>
       </div>
     </div>
   </div>

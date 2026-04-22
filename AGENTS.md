@@ -133,7 +133,7 @@
 - 全局状态：`store/state.ts` 使用 `reactive` + Provide/Inject 模式
 - Provide/Inject 键：`APP_STATE_KEY`（`app.state`）、`APP_ACTIONS_KEY`（`app.actions`）
 - 全局权限状态 `permState`（`reactive`）：供路由守卫使用，避免循环依赖
-  - `loaded`、`isPrimary`、`allowTerminal`、`permissions`
+  - `loaded`、`isPrimary`、`permissions`
 - 初始化函数：`initProvider()` 返回 `{ state, actions }`
 
 ### 5.3 API 服务层

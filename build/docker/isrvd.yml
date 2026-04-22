@@ -30,4 +30,12 @@ members:
   - username: admin
     password: __ISRVD_PASSWORD__
     homeDirectory: .
-    allowTerminal: true
+    permissions:
+      filer: rw
+      agent: rw
+      apisix: rw
+      docker: rw
+      swarm: rw
+      compose: rw
+      system: rw
+      shell: rw
