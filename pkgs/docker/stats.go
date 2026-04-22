@@ -99,7 +99,13 @@ func (s *DockerService) GetContainerStats(ctx context.Context, id string) (*Cont
 		return nil, err
 	}
 
-	cpuCores := len(v.CPUStats.CPUUsage.PercpuUsage)
+	cpuCores := int(v.CPUStats.OnlineCPUs)
+	if cpuCores == 0 {
+		cpuCores = len(v.CPUStats.CPUUsage.PercpuUsage)
+	}
+	if cpuCores == 0 {
+		cpuCores = 1
+	}
 
 	cpuDelta := float64(v.CPUStats.CPUUsage.TotalUsage - v.PreCPUStats.CPUUsage.TotalUsage)
 	systemDelta := float64(v.CPUStats.SystemUsage - v.PreCPUStats.SystemUsage)
