@@ -51,7 +51,6 @@ class App extends Vue {
             if (member) {
                 this.actions.setPermissions({
                     isPrimary: member.isPrimary,
-                    allowTerminal: member.allowTerminal ?? false,
                     permissions: member.permissions || {}
                 })
                 // 权限加载完成后重新触发路由守卫（处理刷新页面场景）

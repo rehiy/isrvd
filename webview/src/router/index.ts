@@ -9,6 +9,7 @@ const routePermMap: Array<[string, string]> = [
   ['/swarm', 'swarm'],
   ['/compose', 'compose'],
   ['/system', 'system'],
+  ['/shell', 'shell'],
 ]
 
 const routes: RouteRecordRaw[] = [
@@ -186,10 +187,7 @@ router.beforeEach((to) => {
   // 主账号不受限
   if (permState.isPrimary) return true
 
-  // shell 终端单独用 allowTerminal 控制
-  if (to.path === '/shell') {
-    return permState.allowTerminal ? true : { path: '/overview' }
-  }
+
 
   // 容器终端需要 docker 写权限
   if (to.name === 'docker-container-terminal') {

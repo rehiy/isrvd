@@ -15,7 +15,6 @@ import (
 type MemberInfo struct {
 	Username      string            `json:"username"`
 	HomeDirectory string            `json:"homeDirectory"`
-	AllowTerminal bool              `json:"allowTerminal"`
 	PasswordSet   bool              `json:"passwordSet"`
 	IsPrimary     bool              `json:"isPrimary"`
 	Permissions   map[string]string `json:"permissions"`
@@ -26,7 +25,6 @@ type MemberUpsertRequest struct {
 	Username      string            `json:"username"`
 	Password      string            `json:"password"`
 	HomeDirectory string            `json:"homeDirectory"`
-	AllowTerminal bool              `json:"allowTerminal"`
 	Permissions   map[string]string `json:"permissions"`
 }
 
@@ -51,7 +49,6 @@ func (s *MemberService) GetMember(username string) *MemberInfo {
 	return &MemberInfo{
 		Username:      m.Username,
 		HomeDirectory: m.HomeDirectory,
-		AllowTerminal: m.AllowTerminal,
 		PasswordSet:   m.Password != "",
 		IsPrimary:     m.Username == config.PrimaryMember,
 		Permissions:   perms,
@@ -69,7 +66,6 @@ func (s *MemberService) ListMembers() []*MemberInfo {
 		list = append(list, &MemberInfo{
 			Username:      m.Username,
 			HomeDirectory: m.HomeDirectory,
-			AllowTerminal: m.AllowTerminal,
 			PasswordSet:   m.Password != "",
 			IsPrimary:     m.Username == config.PrimaryMember,
 			Permissions:   perms,
@@ -113,7 +109,6 @@ func (s *MemberService) CreateMember(req MemberUpsertRequest) error {
 		Username:      req.Username,
 		Password:      req.Password,
 		HomeDirectory: home,
-		AllowTerminal: req.AllowTerminal,
 		Permissions:   req.Permissions,
 	}
 	if config.PrimaryMember == "" {
@@ -140,7 +135,6 @@ func (s *MemberService) UpdateMember(username string, req MemberUpsertRequest) e
 
 	member.Password = pickSecret(req.Password, member.Password)
 	member.HomeDirectory = home
-	member.AllowTerminal = req.AllowTerminal
 	member.Permissions = req.Permissions
 
 	if err := config.Save(); err != nil {

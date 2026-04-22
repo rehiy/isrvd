@@ -17,6 +17,7 @@ const MODULES = [
     { key: 'apisix',  label: 'APISIX',   icon: 'fa-route' },
     { key: 'agent',   label: 'AI Agent', icon: 'fa-robot' },
     { key: 'system',  label: '系统管理', icon: 'fa-gear' },
+    { key: 'shell',   label: 'Shell终端', icon: 'fa-terminal' },
 ]
 
 function emptyPermissions(): Record<string, string> {
@@ -41,7 +42,8 @@ class MemberEditModal extends Vue {
     originalUsername = ''
     passwordSet = false
     formData: SystemMemberUpsertRequest = {
-        username: '', password: '', homeDirectory: '', allowTerminal: false,
+        username: '', password: '', homeDirectory: '',
+        allowTerminal: false,
         permissions: emptyPermissions()
     }
 
@@ -81,7 +83,8 @@ class MemberEditModal extends Vue {
             this.originalUsername = ''
             this.passwordSet = false
             this.formData = {
-                username: '', password: '', homeDirectory: '', allowTerminal: false,
+                username: '', password: '', homeDirectory: '',
+                allowTerminal: false,
                 permissions: emptyPermissions()
             }
         }
@@ -144,11 +147,6 @@ export default toNative(MemberEditModal)
         <input type="text" v-model="formData.homeDirectory" placeholder="留空则使用 基础目录/用户名" class="input" />
         <p class="mt-1 text-xs text-slate-400">相对路径基于"基础目录"，留空则自动创建为 基础目录/用户名</p>
       </div>
-      <div class="flex items-center gap-2">
-        <input id="allowTerminalSwitch" type="checkbox" v-model="formData.allowTerminal" class="w-4 h-4" />
-        <label for="allowTerminalSwitch" class="text-sm text-slate-700">允许访问 Shell 终端</label>
-      </div>
-
       <!-- 模块权限 -->
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-2">模块权限</label>

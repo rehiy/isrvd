@@ -68,7 +68,6 @@ func (s *AuthService) getMember(username string) *MemberInfo {
 	return &MemberInfo{
 		Username:      m.Username,
 		HomeDirectory: m.HomeDirectory,
-		AllowTerminal: m.AllowTerminal,
 		PasswordSet:   m.Password != "",
 		IsPrimary:     m.Username == config.PrimaryMember,
 		Permissions:   perms,

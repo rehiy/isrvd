@@ -26,7 +26,7 @@ class NavigationBar extends Vue {
     get canSwarm() { return this.state.serviceAvailability.swarm && this.actions.hasPerm('swarm') }
     get canCompose() { return this.state.serviceAvailability.compose && this.actions.hasPerm('compose') }
     get canSystem() { return this.actions.hasPerm('system') }
-    get canShell() { return this.state.isPrimary || this.state.allowTerminal }
+    get canShell() { return this.actions.hasPerm('shell') }
 
     // 服务是否可用（不考虑权限）
     get hasDocker() { return this.state.serviceAvailability.docker }

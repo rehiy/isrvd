@@ -19,7 +19,7 @@ import (
 func (app *App) shellWebSocket(c *gin.Context) {
 	username := c.GetString("username")
 	member, ok := config.Members[username]
-	if !ok || !member.AllowTerminal {
+	if !ok || member.Permissions["shell"] == "" {
 		logman.Warn("Terminal access denied", "username", username)
 		helper.RespondError(c, http.StatusForbidden, "终端访问被拒绝")
 		return

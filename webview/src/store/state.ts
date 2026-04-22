@@ -51,7 +51,6 @@ export interface AppState {
     token: string | null
     username: string | null
     isPrimary: boolean
-    allowTerminal: boolean
     permissions: Record<string, string>
     loading: boolean
     currentPath: string
@@ -64,7 +63,7 @@ export interface AppState {
 export interface AppActions {
     setAuth(data: { authMode: 'jwt' | 'header'; token: string; username: string }): void
     clearAuth(): void
-    setPermissions(data: { isPrimary: boolean; allowTerminal: boolean; permissions: Record<string, string> }): void
+    setPermissions(data: { isPrimary: boolean; permissions: Record<string, string> }): void
     hasPerm(module: string, write?: boolean): boolean
     loadFiles(path?: string): Promise<void>
     showNotification(type: string, message: string): void
@@ -86,7 +85,6 @@ export interface AppActions {
 export const permState = reactive({
     loaded: false,
     isPrimary: false,
-    allowTerminal: false,
     permissions: {} as Record<string, string>
 })
 
@@ -97,7 +95,6 @@ export const initProvider = () => {
         token: null,
         username: null,
         isPrimary: false,
-        allowTerminal: false,
         permissions: {},
 
         // 网络请求状态
@@ -151,23 +148,19 @@ export const initProvider = () => {
             state.token = null
             state.username = null
             state.isPrimary = false
-            state.allowTerminal = false
             state.permissions = {}
             permState.loaded = false
             permState.isPrimary = false
-            permState.allowTerminal = false
             permState.permissions = {}
             localStorage.removeItem('app-token')
             localStorage.removeItem('app-username')
         },
 
-        setPermissions(data: { isPrimary: boolean; allowTerminal: boolean; permissions: Record<string, string> }) {
+        setPermissions(data: { isPrimary: boolean; permissions: Record<string, string> }) {
             state.isPrimary = data.isPrimary
-            state.allowTerminal = data.allowTerminal
             state.permissions = data.permissions || {}
             permState.loaded = true
             permState.isPrimary = data.isPrimary
-            permState.allowTerminal = data.allowTerminal
             permState.permissions = data.permissions || {}
         },
 
