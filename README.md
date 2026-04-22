@@ -8,11 +8,11 @@
 |------|------|
 | 系统概览 | CPU、内存、硬盘、网络实时监控 |
 | 文件管理 | 浏览、上传、下载、在线编辑、压缩解压、权限修改 |
-| Docker | 容器、镜像、网络、卷的完整管理，支持终端和实时统计 |
+| Web 终端 | 基于 xterm.js 的实时 Shell 交互与容器终端 |
+| APISIX | 路由、Consumer、IP 白名单管理 |
+| Docker | 容器、镜像、网络、卷、镜像仓库的完整管理，支持终端和实时统计 |
 | Docker Swarm | 服务、节点、任务的完整管理 |
 | Docker Compose | Compose 文件编辑、Docker/Swarm 一键部署与重新部署 |
-| APISIX | 路由、Consumer、Upstream、Plugin Config、IP 白名单管理 |
-| Web 终端 | 基于 xterm.js 的实时 Shell 交互与容器终端 |
 | 成员管理 | 多用户支持，用户隔离、独立家目录、权限控制 |
 | AI 助手 | 内置 Page-Agent，支持自然语言操作与页面感知 |
 | 移动端 | 响应式布局，全面适配移动设备 |
@@ -55,7 +55,6 @@ docker run -d \
 | `/data/conf/` | 配置文件（apisix.yaml、isrvd.yml） |
 | `/data/etcd/` | etcd 数据 |
 | `/data/container/` | 容器数据目录 |
-| `/data/{member}/` | 用户数据目录 |
 
 ### slim（仅 isrvd）
 
@@ -80,7 +79,6 @@ docker run -d \
 |------|------|
 | `/data/conf/` | 配置文件（isrvd.yml） |
 | `/data/container/` | 容器数据目录 |
-| `/data/{member}/` | 用户数据目录 |
 
 ### Docker Compose
 
@@ -103,28 +101,26 @@ services:
 
 从 [Releases](https://github.com/rehiy/isrvd/releases) 下载对应平台二进制文件，编辑 `config.yml` 后运行：
 
-```yaml
-server:
-  listenAddr: ":8080"
-  jwtSecret: your-secret-key
-  rootDirectory: "."
-
-members:
-  - username: admin
-    password: admin123
-    homeDirectory: public
-    allowTerminal: true
-```
-
 ```bash
 ./isrvd
 ```
 
-支持环境变量覆盖：`DEBUG`、`LISTEN_ADDR`、`ROOT_DIRECTORY`、`JWT_SECRET`、`PROXY_HEADER_NAME`
+**配置说明**
+
+| 配置段 | 说明 |
+|--------|------|
+| `server` | 服务端口、JWT 密钥、代理认证头、数据目录等基础配置 |
+| `agent` | AI 助手模型接入（model / baseUrl / apiKey） |
+| `apisix` | APISIX Admin API 地址和密钥 |
+| `docker` | Docker 守护进程地址、容器数据目录、镜像仓库账号 |
+| `marketplace` | 应用市场地址 |
+| `members` | 用户账号、家目录、终端权限、模块权限（主账号拥有全部权限） |
+
+支持环境变量 `CONFIG_PATH` 指定配置文件路径（默认 `config.yml`）。
 
 ## 编译
 
-需要 Go 1.25+ 和 Node.js 16+：
+需要 Go 1.25+ 和 Node.js 22+：
 
 ```bash
 ./build.sh
