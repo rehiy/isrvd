@@ -191,6 +191,12 @@ router.beforeEach((to) => {
     return permState.allowTerminal ? true : { path: '/overview' }
   }
 
+  // 容器终端需要 docker 写权限
+  if (to.name === 'docker-container-terminal') {
+    const perm = permState.permissions['docker'] || ''
+    return perm === 'rw' ? true : { path: '/overview' }
+  }
+
   for (const [prefix, module] of routePermMap) {
     if (to.path.startsWith(prefix)) {
       const perm = permState.permissions[module] || ''
