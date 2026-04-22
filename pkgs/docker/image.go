@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -111,7 +112,7 @@ func (s *DockerService) PullImage(ctx context.Context, image, tag string) (strin
 		}
 		if msg.Error != "" {
 			logman.Error("Pull image stream error", "image", imageRef, "error", msg.Error)
-			return "", imageRef, fmt.Errorf("%s", msg.Error)
+			return "", imageRef, errors.New(msg.Error)
 		}
 		if msg.Status != "" {
 			lastMessage = msg.Status
@@ -209,7 +210,7 @@ func (s *DockerService) BuildImage(ctx context.Context, dockerfile, tag string) 
 		}
 		if msg.Error != "" {
 			logman.Error("Build image stream error", "tag", tag, "error", msg.Error)
-			return "", fmt.Errorf("%s", msg.Error)
+			return "", errors.New(msg.Error)
 		}
 		if msg.Stream != "" {
 			lastMessage = strings.TrimSpace(msg.Stream)

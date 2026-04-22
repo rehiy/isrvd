@@ -2,6 +2,7 @@
 package system
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,6 +10,12 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/config"
+)
+
+// 哨兵错误，供 handler 层进行错误类型判断
+var (
+	ErrMemberNotFound        = errors.New("成员不存在")
+	ErrPrimaryMemberNoDelete = errors.New("主账号禁止删除")
 )
 
 // MemberInfo 成员信息（不包含密码明文）
@@ -125,7 +132,7 @@ func (s *MemberService) CreateMember(req MemberUpsertRequest) error {
 func (s *MemberService) UpdateMember(username string, req MemberUpsertRequest) error {
 	member, exists := config.Members[username]
 	if !exists {
-		return fmt.Errorf("成员不存在")
+		return ErrMemberNotFound
 	}
 
 	home, err := ensureHomeDir(req.HomeDirectory, username)
@@ -147,10 +154,10 @@ func (s *MemberService) UpdateMember(username string, req MemberUpsertRequest) e
 // DeleteMember 删除成员
 func (s *MemberService) DeleteMember(username string) error {
 	if _, exists := config.Members[username]; !exists {
-		return fmt.Errorf("成员不存在")
+		return ErrMemberNotFound
 	}
 	if username == config.PrimaryMember {
-		return fmt.Errorf("主账号禁止删除")
+		return ErrPrimaryMemberNoDelete
 	}
 	delete(config.Members, username)
 	if err := config.Save(); err != nil {

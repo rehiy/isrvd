@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -63,7 +64,7 @@ func (app *App) systemUpdateMember(c *gin.Context) {
 		return
 	}
 	if err := app.memberSvc.UpdateMember(username, req); err != nil {
-		if err.Error() == "成员不存在" {
+		if errors.Is(err, svcSystem.ErrMemberNotFound) {
 			helper.RespondError(c, http.StatusNotFound, err.Error())
 		} else {
 			helper.RespondError(c, http.StatusInternalServerError, err.Error())
@@ -76,10 +77,10 @@ func (app *App) systemUpdateMember(c *gin.Context) {
 func (app *App) systemDeleteMember(c *gin.Context) {
 	username := c.Param("username")
 	if err := app.memberSvc.DeleteMember(username); err != nil {
-		switch err.Error() {
-		case "成员不存在":
+		switch {
+		case errors.Is(err, svcSystem.ErrMemberNotFound):
 			helper.RespondError(c, http.StatusNotFound, err.Error())
-		case "主账号禁止删除":
+		case errors.Is(err, svcSystem.ErrPrimaryMemberNoDelete):
 			helper.RespondError(c, http.StatusForbidden, err.Error())
 		default:
 			helper.RespondError(c, http.StatusInternalServerError, err.Error())
