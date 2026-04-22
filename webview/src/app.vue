@@ -129,8 +129,8 @@ export default toNative(App)
             <i class="fas fa-user-tie"></i>
             <span class="hidden sm:inline">{{ state.username }}</span>
           </div>
-          <div class="hidden sm:block w-px h-5 bg-slate-200 mx-1"></div>
-          <AuthLogout />
+          <div class="hidden sm:block w-px h-5 bg-slate-200 mx-1" v-if="state.authMode !== 'header'"></div>
+          <AuthLogout v-if="state.authMode !== 'header'" />
         </div>
       </header>
 
