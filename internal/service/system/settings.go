@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"isrvd/config"
+	pkgdocker "isrvd/pkgs/docker"
 )
 
 // ServerSettings 服务器配置
@@ -130,6 +131,9 @@ func (s *SettingsService) UpdateAll(req UpdateAllRequest) error {
 		config.Docker.Host = req.Docker.Host
 		config.Docker.ContainerRoot = req.Docker.ContainerRoot
 		config.Docker.Mirrors = req.Docker.Mirrors
+		if err := pkgdocker.SyncMirrorsToDaemon(req.Docker.Mirrors); err != nil {
+			return fmt.Errorf("同步 daemon.json 失败: %w", err)
+		}
 	}
 	if req.Marketplace != nil {
 		config.Marketplace.URL = req.Marketplace.URL
