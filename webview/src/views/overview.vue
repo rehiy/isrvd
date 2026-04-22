@@ -17,23 +17,23 @@ class Overview extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── Refs ───
+    @Ref readonly apisixRef!: InstanceType<typeof ApisixOverview>
     @Ref readonly dockerRef!: InstanceType<typeof DockerOverview>
     @Ref readonly swarmRef!: InstanceType<typeof SwarmOverview>
-    @Ref readonly apisixRef!: InstanceType<typeof ApisixOverview>
     @Ref readonly systemRef!: InstanceType<typeof SystemOverview>
 
     // ─── 方法 ───
     refreshAll() {
-        this.systemRef?.load()
+        if (this.state.serviceAvailability.apisix && this.actions.hasPerm('apisix')) {
+            this.apisixRef?.load()
+        }
         if (this.state.serviceAvailability.docker && this.actions.hasPerm('docker')) {
             this.dockerRef?.load()
         }
         if (this.state.serviceAvailability.swarm && this.actions.hasPerm('swarm')) {
             this.swarmRef?.load()
         }
-        if (this.state.serviceAvailability.apisix && this.actions.hasPerm('apisix')) {
-            this.apisixRef?.load()
-        }
+        this.systemRef?.load()
     }
 
     // ─── 生命周期 ───

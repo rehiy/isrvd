@@ -18,9 +18,9 @@ import (
 // App 应用实例，持有各业务服务
 type App struct {
 	*gin.Engine
+	apisixSvc   *svcApisix.Service
 	dockerSvc   *svcDocker.Service
 	swarmSvc    *svcSwarm.Service
-	apisixSvc   *svcApisix.Service
 	composeSvc  *svcCompose.DeployService
 	systemSvc   *svcSystem.Service
 	settingsSvc *svcSystem.SettingsService
