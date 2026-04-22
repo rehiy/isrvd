@@ -501,6 +501,7 @@ class SystemOverview extends Vue {
     }
 
     async pollNet() {
+        if (!localStorage.getItem('app-token')) { this.stopPoll(); return }
         try {
             const res = await api.systemStat()
             const payload = res.payload as SystemStat | undefined
