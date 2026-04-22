@@ -127,10 +127,14 @@ class ContainerCreateModal extends Vue {
     }
 
     async handleConfirm() {
+        const projectName = this.formData.name.trim()
+        if (!projectName) {
+            this.actions.showNotification('error', '请填写容器名称')
+            return
+        }
+
         const content = this.buildYamlFromForm()
         if (!content) return
-
-        const projectName = this.formData.name.trim()
 
         this.modalLoading = true
         try {
@@ -165,8 +169,8 @@ export default toNative(ContainerCreateModal)
           <ImageSelect v-model="formData.image" :images="images" placeholder="选择或输入镜像名称" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">容器名称</label>
-          <input type="text" v-model="formData.name" placeholder="my-container" class="input" />
+          <label class="block text-sm font-medium text-slate-700 mb-2">容器名称 <span class="text-red-500">*</span></label>
+          <input type="text" v-model="formData.name" placeholder="my-container" required class="input" />
         </div>
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">网络模式</label>
