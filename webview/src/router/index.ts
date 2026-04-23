@@ -180,19 +180,22 @@ const router = createRouter({
 // 由 app.vue 在 initProvider 后注入，避免循环依赖
 let _hasPerm: ((module: string, write?: boolean) => boolean) | null = null
 let _permsLoaded: (() => boolean) | null = null
+let _isAuthenticated: (() => boolean) | null = null
 
 export const setRouterGuard = (
     hasPerm: (module: string, write?: boolean) => boolean,
-    permsLoaded: () => boolean
+    permsLoaded: () => boolean,
+    isAuthenticated: () => boolean
 ) => {
     _hasPerm = hasPerm
     _permsLoaded = permsLoaded
+    _isAuthenticated = isAuthenticated
 }
 
 // 路由守卫：根据权限控制页面访问
 router.beforeEach((to) => {
   // 未登录时放行（由 app.vue 的 v-if 控制显示登录页）
-  if (!localStorage.getItem('app-token')) return true
+  if (!_isAuthenticated?.()) return true
   // 权限尚未加载完成时放行（刷新页面场景，等 loadMe 完成后由导航菜单 v-if 控制）
   if (!_permsLoaded?.()) return true
 

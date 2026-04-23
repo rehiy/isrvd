@@ -63,6 +63,7 @@ export interface AppState {
 export interface AppActions {
     setAuth(data: { authMode: 'jwt' | 'header'; token: string; username: string }): void
     clearAuth(): void
+    isAuthenticated(): boolean
     setPermissions(data: { permissions: Record<string, string> }): void
     hasPerm(module: string, write?: boolean): boolean
     loadFiles(path?: string): Promise<void>
@@ -146,6 +147,10 @@ export const initProvider = () => {
             state.permissions = {}
             localStorage.removeItem('app-token')
             localStorage.removeItem('app-username')
+        },
+
+        isAuthenticated(): boolean {
+            return !!state.token
         },
 
         setPermissions(data: { permissions: Record<string, string> }) {

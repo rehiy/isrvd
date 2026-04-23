@@ -19,7 +19,7 @@ import type { SystemLinkSetting } from '@/service/types'
 import { FA_ICONS } from '@/helper/icons'
 
 const { state, actions } = initProvider()
-setRouterGuard(actions.hasPerm, () => state.permissionsLoaded)
+setRouterGuard(actions.hasPerm, () => state.permissionsLoaded, actions.isAuthenticated)
 
 @Component({
     components: { ConfirmModal, NavigationBar, NotificationManager, PageAgent, UserMenu, AuthLogin }

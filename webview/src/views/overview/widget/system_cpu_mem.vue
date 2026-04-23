@@ -1,12 +1,10 @@
 <script lang="ts">
 import type { ChartOptions } from 'chart.js'
-import { Chart, registerables } from 'chart.js'
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 import { markRaw } from 'vue'
 
+import Chart from '@/helper/chart'
 import type { SystemStat } from '@/service/types'
-
-Chart.register(...registerables)
 
 interface ChartCallbackContext {
     parsed: { y: number | null }
@@ -172,7 +170,7 @@ export default toNative(SystemCpuMem)
 </script>
 
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+  <div v-if="current" class="grid grid-cols-1 md:grid-cols-2 gap-3">
     <div class="relative rounded-xl border border-slate-200 bg-white overflow-hidden">
       <div class="absolute inset-0 pointer-events-none">
         <canvas ref="cpuCanvasRef" class="w-full h-full"></canvas>

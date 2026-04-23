@@ -1,13 +1,11 @@
 <script lang="ts">
 import type { ChartOptions } from 'chart.js'
-import { Chart, registerables } from 'chart.js'
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 import { markRaw } from 'vue'
 
-import type { SystemStat, SystemGPU } from '@/service/types'
+import Chart from '@/helper/chart'
 import { hexToRgba } from '@/helper/utils'
-
-Chart.register(...registerables)
+import type { SystemStat, SystemGPU } from '@/service/types'
 
 interface GpuHistory {
     labels: string[]

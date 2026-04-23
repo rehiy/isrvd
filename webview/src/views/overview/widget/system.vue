@@ -1,6 +1,7 @@
 <script lang="ts">
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { APP_STATE_KEY } from '@/store/state'
 import api from '@/service/api'
 import type { SystemStat } from '@/service/types'
 import { POLL_INTERVAL } from '@/helper/utils'
@@ -16,8 +17,9 @@ import SystemGo from './system_go.vue'
     components: { SystemInfo, SystemCpuMem, SystemGpu, SystemDisk, SystemNetwork, SystemGo }
 })
 class SystemOverview extends Vue {
-    stat: SystemStat | null = null
+    @Inject({ from: APP_STATE_KEY }) readonly state!: { token: string | null }
     loading = false
+    ready = false
 
     private pollTimer: ReturnType<typeof setInterval> | null = null
 
@@ -41,26 +43,25 @@ class SystemOverview extends Vue {
         this.loading = true
         try {
             const res = await api.systemStat()
-            const payload = res.payload as SystemStat | undefined
-            this.stat = payload ?? null
-            if (payload) this.dispatchData(payload)
-        } catch (e) {
-            this.stat = null
-        }
+            if (res.payload) {
+                this.ready = true
+                const data = res.payload
+                setTimeout(() => this.dispatchData(data))
+            }
+        } catch (e) { /* ignore */ }
         this.loading = false
     }
 
     async poll() {
-        if (!localStorage.getItem('app-token')) {
+        if (!this.state.token) {
             this.stopPoll()
             return
         }
         try {
             const res = await api.systemStat()
-            const payload = res.payload as SystemStat | undefined
-            if (!payload) return
-            this.stat = payload
-            this.dispatchData(payload)
+            if (res.payload) {
+                this.dispatchData(res.payload)
+            }
         } catch (e) { /* ignore */ }
     }
 
@@ -91,24 +92,24 @@ export default toNative(SystemOverview)
 </script>
 
 <template>
-  <div>
-    <div v-if="loading" class="flex items-center justify-center py-10">
-      <div class="w-8 h-8 spinner mr-2"></div>
-      <span class="text-slate-400 text-sm">加载中...</span>
-    </div>
+    <div>
+        <div v-if="loading" class="flex items-center justify-center py-10">
+            <div class="w-8 h-8 spinner mr-2"></div>
+            <span class="text-slate-400 text-sm">加载中...</span>
+        </div>
 
-    <div v-else-if="stat" class="space-y-5">
-      <SystemInfo ref="infoRef" />
-      <SystemCpuMem ref="cpuMemRef" />
-      <SystemGpu ref="gpuRef" />
-      <SystemDisk ref="diskRef" />
-      <SystemNetwork ref="networkRef" />
-      <SystemGo ref="goRef" />
-    </div>
+        <div v-else-if="ready" class="space-y-5">
+            <SystemInfo ref="infoRef" />
+            <SystemCpuMem ref="cpuMemRef" />
+            <SystemGpu ref="gpuRef" />
+            <SystemDisk ref="diskRef" />
+            <SystemNetwork ref="networkRef" />
+            <SystemGo ref="goRef" />
+        </div>
 
-    <div v-else class="flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50">
-      <i class="fas fa-triangle-exclamation text-2xl text-slate-300"></i>
-      <p class="text-sm text-slate-500">获取系统信息失败</p>
+        <div v-else class="flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50">
+            <i class="fas fa-triangle-exclamation text-2xl text-slate-300"></i>
+            <p class="text-sm text-slate-500">获取系统信息失败</p>
+        </div>
     </div>
-  </div>
 </template>

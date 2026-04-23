@@ -29,7 +29,7 @@ export default toNative(SystemInfo)
 </script>
 
 <template>
-  <div v-if="current" class="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-5 gap-3">
+  <div v-if="current?.system" class="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-5 gap-3">
     <div class="rounded-xl border border-slate-200 bg-white p-4">
       <p class="text-xs text-slate-400 mb-1">程序版本</p>
       <div class="flex items-center gap-2">
