@@ -4,10 +4,17 @@
 apisix:
   node_listen: 9080
   enable_ipv6: false
+  ssl:
+    enable: true
+    listen:
+      - port: 9443
+        enable_http3: false
   enable_control: true
   control:
     ip: "0.0.0.0"
     port: 9090
+  #trusted_addresses:
+  #  - 0.0.0.0/0
 
 deployment:
   admin:
