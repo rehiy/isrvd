@@ -45,8 +45,7 @@ class SystemOverview extends Vue {
             const res = await api.systemStat()
             if (res.payload) {
                 this.ready = true
-                const data = res.payload
-                setTimeout(() => this.dispatchData(data))
+                this.dispatchData(res.payload)
             }
         } catch (e) { /* ignore */ }
         this.loading = false
@@ -98,7 +97,7 @@ export default toNative(SystemOverview)
             <span class="text-slate-400 text-sm">加载中...</span>
         </div>
 
-        <div v-else-if="ready" class="space-y-5">
+        <div v-show="!loading && ready" class="space-y-5">
             <SystemInfo ref="infoRef" />
             <SystemCpuMem ref="cpuMemRef" />
             <SystemGpu ref="gpuRef" />
@@ -107,7 +106,7 @@ export default toNative(SystemOverview)
             <SystemGo ref="goRef" />
         </div>
 
-        <div v-else class="flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50">
+        <div v-show="!loading && !ready" class="flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50">
             <i class="fas fa-triangle-exclamation text-2xl text-slate-300"></i>
             <p class="text-sm text-slate-500">获取系统信息失败</p>
         </div>
