@@ -1,11 +1,13 @@
 <script lang="ts">
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import { formatFileSize, formatTime } from '@/helper/utils'
-import api from '@/service/api'
-import type { DockerImageInspectResponse } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
+
+import api from '@/service/api'
+import type { DockerImageInspectResponse } from '@/service/types'
+
+import { formatFileSize, formatTime } from '@/helper/utils'
 
 @Component
 class ImageDetail extends Vue {

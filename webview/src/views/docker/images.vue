@@ -1,15 +1,17 @@
 <script lang="ts">
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import { formatFileSize, formatTime } from '@/helper/utils'
-import api from '@/service/api'
-import type { DockerImageInfo, DockerRegistryInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
+import api from '@/service/api'
+import type { DockerImageInfo, DockerRegistryInfo } from '@/service/types'
+
+import { formatFileSize, formatTime } from '@/helper/utils'
+
+import ImageBuildModal from '@/views/docker/widget/image-build-modal.vue'
 import ImagePullModal from '@/views/docker/widget/image-pull-modal.vue'
 import ImageTagModal from '@/views/docker/widget/image-tag-modal.vue'
-import ImageBuildModal from '@/views/docker/widget/image-build-modal.vue'
 import RegistryPushModal from '@/views/docker/widget/registry-push-modal.vue'
 
 @Component({

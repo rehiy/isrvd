@@ -1,11 +1,13 @@
 <script lang="ts">
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import { formatTime } from '@/helper/utils'
-import api from '@/service/api'
-import type { DockerVolumeInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
+
+import api from '@/service/api'
+import type { DockerVolumeInfo } from '@/service/types'
+
+import { formatTime } from '@/helper/utils'
 
 import VolumeCreateModal from '@/views/docker/widget/volume-create-modal.vue'
 

@@ -1,10 +1,11 @@
 <script lang="ts">
 import { Component, Inject, Prop, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api'
-import type { SystemAllSettings, ComposeMarketplacePick } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
+
+import api from '@/service/api'
+import type { SystemAllSettings, ComposeMarketplacePick } from '@/service/types'
 
 // 应用市场 postMessage 协议：仅本组件使用，故就近定义
 interface MarketplaceInstallPayload {

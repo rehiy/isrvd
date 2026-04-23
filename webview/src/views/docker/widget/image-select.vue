@@ -1,8 +1,9 @@
 <script lang="ts">
 import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
-import Combobox from '@/component/combobox.vue'
 import type { DockerImageInfo } from '@/service/types'
+
+import Combobox from '@/component/combobox.vue'
 
 interface ImageGroup {
     domain: string

@@ -2,7 +2,14 @@
 import { Component, Provide, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { APP_ACTIONS_KEY, APP_STATE_KEY, initProvider } from '@/store/state'
-import { setRouterGuard } from '@/router'
+
+import router, { setRouterGuard } from '@/router'
+
+import api from '@/service/api'
+import { fetchServiceProbe } from '@/service/probe'
+import type { SystemLinkSetting } from '@/service/types'
+
+import { FA_ICONS } from '@/helper/icons'
 
 import ConfirmModal from '@/component/confirm.vue'
 import NavigationBar from '@/component/navigation.vue'
@@ -11,12 +18,6 @@ import PageAgent from '@/component/page-agent.vue'
 import UserMenu from '@/component/user-menu.vue'
 
 import AuthLogin from '@/views/login.vue'
-
-import { fetchServiceProbe } from '@/service/probe'
-import api from '@/service/api'
-import router from '@/router'
-import type { SystemLinkSetting } from '@/service/types'
-import { FA_ICONS } from '@/helper/icons'
 
 const { state, actions } = initProvider()
 setRouterGuard(actions.hasPerm, () => state.permissionsLoaded, actions.isAuthenticated)

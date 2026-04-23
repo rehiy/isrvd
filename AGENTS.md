@@ -194,13 +194,29 @@
   - 留空保存表示"不修改已有值"
   - placeholder 动态提示："已设置（留空保持不变）" / "尚未设置"
 
-### 5.9 统一工具与轮询
+### 5.10 统一工具与轮询
 
 - 通用工具函数复用 `webview/src/helper/utils.ts`。
 - 轮询间隔使用 `POLL_INTERVAL`，禁止硬编码毫秒值。
 
-### 5.10 终端能力
+### 5.11 import 分组与排序
 
+`<script>` 块内的 `import` 语句按以下顺序分组，**组间空一行，组内按字母升序排列**：
+
+1. **第三方库**（不以 `@/` 开头）：`vue-facing-decorator`、`vue`、`vue-router` 等
+2. **`@/store/...`**：全局状态
+3. **`@/router`**：路由
+4. **`@/service/...`**：API 与类型
+5. **`@/helper/...`**：工具函数
+6. **`@/component/...`**：通用组件
+7. **`@/views/...`**：页面级组件
+8. **其余 `@/` 路径**（兜底）
+
+同一模块的普通导入在前、`type` 导入在后，紧邻排列，不跨组拆散。
+
+可使用 `webview/sort-imports.py` 脚本批量整理（支持 `--dry-run` 预览）。
+
+### 5.12 终端能力
 - 系统终端统一走 `helper/shell.ts`
 - 容器终端统一走 `helper/container-exec.ts`
 - 禁止在页面直接创建 Terminal / WebSocket 实例

@@ -1,9 +1,10 @@
 <script lang="ts">
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import * as ShellTerminal from '@/helper/shell'
 import { APP_STATE_KEY } from '@/store/state'
 import type { AppState } from '@/store/state'
+
+import * as ShellTerminal from '@/helper/shell'
 
 @Component
 class Shell extends Vue {

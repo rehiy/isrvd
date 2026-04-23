@@ -1,11 +1,13 @@
 <script lang="ts">
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import { copyToClipboard } from '@/helper/utils'
-import api from '@/service/api'
-import type { SwarmNodeDTO } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
+
+import api from '@/service/api'
+import type { SwarmNodeDTO } from '@/service/types'
+
+import { copyToClipboard } from '@/helper/utils'
 
 import BaseModal from '@/component/modal.vue'
 

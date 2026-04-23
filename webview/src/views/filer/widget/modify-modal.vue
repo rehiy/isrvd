@@ -1,7 +1,4 @@
 <script lang="ts">
-import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
-
-import { Codemirror } from 'vue-codemirror'
 import { css } from '@codemirror/lang-css'
 import { go } from '@codemirror/lang-go'
 import { html } from '@codemirror/lang-html'
@@ -12,11 +9,14 @@ import { python } from '@codemirror/lang-python'
 import { sql } from '@codemirror/lang-sql'
 import { xml } from '@codemirror/lang-xml'
 import { yaml } from '@codemirror/lang-yaml'
+import { Codemirror } from 'vue-codemirror'
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
+
+import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions, AppState } from '@/store/state'
 
 import api from '@/service/api'
 import type { FilerFileInfo } from '@/service/types'
-import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
-import type { AppActions, AppState } from '@/store/state'
 
 import BaseModal from '@/component/modal.vue'
 

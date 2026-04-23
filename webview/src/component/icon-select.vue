@@ -1,9 +1,10 @@
 <script lang="ts">
 import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
-import Combobox from '@/component/combobox.vue'
 import { FA_ICONS } from '@/helper/icons'
 import type { FaIcon } from '@/helper/icons'
+
+import Combobox from '@/component/combobox.vue'
 
 interface IconGroup {
     label: string

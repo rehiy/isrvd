@@ -1,11 +1,13 @@
 <script lang="ts">
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import { downloadFile, formatFileSize, formatTime, getFileIcon, isEditableFile } from '@/helper/utils'
-import api from '@/service/api'
-import type { FilerFileInfo } from '@/service/types'
 import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
 import type { AppActions, AppState } from '@/store/state'
+
+import api from '@/service/api'
+import type { FilerFileInfo } from '@/service/types'
+
+import { downloadFile, formatFileSize, formatTime, getFileIcon, isEditableFile } from '@/helper/utils'
 
 import ChmodModal from '@/views/filer/widget/chmod-modal.vue'
 import CreateModal from '@/views/filer/widget/create-modal.vue'

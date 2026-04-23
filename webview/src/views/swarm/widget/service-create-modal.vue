@@ -3,8 +3,10 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
 import type { DockerImageInfo, DockerNetworkInfo } from '@/service/types'
-import ImageSelect from '@/views/docker/widget/image-select.vue'
+
 import BaseModal from '@/component/modal.vue'
+
+import ImageSelect from '@/views/docker/widget/image-select.vue'
 
 @Component({
     expose: ['show'],

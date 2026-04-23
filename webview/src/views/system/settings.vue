@@ -1,10 +1,11 @@
 <script lang="ts">
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api'
-import type { SystemAllSettings, SystemServerSettings, SystemAgentSettings, SystemApisixSettings, SystemDockerSettings, SystemMarketplaceSettings, SystemLinkSetting } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
+
+import api from '@/service/api'
+import type { SystemAllSettings, SystemServerSettings, SystemAgentSettings, SystemApisixSettings, SystemDockerSettings, SystemMarketplaceSettings, SystemLinkSetting } from '@/service/types'
 
 import IconSelect from '@/component/icon-select.vue'
 

@@ -1,8 +1,9 @@
 <script lang="ts">
-import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 import { PageAgent } from 'page-agent'
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import { APP_STATE_KEY } from '@/store/state'
+
 import { systemInstruction, getPageInstruction } from '@/helper/instructions'
 
 @Component

@@ -1,12 +1,14 @@
 <script lang="ts">
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api'
-import type { DockerContainerInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
+import api from '@/service/api'
+import type { DockerContainerInfo } from '@/service/types'
+
 import BaseModal from '@/component/modal.vue'
+
 import ComposeEditor from '@/views/compose/widget/compose-editor.vue'
 
 @Component({

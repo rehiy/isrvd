@@ -1,13 +1,13 @@
 <script lang="ts">
+import ComposeEditor from './widget/compose-editor.vue'
+import MarketplaceModal from './widget/marketplace-modal.vue'
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api'
-import type { ComposeDeployTarget, ComposeMarketplacePick } from '@/service/types'
 import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
 import type { AppActions, AppState } from '@/store/state'
 
-import MarketplaceModal from './widget/marketplace-modal.vue'
-import ComposeEditor from './widget/compose-editor.vue'
+import api from '@/service/api'
+import type { ComposeDeployTarget, ComposeMarketplacePick } from '@/service/types'
 
 @Component({
     components: { ComposeEditor, MarketplaceModal }

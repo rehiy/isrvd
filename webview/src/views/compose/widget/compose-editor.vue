@@ -1,7 +1,7 @@
 <script lang="ts">
-import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
-import { Codemirror } from 'vue-codemirror'
 import { yaml } from '@codemirror/lang-yaml'
+import { Codemirror } from 'vue-codemirror'
+import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
 @Component({
     components: { Codemirror },

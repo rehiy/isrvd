@@ -1,10 +1,11 @@
 <script lang="ts">
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api'
-import type { SwarmInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
+
+import api from '@/service/api'
+import type { SwarmInfo } from '@/service/types'
 
 @Component
 class SwarmOverview extends Vue {

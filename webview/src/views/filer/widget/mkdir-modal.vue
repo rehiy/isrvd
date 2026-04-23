@@ -1,9 +1,10 @@
 <script lang="ts">
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api'
 import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions, AppState } from '@/store/state'
+
+import api from '@/service/api'
 
 import BaseModal from '@/component/modal.vue'
 

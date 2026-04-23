@@ -1,10 +1,12 @@
 <script lang="ts">
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import * as ContainerExec from '@/helper/container-exec'
-import type { DockerContainerInfo } from '@/service/types'
 import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
 import type { AppActions, AppState } from '@/store/state'
+
+import type { DockerContainerInfo } from '@/service/types'
+
+import * as ContainerExec from '@/helper/container-exec'
 
 import ContainerNav from '@/views/docker/widget/container-nav.vue'
 

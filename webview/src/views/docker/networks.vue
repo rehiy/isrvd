@@ -1,10 +1,11 @@
 <script lang="ts">
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api'
-import type { DockerNetworkInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
+
+import api from '@/service/api'
+import type { DockerNetworkInfo } from '@/service/types'
 
 import NetworkCreateModal from '@/views/docker/widget/network-create-modal.vue'
 

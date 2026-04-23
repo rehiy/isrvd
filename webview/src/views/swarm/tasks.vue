@@ -1,11 +1,13 @@
 <script lang="ts">
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
-import { formatTime } from '@/helper/utils'
-import api from '@/service/api'
-import type { SwarmTask, SwarmServiceInfo } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
+
+import api from '@/service/api'
+import type { SwarmTask, SwarmServiceInfo } from '@/service/types'
+
+import { formatTime } from '@/helper/utils'
 
 @Component
 class Tasks extends Vue {

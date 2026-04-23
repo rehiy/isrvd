@@ -1,10 +1,12 @@
 <script lang="ts">
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api'
-import type { ApisixRoute } from '@/service/types'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
+
+import api from '@/service/api'
+import type { ApisixRoute } from '@/service/types'
+
 import RouteEditModal from '@/views/apisix/widget/route-edit-modal.vue'
 
 @Component({

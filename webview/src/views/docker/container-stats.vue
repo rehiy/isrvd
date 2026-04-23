@@ -1,14 +1,16 @@
 <script lang="ts">
-import type { ChartOptions, TooltipItem } from 'chart.js'
 import { Chart, registerables } from 'chart.js'
 import { markRaw, nextTick } from 'vue'
 import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
+import type { ChartOptions, TooltipItem } from 'chart.js'
+
+import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 import api from '@/service/api'
 import type { DockerContainerInfo, DockerContainerStatsResponse } from '@/service/types'
+
 import { formatFileSize, hexToRgba, POLL_INTERVAL } from '@/helper/utils'
-import { APP_ACTIONS_KEY } from '@/store/state'
-import type { AppActions } from '@/store/state'
 
 import ContainerNav from '@/views/docker/widget/container-nav.vue'
 

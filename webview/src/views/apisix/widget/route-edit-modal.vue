@@ -1,15 +1,17 @@
 <script lang="ts">
+import HostSelect from './host-select.vue'
+import PortSelect from './port-select.vue'
 import { Component, Inject, Vue, Watch, toNative } from 'vue-facing-decorator'
+
+import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
 
 import api from '@/service/api'
 import type { ApisixRoute, ApisixPluginConfig, ApisixUpstream, DockerContainerInfo } from '@/service/types'
-import { APP_ACTIONS_KEY } from '@/store/state'
-import type { AppActions } from '@/store/state'
+
 import { parseUpstreamNode, buildRoutePayload } from '@/helper/utils'
 
 import BaseModal from '@/component/modal.vue'
-import HostSelect from './host-select.vue'
-import PortSelect from './port-select.vue'
 
 @Component({
     expose: ['show'],

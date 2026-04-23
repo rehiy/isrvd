@@ -1,12 +1,12 @@
 <script lang="ts">
-import type { ChartOptions } from 'chart.js'
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 import { markRaw } from 'vue'
+import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import type { ChartOptions } from 'chart.js'
+
+import type { SystemStat, SystemNetInterface } from '@/service/types'
 
 import Chart from '@/helper/chart'
 import { hexToRgba } from '@/helper/utils'
-import type { SystemStat, SystemNetInterface } from '@/service/types'
-
 
 interface TimeSeriesHistory {
     labels: string[]

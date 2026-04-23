@@ -1,10 +1,11 @@
 <script lang="ts">
-import type { ChartOptions } from 'chart.js'
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 import { markRaw } from 'vue'
+import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import type { ChartOptions } from 'chart.js'
+
+import type { SystemStat } from '@/service/types'
 
 import Chart from '@/helper/chart'
-import type { SystemStat } from '@/service/types'
 
 interface ChartCallbackContext {
     parsed: { y: number | null }

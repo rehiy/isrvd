@@ -3,6 +3,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
 import type { SwarmServiceInfo } from '@/service/types'
+
 import BaseModal from '@/component/modal.vue'
 
 @Component({
