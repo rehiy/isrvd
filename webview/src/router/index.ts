@@ -20,7 +20,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/overview',
     name: 'overview',
-    component: () => import('@/views/overview.vue')
+    component: () => import('@/views/overview/index.vue')
   },
   {
     path: '/explorer',
