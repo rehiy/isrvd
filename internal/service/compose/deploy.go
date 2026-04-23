@@ -3,6 +3,7 @@ package compose
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -120,13 +121,15 @@ const (
 
 // DeployDockerRequest docker compose 部署请求
 //
-//   - Content     : 完整 compose yaml 文本（必填；前端已完成变量插值）
-//   - ProjectName : 实例名（必填），同时作为 compose project 名；落盘到 {ContainerRoot}/{ProjectName}
-//   - InitURL     : 可选；附加运行文件 zip 下载地址
+//   - Content         : 完整 compose yaml 文本（必填；前端已完成变量插值）
+//   - ProjectName     : 实例名（必填），同时作为 compose project 名；落盘到 {ContainerRoot}/{ProjectName}
+//   - InitURL  : 可选；附加运行文件 zip 下载地址（与 InitFile 二选一，InitFile 优先）
+//   - InitFile : 可选；直接上传的附加运行文件 zip 流（优先于 InitURL）
 type DeployDockerRequest struct {
-	Content     string `json:"content" binding:"required"`
-	ProjectName string `json:"projectName" binding:"required"`
-	InitURL     string `json:"initURL"`
+	Content     string    `json:"content" binding:"required"`
+	ProjectName string    `json:"projectName" binding:"required"`
+	InitURL     string    `json:"initURL"`
+	InitFile    io.Reader `json:"-"` // 由 handler 从 multipart 文件注入，不参与 JSON 绑定
 }
 
 // DeploySwarmRequest swarm compose 部署请求
@@ -245,9 +248,13 @@ func (s *DeployService) deployDocker(ctx context.Context, req DeployDockerReques
 		}
 	}()
 
-	// 下载并解压附加运行文件
-	if req.InitURL != "" {
-		zipPath := filepath.Join(installDir, "init.zip")
+	// 处理附加运行文件：优先使用上传的文件流，其次使用 URL 下载
+	zipPath := filepath.Join(installDir, "init.zip")
+	if req.InitFile != nil {
+		if err := writeAndUnzip(zipPath, req.InitFile); err != nil {
+			return nil, err
+		}
+	} else if req.InitURL != "" {
 		if _, err := request.Download(req.InitURL, zipPath, false); err != nil {
 			return nil, fmt.Errorf("下载附加文件失败: %w", err)
 		}
@@ -283,6 +290,24 @@ func (s *DeployService) deployDocker(ctx context.Context, req DeployDockerReques
 		"installDir", installDir,
 	)
 	return &DeployResult{Target: TargetDocker, Items: items, InstallDir: installDir}, nil
+}
+
+// writeAndUnzip 将 r 中的 zip 数据流式写入 zipPath 后解压，完成后删除 zip 文件。
+func writeAndUnzip(zipPath string, r io.Reader) error {
+	f, err := os.Create(zipPath)
+	if err != nil {
+		return fmt.Errorf("创建附加文件失败: %w", err)
+	}
+	if _, err = io.Copy(f, r); err != nil {
+		f.Close()
+		return fmt.Errorf("写入附加文件失败: %w", err)
+	}
+	f.Close()
+	if err := archive.NewZipper().Unzip(zipPath); err != nil {
+		return fmt.Errorf("解压附加文件失败: %w", err)
+	}
+	_ = os.Remove(zipPath)
+	return nil
 }
 
 // deploySwarm swarm 部署：不落盘，仅将 ProjectName 作为 compose project 名

@@ -30,11 +30,27 @@ func (app *App) composeGetSwarmContent(c *gin.Context) {
 }
 
 func (app *App) composeDeployDocker(c *gin.Context) {
-	var req svcCompose.DeployDockerRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, err.Error())
+	req := svcCompose.DeployDockerRequest{
+		Content:     c.PostForm("content"),
+		ProjectName: c.PostForm("projectName"),
+		InitURL:     c.PostForm("initURL"),
+	}
+	if req.Content == "" || req.ProjectName == "" {
+		helper.RespondError(c, http.StatusBadRequest, "content 和 projectName 不能为空")
 		return
 	}
+
+	// 读取上传的 zip 文件（可选），流式传入 service 避免内存双份拷贝
+	if fh, err := c.FormFile("initFile"); err == nil {
+		f, err := fh.Open()
+		if err != nil {
+			helper.RespondError(c, http.StatusBadRequest, "读取上传文件失败: "+err.Error())
+			return
+		}
+		req.InitFile = f
+		defer f.Close()
+	}
+
 	result, err := app.composeSvc.DeployDocker(c.Request.Context(), req)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())

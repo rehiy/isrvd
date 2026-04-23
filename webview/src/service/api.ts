@@ -379,8 +379,17 @@ class ApiService {
 
     // ==================== Compose 部署 ====================
 
-    composeDeployDocker(data: { content: string; projectName: string; initURL?: string }) {
-        return http.post<ComposeDeployResult>('/api/compose/docker/deploy', data)
+    composeDeployDocker(data: { content: string; projectName: string; initURL?: string; initFile?: File }) {
+        const form = new FormData()
+        form.append('content', data.content)
+        form.append('projectName', data.projectName)
+        // 文件优先，二者互斥
+        if (data.initFile) {
+            form.append('initFile', data.initFile)
+        } else if (data.initURL) {
+            form.append('initURL', data.initURL)
+        }
+        return http.post<ComposeDeployResult>('/api/compose/docker/deploy', form)
     }
 
     composeDeploySwarm(data: { content: string; projectName: string }) {

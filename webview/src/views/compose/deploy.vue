@@ -23,6 +23,7 @@ class ComposeDeploy extends Vue {
     target: ComposeDeployTarget = 'docker'
     projectName = ''
     initURL = ''
+    initFile: File | null = null
     content = ''
 
     // ─── 计算属性 ───
@@ -71,18 +72,34 @@ class ComposeDeploy extends Vue {
         this.fromMarketplace = true
     }
 
+    onInitFileChange(e: Event) {
+        const input = e.target as HTMLInputElement
+        const file = input.files?.[0] ?? null
+        this.initFile = file
+        if (file) this.initURL = ''
+    }
+
+    clearInitFile() {
+        this.initFile = null
+        const input = this.$refs.fileInput as HTMLInputElement | undefined
+        if (input) input.value = ''
+    }
+
     async handleDeploy() {
         if (!this.canSubmit) return
 
         const projectName = this.projectName.trim()
-        // initURL 仅在 docker 目标下生效（swarm 集群自管，不落盘）
-        const initURL = this.target === 'docker' ? this.initURL.trim() : ''
 
         this.loading = true
         try {
             const res = this.target === 'swarm'
                 ? await api.composeDeploySwarm({ content: this.content, projectName })
-                : await api.composeDeployDocker({ content: this.content, projectName, initURL: initURL || undefined })
+                : await api.composeDeployDocker({
+                    content: this.content,
+                    projectName,
+                    initURL: this.initURL.trim() || undefined,
+                    initFile: this.initFile ?? undefined,
+                })
             const created = res.payload?.items || []
             const label = this.target === 'swarm' ? '服务' : '容器'
             this.actions.showNotification('success', `${projectName} 部署成功，已创建 ${created.length} 个${label}`)
@@ -103,7 +120,10 @@ class ComposeDeploy extends Vue {
         this.content = ''
         this.projectName = ''
         this.initURL = ''
+        this.initFile = null
         this.target = 'docker'
+        const input = this.$refs.fileInput as HTMLInputElement | undefined
+        if (input) input.value = ''
         this.fromMarketplace = false
     }
 }
@@ -211,20 +231,40 @@ export default toNative(ComposeDeploy)
           </p>
         </div>
 
-        <!-- initURL（仅 docker） -->
+        <!-- 附加文件（仅 docker） -->
         <div v-if="target === 'docker'">
-          <label class="block text-sm font-medium text-slate-700 mb-2">
-            附加文件 URL
-            <span class="text-xs font-normal text-slate-400">（选填，指向 init.zip 下载地址）</span>
+          <label class="block text-sm font-medium text-slate-700 mb-2">附加文件
+            <span class="text-xs font-normal text-slate-400">（选填，部署前解压到实例目录）</span>
           </label>
-          <input
-            type="text"
-            v-model="initURL"
-            placeholder="例如 http://market.example.com/apps/foo/1.0.0/init.zip"
-            class="input"
-            :disabled="loading"
-          />
-          <p class="mt-1 text-xs text-slate-400">部署前下载 zip 并解压到实例目录，随后写入 compose.yaml 并启动</p>
+          <div class="flex items-center gap-2">
+            <input
+              type="text"
+              v-model="initURL"
+              placeholder="zip 下载 URL，例如 http://example.com/init.zip"
+              class="input flex-1"
+              :disabled="loading || !!initFile"
+            />
+            <span class="text-xs text-slate-400 flex-shrink-0">或</span>
+            <!-- 隐藏真实 input，用自定义按钮触发 -->
+            <label
+              :class="['flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-sm font-medium cursor-pointer transition-colors select-none',
+                loading ? 'opacity-50 cursor-not-allowed' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50',
+                initFile ? 'border-blue-300 bg-blue-50 text-blue-600' : '']"
+            >
+              <i class="fas fa-paperclip"></i>
+              <span>{{ initFile ? initFile.name : '上传 zip' }}</span>
+              <i v-if="initFile" class="fas fa-xmark ml-1 hover:text-red-500" @click.prevent="clearInitFile()"></i>
+              <input
+                ref="fileInput"
+                type="file"
+                accept=".zip,application/zip"
+                class="hidden"
+                :disabled="loading"
+                @change="onInitFileChange"
+              />
+            </label>
+          </div>
+          <p class="mt-1 text-xs text-slate-400">URL 与上传文件二选一，仅支持 .zip 格式</p>
         </div>
 
         <!-- Compose 内容 -->
