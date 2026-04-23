@@ -9,6 +9,7 @@ class Dropdown extends Vue {
     @Prop({ type: Boolean, default: false }) readonly open!: boolean
     @Prop({ type: String, default: 'auto' }) readonly placement!: string
     @Prop({ type: Number, default: 6 }) readonly offset!: number
+    @Prop({ type: String, default: 'left' }) readonly align!: string
     @Prop({ type: String, default: undefined }) readonly maxWidth!: string | undefined
     @Prop({ type: String, default: '360px' }) readonly maxHeight!: string
     @Prop({ type: Boolean, default: false }) readonly closeOnClick!: boolean
@@ -105,7 +106,8 @@ export default toNative(Dropdown)
       <div
         v-if="isOpen"
         :class="[
-          'absolute z-50 left-0 right-0 bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden',
+          'absolute z-50 min-w-max bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden',
+          align === 'right' ? 'right-0' : 'left-0',
           actualPlacement === 'top' ? 'bottom-full' : 'top-full',
         ]"
         :style="{

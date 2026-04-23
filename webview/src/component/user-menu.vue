@@ -40,7 +40,7 @@ export default toNative(UserMenu)
   </div>
 
   <!-- jwt 认证模式：用户名 + 下拉注销 -->
-  <Dropdown v-else v-model:open="menuOpen" placement="bottom" :close-on-click="true" max-height="320px">
+  <Dropdown v-else v-model:open="menuOpen" placement="bottom" align="right" :close-on-click="true" max-height="320px">
     <template #trigger="{ toggle }">
       <button
         class="px-2 py-2 text-sm font-medium text-slate-500 flex items-center gap-2 rounded-lg hover:bg-slate-100 transition-colors"
