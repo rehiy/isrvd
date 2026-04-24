@@ -207,6 +207,46 @@ type ImageInspectResponse struct {
 	LayerDetails []*ImageLayerInfo `json:"layerDetails"`
 }
 
+// EnsureImage 确保镜像存在；若本地不存在则自动从 daemon 配置的 mirror 拉取。
+// 拉取时不携带认证信息，依赖 daemon 的 mirror/proxy 配置。
+func (s *DockerService) EnsureImage(ctx context.Context, ref string) error {
+	if ref == "" {
+		return nil
+	}
+	// 补全 tag
+	imageRef := ref
+	if !strings.Contains(imageRef, ":") && !strings.Contains(imageRef, "@") {
+		imageRef += ":latest"
+	}
+	// 检查本地是否已存在
+	_, _, err := s.client.ImageInspectWithRaw(ctx, imageRef)
+	if err == nil {
+		return nil // 已存在，无需拉取
+	}
+	logman.Info("Image not found locally, pulling", "image", imageRef)
+	reader, err := s.client.ImagePull(ctx, imageRef, dockerimage.PullOptions{})
+	if err != nil {
+		return fmt.Errorf("拉取镜像 %s 失败: %w", imageRef, err)
+	}
+	defer reader.Close()
+	// 消费响应流，等待拉取完成
+	decoder := json.NewDecoder(reader)
+	for {
+		var msg struct {
+			Status string `json:"status"`
+			Error  string `json:"error"`
+		}
+		if err := decoder.Decode(&msg); err != nil {
+			break
+		}
+		if msg.Error != "" {
+			return fmt.Errorf("拉取镜像 %s 失败: %s", imageRef, msg.Error)
+		}
+	}
+	logman.Info("Image pulled successfully", "image", imageRef)
+	return nil
+}
+
 // InspectImage 获取镜像详情
 func (s *DockerService) InspectImage(ctx context.Context, id string) (*ImageInspectResponse, error) {
 	img, _, err := s.client.ImageInspectWithRaw(ctx, id)

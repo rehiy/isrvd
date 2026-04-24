@@ -41,6 +41,11 @@ func (s *ComposeService) DeployProject(ctx context.Context, project *types.Proje
 			return containers, err
 		}
 
+		// 镜像不存在时自动拉取
+		if err := s.docker.EnsureImage(ctx, svc.Image); err != nil {
+			return containers, fmt.Errorf("确保镜像 %s 存在失败: %w", svc.Image, err)
+		}
+
 		id, err := s.docker.CreateContainer(ctx, req)
 		if err != nil {
 			return containers, fmt.Errorf("创建容器 %s 失败: %w", req.Name, err)
