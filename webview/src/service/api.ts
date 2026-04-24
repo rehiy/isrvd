@@ -151,10 +151,6 @@ class ApiService {
         return http.post<void>(`/api/docker/image/${id}/action`, { action })
     }
 
-    pullImage(image: string, tag = '') {
-        return http.post<void>('/api/docker/image/pull', { image, tag })
-    }
-
     imageTag(id: string, repoTag: string) {
         return http.post<void>('/api/docker/image/tag', { id, repoTag })
     }

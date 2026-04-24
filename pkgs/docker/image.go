@@ -78,51 +78,6 @@ func (s *DockerService) ImageAction(ctx context.Context, id, action string) erro
 	return nil
 }
 
-// ImagePullRequest 拉取镜像请求
-type ImagePullRequest struct {
-	Image string `json:"image" binding:"required"`
-	Tag   string `json:"tag"`
-}
-
-// PullImage 拉取镜像
-func (s *DockerService) PullImage(ctx context.Context, image, tag string) (string, string, error) {
-	imageRef := image
-	if tag != "" {
-		imageRef = image + ":" + tag
-	} else if !strings.Contains(image, ":") && !strings.Contains(image, "@") {
-		imageRef = image + ":latest"
-	}
-
-	reader, err := s.client.ImagePull(ctx, imageRef, dockerimage.PullOptions{})
-	if err != nil {
-		logman.Error("Pull image failed", "image", imageRef, "error", err)
-		return "", imageRef, err
-	}
-	defer reader.Close()
-
-	var lastMessage string
-	decoder := json.NewDecoder(reader)
-	for {
-		var msg struct {
-			Status string `json:"status"`
-			Error  string `json:"error"`
-		}
-		if err := decoder.Decode(&msg); err != nil {
-			break
-		}
-		if msg.Error != "" {
-			logman.Error("Pull image stream error", "image", imageRef, "error", msg.Error)
-			return "", imageRef, errors.New(msg.Error)
-		}
-		if msg.Status != "" {
-			lastMessage = msg.Status
-		}
-	}
-
-	logman.Info("Image pulled", "image", imageRef)
-	return lastMessage, imageRef, nil
-}
-
 // ImageTagRequest 镜像标签请求
 type ImageTagRequest struct {
 	ID      string `json:"id" binding:"required"`
@@ -309,7 +264,7 @@ func (s *DockerService) InspectImage(ctx context.Context, id string) (*ImageInsp
 		RepoTags:     img.RepoTags,
 		RepoDigests:  img.RepoDigests,
 		Size:         img.Size,
-		VirtualSize:  img.VirtualSize, //nolint:staticcheck
+		VirtualSize:  img.VirtualSize,
 		Created:      img.Created,
 		Author:       img.Author,
 		Architecture: img.Architecture,
@@ -325,12 +280,4 @@ func (s *DockerService) InspectImage(ctx context.Context, id string) (*ImageInsp
 	}
 
 	return result, nil
-}
-
-// min 返回两个整数中的较小值
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

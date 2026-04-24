@@ -133,20 +133,6 @@ func (app *App) dockerImageAction(c *gin.Context) {
 	helper.RespondSuccess(c, "Image "+req.Action+" successfully", nil)
 }
 
-func (app *App) dockerPullImage(c *gin.Context) {
-	var req pkgdocker.ImagePullRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, err.Error())
-		return
-	}
-	result, err := app.dockerSvc.PullImage(c.Request.Context(), req)
-	if err != nil {
-		helper.RespondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	helper.RespondSuccess(c, "镜像拉取成功", result)
-}
-
 func (app *App) dockerTagImage(c *gin.Context) {
 	var req pkgdocker.ImageTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

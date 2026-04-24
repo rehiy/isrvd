@@ -168,7 +168,6 @@ func (app *App) setupRouter() {
 			dw.POST("/container/:id/action", app.dockerContainerAction)
 			dw.POST("/container/create", app.dockerCreateContainer)
 			dw.POST("/image/:id/action", app.dockerImageAction)
-			dw.POST("/image/pull", app.dockerPullImage)
 			dw.POST("/image/tag", app.dockerTagImage)
 			dw.POST("/image/build", app.dockerBuildImage)
 			dw.POST("/network/:id/action", app.dockerNetworkAction)

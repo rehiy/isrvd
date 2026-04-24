@@ -192,26 +192,36 @@ func (s *DockerService) PushImage(ctx context.Context, req ImagePushRequest) (st
 // ImagePullFromRegistryRequest 从仓库拉取镜像请求
 type ImagePullFromRegistryRequest struct {
 	Image       string `json:"image" binding:"required"`
-	RegistryURL string `json:"registryUrl" binding:"required"`
+	RegistryURL string `json:"registryUrl"`
 	Namespace   string `json:"namespace"`
 }
 
 // PullFromRegistry 从仓库拉取镜像到本地
+// RegistryURL 为空时直接从 Docker Hub / daemon 配置的 mirror 拉取
 func (s *DockerService) PullFromRegistry(ctx context.Context, req ImagePullFromRegistryRequest) (string, string, error) {
-	// 构建完整的镜像引用
-	host := registryHost(req.RegistryURL)
 	var imageRef string
-	if req.Namespace != "" {
-		imageRef = host + "/" + req.Namespace + "/" + req.Image
-	} else {
-		imageRef = host + "/" + req.Image
-	}
-	if !strings.Contains(req.Image, ":") && !strings.Contains(req.Image, "@") {
-		imageRef += ":latest"
-	}
+	var authStr string
 
-	// 获取仓库认证信息
-	authStr := s.getRegistryAuth(req.RegistryURL)
+	if req.RegistryURL == "" {
+		// 无私有仓库：直接使用镜像名，依赖 daemon mirror 配置
+		imageRef = req.Image
+		if !strings.Contains(imageRef, ":") && !strings.Contains(imageRef, "@") {
+			imageRef += ":latest"
+		}
+	} else {
+		// 构建完整的镜像引用
+		host := registryHost(req.RegistryURL)
+		if req.Namespace != "" {
+			imageRef = host + "/" + req.Namespace + "/" + req.Image
+		} else {
+			imageRef = host + "/" + req.Image
+		}
+		if !strings.Contains(req.Image, ":") && !strings.Contains(req.Image, "@") {
+			imageRef += ":latest"
+		}
+		// 获取仓库认证信息
+		authStr = s.getRegistryAuth(req.RegistryURL)
+	}
 
 	// 从仓库拉取镜像到本地
 	reader, err := s.client.ImagePull(ctx, imageRef, image.PullOptions{

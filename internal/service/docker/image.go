@@ -17,15 +17,6 @@ func (s *Service) ImageAction(ctx context.Context, req pkgdocker.ImageActionRequ
 	return s.docker.ImageAction(ctx, req.ID, req.Action)
 }
 
-// PullImage 拉取镜像
-func (s *Service) PullImage(ctx context.Context, req pkgdocker.ImagePullRequest) (map[string]string, error) {
-	msg, imageRef, err := s.docker.PullImage(ctx, req.Image, req.Tag)
-	if err != nil {
-		return nil, err
-	}
-	return map[string]string{"image": imageRef, "message": msg}, nil
-}
-
 // TagImage 镜像打标签
 func (s *Service) TagImage(ctx context.Context, req pkgdocker.ImageTagRequest) error {
 	return s.docker.TagImage(ctx, req.ID, req.RepoTag)

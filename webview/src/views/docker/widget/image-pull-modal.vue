@@ -64,14 +64,10 @@ class ImagePullModal extends Vue {
         if (!this.formData.image.trim()) return
         this.modalLoading = true
         try {
-            if (this.isRegistryMode) {
-                const imageRef = this.formData.tag.trim()
-                    ? `${this.formData.image.trim()}:${this.formData.tag.trim()}`
-                    : this.formData.image.trim()
-                await api.pullFromRegistry(imageRef, this.formData.source, this.formData.namespace.trim())
-            } else {
-                await api.pullImage(this.formData.image, this.formData.tag)
-            }
+            const imageRef = this.formData.tag.trim()
+                ? `${this.formData.image.trim()}:${this.formData.tag.trim()}`
+                : this.formData.image.trim()
+            await api.pullFromRegistry(imageRef, this.formData.source, this.formData.namespace.trim())
             this.actions.showNotification('success', '镜像拉取成功')
             this.isOpen = false
             this.$emit('success')
