@@ -35,8 +35,7 @@ var (
 	Members = map[string]*MemberConfig{}
 	// 当前加载的配置文件路径
 	ConfigPath = ""
-	// 版本信息，通过 -ldflags 在编译时注入
-	// 示例：go build -ldflags "-X config.Version=v1.0.0"
+	// 版本信息，编译时通过脚本注入
 	Version = "v0.0.0"
 )
 

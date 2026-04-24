@@ -19,6 +19,12 @@ if [ -n "$last_tag$prev_tag" ]; then
 fi
 
 ###########################################
+# 替换版本号
+###########################################
+
+sed -i "s/Version = \".*\"/Version = \"$last_tag\"/" config/load.go
+
+###########################################
 # Go 编译环境
 ###########################################
 
@@ -31,10 +37,7 @@ build() {
     if [ x"$1" = x"windows" ]; then
         target="${target}.exe"
     fi
-    GOOS=$1 GOARCH=$2 go build \
-        -ldflags="-s -w -X config.Version=$last_tag" \
-        -o "$target" \
-        cmd/server/main.go
+    GOOS=$1 GOARCH=$2 go build -ldflags="-s -w" -o "$target" cmd/server/main.go
 }
 
 ###########################################
