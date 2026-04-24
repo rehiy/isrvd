@@ -100,7 +100,6 @@ type ImageSearchResult struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	IsOfficial  bool   `json:"isOfficial"`
-	IsAutomated bool   `json:"isAutomated"`
 	StarCount   int    `json:"starCount"`
 }
 
@@ -118,7 +117,6 @@ func (s *DockerService) SearchImages(ctx context.Context, term string) ([]*Image
 			Name:        r.Name,
 			Description: r.Description,
 			IsOfficial:  r.IsOfficial,
-			IsAutomated: r.IsAutomated,
 			StarCount:   r.StarCount,
 		})
 	}
@@ -192,7 +190,6 @@ type ImageInspectResponse struct {
 	RepoTags     []string          `json:"repoTags"`
 	RepoDigests  []string          `json:"repoDigests"`
 	Size         int64             `json:"size"`
-	VirtualSize  int64             `json:"virtualSize"`
 	Created      string            `json:"created"`
 	Author       string            `json:"author"`
 	Architecture string            `json:"architecture"`
@@ -219,7 +216,7 @@ func (s *DockerService) EnsureImage(ctx context.Context, ref string) error {
 		imageRef += ":latest"
 	}
 	// 检查本地是否已存在
-	_, _, err := s.client.ImageInspectWithRaw(ctx, imageRef)
+	_, err := s.client.ImageInspect(ctx, imageRef)
 	if err == nil {
 		return nil // 已存在，无需拉取
 	}
@@ -249,7 +246,7 @@ func (s *DockerService) EnsureImage(ctx context.Context, ref string) error {
 
 // InspectImage 获取镜像详情
 func (s *DockerService) InspectImage(ctx context.Context, id string) (*ImageInspectResponse, error) {
-	img, _, err := s.client.ImageInspectWithRaw(ctx, id)
+	img, err := s.client.ImageInspect(ctx, id)
 	if err != nil {
 		logman.Error("Inspect image failed", "id", id, "error", err)
 		return nil, err
@@ -263,7 +260,7 @@ func (s *DockerService) InspectImage(ctx context.Context, id string) (*ImageInsp
 	// 提取暴露端口列表
 	var exposedPorts []string
 	for port := range img.Config.ExposedPorts {
-		exposedPorts = append(exposedPorts, string(port))
+		exposedPorts = append(exposedPorts, port)
 	}
 
 	// 统计层数
@@ -304,7 +301,6 @@ func (s *DockerService) InspectImage(ctx context.Context, id string) (*ImageInsp
 		RepoTags:     img.RepoTags,
 		RepoDigests:  img.RepoDigests,
 		Size:         img.Size,
-		VirtualSize:  img.VirtualSize,
 		Created:      img.Created,
 		Author:       img.Author,
 		Architecture: img.Architecture,

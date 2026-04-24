@@ -127,7 +127,6 @@ export interface DockerImageInspectResponse {
     repoTags: string[]
     repoDigests: string[]
     size: number
-    virtualSize: number
     created: string
     author: string
     architecture: string
@@ -146,7 +145,6 @@ export interface DockerImageSearchResult {
     name: string
     description: string
     isOfficial: boolean
-    isAutomated: boolean
     starCount: number
 }
 

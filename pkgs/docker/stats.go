@@ -114,7 +114,12 @@ func (s *DockerService) GetContainerStats(ctx context.Context, id string) (*Cont
 		cpuPercent = (cpuDelta / systemDelta) * float64(cpuCores) * 100.0
 	}
 
-	memoryUsage := v.MemoryStats.Usage - v.MemoryStats.Stats["cache"]
+	// cgroups v2 使用 inactive_file，cgroups v1 使用 cache
+	memCache := v.MemoryStats.Stats["inactive_file"]
+	if memCache == 0 {
+		memCache = v.MemoryStats.Stats["cache"]
+	}
+	memoryUsage := v.MemoryStats.Usage - memCache
 	var memoryPercent float64
 	if v.MemoryStats.Limit > 0 {
 		memoryPercent = float64(memoryUsage) / float64(v.MemoryStats.Limit) * 100.0
