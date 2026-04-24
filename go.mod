@@ -14,6 +14,7 @@ require (
 	github.com/jaypipes/ghw v0.24.0
 	github.com/rehiy/pango v0.12.0
 	github.com/shirou/gopsutil/v3 v3.24.5
+	golang.org/x/crypto v0.50.0
 )
 
 require (
@@ -83,7 +84,6 @@ require (
 	go.opentelemetry.io/otel/trace v1.43.0 // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.4 // indirect
 	golang.org/x/arch v0.26.0 // indirect
-	golang.org/x/crypto v0.50.0 // indirect
 	golang.org/x/net v0.53.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect

@@ -5,6 +5,9 @@ import (
 	"path/filepath"
 
 	"github.com/goccy/go-yaml"
+	"github.com/rehiy/pango/logman"
+
+	"isrvd/internal/helper"
 )
 
 var (
@@ -101,6 +104,46 @@ func Load() error {
 			return err
 		}
 		Members[m.Username] = m
+	}
+
+	// 自动迁移明文密码为加密格式
+	if err := migratePlaintextPasswords(); err != nil {
+		logman.Warn("密码迁移失败", "error", err)
+	}
+
+	return nil
+}
+
+// migratePlaintextPasswords 自动迁移明文密码为加密格式
+// 遍历所有成员，将明文密码替换为 bcrypt 格式的哈希值
+// 迁移完成后自动保存配置文件
+func migratePlaintextPasswords() error {
+	needSave := false
+
+	for _, m := range Members {
+		// 跳过空密码或已经是加密格式的密码
+		if m.Password == "" || helper.HashedBcrypt(m.Password) {
+			continue
+		}
+
+		// 对明文密码进行加密
+		hashedPassword, err := helper.HashPassword(m.Password)
+		if err != nil {
+			logman.Warn("密码加密失败", "username", m.Username, "error", err)
+			continue
+		}
+
+		logman.Info("密码已自动迁移为加密格式", "username", m.Username)
+		m.Password = hashedPassword
+		needSave = true
+	}
+
+	// 如果有密码被迁移，自动保存配置文件
+	if needSave {
+		if err := Save(); err != nil {
+			return err
+		}
+		logman.Info("配置文件已自动更新（密码迁移）")
 	}
 
 	return nil

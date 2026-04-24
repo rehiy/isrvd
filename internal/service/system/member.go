@@ -10,6 +10,7 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/config"
+	"isrvd/internal/helper"
 )
 
 // 哨兵错误，供 handler 层进行错误类型判断
@@ -96,9 +97,6 @@ func (s *MemberService) CreateMember(req MemberUpsertRequest) error {
 	if req.Username == "" {
 		return fmt.Errorf("用户名不能为空")
 	}
-	if req.Password == "" {
-		return fmt.Errorf("密码不能为空")
-	}
 	if _, exists := config.Members[req.Username]; exists {
 		return fmt.Errorf("用户名已存在")
 	}
@@ -108,9 +106,14 @@ func (s *MemberService) CreateMember(req MemberUpsertRequest) error {
 		return fmt.Errorf("创建 home 目录失败: %w", err)
 	}
 
-	config.Members[req.Username] = &config.MemberConfig{
-		Username:      req.Username,
-		Password:      req.Password,
+	// 对密码进行 bcrypt 加密
+	hashedPassword, err := helper.HashPassword(req.Password)
+	if err != nil {
+		return fmt.Errorf("密码加密失败: %w", err)
+	}
+
+	config.Members[req.Username] = &config.MemberConfig{Username: req.Username,
+		Password:      hashedPassword,
 		HomeDirectory: home,
 		Permissions:   req.Permissions,
 	}
@@ -133,7 +136,15 @@ func (s *MemberService) UpdateMember(username string, req MemberUpsertRequest) e
 		return fmt.Errorf("创建 home 目录失败: %w", err)
 	}
 
-	member.Password = pickSecret(req.Password, member.Password)
+	// 密码为空时 HashPassword 返回空，保持原密码不变
+	hashedPassword, err := helper.HashPassword(req.Password)
+	if err != nil {
+		return fmt.Errorf("密码加密失败: %w", err)
+	}
+	if hashedPassword != "" {
+		member.Password = hashedPassword
+	}
+
 	member.HomeDirectory = home
 	member.Permissions = req.Permissions
 

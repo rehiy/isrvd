@@ -9,6 +9,7 @@ import (
 	"github.com/rehiy/pango/logman"
 
 	"isrvd/config"
+	"isrvd/internal/helper"
 )
 
 // AuthInfoResponse 认证模式及当前用户信息
@@ -76,7 +77,7 @@ func (s *AuthService) getMember(username string) *MemberInfo {
 // Login 校验用户名密码并签发 JWT Token
 func (s *AuthService) Login(req LoginRequest) (*LoginResponse, error) {
 	member, exists := config.Members[req.Username]
-	if !exists || member.Password != req.Password {
+	if !exists || !helper.VerifyPassword(req.Password, member.Password) {
 		logman.Warn("Login failed", "username", req.Username)
 		return nil, fmt.Errorf("invalid credentials")
 	}
