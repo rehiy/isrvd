@@ -19,8 +19,8 @@ export function create(el: HTMLElement, token: string, shell = 'bash'): void {
     resizeHandler = () => fitAddon?.fit()
     window.addEventListener('resize', resizeHandler)
 
-    const protocol = location.protocol === 'https:' ? 'wss://' : 'ws://'
-    socket = new WebSocket(`${protocol}${location.host}/ws/shell?token=${token}&shell=${encodeURIComponent(shell)}`)
+    const baseURL =  window.__BASE_URL__ || ''
+    socket = new WebSocket(`${baseURL}/ws/shell?token=${token}&shell=${encodeURIComponent(shell)}`)
 
     term.onData(data => socket?.readyState === WebSocket.OPEN && socket.send(data))
     socket.onopen = () => term && term.write('[连接中...]\r\n')

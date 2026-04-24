@@ -15,12 +15,19 @@ export interface HttpBlobClient {
     post(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<Blob>
 }
 
+// 获取 baseURL 配置
+const baseURL = window.__BASE_URL__ || ''
+
+// 创建配置了 baseURL 的 axios 实例
+const axiosInstance = axios.create({ baseURL })
+const axiosBlobInstance = axios.create({ baseURL })
+
 // 导出类型安全的 HTTP 客户端（实际使用 axios 实例，通过类型断言修正拦截器解包后的返回类型）
-export const http = axios as unknown as HttpClient
-export const httpBlob = axios as unknown as HttpBlobClient
+export const http = axiosInstance as unknown as HttpClient
+export const httpBlob = axiosBlobInstance as unknown as HttpBlobClient
 
 export const interceptors = (state: { token: string | null; loading: boolean }, actions: { showNotification: (type: string, message: string) => void; clearAuth: () => void }) => {
-    axios.interceptors.request.use(
+    axiosInstance.interceptors.request.use(
         (config: InternalAxiosRequestConfig) => {
             if (state.token) {
                 config.headers['Authorization'] = state.token
@@ -35,7 +42,7 @@ export const interceptors = (state: { token: string | null; loading: boolean }, 
         }
     )
 
-    axios.interceptors.response.use(
+    axiosInstance.interceptors.response.use(
         (value: AxiosResponse) => {
             // 过滤逻辑：不显示 GET 请求和 HTTP 200 状态码的消息
             const isGetRequest = value.config?.method?.toLowerCase() === 'get'
