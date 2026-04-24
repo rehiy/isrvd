@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 
+// 获取 baseURL 配置
+const baseURL = window.__BASE_URL__ || ''
+
 // 路由前缀与权限模块的映射
 const routePermMap: Array<[string, string]> = [
   ['/explorer', 'filer'],
@@ -173,7 +176,7 @@ const routes: RouteRecordRaw[] = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(baseURL),
   routes
 })
 
