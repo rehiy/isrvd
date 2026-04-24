@@ -253,7 +253,7 @@ func (app *App) setupRouter() {
 	{
 		ws.GET("/shell", app.shellWebSocket)
 		if app.dockerSvc != nil {
-			ws.GET("/docker/container/exec", PermMiddleware("docker", true), app.dockerContainerExec)
+			ws.GET("/docker/exec", PermMiddleware("docker", true), app.dockerContainerExec)
 		}
 	}
 }
