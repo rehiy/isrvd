@@ -76,10 +76,7 @@ func ProjectFromInspect(info container.InspectResponse, imageConfig *dockerspec.
 	if info.Config == nil || info.HostConfig == nil {
 		return nil, fmt.Errorf("容器 inspect 数据不完整")
 	}
-	name := strings.TrimPrefix(info.Name, "/")
-	if name == "" {
-		name = info.ID
-	}
+	name := defaultString(strings.TrimPrefix(info.Name, "/"), info.ID)
 
 	// 过滤 Dockerfile 默认值：只保留用户实际覆盖的配置
 	cmd := diffCmd(info.Config.Cmd, imageConfig)
@@ -112,10 +109,7 @@ func ProjectFromInspect(info container.InspectResponse, imageConfig *dockerspec.
 	// 端口映射：HostConfig.PortBindings (容器端口 → 宿主绑定列表)
 	for containerPort, bindings := range info.HostConfig.PortBindings {
 		target := parsePort(containerPort.Port())
-		proto := containerPort.Proto()
-		if proto == "" {
-			proto = "tcp"
-		}
+		proto := defaultString(containerPort.Proto(), "tcp")
 		if len(bindings) == 0 {
 			svc.Ports = append(svc.Ports, types.ServicePortConfig{
 				Target:   target,
@@ -186,10 +180,7 @@ func ProjectFromSwarmInspect(info *swarm.ServiceInfo) (*types.Project, error) {
 		return nil, fmt.Errorf("swarm 服务数据不完整")
 	}
 
-	name := info.Name
-	if name == "" {
-		name = info.ID
-	}
+	name := defaultString(info.Name, info.ID)
 
 	svc := types.ServiceConfig{
 		Name:        name,
@@ -214,7 +205,7 @@ func ProjectFromSwarmInspect(info *swarm.ServiceInfo) (*types.Project, error) {
 		svc.Ports = append(svc.Ports, types.ServicePortConfig{
 			Target:    p.TargetPort,
 			Published: strconv.Itoa(int(p.PublishedPort)),
-			Protocol:  p.Protocol,
+			Protocol:  defaultString(p.Protocol, "tcp"),
 			Mode:      "ingress",
 		})
 	}

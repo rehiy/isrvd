@@ -78,5 +78,7 @@ func (s *DockerService) ContainerExec(conn *websocket.Conn, containerID, shell s
 
 // sendWsMessage 发送 WebSocket 消息
 func sendWsMessage(conn *websocket.Conn, msg string) {
-	conn.WriteMessage(websocket.TextMessage, []byte(msg))
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
+		logman.Error("WebSocket write error", "error", err)
+	}
 }

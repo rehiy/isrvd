@@ -224,6 +224,7 @@ func (m *SwarmService) CreateService(ctx context.Context, req ServiceSpec) (stri
 func (m *SwarmService) ForceUpdateService(ctx context.Context, id string) error {
 	svc, _, err := m.client.ServiceInspectWithRaw(ctx, id, swarm.ServiceInspectOptions{InsertDefaults: true})
 	if err != nil {
+		logman.Error("ServiceInspect failed", "id", id, "error", err)
 		return err
 	}
 

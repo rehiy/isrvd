@@ -84,11 +84,15 @@ func (zs *Zipper) Unzip(path string) error {
 		}
 
 		if f.FileInfo().IsDir() {
-			os.MkdirAll(destPath, 0755)
+			if err := os.MkdirAll(destPath, 0755); err != nil {
+				return err
+			}
 			continue
 		}
 
-		os.MkdirAll(filepath.Dir(destPath), 0755)
+		if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+			return err
+		}
 
 		rc, err := f.Open()
 		if err != nil {

@@ -21,10 +21,7 @@ func ServiceToCreateRequest(project *types.Project, svc types.ServiceConfig) (do
 		return docker.ContainerCreateRequest{}, fmt.Errorf("service %q 缺少 image", svc.Name)
 	}
 
-	name := svc.ContainerName
-	if name == "" {
-		name = svc.Name
-	}
+	name := defaultString(svc.ContainerName, svc.Name)
 
 	req := docker.ContainerCreateRequest{
 		Image:      svc.Image,
@@ -38,10 +35,7 @@ func ServiceToCreateRequest(project *types.Project, svc types.ServiceConfig) (do
 		Privileged: svc.Privileged,
 		CapAdd:     svc.CapAdd,
 		CapDrop:    svc.CapDrop,
-		Restart:    svc.Restart,
-	}
-	if req.Restart == "" {
-		req.Restart = "no"
+		Restart:    defaultString(svc.Restart, "always"),
 	}
 
 	// 网络：优先 network_mode，其次取 networks 映射的第一个 key（解析为真实 docker 网络名）
@@ -107,10 +101,7 @@ func ServiceToSwarmRequest(project *types.Project, svc types.ServiceConfig) (swa
 		return swarm.ServiceSpec{}, fmt.Errorf("service %q 缺少 image", svc.Name)
 	}
 
-	name := svc.Name
-	if name == "" {
-		name = svc.ContainerName
-	}
+	name := defaultString(svc.Name, svc.ContainerName)
 
 	replicas := uint64(1)
 	mode := "replicated"
@@ -152,10 +143,7 @@ func ServiceToSwarmRequest(project *types.Project, svc types.ServiceConfig) (swa
 		if published == 0 {
 			published = int(p.Target)
 		}
-		proto := strings.ToLower(p.Protocol)
-		if proto == "" {
-			proto = "tcp"
-		}
+		proto := defaultString(strings.ToLower(p.Protocol), "tcp")
 		req.Ports = append(req.Ports, swarm.ServicePort{
 			PublishedPort: uint32(published),
 			TargetPort:    p.Target,
