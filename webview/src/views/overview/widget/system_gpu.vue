@@ -175,7 +175,8 @@ export default toNative(SystemGpu)
         <div class="w-6 h-6 rounded-md bg-emerald-500 flex items-center justify-center">
           <i class="fas fa-microchip text-white text-xs"></i>
         </div>
-        <span class="text-sm font-semibold text-slate-700">GPU 加速卡 <template v-if="currentGpus.length > 1">{{ gpu.index }} </template>· {{ gpu.name }}</span>
+        <span class="text-sm font-semibold text-slate-700">显卡<template v-if="currentGpus.length > 1"> {{ gpu.index }}</template></span>
+        <span class="ml-auto text-xs text-slate-400 font-mono">{{ gpu.name }}</span>
       </div>
       <div class="px-4 py-3">
         <div class="flex items-center justify-end mb-2 gap-4 text-xs">
