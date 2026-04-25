@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types/build"
 	dockerimage "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/registry"
+	dockerspec "github.com/moby/docker-image-spec/specs-go/v1"
 	"github.com/rehiy/pango/logman"
 )
 
@@ -244,6 +245,17 @@ func (s *DockerService) EnsureImage(ctx context.Context, ref string) error {
 	return nil
 }
 
+// GetImageConfig 获取镜像的原始运行配置（来自 Dockerfile 的默认值）
+// 用于在从运行容器反推 compose 时过滤掉镜像内置的默认值
+func (s *DockerService) GetImageConfig(ctx context.Context, imageRef string) (*dockerspec.DockerOCIImageConfig, error) {
+	img, err := s.client.ImageInspect(ctx, imageRef)
+	if err != nil {
+		logman.Error("Get image config failed", "image", imageRef, "error", err)
+		return nil, err
+	}
+	return img.Config, nil
+}
+
 // InspectImage 获取镜像详情
 func (s *DockerService) InspectImage(ctx context.Context, id string) (*ImageInspectResponse, error) {
 	img, err := s.client.ImageInspect(ctx, id)
@@ -259,8 +271,10 @@ func (s *DockerService) InspectImage(ctx context.Context, id string) (*ImageInsp
 
 	// 提取暴露端口列表
 	var exposedPorts []string
-	for port := range img.Config.ExposedPorts {
-		exposedPorts = append(exposedPorts, port)
+	if img.Config != nil {
+		for port := range img.Config.ExposedPorts {
+			exposedPorts = append(exposedPorts, port)
+		}
 	}
 
 	// 统计层数
@@ -295,6 +309,19 @@ func (s *DockerService) InspectImage(ctx context.Context, id string) (*ImageInsp
 		layerDetails = append(layerDetails, info)
 	}
 
+	var cmd []string
+	var entrypoint []string
+	var env []string
+	var workingDir string
+	var labels map[string]string
+	if img.Config != nil {
+		cmd = img.Config.Cmd
+		entrypoint = img.Config.Entrypoint
+		env = img.Config.Env
+		workingDir = img.Config.WorkingDir
+		labels = img.Config.Labels
+	}
+
 	result := &ImageInspectResponse{
 		ID:           img.ID,
 		ShortID:      shortID,
@@ -305,12 +332,12 @@ func (s *DockerService) InspectImage(ctx context.Context, id string) (*ImageInsp
 		Author:       img.Author,
 		Architecture: img.Architecture,
 		OS:           img.Os,
-		Cmd:          img.Config.Cmd,
-		Entrypoint:   img.Config.Entrypoint,
-		Env:          img.Config.Env,
-		WorkingDir:   img.Config.WorkingDir,
+		Cmd:          cmd,
+		Entrypoint:   entrypoint,
+		Env:          env,
+		WorkingDir:   workingDir,
 		ExposedPorts: exposedPorts,
-		Labels:       img.Config.Labels,
+		Labels:       labels,
 		Layers:       layers,
 		LayerDetails: layerDetails,
 	}

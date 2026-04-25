@@ -61,7 +61,9 @@ func (s *DeployService) getDockerContent(ctx context.Context, name string) (stri
 		if err != nil {
 			return "", fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
 		}
-		project, err := compose.ProjectFromInspect(info)
+		// 获取镜像默认配置，用于过滤 Dockerfile 内置的默认值；失败时降级为不过滤
+		imageConfig, _ := s.docker.GetImageConfig(ctx, info.Config.Image)
+		project, err := compose.ProjectFromInspect(info, imageConfig)
 		if err != nil {
 			return "", err
 		}
