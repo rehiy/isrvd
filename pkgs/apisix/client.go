@@ -60,5 +60,10 @@ func (c *Client) doRequest(method, path string, body any) ([]byte, error) {
 		return nil, fmt.Errorf("读取响应失败: %w", err)
 	}
 
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		logman.Error("Apisix request error", "method", method, "path", path, "status", resp.StatusCode, "body", string(respData))
+		return nil, fmt.Errorf("Apisix 返回错误状态码 %d: %s", resp.StatusCode, string(respData))
+	}
+
 	return respData, nil
 }

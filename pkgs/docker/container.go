@@ -259,7 +259,10 @@ func (s *DockerService) CreateContainer(ctx context.Context, req ContainerCreate
 	}
 
 	// 启动容器
-	s.client.ContainerStart(ctx, resp.ID, container.StartOptions{})
+	if err := s.client.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
+		logman.Error("Start container failed", "id", resp.ID[:12], "name", req.Name, "error", err)
+		return "", fmt.Errorf("启动容器失败: %w", err)
+	}
 
 	shortID := resp.ID
 	if len(shortID) > 12 {

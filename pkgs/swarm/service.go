@@ -116,6 +116,7 @@ func (m *SwarmService) ListServices(ctx context.Context) ([]ServiceInfo, error) 
 func (m *SwarmService) ServiceAction(ctx context.Context, id, action string, replicas *uint64) error {
 	if action == "remove" {
 		if err := m.client.ServiceRemove(ctx, id); err != nil {
+			logman.Error("ServiceRemove failed", "id", id, "error", err)
 			return err
 		}
 		return nil
@@ -124,6 +125,7 @@ func (m *SwarmService) ServiceAction(ctx context.Context, id, action string, rep
 	if action == "scale" && replicas != nil {
 		svc, _, err := m.client.ServiceInspectWithRaw(ctx, id, swarm.ServiceInspectOptions{InsertDefaults: true})
 		if err != nil {
+			logman.Error("ServiceInspect failed", "id", id, "error", err)
 			return err
 		}
 		if svc.Spec.Mode.Replicated == nil {
@@ -131,6 +133,7 @@ func (m *SwarmService) ServiceAction(ctx context.Context, id, action string, rep
 		}
 		svc.Spec.Mode.Replicated.Replicas = replicas
 		if _, err := m.client.ServiceUpdate(ctx, id, svc.Version, svc.Spec, swarm.ServiceUpdateOptions{}); err != nil {
+			logman.Error("ServiceScale failed", "id", id, "replicas", *replicas, "error", err)
 			return err
 		}
 		return nil

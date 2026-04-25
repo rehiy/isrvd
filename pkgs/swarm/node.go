@@ -50,6 +50,7 @@ func (m *SwarmService) ListNodes(ctx context.Context) ([]NodeDTO, error) {
 func (m *SwarmService) NodeAction(ctx context.Context, id, action string) error {
 	if action == "remove" {
 		if err := m.client.NodeRemove(ctx, id, swarm.NodeRemoveOptions{Force: true}); err != nil {
+			logman.Error("NodeRemove failed", "id", id, "error", err)
 			return err
 		}
 		return nil
@@ -57,6 +58,7 @@ func (m *SwarmService) NodeAction(ctx context.Context, id, action string) error 
 
 	node, _, err := m.client.NodeInspectWithRaw(ctx, id)
 	if err != nil {
+		logman.Error("NodeInspect failed", "id", id, "error", err)
 		return err
 	}
 
