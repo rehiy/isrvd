@@ -46,6 +46,7 @@ class RouteEditModal extends Vue {
         name: '', desc: '', uris: '', hosts: '',
         status: 1, priority: 0, enable_websocket: false,
         plugin_config_id: '', upstream_host: '', upstream_port: '',
+        timeout_connect: '', timeout_send: '', timeout_read: '',
         plugins: {} as Record<string, unknown>, pluginsJson: '{}', pluginsJsonError: ''
     }
 
@@ -85,6 +86,7 @@ class RouteEditModal extends Vue {
         Object.assign(this.formData, {
             name: '', desc: '', uris: '', hosts: '', status: 1, priority: 0,
             enable_websocket: false, plugin_config_id: '', upstream_host: '', upstream_port: '',
+            timeout_connect: '', timeout_send: '', timeout_read: '',
             plugins: {}, pluginsJson: '{}', pluginsJsonError: ''
         })
         this.editingRouteId = ''
@@ -140,6 +142,7 @@ class RouteEditModal extends Vue {
                     enable_websocket: r.enable_websocket || false,
                     plugin_config_id: r.plugin_config_id || '',
                     upstream_host: uH, upstream_port: String(uP),
+                    timeout_connect: r.timeout?.connect ?? '', timeout_send: r.timeout?.send ?? '', timeout_read: r.timeout?.read ?? '',
                     plugins, pluginsJson: JSON.stringify(plugins, null, 2), pluginsJsonError: ''
                 })
                 // 若 uH 为空，watch 不会触发，手动重置标志避免影响后续用户操作
@@ -286,6 +289,14 @@ export default toNative(RouteEditModal)
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">上游端口</label>
           <PortSelect v-model="formData.upstream_port" :ports="selectedContainerPorts" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-2">超时配置（秒）</label>
+        <div class="grid grid-cols-3 gap-3">
+          <div><input v-model.number="formData.timeout_connect" type="number" class="input" placeholder="连接超时" min="0" /><p class="text-xs text-slate-400 mt-1">connect</p></div>
+          <div><input v-model.number="formData.timeout_send" type="number" class="input" placeholder="发送超时" min="0" /><p class="text-xs text-slate-400 mt-1">send</p></div>
+          <div><input v-model.number="formData.timeout_read" type="number" class="input" placeholder="读取超时" min="0" /><p class="text-xs text-slate-400 mt-1">read</p></div>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3">

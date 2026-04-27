@@ -6,6 +6,13 @@ import (
 	"net/http"
 )
 
+// RouteTimeout Apisix 路由超时配置
+type RouteTimeout struct {
+	Connect int `json:"connect,omitempty"`
+	Send    int `json:"send,omitempty"`
+	Read    int `json:"read,omitempty"`
+}
+
 // Route Apisix Route 信息
 type Route struct {
 	ID              string         `json:"id,omitempty"`
@@ -23,6 +30,7 @@ type Route struct {
 	Upstream        map[string]any `json:"upstream,omitempty"`
 	Plugins         map[string]any `json:"plugins,omitempty"`
 	Consumers       []string       `json:"consumers,omitempty"`
+	Timeout         *RouteTimeout  `json:"timeout,omitempty"`
 	CreateTime      int64          `json:"create_time"`
 	UpdateTime      int64          `json:"update_time"`
 }
@@ -252,6 +260,10 @@ func buildRouteBody(req Route) map[string]any {
 	// Plugins
 	if req.Plugins != nil {
 		body["plugins"] = req.Plugins
+	}
+	// Timeout
+	if req.Timeout != nil {
+		body["timeout"] = req.Timeout
 	}
 	return body
 }

@@ -95,6 +95,9 @@ interface RouteFormData {
     hosts: string
     upstream_host?: string
     upstream_port?: string | number
+    timeout_connect?: string | number
+    timeout_send?: string | number
+    timeout_read?: string | number
 }
 
 export const buildRoutePayload = (formData: RouteFormData): ApisixRoute => {
@@ -115,6 +118,12 @@ export const buildRoutePayload = (formData: RouteFormData): ApisixRoute => {
     else if (hostsArr.length === 1) payload.host = hostsArr[0]
     if (formData.upstream_host && formData.upstream_port) {
         payload.upstream = { type: 'roundrobin', nodes: [{ host: formData.upstream_host, port: Number(formData.upstream_port), weight: 1 }] }
+    }
+    const connect = Number(formData.timeout_connect) || 0
+    const send = Number(formData.timeout_send) || 0
+    const read = Number(formData.timeout_read) || 0
+    if (connect > 0 || send > 0 || read > 0) {
+        payload.timeout = { connect: connect || undefined, send: send || undefined, read: read || undefined }
     }
     return payload
 }

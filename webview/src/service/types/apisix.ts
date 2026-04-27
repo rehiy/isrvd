@@ -12,6 +12,12 @@ export interface ApisixUpstreamConfig {
     [key: string]: unknown
 }
 
+export interface ApisixRouteTimeout {
+    connect?: number
+    send?: number
+    read?: number
+}
+
 export interface ApisixRoute {
     id?: string
     name: string
@@ -27,6 +33,7 @@ export interface ApisixRoute {
     upstream_id?: string
     upstream?: ApisixUpstreamConfig
     plugins?: Record<string, unknown>
+    timeout?: ApisixRouteTimeout
     consumers?: string[]
     create_time?: number
     update_time?: number
