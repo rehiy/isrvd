@@ -1,17 +1,17 @@
 {
-  "name": "front",
+  "name": "isrvd-webview",
   "version": "1.0.0",
   "type": "module",
+  "description": "轻量级 Web 服务器管理工具前端，基于 Vue 3 构建",
+  "keywords": ["docker", "swarm", "compose", "apisix", "terminal", "vue3"],
+  "author": "rehiy",
+  "license": "GPL-3.0-only",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "vue-tsc --noEmit"
   },
-  "keywords": [],
-  "author": "",
-  "license": "GPL-3.0-only",
-  "description": "",
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
     "@codemirror/lang-go": "^6.0.1",
@@ -24,7 +24,6 @@
     "@codemirror/lang-xml": "^6.1.0",
     "@codemirror/lang-yaml": "^6.1.2",
     "@fortawesome/fontawesome-free": "^7.0.0",
-    "@types/js-yaml": "^4.0.9",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^5.5.0",
     "axios": "^1.11.0",
@@ -39,6 +38,7 @@
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.11",
+    "@types/js-yaml": "^4.0.9",
     "@vitejs/plugin-vue": "^6.0.1",
     "autoprefixer": "^10.4.27",
     "postcss": "^8.5.9",
@@ -48,7 +48,7 @@
   },
   "overrides": {
     "dompurify": "^3.3.3",
-    "jsdom": "^25.0.1",
-    "http-proxy-agent": "^7.0.2"
+    "http-proxy-agent": "^7.0.2",
+    "jsdom": "^25.0.1"
   }
 }
