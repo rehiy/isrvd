@@ -9,7 +9,8 @@ import type { AppActions } from '@/store/state'
 import api from '@/service/api'
 import type { ApisixRoute, ApisixPluginConfig, ApisixUpstream, DockerContainerInfo } from '@/service/types'
 
-import { parseUpstreamNode, buildRoutePayload } from '@/helper/utils'
+import { parseUpstreamNodes, buildRoutePayload } from '@/helper/utils'
+import type { UpstreamNodeItem } from '@/helper/utils'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -45,7 +46,7 @@ class RouteEditModal extends Vue {
     formData = {
         name: '', desc: '', uris: '', hosts: '',
         status: 1, priority: 0, enable_websocket: false,
-        plugin_config_id: '', upstream_host: '', upstream_port: '',
+        plugin_config_id: '', upstream_nodes: [] as UpstreamNodeItem[], upstream_type: 'roundrobin',
         timeout_connect: '', timeout_send: '', timeout_read: '',
         plugins: {} as Record<string, unknown>, pluginsJson: '{}', pluginsJsonError: ''
     }
@@ -59,33 +60,50 @@ class RouteEditModal extends Vue {
         return all.filter(n => n.toLowerCase().includes(this.pluginSearchKeyword.toLowerCase()))
     }
 
-    get selectedContainer(): DockerContainerInfo | undefined {
-        const host = this.formData.upstream_host.trim()
-        return host ? this.containers.find(c => c.name === host) : undefined
-    }
-
-    get selectedContainerPorts(): string[] {
-        return this.selectedContainer?.ports || []
-    }
-
     // ─── 监听器 ───
-    // 切换到匹配的容器时，自动同步该容器的第一个端口（若未暴露则清空让用户填）
-    @Watch('formData.upstream_host')
+    // 当第一个节点的 host 变化时，自动同步该容器的第一个端口
+    prevHost0 = ''
+    @Watch('formData.upstream_nodes.0.host')
     onUpstreamHostChange() {
+        const node = this.formData.upstream_nodes[0]
+        if (!node) return
+        const host = node.host?.trim() || ''
+        // 仅在 host 实际变化时才自动填充端口
+        if (host === this.prevHost0) return
+        this.prevHost0 = host
         if (this.suppressPortAutofill) {
             this.suppressPortAutofill = false
             return
         }
-        if (!this.selectedContainer) return
-        const first = this.selectedContainerPorts[0] || ''
-        this.formData.upstream_port = first.split('/')[0].split(':').pop() || ''
+        const container = this.containers.find(c => c.name === host)
+        if (!container) return
+        const first = container.ports?.[0] || ''
+        node.port = first.split('/')[0].split(':').pop() || ''
+    }
+
+    // ─── 上游节点管理 ───
+    addUpstreamNode() {
+        this.formData.upstream_nodes = [...this.formData.upstream_nodes, { host: '', port: '', weight: 0 }]
+    }
+
+    removeUpstreamNode(index: number) {
+        const nodes = [...this.formData.upstream_nodes]
+        nodes.splice(index, 1)
+        this.formData.upstream_nodes = nodes
+    }
+
+    getContainerPortsForNode(index: number): string[] {
+        const node = this.formData.upstream_nodes[index]
+        if (!node) return []
+        const container = this.containers.find(c => c.name === node.host?.trim())
+        return container?.ports || []
     }
 
     // ─── 方法 ───
     resetForm() {
         Object.assign(this.formData, {
             name: '', desc: '', uris: '', hosts: '', status: 1, priority: 0,
-            enable_websocket: false, plugin_config_id: '', upstream_host: '', upstream_port: '',
+            enable_websocket: false, plugin_config_id: '', upstream_nodes: [{ host: '', port: '', weight: 0 }], upstream_type: 'roundrobin',
             timeout_connect: '', timeout_send: '', timeout_read: '',
             plugins: {}, pluginsJson: '{}', pluginsJsonError: ''
         })
@@ -96,6 +114,7 @@ class RouteEditModal extends Vue {
         this.importRouteId = ''
         this.importRoutePlugins = {}
         this.selectedImportPlugins = new Set()
+        this.prevHost0 = ''
     }
 
     async loadResources(allRoutes: ApisixRoute[]) {
@@ -130,8 +149,8 @@ class RouteEditModal extends Vue {
                     return
                 }
                 const plugins = r.plugins || {}
-                const { host: uH, port: uP } = parseUpstreamNode(r.upstream)
-                // 保存原始 upstream 配置，提交时若 upstream_host 为空则保留
+                const { type: uType, nodes: uNodes } = parseUpstreamNodes(r.upstream)
+                // 保存原始 upstream 配置，提交时若 upstream_nodes 为空则保留
                 this.originalUpstream = r.upstream ? { ...r.upstream as Record<string, unknown> } : null
                 this.suppressPortAutofill = true
                 Object.assign(this.formData, {
@@ -141,12 +160,15 @@ class RouteEditModal extends Vue {
                     status: r.status ?? 0, priority: r.priority ?? 0,
                     enable_websocket: r.enable_websocket || false,
                     plugin_config_id: r.plugin_config_id || '',
-                    upstream_host: uH, upstream_port: String(uP),
+                    upstream_nodes: uNodes.length ? uNodes : [{ host: '', port: '', weight: 0 }],
+                    upstream_type: uType,
                     timeout_connect: r.timeout?.connect ?? '', timeout_send: r.timeout?.send ?? '', timeout_read: r.timeout?.read ?? '',
                     plugins, pluginsJson: JSON.stringify(plugins, null, 2), pluginsJsonError: ''
                 })
-                // 若 uH 为空，watch 不会触发，手动重置标志避免影响后续用户操作
-                if (!uH) this.suppressPortAutofill = false
+                // 记录初始 host，避免 watcher 误重置端口
+                this.prevHost0 = this.formData.upstream_nodes[0]?.host?.trim() || ''
+                // 若无节点则不需要抑制端口自动填充
+                if (!uNodes.length) this.suppressPortAutofill = false
             } catch (e) {
                 this.actions.showNotification('error', '加载路由详情失败')
                 this.isOpen = false
@@ -155,6 +177,7 @@ class RouteEditModal extends Vue {
         } else {
             this.isEditMode = false
             this.resetForm()
+            this.formData.upstream_nodes = [{ host: '', port: '', weight: 0 }]
             this.isOpen = true
         }
     }
@@ -247,8 +270,8 @@ class RouteEditModal extends Vue {
         this.modalLoading = true
         try {
             const payload = buildRoutePayload(this.formData)
-            // 编辑模式下，若 upstream_host 为空但原路由有 upstream 配置，则保留原始配置
-            if (this.isEditMode && !this.formData.upstream_host && this.originalUpstream) {
+            // 编辑模式下，若 upstream_nodes 为空但原路由有 upstream 配置，则保留原始配置
+            if (this.isEditMode && !this.formData.upstream_nodes.some(n => n.host.trim() && String(n.port).trim()) && this.originalUpstream) {
                 payload.upstream = this.originalUpstream as typeof payload.upstream
             }
             if (this.isEditMode) {
@@ -281,18 +304,45 @@ export default toNative(RouteEditModal)
       <div><label class="block text-sm font-medium text-slate-700 mb-2">描述</label><textarea v-model="formData.desc" rows="2" class="input" placeholder="路由描述"></textarea></div>
       <div><label class="block text-sm font-medium text-slate-700 mb-2">URI（每行一个）<span class="text-red-500">*</span></label><textarea v-model="formData.uris" rows="3" class="input font-mono text-sm" placeholder="/api/v1/*&#10;/api/v2/*"></textarea></div>
       <div><label class="block text-sm font-medium text-slate-700 mb-2">Host（每行一个，留空匹配所有）</label><textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="example.com"></textarea></div>
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">上游主机</label>
-          <HostSelect v-model="formData.upstream_host" :containers="containers" />
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-sm font-medium text-slate-700">上游节点</label>
+          <button @click="addUpstreamNode()" type="button" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="添加节点"><i class="fas fa-plus text-xs"></i></button>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">上游端口</label>
-          <PortSelect v-model="formData.upstream_port" :ports="selectedContainerPorts" />
+        <div class="rounded-lg border border-slate-200 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 w-1/2">主机</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 w-[30%]">端口</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 w-[20%]">权重</th>
+                <th v-if="formData.upstream_nodes.length > 1" class="px-3 py-2 w-8"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr v-for="(node, index) in formData.upstream_nodes" :key="index">
+                <td class="px-3 py-2"><HostSelect v-model="node.host" :containers="containers" placeholder="127.0.0.1 或 容器名" /></td>
+                <td class="px-3 py-2"><PortSelect v-model="node.port" :ports="getContainerPortsForNode(index)" placeholder="80" /></td>
+                <td class="px-3 py-2"><input v-model.number="node.weight" type="number" class="input" placeholder="1" min="0" /></td>
+                <td v-if="formData.upstream_nodes.length > 1" class="px-1 py-2 text-center">
+                  <button @click="removeUpstreamNode(index)" type="button" class="btn-icon text-red-400 hover:text-red-600 hover:bg-red-50" title="移除"><i class="fas fa-xmark text-xs"></i></button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="mt-3">
+          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">负载均衡策略</label>
+          <select v-model="formData.upstream_type" class="input">
+            <option value="roundrobin">roundrobin（轮询）</option>
+            <option value="chash">chash（一致性哈希）</option>
+            <option value="ewma">ewma（加权移动平均）</option>
+            <option value="least_conn">least_conn（最少连接）</option>
+          </select>
         </div>
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">超时配置（秒）</label>
+        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">超时配置（秒）</label>
         <div class="grid grid-cols-3 gap-3">
           <div><input v-model.number="formData.timeout_connect" type="number" class="input" placeholder="连接超时" min="0" /><p class="text-xs text-slate-400 mt-1">connect</p></div>
           <div><input v-model.number="formData.timeout_send" type="number" class="input" placeholder="发送超时" min="0" /><p class="text-xs text-slate-400 mt-1">send</p></div>

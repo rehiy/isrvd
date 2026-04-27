@@ -69,18 +69,33 @@ export const formatFileSize = (bytes: number): string => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-export const parseUpstreamNode = (upstream?: ApisixUpstreamConfig): { host: string; port: number | string } => {
+export interface UpstreamNodeItem {
+    host: string
+    port: string
+    weight: number
+}
+
+const DEFAULT_UPSTREAM_TYPE = 'roundrobin'
+
+export const parseUpstreamNodes = (upstream?: ApisixUpstreamConfig): { type: string; nodes: UpstreamNodeItem[] } => {
+    const type = upstream?.type || DEFAULT_UPSTREAM_TYPE
     const nodes = upstream?.nodes
-    if (!nodes) return { host: '', port: '' }
-    if (Array.isArray(nodes) && nodes.length > 0) return { host: nodes[0].host || '', port: nodes[0].port || '' }
-    if (typeof nodes === 'object') {
-        const k = Object.keys(nodes)[0] || ''
-        if (k) {
-            const i = k.lastIndexOf(':')
-            return { host: i > 0 ? k.slice(0, i) : k, port: i > 0 ? Number(k.slice(i + 1)) : '' }
+    if (!nodes) return { type, nodes: [] }
+    if (Array.isArray(nodes) && nodes.length > 0) {
+        return {
+            type,
+            nodes: nodes.map(n => ({ host: n.host || '', port: String(n.port || ''), weight: n.weight ?? 1 }))
         }
     }
-    return { host: '', port: '' }
+    if (typeof nodes === 'object') {
+        const result: UpstreamNodeItem[] = []
+        for (const [k, w] of Object.entries(nodes)) {
+            const i = k.lastIndexOf(':')
+            result.push({ host: i > 0 ? k.slice(0, i) : k, port: i > 0 ? k.slice(i + 1) : '', weight: (w as number) ?? 1 })
+        }
+        return { type, nodes: result }
+    }
+    return { type, nodes: [] }
 }
 
 interface RouteFormData {
@@ -93,8 +108,8 @@ interface RouteFormData {
     plugins?: Record<string, unknown>
     uris: string
     hosts: string
-    upstream_host?: string
-    upstream_port?: string | number
+    upstream_nodes: UpstreamNodeItem[]
+    upstream_type: string
     timeout_connect?: string | number
     timeout_send?: string | number
     timeout_read?: string | number
@@ -116,8 +131,12 @@ export const buildRoutePayload = (formData: RouteFormData): ApisixRoute => {
     const hostsArr = formData.hosts.split('\n').map((s: string) => s.trim()).filter(Boolean)
     if (hostsArr.length > 1) payload.hosts = hostsArr
     else if (hostsArr.length === 1) payload.host = hostsArr[0]
-    if (formData.upstream_host && formData.upstream_port) {
-        payload.upstream = { type: 'roundrobin', nodes: [{ host: formData.upstream_host, port: Number(formData.upstream_port), weight: 1 }] }
+    const validNodes = formData.upstream_nodes.filter(n => n.host.trim() && String(n.port).trim())
+    if (validNodes.length > 0) {
+        payload.upstream = {
+            type: formData.upstream_type || 'roundrobin',
+            nodes: validNodes.map(n => ({ host: n.host.trim(), port: Number(n.port), weight: n.weight ?? 1 }))
+        }
     }
     const connect = Number(formData.timeout_connect) || 0
     const send = Number(formData.timeout_send) || 0

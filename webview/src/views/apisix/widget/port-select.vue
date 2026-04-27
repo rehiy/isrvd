@@ -57,17 +57,35 @@ class PortSelect extends Vue {
         if (proto === 'udp') return 'text-amber-500'
         return 'text-slate-400'
     }
+
+    protoBg(proto: string) {
+        if (proto === 'tcp') return 'bg-sky-50'
+        if (proto === 'udp') return 'bg-amber-50'
+        return 'bg-slate-50'
+    }
 }
 
 export default toNative(PortSelect)
 </script>
 
 <template>
+  <!-- 无端口数据时直接用输入框，避免空下拉面板 -->
+  <input
+    v-if="parsedPorts.length === 0"
+    type="text"
+    class="input"
+    :value="modelValue"
+    :placeholder="placeholder"
+    :disabled="disabled"
+    @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+  />
+  <!-- 有端口数据时用 Combobox 下拉选择 -->
   <Combobox
+    v-else
     :model-value="modelValue"
     :placeholder="placeholder"
     :disabled="disabled"
-    max-height="280px"
+    max-height="220px"
     @update:model-value="$emit('update:modelValue', $event)"
   >
     <template #hint-extra="{ query }">
@@ -75,47 +93,35 @@ export default toNative(PortSelect)
     </template>
 
     <template #default="{ query, select }">
-      <div v-if="filtered(query).length > 0" class="px-2 py-1.5 grid grid-cols-1 gap-0.5">
+      <div v-if="filtered(query).length > 0" class="px-1.5 py-1 grid grid-cols-1 gap-0.5">
         <button
           v-for="item in filtered(query)"
           :key="item.port + '-' + item.proto"
           type="button"
           @click="select(item.port)"
           :class="[
-            'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all duration-150',
+            'w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-all duration-150',
             modelValue === item.port ? 'bg-primary-50 border border-primary-200' : 'hover:bg-slate-50 border border-transparent'
           ]"
         >
-          <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-slate-100">
-            <i class="fas fa-plug text-xs" :class="protoColor(item.proto)"></i>
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="text-sm font-medium text-slate-700">
-              {{ item.port }}<span class="text-xs text-slate-400 ml-1">/{{ item.proto }}</span>
-            </div>
-            <div class="text-xs text-slate-400 truncate">
-              <template v-if="item.published">宿主: {{ item.published }}</template>
-              <template v-else>仅容器内暴露</template>
-            </div>
-          </div>
-          <i v-if="modelValue === item.port" class="fas fa-check text-primary-500 text-xs"></i>
+          <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex-shrink-0" :class="[protoBg(item.proto), protoColor(item.proto)]">{{ item.proto }}</span>
+          <span class="flex-1 min-w-0 text-sm font-medium text-slate-700">{{ item.port }}</span>
+          <span v-if="item.published" class="text-xs text-slate-400 truncate">→{{ item.published }}</span>
+          <span class="w-4 flex-shrink-0 flex items-center justify-center"><i v-if="modelValue === item.port" class="fas fa-check text-primary-500 text-xs"></i></span>
         </button>
       </div>
     </template>
 
     <template #empty="{ query }">
-      <div v-if="filtered(query).length === 0" class="py-8 text-center">
-        <i class="fas fa-search text-slate-300 text-2xl mb-2"></i>
-        <p class="text-sm text-slate-400">
-          {{ parsedPorts.length === 0 ? '该容器未暴露端口，请手动输入' : '无匹配端口' }}
-        </p>
+      <div v-if="filtered(query).length === 0" class="py-4 text-center">
+        <p class="text-xs text-slate-400">无匹配端口</p>
       </div>
     </template>
 
     <template #footer>
-      <div v-if="parsedPorts.length > 0" class="px-3 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-        <span class="text-xs text-slate-400">共 <strong class="text-slate-700">{{ parsedPorts.length }}</strong> 个容器端口</span>
-        <span class="text-xs text-slate-400">回车使用输入值</span>
+      <div class="px-3 py-1.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-xs text-slate-400">共 <strong class="text-slate-700">{{ parsedPorts.length }}</strong> 个端口</span>
+        <span class="text-xs text-slate-400">回车确认</span>
       </div>
     </template>
   </Combobox>
