@@ -136,8 +136,11 @@ export default toNative(NavigationBar)
 
 <template>
   <aside 
-    class="fixed left-0 top-0 h-screen bg-white/80 backdrop-blur-xl border-r border-slate-200/50 z-50 flex flex-col transition-all duration-300"
-    :class="[collapsed ? 'w-16' : 'w-64', mobileSidebarVisible ? 'translate-x-0' : '-translate-x-full lg:translate-x-0']"
+    class="fixed left-0 top-0 h-screen border-r border-slate-200/50 z-50 flex flex-col transition-all duration-300"
+    :class="[
+      collapsed ? 'w-16' : 'w-64',
+      mobileSidebarVisible ? 'translate-x-0 bg-white/95 backdrop-blur-xl shadow-2xl' : '-translate-x-full lg:translate-x-0 lg:bg-white/80 lg:backdrop-blur-xl'
+    ]"
   >
     <!-- Logo 区域 -->
     <div class="h-16 flex items-center border-b border-slate-200/50" :class="collapsed ? 'justify-center' : 'px-4'" @click="closeMobileSidebar">
@@ -435,7 +438,7 @@ export default toNative(NavigationBar)
   <!-- 移动端遮罩层 -->
   <div 
     v-if="mobileSidebarVisible"
-    class="fixed inset-0 bg-black/40 z-30 lg:hidden"
+    class="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 lg:hidden"
     @click="closeMobileSidebar"
   ></div>
 </template>
