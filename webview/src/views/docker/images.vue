@@ -58,6 +58,17 @@ class Images extends Vue {
         this.registryPushModalRef?.show(this.registries, null, tag)
     }
 
+    parseImageRef(tag: string) {
+        if (!tag || tag === '<none>:<none>') return { host: '', name: tag || '<none>' }
+        const firstSlash = tag.indexOf('/')
+        if (firstSlash === -1) return { host: '', name: tag }
+        const firstPart = tag.substring(0, firstSlash)
+        if (firstPart.includes('.') || firstPart.includes(':')) {
+            return { host: firstPart, name: tag.substring(firstSlash + 1) }
+        }
+        return { host: '', name: tag }
+    }
+
     handleImageAction(image: DockerImageInfo, action: string) {
         this.actions.showConfirm({
             title: '删除镜像',
@@ -169,7 +180,6 @@ export default toNative(Images)
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
               <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">镜像</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ID</th>
               <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">大小</th>
               <th class="w-36 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
               <th class="w-40 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
@@ -177,13 +187,17 @@ export default toNative(Images)
           </thead>
           <tbody class="bg-white divide-y divide-slate-100">
             <tr v-for="img in images" :key="img.id" class="hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3">
+              <td class="px-4 py-3 max-w-[280px]">
                 <div class="flex flex-col gap-0.5">
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2 min-w-0">
                     <div class="w-8 h-8 rounded-lg bg-blue-400 flex items-center justify-center flex-shrink-0">
                       <i class="fas fa-compact-disc text-white text-sm"></i>
                     </div>
-                    <span class="font-medium text-slate-800">{{ img.repoTags[0] || '<none>' }}</span>
+                    <div class="min-w-0">
+                      <span class="font-medium text-slate-800 truncate block">{{ parseImageRef(img.repoTags[0]).name }}</span>
+                      <span v-if="parseImageRef(img.repoTags[0]).host" class="text-xs text-slate-400 truncate block mt-0.5">{{ parseImageRef(img.repoTags[0]).host }}</span>
+                      <code v-else class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ img.shortId }}</code>
+                    </div>
                   </div>
                   <div v-if="img.repoTags.length > 1" class="ml-10 flex flex-wrap gap-1">
                     <span v-for="(tag, idx) in img.repoTags.slice(1)" :key="idx" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-600">
@@ -192,7 +206,6 @@ export default toNative(Images)
                   </div>
                 </div>
               </td>
-              <td class="px-4 py-3"><code class="text-xs text-slate-500 font-mono">{{ img.shortId }}</code></td>
               <td class="px-4 py-3 text-sm text-slate-600">{{ formatFileSize(img.size) }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(img.created * 1000).toISOString()) }}</td>
               <td class="px-4 py-3">
@@ -203,7 +216,7 @@ export default toNative(Images)
                   <button @click="tagModalRef?.show(img)" v-if="actions.hasPerm('docker', true)" class="btn-icon text-blue-600 hover:bg-blue-50" title="打标签">
                     <i class="fas fa-tag text-xs"></i>
                   </button>
-                  <button @click="openPush(img)" v-if="actions.hasPerm('docker', true)" :disabled="registries.length === 0" class="btn-icon text-purple-600 hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'">
+                  <button @click="openPush(img)" v-if="actions.hasPerm('docker', true)" :disabled="registries.length === 0" class="btn-icon text-blue-600 hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'">
                     <i class="fas fa-upload text-xs"></i>
                   </button>
                   <button @click="handleImageAction(img, 'remove')" v-if="actions.hasPerm('docker', true)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
@@ -229,15 +242,10 @@ export default toNative(Images)
               <i class="fas fa-compact-disc text-white text-base"></i>
             </div>
             <div class="min-w-0">
-              <span class="font-medium text-slate-800 text-sm truncate block">{{ img.repoTags[0] || '&lt;none&gt;' }}</span>
-              <span class="text-xs text-slate-500 mt-0.5 block">{{ formatFileSize(img.size) }}</span>
+              <span class="font-medium text-slate-800 text-sm truncate block">{{ parseImageRef(img.repoTags[0]).name }}</span>
+              <span v-if="parseImageRef(img.repoTags[0]).host" class="text-xs text-slate-400 truncate block mt-0.5">{{ parseImageRef(img.repoTags[0]).host }}</span>
+              <code v-else class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ img.shortId }}</code>
             </div>
-          </div>
-
-          <!-- 镜像ID -->
-          <div class="flex items-center gap-2 mb-3">
-            <span class="text-xs text-slate-400 flex-shrink-0">ID</span>
-            <code class="text-xs text-slate-500 font-mono truncate">{{ img.shortId }}</code>
           </div>
 
           <!-- 创建时间 -->
@@ -261,7 +269,7 @@ export default toNative(Images)
             <button @click="tagModalRef?.show(img)" v-if="actions.hasPerm('docker', true)" class="btn-icon text-blue-600 hover:bg-blue-50" title="打标签">
               <i class="fas fa-tag text-xs"></i><span class="text-xs ml-1">标签</span>
             </button>
-            <button @click="openPush(img)" v-if="actions.hasPerm('docker', true)" :disabled="registries.length === 0" class="btn-icon text-purple-600 hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'">
+            <button @click="openPush(img)" v-if="actions.hasPerm('docker', true)" :disabled="registries.length === 0" class="btn-icon text-blue-600 hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'">
               <i class="fas fa-upload text-xs"></i><span class="text-xs ml-1">推送</span>
             </button>
             <button @click="handleImageAction(img, 'remove')" v-if="actions.hasPerm('docker', true)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">

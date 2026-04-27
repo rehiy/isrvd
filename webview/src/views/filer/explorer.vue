@@ -180,7 +180,7 @@ export default toNative(FileExplorer)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="w-1/3 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
                 <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">大小</th>
                 <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">权限</th>
                 <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">修改时间</th>
@@ -189,7 +189,7 @@ export default toNative(FileExplorer)
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="file in files" :key="file.name" class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3">
+                <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center">
                     <div :class="[
                       'w-9 h-9 rounded-lg flex items-center justify-center mr-3',
@@ -204,11 +204,11 @@ export default toNative(FileExplorer)
                         v-if="file.isDir" 
                         href="#" 
                         @click="navigateTo(file.path)" 
-                        class="font-medium text-slate-800 hover:text-primary-600 transition-colors"
+                        class="font-medium text-slate-800 hover:text-primary-600 transition-colors truncate block"
                       >
                         {{ file.name }}
                       </a>
-                      <span v-else class="font-medium text-slate-800">{{ file.name }}</span>
+                      <span v-else class="font-medium text-slate-800 truncate block">{{ file.name }}</span>
                     </div>
                   </div>
                 </td>

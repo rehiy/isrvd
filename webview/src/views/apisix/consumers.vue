@@ -180,7 +180,6 @@ export default toNative(Consumers)
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
                 <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">用户名</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">描述</th>
                 <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">API Key</th>
                 <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">关联路由</th>
                 <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
@@ -189,16 +188,16 @@ export default toNative(Consumers)
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="consumer in filteredConsumers" :key="consumer.username" class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-2">
+                <td class="px-4 py-3 max-w-[280px]">
+                  <div class="flex items-center gap-2 min-w-0">
                     <div class="w-8 h-8 rounded-lg bg-violet-400 flex items-center justify-center flex-shrink-0">
                       <i class="fas fa-user text-white text-sm"></i>
                     </div>
-                    <span class="font-medium text-slate-800">{{ consumer.username }}</span>
+                    <div class="min-w-0">
+                      <span class="font-medium text-slate-800 truncate block">{{ consumer.username }}</span>
+                      <span v-if="consumer.desc" class="text-xs text-slate-400 truncate block mt-0.5">{{ consumer.desc }}</span>
+                    </div>
                   </div>
-                </td>
-                <td class="px-4 py-3">
-                  <span class="text-sm text-slate-600">{{ consumer.desc || '-' }}</span>
                 </td>
                 <td class="px-4 py-3">
                   <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{{ (consumer.plugins?.['key-auth'] as Record<string, unknown>)?.key || '-' }}</code>
@@ -215,7 +214,7 @@ export default toNative(Consumers)
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-0.5">
                     <button v-if="actions.hasPerm('apisix', true)" @click="openEditModal(consumer)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑">
-                      <i class="fas fa-pen-to-square text-xs"></i>
+                      <i class="fas fa-pen text-xs"></i>
                     </button>
                     <button v-if="actions.hasPerm('apisix', true)" @click="deleteConsumer(consumer)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                       <i class="fas fa-trash text-xs"></i>
@@ -244,17 +243,15 @@ export default toNative(Consumers)
                   <div class="flex items-center gap-2">
                     <span class="font-medium text-slate-800 text-sm truncate">{{ consumer.username }}</span>
                   </div>
-                  <div class="flex items-center gap-1.5 mt-0.5">
-                    <span class="text-xs text-slate-400">{{ formatTs(consumer.create_time) }}</span>
-                  </div>
+                  <span v-if="consumer.desc" class="text-xs text-slate-400 truncate block mt-0.5">{{ consumer.desc }}</span>
                 </div>
               </div>
             </div>
             
-            <!-- 中间：描述和API Key信息 -->
+            <!-- 中间：API Key和创建时间 -->
             <div class="flex items-center gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0">描述</span>
-              <span class="text-sm text-slate-600">{{ consumer.desc || '-' }}</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">创建</span>
+              <span class="text-xs text-slate-600">{{ formatTs(consumer.create_time) }}</span>
             </div>
             
             <div class="flex items-start gap-2 mb-3">
@@ -274,7 +271,7 @@ export default toNative(Consumers)
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
               <button v-if="actions.hasPerm('apisix', true)" @click="openEditModal(consumer)" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑">
-                <i class="fas fa-pen-to-square text-xs"></i><span class="text-xs ml-1">编辑</span>
+                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
               <button v-if="actions.hasPerm('apisix', true)" @click="deleteConsumer(consumer)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>

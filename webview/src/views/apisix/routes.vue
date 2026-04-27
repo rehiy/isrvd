@@ -186,9 +186,16 @@ export default toNative(Routes)
             </tr></thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="route in filteredRoutes" :key="route.id" class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3">
-                  <div class="font-medium text-sm text-slate-800">{{ route.name || route.id }}</div>
-                  <div v-if="route.desc" class="text-xs text-slate-400 mt-0.5 truncate max-w-xs">{{ route.desc }}</div>
+                <td class="px-4 py-3 max-w-[280px]">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-400 flex items-center justify-center flex-shrink-0">
+                      <i class="fas fa-route text-white text-sm"></i>
+                    </div>
+                    <div class="min-w-0">
+                      <span class="font-medium text-slate-800 truncate block">{{ route.name || route.id }}</span>
+                      <span v-if="route.desc" class="text-xs text-slate-400 truncate block mt-0.5">{{ route.desc }}</span>
+                    </div>
+                  </div>
                 </td>
                 <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-700">{{ getRouteUri(route) }}</code></td>
                 <td class="px-4 py-3"><span class="text-sm text-slate-600">{{ getRouteHost(route) }}</span></td>
@@ -200,7 +207,7 @@ export default toNative(Routes)
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button v-if="actions.hasPerm('apisix', true)" @click="openEditModal(route)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="编辑"><i class="fas fa-pen-to-square text-xs"></i></button>
+                    <button v-if="actions.hasPerm('apisix', true)" @click="openEditModal(route)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="编辑"><i class="fas fa-pen text-xs"></i></button>
                     <button v-if="actions.hasPerm('apisix', true)" @click="deleteRoute(route)" class="btn-icon text-red-600 hover:bg-red-50" title="删除"><i class="fas fa-trash text-xs"></i></button>
                   </div>
                 </td>
@@ -241,13 +248,13 @@ export default toNative(Routes)
             
             <div class="flex items-center gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0">Host</span>
-              <span class="text-sm text-slate-600 break-all">{{ getRouteHost(route) }}</span>
+              <span class="text-xs text-slate-600 break-all">{{ getRouteHost(route) }}</span>
             </div>
             
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
               <button v-if="actions.hasPerm('apisix', true)" @click="openEditModal(route)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="编辑">
-                <i class="fas fa-pen-to-square text-xs"></i><span class="text-xs ml-1">编辑</span>
+                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
               <button v-if="actions.hasPerm('apisix', true)" @click="deleteRoute(route)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>

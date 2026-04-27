@@ -154,12 +154,14 @@ export default toNative(Whitelist)
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="route in filteredWhitelist" :key="route.id" class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-2">
+                <td class="px-4 py-3 max-w-[280px]">
+                  <div class="flex items-center gap-2 min-w-0">
                     <div class="w-8 h-8 rounded-lg bg-amber-400 flex items-center justify-center flex-shrink-0">
                       <i class="fas fa-shield-halved text-white text-sm"></i>
                     </div>
-                    <span class="font-medium text-slate-800 truncate max-w-[200px]">{{ route.name || route.id }}</span>
+                    <div class="min-w-0">
+                      <span class="font-medium text-slate-800 truncate block">{{ route.name || route.id }}</span>
+                    </div>
                   </div>
                 </td>
                 <td class="px-4 py-3">

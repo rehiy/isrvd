@@ -142,7 +142,7 @@ export default toNative(Networks)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
                 <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">驱动</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">子网</th>
                 <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">范围</th>
@@ -151,12 +151,15 @@ export default toNative(Networks)
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="net in networks" :key="net.id" class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-purple-400 flex items-center justify-center">
+                <td class="px-4 py-3 max-w-[280px]">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-purple-400 flex items-center justify-center flex-shrink-0">
                       <i class="fas fa-network-wired text-white text-sm"></i>
                     </div>
-                    <span class="font-medium text-slate-800">{{ net.name }}</span>
+                    <div class="min-w-0">
+                      <span class="font-medium text-slate-800 truncate block">{{ net.name }}</span>
+                      <code class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ net.id }}</code>
+                    </div>
                   </div>
                 </td>
                 <td class="px-4 py-3 text-sm text-slate-600">{{ net.driver }}</td>
@@ -164,8 +167,8 @@ export default toNative(Networks)
                 <td class="px-4 py-3 text-sm text-slate-600">{{ net.scope }}</td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-0.5">
-                    <button @click="viewNetworkDetail(net)" class="btn-icon text-purple-600 hover:bg-purple-50" title="详情">
-                      <i class="fas fa-info-circle text-xs"></i>
+                    <button @click="viewNetworkDetail(net)" class="btn-icon text-slate-600 hover:bg-slate-50" title="详情">
+                      <i class="fas fa-circle-info text-xs"></i>
                     </button>
                     <button
                       v-if="canDeleteNetwork(net) && actions.hasPerm('docker', true)"
@@ -204,23 +207,28 @@ export default toNative(Networks)
               </div>
               <div class="min-w-0">
                 <span class="font-medium text-slate-800 text-sm truncate block">{{ net.name }}</span>
-                <span class="text-xs text-slate-500 mt-0.5 block">{{ net.driver }}</span>
+                <code class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ net.id }}</code>
               </div>
             </div>
 
-            <!-- 范围 / 子网 -->
+            <!-- 驱动 / 范围 / 子网 -->
             <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0">驱动</span>
+              <span class="text-xs text-slate-600">{{ net.driver }}</span>
+              <span class="text-xs text-slate-300">|</span>
               <span class="text-xs text-slate-400 flex-shrink-0">范围</span>
               <span class="text-xs text-slate-600">{{ net.scope }}</span>
-              <span class="text-xs text-slate-300">|</span>
+            </div>
+
+            <div class="flex items-center gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0">子网</span>
               <code class="font-mono text-xs text-slate-600">{{ net.subnet || '-' }}</code>
             </div>
             
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
-              <button @click="viewNetworkDetail(net)" class="btn-icon text-purple-600 hover:bg-purple-50" title="详情">
-                <i class="fas fa-info-circle text-xs"></i><span class="text-xs ml-1">详情</span>
+<button @click="viewNetworkDetail(net)" class="btn-icon text-slate-600 hover:bg-slate-50" title="详情">
+                <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
               </button>
               <button
                 v-if="canDeleteNetwork(net) && actions.hasPerm('docker', true)"

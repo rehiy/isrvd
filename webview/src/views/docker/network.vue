@@ -136,8 +136,8 @@ export default toNative(NetworkDetail)
             已连接容器
             <span v-if="detailData.containers" class="text-slate-400 normal-case font-normal ml-1">({{ detailData.containers.length }})</span>
           </h2>
-          <div v-if="detailData.containers && detailData.containers.length > 0" class="border border-slate-200 rounded-xl overflow-x-auto">
-            <table class="w-full min-w-[480px]">
+          <div v-if="detailData.containers && detailData.containers.length > 0" class="border border-slate-200 rounded-xl overflow-hidden">
+            <table class="w-full">
               <thead>
                 <tr class="bg-slate-50 border-b border-slate-200">
                   <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>

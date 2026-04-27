@@ -131,7 +131,7 @@ export default toNative(Volumes)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
                 <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">驱动</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">挂载点</th>
                 <th class="w-36 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
@@ -140,12 +140,15 @@ export default toNative(Volumes)
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="vol in volumes" :key="vol.name" class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-amber-400 flex items-center justify-center">
+                <td class="px-4 py-3 max-w-[280px]">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-amber-400 flex items-center justify-center flex-shrink-0">
                       <i class="fas fa-database text-white text-sm"></i>
                     </div>
-                    <span class="font-medium text-slate-800 truncate max-w-[200px] block" :title="vol.name">{{ vol.name }}</span>
+                    <div class="min-w-0">
+                      <span class="font-medium text-slate-800 truncate block" :title="vol.name">{{ vol.name }}</span>
+                      <span class="text-xs text-slate-400 truncate block mt-0.5">{{ vol.driver }}</span>
+                    </div>
                   </div>
                 </td>
                 <td class="px-4 py-3 text-sm text-slate-600">{{ vol.driver }}</td>
@@ -153,10 +156,8 @@ export default toNative(Volumes)
                 <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(vol.createdAt) }}</td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-0.5">
-                    <button @click="viewVolumeDetail(vol)" class="btn-icon text-amber-600 hover:bg-amber-50" title="详情">
-                      <i class="fas fa-info-circle text-xs"></i>
-                    </button>
-                    <button v-if="actions.hasPerm('docker', true)" @click="handleVolumeAction(vol, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
+<button @click="viewVolumeDetail(vol)" class="btn-icon text-slate-600 hover:bg-slate-50" title="详情">
+              <i class="fas fa-circle-info text-xs"></i></button>                    <button v-if="actions.hasPerm('docker', true)" @click="handleVolumeAction(vol, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                       <i class="fas fa-trash text-xs"></i>
                     </button>
                   </div>
@@ -198,8 +199,8 @@ export default toNative(Volumes)
             
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
-              <button @click="viewVolumeDetail(vol)" class="btn-icon text-amber-600 hover:bg-amber-50" title="详情">
-                <i class="fas fa-info-circle text-xs"></i><span class="text-xs ml-1">详情</span>
+<button @click="viewVolumeDetail(vol)" class="btn-icon text-slate-600 hover:bg-slate-50" title="详情">
+                <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
               </button>
               <button v-if="actions.hasPerm('docker', true)" @click="handleVolumeAction(vol, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>

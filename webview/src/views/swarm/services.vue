@@ -84,7 +84,7 @@ class Services extends Vue {
         this.actions.showConfirm({
             title: '强制重部署',
             message: `重新拉取并部署服务 <strong class="text-slate-900">${svc.name}</strong>，正在运行的副本会滚动更新。`,
-            icon: 'fa-rotate',
+            icon: 'fa-arrows-rotate',
             iconColor: 'blue',
             confirmText: '确认重部署',
             onConfirm: async () => {
@@ -160,25 +160,27 @@ export default toNative(Services)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">服务名</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">镜像</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">服务名</th>
                 <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">模式</th>
                 <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">副本</th>
                 <th class="w-36 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
+                <th class="w-36 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">更新时间</th>
                 <th class="w-44 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="svc in services" :key="svc.id" class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-emerald-400 flex items-center justify-center">
+                <td class="px-4 py-3 max-w-[280px]">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-400 flex items-center justify-center flex-shrink-0">
                       <i class="fas fa-cubes text-white text-sm"></i>
                     </div>
-                    <span class="font-medium text-slate-800">{{ svc.name }}</span>
+                    <div class="min-w-0">
+                      <span class="font-medium text-slate-800 truncate block">{{ svc.name }}</span>
+                      <code class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ svc.image }}</code>
+                    </div>
                   </div>
                 </td>
-                <td class="px-4 py-3"><code class="text-xs text-slate-500 font-mono">{{ svc.image }}</code></td>
                 <td class="px-4 py-3 text-sm text-slate-600 capitalize">{{ svc.mode }}</td>
                 <td class="px-4 py-3 text-sm text-slate-600">
                   <span class="text-emerald-600 font-medium">{{ svc.runningTasks }}</span>
@@ -190,13 +192,14 @@ export default toNative(Services)
                   </template>
                   <template v-else>-</template>
                 </td>
+                <td class="px-4 py-3 text-sm text-slate-500">{{ svc.updatedAt?.slice(0, 16).replace('T', ' ') }}</td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-0.5">
                     <button @click="$router.push({ name: 'swarm-service-info', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="详情"><i class="fas fa-circle-info text-xs"></i></button>
                     <button @click="$router.push({ name: 'swarm-service-logs', params: { id: svc.id } })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志"><i class="fas fa-file-lines text-xs"></i></button>
                     <button v-if="svc.mode === 'replicated' && actions.hasPerm('swarm', true)" @click="openScaleModal(svc)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="扩缩容"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>
-                    <button v-if="actions.hasPerm('swarm', true)" @click="handleRedeploy(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="强制重部署"><i class="fas fa-rotate text-xs"></i></button>
-                    <button v-if="actions.hasPerm('swarm', true)" @click="openEditModal(svc)" class="btn-icon text-amber-600 hover:bg-amber-50" title="编辑"><i class="fas fa-pen text-xs"></i></button>
+                    <button v-if="actions.hasPerm('swarm', true)" @click="handleRedeploy(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="强制重部署"><i class="fas fa-arrows-rotate text-xs"></i></button>
+                    <button v-if="actions.hasPerm('swarm', true)" @click="openEditModal(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑"><i class="fas fa-pen text-xs"></i></button>
                     <button v-if="actions.hasPerm('swarm', true)" @click="handleServiceRemove(svc)" class="btn-icon text-red-600 hover:bg-red-50" title="删除"><i class="fas fa-trash text-xs"></i></button>
                   </div>
                 </td>
@@ -220,9 +223,15 @@ export default toNative(Services)
                 </div>
                 <div class="min-w-0">
                   <span class="font-medium text-slate-800 text-sm truncate block">{{ svc.name }}</span>
-                  <span class="text-xs text-slate-500 mt-0.5 block capitalize">{{ svc.mode }}</span>
+                  <code class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ svc.image }}</code>
                 </div>
               </div>
+            </div>
+
+            <!-- 模式 -->
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0">模式</span>
+              <span class="text-xs text-slate-500 capitalize">{{ svc.mode }}</span>
             </div>
 
             <!-- 副本数 -->
@@ -233,12 +242,6 @@ export default toNative(Services)
                 <span v-if="svc.mode === 'replicated'" class="text-slate-400"> / {{ svc.replicas ?? '?' }}</span>
               </span>
             </div>
-
-            <!-- 镜像 -->
-            <div class="flex items-start gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">镜像</span>
-              <code class="text-xs text-slate-500 font-mono break-all">{{ svc.image }}</code>
-            </div>
             
             <!-- 端口信息 -->
             <div v-if="svc.ports && svc.ports.length" class="flex items-start gap-2 mb-3">
@@ -246,6 +249,12 @@ export default toNative(Services)
               <div class="font-mono text-xs text-slate-500">
                 <div v-for="p in svc.ports" :key="p.publishedPort">{{ p.publishedPort }}:{{ p.targetPort }}/{{ p.protocol }}</div>
               </div>
+            </div>
+
+            <!-- 更新时间 -->
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xs text-slate-400 flex-shrink-0">更新</span>
+              <span class="text-xs text-slate-500">{{ svc.updatedAt?.slice(0, 16).replace('T', ' ') }}</span>
             </div>
             
             <!-- 底部：操作按钮 -->
@@ -260,9 +269,9 @@ export default toNative(Services)
                 <i class="fas fa-up-right-and-down-left-from-center text-xs"></i><span class="text-xs ml-1">扩缩容</span>
               </button>
               <button v-if="actions.hasPerm('swarm', true)" @click="handleRedeploy(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="强制重部署">
-                <i class="fas fa-rotate text-xs"></i><span class="text-xs ml-1">重部署</span>
+                <i class="fas fa-arrows-rotate text-xs"></i><span class="text-xs ml-1">重部署</span>
               </button>
-              <button v-if="actions.hasPerm('swarm', true)" @click="openEditModal(svc)" class="btn-icon text-amber-600 hover:bg-amber-50" title="编辑">
+              <button v-if="actions.hasPerm('swarm', true)" @click="openEditModal(svc)" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
               <button v-if="actions.hasPerm('swarm', true)" @click="handleServiceRemove(svc)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">

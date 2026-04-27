@@ -33,7 +33,7 @@ class Containers extends Vue {
     readonly actionConfigs: Record<string, { icon: string; iconColor: string; title: string; confirmText: string; danger?: boolean }> = {
         start: { icon: 'fa-play', iconColor: 'emerald', title: '启动容器', confirmText: '启动' },
         stop: { icon: 'fa-stop', iconColor: 'amber', title: '停止容器', confirmText: '停止' },
-        restart: { icon: 'fa-redo', iconColor: 'blue', title: '重启容器', confirmText: '重启' },
+        restart: { icon: 'fa-rotate', iconColor: 'blue', title: '重启容器', confirmText: '重启' },
         remove: { icon: 'fa-trash', iconColor: 'red', title: '删除容器', confirmText: '删除', danger: true },
         pause: { icon: 'fa-pause', iconColor: 'amber', title: '暂停容器', confirmText: '暂停' },
         unpause: { icon: 'fa-play', iconColor: 'emerald', title: '恢复容器', confirmText: '恢复' }
@@ -239,19 +239,20 @@ export default toNative(Containers)
                 <th v-if="batchMode" class="w-10 px-4 py-3 text-left text-xs font-semibold text-slate-600">
                   <input type="checkbox" :checked="selectedIds.length === containers.length && containers.length > 0" @change="selectAll" class="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500" />
                 </th>
-                <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
                 <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
                 <th class="w-48 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
                 <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
-                <th class="w-48 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>              </tr>
+                <th class="w-48 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+              </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="ct in containers" :key="ct.id" :class="['hover:bg-slate-50 transition-colors', selectedIds.includes(ct.id) ? 'bg-blue-50' : '']">
                 <td v-if="batchMode" class="px-4 py-3">
                   <input type="checkbox" :checked="selectedIds.includes(ct.id)" @change="toggleSelect(ct.id)" class="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500" />
                 </td>
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-2">
+                <td class="px-4 py-3 max-w-[280px]">
+                  <div class="flex items-center gap-2 min-w-0">
                     <div :class="['w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
                       <i class="fas fa-box text-white text-sm"></i>
                     </div>
@@ -276,7 +277,7 @@ export default toNative(Containers)
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
                     <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats' })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
-                      <i class="fas fa-chart-bar text-xs"></i>
+                      <i class="fas fa-chart-line text-xs"></i>
                     </button>
                     <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/logs' })" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志">
                       <i class="fas fa-file-lines text-xs"></i>
@@ -288,12 +289,12 @@ export default toNative(Containers)
                       <i class="fas fa-play text-xs"></i>
                     </button>
                     <button v-if="ct.state === 'running' && actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'restart')" class="btn-icon text-blue-600 hover:bg-blue-50" title="重启">
-                      <i class="fas fa-redo text-xs"></i>
+                      <i class="fas fa-rotate text-xs"></i>
                     </button>
                     <button v-if="ct.state === 'running' && actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
                       <i class="fas fa-stop text-xs"></i>
                     </button>
-                    <button v-if="actions.hasPerm('docker', true)" @click="!ct.isSwarm && containerEditModalRef?.show(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-amber-600 hover:bg-amber-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
+                    <button v-if="actions.hasPerm('docker', true)" @click="!ct.isSwarm && containerEditModalRef?.show(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
                       <i class="fas fa-pen text-xs"></i>
                     </button>
                     <button v-if="actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
@@ -352,7 +353,7 @@ export default toNative(Containers)
                 <i class="fas fa-file-lines text-xs"></i><span class="text-xs ml-1">日志</span>
               </button>
               <button v-if="ct.state === 'running'" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats' })" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计">
-                <i class="fas fa-chart-bar text-xs"></i><span class="text-xs ml-1">统计</span>
+                <i class="fas fa-chart-line text-xs"></i><span class="text-xs ml-1">统计</span>
               </button>
               <button v-if="ct.state === 'running' && actions.hasPerm('docker', true)" @click="$router.push({ path: '/docker/container/' + ct.id + '/terminal' })" class="btn-icon text-teal-600 hover:bg-teal-50" title="终端">
                 <i class="fas fa-terminal text-xs"></i><span class="text-xs ml-1">终端</span>
@@ -361,12 +362,12 @@ export default toNative(Containers)
                 <i class="fas fa-play text-xs"></i><span class="text-xs ml-1">启动</span>
               </button>
               <button v-if="ct.state === 'running' && actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'restart')" class="btn-icon text-blue-600 hover:bg-blue-50" title="重启">
-                <i class="fas fa-redo text-xs"></i><span class="text-xs ml-1">重启</span>
+                <i class="fas fa-rotate text-xs"></i><span class="text-xs ml-1">重启</span>
               </button>
               <button v-if="ct.state === 'running' && actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'stop')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止">
                 <i class="fas fa-stop text-xs"></i><span class="text-xs ml-1">停止</span>
               </button>
-              <button v-if="actions.hasPerm('docker', true)" @click="!ct.isSwarm && containerEditModalRef?.show(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-amber-600 hover:bg-amber-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
+              <button v-if="actions.hasPerm('docker', true)" @click="!ct.isSwarm && containerEditModalRef?.show(ct)" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
               <button v-if="actions.hasPerm('docker', true)" @click="handleContainerAction(ct, 'remove')" class="btn-icon text-red-600 hover:bg-red-50" title="删除">

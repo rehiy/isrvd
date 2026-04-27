@@ -184,21 +184,20 @@ export default toNative(Nodes)
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="n in nodes" :key="n.id" class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-blue-400 flex items-center justify-center">
+                <td class="px-4 py-3 max-w-[280px]">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-blue-400 flex items-center justify-center flex-shrink-0">
                       <i class="fas fa-server text-white text-sm"></i>
                     </div>
-                    <div>
-                      <span class="font-medium text-slate-800">{{ n.hostname }}</span>
-                      <span v-if="n.leader" class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium bg-indigo-100 text-indigo-700">
-                        <i class="fas fa-crown mr-1 text-[10px]"></i>Leader
-                      </span>
+                    <div class="min-w-0">
+                      <span class="font-medium text-slate-800 truncate block">{{ n.hostname }}</span>
                     </div>
                   </div>
                 </td>
                 <td class="px-4 py-3">
-                  <span :class="n.role === 'manager' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ n.role }}</span>
+                  <span :class="n.role === 'manager' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">
+                    <i v-if="n.leader" class="fas fa-crown mr-1 text-[10px]"></i>{{ n.role }}
+                  </span>
                 </td>
                 <td class="px-4 py-3">
                   <span :class="nodeStateClass(n.state)" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ n.state }}</span>

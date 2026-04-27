@@ -137,8 +137,7 @@ export default toNative(Members)
           <table class="w-full border-collapse">
               <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                  <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">用户名</th>
-                  <th class="w-48 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Home 目录</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">用户名</th>
                   <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">模块权限</th>
                   <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">密码</th>
                   <th class="w-28 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
@@ -146,15 +145,17 @@ export default toNative(Members)
               </thead>
               <tbody class="bg-white divide-y divide-slate-100">
                 <tr v-for="m in members" :key="m.username" class="hover:bg-slate-50 transition-colors">
-                  <td class="px-4 py-3">
-                    <div class="flex items-center gap-2">
-                      <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                  <td class="px-4 py-3 max-w-[280px]">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
                         <i class="fas fa-user text-white text-sm"></i>
                       </div>
-                      <span class="font-medium text-slate-800">{{ m.username }}</span>
+                      <div class="min-w-0">
+                        <span class="font-medium text-slate-800 truncate block">{{ m.username }}</span>
+                        <code class="text-xs text-slate-400 truncate block mt-0.5">{{ m.homeDirectory }}</code>
+                      </div>
                     </div>
                   </td>
-                  <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ m.homeDirectory }}</code></td>
                   <td class="px-4 py-3">
                     <div class="flex flex-wrap gap-1">
                       <template v-for="(perm, mod) in m.permissions" :key="mod">

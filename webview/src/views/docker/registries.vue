@@ -140,7 +140,7 @@ export default toNative(Registries)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">地址</th>
                 <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">认证</th>
                 <th class="w-28 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
@@ -149,13 +149,13 @@ export default toNative(Registries)
             <tbody class="bg-white divide-y divide-slate-100">
               <!-- Docker Hub 行（始终显示） -->
               <tr class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                <td class="px-4 py-3 max-w-[280px]">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
                       <i class="fab fa-docker text-white text-sm"></i>
                     </div>
-                    <div class="flex flex-col">
-                      <span class="font-medium text-slate-800">Docker Hub</span>
+                    <div class="flex flex-col min-w-0">
+                      <span class="font-medium text-slate-800 truncate block">Docker Hub</span>
                       <span class="text-xs text-slate-400 font-normal">默认</span>
                     </div>
                   </div>
@@ -179,14 +179,14 @@ export default toNative(Registries)
               </tr>
               <!-- 私有仓库行 -->
               <tr v-for="reg in registries" :key="reg.url" class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-purple-400 flex items-center justify-center">
+                <td class="px-4 py-3 max-w-[280px]">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-purple-400 flex items-center justify-center flex-shrink-0">
                       <i class="fas fa-warehouse text-white text-sm"></i>
                     </div>
-                    <div class="flex flex-col">
-                      <span class="font-medium text-slate-800">{{ reg.name }}</span>
-                      <span v-if="reg.description" class="text-xs text-slate-400 font-normal">{{ reg.description }}</span>
+                    <div class="flex flex-col min-w-0">
+                      <span class="font-medium text-slate-800 truncate block">{{ reg.name }}</span>
+                      <span v-if="reg.description" class="text-xs text-slate-400 font-normal truncate block">{{ reg.description }}</span>
                     </div>
                   </div>
                 </td>
@@ -224,7 +224,7 @@ export default toNative(Registries)
               </div>
               <div class="min-w-0">
                 <h3 class="font-medium text-slate-800 text-sm">Docker Hub</h3>
-                <span class="text-xs text-slate-400">默认公共仓库</span>
+                <span class="text-xs text-slate-400">默认</span>
               </div>
             </div>
 
