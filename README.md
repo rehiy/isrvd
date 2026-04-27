@@ -17,6 +17,47 @@
 | 成员管理 | 多用户支持，用户隔离、独立家目录、权限控制 |
 | 移动端 | 响应式布局，全面适配移动设备 |
 
+## 技术栈
+
+| 层级 | 技术 |
+|------|------|
+| 后端 | Go 1.25+ / Gin |
+| 前端 | Vue 3 + TypeScript + Tailwind CSS |
+| 构建 | Vite |
+| 终端 | xterm.js + WebSocket |
+| 认证 | JWT |
+| 容器 | Docker SDK for Go |
+| 监控 | gopsutil + ghw |
+
+## 项目结构
+
+```
+isrvd/
+├── cmd/server/          # 服务入口
+├── config/              # 配置加载与保存
+├── internal/
+│   ├── helper/          # 辅助函数（响应、密码、WebSocket）
+│   ├── registry/        # 外部服务注册（Docker、APISIX、Compose）
+│   ├── server/          # HTTP handlers
+│   └── service/         # 业务逻辑层
+├── pkgs/
+│   ├── apisix/          # APISIX Admin API 客户端
+│   ├── archive/         # 压缩解压工具
+│   ├── compose/         # Compose 文件解析与部署
+│   ├── docker/          # Docker 客户端封装
+│   ├── gpu/             # GPU 监控（NVIDIA/AMD/Intel）
+│   └── swarm/           # Docker Swarm 客户端
+├── webview/             # 前端 Vue 应用
+│   └── src/
+│       ├── component/   # 通用组件
+│       ├── helper/      # 工具函数
+│       ├── router/      # 路由配置
+│       ├── service/     # API 服务与类型定义
+│       ├── store/       # 状态管理
+│       └── views/       # 页面组件
+└── build/               # 构建脚本与 Dockerfile
+```
+
 ## Docker 部署（推荐）
 
 提供两个镜像版本：
@@ -114,9 +155,25 @@ services:
 | `apisix` | APISIX Admin API 地址和密钥 |
 | `docker` | Docker 守护进程地址、容器数据目录、镜像仓库账号 |
 | `marketplace` | 应用市场地址 |
-| `members` | 用户账号、家目录、终端权限、模块权限 |
+| `links` | 自定义快捷链接（侧边栏显示） |
+| `members` | 用户账号、家目录、模块权限 |
 
 支持环境变量 `CONFIG_PATH` 指定配置文件路径（默认 `config.yml`）。
+
+**权限模块**
+
+| 模块 | 权限值 | 说明 |
+|------|--------|------|
+| `filer` | `r` / `rw` | 文件管理 |
+| `agent` | `r` / `rw` | AI 助手 |
+| `apisix` | `r` / `rw` | APISIX 管理 |
+| `docker` | `r` / `rw` | Docker 管理 |
+| `swarm` | `r` / `rw` | Swarm 管理 |
+| `compose` | `r` / `rw` | Compose 管理 |
+| `system` | `r` / `rw` | 系统设置 |
+| `shell` | `r` / `rw` | Web 终端 |
+
+> `r` = 只读，`rw` = 读写，留空或不填 = 无权限
 
 ## GPU 监控
 
@@ -168,6 +225,79 @@ docker run -d \
 
 > 无 GPU 或驱动未安装的环境下，GPU 区域不会显示，不影响其他功能。
 
+## API 端点
+
+| 路径 | 说明 |
+|------|------|
+| `POST /api/auth/login` | 用户登录 |
+| `POST /api/auth/logout` | 用户登出 |
+| `GET /api/system/overview` | 系统概览 |
+| `GET /api/system/settings` | 获取系统设置 |
+| `PUT /api/system/settings` | 更新系统设置 |
+| `GET /api/filer/*` | 文件浏览 |
+| `POST /api/filer/upload` | 文件上传 |
+| `GET /api/filer/download/*` | 文件下载 |
+| `PUT /api/filer/content/*` | 文件内容保存 |
+| `WS /api/shell` | Web 终端 |
+| `GET /api/docker/containers` | 容器列表 |
+| `GET /api/docker/images` | 镜像列表 |
+| `GET /api/docker/networks` | 网络列表 |
+| `GET /api/docker/volumes` | 卷列表 |
+| `WS /api/docker/stats/:id` | 容器实时统计 |
+| `WS /api/docker/exec/:id` | 容器终端 |
+| `GET /api/swarm/services` | Swarm 服务列表 |
+| `GET /api/swarm/nodes` | Swarm 节点列表 |
+| `GET /api/swarm/tasks` | Swarm 任务列表 |
+| `GET /api/compose/files` | Compose 文件列表 |
+| `POST /api/compose/deploy` | Compose 部署 |
+| `GET /api/apisix/routes` | APISIX 路由列表 |
+| `GET /api/apisix/consumers` | APISIX Consumer 列表 |
+| `POST /api/agent/chat` | AI 助手对话 |
+
+> 完整 API 文档请参考源码 `internal/server/` 目录下的各 handler 文件。
+
+## 架构设计
+
+### 分层架构
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   HTTP Handler                       │
+│              (internal/server/)                      │
+│         解析请求 → 调用 Service → 返回响应            │
+└───────────────────────┬─────────────────────────────┘
+                        │
+┌───────────────────────▼─────────────────────────────┐
+│                   Service Layer                      │
+│              (internal/service/)                     │
+│         业务组合、类型转换、参数校验                  │
+└───────────────────────┬─────────────────────────────┘
+                        │
+┌───────────────────────▼─────────────────────────────┐
+│                   Package Layer                      │
+│                    (pkgs/)                           │
+│    Docker / Swarm / APISIX / GPU / Compose 客户端    │
+└───────────────────────┬─────────────────────────────┘
+                        │
+┌───────────────────────▼─────────────────────────────┐
+│                   Registry                           │
+│            (internal/registry/)                      │
+│         外部服务初始化与生命周期管理                  │
+└─────────────────────────────────────────────────────┘
+```
+
+### 依赖方向
+
+```
+config → registry → pkgs → service → server
+```
+
+### 设计原则
+
+- **高内聚**：同一领域功能聚合在同一包（如 `pkgs/docker/` 包含所有 Docker 操作）
+- **低耦合**：层与层之间通过接口解耦，禁止跨层直达
+- **单一职责**：Handler 只负责 HTTP 解析，Service 只负责业务逻辑
+
 ## 编译
 
 需要 Go 1.25+ 和 Node.js 22+：
@@ -175,6 +305,15 @@ docker run -d \
 ```bash
 ./build.sh
 ```
+
+## 安全特性
+
+- JWT 认证，所有 API 请求需携带有效 Token
+- 敏感配置（密码、密钥）仅返回 `xxxSet` 布尔值，不回传明文
+- 文件系统操作防目录遍历攻击
+- 压缩解压防 Zip Slip 攻击
+- WebSocket 连接需经过认证链路
+- 支持代理认证头（`proxyHeaderName`），可与反向代理集成
 
 ## 许可证
 
