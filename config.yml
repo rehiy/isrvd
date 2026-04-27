@@ -1,6 +1,6 @@
 server:
   debug: false
-  listenAddr: ":8080"
+  listenAddr: :8080
   jwtSecret: default-secret-key
   # proxyHeaderName: X-Username
   rootDirectory: storage/

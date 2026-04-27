@@ -62,7 +62,6 @@ func NewApp() *App {
 	app.setupRouter()
 
 	logman.Info("Server starting",
-		"listenAddr", config.ListenAddr,
 		"rootDirectory", config.RootDirectory,
 		"members", len(config.Members),
 	)

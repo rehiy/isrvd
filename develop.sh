@@ -19,6 +19,11 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
+# 释放占用的端口
+if command -v fuser &>/dev/null; then
+    fuser -k 8080/tcp 3000/tcp 2>/dev/null
+fi
+
 # 启动 Go 服务
 if [ ! -f .local.yml ]; then
     cp config.yml .local.yml
