@@ -17,6 +17,7 @@ class BaseModal extends Vue {
 
     // ─── 数据属性 ───
     isOpen = this.modelValue
+    mouseDownTarget: EventTarget | null = null
 
     // ─── 监听器 ───
     @Watch('modelValue')
@@ -44,10 +45,17 @@ class BaseModal extends Vue {
         this.close()
     }
 
+    handleBackdropMouseDown(e: MouseEvent) {
+        this.mouseDownTarget = e.target
+    }
+
     handleBackdropClick(e: MouseEvent) {
-        if (e.target === this.modalRef) {
+        // 只有 mousedown 和 mouseup 都落在遮罩层本身时才关闭
+        // 防止在表单内拖拽选中文字后鼠标松开偏移到遮罩层触发误关闭
+        if (e.target === this.modalRef && this.mouseDownTarget === this.modalRef) {
             this.handleCancel()
         }
+        this.mouseDownTarget = null
     }
 
     handleEscape(e: KeyboardEvent) {
@@ -83,6 +91,7 @@ export default toNative(BaseModal)
         v-if="isOpen" 
         ref="modalRef"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+        @mousedown="handleBackdropMouseDown"
         @click="handleBackdropClick"
       >
         <div :class="['w-full modal-card animate-scale-in', 'max-w-3xl']">
