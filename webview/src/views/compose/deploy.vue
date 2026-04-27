@@ -151,7 +151,7 @@ export default toNative(ComposeDeploy)
               <i class="fas fa-rotate-left"></i>清空
             </button>
             <button v-if="actions.hasPerm('compose', true)" type="button" @click="openMarketplace()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
-              <i class="fas fa-store"></i>从应用市场选择
+              <i class="fas fa-store"></i>应用市场
             </button>
           </div>
         </div>

@@ -242,7 +242,7 @@ export default toNative(MarketplaceModal)
               :src="iframeUrl"
               class="w-full h-full border-0"
               referrerpolicy="no-referrer"
-              sandbox="allow-scripts allow-popups allow-forms allow-downloads allow-modals"
+              sandbox="allow-scripts allow-popups allow-forms allow-downloads allow-modals allow-same-origin"
             ></iframe>
           </div>
         </div>

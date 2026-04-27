@@ -81,7 +81,7 @@ export function getPageInstruction(url: string): string {
         return '当前页面：Swarm 任务列表。可查看所有服务任务的运行状态和调度信息。'
     }
     if (path.includes('/compose/deploy')) {
-        return '当前页面：Compose 部署。可直接粘贴 docker-compose.yml 文本部署，或点击「从应用市场选择」打开弹窗挑选模板回填；需要填写实例名（同时作 compose project 名），docker 目标下会落盘到 数据目录/实例名 以便后续管理。'
+        return '当前页面：Compose 部署。可直接粘贴 docker-compose.yml 文本部署，或点击「应用市场」打开弹窗挑选模板回填；需要填写实例名（同时作 compose project 名），docker 目标下会落盘到 数据目录/实例名 以便后续管理。'
     }
     if (path.includes('/system/members')) {
         return '当前页面：成员管理。可添加、编辑、删除系统用户，管理用户角色权限。'
