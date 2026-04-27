@@ -116,7 +116,7 @@ export default toNative(App)
     <template v-if="state.username">
       <!-- 移动端顶部菜单栏 -->
       <header 
-        class="fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-40 flex items-center justify-between px-4 transition-all duration-300"
+        class="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 z-40 flex items-center justify-between px-4 transition-all duration-300"
         :class="sidebarCollapsed ? 'lg:left-16' : 'lg:left-64'"
       >
         <!-- 移动端菜单切换按钮 -->
@@ -128,7 +128,7 @@ export default toNative(App)
         </button>
         
         <!-- 工具栏按钮区域 -->
-        <div class="flex items-center gap-2 overflow-x-auto ml-auto">
+        <div v-if="toolbarLinks.length > 0" class="flex items-center gap-2 overflow-x-auto ml-auto">
           <a
             v-for="link in toolbarLinks"
             :key="link.url"

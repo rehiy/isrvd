@@ -135,19 +135,12 @@ export default toNative(NavigationBar)
 </script>
 
 <template>
-  <!-- 移动端遮罩层 -->
-  <div 
-    v-if="mobileSidebarVisible"
-    class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-    @click="closeMobileSidebar"
-  ></div>
-  
   <aside 
-    class="fixed left-0 top-0 h-screen bg-white border-r border-slate-200 z-50 flex flex-col transition-all duration-300"
+    class="fixed left-0 top-0 h-screen bg-white/80 backdrop-blur-xl border-r border-slate-200/50 z-50 flex flex-col transition-all duration-300"
     :class="[collapsed ? 'w-16' : 'w-64', mobileSidebarVisible ? 'translate-x-0' : '-translate-x-full lg:translate-x-0']"
   >
     <!-- Logo 区域 -->
-    <div class="h-16 flex items-center border-b border-slate-200" :class="collapsed ? 'justify-center' : 'px-4'" @click="closeMobileSidebar">
+    <div class="h-16 flex items-center border-b border-slate-200/50" :class="collapsed ? 'justify-center' : 'px-4'" @click="closeMobileSidebar">
       <div class="flex items-center" :class="collapsed ? '' : 'space-x-3'">
         <div class="w-10 h-10 rounded-xl bg-primary-500 flex items-center justify-center shadow-glow">
           <i class="fas fa-server text-white text-lg"></i>
@@ -171,7 +164,7 @@ export default toNative(NavigationBar)
       <router-link 
         to="/overview" 
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-        active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+        active-class="bg-blue-50 text-blue-700"
         :title="collapsed ? '概览' : ''"
       >
         <i class="fas fa-gauge-high"></i>
@@ -181,7 +174,7 @@ export default toNative(NavigationBar)
         v-if="canFiler"
         to="/explorer" 
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-        active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+        active-class="bg-blue-50 text-blue-700"
         :title="collapsed ? '文件管理' : ''"
       >
         <i class="fas fa-folder-open"></i>
@@ -191,7 +184,7 @@ export default toNative(NavigationBar)
         v-if="canShell"
         to="/shell" 
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-        active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+        active-class="bg-blue-50 text-blue-700"
         :title="collapsed ? 'Shell 终端' : ''"
       >
         <i class="fas fa-terminal"></i>
@@ -200,16 +193,16 @@ export default toNative(NavigationBar)
 
       <!-- APISIX 折叠子菜单 -->
       <div v-if="canApisix">
-        <!-- 折叠状态只显示图标 -->
-        <router-link
+        <!-- 折叠状态只显示图标，点击展开侧边栏 -->
+        <button
           v-if="collapsed"
-          to="/overview"
-          class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/') }"
-          title="APISIX"
+          @click.stop="toggleApisix"
+          class="flex items-center justify-center w-full px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+          :class="{ 'bg-blue-50 text-blue-700': isActive('/apisix/') }"
+          title="APISIX 网关"
         >
           <i class="fas fa-cloud"></i>
-        </router-link>
+        </button>
         <!-- 有权限：展开状态显示完整子菜单 -->
         <template v-else>
           <button
@@ -255,16 +248,16 @@ export default toNative(NavigationBar)
 
       <!-- Docker 折叠子菜单 -->
       <div v-if="canDocker">
-        <!-- 折叠状态只显示图标 -->
-        <router-link
+        <!-- 折叠状态只显示图标，点击展开侧边栏 -->
+        <button
           v-if="collapsed"
-          to="/overview"
-          class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/') }"
-          title="Docker"
+          @click.stop="toggleDocker"
+          class="flex items-center justify-center w-full px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+          :class="{ 'bg-blue-50 text-blue-700': isActive('/docker/') }"
+          title="Docker 服务"
         >
           <i class="fab fa-docker"></i>
-        </router-link>
+        </button>
         <!-- 展开状态：显示完整子菜单 -->
         <template v-else>
           <button
@@ -326,16 +319,16 @@ export default toNative(NavigationBar)
 
       <!-- Swarm 折叠子菜单 -->
       <div v-if="canSwarm">
-        <!-- 折叠状态只显示图标 -->
-        <router-link
+        <!-- 折叠状态只显示图标，点击展开侧边栏 -->
+        <button
           v-if="collapsed"
-          to="/overview"
-          class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-          :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm') }"
+          @click.stop="toggleSwarm"
+          class="flex items-center justify-center w-full px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+          :class="{ 'bg-blue-50 text-blue-700': isActive('/swarm') }"
           title="Swarm 集群"
         >
           <i class="fas fa-circle-nodes"></i>
-        </router-link>
+        </button>
         <!-- 有权限：展开状态显示完整子菜单 -->
         <template v-else>
           <button
@@ -384,7 +377,7 @@ export default toNative(NavigationBar)
         v-if="canCompose"
         to="/compose/deploy"
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-        active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+        active-class="bg-blue-50 text-blue-700"
         :title="collapsed ? 'Compose 部署' : ''"
       >
         <i class="fas fa-file-code"></i>
@@ -395,7 +388,7 @@ export default toNative(NavigationBar)
         v-if="canSystem"
         to="/system/members"
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-        active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+        active-class="bg-blue-50 text-blue-700"
         :title="collapsed ? '用户管理' : ''"
       >
         <i class="fas fa-users"></i>
@@ -407,7 +400,7 @@ export default toNative(NavigationBar)
         v-if="canSystem"
         to="/system/settings"
         class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
-        active-class="bg-blue-50 text-blue-700 hover:bg-blue-100"
+        active-class="bg-blue-50 text-blue-700"
         :title="collapsed ? '系统设置' : ''"
       >
         <i class="fas fa-gear"></i>
@@ -416,7 +409,7 @@ export default toNative(NavigationBar)
     </nav>
 
     <!-- 底部工具条：GitHub 链接 + 折叠按钮 -->
-    <div class="border-t border-slate-200 p-3" :class="collapsed ? 'space-y-1' : 'flex items-center gap-2'">
+    <div class="border-t border-slate-200/50 p-3" :class="collapsed ? 'space-y-1' : 'flex items-center gap-2'">
       <a
         href="https://github.com/rehiy/isrvd"
         target="_blank"
@@ -438,4 +431,11 @@ export default toNative(NavigationBar)
       </button>
     </div>
   </aside>
+
+  <!-- 移动端遮罩层 -->
+  <div 
+    v-if="mobileSidebarVisible"
+    class="fixed inset-0 bg-black/40 z-30 lg:hidden"
+    @click="closeMobileSidebar"
+  ></div>
 </template>
