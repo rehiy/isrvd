@@ -13,7 +13,7 @@ CONF_DIR="/data/conf"
 DEFAULTS_DIR="/etc/defaults"
 
 mkdir -p "$CONF_DIR"
-mkdir -p /data/conf /data/container
+mkdir -p /data/conf
 
 # 遍历默认配置模板，不存在则自动拷贝
 for file in "$DEFAULTS_DIR"/*; do

@@ -14,7 +14,7 @@ DEFAULTS_DIR="/etc/defaults"
 
 mkdir -p "$CONF_DIR"
 mkdir -p /var/log/supervisor
-mkdir -p /data/conf /data/etcd /data/container
+mkdir -p /data/conf /data/etcd
 
 # 遍历默认配置模板，不存在则自动拷贝
 for file in "$DEFAULTS_DIR"/*; do
