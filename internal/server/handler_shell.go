@@ -96,6 +96,7 @@ func shellHandleIO(conn *websocket.Conn, stdin io.Writer, stdout io.Reader, cmd 
 				shellSendMsg(conn, string(buf[:n]))
 			}
 			if err != nil {
+				logman.Error("shellHandleIO: stdout.Read error", "error", err)
 				return
 			}
 		}
@@ -104,9 +105,11 @@ func shellHandleIO(conn *websocket.Conn, stdin io.Writer, stdout io.Reader, cmd 
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
+			logman.Error("shellHandleIO: conn.ReadMessage error", "error", err)
 			return
 		}
 		if _, err = stdin.Write(msg); err != nil {
+			logman.Error("shellHandleIO: stdin.Write error", "error", err)
 			return
 		}
 	}
@@ -144,17 +147,24 @@ func shellResolve(shell string) string {
 }
 
 func shellBuildCmd(shell, homeDir string) *exec.Cmd {
-	cmd := exec.Command(shell)
-	cmd.Dir = homeDir
+	var cmd *exec.Cmd
 	env := os.Environ()
+
 	switch runtime.GOOS {
 	case "windows":
+		// Windows 下通过 /C chcp 65001 切换 UTF-8 代码页后再启动目标 shell，
+		// 避免 GBK 输出导致 WebSocket UTF-8 错误
+		cmd = exec.Command("cmd", "/C", "chcp 65001 >nul && "+shell)
 		env = append(env, "TERM=dumb")
 	case "darwin":
+		cmd = exec.Command(shell)
 		env = append([]string{"TERM=xterm-256color", "CLICOLOR=1"}, env...)
 	default:
+		cmd = exec.Command(shell)
 		env = append([]string{"TERM=xterm-256color"}, env...)
 	}
+
+	cmd.Dir = homeDir
 	cmd.Env = env
 	return cmd
 }
