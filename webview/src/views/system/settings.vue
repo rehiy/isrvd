@@ -82,7 +82,7 @@ class Settings extends Vue {
   }
 
   addLink() {
-    this.links.push({ label: '', url: '', icon: 'fa-link' })
+    this.links.push({ label: '', url: '', icon: 'fas fa-link' })
   }
 
   removeLink(index: number) {

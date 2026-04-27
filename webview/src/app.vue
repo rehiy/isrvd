@@ -9,8 +9,6 @@ import api from '@/service/api'
 import { fetchServiceProbe } from '@/service/probe'
 import type { SystemLinkSetting } from '@/service/types'
 
-import { FA_ICONS } from '@/helper/icons'
-
 import ConfirmModal from '@/component/confirm.vue'
 import NavigationBar from '@/component/navigation.vue'
 import NotificationManager from '@/component/notification.vue'
@@ -30,7 +28,6 @@ class App extends Vue {
     @Provide(APP_STATE_KEY) state = state
     @Provide(APP_ACTIONS_KEY) actions = actions
     sidebarCollapsed = false
-    readonly FA_ICONS = FA_ICONS
     toolbarLinks: SystemLinkSetting[] = []
 
     // ─── Refs ───
@@ -140,7 +137,7 @@ export default toNative(App)
             rel="noopener noreferrer"
             class="flex items-center gap-2 px-2 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-100 transition-colors whitespace-nowrap flex-shrink-0"
           >
-            <i v-if="link.icon" :class="[FA_ICONS.find(i => i.name === link.icon)?.prefix ?? 'fas', link.icon]"></i>
+            <i v-if="link.icon" :class="link.icon.includes(' ') ? link.icon : `fas ${link.icon}`"></i>
             <span>{{ link.label }}</span>
           </a>
         </div>
