@@ -138,7 +138,7 @@ export default toNative(Members)
               <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
                   <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">用户名</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Home 目录</th>
+                  <th class="w-48 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Home 目录</th>
                   <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">模块权限</th>
                   <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">密码</th>
                   <th class="w-28 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>

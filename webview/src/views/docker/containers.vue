@@ -239,7 +239,7 @@ export default toNative(Containers)
                 <th v-if="batchMode" class="w-10 px-4 py-3 text-left text-xs font-semibold text-slate-600">
                   <input type="checkbox" :checked="selectedIds.length === containers.length && containers.length > 0" @change="selectAll" class="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500" />
                 </th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+                <th class="w-1/4 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
                 <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
                 <th class="w-48 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
                 <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
@@ -256,8 +256,8 @@ export default toNative(Containers)
                       <i class="fas fa-box text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
-                      <span class="font-medium text-slate-800" :title="ct.name || ct.id">{{ ct.name || ct.id }}</span>
-                      <code class="text-xs text-slate-400 block mt-0.5" :title="ct.image">{{ formatImageName(ct.image) }}</code>
+                      <span class="font-medium text-slate-800 truncate block" :title="ct.name || ct.id">{{ ct.name || ct.id }}</span>
+                      <code class="text-xs text-slate-400 truncate block mt-0.5" :title="ct.image">{{ formatImageName(ct.image) }}</code>
                     </div>
                   </div>
                 </td>
