@@ -29,9 +29,9 @@ marketplace:
   url: https://apps.rehi.org
 
 links:
-- label: 工具
+- label: 工具箱
   url: https://api.rehi.org
-  icon: fa-bolt
+  icon: fas fa-cloud-bolt
 
 members:
   - username: admin
