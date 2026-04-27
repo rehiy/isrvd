@@ -18,14 +18,16 @@ import (
 // App 应用实例，持有各业务服务
 type App struct {
 	*gin.Engine
-	apisixSvc   *svcApisix.Service
-	dockerSvc   *svcDocker.Service
-	swarmSvc    *svcSwarm.Service
-	composeSvc  *svcCompose.DeployService
 	systemSvc   *svcSystem.Service
 	settingsSvc *svcSystem.SettingsService
 	memberSvc   *svcSystem.MemberService
 	authSvc     *svcSystem.AuthService
+	filerSvc    *svcSystem.Service
+	agentSvc    *svcSystem.Service
+	apisixSvc   *svcApisix.Service
+	dockerSvc   *svcDocker.Service
+	swarmSvc    *svcSwarm.Service
+	composeSvc  *svcCompose.DeployService
 }
 
 func NewApp() *App {
@@ -75,6 +77,7 @@ func NewApp() *App {
 func (app *App) setupRouter() {
 	api := app.Group("/api")
 
+	// Auth
 	api.GET("/auth/info", MixAuthMiddleware(), app.authInfo)
 	api.POST("/auth/login", app.login)
 
@@ -83,7 +86,26 @@ func (app *App) setupRouter() {
 
 	authApi.POST("/auth/logout", app.logout)
 
-	// 文件管理（只读）
+	// System（只读）
+	sr := authApi.Group("/system")
+	sr.Use(PermMiddleware("system", false))
+	{
+		sr.GET("/stats", app.systemStat)
+		sr.GET("/probe", app.systemProbe)
+		sr.GET("/settings", app.systemGetSettings)
+		sr.GET("/members", app.systemListMembers)
+	}
+	// System（读写）
+	sw := authApi.Group("/system")
+	sw.Use(PermMiddleware("system", true))
+	{
+		sw.PUT("/settings", app.systemUpdateSettings)
+		sw.POST("/members", app.systemCreateMember)
+		sw.PUT("/member/:username", app.systemUpdateMember)
+		sw.DELETE("/member/:username", app.systemDeleteMember)
+	}
+
+	// Filer（只读）
 	fr := authApi.Group("/filer")
 	fr.Use(PermMiddleware("filer", false))
 	{
@@ -91,7 +113,7 @@ func (app *App) setupRouter() {
 		fr.POST("/download", app.filerDownload)
 		fr.POST("/read", app.filerRead)
 	}
-	// 文件管理（读写）
+	// Filer（读写）
 	fw := authApi.Group("/filer")
 	fw.Use(PermMiddleware("filer", true))
 	{
@@ -107,10 +129,10 @@ func (app *App) setupRouter() {
 	}
 
 	// Agent LLM 代理
-	agentGroup := authApi.Group("/agent")
-	agentGroup.Use(PermMiddleware("agent", false))
+	gr := authApi.Group("/agent")
+	gr.Use(PermMiddleware("agent", false))
 	{
-		agentGroup.Any("/proxy/*path", app.agentProxy)
+		gr.Any("/proxy/*path", app.agentProxy)
 	}
 
 	// Apisix
@@ -228,29 +250,11 @@ func (app *App) setupRouter() {
 		}
 	}
 
-	// 系统（system 只读权限）
-	sysr := authApi.Group("/system")
-	sysr.Use(PermMiddleware("system", false))
-	{
-		sysr.GET("/stats", app.systemStat)
-		sysr.GET("/probe", app.systemProbe)
-		sysr.GET("/settings", app.systemGetSettings)
-		sysr.GET("/members", app.systemListMembers)
-	}
-	sysw := authApi.Group("/system")
-	sysw.Use(PermMiddleware("system", true))
-	{
-		sysw.PUT("/settings", app.systemUpdateSettings)
-		sysw.POST("/members", app.systemCreateMember)
-		sysw.PUT("/member/:username", app.systemUpdateMember)
-		sysw.DELETE("/member/:username", app.systemDeleteMember)
-	}
-
 	// WebSocket
 	ws := app.Group("/ws")
 	ws.Use(AuthMiddleware())
 	{
-		ws.GET("/shell", app.shellWebSocket)
+		ws.GET("/shell", PermMiddleware("shell", true), app.shellWebSocket)
 		if app.dockerSvc != nil {
 			ws.GET("/docker/exec", PermMiddleware("docker", true), app.dockerContainerExec)
 		}

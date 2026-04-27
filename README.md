@@ -164,14 +164,14 @@ services:
 
 | 模块 | 权限值 | 说明 |
 |------|--------|------|
+| `system` | `r` / `rw` | 系统设置 |
 | `filer` | `r` / `rw` | 文件管理 |
+| `shell` | `r` / `rw` | Web 终端 |
 | `agent` | `r` / `rw` | AI 助手 |
 | `apisix` | `r` / `rw` | APISIX 管理 |
 | `docker` | `r` / `rw` | Docker 管理 |
 | `swarm` | `r` / `rw` | Swarm 管理 |
 | `compose` | `r` / `rw` | Compose 管理 |
-| `system` | `r` / `rw` | 系统设置 |
-| `shell` | `r` / `rw` | Web 终端 |
 
 > `r` = 只读，`rw` = 读写，留空或不填 = 无权限
 
@@ -231,28 +231,28 @@ docker run -d \
 |------|------|
 | `POST /api/auth/login` | 用户登录 |
 | `POST /api/auth/logout` | 用户登出 |
-| `GET /api/system/overview` | 系统概览 |
+| `GET /api/system/stats` | 系统统计 |
 | `GET /api/system/settings` | 获取系统设置 |
 | `PUT /api/system/settings` | 更新系统设置 |
-| `GET /api/filer/*` | 文件浏览 |
+| `GET /api/system/members` | 成员列表 |
+| `POST /api/filer/list` | 文件列表 |
 | `POST /api/filer/upload` | 文件上传 |
-| `GET /api/filer/download/*` | 文件下载 |
-| `PUT /api/filer/content/*` | 文件内容保存 |
-| `WS /api/shell` | Web 终端 |
+| `POST /api/filer/download` | 文件下载 |
+| `POST /api/filer/read` | 文件读取 |
+| `GET /api/agent/proxy/*` | Agent 代理 |
+| `GET /api/apisix/routes` | APISIX 路由列表 |
+| `GET /api/apisix/consumers` | APISIX Consumer 列表 |
 | `GET /api/docker/containers` | 容器列表 |
 | `GET /api/docker/images` | 镜像列表 |
 | `GET /api/docker/networks` | 网络列表 |
 | `GET /api/docker/volumes` | 卷列表 |
-| `WS /api/docker/stats/:id` | 容器实时统计 |
-| `WS /api/docker/exec/:id` | 容器终端 |
 | `GET /api/swarm/services` | Swarm 服务列表 |
 | `GET /api/swarm/nodes` | Swarm 节点列表 |
 | `GET /api/swarm/tasks` | Swarm 任务列表 |
-| `GET /api/compose/files` | Compose 文件列表 |
-| `POST /api/compose/deploy` | Compose 部署 |
-| `GET /api/apisix/routes` | APISIX 路由列表 |
-| `GET /api/apisix/consumers` | APISIX Consumer 列表 |
-| `POST /api/agent/chat` | AI 助手对话 |
+| `GET /api/compose/docker/:name` | Compose 文件内容 |
+| `POST /api/compose/docker/deploy` | Compose 部署 |
+| `WS /ws/shell` | Web 终端 |
+| `WS /ws/docker/exec` | 容器终端 |
 
 > 完整 API 文档请参考源码 `internal/server/` 目录下的各 handler 文件。
 
