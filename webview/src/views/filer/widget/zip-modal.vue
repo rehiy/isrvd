@@ -49,7 +49,6 @@ export default toNative(ZipModal)
       <p class="text-sm text-slate-500">压缩后的文件将保存在当前目录</p>
     </div>
     <template #confirm-text>
-      <i class="fas fa-file-archive mr-2" v-if="!state.loading"></i>
       {{ state.loading ? '压缩中...' : '开始压缩' }}
     </template>
   </BaseModal>

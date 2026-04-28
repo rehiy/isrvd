@@ -49,7 +49,6 @@ export default toNative(UnzipModal)
       <p class="text-sm text-slate-500">文件将解压到当前目录</p>
     </div>
     <template #confirm-text>
-      <i class="fas fa-expand-arrows-alt mr-2" v-if="!state.loading"></i>
       {{ state.loading ? '解压中...' : '开始解压' }}
     </template>
   </BaseModal>

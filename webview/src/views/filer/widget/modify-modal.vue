@@ -58,7 +58,6 @@ export default toNative(ModifyModal)
       <Codemirror v-model="formData.content" :style="{ height: '60vh' }" :extensions="extensions" :disabled="state.loading" />
     </div>
     <template #confirm-text>
-      <i class="fas fa-save mr-2" v-if="!state.loading"></i>
       {{ state.loading ? '保存中...' : '保存文件' }}
     </template>
   </BaseModal>

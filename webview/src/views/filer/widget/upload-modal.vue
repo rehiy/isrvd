@@ -138,7 +138,6 @@ export default toNative(UploadModal)
       </div>
     </form>
     <template #confirm-text>
-      <i class="fas fa-cloud-arrow-up mr-2" v-if="!state.loading"></i>
       {{ state.loading ? `上传中 ${uploadProgress}/${uploadFiles.length}...` : '开始上传' }}
     </template>
   </BaseModal>

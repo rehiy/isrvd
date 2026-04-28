@@ -71,7 +71,6 @@ export default toNative(ChmodModal)
       </div>
     </form>
     <template #confirm-text>
-      <i class="fas fa-key mr-2" v-if="!state.loading"></i>
       {{ state.loading ? '修改中...' : '确认修改' }}
     </template>
   </BaseModal>

@@ -74,7 +74,6 @@ export default toNative(CreateModal)
       </div>
     </form>
     <template #confirm-text>
-      <i class="fas fa-file-circle-plus mr-2" v-if="!state.loading"></i>
       {{ state.loading ? '创建中...' : '创建文件' }}
     </template>
   </BaseModal>

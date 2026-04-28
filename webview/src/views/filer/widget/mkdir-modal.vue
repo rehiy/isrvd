@@ -61,7 +61,6 @@ export default toNative(MkdirModal)
       </div>
     </form>
     <template #confirm-text>
-      <i class="fas fa-folder mr-2" v-if="!state.loading"></i>
       {{ state.loading ? '创建中...' : '创建目录' }}
     </template>
   </BaseModal>

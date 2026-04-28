@@ -54,7 +54,6 @@ export default toNative(DeleteModal)
       </p>
     </div>
     <template #confirm-text>
-      <i class="fas fa-trash mr-2" v-if="!state.loading"></i>
       {{ state.loading ? '删除中...' : '确认删除' }}
     </template>
   </BaseModal>

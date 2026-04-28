@@ -249,14 +249,14 @@ export default toNative(FileExplorer)
                           @click="zipModalRef.show(file)" 
                           title="压缩"
                         >
-                          <i class="fas fa-file-zipper text-xs"></i>
+                          <i class="fas fa-file-pen text-xs"></i>
                         </button>
                         <button 
                           class="btn-icon text-slate-600 hover:bg-slate-50"
                           @click="renameModalRef.show(file)" 
                           title="重命名"
                         >
-                          <i class="fas fa-tag text-xs"></i>
+                          <i class="fas fa-pen text-xs"></i>
                         </button>
                         <button 
                           class="btn-icon text-red-600 hover:bg-red-50"
@@ -291,7 +291,7 @@ export default toNative(FileExplorer)
                           @click="renameModalRef.show(file)" 
                           title="重命名"
                         >
-                          <i class="fas fa-tag text-xs"></i>
+                          <i class="fas fa-pen text-xs"></i>
                         </button>
                         <button 
                           class="btn-icon text-red-600 hover:bg-red-50"
@@ -384,7 +384,7 @@ export default toNative(FileExplorer)
                     @click="renameModalRef.show(file)" 
                     title="重命名"
                   >
-                    <i class="fas fa-tag text-xs"></i>
+                    <i class="fas fa-pen text-xs"></i>
                     <span class="text-xs ml-1 hidden xs:inline">重命名</span>
                   </button>
                   <button 
@@ -397,7 +397,7 @@ export default toNative(FileExplorer)
                   </button>
                 </template>
               </template>
-              
+
               <!-- File Actions -->
               <template v-else>
                 <button 
@@ -415,7 +415,7 @@ export default toNative(FileExplorer)
                     @click="modifyModalRef.show(file)" 
                     title="编辑"
                   >
-                    <i class="fas fa-pen-to-square text-xs"></i>
+                    <i class="fas fa-file-pen text-xs"></i>
                     <span class="text-xs ml-1 hidden xs:inline">编辑</span>
                   </button>
                   <button 
@@ -423,7 +423,7 @@ export default toNative(FileExplorer)
                     @click="renameModalRef.show(file)" 
                     title="重命名"
                   >
-                    <i class="fas fa-tag text-xs"></i>
+                    <i class="fas fa-pen text-xs"></i>
                     <span class="text-xs ml-1 hidden xs:inline">重命名</span>
                   </button>
                   <button 

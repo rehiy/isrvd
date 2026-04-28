@@ -48,7 +48,7 @@ export default toNative(RenameModal)
         </label>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <i class="fas fa-tag text-slate-400"></i>
+            <i class="fas fa-pen text-slate-400"></i>
           </div>
           <input 
             type="text" 
@@ -63,7 +63,6 @@ export default toNative(RenameModal)
       </div>
     </form>
     <template #confirm-text>
-      <i class="fas fa-check mr-2" v-if="!state.loading"></i>
       {{ state.loading ? '重命名中...' : '确认重命名' }}
     </template>
   </BaseModal>
