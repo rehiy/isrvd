@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -21,14 +22,15 @@ import (
 // ─── 文件路径辅助 ───
 
 func filerGetAbsPath(c *gin.Context, path string) string {
-	home := filepath.Join(config.RootDirectory, "share")
+	home := filepath.Clean(filepath.Join(config.RootDirectory, "share"))
 	if name := c.GetString("username"); name != "" {
 		if member, ok := config.Members[name]; ok {
-			home = member.HomeDirectory
+			home = filepath.Clean(member.HomeDirectory)
 		}
 	}
 	abs := filepath.Clean(filepath.Join(home, path))
-	if len(abs) >= len(home) && abs[:len(home)] == home {
+	rel, err := filepath.Rel(home, abs)
+	if err == nil && rel != ".." && !filepath.IsAbs(rel) && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		return abs
 	}
 	return home
