@@ -50,7 +50,7 @@ func NewApp() *App {
 		app.swarmSvc = svcSwarm.NewService()
 	}
 
-	if composeSvc, err := svcCompose.NewComposeService(); err != nil {
+	if composeSvc, err := svcCompose.NewService(); err != nil {
 		logman.Warn("Compose service unavailable", "error", err)
 	} else {
 		app.composeSvc = composeSvc

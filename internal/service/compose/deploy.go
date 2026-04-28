@@ -18,6 +18,9 @@ import (
 	"isrvd/pkgs/swarm"
 )
 
+// safeName 校验实例名，防止路径穿越
+var safeName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]*$`)
+
 // GetContent 统一获取 compose 文件内容
 //   - target=docker：从磁盘读取 compose 文件（缺失时从运行态 inspect 反推）
 //   - target=swarm ：从运行态 inspect 反推
@@ -25,6 +28,10 @@ func (s *DeployService) GetContent(ctx context.Context, target ComposeDeployTarg
 	if name == "" {
 		return "", fmt.Errorf("名称不能为空")
 	}
+	if !safeName.MatchString(name) {
+		return "", fmt.Errorf("非法的实例名")
+	}
+
 	switch target {
 	case TargetDocker:
 		return s.getDockerContent(ctx, name)
@@ -54,7 +61,7 @@ func (s *DeployService) getDockerContent(ctx context.Context, name string) (stri
 	if root == "" {
 		return "", fmt.Errorf("未配置容器数据根目录")
 	}
-	path := filepath.Join(root, name, composeFileName)
+	path := filepath.Join(root, name, "compose.yml")
 
 	if _, err := os.Stat(path); err != nil {
 		info, err := s.docker.InspectContainer(ctx, name)
@@ -86,11 +93,6 @@ func (s *DeployService) getDockerContent(ctx context.Context, name string) (stri
 	}
 	return string(data), nil
 }
-
-const composeFileName = "docker-compose.yml"
-
-// safeName 校验实例名，防止路径穿越
-var safeName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]*$`)
 
 // DeployService 统一的 Compose 部署业务服务
 //
@@ -204,7 +206,7 @@ func (s *DeployService) RedeployDocker(ctx context.Context, name string, req Red
 		if err := os.MkdirAll(installDir, 0755); err != nil {
 			return nil, fmt.Errorf("创建安装目录失败: %w", err)
 		}
-		composeFile := filepath.Join(installDir, "docker-compose.yml")
+		composeFile := filepath.Join(installDir, "compose.yml")
 		if err := os.WriteFile(composeFile, []byte(req.Content), 0644); err != nil {
 			return nil, fmt.Errorf("写入 compose 文件失败: %w", err)
 		}
@@ -267,7 +269,7 @@ func (s *DeployService) deployDocker(ctx context.Context, req DeployDockerReques
 	}
 
 	// 将已插值的 compose 落盘（前端已完成变量替换，后端无需再做 env 处理）
-	composeFile := filepath.Join(installDir, "docker-compose.yml")
+	composeFile := filepath.Join(installDir, "compose.yml")
 	if err := os.WriteFile(composeFile, []byte(req.Content), 0644); err != nil {
 		return nil, fmt.Errorf("写入 compose 文件失败: %w", err)
 	}

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/pango/logman"
@@ -14,6 +15,8 @@ import (
 	"isrvd/config"
 	"isrvd/internal/helper"
 )
+
+var agentHTTPClient = &http.Client{Timeout: 10 * time.Minute}
 
 func (app *App) agentProxy(c *gin.Context) {
 	if config.Agent.BaseURL == "" {
@@ -58,8 +61,7 @@ func (app *App) agentProxy(c *gin.Context) {
 	}
 	req.URL.RawQuery = c.Request.URL.RawQuery
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := agentHTTPClient.Do(req)
 	if err != nil {
 		logman.Error("agent proxy: upstream request failed", "err", err)
 		helper.RespondError(c, http.StatusBadGateway, "上游 LLM 请求失败")

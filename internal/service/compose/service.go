@@ -15,8 +15,8 @@ var (
 	deployService *DeployService
 )
 
-// NewComposeService 创建 compose 服务（供 server 层调用）
-func NewComposeService() (*DeployService, error) {
+// NewService 创建 compose 部署服务（供 server 层调用）
+func NewService() (*DeployService, error) {
 	once.Do(func() {
 		d := registry.DockerService
 		s := registry.SwarmService
