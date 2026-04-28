@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -232,6 +233,9 @@ func (s *DockerService) CreateContainer(ctx context.Context, req ContainerCreate
 			hostPath := vol.HostPath
 			if s.config.ContainerRoot != "" && !filepath.IsAbs(hostPath) {
 				hostPath = filepath.Join(s.config.ContainerRoot, req.Name, hostPath)
+				if err := os.MkdirAll(hostPath, 0755); err != nil {
+					return "", fmt.Errorf("创建卷目录失败: %w", err)
+				}
 			}
 			bind := hostPath + ":" + vol.ContainerPath
 			if vol.ReadOnly {
