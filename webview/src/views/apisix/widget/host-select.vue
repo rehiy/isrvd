@@ -79,12 +79,12 @@ export default toNative(HostSelect)
 
     <template #default="{ query, select }">
       <div v-for="group in groupedBy(query)" :key="group.network" class="border-b border-slate-100 last:border-0">
-        <div class="px-3 py-2 bg-slate-50/80 flex items-center gap-2 sticky top-0 z-10">
+        <div class="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-2 sticky top-0 z-10">
           <i class="fas fa-network-wired text-xs" :style="{ color: networkColor(group.network) }"></i>
           <span class="text-xs font-semibold text-slate-600">{{ group.network }}</span>
           <span class="text-xs text-slate-400">{{ group.containers.length }}</span>
         </div>
-        <div class="px-2 py-1.5 grid grid-cols-1 gap-0.5">
+        <div class="px-2 py-1.5 grid grid-cols-1 gap-0.5 bg-white">
           <button
             v-for="c in group.containers"
             :key="group.network + '-' + c.id"
@@ -121,7 +121,6 @@ export default toNative(HostSelect)
     <template #footer>
       <div v-if="containers.length > 0" class="px-3 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
         <span class="text-xs text-slate-400">共 <strong class="text-slate-700">{{ containers.length }}</strong> 个运行中容器</span>
-        <span class="text-xs text-slate-400">回车使用输入值</span>
       </div>
     </template>
   </Combobox>

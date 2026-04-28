@@ -121,7 +121,6 @@ export default toNative(PortSelect)
     <template #footer>
       <div class="px-3 py-1.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
         <span class="text-xs text-slate-400">共 <strong class="text-slate-700">{{ parsedPorts.length }}</strong> 个端口</span>
-        <span class="text-xs text-slate-400">回车确认</span>
       </div>
     </template>
   </Combobox>
