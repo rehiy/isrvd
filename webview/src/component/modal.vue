@@ -94,15 +94,15 @@ export default toNative(BaseModal)
         @mousedown="handleBackdropMouseDown"
         @click="handleBackdropClick"
       >
-        <div :class="['w-full modal-card animate-scale-in', 'max-w-3xl']">
+        <div :class="['w-full max-h-[calc(100vh-2rem)] modal-card animate-scale-in flex flex-col overflow-hidden', 'max-w-3xl']">
           <!-- Header -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200/50">
-            <h3 class="text-lg font-semibold text-slate-800">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200/50 flex-shrink-0">
+            <h3 class="text-lg font-semibold text-slate-800 min-w-0 pr-4">
               <slot name="title">{{ title }}</slot>
             </h3>
             <button 
               type="button" 
-              class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200"
+              class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200 flex-shrink-0"
               @click="handleCancel"
               :disabled="loading"
             >
@@ -111,12 +111,12 @@ export default toNative(BaseModal)
           </div>
 
           <!-- Body -->
-          <div class="px-6 py-6 max-h-[70vh] overflow-y-auto">
+          <div class="px-6 py-6 flex-1 min-h-0 overflow-y-auto">
             <slot></slot>
           </div>
 
           <!-- Footer -->
-          <div v-if="showFooter" class="flex justify-end gap-3 px-6 py-4 border-t border-slate-200/50 bg-slate-50/50">
+          <div v-if="showFooter" class="flex justify-end gap-3 px-6 py-4 border-t border-slate-200/50 bg-slate-50/50 flex-shrink-0">
             <slot name="footer">
               <button 
                 type="button" 
