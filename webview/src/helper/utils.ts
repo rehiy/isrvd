@@ -183,33 +183,21 @@ const buildInlineUpstream = (
     hashOn?: ApisixUpstreamHashOn,
     key?: string
 ): ApisixUpstreamConfig | undefined => {
-    const normalizedNodes = nodes
-        .map(node => ({
-            host: node.host.trim(),
-            port: String(node.port).trim(),
-            weight: Number(node.weight) >= 0 ? Number(node.weight) : 1
-        }))
-        .filter(node => node.host && node.port)
-        .map(node => ({
-            host: node.host,
-            port: Number(node.port),
-            weight: node.weight
-        }))
-
-    if (normalizedNodes.length === 0) return undefined
+    const normalizedNodes: { host: string; port: number; weight: number }[] = []
+    for (const node of nodes) {
+        const host = node.host.trim()
+        const port = String(node.port).trim()
+        if (host && port) normalizedNodes.push({ host, port: Number(port), weight: Number(node.weight) >= 0 ? Number(node.weight) : 1 })
+    }
+    if (!normalizedNodes.length) return undefined
 
     const type = String(baseUpstream?.type || 'roundrobin')
-    const result: ApisixUpstreamConfig = {
-        ...(baseUpstream || {}),
-        type,
-        nodes: normalizedNodes
-    }
+    const result: ApisixUpstreamConfig = { ...(baseUpstream || {}), type, nodes: normalizedNodes }
 
     if (type === 'chash') {
         result.hash_on = hashOn || 'vars'
         result.key = key || 'remote_addr'
     } else {
-        // 非 chash 策略不传 hash_on / key
         delete result.hash_on
         delete result.key
     }
