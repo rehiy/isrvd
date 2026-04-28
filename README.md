@@ -28,6 +28,7 @@
 | 认证 | JWT |
 | 容器 | Docker SDK for Go |
 | 监控 | gopsutil + ghw |
+| 配置存储 | YAML + etcd（可选） |
 
 ## 项目结构
 
@@ -157,6 +158,35 @@ services:
 | `marketplace` | 应用市场地址 |
 | `links` | 自定义快捷链接（侧边栏显示） |
 | `members` | 用户账号、家目录、模块权限 |
+| `etcd` | etcd 连接配置（可选，启用后全局配置自动同步） |
+
+### 配置分层存储
+
+isrvd 支持 **YAML + etcd** 双层存储：
+
+| 存储位置 | 配置项 | 说明 |
+|----------|--------|------|
+| **YAML（本地）** | `server.listenAddr`, `server.rootDirectory`, `server.debug`, `docker.host`, `docker.containerRoot`, `apisix.adminUrl`, `etcd.*` | 节点级配置，每个实例独立 |
+| **etcd（全局）** | `members`, `links`, `marketplace`, `docker.registries`, `agent.*`, `server.jwtSecret`, `server.proxyHeaderName`, `apisix.adminKey` | 多实例共享，修改后自动热同步 |
+
+未配置 `etcd` 段时，所有配置完全走 YAML，行为与之前一致。
+
+### etcd 配置示例
+
+```yaml
+etcd:
+  endpoints:
+    - http://127.0.0.1:2379
+  prefix: /isrvd          # 默认 /isrvd
+  username: ""            # 可选
+  password: ""            # 可选
+  tls:                    # 可选
+    certFile: ""
+    keyFile: ""
+    caFile: ""
+```
+
+All-in-One 镜像（`rehiy/isrvd:latest`）已内置 etcd，可直接使用本地 `http://127.0.0.1:2379`。slim 镜像需外接 etcd。
 
 支持环境变量 `CONFIG_PATH` 指定配置文件路径（默认 `config.yml`）。
 
@@ -314,6 +344,7 @@ config → registry → pkgs → service → server
 - 压缩解压防 Zip Slip 攻击
 - WebSocket 连接需经过认证链路
 - 支持代理认证头（`proxyHeaderName`），可与反向代理集成
+- etcd 传输支持 TLS 加密（可选配置 `etcd.tls`）
 
 ## 许可证
 
