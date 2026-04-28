@@ -69,6 +69,37 @@ class Images extends Vue {
         return { host: '', name: tag }
     }
 
+    async pullImage(image: DockerImageInfo) {
+        const tag = image.repoTags.find(t => t !== '<none>:<none>')
+        if (!tag || tag === '<none>:<none>') {
+            this.actions.showNotification('error', '该镜像没有有效的 Tag，无法拉取')
+            return
+        }
+        // 根据镜像 tag 的 host 自动匹配已配置的 registry，以便携带认证信息
+        const { host: tagHost, name: imageName } = this.parseImageRef(tag)
+        const matchedRegistry = tagHost
+            ? this.registries.find(r => r.url === tagHost || r.url.replace(/^https?:\/\//, '') === tagHost)
+            : null
+        const registryUrl = matchedRegistry ? matchedRegistry.url : ''
+        this.actions.showConfirm({
+            title: '拉取镜像',
+            message: `确定要重新拉取镜像 <strong class="text-slate-900">${tag}</strong> 吗？`,
+            icon: 'fa-download',
+            iconColor: 'blue',
+            confirmText: '确认拉取',
+            danger: false,
+            onConfirm: async () => {
+                try {
+                    await api.pullFromRegistry(imageName, registryUrl, '')
+                    this.actions.showNotification('success', '镜像拉取成功')
+                    this.loadImages()
+                } catch (e: any) {
+                    this.actions.showNotification('error', e.message || '镜像拉取失败')
+                }
+            }
+        })
+    }
+
     handleImageAction(image: DockerImageInfo, action: string) {
         this.actions.showConfirm({
             title: '删除镜像',
@@ -216,7 +247,10 @@ export default toNative(Images)
                   <button @click="tagModalRef?.show(img)" v-if="actions.hasPerm('docker', true)" class="btn-icon text-blue-600 hover:bg-blue-50" title="打标签">
                     <i class="fas fa-tag text-xs"></i>
                   </button>
-                  <button @click="openPush(img)" v-if="actions.hasPerm('docker', true)" :disabled="registries.length === 0" class="btn-icon text-blue-600 hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'">
+                  <button @click="pullImage(img)" v-if="actions.hasPerm('docker', true)" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="拉取（更新）">
+                    <i class="fas fa-download text-xs"></i>
+                  </button>
+                  <button @click="openPush(img)" v-if="actions.hasPerm('docker', true)" :disabled="registries.length === 0" class="btn-icon text-indigo-600 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'">
                     <i class="fas fa-upload text-xs"></i>
                   </button>
                   <button @click="handleImageAction(img, 'remove')" v-if="actions.hasPerm('docker', true)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
@@ -269,7 +303,10 @@ export default toNative(Images)
             <button @click="tagModalRef?.show(img)" v-if="actions.hasPerm('docker', true)" class="btn-icon text-blue-600 hover:bg-blue-50" title="打标签">
               <i class="fas fa-tag text-xs"></i><span class="text-xs ml-1">标签</span>
             </button>
-            <button @click="openPush(img)" v-if="actions.hasPerm('docker', true)" :disabled="registries.length === 0" class="btn-icon text-blue-600 hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'">
+            <button @click="pullImage(img)" v-if="actions.hasPerm('docker', true)" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="拉取（更新）">
+              <i class="fas fa-download text-xs"></i><span class="text-xs ml-1">拉取</span>
+            </button>
+            <button @click="openPush(img)" v-if="actions.hasPerm('docker', true)" :disabled="registries.length === 0" class="btn-icon text-indigo-600 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'">
               <i class="fas fa-upload text-xs"></i><span class="text-xs ml-1">推送</span>
             </button>
             <button @click="handleImageAction(img, 'remove')" v-if="actions.hasPerm('docker', true)" class="btn-icon text-red-600 hover:bg-red-50" title="删除">
