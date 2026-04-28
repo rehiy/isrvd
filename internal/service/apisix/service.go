@@ -110,6 +110,14 @@ func (s *Service) UpdateConsumerDesc(username, desc string) error {
 	return s.client.UpdateConsumerDesc(username, desc)
 }
 
+// UpdateConsumer 更新 Consumer（支持 plugins，自动替换脱敏值）
+func (s *Service) UpdateConsumer(username, desc string, plugins map[string]any) error {
+	if username == "" {
+		return fmt.Errorf("用户名不能为空")
+	}
+	return s.client.UpdateConsumer(username, desc, plugins)
+}
+
 // DeleteConsumer 删除 Consumer
 func (s *Service) DeleteConsumer(username string) error {
 	if username == "" {

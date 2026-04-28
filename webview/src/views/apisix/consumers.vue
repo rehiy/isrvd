@@ -180,7 +180,7 @@ export default toNative(Consumers)
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
                 <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">用户名</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">API Key</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">插件</th>
                 <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">关联路由</th>
                 <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
                 <th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
@@ -200,7 +200,10 @@ export default toNative(Consumers)
                   </div>
                 </td>
                 <td class="px-4 py-3">
-                  <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{{ (consumer.plugins?.['key-auth'] as Record<string, unknown>)?.key || '-' }}</code>
+                  <div v-if="Object.keys(consumer.plugins || {}).length > 0" class="flex flex-wrap gap-1">
+                    <span v-for="(_, name) in consumer.plugins" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-violet-50 text-violet-700 rounded text-xs">{{ name }}</span>
+                  </div>
+                  <span v-else class="text-xs text-slate-400">-</span>
                 </td>
                 <td class="px-4 py-3">
                   <div v-if="getConsumerRoutes(consumer.username).length > 0" class="flex flex-wrap gap-1">
@@ -255,8 +258,11 @@ export default toNative(Consumers)
             </div>
             
             <div class="flex items-start gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">API Key</span>
-              <code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600 break-all">{{ (consumer.plugins?.['key-auth'] as Record<string, unknown>)?.key || '-' }}</code>
+              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">插件</span>
+              <div v-if="Object.keys(consumer.plugins || {}).length > 0" class="flex flex-wrap gap-1">
+                <span v-for="(_, name) in consumer.plugins" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-violet-50 text-violet-700 rounded text-xs">{{ name }}</span>
+              </div>
+              <span v-else class="text-xs text-slate-400">-</span>
             </div>
             
             <!-- 关联路由 -->

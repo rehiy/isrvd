@@ -72,10 +72,12 @@ export interface ApisixConsumer {
 export interface ApisixCreateConsumerRequest {
     username: string
     desc?: string
+    plugins?: Record<string, unknown>
 }
 
 export interface ApisixUpdateConsumerRequest {
     desc?: string
+    plugins?: Record<string, unknown>
 }
 
 export interface ApisixPluginConfig {

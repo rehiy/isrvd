@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/rehiy/pango/strutil"
 )
@@ -43,27 +44,56 @@ func (c *Client) ListConsumers() ([]Consumer, error) {
 
 // GetConsumerRawKey 获取指定 Consumer 的完整（未脱敏）API Key
 func (c *Client) GetConsumerRawKey(username string) (string, error) {
-	data, err := c.doRequest(http.MethodGet, "/consumers/"+username, nil)
+	raw, err := c.GetConsumerRaw(username)
 	if err != nil {
 		return "", err
 	}
-
-	var raw1 struct {
-		Value Consumer `json:"value"`
-	}
-	if err := json.Unmarshal(data, &raw1); err != nil {
-		return "", fmt.Errorf("解析 Consumer 失败: %w", err)
-	}
-	v := &raw1.Value
-
-	if v.Plugins != nil {
-		if keyAuth, ok := v.Plugins["key-auth"].(map[string]any); ok {
+	if raw.Plugins != nil {
+		if keyAuth, ok := raw.Plugins["key-auth"].(map[string]any); ok {
 			if key, ok := keyAuth["key"].(string); ok && key != "" {
 				return key, nil
 			}
 		}
 	}
 	return "", fmt.Errorf("该用户尚未配置 API Key")
+}
+
+// GetConsumerRaw 获取指定 Consumer 的完整（未脱敏）数据
+func (c *Client) GetConsumerRaw(username string) (*Consumer, error) {
+	data, err := c.doRequest(http.MethodGet, "/consumers/"+username, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var raw struct {
+		Value Consumer `json:"value"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, fmt.Errorf("解析 Consumer 失败: %w", err)
+	}
+	return &raw.Value, nil
+}
+
+// UpdateConsumer 更新 Consumer，支持传入完整 plugins，
+// 对于脱敏字段（含 ****** 的 key/password）自动替换为原始值
+func (c *Client) UpdateConsumer(username, desc string, plugins map[string]any) error {
+	raw, err := c.GetConsumerRaw(username)
+	if err != nil {
+		return err
+	}
+
+	// 用原始值替换脱敏字段
+	if raw.Plugins != nil && plugins != nil {
+		unmaskPlugins(plugins, raw.Plugins)
+	}
+
+	body := map[string]any{
+		"username": username,
+		"desc":     desc,
+		"plugins":  plugins,
+	}
+	_, err = c.doRequest(http.MethodPut, "/consumers/"+username, body)
+	return err
 }
 
 // CreateConsumer 创建 Consumer，自动生成 API Key，返回完整的 Consumer（含明文 API Key）
@@ -120,6 +150,33 @@ func (c *Client) DeleteConsumer(username string) error {
 }
 
 // --- 辅助函数 ---
+
+// unmaskPlugins 将 plugins 中的脱敏值（包含 ******）替换为原始值
+func unmaskPlugins(plugins, rawPlugins map[string]any) {
+	for pluginName, plugin := range plugins {
+		p, ok := plugin.(map[string]any)
+		if !ok {
+			continue
+		}
+		rawPlugin, ok := rawPlugins[pluginName]
+		if !ok {
+			continue
+		}
+		rawP, ok := rawPlugin.(map[string]any)
+		if !ok {
+			continue
+		}
+		for _, field := range []string{"key", "password"} {
+			val, ok := p[field].(string)
+			if !ok || !strings.Contains(val, "******") {
+				continue
+			}
+			if rawVal, ok := rawP[field].(string); ok && rawVal != "" {
+				p[field] = rawVal
+			}
+		}
+	}
+}
 
 // maskConsumerPlugins 对 plugins 中的敏感字段（key、password）进行脱敏：
 // - 长度 > 10：保留前 5 位 + ****** + 后 3 位

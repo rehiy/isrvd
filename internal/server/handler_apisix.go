@@ -93,7 +93,7 @@ func (app *App) apisixCreateConsumer(c *gin.Context) {
 		Desc     string `json:"desc"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "用户名不能为空")
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	result, err := app.apisixSvc.CreateConsumer(req.Username, req.Desc)
@@ -107,13 +107,14 @@ func (app *App) apisixCreateConsumer(c *gin.Context) {
 func (app *App) apisixUpdateConsumer(c *gin.Context) {
 	username := c.Param("username")
 	var req struct {
-		Desc string `json:"desc"`
+		Desc    string         `json:"desc"`
+		Plugins map[string]any `json:"plugins"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.apisixSvc.UpdateConsumerDesc(username, req.Desc); err != nil {
+	if err := app.apisixSvc.UpdateConsumer(username, req.Desc, req.Plugins); err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -143,7 +144,7 @@ func (app *App) apisixRevokeWhitelist(c *gin.Context) {
 		ConsumerName string `json:"consumer_name" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.RespondError(c, http.StatusBadRequest, "路由 ID 和消费者名称不能为空")
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err := app.apisixSvc.RevokeWhitelist(req.RouteID, req.ConsumerName); err != nil {
