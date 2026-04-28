@@ -198,8 +198,7 @@ export default toNative(Routes)
               <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">URI</th>
               <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Host</th>
               <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">上游</th>
-              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
-              <th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+              <th class="w-40 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
             </tr></thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="route in filteredRoutes" :key="route.id" class="hover:bg-slate-50 transition-colors">
@@ -218,13 +217,10 @@ export default toNative(Routes)
                 <td class="px-4 py-3"><span class="text-sm text-slate-600 break-all">{{ getRouteHost(route) }}</span></td>
                 <td class="px-4 py-3"><span :class="['text-xs px-2 py-1 rounded break-all', getRouteUpstreamTagClass(route)]">{{ getRouteUpstreamSummary(route) }}</span></td>
                 <td class="px-4 py-3">
-                  <button @click="toggleStatus(route)" v-if="actions.hasPerm('apisix', true)" :class="['inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors', route.status === 1 ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200']">
-                    <i :class="route.status === 1 ? 'fas fa-circle text-emerald-500' : 'fas fa-circle text-slate-400'" class="text-[6px]"></i>
-                    {{ route.status === 1 ? '启用' : '禁用' }}
-                  </button>
-                </td>
-                <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
+                    <button v-if="actions.hasPerm('apisix', true)" @click="toggleStatus(route)" :class="['btn-icon', route.status === 1 ? 'text-amber-500 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50']" :title="route.status === 1 ? '禁用' : '启用'">
+                      <i :class="route.status === 1 ? 'fas fa-ban' : 'fas fa-play'" class="text-xs"></i>
+                    </button>
                     <button v-if="actions.hasPerm('apisix', true)" @click="openEditModal(route)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="编辑"><i class="fas fa-pen text-xs"></i></button>
                     <button v-if="actions.hasPerm('apisix', true)" @click="deleteRoute(route)" class="btn-icon text-red-600 hover:bg-red-50" title="删除"><i class="fas fa-trash text-xs"></i></button>
                   </div>
@@ -252,10 +248,6 @@ export default toNative(Routes)
                   <div v-if="route.desc" class="text-xs text-slate-400 mt-0.5 truncate">{{ route.desc }}</div>
                 </div>
               </div>
-              <button @click="toggleStatus(route)" v-if="actions.hasPerm('apisix', true)" :class="['inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors flex-shrink-0', route.status === 1 ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200']">
-                <i :class="route.status === 1 ? 'fas fa-circle text-emerald-500' : 'fas fa-circle text-slate-400'" class="text-[6px]"></i>
-                {{ route.status === 1 ? '启用' : '禁用' }}
-              </button>
             </div>
 
             <!-- 中间：URI和Host信息 -->
@@ -276,6 +268,9 @@ export default toNative(Routes)
 
             <!-- 底部：操作按钮 -->
             <div class="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
+              <button v-if="actions.hasPerm('apisix', true)" @click="toggleStatus(route)" :class="['btn-icon', route.status === 1 ? 'text-amber-500 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50']" :title="route.status === 1 ? '禁用' : '启用'">
+                <i :class="route.status === 1 ? 'fas fa-ban' : 'fas fa-play'" class="text-xs"></i><span class="text-xs ml-1">{{ route.status === 1 ? '禁用' : '启用' }}</span>
+              </button>
               <button v-if="actions.hasPerm('apisix', true)" @click="openEditModal(route)" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="编辑">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
