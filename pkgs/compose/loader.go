@@ -100,7 +100,7 @@ func LoadProjectFromContent(ctx context.Context, content string, projectName str
 		WorkingDir: ".",
 		ConfigFiles: []types.ConfigFile{
 			{
-				Filename: "compose.yaml",
+				Filename: "compose.yml",
 				Content:  []byte(content),
 			},
 		},

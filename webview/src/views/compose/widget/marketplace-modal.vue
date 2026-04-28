@@ -15,7 +15,7 @@ interface MarketplaceInstallPayload {
 
     // 业务字段
     name: string                                          // 实例名（作为目录名 / compose project 名，需满足 [a-zA-Z0-9][a-zA-Z0-9_.-]*）
-    compose: string                                       // 已完成 ${VAR} 插值的完整 docker-compose.yml 文本
+    compose: string                                       // 已完成 ${VAR} 插值的完整 compose.yml 文本
     initURL?: string                                      // 可选：附加运行文件 zip 下载地址
 }
 
@@ -122,9 +122,9 @@ class MarketplaceModal extends Vue {
             return
         }
 
-        // 次要校验：若配置 URL 能解析出 origin，则 origin 应一致（sandbox iframe 中 origin 可能为 "null"，兼容处理）
-        if (this.iframeOrigin && e.origin !== this.iframeOrigin && e.origin !== 'null') {
-            console.warn('[marketplace] message origin mismatch:', e.origin, 'expected:', this.iframeOrigin)
+        // 次要校验：若配置 URL 能解析出 origin，则 origin 应一致
+        if (this.iframeOrigin && e.origin !== this.iframeOrigin) {
+            return
         }
 
         const payload = e.data as MarketplaceInstallPayload

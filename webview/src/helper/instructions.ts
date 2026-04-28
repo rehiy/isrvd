@@ -7,7 +7,7 @@ export const systemInstruction = `
 - Docker（/docker）：管理容器、镜像、网络、数据卷、镜像仓库
 - Docker Swarm（/swarm）：管理集群节点、服务、任务
 - 终端（/shell）：在线 Web 终端，直接执行 Shell 命令
-- Compose 部署（/compose/deploy）：粘贴 docker-compose.yml，或通过内嵌的「应用市场」弹窗选择模板一键回填，统一部署为单机容器或 Swarm 服务
+- Compose 部署（/compose/deploy）：粘贴 compose.yml，或通过内嵌的「应用市场」弹窗选择模板一键回填，统一部署为单机容器或 Swarm 服务
 - 成员管理（/system/members）：管理系统用户账号
 - 系统设置（/system/settings）：配置系统参数
 
@@ -81,7 +81,7 @@ export function getPageInstruction(url: string): string {
         return '当前页面：Swarm 任务列表。可查看所有服务任务的运行状态和调度信息。'
     }
     if (path.includes('/compose/deploy')) {
-        return '当前页面：Compose 部署。可直接粘贴 docker-compose.yml 文本部署，或点击「应用市场」打开弹窗挑选模板回填；需要填写实例名（同时作 compose project 名），docker 目标下会落盘到 数据目录/实例名 以便后续管理。'
+        return '当前页面：Compose 部署。可直接粘贴 compose.yml 文本部署，或点击「应用市场」打开弹窗挑选模板回填；需要填写实例名（同时作 compose project 名），docker 目标下会落盘到 数据目录/实例名 以便后续管理。'
     }
     if (path.includes('/system/members')) {
         return '当前页面：成员管理。可添加、编辑、删除系统用户，管理用户角色权限。'

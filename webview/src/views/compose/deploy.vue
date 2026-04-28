@@ -1,6 +1,4 @@
 <script lang="ts">
-import ComposeEditor from './widget/compose-editor.vue'
-import MarketplaceModal from './widget/marketplace-modal.vue'
 import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
@@ -8,6 +6,9 @@ import type { AppActions, AppState } from '@/store/state'
 
 import api from '@/service/api'
 import type { ComposeDeployTarget, ComposeMarketplacePick } from '@/service/types'
+
+import ComposeEditor from './widget/compose-editor.vue'
+import MarketplaceModal from './widget/marketplace-modal.vue'
 
 @Component({
     components: { ComposeEditor, MarketplaceModal }
@@ -143,7 +144,7 @@ export default toNative(ComposeDeploy)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">Compose 部署</h1>
-              <p class="text-xs text-slate-500">直接粘贴 docker-compose.yml 或从应用市场选择模板</p>
+              <p class="text-xs text-slate-500">直接粘贴 compose.yml 或从应用市场选择模板</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -224,7 +225,7 @@ export default toNative(ComposeDeploy)
             :disabled="loading"
           />
           <p class="mt-1 text-xs text-slate-400">
-            同时作为 compose project 名<span v-if="target === 'docker'">，将在同名目录下保存 compose.yaml</span>
+            同时作为 compose project 名<span v-if="target === 'docker'">，将在同名目录下保存 compose.yml</span>
           </p>
           <p v-if="projectName.trim() && !projectNameValid" class="mt-1 text-xs text-red-500">
             实例名不符合命名规则 <code class="px-1 bg-slate-100 rounded">[a-zA-Z0-9][a-zA-Z0-9_.-]*</code>

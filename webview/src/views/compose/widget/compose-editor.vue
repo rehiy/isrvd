@@ -36,7 +36,7 @@ export default toNative(ComposeEditor)
     </div>
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-2">
-        <i class="fas fa-file-code mr-1 text-slate-400"></i>docker-compose.yml
+        <i class="fas fa-file-code mr-1 text-slate-400"></i>compose.yml
       </label>
       <div class="rounded-xl overflow-hidden border border-slate-200">
         <Codemirror
