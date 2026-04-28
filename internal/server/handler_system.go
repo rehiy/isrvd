@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"isrvd/config"
 	"isrvd/internal/helper"
 	svcSystem "isrvd/internal/service/system"
 )
@@ -19,6 +20,12 @@ func (app *App) systemProbe(c *gin.Context) {
 }
 
 func (app *App) systemGetSettings(c *gin.Context) {
+	if c.Query("reload") == "true" {
+		if err := config.Load(); err != nil {
+			helper.RespondError(c, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
 	helper.RespondSuccess(c, "ok", app.settingsSvc.GetAll())
 }
 

@@ -348,8 +348,8 @@ class ApiService {
         return http.get<AuthInfoResponse>('/api/auth/info')
     }
 
-    getSettings() {
-        return http.get<SystemAllSettings>('/api/system/settings')
+    getSettings(params?: Record<string, string>) {
+        return http.get<SystemAllSettings>('/api/system/settings', { params })
     }
 
     updateAllSettings(data: Partial<SystemAllSettings>) {

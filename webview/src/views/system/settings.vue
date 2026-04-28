@@ -43,10 +43,10 @@ class Settings extends Vue {
   }
 
   // ─── 方法 ───
-  async loadSettings() {
+  async loadSettings(reload = false) {
     this.loading = true
     try {
-      const res = await api.getSettings()
+      const res = await api.getSettings(reload ? { reload: 'true' } : undefined)
       const payload = res.payload as SystemAllSettings
       // 敏感字段统一置空，仅用标志位驱动 placeholder
       this.server = { ...payload.server, jwtSecret: '' }
@@ -58,8 +58,11 @@ class Settings extends Vue {
       this.jwtSecretSet = !!payload.server.jwtSecretSet
       this.adminKeySet = !!payload.apisix.adminKeySet
       this.agentApiKeySet = !!payload.agent.apiKeySet
+      if (reload) {
+        this.actions.showNotification('success', '配置已从文件重新加载')
+      }
     } catch (e) {
-      this.actions.showNotification('error', '加载配置失败')
+      this.actions.showNotification('error', reload ? '重载配置失败' : '加载配置失败')
     }
     this.loading = false
   }
@@ -130,8 +133,8 @@ export default toNative(Settings)
                 <i class="fas fa-link mr-1"></i>导航
               </button>
             </div>
-            <button type="button" @click="loadSettings()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
-              <i class="fas fa-rotate"></i>刷新
+            <button type="button" @click="loadSettings(true)" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-rotate"></i>重载配置
             </button>
           </div>
         </div>
@@ -146,7 +149,7 @@ export default toNative(Settings)
               <p class="text-xs text-slate-500 truncate">服务器、Agent、APISIX、Docker 配置</p>
             </div>
           </div>
-          <button type="button" @click="loadSettings()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0" title="刷新">
+          <button type="button" @click="loadSettings(true)" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0" title="重载配置">
             <i class="fas fa-rotate text-sm"></i>
           </button>
         </div>
