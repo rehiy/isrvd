@@ -1,18 +1,88 @@
 <script lang="ts">
-import HostSelect from './host-select.vue'
-import PortSelect from './port-select.vue'
-import { Component, Inject, Vue, Watch, toNative } from 'vue-facing-decorator'
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
 import api from '@/service/api'
-import type { ApisixRoute, ApisixPluginConfig, ApisixUpstream, DockerContainerInfo } from '@/service/types'
+import type {
+    ApisixPluginConfig,
+    ApisixRoute,
+    ApisixRouteUpstreamFormNode,
+    ApisixRouteUpstreamModeCard,
+    ApisixRouteUpstreamMode,
+    ApisixUpstream,
+    ApisixUpstreamConfig,
+    ApisixUpstreamHashOn,
+    ApisixUpstreamType,
+    DockerContainerInfo
+} from '@/service/types'
 
-import { parseUpstreamNodes, buildRoutePayload } from '@/helper/utils'
-import type { UpstreamNodeItem } from '@/helper/utils'
+import {
+    buildRoutePayload,
+    detectRouteUpstreamMode,
+    normalizeUpstreamFormNodes,
+    normalizeUpstreamType
+} from '@/helper/utils'
 
 import BaseModal from '@/component/modal.vue'
+import HostSelect from './host-select.vue'
+import PortSelect from './port-select.vue'
+
+// ─── 模块级静态常量 ───
+
+const UPSTREAM_MODE_CARDS: ApisixRouteUpstreamModeCard[] = [
+    { value: 'nodes', title: '内联多上游节点', desc: '一个路由直连多个节点，并为每个节点设置权重', icon: 'fa-circle-nodes', tone: 'indigo' },
+    { value: 'upstream_id', title: '引用已有上游', desc: '复用 APISIX 中已经创建好的上游对象', icon: 'fa-diagram-project', tone: 'emerald' },
+    { value: 'none', title: '空上游', desc: '暂不配置转发目标，先保存路由规则', icon: 'fa-ban', tone: 'slate' }
+]
+
+const UPSTREAM_TYPE_OPTIONS: Array<{ value: ApisixUpstreamType; label: string; desc: string }> = [
+    { value: 'roundrobin', label: 'roundrobin', desc: '按权重轮询分配请求' },
+    { value: 'least_conn', label: 'least_conn', desc: '优先选择当前连接数更少的节点' },
+    { value: 'ewma', label: 'ewma', desc: '根据历史延迟动态选择更快的节点' },
+    { value: 'chash', label: 'chash', desc: '一致性哈希，适合会话粘性场景' }
+]
+
+const HASH_ON_OPTIONS: Array<{ value: ApisixUpstreamHashOn; label: string; keyPlaceholder: string; keyHint: string }> = [
+    { value: 'vars', label: 'vars（Nginx 变量）', keyPlaceholder: 'remote_addr', keyHint: 'Nginx 变量名，不带 $ 前缀，如 remote_addr、uri' },
+    { value: 'header', label: 'header（请求头）', keyPlaceholder: 'X-User-Id', keyHint: '请求头名称，如 X-User-Id' },
+    { value: 'cookie', label: 'cookie', keyPlaceholder: 'session_id', keyHint: 'Cookie 名称（大小写敏感），如 session_id' },
+    { value: 'consumer', label: 'consumer（消费者）', keyPlaceholder: 'consumer_name', keyHint: '通常填 consumer_name，由 APISIX 自动注入' },
+    { value: 'vars_combinations', label: 'vars_combinations', keyPlaceholder: '$remote_addr$uri', keyHint: '多个 Nginx 变量组合，如 $remote_addr$uri' }
+]
+
+const TYPE_DEFAULTS: Record<string, string | number | boolean | unknown[] | Record<string, unknown>> = { string: '', integer: 0, number: 0, boolean: false, array: [], object: {} }
+
+const TONE_CARD_ACTIVE: Record<string, string> = {
+    indigo: 'border-indigo-300 bg-indigo-50 text-indigo-700',
+    emerald: 'border-emerald-300 bg-emerald-50 text-emerald-700',
+    slate: 'border-slate-300 bg-slate-100 text-slate-700'
+}
+const TONE_ICON_ACTIVE: Record<string, string> = { indigo: 'bg-indigo-100', emerald: 'bg-emerald-100', slate: 'bg-slate-200' }
+
+const defaultFormData = () => ({
+    name: '',
+    desc: '',
+    uris: '',
+    hosts: '',
+    status: 1,
+    priority: 0,
+    enable_websocket: false,
+    plugin_config_id: '',
+    plugins: {} as Record<string, unknown>,
+    pluginsJson: '{}',
+    pluginsJsonError: '',
+    upstream_mode: 'nodes' as ApisixRouteUpstreamMode,
+    upstream_type: 'roundrobin' as ApisixUpstreamType,
+    upstream_id: '',
+    upstream_nodes: [{ host: '', port: '', weight: 1 }] as ApisixRouteUpstreamFormNode[],
+    upstream_hash_on: 'vars' as ApisixUpstreamHashOn,
+    upstream_key: 'remote_addr',
+    timeout_connect: '' as string | number,
+    timeout_send: '' as string | number,
+    timeout_read: '' as string | number,
+})
 
 @Component({
     expose: ['show'],
@@ -34,8 +104,7 @@ class RouteEditModal extends Vue {
     importRoutePluginsLoading = false
     selectedImportPlugins: Set<string> = new Set()
     pluginSearchKeyword = ''
-    suppressPortAutofill = false
-    originalUpstream: Record<string, unknown> | null = null
+    originalUpstream: ApisixUpstreamConfig | null = null
 
     pluginConfigs: ApisixPluginConfig[] = []
     upstreams: ApisixUpstream[] = []
@@ -43,70 +112,68 @@ class RouteEditModal extends Vue {
     availablePlugins: Record<string, { schema: Record<string, unknown> }> = {}
     routes: ApisixRoute[] = []
 
-    formData = {
-        name: '', desc: '', uris: '', hosts: '',
-        status: 1, priority: 0, enable_websocket: false,
-        plugin_config_id: '', upstream_nodes: [] as UpstreamNodeItem[], upstream_type: 'roundrobin',
-        timeout_connect: '', timeout_send: '', timeout_read: '',
-        plugins: {} as Record<string, unknown>, pluginsJson: '{}', pluginsJsonError: ''
-    }
+    formData = defaultFormData()
+
+    // 暴露常量给模板
+    readonly upstreamModeCards = UPSTREAM_MODE_CARDS
+    readonly upstreamTypeOptions = UPSTREAM_TYPE_OPTIONS
+    readonly hashOnOptions = HASH_ON_OPTIONS
 
     // ─── 计算属性 ───
     get currentPluginNames() { return Object.keys(this.formData.plugins || {}) }
 
     get filteredAvailablePlugins() {
+        const kw = this.pluginSearchKeyword.toLowerCase()
         const all = Object.keys(this.availablePlugins)
-        if (!this.pluginSearchKeyword) return all
-        return all.filter(n => n.toLowerCase().includes(this.pluginSearchKeyword.toLowerCase()))
+        return kw ? all.filter(n => n.toLowerCase().includes(kw)) : all
     }
 
-    // ─── 监听器 ───
-    // 当第一个节点的 host 变化时，自动同步该容器的第一个端口
-    prevHost0 = ''
-    @Watch('formData.upstream_nodes.0.host')
-    onUpstreamHostChange() {
-        const node = this.formData.upstream_nodes[0]
-        if (!node) return
-        const host = node.host?.trim() || ''
-        // 仅在 host 实际变化时才自动填充端口
-        if (host === this.prevHost0) return
-        this.prevHost0 = host
-        if (this.suppressPortAutofill) {
-            this.suppressPortAutofill = false
-            return
+    get selectedUpstreamTypeOption() {
+        return UPSTREAM_TYPE_OPTIONS.find(o => o.value === this.formData.upstream_type) ?? UPSTREAM_TYPE_OPTIONS[0]
+    }
+
+    get selectedHashOnOption() {
+        return HASH_ON_OPTIONS.find(o => o.value === this.formData.upstream_hash_on) ?? HASH_ON_OPTIONS[0]
+    }
+
+    get routeValidationMessage() {
+        const mode = this.formData.upstream_mode
+        if (mode === 'upstream_id') return this.formData.upstream_id.trim() ? '' : '请选择要引用的上游对象'
+        if (mode !== 'nodes') return ''
+
+        const rows = this.formData.upstream_nodes
+        if (!rows.some(n => n.host.trim() && String(n.port).trim())) return '请至少配置一个完整的上游节点'
+
+        for (const [i, node] of rows.entries()) {
+            const hasHost = !!node.host.trim()
+            const hasPort = !!String(node.port).trim()
+            if (hasHost !== hasPort) return `第 ${i + 1} 个上游节点的主机和端口需要同时填写`
+            if (hasPort && !/^\d+$/.test(String(node.port).trim())) return `第 ${i + 1} 个上游节点端口必须为数字`
+            if ((hasHost || hasPort) && Number(node.weight) < 0) return `第 ${i + 1} 个上游节点权重不能为负数`
         }
-        const container = this.containers.find(c => c.name === host)
-        if (!container) return
-        const first = container.ports?.[0] || ''
-        node.port = first.split('/')[0].split(':').pop() || ''
+
+        if (this.formData.upstream_type === 'chash' && !this.formData.upstream_key?.trim()) {
+            return '使用 chash 策略时，哈希键（key）不能为空'
+        }
+
+        return ''
     }
 
-    // ─── 上游节点管理 ───
-    addUpstreamNode() {
-        this.formData.upstream_nodes = [...this.formData.upstream_nodes, { host: '', port: '', weight: 0 }]
+    // ─── 模式卡片样式 ───
+    modeCardClass(item: ApisixRouteUpstreamModeCard) {
+        const base = 'text-left rounded-xl border p-4 transition-colors'
+        const active = this.formData.upstream_mode === item.value
+        return `${base} ${active ? TONE_CARD_ACTIVE[item.tone] : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`
     }
 
-    removeUpstreamNode(index: number) {
-        const nodes = [...this.formData.upstream_nodes]
-        nodes.splice(index, 1)
-        this.formData.upstream_nodes = nodes
-    }
-
-    getContainerPortsForNode(index: number): string[] {
-        const node = this.formData.upstream_nodes[index]
-        if (!node) return []
-        const container = this.containers.find(c => c.name === node.host?.trim())
-        return container?.ports || []
+    modeCardIconClass(item: ApisixRouteUpstreamModeCard) {
+        const active = this.formData.upstream_mode === item.value
+        return `w-10 h-10 rounded-xl flex items-center justify-center ${active ? TONE_ICON_ACTIVE[item.tone] : 'bg-slate-100'}`
     }
 
     // ─── 方法 ───
     resetForm() {
-        Object.assign(this.formData, {
-            name: '', desc: '', uris: '', hosts: '', status: 1, priority: 0,
-            enable_websocket: false, plugin_config_id: '', upstream_nodes: [{ host: '', port: '', weight: 0 }], upstream_type: 'roundrobin',
-            timeout_connect: '', timeout_send: '', timeout_read: '',
-            plugins: {}, pluginsJson: '{}', pluginsJsonError: ''
-        })
+        Object.assign(this.formData, defaultFormData())
         this.editingRouteId = ''
         this.originalUpstream = null
         this.showPluginPanel = false
@@ -114,14 +181,53 @@ class RouteEditModal extends Vue {
         this.importRouteId = ''
         this.importRoutePlugins = {}
         this.selectedImportPlugins = new Set()
-        this.prevHost0 = ''
+        this.pluginSearchKeyword = ''
+    }
+
+    createUpstreamNode(): ApisixRouteUpstreamFormNode {
+        return { host: '', port: '', weight: 1 }
+    }
+
+    // ─── 上游节点管理 ───
+    addUpstreamNode() {
+        this.formData.upstream_nodes = [...this.formData.upstream_nodes, this.createUpstreamNode()]
+    }
+
+    removeUpstreamNode(index: number) {
+        const next = this.formData.upstream_nodes.filter((_, i) => i !== index)
+        this.formData.upstream_nodes = next.length > 0 ? next : [this.createUpstreamNode()]
+    }
+
+    setUpstreamMode(mode: ApisixRouteUpstreamMode) {
+        this.formData.upstream_mode = mode
+        if (mode === 'nodes' && !this.formData.upstream_nodes.length) {
+            this.formData.upstream_nodes = [this.createUpstreamNode()]
+        }
+    }
+
+    getPortsByHost(host: string): string[] {
+        return this.containers.find(c => c.name === host.trim())?.ports || []
+    }
+
+    updateUpstreamNode(index: number, field: 'host' | 'port', value: string) {
+        const next = [...this.formData.upstream_nodes]
+        const node = next[index]
+        if (!node) return
+        node[field] = value
+        if (field === 'host' && value.trim()) {
+            const port = (this.getPortsByHost(value)[0] || '').split('/')[0].split(':').pop() || ''
+            if (port) node.port = port
+        }
+        this.formData.upstream_nodes = next
     }
 
     async loadResources(allRoutes: ApisixRoute[]) {
         this.routes = allRoutes || []
         try {
             const [pc, us, pl, ct] = await Promise.all([
-                api.apisixListPluginConfigs(), api.apisixListUpstreams(), api.apisixListPlugins(),
+                api.apisixListPluginConfigs(),
+                api.apisixListUpstreams(),
+                api.apisixListPlugins(),
                 api.listContainers()
             ])
             this.pluginConfigs = pc.payload || []
@@ -133,15 +239,14 @@ class RouteEditModal extends Vue {
 
     async show(route: ApisixRoute | null, allRoutes: ApisixRoute[]) {
         await this.loadResources(allRoutes)
-        if (route && route.id) {
-            const routeId = route.id
+        if (route?.id) {
             this.isEditMode = true
             this.resetForm()
-            this.editingRouteId = routeId
+            this.editingRouteId = route.id
             this.modalLoading = true
             this.isOpen = true
             try {
-                const r = (await api.apisixGetRoute(routeId)).payload
+                const r = (await api.apisixGetRoute(route.id)).payload
                 if (!r) {
                     this.actions.showNotification('error', '加载路由详情失败')
                     this.isOpen = false
@@ -149,37 +254,39 @@ class RouteEditModal extends Vue {
                     return
                 }
                 const plugins = r.plugins || {}
-                const { type: uType, nodes: uNodes } = parseUpstreamNodes(r.upstream)
-                // 保存原始 upstream 配置，提交时若 upstream_nodes 为空则保留
-                this.originalUpstream = r.upstream ? { ...r.upstream as Record<string, unknown> } : null
-                this.suppressPortAutofill = true
+                this.originalUpstream = r.upstream ? { ...(r.upstream as ApisixUpstreamConfig) } : null
                 Object.assign(this.formData, {
-                    name: r.name || '', desc: r.desc || '',
-                    uris: (r.uris?.length ? r.uris : [r.uri || '']).join('\n'),
-                    hosts: (r.hosts?.length ? r.hosts : [r.host || '']).join('\n'),
-                    status: r.status ?? 0, priority: r.priority ?? 0,
+                    name: r.name || '',
+                    desc: r.desc || '',
+                    uris: (r.uris?.length ? r.uris : [r.uri || '']).filter(Boolean).join('\n'),
+                    hosts: (r.hosts?.length ? r.hosts : [r.host || '']).filter(Boolean).join('\n'),
+                    status: r.status ?? 0,
+                    priority: r.priority ?? 0,
                     enable_websocket: r.enable_websocket || false,
                     plugin_config_id: r.plugin_config_id || '',
-                    upstream_nodes: uNodes.length ? uNodes : [{ host: '', port: '', weight: 0 }],
-                    upstream_type: uType,
-                    timeout_connect: r.timeout?.connect ?? '', timeout_send: r.timeout?.send ?? '', timeout_read: r.timeout?.read ?? '',
-                    plugins, pluginsJson: JSON.stringify(plugins, null, 2), pluginsJsonError: ''
+                    plugins,
+                    pluginsJson: JSON.stringify(plugins, null, 2),
+                    pluginsJsonError: '',
+                    upstream_mode: detectRouteUpstreamMode(r),
+                    upstream_type: normalizeUpstreamType(r.upstream?.type),
+                    upstream_id: r.upstream_id || '',
+                    upstream_nodes: normalizeUpstreamFormNodes(r.upstream),
+                    upstream_hash_on: (r.upstream?.hash_on as ApisixUpstreamHashOn) || 'vars',
+                    upstream_key: (r.upstream?.key as string) || 'remote_addr',
+                    timeout_connect: r.timeout?.connect ?? '',
+                    timeout_send: r.timeout?.send ?? '',
+                    timeout_read: r.timeout?.read ?? '',
                 })
-                // 记录初始 host，避免 watcher 误重置端口
-                this.prevHost0 = this.formData.upstream_nodes[0]?.host?.trim() || ''
-                // 若无节点则不需要抑制端口自动填充
-                if (!uNodes.length) this.suppressPortAutofill = false
-            } catch (e) {
+            } catch {
                 this.actions.showNotification('error', '加载路由详情失败')
                 this.isOpen = false
             }
             this.modalLoading = false
-        } else {
-            this.isEditMode = false
-            this.resetForm()
-            this.formData.upstream_nodes = [{ host: '', port: '', weight: 0 }]
-            this.isOpen = true
+            return
         }
+        this.isEditMode = false
+        this.resetForm()
+        this.isOpen = true
     }
 
     syncPluginsFromJson() {
@@ -198,8 +305,6 @@ class RouteEditModal extends Vue {
         this.formData.pluginsJson = JSON.stringify(p, null, 2)
     }
 
-    readonly TYPE_DEFAULTS: Record<string, string | number | boolean | unknown[] | Record<string, unknown>> = { string: '', integer: 0, number: 0, boolean: false, array: [], object: {} }
-
     buildPluginDefault(schema: { properties?: Record<string, { type: string; default?: unknown }>; required?: string[] }) {
         if (!schema?.properties) return {}
         const required = new Set(schema.required || [])
@@ -207,7 +312,7 @@ class RouteEditModal extends Vue {
         for (const [key, def] of Object.entries(schema.properties)) {
             if (key === 'disable') continue
             if (required.has(key) || def.default !== undefined) {
-                result[key] = def.default !== undefined ? def.default : (this.TYPE_DEFAULTS[def.type] ?? null)
+                result[key] = def.default !== undefined ? def.default : (TYPE_DEFAULTS[def.type] ?? null)
             }
         }
         return result
@@ -217,8 +322,7 @@ class RouteEditModal extends Vue {
         if (this.formData.plugins[name] !== undefined) {
             return this.actions.showNotification('warning', `插件 ${name} 已存在`)
         }
-        const schema = this.availablePlugins[name]?.schema
-        const p = { ...this.formData.plugins, [name]: this.buildPluginDefault(schema) }
+        const p = { ...this.formData.plugins, [name]: this.buildPluginDefault(this.availablePlugins[name]?.schema) }
         this.formData.plugins = p
         this.formData.pluginsJson = JSON.stringify(p, null, 2)
         this.showPluginPanel = false
@@ -234,7 +338,7 @@ class RouteEditModal extends Vue {
             const src = (await api.apisixGetRoute(this.importRouteId)).payload?.plugins || {}
             this.importRoutePlugins = src
             this.selectedImportPlugins = new Set(Object.keys(src))
-        } catch (e) {
+        } catch {
             this.actions.showNotification('error', '加载路由插件失败')
         }
         this.importRoutePluginsLoading = false
@@ -248,11 +352,12 @@ class RouteEditModal extends Vue {
 
     importPluginsFromRoute() {
         if (!this.importRouteId) return this.actions.showNotification('warning', '请先选择要导入的路由')
-        if (this.selectedImportPlugins.size === 0) return this.actions.showNotification('warning', '请至少勾选一个插件')
-        const toImport: Record<string, unknown> = {}
-        for (const name of this.selectedImportPlugins) {
-            if (this.importRoutePlugins[name] !== undefined) toImport[name] = this.importRoutePlugins[name]
-        }
+        if (!this.selectedImportPlugins.size) return this.actions.showNotification('warning', '请至少勾选一个插件')
+        const toImport = Object.fromEntries(
+            [...this.selectedImportPlugins]
+                .filter(n => this.importRoutePlugins[n] !== undefined)
+                .map(n => [n, this.importRoutePlugins[n]])
+        )
         const merged = { ...this.formData.plugins, ...toImport }
         this.formData.plugins = merged
         this.formData.pluginsJson = JSON.stringify(merged, null, 2)
@@ -265,15 +370,13 @@ class RouteEditModal extends Vue {
 
     async handleConfirm() {
         if (!this.formData.name.trim()) return this.actions.showNotification('error', '路由名称不能为空')
-        if (!this.formData.uris.split('\n').map((s: string) => s.trim()).filter(Boolean).length) return this.actions.showNotification('error', 'URI 不能为空')
+        if (!this.formData.uris.split('\n').map(s => s.trim()).filter(Boolean).length) return this.actions.showNotification('error', 'URI 不能为空')
         if (this.formData.pluginsJsonError) return this.actions.showNotification('error', '请修正 Plugin JSON 格式错误')
+        if (this.routeValidationMessage) return this.actions.showNotification('error', this.routeValidationMessage)
+
         this.modalLoading = true
         try {
-            const payload = buildRoutePayload(this.formData)
-            // 编辑模式下，若 upstream_nodes 为空但原路由有 upstream 配置，则保留原始配置
-            if (this.isEditMode && !this.formData.upstream_nodes.some(n => n.host.trim() && String(n.port).trim()) && this.originalUpstream) {
-                payload.upstream = this.originalUpstream as typeof payload.upstream
-            }
+            const payload = buildRoutePayload(this.formData, this.originalUpstream)
             if (this.isEditMode) {
                 await api.apisixUpdateRoute(this.editingRouteId, payload)
                 this.actions.showNotification('success', '路由更新成功')
@@ -299,108 +402,160 @@ export default toNative(RouteEditModal)
     <div class="space-y-4 p-1">
       <div class="grid grid-cols-2 gap-3">
         <div><label class="block text-sm font-medium text-slate-700 mb-2">路由名称 <span class="text-red-500">*</span></label><input v-model="formData.name" type="text" class="input" placeholder="路由名称" /></div>
-        <div><label class="block text-sm font-medium text-slate-700 mb-2">优先级</label><input v-model.number="formData.priority" type="number" class="input" placeholder="0" /></div>
+        <div><label class="block text-sm font-medium text-slate-700 mb-2">优先级</label><input v-model.number="formData.priority" type="number" class="input" placeholder="0" min="0" /></div>
       </div>
       <div><label class="block text-sm font-medium text-slate-700 mb-2">描述</label><textarea v-model="formData.desc" rows="2" class="input" placeholder="路由描述"></textarea></div>
       <div><label class="block text-sm font-medium text-slate-700 mb-2">URI（每行一个）<span class="text-red-500">*</span></label><textarea v-model="formData.uris" rows="3" class="input font-mono text-sm" placeholder="/api/v1/*&#10;/api/v2/*"></textarea></div>
       <div><label class="block text-sm font-medium text-slate-700 mb-2">Host（每行一个，留空匹配所有）</label><textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="example.com"></textarea></div>
-      <div>
-        <div class="flex items-center justify-between mb-2">
-          <label class="text-sm font-medium text-slate-700">上游节点</label>
-          <button @click="addUpstreamNode()" type="button" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="添加节点"><i class="fas fa-plus text-xs"></i></button>
-        </div>
-        <div class="rounded-lg border border-slate-200 overflow-hidden">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 w-1/2">主机</th>
-                <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 w-[30%]">端口</th>
-                <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 w-[20%]">权重</th>
-                <th v-if="formData.upstream_nodes.length > 1" class="px-3 py-2 w-8"></th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-              <tr v-for="(node, index) in formData.upstream_nodes" :key="index">
-                <td class="px-3 py-2"><HostSelect v-model="node.host" :containers="containers" placeholder="127.0.0.1 或 容器名" /></td>
-                <td class="px-3 py-2"><PortSelect v-model="node.port" :ports="getContainerPortsForNode(index)" placeholder="80" /></td>
-                <td class="px-3 py-2"><input v-model.number="node.weight" type="number" class="input" placeholder="1" min="0" /></td>
-                <td v-if="formData.upstream_nodes.length > 1" class="px-1 py-2 text-center">
-                  <button @click="removeUpstreamNode(index)" type="button" class="btn-icon text-red-400 hover:text-red-600 hover:bg-red-50" title="移除"><i class="fas fa-xmark text-xs"></i></button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="mt-3">
-          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">负载均衡策略</label>
-          <select v-model="formData.upstream_type" class="input">
-            <option value="roundrobin">roundrobin（轮询）</option>
-            <option value="chash">chash（一致性哈希）</option>
-            <option value="ewma">ewma（加权移动平均）</option>
-            <option value="least_conn">least_conn（最少连接）</option>
-          </select>
-        </div>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">超时配置（秒）</label>
-        <div class="grid grid-cols-3 gap-3">
-          <div><input v-model.number="formData.timeout_connect" type="number" class="input" placeholder="连接超时" min="0" /><p class="text-xs text-slate-400 mt-1">connect</p></div>
-          <div><input v-model.number="formData.timeout_send" type="number" class="input" placeholder="发送超时" min="0" /><p class="text-xs text-slate-400 mt-1">send</p></div>
-          <div><input v-model.number="formData.timeout_read" type="number" class="input" placeholder="读取超时" min="0" /><p class="text-xs text-slate-400 mt-1">read</p></div>
-        </div>
-      </div>
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">WebSocket</label>
-          <select v-model="formData.enable_websocket" class="input">
-            <option :value="false">关闭</option>
-            <option :value="true">开启</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">路由状态</label>
-          <select v-model="formData.status" class="input">
-            <option :value="1">启用</option>
-            <option :value="0">禁用</option>
-          </select>
-        </div>
-      </div>
-      <div><label class="block text-sm font-medium text-slate-700 mb-2">复用插件配置</label>
-        <select v-model="formData.plugin_config_id" class="input"><option value="">不使用</option><option v-for="pc in pluginConfigs" :key="pc.id" :value="pc.id">{{ pc.desc || pc.id }}</option></select>
-      </div>
-      <div>
-        <div class="flex items-center justify-between mb-1">
-          <label class="text-sm font-medium text-slate-700">独立插件配置</label>
-          <div class="flex items-center gap-1">
-            <button @click="showPluginPanel = !showPluginPanel; showImportPanel = false" class="px-2 py-0.5 text-xs rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"><i class="fas fa-puzzle-piece mr-1"></i>添加插件</button>
-            <button @click="showImportPanel = !showImportPanel; showPluginPanel = false" class="px-2 py-0.5 text-xs rounded bg-slate-50 text-slate-600 hover:bg-slate-50 transition-colors"><i class="fas fa-file-import mr-1"></i>从路由导入</button>
+
+      <div class="border border-slate-200 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-700">上游配置</label>
+            <p class="text-xs text-slate-400 mt-1">支持多节点、引用已有上游或暂不配置上游</p>
           </div>
         </div>
-        <div v-if="showPluginPanel" class="mb-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
-          <div class="mb-2"><input v-model="pluginSearchKeyword" type="text" placeholder="搜索插件..." class="input text-xs" /></div>
-          <div class="max-h-40 overflow-y-auto grid grid-cols-3 gap-1">
-            <button v-for="name in filteredAvailablePlugins" :key="name" @click="addPresetPlugin(name)" :class="['px-2 py-1 text-xs rounded text-left truncate transition-colors', formData.plugins[name] !== undefined ? 'bg-indigo-100 text-indigo-700 cursor-default' : 'bg-white hover:bg-indigo-50 text-slate-700']" :disabled="formData.plugins[name] !== undefined">{{ name }}</button>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <button v-for="item in upstreamModeCards" :key="item.value" type="button" :class="modeCardClass(item)" @click="setUpstreamMode(item.value)">
+            <div class="flex items-center gap-2 mb-1">
+              <div :class="modeCardIconClass(item)"><i class="fas text-sm" :class="item.icon"></i></div>
+              <span class="text-sm font-semibold">{{ item.title }}</span>
+            </div>
+            <div class="text-xs opacity-80 leading-5">{{ item.desc }}</div>
+          </button>
+        </div>
+
+        <div v-if="formData.upstream_mode === 'nodes'" class="space-y-3">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">负载均衡策略</label>
+              <select v-model="formData.upstream_type" class="input">
+                <option v-for="o in upstreamTypeOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+              </select>
+              <p class="text-xs text-slate-400 mt-1">{{ selectedUpstreamTypeOption.desc }}</p>
+            </div>
+            <div v-if="formData.upstream_type === 'chash'">
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">哈希依据（hash_on）</label>
+              <select v-model="formData.upstream_hash_on" class="input">
+                <option v-for="o in hashOnOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+              </select>
+              <p class="text-xs text-slate-400 mt-1">{{ selectedHashOnOption.keyHint }}</p>
+            </div>
+            <div v-if="formData.upstream_type === 'chash'">
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">哈希键（key）</label>
+              <input v-model="formData.upstream_key" type="text" class="input" :placeholder="selectedHashOnOption.keyPlaceholder" />
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium text-slate-700">上游节点</label>
+            <button @click="addUpstreamNode()" type="button" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="添加节点"><i class="fas fa-plus text-xs"></i></button>
+          </div>
+          <div class="rounded-lg border border-slate-200 overflow-hidden">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200">
+                  <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 w-1/2">主机</th>
+                  <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 w-[30%]">端口</th>
+                  <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 w-[20%]">权重</th>
+                  <th v-if="formData.upstream_nodes.length > 1" class="px-3 py-2 w-8"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr v-for="(node, index) in formData.upstream_nodes" :key="index">
+                  <td class="px-3 py-2"><HostSelect :model-value="node.host" :containers="containers" placeholder="127.0.0.1 或 容器名" @update:modelValue="updateUpstreamNode(index, 'host', $event)" /></td>
+                  <td class="px-3 py-2"><PortSelect :model-value="node.port" :ports="getPortsByHost(node.host)" placeholder="80" @update:modelValue="updateUpstreamNode(index, 'port', $event)" /></td>
+                  <td class="px-3 py-2"><input v-model.number="node.weight" type="number" class="input" placeholder="1" min="0" /></td>
+                  <td v-if="formData.upstream_nodes.length > 1" class="px-1 py-2 text-center">
+                    <button @click="removeUpstreamNode(index)" type="button" class="btn-icon text-red-400 hover:text-red-600 hover:bg-red-50" title="移除"><i class="fas fa-xmark text-xs"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
+        </div>
+
+        <div v-else-if="formData.upstream_mode === 'upstream_id'" class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">选择已有上游</label>
+            <select v-model="formData.upstream_id" class="input">
+              <option value="">请选择已有上游</option>
+              <option v-for="upstream in upstreams" :key="upstream.id" :value="upstream.id">{{ upstream.name || upstream.id }}（{{ upstream.type || 'roundrobin' }}）</option>
+            </select>
+          </div>
+          <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
+        </div>
+
+        <div v-else class="text-sm text-slate-500 leading-6">当前保存只会提交路由匹配规则、状态和插件配置，不会附带内联节点，也不会引用已有上游。</div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-2">复用插件配置</label>
+        <select v-model="formData.plugin_config_id" class="input">
+          <option value="">不使用</option>
+          <option v-for="pc in pluginConfigs" :key="pc.id" :value="pc.id">{{ pc.desc || pc.id }}</option>
+        </select>
+      </div>
+
+      <div class="border border-slate-200 rounded-xl p-4">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">独立插件配置</label>
+            <p class="text-xs text-slate-400">可直接编辑 JSON，也支持从现有路由导入。</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button @click="showPluginPanel = !showPluginPanel; showImportPanel = false" class="px-3 py-1.5 text-xs rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors border border-indigo-100"><i class="fas fa-puzzle-piece mr-1"></i>添加插件</button>
+            <button @click="showImportPanel = !showImportPanel; showPluginPanel = false" class="px-3 py-1.5 text-xs rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors border border-slate-200"><i class="fas fa-file-import mr-1"></i>从路由导入</button>
           </div>
         </div>
-        <div v-if="showImportPanel" class="mb-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
-          <div class="mb-2"><select v-model="importRouteId" @change="onImportRouteChange" class="input text-xs"><option value="">选择来源路由...</option><option v-for="r in routes" :key="r.id" :value="r.id">{{ r.name || r.id }}</option></select></div>
+
+        <div v-if="showPluginPanel" class="mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <input v-model="pluginSearchKeyword" type="text" placeholder="搜索插件..." class="input text-xs mb-2" />
+          <div class="max-h-40 overflow-y-auto grid grid-cols-1 md:grid-cols-3 gap-2">
+            <button
+              v-for="name in filteredAvailablePlugins"
+              :key="name"
+              :disabled="formData.plugins[name] !== undefined"
+              :class="['px-3 py-2 text-xs rounded-xl text-left truncate transition-colors border', formData.plugins[name] !== undefined ? 'bg-indigo-100 text-indigo-700 border-indigo-200 cursor-default' : 'bg-white hover:bg-indigo-50 text-slate-700 border-slate-200']"
+              @click="addPresetPlugin(name)"
+            >{{ name }}</button>
+          </div>
+        </div>
+
+        <div v-if="showImportPanel" class="mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <select v-model="importRouteId" @change="onImportRouteChange" class="input text-xs mb-2">
+            <option value="">选择来源路由...</option>
+            <option v-for="r in routes" :key="r.id" :value="r.id">{{ r.name || r.id }}</option>
+          </select>
           <div v-if="importRoutePluginsLoading" class="text-xs text-slate-500 text-center py-2">加载中...</div>
           <div v-else-if="Object.keys(importRoutePlugins).length > 0">
-            <div class="max-h-32 overflow-y-auto space-y-1 mb-2"><label v-for="(_, name) in importRoutePlugins" :key="name" class="flex items-center gap-2 text-xs cursor-pointer"><input type="checkbox" :checked="selectedImportPlugins.has(name)" @change="toggleImportPlugin(name)" class="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500" /><span>{{ name }}</span></label></div>
-            <button @click="importPluginsFromRoute" class="px-3 py-1 text-xs bg-indigo-500 text-white rounded hover:bg-indigo-600 transition-colors">导入选中插件</button>
+            <div class="max-h-32 overflow-y-auto space-y-1 mb-2">
+              <label v-for="(_, name) in importRoutePlugins" :key="name" class="flex items-center gap-2 text-xs cursor-pointer rounded-lg px-2 py-1 hover:bg-white">
+                <input type="checkbox" :checked="selectedImportPlugins.has(name)" @change="toggleImportPlugin(name)" class="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500" />
+                <span>{{ name }}</span>
+              </label>
+            </div>
+            <button @click="importPluginsFromRoute" class="px-3 py-1.5 text-xs bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">导入选中插件</button>
           </div>
         </div>
+
         <div v-if="currentPluginNames.length > 0" class="flex flex-wrap gap-1 mb-2">
           <span v-for="name in currentPluginNames" :key="name" class="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs">{{ name }}<button @click="removePlugin(name)" class="hover:text-red-500 transition-colors"><i class="fas fa-xmark text-[10px]"></i></button></span>
         </div>
+
         <textarea v-model="formData.pluginsJson" @blur="syncPluginsFromJson" rows="8" :class="['input font-mono text-sm', formData.pluginsJsonError ? 'border-red-300 bg-red-50' : '']" placeholder='{"key-auth": {}, "proxy-rewrite": {"uri": "/new-path"}}'></textarea>
         <p v-if="formData.pluginsJsonError" class="text-xs text-red-500 mt-1">{{ formData.pluginsJsonError }}</p>
       </div>
     </div>
+
     <template #footer>
       <div class="flex justify-end gap-2">
         <button @click="isOpen = false" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50">取消</button>
-        <button @click="handleConfirm()" :disabled="modalLoading" class="px-4 py-2 text-sm font-medium text-white bg-indigo-500 rounded-lg hover:bg-indigo-600 disabled:opacity-50"><i v-if="modalLoading" class="fas fa-spinner fa-spin mr-1"></i>{{ isEditMode ? '保存' : '创建' }}</button>
+        <button @click="handleConfirm()" :disabled="modalLoading" class="px-4 py-2 text-sm font-medium text-white bg-indigo-500 rounded-lg hover:bg-indigo-600 disabled:opacity-50 shadow-sm">
+          <i v-if="modalLoading" class="fas fa-spinner fa-spin mr-1"></i>{{ isEditMode ? '保存' : '创建' }}
+        </button>
       </div>
     </template>
   </BaseModal>

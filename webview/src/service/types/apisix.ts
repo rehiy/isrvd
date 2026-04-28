@@ -1,5 +1,11 @@
 // ─── Apisix 相关 ───
 
+export type ApisixRouteUpstreamMode = 'none' | 'nodes' | 'upstream_id'
+
+export type ApisixUpstreamType = 'roundrobin' | 'chash' | 'ewma' | 'least_conn'
+
+export type ApisixUpstreamHashOn = 'vars' | 'header' | 'cookie' | 'consumer' | 'vars_combinations'
+
 export interface ApisixUpstreamNode {
     host?: string
     port?: number | string
@@ -7,8 +13,10 @@ export interface ApisixUpstreamNode {
 }
 
 export interface ApisixUpstreamConfig {
-    type?: string
+    type?: ApisixUpstreamType | string
     nodes?: ApisixUpstreamNode[] | Record<string, number>
+    hash_on?: ApisixUpstreamHashOn
+    key?: string
     [key: string]: unknown
 }
 
@@ -16,6 +24,20 @@ export interface ApisixRouteTimeout {
     connect?: number
     send?: number
     read?: number
+}
+
+export interface ApisixRouteUpstreamFormNode {
+    host: string
+    port: string
+    weight: number
+}
+
+export interface ApisixRouteUpstreamModeCard {
+    value: ApisixRouteUpstreamMode
+    title: string
+    desc: string
+    icon: string
+    tone: 'indigo' | 'emerald' | 'slate'
 }
 
 export interface ApisixRoute {
