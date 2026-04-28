@@ -15,6 +15,7 @@ type Task struct {
 	ServiceID   string `json:"serviceID"`
 	ServiceName string `json:"serviceName"`
 	NodeID      string `json:"nodeID"`
+	NodeName    string `json:"nodeName"`
 	Slot        int    `json:"slot"`
 	Image       string `json:"image"`
 	State       string `json:"state"`
@@ -45,6 +46,13 @@ func (m *SwarmService) ListTasks(ctx context.Context, serviceID string) ([]Task,
 		svcNameMap[s.ID] = s.Spec.Name
 	}
 
+	// 建立节点 ID→主机名 映射
+	nodes, _ := m.client.NodeList(ctx, swarm.NodeListOptions{})
+	nodeNameMap := map[string]string{}
+	for _, n := range nodes {
+		nodeNameMap[n.ID] = n.Description.Hostname
+	}
+
 	var result []Task
 	for _, t := range tasks {
 		result = append(result, Task{
@@ -52,6 +60,7 @@ func (m *SwarmService) ListTasks(ctx context.Context, serviceID string) ([]Task,
 			ServiceID:   t.ServiceID,
 			ServiceName: svcNameMap[t.ServiceID],
 			NodeID:      t.NodeID,
+			NodeName:    nodeNameMap[t.NodeID],
 			Slot:        t.Slot,
 			Image:       t.Spec.ContainerSpec.Image,
 			State:       string(t.Status.State),

@@ -5,7 +5,7 @@ import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
 import api from '@/service/api'
-import type { SwarmServiceDetail } from '@/service/types'
+import type { SwarmServiceDetail, SwarmTask } from '@/service/types'
 
 import { formatTime } from '@/helper/utils'
 
@@ -14,9 +14,10 @@ class ServiceInfo extends Vue {
     @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
 
     // ─── 数据属性 ───
-  serviceData: SwarmServiceDetail | null = null
-    loading = false
+    serviceData: SwarmServiceDetail | null = null
     formatTime = formatTime
+    tasks: SwarmTask[] = []
+    loading = false
 
     get serviceId() {
         return this.$route.params.id as string
@@ -31,11 +32,29 @@ class ServiceInfo extends Vue {
         this.$router.push({ name, params: { id: this.serviceId } })
     }
 
+    get nodeDistribution() {
+        const map = new Map<string, { nodeID: string; nodeName: string; running: number; total: number }>()
+        for (const t of this.tasks) {
+            const key = t.nodeID || t.nodeName
+            if (!map.has(key)) {
+                map.set(key, { nodeID: t.nodeID, nodeName: t.nodeName || t.nodeID, running: 0, total: 0 })
+            }
+            const entry = map.get(key)!
+            entry.total++
+            if (t.state === 'running') entry.running++
+        }
+        return [...map.values()].sort((a, b) => b.running - a.running)
+    }
+
     async loadDetail() {
         this.loading = true
         try {
-            const res = await api.swarmInspectService(this.serviceId)
-            this.serviceData = res.payload ?? null
+            const [detailRes, tasksRes] = await Promise.all([
+                api.swarmInspectService(this.serviceId),
+                api.swarmListTasks(this.serviceId),
+            ])
+            this.serviceData = detailRes.payload ?? null
+            this.tasks = tasksRes.payload ?? []
         } catch (e) {
             this.actions.showNotification('error', '获取服务详情失败')
         }
@@ -161,6 +180,14 @@ export default toNative(ServiceInfo)
           </div>
         </div>
 
+        <!-- 网络 -->
+        <div v-if="serviceData.networks && serviceData.networks.length > 0">
+          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">网络</h2>
+          <div class="flex flex-wrap gap-1.5">
+            <span v-for="n in serviceData.networks" :key="n" class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-700">{{ n }}</span>
+          </div>
+        </div>
+
         <!-- 端口 -->
         <div v-if="serviceData.ports && serviceData.ports.length > 0">
           <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">端口映射</h2>
@@ -171,14 +198,6 @@ export default toNative(ServiceInfo)
               <code class="text-xs font-mono text-slate-600">{{ p.targetPort }}/{{ p.protocol }}</code>
               <span class="ml-auto text-xs text-slate-400 capitalize">{{ p.publishMode }}</span>
             </div>
-          </div>
-        </div>
-
-        <!-- 网络 -->
-        <div v-if="serviceData.networks && serviceData.networks.length > 0">
-          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">网络</h2>
-          <div class="flex flex-wrap gap-1.5">
-            <span v-for="n in serviceData.networks" :key="n" class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-700">{{ n }}</span>
           </div>
         </div>
 
@@ -220,6 +239,22 @@ export default toNative(ServiceInfo)
           <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
             <div v-for="(c, idx) in serviceData.constraints" :key="idx" class="px-3 py-1.5">
               <code class="text-xs font-mono text-slate-600">{{ c }}</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- 节点分布 -->
+        <div v-if="nodeDistribution.length > 0">
+          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">节点分布</h2>
+          <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
+            <div v-for="node in nodeDistribution" :key="node.nodeName" class="px-3 py-2 flex items-center gap-3 cursor-pointer hover:bg-slate-50 transition-colors" @click="$router.push({ name: 'swarm-node', params: { id: node.nodeID } })">
+              <i class="fas fa-server text-slate-400 text-xs w-3"></i>
+              <span class="text-xs font-mono text-slate-700 flex-1 truncate">{{ node.nodeName }}</span>
+              <span class="text-xs">
+                <span class="text-emerald-600 font-medium">{{ node.running }}</span>
+                <span class="text-slate-400"> / {{ node.total }} 任务</span>
+              </span>
+              <span :class="['inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium', node.running > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500']">{{ node.running > 0 ? '运行中' : '空闲' }}</span>
             </div>
           </div>
         </div>

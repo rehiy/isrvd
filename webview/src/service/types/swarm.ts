@@ -97,6 +97,7 @@ export interface SwarmTask {
     serviceID: string
     serviceName: string
     nodeID: string
+    nodeName: string
     slot: number
     image: string
     state: string
