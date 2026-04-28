@@ -79,5 +79,6 @@ if [ -n "$ISRVD_PASSWORD" ]; then
     echo "=========================================="
 fi
 
+export CONFIG_PATH="$CONF_DIR/isrvd.yml"
 echo "[init] Starting isrvd..."
 exec /usr/local/bin/isrvd
