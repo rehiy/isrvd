@@ -9,6 +9,7 @@ type Config struct {
 	Marketplace *MarketplaceConfig `yaml:"marketplace"`
 	Links       []*LinkConfig      `yaml:"links"`
 	Members     []*MemberConfig    `yaml:"members"`
+	Etcd        *EtcdConfig        `yaml:"etcd"`
 }
 
 // 服务器配置
@@ -69,4 +70,20 @@ type MemberConfig struct {
 	// Permissions 各模块权限，key 为模块名，value 为 "r"（只读）或 "rw"（读写），空字符串或缺失表示无权限
 	// 可用模块：filer, agent, apisix, docker, swarm, compose, system, shell
 	Permissions map[string]string `yaml:"permissions,omitempty"`
+}
+
+// EtcdConfig etcd 连接配置
+type EtcdConfig struct {
+	Endpoints []string   `yaml:"endpoints"`
+	Prefix    string     `yaml:"prefix"`
+	Username  string     `yaml:"username"`
+	Password  string     `yaml:"password"`
+	TLS       *EtcdTLS   `yaml:"tls"`
+}
+
+// EtcdTLS etcd TLS 配置
+type EtcdTLS struct {
+	CertFile string `yaml:"certFile"`
+	KeyFile  string `yaml:"keyFile"`
+	CAFile   string `yaml:"caFile"`
 }

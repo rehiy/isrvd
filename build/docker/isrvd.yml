@@ -44,3 +44,17 @@ members:
       compose: rw
       system: rw
       shell: rw
+
+# etcd 配置（可选）
+# 启用后，members / links / marketplace / registries / agent / jwtSecret / proxyHeaderName / adminKey
+# 等全局配置将存储在 etcd 中，多实例自动同步
+# etcd:
+#   endpoints:
+#     - http://127.0.0.1:2379
+#   prefix: /isrvd          # 默认 /isrvd
+#   username: ""
+#   password: ""
+#   tls:
+#     certFile: ""
+#     keyFile: ""
+#     caFile: ""
