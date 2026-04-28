@@ -128,7 +128,7 @@ export default toNative(App)
         </button>
         
         <!-- 工具栏按钮区域 -->
-        <div v-if="toolbarLinks.length > 0" class="flex items-center gap-2 overflow-x-auto ml-auto">
+        <div class="flex items-center gap-2 overflow-x-auto ml-auto">
           <a
             v-for="link in toolbarLinks"
             :key="link.url"
