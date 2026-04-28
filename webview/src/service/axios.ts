@@ -42,6 +42,21 @@ export const interceptors = (state: { token: string | null; loading: boolean }, 
         }
     )
 
+    axiosBlobInstance.interceptors.request.use(
+        (config: InternalAxiosRequestConfig) => {
+            if (state.token) {
+                config.headers['Authorization'] = state.token
+            }
+            return config
+        },
+        (error: unknown) => Promise.reject(error)
+    )
+
+    axiosBlobInstance.interceptors.response.use(
+        (value: AxiosResponse) => value.data,
+        (error: unknown) => Promise.reject(error)
+    )
+
     axiosInstance.interceptors.response.use(
         (value: AxiosResponse) => {
             // 过滤逻辑：不显示 GET 请求和 HTTP 200 状态码的消息
