@@ -42,22 +42,6 @@ func (c *Client) ListConsumers() ([]Consumer, error) {
 	return result, nil
 }
 
-// GetConsumerRawKey 获取指定 Consumer 的完整（未脱敏）API Key
-func (c *Client) GetConsumerRawKey(username string) (string, error) {
-	raw, err := c.GetConsumerRaw(username)
-	if err != nil {
-		return "", err
-	}
-	if raw.Plugins != nil {
-		if keyAuth, ok := raw.Plugins["key-auth"].(map[string]any); ok {
-			if key, ok := keyAuth["key"].(string); ok && key != "" {
-				return key, nil
-			}
-		}
-	}
-	return "", fmt.Errorf("该用户尚未配置 API Key")
-}
-
 // GetConsumerRaw 获取指定 Consumer 的完整（未脱敏）数据
 func (c *Client) GetConsumerRaw(username string) (*Consumer, error) {
 	data, err := c.doRequest(http.MethodGet, "/consumers/"+username, nil)
@@ -96,48 +80,26 @@ func (c *Client) UpdateConsumer(username, desc string, plugins map[string]any) e
 	return err
 }
 
-// CreateConsumer 创建 Consumer，自动生成 API Key，返回完整的 Consumer（含明文 API Key）
-func (c *Client) CreateConsumer(username, desc string) (*Consumer, error) {
-	apiKey := strutil.Rand(32)
-	if err := c.CreateOrUpdateConsumer(username, apiKey, desc); err != nil {
-		return nil, err
+// CreateConsumer 创建 Consumer，支持传入完整 plugins。
+// 若 plugins 为空，自动生成 key-auth 插件并返回明文 API Key。
+func (c *Client) CreateConsumer(username, desc string, plugins map[string]any) (*Consumer, error) {
+	if len(plugins) == 0 {
+		apiKey := strutil.Rand(32)
+		plugins = map[string]any{
+			"key-auth": map[string]any{"key": apiKey},
+		}
 	}
-	return &Consumer{
-		Username: username,
-		Desc:     desc,
-		Plugins: map[string]any{
-			"key-auth": map[string]any{
-				"key": apiKey,
-			},
-		},
-	}, nil
-}
-
-// UpdateConsumerDesc 更新 Consumer 描述，保持原有 API Key 不变
-func (c *Client) UpdateConsumerDesc(username, desc string) error {
-	apiKey, err := c.GetConsumerRawKey(username)
-	if err != nil {
-		return err
-	}
-	return c.CreateOrUpdateConsumer(username, apiKey, desc)
-}
-
-// CreateOrUpdateConsumer 创建或更新 Consumer（key-auth 插件）
-func (c *Client) CreateOrUpdateConsumer(username, apiKey, desc string) error {
 	body := map[string]any{
 		"username": username,
 		"desc":     desc,
-		"plugins": map[string]any{
-			"key-auth": map[string]any{
-				"key": apiKey,
-			},
-		},
+		"plugins":  plugins,
 	}
 	_, err := c.doRequest(http.MethodPut, "/consumers/"+username, body)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	maskConsumerPlugins(plugins)
+	return &Consumer{Username: username, Desc: desc, Plugins: plugins}, nil
 }
 
 // DeleteConsumer 删除指定 Consumer
@@ -150,6 +112,9 @@ func (c *Client) DeleteConsumer(username string) error {
 }
 
 // --- 辅助函数 ---
+
+// sensitivePluginFields 各 auth 插件中需要脱敏/还原的敏感字段名
+var sensitivePluginFields = []string{"key", "password", "secret", "private_key", "secret_key", "appSecret"}
 
 // unmaskPlugins 将 plugins 中的脱敏值（包含 ******）替换为原始值
 func unmaskPlugins(plugins, rawPlugins map[string]any) {
@@ -166,7 +131,7 @@ func unmaskPlugins(plugins, rawPlugins map[string]any) {
 		if !ok {
 			continue
 		}
-		for _, field := range []string{"key", "password"} {
+		for _, field := range sensitivePluginFields {
 			val, ok := p[field].(string)
 			if !ok || !strings.Contains(val, "******") {
 				continue
@@ -178,7 +143,7 @@ func unmaskPlugins(plugins, rawPlugins map[string]any) {
 	}
 }
 
-// maskConsumerPlugins 对 plugins 中的敏感字段（key、password）进行脱敏：
+// maskConsumerPlugins 对 plugins 中的敏感字段（key、password 等）进行脱敏：
 // - 长度 > 10：保留前 5 位 + ****** + 后 3 位
 // - 长度 <= 10：保留首尾各 1 位，中间替换为 ******
 func maskConsumerPlugins(plugins map[string]any) {
@@ -187,7 +152,7 @@ func maskConsumerPlugins(plugins map[string]any) {
 		if !ok {
 			continue
 		}
-		for _, field := range []string{"key", "password"} {
+		for _, field := range sensitivePluginFields {
 			s, ok := p[field].(string)
 			if !ok || len(s) == 0 {
 				continue

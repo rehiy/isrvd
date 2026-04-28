@@ -89,14 +89,15 @@ func (app *App) apisixListConsumers(c *gin.Context) {
 
 func (app *App) apisixCreateConsumer(c *gin.Context) {
 	var req struct {
-		Username string `json:"username" binding:"required"`
-		Desc     string `json:"desc"`
+		Username string         `json:"username" binding:"required"`
+		Desc     string         `json:"desc"`
+		Plugins  map[string]any `json:"plugins"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.RespondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.CreateConsumer(req.Username, req.Desc)
+	result, err := app.apisixSvc.CreateConsumer(req.Username, req.Desc, req.Plugins)
 	if err != nil {
 		helper.RespondError(c, http.StatusInternalServerError, err.Error())
 		return

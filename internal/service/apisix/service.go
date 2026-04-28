@@ -97,17 +97,12 @@ func (s *Service) ListConsumers() (any, error) {
 	return s.client.ListConsumers()
 }
 
-// CreateConsumer 创建 Consumer
-func (s *Service) CreateConsumer(username, desc string) (any, error) {
-	return s.client.CreateConsumer(username, desc)
-}
-
-// UpdateConsumerDesc 更新 Consumer 描述
-func (s *Service) UpdateConsumerDesc(username, desc string) error {
+// CreateConsumer 创建 Consumer，支持传入完整 plugins
+func (s *Service) CreateConsumer(username, desc string, plugins map[string]any) (any, error) {
 	if username == "" {
-		return fmt.Errorf("用户名不能为空")
+		return nil, fmt.Errorf("用户名不能为空")
 	}
-	return s.client.UpdateConsumerDesc(username, desc)
+	return s.client.CreateConsumer(username, desc, plugins)
 }
 
 // UpdateConsumer 更新 Consumer（支持 plugins，自动替换脱敏值）

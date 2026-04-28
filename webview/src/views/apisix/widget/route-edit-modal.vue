@@ -27,6 +27,7 @@ import {
 
 import BaseModal from '@/component/modal.vue'
 import HostSelect from './host-select.vue'
+import PluginConfigPanel from '@/views/apisix/widget/plugin-config-panel.vue'
 import PortSelect from './port-select.vue'
 
 // ─── 模块级静态常量 ───
@@ -52,8 +53,6 @@ const HASH_ON_OPTIONS: Array<{ value: ApisixUpstreamHashOn; label: string; keyPl
     { value: 'vars_combinations', label: 'vars_combinations', keyPlaceholder: '$remote_addr$uri', keyHint: '多个 Nginx 变量组合，如 $remote_addr$uri' }
 ]
 
-const TYPE_DEFAULTS: Record<string, string | number | boolean | unknown[] | Record<string, unknown>> = { string: '', integer: 0, number: 0, boolean: false, array: [], object: {} }
-
 const TONE_CARD_ACTIVE: Record<string, string> = {
     indigo: 'border-indigo-300 bg-indigo-50 text-indigo-700',
     emerald: 'border-emerald-300 bg-emerald-50 text-emerald-700',
@@ -71,8 +70,6 @@ const defaultFormData = () => ({
     enable_websocket: false,
     plugin_config_id: '',
     plugins: {} as Record<string, unknown>,
-    pluginsJson: '{}',
-    pluginsJsonError: '',
     upstream_mode: 'nodes' as ApisixRouteUpstreamMode,
     upstream_type: 'roundrobin' as ApisixUpstreamType,
     upstream_id: '',
@@ -86,7 +83,7 @@ const defaultFormData = () => ({
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, HostSelect, PortSelect },
+    components: { BaseModal, HostSelect, PluginConfigPanel, PortSelect },
     emits: ['success']
 })
 class RouteEditModal extends Vue {
@@ -97,14 +94,8 @@ class RouteEditModal extends Vue {
     modalLoading = false
     isEditMode = false
     editingRouteId = ''
-    showPluginPanel = false
-    showImportPanel = false
-    importRouteId = ''
-    importRoutePlugins: Record<string, unknown> = {}
-    importRoutePluginsLoading = false
-    selectedImportPlugins: Set<string> = new Set()
-    pluginSearchKeyword = ''
     originalUpstream: ApisixUpstreamConfig | null = null
+    declare $refs: { pluginPanel: InstanceType<typeof PluginConfigPanel> }
 
     pluginConfigs: ApisixPluginConfig[] = []
     upstreams: ApisixUpstream[] = []
@@ -120,14 +111,6 @@ class RouteEditModal extends Vue {
     readonly hashOnOptions = HASH_ON_OPTIONS
 
     // ─── 计算属性 ───
-    get currentPluginNames() { return Object.keys(this.formData.plugins || {}) }
-
-    get filteredAvailablePlugins() {
-        const kw = this.pluginSearchKeyword.toLowerCase()
-        const all = Object.keys(this.availablePlugins)
-        return kw ? all.filter(n => n.toLowerCase().includes(kw)) : all
-    }
-
     get selectedUpstreamTypeOption() {
         return UPSTREAM_TYPE_OPTIONS.find(o => o.value === this.formData.upstream_type) ?? UPSTREAM_TYPE_OPTIONS[0]
     }
@@ -176,12 +159,6 @@ class RouteEditModal extends Vue {
         Object.assign(this.formData, defaultFormData())
         this.editingRouteId = ''
         this.originalUpstream = null
-        this.showPluginPanel = false
-        this.showImportPanel = false
-        this.importRouteId = ''
-        this.importRoutePlugins = {}
-        this.selectedImportPlugins = new Set()
-        this.pluginSearchKeyword = ''
     }
 
     createUpstreamNode(): ApisixRouteUpstreamFormNode {
@@ -265,8 +242,6 @@ class RouteEditModal extends Vue {
                     enable_websocket: r.enable_websocket || false,
                     plugin_config_id: r.plugin_config_id || '',
                     plugins,
-                    pluginsJson: JSON.stringify(plugins, null, 2),
-                    pluginsJsonError: '',
                     upstream_mode: detectRouteUpstreamMode(r),
                     upstream_type: normalizeUpstreamType(r.upstream?.type),
                     upstream_id: r.upstream_id || '',
@@ -289,89 +264,14 @@ class RouteEditModal extends Vue {
         this.isOpen = true
     }
 
-    syncPluginsFromJson() {
-        try {
-            this.formData.plugins = JSON.parse(this.formData.pluginsJson || '{}')
-            this.formData.pluginsJsonError = ''
-        } catch (e: unknown) {
-            this.formData.pluginsJsonError = 'JSON 格式错误: ' + (e instanceof Error ? e.message : String(e))
-        }
-    }
-
-    removePlugin(name: string) {
-        const p = { ...this.formData.plugins }
-        delete p[name]
-        this.formData.plugins = p
-        this.formData.pluginsJson = JSON.stringify(p, null, 2)
-    }
-
-    buildPluginDefault(schema: { properties?: Record<string, { type: string; default?: unknown }>; required?: string[] }) {
-        if (!schema?.properties) return {}
-        const required = new Set(schema.required || [])
-        const result: Record<string, unknown> = {}
-        for (const [key, def] of Object.entries(schema.properties)) {
-            if (key === 'disable') continue
-            if (required.has(key) || def.default !== undefined) {
-                result[key] = def.default !== undefined ? def.default : (TYPE_DEFAULTS[def.type] ?? null)
-            }
-        }
-        return result
-    }
-
-    addPresetPlugin(name: string) {
-        if (this.formData.plugins[name] !== undefined) {
-            return this.actions.showNotification('warning', `插件 ${name} 已存在`)
-        }
-        const p = { ...this.formData.plugins, [name]: this.buildPluginDefault(this.availablePlugins[name]?.schema) }
-        this.formData.plugins = p
-        this.formData.pluginsJson = JSON.stringify(p, null, 2)
-        this.showPluginPanel = false
-        this.pluginSearchKeyword = ''
-    }
-
-    async onImportRouteChange() {
-        this.importRoutePlugins = {}
-        this.selectedImportPlugins = new Set()
-        if (!this.importRouteId) return
-        this.importRoutePluginsLoading = true
-        try {
-            const src = (await api.apisixGetRoute(this.importRouteId)).payload?.plugins || {}
-            this.importRoutePlugins = src
-            this.selectedImportPlugins = new Set(Object.keys(src))
-        } catch {
-            this.actions.showNotification('error', '加载路由插件失败')
-        }
-        this.importRoutePluginsLoading = false
-    }
-
-    toggleImportPlugin(name: string) {
-        const s = new Set(this.selectedImportPlugins)
-        s.has(name) ? s.delete(name) : s.add(name)
-        this.selectedImportPlugins = s
-    }
-
-    importPluginsFromRoute() {
-        if (!this.importRouteId) return this.actions.showNotification('warning', '请先选择要导入的路由')
-        if (!this.selectedImportPlugins.size) return this.actions.showNotification('warning', '请至少勾选一个插件')
-        const toImport = Object.fromEntries(
-            [...this.selectedImportPlugins]
-                .filter(n => this.importRoutePlugins[n] !== undefined)
-                .map(n => [n, this.importRoutePlugins[n]])
-        )
-        const merged = { ...this.formData.plugins, ...toImport }
-        this.formData.plugins = merged
-        this.formData.pluginsJson = JSON.stringify(merged, null, 2)
-        this.showImportPanel = false
-        this.importRouteId = ''
-        this.importRoutePlugins = {}
-        this.selectedImportPlugins = new Set()
-        this.actions.showNotification('success', `已导入 ${Object.keys(toImport).length} 个插件`)
+    onPluginsUpdate(plugins: Record<string, unknown>) {
+        this.formData.plugins = plugins
     }
 
     async handleConfirm() {
         if (!this.formData.name.trim()) return this.actions.showNotification('error', '路由名称不能为空')
         if (!this.formData.uris.split('\n').map(s => s.trim()).filter(Boolean).length) return this.actions.showNotification('error', 'URI 不能为空')
-        if (this.formData.pluginsJsonError) return this.actions.showNotification('error', '请修正 Plugin JSON 格式错误')
+        if (this.$refs.pluginPanel?.pluginsJsonError) return this.actions.showNotification('error', '请修正 Plugin JSON 格式错误')
         if (this.routeValidationMessage) return this.actions.showNotification('error', this.routeValidationMessage)
 
         this.modalLoading = true
@@ -385,7 +285,6 @@ class RouteEditModal extends Vue {
                 this.actions.showNotification('success', '路由创建成功')
             }
             this.isOpen = false
-            this.resetForm()
             this.$emit('success')
         } catch (e: unknown) {
             this.actions.showNotification('error', (e instanceof Error ? e.message : '') || '操作失败')
@@ -401,17 +300,17 @@ export default toNative(RouteEditModal)
   <BaseModal v-model="isOpen" :title="isEditMode ? '编辑路由' : '创建路由'" :loading="modalLoading">
     <div class="space-y-4 p-1">
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="block text-sm font-medium text-slate-700 mb-2">路由名称 <span class="text-red-500">*</span></label><input v-model="formData.name" type="text" class="input" placeholder="路由名称" /></div>
-        <div><label class="block text-sm font-medium text-slate-700 mb-2">优先级</label><input v-model.number="formData.priority" type="number" class="input" placeholder="0" min="0" /></div>
+        <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">路由名称 <span class="text-red-500">*</span></label><input v-model="formData.name" type="text" class="input" placeholder="路由名称" /></div>
+        <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">优先级</label><input v-model.number="formData.priority" type="number" class="input" placeholder="0" min="0" /></div>
       </div>
-      <div><label class="block text-sm font-medium text-slate-700 mb-2">描述</label><textarea v-model="formData.desc" rows="2" class="input" placeholder="路由描述"></textarea></div>
-      <div><label class="block text-sm font-medium text-slate-700 mb-2">URI（每行一个）<span class="text-red-500">*</span></label><textarea v-model="formData.uris" rows="3" class="input font-mono text-sm" placeholder="/api/v1/*&#10;/api/v2/*"></textarea></div>
-      <div><label class="block text-sm font-medium text-slate-700 mb-2">Host（每行一个，留空匹配所有）</label><textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="example.com"></textarea></div>
+      <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">描述</label><textarea v-model="formData.desc" rows="2" class="input" placeholder="路由描述"></textarea></div>
+      <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">URI（每行一个）<span class="text-red-500">*</span></label><textarea v-model="formData.uris" rows="3" class="input font-mono text-sm" placeholder="/api/v1/*&#10;/api/v2/*"></textarea></div>
+      <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Host（每行一个，留空匹配所有）</label><textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="example.com"></textarea></div>
 
       <div class="border border-slate-200 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">
           <div>
-            <label class="block text-sm font-medium text-slate-700">上游配置</label>
+          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">上游配置</label>
             <p class="text-xs text-slate-400 mt-1">支持多节点、引用已有上游或暂不配置上游</p>
           </div>
         </div>
@@ -428,7 +327,7 @@ export default toNative(RouteEditModal)
 
         <div v-if="formData.upstream_mode === 'nodes'" class="space-y-3">
           <div class="flex items-center justify-between">
-            <label class="text-sm font-medium text-slate-700">上游节点</label>
+          <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">上游节点</label>
             <button @click="addUpstreamNode()" type="button" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="添加节点"><i class="fas fa-plus text-xs"></i></button>
           </div>
           <div class="space-y-2">
@@ -445,7 +344,7 @@ export default toNative(RouteEditModal)
             </div>
           </div>
           <div v-if="formData.upstream_nodes.length > 1" class="space-y-2">
-            <label class="block text-sm font-medium text-slate-700">负载均衡策略</label>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">负载均衡策略</label>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
               <button
                 v-for="o in upstreamTypeOptions"
@@ -490,7 +389,7 @@ export default toNative(RouteEditModal)
 
       <div class="border border-slate-200 rounded-xl p-4">
         <div class="mb-3">
-          <label class="block text-sm font-medium text-slate-700">复用插件配置</label>
+          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">复用插件配置</label>
           <p class="text-xs text-slate-400 mt-1 mb-2">选择已有的插件配置对象，与独立插件配置合并生效</p>
           <select v-model="formData.plugin_config_id" class="input">
             <option value="">不使用</option>
@@ -498,67 +397,15 @@ export default toNative(RouteEditModal)
           </select>
         </div>
 
-        <div class="pt-3 border-t border-slate-100 space-y-3">
-          <!-- 独立插件配置标题行 -->
-          <div class="flex items-center justify-between">
-            <div>
-              <label class="block text-sm font-medium text-slate-700">独立插件配置</label>
-              <p class="text-xs text-slate-400 mt-0.5">可直接编辑 JSON，也支持从现有路由导入</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <button @click="showPluginPanel = !showPluginPanel; showImportPanel = false" :class="['px-3 py-1.5 text-xs rounded-lg border transition-colors', showPluginPanel ? 'border-indigo-300 text-indigo-600 bg-indigo-50' : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50']"><i class="fas fa-puzzle-piece mr-1"></i>添加插件</button>
-              <button @click="showImportPanel = !showImportPanel; showPluginPanel = false" :class="['px-3 py-1.5 text-xs rounded-lg border transition-colors', showImportPanel ? 'border-indigo-300 text-indigo-600 bg-indigo-50' : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50']"><i class="fas fa-file-import mr-1"></i>从路由导入</button>
-            </div>
-          </div>
-
-          <!-- 插件选择面板 -->
-          <div v-if="showPluginPanel" class="rounded-lg border border-slate-200 overflow-hidden">
-            <div class="px-3 py-2 bg-slate-50 border-b border-slate-100">
-              <div class="relative">
-                <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
-                <input v-model="pluginSearchKeyword" type="text" placeholder="搜索插件..." class="w-full pl-7 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-300" />
-              </div>
-            </div>
-            <div class="max-h-44 overflow-y-auto p-2 grid grid-cols-2 md:grid-cols-3 gap-1">
-              <button
-                v-for="name in filteredAvailablePlugins"
-                :key="name"
-                :disabled="formData.plugins[name] !== undefined"
-                :class="['px-2.5 py-1.5 text-xs rounded-lg text-left truncate transition-colors border', formData.plugins[name] !== undefined ? 'bg-indigo-50 text-indigo-500 border-indigo-100 cursor-default' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300']"
-                @click="addPresetPlugin(name)"
-              ><i v-if="formData.plugins[name] !== undefined" class="fas fa-check text-[9px] mr-1"></i>{{ name }}</button>
-            </div>
-          </div>
-
-          <!-- 从路由导入面板 -->
-          <div v-if="showImportPanel" class="rounded-lg border border-slate-200 overflow-hidden">
-            <div class="px-3 py-2 bg-slate-50 border-b border-slate-100">
-              <select v-model="importRouteId" @change="onImportRouteChange" class="w-full text-xs bg-white border border-slate-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-300">
-                <option value="">选择来源路由...</option>
-                <option v-for="r in routes" :key="r.id" :value="r.id">{{ r.name || r.id }}</option>
-              </select>
-            </div>
-            <div v-if="importRoutePluginsLoading" class="py-5 text-center text-xs text-slate-400"><i class="fas fa-spinner fa-spin mr-1"></i>加载中...</div>
-            <div v-else-if="Object.keys(importRoutePlugins).length > 0" class="p-2 space-y-2">
-              <div class="max-h-32 overflow-y-auto space-y-0.5">
-                <label v-for="(_, name) in importRoutePlugins" :key="name" class="flex items-center gap-2 text-xs cursor-pointer rounded-lg px-2.5 py-1.5 hover:bg-slate-50 transition-colors">
-                  <input type="checkbox" :checked="selectedImportPlugins.has(name)" @change="toggleImportPlugin(name)" class="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500" />
-                  <span class="text-slate-700">{{ name }}</span>
-                </label>
-              </div>
-              <button @click="importPluginsFromRoute" class="w-full py-1.5 text-xs bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium">导入选中 {{ selectedImportPlugins.size }} 个插件</button>
-            </div>
-            <div v-else-if="importRouteId" class="py-5 text-center text-xs text-slate-400">该路由没有插件配置</div>
-          </div>
-
-          <!-- 已添加插件 tags -->
-          <div v-if="currentPluginNames.length > 0" class="flex flex-wrap gap-1">
-            <span v-for="name in currentPluginNames" :key="name" class="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs">{{ name }}<button @click="removePlugin(name)" class="hover:text-red-500 transition-colors"><i class="fas fa-xmark text-[10px]"></i></button></span>
-          </div>
-
-          <!-- JSON 编辑器 -->
-          <textarea v-model="formData.pluginsJson" @blur="syncPluginsFromJson" rows="8" :class="['input font-mono text-sm', formData.pluginsJsonError ? 'border-red-300 bg-red-50' : '']" placeholder='{"key-auth": {}, "proxy-rewrite": {"uri": "/new-path"}}'></textarea>
-          <p v-if="formData.pluginsJsonError" class="text-xs text-red-500 mt-1">{{ formData.pluginsJsonError }}</p>
+        <div class="pt-3 border-t border-slate-100">
+          <PluginConfigPanel
+            :plugins="formData.plugins"
+            :available-plugins="availablePlugins"
+            :show-import="true"
+            :routes="routes"
+            @update:plugins="onPluginsUpdate"
+            ref="pluginPanel"
+          />
         </div>
       </div>
     </div>

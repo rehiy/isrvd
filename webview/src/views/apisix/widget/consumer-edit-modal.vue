@@ -8,20 +8,17 @@ import api from '@/service/api'
 import type { ApisixConsumer, ApisixCreateConsumerRequest, ApisixUpdateConsumerRequest } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
-
-const TYPE_DEFAULTS: Record<string, string | number | boolean | unknown[] | Record<string, unknown>> = { string: '', integer: 0, number: 0, boolean: false, array: [], object: {} }
+import PluginConfigPanel from '@/views/apisix/widget/plugin-config-panel.vue'
 
 const defaultFormData = () => ({
     username: '',
     desc: '',
     plugins: {} as Record<string, unknown>,
-    pluginsJson: '{}',
-    pluginsJsonError: '',
 })
 
 @Component({
     expose: ['show'],
-    components: { BaseModal },
+    components: { BaseModal, PluginConfigPanel },
     emits: ['success']
 })
 class ConsumerEditModal extends Vue {
@@ -31,26 +28,14 @@ class ConsumerEditModal extends Vue {
     isOpen = false
     modalLoading = false
     isEditMode = false
-    showPluginPanel = false
-    pluginSearchKeyword = ''
     availablePlugins: Record<string, { schema: Record<string, unknown> }> = {}
+    declare $refs: { pluginPanel: InstanceType<typeof PluginConfigPanel> }
 
     formData = defaultFormData()
-
-    // ─── 计算属性 ───
-    get currentPluginNames() { return Object.keys(this.formData.plugins || {}) }
-
-    get filteredAvailablePlugins() {
-        const kw = this.pluginSearchKeyword.toLowerCase()
-        const all = Object.keys(this.availablePlugins)
-        return kw ? all.filter(n => n.toLowerCase().includes(kw)) : all
-    }
 
     // ─── 方法 ───
     resetForm() {
         Object.assign(this.formData, defaultFormData())
-        this.showPluginPanel = false
-        this.pluginSearchKeyword = ''
     }
 
     async loadPlugins() {
@@ -64,13 +49,10 @@ class ConsumerEditModal extends Vue {
         await this.loadPlugins()
         if (consumer) {
             this.isEditMode = true
-            const plugins = consumer.plugins || {}
             this.formData = {
                 username: consumer.username,
                 desc: consumer.desc || '',
-                plugins,
-                pluginsJson: JSON.stringify(plugins, null, 2),
-                pluginsJsonError: '',
+                plugins: consumer.plugins || {},
             }
         } else {
             this.isEditMode = false
@@ -79,44 +61,8 @@ class ConsumerEditModal extends Vue {
         this.isOpen = true
     }
 
-    syncPluginsFromJson() {
-        try {
-            this.formData.plugins = JSON.parse(this.formData.pluginsJson || '{}')
-            this.formData.pluginsJsonError = ''
-        } catch (e: unknown) {
-            this.formData.pluginsJsonError = 'JSON 格式错误: ' + (e instanceof Error ? e.message : String(e))
-        }
-    }
-
-    removePlugin(name: string) {
-        const p = { ...this.formData.plugins }
-        delete p[name]
-        this.formData.plugins = p
-        this.formData.pluginsJson = JSON.stringify(p, null, 2)
-    }
-
-    buildPluginDefault(schema: { properties?: Record<string, { type: string; default?: unknown }>; required?: string[] }) {
-        if (!schema?.properties) return {}
-        const required = new Set(schema.required || [])
-        const result: Record<string, unknown> = {}
-        for (const [key, def] of Object.entries(schema.properties)) {
-            if (key === 'disable') continue
-            if (required.has(key) || def.default !== undefined) {
-                result[key] = def.default !== undefined ? def.default : (TYPE_DEFAULTS[def.type] ?? null)
-            }
-        }
-        return result
-    }
-
-    addPresetPlugin(name: string) {
-        if (this.formData.plugins[name] !== undefined) {
-            return this.actions.showNotification('warning', `插件 ${name} 已存在`)
-        }
-        const p = { ...this.formData.plugins, [name]: this.buildPluginDefault(this.availablePlugins[name]?.schema) }
-        this.formData.plugins = p
-        this.formData.pluginsJson = JSON.stringify(p, null, 2)
-        this.showPluginPanel = false
-        this.pluginSearchKeyword = ''
+    onPluginsUpdate(plugins: Record<string, unknown>) {
+        this.formData.plugins = plugins
     }
 
     async handleConfirm() {
@@ -124,7 +70,7 @@ class ConsumerEditModal extends Vue {
             this.actions.showNotification('error', '用户名不能为空')
             return
         }
-        if (this.formData.pluginsJsonError) {
+        if (this.$refs.pluginPanel?.pluginsJsonError) {
             this.actions.showNotification('error', '请修正 Plugin JSON 格式错误')
             return
         }
@@ -169,42 +115,12 @@ export default toNative(ConsumerEditModal)
         </div>
       </div>
 
-      <!-- 插件配置 -->
-      <div class="flex items-center justify-between">
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">插件配置</label>
-          <p class="text-xs text-slate-400 mt-1">可直接编辑 JSON，或从插件列表添加</p>
-        </div>
-        <button @click="showPluginPanel = !showPluginPanel" :class="['px-3 py-1.5 text-xs rounded-lg border transition-colors', showPluginPanel ? 'border-violet-300 text-violet-600 bg-violet-50' : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50']"><i class="fas fa-puzzle-piece mr-1"></i>添加插件</button>
-      </div>
-
-      <!-- 插件选择面板 -->
-      <div v-if="showPluginPanel" class="rounded-lg border border-slate-200 overflow-hidden mt-3">
-        <div class="px-3 py-2 bg-slate-50 border-b border-slate-100">
-          <div class="relative">
-            <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
-            <input v-model="pluginSearchKeyword" type="text" placeholder="搜索插件..." class="w-full pl-7 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 focus:border-violet-300" />
-          </div>
-        </div>
-        <div class="max-h-44 overflow-y-auto p-2 grid grid-cols-2 md:grid-cols-3 gap-1">
-          <button
-            v-for="name in filteredAvailablePlugins"
-            :key="name"
-            :disabled="formData.plugins[name] !== undefined"
-            :class="['px-2.5 py-1.5 text-xs rounded-lg text-left truncate transition-colors border', formData.plugins[name] !== undefined ? 'bg-violet-50 text-violet-500 border-violet-100 cursor-default' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300']"
-            @click="addPresetPlugin(name)"
-          ><i v-if="formData.plugins[name] !== undefined" class="fas fa-check text-[9px] mr-1"></i>{{ name }}</button>
-        </div>
-      </div>
-
-      <!-- 已添加插件 tags -->
-      <div v-if="currentPluginNames.length > 0" class="flex flex-wrap gap-1 mt-3">
-        <span v-for="name in currentPluginNames" :key="name" class="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-50 text-violet-700 rounded text-xs">{{ name }}<button @click="removePlugin(name)" class="hover:text-red-500 transition-colors"><i class="fas fa-xmark text-[10px]"></i></button></span>
-      </div>
-
-      <!-- JSON 编辑器 -->
-      <textarea v-model="formData.pluginsJson" @blur="syncPluginsFromJson" rows="8" :class="['input font-mono text-sm mt-3', formData.pluginsJsonError ? 'border-red-300 bg-red-50' : '']" placeholder='{"key-auth": {"key": "your-api-key"}}'></textarea>
-      <p v-if="formData.pluginsJsonError" class="text-xs text-red-500 mt-1">{{ formData.pluginsJsonError }}</p>
+      <PluginConfigPanel
+        :plugins="formData.plugins"
+        :available-plugins="availablePlugins"
+        @update:plugins="onPluginsUpdate"
+        ref="pluginPanel"
+      />
     </div>
 
     <template #footer>
