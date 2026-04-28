@@ -155,8 +155,8 @@ export default toNative(Tasks)
                   <span :class="taskStateClass(t.state)" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ t.state }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <button v-if="t.nodeID" @click="goNodeDetail(t.nodeID)" class="font-mono text-xs text-blue-600 hover:text-blue-700 hover:underline">
-                    {{ t.nodeID.slice(0, 12) }}
+                  <button v-if="t.nodeID" @click="goNodeDetail(t.nodeID)" class="text-xs text-blue-600 hover:text-blue-700 hover:underline">
+                    {{ t.nodeName || t.nodeID.slice(0, 12) }}
                   </button>
                   <span v-else class="text-xs text-slate-400">-</span>
                 </td>
@@ -193,8 +193,8 @@ export default toNative(Tasks)
               </button>
               <span class="text-xs text-slate-300">|</span>
               <span class="text-xs text-slate-400 flex-shrink-0">节点</span>
-              <button v-if="t.nodeID" @click="goNodeDetail(t.nodeID)" class="text-xs text-blue-600 hover:text-blue-700 hover:underline font-mono">
-                {{ t.nodeID.slice(0, 12) }}
+              <button v-if="t.nodeID" @click="goNodeDetail(t.nodeID)" class="text-xs text-blue-600 hover:text-blue-700 hover:underline">
+                {{ t.nodeName || t.nodeID.slice(0, 12) }}
               </button>
               <span v-else class="text-xs text-slate-400">-</span>
             </div>
