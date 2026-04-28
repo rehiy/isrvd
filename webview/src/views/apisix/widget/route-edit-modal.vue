@@ -152,7 +152,7 @@ class RouteEditModal extends Vue {
             if ((hasHost || hasPort) && Number(node.weight) < 0) return `第 ${i + 1} 个上游节点权重不能为负数`
         }
 
-        if (this.formData.upstream_type === 'chash' && !this.formData.upstream_key?.trim()) {
+        if (rows.length > 1 && this.formData.upstream_type === 'chash' && !this.formData.upstream_key?.trim()) {
             return '使用 chash 策略时，哈希键（key）不能为空'
         }
 
@@ -427,52 +427,50 @@ export default toNative(RouteEditModal)
         </div>
 
         <div v-if="formData.upstream_mode === 'nodes'" class="space-y-3">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">负载均衡策略</label>
-              <select v-model="formData.upstream_type" class="input">
-                <option v-for="o in upstreamTypeOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
-              </select>
-              <p class="text-xs text-slate-400 mt-1">{{ selectedUpstreamTypeOption.desc }}</p>
-            </div>
-            <div v-if="formData.upstream_type === 'chash'">
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">哈希依据（hash_on）</label>
-              <select v-model="formData.upstream_hash_on" class="input">
-                <option v-for="o in hashOnOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
-              </select>
-              <p class="text-xs text-slate-400 mt-1">{{ selectedHashOnOption.keyHint }}</p>
-            </div>
-            <div v-if="formData.upstream_type === 'chash'">
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">哈希键（key）</label>
-              <input v-model="formData.upstream_key" type="text" class="input" :placeholder="selectedHashOnOption.keyPlaceholder" />
-            </div>
-          </div>
-
           <div class="flex items-center justify-between">
             <label class="text-sm font-medium text-slate-700">上游节点</label>
             <button @click="addUpstreamNode()" type="button" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="添加节点"><i class="fas fa-plus text-xs"></i></button>
           </div>
-          <div class="rounded-lg border border-slate-200 overflow-hidden">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="bg-slate-50 border-b border-slate-200">
-                  <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 w-1/2">主机</th>
-                  <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 w-[30%]">端口</th>
-                  <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 w-[20%]">权重</th>
-                  <th v-if="formData.upstream_nodes.length > 1" class="px-3 py-2 w-8"></th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100">
-                <tr v-for="(node, index) in formData.upstream_nodes" :key="index">
-                  <td class="px-3 py-2"><HostSelect :model-value="node.host" :containers="containers" placeholder="127.0.0.1 或 容器名" @update:modelValue="updateUpstreamNode(index, 'host', $event)" /></td>
-                  <td class="px-3 py-2"><PortSelect :model-value="node.port" :ports="getPortsByHost(node.host)" placeholder="80" @update:modelValue="updateUpstreamNode(index, 'port', $event)" /></td>
-                  <td class="px-3 py-2"><input v-model.number="node.weight" type="number" class="input" placeholder="1" min="0" /></td>
-                  <td v-if="formData.upstream_nodes.length > 1" class="px-1 py-2 text-center">
-                    <button @click="removeUpstreamNode(index)" type="button" class="btn-icon text-red-400 hover:text-red-600 hover:bg-red-50" title="移除"><i class="fas fa-xmark text-xs"></i></button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="space-y-2">
+            <div class="grid grid-cols-[2fr_1fr_1fr_32px] gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <span class="whitespace-nowrap">主机</span><span class="whitespace-nowrap">端口</span><span class="whitespace-nowrap">权重</span><span v-if="formData.upstream_nodes.length > 1"></span>
+            </div>
+            <div v-for="(node, index) in formData.upstream_nodes" :key="index" class="grid grid-cols-[2fr_1fr_1fr_32px] gap-2 items-center">
+              <HostSelect :model-value="node.host" :containers="containers" placeholder="127.0.0.1 或 容器名" @update:modelValue="updateUpstreamNode(index, 'host', $event)" />
+              <PortSelect :model-value="node.port" :ports="getPortsByHost(node.host)" placeholder="80" @update:modelValue="updateUpstreamNode(index, 'port', $event)" />
+              <input v-model.number="node.weight" type="number" class="input" placeholder="1" min="0" />
+              <button :disabled="formData.upstream_nodes.length < 2" @click="removeUpstreamNode(index)" type="button" class="btn-icon text-red-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50" title="移除">
+                <i class="fas fa-xmark text-xs"></i>
+              </button>
+            </div>
+          </div>
+          <div v-if="formData.upstream_nodes.length > 1" class="space-y-2">
+            <label class="block text-sm font-medium text-slate-700">负载均衡策略</label>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <button
+                v-for="o in upstreamTypeOptions"
+                :key="o.value"
+                type="button"
+                @click="formData.upstream_type = o.value"
+                :class="['text-left rounded-lg border px-3 py-2 transition-colors', formData.upstream_type === o.value ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300']"
+              >
+                <div class="text-xs font-semibold">{{ o.label }}</div>
+                <div class="text-xs opacity-70 mt-0.5 leading-4">{{ o.desc }}</div>
+              </button>
+            </div>
+            <div v-if="formData.upstream_type === 'chash'" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">哈希依据（hash_on）</label>
+                <select v-model="formData.upstream_hash_on" class="input">
+                  <option v-for="o in hashOnOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+                </select>
+                <p class="text-xs text-slate-400 mt-1">{{ selectedHashOnOption.keyHint }}</p>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">哈希键（key）</label>
+                <input v-model="formData.upstream_key" type="text" class="input" :placeholder="selectedHashOnOption.keyPlaceholder" />
+              </div>
+            </div>
           </div>
           <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
         </div>
@@ -487,66 +485,81 @@ export default toNative(RouteEditModal)
           </div>
           <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
         </div>
-
         <div v-else class="text-sm text-slate-500 leading-6">当前保存只会提交路由匹配规则、状态和插件配置，不会附带内联节点，也不会引用已有上游。</div>
       </div>
 
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">复用插件配置</label>
-        <select v-model="formData.plugin_config_id" class="input">
-          <option value="">不使用</option>
-          <option v-for="pc in pluginConfigs" :key="pc.id" :value="pc.id">{{ pc.desc || pc.id }}</option>
-        </select>
-      </div>
-
       <div class="border border-slate-200 rounded-xl p-4">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">独立插件配置</label>
-            <p class="text-xs text-slate-400">可直接编辑 JSON，也支持从现有路由导入。</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <button @click="showPluginPanel = !showPluginPanel; showImportPanel = false" class="px-3 py-1.5 text-xs rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors border border-indigo-100"><i class="fas fa-puzzle-piece mr-1"></i>添加插件</button>
-            <button @click="showImportPanel = !showImportPanel; showPluginPanel = false" class="px-3 py-1.5 text-xs rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors border border-slate-200"><i class="fas fa-file-import mr-1"></i>从路由导入</button>
-          </div>
-        </div>
-
-        <div v-if="showPluginPanel" class="mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-          <input v-model="pluginSearchKeyword" type="text" placeholder="搜索插件..." class="input text-xs mb-2" />
-          <div class="max-h-40 overflow-y-auto grid grid-cols-1 md:grid-cols-3 gap-2">
-            <button
-              v-for="name in filteredAvailablePlugins"
-              :key="name"
-              :disabled="formData.plugins[name] !== undefined"
-              :class="['px-3 py-2 text-xs rounded-xl text-left truncate transition-colors border', formData.plugins[name] !== undefined ? 'bg-indigo-100 text-indigo-700 border-indigo-200 cursor-default' : 'bg-white hover:bg-indigo-50 text-slate-700 border-slate-200']"
-              @click="addPresetPlugin(name)"
-            >{{ name }}</button>
-          </div>
-        </div>
-
-        <div v-if="showImportPanel" class="mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-          <select v-model="importRouteId" @change="onImportRouteChange" class="input text-xs mb-2">
-            <option value="">选择来源路由...</option>
-            <option v-for="r in routes" :key="r.id" :value="r.id">{{ r.name || r.id }}</option>
+        <div class="mb-3">
+          <label class="block text-sm font-medium text-slate-700">复用插件配置</label>
+          <p class="text-xs text-slate-400 mt-1 mb-2">选择已有的插件配置对象，与独立插件配置合并生效</p>
+          <select v-model="formData.plugin_config_id" class="input">
+            <option value="">不使用</option>
+            <option v-for="pc in pluginConfigs" :key="pc.id" :value="pc.id">{{ pc.desc || pc.id }}</option>
           </select>
-          <div v-if="importRoutePluginsLoading" class="text-xs text-slate-500 text-center py-2">加载中...</div>
-          <div v-else-if="Object.keys(importRoutePlugins).length > 0">
-            <div class="max-h-32 overflow-y-auto space-y-1 mb-2">
-              <label v-for="(_, name) in importRoutePlugins" :key="name" class="flex items-center gap-2 text-xs cursor-pointer rounded-lg px-2 py-1 hover:bg-white">
-                <input type="checkbox" :checked="selectedImportPlugins.has(name)" @change="toggleImportPlugin(name)" class="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500" />
-                <span>{{ name }}</span>
-              </label>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 space-y-3">
+          <!-- 独立插件配置标题行 -->
+          <div class="flex items-center justify-between">
+            <div>
+              <label class="block text-sm font-medium text-slate-700">独立插件配置</label>
+              <p class="text-xs text-slate-400 mt-0.5">可直接编辑 JSON，也支持从现有路由导入</p>
             </div>
-            <button @click="importPluginsFromRoute" class="px-3 py-1.5 text-xs bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">导入选中插件</button>
+            <div class="flex items-center gap-2">
+              <button @click="showPluginPanel = !showPluginPanel; showImportPanel = false" :class="['px-3 py-1.5 text-xs rounded-lg border transition-colors', showPluginPanel ? 'border-indigo-300 text-indigo-600 bg-indigo-50' : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50']"><i class="fas fa-puzzle-piece mr-1"></i>添加插件</button>
+              <button @click="showImportPanel = !showImportPanel; showPluginPanel = false" :class="['px-3 py-1.5 text-xs rounded-lg border transition-colors', showImportPanel ? 'border-indigo-300 text-indigo-600 bg-indigo-50' : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50']"><i class="fas fa-file-import mr-1"></i>从路由导入</button>
+            </div>
           </div>
-        </div>
 
-        <div v-if="currentPluginNames.length > 0" class="flex flex-wrap gap-1 mb-2">
-          <span v-for="name in currentPluginNames" :key="name" class="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs">{{ name }}<button @click="removePlugin(name)" class="hover:text-red-500 transition-colors"><i class="fas fa-xmark text-[10px]"></i></button></span>
-        </div>
+          <!-- 插件选择面板 -->
+          <div v-if="showPluginPanel" class="rounded-lg border border-slate-200 overflow-hidden">
+            <div class="px-3 py-2 bg-slate-50 border-b border-slate-100">
+              <div class="relative">
+                <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                <input v-model="pluginSearchKeyword" type="text" placeholder="搜索插件..." class="w-full pl-7 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-300" />
+              </div>
+            </div>
+            <div class="max-h-44 overflow-y-auto p-2 grid grid-cols-2 md:grid-cols-3 gap-1">
+              <button
+                v-for="name in filteredAvailablePlugins"
+                :key="name"
+                :disabled="formData.plugins[name] !== undefined"
+                :class="['px-2.5 py-1.5 text-xs rounded-lg text-left truncate transition-colors border', formData.plugins[name] !== undefined ? 'bg-indigo-50 text-indigo-500 border-indigo-100 cursor-default' : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300']"
+                @click="addPresetPlugin(name)"
+              ><i v-if="formData.plugins[name] !== undefined" class="fas fa-check text-[9px] mr-1"></i>{{ name }}</button>
+            </div>
+          </div>
 
-        <textarea v-model="formData.pluginsJson" @blur="syncPluginsFromJson" rows="8" :class="['input font-mono text-sm', formData.pluginsJsonError ? 'border-red-300 bg-red-50' : '']" placeholder='{"key-auth": {}, "proxy-rewrite": {"uri": "/new-path"}}'></textarea>
-        <p v-if="formData.pluginsJsonError" class="text-xs text-red-500 mt-1">{{ formData.pluginsJsonError }}</p>
+          <!-- 从路由导入面板 -->
+          <div v-if="showImportPanel" class="rounded-lg border border-slate-200 overflow-hidden">
+            <div class="px-3 py-2 bg-slate-50 border-b border-slate-100">
+              <select v-model="importRouteId" @change="onImportRouteChange" class="w-full text-xs bg-white border border-slate-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-300">
+                <option value="">选择来源路由...</option>
+                <option v-for="r in routes" :key="r.id" :value="r.id">{{ r.name || r.id }}</option>
+              </select>
+            </div>
+            <div v-if="importRoutePluginsLoading" class="py-5 text-center text-xs text-slate-400"><i class="fas fa-spinner fa-spin mr-1"></i>加载中...</div>
+            <div v-else-if="Object.keys(importRoutePlugins).length > 0" class="p-2 space-y-2">
+              <div class="max-h-32 overflow-y-auto space-y-0.5">
+                <label v-for="(_, name) in importRoutePlugins" :key="name" class="flex items-center gap-2 text-xs cursor-pointer rounded-lg px-2.5 py-1.5 hover:bg-slate-50 transition-colors">
+                  <input type="checkbox" :checked="selectedImportPlugins.has(name)" @change="toggleImportPlugin(name)" class="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500" />
+                  <span class="text-slate-700">{{ name }}</span>
+                </label>
+              </div>
+              <button @click="importPluginsFromRoute" class="w-full py-1.5 text-xs bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium">导入选中 {{ selectedImportPlugins.size }} 个插件</button>
+            </div>
+            <div v-else-if="importRouteId" class="py-5 text-center text-xs text-slate-400">该路由没有插件配置</div>
+          </div>
+
+          <!-- 已添加插件 tags -->
+          <div v-if="currentPluginNames.length > 0" class="flex flex-wrap gap-1">
+            <span v-for="name in currentPluginNames" :key="name" class="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs">{{ name }}<button @click="removePlugin(name)" class="hover:text-red-500 transition-colors"><i class="fas fa-xmark text-[10px]"></i></button></span>
+          </div>
+
+          <!-- JSON 编辑器 -->
+          <textarea v-model="formData.pluginsJson" @blur="syncPluginsFromJson" rows="8" :class="['input font-mono text-sm', formData.pluginsJsonError ? 'border-red-300 bg-red-50' : '']" placeholder='{"key-auth": {}, "proxy-rewrite": {"uri": "/new-path"}}'></textarea>
+          <p v-if="formData.pluginsJsonError" class="text-xs text-red-500 mt-1">{{ formData.pluginsJsonError }}</p>
+        </div>
       </div>
     </div>
 

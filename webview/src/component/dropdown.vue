@@ -42,10 +42,10 @@ class Dropdown extends Vue {
     }
 
     // ─── 方法 ───
-    async computePlacement() {
+    async computePlacement(immediate = false) {
         if (!this.containerRef) return
 
-        await nextTick()
+        if (!immediate) await nextTick()
 
         const rect = this.containerRef.getBoundingClientRect()
         const viewportHeight = window.innerHeight
@@ -111,21 +111,23 @@ class Dropdown extends Vue {
         }
     }
 
-    handleScroll() {
-        if (this.isOpen) this.computePlacement()
+    handleScroll(e: Event) {
+        // 如果滚动发生在面板内部，不关闭
+        if (this.panelRef && this.panelRef.contains(e.target as Node)) return
+        if (this.isOpen) this.isOpen = false
     }
 
     // ─── 生命周期 ───
     mounted() {
         document.addEventListener('click', this.handleClickOutside, true)
         window.addEventListener('resize', this.handleScroll)
-        window.addEventListener('scroll', this.handleScroll, true)
+        document.addEventListener('scroll', this.handleScroll, true)
     }
 
     unmounted() {
         document.removeEventListener('click', this.handleClickOutside, true)
         window.removeEventListener('resize', this.handleScroll)
-        window.removeEventListener('scroll', this.handleScroll, true)
+        document.removeEventListener('scroll', this.handleScroll, true)
     }
 }
 
