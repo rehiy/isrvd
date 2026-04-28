@@ -191,6 +191,7 @@ export default toNative(Nodes)
                     </div>
                     <div class="min-w-0">
                       <span class="font-medium text-slate-800 truncate block">{{ n.hostname }}</span>
+                      <span class="text-xs text-slate-400 font-mono">{{ n.id.slice(0, 12) }}</span>
                     </div>
                   </div>
                 </td>
@@ -241,7 +242,8 @@ export default toNative(Nodes)
                       <i class="fas fa-crown mr-1 text-[10px]"></i>Leader
                     </span>
                   </div>
-                  <div class="text-xs text-slate-500 mt-1">{{ n.addr || '-' }}</div>
+                  <div class="text-xs text-slate-400 font-mono">{{ n.id.slice(0, 12) }}</div>
+                  <div class="text-xs text-slate-500 mt-0.5">{{ n.addr || '-' }}</div>
                 </div>
               </div>
             </div>
