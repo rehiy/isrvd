@@ -7,7 +7,7 @@ import type { AppActions } from '@/store/state'
 import api from '@/service/api'
 import type { ApisixRoute } from '@/service/types'
 
-import { formatRouteUpstreamSummary, normalizeUpstreamNodes } from '@/helper/utils'
+import { formatRouteUpstreamSummary, formatRouteUpstreamType, formatRouteUpstreamNodes, normalizeUpstreamNodes } from '@/helper/apisix'
 
 import RouteEditModal from '@/views/apisix/widget/route-edit-modal.vue'
 
@@ -84,6 +84,14 @@ class Routes extends Vue {
 
     getRouteUpstreamSummary(r: ApisixRoute) {
         return formatRouteUpstreamSummary(r)
+    }
+
+    getRouteUpstreamType(r: ApisixRoute) {
+        return formatRouteUpstreamType(r)
+    }
+
+    getRouteUpstreamNodes(r: ApisixRoute) {
+        return formatRouteUpstreamNodes(r)
     }
 
     getRouteUpstreamTagClass(r: ApisixRoute) {
@@ -197,6 +205,7 @@ export default toNative(Routes)
               <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
               <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">URI</th>
               <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Host</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">策略</th>
               <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">上游</th>
               <th class="w-40 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
             </tr></thead>
@@ -215,7 +224,8 @@ export default toNative(Routes)
                 </td>
                 <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-700 break-all">{{ getRouteUri(route) }}</code></td>
                 <td class="px-4 py-3"><span class="text-sm text-slate-600 break-all">{{ getRouteHost(route) }}</span></td>
-                <td class="px-4 py-3"><span :class="['text-xs px-2 py-1 rounded break-all', getRouteUpstreamTagClass(route)]">{{ getRouteUpstreamSummary(route) }}</span></td>
+                <td class="px-4 py-3"><span class="text-xs text-slate-500">{{ getRouteUpstreamType(route) || '-' }}</span></td>
+                <td class="px-4 py-3"><span :class="['text-xs px-2 py-1 rounded break-all', getRouteUpstreamTagClass(route)]">{{ getRouteUpstreamNodes(route) }}</span></td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
                     <button v-if="actions.hasPerm('apisix', true)" @click="toggleStatus(route)" :class="['btn-icon', route.status === 1 ? 'text-amber-500 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50']" :title="route.status === 1 ? '禁用' : '启用'">
@@ -261,9 +271,13 @@ export default toNative(Routes)
               <span class="text-xs text-slate-600 break-all">{{ getRouteHost(route) }}</span>
             </div>
 
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs text-slate-400 flex-shrink-0">策略</span>
+              <span class="text-xs text-slate-500">{{ getRouteUpstreamType(route) || '-' }}</span>
+            </div>
             <div class="flex items-center gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0">上游</span>
-              <span :class="['text-xs px-2 py-1 rounded-full break-all', getRouteUpstreamTagClass(route)]">{{ getRouteUpstreamSummary(route) }}</span>
+              <span :class="['text-xs px-2 py-1 rounded-full break-all', getRouteUpstreamTagClass(route)]">{{ getRouteUpstreamNodes(route) }}</span>
             </div>
 
             <!-- 底部：操作按钮 -->

@@ -23,7 +23,7 @@ import {
     detectRouteUpstreamMode,
     normalizeUpstreamFormNodes,
     normalizeUpstreamType
-} from '@/helper/utils'
+} from '@/helper/apisix'
 
 import BaseModal from '@/component/modal.vue'
 import HostSelect from './host-select.vue'
