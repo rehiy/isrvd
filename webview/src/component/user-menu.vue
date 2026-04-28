@@ -4,8 +4,6 @@ import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
 import { APP_ACTIONS_KEY, APP_STATE_KEY } from '@/store/state'
 import type { AppActions, AppState } from '@/store/state'
 
-import api from '@/service/api'
-
 import Dropdown from '@/component/dropdown.vue'
 
 @Component({
@@ -19,9 +17,7 @@ class UserMenu extends Vue {
     menuOpen = false
 
     // ─── 方法 ───
-    async handleLogout() {
-        this.menuOpen = false
-        await api.logout()
+    handleLogout() {
         this.actions.clearAuth()
     }
 }
@@ -57,12 +53,10 @@ export default toNative(UserMenu)
     <!-- 注销选项 -->
     <button
       class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 transition-colors"
-      :disabled="state.loading"
       @click="handleLogout"
     >
-      <i class="fas fa-spinner fa-spin" v-if="state.loading"></i>
-      <i class="fas fa-sign-out-alt" v-else></i>
-      {{ state.loading ? '处理' : '退出' }}
+      <i class="fas fa-sign-out-alt"></i>
+      退出
     </button>
   </Dropdown>
 </template>

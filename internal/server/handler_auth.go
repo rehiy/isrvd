@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rehiy/pango/logman"
 
 	"isrvd/internal/helper"
 	svcSystem "isrvd/internal/service/system"
@@ -27,14 +26,4 @@ func (app *App) login(c *gin.Context) {
 		return
 	}
 	helper.RespondSuccess(c, "Login successful", resp)
-}
-
-func (app *App) logout(c *gin.Context) {
-	username := c.GetString("username")
-	if username == "" {
-		helper.RespondError(c, http.StatusUnauthorized, "未登录")
-		return
-	}
-	logman.Info("User logged out", "username", username)
-	helper.RespondSuccess(c, "Logout successful", nil)
 }

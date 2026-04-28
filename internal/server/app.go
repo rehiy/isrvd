@@ -81,8 +81,6 @@ func (app *App) setupRouter() {
 	authApi := api.Group("")
 	authApi.Use(AuthMiddleware())
 
-	authApi.POST("/auth/logout", app.logout)
-
 	// System（只读）
 	sr := authApi.Group("/system")
 	sr.Use(PermMiddleware("system", false))

@@ -32,10 +32,6 @@ class ApiService {
         return http.post<AuthLoginResponse>('/api/auth/login', data)
     }
 
-    logout() {
-        return http.post<void>('/api/auth/logout')
-    }
-
     // 文件管理相关
     list(path: string) {
         return http.post<FilerListResponse>('/api/filer/list', { path })
