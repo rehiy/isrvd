@@ -36,6 +36,8 @@ var (
 	Members = map[string]*MemberConfig{}
 	// 当前加载的配置文件路径
 	ConfigPath = ""
+	// etcd 连接配置（从 YAML 读取保留）
+	Etcd *EtcdConfig
 	// 版本信息，编译时通过脚本注入
 	Version = "v0.0.0"
 )
@@ -128,6 +130,8 @@ func Load() error {
 		Members[m.Username] = m
 	}
 
+	Etcd = conf.Etcd
+
 	// 5. 自动迁移明文密码
 	if err := migratePlaintextPasswords(); err != nil {
 		logman.Warn("密码迁移失败", "error", err)
@@ -142,6 +146,28 @@ func startWatch(rev int64) {
 	}
 	ctx := context.Background()
 	err := remoteStore.Watch(ctx, rev, func(key string, value []byte) {
+		// DELETE event: reset to empty
+		if value == nil && key != "_compacted" && key != "_canceled" {
+			switch key {
+			case "agent":
+				Agent = &AgentConfig{}
+			case "apisix":
+				Apisix.AdminKey = ""
+			case "marketplace":
+				Marketplace = &MarketplaceConfig{}
+			case "links":
+				Links = []*LinkConfig{}
+			case "members":
+				Members = map[string]*MemberConfig{}
+			case "docker":
+				Docker.Registries = []*DockerRegistry{}
+			case "server":
+				JWTSecret = ""
+				ProxyHeaderName = ""
+			}
+			logman.Info("etcd 配置已删除", "key", key)
+			return
+		}
 		switch key {
 		case "_compacted", "_canceled":
 			ctx2, cancel := context.WithTimeout(context.Background(), 10*time.Second)

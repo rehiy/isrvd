@@ -59,5 +59,6 @@ func buildConfigFromGlobals() *Config {
 		Marketplace: Marketplace,
 		Links:       Links,
 		Members:     members,
+		Etcd:        Etcd,
 	}
 }

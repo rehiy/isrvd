@@ -31,6 +31,9 @@ func saveYAML(path string, conf *Config) error {
 
 // resolvePaths 处理 ContainerRoot 和 HomeDirectory 的相对路径
 func resolvePaths(conf *Config) {
+	if conf.Server == nil {
+		return
+	}
 	if conf.Docker != nil && conf.Docker.ContainerRoot != "" && !filepath.IsAbs(conf.Docker.ContainerRoot) {
 		conf.Docker.ContainerRoot = filepath.Join(conf.Server.RootDirectory, conf.Docker.ContainerRoot)
 	}

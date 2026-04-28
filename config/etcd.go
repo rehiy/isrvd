@@ -19,10 +19,11 @@ type etcdStore struct {
 }
 
 func newEtcdStore(cfg *EtcdConfig) (*etcdStore, error) {
-	if cfg.Prefix == "" {
-		cfg.Prefix = "/isrvd"
+	prefix := cfg.Prefix
+	if prefix == "" {
+		prefix = "/isrvd"
 	}
-	cfg.Prefix = strings.TrimRight(cfg.Prefix, "/")
+	prefix = strings.TrimRight(prefix, "/")
 
 	etcdCfg := clientv3.Config{
 		Endpoints:   cfg.Endpoints,
@@ -46,7 +47,7 @@ func newEtcdStore(cfg *EtcdConfig) (*etcdStore, error) {
 
 	return &etcdStore{
 		cli:    cli,
-		prefix: cfg.Prefix,
+		prefix: prefix,
 	}, nil
 }
 
@@ -126,14 +127,18 @@ func (s *etcdStore) Watch(ctx context.Context, rev int64, onChange func(key stri
 				rev = resp.CompactRevision
 				break
 			}
-		if resp.Canceled {
-			logman.Warn("etcd watch canceled", "error", resp.Err())
-			onChange("_canceled", nil)
-			break
-		}
+			if resp.Canceled {
+				logman.Warn("etcd watch canceled", "error", resp.Err())
+				onChange("_canceled", nil)
+				break
+			}
 			for _, ev := range resp.Events {
 				key := strings.TrimPrefix(string(ev.Kv.Key), watchKey)
-				onChange(key, ev.Kv.Value)
+				if ev.Type == clientv3.EventTypeDelete {
+					onChange(key, nil)
+				} else {
+					onChange(key, ev.Kv.Value)
+				}
 				rev = ev.Kv.ModRevision + 1
 			}
 		}
