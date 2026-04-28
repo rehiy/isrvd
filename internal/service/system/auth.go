@@ -3,6 +3,7 @@ package system
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -62,10 +63,18 @@ func (s *AuthService) getMember(username string) *MemberInfo {
 	if !exists {
 		return nil
 	}
+
+	// 确保权限不为 nil
 	perms := m.Permissions
 	if perms == nil {
 		perms = map[string]string{}
 	}
+
+	// 确保用户目录存在
+	if err := os.MkdirAll(m.HomeDirectory, 0755); err != nil {
+		logman.Warn("创建用户目录失败", "username", m.Username, "error", err)
+	}
+
 	return &MemberInfo{
 		Username:      m.Username,
 		HomeDirectory: m.HomeDirectory,

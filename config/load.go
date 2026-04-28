@@ -97,7 +97,9 @@ func Load() error {
 	// 更新 Member 配置
 	Members = make(map[string]*MemberConfig, len(conf.Members))
 	for _, m := range conf.Members {
-		if !filepath.IsAbs(m.HomeDirectory) {
+		if m.HomeDirectory == "" {
+			m.HomeDirectory = filepath.Join(RootDirectory, m.Username)
+		} else if !filepath.IsAbs(m.HomeDirectory) {
 			m.HomeDirectory = filepath.Join(RootDirectory, m.HomeDirectory)
 		}
 		Members[m.Username] = m
