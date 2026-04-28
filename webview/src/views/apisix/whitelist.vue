@@ -147,7 +147,7 @@ export default toNative(Whitelist)
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
                 <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">路由</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">URI / 主机</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">描述</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">白名单用户</th>
                 <th class="w-24 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">用户数</th>
               </tr>
@@ -160,16 +160,12 @@ export default toNative(Whitelist)
                       <i class="fas fa-shield-halved text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
-                      <span class="font-medium text-slate-800 truncate block">{{ route.name || route.id }}</span>
+                      <span class="font-medium text-slate-800 truncate block">{{ getRouteUri(route) }}</span>
+                      <span class="text-xs text-slate-400 truncate block mt-0.5">{{ getRouteHost(route) }}</span>
                     </div>
                   </div>
                 </td>
-                <td class="px-4 py-3">
-                  <div class="flex flex-col gap-1">
-                    <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 break-all max-w-[320px]">{{ getRouteUri(route) }}</code>
-                    <span class="text-xs text-slate-400">{{ getRouteHost(route) }}</span>
-                  </div>
-                </td>
+                <td class="px-4 py-3 text-xs text-slate-500">{{ route.name || route.id }}</td>
                 <td class="px-4 py-3">
                   <div class="flex flex-wrap gap-1.5">
                     <span v-for="consumer in (route.consumers || [])" :key="consumer" class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 text-amber-800 rounded-lg text-xs group">
@@ -195,20 +191,16 @@ export default toNative(Whitelist)
                   <i class="fas fa-shield-halved text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
-                  <div class="font-medium text-slate-800 text-sm truncate">{{ route.name || route.id }}</div>
-                  <div class="text-xs text-slate-400 mt-0.5">{{ (route.consumers || []).length }} 个用户</div>
+                  <div class="font-medium text-slate-800 text-sm truncate">{{ getRouteUri(route) }}</div>
+                  <div class="text-xs text-slate-400 truncate mt-0.5">{{ getRouteHost(route) }}</div>
                 </div>
               </div>
             </div>
 
-            <!-- 中间：URI/Host -->
-            <div class="flex items-start gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">URI</span>
-              <code class="block text-xs bg-slate-100 px-2 py-1 rounded text-slate-600 break-all">{{ getRouteUri(route) }}</code>
-            </div>
+            <!-- 主机 -->
             <div class="flex items-center gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0">Host</span>
-              <span class="text-xs text-slate-400">{{ getRouteHost(route) }}</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">描述</span>
+              <span class="text-xs text-slate-500">{{ route.name || route.id }}</span>
             </div>
 
             <!-- 用户列表 -->
