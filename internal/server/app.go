@@ -22,8 +22,6 @@ type App struct {
 	settingsSvc *svcSystem.SettingsService
 	memberSvc   *svcSystem.MemberService
 	authSvc     *svcSystem.AuthService
-	filerSvc    *svcSystem.Service
-	agentSvc    *svcSystem.Service
 	apisixSvc   *svcApisix.Service
 	dockerSvc   *svcDocker.Service
 	swarmSvc    *svcSwarm.Service
