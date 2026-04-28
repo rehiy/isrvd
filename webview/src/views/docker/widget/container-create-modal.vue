@@ -125,6 +125,16 @@ class ContainerCreateModal extends Vue {
         const doc: Record<string, unknown> = {
             services: { [svcName]: svc }
         }
+
+        if (this.formData.network) {
+            doc.networks = {
+                [this.formData.network]: {
+                    external: true,
+                    name: this.formData.network
+                }
+            }
+        }
+
         return yaml.dump(doc, { lineWidth: -1 })
     }
 
