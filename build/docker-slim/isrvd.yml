@@ -1,6 +1,6 @@
 server:
   debug: false
-  listenAddr: ":8080"
+  listenAddr: :8080
   jwtSecret: __JWT_SECRET__
   rootDirectory: /data/
 
@@ -25,6 +25,11 @@ docker:
 
 marketplace:
   url: https://apps.rehi.org
+
+links:
+- label: 工具箱
+  url: https://api.rehi.org
+  icon: fas fa-cloud-bolt
 
 members:
   - username: admin
