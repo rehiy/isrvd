@@ -249,7 +249,7 @@ export default toNative(FileExplorer)
                           @click="zipModalRef.show(file)" 
                           title="压缩"
                         >
-                          <i class="fas fa-file-pen text-xs"></i>
+                          <i class="fas fa-file-zipper text-xs"></i>
                         </button>
                         <button 
                           class="btn-icon text-slate-600 hover:bg-slate-50"
@@ -284,7 +284,7 @@ export default toNative(FileExplorer)
                           @click="modifyModalRef.show(file)" 
                           title="编辑"
                         >
-                          <i class="fas fa-pen-to-square text-xs"></i>
+                          <i class="fas fa-file-pen text-xs"></i>
                         </button>
                         <button 
                           class="btn-icon text-slate-600 hover:bg-slate-50"
