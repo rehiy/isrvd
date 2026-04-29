@@ -11,17 +11,20 @@ apisix:
         enable_http3: false
   enable_control: true
   control:
-    ip: "0.0.0.0"
+    ip: 0.0.0.0
     port: 9090
-  #trusted_addresses:
-  #  - 0.0.0.0/0
+  trusted_addresses:
+    - 0.0.0.0/0
+  dns_resolver:
+    - 127.0.0.11
+  dns_resolver_valid: 10
 
 deployment:
   admin:
     allow_admin:
       - 0.0.0.0/0
     admin_key:
-      - name: "admin"
+      - name: admin
         key: __APISIX_ADMIN_KEY__
         role: admin
     admin_listen:
@@ -29,12 +32,12 @@ deployment:
       port: 9180
   etcd:
     host:
-      - "http://127.0.0.1:2379"
-    prefix: "/apisix"
+      - http://127.0.0.1:2379
+    prefix: /apisix
     timeout: 30
 
 plugin_attr:
   prometheus:
     export_addr:
-      ip: "0.0.0.0"
+      ip: 0.0.0.0
       port: 9091
