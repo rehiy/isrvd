@@ -17,6 +17,7 @@ export interface ApisixUpstreamConfig {
     nodes?: ApisixUpstreamNode[] | Record<string, number>
     hash_on?: ApisixUpstreamHashOn
     key?: string
+    timeout?: ApisixRouteTimeout
     [key: string]: unknown
 }
 
@@ -89,13 +90,27 @@ export interface ApisixPluginConfig {
 }
 
 export interface ApisixUpstream {
-    id: string
+    id?: string
     name: string
-    desc: string
-    type: string
-    create_time: number
-    update_time: number
+    desc?: string
+    type: ApisixUpstreamType | string
+    nodes?: ApisixUpstreamNode[] | Record<string, number>
+    hash_on?: ApisixUpstreamHashOn
+    key?: string
+    scheme?: string
+    pass_host?: string
+    upstream_host?: string
+    retries?: number
+    retry_timeout?: number
+    timeout?: ApisixRouteTimeout
+    create_time?: number
+    update_time?: number
+    [key: string]: unknown
 }
+
+export type ApisixCreateUpstreamRequest = ApisixUpstream
+
+export type ApisixUpdateUpstreamRequest = ApisixUpstream
 
 export interface ApisixRevokeWhitelistRequest {
     routeId: string

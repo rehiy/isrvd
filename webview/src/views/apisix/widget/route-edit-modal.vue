@@ -13,16 +13,13 @@ import type {
     ApisixRouteUpstreamMode,
     ApisixUpstream,
     ApisixUpstreamConfig,
-    ApisixUpstreamHashOn,
-    ApisixUpstreamType,
     DockerContainerInfo
 } from '@/service/types'
 
 import {
     buildRoutePayload,
     detectRouteUpstreamMode,
-    normalizeUpstreamFormNodes,
-    normalizeUpstreamType
+    normalizeUpstreamFormNodes
 } from '@/helper/apisix'
 
 import BaseModal from '@/component/modal.vue'
@@ -33,24 +30,9 @@ import PortSelect from './port-select.vue'
 // ─── 模块级静态常量 ───
 
 const UPSTREAM_MODE_CARDS: ApisixRouteUpstreamModeCard[] = [
-    { value: 'nodes', title: '内联多上游节点', desc: '一个路由直连多个节点，并为每个节点设置权重', icon: 'fa-circle-nodes', tone: 'indigo' },
-    { value: 'upstream_id', title: '引用已有上游', desc: '复用 APISIX 中已经创建好的上游对象', icon: 'fa-diagram-project', tone: 'emerald' },
-    { value: 'none', title: '空上游', desc: '暂不配置转发目标，先保存路由规则', icon: 'fa-ban', tone: 'slate' }
-]
-
-const UPSTREAM_TYPE_OPTIONS: Array<{ value: ApisixUpstreamType; label: string; desc: string }> = [
-    { value: 'roundrobin', label: 'roundrobin', desc: '按权重轮询分配请求' },
-    { value: 'least_conn', label: 'least_conn', desc: '优先选择当前连接数更少的节点' },
-    { value: 'ewma', label: 'ewma', desc: '根据历史延迟动态选择更快的节点' },
-    { value: 'chash', label: 'chash', desc: '一致性哈希，适合会话粘性场景' }
-]
-
-const HASH_ON_OPTIONS: Array<{ value: ApisixUpstreamHashOn; label: string; keyPlaceholder: string; keyHint: string }> = [
-    { value: 'vars', label: 'vars（Nginx 变量）', keyPlaceholder: 'remote_addr', keyHint: 'Nginx 变量名，不带 $ 前缀，如 remote_addr、uri' },
-    { value: 'header', label: 'header（请求头）', keyPlaceholder: 'X-User-Id', keyHint: '请求头名称，如 X-User-Id' },
-    { value: 'cookie', label: 'cookie', keyPlaceholder: 'session_id', keyHint: 'Cookie 名称（大小写敏感），如 session_id' },
-    { value: 'consumer', label: 'consumer（消费者）', keyPlaceholder: 'consumer_name', keyHint: '通常填 consumer_name，由 APISIX 自动注入' },
-    { value: 'vars_combinations', label: 'vars_combinations', keyPlaceholder: '$remote_addr$uri', keyHint: '多个 Nginx 变量组合，如 $remote_addr$uri' }
+    { value: 'nodes', title: '内联上游节点', desc: '为当前路由配置一个后端服务地址', icon: 'fa-server', tone: 'indigo' },
+    { value: 'upstream_id', title: '引用已有上游', desc: '复用已经创建好的上游对象', icon: 'fa-diagram-project', tone: 'emerald' },
+    { value: 'none', title: '空上游', desc: '不配置转发目标，仅保存路由规则', icon: 'fa-ban', tone: 'slate' }
 ]
 
 const TONE_CARD_ACTIVE: Record<string, string> = {
@@ -71,11 +53,8 @@ const defaultFormData = () => ({
     plugin_config_id: '',
     plugins: {} as Record<string, unknown>,
     upstream_mode: 'nodes' as ApisixRouteUpstreamMode,
-    upstream_type: 'roundrobin' as ApisixUpstreamType,
     upstream_id: '',
     upstream_nodes: [{ host: '', port: '', weight: 1 }] as ApisixRouteUpstreamFormNode[],
-    upstream_hash_on: 'vars' as ApisixUpstreamHashOn,
-    upstream_key: 'remote_addr',
     timeout_connect: '' as string | number,
     timeout_send: '' as string | number,
     timeout_read: '' as string | number,
@@ -107,37 +86,19 @@ class RouteEditModal extends Vue {
 
     // 暴露常量给模板
     readonly upstreamModeCards = UPSTREAM_MODE_CARDS
-    readonly upstreamTypeOptions = UPSTREAM_TYPE_OPTIONS
-    readonly hashOnOptions = HASH_ON_OPTIONS
 
     // ─── 计算属性 ───
-    get selectedUpstreamTypeOption() {
-        return UPSTREAM_TYPE_OPTIONS.find(o => o.value === this.formData.upstream_type) ?? UPSTREAM_TYPE_OPTIONS[0]
-    }
-
-    get selectedHashOnOption() {
-        return HASH_ON_OPTIONS.find(o => o.value === this.formData.upstream_hash_on) ?? HASH_ON_OPTIONS[0]
-    }
-
     get routeValidationMessage() {
         const mode = this.formData.upstream_mode
         if (mode === 'upstream_id') return this.formData.upstream_id.trim() ? '' : '请选择要引用的上游对象'
         if (mode !== 'nodes') return ''
 
-        const rows = this.formData.upstream_nodes
-        if (!rows.some(n => n.host.trim() && String(n.port).trim())) return '请至少配置一个完整的上游节点'
-
-        for (const [i, node] of rows.entries()) {
-            const hasHost = !!node.host.trim()
-            const hasPort = !!String(node.port).trim()
-            if (hasHost !== hasPort) return `第 ${i + 1} 个上游节点的主机和端口需要同时填写`
-            if (hasPort && !/^\d+$/.test(String(node.port).trim())) return `第 ${i + 1} 个上游节点端口必须为数字`
-            if ((hasHost || hasPort) && Number(node.weight) < 0) return `第 ${i + 1} 个上游节点权重不能为负数`
-        }
-
-        if (rows.length > 1 && this.formData.upstream_type === 'chash' && !this.formData.upstream_key?.trim()) {
-            return '使用 chash 策略时，哈希键（key）不能为空'
-        }
+        const node = this.formData.upstream_nodes[0] || this.createUpstreamNode()
+        const hasHost = !!node.host.trim()
+        const hasPort = !!String(node.port).trim()
+        if (!hasHost && !hasPort) return '请填写上游主机和端口'
+        if (hasHost !== hasPort) return '上游主机和端口需要同时填写'
+        if (hasPort && !/^\d+$/.test(String(node.port).trim())) return '上游端口必须为数字'
 
         return ''
     }
@@ -166,19 +127,10 @@ class RouteEditModal extends Vue {
     }
 
     // ─── 上游节点管理 ───
-    addUpstreamNode() {
-        this.formData.upstream_nodes = [...this.formData.upstream_nodes, this.createUpstreamNode()]
-    }
-
-    removeUpstreamNode(index: number) {
-        const next = this.formData.upstream_nodes.filter((_, i) => i !== index)
-        this.formData.upstream_nodes = next.length > 0 ? next : [this.createUpstreamNode()]
-    }
-
     setUpstreamMode(mode: ApisixRouteUpstreamMode) {
         this.formData.upstream_mode = mode
-        if (mode === 'nodes' && !this.formData.upstream_nodes.length) {
-            this.formData.upstream_nodes = [this.createUpstreamNode()]
+        if (mode === 'nodes') {
+            this.formData.upstream_nodes = [this.formData.upstream_nodes[0] || this.createUpstreamNode()]
         }
     }
 
@@ -243,14 +195,11 @@ class RouteEditModal extends Vue {
                     plugin_config_id: r.plugin_config_id || '',
                     plugins,
                     upstream_mode: detectRouteUpstreamMode(r),
-                    upstream_type: normalizeUpstreamType(r.upstream?.type),
                     upstream_id: r.upstream_id || '',
-                    upstream_nodes: normalizeUpstreamFormNodes(r.upstream),
-                    upstream_hash_on: (r.upstream?.hash_on as ApisixUpstreamHashOn) || 'vars',
-                    upstream_key: (r.upstream?.key as string) || 'remote_addr',
-                    timeout_connect: r.timeout?.connect ?? '',
-                    timeout_send: r.timeout?.send ?? '',
-                    timeout_read: r.timeout?.read ?? '',
+                    upstream_nodes: normalizeUpstreamFormNodes(r.upstream).slice(0, 1),
+                    timeout_connect: r.upstream?.timeout?.connect ?? '',
+                    timeout_send: r.upstream?.timeout?.send ?? '',
+                    timeout_read: r.upstream?.timeout?.read ?? '',
                 })
             } catch {
                 this.actions.showNotification('error', '加载路由详情失败')
@@ -311,7 +260,7 @@ export default toNative(RouteEditModal)
         <div class="flex items-center justify-between mb-3">
           <div>
           <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">上游配置</label>
-            <p class="text-xs text-slate-400 mt-1">支持多节点、引用已有上游或暂不配置上游</p>
+            <p class="text-xs text-slate-400 mt-1">支持直接输入单个上游、引用已有上游或暂不配置上游</p>
           </div>
         </div>
 
@@ -326,50 +275,23 @@ export default toNative(RouteEditModal)
         </div>
 
         <div v-if="formData.upstream_mode === 'nodes'" class="space-y-3">
-          <div class="flex items-center justify-between">
-          <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">上游节点</label>
-            <button @click="addUpstreamNode()" type="button" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="添加节点"><i class="fas fa-plus text-xs"></i></button>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">上游地址</label>
+            <div class="grid grid-cols-[2fr_1fr] gap-2 items-center">
+              <HostSelect :model-value="formData.upstream_nodes[0]?.host || ''" :containers="containers" placeholder="127.0.0.1 或 容器名" @update:modelValue="updateUpstreamNode(0, 'host', $event)" />
+              <PortSelect :model-value="formData.upstream_nodes[0]?.port || ''" :ports="getPortsByHost(formData.upstream_nodes[0]?.host || '')" placeholder="80" @update:modelValue="updateUpstreamNode(0, 'port', $event)" />
+            </div>
+            <p class="text-xs text-slate-400 mt-2">直接输入模式仅提交一个上游节点；如需多节点负载均衡，请先在「上游管理」中创建后再引用。</p>
           </div>
-          <div class="space-y-2">
-            <div class="grid grid-cols-[2fr_1fr_1fr_32px] gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              <span class="whitespace-nowrap">主机</span><span class="whitespace-nowrap">端口</span><span class="whitespace-nowrap">权重</span><span v-if="formData.upstream_nodes.length > 1"></span>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">超时时间（秒）</label>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" placeholder="连接 connect" />
+              <input v-model.number="formData.timeout_send" type="number" min="0" class="input" placeholder="发送 send" />
+              <input v-model.number="formData.timeout_read" type="number" min="0" class="input" placeholder="读取 read" />
             </div>
-            <div v-for="(node, index) in formData.upstream_nodes" :key="index" class="grid grid-cols-[2fr_1fr_1fr_32px] gap-2 items-center">
-              <HostSelect :model-value="node.host" :containers="containers" placeholder="127.0.0.1 或 容器名" @update:modelValue="updateUpstreamNode(index, 'host', $event)" />
-              <PortSelect :model-value="node.port" :ports="getPortsByHost(node.host)" placeholder="80" @update:modelValue="updateUpstreamNode(index, 'port', $event)" />
-              <input v-model.number="node.weight" type="number" class="input" placeholder="1" min="0" />
-              <button :disabled="formData.upstream_nodes.length < 2" @click="removeUpstreamNode(index)" type="button" class="btn-icon text-red-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50" title="移除">
-                <i class="fas fa-xmark text-xs"></i>
-              </button>
-            </div>
-          </div>
-          <div v-if="formData.upstream_nodes.length > 1" class="space-y-2">
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">负载均衡策略</label>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <button
-                v-for="o in upstreamTypeOptions"
-                :key="o.value"
-                type="button"
-                @click="formData.upstream_type = o.value"
-                :class="['text-left rounded-lg border px-3 py-2 transition-colors', formData.upstream_type === o.value ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300']"
-              >
-                <div class="text-xs font-semibold">{{ o.label }}</div>
-                <div class="text-xs opacity-70 mt-0.5 leading-4">{{ o.desc }}</div>
-              </button>
-            </div>
-            <div v-if="formData.upstream_type === 'chash'" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-              <div>
-                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">哈希依据（hash_on）</label>
-                <select v-model="formData.upstream_hash_on" class="input">
-                  <option v-for="o in hashOnOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
-                </select>
-                <p class="text-xs text-slate-400 mt-1">{{ selectedHashOnOption.keyHint }}</p>
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">哈希键（key）</label>
-                <input v-model="formData.upstream_key" type="text" class="input" :placeholder="selectedHashOnOption.keyPlaceholder" />
-              </div>
-            </div>
+            <p class="text-xs text-slate-400 mt-1">留空或 0 表示使用 APISIX 默认超时。</p>
           </div>
           <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
         </div>
@@ -389,7 +311,7 @@ export default toNative(RouteEditModal)
 
       <div class="border border-slate-200 rounded-xl p-4">
         <div class="mb-3">
-          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">复用插件配置</label>
+          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">引用插件配置</label>
           <p class="text-xs text-slate-400 mt-1 mb-2">选择已有的插件配置对象，与独立插件配置合并生效</p>
           <select v-model="formData.plugin_config_id" class="input">
             <option value="">不使用</option>

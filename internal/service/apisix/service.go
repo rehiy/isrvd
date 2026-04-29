@@ -133,16 +133,65 @@ func (s *Service) RevokeWhitelist(routeID, consumerName string) error {
 	return s.client.RemoveConsumerFromRouteWhitelist(routeID, consumerName)
 }
 
+// ─── Upstream 管理 ───
+
+// ListUpstreams 获取 Upstream 列表
+func (s *Service) ListUpstreams() (any, error) {
+	return s.client.ListUpstreams()
+}
+
+// GetUpstream 获取单条 Upstream 详情
+func (s *Service) GetUpstream(upstreamID string) (any, error) {
+	if upstreamID == "" {
+		return nil, fmt.Errorf("Upstream ID 不能为空")
+	}
+	return s.client.GetUpstream(upstreamID)
+}
+
+// CreateUpstream 创建 Upstream
+func (s *Service) CreateUpstream(req pkgapisix.Upstream) (any, error) {
+	if req.Name == "" {
+		return nil, fmt.Errorf("Upstream 名称不能为空")
+	}
+	if req.Type == "" {
+		return nil, fmt.Errorf("Upstream 类型不能为空")
+	}
+	if !pkgapisix.HasUpstreamNodes(req.Nodes) {
+		return nil, fmt.Errorf("Upstream 节点不能为空")
+	}
+	return s.client.CreateUpstream(req)
+}
+
+// UpdateUpstream 更新 Upstream
+func (s *Service) UpdateUpstream(upstreamID string, req pkgapisix.Upstream) (any, error) {
+	if upstreamID == "" {
+		return nil, fmt.Errorf("Upstream ID 不能为空")
+	}
+	if req.Name == "" {
+		return nil, fmt.Errorf("Upstream 名称不能为空")
+	}
+	if req.Type == "" {
+		return nil, fmt.Errorf("Upstream 类型不能为空")
+	}
+	if !pkgapisix.HasUpstreamNodes(req.Nodes) {
+		return nil, fmt.Errorf("Upstream 节点不能为空")
+	}
+	return s.client.UpdateUpstream(upstreamID, req)
+}
+
+// DeleteUpstream 删除 Upstream
+func (s *Service) DeleteUpstream(upstreamID string) error {
+	if upstreamID == "" {
+		return fmt.Errorf("Upstream ID 不能为空")
+	}
+	return s.client.DeleteUpstream(upstreamID)
+}
+
 // ─── 辅助资源 ───
 
 // ListPluginConfigs 获取 Plugin Config 列表
 func (s *Service) ListPluginConfigs() (any, error) {
 	return s.client.ListPluginConfigs()
-}
-
-// ListUpstreams 获取 Upstream 列表
-func (s *Service) ListUpstreams() (any, error) {
-	return s.client.ListUpstreams()
 }
 
 // ListPlugins 获取可用插件列表

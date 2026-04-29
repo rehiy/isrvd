@@ -173,6 +173,51 @@ func (app *App) apisixListUpstreams(c *gin.Context) {
 	helper.RespondSuccess(c, "", result)
 }
 
+func (app *App) apisixGetUpstream(c *gin.Context) {
+	result, err := app.apisixSvc.GetUpstream(c.Param("id"))
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "", result)
+}
+
+func (app *App) apisixCreateUpstream(c *gin.Context) {
+	var req pkgapisix.Upstream
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := app.apisixSvc.CreateUpstream(req)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Upstream created successfully", result)
+}
+
+func (app *App) apisixUpdateUpstream(c *gin.Context) {
+	var req pkgapisix.Upstream
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := app.apisixSvc.UpdateUpstream(c.Param("id"), req)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Upstream updated successfully", result)
+}
+
+func (app *App) apisixDeleteUpstream(c *gin.Context) {
+	if err := app.apisixSvc.DeleteUpstream(c.Param("id")); err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Upstream deleted successfully", nil)
+}
+
 func (app *App) apisixListPlugins(c *gin.Context) {
 	result, err := app.apisixSvc.ListPlugins()
 	if err != nil {

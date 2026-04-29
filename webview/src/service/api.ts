@@ -11,7 +11,7 @@ import type {
     SwarmServiceInfo, SwarmServiceDetail, SwarmTask,
     SwarmCreateServiceRequest,
     ApisixRoute, ApisixConsumer, ApisixCreateConsumerRequest, ApisixUpdateConsumerRequest,
-    ApisixPluginConfig, ApisixUpstream,
+    ApisixCreateUpstreamRequest, ApisixPluginConfig, ApisixUpstream, ApisixUpdateUpstreamRequest,
     SystemProbeResponse, DockerInfo,
     FilerListResponse, FilerReadResponse,
     AuthLoginResponse, AuthInfoResponse,
@@ -332,6 +332,22 @@ class ApiService {
 
     apisixListUpstreams() {
         return http.get<ApisixUpstream[]>('/api/apisix/upstreams')
+    }
+
+    apisixGetUpstream(id: string) {
+        return http.get<ApisixUpstream>(`/api/apisix/upstream/${id}`)
+    }
+
+    apisixCreateUpstream(data: ApisixCreateUpstreamRequest) {
+        return http.post('/api/apisix/upstreams', data)
+    }
+
+    apisixUpdateUpstream(id: string, data: ApisixUpdateUpstreamRequest) {
+        return http.put(`/api/apisix/upstream/${id}`, data)
+    }
+
+    apisixDeleteUpstream(id: string) {
+        return http.delete<void>(`/api/apisix/upstream/${id}`)
     }
 
     apisixListPlugins() {
