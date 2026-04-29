@@ -269,7 +269,7 @@ export default toNative(RouteEditModal)
   <BaseModal v-model="isOpen" :title="isEditMode ? '编辑路由' : '创建路由'" :loading="modalLoading">
     <div class="space-y-4 p-1">
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">路由名称 <span class="text-red-500">*</span></label><input v-model="formData.name" type="text" class="input" placeholder="路由名称" /></div>
+        <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">名称 <span class="text-red-500">*</span></label><input v-model="formData.name" type="text" class="input" placeholder="路由名称" /></div>
         <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">优先级</label><input v-model.number="formData.priority" type="number" class="input" placeholder="0" min="0" /></div>
       </div>
       <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">描述</label><textarea v-model="formData.desc" rows="2" class="input" placeholder="路由描述"></textarea></div>

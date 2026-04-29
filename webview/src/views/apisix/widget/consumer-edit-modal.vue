@@ -67,7 +67,7 @@ class ConsumerEditModal extends Vue {
 
     async handleConfirm() {
         if (!this.formData.username) {
-            this.actions.showNotification('error', '用户名不能为空')
+            this.actions.showNotification('error', '消费者名称不能为空')
             return
         }
         if (this.$refs.pluginPanel?.pluginsJsonError) {
@@ -100,18 +100,18 @@ export default toNative(ConsumerEditModal)
 <template>
   <BaseModal
     v-model="isOpen"
-    :title="isEditMode ? '编辑用户' : '创建用户'"
+    :title="isEditMode ? '编辑消费者' : '创建消费者'"
     :loading="modalLoading"
   >
     <div class="max-w-3xl space-y-4 p-1">
       <div class="space-y-3">
         <div>
-          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">用户名 <span class="text-red-500">*</span></label>
-          <input v-model="formData.username" type="text" :disabled="isEditMode" class="input" :class="{ 'disabled:bg-slate-50 disabled:text-slate-500': isEditMode }" placeholder="输入用户名" />
+          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">名称 <span class="text-red-500">*</span></label>
+          <input v-model="formData.username" type="text" :disabled="isEditMode" class="input" :class="{ 'disabled:bg-slate-50 disabled:text-slate-500': isEditMode }" placeholder="消费者名称" />
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">描述</label>
-          <textarea v-model="formData.desc" rows="3" class="input" placeholder="用户描述"></textarea>
+          <textarea v-model="formData.desc" rows="3" class="input" placeholder="消费者描述"></textarea>
         </div>
       </div>
 

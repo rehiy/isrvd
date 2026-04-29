@@ -204,7 +204,7 @@ export default toNative(UpstreamEditModal)
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">名称 <span class="text-red-500">*</span></label>
-          <input v-model="formData.name" type="text" class="input" placeholder="输入上游名称" />
+          <input v-model="formData.name" type="text" class="input" placeholder="上游名称" />
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">负载均衡策略</label>
