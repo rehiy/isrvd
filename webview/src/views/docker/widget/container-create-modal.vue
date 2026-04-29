@@ -10,8 +10,8 @@ import type { DockerImageInfo, DockerNetworkInfo } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
 
-import CapSelect from '@/views/docker/widget/cap-select.vue'
-import ImageSelect from '@/views/docker/widget/image-select.vue'
+import CapSelect from './cap-select.vue'
+import ImageSelect from './image-select.vue'
 
 @Component({
     expose: ['show'],

@@ -9,8 +9,8 @@ import type { DockerContainerInfo } from '@/service/types'
 
 import { formatTime } from '@/helper/utils'
 
-import ContainerCreateModal from '@/views/docker/widget/container-create-modal.vue'
-import ContainerEditModal from '@/views/docker/widget/container-edit-modal.vue'
+import ContainerCreateModal from './widget/container-create-modal.vue'
+import ContainerEditModal from './widget/container-edit-modal.vue'
 
 @Component({
     expose: ['load', 'show'],

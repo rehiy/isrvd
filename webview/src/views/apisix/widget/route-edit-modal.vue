@@ -24,7 +24,7 @@ import {
 
 import BaseModal from '@/component/modal.vue'
 import HostSelect from './host-select.vue'
-import PluginConfigPanel from '@/views/apisix/widget/plugin-config-panel.vue'
+import PluginConfigPanel from './plugin-config-panel.vue'
 import PortSelect from './port-select.vue'
 
 // ─── 模块级静态常量 ───

@@ -7,7 +7,7 @@ import type { AppActions } from '@/store/state'
 import api from '@/service/api'
 import type { SystemMemberInfo } from '@/service/types'
 
-import MemberEditModal from '@/views/system/widget/member-edit-modal.vue'
+import MemberEditModal from './widget/member-edit-modal.vue'
 
 @Component({
     components: { MemberEditModal }

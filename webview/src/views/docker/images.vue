@@ -9,10 +9,10 @@ import type { DockerImageInfo, DockerRegistryInfo } from '@/service/types'
 
 import { formatFileSize, formatTime } from '@/helper/utils'
 
-import ImageBuildModal from '@/views/docker/widget/image-build-modal.vue'
-import ImagePullModal from '@/views/docker/widget/image-pull-modal.vue'
-import ImageTagModal from '@/views/docker/widget/image-tag-modal.vue'
-import RegistryPushModal from '@/views/docker/widget/registry-push-modal.vue'
+import ImageBuildModal from './widget/image-build-modal.vue'
+import ImagePullModal from './widget/image-pull-modal.vue'
+import ImageTagModal from './widget/image-tag-modal.vue'
+import RegistryPushModal from './widget/registry-push-modal.vue'
 
 @Component({
     components: { ImagePullModal, ImageTagModal, ImageBuildModal, RegistryPushModal }

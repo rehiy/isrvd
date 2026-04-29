@@ -9,7 +9,7 @@ import type { DockerVolumeInfo } from '@/service/types'
 
 import { formatTime } from '@/helper/utils'
 
-import VolumeCreateModal from '@/views/docker/widget/volume-create-modal.vue'
+import VolumeCreateModal from './widget/volume-create-modal.vue'
 
 @Component({
     expose: ['load', 'show'],

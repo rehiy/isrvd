@@ -7,7 +7,7 @@ import type { AppActions } from '@/store/state'
 import api from '@/service/api'
 import type { DockerRegistryInfo } from '@/service/types'
 
-import RegistryEditModal from '@/views/docker/widget/registry-edit-modal.vue'
+import RegistryEditModal from './widget/registry-edit-modal.vue'
 
 @Component({
     components: { RegistryEditModal }

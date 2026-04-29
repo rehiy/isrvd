@@ -7,7 +7,7 @@ import type { AppActions } from '@/store/state'
 import api from '@/service/api'
 import type { DockerContainerInfo } from '@/service/types'
 
-import ContainerNav from '@/views/docker/widget/container-nav.vue'
+import ContainerNav from './widget/container-nav.vue'
 
 @Component({
     components: { ContainerNav }

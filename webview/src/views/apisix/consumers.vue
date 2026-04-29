@@ -7,7 +7,7 @@ import type { AppActions } from '@/store/state'
 import api from '@/service/api'
 import type { ApisixConsumer, ApisixRoute } from '@/service/types'
 
-import ConsumerEditModal from '@/views/apisix/widget/consumer-edit-modal.vue'
+import ConsumerEditModal from './widget/consumer-edit-modal.vue'
 
 @Component({
     components: { ConsumerEditModal }

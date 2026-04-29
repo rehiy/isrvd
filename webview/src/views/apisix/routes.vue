@@ -9,7 +9,7 @@ import type { ApisixRoute } from '@/service/types'
 
 import { formatRouteUpstreamSummary, formatRouteUpstreamType, formatRouteUpstreamNodes, normalizeUpstreamNodes } from '@/helper/apisix'
 
-import RouteEditModal from '@/views/apisix/widget/route-edit-modal.vue'
+import RouteEditModal from './widget/route-edit-modal.vue'
 
 @Component({
     components: { RouteEditModal }

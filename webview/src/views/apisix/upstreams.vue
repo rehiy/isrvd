@@ -9,7 +9,7 @@ import type { ApisixUpstream } from '@/service/types'
 
 import { normalizeUpstreamNodes } from '@/helper/apisix'
 
-import UpstreamEditModal from '@/views/apisix/widget/upstream-edit-modal.vue'
+import UpstreamEditModal from './widget/upstream-edit-modal.vue'
 
 @Component({
     components: { UpstreamEditModal }

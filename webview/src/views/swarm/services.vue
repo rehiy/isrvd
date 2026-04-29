@@ -7,9 +7,9 @@ import type { AppActions } from '@/store/state'
 import api from '@/service/api'
 import type { SwarmServiceInfo } from '@/service/types'
 
-import CreateServiceModal from '@/views/swarm/widget/service-create-modal.vue'
-import ServiceEditModal from '@/views/swarm/widget/service-edit-modal.vue'
-import ScaleModal from '@/views/swarm/widget/service-scale-modal.vue'
+import CreateServiceModal from './widget/service-create-modal.vue'
+import ServiceEditModal from './widget/service-edit-modal.vue'
+import ScaleModal from './widget/service-scale-modal.vue'
 
 @Component({
     components: { ScaleModal, CreateServiceModal, ServiceEditModal }

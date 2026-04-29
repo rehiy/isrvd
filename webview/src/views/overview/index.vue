@@ -4,10 +4,10 @@ import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 import { APP_STATE_KEY, APP_ACTIONS_KEY } from '@/store/state'
 import type { AppState, AppActions } from '@/store/state'
 
-import ApisixOverview from '@/views/overview/widget/apisix.vue'
-import DockerOverview from '@/views/overview/widget/docker.vue'
-import SwarmOverview from '@/views/overview/widget/swarm.vue'
-import SystemOverview from '@/views/overview/widget/system.vue'
+import ApisixOverview from './widget/apisix.vue'
+import DockerOverview from './widget/docker.vue'
+import SwarmOverview from './widget/swarm.vue'
+import SystemOverview from './widget/system.vue'
 
 @Component({
     components: { ApisixOverview, DockerOverview, SwarmOverview, SystemOverview }
