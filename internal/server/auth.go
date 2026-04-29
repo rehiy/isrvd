@@ -82,27 +82,37 @@ func HeaderAuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-// moduleLabel 模块显示名映射，统一错误提示中的大小写与空格
-var moduleLabel = map[string]string{
-	"filer":   "文件管理",
-	"agent":   "AI Agent",
-	"apisix":  "APISIX",
-	"docker":  "Docker",
-	"swarm":   "Swarm",
-	"compose": "Compose",
-	"system":  "系统管理",
-	"shell":   "Shell终端",
-}
-
-// PermMiddleware 模块权限检查中间件
-// module: 模块名（filer/agent/apisix/docker/swarm/compose/system/shell）
-// write: true 表示需要写权限（rw），false 表示只需读权限（r 或 rw）
-func PermMiddleware(module string, write bool) gin.HandlerFunc {
-	label := moduleLabel[module]
-	if label == "" {
-		label = module
-	}
+// RoutePermMiddleware 基于 METHOD+PATH 的集中式权限验证中间件
+// 根据 Gin 已匹配的完整路由模板一次定位当前请求所需的权限
+func (app *App) RoutePermMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		method := c.Request.Method
+		path := c.FullPath()
+
+		// Gin 未匹配到路由时 FullPath 为空，直接拒绝（防御性检查，正常不会触发）
+		if path == "" {
+			helper.RespondError(c, http.StatusForbidden, "未授权的访问路径")
+			c.Abort()
+			return
+		}
+
+		route, exists := app.routePerms[method+" "+path]
+		if !exists {
+			route, exists = app.routePerms["ANY "+path]
+		}
+		if !exists {
+			helper.RespondError(c, http.StatusForbidden, "未授权的访问路径")
+			c.Abort()
+			return
+		}
+
+		// 匹配成功，进行权限验证
+		if route.Module == "" {
+			c.Next()
+			return
+		}
+
+		// 验证模块权限
 		username := c.GetString("username")
 		member, exists := config.Members[username]
 		if !exists {
@@ -110,8 +120,15 @@ func PermMiddleware(module string, write bool) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		perm := member.Permissions[module]
-		if write {
+
+		perm := member.Permissions[route.Module]
+		label := route.Label
+		if label == "" {
+			label = route.Module
+		}
+
+		// 直接比较：route.Perm 为空或 "r" 时只需有读权限；"rw" 时必须有 rw
+		if route.Perm == "rw" {
 			if perm != "rw" {
 				helper.RespondError(c, http.StatusForbidden, "无 "+label+" 模块写权限")
 				c.Abort()
@@ -124,6 +141,7 @@ func PermMiddleware(module string, write bool) gin.HandlerFunc {
 				return
 			}
 		}
+
 		c.Next()
 	}
 }

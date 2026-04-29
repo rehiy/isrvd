@@ -48,6 +48,7 @@ func Load() error {
 	ConfigPath = file
 
 	// 读取配置文件
+	logman.Info("load config", "file", file)
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return err

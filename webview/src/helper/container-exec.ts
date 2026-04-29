@@ -20,7 +20,7 @@ export function create(el: HTMLElement, token: string, containerId: string, shel
     window.addEventListener('resize', resizeHandler)
 
     const baseURL =  window.__BASE_URL__ || ''
-    socket = new WebSocket(`${baseURL}/ws/docker/exec?token=${token}&id=${encodeURIComponent(containerId)}&shell=${encodeURIComponent(shell)}`)
+    socket = new WebSocket(`${baseURL}/api/ws/docker/exec?token=${token}&id=${encodeURIComponent(containerId)}&shell=${encodeURIComponent(shell)}`)
 
     term.onData(data => socket?.readyState === WebSocket.OPEN && socket.send(data))
     socket.onopen = () => term && term.write('[连接中...]\r\n')
