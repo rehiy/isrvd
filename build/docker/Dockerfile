@@ -46,9 +46,10 @@ RUN chmod +x /entrypoint.sh
 
 # 暴露端口
 # 8080: isrvd Web UI
-# 9080: Apisix 代理端口
 # 9180: Apisix Admin API
-EXPOSE 8080 9080 9180
+# 9080: Apisix 代理端口
+# 9443: Apisix 代理端口 (HTTPS)
+EXPOSE 8080 9180 9080 9443
 
 # 数据卷
 VOLUME ["/data"]
