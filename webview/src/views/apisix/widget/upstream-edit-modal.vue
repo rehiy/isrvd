@@ -11,12 +11,15 @@ import type {
     ApisixUpstream,
     ApisixUpstreamHashOn,
     ApisixUpstreamType,
-    ApisixUpdateUpstreamRequest
+    ApisixUpdateUpstreamRequest,
+    DockerContainerInfo
 } from '@/service/types'
 
 import { normalizeUpstreamFormNodes, normalizeUpstreamType } from '@/helper/apisix'
 
 import BaseModal from '@/component/modal.vue'
+import HostSelect from './host-select.vue'
+import PortSelect from './port-select.vue'
 
 const UPSTREAM_TYPE_OPTIONS: Array<{ value: ApisixUpstreamType; label: string; desc: string }> = [
     { value: 'roundrobin', label: 'roundrobin', desc: '加权轮询' },
@@ -50,7 +53,7 @@ const defaultFormData = () => ({
 
 @Component({
     expose: ['show'],
-    components: { BaseModal },
+    components: { BaseModal, HostSelect, PortSelect },
     emits: ['success']
 })
 class UpstreamEditModal extends Vue {
@@ -60,6 +63,7 @@ class UpstreamEditModal extends Vue {
     modalLoading = false
     isEditMode = false
     formData = defaultFormData()
+    containers: DockerContainerInfo[] = []
 
     readonly upstreamTypeOptions = UPSTREAM_TYPE_OPTIONS
     readonly hashOnOptions = HASH_ON_OPTIONS
@@ -72,7 +76,8 @@ class UpstreamEditModal extends Vue {
         this.formData = defaultFormData()
     }
 
-    show(upstream: ApisixUpstream | null = null) {
+    async show(upstream: ApisixUpstream | null = null) {
+        await this.loadContainers()
         if (upstream) {
             const upstreamType = normalizeUpstreamType(upstream.type)
             this.isEditMode = true
@@ -102,6 +107,29 @@ class UpstreamEditModal extends Vue {
     removeNode(index: number) {
         if (this.formData.nodes.length <= 1) return
         this.formData.nodes.splice(index, 1)
+    }
+
+    getPortsByHost(host: string): string[] {
+        return this.containers.find(c => c.name === host.trim())?.ports || []
+    }
+
+    updateNode(index: number, field: 'host' | 'port', value: string) {
+        const node = this.formData.nodes[index]
+        if (!node) return
+        node[field] = value
+        if (field === 'host' && value.trim()) {
+            const port = (this.getPortsByHost(value)[0] || '').split('/')[0].split(':').pop() || ''
+            if (port) node.port = port
+        }
+    }
+
+    async loadContainers() {
+        try {
+            const res = await api.listContainers()
+            this.containers = (res.payload || []).filter(c => c.state === 'running')
+        } catch {
+            this.containers = []
+        }
     }
 
     buildPayload(): ApisixCreateUpstreamRequest | ApisixUpdateUpstreamRequest {
@@ -229,11 +257,11 @@ export default toNative(UpstreamEditModal)
           <div v-for="(node, index) in formData.nodes" :key="index" class="grid grid-cols-12 gap-2 p-3 items-end">
             <div class="col-span-12 md:col-span-5">
               <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Host</label>
-              <input v-model="node.host" type="text" class="input" placeholder="127.0.0.1" />
+              <HostSelect :model-value="node.host" :containers="containers" placeholder="127.0.0.1 或 容器名" @update:modelValue="updateNode(index, 'host', $event)" />
             </div>
             <div class="col-span-5 md:col-span-3">
               <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Port</label>
-              <input v-model="node.port" type="number" min="1" class="input" placeholder="8080" />
+              <PortSelect :model-value="String(node.port || '')" :ports="getPortsByHost(node.host)" placeholder="8080" @update:modelValue="updateNode(index, 'port', $event)" />
             </div>
             <div class="col-span-5 md:col-span-3">
               <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">权重</label>
