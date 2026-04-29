@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"github.com/rehiy/pango/logman"
@@ -43,6 +44,7 @@ var (
 )
 
 var remoteStore RemoteStore
+var remoteRevision atomic.Int64
 
 // 加载配置文件
 func Load() error {
@@ -51,6 +53,7 @@ func Load() error {
 		file = "config.yml"
 	}
 	ConfigPath = file
+	remoteRevisionReset()
 
 	// 1. 读取本地 YAML
 	conf, err := loadYAML(file)
@@ -75,7 +78,19 @@ func Load() error {
 		conf.Marketplace = &MarketplaceConfig{}
 	}
 
-	// 2. 如果配置了 etcd，初始化远程存储并预加载
+	// 2. 先迁移本地明文密码，避免首次 bootstrap 把明文写进 etcd
+	migrated, err := migratePlaintextPasswordsInConfig(conf)
+	if err != nil {
+		logman.Warn("本地密码迁移失败", "error", err)
+	} else if migrated {
+		if err := saveYAML(file, conf); err != nil {
+			logman.Warn("本地密码迁移保存失败", "error", err)
+		} else {
+			logman.Info("本地配置文件已自动更新（密码迁移）")
+		}
+	}
+
+	// 3. 如果配置了 etcd，初始化远程存储并预加载/首次初始化
 	if conf.Etcd != nil && len(conf.Etcd.Endpoints) > 0 {
 		store, err := newEtcdStore(conf.Etcd)
 		if err != nil {
@@ -87,22 +102,48 @@ func Load() error {
 			cancel()
 			if err != nil {
 				logman.Warn("etcd 预加载失败，使用本地配置", "error", err)
-			} else {
-				if err := validateRemote(rc); err != nil {
-					logman.Warn("etcd 配置校验失败，使用本地配置", "error", err)
+			} else if isRemoteEmpty(rc) {
+				bootstrapConfig := cloneConfig(conf)
+				resolvePaths(bootstrapConfig)
+				ctx2, cancel2 := context.WithTimeout(context.Background(), 10*time.Second)
+				bootstrapped, err := store.Bootstrap(ctx2, extractRemote(bootstrapConfig))
+				cancel2()
+				if err != nil {
+					logman.Warn("etcd 首次初始化失败，使用本地配置", "error", err)
 				} else {
-					mergeRemote(conf, rc)
-					logman.Info("etcd 配置已加载", "revision", rev)
-					go startWatch(rev)
+					ctx3, cancel3 := context.WithTimeout(context.Background(), 10*time.Second)
+					rc, rev, err = store.Load(ctx3)
+					cancel3()
+					if err != nil {
+						logman.Warn("etcd 初始化后重载失败，使用本地配置", "error", err)
+					} else if err := validateRemote(rc); err != nil {
+						logman.Warn("etcd 初始化后配置校验失败，使用本地配置", "error", err)
+					} else {
+						mergeRemote(conf, rc)
+						setRemoteRevision(rev)
+						if bootstrapped {
+							logman.Info("etcd 配置首次初始化完成", "revision", rev)
+						} else {
+							logman.Info("etcd 配置已由其他实例初始化", "revision", rev)
+						}
+						go startWatch(rev + 1)
+					}
 				}
+			} else if err := validateRemote(rc); err != nil {
+				logman.Warn("etcd 配置校验失败，使用本地配置", "error", err)
+			} else {
+				mergeRemote(conf, rc)
+				setRemoteRevision(rev)
+				logman.Info("etcd 配置已加载", "revision", rev)
+				go startWatch(rev + 1)
 			}
 		}
 	}
 
-	// 3. 处理路径
+	// 4. 处理路径
 	resolvePaths(conf)
 
-	// 4. 更新全局变量
+	// 5. 更新全局变量
 	Debug = conf.Server.Debug
 	ListenAddr = conf.Server.ListenAddr
 	JWTSecret = conf.Server.JWTSecret
@@ -132,11 +173,6 @@ func Load() error {
 
 	Etcd = conf.Etcd
 
-	// 5. 自动迁移明文密码
-	if err := migratePlaintextPasswords(); err != nil {
-		logman.Warn("密码迁移失败", "error", err)
-	}
-
 	return nil
 }
 
@@ -145,7 +181,10 @@ func startWatch(rev int64) {
 		return
 	}
 	ctx := context.Background()
-	err := remoteStore.Watch(ctx, rev, func(key string, value []byte) {
+	err := remoteStore.Watch(ctx, rev, func(key string, value []byte, eventRev int64) {
+		if eventRev > 0 {
+			setRemoteRevision(eventRev)
+		}
 		// DELETE event: reset to empty
 		if value == nil && key != "_compacted" && key != "_canceled" {
 			switch key {
@@ -165,20 +204,21 @@ func startWatch(rev int64) {
 				JWTSecret = ""
 				ProxyHeaderName = ""
 			}
-			logman.Info("etcd 配置已删除", "key", key)
+			logman.Info("etcd 配置已删除", "key", key, "revision", eventRev)
 			return
 		}
 		switch key {
 		case "_compacted", "_canceled":
 			ctx2, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			rc, _, err := remoteStore.Load(ctx2)
+			rc, rev, err := remoteStore.Load(ctx2)
 			cancel()
 			if err != nil {
 				logman.Error("etcd 全量重载失败", "error", err)
 				return
 			}
 			applyRemoteToGlobals(rc)
-			logman.Info("etcd 配置已全量重载", "trigger", key)
+			setRemoteRevision(rev)
+			logman.Info("etcd 配置已全量重载", "trigger", key, "revision", rev)
 		case "agent":
 			var a AgentConfig
 			if err := json.Unmarshal(value, &a); err != nil {
@@ -186,7 +226,7 @@ func startWatch(rev int64) {
 				return
 			}
 			Agent = &a
-			logman.Info("etcd 配置已热更新", "key", key)
+			logman.Info("etcd 配置已热更新", "key", key, "revision", eventRev)
 		case "apisix":
 			var a ApisixRemote
 			if err := json.Unmarshal(value, &a); err != nil {
@@ -194,7 +234,7 @@ func startWatch(rev int64) {
 				return
 			}
 			Apisix.AdminKey = a.AdminKey
-			logman.Info("etcd 配置已热更新", "key", key)
+			logman.Info("etcd 配置已热更新", "key", key, "revision", eventRev)
 		case "marketplace":
 			var m MarketplaceConfig
 			if err := json.Unmarshal(value, &m); err != nil {
@@ -202,7 +242,7 @@ func startWatch(rev int64) {
 				return
 			}
 			Marketplace = &m
-			logman.Info("etcd 配置已热更新", "key", key)
+			logman.Info("etcd 配置已热更新", "key", key, "revision", eventRev)
 		case "links":
 			var l []*LinkConfig
 			if err := json.Unmarshal(value, &l); err != nil {
@@ -210,7 +250,7 @@ func startWatch(rev int64) {
 				return
 			}
 			Links = l
-			logman.Info("etcd 配置已热更新", "key", key)
+			logman.Info("etcd 配置已热更新", "key", key, "revision", eventRev)
 		case "members":
 			var ms []*MemberConfig
 			if err := json.Unmarshal(value, &ms); err != nil {
@@ -221,7 +261,7 @@ func startWatch(rev int64) {
 			for _, m := range ms {
 				Members[m.Username] = m
 			}
-			logman.Info("etcd 配置已热更新", "key", key)
+			logman.Info("etcd 配置已热更新", "key", key, "revision", eventRev)
 		case "docker":
 			var d DockerRemote
 			if err := json.Unmarshal(value, &d); err != nil {
@@ -229,7 +269,7 @@ func startWatch(rev int64) {
 				return
 			}
 			Docker.Registries = d.Registries
-			logman.Info("etcd 配置已热更新", "key", key)
+			logman.Info("etcd 配置已热更新", "key", key, "revision", eventRev)
 		case "server":
 			var s ServerRemote
 			if err := json.Unmarshal(value, &s); err != nil {
@@ -238,12 +278,26 @@ func startWatch(rev int64) {
 			}
 			JWTSecret = s.JWTSecret
 			ProxyHeaderName = s.ProxyHeaderName
-			logman.Info("etcd 配置已热更新", "key", key)
+			logman.Info("etcd 配置已热更新", "key", key, "revision", eventRev)
 		}
 	})
 	if err != nil {
 		logman.Error("etcd watch 异常退出", "error", err)
 	}
+}
+
+func setRemoteRevision(rev int64) {
+	if rev > 0 {
+		remoteRevision.Store(rev)
+	}
+}
+
+func getRemoteRevision() int64 {
+	return remoteRevision.Load()
+}
+
+func remoteRevisionReset() {
+	remoteRevision.Store(0)
 }
 
 func applyRemoteToGlobals(rc *RemoteConfig) {
@@ -274,6 +328,26 @@ func applyRemoteToGlobals(rc *RemoteConfig) {
 	}
 }
 
+func migratePlaintextPasswordsInConfig(conf *Config) (bool, error) {
+	if conf == nil {
+		return false, nil
+	}
+	changed := false
+	for _, m := range conf.Members {
+		if m.Password == "" || helper.HashedBcrypt(m.Password) {
+			continue
+		}
+		hashedPassword, err := helper.HashPassword(m.Password)
+		if err != nil {
+			return changed, err
+		}
+		logman.Info("密码已自动迁移为加密格式", "username", m.Username)
+		m.Password = hashedPassword
+		changed = true
+	}
+	return changed, nil
+}
+
 // migratePlaintextPasswords 自动迁移明文密码为加密格式
 func migratePlaintextPasswords() error {
 	needSave := false
@@ -297,4 +371,91 @@ func migratePlaintextPasswords() error {
 		logman.Info("配置文件已自动更新（密码迁移）")
 	}
 	return nil
+}
+
+func cloneConfig(conf *Config) *Config {
+	if conf == nil {
+		return nil
+	}
+	members := make([]*MemberConfig, 0, len(conf.Members))
+	for _, m := range conf.Members {
+		members = append(members, &MemberConfig{
+			Username:      m.Username,
+			Password:      m.Password,
+			HomeDirectory: m.HomeDirectory,
+			Permissions:   clonePermissions(m.Permissions),
+		})
+	}
+
+	links := make([]*LinkConfig, 0, len(conf.Links))
+	for _, l := range conf.Links {
+		links = append(links, &LinkConfig{Label: l.Label, URL: l.URL, Icon: l.Icon})
+	}
+
+	var agent *AgentConfig
+	if conf.Agent != nil {
+		agent = &AgentConfig{Model: conf.Agent.Model, BaseURL: conf.Agent.BaseURL, APIKey: conf.Agent.APIKey}
+	}
+	var apisix *ApisixConfig
+	if conf.Apisix != nil {
+		apisix = &ApisixConfig{AdminURL: conf.Apisix.AdminURL, AdminKey: conf.Apisix.AdminKey}
+	}
+	var docker *DockerConfig
+	if conf.Docker != nil {
+		registries := make([]*DockerRegistry, 0, len(conf.Docker.Registries))
+		for _, r := range conf.Docker.Registries {
+			registries = append(registries, &DockerRegistry{
+				Name:        r.Name,
+				Description: r.Description,
+				URL:         r.URL,
+				Username:    r.Username,
+				Password:    r.Password,
+			})
+		}
+		docker = &DockerConfig{Host: conf.Docker.Host, ContainerRoot: conf.Docker.ContainerRoot, Registries: registries}
+	}
+	var marketplace *MarketplaceConfig
+	if conf.Marketplace != nil {
+		marketplace = &MarketplaceConfig{URL: conf.Marketplace.URL}
+	}
+	var server *Server
+	if conf.Server != nil {
+		server = &Server{
+			Debug:           conf.Server.Debug,
+			ListenAddr:      conf.Server.ListenAddr,
+			JWTSecret:       conf.Server.JWTSecret,
+			ProxyHeaderName: conf.Server.ProxyHeaderName,
+			RootDirectory:   conf.Server.RootDirectory,
+		}
+	}
+	var etcd *EtcdConfig
+	if conf.Etcd != nil {
+		var tlsCfg *EtcdTLS
+		if conf.Etcd.TLS != nil {
+			tlsCfg = &EtcdTLS{
+				CertFile: conf.Etcd.TLS.CertFile,
+				KeyFile:  conf.Etcd.TLS.KeyFile,
+				CAFile:   conf.Etcd.TLS.CAFile,
+			}
+		}
+		endpoints := append([]string(nil), conf.Etcd.Endpoints...)
+		etcd = &EtcdConfig{
+			Endpoints: endpoints,
+			Prefix:    conf.Etcd.Prefix,
+			Username:  conf.Etcd.Username,
+			Password:  conf.Etcd.Password,
+			TLS:       tlsCfg,
+		}
+	}
+
+	return &Config{
+		Server:      server,
+		Agent:       agent,
+		Apisix:      apisix,
+		Docker:      docker,
+		Marketplace: marketplace,
+		Links:       links,
+		Members:     members,
+		Etcd:        etcd,
+	}
 }

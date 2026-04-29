@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -18,20 +19,25 @@ func Save() error {
 		return fmt.Errorf("config path not initialized")
 	}
 
+	conf := buildConfigFromGlobals()
+
 	// 1. 如果 etcd 可用，先保存全局段到 etcd
 	if remoteStore != nil {
-		conf := buildConfigFromGlobals()
 		rc := extractRemote(conf)
+		expectedRevision := getRemoteRevision()
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		err := remoteStore.Save(ctx, rc)
+		newRevision, err := remoteStore.Save(ctx, rc, expectedRevision)
 		cancel()
 		if err != nil {
+			if errors.Is(err, ErrRemoteConfigConflict) {
+				return fmt.Errorf("保存 etcd 配置失败: %w，请刷新配置后重试", err)
+			}
 			return fmt.Errorf("保存 etcd 配置失败: %w", err)
 		}
+		setRemoteRevision(newRevision)
 	}
 
 	// 2. 保存完整配置到本地 YAML（作为 fallback）
-	conf := buildConfigFromGlobals()
 	if err := saveYAML(ConfigPath, conf); err != nil {
 		return fmt.Errorf("保存本地配置失败: %w", err)
 	}

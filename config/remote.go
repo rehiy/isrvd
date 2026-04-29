@@ -3,14 +3,18 @@ package config
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 )
+
+var ErrRemoteConfigConflict = errors.New("remote config conflict")
 
 // RemoteStore 抽象远程配置存储（etcd / 未来可扩展）
 type RemoteStore interface {
 	Load(ctx context.Context) (*RemoteConfig, int64, error)
-	Save(ctx context.Context, rc *RemoteConfig) error
-	Watch(ctx context.Context, rev int64, onChange func(key string, value []byte)) error
+	Save(ctx context.Context, rc *RemoteConfig, expectedRevision int64) (int64, error)
+	Bootstrap(ctx context.Context, rc *RemoteConfig) (bool, error)
+	Watch(ctx context.Context, rev int64, onChange func(key string, value []byte, rev int64)) error
 	Close() error
 }
 
@@ -140,6 +144,19 @@ func validateRemote(rc *RemoteConfig) error {
 		}
 	}
 	return nil
+}
+
+func isRemoteEmpty(rc *RemoteConfig) bool {
+	if rc == nil {
+		return true
+	}
+	return rc.Agent == nil &&
+		rc.Apisix == nil &&
+		rc.Marketplace == nil &&
+		rc.Links == nil &&
+		rc.Members == nil &&
+		rc.Docker == nil &&
+		rc.Server == nil
 }
 
 // remoteToBytes 将 RemoteConfig 分段序列化为 map[key]bytes
