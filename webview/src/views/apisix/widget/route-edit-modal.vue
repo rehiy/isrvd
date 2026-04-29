@@ -115,6 +115,26 @@ class RouteEditModal extends Vue {
         return `w-10 h-10 rounded-xl flex items-center justify-center ${active ? TONE_ICON_ACTIVE[item.tone] : 'bg-slate-100'}`
     }
 
+    upstreamNodeSummary(upstream: ApisixUpstream) {
+        const nodes = upstream.nodes
+        if (Array.isArray(nodes)) {
+            const labels = nodes.map(node => `${node.host || '-'}:${node.port || '-'}`)
+            return labels.length > 2 ? `${labels.slice(0, 2).join(', ')} 等 ${labels.length} 个节点` : labels.join(', ')
+        }
+        if (nodes && typeof nodes === 'object') {
+            const labels = Object.keys(nodes)
+            return labels.length > 2 ? `${labels.slice(0, 2).join(', ')} 等 ${labels.length} 个节点` : labels.join(', ')
+        }
+        return '无节点'
+    }
+
+    upstreamOptionLabel(upstream: ApisixUpstream) {
+        const name = upstream.name || upstream.id || '未命名上游'
+        const type = upstream.type || 'roundrobin'
+        const desc = upstream.desc ? `描述: ${upstream.desc}` : ''
+        return [name, `类型: ${type}`, `节点: ${this.upstreamNodeSummary(upstream)}`, desc].filter(Boolean).join(' ｜ ')
+    }
+
     // ─── 方法 ───
     resetForm() {
         Object.assign(this.formData, defaultFormData())
@@ -276,7 +296,6 @@ export default toNative(RouteEditModal)
 
         <div v-if="formData.upstream_mode === 'nodes'" class="space-y-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">上游地址</label>
             <div class="grid grid-cols-[2fr_1fr] gap-2 items-center">
               <HostSelect :model-value="formData.upstream_nodes[0]?.host || ''" :containers="containers" placeholder="127.0.0.1 或 容器名" @update:modelValue="updateUpstreamNode(0, 'host', $event)" />
               <PortSelect :model-value="formData.upstream_nodes[0]?.port || ''" :ports="getPortsByHost(formData.upstream_nodes[0]?.host || '')" placeholder="80" @update:modelValue="updateUpstreamNode(0, 'port', $event)" />
@@ -298,10 +317,9 @@ export default toNative(RouteEditModal)
 
         <div v-else-if="formData.upstream_mode === 'upstream_id'" class="space-y-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">选择已有上游</label>
             <select v-model="formData.upstream_id" class="input">
               <option value="">请选择已有上游</option>
-              <option v-for="upstream in upstreams" :key="upstream.id" :value="upstream.id">{{ upstream.name || upstream.id }}（{{ upstream.type || 'roundrobin' }}）</option>
+              <option v-for="upstream in upstreams" :key="upstream.id" :value="upstream.id">{{ upstreamOptionLabel(upstream) }}</option>
             </select>
           </div>
           <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
