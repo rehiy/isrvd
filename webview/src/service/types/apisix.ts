@@ -112,6 +112,20 @@ export type ApisixCreateUpstreamRequest = ApisixUpstream
 
 export type ApisixUpdateUpstreamRequest = ApisixUpstream
 
+export interface ApisixSSL {
+    id?: string
+    snis: string[]
+    cert?: string
+    key?: string
+    status?: number
+    create_time?: number
+    update_time?: number
+}
+
+export type ApisixCreateSSLRequest = ApisixSSL
+
+export type ApisixUpdateSSLRequest = ApisixSSL
+
 export interface ApisixRevokeWhitelistRequest {
     routeId: string
     consumer: string

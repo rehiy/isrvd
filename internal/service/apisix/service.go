@@ -187,6 +187,54 @@ func (s *Service) DeleteUpstream(upstreamID string) error {
 	return s.client.DeleteUpstream(upstreamID)
 }
 
+// ─── SSL 证书管理 ───
+
+// ListSSLs 获取 SSL 证书列表
+func (s *Service) ListSSLs() (any, error) {
+	return s.client.ListSSLs()
+}
+
+// GetSSL 获取单个 SSL 证书详情
+func (s *Service) GetSSL(sslID string) (any, error) {
+	if sslID == "" {
+		return nil, fmt.Errorf("SSL 证书 ID 不能为空")
+	}
+	return s.client.GetSSL(sslID)
+}
+
+// CreateSSL 创建 SSL 证书
+func (s *Service) CreateSSL(req pkgapisix.SSL) (any, error) {
+	if len(req.Snis) == 0 {
+		return nil, fmt.Errorf("SNI 不能为空")
+	}
+	if req.Cert == "" {
+		return nil, fmt.Errorf("证书内容不能为空")
+	}
+	if req.Key == "" {
+		return nil, fmt.Errorf("私钥内容不能为空")
+	}
+	return s.client.CreateSSL(req)
+}
+
+// UpdateSSL 更新 SSL 证书
+func (s *Service) UpdateSSL(sslID string, req pkgapisix.SSL) (any, error) {
+	if sslID == "" {
+		return nil, fmt.Errorf("SSL 证书 ID 不能为空")
+	}
+	if len(req.Snis) == 0 {
+		return nil, fmt.Errorf("SNI 不能为空")
+	}
+	return s.client.UpdateSSL(sslID, req)
+}
+
+// DeleteSSL 删除 SSL 证书
+func (s *Service) DeleteSSL(sslID string) error {
+	if sslID == "" {
+		return fmt.Errorf("SSL 证书 ID 不能为空")
+	}
+	return s.client.DeleteSSL(sslID)
+}
+
 // ─── 辅助资源 ───
 
 // ListPluginConfigs 获取 Plugin Config 列表

@@ -143,6 +143,8 @@ func (app *App) setupRouter() {
 			ar.GET("/plugins", app.apisixListPlugins)
 			ar.GET("/upstreams", app.apisixListUpstreams)
 			ar.GET("/upstream/:id", app.apisixGetUpstream)
+			ar.GET("/ssls", app.apisixListSSLs)
+			ar.GET("/ssl/:id", app.apisixGetSSL)
 			ar.GET("/whitelist", app.apisixGetWhitelist)
 		}
 		// Apisix 读写
@@ -159,6 +161,9 @@ func (app *App) setupRouter() {
 			aw.POST("/upstreams", app.apisixCreateUpstream)
 			aw.PUT("/upstream/:id", app.apisixUpdateUpstream)
 			aw.DELETE("/upstream/:id", app.apisixDeleteUpstream)
+			aw.POST("/ssls", app.apisixCreateSSL)
+			aw.PATCH("/ssl/:id", app.apisixUpdateSSL)
+			aw.DELETE("/ssl/:id", app.apisixDeleteSSL)
 			aw.PUT("/whitelist/revoke", app.apisixRevokeWhitelist)
 		}
 	}

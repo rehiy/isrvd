@@ -51,6 +51,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/apisix/upstreams.vue')
   },
   {
+    path: '/apisix/ssls',
+    name: 'apisix-ssls',
+    component: () => import('@/views/apisix/ssls.vue')
+  },
+  {
     path: '/apisix/consumers',
     name: 'apisix-consumers',
     component: () => import('@/views/apisix/consumers.vue')

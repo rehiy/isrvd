@@ -11,7 +11,8 @@ import type {
     SwarmServiceInfo, SwarmServiceDetail, SwarmTask,
     SwarmCreateServiceRequest,
     ApisixRoute, ApisixConsumer, ApisixCreateConsumerRequest, ApisixUpdateConsumerRequest,
-    ApisixCreateUpstreamRequest, ApisixPluginConfig, ApisixUpstream, ApisixUpdateUpstreamRequest,
+    ApisixCreateSSLRequest, ApisixCreateUpstreamRequest, ApisixPluginConfig, ApisixSSL,
+    ApisixUpstream, ApisixUpdateSSLRequest, ApisixUpdateUpstreamRequest,
     SystemProbeResponse, DockerInfo,
     FilerListResponse, FilerReadResponse,
     AuthLoginResponse, AuthInfoResponse,
@@ -348,6 +349,26 @@ class ApiService {
 
     apisixDeleteUpstream(id: string) {
         return http.delete<void>(`/api/apisix/upstream/${id}`)
+    }
+
+    apisixListSSLs() {
+        return http.get<ApisixSSL[]>('/api/apisix/ssls')
+    }
+
+    apisixGetSSL(id: string) {
+        return http.get<ApisixSSL>(`/api/apisix/ssl/${id}`)
+    }
+
+    apisixCreateSSL(data: ApisixCreateSSLRequest) {
+        return http.post('/api/apisix/ssls', data)
+    }
+
+    apisixUpdateSSL(id: string, data: ApisixUpdateSSLRequest) {
+        return http.patch(`/api/apisix/ssl/${id}`, data)
+    }
+
+    apisixDeleteSSL(id: string) {
+        return http.delete<void>(`/api/apisix/ssl/${id}`)
     }
 
     apisixListPlugins() {

@@ -238,6 +238,14 @@ export default toNative(NavigationBar)
               <span>上游</span>
             </router-link>
             <router-link
+              to="/apisix/ssls"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/ssl') }"
+            >
+              <i class="fas fa-certificate"></i>
+              <span>证书</span>
+            </router-link>
+            <router-link
               to="/apisix/consumers"
               class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/consumer') }"
