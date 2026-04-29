@@ -30,9 +30,9 @@ import PortSelect from './port-select.vue'
 // ─── 模块级静态常量 ───
 
 const UPSTREAM_MODE_CARDS: ApisixRouteUpstreamModeCard[] = [
-    { value: 'nodes', title: '内联上游节点', desc: '为当前路由配置一个后端服务地址', icon: 'fa-server', tone: 'indigo' },
+    { value: 'nodes', title: '内联上游节点', desc: '为路由配置一个后端服务地址', icon: 'fa-server', tone: 'indigo' },
     { value: 'upstream_id', title: '引用已有上游', desc: '复用已经创建好的上游对象', icon: 'fa-diagram-project', tone: 'emerald' },
-    { value: 'none', title: '空上游', desc: '不配置转发目标，仅保存路由规则', icon: 'fa-ban', tone: 'slate' }
+    { value: 'none', title: '空上游', desc: '不配置转发，仅保存路由规则', icon: 'fa-ban', tone: 'slate' }
 ]
 
 const TONE_CARD_ACTIVE: Record<string, string> = {
@@ -105,14 +105,14 @@ class RouteEditModal extends Vue {
 
     // ─── 模式卡片样式 ───
     modeCardClass(item: ApisixRouteUpstreamModeCard) {
-        const base = 'text-left rounded-xl border p-4 transition-colors'
+        const base = 'text-left rounded-xl border p-3 transition-colors'
         const active = this.formData.upstream_mode === item.value
         return `${base} ${active ? TONE_CARD_ACTIVE[item.tone] : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`
     }
 
     modeCardIconClass(item: ApisixRouteUpstreamModeCard) {
         const active = this.formData.upstream_mode === item.value
-        return `w-10 h-10 rounded-xl flex items-center justify-center ${active ? TONE_ICON_ACTIVE[item.tone] : 'bg-slate-100'}`
+        return `w-8 h-8 rounded-xl flex items-center justify-center ${active ? TONE_ICON_ACTIVE[item.tone] : 'bg-slate-100'}`
     }
 
     upstreamNodeSummary(upstream: ApisixUpstream) {
