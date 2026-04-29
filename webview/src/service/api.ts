@@ -324,7 +324,7 @@ class ApiService {
     }
 
     apisixRevokeWhitelist(routeId: string, consumerName: string) {
-        return http.put<void>('/api/apisix/whitelist/revoke', { route_id: routeId, consumer_name: consumerName })
+        return http.post<void>('/api/apisix/whitelist/revoke', { route_id: routeId, consumer_name: consumerName })
     }
 
     // 辅助资源
@@ -381,7 +381,7 @@ class ApiService {
     }
 
     apisixUpdateSSL(id: string, data: ApisixUpdateSSLRequest) {
-        return http.patch(`/api/apisix/ssl/${id}`, data)
+        return http.put(`/api/apisix/ssl/${id}`, data)
     }
 
     apisixDeleteSSL(id: string) {

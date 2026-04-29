@@ -166,9 +166,9 @@ func (app *App) setupRouter() {
 			aw.PUT("/upstream/:id", app.apisixUpdateUpstream)
 			aw.DELETE("/upstream/:id", app.apisixDeleteUpstream)
 			aw.POST("/ssls", app.apisixCreateSSL)
-			aw.PATCH("/ssl/:id", app.apisixUpdateSSL)
+			aw.PUT("/ssl/:id", app.apisixUpdateSSL)
 			aw.DELETE("/ssl/:id", app.apisixDeleteSSL)
-			aw.PUT("/whitelist/revoke", app.apisixRevokeWhitelist)
+			aw.POST("/whitelist/revoke", app.apisixRevokeWhitelist)
 		}
 	}
 
