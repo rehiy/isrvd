@@ -243,7 +243,7 @@ export default toNative(NavigationBar)
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/consumer') }"
             >
               <i class="fas fa-users"></i>
-              <span>用户</span>
+              <span>消费者</span>
             </router-link>
             <router-link
               to="/apisix/whitelist"

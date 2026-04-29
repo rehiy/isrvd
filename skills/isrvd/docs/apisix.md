@@ -183,7 +183,7 @@ GET /api/apisix/whitelist
 
 ```
 PUT /api/apisix/whitelist/revoke
-Body: { "route_id": "路由ID", "consumer_name": "消费者名" }
+Body: { "route_id": "路由ID", "consumer_name": "名称" }
 ```
 
 ---

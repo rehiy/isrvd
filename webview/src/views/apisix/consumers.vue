@@ -42,7 +42,7 @@ class Consumers extends Vue {
             this.consumers = consRes.payload || []
             this.whitelist = wlRes.payload || []
         } catch (e) {
-            this.actions.showNotification('error', '加载用户列表失败')
+            this.actions.showNotification('error', '加载消费者列表失败')
         }
         this.loading = false
     }
@@ -66,8 +66,8 @@ class Consumers extends Vue {
 
     deleteConsumer(consumer: ApisixConsumer) {
         this.actions.showConfirm({
-            title: '删除用户',
-            message: `确定要删除用户 <strong class="text-slate-900">${consumer.username}</strong> 吗？此操作不可恢复。`,
+            title: '删除消费者',
+            message: `确定要删除消费者 <strong class="text-slate-900">${consumer.username}</strong> 吗？此操作不可恢复。`,
             icon: 'fa-trash',
             iconColor: 'red',
             confirmText: '确认删除',
@@ -101,7 +101,7 @@ export default toNative(Consumers)
               <i class="fas fa-users text-white"></i>
             </div>
             <div>
-              <h1 class="text-lg font-semibold text-slate-800">用户管理</h1>
+              <h1 class="text-lg font-semibold text-slate-800">消费者管理</h1>
               <p class="text-xs text-slate-500">管理 APISIX Consumer</p>
             </div>
           </div>
@@ -110,7 +110,7 @@ export default toNative(Consumers)
               <input
                 v-model="searchText"
                 type="text"
-                placeholder="搜索用户..."
+                placeholder="搜索消费者..."
                 class="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent w-48"
               />
               <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -130,7 +130,7 @@ export default toNative(Consumers)
               <i class="fas fa-users text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">用户管理</h1>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">消费者管理</h1>
               <p class="text-xs text-slate-500 truncate">管理 APISIX Consumer</p>
             </div>
           </div>
@@ -150,7 +150,7 @@ export default toNative(Consumers)
           <input
             v-model="searchText"
             type="text"
-            placeholder="搜索用户..."
+            placeholder="搜索消费者..."
             class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
           />
           <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -168,20 +168,20 @@ export default toNative(Consumers)
         <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
           <i class="fas fa-users text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">暂无用户</p>
-        <p class="text-sm text-slate-400">点击「创建」添加 Consumer 用户</p>
+        <p class="text-slate-600 font-medium mb-1">暂无消费者</p>
+        <p class="text-sm text-slate-400">点击「创建」添加 Consumer</p>
       </div>
 
-      <!-- 用户列表 -->
+      <!-- 消费者列表 -->
       <div v-else class="space-y-3">
         <!-- 桌面端表格视图 -->
         <div class="hidden md:block overflow-x-auto">
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">用户名</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">插件</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">关联路由</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">插件配置</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">授权路由</th>
                 <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
                 <th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
               </tr>
@@ -201,13 +201,13 @@ export default toNative(Consumers)
                 </td>
                 <td class="px-4 py-3">
                   <div v-if="Object.keys(consumer.plugins || {}).length > 0" class="flex flex-wrap gap-1">
-                    <span v-for="(_, name) in consumer.plugins" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-violet-50 text-violet-700 rounded text-xs">{{ name }}</span>
+                    <span v-for="(_, name) in consumer.plugins" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">{{ name }}</span>
                   </div>
                   <span v-else class="text-xs text-slate-400">-</span>
                 </td>
                 <td class="px-4 py-3">
                   <div v-if="getConsumerRoutes(consumer.username).length > 0" class="flex flex-wrap gap-1">
-                    <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-violet-50 text-violet-700 rounded text-xs">{{ name }}</span>
+                    <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded text-xs">{{ name }}</span>
                   </div>
                   <span v-else class="text-xs text-slate-400">-</span>
                 </td>
@@ -236,7 +236,7 @@ export default toNative(Consumers)
             :key="consumer.username"
             class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
           >
-            <!-- 顶部：用户信息和图标 -->
+            <!-- 顶部：消费者信息和图标 -->
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-3 min-w-0 flex-1">
                 <div class="w-10 h-10 rounded-lg bg-violet-400 flex items-center justify-center flex-shrink-0">
@@ -260,16 +260,16 @@ export default toNative(Consumers)
             <div class="flex items-start gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">插件</span>
               <div v-if="Object.keys(consumer.plugins || {}).length > 0" class="flex flex-wrap gap-1">
-                <span v-for="(_, name) in consumer.plugins" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-violet-50 text-violet-700 rounded text-xs">{{ name }}</span>
+                <span v-for="(_, name) in consumer.plugins" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">{{ name }}</span>
               </div>
               <span v-else class="text-xs text-slate-400">-</span>
             </div>
             
-            <!-- 关联路由 -->
+            <!-- 授权路由 -->
             <div class="flex items-start gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">路由</span>
               <div v-if="getConsumerRoutes(consumer.username).length > 0" class="flex flex-wrap gap-1">
-                <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-violet-50 text-violet-700 rounded text-xs">{{ name }}</span>
+                <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded text-xs">{{ name }}</span>
               </div>
               <span v-else class="text-xs text-slate-400">-</span>
             </div>
