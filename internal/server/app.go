@@ -15,6 +15,8 @@ import (
 	"isrvd/public"
 )
 
+const apiPrefix = "/api"
+
 // App 应用实例，持有各业务服务
 type App struct {
 	*gin.Engine
@@ -74,8 +76,6 @@ type Route struct {
 	Label   string          // 模块显示名，用于错误提示
 	Perm    string          // 所需权限：空或"r"=只读，"rw"=读写
 }
-
-const apiPrefix = "/api"
 
 // initRoutes 初始化路由表并注册所有路由
 // 同时完成路由注册和权限配置，实现真正的集中式管理
