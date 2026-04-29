@@ -12,5 +12,5 @@ func main() {
 	}
 
 	registry.Init()
-	server.NewApp()
+	server.StartApp()
 }

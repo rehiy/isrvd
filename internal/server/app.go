@@ -31,7 +31,7 @@ type App struct {
 	routePerms  map[string]Route // METHOD+完整路径 → Route 权限索引
 }
 
-func NewApp() *App {
+func StartApp() {
 	app := &App{Engine: httpd.Engine(config.Debug)}
 
 	// 初始化各业务服务
@@ -62,9 +62,9 @@ func NewApp() *App {
 	// 统一注册路由
 	app.initRoutes()
 	httpd.StaticEmbed(public.Efs, "", "")
-	httpd.Server(config.ListenAddr)
 
-	return app
+	// 启动 HTTP 服务
+	httpd.Server(config.ListenAddr)
 }
 
 // Route 定义单个路由的完整信息（同时用于注册和权限验证）
