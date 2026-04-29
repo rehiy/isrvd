@@ -11,8 +11,9 @@ import type {
     SwarmServiceInfo, SwarmServiceDetail, SwarmTask,
     SwarmCreateServiceRequest,
     ApisixRoute, ApisixConsumer, ApisixCreateConsumerRequest, ApisixUpdateConsumerRequest,
+    ApisixCreatePluginConfigRequest,
     ApisixCreateSSLRequest, ApisixCreateUpstreamRequest, ApisixPluginConfig, ApisixSSL,
-    ApisixUpstream, ApisixUpdateSSLRequest, ApisixUpdateUpstreamRequest,
+    ApisixUpstream, ApisixUpdatePluginConfigRequest, ApisixUpdateSSLRequest, ApisixUpdateUpstreamRequest,
     SystemProbeResponse, DockerInfo,
     FilerListResponse, FilerReadResponse,
     AuthLoginResponse, AuthInfoResponse,
@@ -329,6 +330,22 @@ class ApiService {
     // 辅助资源
     apisixListPluginConfigs() {
         return http.get<ApisixPluginConfig[]>('/api/apisix/plugin_configs')
+    }
+
+    apisixGetPluginConfig(id: string) {
+        return http.get<ApisixPluginConfig>(`/api/apisix/plugin_config/${id}`)
+    }
+
+    apisixCreatePluginConfig(data: ApisixCreatePluginConfigRequest) {
+        return http.post('/api/apisix/plugin_configs', data)
+    }
+
+    apisixUpdatePluginConfig(id: string, data: ApisixUpdatePluginConfigRequest) {
+        return http.put(`/api/apisix/plugin_config/${id}`, data)
+    }
+
+    apisixDeletePluginConfig(id: string) {
+        return http.delete<void>(`/api/apisix/plugin_config/${id}`)
     }
 
     apisixListUpstreams() {

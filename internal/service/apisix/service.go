@@ -242,6 +242,41 @@ func (s *Service) ListPluginConfigs() (any, error) {
 	return s.client.ListPluginConfigs()
 }
 
+// GetPluginConfig 获取单个 Plugin Config 详情
+func (s *Service) GetPluginConfig(configID string) (any, error) {
+	if configID == "" {
+		return nil, fmt.Errorf("Plugin Config ID 不能为空")
+	}
+	return s.client.GetPluginConfig(configID)
+}
+
+// CreatePluginConfig 创建 Plugin Config
+func (s *Service) CreatePluginConfig(req pkgapisix.PluginConfig) (any, error) {
+	if len(req.Plugins) == 0 {
+		return nil, fmt.Errorf("插件配置不能为空")
+	}
+	return s.client.CreatePluginConfig(req)
+}
+
+// UpdatePluginConfig 更新 Plugin Config
+func (s *Service) UpdatePluginConfig(configID string, req pkgapisix.PluginConfig) (any, error) {
+	if configID == "" {
+		return nil, fmt.Errorf("Plugin Config ID 不能为空")
+	}
+	if len(req.Plugins) == 0 {
+		return nil, fmt.Errorf("插件配置不能为空")
+	}
+	return s.client.UpdatePluginConfig(configID, req)
+}
+
+// DeletePluginConfig 删除 Plugin Config
+func (s *Service) DeletePluginConfig(configID string) error {
+	if configID == "" {
+		return fmt.Errorf("Plugin Config ID 不能为空")
+	}
+	return s.client.DeletePluginConfig(configID)
+}
+
 // ListPlugins 获取可用插件列表
 func (s *Service) ListPlugins() (any, error) {
 	return s.client.ListPlugins()

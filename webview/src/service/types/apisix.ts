@@ -82,11 +82,22 @@ export interface ApisixUpdateConsumerRequest {
 }
 
 export interface ApisixPluginConfig {
-    id: string
+    id?: string
     desc: string
     plugins?: Record<string, unknown>
     create_time: number
     update_time: number
+}
+
+export interface ApisixCreatePluginConfigRequest {
+    id?: string
+    desc?: string
+    plugins?: Record<string, unknown>
+}
+
+export interface ApisixUpdatePluginConfigRequest {
+    desc?: string
+    plugins?: Record<string, unknown>
 }
 
 export interface ApisixUpstream {

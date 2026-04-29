@@ -164,6 +164,51 @@ func (app *App) apisixListPluginConfigs(c *gin.Context) {
 	helper.RespondSuccess(c, "", result)
 }
 
+func (app *App) apisixGetPluginConfig(c *gin.Context) {
+	result, err := app.apisixSvc.GetPluginConfig(c.Param("id"))
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "", result)
+}
+
+func (app *App) apisixCreatePluginConfig(c *gin.Context) {
+	var req pkgapisix.PluginConfig
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := app.apisixSvc.CreatePluginConfig(req)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Plugin Config created successfully", result)
+}
+
+func (app *App) apisixUpdatePluginConfig(c *gin.Context) {
+	var req pkgapisix.PluginConfig
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := app.apisixSvc.UpdatePluginConfig(c.Param("id"), req)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Plugin Config updated successfully", result)
+}
+
+func (app *App) apisixDeletePluginConfig(c *gin.Context) {
+	if err := app.apisixSvc.DeletePluginConfig(c.Param("id")); err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Plugin Config deleted successfully", nil)
+}
+
 func (app *App) apisixListUpstreams(c *gin.Context) {
 	result, err := app.apisixSvc.ListUpstreams()
 	if err != nil {
