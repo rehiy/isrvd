@@ -42,6 +42,13 @@ if [ -f "$BIN_FILE" ]; then
     rm -f "$BIN_FILE"
 fi
 
+# 删除配置目录
+CONFIG_DIR="/etc/isrvd"
+if [ -d "$CONFIG_DIR" ]; then
+    echo "[info] Removing config directory: $CONFIG_DIR"
+    rm -rf "$CONFIG_DIR"
+fi
+
 # 重新加载 systemd
 echo "[info] Reloading systemd daemon..."
 systemctl daemon-reload
@@ -50,6 +57,4 @@ echo ""
 echo "=========================================="
 echo "  Uninstallation Complete!"
 echo "=========================================="
-echo ""
-echo "  Note: Config files in /etc/isrvd are preserved"
 echo ""
