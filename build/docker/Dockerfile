@@ -1,11 +1,11 @@
 ###############################################
 # 阶段 1: 下载 isrvd 和 etcd
 ###############################################
-FROM alpine:3 AS builder-etcd
+FROM alpine:3 AS builder
 
+ARG TARGETARCH
 ARG ISRVD_VERSION
 ARG ETCD_VERSION=v3.5.29
-ARG TARGETARCH
 
 RUN apk add --no-cache curl tar \
     && curl -fsSL "https://github.com/rehiy/isrvd/releases/download/${ISRVD_VERSION}/isrvd-linux-${TARGETARCH}.tar.gz" \
@@ -23,26 +23,16 @@ FROM apache/apisix:3.16.0-debian
 
 USER root
 
-# 安装 supervisord
+# 安装 runit、openssl 和 busybox
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends supervisor \
+    && apt-get install -y --no-install-recommends runit openssl busybox-static \
     && rm -rf /var/lib/apt/lists/*
 
-# 拷贝 etcd
-COPY --from=builder-etcd /usr/local/bin/etcd /usr/local/bin/etcd
-COPY --from=builder-etcd /usr/local/bin/etcdctl /usr/local/bin/etcdctl
-
-# 拷贝 isrvd
-COPY --from=builder-etcd /usr/local/bin/isrvd /usr/local/bin/isrvd
-
-# 拷贝默认配置模板（entrypoint 启动时自动填充到 /data/conf/）
-COPY build/docker/apisix.yaml /etc/defaults/apisix.yaml
-COPY build/docker/isrvd.yml /etc/defaults/isrvd.yml
-
-# 拷贝 supervisord 配置和启动脚本
-COPY build/docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY build/docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# 拷贝二进制文件和配置
+COPY --from=builder /usr/local/bin/etcd /usr/local/bin/etcdctl /usr/local/bin/isrvd /usr/local/bin/
+COPY --chmod=755 build/docker/entrypoint.sh /entrypoint.sh
+COPY build/docker/apisix.yaml build/docker/isrvd.yml /etc/defaults/
+COPY build/docker/runit /etc/sv
 
 # 暴露端口
 # 8080: isrvd Web UI
