@@ -20,7 +20,7 @@ export function create(el: HTMLElement, token: string, shell = 'bash'): void {
     window.addEventListener('resize', resizeHandler)
 
     const baseURL =  window.__BASE_URL__ || ''
-    socket = new WebSocket(`${baseURL}/ws/shell?token=${token}&shell=${encodeURIComponent(shell)}`)
+    socket = new WebSocket(`${baseURL}/api/ws/shell?token=${token}&shell=${encodeURIComponent(shell)}`)
 
     term.onData(data => socket?.readyState === WebSocket.OPEN && socket.send(data))
     socket.onopen = () => term && term.write('[连接中...]\r\n')

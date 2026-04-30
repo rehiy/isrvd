@@ -9,15 +9,15 @@ import type { FilerFileInfo } from '@/service/types'
 
 import { downloadFile, formatFileSize, formatTime, getFileIcon, isEditableFile } from '@/helper/utils'
 
-import ChmodModal from '@/views/filer/widget/chmod-modal.vue'
-import CreateModal from '@/views/filer/widget/create-modal.vue'
-import DeleteModal from '@/views/filer/widget/delete-modal.vue'
-import MkdirModal from '@/views/filer/widget/mkdir-modal.vue'
-import ModifyModal from '@/views/filer/widget/modify-modal.vue'
-import RenameModal from '@/views/filer/widget/rename-modal.vue'
-import UnzipModal from '@/views/filer/widget/unzip-modal.vue'
-import UploadModal from '@/views/filer/widget/upload-modal.vue'
-import ZipModal from '@/views/filer/widget/zip-modal.vue'
+import ChmodModal from './widget/chmod-modal.vue'
+import CreateModal from './widget/create-modal.vue'
+import DeleteModal from './widget/delete-modal.vue'
+import MkdirModal from './widget/mkdir-modal.vue'
+import ModifyModal from './widget/modify-modal.vue'
+import RenameModal from './widget/rename-modal.vue'
+import UnzipModal from './widget/unzip-modal.vue'
+import UploadModal from './widget/upload-modal.vue'
+import ZipModal from './widget/zip-modal.vue'
 
 @Component({
     components: {

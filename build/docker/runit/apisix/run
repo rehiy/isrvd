@@ -1,0 +1,34 @@
+#!/bin/bash
+exec 2>&1
+
+# 等待 etcd 就绪
+echo "[apisix] Waiting for etcd..."
+for i in $(seq 1 30); do
+    if etcdctl endpoint health --endpoints=http://127.0.0.1:2379 &>/dev/null; then
+        echo "[apisix] etcd is ready"
+        break
+    fi
+    if [ "$i" -eq 30 ]; then
+        echo "[apisix] etcd not ready after 30s, exiting"
+        exit 1
+    fi
+    sleep 1
+done
+
+# 初始化 APISIX（需要 etcd 就绪）
+cd /usr/local/apisix
+/usr/local/openresty/luajit/bin/luajit apisix/cli/apisix.lua init
+/usr/local/openresty/luajit/bin/luajit apisix/cli/apisix.lua init_etcd
+
+# 确保 SSL 证书目录存在（APISIX 需要占位证书）
+mkdir -p /usr/local/apisix/cert
+if [ ! -f /usr/local/apisix/cert/ssl_PLACE_HOLDER.crt ]; then
+    openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 \
+        -keyout /usr/local/apisix/cert/ssl_PLACE_HOLDER.key \
+        -out /usr/local/apisix/cert/ssl_PLACE_HOLDER.crt \
+        -subj "/CN=placeholder" 2>/dev/null
+    echo "[apisix] Generated placeholder SSL certificate"
+fi
+
+echo "[apisix] Starting OpenResty..."
+exec /usr/local/openresty/bin/openresty -p /usr/local/apisix -g "daemon off;"

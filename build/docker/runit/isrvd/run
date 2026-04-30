@@ -1,0 +1,22 @@
+#!/bin/bash
+exec 2>&1
+
+# 等待 etcd 就绪
+echo "[isrvd] Waiting for etcd..."
+for i in $(seq 1 30); do
+    if etcdctl endpoint health --endpoints=http://127.0.0.1:2379 &>/dev/null; then
+        echo "[isrvd] etcd is ready"
+        break
+    fi
+    if [ "$i" -eq 30 ]; then
+        echo "[isrvd] etcd not ready after 30s, exiting"
+        exit 1
+    fi
+    sleep 1
+done
+
+echo "[isrvd] Starting isrvd..."
+cd /data
+
+export CONFIG_PATH="/data/conf/isrvd.yml"
+exec /usr/local/bin/isrvd

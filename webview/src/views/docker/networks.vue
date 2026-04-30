@@ -7,7 +7,7 @@ import type { AppActions } from '@/store/state'
 import api from '@/service/api'
 import type { DockerNetworkInfo } from '@/service/types'
 
-import NetworkCreateModal from '@/views/docker/widget/network-create-modal.vue'
+import NetworkCreateModal from './widget/network-create-modal.vue'
 
 @Component({
     expose: ['load', 'show'],

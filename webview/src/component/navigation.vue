@@ -230,12 +230,20 @@ export default toNative(NavigationBar)
               <span>路由</span>
             </router-link>
             <router-link
+              to="/apisix/upstreams"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/upstream') }"
+            >
+              <i class="fas fa-diagram-project"></i>
+              <span>上游</span>
+            </router-link>
+            <router-link
               to="/apisix/consumers"
               class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/consumer') }"
             >
               <i class="fas fa-users"></i>
-              <span>用户</span>
+              <span>消费者</span>
             </router-link>
             <router-link
               to="/apisix/whitelist"
@@ -244,6 +252,22 @@ export default toNative(NavigationBar)
             >
               <i class="fas fa-shield-halved"></i>
               <span>白名单</span>
+            </router-link>
+            <router-link
+              to="/apisix/ssls"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/ssl') }"
+            >
+              <i class="fas fa-certificate"></i>
+              <span>SSL 证书</span>
+            </router-link>
+            <router-link
+              to="/apisix/plugin-configs"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/plugin-config') }"
+            >
+              <i class="fas fa-puzzle-piece"></i>
+              <span>插件配置</span>
             </router-link>
           </div>
         </template>

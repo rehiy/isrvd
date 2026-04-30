@@ -65,8 +65,6 @@ class App extends Vue {
                 this.actions.setPermissions({
                     permissions: member.permissions || {}
                 })
-                // 权限加载完成后重新触发路由守卫（处理刷新页面场景）
-                router.replace(router.currentRoute.value.fullPath).catch(() => {})
             }
         } catch (e) {
             console.warn('Failed to load user permissions:', e)

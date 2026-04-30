@@ -3,7 +3,8 @@ package config
 import (
 	"context"
 	"encoding/json"
-	"os"
+	"fmt"
+	"path/filepath"
 	"sync/atomic"
 	"time"
 
@@ -17,11 +18,11 @@ var (
 	Debug = false
 	// 监听地址
 	ListenAddr = ":8080"
-	// JWT 密鑰
-	JWTSecret = "default-secret-key"
+	// JWT 密钥
+	JWTSecret = "jwt-secret-key"
 	// 内网代理用户名 Header 名（为空则不启用）
 	ProxyHeaderName = ""
-	// 基础目录
+	// 根目录
 	RootDirectory = "."
 	// Agent LLM 配置
 	Agent = &AgentConfig{}
@@ -39,58 +40,49 @@ var (
 	ConfigPath = ""
 	// etcd 连接配置（从 YAML 读取保留）
 	Etcd *EtcdConfig
-	// 版本信息，编译时通过脚本注入
+	// 版本信息（编译时通过脚本注入）
 	Version = "v0.0.0"
 )
 
 var remoteStore RemoteStore
 var remoteRevision atomic.Int64
 
-// 加载配置文件
+// Load 从配置提供者加载配置，并在配置了 etcd 时合并远端全局配置
 func Load() error {
-	file := os.Getenv("CONFIG_PATH")
-	if file == "" {
-		file = "config.yml"
+	if provider == nil {
+		return fmt.Errorf("config provider not initialized")
 	}
-	ConfigPath = file
+
+	if y, ok := provider.(*YamlProvider); ok {
+		ConfigPath = y.file
+	}
 	remoteRevisionReset()
 
-	// 1. 读取本地 YAML
-	conf, err := loadYAML(file)
+	conf, err := provider.Load()
 	if err != nil {
 		return err
 	}
 
-	// 填充默认值
-	if conf.Server == nil {
-		conf.Server = &Server{}
-	}
-	if conf.Agent == nil {
-		conf.Agent = &AgentConfig{}
-	}
-	if conf.Apisix == nil {
-		conf.Apisix = &ApisixConfig{}
-	}
-	if conf.Docker == nil {
-		conf.Docker = &DockerConfig{}
-	}
-	if conf.Marketplace == nil {
-		conf.Marketplace = &MarketplaceConfig{}
-	}
+	ensureDefaults(conf)
 
-	// 2. 先迁移本地明文密码，避免首次 bootstrap 把明文写进 etcd
 	migrated, err := migratePlaintextPasswordsInConfig(conf)
 	if err != nil {
 		logman.Warn("本地密码迁移失败", "error", err)
 	} else if migrated {
-		if err := saveYAML(file, conf); err != nil {
+		if ConfigPath != "" {
+			if err := saveYAML(ConfigPath, conf); err != nil {
+				logman.Warn("本地密码迁移保存失败", "error", err)
+			} else {
+				logman.Info("本地配置文件已自动更新（密码迁移）")
+			}
+		} else if err := provider.Save(conf); err != nil {
 			logman.Warn("本地密码迁移保存失败", "error", err)
 		} else {
 			logman.Info("本地配置文件已自动更新（密码迁移）")
 		}
 	}
 
-	// 3. 如果配置了 etcd，初始化远程存储并预加载/首次初始化
+	remoteStore = nil
 	if conf.Etcd != nil && len(conf.Etcd.Endpoints) > 0 {
 		store, err := newEtcdStore(conf.Etcd)
 		if err != nil {
@@ -140,28 +132,66 @@ func Load() error {
 		}
 	}
 
-	// 4. 处理路径
 	resolvePaths(conf)
+	applyConfig(conf)
 
-	// 5. 更新全局变量
-	Debug = conf.Server.Debug
-	ListenAddr = conf.Server.ListenAddr
-	JWTSecret = conf.Server.JWTSecret
-	ProxyHeaderName = conf.Server.ProxyHeaderName
-	RootDirectory = conf.Server.RootDirectory
+	if err := migratePlaintextPasswords(); err != nil {
+		logman.Warn("密码迁移失败", "error", err)
+	}
+
+	return nil
+}
+
+func ensureDefaults(conf *Config) {
+	if conf == nil {
+		return
+	}
+	if conf.Server == nil {
+		conf.Server = &Server{}
+	}
+	if conf.Agent == nil {
+		conf.Agent = &AgentConfig{}
+	}
+	if conf.Apisix == nil {
+		conf.Apisix = &ApisixConfig{}
+	}
+	if conf.Docker == nil {
+		conf.Docker = &DockerConfig{}
+	}
+	if conf.Marketplace == nil {
+		conf.Marketplace = &MarketplaceConfig{}
+	}
+}
+
+// applyConfig 应用配置到全局变量
+func applyConfig(conf *Config) {
+	if conf.Server != nil {
+		Debug = conf.Server.Debug
+		ListenAddr = conf.Server.ListenAddr
+		JWTSecret = conf.Server.JWTSecret
+		ProxyHeaderName = conf.Server.ProxyHeaderName
+		RootDirectory = conf.Server.RootDirectory
+	}
 
 	if conf.Agent != nil {
 		Agent = conf.Agent
 	}
+
 	if conf.Apisix != nil {
 		Apisix = conf.Apisix
 	}
+
 	if conf.Docker != nil {
 		Docker = conf.Docker
+		if Docker.ContainerRoot != "" && !filepath.IsAbs(Docker.ContainerRoot) {
+			Docker.ContainerRoot = filepath.Join(RootDirectory, Docker.ContainerRoot)
+		}
 	}
+
 	if conf.Marketplace != nil {
 		Marketplace = conf.Marketplace
 	}
+
 	if conf.Links != nil {
 		Links = conf.Links
 	}
@@ -172,8 +202,6 @@ func Load() error {
 	}
 
 	Etcd = conf.Etcd
-
-	return nil
 }
 
 func startWatch(rev int64) {
@@ -185,7 +213,6 @@ func startWatch(rev int64) {
 		if eventRev > 0 {
 			setRemoteRevision(eventRev)
 		}
-		// DELETE event: reset to empty
 		if value == nil && key != "_compacted" && key != "_canceled" {
 			switch key {
 			case "agent":

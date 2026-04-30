@@ -1,0 +1,3 @@
+#!/bin/bash
+# runit finish script for etcd
+# 当服务异常退出时，runit 会自动重启（默认间隔 1 秒）

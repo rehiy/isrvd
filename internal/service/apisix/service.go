@@ -133,6 +133,108 @@ func (s *Service) RevokeWhitelist(routeID, consumerName string) error {
 	return s.client.RemoveConsumerFromRouteWhitelist(routeID, consumerName)
 }
 
+// ─── Upstream 管理 ───
+
+// ListUpstreams 获取 Upstream 列表
+func (s *Service) ListUpstreams() (any, error) {
+	return s.client.ListUpstreams()
+}
+
+// GetUpstream 获取单条 Upstream 详情
+func (s *Service) GetUpstream(upstreamID string) (any, error) {
+	if upstreamID == "" {
+		return nil, fmt.Errorf("Upstream ID 不能为空")
+	}
+	return s.client.GetUpstream(upstreamID)
+}
+
+// CreateUpstream 创建 Upstream
+func (s *Service) CreateUpstream(req pkgapisix.Upstream) (any, error) {
+	if req.Name == "" {
+		return nil, fmt.Errorf("Upstream 名称不能为空")
+	}
+	if req.Type == "" {
+		return nil, fmt.Errorf("Upstream 类型不能为空")
+	}
+	if !pkgapisix.HasUpstreamNodes(req.Nodes) {
+		return nil, fmt.Errorf("Upstream 节点不能为空")
+	}
+	return s.client.CreateUpstream(req)
+}
+
+// UpdateUpstream 更新 Upstream
+func (s *Service) UpdateUpstream(upstreamID string, req pkgapisix.Upstream) (any, error) {
+	if upstreamID == "" {
+		return nil, fmt.Errorf("Upstream ID 不能为空")
+	}
+	if req.Name == "" {
+		return nil, fmt.Errorf("Upstream 名称不能为空")
+	}
+	if req.Type == "" {
+		return nil, fmt.Errorf("Upstream 类型不能为空")
+	}
+	if !pkgapisix.HasUpstreamNodes(req.Nodes) {
+		return nil, fmt.Errorf("Upstream 节点不能为空")
+	}
+	return s.client.UpdateUpstream(upstreamID, req)
+}
+
+// DeleteUpstream 删除 Upstream
+func (s *Service) DeleteUpstream(upstreamID string) error {
+	if upstreamID == "" {
+		return fmt.Errorf("Upstream ID 不能为空")
+	}
+	return s.client.DeleteUpstream(upstreamID)
+}
+
+// ─── SSL 证书管理 ───
+
+// ListSSLs 获取 SSL 证书列表
+func (s *Service) ListSSLs() (any, error) {
+	return s.client.ListSSLs()
+}
+
+// GetSSL 获取单个 SSL 证书详情
+func (s *Service) GetSSL(sslID string) (any, error) {
+	if sslID == "" {
+		return nil, fmt.Errorf("SSL 证书 ID 不能为空")
+	}
+	return s.client.GetSSL(sslID)
+}
+
+// CreateSSL 创建 SSL 证书
+func (s *Service) CreateSSL(req pkgapisix.SSL) (any, error) {
+	if len(req.Snis) == 0 {
+		return nil, fmt.Errorf("SNI 不能为空")
+	}
+	if req.Cert == "" {
+		return nil, fmt.Errorf("证书内容不能为空")
+	}
+	if req.Key == "" {
+		return nil, fmt.Errorf("私钥内容不能为空")
+	}
+	return s.client.CreateSSL(req)
+}
+
+// UpdateSSL 更新 SSL 证书
+func (s *Service) UpdateSSL(sslID string, req pkgapisix.SSL) (any, error) {
+	if sslID == "" {
+		return nil, fmt.Errorf("SSL 证书 ID 不能为空")
+	}
+	if len(req.Snis) == 0 {
+		return nil, fmt.Errorf("SNI 不能为空")
+	}
+	return s.client.UpdateSSL(sslID, req)
+}
+
+// DeleteSSL 删除 SSL 证书
+func (s *Service) DeleteSSL(sslID string) error {
+	if sslID == "" {
+		return fmt.Errorf("SSL 证书 ID 不能为空")
+	}
+	return s.client.DeleteSSL(sslID)
+}
+
 // ─── 辅助资源 ───
 
 // ListPluginConfigs 获取 Plugin Config 列表
@@ -140,9 +242,39 @@ func (s *Service) ListPluginConfigs() (any, error) {
 	return s.client.ListPluginConfigs()
 }
 
-// ListUpstreams 获取 Upstream 列表
-func (s *Service) ListUpstreams() (any, error) {
-	return s.client.ListUpstreams()
+// GetPluginConfig 获取单个 Plugin Config 详情
+func (s *Service) GetPluginConfig(configID string) (any, error) {
+	if configID == "" {
+		return nil, fmt.Errorf("Plugin Config ID 不能为空")
+	}
+	return s.client.GetPluginConfig(configID)
+}
+
+// CreatePluginConfig 创建 Plugin Config
+func (s *Service) CreatePluginConfig(req pkgapisix.PluginConfig) (any, error) {
+	if len(req.Plugins) == 0 {
+		return nil, fmt.Errorf("插件配置不能为空")
+	}
+	return s.client.CreatePluginConfig(req)
+}
+
+// UpdatePluginConfig 更新 Plugin Config
+func (s *Service) UpdatePluginConfig(configID string, req pkgapisix.PluginConfig) (any, error) {
+	if configID == "" {
+		return nil, fmt.Errorf("Plugin Config ID 不能为空")
+	}
+	if len(req.Plugins) == 0 {
+		return nil, fmt.Errorf("插件配置不能为空")
+	}
+	return s.client.UpdatePluginConfig(configID, req)
+}
+
+// DeletePluginConfig 删除 Plugin Config
+func (s *Service) DeletePluginConfig(configID string) error {
+	if configID == "" {
+		return fmt.Errorf("Plugin Config ID 不能为空")
+	}
+	return s.client.DeletePluginConfig(configID)
 }
 
 // ListPlugins 获取可用插件列表
