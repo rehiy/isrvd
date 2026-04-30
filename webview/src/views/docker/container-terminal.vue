@@ -8,7 +8,7 @@ import type { DockerContainerInfo } from '@/service/types'
 
 import * as ContainerExec from '@/helper/container-exec'
 
-import ContainerNav from '@/views/docker/widget/container-nav.vue'
+import ContainerNav from './widget/container-nav.vue'
 
 @Component({
     components: { ContainerNav }

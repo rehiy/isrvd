@@ -17,6 +17,7 @@ export interface ApisixUpstreamConfig {
     nodes?: ApisixUpstreamNode[] | Record<string, number>
     hash_on?: ApisixUpstreamHashOn
     key?: string
+    timeout?: ApisixRouteTimeout
     [key: string]: unknown
 }
 
@@ -81,21 +82,60 @@ export interface ApisixUpdateConsumerRequest {
 }
 
 export interface ApisixPluginConfig {
-    id: string
+    id?: string
     desc: string
     plugins?: Record<string, unknown>
     create_time: number
     update_time: number
 }
 
-export interface ApisixUpstream {
-    id: string
-    name: string
-    desc: string
-    type: string
-    create_time: number
-    update_time: number
+export interface ApisixCreatePluginConfigRequest {
+    id?: string
+    desc?: string
+    plugins?: Record<string, unknown>
 }
+
+export interface ApisixUpdatePluginConfigRequest {
+    desc?: string
+    plugins?: Record<string, unknown>
+}
+
+export interface ApisixUpstream {
+    id?: string
+    name: string
+    desc?: string
+    type: ApisixUpstreamType | string
+    nodes?: ApisixUpstreamNode[] | Record<string, number>
+    hash_on?: ApisixUpstreamHashOn
+    key?: string
+    scheme?: string
+    pass_host?: string
+    upstream_host?: string
+    retries?: number
+    retry_timeout?: number
+    timeout?: ApisixRouteTimeout
+    create_time?: number
+    update_time?: number
+    [key: string]: unknown
+}
+
+export type ApisixCreateUpstreamRequest = ApisixUpstream
+
+export type ApisixUpdateUpstreamRequest = ApisixUpstream
+
+export interface ApisixSSL {
+    id?: string
+    snis: string[]
+    cert?: string
+    key?: string
+    status?: number
+    create_time?: number
+    update_time?: number
+}
+
+export type ApisixCreateSSLRequest = ApisixSSL
+
+export type ApisixUpdateSSLRequest = ApisixSSL
 
 export interface ApisixRevokeWhitelistRequest {
     routeId: string

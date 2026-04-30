@@ -4,9 +4,9 @@ import { Component, Inject, Ref, Vue, toNative } from 'vue-facing-decorator'
 import { APP_ACTIONS_KEY } from '@/store/state'
 import type { AppActions } from '@/store/state'
 
-import CreateModal from '@/views/filer/widget/create-modal.vue'
-import MkdirModal from '@/views/filer/widget/mkdir-modal.vue'
-import UploadModal from '@/views/filer/widget/upload-modal.vue'
+import CreateModal from './widget/create-modal.vue'
+import MkdirModal from './widget/mkdir-modal.vue'
+import UploadModal from './widget/upload-modal.vue'
 
 @Component({
     components: { CreateModal, MkdirModal, UploadModal }

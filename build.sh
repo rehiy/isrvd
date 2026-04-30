@@ -22,7 +22,7 @@ fi
 # 替换版本号
 ###########################################
 
-sed -i "s/Version = \".*\"/Version = \"$last_tag\"/" config/load.go
+sed -i "s/Version = \".*\"/Version = \"$last_tag\"/" config/config.go
 
 ###########################################
 # Go 编译环境
@@ -63,14 +63,15 @@ build linux arm64
 ###########################################
 
 cp config.yml dist/
+cp -r build/systemctl dist/
 
 cd dist/
 for app in isrvd-*; do
     archive="${app}.tar.gz"
     echo "==> packing $archive"
-    tar czf "$archive" "$app" config.yml
+    tar czf "$archive" "$app" config.yml systemctl/
     rm -f "$app"
 done
 
-rm -f config.yml
+rm -rf config.yml systemctl/
 cd ../

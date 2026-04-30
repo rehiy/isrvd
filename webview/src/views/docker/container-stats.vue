@@ -12,7 +12,7 @@ import type { DockerContainerInfo, DockerContainerStatsResponse } from '@/servic
 
 import { formatFileSize, hexToRgba, POLL_INTERVAL } from '@/helper/utils'
 
-import ContainerNav from '@/views/docker/widget/container-nav.vue'
+import ContainerNav from './widget/container-nav.vue'
 
 Chart.register(...registerables)
 

@@ -3,7 +3,6 @@ import type {
     ApisixRouteUpstreamFormNode,
     ApisixRouteUpstreamMode,
     ApisixUpstreamConfig,
-    ApisixUpstreamHashOn,
     ApisixUpstreamType,
     ApisixUpstreamNode
 } from '@/service/types'
@@ -117,11 +116,8 @@ interface RouteFormData {
     uris: string
     hosts: string
     upstream_mode: ApisixRouteUpstreamMode
-    upstream_type?: ApisixUpstreamType
     upstream_id?: string
     upstream_nodes: ApisixRouteUpstreamFormNode[]
-    upstream_hash_on?: ApisixUpstreamHashOn
-    upstream_key?: string
     timeout_connect?: string | number
     timeout_send?: string | number
     timeout_read?: string | number
@@ -130,26 +126,28 @@ interface RouteFormData {
 const buildInlineUpstream = (
     nodes: ApisixRouteUpstreamFormNode[],
     baseUpstream?: ApisixUpstreamConfig | null,
-    hashOn?: ApisixUpstreamHashOn,
-    key?: string
+    timeout?: { connect?: string | number; send?: string | number; read?: string | number }
 ): ApisixUpstreamConfig | undefined => {
-    const normalizedNodes: { host: string; port: number; weight: number }[] = []
-    for (const node of nodes) {
-        const host = node.host.trim()
-        const port = String(node.port).trim()
-        if (host && port) normalizedNodes.push({ host, port: Number(port), weight: Number(node.weight) >= 0 ? Number(node.weight) : 1 })
+    const node = nodes[0]
+    if (!node) return undefined
+
+    const host = node.host.trim()
+    const port = String(node.port).trim()
+    if (!host || !port) return undefined
+
+    const connect = Number(timeout?.connect) || 0
+    const send = Number(timeout?.send) || 0
+    const read = Number(timeout?.read) || 0
+    const result: ApisixUpstreamConfig = {
+        ...(baseUpstream || {}),
+        type: DEFAULT_UPSTREAM_TYPE,
+        nodes: [{ host, port: Number(port), weight: 1 }]
     }
-    if (!normalizedNodes.length) return undefined
 
-    const type = String(baseUpstream?.type || 'roundrobin')
-    const result: ApisixUpstreamConfig = { ...(baseUpstream || {}), type, nodes: normalizedNodes }
-
-    if (type === 'chash') {
-        result.hash_on = hashOn || 'vars'
-        result.key = key || 'remote_addr'
+    if (connect > 0 || send > 0 || read > 0) {
+        result.timeout = { connect: connect || undefined, send: send || undefined, read: read || undefined }
     } else {
-        delete result.hash_on
-        delete result.key
+        delete result.timeout
     }
 
     return result
@@ -177,23 +175,12 @@ export const buildRoutePayload = (formData: RouteFormData, baseUpstream?: Apisix
     }
 
     if (formData.upstream_mode === 'nodes') {
-        const inlineUpstream = buildInlineUpstream(
-            formData.upstream_nodes,
-            {
-                ...(baseUpstream || {}),
-                type: normalizeUpstreamType(formData.upstream_type || baseUpstream?.type)
-            },
-            formData.upstream_hash_on,
-            formData.upstream_key
-        )
+        const inlineUpstream = buildInlineUpstream(formData.upstream_nodes, baseUpstream, {
+            connect: formData.timeout_connect,
+            send: formData.timeout_send,
+            read: formData.timeout_read
+        })
         if (inlineUpstream) payload.upstream = inlineUpstream
-    }
-
-    const connect = Number(formData.timeout_connect) || 0
-    const send = Number(formData.timeout_send) || 0
-    const read = Number(formData.timeout_read) || 0
-    if (connect > 0 || send > 0 || read > 0) {
-        payload.timeout = { connect: connect || undefined, send: send || undefined, read: read || undefined }
     }
 
     return payload

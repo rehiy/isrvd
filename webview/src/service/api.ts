@@ -11,7 +11,9 @@ import type {
     SwarmServiceInfo, SwarmServiceDetail, SwarmTask,
     SwarmCreateServiceRequest,
     ApisixRoute, ApisixConsumer, ApisixCreateConsumerRequest, ApisixUpdateConsumerRequest,
-    ApisixPluginConfig, ApisixUpstream,
+    ApisixCreatePluginConfigRequest,
+    ApisixCreateSSLRequest, ApisixCreateUpstreamRequest, ApisixPluginConfig, ApisixSSL,
+    ApisixUpstream, ApisixUpdatePluginConfigRequest, ApisixUpdateSSLRequest, ApisixUpdateUpstreamRequest,
     SystemProbeResponse, DockerInfo,
     FilerListResponse, FilerReadResponse,
     AuthLoginResponse, AuthInfoResponse,
@@ -322,7 +324,7 @@ class ApiService {
     }
 
     apisixRevokeWhitelist(routeId: string, consumerName: string) {
-        return http.put<void>('/api/apisix/whitelist/revoke', { route_id: routeId, consumer_name: consumerName })
+        return http.post<void>('/api/apisix/whitelist/revoke', { route_id: routeId, consumer_name: consumerName })
     }
 
     // 辅助资源
@@ -330,8 +332,60 @@ class ApiService {
         return http.get<ApisixPluginConfig[]>('/api/apisix/plugin_configs')
     }
 
+    apisixGetPluginConfig(id: string) {
+        return http.get<ApisixPluginConfig>(`/api/apisix/plugin_config/${id}`)
+    }
+
+    apisixCreatePluginConfig(data: ApisixCreatePluginConfigRequest) {
+        return http.post('/api/apisix/plugin_configs', data)
+    }
+
+    apisixUpdatePluginConfig(id: string, data: ApisixUpdatePluginConfigRequest) {
+        return http.put(`/api/apisix/plugin_config/${id}`, data)
+    }
+
+    apisixDeletePluginConfig(id: string) {
+        return http.delete<void>(`/api/apisix/plugin_config/${id}`)
+    }
+
     apisixListUpstreams() {
         return http.get<ApisixUpstream[]>('/api/apisix/upstreams')
+    }
+
+    apisixGetUpstream(id: string) {
+        return http.get<ApisixUpstream>(`/api/apisix/upstream/${id}`)
+    }
+
+    apisixCreateUpstream(data: ApisixCreateUpstreamRequest) {
+        return http.post('/api/apisix/upstreams', data)
+    }
+
+    apisixUpdateUpstream(id: string, data: ApisixUpdateUpstreamRequest) {
+        return http.put(`/api/apisix/upstream/${id}`, data)
+    }
+
+    apisixDeleteUpstream(id: string) {
+        return http.delete<void>(`/api/apisix/upstream/${id}`)
+    }
+
+    apisixListSSLs() {
+        return http.get<ApisixSSL[]>('/api/apisix/ssls')
+    }
+
+    apisixGetSSL(id: string) {
+        return http.get<ApisixSSL>(`/api/apisix/ssl/${id}`)
+    }
+
+    apisixCreateSSL(data: ApisixCreateSSLRequest) {
+        return http.post('/api/apisix/ssls', data)
+    }
+
+    apisixUpdateSSL(id: string, data: ApisixUpdateSSLRequest) {
+        return http.put(`/api/apisix/ssl/${id}`, data)
+    }
+
+    apisixDeleteSSL(id: string) {
+        return http.delete<void>(`/api/apisix/ssl/${id}`)
     }
 
     apisixListPlugins() {

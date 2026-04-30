@@ -164,6 +164,51 @@ func (app *App) apisixListPluginConfigs(c *gin.Context) {
 	helper.RespondSuccess(c, "", result)
 }
 
+func (app *App) apisixGetPluginConfig(c *gin.Context) {
+	result, err := app.apisixSvc.GetPluginConfig(c.Param("id"))
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "", result)
+}
+
+func (app *App) apisixCreatePluginConfig(c *gin.Context) {
+	var req pkgapisix.PluginConfig
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := app.apisixSvc.CreatePluginConfig(req)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Plugin Config created successfully", result)
+}
+
+func (app *App) apisixUpdatePluginConfig(c *gin.Context) {
+	var req pkgapisix.PluginConfig
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := app.apisixSvc.UpdatePluginConfig(c.Param("id"), req)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Plugin Config updated successfully", result)
+}
+
+func (app *App) apisixDeletePluginConfig(c *gin.Context) {
+	if err := app.apisixSvc.DeletePluginConfig(c.Param("id")); err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Plugin Config deleted successfully", nil)
+}
+
 func (app *App) apisixListUpstreams(c *gin.Context) {
 	result, err := app.apisixSvc.ListUpstreams()
 	if err != nil {
@@ -171,6 +216,105 @@ func (app *App) apisixListUpstreams(c *gin.Context) {
 		return
 	}
 	helper.RespondSuccess(c, "", result)
+}
+
+func (app *App) apisixGetUpstream(c *gin.Context) {
+	result, err := app.apisixSvc.GetUpstream(c.Param("id"))
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "", result)
+}
+
+func (app *App) apisixCreateUpstream(c *gin.Context) {
+	var req pkgapisix.Upstream
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := app.apisixSvc.CreateUpstream(req)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Upstream created successfully", result)
+}
+
+func (app *App) apisixUpdateUpstream(c *gin.Context) {
+	var req pkgapisix.Upstream
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := app.apisixSvc.UpdateUpstream(c.Param("id"), req)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Upstream updated successfully", result)
+}
+
+func (app *App) apisixDeleteUpstream(c *gin.Context) {
+	if err := app.apisixSvc.DeleteUpstream(c.Param("id")); err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "Upstream deleted successfully", nil)
+}
+
+func (app *App) apisixListSSLs(c *gin.Context) {
+	result, err := app.apisixSvc.ListSSLs()
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "", result)
+}
+
+func (app *App) apisixGetSSL(c *gin.Context) {
+	result, err := app.apisixSvc.GetSSL(c.Param("id"))
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "", result)
+}
+
+func (app *App) apisixCreateSSL(c *gin.Context) {
+	var req pkgapisix.SSL
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := app.apisixSvc.CreateSSL(req)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "SSL created successfully", result)
+}
+
+func (app *App) apisixUpdateSSL(c *gin.Context) {
+	var req pkgapisix.SSL
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.RespondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := app.apisixSvc.UpdateSSL(c.Param("id"), req)
+	if err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "SSL updated successfully", result)
+}
+
+func (app *App) apisixDeleteSSL(c *gin.Context) {
+	if err := app.apisixSvc.DeleteSSL(c.Param("id")); err != nil {
+		helper.RespondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.RespondSuccess(c, "SSL deleted successfully", nil)
 }
 
 func (app *App) apisixListPlugins(c *gin.Context) {

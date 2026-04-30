@@ -1,0 +1,22 @@
+#!/bin/bash
+exec 2>&1
+
+# 检测 etcd 数据目录判断集群状态
+if [ -d "/data/etcd/member" ]; then
+    ETCD_CLUSTER_STATE="existing"
+else
+    ETCD_CLUSTER_STATE="new"
+fi
+
+echo "[etcd] Starting with cluster state: $ETCD_CLUSTER_STATE"
+
+exec /usr/local/bin/etcd \
+    --name=apisix-etcd \
+    --data-dir=/data/etcd \
+    --listen-client-urls=http://0.0.0.0:2379 \
+    --advertise-client-urls=http://0.0.0.0:2379 \
+    --listen-peer-urls=http://0.0.0.0:2380 \
+    --initial-advertise-peer-urls=http://0.0.0.0:2380 \
+    --initial-cluster=apisix-etcd=http://0.0.0.0:2380 \
+    --initial-cluster-token=apisix-etcd-cluster \
+    --initial-cluster-state="$ETCD_CLUSTER_STATE"
