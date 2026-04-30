@@ -1,0 +1,26 @@
+[Unit]
+Description=isrvd - Infrastructure Service Daemon
+Documentation=https://github.com/rehiy/isrvd
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=root
+Environment="CONFIG_PATH=/etc/isrvd/config.yml"
+ExecStart=/usr/local/bin/isrvd
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5s
+
+# 安全加固
+NoNewPrivileges=true
+LimitNOFILE=65536
+
+# 日志
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=isrvd
+
+[Install]
+WantedBy=multi-user.target

@@ -63,14 +63,15 @@ build linux arm64
 ###########################################
 
 cp config.yml dist/
+cp -r build/systemctl dist/
 
 cd dist/
 for app in isrvd-*; do
     archive="${app}.tar.gz"
     echo "==> packing $archive"
-    tar czf "$archive" "$app" config.yml
+    tar czf "$archive" "$app" config.yml systemctl/
     rm -f "$app"
 done
 
-rm -f config.yml
+rm -rf config.yml systemctl/
 cd ../

@@ -75,7 +75,37 @@ services:
 
 ## 二进制部署
 
-从 [Releases](https://github.com/rehiy/isrvd/releases) 下载二进制文件，编辑 `config.yml` 后运行：
+从 [Releases](https://github.com/rehiy/isrvd/releases) 下载对应平台的压缩包，解压后安装：
+
+```bash
+tar xzf isrvd-linux-amd64.tar.gz
+cd isrvd-linux-amd64
+sudo ./systemctl/install.sh
+```
+
+安装完成后，服务自动启用。配置文件位于 `/etc/isrvd/config.yml`。
+
+### 服务管理
+
+```bash
+sudo systemctl start isrvd      # 启动
+sudo systemctl stop isrvd       # 停止
+sudo systemctl restart isrvd    # 重启
+sudo systemctl status isrvd     # 状态
+journalctl -u isrvd -f          # 日志
+```
+
+### 卸载
+
+```bash
+sudo ./systemctl/uninstall.sh
+```
+
+> 注意：配置文件 `/etc/isrvd/` 不会被删除。
+
+### 手动运行
+
+也可以直接运行二进制文件：
 
 ```bash
 ./isrvd
