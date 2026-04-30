@@ -1,0 +1,250 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply antialiased;
+  }
+
+  body {
+    @apply bg-slate-50 min-h-screen;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* 移动端优化：防止文本选择 */
+  @media (max-width: 768px) {
+    body {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    
+    /* 允许输入框和按钮文本选择 */
+    input, textarea, button {
+      -webkit-user-select: text;
+      -khtml-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+    }
+  }
+
+  /* 移动端优化：改善触摸体验 */
+  @media (hover: none) and (pointer: coarse) {
+    .btn, button, .btn-primary, .btn-secondary {
+      @apply min-h-[44px] min-w-[44px];
+    }
+    
+    .router-link, a {
+      @apply min-h-[44px];
+    }
+  }
+
+  /* 应用加载状态 */
+  .app-wait {
+    @apply fixed inset-0 z-[9999] flex flex-col items-center justify-center;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  }
+
+  .app-wait::before {
+    content: '';
+    @apply absolute inset-0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.3;
+  }
+
+  /* 自定义滚动条 */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full transition-colors;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400;
+  }
+
+  /* 移动端滚动条优化 */
+  @media (max-width: 768px) {
+    ::-webkit-scrollbar {
+      @apply w-1 h-1;
+    }
+  }
+
+  /* 表单样式 */
+  input,
+  textarea,
+  select {
+    @apply transition-all duration-200;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    @apply outline-none ring-2 ring-primary-500/50 border-primary-400;
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+  }
+
+  /* 移动端输入框优化 */
+  @media (max-width: 768px) {
+    input, textarea, select {
+      @apply text-base; /* 防止 iOS 缩放 */
+    }
+    
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    input[type="number"],
+    input[type="tel"],
+    textarea {
+      font-size: 16px !important; /* 防止 iOS 缩放 */
+    }
+  }
+}
+
+@layer components {
+
+  /* 卡片样式 */
+  .card {
+    @apply bg-white rounded-2xl shadow-soft border border-slate-200/60;
+  }
+
+  /* 移动端卡片优化 */
+  @media (max-width: 768px) {
+    .card {
+      @apply rounded-xl; /* 移动端圆角稍小 */
+    }
+  }
+
+  /* 模态框样式 */
+  .modal-card {
+    @apply bg-white rounded-2xl shadow-2xl border border-slate-200;
+  }
+
+  /* 移动端模态框优化 */
+  @media (max-width: 768px) {
+    .modal-card {
+      @apply rounded-xl m-4; /* 移动端边距和圆角优化 */
+    }
+  }
+
+  /* 按钮样式 */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 font-medium rounded-xl transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-500 text-white;
+    @apply hover:bg-primary-600;
+    @apply focus:ring-primary-500;
+    @apply active:scale-95;
+    box-shadow: 0 4px 14px 0 rgba(14, 165, 233, 0.39);
+  }
+
+  .btn-secondary {
+    @apply btn bg-slate-100 text-slate-700;
+    @apply hover:bg-slate-200;
+    @apply focus:ring-slate-500;
+  }
+
+  .btn-success {
+    @apply btn bg-emerald-500 text-white;
+    @apply hover:bg-emerald-600;
+    @apply focus:ring-emerald-500;
+    box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39);
+  }
+
+  .btn-danger {
+    @apply btn bg-red-500 text-white;
+    @apply hover:bg-red-600;
+    @apply focus:ring-red-500;
+    box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.39);
+  }
+
+  .btn-cyan {
+    @apply btn bg-cyan-500 text-white;
+    @apply hover:bg-cyan-600;
+    @apply focus:ring-cyan-500;
+    box-shadow: 0 4px 14px 0 rgba(6, 182, 212, 0.39);
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent hover:bg-slate-100 text-slate-700;
+    @apply focus:ring-0 focus:ring-offset-0;
+  }
+
+  .btn-icon {
+    @apply inline-flex items-center justify-center p-2 rounded-lg hover:bg-slate-100 transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500;
+  }
+
+  /* 移动端按钮优化 */
+  @media (max-width: 768px) {
+    .btn {
+      @apply min-h-[44px]; /* 触摸友好高度 */
+    }
+    
+    .btn-icon {
+      @apply min-h-[44px] min-w-[44px] flex items-center justify-center; /* 触摸友好尺寸，内容居中 */
+    }
+  }
+
+  /* 输入框样式 */
+  .input {
+    @apply w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl;
+    @apply placeholder:text-slate-400 text-slate-700;
+    @apply hover:border-slate-300;
+  }
+
+  /* 下拉框样式：防止文本与三角箭头重叠 */
+  select.input {
+    @apply pr-8 truncate;
+    background-position: right 0.5rem center;
+  }
+
+  /* 移动端输入框优化 */
+  @media (max-width: 768px) {
+    .input {
+      @apply py-3; /* 移动端触摸友好 */
+    }
+  }
+
+  /* 徽章样式 */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply badge bg-primary-100 text-primary-700;
+  }
+
+  .badge-warning {
+    @apply badge bg-amber-100 text-amber-700;
+  }
+
+  /* 品牌文字 */
+  .gradient-text {
+    @apply font-semibold;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* 加载动画 */
+  .spinner {
+    @apply animate-spin rounded-full border-4 border-slate-200 border-t-primary-500;
+  }
+}

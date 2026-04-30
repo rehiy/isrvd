@@ -1,0 +1,63 @@
+server:
+  debug: false
+  listenAddr: :8080
+  jwtSecret: default-secret-key
+  # proxyHeaderName: X-Username
+  rootDirectory: storage/
+
+agent:
+  # model: your-model
+  # baseUrl: https://ai.rehiy.wang/v1
+  # apiKey: your-api-key
+
+apisix:
+  # adminUrl: http://127.0.0.1:9180
+  # adminKey: your-admin-key
+
+docker:
+  # host: unix:///var/run/docker.sock
+  # host: tcp://127.0.0.1:2375
+  containerRoot: container/
+  registries:
+     # - name: Company Hub
+     #   description: 公司内部镜像仓库
+     #   url: hub.example.com
+     #   username: debug
+     #   password: 123
+
+marketplace:
+  url: https://apps.rehi.org
+
+links:
+- label: 工具箱
+  url: https://api.rehi.org
+  icon: fas fa-cloud-bolt
+
+members:
+  - username: admin
+    password: admin
+    homeDirectory: .
+    permissions:
+      filer: rw
+      agent: rw
+      apisix: rw
+      docker: rw
+      swarm: rw
+      compose: rw
+      system: rw
+      shell: rw
+
+  - username: user1
+    password: password1
+    homeDirectory: user1/
+    permissions:
+      filer: rw
+      docker: r
+      compose: r
+
+  - username: user2
+    password: password2
+    homeDirectory: user2/
+    # permissions 未配置则所有模块无权限
+    # 可用模块: filer, agent, apisix, docker, swarm, compose, system, shell
+    # 可用値: r（只读）, rw（读写），留空或不填表示无权限

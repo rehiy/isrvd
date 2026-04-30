@@ -1,0 +1,244 @@
+<script lang="ts">
+import { Component, Inject, Vue, toNative } from 'vue-facing-decorator'
+
+import { APP_ACTIONS_KEY } from '@/store/state'
+import type { AppActions } from '@/store/state'
+
+import api from '@/service/api'
+import type { DockerImageInspectResponse } from '@/service/types'
+
+import { formatFileSize, formatTime } from '@/helper/utils'
+
+@Component
+class ImageDetail extends Vue {
+    @Inject({ from: APP_ACTIONS_KEY }) readonly actions!: AppActions
+
+    // ─── 数据属性 ───
+    inspectData: DockerImageInspectResponse | null = null
+    loading = false
+    formatFileSize = formatFileSize
+    formatTime = formatTime
+
+    get imageId() {
+        return this.$route.params.id as string
+    }
+
+    // ─── 方法 ───
+    async loadDetail() {
+        this.loading = true
+        try {
+            const res = await api.imageInspect(this.imageId)
+            this.inspectData = res.payload ?? null
+        } catch (e) {
+            this.actions.showNotification('error', '获取镜像详情失败')
+        }
+        this.loading = false
+    }
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadDetail()
+    }
+}
+
+export default toNative(ImageDetail)
+</script>
+
+<template>
+  <div>
+    <div class="card mb-4">
+      <!-- Toolbar -->
+      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+        <!-- 桌面端 -->
+        <div class="hidden md:flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
+              <i class="fas fa-compact-disc text-white"></i>
+            </div>
+            <div>
+              <h1 class="text-lg font-semibold text-slate-800">镜像详情</h1>
+              <p class="text-xs text-slate-500 font-mono truncate max-w-xs">{{ imageId }}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button @click="loadDetail()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fas fa-rotate"></i>刷新
+            </button>
+          </div>
+        </div>
+        <!-- 移动端 -->
+        <div class="flex md:hidden items-center justify-between gap-2">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-compact-disc text-white"></i>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-lg font-semibold text-slate-800 truncate">镜像详情</h1>
+              <p class="text-xs text-slate-500 font-mono truncate">{{ imageId }}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <button @click="loadDetail()" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新">
+              <i class="fas fa-rotate text-sm"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
+
+      <!-- Detail Content -->
+      <div v-else-if="inspectData" class="p-4 md:p-6 space-y-6 text-sm">
+        <!-- 基本信息 -->
+        <div>
+          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">基本信息</h2>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="col-span-2">
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">镜像 ID</label>
+              <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ inspectData.id }}</code>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">架构</label>
+              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.architecture || '-' }}</div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">操作系统</label>
+              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.os || '-' }}</div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">大小</label>
+              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatFileSize(inspectData.size) }}</div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">层数</label>
+              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.layers }}</div>
+            </div>
+            <div class="col-span-2">
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">创建时间</label>
+              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(inspectData.created) }}</div>
+            </div>
+            <div v-if="inspectData.author" class="col-span-2">
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">作者</label>
+              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.author }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 标签 -->
+        <div v-if="inspectData.repoTags && inspectData.repoTags.length > 0">
+          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">标签</h2>
+          <div class="flex flex-wrap gap-1.5">
+            <span v-for="tag in inspectData.repoTags" :key="tag" class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-700">{{ tag }}</span>
+          </div>
+        </div>
+
+        <!-- Digest -->
+        <div v-if="inspectData.repoDigests && inspectData.repoDigests.length > 0">
+          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Digest</h2>
+          <div class="space-y-1">
+            <code v-for="d in inspectData.repoDigests" :key="d" class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-600 break-all">{{ d }}</code>
+          </div>
+        </div>
+
+        <!-- 运行配置 -->
+        <div>
+          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">运行配置</h2>
+          <div class="space-y-3">
+            <div v-if="inspectData.workingDir">
+              <label class="block text-xs text-slate-500 mb-1">工作目录</label>
+              <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700">{{ inspectData.workingDir }}</code>
+            </div>
+            <div v-if="inspectData.entrypoint && inspectData.entrypoint.length > 0">
+              <label class="block text-xs text-slate-500 mb-1">Entrypoint</label>
+              <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700">{{ inspectData.entrypoint.join(' ') }}</code>
+            </div>
+            <div v-if="inspectData.cmd && inspectData.cmd.length > 0">
+              <label class="block text-xs text-slate-500 mb-1">CMD</label>
+              <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700">{{ inspectData.cmd.join(' ') }}</code>
+            </div>
+            <div v-if="inspectData.exposedPorts && inspectData.exposedPorts.length > 0">
+              <label class="block text-xs text-slate-500 mb-1">暴露端口</label>
+              <div class="flex flex-wrap gap-1.5">
+                <span v-for="port in inspectData.exposedPorts" :key="port" class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700">{{ port }}</span>
+              </div>
+            </div>
+            <div v-if="!inspectData.workingDir && !inspectData.entrypoint?.length && !inspectData.cmd?.length && !inspectData.exposedPorts?.length" class="text-sm text-slate-400">
+              无运行配置
+            </div>
+          </div>
+        </div>
+
+        <!-- 环境变量 -->
+        <div v-if="inspectData.env && inspectData.env.length > 0">
+          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">环境变量</h2>
+          <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
+            <div v-for="(env, idx) in inspectData.env" :key="idx" class="px-3 py-1.5">
+              <code class="text-xs font-mono text-slate-600 break-all">{{ env }}</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- Labels -->
+        <div v-if="inspectData.labels && Object.keys(inspectData.labels).length > 0">
+          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Labels</h2>
+          <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
+            <div v-for="(val, key) in inspectData.labels" :key="key" class="px-3 py-1.5 flex gap-2">
+              <code class="text-xs font-mono text-blue-600 shrink-0">{{ key }}</code>
+              <span class="text-slate-400">=</span>
+              <code class="text-xs font-mono text-slate-600 break-all">{{ val }}</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- 层信息 -->
+        <div v-if="inspectData.layerDetails && inspectData.layerDetails.length > 0">
+          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+            层信息（{{ inspectData.layers }} 个实际层，共 {{ inspectData.layerDetails.length }} 步）
+          </h2>
+          <div class="border border-slate-200 rounded-lg divide-y divide-slate-100 overflow-hidden">
+            <div
+              v-for="(layer, idx) in inspectData.layerDetails"
+              :key="idx"
+              class="px-3 py-2"
+              :class="layer.empty ? 'bg-slate-50/50' : 'bg-white'"
+            >
+              <div class="flex items-start gap-2">
+                <!-- 层序号 + 类型标记 -->
+                <div class="flex items-center gap-1.5 shrink-0 mt-0.5">
+                  <span class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold"
+                    :class="layer.empty ? 'bg-slate-100 text-slate-400' : 'bg-blue-50 text-blue-600'"
+                  >{{ inspectData.layerDetails.length - idx }}</span>
+            <span v-if="!layer.empty" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700">
+                    {{ formatFileSize(layer.size) }}
+                  </span>
+                  <span v-else class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-400">
+                    空层
+                  </span>
+                </div>
+                <!-- 构建命令 -->
+                <div class="flex-1 min-w-0">
+                  <code class="text-xs font-mono text-slate-700 break-all leading-relaxed">{{ layer.createdBy || '(无命令)' }}</code>
+                  <div v-if="!layer.empty && layer.digest" class="mt-1">
+                    <code class="text-xs font-mono text-slate-400 break-all">{{ layer.digest }}</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty -->
+      <div v-else class="flex flex-col items-center justify-center py-20">
+        <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+          <i class="fas fa-compact-disc text-4xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-600 font-medium">未找到镜像详情</p>
+      </div>
+    </div>
+  </div>
+</template>
