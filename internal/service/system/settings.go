@@ -43,6 +43,19 @@ type MarketplaceSettings struct {
 	URL string `json:"url"`
 }
 
+// EtcdSettings etcd 连接配置
+type EtcdSettings struct {
+	Endpoints    []string      `json:"endpoints"`
+	Prefix       string        `json:"prefix"`
+	Username     string        `json:"username"`
+	UsernameSet  bool          `json:"usernameSet"`
+	Password     string        `json:"password"`
+	PasswordSet  bool          `json:"passwordSet"`
+	TLSCertFile  string        `json:"tlsCertFile"`
+	TLSKeyFile   string        `json:"tlsKeyFile"`
+	TLSCAFile    string        `json:"tlsCaFile"`
+}
+
 // LinkConfig 工具栏链接
 type LinkConfig struct {
 	Label string `json:"label"`
@@ -57,6 +70,7 @@ type AllSettings struct {
 	Apisix      *ApisixSettings      `json:"apisix"`
 	Docker      *DockerSettings      `json:"docker"`
 	Marketplace *MarketplaceSettings `json:"marketplace"`
+	Etcd        *EtcdSettings        `json:"etcd"`
 	Links       []*LinkConfig        `json:"links"`
 }
 
@@ -67,6 +81,7 @@ type UpdateAllRequest struct {
 	Apisix      *ApisixSettings      `json:"apisix"`
 	Docker      *DockerSettings      `json:"docker"`
 	Marketplace *MarketplaceSettings `json:"marketplace"`
+	Etcd        *EtcdSettings        `json:"etcd"`
 	Links       []*LinkConfig        `json:"links"`
 }
 
@@ -112,6 +127,17 @@ func (s *SettingsService) GetAll() *AllSettings {
 		Marketplace: &MarketplaceSettings{
 			URL: config.Marketplace.URL,
 		},
+		Etcd: &EtcdSettings{
+			Endpoints:    config.Etcd.Endpoints,
+			Prefix:       config.Etcd.Prefix,
+			Username:      config.Etcd.Username,
+			UsernameSet:   config.Etcd.Username != "",
+			Password:      config.Etcd.Password,
+			PasswordSet:   config.Etcd.Password != "",
+			TLSCertFile:  config.Etcd.TLS.CertFile,
+			TLSKeyFile:   config.Etcd.TLS.KeyFile,
+			TLSCAFile:    config.Etcd.TLS.CAFile,
+		},
 		Links: func() []*LinkConfig {
 			links := make([]*LinkConfig, 0, len(config.Links))
 			for _, l := range config.Links {
@@ -146,6 +172,20 @@ func (s *SettingsService) UpdateAll(req UpdateAllRequest) error {
 	}
 	if req.Marketplace != nil {
 		config.Marketplace.URL = req.Marketplace.URL
+	}
+	if req.Etcd != nil {
+		config.Etcd.Endpoints = req.Etcd.Endpoints
+		config.Etcd.Prefix = req.Etcd.Prefix
+		config.Etcd.Username = pickSecret(req.Etcd.Username, config.Etcd.Username)
+		config.Etcd.Password = pickSecret(req.Etcd.Password, config.Etcd.Password)
+		if req.Etcd.TLSCertFile != "" || req.Etcd.TLSKeyFile != "" || req.Etcd.TLSCAFile != "" {
+			if config.Etcd.TLS == nil {
+				config.Etcd.TLS = &config.EtcdTLS{}
+			}
+			config.Etcd.TLS.CertFile = req.Etcd.TLSCertFile
+			config.Etcd.TLS.KeyFile = req.Etcd.TLSKeyFile
+			config.Etcd.TLS.CAFile = req.Etcd.TLSCAFile
+		}
 	}
 	if req.Links != nil {
 		links := make([]*config.LinkConfig, 0, len(req.Links))

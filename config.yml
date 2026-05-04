@@ -61,3 +61,18 @@ members:
     # permissions 未配置则所有模块无权限
     # 可用模块: filer, agent, apisix, docker, swarm, compose, system, shell
     # 可用値: r（只读）, rw（读写），留空或不填表示无权限
+
+etcd:
+  # etcd 集群端点列表（必填，至少一个）
+  endpoints:
+    - http://127.0.0.1:2379
+  # key 前缀，用于隔离不同应用的配置（默认 /isrvd）
+  prefix: /isrvd
+  # 认证信息（可选，etcd 未启用 auth 时留空）
+  # username: root
+  # password: 123456
+  # TLS 配置（可选，etcd 未启用 TLS 时留空）
+  # tls:
+  #   certFile: /path/to/client.crt
+  #   keyFile: /path/to/client.key
+  #   caFile: /path/to/ca.crt
