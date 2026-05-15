@@ -148,7 +148,7 @@ func (app *App) cronJobEnable(c *gin.Context) {
 		return
 	}
 
-	if err := app.cronSvc.JobToggle(id, req.Enabled); err != nil {
+	if err := app.cronSvc.JobStatusPatch(id, req.Enabled); err != nil {
 		logman.Error("Toggle cron job failed", "id", id, "enabled", req.Enabled, "error", err)
 		respondError(c, http.StatusBadRequest, err.Error())
 		return

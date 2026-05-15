@@ -78,11 +78,11 @@ func AuditMiddleware(routeIndex map[string]Route, svc *svcSystem.AuditService) g
 		startTime := time.Now()
 		var body string
 		if !isWS {
-			body = svc.RequestBodyRead(c)
+			body = svc.BodyRead(c)
 		}
 
 		c.Next()
-		svc.RequestRecord(c, startTime, body)
+		svc.AuditRecord(c, startTime, body)
 	}
 }
 

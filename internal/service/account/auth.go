@@ -57,7 +57,7 @@ func (s *Service) Auth(c *gin.Context) (username, errMsg string) {
 	if config.Server.ProxyHeaderName != "" {
 		return s.HeaderTokenCheck(c)
 	}
-	return s.JwtTokenCheck(c)
+	return s.JWTCheck(c)
 }
 
 // AuthMix 可选认证：成功返回用户名，失败返回空字符串（不中断请求）。
@@ -158,22 +158,22 @@ func (s *Service) signJWT(username string, extra jwt.MapClaims) (string, error) 
 
 // ─── JWT 认证 ─────────
 
-// JwtTokenCheck 解析 JWT 并返回用户名；失败时返回空用户名和具体错误原因。
-func (s *Service) JwtTokenCheck(c *gin.Context) (username, errMsg string) {
-	tokenStr := s.extractJwtToken(c)
-	if tokenStr == "" {
-		return "", "未提供认证令牌"
-	}
-	username = s.JwtUsernameExtract(c)
+// JWTCheck 解析 JWT 并返回用户名；失败时返回空用户名和具体错误原因。
+func (s *Service) JWTCheck(c *gin.Context) (username, errMsg string) {
+	tokenStr := s.extractJWT(c)
+		if tokenStr == "" {
+			return "", "未提供认证令牌"
+		}
+		username = s.JWTUsername(c)
 	if username == "" {
 		return "", "认证令牌无效"
 	}
 	return username, ""
 }
 
-// JwtUsernameExtract 从 JWT 中解析并返回有效用户名；无效时返回空字符串
-func (s *Service) JwtUsernameExtract(c *gin.Context) string {
-	tokenStr := s.extractJwtToken(c)
+// JWTUsername 从 JWT 中解析并返回有效用户名；无效时返回空字符串
+func (s *Service) JWTUsername(c *gin.Context) string {
+	tokenStr := s.extractJWT(c)
 	if tokenStr == "" {
 		return ""
 	}
@@ -208,8 +208,8 @@ func (s *Service) JwtUsernameExtract(c *gin.Context) string {
 	return sub
 }
 
-// extractJwtToken 从 Authorization Header、WebSocket query 或文件预览 query 中提取原始 token 字符串
-func (s *Service) extractJwtToken(c *gin.Context) string {
+// extractJWT 从 Authorization Header、WebSocket query 或文件预览 query 中提取原始 JWT 字符串
+func (s *Service) extractJWT(c *gin.Context) string {
 	tokenStr := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
 	if tokenStr == "" && (c.GetHeader("Upgrade") == "websocket" || (c.Request.Method == http.MethodGet && c.FullPath() == "/api/filer/download" && c.Query("inline") == "1")) {
 		tokenStr = c.Query("token")

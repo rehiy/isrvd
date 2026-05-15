@@ -69,8 +69,8 @@ func NewAuditService() *AuditService {
 	return s
 }
 
-// Add 将审计条目写入内存缓冲，并异步追加到当日日志文件。
-func (s *AuditService) Add(entry AuditLog) {
+// LogAdd 将审计条目写入内存缓冲，并异步追加到当日日志文件。
+func (s *AuditService) LogAdd(entry AuditLog) {
 	s.mu.Lock()
 	if len(s.buffer) >= maxAuditBufferSize {
 		// 重新分配以释放底层数组，避免内存泄漏
@@ -84,7 +84,7 @@ func (s *AuditService) Add(entry AuditLog) {
 	select {
 	case s.ch <- entry:
 	default:
-		logman.Warn("Audit", "msg", "审计日志通道已满，丢弃文件写入")
+		logman.Warn("audit log channel full, discard write", "max_size", maxAuditBufferSize)
 	}
 }
 
@@ -108,16 +108,16 @@ func (s *AuditService) LogList(username string, limit int) []AuditLog {
 	return result
 }
 
-// RequestRecord 根据请求类型记录审计日志，供中间件在 c.Next() 后调用。
+// AuditRecord 根据请求类型记录审计日志，供中间件在 c.Next() 后调用。
 // WebSocket 升级请求记录 "WS" 方法；其余记录方法、URI、请求体、状态码。
-func (s *AuditService) RequestRecord(c *gin.Context, startTime time.Time, body string) {
+func (s *AuditService) AuditRecord(c *gin.Context, startTime time.Time, body string) {
 	// WebSocket
 	if strings.EqualFold(c.GetHeader("Upgrade"), "websocket") {
 		statusCode := c.Writer.Status()
 		if statusCode == 0 || statusCode == http.StatusOK {
 			statusCode = http.StatusSwitchingProtocols
 		}
-		s.Add(AuditLog{
+		s.LogAdd(AuditLog{
 			Timestamp:  startTime,
 			Username:   c.GetString("username"),
 			Method:     "WS",
@@ -134,7 +134,7 @@ func (s *AuditService) RequestRecord(c *gin.Context, startTime time.Time, body s
 	if statusCode == 0 {
 		statusCode = http.StatusOK
 	}
-	s.Add(AuditLog{
+	s.LogAdd(AuditLog{
 		Timestamp:  startTime,
 		Username:   c.GetString("username"),
 		Method:     c.Request.Method,
@@ -147,11 +147,11 @@ func (s *AuditService) RequestRecord(c *gin.Context, startTime time.Time, body s
 	})
 }
 
-// RequestBodyRead 读取请求体，按 Content-Type 差异化处理：
+// BodyRead 读取请求体，按 Content-Type 差异化处理：
 //   - application/octet-stream：返回占位符
 //   - multipart/form-data：保留文本字段，文件字段替换为占位符，敏感字段脱敏
 //   - 其他：读取全部内容并回填 Body，敏感字段脱敏
-func (s *AuditService) RequestBodyRead(c *gin.Context) string {
+func (s *AuditService) BodyRead(c *gin.Context) string {
 	switch {
 	case strings.HasPrefix(c.ContentType(), "application/octet-stream"):
 		return "[Binary Omitted]"
@@ -205,7 +205,7 @@ func (s *AuditService) process() {
 		}
 		data = append(data, '\n')
 		if _, err = s.file.Write(data); err != nil {
-			logman.Warn("Audit", "msg", "写入审计日志文件失败", "err", err)
+			logman.Warn("audit log write failed", "error", err)
 		}
 	}
 }
@@ -238,12 +238,12 @@ func (s *AuditService) openFile(date string) {
 	path := auditFilePath(date)
 
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		logman.Warn("Audit", "msg", "无法创建审计日志目录", "err", err)
+		logman.Warn("audit log mkdir failed", "path", path, "error", err)
 	}
 
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		logman.Warn("Audit", "msg", "无法打开审计日志文件", "path", path, "err", err)
+		logman.Warn("audit log open failed", "path", path, "error", err)
 		return
 	}
 

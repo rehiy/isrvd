@@ -280,8 +280,8 @@ func (s *Service) DeleteJob(id string) error {
 	return nil
 }
 
-// JobToggle 启用或禁用任务
-func (s *Service) JobToggle(id string, enabled bool) error {
+// JobStatusPatch 启用或禁用任务
+func (s *Service) JobStatusPatch(id string, enabled bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
