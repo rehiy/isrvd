@@ -2,14 +2,15 @@
 import { Codemirror } from 'vue-codemirror'
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { CronJob, CronJobCreate, CronTypeInfo, DockerContainerInfo, DockerImageInfo } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
+
 import ContainerSelect from '@/views/docker/widget/container-select.vue'
 import ImageSelect from '@/views/docker/widget/image-select.vue'
-
-import { usePortal } from '@/stores'
 
 const defaultFormData = (type = 'SHELL'): CronJobCreate => ({
     name: '',
@@ -128,7 +129,7 @@ export default toNative(JobEditModal)
   >
     <template #confirm-text>{{ isEditMode ? '保存' : '创建' }}</template>
 
-    <div class="space-y-4 p-1">
+    <div class="max-w-3xl space-y-4 p-1">
       <div>
         <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">任务名称 <span class="text-red-500">*</span></label>
         <input v-model="formData.name" type="text" class="input" placeholder="如：每日备份" />

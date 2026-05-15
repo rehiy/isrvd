@@ -12,6 +12,7 @@
 | 文件管理 | 浏览、上传、下载、编辑、压缩解压、权限修改 |
 | Web 终端 | 基于 xterm.js 的 Shell 与容器终端 |
 | AI 助手 | 内置 Agent，支持自然语言操作 |
+| 计划任务 | 定时任务调度，支持 Shell/BAT/PowerShell/Docker 执行模式 |
 | APISIX | 路由、Consumer、上游、SSL、插件配置、白名单 |
 | Docker | 容器、镜像、网络、卷、镜像仓库管理 |
 | Swarm | 集群、节点、服务、任务管理 |
@@ -209,6 +210,9 @@ cd webview && python3 sort-imports.py --dry-run src
 | `filer` | `POST /api/filer/modify` | 文件管理（修改） |
 | `shell` | `WS /api/shell` | Web 终端 |
 | `agent` | `POST /api/agent/chat` | AI 助手 |
+| `cron` | `POST /api/cron/jobs` | 计划任务管理 |
+| `cron` | `POST /api/cron/jobs/:id/run` | 计划任务（立即执行） |
+| `cron` | `GET /api/cron/jobs/:id/logs` | 计划任务（查看日志） |
 | `apisix` | `POST /api/apisix/routes` | APISIX 管理 |
 | `docker` | `POST /api/docker/containers` | Docker 管理 |
 | `swarm` | `POST /api/swarm/services` | Swarm 管理 |

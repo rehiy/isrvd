@@ -70,7 +70,7 @@ skills/isrvd/
     ├── swarm/{info,services,tasks}.md
     ├── compose.md
     ├── apisix/{routes,upstreams,consumers,ssl}.md
-    └── system/{overview,config,account,filer}.md
+    └── system/{overview,config,account,filer,cron}.md
 ```
 
 ### 需要同步更新的文件
@@ -81,6 +81,7 @@ skills/isrvd/
 | `internal/server/ctrl_swarm.go` | `skills/isrvd/docs/swarm/` 下对应资源文件 |
 | `internal/server/ctrl_apisix.go` | `skills/isrvd/docs/apisix/` 下对应资源文件 |
 | `internal/server/ctrl_compose.go` | `skills/isrvd/docs/compose.md` |
+| `internal/server/ctrl_cron.go` | `skills/isrvd/docs/system/cron.md` |
 | `internal/server/ctrl_system.go` / `ctrl_account.go` | `skills/isrvd/docs/system/` 下对应文件 |
 | `pkgs/*/`（数据结构变更） | 对应 docs 文件中的字段表 |
 | 新增路由/模块 | `skills/isrvd/SKILL.md` 索引表 + 决策树 |
@@ -196,7 +197,7 @@ skills/isrvd/
 
 ### 6.4 类型定义与命名（强制）
 
-`service/types/` 按域拆分（`docker`、`swarm`、`apisix`、`compose`、`system`、`account`、`overview`、`filer`），`service/types.ts` 统一 `export *` 导出
+`service/types/` 按域拆分（`docker`、`swarm`、`apisix`、`compose`、`cron`、`system`、`account`、`overview`、`filer`），`service/types.ts` 统一 `export *` 导出
 
 | 场景 | 命名 | 示例 |
 |---|---|---|
@@ -216,14 +217,14 @@ skills/isrvd/
 
 | 操作 | 命名模式 | 示例 |
 |---|---|---|
-| 列表 | `domainResourceList(params?)` | `dockerContainerList()`、`apisixRouteList()` |
+| 列表 | `domainResourceList(params?)` | `dockerContainerList()`、`apisixRouteList()`、`cronJobList()` |
 | 单条 | `domainResource(id)` | `dockerImage(id)`、`swarmNode(id)` |
-| 创建/更新/删除 | `domainResourceCreate/Update/Delete` | `dockerContainerCreate(data)`、`dockerImageDelete(id)` |
-| 操作/动作 | `domainResourceAction(id, action)` | `dockerContainerAction(id, 'start')` |
-| 状态切换 | `domainResourceStatus(id, status)` | `apisixRouteStatus(id, 0)` |
-| 统计/日志 | `domainResourceStats/Logs(id)` | `dockerContainerStats(id)` |
+| 创建/更新/删除 | `domainResourceCreate/Update/Delete` | `dockerContainerCreate(data)`、`dockerImageDelete(id)`、`cronJobCreate(data)` |
+| 操作/动作 | `domainResourceAction(id, action)` | `dockerContainerAction(id, 'start')`、`cronJobRun(id)` |
+| 状态切换 | `domainResourceStatus(id, status)` | `apisixRouteStatus(id, 0)`、`cronJobEnable(id, enabled)` |
+| 统计/日志 | `domainResourceStats/Logs(id)` | `dockerContainerStats(id)`、`cronJobLogs(id)` |
 
-- **域名前缀**：`docker`、`swarm`、`apisix`、`account`、`system`、`filer`、`compose`
+- **域名前缀**：`docker`、`swarm`、`apisix`、`account`、`system`、`filer`、`compose`、`cron`
 - **资源名**：单数形式
 - **分组注释**：`// ==================== XXXX 相关 ====================`
 
@@ -332,7 +333,7 @@ skills/isrvd/
 </td>
 ```
 
-图标配色（色阶 `400`）：容器 `emerald`/`slate`（按状态）、镜像 `blue`、网络 `purple`、数据卷 `amber`、仓库 `blue-500`、Swarm 服务 `emerald`、节点 `blue`、路由 `indigo`、白名单 `amber`、消费者 `violet`、用户 `blue-500`。新模块选未用色（`rose`/`cyan`/`lime` 等）
+图标配色（色阶 `400`）：容器 `emerald`/`slate`（按状态）、镜像 `blue`、网络 `purple`、数据卷 `amber`、仓库 `blue-500`、Swarm 服务 `emerald`、节点 `blue`、路由 `indigo`、白名单 `amber`、消费者 `violet`、计划任务 `violet`、用户 `blue-500`。新模块选未用色（`rose`/`cyan`/`lime` 等）
 
 ### 6.9.1 状态文字颜色（强制）
 
@@ -442,6 +443,7 @@ skills/isrvd/
 
 - `/overview` 概览；`docker/overview`/`swarm/overview` 仅作组件不作独立菜单路由
 - 系统模块：`/system/config`、`/system/audit`；用户管理：`/account/members`
+- 计划任务：`/cron/jobs`
 - 折叠子菜单展开状态跟随当前路由（`@Watch` immediate）
 - 侧边栏宽度 `w-16`（折叠）→ `w-64`（展开）
 - 移动端：遮罩 + 抽屉式（`-translate-x-full lg:translate-x-0`），`toggleMobileSidebar`/`closeMobileSidebar`/`openMobileSidebar`；窗口 ≥ 1024px 自动关闭
@@ -455,6 +457,13 @@ skills/isrvd/
 可用性检查：`IsDockerAvailable`、`IsSwarmAvailable`、`IsApisixAvailable`
 
 已用命名：`registry.DockerService`、`registry.SwarmService`、`registry.ApisixClient`
+
+服务初始化（`server/app.go` `StartApp()`）：
+- `overviewSvc`、`configSvc`、`auditSvc`、`accountSvc`、`filerSvc`：直接初始化
+- `apisixSvc`：根据可用性检查可选初始化
+- `dockerSvc`、`swarmSvc`：根据 Docker 可用性可选初始化
+- `composeSvc`：根据 Docker 可用性可选初始化
+- `cronSvc`：始终初始化，可选依赖 `registry.DockerService`（用于 DOCKER 类型任务）
 
 ---
 

@@ -562,7 +562,7 @@ class ApiService {
         return http.post<void>(`cron/jobs/${id}/run`, {})
     }
 
-    cronJobEnable(id: string, enabled: boolean) {
+    cronJobStatus(id: string, enabled: boolean) {
         return http.post<void>(`cron/jobs/${id}/enable`, { enabled })
     }
 

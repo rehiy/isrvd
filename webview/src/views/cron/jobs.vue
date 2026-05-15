@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { CronJob, CronTypeInfo } from '@/service/types'
 
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 import JobEditModal from './widget/job-edit-modal.vue'
 import JobLogsModal from './widget/job-logs-modal.vue'
@@ -51,8 +51,8 @@ class CronJobs extends Vue {
     }
 
     runtimeStatusClass(job: CronJob): string {
-        if (job.runtimeStatus === 'scheduled') return 'text-emerald-600 hover:text-emerald-700'
-        if (job.runtimeStatus === 'unregistered') return 'text-amber-600 hover:text-amber-700'
+        if (job.runtimeStatus === 'scheduled') return 'text-emerald-600 font-medium hover:text-emerald-700'
+        if (job.runtimeStatus === 'unregistered') return 'text-amber-600 font-medium hover:text-amber-700'
         return 'text-slate-400 hover:text-slate-500'
     }
 
@@ -108,7 +108,7 @@ class CronJobs extends Vue {
 
     async toggleEnabled(job: CronJob) {
         try {
-            await api.cronJobEnable(job.id, !job.enabled)
+            await api.cronJobStatus(job.id, !job.enabled)
             this.portal.showNotification('success', job.enabled ? '任务已禁用' : '任务已启用')
             await this.loadJobs()
         } catch {
@@ -215,7 +215,7 @@ export default toNative(CronJobs)
           </thead>
           <tbody class="bg-white divide-y divide-slate-100">
             <tr v-for="job in filteredJobs" :key="job.id" class="hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3">
+              <td class="px-4 py-3 max-w-[280px]">
                 <div class="flex items-center gap-2 min-w-0">
                   <div class="w-8 h-8 rounded-lg bg-violet-400 flex items-center justify-center flex-shrink-0">
                     <i class="fas fa-clock text-white text-sm"></i>
@@ -249,10 +249,10 @@ export default toNative(CronJobs)
                   <button class="btn-icon text-emerald-600 hover:bg-emerald-50" title="立即执行" @click="runNow(job)">
                     <i class="fas fa-play text-xs"></i>
                   </button>
-                  <button class="btn-icon text-blue-600 hover:bg-blue-50" title="执行日志" @click="openLogs(job)">
+                  <button class="btn-icon text-slate-600 hover:bg-slate-50" title="执行日志" @click="openLogs(job)">
                     <i class="fas fa-list-ul text-xs"></i>
                   </button>
-                  <button class="btn-icon text-slate-600 hover:bg-slate-100" title="编辑" @click="openEdit(job)">
+                  <button class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑" @click="openEdit(job)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
                   <button class="btn-icon text-red-500 hover:bg-red-50" title="删除" @click="openDelete(job)">
@@ -286,24 +286,24 @@ export default toNative(CronJobs)
             </button>
           </div>
 
-          <div class="space-y-2 text-xs">
-            <div class="flex items-start gap-2">
+          <div class="text-xs">
+            <div class="flex items-start gap-2 mb-3">
               <span class="w-20 flex-shrink-0 text-slate-400">执行计划</span>
               <code class="min-w-0 text-slate-700 font-mono truncate">{{ job.schedule }}</code>
             </div>
-            <div class="flex items-start gap-2">
+            <div class="flex items-start gap-2 mb-3">
               <span class="w-20 flex-shrink-0 text-slate-400">类型</span>
               <span class="min-w-0 text-slate-600 font-mono truncate">{{ job.type }}</span>
             </div>
-            <div class="flex items-start gap-2">
+            <div class="flex items-start gap-2 mb-3">
               <span class="w-20 flex-shrink-0 text-slate-400">下次执行</span>
               <span class="min-w-0 text-slate-600 truncate">{{ formatTime(job.nextRun) }}</span>
             </div>
-            <div class="flex items-start gap-2">
+            <div class="flex items-start gap-2 mb-3">
               <span class="w-20 flex-shrink-0 text-slate-400">上次执行</span>
               <span class="min-w-0 text-slate-600 truncate">{{ formatTime(job.lastRun) }}</span>
             </div>
-            <div v-if="job.description" class="flex items-start gap-2">
+            <div v-if="job.description" class="flex items-start gap-2 mb-3">
               <span class="w-20 flex-shrink-0 text-slate-400">描述</span>
               <span class="min-w-0 text-slate-600 break-words">{{ job.description }}</span>
             </div>
@@ -311,8 +311,8 @@ export default toNative(CronJobs)
 
           <div class="flex items-center justify-end gap-1 pt-3 mt-3 border-t border-slate-100">
             <button class="btn-icon text-emerald-600 hover:bg-emerald-50" title="立即执行" @click="runNow(job)"><i class="fas fa-play text-xs"></i></button>
-            <button class="btn-icon text-blue-600 hover:bg-blue-50" title="执行日志" @click="openLogs(job)"><i class="fas fa-list-ul text-xs"></i></button>
-            <button class="btn-icon text-slate-600 hover:bg-slate-100" title="编辑" @click="openEdit(job)"><i class="fas fa-pen text-xs"></i></button>
+            <button class="btn-icon text-slate-600 hover:bg-slate-50" title="执行日志" @click="openLogs(job)"><i class="fas fa-list-ul text-xs"></i></button>
+            <button class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑" @click="openEdit(job)"><i class="fas fa-pen text-xs"></i></button>
             <button class="btn-icon text-red-500 hover:bg-red-50" title="删除" @click="openDelete(job)"><i class="fas fa-trash text-xs"></i></button>
           </div>
         </div>

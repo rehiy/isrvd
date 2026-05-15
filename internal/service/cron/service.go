@@ -280,8 +280,8 @@ func (s *Service) DeleteJob(id string) error {
 	return nil
 }
 
-// ToggleJob 启用或禁用任务
-func (s *Service) ToggleJob(id string, enabled bool) error {
+// JobToggle 启用或禁用任务
+func (s *Service) JobToggle(id string, enabled bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -326,8 +326,8 @@ func (s *Service) ToggleJob(id string, enabled bool) error {
 	return nil
 }
 
-// RunNow 立即触发一次任务（异步执行）
-func (s *Service) RunNow(id string) error {
+// JobRun 立即触发一次任务（异步执行）
+func (s *Service) JobRun(id string) error {
 	s.mu.RLock()
 	_, ok := s.jobs[id]
 	s.mu.RUnlock()
@@ -340,8 +340,8 @@ func (s *Service) RunNow(id string) error {
 	return nil
 }
 
-// GetLogs 返回指定任务的执行历史（最近 limit 条，倒序）
-func (s *Service) GetLogs(id string, limit int) []*JobLog {
+// JobLogs 返回指定任务的执行历史（最近 limit 条，倒序）
+func (s *Service) JobLogs(id string, limit int) []*JobLog {
 	return s.store.LoadJobLogs(id, limit)
 }
 

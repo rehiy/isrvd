@@ -132,7 +132,7 @@ func (app *App) cronJobDelete(c *gin.Context) {
 
 func (app *App) cronJobRun(c *gin.Context) {
 	id := c.Param("id")
-	if err := app.cronSvc.RunNow(id); err != nil {
+	if err := app.cronSvc.JobRun(id); err != nil {
 		respondError(c, http.StatusNotFound, err.Error())
 		return
 	}
@@ -148,7 +148,7 @@ func (app *App) cronJobEnable(c *gin.Context) {
 		return
 	}
 
-	if err := app.cronSvc.ToggleJob(id, req.Enabled); err != nil {
+	if err := app.cronSvc.JobToggle(id, req.Enabled); err != nil {
 		logman.Error("Toggle cron job failed", "id", id, "enabled", req.Enabled, "error", err)
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -170,6 +170,6 @@ func (app *App) cronJobLogs(c *gin.Context) {
 		limit = 50
 	}
 
-	logs := app.cronSvc.GetLogs(id, limit)
+	logs := app.cronSvc.JobLogs(id, limit)
 	respondSuccess(c, "Logs retrieved", gin.H{"logs": logs})
 }
