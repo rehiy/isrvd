@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-前端样式 Review 脚本 — 基于 AGENTS.md 5.x 规范
+前端样式 Review 脚本 — 基于 AGENTS.md 6.x 规范
 用法：cd webview && python3 script/review-style.py
 """
 
@@ -49,7 +49,7 @@ def has_card_list(tmpl: str) -> bool:
 # ─── 检查函数 ────────
 
 def check_toolbar_layout(filepath, lines, tmpl, tmpl_line0):
-    """5.6 toolbar 必须有桌面/移动双布局，且有标题结构"""
+    """6.6 toolbar 必须有桌面/移动双布局，且有标题结构"""
     if not has_toolbar(tmpl):
         return
     # 排除面包屑导航页（没有 h1 标题）
@@ -78,7 +78,7 @@ def check_toolbar_layout(filepath, lines, tmpl, tmpl_line0):
 
 
 def check_toolbar_icon(filepath, lines, tmpl, tmpl_line0):
-    """5.6 toolbar 图标应为 w-9 h-9 rounded-lg"""
+    """6.6 toolbar 图标应为 w-9 h-9 rounded-lg"""
     if not has_toolbar(tmpl):
         return
     toolbar_start = tmpl.find('bg-slate-50 border-b border-slate-200 rounded-t-2xl')
@@ -118,7 +118,7 @@ def check_toolbar_icon(filepath, lines, tmpl, tmpl_line0):
 
 
 def check_empty_state(filepath, lines, tmpl, tmpl_line0):
-    """5.6 列表页空状态必须有主标题+副标题两行"""
+    """6.6 列表页空状态必须有主标题+副标题两行"""
     if not has_toolbar(tmpl):
         return
     tmpl_lines = tmpl.splitlines()
@@ -148,7 +148,7 @@ def check_empty_state(filepath, lines, tmpl, tmpl_line0):
 
 
 def check_mobile_card_container(filepath, lines, tmpl, tmpl_line0):
-    """5.7 移动端卡片容器必须有 p-4"""
+    """6.7 移动端卡片容器必须有 p-4"""
     for m in re.finditer(r'class="([^"]*md:hidden[^"]*space-y-3[^"]*)"', tmpl):
         cls = m.group(1)
         after = tmpl[m.end():m.end() + 400]
@@ -161,7 +161,7 @@ def check_mobile_card_container(filepath, lines, tmpl, tmpl_line0):
 
 
 def check_mobile_card_hover(filepath, lines, tmpl, tmpl_line0):
-    """5.7 移动端卡片应有 transition-all hover:shadow-sm"""
+    """6.7 移动端卡片应有 transition-all hover:shadow-sm"""
     if not has_card_list(tmpl):
         return
     mobile_start = tmpl.find('md:hidden space-y-3')
@@ -179,7 +179,7 @@ def check_mobile_card_hover(filepath, lines, tmpl, tmpl_line0):
 
 def check_mobile_card_top(filepath, lines, tmpl, tmpl_line0):
     """
-    5.7 移动端卡片顶部：
+    6.7 移动端卡片顶部：
     - 图标 flex-shrink-0，w-10 h-10 rounded-lg
     - 文字容器 min-w-0
     - 主名称 truncate block（不得用额外 flex 包裹）
@@ -236,7 +236,7 @@ def check_mobile_card_top(filepath, lines, tmpl, tmpl_line0):
 
 def check_mobile_card_rows(filepath, lines, tmpl, tmpl_line0):
     """
-    5.8 移动端卡片属性行：
+    6.8 移动端卡片属性行：
     - 行间距统一 mb-3（不得用 mb-2）
     - badge/code(py-0.5/py-1) 行：items-start，标签 mt-0.5/mt-1
     - 纯文本值：text-slate-500（不得用 text-slate-600）
@@ -307,7 +307,7 @@ def check_mobile_card_rows(filepath, lines, tmpl, tmpl_line0):
 
 
 def check_table_first_col(filepath, lines, tmpl, tmpl_line0):
-    """5.9 表格第一列布局"""
+    """6.9 表格第一列布局"""
     desktop_start = tmpl.find('hidden md:block overflow-x-auto')
     if desktop_start == -1:
         return
@@ -334,7 +334,7 @@ def check_table_first_col(filepath, lines, tmpl, tmpl_line0):
 
 
 def check_table_icon_size(filepath, lines, tmpl, tmpl_line0):
-    """5.9 桌面端表格图标应为 w-8 h-8，移动端卡片图标应为 w-10 h-10"""
+    """6.9 桌面端表格图标应为 w-8 h-8，移动端卡片图标应为 w-10 h-10"""
     desktop_start = tmpl.find('hidden md:block overflow-x-auto')
     if desktop_start != -1:
         desktop_end = tmpl.find('md:hidden space-y-3', desktop_start)
@@ -370,7 +370,7 @@ def check_table_icon_size(filepath, lines, tmpl, tmpl_line0):
 
 
 def check_table_text_colors(filepath, lines, tmpl, tmpl_line0):
-    """5.9 桌面端表格时间列/普通列应用 text-slate-600，不得用 text-slate-500"""
+    """6.9 桌面端表格时间列/普通列应用 text-slate-600，不得用 text-slate-500"""
     desktop_start = tmpl.find('hidden md:block overflow-x-auto')
     if desktop_start == -1:
         return
@@ -395,7 +395,7 @@ def check_table_text_colors(filepath, lines, tmpl, tmpl_line0):
 
 
 def check_desktop_action_gap(filepath, lines, tmpl, tmpl_line0):
-    """5.9 桌面端操作按钮列 gap 必须是 gap-1"""
+    """6.9 桌面端操作按钮列 gap 必须是 gap-1"""
     for i, line in enumerate(lines, 1):
         if 'flex justify-end items-center' in line:
             gap_m = re.search(r'gap-([\d.]+)', line)
@@ -405,7 +405,7 @@ def check_desktop_action_gap(filepath, lines, tmpl, tmpl_line0):
 
 
 def check_mobile_action_gap(filepath, lines, tmpl, tmpl_line0):
-    """5.10 移动端操作按钮区 gap 必须是 gap-1.5"""
+    """6.10 移动端操作按钮区 gap 必须是 gap-1.5"""
     for i, line in enumerate(lines, 1):
         if 'flex flex-wrap' in line and 'pt-2' in line and 'border-t' in line:
             if 'gap-1.5' not in line:
@@ -416,7 +416,7 @@ def check_mobile_action_gap(filepath, lines, tmpl, tmpl_line0):
 
 
 def check_action_buttons(filepath, lines, tmpl, tmpl_line0):
-    """5.10 操作按钮语义色"""
+    """6.10 操作按钮语义色"""
     is_apisix = 'apisix' in filepath.lower()
     for i, line in enumerate(lines, 1):
         if 'btn-icon' not in line or 'cursor-not-allowed' in line:
@@ -468,7 +468,7 @@ def check_h_tags_in_mobile(filepath, lines, tmpl, tmpl_line0):
                    f"移动端卡片内不应使用 h2-h6 标签: {line.strip()[:60]}")
 
 
-# 5.9.1 状态关键词
+# 6.9.1 状态关键词
 _STATE_POSITIVE = re.compile(r'\b(running|ready|active|enabled|healthy)\b', re.I)
 _STATE_NEGATIVE = re.compile(r'\b(stopped|down|error|failed|unhealthy|exited)\b', re.I)
 _STATE_WARNING  = re.compile(r'\b(drain|paused|warning|degraded|pending)\b', re.I)
@@ -479,7 +479,7 @@ _BADGE_BG = re.compile(r'bg-(?:emerald|green|red|rose|amber|yellow|orange|slate|
 
 def check_status_uses_text_color(filepath, lines, tmpl, tmpl_line0):
     """
-    5.9.1 状态值应优先用文字颜色区分，不应用 badge 背景色。
+    6.9.1 状态值应优先用文字颜色区分，不应用 badge 背景色。
     检测：:class 绑定中同时出现状态关键词 + badge 背景色（bg-xxx-100/50）
     仅检查 :class=（动态绑定），排除 v-if/v-show 条件判断行。
     """
@@ -523,7 +523,7 @@ def check_status_uses_text_color(filepath, lines, tmpl, tmpl_line0):
 
 def check_status_text_color_values(filepath, lines, tmpl, tmpl_line0):
     """
-    5.9.1 状态文字颜色值规范：
+    6.9.1 状态文字颜色值规范：
     - 正常/运行/就绪 → text-emerald-600 font-medium
     - 异常/停止/下线 → text-red-500 font-medium（注意是 red-500 不是 red-600）
     - 警告/排空/暂停 → text-amber-600 font-medium
@@ -561,7 +561,7 @@ def check_status_text_color_values(filepath, lines, tmpl, tmpl_line0):
 
 def check_enum_badge_rounded(filepath, lines, tmpl, tmpl_line0):
     """
-    5.9.2 枚举 badge（驱动、类型等）形状应用 rounded 或 rounded-lg，不得用 rounded-full。
+    6.9.2 枚举 badge（驱动、类型等）形状应用 rounded 或 rounded-lg，不得用 rounded-full。
     覆盖桌面端和移动端。
     """
     for i, line in enumerate(lines, 1):
@@ -595,10 +595,10 @@ CHECKS = [
     check_action_buttons,
     check_desktop_badge_shape,
     check_h_tags_in_mobile,
-    # 5.9.1 状态文字颜色
+    # 6.9.1 状态文字颜色
     check_status_uses_text_color,
     check_status_text_color_values,
-    # 5.9.2 枚举 badge 形状
+    # 6.9.2 枚举 badge 形状
     check_enum_badge_rounded,
 ]
 

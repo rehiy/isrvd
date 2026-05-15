@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import { usePortal } from '@/stores'
-
 import api from '@/service/api'
 import type { CronJob, CronTypeInfo } from '@/service/types'
 
 import PageSearch from '@/component/page-search.vue'
+
+import { usePortal } from '@/stores'
 
 import JobEditModal from './widget/job-edit-modal.vue'
 import JobLogsModal from './widget/job-logs-modal.vue'
@@ -242,8 +242,8 @@ export default toNative(CronJobs)
                   {{ runtimeStatusText(job) }}
                 </button>
               </td>
-              <td class="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">{{ formatTime(job.nextRun) }}</td>
-              <td class="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">{{ formatTime(job.lastRun) }}</td>
+              <td class="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{{ formatTime(job.nextRun) }}</td>
+              <td class="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{{ formatTime(job.lastRun) }}</td>
               <td class="px-4 py-3">
                 <div class="flex items-center justify-end gap-1.5">
                   <button class="btn-icon text-emerald-600 hover:bg-emerald-50" title="立即执行" @click="runNow(job)">
@@ -255,7 +255,7 @@ export default toNative(CronJobs)
                   <button class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑" @click="openEdit(job)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
-                  <button class="btn-icon text-red-500 hover:bg-red-50" title="删除" @click="openDelete(job)">
+                  <button class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="openDelete(job)">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
@@ -266,10 +266,10 @@ export default toNative(CronJobs)
       </div>
 
       <div v-if="!loading && filteredJobs.length > 0" class="md:hidden space-y-3 p-4">
-        <div v-for="job in filteredJobs" :key="job.id" class="rounded-xl border border-slate-200 bg-white p-4 hover:shadow-sm">
+        <div v-for="job in filteredJobs" :key="job.id" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
           <div class="flex items-start justify-between gap-3 mb-3">
             <div class="flex items-center gap-2 min-w-0 flex-1">
-              <div class="w-9 h-9 rounded-lg bg-violet-400 flex items-center justify-center flex-shrink-0">
+              <div class="w-10 h-10 rounded-lg bg-violet-400 flex items-center justify-center flex-shrink-0">
                 <i class="fas fa-clock text-white text-base"></i>
               </div>
               <div class="min-w-0">
@@ -313,7 +313,7 @@ export default toNative(CronJobs)
             <button class="btn-icon text-emerald-600 hover:bg-emerald-50" title="立即执行" @click="runNow(job)"><i class="fas fa-play text-xs"></i></button>
             <button class="btn-icon text-slate-600 hover:bg-slate-50" title="执行日志" @click="openLogs(job)"><i class="fas fa-list-ul text-xs"></i></button>
             <button class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑" @click="openEdit(job)"><i class="fas fa-pen text-xs"></i></button>
-            <button class="btn-icon text-red-500 hover:bg-red-50" title="删除" @click="openDelete(job)"><i class="fas fa-trash text-xs"></i></button>
+            <button class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="openDelete(job)"><i class="fas fa-trash text-xs"></i></button>
           </div>
         </div>
       </div>
