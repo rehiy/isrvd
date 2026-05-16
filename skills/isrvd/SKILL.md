@@ -57,6 +57,14 @@ isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
 | [docs/apisix/consumers.md](docs/apisix/consumers.md) | Consumer CRUD、白名单管理 |
 | [docs/apisix/ssl.md](docs/apisix/ssl.md) | SSL 证书、PluginConfig、插件列表 |
 
+### Caddy
+
+| 文档 | 覆盖内容 |
+|------|----------|
+| [docs/caddy/routes.md](docs/caddy/routes.md) | 路由 CRUD（match + handler，含反向代理/文件服务/静态响应/原始 handle） |
+| [docs/caddy/certs.md](docs/caddy/certs.md) | TLS 证书 CRUD（磁盘文件 / 内联 PEM / 自动签发三种来源） |
+| [docs/caddy/config.md](docs/caddy/config.md) | 概览、获取/整体替换原始 JSON 配置 |
+
 ### 系统
 
 | 文档 | 覆盖内容 |
@@ -79,7 +87,8 @@ isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
 │   ├── 多容器应用(单机) → docs/compose.md §1
 │   ├── 集群服务(Stack)  → docs/compose.md §2
 │   ├── 集群服务(单服务) → docs/swarm/services.md
-│   └── 配置路由         → docs/apisix/routes.md
+│   ├── 配置 APISIX 路由 → docs/apisix/routes.md
+│   └── 配置 Caddy 路由  → docs/caddy/routes.md
 │
 ├── 更新/变更
 │   ├── 更新 Compose 服务镜像 → docs/compose.md (redeploy + serviceName/image)
@@ -87,12 +96,14 @@ isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
 │   ├── 扩缩容           → docs/swarm/services.md
 │   ├── 重新部署         → docs/swarm/services.md (force-update)
 │   ├── 修改路由/上游    → docs/apisix/routes.md 或 docs/apisix/upstreams.md
+│   ├── 修改 Caddy 路由  → docs/caddy/routes.md（更新触发 /load 整体替换）
 │   └── 修改系统配置     → docs/system/config.md
 │
 ├── 查询/监控
 │   ├── 容器/镜像/网络/卷 → docs/docker/ 下对应文件
 │   ├── 集群/服务/任务    → docs/swarm/ 下对应文件
 │   ├── 路由/上游/插件    → docs/apisix/ 下对应文件
+│   ├── Caddy 路由/配置   → docs/caddy/ 下对应文件
 │   ├── 系统状态          → docs/system/overview.md
 │   ├── 日志             → docs/docker/containers.md 或 docs/swarm/services.md
 │   └── 文件管理         → docs/system/filer.md
@@ -100,7 +111,8 @@ isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
 ├── 删除/清理
 │   ├── 容器/镜像/网络/卷 → docs/docker/ 下对应文件（action=remove）
 │   ├── Swarm 服务        → docs/swarm/services.md（action=remove）
-│   └── 路由/消费者       → docs/apisix/routes.md 或 docs/apisix/consumers.md
+│   ├── 路由/消费者       → docs/apisix/routes.md 或 docs/apisix/consumers.md
+│   └── Caddy 路由        → docs/caddy/routes.md (DELETE /caddy/route/:index)
 │
 └── 管理
     ├── 镜像仓库         → docs/docker/registries.md
@@ -190,6 +202,22 @@ isrvd_post "/apisix/route" '{"name":"<NAME>","uri":"<URI>","status":1,"upstream"
 ```bash
 isrvd_patch "/apisix/route/<ROUTE_ID>/status" '{"status":0}'
 isrvd_patch "/apisix/route/<ROUTE_ID>/status" '{"status":1}'
+```
+
+### 为新服务配置 Caddy 路由
+
+```bash
+# 反向代理（最常见）
+isrvd_post "/caddy/route" '{
+  "match": {"hosts": ["<DOMAIN>"], "paths": ["/*"]},
+  "handler": {"kind": "reverse_proxy", "upstreams": ["<HOST>:<PORT>"]}
+}'
+
+# 查看当前所有 Caddy 路由
+isrvd_get "/caddy/routes"
+
+# 备份完整配置（推荐在重大变更前执行）
+isrvd_get "/caddy/config" > /tmp/caddy-backup.json
 ```
 
 ### 更新静态文件（无需重建容器）

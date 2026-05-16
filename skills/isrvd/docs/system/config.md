@@ -23,6 +23,7 @@ isrvd_get "/system/config"
 | agent | object | `{model, baseUrl}`（apiKey 不返回） |
 | oidc | object | `{enabled, issuerUrl, clientId, redirectUrl, usernameClaim, scopes}`（clientSecret 不返回） |
 | apisix | object | `{adminUrl}`（adminKey 不返回） |
+| caddy | object | `{adminUrl}` |
 | docker | object | `{host, containerRoot, registries}`（registry password 不返回） |
 | marketplace | object | `{url}` |
 | links | object[] | `{label, url, icon}` |
