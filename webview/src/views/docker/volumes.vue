@@ -234,7 +234,7 @@ export default toNative(Volumes)
           <i class="fas fa-database text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ volumes.length === 0 ? '暂无数据卷' : '未找到匹配数据卷' }}</p>
-        <p class="text-sm text-slate-400">{{ volumes.length === 0 ? '点击「创建数据卷」添加数据卷' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ volumes.length === 0 ? '点击「创建」添加数据卷' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
     </div>
 

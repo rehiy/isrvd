@@ -79,11 +79,11 @@ export default toNative(CaddyRaw)
             <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">Caddy 原始配置</h1><p class="text-xs text-slate-500 truncate">直接编辑底层 JSON 并整体替换运行配置</p></div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
-            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadConfig()"><i class="fas fa-rotate"></i>重新加载</button>
+            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadConfig()"><i class="fas fa-rotate"></i>重载</button>
             <button v-if="portal.hasPerm('POST /api/caddy/config')" :disabled="saving" class="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50" @click="saveConfig()">
               <i v-if="saving" class="fas fa-spinner fa-spin"></i>
               <i v-else class="fas fa-cloud-arrow-up"></i>
-              <span>{{ saving ? '提交中...' : '提交配置' }}</span>
+              <span>{{ saving ? '保存中...' : '保存' }}</span>
             </button>
           </div>
         </div>

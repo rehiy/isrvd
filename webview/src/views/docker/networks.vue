@@ -279,7 +279,7 @@ export default toNative(Networks)
           <i class="fas fa-network-wired text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ networks.length === 0 ? '暂无自定义网络' : '未找到匹配网络' }}</p>
-        <p class="text-sm text-slate-400">{{ networks.length === 0 ? '点击「创建网络」添加自定义网络' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ networks.length === 0 ? '点击「创建」添加自定义网络' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
     </div>
 

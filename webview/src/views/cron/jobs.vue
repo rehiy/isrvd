@@ -158,7 +158,7 @@ export default toNative(CronJobs)
               <i class="fas fa-rotate"></i>刷新
             </button>
             <button class="px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap" @click="openCreate()">
-              <i class="fas fa-plus"></i>新建任务
+              <i class="fas fa-plus"></i>创建
             </button>
           </div>
         </div>
@@ -197,7 +197,7 @@ export default toNative(CronJobs)
           <i class="fas fa-clock text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ jobs.length === 0 ? '暂无计划任务' : '未找到匹配任务' }}</p>
-        <p class="text-sm text-slate-400 mb-4">{{ jobs.length === 0 ? '点击「新建任务」创建第一个定时任务' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400 mb-4">{{ jobs.length === 0 ? '点击「创建」添加第一个定时任务' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
 
       <div v-else class="hidden md:block overflow-x-auto">

@@ -414,7 +414,7 @@ export default toNative(Images)
           <i class="fas fa-compact-disc text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ images.length === 0 ? '暂无镜像' : '未找到匹配镜像' }}</p>
-        <p class="text-sm text-slate-400">{{ images.length === 0 ? '点击「拉取镜像」从 Registry 获取镜像' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ images.length === 0 ? '点击「拉取」从 Registry 获取镜像' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
     </div>
 

@@ -130,7 +130,7 @@ export default toNative(Config)
               </button>
             </div>
             <button type="button" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadConfig(true)">
-              <i class="fas fa-rotate"></i>重载配置
+              <i class="fas fa-rotate"></i>重载
             </button>
           </div>
         </div>

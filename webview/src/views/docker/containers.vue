@@ -336,7 +336,7 @@ export default toNative(Containers)
           <i class="fab fa-docker text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ containers.length === 0 ? '暂无容器' : '未找到匹配容器' }}</p>
-        <p class="text-sm text-slate-400">{{ containers.length === 0 ? '点击「创建容器」开始使用 Docker' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ containers.length === 0 ? '点击「创建」开始使用 Docker' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
     </div>
 
