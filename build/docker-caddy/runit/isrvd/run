@@ -1,0 +1,8 @@
+#!/bin/bash
+exec 2>&1
+
+echo "[isrvd] Starting isrvd..."
+cd /data
+
+echo "[isrvd] Using CONFIG_PATH: $CONFIG_PATH"
+exec /usr/local/bin/isrvd

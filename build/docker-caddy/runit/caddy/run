@@ -1,0 +1,17 @@
+#!/bin/bash
+exec 2>&1
+
+# Caddy 配置与运行数据均写入 /data 持久卷
+CADDY_CONF=/data/conf/caddy.json
+CADDY_HOME=/data/caddy
+export XDG_DATA_HOME="$CADDY_HOME/data"
+export XDG_CONFIG_HOME="$CADDY_HOME/config"
+mkdir -p "$(dirname "$CADDY_CONF")" "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$CADDY_HOME/certs"
+
+if [ ! -f "$CADDY_CONF" ]; then
+    echo "[caddy] Config not found: $CADDY_CONF"
+    exit 1
+fi
+
+echo "[caddy] Starting Caddy admin api on 127.0.0.1:2019..."
+exec /usr/local/bin/caddy run --config "$CADDY_CONF" --adapter json

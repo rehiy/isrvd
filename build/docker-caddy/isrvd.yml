@@ -1,0 +1,26 @@
+server:
+  debug: false
+  listenAddr: :8080
+  jwtSecret: __JWT_SECRET__
+  rootDirectory: /data/
+
+caddy:
+  adminUrl: http://127.0.0.1:2019
+
+docker:
+  host: unix:///var/run/docker.sock
+  containerRoot: container/
+
+marketplace:
+  url: https://apps.rehi.org
+
+links:
+- label: 工具箱
+  url: https://api.rehi.org
+  icon: fas fa-cloud-bolt
+
+members:
+  - username: admin
+    password: __ISRVD_PASSWORD__
+    homeDirectory: .
+    founder: true

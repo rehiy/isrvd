@@ -1,0 +1,14 @@
+{
+  "admin": {"listen": "127.0.0.1:2019"},
+  "apps": {
+    "http": {
+      "servers": {
+        "srv0": {
+          "listen": [":80"],
+          "automatic_https": {"disable_redirects": true},
+          "routes": []
+        }
+      }
+    }
+  }
+}

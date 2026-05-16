@@ -58,9 +58,21 @@ $:
 
         - name: Build and push CNB image
           timeout: 2h
-          script: docker buildx build --platform linux/amd64,linux/arm64 -f build/docker/Dockerfile -t $IMAGE_URL:latest -t $IMAGE_URL:$CNB_BRANCH --build-arg "ISRVD_VERSION=$CNB_BRANCH" --build-arg "ISRVD_DOWNLOAD_BASE=$ISRVD_DOWNLOAD_BASE" --push .
+          script: |
+            docker buildx build --push --platform linux/amd64,linux/arm64 \
+            --build-arg "ISRVD_VERSION=$CNB_BRANCH" --build-arg "ISRVD_DOWNLOAD_BASE=$ISRVD_DOWNLOAD_BASE" \
+            -t $IMAGE_URL:latest -f build/docker/Dockerfile .
+
+        - name: Build and push CNB Caddy image
+          timeout: 2h
+          script: |
+            docker buildx build --push --platform linux/amd64,linux/arm64 \
+            --build-arg "ISRVD_VERSION=$CNB_BRANCH" --build-arg "ISRVD_DOWNLOAD_BASE=$ISRVD_DOWNLOAD_BASE" \
+            -t $IMAGE_URL:caddy -f build/docker-caddy/Dockerfile .
 
         - name: Build and push CNB slim image
           timeout: 2h
-          script: docker buildx build --platform linux/amd64,linux/arm64 -f build/docker-slim/Dockerfile -t $IMAGE_URL:slim -t "$IMAGE_URL:$CNB_BRANCH-slim" --build-arg "ISRVD_VERSION=$CNB_BRANCH" --build-arg "ISRVD_DOWNLOAD_BASE=$ISRVD_DOWNLOAD_BASE" --push .
-
+          script: |
+            docker buildx build --push --platform linux/amd64,linux/arm64 \
+            --build-arg "ISRVD_VERSION=$CNB_BRANCH" --build-arg "ISRVD_DOWNLOAD_BASE=$ISRVD_DOWNLOAD_BASE" \
+            -t $IMAGE_URL:slim -f build/docker-slim/Dockerfile .
