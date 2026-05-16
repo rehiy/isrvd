@@ -11,6 +11,8 @@ export interface CaddyMatchForm {
 export interface CaddyHandlerForm {
     kind: CaddyHandlerKind
     upstreams?: string[]
+    fastcgi?: boolean      // 启用 FastCGI 传输（PHP-FPM 等）
+    fastcgiRoot?: string   // FastCGI 文档根目录
     root?: string
     browse?: boolean
     statusCode?: number

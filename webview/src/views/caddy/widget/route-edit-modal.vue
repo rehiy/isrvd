@@ -36,6 +36,8 @@ const defaultFormData = () => ({
     upstreams: '',
     upstreamHost: '',
     upstreamPort: '',
+    fastcgi: false,
+    fastcgiRoot: '',
     root: '',
     browse: false,
     statusCode: 200,
@@ -140,6 +142,8 @@ class RouteEditModal extends Vue {
                 this.formData.kind = h.kind
                 this.formData.upstreams = (h.upstreams || []).join('\n')
                 this.syncSelectedFromText()
+                this.formData.fastcgi = !!h.fastcgi
+                this.formData.fastcgiRoot = h.fastcgiRoot || ''
                 this.formData.root = h.root || ''
                 this.formData.browse = !!h.browse
                 this.formData.statusCode = h.statusCode || 200
@@ -176,7 +180,7 @@ class RouteEditModal extends Vue {
                     this.portal.showNotification('error', '请填写至少一个上游 host:port')
                     return null
                 }
-                handler = { kind: 'reverse_proxy', upstreams }
+                handler = { kind: 'reverse_proxy', upstreams, fastcgi: f.fastcgi || undefined, fastcgiRoot: f.fastcgi && f.fastcgiRoot.trim() ? f.fastcgiRoot.trim() : undefined }
                 break
             }
             case 'file_server': {
@@ -277,6 +281,18 @@ export default toNative(RouteEditModal)
             <textarea v-model="formData.upstreams" rows="3" class="input font-mono text-sm" placeholder="backend1:8080&#10;backend2:8080" @input="syncSelectedFromText"></textarea>
             <p class="text-xs text-slate-400 mt-1">多个上游会做轮询负载</p>
           </div>
+          <div>
+            <label class="flex items-center gap-2 cursor-pointer select-none w-fit">
+              <input v-model="formData.fastcgi" type="checkbox" class="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500" />
+              <span class="text-sm text-slate-600">使用 FastCGI 协议（PHP-FPM / fcgi）</span>
+            </label>
+            <p class="text-xs text-slate-400 mt-1">启用后将使用 FastCGI 传输协议与上游通信，适用于 PHP-FPM 等 FastCGI 进程</p>
+          </div>
+          <div v-if="formData.fastcgi">
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">FastCGI 文档根目录</label>
+            <input v-model="formData.fastcgiRoot" type="text" class="input font-mono text-sm" placeholder="/var/www/html（留空不传 root）" />
+            <p class="text-xs text-slate-400 mt-1">上游 FastCGI 服务器的文档根目录，用于设置 <code class="px-1 bg-slate-100 rounded">DOCUMENT_ROOT</code></p>
+          </div>
         </div>
 
         <!-- file_server -->
@@ -285,11 +301,12 @@ export default toNative(RouteEditModal)
             <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">根目录 <span class="text-red-500">*</span></label>
             <input v-model="formData.root" type="text" class="input font-mono text-sm" placeholder="/var/www/html" />
           </div>
-          <div class="flex items-center gap-2">
+          <div>
             <label class="flex items-center gap-2 cursor-pointer select-none w-fit">
               <input v-model="formData.browse" type="checkbox" class="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500" />
               <span class="text-sm text-slate-600">启用目录浏览</span>
             </label>
+            <p class="text-xs text-slate-400 mt-1">允许访客浏览目录内文件列表</p>
           </div>
         </div>
 

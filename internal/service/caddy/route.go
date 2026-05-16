@@ -24,7 +24,9 @@ type HandlerForm struct {
 	Kind string `json:"kind"` // reverse_proxy / file_server / static_response / raw
 
 	// reverse_proxy
-	Upstreams []string `json:"upstreams,omitempty"`
+	Upstreams   []string `json:"upstreams,omitempty"`
+	FastCGI     bool     `json:"fastcgi,omitempty"`     // 启用 FastCGI 传输协议（PHP-FPM 等）
+	FastCGIRoot string   `json:"fastcgiRoot,omitempty"` // FastCGI 文档根目录
 
 	// file_server
 	Root   string `json:"root,omitempty"`
@@ -197,7 +199,15 @@ func formToRoute(req RouteForm) (pkgcaddy.Route, error) {
 
 	switch req.Handler.Kind {
 	case HandlerKindReverseProxy:
-		r.Handle = []pkgcaddy.Handler{pkgcaddy.HandlerReverseProxy(nonEmpty(req.Handler.Upstreams)...)}
+		h := pkgcaddy.HandlerReverseProxy(nonEmpty(req.Handler.Upstreams)...)
+		if req.Handler.FastCGI {
+			transport := map[string]any{"protocol": "fastcgi"}
+			if req.Handler.FastCGIRoot != "" {
+				transport["root"] = req.Handler.FastCGIRoot
+			}
+			h["transport"] = transport
+		}
+		r.Handle = []pkgcaddy.Handler{h}
 	case HandlerKindFileServer:
 		r.Handle = []pkgcaddy.Handler{pkgcaddy.HandlerFileServer(req.Handler.Root, req.Handler.Browse)}
 	case HandlerKindStaticResp:
@@ -247,7 +257,14 @@ func handlerToForm(handlers []pkgcaddy.Handler) *HandlerForm {
 	kind, _ := h["handler"].(string)
 	switch kind {
 	case HandlerKindReverseProxy:
-		return &HandlerForm{Kind: kind, Upstreams: extractUpstreams(h)}
+		form := &HandlerForm{Kind: kind, Upstreams: extractUpstreams(h)}
+		if t, ok := h["transport"].(map[string]any); ok {
+			if proto, _ := t["protocol"].(string); proto == "fastcgi" {
+				form.FastCGI = true
+				form.FastCGIRoot, _ = t["root"].(string)
+			}
+		}
+		return form
 	case HandlerKindFileServer:
 		root, _ := h["root"].(string)
 		_, browse := h["browse"]

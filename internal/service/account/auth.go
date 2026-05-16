@@ -161,10 +161,10 @@ func (s *Service) signJWT(username string, extra jwt.MapClaims) (string, error) 
 // JWTCheck 解析 JWT 并返回用户名；失败时返回空用户名和具体错误原因。
 func (s *Service) JWTCheck(c *gin.Context) (username, errMsg string) {
 	tokenStr := s.extractJWT(c)
-		if tokenStr == "" {
-			return "", "未提供认证令牌"
-		}
-		username = s.JWTUsername(c)
+	if tokenStr == "" {
+		return "", "未提供认证令牌"
+	}
+	username = s.JWTUsername(c)
 	if username == "" {
 		return "", "认证令牌无效"
 	}
