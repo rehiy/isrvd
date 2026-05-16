@@ -51,7 +51,7 @@ export default toNative(Shell)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">Shell 终端</h1>
-              <p class="text-xs text-slate-500">连接到远程服务器</p>
+              <p class="text-xs text-slate-500">通过 Web 终端连接到远程服务器</p>
             </div>
           </div>
 
@@ -93,7 +93,7 @@ export default toNative(Shell)
               </div>
               <div class="min-w-0">
                 <h1 class="text-lg font-semibold text-slate-800 truncate">Shell 终端</h1>
-                <p class="text-xs text-slate-500 truncate">连接到远程服务器</p>
+                <p class="text-xs text-slate-500 truncate">Web 终端连接</p>
               </div>
             </div>
           </div>

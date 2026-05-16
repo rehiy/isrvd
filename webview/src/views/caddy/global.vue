@@ -92,7 +92,7 @@ export default toNative(CaddyGlobalConfig)
             </div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">Caddy 全局选项</h1>
-              <p class="text-xs text-slate-500 truncate">配置 ACME 邮箱、证书存储、日志级别等全局参数</p>
+              <p class="text-xs text-slate-500 truncate">配置 TLS 自动化、日志级别与 HTTP 服务器参数</p>
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
@@ -108,7 +108,7 @@ export default toNative(CaddyGlobalConfig)
             >
               <i v-if="saving" class="fas fa-spinner fa-spin"></i>
               <i v-else class="fas fa-floppy-disk"></i>
-              {{ saving ? '保存中...' : '保存' }}
+              {{ saving ? '保存中...' : '保存配置' }}
             </button>
           </div>
         </div>
@@ -120,7 +120,7 @@ export default toNative(CaddyGlobalConfig)
             </div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">Caddy 全局选项</h1>
-              <p class="text-xs text-slate-500 truncate">ACME、证书存储、日志等全局参数</p>
+              <p class="text-xs text-slate-500 truncate">TLS、日志与 HTTP 参数</p>
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">

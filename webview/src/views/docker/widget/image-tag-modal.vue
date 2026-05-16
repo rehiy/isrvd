@@ -48,7 +48,7 @@ export default toNative(ImageTagModal)
 <template>
   <BaseModal
     v-model="isOpen"
-    title="添加镜像标签"
+    title="新建镜像标签"
     :loading="modalLoading"
     show-footer
     @confirm="handleConfirm"
@@ -73,6 +73,6 @@ export default toNative(ImageTagModal)
       </div>
     </div>
 
-    <template #confirm-text>确认添加</template>
+    <template #confirm-text>确认新建</template>
   </BaseModal>
 </template>

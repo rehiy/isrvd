@@ -12,10 +12,10 @@ import ContainerSelect from '@/views/docker/widget/container-select.vue'
 import { usePortal } from '@/stores'
 
 const HANDLER_KIND_CARDS: CaddyHandlerKindCard[] = [
-    { value: 'reverse_proxy', title: '反向代理', desc: '转发到一个或多个上游', icon: 'fa-diagram-project', tone: 'indigo' },
-    { value: 'file_server', title: '静态文件', desc: '提供本地目录文件服务', icon: 'fa-folder-open', tone: 'emerald' },
-    { value: 'static_response', title: '静态响应', desc: '返回固定状态码或内容', icon: 'fa-bolt', tone: 'amber' },
-    { value: 'raw', title: '原始 JSON', desc: '直接编辑 handle 数组', icon: 'fa-code', tone: 'slate' }
+    { value: 'reverse_proxy', title: '反向代理', desc: '将请求转发到一个或多个上游服务器', icon: 'fa-diagram-project', tone: 'indigo' },
+    { value: 'file_server', title: '静态文件服务', desc: '提供本地目录中的静态文件访问', icon: 'fa-folder-open', tone: 'emerald' },
+    { value: 'static_response', title: '静态响应', desc: '直接返回指定的 HTTP 状态码和响应体', icon: 'fa-bolt', tone: 'amber' },
+    { value: 'raw', title: '原始 JSON', desc: '直接编辑 Caddy 原生 handle 数组', icon: 'fa-code', tone: 'slate' }
 ]
 
 const TONE_CARD_ACTIVE: Record<string, string> = {
@@ -246,7 +246,7 @@ export default toNative(RouteEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑路由' : '创建路由'" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑路由' : '新建路由'" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
     <div class="space-y-4 p-1">
       <!-- 匹配条件：直接平铺，与 apisix 一致 -->
       <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Host（每行一个，留空匹配所有）</label><textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="example.com&#10;*.example.com"></textarea></div>
@@ -332,7 +332,7 @@ export default toNative(RouteEditModal)
     </div>
 
     <template #confirm-text>
-      确认{{ isEditMode ? '更新' : '创建' }}
+      确认{{ isEditMode ? '更新' : '新建' }}
     </template>
   </BaseModal>
 </template>

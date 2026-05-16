@@ -72,7 +72,7 @@ export default toNative(CreateModal)
     </form>
 
     <template #confirm-text>
-      {{ portal.filerLoading ? '创建中...' : '创建文件' }}
+      {{ portal.filerLoading ? '新建中...' : '新建文件' }}
     </template>
   </BaseModal>
 </template>

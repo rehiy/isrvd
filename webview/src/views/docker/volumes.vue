@@ -95,7 +95,7 @@ export default toNative(Volumes)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">数据卷管理</h1>
-              <p class="text-xs text-slate-500">管理 Docker 数据卷</p>
+              <p class="text-xs text-slate-500">管理 Docker 数据卷，持久化容器数据</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -104,7 +104,7 @@ export default toNative(Volumes)
               <i class="fas fa-rotate"></i>刷新
             </button>
             <button v-if="portal.hasPerm('POST /api/docker/volume')" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="createModalRef?.show()">
-              <i class="fas fa-plus"></i>创建
+              <i class="fas fa-plus"></i>新建卷
             </button>
           </div>
         </div>
@@ -116,14 +116,14 @@ export default toNative(Volumes)
             </div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">数据卷管理</h1>
-              <p class="text-xs text-slate-500 truncate">管理 Docker 数据卷</p>
+              <p class="text-xs text-slate-500 truncate">管理容器数据卷</p>
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
             <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadVolumes()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/volume')" class="w-9 h-9 rounded-lg bg-amber-500 hover:bg-amber-600 flex items-center justify-center text-white transition-colors" title="创建" @click="createModalRef?.show()">
+            <button v-if="portal.hasPerm('POST /api/docker/volume')" class="w-9 h-9 rounded-lg bg-amber-500 hover:bg-amber-600 flex items-center justify-center text-white transition-colors" title="新建卷" @click="createModalRef?.show()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
@@ -211,7 +211,7 @@ export default toNative(Volumes)
 
             <!-- 创建时间 -->
             <div class="flex items-center gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0">创建</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">创建时间</span>
               <span class="text-xs text-slate-500">{{ formatTime(vol.createdAt) }}</span>
             </div>
             
@@ -234,7 +234,7 @@ export default toNative(Volumes)
           <i class="fas fa-database text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ volumes.length === 0 ? '暂无数据卷' : '未找到匹配数据卷' }}</p>
-        <p class="text-sm text-slate-400">{{ volumes.length === 0 ? '点击「创建」添加数据卷' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ volumes.length === 0 ? '点击「新建卷」创建数据卷' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
     </div>
 

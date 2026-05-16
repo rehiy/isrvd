@@ -29,7 +29,7 @@ class RegistryEditModal extends Vue {
     }
 
     get title() {
-        return this.isEdit ? '编辑镜像仓库' : '添加镜像仓库'
+        return this.isEdit ? '编辑镜像仓库' : '新建镜像仓库'
     }
 
     // ─── 方法 ───

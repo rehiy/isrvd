@@ -59,7 +59,7 @@ export default toNative(MkdirModal)
     </form>
 
     <template #confirm-text>
-      {{ portal.filerLoading ? '创建中...' : '创建目录' }}
+      {{ portal.filerLoading ? '新建中...' : '新建目录' }}
     </template>
   </BaseModal>
 </template>

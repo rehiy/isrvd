@@ -127,7 +127,7 @@ export default toNative(JobEditModal)
     :loading="modalLoading"
     @confirm="handleConfirm"
   >
-    <template #confirm-text>{{ isEditMode ? '保存' : '创建' }}</template>
+    <template #confirm-text>{{ isEditMode ? '保存' : '新建' }}</template>
 
     <div class="max-w-3xl space-y-4 p-1">
       <div>

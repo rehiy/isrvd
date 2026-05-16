@@ -104,7 +104,7 @@ export default toNative(Consumers)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">消费者管理</h1>
-              <p class="text-xs text-slate-500">管理 APISIX Consumer</p>
+              <p class="text-xs text-slate-500">管理 APISIX Consumer 及其认证凭据</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -113,7 +113,7 @@ export default toNative(Consumers)
               <i class="fas fa-rotate"></i>刷新
             </button>
             <button v-if="portal.hasPerm('POST /api/apisix/consumer')" class="px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openCreateModal()">
-              <i class="fas fa-plus"></i>创建
+              <i class="fas fa-plus"></i>新建消费者
             </button>
           </div>
         </div>
@@ -125,14 +125,14 @@ export default toNative(Consumers)
             </div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">消费者管理</h1>
-              <p class="text-xs text-slate-500 truncate">管理 APISIX Consumer</p>
+              <p class="text-xs text-slate-500 truncate">管理 Consumer 与凭据</p>
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
             <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadConsumers()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/consumer')" class="w-9 h-9 rounded-lg bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white transition-colors" title="创建" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/apisix/consumer')" class="w-9 h-9 rounded-lg bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white transition-colors" title="新建消费者" @click="openCreateModal()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
@@ -155,7 +155,7 @@ export default toNative(Consumers)
           <i class="fas fa-users text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ consumers.length === 0 ? '暂无消费者' : '未找到匹配消费者' }}</p>
-        <p class="text-sm text-slate-400">{{ consumers.length === 0 ? '点击「创建」添加 Consumer' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ consumers.length === 0 ? '点击「新建消费者」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
 
       <!-- 消费者列表 -->

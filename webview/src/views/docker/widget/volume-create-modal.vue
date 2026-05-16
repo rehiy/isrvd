@@ -45,7 +45,7 @@ export default toNative(VolumeCreateModal)
 <template>
   <BaseModal
     v-model="isOpen"
-    title="创建数据卷"
+    title="新建数据卷"
     :loading="modalLoading"
     show-footer
     @confirm="handleConfirm"
@@ -63,6 +63,6 @@ export default toNative(VolumeCreateModal)
       </div>
     </form>
 
-    <template #confirm-text>确认创建</template>
+    <template #confirm-text>确认新建</template>
   </BaseModal>
 </template>

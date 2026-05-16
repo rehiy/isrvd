@@ -108,12 +108,12 @@ export default toNative(CaddyCerts)
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-lg bg-cyan-500 flex items-center justify-center"><i class="fas fa-certificate text-white"></i></div>
-            <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">TLS 证书</h1><p class="text-xs text-slate-500 truncate">管理 Caddy 证书：磁盘文件 / 内联 PEM / 自动签发</p></div>
+            <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">TLS 证书</h1><p class="text-xs text-slate-500 truncate">管理 Caddy 证书来源：文件、PEM 或自动签发</p></div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
             <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="搜索主机、路径、标签..." width-class="w-64" focus-color="cyan" type-to-search />
             <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadCerts()"><i class="fas fa-rotate"></i>刷新</button>
-            <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openCreateModal()"><i class="fas fa-plus"></i>添加</button>
+            <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openCreateModal()"><i class="fas fa-plus"></i>新建证书</button>
           </div>
         </div>
         <!-- 移动端 -->
@@ -122,14 +122,14 @@ export default toNative(CaddyCerts)
             <div class="w-9 h-9 rounded-lg bg-cyan-500 flex items-center justify-center flex-shrink-0"><i class="fas fa-certificate text-white"></i></div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">TLS 证书</h1>
-              <p class="text-xs text-slate-500 truncate">管理 Caddy 证书来源</p>
+              <p class="text-xs text-slate-500 truncate">管理证书来源</p>
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
             <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadCerts()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="w-9 h-9 rounded-lg bg-cyan-500 hover:bg-cyan-600 flex items-center justify-center text-white transition-colors" title="添加" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="w-9 h-9 rounded-lg bg-cyan-500 hover:bg-cyan-600 flex items-center justify-center text-white transition-colors" title="新建证书" @click="openCreateModal()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
@@ -143,7 +143,7 @@ export default toNative(CaddyCerts)
       <div v-else-if="filteredCerts.length === 0" class="flex flex-col items-center justify-center py-20">
         <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4"><i class="fas fa-certificate text-4xl text-slate-300"></i></div>
         <p class="text-slate-600 font-medium mb-1">{{ certs.length === 0 ? '暂无证书' : '未找到匹配证书' }}</p>
-        <p class="text-sm text-slate-400">{{ certs.length === 0 ? '点击「添加」配置磁盘文件、内联 PEM 或自动签发' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ certs.length === 0 ? '点击「新建证书」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
       <div v-else class="space-y-3">
         <!-- 桌面端表格 -->

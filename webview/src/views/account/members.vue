@@ -105,7 +105,7 @@ export default toNative(Members)
               <i class="fas fa-rotate"></i>刷新
             </button>
             <button v-if="portal.hasPerm('POST /api/account/member')" type="button" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openAddMember">
-              <i class="fas fa-plus"></i>添加
+              <i class="fas fa-plus"></i>新建用户
             </button>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default toNative(Members)
             <button type="button" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadMembers">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/account/member')" type="button" class="w-9 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-white transition-colors" title="添加" @click="openAddMember">
+            <button v-if="portal.hasPerm('POST /api/account/member')" type="button" class="w-9 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-white transition-colors" title="新建用户" @click="openAddMember">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
@@ -146,7 +146,7 @@ export default toNative(Members)
           <i class="fas fa-users text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ members.length === 0 ? '暂无成员' : '未找到匹配成员' }}</p>
-        <p class="text-sm text-slate-400">{{ members.length === 0 ? '点击右上角「添加」创建成员' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ members.length === 0 ? '点击「新建用户」创建成员' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
 
       <!-- Table -->

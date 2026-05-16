@@ -216,7 +216,7 @@ export default toNative(Images)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">镜像管理</h1>
-              <p class="text-xs text-slate-500">管理 Docker 镜像</p>
+              <p class="text-xs text-slate-500">拉取、导入、导出和删除 Docker 镜像</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -251,7 +251,7 @@ export default toNative(Images)
             </div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">镜像管理</h1>
-              <p class="text-xs text-slate-500 truncate">管理 Docker 镜像</p>
+              <p class="text-xs text-slate-500 truncate">拉取与管理镜像</p>
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
@@ -378,7 +378,7 @@ export default toNative(Images)
 
             <!-- 创建时间 -->
             <div class="flex items-center gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0">创建</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">创建时间</span>
               <span class="text-xs text-slate-500">{{ formatTime(new Date(img.created * 1000).toISOString()) }}</span>
             </div>
             <!-- 大小 -->
@@ -414,7 +414,7 @@ export default toNative(Images)
           <i class="fas fa-compact-disc text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ images.length === 0 ? '暂无镜像' : '未找到匹配镜像' }}</p>
-        <p class="text-sm text-slate-400">{{ images.length === 0 ? '点击「拉取」从 Registry 获取镜像' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ images.length === 0 ? '点击「拉取」从 Registry 获取' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
     </div>
 

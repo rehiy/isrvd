@@ -143,7 +143,7 @@ export default toNative(AuditLogs)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">操作审计</h1>
-              <p class="text-xs text-slate-500">记录所有用户的操作行为</p>
+              <p class="text-xs text-slate-500">查看和检索所有用户的操作记录</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -165,8 +165,8 @@ export default toNative(AuditLogs)
                 <i class="fas fa-clipboard-list text-white"></i>
               </div>
               <div class="min-w-0">
-                <h1 class="text-lg font-semibold text-slate-800 truncate">审计日志</h1>
-                <p class="text-xs text-slate-500 truncate">记录所有用户操作行为</p>
+                <h1 class="text-lg font-semibold text-slate-800 truncate">操作审计</h1>
+                <p class="text-xs text-slate-500 truncate">查看用户操作记录</p>
               </div>
             </div>
             <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0" title="刷新" @click="loadLogs()">

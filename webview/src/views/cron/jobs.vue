@@ -149,7 +149,7 @@ export default toNative(CronJobs)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">计划任务</h1>
-              <p class="text-xs text-slate-500">按执行计划自动运行脚本</p>
+              <p class="text-xs text-slate-500">按设定时间或周期自动执行脚本命令</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -158,7 +158,7 @@ export default toNative(CronJobs)
               <i class="fas fa-rotate"></i>刷新
             </button>
             <button class="px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap" @click="openCreate()">
-              <i class="fas fa-plus"></i>创建
+              <i class="fas fa-plus"></i>新建任务
             </button>
           </div>
         </div>
@@ -171,14 +171,14 @@ export default toNative(CronJobs)
               </div>
               <div class="min-w-0">
                 <h1 class="text-lg font-semibold text-slate-800 truncate">计划任务</h1>
-                <p class="text-xs text-slate-500 truncate">定时脚本执行</p>
+                <p class="text-xs text-slate-500 truncate">定时自动执行脚本</p>
               </div>
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
               <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadJobs()">
                 <i class="fas fa-rotate text-sm"></i>
               </button>
-              <button class="w-9 h-9 rounded-lg bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white transition-colors" title="新建" @click="openCreate()">
+              <button class="w-9 h-9 rounded-lg bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white transition-colors" title="新建任务" @click="openCreate()">
                 <i class="fas fa-plus text-sm"></i>
               </button>
             </div>
@@ -197,7 +197,7 @@ export default toNative(CronJobs)
           <i class="fas fa-clock text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ jobs.length === 0 ? '暂无计划任务' : '未找到匹配任务' }}</p>
-        <p class="text-sm text-slate-400 mb-4">{{ jobs.length === 0 ? '点击「创建」添加第一个定时任务' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ jobs.length === 0 ? '点击「新建任务」创建第一个定时任务' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
 
       <div v-else class="hidden md:block overflow-x-auto">

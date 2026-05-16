@@ -170,7 +170,7 @@ export default toNative(ContainerCreateModal)
   <BaseModal
     ref="modalRef"
     v-model="isOpen"
-    title="创建容器"
+    title="新建容器"
     :loading="modalLoading"
     show-footer
     @confirm="handleConfirm"
@@ -290,6 +290,6 @@ export default toNative(ContainerCreateModal)
       </div>
     </form>
 
-    <template #confirm-text>确认创建</template>
+    <template #confirm-text>确认新建</template>
   </BaseModal>
 </template>

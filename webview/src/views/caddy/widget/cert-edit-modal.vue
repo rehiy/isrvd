@@ -9,9 +9,9 @@ import BaseModal from '@/component/modal.vue'
 import { usePortal } from '@/stores'
 
 const SOURCE_CARDS: CaddyCertSourceCard[] = [
-    { value: 'file', title: '磁盘文件', desc: '通过路径加载证书与私钥', icon: 'fa-file-shield', tone: 'indigo' },
-    { value: 'pem', title: '内联 PEM', desc: '直接粘贴 PEM 文本到配置中', icon: 'fa-key', tone: 'emerald' },
-    { value: 'automate', title: '自动签发', desc: '由 Caddy 通过 ACME 自动申请', icon: 'fa-bolt', tone: 'amber' }
+    { value: 'file', title: '磁盘文件', desc: '从本地磁盘路径加载证书和私钥文件', icon: 'fa-file-shield', tone: 'indigo' },
+    { value: 'pem', title: '内联 PEM', desc: '直接将证书和私钥的 PEM 内容写入配置', icon: 'fa-key', tone: 'emerald' },
+    { value: 'automate', title: '自动签发', desc: '由 Caddy 通过 ACME 协议自动申请和续签证书', icon: 'fa-bolt', tone: 'amber' }
 ]
 
 const TONE_CARD_ACTIVE: Record<string, string> = {
@@ -158,7 +158,7 @@ export default toNative(CertEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑证书' : '添加证书'" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑证书' : '新建证书'" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
     <div class="space-y-4 p-1">
       <!-- 来源选择：mode cards，直接平铺 -->
       <div>
@@ -227,7 +227,7 @@ export default toNative(CertEditModal)
     </div>
 
     <template #confirm-text>
-      确认{{ isEditMode ? '更新' : '保存' }}
+      确认{{ isEditMode ? '更新' : '提交' }}
     </template>
   </BaseModal>
 </template>

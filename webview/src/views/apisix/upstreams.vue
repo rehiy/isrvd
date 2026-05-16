@@ -125,7 +125,7 @@ export default toNative(Upstreams)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">上游管理</h1>
-              <p class="text-xs text-slate-500">管理 APISIX Upstream，供多个路由复用</p>
+              <p class="text-xs text-slate-500">管理可复用的后端上游对象与负载均衡策略</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -134,7 +134,7 @@ export default toNative(Upstreams)
               <i class="fas fa-rotate"></i>刷新
             </button>
             <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openCreateModal()">
-              <i class="fas fa-plus"></i>创建
+              <i class="fas fa-plus"></i>新建上游
             </button>
           </div>
         </div>
@@ -146,14 +146,14 @@ export default toNative(Upstreams)
             </div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">上游管理</h1>
-              <p class="text-xs text-slate-500 truncate">管理可复用 Upstream</p>
+              <p class="text-xs text-slate-500 truncate">管理可复用上游对象</p>
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
             <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadUpstreams()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="w-9 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-colors" title="创建" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="w-9 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-colors" title="新建上游" @click="openCreateModal()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
@@ -174,7 +174,7 @@ export default toNative(Upstreams)
           <i class="fas fa-diagram-project text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ upstreams.length === 0 ? '暂无上游' : '未找到匹配上游' }}</p>
-        <p class="text-sm text-slate-400">{{ upstreams.length === 0 ? '点击「创建」添加可复用 Upstream' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ upstreams.length === 0 ? '点击「新建上游」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
 
       <div v-else class="space-y-3">

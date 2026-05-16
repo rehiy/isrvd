@@ -47,7 +47,7 @@ class Config extends Vue {
       this.marketplace = { ...(payload.marketplace || { url: '' }) }
       this.links = payload.links ? payload.links.map(l => ({ ...l })) : []
       if (reload) {
-        this.portal.showNotification('success', '配置已从文件重新加载')
+        this.portal.showNotification('success', '配置已从文件重载配置')
       }
     } catch {
       this.portal.showNotification('error', reload ? '重载配置失败' : '加载配置失败')
@@ -107,7 +107,7 @@ export default toNative(Config)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">系统配置</h1>
-              <p class="text-xs text-slate-500">服务器、OIDC、Agent、APISIX、Docker 配置</p>
+              <p class="text-xs text-slate-500">管理服务器、认证、网关与容器引擎参数</p>
             </div>
           </div>
           <div class="flex items-center gap-3">
@@ -130,7 +130,7 @@ export default toNative(Config)
               </button>
             </div>
             <button type="button" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadConfig(true)">
-              <i class="fas fa-rotate"></i>重载
+              <i class="fas fa-rotate"></i>重载配置
             </button>
           </div>
         </div>
@@ -142,7 +142,7 @@ export default toNative(Config)
             </div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">系统配置</h1>
-              <p class="text-xs text-slate-500 truncate">服务器、OIDC、Agent、APISIX、Docker 配置</p>
+              <p class="text-xs text-slate-500 truncate">服务器、认证、网关与容器参数</p>
             </div>
           </div>
           <button type="button" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0" title="重载配置" @click="loadConfig(true)">

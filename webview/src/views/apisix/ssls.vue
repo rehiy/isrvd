@@ -115,8 +115,8 @@ export default toNative(SSLs)
               <i class="fas fa-certificate text-white"></i>
             </div>
             <div>
-              <h1 class="text-lg font-semibold text-slate-800">证书管理</h1>
-              <p class="text-xs text-slate-500">管理 APISIX SSL 证书与 SNI 域名</p>
+              <h1 class="text-lg font-semibold text-slate-800">SSL 证书</h1>
+              <p class="text-xs text-slate-500">管理 APISIX 的 SSL 证书绑定与 SNI 配置</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -125,7 +125,7 @@ export default toNative(SSLs)
               <i class="fas fa-rotate"></i>刷新
             </button>
             <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openCreateModal()">
-              <i class="fas fa-plus"></i>创建
+              <i class="fas fa-plus"></i>新建证书
             </button>
           </div>
         </div>
@@ -136,15 +136,15 @@ export default toNative(SSLs)
               <i class="fas fa-certificate text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">证书管理</h1>
-              <p class="text-xs text-slate-500 truncate">管理 SSL 证书与 SNI</p>
+              <h1 class="text-lg font-semibold text-slate-800 truncate">SSL 证书</h1>
+              <p class="text-xs text-slate-500 truncate">管理证书与 SNI 绑定</p>
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
             <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadSSLs()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="w-9 h-9 rounded-lg bg-cyan-500 hover:bg-cyan-600 flex items-center justify-center text-white transition-colors" title="创建" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="w-9 h-9 rounded-lg bg-cyan-500 hover:bg-cyan-600 flex items-center justify-center text-white transition-colors" title="新建证书" @click="openCreateModal()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
@@ -165,7 +165,7 @@ export default toNative(SSLs)
           <i class="fas fa-certificate text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ ssls.length === 0 ? '暂无证书' : '未找到匹配证书' }}</p>
-        <p class="text-sm text-slate-400">{{ ssls.length === 0 ? '点击「创建」添加 SSL 证书' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ ssls.length === 0 ? '点击「新建证书」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
 
       <div v-else class="space-y-3">

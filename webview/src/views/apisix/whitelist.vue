@@ -90,7 +90,7 @@ export default toNative(Whitelist)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">白名单管理</h1>
-              <p class="text-xs text-slate-500">管理路由的 Consumer 白名单</p>
+              <p class="text-xs text-slate-500">配置路由级别的 Consumer 访问白名单</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -108,7 +108,7 @@ export default toNative(Whitelist)
             </div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">白名单管理</h1>
-              <p class="text-xs text-slate-500 truncate">管理路由的 Consumer 白名单</p>
+              <p class="text-xs text-slate-500 truncate">路由级 Consumer 白名单</p>
             </div>
           </div>
           <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0" title="刷新" @click="loadWhitelist()">

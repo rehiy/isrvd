@@ -105,7 +105,7 @@ export default toNative(SSLEditModal)
 <template>
   <BaseModal
     v-model="isOpen"
-    :title="isEditMode ? '编辑证书' : '创建证书'"
+    :title="isEditMode ? '编辑证书' : '新建证书'"
     :loading="modalLoading"
     confirm-class="btn-cyan"
     @confirm="handleConfirm"
@@ -141,7 +141,7 @@ export default toNative(SSLEditModal)
     </div>
 
     <template #confirm-text>
-      确认{{ isEditMode ? '更新' : '创建' }}
+      确认{{ isEditMode ? '更新' : '新建' }}
     </template>
   </BaseModal>
 </template>

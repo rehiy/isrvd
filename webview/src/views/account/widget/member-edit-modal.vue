@@ -82,7 +82,7 @@ class MemberEditModal extends Vue {
     }
 
     get title() {
-        return this.isEdit ? '编辑成员' : '添加成员'
+        return this.isEdit ? '编辑成员' : '新建成员'
     }
 
     // ─── 方法 ───

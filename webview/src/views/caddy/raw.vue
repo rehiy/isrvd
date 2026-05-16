@@ -76,14 +76,14 @@ export default toNative(CaddyRaw)
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center"><i class="fas fa-code text-white"></i></div>
-            <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">Caddy 原始配置</h1><p class="text-xs text-slate-500 truncate">直接编辑底层 JSON 并整体替换运行配置</p></div>
+            <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">Caddy 原始配置</h1><p class="text-xs text-slate-500 truncate">直接查看和编辑 Caddy 的 JSON 运行配置</p></div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
-            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadConfig()"><i class="fas fa-rotate"></i>重载</button>
+            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadConfig()"><i class="fas fa-rotate"></i>刷新</button>
             <button v-if="portal.hasPerm('POST /api/caddy/config')" :disabled="saving" class="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50" @click="saveConfig()">
               <i v-if="saving" class="fas fa-spinner fa-spin"></i>
               <i v-else class="fas fa-cloud-arrow-up"></i>
-              <span>{{ saving ? '保存中...' : '保存' }}</span>
+              <span>{{ saving ? '提交中...' : '提交配置' }}</span>
             </button>
           </div>
         </div>
@@ -93,12 +93,12 @@ export default toNative(CaddyRaw)
             <div class="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0"><i class="fas fa-code text-white"></i></div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">Caddy 原始配置</h1>
-              <p class="text-xs text-slate-500 truncate">编辑底层 JSON</p>
+              <p class="text-xs text-slate-500 truncate">查看和编辑 JSON 配置</p>
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="重新加载" @click="loadConfig()"><i class="fas fa-rotate text-sm"></i></button>
-            <button v-if="portal.hasPerm('POST /api/caddy/config')" :disabled="saving" class="w-9 h-9 rounded-lg bg-indigo-500 hover:bg-indigo-600 flex items-center justify-center text-white transition-colors disabled:opacity-50" title="提交" @click="saveConfig()"><i class="fas fa-cloud-arrow-up text-sm"></i></button>
+            <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadConfig()"><i class="fas fa-rotate text-sm"></i></button>
+            <button v-if="portal.hasPerm('POST /api/caddy/config')" :disabled="saving" class="w-9 h-9 rounded-lg bg-indigo-500 hover:bg-indigo-600 flex items-center justify-center text-white transition-colors disabled:opacity-50" title="提交配置" @click="saveConfig()"><i class="fas fa-cloud-arrow-up text-sm"></i></button>
           </div>
         </div>
       </div>

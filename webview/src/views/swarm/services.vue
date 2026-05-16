@@ -140,7 +140,7 @@ export default toNative(Services)
               <i class="fas fa-rotate"></i>刷新
             </button>
             <button v-if="portal.hasPerm('POST /api/swarm/service')" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openCreateModal">
-              <i class="fas fa-plus"></i>创建
+              <i class="fas fa-plus"></i>新建服务
             </button>
           </div>
         </div>
@@ -307,7 +307,7 @@ export default toNative(Services)
           <i class="fas fa-cubes text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ services.length === 0 ? '暂无服务' : '未找到匹配服务' }}</p>
-        <p class="text-sm text-slate-400">{{ services.length === 0 ? '点击「创建」添加 Swarm 服务' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ services.length === 0 ? '点击「新建服务」添加 Swarm 服务' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
     </div>
 

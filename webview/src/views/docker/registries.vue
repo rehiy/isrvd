@@ -121,7 +121,7 @@ export default toNative(Registries)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">镜像仓库</h1>
-              <p class="text-xs text-slate-500">管理镜像仓库账号与加速器</p>
+              <p class="text-xs text-slate-500">管理私有镜像仓库认证信息与镜像加速器</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -130,7 +130,7 @@ export default toNative(Registries)
               <i class="fas fa-rotate"></i>刷新
             </button>
             <button v-if="portal.hasPerm('POST /api/docker/registry')" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openAdd">
-              <i class="fas fa-plus"></i>添加
+              <i class="fas fa-plus"></i>添加仓库
             </button>
           </div>
         </div>
@@ -142,7 +142,7 @@ export default toNative(Registries)
             </div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">镜像仓库</h1>
-              <p class="text-xs text-slate-500 truncate">管理镜像仓库账号与加速器</p>
+              <p class="text-xs text-slate-500 truncate">管理仓库账号与加速器</p>
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
@@ -317,7 +317,7 @@ export default toNative(Registries)
           </div>
 
           <div v-if="!showDockerHub && filteredRegistries.length === 0" class="rounded-xl border border-slate-200 bg-white py-10 px-4 text-center">
-            <p class="text-sm text-slate-500">{{ registries.length === 0 ? '暂无镜像仓库' : '未找到匹配仓库，尝试更换关键词或清空搜索条件' }}</p>
+            <p class="text-sm text-slate-500">{{ registries.length === 0 ? '暂无镜像仓库' : '未找到匹配仓库' }}</p>
           </div>
         </div>
 
@@ -325,8 +325,8 @@ export default toNative(Registries)
           <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4">
             <i class="fas fa-warehouse text-4xl text-slate-300"></i>
           </div>
-          <p class="text-slate-600 font-medium mb-1">{{ registries.length === 0 ? '暂无镜像仓库' : '未找到匹配仓库' }}</p>
-          <p class="text-sm text-slate-400">{{ registries.length === 0 ? '点击「添加」创建镜像仓库' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ registries.length === 0 ? '暂无镜像仓库' : '未找到匹配仓库' }}</p>
+        <p class="text-sm text-slate-400">{{ registries.length === 0 ? '点击「新建仓库」创建私有镜像仓库' : '尝试更换关键词或清空搜索条件' }}</p>
         </div>
       </div>
     </div>

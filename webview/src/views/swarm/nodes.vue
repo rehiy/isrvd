@@ -155,7 +155,7 @@ export default toNative(Nodes)
               <i class="fas fa-rotate"></i>刷新
             </button>
             <button v-if="portal.hasPerm('GET /api/swarm/token')" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openJoinModal">
-              <i class="fas fa-plus"></i>加入
+              <i class="fas fa-plus"></i>加入集群
             </button>
           </div>
         </div>

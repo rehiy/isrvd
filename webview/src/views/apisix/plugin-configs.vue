@@ -112,7 +112,7 @@ export default toNative(PluginConfigs)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">插件配置</h1>
-              <p class="text-xs text-slate-500">管理 APISIX Plugin Config，供多个路由复用</p>
+              <p class="text-xs text-slate-500">管理可复用的插件集合，供路由引用</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -121,7 +121,7 @@ export default toNative(PluginConfigs)
               <i class="fas fa-rotate"></i>刷新
             </button>
             <button v-if="portal.hasPerm('POST /api/apisix/plugin-config')" class="px-3 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openCreateModal()">
-              <i class="fas fa-plus"></i>创建
+              <i class="fas fa-plus"></i>新建配置
             </button>
           </div>
         </div>
@@ -133,7 +133,7 @@ export default toNative(PluginConfigs)
             </div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">插件配置</h1>
-              <p class="text-xs text-slate-500 truncate">管理可复用插件配置</p>
+              <p class="text-xs text-slate-500 truncate">管理可复用插件集合</p>
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
@@ -161,7 +161,7 @@ export default toNative(PluginConfigs)
           <i class="fas fa-puzzle-piece text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ configs.length === 0 ? '暂无插件配置' : '未找到匹配插件配置' }}</p>
-        <p class="text-sm text-slate-400">{{ configs.length === 0 ? '点击「创建」添加可复用 Plugin Config' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ configs.length === 0 ? '点击「新建配置」添加可复用 Plugin Config' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
 
       <div v-else class="space-y-3">

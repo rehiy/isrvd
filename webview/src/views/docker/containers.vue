@@ -121,7 +121,7 @@ export default toNative(Containers)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">容器管理</h1>
-              <p class="text-xs text-slate-500">管理 Docker 容器</p>
+              <p class="text-xs text-slate-500">管理 Docker 容器的生命周期与运行状态</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -138,7 +138,7 @@ export default toNative(Containers)
               <i class="fas fa-rotate"></i>刷新
             </button>
             <button v-if="portal.hasPerm('POST /api/docker/container')" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="createContainerModal()">
-              <i class="fas fa-plus"></i>创建
+              <i class="fas fa-plus"></i>新建容器
             </button>
           </div>
         </div>
@@ -151,14 +151,14 @@ export default toNative(Containers)
               </div>
               <div class="min-w-0">
                 <h1 class="text-lg font-semibold text-slate-800 truncate">容器管理</h1>
-                <p class="text-xs text-slate-500 truncate">管理 Docker 容器</p>
+                <p class="text-xs text-slate-500 truncate">管理容器生命周期</p>
               </div>
             </div>
             <div class="flex items-center gap-1 flex-shrink-0">
               <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadContainers()">
                 <i class="fas fa-rotate text-sm"></i>
               </button>
-              <button v-if="portal.hasPerm('POST /api/docker/container')" class="w-9 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-colors" title="创建" @click="createContainerModal()">
+              <button v-if="portal.hasPerm('POST /api/docker/container')" class="w-9 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-colors" title="新建容器" @click="createContainerModal()">
                 <i class="fas fa-plus text-sm"></i>
               </button>
             </div>
@@ -284,7 +284,7 @@ export default toNative(Containers)
             </div>
             <!-- 创建时间 -->
             <div class="flex items-center gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0">创建</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">创建时间</span>
               <span class="text-xs text-slate-500">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</span>
             </div>
 
@@ -336,7 +336,7 @@ export default toNative(Containers)
           <i class="fab fa-docker text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ containers.length === 0 ? '暂无容器' : '未找到匹配容器' }}</p>
-        <p class="text-sm text-slate-400">{{ containers.length === 0 ? '点击「创建」开始使用 Docker' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ containers.length === 0 ? '点击「新建容器」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
     </div>
 

@@ -31,9 +31,9 @@ import PluginConfigPanel from './plugin-config-panel.vue'
 // ─── 模块级静态常量 ───
 
 const UPSTREAM_MODE_CARDS: ApisixRouteUpstreamModeCard[] = [
-    { value: 'nodes', title: '内联上游节点', desc: '为路由配置一个后端服务地址', icon: 'fa-server', tone: 'indigo' },
-    { value: 'upstream_id', title: '引用已有上游', desc: '复用已经创建好的上游对象', icon: 'fa-diagram-project', tone: 'emerald' },
-    { value: 'none', title: '空上游', desc: '不配置转发，仅保存路由规则', icon: 'fa-ban', tone: 'slate' }
+    { value: 'nodes', title: '内联上游节点', desc: '为当前路由直接配置后端服务地址列表', icon: 'fa-server', tone: 'indigo' },
+    { value: 'upstream_id', title: '引用已有上游', desc: '复用已创建的上游对象，便于统一管理', icon: 'fa-diagram-project', tone: 'emerald' },
+    { value: 'none', title: '空上游', desc: '不配置后端转发，仅使用路由的匹配和插件', icon: 'fa-ban', tone: 'slate' }
 ]
 
 const TONE_CARD_ACTIVE: Record<string, string> = {
@@ -268,7 +268,7 @@ export default toNative(RouteEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑路由' : '创建路由'" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑路由' : '新建路由'" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
     <div class="space-y-4 p-1">
       <div class="grid grid-cols-2 gap-3">
         <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">名称 <span class="text-red-500">*</span></label><input v-model="formData.name" type="text" class="input" placeholder="路由名称" /></div>
@@ -353,7 +353,7 @@ export default toNative(RouteEditModal)
     </div>
 
     <template #confirm-text>
-      确认{{ isEditMode ? '更新' : '创建' }}
+      确认{{ isEditMode ? '更新' : '新建' }}
     </template>
   </BaseModal>
 </template>

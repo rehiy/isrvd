@@ -156,12 +156,12 @@ export default toNative(Routes)
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-lg bg-indigo-500 flex items-center justify-center"><i class="fas fa-route text-white"></i></div>
-            <div><h1 class="text-lg font-semibold text-slate-800">路由管理</h1><p class="text-xs text-slate-500">管理 APISIX 路由，并支持多上游节点或引用已有上游</p></div>
+            <div><h1 class="text-lg font-semibold text-slate-800">路由管理</h1><p class="text-xs text-slate-500">管理 APISIX 路由，配置匹配规则、上游转发与插件</p></div>
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="apisix-routes" placeholder="搜索路由、URI、描述或上游..." width-class="w-64" focus-color="indigo" type-to-search />
             <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadRoutes()"><i class="fas fa-rotate"></i>刷新</button>
-            <button v-if="portal.hasPerm('POST /api/apisix/route')" class="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openCreateModal()"><i class="fas fa-plus"></i>创建</button>
+            <button v-if="portal.hasPerm('POST /api/apisix/route')" class="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openCreateModal()"><i class="fas fa-plus"></i>新建路由</button>
           </div>
         </div>
         <!-- 移动端 -->
@@ -170,14 +170,14 @@ export default toNative(Routes)
             <div class="w-9 h-9 rounded-lg bg-indigo-500 flex items-center justify-center flex-shrink-0"><i class="fas fa-route text-white"></i></div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">路由管理</h1>
-              <p class="text-xs text-slate-500 truncate">支持多上游节点与已有上游引用</p>
+              <p class="text-xs text-slate-500 truncate">配置匹配规则、上游与插件</p>
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
             <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadRoutes()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/route')" class="w-9 h-9 rounded-lg bg-indigo-500 hover:bg-indigo-600 flex items-center justify-center text-white transition-colors" title="创建" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/apisix/route')" class="w-9 h-9 rounded-lg bg-indigo-500 hover:bg-indigo-600 flex items-center justify-center text-white transition-colors" title="新建路由" @click="openCreateModal()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
@@ -191,7 +191,7 @@ export default toNative(Routes)
       <div v-else-if="filteredRoutes.length === 0" class="flex flex-col items-center justify-center py-20">
         <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4"><i class="fas fa-route text-4xl text-slate-300"></i></div>
         <p class="text-slate-600 font-medium mb-1">{{ routes.length === 0 ? '暂无路由' : '未找到匹配路由' }}</p>
-        <p class="text-sm text-slate-400">{{ routes.length === 0 ? '点击「创建」添加新路由' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-sm text-slate-400">{{ routes.length === 0 ? '点击「新建路由」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
       <div v-else class="space-y-3">
         <!-- 桌面端表格视图 -->
