@@ -21,16 +21,18 @@ const METHOD_COLOR: Record<string, string> = {
 
 // 模块元信息（图标 + 显示名）
 const MODULE_META: Record<string, { icon: string; label: string }> = {
-    overview: { icon: 'fas fa-gauge-high', label: '系统概览' },
-    system:   { icon: 'fas fa-gear',       label: '系统管理' },
-    account:  { icon: 'fas fa-users',      label: '用户管理' },
-    shell:    { icon: 'fas fa-terminal',   label: 'Shell 终端' },
-    filer:    { icon: 'fas fa-folder',     label: '文件管理' },
-    agent:    { icon: 'fas fa-robot',      label: 'AI Agent' },
-    apisix:   { icon: 'fas fa-route',      label: 'APISIX' },
-    docker:   { icon: 'fab fa-docker',     label: 'Docker' },
-    swarm:    { icon: 'fas fa-layer-group',label: 'Swarm' },
-    compose:  { icon: 'fas fa-cubes',      label: 'Compose' },
+    overview: { icon: 'fas fa-gauge-high',  label: '系统概览' },
+    system:   { icon: 'fas fa-gear',        label: '系统管理' },
+    account:  { icon: 'fas fa-users',       label: '用户管理' },
+    shell:    { icon: 'fas fa-terminal',    label: 'Shell 终端' },
+    filer:    { icon: 'fas fa-folder',      label: '文件管理' },
+    agent:    { icon: 'fas fa-robot',       label: 'AI Agent' },
+    apisix:   { icon: 'fas fa-route',       label: 'APISIX' },
+    caddy:    { icon: 'fas fa-shield',      label: 'Caddy 网关' },
+    docker:   { icon: 'fab fa-docker',      label: 'Docker' },
+    swarm:    { icon: 'fas fa-layer-group', label: 'Swarm' },
+    compose:  { icon: 'fas fa-cubes',       label: 'Compose' },
+    cron:     { icon: 'fas fa-clock',       label: '计划任务' },
 }
 
 interface RouteItem {
