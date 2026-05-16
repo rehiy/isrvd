@@ -10,6 +10,7 @@ isrvd_get "/overview/probe"
 |------|------|------|
 | agent | object | `{available: bool}` |
 | apisix | object | `{available: bool}` |
+| caddy | object | `{available: bool}` |
 | docker | object | `{available: bool}` |
 | swarm | object | `{available: bool}` |
 | compose | object | `{available: bool}` |

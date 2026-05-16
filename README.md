@@ -14,6 +14,7 @@
 | AI 助手 | 内置 Agent，支持自然语言操作 |
 | 计划任务 | 定时任务调度，支持 Shell/BAT/PowerShell/Docker 执行模式 |
 | APISIX | 路由、Consumer、上游、SSL、插件配置、白名单 |
+| Caddy | 路由、TLS 证书、全局选项管理 |
 | Docker | 容器、镜像、网络、卷、镜像仓库管理 |
 | Swarm | 集群、节点、服务、任务管理 |
 | Compose | 文件编辑、Docker/Swarm 部署与重部署 |
@@ -23,27 +24,38 @@
 
 ## Docker 部署
 
-提供两个镜像版本：
+提供三个镜像版本：
 
 | 镜像 | 说明 |
 |------|------|
-| `rehiy/isrvd:latest` | All-in-One，集成 APISIX + etcd + isrvd |
-| `rehiy/isrvd:slim` | 仅 isrvd，适合不需要 APISIX 的场景 |
+| `rehiy/isrvd:slim` | **默认版本**，仅含 isrvd，适合大多数场景 |
+| `rehiy/isrvd:apisix` | isrvd + APISIX，集成 API 网关 |
+| `rehiy/isrvd:caddy` | isrvd + Caddy，集成反向代理与 TLS 管理 |
 
-CNB 流水线会同步推送到 CNB Docker 制品库，镜像路径为：
-
-| 镜像 | 说明 |
-|------|------|
-| `docker.cnb.cool/<repo-slug>:latest` | All-in-One 最新版 |
-| `docker.cnb.cool/<repo-slug>:<version>` | All-in-One 指定版本，如 `v1.2.3` |
-| `docker.cnb.cool/<repo-slug>:slim` | Slim 最新版 |
-| `docker.cnb.cool/<repo-slug>:<version>-slim` | Slim 指定版本，如 `v1.2.3-slim` |
-
-其中 `<repo-slug>` 为 CNB 仓库路径的小写形式，例如 `team/isrvd`。
+CNB 流水线会同步推送到 CNB Docker 制品库，镜像路径为 `docker.cnb.cool/<repo-slug>:<tag>`，支持 `slim`、`caddy`、`apisix` 三个标签，其中 `slim` 同时作为 `latest`。
 
 首次启动自动生成随机密码，通过 `docker logs isrvd` 查看。
 
-### latest（All-in-One）
+### slim（默认）
+
+仅含 isrvd 本体，体积最小，适合只需要文件管理、Docker/Swarm/Compose、计划任务等功能的场景。
+
+```bash
+docker run -d \
+  --name isrvd \
+  -p 8080:8080 \
+  -v /srv/data:/data \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  rehiy/isrvd:slim
+```
+
+| 端口 | 服务 | 说明 |
+|------|------|------|
+| 8080 | isrvd | Web 管理界面 |
+
+### apisix（集成 API 网关）
+
+isrvd + APISIX，适合已使用 APISIX 作为 API 网关的场景。
 
 ```bash
 docker network create srvdnet
@@ -55,7 +67,7 @@ docker run -d \
   -p 443:9443 \
   -v /srv/data:/data \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  rehiy/isrvd:latest
+  rehiy/isrvd:apisix
 ```
 
 | 端口 | 服务 | 说明 |
@@ -64,20 +76,28 @@ docker run -d \
 | 9080 | APISIX | HTTP 代理端口 |
 | 9443 | APISIX | HTTPS 代理端口 |
 
-Web 管理界面使用 hash 路由与相对 API 路径，反向代理可部署在 `/` 或 `/xxx/`。
+### caddy（集成反向代理）
 
-### slim（仅 isrvd）
+isrvd + Caddy，适合需要反向代理、自动 HTTPS（ACME）或统一网关管理的场景。
 
 ```bash
-docker network create srvdnet
 docker run -d \
   --name isrvd \
-  --network srvdnet \
   -p 8080:8080 \
+  -p 80:80 \
+  -p 443:443 \
   -v /srv/data:/data \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  rehiy/isrvd:slim
+  rehiy/isrvd:caddy
 ```
+
+| 端口 | 服务 | 说明 |
+|------|------|------|
+| 8080 | isrvd | Web 管理界面 |
+| 80 | Caddy | HTTP 代理端口 |
+| 443 | Caddy | HTTPS 代理端口 |
+
+Caddy 默认配置仅监听 `:80`，关闭了自动 HTTPS 跳转，首次启动即可正常访问。如需 HTTPS，在「Caddy → 全局选项」中开启，或直接编辑「原始配置」。
 
 ### Docker Compose
 
@@ -92,8 +112,6 @@ services:
     volumes:
       - /srv/data:/data
       - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - srvdnet
 ```
 
 > **注意**：请始终挂载整个 `/data` 目录，避免容器重建时数据丢失。
@@ -256,7 +274,7 @@ config → registry → pkgs → service → server
 
 - **config**：配置加载
 - **registry**：外部服务初始化
-- **pkgs**：各模块客户端（Docker / Swarm / APISIX / GPU / Compose / Archive）
+- **pkgs**：各模块客户端（Docker / Swarm / APISIX / Caddy / GPU / Compose / Archive）
 - **service**：业务逻辑与类型转换
 - **server**：HTTP handlers
 

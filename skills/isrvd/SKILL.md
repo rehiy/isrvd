@@ -63,7 +63,7 @@ isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
 |------|----------|
 | [docs/caddy/routes.md](docs/caddy/routes.md) | 路由 CRUD（match + handler，含反向代理/文件服务/静态响应/原始 handle） |
 | [docs/caddy/certs.md](docs/caddy/certs.md) | TLS 证书 CRUD（磁盘文件 / 内联 PEM / 自动签发三种来源） |
-| [docs/caddy/config.md](docs/caddy/config.md) | 概览、获取/整体替换原始 JSON 配置 |
+| [docs/caddy/config.md](docs/caddy/config.md) | 概览、全局选项（Admin/日志/端口/优雅关闭）、获取/整体替换原始 JSON 配置 |
 
 ### 系统
 
@@ -97,6 +97,7 @@ isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
 │   ├── 重新部署         → docs/swarm/services.md (force-update)
 │   ├── 修改路由/上游    → docs/apisix/routes.md 或 docs/apisix/upstreams.md
 │   ├── 修改 Caddy 路由  → docs/caddy/routes.md（更新触发 /load 整体替换）
+│   ├── 修改 Caddy 全局选项 → docs/caddy/config.md (PUT /caddy/global)
 │   └── 修改系统配置     → docs/system/config.md
 │
 ├── 查询/监控

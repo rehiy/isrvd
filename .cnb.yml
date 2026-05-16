@@ -56,12 +56,19 @@ $:
         - name: Login to CNB Docker registry
           script: printf "%s" "$CNB_TOKEN" | docker login -u "$CNB_TOKEN_USER_NAME" --password-stdin "$CNB_DOCKER_REGISTRY"
 
+        - name: Build and push CNB slim image
+          timeout: 2h
+          script: |
+            docker buildx build --push --platform linux/amd64,linux/arm64 \
+            --build-arg "ISRVD_VERSION=$CNB_BRANCH" --build-arg "ISRVD_DOWNLOAD_BASE=$ISRVD_DOWNLOAD_BASE" \
+            -t $IMAGE_URL:slim -t $IMAGE_URL:latest -f build/docker-slim/Dockerfile .
+
         - name: Build and push CNB image
           timeout: 2h
           script: |
             docker buildx build --push --platform linux/amd64,linux/arm64 \
             --build-arg "ISRVD_VERSION=$CNB_BRANCH" --build-arg "ISRVD_DOWNLOAD_BASE=$ISRVD_DOWNLOAD_BASE" \
-            -t $IMAGE_URL:latest -f build/docker/Dockerfile .
+            -t $IMAGE_URL:apisix -f build/docker/Dockerfile .
 
         - name: Build and push CNB Caddy image
           timeout: 2h
@@ -69,10 +76,3 @@ $:
             docker buildx build --push --platform linux/amd64,linux/arm64 \
             --build-arg "ISRVD_VERSION=$CNB_BRANCH" --build-arg "ISRVD_DOWNLOAD_BASE=$ISRVD_DOWNLOAD_BASE" \
             -t $IMAGE_URL:caddy -f build/docker-caddy/Dockerfile .
-
-        - name: Build and push CNB slim image
-          timeout: 2h
-          script: |
-            docker buildx build --push --platform linux/amd64,linux/arm64 \
-            --build-arg "ISRVD_VERSION=$CNB_BRANCH" --build-arg "ISRVD_DOWNLOAD_BASE=$ISRVD_DOWNLOAD_BASE" \
-            -t $IMAGE_URL:slim -f build/docker-slim/Dockerfile .
