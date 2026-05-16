@@ -12,6 +12,7 @@ import (
 type ProbeResponse struct {
 	Agent   map[string]bool `json:"agent"`
 	Apisix  map[string]bool `json:"apisix"`
+	Caddy   map[string]bool `json:"caddy"`
 	Docker  map[string]bool `json:"docker"`
 	Swarm   map[string]bool `json:"swarm"`
 	Compose map[string]bool `json:"compose"`
@@ -38,6 +39,7 @@ func (s *Service) Probe(ctx context.Context) *ProbeResponse {
 	return &ProbeResponse{
 		Agent:   map[string]bool{"available": config.Agent.BaseURL != "" && config.Agent.APIKey != ""},
 		Apisix:  map[string]bool{"available": registry.IsApisixAvailable()},
+		Caddy:   map[string]bool{"available": registry.IsCaddyAvailable(ctx)},
 		Docker:  map[string]bool{"available": registry.IsDockerAvailable(ctx)},
 		Swarm:   map[string]bool{"available": registry.IsSwarmAvailable(ctx)},
 		Compose: map[string]bool{"available": registry.IsComposeAvailable(ctx)},

@@ -3,5 +3,6 @@ package registry
 
 func Init() {
 	initApisix()
+	initCaddy()
 	initDocker()
 }

@@ -8,6 +8,7 @@ import (
 
 	svcAccount "isrvd/internal/service/account"
 	svcApisix "isrvd/internal/service/apisix"
+	svcCaddy "isrvd/internal/service/caddy"
 	svcCompose "isrvd/internal/service/compose"
 	svcCron "isrvd/internal/service/cron"
 	svcDocker "isrvd/internal/service/docker"
@@ -31,6 +32,7 @@ type App struct {
 	accountSvc  *svcAccount.Service
 	filerSvc    *svcFiler.Service
 	apisixSvc   *svcApisix.Service
+	caddySvc    *svcCaddy.Service
 	dockerSvc   *svcDocker.Service
 	swarmSvc    *svcSwarm.Service
 	composeSvc  *svcCompose.Service
@@ -90,6 +92,12 @@ func StartApp() {
 		logman.Warn("Apisix service unavailable", "error", err)
 	} else {
 		app.apisixSvc = apisixSvc
+	}
+
+	if caddySvc, err := svcCaddy.NewService(); err != nil {
+		logman.Warn("Caddy service unavailable", "error", err)
+	} else {
+		app.caddySvc = caddySvc
 	}
 
 	if dockerSvc, err := svcDocker.NewService(); err != nil {
@@ -158,6 +166,8 @@ func (app *App) collectRoutes() []Route {
 	routes = append(routes, app.defineAgentRoutes()...)
 	// APISIX 管理
 	routes = append(routes, app.defineApisixRoutes()...)
+	// Caddy 管理
+	routes = append(routes, app.defineCaddyRoutes()...)
 	// Docker 管理
 	routes = append(routes, app.defineDockerRoutes()...)
 	// Swarm 管理
@@ -197,6 +207,8 @@ func (app *App) isRouteAvailable(route Route) bool {
 	switch route.Module {
 	case "apisix":
 		return app.apisixSvc != nil
+	case "caddy":
+		return app.caddySvc != nil
 	case "docker", "shell":
 		return app.dockerSvc != nil
 	case "swarm":

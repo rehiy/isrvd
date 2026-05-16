@@ -13,6 +13,7 @@ type AllConfigResponse struct {
 	OIDC        *config.OIDCConfig        `json:"oidc"`
 	Agent       *config.AgentConfig       `json:"agent"`
 	Apisix      *config.ApisixConfig      `json:"apisix"`
+	Caddy       *config.CaddyConfig       `json:"caddy"`
 	Docker      *config.DockerConfig      `json:"docker"`
 	Marketplace *config.MarketplaceConfig `json:"marketplace"`
 	Links       []*config.LinkConfig      `json:"links"`
@@ -24,6 +25,7 @@ type UpdateAllConfigRequest struct {
 	OIDC        *config.OIDCConfig        `json:"oidc"`
 	Agent       *config.AgentConfig       `json:"agent"`
 	Apisix      *config.ApisixConfig      `json:"apisix"`
+	Caddy       *config.CaddyConfig       `json:"caddy"`
 	Docker      *config.DockerConfig      `json:"docker"`
 	Marketplace *config.MarketplaceConfig `json:"marketplace"`
 	Links       []*config.LinkConfig      `json:"links"`
@@ -80,6 +82,9 @@ func (s *ConfigService) ConfigAll() *AllConfigResponse {
 			AdminURL: config.Apisix.AdminURL,
 			// AdminKey 不返回
 		},
+		Caddy: &config.CaddyConfig{
+			AdminURL: config.Caddy.AdminURL,
+		},
 		Docker:      config.Docker,
 		Marketplace: config.Marketplace,
 		Links:       config.Links,
@@ -104,6 +109,9 @@ func (s *ConfigService) ConfigUpdateAll(req UpdateAllConfigRequest) error {
 	if req.Apisix != nil {
 		config.Apisix.AdminURL = req.Apisix.AdminURL
 		config.Apisix.AdminKey = pickSecret(req.Apisix.AdminKey, config.Apisix.AdminKey)
+	}
+	if req.Caddy != nil {
+		config.Caddy.AdminURL = req.Caddy.AdminURL
 	}
 	if req.Docker != nil {
 		config.Docker.Host = req.Docker.Host
