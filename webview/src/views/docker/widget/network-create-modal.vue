@@ -46,6 +46,7 @@ export default toNative(NetworkCreateModal)
     v-model="isOpen"
     title="新建网络"
     :loading="modalLoading"
+    confirm-class="btn-purple"
     show-footer
     @confirm="handleConfirm"
   >

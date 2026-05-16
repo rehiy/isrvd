@@ -61,6 +61,7 @@ export default toNative(ContainerEditModal)
     v-model="isOpen"
     title="编辑容器配置"
     :loading="modalLoading"
+    confirm-class="btn-emerald"
     show-footer
     @confirm="handleConfirm"
   >

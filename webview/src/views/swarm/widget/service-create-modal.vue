@@ -78,7 +78,7 @@ export default toNative(ServiceCreateModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" title="新建服务" :loading="loading" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" title="新建服务" :loading="loading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <!-- 基础设置 -->
       <div class="grid grid-cols-2 gap-3">

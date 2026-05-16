@@ -102,7 +102,7 @@ export default toNative(Config)
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center">
+            <div class="w-9 h-9 rounded-lg bg-indigo-500 flex items-center justify-center">
               <i class="fas fa-gear text-white"></i>
             </div>
             <div>
@@ -129,7 +129,7 @@ export default toNative(Config)
                 <i class="fas fa-link mr-1"></i>导航
               </button>
             </div>
-            <button type="button" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadConfig(true)">
+            <button type="button" class="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadConfig(true)">
               <i class="fas fa-rotate"></i>重载配置
             </button>
           </div>
@@ -137,7 +137,7 @@ export default toNative(Config)
         <!-- 移动端 -->
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0">
+            <div class="w-9 h-9 rounded-lg bg-indigo-500 flex items-center justify-center flex-shrink-0">
               <i class="fas fa-gear text-white"></i>
             </div>
             <div class="min-w-0">
@@ -145,7 +145,7 @@ export default toNative(Config)
               <p class="text-xs text-slate-500 truncate">服务器、认证、网关与容器参数</p>
             </div>
           </div>
-          <button type="button" class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0" title="重载配置" @click="loadConfig(true)">
+          <button type="button" class="w-9 h-9 rounded-lg bg-indigo-500 hover:bg-indigo-600 flex items-center justify-center text-white transition-colors flex-shrink-0" title="重载配置" @click="loadConfig(true)">
             <i class="fas fa-rotate text-sm"></i>
           </button>
         </div>
@@ -363,7 +363,7 @@ export default toNative(Config)
 
         <!-- 统一保存 -->
         <div class="max-w-3xl mt-6 pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center gap-3">
-          <button type="submit" :disabled="saving" class="btn btn-primary whitespace-nowrap flex-shrink-0 self-start">
+          <button type="submit" :disabled="saving" class="px-4 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 disabled:bg-indigo-300 text-white text-sm font-medium flex items-center gap-2 transition-colors whitespace-nowrap flex-shrink-0 self-start">
             <i v-if="saving" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-save"></i>
             <span>{{ saving ? '保存中...' : '保存配置' }}</span>

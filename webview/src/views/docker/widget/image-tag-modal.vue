@@ -50,6 +50,7 @@ export default toNative(ImageTagModal)
     v-model="isOpen"
     title="新建镜像标签"
     :loading="modalLoading"
+    confirm-class="btn-blue"
     show-footer
     @confirm="handleConfirm"
   >

@@ -48,6 +48,7 @@ export default toNative(VolumeCreateModal)
     title="新建数据卷"
     :loading="modalLoading"
     show-footer
+    confirm-class="btn-amber"
     @confirm="handleConfirm"
   >
     <form class="space-y-4" @submit.prevent="handleConfirm">

@@ -158,7 +158,7 @@ export default toNative(CertEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑证书' : '新建证书'" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑证书' : '新建证书'" :loading="modalLoading" confirm-class="btn-cyan" @confirm="handleConfirm">
     <div class="space-y-4 p-1">
       <!-- 来源选择：mode cards，直接平铺 -->
       <div>

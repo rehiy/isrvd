@@ -76,6 +76,7 @@ export default toNative(RegistryEditModal)
     v-model="isOpen"
     :title="title"
     :loading="modalLoading"
+    confirm-class="btn-purple"
     show-footer
     @confirm="handleConfirm"
   >
@@ -103,5 +104,7 @@ export default toNative(RegistryEditModal)
         </div>
       </div>
     </form>
+
+    <template #confirm-text>确认添加</template>
   </BaseModal>
 </template>

@@ -26,6 +26,14 @@
     @apply bg-primary-500 text-white hover:bg-primary-600;
   }
 
+  .btn-blue {
+    @apply bg-blue-500 text-white hover:bg-blue-600;
+  }
+
+  .btn-amber {
+    @apply bg-amber-500 text-white hover:bg-amber-600;
+  }
+
   .btn-secondary {
     @apply bg-white border border-slate-200 text-slate-700 hover:bg-slate-50;
   }
@@ -48,6 +56,14 @@
 
   .btn-rose {
     @apply bg-rose-500 text-white hover:bg-rose-600;
+  }
+
+  .btn-purple {
+    @apply bg-purple-500 text-white hover:bg-purple-600;
+  }
+
+  .btn-emerald {
+    @apply bg-emerald-500 text-white hover:bg-emerald-600;
   }
 
   .btn-violet {

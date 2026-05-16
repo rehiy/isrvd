@@ -83,6 +83,7 @@ export default toNative(RegistryPushModal)
     v-model="isOpen"
     title="推送镜像到仓库"
     :loading="modalLoading"
+    confirm-class="btn-blue"
     show-footer
     @confirm="handleConfirm"
   >

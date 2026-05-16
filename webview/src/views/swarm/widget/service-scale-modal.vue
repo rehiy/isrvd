@@ -41,7 +41,7 @@ export default toNative(ServiceScaleModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" title="服务扩缩容" :loading="loading" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" title="服务扩缩容" :loading="loading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
     <div v-if="service" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-2">服务</label>

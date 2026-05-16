@@ -49,6 +49,7 @@ export default toNative(ImageBuildModal)
     v-model="isOpen"
     title="构建镜像"
     :loading="modalLoading"
+    confirm-class="btn-blue"
     show-footer
     @confirm="handleConfirm"
   >

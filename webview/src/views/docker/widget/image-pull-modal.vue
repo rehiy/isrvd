@@ -113,6 +113,7 @@ export default toNative(ImagePullModal)
     v-model="isOpen"
     title="拉取镜像"
     :loading="modalLoading"
+    confirm-class="btn-blue"
     show-footer
     @confirm="handleConfirm"
   >
@@ -204,5 +205,7 @@ export default toNative(ImagePullModal)
         </div>
       </section>
     </form>
+
+    <template #confirm-text>开始拉取</template>
   </BaseModal>
 </template>

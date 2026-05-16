@@ -172,6 +172,7 @@ export default toNative(ContainerCreateModal)
     v-model="isOpen"
     title="新建容器"
     :loading="modalLoading"
+    confirm-class="btn-emerald"
     show-footer
     @confirm="handleConfirm"
   >

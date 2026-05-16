@@ -61,6 +61,7 @@ export default toNative(ServiceEditModal)
     v-model="isOpen"
     :title="`编辑服务：${serviceName}`"
     :loading="modalLoading"
+    confirm-class="btn-emerald"
     show-footer
     @confirm="handleConfirm"
   >

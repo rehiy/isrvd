@@ -123,7 +123,7 @@ export default toNative(ComposeDeploy)
       <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-violet-500 flex items-center justify-center">
+            <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center">
               <i class="fas fa-file-code text-white"></i>
             </div>
             <div>
@@ -142,7 +142,7 @@ export default toNative(ComposeDeploy)
         </div>
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-violet-500 flex items-center justify-center flex-shrink-0">
+            <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
               <i class="fas fa-file-code text-white"></i>
             </div>
             <div class="min-w-0 flex-1">
@@ -250,7 +250,7 @@ export default toNative(ComposeDeploy)
           <button
             type="button"
             :disabled="!canSubmit"
-            class="btn btn-primary whitespace-nowrap flex-shrink-0 self-start"
+            class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-sm font-medium flex items-center gap-2 transition-colors whitespace-nowrap flex-shrink-0 self-start"
             @click="handleDeploy()"
           >
             <i v-if="loading" class="fas fa-spinner fa-spin"></i>

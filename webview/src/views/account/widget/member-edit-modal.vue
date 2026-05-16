@@ -267,6 +267,7 @@ export default toNative(MemberEditModal)
     v-model="isOpen"
     :title="title"
     :loading="modalLoading"
+    confirm-class="btn-blue"
     show-footer
     @confirm="handleConfirm"
   >
