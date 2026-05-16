@@ -157,7 +157,7 @@ export default toNative(JobEditModal)
       </div>
 
       <!-- 宿主机类型：工作目录 + 超时 -->
-      <div v-if="formData.type !== 'DOCKER'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div v-if="!isDockerType" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">工作目录</label>
           <input v-model="formData.workDir" type="text" class="input font-mono" placeholder="可选，默认当前目录" />
