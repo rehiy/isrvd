@@ -17,6 +17,7 @@ class CaddyOverview extends Vue {
     readonly statCards = [
         { key: 'servers', label: 'Server 数',  icon: 'fa-server',         bgColor: 'bg-indigo-500' },
         { key: 'routes',  label: '路由总数',   icon: 'fa-route',          bgColor: 'bg-orange-500' },
+        { key: 'certs',   label: 'TLS 证书',   icon: 'fa-lock',           bgColor: 'bg-cyan-500' },
         { key: 'hasTls',  label: 'TLS 启用',   icon: 'fa-certificate',    bgColor: 'bg-emerald-500' },
     ]
 
@@ -24,7 +25,37 @@ class CaddyOverview extends Vue {
     async load() {
         this.loading = true
         try {
-            this.info = (await api.caddyInfo()).payload || null
+            const requests: Promise<unknown>[] = []
+            const keys: string[] = []
+
+            if (this.portal.hasPerm('GET /api/caddy/info')) {
+                requests.push(api.caddyInfo())
+                keys.push('info')
+            }
+            if (this.portal.hasPerm('GET /api/caddy/certs')) {
+                requests.push(api.caddyCertList())
+                keys.push('certs')
+            }
+
+            const results = await Promise.all(requests)
+            const info: Record<string, number | boolean> = {}
+
+            keys.forEach((key, index) => {
+                const res = results[index] as { payload?: unknown }
+                if (key === 'info') {
+                    const caddyInfo = res.payload as CaddyInfo | undefined
+                    if (caddyInfo) {
+                        info.servers = caddyInfo.servers
+                        info.routes = caddyInfo.routes
+                        info.certs = caddyInfo.certs || 0
+                        info.hasTls = caddyInfo.hasTls
+                    }
+                } else if (key === 'certs') {
+                    info.certs = (res.payload || []).length
+                }
+            })
+
+            this.info = info as unknown as CaddyInfo
         } catch {
             this.portal.showNotification('error', '获取 Caddy 信息失败')
             this.info = null

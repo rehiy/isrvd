@@ -26,6 +26,11 @@ class Overview extends Vue {
     get hasAnyBlock() {
         return (
             this.portal.hasPerm('GET /api/apisix/routes') ||
+            this.portal.hasPerm('GET /api/apisix/consumers') ||
+            this.portal.hasPerm('GET /api/apisix/upstreams') ||
+            this.portal.hasPerm('GET /api/apisix/plugin-configs') ||
+            this.portal.hasPerm('GET /api/apisix/ssls') ||
+            this.portal.hasPerm('GET /api/apisix/whitelist') ||
             this.portal.hasPerm('GET /api/caddy/info') ||
             this.portal.hasPerm('GET /api/docker/containers') ||
             this.portal.hasPerm('GET /api/swarm/info') ||
@@ -35,7 +40,14 @@ class Overview extends Vue {
 
     // ─── 方法 ───
     refreshAll() {
-        if (this.portal.hasPerm('GET /api/apisix/routes')) {
+        if (
+            this.portal.hasPerm('GET /api/apisix/routes') ||
+            this.portal.hasPerm('GET /api/apisix/consumers') ||
+            this.portal.hasPerm('GET /api/apisix/upstreams') ||
+            this.portal.hasPerm('GET /api/apisix/plugin-configs') ||
+            this.portal.hasPerm('GET /api/apisix/ssls') ||
+            this.portal.hasPerm('GET /api/apisix/whitelist')
+        ) {
             this.apisixRef?.load()
         }
         if (this.portal.hasPerm('GET /api/caddy/info')) {

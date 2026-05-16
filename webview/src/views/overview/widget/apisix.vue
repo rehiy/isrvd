@@ -15,28 +15,55 @@ class ApisixOverview extends Vue {
     loading = false
 
     readonly statCards = [
-        { key: 'routes',    label: '路由总数',   icon: 'fa-route',         bgColor: 'bg-orange-500' },
-        { key: 'consumers', label: '消费者总数', icon: 'fa-user-tag',      bgColor: 'bg-amber-500' },
-        { key: 'whitelist', label: '白名单授权', icon: 'fa-shield-halved', bgColor: 'bg-emerald-500' },
+        { key: 'routes',        label: '路由总数',   icon: 'fa-route',         bgColor: 'bg-orange-500' },
+        { key: 'consumers',     label: '消费者总数', icon: 'fa-user-tag',      bgColor: 'bg-amber-500' },
+        { key: 'upstreams',     label: '上游总数',   icon: 'fa-server',        bgColor: 'bg-emerald-500' },
+        { key: 'pluginConfigs', label: '插件配置',   icon: 'fa-puzzle-piece', bgColor: 'bg-rose-500' },
+        { key: 'ssl',           label: 'SSL 证书',   icon: 'fa-lock',          bgColor: 'bg-cyan-500' },
+        { key: 'whitelist',     label: '白名单授权', icon: 'fa-shield-halved', bgColor: 'bg-emerald-500' },
     ]
 
     // ─── 方法 ───
     async load() {
         this.loading = true
         try {
-            const [routesRes, consumersRes, whitelistRes] = await Promise.all([
-                api.apisixRouteList(),
-                api.apisixConsumerList(),
-                api.apisixWhitelist(),
-            ])
-            const routes = routesRes.payload || []
-            const consumers = consumersRes.payload || []
-            const whitelist = whitelistRes.payload || []
-            this.info = {
-                routes: routes.length,
-                consumers: consumers.length,
-                whitelist: whitelist.length,
+            const requests: Promise<unknown>[] = []
+            const keys: string[] = []
+
+            if (this.portal.hasPerm('GET /api/apisix/routes')) {
+                requests.push(api.apisixRouteList())
+                keys.push('routes')
             }
+            if (this.portal.hasPerm('GET /api/apisix/consumers')) {
+                requests.push(api.apisixConsumerList())
+                keys.push('consumers')
+            }
+            if (this.portal.hasPerm('GET /api/apisix/upstreams')) {
+                requests.push(api.apisixUpstreamList())
+                keys.push('upstreams')
+            }
+            if (this.portal.hasPerm('GET /api/apisix/plugin-configs')) {
+                requests.push(api.apisixPluginConfigList())
+                keys.push('pluginConfigs')
+            }
+            if (this.portal.hasPerm('GET /api/apisix/ssls')) {
+                requests.push(api.apisixSSLList())
+                keys.push('ssl')
+            }
+            if (this.portal.hasPerm('GET /api/apisix/whitelist')) {
+                requests.push(api.apisixWhitelist())
+                keys.push('whitelist')
+            }
+
+            const results = await Promise.all(requests)
+            const info: Record<string, number> = {}
+
+            keys.forEach((key, index) => {
+                const res = results[index] as { payload?: unknown[] }
+                info[key] = (res.payload || []).length
+            })
+
+            this.info = info as ApisixInfo
         } catch {
             this.portal.showNotification('error', '获取 APISIX 信息失败')
             this.info = null

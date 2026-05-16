@@ -146,6 +146,8 @@ export interface ApisixRevokeWhitelist {
 export interface ApisixInfo {
     routes: number
     consumers: number
-    whitelist: number
+    upstreams: number
+    pluginConfigs: number
+    ssl: number
     [key: string]: number
 }

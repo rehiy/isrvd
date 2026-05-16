@@ -27,8 +27,25 @@ class DockerOverview extends Vue {
     async load() {
         this.loading = true
         try {
-            const res = await api.dockerInfo()
-            this.info = res.payload ?? null
+            const requests: Promise<unknown>[] = []
+            const keys: string[] = []
+
+            if (this.portal.hasPerm('GET /api/docker/info')) {
+                requests.push(api.dockerInfo())
+                keys.push('info')
+            }
+
+            const results = await Promise.all(requests)
+            const info: Record<string, number> = {}
+
+            keys.forEach((key, index) => {
+                const res = results[index] as { payload?: DockerInfo }
+                if (key === 'info' && res.payload) {
+                    Object.assign(info, res.payload)
+                }
+            })
+
+            this.info = (Object.keys(info).length ? info : null) as unknown as DockerInfo
         } catch {
             this.portal.showNotification('error', '加载 Docker 信息失败')
             this.info = null

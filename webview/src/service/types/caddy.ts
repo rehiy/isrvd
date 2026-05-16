@@ -43,6 +43,7 @@ export interface CaddyInfo {
     adminUrl: string
     servers: number
     routes: number
+    certs: number
     hasTls: boolean
     available: boolean
 }

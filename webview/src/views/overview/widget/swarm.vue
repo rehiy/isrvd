@@ -31,13 +31,31 @@ class SwarmOverview extends Vue {
     async load() {
         this.loading = true
         try {
-            const res = await api.swarmInfo()
-            this.swarmInfo = res.payload ?? null
+            const requests: Promise<unknown>[] = []
+            const keys: string[] = []
+
+            if (this.portal.hasPerm('GET /api/swarm/info')) {
+                requests.push(api.swarmInfo())
+                keys.push('info')
+            }
+
+            const results = await Promise.all(requests)
+            const info: Record<string, number> = {}
+
+            keys.forEach((key, index) => {
+                const res = results[index] as { payload?: SwarmInfo }
+                if (key === 'info' && res.payload) {
+                    Object.assign(info, res.payload)
+                }
+            })
+
+            this.swarmInfo = (Object.keys(info).length ? info : null) as unknown as SwarmInfo
         } catch {
             this.portal.showNotification('error', '获取 Swarm 信息失败，请确认集群已初始化')
             this.swarmInfo = null
+        } finally {
+            this.loading = false
         }
-        this.loading = false
     }
 }
 
