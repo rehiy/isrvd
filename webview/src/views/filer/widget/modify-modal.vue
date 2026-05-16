@@ -25,7 +25,6 @@ import { usePortal } from '@/stores'
 })
 class ModifyModal extends Vue {
     portal = usePortal()
-    get appState() { return this.portal }
     // ─── 数据属性 ───
     isOpen = false
     formData = { filename: '', content: '', path: '' }
@@ -51,13 +50,13 @@ export default toNative(ModifyModal)
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" :title="'编辑: ' + formData.filename" :loading="appState.loading" @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" :title="'编辑: ' + formData.filename" :loading="portal.filerLoading" @confirm="handleConfirm">
     <div class="rounded-xl overflow-hidden border border-slate-200">
-      <Codemirror v-model="formData.content" :style="{ height: '60vh' }" :extensions="extensions" :disabled="appState.loading" />
+      <Codemirror v-model="formData.content" :style="{ height: '60vh' }" :extensions="extensions" :disabled="portal.filerLoading" />
     </div>
 
     <template #confirm-text>
-      {{ appState.loading ? '保存中...' : '保存文件' }}
+      {{ portal.filerLoading ? '保存中...' : '保存文件' }}
     </template>
   </BaseModal>
 </template>

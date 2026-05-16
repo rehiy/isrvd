@@ -14,7 +14,6 @@ import { usePortal } from '@/stores'
 })
 class DeleteModal extends Vue {
     portal = usePortal()
-    get appState() { return this.portal }
     // ─── 数据属性 ───
     isOpen = false
     formData = { path: '', name: '' }
@@ -38,7 +37,7 @@ export default toNative(DeleteModal)
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" title="确认删除" :loading="appState.loading" @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" title="确认删除" :loading="portal.filerLoading" @confirm="handleConfirm">
     <div class="text-center py-6">
       <div class="w-16 h-16 rounded-lg bg-red-100 flex items-center justify-center mx-auto mb-4">
         <i class="fas fa-trash text-3xl text-red-500"></i>
@@ -53,7 +52,7 @@ export default toNative(DeleteModal)
     </div>
 
     <template #confirm-text>
-      {{ appState.loading ? '删除中...' : '确认删除' }}
+      {{ portal.filerLoading ? '删除中...' : '确认删除' }}
     </template>
   </BaseModal>
 </template>

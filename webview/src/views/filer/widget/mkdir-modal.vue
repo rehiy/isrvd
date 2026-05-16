@@ -13,7 +13,6 @@ import { usePortal } from '@/stores'
 })
 class MkdirModal extends Vue {
     portal = usePortal()
-    get appState() { return this.portal }
     // ─── 数据属性 ───
     isOpen = false
     formData = { name: '' }
@@ -36,7 +35,7 @@ export default toNative(MkdirModal)
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" title="新建目录" :loading="appState.loading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" title="新建目录" :loading="portal.filerLoading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm">
       <div>
         <label for="dirName" class="block text-sm font-medium text-slate-700 mb-2">
@@ -46,11 +45,11 @@ export default toNative(MkdirModal)
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <i class="fas fa-folder text-slate-400"></i>
           </div>
-          <input 
-            id="dirName" 
-            v-model="formData.name" 
-            type="text" 
-            :disabled="appState.loading" 
+          <input
+            id="dirName"
+            v-model="formData.name"
+            type="text"
+            :disabled="portal.filerLoading"
             required
             class="input pl-11"
             placeholder="请输入目录名称"
@@ -60,7 +59,7 @@ export default toNative(MkdirModal)
     </form>
 
     <template #confirm-text>
-      {{ appState.loading ? '创建中...' : '创建目录' }}
+      {{ portal.filerLoading ? '创建中...' : '创建目录' }}
     </template>
   </BaseModal>
 </template>

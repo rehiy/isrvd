@@ -14,7 +14,6 @@ import { usePortal } from '@/stores'
 })
 class RenameModal extends Vue {
     portal = usePortal()
-    get appState() { return this.portal }
     // ─── 数据属性 ───
     isOpen = false
     formData = { name: '', file: null as FilerFileInfo | null }
@@ -38,7 +37,7 @@ export default toNative(RenameModal)
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" title="重命名" :loading="appState.loading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" title="重命名" :loading="portal.filerLoading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm">
       <div>
         <label for="target" class="block text-sm font-medium text-slate-700 mb-2">
@@ -48,11 +47,11 @@ export default toNative(RenameModal)
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <i class="fas fa-pen text-slate-400"></i>
           </div>
-          <input 
-            id="target" 
-            v-model="formData.name" 
-            type="text" 
-            :disabled="appState.loading" 
+          <input
+            id="target"
+            v-model="formData.name"
+            type="text"
+            :disabled="portal.filerLoading"
             required
             class="input pl-11"
             placeholder="请输入新名称"
@@ -62,7 +61,7 @@ export default toNative(RenameModal)
     </form>
 
     <template #confirm-text>
-      {{ appState.loading ? '重命名中...' : '确认重命名' }}
+      {{ portal.filerLoading ? '重命名中...' : '确认重命名' }}
     </template>
   </BaseModal>
 </template>

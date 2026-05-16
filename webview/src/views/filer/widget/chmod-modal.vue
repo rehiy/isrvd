@@ -14,7 +14,6 @@ import { usePortal } from '@/stores'
 })
 class ChmodModal extends Vue {
     portal = usePortal()
-    get appState() { return this.portal }
     // ─── 数据属性 ───
     isOpen = false
     formData = { path: '', mode: '' }
@@ -38,7 +37,7 @@ export default toNative(ChmodModal)
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" title="修改权限" :loading="appState.loading" :confirm-disabled="!formData.mode.trim()" @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" title="修改权限" :loading="portal.filerLoading" :confirm-disabled="!formData.mode.trim()" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm">
       <div>
         <label for="fileMode" class="block text-sm font-medium text-slate-700 mb-2">
@@ -48,12 +47,12 @@ export default toNative(ChmodModal)
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <i class="fas fa-key text-slate-400"></i>
           </div>
-          <input 
-            id="fileMode" 
-            v-model="formData.mode" 
-            type="text" 
-            :disabled="appState.loading" 
-            required 
+          <input
+            id="fileMode"
+            v-model="formData.mode"
+            type="text"
+            :disabled="portal.filerLoading"
+            required
             placeholder="755"
             class="input pl-11"
           >
@@ -70,7 +69,7 @@ export default toNative(ChmodModal)
     </form>
 
     <template #confirm-text>
-      {{ appState.loading ? '修改中...' : '确认修改' }}
+      {{ portal.filerLoading ? '修改中...' : '确认修改' }}
     </template>
   </BaseModal>
 </template>

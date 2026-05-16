@@ -13,7 +13,6 @@ import { usePortal } from '@/stores'
 })
 class UploadModal extends Vue {
     portal = usePortal()
-    get appState() { return this.portal }
     @Ref readonly fileInput!: HTMLInputElement
 
     isOpen = false
@@ -26,7 +25,7 @@ class UploadModal extends Vue {
 
     // 文件状态：done | active | pending
     fileStatus(index: number) {
-        if (!this.appState.loading) return 'pending'
+        if (!this.portal.filerLoading) return 'pending'
         if (index < this.uploadProgress) return 'done'
         if (index === this.uploadProgress) return 'active'
         return 'pending'
@@ -74,13 +73,13 @@ export default toNative(UploadModal)
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" title="上传文件" :loading="appState.loading" :confirm-disabled="!hasFiles" @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" title="上传文件" :loading="portal.filerLoading" :confirm-disabled="!hasFiles" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm">
       <div>
         <label for="uploadFile" class="block text-sm font-medium text-slate-700 mb-2">选择文件</label>
         <input
           id="uploadFile" ref="fileInput" type="file" multiple required
-          :disabled="appState.loading" class="input file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+          :disabled="portal.filerLoading" class="input file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
           @change="handleFileChange"
         >
         <div v-if="hasFiles" class="mt-3 space-y-2">
@@ -89,8 +88,8 @@ export default toNative(UploadModal)
             class="p-3 rounded-lg border"
             :class="{
               'bg-green-50 border-green-200': fileStatus(index) === 'done',
-              'bg-primary-50 border-primary-200': fileStatus(index) === 'active' || !appState.loading,
-              'bg-slate-50 border-slate-200': fileStatus(index) === 'pending' && appState.loading,
+              'bg-primary-50 border-primary-200': fileStatus(index) === 'active' || !portal.filerLoading,
+              'bg-slate-50 border-slate-200': fileStatus(index) === 'pending' && portal.filerLoading,
             }"
           >
             <div class="flex items-center">
@@ -98,8 +97,8 @@ export default toNative(UploadModal)
                 class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 flex-shrink-0"
                 :class="{
                   'bg-green-100': fileStatus(index) === 'done',
-                  'bg-primary-100': fileStatus(index) === 'active' || !appState.loading,
-                  'bg-slate-100': fileStatus(index) === 'pending' && appState.loading,
+                  'bg-primary-100': fileStatus(index) === 'active' || !portal.filerLoading,
+                  'bg-slate-100': fileStatus(index) === 'pending' && portal.filerLoading,
                 }"
               >
                 <i
@@ -107,8 +106,8 @@ export default toNative(UploadModal)
                   :class="{
                     'fa-check text-green-600': fileStatus(index) === 'done',
                     'fa-spinner fa-spin text-primary-600': fileStatus(index) === 'active',
-                    'fa-file text-primary-600': !appState.loading,
-                    'fa-file text-slate-400': fileStatus(index) === 'pending' && appState.loading,
+                    'fa-file text-primary-600': !portal.filerLoading,
+                    'fa-file text-slate-400': fileStatus(index) === 'pending' && portal.filerLoading,
                   }"
                 ></i>
               </div>
@@ -133,14 +132,14 @@ export default toNative(UploadModal)
           </div>
           <p v-if="uploadFiles.length > 1" class="text-xs text-slate-400 text-right">
             共 {{ uploadFiles.length }} 个文件，合计 {{ (totalSize / 1024).toFixed(2) }} KB
-            <span v-if="appState.loading">（{{ uploadProgress }}/{{ uploadFiles.length }}）</span>
+            <span v-if="portal.filerLoading">（{{ uploadProgress }}/{{ uploadFiles.length }}）</span>
           </p>
         </div>
       </div>
     </form>
 
     <template #confirm-text>
-      {{ appState.loading ? `上传中 ${uploadProgress}/${uploadFiles.length}...` : '开始上传' }}
+      {{ portal.filerLoading ? `上传中 ${uploadProgress}/${uploadFiles.length}...` : '开始上传' }}
     </template>
   </BaseModal>
 </template>
