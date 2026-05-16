@@ -8,6 +8,7 @@ import { initTheme } from '@/helper/theme'
 interface ServiceAvailability {
     agent: boolean
     apisix: boolean
+    caddy: boolean
     docker: boolean
     swarm: boolean
     compose: boolean
@@ -31,6 +32,7 @@ export const useSystemStore = defineStore('system', () => {
     const serviceAvailability = reactive<ServiceAvailability>({
         agent: false,
         apisix: false,
+        caddy: false,
         docker: false,
         swarm: false,
         compose: false
@@ -66,6 +68,7 @@ export const useSystemStore = defineStore('system', () => {
             Object.assign(serviceAvailability, {
                 agent: probe.agent?.available || false,
                 apisix: probe.apisix?.available || false,
+                caddy: probe.caddy?.available || false,
                 docker: probe.docker?.available || false,
                 swarm: probe.swarm?.available || false,
                 compose: probe.compose?.available || false

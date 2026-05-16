@@ -3,6 +3,7 @@
 export interface SystemProbe {
     agent: { available: boolean }
     apisix: { available: boolean }
+    caddy: { available: boolean }
     docker: { available: boolean }
     swarm: { available: boolean }
     compose: { available: boolean }

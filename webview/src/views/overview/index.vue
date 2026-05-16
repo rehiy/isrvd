@@ -4,18 +4,20 @@ import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import ApisixOverview from './widget/apisix.vue'
+import CaddyOverview from './widget/caddy.vue'
 import DockerOverview from './widget/docker.vue'
 import SwarmOverview from './widget/swarm.vue'
 import SystemOverview from './widget/system.vue'
 
 @Component({
-    components: { ApisixOverview, DockerOverview, SwarmOverview, SystemOverview }
+    components: { ApisixOverview, CaddyOverview, DockerOverview, SwarmOverview, SystemOverview }
 })
 class Overview extends Vue {
     portal = usePortal()
 
     // ─── Refs ───
     @Ref readonly apisixRef!: InstanceType<typeof ApisixOverview>
+    @Ref readonly caddyRef!: InstanceType<typeof CaddyOverview>
     @Ref readonly dockerRef!: InstanceType<typeof DockerOverview>
     @Ref readonly swarmRef!: InstanceType<typeof SwarmOverview>
     @Ref readonly systemRef!: InstanceType<typeof SystemOverview>
@@ -24,6 +26,7 @@ class Overview extends Vue {
     get hasAnyBlock() {
         return (
             this.portal.hasPerm('GET /api/apisix/routes') ||
+            this.portal.hasPerm('GET /api/caddy/info') ||
             this.portal.hasPerm('GET /api/docker/containers') ||
             this.portal.hasPerm('GET /api/swarm/info') ||
             this.portal.hasPerm('GET /api/overview/status')
@@ -34,6 +37,9 @@ class Overview extends Vue {
     refreshAll() {
         if (this.portal.hasPerm('GET /api/apisix/routes')) {
             this.apisixRef?.load()
+        }
+        if (this.portal.hasPerm('GET /api/caddy/info')) {
+            this.caddyRef?.load()
         }
         if (this.portal.hasPerm('GET /api/docker/containers')) {
             this.dockerRef?.load()
@@ -101,6 +107,15 @@ export default toNative(Overview)
           <h1 class="text-lg font-semibold text-slate-700">APISIX 网关</h1>
         </div>
         <ApisixOverview ref="apisixRef" />
+      </div>
+
+      <!-- Caddy 概览区块 -->
+      <div v-if="portal.hasPerm('GET /api/caddy/info')" class="p-6 border-b border-slate-100">
+        <div class="flex items-center gap-2 mb-4">
+          <i class="fas fa-shield text-indigo-500 text-lg"></i>
+          <h1 class="text-lg font-semibold text-slate-700">Caddy 网关</h1>
+        </div>
+        <CaddyOverview ref="caddyRef" />
       </div>
 
       <!-- Docker 概览区块 -->

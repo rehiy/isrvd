@@ -2,7 +2,7 @@
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { AllConfig, ServerConfig, AgentConfig, OIDCConfig, ApisixConfig, DockerConfig, MarketplaceConfig, LinkConfig } from '@/service/types'
+import type { AllConfig, ServerConfig, AgentConfig, OIDCConfig, ApisixConfig, CaddyConfig, DockerConfig, MarketplaceConfig, LinkConfig } from '@/service/types'
 
 import IconSelect from '@/component/icon-select.vue'
 
@@ -24,6 +24,7 @@ class Config extends Vue {
   oidcScopes = 'openid profile email'
   agent: AgentConfig = { model: '', baseUrl: '' }
   apisix: ApisixConfig = { adminUrl: '' }
+  caddy: CaddyConfig = { adminUrl: '' }
   docker: DockerConfig = { host: '', containerRoot: '' }
   marketplace: MarketplaceConfig = { url: '' }
   links: LinkConfig[] = []
@@ -41,6 +42,7 @@ class Config extends Vue {
       this.oidcScopes = (this.oidc.scopes || []).join(' ')
       this.agent = { ...payload.agent }
       this.apisix = { ...payload.apisix }
+      this.caddy = { ...(payload.caddy || { adminUrl: '' }) }
       this.docker = { ...payload.docker }
       this.marketplace = { ...(payload.marketplace || { url: '' }) }
       this.links = payload.links ? payload.links.map(l => ({ ...l })) : []
@@ -62,6 +64,7 @@ class Config extends Vue {
         oidc: { ...this.oidc, scopes: this.oidcScopes.split(/\s+/).filter(Boolean) },
         agent: this.agent,
         apisix: this.apisix,
+        caddy: this.caddy,
         docker: this.docker,
         marketplace: this.marketplace,
         links: this.links,
@@ -296,6 +299,16 @@ export default toNative(Config)
             <label class="block text-sm font-medium text-slate-700 mb-1.5">Admin Key</label>
             <input v-model="apisix.adminKey" type="password" placeholder="留空保持不变" class="input" autocomplete="new-password" />
             <p class="mt-1 text-xs text-slate-400">访问 APISIX Admin API 的密钥</p>
+          </div>
+          <div class="border-t border-slate-200 pt-4">
+            <p class="text-sm font-medium text-slate-500 mb-4">Caddy</p>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Admin URL</label>
+                <input v-model="caddy.adminUrl" type="text" placeholder="http://127.0.0.1:2019" class="input" />
+                <p class="text-xs text-slate-400 mt-1">Caddy Admin API 地址（默认 127.0.0.1:2019）</p>
+              </div>
+            </div>
           </div>
           <div class="border-t border-slate-200 pt-4">
             <p class="text-sm font-medium text-slate-500 mb-4">Docker</p>

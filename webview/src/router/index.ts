@@ -57,6 +57,26 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/apisix/whitelist.vue')
   },
   {
+    path: '/caddy',
+    name: 'caddy',
+    redirect: '/caddy/routes'
+  },
+  {
+    path: '/caddy/routes',
+    name: 'caddy-routes',
+    component: () => import('@/views/caddy/routes.vue')
+  },
+  {
+    path: '/caddy/certs',
+    name: 'caddy-certs',
+    component: () => import('@/views/caddy/certs.vue')
+  },
+  {
+    path: '/caddy/raw',
+    name: 'caddy-raw',
+    component: () => import('@/views/caddy/raw.vue')
+  },
+  {
     path: '/docker',
     name: 'docker',
     redirect: '/docker/containers'

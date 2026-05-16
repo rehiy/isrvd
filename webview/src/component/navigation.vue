@@ -14,12 +14,17 @@ class NavigationBar extends Vue {
     // ─── 数据属性 ───
     mobileSidebarVisible = false
     apisixExpanded = false
+    caddyExpanded = false
     dockerExpanded = false
     swarmExpanded = false
 
     // ─── 计算属性 ───
     get isApisixActive() {
         return this.isActive('/apisix/')
+    }
+
+    get isCaddyActive() {
+        return this.isActive('/caddy/')
     }
 
     get isDockerActive() {
@@ -40,6 +45,13 @@ class NavigationBar extends Vue {
     onApisixActiveChange(isActive: boolean) {
         if (isActive && !this.collapsed) {
             this.apisixExpanded = true
+        }
+    }
+
+    @Watch('isCaddyActive', { immediate: true })
+    onCaddyActiveChange(isActive: boolean) {
+        if (isActive && !this.collapsed) {
+            this.caddyExpanded = true
         }
     }
 
@@ -68,6 +80,15 @@ class NavigationBar extends Vue {
             this.apisixExpanded = true
         } else {
             this.apisixExpanded = !this.apisixExpanded
+        }
+    }
+
+    toggleCaddy() {
+        if (this.collapsed) {
+            this.$emit('update:collapsed', false)
+            this.caddyExpanded = true
+        } else {
+            this.caddyExpanded = !this.caddyExpanded
         }
     }
 
@@ -111,6 +132,7 @@ class NavigationBar extends Vue {
     mounted() {
         // 根据当前路由初始化子菜单展开状态
         this.apisixExpanded = this.$route.path.startsWith('/apisix/')
+        this.caddyExpanded = this.$route.path.startsWith('/caddy/')
         this.dockerExpanded = this.$route.path.startsWith('/docker/')
         this.swarmExpanded = this.$route.path.startsWith('/swarm/')
         window.addEventListener('resize', this.handleResize)
@@ -264,6 +286,62 @@ export default toNative(NavigationBar)
             >
               <i class="fas fa-puzzle-piece"></i>
               <span>插件配置</span>
+            </router-link>
+          </div>
+        </template>
+      </div>
+
+      <!-- Caddy 折叠子菜单 -->
+      <div v-if="portal.hasPerm('caddy')">
+        <button
+          v-if="collapsed"
+          class="flex items-center justify-center w-full px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+          :class="{ 'bg-blue-50 text-blue-700': isActive('/caddy/') }"
+          title="Caddy 网关"
+          @click.stop="toggleCaddy"
+        >
+          <i class="fas fa-shield"></i>
+        </button>
+        <template v-else>
+          <button
+            class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/caddy/') }"
+            @click.stop="toggleCaddy"
+          >
+            <i class="fas fa-shield"></i>
+            <span>Caddy 网关</span>
+            <i
+              class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200"
+              :class="{ 'rotate-180': caddyExpanded }"
+            ></i>
+          </button>
+          <div v-show="caddyExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+            <router-link
+              v-if="portal.hasPerm('GET /api/caddy/routes')"
+              to="/caddy/routes"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/caddy/route') }"
+            >
+              <i class="fas fa-route"></i>
+              <span>路由</span>
+            </router-link>
+            <router-link
+              v-if="portal.hasPerm('GET /api/caddy/certs')"
+              to="/caddy/certs"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/caddy/cert') }"
+            >
+              <i class="fas fa-certificate"></i>
+              <span>TLS 证书</span>
+            </router-link>
+            <router-link
+              v-if="portal.hasPerm('GET /api/caddy/config')"
+              to="/caddy/raw"
+              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/caddy/raw') }"
+            >
+              <i class="fas fa-code"></i>
+              <span>原始配置</span>
             </router-link>
           </div>
         </template>

@@ -36,6 +36,11 @@ import type {
     ApisixUpstream,
     ApisixPluginConfig,
     ApisixRevokeWhitelist,
+    // Caddy
+    CaddyInfo,
+    CaddyRoute,
+    CaddyRouteUpsert,
+    CaddyCert,
     // Docker
     DockerInfo,
     DockerContainerInfo,
@@ -325,6 +330,56 @@ class ApiService {
 
     apisixPluginList() {
         return http.get<Record<string, { schema: Record<string, unknown> }>>('apisix/plugins')
+    }
+
+    // ==================== Caddy 网关相关 ====================
+
+    caddyInfo() {
+        return http.get<CaddyInfo>('caddy/info')
+    }
+
+    caddyConfig() {
+        return http.get<unknown>('caddy/config')
+    }
+
+    caddyConfigLoad(config: unknown) {
+        return http.post<void>('caddy/config', { config })
+    }
+
+    caddyRouteList(server?: string) {
+        return http.get<CaddyRoute[]>('caddy/routes', { params: server ? { server } : {} })
+    }
+
+    caddyRoute(index: number, server?: string) {
+        return http.get<CaddyRoute>(`caddy/route/${index}`, { params: server ? { server } : {} })
+    }
+
+    caddyRouteCreate(data: CaddyRouteUpsert, server?: string) {
+        return http.post<{ index: number }>('caddy/route', data, { params: server ? { server } : {} })
+    }
+
+    caddyRouteUpdate(index: number, data: CaddyRouteUpsert, server?: string) {
+        return http.put<void>(`caddy/route/${index}`, data, { params: server ? { server } : {} })
+    }
+
+    caddyRouteDelete(index: number, server?: string) {
+        return http.delete<void>(`caddy/route/${index}`, { params: server ? { server } : {} })
+    }
+
+    caddyCertList() {
+        return http.get<CaddyCert[]>('caddy/certs')
+    }
+
+    caddyCertCreate(data: CaddyCert) {
+        return http.post<void>('caddy/cert', data)
+    }
+
+    caddyCertUpdate(key: string, data: CaddyCert) {
+        return http.put<void>(`caddy/cert/${encodeURIComponent(key)}`, data)
+    }
+
+    caddyCertDelete(key: string) {
+        return http.delete<void>(`caddy/cert/${encodeURIComponent(key)}`)
     }
 
     // ==================== Docker 服务相关 ====================

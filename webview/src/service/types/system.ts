@@ -51,6 +51,10 @@ export interface ApisixConfig {
     adminKey?: string
 }
 
+export interface CaddyConfig {
+    adminUrl: string
+}
+
 export interface DockerRegistry {
     name: string
     description?: string
@@ -79,6 +83,7 @@ export interface AllConfig {
     agent: AgentConfig
     oidc: OIDCConfig
     apisix: ApisixConfig
+    caddy: CaddyConfig
     docker: DockerConfig
     marketplace: MarketplaceConfig
     links: LinkConfig[]
