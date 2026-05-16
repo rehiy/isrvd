@@ -17,6 +17,9 @@ func (app *App) defineCaddyRoutes() []Route {
 		{Method: "GET", Path: "/caddy/info", Handler: app.caddyInfoInspect, Module: "caddy", Label: "查询 Caddy 概览"},
 		{Method: "GET", Path: "/caddy/config", Handler: app.caddyConfigInspect, Module: "caddy", Label: "查询 Caddy 完整配置"},
 		{Method: "POST", Path: "/caddy/config", Handler: app.caddyConfigLoad, Module: "caddy", Label: "整体替换 Caddy 配置"},
+		// 全局选项
+		{Method: "GET", Path: "/caddy/global", Handler: app.caddyGlobalInspect, Module: "caddy", Label: "查询 Caddy 全局选项"},
+		{Method: "PUT", Path: "/caddy/global", Handler: app.caddyGlobalUpdate, Module: "caddy", Label: "更新 Caddy 全局选项"},
 		// 路由 CRUD（默认 server=srv0，可通过 query 指定）
 		{Method: "GET", Path: "/caddy/routes", Handler: app.caddyRouteList, Module: "caddy", Label: "查询 Caddy 路由列表"},
 		{Method: "GET", Path: "/caddy/route/:index", Handler: app.caddyRouteInspect, Module: "caddy", Label: "获取 Caddy 路由详情"},
@@ -64,6 +67,30 @@ func (app *App) caddyConfigLoad(c *gin.Context) {
 		return
 	}
 	respondSuccess(c, "Caddy 配置已加载", nil)
+}
+
+// ─── 全局选项 ───
+
+func (app *App) caddyGlobalInspect(c *gin.Context) {
+	result, err := app.caddySvc.GlobalGet(c.Request.Context())
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "", result)
+}
+
+func (app *App) caddyGlobalUpdate(c *gin.Context) {
+	var req svccaddy.GlobalForm
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := app.caddySvc.GlobalUpdate(c.Request.Context(), req); err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "全局选项已更新", nil)
 }
 
 // ─── 路由 CRUD ───

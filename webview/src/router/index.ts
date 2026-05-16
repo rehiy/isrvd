@@ -72,6 +72,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/caddy/certs.vue')
   },
   {
+    path: '/caddy/global',
+    name: 'caddy-global',
+    component: () => import('@/views/caddy/global.vue')
+  },
+  {
     path: '/caddy/raw',
     name: 'caddy-raw',
     component: () => import('@/views/caddy/raw.vue')

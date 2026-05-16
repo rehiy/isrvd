@@ -38,6 +38,7 @@ import type {
     ApisixRevokeWhitelist,
     // Caddy
     CaddyInfo,
+    CaddyGlobal,
     CaddyRoute,
     CaddyRouteUpsert,
     CaddyCert,
@@ -336,6 +337,14 @@ class ApiService {
 
     caddyInfo() {
         return http.get<CaddyInfo>('caddy/info')
+    }
+
+    caddyGlobal() {
+        return http.get<CaddyGlobal>('caddy/global')
+    }
+
+    caddyGlobalUpdate(data: CaddyGlobal) {
+        return http.put<void>('caddy/global', data)
     }
 
     caddyConfig() {

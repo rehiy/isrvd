@@ -54,6 +54,20 @@ export interface CaddyHandlerKindCard {
     tone: 'indigo' | 'emerald' | 'amber' | 'slate'
 }
 
+// ─── 全局选项 ───
+
+export interface CaddyGlobal {
+    logLevel?: string       // 全局日志级别：DEBUG / INFO / WARN / ERROR
+    logFormat?: string      // 日志格式：json / console
+    email?: string          // ACME 注册邮箱
+    acmeCA?: string         // 自定义 ACME 目录 URL，留空使用 Let's Encrypt
+    localCerts?: boolean    // 使用本地自签证书（internal issuer），不走 ACME
+    onDemandTLS?: boolean   // 启用 on_demand TLS（连接时动态申请证书）
+    autoHttpsDisable?: boolean          // 全局禁用自动 HTTPS
+    autoHttpsDisableRedirects?: boolean // 禁用 HTTP→HTTPS 自动跳转
+    gracePeriod?: string    // 优雅关闭等待时间，例如 10s
+}
+
 // ─── TLS 证书 ───
 
 export type CaddyCertSource = 'file' | 'pem' | 'automate'

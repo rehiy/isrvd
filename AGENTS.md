@@ -396,6 +396,26 @@ skills/isrvd/
 - 表单容器 `max-w-3xl space-y-4`
 - label：`block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1`，input 通用 `.input`，help `text-xs text-slate-400 mt-1`
 - 密钥/密码：后端敏感字段 `json:"-"`，前端 `type="password" autocomplete="new-password"`，留空保存=不修改，placeholder："留空保持不变"
+- **Checkbox 规范**：统一使用以下结构，`<label>` 包裹 checkbox + 文字，描述段落在 `<label>` 外同级；禁止使用独立 `id`/`for` 绑定方式，禁止使用 `accent-*` 或裸 `w-4 h-4` 类（权限多选列表除外）：
+
+  ```html
+  <!-- 无描述 -->
+  <label class="flex items-center gap-2 cursor-pointer select-none w-fit">
+    <input v-model="field" type="checkbox" class="rounded border-slate-300 text-{color}-500 focus:ring-{color}-500" />
+    <span class="text-sm text-slate-600">选项文字</span>
+  </label>
+
+  <!-- 有描述（描述与 label 同级，mt-1 无缩进） -->
+  <div>
+    <label class="flex items-center gap-2 cursor-pointer select-none w-fit">
+      <input v-model="field" type="checkbox" class="rounded border-slate-300 text-{color}-500 focus:ring-{color}-500" />
+      <span class="text-sm text-slate-700">选项文字</span>
+    </label>
+    <p class="text-xs text-slate-400 mt-1">描述说明</p>
+  </div>
+  ```
+
+  `{color}` 与页面主色一致，如 `indigo`（APISIX/Docker）、`violet`（Caddy）、`blue`（系统/账户）。
 
 ### 6.12 统一工具与轮询
 

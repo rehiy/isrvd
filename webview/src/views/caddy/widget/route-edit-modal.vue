@@ -286,8 +286,10 @@ export default toNative(RouteEditModal)
             <input v-model="formData.root" type="text" class="input font-mono text-sm" placeholder="/var/www/html" />
           </div>
           <div class="flex items-center gap-2">
-            <input id="caddyBrowse" v-model="formData.browse" type="checkbox" class="rounded border-slate-300" />
-            <label for="caddyBrowse" class="text-sm text-slate-600">启用目录浏览</label>
+            <label class="flex items-center gap-2 cursor-pointer select-none w-fit">
+              <input v-model="formData.browse" type="checkbox" class="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500" />
+              <span class="text-sm text-slate-600">启用目录浏览</span>
+            </label>
           </div>
         </div>
 

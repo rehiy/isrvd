@@ -24,21 +24,22 @@ isrvd_get "/caddy/global"
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| adminListen | string | Admin API 监听地址，例如 `127.0.0.1:2019` |
-| adminDisabled | boolean | 是否禁用 Admin API |
 | logLevel | string | 全局日志级别：`DEBUG` / `INFO` / `WARN` / `ERROR` |
-| httpPort | number | HTTP 监听端口，默认 80 |
-| httpsPort | number | HTTPS 监听端口，默认 443 |
-| gracePeriod | string | 优雅关闭等待时间，例如 `10s` |
+| persistConfig | boolean | 是否持久化配置到磁盘（`admin.config.persist`） |
+| storageModule | string | 证书存储模块名，例如 `file_system`，留空使用默认 |
+| storageRoot | string | 存储根路径（`file_system` 模块的 `root` 字段） |
+| email | string | ACME 注册邮箱 |
+| acmeCA | string | 自定义 ACME 目录 URL，留空使用 Let's Encrypt |
+| localCerts | boolean | 使用本地自签证书（`internal` issuer），不走 ACME |
+| onDemandTLS | boolean | 启用 on_demand TLS，连接时动态申请证书 |
+| autoHttpsDisable | boolean | 全局禁用自动 HTTPS（`apps.http.automatic_https.disable`） |
+| autoHttpsDisableRedirects | boolean | 禁用 HTTP→HTTPS 自动跳转（`apps.http.automatic_https.disable_redirects`） |
 
 ### 更新全局选项
 
 ```bash
-isrvd_put "/caddy/global" '{"logLevel":"WARN","gracePeriod":"10s"}'
+isrvd_put "/caddy/global" '{"email":"you@example.com","logLevel":"WARN"}'
 ```
-
-请求体字段同上，**只传需要修改的字段**，数值为 0 / 空字符串 / false 的字段不会覆盖现有值。  
-保存后通过 `POST /load` 整体原子替换 Caddy 运行配置，立即生效（Admin 监听地址变更需重启 Caddy）。
 
 ## 获取完整配置
 
@@ -79,10 +80,19 @@ isrvd_post "/caddy/config" "$(jq -n '{
 
 ## 典型工作流
 
-### 调整日志级别与关闭等待时间
+### 启用 HTTPS 自动签发
 
 ```bash
-isrvd_put "/caddy/global" '{"logLevel":"WARN","gracePeriod":"10s"}'
+# 设置 ACME 邮箱（必填）
+isrvd_put "/caddy/global" '{"email":"you@example.com"}'
+# 使用本地自签证书（不走 ACME）
+isrvd_put "/caddy/global" '{"localCerts":true}'
+```
+
+### 调整日志级别
+
+```bash
+isrvd_put "/caddy/global" '{"logLevel":"WARN"}'
 ```
 
 ### 备份并修改部分字段
