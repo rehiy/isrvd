@@ -6,6 +6,7 @@ type Config struct {
 	OIDC        *OIDCConfig        `yaml:"oidc"`
 	Agent       *AgentConfig       `yaml:"agent"`
 	Apisix      *ApisixConfig      `yaml:"apisix"`
+	Caddy       *CaddyConfig       `yaml:"caddy"`
 	Docker      *DockerConfig      `yaml:"docker"`
 	Marketplace *MarketplaceConfig `yaml:"marketplace"`
 	Links       []*LinkConfig      `yaml:"links"`
@@ -47,6 +48,11 @@ type AgentConfig struct {
 type ApisixConfig struct {
 	AdminURL string `yaml:"adminUrl" json:"adminUrl"`           // Apisix Admin API 地址
 	AdminKey string `yaml:"adminKey" json:"adminKey,omitempty"` // 写入时为空表示保留原值；响应时不返回
+}
+
+// Caddy 配置
+type CaddyConfig struct {
+	AdminURL string `yaml:"adminUrl" json:"adminUrl"` // Caddy Admin API 地址，例如 http://127.0.0.1:2019
 }
 
 // Docker 配置

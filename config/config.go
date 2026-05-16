@@ -11,6 +11,8 @@ var (
 	Agent = &AgentConfig{}
 	// Apisix 配置
 	Apisix = &ApisixConfig{}
+	// Caddy 配置
+	Caddy = &CaddyConfig{}
 	// Docker 配置
 	Docker = &DockerConfig{}
 	// 应用市场配置
@@ -46,6 +48,7 @@ func Save() error {
 		OIDC:        OIDC,
 		Agent:       Agent,
 		Apisix:      Apisix,
+		Caddy:       Caddy,
 		Docker:      Docker,
 		Marketplace: Marketplace,
 		Links:       Links,
@@ -71,6 +74,10 @@ func Apply(conf *Config) {
 
 	if conf.Apisix != nil {
 		Apisix = conf.Apisix
+	}
+
+	if conf.Caddy != nil {
+		Caddy = conf.Caddy
 	}
 
 	if conf.Docker != nil {

@@ -28,6 +28,9 @@ apisix:
   # adminUrl: http://127.0.0.1:9180
   # adminKey: your-admin-key
 
+caddy:
+  # adminUrl: http://127.0.0.1:2019    # Caddy Admin API 地址，默认 127.0.0.1:2019
+
 docker:
   # host: unix:///var/run/docker.sock
   # host: tcp://127.0.0.1:2375
