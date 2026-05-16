@@ -9,7 +9,7 @@ interface PortItem {
 @Component({
     emits: ['update:modelValue']
 })
-class PortSelect extends Vue {
+class ContainerPortSelect extends Vue {
     @Prop({ type: String, default: '' }) readonly modelValue!: string
     @Prop({ type: Array, default: () => [] }) readonly ports!: string[]
     @Prop({ type: String, default: '80' }) readonly placeholder!: string
@@ -39,7 +39,7 @@ class PortSelect extends Vue {
     }
 }
 
-export default toNative(PortSelect)
+export default toNative(ContainerPortSelect)
 </script>
 
 <template>

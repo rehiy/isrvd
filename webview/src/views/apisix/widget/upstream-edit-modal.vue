@@ -16,10 +16,10 @@ import { normalizeUpstreamFormNodes, normalizeUpstreamType } from '@/helper/apis
 
 import BaseModal from '@/component/modal.vue'
 
-import { usePortal } from '@/stores'
-
+import ContainerPortSelect from '@/views/docker/widget/container-port-select.vue'
 import ContainerSelect from '@/views/docker/widget/container-select.vue'
-import PortSelect from './port-select.vue'
+
+import { usePortal } from '@/stores'
 
 const UPSTREAM_TYPE_OPTIONS: Array<{ value: ApisixUpstreamType; label: string; desc: string }> = [
     { value: 'roundrobin', label: 'roundrobin', desc: '加权轮询' },
@@ -53,7 +53,7 @@ const defaultFormData = () => ({
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, ContainerSelect, PortSelect },
+    components: { BaseModal, ContainerPortSelect, ContainerSelect },
     emits: ['success']
 })
 class UpstreamEditModal extends Vue {
@@ -263,7 +263,7 @@ export default toNative(UpstreamEditModal)
             </div>
             <div class="col-span-5 md:col-span-3">
               <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Port</label>
-              <PortSelect :model-value="String(node.port || '')" :ports="getPortsByHost(node.host)" placeholder="8080" @update:model-value="updateNode(index, 'port', $event)" />
+              <ContainerPortSelect :model-value="String(node.port || '')" :ports="getPortsByHost(node.host)" placeholder="8080" @update:model-value="updateNode(index, 'port', $event)" />
             </div>
             <div class="col-span-5 md:col-span-3">
               <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">权重</label>
