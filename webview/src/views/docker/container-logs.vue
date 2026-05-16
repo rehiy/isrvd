@@ -64,9 +64,9 @@ export default toNative(ContainerLogs)
               <option value="1000">1000 行</option>
             </select>
           </div>
-            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadLogs">
-            <i class="fas fa-rotate"></i>刷新
-          </button>
+            <button class="btn btn-sm btn-secondary" @click="loadLogs">
+              <i class="fas fa-rotate"></i>刷新
+            </button>
         </div>
         <div v-if="logLoading" class="flex flex-col items-center justify-center py-20">
           <div class="w-12 h-12 spinner mb-3"></div>

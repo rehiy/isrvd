@@ -151,10 +151,10 @@ export default toNative(Nodes)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="swarm-nodes" placeholder="搜索主机名、ID、角色、状态或 IP..." width-class="w-64" focus-color="blue" type-to-search />
-            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadNodes">
+            <button class="btn btn-sm btn-secondary" @click="loadNodes">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('GET /api/swarm/token')" class="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openJoinModal">
+            <button v-if="portal.hasPerm('GET /api/swarm/token')" class="btn btn-sm btn-blue" @click="openJoinModal">
               <i class="fas fa-plus"></i>加入集群
             </button>
           </div>
@@ -171,10 +171,10 @@ export default toNative(Nodes)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadNodes">
+            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadNodes">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('GET /api/swarm/token')" class="w-9 h-9 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-white transition-colors" title="加入集群" @click="openJoinModal">
+            <button v-if="portal.hasPerm('GET /api/swarm/token')" class="btn btn-sm btn-blue w-9 h-9 !px-0" title="加入集群" @click="openJoinModal">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

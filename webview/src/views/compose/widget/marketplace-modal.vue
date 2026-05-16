@@ -164,7 +164,7 @@ export default toNative(MarketplaceModal)
     <template #header-actions>
       <button
         type="button"
-        class="hidden md:flex px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium items-center gap-1.5 transition-colors"
+        class="hidden md:flex btn btn-sm btn-secondary"
         title="刷新"
         @click="loadUrl()"
       >
@@ -172,7 +172,7 @@ export default toNative(MarketplaceModal)
       </button>
       <button
         type="button"
-        class="md:hidden w-8 h-8 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors"
+        class="md:hidden btn btn-sm btn-secondary w-9 h-9 !px-0"
         title="刷新"
         @click="loadUrl()"
       >
@@ -194,7 +194,7 @@ export default toNative(MarketplaceModal)
         </div>
         <h1 class="text-lg font-semibold text-slate-800 mb-1">尚未配置应用市场</h1>
         <p class="text-sm text-slate-500 mb-4">请前往「系统设置 → 应用市场」配置站点 URL</p>
-        <button type="button" class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openConfig()">
+        <button type="button" class="btn btn-sm btn-blue" @click="openConfig()">
           <i class="fas fa-gear"></i>前往配置
         </button>
       </div>

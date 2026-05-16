@@ -109,10 +109,10 @@ export default toNative(Consumers)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="apisix-consumers" placeholder="搜索消费者..." width-class="w-48" focus-color="violet" type-to-search />
-            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadConsumers()">
+            <button class="btn btn-sm btn-secondary" @click="loadConsumers()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/consumer')" class="px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/apisix/consumer')" class="btn btn-sm btn-violet" @click="openCreateModal()">
               <i class="fas fa-plus"></i>新建消费者
             </button>
           </div>
@@ -129,10 +129,10 @@ export default toNative(Consumers)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadConsumers()">
+            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadConsumers()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/consumer')" class="w-9 h-9 rounded-lg bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white transition-colors" title="新建消费者" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/apisix/consumer')" class="btn btn-sm btn-violet w-9 h-9 !px-0" title="新建消费者" @click="openCreateModal()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

@@ -114,10 +114,10 @@ export default toNative(Networks)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="docker-networks" placeholder="搜索网络名称、ID、驱动或子网..." width-class="w-64" focus-color="purple" type-to-search />
-            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadNetworks()">
+            <button class="btn btn-sm btn-secondary" @click="loadNetworks()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/network')" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="createModalRef?.show()">
+            <button v-if="portal.hasPerm('POST /api/docker/network')" class="btn btn-sm btn-purple" @click="createModalRef?.show()">
               <i class="fas fa-plus"></i>新建网络
             </button>
           </div>
@@ -134,10 +134,10 @@ export default toNative(Networks)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadNetworks()">
+            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadNetworks()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/network')" class="w-9 h-9 rounded-lg bg-purple-500 hover:bg-purple-600 flex items-center justify-center text-white transition-colors" title="新建网络" @click="createModalRef?.show()">
+            <button v-if="portal.hasPerm('POST /api/docker/network')" class="btn btn-sm btn-purple w-9 h-9 !px-0" title="新建网络" @click="createModalRef?.show()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

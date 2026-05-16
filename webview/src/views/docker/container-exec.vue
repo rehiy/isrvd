@@ -76,10 +76,14 @@ export default toNative(ContainerTerminal)
               <option value="/bin/ash">/bin/ash</option>
             </select>
           </div>
-          <button :class="['px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors', terminalConnected ? 'bg-white border border-slate-200 hover:bg-slate-50 text-slate-700' : 'bg-emerald-500 hover:bg-emerald-600 text-white']" @click="terminalConnected ? handleTerminalDisconnect() : handleTerminalConnect()">
-            <i :class="['fas', terminalConnected ? 'fa-plug-circle-xmark' : 'fa-plug']"></i>
-            {{ terminalConnected ? '断开连接' : '连接' }}
-          </button>
+          <div class="flex items-center gap-2">
+            <button v-if="!terminalConnected" type="button" class="btn btn-sm btn-success" @click="handleTerminalConnect()">
+              <i class="fas fa-plug"></i>连接
+            </button>
+            <button v-else type="button" class="btn btn-sm btn-secondary" @click="handleTerminalDisconnect()">
+              <i class="fas fa-plug-circle-xmark"></i>断开连接
+            </button>
+          </div>
         </div>
         <!-- 移动端工具栏 -->
         <div class="block md:hidden space-y-3 mb-4">
@@ -89,10 +93,14 @@ export default toNative(ContainerTerminal)
               <option value="/bin/bash">/bin/bash</option>
               <option value="/bin/ash">/bin/ash</option>
             </select>
-            <button :class="['px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors min-w-[80px]', terminalConnected ? 'bg-white border border-slate-200 hover:bg-slate-50 text-slate-700' : 'bg-emerald-500 hover:bg-emerald-600 text-white']" @click="terminalConnected ? handleTerminalDisconnect() : handleTerminalConnect()">
-              <i :class="['fas', terminalConnected ? 'fa-plug-circle-xmark' : 'fa-plug']"></i>
-              <span class="ml-1">{{ terminalConnected ? '断开' : '连接' }}</span>
-            </button>
+            <div class="flex items-center gap-1">
+              <button v-if="!terminalConnected" type="button" class="btn btn-sm btn-success" @click="handleTerminalConnect()">
+                <i class="fas fa-plug"></i>连接
+              </button>
+              <button v-else type="button" class="btn btn-sm btn-secondary" @click="handleTerminalDisconnect()">
+                <i class="fas fa-plug-circle-xmark"></i>断开
+              </button>
+            </div>
           </div>
         </div>
         <div class="bg-slate-900 rounded-xl p-3 md:p-4 min-h-[400px] md:min-h-[500px]">

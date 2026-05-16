@@ -134,10 +134,10 @@ export default toNative(Containers)
                 <i class="fas fa-layer-group"></i><span>全部</span>
               </button>
             </div>
-            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadContainers()">
+            <button class="btn btn-sm btn-secondary" @click="loadContainers()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/container')" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="createContainerModal()">
+            <button v-if="portal.hasPerm('POST /api/docker/container')" class="btn btn-sm btn-emerald" @click="createContainerModal()">
               <i class="fas fa-plus"></i>新建容器
             </button>
           </div>
@@ -155,10 +155,10 @@ export default toNative(Containers)
               </div>
             </div>
             <div class="flex items-center gap-1 flex-shrink-0">
-              <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadContainers()">
+              <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadContainers()">
                 <i class="fas fa-rotate text-sm"></i>
               </button>
-              <button v-if="portal.hasPerm('POST /api/docker/container')" class="w-9 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-colors" title="新建容器" @click="createContainerModal()">
+              <button v-if="portal.hasPerm('POST /api/docker/container')" class="btn btn-sm btn-emerald w-9 h-9 !px-0" title="新建容器" @click="createContainerModal()">
                 <i class="fas fa-plus text-sm"></i>
               </button>
             </div>

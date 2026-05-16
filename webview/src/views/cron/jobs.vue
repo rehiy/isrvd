@@ -144,7 +144,7 @@ export default toNative(CronJobs)
       <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-violet-500 flex items-center justify-center">
+            <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center">
               <i class="fas fa-clock text-white"></i>
             </div>
             <div>
@@ -153,11 +153,11 @@ export default toNative(CronJobs)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <PageSearch v-model="searchText" search-key="cron-jobs" placeholder="搜索任务名称、执行计划..." width-class="w-60" focus-color="violet" type-to-search />
-            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap" @click="loadJobs()">
+            <PageSearch v-model="searchText" search-key="cron-jobs" placeholder="搜索任务名称、执行计划..." width-class="w-60" focus-color="amber" type-to-search />
+            <button class="btn btn-sm btn-secondary" @click="loadJobs()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button class="px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap" @click="openCreate()">
+            <button class="btn btn-sm btn-amber" @click="openCreate()">
               <i class="fas fa-plus"></i>新建任务
             </button>
           </div>
@@ -166,7 +166,7 @@ export default toNative(CronJobs)
         <div class="block md:hidden">
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-3 min-w-0 flex-1">
-              <div class="w-9 h-9 rounded-lg bg-violet-500 flex items-center justify-center flex-shrink-0">
+              <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
                 <i class="fas fa-clock text-white"></i>
               </div>
               <div class="min-w-0">
@@ -175,15 +175,15 @@ export default toNative(CronJobs)
               </div>
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
-              <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadJobs()">
+              <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadJobs()">
                 <i class="fas fa-rotate text-sm"></i>
               </button>
-              <button class="w-9 h-9 rounded-lg bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white transition-colors" title="新建任务" @click="openCreate()">
+              <button class="btn btn-sm btn-amber w-9 h-9 !px-0" title="新建任务" @click="openCreate()">
                 <i class="fas fa-plus text-sm"></i>
               </button>
             </div>
           </div>
-          <PageSearch v-model="searchText" search-key="cron-jobs" placeholder="搜索任务..." width-class="w-full" focus-color="violet" />
+          <PageSearch v-model="searchText" search-key="cron-jobs" placeholder="搜索任务..." width-class="w-full" focus-color="amber" />
         </div>
       </div>
 

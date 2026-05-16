@@ -121,10 +121,10 @@ export default toNative(SSLs)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="apisix-ssls" placeholder="搜索证书、SNI 或 ID..." width-class="w-56" focus-color="cyan" type-to-search />
-            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadSSLs()">
+            <button class="btn btn-sm btn-secondary" @click="loadSSLs()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="btn btn-sm btn-cyan" @click="openCreateModal()">
               <i class="fas fa-plus"></i>新建证书
             </button>
           </div>
@@ -141,10 +141,10 @@ export default toNative(SSLs)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadSSLs()">
+            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadSSLs()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="w-9 h-9 rounded-lg bg-cyan-500 hover:bg-cyan-600 flex items-center justify-center text-white transition-colors" title="新建证书" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="btn btn-sm btn-cyan w-9 h-9 !px-0" title="新建证书" @click="openCreateModal()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

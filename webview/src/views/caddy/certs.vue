@@ -112,8 +112,8 @@ export default toNative(CaddyCerts)
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
             <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="搜索主机、路径、标签..." width-class="w-64" focus-color="cyan" type-to-search />
-            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadCerts()"><i class="fas fa-rotate"></i>刷新</button>
-            <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openCreateModal()"><i class="fas fa-plus"></i>新建证书</button>
+            <button class="btn btn-sm btn-secondary" @click="loadCerts()"><i class="fas fa-rotate"></i>刷新</button>
+            <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="btn btn-sm btn-cyan" @click="openCreateModal()"><i class="fas fa-plus"></i>新建证书</button>
           </div>
         </div>
         <!-- 移动端 -->
@@ -126,10 +126,10 @@ export default toNative(CaddyCerts)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadCerts()">
+            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadCerts()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="w-9 h-9 rounded-lg bg-cyan-500 hover:bg-cyan-600 flex items-center justify-center text-white transition-colors" title="新建证书" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="btn btn-sm btn-cyan w-9 h-9 !px-0" title="新建证书" @click="openCreateModal()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

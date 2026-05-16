@@ -113,7 +113,7 @@ export default toNative(Tasks)
               <option value="">全部服务</option>
               <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>
             </select>
-            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadTasks()">
+            <button class="btn btn-sm btn-secondary" @click="loadTasks()">
               <i class="fas fa-rotate"></i>刷新
             </button>
           </div>
@@ -130,7 +130,7 @@ export default toNative(Tasks)
                 <p class="text-xs text-slate-500 truncate">查看 Swarm 集群任务状态</p>
               </div>
             </div>
-            <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors flex-shrink-0" title="刷新" @click="loadTasks()">
+            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadTasks()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
           </div>

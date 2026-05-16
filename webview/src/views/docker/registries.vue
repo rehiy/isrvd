@@ -126,10 +126,10 @@ export default toNative(Registries)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="docker-registries" placeholder="搜索仓库名称、地址或账号..." width-class="w-64" focus-color="purple" type-to-search />
-            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadRegistries()">
+            <button class="btn btn-sm btn-secondary" @click="loadRegistries()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/registry')" class="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openAdd">
+            <button v-if="portal.hasPerm('POST /api/docker/registry')" class="btn btn-sm btn-purple" @click="openAdd">
               <i class="fas fa-plus"></i>添加仓库
             </button>
           </div>
@@ -146,10 +146,10 @@ export default toNative(Registries)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadRegistries()">
+            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadRegistries()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/registry')" class="w-9 h-9 rounded-lg bg-purple-500 hover:bg-purple-600 flex items-center justify-center text-white transition-colors" title="添加" @click="openAdd">
+            <button v-if="portal.hasPerm('POST /api/docker/registry')" class="btn btn-sm btn-purple w-9 h-9 !px-0" title="添加" @click="openAdd">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

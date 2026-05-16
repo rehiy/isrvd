@@ -142,8 +142,8 @@ export default toNative(CaddyRoutes)
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
             <PageSearch v-model="searchText" search-key="caddy-routes" placeholder="搜索 host、path、上游..." width-class="w-64" focus-color="indigo" type-to-search />
-            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadRoutes()"><i class="fas fa-rotate"></i>刷新</button>
-            <button v-if="portal.hasPerm('POST /api/caddy/route')" class="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openCreateModal()"><i class="fas fa-plus"></i>新建路由</button>
+            <button class="btn btn-sm btn-secondary" @click="loadRoutes()"><i class="fas fa-rotate"></i>刷新</button>
+            <button v-if="portal.hasPerm('POST /api/caddy/route')" class="btn btn-sm btn-indigo" @click="openCreateModal()"><i class="fas fa-plus"></i>新建路由</button>
           </div>
         </div>
         <!-- 移动端 -->
@@ -156,10 +156,10 @@ export default toNative(CaddyRoutes)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadRoutes()">
+            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadRoutes()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/caddy/route')" class="w-9 h-9 rounded-lg bg-indigo-500 hover:bg-indigo-600 flex items-center justify-center text-white transition-colors" title="新建路由" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/caddy/route')" class="btn btn-sm btn-indigo w-9 h-9 !px-0" title="新建路由" @click="openCreateModal()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

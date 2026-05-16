@@ -136,10 +136,10 @@ export default toNative(Services)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="swarm-services" placeholder="搜索服务名、镜像、模式或端口..." width-class="w-64" focus-color="emerald" type-to-search />
-            <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors" @click="loadServices">
+            <button class="btn btn-sm btn-secondary" @click="loadServices">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/swarm/service')" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1.5 transition-colors" @click="openCreateModal">
+            <button v-if="portal.hasPerm('POST /api/swarm/service')" class="btn btn-sm btn-emerald" @click="openCreateModal">
               <i class="fas fa-plus"></i>新建服务
             </button>
           </div>
@@ -156,10 +156,10 @@ export default toNative(Services)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="w-9 h-9 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors" title="刷新" @click="loadServices">
+            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadServices">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/swarm/service')" class="w-9 h-9 rounded-lg bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white transition-colors" title="创建" @click="openCreateModal">
+            <button v-if="portal.hasPerm('POST /api/swarm/service')" class="btn btn-sm btn-emerald w-9 h-9 !px-0" title="创建" @click="openCreateModal">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
