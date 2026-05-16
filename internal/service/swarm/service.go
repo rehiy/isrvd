@@ -14,9 +14,17 @@ type Service struct {
 	svc *pkgswarm.SwarmService
 }
 
-// NewService 创建 Swarm 业务服务
-func NewService() *Service {
-	return &Service{svc: registry.SwarmService}
+// NewService 创建 Swarm 业务服务，验证节点是否是 Swarm manager
+func NewService() (*Service, error) {
+	svc := registry.SwarmService
+	if svc == nil {
+		return nil, fmt.Errorf("Swarm 服务未初始化")
+	}
+	// 验证节点是否加入 Swarm 且为 manager
+	if _, err := svc.GetClient().SwarmInspect(context.Background()); err != nil {
+		return nil, fmt.Errorf("Swarm 不可用: %w", err)
+	}
+	return &Service{svc: svc}, nil
 }
 
 // CheckAvailability 检测 Swarm 可用性

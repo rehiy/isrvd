@@ -22,6 +22,10 @@ func NewService() (*Service, error) {
 		logman.Error("Apisix client not initialized")
 		return nil, fmt.Errorf("Apisix 未配置")
 	}
+	// 验证连通性，服务不可达时拒绝初始化
+	if _, err := client.RouteList(); err != nil {
+		return nil, fmt.Errorf("Apisix 不可达: %w", err)
+	}
 	return &Service{client: client}, nil
 }
 

@@ -104,7 +104,11 @@ func StartApp() {
 		logman.Warn("Docker service unavailable", "error", err)
 	} else {
 		app.dockerSvc = dockerSvc
-		app.swarmSvc = svcSwarm.NewService()
+		if swarmSvc, err := svcSwarm.NewService(); err != nil {
+			logman.Warn("Swarm service unavailable", "error", err)
+		} else {
+			app.swarmSvc = swarmSvc
+		}
 	}
 
 	if composeSvc, err := svcCompose.NewService(); err != nil {
@@ -205,6 +209,8 @@ func (app *App) registerRoute(group *gin.RouterGroup, route Route) {
 // isRouteAvailable 检查路由是否满足服务可用性条件（基于 Module 字段判断）
 func (app *App) isRouteAvailable(route Route) bool {
 	switch route.Module {
+	case "agent":
+		return config.Agent.BaseURL != ""
 	case "apisix":
 		return app.apisixSvc != nil
 	case "caddy":

@@ -7,6 +7,7 @@
 package caddy
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -45,6 +46,10 @@ func NewService() (*Service, error) {
 	if client == nil {
 		logman.Error("Caddy client not initialized")
 		return nil, fmt.Errorf("Caddy 未配置")
+	}
+	// 验证连通性，服务不可达时拒绝初始化
+	if _, err := client.ConfigAll(context.Background()); err != nil {
+		return nil, fmt.Errorf("Caddy 不可达: %w", err)
 	}
 	return &Service{client: client}, nil
 }
