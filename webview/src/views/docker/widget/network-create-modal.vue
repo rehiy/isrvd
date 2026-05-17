@@ -42,14 +42,7 @@ export default toNative(NetworkCreateModal)
 </script>
 
 <template>
-  <BaseModal
-    v-model="isOpen"
-    title="新建网络"
-    :loading="modalLoading"
-    confirm-class="btn-purple"
-    show-footer
-    @confirm="handleConfirm"
-  >
+  <BaseModal v-model="isOpen" title="新建网络" :loading="modalLoading" confirm-class="btn-purple" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-2">网络名称</label>

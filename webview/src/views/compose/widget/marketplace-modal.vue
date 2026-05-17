@@ -162,20 +162,10 @@ export default toNative(MarketplaceModal)
     </template>
 
     <template #header-actions>
-      <button
-        type="button"
-        class="hidden md:flex btn btn-secondary"
-        title="刷新"
-        @click="loadUrl()"
-      >
+      <button type="button" class="hidden md:flex btn btn-secondary" title="刷新" @click="loadUrl()">
         <i class="fas fa-rotate"></i><span>刷新</span>
       </button>
-      <button
-        type="button"
-        class="md:hidden btn btn-secondary w-9 h-9 !px-0"
-        title="刷新"
-        @click="loadUrl()"
-      >
+      <button type="button" class="md:hidden btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadUrl()">
         <i class="fas fa-rotate text-sm"></i>
       </button>
     </template>

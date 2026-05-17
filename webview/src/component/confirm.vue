@@ -38,14 +38,8 @@ export default toNative(ConfirmModal)
     @update:model-value="!$event && portal.closeConfirm()"
   >
     <div class="text-center">
-      <div 
-        class="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4"
-        :class="iconColorClass.split(' ')[0]"
-      >
-        <i 
-          class="fas text-3xl"
-          :class="[portal.confirm.icon, iconColorClass.split(' ')[1]]"
-        ></i>
+      <div class="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4" :class="iconColorClass.split(' ')[0]">
+        <i class="fas text-3xl" :class="[portal.confirm.icon, iconColorClass.split(' ')[1]]"></i>
       </div>
       <p class="text-lg text-slate-700" v-html="portal.confirm.message"></p>
       <p v-if="portal.confirm.danger" class="text-sm text-red-600 flex items-center justify-center mt-3">

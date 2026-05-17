@@ -46,14 +46,7 @@ export default toNative(ImageTagModal)
 </script>
 
 <template>
-  <BaseModal
-    v-model="isOpen"
-    title="新建镜像标签"
-    :loading="modalLoading"
-    confirm-class="btn-blue"
-    show-footer
-    @confirm="handleConfirm"
-  >
+  <BaseModal v-model="isOpen" title="新建镜像标签" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
     <div v-if="tagImage" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-2">当前镜像</label>

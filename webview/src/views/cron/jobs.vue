@@ -235,12 +235,7 @@ export default toNative(CronJobs)
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium font-mono bg-slate-100 text-slate-700">{{ job.type }}</span>
               </td>
               <td class="px-4 py-3">
-                <button
-                  :title="job.enabled ? '点击禁用' : '点击启用'"
-                  class="text-xs font-medium transition-colors"
-                  :class="runtimeStatusClass(job)"
-                  @click="toggleEnabled(job)"
-                >
+                <button :title="job.enabled ? '点击禁用' : '点击启用'" class="text-xs font-medium transition-colors" :class="runtimeStatusClass(job)" @click="toggleEnabled(job)">
                   {{ runtimeStatusText(job) }}
                 </button>
               </td>
@@ -279,11 +274,7 @@ export default toNative(CronJobs)
                 <span class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ job.id }}</span>
               </div>
             </div>
-            <button
-              class="text-xs font-medium flex-shrink-0 transition-colors"
-              :class="runtimeStatusClass(job)"
-              @click="toggleEnabled(job)"
-            >
+            <button class="text-xs font-medium flex-shrink-0 transition-colors" :class="runtimeStatusClass(job)" @click="toggleEnabled(job)">
               {{ runtimeStatusText(job) }}
             </button>
           </div>

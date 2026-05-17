@@ -45,29 +45,14 @@ export default toNative(CreateModal)
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <i class="fas fa-file text-slate-400"></i>
           </div>
-          <input
-            id="fileName"
-            v-model="formData.name"
-            type="text"
-            :disabled="portal.filerLoading"
-            required
-            class="input pl-11"
-            placeholder="请输入文件名称"
-          >
+          <input id="fileName" v-model="formData.name" type="text" :disabled="portal.filerLoading" required class="input pl-11" placeholder="请输入文件名称">
         </div>
       </div>
       <div>
         <label for="fileContent" class="block text-sm font-medium text-slate-700 mb-2">
           文件内容
         </label>
-        <textarea
-          id="fileContent"
-          v-model="formData.content"
-          rows="10"
-          :disabled="portal.filerLoading"
-          class="input font-mono text-sm"
-          placeholder="请输入文件内容..."
-        ></textarea>
+        <textarea id="fileContent" v-model="formData.content" rows="10" :disabled="portal.filerLoading" class="input font-mono text-sm" placeholder="请输入文件内容..."></textarea>
       </div>
     </form>
 

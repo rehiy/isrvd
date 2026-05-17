@@ -99,13 +99,7 @@ export default toNative(ConsumerEditModal)
 </script>
 
 <template>
-  <BaseModal
-    v-model="isOpen"
-    :title="isEditMode ? '编辑消费者' : '新建消费者'"
-    :loading="modalLoading"
-    confirm-class="btn-violet"
-    @confirm="handleConfirm"
-  >
+  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑消费者' : '新建消费者'" :loading="modalLoading" confirm-class="btn-violet" @confirm="handleConfirm">
     <div class="max-w-3xl space-y-4 p-1">
       <div class="space-y-3">
         <div>
@@ -118,12 +112,7 @@ export default toNative(ConsumerEditModal)
         </div>
       </div>
 
-      <PluginConfigPanel
-        ref="pluginPanel"
-        :plugins="formData.plugins"
-        :available-plugins="availablePlugins"
-        @update:plugins="onPluginsUpdate"
-      />
+      <PluginConfigPanel ref="pluginPanel" :plugins="formData.plugins" :available-plugins="availablePlugins" @update:plugins="onPluginsUpdate" />
     </div>
 
     <template #confirm-text>

@@ -244,11 +244,7 @@ export default toNative(Nodes)
 
         <!-- 移动端卡片视图 -->
         <div class="md:hidden space-y-3 p-4">
-          <div 
-            v-for="n in filteredNodes" 
-            :key="n.id"
-            class="card-interactive"
-          >
+          <div v-for="n in filteredNodes" :key="n.id" class="card-interactive">
             <!-- 顶部：主机名和图标 -->
             <div class="card-info-row">
               <div class="list-icon bg-blue-400">
@@ -346,12 +342,7 @@ export default toNative(Nodes)
       <!-- Manager 地址 -->
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Manager 地址</label>
-        <input
-          v-model="joinAddr"
-          type="text"
-          class="input"
-          placeholder="例如：192.168.1.100:2377"
-        />
+        <input v-model="joinAddr" type="text" class="input" placeholder="例如：192.168.1.100:2377" />
         <p class="mt-1 text-xs text-slate-400">留空则使用占位符，填写后命令可直接使用</p>
       </div>
       <!-- 加入命令 -->

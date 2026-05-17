@@ -109,12 +109,7 @@ export default toNative(BaseModal)
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
               <slot name="header-actions"></slot>
-              <button 
-                type="button" 
-                class="btn-icon text-slate-400"
-                :disabled="loading"
-                @click="handleCancel"
-              >
+              <button type="button" class="btn-icon text-slate-400" :disabled="loading" @click="handleCancel">
                 <i class="fas fa-times"></i>
               </button>
             </div>
@@ -128,22 +123,10 @@ export default toNative(BaseModal)
           <!-- Footer -->
           <div v-if="showFooter" class="flex justify-end gap-3 px-6 py-4 border-t border-slate-200/50 bg-slate-50/50 flex-shrink-0">
             <slot name="footer">
-              <button 
-                type="button" 
-                class="btn btn-secondary"
-                :disabled="loading"
-                @click="handleCancel"
-              >
+              <button type="button" class="btn btn-secondary" :disabled="loading" @click="handleCancel">
                 <slot name="cancel-text">取消</slot>
               </button>
-              <button 
-                v-if="showConfirm"
-                type="button" 
-                class="btn"
-                :class="confirmClass"
-                :disabled="loading || confirmDisabled"
-                @click="handleConfirm"
-              >
+              <button v-if="showConfirm" type="button" class="btn" :class="confirmClass" :disabled="loading || confirmDisabled" @click="handleConfirm">
                 <i v-if="loading" class="fas fa-spinner fa-spin"></i>
                 <slot name="confirm-text">确认</slot>
               </button>

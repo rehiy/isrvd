@@ -217,11 +217,7 @@ export default toNative(Consumers)
 
         <!-- 移动端卡片视图 -->
         <div class="md:hidden space-y-3 p-4">
-          <div 
-            v-for="consumer in filteredConsumers" 
-            :key="consumer.username"
-            class="card-interactive"
-          >
+          <div v-for="consumer in filteredConsumers" :key="consumer.username" class="card-interactive">
             <!-- 顶部：消费者信息和图标 -->
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-3 min-w-0 flex-1">

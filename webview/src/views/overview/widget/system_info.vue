@@ -34,10 +34,7 @@ export default toNative(SystemInfo)
       <p class="text-xs text-slate-400 mb-1">程序版本</p>
       <div class="flex items-center gap-2">
         <p class="text-sm font-semibold text-slate-800 truncate">{{ current.version }}</p>
-        <a
-          v-if="current.versionCheck?.update" :href="current.versionCheck.release" target="_blank" rel="noopener noreferrer"
-          class="update-link"
-        >
+        <a v-if="current.versionCheck?.update" :href="current.versionCheck.release" target="_blank" rel="noopener noreferrer" class="update-link">
           <i class="fas fa-arrow-up text-[10px]"></i>
           更新 {{ current.versionCheck.latest }}
         </a>

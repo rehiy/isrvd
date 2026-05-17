@@ -218,11 +218,7 @@ export default toNative(CaddyRoutes)
 
         <!-- 移动端卡片 -->
         <div class="md:hidden space-y-3 p-4">
-          <div
-            v-for="route in filteredRoutes"
-            :key="route.index"
-            class="card-interactive"
-          >
+          <div v-for="route in filteredRoutes" :key="route.index" class="card-interactive">
             <div class="card-info-row">
               <div class="list-icon bg-indigo-400">
                 <i class="fas fa-route text-white text-base"></i>

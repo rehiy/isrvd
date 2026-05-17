@@ -188,11 +188,7 @@ export default toNative(CaddyCerts)
 
         <!-- 移动端卡片 -->
         <div class="md:hidden space-y-3 p-4">
-          <div
-            v-for="cert in filteredCerts"
-            :key="cert.key"
-            class="card-interactive"
-          >
+          <div v-for="cert in filteredCerts" :key="cert.key" class="card-interactive">
             <div class="card-info-row">
               <div class="list-icon bg-cyan-400">
                 <i class="fas fa-certificate text-white text-base"></i>

@@ -45,14 +45,7 @@ export default toNative(ImageBuildModal)
 </script>
 
 <template>
-  <BaseModal
-    v-model="isOpen"
-    title="构建镜像"
-    :loading="modalLoading"
-    confirm-class="btn-blue"
-    show-footer
-    @confirm="handleConfirm"
-  >
+  <BaseModal v-model="isOpen" title="构建镜像" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
     <div class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-2">镜像标签</label>
@@ -61,13 +54,7 @@ export default toNative(ImageBuildModal)
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-2">Dockerfile</label>
-        <textarea
-          v-model="buildDockerfile"
-          rows="14"
-          class="input font-mono text-sm"
-          placeholder="FROM alpine:latest&#10;RUN echo hello"
-          spellcheck="false"
-        ></textarea>
+        <textarea v-model="buildDockerfile" rows="14" class="input font-mono text-sm" placeholder="FROM alpine:latest&#10;RUN echo hello" spellcheck="false"></textarea>
       </div>
     </div>
 

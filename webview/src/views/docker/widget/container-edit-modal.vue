@@ -57,18 +57,8 @@ export default toNative(ContainerEditModal)
 </script>
 
 <template>
-  <BaseModal
-    v-model="isOpen"
-    title="编辑容器配置"
-    :loading="modalLoading"
-    confirm-class="btn-emerald"
-    show-footer
-    @confirm="handleConfirm"
-  >
-    <ComposeEditor
-      v-model="composeContent"
-      warning="更新配置后将会重建容器，旧容器将被停止并删除"
-    />
+  <BaseModal v-model="isOpen" title="编辑容器配置" :loading="modalLoading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
+    <ComposeEditor v-model="composeContent" warning="更新配置后将会重建容器，旧容器将被停止并删除" />
     <template #confirm-text>更新并重建</template>
   </BaseModal>
 </template>

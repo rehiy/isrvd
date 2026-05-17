@@ -103,15 +103,7 @@ export default toNative(PreviewModal)
       @error="handleError"
     />
 
-    <audio
-      v-if="previewUrl && previewType === 'audio' && !error"
-      v-show="!loading"
-      class="w-full"
-      controls
-      preload="metadata"
-      @loadedmetadata="handleLoaded"
-      @error="handleError"
-    >
+    <audio v-if="previewUrl && previewType === 'audio' && !error" v-show="!loading" class="w-full" controls preload="metadata" @loadedmetadata="handleLoaded" @error="handleError">
       <source :src="previewUrl" :type="mimeType" />
     </audio>
 
@@ -127,13 +119,7 @@ export default toNative(PreviewModal)
       <source :src="previewUrl" :type="mimeType" />
     </video>
 
-    <object
-      v-else-if="previewUrl && previewType === 'pdf'"
-      :data="previewUrl"
-      type="application/pdf"
-      class="w-full border-0"
-      style="height: calc(100vh - 10rem);"
-    >
+    <object v-else-if="previewUrl && previewType === 'pdf'" :data="previewUrl" type="application/pdf" class="w-full border-0" style="height: calc(100vh - 10rem);">
       <div class="flex flex-col items-center justify-center gap-3 py-20">
         <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center">
           <i class="fas fa-file-pdf text-4xl text-slate-400"></i>

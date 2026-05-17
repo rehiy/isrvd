@@ -231,10 +231,7 @@ export default toNative(AuditLogs)
                   </td>
                   <!-- 方法 -->
                   <td class="px-4 py-3">
-                    <span
-                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium font-mono"
-                      :class="methodClass(log.method)"
-                    >{{ log.method }}</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium font-mono" :class="methodClass(log.method)">{{ log.method }}</span>
                   </td>
                   <!-- URI -->
                   <td class="px-4 py-3 max-w-[240px]">
@@ -267,10 +264,7 @@ export default toNative(AuditLogs)
 
           <!-- 移动卡片列表 -->
           <div class="md:hidden space-y-3 p-4">
-            <div
-              v-for="(log, idx) in filteredLogs" :key="idx"
-              class="card-interactive"
-            >
+            <div v-for="(log, idx) in filteredLogs" :key="idx" class="card-interactive">
               <!-- 顶部：用户 + 时间 -->
               <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2 min-w-0 flex-1">
@@ -287,10 +281,7 @@ export default toNative(AuditLogs)
 
               <!-- 方法 + URI -->
               <div class="flex items-center gap-2 mb-3">
-                <span
-                  class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium font-mono flex-shrink-0"
-                  :class="methodClass(log.method)"
-                >{{ log.method }}</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium font-mono flex-shrink-0" :class="methodClass(log.method)">{{ log.method }}</span>
                 <code class="text-xs text-slate-700 font-mono truncate">{{ log.uri }}</code>
               </div>
 
@@ -322,20 +313,12 @@ export default toNative(AuditLogs)
       <BaseModal v-model="detailOpen" :show-footer="false">
         <template #title>
           <div class="flex items-center gap-2">
-            <span
-              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium font-mono"
-              :class="methodClass(detailLog?.method || '')"
-            >{{ detailLog?.method }}</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium font-mono" :class="methodClass(detailLog?.method || '')">{{ detailLog?.method }}</span>
             <code class="text-sm text-slate-700 font-mono truncate">{{ detailLog?.uri }}</code>
           </div>
         </template>
         <div class="editor-container">
-          <Codemirror
-            :model-value="detailBody"
-            :style="{ height: '50vh' }"
-            :extensions="jsonExtensions"
-            :disabled="true"
-          />
+          <Codemirror :model-value="detailBody" :style="{ height: '50vh' }" :extensions="jsonExtensions" :disabled="true" />
         </div>
       </BaseModal>
     </div>

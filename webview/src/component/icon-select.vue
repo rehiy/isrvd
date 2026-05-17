@@ -141,13 +141,7 @@ export default toNative(IconSelect)
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <i class="fas fa-search text-slate-400 text-sm"></i>
           </div>
-          <input
-            v-model="searchQuery"
-            type="text"
-            class="input pl-9"
-            placeholder="搜索图标名称..."
-            autofocus
-          />
+          <input v-model="searchQuery" type="text" class="input pl-9" placeholder="搜索图标名称..." autofocus />
           <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
             <span class="text-xs text-slate-400">{{ filteredIcons.length }} 个</span>
           </div>
@@ -157,12 +151,7 @@ export default toNative(IconSelect)
       <!-- 分类标签 -->
       <div v-if="!searchQuery" class="mb-3">
         <div class="flex flex-wrap gap-1.5">
-          <button
-            type="button"
-            class="btn-category"
-            :class="!activeCategory ? 'btn-category-active' : 'btn-category-inactive'"
-            @click="activeCategory = ''"
-          >
+          <button type="button" class="btn-category" :class="!activeCategory ? 'btn-category-active' : 'btn-category-inactive'" @click="activeCategory = ''">
             全部
           </button>
           <button
@@ -175,12 +164,7 @@ export default toNative(IconSelect)
           >
             {{ cat.label }}
           </button>
-          <button
-            v-if="hasMoreCategories"
-            type="button"
-            class="btn-category text-primary-500 hover:text-primary-600 hover:bg-primary-50!"
-            @click="categoryExpanded = !categoryExpanded"
-          >
+          <button v-if="hasMoreCategories" type="button" class="btn-category text-primary-500 hover:text-primary-600 hover:bg-primary-50!" @click="categoryExpanded = !categoryExpanded">
             <i :class="categoryExpanded ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-[10px]"></i>
             {{ categoryExpanded ? '收起' : '更多' }}
           </button>

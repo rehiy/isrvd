@@ -129,23 +129,11 @@ export default toNative(Combobox)
 <template>
   <Dropdown v-model:open="dropdownOpen" :max-height="maxHeight" :align="align">
     <template #trigger="{ open }">
-      <div
-        class="input min-h-[46px] cursor-text flex items-center gap-2"
-        :class="[open ? '!border-primary-400' : '', multiple ? 'flex-wrap gap-1.5' : '']"
-        @click="focusInput"
-      >
+      <div class="input min-h-[46px] cursor-text flex items-center gap-2" :class="[open ? '!border-primary-400' : '', multiple ? 'flex-wrap gap-1.5' : '']" @click="focusInput">
         <template v-if="multiple">
-          <span
-            v-for="tag in selected"
-            :key="tag"
-            :class="['inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all', tagClass(tag)]"
-          >
+          <span v-for="tag in selected" :key="tag" :class="['inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all', tagClass(tag)]">
             {{ tag }}
-            <button
-              type="button"
-              class="btn-tag-remove"
-              @click.stop="removeTag(tag)"
-            >
+            <button type="button" class="btn-tag-remove" @click.stop="removeTag(tag)">
               <i class="fas fa-times text-[8px]"></i>
             </button>
           </span>
@@ -163,10 +151,7 @@ export default toNative(Combobox)
           @keydown.enter.prevent="handleEnter"
         />
 
-        <i
-          v-if="!multiple"
-          :class="['fas fa-chevron-down text-slate-400 text-xs transition-transform duration-200', open ? 'rotate-180' : '']"
-        ></i>
+        <i v-if="!multiple" :class="['fas fa-chevron-down text-slate-400 text-xs transition-transform duration-200', open ? 'rotate-180' : '']"></i>
       </div>
     </template>
 
@@ -182,12 +167,7 @@ export default toNative(Combobox)
     </template>
 
     <template #default>
-      <slot
-        :query="searchQuery.trim().toLowerCase()"
-        :select="select"
-        :selected="selected"
-        :is-selected="isSelected"
-      />
+      <slot :query="searchQuery.trim().toLowerCase()" :select="select" :selected="selected" :is-selected="isSelected" />
     </template>
 
     <template #empty>

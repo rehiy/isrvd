@@ -340,14 +340,7 @@ export default toNative(RouteEditModal)
         </div>
 
         <div class="pt-3 border-t border-slate-100">
-          <PluginConfigPanel
-            ref="pluginPanel"
-            :plugins="formData.plugins"
-            :available-plugins="availablePlugins"
-            :show-import="true"
-            :routes="routes"
-            @update:plugins="onPluginsUpdate"
-          />
+          <PluginConfigPanel ref="pluginPanel" :plugins="formData.plugins" :available-plugins="availablePlugins" :show-import="true" :routes="routes" @update:plugins="onPluginsUpdate" />
         </div>
       </div>
     </div>

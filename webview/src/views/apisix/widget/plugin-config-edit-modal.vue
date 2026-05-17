@@ -112,13 +112,7 @@ export default toNative(PluginConfigEditModal)
 </script>
 
 <template>
-  <BaseModal
-    v-model="isOpen"
-    :title="isEditMode ? '编辑插件配置' : '新建插件配置'"
-    :loading="modalLoading"
-    confirm-class="btn-rose"
-    @confirm="handleConfirm"
-  >
+  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑插件配置' : '新建插件配置'" :loading="modalLoading" confirm-class="btn-rose" @confirm="handleConfirm">
     <div class="max-w-3xl space-y-4 p-1">
       <div>
         <label class="form-label">配置 ID</label>
@@ -130,13 +124,7 @@ export default toNative(PluginConfigEditModal)
         <textarea v-model="formData.desc" rows="2" class="input resize-none" placeholder="插件配置描述"></textarea>
       </div>
 
-      <PluginConfigPanel
-        :plugins="formData.plugins"
-        :available-plugins="availablePlugins"
-        :show-import="true"
-        :routes="routes"
-        @update:plugins="updatePlugins"
-      />
+      <PluginConfigPanel :plugins="formData.plugins" :available-plugins="availablePlugins" :show-import="true" :routes="routes" @update:plugins="updatePlugins" />
     </div>
 
     <template #confirm-text>

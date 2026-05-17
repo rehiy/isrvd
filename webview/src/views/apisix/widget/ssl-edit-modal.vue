@@ -103,13 +103,7 @@ export default toNative(SSLEditModal)
 </script>
 
 <template>
-  <BaseModal
-    v-model="isOpen"
-    :title="isEditMode ? '编辑证书' : '新建证书'"
-    :loading="modalLoading"
-    confirm-class="btn-cyan"
-    @confirm="handleConfirm"
-  >
+  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑证书' : '新建证书'" :loading="modalLoading" confirm-class="btn-cyan" @confirm="handleConfirm">
     <div class="max-w-3xl space-y-4 p-1">
       <div>
         <label class="form-label">SNI 域名 <span class="text-red-500">*</span></label>

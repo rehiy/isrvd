@@ -67,12 +67,7 @@ export default toNative(ContainerSelect)
 </script>
 
 <template>
-  <Combobox
-    :model-value="modelValue"
-    :placeholder="placeholder"
-    :disabled="disabled"
-    @update:model-value="$emit('update:modelValue', $event)"
-  >
+  <Combobox :model-value="modelValue" :placeholder="placeholder" :disabled="disabled" @update:model-value="$emit('update:modelValue', $event)">
     <template #hint-extra="{ query }">
       <span class="text-xs text-slate-400">{{ matchCount(query.toLowerCase()) }} 个匹配</span>
     </template>

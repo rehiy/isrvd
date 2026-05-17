@@ -76,12 +76,7 @@ export default toNative(JobLogsModal)
     </template>
 
     <template #header-actions>
-      <button
-        class="btn-icon text-slate-400"
-        :disabled="loading"
-        title="刷新"
-        @click="loadLogs"
-      >
+      <button class="btn-icon text-slate-400" :disabled="loading" title="刷新" @click="loadLogs">
         <i class="fas fa-rotate text-sm" :class="{ 'fa-spin': loading }"></i>
       </button>
     </template>
@@ -112,16 +107,9 @@ export default toNative(JobLogsModal)
         </div>
 
         <div v-else class="divide-y divide-slate-200">
-          <div
-            v-for="(log, idx) in logs"
-            :key="log.runId || idx"
-            class="py-3 first:pt-0 last:pb-0"
-          >
+          <div v-for="(log, idx) in logs" :key="log.runId || idx" class="py-3 first:pt-0 last:pb-0">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2">
-              <span
-                class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium w-fit"
-                :class="log.success ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'"
-              >
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium w-fit" :class="log.success ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'">
                 <i :class="log.success ? 'fas fa-circle-check' : 'fas fa-circle-xmark'"></i>
                 {{ log.success ? '成功' : '失败' }}
               </span>

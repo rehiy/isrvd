@@ -165,12 +165,7 @@ export default toNative(ComposeDeploy)
       <div class="p-4 md:p-6 space-y-4 max-w-5xl">
         <!-- 部署目标 -->
         <div class="inline-flex gap-1 bg-slate-100 p-1 rounded-lg">
-          <button
-            type="button"
-            :class="['tab-btn',
-                     target === 'docker' ? 'tab-btn-active text-amber-600' : 'tab-btn-inactive']"
-            @click="selectTarget('docker')"
-          >
+          <button type="button" :class="['tab-btn', target === 'docker' ? 'tab-btn-active text-amber-600' : 'tab-btn-inactive']" @click="selectTarget('docker')">
             <i class="fab fa-docker"></i><span>单机容器</span>
           </button>
           <button
@@ -195,11 +190,7 @@ export default toNative(ComposeDeploy)
         </div>
 
         <!-- Compose 内容 -->
-        <ComposeEditor
-          v-model="content"
-          :disabled="loading"
-          warning="项目名来自 compose 文件的 name 字段；变量插值需在客户端完成，后端仅按原文落盘与加载"
-        />
+        <ComposeEditor v-model="content" :disabled="loading" warning="项目名来自 compose 文件的 name 字段；变量插值需在客户端完成，后端仅按原文落盘与加载" />
 
         <!-- 附加文件 -->
         <div>
@@ -207,13 +198,7 @@ export default toNative(ComposeDeploy)
             <span class="text-xs font-normal text-slate-400">（选填，部署前解压到项目目录）</span>
           </label>
           <div class="flex items-center gap-2">
-            <input
-              v-model="initURL"
-              type="text"
-              placeholder="zip 下载 URL，例如 http://example.com/init.zip"
-              class="input flex-1"
-              :disabled="loading || !!initFile"
-            />
+            <input v-model="initURL" type="text" placeholder="zip 下载 URL，例如 http://example.com/init.zip" class="input flex-1" :disabled="loading || !!initFile" />
             <span class="text-xs text-slate-400 flex-shrink-0">或</span>
             <!-- 隐藏真实 input，用自定义按钮触发 -->
             <label
@@ -224,14 +209,7 @@ export default toNative(ComposeDeploy)
               <i class="fas fa-paperclip"></i>
               <span>{{ initFile ? initFile.name : '上传 zip' }}</span>
               <i v-if="initFile" class="fas fa-xmark ml-1 hover:text-red-500" @click.prevent="clearInitFile()"></i>
-              <input
-                ref="fileInput"
-                type="file"
-                accept=".zip,application/zip"
-                class="hidden"
-                :disabled="loading"
-                @change="onInitFileChange"
-              />
+              <input ref="fileInput" type="file" accept=".zip,application/zip" class="hidden" :disabled="loading" @change="onInitFileChange" />
             </label>
           </div>
           <p class="mt-1 text-xs text-slate-400">
@@ -247,12 +225,7 @@ export default toNative(ComposeDeploy)
 
         <!-- 操作按钮 -->
         <div class="flex flex-col sm:flex-row sm:items-center gap-3 pt-2">
-          <button
-            type="button"
-            :disabled="!canSubmit"
-            class="btn btn-amber rounded-xl whitespace-nowrap flex-shrink-0 self-start"
-            @click="handleDeploy()"
-          >
+          <button type="button" :disabled="!canSubmit" class="btn btn-amber rounded-xl whitespace-nowrap flex-shrink-0 self-start" @click="handleDeploy()">
             <i v-if="loading" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-rocket"></i>
             <span>{{ loading ? '部署中...' : '部署' }}</span>

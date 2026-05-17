@@ -263,14 +263,7 @@ export default toNative(MemberEditModal)
 </script>
 
 <template>
-  <BaseModal
-    v-model="isOpen"
-    :title="title"
-    :loading="modalLoading"
-    confirm-class="btn-blue"
-    show-footer
-    @confirm="handleConfirm"
-  >
+  <BaseModal v-model="isOpen" :title="title" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-2">用户名 <span class="text-red-500">*</span></label>
@@ -332,13 +325,7 @@ export default toNative(MemberEditModal)
                 :key="item.key"
                 :class="['flex items-center gap-2 px-3 py-1.5', isAuto(item.key) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-slate-50 cursor-pointer']"
               >
-                <input
-                  type="checkbox"
-                  :checked="isChecked(item.key)"
-                  :disabled="isAuto(item.key)"
-                  class="w-4 h-4 accent-blue-500 flex-shrink-0"
-                  @change="togglePerm(item.key)"
-                />
+                <input type="checkbox" :checked="isChecked(item.key)" :disabled="isAuto(item.key)" class="w-4 h-4 accent-blue-500 flex-shrink-0" @change="togglePerm(item.key)" />
                 <span :class="['inline-block w-14 text-center text-xs font-mono font-semibold rounded px-1 py-0.5 flex-shrink-0', methodColor[methodOf(item.key)] || 'bg-slate-100 text-slate-600']">
                   {{ methodOf(item.key) }}
                 </span>

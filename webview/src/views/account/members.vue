@@ -185,20 +185,10 @@ export default toNative(Members)
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button 
-                      v-if="!m.founder && portal.hasPerm('PUT /api/account/member/:username')"
-                      class="btn-icon btn-icon-blue" 
-                      title="编辑" 
-                      @click="openEditMember(m)"
-                    >
+                    <button v-if="!m.founder && portal.hasPerm('PUT /api/account/member/:username')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditMember(m)">
                       <i class="fas fa-pen text-xs"></i>
                     </button>
-                    <button 
-                      v-if="!m.founder && portal.hasPerm('DELETE /api/account/member/:username')"
-                      class="btn-icon btn-icon-red" 
-                      title="删除" 
-                      @click="handleDeleteMember(m)"
-                    >
+                    <button v-if="!m.founder && portal.hasPerm('DELETE /api/account/member/:username')" class="btn-icon btn-icon-red" title="删除" @click="handleDeleteMember(m)">
                       <i class="fas fa-trash text-xs"></i>
                     </button>
                   </div>
@@ -241,20 +231,10 @@ export default toNative(Members)
             </div>
             <!-- 底部：操作按鈕 -->
             <div class="card-actions">
-              <button 
-                v-if="!m.founder && portal.hasPerm('PUT /api/account/member/:username')"
-                class="btn-icon btn-icon-blue" 
-                title="编辑" 
-                @click="openEditMember(m)"
-              >
+              <button v-if="!m.founder && portal.hasPerm('PUT /api/account/member/:username')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditMember(m)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
-              <button 
-                v-if="!m.founder && portal.hasPerm('DELETE /api/account/member/:username')"
-                class="btn-icon btn-icon-red" 
-                title="删除" 
-                @click="handleDeleteMember(m)"
-              >
+              <button v-if="!m.founder && portal.hasPerm('DELETE /api/account/member/:username')" class="btn-icon btn-icon-red" title="删除" @click="handleDeleteMember(m)">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>

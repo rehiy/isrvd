@@ -190,20 +190,10 @@ export default toNative(Networks)
                     <button v-if="portal.hasPerm('GET /api/docker/network/:id')" class="btn-icon btn-icon-slate" title="详情" @click="viewNetworkDetail(net)">
                       <i class="fas fa-circle-info text-xs"></i>
                     </button>
-                    <button
-                      v-if="canDeleteNetwork(net) && portal.hasPerm('POST /api/docker/network/:id/action')"
-                      class="btn-icon btn-icon-red"
-                      title="删除"
-                      @click="handleNetworkAction(net, 'remove')"
-                    >
+                    <button v-if="canDeleteNetwork(net) && portal.hasPerm('POST /api/docker/network/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleNetworkAction(net, 'remove')">
                       <i class="fas fa-trash text-xs"></i>
                     </button>
-                    <button
-                      v-else
-                      disabled
-                      class="btn-icon text-slate-300 cursor-not-allowed"
-                      :title="getDeleteDisabledReason(net)"
-                    >
+                    <button v-else disabled class="btn-icon text-slate-300 cursor-not-allowed" :title="getDeleteDisabledReason(net)">
                       <i class="fas fa-trash text-xs"></i>
                     </button>
                   </div>
@@ -215,11 +205,7 @@ export default toNative(Networks)
 
         <!-- 移动端卡片视图 -->
         <div class="md:hidden space-y-3 p-4">
-          <div 
-            v-for="net in filteredNetworks" 
-            :key="net.id"
-            class="card-interactive"
-          >
+          <div v-for="net in filteredNetworks" :key="net.id" class="card-interactive">
             <!-- 顶部：网络信息和图标 -->
             <div class="card-info-row">
               <div class="list-icon bg-purple-400">
@@ -252,20 +238,10 @@ export default toNative(Networks)
               <button v-if="portal.hasPerm('GET /api/docker/network/:id')" class="btn-icon btn-icon-slate" title="详情" @click="viewNetworkDetail(net)">
                 <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
               </button>
-              <button
-                v-if="canDeleteNetwork(net) && portal.hasPerm('POST /api/docker/network/:id/action')"
-                class="btn-icon btn-icon-red"
-                title="删除"
-                @click="handleNetworkAction(net, 'remove')"
-              >
+              <button v-if="canDeleteNetwork(net) && portal.hasPerm('POST /api/docker/network/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleNetworkAction(net, 'remove')">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
-              <button
-                v-else
-                disabled
-                class="btn-icon text-slate-300 cursor-not-allowed"
-                :title="getDeleteDisabledReason(net)"
-              >
+              <button v-else disabled class="btn-icon text-slate-300 cursor-not-allowed" :title="getDeleteDisabledReason(net)">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>

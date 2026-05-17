@@ -95,18 +95,10 @@ export default toNative(CaddyGlobalConfig)
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
-            <button
-              class="btn btn-secondary"
-              @click="load()"
-            >
+            <button class="btn btn-secondary" @click="load()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button
-              v-if="portal.hasPerm('PUT /api/caddy/global')"
-              :disabled="saving || loading"
-              class="btn btn-violet"
-              @click="save()"
-            >
+            <button v-if="portal.hasPerm('PUT /api/caddy/global')" :disabled="saving || loading" class="btn btn-violet" @click="save()">
               <i v-if="saving" class="fas fa-spinner fa-spin"></i>
               <i v-else class="fas fa-floppy-disk"></i>
               {{ saving ? '保存中...' : '保存配置' }}
@@ -128,13 +120,7 @@ export default toNative(CaddyGlobalConfig)
             <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="load()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button
-              v-if="portal.hasPerm('PUT /api/caddy/global')"
-              :disabled="saving || loading"
-              class="btn btn-violet w-9 h-9 !px-0"
-              title="保存"
-              @click="save()"
-            >
+            <button v-if="portal.hasPerm('PUT /api/caddy/global')" :disabled="saving || loading" class="btn btn-violet w-9 h-9 !px-0" title="保存" @click="save()">
               <i class="fas fa-floppy-disk text-sm"></i>
             </button>
           </div>

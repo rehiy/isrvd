@@ -47,15 +47,7 @@ export default toNative(ChmodModal)
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <i class="fas fa-key text-slate-400"></i>
           </div>
-          <input
-            id="fileMode"
-            v-model="formData.mode"
-            type="text"
-            :disabled="portal.filerLoading"
-            required
-            placeholder="755"
-            class="input pl-11"
-          >
+          <input id="fileMode" v-model="formData.mode" type="text" :disabled="portal.filerLoading" required placeholder="755" class="input pl-11">
         </div>
         <div class="mt-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
           <p class="text-sm font-medium text-slate-700 mb-2">常用权限:</p>

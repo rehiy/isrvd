@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 前端样式 Review 脚本 — 基于 AGENTS.md 6.x 规范
-用法：cd webview && python3 script/review-style.py
+用法：cd webview && python3 scripts/review-style.py
 """
 
 import re

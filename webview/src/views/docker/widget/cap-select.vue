@@ -196,7 +196,7 @@ export default toNative(CapSelect)
           已选 <strong :class="selected.length > 0 ? 'text-slate-700' : 'text-slate-400'">{{ selected.length }}</strong> 项权限
         </span>
         <button
-          v-if="selected.length > 0"
+          v-if="selected.length> 0"
           type="button"
           class="text-xs text-red-500 hover:text-red-600 font-medium"
           @click="clearAll"

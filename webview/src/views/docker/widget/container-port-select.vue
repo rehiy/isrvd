@@ -52,13 +52,7 @@ export default toNative(ContainerPortSelect)
     :disabled="disabled"
     @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
   />
-  <select
-    v-else
-    class="input"
-    :value="modelValue"
-    :disabled="disabled"
-    @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
-  >
+  <select v-else class="input" :value="modelValue" :disabled="disabled" @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)">
     <option value="" disabled>选择端口</option>
     <option v-for="item in parsedPorts" :key="item.port + '-' + item.proto" :value="item.port">
       {{ item.port }} / {{ item.proto }}

@@ -19,8 +19,8 @@
     "preview": "vite preview",
     "lint": "vue-tsc --noEmit && eslint src --ext .ts,.vue",
     "lint:fix": "vue-tsc --noEmit && eslint src --ext .ts,.vue --fix",
-    "format": "python3 script/format.py",
-    "format:check": "python3 script/format.py --dry-run"
+    "format": "python3 scripts/format.py",
+    "format:check": "python3 scripts/format.py --dry-run"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",

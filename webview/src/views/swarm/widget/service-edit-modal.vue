@@ -57,18 +57,8 @@ export default toNative(ServiceEditModal)
 </script>
 
 <template>
-  <BaseModal
-    v-model="isOpen"
-    :title="`编辑服务：${serviceName}`"
-    :loading="modalLoading"
-    confirm-class="btn-emerald"
-    show-footer
-    @confirm="handleConfirm"
-  >
-    <ComposeEditor
-      v-model="composeContent"
-      warning="更新配置后将会删除旧服务并重新创建，期间服务短暂不可用"
-    />
+  <BaseModal v-model="isOpen" :title="`编辑服务：${serviceName}`" :loading="modalLoading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
+    <ComposeEditor v-model="composeContent" warning="更新配置后将会删除旧服务并重新创建，期间服务短暂不可用" />
     <template #confirm-text>更新并重建</template>
   </BaseModal>
 </template>

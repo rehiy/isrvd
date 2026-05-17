@@ -260,11 +260,7 @@ export default toNative(Containers)
 
         <!-- 移动端卡片视图 -->
         <div class="md:hidden space-y-3 p-4">
-          <div
-            v-for="ct in filteredContainers"
-            :key="ct.id"
-            class="card-interactive"
-          >
+          <div v-for="ct in filteredContainers" :key="ct.id" class="card-interactive">
             <!-- 顶部：名称和状态 -->
             <div class="card-info-row">
               <div :class="['list-icon', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">

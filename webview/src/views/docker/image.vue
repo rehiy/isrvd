@@ -197,12 +197,7 @@ export default toNative(ImageDetail)
             层信息（{{ inspectData.layers }} 个实际层，共 {{ inspectData.layerDetails.length }} 步）
           </h2>
           <div class="border border-slate-200 rounded-lg divide-y divide-slate-100 overflow-hidden">
-            <div
-              v-for="(layer, idx) in inspectData.layerDetails"
-              :key="idx"
-              class="px-3 py-2"
-              :class="layer.empty ? 'bg-slate-50/50' : 'bg-white'"
-            >
+            <div v-for="(layer, idx) in inspectData.layerDetails" :key="idx" class="px-3 py-2" :class="layer.empty ? 'bg-slate-50/50' : 'bg-white'">
               <div class="flex items-start gap-2">
                 <!-- 层序号 + 类型标记 -->
                 <div class="flex items-center gap-1.5 shrink-0 mt-0.5">

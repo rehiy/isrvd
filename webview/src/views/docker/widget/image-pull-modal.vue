@@ -108,15 +108,7 @@ export default toNative(ImagePullModal)
 </script>
 
 <template>
-  <BaseModal
-    ref="modalRef"
-    v-model="isOpen"
-    title="拉取镜像"
-    :loading="modalLoading"
-    confirm-class="btn-blue"
-    show-footer
-    @confirm="handleConfirm"
-  >
+  <BaseModal ref="modalRef" v-model="isOpen" title="拉取镜像" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
     <form class="max-w-3xl space-y-4" @submit.prevent="handleConfirm">
       <section>
         <div class="space-y-3">
@@ -151,13 +143,7 @@ export default toNative(ImagePullModal)
       <section v-if="!isRegistryMode">
         <div class="space-y-3">
           <div class="flex gap-2">
-            <input
-              v-model="searchKeyword"
-              type="text"
-              placeholder="例如: nginx、redis、ubuntu"
-              class="input flex-1"
-              @keydown.enter.prevent="handleSearchImage"
-            />
+            <input v-model="searchKeyword" type="text" placeholder="例如: nginx、redis、ubuntu" class="input flex-1" @keydown.enter.prevent="handleSearchImage" />
             <button type="button" :disabled="searchLoading" class="btn h-[46px] btn-secondary" @click="handleSearchImage">
               <i :class="['fas', searchLoading ? 'fa-spinner fa-spin' : 'fa-search']"></i>
               {{ searchLoading ? '搜索中' : '搜索' }}

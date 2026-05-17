@@ -98,13 +98,7 @@ export default toNative(ImageSelect)
 </script>
 
 <template>
-  <Combobox
-    :model-value="modelValue"
-    :placeholder="placeholder"
-    :disabled="disabled"
-    max-height="360px"
-    @update:model-value="$emit('update:modelValue', $event)"
-  >
+  <Combobox :model-value="modelValue" :placeholder="placeholder" :disabled="disabled" max-height="360px" @update:model-value="$emit('update:modelValue', $event)">
     <template #hint-extra="{ query }">
       <span class="text-xs text-slate-400">{{ matchCount(query.toLowerCase()) }} 个匹配</span>
     </template>

@@ -79,14 +79,7 @@ export default toNative(RegistryPushModal)
 </script>
 
 <template>
-  <BaseModal
-    v-model="isOpen"
-    title="推送镜像到仓库"
-    :loading="modalLoading"
-    confirm-class="btn-blue"
-    show-footer
-    @confirm="handleConfirm"
-  >
+  <BaseModal v-model="isOpen" title="推送镜像到仓库" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-2">本地镜像</label>

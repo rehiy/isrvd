@@ -63,14 +63,7 @@ export default toNative(PageSearch)
 
 <template>
   <div class="relative">
-    <input
-      ref="inputRef"
-      v-model="value"
-      :data-page-search="searchAttr"
-      type="text"
-      :placeholder="placeholder"
-      :class="inputClass"
-    />
+    <input ref="inputRef" v-model="value" :data-page-search="searchAttr" type="text" :placeholder="placeholder" :class="inputClass" />
     <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
   </div>
 </template>

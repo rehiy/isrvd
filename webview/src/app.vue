@@ -81,10 +81,7 @@ export default toNative(App)
         :class="sidebarCollapsed ? 'lg:left-16' : 'lg:left-64'"
       >
         <!-- 移动端菜单切换按钮 -->
-        <button
-          class="btn-icon lg:hidden"
-          @click="toggleMobileMenu"
-        >
+        <button class="btn-icon lg:hidden" @click="toggleMobileMenu">
           <i class="fas fa-bars text-slate-600"></i>
         </button>
 

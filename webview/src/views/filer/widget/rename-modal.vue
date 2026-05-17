@@ -47,15 +47,7 @@ export default toNative(RenameModal)
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <i class="fas fa-pen text-slate-400"></i>
           </div>
-          <input
-            id="target"
-            v-model="formData.name"
-            type="text"
-            :disabled="portal.filerLoading"
-            required
-            class="input pl-11"
-            placeholder="请输入新名称"
-          >
+          <input id="target" v-model="formData.name" type="text" :disabled="portal.filerLoading" required class="input pl-11" placeholder="请输入新名称">
         </div>
       </div>
     </form>

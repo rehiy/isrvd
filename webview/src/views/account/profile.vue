@@ -155,35 +155,17 @@ export default toNative(Profile)
         <form class="max-w-3xl space-y-4" @submit.prevent="handleChangePassword">
           <div>
             <label class="form-label">原密码</label>
-            <input
-              v-model="passwordForm.oldPassword"
-              type="password"
-              class="input"
-              placeholder="请输入原密码"
-              autocomplete="current-password"
-            />
+            <input v-model="passwordForm.oldPassword" type="password" class="input" placeholder="请输入原密码" autocomplete="current-password" />
           </div>
 
           <div>
             <label class="form-label">新密码</label>
-            <input
-              v-model="passwordForm.newPassword"
-              type="password"
-              class="input"
-              placeholder="请输入新密码（至少 6 位）"
-              autocomplete="new-password"
-            />
+            <input v-model="passwordForm.newPassword" type="password" class="input" placeholder="请输入新密码（至少 6 位）" autocomplete="new-password" />
           </div>
 
           <div>
             <label class="form-label">确认密码</label>
-            <input
-              v-model="passwordForm.confirmPassword"
-              type="password"
-              class="input"
-              placeholder="请再次输入新密码"
-              autocomplete="new-password"
-            />
+            <input v-model="passwordForm.confirmPassword" type="password" class="input" placeholder="请再次输入新密码" autocomplete="new-password" />
           </div>
 
           <div class="flex items-center gap-3 pt-2">
@@ -227,13 +209,7 @@ export default toNative(Profile)
         <form class="max-w-3xl space-y-4" @submit.prevent="handleCreateToken">
           <div>
             <label class="form-label">令牌名称</label>
-            <input
-              v-model="tokenForm.name"
-              type="text"
-              class="input"
-              placeholder="如：CI/CD Pipeline"
-              maxlength="64"
-            />
+            <input v-model="tokenForm.name" type="text" class="input" placeholder="如：CI/CD Pipeline" maxlength="64" />
             <p class="text-xs text-slate-400 mt-1">用于标识令牌用途，最长 64 字符</p>
           </div>
 

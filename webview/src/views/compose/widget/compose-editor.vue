@@ -34,12 +34,7 @@ export default toNative(ComposeEditor)
         <i class="fas fa-file-code mr-1 text-slate-400"></i>compose.yml
       </label>
       <div class="editor-container">
-        <Codemirror
-          v-model="content"
-          :style="{ height }"
-          :extensions="extensions"
-          :disabled="disabled"
-        />
+        <Codemirror v-model="content" :style="{ height }" :extensions="extensions" :disabled="disabled" />
       </div>
     </div>
     <div v-if="warning" class="bg-amber-50 border border-amber-200 rounded-lg p-3">

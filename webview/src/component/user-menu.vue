@@ -35,11 +35,7 @@ export default toNative(UserMenu)
 
 <template>
   <!-- header 认证模式：仅显示用户名，无注销入口 -->
-  <div
-    v-if="portal.authMode === 'header'"
-    class="px-2 py-2 text-sm font-medium text-slate-500 flex items-center gap-2 cursor-default select-none"
-    :title="portal.username || '未登录'"
-  >
+  <div v-if="portal.authMode === 'header'" class="px-2 py-2 text-sm font-medium text-slate-500 flex items-center gap-2 cursor-default select-none" :title="portal.username || '未登录'">
     <i class="fas fa-user-tie"></i>
     <span class="hidden sm:inline">{{ portal.username }}</span>
   </div>
@@ -47,11 +43,7 @@ export default toNative(UserMenu)
   <!-- jwt 认证模式：用户名 + 下拉菜单 -->
   <Dropdown v-else v-model:open="menuOpen" placement="bottom" align="right" :close-on-click="true" max-height="320px">
     <template #trigger="{ toggle }">
-      <button
-        class="btn btn-ghost !px-2"
-        :title="portal.username || '未登录'"
-        @click="toggle"
-      >
+      <button class="btn btn-ghost !px-2" :title="portal.username || '未登录'" @click="toggle">
         <i class="fas fa-user-tie"></i>
         <span class="hidden sm:inline">{{ portal.username }}</span>
         <i class="fas fa-chevron-down text-xs text-slate-400 hidden sm:inline transition-transform duration-200" :class="{ 'rotate-180': menuOpen }"></i>
@@ -59,21 +51,13 @@ export default toNative(UserMenu)
     </template>
 
     <!-- 个人设置 -->
-    <router-link
-      to="/account/profile"
-      class="dropdown-item"
-      @click="menuOpen = false"
-    >
+    <router-link to="/account/profile" class="dropdown-item" @click="menuOpen = false">
       <i class="fas fa-user-circle"></i>
       个人设置
     </router-link>
 
     <!-- 主题切换：浅色 / 深色 / 跟随系统 -->
-    <button
-      class="dropdown-item"
-      :title="`当前：${themeLabel}，点击切换`"
-      @click.stop="toggleTheme"
-    >
+    <button class="dropdown-item" :title="`当前：${themeLabel}，点击切换`" @click.stop="toggleTheme">
       <i :class="themeIcon" class="w-4 text-center"></i>
       <span>{{ themeLabel }}</span>
     </button>
@@ -82,10 +66,7 @@ export default toNative(UserMenu)
     <div class="border-t border-slate-100 my-1"></div>
 
     <!-- 注销选项 -->
-    <button
-      class="dropdown-item-danger"
-      @click="handleLogout"
-    >
+    <button class="dropdown-item-danger" @click="handleLogout">
       <i class="fas fa-sign-out-alt"></i>
       退出
     </button>

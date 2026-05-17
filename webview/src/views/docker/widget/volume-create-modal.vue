@@ -43,14 +43,7 @@ export default toNative(VolumeCreateModal)
 </script>
 
 <template>
-  <BaseModal
-    v-model="isOpen"
-    title="新建数据卷"
-    :loading="modalLoading"
-    show-footer
-    confirm-class="btn-amber"
-    @confirm="handleConfirm"
-  >
+  <BaseModal v-model="isOpen" title="新建数据卷" :loading="modalLoading" show-footer confirm-class="btn-amber" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-2">卷名称</label>

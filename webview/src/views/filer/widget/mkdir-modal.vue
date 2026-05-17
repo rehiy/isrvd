@@ -45,15 +45,7 @@ export default toNative(MkdirModal)
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <i class="fas fa-folder text-slate-400"></i>
           </div>
-          <input
-            id="dirName"
-            v-model="formData.name"
-            type="text"
-            :disabled="portal.filerLoading"
-            required
-            class="input pl-11"
-            placeholder="请输入目录名称"
-          >
+          <input id="dirName" v-model="formData.name" type="text" :disabled="portal.filerLoading" required class="input pl-11" placeholder="请输入目录名称">
         </div>
       </div>
     </form>

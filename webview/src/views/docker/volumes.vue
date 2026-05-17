@@ -186,11 +186,7 @@ export default toNative(Volumes)
 
         <!-- 移动端卡片视图 -->
         <div class="md:hidden space-y-3 p-4">
-          <div 
-            v-for="vol in filteredVolumes" 
-            :key="vol.name"
-            class="card-interactive"
-          >
+          <div v-for="vol in filteredVolumes" :key="vol.name" class="card-interactive">
             <!-- 顶部：卷信息和图标 -->
             <div class="card-info-row">
               <div class="list-icon bg-amber-400">

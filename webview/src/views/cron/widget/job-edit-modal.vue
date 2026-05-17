@@ -121,12 +121,7 @@ export default toNative(JobEditModal)
 </script>
 
 <template>
-  <BaseModal
-    v-model="isOpen"
-    :title="isEditMode ? '编辑计划任务' : '新建计划任务'"
-    :loading="modalLoading"
-    @confirm="handleConfirm"
-  >
+  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑计划任务' : '新建计划任务'" :loading="modalLoading" @confirm="handleConfirm">
     <template #confirm-text>{{ isEditMode ? '保存' : '新建' }}</template>
 
     <div class="max-w-3xl space-y-4 p-1">
@@ -202,12 +197,7 @@ export default toNative(JobEditModal)
       <div>
         <label class="form-label">脚本内容 <span class="text-red-500">*</span></label>
         <div class="editor-container">
-          <Codemirror
-            v-model="formData.content"
-            :style="{ height: '240px' }"
-            :disabled="modalLoading"
-            placeholder="输入脚本内容，如：#!/bin/bash&#10;echo &quot;hello&quot;"
-          />
+          <Codemirror v-model="formData.content" :style="{ height: '240px' }" :disabled="modalLoading" placeholder="输入脚本内容，如：#!/bin/bash&#10;echo &quot;hello&quot;" />
         </div>
       </div>
 

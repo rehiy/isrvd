@@ -55,11 +55,7 @@ export default toNative(Shell)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <select
-              v-model="shellType"
-              :disabled="connected"
-              class="w-28 select-sm"
-            >
+            <select v-model="shellType" :disabled="connected" class="w-28 select-sm">
               <option value="bash">bash</option>
               <option value="sh">sh</option>
               <option value="zsh">zsh</option>
@@ -67,18 +63,10 @@ export default toNative(Shell)
               <option value="powershell">powershell</option>
               <option value="cmd">cmd</option>
             </select>
-            <button
-              v-if="!connected"
-              class="btn btn-primary"
-              @click="handleConnect()"
-            >
+            <button v-if="!connected" class="btn btn-primary" @click="handleConnect()">
               <i class="fas fa-plug"></i>连接
             </button>
-            <button
-              v-else
-              class="btn btn-secondary"
-              @click="handleDisconnect()"
-            >
+            <button v-else class="btn btn-secondary" @click="handleDisconnect()">
               <i class="fas fa-plug-circle-xmark"></i>断开
             </button>
           </div>
@@ -95,11 +83,7 @@ export default toNative(Shell)
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
-            <select
-              v-model="shellType"
-              :disabled="connected"
-              class="w-24 select-sm"
-            >
+            <select v-model="shellType" :disabled="connected" class="w-24 select-sm">
               <option value="bash">bash</option>
               <option value="sh">sh</option>
               <option value="zsh">zsh</option>
@@ -107,20 +91,10 @@ export default toNative(Shell)
               <option value="powershell">powershell</option>
               <option value="cmd">cmd</option>
             </select>
-            <button
-              v-if="!connected"
-              class="btn btn-primary w-9 h-9 !px-0"
-              title="连接"
-              @click="handleConnect()"
-            >
+            <button v-if="!connected" class="btn btn-primary w-9 h-9 !px-0" title="连接" @click="handleConnect()">
               <i class="fas fa-plug text-sm"></i>
             </button>
-            <button
-              v-else
-              class="btn btn-secondary w-9 h-9 !px-0"
-              title="断开连接"
-              @click="handleDisconnect()"
-            >
+            <button v-else class="btn btn-secondary w-9 h-9 !px-0" title="断开连接" @click="handleDisconnect()">
               <i class="fas fa-plug-circle-xmark text-sm"></i>
             </button>
           </div>

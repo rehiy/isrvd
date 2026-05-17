@@ -212,11 +212,7 @@ export default toNative(SSLs)
         </div>
 
         <div class="md:hidden space-y-3 p-4">
-          <div
-            v-for="ssl in filteredSSLs"
-            :key="ssl.id"
-            class="card-interactive"
-          >
+          <div v-for="ssl in filteredSSLs" :key="ssl.id" class="card-interactive">
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-3 min-w-0 flex-1">
                 <div class="list-icon bg-cyan-400">

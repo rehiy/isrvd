@@ -167,15 +167,7 @@ export default toNative(ContainerCreateModal)
 </script>
 
 <template>
-  <BaseModal
-    ref="modalRef"
-    v-model="isOpen"
-    title="新建容器"
-    :loading="modalLoading"
-    confirm-class="btn-emerald"
-    show-footer
-    @confirm="handleConfirm"
-  >
+  <BaseModal ref="modalRef" v-model="isOpen" title="新建容器" :loading="modalLoading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <!-- 基础设置 -->
       <div class="grid grid-cols-2 gap-3">
