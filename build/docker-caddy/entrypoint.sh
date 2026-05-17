@@ -85,11 +85,11 @@ fi
 # 初始化 runit 服务
 # ------------------------------------------
 
-if [ ! -L /etc/service/isrvd ]; then
+if [ ! -L /etc/service/caddy ]; then
     mkdir -p /etc/service
     find /etc/sv -type f \( -name run -o -name finish \) -exec chmod +x {} \;
-    ln -s /etc/sv/isrvd /etc/service/isrvd
     ln -s /etc/sv/caddy /etc/service/caddy
+    ln -s /etc/sv/isrvd /etc/service/isrvd
 fi
 
 echo "[init] Starting all services via runit..."

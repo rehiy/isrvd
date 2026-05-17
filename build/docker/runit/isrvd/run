@@ -1,16 +1,16 @@
 #!/bin/bash
 exec 2>&1
 
-# 等待 etcd 就绪
-echo "[isrvd] Waiting for etcd..."
-for i in $(seq 1 30); do
-    if etcdctl endpoint health --endpoints=http://127.0.0.1:2379 &>/dev/null; then
-        echo "[isrvd] etcd is ready"
+# 等待 APISIX Admin API 就绪（etcd 已由 apisix 等待）
+echo "[isrvd] Waiting for APISIX..."
+for i in $(seq 1 60); do
+    if curl -sf http://127.0.0.1:9180/apisix/admin/routes &>/dev/null; then
+        echo "[isrvd] APISIX is ready"
         break
     fi
-    if [ "$i" -eq 30 ]; then
-        echo "[isrvd] etcd not ready after 30s, exiting"
-        exit 1
+    if [ "$i" -eq 60 ]; then
+        echo "[isrvd] APISIX not ready after 60s, continuing anyway..."
+        break
     fi
     sleep 1
 done

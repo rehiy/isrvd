@@ -1,6 +1,20 @@
 #!/bin/bash
 exec 2>&1
 
+# 等待 Caddy Admin API 就绪
+echo "[isrvd] Waiting for Caddy..."
+for i in $(seq 1 60); do
+    if curl -sf http://127.0.0.1:2019/config/ &>/dev/null; then
+        echo "[isrvd] Caddy is ready"
+        break
+    fi
+    if [ "$i" -eq 60 ]; then
+        echo "[isrvd] Caddy not ready after 60s, continuing anyway..."
+        break
+    fi
+    sleep 1
+done
+
 echo "[isrvd] Starting isrvd..."
 cd /data
 
