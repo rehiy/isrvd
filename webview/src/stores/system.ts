@@ -66,12 +66,12 @@ export const useSystemStore = defineStore('system', () => {
         const probe = probeRes?.payload
         if (probe) {
             Object.assign(serviceAvailability, {
-                agent: probe.agent?.available || false,
-                apisix: probe.apisix?.available || false,
-                caddy: probe.caddy?.available || false,
-                docker: probe.docker?.available || false,
-                swarm: probe.swarm?.available || false,
-                compose: probe.compose?.available || false
+                agent: probe.agent || false,
+                apisix: probe.apisix || false,
+                caddy: probe.caddy || false,
+                docker: probe.docker || false,
+                swarm: probe.swarm || false,
+                compose: probe.compose || false
             })
         }
 

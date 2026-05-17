@@ -1,12 +1,12 @@
 // ─── 系统探测 ───
 
 export interface SystemProbe {
-    agent: { available: boolean }
-    apisix: { available: boolean }
-    caddy: { available: boolean }
-    docker: { available: boolean }
-    swarm: { available: boolean }
-    compose: { available: boolean }
+    agent: boolean
+    apisix: boolean
+    caddy: boolean
+    docker: boolean
+    swarm: boolean
+    compose: boolean
 }
 
 // ─── 系统统计 ───
