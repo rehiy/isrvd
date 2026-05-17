@@ -1,4 +1,4 @@
-# AGENTS.md — isrvd Agent Operating Guide
+# AGENTS.md — isrvd Agent 操作指南
 
 > 本文件是 `isrvd` 仓库唯一代码规范入口。目标：可执行、可验证、低歧义。
 
@@ -146,7 +146,7 @@ skills/isrvd/
 | 状态切换 | `{Resource}StatusPatch` | `RouteStatusPatch(id, status)` |
 | 特殊操作 | `{Resource}{Verb}` | `ContainerAction(id, action)`、`WhitelistRevoke(...)` |
 
-- **查询接口不加 `Get` 后缀**：方法名本身已表达"获取"语义（`Stat()`、`Probe()`、`Info()`、`JoinToken()`、`ConfigAll()`），禁止改为 `StatGet()`、`ProbeGet()` 等形式
+- **查询接口不加 `Get` 后缀**：方法名本身已表达"获取"语义（`Stat()`、`Probe()`、`Info()`、`JoinToken()`、`ConfigAll()`），禁止改为 `StatGet()`、`probeGet()` 等形式
 - **`Get` 仅用于必要场景**：当方法名去掉 `Get` 后会与已有方法冲突或语义不明时，才可保留 `Get` 后缀
 - **模块前缀**：`docker`、`swarm`、`apisix`、`account`、`system`、`filer`、`compose`
 - **资源名**：单数形式，不重复模块语义
@@ -234,13 +234,13 @@ skills/isrvd/
 ### 6.6 卡片与标题栏
 
 - 列表/详情页统一 `.card mb-4`
-- 标题栏：`bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3`，容器不写 `flex/justify-between`
+- 标题栏：使用 `.card-toolbar` 类（定义于 `light_components.css`），容器不写 `flex/justify-between`
 - 必须提供桌面 `hidden md:flex` 与移动 `flex md:hidden` 双布局
 - 详情页右侧仅保留刷新等功能按钮，**不添加返回按钮**
 
 **toolbar 图标与标题（强制）**：
 
-- 图标：`w-9 h-9 rounded-lg`（不得用 `w-10`/`w-8` 或 `rounded-xl`）
+- 图标：使用 `.page-icon` 类（布局）+ 调用方内联背景色（如 `bg-blue-500`）（禁止手写 `w-9 h-9 rounded-lg flex ...`）
 - 标题：`<h1 class="text-lg font-semibold text-slate-800 truncate">`（不得用 `h3`/`h2`/`text-base`）
 - 副标题：`<p class="text-xs text-slate-500 truncate">`
 - 移动端左侧容器：`flex items-center gap-3 min-w-0 flex-1`，图标加 `flex-shrink-0`，文字容器加 `min-w-0`
@@ -249,7 +249,7 @@ skills/isrvd/
 **图标样式（强制）**：
 
 - 形状：`rounded-lg`（禁止 `rounded-full`/`rounded-2xl`）
-- 尺寸：`w-16 h-16`（空状态/登录）、`w-12 h-12`（加载）、`w-10 h-10`（移动卡片）、`w-9 h-9`（toolbar）、`w-8 h-8`（桌面表格）
+- 尺寸：使用对应 CSS 类——`.empty-state-icon`（空状态/登录 64×64）、`.page-icon`（toolbar 36×36）、`.list-icon`（移动卡片 40×40）、`.row-icon`（桌面表格 32×32）、`.card-icon`（卡片标题 24×24）
 
 ### 6.7 列表双视图与搜索（强制）
 
@@ -265,7 +265,7 @@ skills/isrvd/
 
 ```html
 <div class="flex items-center gap-3 min-w-0 flex-1 mb-3">
-  <div class="w-10 h-10 rounded-lg bg-xxx flex items-center justify-center flex-shrink-0">
+  <div class="list-icon bg-xxx flex items-center justify-center flex-shrink-0">
     <i class="fas fa-xxx text-white text-base"></i>
   </div>
   <div class="min-w-0">
@@ -275,7 +275,7 @@ skills/isrvd/
 </div>
 ```
 
-- 卡片图标：`w-10 h-10 rounded-lg`
+- 卡片图标：使用 `.list-icon` 类（40×40），禁止手写 `w-10 h-10 rounded-lg`
 - 主名称：`font-medium text-slate-800 text-sm truncate block`
 - 副信息：`text-xs text-slate-400 truncate block mt-0.5`
 
@@ -285,7 +285,7 @@ skills/isrvd/
 
 - 纯文本：`flex items-center gap-2 mb-3`，值用 `text-slate-500`
 - badge/code：`flex items-start gap-2 mb-3`，标签加 `mt-0.5`
-- badge 形状：`rounded` 或 `rounded-lg`（禁止 `rounded-full`）
+- badge 形状：`rounded-lg`（禁止 `rounded-full`/`rounded-md`）
 
 ```html
 <!-- 纯文本 -->
@@ -320,12 +320,12 @@ skills/isrvd/
 - 数据列：`text-sm text-slate-600`
 - 副信息行：`text-xs text-slate-400`
 - 操作按钮列：`flex justify-end items-center gap-1`
-- badge 形状：`rounded` 或 `rounded-lg`（禁止 `rounded-full`）
+- badge 形状：`rounded-lg`（禁止 `rounded-full`/`rounded-md`）
 
 ```html
 <td class="px-4 py-3 max-w-[280px]">
   <div class="flex items-center gap-2 min-w-0">
-    <div class="w-8 h-8 rounded-lg bg-xxx flex items-center justify-center flex-shrink-0">
+    <div class="row-icon bg-xxx flex items-center justify-center flex-shrink-0">
       <i class="fas fa-xxx text-white text-sm"></i>
     </div>
     <div class="min-w-0">
@@ -338,7 +338,7 @@ skills/isrvd/
 
 图标配色（色阶 `400`）：容器 `emerald`/`slate`（按状态）、镜像 `blue`、网络 `purple`、数据卷 `amber`、仓库 `blue-500`、Swarm 服务 `emerald`、节点 `blue`、路由 `indigo`、白名单 `amber`、消费者 `violet`、计划任务 `violet`、用户 `blue-500`。新模块选未用色（`rose`/`cyan`/`lime` 等）
 
-### 6.9.1 状态文字颜色（强制）
+#### 6.9.1 状态文字颜色（强制）
 
 **状态值优先用文字颜色区分，不用 badge**；仅枚举型分类字段（驱动、类型等）才用 badge。
 
@@ -353,7 +353,7 @@ skills/isrvd/
 - 有意义的 host/域名用 `text-teal-600 font-medium`
 - 数值型强调（如运行中任务数）用 `text-emerald-600 font-medium`
 
-### 6.9.2 枚举 badge 配色
+#### 6.9.2 枚举 badge 配色
 
 枚举型分类字段（驱动、协议、类型等）使用 badge，颜色跟随模块主色：
 
@@ -363,7 +363,7 @@ skills/isrvd/
 | 路由上游（apisix upstream） | `bg-indigo-50 text-indigo-700` |
 | 其他枚举 | 跟随模块主色，`bg-{color}-50 text-{color}-700` |
 
-### 6.9.3 权限/角色图标颜色
+#### 6.9.3 权限/角色图标颜色
 
 | 角色/权限 | 图标 | 颜色 |
 |---|---|---|
@@ -372,7 +372,7 @@ skills/isrvd/
 
 ### 6.10 操作按钮语义色
 
-统一格式：`btn-icon text-{color}-600 hover:bg-{color}-50`
+统一格式：使用 `.btn-icon-{color}` 语义类（如 `.btn-icon-slate`、`.btn-icon-blue`、`.btn-icon-emerald`）
 
 | 操作 | 配色 | 图标 |
 |---|---|---|
@@ -417,11 +417,28 @@ skills/isrvd/
 
   `{color}` 与页面主色一致，如 `indigo`（APISIX/Docker）、`violet`（Caddy）、`blue`（系统/账户）。
 
-### 6.12 统一工具与轮询
+### 6.12 概览 Widget 统计卡片（强制）
+
+概览页各服务 widget（`overview/widget/*.vue`）中的统计卡片网格列数按元素数量定：
+
+| 元素数 | 响应式 grid 类 | 示例 |
+|---|---|---|
+| 6 | `grid-cols-2 md:grid-cols-3 lg:grid-cols-6` | Docker、APISIX |
+| 4 | `grid-cols-2 md:grid-cols-3 lg:grid-cols-4` | Caddy |
+| 其他 | `grid-cols-2 md:grid-cols-3 lg:grid-cols-N`（N=元素数） | 按实际补充 |
+
+- 大屏（`lg:`）下必须一行铺满，禁止多行堆叠
+- 卡片统一：`rounded-xl border border-slate-200 bg-white p-4 hover:shadow-md transition-shadow`
+- 卡片内容：图标（`.page-icon` + 模块主色）+ 数值（`text-2xl font-bold text-slate-800`）+ 标签（`text-xs text-slate-500 leading-tight`），垂直居中 `flex flex-col items-center gap-2 text-center`
+- 加载状态：`flex items-center justify-center py-10` + `spinner`
+- 错误/不可用状态：`flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50`
+- `available` 字段由后端返回，`load()` 必须完整赋值所有 `CaddyInfo`/`DockerInfo` 字段，不得遗漏
+
+### 6.13 统一工具与轮询
 
 通用函数复用 `webview/src/helper/utils.ts`；轮询间隔用 `POLL_INTERVAL`，禁止硬编码
 
-### 6.13 import 分组排序
+### 6.14 import 分组排序
 
 `<script>` 内 import 按以下顺序，组间空一行，组内字母升序：
 
@@ -429,11 +446,11 @@ skills/isrvd/
 
 同模块普通导入在前、`type` 导入在后紧邻。批量整理：`cd webview && python3 sort-imports.py src`（支持 `--dry-run`）
 
-### 6.14 终端能力
+### 6.15 终端能力
 
 系统终端走 `helper/shell.ts`，容器终端走 `helper/container-exec.ts`，禁止页面直接创建 Terminal/WebSocket 实例
 
-### 6.15 暗黑模式样式（强制）
+### 6.16 暗黑模式样式（强制）
 
 暗黑模式样式统一在 `webview/src/assets/dark.css` 中定义，**禁止在组件中使用 `dark:` 前缀**。
 
@@ -459,6 +476,123 @@ skills/isrvd/
 3. 检查是否有响应式前缀（`lg:`、`md:`）或组悬停（`group-hover:`）需求
 
 **终端/日志区域**：使用 `bg-slate-900` 保持深色背景，不跟随主题切换
+
+### 6.17 CSS 组件库规范（强制）
+
+所有前端组件样式**优先使用** `webview/src/assets/light_components.css` 中定义的 CSS 类，禁止在同功能场景下使用等价的 inline Tailwind 类。新增样式必须先评估是否应提取到 CSS 文件。
+
+#### 文件结构与类清单
+
+`light_components.css` 包含 8 个模块，按功能分组：
+
+**1. 卡片（Card）**
+
+| 类 | 用途 | 禁止手写 |
+|---|---|---|
+| `.card` | 页面级主卡片 | `bg-white rounded-2xl shadow-soft border border-slate-200/60` |
+| `.card-interactive` | 列表交互式卡片（悬停阴影） | `rounded-xl border border-slate-200 bg-white p-4 hover:shadow-sm` |
+| `.card-toolbar` | 页面级卡片顶栏（灰底） | `bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3` |
+| `.card-header` | 小卡片标题栏（widget/模态框内部） | `px-4 py-3 border-b border-slate-100 flex items-center gap-2` |
+| `.card-actions` | 移动端卡片底部操作按钮栏 | `flex flex-wrap gap-1.5 pt-2 border-t border-slate-100` |
+| `.card-info-row` | 移动端卡片主信息行（图标+文字） | `flex items-center gap-3 min-w-0 flex-1 mb-3` |
+| `.editor-container` | 代码编辑器/内容外层边框 | `rounded-xl overflow-hidden border border-slate-200` |
+| `.modal-card` | 模态框卡片容器 | `bg-white rounded-2xl shadow-2xl border border-slate-200` |
+
+**2. 图标容器（Icon Container）**
+
+| 类 | 尺寸 | 用途 | 禁止手写 |
+|---|---|---|---|
+| `.page-icon` | 36×36 | Toolbar 模块标识图标（布局） | `w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0` |
+| `.row-icon` | 32×32 | 桌面表格行第一列图标 | `w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0` |
+| `.list-icon` | 40×40 | 移动端卡片列表图标 | `w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0` |
+| `.card-icon` | 24×24 | 卡片标题图标容器 | `w-6 h-6 rounded-md flex items-center justify-center` |
+| `.empty-state-icon` | 64×64 | 空状态图标容器 | `w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4` |
+
+**3. 状态占位（Loading / Empty State）**
+
+| 类 | 用途 |
+|---|---|
+| `.loading-state` | 加载中 `flex flex-col items-center justify-center py-20` |
+| `.empty-state` | 空状态（布局同 loading-state，语义不同） |
+| `.spinner` | 加载动画 `animate-spin rounded-full border-4 border-slate-200 border-t-primary-500` |
+
+**4. 按钮（Button）**
+
+| 类 | 用途 | 禁止手写 |
+|---|---|---|
+| `.btn` | 基础按钮（inline-flex，焦点&禁用处理） | — |
+| `.btn-sm` | 小尺寸 `h-9 px-3 text-xs`（与 `.select-sm` 高度对齐） | `h-9 px-3 text-xs` |
+| `.btn-md` | 中尺寸 `px-4 py-2.5 text-sm` | — |
+| `.btn-{color}` | 颜色变体（primary/blue/cyan/indigo/amber/emerald/danger/rose/purple/violet/secondary） | — |
+| `.btn-ghost` | 幽灵按钮（透明背景） | — |
+| `.btn-icon` | 图标按钮（正方形 padding，工具栏通用） | — |
+| `.btn-icon-{color}` | 图标按钮语义色（slate/blue/indigo/violet/cyan/teal/emerald/amber/rose/red） | `text-{color}-600 hover:bg-{color}-50` |
+| `.btn-icon-sm` | 小型图标按钮 32×32（关闭/刷新等非行操作） | `w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100` |
+| `.tab-group` | Tab 切换按钮组容器（整体高度 36px） | `bg-slate-100 p-1 rounded-lg flex items-center gap-0.5` |
+| `.tab-btn` | Tab 按钮（含图标，h-7） | `h-7 px-3 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5` |
+| `.tab-btn-text` | Tab 按钮（纯文字，h-7） | `h-7 px-3 text-xs font-medium rounded-md transition-colors` |
+| `.tab-btn-active` | Tab 激活态（白底+阴影） | `bg-white shadow-sm` |
+| `.tab-btn-inactive` | Tab 非激活态 | `text-slate-500 hover:text-slate-700` |
+| `.btn-category` / `-active` / `-inactive` | 分类过滤标签按钮 | — |
+| `.btn-panel-toggle` / `-active` / `-inactive` | 面板模式切换按钮 | — |
+| `.btn-tag-remove` | 多选标签删除按钮（×） | — |
+
+**5. 导航与菜单（Navigation）**
+
+| 类 | 用途 |
+|---|---|
+| `.nav-link` | 侧边栏导航链接 |
+| `.dropdown-item` | 下拉菜单项（普通） |
+| `.dropdown-item-danger` | 下拉菜单项（危险/注销） |
+| `.breadcrumb-btn` | 面包屑路径按钮 |
+
+**6. 表格（Table）**
+
+| 类 | 用途 | 禁止手写 |
+|---|---|---|
+| `.th` | th 单元格（左对齐） | `text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider` |
+| `.th-sm` | th 单元格（紧凑型） | `text-left px-3 py-2 text-xs font-semibold text-slate-600 uppercase tracking-wider` |
+| `.th-right` | th 单元格（右对齐，操作列） | `text-right px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider` |
+
+**7. 表单（Form）**
+
+| 类 | 用途 | 禁止手写 |
+|---|---|---|
+| `.form-label` | 字段 label（灰色大写标题） | `block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1` |
+| `.section-title` | 详情页信息分组标题 | `text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3` |
+| `.input` | 文本输入框 | `w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 text-slate-700 hover:border-slate-300` |
+| `.select-sm` | 小尺寸 select（toolbar 内使用，固定 `h-9`） | `h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 hover:border-slate-300` |
+| `.select-search-header` | 下拉选择器粘性搜索头部 | `px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-2 sticky top-0 z-10` |
+| `.select-list` | 下拉选择器选项列表容器 | `px-2 py-1.5 grid grid-cols-1 gap-0.5 bg-white` |
+| `.select-footer` | 下拉选择器底部工具栏 | `px-3 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between` |
+| `.mobile-search` | 移动端搜索栏容器（桌面端隐藏） | `md:hidden px-4 py-2 border-b border-slate-100` |
+| `.check-label` | checkbox/radio label 包裹层 | `flex items-center gap-2 cursor-pointer select-none w-fit` |
+| `.text-mono-muted` | 代码/ID 副文字（灰色 mono 截断） | `block font-mono text-xs text-slate-400 truncate mt-0.5` |
+
+**8. 徽章与标签（Badge）**
+
+| 类 | 用途 |
+|---|---|
+| `.badge` / `.badge-primary` / `.badge-warning` | 通用徽章（`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium`） |
+| `.update-link` | 版本更新跳转链接标签 |
+
+#### 使用规则
+
+- **toolbar 图标与标题**：使用 `.page-icon`（布局）+ 调用方内联背景色，禁止手写等价 inline Tailwind
+- **toolbar 下拉框**：使用 `.select-sm`（固定 `h-9`），禁止手写等价的 inline Tailwind
+- **toolbar 操作按钮**：使用 `.btn-icon-{color}` 语义类，禁止手写 `text-{color}-600 hover:bg-{color}-50`
+- **移动端搜索**：使用 `.mobile-search` 类，禁止手写 `md:hidden px-4 py-2 border-b ...`
+- **表格表头**：使用 `.th` / `.th-sm` / `.th-right`，禁止手写等价的 inline Tailwind
+- **卡片操作栏（移动端）**：使用 `.card-actions`，`gap-1.5` 不得用 `gap-1`
+- **Tab 切换**：使用 `.tab-group` + `.tab-btn` / `.tab-btn-text`，整体高度 36px
+- **独立详情页 toolbar**：去掉 `<ContainerNav>` Tab 导航，改用独立 `.card-toolbar`（图标+标题在左，操作控件在右），不添加返回按钮
+- **header 区域文字按钮统一**：`app.vue` header 中的文字按钮（如工具箱链接、AI 助手）统一使用 `btn btn-ghost px-4 py-2 text-sm gap-2`，禁止个别按钮手写冗余 inline class
+
+#### 禁止
+
+- 在有对应 CSS 类的情况下使用等价的 inline Tailwind 类
+- 在组件中使用 `dark:` 前缀（暗黑模式样式统一在 `dark.css`）
+- `.btn-icon-sm` 用于表格行操作（应使用 `.btn-icon-{color}`）
 
 ---
 
