@@ -1,28 +1,118 @@
 @layer components {
-  /* 卡片样式 */
+
+  /* ============================================================
+   * 1. 卡片（Card）
+   * ============================================================ */
+
+  /* 页面级主卡片：白底、柔和阴影 */
   .card {
     @apply bg-white rounded-2xl shadow-soft border border-slate-200/60;
   }
 
-  /* 移动端优化 */
+  /* 移动端圆角稍小 */
   @media (max-width: 768px) {
     .card {
-      @apply rounded-xl; /* 移动端圆角稍小 */
+      @apply rounded-xl;
     }
   }
 
-  /* 模态框样式 */
+  /* 列表中的交互式卡片：悬停阴影 */
+  .card-interactive {
+    @apply rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm;
+  }
+
+  /* 卡片顶部工具栏（页面级，灰底，含圆角）：33 个页面 */
+  .card-toolbar {
+    @apply bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3;
+  }
+
+  /* 卡片标题栏（widget 小卡片内部头部） */
+  .card-header {
+    @apply px-4 py-3 border-b border-slate-100 flex items-center gap-2;
+  }
+
+  /* 模态框卡片容器 */
   .modal-card {
     @apply bg-white rounded-2xl shadow-2xl border border-slate-200;
   }
 
-  /* 按钮样式 */
+  /* 代码编辑器 / 内容外层边框容器 */
+  .editor-container {
+    @apply rounded-xl overflow-hidden border border-slate-200;
+  }
+
+  /* 移动端卡片底部操作按钮栏 */
+  .card-actions {
+    @apply flex flex-wrap gap-1.5 pt-2 border-t border-slate-100;
+  }
+
+  /* 移动端卡片主信息行（图标 + 文字，带下间距） */
+  .card-info-row {
+    @apply flex items-center gap-3 min-w-0 flex-1 mb-3;
+  }
+
+
+  /* ============================================================
+   * 2. 图标容器（Icon Container）
+   * ============================================================ */
+
+  /* Toolbar 模块标识图标 36×36（页面顶部工具栏左侧彩色图标块） */
+  .page-icon {
+    @apply w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0;
+  }
+
+  /* 桌面表格行第一列图标 32×32 */
+  .row-icon {
+    @apply w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0;
+  }
+
+  /* 移动端卡片列表图标 40×40 */
+  .list-icon {
+    @apply w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0;
+  }
+
+  /* 卡片标题图标容器 24×24 */
+  .card-icon {
+    @apply w-6 h-6 rounded-md flex items-center justify-center;
+  }
+
+  /* 空状态图标容器 64×64 */
+  .empty-state-icon {
+    @apply w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4;
+  }
+
+
+  /* ============================================================
+   * 3. 状态占位（Loading / Empty State）
+   * ============================================================ */
+
+  /* 加载中状态块 */
+  .loading-state {
+    @apply flex flex-col items-center justify-center py-20;
+  }
+
+  /* 空状态块：与 loading-state 布局相同，语义不同 */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-20;
+  }
+
+  /* 加载动画 */
+  .spinner {
+    @apply animate-spin rounded-full border-4 border-slate-200 border-t-primary-500;
+  }
+
+
+  /* ============================================================
+   * 4. 按钮（Button）
+   * ============================================================ */
+
+  /* 基础按钮：inline-flex 布局、焦点 & 禁用处理 */
   .btn {
     @apply inline-flex items-center justify-center gap-1.5 font-medium rounded-lg transition-colors;
     @apply focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
-  /* 按钮尺寸 */
+  /* 尺寸 */
   .btn-sm {
     @apply px-3 py-1.5 text-xs;
   }
@@ -31,69 +121,146 @@
     @apply px-4 py-2.5 text-sm;
   }
 
-  /* 按钮颜色变体 */
-  .btn-primary {
-    @apply bg-primary-500 text-white hover:bg-primary-600;
-  }
-
-  .btn-blue {
-    @apply bg-blue-500 text-white hover:bg-blue-600;
-  }
-
-  .btn-amber {
-    @apply bg-amber-500 text-white hover:bg-amber-600;
-  }
-
-  .btn-secondary {
-    @apply bg-white border border-slate-200 text-slate-700 hover:bg-slate-50;
-  }
-
-  .btn-success, .btn-emerald {
-    @apply bg-emerald-500 text-white hover:bg-emerald-600;
-  }
-
-  .btn-danger {
-    @apply bg-red-500 text-white hover:bg-red-600;
-  }
-
-  .btn-cyan {
-    @apply bg-cyan-500 text-white hover:bg-cyan-600;
-  }
-
-  .btn-indigo {
-    @apply bg-indigo-500 text-white hover:bg-indigo-600;
-  }
-
-  .btn-rose {
-    @apply bg-rose-500 text-white hover:bg-rose-600;
-  }
-
-  .btn-purple {
-    @apply bg-purple-500 text-white hover:bg-purple-600;
-  }
-
-  .btn-violet {
-    @apply bg-violet-500 text-white hover:bg-violet-600;
-  }
+  /* 颜色变体 */
+  .btn-primary  { @apply bg-primary-500 text-white hover:bg-primary-600; }
+  .btn-blue     { @apply bg-blue-500    text-white hover:bg-blue-600;    }
+  .btn-cyan     { @apply bg-cyan-500    text-white hover:bg-cyan-600;    }
+  .btn-indigo   { @apply bg-indigo-500  text-white hover:bg-indigo-600;  }
+  .btn-amber    { @apply bg-amber-500   text-white hover:bg-amber-600;   }
+  .btn-success,
+  .btn-emerald  { @apply bg-emerald-500 text-white hover:bg-emerald-600; }
+  .btn-danger   { @apply bg-red-500     text-white hover:bg-red-600;     }
+  .btn-rose     { @apply bg-rose-500    text-white hover:bg-rose-600;    }
+  .btn-purple   { @apply bg-purple-500  text-white hover:bg-purple-600;  }
+  .btn-violet   { @apply bg-violet-500  text-white hover:bg-violet-600;  }
+  .btn-secondary{ @apply bg-white border border-slate-200 text-slate-700 hover:bg-slate-50; }
 
   .btn-ghost {
     @apply bg-transparent hover:bg-slate-100 text-slate-700;
     @apply focus:ring-0 focus:ring-offset-0;
   }
 
+  /* 图标按钮：正方形 padding，用于工具栏通用操作 */
   .btn-icon {
     @apply inline-flex items-center justify-center p-2 rounded-lg hover:bg-slate-100 transition-all duration-200;
     @apply focus:outline-none focus:ring-2 focus:ring-primary-500;
   }
 
-  /* 输入框样式 */
+  /* 图标按钮语义颜色变体（用于表格/卡片行级操作） */
+  .btn-icon-slate  { @apply text-slate-600   hover:bg-slate-50;   }
+  .btn-icon-blue   { @apply text-blue-600    hover:bg-blue-50;    }
+  .btn-icon-indigo { @apply text-indigo-600  hover:bg-indigo-50;  }
+  .btn-icon-violet { @apply text-violet-600  hover:bg-violet-50;  }
+  .btn-icon-cyan   { @apply text-cyan-600    hover:bg-cyan-50;    }
+  .btn-icon-teal   { @apply text-teal-600    hover:bg-teal-50;    }
+  .btn-icon-emerald{ @apply text-emerald-600 hover:bg-emerald-50; }
+  .btn-icon-amber  { @apply text-amber-600   hover:bg-amber-50;   }
+  .btn-icon-rose   { @apply text-rose-600    hover:bg-rose-50;    }
+  .btn-icon-red    { @apply text-red-600     hover:bg-red-50;     }
+
+  /* 小型图标按钮 32×32：用于关闭、刷新等非行操作场景 */
+  .btn-icon-sm {
+    @apply w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200 flex-shrink-0;
+  }
+
+  /* 分类过滤标签按钮 */
+  .btn-category          { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-medium transition-colors; }
+  .btn-category-active   { @apply bg-primary-100 text-primary-700 ring-1 ring-primary-300; }
+  .btn-category-inactive { @apply bg-slate-100 text-slate-500 hover:bg-slate-200; }
+
+  /* 面板模式切换按钮（如「添加插件 / 从路由导入」） */
+  .btn-panel-toggle         { @apply px-3 py-1.5 text-xs rounded-lg border transition-colors; }
+  .btn-panel-toggle-active  { @apply border-indigo-300 text-indigo-600 bg-indigo-50; }
+  .btn-panel-toggle-inactive{ @apply border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50; }
+
+  /* 多选标签的删除按钮（×） */
+  .btn-tag-remove {
+    @apply w-3.5 h-3.5 flex items-center justify-center rounded-full hover:bg-black/10 transition-colors;
+  }
+
+  /* Tab 切换按钮组容器 */
+  .tab-group { @apply bg-slate-100 p-1 rounded-lg flex items-center gap-0.5; }
+
+  /* Tab 切换按钮（含图标，flex 布局） */
+  .tab-btn { @apply px-3 py-1 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5; }
+
+  /* Tab 切换按钮（纯文字，无图标） */
+  .tab-btn-text { @apply px-3 py-1 text-xs font-medium rounded-md transition-colors; }
+
+  /* Tab 激活态（白底 + 彩色文字由外部 class 指定 + 阴影） */
+  .tab-btn-active  { @apply bg-white shadow-sm; }
+
+  /* Tab 非激活态 */
+  .tab-btn-inactive{ @apply text-slate-500 hover:text-slate-700; }
+
+
+  /* ============================================================
+   * 5. 导航与菜单（Navigation & Menu）
+   * ============================================================ */
+
+  /* 侧边栏导航链接 / 折叠菜单按钮 */
+  .nav-link {
+    @apply flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900;
+  }
+
+  /* 下拉菜单项（普通） */
+  .dropdown-item {
+    @apply w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors;
+  }
+
+  /* 下拉菜单项（危险/注销） */
+  .dropdown-item-danger {
+    @apply w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 transition-colors;
+  }
+
+  /* 面包屑路径按钮 */
+  .breadcrumb-btn {
+    @apply flex items-center px-3 py-1.5 rounded-lg text-slate-600 hover:bg-white hover:text-primary-600 transition-all;
+  }
+
+
+  /* ============================================================
+   * 6. 表格（Table）
+   * ============================================================ */
+
+  /* th 单元格（左对齐，操作列之外均使用） */
+  .th {
+    @apply text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider;
+  }
+
+  /* th 单元格（紧凑型，用于详情页内嵌表格） */
+  .th-sm {
+    @apply text-left px-3 py-2 text-xs font-semibold text-slate-600 uppercase tracking-wider;
+  }
+
+  /* th 单元格（右对齐，用于操作列） */
+  .th-right {
+    @apply text-right px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider;
+  }
+
+
+  /* ============================================================
+   * 7. 表单（Form）
+   * ============================================================ */
+
+  /* 字段 label：灰色大写标题，110 处使用 */
+  .form-label {
+    @apply block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1;
+  }
+
+  /* 详情页信息分组标题（h2）：与 form-label 相同样式但 mb-3 */
+  .section-title {
+    @apply text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3;
+  }
+
+  /* 文本输入框 */
   .input {
     @apply w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl;
     @apply placeholder:text-slate-400 text-slate-700;
     @apply hover:border-slate-300;
   }
 
-  /* 下拉框样式：防止文本与三角箭头重叠 */
+  /* select 下拉框：防止文字与系统箭头重叠 */
   select.input {
     @apply pr-10 truncate appearance-none;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
@@ -103,30 +270,56 @@
     height: 46px;
   }
 
-  /* 徽章样式 */
-  .badge {
-    @apply inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium;
+  /* 小尺寸 select：用于 toolbar 过滤、终端选项等场景 */
+  .select-sm {
+    @apply px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700;
+    @apply hover:border-slate-300 focus:outline-none focus:border-slate-400;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
-  .badge-primary {
-    @apply bg-primary-100 text-primary-700;
+  /* 下拉选择器的粘性搜索头部 */
+  .select-search-header {
+    @apply px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-2 sticky top-0 z-10;
   }
 
-  .badge-warning {
-    @apply bg-amber-100 text-amber-700;
+  /* 下拉选择器选项列表容器 */
+  .select-list {
+    @apply px-2 py-1.5 grid grid-cols-1 gap-0.5 bg-white;
   }
 
-  /* 品牌文字 */
-  .gradient-text {
-    @apply font-semibold;
-    background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  /* 下拉选择器底部工具栏 */
+  .select-footer {
+    @apply px-3 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between;
   }
 
-  /* 加载动画 */
-  .spinner {
-    @apply animate-spin rounded-full border-4 border-slate-200 border-t-primary-500;
+  /* 移动端搜索栏容器（桌面端隐藏） */
+  .mobile-search {
+    @apply md:hidden px-4 py-2 border-b border-slate-100;
   }
+
+  /* checkbox / radio label 包裹层 */
+  .check-label {
+    @apply flex items-center gap-2 cursor-pointer select-none w-fit;
+  }
+
+  /* 代码/ID 副文字（表格/卡片中灰色 mono 截断） */
+  .text-mono-muted {
+    @apply block font-mono text-xs text-slate-400 truncate mt-0.5;
+  }
+
+
+  /* ============================================================
+   * 8. 徽章与标签（Badge）
+   * ============================================================ */
+
+  /* 通用徽章基类 */
+  .badge          { @apply inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium; }
+  .badge-primary  { @apply bg-primary-100 text-primary-700; }
+  .badge-warning  { @apply bg-amber-100 text-amber-700; }
+
+  /* 版本更新跳转链接标签 */
+  .update-link {
+    @apply shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors;
+  }
+
 }
