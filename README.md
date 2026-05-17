@@ -2,7 +2,7 @@
 
 > 名称源自 *"it is a server daemon"*，`srv` 对应 Linux 惯例目录 `/srv`，`d` 代表 daemon。
 
-轻量级运维管理面板，基于 Go + Vue 3 构建。集文件管理、容器编排、网关配置、Web 终端、AI 助手于一体，适配桌面与移动端。
+基于 Go + Vue 3 构建的轻量级运维面板，集成文件管理、Docker 容器编排、APISIX/Caddy 网关配置、Web 终端、GPU 监控、计划任务与 AI 助手，为个人服务器与中小型团队提供一站式管理体验。
 
 ## 功能特性
 
@@ -256,13 +256,14 @@ cd webview && python3 sort-imports.py --dry-run src
 
 ## GPU 监控
 
-支持自动检测 NVIDIA / AMD / Intel 独立显卡，显示使用率、显存、温度、功耗、风扇转速。
+支持自动检测 NVIDIA / AMD / Intel / Apple Silicon 独立显卡，显示使用率、显存、温度、功耗、风扇转速。
 
 | 厂商 | 首选方式 | 回退方式 |
 |------|---------|---------|
 | NVIDIA | go-nvml | nvidia-smi |
 | AMD | sysfs | rocm-smi |
 | Intel | sysfs | — |
+| Apple Silicon | sysctl | — |
 
 自动过滤虚拟显卡与核显（Intel Arc 独显保留）。
 
