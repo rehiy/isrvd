@@ -171,8 +171,8 @@ export default toNative(SystemGpu)
 <template>
   <div v-if="currentGpus?.length" ref="gpuContainerRef" class="space-y-3">
     <div v-for="gpu in currentGpus" :key="gpuKey(gpu)" class="rounded-xl border border-slate-200 bg-white overflow-hidden">
-      <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
-        <div class="w-6 h-6 rounded-md bg-emerald-500 flex items-center justify-center">
+      <div class="card-header">
+        <div class="card-icon bg-emerald-500">
           <i class="fas fa-microchip text-white text-xs"></i>
         </div>
         <span class="text-sm font-semibold text-slate-700">显卡<template v-if="currentGpus.length > 1"> {{ gpu.index }}</template></span>

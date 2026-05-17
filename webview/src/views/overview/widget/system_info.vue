@@ -36,7 +36,7 @@ export default toNative(SystemInfo)
         <p class="text-sm font-semibold text-slate-800 truncate">{{ current.version }}</p>
         <a
           v-if="current.versionCheck?.update" :href="current.versionCheck.release" target="_blank" rel="noopener noreferrer"
-          class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors"
+          class="update-link"
         >
           <i class="fas fa-arrow-up text-[10px]"></i>
           更新 {{ current.versionCheck.latest }}

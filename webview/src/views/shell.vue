@@ -46,7 +46,7 @@ export default toNative(Shell)
         <!-- 桌面端工具栏 -->
         <div class="hidden md:flex md:items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center">
+            <div class="page-icon bg-slate-700">
               <i class="fas fa-terminal text-white text-sm"></i>
             </div>
             <div>
@@ -54,12 +54,11 @@ export default toNative(Shell)
               <p class="text-xs text-slate-500">通过 Web 终端连接到远程服务器</p>
             </div>
           </div>
-
           <div class="flex items-center gap-2">
-            <select 
-              v-model="shellType" 
-              :disabled="connected" 
-              class="w-28 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 hover:border-slate-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+            <select
+              v-model="shellType"
+              :disabled="connected"
+              class="w-28 select-sm"
             >
               <option value="bash">bash</option>
               <option value="sh">sh</option>
@@ -68,41 +67,38 @@ export default toNative(Shell)
               <option value="powershell">powershell</option>
               <option value="cmd">cmd</option>
             </select>
-
-            <button 
-              :class="[
-                'px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors',
-                connected 
-                  ? 'bg-white border border-slate-200 hover:bg-slate-50 text-slate-700' 
-                  : 'bg-primary-500 hover:bg-primary-600 text-white'
-              ]" 
-              @click="connected ? handleDisconnect() : handleConnect()"
+            <button
+              v-if="!connected"
+              class="btn btn-sm btn-primary"
+              @click="handleConnect()"
             >
-              <i :class="['fas', connected ? 'fa-plug-circle-xmark' : 'fa-plug']"></i>
-              {{ connected ? '断开连接' : '连接' }}
+              <i class="fas fa-plug"></i>连接
+            </button>
+            <button
+              v-else
+              class="btn btn-sm btn-secondary"
+              @click="handleDisconnect()"
+            >
+              <i class="fas fa-plug-circle-xmark"></i>断开
             </button>
           </div>
         </div>
-
         <!-- 移动端工具栏 -->
-        <div class="block md:hidden">
-          <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3 min-w-0 flex-1">
-              <div class="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0">
-                <i class="fas fa-terminal text-white text-sm"></i>
-              </div>
-              <div class="min-w-0">
-                <h1 class="text-lg font-semibold text-slate-800 truncate">Shell 终端</h1>
-                <p class="text-xs text-slate-500 truncate">Web 终端连接</p>
-              </div>
+        <div class="flex md:hidden items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="page-icon bg-slate-700">
+              <i class="fas fa-terminal text-white text-sm"></i>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-lg font-semibold text-slate-800 truncate">Shell 终端</h1>
+              <p class="text-xs text-slate-500 truncate">Web 终端连接</p>
             </div>
           </div>
-          
-          <div class="flex flex-col gap-2">
-            <select 
-              v-model="shellType" 
-              :disabled="connected" 
-              class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 hover:border-slate-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <select
+              v-model="shellType"
+              :disabled="connected"
+              class="w-24 select-sm"
             >
               <option value="bash">bash</option>
               <option value="sh">sh</option>
@@ -111,26 +107,32 @@ export default toNative(Shell)
               <option value="powershell">powershell</option>
               <option value="cmd">cmd</option>
             </select>
-
-            <button 
-              :class="[
-                'px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors justify-center',
-                connected 
-                  ? 'bg-white border border-slate-200 hover:bg-slate-50 text-slate-700' 
-                  : 'bg-primary-500 hover:bg-primary-600 text-white'
-              ]" 
-              @click="connected ? handleDisconnect() : handleConnect()"
+            <button
+              v-if="!connected"
+              class="btn btn-sm btn-primary w-9 h-9 !px-0"
+              title="连接"
+              @click="handleConnect()"
             >
-              <i :class="['fas', connected ? 'fa-plug-circle-xmark' : 'fa-plug']"></i>
-              <span class="ml-1">{{ connected ? '断开' : '连接' }}</span>
+              <i class="fas fa-plug text-sm"></i>
+            </button>
+            <button
+              v-else
+              class="btn btn-sm btn-secondary w-9 h-9 !px-0"
+              title="断开连接"
+              @click="handleDisconnect()"
+            >
+              <i class="fas fa-plug-circle-xmark text-sm"></i>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Terminal -->
-      <div class="flex-1 bg-slate-900 p-2 md:p-4">
-        <div ref="xtermRef" class="h-full rounded-lg overflow-hidden"></div>
+      <!-- 内容区域 -->
+      <div class="flex-1 flex flex-col overflow-hidden p-3 md:p-4">
+        <!-- Terminal -->
+        <div class="flex-1 bg-slate-900 rounded-xl p-2 md:p-3 overflow-hidden">
+          <div ref="xtermRef" class="h-full rounded-lg overflow-hidden"></div>
+        </div>
       </div>
     </div>
   </div>

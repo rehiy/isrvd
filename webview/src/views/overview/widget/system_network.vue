@@ -165,8 +165,8 @@ export default toNative(SystemNetwork)
 
 <template>
   <div v-if="currentIfaces.length" class="rounded-xl border border-slate-200 bg-white overflow-hidden">
-    <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
-      <div class="w-6 h-6 rounded-md bg-cyan-500 flex items-center justify-center">
+    <div class="card-header">
+      <div class="card-icon bg-cyan-500">
         <i class="fas fa-network-wired text-white text-xs"></i>
       </div>
       <span class="text-sm font-semibold text-slate-700">网络接口</span>

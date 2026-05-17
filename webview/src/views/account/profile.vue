@@ -108,11 +108,11 @@ export default toNative(Profile)
   <div>
     <div class="card mb-4">
       <!-- Toolbar Bar -->
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
+            <div class="page-icon bg-blue-500">
               <i class="fas fa-user-circle text-white"></i>
             </div>
             <div>
@@ -120,18 +120,18 @@ export default toNative(Profile)
               <p class="text-xs text-slate-500">修改密码、管理 API 令牌</p>
             </div>
           </div>
-          <div class="bg-slate-100 p-1 rounded-lg flex items-center gap-0.5">
-            <button type="button" :class="['px-3 py-1 rounded-md text-xs font-medium transition-colors', activeTab === 'password' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']" @click="activeTab = 'password'">
+          <div class="tab-group">
+            <button type="button" :class="['tab-btn-text', activeTab === 'password' ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="activeTab = 'password'">
               <i class="fas fa-lock mr-1"></i>修改密码
             </button>
-            <button type="button" :class="['px-3 py-1 rounded-md text-xs font-medium transition-colors', activeTab === 'token' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']" @click="activeTab = 'token'">
+            <button type="button" :class="['tab-btn-text', activeTab === 'token' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="activeTab = 'token'">
               <i class="fas fa-key mr-1"></i>API 令牌
             </button>
           </div>
         </div>
         <!-- 移动端 -->
         <div class="flex md:hidden items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+          <div class="page-icon bg-blue-500">
             <i class="fas fa-user-circle text-white"></i>
           </div>
           <div class="min-w-0 flex-1">
@@ -141,10 +141,10 @@ export default toNative(Profile)
         </div>
         <!-- 移动端 Tab -->
         <div class="flex md:hidden mt-3 bg-slate-100 p-1 rounded-lg gap-0.5">
-          <button type="button" :class="['flex-1 px-2 py-0.5 rounded-md text-xs font-medium transition-colors', activeTab === 'password' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500']" @click="activeTab = 'password'">
+          <button type="button" :class="['flex-1 px-2 py-0.5 rounded-md text-xs font-medium transition-colors', activeTab === 'password' ? 'tab-btn-active text-blue-600' : 'text-slate-500']" @click="activeTab = 'password'">
             <i class="fas fa-lock mr-1"></i>修改密码
           </button>
-          <button type="button" :class="['flex-1 px-2 py-0.5 rounded-md text-xs font-medium transition-colors', activeTab === 'token' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500']" @click="activeTab = 'token'">
+          <button type="button" :class="['flex-1 px-2 py-0.5 rounded-md text-xs font-medium transition-colors', activeTab === 'token' ? 'tab-btn-active text-emerald-600' : 'text-slate-500']" @click="activeTab = 'token'">
             <i class="fas fa-key mr-1"></i>API 令牌
           </button>
         </div>
@@ -154,7 +154,7 @@ export default toNative(Profile)
       <div v-if="activeTab === 'password'" class="p-4 md:p-6">
         <form class="max-w-3xl space-y-4" @submit.prevent="handleChangePassword">
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">原密码</label>
+            <label class="form-label">原密码</label>
             <input
               v-model="passwordForm.oldPassword"
               type="password"
@@ -165,7 +165,7 @@ export default toNative(Profile)
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">新密码</label>
+            <label class="form-label">新密码</label>
             <input
               v-model="passwordForm.newPassword"
               type="password"
@@ -176,7 +176,7 @@ export default toNative(Profile)
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">确认密码</label>
+            <label class="form-label">确认密码</label>
             <input
               v-model="passwordForm.confirmPassword"
               type="password"
@@ -205,7 +205,7 @@ export default toNative(Profile)
         <!-- 新令牌提示 -->
         <div v-if="newToken" class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
           <div class="flex items-start gap-3">
-            <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
+            <div class="page-icon bg-emerald-500">
               <i class="fas fa-check text-white text-sm"></i>
             </div>
             <div class="flex-1 min-w-0">
@@ -218,7 +218,7 @@ export default toNative(Profile)
                 </button>
               </div>
             </div>
-            <button class="flex-shrink-0 w-8 h-8 rounded-lg text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition-colors" @click="dismissNewToken()">
+            <button class="btn-icon-sm text-emerald-600! hover:bg-emerald-100!" @click="dismissNewToken()">
               <i class="fas fa-times"></i>
             </button>
           </div>
@@ -226,7 +226,7 @@ export default toNative(Profile)
 
         <form class="max-w-3xl space-y-4" @submit.prevent="handleCreateToken">
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">令牌名称</label>
+            <label class="form-label">令牌名称</label>
             <input
               v-model="tokenForm.name"
               type="text"
@@ -238,7 +238,7 @@ export default toNative(Profile)
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">有效期</label>
+            <label class="form-label">有效期</label>
             <select v-model="tokenForm.expiresIn" class="input">
               <option v-for="opt in expiryOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
             </select>

@@ -79,11 +79,11 @@ export default toNative(Overview)
   <div>
     <div class="card mb-4">
       <!-- 页面标题栏 -->
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-primary-500 flex items-center justify-center">
+            <div class="page-icon bg-primary-500">
               <i class="fas fa-gauge-high text-white"></i>
             </div>
             <div>
@@ -98,7 +98,7 @@ export default toNative(Overview)
         <!-- 移动端 -->
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-primary-500 flex items-center justify-center flex-shrink-0">
+            <div class="page-icon bg-primary-500">
               <i class="fas fa-gauge-high text-white"></i>
             </div>
             <div class="min-w-0">

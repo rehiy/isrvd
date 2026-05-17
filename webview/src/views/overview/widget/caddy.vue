@@ -51,7 +51,7 @@ class CaddyOverview extends Vue {
                         info.hasTls = caddyInfo.hasTls
                     }
                 } else if (key === 'certs') {
-                    info.certs = (res.payload || []).length
+                    info.certs = Array.isArray(res.payload) ? res.payload.length : 0
                 }
             })
 
@@ -94,7 +94,7 @@ export default toNative(CaddyOverview)
         class="rounded-xl border border-slate-200 bg-white p-4 hover:shadow-md transition-shadow"
       >
         <div class="flex flex-col items-center gap-2 text-center">
-          <div :class="['w-9 h-9 rounded-lg flex items-center justify-center', card.bgColor]">
+          <div :class="['page-icon', card.bgColor]">
             <i :class="['fas', card.icon, 'text-white']"></i>
           </div>
           <p class="text-2xl font-bold text-slate-800">{{ cardValue(card.key) }}</p>

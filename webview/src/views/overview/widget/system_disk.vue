@@ -188,8 +188,8 @@ export default toNative(SystemDisk)
 
 <template>
   <div v-if="current?.diskPartition?.length" class="rounded-xl border border-slate-200 bg-white overflow-hidden">
-    <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
-      <div class="w-6 h-6 rounded-md bg-amber-500 flex items-center justify-center">
+    <div class="card-header">
+      <div class="card-icon bg-amber-500">
         <i class="fas fa-hard-drive text-white text-xs"></i>
       </div>
       <span class="text-sm font-semibold text-slate-700">硬盘 I/O</span>

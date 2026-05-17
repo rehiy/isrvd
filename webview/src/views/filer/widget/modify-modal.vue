@@ -51,7 +51,7 @@ export default toNative(ModifyModal)
 
 <template>
   <BaseModal ref="modalRef" v-model="isOpen" :title="'编辑: ' + formData.filename" :loading="portal.filerLoading" @confirm="handleConfirm">
-    <div class="rounded-xl overflow-hidden border border-slate-200">
+    <div class="editor-container">
       <Codemirror v-model="formData.content" :style="{ height: '60vh' }" :extensions="extensions" :disabled="portal.filerLoading" />
     </div>
 

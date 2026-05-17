@@ -97,28 +97,28 @@ export default toNative(FileExplorer)
   <div>
     <!-- Toolbar Bar -->
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <div class="flex items-center justify-between gap-3">
           <nav aria-label="breadcrumb" class="flex-1 min-w-0">
             <ol class="flex items-center space-x-2 text-sm overflow-x-auto">
               <li class="flex-shrink-0">
-                <button 
+                <button
                   type="button"
-                  class="flex items-center px-3 py-1.5 rounded-lg text-slate-600 hover:bg-white hover:text-primary-600 transition-all"
+                  class="breadcrumb-btn"
                   @click="navigateTo('/')"
                 >
                   <i class="fas fa-home text-base"></i>
                 </button>
               </li>
-              
+
               <template v-for="(part, index) in paths" :key="index">
                 <li class="text-slate-300 flex-shrink-0">
                   <i class="fas fa-chevron-right text-xs"></i>
                 </li>
                 <li v-if="Number(index) < paths.length - 1" class="flex-shrink-0">
-                  <button 
+                  <button
                     type="button"
-                    class="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-white hover:text-primary-600 transition-all"
+                    class="breadcrumb-btn"
                     @click="navigateTo('/' + paths.slice(0, Number(index) + 1).join('/'))"
                   >
                     {{ part }}
@@ -131,8 +131,8 @@ export default toNative(FileExplorer)
             </ol>
           </nav>
 
-          <div class="flex items-center gap-2 flex-shrink-0">
-            <PageSearch v-model="searchText" search-key="filer-explorer" placeholder="搜索文件名、路径或权限..." width-class="w-72" focus-color="primary" type-to-search class="hidden md:block" />
+          <div class="hidden md:flex items-center gap-2 flex-shrink-0">
+            <PageSearch v-model="searchText" search-key="filer-explorer" placeholder="搜索文件名、路径或权限..." width-class="w-72" focus-color="primary" type-to-search />
             <button 
               v-if="portal.hasPerm('GET /api/filer/list')"
               class="btn btn-sm btn-secondary"
@@ -161,7 +161,9 @@ export default toNative(FileExplorer)
             >
               <i class="fas fa-upload"></i><span>上传文件</span>
             </button>
-            <!-- 移动端图标按鈕 -->
+          </div>
+          <!-- 移动端图标按钮 -->
+          <div class="flex md:hidden items-center gap-1.5 flex-shrink-0">
             <button v-if="portal.hasPerm('GET /api/filer/list')" class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="refreshFiles()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
@@ -177,22 +179,21 @@ export default toNative(FileExplorer)
           </div>
         </div>
       </div>
+      <div class="mobile-search">
+        <PageSearch v-model="searchText" search-key="filer-explorer" placeholder="搜索文件名、路径或权限..." width-class="w-full" focus-color="primary" />
+      </div>
 
       <!-- Loading State -->
-      <div v-if="portal.filerLoading" class="flex flex-col items-center justify-center py-20">
+      <div v-if="portal.filerLoading" class="loading-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
 
       <div v-else>
-        <div class="md:hidden px-4 py-2 border-b border-slate-100">
-          <PageSearch v-model="searchText" search-key="filer-explorer" placeholder="搜索文件名、路径或权限..." width-class="w-full" focus-color="primary" />
-        </div>
-
         <!-- File List -->
         <!-- Empty State -->
-        <div v-if="filteredFiles.length === 0" class="flex flex-col items-center justify-center py-20">
-          <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4">
+        <div v-if="filteredFiles.length === 0" class="empty-state">
+          <div class="empty-state-icon">
             <i class="fas fa-folder-open text-4xl text-slate-300"></i>
           </div>
           <p class="text-slate-600 font-medium mb-1">{{ files.length === 0 ? '此目录为空' : '未找到匹配文件' }}</p>
@@ -203,11 +204,11 @@ export default toNative(FileExplorer)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
-                <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">大小</th>
-                <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">权限</th>
-                <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">修改时间</th>
-                <th class="w-40 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+                <th class="th">名称</th>
+                <th class="w-32 th">大小</th>
+                <th class="w-32 th">权限</th>
+                <th class="w-32 th">修改时间</th>
+                <th class="w-40 th-right">操作</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
@@ -261,7 +262,7 @@ export default toNative(FileExplorer)
                     <template v-if="file.isDir">
                       <button 
                         v-if="portal.hasPerm('GET /api/filer/list')"
-                        class="btn-icon text-slate-600 hover:bg-slate-50"
+                        class="btn-icon btn-icon-slate"
                         title="进入目录" 
                         @click="navigateTo(file.path)"
                       >
@@ -269,7 +270,7 @@ export default toNative(FileExplorer)
                       </button>
                       <button 
                         v-if="portal.hasPerm('POST /api/filer/zip')"
-                        class="btn-icon text-amber-600 hover:bg-amber-50"
+                        class="btn-icon btn-icon-amber"
                         title="压缩" 
                         @click="zipModalRef.show(file)"
                       >
@@ -277,7 +278,7 @@ export default toNative(FileExplorer)
                       </button>
                       <button 
                         v-if="portal.hasPerm('POST /api/filer/chmod')"
-                        class="btn-icon text-blue-600 hover:bg-blue-50"
+                        class="btn-icon btn-icon-blue"
                         title="权限" 
                         @click="chmodModalRef.show(file)"
                       >
@@ -285,7 +286,7 @@ export default toNative(FileExplorer)
                       </button>
                       <button 
                         v-if="portal.hasPerm('POST /api/filer/rename')"
-                        class="btn-icon text-blue-600 hover:bg-blue-50"
+                        class="btn-icon btn-icon-blue"
                         title="重命名" 
                         @click="renameModalRef.show(file)"
                       >
@@ -293,7 +294,7 @@ export default toNative(FileExplorer)
                       </button>
                       <button 
                         v-if="portal.hasPerm('POST /api/filer/delete')"
-                        class="btn-icon text-red-600 hover:bg-red-50"
+                        class="btn-icon btn-icon-red"
                         title="删除" 
                         @click="deleteModalRef.show(file)"
                       >
@@ -305,7 +306,7 @@ export default toNative(FileExplorer)
                     <template v-else>
                       <button 
                         v-if="portal.hasPerm('GET /api/filer/download')"
-                        class="btn-icon text-slate-600 hover:bg-slate-50"
+                        class="btn-icon btn-icon-slate"
                         title="下载" 
                         @click="download(file)"
                       >
@@ -313,7 +314,7 @@ export default toNative(FileExplorer)
                       </button>
                       <button
                         v-if="isPreviewableFile(file.name) && portal.hasPerm('GET /api/filer/download')"
-                        class="btn-icon text-slate-600 hover:bg-slate-50"
+                        class="btn-icon btn-icon-slate"
                         title="预览"
                         @click="previewModalRef.show(file)"
                       >
@@ -321,7 +322,7 @@ export default toNative(FileExplorer)
                       </button>
                       <button 
                         v-if="file.name.endsWith('.zip') && portal.hasPerm('POST /api/filer/unzip')"
-                        class="btn-icon text-amber-600 hover:bg-amber-50"
+                        class="btn-icon btn-icon-amber"
                         title="解压" 
                         @click="unzipModalRef.show(file)"
                       >
@@ -329,7 +330,7 @@ export default toNative(FileExplorer)
                       </button>
                       <button 
                         v-if="isEditableFile(file.name) && portal.hasPerm('GET /api/filer/read') && portal.hasPerm('POST /api/filer/modify')"
-                        class="btn-icon text-blue-600 hover:bg-blue-50"
+                        class="btn-icon btn-icon-blue"
                         title="编辑" 
                         @click="modifyModalRef.show(file)"
                       >
@@ -337,7 +338,7 @@ export default toNative(FileExplorer)
                       </button>
                       <button 
                         v-if="portal.hasPerm('POST /api/filer/chmod')"
-                        class="btn-icon text-blue-600 hover:bg-blue-50"
+                        class="btn-icon btn-icon-blue"
                         title="权限" 
                         @click="chmodModalRef.show(file)"
                       >
@@ -345,7 +346,7 @@ export default toNative(FileExplorer)
                       </button>
                       <button 
                         v-if="portal.hasPerm('POST /api/filer/rename')"
-                        class="btn-icon text-blue-600 hover:bg-blue-50"
+                        class="btn-icon btn-icon-blue"
                         title="重命名" 
                         @click="renameModalRef.show(file)"
                       >
@@ -353,7 +354,7 @@ export default toNative(FileExplorer)
                       </button>
                       <button 
                         v-if="portal.hasPerm('POST /api/filer/delete')"
-                        class="btn-icon text-red-600 hover:bg-red-50"
+                        class="btn-icon btn-icon-red"
                         title="删除" 
                         @click="deleteModalRef.show(file)"
                       >
@@ -372,14 +373,14 @@ export default toNative(FileExplorer)
           <div 
             v-for="file in filteredFiles" 
             :key="file.path"
-            class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
+            class="card-interactive"
           >
             <!-- 顶部：文件信息和图标 -->
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-3 min-w-0 flex-1">
                 <div
                   :class="[
-                    'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
+                    'list-icon',
                     file.isDir 
                       ? 'bg-amber-400' 
                       : 'bg-blue-400'
@@ -416,12 +417,12 @@ export default toNative(FileExplorer)
             </div>
 
             <!-- 底部：操作按钮 -->
-            <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
+            <div class="card-actions">
               <!-- Directory Actions -->
               <template v-if="file.isDir">
                 <button 
                   v-if="portal.hasPerm('GET /api/filer/list')"
-                  class="btn-icon text-slate-600 hover:bg-slate-50"
+                  class="btn-icon btn-icon-slate"
                   title="进入目录" 
                   @click="navigateTo(file.path)"
                 >
@@ -429,7 +430,7 @@ export default toNative(FileExplorer)
                 </button>
                 <button 
                   v-if="portal.hasPerm('POST /api/filer/zip')"
-                  class="btn-icon text-amber-600 hover:bg-amber-50"
+                  class="btn-icon btn-icon-amber"
                   title="压缩" 
                   @click="zipModalRef.show(file)"
                 >
@@ -437,7 +438,7 @@ export default toNative(FileExplorer)
                 </button>
                 <button 
                   v-if="portal.hasPerm('POST /api/filer/chmod')"
-                  class="btn-icon text-blue-600 hover:bg-blue-50"
+                  class="btn-icon btn-icon-blue"
                   title="权限" 
                   @click="chmodModalRef.show(file)"
                 >
@@ -445,7 +446,7 @@ export default toNative(FileExplorer)
                 </button>
                 <button 
                   v-if="portal.hasPerm('POST /api/filer/rename')"
-                  class="btn-icon text-blue-600 hover:bg-blue-50"
+                  class="btn-icon btn-icon-blue"
                   title="重命名" 
                   @click="renameModalRef.show(file)"
                 >
@@ -453,7 +454,7 @@ export default toNative(FileExplorer)
                 </button>
                 <button 
                   v-if="portal.hasPerm('POST /api/filer/delete')"
-                  class="btn-icon text-red-600 hover:bg-red-50"
+                  class="btn-icon btn-icon-red"
                   title="删除" 
                   @click="deleteModalRef.show(file)"
                 >
@@ -465,7 +466,7 @@ export default toNative(FileExplorer)
               <template v-else>
                 <button 
                   v-if="portal.hasPerm('GET /api/filer/download')"
-                  class="btn-icon text-slate-600 hover:bg-slate-50"
+                  class="btn-icon btn-icon-slate"
                   title="下载" 
                   @click="download(file)"
                 >
@@ -473,7 +474,7 @@ export default toNative(FileExplorer)
                 </button>
                 <button
                   v-if="isPreviewableFile(file.name) && portal.hasPerm('GET /api/filer/download')"
-                  class="btn-icon text-slate-600 hover:bg-slate-50"
+                  class="btn-icon btn-icon-slate"
                   title="预览"
                   @click="previewModalRef.show(file)"
                 >
@@ -481,7 +482,7 @@ export default toNative(FileExplorer)
                 </button>
                 <button 
                   v-if="file.name.endsWith('.zip') && portal.hasPerm('POST /api/filer/unzip')"
-                  class="btn-icon text-amber-600 hover:bg-amber-50"
+                  class="btn-icon btn-icon-amber"
                   title="解压" 
                   @click="unzipModalRef.show(file)"
                 >
@@ -489,7 +490,7 @@ export default toNative(FileExplorer)
                 </button>
                 <button 
                   v-if="isEditableFile(file.name) && portal.hasPerm('GET /api/filer/read') && portal.hasPerm('POST /api/filer/modify')"
-                  class="btn-icon text-blue-600 hover:bg-blue-50"
+                  class="btn-icon btn-icon-blue"
                   title="编辑" 
                   @click="modifyModalRef.show(file)"
                 >
@@ -497,7 +498,7 @@ export default toNative(FileExplorer)
                 </button>
                 <button 
                   v-if="portal.hasPerm('POST /api/filer/chmod')"
-                  class="btn-icon text-blue-600 hover:bg-blue-50"
+                  class="btn-icon btn-icon-blue"
                   title="权限" 
                   @click="chmodModalRef.show(file)"
                 >
@@ -505,7 +506,7 @@ export default toNative(FileExplorer)
                 </button>
                 <button 
                   v-if="portal.hasPerm('POST /api/filer/rename')"
-                  class="btn-icon text-blue-600 hover:bg-blue-50"
+                  class="btn-icon btn-icon-blue"
                   title="重命名" 
                   @click="renameModalRef.show(file)"
                 >
@@ -513,7 +514,7 @@ export default toNative(FileExplorer)
                 </button>
                 <button 
                   v-if="portal.hasPerm('POST /api/filer/delete')"
-                  class="btn-icon text-red-600 hover:bg-red-50"
+                  class="btn-icon btn-icon-red"
                   title="删除" 
                   @click="deleteModalRef.show(file)"
                 >
