@@ -67,7 +67,7 @@ class CaddyOverview extends Vue {
 
     cardValue(key: string): string | number {
         if (!this.info) return 0
-        if (key === 'hasTls') return this.info.hasTls ? '是' : '否'
+        if (key === 'hasTls') return this.info.hasTls ? 'Y' : 'N'
         const v = (this.info as unknown as Record<string, unknown>)[key]
         return typeof v === 'number' ? v : 0
     }
