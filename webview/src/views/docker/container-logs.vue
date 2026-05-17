@@ -56,7 +56,7 @@ export default toNative(ContainerLogs)
         <div class="flex items-center justify-between gap-3 mb-4">
           <div class="flex items-center gap-3">
             <label class="text-sm text-slate-600">显示行数</label>
-            <select v-model="logTail" class="w-28 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 hover:border-slate-300 focus:outline-none focus:border-slate-400">
+            <select v-model="logTail" class="w-28 select-sm">
               <option value="50">50 行</option>
               <option value="100">100 行</option>
               <option value="200">200 行</option>
@@ -64,17 +64,19 @@ export default toNative(ContainerLogs)
               <option value="1000">1000 行</option>
             </select>
           </div>
-            <button class="btn btn-sm btn-secondary" @click="loadLogs">
-              <i class="fas fa-rotate"></i>刷新
-            </button>
+          <button class="btn btn-sm btn-secondary" @click="loadLogs">
+            <i class="fas fa-rotate"></i>刷新
+          </button>
         </div>
-        <div v-if="logLoading" class="flex flex-col items-center justify-center py-20">
+        <div v-if="logLoading" class="loading-state">
           <div class="w-12 h-12 spinner mb-3"></div>
           <p class="text-slate-500">加载中...</p>
         </div>
-        <pre v-else-if="logContent" class="bg-slate-900 text-slate-100 rounded-xl p-3 md:p-4 text-xs font-mono overflow-auto max-h-[600px] whitespace-pre-wrap break-all">{{ logContent }}</pre>
-        <div v-else class="flex flex-col items-center justify-center py-16">
-          <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4">
+        <pre v-else-if="logContent" class="bg-slate-900 text-slate-100 rounded-xl p-3 md:p-4 text-xs font-mono overflow-auto max-h-[600px] whitespace-pre-wrap break-all">
+          {{ logContent }}
+        </pre>
+        <div v-else class="empty-state">
+          <div class="empty-state-icon">
             <i class="fas fa-file-lines text-2xl text-slate-300"></i>
           </div>
           <p class="text-slate-500 text-sm">暂无日志</p>

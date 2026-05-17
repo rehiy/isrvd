@@ -70,7 +70,7 @@ export default toNative(ContainerTerminal)
         <!-- 桌面端工具栏 -->
         <div class="hidden md:flex md:items-center justify-between mb-4">
           <div class="flex items-center gap-3">
-            <select v-model="terminalShell" :disabled="terminalConnected" class="w-28 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 hover:border-slate-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed" @change="handleShellChange">
+            <select v-model="terminalShell" :disabled="terminalConnected" class="w-28 select-sm" @change="handleShellChange">
               <option value="/bin/sh">/bin/sh</option>
               <option value="/bin/bash">/bin/bash</option>
               <option value="/bin/ash">/bin/ash</option>
@@ -88,7 +88,7 @@ export default toNative(ContainerTerminal)
         <!-- 移动端工具栏 -->
         <div class="block md:hidden space-y-3 mb-4">
           <div class="flex items-center gap-2">
-            <select v-model="terminalShell" :disabled="terminalConnected" class="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 hover:border-slate-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed" @change="handleShellChange">
+            <select v-model="terminalShell" :disabled="terminalConnected" class="flex-1 select-sm" @change="handleShellChange">
               <option value="/bin/sh">/bin/sh</option>
               <option value="/bin/bash">/bin/bash</option>
               <option value="/bin/ash">/bin/ash</option>

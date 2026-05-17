@@ -111,12 +111,12 @@ export default toNative(ImageSelect)
 
     <template #default="{ query, select }">
       <div v-for="group in groupedBy(query)" :key="group.domain" class="border-b border-slate-100 last:border-0">
-        <div class="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-2 sticky top-0 z-10">
+        <div class="select-search-header">
           <i :class="['text-xs', domainIcon(group.domain)]" :style="{ color: domainColor(group.domain) }"></i>
           <span class="text-xs font-semibold text-slate-600">{{ domainLabel(group.domain) }}</span>
           <span class="text-xs text-slate-400">{{ group.images.length }}</span>
         </div>
-        <div class="px-2 py-1.5 grid grid-cols-1 gap-0.5 bg-white">
+        <div class="select-list">
           <button
             v-for="img in group.images"
             :key="img.id + '-' + img.repoTags[0]"
@@ -148,7 +148,7 @@ export default toNative(ImageSelect)
     </template>
 
     <template #footer>
-      <div v-if="images.length > 0" class="px-3 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+      <div v-if="images.length > 0" class="select-footer">
         <span class="text-xs text-slate-400">共 <strong class="text-slate-700">{{ images.length }}</strong> 个镜像</span>
       </div>
     </template>

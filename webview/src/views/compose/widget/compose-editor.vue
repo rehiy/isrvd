@@ -33,7 +33,7 @@ export default toNative(ComposeEditor)
       <label class="block text-sm font-medium text-slate-700 mb-2">
         <i class="fas fa-file-code mr-1 text-slate-400"></i>compose.yml
       </label>
-      <div class="rounded-xl overflow-hidden border border-slate-200">
+      <div class="editor-container">
         <Codemirror
           v-model="content"
           :style="{ height }"

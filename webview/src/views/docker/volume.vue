@@ -46,11 +46,11 @@ export default toNative(VolumeDetail)
   <div>
     <div class="card mb-4">
       <!-- Toolbar -->
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center">
+            <div class="page-icon bg-amber-500">
               <i class="fas fa-database text-white"></i>
             </div>
             <div>
@@ -67,7 +67,7 @@ export default toNative(VolumeDetail)
         <!-- 移动端 -->
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+            <div class="page-icon bg-amber-500">
               <i class="fas fa-database text-white"></i>
             </div>
             <div class="min-w-0">
@@ -84,7 +84,7 @@ export default toNative(VolumeDetail)
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+      <div v-if="loading" class="loading-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
@@ -93,34 +93,34 @@ export default toNative(VolumeDetail)
       <div v-else-if="detailData" class="p-4 md:p-6 space-y-6 text-sm">
         <!-- 基本信息 -->
         <div>
-          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">基本信息</h2>
+          <h2 class="section-title">基本信息</h2>
           <div class="grid grid-cols-2 gap-3">
             <div class="col-span-2">
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">名称</label>
+              <label class="form-label">名称</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 break-all">{{ detailData.name }}</div>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">驱动</label>
+              <label class="form-label">驱动</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detailData.driver }}</div>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">范围</label>
+              <label class="form-label">范围</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detailData.scope }}</div>
             </div>
             <div class="col-span-2">
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">挂载点</label>
+              <label class="form-label">挂载点</label>
               <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ detailData.mountpoint }}</code>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">创建时间</label>
+              <label class="form-label">创建时间</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(detailData.createdAt) }}</div>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">占用空间</label>
+              <label class="form-label">占用空间</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detailData.size > 0 ? formatFileSize(detailData.size) : '-' }}</div>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">引用数</label>
+              <label class="form-label">引用数</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detailData.refCount || 0 }}</div>
             </div>
           </div>
@@ -128,7 +128,7 @@ export default toNative(VolumeDetail)
 
         <!-- 使用此卷的容器 -->
         <div>
-          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          <h2 class="section-title">
             使用此卷的容器
             <span v-if="detailData.usedBy" class="text-slate-400 normal-case font-normal ml-1">({{ detailData.usedBy.length }})</span>
           </h2>
@@ -136,9 +136,9 @@ export default toNative(VolumeDetail)
             <table class="w-full">
               <thead>
                 <tr class="bg-slate-50 border-b border-slate-200">
-                  <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
-                  <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">挂载路径</th>
-                  <th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">权限</th>
+                  <th class="th-sm">名称</th>
+                  <th class="th-sm">挂载路径</th>
+                  <th class="th-sm">权限</th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-slate-100">
@@ -164,8 +164,8 @@ export default toNative(VolumeDetail)
       </div>
 
       <!-- Empty -->
-      <div v-else class="flex flex-col items-center justify-center py-20">
-        <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4">
+      <div v-else class="empty-state">
+        <div class="empty-state-icon">
           <i class="fas fa-database text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium">未找到数据卷详情</p>

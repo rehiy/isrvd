@@ -100,11 +100,11 @@ export default toNative(Networks)
   <div>
     <!-- Toolbar Bar -->
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-purple-500 flex items-center justify-center">
+            <div class="page-icon bg-purple-500">
               <i class="fas fa-network-wired text-white"></i>
             </div>
             <div>
@@ -125,7 +125,7 @@ export default toNative(Networks)
         <!-- 移动端 -->
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-purple-500 flex items-center justify-center flex-shrink-0">
+            <div class="page-icon bg-purple-500">
               <i class="fas fa-network-wired text-white"></i>
             </div>
             <div class="min-w-0">
@@ -144,12 +144,12 @@ export default toNative(Networks)
         </div>
       </div>
 
-      <div class="md:hidden px-4 py-2 border-b border-slate-100">
+      <div class="mobile-search">
         <PageSearch v-model="searchText" search-key="docker-networks" placeholder="搜索网络名称、ID、驱动..." width-class="w-full" focus-color="purple" />
       </div>
 
       <!-- Loading State -->
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+      <div v-if="loading" class="loading-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
@@ -161,18 +161,18 @@ export default toNative(Networks)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
-                <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">驱动</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">子网</th>
-                <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">范围</th>
-                <th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+                <th class="th">名称</th>
+                <th class="w-24 th">驱动</th>
+                <th class="th">子网</th>
+                <th class="w-24 th">范围</th>
+                <th class="w-32 th-right">操作</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="net in filteredNetworks" :key="net.id" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center gap-2 min-w-0">
-                    <div class="w-8 h-8 rounded-lg bg-purple-400 flex items-center justify-center flex-shrink-0">
+                    <div class="row-icon bg-purple-400">
                       <i class="fas fa-network-wired text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
@@ -187,12 +187,12 @@ export default toNative(Networks)
                 <td class="px-4 py-3 text-sm text-slate-600">{{ net.scope }}</td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button v-if="portal.hasPerm('GET /api/docker/network/:id')" class="btn-icon text-slate-600 hover:bg-slate-50" title="详情" @click="viewNetworkDetail(net)">
+                    <button v-if="portal.hasPerm('GET /api/docker/network/:id')" class="btn-icon btn-icon-slate" title="详情" @click="viewNetworkDetail(net)">
                       <i class="fas fa-circle-info text-xs"></i>
                     </button>
                     <button
                       v-if="canDeleteNetwork(net) && portal.hasPerm('POST /api/docker/network/:id/action')"
-                      class="btn-icon text-red-600 hover:bg-red-50"
+                      class="btn-icon btn-icon-red"
                       title="删除"
                       @click="handleNetworkAction(net, 'remove')"
                     >
@@ -218,11 +218,11 @@ export default toNative(Networks)
           <div 
             v-for="net in filteredNetworks" 
             :key="net.id"
-            class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
+            class="card-interactive"
           >
             <!-- 顶部：网络信息和图标 -->
-            <div class="flex items-center gap-3 min-w-0 flex-1 mb-3">
-              <div class="w-10 h-10 rounded-lg bg-purple-400 flex items-center justify-center flex-shrink-0">
+            <div class="card-info-row">
+              <div class="list-icon bg-purple-400">
                 <i class="fas fa-network-wired text-white text-base"></i>
               </div>
               <div class="min-w-0">
@@ -248,13 +248,13 @@ export default toNative(Networks)
             </div>
             
             <!-- 底部：操作按钮 -->
-            <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
-              <button v-if="portal.hasPerm('GET /api/docker/network/:id')" class="btn-icon text-slate-600 hover:bg-slate-50" title="详情" @click="viewNetworkDetail(net)">
+            <div class="card-actions">
+              <button v-if="portal.hasPerm('GET /api/docker/network/:id')" class="btn-icon btn-icon-slate" title="详情" @click="viewNetworkDetail(net)">
                 <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
               </button>
               <button
                 v-if="canDeleteNetwork(net) && portal.hasPerm('POST /api/docker/network/:id/action')"
-                class="btn-icon text-red-600 hover:bg-red-50"
+                class="btn-icon btn-icon-red"
                 title="删除"
                 @click="handleNetworkAction(net, 'remove')"
               >
@@ -274,8 +274,8 @@ export default toNative(Networks)
       </div>
 
       <!-- Empty State -->
-      <div v-else class="flex flex-col items-center justify-center py-20">
-        <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4">
+      <div v-else class="empty-state">
+        <div class="empty-state-icon">
           <i class="fas fa-network-wired text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ networks.length === 0 ? '暂无自定义网络' : '未找到匹配网络' }}</p>

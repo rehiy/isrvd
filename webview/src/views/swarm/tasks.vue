@@ -95,11 +95,11 @@ export default toNative(Tasks)
   <div>
     <div class="card mb-4">
       <!-- Toolbar -->
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
+            <div class="page-icon bg-emerald-500">
               <i class="fas fa-list-check text-white"></i>
             </div>
             <div>
@@ -109,7 +109,7 @@ export default toNative(Tasks)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="swarm-tasks" placeholder="搜索任务、服务、节点、状态或消息..." width-class="w-64" focus-color="emerald" type-to-search />
-            <select v-model="selectedServiceId" class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 min-w-[160px]">
+            <select v-model="selectedServiceId" class="select-sm min-w-[160px]">
               <option value="">全部服务</option>
               <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>
             </select>
@@ -120,9 +120,9 @@ export default toNative(Tasks)
         </div>
         <!-- 移动端 -->
         <div class="block md:hidden">
-          <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center justify-between">
             <div class="flex items-center gap-3 min-w-0 flex-1">
-              <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
+              <div class="page-icon bg-emerald-500">
                 <i class="fas fa-list-check text-white"></i>
               </div>
               <div class="min-w-0">
@@ -134,16 +134,18 @@ export default toNative(Tasks)
               <i class="fas fa-rotate text-sm"></i>
             </button>
           </div>
-          <PageSearch v-model="searchText" search-key="swarm-tasks" placeholder="搜索任务、服务、节点、状态或消息..." width-class="w-full" focus-color="emerald" class="mb-2" />
-          <select v-model="selectedServiceId" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-700">
-            <option value="">全部服务</option>
-            <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>
-          </select>
         </div>
+      </div>
+      <div class="mobile-search">
+        <PageSearch v-model="searchText" search-key="swarm-tasks" placeholder="搜索任务、服务、节点、状态或消息..." width-class="w-full" focus-color="emerald" />
+        <select v-model="selectedServiceId" class="mt-2 w-full select-sm">
+          <option value="">全部服务</option>
+          <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>
+        </select>
       </div>
 
       <!-- 内容 -->
-      <div v-if="tasksLoading" class="flex flex-col items-center justify-center py-20">
+      <div v-if="tasksLoading" class="loading-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
@@ -153,13 +155,13 @@ export default toNative(Tasks)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">任务 ID</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">服务</th>
-                <th class="w-16 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Slot</th>
-                <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">消息</th>
-                <th class="w-36 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">节点</th>
-                <th class="w-40 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">更新时间</th>
+                <th class="th">任务 ID</th>
+                <th class="th">服务</th>
+                <th class="w-16 th">Slot</th>
+                <th class="w-28 th">状态</th>
+                <th class="th">消息</th>
+                <th class="w-36 th">节点</th>
+                <th class="w-40 th">更新时间</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
@@ -192,10 +194,10 @@ export default toNative(Tasks)
 
         <!-- 移动端卡片视图 -->
         <div class="md:hidden space-y-3 p-4">
-          <div v-for="t in filteredTasks" :key="t.id" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
+          <div v-for="t in filteredTasks" :key="t.id" class="card-interactive">
             <!-- 顶部：图标 + ID -->
-            <div class="flex items-center gap-3 min-w-0 flex-1 mb-3">
-              <div :class="['w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0', taskStateClass(t.state).includes('emerald') ? 'bg-emerald-400' : taskStateClass(t.state).includes('red') ? 'bg-red-400' : 'bg-slate-400']">
+            <div class="card-info-row">
+              <div :class="['list-icon', taskStateClass(t.state).includes('emerald') ? 'bg-emerald-400' : taskStateClass(t.state).includes('red') ? 'bg-red-400' : 'bg-slate-400']">
                 <i class="fas fa-list-check text-white text-base"></i>
               </div>
               <div class="min-w-0">
@@ -236,8 +238,8 @@ export default toNative(Tasks)
           </div>
         </div>
       </div>
-      <div v-else class="flex flex-col items-center justify-center py-20">
-        <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4">
+      <div v-else class="empty-state">
+        <div class="empty-state-icon">
           <i class="fas fa-list-check text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ tasks.length === 0 ? '暂无任务' : '未找到匹配任务' }}</p>

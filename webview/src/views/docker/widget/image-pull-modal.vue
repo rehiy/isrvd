@@ -121,7 +121,7 @@ export default toNative(ImagePullModal)
       <section>
         <div class="space-y-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">镜像源</label>
+            <label class="form-label">镜像源</label>
             <select v-model="formData.source" class="input">
               <option value="">Docker Hub（默认）</option>
               <option v-for="reg in registries" :key="reg.url" :value="reg.url">
@@ -191,7 +191,7 @@ export default toNative(ImagePullModal)
       <section>
         <div class="space-y-4">
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">镜像引用</label>
+            <label class="form-label">镜像引用</label>
             <input v-model="formData.image" type="text" placeholder="例如: nginx, redis:alpine, library/ubuntu:22.04, myteam/app:v1" required class="input font-mono" />
             <p class="text-xs text-slate-400 mt-1">
               未指定 tag 时默认拉取 latest；选择私有仓库时不需要重复填写仓库地址。

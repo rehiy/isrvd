@@ -112,11 +112,11 @@ export default toNative(Containers)
   <div>
     <!-- Toolbar Bar -->
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
+            <div class="page-icon bg-emerald-500">
               <i class="fab fa-docker text-white"></i>
             </div>
             <div>
@@ -127,10 +127,10 @@ export default toNative(Containers)
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="docker-containers" placeholder="搜索容器名称、ID、镜像或端口..." width-class="w-64" focus-color="emerald" type-to-search />
             <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
-              <button :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', !showAll ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']" @click="showAll = false; loadContainers()">
+              <button :class="['tab-btn', !showAll ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="showAll = false; loadContainers()">
                 <i class="fas fa-play"></i><span>运行中</span>
               </button>
-              <button :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', showAll ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']" @click="showAll = true; loadContainers()">
+              <button :class="['tab-btn', showAll ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="showAll = true; loadContainers()">
                 <i class="fas fa-layer-group"></i><span>全部</span>
               </button>
             </div>
@@ -146,7 +146,7 @@ export default toNative(Containers)
         <div class="block md:hidden">
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-3 min-w-0 flex-1">
-              <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
+              <div class="page-icon bg-emerald-500">
                 <i class="fab fa-docker text-white"></i>
               </div>
               <div class="min-w-0">
@@ -164,20 +164,20 @@ export default toNative(Containers)
             </div>
           </div>
           <div class="flex justify-center gap-1 bg-slate-100 p-1 rounded-lg">
-            <button :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', !showAll ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']" @click="showAll = false; loadContainers()">
+            <button :class="['tab-btn', !showAll ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="showAll = false; loadContainers()">
               <i class="fas fa-play"></i><span>运行中</span>
             </button>
-            <button :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5', showAll ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']" @click="showAll = true; loadContainers()">
+            <button :class="['tab-btn', showAll ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="showAll = true; loadContainers()">
               <i class="fas fa-layer-group"></i><span>全部</span>
             </button>
           </div>
         </div>
       </div>
-      <div class="md:hidden px-4 py-2 border-b border-slate-100">
+      <div class="mobile-search">
         <PageSearch v-model="searchText" search-key="docker-containers" placeholder="搜索容器名称、镜像或端口..." width-class="w-full" focus-color="emerald" />
       </div>
       <!-- Loading -->
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+      <div v-if="loading" class="loading-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
@@ -189,11 +189,11 @@ export default toNative(Containers)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
-                <th class="w-32 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
-                <th class="w-48 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">端口</th>
-                <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
-                <th class="w-48 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+                <th class="th">名称</th>
+                <th class="w-32 th">状态</th>
+                <th class="w-48 th">端口</th>
+                <th class="w-28 th">创建时间</th>
+                <th class="w-48 th-right">操作</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
@@ -224,31 +224,31 @@ export default toNative(Containers)
                 <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button v-if="portal.hasPerm('GET /api/docker/container/:id')" class="btn-icon text-slate-600 hover:bg-slate-50" title="详情" @click="$router.push({ path: '/docker/container/' + ct.id })">
+                    <button v-if="portal.hasPerm('GET /api/docker/container/:id')" class="btn-icon btn-icon-slate" title="详情" @click="$router.push({ path: '/docker/container/' + ct.id })">
                       <i class="fas fa-circle-info text-xs"></i>
                     </button>
-                    <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/stats')" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats' })">
+                    <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/stats')" class="btn-icon btn-icon-indigo" title="统计" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats' })">
                       <i class="fas fa-chart-line text-xs"></i>
                     </button>
-                    <button v-if="portal.hasPerm('GET /api/docker/container/:id/logs')" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志" @click="$router.push({ path: '/docker/container/' + ct.id + '/logs' })">
+                    <button v-if="portal.hasPerm('GET /api/docker/container/:id/logs')" class="btn-icon btn-icon-slate" title="日志" @click="$router.push({ path: '/docker/container/' + ct.id + '/logs' })">
                       <i class="fas fa-file-lines text-xs"></i>
                     </button>
-                    <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/exec')" class="btn-icon text-teal-600 hover:bg-teal-50" title="登录终端" @click="$router.push({ path: '/docker/container/' + ct.id + '/exec' })">
+                    <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/exec')" class="btn-icon btn-icon-teal" title="登录终端" @click="$router.push({ path: '/docker/container/' + ct.id + '/exec' })">
                       <i class="fas fa-terminal text-xs"></i>
                     </button>
-                    <button v-if="ct.state !== 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动" @click="handleContainerAction(ct, 'start')">
+                    <button v-if="ct.state !== 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-emerald" title="启动" @click="handleContainerAction(ct, 'start')">
                       <i class="fas fa-play text-xs"></i>
                     </button>
-                    <button v-if="!ct.isSelf && ct.state === 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon text-blue-600 hover:bg-blue-50" title="重启" @click="handleContainerAction(ct, 'restart')">
+                    <button v-if="!ct.isSelf && ct.state === 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-blue" title="重启" @click="handleContainerAction(ct, 'restart')">
                       <i class="fas fa-rotate text-xs"></i>
                     </button>
-                    <button v-if="!ct.isSelf && ct.state === 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止" @click="handleContainerAction(ct, 'stop')">
+                    <button v-if="!ct.isSelf && ct.state === 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-amber" title="停止" @click="handleContainerAction(ct, 'stop')">
                       <i class="fas fa-stop text-xs"></i>
                     </button>
                     <button v-if="!ct.isSelf && portal.hasPerm('GET /api/compose/docker/:name') && portal.hasPerm('POST /api/compose/docker/:name/redeploy')" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'" @click="!ct.isSwarm && containerEditModalRef?.show(ct)">
                       <i class="fas fa-pen text-xs"></i>
                     </button>
-                    <button v-if="!ct.isSelf && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="handleContainerAction(ct, 'remove')">
+                    <button v-if="!ct.isSelf && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleContainerAction(ct, 'remove')">
                       <i class="fas fa-trash text-xs"></i>
                     </button>
                   </div>
@@ -263,11 +263,11 @@ export default toNative(Containers)
           <div
             v-for="ct in filteredContainers"
             :key="ct.id"
-            class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
+            class="card-interactive"
           >
             <!-- 顶部：名称和状态 -->
-            <div class="flex items-center gap-3 min-w-0 flex-1 mb-3">
-              <div :class="['w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+            <div class="card-info-row">
+              <div :class="['list-icon', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
                 <i class="fas fa-box text-white text-base"></i>
               </div>
               <div class="min-w-0">
@@ -297,32 +297,32 @@ export default toNative(Containers)
             </div>
 
             <!-- 底部：操作按钮 -->
-            <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
-              <button v-if="portal.hasPerm('GET /api/docker/container/:id')" class="btn-icon text-slate-600 hover:bg-slate-50" title="详情" @click="$router.push({ path: '/docker/container/' + ct.id })">
+            <div class="card-actions">
+              <button v-if="portal.hasPerm('GET /api/docker/container/:id')" class="btn-icon btn-icon-slate" title="详情" @click="$router.push({ path: '/docker/container/' + ct.id })">
                 <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
               </button>
-              <button v-if="portal.hasPerm('GET /api/docker/container/:id/logs')" class="btn-icon text-slate-600 hover:bg-slate-50" title="日志" @click="$router.push({ path: '/docker/container/' + ct.id + '/logs' })">
+              <button v-if="portal.hasPerm('GET /api/docker/container/:id/logs')" class="btn-icon btn-icon-slate" title="日志" @click="$router.push({ path: '/docker/container/' + ct.id + '/logs' })">
                 <i class="fas fa-file-lines text-xs"></i><span class="text-xs ml-1">日志</span>
               </button>
-              <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/stats')" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="统计" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats' })">
+              <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/stats')" class="btn-icon btn-icon-indigo" title="统计" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats' })">
                 <i class="fas fa-chart-line text-xs"></i><span class="text-xs ml-1">统计</span>
               </button>
-              <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/exec')" class="btn-icon text-teal-600 hover:bg-teal-50" title="终端" @click="$router.push({ path: '/docker/container/' + ct.id + '/exec' })">
+              <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/exec')" class="btn-icon btn-icon-teal" title="终端" @click="$router.push({ path: '/docker/container/' + ct.id + '/exec' })">
                 <i class="fas fa-terminal text-xs"></i><span class="text-xs ml-1">终端</span>
               </button>
-              <button v-if="ct.state !== 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="启动" @click="handleContainerAction(ct, 'start')">
+              <button v-if="ct.state !== 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-emerald" title="启动" @click="handleContainerAction(ct, 'start')">
                 <i class="fas fa-play text-xs"></i><span class="text-xs ml-1">启动</span>
               </button>
-              <button v-if="!ct.isSelf && ct.state === 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon text-blue-600 hover:bg-blue-50" title="重启" @click="handleContainerAction(ct, 'restart')">
+              <button v-if="!ct.isSelf && ct.state === 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-blue" title="重启" @click="handleContainerAction(ct, 'restart')">
                 <i class="fas fa-rotate text-xs"></i><span class="text-xs ml-1">重启</span>
               </button>
-              <button v-if="!ct.isSelf && ct.state === 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon text-amber-600 hover:bg-amber-50" title="停止" @click="handleContainerAction(ct, 'stop')">
+              <button v-if="!ct.isSelf && ct.state === 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-amber" title="停止" @click="handleContainerAction(ct, 'stop')">
                 <i class="fas fa-stop text-xs"></i><span class="text-xs ml-1">停止</span>
               </button>
               <button v-if="!ct.isSelf && portal.hasPerm('GET /api/compose/docker/:name') && portal.hasPerm('POST /api/compose/docker/:name/redeploy')" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'" @click="!ct.isSwarm && containerEditModalRef?.show(ct)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
-              <button v-if="!ct.isSelf && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="handleContainerAction(ct, 'remove')">
+              <button v-if="!ct.isSelf && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleContainerAction(ct, 'remove')">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>
@@ -331,8 +331,8 @@ export default toNative(Containers)
       </div>
 
       <!-- Empty State -->
-      <div v-else class="flex flex-col items-center justify-center py-20">
-        <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4">
+      <div v-else class="empty-state">
+        <div class="empty-state-icon">
           <i class="fab fa-docker text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ containers.length === 0 ? '暂无容器' : '未找到匹配容器' }}</p>

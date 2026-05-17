@@ -112,11 +112,11 @@ export default toNative(Registries)
   <div>
     <!-- Toolbar Bar -->
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-purple-500 flex items-center justify-center">
+            <div class="page-icon bg-purple-500">
               <i class="fas fa-warehouse text-white"></i>
             </div>
             <div>
@@ -137,7 +137,7 @@ export default toNative(Registries)
         <!-- 移动端 -->
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-purple-500 flex items-center justify-center flex-shrink-0">
+            <div class="page-icon bg-purple-500">
               <i class="fas fa-warehouse text-white"></i>
             </div>
             <div class="min-w-0">
@@ -156,12 +156,12 @@ export default toNative(Registries)
         </div>
       </div>
 
-      <div class="md:hidden px-4 py-2 border-b border-slate-100">
+      <div class="mobile-search">
         <PageSearch v-model="searchText" search-key="docker-registries" placeholder="搜索仓库名称、地址或账号..." width-class="w-full" focus-color="purple" />
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+      <div v-if="loading" class="loading-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
@@ -173,10 +173,10 @@ export default toNative(Registries)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">地址</th>
-                <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">认证</th>
-                <th class="w-28 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+                <th class="th">名称</th>
+                <th class="th">地址</th>
+                <th class="w-28 th">认证</th>
+                <th class="w-28 th-right">操作</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
@@ -184,7 +184,7 @@ export default toNative(Registries)
               <tr v-if="showDockerHub" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center gap-2 min-w-0">
-                    <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+                    <div class="row-icon bg-blue-500">
                       <i class="fab fa-docker text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
@@ -212,7 +212,7 @@ export default toNative(Registries)
               <tr v-for="reg in filteredRegistries" :key="reg.url" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center gap-2 min-w-0">
-                    <div class="w-8 h-8 rounded-lg bg-purple-400 flex items-center justify-center flex-shrink-0">
+                    <div class="row-icon bg-purple-400">
                       <i class="fas fa-warehouse text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
@@ -232,10 +232,10 @@ export default toNative(Registries)
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button v-if="portal.hasPerm('PUT /api/docker/registry')" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑" @click="openEdit(reg)">
+                    <button v-if="portal.hasPerm('PUT /api/docker/registry')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(reg)">
                       <i class="fas fa-pen text-xs"></i>
                     </button>
-                    <button v-if="portal.hasPerm('DELETE /api/docker/registry')" class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="handleDelete(reg)">
+                    <button v-if="portal.hasPerm('DELETE /api/docker/registry')" class="btn-icon btn-icon-red" title="删除" @click="handleDelete(reg)">
                       <i class="fas fa-trash text-xs"></i>
                     </button>
                   </div>
@@ -248,10 +248,10 @@ export default toNative(Registries)
         <!-- 移动端卡片视图 -->
         <div class="md:hidden space-y-3 p-4">
           <!-- Docker Hub 卡片 -->
-          <div v-if="showDockerHub" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
+          <div v-if="showDockerHub" class="card-interactive">
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+                <div class="list-icon bg-blue-500">
                   <i class="fab fa-docker text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
@@ -280,10 +280,10 @@ export default toNative(Registries)
           </div>
 
           <!-- 私有仓库卡片 -->
-          <div v-for="reg in filteredRegistries" :key="reg.url" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
+          <div v-for="reg in filteredRegistries" :key="reg.url" class="card-interactive">
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div class="w-10 h-10 rounded-lg bg-purple-400 flex items-center justify-center flex-shrink-0">
+                <div class="list-icon bg-purple-400">
                   <i class="fas fa-warehouse text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
@@ -306,11 +306,11 @@ export default toNative(Registries)
             </div>
 
             <!-- 底部：操作按钮 -->
-            <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
-              <button v-if="portal.hasPerm('PUT /api/docker/registry')" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑" @click="openEdit(reg)">
+            <div class="card-actions">
+              <button v-if="portal.hasPerm('PUT /api/docker/registry')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(reg)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
-              <button v-if="portal.hasPerm('DELETE /api/docker/registry')" class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="handleDelete(reg)">
+              <button v-if="portal.hasPerm('DELETE /api/docker/registry')" class="btn-icon btn-icon-red" title="删除" @click="handleDelete(reg)">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>
@@ -321,12 +321,12 @@ export default toNative(Registries)
           </div>
         </div>
 
-        <div v-if="!showDockerHub && filteredRegistries.length === 0" class="hidden md:flex flex-col items-center justify-center py-16">
-          <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4">
+        <div v-if="!showDockerHub && filteredRegistries.length === 0" class="hidden md:flex flex-col items-center justify-center py-20">
+          <div class="empty-state-icon">
             <i class="fas fa-warehouse text-4xl text-slate-300"></i>
           </div>
-        <p class="text-slate-600 font-medium mb-1">{{ registries.length === 0 ? '暂无镜像仓库' : '未找到匹配仓库' }}</p>
-        <p class="text-sm text-slate-400">{{ registries.length === 0 ? '点击「新建仓库」创建私有镜像仓库' : '尝试更换关键词或清空搜索条件' }}</p>
+          <p class="text-slate-600 font-medium mb-1">{{ registries.length === 0 ? '暂无镜像仓库' : '未找到匹配仓库' }}</p>
+          <p class="text-sm text-slate-400">{{ registries.length === 0 ? '点击「新建仓库」创建私有镜像仓库' : '尝试更换关键词或清空搜索条件' }}</p>
         </div>
       </div>
     </div>

@@ -47,11 +47,11 @@ export default toNative(ImageDetail)
   <div>
     <div class="card mb-4">
       <!-- Toolbar -->
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
+            <div class="page-icon bg-blue-500">
               <i class="fas fa-compact-disc text-white"></i>
             </div>
             <div>
@@ -68,7 +68,7 @@ export default toNative(ImageDetail)
         <!-- 移动端 -->
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+            <div class="page-icon bg-blue-500">
               <i class="fas fa-compact-disc text-white"></i>
             </div>
             <div class="min-w-0">
@@ -85,7 +85,7 @@ export default toNative(ImageDetail)
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+      <div v-if="loading" class="loading-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
@@ -94,34 +94,34 @@ export default toNative(ImageDetail)
       <div v-else-if="inspectData" class="p-4 md:p-6 space-y-6 text-sm">
         <!-- 基本信息 -->
         <div>
-          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">基本信息</h2>
+          <h2 class="section-title">基本信息</h2>
           <div class="grid grid-cols-2 gap-3">
             <div class="col-span-2">
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">镜像 ID</label>
+              <label class="form-label">镜像 ID</label>
               <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ inspectData.id }}</code>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">架构</label>
+              <label class="form-label">架构</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.architecture || '-' }}</div>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">操作系统</label>
+              <label class="form-label">操作系统</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.os || '-' }}</div>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">大小</label>
+              <label class="form-label">大小</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatFileSize(inspectData.size) }}</div>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">层数</label>
+              <label class="form-label">层数</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.layers }}</div>
             </div>
             <div class="col-span-2">
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">创建时间</label>
+              <label class="form-label">创建时间</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(inspectData.created) }}</div>
             </div>
             <div v-if="inspectData.author" class="col-span-2">
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">作者</label>
+              <label class="form-label">作者</label>
               <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.author }}</div>
             </div>
           </div>
@@ -129,7 +129,7 @@ export default toNative(ImageDetail)
 
         <!-- 标签 -->
         <div v-if="inspectData.repoTags && inspectData.repoTags.length > 0">
-          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">标签</h2>
+          <h2 class="section-title">标签</h2>
           <div class="space-y-1">
             <div v-for="tag in inspectData.repoTags" :key="tag" class="text-xs font-mono text-slate-700">{{ tag }}</div>
           </div>
@@ -137,7 +137,7 @@ export default toNative(ImageDetail)
 
         <!-- Digest -->
         <div v-if="inspectData.repoDigests && inspectData.repoDigests.length > 0">
-          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Digest</h2>
+          <h2 class="section-title">Digest</h2>
           <div class="space-y-1">
             <code v-for="d in inspectData.repoDigests" :key="d" class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-600 break-all">{{ d }}</code>
           </div>
@@ -145,7 +145,7 @@ export default toNative(ImageDetail)
 
         <!-- 运行配置 -->
         <div>
-          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">运行配置</h2>
+          <h2 class="section-title">运行配置</h2>
           <div class="space-y-3">
             <div v-if="inspectData.workingDir">
               <label class="block text-xs text-slate-500 mb-1">工作目录</label>
@@ -171,7 +171,7 @@ export default toNative(ImageDetail)
 
         <!-- 环境变量 -->
         <div v-if="inspectData.env && inspectData.env.length > 0">
-          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">环境变量</h2>
+          <h2 class="section-title">环境变量</h2>
           <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
             <div v-for="(env, idx) in inspectData.env" :key="idx" class="px-3 py-1.5">
               <code class="text-xs font-mono text-slate-600 break-all">{{ env }}</code>
@@ -181,7 +181,7 @@ export default toNative(ImageDetail)
 
         <!-- Labels -->
         <div v-if="inspectData.labels && Object.keys(inspectData.labels).length > 0">
-          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Labels</h2>
+          <h2 class="section-title">Labels</h2>
           <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
             <div v-for="(val, key) in inspectData.labels" :key="key" class="px-3 py-1.5 flex gap-2">
               <code class="text-xs font-mono text-blue-600 shrink-0">{{ key }}</code>
@@ -193,7 +193,7 @@ export default toNative(ImageDetail)
 
         <!-- 层信息 -->
         <div v-if="inspectData.layerDetails && inspectData.layerDetails.length > 0">
-          <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          <h2 class="section-title">
             层信息（{{ inspectData.layers }} 个实际层，共 {{ inspectData.layerDetails.length }} 步）
           </h2>
           <div class="border border-slate-200 rounded-lg divide-y divide-slate-100 overflow-hidden">
@@ -227,8 +227,8 @@ export default toNative(ImageDetail)
       </div>
 
       <!-- Empty -->
-      <div v-else class="flex flex-col items-center justify-center py-20">
-        <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4">
+      <div v-else class="empty-state">
+        <div class="empty-state-icon">
           <i class="fas fa-compact-disc text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium">未找到镜像详情</p>

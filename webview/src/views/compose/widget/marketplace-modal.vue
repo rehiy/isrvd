@@ -151,7 +151,7 @@ export default toNative(MarketplaceModal)
   >
     <template #title>
       <div class="flex items-center gap-3 min-w-0">
-        <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+        <div class="page-icon bg-amber-500">
           <i class="fas fa-store text-white"></i>
         </div>
         <div class="min-w-0">

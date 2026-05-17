@@ -145,12 +145,12 @@ export default toNative(CapSelect)
   >
     <template #default="{ query, select, selected, isSelected }">
       <div v-for="cat in filteredCategories(query)" :key="cat.name" class="border-b border-slate-100 last:border-0">
-        <div class="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-2 sticky top-0 z-10">
+        <div class="select-search-header">
           <i :class="['fas text-xs', cat.icon]" :style="{ color: cat.color }"></i>
           <span class="text-xs font-semibold text-slate-600">{{ cat.name }}</span>
           <span class="text-xs text-slate-400">{{ selectedCountIn(cat, selected) }}/{{ cat.caps.length }}</span>
         </div>
-        <div class="px-2 py-1.5 grid grid-cols-1 gap-0.5 bg-white">
+        <div class="select-list">
           <button
             v-for="cap in cat.caps"
             :key="cap.name"
@@ -191,7 +191,7 @@ export default toNative(CapSelect)
     </template>
 
     <template #footer="{ selected, clearAll }">
-      <div class="px-3 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+      <div class="select-footer">
         <span class="text-xs text-slate-400">
           已选 <strong :class="selected.length > 0 ? 'text-slate-700' : 'text-slate-400'">{{ selected.length }}</strong> 项权限
         </span>

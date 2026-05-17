@@ -120,10 +120,10 @@ export default toNative(ComposeDeploy)
   <div>
     <div class="card mb-4">
       <!-- Toolbar -->
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center">
+            <div class="page-icon bg-amber-500">
               <i class="fas fa-file-code text-white"></i>
             </div>
             <div>
@@ -142,7 +142,7 @@ export default toNative(ComposeDeploy)
         </div>
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+            <div class="page-icon bg-amber-500">
               <i class="fas fa-file-code text-white"></i>
             </div>
             <div class="min-w-0 flex-1">
@@ -167,8 +167,8 @@ export default toNative(ComposeDeploy)
         <div class="inline-flex gap-1 bg-slate-100 p-1 rounded-lg">
           <button
             type="button"
-            :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5',
-                     target === 'docker' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']"
+            :class="['tab-btn',
+                     target === 'docker' ? 'tab-btn-active text-amber-600' : 'tab-btn-inactive']"
             @click="selectTarget('docker')"
           >
             <i class="fab fa-docker"></i><span>单机容器</span>
@@ -176,9 +176,9 @@ export default toNative(ComposeDeploy)
           <button
             type="button"
             :disabled="!swarmAvailable"
-            :class="['px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5',
-                     target === 'swarm' ? 'bg-white text-amber-600 shadow-sm'
-                     : (swarmAvailable ? 'text-slate-500 hover:text-slate-700' : 'text-slate-300 cursor-not-allowed')]"
+            :class="['tab-btn',
+                     target === 'swarm' ? 'tab-btn-active text-amber-600'
+                     : (swarmAvailable ? 'tab-btn-inactive' : 'text-slate-300 cursor-not-allowed')]"
             :title="swarmAvailable ? '' : '当前节点未启用 Swarm'"
             @click="selectTarget('swarm')"
           >

@@ -137,11 +137,11 @@ export default toNative(Nodes)
 <template>
   <div>
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
+            <div class="page-icon bg-blue-500">
               <i class="fas fa-server text-white"></i>
             </div>
             <div>
@@ -162,7 +162,7 @@ export default toNative(Nodes)
         <!-- 移动端 -->
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+            <div class="page-icon bg-blue-500">
               <i class="fas fa-server text-white"></i>
             </div>
             <div class="min-w-0">
@@ -180,11 +180,11 @@ export default toNative(Nodes)
           </div>
         </div>
       </div>
-      <div class="md:hidden px-4 py-2 border-b border-slate-100">
+      <div class="mobile-search">
         <PageSearch v-model="searchText" search-key="swarm-nodes" placeholder="搜索主机名、ID、角色、状态或 IP..." width-class="w-full" focus-color="blue" />
       </div>
 
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+      <div v-if="loading" class="loading-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
@@ -194,20 +194,20 @@ export default toNative(Nodes)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">主机名</th>
-                <th class="w-24 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">角色</th>
-                <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
-                <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">可用性</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">IP 地址</th>
-                <th class="w-28 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">引擎版本</th>
-                <th class="w-44 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+                <th class="th">主机名</th>
+                <th class="w-24 th">角色</th>
+                <th class="w-28 th">状态</th>
+                <th class="w-28 th">可用性</th>
+                <th class="th">IP 地址</th>
+                <th class="w-28 th">引擎版本</th>
+                <th class="w-44 th-right">操作</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="n in filteredNodes" :key="n.id" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center gap-2 min-w-0">
-                    <div class="w-8 h-8 rounded-lg bg-blue-400 flex items-center justify-center flex-shrink-0">
+                    <div class="row-icon bg-blue-400">
                       <i class="fas fa-server text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
@@ -230,11 +230,11 @@ export default toNative(Nodes)
                 <td class="px-4 py-3 text-xs text-slate-500">{{ n.engineVersion || '-' }}</td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button v-if="portal.hasPerm('GET /api/swarm/node/:id')" class="btn-icon text-slate-600 hover:bg-slate-50" title="查看详情" @click="$router.push(`/swarm/node/${n.id}`)"><i class="fas fa-circle-info text-xs"></i></button>
-                    <button v-if="n.availability !== 'active' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="激活" @click="handleNodeAction(n, 'active')"><i class="fas fa-play text-xs"></i></button>
-                    <button v-if="n.availability !== 'drain' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon text-amber-600 hover:bg-amber-50" title="排空" @click="handleNodeAction(n, 'drain')"><i class="fas fa-arrow-down text-xs"></i></button>
-                    <button v-if="n.availability !== 'pause' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon text-slate-600 hover:bg-slate-50" title="暂停" @click="handleNodeAction(n, 'pause')"><i class="fas fa-pause text-xs"></i></button>
-                    <button v-if="portal.hasPerm('POST /api/swarm/node/:id/action')" :disabled="n.leader" :class="n.leader ? 'btn-icon text-slate-300 cursor-not-allowed' : 'btn-icon text-red-600 hover:bg-red-50'" :title="n.leader ? '不能移除 Leader 节点' : '移除'" @click="n.leader ? null : handleNodeAction(n, 'remove')"><i class="fas fa-trash text-xs"></i></button>
+                    <button v-if="portal.hasPerm('GET /api/swarm/node/:id')" class="btn-icon btn-icon-slate" title="查看详情" @click="$router.push(`/swarm/node/${n.id}`)"><i class="fas fa-circle-info text-xs"></i></button>
+                    <button v-if="n.availability !== 'active' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon btn-icon-emerald" title="激活" @click="handleNodeAction(n, 'active')"><i class="fas fa-play text-xs"></i></button>
+                    <button v-if="n.availability !== 'drain' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon btn-icon-amber" title="排空" @click="handleNodeAction(n, 'drain')"><i class="fas fa-arrow-down text-xs"></i></button>
+                    <button v-if="n.availability !== 'pause' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon btn-icon-slate" title="暂停" @click="handleNodeAction(n, 'pause')"><i class="fas fa-pause text-xs"></i></button>
+                    <button v-if="portal.hasPerm('POST /api/swarm/node/:id/action')" :disabled="n.leader" :class="n.leader ? 'btn-icon text-slate-300 cursor-not-allowed' : 'btn-icon btn-icon-red'" :title="n.leader ? '不能移除 Leader 节点' : '移除'" @click="n.leader ? null : handleNodeAction(n, 'remove')"><i class="fas fa-trash text-xs"></i></button>
                   </div>
                 </td>
               </tr>
@@ -247,11 +247,11 @@ export default toNative(Nodes)
           <div 
             v-for="n in filteredNodes" 
             :key="n.id"
-            class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
+            class="card-interactive"
           >
             <!-- 顶部：主机名和图标 -->
-            <div class="flex items-center gap-3 min-w-0 flex-1 mb-3">
-              <div class="w-10 h-10 rounded-lg bg-blue-400 flex items-center justify-center flex-shrink-0">
+            <div class="card-info-row">
+              <div class="list-icon bg-blue-400">
                 <i class="fas fa-server text-white text-base"></i>
               </div>
               <div class="min-w-0">
@@ -286,28 +286,28 @@ export default toNative(Nodes)
             </div>
             
             <!-- 底部：操作按钮 -->
-            <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
-              <button v-if="portal.hasPerm('GET /api/swarm/node/:id')" class="btn-icon text-slate-600 hover:bg-slate-50" title="查看详情" @click="$router.push(`/swarm/node/${n.id}`)">
+            <div class="card-actions">
+              <button v-if="portal.hasPerm('GET /api/swarm/node/:id')" class="btn-icon btn-icon-slate" title="查看详情" @click="$router.push(`/swarm/node/${n.id}`)">
                 <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
               </button>
-              <button v-if="n.availability !== 'active' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="激活" @click="handleNodeAction(n, 'active')">
+              <button v-if="n.availability !== 'active' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon btn-icon-emerald" title="激活" @click="handleNodeAction(n, 'active')">
                 <i class="fas fa-play text-xs"></i><span class="text-xs ml-1">激活</span>
               </button>
-              <button v-if="n.availability !== 'drain' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon text-amber-600 hover:bg-amber-50" title="排空" @click="handleNodeAction(n, 'drain')">
+              <button v-if="n.availability !== 'drain' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon btn-icon-amber" title="排空" @click="handleNodeAction(n, 'drain')">
                 <i class="fas fa-arrow-down text-xs"></i><span class="text-xs ml-1">排空</span>
               </button>
-              <button v-if="n.availability !== 'pause' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon text-slate-600 hover:bg-slate-50" title="暂停" @click="handleNodeAction(n, 'pause')">
+              <button v-if="n.availability !== 'pause' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon btn-icon-slate" title="暂停" @click="handleNodeAction(n, 'pause')">
                 <i class="fas fa-pause text-xs"></i><span class="text-xs ml-1">暂停</span>
               </button>
-              <button v-if="portal.hasPerm('POST /api/swarm/node/:id/action')" :disabled="n.leader" :class="n.leader ? 'btn-icon text-slate-300 cursor-not-allowed' : 'btn-icon text-red-600 hover:bg-red-50'" :title="n.leader ? '不能移除 Leader 节点' : '移除'" @click="n.leader ? null : handleNodeAction(n, 'remove')">
+              <button v-if="portal.hasPerm('POST /api/swarm/node/:id/action')" :disabled="n.leader" :class="n.leader ? 'btn-icon text-slate-300 cursor-not-allowed' : 'btn-icon btn-icon-red'" :title="n.leader ? '不能移除 Leader 节点' : '移除'" @click="n.leader ? null : handleNodeAction(n, 'remove')">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">移除</span>
               </button>
             </div>
           </div>
         </div>
       </div>
-      <div v-else class="flex flex-col items-center justify-center py-20">
-        <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4">
+      <div v-else class="empty-state">
+        <div class="empty-state-icon">
           <i class="fas fa-server text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ nodes.length === 0 ? '暂无节点' : '未找到匹配节点' }}</p>

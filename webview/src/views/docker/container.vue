@@ -74,7 +74,7 @@ export default toNative(ContainerDetail)
   <div class="card mb-4 overflow-hidden">
     <ContainerNav :container-id="containerId" @loaded="onContainerLoaded" />
 
-    <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+    <div v-if="loading" class="loading-state">
       <div class="w-12 h-12 spinner mb-3"></div>
       <p class="text-slate-500">加载中...</p>
     </div>
@@ -154,8 +154,8 @@ export default toNative(ContainerDetail)
       </div>
     </div>
 
-    <div v-else class="flex flex-col items-center justify-center py-20">
-      <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4">
+    <div v-else class="empty-state">
+      <div class="empty-state-icon">
         <i class="fas fa-cube text-4xl text-slate-300"></i>
       </div>
       <p class="text-slate-600 font-medium">未找到容器详情</p>

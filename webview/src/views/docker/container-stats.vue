@@ -322,7 +322,7 @@ export default toNative(ContainerStats)
       <!-- 内容区域 -->
       <div class="p-4 md:p-6 space-y-4">
         <!-- 加载状态 -->
-        <div v-if="statsLoading && !statsData" class="flex flex-col items-center justify-center py-12 gap-3 text-slate-400 text-sm">
+        <div v-if="statsLoading && !statsData" class="loading-state gap-3 text-slate-400 text-sm">
           <div class="w-8 h-8 spinner"></div>
           <span>正在采集数据...</span>
         </div>
