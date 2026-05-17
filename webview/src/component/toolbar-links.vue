@@ -26,7 +26,7 @@ export default toNative(ToolbarLinks)
       :href="link.url"
       target="_blank"
       rel="noopener noreferrer"
-      class="btn btn-ghost whitespace-nowrap"
+      class="btn btn-ghost px-4 py-2 text-sm gap-2 whitespace-nowrap"
     >
       <i v-if="link.icon" :class="link.icon.includes(' ') ? link.icon : `fas ${link.icon}`"></i>
       <span class="whitespace-nowrap">{{ link.label }}</span>

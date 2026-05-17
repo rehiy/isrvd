@@ -125,7 +125,7 @@ export default toNative(PageAgentModal)
 <template>
   <button
     :title="panelVisible ? '关闭 AI 助手' : '打开 AI 助手'"
-    class="btn btn-ghost px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2"
+    class="btn btn-ghost px-4 py-2 text-sm gap-2"
     :class="panelVisible
       ? 'text-primary-600 bg-primary-50 hover:bg-primary-100'
       : 'text-slate-600 hover:text-primary-600 hover:bg-primary-50'"
