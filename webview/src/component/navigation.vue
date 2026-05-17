@@ -167,7 +167,7 @@ export default toNative(NavigationBar)
       <!-- 移动端关闭按钮，仅展开状态下显示 -->
       <button 
         v-if="!collapsed"
-        class="btn-icon-sm lg:hidden ml-2"
+        class="btn-icon text-slate-400 lg:hidden ml-2"
         @click="closeMobileSidebar"
       >
         <i class="fas fa-times text-sm"></i>

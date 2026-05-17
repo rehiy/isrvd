@@ -77,7 +77,7 @@ export default toNative(JobLogsModal)
 
     <template #header-actions>
       <button
-        class="btn-icon-sm"
+        class="btn-icon text-slate-400"
         :disabled="loading"
         title="刷新"
         @click="loadLogs"

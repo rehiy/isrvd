@@ -218,7 +218,7 @@ export default toNative(Profile)
                 </button>
               </div>
             </div>
-            <button class="btn-icon-sm text-emerald-600! hover:bg-emerald-100!" @click="dismissNewToken()">
+            <button class="btn-icon text-emerald-600! hover:bg-emerald-100!" @click="dismissNewToken()">
               <i class="fas fa-times"></i>
             </button>
           </div>

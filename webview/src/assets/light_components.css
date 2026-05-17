@@ -149,11 +149,6 @@
   .btn-icon-rose   { @apply text-rose-600    hover:bg-rose-50;    }
   .btn-icon-red    { @apply text-red-600     hover:bg-red-50;     }
 
-  /* 小型图标按钮 32×32：用于关闭、刷新等非行操作场景 */
-  .btn-icon-sm {
-    @apply w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200 flex-shrink-0;
-  }
-
   /* 分类过滤标签按钮 */
   .btn-category          { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-medium transition-colors; }
   .btn-category-active   { @apply bg-primary-100 text-primary-700 ring-1 ring-primary-300; }
