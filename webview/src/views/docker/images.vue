@@ -338,7 +338,7 @@ export default toNative(Images)
                     <button v-if="portal.hasPerm('POST /api/docker/image/pull')" class="btn-icon btn-icon-blue" title="拉取（更新）" @click="pullImage(img)">
                       <i class="fas fa-download text-xs"></i>
                     </button>
-                    <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" :disabled="registries.length === 0" class="btn-icon btn-icon-indigo disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'" @click="openPush(img)">
+                    <button v-if="portal.hasPerm('POST /api/docker/image/push')" :disabled="registries.length === 0" class="btn-icon btn-icon-indigo disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'" @click="openPush(img)">
                       <i class="fas fa-upload text-xs"></i>
                     </button>
                     <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleImageAction(img, 'remove')">
@@ -400,7 +400,7 @@ export default toNative(Images)
               <button v-if="portal.hasPerm('POST /api/docker/image/pull')" class="btn-icon btn-icon-blue" title="拉取（更新）" @click="pullImage(img)">
                 <i class="fas fa-download text-xs"></i><span class="text-xs ml-1">拉取</span>
               </button>
-              <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" :disabled="registries.length === 0" class="btn-icon btn-icon-indigo disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'" @click="openPush(img)">
+              <button v-if="portal.hasPerm('POST /api/docker/image/push')" :disabled="registries.length === 0" class="btn-icon btn-icon-indigo disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'" @click="openPush(img)">
                 <i class="fas fa-upload text-xs"></i><span class="text-xs ml-1">推送</span>
               </button>
               <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleImageAction(img, 'remove')">
