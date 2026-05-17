@@ -147,7 +147,7 @@ export default toNative(Tasks)
       </div>
 
       <!-- 内容 -->
-      <div v-if="tasksLoading" class="loading-state">
+      <div v-if="tasksLoading" class="empty-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>

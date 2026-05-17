@@ -126,7 +126,7 @@ export default toNative(ServiceLogs)
             <option value="1000">1000</option>
           </select>
         </div>
-        <div v-if="logsLoading" class="loading-state">
+        <div v-if="logsLoading" class="empty-state">
           <div class="w-12 h-12 spinner mb-3"></div>
           <p class="text-slate-500">加载中...</p>
         </div>

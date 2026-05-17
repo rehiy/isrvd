@@ -169,7 +169,7 @@ export default toNative(CaddyRoutes)
       <div class="mobile-search">
         <PageSearch v-model="searchText" search-key="caddy-routes" placeholder="搜索 host、path、上游..." width-class="w-full" focus-color="indigo" />
       </div>
-      <div v-if="loading" class="loading-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
+      <div v-if="loading" class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
       <div v-else-if="filteredRoutes.length === 0" class="empty-state">
         <div class="empty-state-icon"><i class="fas fa-route text-4xl text-slate-300"></i></div>
         <p class="text-slate-600 font-medium mb-1">{{ routes.length === 0 ? '暂无路由' : '未找到匹配路由' }}</p>

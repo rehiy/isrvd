@@ -87,7 +87,7 @@ export default toNative(JobLogsModal)
     </template>
 
     <div class="p-4 md:p-5">
-      <div v-if="loading" class="loading-state">
+      <div v-if="loading" class="empty-state">
         <div class="w-10 h-10 spinner mb-3"></div>
         <p class="text-sm text-slate-500">加载中...</p>
       </div>

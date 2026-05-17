@@ -184,7 +184,7 @@ export default toNative(Nodes)
         <PageSearch v-model="searchText" search-key="swarm-nodes" placeholder="搜索主机名、ID、角色、状态或 IP..." width-class="w-full" focus-color="blue" />
       </div>
 
-      <div v-if="loading" class="loading-state">
+      <div v-if="loading" class="empty-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>

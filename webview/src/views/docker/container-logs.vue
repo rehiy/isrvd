@@ -116,7 +116,7 @@ export default toNative(ContainerLogs)
 
       <!-- 内容区域 -->
       <div class="p-4 md:p-6">
-        <div v-if="logLoading" class="loading-state">
+        <div v-if="logLoading" class="empty-state">
           <div class="w-12 h-12 spinner mb-3"></div>
           <p class="text-slate-500">加载中...</p>
         </div>

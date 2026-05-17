@@ -86,12 +86,7 @@
    * 3. 状态占位（Loading / Empty State）
    * ============================================================ */
 
-  /* 加载中状态块 */
-  .loading-state {
-    @apply flex flex-col items-center justify-center py-20;
-  }
-
-  /* 空状态块：与 loading-state 布局相同，语义不同 */
+  /* 加载中 / 空状态块 */
   .empty-state {
     @apply flex flex-col items-center justify-center py-20;
   }
@@ -124,11 +119,10 @@
   .btn-rose     { @apply bg-rose-500    text-white hover:bg-rose-600;    }
   .btn-purple   { @apply bg-purple-500  text-white hover:bg-purple-600;  }
   .btn-violet   { @apply bg-violet-500  text-white hover:bg-violet-600;  }
-  .btn-secondary{ @apply bg-white border border-slate-200 text-slate-700 hover:bg-slate-50; }
+  .btn-secondary{ @apply bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300; }
 
   .btn-ghost {
     @apply bg-transparent hover:bg-slate-100 text-slate-700;
-    @apply focus:ring-0 focus:ring-offset-0;
   }
 
   /* 图标按钮：正方形 padding，用于工具栏通用操作 */
@@ -167,11 +161,8 @@
   /* Tab 切换按钮组容器 */
   .tab-group { @apply bg-slate-100 p-1 rounded-lg flex items-center gap-0.5; }
 
-  /* Tab 切换按钮（含图标，flex 布局）：高度 h-7 使 tab-group 整体为 36px */
+  /* Tab 切换按钮（flex 布局，含图标或纯文字均适用） */
   .tab-btn { @apply h-7 px-3 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5; }
-
-  /* Tab 切换按钮（纯文字，无图标） */
-  .tab-btn-text { @apply h-7 px-3 text-xs font-medium rounded-md transition-colors; }
 
   /* Tab 激活态（白底 + 彩色文字由外部 class 指定 + 阴影） */
   .tab-btn-active  { @apply bg-white shadow-sm; }
@@ -237,30 +228,33 @@
   /* 详情页信息分组标题（h2）：与 form-label 相同样式但 mb-3 */
   .section-title {
     @apply text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3;
-  }
-
-  /* 文本输入框 */
+  }  /* 文本输入框 */
   .input {
     @apply w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl;
     @apply placeholder:text-slate-400 text-slate-700;
     @apply hover:border-slate-300;
   }
 
-  /* select 下拉框：防止文字与系统箭头重叠 */
-  select.input {
-    @apply pr-10 truncate appearance-none;
+  /* select 公共基础：自定义箭头、边框交互、禁用状态 */
+  select {
+    @apply bg-white border border-slate-200 text-slate-700 appearance-none truncate;
+    @apply hover:border-slate-300 focus:outline-none focus:border-slate-400;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 0.75rem center;
     background-size: 1.25rem;
+  }
+
+  /* select 表单尺寸（配合 .input 使用） */
+  select.input {
+    @apply pr-10 rounded-xl;
     height: 46px;
   }
 
-  /* 小尺寸 select：用于 toolbar，固定 h-9 与 btn、图标按钮统一对齐 */
+  /* select toolbar 尺寸：固定 h-9 与 btn、图标按钮统一对齐 */
   .select-sm {
-    @apply h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-700;
-    @apply hover:border-slate-300 focus:outline-none focus:border-slate-400;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply h-9 px-3 pr-8 rounded-md text-xs;
   }
 
   /* 下拉选择器的粘性搜索头部 */

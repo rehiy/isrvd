@@ -103,7 +103,7 @@ export default toNative(CaddyRaw)
         </div>
       </div>
 
-      <div v-if="loading" class="loading-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
+      <div v-if="loading" class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
       <div v-else class="p-4 md:p-6 space-y-3">
         <div class="editor-container">
           <Codemirror v-model="raw" :style="{ height: '65vh' }" :extensions="extensions" />

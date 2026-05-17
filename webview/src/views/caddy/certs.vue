@@ -139,7 +139,7 @@ export default toNative(CaddyCerts)
       <div class="mobile-search">
         <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="搜索主机、路径、标签..." width-class="w-full" focus-color="cyan" />
       </div>
-      <div v-if="loading" class="loading-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
+      <div v-if="loading" class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
       <div v-else-if="filteredCerts.length === 0" class="empty-state">
         <div class="empty-state-icon"><i class="fas fa-certificate text-4xl text-slate-300"></i></div>
         <p class="text-slate-600 font-medium mb-1">{{ certs.length === 0 ? '暂无证书' : '未找到匹配证书' }}</p>

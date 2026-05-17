@@ -48,7 +48,7 @@ export default toNative(UserMenu)
   <Dropdown v-else v-model:open="menuOpen" placement="bottom" align="right" :close-on-click="true" max-height="320px">
     <template #trigger="{ toggle }">
       <button
-        class="btn btn-ghost px-2 py-2"
+        class="btn btn-ghost !px-2"
         :title="portal.username || '未登录'"
         @click="toggle"
       >

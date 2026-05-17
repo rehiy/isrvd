@@ -113,20 +113,20 @@ export default toNative(Config)
           <div class="flex items-center gap-3">
             <!-- Tab 切换 -->
             <div class="tab-group">
-              <button type="button" :class="['tab-btn-text', activeTab === 'server' ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="activeTab = 'server'">
-                <i class="fas fa-server mr-1"></i>全局
+              <button type="button" :class="['tab-btn', activeTab === 'server' ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="activeTab = 'server'">
+                <i class="fas fa-server"></i>全局
               </button>
-              <button type="button" :class="['tab-btn-text', activeTab === 'oidc' ? 'tab-btn-active text-purple-600' : 'tab-btn-inactive']" @click="activeTab = 'oidc'">
-                <i class="fas fa-id-card mr-1"></i>OIDC
+              <button type="button" :class="['tab-btn', activeTab === 'oidc' ? 'tab-btn-active text-purple-600' : 'tab-btn-inactive']" @click="activeTab = 'oidc'">
+                <i class="fas fa-id-card"></i>OIDC
               </button>
-              <button type="button" :class="['tab-btn-text', activeTab === 'agent' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="activeTab = 'agent'">
-                <i class="fas fa-robot mr-1"></i>Agent
+              <button type="button" :class="['tab-btn', activeTab === 'agent' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="activeTab = 'agent'">
+                <i class="fas fa-robot"></i>Agent
               </button>
-              <button type="button" :class="['tab-btn-text', activeTab === 'app' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive']" @click="activeTab = 'app'">
-                <i class="fas fa-layer-group mr-1"></i>应用
+              <button type="button" :class="['tab-btn', activeTab === 'app' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive']" @click="activeTab = 'app'">
+                <i class="fas fa-layer-group"></i>应用
               </button>
-              <button type="button" :class="['tab-btn-text', activeTab === 'links' ? 'tab-btn-active text-orange-600' : 'tab-btn-inactive']" @click="activeTab = 'links'">
-                <i class="fas fa-link mr-1"></i>导航
+              <button type="button" :class="['tab-btn', activeTab === 'links' ? 'tab-btn-active text-orange-600' : 'tab-btn-inactive']" @click="activeTab = 'links'">
+                <i class="fas fa-link"></i>导航
               </button>
             </div>
             <button type="button" class="btn btn-indigo" @click="loadConfig(true)">
@@ -152,25 +152,25 @@ export default toNative(Config)
         <!-- 移动端 Tab -->
         <div class="flex md:hidden mt-3 bg-slate-100 p-1 rounded-lg gap-0.5 overflow-x-auto">
           <button type="button" :class="['flex-1 min-w-0 px-2 py-0.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap', activeTab === 'server' ? 'tab-btn-active text-blue-600' : 'text-slate-500']" @click="activeTab = 'server'">
-            <i class="fas fa-server mr-1"></i>全局
+            <i class="fas fa-server"></i>全局
           </button>
           <button type="button" :class="['flex-1 min-w-0 px-2 py-0.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap', activeTab === 'oidc' ? 'tab-btn-active text-purple-600' : 'text-slate-500']" @click="activeTab = 'oidc'">
-            <i class="fas fa-id-card mr-1"></i>OIDC
+            <i class="fas fa-id-card"></i>OIDC
           </button>
           <button type="button" :class="['flex-1 min-w-0 px-2 py-0.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap', activeTab === 'agent' ? 'tab-btn-active text-emerald-600' : 'text-slate-500']" @click="activeTab = 'agent'">
-            <i class="fas fa-robot mr-1"></i>Agent
+            <i class="fas fa-robot"></i>Agent
           </button>
           <button type="button" :class="['flex-1 min-w-0 px-2 py-0.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap', activeTab === 'app' ? 'tab-btn-active text-indigo-600' : 'text-slate-500']" @click="activeTab = 'app'">
-            <i class="fas fa-layer-group mr-1"></i>应用
+            <i class="fas fa-layer-group"></i>应用
           </button>
           <button type="button" :class="['flex-1 min-w-0 px-2 py-0.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap', activeTab === 'links' ? 'tab-btn-active text-orange-600' : 'text-slate-500']" @click="activeTab = 'links'">
-            <i class="fas fa-link mr-1"></i>导航
+            <i class="fas fa-link"></i>导航
           </button>
         </div>
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="loading-state">
+      <div v-if="loading" class="empty-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>

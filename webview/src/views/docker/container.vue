@@ -74,7 +74,7 @@ export default toNative(ContainerDetail)
   <div class="card mb-4 overflow-hidden">
     <ContainerNav :container-id="containerId" @loaded="onContainerLoaded" />
 
-    <div v-if="loading" class="loading-state">
+    <div v-if="loading" class="empty-state">
       <div class="w-12 h-12 spinner mb-3"></div>
       <p class="text-slate-500">加载中...</p>
     </div>
