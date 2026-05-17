@@ -111,7 +111,7 @@ export default toNative(BaseModal)
               <slot name="header-actions"></slot>
               <button 
                 type="button" 
-                class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200 flex-shrink-0"
+                class="btn-icon-sm"
                 :disabled="loading"
                 @click="handleCancel"
               >

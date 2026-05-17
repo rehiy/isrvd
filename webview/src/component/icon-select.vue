@@ -159,10 +159,8 @@ export default toNative(IconSelect)
         <div class="flex flex-wrap gap-1.5">
           <button
             type="button"
-            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-medium transition-colors"
-            :class="!activeCategory
-              ? 'bg-primary-100 text-primary-700 ring-1 ring-primary-300'
-              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
+            class="btn-category"
+            :class="!activeCategory ? 'btn-category-active' : 'btn-category-inactive'"
             @click="activeCategory = ''"
           >
             全部
@@ -171,10 +169,8 @@ export default toNative(IconSelect)
             v-for="cat in visibleCategories"
             :key="cat.key"
             type="button"
-            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-medium transition-colors"
-            :class="activeCategory === cat.key
-              ? 'bg-primary-100 text-primary-700 ring-1 ring-primary-300'
-              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
+            class="btn-category"
+            :class="activeCategory === cat.key ? 'btn-category-active' : 'btn-category-inactive'"
             @click="setCategory(cat.key)"
           >
             {{ cat.label }}
@@ -182,7 +178,7 @@ export default toNative(IconSelect)
           <button
             v-if="hasMoreCategories"
             type="button"
-            class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-xs text-primary-500 hover:text-primary-600 hover:bg-primary-50 transition-colors"
+            class="btn-category text-primary-500 hover:text-primary-600 hover:bg-primary-50!"
             @click="categoryExpanded = !categoryExpanded"
           >
             <i :class="categoryExpanded ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-[10px]"></i>

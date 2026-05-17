@@ -143,7 +143,7 @@ export default toNative(Combobox)
             {{ tag }}
             <button
               type="button"
-              class="w-3.5 h-3.5 flex items-center justify-center rounded-full hover:bg-black/10 transition-colors"
+              class="btn-tag-remove"
               @click.stop="removeTag(tag)"
             >
               <i class="fas fa-times text-[8px]"></i>

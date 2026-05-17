@@ -82,7 +82,7 @@ export default toNative(App)
       >
         <!-- 移动端菜单切换按钮 -->
         <button
-          class="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
+          class="btn-icon lg:hidden"
           @click="toggleMobileMenu"
         >
           <i class="fas fa-bars text-slate-600"></i>

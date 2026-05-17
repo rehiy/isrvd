@@ -167,7 +167,7 @@ export default toNative(NavigationBar)
       <!-- 移动端关闭按钮，仅展开状态下显示 -->
       <button 
         v-if="!collapsed"
-        class="lg:hidden w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0 ml-2"
+        class="btn-icon-sm lg:hidden ml-2"
         @click="closeMobileSidebar"
       >
         <i class="fas fa-times text-sm"></i>
@@ -176,29 +176,29 @@ export default toNative(NavigationBar)
 
     <!-- 导航链接 -->
     <nav v-if="portal.username" class="flex-1 py-4 px-3 space-y-1 overflow-y-auto" @click="closeMobileSidebar">
-      <router-link 
-        to="/overview" 
-        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+      <router-link
+        to="/overview"
+        class="nav-link"
         active-class="bg-blue-50 text-blue-700"
         :title="collapsed ? '概览' : ''"
       >
         <i class="fas fa-gauge-high"></i>
         <span v-if="!collapsed">概览</span>
       </router-link>
-      <router-link 
+      <router-link
         v-if="portal.hasPerm('GET /api/filer/list')"
-        to="/filer" 
-        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        to="/filer"
+        class="nav-link"
         active-class="bg-blue-50 text-blue-700"
         :title="collapsed ? '文件管理' : ''"
       >
         <i class="fas fa-folder-open"></i>
         <span v-if="!collapsed">文件管理</span>
       </router-link>
-      <router-link 
+      <router-link
         v-if="portal.hasPerm('GET /api/shell')"
-        to="/shell" 
-        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        to="/shell"
+        class="nav-link"
         active-class="bg-blue-50 text-blue-700"
         :title="collapsed ? 'Shell 终端' : ''"
       >
@@ -211,7 +211,7 @@ export default toNative(NavigationBar)
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
         <button
           v-if="collapsed"
-          class="flex items-center justify-center w-full px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+          class="nav-link justify-center"
           :class="{ 'bg-blue-50 text-blue-700': isActive('/apisix/') }"
           title="APISIX 网关"
           @click.stop="toggleApisix"
@@ -221,7 +221,7 @@ export default toNative(NavigationBar)
         <!-- 有权限：展开状态显示完整子菜单 -->
         <template v-else>
           <button
-            class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            class="nav-link w-full"
             :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/') }"
             @click.stop="toggleApisix"
           >
@@ -236,7 +236,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/apisix/routes')"
               to="/apisix/routes"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/route') }"
             >
               <i class="fas fa-route"></i>
@@ -245,7 +245,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/apisix/upstreams')"
               to="/apisix/upstreams"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/upstream') }"
             >
               <i class="fas fa-diagram-project"></i>
@@ -254,7 +254,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/apisix/consumers')"
               to="/apisix/consumers"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/consumer') }"
             >
               <i class="fas fa-users"></i>
@@ -263,7 +263,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/apisix/whitelist')"
               to="/apisix/whitelist"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/whitelist') }"
             >
               <i class="fas fa-shield-halved"></i>
@@ -272,7 +272,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/apisix/ssls')"
               to="/apisix/ssls"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/ssl') }"
             >
               <i class="fas fa-certificate"></i>
@@ -281,7 +281,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/apisix/plugin-configs')"
               to="/apisix/plugin-configs"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/plugin-config') }"
             >
               <i class="fas fa-puzzle-piece"></i>
@@ -295,7 +295,7 @@ export default toNative(NavigationBar)
       <div v-if="portal.hasPerm('caddy')">
         <button
           v-if="collapsed"
-          class="flex items-center justify-center w-full px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+          class="nav-link justify-center"
           :class="{ 'bg-blue-50 text-blue-700': isActive('/caddy/') }"
           title="Caddy 网关"
           @click.stop="toggleCaddy"
@@ -304,7 +304,7 @@ export default toNative(NavigationBar)
         </button>
         <template v-else>
           <button
-            class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            class="nav-link w-full"
             :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/caddy/') }"
             @click.stop="toggleCaddy"
           >
@@ -319,7 +319,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/caddy/routes')"
               to="/caddy/routes"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/caddy/route') }"
             >
               <i class="fas fa-route"></i>
@@ -328,7 +328,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/caddy/certs')"
               to="/caddy/certs"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/caddy/cert') }"
             >
               <i class="fas fa-certificate"></i>
@@ -337,7 +337,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/caddy/global')"
               to="/caddy/global"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/caddy/global') }"
             >
               <i class="fas fa-sliders"></i>
@@ -346,7 +346,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/caddy/config')"
               to="/caddy/raw"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/caddy/raw') }"
             >
               <i class="fas fa-code"></i>
@@ -361,7 +361,7 @@ export default toNative(NavigationBar)
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
         <button
           v-if="collapsed"
-          class="flex items-center justify-center w-full px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+          class="nav-link justify-center"
           :class="{ 'bg-blue-50 text-blue-700': isActive('/docker/') }"
           title="Docker 服务"
           @click.stop="toggleDocker"
@@ -371,7 +371,7 @@ export default toNative(NavigationBar)
         <!-- 展开状态：显示完整子菜单 -->
         <template v-else>
           <button
-            class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            class="nav-link w-full"
             :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/') }"
             @click.stop="toggleDocker"
           >
@@ -386,7 +386,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/docker/containers')"
               to="/docker/containers"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/container') }"
             >
               <i class="fas fa-cube"></i>
@@ -395,7 +395,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/docker/networks')"
               to="/docker/networks"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/network') }"
             >
               <i class="fas fa-network-wired"></i>
@@ -404,7 +404,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/docker/volumes')"
               to="/docker/volumes"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/volume') }"
             >
               <i class="fas fa-database"></i>
@@ -413,7 +413,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/docker/images')"
               to="/docker/images"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/image') }"
             >
               <i class="fas fa-layer-group"></i>
@@ -422,7 +422,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/docker/registries')"
               to="/docker/registries"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/docker/registr') }"
             >
               <i class="fas fa-warehouse"></i>
@@ -437,7 +437,7 @@ export default toNative(NavigationBar)
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
         <button
           v-if="collapsed"
-          class="flex items-center justify-center w-full px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+          class="nav-link justify-center"
           :class="{ 'bg-blue-50 text-blue-700': isActive('/swarm') }"
           title="Swarm 集群"
           @click.stop="toggleSwarm"
@@ -447,7 +447,7 @@ export default toNative(NavigationBar)
         <!-- 有权限：展开状态显示完整子菜单 -->
         <template v-else>
           <button
-            class="flex items-center gap-3 px-3 py-3 w-full text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+            class="nav-link w-full"
             :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm') }"
             @click.stop="toggleSwarm"
           >
@@ -462,7 +462,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/swarm/nodes')"
               to="/swarm/nodes"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm/node') }"
             >
               <i class="fas fa-server"></i>
@@ -471,7 +471,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/swarm/services')"
               to="/swarm/services"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/swarm/service') }"
             >
               <i class="fas fa-cubes"></i>
@@ -480,7 +480,7 @@ export default toNative(NavigationBar)
             <router-link
               v-if="portal.hasPerm('GET /api/swarm/tasks')"
               to="/swarm/tasks"
-              class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+              class="nav-link"
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': $route.path === '/swarm/tasks' }"
             >
               <i class="fas fa-list-check"></i>
@@ -494,7 +494,7 @@ export default toNative(NavigationBar)
       <router-link
         v-if="composeDeployVisible"
         to="/compose/deploy"
-        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        class="nav-link"
         active-class="bg-blue-50 text-blue-700"
         :title="collapsed ? 'Compose 部署' : ''"
       >
@@ -506,7 +506,7 @@ export default toNative(NavigationBar)
       <router-link
         v-if="portal.hasPerm('GET /api/cron/jobs')"
         to="/cron/jobs"
-        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        class="nav-link"
         active-class="bg-blue-50 text-blue-700"
         :title="collapsed ? '计划任务' : ''"
       >
@@ -518,7 +518,7 @@ export default toNative(NavigationBar)
       <router-link
         v-if="portal.hasPerm('GET /api/system/audit/logs')"
         to="/system/audit/logs"
-        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        class="nav-link"
         active-class="bg-blue-50 text-blue-700"
         :title="collapsed ? '操作审计' : ''"
       >
@@ -530,7 +530,7 @@ export default toNative(NavigationBar)
       <router-link
         v-if="portal.hasPerm('GET /api/account/members')"
         to="/account/members"
-        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        class="nav-link"
         active-class="bg-blue-50 text-blue-700"
         :title="collapsed ? '用户管理' : ''"
       >
@@ -542,7 +542,7 @@ export default toNative(NavigationBar)
       <router-link
         v-if="portal.hasPerm('PUT /api/system/config')"
         to="/system/config"
-        class="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-600 rounded-xl transition-all duration-200 hover:bg-slate-100 hover:text-slate-900"
+        class="nav-link"
         active-class="bg-blue-50 text-blue-700"
         :title="collapsed ? '系统配置' : ''"
       >
@@ -557,14 +557,14 @@ export default toNative(NavigationBar)
         href="https://github.com/rehiy/isrvd"
         target="_blank"
         rel="noopener noreferrer"
-        class="flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+        class="btn-icon text-slate-400 hover:text-slate-700"
         :class="collapsed ? 'w-full h-10' : 'w-10 h-10 flex-shrink-0'"
         title="GitHub 仓库"
       >
         <i class="fab fa-github text-base"></i>
       </a>
-      <button 
-        class="flex items-center justify-center gap-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+      <button
+        class="btn-icon text-slate-400 hover:text-slate-700"
         :class="collapsed ? 'w-full h-10' : 'flex-1 h-10 text-xs font-medium'"
         :title="collapsed ? '展开菜单' : '收起菜单'"
         @click="$emit('update:collapsed', !collapsed)"

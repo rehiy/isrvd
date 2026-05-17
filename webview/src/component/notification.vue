@@ -44,7 +44,7 @@ export default toNative(NotificationManager)
           <span class="flex-1 font-medium">{{ item.message }}</span>
           <button 
             type="button" 
-            class="ml-4 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/20 transition-colors"
+            class="btn-icon-sm hover:bg-white/20!"
             @click="portal.clearNotification(item.id)"
           >
             <i class="fas fa-times"></i>
