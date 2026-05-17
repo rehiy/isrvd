@@ -53,6 +53,14 @@ class Tasks extends Vue {
         return 'bg-amber-100 text-amber-700'
     }
 
+    taskIconClass(state: string) {
+        if (state === 'running') return 'bg-cyan-400'
+        if (state === 'failed' || state === 'rejected') return 'bg-red-400'
+        if (state === 'complete') return 'bg-blue-400'
+        if (state === 'shutdown') return 'bg-slate-400'
+        return 'bg-amber-400'
+    }
+
     async loadServices() {
         try {
             const res = await api.swarmServiceList()
@@ -99,7 +107,7 @@ export default toNative(Tasks)
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="page-icon bg-emerald-500">
+            <div class="page-icon bg-cyan-500">
               <i class="fas fa-list-check text-white"></i>
             </div>
             <div>
@@ -108,7 +116,7 @@ export default toNative(Tasks)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <PageSearch v-model="searchText" search-key="swarm-tasks" placeholder="搜索任务、服务、节点、状态或消息..." width-class="w-64" focus-color="emerald" type-to-search />
+            <PageSearch v-model="searchText" search-key="swarm-tasks" placeholder="搜索任务、服务、节点、状态或消息..." width-class="w-64" focus-color="cyan" type-to-search />
             <select v-model="selectedServiceId" class="select-sm min-w-[160px]">
               <option value="">全部服务</option>
               <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>
@@ -122,7 +130,7 @@ export default toNative(Tasks)
         <div class="block md:hidden">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3 min-w-0 flex-1">
-              <div class="page-icon bg-emerald-500">
+              <div class="page-icon bg-cyan-500">
                 <i class="fas fa-list-check text-white"></i>
               </div>
               <div class="min-w-0">
@@ -199,7 +207,7 @@ export default toNative(Tasks)
           <div v-for="t in filteredTasks" :key="t.id" class="card-interactive">
             <!-- 顶部：图标 + ID -->
             <div class="card-info-row">
-              <div :class="['list-icon', taskStateClass(t.state).includes('emerald') ? 'bg-emerald-400' : taskStateClass(t.state).includes('red') ? 'bg-red-400' : 'bg-slate-400']">
+              <div :class="['list-icon', taskIconClass(t.state)]">
                 <i class="fas fa-list-check text-white text-base"></i>
               </div>
               <div class="min-w-0">

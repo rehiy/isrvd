@@ -212,7 +212,7 @@ export default toNative(Images)
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="page-icon bg-blue-500">
-              <i class="fas fa-compact-disc text-white"></i>
+              <i class="fas fa-layer-group text-white"></i>
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">镜像管理</h1>
@@ -248,7 +248,7 @@ export default toNative(Images)
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-3 min-w-0 flex-1">
               <div class="page-icon bg-blue-500">
-                <i class="fas fa-compact-disc text-white"></i>
+                <i class="fas fa-layer-group text-white"></i>
               </div>
               <div class="min-w-0">
                 <h1 class="text-lg font-semibold text-slate-800 truncate">镜像管理</h1>
@@ -310,7 +310,7 @@ export default toNative(Images)
                 <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center gap-2 min-w-0">
                     <div class="row-icon bg-blue-400">
-                      <i class="fas fa-compact-disc text-white text-sm"></i>
+                      <i class="fas fa-layer-group text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
                       <router-link v-if="portal.hasPerm('GET /api/docker/image/:id')" :to="'/docker/image/' + img.id" class="font-medium text-slate-800 hover:text-blue-600 transition-colors truncate block">{{ getImageName(img) }}</router-link>
@@ -357,7 +357,7 @@ export default toNative(Images)
             <!-- 顶部：镜像信息和图标 -->
             <div class="card-info-row">
               <div class="list-icon bg-blue-400">
-                <i class="fas fa-compact-disc text-white text-base"></i>
+                <i class="fas fa-layer-group text-white text-base"></i>
               </div>
               <div class="min-w-0">
                 <router-link v-if="portal.hasPerm('GET /api/docker/image/:id')" :to="'/docker/image/' + img.id" class="font-medium text-slate-800 hover:text-blue-600 transition-colors text-sm truncate block">{{ getImageName(img) }}</router-link>

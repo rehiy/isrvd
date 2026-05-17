@@ -135,11 +135,11 @@ export default toNative(Registries)
           </div>
         </div>
         <!-- 移动端 -->
-        <div class="flex md:hidden items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="page-icon bg-purple-500">
-              <i class="fas fa-warehouse text-white"></i>
-            </div>
+          <div class="flex md:hidden items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div class="page-icon bg-purple-500">
+                <i class="fas fa-warehouse text-white"></i>
+              </div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">镜像仓库</h1>
               <p class="text-xs text-slate-500 truncate">管理仓库账号与加速器</p>
@@ -184,8 +184,8 @@ export default toNative(Registries)
               <tr v-if="showDockerHub" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center gap-2 min-w-0">
-                    <div class="row-icon bg-blue-500">
-                      <i class="fab fa-docker text-white text-sm"></i>
+                    <div class="row-icon bg-purple-400">
+                      <i class="fas fa-warehouse text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
                       <span class="font-medium text-slate-800 truncate block">Docker Hub</span>
@@ -251,8 +251,8 @@ export default toNative(Registries)
           <div v-if="showDockerHub" class="card-interactive">
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div class="list-icon bg-blue-500">
-                  <i class="fab fa-docker text-white text-base"></i>
+                <div class="list-icon bg-purple-400">
+                  <i class="fas fa-warehouse text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
                   <span class="font-medium text-slate-800 text-sm truncate block">Docker Hub</span>

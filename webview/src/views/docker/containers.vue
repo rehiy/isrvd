@@ -117,7 +117,7 @@ export default toNative(Containers)
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="page-icon bg-emerald-500">
-              <i class="fab fa-docker text-white"></i>
+              <i class="fas fa-cube text-white"></i>
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">容器管理</h1>
@@ -147,7 +147,7 @@ export default toNative(Containers)
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-3 min-w-0 flex-1">
               <div class="page-icon bg-emerald-500">
-                <i class="fab fa-docker text-white"></i>
+                <i class="fas fa-cube text-white"></i>
               </div>
               <div class="min-w-0">
                 <h1 class="text-lg font-semibold text-slate-800 truncate">容器管理</h1>
@@ -201,7 +201,7 @@ export default toNative(Containers)
                 <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center gap-2 min-w-0">
                     <div :class="['w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
-                      <i class="fas fa-box text-white text-sm"></i>
+                      <i class="fas fa-cube text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
                       <router-link v-if="portal.hasPerm('GET /api/docker/container/:id')" :to="'/docker/container/' + ct.id" class="font-medium text-slate-800 hover:text-emerald-600 transition-colors truncate block" :title="ct.name || ct.id">{{ ct.name || ct.id }}</router-link>
@@ -264,7 +264,7 @@ export default toNative(Containers)
             <!-- 顶部：名称和状态 -->
             <div class="card-info-row">
               <div :class="['list-icon', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
-                <i class="fas fa-box text-white text-base"></i>
+                <i class="fas fa-cube text-white text-base"></i>
               </div>
               <div class="min-w-0">
                 <router-link v-if="portal.hasPerm('GET /api/docker/container/:id')" :to="'/docker/container/' + ct.id" class="font-medium text-slate-800 hover:text-emerald-600 transition-colors text-sm truncate block" :title="ct.name || ct.id">{{ ct.name || ct.id }}</router-link>
