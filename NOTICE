@@ -4,25 +4,7 @@ NOTICE
 isrvd — 轻量级 Web 服务器管理工具
 Copyright (C) 2024 rehiy
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-
-Third-Party Software Notices
-============================
-
-This software uses third-party libraries and components. Below is a list
-of these components along with their respective licenses.
+This product includes software developed by third parties, listed below.
 
 Go Backend Dependencies
 -----------------------
@@ -32,70 +14,106 @@ Direct dependencies:
 | Package                                      | License       |
 |----------------------------------------------|---------------|
 | github.com/compose-spec/compose-go/v2        | Apache-2.0    |
+| github.com/coreos/go-oidc/v3                 | Apache-2.0    |
 | github.com/creack/pty                        | MIT           |
 | github.com/docker/docker                     | Apache-2.0    |
-| github.com/docker/go-connections             | Apache-2.0    |
+| github.com/docker/go-connections              | Apache-2.0    |
 | github.com/gin-gonic/gin                     | MIT           |
 | github.com/goccy/go-yaml                     | MIT           |
 | github.com/golang-jwt/jwt/v5                 | MIT           |
-| github.com/gorilla/websocket                 | BSD-2-Clause  |
-| github.com/rehiy/pango                       | MIT           |
+| github.com/moby/docker-image-spec            | Apache-2.0    |
+| github.com/rehiy/libgo                       | MIT           |
+| github.com/robfig/cron/v3                    | MIT           |
 | github.com/shirou/gopsutil/v3               | BSD-3-Clause  |
+| golang.org/x/oauth2                        | BSD-3-Clause  |
 
 Indirect dependencies (selected):
 
 | Package                                      | License       |
 |----------------------------------------------|---------------|
 | github.com/Microsoft/go-winio               | MIT           |
+| github.com/VividCortex/ewma                  | MIT           |
 | github.com/bytedance/gopkg                   | Apache-2.0    |
 | github.com/bytedance/sonic                   | Apache-2.0    |
 | github.com/cespare/xxhash/v2                 | MIT           |
+| github.com/cheggaaa/pb/v3                    | BSD-2-Clause  |
+| github.com/clipperhouse/uax29/v2             | MIT           |
+| github.com/cloudwego/base64x                 | Apache-2.0    |
 | github.com/containerd/errdefs               | Apache-2.0    |
+| github.com/containerd/log                   | Apache-2.0    |
 | github.com/distribution/reference            | Apache-2.0    |
 | github.com/docker/go-units                   | Apache-2.0    |
 | github.com/fatih/color                       | MIT           |
 | github.com/felixge/httpsnoop                 | Apache-2.0    |
+| github.com/forgoer/openssl                  | BSD-2-Clause  |
 | github.com/gabriel-vasile/mimetype           | MIT           |
 | github.com/gin-contrib/sse                   | MIT           |
+| github.com/go-jose/go-jose/v4               | Apache-2.0    |
 | github.com/go-logr/logr                      | Apache-2.0    |
+| github.com/go-logr/stdr                      | Apache-2.0    |
+| github.com/go-ole/go-ole                    | BSD-3-Clause  |
+| github.com/go-playground/locales             | MIT           |
+| github.com/go-playground/universal-translator | MIT         |
 | github.com/go-playground/validator/v10       | MIT           |
+| github.com/go-viper/mapstructure/v2         | MIT           |
 | github.com/goccy/go-json                     | MIT           |
+| github.com/google/uuid                      | BSD-3-Clause  |
+| github.com/grpc-ecosystem/grpc-gateway/v2   | BSD-3-Clause  |
+| github.com/jaypipes/ghw                     | Apache-2.0    |
+| github.com/jaypipes/pcidb                   | MIT           |
 | github.com/json-iterator/go                  | MIT           |
 | github.com/klauspost/cpuid/v2                | MIT           |
 | github.com/leodido/go-urn                    | Apache-2.0    |
+| github.com/lufia/plan9stats                 | BSD-2-Clause  |
 | github.com/mattn/go-colorable                | MIT           |
 | github.com/mattn/go-isatty                   | MIT           |
 | github.com/mattn/go-runewidth                | MIT           |
-| github.com/moby/docker-image-spec            | Apache-2.0    |
+| github.com/mattn/go-shellwords               | MIT           |
+| github.com/moby/sys/atomicwriter             | Apache-2.0    |
 | github.com/moby/term                         | Apache-2.0    |
 | github.com/modern-go/concurrent              | Apache-2.0    |
 | github.com/modern-go/reflect2                | Apache-2.0    |
+| github.com/morikuni/aec                     | MIT           |
 | github.com/opencontainers/go-digest          | Apache-2.0    |
 | github.com/opencontainers/image-spec         | Apache-2.0    |
 | github.com/pelletier/go-toml/v2             | MIT           |
 | github.com/pkg/errors                        | BSD-2-Clause  |
+| github.com/power-devops/perfstat             | Apache-2.0    |
 | github.com/quic-go/qpack                     | BSD-3-Clause  |
 | github.com/quic-go/quic-go                   | BSD-3-Clause  |
 | github.com/santhosh-tekuri/jsonschema/v6     | Apache-2.0    |
 | github.com/shoenig/go-m1cpu                  | MIT           |
 | github.com/sirupsen/logrus                   | MIT           |
+| github.com/tklauser/go-sysconf              | BSD-3-Clause  |
+| github.com/tklauser/numcpus                 | MIT           |
 | github.com/twitchyliquid64/golang-asm        | BSD-3-Clause  |
 | github.com/ugorji/go/codec                   | MIT           |
 | github.com/xhit/go-str2duration/v2           | MIT           |
 | github.com/yusufpapurcu/wmi                  | MIT           |
 | go.mongodb.org/mongo-driver/v2              | Apache-2.0    |
+| go.opentelemetry.io/auto/sdk                | Apache-2.0    |
+| go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp | Apache-2.0 |
 | go.opentelemetry.io/otel                     | Apache-2.0    |
+| go.opentelemetry.io/otel/metric             | Apache-2.0    |
 | go.opentelemetry.io/otel/trace               | Apache-2.0    |
+| go.opentelemetry.io/proto/otlp              | Apache-2.0    |
 | go.yaml.in/yaml/v4                           | Apache-2.0    |
-| golang.org/x/crypto                          | BSD-3-Clause  |
-| golang.org/x/net                             | BSD-3-Clause  |
-| golang.org/x/sys                             | BSD-3-Clause  |
-| golang.org/x/text                            | BSD-3-Clause  |
-| golang.org/x/time                            | BSD-3-Clause  |
-| google.golang.org/protobuf                   | BSD-3-Clause  |
-| gopkg.in/natefinch/lumberjack.v2             | MIT           |
+| golang.org/x/arch                           | BSD-3-Clause  |
+| golang.org/x/crypto                        | BSD-3-Clause  |
+| golang.org/x/net                           | BSD-3-Clause  |
+| golang.org/x/sync                          | BSD-3-Clause  |
+| golang.org/x/sys                           | BSD-3-Clause  |
+| golang.org/x/text                          | BSD-3-Clause  |
+| golang.org/x/time                          | BSD-3-Clause  |
+| google.golang.org/genproto/googleapis/api    | Apache-2.0    |
+| google.golang.org/genproto/googleapis/rpc    | Apache-2.0    |
+| google.golang.org/grpc                     | Apache-2.0    |
+| google.golang.org/protobuf                 | BSD-3-Clause  |
+| gopkg.in/natefinsh/lumberjack.v2             | MIT           |
 | gopkg.in/yaml.v3                             | Apache-2.0    |
 | gotest.tools/v3                              | MIT           |
+| howett.net/plist                             | BSD-3-Clause  |
+
 
 Frontend Dependencies
 ---------------------
@@ -114,14 +132,16 @@ Direct dependencies:
 | @codemirror/lang-sql         | MIT                           |
 | @codemirror/lang-xml         | MIT                           |
 | @codemirror/lang-yaml        | MIT                           |
-| @fortawesome/fontawesome-free| CC-BY-4.0 / OFL-1.1 / MIT    |
+| @fortawesome/fontawesome-free | CC-BY-4.0 / OFL-1.1 / MIT    |
 | @xterm/xterm                 | MIT                           |
 | @xterm/addon-fit             | MIT                           |
 | axios                        | MIT                           |
 | chart.js                     | MIT                           |
 | codemirror                   | MIT                           |
 | js-yaml                      | MIT                           |
+| jsonrepair                   | MIT                           |
 | page-agent                   | MIT                           |
+| pinia                        | MIT                           |
 | vue                          | MIT                           |
 | vue-codemirror               | MIT                           |
 | vue-facing-decorator         | MIT                           |
@@ -131,28 +151,26 @@ Dev dependencies:
 
 | Package                      | License                       |
 |------------------------------|-------------------------------|
-| @tailwindcss/forms           | MIT                           |
+| @eslint/js                   | MIT                           |
+| @tailwindcss/vite            | MIT                           |
+| @types/js-yaml               | MIT                           |
 | @vitejs/plugin-vue           | MIT                           |
-| autoprefixer                 | MIT                           |
-| postcss                      | MIT                           |
+| eslint                       | MIT                           |
+| eslint-plugin-vue             | MIT                           |
+| globals                      | MIT                           |
 | tailwindcss                  | MIT                           |
+| typescript-eslint            | MIT                           |
 | vite                         | MIT                           |
 | vue-tsc                      | MIT                           |
 
-Notable special license:
 
-  @fortawesome/fontawesome-free is licensed under a triple license:
+Notable Special Licenses
+------------------------
+
+@fortawesome/fontawesome-free is licensed under a triple license:
   - CC-BY-4.0 (documentation)
   - OFL-1.1 (fonts)
   - MIT (code)
 
-  All three licenses are compatible with GPL-3.0.
-
-
-License Compatibility Statement
-===============================
-
-All third-party dependencies used in this project are licensed under
-permissive licenses (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause,
-CC-BY-4.0, OFL-1.1) that are compatible with the GNU General Public
-License v3.0 under which this project is distributed.
+All three licenses are compatible with the Apache License 2.0 under which
+this project is distributed.

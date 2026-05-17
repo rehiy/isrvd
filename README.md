@@ -304,6 +304,6 @@ config → registry → pkgs → service → server
 
 ## 许可证
 
-本项目基于 **GNU General Public License v3.0** 发布，详见 [LICENSE](LICENSE)。
+本项目基于 **Apache License 2.0** 发布，详见 [LICENSE](LICENSE)。
 
 第三方组件协议详见 [NOTICE](NOTICE)。

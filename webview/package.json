@@ -12,7 +12,7 @@
     "vue3"
   ],
   "author": "rehiy",
-  "license": "GPL-3.0-only",
+  "license": "Apache-2.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
