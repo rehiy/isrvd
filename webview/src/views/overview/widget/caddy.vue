@@ -49,6 +49,7 @@ class CaddyOverview extends Vue {
                         info.routes = caddyInfo.routes
                         info.certs = caddyInfo.certs || 0
                         info.hasTls = caddyInfo.hasTls
+                        info.available = caddyInfo.available
                     }
                 } else if (key === 'certs') {
                     info.certs = Array.isArray(res.payload) ? res.payload.length : 0
@@ -87,7 +88,7 @@ export default toNative(CaddyOverview)
       <span class="text-slate-400 text-sm">加载中...</span>
     </div>
 
-    <div v-else-if="info && info.available" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+    <div v-else-if="info && info.available" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
       <div
         v-for="card in statCards"
         :key="card.key"
