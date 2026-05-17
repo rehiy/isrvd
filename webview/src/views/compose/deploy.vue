@@ -132,10 +132,10 @@ export default toNative(ComposeDeploy)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <button type="button" :disabled="loading" class="btn btn-sm btn-secondary" @click="resetForm()">
+            <button type="button" :disabled="loading" class="btn btn-secondary" @click="resetForm()">
               <i class="fas fa-rotate-left"></i>清空
             </button>
-            <button v-if="portal.hasPerm('POST /api/compose/docker/deploy')" type="button" class="btn btn-sm btn-amber" @click="openMarketplace()">
+            <button v-if="portal.hasPerm('POST /api/compose/docker/deploy')" type="button" class="btn btn-amber" @click="openMarketplace()">
               <i class="fas fa-store"></i>应用市场
             </button>
           </div>
@@ -151,10 +151,10 @@ export default toNative(ComposeDeploy)
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
-            <button type="button" :disabled="loading" class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="清空" @click="resetForm()">
+            <button type="button" :disabled="loading" class="btn btn-secondary w-9 h-9 !px-0" title="清空" @click="resetForm()">
               <i class="fas fa-rotate-left"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/compose/docker/deploy')" type="button" class="btn btn-sm btn-amber w-9 h-9 !px-0" title="从应用市场选择" @click="openMarketplace()">
+            <button v-if="portal.hasPerm('POST /api/compose/docker/deploy')" type="button" class="btn btn-amber w-9 h-9 !px-0" title="从应用市场选择" @click="openMarketplace()">
               <i class="fas fa-store"></i>
             </button>
           </div>
@@ -250,7 +250,7 @@ export default toNative(ComposeDeploy)
           <button
             type="button"
             :disabled="!canSubmit"
-            class="btn btn-md btn-amber rounded-xl whitespace-nowrap flex-shrink-0 self-start"
+            class="btn btn-amber rounded-xl whitespace-nowrap flex-shrink-0 self-start"
             @click="handleDeploy()"
           >
             <i v-if="loading" class="fas fa-spinner fa-spin"></i>

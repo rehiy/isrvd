@@ -106,19 +106,10 @@
    * 4. 按钮（Button）
    * ============================================================ */
 
-  /* 基础按钮：inline-flex 布局、焦点 & 禁用处理 */
+  /* 基础按钮：inline-flex 布局、固定高度 36px、焦点 & 禁用处理 */
   .btn {
-    @apply inline-flex items-center justify-center gap-1.5 font-medium rounded-lg transition-colors;
+    @apply inline-flex items-center justify-center gap-1.5 h-9 px-3 text-sm font-medium rounded-md transition-colors;
     @apply focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  /* 尺寸 */
-  .btn-sm {
-    @apply h-9 px-3 text-xs;
-  }
-
-  .btn-md {
-    @apply px-4 py-2.5 text-sm;
   }
 
   /* 颜色变体 */
@@ -270,7 +261,7 @@
     height: 46px;
   }
 
-  /* 小尺寸 select：用于 toolbar，固定 h-9 与 btn-sm、图标按钮统一对齐 */
+  /* 小尺寸 select：用于 toolbar，固定 h-9 与 btn、图标按钮统一对齐 */
   .select-sm {
     @apply h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-700;
     @apply hover:border-slate-300 focus:outline-none focus:border-slate-400;

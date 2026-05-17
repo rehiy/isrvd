@@ -94,10 +94,10 @@ export default toNative(ContainerTerminal)
               <option value="/bin/bash">/bin/bash</option>
               <option value="/bin/ash">/bin/ash</option>
             </select>
-            <button v-if="!terminalConnected" type="button" class="btn btn-sm btn-success" @click="handleTerminalConnect()">
+            <button v-if="!terminalConnected" type="button" class="btn btn-success" @click="handleTerminalConnect()">
               <i class="fas fa-plug"></i>连接
             </button>
-            <button v-else type="button" class="btn btn-sm btn-secondary" @click="handleTerminalDisconnect()">
+            <button v-else type="button" class="btn btn-secondary" @click="handleTerminalDisconnect()">
               <i class="fas fa-plug-circle-xmark"></i>断开
             </button>
           </div>
@@ -119,10 +119,10 @@ export default toNative(ContainerTerminal)
               <option value="/bin/bash">/bin/bash</option>
               <option value="/bin/ash">/bin/ash</option>
             </select>
-            <button v-if="!terminalConnected" type="button" class="btn btn-sm btn-success w-9 h-9 !px-0" title="连接" @click="handleTerminalConnect()">
+            <button v-if="!terminalConnected" type="button" class="btn btn-success w-9 h-9 !px-0" title="连接" @click="handleTerminalConnect()">
               <i class="fas fa-plug text-sm"></i>
             </button>
-            <button v-else type="button" class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="断开" @click="handleTerminalDisconnect()">
+            <button v-else type="button" class="btn btn-secondary w-9 h-9 !px-0" title="断开" @click="handleTerminalDisconnect()">
               <i class="fas fa-plug-circle-xmark text-sm"></i>
             </button>
           </div>

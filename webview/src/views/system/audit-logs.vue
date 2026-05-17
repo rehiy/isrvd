@@ -152,7 +152,7 @@ export default toNative(AuditLogs)
               <option value="">所有用户</option>
               <option v-for="username in uniqueUsernames" :key="username" :value="username">{{ username }}</option>
             </select>
-            <button class="btn btn-sm btn-secondary" @click="loadLogs()">
+            <button class="btn btn-secondary" @click="loadLogs()">
               <i class="fas fa-rotate"></i>刷新
             </button>
           </div>
@@ -174,7 +174,7 @@ export default toNative(AuditLogs)
                 <option value="">所有用户</option>
                 <option v-for="username in uniqueUsernames" :key="username" :value="username">{{ username }}</option>
               </select>
-              <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadLogs()">
+              <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadLogs()">
                 <i class="fas fa-rotate text-sm"></i>
               </button>
             </div>

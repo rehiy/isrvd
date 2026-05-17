@@ -101,10 +101,10 @@ export default toNative(Members)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="account-members" placeholder="搜索用户名、描述、家目录或权限..." width-class="w-64" focus-color="blue" type-to-search />
-            <button type="button" class="btn btn-sm btn-secondary" @click="loadMembers">
+            <button type="button" class="btn btn-secondary" @click="loadMembers">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/account/member')" type="button" class="btn btn-sm btn-blue" @click="openAddMember">
+            <button v-if="portal.hasPerm('POST /api/account/member')" type="button" class="btn btn-blue" @click="openAddMember">
               <i class="fas fa-plus"></i>新建用户
             </button>
           </div>
@@ -121,10 +121,10 @@ export default toNative(Members)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button type="button" class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadMembers">
+            <button type="button" class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadMembers">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/account/member')" type="button" class="btn btn-sm btn-blue w-9 h-9 !px-0" title="新建用户" @click="openAddMember">
+            <button v-if="portal.hasPerm('POST /api/account/member')" type="button" class="btn btn-blue w-9 h-9 !px-0" title="新建用户" @click="openAddMember">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

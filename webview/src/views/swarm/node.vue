@@ -73,7 +73,7 @@ export default toNative(NodeDetail)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <button class="btn btn-sm btn-secondary" @click="loadDetail()">
+            <button class="btn btn-secondary" @click="loadDetail()">
               <i class="fas fa-rotate"></i>刷新
             </button>
           </div>
@@ -89,7 +89,7 @@ export default toNative(NodeDetail)
               <p class="text-xs text-slate-600 font-mono truncate">{{ nodeId }}</p>
             </div>
           </div>
-          <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadDetail()">
+          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadDetail()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
         </div>

@@ -100,10 +100,10 @@ export default toNative(Volumes)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="docker-volumes" placeholder="搜索卷名称、驱动或挂载点..." width-class="w-64" focus-color="amber" type-to-search />
-            <button class="btn btn-sm btn-secondary" @click="loadVolumes()">
+            <button class="btn btn-secondary" @click="loadVolumes()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/volume')" class="btn btn-sm btn-amber" @click="createModalRef?.show()">
+            <button v-if="portal.hasPerm('POST /api/docker/volume')" class="btn btn-amber" @click="createModalRef?.show()">
               <i class="fas fa-plus"></i>新建卷
             </button>
           </div>
@@ -120,10 +120,10 @@ export default toNative(Volumes)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadVolumes()">
+            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadVolumes()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/volume')" class="btn btn-sm btn-amber w-9 h-9 !px-0" title="新建卷" @click="createModalRef?.show()">
+            <button v-if="portal.hasPerm('POST /api/docker/volume')" class="btn btn-amber w-9 h-9 !px-0" title="新建卷" @click="createModalRef?.show()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

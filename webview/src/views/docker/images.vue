@@ -229,16 +229,16 @@ export default toNative(Images)
                 <i class="fas fa-layer-group"></i><span>全部</span>
               </button>
             </div>
-            <button class="btn btn-sm btn-secondary" @click="loadImages()">
+            <button class="btn btn-secondary" @click="loadImages()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/image/prune')" class="btn btn-sm btn-secondary" @click="handleImagePrune()">
+            <button v-if="portal.hasPerm('POST /api/docker/image/prune')" class="btn btn-secondary" @click="handleImagePrune()">
               <i class="fas fa-broom"></i>清理
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn btn-sm btn-blue" @click="buildModalRef?.show()">
+            <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn btn-blue" @click="buildModalRef?.show()">
               <i class="fas fa-hammer"></i>构建
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/image/pull')" class="btn btn-sm btn-blue" @click="pullModalRef?.show()">
+            <button v-if="portal.hasPerm('POST /api/docker/image/pull')" class="btn btn-blue" @click="pullModalRef?.show()">
               <i class="fas fa-download"></i>拉取
             </button>
           </div>
@@ -256,16 +256,16 @@ export default toNative(Images)
               </div>
             </div>
             <div class="flex items-center gap-1 flex-shrink-0">
-              <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadImages()">
+              <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadImages()">
                 <i class="fas fa-rotate text-sm"></i>
               </button>
-              <button v-if="portal.hasPerm('POST /api/docker/image/prune')" class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="清理镜像" @click="handleImagePrune()">
+              <button v-if="portal.hasPerm('POST /api/docker/image/prune')" class="btn btn-secondary w-9 h-9 !px-0" title="清理镜像" @click="handleImagePrune()">
                 <i class="fas fa-broom text-sm"></i>
               </button>
-              <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn btn-sm btn-blue w-9 h-9 !px-0" title="构建" @click="buildModalRef?.show()">
+              <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn btn-blue w-9 h-9 !px-0" title="构建" @click="buildModalRef?.show()">
                 <i class="fas fa-hammer text-sm"></i>
               </button>
-              <button v-if="portal.hasPerm('POST /api/docker/image/pull')" class="btn btn-sm btn-blue w-9 h-9 !px-0" title="拉取" @click="pullModalRef?.show()">
+              <button v-if="portal.hasPerm('POST /api/docker/image/pull')" class="btn btn-blue w-9 h-9 !px-0" title="拉取" @click="pullModalRef?.show()">
                 <i class="fas fa-download text-sm"></i>
               </button>
             </div>

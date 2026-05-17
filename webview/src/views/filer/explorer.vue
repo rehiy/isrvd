@@ -135,28 +135,28 @@ export default toNative(FileExplorer)
             <PageSearch v-model="searchText" search-key="filer-explorer" placeholder="搜索文件名、路径或权限..." width-class="w-72" focus-color="primary" type-to-search />
             <button 
               v-if="portal.hasPerm('GET /api/filer/list')"
-              class="btn btn-sm btn-secondary"
+              class="btn btn-secondary"
               @click="refreshFiles()"
             >
               <i class="fas fa-rotate"></i><span>刷新</span>
             </button>
             <button 
               v-if="portal.hasPerm('POST /api/filer/mkdir')"
-              class="btn btn-sm btn-secondary"
+              class="btn btn-secondary"
               @click="mkdirModalRef.show()"
             >
               <i class="fas fa-folder"></i><span>新建目录</span>
             </button>
             <button 
               v-if="portal.hasPerm('POST /api/filer/create')"
-              class="btn btn-sm btn-secondary"
+              class="btn btn-secondary"
               @click="createModalRef.show()"
             >
               <i class="fas fa-file"></i><span>新建文件</span>
             </button>
             <button 
               v-if="portal.hasPerm('POST /api/filer/upload')"
-              class="btn btn-sm btn-primary"
+              class="btn btn-primary"
               @click="uploadModal.show()"
             >
               <i class="fas fa-upload"></i><span>上传文件</span>
@@ -164,16 +164,16 @@ export default toNative(FileExplorer)
           </div>
           <!-- 移动端图标按钮 -->
           <div class="flex md:hidden items-center gap-1.5 flex-shrink-0">
-            <button v-if="portal.hasPerm('GET /api/filer/list')" class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="refreshFiles()">
+            <button v-if="portal.hasPerm('GET /api/filer/list')" class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="refreshFiles()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/filer/mkdir')" class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="新建目录" @click="mkdirModalRef.show()">
+            <button v-if="portal.hasPerm('POST /api/filer/mkdir')" class="btn btn-secondary w-9 h-9 !px-0" title="新建目录" @click="mkdirModalRef.show()">
               <i class="fas fa-folder text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/filer/create')" class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="新建文件" @click="createModalRef.show()">
+            <button v-if="portal.hasPerm('POST /api/filer/create')" class="btn btn-secondary w-9 h-9 !px-0" title="新建文件" @click="createModalRef.show()">
               <i class="fas fa-file text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/filer/upload')" class="btn btn-sm btn-primary w-9 h-9 !px-0" title="上传文件" @click="uploadModal.show()">
+            <button v-if="portal.hasPerm('POST /api/filer/upload')" class="btn btn-primary w-9 h-9 !px-0" title="上传文件" @click="uploadModal.show()">
               <i class="fas fa-upload text-sm"></i>
             </button>
           </div>

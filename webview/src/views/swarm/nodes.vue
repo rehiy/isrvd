@@ -151,10 +151,10 @@ export default toNative(Nodes)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="swarm-nodes" placeholder="搜索主机名、ID、角色、状态或 IP..." width-class="w-64" focus-color="blue" type-to-search />
-            <button class="btn btn-sm btn-secondary" @click="loadNodes">
+            <button class="btn btn-secondary" @click="loadNodes">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('GET /api/swarm/token')" class="btn btn-sm btn-blue" @click="openJoinModal">
+            <button v-if="portal.hasPerm('GET /api/swarm/token')" class="btn btn-blue" @click="openJoinModal">
               <i class="fas fa-plus"></i>加入集群
             </button>
           </div>
@@ -171,10 +171,10 @@ export default toNative(Nodes)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadNodes">
+            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadNodes">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('GET /api/swarm/token')" class="btn btn-sm btn-blue w-9 h-9 !px-0" title="加入集群" @click="openJoinModal">
+            <button v-if="portal.hasPerm('GET /api/swarm/token')" class="btn btn-blue w-9 h-9 !px-0" title="加入集群" @click="openJoinModal">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

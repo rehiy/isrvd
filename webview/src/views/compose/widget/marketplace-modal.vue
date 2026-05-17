@@ -164,7 +164,7 @@ export default toNative(MarketplaceModal)
     <template #header-actions>
       <button
         type="button"
-        class="hidden md:flex btn btn-sm btn-secondary"
+        class="hidden md:flex btn btn-secondary"
         title="刷新"
         @click="loadUrl()"
       >
@@ -172,7 +172,7 @@ export default toNative(MarketplaceModal)
       </button>
       <button
         type="button"
-        class="md:hidden btn btn-sm btn-secondary w-9 h-9 !px-0"
+        class="md:hidden btn btn-secondary w-9 h-9 !px-0"
         title="刷新"
         @click="loadUrl()"
       >
@@ -194,7 +194,7 @@ export default toNative(MarketplaceModal)
         </div>
         <h1 class="text-lg font-semibold text-slate-800 mb-1">尚未配置应用市场</h1>
         <p class="text-sm text-slate-500 mb-4">请前往「系统设置 → 应用市场」配置站点 URL</p>
-        <button type="button" class="btn btn-sm btn-blue" @click="openConfig()">
+        <button type="button" class="btn btn-blue" @click="openConfig()">
           <i class="fas fa-gear"></i>前往配置
         </button>
       </div>

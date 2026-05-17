@@ -91,7 +91,7 @@ export default toNative(Overview)
               <p class="text-xs text-slate-500">服务状态总览</p>
             </div>
           </div>
-          <button class="btn btn-sm btn-secondary" @click="refreshAll">
+          <button class="btn btn-secondary" @click="refreshAll">
             <i class="fas fa-rotate"></i>刷新
           </button>
         </div>
@@ -106,7 +106,7 @@ export default toNative(Overview)
               <p class="text-xs text-slate-500 truncate">服务状态总览</p>
             </div>
           </div>
-          <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="refreshAll">
+          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="refreshAll">
             <i class="fas fa-rotate text-sm"></i>
           </button>
         </div>

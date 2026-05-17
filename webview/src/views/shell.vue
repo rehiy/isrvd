@@ -69,14 +69,14 @@ export default toNative(Shell)
             </select>
             <button
               v-if="!connected"
-              class="btn btn-sm btn-primary"
+              class="btn btn-primary"
               @click="handleConnect()"
             >
               <i class="fas fa-plug"></i>连接
             </button>
             <button
               v-else
-              class="btn btn-sm btn-secondary"
+              class="btn btn-secondary"
               @click="handleDisconnect()"
             >
               <i class="fas fa-plug-circle-xmark"></i>断开
@@ -109,7 +109,7 @@ export default toNative(Shell)
             </select>
             <button
               v-if="!connected"
-              class="btn btn-sm btn-primary w-9 h-9 !px-0"
+              class="btn btn-primary w-9 h-9 !px-0"
               title="连接"
               @click="handleConnect()"
             >
@@ -117,7 +117,7 @@ export default toNative(Shell)
             </button>
             <button
               v-else
-              class="btn btn-sm btn-secondary w-9 h-9 !px-0"
+              class="btn btn-secondary w-9 h-9 !px-0"
               title="断开连接"
               @click="handleDisconnect()"
             >

@@ -154,10 +154,10 @@ export default toNative(CronJobs)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="cron-jobs" placeholder="搜索任务名称、执行计划..." width-class="w-60" focus-color="amber" type-to-search />
-            <button class="btn btn-sm btn-secondary" @click="loadJobs()">
+            <button class="btn btn-secondary" @click="loadJobs()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button class="btn btn-sm btn-amber" @click="openCreate()">
+            <button class="btn btn-amber" @click="openCreate()">
               <i class="fas fa-plus"></i>新建任务
             </button>
           </div>
@@ -175,10 +175,10 @@ export default toNative(CronJobs)
               </div>
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
-              <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadJobs()">
+              <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadJobs()">
                 <i class="fas fa-rotate text-sm"></i>
               </button>
-              <button class="btn btn-sm btn-amber w-9 h-9 !px-0" title="新建任务" @click="openCreate()">
+              <button class="btn btn-amber w-9 h-9 !px-0" title="新建任务" @click="openCreate()">
                 <i class="fas fa-plus text-sm"></i>
               </button>
             </div>

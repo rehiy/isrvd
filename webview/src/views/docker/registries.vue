@@ -126,10 +126,10 @@ export default toNative(Registries)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="docker-registries" placeholder="搜索仓库名称、地址或账号..." width-class="w-64" focus-color="purple" type-to-search />
-            <button class="btn btn-sm btn-secondary" @click="loadRegistries()">
+            <button class="btn btn-secondary" @click="loadRegistries()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/registry')" class="btn btn-sm btn-purple" @click="openAdd">
+            <button v-if="portal.hasPerm('POST /api/docker/registry')" class="btn btn-purple" @click="openAdd">
               <i class="fas fa-plus"></i>添加仓库
             </button>
           </div>
@@ -146,10 +146,10 @@ export default toNative(Registries)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadRegistries()">
+            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadRegistries()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/registry')" class="btn btn-sm btn-purple w-9 h-9 !px-0" title="添加" @click="openAdd">
+            <button v-if="portal.hasPerm('POST /api/docker/registry')" class="btn btn-purple w-9 h-9 !px-0" title="添加" @click="openAdd">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

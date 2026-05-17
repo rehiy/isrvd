@@ -117,10 +117,10 @@ export default toNative(PluginConfigs)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="apisix-plugin-configs" placeholder="搜索 ID、描述或插件..." width-class="w-56" focus-color="rose" type-to-search />
-            <button class="btn btn-sm btn-secondary" @click="loadConfigs()">
+            <button class="btn btn-secondary" @click="loadConfigs()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/plugin-config')" class="btn btn-sm btn-rose" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/apisix/plugin-config')" class="btn btn-rose" @click="openCreateModal()">
               <i class="fas fa-plus"></i>新建配置
             </button>
           </div>
@@ -137,10 +137,10 @@ export default toNative(PluginConfigs)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadConfigs()">
+            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadConfigs()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/plugin-config')" class="btn btn-sm btn-rose w-9 h-9 !px-0" title="创建" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/apisix/plugin-config')" class="btn btn-rose w-9 h-9 !px-0" title="创建" @click="openCreateModal()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

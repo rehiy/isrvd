@@ -95,7 +95,7 @@ export default toNative(Whitelist)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="apisix-whitelist" placeholder="搜索路由或用户..." width-class="w-48" focus-color="amber" type-to-search />
-            <button class="btn btn-sm btn-secondary" @click="loadWhitelist()">
+            <button class="btn btn-secondary" @click="loadWhitelist()">
               <i class="fas fa-rotate"></i>刷新
             </button>
           </div>
@@ -111,7 +111,7 @@ export default toNative(Whitelist)
               <p class="text-xs text-slate-500 truncate">路由级 Consumer 白名单</p>
             </div>
           </div>
-          <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadWhitelist()">
+          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadWhitelist()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
         </div>

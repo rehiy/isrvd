@@ -130,10 +130,10 @@ export default toNative(Upstreams)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="apisix-upstreams" placeholder="搜索上游、节点或策略..." width-class="w-56" focus-color="emerald" type-to-search />
-            <button class="btn btn-sm btn-secondary" @click="loadUpstreams()">
+            <button class="btn btn-secondary" @click="loadUpstreams()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="btn btn-sm btn-success" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="btn btn-success" @click="openCreateModal()">
               <i class="fas fa-plus"></i>新建上游
             </button>
           </div>
@@ -150,10 +150,10 @@ export default toNative(Upstreams)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadUpstreams()">
+            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadUpstreams()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="btn btn-sm btn-success w-9 h-9 !px-0" title="新建上游" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="btn btn-success w-9 h-9 !px-0" title="新建上游" @click="openCreateModal()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

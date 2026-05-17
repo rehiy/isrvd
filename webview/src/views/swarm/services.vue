@@ -136,10 +136,10 @@ export default toNative(Services)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="swarm-services" placeholder="搜索服务名、镜像、模式或端口..." width-class="w-64" focus-color="emerald" type-to-search />
-            <button class="btn btn-sm btn-secondary" @click="loadServices">
+            <button class="btn btn-secondary" @click="loadServices">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/swarm/service')" class="btn btn-sm btn-emerald" @click="openCreateModal">
+            <button v-if="portal.hasPerm('POST /api/swarm/service')" class="btn btn-emerald" @click="openCreateModal">
               <i class="fas fa-plus"></i>新建服务
             </button>
           </div>
@@ -156,10 +156,10 @@ export default toNative(Services)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadServices">
+            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadServices">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/swarm/service')" class="btn btn-sm btn-emerald w-9 h-9 !px-0" title="创建" @click="openCreateModal">
+            <button v-if="portal.hasPerm('POST /api/swarm/service')" class="btn btn-emerald w-9 h-9 !px-0" title="创建" @click="openCreateModal">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

@@ -134,10 +134,10 @@ export default toNative(Containers)
                 <i class="fas fa-layer-group"></i><span>全部</span>
               </button>
             </div>
-            <button class="btn btn-sm btn-secondary" @click="loadContainers()">
+            <button class="btn btn-secondary" @click="loadContainers()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/container')" class="btn btn-sm btn-emerald" @click="createContainerModal()">
+            <button v-if="portal.hasPerm('POST /api/docker/container')" class="btn btn-emerald" @click="createContainerModal()">
               <i class="fas fa-plus"></i>新建容器
             </button>
           </div>
@@ -155,10 +155,10 @@ export default toNative(Containers)
               </div>
             </div>
             <div class="flex items-center gap-1 flex-shrink-0">
-              <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadContainers()">
+              <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadContainers()">
                 <i class="fas fa-rotate text-sm"></i>
               </button>
-              <button v-if="portal.hasPerm('POST /api/docker/container')" class="btn btn-sm btn-emerald w-9 h-9 !px-0" title="新建容器" @click="createContainerModal()">
+              <button v-if="portal.hasPerm('POST /api/docker/container')" class="btn btn-emerald w-9 h-9 !px-0" title="新建容器" @click="createContainerModal()">
                 <i class="fas fa-plus text-sm"></i>
               </button>
             </div>

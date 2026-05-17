@@ -82,7 +82,7 @@ export default toNative(ServiceLogs)
                 <i class="fas fa-file-lines"></i><span>日志</span>
               </button>
             </div>
-            <button class="btn btn-sm btn-secondary" @click="loadLogs()">
+            <button class="btn btn-secondary" @click="loadLogs()">
               <i class="fas fa-rotate"></i>刷新
             </button>
           </div>
@@ -99,7 +99,7 @@ export default toNative(ServiceLogs)
                 <p class="text-xs text-slate-600 font-mono truncate">{{ serviceId.slice(0, 12) }}</p>
               </div>
             </div>
-            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadLogs()">
+            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadLogs()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
           </div>

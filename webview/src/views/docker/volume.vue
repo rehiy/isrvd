@@ -59,7 +59,7 @@ export default toNative(VolumeDetail)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <button class="btn btn-sm btn-secondary" @click="loadDetail()">
+            <button class="btn btn-secondary" @click="loadDetail()">
               <i class="fas fa-rotate"></i>刷新
             </button>
           </div>
@@ -76,7 +76,7 @@ export default toNative(VolumeDetail)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadDetail()">
+            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadDetail()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
           </div>

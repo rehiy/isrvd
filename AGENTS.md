@@ -521,8 +521,6 @@ skills/isrvd/
 | 类 | 用途 | 禁止手写 |
 |---|---|---|
 | `.btn` | 基础按钮（inline-flex，焦点&禁用处理） | — |
-| `.btn-sm` | 小尺寸 `h-9 px-3 text-xs`（与 `.select-sm` 高度对齐） | `h-9 px-3 text-xs` |
-| `.btn-md` | 中尺寸 `px-4 py-2.5 text-sm` | — |
 | `.btn-{color}` | 颜色变体（primary/blue/cyan/indigo/amber/emerald/danger/rose/purple/violet/secondary） | — |
 | `.btn-ghost` | 幽灵按钮（透明背景） | — |
 | `.btn-icon` | 图标按钮（正方形 padding，工具栏通用） | — |

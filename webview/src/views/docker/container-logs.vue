@@ -83,7 +83,7 @@ export default toNative(ContainerLogs)
               <option value="500">500 行</option>
               <option value="1000">1000 行</option>
             </select>
-            <button class="btn btn-sm btn-secondary" @click="loadLogs">
+            <button class="btn btn-secondary" @click="loadLogs">
               <i class="fas fa-rotate"></i>刷新
             </button>
           </div>
@@ -107,7 +107,7 @@ export default toNative(ContainerLogs)
               <option value="500">500</option>
               <option value="1000">1000</option>
             </select>
-            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadLogs">
+            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadLogs">
               <i class="fas fa-rotate text-sm"></i>
             </button>
           </div>

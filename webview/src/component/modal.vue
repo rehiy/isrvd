@@ -134,7 +134,7 @@ export default toNative(BaseModal)
                 :disabled="loading"
                 @click="handleCancel"
               >
-                <span><slot name="cancel-text">取消</slot></span>
+                <slot name="cancel-text">取消</slot>
               </button>
               <button 
                 v-if="showConfirm"
@@ -145,7 +145,7 @@ export default toNative(BaseModal)
                 @click="handleConfirm"
               >
                 <i v-if="loading" class="fas fa-spinner fa-spin"></i>
-                <span><slot name="confirm-text">确认</slot></span>
+                <slot name="confirm-text">确认</slot>
               </button>
             </slot>
           </div>

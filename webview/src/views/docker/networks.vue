@@ -114,10 +114,10 @@ export default toNative(Networks)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="docker-networks" placeholder="搜索网络名称、ID、驱动或子网..." width-class="w-64" focus-color="purple" type-to-search />
-            <button class="btn btn-sm btn-secondary" @click="loadNetworks()">
+            <button class="btn btn-secondary" @click="loadNetworks()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/network')" class="btn btn-sm btn-purple" @click="createModalRef?.show()">
+            <button v-if="portal.hasPerm('POST /api/docker/network')" class="btn btn-purple" @click="createModalRef?.show()">
               <i class="fas fa-plus"></i>新建网络
             </button>
           </div>
@@ -134,10 +134,10 @@ export default toNative(Networks)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadNetworks()">
+            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadNetworks()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/network')" class="btn btn-sm btn-purple w-9 h-9 !px-0" title="新建网络" @click="createModalRef?.show()">
+            <button v-if="portal.hasPerm('POST /api/docker/network')" class="btn btn-purple w-9 h-9 !px-0" title="新建网络" @click="createModalRef?.show()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

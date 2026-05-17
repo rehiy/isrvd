@@ -113,7 +113,7 @@ export default toNative(Tasks)
               <option value="">全部服务</option>
               <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>
             </select>
-            <button class="btn btn-sm btn-secondary" @click="loadTasks()">
+            <button class="btn btn-secondary" @click="loadTasks()">
               <i class="fas fa-rotate"></i>刷新
             </button>
           </div>
@@ -135,7 +135,7 @@ export default toNative(Tasks)
                 <option value="">全部服务</option>
                 <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>
               </select>
-              <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadTasks()">
+              <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadTasks()">
                 <i class="fas fa-rotate text-sm"></i>
               </button>
             </div>
