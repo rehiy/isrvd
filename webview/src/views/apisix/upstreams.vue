@@ -133,7 +133,7 @@ export default toNative(Upstreams)
             <button class="btn btn-secondary" @click="loadUpstreams()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="btn btn-success" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="btn btn-emerald" @click="openCreateModal()">
               <i class="fas fa-plus"></i>新建上游
             </button>
           </div>
@@ -153,7 +153,7 @@ export default toNative(Upstreams)
             <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadUpstreams()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="btn btn-success w-9 h-9 !px-0" title="新建上游" @click="openCreateModal()">
+            <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="btn btn-emerald w-9 h-9 !px-0" title="新建上游" @click="openCreateModal()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>

@@ -113,7 +113,6 @@
   .btn-cyan     { @apply bg-cyan-500    text-white hover:bg-cyan-600;    }
   .btn-indigo   { @apply bg-indigo-500  text-white hover:bg-indigo-600;  }
   .btn-amber    { @apply bg-amber-500   text-white hover:bg-amber-600;   }
-  .btn-success,
   .btn-emerald  { @apply bg-emerald-500 text-white hover:bg-emerald-600; }
   .btn-danger   { @apply bg-red-500     text-white hover:bg-red-600;     }
   .btn-rose     { @apply bg-rose-500    text-white hover:bg-rose-600;    }
@@ -228,7 +227,9 @@
   /* 详情页信息分组标题（h2）：与 form-label 相同样式但 mb-3 */
   .section-title {
     @apply text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3;
-  }  /* 文本输入框 */
+  }
+
+  /* 文本输入框 */
   .input {
     @apply w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl;
     @apply placeholder:text-slate-400 text-slate-700;

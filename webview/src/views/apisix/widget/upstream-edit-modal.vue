@@ -199,7 +199,7 @@ export default toNative(UpstreamEditModal)
     v-model="isOpen"
     :title="isEditMode ? '编辑上游' : '创建上游'"
     :loading="modalLoading"
-    confirm-class="btn-success"
+    confirm-class="btn-emerald"
     @confirm="handleConfirm"
   >
     <div class="max-w-3xl space-y-4 p-1">

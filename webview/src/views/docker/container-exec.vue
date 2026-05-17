@@ -94,7 +94,7 @@ export default toNative(ContainerTerminal)
               <option value="/bin/bash">/bin/bash</option>
               <option value="/bin/ash">/bin/ash</option>
             </select>
-            <button v-if="!terminalConnected" type="button" class="btn btn-success" @click="handleTerminalConnect()">
+            <button v-if="!terminalConnected" type="button" class="btn btn-emerald" @click="handleTerminalConnect()">
               <i class="fas fa-plug"></i>连接
             </button>
             <button v-else type="button" class="btn btn-secondary" @click="handleTerminalDisconnect()">
@@ -119,7 +119,7 @@ export default toNative(ContainerTerminal)
               <option value="/bin/bash">/bin/bash</option>
               <option value="/bin/ash">/bin/ash</option>
             </select>
-            <button v-if="!terminalConnected" type="button" class="btn btn-success w-9 h-9 !px-0" title="连接" @click="handleTerminalConnect()">
+            <button v-if="!terminalConnected" type="button" class="btn btn-emerald w-9 h-9 !px-0" title="连接" @click="handleTerminalConnect()">
               <i class="fas fa-plug text-sm"></i>
             </button>
             <button v-else type="button" class="btn btn-secondary w-9 h-9 !px-0" title="断开" @click="handleTerminalDisconnect()">
