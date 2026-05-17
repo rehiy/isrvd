@@ -309,8 +309,8 @@ func extractUpstreams(h pkgcaddy.Handler) []string {
 
 // GlobalForm 全局选项编辑表单
 //
-// 只暴露不影响 isrvd 管理能力的字段；
-// admin 相关（listen/disabled）由 isrvd 连接 Caddy，不允许通过此接口修改。
+// 只暴露不影响 iSrvd 管理能力的字段；
+// admin 相关（listen/disabled）由 iSrvd 连接 Caddy，不允许通过此接口修改。
 type GlobalForm struct {
 	// 日志
 	LogLevel  string `json:"logLevel,omitempty"`  // 全局日志级别：DEBUG / INFO / WARN / ERROR

@@ -243,7 +243,7 @@ export default toNative(Config)
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1.5">客户端 ID</label>
-            <input v-model="oidc.clientId" type="text" placeholder="isrvd" class="input" />
+            <input v-model="oidc.clientId" type="text" placeholder="iSrvd" class="input" />
             <p class="mt-1 text-xs text-slate-400">Client ID；在 OIDC Provider 处注册应用时获得</p>
           </div>
           <div>
@@ -253,7 +253,7 @@ export default toNative(Config)
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1.5">回调地址</label>
-            <input v-model="oidc.redirectUrl" type="text" placeholder="https://isrvd.example.com/api/account/oidc/callback" class="input" />
+            <input v-model="oidc.redirectUrl" type="text" placeholder="https://iSrvd.example.com/api/account/oidc/callback" class="input" />
             <p class="mt-1 text-xs text-slate-400">Redirect URL；开发环境可留空自动生成，生产环境建议填写固定 HTTPS 回调地址</p>
           </div>
           <div>

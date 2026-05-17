@@ -159,7 +159,7 @@ export default toNative(NavigationBar)
       <div class="flex items-center space-x-3 flex-1 min-w-0" :class="collapsed ? 'justify-center flex-none' : ''">
         <img
           src="@/assets/logo.svg"
-          alt="Isrvd"
+          alt="iSrvd"
           class="flex-shrink-0 transition-all duration-300"
           :class="collapsed ? 'w-9 h-9 object-cover object-left' : 'w-auto h-9 max-w-[11rem] object-contain'"
         >

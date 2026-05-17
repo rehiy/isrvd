@@ -1,4 +1,4 @@
-# isrvd
+# iSrvd
 
 > 名称源自 *"it is a server daemon"*，`srv` 对应 Linux 惯例目录 `/srv`，`d` 代表 daemon。
 

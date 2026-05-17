@@ -175,7 +175,7 @@ func (s *DockerService) ContainerAction(ctx context.Context, id, action string) 
 	case "stop", "restart", "remove", "pause":
 		selfID := s.GetSelfContainerID(ctx)
 		if selfID != "" && (id == selfID || ShortID(id) == ShortID(selfID)) {
-			return fmt.Errorf("禁止操作当前 isrvd 所在容器")
+			return fmt.Errorf("禁止操作当前 iSrvd 所在容器")
 		}
 	}
 

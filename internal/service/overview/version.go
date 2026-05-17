@@ -53,7 +53,7 @@ func fetchLatestTag(ctx context.Context) (tag, url string, err error) {
 		return "", "", err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", "isrvd-version-check")
+	req.Header.Set("User-Agent", "iSrvd-version-check")
 
 	resp, err := (&http.Client{Timeout: 10 * time.Second}).Do(req)
 	if err != nil {
