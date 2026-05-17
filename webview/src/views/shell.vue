@@ -98,7 +98,7 @@ export default toNative(Shell)
             <select
               v-model="shellType"
               :disabled="connected"
-              class="w-24 select-sm"
+              class="w-24 h-9 select-sm"
             >
               <option value="bash">bash</option>
               <option value="sh">sh</option>

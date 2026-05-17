@@ -272,7 +272,7 @@
 
   /* 小尺寸 select：用于 toolbar 过滤、终端选项等场景 */
   .select-sm {
-    @apply px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700;
+    @apply py-1.5 px-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-700;
     @apply hover:border-slate-300 focus:outline-none focus:border-slate-400;
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
   }

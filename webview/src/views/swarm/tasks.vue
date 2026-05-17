@@ -130,18 +130,20 @@ export default toNative(Tasks)
                 <p class="text-xs text-slate-500 truncate">查看 Swarm 集群任务状态</p>
               </div>
             </div>
-            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadTasks()">
-              <i class="fas fa-rotate text-sm"></i>
-            </button>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <select v-model="selectedServiceId" class="w-28 h-9 select-sm">
+                <option value="">全部服务</option>
+                <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>
+              </select>
+              <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadTasks()">
+                <i class="fas fa-rotate text-sm"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
       <div class="mobile-search">
         <PageSearch v-model="searchText" search-key="swarm-tasks" placeholder="搜索任务、服务、节点、状态或消息..." width-class="w-full" focus-color="emerald" />
-        <select v-model="selectedServiceId" class="mt-2 w-full select-sm">
-          <option value="">全部服务</option>
-          <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>
-        </select>
       </div>
 
       <!-- 内容 -->

@@ -169,18 +169,20 @@ export default toNative(AuditLogs)
                 <p class="text-xs text-slate-500 truncate">查看用户操作记录</p>
               </div>
             </div>
-            <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadLogs()">
-              <i class="fas fa-rotate text-sm"></i>
-            </button>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <select v-model="selectedUsername" class="w-28 h-9 select-sm">
+                <option value="">所有用户</option>
+                <option v-for="username in uniqueUsernames" :key="username" :value="username">{{ username }}</option>
+              </select>
+              <button class="btn btn-sm btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadLogs()">
+                <i class="fas fa-rotate text-sm"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
       <div class="mobile-search">
         <PageSearch v-model="searchText" search-key="system-audit-logs" placeholder="搜索用户、方法、URI、IP 或状态..." width-class="w-full" focus-color="rose" />
-        <select v-model="selectedUsername" class="mt-2 w-full select-sm">
-          <option value="">所有用户</option>
-          <option v-for="username in uniqueUsernames" :key="username" :value="username">{{ username }}</option>
-        </select>
 
         <!-- Loading -->
         <div v-if="loading" class="loading-state">

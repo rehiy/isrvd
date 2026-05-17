@@ -114,7 +114,7 @@ export default toNative(ContainerTerminal)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <select v-model="terminalShell" :disabled="terminalConnected" class="w-24 select-sm" @change="handleShellChange">
+            <select v-model="terminalShell" :disabled="terminalConnected" class="w-24 h-9 select-sm" @change="handleShellChange">
               <option value="/bin/sh">/bin/sh</option>
               <option value="/bin/bash">/bin/bash</option>
               <option value="/bin/ash">/bin/ash</option>
