@@ -170,7 +170,7 @@ export default toNative(AuditLogs)
               </div>
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
-              <select v-model="selectedUsername" class="w-28 h-9 select-sm">
+              <select v-model="selectedUsername" class="w-28 select-sm">
                 <option value="">所有用户</option>
                 <option v-for="username in uniqueUsernames" :key="username" :value="username">{{ username }}</option>
               </select>

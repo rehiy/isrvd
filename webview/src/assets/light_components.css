@@ -114,7 +114,7 @@
 
   /* 尺寸 */
   .btn-sm {
-    @apply px-3 py-1.5 text-xs;
+    @apply h-9 px-3 text-xs;
   }
 
   .btn-md {
@@ -181,11 +181,11 @@
   /* Tab 切换按钮组容器 */
   .tab-group { @apply bg-slate-100 p-1 rounded-lg flex items-center gap-0.5; }
 
-  /* Tab 切换按钮（含图标，flex 布局） */
-  .tab-btn { @apply px-3 py-1 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5; }
+  /* Tab 切换按钮（含图标，flex 布局）：高度 h-7 使 tab-group 整体为 36px */
+  .tab-btn { @apply h-7 px-3 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5; }
 
   /* Tab 切换按钮（纯文字，无图标） */
-  .tab-btn-text { @apply px-3 py-1 text-xs font-medium rounded-md transition-colors; }
+  .tab-btn-text { @apply h-7 px-3 text-xs font-medium rounded-md transition-colors; }
 
   /* Tab 激活态（白底 + 彩色文字由外部 class 指定 + 阴影） */
   .tab-btn-active  { @apply bg-white shadow-sm; }
@@ -270,9 +270,9 @@
     height: 46px;
   }
 
-  /* 小尺寸 select：用于 toolbar 过滤、终端选项等场景 */
+  /* 小尺寸 select：用于 toolbar，固定 h-9 与 btn-sm、图标按钮统一对齐 */
   .select-sm {
-    @apply py-1.5 px-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-700;
+    @apply h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-700;
     @apply hover:border-slate-300 focus:outline-none focus:border-slate-400;
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
   }

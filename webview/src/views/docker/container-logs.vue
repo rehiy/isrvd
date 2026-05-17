@@ -76,7 +76,7 @@ export default toNative(ContainerLogs)
           </div>
           <div class="flex items-center gap-2">
             <label class="text-xs text-slate-500">显示行数</label>
-            <select v-model="logTail" class="w-28 h-9 select-sm" @change="loadLogs">
+            <select v-model="logTail" class="w-28 select-sm" @change="loadLogs">
               <option value="50">50 行</option>
               <option value="100">100 行</option>
               <option value="200">200 行</option>

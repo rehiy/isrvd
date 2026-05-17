@@ -131,7 +131,7 @@ export default toNative(Tasks)
               </div>
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
-              <select v-model="selectedServiceId" class="w-28 h-9 select-sm">
+              <select v-model="selectedServiceId" class="w-28 select-sm">
                 <option value="">全部服务</option>
                 <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>
               </select>

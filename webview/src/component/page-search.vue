@@ -38,7 +38,7 @@ class PageSearch extends Vue {
             amber: 'focus:ring-amber-500',
             rose: 'focus:ring-rose-500'
         }[this.focusColor] || 'focus:ring-primary-500'
-        return `${this.widthClass} pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 ${focusClass} focus:border-transparent`
+        return `${this.widthClass} h-9 pl-8 pr-3 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 ${focusClass} focus:border-transparent`
     }
 
     get searchAttr() {
