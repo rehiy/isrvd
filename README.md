@@ -2,7 +2,7 @@
 
 > 名称源自 *"it is a server daemon"*，`srv` 对应 Linux 惯例目录 `/srv`，`d` 代表 daemon。
 
-轻量级 Web 服务器管理工具，基于 Go + Vue 3 构建，提供文件管理、Docker/Swarm/Compose 管理、APISIX 管理和实时终端等功能。
+轻量级运维管理面板，基于 Go + Vue 3 构建。集文件管理、容器编排、网关配置、Web 终端、AI 助手于一体，适配桌面与移动端。
 
 ## 功能特性
 
@@ -21,6 +21,16 @@
 | 成员管理 | 多用户、家目录隔离、模块权限控制 |
 | 系统管理 | 配置管理、操作审计日志 |
 | 移动端 | 响应式布局，适配移动设备 |
+
+## 技术栈
+
+| 层级 | 技术 |
+|------|------|
+| 后端 | Go 1.24+ / Gin / golang-jwt |
+| 前端 | Vue 3 / TypeScript / Tailwind CSS / Pinia |
+| 终端 | xterm.js |
+| 容器 | Docker / APISIX / Caddy |
+| AI | 兼容 OpenAI API 的 LLM 接入 |
 
 ## Docker 部署
 
@@ -201,8 +211,10 @@ cd webview && python3 sort-imports.py --dry-run src
 | 配置段 | 说明 |
 |--------|------|
 | `server` | 端口、JWT 密钥、代理认证头、数据目录 |
+| `oidc` | OIDC 认证（issuerUrl / clientId / clientSecret / redirectUrl） |
 | `agent` | AI 助手模型接入（model / baseUrl / apiKey） |
 | `apisix` | APISIX Admin API 地址和密钥 |
+| `caddy` | Caddy Admin API 地址 |
 | `docker` | Docker 守护进程地址、容器数据目录、镜像仓库账号 |
 | `marketplace` | 应用市场地址 |
 | `links` | 自定义快捷链接 |
@@ -212,29 +224,33 @@ cd webview && python3 sort-imports.py --dry-run src
 
 权限基于路由进行细粒度控制，每个用户可以独立授予各模块下具体 API 路由的访问权限。
 
-**权限格式**：`POST /api/<模块>/<路由>`（具体 HTTP 方法与路径）
+**权限格式**：`<METHOD> /api/<模块>/<路由>`（如 `GET /api/overview/status`、`POST /api/account/member`）
 
-**前端权限判断**：使用 `actions.hasPerm('POST /api/<路由>')` 控制按钮/操作的显示
+**前端权限判断**：使用 `actions.hasPerm('<METHOD> /api/<路由>')` 控制按钮/操作的显示
 
 **常用模块与路由示例**：
 
 | 模块 | 路由权限点示例 | 说明 |
 |------|---------------|------|
-| `overview` | `POST /api/overview/stats` | 系统概览 |
-| `system` | `POST /api/system/config` | 系统设置 |
-| `account` | `POST /api/members` | 成员管理 |
+| `overview` | `GET /api/overview/status` | 系统概览 |
+| `system` | `GET /api/system/config` | 系统设置 |
+| `account` | `GET /api/account/members` | 成员管理（列出） |
+| `account` | `POST /api/account/member` | 成员管理（创建） |
+| `account` | `PUT /api/account/member/:username` | 成员管理（更新） |
+| `account` | `DELETE /api/account/member/:username` | 成员管理（删除） |
 | `filer` | `GET /api/filer/list` | 文件管理（列出） |
 | `filer` | `POST /api/filer/upload` | 文件管理（上传） |
 | `filer` | `POST /api/filer/modify` | 文件管理（修改） |
-| `shell` | `WS /api/shell` | Web 终端 |
-| `agent` | `POST /api/agent/chat` | AI 助手 |
-| `cron` | `POST /api/cron/jobs` | 计划任务管理 |
+| `shell` | `GET /api/shell` | Web 终端 |
+| `agent` | `ANY /api/agent/*path` | AI 助手（LLM 代理） |
+| `cron` | `GET /api/cron/jobs` | 计划任务（列出） |
+| `cron` | `POST /api/cron/jobs` | 计划任务（创建） |
 | `cron` | `POST /api/cron/jobs/:id/run` | 计划任务（立即执行） |
 | `cron` | `GET /api/cron/jobs/:id/logs` | 计划任务（查看日志） |
-| `apisix` | `POST /api/apisix/routes` | APISIX 管理 |
-| `docker` | `POST /api/docker/containers` | Docker 管理 |
-| `swarm` | `POST /api/swarm/services` | Swarm 管理 |
-| `compose` | `POST /api/compose/deploy` | Compose 管理 |
+| `apisix` | `GET /api/apisix/routes` | APISIX 管理（列出） |
+| `docker` | `GET /api/docker/containers` | Docker 管理（列出） |
+| `swarm` | `GET /api/swarm/services` | Swarm 管理（列出） |
+| `compose` | `POST /api/compose/deploy` | Compose 管理（部署） |
 
 > 留空 = 无权限；具体可用路由见各模块 API 文档
 
