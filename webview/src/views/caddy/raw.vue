@@ -71,11 +71,11 @@ export default toNative(CaddyRaw)
 <template>
   <div>
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center"><i class="fas fa-code text-white"></i></div>
+            <div class="page-icon bg-slate-700"><i class="fas fa-code text-white"></i></div>
             <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">Caddy 原始配置</h1><p class="text-xs text-slate-500 truncate">直接查看和编辑 Caddy 的 JSON 运行配置</p></div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
@@ -90,7 +90,7 @@ export default toNative(CaddyRaw)
         <!-- 移动端 -->
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0"><i class="fas fa-code text-white"></i></div>
+            <div class="page-icon bg-slate-700"><i class="fas fa-code text-white"></i></div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">Caddy 原始配置</h1>
               <p class="text-xs text-slate-500 truncate">查看和编辑 JSON 配置</p>
@@ -103,9 +103,9 @@ export default toNative(CaddyRaw)
         </div>
       </div>
 
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
+      <div v-if="loading" class="loading-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
       <div v-else class="p-4 md:p-6 space-y-3">
-        <div class="rounded-xl overflow-hidden border border-slate-200">
+        <div class="editor-container">
           <Codemirror v-model="raw" :style="{ height: '65vh' }" :extensions="extensions" />
         </div>
         <p class="text-xs text-slate-400 flex items-start gap-1">

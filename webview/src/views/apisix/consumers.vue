@@ -95,11 +95,11 @@ export default toNative(Consumers)
   <div>
     <!-- Toolbar -->
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-violet-500 flex items-center justify-center">
+            <div class="page-icon bg-violet-500">
               <i class="fas fa-users text-white"></i>
             </div>
             <div>
@@ -120,7 +120,7 @@ export default toNative(Consumers)
         <!-- 移动端 -->
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-violet-500 flex items-center justify-center flex-shrink-0">
+            <div class="page-icon bg-violet-500">
               <i class="fas fa-users text-white"></i>
             </div>
             <div class="min-w-0">
@@ -139,19 +139,19 @@ export default toNative(Consumers)
         </div>
       </div>
       <!-- 移动端搜索栏 -->
-      <div class="md:hidden px-4 py-2 border-b border-slate-100">
+      <div class="mobile-search">
         <PageSearch v-model="searchText" search-key="apisix-consumers" placeholder="搜索消费者..." width-class="w-full" focus-color="violet" />
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+      <div v-if="loading" class="loading-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
 
       <!-- 空状态 -->
-      <div v-else-if="filteredConsumers.length === 0" class="flex flex-col items-center justify-center py-20">
-        <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4">
+      <div v-else-if="filteredConsumers.length === 0" class="empty-state">
+        <div class="empty-state-icon">
           <i class="fas fa-users text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ consumers.length === 0 ? '暂无消费者' : '未找到匹配消费者' }}</p>
@@ -165,18 +165,18 @@ export default toNative(Consumers)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">插件配置</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">授权路由</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">创建时间</th>
-                <th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+                <th class="th">名称</th>
+                <th class="th">插件配置</th>
+                <th class="th">授权路由</th>
+                <th class="th">创建时间</th>
+                <th class="w-32 th-right">操作</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="consumer in filteredConsumers" :key="consumer.username" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center gap-2 min-w-0">
-                    <div class="w-8 h-8 rounded-lg bg-violet-400 flex items-center justify-center flex-shrink-0">
+                    <div class="row-icon bg-violet-400">
                       <i class="fas fa-user text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
@@ -202,10 +202,10 @@ export default toNative(Consumers)
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button v-if="portal.hasPerm('PUT /api/apisix/consumer/:username')" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑" @click="openEditModal(consumer)">
+                    <button v-if="portal.hasPerm('PUT /api/apisix/consumer/:username')" class="btn-icon btn-icon-violet" title="编辑" @click="openEditModal(consumer)">
                       <i class="fas fa-pen text-xs"></i>
                     </button>
-                    <button v-if="portal.hasPerm('DELETE /api/apisix/consumer/:username')" class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="deleteConsumer(consumer)">
+                    <button v-if="portal.hasPerm('DELETE /api/apisix/consumer/:username')" class="btn-icon btn-icon-red" title="删除" @click="deleteConsumer(consumer)">
                       <i class="fas fa-trash text-xs"></i>
                     </button>
                   </div>
@@ -220,12 +220,12 @@ export default toNative(Consumers)
           <div 
             v-for="consumer in filteredConsumers" 
             :key="consumer.username"
-            class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
+            class="card-interactive"
           >
             <!-- 顶部：消费者信息和图标 -->
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div class="w-10 h-10 rounded-lg bg-violet-400 flex items-center justify-center flex-shrink-0">
+                <div class="list-icon bg-violet-400">
                   <i class="fas fa-user text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
@@ -259,11 +259,11 @@ export default toNative(Consumers)
             </div>
             
             <!-- 底部：操作按钮 -->
-            <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
-              <button v-if="portal.hasPerm('PUT /api/apisix/consumer/:username')" class="btn-icon text-violet-600 hover:bg-violet-50" title="编辑" @click="openEditModal(consumer)">
+            <div class="card-actions">
+              <button v-if="portal.hasPerm('PUT /api/apisix/consumer/:username')" class="btn-icon btn-icon-violet" title="编辑" @click="openEditModal(consumer)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
-              <button v-if="portal.hasPerm('DELETE /api/apisix/consumer/:username')" class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="deleteConsumer(consumer)">
+              <button v-if="portal.hasPerm('DELETE /api/apisix/consumer/:username')" class="btn-icon btn-icon-red" title="删除" @click="deleteConsumer(consumer)">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>

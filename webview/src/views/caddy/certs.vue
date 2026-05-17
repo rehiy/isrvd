@@ -103,11 +103,11 @@ export default toNative(CaddyCerts)
 <template>
   <div>
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-cyan-500 flex items-center justify-center"><i class="fas fa-certificate text-white"></i></div>
+            <div class="page-icon bg-cyan-500"><i class="fas fa-certificate text-white"></i></div>
             <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">TLS 证书</h1><p class="text-xs text-slate-500 truncate">管理 Caddy 证书来源：文件、PEM 或自动签发</p></div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
@@ -119,7 +119,7 @@ export default toNative(CaddyCerts)
         <!-- 移动端 -->
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-cyan-500 flex items-center justify-center flex-shrink-0"><i class="fas fa-certificate text-white"></i></div>
+            <div class="page-icon bg-cyan-500"><i class="fas fa-certificate text-white"></i></div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">TLS 证书</h1>
               <p class="text-xs text-slate-500 truncate">管理证书来源</p>
@@ -136,12 +136,12 @@ export default toNative(CaddyCerts)
         </div>
       </div>
       <!-- 移动端搜索栏 -->
-      <div class="md:hidden px-4 py-2 border-b border-slate-100">
+      <div class="mobile-search">
         <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="搜索主机、路径、标签..." width-class="w-full" focus-color="cyan" />
       </div>
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
-      <div v-else-if="filteredCerts.length === 0" class="flex flex-col items-center justify-center py-20">
-        <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4"><i class="fas fa-certificate text-4xl text-slate-300"></i></div>
+      <div v-if="loading" class="loading-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
+      <div v-else-if="filteredCerts.length === 0" class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-certificate text-4xl text-slate-300"></i></div>
         <p class="text-slate-600 font-medium mb-1">{{ certs.length === 0 ? '暂无证书' : '未找到匹配证书' }}</p>
         <p class="text-sm text-slate-400">{{ certs.length === 0 ? '点击「新建证书」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
@@ -151,17 +151,17 @@ export default toNative(CaddyCerts)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">来源</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">主体</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">标签</th>
-                <th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+                <th class="th">来源</th>
+                <th class="th">主体</th>
+                <th class="th">标签</th>
+                <th class="w-32 th-right">操作</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="cert in filteredCerts" :key="cert.key" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center gap-2 min-w-0">
-                    <div class="w-8 h-8 rounded-lg bg-cyan-400 flex items-center justify-center flex-shrink-0">
+                    <div class="row-icon bg-cyan-400">
                       <i class="fas fa-certificate text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
@@ -177,8 +177,8 @@ export default toNative(CaddyCerts)
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button v-if="portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑" @click="openEditModal(cert)"><i class="fas fa-pen text-xs"></i></button>
-                    <button v-if="portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="deleteCert(cert)"><i class="fas fa-trash text-xs"></i></button>
+                    <button v-if="portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(cert)"><i class="fas fa-pen text-xs"></i></button>
+                    <button v-if="portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon btn-icon-red" title="删除" @click="deleteCert(cert)"><i class="fas fa-trash text-xs"></i></button>
                   </div>
                 </td>
               </tr>
@@ -191,10 +191,10 @@ export default toNative(CaddyCerts)
           <div
             v-for="cert in filteredCerts"
             :key="cert.key"
-            class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
+            class="card-interactive"
           >
-            <div class="flex items-center gap-3 min-w-0 flex-1 mb-3">
-              <div class="w-10 h-10 rounded-lg bg-cyan-400 flex items-center justify-center flex-shrink-0">
+            <div class="card-info-row">
+              <div class="list-icon bg-cyan-400">
                 <i class="fas fa-certificate text-white text-base"></i>
               </div>
               <div class="min-w-0">
@@ -210,11 +210,11 @@ export default toNative(CaddyCerts)
               </span>
             </div>
 
-            <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
-              <button v-if="portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑" @click="openEditModal(cert)">
+            <div class="card-actions">
+              <button v-if="portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(cert)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
-              <button v-if="portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="deleteCert(cert)">
+              <button v-if="portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon btn-icon-red" title="删除" @click="deleteCert(cert)">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>

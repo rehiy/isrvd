@@ -249,13 +249,13 @@ export default toNative(RouteEditModal)
   <BaseModal v-model="isOpen" :title="isEditMode ? '编辑路由' : '新建路由'" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
     <div class="space-y-4 p-1">
       <!-- 匹配条件：直接平铺，与 apisix 一致 -->
-      <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Host（每行一个，留空匹配所有）</label><textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="example.com&#10;*.example.com"></textarea></div>
-      <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Path（每行一个，支持 * 通配符）</label><textarea v-model="formData.paths" rows="2" class="input font-mono text-sm" placeholder="/api/*&#10;/static/*"></textarea></div>
-      <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Method（空格分隔，留空匹配所有）</label><input v-model="formData.methods" type="text" class="input font-mono text-sm" placeholder="GET POST" /></div>
+      <div><label class="form-label">Host（每行一个，留空匹配所有）</label><textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="example.com&#10;*.example.com"></textarea></div>
+      <div><label class="form-label">Path（每行一个，支持 * 通配符）</label><textarea v-model="formData.paths" rows="2" class="input font-mono text-sm" placeholder="/api/*&#10;/static/*"></textarea></div>
+      <div><label class="form-label">Method（空格分隔，留空匹配所有）</label><input v-model="formData.methods" type="text" class="input font-mono text-sm" placeholder="GET POST" /></div>
 
       <!-- 处理器：含 mode cards，用框包裹（对应 apisix 上游配置框） -->
       <div class="border border-slate-200 rounded-xl p-4">
-        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">处理器类型</label>
+        <label class="block section-title">处理器类型</label>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <button v-for="item in handlerKindCards" :key="item.value" type="button" :class="modeCardClass(item)" @click="setKind(item.value)">
             <div class="flex items-center gap-2 mb-1">
@@ -269,7 +269,7 @@ export default toNative(RouteEditModal)
         <!-- reverse_proxy -->
         <div v-if="formData.kind === 'reverse_proxy'" class="space-y-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">选择容器与端口</label>
+            <label class="form-label">选择容器与端口</label>
             <div class="grid grid-cols-[2fr_1fr] gap-2 items-center">
               <ContainerSelect :model-value="formData.upstreamHost" :containers="containers" placeholder="127.0.0.1 或 容器名" @update:model-value="setUpstreamHost" />
               <ContainerPortSelect :model-value="formData.upstreamPort" :ports="getPortsByHost(formData.upstreamHost)" placeholder="80" @update:model-value="setUpstreamPort" />
@@ -277,19 +277,19 @@ export default toNative(RouteEditModal)
             <p class="text-xs text-slate-400 mt-1">选择后会自动填充下方第一个上游；也可手动输入多个 host:port。</p>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">上游 host:port（每行一个）<span class="text-red-500">*</span></label>
+            <label class="form-label">上游 host:port（每行一个）<span class="text-red-500">*</span></label>
             <textarea v-model="formData.upstreams" rows="3" class="input font-mono text-sm" placeholder="backend1:8080&#10;backend2:8080" @input="syncSelectedFromText"></textarea>
             <p class="text-xs text-slate-400 mt-1">多个上游会做轮询负载</p>
           </div>
           <div>
-            <label class="flex items-center gap-2 cursor-pointer select-none w-fit">
+            <label class="check-label">
               <input v-model="formData.fastcgi" type="checkbox" class="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500" />
               <span class="text-sm text-slate-600">使用 FastCGI 协议（PHP-FPM / fcgi）</span>
             </label>
             <p class="text-xs text-slate-400 mt-1">启用后将使用 FastCGI 传输协议与上游通信，适用于 PHP-FPM 等 FastCGI 进程</p>
           </div>
           <div v-if="formData.fastcgi">
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">FastCGI 文档根目录</label>
+            <label class="form-label">FastCGI 文档根目录</label>
             <input v-model="formData.fastcgiRoot" type="text" class="input font-mono text-sm" placeholder="/var/www/html（留空不传 root）" />
             <p class="text-xs text-slate-400 mt-1">上游 FastCGI 服务器的文档根目录，用于设置 <code class="px-1 bg-slate-100 rounded">DOCUMENT_ROOT</code></p>
           </div>
@@ -298,11 +298,11 @@ export default toNative(RouteEditModal)
         <!-- file_server -->
         <div v-else-if="formData.kind === 'file_server'" class="space-y-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">根目录 <span class="text-red-500">*</span></label>
+            <label class="form-label">根目录 <span class="text-red-500">*</span></label>
             <input v-model="formData.root" type="text" class="input font-mono text-sm" placeholder="/var/www/html" />
           </div>
           <div>
-            <label class="flex items-center gap-2 cursor-pointer select-none w-fit">
+            <label class="check-label">
               <input v-model="formData.browse" type="checkbox" class="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500" />
               <span class="text-sm text-slate-600">启用目录浏览</span>
             </label>
@@ -313,18 +313,18 @@ export default toNative(RouteEditModal)
         <!-- static_response -->
         <div v-else-if="formData.kind === 'static_response'" class="space-y-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">状态码</label>
+            <label class="form-label">状态码</label>
             <input v-model.number="formData.statusCode" type="number" min="100" max="599" class="input" placeholder="200" />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">响应体</label>
+            <label class="form-label">响应体</label>
             <textarea v-model="formData.body" rows="4" class="input font-mono text-sm" placeholder="OK"></textarea>
           </div>
         </div>
 
         <!-- raw -->
         <div v-else>
-          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">原始 handle 数组（JSON）<span class="text-red-500">*</span></label>
+          <label class="form-label">原始 handle 数组（JSON）<span class="text-red-500">*</span></label>
           <textarea v-model="formData.rawText" rows="10" class="input font-mono text-xs" placeholder='[{"handler":"reverse_proxy","upstreams":[{"dial":"x:80"}]}]'></textarea>
           <p class="text-xs text-slate-400 mt-1">直接编辑 caddy json 中 routes[i].handle 的原始数组</p>
         </div>

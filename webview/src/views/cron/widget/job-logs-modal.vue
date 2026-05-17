@@ -77,7 +77,7 @@ export default toNative(JobLogsModal)
 
     <template #header-actions>
       <button
-        class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+        class="btn-icon-sm"
         :disabled="loading"
         title="刷新"
         @click="loadLogs"
@@ -87,7 +87,7 @@ export default toNative(JobLogsModal)
     </template>
 
     <div class="p-4 md:p-5">
-      <div v-if="loading" class="flex flex-col items-center justify-center py-16">
+      <div v-if="loading" class="loading-state">
         <div class="w-10 h-10 spinner mb-3"></div>
         <p class="text-sm text-slate-500">加载中...</p>
       </div>
@@ -104,8 +104,8 @@ export default toNative(JobLogsModal)
           </div>
         </div>
 
-        <div v-if="logs.length === 0" class="flex flex-col items-center justify-center py-16">
-          <div class="w-16 h-16 rounded-lg bg-white flex items-center justify-center mb-4">
+        <div v-if="logs.length === 0" class="empty-state">
+          <div class="empty-state-icon bg-white!">
             <i class="fas fa-file-lines text-2xl text-slate-300"></i>
           </div>
           <p class="text-slate-500 text-sm">暂无执行记录</p>

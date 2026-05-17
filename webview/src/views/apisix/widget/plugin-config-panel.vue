@@ -169,12 +169,12 @@ export default toNative(PluginConfigPanel)
     <!-- 标题行 -->
     <div class="flex items-center justify-between">
       <div>
-        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">插件配置</label>
+        <label class="form-label">插件配置</label>
         <p class="text-xs text-slate-400 mt-1">{{ showImport ? '可直接编辑 JSON，也支持从现有路由导入' : '可直接编辑 JSON，或从插件列表添加' }}</p>
       </div>
       <div class="flex items-center gap-2">
-        <button :class="['px-3 py-1.5 text-xs rounded-lg border transition-colors', showPluginPanel ? 'border-indigo-300 text-indigo-600 bg-indigo-50' : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50']" @click="openPluginPanel"><i class="fas fa-puzzle-piece mr-1"></i>添加插件</button>
-        <button v-if="showImport" :class="['px-3 py-1.5 text-xs rounded-lg border transition-colors', showImportPanel ? 'border-indigo-300 text-indigo-600 bg-indigo-50' : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50']" @click="openImportPanel"><i class="fas fa-file-import mr-1"></i>从路由导入</button>
+        <button class="btn-panel-toggle" :class="showPluginPanel ? 'btn-panel-toggle-active' : 'btn-panel-toggle-inactive'" @click="openPluginPanel"><i class="fas fa-puzzle-piece mr-1"></i>添加插件</button>
+        <button v-if="showImport" class="btn-panel-toggle" :class="showImportPanel ? 'btn-panel-toggle-active' : 'btn-panel-toggle-inactive'" @click="openImportPanel"><i class="fas fa-file-import mr-1"></i>从路由导入</button>
       </div>
     </div>
 

@@ -81,11 +81,11 @@ export default toNative(Whitelist)
   <div>
     <div class="card mb-4">
       <!-- Toolbar -->
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center">
+            <div class="page-icon bg-amber-500">
               <i class="fas fa-shield-halved text-white"></i>
             </div>
             <div>
@@ -103,7 +103,7 @@ export default toNative(Whitelist)
         <!-- 移动端 -->
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+            <div class="page-icon bg-amber-500">
               <i class="fas fa-shield-halved text-white"></i>
             </div>
             <div class="min-w-0">
@@ -118,19 +118,19 @@ export default toNative(Whitelist)
       </div>
 
       <!-- 移动端搜索 -->
-      <div class="md:hidden px-4 py-2 border-b border-slate-100">
+      <div class="mobile-search">
         <PageSearch v-model="searchText" search-key="apisix-whitelist" placeholder="搜索路由或用户..." width-class="w-full" focus-color="amber" />
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+      <div v-if="loading" class="loading-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
 
       <!-- Empty -->
-      <div v-else-if="filteredWhitelist.length === 0" class="flex flex-col items-center justify-center py-20">
-        <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4">
+      <div v-else-if="filteredWhitelist.length === 0" class="empty-state">
+        <div class="empty-state-icon">
           <i class="fas fa-shield-halved text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ whitelist.length === 0 ? '暂无白名单数据' : '未找到匹配白名单' }}</p>
@@ -144,17 +144,17 @@ export default toNative(Whitelist)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">路由</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">描述</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">白名单用户</th>
-                <th class="w-24 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">用户数</th>
+                <th class="th">路由</th>
+                <th class="th">描述</th>
+                <th class="th">白名单用户</th>
+                <th class="w-24 th-right">用户数</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="route in filteredWhitelist" :key="route.id" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center gap-2 min-w-0">
-                    <div class="w-8 h-8 rounded-lg bg-amber-400 flex items-center justify-center flex-shrink-0">
+                    <div class="row-icon bg-amber-400">
                       <i class="fas fa-shield-halved text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
@@ -181,11 +181,11 @@ export default toNative(Whitelist)
 
         <!-- 移动端卡片 -->
         <div class="md:hidden space-y-3 p-4">
-          <div v-for="route in filteredWhitelist" :key="route.id" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
+          <div v-for="route in filteredWhitelist" :key="route.id" class="card-interactive">
             <!-- 顶部：路由标识 -->
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div class="w-10 h-10 rounded-lg bg-amber-400 flex items-center justify-center flex-shrink-0">
+                <div class="list-icon bg-amber-400">
                   <i class="fas fa-shield-halved text-white text-base"></i>
                 </div>
                 <div class="min-w-0">

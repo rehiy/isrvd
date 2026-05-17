@@ -205,11 +205,11 @@ export default toNative(UpstreamEditModal)
     <div class="max-w-3xl space-y-4 p-1">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">名称 <span class="text-red-500">*</span></label>
+          <label class="form-label">名称 <span class="text-red-500">*</span></label>
           <input v-model="formData.name" type="text" class="input" placeholder="上游名称" />
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">负载均衡策略</label>
+          <label class="form-label">负载均衡策略</label>
           <select v-model="formData.type" class="input">
             <option v-for="item in upstreamTypeOptions" :key="item.value" :value="item.value">{{ item.label }} - {{ item.desc }}</option>
           </select>
@@ -217,12 +217,12 @@ export default toNative(UpstreamEditModal)
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">描述</label>
+        <label class="form-label">描述</label>
         <textarea v-model="formData.desc" rows="2" class="input" placeholder="上游描述"></textarea>
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">超时时间（秒）</label>
+        <label class="form-label">超时时间（秒）</label>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
           <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" placeholder="连接 connect" />
           <input v-model.number="formData.timeout_send" type="number" min="0" class="input" placeholder="发送 send" />
@@ -233,13 +233,13 @@ export default toNative(UpstreamEditModal)
 
       <div v-if="formData.type === 'chash'" class="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Hash On</label>
+          <label class="form-label">Hash On</label>
           <select v-model="formData.hash_on" class="input bg-white">
             <option v-for="item in hashOnOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
           </select>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Key</label>
+          <label class="form-label">Key</label>
           <input v-model="formData.key" type="text" class="input bg-white" :placeholder="selectedHashOnOption.keyPlaceholder" />
           <p class="text-xs text-slate-400 mt-1">{{ selectedHashOnOption.keyHint }}</p>
         </div>
@@ -258,19 +258,19 @@ export default toNative(UpstreamEditModal)
         <div class="divide-y divide-slate-100">
           <div v-for="(node, index) in formData.nodes" :key="index" class="grid grid-cols-12 gap-2 p-3 items-end">
             <div class="col-span-12 md:col-span-5">
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Host</label>
+              <label class="form-label">Host</label>
               <ContainerSelect :model-value="node.host" :containers="containers" placeholder="127.0.0.1 或 容器名" @update:model-value="updateNode(index, 'host', $event)" />
             </div>
             <div class="col-span-5 md:col-span-3">
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Port</label>
+              <label class="form-label">Port</label>
               <ContainerPortSelect :model-value="String(node.port || '')" :ports="getPortsByHost(node.host)" placeholder="8080" @update:model-value="updateNode(index, 'port', $event)" />
             </div>
             <div class="col-span-5 md:col-span-3">
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">权重</label>
+              <label class="form-label">权重</label>
               <input v-model.number="node.weight" type="number" min="0" class="input" />
             </div>
             <div class="col-span-2 md:col-span-1 flex h-12 items-center justify-end">
-              <button type="button" :disabled="formData.nodes.length <= 1" class="btn-icon text-red-600 hover:bg-red-50 disabled:text-slate-300 disabled:cursor-not-allowed" title="删除节点" @click="removeNode(index)">
+              <button type="button" :disabled="formData.nodes.length <= 1" class="btn-icon btn-icon-red disabled:text-slate-300 disabled:cursor-not-allowed" title="删除节点" @click="removeNode(index)">
                 <i class="fas fa-trash text-xs"></i>
               </button>
             </div>

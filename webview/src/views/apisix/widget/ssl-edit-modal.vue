@@ -112,26 +112,26 @@ export default toNative(SSLEditModal)
   >
     <div class="max-w-3xl space-y-4 p-1">
       <div>
-        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">SNI 域名 <span class="text-red-500">*</span></label>
+        <label class="form-label">SNI 域名 <span class="text-red-500">*</span></label>
         <textarea v-model="formData.snisText" rows="3" class="input font-mono" placeholder="example.com&#10;*.example.com"></textarea>
         <p class="text-xs text-slate-400 mt-1">每行一个域名，也支持用英文逗号分隔。</p>
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">证书内容 <span v-if="!isEditMode" class="text-red-500">*</span></label>
+        <label class="form-label">证书内容 <span v-if="!isEditMode" class="text-red-500">*</span></label>
         <textarea v-model="formData.cert" rows="8" class="input font-mono text-xs" :placeholder="isEditMode ? '留空保持不变' : '-----BEGIN CERTIFICATE-----'" autocomplete="new-password"></textarea>
         <p class="text-xs text-slate-400 mt-1">PEM 格式证书，编辑时留空表示不修改当前证书。</p>
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">私钥内容 <span v-if="!isEditMode" class="text-red-500">*</span></label>
+        <label class="form-label">私钥内容 <span v-if="!isEditMode" class="text-red-500">*</span></label>
         <textarea v-model="formData.key" rows="8" class="input font-mono text-xs" :placeholder="isEditMode ? '留空保持不变' : '-----BEGIN PRIVATE KEY-----'" autocomplete="new-password"></textarea>
         <p class="text-xs text-slate-400 mt-1">PEM 格式私钥，编辑时留空表示不修改当前私钥。</p>
       </div>
 
       <div class="grid grid-cols-1 gap-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">状态</label>
+          <label class="form-label">状态</label>
           <select v-model.number="formData.status" class="input">
             <option :value="1">启用</option>
             <option :value="0">禁用</option>

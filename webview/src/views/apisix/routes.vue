@@ -151,11 +151,11 @@ export default toNative(Routes)
 <template>
   <div>
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-indigo-500 flex items-center justify-center"><i class="fas fa-route text-white"></i></div>
+            <div class="page-icon bg-indigo-500"><i class="fas fa-route text-white"></i></div>
             <div><h1 class="text-lg font-semibold text-slate-800">路由管理</h1><p class="text-xs text-slate-500">管理 APISIX 路由，配置匹配规则、上游转发与插件</p></div>
           </div>
           <div class="flex items-center gap-2">
@@ -167,7 +167,7 @@ export default toNative(Routes)
         <!-- 移动端 -->
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-indigo-500 flex items-center justify-center flex-shrink-0"><i class="fas fa-route text-white"></i></div>
+            <div class="page-icon bg-indigo-500"><i class="fas fa-route text-white"></i></div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">路由管理</h1>
               <p class="text-xs text-slate-500 truncate">配置匹配规则、上游与插件</p>
@@ -184,12 +184,12 @@ export default toNative(Routes)
         </div>
       </div>
       <!-- 移动端搜索栏 -->
-      <div class="md:hidden px-4 py-2 border-b border-slate-100">
+      <div class="mobile-search">
         <PageSearch v-model="searchText" search-key="apisix-routes" placeholder="搜索路由、URI、上游..." width-class="w-full" focus-color="indigo" />
       </div>
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
-      <div v-else-if="filteredRoutes.length === 0" class="flex flex-col items-center justify-center py-20">
-        <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4"><i class="fas fa-route text-4xl text-slate-300"></i></div>
+      <div v-if="loading" class="loading-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
+      <div v-else-if="filteredRoutes.length === 0" class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-route text-4xl text-slate-300"></i></div>
         <p class="text-slate-600 font-medium mb-1">{{ routes.length === 0 ? '暂无路由' : '未找到匹配路由' }}</p>
         <p class="text-sm text-slate-400">{{ routes.length === 0 ? '点击「新建路由」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
@@ -199,19 +199,19 @@ export default toNative(Routes)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">名称</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">URI</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Host</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">策略</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">上游</th>
-                <th class="w-40 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+                <th class="th">名称</th>
+                <th class="th">URI</th>
+                <th class="th">Host</th>
+                <th class="th">策略</th>
+                <th class="th">上游</th>
+                <th class="w-40 th-right">操作</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="route in filteredRoutes" :key="route.id" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center gap-2 min-w-0">
-                    <div class="w-8 h-8 rounded-lg bg-indigo-400 flex items-center justify-center flex-shrink-0">
+                    <div class="row-icon bg-indigo-400">
                       <i class="fas fa-route text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
@@ -229,8 +229,8 @@ export default toNative(Routes)
                     <button v-if="portal.hasPerm('PATCH /api/apisix/route/:id/status')" :class="['btn-icon', route.status === 1 ? 'text-amber-500 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50']" :title="route.status === 1 ? '禁用' : '启用'" @click="toggleStatus(route)">
                       <i :class="route.status === 1 ? 'fas fa-ban' : 'fas fa-play'" class="text-xs"></i>
                     </button>
-                    <button v-if="portal.hasPerm('PUT /api/apisix/route/:id')" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="编辑" @click="openEditModal(route)"><i class="fas fa-pen text-xs"></i></button>
-                    <button v-if="portal.hasPerm('DELETE /api/apisix/route/:id')" class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="deleteRoute(route)"><i class="fas fa-trash text-xs"></i></button>
+                    <button v-if="portal.hasPerm('PUT /api/apisix/route/:id')" class="btn-icon btn-icon-indigo" title="编辑" @click="openEditModal(route)"><i class="fas fa-pen text-xs"></i></button>
+                    <button v-if="portal.hasPerm('DELETE /api/apisix/route/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteRoute(route)"><i class="fas fa-trash text-xs"></i></button>
                   </div>
                 </td>
               </tr>
@@ -243,12 +243,12 @@ export default toNative(Routes)
           <div
             v-for="route in filteredRoutes"
             :key="route.id"
-            class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
+            class="card-interactive"
           >
             <!-- 顶部：路由信息和状态 -->
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div class="w-10 h-10 rounded-lg bg-indigo-400 flex items-center justify-center flex-shrink-0">
+                <div class="list-icon bg-indigo-400">
                   <i class="fas fa-route text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
@@ -279,14 +279,14 @@ export default toNative(Routes)
             </div>
 
             <!-- 底部：操作按钮 -->
-            <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
+            <div class="card-actions">
               <button v-if="portal.hasPerm('PATCH /api/apisix/route/:id/status')" :class="['btn-icon', route.status === 1 ? 'text-amber-500 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50']" :title="route.status === 1 ? '禁用' : '启用'" @click="toggleStatus(route)">
                 <i :class="route.status === 1 ? 'fas fa-ban' : 'fas fa-play'" class="text-xs"></i><span class="text-xs ml-1">{{ route.status === 1 ? '禁用' : '启用' }}</span>
               </button>
-              <button v-if="portal.hasPerm('PUT /api/apisix/route/:id')" class="btn-icon text-indigo-600 hover:bg-indigo-50" title="编辑" @click="openEditModal(route)">
+              <button v-if="portal.hasPerm('PUT /api/apisix/route/:id')" class="btn-icon btn-icon-indigo" title="编辑" @click="openEditModal(route)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
-              <button v-if="portal.hasPerm('DELETE /api/apisix/route/:id')" class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="deleteRoute(route)">
+              <button v-if="portal.hasPerm('DELETE /api/apisix/route/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteRoute(route)">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>

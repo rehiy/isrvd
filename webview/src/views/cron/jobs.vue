@@ -141,10 +141,10 @@ export default toNative(CronJobs)
 <template>
   <div>
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center">
+            <div class="page-icon bg-amber-500">
               <i class="fas fa-clock text-white"></i>
             </div>
             <div>
@@ -164,9 +164,9 @@ export default toNative(CronJobs)
         </div>
 
         <div class="block md:hidden">
-          <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center justify-between">
             <div class="flex items-center gap-3 min-w-0 flex-1">
-              <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+              <div class="page-icon bg-amber-500">
                 <i class="fas fa-clock text-white"></i>
               </div>
               <div class="min-w-0">
@@ -183,17 +183,19 @@ export default toNative(CronJobs)
               </button>
             </div>
           </div>
-          <PageSearch v-model="searchText" search-key="cron-jobs" placeholder="搜索任务..." width-class="w-full" focus-color="amber" />
         </div>
       </div>
+      <div class="mobile-search">
+        <PageSearch v-model="searchText" search-key="cron-jobs" placeholder="搜索任务..." width-class="w-full" focus-color="amber" />
+      </div>
 
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+      <div v-if="loading" class="loading-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
 
-      <div v-else-if="filteredJobs.length === 0" class="flex flex-col items-center justify-center py-20">
-        <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4">
+      <div v-else-if="filteredJobs.length === 0" class="empty-state">
+        <div class="empty-state-icon">
           <i class="fas fa-clock text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ jobs.length === 0 ? '暂无计划任务' : '未找到匹配任务' }}</p>
@@ -204,20 +206,20 @@ export default toNative(CronJobs)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">任务名称</th>
-              <th class="w-36 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">执行计划</th>
-              <th class="w-20 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">类型</th>
-              <th class="w-20 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
-              <th class="w-36 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">下次执行</th>
-              <th class="w-36 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">上次执行</th>
-              <th class="w-36 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+              <th class="th">任务名称</th>
+              <th class="w-36 th">执行计划</th>
+              <th class="w-20 th">类型</th>
+              <th class="w-20 th">状态</th>
+              <th class="w-36 th">下次执行</th>
+              <th class="w-36 th">上次执行</th>
+              <th class="w-36 th-right">操作</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-slate-100">
             <tr v-for="job in filteredJobs" :key="job.id" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[280px]">
                 <div class="flex items-center gap-2 min-w-0">
-                  <div class="w-8 h-8 rounded-lg bg-violet-400 flex items-center justify-center flex-shrink-0">
+                  <div class="row-icon bg-violet-400">
                     <i class="fas fa-clock text-white text-sm"></i>
                   </div>
                   <div class="min-w-0">
@@ -246,16 +248,16 @@ export default toNative(CronJobs)
               <td class="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{{ formatTime(job.lastRun) }}</td>
               <td class="px-4 py-3">
                 <div class="flex items-center justify-end gap-1.5">
-                  <button class="btn-icon text-emerald-600 hover:bg-emerald-50" title="立即执行" @click="runNow(job)">
+                  <button class="btn-icon btn-icon-emerald" title="立即执行" @click="runNow(job)">
                     <i class="fas fa-play text-xs"></i>
                   </button>
-                  <button class="btn-icon text-slate-600 hover:bg-slate-50" title="执行日志" @click="openLogs(job)">
+                  <button class="btn-icon btn-icon-slate" title="执行日志" @click="openLogs(job)">
                     <i class="fas fa-list-ul text-xs"></i>
                   </button>
-                  <button class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑" @click="openEdit(job)">
+                  <button class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(job)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
-                  <button class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="openDelete(job)">
+                  <button class="btn-icon btn-icon-red" title="删除" @click="openDelete(job)">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
@@ -266,10 +268,10 @@ export default toNative(CronJobs)
       </div>
 
       <div v-if="!loading && filteredJobs.length > 0" class="md:hidden space-y-3 p-4">
-        <div v-for="job in filteredJobs" :key="job.id" class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm">
+        <div v-for="job in filteredJobs" :key="job.id" class="card-interactive">
           <div class="flex items-start justify-between gap-3 mb-3">
             <div class="flex items-center gap-2 min-w-0 flex-1">
-              <div class="w-10 h-10 rounded-lg bg-violet-400 flex items-center justify-center flex-shrink-0">
+              <div class="list-icon bg-violet-400">
                 <i class="fas fa-clock text-white text-base"></i>
               </div>
               <div class="min-w-0">
@@ -310,10 +312,10 @@ export default toNative(CronJobs)
           </div>
 
           <div class="flex items-center justify-end gap-1 pt-3 mt-3 border-t border-slate-100">
-            <button class="btn-icon text-emerald-600 hover:bg-emerald-50" title="立即执行" @click="runNow(job)"><i class="fas fa-play text-xs"></i></button>
-            <button class="btn-icon text-slate-600 hover:bg-slate-50" title="执行日志" @click="openLogs(job)"><i class="fas fa-list-ul text-xs"></i></button>
-            <button class="btn-icon text-blue-600 hover:bg-blue-50" title="编辑" @click="openEdit(job)"><i class="fas fa-pen text-xs"></i></button>
-            <button class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="openDelete(job)"><i class="fas fa-trash text-xs"></i></button>
+            <button class="btn-icon btn-icon-emerald" title="立即执行" @click="runNow(job)"><i class="fas fa-play text-xs"></i></button>
+            <button class="btn-icon btn-icon-slate" title="执行日志" @click="openLogs(job)"><i class="fas fa-list-ul text-xs"></i></button>
+            <button class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(job)"><i class="fas fa-pen text-xs"></i></button>
+            <button class="btn-icon btn-icon-red" title="删除" @click="openDelete(job)"><i class="fas fa-trash text-xs"></i></button>
           </div>
         </div>
       </div>

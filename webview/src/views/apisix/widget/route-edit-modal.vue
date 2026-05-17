@@ -271,12 +271,12 @@ export default toNative(RouteEditModal)
   <BaseModal v-model="isOpen" :title="isEditMode ? '编辑路由' : '新建路由'" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
     <div class="space-y-4 p-1">
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">名称 <span class="text-red-500">*</span></label><input v-model="formData.name" type="text" class="input" placeholder="路由名称" /></div>
-        <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">优先级</label><input v-model.number="formData.priority" type="number" class="input" placeholder="0" min="0" /></div>
+        <div><label class="form-label">名称 <span class="text-red-500">*</span></label><input v-model="formData.name" type="text" class="input" placeholder="路由名称" /></div>
+        <div><label class="form-label">优先级</label><input v-model.number="formData.priority" type="number" class="input" placeholder="0" min="0" /></div>
       </div>
-      <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">描述</label><textarea v-model="formData.desc" rows="2" class="input" placeholder="路由描述"></textarea></div>
-      <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">URI（每行一个）<span class="text-red-500">*</span></label><textarea v-model="formData.uris" rows="3" class="input font-mono text-sm" placeholder="/api/v1/*&#10;/api/v2/*"></textarea></div>
-      <div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Host（每行一个，留空匹配所有）</label><textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="example.com"></textarea></div>
+      <div><label class="form-label">描述</label><textarea v-model="formData.desc" rows="2" class="input" placeholder="路由描述"></textarea></div>
+      <div><label class="form-label">URI（每行一个）<span class="text-red-500">*</span></label><textarea v-model="formData.uris" rows="3" class="input font-mono text-sm" placeholder="/api/v1/*&#10;/api/v2/*"></textarea></div>
+      <div><label class="form-label">Host（每行一个，留空匹配所有）</label><textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="example.com"></textarea></div>
 
       <div class="border border-slate-200 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">
@@ -306,7 +306,7 @@ export default toNative(RouteEditModal)
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">超时时间（秒）</label>
+            <label class="form-label">超时时间（秒）</label>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
               <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" placeholder="连接 connect" />
               <input v-model.number="formData.timeout_send" type="number" min="0" class="input" placeholder="发送 send" />
@@ -331,7 +331,7 @@ export default toNative(RouteEditModal)
 
       <div class="border border-slate-200 rounded-xl p-4">
         <div class="mb-3">
-          <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">引用插件配置</label>
+          <label class="form-label">引用插件配置</label>
           <p class="text-xs text-slate-400 mt-1 mb-2">选择已有的插件配置对象，与独立插件配置合并生效</p>
           <select v-model="formData.plugin_config_id" class="input">
             <option value="">不使用</option>

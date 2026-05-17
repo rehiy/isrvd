@@ -108,10 +108,10 @@ export default toNative(SSLs)
 <template>
   <div>
     <div class="card mb-4">
-      <div class="bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-cyan-500 flex items-center justify-center">
+            <div class="page-icon bg-cyan-500">
               <i class="fas fa-certificate text-white"></i>
             </div>
             <div>
@@ -132,7 +132,7 @@ export default toNative(SSLs)
 
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-lg bg-cyan-500 flex items-center justify-center flex-shrink-0">
+            <div class="page-icon bg-cyan-500">
               <i class="fas fa-certificate text-white"></i>
             </div>
             <div class="min-w-0">
@@ -151,17 +151,17 @@ export default toNative(SSLs)
         </div>
       </div>
 
-      <div class="md:hidden px-4 py-2 border-b border-slate-100">
+      <div class="mobile-search">
         <PageSearch v-model="searchText" search-key="apisix-ssls" placeholder="搜索证书或 SNI..." width-class="w-full" focus-color="cyan" />
       </div>
 
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+      <div v-if="loading" class="loading-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
 
-      <div v-else-if="filteredSSLs.length === 0" class="flex flex-col items-center justify-center py-20">
-        <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4">
+      <div v-else-if="filteredSSLs.length === 0" class="empty-state">
+        <div class="empty-state-icon">
           <i class="fas fa-certificate text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">{{ ssls.length === 0 ? '暂无证书' : '未找到匹配证书' }}</p>
@@ -173,22 +173,22 @@ export default toNative(SSLs)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">SNI</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">状态</th>
-                <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">更新时间</th>
-                <th class="w-32 px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+                <th class="th">SNI</th>
+                <th class="th">状态</th>
+                <th class="th">更新时间</th>
+                <th class="w-32 th-right">操作</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="ssl in filteredSSLs" :key="ssl.id" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center gap-2 min-w-0">
-                    <div class="w-8 h-8 rounded-lg bg-cyan-400 flex items-center justify-center flex-shrink-0">
+                    <div class="row-icon bg-cyan-400">
                       <i class="fas fa-certificate text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
                       <span class="font-medium text-slate-800 truncate block">{{ getPrimarySNI(ssl) }}</span>
-                      <span class="text-xs text-slate-400 truncate block mt-0.5 font-mono">{{ ssl.id }}</span>
+                      <span class="text-mono-muted">{{ ssl.id }}</span>
                     </div>
                   </div>
                 </td>
@@ -198,10 +198,10 @@ export default toNative(SSLs)
                 <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTs(ssl.update_time || ssl.create_time) }}</td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button v-if="portal.hasPerm('PUT /api/apisix/ssl/:id')" class="btn-icon text-cyan-600 hover:bg-cyan-50" title="编辑" @click="openEditModal(ssl)">
+                    <button v-if="portal.hasPerm('PUT /api/apisix/ssl/:id')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(ssl)">
                       <i class="fas fa-pen text-xs"></i>
                     </button>
-                    <button v-if="portal.hasPerm('DELETE /api/apisix/ssl/:id')" class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="deleteSSL(ssl)">
+                    <button v-if="portal.hasPerm('DELETE /api/apisix/ssl/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteSSL(ssl)">
                       <i class="fas fa-trash text-xs"></i>
                     </button>
                   </div>
@@ -215,16 +215,16 @@ export default toNative(SSLs)
           <div
             v-for="ssl in filteredSSLs"
             :key="ssl.id"
-            class="rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm"
+            class="card-interactive"
           >
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div class="w-10 h-10 rounded-lg bg-cyan-400 flex items-center justify-center flex-shrink-0">
+                <div class="list-icon bg-cyan-400">
                   <i class="fas fa-certificate text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
                   <div class="font-medium text-sm text-slate-800 truncate">{{ getPrimarySNI(ssl) }}</div>
-                  <div class="text-xs text-slate-400 mt-0.5 truncate font-mono">{{ ssl.id }}</div>
+                  <div class="text-mono-muted">{{ ssl.id }}</div>
                 </div>
               </div>
               <span :class="['text-xs px-2 py-0.5 rounded flex-shrink-0', getStatusClass(ssl)]">{{ getStatusText(ssl) }}</span>
@@ -239,11 +239,11 @@ export default toNative(SSLs)
               <span class="text-xs text-slate-500">{{ formatTs(ssl.update_time || ssl.create_time) }}</span>
             </div>
 
-            <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
-              <button v-if="portal.hasPerm('PUT /api/apisix/ssl/:id')" class="btn-icon text-cyan-600 hover:bg-cyan-50" title="编辑" @click="openEditModal(ssl)">
+            <div class="card-actions">
+              <button v-if="portal.hasPerm('PUT /api/apisix/ssl/:id')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(ssl)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
-              <button v-if="portal.hasPerm('DELETE /api/apisix/ssl/:id')" class="btn-icon text-red-600 hover:bg-red-50" title="删除" @click="deleteSSL(ssl)">
+              <button v-if="portal.hasPerm('DELETE /api/apisix/ssl/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteSSL(ssl)">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
             </div>

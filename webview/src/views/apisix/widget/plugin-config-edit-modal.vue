@@ -121,12 +121,12 @@ export default toNative(PluginConfigEditModal)
   >
     <div class="max-w-3xl space-y-4 p-1">
       <div>
-        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">配置 ID</label>
+        <label class="form-label">配置 ID</label>
         <input v-model="formData.id" type="text" class="input" :disabled="isEditMode" placeholder="留空由 APISIX 自动生成" />
         <p class="text-xs text-slate-400 mt-1">创建时可选；编辑时不能修改 ID。</p>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">描述</label>
+        <label class="form-label">描述</label>
         <textarea v-model="formData.desc" rows="2" class="input resize-none" placeholder="插件配置描述"></textarea>
       </div>
 
