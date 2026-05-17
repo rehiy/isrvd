@@ -4,7 +4,7 @@ exec 2>&1
 # 等待 APISIX Admin API 就绪（etcd 已由 apisix 等待）
 echo "[isrvd] Waiting for APISIX..."
 for i in $(seq 1 60); do
-    if curl -sf http://127.0.0.1:9180/apisix/admin/routes &>/dev/null; then
+    if curl -sf --connect-timeout 5 --max-time 10 http://127.0.0.1:9180/apisix/admin/routes &>/dev/null; then
         echo "[isrvd] APISIX is ready"
         break
     fi
