@@ -56,21 +56,21 @@ $:
         - name: Login to CNB Docker registry
           script: printf "%s" "$CNB_TOKEN" | docker login -u "$CNB_TOKEN_USER_NAME" --password-stdin "$CNB_DOCKER_REGISTRY"
 
-        - name: Build and push CNB slim image
+        - name: Build and push slim image
           timeout: 2h
           script: |
             docker buildx build --push --platform linux/amd64,linux/arm64 \
             --build-arg "ISRVD_VERSION=$CNB_BRANCH" --build-arg "ISRVD_DOWNLOAD_BASE=$ISRVD_DOWNLOAD_BASE" \
             -t $IMAGE_URL:slim -t $IMAGE_URL:latest -f build/docker-slim/Dockerfile .
 
-        - name: Build and push CNB image
+        - name: Build and push apisix image
           timeout: 2h
           script: |
             docker buildx build --push --platform linux/amd64,linux/arm64 \
             --build-arg "ISRVD_VERSION=$CNB_BRANCH" --build-arg "ISRVD_DOWNLOAD_BASE=$ISRVD_DOWNLOAD_BASE" \
             -t $IMAGE_URL:apisix -f build/docker/Dockerfile .
 
-        - name: Build and push CNB Caddy image
+        - name: Build and push caddy image
           timeout: 2h
           script: |
             docker buildx build --push --platform linux/amd64,linux/arm64 \
