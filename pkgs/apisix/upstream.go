@@ -1,6 +1,7 @@
 package apisix
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -27,8 +28,8 @@ type Upstream struct {
 }
 
 // UpstreamList 获取所有 Upstream 列表
-func (c *Client) UpstreamList() ([]Upstream, error) {
-	data, err := c.doRequest(http.MethodGet, "/upstreams", nil)
+func (c *Client) UpstreamList(ctx context.Context) ([]Upstream, error) {
+	data, err := c.doRequest(ctx, http.MethodGet, "/upstreams", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -36,8 +37,8 @@ func (c *Client) UpstreamList() ([]Upstream, error) {
 }
 
 // UpstreamInspect 获取单条 Upstream 详情
-func (c *Client) UpstreamInspect(upstreamID string) (*Upstream, error) {
-	data, err := c.doRequest(http.MethodGet, "/upstreams/"+url.PathEscape(upstreamID), nil)
+func (c *Client) UpstreamInspect(ctx context.Context, upstreamID string) (*Upstream, error) {
+	data, err := c.doRequest(ctx, http.MethodGet, "/upstreams/"+url.PathEscape(upstreamID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +46,8 @@ func (c *Client) UpstreamInspect(upstreamID string) (*Upstream, error) {
 }
 
 // UpstreamCreate 创建 Upstream
-func (c *Client) UpstreamCreate(req Upstream) (*Upstream, error) {
-	data, err := c.doRequest(http.MethodPost, "/upstreams", buildUpstreamBody(req))
+func (c *Client) UpstreamCreate(ctx context.Context, req Upstream) (*Upstream, error) {
+	data, err := c.doRequest(ctx, http.MethodPost, "/upstreams", buildUpstreamBody(req))
 	if err != nil {
 		return nil, err
 	}
@@ -54,8 +55,8 @@ func (c *Client) UpstreamCreate(req Upstream) (*Upstream, error) {
 }
 
 // UpstreamUpdate 更新 Upstream
-func (c *Client) UpstreamUpdate(upstreamID string, req Upstream) (*Upstream, error) {
-	data, err := c.doRequest(http.MethodPut, "/upstreams/"+url.PathEscape(upstreamID), buildUpstreamBody(req))
+func (c *Client) UpstreamUpdate(ctx context.Context, upstreamID string, req Upstream) (*Upstream, error) {
+	data, err := c.doRequest(ctx, http.MethodPut, "/upstreams/"+url.PathEscape(upstreamID), buildUpstreamBody(req))
 	if err != nil {
 		return nil, err
 	}
@@ -63,13 +64,12 @@ func (c *Client) UpstreamUpdate(upstreamID string, req Upstream) (*Upstream, err
 }
 
 // UpstreamDelete 删除 Upstream
-func (c *Client) UpstreamDelete(upstreamID string) error {
-	_, err := c.doRequest(http.MethodDelete, "/upstreams/"+url.PathEscape(upstreamID), nil)
-	if err != nil {
-		return err
-	}
-	return nil
+func (c *Client) UpstreamDelete(ctx context.Context, upstreamID string) error {
+	_, err := c.doRequest(ctx, http.MethodDelete, "/upstreams/"+url.PathEscape(upstreamID), nil)
+	return err
 }
+
+// --- 辅助函数 ---
 
 // buildUpstreamBody 将 Upstream 转换为 Apisix API 请求体
 func buildUpstreamBody(req Upstream) map[string]any {

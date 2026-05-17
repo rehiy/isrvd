@@ -72,7 +72,13 @@ func IsSwarmAvailable(ctx context.Context) bool {
 		return false
 	}
 
-	_, err := SwarmService.GetClient().SwarmInspect(ctx)
+	client := SwarmService.GetClient()
+	if client == nil {
+		logman.Warn("Swarm client is nil")
+		return false
+	}
+
+	_, err := client.SwarmInspect(ctx)
 	if err != nil {
 		logman.Error("Swarm not available", "error", err)
 		return false

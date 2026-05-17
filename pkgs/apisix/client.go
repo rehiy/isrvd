@@ -2,6 +2,7 @@ package apisix
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -29,8 +30,8 @@ func NewClient(baseURL, adminKey string) *Client {
 	}
 }
 
-// doRequest 发送请求到 Apisix Admin API
-func (c *Client) doRequest(method, path string, body any) ([]byte, error) {
+// doRequest 发送请求到 Apisix Admin API，支持 context 取消和超时
+func (c *Client) doRequest(ctx context.Context, method, path string, body any) ([]byte, error) {
 	var bodyReader io.Reader
 	if body != nil {
 		data, err := json.Marshal(body)
@@ -40,8 +41,8 @@ func (c *Client) doRequest(method, path string, body any) ([]byte, error) {
 		bodyReader = bytes.NewReader(data)
 	}
 
-	url := c.baseURL + path
-	req, err := http.NewRequest(method, url, bodyReader)
+	rawURL := c.baseURL + path
+	req, err := http.NewRequestWithContext(ctx, method, rawURL, bodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("创建请求失败: %w", err)
 	}

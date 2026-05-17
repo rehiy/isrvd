@@ -1,6 +1,7 @@
 package apisix
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -37,8 +38,8 @@ type Route struct {
 }
 
 // RouteList 获取所有路由列表（不过滤插件，用于路由管理页面展示）
-func (c *Client) RouteList() ([]Route, error) {
-	data, err := c.doRequest(http.MethodGet, "/routes", nil)
+func (c *Client) RouteList(ctx context.Context) ([]Route, error) {
+	data, err := c.doRequest(ctx, http.MethodGet, "/routes", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +47,8 @@ func (c *Client) RouteList() ([]Route, error) {
 }
 
 // RouteInspect 获取单条路由详情
-func (c *Client) RouteInspect(routeID string) (*Route, error) {
-	data, err := c.doRequest(http.MethodGet, "/routes/"+url.PathEscape(routeID), nil)
+func (c *Client) RouteInspect(ctx context.Context, routeID string) (*Route, error) {
+	data, err := c.doRequest(ctx, http.MethodGet, "/routes/"+url.PathEscape(routeID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +56,8 @@ func (c *Client) RouteInspect(routeID string) (*Route, error) {
 }
 
 // RouteCreate 创建路由
-func (c *Client) RouteCreate(req Route) (*Route, error) {
-	data, err := c.doRequest(http.MethodPost, "/routes", buildRouteBody(req))
+func (c *Client) RouteCreate(ctx context.Context, req Route) (*Route, error) {
+	data, err := c.doRequest(ctx, http.MethodPost, "/routes", buildRouteBody(req))
 	if err != nil {
 		return nil, err
 	}
@@ -64,8 +65,8 @@ func (c *Client) RouteCreate(req Route) (*Route, error) {
 }
 
 // RouteUpdate 更新路由
-func (c *Client) RouteUpdate(routeID string, req Route) (*Route, error) {
-	data, err := c.doRequest(http.MethodPut, "/routes/"+url.PathEscape(routeID), buildRouteBody(req))
+func (c *Client) RouteUpdate(ctx context.Context, routeID string, req Route) (*Route, error) {
+	data, err := c.doRequest(ctx, http.MethodPut, "/routes/"+url.PathEscape(routeID), buildRouteBody(req))
 	if err != nil {
 		return nil, err
 	}
@@ -73,31 +74,24 @@ func (c *Client) RouteUpdate(routeID string, req Route) (*Route, error) {
 }
 
 // RouteStatusPatch 仅更新路由的启用/禁用状态（1=启用 0=禁用）
-func (c *Client) RouteStatusPatch(routeID string, status int) error {
+func (c *Client) RouteStatusPatch(ctx context.Context, routeID string, status int) error {
 	body := map[string]any{"status": status}
-	_, err := c.doRequest(http.MethodPatch, "/routes/"+url.PathEscape(routeID), body)
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err := c.doRequest(ctx, http.MethodPatch, "/routes/"+url.PathEscape(routeID), body)
+	return err
 }
 
 // RouteDelete 删除路由
-func (c *Client) RouteDelete(routeID string) error {
-	_, err := c.doRequest(http.MethodDelete, "/routes/"+url.PathEscape(routeID), nil)
-	if err != nil {
-		return err
-	}
-	return nil
+func (c *Client) RouteDelete(ctx context.Context, routeID string) error {
+	_, err := c.doRequest(ctx, http.MethodDelete, "/routes/"+url.PathEscape(routeID), nil)
+	return err
 }
 
 // RouteWhitelistList 获取管控路由列表（仅返回同时配置了 key-auth 和 consumer-restriction 的路由）
-func (c *Client) RouteWhitelistList() ([]Route, error) {
-	routes, err := c.fetchRoutes()
+func (c *Client) RouteWhitelistList(ctx context.Context) ([]Route, error) {
+	routes, err := c.fetchRoutes(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	result := make([]Route, 0, len(routes))
 	for _, v := range routes {
 		if !hasPlugin(v.Plugins, "key-auth") || !hasPlugin(v.Plugins, "consumer-restriction") {
@@ -109,12 +103,11 @@ func (c *Client) RouteWhitelistList() ([]Route, error) {
 }
 
 // RouteWhitelist 获取所有路由的 consumer-restriction 白名单
-func (c *Client) RouteWhitelist() ([]Route, error) {
-	routes, err := c.fetchRoutes()
+func (c *Client) RouteWhitelist(ctx context.Context) ([]Route, error) {
+	routes, err := c.fetchRoutes(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	result := make([]Route, 0)
 	for _, v := range routes {
 		consumers := pluginConsumerRestrictionWhitelist(v.Plugins)
@@ -128,12 +121,11 @@ func (c *Client) RouteWhitelist() ([]Route, error) {
 }
 
 // getRouteConsumers 获取指定路由的白名单消费者列表
-func (c *Client) getRouteConsumers(routeID string) ([]string, error) {
-	whitelist, err := c.RouteWhitelist()
+func (c *Client) getRouteConsumers(ctx context.Context, routeID string) ([]string, error) {
+	whitelist, err := c.RouteWhitelist(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	for _, wl := range whitelist {
 		if wl.ID == routeID {
 			return wl.Consumers, nil
@@ -143,12 +135,11 @@ func (c *Client) getRouteConsumers(routeID string) ([]string, error) {
 }
 
 // RouteWhitelistRevoke 从路由的白名单中移除 consumer
-func (c *Client) RouteWhitelistRevoke(routeID, consumerName string) error {
-	consumers, err := c.getRouteConsumers(routeID)
+func (c *Client) RouteWhitelistRevoke(ctx context.Context, routeID, consumerName string) error {
+	consumers, err := c.getRouteConsumers(ctx, routeID)
 	if err != nil {
 		return err
 	}
-
 	newConsumers := make([]string, 0, len(consumers))
 	found := false
 	for _, name := range consumers {
@@ -161,49 +152,41 @@ func (c *Client) RouteWhitelistRevoke(routeID, consumerName string) error {
 	if !found {
 		return fmt.Errorf("用户 %s 不在路由 %s 的白名单中", consumerName, routeID)
 	}
-	return c.RouteConsumerRestrictionUpdate(routeID, newConsumers)
+	return c.RouteConsumerRestrictionUpdate(ctx, routeID, newConsumers)
 }
 
 // RouteConsumerRestrictionUpdate 更新路由的 consumer-restriction 白名单
-func (c *Client) RouteConsumerRestrictionUpdate(routeID string, consumers []string) error {
-	routeData, err := c.doRequest(http.MethodGet, "/routes/"+url.PathEscape(routeID), nil)
+func (c *Client) RouteConsumerRestrictionUpdate(ctx context.Context, routeID string, consumers []string) error {
+	routeData, err := c.doRequest(ctx, http.MethodGet, "/routes/"+url.PathEscape(routeID), nil)
 	if err != nil {
 		return err
 	}
-
 	var raw struct {
 		Value map[string]any `json:"value"`
 	}
 	if err := json.Unmarshal(routeData, &raw); err != nil {
 		return fmt.Errorf("解析路由详情失败: %w", err)
 	}
-
 	route := raw.Value
 	plugins, _ := route["plugins"].(map[string]any)
 	if plugins == nil {
 		plugins = make(map[string]any)
 	}
-
 	if len(consumers) > 0 {
 		plugins["consumer-restriction"] = map[string]any{"whitelist": consumers}
 	} else {
 		delete(plugins, "consumer-restriction")
 	}
-
 	route["plugins"] = plugins
 	delete(route, "create_time")
 	delete(route, "update_time")
-
-	_, err = c.doRequest(http.MethodPut, "/routes/"+url.PathEscape(routeID), route)
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err = c.doRequest(ctx, http.MethodPut, "/routes/"+url.PathEscape(routeID), route)
+	return err
 }
 
 // fetchRoutes 拉取全量路由（内部复用，避免重复 HTTP 调用）
-func (c *Client) fetchRoutes() ([]Route, error) {
-	data, err := c.doRequest(http.MethodGet, "/routes", nil)
+func (c *Client) fetchRoutes(ctx context.Context) ([]Route, error) {
+	data, err := c.doRequest(ctx, http.MethodGet, "/routes", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +251,6 @@ func parseRouteList(data []byte) ([]Route, error) {
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return nil, fmt.Errorf("解析路由列表失败: %w", err)
 	}
-
 	routes := make([]Route, 0, len(raw.List))
 	for _, item := range raw.List {
 		routes = append(routes, item.Value)

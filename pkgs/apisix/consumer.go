@@ -1,6 +1,7 @@
 package apisix
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -20,12 +21,11 @@ type Consumer struct {
 }
 
 // ConsumerList 获取所有 Consumer 列表
-func (c *Client) ConsumerList() ([]Consumer, error) {
-	data, err := c.doRequest(http.MethodGet, "/consumers", nil)
+func (c *Client) ConsumerList(ctx context.Context) ([]Consumer, error) {
+	data, err := c.doRequest(ctx, http.MethodGet, "/consumers", nil)
 	if err != nil {
 		return nil, err
 	}
-
 	var raw struct {
 		List []struct {
 			Value Consumer `json:"value"`
@@ -34,7 +34,6 @@ func (c *Client) ConsumerList() ([]Consumer, error) {
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return nil, fmt.Errorf("解析 Consumer 列表失败: %w", err)
 	}
-
 	result := make([]Consumer, 0, len(raw.List))
 	for _, item := range raw.List {
 		maskConsumerPlugins(item.Value.Plugins)
@@ -44,12 +43,11 @@ func (c *Client) ConsumerList() ([]Consumer, error) {
 }
 
 // ConsumerRaw 获取指定 Consumer 的完整（未脱敏）数据
-func (c *Client) ConsumerRaw(username string) (*Consumer, error) {
-	data, err := c.doRequest(http.MethodGet, "/consumers/"+url.PathEscape(username), nil)
+func (c *Client) ConsumerRaw(ctx context.Context, username string) (*Consumer, error) {
+	data, err := c.doRequest(ctx, http.MethodGet, "/consumers/"+url.PathEscape(username), nil)
 	if err != nil {
 		return nil, err
 	}
-
 	var raw struct {
 		Value Consumer `json:"value"`
 	}
@@ -61,29 +59,27 @@ func (c *Client) ConsumerRaw(username string) (*Consumer, error) {
 
 // ConsumerUpdate 更新 Consumer，支持传入完整 plugins，
 // 对于脱敏字段（含 ****** 的 key/password）自动替换为原始值
-func (c *Client) ConsumerUpdate(username, desc string, plugins map[string]any) error {
-	raw, err := c.ConsumerRaw(username)
+func (c *Client) ConsumerUpdate(ctx context.Context, username, desc string, plugins map[string]any) error {
+	raw, err := c.ConsumerRaw(ctx, username)
 	if err != nil {
 		return err
 	}
-
 	// 用原始值替换脱敏字段
 	if raw.Plugins != nil && plugins != nil {
 		unmaskPlugins(plugins, raw.Plugins)
 	}
-
 	body := map[string]any{
 		"username": username,
 		"desc":     desc,
 		"plugins":  plugins,
 	}
-	_, err = c.doRequest(http.MethodPut, "/consumers/"+url.PathEscape(username), body)
+	_, err = c.doRequest(ctx, http.MethodPut, "/consumers/"+url.PathEscape(username), body)
 	return err
 }
 
 // ConsumerCreate 创建 Consumer，支持传入完整 plugins。
 // 若 plugins 为空，自动生成 key-auth 插件并返回明文 API Key。
-func (c *Client) ConsumerCreate(username, desc string, plugins map[string]any) (*Consumer, error) {
+func (c *Client) ConsumerCreate(ctx context.Context, username, desc string, plugins map[string]any) (*Consumer, error) {
 	if len(plugins) == 0 {
 		apiKey := strutil.Rand(32)
 		plugins = map[string]any{
@@ -95,7 +91,7 @@ func (c *Client) ConsumerCreate(username, desc string, plugins map[string]any) (
 		"desc":     desc,
 		"plugins":  plugins,
 	}
-	_, err := c.doRequest(http.MethodPut, "/consumers/"+url.PathEscape(username), body)
+	_, err := c.doRequest(ctx, http.MethodPut, "/consumers/"+url.PathEscape(username), body)
 	if err != nil {
 		return nil, err
 	}
@@ -104,12 +100,9 @@ func (c *Client) ConsumerCreate(username, desc string, plugins map[string]any) (
 }
 
 // ConsumerDelete 删除指定 Consumer
-func (c *Client) ConsumerDelete(username string) error {
-	_, err := c.doRequest(http.MethodDelete, "/consumers/"+url.PathEscape(username), nil)
-	if err != nil {
-		return err
-	}
-	return nil
+func (c *Client) ConsumerDelete(ctx context.Context, username string) error {
+	_, err := c.doRequest(ctx, http.MethodDelete, "/consumers/"+url.PathEscape(username), nil)
+	return err
 }
 
 // --- 辅助函数 ---

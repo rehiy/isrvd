@@ -2,6 +2,7 @@ package overview
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"isrvd/config"
@@ -34,14 +35,75 @@ func (s *Service) Uptime() *UptimeResponse {
 	}
 }
 
-// Probe 服务探活
+// Probe 服务探活（并发检查，整体 5 秒超时）
 func (s *Service) Probe(ctx context.Context) *ProbeResponse {
+	probeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	var (
+		agentOk, apisixOk, caddyOk, dockerOk, swarmOk, composeOk bool
+		wg                                                                 sync.WaitGroup
+		mu                                                                 sync.Mutex
+	)
+
+	wg.Add(5) // Agent 不需要网络检查，直接判断
+
+	// Agent 检查（本地配置判断，无需并发）
+	agentOk = config.Agent.BaseURL != "" && config.Agent.APIKey != ""
+
+	// Apisix 检查
+	go func() {
+		defer wg.Done()
+		ok := registry.IsApisixAvailable(probeCtx)
+		mu.Lock()
+		apisixOk = ok
+		mu.Unlock()
+	}()
+
+	// Caddy 检查
+	go func() {
+		defer wg.Done()
+		ok := registry.IsCaddyAvailable(probeCtx)
+		mu.Lock()
+		caddyOk = ok
+		mu.Unlock()
+	}()
+
+	// Docker 检查
+	go func() {
+		defer wg.Done()
+		ok := registry.IsDockerAvailable(probeCtx)
+		mu.Lock()
+		dockerOk = ok
+		mu.Unlock()
+	}()
+
+	// Swarm 检查
+	go func() {
+		defer wg.Done()
+		ok := registry.IsSwarmAvailable(probeCtx)
+		mu.Lock()
+		swarmOk = ok
+		mu.Unlock()
+	}()
+
+	// Compose 检查
+	go func() {
+		defer wg.Done()
+		ok := registry.IsComposeAvailable(probeCtx)
+		mu.Lock()
+		composeOk = ok
+		mu.Unlock()
+	}()
+
+	wg.Wait()
+
 	return &ProbeResponse{
-		Agent:   map[string]bool{"available": config.Agent.BaseURL != "" && config.Agent.APIKey != ""},
-		Apisix:  map[string]bool{"available": registry.IsApisixAvailable()},
-		Caddy:   map[string]bool{"available": registry.IsCaddyAvailable(ctx)},
-		Docker:  map[string]bool{"available": registry.IsDockerAvailable(ctx)},
-		Swarm:   map[string]bool{"available": registry.IsSwarmAvailable(ctx)},
-		Compose: map[string]bool{"available": registry.IsComposeAvailable(ctx)},
+		Agent:   map[string]bool{"available": agentOk},
+		Apisix:  map[string]bool{"available": apisixOk},
+		Caddy:   map[string]bool{"available": caddyOk},
+		Docker:  map[string]bool{"available": dockerOk},
+		Swarm:   map[string]bool{"available": swarmOk},
+		Compose: map[string]bool{"available": composeOk},
 	}
 }

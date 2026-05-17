@@ -1,6 +1,7 @@
 package apisix
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -19,8 +20,8 @@ type SSL struct {
 }
 
 // SSLList 获取所有 SSL 证书列表
-func (c *Client) SSLList() ([]SSL, error) {
-	data, err := c.doRequest(http.MethodGet, "/ssls", nil)
+func (c *Client) SSLList(ctx context.Context) ([]SSL, error) {
+	data, err := c.doRequest(ctx, http.MethodGet, "/ssls", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -28,8 +29,8 @@ func (c *Client) SSLList() ([]SSL, error) {
 }
 
 // SSLInspect 获取单个 SSL 证书详情
-func (c *Client) SSLInspect(sslID string) (*SSL, error) {
-	data, err := c.doRequest(http.MethodGet, "/ssls/"+url.PathEscape(sslID), nil)
+func (c *Client) SSLInspect(ctx context.Context, sslID string) (*SSL, error) {
+	data, err := c.doRequest(ctx, http.MethodGet, "/ssls/"+url.PathEscape(sslID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -37,8 +38,8 @@ func (c *Client) SSLInspect(sslID string) (*SSL, error) {
 }
 
 // SSLCreate 创建 SSL 证书
-func (c *Client) SSLCreate(req SSL) (*SSL, error) {
-	data, err := c.doRequest(http.MethodPost, "/ssls", buildSSLBody(req, false))
+func (c *Client) SSLCreate(ctx context.Context, req SSL) (*SSL, error) {
+	data, err := c.doRequest(ctx, http.MethodPost, "/ssls", buildSSLBody(req, false))
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +47,8 @@ func (c *Client) SSLCreate(req SSL) (*SSL, error) {
 }
 
 // SSLUpdate 更新 SSL 证书
-func (c *Client) SSLUpdate(sslID string, req SSL) (*SSL, error) {
-	data, err := c.doRequest(http.MethodPatch, "/ssls/"+url.PathEscape(sslID), buildSSLBody(req, true))
+func (c *Client) SSLUpdate(ctx context.Context, sslID string, req SSL) (*SSL, error) {
+	data, err := c.doRequest(ctx, http.MethodPatch, "/ssls/"+url.PathEscape(sslID), buildSSLBody(req, true))
 	if err != nil {
 		return nil, err
 	}
@@ -55,13 +56,12 @@ func (c *Client) SSLUpdate(sslID string, req SSL) (*SSL, error) {
 }
 
 // SSLDelete 删除 SSL 证书
-func (c *Client) SSLDelete(sslID string) error {
-	_, err := c.doRequest(http.MethodDelete, "/ssls/"+url.PathEscape(sslID), nil)
-	if err != nil {
-		return err
-	}
-	return nil
+func (c *Client) SSLDelete(ctx context.Context, sslID string) error {
+	_, err := c.doRequest(ctx, http.MethodDelete, "/ssls/"+url.PathEscape(sslID), nil)
+	return err
 }
+
+// --- 辅助函数 ---
 
 // buildSSLBody 将 SSL 转换为 Apisix API 请求体
 func buildSSLBody(req SSL, patch bool) map[string]any {

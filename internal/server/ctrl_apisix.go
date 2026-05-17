@@ -50,7 +50,7 @@ func (app *App) defineApisixRoutes() []Route {
 }
 
 func (app *App) apisixRouteList(c *gin.Context) {
-	result, err := app.apisixSvc.RouteList()
+	result, err := app.apisixSvc.RouteList(c.Request.Context())
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -59,7 +59,7 @@ func (app *App) apisixRouteList(c *gin.Context) {
 }
 
 func (app *App) apisixRouteInspect(c *gin.Context) {
-	result, err := app.apisixSvc.RouteInspect(c.Param("id"))
+	result, err := app.apisixSvc.RouteInspect(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -73,7 +73,7 @@ func (app *App) apisixRouteCreate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.RouteCreate(req)
+	result, err := app.apisixSvc.RouteCreate(c.Request.Context(), req)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -87,7 +87,7 @@ func (app *App) apisixRouteUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.RouteUpdate(c.Param("id"), req)
+	result, err := app.apisixSvc.RouteUpdate(c.Request.Context(), c.Param("id"), req)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -103,7 +103,7 @@ func (app *App) apisixRouteStatusPatch(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.apisixSvc.RouteStatusPatch(c.Param("id"), req.Status); err != nil {
+	if err := app.apisixSvc.RouteStatusPatch(c.Request.Context(), c.Param("id"), req.Status); err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -111,7 +111,7 @@ func (app *App) apisixRouteStatusPatch(c *gin.Context) {
 }
 
 func (app *App) apisixRouteDelete(c *gin.Context) {
-	if err := app.apisixSvc.RouteDelete(c.Param("id")); err != nil {
+	if err := app.apisixSvc.RouteDelete(c.Request.Context(), c.Param("id")); err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -119,7 +119,7 @@ func (app *App) apisixRouteDelete(c *gin.Context) {
 }
 
 func (app *App) apisixConsumerList(c *gin.Context) {
-	result, err := app.apisixSvc.ConsumerList()
+	result, err := app.apisixSvc.ConsumerList(c.Request.Context())
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -137,7 +137,7 @@ func (app *App) apisixConsumerCreate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.ConsumerCreate(req.Username, req.Desc, req.Plugins)
+	result, err := app.apisixSvc.ConsumerCreate(c.Request.Context(), req.Username, req.Desc, req.Plugins)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -155,7 +155,7 @@ func (app *App) apisixConsumerUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.apisixSvc.ConsumerUpdate(username, req.Desc, req.Plugins); err != nil {
+	if err := app.apisixSvc.ConsumerUpdate(c.Request.Context(), username, req.Desc, req.Plugins); err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -163,7 +163,7 @@ func (app *App) apisixConsumerUpdate(c *gin.Context) {
 }
 
 func (app *App) apisixConsumerDelete(c *gin.Context) {
-	if err := app.apisixSvc.ConsumerDelete(c.Param("username")); err != nil {
+	if err := app.apisixSvc.ConsumerDelete(c.Request.Context(), c.Param("username")); err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -171,7 +171,7 @@ func (app *App) apisixConsumerDelete(c *gin.Context) {
 }
 
 func (app *App) apisixWhitelistList(c *gin.Context) {
-	result, err := app.apisixSvc.WhitelistList()
+	result, err := app.apisixSvc.WhitelistList(c.Request.Context())
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -188,7 +188,7 @@ func (app *App) apisixWhitelistRevoke(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.apisixSvc.WhitelistRevoke(req.RouteID, req.ConsumerName); err != nil {
+	if err := app.apisixSvc.WhitelistRevoke(c.Request.Context(), req.RouteID, req.ConsumerName); err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -196,7 +196,7 @@ func (app *App) apisixWhitelistRevoke(c *gin.Context) {
 }
 
 func (app *App) apisixPluginConfigList(c *gin.Context) {
-	result, err := app.apisixSvc.PluginConfigList()
+	result, err := app.apisixSvc.PluginConfigList(c.Request.Context())
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -205,7 +205,7 @@ func (app *App) apisixPluginConfigList(c *gin.Context) {
 }
 
 func (app *App) apisixPluginConfigInspect(c *gin.Context) {
-	result, err := app.apisixSvc.PluginConfigInspect(c.Param("id"))
+	result, err := app.apisixSvc.PluginConfigInspect(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -219,7 +219,7 @@ func (app *App) apisixPluginConfigCreate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.PluginConfigCreate(req)
+	result, err := app.apisixSvc.PluginConfigCreate(c.Request.Context(), req)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -233,7 +233,7 @@ func (app *App) apisixPluginConfigUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.PluginConfigUpdate(c.Param("id"), req)
+	result, err := app.apisixSvc.PluginConfigUpdate(c.Request.Context(), c.Param("id"), req)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -242,7 +242,7 @@ func (app *App) apisixPluginConfigUpdate(c *gin.Context) {
 }
 
 func (app *App) apisixPluginConfigDelete(c *gin.Context) {
-	if err := app.apisixSvc.PluginConfigDelete(c.Param("id")); err != nil {
+	if err := app.apisixSvc.PluginConfigDelete(c.Request.Context(), c.Param("id")); err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -250,7 +250,7 @@ func (app *App) apisixPluginConfigDelete(c *gin.Context) {
 }
 
 func (app *App) apisixUpstreamList(c *gin.Context) {
-	result, err := app.apisixSvc.UpstreamList()
+	result, err := app.apisixSvc.UpstreamList(c.Request.Context())
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -259,7 +259,7 @@ func (app *App) apisixUpstreamList(c *gin.Context) {
 }
 
 func (app *App) apisixUpstreamInspect(c *gin.Context) {
-	result, err := app.apisixSvc.UpstreamInspect(c.Param("id"))
+	result, err := app.apisixSvc.UpstreamInspect(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -273,7 +273,7 @@ func (app *App) apisixUpstreamCreate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.UpstreamCreate(req)
+	result, err := app.apisixSvc.UpstreamCreate(c.Request.Context(), req)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -287,7 +287,7 @@ func (app *App) apisixUpstreamUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.UpstreamUpdate(c.Param("id"), req)
+	result, err := app.apisixSvc.UpstreamUpdate(c.Request.Context(), c.Param("id"), req)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -296,7 +296,7 @@ func (app *App) apisixUpstreamUpdate(c *gin.Context) {
 }
 
 func (app *App) apisixUpstreamDelete(c *gin.Context) {
-	if err := app.apisixSvc.UpstreamDelete(c.Param("id")); err != nil {
+	if err := app.apisixSvc.UpstreamDelete(c.Request.Context(), c.Param("id")); err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -304,7 +304,7 @@ func (app *App) apisixUpstreamDelete(c *gin.Context) {
 }
 
 func (app *App) apisixSSLList(c *gin.Context) {
-	result, err := app.apisixSvc.SSLList()
+	result, err := app.apisixSvc.SSLList(c.Request.Context())
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -313,7 +313,7 @@ func (app *App) apisixSSLList(c *gin.Context) {
 }
 
 func (app *App) apisixSSLInspect(c *gin.Context) {
-	result, err := app.apisixSvc.SSLInspect(c.Param("id"))
+	result, err := app.apisixSvc.SSLInspect(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -327,7 +327,7 @@ func (app *App) apisixSSLCreate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.SSLCreate(req)
+	result, err := app.apisixSvc.SSLCreate(c.Request.Context(), req)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -341,7 +341,7 @@ func (app *App) apisixSSLUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.SSLUpdate(c.Param("id"), req)
+	result, err := app.apisixSvc.SSLUpdate(c.Request.Context(), c.Param("id"), req)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -350,7 +350,7 @@ func (app *App) apisixSSLUpdate(c *gin.Context) {
 }
 
 func (app *App) apisixSSLDelete(c *gin.Context) {
-	if err := app.apisixSvc.SSLDelete(c.Param("id")); err != nil {
+	if err := app.apisixSvc.SSLDelete(c.Request.Context(), c.Param("id")); err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -358,7 +358,7 @@ func (app *App) apisixSSLDelete(c *gin.Context) {
 }
 
 func (app *App) apisixPluginList(c *gin.Context) {
-	result, err := app.apisixSvc.PluginList()
+	result, err := app.apisixSvc.PluginList(c.Request.Context())
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return

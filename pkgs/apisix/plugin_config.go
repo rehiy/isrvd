@@ -1,6 +1,7 @@
 package apisix
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -17,8 +18,8 @@ type PluginConfig struct {
 }
 
 // PluginConfigList 获取所有 Plugin Config 列表
-func (c *Client) PluginConfigList() ([]PluginConfig, error) {
-	data, err := c.doRequest(http.MethodGet, "/plugin_configs", nil)
+func (c *Client) PluginConfigList(ctx context.Context) ([]PluginConfig, error) {
+	data, err := c.doRequest(ctx, http.MethodGet, "/plugin_configs", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -26,8 +27,8 @@ func (c *Client) PluginConfigList() ([]PluginConfig, error) {
 }
 
 // PluginConfigInspect 获取单个 Plugin Config 详情
-func (c *Client) PluginConfigInspect(configID string) (*PluginConfig, error) {
-	data, err := c.doRequest(http.MethodGet, "/plugin_configs/"+url.PathEscape(configID), nil)
+func (c *Client) PluginConfigInspect(ctx context.Context, configID string) (*PluginConfig, error) {
+	data, err := c.doRequest(ctx, http.MethodGet, "/plugin_configs/"+url.PathEscape(configID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -35,14 +36,14 @@ func (c *Client) PluginConfigInspect(configID string) (*PluginConfig, error) {
 }
 
 // PluginConfigCreate 创建 Plugin Config
-func (c *Client) PluginConfigCreate(req PluginConfig) (*PluginConfig, error) {
+func (c *Client) PluginConfigCreate(ctx context.Context, req PluginConfig) (*PluginConfig, error) {
 	path := "/plugin_configs"
 	method := http.MethodPost
 	if req.ID != "" {
 		path = "/plugin_configs/" + url.PathEscape(req.ID)
 		method = http.MethodPut
 	}
-	data, err := c.doRequest(method, path, buildPluginConfigBody(req))
+	data, err := c.doRequest(ctx, method, path, buildPluginConfigBody(req))
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +51,8 @@ func (c *Client) PluginConfigCreate(req PluginConfig) (*PluginConfig, error) {
 }
 
 // PluginConfigUpdate 更新 Plugin Config
-func (c *Client) PluginConfigUpdate(configID string, req PluginConfig) (*PluginConfig, error) {
-	data, err := c.doRequest(http.MethodPut, "/plugin_configs/"+url.PathEscape(configID), buildPluginConfigBody(req))
+func (c *Client) PluginConfigUpdate(ctx context.Context, configID string, req PluginConfig) (*PluginConfig, error) {
+	data, err := c.doRequest(ctx, http.MethodPut, "/plugin_configs/"+url.PathEscape(configID), buildPluginConfigBody(req))
 	if err != nil {
 		return nil, err
 	}
@@ -59,13 +60,12 @@ func (c *Client) PluginConfigUpdate(configID string, req PluginConfig) (*PluginC
 }
 
 // PluginConfigDelete 删除 Plugin Config
-func (c *Client) PluginConfigDelete(configID string) error {
-	_, err := c.doRequest(http.MethodDelete, "/plugin_configs/"+url.PathEscape(configID), nil)
-	if err != nil {
-		return err
-	}
-	return nil
+func (c *Client) PluginConfigDelete(ctx context.Context, configID string) error {
+	_, err := c.doRequest(ctx, http.MethodDelete, "/plugin_configs/"+url.PathEscape(configID), nil)
+	return err
 }
+
+// --- 辅助函数 ---
 
 // buildPluginConfigBody 将 Plugin Config 转换为 Apisix API 请求体
 func buildPluginConfigBody(req PluginConfig) map[string]any {
@@ -91,7 +91,6 @@ func parsePluginConfigList(data []byte) ([]PluginConfig, error) {
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return nil, fmt.Errorf("解析 Plugin Config 列表失败: %w", err)
 	}
-
 	result := make([]PluginConfig, 0, len(raw.List))
 	for _, item := range raw.List {
 		result = append(result, item.Value)
