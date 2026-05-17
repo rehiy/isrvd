@@ -125,6 +125,29 @@ isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
 
 ---
 
+## 配置重载
+
+isrvd 支持运行时重载，无需重启进程：
+
+- **etcd 配置变更**：自动触发重载，无需手动操作
+- **SIGHUP 信号**：手动触发，适用于本地文件配置场景
+
+```bash
+kill -HUP $(pgrep isrvd)
+```
+
+触发行为：重新加载配置 → 重新初始化 registry 客户端 → 重新初始化各业务服务，服务恢复后 API 立即生效。
+
+### 服务不可用时的行为
+
+服务初始化失败时，对应模块路由返回 `503`：
+
+```json
+{"error": "apisix service unavailable", "module": "apisix", "reload": "send SIGHUP to reload services"}
+```
+
+---
+
 ## 常见工作流
 
 > 以下示例中的路径、IP、端口、容器名等**仅为格式参考**，实际值必须通过 API 查询获取。

@@ -3,7 +3,6 @@ package server
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/httpd"
-	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/websocket"
 
 	svcAccount "isrvd/internal/service/account"
@@ -18,7 +17,6 @@ import (
 	svcSystem "isrvd/internal/service/system"
 
 	"isrvd/config"
-	"isrvd/internal/registry"
 	"isrvd/public"
 )
 
@@ -81,110 +79,49 @@ func StartApp() {
 		routeIndex: make(map[string]Route),
 	}
 
-	// 初始化各业务服务
-	app.overviewSvc = svcOverview.NewService()
-	app.configSvc = svcSystem.NewConfigService()
-	app.auditSvc = svcSystem.NewAuditService()
-	app.accountSvc = svcAccount.NewService()
-	app.filerSvc = svcFiler.NewService()
+	app.initServices()
 
-	if apisixSvc, err := svcApisix.NewService(); err != nil {
-		logman.Warn("Apisix service unavailable", "error", err)
-	} else {
-		app.apisixSvc = apisixSvc
-	}
-
-	if caddySvc, err := svcCaddy.NewService(); err != nil {
-		logman.Warn("Caddy service unavailable", "error", err)
-	} else {
-		app.caddySvc = caddySvc
-	}
-
-	if dockerSvc, err := svcDocker.NewService(); err != nil {
-		logman.Warn("Docker service unavailable", "error", err)
-	} else {
-		app.dockerSvc = dockerSvc
-		if swarmSvc, err := svcSwarm.NewService(); err != nil {
-			logman.Warn("Swarm service unavailable", "error", err)
-		} else {
-			app.swarmSvc = swarmSvc
-		}
-	}
-
-	if composeSvc, err := svcCompose.NewService(); err != nil {
-		logman.Warn("Compose service unavailable", "error", err)
-	} else {
-		app.composeSvc = composeSvc
-	}
-
-	app.cronSvc = svcCron.NewService(registry.DockerService)
-
-	// 统一注册路由
 	app.initRoutes()
 	httpd.StaticEmbed(public.Efs, "", "")
 
-	// 启动 HTTP 服务
+	app.watchReload()
 	httpd.Server(config.Server.ListenAddr)
 }
 
-// initRoutes 初始化路由表并注册所有路由
-// 按模块注册路由，每个模块自己管理路由定义和注册
+// initRoutes 注册所有路由，服务可用性由 serviceAvailableMiddleware 动态检查
 func (app *App) initRoutes() {
 	r := app.Group(APINamespace)
-
-	// CORS 中间件（必须在最前面）
 	r.Use(app.wsConfig.CorsMiddleware())
-
-	// 安全响应头中间件
 	r.Use(securityHeadersMiddleware())
-
-	// 认证、权限与审计中间件
+	r.Use(app.serviceAvailableMiddleware())
 	r.Use(AuthMiddleware(app.routeIndex, app.accountSvc))
 	r.Use(PermMiddleware(app.routeIndex, app.accountSvc))
 	r.Use(AuditMiddleware(app.routeIndex, app.auditSvc))
 
-	// 加载所有模块的路由定义并注册
 	for _, route := range app.collectRoutes() {
-		if app.isRouteAvailable(route) {
-			app.registerRoute(r, route)
-		}
+		app.registerRoute(r, route)
 	}
 }
 
 // collectRoutes 收集所有模块的路由定义
-// 每个模块通过 defineXxxRoutes() 方法返回自己的路由列表
 func (app *App) collectRoutes() []Route {
 	var routes []Route
-
-	// 概览（系统统计 + 服务探测，无需权限）
 	routes = append(routes, app.defineOverviewRoutes()...)
-	// 系统设置
 	routes = append(routes, app.defineSystemRoutes()...)
-	// Account 模块
 	routes = append(routes, app.defineAccountRoutes()...)
-	// Web 终端
 	routes = append(routes, app.defineShellRoutes()...)
-	// 文件管理
 	routes = append(routes, app.defineFilerRoutes()...)
-	// LLM 代理
 	routes = append(routes, app.defineAgentRoutes()...)
-	// APISIX 管理
 	routes = append(routes, app.defineApisixRoutes()...)
-	// Caddy 管理
 	routes = append(routes, app.defineCaddyRoutes()...)
-	// Docker 管理
 	routes = append(routes, app.defineDockerRoutes()...)
-	// Swarm 管理
 	routes = append(routes, app.defineSwarmRoutes()...)
-	// Compose 部署
 	routes = append(routes, app.defineComposeRoutes()...)
-	// 计划任务
 	routes = append(routes, app.defineCronRoutes()...)
-
 	return routes
 }
 
-// registerRoute 注册单个路由，并同步建立 METHOD+完整路由模板索引
+// registerRoute 注册单个路由并建立索引
 func (app *App) registerRoute(group *gin.RouterGroup, route Route) {
 	key := route.Method + " " + APINamespace + route.Path
 	route.Key = key
@@ -203,25 +140,5 @@ func (app *App) registerRoute(group *gin.RouterGroup, route Route) {
 		group.DELETE(route.Path, route.Handler)
 	case "ANY":
 		group.Any(route.Path, route.Handler)
-	}
-}
-
-// isRouteAvailable 检查路由是否满足服务可用性条件（基于 Module 字段判断）
-func (app *App) isRouteAvailable(route Route) bool {
-	switch route.Module {
-	case "agent":
-		return config.Agent.BaseURL != ""
-	case "apisix":
-		return app.apisixSvc != nil
-	case "caddy":
-		return app.caddySvc != nil
-	case "docker", "shell":
-		return app.dockerSvc != nil
-	case "swarm":
-		return app.dockerSvc != nil && app.swarmSvc != nil
-	case "compose":
-		return app.dockerSvc != nil && app.composeSvc != nil
-	default:
-		return true
 	}
 }

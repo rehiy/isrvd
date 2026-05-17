@@ -9,7 +9,42 @@ CONFIG_PATH=/data/conf/isrvd.yml ./isrvd
 CONFIG_PATH="etcd://user:pass@127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" ./isrvd
 ```
 
-说明：etcd value 使用同款 YAML；`fallback` 仅在 key 不存在时用于初始化；外部变更仅提示重启，不自动热更新。
+说明：etcd value 使用同款 YAML；`fallback` 仅在 key 不存在时用于初始化。
+
+## 配置重载
+
+isrvd 支持运行时重载配置和服务连接，无需重启进程。
+
+### 重载方式
+
+| 方式 | 说明 |
+|------|------|
+| etcd 配置变更 | 自动触发，无需手动操作 |
+| `kill -HUP <pid>` | 手动触发，适用于本地文件配置场景 |
+
+```bash
+kill -HUP $(pgrep isrvd)
+```
+
+### 触发行为
+
+1. 重新从配置源加载配置
+2. 重新初始化 registry 客户端连接（APISIX/Caddy/Docker）
+3. 重新初始化各业务服务
+4. 服务恢复可用后，对应 API 立即生效
+
+### 服务不可用时的行为
+
+服务初始化失败时，对应模块的路由仍然注册，但请求时返回 `503 Service Unavailable`：
+
+```json
+{
+  "error": "apisix service unavailable",
+  "module": "apisix",
+  "label": "查询 APISIX 路由列表",
+  "reload": "send SIGHUP to reload services"
+}
+```
 
 ## 获取配置
 

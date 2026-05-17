@@ -9,6 +9,9 @@ import (
 	"github.com/rehiy/libgo/logman"
 )
 
+// ReloadCh 配置变更通知通道，etcd 变更时触发服务重载
+var ReloadCh = make(chan struct{}, 1)
+
 // ConfigProvider 配置提供者接口
 type ConfigProvider interface {
 	Type() string
@@ -23,22 +26,20 @@ type ConfigWatcher interface {
 var provider ConfigProvider
 
 func Init() error {
-	if provider == nil {
-		path := envOrDefault("CONFIG_PATH", "config.yml")
-		switch {
-		case strings.HasPrefix(strings.ToLower(path), "etcd://"):
-			p, err := NewEtcdProvider(path)
-			if err != nil {
-				return err
-			}
-			provider = p
-		case strings.HasPrefix(strings.ToLower(path), "file://"):
-			provider = NewYamlProvider(strings.TrimPrefix(path, "file://"))
-		case strings.Contains(path, "://"):
-			return fmt.Errorf("不支持的配置路径: %s", path)
-		default:
-			provider = NewYamlProvider(path)
+	path := envOrDefault("CONFIG_PATH", "config.yml")
+	switch {
+	case strings.HasPrefix(strings.ToLower(path), "etcd://"):
+		p, err := NewEtcdProvider(path)
+		if err != nil {
+			return err
 		}
+		provider = p
+	case strings.HasPrefix(strings.ToLower(path), "file://"):
+		provider = NewYamlProvider(strings.TrimPrefix(path, "file://"))
+	case strings.Contains(path, "://"):
+		return fmt.Errorf("不支持的配置路径: %s", path)
+	default:
+		provider = NewYamlProvider(path)
 	}
 
 	logman.Info("load config", "provider", provider.Type())
@@ -50,6 +51,7 @@ func Init() error {
 	return nil
 }
 
+// watchConfigChanges 监听 etcd 配置变更，变更时通知 server 层触发重载
 func watchConfigChanges() {
 	watcher, ok := provider.(ConfigWatcher)
 	if !ok {
@@ -65,7 +67,11 @@ func watchConfigChanges() {
 					changes = nil
 					continue
 				}
-				logman.Warn("Config changed", "provider", provider.Type(), "msg", "检测到配置变更，当前不会自动热更新，请重启服务使配置完整生效")
+				logman.Info("Config changed, triggering reload", "provider", provider.Type())
+				select {
+				case ReloadCh <- struct{}{}:
+				default:
+				}
 			case err, ok := <-errs:
 				if !ok {
 					errs = nil
