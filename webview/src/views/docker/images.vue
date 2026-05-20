@@ -180,13 +180,13 @@ class Images extends Vue {
     handleImagePrune() {
         this.portal.showConfirm({
             title: '清理镜像',
-            message: '将清理未打标签的悬空镜像层，不会删除正在被容器使用的镜像。确定继续吗？',
+            message: '将清理所有未被容器使用的镜像（包括有标签但闲置的），不会删除正在被容器使用的镜像。确定继续吗？',
             icon: 'fa-broom',
             iconColor: 'red',
             confirmText: '确认清理',
             danger: true,
             onConfirm: async () => {
-                const { payload } = await api.dockerImagePrune()
+                const { payload } = await api.dockerImagePrune({ all: true })
                 this.portal.showNotification('success', `镜像清理完成，回收 ${formatFileSize(payload?.spaceReclaimed || 0)}`)
                 this.loadImages()
             }
