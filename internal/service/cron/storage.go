@@ -10,6 +10,8 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/rehiy/libgo/logman"
+
+	"isrvd/config"
 )
 
 // Store 负责计划任务配置和执行日志的文件存储。
@@ -25,6 +27,7 @@ func NewStore(rootDirectory string) *Store {
 }
 
 // LoadJobs 从 cron.yml 加载任务列表。
+// 读取时将 rootDirectory 内的 WorkDir 转为绝对路径。
 func (s *Store) LoadJobs() ([]*Job, error) {
 	data, err := os.ReadFile(filepath.Join(s.rootDirectory, "cron.yml"))
 	if err != nil {
@@ -38,15 +41,36 @@ func (s *Store) LoadJobs() ([]*Job, error) {
 	if err := yaml.Unmarshal(data, &jobs); err != nil {
 		return nil, err
 	}
+
+	for _, job := range jobs {
+		job.WorkDir = config.PathToAbs(s.rootDirectory, job.WorkDir)
+	}
+
 	return jobs, nil
 }
 
 // SaveJobs 将任务列表写入 cron.yml。
+// 对 jobs 做深拷贝，对副本还原相对路径后序列化，不影响原对象。
 func (s *Store) SaveJobs(jobs []*Job) error {
 	s.jobMu.Lock()
 	defer s.jobMu.Unlock()
 
-	data, err := yaml.Marshal(jobs)
+	// 深拷贝：序列化再反序列化，得到独立副本
+	buf, err := yaml.Marshal(jobs)
+	if err != nil {
+		return err
+	}
+	var copy []*Job
+	if err := yaml.Unmarshal(buf, &copy); err != nil {
+		return err
+	}
+
+	// 对副本做路径还原
+	for _, job := range copy {
+		job.WorkDir = config.PathToRel(s.rootDirectory, job.WorkDir)
+	}
+
+	data, err := yaml.Marshal(copy)
 	if err != nil {
 		return err
 	}

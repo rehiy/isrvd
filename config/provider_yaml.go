@@ -51,11 +51,25 @@ func (y *YamlProvider) Load() (*Config, error) {
 }
 
 // Save 将配置保存到 YAML 文件
+// 对 conf 做深拷贝，对副本还原相对路径后序列化，不影响原对象
 func (y *YamlProvider) Save(conf *Config) error {
 	y.mu.Lock()
 	defer y.mu.Unlock()
 
-	data, err := yaml.Marshal(conf)
+	// 深拷贝：序列化再反序列化，得到独立副本
+	buf, err := yaml.Marshal(conf)
+	if err != nil {
+		return err
+	}
+	copy := &Config{}
+	if err := yaml.Unmarshal(buf, copy); err != nil {
+		return err
+	}
+
+	// 对副本做路径还原
+	denormalizePaths(copy)
+
+	data, err := yaml.Marshal(copy)
 	if err != nil {
 		return err
 	}

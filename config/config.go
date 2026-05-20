@@ -82,9 +82,7 @@ func Apply(conf *Config) {
 
 	if conf.Docker != nil {
 		Docker = conf.Docker
-		if !filepath.IsAbs(Docker.ContainerRoot) {
-			Docker.ContainerRoot = filepath.Join(Server.RootDirectory, Docker.ContainerRoot)
-		}
+		Docker.ContainerRoot = PathToAbs(Server.RootDirectory, Docker.ContainerRoot)
 	}
 
 	if conf.Marketplace != nil {
@@ -97,11 +95,7 @@ func Apply(conf *Config) {
 
 	Members = make(map[string]*MemberConfig, len(conf.Members))
 	for _, m := range conf.Members {
-		if m.HomeDirectory == "" {
-			m.HomeDirectory = filepath.Join(Server.RootDirectory, m.Username)
-		} else if !filepath.IsAbs(m.HomeDirectory) {
-			m.HomeDirectory = filepath.Join(Server.RootDirectory, m.HomeDirectory)
-		}
+		m.HomeDirectory = PathToAbs(Server.RootDirectory, m.HomeDirectory)
 		Members[m.Username] = m
 	}
 }
