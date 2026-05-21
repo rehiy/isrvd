@@ -248,8 +248,9 @@ type ImageDetail struct {
 }
 
 // ImageEnsure 确保镜像存在；若本地不存在则自动拉取。
+// forcePull 为 true 时，无论本地是否存在都会重新拉取。
 // 认证信息从 imageRef 的 host 自动匹配已配置的 registry。
-func (s *DockerService) ImageEnsure(ctx context.Context, ref string) error {
+func (s *DockerService) ImageEnsure(ctx context.Context, ref string, forcePull bool) error {
 	if ref == "" {
 		return nil
 	}
@@ -258,17 +259,16 @@ func (s *DockerService) ImageEnsure(ctx context.Context, ref string) error {
 	if !strings.Contains(imageRef, ":") && !strings.Contains(imageRef, "@") {
 		imageRef += ":latest"
 	}
-	// 检查本地是否已存在
-	_, err := s.client.ImageInspect(ctx, imageRef)
-	if err == nil {
-		return nil // 已存在，无需拉取
+	// forcePull=false 时，本地已存在则跳过
+	if !forcePull {
+		if _, err := s.client.ImageInspect(ctx, imageRef); err == nil {
+			return nil
+		}
 	}
-
-	logman.Info("Image not found locally, pulling", "image", imageRef)
+	logman.Info("Pulling image", "image", imageRef, "force", forcePull)
 	if _, err := s.imagePull(ctx, imageRef); err != nil {
 		return err
 	}
-
 	logman.Info("Image pulled successfully", "image", imageRef)
 	return nil
 }

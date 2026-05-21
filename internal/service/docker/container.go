@@ -36,7 +36,7 @@ func (s *Service) ContainerInspect(ctx context.Context, id string) (*pkgdocker.C
 
 // ContainerCreate 创建并启动容器
 func (s *Service) ContainerCreate(ctx context.Context, req pkgdocker.ContainerSpec) (*ContainerCreateResult, error) {
-	if err := s.docker.ImageEnsure(ctx, req.Image); err != nil {
+	if err := s.docker.ImageEnsure(ctx, req.Image, false); err != nil {
 		return nil, fmt.Errorf("镜像 %s 不存在，拉取失败: %w", req.Image, err)
 	}
 	id, err := s.docker.ContainerCreate(ctx, req)

@@ -69,12 +69,12 @@ func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployRe
 		}
 	}
 
-	// 预拉取镜像（manager 节点本地校验）
-	if err := s.imagesEnsure(ctx, project); err != nil {
+	// 预拉取所有镜像（manager 节点本地校验）
+	if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
 		return nil, err
 	}
 
-	items, err := s.swarmProjectDeploy(ctx, project)
+	items, err := s.swarmServicesCreate(ctx, project)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (s *Service) SwarmContentGet(ctx context.Context, name string) (string, err
 }
 
 // SwarmRedeploy 用新 compose 内容全量重建项目。
-func (s *Service) SwarmRedeploy(ctx context.Context, name, content string) (*DeployResult, error) {
+func (s *Service) SwarmRedeploy(ctx context.Context, name, content string, forcePull bool) (*DeployResult, error) {
 	if err := ValidateName(name); err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name, content string) (*Dep
 		return nil, fmt.Errorf("compose 文件中没有定义服务")
 	}
 	// 预拉取镜像（manager 节点本地校验，验证镜像引用合法、registry 可达）
-	if err := s.imagesEnsure(ctx, newProject); err != nil {
+	if err := s.imagesEnsure(ctx, newProject, forcePull); err != nil {
 		return nil, err
 	}
 
@@ -154,7 +154,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name, content string) (*Dep
 		return nil, err
 	}
 
-	items, err := s.swarmProjectDeploy(ctx, project)
+	items, err := s.swarmServicesCreate(ctx, project)
 	if err != nil {
 		rollback()
 		return nil, err
@@ -167,7 +167,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name, content string) (*Dep
 }
 
 // SwarmImageRedeploy 更新项目中指定服务的镜像并重建该服务。
-func (s *Service) SwarmImageRedeploy(ctx context.Context, name, serviceName, image string) (*DeployResult, error) {
+func (s *Service) SwarmImageRedeploy(ctx context.Context, name, serviceName, image string, forcePull bool) (*DeployResult, error) {
 	if err := ValidateName(name); err != nil {
 		return nil, err
 	}
@@ -205,7 +205,7 @@ func (s *Service) SwarmImageRedeploy(ctx context.Context, name, serviceName, ima
 	}
 
 	// 预拉取新镜像（manager 节点本地校验）
-	if err := s.docker.ImageEnsure(ctx, newSvc.Image); err != nil {
+	if err := s.docker.ImageEnsure(ctx, newSvc.Image, forcePull); err != nil {
 		return nil, fmt.Errorf("镜像 %s 不存在，拉取失败: %w", newSvc.Image, err)
 	}
 
@@ -233,8 +233,9 @@ func (s *Service) SwarmImageRedeploy(ctx context.Context, name, serviceName, ima
 
 // ==================== 辅助函数 ====================
 
-// swarmProjectDeploy 部署 compose project 中的所有服务，失败时回滚已创建的服务
-func (s *Service) swarmProjectDeploy(ctx context.Context, project *types.Project) ([]string, error) {
+// swarmServicesCreate 批量创建 project 中的所有 Swarm 服务，失败时回滚已创建的服务。
+// 调用前须先通过 imagesEnsure 完成预拉取。
+func (s *Service) swarmServicesCreate(ctx context.Context, project *types.Project) ([]string, error) {
 	if err := s.swarmEnsureNetworks(ctx, project); err != nil {
 		return nil, err
 	}
@@ -263,7 +264,8 @@ func (s *Service) swarmProjectDeploy(ctx context.Context, project *types.Project
 	return items, nil
 }
 
-// swarmServiceCreate 根据 compose service 创建对应 Swarm 服务
+// swarmServiceCreate 根据 compose service 创建对应 Swarm 服务。
+// 不负责镜像拉取，调用前须确保镜像已存在。
 func (s *Service) swarmServiceCreate(ctx context.Context, project *types.Project, svc types.ServiceConfig) (string, string, error) {
 	req, err := compose.ServiceToSwarmRequest(project, svc)
 	if err != nil {
@@ -300,7 +302,7 @@ func (s *Service) swarmRollback(ctx context.Context, name, content, installDir s
 		logman.Warn("Rollback load project failed", "name", name, "error", err)
 		return
 	}
-	if _, err := s.swarmProjectDeploy(ctx, project); err != nil {
+	if _, err := s.swarmServicesCreate(ctx, project); err != nil {
 		logman.Warn("Rollback deploy failed", "name", name, "error", err)
 	}
 }

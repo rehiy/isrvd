@@ -28,9 +28,10 @@ type Service struct {
 
 // DeployRequest 部署请求
 type DeployRequest struct {
-	Content  string    `json:"content" binding:"required"`
-	InitURL  string    `json:"initURL,omitempty"`
-	InitFile io.Reader `json:"-"`
+	Content   string `json:"content" binding:"required"`
+	InitURL   string `json:"initURL,omitempty"`
+	InitFile  io.Reader `json:"-"`
+	ForcePull bool   `json:"forcePull,omitempty"` // 是否强制拉取最新镜像
 }
 
 // DeployResult 部署结果
@@ -44,9 +45,10 @@ type DeployResult struct {
 // - ServiceName + Image 非空：从现有内容读取后更新指定服务镜像重建
 // - 否则：Content 必须非空，全量重建
 type RedeployRequest struct {
-	Content     string `json:"content,omitempty"`
+	Content    string `json:"content,omitempty"`
 	ServiceName string `json:"serviceName,omitempty"`
-	Image       string `json:"image,omitempty"`
+	Image      string `json:"image,omitempty"`
+	ForcePull  bool   `json:"forcePull,omitempty"` // 是否强制拉取最新镜像
 }
 
 // NewService 创建 Compose 业务服务
@@ -95,12 +97,13 @@ func (s *Service) projectParse(ctx context.Context, name, content, installDir st
 }
 
 // imagesEnsure 预拉取 project 中所有 service 的镜像，避免删除旧实例后才发现镜像不可用。
-func (s *Service) imagesEnsure(ctx context.Context, project *types.Project) error {
+// forcePull 为 true 时，无论本地是否存在都重新拉取。
+func (s *Service) imagesEnsure(ctx context.Context, project *types.Project, forcePull bool) error {
 	for _, svc := range project.Services {
 		if svc.Image == "" {
 			continue
 		}
-		if err := s.docker.ImageEnsure(ctx, svc.Image); err != nil {
+		if err := s.docker.ImageEnsure(ctx, svc.Image, forcePull); err != nil {
 			return fmt.Errorf("镜像 %s 不存在，拉取失败: %w", svc.Image, err)
 		}
 	}

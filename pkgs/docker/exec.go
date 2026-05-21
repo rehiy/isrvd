@@ -143,7 +143,7 @@ func (s *DockerService) ContainerExecRun(ctx context.Context, containerID, shell
 // 脚本内容通过临时文件 bind mount 进容器执行，不依赖现有容器。
 // image: 镜像名；shell: 容器内 shell（默认 /bin/sh）；script: 脚本内容；timeout: 超时秒数（0 不限）。
 func (s *DockerService) ContainerRunScript(ctx context.Context, image, shell, script string, timeout uint, volumes []VolumeMapping) (string, error) {
-	if err := s.ImageEnsure(ctx, image); err != nil {
+	if err := s.ImageEnsure(ctx, image, false); err != nil {
 		return "", fmt.Errorf("镜像 %s 不可用: %w", image, err)
 	}
 
