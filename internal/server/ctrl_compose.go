@@ -130,29 +130,19 @@ func (app *App) composeDockerRedeploy(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-
 	name, ok := composeNameParam(c)
 	if !ok {
 		return
 	}
-
-	var (
-		result *svcCompose.DeployResult
-		err    error
-	)
-	if req.ServiceName != "" {
-		if req.Image == "" {
-			respondError(c, http.StatusBadRequest, "image 不能为空")
-			return
-		}
-		result, err = app.composeSvc.DockerImageRedeploy(c.Request.Context(), name, req.ServiceName, req.Image, req.ForcePull)
-	} else {
-		if req.Content == "" {
-			respondError(c, http.StatusBadRequest, "content 不能为空")
-			return
-		}
-		result, err = app.composeSvc.DockerRedeploy(c.Request.Context(), name, req.Content, req.ForcePull)
+	if req.ServiceName != "" && req.Image == "" {
+		respondError(c, http.StatusBadRequest, "image 不能为空")
+		return
 	}
+	if req.ServiceName == "" && req.Content == "" {
+		respondError(c, http.StatusBadRequest, "content 不能为空")
+		return
+	}
+	result, err := app.composeSvc.DockerRedeploy(c.Request.Context(), name, req)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -166,29 +156,19 @@ func (app *App) composeSwarmRedeploy(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-
 	name, ok := composeNameParam(c)
 	if !ok {
 		return
 	}
-
-	var (
-		result *svcCompose.DeployResult
-		err    error
-	)
-	if req.ServiceName != "" {
-		if req.Image == "" {
-			respondError(c, http.StatusBadRequest, "image 不能为空")
-			return
-		}
-		result, err = app.composeSvc.SwarmImageRedeploy(c.Request.Context(), name, req.ServiceName, req.Image, req.ForcePull)
-	} else {
-		if req.Content == "" {
-			respondError(c, http.StatusBadRequest, "content 不能为空")
-			return
-		}
-		result, err = app.composeSvc.SwarmRedeploy(c.Request.Context(), name, req.Content, req.ForcePull)
+	if req.ServiceName != "" && req.Image == "" {
+		respondError(c, http.StatusBadRequest, "image 不能为空")
+		return
 	}
+	if req.ServiceName == "" && req.Content == "" {
+		respondError(c, http.StatusBadRequest, "content 不能为空")
+		return
+	}
+	result, err := app.composeSvc.SwarmRedeploy(c.Request.Context(), name, req)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return

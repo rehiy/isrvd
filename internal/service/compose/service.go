@@ -185,18 +185,6 @@ func updateServiceImage(ctx context.Context, name, content, serviceName, image s
 	return string(data), nil
 }
 
-func projectServiceFind(project *types.Project, serviceName string) (types.ServiceConfig, error) {
-	if project == nil {
-		return types.ServiceConfig{}, fmt.Errorf("compose 项目为空")
-	}
-	for _, svc := range project.Services {
-		if svc.Name == serviceName {
-			return svc, nil
-		}
-	}
-	return types.ServiceConfig{}, fmt.Errorf("compose 服务 %s 不存在", serviceName)
-}
-
 // writeAndUnzip 将 reader 内容写入 zip 文件并解压
 func writeAndUnzip(zipPath string, r io.Reader) error {
 	f, err := os.Create(zipPath)

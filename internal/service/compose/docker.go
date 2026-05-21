@@ -116,8 +116,10 @@ func (s *Service) DockerContentGet(ctx context.Context, name string) (string, er
 	return string(data), nil
 }
 
-// DockerRedeploy 用新 compose 内容全量重建项目。
-func (s *Service) DockerRedeploy(ctx context.Context, name, content string, forcePull bool) (*DeployResult, error) {
+// DockerRedeploy 重建 Docker Compose 项目。
+// req.ServiceName + req.Image 非空时：仅更新指定服务的镜像后全量重建；
+// 否则：用 req.Content 全量重建。
+func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployRequest) (*DeployResult, error) {
 	if err := ValidateName(name); err != nil {
 		return nil, err
 	}
@@ -126,6 +128,19 @@ func (s *Service) DockerRedeploy(ctx context.Context, name, content string, forc
 	installDir := ""
 	if root != "" {
 		installDir = filepath.Join(root, name)
+	}
+
+	// 准备新 content：单服务镜像更新 or 全量替换
+	content := req.Content
+	if req.ServiceName != "" {
+		oldContent, err := s.DockerContentGet(ctx, name)
+		if err != nil {
+			return nil, err
+		}
+		content, err = updateServiceImage(ctx, name, oldContent, req.ServiceName, req.Image)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	oldContent, _ := s.DockerContentGet(ctx, name)
@@ -139,7 +154,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name, content string, forc
 		return nil, fmt.Errorf("compose 文件中没有定义服务")
 	}
 	// 预拉取镜像，避免删除旧容器后才发现镜像不可用
-	if err := s.imagesEnsure(ctx, newProject, forcePull); err != nil {
+	if err := s.imagesEnsure(ctx, newProject, req.ForcePull); err != nil {
 		return nil, err
 	}
 
@@ -166,72 +181,6 @@ func (s *Service) DockerRedeploy(ctx context.Context, name, content string, forc
 
 	logman.Info("Compose redeployed", "name", name)
 	return &DeployResult{ProjectName: name, Items: items, InstallDir: installDir}, nil
-}
-
-// DockerImageRedeploy 更新项目中指定服务的镜像并重建该容器。
-func (s *Service) DockerImageRedeploy(ctx context.Context, name, serviceName, image string, forcePull bool) (*DeployResult, error) {
-	if err := ValidateName(name); err != nil {
-		return nil, err
-	}
-
-	root := s.docker.ContainerRoot()
-	installDir := ""
-	if root != "" {
-		installDir = filepath.Join(root, name)
-	}
-
-	oldContent, err := s.DockerContentGet(ctx, name)
-	if err != nil {
-		return nil, err
-	}
-	newContent, err := updateServiceImage(ctx, name, oldContent, serviceName, image)
-	if err != nil {
-		return nil, err
-	}
-
-	oldProject, err := s.projectParse(ctx, name, oldContent, installDir)
-	if err != nil {
-		return nil, err
-	}
-	newProject, err := s.projectParse(ctx, name, newContent, installDir)
-	if err != nil {
-		return nil, err
-	}
-	oldSvc, err := projectServiceFind(oldProject, serviceName)
-	if err != nil {
-		return nil, err
-	}
-	newSvc, err := projectServiceFind(newProject, serviceName)
-	if err != nil {
-		return nil, err
-	}
-
-	// 预拉取新镜像，避免删除旧容器后才发现镜像不可用
-	if err := s.docker.ImageEnsure(ctx, newSvc.Image, forcePull); err != nil {
-		return nil, fmt.Errorf("镜像 %s 不存在，拉取失败: %w", newSvc.Image, err)
-	}
-
-	oldContainerName := dockerContainerNameOf(oldSvc)
-	_ = s.docker.ContainerAction(ctx, oldContainerName, "stop")
-	if err := s.docker.ContainerAction(ctx, oldContainerName, "remove"); err != nil {
-		s.contentSave(installDir, oldContent, "")
-		return nil, fmt.Errorf("删除旧容器 %s 失败: %w", oldContainerName, err)
-	}
-
-	id, cname, err := s.dockerServiceCreate(ctx, newProject, newSvc)
-	if err != nil {
-		if _, _, rbErr := s.dockerServiceCreate(ctx, oldProject, oldSvc); rbErr != nil {
-			logman.Warn("Compose container rollback failed", "name", name, "service", serviceName, "error", rbErr)
-		}
-		s.contentSave(installDir, oldContent, "")
-		return nil, err
-	}
-
-	s.contentSave(installDir, newContent, oldContent)
-
-	item := fmt.Sprintf("%s (%s)", cname, docker.ShortID(id))
-	logman.Info("Compose service image redeployed", "name", name, "service", serviceName, "image", image)
-	return &DeployResult{ProjectName: name, Items: []string{item}, InstallDir: installDir}, nil
 }
 
 // ==================== 辅助函数 ====================
