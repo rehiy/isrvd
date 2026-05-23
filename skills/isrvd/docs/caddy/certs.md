@@ -1,7 +1,7 @@
 # Caddy TLS 证书 API
 
-> Caddy 证书有 3 种来源，对应 `apps.tls.certificates.load_files`、`apps.tls.certificates.load_pem`、`apps.tls.automation.policies[].subjects`。
-> 后端用复合主键 `<source>-<index>` 统一定位（例如 `file-0`、`pem-1`、`automate-2`）。
+> Caddy 证书有 4 种来源：`file`（`apps.tls.certificates.load_files`）、`pem`（`apps.tls.certificates.load_pem`）、`automate`（`apps.tls.automation.policies[].subjects`）、`cached`（Caddy 运行时已签发证书缓存）。
+> 后端用复合主键 `<source>-<index>` 统一定位可管理证书（例如 `file-0`、`pem-1`、`automate-2`）；`cached` 为只读运行时证书，不支持编辑/删除。
 
 ## 列出证书
 
@@ -13,14 +13,19 @@ isrvd_get "/caddy/certs"
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| key | string | 复合主键 `<source>-<index>`（只读） |
-| source | string | `file` / `pem` / `automate` |
-| certificate | string | file: 路径；pem: PEM 文本；automate: 不返回 |
+| key | string | 只读标识；可管理证书为 `<source>-<index>`，`cached` 为缓存文件相对路径标识 |
+| source | string | `file` / `pem` / `automate` / `cached` |
+| subject | string | 证书域名：`automate` / `cached` 为目标域名；`file` / `pem` 可从证书 CN 解析 |
+| certificate | string | `file`: 路径；`pem`: PEM 文本；`automate` / `cached`: 不返回 |
 | tags | string[] | Caddy 内部标签（可选） |
-| format | string | 仅 file 使用，证书格式（默认 PEM） |
-| subject | string | 仅 automate 使用，目标主机名 |
+| format | string | 仅 `file` 使用，证书格式（默认 PEM） |
+| issuer | string | 签发机构 Common Name（从证书内容解析，`automate` 通常为空） |
+| notBefore | string | 证书生效时间（RFC3339，`automate` 通常为空） |
+| notAfter | string | 证书过期时间（RFC3339，`automate` 通常为空） |
+| sans | string[] | Subject Alternative Names（DNS） |
 
 > 列表接口不返回 `keyContent`；更新时留空表示保留原私钥。
+> `cached` 来源为 Caddy 自动签发后的运行时缓存证书，只读展示，不支持编辑/删除。
 
 ## 添加证书
 

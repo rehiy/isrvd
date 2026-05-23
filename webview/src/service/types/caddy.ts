@@ -43,7 +43,6 @@ export interface CaddyInfo {
     adminUrl: string
     servers: number
     routes: number
-    certs: number
     hasTls: boolean
     available: boolean
 }
@@ -74,16 +73,21 @@ export interface CaddyGlobal {
 
 // ─── TLS 证书 ───
 
-export type CaddyCertSource = 'file' | 'pem' | 'automate'
+export type CaddyCertSource = 'file' | 'pem' | 'automate' | 'cached'
 
 export interface CaddyCert {
-    key?: string             // 复合主键 <source>-<index>，仅响应使用
+    key?: string             // 复合主键 <source>-<index>，仅响应使用（cached 无此字段）
     source: CaddyCertSource
-    certificate?: string     // file: 路径；pem: PEM 文本
-    keyContent?: string      // 私钥（路径或 PEM 文本）
-    tags?: string[]
-    format?: string          // 仅 file 使用
-    subject?: string         // 仅 automate 使用
+    subject?: string         // 证书域名：automate/cached 为目标域名，file/pem 从证书 CN 解析
+    certificate?: string     // file：证书文件路径；pem：证书 PEM 文本
+    keyContent?: string      // file：私钥文件路径；pem：私钥 PEM 文本（响应时不返回）
+    tags?: string[]          // Caddy 内部标签（file/pem 可选）
+    format?: string          // 证书格式，仅 file 使用（默认 PEM）
+    // 由证书内容解析填充，automate 类型无证书文件故留空
+    issuer?: string          // 签发机构 Common Name
+    notBefore?: string       // 证书生效时间
+    notAfter?: string        // 证书过期时间
+    sans?: string[]          // Subject Alternative Names（DNS）
 }
 
 export interface CaddyCertSourceCard {
@@ -91,5 +95,5 @@ export interface CaddyCertSourceCard {
     title: string
     desc: string
     icon: string
-    tone: 'indigo' | 'emerald' | 'amber'
+    tone: 'indigo' | 'emerald' | 'amber' | 'cyan'
 }

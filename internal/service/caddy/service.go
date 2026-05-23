@@ -33,6 +33,7 @@ const (
 	CertSourceFile     = "file"     // load_files：磁盘文件路径
 	CertSourcePEM      = "pem"      // load_pem：内联 PEM
 	CertSourceAutomate = "automate" // automation.policies[].subjects：自动签发
+	CertSourceCached   = "cached"   // 运行时证书缓存（只读）
 )
 
 // Service Caddy 业务服务

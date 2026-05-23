@@ -2,9 +2,14 @@ package caddy
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	pkgcaddy "isrvd/pkgs/caddy"
 )
@@ -13,65 +18,78 @@ import (
 
 // CertForm TLS 证书统一编辑模型
 //
-// 通过 Source 区分三种来源：
-//   - file：load_files，Certificate/Key 是文件路径
-//   - pem：load_pem，Certificate/Key 是 PEM 文本
-//   - automate：automation.policies[].subjects 中的 host
+// 通过 Source 区分四种来源：
+//   - file：load_files，Certificate/KeyContent 为磁盘文件路径
+//   - pem：load_pem，Certificate/KeyContent 为 PEM 文本
+//   - automate：automation.policies[].subjects，Subject 为域名
+//   - cached：运行时文件缓存（只读），Subject 为域名，含有效期字段
 type CertForm struct {
-	Key         string   `json:"key,omitempty"`         // 复合主键 <source>-<index>，仅响应使用
-	Source      string   `json:"source"`                // file / pem / automate
-	Certificate string   `json:"certificate,omitempty"` // file: 路径；pem: PEM 文本
-	KeyContent  string   `json:"keyContent,omitempty"`  // 私钥（路径或 PEM 文本）
-	Tags        []string `json:"tags,omitempty"`
-	Format      string   `json:"format,omitempty"`  // 仅 file 类型使用
-	Subject     string   `json:"subject,omitempty"` // 仅 automate 使用：host 名称
+	Key         string   `json:"key,omitempty"`         // 复合主键 <source>-<index>，仅响应使用（cached 无此字段）
+	Source      string   `json:"source"`                // file / pem / automate / cached
+	Subject     string   `json:"subject,omitempty"`     // automate/cached：目标域名；file/pem：解析自证书 CN
+	Certificate string   `json:"certificate,omitempty"` // file：证书文件路径；pem：证书 PEM 文本
+	KeyContent  string   `json:"keyContent,omitempty"`  // file：私钥文件路径；pem：私钥 PEM 文本（响应时不返回）
+	Tags        []string `json:"tags,omitempty"`        // Caddy 内部标签（file/pem 可选）
+	Format      string   `json:"format,omitempty"`      // 证书格式，仅 file 使用（默认 PEM）
+
+	// 以下字段由证书内容解析填充，automate 类型无证书文件故留空
+	Issuer    string     `json:"issuer,omitempty"`    // 签发机构 Common Name
+	NotBefore *time.Time `json:"notBefore,omitempty"` // 证书生效时间
+	NotAfter  *time.Time `json:"notAfter,omitempty"`  // 证书过期时间
+	SANs      []string   `json:"sans,omitempty"`      // Subject Alternative Names（DNS）
 }
 
-// CertList 列出所有证书（合并三种来源）
+// CertList 列出所有证书（合并四种来源：file / pem / automate / cached）
 func (s *Service) CertList(ctx context.Context) ([]CertForm, error) {
 	cfg, err := s.client.ConfigAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 	out := make([]CertForm, 0)
-	if cfg.Apps == nil || cfg.Apps.TLS == nil {
-		return out, nil
-	}
-	tls := cfg.Apps.TLS
-	if tls.Certificates != nil {
-		for i, f := range tls.Certificates.LoadFiles {
-			out = append(out, CertForm{
-				Key:         buildCertKey(CertSourceFile, i),
-				Source:      CertSourceFile,
-				Certificate: f.Certificate,
-				// KeyContent 不返回：file 来源是路径引用，路径本身是安全信息
-				Tags:   f.Tags,
-				Format: f.Format,
-			})
+	if cfg.Apps != nil && cfg.Apps.TLS != nil {
+		tls := cfg.Apps.TLS
+		if tls.Certificates != nil {
+			for i, f := range tls.Certificates.LoadFiles {
+				form := CertForm{
+					Key:         buildCertKey(CertSourceFile, i),
+					Source:      CertSourceFile,
+					Certificate: f.Certificate,
+					Tags:        f.Tags,
+					Format:      f.Format,
+				}
+				fillCertInfo(&form, parseCertFile(f.Certificate))
+				out = append(out, form)
+			}
+			for i, p := range tls.Certificates.LoadPEM {
+				form := CertForm{
+					Key:         buildCertKey(CertSourcePEM, i),
+					Source:      CertSourcePEM,
+					Certificate: p.Certificate,
+					Tags:        p.Tags,
+				}
+				fillCertInfo(&form, parseCertPEM([]byte(p.Certificate)))
+				out = append(out, form)
+			}
 		}
-		for i, p := range tls.Certificates.LoadPEM {
-			out = append(out, CertForm{
-				Key:         buildCertKey(CertSourcePEM, i),
-				Source:      CertSourcePEM,
-				Certificate: p.Certificate,
-				// KeyContent 不返回：私钥不在列表接口暴露；编辑时客户端留空=保留原值
-				Tags: p.Tags,
-			})
-		}
-	}
-	if tls.Automation != nil {
-		idx := 0
-		for _, policy := range tls.Automation.Policies {
-			for _, subject := range policy.Subjects {
-				out = append(out, CertForm{
-					Key:     buildCertKey(CertSourceAutomate, idx),
-					Source:  CertSourceAutomate,
-					Subject: subject,
-				})
-				idx++
+		if tls.Automation != nil {
+			idx := 0
+			for _, policy := range tls.Automation.Policies {
+				for _, subject := range policy.Subjects {
+					out = append(out, CertForm{
+						Key:     buildCertKey(CertSourceAutomate, idx),
+						Source:  CertSourceAutomate,
+						Subject: subject,
+					})
+					idx++
+				}
 			}
 		}
 	}
+
+	// 追加运行时证书缓存（忽略扫描错误，不影响主列表）
+	cached, _ := s.scanCertCache(cfg)
+	out = append(out, cached...)
+
 	return out, nil
 }
 
@@ -299,4 +317,98 @@ func removeAutomateSubject(tls *pkgcaddy.TLSApp, index int) bool {
 		}
 	}
 	return false
+}
+
+// ─── 证书缓存（运行时已签发证书，内部方法）───
+
+// scanCertCache 扫描 Caddy storage root 下的证书缓存，返回 cached 类型的 CertForm 列表。
+// 接收已读取的 cfg 避免重复请求。
+//
+// Caddy ACME 证书存储路径：<storage_root>/certificates/<acme_server_host>/<domain>/<domain>.crt
+// 文件格式：PEM，包含私钥 + 证书链（多个 block），与 certify.certToPEM 输出格式一致。
+func (s *Service) scanCertCache(cfg *pkgcaddy.Config) ([]CertForm, error) {
+	if cfg.Storage == nil {
+		return nil, nil
+	}
+	storageRoot, _ := cfg.Storage["root"].(string)
+	if storageRoot == "" {
+		return nil, nil
+	}
+
+	certsDir := filepath.Join(storageRoot, "certificates")
+	var result []CertForm
+
+	err := filepath.Walk(certsDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info == nil || info.IsDir() {
+			return nil
+		}
+		if !strings.HasSuffix(path, ".crt") {
+			return nil
+		}
+		cert := parseCertFile(path)
+		if cert == nil {
+			return nil
+		}
+		rel, _ := filepath.Rel(storageRoot, path)
+		form := CertForm{
+			Key:    "cached-" + rel,
+			Source: CertSourceCached,
+		}
+		fillCertInfo(&form, cert)
+		result = append(result, form)
+		return nil
+	})
+
+	if err != nil && !os.IsNotExist(err) {
+		return nil, fmt.Errorf("扫描证书缓存失败: %w", err)
+	}
+	return result, nil
+}
+
+// parseCertFile 从 PEM 文件中提取第一个 CERTIFICATE block 并解析。
+// Caddy 缓存文件包含私钥 + 证书链多个 block，需逐块扫描。
+func parseCertFile(path string) *x509.Certificate {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	return parseCertPEM(data)
+}
+
+// parseCertPEM 从 PEM 字节中提取第一个 CERTIFICATE block 并解析。
+// 支持多 block 文件（私钥 + 证书链），跳过非证书 block。
+func parseCertPEM(data []byte) *x509.Certificate {
+	for len(data) > 0 {
+		var block *pem.Block
+		block, data = pem.Decode(data)
+		if block == nil {
+			break
+		}
+		if block.Type != "CERTIFICATE" {
+			continue
+		}
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return nil
+		}
+		return cert
+	}
+	return nil
+}
+
+// fillCertInfo 将 x509.Certificate 中的证书信息填充到 CertForm
+func fillCertInfo(form *CertForm, cert *x509.Certificate) {
+	if cert == nil {
+		return
+	}
+	if form.Subject == "" {
+		form.Subject = cert.Subject.CommonName
+		if form.Subject == "" && len(cert.DNSNames) > 0 {
+			form.Subject = cert.DNSNames[0]
+		}
+	}
+	form.Issuer = cert.Issuer.CommonName
+	form.NotBefore = &cert.NotBefore
+	form.NotAfter = &cert.NotAfter
+	form.SANs = cert.DNSNames
 }

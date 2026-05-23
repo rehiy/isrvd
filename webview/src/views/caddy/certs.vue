@@ -28,6 +28,7 @@ class CaddyCerts extends Vue {
         return this.certs.filter((c: CaddyCert) =>
             (c.subject || '').toLowerCase().includes(keyword) ||
             (c.certificate || '').toLowerCase().includes(keyword) ||
+            (c.issuer || '').toLowerCase().includes(keyword) ||
             (c.tags || []).some((t: string) => t.toLowerCase().includes(keyword))
         )
     }
@@ -52,23 +53,40 @@ class CaddyCerts extends Vue {
     }
 
     sourceLabel(source: string) {
-        const map: Record<string, string> = { file: '磁盘文件', pem: '内联 PEM', automate: '自动签发' }
+        const map: Record<string, string> = { file: '磁盘文件', pem: '内联 PEM', automate: '自动签发', cached: '已签发' }
         return map[source] || source
     }
 
     sourceTagClass(source: string) {
-        if (source === 'file') return 'bg-indigo-50 text-indigo-700'
-        if (source === 'pem') return 'bg-emerald-50 text-emerald-700'
-        if (source === 'automate') return 'bg-amber-50 text-amber-700'
-        return 'bg-slate-100 text-slate-500'
+        const map: Record<string, string> = {
+            file: 'bg-indigo-50 text-indigo-700',
+            pem: 'bg-emerald-50 text-emerald-700',
+            automate: 'bg-amber-50 text-amber-700',
+            cached: 'bg-cyan-50 text-cyan-700',
+        }
+        return map[source] || 'bg-slate-100 text-slate-500'
     }
 
     certSummary(cert: CaddyCert) {
-        if (cert.source === 'automate') return cert.subject || '-'
+        if (cert.subject) return cert.subject
         if (cert.source === 'file') return cert.certificate || '-'
-        // pem：显示前两行（通常是 BEGIN CERTIFICATE）
-        const pem = cert.certificate || ''
-        return pem.split('\n').slice(0, 1).join('').trim() || '(空)'
+        return cert.certificate?.split('\n')[0].trim() || '(空)'
+    }
+
+    certExpireClass(notAfter?: string) {
+        if (!notAfter) return 'text-slate-400'
+        const days = (new Date(notAfter).getTime() - Date.now()) / 86400000
+        if (days < 0) return 'text-red-600 font-medium'
+        if (days < 30) return 'text-amber-600 font-medium'
+        return 'text-emerald-600'
+    }
+
+    certExpireLabel(notAfter?: string) {
+        if (!notAfter) return '-'
+        const days = Math.floor((new Date(notAfter).getTime() - Date.now()) / 86400000)
+        if (days < 0) return `已过期 ${-days} 天`
+        if (days === 0) return '今日过期'
+        return `${days} 天后到期`
     }
 
     deleteCert(cert: CaddyCert) {
@@ -108,10 +126,10 @@ export default toNative(CaddyCerts)
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="page-icon bg-cyan-500"><i class="fas fa-certificate text-white"></i></div>
-            <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">TLS 证书</h1><p class="text-xs text-slate-500 truncate">管理 Caddy 证书来源：文件、PEM 或自动签发</p></div>
+            <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">TLS 证书</h1><p class="text-xs text-slate-500 truncate">管理 Caddy 证书来源：文件、PEM、自动签发；已签发证书只读</p></div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
-            <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="搜索主机、路径、标签..." width-class="w-64" focus-color="cyan" type-to-search />
+            <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="搜索域名、路径、签发机构..." width-class="w-64" focus-color="cyan" type-to-search />
             <button class="btn btn-secondary" @click="loadCerts()"><i class="fas fa-rotate"></i>刷新</button>
             <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="btn btn-cyan" @click="openCreateModal()"><i class="fas fa-plus"></i>新建证书</button>
           </div>
@@ -137,7 +155,7 @@ export default toNative(CaddyCerts)
       </div>
       <!-- 移动端搜索栏 -->
       <div class="mobile-search">
-        <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="搜索主机、路径、标签..." width-class="w-full" focus-color="cyan" />
+        <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="搜索域名、路径、签发机构..." width-class="w-full" focus-color="cyan" />
       </div>
       <div v-if="loading" class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
       <div v-else-if="filteredCerts.length === 0" class="empty-state">
@@ -153,32 +171,37 @@ export default toNative(CaddyCerts)
               <tr class="bg-slate-50 border-b border-slate-200">
                 <th class="th">来源</th>
                 <th class="th">主体</th>
+                <th class="th">签发机构</th>
+                <th class="th">有效期</th>
                 <th class="th">标签</th>
-                <th class="w-32 th-right">操作</th>
+                <th class="w-24 th-right">操作</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
-              <tr v-for="cert in filteredCerts" :key="cert.key" class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 max-w-[280px]">
+              <tr v-for="cert in filteredCerts" :key="cert.key || cert.subject" class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 max-w-[160px]">
                   <div class="flex items-center gap-2 min-w-0">
                     <div class="row-icon bg-cyan-400">
                       <i class="fas fa-certificate text-white text-sm"></i>
                     </div>
-                    <div class="min-w-0">
-                      <span class="font-medium text-slate-800 truncate block">{{ sourceLabel(cert.source) }}</span>
-                      <span v-if="cert.key" class="text-xs text-slate-400 truncate block mt-0.5">{{ cert.key }}</span>
-                    </div>
+                    <span :class="sourceTagClass(cert.source)" class="inline-block text-xs px-2 py-0.5 rounded-lg font-medium whitespace-nowrap">{{ sourceLabel(cert.source) }}</span>
                   </div>
                 </td>
                 <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ certSummary(cert) }}</code></td>
+                <td class="px-4 py-3"><span class="text-sm text-slate-500">{{ cert.issuer || '-' }}</span></td>
+                <td class="px-4 py-3">
+                  <span v-if="cert.notAfter" :class="certExpireClass(cert.notAfter)" class="text-xs">{{ certExpireLabel(cert.notAfter) }}</span>
+                  <span v-else class="text-xs text-slate-400">-</span>
+                </td>
                 <td class="px-4 py-3">
                   <span v-if="!cert.tags || cert.tags.length === 0" class="text-xs text-slate-400">-</span>
                   <span v-for="tag in cert.tags" v-else :key="tag" class="inline-block text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600 mr-1">{{ tag }}</span>
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button v-if="portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(cert)"><i class="fas fa-pen text-xs"></i></button>
-                    <button v-if="portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon btn-icon-red" title="删除" @click="deleteCert(cert)"><i class="fas fa-trash text-xs"></i></button>
+                    <button v-if="cert.source !== 'cached' && portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(cert)"><i class="fas fa-pen text-xs"></i></button>
+                    <button v-if="cert.source !== 'cached' && portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon btn-icon-red" title="删除" @click="deleteCert(cert)"><i class="fas fa-trash text-xs"></i></button>
+                    <span v-if="cert.source === 'cached'" class="text-xs text-slate-400 pr-1">只读</span>
                   </div>
                 </td>
               </tr>
@@ -188,17 +211,25 @@ export default toNative(CaddyCerts)
 
         <!-- 移动端卡片 -->
         <div class="md:hidden space-y-3 p-4">
-          <div v-for="cert in filteredCerts" :key="cert.key" class="card-interactive">
+          <div v-for="cert in filteredCerts" :key="cert.key || cert.subject" class="card-interactive">
             <div class="card-info-row">
               <div class="list-icon bg-cyan-400">
                 <i class="fas fa-certificate text-white text-base"></i>
               </div>
               <div class="min-w-0">
                 <span class="font-medium text-slate-800 text-sm truncate block">{{ certSummary(cert) }}</span>
-                <span class="text-xs text-slate-400 truncate block mt-0.5">{{ sourceLabel(cert.source) }}</span>
+                <span :class="sourceTagClass(cert.source)" class="inline-block text-xs px-1.5 py-0.5 rounded mt-0.5">{{ sourceLabel(cert.source) }}</span>
               </div>
             </div>
 
+            <div v-if="cert.issuer" class="flex items-center gap-2 mb-2">
+              <span class="text-xs text-slate-400 flex-shrink-0">签发机构</span>
+              <span class="text-xs text-slate-600">{{ cert.issuer }}</span>
+            </div>
+            <div v-if="cert.notAfter" class="flex items-center gap-2 mb-2">
+              <span class="text-xs text-slate-400 flex-shrink-0">有效期</span>
+              <span :class="certExpireClass(cert.notAfter)" class="text-xs">{{ certExpireLabel(cert.notAfter) }}</span>
+            </div>
             <div v-if="cert.tags && cert.tags.length" class="flex items-start gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">标签</span>
               <span class="flex flex-wrap gap-1">
@@ -206,7 +237,7 @@ export default toNative(CaddyCerts)
               </span>
             </div>
 
-            <div class="card-actions">
+            <div v-if="cert.source !== 'cached'" class="card-actions">
               <button v-if="portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(cert)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
