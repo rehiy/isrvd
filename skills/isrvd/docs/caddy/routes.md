@@ -33,12 +33,15 @@ isrvd_get "/caddy/routes?server=srv0"          # 显式指定 server
 
 handler 通过 `kind` 字段区分类型，每种类型只填对应字段。
 
-| kind | 字段 | 说明 |
+| 字段 | 类型 | 说明 |
 |------|------|------|
-| `reverse_proxy` | `upstreams: string[]` | 反向代理上游 `host:port` 列表；Web UI 可选择运行中 Docker 容器与端口自动填充 |
-| `file_server` | `root: string`, `browse: boolean` | 静态文件服务 |
-| `static_response` | `statusCode: number`, `body: string` | 直接返回固定响应 |
-| `raw` | `raw: any` | 原始 handle 数组（任意 Caddy 模块），高级用法 |
+| kind | string | 处理器类型：`reverse_proxy` / `file_server` / `static_response` / `raw` |
+| upstreams | string[] | 反向代理上游 `host:port` 列表（`kind=reverse_proxy`）；Web UI 可选择运行中 Docker 容器与端口自动填充 |
+| root | string | 静态文件根目录（`kind=file_server`） |
+| browse | boolean | 是否开启目录浏览（`kind=file_server`） |
+| statusCode | number | 响应状态码（`kind=static_response`） |
+| body | string | 响应体内容（`kind=static_response`） |
+| raw | any | 原始 handle 数组，任意 Caddy 模块，高级用法（`kind=raw`） |
 
 ## 查看路由详情
 
