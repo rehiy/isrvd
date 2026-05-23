@@ -99,11 +99,13 @@ class ContainerCreateModal extends Vue {
             svc.command = this.formData.cmd.trim().split(/\s+/)
         }
         if (this.formData.envStr.trim()) {
+            // 兼容 KEY=VALUE 和 KEY: VALUE 格式，自动 strip 包裹引号
+            const re = /^([^=:]+?)\s*[=:]\s*(['"]?)(.*)\2$/
             svc.environment = this.formData.envStr
                 .split('\n')
                 .map(e => e.trim())
                 .filter(e => e)
-                .map(e => e.includes('=') ? e : e.replace(/\s*:\s*/, '='))
+                .map(e => e.replace(re, '$1=$3'))
         }
         if (this.formData.portsStr.trim()) {
             svc.ports = this.formData.portsStr.split('\n').filter(p => p.trim())
