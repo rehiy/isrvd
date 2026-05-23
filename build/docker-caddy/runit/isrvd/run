@@ -1,22 +1,19 @@
 #!/bin/bash
 exec 2>&1
 
-# 等待 Caddy Admin API 就绪
+# 等待 Caddy Admin API 就绪（2019 端口）
+# 使用 bash 内置 /dev/tcp，不依赖 curl/wget
 echo "[isrvd] Waiting for Caddy..."
 for i in $(seq 1 60); do
-    if curl -sf --connect-timeout 5 --max-time 10 http://127.0.0.1:2019/config/ &>/dev/null; then
-        echo "[isrvd] Caddy is ready"
+    if bash -c "echo > /dev/tcp/127.0.0.1/2019" 2>/dev/null; then
+        echo "[isrvd] Caddy is ready (${i}s)"
         break
     fi
-    if [ "$i" -eq 60 ]; then
-        echo "[isrvd] Caddy not ready after 60s, continuing anyway..."
-        break
-    fi
+    [ "$i" -eq 60 ] && echo "[isrvd] Caddy not ready after 60s, continuing anyway..."
     sleep 1
 done
 
 echo "[isrvd] Starting isrvd..."
 cd /data
-
 echo "[isrvd] Using CONFIG_PATH: $CONFIG_PATH"
 exec /usr/local/bin/isrvd
