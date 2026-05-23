@@ -20,6 +20,7 @@ class CaddyGlobalConfig extends Vue {
     acmeCA        = ''
     localCerts    = false
     onDemandTLS   = false
+    onDemandAsk   = ''
     autoHttpsDisable          = false
     autoHttpsDisableRedirects = false
     gracePeriod   = ''
@@ -40,6 +41,7 @@ class CaddyGlobalConfig extends Vue {
             this.acmeCA        = data.acmeCA        ?? ''
             this.localCerts    = data.localCerts    ?? false
             this.onDemandTLS   = data.onDemandTLS   ?? false
+            this.onDemandAsk   = data.onDemandAsk   ?? ''
             this.autoHttpsDisable          = data.autoHttpsDisable          ?? false
             this.autoHttpsDisableRedirects = data.autoHttpsDisableRedirects ?? false
             this.gracePeriod   = data.gracePeriod   ?? ''
@@ -58,6 +60,7 @@ class CaddyGlobalConfig extends Vue {
             acmeCA:        this.acmeCA        || undefined,
             localCerts:    this.localCerts    || undefined,
             onDemandTLS:   this.onDemandTLS   || undefined,
+            onDemandAsk:   this.onDemandAsk   || undefined,
             autoHttpsDisable:          this.autoHttpsDisable          || undefined,
             autoHttpsDisableRedirects: this.autoHttpsDisableRedirects || undefined,
             gracePeriod:   this.gracePeriod   || undefined,
@@ -170,6 +173,11 @@ export default toNative(CaddyGlobalConfig)
                 <span class="toggle-thumb" />
               </button>
             </div>
+            <div v-if="onDemandTLS" class="form-row">
+              <label class="form-label">Ask 鉴权端点</label>
+              <input v-model="onDemandAsk" type="text" class="input" placeholder="http://localhost:9090/tls-ask" />
+              <p class="text-xs text-slate-400 mt-1">Caddy 在申请证书前会向此 URL 发起 GET 请求，返回 2xx 则允许；留空时不配置鉴权（仅测试环境使用）</p>
+            </div>
           </div>
         </div>
 
@@ -182,7 +190,7 @@ export default toNative(CaddyGlobalConfig)
             <div class="toggle-row">
               <div>
                 <span class="text-sm text-slate-700">禁用自动 HTTPS</span>
-                <p class="text-xs text-slate-400 mt-0.5">勾选后 Caddy 不再自动申请或管理证书；取消勾选并配置好 ACME 邮箱后，Caddy 将自动为路由中的域名申请和续签证书</p>
+                <p class="text-xs text-slate-400 mt-0.5">开启后 Caddy 不再自动申请或续签证书，也不插入 HTTP→HTTPS 跳转路由；关闭后配合 ACME 邮箱即可启用全自动证书管理</p>
               </div>
               <button type="button" class="toggle toggle-violet" :class="{ 'toggle-on': autoHttpsDisable }" role="switch" :aria-checked="autoHttpsDisable" @click="autoHttpsDisable = !autoHttpsDisable">
                 <span class="toggle-thumb" />

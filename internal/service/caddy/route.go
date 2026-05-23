@@ -324,7 +324,8 @@ type GlobalForm struct {
 	LocalCerts bool   `json:"localCerts,omitempty"` // 使用本地自签证书（internal issuer），不走 ACME
 
 	// 按需签发
-	OnDemandTLS bool `json:"onDemandTLS,omitempty"` // 启用 on_demand TLS（连接时动态申请证书）
+	OnDemandTLS bool   `json:"onDemandTLS,omitempty"` // 启用 on_demand TLS（连接时动态申请证书）
+	OnDemandAsk string `json:"onDemandAsk,omitempty"` // ask 鉴权端点 URL（防滥用，Caddy v2.8+ 必须配置）
 
 	// automatic_https（server 级，作用于默认 server srv0）
 	AutoHTTPSDisable          bool `json:"autoHttpsDisable,omitempty"`          // 禁用自动 HTTPS
@@ -358,14 +359,20 @@ func (s *Service) GlobalGet(ctx context.Context) (*GlobalForm, error) {
 	if cfg.Apps != nil && cfg.Apps.TLS != nil && cfg.Apps.TLS.Automation != nil {
 		auto := cfg.Apps.TLS.Automation
 
-		// on_demand
-		form.OnDemandTLS = auto.OnDemand != nil
+		// on_demand permission（ask 端点）
+		if auto.OnDemand != nil {
+			if perm, ok := auto.OnDemand["permission"].(map[string]any); ok {
+				form.OnDemandAsk, _ = perm["endpoint"].(string)
+			}
+		}
 
 		// 全局默认策略：第一个无 subjects 的策略
 		for _, p := range auto.Policies {
 			if len(p.Subjects) > 0 {
 				continue
 			}
+			// on_demand 以策略级开关为准（全局 permission + 策略 on_demand 两者均需启用）
+			form.OnDemandTLS = p.OnDemand
 			for _, issuer := range p.Issuers {
 				mod, _ := issuer["module"].(string)
 				switch mod {
@@ -441,16 +448,18 @@ func (s *Service) GlobalUpdate(ctx context.Context, req GlobalForm) error {
 	}
 	auto := cfg.Apps.TLS.Automation
 
-	// on_demand
+	// on_demand：需同时设置全局 permission 和默认策略的 on_demand: true
 	if req.OnDemandTLS {
-		if auto.OnDemand == nil {
-			auto.OnDemand = map[string]any{}
+		perm := map[string]any{"module": "http"}
+		if req.OnDemandAsk != "" {
+			perm["endpoint"] = req.OnDemandAsk
 		}
+		auto.OnDemand = map[string]any{"permission": perm}
 	} else {
 		auto.OnDemand = nil
 	}
 
-	// 全局默认策略（无 subjects），重新构建 issuers
+	// 全局默认策略（无 subjects），重新构建 issuers 和 on_demand
 	globalPolicyIdx := -1
 	for i, p := range auto.Policies {
 		if len(p.Subjects) == 0 {
@@ -459,8 +468,16 @@ func (s *Service) GlobalUpdate(ctx context.Context, req GlobalForm) error {
 		}
 	}
 	issuer := buildIssuer(req)
-	if issuer != nil {
-		policy := pkgcaddy.TLSPolicy{Issuers: []map[string]any{issuer}}
+	if issuer != nil || req.OnDemandTLS {
+		policy := pkgcaddy.TLSPolicy{
+			Issuers:  []map[string]any{},
+			OnDemand: req.OnDemandTLS,
+		}
+		if issuer != nil {
+			policy.Issuers = []map[string]any{issuer}
+		} else {
+			policy.Issuers = nil
+		}
 		if globalPolicyIdx >= 0 {
 			auto.Policies[globalPolicyIdx] = policy
 		} else {
