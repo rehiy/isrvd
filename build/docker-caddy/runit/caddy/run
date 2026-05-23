@@ -13,5 +13,12 @@ if [ ! -f "$CADDY_CONF" ]; then
     exit 1
 fi
 
-echo "[caddy] Starting Caddy admin api on 127.0.0.1:2019..."
-exec /usr/local/bin/caddy run --config "$CADDY_CONF"
+AUTOSAVE="$XDG_CONFIG_HOME/caddy/autosave.json"
+
+if [ -f "$AUTOSAVE" ]; then
+    echo "[caddy] Resuming from autosave: $AUTOSAVE"
+    exec /usr/local/bin/caddy run --resume
+else
+    echo "[caddy] Starting Caddy admin api on 127.0.0.1:2019..."
+    exec /usr/local/bin/caddy run --config "$CADDY_CONF"
+fi
