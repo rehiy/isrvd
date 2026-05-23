@@ -46,6 +46,17 @@ CNB 流水线会同步推送到 CNB Docker 制品库，镜像路径为 `docker.c
 
 首次启动自动生成随机密码，通过 `docker logs isrvd` 查看。
 
+### 创建网络
+
+根据实际网络环境，创建 `sdnet` 网络（二选一），并将容器加入该网络。
+
+```bash
+# 本地通信
+docker network create --driver=bridge sdnet
+# 跨主机通信
+docker network create --driver=overlay --attachable sdnet
+```
+
 ### slim（默认）
 
 仅含 isrvd 本体，体积最小，适合只需要文件管理、Docker/Swarm/Compose、计划任务等功能的场景。
@@ -53,6 +64,7 @@ CNB 流水线会同步推送到 CNB Docker 制品库，镜像路径为 `docker.c
 ```bash
 docker run -d \
   --name isrvd \
+  --network sdnet \
   -p 8080:8080 \
   -v /srv/data:/data \
   -v /var/run/docker.sock:/var/run/docker.sock \
@@ -68,10 +80,9 @@ docker run -d \
 isrvd + APISIX，适合已使用 APISIX 作为 API 网关的场景。
 
 ```bash
-docker network create srvdnet
 docker run -d \
   --name isrvd \
-  --network srvdnet \
+  --network sdnet \
   -p 8080:8080 \
   -p 80:9080 \
   -p 443:9443 \
@@ -93,6 +104,7 @@ isrvd + Caddy，适合需要反向代理、自动 HTTPS（ACME）或统一网关
 ```bash
 docker run -d \
   --name isrvd \
+  --network sdnet \
   -p 8080:8080 \
   -p 80:80 \
   -p 443:443 \
@@ -128,7 +140,8 @@ services:
 
 ## 二进制部署
 
-安装目录：`/usr/local/isrvd/`（包含二进制和配置文件）
+- 目录：`/usr/local/isrvd/`，包含二进制和配置文件
+- 限制：无法通过容器内网访问其它容器
 
 ```bash
 # 一键安装
