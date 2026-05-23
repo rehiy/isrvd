@@ -14,4 +14,4 @@ if [ ! -f "$CADDY_CONF" ]; then
 fi
 
 echo "[caddy] Starting Caddy admin api on 127.0.0.1:2019..."
-exec /usr/local/bin/caddy run --config "$CADDY_CONF" --adapter json
+exec /usr/local/bin/caddy run --config "$CADDY_CONF"
