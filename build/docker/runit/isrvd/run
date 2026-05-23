@@ -1,10 +1,10 @@
 #!/bin/bash
 exec 2>&1
 
-# 等待 APISIX Admin API 就绪（etcd 已由 apisix 等待）
+# 等待 APISIX Control API 就绪（无需 admin key，9090 端口）
 echo "[isrvd] Waiting for APISIX..."
 for i in $(seq 1 60); do
-    if curl -sf --connect-timeout 5 --max-time 10 http://127.0.0.1:9180/apisix/admin/routes &>/dev/null; then
+    if curl -sf --connect-timeout 2 --max-time 5 http://127.0.0.1:9090/v1/healthcheck &>/dev/null; then
         echo "[isrvd] APISIX is ready"
         break
     fi
