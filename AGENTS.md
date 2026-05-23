@@ -396,18 +396,36 @@ skills/isrvd/
 - 表单容器 `max-w-3xl space-y-4`
 - label：`block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1`，input 通用 `.input`，help `text-xs text-slate-400 mt-1`
 - 密钥/密码：后端敏感字段 `json:"-"`，前端 `type="password" autocomplete="new-password"`，留空保存=不修改，placeholder："留空保持不变"
-- **Checkbox 规范**：统一使用以下结构，`<label>` 包裹 checkbox + 文字，描述段落在 `<label>` 外同级；禁止使用独立 `id`/`for` 绑定方式，禁止使用 `accent-*` 或裸 `w-4 h-4` 类（权限多选列表除外）：
+
+- **Toggle Switch 规范**（单一功能启用/禁用开关）：使用 `.toggle-row` + `.toggle` + `.toggle-thumb` CSS 类；通过 `:class="{ 'toggle-on': value }"` 控制激活态；Caddy 模块用 `toggle-violet` 修饰符；禁止手写内联 Tailwind toggle 样式：
+
+  ```html
+  <div class="toggle-row">
+    <div>
+      <span class="text-sm text-slate-700">开关文字</span>
+      <p class="text-xs text-slate-400 mt-0.5">描述说明（可选）</p>
+    </div>
+    <button type="button" class="toggle" :class="{ 'toggle-on': field }"
+            role="switch" :aria-checked="field" @click="field = !field">
+      <span class="toggle-thumb" />
+    </button>
+  </div>
+  ```
+
+  使用场景：单个布尔型功能开关，且有描述文字（如 WebSocket 代理、FastCGI、目录浏览、TLS 配置项等）。
+
+- **Checkbox 规范**（多选列表 / 无描述的简单开关）：统一使用以下结构，`<label>` 包裹 checkbox + 文字，描述段落在 `<label>` 外同级；禁止使用独立 `id`/`for` 绑定方式，禁止使用 `accent-*` 或裸 `w-4 h-4` 类（权限多选列表除外）：
 
   ```html
   <!-- 无描述 -->
-  <label class="flex items-center gap-2 cursor-pointer select-none w-fit">
+  <label class="check-label">
     <input v-model="field" type="checkbox" class="rounded border-slate-300 text-{color}-500 focus:ring-{color}-500" />
     <span class="text-sm text-slate-600">选项文字</span>
   </label>
 
   <!-- 有描述（描述与 label 同级，mt-1 无缩进） -->
   <div>
-    <label class="flex items-center gap-2 cursor-pointer select-none w-fit">
+    <label class="check-label">
       <input v-model="field" type="checkbox" class="rounded border-slate-300 text-{color}-500 focus:ring-{color}-500" />
       <span class="text-sm text-slate-700">选项文字</span>
     </label>
@@ -415,7 +433,7 @@ skills/isrvd/
   </div>
   ```
 
-  `{color}` 与页面主色一致，如 `indigo`（APISIX/Docker）、`violet`（Caddy）、`blue`（系统/账户）。
+  使用场景：多选列表（插件、权限矩阵）或无描述的简单开关。`{color}` 与页面主色一致，如 `indigo`（APISIX/Docker）、`violet`（Caddy）、`blue`（系统/账户）。
 
 ### 6.12 概览 Widget 统计卡片（强制）
 

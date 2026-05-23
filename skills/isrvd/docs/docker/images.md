@@ -63,11 +63,11 @@ isrvd_post "/docker/image/<IMAGE_ID>/action" '{"action":"remove"}'
 ## 清理未使用镜像
 
 ```bash
-# 仅清理悬空层（未打 tag 的中间/失标层）
-isrvd_post "/docker/image/prune" '{}'
-
-# 清理所有未被容器引用的镜像（含有 tag 但闲置的）
+# 清理所有未被容器引用的镜像（含有 tag 但闲置的）—— UI 默认行为
 isrvd_post "/docker/image/prune" '{"all":true}'
+
+# 仅清理悬空层（未打 tag 的中间/失标层）
+isrvd_post "/docker/image/prune" '{"all":false}'
 
 # 按时间过滤：仅清理 24 小时前创建的镜像
 isrvd_post "/docker/image/prune" '{"all":true,"until":"24h"}'
@@ -77,7 +77,7 @@ isrvd_post "/docker/image/prune" '{"all":true,"until":"24h"}'
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| all | bool | `false`（默认）仅清理悬空层；`true` 清理所有未被容器引用的镜像 |
+| all | bool | `true`（UI 默认）清理所有未被容器引用的镜像；`false` 仅清理悬空层 |
 | until | string | 仅清理在该时间之前创建的镜像（Docker filters 语法，如 `24h`、`2024-01-01T00:00:00`） |
 
 响应字段：

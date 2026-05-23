@@ -152,19 +152,23 @@ export default toNative(CaddyGlobalConfig)
             </div>
           </div>
           <div class="space-y-3">
-            <div>
-              <label class="check-label">
-                <input v-model="localCerts" type="checkbox" class="rounded border-slate-300 text-violet-600 focus:ring-violet-500" />
+            <div class="toggle-row">
+              <div>
                 <span class="text-sm text-slate-700">使用本地自签证书（internal issuer）</span>
-              </label>
-              <p class="text-xs text-slate-400 mt-1">不走 ACME，由 Caddy 自动签发本地信任证书；启用后 ACME 邮箱和目录设置将被忽略</p>
+                <p class="text-xs text-slate-400 mt-0.5">不走 ACME，由 Caddy 自动签发本地信任证书；启用后 ACME 邮箱和目录设置将被忽略</p>
+              </div>
+              <button type="button" class="toggle toggle-violet" :class="{ 'toggle-on': localCerts }" role="switch" :aria-checked="localCerts" @click="localCerts = !localCerts">
+                <span class="toggle-thumb" />
+              </button>
             </div>
-            <div>
-              <label class="check-label">
-                <input v-model="onDemandTLS" type="checkbox" class="rounded border-slate-300 text-violet-600 focus:ring-violet-500" />
+            <div class="toggle-row">
+              <div>
                 <span class="text-sm text-slate-700">启用 On-Demand TLS</span>
-              </label>
-              <p class="text-xs text-slate-400 mt-1">连接时动态申请证书，适合域名数量不固定的多租户场景；生产环境需配合 <code class="px-1 bg-slate-100 rounded">ask</code> 端点防滥用</p>
+                <p class="text-xs text-slate-400 mt-0.5">连接时动态申请证书，适合域名数量不固定的多租户场景；生产环境需配合 <code class="px-1 bg-slate-100 rounded">ask</code> 端点防滥用</p>
+              </div>
+              <button type="button" class="toggle toggle-violet" :class="{ 'toggle-on': onDemandTLS }" role="switch" :aria-checked="onDemandTLS" @click="onDemandTLS = !onDemandTLS">
+                <span class="toggle-thumb" />
+              </button>
             </div>
           </div>
         </div>
@@ -175,19 +179,23 @@ export default toNative(CaddyGlobalConfig)
             <i class="fas fa-arrow-right-arrow-left text-violet-500"></i>HTTPS 行为
           </h2>
           <div class="space-y-3">
-            <div>
-              <label class="check-label">
-                <input v-model="autoHttpsDisable" type="checkbox" class="rounded border-slate-300 text-violet-600 focus:ring-violet-500" />
+            <div class="toggle-row">
+              <div>
                 <span class="text-sm text-slate-700">禁用自动 HTTPS</span>
-              </label>
-              <p class="text-xs text-slate-400 mt-1">勾选后 Caddy 不再自动申请或管理证书；取消勾选并配置好 ACME 邮箱后，Caddy 将自动为路由中的域名申请和续签证书</p>
+                <p class="text-xs text-slate-400 mt-0.5">勾选后 Caddy 不再自动申请或管理证书；取消勾选并配置好 ACME 邮箱后，Caddy 将自动为路由中的域名申请和续签证书</p>
+              </div>
+              <button type="button" class="toggle toggle-violet" :class="{ 'toggle-on': autoHttpsDisable }" role="switch" :aria-checked="autoHttpsDisable" @click="autoHttpsDisable = !autoHttpsDisable">
+                <span class="toggle-thumb" />
+              </button>
             </div>
-            <div>
-              <label class="check-label">
-                <input v-model="autoHttpsDisableRedirects" type="checkbox" class="rounded border-slate-300 text-violet-600 focus:ring-violet-500" />
+            <div class="toggle-row">
+              <div>
                 <span class="text-sm text-slate-700">禁用 HTTP→HTTPS 自动跳转</span>
-              </label>
-              <p class="text-xs text-slate-400 mt-1">不插入 301 重定向路由；适合需要同时提供 HTTP 和 HTTPS 服务的场景</p>
+                <p class="text-xs text-slate-400 mt-0.5">不插入 301 重定向路由；适合需要同时提供 HTTP 和 HTTPS 服务的场景</p>
+              </div>
+              <button type="button" class="toggle toggle-violet" :class="{ 'toggle-on': autoHttpsDisableRedirects }" role="switch" :aria-checked="autoHttpsDisableRedirects" @click="autoHttpsDisableRedirects = !autoHttpsDisableRedirects">
+                <span class="toggle-thumb" />
+              </button>
             </div>
           </div>
         </div>

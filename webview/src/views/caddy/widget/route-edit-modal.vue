@@ -281,12 +281,14 @@ export default toNative(RouteEditModal)
             <textarea v-model="formData.upstreams" rows="3" class="input font-mono text-sm" placeholder="backend1:8080&#10;backend2:8080" @input="syncSelectedFromText"></textarea>
             <p class="text-xs text-slate-400 mt-1">多个上游会做轮询负载</p>
           </div>
-          <div>
-            <label class="check-label">
-              <input v-model="formData.fastcgi" type="checkbox" class="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500" />
+          <div class="toggle-row">
+            <div>
               <span class="text-sm text-slate-600">使用 FastCGI 协议（PHP-FPM / fcgi）</span>
-            </label>
-            <p class="text-xs text-slate-400 mt-1">启用后将使用 FastCGI 传输协议与上游通信，适用于 PHP-FPM 等 FastCGI 进程</p>
+              <p class="text-xs text-slate-400 mt-0.5">启用后将使用 FastCGI 传输协议与上游通信，适用于 PHP-FPM 等 FastCGI 进程</p>
+            </div>
+            <button type="button" class="toggle" :class="{ 'toggle-on': formData.fastcgi }" role="switch" :aria-checked="formData.fastcgi" @click="formData.fastcgi = !formData.fastcgi">
+              <span class="toggle-thumb" />
+            </button>
           </div>
           <div v-if="formData.fastcgi">
             <label class="form-label">FastCGI 文档根目录</label>
@@ -301,12 +303,14 @@ export default toNative(RouteEditModal)
             <label class="form-label">根目录 <span class="text-red-500">*</span></label>
             <input v-model="formData.root" type="text" class="input font-mono text-sm" placeholder="/var/www/html" />
           </div>
-          <div>
-            <label class="check-label">
-              <input v-model="formData.browse" type="checkbox" class="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500" />
+          <div class="toggle-row">
+            <div>
               <span class="text-sm text-slate-600">启用目录浏览</span>
-            </label>
-            <p class="text-xs text-slate-400 mt-1">允许访客浏览目录内文件列表</p>
+              <p class="text-xs text-slate-400 mt-0.5">允许访客浏览目录内文件列表</p>
+            </div>
+            <button type="button" class="toggle" :class="{ 'toggle-on': formData.browse }" role="switch" :aria-checked="formData.browse" @click="formData.browse = !formData.browse">
+              <span class="toggle-thumb" />
+            </button>
           </div>
         </div>
 

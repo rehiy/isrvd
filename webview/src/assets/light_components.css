@@ -283,6 +283,34 @@
     @apply flex items-center gap-2 cursor-pointer select-none w-fit;
   }
 
+  /* toggle switch —— 功能启用/禁用开关
+   * 用法：
+   *   <div class="toggle-row">
+   *     <div>
+   *       <span class="text-sm text-slate-700">开关文字</span>
+   *       <p class="text-xs text-slate-400 mt-0.5">描述说明（可选）</p>
+   *     </div>
+   *     <button type="button" class="toggle" :class="{ 'toggle-on': value }"
+   *             role="switch" :aria-checked="value" @click="value = !value">
+   *       <span class="toggle-thumb" />
+   *     </button>
+   *   </div>
+   * 颜色 modifier：默认主色 indigo；violet 场景加 .toggle-violet
+   */
+  .toggle-row {
+    @apply flex items-center justify-between gap-4 rounded-xl border border-slate-200 px-4 py-3;
+  }
+  .toggle {
+    @apply relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-slate-200 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2;
+  }
+  .toggle.toggle-on         { @apply bg-indigo-500; }
+  .toggle.toggle-violet     { @apply focus-visible:ring-violet-500; }
+  .toggle.toggle-violet.toggle-on { @apply bg-violet-500; }
+  .toggle-thumb {
+    @apply inline-block h-5 w-5 translate-x-0 transform rounded-full bg-white shadow ring-0 transition duration-200;
+  }
+  .toggle.toggle-on .toggle-thumb { @apply translate-x-5; }
+
   /* 代码/ID 副文字（表格/卡片中灰色 mono 截断） */
   .text-mono-muted {
     @apply block font-mono text-xs text-slate-400 truncate mt-0.5;

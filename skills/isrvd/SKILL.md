@@ -46,7 +46,7 @@ isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
 
 | 文档 | 覆盖内容 |
 |------|----------|
-| [docs/compose.md](docs/compose.md) | Docker Compose 部署/重部署/按服务更新镜像并重建、Swarm Stack 部署/重部署/按服务更新镜像并重建 |
+| [docs/compose.md](docs/compose.md) | Docker Compose 与 Swarm Stack 的部署、读取配置、重部署（含全量重建与按服务更新镜像）、forcePull 强制拉取 |
 
 ### APISIX
 
