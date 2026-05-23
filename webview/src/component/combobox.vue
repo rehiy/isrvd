@@ -58,12 +58,12 @@ class Combobox extends Vue {
             if (!open) this.searchQuery = ''
             return
         }
-        if (open) {
-            this.searchQuery = ''
-        } else if (!this.justSelected) {
-            this.searchQuery = this.singleValue
+        if (!open) {
+            // 关闭时：未通过点选确认则恢复显示原值
+            if (!this.justSelected) this.searchQuery = this.singleValue
+            this.justSelected = false
         }
-        this.justSelected = false
+        // 打开时不清空 searchQuery：保留当前值，用户可直接继续输入过滤
     }
 
     // ─── 方法 ───
