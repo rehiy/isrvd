@@ -64,6 +64,9 @@ class ContainerCreateModal extends Vue {
         try {
             const res = await api.dockerNetworkList()
             this.networks = res.payload || []
+            if (!this.formData.network && this.networks.some(n => n.name === 'sdnet')) {
+                this.formData.network = 'sdnet'
+            }
         } catch {}
     }
 

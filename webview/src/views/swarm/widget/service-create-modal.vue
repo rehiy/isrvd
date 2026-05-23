@@ -30,6 +30,9 @@ class ServiceCreateModal extends Vue {
             this.networks = (netRes.payload || []).filter((n: DockerNetworkInfo) =>
                 n.driver === 'overlay' || n.driver === 'host' || n.driver === 'bridge'
             )
+            if (!this.form.network && this.networks.some(n => n.name === 'sdnet')) {
+                this.form.network = 'sdnet'
+            }
         } catch {}
     }
 
