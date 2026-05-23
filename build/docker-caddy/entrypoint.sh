@@ -93,4 +93,4 @@ if [ ! -L /etc/service/caddy ]; then
 fi
 
 echo "[init] Starting all services via runit..."
-exec /sbin/runsvdir -P /etc/service
+exec /usr/sbin/runsvdir -P /etc/service
