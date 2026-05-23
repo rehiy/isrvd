@@ -126,7 +126,7 @@ func (s *Service) OIDCCallback(c *gin.Context) (string, error) {
 	// 使用授权码换取 token
 	token, err := oauthConfig.Exchange(c.Request.Context(), code)
 	if err != nil {
-		logman.Warn("OIDC code exchange failed", "err", err)
+		logman.Warn("OIDC code exchange failed", "error", err)
 		return "", fmt.Errorf("OIDC 登录失败，请重试")
 	}
 
@@ -139,7 +139,7 @@ func (s *Service) OIDCCallback(c *gin.Context) (string, error) {
 	// 验证 id_token 签名和 claims
 	idToken, err := provider.Verifier(&oidc.Config{ClientID: config.OIDC.ClientID}).Verify(c.Request.Context(), rawIDToken)
 	if err != nil {
-		logman.Warn("OIDC id_token verify failed", "err", err)
+		logman.Warn("OIDC id_token verify failed", "error", err)
 		return "", fmt.Errorf("OIDC 登录失败，请重试")
 	}
 
@@ -152,7 +152,7 @@ func (s *Service) OIDCCallback(c *gin.Context) (string, error) {
 	// 提取用户名：优先从 id_token claims 读，回落到 UserInfo endpoint
 	username, err := oidcUsername(c.Request.Context(), provider, oauthConfig.TokenSource(c.Request.Context(), token), idToken, config.OIDC.UsernameClaim)
 	if err != nil {
-		logman.Warn("OIDC username claim error", "err", err, "claim", config.OIDC.UsernameClaim)
+		logman.Warn("OIDC username claim error", "error", err, "claim", config.OIDC.UsernameClaim)
 		return "", fmt.Errorf("OIDC 登录失败，请重试")
 	}
 

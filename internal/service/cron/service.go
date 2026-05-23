@@ -19,6 +19,9 @@ import (
 	"isrvd/pkgs/docker"
 )
 
+// logger 为 cron 包创建带名称的 logger
+var logger = logman.Named("cron")
+
 // TypeInfo 脚本类型描述
 type TypeInfo struct {
 	Value string `json:"value"`
@@ -111,28 +114,28 @@ func NewService(dockerSvc *docker.DockerService) *Service {
 	// 从 cron.yml 加载任务
 	jobs, err := s.store.LoadJobs()
 	if err != nil {
-		logman.Warn("Load cron jobs failed", "error", err)
+		logger.Warn("Load cron jobs failed", "error", err)
 	}
 	for _, job := range jobs {
 		if err := s.validateJob(job); err != nil {
-			logman.Warn("Skip invalid cron job", "error", err)
+			logger.Warn("Skip invalid cron job", "error", err)
 			continue
 		}
 		s.jobs[job.ID] = job
 		if job.Enabled {
 			if err := s.register(job); err != nil {
-				logman.Warn("Cron job register failed", "id", job.ID, "name", job.Name, "error", err)
+				logger.Warn("Cron job register failed", "id", job.ID, "name", job.Name, "error", err)
 			}
 		}
 	}
 
 	s.cron.Start()
-	logman.Info("Cron scheduler started", "jobs", len(s.entries))
+	logger.Info("Cron scheduler started", "jobs", len(s.entries))
 
 	signal.OnQuit(func() {
 		ctx := s.cron.Stop()
 		<-ctx.Done()
-		logman.Info("Cron scheduler stopped")
+		logger.Info("Cron scheduler stopped")
 	})
 
 	return s
@@ -376,7 +379,7 @@ func (s *Service) runJob(id string) {
 	}
 
 	start := time.Now()
-	logman.Info("Cron job running", "id", job.ID, "name", job.Name)
+	logger.Info("Cron job running", "id", job.ID, "name", job.Name)
 
 	var output string
 	var err error
@@ -407,9 +410,9 @@ func (s *Service) runJob(id string) {
 	}
 	if err != nil {
 		entry.Error = err.Error()
-		logman.Warn("Cron job failed", "id", job.ID, "name", job.Name, "error", err)
+		logger.Warn("Cron job failed", "id", job.ID, "name", job.Name, "error", err)
 	} else {
-		logman.Info("Cron job done", "id", job.ID, "name", job.Name, "duration", entry.Duration)
+		logger.Info("Cron job done", "id", job.ID, "name", job.Name, "duration", entry.Duration)
 	}
 
 	s.store.AppendJobLog(entry)

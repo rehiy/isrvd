@@ -44,7 +44,7 @@ type Service struct {
 func NewService() (*Service, error) {
 	client := registry.CaddyClient
 	if client == nil {
-		logman.Error("Caddy client not initialized")
+		logman.Warn("Caddy client not initialized")
 		return nil, fmt.Errorf("Caddy 未配置")
 	}
 	// 验证连通性，服务不可达时拒绝初始化

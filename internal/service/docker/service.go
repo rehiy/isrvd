@@ -20,7 +20,7 @@ type Service struct {
 func NewService() (*Service, error) {
 	svc := registry.DockerService
 	if svc == nil {
-		logman.Error("Docker service not initialized")
+		logman.Warn("Docker service not initialized")
 		return nil, fmt.Errorf("Docker 服务未初始化")
 	}
 	return &Service{docker: svc}, nil

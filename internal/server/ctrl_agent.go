@@ -69,7 +69,7 @@ func (app *App) agentProxy(c *gin.Context) {
 
 	resp, err := agentHTTPClient.Do(req)
 	if err != nil {
-		logman.Error("agent proxy: upstream request failed", "err", err)
+		logman.Error("agent proxy: upstream request failed", "error", err)
 		respondError(c, http.StatusBadGateway, "上游 LLM 请求失败")
 		return
 	}
@@ -82,7 +82,7 @@ func (app *App) agentProxy(c *gin.Context) {
 	}
 	c.Status(resp.StatusCode)
 	if _, err := io.Copy(c.Writer, resp.Body); err != nil {
-		logman.Error("agent proxy: stream copy failed", "err", err)
+		logman.Error("agent proxy: stream copy failed", "error", err)
 	}
 }
 

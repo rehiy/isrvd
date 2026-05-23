@@ -20,7 +20,7 @@ type Service struct {
 func NewService() (*Service, error) {
 	client := registry.ApisixClient
 	if client == nil {
-		logman.Error("Apisix client not initialized")
+		logman.Warn("Apisix client not initialized")
 		return nil, fmt.Errorf("Apisix 未配置")
 	}
 	// 验证连通性，服务不可达时拒绝初始化

@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/goccy/go-yaml"
-	"github.com/rehiy/libgo/logman"
 
 	"isrvd/config"
 )
@@ -80,7 +79,7 @@ func (s *Store) SaveJobs(jobs []*Job) error {
 		return err
 	}
 
-	logman.Debug("Save cron jobs", "path", path, "count", len(jobs))
+	logger.Debug("Save cron jobs", "path", path, "count", len(jobs))
 	return os.WriteFile(path, data, 0644)
 }
 
@@ -95,30 +94,30 @@ func (s *Store) AppendJobLog(entry *JobLog) {
 
 	path, ok := s.jobLogPath(entry.JobID)
 	if !ok {
-		logman.Warn("Cron", "msg", "无效的计划任务日志 ID", "id", entry.JobID)
+		logger.Warn("无效的计划任务日志 ID", "id", entry.JobID)
 		return
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		logman.Warn("Cron", "msg", "无法创建计划任务日志目录", "err", err)
+		logger.Warn("无法创建计划任务日志目录", "error", err)
 		return
 	}
 
 	data, err := json.Marshal(entry)
 	if err != nil {
-		logman.Warn("Cron", "msg", "序列化计划任务日志失败", "err", err)
+		logger.Warn("序列化计划任务日志失败", "error", err)
 		return
 	}
 	data = append(data, '\n')
 
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		logman.Warn("Cron", "msg", "无法打开计划任务日志文件", "path", path, "err", err)
+		logger.Warn("无法打开计划任务日志文件", "path", path, "error", err)
 		return
 	}
 	defer file.Close()
 
 	if _, err := file.Write(data); err != nil {
-		logman.Warn("Cron", "msg", "写入计划任务日志失败", "path", path, "err", err)
+		logger.Warn("写入计划任务日志失败", "path", path, "error", err)
 	}
 }
 
