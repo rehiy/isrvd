@@ -278,6 +278,16 @@ export default toNative(RouteEditModal)
       <div><label class="form-label">URI（每行一个）<span class="text-red-500">*</span></label><textarea v-model="formData.uris" rows="3" class="input font-mono text-sm" placeholder="/api/v1/*&#10;/api/v2/*"></textarea></div>
       <div><label class="form-label">Host（每行一个，留空匹配所有）</label><textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="example.com"></textarea></div>
 
+      <div class="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
+        <div>
+          <div class="text-sm font-medium text-slate-700">WebSocket 代理</div>
+          <div class="text-xs text-slate-400 mt-0.5">启用后支持 WebSocket 协议升级（ws:// / wss://）</div>
+        </div>
+        <button type="button" :class="['relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200', formData.enable_websocket ? 'bg-indigo-500' : 'bg-slate-200']" @click="formData.enable_websocket = !formData.enable_websocket">
+          <span :class="['inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200', formData.enable_websocket ? 'translate-x-5' : 'translate-x-0']" />
+        </button>
+      </div>
+
       <div class="border border-slate-200 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">
           <div>
@@ -328,7 +338,6 @@ export default toNative(RouteEditModal)
         </div>
         <div v-else class="text-sm text-slate-500 leading-6">当前保存只会提交路由匹配规则、状态和插件配置，不会附带内联节点，也不会引用已有上游。</div>
       </div>
-
       <div class="border border-slate-200 rounded-xl p-4">
         <div class="mb-3">
           <label class="form-label">引用插件配置</label>
