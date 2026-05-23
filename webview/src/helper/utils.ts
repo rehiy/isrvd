@@ -1,6 +1,40 @@
 // 全局自动刷新间隔（毫秒），所有轮询定时器统一使用此常量
 export const POLL_INTERVAL = 3000
 
+/**
+ * 解析 host:port 字符串，正确处理 IPv6 字面量地址。
+ *
+ * 规则（遵循 RFC 3986）：
+ *   [::1]:8080   → { host: '::1',       port: '8080' }
+ *   ::1          → { host: '::1',       port: ''     }  (裸 IPv6，无端口)
+ *   127.0.0.1:80 → { host: '127.0.0.1', port: '80'  }
+ *   hostname:80  → { host: 'hostname',  port: '80'   }
+ *   hostname     → { host: 'hostname',  port: ''     }
+ */
+export function parseHostPort(value: string): { host: string; port: string } {
+    const s = value.trim()
+    if (!s) return { host: '', port: '' }
+
+    // RFC 3986 带方括号的 IPv6：[::1] 或 [::1]:8080
+    if (s.startsWith('[')) {
+        const close = s.indexOf(']')
+        if (close === -1) return { host: s, port: '' }
+        const host = s.slice(1, close)
+        const rest = s.slice(close + 1)
+        const port = rest.startsWith(':') ? rest.slice(1) : ''
+        return { host, port }
+    }
+
+    // 裸 IPv6（含多个冒号，不带端口）：:: / ::1 / 2001:db8::1
+    const colonCount = (s.match(/:/g) ?? []).length
+    if (colonCount > 1) return { host: s, port: '' }
+
+    // IPv4 或 hostname：host 或 host:port
+    const idx = s.lastIndexOf(':')
+    if (idx <= 0) return { host: s, port: '' }
+    return { host: s.slice(0, idx), port: s.slice(idx + 1) }
+}
+
 export const TEXT_EXTENSIONS: string[] = [
     'txt', 'md', 'js', 'css', 'html', 'htm', 'json', 'xml', 'csv',
     'log', 'conf', 'ini', 'cfg', 'yaml', 'yml', 'php', 'py', 'go',

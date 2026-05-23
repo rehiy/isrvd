@@ -11,6 +11,8 @@ import ContainerSelect from '@/views/docker/widget/container-select.vue'
 
 import { usePortal } from '@/stores'
 
+import { parseHostPort } from '@/helper/utils'
+
 const HANDLER_KIND_CARDS: CaddyHandlerKindCard[] = [
     { value: 'reverse_proxy', title: '反向代理', desc: '将请求转发到一个或多个上游服务器', icon: 'fa-diagram-project', tone: 'indigo' },
     { value: 'file_server', title: '静态文件服务', desc: '提供本地目录中的静态文件访问', icon: 'fa-folder-open', tone: 'emerald' },
@@ -84,10 +86,7 @@ class RouteEditModal extends Vue {
     }
 
     parseUpstream(upstream: string) {
-        const value = upstream.trim()
-        const idx = value.lastIndexOf(':')
-        if (idx <= 0) return { host: value, port: '' }
-        return { host: value.slice(0, idx), port: value.slice(idx + 1) }
+        return parseHostPort(upstream)
     }
 
     syncSelectedUpstream() {

@@ -7,14 +7,14 @@ import type {
     ApisixUpstreamNode
 } from '@/service/types'
 
+import { parseHostPort } from '@/helper/utils'
+
 const parseNodeKey = (key: string): ApisixUpstreamNode => {
     if (!key) return { host: '', port: '' }
-    const idx = key.lastIndexOf(':')
-    if (idx <= 0) return { host: key, port: '' }
-    const port = key.slice(idx + 1)
+    const { host, port } = parseHostPort(key)
     return {
-        host: key.slice(0, idx),
-        port: /^\d+$/.test(port) ? Number(port) : port
+        host,
+        port: port && /^\d+$/.test(port) ? Number(port) : port
     }
 }
 

@@ -17,7 +17,7 @@ interface HostGroup {
 class ContainerSelect extends Vue {
     @Prop({ type: String, default: '' }) readonly modelValue!: string
     @Prop({ type: Array, default: () => [] }) readonly containers!: DockerContainerInfo[]
-    @Prop({ type: String, default: '127.0.0.1 或 容器名' }) readonly placeholder!: string
+    @Prop({ type: String, default: '127.0.0.1、[::1] 或 容器名' }) readonly placeholder!: string
     @Prop({ type: Boolean, default: false }) readonly disabled!: boolean
 
     // ─── 常量 ───

@@ -63,7 +63,6 @@ class Combobox extends Vue {
             if (!this.justSelected) this.searchQuery = this.singleValue
             this.justSelected = false
         }
-        // 打开时不清空 searchQuery：保留当前值，用户可直接继续输入过滤
     }
 
     // ─── 方法 ───
