@@ -47,7 +47,7 @@ class CaddyOverview extends Vue {
                     if (caddyInfo) {
                         info.servers = caddyInfo.servers
                         info.routes = caddyInfo.routes
-                        info.certs = caddyInfo.certs || 0
+                        info.certs = 0
                         info.hasTls = caddyInfo.hasTls
                         info.available = caddyInfo.available
                     }
