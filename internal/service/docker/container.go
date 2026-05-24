@@ -68,6 +68,11 @@ func (s *Service) ContainerLogs(ctx context.Context, req pkgdocker.ContainerLogs
 	return &ContainerLogsResult{ID: req.ID, Logs: logs}, nil
 }
 
+// ContainerLogsStream 容器实时日志 WebSocket（代理到 pkgs 层）
+func (s *Service) ContainerLogsStream(ctx context.Context, conn *websocket.ServerConn, req pkgdocker.ContainerLogsRequest) {
+	s.docker.ContainerLogsStream(ctx, conn, req.ID, req.Tail)
+}
+
 // ContainerExec 容器终端 WebSocket（代理到 pkgs 层）
 func (s *Service) ContainerExec(ctx context.Context, conn *websocket.ServerConn, containerID, shell string) {
 	s.docker.ContainerExec(ctx, conn, containerID, shell)

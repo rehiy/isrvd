@@ -22,6 +22,7 @@ func (app *App) defineDockerRoutes() []Route {
 		{Method: "GET", Path: "/docker/container/:id/stats", Handler: app.dockerContainerStats, Module: "docker", Label: "获取容器资源统计"},
 		{Method: "POST", Path: "/docker/container/:id/action", Handler: app.dockerContainerAction, Module: "docker", Label: "执行容器操作"},
 		{Method: "GET", Path: "/docker/container/:id/logs", Handler: app.dockerContainerLogs, Module: "docker", Label: "获取容器日志"},
+		{Method: "GET", Path: "/docker/container/:id/logs/stream", Handler: app.dockerContainerLogsStream, Module: "docker", Label: "实时查看容器日志"},
 		{Method: "GET", Path: "/docker/container/:id/exec", Handler: app.dockerContainerExec, Module: "docker", Label: "打开容器终端"},
 		// 镜像管理
 		{Method: "GET", Path: "/docker/images", Handler: app.dockerImageList, Module: "docker", Label: "查询镜像列表"},
@@ -138,6 +139,21 @@ func (app *App) dockerContainerLogs(c *gin.Context) {
 		return
 	}
 	respondSuccess(c, "获取容器日志成功", result)
+}
+
+func (app *App) dockerContainerLogsStream(c *gin.Context) {
+	req := pkgdocker.ContainerLogsRequest{
+		ID:   c.Param("id"),
+		Tail: c.DefaultQuery("tail", "100"),
+	}
+	if req.ID == "" {
+		respondError(c, http.StatusBadRequest, "缺少容器 ID")
+		return
+	}
+
+	app.wsConfig.Handler(func(conn *websocket.ServerConn) {
+		app.dockerSvc.ContainerLogsStream(c.Request.Context(), conn, req)
+	})(c)
 }
 
 func (app *App) dockerContainerExec(c *gin.Context) {
