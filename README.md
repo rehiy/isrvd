@@ -320,7 +320,7 @@ config → registry → pkgs → service → server
 - **前端结构**：`webview/src/service/types` 按域拆分类型，页面复用统一卡片、表格、移动端双视图和操作按钮语义色
 - **状态与权限**：全局状态通过 Pinia `usePortal()` 聚合访问，权限统一使用 `portal.hasPerm(moduleOrRoute)` 判断
 - **安全基线**：敏感字段不返回明文，文件路径与解压路径必须校验，WebSocket 必须经过认证链路
-- **完整规范**：详见 [AGENTS.md](AGENTS.md)
+- **完整规范**：根规范见 [AGENTS.md](AGENTS.md)，前端专项规范见 [webview/AGENTS.md](webview/AGENTS.md)
 
 ## 安全特性
 
