@@ -1,11 +1,11 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import { cycleTheme, getThemeMode, THEME_META, type ThemeMode } from '@/helper/theme'
 
 import Dropdown from '@/component/dropdown.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
   components: { Dropdown }

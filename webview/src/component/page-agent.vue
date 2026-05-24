@@ -2,9 +2,9 @@
 import { PageAgent } from 'page-agent'
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
-import { systemInstruction, getPageInstruction } from '@/helper/instructions'
-
 import { usePortal } from '@/stores'
+
+import { systemInstruction, getPageInstruction } from '@/helper/instructions'
 
 @Component
 class PageAgentModal extends Vue {

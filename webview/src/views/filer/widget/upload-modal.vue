@@ -1,11 +1,11 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     expose: ['show'],
@@ -76,7 +76,7 @@ export default toNative(UploadModal)
   <BaseModal ref="modalRef" v-model="isOpen" title="上传文件" :loading="portal.filerLoading" :confirm-disabled="!hasFiles" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm">
       <div>
-        <label for="uploadFile" class="block text-sm font-medium text-slate-700 mb-2">选择文件</label>
+        <label for="uploadFile" class="form-label">选择文件</label>
         <input
           id="uploadFile" ref="fileInput" type="file" multiple required
           :disabled="portal.filerLoading" class="input file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
@@ -94,7 +94,7 @@ export default toNative(UploadModal)
           >
             <div class="flex items-center">
               <div
-                class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 flex-shrink-0"
+                class="row-icon mr-3"
                 :class="{
                   'bg-green-100': fileStatus(index) === 'done',
                   'bg-primary-100': fileStatus(index) === 'active' || !portal.filerLoading,

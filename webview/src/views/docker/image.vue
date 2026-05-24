@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { DockerImageDetail } from '@/service/types'
 
 import { formatFileSize, formatTime } from '@/helper/utils'
-
-import { usePortal } from '@/stores'
 
 @Component
 class ImageDetail extends Vue {

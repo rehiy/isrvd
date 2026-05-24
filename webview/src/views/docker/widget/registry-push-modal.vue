@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { DockerRegistryInfo, DockerImageInfo } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     expose: ['show'],
@@ -82,21 +82,21 @@ export default toNative(RegistryPushModal)
   <BaseModal v-model="isOpen" title="推送镜像到仓库" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">本地镜像</label>
+        <label class="form-label">本地镜像</label>
         <select v-model="pushForm.image" class="input" required>
           <option value="" disabled>请选择镜像</option>
           <option v-for="tag in imageTagOptions" :key="tag" :value="tag">{{ tag }}</option>
         </select>
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">目标仓库地址</label>
+        <label class="form-label">目标仓库地址</label>
         <select v-model="pushForm.registryUrl" class="input" required>
           <option value="" disabled>请选择仓库</option>
           <option v-for="reg in registries" :key="reg.url" :value="reg.url">{{ reg.name }} ({{ reg.url }}){{ reg.description ? ' - ' + reg.description : '' }}</option>
         </select>
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">命名空间 <span class="text-slate-400 font-normal">(可选)</span></label>
+        <label class="form-label">命名空间 <span class="text-slate-400 font-normal">(可选)</span></label>
         <input v-model="pushForm.namespace" type="text" placeholder="例如: myteam" class="input" />
         <p class="mt-1 text-xs text-slate-400">镜像将被推送为: {{ pushTargetPreview }}</p>
       </div>

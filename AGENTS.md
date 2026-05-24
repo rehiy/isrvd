@@ -39,8 +39,8 @@
 
 ### 内聚与耦合
 
-- 同领域功能聚合同包（`pkgs/docker/`、`pkgs/swarm/`），类型就近定义，不集中 `types.go`
-- 层间通过接口或注入解耦；前端组件通过 `Provide/Inject` 获取全局状态
+- 同领域功能聚合同包（`pkgs/docker/`、`pkgs/swarm/`、`pkgs/caddy/`），类型就近定义，不集中 `types.go`
+- 层间通过接口或注入解耦；前端全局状态通过 Pinia `usePortal()` 聚合访问
 - 判定：改一个功能只需改一处；若需同时改多个包同名函数，说明内聚不足
 
 ---
@@ -70,6 +70,7 @@ skills/isrvd/
     ├── swarm/{info,services,tasks}.md
     ├── compose.md
     ├── apisix/{routes,upstreams,consumers,ssl}.md
+    ├── caddy/{routes,certs,global,raw}.md
     └── system/{overview,config,account,filer,cron}.md
 ```
 
@@ -80,6 +81,7 @@ skills/isrvd/
 | `internal/server/ctrl_docker.go` | `skills/isrvd/docs/docker/` 下对应资源文件 |
 | `internal/server/ctrl_swarm.go` | `skills/isrvd/docs/swarm/` 下对应资源文件 |
 | `internal/server/ctrl_apisix.go` | `skills/isrvd/docs/apisix/` 下对应资源文件 |
+| `internal/server/ctrl_caddy.go` | `skills/isrvd/docs/caddy/` 下对应资源文件 |
 | `internal/server/ctrl_compose.go` | `skills/isrvd/docs/compose.md` |
 | `internal/server/ctrl_cron.go` | `skills/isrvd/docs/system/cron.md` |
 | `internal/server/ctrl_system.go` / `ctrl_account.go` | `skills/isrvd/docs/system/` 下对应文件 |
@@ -148,7 +150,7 @@ skills/isrvd/
 
 - **查询接口不加 `Get` 后缀**：方法名本身已表达"获取"语义（`Stat()`、`Probe()`、`Info()`、`JoinToken()`、`ConfigAll()`），禁止改为 `StatGet()`、`probeGet()` 等形式
 - **`Get` 仅用于必要场景**：当方法名去掉 `Get` 后会与已有方法冲突或语义不明时，才可保留 `Get` 后缀
-- **模块前缀**：`docker`、`swarm`、`apisix`、`account`、`system`、`filer`、`compose`
+- **模块前缀**：`docker`、`swarm`、`apisix`、`caddy`、`account`、`system`、`filer`、`compose`、`cron`
 - **资源名**：单数形式，不重复模块语义
 - **禁止**：`动词+资源` 旧式命名（`CreateRoute`、`ListContainers`、`apisixCreateRoute`）
 - **注意**：类名为 `Docker` 时 `ContainerList` 不缩写为 `List`；类名为 `Apisix` 时 `RouteList` 不缩写为 `List`
@@ -160,7 +162,7 @@ skills/isrvd/
 
 ### 配置结构体与 Provider
 
-- 顶层 `Config`（`config/types.go`），子配置：`Server`、`AgentConfig`、`ApisixConfig`、`DockerConfig`、`MarketplaceConfig`、`MemberConfig`
+- 顶层 `Config`（`config/types.go`），子配置：`Server`、`AgentConfig`、`ApisixConfig`、`CaddyConfig`、`DockerConfig`、`MarketplaceConfig`、`MemberConfig`
 - `Server` 必须作为 `config.Server` 结构体统一访问，禁止重新展开为 `config.Debug`、`config.ListenAddr` 等包级散变量
 - 镜像仓库 `DockerRegistry`（含 `Name`、`URL`、`Username`、`Password`、`Description`）
 - 字段使用指针类型 `*` 和 YAML 标签；配置持久化以 YAML 结构为准，禁止用 API 响应的 `json:"-"` 语义保存配置
@@ -185,14 +187,14 @@ skills/isrvd/
 
 ### 6.1 组件装饰器
 
-使用 `vue-facing-decorator`（`@Component`、`@Inject`、`@Prop`、`@Ref`、`@Watch`、`@Provide`），类必须 `toNative()` 包装后导出。`@Inject` 从 `APP_STATE_KEY`/`APP_ACTIONS_KEY` 注入
+使用 `vue-facing-decorator`（`@Component`、`@Prop`、`@Ref`、`@Watch` 等），类组件必须 `toNative()` 包装后导出。全局状态禁止再新增 `@Inject`/`@Provide` 方案，统一走 Pinia。
 
 ### 6.2 状态管理
 
-- 全局状态 `store/state.ts` 使用 `reactive` + Provide/Inject
-- 键：`APP_STATE_KEY`（`app.state`）、`APP_ACTIONS_KEY`（`app.actions`）
-- 权限：`permissionsLoaded`（布尔）、`permissions`（`string[]`，格式为 `"METHOD /api/path"`），通过 `hasPerm(module)` 检查
-- 初始化 `initProvider()` 返回 `{ state, actions }`
+- 全局状态使用 Pinia，入口为 `webview/src/stores/index.ts` 导出的 `usePortal()`
+- `main.ts` 中创建 `createPinia()`，再初始化 `portal = usePortal()` 并注入路由守卫
+- `portal` 聚合 `auth`、`system`、`ui`、`filer` 等子 store；组件内统一 `portal = usePortal()`
+- 权限：`permissionsLoaded`（布尔）、`permissions`（`string[]`，格式为 `"METHOD /api/path"`），通过 `portal.hasPerm(moduleOrRoute)` 检查；支持模块名（如 `docker`）和精确路由（如 `GET /api/docker/containers`）
 
 ### 6.3 API 服务层
 
@@ -200,7 +202,7 @@ skills/isrvd/
 
 ### 6.4 类型定义与命名（强制）
 
-`service/types/` 按域拆分（`docker`、`swarm`、`apisix`、`compose`、`cron`、`system`、`account`、`overview`、`filer`），`service/types.ts` 统一 `export *` 导出
+`service/types/` 按域拆分（`docker`、`swarm`、`apisix`、`caddy`、`compose`、`cron`、`system`、`account`、`overview`、`filer`），`service/types.ts` 统一 `export *` 导出
 
 | 场景 | 命名 | 示例 |
 |---|---|---|
@@ -227,7 +229,7 @@ skills/isrvd/
 | 状态切换 | `domainResourceStatus(id, status)` | `apisixRouteStatus(id, 0)`、`cronJobEnable(id, enabled)` |
 | 统计/日志 | `domainResourceStats/Logs(id)` | `dockerContainerStats(id)`、`cronJobLogs(id)` |
 
-- **域名前缀**：`docker`、`swarm`、`apisix`、`account`、`system`、`filer`、`compose`、`cron`
+- **域名前缀**：`docker`、`swarm`、`apisix`、`caddy`、`account`、`system`、`filer`、`compose`、`cron`
 - **资源名**：单数形式
 - **分组注释**：`// ==================== XXXX 相关 ====================`
 
@@ -235,7 +237,7 @@ skills/isrvd/
 
 - 列表/详情页统一 `.card mb-4`
 - 标题栏：使用 `.card-toolbar` 类（定义于 `light_components.css`），容器不写 `flex/justify-between`
-- 必须提供桌面 `hidden md:flex` 与移动 `flex md:hidden` 双布局
+- 必须提供桌面 `hidden md:flex` 与移动布局；移动端可用 `flex md:hidden`，也可用 `block md:hidden` 外层 + 内部 `flex items-center justify-between`
 - 详情页右侧仅保留刷新等功能按钮，**不添加返回按钮**
 
 **toolbar 图标与标题（强制）**：
@@ -254,7 +256,7 @@ skills/isrvd/
 ### 6.7 列表双视图与搜索（强制）
 
 - 桌面：`hidden md:block overflow-x-auto` + `<table>`
-- 移动：`md:hidden space-y-3 p-4` + 卡片列表（**`p-4` 不得省略**，卡片 `rounded-xl border border-slate-200 bg-white p-4 transition-all hover:shadow-sm`）
+- 移动：`md:hidden space-y-3 p-4` + `.card-interactive` 卡片列表（**`p-4` 不得省略**，禁止手写等价卡片 Tailwind 组合）
 - 所有资源列表页必须提供 `searchText` + `filteredXxx` 过滤逻辑，并使用 `webview/src/component/page-search.vue`，禁止手写重复的搜索框 HTML
 - 页面级键盘输入直达搜索只能通过 `PageSearch` 的 `type-to-search` 启用；禁止页面直接调用 `bindTypeToSearchFocus`
 - 每个列表页只允许一个 `PageSearch` 设置 `type-to-search`（通常为桌面搜索框）；移动端搜索框复用同一个 `search-key`，但不设置 `type-to-search`
@@ -264,8 +266,8 @@ skills/isrvd/
 **移动端卡片顶部结构（强制）**：
 
 ```html
-<div class="flex items-center gap-3 min-w-0 flex-1 mb-3">
-  <div class="list-icon bg-xxx flex items-center justify-center flex-shrink-0">
+<div class="card-info-row">
+  <div class="list-icon bg-xxx">
     <i class="fas fa-xxx text-white text-base"></i>
   </div>
   <div class="min-w-0">
@@ -303,7 +305,7 @@ skills/isrvd/
 <!-- code -->
 <div class="flex items-start gap-2 mb-3">
   <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">路径</span>
-  <code class="text-xs bg-slate-100 px-2 py-0.5 rounded break-all">{{ value }}</code>
+  <code class="text-xs bg-slate-100 px-2 py-0.5 rounded-lg break-all">{{ value }}</code>
 </div>
 ```
 
@@ -325,7 +327,7 @@ skills/isrvd/
 ```html
 <td class="px-4 py-3 max-w-[280px]">
   <div class="flex items-center gap-2 min-w-0">
-    <div class="row-icon bg-xxx flex items-center justify-center flex-shrink-0">
+    <div class="row-icon bg-xxx">
       <i class="fas fa-xxx text-white text-sm"></i>
     </div>
     <div class="min-w-0">
@@ -336,7 +338,7 @@ skills/isrvd/
 </td>
 ```
 
-图标配色（色阶 `400`）：容器 `emerald`/`slate`（按状态）、镜像 `blue`、网络 `purple`、数据卷 `amber`、仓库 `blue-500`、Swarm 服务 `emerald`、节点 `blue`、路由 `indigo`、白名单 `amber`、消费者 `violet`、计划任务 `violet`、用户 `blue-500`。新模块选未用色（`rose`/`cyan`/`lime` 等）
+图标配色跟随资源页主色（图标背景通常用 `400` 色阶，toolbar 用 `500` 色阶）：Docker 容器 `emerald/slate`（按状态）、镜像 `blue`、网络 `purple`、数据卷 `amber`、仓库 `purple`；Swarm 节点 `blue`、服务 `emerald`、任务 `cyan`；APISIX 路由 `indigo`、上游 `emerald`、消费者 `violet`、SSL `cyan`、插件配置 `rose`、白名单 `amber`；Caddy 路由 `indigo`、证书 `cyan`、全局配置 `violet`、原始配置 `slate`；Compose `amber`、Cron `amber/violet`、用户 `blue`、Filer `primary`。新模块选未用色（`rose`/`cyan`/`lime` 等）
 
 #### 6.9.1 状态文字颜色（强制）
 
@@ -385,7 +387,7 @@ skills/isrvd/
 | 终端 | `teal` | `fa-terminal` |
 | 禁用/只读 | `slate-300 cursor-not-allowed` | — |
 
-> APISIX 域各资源编辑按钮颜色：路由 `indigo`、消费者 `violet`、SSL `cyan`、上游 `emerald`、插件配置 `rose`；其余模块（docker/swarm/account/filer/compose）统一 `blue`
+> 编辑按钮颜色跟随资源主色：APISIX 路由 `indigo`、消费者 `violet`、SSL `cyan`、上游 `emerald`、插件配置 `rose`；Caddy 路由 `indigo`、证书 `cyan`；其他模块通常使用 `blue`，但可按资源主色保持一致。
 
 **移动端操作按钮区（强制）**：
 
@@ -397,7 +399,7 @@ skills/isrvd/
 - label：`block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1`，input 通用 `.input`，help `text-xs text-slate-400 mt-1`
 - 密钥/密码：后端敏感字段 `json:"-"`，前端 `type="password" autocomplete="new-password"`，留空保存=不修改，placeholder："留空保持不变"
 
-- **Toggle Switch 规范**（单一功能启用/禁用开关）：使用 `.toggle-row` + `.toggle` + `.toggle-thumb` CSS 类；通过 `:class="{ 'toggle-on': value }"` 控制激活态；Caddy 模块用 `toggle-violet` 修饰符；禁止手写内联 Tailwind toggle 样式：
+- **Toggle Switch 规范**（单一功能启用/禁用开关）：使用 `.toggle-row` + `.toggle` + `.toggle-thumb` CSS 类；通过 `:class="{ 'toggle-on': value }"` 控制激活态；默认激活色为 indigo，确需 violet 场景（如 Caddy Global）加 `toggle-violet` 修饰符；禁止手写内联 Tailwind toggle 样式：
 
   ```html
   <div class="toggle-row">
@@ -433,7 +435,7 @@ skills/isrvd/
   </div>
   ```
 
-  使用场景：多选列表（插件、权限矩阵）或无描述的简单开关。`{color}` 与页面主色一致，如 `indigo`（APISIX/Docker）、`violet`（Caddy）、`blue`（系统/账户）。
+  使用场景：多选列表（插件、权限矩阵）或无描述的简单开关。`{color}` 与页面/资源主色一致。
 
 ### 6.12 概览 Widget 统计卡片（强制）
 
@@ -460,9 +462,9 @@ skills/isrvd/
 
 `<script>` 内 import 按以下顺序，组间空一行，组内字母升序：
 
-1. 第三方库  2. `@/store/...`  3. `@/router`  4. `@/service/...`  5. `@/helper/...`  6. `@/component/...`  7. `@/views/...`  8. 其余 `@/`
+1. 第三方库  2. `@/stores/...` / `@/stores`  3. `@/router`  4. `@/service/...`  5. `@/helper/...`  6. `@/component/...`  7. `@/views/...`  8. 其余 `@/`  9. 相对路径
 
-同模块普通导入在前、`type` 导入在后紧邻。批量整理：`cd webview && python3 sort-imports.py src`（支持 `--dry-run`）
+同模块普通导入在前、`type` 导入在后紧邻。批量整理：`cd webview && python3 scripts/sort-imports.py --dry-run`，或使用 `npm run format:check` 检查、`npm run format` 修复。
 
 ### 6.15 终端能力
 
@@ -472,26 +474,14 @@ skills/isrvd/
 
 暗黑模式样式统一在 `webview/src/assets/dark.css` 中定义，**禁止在组件中使用 `dark:` 前缀**。
 
-**CSS 选择器转义规则**：
-
-| 原始类名 | CSS 选择器 | 说明 |
-|---|---|---|
-| `bg-white/80` | `.dark .bg-white\\/80` | 斜杠 `/` 转义为 `\\/` |
-| `lg:bg-white` | `.dark .lg\\:bg-white` | 冒号 `:` 转义为 `\\:` |
-| `hover:bg-slate-100` | `.dark .hover\\:bg-slate-100:hover` | `hover:` 转义 + `:hover` 伪类 |
-| `group-hover:text-primary-600` | `.dark .group:hover .group-hover\\:text-primary-600` | 组悬停需 `.group:hover` 父选择器 |
-
-**已覆盖的颜色类**：
-
-- 背景：`bg-slate-50/100/200/700/800/900`、`bg-white`、半透明 `bg-white/80/95`
-- 文字：`text-slate-100/200/300/400/500/600/700/800/900`
-- 强调色：`blue`、`primary`、`emerald`、`amber`、`red`、`indigo`、`violet`、`teal`、`cyan`、`rose`、`orange`、`sky`
+当前暗黑模式主要通过 `.dark` 下覆盖 Tailwind CSS 变量实现：`--color-slate-*`、`--color-primary-*`、`--color-blue-*` 等；浅色主题变量在 `webview/src/assets/light.css` 的 `@theme` 中定义。
 
 **新增颜色时必须同步更新**：
 
-1. 在 `dark.css` 对应色系区块添加样式
-2. 同时添加 `bg-`、`text-`、`hover:bg-`、`hover:text-` 等变体
-3. 检查是否有响应式前缀（`lg:`、`md:`）或组悬停（`group-hover:`）需求
+1. 如新增主题色，先在 `light.css @theme` 中补齐浅色变量
+2. 在 `dark.css .dark` 中补齐对应暗色变量
+3. 仅对变量无法覆盖的特殊类写显式选择器，例如透明度类（`bg-white/80`、`bg-slate-900/60`）、终端/日志区域、CodeMirror 等
+4. 显式选择器中包含 `/`、`:`、`group-hover:` 时按 CSS 选择器规则转义
 
 **终端/日志区域**：使用 `bg-slate-900` 保持深色背景，不跟随主题切换
 
@@ -513,6 +503,7 @@ skills/isrvd/
 | `.card-header` | 小卡片标题栏（widget/模态框内部） | `px-4 py-3 border-b border-slate-100 flex items-center gap-2` |
 | `.card-actions` | 移动端卡片底部操作按钮栏 | `flex flex-wrap gap-1.5 pt-2 border-t border-slate-100` |
 | `.card-info-row` | 移动端卡片主信息行（图标+文字） | `flex items-center gap-3 min-w-0 flex-1 mb-3` |
+| `.option-card` / `.option-card-inactive` / `.option-card-disabled` / `.option-card-icon` | 单选模式/来源选择卡片 | `text-left rounded-xl border p-3 transition-colors`、`w-8 h-8 rounded-lg flex items-center justify-center` |
 | `.editor-container` | 代码编辑器/内容外层边框 | `rounded-xl overflow-hidden border border-slate-200` |
 | `.modal-card` | 模态框卡片容器 | `bg-white rounded-2xl shadow-2xl border border-slate-200` |
 
@@ -530,8 +521,7 @@ skills/isrvd/
 
 | 类 | 用途 |
 |---|---|
-| `.loading-state` | 加载中 `flex flex-col items-center justify-center py-20` |
-| `.empty-state` | 空状态（布局同 loading-state，语义不同） |
+| `.empty-state` | 加载中 / 空状态块 `flex flex-col items-center justify-center py-20` |
 | `.spinner` | 加载动画 `animate-spin rounded-full border-4 border-slate-200 border-t-primary-500` |
 
 **4. 按钮（Button）**
@@ -577,12 +567,13 @@ skills/isrvd/
 | `.form-label` | 字段 label（灰色大写标题） | `block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1` |
 | `.section-title` | 详情页信息分组标题 | `text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3` |
 | `.input` | 文本输入框 | `w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 text-slate-700 hover:border-slate-300` |
-| `.select-sm` | 小尺寸 select（toolbar 内使用，固定 `h-9`） | `h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 hover:border-slate-300` |
+| `.select-sm` | 小尺寸 select（toolbar 内使用，固定 `h-9`；基础颜色/边框来自全局 `select`） | `h-9 px-3 pr-8 rounded-md text-xs` |
 | `.select-search-header` | 下拉选择器粘性搜索头部 | `px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-2 sticky top-0 z-10` |
 | `.select-list` | 下拉选择器选项列表容器 | `px-2 py-1.5 grid grid-cols-1 gap-0.5 bg-white` |
 | `.select-footer` | 下拉选择器底部工具栏 | `px-3 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between` |
 | `.mobile-search` | 移动端搜索栏容器（桌面端隐藏） | `md:hidden px-4 py-2 border-b border-slate-100` |
 | `.check-label` | checkbox/radio label 包裹层 | `flex items-center gap-2 cursor-pointer select-none w-fit` |
+| `.toggle-row` / `.toggle` / `.toggle-on` / `.toggle-violet` / `.toggle-thumb` | 功能启用/禁用开关 | — |
 | `.text-mono-muted` | 代码/ID 副文字（灰色 mono 截断） | `block font-mono text-xs text-slate-400 truncate mt-0.5` |
 
 **8. 徽章与标签（Badge）**
@@ -600,6 +591,7 @@ skills/isrvd/
 - **移动端搜索**：使用 `.mobile-search` 类，禁止手写 `md:hidden px-4 py-2 border-b ...`
 - **表格表头**：使用 `.th` / `.th-sm` / `.th-right`，禁止手写等价的 inline Tailwind
 - **卡片操作栏（移动端）**：使用 `.card-actions`，`gap-1.5` 不得用 `gap-1`
+- **单选模式/来源卡片**：使用 `.option-card` + `.option-card-inactive` / `.option-card-disabled` + `.option-card-icon`
 - **Tab 切换**：使用 `.tab-group` + `.tab-btn` / `.tab-btn-text`，整体高度 36px
 - **独立详情页 toolbar**：去掉 `<ContainerNav>` Tab 导航，改用独立 `.card-toolbar`（图标+标题在左，操作控件在右），不添加返回按钮
 - **header 区域文字按钮统一**：`app.vue` header 中的文字按钮（如工具箱链接、AI 助手）统一使用 `btn btn-ghost px-4 py-2 text-sm gap-2`，禁止个别按钮手写冗余 inline class
@@ -608,15 +600,23 @@ skills/isrvd/
 
 - 在有对应 CSS 类的情况下使用等价的 inline Tailwind 类
 - 在组件中使用 `dark:` 前缀（暗黑模式样式统一在 `dark.css`）
-- `.btn-icon-sm` 用于表格行操作（应使用 `.btn-icon-{color}`）
+- `.btn-icon-sm` 用于表格/移动卡片行级操作（应使用 `.btn-icon-{color}`）
+
+#### 样式自检脚本
+
+`webview/scripts/review-style.py` 是 AGENTS 6.x 的辅助检查脚本：当前扫描 `webview/src/views/**/*.vue`，跳过路径中包含 `widget` 的文件；`ERROR` 会返回非零，`WARN` 需要人工处理。脚本不能替代完整人工 review，新增 CSS 组件类或强制规范时需同步更新该脚本。
 
 ---
 
 ## 7) 路由与导航
 
 - `/overview` 概览；`docker/overview`/`swarm/overview` 仅作组件不作独立菜单路由
-- 系统模块：`/system/config`、`/system/audit`；用户管理：`/account/members`
-- 计划任务：`/cron/jobs`
+- APISIX：`/apisix/routes`、`/apisix/upstreams`、`/apisix/plugin-configs`、`/apisix/ssls`、`/apisix/consumers`、`/apisix/whitelist`
+- Caddy：`/caddy/routes`、`/caddy/certs`、`/caddy/global`、`/caddy/raw`
+- Docker：`/docker/containers`、`/docker/images`、`/docker/networks`、`/docker/volumes`、`/docker/registries` 及对应详情页
+- Swarm：`/swarm/nodes`、`/swarm/services`、`/swarm/tasks` 及对应详情/日志页
+- 系统模块：`/system/config`、`/system/audit/logs`；用户管理：`/account/members`、个人设置：`/account/profile`
+- 计划任务：`/cron/jobs`；Compose：`/compose/deploy`
 - 折叠子菜单展开状态跟随当前路由（`@Watch` immediate）
 - 侧边栏宽度 `w-16`（折叠）→ `w-64`（展开）
 - 移动端：遮罩 + 抽屉式（`-translate-x-full lg:translate-x-0`），`toggleMobileSidebar`/`closeMobileSidebar`/`openMobileSidebar`；窗口 ≥ 1024px 自动关闭
@@ -627,13 +627,13 @@ skills/isrvd/
 
 启动顺序：`main → config.Init → registry.Init → server.StartApp`
 
-可用性检查：`IsDockerAvailable`、`IsSwarmAvailable`、`IsApisixAvailable`
+可用性检查：`IsDockerAvailable`、`IsSwarmAvailable`、`IsApisixAvailable`、`IsCaddyAvailable`
 
-已用命名：`registry.DockerService`、`registry.SwarmService`、`registry.ApisixClient`
+已用命名：`registry.DockerService`、`registry.SwarmService`、`registry.ApisixClient`、`registry.CaddyService`
 
 服务初始化（`server/app.go` `StartApp()`）：
 - `overviewSvc`、`configSvc`、`auditSvc`、`accountSvc`、`filerSvc`：直接初始化
-- `apisixSvc`：根据可用性检查可选初始化
+- `apisixSvc`、`caddySvc`：根据可用性检查可选初始化
 - `dockerSvc`、`swarmSvc`：根据 Docker 可用性可选初始化
 - `composeSvc`：根据 Docker 可用性可选初始化
 - `cronSvc`：始终初始化，可选依赖 `registry.DockerService`（用于 DOCKER 类型任务）
@@ -654,10 +654,12 @@ skills/isrvd/
 
 ```bash
 go test ./...                                          # 后端编译/测试
-cd webview && npm run lint                             # 前端类型检查
-cd webview && npm run format                           # import 排序检查
-cd webview && python3 script/review-style.py           # 前端样式一致性检查
+cd webview && npm run lint                             # 前端类型检查 + ESLint
+cd webview && npm run format:check                     # import 排序/格式检查（dry-run，需关注输出）
+cd webview && python3 scripts/review-style.py          # 前端样式一致性辅助检查
 ```
+
+`npm run format` 会直接修复 import/ESLint；仅在需要改写文件时使用。`review-style.py` 只有 ERROR 阻断，WARN 需人工确认。
 
 - [ ] 编译通过；[ ] 无新增 lint 警告；[ ] 关键路径手动验证；[ ] 错误处理与日志符合规范；[ ] 未引入明文敏感信息；[ ] 相关文档与 skills 已同步更新
 

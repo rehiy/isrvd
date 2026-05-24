@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { FilerFileInfo } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     expose: ['show'],
@@ -40,7 +40,7 @@ export default toNative(ChmodModal)
   <BaseModal ref="modalRef" v-model="isOpen" title="修改权限" :loading="portal.filerLoading" :confirm-disabled="!formData.mode.trim()" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm">
       <div>
-        <label for="fileMode" class="block text-sm font-medium text-slate-700 mb-2">
+        <label for="fileMode" class="form-label">
           权限 (八进制)
         </label>
         <div class="relative">

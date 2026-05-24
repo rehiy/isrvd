@@ -165,7 +165,7 @@ export default toNative(NavigationBar)
         >
       </div>
       <!-- 移动端关闭按钮，仅展开状态下显示 -->
-      <button v-if="!collapsed" class="btn-icon text-slate-400 lg:hidden ml-2" @click="closeMobileSidebar">
+      <button v-if="!collapsed" class="btn-icon btn-icon-slate lg:hidden ml-2" @click="closeMobileSidebar">
         <i class="fas fa-times text-sm"></i>
       </button>
     </div>
@@ -434,14 +434,14 @@ export default toNative(NavigationBar)
         href="https://github.com/rehiy/isrvd"
         target="_blank"
         rel="noopener noreferrer"
-        class="btn-icon text-slate-400 hover:text-slate-700"
+        class="btn-icon btn-icon-slate"
         :class="collapsed ? 'w-full h-10' : 'w-10 h-10 flex-shrink-0'"
         title="GitHub 仓库"
       >
         <i class="fab fa-github text-base"></i>
       </a>
       <button
-        class="btn-icon text-slate-400 hover:text-slate-700"
+        class="btn-icon btn-icon-slate"
         :class="collapsed ? 'w-full h-10' : 'flex-1 h-10 text-xs font-medium'"
         :title="collapsed ? '展开菜单' : '收起菜单'"
         @click="$emit('update:collapsed', !collapsed)"

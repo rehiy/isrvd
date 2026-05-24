@@ -3,9 +3,9 @@ import { json } from '@codemirror/lang-json'
 import { Codemirror } from 'vue-codemirror'
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api'
-
 import { usePortal } from '@/stores'
+
+import api from '@/service/api'
 
 @Component({
     components: { Codemirror }

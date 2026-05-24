@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { DockerContainerInfo } from '@/service/types'
 
 import * as ContainerExec from '@/helper/container-exec'
-
-import { usePortal } from '@/stores'
 
 @Component
 class ContainerTerminal extends Vue {

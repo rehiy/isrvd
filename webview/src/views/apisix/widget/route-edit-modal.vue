@@ -1,6 +1,8 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type {
     ApisixPluginConfig,
@@ -23,8 +25,6 @@ import BaseModal from '@/component/modal.vue'
 
 import ContainerPortSelect from '@/views/docker/widget/container-port-select.vue'
 import ContainerSelect from '@/views/docker/widget/container-select.vue'
-
-import { usePortal } from '@/stores'
 
 import PluginConfigPanel from './plugin-config-panel.vue'
 
@@ -106,14 +106,13 @@ class RouteEditModal extends Vue {
 
     // ─── 模式卡片样式 ───
     modeCardClass(item: ApisixRouteUpstreamModeCard) {
-        const base = 'text-left rounded-xl border p-3 transition-colors'
         const active = this.formData.upstream_mode === item.value
-        return `${base} ${active ? TONE_CARD_ACTIVE[item.tone] : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`
+        return `option-card ${active ? TONE_CARD_ACTIVE[item.tone] : 'option-card-inactive'}`
     }
 
     modeCardIconClass(item: ApisixRouteUpstreamModeCard) {
         const active = this.formData.upstream_mode === item.value
-        return `w-8 h-8 rounded-xl flex items-center justify-center ${active ? TONE_ICON_ACTIVE[item.tone] : 'bg-slate-100'}`
+        return `option-card-icon ${active ? TONE_ICON_ACTIVE[item.tone] : 'bg-slate-100'}`
     }
 
     upstreamNodeSummary(upstream: ApisixUpstream) {

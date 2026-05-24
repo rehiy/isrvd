@@ -1,17 +1,17 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { CaddyRoute, CaddyRouteUpsert, CaddyHandlerKind, CaddyHandlerKindCard, DockerContainerInfo } from '@/service/types'
+
+import { parseHostPort } from '@/helper/utils'
 
 import BaseModal from '@/component/modal.vue'
 
 import ContainerPortSelect from '@/views/docker/widget/container-port-select.vue'
 import ContainerSelect from '@/views/docker/widget/container-select.vue'
-
-import { usePortal } from '@/stores'
-
-import { parseHostPort } from '@/helper/utils'
 
 const HANDLER_KIND_CARDS: CaddyHandlerKindCard[] = [
     { value: 'reverse_proxy', title: '反向代理', desc: '将请求转发到一个或多个上游服务器', icon: 'fa-diagram-project', tone: 'indigo' },
@@ -67,14 +67,13 @@ class RouteEditModal extends Vue {
 
     // ─── 模式卡片样式 ───
     modeCardClass(item: CaddyHandlerKindCard) {
-        const base = 'text-left rounded-xl border p-3 transition-colors'
         const active = this.formData.kind === item.value
-        return `${base} ${active ? TONE_CARD_ACTIVE[item.tone] : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`
+        return `option-card ${active ? TONE_CARD_ACTIVE[item.tone] : 'option-card-inactive'}`
     }
 
     modeCardIconClass(item: CaddyHandlerKindCard) {
         const active = this.formData.kind === item.value
-        return `w-8 h-8 rounded-lg flex items-center justify-center ${active ? TONE_ICON_ACTIVE[item.tone] : 'bg-slate-100'}`
+        return `option-card-icon ${active ? TONE_ICON_ACTIVE[item.tone] : 'bg-slate-100'}`
     }
 
     setKind(kind: CaddyHandlerKind) {

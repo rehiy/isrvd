@@ -1,13 +1,13 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import { RouteAccessPerm } from '@/service/types'
 import type { MemberInfo, MemberUpsert, Route } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 // 方法颜色映射
 const METHOD_COLOR: Record<string, string> = {
@@ -266,12 +266,12 @@ export default toNative(MemberEditModal)
   <BaseModal v-model="isOpen" :title="title" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">用户名 <span class="text-red-500">*</span></label>
+        <label class="form-label">用户名 <span class="text-red-500">*</span></label>
         <input v-model="formData.username" type="text" placeholder="登录用户名" required :disabled="isEdit" class="input disabled:bg-slate-50 disabled:text-slate-500" autocomplete="off" />
         <p v-if="isEdit" class="mt-1 text-xs text-slate-400">用户名不可修改</p>
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">
+        <label class="form-label">
           密码
           <span v-if="!isEdit" class="text-red-500">*</span>
           <span v-else class="text-slate-400 font-normal">(留空则保持不变)</span>
@@ -279,19 +279,19 @@ export default toNative(MemberEditModal)
         <input v-model="formData.password" type="password" :placeholder="isEdit ? '留空则保持不变' : '登录密码'" class="input" autocomplete="new-password" />
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">家目录 <span class="text-slate-400 font-normal">(可选)</span></label>
+        <label class="form-label">家目录 <span class="text-slate-400 font-normal">(可选)</span></label>
         <input v-model="formData.homeDirectory" type="text" placeholder="留空则使用 基础目录/用户名" class="input" />
         <p class="mt-1 text-xs text-slate-400">相对路径基于"基础目录"，留空则自动创建为 基础目录/用户名</p>
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">描述 <span class="text-slate-400 font-normal">(可选)</span></label>
+        <label class="form-label">描述 <span class="text-slate-400 font-normal">(可选)</span></label>
         <input v-model="formData.description" type="text" placeholder="成员描述信息" class="input" maxlength="64" />
         <p class="mt-1 text-xs text-slate-400">用于标识成员用途，最长 64 字符</p>
       </div>
       <!-- 路由权限 -->
       <div>
         <div class="flex items-center gap-2 mb-2">
-          <label class="block text-sm font-medium text-slate-700">路由权限</label>
+          <label class="form-label">路由权限</label>
           <div class="ml-auto flex items-center gap-1">
             <button type="button" class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-medium transition-colors" @click="selectAllRoutes">全选</button>
             <button type="button" class="px-2 py-0.5 rounded-md bg-slate-50 text-slate-600 hover:bg-slate-100 text-xs font-medium transition-colors" @click="selectReadOnlyRoutes">只读</button>

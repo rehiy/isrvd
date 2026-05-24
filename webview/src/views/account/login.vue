@@ -1,9 +1,9 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api'
-
 import { usePortal } from '@/stores'
+
+import api from '@/service/api'
 
 @Component
 class Login extends Vue {
@@ -61,7 +61,7 @@ export default toNative(Login)
         <!-- Form -->
         <form class="space-y-5" @submit.prevent="handleLogin">
           <div>
-            <label for="username" class="block text-sm font-medium text-slate-700 mb-2">
+            <label for="username" class="form-label">
               用户名
             </label>
             <div class="relative">
@@ -73,7 +73,7 @@ export default toNative(Login)
           </div>
 
           <div>
-            <label for="password" class="block text-sm font-medium text-slate-700 mb-2">
+            <label for="password" class="form-label">
               密码
             </label>
             <div class="relative">

@@ -1,10 +1,10 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { ComposeDeployTarget, ComposeMarketplacePick } from '@/service/types'
-
-import { usePortal } from '@/stores'
 
 import ComposeEditor from './widget/compose-editor.vue'
 import MarketplaceModal from './widget/marketplace-modal.vue'
@@ -194,7 +194,7 @@ export default toNative(ComposeDeploy)
 
         <!-- 附加文件 -->
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">附加文件
+          <label class="form-label">附加文件
             <span class="text-xs font-normal text-slate-400">（选填，部署前解压到项目目录）</span>
           </label>
           <div class="flex items-center gap-2">

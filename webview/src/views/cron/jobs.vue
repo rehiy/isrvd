@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { CronJob, CronTypeInfo } from '@/service/types'
 
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 import JobEditModal from './widget/job-edit-modal.vue'
 import JobLogsModal from './widget/job-logs-modal.vue'
@@ -232,7 +232,7 @@ export default toNative(CronJobs)
                 <code class="text-xs text-slate-700 font-mono bg-slate-100 px-1.5 py-0.5 rounded">{{ job.schedule }}</code>
               </td>
               <td class="px-4 py-3">
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium font-mono bg-slate-100 text-slate-700">{{ job.type }}</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium font-mono bg-slate-100 text-slate-700">{{ job.type }}</span>
               </td>
               <td class="px-4 py-3">
                 <button :title="job.enabled ? '点击禁用' : '点击启用'" class="text-xs font-medium transition-colors" :class="runtimeStatusClass(job)" @click="toggleEnabled(job)">

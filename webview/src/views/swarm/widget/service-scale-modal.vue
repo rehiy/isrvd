@@ -44,11 +44,11 @@ export default toNative(ServiceScaleModal)
   <BaseModal v-model="isOpen" title="服务扩缩容" :loading="loading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
     <div v-if="service" class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">服务</label>
+        <label class="form-label">服务</label>
         <div class="px-3 py-2 bg-slate-50 rounded-lg text-sm text-slate-600">{{ service.name }}</div>
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">目标副本数</label>
+        <label class="form-label">目标副本数</label>
         <input v-model.number="replicas" type="number" min="0" max="100" class="input" />
         <p class="mt-1 text-xs text-slate-400">当前运行中副本：{{ service.runningTasks }} / {{ service.replicas }}</p>
       </div>

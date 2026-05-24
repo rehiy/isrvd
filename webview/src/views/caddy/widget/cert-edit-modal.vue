@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { CaddyCert, CaddyCertSource, CaddyCertSourceCard } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 const SOURCE_CARDS: CaddyCertSourceCard[] = [
     { value: 'file', title: '磁盘文件', desc: '从本地磁盘路径加载证书和私钥文件', icon: 'fa-file-shield', tone: 'indigo' },
@@ -50,18 +50,17 @@ class CertEditModal extends Vue {
     readonly sourceCards = SOURCE_CARDS
 
     sourceCardClass(item: CaddyCertSourceCard) {
-        const base = 'text-left rounded-xl border p-3 transition-colors'
         const active = this.formData.source === item.value
         // 编辑模式不允许切换 source（避免跨数组删改混乱）
         if (this.isEditMode && !active) {
-            return `${base} border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed`
+            return 'option-card option-card-disabled'
         }
-        return `${base} ${active ? TONE_CARD_ACTIVE[item.tone] : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`
+        return `option-card ${active ? TONE_CARD_ACTIVE[item.tone] : 'option-card-inactive'}`
     }
 
     sourceCardIconClass(item: CaddyCertSourceCard) {
         const active = this.formData.source === item.value
-        return `w-8 h-8 rounded-lg flex items-center justify-center ${active ? TONE_ICON_ACTIVE[item.tone] : 'bg-slate-100'}`
+        return `option-card-icon ${active ? TONE_ICON_ACTIVE[item.tone] : 'bg-slate-100'}`
     }
 
     setSource(source: CaddyCertSource) {

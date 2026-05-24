@@ -1,14 +1,14 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { FilerFileInfo } from '@/service/types'
 
 import { downloadFile, formatFileSize, formatTime, getFileIcon, isEditableFile, isPreviewableFile } from '@/helper/utils'
 
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 import ChmodModal from './widget/chmod-modal.vue'
 import CreateModal from './widget/create-modal.vue'
@@ -191,7 +191,7 @@ export default toNative(FileExplorer)
               <tr v-for="file in filteredFiles" :key="file.path" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center gap-2 min-w-0">
-                    <div :class="[ 'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', file.isDir ? 'bg-amber-400' : 'bg-blue-400' ]">
+                    <div :class="['row-icon', file.isDir ? 'bg-amber-400' : 'bg-blue-400']">
                       <i :class="getFileIcon(file)" class="text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
@@ -211,7 +211,7 @@ export default toNative(FileExplorer)
                 </td>
                 
                 <td class="px-4 py-3">
-                  <code class="px-2 py-1 bg-slate-100 rounded text-xs text-slate-700 font-mono">
+                  <code class="px-2 py-1 bg-slate-100 rounded-lg text-xs text-slate-700 font-mono">
                     {{ file.mode }}
                   </code>
                 </td>
@@ -281,24 +281,22 @@ export default toNative(FileExplorer)
         <div v-if="filteredFiles.length > 0" class="md:hidden space-y-3 p-4">
           <div v-for="file in filteredFiles" :key="file.path" class="card-interactive">
             <!-- 顶部：文件信息和图标 -->
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div :class="[ 'list-icon', file.isDir ? 'bg-amber-400' : 'bg-blue-400' ]">
-                  <i :class="getFileIcon(file)" class="text-white text-base"></i>
-                </div>
-                <div class="min-w-0">
-                  <button 
-                    v-if="file.isDir" 
-                    type="button"
-                    class="font-medium text-slate-800 hover:text-primary-600 transition-colors text-sm truncate block text-left" 
-                    @click="navigateTo(file.path)"
-                  >
-                    {{ file.name }}
-                  </button>
-                  <span v-else class="font-medium text-slate-800 text-sm truncate block">{{ file.name }}</span>
-                  <span v-if="!file.isDir" class="text-xs text-slate-400 truncate block mt-0.5">{{ formatFileSize(file.size) }}</span>
-                  <span v-else class="text-xs text-slate-400 truncate block mt-0.5">目录</span>
-                </div>
+            <div class="card-info-row">
+              <div :class="['list-icon', file.isDir ? 'bg-amber-400' : 'bg-blue-400']">
+                <i :class="getFileIcon(file)" class="text-white text-base"></i>
+              </div>
+              <div class="min-w-0">
+                <button 
+                  v-if="file.isDir" 
+                  type="button"
+                  class="font-medium text-slate-800 hover:text-primary-600 transition-colors text-sm truncate block text-left" 
+                  @click="navigateTo(file.path)"
+                >
+                  {{ file.name }}
+                </button>
+                <span v-else class="font-medium text-slate-800 text-sm truncate block">{{ file.name }}</span>
+                <span v-if="!file.isDir" class="text-xs text-slate-400 truncate block mt-0.5">{{ formatFileSize(file.size) }}</span>
+                <span v-else class="text-xs text-slate-400 truncate block mt-0.5">目录</span>
               </div>
             </div>
 
@@ -311,7 +309,7 @@ export default toNative(FileExplorer)
             <!-- 权限 -->
             <div class="flex items-start gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">权限</span>
-              <code class="text-xs bg-slate-100 px-2 py-0.5 rounded font-mono text-slate-700">{{ file.mode }}</code>
+              <code class="text-xs bg-slate-100 px-2 py-0.5 rounded-lg font-mono text-slate-700">{{ file.mode }}</code>
             </div>
 
             <!-- 底部：操作按钮 -->

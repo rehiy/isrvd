@@ -4,7 +4,7 @@
 
 分组顺序（组间空一行，组内按字母排序）：
   1. 第三方库          vue-facing-decorator、vue、vue-router 等（不以 @/ 或 ./ 开头）
-  2. @/store/...
+  2. @/stores/... 或 @/stores
   3. @/router
   4. @/service/...
   5. @/helper/...
@@ -25,7 +25,7 @@ from pathlib import Path
 # 注意：./ 开头的相对路径导入排在最后（第8组）
 GROUP_PATTERNS = [
     (0, re.compile(r"^'(?!\./)(?!@/)")),   # 第三方：不以 @/ 或 ./ 开头
-    (1, re.compile(r"^'@/store/")),         # store
+    (1, re.compile(r"^'@/stores(?:/|')")),  # stores
     (2, re.compile(r"^'@/router")),         # router
     (3, re.compile(r"^'@/service/")),       # service
     (4, re.compile(r"^'@/helper/")),        # helper

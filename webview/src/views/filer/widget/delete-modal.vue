@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { FilerFileInfo } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     expose: ['show'],
@@ -39,7 +39,7 @@ export default toNative(DeleteModal)
 <template>
   <BaseModal ref="modalRef" v-model="isOpen" title="确认删除" :loading="portal.filerLoading" @confirm="handleConfirm">
     <div class="text-center py-6">
-      <div class="w-16 h-16 rounded-lg bg-red-100 flex items-center justify-center mx-auto mb-4">
+      <div class="empty-state-icon bg-red-100 mx-auto">
         <i class="fas fa-trash text-3xl text-red-500"></i>
       </div>
       <p class="text-lg text-slate-700 mb-2">

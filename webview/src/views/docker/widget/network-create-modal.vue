@@ -1,11 +1,11 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     expose: ['show'],
@@ -45,11 +45,11 @@ export default toNative(NetworkCreateModal)
   <BaseModal v-model="isOpen" title="新建网络" :loading="modalLoading" confirm-class="btn-purple" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">网络名称</label>
+        <label class="form-label">网络名称</label>
         <input v-model="formData.name" type="text" placeholder="例如: my-network" required class="input" />
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">驱动类型</label>
+        <label class="form-label">驱动类型</label>
         <select v-model="formData.driver" class="input">
           <option value="bridge">bridge (桥接)</option>
           <option value="host">host (主机)</option>
@@ -58,7 +58,7 @@ export default toNative(NetworkCreateModal)
         </select>
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">子网 CIDR（可选）</label>
+        <label class="form-label">子网 CIDR（可选）</label>
         <input v-model="formData.subnet" type="text" placeholder="例如: 172.20.0.0/16" class="input" />
       </div>
     </form>

@@ -121,7 +121,7 @@ export default toNative(ImageSelect)
             ]"
             @click="select(img.repoTags[0])"
           >
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" :style="{ background: domainColor(group.domain) + '15' }">
+            <div class="row-icon" :style="{ background: domainColor(group.domain) + '15' }">
               <i :class="['text-xs', domainIcon(group.domain)]" :style="{ color: domainColor(group.domain) }"></i>
             </div>
             <div class="flex-1 min-w-0">

@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { DockerNetworkInfo } from '@/service/types'
 
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 import NetworkCreateModal from './widget/network-create-modal.vue'
 

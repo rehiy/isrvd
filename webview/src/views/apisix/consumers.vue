@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { ApisixConsumer, ApisixRoute } from '@/service/types'
 
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 import ConsumerEditModal from './widget/consumer-edit-modal.vue'
 
@@ -187,13 +187,13 @@ export default toNative(Consumers)
                 </td>
                 <td class="px-4 py-3">
                   <div v-if="Object.keys(consumer.plugins || {}).length > 0" class="flex flex-wrap gap-1">
-                    <span v-for="(_, name) in consumer.plugins" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">{{ name }}</span>
+                    <span v-for="(_, name) in consumer.plugins" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-lg text-xs">{{ name }}</span>
                   </div>
                   <span v-else class="text-xs text-slate-400">-</span>
                 </td>
                 <td class="px-4 py-3">
                   <div v-if="getConsumerRoutes(consumer.username).length > 0" class="flex flex-wrap gap-1">
-                    <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded text-xs">{{ name }}</span>
+                    <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded-lg text-xs">{{ name }}</span>
                   </div>
                   <span v-else class="text-xs text-slate-400">-</span>
                 </td>
@@ -240,7 +240,7 @@ export default toNative(Consumers)
             <div class="flex items-start gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">插件</span>
               <div v-if="Object.keys(consumer.plugins || {}).length > 0" class="flex flex-wrap gap-1">
-                <span v-for="(_, name) in consumer.plugins" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">{{ name }}</span>
+                <span v-for="(_, name) in consumer.plugins" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-lg text-xs">{{ name }}</span>
               </div>
               <span v-else class="text-xs text-slate-400">-</span>
             </div>
@@ -249,7 +249,7 @@ export default toNative(Consumers)
             <div class="flex items-start gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">路由</span>
               <div v-if="getConsumerRoutes(consumer.username).length > 0" class="flex flex-wrap gap-1">
-                <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded text-xs">{{ name }}</span>
+                <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded-lg text-xs">{{ name }}</span>
               </div>
               <span v-else class="text-xs text-slate-400">-</span>
             </div>

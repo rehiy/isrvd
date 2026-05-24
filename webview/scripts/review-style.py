@@ -37,14 +37,15 @@ def find_line(lines: list[str], text: str) -> int:
     return 1
 
 def has_toolbar(tmpl: str) -> bool:
-    return 'bg-slate-50 border-b border-slate-200 rounded-t-2xl' in tmpl
+    return 'card-toolbar' in tmpl or 'bg-slate-50 border-b border-slate-200 rounded-t-2xl' in tmpl
 
 def has_card_list(tmpl: str) -> bool:
-    """判断是否是有卡片列表的页面（移动端 space-y-3 + rounded-xl 卡片）"""
+    """判断是否是有卡片列表的页面（移动端 space-y-3 + card-interactive 卡片）"""
     pos = tmpl.find('md:hidden space-y-3')
     if pos == -1:
         return False
-    return 'rounded-xl border border-slate-200 bg-white p-4' in tmpl[pos:pos+400]
+    section = tmpl[pos:pos+500]
+    return 'card-interactive' in section or 'rounded-xl border border-slate-200 bg-white p-4' in section
 
 # ─── 检查函数 ────────
 
@@ -416,25 +417,20 @@ def check_mobile_action_gap(filepath, lines, tmpl, tmpl_line0):
 
 
 def check_action_buttons(filepath, lines, tmpl, tmpl_line0):
-    """6.10 操作按钮语义色"""
-    is_apisix = 'apisix' in filepath.lower()
+    """6.10 操作按钮语义色：行级按钮必须使用 btn-icon-{color}，关闭/刷新等非行级按钮使用 btn-icon-sm。"""
+    semantic_re = re.compile(r'\bbtn-icon-(?:slate|blue|indigo|violet|cyan|teal|emerald|amber|rose|red)\b')
+    inline_re = re.compile(r'\btext-(?:slate|blue|indigo|violet|cyan|teal|emerald|amber|rose|red)-\d+\b.*\bhover:bg-(?:slate|blue|indigo|violet|cyan|teal|emerald|amber|rose|red)-50\b')
     for i, line in enumerate(lines, 1):
-        if 'btn-icon' not in line or 'cursor-not-allowed' in line:
+        stripped = line.strip()
+        if 'btn-icon' not in stripped or 'cursor-not-allowed' in stripped:
             continue
-        if 'hover:bg-' not in line:
-            report(filepath, i, "WARN", f"btn-icon 缺少 hover:bg-xxx-50: {line.strip()[:80]}")
-        if 'fa-trash' in line and 'text-red-600' not in line:
-            report(filepath, i, "WARN", f"删除按钮应用 text-red-600: {line.strip()[:80]}")
-        if 'fa-circle-info' in line and 'text-slate-600' not in line:
-            report(filepath, i, "WARN", f"详情按钮应用 text-slate-600: {line.strip()[:80]}")
-        if 'fa-pen' in line:
-            allowed = ['text-blue-600', 'text-indigo-600', 'text-violet-600',
-                       'text-cyan-600', 'text-rose-600', 'text-emerald-600']
-            if not any(c in line for c in allowed):
-                report(filepath, i, "WARN", f"编辑按钮颜色不规范: {line.strip()[:80]}")
-            elif not is_apisix and 'text-blue-600' not in line:
-                report(filepath, i, "WARN",
-                       f"非 APISIX 模块编辑按钮应用 text-blue-600: {line.strip()[:80]}")
+        if 'btn-icon-sm' in stripped:
+            continue
+        if inline_re.search(stripped):
+            report(filepath, i, "WARN", f"btn-icon 应使用 btn-icon-{{color}} 语义类，禁止手写 text/hover 组合: {stripped[:100]}")
+            continue
+        if 'btn-icon' in stripped and not semantic_re.search(stripped):
+            report(filepath, i, "WARN", f"btn-icon 缺少 btn-icon-{{color}} 语义类: {stripped[:100]}")
 
 
 def check_desktop_badge_shape(filepath, lines, tmpl, tmpl_line0):
@@ -503,8 +499,8 @@ def check_status_uses_text_color(filepath, lines, tmpl, tmpl_line0):
         # 跳过图标容器（w-8/w-10 + justify-center）
         if re.search(r'\bw-(?:8|9|10)\b', stripped) and 'justify-center' in stripped:
             continue
-        # 跳过任务状态 badge（getStateClass 属于枚举分类，允许用 badge）
-        if 'getStateClass' in stripped or 'getState(' in stripped:
+        # 跳过非状态通用函数命名
+        if 'getState(' in stripped:
             continue
 
         has_state = (_STATE_POSITIVE.search(stripped) or
@@ -513,10 +509,6 @@ def check_status_uses_text_color(filepath, lines, tmpl, tmpl_line0):
         has_badge_bg = _BADGE_BG.search(stripped)
 
         if has_state and has_badge_bg:
-            # 排除两值枚举 badge（如 running ? bg-emerald-100 : bg-slate-100）
-            # 这类场景只有两种状态，用 badge 是合理的枚举分类展示
-            if re.search(r"'\s*\?\s*'bg-\w+-(?:50|100)", stripped):
-                continue
             report(filepath, i, "WARN",
                    f"状态值应用文字颜色（text-xxx-600 font-medium）而非 badge 背景色: {stripped[:100]}")
 

@@ -1,11 +1,11 @@
 <script lang="ts">
 import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import type { ApisixRoute } from '@/service/types'
 
 import { formatRouteUpstreamSummary, formatRouteUpstreamType, formatRouteUpstreamNodes, normalizeUpstreamNodes } from '@/helper/apisix'
-
-import { usePortal } from '@/stores'
 
 interface ApisixRouteGroupEntry {
     key: string

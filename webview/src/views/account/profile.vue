@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { ApiTokenResult } from '@/service/types'
 
 import { copyToClipboard } from '@/helper/utils'
-
-import { usePortal } from '@/stores'
 
 @Component
 class Profile extends Vue {
@@ -140,11 +140,11 @@ export default toNative(Profile)
           </div>
         </div>
         <!-- 移动端 Tab -->
-        <div class="flex md:hidden mt-3 bg-slate-100 p-1 rounded-lg gap-0.5">
-          <button type="button" :class="['flex-1 px-2 py-0.5 rounded-md text-xs font-medium transition-colors', activeTab === 'password' ? 'tab-btn-active text-blue-600' : 'text-slate-500']" @click="activeTab = 'password'">
+        <div class="tab-group md:hidden mt-3">
+          <button type="button" :class="['tab-btn flex-1 justify-center', activeTab === 'password' ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="activeTab = 'password'">
             <i class="fas fa-lock"></i>修改密码
           </button>
-          <button type="button" :class="['flex-1 px-2 py-0.5 rounded-md text-xs font-medium transition-colors', activeTab === 'token' ? 'tab-btn-active text-emerald-600' : 'text-slate-500']" @click="activeTab = 'token'">
+          <button type="button" :class="['tab-btn flex-1 justify-center', activeTab === 'token' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="activeTab = 'token'">
             <i class="fas fa-key"></i>API 令牌
           </button>
         </div>
@@ -172,7 +172,7 @@ export default toNative(Profile)
             <button
               type="submit"
               :disabled="passwordLoading || !passwordForm.newPassword"
-              class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-medium flex items-center gap-2 transition-colors"
+              class="btn btn-blue"
             >
               <i v-if="!passwordLoading" class="fas fa-check"></i>
               <i v-else class="fas fa-spinner fa-spin"></i>
@@ -195,12 +195,12 @@ export default toNative(Profile)
               <p class="text-xs text-emerald-700 mb-3">请立即复制保存，此令牌仅显示一次：</p>
               <div class="flex flex-col sm:flex-row gap-2">
                 <code class="block flex-1 min-w-0 max-h-28 overflow-y-auto px-3 py-2 bg-white rounded-lg text-xs font-mono leading-relaxed text-slate-700 break-all border border-emerald-200">{{ newToken.token }}</code>
-                <button class="self-start sm:self-stretch flex-shrink-0 px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-colors" @click="copyToken(newToken.token)">
+                <button class="btn btn-emerald self-start sm:self-stretch flex-shrink-0 text-xs" @click="copyToken(newToken.token)">
                   <i class="fas fa-copy"></i>复制
                 </button>
               </div>
             </div>
-            <button class="btn-icon text-emerald-600! hover:bg-emerald-100!" @click="dismissNewToken()">
+            <button class="btn-icon btn-icon-emerald" @click="dismissNewToken()">
               <i class="fas fa-times"></i>
             </button>
           </div>
@@ -224,7 +224,7 @@ export default toNative(Profile)
             <button
               type="submit"
               :disabled="tokenLoading || !tokenForm.name.trim()"
-              class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-medium flex items-center gap-2 transition-colors"
+              class="btn btn-emerald"
             >
               <i v-if="!tokenLoading" class="fas fa-plus"></i>
               <i v-else class="fas fa-spinner fa-spin"></i>

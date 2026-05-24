@@ -1,6 +1,8 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type {
     ApisixUpstreamCreate,
@@ -18,8 +20,6 @@ import BaseModal from '@/component/modal.vue'
 
 import ContainerPortSelect from '@/views/docker/widget/container-port-select.vue'
 import ContainerSelect from '@/views/docker/widget/container-select.vue'
-
-import { usePortal } from '@/stores'
 
 const UPSTREAM_TYPE_OPTIONS: Array<{ value: ApisixUpstreamType; label: string; desc: string }> = [
     { value: 'roundrobin', label: 'roundrobin', desc: '加权轮询' },

@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { DockerImageSearchResult, DockerRegistryInfo } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     expose: ['show'],
@@ -127,7 +127,7 @@ export default toNative(ImagePullModal)
               <code
                 v-for="mirror in daemonMirrors"
                 :key="mirror"
-                class="inline-flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-md text-xs font-mono text-slate-600"
+                class="inline-flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-600"
               >
                 <i class="fas fa-bolt text-slate-400 text-xs"></i>{{ mirror }}
               </code>
@@ -164,7 +164,7 @@ export default toNative(ImagePullModal)
                   <span class="text-sm font-medium text-slate-800 truncate">{{ item.name }}</span>
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
-                  <span v-if="item.isOfficial" class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-600">官方</span>
+                  <span v-if="item.isOfficial" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-600">官方</span>
                   <span class="text-xs text-slate-400"><i class="fas fa-star text-slate-400 mr-0.5"></i>{{ item.starCount }}</span>
                 </div>
               </div>

@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { ApisixSSL } from '@/service/types'
 
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 import SSLEditModal from './widget/ssl-edit-modal.vue'
 
@@ -67,7 +67,7 @@ class SSLs extends Vue {
     }
 
     getStatusClass(ssl: ApisixSSL) {
-        return (ssl.status ?? 1) === 0 ? 'bg-slate-100 text-slate-600' : 'bg-emerald-50 text-emerald-700'
+        return (ssl.status ?? 1) === 0 ? 'text-slate-500' : 'text-emerald-600 font-medium'
     }
 
     getStatusText(ssl: ApisixSSL) {
@@ -193,7 +193,7 @@ export default toNative(SSLs)
                   </div>
                 </td>
                 <td class="px-4 py-3">
-                  <span :class="['text-xs px-2 py-0.5 rounded', getStatusClass(ssl)]">{{ getStatusText(ssl) }}</span>
+                  <span :class="getStatusClass(ssl)" class="text-sm">{{ getStatusText(ssl) }}</span>
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTs(ssl.update_time || ssl.create_time) }}</td>
                 <td class="px-4 py-3">
@@ -213,17 +213,17 @@ export default toNative(SSLs)
 
         <div class="md:hidden space-y-3 p-4">
           <div v-for="ssl in filteredSSLs" :key="ssl.id" class="card-interactive">
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-3 mb-3">
+              <div class="card-info-row !mb-0">
                 <div class="list-icon bg-cyan-400">
                   <i class="fas fa-certificate text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
-                  <div class="font-medium text-sm text-slate-800 truncate">{{ getPrimarySNI(ssl) }}</div>
-                  <div class="text-mono-muted">{{ ssl.id }}</div>
+                  <span class="font-medium text-slate-800 text-sm truncate block">{{ getPrimarySNI(ssl) }}</span>
+                  <span class="text-mono-muted">{{ ssl.id }}</span>
                 </div>
               </div>
-              <span :class="['text-xs px-2 py-0.5 rounded flex-shrink-0', getStatusClass(ssl)]">{{ getStatusText(ssl) }}</span>
+              <span :class="getStatusClass(ssl)" class="text-xs flex-shrink-0">{{ getStatusText(ssl) }}</span>
             </div>
 
             <div class="flex items-center gap-2 mb-3">

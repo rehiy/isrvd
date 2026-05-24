@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { FilerFileInfo } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     expose: ['show'],
@@ -44,7 +44,7 @@ export default toNative(UnzipModal)
 <template>
   <BaseModal ref="modalRef" v-model="isOpen" title="解压确认" :loading="loading" :confirm-disabled="!formData.file" @confirm="handleConfirm">
     <div v-if="formData.file" class="text-center py-6">
-      <div class="w-16 h-16 rounded-lg bg-amber-400 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-500/30">
+      <div class="empty-state-icon bg-amber-400 mx-auto shadow-lg shadow-amber-500/30">
         <i class="fas fa-expand-arrows-alt text-3xl text-white"></i>
       </div>
       <p class="text-lg text-slate-700 mb-2">

@@ -1,6 +1,8 @@
 <script lang="ts">
 import { Component, Vue, Watch, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { FilerFileInfo } from '@/service/types'
 
@@ -8,8 +10,6 @@ import { getPreviewMimeType, getPreviewType } from '@/helper/utils'
 import type { PreviewFileType } from '@/helper/utils'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     expose: ['show'],
@@ -86,7 +86,7 @@ export default toNative(PreviewModal)
     </div>
 
     <div v-if="error" class="flex flex-col items-center gap-3 py-10">
-      <div class="w-16 h-16 rounded-lg bg-red-100 flex items-center justify-center">
+      <div class="empty-state-icon bg-red-100 !mb-0">
         <i class="fas fa-circle-exclamation text-4xl text-red-400"></i>
       </div>
       <span class="text-sm text-red-500">{{ error }}</span>
@@ -121,7 +121,7 @@ export default toNative(PreviewModal)
 
     <object v-else-if="previewUrl && previewType === 'pdf'" :data="previewUrl" type="application/pdf" class="w-full border-0" style="height: calc(100vh - 10rem);">
       <div class="flex flex-col items-center justify-center gap-3 py-20">
-        <div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center">
+        <div class="empty-state-icon !mb-0">
           <i class="fas fa-file-pdf text-4xl text-slate-400"></i>
         </div>
         <span class="text-sm text-slate-500">浏览器不支持 PDF 预览</span>

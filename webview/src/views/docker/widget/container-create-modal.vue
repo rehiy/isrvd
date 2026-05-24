@@ -2,12 +2,12 @@
 import * as yaml from 'js-yaml'
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { DockerImageInfo, DockerNetworkInfo } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 import CapSelect from './cap-select.vue'
 import ImageSelect from './image-select.vue'
@@ -177,15 +177,15 @@ export default toNative(ContainerCreateModal)
       <!-- 基础设置 -->
       <div class="grid grid-cols-2 gap-3">
         <div class="col-span-2">
-          <label class="block text-sm font-medium text-slate-700 mb-2">镜像 <span class="text-red-500">*</span></label>
+          <label class="form-label">镜像 <span class="text-red-500">*</span></label>
           <ImageSelect v-model="formData.image" :images="images" placeholder="选择或输入镜像名称" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">容器名称 <span class="text-red-500">*</span></label>
+          <label class="form-label">容器名称 <span class="text-red-500">*</span></label>
           <input v-model="formData.name" type="text" placeholder="my-container" required class="input" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">网络模式</label>
+          <label class="form-label">网络模式</label>
           <select v-model="formData.network" class="input">
             <option v-for="opt in networkOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
           </select>
@@ -194,21 +194,21 @@ export default toNative(ContainerCreateModal)
 
       <!-- 端口映射 -->
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">端口映射</label>
+        <label class="form-label">端口映射</label>
         <textarea v-model="formData.portsStr" rows="2" placeholder="8080:80" class="input font-mono text-sm"></textarea>
         <p class="mt-1 text-xs text-slate-400">主机端口:容器端口，每行一条</p>
       </div>
 
       <!-- 挂载映射 -->
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">挂载映射</label>
+        <label class="form-label">挂载映射</label>
         <textarea v-model="formData.volumesStr" rows="3" placeholder="./data:/app/data:ro&#10;./config.yaml:/app/config.yaml:ro&#10;volume-name:/data" class="input font-mono text-sm"></textarea>
         <p class="mt-1 text-xs text-slate-400">支持宿主机文件/目录或 Docker 卷：来源:容器路径[:ro]，每行一条</p>
       </div>
 
       <!-- 环境变量 -->
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">环境变量</label>
+        <label class="form-label">环境变量</label>
         <textarea v-model="formData.envStr" rows="2" placeholder="KEY=value" class="input font-mono text-sm"></textarea>
         <p class="mt-1 text-xs text-slate-400">每行一条，支持 KEY=value 或 KEY: value 格式</p>
       </div>
@@ -221,38 +221,38 @@ export default toNative(ContainerCreateModal)
         </button>
         <div v-if="showAdvanced" class="mt-4 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">启动命令</label>
+            <label class="form-label">启动命令</label>
             <input v-model="formData.cmd" type="text" placeholder="覆盖默认命令" class="input font-mono text-sm" />
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">重启策略</label>
+              <label class="form-label">重启策略</label>
               <select v-model="formData.restart" class="input">
                 <option v-for="opt in restartOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">主机名</label>
+              <label class="form-label">主机名</label>
               <input v-model="formData.hostname" type="text" placeholder="容器主机名" class="input" />
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">内存限制 (MB)</label>
+              <label class="form-label">内存限制 (MB)</label>
               <input v-model="formData.memory" type="number" placeholder="512" class="input" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">CPU 限制 (核心)</label>
+              <label class="form-label">CPU 限制 (核心)</label>
               <input v-model="formData.cpus" type="number" step="0.1" placeholder="1.5" class="input" />
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">工作目录</label>
+              <label class="form-label">工作目录</label>
               <input v-model="formData.workdir" type="text" placeholder="/app" class="input" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">运行用户</label>
+              <label class="form-label">运行用户</label>
               <input v-model="formData.user" type="text" placeholder="root" class="input" />
             </div>
           </div>
@@ -270,18 +270,18 @@ export default toNative(ContainerCreateModal)
         </button>
         <div v-if="showSecurity" class="mt-4 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1.5">特权模式</label>
+            <label class="form-label">特权模式</label>
             <select v-model="formData.privileged" class="input">
               <option :value="false">禁用</option>
               <option :value="true">启用（⚠️ 赋予容器所有主机权限，谨慎使用）</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">添加权限 (CapAdd)</label>
+            <label class="form-label">添加权限 (CapAdd)</label>
             <CapSelect v-model="formData.capAdd" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">移除权限 (CapDrop)</label>
+            <label class="form-label">移除权限 (CapDrop)</label>
             <CapSelect v-model="formData.capDrop" />
           </div>
         </div>

@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { DockerRegistryInfo } from '@/service/types'
 
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 import RegistryEditModal from './widget/registry-edit-modal.vue'
 
@@ -135,11 +135,11 @@ export default toNative(Registries)
           </div>
         </div>
         <!-- 移动端 -->
-          <div class="flex md:hidden items-center justify-between">
-            <div class="flex items-center gap-3 min-w-0 flex-1">
-              <div class="page-icon bg-purple-500">
-                <i class="fas fa-warehouse text-white"></i>
-              </div>
+        <div class="flex md:hidden items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="page-icon bg-purple-500">
+              <i class="fas fa-warehouse text-white"></i>
+            </div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">镜像仓库</h1>
               <p class="text-xs text-slate-500 truncate">管理仓库账号与加速器</p>

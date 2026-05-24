@@ -1,6 +1,8 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { SwarmNodeInfo } from '@/service/types'
 
@@ -8,8 +10,6 @@ import { copyToClipboard } from '@/helper/utils'
 
 import BaseModal from '@/component/modal.vue'
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({ components: { BaseModal, PageSearch } })
 class Nodes extends Vue {
@@ -321,7 +321,7 @@ export default toNative(Nodes)
     <div v-else-if="joinTokens" class="space-y-4">
       <!-- 角色选择 -->
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">节点角色</label>
+        <label class="form-label">节点角色</label>
         <div class="flex gap-2">
           <button
             :class="joinTokenRole === 'worker' ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
@@ -341,13 +341,13 @@ export default toNative(Nodes)
       </div>
       <!-- Manager 地址 -->
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Manager 地址</label>
+        <label class="form-label">Manager 地址</label>
         <input v-model="joinAddr" type="text" class="input" placeholder="例如：192.168.1.100:2377" />
         <p class="mt-1 text-xs text-slate-400">留空则使用占位符，填写后命令可直接使用</p>
       </div>
       <!-- 加入命令 -->
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">加入命令</label>
+        <label class="form-label">加入命令</label>
         <div class="relative">
           <pre class="bg-slate-900 text-emerald-400 rounded-xl p-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all pr-12">{{ joinCommand }}</pre>
           <button

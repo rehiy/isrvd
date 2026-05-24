@@ -223,7 +223,7 @@ const router = createRouter({
   routes
 })
 
-// 由 app.vue 在 initProvider 后注入，避免循环依赖
+// 由 main.ts 在 Pinia 初始化后注入，避免循环依赖
 let _hasPerm: ((module: string) => boolean) | null = null
 let _permsLoaded: (() => boolean) | null = null
 let _isAuthenticated: (() => boolean) | null = null

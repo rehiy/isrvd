@@ -1,14 +1,14 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { DockerContainerInfo } from '@/service/types'
 
 import { formatTime } from '@/helper/utils'
 
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 import ContainerCreateModal from './widget/container-create-modal.vue'
 import ContainerEditModal from './widget/container-edit-modal.vue'
@@ -200,7 +200,7 @@ export default toNative(Containers)
               <tr v-for="ct in filteredContainers" :key="ct.id" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center gap-2 min-w-0">
-                    <div :class="['w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+                    <div :class="['row-icon', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
                       <i class="fas fa-cube text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
@@ -211,7 +211,7 @@ export default toNative(Containers)
                   </div>
                 </td>
                 <td class="px-4 py-3">
-                  <span :class="['inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium', ct.state === 'running' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600']" :title="ct.status">
+                  <span :class="ct.state === 'running' ? 'text-emerald-600 font-medium' : 'text-red-500 font-medium'" class="text-sm" :title="ct.status">
                     {{ ct.state }}
                   </span>
                 </td>
@@ -245,7 +245,7 @@ export default toNative(Containers)
                     <button v-if="!ct.isSelf && ct.state === 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-amber" title="停止" @click="handleContainerAction(ct, 'stop')">
                       <i class="fas fa-stop text-xs"></i>
                     </button>
-                    <button v-if="!ct.isSelf && portal.hasPerm('GET /api/compose/docker/:name') && portal.hasPerm('POST /api/compose/docker/:name/redeploy')" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'" @click="!ct.isSwarm && containerEditModalRef?.show(ct)">
+                    <button v-if="!ct.isSelf && portal.hasPerm('GET /api/compose/docker/:name') && portal.hasPerm('POST /api/compose/docker/:name/redeploy')" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'btn-icon-blue']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'" @click="!ct.isSwarm && containerEditModalRef?.show(ct)">
                       <i class="fas fa-pen text-xs"></i>
                     </button>
                     <button v-if="!ct.isSelf && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleContainerAction(ct, 'remove')">
@@ -276,7 +276,7 @@ export default toNative(Containers)
             <!-- 状态 -->
             <div class="flex items-start gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">状态</span>
-              <span :class="['text-xs px-2 py-0.5 rounded-lg', ct.state === 'running' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600']" :title="ct.status">{{ ct.state }}</span>
+              <span :class="ct.state === 'running' ? 'text-emerald-600 font-medium' : 'text-red-500 font-medium'" class="text-xs" :title="ct.status">{{ ct.state }}</span>
             </div>
             <!-- 创建时间 -->
             <div class="flex items-center gap-2 mb-3">
@@ -288,7 +288,7 @@ export default toNative(Containers)
             <div v-if="ct.ports && ct.ports.length > 0" class="flex items-start gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">端口</span>
               <div class="flex flex-wrap gap-1">
-                <code v-for="port in ct.ports" :key="port" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono bg-slate-100 text-slate-600">{{ port }}</code>
+                <code v-for="port in ct.ports" :key="port" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-mono bg-slate-100 text-slate-600">{{ port }}</code>
               </div>
             </div>
 
@@ -315,7 +315,7 @@ export default toNative(Containers)
               <button v-if="!ct.isSelf && ct.state === 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-amber" title="停止" @click="handleContainerAction(ct, 'stop')">
                 <i class="fas fa-stop text-xs"></i><span class="text-xs ml-1">停止</span>
               </button>
-              <button v-if="!ct.isSelf && portal.hasPerm('GET /api/compose/docker/:name') && portal.hasPerm('POST /api/compose/docker/:name/redeploy')" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'" @click="!ct.isSwarm && containerEditModalRef?.show(ct)">
+              <button v-if="!ct.isSelf && portal.hasPerm('GET /api/compose/docker/:name') && portal.hasPerm('POST /api/compose/docker/:name/redeploy')" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'btn-icon-blue']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : '编辑配置'" @click="!ct.isSwarm && containerEditModalRef?.show(ct)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
               <button v-if="!ct.isSelf && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleContainerAction(ct, 'remove')">

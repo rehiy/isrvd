@@ -1,6 +1,8 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 
 import ConfirmModal from '@/component/confirm.vue'
@@ -11,8 +13,6 @@ import ToolbarLinks from '@/component/toolbar-links.vue'
 import UserMenu from '@/component/user-menu.vue'
 
 import AuthLogin from '@/views/account/login.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     components: { ConfirmModal, NavigationBar, NotificationManager, PageAgent, ToolbarLinks, UserMenu, AuthLogin }

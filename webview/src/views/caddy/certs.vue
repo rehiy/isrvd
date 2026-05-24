@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { CaddyCert } from '@/service/types'
 
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 import CertEditModal from './widget/cert-edit-modal.vue'
 
@@ -188,14 +188,14 @@ export default toNative(CaddyCerts)
                   </div>
                 </td>
                 <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ certSummary(cert) }}</code></td>
-                <td class="px-4 py-3"><span class="text-sm text-slate-500">{{ cert.issuer || '-' }}</span></td>
+                <td class="px-4 py-3"><span class="text-sm text-slate-600">{{ cert.issuer || '-' }}</span></td>
                 <td class="px-4 py-3">
                   <span v-if="cert.notAfter" :class="certExpireClass(cert.notAfter)" class="text-xs">{{ certExpireLabel(cert.notAfter) }}</span>
                   <span v-else class="text-xs text-slate-400">-</span>
                 </td>
                 <td class="px-4 py-3">
                   <span v-if="!cert.tags || cert.tags.length === 0" class="text-xs text-slate-400">-</span>
-                  <span v-for="tag in cert.tags" v-else :key="tag" class="inline-block text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600 mr-1">{{ tag }}</span>
+                  <span v-for="tag in cert.tags" v-else :key="tag" class="inline-block text-xs px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 mr-1">{{ tag }}</span>
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
@@ -218,22 +218,22 @@ export default toNative(CaddyCerts)
               </div>
               <div class="min-w-0">
                 <span class="font-medium text-slate-800 text-sm truncate block">{{ certSummary(cert) }}</span>
-                <span :class="sourceTagClass(cert.source)" class="inline-block text-xs px-1.5 py-0.5 rounded mt-0.5">{{ sourceLabel(cert.source) }}</span>
+                <span :class="sourceTagClass(cert.source)" class="inline-block text-xs px-1.5 py-0.5 rounded-lg mt-0.5">{{ sourceLabel(cert.source) }}</span>
               </div>
             </div>
 
-            <div v-if="cert.issuer" class="flex items-center gap-2 mb-2">
+            <div v-if="cert.issuer" class="flex items-center gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0">签发机构</span>
-              <span class="text-xs text-slate-600">{{ cert.issuer }}</span>
+              <span class="text-xs text-slate-500">{{ cert.issuer }}</span>
             </div>
-            <div v-if="cert.notAfter" class="flex items-center gap-2 mb-2">
+            <div v-if="cert.notAfter" class="flex items-center gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0">有效期</span>
               <span :class="certExpireClass(cert.notAfter)" class="text-xs">{{ certExpireLabel(cert.notAfter) }}</span>
             </div>
             <div v-if="cert.tags && cert.tags.length" class="flex items-start gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">标签</span>
               <span class="flex flex-wrap gap-1">
-                <span v-for="tag in cert.tags" :key="tag" class="inline-block text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600">{{ tag }}</span>
+                <span v-for="tag in cert.tags" :key="tag" class="inline-block text-xs px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600">{{ tag }}</span>
               </span>
             </div>
 

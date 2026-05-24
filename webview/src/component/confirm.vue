@@ -1,9 +1,9 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
-import BaseModal from '@/component/modal.vue'
-
 import { usePortal } from '@/stores'
+
+import BaseModal from '@/component/modal.vue'
 
 @Component({
     components: { BaseModal }
@@ -38,7 +38,7 @@ export default toNative(ConfirmModal)
     @update:model-value="!$event && portal.closeConfirm()"
   >
     <div class="text-center">
-      <div class="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4" :class="iconColorClass.split(' ')[0]">
+      <div class="empty-state-icon mx-auto" :class="iconColorClass.split(' ')[0]">
         <i class="fas text-3xl" :class="[portal.confirm.icon, iconColorClass.split(' ')[1]]"></i>
       </div>
       <p class="text-lg text-slate-700" v-html="portal.confirm.message"></p>

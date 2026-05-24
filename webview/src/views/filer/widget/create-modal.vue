@@ -1,11 +1,11 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     expose: ['show'],
@@ -38,7 +38,7 @@ export default toNative(CreateModal)
   <BaseModal ref="modalRef" v-model="isOpen" title="新建文件" :loading="portal.filerLoading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
     <form class="space-y-5" @submit.prevent="handleConfirm">
       <div>
-        <label for="fileName" class="block text-sm font-medium text-slate-700 mb-2">
+        <label for="fileName" class="form-label">
           文件名称
         </label>
         <div class="relative">
@@ -49,7 +49,7 @@ export default toNative(CreateModal)
         </div>
       </div>
       <div>
-        <label for="fileContent" class="block text-sm font-medium text-slate-700 mb-2">
+        <label for="fileContent" class="form-label">
           文件内容
         </label>
         <textarea id="fileContent" v-model="formData.content" rows="10" :disabled="portal.filerLoading" class="input font-mono text-sm" placeholder="请输入文件内容..."></textarea>

@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { SystemStat } from '@/service/types'
 
 import { POLL_INTERVAL } from '@/helper/utils'
-
-import { usePortal } from '@/stores'
 
 import SystemCpuMem from './system_cpu_mem.vue'
 import SystemDisk from './system_disk.vue'

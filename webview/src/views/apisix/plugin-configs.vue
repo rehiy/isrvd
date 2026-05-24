@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { ApisixPluginConfig } from '@/service/types'
 
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 import PluginConfigEditModal from './widget/plugin-config-edit-modal.vue'
 
@@ -190,7 +190,7 @@ export default toNative(PluginConfigs)
                 </td>
                 <td class="px-4 py-3">
                   <div v-if="getPluginNames(config).length > 0" class="flex flex-wrap gap-1">
-                    <span v-for="name in getPluginNames(config)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded text-xs">{{ name }}</span>
+                    <span v-for="name in getPluginNames(config)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded-lg text-xs">{{ name }}</span>
                   </div>
                   <span v-else class="text-xs text-slate-400">未配置</span>
                 </td>
@@ -227,7 +227,7 @@ export default toNative(PluginConfigs)
             <div class="flex items-start gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">插件</span>
               <div v-if="getPluginNames(config).length > 0" class="flex flex-wrap gap-1">
-                <span v-for="name in getPluginNames(config)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded text-xs">{{ name }}</span>
+                <span v-for="name in getPluginNames(config)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded-lg text-xs">{{ name }}</span>
               </div>
               <span v-else class="text-xs text-slate-400">未配置</span>
             </div>

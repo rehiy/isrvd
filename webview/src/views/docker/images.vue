@@ -1,14 +1,14 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { DockerImageInfo, DockerRegistryInfo } from '@/service/types'
 
 import { formatFileSize, formatTime } from '@/helper/utils'
 
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 import ImageBuildModal from './widget/image-build-modal.vue'
 import ImagePullModal from './widget/image-pull-modal.vue'
@@ -321,7 +321,7 @@ export default toNative(Images)
                 </td>
                 <td class="px-4 py-3">
                   <div v-if="img.repoTags && img.repoTags.length > 0" class="flex flex-wrap gap-1">
-                    <span v-for="(tag, idx) in img.repoTags" :key="idx" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono bg-blue-50 text-blue-600">{{ tag }}</span>
+                    <span v-for="(tag, idx) in img.repoTags" :key="idx" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-mono bg-blue-50 text-blue-600">{{ tag }}</span>
                   </div>
                   <span v-else class="text-sm text-slate-400">-</span>
                 </td>
@@ -370,7 +370,7 @@ export default toNative(Images)
             <div v-if="img.repoTags && img.repoTags.length > 0" class="flex items-start gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">标签</span>
               <div class="flex flex-wrap gap-1">
-                <span v-for="(tag, idx) in img.repoTags" :key="idx" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono bg-blue-50 text-blue-600">{{ tag }}</span>
+                <span v-for="(tag, idx) in img.repoTags" :key="idx" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-mono bg-blue-50 text-blue-600">{{ tag }}</span>
               </div>
             </div>
 

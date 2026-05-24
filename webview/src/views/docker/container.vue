@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { DockerContainerDetail, DockerContainerInfo, DockerVolumeMapping } from '@/service/types'
 
 import { formatTime } from '@/helper/utils'
-
-import { usePortal } from '@/stores'
 
 import ContainerNav from './widget/container-nav.vue'
 

@@ -1,14 +1,14 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { DockerVolumeInfo } from '@/service/types'
 
 import { formatTime } from '@/helper/utils'
 
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 import VolumeCreateModal from './widget/volume-create-modal.vue'
 

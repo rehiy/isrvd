@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Prop, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { AllConfig, ComposeMarketplacePick } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 // 应用市场 postMessage 协议：仅本组件使用，故就近定义
 interface MarketplaceInstallPayload {
@@ -179,7 +179,7 @@ export default toNative(MarketplaceModal)
 
       <!-- Empty -->
       <div v-else-if="!iframeUrl" class="h-full flex flex-col items-center justify-center px-4 text-center">
-        <div class="w-16 h-16 rounded-lg bg-amber-100 flex items-center justify-center mb-4">
+        <div class="empty-state-icon bg-amber-100">
           <i class="fas fa-store text-amber-500 text-2xl"></i>
         </div>
         <h1 class="text-lg font-semibold text-slate-800 mb-1">尚未配置应用市场</h1>

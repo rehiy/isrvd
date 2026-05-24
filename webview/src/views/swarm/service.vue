@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { SwarmServiceDetail, SwarmTask } from '@/service/types'
 
 import { formatTime } from '@/helper/utils'
-
-import { usePortal } from '@/stores'
 
 @Component
 class ServiceInfo extends Vue {

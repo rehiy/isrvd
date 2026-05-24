@@ -1,14 +1,14 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { SwarmTask, SwarmServiceInfo } from '@/service/types'
 
 import { formatTime } from '@/helper/utils'
 
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     components: { PageSearch }
@@ -46,11 +46,10 @@ class Tasks extends Vue {
 
     // ─── 方法 ───
     taskStateClass(state: string) {
-        if (state === 'running') return 'bg-emerald-100 text-emerald-700'
-        if (state === 'failed' || state === 'rejected') return 'bg-red-100 text-red-700'
-        if (state === 'complete') return 'bg-blue-100 text-blue-700'
-        if (state === 'shutdown') return 'bg-slate-100 text-slate-500'
-        return 'bg-amber-100 text-amber-700'
+        if (state === 'running' || state === 'complete') return 'text-emerald-600 font-medium'
+        if (state === 'failed' || state === 'rejected') return 'text-red-500 font-medium'
+        if (state === 'pending' || state === 'preparing' || state === 'starting') return 'text-amber-600 font-medium'
+        return 'text-slate-500'
     }
 
     taskIconClass(state: string) {
@@ -184,7 +183,7 @@ export default toNative(Tasks)
                 </td>
                 <td class="px-4 py-3 text-sm text-slate-600">{{ t.slot || '-' }}</td>
                 <td class="px-4 py-3">
-                  <span :class="taskStateClass(t.state)" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ t.state }}</span>
+                  <span :class="taskStateClass(t.state)" class="text-sm capitalize">{{ t.state }}</span>
                 </td>
                 <td class="px-4 py-3 text-xs text-slate-500">
                   <span v-if="t.err" class="text-red-500">{{ t.err }}</span>
@@ -212,9 +211,7 @@ export default toNative(Tasks)
               </div>
               <div class="min-w-0">
                 <code class="font-mono text-xs text-slate-500">{{ t.id.slice(0, 12) }}</code>
-                <div class="mt-0.5">
-                  <span :class="taskStateClass(t.state)" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium capitalize">{{ t.state }}</span>
-                </div>
+                <span :class="taskStateClass(t.state)" class="text-xs capitalize block mt-0.5">{{ t.state }}</span>
               </div>
             </div>
             <!-- 服务 + Slot（关联：Slot 是服务副本编号） -->

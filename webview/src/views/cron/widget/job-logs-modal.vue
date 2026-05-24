@@ -1,12 +1,12 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { CronJob, CronJobLog } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     expose: ['show'],
@@ -65,7 +65,7 @@ export default toNative(JobLogsModal)
   <BaseModal v-model="isOpen" :show-footer="false" body-class="p-0 overflow-y-auto bg-slate-50">
     <template #title>
       <div class="flex items-center gap-3 min-w-0">
-        <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+        <div class="page-icon bg-blue-50 text-blue-600">
           <i class="fas fa-list-ul text-sm"></i>
         </div>
         <div class="min-w-0">
@@ -76,7 +76,7 @@ export default toNative(JobLogsModal)
     </template>
 
     <template #header-actions>
-      <button class="btn-icon text-slate-400" :disabled="loading" title="刷新" @click="loadLogs">
+      <button class="btn-icon-sm" :disabled="loading" title="刷新" @click="loadLogs">
         <i class="fas fa-rotate text-sm" :class="{ 'fa-spin': loading }"></i>
       </button>
     </template>
@@ -109,7 +109,7 @@ export default toNative(JobLogsModal)
         <div v-else class="divide-y divide-slate-200">
           <div v-for="(log, idx) in logs" :key="log.runId || idx" class="py-3 first:pt-0 last:pb-0">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2">
-              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium w-fit" :class="log.success ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'">
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-medium w-fit" :class="log.success ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'">
                 <i :class="log.success ? 'fas fa-circle-check' : 'fas fa-circle-xmark'"></i>
                 {{ log.success ? '成功' : '失败' }}
               </span>

@@ -164,7 +164,7 @@ export default toNative(IconSelect)
           >
             {{ cat.label }}
           </button>
-          <button v-if="hasMoreCategories" type="button" class="btn-category text-primary-500 hover:text-primary-600 hover:bg-primary-50!" @click="categoryExpanded = !categoryExpanded">
+          <button v-if="hasMoreCategories" type="button" class="btn-category btn-category-inactive" @click="categoryExpanded = !categoryExpanded">
             <i :class="categoryExpanded ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-[10px]"></i>
             {{ categoryExpanded ? '收起' : '更多' }}
           </button>

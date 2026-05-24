@@ -1,11 +1,11 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     expose: ['show'],
@@ -48,12 +48,12 @@ export default toNative(ImageBuildModal)
   <BaseModal v-model="isOpen" title="构建镜像" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
     <div class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">镜像标签</label>
+        <label class="form-label">镜像标签</label>
         <input v-model="buildTag" type="text" placeholder="例如: myapp:v1, custom-image:latest" class="input" />
         <p class="mt-1 text-xs text-slate-400">留空则使用 custom:latest</p>
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">Dockerfile</label>
+        <label class="form-label">Dockerfile</label>
         <textarea v-model="buildDockerfile" rows="14" class="input font-mono text-sm" placeholder="FROM alpine:latest&#10;RUN echo hello" spellcheck="false"></textarea>
       </div>
     </div>

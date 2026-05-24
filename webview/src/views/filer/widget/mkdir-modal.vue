@@ -1,11 +1,11 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     expose: ['show'],
@@ -38,7 +38,7 @@ export default toNative(MkdirModal)
   <BaseModal ref="modalRef" v-model="isOpen" title="新建目录" :loading="portal.filerLoading" :confirm-disabled="!formData.name.trim()" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm">
       <div>
-        <label for="dirName" class="block text-sm font-medium text-slate-700 mb-2">
+        <label for="dirName" class="form-label">
           目录名称
         </label>
         <div class="relative">

@@ -51,6 +51,12 @@
     @apply flex items-center gap-3 min-w-0 flex-1 mb-3;
   }
 
+  /* 单选模式 / 来源选择卡片 */
+  .option-card { @apply text-left rounded-xl border p-3 transition-colors; }
+  .option-card-inactive { @apply border-slate-200 bg-white text-slate-600 hover:border-slate-300; }
+  .option-card-disabled { @apply border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed; }
+  .option-card-icon { @apply w-8 h-8 rounded-lg flex items-center justify-center; }
+
 
   /* ============================================================
    * 2. 图标容器（Icon Container）
@@ -142,6 +148,12 @@
   .btn-icon-rose   { @apply text-rose-600    hover:bg-rose-50;    }
   .btn-icon-red    { @apply text-red-600     hover:bg-red-50;     }
 
+  /* 小型图标按钮：关闭/刷新等非行级操作 */
+  .btn-icon-sm {
+    @apply w-8 h-8 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500;
+  }
+
   /* 分类过滤标签按钮 */
   .btn-category          { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-medium transition-colors; }
   .btn-category-active   { @apply bg-primary-100 text-primary-700 ring-1 ring-primary-300; }
@@ -162,6 +174,9 @@
 
   /* Tab 切换按钮（flex 布局，含图标或纯文字均适用） */
   .tab-btn { @apply h-7 px-3 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5; }
+
+  /* Tab 切换按钮（纯文字 / 已有外层 flex 控制） */
+  .tab-btn-text { @apply h-7 px-3 text-xs font-medium rounded-md transition-colors; }
 
   /* Tab 激活态（白底 + 彩色文字由外部 class 指定 + 阴影） */
   .tab-btn-active  { @apply bg-white shadow-sm; }

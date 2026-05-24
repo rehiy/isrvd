@@ -1,10 +1,10 @@
 <script lang="ts">
 import { Component, Prop, Vue, Watch, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { ApisixRoute } from '@/service/types'
-
-import { usePortal } from '@/stores'
 
 const TYPE_DEFAULTS: Record<string, string | number | boolean | unknown[] | Record<string, unknown>> = { string: '', integer: 0, number: 0, boolean: false, array: [], object: {} }
 
@@ -222,7 +222,7 @@ export default toNative(PluginConfigPanel)
 
     <!-- 已添加插件 tags -->
     <div v-if="currentPluginNames.length > 0" class="flex flex-wrap gap-1 mt-3">
-      <span v-for="name in currentPluginNames" :key="name" class="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs">{{ name }}<button class="hover:text-red-500 transition-colors" @click="removePlugin(name)"><i class="fas fa-xmark text-[10px]"></i></button></span>
+      <span v-for="name in currentPluginNames" :key="name" class="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs">{{ name }}<button class="hover:text-red-500 transition-colors" @click="removePlugin(name)"><i class="fas fa-xmark text-[10px]"></i></button></span>
     </div>
 
     <!-- JSON 编辑器 -->

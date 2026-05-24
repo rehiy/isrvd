@@ -30,7 +30,7 @@ export default toNative(ComposeEditor)
 <template>
   <div class="space-y-3">
     <div>
-      <label class="block text-sm font-medium text-slate-700 mb-2">
+      <label class="form-label">
         <i class="fas fa-file-code mr-1 text-slate-400"></i>compose.yml
       </label>
       <div class="editor-container">

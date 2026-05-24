@@ -1,9 +1,9 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import * as ShellTerminal from '@/helper/shell'
-
 import { usePortal } from '@/stores'
+
+import * as ShellTerminal from '@/helper/shell'
 
 @Component
 class Shell extends Vue {

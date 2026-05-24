@@ -1,14 +1,14 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { DockerContainerInfo } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
 
 import ComposeEditor from '@/views/compose/widget/compose-editor.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     expose: ['show'],

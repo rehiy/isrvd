@@ -1,11 +1,11 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 
 import BaseModal from '@/component/modal.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     expose: ['show'],
@@ -46,11 +46,11 @@ export default toNative(VolumeCreateModal)
   <BaseModal v-model="isOpen" title="新建数据卷" :loading="modalLoading" show-footer confirm-class="btn-amber" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">卷名称</label>
+        <label class="form-label">卷名称</label>
         <input v-model="formData.name" type="text" placeholder="例如: my-data" required class="input" />
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">驱动类型</label>
+        <label class="form-label">驱动类型</label>
         <select v-model="formData.driver" class="input">
           <option value="local">local (本地)</option>
         </select>

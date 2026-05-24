@@ -4,13 +4,13 @@ import { jsonrepair } from 'jsonrepair'
 import { Codemirror } from 'vue-codemirror'
 import { Component, toNative, Vue } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { AuditLog } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 @Component({
     components: { BaseModal, PageSearch, Codemirror }
@@ -232,7 +232,7 @@ export default toNative(AuditLogs)
                 </td>
                 <!-- 方法 -->
                 <td class="px-4 py-3">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium font-mono" :class="methodClass(log.method)">{{ log.method }}</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium font-mono" :class="methodClass(log.method)">{{ log.method }}</span>
                 </td>
                 <!-- URI -->
                 <td class="px-4 py-3 max-w-[240px]">
@@ -281,8 +281,8 @@ export default toNative(AuditLogs)
             </div>
 
             <!-- 方法 + URI -->
-            <div class="flex items-center gap-2 mb-3">
-              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium font-mono flex-shrink-0" :class="methodClass(log.method)">{{ log.method }}</span>
+            <div class="flex items-start gap-2 mb-3">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium font-mono flex-shrink-0" :class="methodClass(log.method)">{{ log.method }}</span>
               <code class="text-xs text-slate-700 font-mono truncate">{{ log.uri }}</code>
             </div>
 
@@ -313,7 +313,7 @@ export default toNative(AuditLogs)
       <BaseModal v-model="detailOpen" :show-footer="false">
         <template #title>
           <div class="flex items-center gap-2">
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium font-mono" :class="methodClass(detailLog?.method || '')">{{ detailLog?.method }}</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium font-mono" :class="methodClass(detailLog?.method || '')">{{ detailLog?.method }}</span>
             <code class="text-sm text-slate-700 font-mono truncate">{{ detailLog?.uri }}</code>
           </div>
         </template>

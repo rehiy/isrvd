@@ -109,7 +109,7 @@ export default toNative(BaseModal)
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
               <slot name="header-actions"></slot>
-              <button type="button" class="btn-icon text-slate-400" :disabled="loading" @click="handleCancel">
+              <button type="button" class="btn-icon-sm" :disabled="loading" @click="handleCancel">
                 <i class="fas fa-times"></i>
               </button>
             </div>

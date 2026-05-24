@@ -90,7 +90,7 @@ export default toNative(ContainerSelect)
             ]"
             @click="select(c.name)"
           >
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" :style="{ background: networkColor(group.network) + '15' }">
+            <div class="row-icon" :style="{ background: networkColor(group.network) + '15' }">
               <i class="fas fa-cube text-xs" :style="{ color: networkColor(group.network) }"></i>
             </div>
             <div class="flex-1 min-w-0">

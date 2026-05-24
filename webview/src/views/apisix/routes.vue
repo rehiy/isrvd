@@ -1,14 +1,14 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { ApisixRoute } from '@/service/types'
 
 import { formatRouteUpstreamSummary, formatRouteUpstreamType, formatRouteUpstreamNodes, normalizeUpstreamNodes } from '@/helper/apisix'
 
 import PageSearch from '@/component/page-search.vue'
-
-import { usePortal } from '@/stores'
 
 import RouteEditModal from './widget/route-edit-modal.vue'
 import RouteGroupedList from './widget/route-grouped-list.vue'
@@ -203,13 +203,13 @@ export default toNative(Routes)
       <div class="mobile-search space-y-2">
         <PageSearch v-model="searchText" search-key="apisix-routes" placeholder="搜索路由、URI、上游..." width-class="w-full" focus-color="indigo" />
         <div class="tab-group w-full">
-            <button class="tab-btn flex-1 justify-center" :class="viewMode === 'route' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive'" @click="setViewMode('route')">
-              <i class="fas fa-list text-xs"></i>默认
-            </button>
-            <button class="tab-btn flex-1 justify-center" :class="viewMode === 'host' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive'" @click="setViewMode('host')">
-              <i class="fas fa-layer-group text-xs"></i>Host 分组
-            </button>
-          </div>
+          <button class="tab-btn flex-1 justify-center" :class="viewMode === 'route' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive'" @click="setViewMode('route')">
+            <i class="fas fa-list text-xs"></i>默认
+          </button>
+          <button class="tab-btn flex-1 justify-center" :class="viewMode === 'host' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive'" @click="setViewMode('host')">
+            <i class="fas fa-layer-group text-xs"></i>Host 分组
+          </button>
+        </div>
       </div>
       <div v-if="loading" class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
       <div v-else-if="filteredRoutes.length === 0" class="empty-state">
@@ -260,7 +260,7 @@ export default toNative(Routes)
                 <td class="px-4 py-3"><span :class="getRouteUpstreamTagClass(route)" class="inline-block text-xs px-2 py-0.5 rounded-lg font-mono break-all">{{ getRouteUpstreamNodes(route) }}</span></td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button v-if="portal.hasPerm('PATCH /api/apisix/route/:id/status')" :class="['btn-icon', route.status === 1 ? 'text-amber-500 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50']" :title="route.status === 1 ? '禁用' : '启用'" @click="toggleStatus(route)">
+                    <button v-if="portal.hasPerm('PATCH /api/apisix/route/:id/status')" :class="['btn-icon', route.status === 1 ? 'btn-icon-amber' : 'btn-icon-emerald']" :title="route.status === 1 ? '禁用' : '启用'" @click="toggleStatus(route)">
                       <i :class="route.status === 1 ? 'fas fa-ban' : 'fas fa-play'" class="text-xs"></i>
                     </button>
                     <button v-if="portal.hasPerm('PUT /api/apisix/route/:id')" class="btn-icon btn-icon-indigo" title="编辑" @click="openEditModal(route)"><i class="fas fa-pen text-xs"></i></button>
@@ -310,7 +310,7 @@ export default toNative(Routes)
 
             <!-- 底部：操作按钮 -->
             <div class="card-actions">
-              <button v-if="portal.hasPerm('PATCH /api/apisix/route/:id/status')" :class="['btn-icon', route.status === 1 ? 'text-amber-500 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50']" :title="route.status === 1 ? '禁用' : '启用'" @click="toggleStatus(route)">
+              <button v-if="portal.hasPerm('PATCH /api/apisix/route/:id/status')" :class="['btn-icon', route.status === 1 ? 'btn-icon-amber' : 'btn-icon-emerald']" :title="route.status === 1 ? '禁用' : '启用'" @click="toggleStatus(route)">
                 <i :class="route.status === 1 ? 'fas fa-ban' : 'fas fa-play'" class="text-xs"></i><span class="text-xs ml-1">{{ route.status === 1 ? '禁用' : '启用' }}</span>
               </button>
               <button v-if="portal.hasPerm('PUT /api/apisix/route/:id')" class="btn-icon btn-icon-indigo" title="编辑" @click="openEditModal(route)">

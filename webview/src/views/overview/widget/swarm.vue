@@ -1,10 +1,10 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
+import { usePortal } from '@/stores'
+
 import api from '@/service/api'
 import type { SwarmInfo } from '@/service/types'
-
-import { usePortal } from '@/stores'
 
 @Component
 class SwarmOverview extends Vue {
