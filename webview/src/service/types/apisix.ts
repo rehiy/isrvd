@@ -90,7 +90,6 @@ export interface ApisixPluginConfig {
 }
 
 export interface ApisixPluginConfigCreate {
-    id?: string
     desc?: string
     plugins?: Record<string, unknown>
 }

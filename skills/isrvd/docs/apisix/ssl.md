@@ -27,14 +27,18 @@ isrvd_delete "/apisix/ssl/<SSL_ID>"
 | id | string | 配置 ID |
 | desc | string | 描述 |
 | plugins | object | 插件配置集合 |
+| create_time | number | 创建时间（只读，Unix 秒） |
+| update_time | number | 更新时间（只读，Unix 秒） |
 
 ```bash
 isrvd_get "/apisix/plugin-configs"
 isrvd_get "/apisix/plugin-config/<CONFIG_ID>"
-isrvd_post "/apisix/plugin-config" '{"id":"<ID>","desc":"<DESC>","plugins":{...}}'
+isrvd_post "/apisix/plugin-config" '{"desc":"<DESC>","plugins":{...}}'
 isrvd_put "/apisix/plugin-config/<CONFIG_ID>" '{"desc":"<DESC>","plugins":{...}}'
 isrvd_delete "/apisix/plugin-config/<CONFIG_ID>"
 ```
+
+创建时 `id` 由 isrvd 强制生成 UUID v7，传入请求体的 `id` 会被忽略；创建调用 APISIX `PUT /plugin_configs/<ID>`，更新调用 APISIX `PATCH /plugin_configs/<ID>`。
 
 ---
 

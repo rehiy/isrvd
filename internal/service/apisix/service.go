@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/rehiy/libgo/logman"
+	"github.com/rehiy/libgo/strutil"
 
 	"isrvd/internal/registry"
 	pkgapisix "isrvd/pkgs/apisix"
@@ -260,6 +261,7 @@ func (s *Service) PluginConfigCreate(ctx context.Context, req pkgapisix.PluginCo
 	if len(req.Plugins) == 0 {
 		return nil, fmt.Errorf("插件配置不能为空")
 	}
+	req.ID = strutil.NewString()
 	return s.client.PluginConfigCreate(ctx, req)
 }
 
