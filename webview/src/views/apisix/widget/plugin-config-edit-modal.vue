@@ -74,15 +74,10 @@ class PluginConfigEditModal extends Vue {
     }
 
     buildPayload(): ApisixPluginConfigCreate | ApisixPluginConfigUpdate {
-        const payload: ApisixPluginConfigCreate = {
+        return {
             desc: this.formData.desc.trim(),
             plugins: this.formData.plugins,
         }
-        // 只在创建时且用户手动填写了 ID 才传入
-        if (!this.isEditMode && this.formData.id.trim()) {
-            payload.id = this.formData.id.trim()
-        }
-        return payload
     }
 
     async handleConfirm() {
@@ -114,10 +109,10 @@ export default toNative(PluginConfigEditModal)
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? '编辑插件配置' : '新建插件配置'" :loading="modalLoading" confirm-class="btn-rose" @confirm="handleConfirm">
     <div class="max-w-3xl space-y-4 p-1">
-      <div>
+      <div v-if="isEditMode">
         <label class="form-label">配置 ID</label>
-        <input v-model="formData.id" type="text" class="input" :disabled="isEditMode" placeholder="留空由 APISIX 自动生成" />
-        <p class="text-xs text-slate-400 mt-1">创建时可选；编辑时不能修改 ID。</p>
+        <input v-model="formData.id" type="text" class="input" disabled />
+        <p class="text-xs text-slate-400 mt-1">ID 由创建接口自动生成，编辑时不能修改。</p>
       </div>
       <div>
         <label class="form-label">描述</label>

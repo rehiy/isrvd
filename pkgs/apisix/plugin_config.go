@@ -37,13 +37,7 @@ func (c *Client) PluginConfigInspect(ctx context.Context, configID string) (*Plu
 
 // PluginConfigCreate 创建 Plugin Config
 func (c *Client) PluginConfigCreate(ctx context.Context, req PluginConfig) (*PluginConfig, error) {
-	path := "/plugin_configs"
-	method := http.MethodPost
-	if req.ID != "" {
-		path = "/plugin_configs/" + url.PathEscape(req.ID)
-		method = http.MethodPut
-	}
-	data, err := c.doRequest(ctx, method, path, buildPluginConfigBody(req))
+	data, err := c.doRequest(ctx, http.MethodPut, "/plugin_configs/"+url.PathEscape(req.ID), buildPluginConfigBody(req))
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +46,7 @@ func (c *Client) PluginConfigCreate(ctx context.Context, req PluginConfig) (*Plu
 
 // PluginConfigUpdate 更新 Plugin Config
 func (c *Client) PluginConfigUpdate(ctx context.Context, configID string, req PluginConfig) (*PluginConfig, error) {
-	data, err := c.doRequest(ctx, http.MethodPut, "/plugin_configs/"+url.PathEscape(configID), buildPluginConfigBody(req))
+	data, err := c.doRequest(ctx, http.MethodPatch, "/plugin_configs/"+url.PathEscape(configID), buildPluginConfigBody(req))
 	if err != nil {
 		return nil, err
 	}
