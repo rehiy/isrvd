@@ -8,14 +8,16 @@ import type { CaddyCert } from '@/service/types'
 
 import PageSearch from '@/component/page-search.vue'
 
+import CertDetailModal from './widget/cert-detail-modal.vue'
 import CertEditModal from './widget/cert-edit-modal.vue'
 
 @Component({
-    components: { PageSearch, CertEditModal }
+    components: { PageSearch, CertDetailModal, CertEditModal }
 })
 class CaddyCerts extends Vue {
     portal = usePortal()
 
+    @Ref readonly detailModalRef!: InstanceType<typeof CertDetailModal>
     @Ref readonly editModalRef!: InstanceType<typeof CertEditModal>
 
     certs: CaddyCert[] = []
@@ -50,6 +52,10 @@ class CaddyCerts extends Vue {
 
     openEditModal(cert: CaddyCert) {
         this.editModalRef?.show(cert)
+    }
+
+    openDetailModal(cert: CaddyCert) {
+        this.detailModalRef?.show(cert)
     }
 
     sourceLabel(source: string) {
@@ -174,7 +180,7 @@ export default toNative(CaddyCerts)
                 <th class="th">签发机构</th>
                 <th class="th">有效期</th>
                 <th class="th">标签</th>
-                <th class="w-24 th-right">操作</th>
+                <th class="w-32 th-right">操作</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
@@ -199,7 +205,8 @@ export default toNative(CaddyCerts)
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button v-if="cert.source !== 'cached' && portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(cert)"><i class="fas fa-pen text-xs"></i></button>
+                    <button class="btn-icon btn-icon-slate" title="详情" @click="openDetailModal(cert)"><i class="fas fa-circle-info text-xs"></i></button>
+                    <button v-if="cert.source !== 'cached' && portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(cert)"><i class="fas fa-pen text-xs"></i></button>
                     <button v-if="cert.source !== 'cached' && portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon btn-icon-red" title="删除" @click="deleteCert(cert)"><i class="fas fa-trash text-xs"></i></button>
                     <span v-if="cert.source === 'cached'" class="text-xs text-slate-400 pr-1">只读</span>
                   </div>
@@ -237,19 +244,24 @@ export default toNative(CaddyCerts)
               </span>
             </div>
 
-            <div v-if="cert.source !== 'cached'" class="card-actions">
-              <button v-if="portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(cert)">
+            <div class="card-actions">
+              <button class="btn-icon btn-icon-slate" title="详情" @click="openDetailModal(cert)">
+                <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
+              </button>
+              <button v-if="cert.source !== 'cached' && portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(cert)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
-              <button v-if="portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon btn-icon-red" title="删除" @click="deleteCert(cert)">
+              <button v-if="cert.source !== 'cached' && portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon btn-icon-red" title="删除" @click="deleteCert(cert)">
                 <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
               </button>
+              <span v-if="cert.source === 'cached'" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs text-slate-400 bg-slate-100">只读</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
+    <CertDetailModal ref="detailModalRef" />
     <CertEditModal ref="editModalRef" @success="loadCerts" />
   </div>
 </template>
