@@ -45,6 +45,10 @@ func (s *Service) CertList(ctx context.Context) ([]CertForm, error) {
 	if err != nil {
 		return nil, err
 	}
+	return s.certListFromConfig(cfg), nil
+}
+
+func (s *Service) certListFromConfig(cfg *pkgcaddy.Config) []CertForm {
 	out := make([]CertForm, 0)
 	if cfg.Apps != nil && cfg.Apps.TLS != nil {
 		tls := cfg.Apps.TLS
@@ -89,8 +93,7 @@ func (s *Service) CertList(ctx context.Context) ([]CertForm, error) {
 	// 追加运行时证书缓存（忽略扫描错误，不影响主列表）
 	cached, _ := s.scanCertCache(cfg)
 	out = append(out, cached...)
-
-	return out, nil
+	return out
 }
 
 // CertCreate 创建证书

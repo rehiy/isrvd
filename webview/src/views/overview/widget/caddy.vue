@@ -25,38 +25,12 @@ class CaddyOverview extends Vue {
     async load() {
         this.loading = true
         try {
-            const requests: Promise<unknown>[] = []
-            const keys: string[] = []
-
-            if (this.portal.hasPerm('GET /api/caddy/info')) {
-                requests.push(api.caddyInfo())
-                keys.push('info')
-            }
-            if (this.portal.hasPerm('GET /api/caddy/certs')) {
-                requests.push(api.caddyCertList())
-                keys.push('certs')
+            if (!this.portal.hasPerm('GET /api/caddy/info')) {
+                this.info = null
+                return
             }
 
-            const results = await Promise.all(requests)
-            const info: Record<string, number | boolean> = {}
-
-            keys.forEach((key, index) => {
-                const res = results[index] as { payload?: unknown }
-                if (key === 'info') {
-                    const caddyInfo = res.payload as CaddyInfo | undefined
-                    if (caddyInfo) {
-                        info.servers = caddyInfo.servers
-                        info.routes = caddyInfo.routes
-                        info.certs = 0
-                        info.hasTls = caddyInfo.hasTls
-                        info.available = caddyInfo.available
-                    }
-                } else if (key === 'certs') {
-                    info.certs = Array.isArray(res.payload) ? res.payload.length : 0
-                }
-            })
-
-            this.info = info as unknown as CaddyInfo
+            this.info = (await api.caddyInfo()).payload || null
         } catch {
             this.portal.showNotification('error', '获取 Caddy 信息失败')
             this.info = null

@@ -11,6 +11,7 @@ isrvd_get "/caddy/info"
 | adminUrl | string | Caddy Admin API 地址（来自系统配置） |
 | servers | number | server 总数 |
 | routes | number | 所有 server 路由总数 |
+| certs | number | TLS 证书总数，包含配置证书与 Caddy 运行时已签发缓存证书 |
 | hasTls | boolean | 是否配置了 TLS app |
 | available | boolean | Admin API 是否可达 |
 

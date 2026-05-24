@@ -15,6 +15,7 @@ type Info struct {
 	AdminURL  string `json:"adminUrl"`
 	Servers   int    `json:"servers"`
 	Routes    int    `json:"routes"`
+	Certs     int    `json:"certs"`
 	HasTLS    bool   `json:"hasTls"`
 	Available bool   `json:"available"`
 }
@@ -35,6 +36,7 @@ func (s *Service) Info(ctx context.Context) (*Info, error) {
 	if cfg.Apps != nil && cfg.Apps.TLS != nil {
 		info.HasTLS = true
 	}
+	info.Certs = len(s.certListFromConfig(cfg))
 	return info, nil
 }
 
