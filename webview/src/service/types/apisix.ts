@@ -89,12 +89,7 @@ export interface ApisixPluginConfig {
     update_time: number
 }
 
-export interface ApisixPluginConfigCreate {
-    desc?: string
-    plugins?: Record<string, unknown>
-}
-
-export interface ApisixPluginConfigUpdate {
+export interface ApisixPluginConfigPayload {
     desc?: string
     plugins?: Record<string, unknown>
 }

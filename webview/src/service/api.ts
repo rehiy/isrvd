@@ -26,8 +26,7 @@ import type {
     ApisixConsumer,
     ApisixConsumerCreate,
     ApisixConsumerUpdate,
-    ApisixPluginConfigCreate,
-    ApisixPluginConfigUpdate,
+    ApisixPluginConfigPayload,
     ApisixSSLCreate,
     ApisixSSLUpdate,
     ApisixSSL,
@@ -275,11 +274,11 @@ class ApiService {
         return http.get<ApisixPluginConfig>(`apisix/plugin-config/${id}`)
     }
 
-    apisixPluginConfigCreate(data: ApisixPluginConfigCreate) {
+    apisixPluginConfigCreate(data: ApisixPluginConfigPayload) {
         return http.post('apisix/plugin-config', data)
     }
 
-    apisixPluginConfigUpdate(id: string, data: ApisixPluginConfigUpdate) {
+    apisixPluginConfigUpdate(id: string, data: ApisixPluginConfigPayload) {
         return http.put(`apisix/plugin-config/${id}`, data)
     }
 
