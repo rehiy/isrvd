@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/rehiy/libgo/websocket"
 
@@ -13,12 +14,6 @@ import (
 type ContainerCreateResult struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
-}
-
-// ContainerLogsResult 容器日志结果
-type ContainerLogsResult struct {
-	ID   string   `json:"id"`
-	Logs []string `json:"logs"`
 }
 
 // ContainerList 列出容器
@@ -60,17 +55,13 @@ func (s *Service) ContainerAction(ctx context.Context, req pkgdocker.ActionReque
 }
 
 // ContainerLogs 获取容器日志
-func (s *Service) ContainerLogs(ctx context.Context, req pkgdocker.ContainerLogsRequest) (*ContainerLogsResult, error) {
-	logs, err := s.docker.ContainerLogs(ctx, req.ID, req.Tail)
-	if err != nil {
-		return nil, err
-	}
-	return &ContainerLogsResult{ID: req.ID, Logs: logs}, nil
+func (s *Service) ContainerLogs(ctx context.Context, req pkgdocker.ContainerLogsRequest) (*pkgdocker.ContainerLogsResult, error) {
+	return s.docker.ContainerLogs(ctx, req)
 }
 
-// ContainerLogsStream 容器实时日志 WebSocket（代理到 pkgs 层）
-func (s *Service) ContainerLogsStream(ctx context.Context, conn *websocket.ServerConn, req pkgdocker.ContainerLogsRequest) {
-	s.docker.ContainerLogsStream(ctx, conn, req.ID, req.Tail)
+// ContainerLogsStream 容器实时日志流（代理到 pkgs 层）
+func (s *Service) ContainerLogsStream(ctx context.Context, w io.Writer, req pkgdocker.ContainerLogsRequest) {
+	s.docker.ContainerLogsStream(ctx, w, req)
 }
 
 // ContainerExec 容器终端 WebSocket（代理到 pkgs 层）

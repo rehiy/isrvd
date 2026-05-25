@@ -3,7 +3,6 @@ package docker
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -206,40 +205,6 @@ func (s *DockerService) ContainerAction(ctx context.Context, id, action string) 
 
 	logman.Info("Container action performed", "action", action, "id", id)
 	return nil
-}
-
-// ContainerLogs 获取容器日志
-func (s *DockerService) ContainerLogs(ctx context.Context, id, tail string) ([]string, error) {
-	if tail == "" {
-		tail = "100"
-	}
-
-	options := container.LogsOptions{
-		ShowStdout: true, ShowStderr: true,
-		Tail: tail, Follow: false, Timestamps: true,
-	}
-
-	reader, err := s.client.ContainerLogs(ctx, id, options)
-	if err != nil {
-		logman.Error("Get container logs failed", "id", id, "error", err)
-		return nil, err
-	}
-	defer reader.Close()
-
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		logman.Error("Read container logs failed", "id", id, "error", err)
-		return nil, err
-	}
-
-	return ParseDockerLogs(data), nil
-}
-
-// ContainerLogsRequest 日志请求
-type ContainerLogsRequest struct {
-	ID     string `json:"id" binding:"required"`
-	Tail   string `json:"tail"`
-	Follow bool   `json:"follow"`
 }
 
 // ContainerSpec 容器可写配置（创建/更新共用）

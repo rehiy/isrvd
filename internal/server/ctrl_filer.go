@@ -19,7 +19,7 @@ func (app *App) defineFilerRoutes() []Route {
 		// 读取类操作不记录审计日志
 		{Method: "GET", Path: "/filer/list", Handler: app.filerFileList, Module: "filer", Label: "查询目录文件列表"},
 		{Method: "GET", Path: "/filer/read", Handler: app.filerFileRead, Module: "filer", Label: "读取文件内容"},
-		{Method: "GET", Path: "/filer/download", Handler: app.filerFileDownload, Module: "filer", Label: "下载文件"},
+		{Method: "GET", Path: "/filer/download", Handler: app.filerFileDownload, Module: "filer", Label: "下载文件", QueryToken: true},
 		// 写入与变更类操作按默认策略审计
 		{Method: "POST", Path: "/filer/mkdir", Handler: app.filerFileMkdir, Module: "filer", Label: "创建目录"},
 		{Method: "POST", Path: "/filer/create", Handler: app.filerFileCreate, Module: "filer", Label: "创建文件"},

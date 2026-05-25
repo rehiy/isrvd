@@ -1,47 +1,35 @@
-import { wsUrl } from '@/service/axios'
-
 interface LogStreamCallbacks {
     onOpen?: () => void
     onMessage?: (data: string) => void
+    onError?: (msg: string) => void
     onClose?: () => void
-    onError?: () => void
 }
 
-let socket: WebSocket | null = null
+let source: EventSource | null = null
 
-function readMessage(data: unknown, callback?: (data: string) => void) {
-    if (!callback) return
-    if (typeof data === 'string') {
-        callback(data)
-        return
-    }
-    if (data instanceof Blob) {
-        data.text().then(callback)
-    }
-}
+const streamUrl = (path: string) => new URL(`api/${path.replace(/^\/+/, '')}`, window.location.href).toString()
 
 export function create(token: string, containerId: string, tail: string, callbacks: LogStreamCallbacks): void {
     destroy()
 
-    const params = new URLSearchParams({
-        token,
-        tail
+    const params = new URLSearchParams({ token, tail })
+    source = new EventSource(streamUrl(`docker/container/${encodeURIComponent(containerId)}/logs/stream?${params.toString()}`))
+    source.onopen = () => callbacks.onOpen?.()
+    source.onmessage = event => callbacks.onMessage?.(event.data)
+    source.addEventListener('error', event => {
+        const msg = (event as MessageEvent).data ?? ''
+        callbacks.onError?.(msg)
     })
-    socket = new WebSocket(wsUrl(`docker/container/${encodeURIComponent(containerId)}/logs/stream?${params.toString()}`))
-
-    socket.onopen = () => callbacks.onOpen?.()
-    socket.onmessage = event => readMessage(event.data, callbacks.onMessage)
-    socket.onclose = () => callbacks.onClose?.()
-    socket.onerror = () => callbacks.onError?.()
+    source.onerror = () => {
+        // readyState 2 = CLOSED：服务端正常关闭（容器停止后 EOF）
+        if (source?.readyState === EventSource.CLOSED) {
+            destroy()
+            callbacks.onClose?.()
+        }
+    }
 }
 
 export function destroy(): void {
-    if (socket) {
-        socket.onopen = null
-        socket.onmessage = null
-        socket.onclose = null
-        socket.onerror = null
-        socket.close()
-    }
-    socket = null
+    source?.close()
+    source = null
 }

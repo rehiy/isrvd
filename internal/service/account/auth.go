@@ -3,7 +3,6 @@ package account
 import (
 	"fmt"
 	"net"
-	"net/http"
 	"strings"
 	"time"
 
@@ -208,13 +207,20 @@ func (s *Service) JWTUsername(c *gin.Context) string {
 	return sub
 }
 
-// extractJWT 从 Authorization Header、WebSocket query 或文件预览 query 中提取原始 JWT 字符串
+// extractJWT 从 Authorization Header 或（路由标记了 QueryToken 时）query ?token= 中提取原始 JWT 字符串。
 func (s *Service) extractJWT(c *gin.Context) string {
 	tokenStr := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
-	if tokenStr == "" && (c.GetHeader("Upgrade") == "websocket" || (c.Request.Method == http.MethodGet && c.FullPath() == "/api/filer/download" && c.Query("inline") == "1")) {
-		tokenStr = c.Query("token")
+	if tokenStr != "" {
+		return tokenStr
 	}
-	return tokenStr
+	// WebSocket 及标记了 QueryToken 的路由（SSE、文件预览下载）允许 query token
+	if c.GetHeader("Upgrade") == "websocket" {
+		return c.Query("token")
+	}
+	if v, exists := c.Get("routeQueryToken"); exists && v.(bool) {
+		return c.Query("token")
+	}
+	return ""
 }
 
 // ─── Header 代理认证 ──────────────────────────────────────────────────────────

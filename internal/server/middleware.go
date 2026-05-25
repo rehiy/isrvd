@@ -16,12 +16,17 @@ import (
 // - 其他路由：强制认证，失败时返回 401
 func AuthMiddleware(routeIndex map[string]Route, svc *svcAccount.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if route, ok := matchRoute(routeIndex, c.Request.Method, c.FullPath()); ok && route.Access == AccessAnon {
-			if username := svc.AuthMix(c); username != "" {
-				c.Set("username", username)
+		if route, ok := matchRoute(routeIndex, c.Request.Method, c.FullPath()); ok {
+			if route.QueryToken {
+				c.Set("routeQueryToken", true)
 			}
-			c.Next()
-			return
+			if route.Access == AccessAnon {
+				if username := svc.AuthMix(c); username != "" {
+					c.Set("username", username)
+				}
+				c.Next()
+				return
+			}
 		}
 
 		username, errMsg := svc.Auth(c)

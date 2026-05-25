@@ -95,13 +95,13 @@ isrvd_get "/docker/container/<CONTAINER_ID>/logs?tail=100"
 
 返回：`{id, logs: string[]}`
 
-实时日志使用 WebSocket：
+实时日志使用 SSE：
 
 ```bash
 GET /api/docker/container/<CONTAINER_ID>/logs/stream?tail=100&token=<JWT>
 ```
 
-服务端会先输出最近 `tail` 行，然后持续推送新日志；断开 WebSocket 即停止跟随。
+响应类型为 `text/event-stream`。服务端会先输出最近 `tail` 行，然后持续推送新日志；断开 SSE 连接即停止跟随。
 
 ## 容器资源统计
 
