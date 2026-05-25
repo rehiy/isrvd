@@ -61,7 +61,7 @@ class PageAgentModal extends Vue {
         // 使用本地 JWT token 作为 apiKey，以便请求能通过后端认证中间件
         const token = this.portal.token || ''
         const agent = new PageAgent({
-            baseURL: 'api/agent/proxy',
+            baseURL: 'api/agent',
             apiKey: token,
             model: 'proxy',
             language: 'zh-CN',
