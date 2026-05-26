@@ -76,7 +76,7 @@ cp build/script/isrvd.sh dist/isrvd.sh
 
 cd dist/
 for app in isrvd-*; do
-    archive="${app}.tar.gz"
+    archive="${app%.exe}.tar.gz"
     echo "==> packing $archive"
     tar czf "$archive" "$app" config.yml isrvd.sh
     rm -f "$app"
