@@ -109,7 +109,7 @@ export default toNative(SystemUpdater)
           <span class="hidden xs:inline">更新日志</span>
         </a>
         <button
-          v-if="portal.hasPerm('POST /api/docker/container')"
+          v-if="selfContainerName && portal.hasPerm('POST /api/docker/container')"
           class="btn btn-emerald"
           title="一键升级当前容器"
           :disabled="deploying"
