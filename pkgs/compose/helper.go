@@ -1,6 +1,7 @@
 package compose
 
 import (
+	"maps"
 	"strings"
 
 	"github.com/compose-spec/compose-go/v2/types"
@@ -95,4 +96,19 @@ func defaultString(v, def string) string {
 		return def
 	}
 	return v
+}
+
+// buildServiceLabels 构建 compose 服务标签基础集合（复制用户标签并写入 project/service 标识）。
+// extraLabels 用于追加额外的标签键值对（如 docker 专用的 container-number、oneoff）。
+func buildServiceLabels(project *types.Project, svc types.ServiceConfig, extraLabels map[string]string) map[string]string {
+	labels := make(map[string]string, len(svc.Labels)+2+len(extraLabels))
+	for k, v := range svc.Labels {
+		labels[k] = v
+	}
+	if project != nil && project.Name != "" {
+		labels[ComposeProjectLabel] = project.Name
+	}
+	labels[ComposeServiceLabel] = svc.Name
+	maps.Copy(labels, extraLabels)
+	return labels
 }

@@ -26,7 +26,7 @@ func ServiceToSwarmRequest(project *types.Project, svc types.ServiceConfig) (swa
 		Args:     []string(svc.Command),
 		Mode:     mode,
 		Replicas: replicas,
-		Labels:   swarmServiceLabels(project, svc),
+		Labels:   buildServiceLabels(project, svc, nil),
 	}
 
 	// networks
@@ -59,18 +59,6 @@ func ServiceToSwarmRequest(project *types.Project, svc types.ServiceConfig) (swa
 	}
 
 	return req, nil
-}
-
-func swarmServiceLabels(project *types.Project, svc types.ServiceConfig) map[string]string {
-	labels := make(map[string]string, len(svc.Labels)+2)
-	for k, v := range svc.Labels {
-		labels[k] = v
-	}
-	if project != nil && project.Name != "" {
-		labels[ComposeProjectLabel] = project.Name
-	}
-	labels[ComposeServiceLabel] = svc.Name
-	return labels
 }
 
 func swarmDeployMode(svc types.ServiceConfig) (string, *uint64) {
