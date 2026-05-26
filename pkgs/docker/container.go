@@ -225,6 +225,7 @@ type ContainerSpec struct {
 	Privileged bool              `json:"privileged"`
 	CapAdd     []string          `json:"capAdd"`
 	CapDrop    []string          `json:"capDrop"`
+	AutoRemove bool              `json:"autoRemove"`
 }
 
 // ContainerCreate 创建容器
@@ -314,6 +315,9 @@ func (s *DockerService) ContainerCreate(ctx context.Context, req ContainerSpec) 
 	}
 	if len(req.CapDrop) > 0 {
 		hostConfig.CapDrop = req.CapDrop
+	}
+	if req.AutoRemove {
+		hostConfig.AutoRemove = true
 	}
 
 	resp, err := s.client.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, req.Name)

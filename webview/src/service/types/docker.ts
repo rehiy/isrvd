@@ -52,6 +52,12 @@ export interface DockerContainerCreate {
     privileged?: boolean
     capAdd?: string[]
     capDrop?: string[]
+    autoRemove?: boolean
+}
+
+export interface DockerContainerCreateResult {
+    id: string
+    name: string
 }
 
 export interface DockerContainerDetail extends DockerContainerCreate {

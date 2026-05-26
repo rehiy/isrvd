@@ -46,6 +46,7 @@ import type {
     DockerContainerInfo,
     DockerContainerStats,
     DockerContainerCreate,
+    DockerContainerCreateResult,
     DockerContainerDetail,
     DockerContainerCompose,
     DockerImageInfo,
@@ -411,7 +412,7 @@ class ApiService {
     }
 
     dockerContainerCreate(data: DockerContainerCreate) {
-        return http.post('docker/container', data)
+        return http.post<DockerContainerCreateResult>('docker/container', data)
     }
 
     dockerContainerLogs(id: string, tail = '100') {
