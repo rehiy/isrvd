@@ -2,6 +2,7 @@
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import type { SystemStat } from '@/service/types'
+
 import SystemUpdater from './system_updater.vue'
 
 @Component({

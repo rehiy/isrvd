@@ -21,6 +21,7 @@ class SystemUpdater extends Vue {
     updaterContainer = ''
     updaterAutoRemove = true
     selfContainerName = ''
+    inDocker = false
 
     async mounted() {
         await this.loadSelfContainer()
@@ -31,7 +32,10 @@ class SystemUpdater extends Vue {
         try {
             const res = await api.dockerContainerList(true)
             const self = res.payload?.find(c => c.isSelf)
-            this.selfContainerName = self?.name ?? ''
+            if (self) {
+                this.inDocker = true
+                this.selfContainerName = self.name ?? ''
+            }
         } catch {
             // 获取失败静默处理，不影响主流程
         }
@@ -43,6 +47,7 @@ class SystemUpdater extends Vue {
         this.updaterModalOpen = true
     }
 
+    // Docker 容器升级：部署临时 docker-updater 容器
     async handleDeployUpdater() {
         if (this.deploying) return
 
@@ -108,8 +113,9 @@ export default toNative(SystemUpdater)
           <i class="fas fa-file-alt"></i>
           <span class="hidden xs:inline">更新日志</span>
         </a>
+        <!-- Docker 容器升级（仅 Docker 环境） -->
         <button
-          v-if="selfContainerName && portal.hasPerm('POST /api/docker/container')"
+          v-if="inDocker && portal.hasPerm('POST /api/docker/container')"
           class="btn btn-emerald"
           title="一键升级当前容器"
           :disabled="deploying"
@@ -121,7 +127,7 @@ export default toNative(SystemUpdater)
       </div>
     </div>
 
-    <!-- 升级确认 Modal -->
+    <!-- Docker 升级确认 Modal -->
     <BaseModal
       v-model="updaterModalOpen"
       title="升级当前 Docker 容器"

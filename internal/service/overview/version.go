@@ -2,14 +2,17 @@ package overview
 
 import (
 	"context"
-	"encoding/json"
-	"isrvd/config"
-	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/rehiy/libgo/logman"
+	"github.com/rehiy/libgo/upgrade"
+
+	"isrvd/config"
 )
+
+const upgradeServer = "https://isrvd.rehiy.com/update/"
 
 // VersionCheck 版本检测结果
 type VersionCheck struct {
@@ -19,18 +22,17 @@ type VersionCheck struct {
 }
 
 var (
-	cachedTag     string
-	cachedURL     string
-	cacheTime     time.Time
-	cacheDuration = 4 * time.Hour
+	versionCacheMu sync.Mutex
+	cachedTag      string
+	cachedURL      string
+	cacheTime      time.Time
+	cacheDuration  = 1 * time.Hour
 )
 
-const checkURL = "https://api.github.com/repos/rehiy/isrvd/releases/latest"
-
-// CheckVersion 检测版本更新
+// CheckVersion 从升级服务器检测最新版本，带 4 小时缓存
 func (s *Service) CheckVersion(ctx context.Context) *VersionCheck {
 	current := config.Version
-	latest, releaseURL := fetchLatestTag(ctx)
+	latest, releaseURL := fetchLatestTag()
 
 	return &VersionCheck{
 		Latest:  latest,
@@ -39,41 +41,28 @@ func (s *Service) CheckVersion(ctx context.Context) *VersionCheck {
 	}
 }
 
-// fetchLatestTag 从 GitHub API 获取最新 Release 标签，带缓存
-func fetchLatestTag(ctx context.Context) (tag, url string) {
+// fetchLatestTag 调用升级服务器获取最新版本号和 Release URL，带内存缓存
+func fetchLatestTag() (tag, releaseURL string) {
+	versionCacheMu.Lock()
+	defer versionCacheMu.Unlock()
+
 	if cachedTag != "" && time.Since(cacheTime) < cacheDuration {
 		return cachedTag, cachedURL
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, checkURL, nil)
-	if err != nil {
-		return cachedTag, cachedURL
-	}
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", "iSrvd-version-check")
-
-	resp, err := (&http.Client{Timeout: 5 * time.Second}).Do(req)
-	if err != nil {
+	info, err := upgrade.CheckUpdate(&upgrade.UpdateParam{
+		Server:  upgradeServer,
+		Version: config.Version,
+	})
+	if err != nil && (info == nil || info.Version == "") {
 		logman.Warn("version check failed", "error", err)
 		return cachedTag, cachedURL
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		logman.Warn("version check failed", "status", resp.StatusCode)
-		return cachedTag, cachedURL
+	if info != nil && info.Version != "" {
+		cachedTag, cachedURL, cacheTime = info.Version, info.Release, time.Now()
 	}
 
-	var r struct {
-		TagName string `json:"tag_name"`
-		HTMLURL string `json:"html_url"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		logman.Warn("version check decode failed", "error", err)
-		return cachedTag, cachedURL
-	}
-
-	cachedTag, cachedURL, cacheTime = r.TagName, r.HTMLURL, time.Now()
 	return cachedTag, cachedURL
 }
 
