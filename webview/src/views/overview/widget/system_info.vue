@@ -2,8 +2,11 @@
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import type { SystemStat } from '@/service/types'
+import SystemUpdater from './system_updater.vue'
 
-@Component
+@Component({
+    components: { SystemUpdater }
+})
 class SystemInfo extends Vue {
     current: SystemStat | null = null
 
@@ -33,11 +36,12 @@ export default toNative(SystemInfo)
     <div class="rounded-xl border border-slate-200 bg-white p-4">
       <p class="text-xs text-slate-400 mb-1">程序版本</p>
       <div class="flex items-center gap-2">
-        <p class="text-sm font-semibold text-slate-800 truncate">{{ current.version }}</p>
-        <a v-if="current.versionCheck?.update" :href="current.versionCheck.release" target="_blank" rel="noopener noreferrer" class="update-link">
-          <i class="fas fa-arrow-up text-[10px]"></i>
-          更新 {{ current.versionCheck.latest }}
-        </a>
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-slate-800 truncate">{{ current.version }}</p>
+        </div>
+        <div class="ml-auto flex items-center gap-2">
+          <SystemUpdater :version-check="current.versionCheck" />
+        </div>
       </div>
     </div>
     <div class="rounded-xl border border-slate-200 bg-white p-4">
