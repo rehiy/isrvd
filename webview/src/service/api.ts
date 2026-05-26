@@ -95,6 +95,10 @@ class ApiService {
         return http.get<SystemStat>('overview/status')
     }
 
+    overviewUpgrade() {
+        return http.post('overview/upgrade', {})
+    }
+
     // ==================== System 系统相关 ====================
 
     systemConfig(params?: Record<string, string>) {

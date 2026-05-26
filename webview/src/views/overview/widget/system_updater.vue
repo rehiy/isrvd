@@ -77,6 +77,20 @@ class SystemUpdater extends Vue {
             this.deploying = false
         }
     }
+
+    // 二进制原地升级：下载最新版本替换当前二进制并重启
+    async handleBinaryUpgrade() {
+        if (this.deploying) return
+        this.deploying = true
+        try {
+            await api.overviewUpgrade()
+            this.portal.showNotification('success', '升级成功，程序正在重启...')
+        } catch {
+            // Axios 拦截器会显示错误通知
+        } finally {
+            this.deploying = false
+        }
+    }
 }
 
 export default toNative(SystemUpdater)
@@ -113,6 +127,17 @@ export default toNative(SystemUpdater)
           <i class="fas fa-file-alt"></i>
           <span class="hidden xs:inline">更新日志</span>
         </a>
+        <!-- 二进制原地升级 -->
+        <button
+          v-if="portal.hasPerm('POST /api/overview/upgrade')"
+          class="btn btn-secondary"
+          title="下载最新版本并重启"
+          :disabled="deploying"
+          @click="handleBinaryUpgrade"
+        >
+          <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying }"></i>
+          <span class="hidden xs:inline">二进制升级</span>
+        </button>
         <!-- Docker 容器升级（仅 Docker 环境） -->
         <button
           v-if="inDocker && portal.hasPerm('POST /api/docker/container')"

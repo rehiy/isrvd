@@ -2,11 +2,16 @@ package overview
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/rehiy/libgo/archive"
 	"github.com/rehiy/libgo/logman"
+	"github.com/rehiy/libgo/request"
 	"github.com/rehiy/libgo/upgrade"
 
 	"isrvd/config"
@@ -26,17 +31,18 @@ var (
 	cachedTag      string
 	cachedURL      string
 	cacheTime      time.Time
-	cacheDuration  = 1 * time.Hour
+	cacheDuration  = 4 * time.Hour
 )
+
+// executablePath 启动时记录，避免升级替换后 /proc/self/exe 失效
+var executablePath, _ = os.Executable()
 
 // CheckVersion 从升级服务器检测最新版本，带 4 小时缓存
 func (s *Service) CheckVersion(ctx context.Context) *VersionCheck {
-	current := config.Version
 	latest, releaseURL := fetchLatestTag()
-
 	return &VersionCheck{
 		Latest:  latest,
-		Update:  isNewerVersion(latest, current),
+		Update:  isNewerVersion(latest, config.Version),
 		Release: releaseURL,
 	}
 }
@@ -50,10 +56,7 @@ func fetchLatestTag() (tag, releaseURL string) {
 		return cachedTag, cachedURL
 	}
 
-	info, err := upgrade.CheckUpdate(&upgrade.UpdateParam{
-		Server:  upgradeServer,
-		Version: config.Version,
-	})
+	info, err := upgrade.NewUpdater(upgradeServer, config.Version).Check()
 	if err != nil && (info == nil || info.Version == "") {
 		logman.Warn("version check failed", "error", err)
 		return cachedTag, cachedURL
@@ -66,13 +69,50 @@ func fetchLatestTag() (tag, releaseURL string) {
 	return cachedTag, cachedURL
 }
 
+// ApplySelfUpgrade 从升级服务器下载最新 tar.gz，提取二进制并替换当前程序
+// 替换成功后由调用方负责延迟重启，确保 HTTP 响应先发出
+func (s *Service) ApplySelfUpgrade() error {
+	if executablePath == "" {
+		return fmt.Errorf("获取可执行文件路径失败")
+	}
+
+	// tar.gz 内文件名为 isrvd-{os}-{arch}，windows 加 .exe，由 build.sh 打包规则决定
+	binaryName := "isrvd-" + runtime.GOOS + "-" + runtime.GOARCH
+	if runtime.GOOS == "windows" {
+		binaryName += ".exe"
+	}
+
+	u := upgrade.NewUpdater(upgradeServer, config.Version)
+	u.TargetPath = executablePath
+	u.Download = func(pkgURL, outputPath string) (string, error) {
+		tarGzPath, err := request.Download(pkgURL, "", false)
+		if err != nil {
+			return "", fmt.Errorf("下载失败: %w", err)
+		}
+		defer os.Remove(tarGzPath)
+
+		if err := archive.NewTarGz().UntarFile(tarGzPath, binaryName, outputPath); err != nil {
+			return "", fmt.Errorf("解压失败: %w", err)
+		}
+		return outputPath, nil
+	}
+
+	return u.Apply()
+}
+
+// RestartSelf 重启当前进程
+func (s *Service) RestartSelf() error {
+	u := upgrade.NewUpdater("", "")
+	u.TargetPath = executablePath
+	return u.Restart()
+}
+
 func isNewerVersion(latest, current string) bool {
 	l := strings.TrimPrefix(latest, "v")
 	c := strings.TrimPrefix(current, "v")
 	if l == "" || c == "" {
 		return false
 	}
-
 	ll := strings.Split(l, ".")
 	cl := strings.Split(c, ".")
 	for i := 0; i < len(ll) || i < len(cl); i++ {
