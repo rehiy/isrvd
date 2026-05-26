@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/compose-spec/compose-go/v2/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/moby/docker-image-spec/specs-go/v1"
 	"github.com/rehiy/libgo/logman"
 
 	"isrvd/pkgs/compose"
@@ -87,33 +89,43 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 
 // DockerContentGet 读取项目的 compose.yml；文件不存在时从运行态反推。
 func (s *Service) DockerContentGet(ctx context.Context, name string) (string, error) {
+	content, _, err := s.dockerContentGet(ctx, name)
+	return content, err
+}
+
+func (s *Service) dockerContentGet(ctx context.Context, name string) (string, string, error) {
 	if err := ValidateName(name); err != nil {
-		return "", err
+		return "", "", err
 	}
 	root := s.docker.ContainerRoot()
 	if root == "" {
-		return "", fmt.Errorf("未配置容器数据根目录")
+		return "", "", fmt.Errorf("未配置容器数据根目录")
 	}
 
-	path := filepath.Join(root, name, "compose.yml")
+	projectName := s.dockerProjectName(ctx, name, root)
+	path := filepath.Join(root, projectName, "compose.yml")
 	if data, err := os.ReadFile(path); err == nil {
-		return string(data), nil
+		return string(data), projectName, nil
+	}
+
+	if content, ok, err := s.dockerProjectContentFromContainers(ctx, projectName, root); ok || err != nil {
+		return content, projectName, err
 	}
 
 	info, err := s.docker.ContainerInspectRaw(ctx, name)
 	if err != nil {
-		return "", fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
+		return "", "", fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
 	}
 	imageConfig, _ := s.docker.ImageConfig(ctx, info.Config.Image)
 	project, err := compose.ProjectFromDockerInspect(info, imageConfig, filepath.Join(root, name))
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	data, err := compose.ProjectToYAML(project)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return string(data), nil
+	return string(data), name, nil
 }
 
 // DockerRedeploy 重建 Docker Compose 项目。
@@ -125,6 +137,9 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	}
 
 	root := s.docker.ContainerRoot()
+	if root != "" {
+		name = s.dockerProjectName(ctx, name, root)
+	}
 	installDir := ""
 	if root != "" {
 		installDir = filepath.Join(root, name)
@@ -133,7 +148,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	// 准备新 content：单服务镜像更新 or 全量替换
 	content := req.Content
 	if req.ServiceName != "" {
-		oldContent, err := s.DockerContentGet(ctx, name)
+		oldContent, _, err := s.dockerContentGet(ctx, name)
 		if err != nil {
 			return nil, err
 		}
@@ -143,7 +158,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		}
 	}
 
-	oldContent, _ := s.DockerContentGet(ctx, name)
+	oldContent, _, _ := s.dockerContentGet(ctx, name)
 
 	// 先解析新 content 校验合法性（不写文件、不删旧实例），失败时旧服务保持运行
 	newProject, err := s.projectParse(ctx, name, content, installDir)
@@ -190,6 +205,30 @@ func dockerContainerNameOf(svc types.ServiceConfig) string {
 		return svc.ContainerName
 	}
 	return svc.Name
+}
+
+func dockerContainerNameCandidates(projectName string, svc types.ServiceConfig) []string {
+	candidates := []string{dockerContainerNameOf(svc)}
+	if svc.ContainerName == "" {
+		candidates = append(candidates,
+			svc.Name,
+			fmt.Sprintf("%s-%s-1", projectName, svc.Name),
+			fmt.Sprintf("%s_%s_1", projectName, svc.Name),
+		)
+	}
+	result := candidates[:0]
+	seen := map[string]struct{}{}
+	for _, name := range candidates {
+		if name == "" {
+			continue
+		}
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		result = append(result, name)
+	}
+	return result
 }
 
 // dockerServicesCreate 批量创建 project 中的所有容器，失败时回滚已创建的容器。
@@ -239,18 +278,97 @@ func (s *Service) dockerServiceCreate(ctx context.Context, project *types.Projec
 
 // dockerContainersRemove 移除 project 中的所有 Docker 容器
 func (s *Service) dockerContainersRemove(ctx context.Context, name, content string) {
-	if content == "" {
-		return
+	removed := map[string]struct{}{}
+	remove := func(id string) {
+		if id == "" {
+			return
+		}
+		if _, ok := removed[id]; ok {
+			return
+		}
+		removed[id] = struct{}{}
+		_ = s.docker.ContainerAction(ctx, id, "stop")
+		_ = s.docker.ContainerAction(ctx, id, "remove")
 	}
-	project, err := compose.LoadProjectFromContent(ctx, content, name)
+
+	if content != "" {
+		project, err := compose.LoadProjectFromContent(ctx, content, name)
+		if err == nil {
+			for _, svc := range project.Services {
+				for _, cname := range dockerContainerNameCandidates(name, svc) {
+					remove(cname)
+				}
+			}
+		}
+	}
+
+	infos, err := s.docker.ContainerListByLabel(ctx, compose.ComposeProjectLabel, name)
 	if err != nil {
+		logman.Warn("List compose project containers failed", "name", name, "error", err)
 		return
 	}
-	for _, svc := range project.Services {
-		cname := dockerContainerNameOf(svc)
-		_ = s.docker.ContainerAction(ctx, cname, "stop")
-		_ = s.docker.ContainerAction(ctx, cname, "remove")
+	for _, info := range infos {
+		remove(info.ID)
 	}
+}
+
+func (s *Service) dockerProjectName(ctx context.Context, name, root string) string {
+	if root != "" {
+		if _, err := os.Stat(filepath.Join(root, name, "compose.yml")); err == nil {
+			return name
+		}
+	}
+	if infos, err := s.docker.ContainerListByLabel(ctx, compose.ComposeProjectLabel, name); err == nil && len(infos) > 0 {
+		return name
+	}
+	if info, err := s.docker.ContainerInspectRaw(ctx, name); err == nil {
+		if projectName := dockerComposeProjectName(info); projectName != "" {
+			if err := ValidateName(projectName); err == nil {
+				return projectName
+			}
+			logman.Warn("Ignore invalid compose project label", "container", name, "project", projectName)
+		}
+	}
+	return name
+}
+
+func (s *Service) dockerProjectContentFromContainers(ctx context.Context, projectName, root string) (string, bool, error) {
+	infos, err := s.docker.ContainerListByLabel(ctx, compose.ComposeProjectLabel, projectName)
+	if err != nil {
+		return "", false, err
+	}
+	if len(infos) == 0 {
+		return "", false, nil
+	}
+
+	configs := make(map[string]*v1.DockerOCIImageConfig, len(infos))
+	for _, info := range infos {
+		if info.Config == nil || info.Config.Image == "" {
+			continue
+		}
+		if _, ok := configs[info.Config.Image]; ok {
+			continue
+		}
+		if cfg, err := s.docker.ImageConfig(ctx, info.Config.Image); err == nil {
+			configs[info.Config.Image] = cfg
+		}
+	}
+	project, err := compose.ProjectFromDockerInspects(infos, configs, projectName, filepath.Join(root, projectName))
+	if err != nil {
+		return "", true, err
+	}
+	data, err := compose.ProjectToYAML(project)
+	if err != nil {
+		return "", true, err
+	}
+	return string(data), true, nil
+}
+
+func dockerComposeProjectName(info container.InspectResponse) string {
+	if info.Config == nil || info.Config.Labels == nil {
+		return ""
+	}
+	return info.Config.Labels[compose.ComposeProjectLabel]
 }
 
 // dockerRollback 用指定配置内容重建 Docker 容器（回滚用）

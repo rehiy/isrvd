@@ -46,7 +46,7 @@ isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
 
 | 文档 | 覆盖内容 |
 |------|----------|
-| [docs/compose.md](docs/compose.md) | Docker Compose 与 Swarm Stack 的部署、读取配置、重部署（含全量重建与按服务更新镜像）、forcePull 强制拉取 |
+| [docs/compose.md](docs/compose.md) | Docker Compose 与 Swarm Stack 的部署、读取配置、重部署（含外部 Compose 标签聚合接管、全量重建与按服务更新镜像）、forcePull 强制拉取 |
 
 ### APISIX
 
@@ -91,7 +91,7 @@ isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
 │   └── 配置 Caddy 路由  → docs/caddy/routes.md
 │
 ├── 更新/变更
-│   ├── 更新 Compose 服务镜像 → docs/compose.md (redeploy + serviceName/image)
+│   ├── 更新/接管 Compose 项目 → docs/compose.md (project 标签聚合、redeploy + serviceName/image)
 │   ├── 更新容器镜像     → docs/docker/images.md (拉取) + docs/docker/containers.md (重建)
 │   ├── 扩缩容           → docs/swarm/services.md
 │   ├── 重新部署         → docs/swarm/services.md (force-update)
