@@ -3,7 +3,7 @@ import type { ChartOptions } from 'chart.js'
 import { markRaw } from 'vue'
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import type { SystemStat, SystemDiskIO } from '@/service/types'
+import type { SystemStat, SystemDiskIO, SystemDiskPartition } from '@/service/types'
 
 import Chart from '@/helper/chart'
 import { hexToRgba } from '@/helper/utils'
@@ -20,6 +20,7 @@ interface ChartCallbackContext {
 }
 
 const MAX_HISTORY = 60
+const NATURAL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
 
 @Component
 class SystemDisk extends Vue {
@@ -56,6 +57,19 @@ class SystemDisk extends Vue {
     barColor(pct: number) { return this.semanticColor(pct, 'bg') }
 
     devShortName(device: string): string { return device.split('/').pop() || device }
+
+    sortedDiskPartitions(list: SystemDiskPartition[] = []) {
+        return [...list].sort((a, b) => {
+            if (a.mountpoint === '/') return -1
+            if (b.mountpoint === '/') return 1
+            return NATURAL_COLLATOR.compare(a.mountpoint, b.mountpoint)
+                || NATURAL_COLLATOR.compare(a.device, b.device)
+        })
+    }
+
+    sortedDiskIO(list: SystemDiskIO[] = []) {
+        return [...list].sort((a, b) => NATURAL_COLLATOR.compare(a.Name, b.Name))
+    }
 
     diskIOByDevice(device: string): SystemDiskIO | null {
         if (!this.currentDiskIO?.length) return null
@@ -128,16 +142,17 @@ class SystemDisk extends Vue {
 
     pushData(payload: SystemStat) {
         const s = payload.system
-        this.current = { diskTotal: s.diskTotal, diskUsed: s.diskUsed, diskPartition: s.diskPartition }
-        this.currentDiskIO = payload.diskIO || []
+        this.current = { diskTotal: s.diskTotal, diskUsed: s.diskUsed, diskPartition: this.sortedDiskPartitions(s.diskPartition) }
+        const diskIO = this.sortedDiskIO(payload.diskIO)
+        this.currentDiskIO = diskIO
 
-        if (!payload.diskIO?.length || !s.diskPartition) return
+        if (!diskIO.length || !s.diskPartition) return
 
         const now = new Date()
         const label = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
         const nowTime = Date.now()
 
-        payload.diskIO.forEach(dio => {
+        diskIO.forEach(dio => {
             const name = dio.Name
             const last = this.lastDiskIO[name]
 
