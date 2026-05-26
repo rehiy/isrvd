@@ -30,10 +30,7 @@ const checkURL = "https://api.github.com/repos/rehiy/isrvd/releases/latest"
 // CheckVersion 检测版本更新
 func (s *Service) CheckVersion(ctx context.Context) *VersionCheck {
 	current := config.Version
-	latest, releaseURL, err := fetchLatestTag(ctx)
-	if err != nil {
-		return &VersionCheck{}
-	}
+	latest, releaseURL := fetchLatestTag(ctx)
 
 	return &VersionCheck{
 		Latest:  latest,
@@ -43,28 +40,28 @@ func (s *Service) CheckVersion(ctx context.Context) *VersionCheck {
 }
 
 // fetchLatestTag 从 GitHub API 获取最新 Release 标签，带缓存
-func fetchLatestTag(ctx context.Context) (tag, url string, err error) {
+func fetchLatestTag(ctx context.Context) (tag, url string) {
 	if cachedTag != "" && time.Since(cacheTime) < cacheDuration {
-		return cachedTag, cachedURL, nil
+		return cachedTag, cachedURL
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, checkURL, nil)
 	if err != nil {
-		return "", "", err
+		return cachedTag, cachedURL
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("User-Agent", "iSrvd-version-check")
 
-	resp, err := (&http.Client{Timeout: 10 * time.Second}).Do(req)
+	resp, err := (&http.Client{Timeout: 5 * time.Second}).Do(req)
 	if err != nil {
 		logman.Warn("version check failed", "error", err)
-		return "", "", err
+		return cachedTag, cachedURL
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		logman.Warn("version check failed", "status", resp.StatusCode)
-		return "", "", nil
+		return cachedTag, cachedURL
 	}
 
 	var r struct {
@@ -73,11 +70,11 @@ func fetchLatestTag(ctx context.Context) (tag, url string, err error) {
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
 		logman.Warn("version check decode failed", "error", err)
-		return "", "", err
+		return cachedTag, cachedURL
 	}
 
 	cachedTag, cachedURL, cacheTime = r.TagName, r.HTMLURL, time.Now()
-	return cachedTag, cachedURL, nil
+	return cachedTag, cachedURL
 }
 
 func isNewerVersion(latest, current string) bool {

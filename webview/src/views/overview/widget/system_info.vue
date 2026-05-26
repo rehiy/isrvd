@@ -32,33 +32,32 @@ export default toNative(SystemInfo)
 </script>
 
 <template>
-  <div v-if="current?.system" class="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-5 gap-3">
-    <div class="rounded-xl border border-slate-200 bg-white p-4">
-      <p class="text-xs text-slate-400 mb-1">程序版本</p>
-      <div class="flex items-center gap-2">
-        <div class="min-w-0">
-          <p class="text-sm font-semibold text-slate-800 truncate">{{ current.version }}</p>
-        </div>
-        <div class="ml-auto flex items-center gap-2">
-          <SystemUpdater :version-check="current.versionCheck" />
-        </div>
+  <div v-if="current?.system" class="space-y-3">
+    <!-- 版本更新横幅（有新版时展示） -->
+    <SystemUpdater :version-check="current.versionCheck" :current-version="current.version" />
+
+    <!-- 系统信息卡片组 -->
+    <div class="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-5 gap-3">
+      <div class="rounded-xl border border-slate-200 bg-white p-4">
+        <p class="text-xs text-slate-400 mb-1">程序版本</p>
+        <p class="text-sm font-semibold text-slate-800 truncate">{{ current.version }}</p>
       </div>
-    </div>
-    <div class="rounded-xl border border-slate-200 bg-white p-4">
-      <p class="text-xs text-slate-400 mb-1">主机名</p>
-      <p class="text-sm font-semibold text-slate-800 truncate">{{ current.system.hostName }}</p>
-    </div>
-    <div class="rounded-xl border border-slate-200 bg-white p-4">
-      <p class="text-xs text-slate-400 mb-1">操作系统</p>
-      <p class="text-sm font-semibold text-slate-800 truncate">{{ current.system.platform }} / {{ current.system.kernelArch }}</p>
-    </div>
-    <div class="rounded-xl border border-slate-200 bg-white p-4">
-      <p class="text-xs text-slate-400 mb-1">运行时间</p>
-      <p class="text-sm font-semibold text-slate-800">{{ fmtUptime(current.system.uptime) }}</p>
-    </div>
-    <div class="rounded-xl border border-slate-200 bg-white p-4">
-      <p class="text-xs text-slate-400 mb-1">CPU 核心</p>
-      <p class="text-sm font-semibold text-slate-800">{{ current.system.cpuCore }} 物理 / {{ current.system.cpuCoreLogic }} 逻辑</p>
+      <div class="rounded-xl border border-slate-200 bg-white p-4">
+        <p class="text-xs text-slate-400 mb-1">主机名</p>
+        <p class="text-sm font-semibold text-slate-800 truncate">{{ current.system.hostName }}</p>
+      </div>
+      <div class="rounded-xl border border-slate-200 bg-white p-4">
+        <p class="text-xs text-slate-400 mb-1">操作系统</p>
+        <p class="text-sm font-semibold text-slate-800 truncate">{{ current.system.platform }} / {{ current.system.kernelArch }}</p>
+      </div>
+      <div class="rounded-xl border border-slate-200 bg-white p-4">
+        <p class="text-xs text-slate-400 mb-1">运行时间</p>
+        <p class="text-sm font-semibold text-slate-800">{{ fmtUptime(current.system.uptime) }}</p>
+      </div>
+      <div class="rounded-xl border border-slate-200 bg-white p-4">
+        <p class="text-xs text-slate-400 mb-1">CPU 核心</p>
+        <p class="text-sm font-semibold text-slate-800">{{ current.system.cpuCore }} 物理 / {{ current.system.cpuCoreLogic }} 逻辑</p>
+      </div>
     </div>
   </div>
 </template>
