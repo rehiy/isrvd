@@ -341,9 +341,4 @@
   .badge-primary  { @apply bg-primary-100 text-primary-700; }
   .badge-warning  { @apply bg-amber-100 text-amber-700; }
 
-  /* 版本更新跳转链接标签 */
-  .update-link {
-    @apply shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors;
-  }
-
 }

@@ -404,7 +404,6 @@
 | 类 | 用途 |
 |---|---|
 | `.badge` / `.badge-primary` / `.badge-warning` | 通用徽章（`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium`） |
-| `.update-link` | 版本更新跳转链接标签 |
 
 #### 使用规则
 

@@ -80,18 +80,18 @@ export default toNative(SystemUpdater)
 <template>
   <template v-if="versionCheck?.update">
     <!-- 版本更新横幅 -->
-    <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/70">
+    <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100">
       <!-- 左侧：图标 + 文案 -->
       <div class="flex items-center gap-3 min-w-0">
-        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-emerald-500 text-white">
+        <div class="row-icon bg-emerald-500 text-white">
           <i class="fas fa-arrow-up text-xs"></i>
         </div>
         <div class="min-w-0">
-          <p class="text-xs font-semibold text-emerald-700 leading-tight">发现新版本</p>
+          <p class="text-xs font-semibold text-emerald-700">发现新版本</p>
           <p class="flex items-center gap-1 text-xs text-slate-500 mt-0.5">
             <span class="text-slate-400 line-through">{{ currentVersion }}</span>
-            <i class="fas fa-arrow-right text-[9px] text-emerald-400"></i>
-            <span class="text-emerald-600 font-semibold">v{{ versionCheck.latest }}</span>
+            <i class="fas fa-arrow-right text-[9px] text-slate-400"></i>
+            <span class="text-emerald-600 font-semibold">{{ versionCheck.latest }}</span>
           </p>
         </div>
       </div>
@@ -102,20 +102,20 @@ export default toNative(SystemUpdater)
           :href="versionCheck.release"
           target="_blank"
           rel="noopener noreferrer"
-          class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-medium text-emerald-700 bg-white border border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 transition-colors"
+          class="btn btn-secondary"
           title="查看更新日志"
         >
-          <i class="fas fa-file-alt text-[10px]"></i>
+          <i class="fas fa-file-alt"></i>
           <span class="hidden xs:inline">更新日志</span>
         </a>
         <button
           v-if="portal.hasPerm('POST /api/docker/container')"
-          class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="btn btn-emerald"
           title="一键升级当前容器"
           :disabled="deploying"
           @click="openUpdaterModal"
         >
-          <i class="fas fa-rotate-right text-[10px]" :class="{ 'fa-spin': deploying }"></i>
+          <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying }"></i>
           <span class="hidden xs:inline">{{ deploying ? '升级中...' : '一键升级' }}</span>
         </button>
       </div>
