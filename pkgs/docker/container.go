@@ -8,9 +8,15 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/go-connections/nat"
 	"github.com/rehiy/libgo/logman"
+)
+
+const (
+	composeProjectLabel = "com.docker.compose.project"
+	composeServiceLabel = "com.docker.compose.service"
 )
 
 // VolumeMapping 挂载映射
@@ -24,17 +30,19 @@ type VolumeMapping struct {
 
 // ContainerInfo Docker 容器信息（列表项）
 type ContainerInfo struct {
-	ID       string            `json:"id"`
-	Name     string            `json:"name"`
-	Image    string            `json:"image"`
-	State    string            `json:"state"`
-	Status   string            `json:"status"`
-	Ports    []string          `json:"ports"`
-	Networks []string          `json:"networks,omitempty"`
-	Created  int64             `json:"created"`
-	IsSwarm  bool              `json:"isSwarm,omitempty"`
-	IsSelf   bool              `json:"isSelf,omitempty"`
-	Labels   map[string]string `json:"labels,omitempty"`
+	ID             string            `json:"id"`
+	Name           string            `json:"name"`
+	Image          string            `json:"image"`
+	State          string            `json:"state"`
+	Status         string            `json:"status"`
+	Ports          []string          `json:"ports"`
+	Networks       []string          `json:"networks,omitempty"`
+	Created        int64             `json:"created"`
+	IsSwarm        bool              `json:"isSwarm,omitempty"`
+	IsSelf         bool              `json:"isSelf,omitempty"`
+	ComposeProject string            `json:"composeProject,omitempty"`
+	ComposeService string            `json:"composeService,omitempty"`
+	Labels         map[string]string `json:"labels,omitempty"`
 }
 
 // ContainerDetail 容器详情（inspect DTO，与 ServiceDetail 对称）
@@ -84,20 +92,48 @@ func (s *DockerService) ContainerList(ctx context.Context, all bool) ([]*Contain
 		}
 		shortID := ShortID(ct.ID)
 		result = append(result, &ContainerInfo{
-			ID:       shortID,
-			Name:     name,
-			Image:    ct.Image,
-			State:    ct.State,
-			Status:   ct.Status,
-			Ports:    formatPorts(ct.Ports),
-			Networks: networks,
-			Created:  ct.Created,
-			IsSwarm:  ct.Labels["com.docker.swarm.service.id"] != "",
-			IsSelf:   selfID != "" && ct.ID == selfID,
-			Labels:   ct.Labels,
+			ID:             shortID,
+			Name:           name,
+			Image:          ct.Image,
+			State:          ct.State,
+			Status:         ct.Status,
+			Ports:          formatPorts(ct.Ports),
+			Networks:       networks,
+			Created:        ct.Created,
+			IsSwarm:        ct.Labels["com.docker.swarm.service.id"] != "",
+			IsSelf:         selfID != "" && ct.ID == selfID,
+			ComposeProject: ct.Labels[composeProjectLabel],
+			ComposeService: ct.Labels[composeServiceLabel],
+			Labels:         ct.Labels,
 		})
 	}
 
+	return result, nil
+}
+
+// ContainerListByLabel 按 Docker label 查询并返回容器原始配置。
+func (s *DockerService) ContainerListByLabel(ctx context.Context, key, value string) ([]container.InspectResponse, error) {
+	label := key
+	if value != "" {
+		label += "=" + value
+	}
+	containers, err := s.client.ContainerList(ctx, container.ListOptions{
+		All:     true,
+		Filters: filters.NewArgs(filters.Arg("label", label)),
+	})
+	if err != nil {
+		logman.Error("List containers by label failed", "label", label, "error", err)
+		return nil, err
+	}
+
+	result := make([]container.InspectResponse, 0, len(containers))
+	for _, ct := range containers {
+		info, err := s.ContainerInspectRaw(ctx, ct.ID)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, info)
+	}
 	return result, nil
 }
 
@@ -226,6 +262,7 @@ type ContainerSpec struct {
 	CapAdd     []string          `json:"capAdd"`
 	CapDrop    []string          `json:"capDrop"`
 	AutoRemove bool              `json:"autoRemove"`
+	Labels     map[string]string `json:"labels,omitempty"`
 }
 
 // ContainerCreate 创建容器
@@ -237,6 +274,7 @@ func (s *DockerService) ContainerCreate(ctx context.Context, req ContainerSpec) 
 		WorkingDir: req.Workdir,
 		User:       req.User,
 		Hostname:   req.Hostname,
+		Labels:     req.Labels,
 	}
 
 	hostConfig := &container.HostConfig{}

@@ -33,6 +33,7 @@ func ServiceToDockerRequest(project *types.Project, svc types.ServiceConfig) (do
 		CapAdd:     svc.CapAdd,
 		CapDrop:    svc.CapDrop,
 		Restart:    defaultString(svc.Restart, "always"), // compose 未指定时默认 always（与 restartPolicy 方向相反：inspect→compose 映射空串为"no"）
+		Labels:     dockerServiceLabels(project, svc),
 	}
 
 	applyDockerNetwork(project, svc, &req)
@@ -41,6 +42,20 @@ func ServiceToDockerRequest(project *types.Project, svc types.ServiceConfig) (do
 	applyDockerResources(svc, &req)
 
 	return req, nil
+}
+
+func dockerServiceLabels(project *types.Project, svc types.ServiceConfig) map[string]string {
+	labels := make(map[string]string, len(svc.Labels)+4)
+	for k, v := range svc.Labels {
+		labels[k] = v
+	}
+	if project != nil && project.Name != "" {
+		labels[ComposeProjectLabel] = project.Name
+	}
+	labels[ComposeServiceLabel] = svc.Name
+	labels[ComposeContainerNumberLabel] = "1"
+	labels[ComposeOneoffLabel] = "False"
+	return labels
 }
 
 func applyDockerNetwork(project *types.Project, svc types.ServiceConfig, req *docker.ContainerSpec) {

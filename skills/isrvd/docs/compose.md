@@ -1,6 +1,6 @@
 # Compose API
 
-Compose 接口用于单机 Docker Compose 与 Swarm Stack 的部署、读取配置、重部署，以及按服务更新镜像并重建。
+Compose 接口用于单机 Docker Compose 与 Swarm Stack 的部署、读取配置、重部署，以及按服务更新镜像并重建。Docker Compose 读取与重部署支持按 `com.docker.compose.project` 标签聚合外部 `docker compose up` 启动的既有项目。
 
 ## 字段说明
 
@@ -64,15 +64,38 @@ isrvd_post "/compose/docker/deploy" '{"content":"<COMPOSE_YAML>","initURL":"<HTT
 isrvd_get "/compose/docker/<NAME>"
 ```
 
-Docker Compose 中的相对 bind path 会基于容器目录 `docker.containerRoot/<NAME>` 解析，部署、全量重部署、按服务更新镜像和失败回滚保持一致。
+`<NAME>` 可以是 iSrvd 项目名，也可以是带 `com.docker.compose.project` 标签的容器名。读取顺序：
+
+1. 优先读取 `docker.containerRoot/<PROJECT>/compose.yml`
+2. 文件不存在时，按 `com.docker.compose.project=<PROJECT>` 聚合同项目容器并反推多服务 compose
+3. 无 compose project 标签时，退回单容器 inspect 反推
+
+```bash
+# 读取 iSrvd 已落盘的项目，或读取外部 Compose 项目标签聚合后的配置
+isrvd_get "/compose/docker/<PROJECT>"
+
+# 也可以传入该 Compose 项目下任意一个容器名，后端会解析到真实 project
+isrvd_get "/compose/docker/<CONTAINER_NAME>"
+```
+
+Docker Compose 中的相对 bind path 会基于容器目录 `docker.containerRoot/<PROJECT>` 解析，部署、全量重部署、按服务更新镜像和失败回滚保持一致。
 
 当 `compose.yml` 不存在、需要从运行态反推生成时，bind mount 的 `source` 会按该容器目录输出为相对路径（例如 `./data`）；只有路径不在容器目录内时才保留宿主机绝对路径。命名卷输出卷名，不输出 Docker 内部挂载目录。
+
+外部 Compose 项目接管说明：
+
+- 同一 `com.docker.compose.project` 下的多个容器会合并为一个多服务 compose
+- 反推内容会保留真实容器名为 `container_name`，便于后续重部署删除旧容器并保持名称稳定
+- 重部署成功后会将 compose 写入 `docker.containerRoot/<PROJECT>/compose.yml`
+- 暂不支持接管同一 `com.docker.compose.service` 下存在多个容器的 scaled 服务
 
 ### 重部署
 
 ```bash
 isrvd_post "/compose/docker/<NAME>/redeploy" "$(jq -n --arg content "$(cat docker-compose.yml)" '{content:$content}')"
 ```
+
+`<NAME>` 可以是项目名，也可以是该项目下任意一个容器名；后端会通过 `com.docker.compose.project` 解析到项目名后整体重建关联容器。
 
 ### 按服务更新镜像并重建
 

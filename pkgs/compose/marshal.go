@@ -8,18 +8,79 @@ import (
 
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/docker/docker/api/types/container"
-	dockermount "github.com/docker/docker/api/types/mount"
-	dockerswarm "github.com/docker/docker/api/types/swarm"
-	dockerspec "github.com/moby/docker-image-spec/specs-go/v1"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/swarm"
+	"github.com/moby/docker-image-spec/specs-go/v1"
 )
 
 // ProjectFromDockerInspect 将 docker inspect 结果反推为单服务 compose Project。
 // containerDir 非空时，位于该目录内的 bind source 会输出为相对路径。
-func ProjectFromDockerInspect(info container.InspectResponse, imageConfig *dockerspec.DockerOCIImageConfig, containerDir string) (*types.Project, error) {
-	if info.Config == nil || info.HostConfig == nil {
-		return nil, fmt.Errorf("容器 inspect 数据不完整")
+func ProjectFromDockerInspect(info container.InspectResponse, imageConfig *v1.DockerOCIImageConfig, containerDir string) (*types.Project, error) {
+	containerName := dockerInspectName(info)
+	svc, projectNetworks, err := serviceFromDockerInspect(info, imageConfig, containerDir, containerName, containerName)
+	if err != nil {
+		return nil, err
 	}
-	name := defaultString(strings.TrimPrefix(info.Name, "/"), info.ID)
+	return &types.Project{
+		Name:     containerName,
+		Services: types.Services{containerName: svc},
+		Networks: projectNetworks,
+	}, nil
+}
+
+// ProjectFromDockerInspects 将同一 compose project 的多个容器反推为多服务 compose Project。
+// containerDir 非空时，位于该目录内的 bind source 会输出为相对路径。
+func ProjectFromDockerInspects(infos []container.InspectResponse, imageConfigs map[string]*v1.DockerOCIImageConfig, projectName, containerDir string) (*types.Project, error) {
+	if projectName == "" {
+		return nil, fmt.Errorf("compose project 名称为空")
+	}
+	if len(infos) == 0 {
+		return nil, fmt.Errorf("compose project %s 未找到容器", projectName)
+	}
+
+	services := make(types.Services, len(infos))
+	projectNetworks := types.Networks{}
+	for _, info := range infos {
+		if dockerComposeOneoff(info) {
+			continue
+		}
+		containerName := dockerInspectName(info)
+		serviceName := dockerComposeServiceName(info)
+		if serviceName == "" {
+			serviceName = containerName
+		}
+		if _, ok := services[serviceName]; ok {
+			return nil, fmt.Errorf("compose 服务 %s 存在多个容器，暂不支持接管 scaled 服务", serviceName)
+		}
+
+		var imageConfig *v1.DockerOCIImageConfig
+		if info.Config != nil && imageConfigs != nil {
+			imageConfig = imageConfigs[info.Config.Image]
+		}
+		svc, networks, err := serviceFromDockerInspect(info, imageConfig, containerDir, serviceName, containerName)
+		if err != nil {
+			return nil, err
+		}
+		services[serviceName] = svc
+		for k, v := range networks {
+			projectNetworks[k] = v
+		}
+	}
+	if len(services) == 0 {
+		return nil, fmt.Errorf("compose project %s 未找到可接管服务容器", projectName)
+	}
+
+	return &types.Project{
+		Name:     projectName,
+		Services: services,
+		Networks: projectNetworks,
+	}, nil
+}
+
+func serviceFromDockerInspect(info container.InspectResponse, imageConfig *v1.DockerOCIImageConfig, containerDir, serviceName, containerName string) (types.ServiceConfig, types.Networks, error) {
+	if info.Config == nil || info.HostConfig == nil {
+		return types.ServiceConfig{}, nil, fmt.Errorf("容器 inspect 数据不完整")
+	}
 
 	var entrypoint types.ShellCommand
 	if len(info.Config.Entrypoint) > 0 && (imageConfig == nil || !sliceEqual(info.Config.Entrypoint, imageConfig.Entrypoint)) {
@@ -27,19 +88,19 @@ func ProjectFromDockerInspect(info container.InspectResponse, imageConfig *docke
 	}
 
 	hostname := info.Config.Hostname
-	if hostname == name {
+	if hostname == containerName {
 		hostname = ""
 	}
 
 	svc := types.ServiceConfig{
-		Name:          name,
+		Name:          serviceName,
 		Image:         info.Config.Image,
-		ContainerName: name,
+		ContainerName: containerName,
 		Command:       types.ShellCommand(diffCmd(info.Config.Cmd, imageConfig)),
 		Entrypoint:    entrypoint,
 		Environment:   sliceToEnv(diffEnv(info.Config.Env, imageConfig)),
-		WorkingDir:    diffString(info.Config.WorkingDir, imageConfig, func(c *dockerspec.DockerOCIImageConfig) string { return c.WorkingDir }),
-		User:          diffString(info.Config.User, imageConfig, func(c *dockerspec.DockerOCIImageConfig) string { return c.User }),
+		WorkingDir:    diffString(info.Config.WorkingDir, imageConfig, func(c *v1.DockerOCIImageConfig) string { return c.WorkingDir }),
+		User:          diffString(info.Config.User, imageConfig, func(c *v1.DockerOCIImageConfig) string { return c.User }),
 		Hostname:      hostname,
 		Privileged:    info.HostConfig.Privileged,
 		CapAdd:        []string(info.HostConfig.CapAdd),
@@ -50,21 +111,35 @@ func ProjectFromDockerInspect(info container.InspectResponse, imageConfig *docke
 	}
 
 	applyInspectDNS(&svc, info)
-	projectNetworks := applyInspectNetworks(&svc, info, name)
+	projectNetworks := applyInspectNetworks(&svc, info, containerName)
 	applyInspectPorts(&svc, info)
 	applyInspectVolumes(&svc, info, containerDir)
 	applyInspectResources(&svc, info)
 
-	return &types.Project{
-		Name:     name,
-		Services: types.Services{name: svc},
-		Networks: projectNetworks,
-	}, nil
+	return svc, projectNetworks, nil
+}
+
+func dockerInspectName(info container.InspectResponse) string {
+	return defaultString(strings.TrimPrefix(info.Name, "/"), info.ID)
+}
+
+func dockerComposeServiceName(info container.InspectResponse) string {
+	if info.Config == nil || info.Config.Labels == nil {
+		return ""
+	}
+	return info.Config.Labels[ComposeServiceLabel]
+}
+
+func dockerComposeOneoff(info container.InspectResponse) bool {
+	if info.Config == nil || info.Config.Labels == nil {
+		return false
+	}
+	return strings.EqualFold(info.Config.Labels[ComposeOneoffLabel], "true")
 }
 
 // ProjectFromSwarmInspect 将 swarm Service 原始配置反推为单服务 compose Project。
 // containerDir 非空时，位于该目录内的 bind source 会输出为相对路径。
-func ProjectFromSwarmInspect(svc dockerswarm.Service, containerDir string) (*types.Project, error) {
+func ProjectFromSwarmInspect(svc swarm.Service, containerDir string) (*types.Project, error) {
 	spec := svc.Spec
 	cs := spec.TaskTemplate.ContainerSpec
 	if cs == nil || cs.Image == "" {
@@ -233,9 +308,9 @@ func applyInspectVolumes(svc *types.ServiceConfig, info container.InspectRespons
 
 func inspectMountSource(m container.MountPoint, containerDir string) string {
 	switch m.Type {
-	case dockermount.TypeBind:
+	case mount.TypeBind:
 		return relativeBindSource(m.Source, containerDir)
-	case dockermount.TypeVolume:
+	case mount.TypeVolume:
 		if m.Name != "" {
 			return m.Name
 		}
@@ -243,11 +318,11 @@ func inspectMountSource(m container.MountPoint, containerDir string) string {
 	return m.Source
 }
 
-func swarmMountSource(m dockermount.Mount, containerDir string) string {
+func swarmMountSource(m mount.Mount, containerDir string) string {
 	switch m.Type {
-	case dockermount.TypeBind:
+	case mount.TypeBind:
 		return relativeBindSource(m.Source, containerDir)
-	case dockermount.TypeVolume:
+	case mount.TypeVolume:
 		// swarm Mount.Source 对 named volume 即为卷名
 		return m.Source
 	}
@@ -283,7 +358,7 @@ func applyInspectResources(svc *types.ServiceConfig, info container.InspectRespo
 }
 
 // diffCmd 若容器 CMD 与镜像默认 CMD 相同则返回 nil（不写入 compose）
-func diffCmd(containerCmd []string, imageConfig *dockerspec.DockerOCIImageConfig) []string {
+func diffCmd(containerCmd []string, imageConfig *v1.DockerOCIImageConfig) []string {
 	if imageConfig == nil {
 		return containerCmd
 	}
@@ -294,7 +369,7 @@ func diffCmd(containerCmd []string, imageConfig *dockerspec.DockerOCIImageConfig
 }
 
 // diffEnv 过滤掉镜像默认 ENV，只保留容器中新增或覆盖的环境变量
-func diffEnv(containerEnv []string, imageConfig *dockerspec.DockerOCIImageConfig) []string {
+func diffEnv(containerEnv []string, imageConfig *v1.DockerOCIImageConfig) []string {
 	if imageConfig == nil {
 		return containerEnv
 	}
@@ -312,14 +387,19 @@ func diffEnv(containerEnv []string, imageConfig *dockerspec.DockerOCIImageConfig
 }
 
 // diffLabels 过滤掉镜像默认 Labels（Dockerfile LABEL），只保留容器层新增或覆盖的标签
-func diffLabels(containerLabels map[string]string, imageConfig *dockerspec.DockerOCIImageConfig) map[string]string {
-	if imageConfig == nil || len(containerLabels) == 0 {
-		return containerLabels
+func diffLabels(containerLabels map[string]string, imageConfig *v1.DockerOCIImageConfig) map[string]string {
+	if len(containerLabels) == 0 {
+		return nil
 	}
 	var result map[string]string
 	for k, v := range containerLabels {
-		if imgV, ok := imageConfig.Labels[k]; ok && imgV == v {
-			continue // 与镜像默认值相同，跳过
+		if ignoreGeneratedDockerLabel(k) {
+			continue
+		}
+		if imageConfig != nil && imageConfig.Labels != nil {
+			if imgV, ok := imageConfig.Labels[k]; ok && imgV == v {
+				continue // 与镜像默认值相同，跳过
+			}
 		}
 		if result == nil {
 			result = make(map[string]string)
@@ -329,8 +409,12 @@ func diffLabels(containerLabels map[string]string, imageConfig *dockerspec.Docke
 	return result
 }
 
+func ignoreGeneratedDockerLabel(key string) bool {
+	return strings.HasPrefix(key, "com.docker.compose.") || strings.HasPrefix(key, "com.docker.swarm.")
+}
+
 // diffString 若容器字段值与镜像默认值相同则返回空字符串（不写入 compose）
-func diffString(containerVal string, imageConfig *dockerspec.DockerOCIImageConfig, getter func(*dockerspec.DockerOCIImageConfig) string) string {
+func diffString(containerVal string, imageConfig *v1.DockerOCIImageConfig, getter func(*v1.DockerOCIImageConfig) string) string {
 	if imageConfig == nil || containerVal == "" {
 		return containerVal
 	}

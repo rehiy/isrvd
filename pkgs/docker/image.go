@@ -11,9 +11,9 @@ import (
 
 	"github.com/docker/docker/api/types/build"
 	"github.com/docker/docker/api/types/filters"
-	dockerimage "github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/registry"
-	dockerspec "github.com/moby/docker-image-spec/specs-go/v1"
+	"github.com/moby/docker-image-spec/specs-go/v1"
 	"github.com/rehiy/libgo/logman"
 )
 
@@ -29,7 +29,7 @@ type ImageInfo struct {
 
 // ImageList 列出镜像
 func (s *DockerService) ImageList(ctx context.Context, all bool) ([]*ImageInfo, error) {
-	images, err := s.client.ImageList(ctx, dockerimage.ListOptions{All: all})
+	images, err := s.client.ImageList(ctx, image.ListOptions{All: all})
 	if err != nil {
 		logman.Error("List images failed", "error", err)
 		return nil, err
@@ -105,7 +105,7 @@ func (s *DockerService) ImagePrune(ctx context.Context, req ImagePruneRequest) (
 func (s *DockerService) ImageAction(ctx context.Context, id, action string) error {
 	switch action {
 	case "remove":
-		deleted, err := s.client.ImageRemove(ctx, id, dockerimage.RemoveOptions{
+		deleted, err := s.client.ImageRemove(ctx, id, image.RemoveOptions{
 			Force:         true,
 			PruneChildren: true,
 		})
@@ -275,7 +275,7 @@ func (s *DockerService) ImageEnsure(ctx context.Context, ref string, forcePull b
 
 // ImageConfig 获取镜像的原始运行配置（来自 Dockerfile 的默认值）
 // 用于在从运行容器反推 compose 时过滤掉镜像内置的默认值
-func (s *DockerService) ImageConfig(ctx context.Context, imageRef string) (*dockerspec.DockerOCIImageConfig, error) {
+func (s *DockerService) ImageConfig(ctx context.Context, imageRef string) (*v1.DockerOCIImageConfig, error) {
 	img, err := s.client.ImageInspect(ctx, imageRef)
 	if err != nil {
 		logman.Error("Get image config failed", "image", imageRef, "error", err)

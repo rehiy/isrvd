@@ -24,6 +24,8 @@ export interface DockerContainerInfo {
     created: number
     isSwarm?: boolean
     isSelf?: boolean
+    composeProject?: string
+    composeService?: string
     labels?: Record<string, string>
 }
 
@@ -53,6 +55,7 @@ export interface DockerContainerCreate {
     capAdd?: string[]
     capDrop?: string[]
     autoRemove?: boolean
+    labels?: Record<string, string>
 }
 
 export interface DockerContainerCreateResult {

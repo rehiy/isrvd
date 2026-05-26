@@ -6,6 +6,13 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 )
 
+const (
+	ComposeProjectLabel         = "com.docker.compose.project"
+	ComposeServiceLabel         = "com.docker.compose.service"
+	ComposeContainerNumberLabel = "com.docker.compose.container-number"
+	ComposeOneoffLabel          = "com.docker.compose.oneoff"
+)
+
 // resolveNetworkName 将 compose networks 的 key 解析为真实 docker 网络名
 // 优先使用顶层 networks.<key>.name，未设置则回退到 key
 func resolveNetworkName(project *types.Project, key string) string {
