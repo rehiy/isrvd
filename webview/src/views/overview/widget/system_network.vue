@@ -20,6 +20,7 @@ interface ChartCallbackContext {
 }
 
 const MAX_HISTORY = 60
+const NATURAL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
 
 @Component
 class SystemNetwork extends Vue {
@@ -44,7 +45,9 @@ class SystemNetwork extends Vue {
     physicalInterfaces(list: SystemNetInterface[]) {
         if (!list) return []
         const virtualPrefixes = ['lo', 'docker', 'veth', 'br-', 'overlay', 'flannel', 'cni', 'tunl', 'dummy', 'virbr']
-        return list.filter(ni => !virtualPrefixes.some(p => ni.name.startsWith(p)))
+        return list
+            .filter(ni => !virtualPrefixes.some(p => ni.name.startsWith(p)))
+            .sort((a, b) => NATURAL_COLLATOR.compare(a.name, b.name))
     }
 
     currentRate(name: string, dir: string): number {
@@ -107,14 +110,15 @@ class SystemNetwork extends Vue {
 
     pushData(payload: SystemStat) {
         const ifaces = payload.system?.netInterface || []
-        this.currentIfaces = this.physicalInterfaces(ifaces)
+        const physicalIfaces = this.physicalInterfaces(ifaces)
+        this.currentIfaces = physicalIfaces
         if (!ifaces.length) return
 
         const now = new Date()
         const label = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
         const nowTime = Date.now()
 
-        this.physicalInterfaces(ifaces).forEach(ni => {
+        physicalIfaces.forEach(ni => {
             const name = ni.name
             const last = this.lastNetIO[name]
 
