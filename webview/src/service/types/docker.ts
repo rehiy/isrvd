@@ -1,3 +1,8 @@
+// ─── Compose 标签常量 ───
+
+export const COMPOSE_PROJECT_LABEL = 'com.docker.compose.project'
+export const COMPOSE_SERVICE_LABEL = 'com.docker.compose.service'
+
 // ─── Docker 概览 ───
 
 export interface DockerInfo {
@@ -24,8 +29,6 @@ export interface DockerContainerInfo {
     created: number
     isSwarm?: boolean
     isSelf?: boolean
-    composeProject?: string
-    composeService?: string
     labels?: Record<string, string>
 }
 

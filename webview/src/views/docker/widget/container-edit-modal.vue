@@ -5,6 +5,7 @@ import { usePortal } from '@/stores'
 
 import api from '@/service/api'
 import type { DockerContainerInfo } from '@/service/types'
+import { COMPOSE_PROJECT_LABEL, COMPOSE_SERVICE_LABEL } from '@/service/types/docker'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -31,9 +32,11 @@ class ContainerEditModal extends Vue {
 
     // ─── 方法 ───
     async show(container: DockerContainerInfo) {
-        this.projectName = container.composeProject || container.name || container.id
-        this.displayName = container.composeProject
-            ? `${container.composeProject} / ${container.composeService || container.name}`
+        const composeProject = container.labels?.[COMPOSE_PROJECT_LABEL]
+        const composeService = container.labels?.[COMPOSE_SERVICE_LABEL]
+        this.projectName = composeProject || container.name || container.id
+        this.displayName = composeProject
+            ? `${composeProject} / ${composeService || container.name}`
             : (container.name || container.id)
         this.composeContent = ''
         this.modalLoading = true

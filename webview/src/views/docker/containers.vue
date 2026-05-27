@@ -5,6 +5,7 @@ import { usePortal } from '@/stores'
 
 import api from '@/service/api'
 import type { DockerContainerInfo } from '@/service/types'
+import { COMPOSE_PROJECT_LABEL, COMPOSE_SERVICE_LABEL } from '@/service/types/docker'
 
 import { formatTime } from '@/helper/utils'
 
@@ -38,8 +39,8 @@ class Containers extends Vue {
                 (container.name || '').toLowerCase().includes(keyword) ||
                 container.id.toLowerCase().includes(keyword) ||
                 (container.image || '').toLowerCase().includes(keyword) ||
-                (container.composeProject || '').toLowerCase().includes(keyword) ||
-                (container.composeService || '').toLowerCase().includes(keyword) ||
+                (container.labels?.[COMPOSE_PROJECT_LABEL] || '').toLowerCase().includes(keyword) ||
+                (container.labels?.[COMPOSE_SERVICE_LABEL] || '').toLowerCase().includes(keyword) ||
                 (container.state || '').toLowerCase().includes(keyword) ||
                 (container.status || '').toLowerCase().includes(keyword) ||
                 ports.toLowerCase().includes(keyword)
@@ -99,10 +100,21 @@ class Containers extends Vue {
         return image.replace(/^[^/]+\.[^/]+\//, '').replace(/^[^/]+:[0-9]+\//, '')
     }
 
+    isCompose(container: DockerContainerInfo) {
+        return !!container.labels?.[COMPOSE_PROJECT_LABEL]
+    }
+
     composeBadgeTitle(container: DockerContainerInfo) {
-        if (!container.composeProject) return ''
-        const service = container.composeService ? ` / ${container.composeService}` : ''
-        return `Compose: ${container.composeProject}${service}`
+        const project = container.labels?.[COMPOSE_PROJECT_LABEL]
+        if (!project) return ''
+        const service = container.labels?.[COMPOSE_SERVICE_LABEL]
+        return `Compose: ${project}${service ? ` / ${service}` : ''}`
+    }
+
+    composeEditTitle(container: DockerContainerInfo) {
+        return container.isSwarm
+            ? '由 Swarm 管理，不支持直接编辑'
+            : (this.isCompose(container) ? '编辑 Compose 项目配置' : '编辑配置')
     }
 
     formatTime = formatTime
@@ -198,7 +210,7 @@ export default toNative(Containers)
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
                 <th class="th">名称</th>
-                <th class="w-32 th">状态</th>
+                <th class="w-40 th">状态</th>
                 <th class="w-48 th">端口</th>
                 <th class="w-28 th">创建时间</th>
                 <th class="w-48 th-right">操作</th>
@@ -214,20 +226,18 @@ export default toNative(Containers)
                     <div class="min-w-0">
                       <router-link v-if="portal.hasPerm('GET /api/docker/container/:id')" :to="'/docker/container/' + ct.id" class="font-medium text-slate-800 hover:text-emerald-600 transition-colors truncate block" :title="ct.name || ct.id">{{ ct.name || ct.id }}</router-link>
                       <span v-else class="font-medium text-slate-800 truncate block" :title="ct.name || ct.id">{{ ct.name || ct.id }}</span>
-                      <div class="flex items-center gap-1 min-w-0 mt-0.5">
-                        <code class="text-xs text-slate-400 truncate block min-w-0" :title="ct.image">{{ formatImageName(ct.image) }}</code>
-                        <span v-if="ct.composeProject" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-100 flex-shrink-0" :title="composeBadgeTitle(ct)">
-                          <i class="fas fa-layer-group text-[10px]"></i>
-                          <span>Compose</span>
-                        </span>
-                      </div>
+                      <code class="text-xs text-slate-400 truncate block min-w-0 mt-0.5" :title="ct.image">{{ formatImageName(ct.image) }}</code>
                     </div>
                   </div>
                 </td>
                 <td class="px-4 py-3">
-                  <span :class="ct.state === 'running' ? 'text-emerald-600 font-medium' : 'text-red-500 font-medium'" class="text-sm" :title="ct.status">
-                    {{ ct.state }}
-                  </span>
+                  <div class="flex flex-wrap gap-1">
+                    <span :class="['inline-flex items-center px-1.5 py-0.5 rounded-lg text-[11px] font-medium', ct.state === 'running' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200']" :title="ct.status">{{ ct.state }}</span>
+                    <span v-if="isCompose(ct)" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-100" :title="composeBadgeTitle(ct)">
+                      <i class="fas fa-layer-group text-[10px]"></i>
+                      <span>Compose</span>
+                    </span>
+                  </div>
                 </td>
                 <td class="px-4 py-3 font-mono text-xs text-slate-600">
                   <template v-if="ct.ports && ct.ports.length > 0">
@@ -259,7 +269,7 @@ export default toNative(Containers)
                     <button v-if="!ct.isSelf && ct.state === 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-amber" title="停止" @click="handleContainerAction(ct, 'stop')">
                       <i class="fas fa-stop text-xs"></i>
                     </button>
-                    <button v-if="!ct.isSelf && portal.hasPerm('GET /api/compose/docker/:name') && portal.hasPerm('POST /api/compose/docker/:name/redeploy')" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'btn-icon-blue']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : (ct.composeProject ? '编辑 Compose 项目配置' : '编辑配置')" @click="!ct.isSwarm && containerEditModalRef?.show(ct)">
+                    <button v-if="!ct.isSelf && portal.hasPerm('GET /api/compose/docker/:name') && portal.hasPerm('POST /api/compose/docker/:name/redeploy')" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'btn-icon-blue']" :title="composeEditTitle(ct)" @click="!ct.isSwarm && containerEditModalRef?.show(ct)">
                       <i class="fas fa-pen text-xs"></i>
                     </button>
                     <button v-if="!ct.isSelf && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleContainerAction(ct, 'remove')">
@@ -283,20 +293,17 @@ export default toNative(Containers)
               <div class="min-w-0">
                 <router-link v-if="portal.hasPerm('GET /api/docker/container/:id')" :to="'/docker/container/' + ct.id" class="font-medium text-slate-800 hover:text-emerald-600 transition-colors text-sm truncate block" :title="ct.name || ct.id">{{ ct.name || ct.id }}</router-link>
                 <span v-else class="font-medium text-slate-800 text-sm truncate block" :title="ct.name || ct.id">{{ ct.name || ct.id }}</span>
-                <div class="flex items-center gap-1 min-w-0 mt-0.5">
-                  <code class="text-xs text-slate-400 truncate block min-w-0" :title="ct.image">{{ formatImageName(ct.image) }}</code>
-                  <span v-if="ct.composeProject" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-100 flex-shrink-0" :title="composeBadgeTitle(ct)">
-                    <i class="fas fa-layer-group text-[10px]"></i>
-                    <span>Compose</span>
-                  </span>
-                </div>
+                <code class="text-xs text-slate-400 truncate block min-w-0 mt-0.5" :title="ct.image">{{ formatImageName(ct.image) }}</code>
               </div>
             </div>
 
             <!-- 状态 -->
-            <div class="flex items-start gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">状态</span>
-              <span :class="ct.state === 'running' ? 'text-emerald-600 font-medium' : 'text-red-500 font-medium'" class="text-xs" :title="ct.status">{{ ct.state }}</span>
+            <div class="flex items-center gap-1 flex-wrap mb-3">
+              <span :class="['inline-flex items-center px-1.5 py-0.5 rounded-lg text-[11px] font-medium', ct.state === 'running' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200']" :title="ct.status">{{ ct.state }}</span>
+              <span v-if="isCompose(ct)" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-100" :title="composeBadgeTitle(ct)">
+                <i class="fas fa-layer-group text-[10px]"></i>
+                <span>Compose</span>
+              </span>
             </div>
             <!-- 创建时间 -->
             <div class="flex items-center gap-2 mb-3">
@@ -335,7 +342,7 @@ export default toNative(Containers)
               <button v-if="!ct.isSelf && ct.state === 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-amber" title="停止" @click="handleContainerAction(ct, 'stop')">
                 <i class="fas fa-stop text-xs"></i><span class="text-xs ml-1">停止</span>
               </button>
-              <button v-if="!ct.isSelf && portal.hasPerm('GET /api/compose/docker/:name') && portal.hasPerm('POST /api/compose/docker/:name/redeploy')" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'btn-icon-blue']" :title="ct.isSwarm ? '由 Swarm 管理，不支持直接编辑' : (ct.composeProject ? '编辑 Compose 项目配置' : '编辑配置')" @click="!ct.isSwarm && containerEditModalRef?.show(ct)">
+              <button v-if="!ct.isSelf && portal.hasPerm('GET /api/compose/docker/:name') && portal.hasPerm('POST /api/compose/docker/:name/redeploy')" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'btn-icon-blue']" :title="composeEditTitle(ct)" @click="!ct.isSwarm && containerEditModalRef?.show(ct)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
               <button v-if="!ct.isSelf && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleContainerAction(ct, 'remove')">

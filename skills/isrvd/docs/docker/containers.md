@@ -29,9 +29,7 @@ isrvd_get "/docker/containers?all=true"
 | created | number | 创建时间戳（Unix 秒） |
 | isSwarm | boolean | 是否为 Swarm 管理的容器 |
 | isSelf | boolean | 是否为当前 isrvd 所在容器；用于前端隐藏危险操作 |
-| composeProject | string | Docker Compose 项目名，来自 `com.docker.compose.project` 标签 |
-| composeService | string | Docker Compose 服务名，来自 `com.docker.compose.service` 标签 |
-| labels | object | 标签键值对 |
+| labels | object | 标签键值对；`com.docker.compose.project` / `com.docker.compose.service` 可用于判断是否属于 Compose 项目 |
 
 ## 查看容器详情
 

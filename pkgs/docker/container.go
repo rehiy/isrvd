@@ -14,11 +14,6 @@ import (
 	"github.com/rehiy/libgo/logman"
 )
 
-const (
-	composeProjectLabel = "com.docker.compose.project"
-	composeServiceLabel = "com.docker.compose.service"
-)
-
 // VolumeMapping 挂载映射
 type VolumeMapping struct {
 	Type          string `json:"type,omitempty"`
@@ -30,19 +25,17 @@ type VolumeMapping struct {
 
 // ContainerInfo Docker 容器信息（列表项）
 type ContainerInfo struct {
-	ID             string            `json:"id"`
-	Name           string            `json:"name"`
-	Image          string            `json:"image"`
-	State          string            `json:"state"`
-	Status         string            `json:"status"`
-	Ports          []string          `json:"ports"`
-	Networks       []string          `json:"networks,omitempty"`
-	Created        int64             `json:"created"`
-	IsSwarm        bool              `json:"isSwarm,omitempty"`
-	IsSelf         bool              `json:"isSelf,omitempty"`
-	ComposeProject string            `json:"composeProject,omitempty"`
-	ComposeService string            `json:"composeService,omitempty"`
-	Labels         map[string]string `json:"labels,omitempty"`
+	ID       string            `json:"id"`
+	Name     string            `json:"name"`
+	Image    string            `json:"image"`
+	State    string            `json:"state"`
+	Status   string            `json:"status"`
+	Ports    []string          `json:"ports"`
+	Networks []string          `json:"networks,omitempty"`
+	Created  int64             `json:"created"`
+	IsSwarm  bool              `json:"isSwarm,omitempty"`
+	IsSelf   bool              `json:"isSelf,omitempty"`
+	Labels   map[string]string `json:"labels,omitempty"`
 }
 
 // ContainerDetail 容器详情（inspect DTO，与 ServiceDetail 对称）
@@ -92,19 +85,17 @@ func (s *DockerService) ContainerList(ctx context.Context, all bool) ([]*Contain
 		}
 		shortID := ShortID(ct.ID)
 		result = append(result, &ContainerInfo{
-			ID:             shortID,
-			Name:           name,
-			Image:          ct.Image,
-			State:          ct.State,
-			Status:         ct.Status,
-			Ports:          formatPorts(ct.Ports),
-			Networks:       networks,
-			Created:        ct.Created,
-			IsSwarm:        ct.Labels["com.docker.swarm.service.id"] != "",
-			IsSelf:         selfID != "" && ct.ID == selfID,
-			ComposeProject: ct.Labels[composeProjectLabel],
-			ComposeService: ct.Labels[composeServiceLabel],
-			Labels:         ct.Labels,
+			ID:       shortID,
+			Name:     name,
+			Image:    ct.Image,
+			State:    ct.State,
+			Status:   ct.Status,
+			Ports:    formatPorts(ct.Ports),
+			Networks: networks,
+			Created:  ct.Created,
+			IsSwarm:  ct.Labels["com.docker.swarm.service.id"] != "",
+			IsSelf:   selfID != "" && ct.ID == selfID,
+			Labels:   ct.Labels,
 		})
 	}
 
