@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/docker/docker/api/types/container"
@@ -68,11 +69,10 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 	for _, svc := range project.Services {
 		cname := dockerContainerNameOf(svc)
 		if _, err := s.docker.ContainerInspectRaw(ctx, cname); err == nil {
-			return nil, fmt.Errorf("容器 %s 已存在，请先移除", cname)
+			return nil, fmt.Errorf("容器 %s 已存在，请使用重部署接口", cname)
 		}
 	}
 
-	// 预拉取所有镜像，避免部署中途某个镜像拉取失败
 	if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 	return &DeployResult{ProjectName: projectName, Items: items, InstallDir: installDir}, nil
 }
 
-// DockerContentGet 读取项目的 compose.yml；文件不存在时从运行态反推。
+// DockerContentGet 读取项目 compose.yml，不存在时从运行态反推。
 func (s *Service) DockerContentGet(ctx context.Context, name string) (string, error) {
 	content, _, err := s.dockerContentGet(ctx, name)
 	return content, err
@@ -129,8 +129,7 @@ func (s *Service) dockerContentGet(ctx context.Context, name string) (string, st
 }
 
 // DockerRedeploy 重建 Docker Compose 项目。
-// req.ServiceName + req.Image 非空时：仅更新指定服务的镜像后全量重建；
-// 否则：用 req.Content 全量重建。
+// ServiceName+Image 非空时仅更新指定服务镜像，否则用 Content 全量重建。
 func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployRequest) (*DeployResult, error) {
 	if err := ValidateName(name); err != nil {
 		return nil, err
@@ -148,7 +147,6 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		installDir = filepath.Join(root, name)
 	}
 
-	// 准备新 content：单服务镜像更新 or 全量替换
 	content := req.Content
 	if req.ServiceName != "" {
 		oldContent, _, err := s.dockerContentGet(ctx, name)
@@ -163,7 +161,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 
 	oldContent, _, _ := s.dockerContentGet(ctx, name)
 
-	// 先解析新 content 校验合法性（不写文件、不删旧实例），失败时旧服务保持运行
+	// 先校验新 content，失败时旧服务保持运行
 	newProject, err := s.projectParse(ctx, name, content, installDir)
 	if err != nil {
 		return nil, err
@@ -171,7 +169,6 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	if len(newProject.Services) == 0 {
 		return nil, fmt.Errorf("compose 文件中没有定义服务")
 	}
-	// 预拉取镜像，避免删除旧容器后才发现镜像不可用
 	if err := s.imagesEnsure(ctx, newProject, req.ForcePull); err != nil {
 		return nil, err
 	}
@@ -219,7 +216,7 @@ func dockerContainerNameCandidates(projectName string, svc types.ServiceConfig) 
 			fmt.Sprintf("%s_%s_1", projectName, svc.Name),
 		)
 	}
-	result := candidates[:0]
+	result := make([]string, 0, len(candidates))
 	seen := map[string]struct{}{}
 	for _, name := range candidates {
 		if name == "" {
@@ -234,8 +231,7 @@ func dockerContainerNameCandidates(projectName string, svc types.ServiceConfig) 
 	return result
 }
 
-// dockerServicesCreate 批量创建 project 中的所有容器，失败时回滚已创建的容器。
-// 调用前须先通过 imagesEnsure 完成预拉取。
+// dockerServicesCreate 批量创建 project 中的所有容器，失败时回滚。
 func (s *Service) dockerServicesCreate(ctx context.Context, project *types.Project) ([]string, error) {
 	if err := s.dockerEnsureNetworks(ctx, project); err != nil {
 		return nil, err
@@ -265,8 +261,7 @@ func (s *Service) dockerServicesCreate(ctx context.Context, project *types.Proje
 	return items, nil
 }
 
-// dockerServiceCreate 根据 compose service 创建对应 Docker 容器。
-// 不负责镜像拉取，调用前须确保镜像已存在。
+// dockerServiceCreate 根据 compose service 创建对应 Docker 容器（不负责镜像拉取）。
 func (s *Service) dockerServiceCreate(ctx context.Context, project *types.Project, svc types.ServiceConfig) (string, string, error) {
 	req, err := compose.ServiceToDockerRequest(project, svc)
 	if err != nil {
@@ -282,7 +277,7 @@ func (s *Service) dockerServiceCreate(ctx context.Context, project *types.Projec
 // dockerContainersRemove 移除 project 中的所有 Docker 容器
 func (s *Service) dockerContainersRemove(ctx context.Context, name, content string) {
 	removed := map[string]struct{}{}
-	remove := func(id string) {
+	removeByID := func(id string) {
 		if id == "" {
 			return
 		}
@@ -294,27 +289,45 @@ func (s *Service) dockerContainersRemove(ctx context.Context, name, content stri
 		_ = s.docker.ContainerAction(ctx, id, "remove")
 	}
 
+	// 优先通过标签精确查找（ID 级别，无误删风险）
+	labelIDs := map[string]struct{}{}
+	if infos, err := s.docker.ContainerListByLabel(ctx, compose.ComposeProjectLabel, name); err == nil {
+		for _, info := range infos {
+			labelIDs[info.ID] = struct{}{}
+			removeByID(info.ID)
+		}
+	} else {
+		logman.Warn("List compose project containers failed", "name", name, "error", err)
+	}
+
+	// 补充删除无标签的旧容器，inspect 确认归属后再删
 	if content != "" {
 		project, err := compose.LoadProjectFromContent(ctx, content, name)
 		if err == nil {
 			for _, svc := range project.Services {
 				for _, cname := range dockerContainerNameCandidates(name, svc) {
-					remove(cname)
+					info, err := s.docker.ContainerInspectRaw(ctx, cname)
+					if err != nil {
+						continue
+					}
+					if _, ok := labelIDs[info.ID]; ok {
+						continue
+					}
+					// 归属其他项目，拒绝删除
+					if p := dockerComposeProjectName(info); p != "" && p != name {
+						logman.Warn("Skip removing container belonging to another project",
+							"container", cname, "container_project", p, "expected_project", name)
+						continue
+					}
+					removeByID(info.ID)
 				}
 			}
 		}
 	}
-
-	infos, err := s.docker.ContainerListByLabel(ctx, compose.ComposeProjectLabel, name)
-	if err != nil {
-		logman.Warn("List compose project containers failed", "name", name, "error", err)
-		return
-	}
-	for _, info := range infos {
-		remove(info.ID)
-	}
 }
 
+// dockerProjectName 将容器名/项目名解析为真实 project 名。
+// 优先查文件和标签；两者均未命中时，把 name 当容器名 inspect 并读取其 project 标签。
 func (s *Service) dockerProjectName(ctx context.Context, name, root string) string {
 	if root != "" {
 		if _, err := os.Stat(filepath.Join(root, name, "compose.yml")); err == nil {
@@ -325,11 +338,14 @@ func (s *Service) dockerProjectName(ctx context.Context, name, root string) stri
 		return name
 	}
 	if info, err := s.docker.ContainerInspectRaw(ctx, name); err == nil {
-		if projectName := dockerComposeProjectName(info); projectName != "" {
-			if err := ValidateName(projectName); err == nil {
-				return projectName
+		containerName := strings.TrimPrefix(info.Name, "/")
+		if containerName == name {
+			if projectName := dockerComposeProjectName(info); projectName != "" {
+				if err := ValidateName(projectName); err == nil {
+					return projectName
+				}
+				logman.Warn("Ignore invalid compose project label", "container", name, "project", projectName)
 			}
-			logman.Warn("Ignore invalid compose project label", "container", name, "project", projectName)
 		}
 	}
 	return name
@@ -374,7 +390,7 @@ func dockerComposeProjectName(info container.InspectResponse) string {
 	return info.Config.Labels[compose.ComposeProjectLabel]
 }
 
-// dockerRollback 用指定配置内容重建 Docker 容器（回滚用）
+// dockerRollback 用指定配置内容重建容器（回滚用）
 func (s *Service) dockerRollback(ctx context.Context, name, content, installDir string) {
 	if content == "" {
 		return
@@ -389,7 +405,7 @@ func (s *Service) dockerRollback(ctx context.Context, name, content, installDir 
 	}
 }
 
-// dockerEnsureNetworks 确保 project 中所有 bridge 网络存在
+// dockerEnsureNetworks 确保 project 所需网络存在，不存在则创建 bridge 网络
 func (s *Service) dockerEnsureNetworks(ctx context.Context, project *types.Project) error {
 	for _, name := range compose.CollectNetworks(project) {
 		if _, err := s.docker.NetworkInspect(ctx, name); err == nil {
