@@ -9,6 +9,7 @@ import type { DockerImageInfo, DockerRegistryInfo } from '@/service/types'
 import { formatFileSize, formatTime } from '@/helper/utils'
 
 import PageSearch from '@/component/page-search.vue'
+import Modal from '@/component/modal.vue'
 
 import ImageBuildModal from './widget/image-build-modal.vue'
 import ImagePullModal from './widget/image-pull-modal.vue'
@@ -16,7 +17,7 @@ import ImageTagModal from './widget/image-tag-modal.vue'
 import RegistryPushModal from './widget/registry-push-modal.vue'
 
 @Component({
-    components: { PageSearch, ImagePullModal, ImageTagModal, ImageBuildModal, RegistryPushModal }
+    components: { PageSearch, Modal, ImagePullModal, ImageTagModal, ImageBuildModal, RegistryPushModal }
 })
 class Images extends Vue {
     portal = usePortal()
@@ -33,6 +34,9 @@ class Images extends Vue {
     loading = false
     showAllImages = false
     searchText = ''
+    pruneModalOpen = false
+    pruneAll = false
+    pruneLoading = false
     formatFileSize = formatFileSize
     formatTime = formatTime
 
@@ -178,19 +182,22 @@ class Images extends Vue {
     }
 
     handleImagePrune() {
-        this.portal.showConfirm({
-            title: '清理镜像',
-            message: '将清理所有未被容器使用的镜像（包括有标签但闲置的），不会删除正在被容器使用的镜像。确定继续吗？',
-            icon: 'fa-broom',
-            iconColor: 'red',
-            confirmText: '确认清理',
-            danger: true,
-            onConfirm: async () => {
-                const { payload } = await api.dockerImagePrune({ all: true })
-                this.portal.showNotification('success', `镜像清理完成，回收 ${formatFileSize(payload?.spaceReclaimed || 0)}`)
-                this.loadImages()
-            }
-        })
+        this.pruneAll = false
+        this.pruneModalOpen = true
+    }
+
+    async confirmPrune() {
+        this.pruneLoading = true
+        try {
+            const { payload } = await api.dockerImagePrune({ all: this.pruneAll })
+            this.portal.showNotification('success', `镜像清理完成，回收 ${formatFileSize(payload?.spaceReclaimed || 0)}`)
+            this.pruneModalOpen = false
+            this.loadImages()
+        } catch {
+            this.portal.showNotification('error', '镜像清理失败')
+        } finally {
+            this.pruneLoading = false
+        }
     }
 
     // ─── 生命周期 ───
@@ -232,7 +239,7 @@ export default toNative(Images)
             <button class="btn btn-secondary" @click="loadImages()">
               <i class="fas fa-rotate"></i>刷新
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/image/prune')" class="btn btn-secondary" @click="handleImagePrune()">
+            <button v-if="portal.hasPerm('POST /api/docker/image/prune')" class="btn btn-danger" @click="handleImagePrune()">
               <i class="fas fa-broom"></i>清理
             </button>
             <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn btn-blue" @click="buildModalRef?.show()">
@@ -259,7 +266,7 @@ export default toNative(Images)
               <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadImages()">
                 <i class="fas fa-rotate text-sm"></i>
               </button>
-              <button v-if="portal.hasPerm('POST /api/docker/image/prune')" class="btn btn-secondary w-9 h-9 !px-0" title="清理镜像" @click="handleImagePrune()">
+            <button v-if="portal.hasPerm('POST /api/docker/image/prune')" class="btn btn-danger w-9 h-9 !px-0" title="清理镜像" @click="handleImagePrune()">
                 <i class="fas fa-broom text-sm"></i>
               </button>
               <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn btn-blue w-9 h-9 !px-0" title="构建" @click="buildModalRef?.show()">
@@ -420,5 +427,29 @@ export default toNative(Images)
     <ImageTagModal ref="tagModalRef" @success="loadImages" />
     <ImageBuildModal ref="buildModalRef" @success="loadImages" />
     <RegistryPushModal ref="registryPushModalRef" />
+
+    <!-- 清理镜像确认 -->
+    <Modal
+      v-model="pruneModalOpen"
+      title="清理镜像"
+      confirm-class="btn-danger"
+      :loading="pruneLoading"
+      @confirm="confirmPrune"
+    >
+      <template #confirm-text>确认清理</template>
+      <div class="space-y-4">
+        <p class="text-sm text-slate-600">将清理未被任何容器使用的悬空镜像层，不会删除正在被容器使用的镜像。</p>
+        <div class="toggle-row">
+          <div>
+            <span class="text-sm text-slate-700">同时清理有标签但未被使用的镜像</span>
+            <p class="text-xs text-slate-400 mt-0.5">等同于 <code class="font-mono bg-slate-100 px-1 rounded">docker image prune -a</code>，会删除更多空间</p>
+          </div>
+          <button type="button" class="toggle" :class="{ 'toggle-on': pruneAll }"
+                  role="switch" :aria-checked="pruneAll" @click="pruneAll = !pruneAll">
+            <span class="toggle-thumb" />
+          </button>
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>
