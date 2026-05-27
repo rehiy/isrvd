@@ -125,8 +125,8 @@ export default toNative(ContainerLogs)
 </script>
 
 <template>
-  <div>
-    <div class="card mb-4">
+<div class="h-[calc(100vh-100px)]">
+    <div class="h-full card flex flex-col overflow-hidden">
       <!-- Toolbar -->
       <div class="card-toolbar">
         <!-- 桌面端 -->
@@ -192,13 +192,13 @@ export default toNative(ContainerLogs)
       </div>
 
       <!-- 内容区域 -->
-      <div class="p-4 md:p-6">
-        <div v-if="logLoading" class="empty-state">
+      <div class="flex-1 flex flex-col overflow-hidden p-3 md:p-4">
+        <div v-if="logLoading" class="empty-state flex-1">
           <div class="w-12 h-12 spinner mb-3"></div>
           <p class="text-slate-500">加载中...</p>
         </div>
-        <pre v-else-if="logContent || streamActive" ref="logRef" class="bg-slate-900 text-slate-100 rounded-xl p-3 md:p-4 text-xs font-mono overflow-auto max-h-[600px] whitespace-pre-wrap break-all">{{ logContent || '等待日志输出...' }}</pre>
-        <div v-else class="empty-state">
+        <pre v-else-if="logContent || streamActive" ref="logRef" class="flex-1 bg-slate-900 text-slate-100 rounded-xl p-3 md:p-4 text-xs font-mono overflow-auto whitespace-pre-wrap break-all">{{ logContent || '等待日志输出...' }}</pre>
+        <div v-else class="empty-state flex-1">
           <div class="empty-state-icon">
             <i class="fas fa-file-lines text-2xl text-slate-300"></i>
           </div>

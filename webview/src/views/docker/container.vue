@@ -8,11 +8,7 @@ import type { DockerContainerDetail, DockerContainerInfo, DockerVolumeMapping } 
 
 import { formatTime } from '@/helper/utils'
 
-import ContainerNav from './widget/container-nav.vue'
-
-@Component({
-    components: { ContainerNav }
-})
+@Component
 class ContainerDetail extends Vue {
     portal = usePortal()
     container: DockerContainerInfo | null = null
@@ -41,10 +37,21 @@ class ContainerDetail extends Vue {
         return (this.detail?.cmd || []).join(' ')
     }
 
-    onContainerLoaded(ct: DockerContainerInfo) {
-        this.container = ct
+    async loadContainer() {
+        try {
+            const res = await api.dockerContainerList(true)
+            this.container = (res.payload || []).find((c: DockerContainerInfo) => c.id === this.containerId) ?? null
+            if (!this.container) {
+                this.portal.showNotification('error', '容器不存在')
+                this.$router.push('/docker/containers')
+            }
+        } catch {
+            this.portal.showNotification('error', '加载容器信息失败')
+            this.$router.push('/docker/containers')
+        }
     }
 
+    formatVolume
     formatVolume(v: DockerVolumeMapping) {
         return `${v.source || v.hostPath || '-'} → ${v.containerPath}${v.readOnly ? ' (ro)' : ''}`
     }
@@ -61,6 +68,7 @@ class ContainerDetail extends Vue {
     }
 
     mounted() {
+        this.loadContainer()
         this.loadDetail()
     }
 
@@ -72,7 +80,42 @@ export default toNative(ContainerDetail)
 
 <template>
   <div class="card mb-4 overflow-hidden">
-    <ContainerNav :container-id="containerId" @loaded="onContainerLoaded" />
+    <div class="card-toolbar">
+      <!-- 桌面端 -->
+      <div class="hidden md:flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+            <i class="fas fa-cube text-white text-sm"></i>
+          </div>
+          <div class="min-w-0">
+            <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
+            <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn btn-secondary" :disabled="loading" @click="loadDetail">
+            <i class="fas fa-rotate"></i>刷新
+          </button>
+        </div>
+      </div>
+      <!-- 移动端 -->
+      <div class="flex md:hidden items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div :class="['page-icon flex-shrink-0', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+            <i class="fas fa-cube text-white text-sm"></i>
+          </div>
+          <div class="min-w-0">
+            <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
+            <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" :disabled="loading" @click="loadDetail">
+            <i class="fas fa-rotate text-sm"></i>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div v-if="loading" class="empty-state">
       <div class="w-12 h-12 spinner mb-3"></div>

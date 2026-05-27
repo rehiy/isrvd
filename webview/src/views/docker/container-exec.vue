@@ -73,8 +73,8 @@ export default toNative(ContainerTerminal)
 </script>
 
 <template>
-  <div>
-    <div class="card mb-4">
+  <div class="h-[calc(100vh-100px)]">
+    <div class="h-full card flex flex-col overflow-hidden">
       <!-- Toolbar -->
       <div class="card-toolbar">
         <!-- 桌面端 -->
@@ -130,9 +130,9 @@ export default toNative(ContainerTerminal)
       </div>
 
       <!-- 内容区域 -->
-      <div class="p-4 md:p-6">
-        <div class="bg-slate-900 rounded-xl p-3 md:p-4 min-h-[400px] md:min-h-[500px]">
-          <div ref="xtermRef" class="h-full rounded-lg overflow-hidden min-h-[360px] md:min-h-[480px]"></div>
+      <div class="flex-1 flex flex-col overflow-hidden p-3 md:p-4">
+        <div class="flex-1 bg-slate-900 rounded-xl p-2 md:p-3 overflow-hidden">
+          <div ref="xtermRef" class="h-full rounded-lg overflow-hidden"></div>
         </div>
       </div>
     </div>

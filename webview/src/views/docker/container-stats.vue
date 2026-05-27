@@ -11,8 +11,6 @@ import type { DockerContainerInfo, DockerContainerStats } from '@/service/types'
 
 import { formatFileSize, hexToRgba, POLL_INTERVAL } from '@/helper/utils'
 
-import ContainerNav from './widget/container-nav.vue'
-
 Chart.register(...registerables)
 
 type ChartCallbackContext = TooltipItem<'line'>
@@ -20,8 +18,7 @@ type ChartCallbackContext = TooltipItem<'line'>
 @Component({
     beforeRouteLeave(this: unknown) {
         (this as InstanceType<typeof ContainerStats>).stopStatsTimer()
-    },
-    components: { ContainerNav }
+    }
 } as Record<string, unknown>)
 class ContainerStats extends Vue {
     portal = usePortal()
@@ -289,6 +286,23 @@ class ContainerStats extends Vue {
     // ─── 生命周期 ───
     mounted() {
         document.addEventListener('visibilitychange', this.handleVisibilityChange)
+        this.loadContainer()
+    }
+
+    async loadContainer() {
+        try {
+            const res = await api.dockerContainerList(true)
+            const ct = (res.payload || []).find((c: DockerContainerInfo) => c.id === this.containerId) ?? null
+            if (!ct) {
+                this.portal.showNotification('error', '容器不存在')
+                this.$router.push('/docker/containers')
+                return
+            }
+            this.onContainerLoaded(ct)
+        } catch {
+            this.portal.showNotification('error', '加载容器信息失败')
+            this.$router.push('/docker/containers')
+        }
     }
 
     onContainerLoaded(ct: DockerContainerInfo) {
@@ -318,7 +332,32 @@ export default toNative(ContainerStats)
 <template>
   <div>
     <div class="card mb-4">
-      <ContainerNav :container-id="containerId" @loaded="onContainerLoaded" />
+      <div class="card-toolbar">
+        <!-- 桌面端 -->
+        <div class="hidden md:flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+              <i class="fas fa-cube text-white text-sm"></i>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
+              <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
+            </div>
+          </div>
+        </div>
+        <!-- 移动端 -->
+        <div class="flex md:hidden items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div :class="['page-icon flex-shrink-0', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+              <i class="fas fa-cube text-white text-sm"></i>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
+              <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- 内容区域 -->
       <div class="p-4 md:p-6 space-y-4">
         <!-- 加载状态 -->
@@ -439,9 +478,9 @@ export default toNative(ContainerStats)
                 ></div>
               </div>
             </div>
-            <div v-if="statsData.processList && statsData.processList.processes && statsData.processList.processes.length > 0" class="overflow-x-auto max-h-60 overflow-y-auto">
+<div v-if="statsData.processList && statsData.processList.processes && statsData.processList.processes.length > 0" class="overflow-x-auto">
               <table class="w-full text-xs">
-                <thead class="sticky top-0 bg-slate-100">
+                <thead class="bg-slate-100">
                   <tr>
                     <th v-for="title in statsData.processList.titles" :key="title" class="px-3 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       {{ title }}

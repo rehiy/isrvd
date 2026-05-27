@@ -97,7 +97,7 @@ export default toNative(App)
       </header>
 
       <NavigationBar ref="navigationRef" v-model:collapsed="sidebarCollapsed" />
-      <main class="px-4 py-6 pt-20 transition-all duration-300" :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'">
+      <main class="p-4 pt-20 transition-all duration-300" :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'">
         <router-view />
       </main>
     </template>
