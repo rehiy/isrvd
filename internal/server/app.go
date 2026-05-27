@@ -6,6 +6,7 @@ import (
 	"github.com/rehiy/libgo/websocket"
 
 	svcAccount "isrvd/internal/service/account"
+	svcAgent "isrvd/internal/service/agent"
 	svcApisix "isrvd/internal/service/apisix"
 	svcCaddy "isrvd/internal/service/caddy"
 	svcCompose "isrvd/internal/service/compose"
@@ -13,6 +14,7 @@ import (
 	svcDocker "isrvd/internal/service/docker"
 	svcFiler "isrvd/internal/service/filer"
 	svcOverview "isrvd/internal/service/overview"
+	svcShell "isrvd/internal/service/shell"
 	svcSwarm "isrvd/internal/service/swarm"
 	svcSystem "isrvd/internal/service/system"
 
@@ -35,6 +37,8 @@ type App struct {
 	swarmSvc    *svcSwarm.Service
 	composeSvc  *svcCompose.Service
 	cronSvc     *svcCron.Service
+	agentSvc    *svcAgent.Service
+	shellSvc    *svcShell.Service
 	routeIndex  map[string]Route // METHOD+完整路径 → 路由索引
 }
 

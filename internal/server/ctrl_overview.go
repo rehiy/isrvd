@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -23,7 +24,28 @@ func (app *App) overviewStat(c *gin.Context) {
 }
 
 func (app *App) overviewProbe(c *gin.Context) {
-	respondSuccess(c, "ok", app.overviewSvc.Probe(c.Request.Context()))
+	respondSuccess(c, "ok", app.overviewSvc.Probe(c.Request.Context(), app.collectProbes()))
+}
+
+// collectProbes 收集当前可用服务的探活函数映射
+func (app *App) collectProbes() map[string]func(context.Context) bool {
+	probes := map[string]func(context.Context) bool{}
+	if app.apisixSvc != nil {
+		probes["Apisix"] = app.apisixSvc.CheckAvailability
+	}
+	if app.caddySvc != nil {
+		probes["Caddy"] = app.caddySvc.CheckAvailability
+	}
+	if app.dockerSvc != nil {
+		probes["Docker"] = app.dockerSvc.CheckAvailability
+	}
+	if app.swarmSvc != nil {
+		probes["Swarm"] = app.swarmSvc.CheckAvailability
+	}
+	if app.composeSvc != nil {
+		probes["Compose"] = app.composeSvc.CheckAvailability
+	}
+	return probes
 }
 
 func (app *App) overviewUpgrade(c *gin.Context) {

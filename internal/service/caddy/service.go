@@ -55,6 +55,15 @@ func NewService() (*Service, error) {
 	return &Service{client: client}, nil
 }
 
+// CheckAvailability 检测 Caddy 可用性
+func (s *Service) CheckAvailability(ctx context.Context) bool {
+	if s.client == nil {
+		return false
+	}
+	_, err := s.client.ConfigAll(ctx)
+	return err == nil
+}
+
 // ─── 共享辅助函数 ───
 
 func normalizeServer(name string) string {

@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/logman"
-	"github.com/rehiy/libgo/strutil"
 
 	svcCron "isrvd/internal/service/cron"
 )
@@ -26,20 +25,6 @@ func (app *App) defineCronRoutes() []Route {
 
 // ─── 请求结构 ───
 
-type cronJobUpsertReq struct {
-	Name        string `json:"name" binding:"required"`
-	Schedule    string `json:"schedule" binding:"required"`
-	Type        string `json:"type" binding:"required"`
-	Content     string `json:"content" binding:"required"`
-	WorkDir     string `json:"workDir"`
-	Image       string `json:"image"`
-	Container   string `json:"container"`
-	Volumes     string `json:"volumes"`
-	Timeout     uint   `json:"timeout"`
-	Enabled     bool   `json:"enabled"`
-	Description string `json:"description"`
-}
-
 type cronJobEnableReq struct {
 	Enabled bool `json:"enabled"`
 }
@@ -51,74 +36,46 @@ type cronJobLogsReq struct {
 // ─── Handler 方法 ───
 
 func (app *App) cronTypes(c *gin.Context) {
-	respondSuccess(c, "Types retrieved", gin.H{"types": app.cronSvc.AvailableTypes()})
+	respondSuccess(c, "获取脚本类型成功", gin.H{"types": app.cronSvc.AvailableTypes()})
 }
 
 func (app *App) cronJobList(c *gin.Context) {
 	jobs := app.cronSvc.ListJobs()
-	respondSuccess(c, "Jobs listed", gin.H{"jobs": jobs})
+	respondSuccess(c, "获取任务列表成功", gin.H{"jobs": jobs})
 }
 
 func (app *App) cronJobCreate(c *gin.Context) {
-	var req cronJobUpsertReq
+	var req svcCron.JobUpsertRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	job := &svcCron.Job{
-		ID:          strutil.NewString(),
-		Name:        req.Name,
-		Schedule:    req.Schedule,
-		Type:        req.Type,
-		Content:     req.Content,
-		WorkDir:     req.WorkDir,
-		Image:       req.Image,
-		Container:   req.Container,
-		Volumes:     req.Volumes,
-		Timeout:     req.Timeout,
-		Enabled:     req.Enabled,
-		Description: req.Description,
-	}
-
-	if err := app.cronSvc.CreateJob(job); err != nil {
+	job, err := app.cronSvc.CreateJobFromRequest(req)
+	if err != nil {
 		logman.Error("Create cron job failed", "name", req.Name, "error", err)
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	respondSuccess(c, "Job created", gin.H{"job": job})
+	respondSuccess(c, "任务创建成功", gin.H{"job": job})
 }
 
 func (app *App) cronJobUpdate(c *gin.Context) {
 	id := c.Param("id")
 
-	var req cronJobUpsertReq
+	var req svcCron.JobUpsertRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	job := &svcCron.Job{
-		ID:          id,
-		Name:        req.Name,
-		Schedule:    req.Schedule,
-		Type:        req.Type,
-		Content:     req.Content,
-		WorkDir:     req.WorkDir,
-		Image:       req.Image,
-		Container:   req.Container,
-		Volumes:     req.Volumes,
-		Timeout:     req.Timeout,
-		Enabled:     req.Enabled,
-		Description: req.Description,
-	}
-
-	if err := app.cronSvc.UpdateJob(job); err != nil {
+	job, err := app.cronSvc.UpdateJobFromRequest(id, req)
+	if err != nil {
 		logman.Error("Update cron job failed", "id", id, "error", err)
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	respondSuccess(c, "Job updated", gin.H{"job": job})
+	respondSuccess(c, "任务更新成功", gin.H{"job": job})
 }
 
 func (app *App) cronJobDelete(c *gin.Context) {
@@ -127,7 +84,7 @@ func (app *App) cronJobDelete(c *gin.Context) {
 		respondError(c, http.StatusNotFound, err.Error())
 		return
 	}
-	respondSuccess(c, "Job deleted", nil)
+	respondSuccess(c, "任务删除成功", nil)
 }
 
 func (app *App) cronJobRun(c *gin.Context) {
@@ -136,7 +93,7 @@ func (app *App) cronJobRun(c *gin.Context) {
 		respondError(c, http.StatusNotFound, err.Error())
 		return
 	}
-	respondSuccess(c, "Job triggered", nil)
+	respondSuccess(c, "任务已触发执行", nil)
 }
 
 func (app *App) cronJobEnable(c *gin.Context) {
@@ -153,7 +110,7 @@ func (app *App) cronJobEnable(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	respondSuccess(c, "Job updated", nil)
+	respondSuccess(c, "任务状态更新成功", nil)
 }
 
 func (app *App) cronJobLogs(c *gin.Context) {
@@ -165,11 +122,6 @@ func (app *App) cronJobLogs(c *gin.Context) {
 		return
 	}
 
-	limit := req.Limit
-	if limit <= 0 || limit > 100 {
-		limit = 50
-	}
-
-	logs := app.cronSvc.JobLogs(id, limit)
-	respondSuccess(c, "Logs retrieved", gin.H{"logs": logs})
+	logs := app.cronSvc.JobLogs(id, req.Limit)
+	respondSuccess(c, "获取执行历史成功", gin.H{"logs": logs})
 }

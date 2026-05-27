@@ -1,7 +1,6 @@
 package registry
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/rehiy/libgo/logman"
@@ -43,45 +42,4 @@ func initDocker() error {
 	SwarmService = swarm.NewSwarmService(svc.GetClient())
 
 	return nil
-}
-
-// IsDockerAvailable 检查 Docker 是否可用
-func IsDockerAvailable(ctx context.Context) bool {
-	if DockerService == nil {
-		logman.Warn("Docker service not initialized")
-		return false
-	}
-
-	_, err := DockerService.Info(ctx)
-	if err != nil {
-		logman.Error("Docker service not available", "error", err)
-		return false
-	}
-	return true
-}
-
-// IsComposeAvailable 检查 Compose 能力是否可用（等价于 Docker 可用）
-func IsComposeAvailable(ctx context.Context) bool {
-	return IsDockerAvailable(ctx)
-}
-
-// IsSwarmAvailable 检查 Swarm 是否可用
-func IsSwarmAvailable(ctx context.Context) bool {
-	if SwarmService == nil {
-		logman.Warn("Swarm service not initialized")
-		return false
-	}
-
-	client := SwarmService.GetClient()
-	if client == nil {
-		logman.Warn("Swarm client is nil")
-		return false
-	}
-
-	_, err := client.SwarmInspect(ctx)
-	if err != nil {
-		logman.Error("Swarm not available", "error", err)
-		return false
-	}
-	return true
 }

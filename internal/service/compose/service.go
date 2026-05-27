@@ -28,10 +28,10 @@ type Service struct {
 
 // DeployRequest 部署请求
 type DeployRequest struct {
-	Content   string `json:"content" binding:"required"`
-	InitURL   string `json:"initURL,omitempty"`
+	Content   string    `json:"content" binding:"required"`
+	InitURL   string    `json:"initURL,omitempty"`
 	InitFile  io.Reader `json:"-"`
-	ForcePull bool   `json:"forcePull,omitempty"` // 是否强制拉取最新镜像
+	ForcePull bool      `json:"forcePull,omitempty"` // 是否强制拉取最新镜像
 }
 
 // DeployResult 部署结果
@@ -45,10 +45,21 @@ type DeployResult struct {
 // - ServiceName + Image 非空：从现有内容读取后更新指定服务镜像重建
 // - 否则：Content 必须非空，全量重建
 type RedeployRequest struct {
-	Content    string `json:"content,omitempty"`
+	Content     string `json:"content,omitempty"`
 	ServiceName string `json:"serviceName,omitempty"`
-	Image      string `json:"image,omitempty"`
-	ForcePull  bool   `json:"forcePull,omitempty"` // 是否强制拉取最新镜像
+	Image       string `json:"image,omitempty"`
+	ForcePull   bool   `json:"forcePull,omitempty"` // 是否强制拉取最新镜像
+}
+
+// Validate 校验重建请求的互斥参数
+func (r RedeployRequest) Validate() error {
+	if r.ServiceName != "" && r.Image == "" {
+		return fmt.Errorf("指定服务名时 image 不能为空")
+	}
+	if r.ServiceName == "" && r.Content == "" {
+		return fmt.Errorf("未指定服务名时 content 不能为空")
+	}
+	return nil
 }
 
 // NewService 创建 Compose 业务服务
@@ -57,6 +68,15 @@ func NewService() (*Service, error) {
 		return nil, fmt.Errorf("docker 服务未初始化")
 	}
 	return &Service{docker: registry.DockerService, swarm: registry.SwarmService}, nil
+}
+
+// CheckAvailability 检测 Compose 可用性（等价于 Docker 可用）
+func (s *Service) CheckAvailability(ctx context.Context) bool {
+	if s.docker == nil {
+		return false
+	}
+	_, err := s.docker.Info(ctx)
+	return err == nil
 }
 
 // ValidateName 校验 Compose 项目名，防止路径逃逸。

@@ -49,7 +49,7 @@ func (s *Service) RegistryCreate(req RegistryUpsertRequest) error {
 		Description: req.Description,
 	}
 	if err := s.docker.RegistryCreate(reg); err != nil {
-		return err
+		return fmt.Errorf("创建镜像仓库失败: %w", err)
 	}
 	return s.registriesConfigSync()
 }
@@ -66,8 +66,12 @@ func (s *Service) RegistryUpdate(originalURL string, req RegistryUpsertRequest) 
 		Password:    req.Password,
 		Description: req.Description,
 	}
+	// 密码为空时保留原密码（前端编辑时不回显密码，空值表示不修改）
+	if reg.Password == "" {
+		reg.Password = s.docker.RegistryGetPassword(originalURL)
+	}
 	if err := s.docker.RegistryUpdate(originalURL, reg); err != nil {
-		return err
+		return fmt.Errorf("更新镜像仓库失败: %w", err)
 	}
 	return s.registriesConfigSync()
 }
@@ -78,7 +82,7 @@ func (s *Service) RegistryDelete(url string) error {
 		return fmt.Errorf("缺少 url 参数")
 	}
 	if err := s.docker.RegistryDelete(url); err != nil {
-		return err
+		return fmt.Errorf("删除镜像仓库失败: %w", err)
 	}
 	return s.registriesConfigSync()
 }

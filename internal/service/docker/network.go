@@ -9,12 +9,25 @@ import (
 
 // NetworkList 列出网络
 func (s *Service) NetworkList(ctx context.Context) ([]*pkgdocker.NetworkInfo, error) {
-	return s.docker.NetworkList(ctx)
+	list, err := s.docker.NetworkList(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("获取网络列表失败: %w", err)
+	}
+	return list, nil
 }
 
 // NetworkAction 网络操作
 func (s *Service) NetworkAction(ctx context.Context, req pkgdocker.ActionRequest) error {
-	return s.docker.NetworkAction(ctx, req.ID, req.Action)
+	if req.ID == "" {
+		return fmt.Errorf("网络ID不能为空")
+	}
+	if req.Action == "" {
+		return fmt.Errorf("操作类型不能为空")
+	}
+	if err := s.docker.NetworkAction(ctx, req.ID, req.Action); err != nil {
+		return fmt.Errorf("网络操作 %s 失败: %w", req.Action, err)
+	}
+	return nil
 }
 
 // NetworkCreate 创建网络
@@ -36,12 +49,25 @@ func (s *Service) NetworkInspect(ctx context.Context, id string) (*pkgdocker.Net
 
 // VolumeList 列出卷
 func (s *Service) VolumeList(ctx context.Context) ([]*pkgdocker.VolumeInfo, error) {
-	return s.docker.VolumeList(ctx)
+	list, err := s.docker.VolumeList(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("获取数据卷列表失败: %w", err)
+	}
+	return list, nil
 }
 
 // VolumeAction 卷操作（ID 字段即卷名）
 func (s *Service) VolumeAction(ctx context.Context, req pkgdocker.ActionRequest) error {
-	return s.docker.VolumeAction(ctx, req.ID, req.Action)
+	if req.ID == "" {
+		return fmt.Errorf("数据卷名称不能为空")
+	}
+	if req.Action == "" {
+		return fmt.Errorf("操作类型不能为空")
+	}
+	if err := s.docker.VolumeAction(ctx, req.ID, req.Action); err != nil {
+		return fmt.Errorf("数据卷操作 %s 失败: %w", req.Action, err)
+	}
+	return nil
 }
 
 // VolumeCreate 创建卷

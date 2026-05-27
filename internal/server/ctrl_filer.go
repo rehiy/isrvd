@@ -5,7 +5,6 @@ import (
 	"mime"
 	"net/http"
 	"path/filepath"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/logman"
@@ -54,31 +53,6 @@ type filerRenameReq struct {
 	Target string `json:"target" binding:"required"`
 }
 
-var filerPreviewContentTypes = map[string]string{
-	".jpg":  "image/jpeg",
-	".jpeg": "image/jpeg",
-	".png":  "image/png",
-	".gif":  "image/gif",
-	".bmp":  "image/bmp",
-	".svg":  "image/svg+xml",
-	".webp": "image/webp",
-	".ico":  "image/x-icon",
-	".tiff": "image/tiff",
-	".tif":  "image/tiff",
-	".mp3":  "audio/mpeg",
-	".wav":  "audio/wav",
-	".ogg":  "audio/ogg",
-	".m4a":  "audio/mp4",
-	".flac": "audio/flac",
-	".aac":  "audio/aac",
-	".mp4":  "video/mp4",
-	".webm": "video/webm",
-	".mov":  "video/quicktime",
-	".m4v":  "video/x-m4v",
-	".mkv":  "video/x-matroska",
-	".pdf":  "application/pdf",
-}
-
 func (app *App) filerAbsPath(c *gin.Context, path string) (string, bool) {
 	absPath, err := app.filerSvc.AbsPath(c.GetString("username"), path)
 	if err != nil {
@@ -104,10 +78,10 @@ func (app *App) filerFileList(c *gin.Context) {
 	files, err := app.filerSvc.FileList(absPath, req.Path)
 	if err != nil {
 		logman.Error("List files failed", "path", absPath, "error", err)
-		respondError(c, http.StatusNotFound, "Directory not found")
+		respondError(c, http.StatusNotFound, "目录不存在")
 		return
 	}
-	respondSuccess(c, "Files listed successfully", gin.H{"path": req.Path, "files": files})
+	respondSuccess(c, "获取文件列表成功", gin.H{"path": req.Path, "files": files})
 }
 
 func (app *App) filerFileDelete(c *gin.Context) {
@@ -123,10 +97,10 @@ func (app *App) filerFileDelete(c *gin.Context) {
 	}
 
 	if err := app.filerSvc.FileDelete(absPath); err != nil {
-		respondError(c, http.StatusInternalServerError, "Cannot delete file")
+		respondError(c, http.StatusInternalServerError, "无法删除文件")
 		return
 	}
-	respondSuccess(c, "File deleted successfully", nil)
+	respondSuccess(c, "文件删除成功", nil)
 }
 
 func (app *App) filerFileMkdir(c *gin.Context) {
@@ -142,10 +116,10 @@ func (app *App) filerFileMkdir(c *gin.Context) {
 	}
 
 	if err := app.filerSvc.FileMkdir(absPath); err != nil {
-		respondError(c, http.StatusInternalServerError, "Cannot create directory")
+		respondError(c, http.StatusInternalServerError, "无法创建目录")
 		return
 	}
-	respondSuccess(c, "Directory created successfully", nil)
+	respondSuccess(c, "目录创建成功", nil)
 }
 
 func (app *App) filerFileCreate(c *gin.Context) {
@@ -161,10 +135,10 @@ func (app *App) filerFileCreate(c *gin.Context) {
 	}
 
 	if err := app.filerSvc.FileCreate(absPath, []byte(req.Content)); err != nil {
-		respondError(c, http.StatusInternalServerError, "Cannot create file")
+		respondError(c, http.StatusInternalServerError, "无法创建文件")
 		return
 	}
-	respondSuccess(c, "File created successfully", nil)
+	respondSuccess(c, "文件创建成功", nil)
 }
 
 func (app *App) filerFileRead(c *gin.Context) {
@@ -181,10 +155,10 @@ func (app *App) filerFileRead(c *gin.Context) {
 
 	content, err := app.filerSvc.FileRead(absPath)
 	if err != nil {
-		respondError(c, http.StatusNotFound, "File not found")
+		respondError(c, http.StatusNotFound, "文件未找到")
 		return
 	}
-	respondSuccess(c, "File content retrieved", gin.H{"path": req.Path, "content": string(content)})
+	respondSuccess(c, "获取文件内容成功", gin.H{"path": req.Path, "content": string(content)})
 }
 
 func (app *App) filerFileModify(c *gin.Context) {
@@ -200,10 +174,10 @@ func (app *App) filerFileModify(c *gin.Context) {
 	}
 
 	if err := app.filerSvc.FileWrite(absPath, []byte(req.Content)); err != nil {
-		respondError(c, http.StatusInternalServerError, "Cannot save file")
+		respondError(c, http.StatusInternalServerError, "无法保存文件")
 		return
 	}
-	respondSuccess(c, "File saved successfully", nil)
+	respondSuccess(c, "文件保存成功", nil)
 }
 
 func (app *App) filerFileRename(c *gin.Context) {
@@ -224,10 +198,10 @@ func (app *App) filerFileRename(c *gin.Context) {
 	}
 
 	if err := app.filerSvc.FileRename(absPath, targetPath); err != nil {
-		respondError(c, http.StatusInternalServerError, "Cannot rename file")
+		respondError(c, http.StatusInternalServerError, "无法重命名文件")
 		return
 	}
-	respondSuccess(c, "File renamed successfully", nil)
+	respondSuccess(c, "文件重命名成功", nil)
 }
 
 func (app *App) filerFileChmod(c *gin.Context) {
@@ -246,7 +220,7 @@ func (app *App) filerFileChmod(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	respondSuccess(c, "Permissions changed successfully", nil)
+	respondSuccess(c, "权限修改成功", nil)
 }
 
 func (app *App) filerFileUpload(c *gin.Context) {
@@ -259,7 +233,7 @@ func (app *App) filerFileUpload(c *gin.Context) {
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		respondError(c, http.StatusBadRequest, "No file uploaded")
+		respondError(c, http.StatusBadRequest, "未上传文件")
 		return
 	}
 	defer file.Close()
@@ -278,14 +252,14 @@ func (app *App) filerFileUpload(c *gin.Context) {
 
 	data, err := io.ReadAll(file)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, "Cannot read uploaded file")
+		respondError(c, http.StatusInternalServerError, "无法读取上传文件")
 		return
 	}
 	if err := app.filerSvc.FileWrite(absPath, data); err != nil {
-		respondError(c, http.StatusInternalServerError, "Cannot write file")
+		respondError(c, http.StatusInternalServerError, "无法写入文件")
 		return
 	}
-	respondSuccess(c, "File uploaded successfully", nil)
+	respondSuccess(c, "文件上传成功", nil)
 }
 
 func (app *App) filerFileDownload(c *gin.Context) {
@@ -303,17 +277,16 @@ func (app *App) filerFileDownload(c *gin.Context) {
 	inline := c.Query("inline") == "1"
 	contentType := ""
 	if inline {
-		var supported bool
-		contentType, supported = filerPreviewContentTypes[strings.ToLower(filepath.Ext(req.Path))]
-		if !supported {
-			respondError(c, http.StatusUnsupportedMediaType, "Unsupported preview file type")
+		contentType = app.filerSvc.PreviewContentType(filepath.Ext(req.Path))
+		if contentType == "" {
+			respondError(c, http.StatusUnsupportedMediaType, "不支持预览的文件类型")
 			return
 		}
 	}
 
 	file, info, err := app.filerSvc.FileOpen(absPath)
 	if err != nil {
-		respondError(c, http.StatusNotFound, "File not found")
+		respondError(c, http.StatusNotFound, "文件未找到")
 		return
 	}
 	defer file.Close()
@@ -346,7 +319,7 @@ func (app *App) filerFileZip(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, "无法创建压缩文件")
 		return
 	}
-	respondSuccess(c, "Archive created successfully", nil)
+	respondSuccess(c, "压缩文件创建成功", nil)
 }
 
 func (app *App) filerFileUnzip(c *gin.Context) {
@@ -366,5 +339,5 @@ func (app *App) filerFileUnzip(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, "无法解压文件")
 		return
 	}
-	respondSuccess(c, "Archive extracted successfully", nil)
+	respondSuccess(c, "文件解压成功", nil)
 }

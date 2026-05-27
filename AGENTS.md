@@ -208,12 +208,12 @@ skills/isrvd/
 
 启动顺序：`main → config.Init → registry.Init → server.StartApp`
 
-可用性检查：`IsDockerAvailable`、`IsSwarmAvailable`、`IsApisixAvailable`、`IsCaddyAvailable`
+可用性检查：由各 `service` 层的 `CheckAvailability(ctx)` 方法负责（`service/docker`、`service/swarm`、`service/apisix`、`service/caddy`、`service/compose`），不再通过 `registry` 层的独立函数检查。
 
 已用命名：`registry.DockerService`、`registry.SwarmService`、`registry.ApisixClient`、`registry.CaddyService`
 
 服务初始化（`server/app.go` `StartApp()`）：
-- `overviewSvc`、`configSvc`、`auditSvc`、`accountSvc`、`filerSvc`：直接初始化
+- `overviewSvc`、`configSvc`、`auditSvc`、`accountSvc`、`filerSvc`、`shellSvc`、`agentSvc`：直接初始化
 - `apisixSvc`、`caddySvc`：根据可用性检查可选初始化
 - `dockerSvc`、`swarmSvc`：根据 Docker 可用性可选初始化
 - `composeSvc`：根据 Docker 可用性可选初始化

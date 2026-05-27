@@ -73,12 +73,19 @@ func (s *DockerService) RegistryUpdate(originalURL string, reg *RegistryConfig) 
 			return fmt.Errorf("仓库地址已存在: %s", reg.URL)
 		}
 	}
-	// 密码为空时保留原密码
-	if reg.Password == "" {
-		reg.Password = s.config.Registries[idx].Password
-	}
 	s.config.Registries[idx] = reg
 	return nil
+}
+
+// RegistryGetPassword 获取指定 URL 仓库的当前密码（供上层在更新时保留原密码使用）
+func (s *DockerService) RegistryGetPassword(url string) string {
+	s.registryMu.RLock()
+	defer s.registryMu.RUnlock()
+	idx := s.indexOfRegistry(url)
+	if idx < 0 {
+		return ""
+	}
+	return s.config.Registries[idx].Password
 }
 
 // RegistryDelete 删除仓库

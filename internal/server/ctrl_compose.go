@@ -134,14 +134,6 @@ func (app *App) composeDockerRedeploy(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if req.ServiceName != "" && req.Image == "" {
-		respondError(c, http.StatusBadRequest, "image 不能为空")
-		return
-	}
-	if req.ServiceName == "" && req.Content == "" {
-		respondError(c, http.StatusBadRequest, "content 不能为空")
-		return
-	}
 	result, err := app.composeSvc.DockerRedeploy(c.Request.Context(), name, req)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
@@ -158,14 +150,6 @@ func (app *App) composeSwarmRedeploy(c *gin.Context) {
 	}
 	name, ok := composeNameParam(c)
 	if !ok {
-		return
-	}
-	if req.ServiceName != "" && req.Image == "" {
-		respondError(c, http.StatusBadRequest, "image 不能为空")
-		return
-	}
-	if req.ServiceName == "" && req.Content == "" {
-		respondError(c, http.StatusBadRequest, "content 不能为空")
 		return
 	}
 	result, err := app.composeSvc.SwarmRedeploy(c.Request.Context(), name, req)

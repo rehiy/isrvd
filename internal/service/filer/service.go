@@ -184,3 +184,35 @@ func (s *Service) FileZip(absPath string) error {
 func (s *Service) FileUnzip(absPath string) error {
 	return archive.NewZipper().Unzip(absPath)
 }
+
+// previewContentTypes 支持在线预览的文件扩展名 → Content-Type 映射
+var previewContentTypes = map[string]string{
+	".jpg":  "image/jpeg",
+	".jpeg": "image/jpeg",
+	".png":  "image/png",
+	".gif":  "image/gif",
+	".bmp":  "image/bmp",
+	".svg":  "image/svg+xml",
+	".webp": "image/webp",
+	".ico":  "image/x-icon",
+	".tiff": "image/tiff",
+	".tif":  "image/tiff",
+	".mp3":  "audio/mpeg",
+	".wav":  "audio/wav",
+	".ogg":  "audio/ogg",
+	".m4a":  "audio/mp4",
+	".flac": "audio/flac",
+	".aac":  "audio/aac",
+	".mp4":  "video/mp4",
+	".webm": "video/webm",
+	".mov":  "video/quicktime",
+	".m4v":  "video/x-m4v",
+	".mkv":  "video/x-matroska",
+	".pdf":  "application/pdf",
+}
+
+// PreviewContentType 根据文件扩展名返回预览 Content-Type。
+// 返回空字符串表示不支持预览。
+func (s *Service) PreviewContentType(ext string) string {
+	return previewContentTypes[strings.ToLower(ext)]
+}

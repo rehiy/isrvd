@@ -11,6 +11,7 @@ import (
 	"github.com/rehiy/libgo/logman"
 
 	svcAccount "isrvd/internal/service/account"
+	svcAgent "isrvd/internal/service/agent"
 	svcApisix "isrvd/internal/service/apisix"
 	svcCaddy "isrvd/internal/service/caddy"
 	svcCompose "isrvd/internal/service/compose"
@@ -18,6 +19,7 @@ import (
 	svcDocker "isrvd/internal/service/docker"
 	svcFiler "isrvd/internal/service/filer"
 	svcOverview "isrvd/internal/service/overview"
+	svcShell "isrvd/internal/service/shell"
 	svcSwarm "isrvd/internal/service/swarm"
 	svcSystem "isrvd/internal/service/system"
 
@@ -33,6 +35,8 @@ func (app *App) initServices() {
 	app.auditSvc = svcSystem.NewAuditService()
 	app.accountSvc = svcAccount.NewService()
 	app.filerSvc = svcFiler.NewService()
+	app.shellSvc = svcShell.NewService()
+	app.agentSvc = svcAgent.NewService()
 	app.cronSvc = svcCron.NewService(registry.DockerService)
 
 	if apisixSvc, err := svcApisix.NewService(); err != nil {

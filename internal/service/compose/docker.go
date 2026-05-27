@@ -8,7 +8,7 @@ import (
 
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/docker/docker/api/types/container"
-	"github.com/moby/docker-image-spec/specs-go/v1"
+	v1 "github.com/moby/docker-image-spec/specs-go/v1"
 	"github.com/rehiy/libgo/logman"
 
 	"isrvd/pkgs/compose"
@@ -133,6 +133,9 @@ func (s *Service) dockerContentGet(ctx context.Context, name string) (string, st
 // 否则：用 req.Content 全量重建。
 func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployRequest) (*DeployResult, error) {
 	if err := ValidateName(name); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
 		return nil, err
 	}
 

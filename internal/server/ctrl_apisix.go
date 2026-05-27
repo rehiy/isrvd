@@ -78,7 +78,7 @@ func (app *App) apisixRouteCreate(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Route created successfully", result)
+	respondSuccess(c, "路由创建成功", result)
 }
 
 func (app *App) apisixRouteUpdate(c *gin.Context) {
@@ -92,7 +92,7 @@ func (app *App) apisixRouteUpdate(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Route updated successfully", result)
+	respondSuccess(c, "路由更新成功", result)
 }
 
 func (app *App) apisixRouteStatusPatch(c *gin.Context) {
@@ -107,7 +107,7 @@ func (app *App) apisixRouteStatusPatch(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Route status updated successfully", nil)
+	respondSuccess(c, "路由状态更新成功", nil)
 }
 
 func (app *App) apisixRouteDelete(c *gin.Context) {
@@ -115,7 +115,7 @@ func (app *App) apisixRouteDelete(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Route deleted successfully", nil)
+	respondSuccess(c, "路由删除成功", nil)
 }
 
 func (app *App) apisixConsumerList(c *gin.Context) {
@@ -142,7 +142,7 @@ func (app *App) apisixConsumerCreate(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Consumer created successfully", result)
+	respondSuccess(c, "消费者创建成功", result)
 }
 
 func (app *App) apisixConsumerUpdate(c *gin.Context) {
@@ -159,7 +159,7 @@ func (app *App) apisixConsumerUpdate(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Consumer updated successfully", gin.H{"username": username, "desc": req.Desc})
+	respondSuccess(c, "消费者更新成功", gin.H{"username": username, "desc": req.Desc})
 }
 
 func (app *App) apisixConsumerDelete(c *gin.Context) {
@@ -167,7 +167,7 @@ func (app *App) apisixConsumerDelete(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Consumer deleted successfully", nil)
+	respondSuccess(c, "消费者删除成功", nil)
 }
 
 func (app *App) apisixWhitelistList(c *gin.Context) {
@@ -192,7 +192,7 @@ func (app *App) apisixWhitelistRevoke(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Whitelist revoked successfully", nil)
+	respondSuccess(c, "白名单授权撤销成功", nil)
 }
 
 func (app *App) apisixPluginConfigList(c *gin.Context) {
@@ -224,7 +224,7 @@ func (app *App) apisixPluginConfigCreate(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Plugin Config created successfully", result)
+	respondSuccess(c, "插件配置创建成功", result)
 }
 
 func (app *App) apisixPluginConfigUpdate(c *gin.Context) {
@@ -238,7 +238,7 @@ func (app *App) apisixPluginConfigUpdate(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Plugin Config updated successfully", result)
+	respondSuccess(c, "插件配置更新成功", result)
 }
 
 func (app *App) apisixPluginConfigDelete(c *gin.Context) {
@@ -246,7 +246,7 @@ func (app *App) apisixPluginConfigDelete(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Plugin Config deleted successfully", nil)
+	respondSuccess(c, "插件配置删除成功", nil)
 }
 
 func (app *App) apisixUpstreamList(c *gin.Context) {
@@ -278,7 +278,7 @@ func (app *App) apisixUpstreamCreate(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Upstream created successfully", result)
+	respondSuccess(c, "上游创建成功", result)
 }
 
 func (app *App) apisixUpstreamUpdate(c *gin.Context) {
@@ -292,7 +292,7 @@ func (app *App) apisixUpstreamUpdate(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Upstream updated successfully", result)
+	respondSuccess(c, "上游更新成功", result)
 }
 
 func (app *App) apisixUpstreamDelete(c *gin.Context) {
@@ -300,7 +300,7 @@ func (app *App) apisixUpstreamDelete(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Upstream deleted successfully", nil)
+	respondSuccess(c, "上游删除成功", nil)
 }
 
 func (app *App) apisixSSLList(c *gin.Context) {
@@ -332,7 +332,7 @@ func (app *App) apisixSSLCreate(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "SSL created successfully", result)
+	respondSuccess(c, "证书创建成功", result)
 }
 
 func (app *App) apisixSSLUpdate(c *gin.Context) {
@@ -346,7 +346,7 @@ func (app *App) apisixSSLUpdate(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "SSL updated successfully", result)
+	respondSuccess(c, "证书更新成功", result)
 }
 
 func (app *App) apisixSSLDelete(c *gin.Context) {
@@ -354,7 +354,7 @@ func (app *App) apisixSSLDelete(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "SSL deleted successfully", nil)
+	respondSuccess(c, "证书删除成功", nil)
 }
 
 func (app *App) apisixPluginList(c *gin.Context) {

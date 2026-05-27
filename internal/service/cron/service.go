@@ -44,6 +44,21 @@ type Job struct {
 	Description string `yaml:"description" json:"description"`
 }
 
+// JobUpsertRequest 创建/更新任务请求（由 server 层传入，service 层负责构建 Job）
+type JobUpsertRequest struct {
+	Name        string `json:"name" binding:"required"`
+	Schedule    string `json:"schedule" binding:"required"`
+	Type        string `json:"type" binding:"required"`
+	Content     string `json:"content" binding:"required"`
+	WorkDir     string `json:"workDir"`
+	Image       string `json:"image"`
+	Container   string `json:"container"`
+	Volumes     string `json:"volumes"`
+	Timeout     uint   `json:"timeout"`
+	Enabled     bool   `json:"enabled"`
+	Description string `json:"description"`
+}
+
 // JobDetail 任务详情（含运行时调度状态）
 type JobDetail struct {
 	*Job
@@ -171,6 +186,53 @@ func (s *Service) ListJobs() []*JobDetail {
 		result = append(result, detail)
 	}
 	return result
+}
+
+// CreateJobFromRequest 从请求创建任务（生成 ID、构建 Job、持久化）
+func (s *Service) CreateJobFromRequest(req JobUpsertRequest) (*Job, error) {
+	job := &Job{
+		ID:          strutil.NewString(),
+		Name:        req.Name,
+		Schedule:    req.Schedule,
+		Type:        req.Type,
+		Content:     req.Content,
+		WorkDir:     req.WorkDir,
+		Image:       req.Image,
+		Container:   req.Container,
+		Volumes:     req.Volumes,
+		Timeout:     req.Timeout,
+		Enabled:     req.Enabled,
+		Description: req.Description,
+	}
+	if err := s.CreateJob(job); err != nil {
+		return nil, err
+	}
+	return job, nil
+}
+
+// UpdateJobFromRequest 从请求更新任务
+func (s *Service) UpdateJobFromRequest(id string, req JobUpsertRequest) (*Job, error) {
+	if id == "" {
+		return nil, fmt.Errorf("任务 ID 不能为空")
+	}
+	job := &Job{
+		ID:          id,
+		Name:        req.Name,
+		Schedule:    req.Schedule,
+		Type:        req.Type,
+		Content:     req.Content,
+		WorkDir:     req.WorkDir,
+		Image:       req.Image,
+		Container:   req.Container,
+		Volumes:     req.Volumes,
+		Timeout:     req.Timeout,
+		Enabled:     req.Enabled,
+		Description: req.Description,
+	}
+	if err := s.UpdateJob(job); err != nil {
+		return nil, err
+	}
+	return job, nil
 }
 
 // CreateJob 创建任务并持久化
@@ -344,7 +406,11 @@ func (s *Service) JobRun(id string) error {
 }
 
 // JobLogs 返回指定任务的执行历史（最近 limit 条，倒序）
+// limit <= 0 时默认 50，超过 100 时截断为 100
 func (s *Service) JobLogs(id string, limit int) []*JobLog {
+	if limit <= 0 || limit > 100 {
+		limit = 50
+	}
 	return s.store.LoadJobLogs(id, limit)
 }
 

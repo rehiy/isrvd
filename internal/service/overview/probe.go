@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"isrvd/config"
-	"isrvd/internal/registry"
 )
 
 // ProbeResponse 探活响应
@@ -42,16 +41,14 @@ type probeTask struct {
 }
 
 // Probe 服务探活（并发检查，整体 5 秒超时）
-func (s *Service) Probe(ctx context.Context) *ProbeResponse {
+// probes 由调用方注入各服务的可用性检查函数，解耦对 registry 包的直接依赖
+func (s *Service) Probe(ctx context.Context, probes map[string]func(context.Context) bool) *ProbeResponse {
 	probeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	tasks := []probeTask{
-		{name: "Apisix", fn: registry.IsApisixAvailable},
-		{name: "Caddy", fn: registry.IsCaddyAvailable},
-		{name: "Docker", fn: registry.IsDockerAvailable},
-		{name: "Swarm", fn: registry.IsSwarmAvailable},
-		{name: "Compose", fn: registry.IsComposeAvailable},
+	tasks := make([]probeTask, 0, len(probes))
+	for name, fn := range probes {
+		tasks = append(tasks, probeTask{name: name, fn: fn})
 	}
 
 	resp := &ProbeResponse{

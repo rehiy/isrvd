@@ -13,16 +13,29 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/rehiy/libgo/logman"
-	"github.com/rehiy/libgo/websocket"
 )
 
-// ContainerExec 容器终端 WebSocket 处理（业务逻辑层）
-func (s *DockerService) ContainerExec(ctx context.Context, conn *websocket.ServerConn, containerID, shell string) {
+// ExecSession 容器 exec 会话，封装 hijacked 连接，实现 io.ReadWriteCloser
+type ExecSession struct {
+	reader io.Reader
+	writer io.Writer
+	closer func() // hijackedResp.Close() 返回 void，用 func() 封装
+}
+
+func (s *ExecSession) Read(p []byte) (int, error)  { return s.reader.Read(p) }
+func (s *ExecSession) Write(p []byte) (int, error) { return s.writer.Write(p) }
+func (s *ExecSession) Close() error {
+	s.closer()
+	return nil
+}
+
+// ContainerExecAttach 创建并连接容器 exec 会话，返回 io.ReadWriteCloser。
+// 调用方负责关闭返回的 session。
+func (s *DockerService) ContainerExecAttach(ctx context.Context, containerID, shell string) (io.ReadWriteCloser, error) {
 	if shell == "" {
 		shell = "/bin/sh"
 	}
 
-	// 创建 exec 实例
 	execConfig := container.ExecOptions{
 		AttachStdin:  true,
 		AttachStdout: true,
@@ -33,59 +46,21 @@ func (s *DockerService) ContainerExec(ctx context.Context, conn *websocket.Serve
 
 	execResp, err := s.client.ContainerExecCreate(ctx, containerID, execConfig)
 	if err != nil {
-		conn.Write([]byte("[创建终端会话失败: " + err.Error() + "]\r\n"))
-		return
+		return nil, fmt.Errorf("创建终端会话失败: %w", err)
 	}
 
-	// 连接到 exec 实例
-	attachConfig := container.ExecStartOptions{Tty: true}
-	hijackedResp, err := s.client.ContainerExecAttach(ctx, execResp.ID, attachConfig)
+	hijackedResp, err := s.client.ContainerExecAttach(ctx, execResp.ID, container.ExecStartOptions{Tty: true})
 	if err != nil {
-		conn.Write([]byte("[连接终端失败: " + err.Error() + "]\r\n"))
-		return
-	}
-	defer hijackedResp.Close()
-
-	conn.Write([]byte("[容器终端已连接]\r\n"))
-
-	// 转发容器输出到 WebSocket
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		buf := make([]byte, 1024)
-		for {
-			n, err := hijackedResp.Reader.Read(buf)
-			if err != nil {
-				if err != io.EOF {
-					logman.Error("Container exec read error", "error", err)
-				}
-				return
-			}
-			if n > 0 {
-				conn.Write(buf[:n])
-			}
-		}
-	}()
-
-	// 转发 WebSocket 输入到容器
-	buf := make([]byte, 1024)
-	for {
-		n, err := conn.Read(buf)
-		if err != nil {
-			logman.Error("WebSocket read error", "error", err)
-			break
-		}
-		if n > 0 {
-			if _, err := hijackedResp.Conn.Write(buf[:n]); err != nil {
-				logman.Error("Container exec write error", "error", err)
-				break
-			}
-		}
+		return nil, fmt.Errorf("连接终端失败: %w", err)
 	}
 
-	// 关闭 hijack 连接触发 reader goroutine 退出，等待其结束后函数返回
-	hijackedResp.Close()
-	<-done
+	// closer 调用 hijackedResp.Close()，它会同时关闭底层连接的读端和写端，
+	// 避免只关闭 Conn 导致 reader goroutine 永久阻塞在 Read 上
+	return &ExecSession{
+		reader: hijackedResp.Reader,
+		writer: hijackedResp.Conn,
+		closer: hijackedResp.Close,
+	}, nil
 }
 
 // ContainerExecRun 在指定容器内非交互地执行命令，返回合并后的 stdout/stderr 输出。

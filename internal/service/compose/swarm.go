@@ -121,6 +121,9 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	if err := ValidateName(name); err != nil {
 		return nil, err
 	}
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
 
 	root := s.docker.ContainerRoot()
 	installDir := ""
