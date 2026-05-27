@@ -1,6 +1,6 @@
 $:
   tag_push:
-    - name: Isrvd Release
+    - name: iSrvd Release
       if: echo "$CNB_BRANCH" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'
       runner:
         tags: cnb:arch:amd64

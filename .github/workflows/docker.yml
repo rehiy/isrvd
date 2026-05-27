@@ -1,9 +1,9 @@
-name: Isrvd Docker Builder
+name: iSrvd Docker Builder
 
 on:
   workflow_run:
     workflows:
-      - "Isrvd Builder"
+      - "iSrvd Builder"
     types:
       - completed
 
