@@ -10,9 +10,10 @@
 |------|------|
 | 系统概览 | CPU、内存、磁盘、网络、GPU 实时监控 |
 | 文件管理 | 浏览、上传、下载、编辑、压缩解压、权限修改 |
-| Web 终端 | 基于 xterm.js 的 Shell 与容器终端 |
+| Web 终端 | 基于 xterm.js 的 Shell 终端与容器终端 |
 | AI 助手 | 内置 Agent，支持自然语言操作 |
 | 计划任务 | 定时任务调度，支持 Shell/BAT/PowerShell/Docker 执行模式 |
+| SSH 远程管理 | 管理 SSH 主机，在浏览器中连接远程服务器，支持密码与私钥认证 |
 | APISIX | 路由、Consumer、上游、SSL、插件配置、白名单 |
 | Caddy | 路由、TLS 证书、全局选项管理 |
 | Docker | 容器、镜像、网络、卷、镜像仓库管理 |
@@ -255,6 +256,9 @@ cd webview && python3 sort-imports.py --dry-run src
 | `filer` | `POST /api/filer/upload` | 文件管理（上传） |
 | `filer` | `POST /api/filer/modify` | 文件管理（修改） |
 | `shell` | `GET /api/shell` | Web 终端 |
+| `ssh` | `GET /api/ssh/hosts` | SSH 远程管理（列出主机） |
+| `ssh` | `POST /api/ssh/host` | SSH 远程管理（添加主机） |
+| `ssh` | `GET /api/ssh/to/:id` | SSH 远程管理（连接终端） |
 | `agent` | `ANY /api/agent/*path` | AI 助手（LLM 代理） |
 | `cron` | `GET /api/cron/jobs` | 计划任务（列出） |
 | `cron` | `POST /api/cron/jobs` | 计划任务（创建） |

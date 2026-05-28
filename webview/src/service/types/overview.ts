@@ -41,10 +41,13 @@ export interface SystemGoRuntimeStat {
     version: string
     numCPU: number
     numGoroutine: number
+    alloc: number
+    sys: number
     heapAlloc: number
     heapInuse: number
-    sys: number
+    heapSys: number
     stackInuse: number
+    stackSys: number
     totalAlloc: number
     numGC: number
     lastGC: number
