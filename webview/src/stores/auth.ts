@@ -14,7 +14,7 @@ export const useAuthStore = defineStore('auth', () => {
     const founder = ref(false)
     const permissions = ref<string[]>([])
     const oidcEnabled = ref(false)
-    const oidcLoginButtonLabel = ref('')
+    const oidcLoginLabel = ref('')
 
     // ─── 操作定义 ───
 
@@ -35,7 +35,7 @@ export const useAuthStore = defineStore('auth', () => {
         permissionsLoaded.value = false
         founder.value = false
         permissions.value = []
-        oidcLoginButtonLabel.value = ''
+        oidcLoginLabel.value = ''
         localStorage.removeItem('app-token')
         localStorage.removeItem('app-username')
     }
@@ -71,7 +71,7 @@ export const useAuthStore = defineStore('auth', () => {
 
         const payload = authRes.payload as AuthInfo
         oidcEnabled.value = payload.oidcEnabled || false
-        oidcLoginButtonLabel.value = payload.oidcBtnLabel || ''
+        oidcLoginLabel.value = payload.oidcBtnLabel || ''
 
         // 核心原则：无 username 或无 member = 无权限，直接清理
         if (!payload?.username || !payload?.member) {
@@ -97,7 +97,7 @@ export const useAuthStore = defineStore('auth', () => {
         founder,
         permissions,
         oidcEnabled,
-        oidcLoginButtonLabel,
+        oidcLoginLabel,
         // 操作
         setAuth,
         clearAuth,

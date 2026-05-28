@@ -29,14 +29,14 @@ type ServerConfig struct {
 
 // OIDC 配置
 type OIDCConfig struct {
-	Enabled          bool     `yaml:"enabled" json:"enabled"`
-	IssuerURL        string   `yaml:"issuerUrl" json:"issuerUrl"`
-	ClientID         string   `yaml:"clientId" json:"clientId"`
-	ClientSecret     string   `yaml:"clientSecret" json:"clientSecret,omitempty"` // 写入时为空表示保留原值；响应时不返回
-	RedirectURL      string   `yaml:"redirectUrl" json:"redirectUrl"`
-	UsernameClaim    string   `yaml:"usernameClaim" json:"usernameClaim"`
-	Scopes           []string `yaml:"scopes" json:"scopes"`
-	LoginButtonLabel string   `yaml:"loginButtonLabel" json:"loginButtonLabel"` // OIDC 登录按钮自定义名称，留空时使用默认文案
+	Enabled       bool     `yaml:"enabled" json:"enabled"`
+	IssuerURL     string   `yaml:"issuerUrl" json:"issuerUrl"`
+	ClientID      string   `yaml:"clientId" json:"clientId"`
+	ClientSecret  string   `yaml:"clientSecret" json:"clientSecret,omitempty"` // 写入时为空表示保留原值；响应时不返回
+	RedirectURL   string   `yaml:"redirectUrl" json:"redirectUrl"`
+	UsernameClaim string   `yaml:"usernameClaim" json:"usernameClaim"`
+	Scopes        []string `yaml:"scopes" json:"scopes"`
+	LoginLabel    string   `yaml:"loginLabel" json:"loginLabel"` // OIDC 登录按钮自定义名称，留空时使用默认文案
 }
 
 // Agent LLM 配置

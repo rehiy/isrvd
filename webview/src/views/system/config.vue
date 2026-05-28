@@ -277,7 +277,7 @@ export default toNative(Config)
           </div>
           <div>
             <label class="form-label">登录按钮名称</label>
-            <input v-model="oidc.loginButtonLabel" type="text" placeholder="使用 OIDC 登录" class="input" />
+            <input v-model="oidc.loginLabel" type="text" placeholder="使用 OIDC 登录" class="input" />
             <p class="mt-1 text-xs text-slate-400">自定义 OIDC 登录按钮显示名称；留空则使用默认文案"使用 OIDC 登录"</p>
           </div>
           <div>

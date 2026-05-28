@@ -83,7 +83,7 @@ export const usePortalStore = defineStore('portal', () => {
         founder: authRefs.founder,
         permissions: authRefs.permissions,
         oidcEnabled: authRefs.oidcEnabled,
-        oidcLoginButtonLabel: authRefs.oidcLoginButtonLabel,
+        oidcLoginLabel: authRefs.oidcLoginLabel,
         // Auth Store 方法
         setAuth: authStore.setAuth,
         clearAuth: authStore.clearAuth,

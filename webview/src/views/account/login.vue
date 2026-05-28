@@ -101,7 +101,7 @@ export default toNative(Login)
             </div>
             <button type="button" class="btn btn-secondary w-full" @click="handleOIDCLogin">
               <i class="fas fa-right-to-bracket mr-2"></i>
-              {{ portal.oidcLoginButtonLabel || '使用 OIDC 登录' }}
+              {{ portal.oidcLoginLabel || '使用 OIDC 登录' }}
             </button>
           </template>
         </form>

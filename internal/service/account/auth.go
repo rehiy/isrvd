@@ -80,7 +80,7 @@ func (s *Service) AuthInfo(username string) *AuthInfoResponse {
 		OIDCEnabled: oidcEnabled,
 	}
 	if oidcEnabled {
-		resp.OIDCBtnLabel = config.OIDC.LoginButtonLabel
+		resp.OIDCBtnLabel = config.OIDC.LoginLabel
 	}
 	return resp
 }

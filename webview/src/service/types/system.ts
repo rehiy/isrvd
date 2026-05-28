@@ -44,7 +44,7 @@ export interface OIDCConfig {
     usernameClaim: string
     scopes: string[]
     // OIDC 登录按钮自定义名称，留空时使用默认文案
-    loginButtonLabel?: string
+    loginLabel?: string
 }
 
 export interface ApisixConfig {
