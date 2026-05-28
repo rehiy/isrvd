@@ -125,143 +125,141 @@ export default toNative(CaddyCerts)
 </script>
 
 <template>
-  <div>
-    <div class="card mb-4">
-      <div class="card-toolbar">
-        <!-- 桌面端 -->
-        <div class="hidden md:flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="page-icon bg-cyan-500"><i class="fas fa-certificate text-white"></i></div>
-            <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">TLS 证书</h1><p class="text-xs text-slate-500 truncate">管理 Caddy 证书来源：文件、PEM、自动签发；已签发证书只读</p></div>
-          </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
-            <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="搜索域名、路径、签发机构..." width-class="w-64" focus-color="cyan" type-to-search />
-            <button class="btn btn-secondary" @click="loadCerts()"><i class="fas fa-rotate"></i>刷新</button>
-            <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="btn btn-cyan" @click="openCreateModal()"><i class="fas fa-plus"></i>新建证书</button>
+  <div class="card">
+    <div class="card-toolbar">
+      <!-- 桌面端 -->
+      <div class="hidden md:flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="page-icon bg-cyan-500"><i class="fas fa-certificate text-white"></i></div>
+          <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">TLS 证书</h1><p class="text-xs text-slate-500 truncate">管理 Caddy 证书来源：文件、PEM、自动签发；已签发证书只读</p></div>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="搜索域名、路径、签发机构..." width-class="w-64" focus-color="cyan" type-to-search />
+          <button class="btn btn-secondary" @click="loadCerts()"><i class="fas fa-rotate"></i>刷新</button>
+          <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="btn btn-cyan" @click="openCreateModal()"><i class="fas fa-plus"></i>新建证书</button>
+        </div>
+      </div>
+      <!-- 移动端 -->
+      <div class="flex md:hidden items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class="page-icon bg-cyan-500"><i class="fas fa-certificate text-white"></i></div>
+          <div class="min-w-0">
+            <h1 class="text-lg font-semibold text-slate-800 truncate">TLS 证书</h1>
+            <p class="text-xs text-slate-500 truncate">管理证书来源</p>
           </div>
         </div>
-        <!-- 移动端 -->
-        <div class="flex md:hidden items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="page-icon bg-cyan-500"><i class="fas fa-certificate text-white"></i></div>
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadCerts()">
+            <i class="fas fa-rotate text-sm"></i>
+          </button>
+          <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="btn btn-cyan w-9 h-9 !px-0" title="新建证书" @click="openCreateModal()">
+            <i class="fas fa-plus text-sm"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- 移动端搜索栏 -->
+    <div class="mobile-search">
+      <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="搜索域名、路径、签发机构..." width-class="w-full" focus-color="cyan" />
+    </div>
+    <div v-if="loading" class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
+    <div v-else-if="filteredCerts.length === 0" class="empty-state">
+      <div class="empty-state-icon"><i class="fas fa-certificate text-4xl text-slate-300"></i></div>
+      <p class="text-slate-600 font-medium mb-1">{{ certs.length === 0 ? '暂无证书' : '未找到匹配证书' }}</p>
+      <p class="text-sm text-slate-400">{{ certs.length === 0 ? '点击「新建证书」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
+    </div>
+    <div v-else class="space-y-3">
+      <!-- 桌面端表格 -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200">
+              <th class="th">来源</th>
+              <th class="th">主体</th>
+              <th class="th">签发机构</th>
+              <th class="th">有效期</th>
+              <th class="th">标签</th>
+              <th class="w-32 th-right">操作</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-slate-100">
+            <tr v-for="cert in filteredCerts" :key="cert.key || cert.subject" class="hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 max-w-[160px]">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="row-icon bg-cyan-400">
+                    <i class="fas fa-certificate text-white text-sm"></i>
+                  </div>
+                  <span :class="sourceTagClass(cert.source)" class="inline-block text-xs px-2 py-0.5 rounded-lg font-medium whitespace-nowrap">{{ sourceLabel(cert.source) }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ certSummary(cert) }}</code></td>
+              <td class="px-4 py-3"><span class="text-sm text-slate-600">{{ cert.issuer || '-' }}</span></td>
+              <td class="px-4 py-3">
+                <span v-if="cert.notAfter" :class="certExpireClass(cert.notAfter)" class="text-xs">{{ certExpireLabel(cert.notAfter) }}</span>
+                <span v-else class="text-xs text-slate-400">-</span>
+              </td>
+              <td class="px-4 py-3">
+                <span v-if="!cert.tags || cert.tags.length === 0" class="text-xs text-slate-400">-</span>
+                <span v-for="tag in cert.tags" v-else :key="tag" class="inline-block text-xs px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 mr-1">{{ tag }}</span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex justify-end items-center gap-1">
+                  <button class="btn-icon btn-icon-slate" title="详情" @click="openDetailModal(cert)"><i class="fas fa-circle-info text-xs"></i></button>
+                  <button v-if="cert.source !== 'cached' && portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(cert)"><i class="fas fa-pen text-xs"></i></button>
+                  <button v-if="cert.source !== 'cached' && portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon btn-icon-red" title="删除" @click="deleteCert(cert)"><i class="fas fa-trash text-xs"></i></button>
+                  <span v-if="cert.source === 'cached'" class="text-xs text-slate-400 pr-1">只读</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 移动端卡片 -->
+      <div class="md:hidden space-y-3 p-4">
+        <div v-for="cert in filteredCerts" :key="cert.key || cert.subject" class="card-interactive">
+          <div class="card-info-row">
+            <div class="list-icon bg-cyan-400">
+              <i class="fas fa-certificate text-white text-base"></i>
+            </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">TLS 证书</h1>
-              <p class="text-xs text-slate-500 truncate">管理证书来源</p>
+              <span class="font-medium text-slate-800 text-sm truncate block">{{ certSummary(cert) }}</span>
+              <span :class="sourceTagClass(cert.source)" class="inline-block text-xs px-1.5 py-0.5 rounded-lg mt-0.5">{{ sourceLabel(cert.source) }}</span>
             </div>
           </div>
-          <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadCerts()">
-              <i class="fas fa-rotate text-sm"></i>
-            </button>
-            <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="btn btn-cyan w-9 h-9 !px-0" title="新建证书" @click="openCreateModal()">
-              <i class="fas fa-plus text-sm"></i>
-            </button>
+
+          <div v-if="cert.issuer" class="flex items-center gap-2 mb-3">
+            <span class="text-xs text-slate-400 flex-shrink-0">签发机构</span>
+            <span class="text-xs text-slate-500">{{ cert.issuer }}</span>
           </div>
-        </div>
-      </div>
-      <!-- 移动端搜索栏 -->
-      <div class="mobile-search">
-        <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="搜索域名、路径、签发机构..." width-class="w-full" focus-color="cyan" />
-      </div>
-      <div v-if="loading" class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
-      <div v-else-if="filteredCerts.length === 0" class="empty-state">
-        <div class="empty-state-icon"><i class="fas fa-certificate text-4xl text-slate-300"></i></div>
-        <p class="text-slate-600 font-medium mb-1">{{ certs.length === 0 ? '暂无证书' : '未找到匹配证书' }}</p>
-        <p class="text-sm text-slate-400">{{ certs.length === 0 ? '点击「新建证书」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
-      </div>
-      <div v-else class="space-y-3">
-        <!-- 桌面端表格 -->
-        <div class="hidden md:block overflow-x-auto">
-          <table class="w-full border-collapse">
-            <thead>
-              <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="th">来源</th>
-                <th class="th">主体</th>
-                <th class="th">签发机构</th>
-                <th class="th">有效期</th>
-                <th class="th">标签</th>
-                <th class="w-32 th-right">操作</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-slate-100">
-              <tr v-for="cert in filteredCerts" :key="cert.key || cert.subject" class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 max-w-[160px]">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <div class="row-icon bg-cyan-400">
-                      <i class="fas fa-certificate text-white text-sm"></i>
-                    </div>
-                    <span :class="sourceTagClass(cert.source)" class="inline-block text-xs px-2 py-0.5 rounded-lg font-medium whitespace-nowrap">{{ sourceLabel(cert.source) }}</span>
-                  </div>
-                </td>
-                <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ certSummary(cert) }}</code></td>
-                <td class="px-4 py-3"><span class="text-sm text-slate-600">{{ cert.issuer || '-' }}</span></td>
-                <td class="px-4 py-3">
-                  <span v-if="cert.notAfter" :class="certExpireClass(cert.notAfter)" class="text-xs">{{ certExpireLabel(cert.notAfter) }}</span>
-                  <span v-else class="text-xs text-slate-400">-</span>
-                </td>
-                <td class="px-4 py-3">
-                  <span v-if="!cert.tags || cert.tags.length === 0" class="text-xs text-slate-400">-</span>
-                  <span v-for="tag in cert.tags" v-else :key="tag" class="inline-block text-xs px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 mr-1">{{ tag }}</span>
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex justify-end items-center gap-1">
-                    <button class="btn-icon btn-icon-slate" title="详情" @click="openDetailModal(cert)"><i class="fas fa-circle-info text-xs"></i></button>
-                    <button v-if="cert.source !== 'cached' && portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(cert)"><i class="fas fa-pen text-xs"></i></button>
-                    <button v-if="cert.source !== 'cached' && portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon btn-icon-red" title="删除" @click="deleteCert(cert)"><i class="fas fa-trash text-xs"></i></button>
-                    <span v-if="cert.source === 'cached'" class="text-xs text-slate-400 pr-1">只读</span>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+          <div v-if="cert.notAfter" class="flex items-center gap-2 mb-3">
+            <span class="text-xs text-slate-400 flex-shrink-0">有效期</span>
+            <span :class="certExpireClass(cert.notAfter)" class="text-xs">{{ certExpireLabel(cert.notAfter) }}</span>
+          </div>
+          <div v-if="cert.tags && cert.tags.length" class="flex items-start gap-2 mb-3">
+            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">标签</span>
+            <span class="flex flex-wrap gap-1">
+              <span v-for="tag in cert.tags" :key="tag" class="inline-block text-xs px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600">{{ tag }}</span>
+            </span>
+          </div>
 
-        <!-- 移动端卡片 -->
-        <div class="md:hidden space-y-3 p-4">
-          <div v-for="cert in filteredCerts" :key="cert.key || cert.subject" class="card-interactive">
-            <div class="card-info-row">
-              <div class="list-icon bg-cyan-400">
-                <i class="fas fa-certificate text-white text-base"></i>
-              </div>
-              <div class="min-w-0">
-                <span class="font-medium text-slate-800 text-sm truncate block">{{ certSummary(cert) }}</span>
-                <span :class="sourceTagClass(cert.source)" class="inline-block text-xs px-1.5 py-0.5 rounded-lg mt-0.5">{{ sourceLabel(cert.source) }}</span>
-              </div>
-            </div>
-
-            <div v-if="cert.issuer" class="flex items-center gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0">签发机构</span>
-              <span class="text-xs text-slate-500">{{ cert.issuer }}</span>
-            </div>
-            <div v-if="cert.notAfter" class="flex items-center gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0">有效期</span>
-              <span :class="certExpireClass(cert.notAfter)" class="text-xs">{{ certExpireLabel(cert.notAfter) }}</span>
-            </div>
-            <div v-if="cert.tags && cert.tags.length" class="flex items-start gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">标签</span>
-              <span class="flex flex-wrap gap-1">
-                <span v-for="tag in cert.tags" :key="tag" class="inline-block text-xs px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600">{{ tag }}</span>
-              </span>
-            </div>
-
-            <div class="card-actions">
-              <button class="btn-icon btn-icon-slate" title="详情" @click="openDetailModal(cert)">
-                <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
-              </button>
-              <button v-if="cert.source !== 'cached' && portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(cert)">
-                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
-              </button>
-              <button v-if="cert.source !== 'cached' && portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon btn-icon-red" title="删除" @click="deleteCert(cert)">
-                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
-              </button>
-              <span v-if="cert.source === 'cached'" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs text-slate-400 bg-slate-100">只读</span>
-            </div>
+          <div class="card-actions">
+            <button class="btn-icon btn-icon-slate" title="详情" @click="openDetailModal(cert)">
+              <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
+            </button>
+            <button v-if="cert.source !== 'cached' && portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(cert)">
+              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
+            </button>
+            <button v-if="cert.source !== 'cached' && portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon btn-icon-red" title="删除" @click="deleteCert(cert)">
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+            </button>
+            <span v-if="cert.source === 'cached'" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs text-slate-400 bg-slate-100">只读</span>
           </div>
         </div>
       </div>
     </div>
-
-    <CertDetailModal ref="detailModalRef" />
-    <CertEditModal ref="editModalRef" @success="loadCerts" />
   </div>
+
+  <CertDetailModal ref="detailModalRef" />
+  <CertEditModal ref="editModalRef" @success="loadCerts" />
 </template>

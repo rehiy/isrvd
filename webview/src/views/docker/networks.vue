@@ -97,168 +97,166 @@ export default toNative(Networks)
 </script>
 
 <template>
-  <div>
-    <!-- Toolbar Bar -->
-    <div class="card mb-4">
-      <div class="card-toolbar">
-        <!-- 桌面端 -->
-        <div class="hidden md:flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="page-icon bg-purple-500">
-              <i class="fas fa-network-wired text-white"></i>
-            </div>
-            <div>
-              <h1 class="text-lg font-semibold text-slate-800">网络管理</h1>
-              <p class="text-xs text-slate-500">管理 Docker 网络，配置容器间通信</p>
-            </div>
+  <!-- Toolbar Bar -->
+  <div class="card">
+    <div class="card-toolbar">
+      <!-- 桌面端 -->
+      <div class="hidden md:flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="page-icon bg-purple-500">
+            <i class="fas fa-network-wired text-white"></i>
           </div>
-          <div class="flex items-center gap-2">
-            <PageSearch v-model="searchText" search-key="docker-networks" placeholder="搜索网络名称、ID、驱动或子网..." width-class="w-64" focus-color="purple" type-to-search />
-            <button class="btn btn-secondary" @click="loadNetworks()">
-              <i class="fas fa-rotate"></i>刷新
-            </button>
-            <button v-if="portal.hasPerm('POST /api/docker/network')" class="btn btn-purple" @click="createModalRef?.show()">
-              <i class="fas fa-plus"></i>新建网络
-            </button>
+          <div>
+            <h1 class="text-lg font-semibold text-slate-800">网络管理</h1>
+            <p class="text-xs text-slate-500">管理 Docker 网络，配置容器间通信</p>
           </div>
         </div>
-        <!-- 移动端 -->
-        <div class="flex md:hidden items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="page-icon bg-purple-500">
-              <i class="fas fa-network-wired text-white"></i>
-            </div>
-            <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">网络管理</h1>
-              <p class="text-xs text-slate-500 truncate">管理容器网络</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadNetworks()">
-              <i class="fas fa-rotate text-sm"></i>
-            </button>
-            <button v-if="portal.hasPerm('POST /api/docker/network')" class="btn btn-purple w-9 h-9 !px-0" title="新建网络" @click="createModalRef?.show()">
-              <i class="fas fa-plus text-sm"></i>
-            </button>
-          </div>
+        <div class="flex items-center gap-2">
+          <PageSearch v-model="searchText" search-key="docker-networks" placeholder="搜索网络名称、ID、驱动或子网..." width-class="w-64" focus-color="purple" type-to-search />
+          <button class="btn btn-secondary" @click="loadNetworks()">
+            <i class="fas fa-rotate"></i>刷新
+          </button>
+          <button v-if="portal.hasPerm('POST /api/docker/network')" class="btn btn-purple" @click="createModalRef?.show()">
+            <i class="fas fa-plus"></i>新建网络
+          </button>
         </div>
       </div>
-
-      <div class="mobile-search">
-        <PageSearch v-model="searchText" search-key="docker-networks" placeholder="搜索网络名称、ID、驱动..." width-class="w-full" focus-color="purple" />
-      </div>
-
-      <!-- Loading State -->
-      <div v-if="loading" class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
-        <p class="text-slate-500">加载中...</p>
-      </div>
-
-      <!-- Network List -->
-      <div v-else-if="filteredNetworks.length > 0" class="space-y-3">
-        <!-- 桌面端表格视图 -->
-        <div class="hidden md:block overflow-x-auto">
-          <table class="w-full border-collapse">
-            <thead>
-              <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="th">名称</th>
-                <th class="w-24 th">驱动</th>
-                <th class="th">子网</th>
-                <th class="w-24 th">范围</th>
-                <th class="w-32 th-right">操作</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-slate-100">
-              <tr v-for="net in filteredNetworks" :key="net.id" class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 max-w-[280px]">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <div class="row-icon bg-purple-400">
-                      <i class="fas fa-network-wired text-white text-sm"></i>
-                    </div>
-                    <div class="min-w-0">
-                      <router-link v-if="portal.hasPerm('GET /api/docker/network/:id')" :to="'/docker/network/' + net.id" class="font-medium text-slate-800 hover:text-purple-600 transition-colors truncate block">{{ net.name }}</router-link>
-                      <span v-else class="font-medium text-slate-800 truncate block">{{ net.name }}</span>
-                      <code class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ net.id }}</code>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700">{{ net.driver }}</span></td>
-                <td class="px-4 py-3 font-mono text-sm text-slate-600">{{ net.subnet || '-' }}</td>
-                <td class="px-4 py-3 text-sm text-slate-600">{{ net.scope }}</td>
-                <td class="px-4 py-3">
-                  <div class="flex justify-end items-center gap-1">
-                    <button v-if="portal.hasPerm('GET /api/docker/network/:id')" class="btn-icon btn-icon-slate" title="详情" @click="viewNetworkDetail(net)">
-                      <i class="fas fa-circle-info text-xs"></i>
-                    </button>
-                    <button v-if="canDeleteNetwork(net) && portal.hasPerm('POST /api/docker/network/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleNetworkAction(net, 'remove')">
-                      <i class="fas fa-trash text-xs"></i>
-                    </button>
-                    <button v-else disabled class="btn-icon text-slate-300 cursor-not-allowed" :title="getDeleteDisabledReason(net)">
-                      <i class="fas fa-trash text-xs"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- 移动端卡片视图 -->
-        <div class="md:hidden space-y-3 p-4">
-          <div v-for="net in filteredNetworks" :key="net.id" class="card-interactive">
-            <!-- 顶部：网络信息和图标 -->
-            <div class="card-info-row">
-              <div class="list-icon bg-purple-400">
-                <i class="fas fa-network-wired text-white text-base"></i>
-              </div>
-              <div class="min-w-0">
-                <router-link v-if="portal.hasPerm('GET /api/docker/network/:id')" :to="'/docker/network/' + net.id" class="font-medium text-slate-800 hover:text-purple-600 transition-colors text-sm truncate block">{{ net.name }}</router-link>
-                <span v-else class="font-medium text-slate-800 text-sm truncate block">{{ net.name }}</span>
-                <code class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ net.id }}</code>
-              </div>
-            </div>
-
-            <!-- 驱动 / 范围 -->
-            <div class="flex items-start gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">驱动</span>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700">{{ net.driver }}</span>
-            </div>
-            <div class="flex items-center gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0">范围</span>
-              <span class="text-xs text-slate-500">{{ net.scope }}</span>
-            </div>
-
-            <div class="flex items-start gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">子网</span>
-              <code class="font-mono text-xs text-slate-500">{{ net.subnet || '-' }}</code>
-            </div>
-            
-            <!-- 底部：操作按钮 -->
-            <div class="card-actions">
-              <button v-if="portal.hasPerm('GET /api/docker/network/:id')" class="btn-icon btn-icon-slate" title="详情" @click="viewNetworkDetail(net)">
-                <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
-              </button>
-              <button v-if="canDeleteNetwork(net) && portal.hasPerm('POST /api/docker/network/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleNetworkAction(net, 'remove')">
-                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
-              </button>
-              <button v-else disabled class="btn-icon text-slate-300 cursor-not-allowed" :title="getDeleteDisabledReason(net)">
-                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
-              </button>
-            </div>
+      <!-- 移动端 -->
+      <div class="flex md:hidden items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class="page-icon bg-purple-500">
+            <i class="fas fa-network-wired text-white"></i>
+          </div>
+          <div class="min-w-0">
+            <h1 class="text-lg font-semibold text-slate-800 truncate">网络管理</h1>
+            <p class="text-xs text-slate-500 truncate">管理容器网络</p>
           </div>
         </div>
-      </div>
-
-      <!-- Empty State -->
-      <div v-else class="empty-state">
-        <div class="empty-state-icon">
-          <i class="fas fa-network-wired text-4xl text-slate-300"></i>
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadNetworks()">
+            <i class="fas fa-rotate text-sm"></i>
+          </button>
+          <button v-if="portal.hasPerm('POST /api/docker/network')" class="btn btn-purple w-9 h-9 !px-0" title="新建网络" @click="createModalRef?.show()">
+            <i class="fas fa-plus text-sm"></i>
+          </button>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ networks.length === 0 ? '暂无自定义网络' : '未找到匹配网络' }}</p>
-        <p class="text-sm text-slate-400">{{ networks.length === 0 ? '点击「新建网络」添加自定义网络' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
     </div>
 
-    <NetworkCreateModal ref="createModalRef" @success="loadNetworks" />
+    <div class="mobile-search">
+      <PageSearch v-model="searchText" search-key="docker-networks" placeholder="搜索网络名称、ID、驱动..." width-class="w-full" focus-color="purple" />
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="loading" class="empty-state">
+      <div class="w-12 h-12 spinner mb-3"></div>
+      <p class="text-slate-500">加载中...</p>
+    </div>
+
+    <!-- Network List -->
+    <div v-else-if="filteredNetworks.length > 0" class="space-y-3">
+      <!-- 桌面端表格视图 -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200">
+              <th class="th">名称</th>
+              <th class="w-24 th">驱动</th>
+              <th class="th">子网</th>
+              <th class="w-24 th">范围</th>
+              <th class="w-32 th-right">操作</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-slate-100">
+            <tr v-for="net in filteredNetworks" :key="net.id" class="hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 max-w-[280px]">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="row-icon bg-purple-400">
+                    <i class="fas fa-network-wired text-white text-sm"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <router-link v-if="portal.hasPerm('GET /api/docker/network/:id')" :to="'/docker/network/' + net.id" class="font-medium text-slate-800 hover:text-purple-600 transition-colors truncate block">{{ net.name }}</router-link>
+                    <span v-else class="font-medium text-slate-800 truncate block">{{ net.name }}</span>
+                    <code class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ net.id }}</code>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700">{{ net.driver }}</span></td>
+              <td class="px-4 py-3 font-mono text-sm text-slate-600">{{ net.subnet || '-' }}</td>
+              <td class="px-4 py-3 text-sm text-slate-600">{{ net.scope }}</td>
+              <td class="px-4 py-3">
+                <div class="flex justify-end items-center gap-1">
+                  <button v-if="portal.hasPerm('GET /api/docker/network/:id')" class="btn-icon btn-icon-slate" title="详情" @click="viewNetworkDetail(net)">
+                    <i class="fas fa-circle-info text-xs"></i>
+                  </button>
+                  <button v-if="canDeleteNetwork(net) && portal.hasPerm('POST /api/docker/network/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleNetworkAction(net, 'remove')">
+                    <i class="fas fa-trash text-xs"></i>
+                  </button>
+                  <button v-else disabled class="btn-icon text-slate-300 cursor-not-allowed" :title="getDeleteDisabledReason(net)">
+                    <i class="fas fa-trash text-xs"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 移动端卡片视图 -->
+      <div class="md:hidden space-y-3 p-4">
+        <div v-for="net in filteredNetworks" :key="net.id" class="card-interactive">
+          <!-- 顶部：网络信息和图标 -->
+          <div class="card-info-row">
+            <div class="list-icon bg-purple-400">
+              <i class="fas fa-network-wired text-white text-base"></i>
+            </div>
+            <div class="min-w-0">
+              <router-link v-if="portal.hasPerm('GET /api/docker/network/:id')" :to="'/docker/network/' + net.id" class="font-medium text-slate-800 hover:text-purple-600 transition-colors text-sm truncate block">{{ net.name }}</router-link>
+              <span v-else class="font-medium text-slate-800 text-sm truncate block">{{ net.name }}</span>
+              <code class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ net.id }}</code>
+            </div>
+          </div>
+
+          <!-- 驱动 / 范围 -->
+          <div class="flex items-start gap-2 mb-3">
+            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">驱动</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700">{{ net.driver }}</span>
+          </div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs text-slate-400 flex-shrink-0">范围</span>
+            <span class="text-xs text-slate-500">{{ net.scope }}</span>
+          </div>
+
+          <div class="flex items-start gap-2 mb-3">
+            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">子网</span>
+            <code class="font-mono text-xs text-slate-500">{{ net.subnet || '-' }}</code>
+          </div>
+          
+          <!-- 底部：操作按钮 -->
+          <div class="card-actions">
+            <button v-if="portal.hasPerm('GET /api/docker/network/:id')" class="btn-icon btn-icon-slate" title="详情" @click="viewNetworkDetail(net)">
+              <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
+            </button>
+            <button v-if="canDeleteNetwork(net) && portal.hasPerm('POST /api/docker/network/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleNetworkAction(net, 'remove')">
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+            </button>
+            <button v-else disabled class="btn-icon text-slate-300 cursor-not-allowed" :title="getDeleteDisabledReason(net)">
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else class="empty-state">
+      <div class="empty-state-icon">
+        <i class="fas fa-network-wired text-4xl text-slate-300"></i>
+      </div>
+      <p class="text-slate-600 font-medium mb-1">{{ networks.length === 0 ? '暂无自定义网络' : '未找到匹配网络' }}</p>
+      <p class="text-sm text-slate-400">{{ networks.length === 0 ? '点击「新建网络」添加自定义网络' : '尝试更换关键词或清空搜索条件' }}</p>
+    </div>
   </div>
+
+  <NetworkCreateModal ref="createModalRef" @success="loadNetworks" />
 </template>

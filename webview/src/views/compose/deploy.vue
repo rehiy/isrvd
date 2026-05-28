@@ -118,7 +118,7 @@ export default toNative(ComposeDeploy)
 
 <template>
   <div>
-    <div class="card mb-4">
+    <div class="card">
       <!-- Toolbar -->
       <div class="card-toolbar">
         <div class="hidden md:flex items-center justify-between">

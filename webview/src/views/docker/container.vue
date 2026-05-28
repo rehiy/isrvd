@@ -78,129 +78,141 @@ export default toNative(ContainerDetail)
 </script>
 
 <template>
-  <div class="card mb-4 overflow-hidden">
-    <div class="card-toolbar">
-      <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
-            <i class="fas fa-cube text-white text-sm"></i>
-          </div>
-          <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
-            <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
-          </div>
+<div class="card">
+  <div class="card-toolbar">
+    <!-- 桌面端 -->
+    <div class="hidden md:flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+          <i class="fas fa-cube text-white text-sm"></i>
         </div>
-        <div class="flex items-center gap-2">
-          <button class="btn btn-secondary" :disabled="loading" @click="loadDetail">
-            <i class="fas fa-rotate"></i>刷新
-          </button>
+        <div class="min-w-0">
+          <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
+          <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
         </div>
       </div>
-      <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
-          <div :class="['page-icon flex-shrink-0', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
-            <i class="fas fa-cube text-white text-sm"></i>
-          </div>
-          <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
-            <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" :disabled="loading" @click="loadDetail">
-            <i class="fas fa-rotate text-sm"></i>
-          </button>
-        </div>
+      <div class="flex items-center gap-2">
+        <button class="btn btn-secondary" :disabled="loading" @click="loadDetail">
+          <i class="fas fa-rotate"></i>刷新
+        </button>
       </div>
     </div>
-
-    <div v-if="loading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
-    </div>
-
-    <div v-else-if="detail" class="p-4 md:p-6 space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="rounded-xl border border-slate-200 p-4">
-          <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><i class="fas fa-circle-info text-emerald-500"></i>基本信息</h2>
-          <div class="space-y-2 text-sm">
-            <div class="flex justify-between gap-4"><span class="text-slate-500">名称</span><span class="font-medium text-slate-800 truncate">{{ detail.name }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">ID</span><code class="text-xs text-slate-600 truncate">{{ detail.id }}</code></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">状态</span><span :class="detail.state === 'running' ? 'text-emerald-600 font-medium' : 'text-slate-500'">{{ detail.state }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">创建时间</span><span class="text-slate-700">{{ formatTime(detail.createdAt) }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">镜像</span><code class="text-xs text-slate-600 truncate">{{ detail.image }}</code></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">重启策略</span><span class="text-slate-700">{{ detail.restart || 'no' }}</span></div>
-          </div>
+    <!-- 移动端 -->
+    <div class="flex md:hidden items-center justify-between">
+      <div class="flex items-center gap-3 min-w-0 flex-1">
+        <div :class="['page-icon flex-shrink-0', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+          <i class="fas fa-cube text-white text-sm"></i>
         </div>
-
-        <div class="rounded-xl border border-slate-200 p-4">
-          <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><i class="fas fa-sliders text-blue-500"></i>运行配置</h2>
-          <div class="space-y-2 text-sm">
-            <div class="flex justify-between gap-4"><span class="text-slate-500">网络</span><span class="text-slate-700">{{ detail.network || '-' }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">工作目录</span><span class="text-slate-700">{{ detail.workdir || '-' }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">用户</span><span class="text-slate-700">{{ detail.user || '-' }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">主机名</span><span class="text-slate-700">{{ detail.hostname || '-' }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">特权模式</span><span class="text-slate-700">{{ detail.privileged ? '是' : '否' }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">资源限制</span><span class="text-slate-700">{{ detail.memory || 0 }} MB / {{ detail.cpus || 0 }} CPU</span></div>
-          </div>
+        <div class="min-w-0">
+          <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
+          <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
         </div>
       </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="rounded-xl border border-slate-200 p-4">
-          <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><i class="fas fa-network-wired text-indigo-500"></i>端口映射</h2>
-          <div v-if="portEntries.length" class="space-y-2">
-            <div v-for="[host, target] in portEntries" :key="host" class="flex items-center justify-between text-sm bg-slate-50 rounded-lg px-3 py-2">
-              <code class="text-slate-700">{{ host }}</code><i class="fas fa-arrow-right text-slate-300"></i><code class="text-slate-700">{{ target }}</code>
-            </div>
-          </div>
-          <p v-else class="text-sm text-slate-400">无端口映射</p>
-        </div>
-
-        <div class="rounded-xl border border-slate-200 p-4">
-          <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><i class="fas fa-hard-drive text-amber-500"></i>挂载</h2>
-          <div v-if="detail.volumes?.length" class="space-y-2">
-            <code v-for="vol in detail.volumes" :key="formatVolume(vol)" class="block text-xs text-slate-600 bg-slate-50 rounded-lg px-3 py-2 break-all">{{ formatVolume(vol) }}</code>
-          </div>
-          <p v-else class="text-sm text-slate-400">无挂载</p>
-        </div>
+      <div class="flex items-center gap-1 flex-shrink-0">
+        <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" :disabled="loading" @click="loadDetail">
+          <i class="fas fa-rotate text-sm"></i>
+        </button>
       </div>
-
-      <div class="rounded-xl border border-slate-200 p-4">
-        <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><i class="fas fa-terminal text-slate-500"></i>命令与环境变量</h2>
-        <div class="space-y-4">
-          <div>
-            <div class="text-xs text-slate-500 mb-1">启动命令</div>
-            <code class="block text-xs text-slate-600 bg-slate-50 rounded-lg px-3 py-2 break-all">{{ cmdText || '-' }}</code>
-          </div>
-          <div>
-            <div class="text-xs text-slate-500 mb-1">环境变量</div>
-            <div v-if="envList.length" class="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <code v-for="env in envList" :key="env" class="text-xs text-slate-600 bg-slate-50 rounded-lg px-3 py-2 break-all">{{ env }}</code>
-            </div>
-            <p v-else class="text-sm text-slate-400">无环境变量</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="rounded-xl border border-slate-200 p-4">
-        <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><i class="fas fa-tags text-purple-500"></i>Labels</h2>
-        <div v-if="labelEntries.length" class="grid grid-cols-1 md:grid-cols-2 gap-2">
-          <div v-for="[key, value] in labelEntries" :key="key" class="text-xs bg-slate-50 rounded-lg px-3 py-2 break-all">
-            <span class="text-slate-500">{{ key }}</span><span class="text-slate-300 mx-1">=</span><span class="text-slate-700">{{ value }}</span>
-          </div>
-        </div>
-        <p v-else class="text-sm text-slate-400">无标签</p>
-      </div>
-    </div>
-
-    <div v-else class="empty-state">
-      <div class="empty-state-icon">
-        <i class="fas fa-cube text-4xl text-slate-300"></i>
-      </div>
-      <p class="text-slate-600 font-medium">未找到容器详情</p>
     </div>
   </div>
+
+  <div v-if="loading" class="empty-state">
+    <div class="w-12 h-12 spinner mb-3"></div>
+    <p class="text-slate-500">加载中...</p>
+  </div>
+
+  <div v-else-if="detail" class="p-4 md:p-6 space-y-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- 基本信息 -->
+      <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-400 to-transparent"></div>
+        <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center"><i class="fas fa-circle-info text-white text-[9px]"></i></div>基本信息</h2>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between gap-4"><span class="text-slate-500">名称</span><span class="font-medium text-slate-800 truncate">{{ detail.name }}</span></div>
+          <div class="flex justify-between gap-4"><span class="text-slate-500">ID</span><code class="text-xs text-slate-600 truncate">{{ detail.id }}</code></div>
+          <div class="flex justify-between gap-4"><span class="text-slate-500">状态</span><span :class="detail.state === 'running' ? 'text-emerald-600 font-medium' : 'text-slate-500'">{{ detail.state }}</span></div>
+          <div class="flex justify-between gap-4"><span class="text-slate-500">创建时间</span><span class="text-slate-700">{{ formatTime(detail.createdAt) }}</span></div>
+          <div class="flex justify-between gap-4"><span class="text-slate-500">镜像</span><code class="text-xs text-slate-600 truncate">{{ detail.image }}</code></div>
+          <div class="flex justify-between gap-4"><span class="text-slate-500">重启策略</span><span class="text-slate-700">{{ detail.restart || 'no' }}</span></div>
+        </div>
+      </div>
+
+      <!-- 运行配置 -->
+      <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-transparent"></div>
+        <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center"><i class="fas fa-sliders text-white text-[9px]"></i></div>运行配置</h2>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between gap-4"><span class="text-slate-500">网络</span><span class="text-slate-700">{{ detail.network || '-' }}</span></div>
+          <div class="flex justify-between gap-4"><span class="text-slate-500">工作目录</span><span class="text-slate-700">{{ detail.workdir || '-' }}</span></div>
+          <div class="flex justify-between gap-4"><span class="text-slate-500">用户</span><span class="text-slate-700">{{ detail.user || '-' }}</span></div>
+          <div class="flex justify-between gap-4"><span class="text-slate-500">主机名</span><span class="text-slate-700">{{ detail.hostname || '-' }}</span></div>
+          <div class="flex justify-between gap-4"><span class="text-slate-500">特权模式</span><span class="text-slate-700">{{ detail.privileged ? '是' : '否' }}</span></div>
+          <div class="flex justify-between gap-4"><span class="text-slate-500">资源限制</span><span class="text-slate-700">{{ detail.memory || 0 }} MB / {{ detail.cpus || 0 }} CPU</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- 端口映射 -->
+      <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-400 to-transparent"></div>
+        <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center"><i class="fas fa-network-wired text-white text-[9px]"></i></div>端口映射</h2>
+        <div v-if="portEntries.length" class="space-y-2">
+          <div v-for="[host, target] in portEntries" :key="host" class="flex items-center justify-between text-sm bg-white rounded-lg px-3 py-2">
+            <code class="text-slate-700">{{ host }}</code><i class="fas fa-arrow-right text-slate-300"></i><code class="text-slate-700">{{ target }}</code>
+          </div>
+        </div>
+        <p v-else class="text-sm text-slate-400">无端口映射</p>
+      </div>
+
+      <!-- 挂载 -->
+      <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-transparent"></div>
+        <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center"><i class="fas fa-hard-drive text-white text-[9px]"></i></div>挂载</h2>
+        <div v-if="detail.volumes?.length" class="space-y-2">
+          <code v-for="vol in detail.volumes" :key="formatVolume(vol)" class="block text-xs text-slate-600 bg-white rounded-lg px-3 py-2 break-all">{{ formatVolume(vol) }}</code>
+        </div>
+        <p v-else class="text-sm text-slate-400">无挂载</p>
+      </div>
+    </div>
+
+    <!-- 命令与环境变量 -->
+    <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-slate-400 to-transparent"></div>
+      <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center"><i class="fas fa-terminal text-white text-[9px]"></i></div>命令与环境变量</h2>
+      <div class="space-y-4">
+        <div>
+          <div class="text-xs text-slate-500 mb-1">启动命令</div>
+          <code class="block text-xs text-slate-600 bg-white rounded-lg px-3 py-2 break-all">{{ cmdText || '-' }}</code>
+        </div>
+        <div>
+          <div class="text-xs text-slate-500 mb-1">环境变量</div>
+          <div v-if="envList.length" class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <code v-for="env in envList" :key="env" class="text-xs text-slate-600 bg-white rounded-lg px-3 py-2 break-all">{{ env }}</code>
+          </div>
+          <p v-else class="text-sm text-slate-400">无环境变量</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Labels -->
+    <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-transparent"></div>
+      <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center"><i class="fas fa-tags text-white text-[9px]"></i></div>Labels</h2>
+      <div v-if="labelEntries.length" class="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div v-for="[key, value] in labelEntries" :key="key" class="text-xs bg-white rounded-lg px-3 py-2 break-all">
+          <span class="text-slate-500">{{ key }}</span><span class="text-slate-300 mx-1">=</span><span class="text-slate-700">{{ value }}</span>
+        </div>
+      </div>
+      <p v-else class="text-sm text-slate-400">无标签</p>
+    </div>
+  </div>
+
+  <div v-else class="empty-state">
+    <div class="empty-state-icon">
+      <i class="fas fa-cube text-4xl text-slate-300"></i>
+    </div>
+    <p class="text-slate-600 font-medium">未找到容器详情</p>
+  </div>
+</div>
 </template>

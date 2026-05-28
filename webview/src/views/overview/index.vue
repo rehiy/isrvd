@@ -77,96 +77,94 @@ export default toNative(Overview)
 </script>
 
 <template>
-  <div>
-    <div class="card mb-4">
-      <!-- 页面标题栏 -->
-      <div class="card-toolbar">
-        <!-- 桌面端 -->
-        <div class="hidden md:flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="page-icon bg-primary-500">
-              <i class="fas fa-gauge-high text-white"></i>
-            </div>
-            <div>
-              <h1 class="text-lg font-semibold text-slate-800">概览</h1>
-              <p class="text-xs text-slate-500">服务状态总览</p>
-            </div>
+  <div class="card">
+    <!-- 页面标题栏 -->
+    <div class="card-toolbar">
+      <!-- 桌面端 -->
+      <div class="hidden md:flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="page-icon bg-primary-500">
+            <i class="fas fa-gauge-high text-white"></i>
           </div>
-          <button class="btn btn-secondary" @click="refreshAll">
-            <i class="fas fa-rotate"></i>刷新
-          </button>
-        </div>
-        <!-- 移动端 -->
-        <div class="flex md:hidden items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="page-icon bg-primary-500">
-              <i class="fas fa-gauge-high text-white"></i>
-            </div>
-            <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">概览</h1>
-              <p class="text-xs text-slate-500 truncate">服务状态总览</p>
-            </div>
+          <div>
+            <h1 class="text-lg font-semibold text-slate-800">概览</h1>
+            <p class="text-xs text-slate-500">服务状态总览</p>
           </div>
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="refreshAll">
-            <i class="fas fa-rotate text-sm"></i>
-          </button>
         </div>
+        <button class="btn btn-secondary" @click="refreshAll">
+          <i class="fas fa-rotate"></i>刷新
+        </button>
       </div>
+      <!-- 移动端 -->
+      <div class="flex md:hidden items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class="page-icon bg-primary-500">
+            <i class="fas fa-gauge-high text-white"></i>
+          </div>
+          <div class="min-w-0">
+            <h1 class="text-lg font-semibold text-slate-800 truncate">概览</h1>
+            <p class="text-xs text-slate-500 truncate">服务状态总览</p>
+          </div>
+        </div>
+        <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="refreshAll">
+          <i class="fas fa-rotate text-sm"></i>
+        </button>
+      </div>
+    </div>
 
-      <!-- APISIX 概览区块 -->
-      <div v-if="portal.hasPerm('GET /api/apisix/routes')" class="p-6 border-b border-slate-100">
-        <div class="flex items-center gap-2 mb-4">
-          <i class="fas fa-route text-orange-500 text-lg"></i>
-          <h1 class="text-lg font-semibold text-slate-700">APISIX 网关</h1>
-        </div>
-        <ApisixOverview ref="apisixRef" />
+    <!-- APISIX 概览区块 -->
+    <div v-if="portal.hasPerm('GET /api/apisix/routes')" class="p-6 border-b border-slate-100">
+      <div class="flex items-center gap-2 mb-4">
+        <i class="fas fa-route text-orange-500 text-lg"></i>
+        <h1 class="text-lg font-semibold text-slate-700">APISIX 网关</h1>
       </div>
+      <ApisixOverview ref="apisixRef" />
+    </div>
 
-      <!-- Caddy 概览区块 -->
-      <div v-if="portal.hasPerm('GET /api/caddy/info')" class="p-6 border-b border-slate-100">
-        <div class="flex items-center gap-2 mb-4">
-          <i class="fas fa-shield text-indigo-500 text-lg"></i>
-          <h1 class="text-lg font-semibold text-slate-700">Caddy 网关</h1>
-        </div>
-        <CaddyOverview ref="caddyRef" />
+    <!-- Caddy 概览区块 -->
+    <div v-if="portal.hasPerm('GET /api/caddy/info')" class="p-6 border-b border-slate-100">
+      <div class="flex items-center gap-2 mb-4">
+        <i class="fas fa-shield text-indigo-500 text-lg"></i>
+        <h1 class="text-lg font-semibold text-slate-700">Caddy 网关</h1>
       </div>
+      <CaddyOverview ref="caddyRef" />
+    </div>
 
-      <!-- Docker 概览区块 -->
-      <div v-if="portal.hasPerm('GET /api/docker/containers')" class="p-6 border-b border-slate-100">
-        <div class="flex items-center gap-2 mb-4">
-          <i class="fab fa-docker text-blue-500 text-lg"></i>
-          <h1 class="text-lg font-semibold text-slate-700">Docker 服务</h1>
-        </div>
-        <DockerOverview ref="dockerRef" />
+    <!-- Docker 概览区块 -->
+    <div v-if="portal.hasPerm('GET /api/docker/containers')" class="p-6 border-b border-slate-100">
+      <div class="flex items-center gap-2 mb-4">
+        <i class="fab fa-docker text-blue-500 text-lg"></i>
+        <h1 class="text-lg font-semibold text-slate-700">Docker 服务</h1>
       </div>
+      <DockerOverview ref="dockerRef" />
+    </div>
 
-      <!-- Swarm 概览区块 -->
-      <div v-if="portal.hasPerm('GET /api/swarm/info')" class="p-6 border-b border-slate-100">
-        <div class="flex items-center gap-2 mb-4">
-          <i class="fas fa-circle-nodes text-cyan-600 text-lg"></i>
-          <h1 class="text-lg font-semibold text-slate-700">Swarm 集群</h1>
-        </div>
-        <SwarmOverview ref="swarmRef" />
+    <!-- Swarm 概览区块 -->
+    <div v-if="portal.hasPerm('GET /api/swarm/info')" class="p-6 border-b border-slate-100">
+      <div class="flex items-center gap-2 mb-4">
+        <i class="fas fa-circle-nodes text-cyan-600 text-lg"></i>
+        <h1 class="text-lg font-semibold text-slate-700">Swarm 集群</h1>
       </div>
+      <SwarmOverview ref="swarmRef" />
+    </div>
 
-      <!-- 系统信息区块 -->
-      <div v-if="portal.hasPerm('GET /api/overview/monitor')" class="p-6 border-b border-slate-100">
-        <div class="flex items-center gap-2 mb-4">
-          <i class="fas fa-server text-slate-500 text-lg"></i>
-          <h1 class="text-lg font-semibold text-slate-700">系统信息</h1>
-        </div>
-        <div class="space-y-3">
-          <SystemUpdater />
-          <SystemOverview ref="systemRef" />
-        </div>
+    <!-- 系统信息区块 -->
+    <div v-if="portal.hasPerm('GET /api/overview/monitor')" class="p-6 border-b border-slate-100">
+      <div class="flex items-center gap-2 mb-4">
+        <i class="fas fa-server text-slate-500 text-lg"></i>
+        <h1 class="text-lg font-semibold text-slate-700">系统信息</h1>
       </div>
+      <div class="space-y-3">
+        <SystemUpdater />
+        <SystemOverview ref="systemRef" />
+      </div>
+    </div>
 
-      <!-- 无任何权限时的空状态 -->
-      <div v-if="!hasAnyBlock" class="flex flex-col items-center justify-center py-16 text-slate-400">
-        <i class="fas fa-lock text-4xl mb-4"></i>
-        <p class="text-sm font-medium">暂无可查看的模块</p>
-        <p class="text-xs mt-1">当前账号未分配任何模块权限</p>
-      </div>
+    <!-- 无任何权限时的空状态 -->
+    <div v-if="!hasAnyBlock" class="flex flex-col items-center justify-center py-16 text-slate-400">
+      <i class="fas fa-lock text-4xl mb-4"></i>
+      <p class="text-sm font-medium">暂无可查看的模块</p>
+      <p class="text-xs mt-1">当前账号未分配任何模块权限</p>
     </div>
   </div>
 </template>

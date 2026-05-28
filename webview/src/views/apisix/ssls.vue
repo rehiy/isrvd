@@ -106,148 +106,146 @@ export default toNative(SSLs)
 </script>
 
 <template>
-  <div>
-    <div class="card mb-4">
-      <div class="card-toolbar">
-        <div class="hidden md:flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="page-icon bg-cyan-500">
-              <i class="fas fa-certificate text-white"></i>
-            </div>
-            <div>
-              <h1 class="text-lg font-semibold text-slate-800">SSL 证书</h1>
-              <p class="text-xs text-slate-500">管理 APISIX 的 SSL 证书绑定与 SNI 配置</p>
-            </div>
+  <div class="card">
+    <div class="card-toolbar">
+      <div class="hidden md:flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="page-icon bg-cyan-500">
+            <i class="fas fa-certificate text-white"></i>
           </div>
-          <div class="flex items-center gap-2">
-            <PageSearch v-model="searchText" search-key="apisix-ssls" placeholder="搜索证书、SNI 或 ID..." width-class="w-56" focus-color="cyan" type-to-search />
-            <button class="btn btn-secondary" @click="loadSSLs()">
-              <i class="fas fa-rotate"></i>刷新
-            </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="btn btn-cyan" @click="openCreateModal()">
-              <i class="fas fa-plus"></i>新建证书
-            </button>
+          <div>
+            <h1 class="text-lg font-semibold text-slate-800">SSL 证书</h1>
+            <p class="text-xs text-slate-500">管理 APISIX 的 SSL 证书绑定与 SNI 配置</p>
           </div>
         </div>
-
-        <div class="flex md:hidden items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="page-icon bg-cyan-500">
-              <i class="fas fa-certificate text-white"></i>
-            </div>
-            <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">SSL 证书</h1>
-              <p class="text-xs text-slate-500 truncate">管理证书与 SNI 绑定</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadSSLs()">
-              <i class="fas fa-rotate text-sm"></i>
-            </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="btn btn-cyan w-9 h-9 !px-0" title="新建证书" @click="openCreateModal()">
-              <i class="fas fa-plus text-sm"></i>
-            </button>
-          </div>
+        <div class="flex items-center gap-2">
+          <PageSearch v-model="searchText" search-key="apisix-ssls" placeholder="搜索证书、SNI 或 ID..." width-class="w-56" focus-color="cyan" type-to-search />
+          <button class="btn btn-secondary" @click="loadSSLs()">
+            <i class="fas fa-rotate"></i>刷新
+          </button>
+          <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="btn btn-cyan" @click="openCreateModal()">
+            <i class="fas fa-plus"></i>新建证书
+          </button>
         </div>
       </div>
 
-      <div class="mobile-search">
-        <PageSearch v-model="searchText" search-key="apisix-ssls" placeholder="搜索证书或 SNI..." width-class="w-full" focus-color="cyan" />
-      </div>
-
-      <div v-if="loading" class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
-        <p class="text-slate-500">加载中...</p>
-      </div>
-
-      <div v-else-if="filteredSSLs.length === 0" class="empty-state">
-        <div class="empty-state-icon">
-          <i class="fas fa-certificate text-4xl text-slate-300"></i>
-        </div>
-        <p class="text-slate-600 font-medium mb-1">{{ ssls.length === 0 ? '暂无证书' : '未找到匹配证书' }}</p>
-        <p class="text-sm text-slate-400">{{ ssls.length === 0 ? '点击「新建证书」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
-      </div>
-
-      <div v-else class="space-y-3">
-        <div class="hidden md:block overflow-x-auto">
-          <table class="w-full border-collapse">
-            <thead>
-              <tr class="bg-slate-50 border-b border-slate-200">
-                <th class="th">SNI</th>
-                <th class="th">状态</th>
-                <th class="th">更新时间</th>
-                <th class="w-32 th-right">操作</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-slate-100">
-              <tr v-for="ssl in filteredSSLs" :key="ssl.id" class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-3 max-w-[280px]">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <div class="row-icon bg-cyan-400">
-                      <i class="fas fa-certificate text-white text-sm"></i>
-                    </div>
-                    <div class="min-w-0">
-                      <span class="font-medium text-slate-800 truncate block">{{ getPrimarySNI(ssl) }}</span>
-                      <span class="text-mono-muted">{{ ssl.id }}</span>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-4 py-3">
-                  <span :class="getStatusClass(ssl)" class="text-sm">{{ getStatusText(ssl) }}</span>
-                </td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTs(ssl.update_time || ssl.create_time) }}</td>
-                <td class="px-4 py-3">
-                  <div class="flex justify-end items-center gap-1">
-                    <button v-if="portal.hasPerm('PUT /api/apisix/ssl/:id')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(ssl)">
-                      <i class="fas fa-pen text-xs"></i>
-                    </button>
-                    <button v-if="portal.hasPerm('DELETE /api/apisix/ssl/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteSSL(ssl)">
-                      <i class="fas fa-trash text-xs"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="md:hidden space-y-3 p-4">
-          <div v-for="ssl in filteredSSLs" :key="ssl.id" class="card-interactive">
-            <div class="flex items-center justify-between gap-3 mb-3">
-              <div class="card-info-row !mb-0">
-                <div class="list-icon bg-cyan-400">
-                  <i class="fas fa-certificate text-white text-base"></i>
-                </div>
-                <div class="min-w-0">
-                  <span class="font-medium text-slate-800 text-sm truncate block">{{ getPrimarySNI(ssl) }}</span>
-                  <span class="text-mono-muted">{{ ssl.id }}</span>
-                </div>
-              </div>
-              <span :class="getStatusClass(ssl)" class="text-xs flex-shrink-0">{{ getStatusText(ssl) }}</span>
-            </div>
-
-            <div class="flex items-center gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0">SNI</span>
-              <span class="text-xs text-slate-500 break-all">{{ getSNISummary(ssl) }}</span>
-            </div>
-            <div class="flex items-center gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0">更新</span>
-              <span class="text-xs text-slate-500">{{ formatTs(ssl.update_time || ssl.create_time) }}</span>
-            </div>
-
-            <div class="card-actions">
-              <button v-if="portal.hasPerm('PUT /api/apisix/ssl/:id')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(ssl)">
-                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
-              </button>
-              <button v-if="portal.hasPerm('DELETE /api/apisix/ssl/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteSSL(ssl)">
-                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
-              </button>
-            </div>
+      <div class="flex md:hidden items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class="page-icon bg-cyan-500">
+            <i class="fas fa-certificate text-white"></i>
           </div>
+          <div class="min-w-0">
+            <h1 class="text-lg font-semibold text-slate-800 truncate">SSL 证书</h1>
+            <p class="text-xs text-slate-500 truncate">管理证书与 SNI 绑定</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadSSLs()">
+            <i class="fas fa-rotate text-sm"></i>
+          </button>
+          <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="btn btn-cyan w-9 h-9 !px-0" title="新建证书" @click="openCreateModal()">
+            <i class="fas fa-plus text-sm"></i>
+          </button>
         </div>
       </div>
     </div>
 
-    <SSLEditModal ref="editModalRef" @success="loadSSLs" />
+    <div class="mobile-search">
+      <PageSearch v-model="searchText" search-key="apisix-ssls" placeholder="搜索证书或 SNI..." width-class="w-full" focus-color="cyan" />
+    </div>
+
+    <div v-if="loading" class="empty-state">
+      <div class="w-12 h-12 spinner mb-3"></div>
+      <p class="text-slate-500">加载中...</p>
+    </div>
+
+    <div v-else-if="filteredSSLs.length === 0" class="empty-state">
+      <div class="empty-state-icon">
+        <i class="fas fa-certificate text-4xl text-slate-300"></i>
+      </div>
+      <p class="text-slate-600 font-medium mb-1">{{ ssls.length === 0 ? '暂无证书' : '未找到匹配证书' }}</p>
+      <p class="text-sm text-slate-400">{{ ssls.length === 0 ? '点击「新建证书」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
+    </div>
+
+    <div v-else class="space-y-3">
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200">
+              <th class="th">SNI</th>
+              <th class="th">状态</th>
+              <th class="th">更新时间</th>
+              <th class="w-32 th-right">操作</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-slate-100">
+            <tr v-for="ssl in filteredSSLs" :key="ssl.id" class="hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 max-w-[280px]">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="row-icon bg-cyan-400">
+                    <i class="fas fa-certificate text-white text-sm"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <span class="font-medium text-slate-800 truncate block">{{ getPrimarySNI(ssl) }}</span>
+                    <span class="text-mono-muted">{{ ssl.id }}</span>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span :class="getStatusClass(ssl)" class="text-sm">{{ getStatusText(ssl) }}</span>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTs(ssl.update_time || ssl.create_time) }}</td>
+              <td class="px-4 py-3">
+                <div class="flex justify-end items-center gap-1">
+                  <button v-if="portal.hasPerm('PUT /api/apisix/ssl/:id')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(ssl)">
+                    <i class="fas fa-pen text-xs"></i>
+                  </button>
+                  <button v-if="portal.hasPerm('DELETE /api/apisix/ssl/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteSSL(ssl)">
+                    <i class="fas fa-trash text-xs"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="md:hidden space-y-3 p-4">
+        <div v-for="ssl in filteredSSLs" :key="ssl.id" class="card-interactive">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="card-info-row !mb-0">
+              <div class="list-icon bg-cyan-400">
+                <i class="fas fa-certificate text-white text-base"></i>
+              </div>
+              <div class="min-w-0">
+                <span class="font-medium text-slate-800 text-sm truncate block">{{ getPrimarySNI(ssl) }}</span>
+                <span class="text-mono-muted">{{ ssl.id }}</span>
+              </div>
+            </div>
+            <span :class="getStatusClass(ssl)" class="text-xs flex-shrink-0">{{ getStatusText(ssl) }}</span>
+          </div>
+
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs text-slate-400 flex-shrink-0">SNI</span>
+            <span class="text-xs text-slate-500 break-all">{{ getSNISummary(ssl) }}</span>
+          </div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs text-slate-400 flex-shrink-0">更新</span>
+            <span class="text-xs text-slate-500">{{ formatTs(ssl.update_time || ssl.create_time) }}</span>
+          </div>
+
+          <div class="card-actions">
+            <button v-if="portal.hasPerm('PUT /api/apisix/ssl/:id')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(ssl)">
+              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
+            </button>
+            <button v-if="portal.hasPerm('DELETE /api/apisix/ssl/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteSSL(ssl)">
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <SSLEditModal ref="editModalRef" @success="loadSSLs" />
 </template>

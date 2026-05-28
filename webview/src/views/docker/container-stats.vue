@@ -398,172 +398,170 @@ export default toNative(ContainerStats)
 </script>
 
 <template>
-  <div>
-    <div class="card mb-4">
-      <div class="card-toolbar">
-        <!-- 桌面端 -->
-        <div class="hidden md:flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
-              <i class="fas fa-cube text-white text-sm"></i>
-            </div>
-            <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
-              <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
-            </div>
+  <div class="card">
+    <div class="card-toolbar">
+      <!-- 桌面端 -->
+      <div class="hidden md:flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+            <i class="fas fa-cube text-white text-sm"></i>
           </div>
-        </div>
-        <!-- 移动端 -->
-        <div class="flex md:hidden items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div :class="['page-icon flex-shrink-0', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
-              <i class="fas fa-cube text-white text-sm"></i>
-            </div>
-            <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
-              <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
-            </div>
+          <div class="min-w-0">
+            <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
+            <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
           </div>
         </div>
       </div>
-      <!-- 内容区域 -->
-      <div class="p-4 md:p-6 space-y-4">
-        <!-- 加载状态 -->
-        <div v-if="statsLoading && !statsData" class="empty-state gap-3 text-slate-400 text-sm">
-          <div class="w-8 h-8 spinner"></div>
-          <span>正在采集数据...</span>
+      <!-- 移动端 -->
+      <div class="flex md:hidden items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div :class="['page-icon flex-shrink-0', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+            <i class="fas fa-cube text-white text-sm"></i>
+          </div>
+          <div class="min-w-0">
+            <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
+            <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 内容区域 -->
+    <div class="p-4 md:p-6 space-y-4">
+      <!-- 加载状态 -->
+      <div v-if="statsLoading && !statsData" class="empty-state gap-3 text-slate-400 text-sm">
+        <div class="w-8 h-8 spinner"></div>
+        <span>正在采集数据...</span>
+      </div>
+
+      <template v-else-if="statsData">
+        <!-- 核心指标：CPU 和 内存 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- CPU 使用率 -->
+          <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-transparent"></div>
+            <div class="flex items-center gap-2 mb-1">
+              <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                <i class="fas fa-microchip text-white text-[9px]"></i>
+              </div>
+              <span class="text-sm font-semibold text-slate-700">CPU</span>
+              <span class="ml-auto text-lg font-bold font-mono" :class="statsData.cpuPercent > 80 ? 'text-red-500' : statsData.cpuPercent > 60 ? 'text-amber-500' : 'text-blue-600'">
+                {{ statsData.cpuPercent }}%
+              </span>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
+              <span v-if="statsData.cpuCores">核心 <span class="text-slate-600 font-medium">{{ statsData.cpuCores }} 核</span></span>
+              <span v-if="statsData.cpuFreq">频率 <span class="text-slate-600 font-medium">{{ statsData.cpuFreq.toFixed(0) }} MHz</span></span>
+              <span v-if="statsData.cpuThrottled && statsData.cpuThrottled.throttledPeriods > 0" class="text-amber-500">
+                <i class="fas fa-bolt"></i> 节流 <span class="font-medium">{{ statsData.cpuThrottled.throttledPeriods }}</span>
+              </span>
+            </div>
+            <div class="h-28"><canvas ref="cpuRef" class="w-full h-full"></canvas></div>
+          </div>
+
+          <!-- 内存使用 -->
+          <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-transparent"></div>
+            <div class="flex items-center gap-2 mb-1">
+              <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                <i class="fas fa-memory text-white text-[9px]"></i>
+              </div>
+              <span class="text-sm font-semibold text-slate-700">内存</span>
+              <span class="ml-auto text-lg font-bold font-mono" :class="statsData.memoryPercent > 80 ? 'text-red-500' : statsData.memoryPercent > 60 ? 'text-amber-500' : 'text-purple-600'">
+                {{ statsData.memoryPercent }}%
+              </span>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
+              <span>内存 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryUsage) }}</span></span>
+              <span>限制 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryLimit) }}</span></span>
+            </div>
+            <div class="h-28"><canvas ref="memRef" class="w-full h-full"></canvas></div>
+          </div>
         </div>
 
-        <template v-else-if="statsData">
-          <!-- 核心指标：CPU 和 内存 -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- CPU 使用率 -->
-            <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
-              <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-transparent"></div>
-              <div class="flex items-center gap-2 mb-1">
-                <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                  <i class="fas fa-microchip text-white text-[9px]"></i>
-                </div>
-                <span class="text-sm font-semibold text-slate-700">CPU</span>
-                <span class="ml-auto text-lg font-bold font-mono" :class="statsData.cpuPercent > 80 ? 'text-red-500' : statsData.cpuPercent > 60 ? 'text-amber-500' : 'text-blue-600'">
-                  {{ statsData.cpuPercent }}%
-                </span>
+        <!-- I/O 指标卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- 网络 I/O -->
+          <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-400 to-transparent"></div>
+            <div class="flex items-center gap-2 mb-1">
+              <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
+                <i class="fas fa-network-wired text-white text-[9px]"></i>
               </div>
-              <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
-                <span v-if="statsData.cpuCores">核心 <span class="text-slate-600 font-medium">{{ statsData.cpuCores }} 核</span></span>
-                <span v-if="statsData.cpuFreq">频率 <span class="text-slate-600 font-medium">{{ statsData.cpuFreq.toFixed(0) }} MHz</span></span>
-                <span v-if="statsData.cpuThrottled && statsData.cpuThrottled.throttledPeriods > 0" class="text-amber-500">
-                  <i class="fas fa-bolt"></i> 节流 <span class="font-medium">{{ statsData.cpuThrottled.throttledPeriods }}</span>
-                </span>
-              </div>
-              <div class="h-28"><canvas ref="cpuRef" class="w-full h-full"></canvas></div>
-            </div>
-
-            <!-- 内存使用 -->
-            <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
-              <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-transparent"></div>
-              <div class="flex items-center gap-2 mb-1">
-                <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                  <i class="fas fa-memory text-white text-[9px]"></i>
-                </div>
-                <span class="text-sm font-semibold text-slate-700">内存</span>
-                <span class="ml-auto text-lg font-bold font-mono" :class="statsData.memoryPercent > 80 ? 'text-red-500' : statsData.memoryPercent > 60 ? 'text-amber-500' : 'text-purple-600'">
-                  {{ statsData.memoryPercent }}%
-                </span>
-              </div>
-              <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
-                <span>内存 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryUsage) }}</span></span>
-                <span>限制 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryLimit) }}</span></span>
-              </div>
-              <div class="h-28"><canvas ref="memRef" class="w-full h-full"></canvas></div>
-            </div>
-          </div>
-
-          <!-- I/O 指标卡片 -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- 网络 I/O -->
-            <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
-              <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-400 to-transparent"></div>
-              <div class="flex items-center gap-2 mb-1">
-                <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
-                  <i class="fas fa-network-wired text-white text-[9px]"></i>
-                </div>
-                <span class="text-sm font-semibold text-slate-700">网络</span>
-                <span class="ml-auto text-xs font-mono text-teal-600">
-                  <span class="text-teal-500">↓</span> {{ formatFileSize(netRxRate) }}/s
-                  <span class="mx-1 text-slate-300">·</span>
-                  <span class="text-teal-700">↑</span> {{ formatFileSize(netTxRate) }}/s
-                </span>
-              </div>
-              <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
-                <span v-if="statsData.networkDetail">网卡 <span class="text-slate-600 font-medium">{{ Object.keys(statsData.networkDetail).length }} 块</span></span>
-                <span>累计收 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkRx) }}</span></span>
-                <span>累计发 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkTx) }}</span></span>
-              </div>
-              <div class="h-28"><canvas ref="netRef" class="w-full h-full"></canvas></div>
-            </div>
-
-            <!-- 硬盘 I/O -->
-            <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
-              <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-transparent"></div>
-              <div class="flex items-center gap-2 mb-1">
-                <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
-                  <i class="fas fa-hard-drive text-white text-[9px]"></i>
-                </div>
-                <span class="text-sm font-semibold text-slate-700">硬盘</span>
-                <span class="ml-auto text-xs font-mono text-amber-600">
-                  <span class="text-amber-500">↓</span> {{ formatFileSize(blkRRate) }}/s
-                  <span class="mx-1 text-slate-300">·</span>
-                  <span class="text-amber-700">↑</span> {{ formatFileSize(blkWRate) }}/s
-                </span>
-              </div>
-              <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
-                <span v-if="statsData.blockDetail">设备 <span class="text-slate-600 font-medium">{{ Object.keys(statsData.blockDetail).length }} 个</span></span>
-                <span>累计读 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockRead) }}</span></span>
-                <span>累计写 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockWrite) }}</span></span>
-              </div>
-              <div class="h-28"><canvas ref="blkRef" class="w-full h-full"></canvas></div>
-            </div>
-          </div>
-
-          <!-- 进程信息 -->
-          <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200/60 relative overflow-hidden">
-            <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-rose-400 to-transparent"></div>
-            <div class="flex items-center gap-2 mb-4">
-              <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center">
-                <i class="fas fa-list-ol text-white text-[10px]"></i>
-              </div>
-              <span class="text-sm font-semibold text-slate-700">进程信息</span>
-              <span class="ml-auto text-xs text-slate-400">
-                <span class="font-semibold text-slate-700">{{ statsData.pids }}</span> 运行中
-                <span v-if="statsData.pidsLimit > 0"> / 限制 {{ statsData.pidsLimit }}</span>
+              <span class="text-sm font-semibold text-slate-700">网络</span>
+              <span class="ml-auto text-xs font-mono text-teal-600">
+                <span class="text-teal-500">↓</span> {{ formatFileSize(netRxRate) }}/s
+                <span class="mx-1 text-slate-300">·</span>
+                <span class="text-teal-700">↑</span> {{ formatFileSize(netTxRate) }}/s
               </span>
-              <div v-if="statsData.pidsLimit > 0" class="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                <div
-                  class="h-full rounded-full transition-all duration-500"
-                  :class="statsData.pids / statsData.pidsLimit > 0.9 ? 'bg-red-500' : statsData.pids / statsData.pidsLimit > 0.7 ? 'bg-amber-500' : 'bg-emerald-500'"
-                  :style="{ width: Math.min(statsData.pids / statsData.pidsLimit * 100, 100) + '%' }"
-                ></div>
-              </div>
             </div>
-<div v-if="statsData.processList && statsData.processList.processes && statsData.processList.processes.length > 0" class="overflow-x-auto">
-              <table class="w-full text-xs">
-                <thead class="bg-slate-100">
-                  <tr>
-                    <th v-for="title in statsData.processList.titles" :key="title" class="px-3 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                      {{ title }}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-slate-100">
-                  <tr v-for="(proc, idx) in statsData.processList.processes" :key="idx" class="hover:bg-slate-50">
-                    <td v-for="(val, vi) in proc" :key="vi" class="px-3 py-1.5 whitespace-nowrap font-mono text-slate-600">{{ val }}</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
+              <span v-if="statsData.networkDetail">网卡 <span class="text-slate-600 font-medium">{{ Object.keys(statsData.networkDetail).length }} 块</span></span>
+              <span>累计收 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkRx) }}</span></span>
+              <span>累计发 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkTx) }}</span></span>
             </div>
-            <div v-else class="text-xs text-slate-400">暂无进程信息</div>
+            <div class="h-28"><canvas ref="netRef" class="w-full h-full"></canvas></div>
           </div>
+
+          <!-- 硬盘 I/O -->
+          <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-transparent"></div>
+            <div class="flex items-center gap-2 mb-1">
+              <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
+                <i class="fas fa-hard-drive text-white text-[9px]"></i>
+              </div>
+              <span class="text-sm font-semibold text-slate-700">硬盘</span>
+              <span class="ml-auto text-xs font-mono text-amber-600">
+                <span class="text-amber-500">↓</span> {{ formatFileSize(blkRRate) }}/s
+                <span class="mx-1 text-slate-300">·</span>
+                <span class="text-amber-700">↑</span> {{ formatFileSize(blkWRate) }}/s
+              </span>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
+              <span v-if="statsData.blockDetail">设备 <span class="text-slate-600 font-medium">{{ Object.keys(statsData.blockDetail).length }} 个</span></span>
+              <span>累计读 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockRead) }}</span></span>
+              <span>累计写 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockWrite) }}</span></span>
+            </div>
+            <div class="h-28"><canvas ref="blkRef" class="w-full h-full"></canvas></div>
+          </div>
+        </div>
+
+        <!-- 进程信息 -->
+        <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200/60 relative overflow-hidden">
+          <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-rose-400 to-transparent"></div>
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center">
+              <i class="fas fa-list-ol text-white text-[10px]"></i>
+            </div>
+            <span class="text-sm font-semibold text-slate-700">进程信息</span>
+            <span class="ml-auto text-xs text-slate-400">
+              <span class="font-semibold text-slate-700">{{ statsData.pids }}</span> 运行中
+              <span v-if="statsData.pidsLimit > 0"> / 限制 {{ statsData.pidsLimit }}</span>
+            </span>
+            <div v-if="statsData.pidsLimit > 0" class="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+              <div
+                class="h-full rounded-full transition-all duration-500"
+                :class="statsData.pids / statsData.pidsLimit > 0.9 ? 'bg-red-500' : statsData.pids / statsData.pidsLimit > 0.7 ? 'bg-amber-500' : 'bg-emerald-500'"
+                :style="{ width: Math.min(statsData.pids / statsData.pidsLimit * 100, 100) + '%' }"
+              ></div>
+            </div>
+          </div>
+<div v-if="statsData.processList && statsData.processList.processes && statsData.processList.processes.length > 0" class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead class="bg-slate-100">
+                <tr>
+                  <th v-for="title in statsData.processList.titles" :key="title" class="px-3 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                    {{ title }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-slate-100">
+                <tr v-for="(proc, idx) in statsData.processList.processes" :key="idx" class="hover:bg-slate-50">
+                  <td v-for="(val, vi) in proc" :key="vi" class="px-3 py-1.5 whitespace-nowrap font-mono text-slate-600">{{ val }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-else class="text-xs text-slate-400">暂无进程信息</div>
         </template>
 
         <!-- 容器未运行提示 -->

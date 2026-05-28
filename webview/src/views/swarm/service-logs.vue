@@ -58,52 +58,22 @@ export default toNative(ServiceLogs)
 </script>
 
 <template>
-  <div>
-    <div class="card mb-4">
-      <!-- Toolbar -->
-      <div class="card-toolbar">
-        <!-- 桌面端 -->
-        <div class="hidden md:flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="page-icon bg-emerald-500">
-              <i class="fas fa-cubes text-white"></i>
-            </div>
-            <div>
-              <h1 class="text-lg font-semibold text-slate-800">{{ serviceName || '服务详情' }}</h1>
-              <p class="text-xs text-slate-600 font-mono truncate max-w-xs">{{ serviceId }}</p>
-            </div>
+  <div class="card">
+    <!-- Toolbar -->
+    <div class="card-toolbar">
+      <!-- 桌面端 -->
+      <div class="hidden md:flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="page-icon bg-emerald-500">
+            <i class="fas fa-cubes text-white"></i>
           </div>
-          <div class="flex items-center gap-2">
-            <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
-              <button v-if="portal.hasPerm('GET /api/swarm/service/:id')" :class="['tab-btn', activeTab() === 'swarm-service' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('swarm-service')">
-                <i class="fas fa-circle-info"></i><span>详情</span>
-              </button>
-              <button v-if="portal.hasPerm('GET /api/swarm/service/:id/logs')" :class="['tab-btn', activeTab() === 'swarm-service-logs' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('swarm-service-logs')">
-                <i class="fas fa-file-lines"></i><span>日志</span>
-              </button>
-            </div>
-            <button class="btn btn-secondary" @click="loadLogs()">
-              <i class="fas fa-rotate"></i>刷新
-            </button>
+          <div>
+            <h1 class="text-lg font-semibold text-slate-800">{{ serviceName || '服务详情' }}</h1>
+            <p class="text-xs text-slate-600 font-mono truncate max-w-xs">{{ serviceId }}</p>
           </div>
         </div>
-        <!-- 移动端 -->
-        <div class="block md:hidden">
-          <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3 min-w-0 flex-1">
-              <div class="page-icon bg-emerald-500">
-                <i class="fas fa-cubes text-white"></i>
-              </div>
-              <div class="min-w-0">
-                <h1 class="text-lg font-semibold text-slate-800 truncate">{{ serviceName || '服务详情' }}</h1>
-                <p class="text-xs text-slate-600 font-mono truncate">{{ serviceId.slice(0, 12) }}</p>
-              </div>
-            </div>
-            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadLogs()">
-              <i class="fas fa-rotate text-sm"></i>
-            </button>
-          </div>
-          <div class="flex justify-center gap-1 bg-slate-100 p-1 rounded-lg">
+        <div class="flex items-center gap-2">
+          <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
             <button v-if="portal.hasPerm('GET /api/swarm/service/:id')" :class="['tab-btn', activeTab() === 'swarm-service' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('swarm-service')">
               <i class="fas fa-circle-info"></i><span>详情</span>
             </button>
@@ -111,32 +81,60 @@ export default toNative(ServiceLogs)
               <i class="fas fa-file-lines"></i><span>日志</span>
             </button>
           </div>
+          <button class="btn btn-secondary" @click="loadLogs()">
+            <i class="fas fa-rotate"></i>刷新
+          </button>
         </div>
       </div>
-
-      <!-- 内容 -->
-      <div class="p-4 md:p-6 space-y-3">
-        <div class="flex items-center gap-2">
-          <label class="text-xs text-slate-500 flex-shrink-0">最近行数</label>
-          <select v-model="logsTail" class="w-24 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-700" @change="loadLogs()">
-            <option value="50">50</option>
-            <option value="100">100</option>
-            <option value="200">200</option>
-            <option value="500">500</option>
-            <option value="1000">1000</option>
-          </select>
-        </div>
-        <div v-if="logsLoading" class="empty-state">
-          <div class="w-12 h-12 spinner mb-3"></div>
-          <p class="text-slate-500">加载中...</p>
-        </div>
-        <pre v-else-if="logsContent.length > 0" class="bg-slate-900 text-slate-100 rounded-xl p-3 md:p-4 text-xs font-mono overflow-auto max-h-[600px] whitespace-pre-wrap break-all">{{ logsContent.join('') }}</pre>
-        <div v-else class="empty-state">
-          <div class="empty-state-icon">
-            <i class="fas fa-file-lines text-2xl text-slate-300"></i>
+      <!-- 移动端 -->
+      <div class="block md:hidden">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="page-icon bg-emerald-500">
+              <i class="fas fa-cubes text-white"></i>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-lg font-semibold text-slate-800 truncate">{{ serviceName || '服务详情' }}</h1>
+              <p class="text-xs text-slate-600 font-mono truncate">{{ serviceId.slice(0, 12) }}</p>
+            </div>
           </div>
-          <p class="text-slate-500 text-sm">暂无日志</p>
+          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadLogs()">
+            <i class="fas fa-rotate text-sm"></i>
+          </button>
         </div>
+        <div class="flex justify-center gap-1 bg-slate-100 p-1 rounded-lg">
+          <button v-if="portal.hasPerm('GET /api/swarm/service/:id')" :class="['tab-btn', activeTab() === 'swarm-service' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('swarm-service')">
+            <i class="fas fa-circle-info"></i><span>详情</span>
+          </button>
+          <button v-if="portal.hasPerm('GET /api/swarm/service/:id/logs')" :class="['tab-btn', activeTab() === 'swarm-service-logs' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('swarm-service-logs')">
+            <i class="fas fa-file-lines"></i><span>日志</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 内容 -->
+    <div class="p-4 md:p-6 space-y-3">
+      <div class="flex items-center gap-2">
+        <label class="text-xs text-slate-500 flex-shrink-0">最近行数</label>
+        <select v-model="logsTail" class="w-24 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-700" @change="loadLogs()">
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="200">200</option>
+          <option value="500">500</option>
+          <option value="1000">1000</option>
+        </select>
+      </div>
+      <div v-if="logsLoading" class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
+      <pre v-else-if="logsContent.length > 0" class="bg-slate-900 text-slate-100 rounded-xl p-3 md:p-4 text-xs font-mono overflow-auto max-h-[600px] whitespace-pre-wrap break-all">{{ logsContent.join('') }}</pre>
+      <div v-else class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-file-lines text-2xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-500 text-sm">暂无日志</p>
       </div>
     </div>
   </div>

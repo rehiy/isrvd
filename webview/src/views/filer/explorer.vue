@@ -96,7 +96,7 @@ export default toNative(FileExplorer)
 <template>
   <div>
     <!-- Toolbar Bar -->
-    <div class="card mb-4">
+    <div class="card">
       <div class="card-toolbar">
         <div class="flex items-center justify-between gap-3">
           <nav aria-label="breadcrumb" class="flex-1 min-w-0">

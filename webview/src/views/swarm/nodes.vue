@@ -136,7 +136,7 @@ export default toNative(Nodes)
 
 <template>
   <div>
-    <div class="card mb-4">
+    <div class="card">
       <div class="card-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
