@@ -102,7 +102,7 @@ export default toNative(HostEditModal)
         <textarea
           v-model="formData.privateKey"
           rows="5"
-          :placeholder="isEdit ? '留空保持不变' : '-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----'"
+          :placeholder="isEdit ? '留空保持不变' : '-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----'"
           class="input font-mono text-xs"
         />
         <p class="text-xs text-slate-400 mt-1">PEM 格式私钥，设置后优先使用私钥认证</p>

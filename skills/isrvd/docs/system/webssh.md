@@ -55,7 +55,7 @@ isrvd_post "/ssh/host" '{
   "name": "开发服务器",
   "addr": "dev.example.com",
   "user": "ubuntu",
-  "privateKey": "-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----",
+  "privateKey": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
   "description": "开发环境"
 }'
 ```
@@ -128,9 +128,9 @@ wscat -c "ws://<HOST>/api/ssh/to/<ID>?token=$TOKEN"
   addr: dev.example.com
   user: ubuntu
   privateKey: |
-    -----BEGIN OPENSSH PRIVATE KEY-----
+    -----BEGIN PRIVATE KEY-----
     ...
-    -----END OPENSSH PRIVATE KEY-----
+    -----END PRIVATE KEY-----
   description: 开发环境
 ```
 
