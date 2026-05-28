@@ -4,11 +4,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rehiy/libgo/httpd"
 	"github.com/rehiy/libgo/websocket"
 
 	svcDocker "isrvd/internal/service/docker"
 	pkgdocker "isrvd/pkgs/docker"
-	"isrvd/pkgs/sse"
 )
 
 // defineDockerRoutes 定义 Docker 模块路由
@@ -150,7 +150,7 @@ func (app *App) dockerContainerLogsStream(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "缺少容器 ID")
 		return
 	}
-	w, err := sse.NewEventWriter(c.Writer)
+	w, err := httpd.NewEventWriter(c.Writer)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return

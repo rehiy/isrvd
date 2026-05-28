@@ -10,7 +10,7 @@ import (
 
 	"github.com/goccy/go-yaml"
 
-	"isrvd/pkgs/etcd"
+	"github.com/rehiy/libgo/etcd"
 )
 
 // EtcdProvider etcd 配置提供者

@@ -7,9 +7,8 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/rehiy/libgo/httpd"
 	"github.com/rehiy/libgo/logman"
-
-	"isrvd/pkgs/sse"
 )
 
 // ContainerLogsRequest 日志请求
@@ -60,7 +59,7 @@ func (s *DockerService) ContainerLogsStream(ctx context.Context, w io.Writer, re
 	}
 
 	writeError := func(msg string) {
-		if sw, ok := w.(sse.Writer); ok {
+		if sw, ok := w.(httpd.Writer); ok {
 			_ = sw.WriteEvent("error", msg)
 		} else {
 			_, _ = w.Write([]byte("[" + msg + "]\n"))
