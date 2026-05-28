@@ -21,7 +21,7 @@ class SystemOverview extends Vue {
     portal = usePortal()
 
     // ─── 数据属性 ───
-    loading = false
+    loading = true
     ready   = false
 
     private pollTimer: ReturnType<typeof setInterval> | null = null
