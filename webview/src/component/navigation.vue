@@ -185,12 +185,6 @@ export default toNative(NavigationBar)
         <i class="fas fa-terminal"></i>
         <span v-if="!collapsed">Shell 终端</span>
       </router-link>
-      <!-- SSH 连接 -->
-      <router-link v-if="portal.hasPerm('GET /api/ssh/hosts')" to="/ssh/hosts" class="nav-link" :class="{ 'bg-blue-50 text-blue-700': isActive('/ssh') }" :title="collapsed ? 'SSH 连接' : ''">
-        <i class="fas fa-server"></i>
-        <span v-if="!collapsed">SSH 连接</span>
-      </router-link>
-
       <!-- APISIX 折叠子菜单 -->
       <div v-if="portal.hasPerm('apisix')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
@@ -407,6 +401,11 @@ export default toNative(NavigationBar)
       <router-link v-if="composeDeployVisible" to="/compose/deploy" class="nav-link" active-class="bg-blue-50 text-blue-700" :title="collapsed ? 'Compose 部署' : ''">
         <i class="fas fa-file-code"></i>
         <span v-if="!collapsed">Compose 部署</span>
+      </router-link>
+      <!-- SSH 远程连接 -->
+      <router-link v-if="portal.hasPerm('GET /api/ssh/hosts')" to="/ssh/hosts" class="nav-link" :class="{ 'bg-blue-50 text-blue-700': isActive('/ssh') }" :title="collapsed ? 'SSH 远程连接' : ''">
+        <i class="fas fa-server"></i>
+        <span v-if="!collapsed">SSH 远程连接</span>
       </router-link>
 
       <!-- 计划任务 -->
