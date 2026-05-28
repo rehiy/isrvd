@@ -62,7 +62,7 @@ class SystemUpdater extends Vue {
         try {
             const spec: DockerContainerCreate = {
                 image: 'rehiy/docker-updater:latest',
-                name: `docker-updater-${Date.now()}`,
+                name: `auto-update-${Date.now()}`,
                 autoRemove: this.updaterAutoRemove,
                 volumes: [
                     { type: 'bind', hostPath: '/var/run/docker.sock', containerPath: '/var/run/docker.sock', readOnly: false },
