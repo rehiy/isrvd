@@ -6,7 +6,9 @@
 isrvd_get "/account/info"
 ```
 
-返回：`{mode, username, member, oidcEnabled}`
+返回：`{mode, username, member, oidcEnabled, oidcBtnLabel}`
+
+> `oidcBtnLabel` 为 OIDC 登录按钮自定义名称，未配置时为空字符串。
 
 ## 登录
 

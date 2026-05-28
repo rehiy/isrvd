@@ -43,6 +43,8 @@ export interface OIDCConfig {
     redirectUrl: string
     usernameClaim: string
     scopes: string[]
+    // OIDC 登录按钮自定义名称，留空时使用默认文案
+    loginButtonLabel?: string
 }
 
 export interface ApisixConfig {

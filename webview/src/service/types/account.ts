@@ -5,6 +5,8 @@ export interface AuthInfo {
     username?: string
     member?: MemberInfo
     oidcEnabled: boolean
+    // OIDC 登录按钮自定义名称
+    oidcBtnLabel?: string
 }
 
 export interface AuthLogin {

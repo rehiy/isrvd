@@ -276,6 +276,11 @@ export default toNative(Config)
             <p class="mt-1 text-xs text-slate-400">Username Claim；默认 sub，该字段的值必须与 members.username 完全一致，用户不存在时登录失败</p>
           </div>
           <div>
+            <label class="form-label">登录按钮名称</label>
+            <input v-model="oidc.loginButtonLabel" type="text" placeholder="使用 OIDC 登录" class="input" />
+            <p class="mt-1 text-xs text-slate-400">自定义 OIDC 登录按钮显示名称；留空则使用默认文案"使用 OIDC 登录"</p>
+          </div>
+          <div>
             <label class="form-label">授权范围</label>
             <input v-model="oidcScopes" type="text" placeholder="openid profile email" class="input" />
             <p class="mt-1 text-xs text-slate-400">Scopes；以空格分隔，系统会自动确保包含 openid</p>

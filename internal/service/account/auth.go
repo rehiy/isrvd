@@ -18,10 +18,11 @@ import (
 
 // AuthInfoResponse 认证模式及当前用户信息
 type AuthInfoResponse struct {
-	Mode        string      `json:"mode"`
-	Username    string      `json:"username,omitempty"`
-	Member      *MemberInfo `json:"member,omitempty"`
-	OIDCEnabled bool        `json:"oidcEnabled"`
+	Mode         string      `json:"mode"`
+	Username     string      `json:"username,omitempty"`
+	Member       *MemberInfo `json:"member,omitempty"`
+	OIDCEnabled  bool        `json:"oidcEnabled"`
+	OIDCBtnLabel string      `json:"oidcBtnLabel,omitempty"` // OIDC 登录按钮自定义名称
 }
 
 // LoginRequest 登录请求
@@ -71,12 +72,17 @@ func (s *Service) AuthInfo(username string) *AuthInfoResponse {
 	if config.Server.ProxyHeaderName != "" {
 		mode = "header"
 	}
-	return &AuthInfoResponse{
+	oidcEnabled := mode == "jwt" && config.OIDC.Enabled && config.OIDC.IssuerURL != "" && config.OIDC.ClientID != ""
+	resp := &AuthInfoResponse{
 		Mode:        mode,
 		Username:    username,
 		Member:      s.MemberInspect(username),
-		OIDCEnabled: mode == "jwt" && config.OIDC.Enabled && config.OIDC.IssuerURL != "" && config.OIDC.ClientID != "",
+		OIDCEnabled: oidcEnabled,
 	}
+	if oidcEnabled {
+		resp.OIDCBtnLabel = config.OIDC.LoginButtonLabel
+	}
+	return resp
 }
 
 // ─── 登录与 Token 签发 ────────────────────────────────────────────────────────

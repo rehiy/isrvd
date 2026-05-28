@@ -234,7 +234,7 @@ cd webview && python3 sort-imports.py --dry-run src
 | 配置段 | 说明 |
 |--------|------|
 | `server` | 端口、JWT 密钥、代理认证头、数据目录、CORS 允许源、最大上传大小 |
-| `oidc` | OIDC 认证（issuerUrl / clientId / clientSecret / redirectUrl） |
+| `oidc` | OIDC 认证（issuerUrl / clientId / clientSecret / redirectUrl / loginButtonLabel） |
 | `agent` | AI 助手模型接入（model / baseUrl / apiKey） |
 | `apisix` | APISIX Admin API 地址和密钥 |
 | `caddy` | Caddy Admin API 地址 |
