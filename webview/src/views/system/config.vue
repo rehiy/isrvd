@@ -72,7 +72,7 @@ class Config extends Vue {
         marketplace: this.marketplace,
         links: this.links,
       })
-      this.portal.showNotification('success', '全部配置已保存，监听地址等选项需重启生效')
+this.portal.showNotification('success', '全部配置已保存，监听地址变更需重启生效')
       this.loadConfig()
     } catch {
     } finally {
@@ -228,19 +228,16 @@ export default toNative(Config)
             <input v-model="server.rootDirectory" type="text" placeholder="." class="input" />
             <p class="mt-1 text-xs text-slate-400">成员家目录及容器数据的基础目录</p>
           </div>
-          <div class="border-t border-slate-200 pt-4">
-            <p class="text-sm font-medium text-slate-500 mb-4">监控</p>
-            <div>
-              <label class="form-label">采集间隔</label>
-              <select v-model.number="monitor.interval" class="input">
-                <option :value="0">禁用</option>
-                <option :value="5">5 秒</option>
-                <option :value="15">15 秒</option>
-                <option :value="30">30 秒</option>
-                <option :value="60">60 秒</option>
-              </select>
-              <p class="mt-1 text-xs text-slate-400">系统与容器监控数据的采集频率，禁用后不再写入监控文件（重启生效）</p>
-            </div>
+          <div>
+            <label class="form-label">监控采集间隔</label>
+            <select v-model.number="monitor.interval" class="input">
+              <option :value="0">禁用</option>
+              <option :value="5">5 秒</option>
+              <option :value="15">15 秒</option>
+              <option :value="30">30 秒</option>
+              <option :value="60">60 秒</option>
+            </select>
+                <p class="mt-1 text-xs text-slate-400">系统与容器监控数据的采集频率，禁用后不再写入监控文件</p>
           </div>
         </section>
 
@@ -387,7 +384,7 @@ export default toNative(Config)
           </button>
           <p class="text-xs text-slate-400 flex items-start gap-1">
             <i class="fas fa-circle-info mt-0.5 flex-shrink-0"></i>
-            <span>保存后立即写入配置文件，部分选项需重启服务生效。</span>
+<span>保存后立即写入配置文件，监听地址变更需重启服务生效。</span>
           </p>
         </div>
       </form>

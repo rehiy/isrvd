@@ -132,5 +132,10 @@ func (s *ConfigService) ConfigUpdateAll(req UpdateAllConfigRequest) error {
 	if err := config.Save(); err != nil {
 		return fmt.Errorf("保存配置失败: %w", err)
 	}
+	// 触发重载，使新配置立即生效
+	select {
+	case config.ReloadCh <- struct{}{}:
+	default:
+	}
 	return nil
 }
