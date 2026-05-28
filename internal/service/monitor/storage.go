@@ -16,6 +16,10 @@ import (
 const (
 	// retainDays 文件保留天数
 	retainDays = 3
+	// HostPrefix 主机监控文件前缀
+	HostPrefix = "host"
+	// ContainerPrefix 容器监控文件前缀
+	ContainerPrefix = "ctr"
 )
 
 // store 管理单个前缀的按天 NDJSON 文件追加写
@@ -96,15 +100,6 @@ func (s *store) append(v any) error {
 	return err
 }
 
-// AppendRecord 追加一条记录到 dir/prefix_YYYY-MM-DD.ndjson
-func AppendRecord(dir, prefix string, v any) error {
-	s, err := getStore(dir, prefix)
-	if err != nil {
-		return err
-	}
-	return s.append(v)
-}
-
 // ReadSince 读取 dir 下 prefix_*.ndjson 中 ts >= (now-sinceSeconds) 的所有行
 // 按时间窗口确定需要读哪几天的文件，合并后按 ts 顺序返回
 func ReadSince[T any](dir, prefix string, sinceSeconds int64) ([]T, error) {
@@ -149,6 +144,25 @@ func CleanOldFiles(dir string) {
 	}
 }
 
+// AppendRecord 将任意数据序列化后追加到 dir/prefix_YYYY-MM-DD.ndjson
+// 内部自动完成 JSON 序列化，写入失败时记录日志
+func AppendRecord(dir, prefix string, ts int64, data any) {
+	raw, err := json.Marshal(data)
+	if err != nil {
+		logman.Warn("monitor: marshal data failed", "prefix", prefix, "error", err)
+		return
+	}
+	record := &Record{Ts: ts, Data: raw}
+	s, err := getStore(dir, prefix)
+	if err != nil {
+		logman.Warn("monitor: get store failed", "prefix", prefix, "error", err)
+		return
+	}
+	if err := s.append(record); err != nil {
+		logman.Warn("monitor: write record failed", "prefix", prefix, "error", err)
+	}
+}
+
 // daysInRange 返回从 cutoffUnix 所在日期到今天的日期字符串列表（YYYY-MM-DD，本地时区）
 func daysInRange(cutoffUnix int64) []string {
 	loc := time.Local
@@ -176,7 +190,7 @@ func readFileRecords[T any](path string, cutoff int64) ([]T, error) {
 
 	var result []T
 	scanner := bufio.NewScanner(bytes.NewReader(data))
-	scanner.Buffer(make([]byte, 64*1024), 64*1024)
+	scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
 	for scanner.Scan() {
 		line := scanner.Bytes()
 		if len(line) == 0 {

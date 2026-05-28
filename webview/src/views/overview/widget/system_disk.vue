@@ -85,7 +85,7 @@ class SystemDisk extends Vue {
         return arr?.length ? arr[arr.length - 1] : 0
     }
 
-    netChartOptions(): ChartOptions<'line'> {
+    diskChartOptions(): ChartOptions<'line'> {
         const fmtRate = (v: number) => this.fmtRate(v)
         return {
             responsive: true, maintainAspectRatio: false, animation: false,
@@ -125,7 +125,7 @@ class SystemDisk extends Vue {
         const chart = new Chart(canvas as HTMLCanvasElement, {
             type: 'line' as const,
             data: { labels: [...h.labels], datasets: [this.makeDataset(h.read, '#f59e0b', '读取'), this.makeDataset(h.write, '#8b5cf6', '写入')] },
-            options: this.netChartOptions()
+            options: this.diskChartOptions()
         })
         this.diskIOCharts[name] = markRaw(chart)
     }
@@ -140,7 +140,7 @@ class SystemDisk extends Vue {
         chart.update('none')
     }
 
-    pushData(payload: SystemStat) {
+    pushData(payload: SystemStat, ts: number) {
         const s = payload.system
         this.current = { diskTotal: s.diskTotal, diskUsed: s.diskUsed, diskPartition: this.sortedDiskPartitions(s.diskPartition) }
         const diskIO = this.sortedDiskIO(payload.diskIO)
@@ -148,9 +148,9 @@ class SystemDisk extends Vue {
 
         if (!diskIO.length || !s.diskPartition) return
 
-        const now = new Date()
-        const label = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
-        const nowTime = Date.now()
+        const t = new Date(ts * 1000)
+        const label = `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}:${t.getSeconds().toString().padStart(2, '0')}`
+        const nowTime = ts * 1000
 
         diskIO.forEach(dio => {
             const name = dio.Name

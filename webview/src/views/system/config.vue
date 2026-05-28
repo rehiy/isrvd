@@ -4,7 +4,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { AllConfig, ServerConfig, AgentConfig, OIDCConfig, ApisixConfig, CaddyConfig, DockerConfig, MarketplaceConfig, LinkConfig } from '@/service/types'
+import type { AllConfig, ServerConfig, AgentConfig, OIDCConfig, ApisixConfig, CaddyConfig, DockerConfig, MonitorConfig, MarketplaceConfig, LinkConfig } from '@/service/types'
 
 import IconSelect from '@/component/icon-select.vue'
 
@@ -20,6 +20,7 @@ class Config extends Vue {
   server: ServerConfig = { debug: false, listenAddr: '', jwtExpiration: 86400, maxUploadSize: 104857600, proxyHeaderName: '', proxyTrustedCIDRs: [], rootDirectory: '', allowedOrigins: [] }
   allowedOriginsText = ''
   proxyTrustedCIDRsText = ''
+  monitor: MonitorConfig = { interval: 0 }
   oidc: OIDCConfig = { enabled: false, issuerUrl: '', clientId: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'] }
   oidcScopes = 'openid profile email'
   agent: AgentConfig = { model: '', baseUrl: '' }
@@ -38,6 +39,7 @@ class Config extends Vue {
       this.server = { ...payload.server }
       this.allowedOriginsText = (this.server.allowedOrigins || []).join('\n')
       this.proxyTrustedCIDRsText = (this.server.proxyTrustedCIDRs || []).join('\n')
+      this.monitor = { ...(payload.monitor || { interval: 0 }) }
       this.oidc = { ...(payload.oidc || { enabled: false, issuerUrl: '', clientId: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'] }) }
       this.oidcScopes = (this.oidc.scopes || []).join(' ')
       this.agent = { ...payload.agent }
@@ -66,6 +68,7 @@ class Config extends Vue {
         apisix: this.apisix,
         caddy: this.caddy,
         docker: this.docker,
+        monitor: this.monitor,
         marketplace: this.marketplace,
         links: this.links,
       })
@@ -224,6 +227,20 @@ export default toNative(Config)
             <label class="form-label">基础目录</label>
             <input v-model="server.rootDirectory" type="text" placeholder="." class="input" />
             <p class="mt-1 text-xs text-slate-400">成员家目录及容器数据的基础目录</p>
+          </div>
+          <div class="border-t border-slate-200 pt-4">
+            <p class="text-sm font-medium text-slate-500 mb-4">监控</p>
+            <div>
+              <label class="form-label">采集间隔</label>
+              <select v-model.number="monitor.interval" class="input">
+                <option :value="0">禁用</option>
+                <option :value="5">5 秒</option>
+                <option :value="15">15 秒</option>
+                <option :value="30">30 秒</option>
+                <option :value="60">60 秒</option>
+              </select>
+              <p class="mt-1 text-xs text-slate-400">系统与容器监控数据的采集频率，禁用后不再写入监控文件（重启生效）</p>
+            </div>
           </div>
         </section>
 

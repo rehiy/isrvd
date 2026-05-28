@@ -108,15 +108,15 @@ class SystemNetwork extends Vue {
         chart.update('none')
     }
 
-    pushData(payload: SystemStat) {
+    pushData(payload: SystemStat, ts: number) {
         const ifaces = payload.system?.netInterface || []
         const physicalIfaces = this.physicalInterfaces(ifaces)
         this.currentIfaces = physicalIfaces
         if (!ifaces.length) return
 
-        const now = new Date()
-        const label = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
-        const nowTime = Date.now()
+        const t = new Date(ts * 1000)
+        const label = `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}:${t.getSeconds().toString().padStart(2, '0')}`
+        const nowTime = ts * 1000
 
         physicalIfaces.forEach(ni => {
             const name = ni.name

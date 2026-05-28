@@ -15,6 +15,7 @@ type AllConfigResponse struct {
 	Apisix      *config.ApisixConfig      `json:"apisix"`
 	Caddy       *config.CaddyConfig       `json:"caddy"`
 	Docker      *config.DockerConfig      `json:"docker"`
+	Monitor     *config.MonitorConfig     `json:"monitor"`
 	Marketplace *config.MarketplaceConfig `json:"marketplace"`
 	Links       []*config.LinkConfig      `json:"links"`
 }
@@ -27,6 +28,7 @@ type UpdateAllConfigRequest struct {
 	Apisix      *config.ApisixConfig      `json:"apisix"`
 	Caddy       *config.CaddyConfig       `json:"caddy"`
 	Docker      *config.DockerConfig      `json:"docker"`
+	Monitor     *config.MonitorConfig     `json:"monitor"`
 	Marketplace *config.MarketplaceConfig `json:"marketplace"`
 	Links       []*config.LinkConfig      `json:"links"`
 }
@@ -86,6 +88,7 @@ func (s *ConfigService) ConfigAll() *AllConfigResponse {
 			AdminURL: config.Caddy.AdminURL,
 		},
 		Docker:      config.Docker,
+		Monitor:     config.Monitor,
 		Marketplace: config.Marketplace,
 		Links:       config.Links,
 	}
@@ -116,6 +119,9 @@ func (s *ConfigService) ConfigUpdateAll(req UpdateAllConfigRequest) error {
 	if req.Docker != nil {
 		config.Docker.Host = req.Docker.Host
 		config.Docker.ContainerRoot = req.Docker.ContainerRoot
+	}
+	if req.Monitor != nil {
+		config.Monitor = config.MonitorNormalize(req.Monitor)
 	}
 	if req.Marketplace != nil {
 		config.Marketplace.URL = req.Marketplace.URL

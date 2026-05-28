@@ -8,6 +8,7 @@ type Config struct {
 	Apisix      *ApisixConfig      `yaml:"apisix"`
 	Caddy       *CaddyConfig       `yaml:"caddy"`
 	Docker      *DockerConfig      `yaml:"docker"`
+	Monitor     *MonitorConfig     `yaml:"monitor"`
 	Marketplace *MarketplaceConfig `yaml:"marketplace"`
 	Links       []*LinkConfig      `yaml:"links"`
 	Members     []*MemberConfig    `yaml:"members"`
@@ -42,6 +43,11 @@ type AgentConfig struct {
 	Model   string `yaml:"model" json:"model"`             // 模型名称
 	BaseURL string `yaml:"baseUrl" json:"baseUrl"`         // LLM API 基础地址（OpenAI 兼容）
 	APIKey  string `yaml:"apiKey" json:"apiKey,omitempty"` // 写入时为空表示保留原值；响应时不返回
+}
+
+// 监控配置
+type MonitorConfig struct {
+	Interval int `yaml:"interval" json:"interval"` // 采集间隔（秒），合法值：5/15/30/60；其他值均视为禁用
 }
 
 // Apisix 配置

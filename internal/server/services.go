@@ -158,5 +158,8 @@ func (app *App) reload() {
 	}
 	registry.Init()
 	app.initServices()
+	if app.monitorCollector != nil {
+		app.monitorCollector.Restart(context.Background())
+	}
 	logman.Info("reload complete")
 }

@@ -17,7 +17,7 @@ import (
 func (app *App) defineOverviewRoutes() []Route {
 	return []Route{
 		{Method: "GET", Path: "/overview/probe", Handler: app.overviewProbe, Module: "overview", Label: "探测服务可用性", Access: AccessAuth},
-		{Method: "GET", Path: "/overview/monitor", Handler: app.overviewMonitor, Module: "overview", Label: "获取监控数据"},
+		{Method: "GET", Path: "/overview/monitor", Handler: app.overviewMonitor, Module: "overview", Label: "获取监控数据", Access: AccessAuth},
 		{Method: "POST", Path: "/overview/upgrade", Handler: app.overviewUpgrade, Module: "overview", Label: "升级程序至最新版本"},
 	}
 }
@@ -66,9 +66,9 @@ func (app *App) overviewUpgrade(c *gin.Context) {
 
 // overviewMonitor 返回监控数据
 // 查询参数：
-//   - type: "host"（默认）或 "container"
-//   - id:   容器 ID（type=container 时必填）
-//   - since: 时间窗口（秒），默认 3600
+//   - type:  "host"（默认）或 "container"
+//   - id:    容器 ID（type=container 时必填）
+//   - since: 时间窗口（秒），默认 3600；传 0 为实时模式（优先返回最近 30s 内已有数据，否则主动采集一次，不写入文件）
 func (app *App) overviewMonitor(c *gin.Context) {
 	if app.monitorCollector == nil {
 		respondError(c, http.StatusServiceUnavailable, "监控采集器未启动")
@@ -77,7 +77,17 @@ func (app *App) overviewMonitor(c *gin.Context) {
 
 	sinceStr := c.DefaultQuery("since", "3600")
 	since, err := strconv.ParseInt(sinceStr, 10, 64)
-	if err != nil || since <= 0 {
+	if err != nil {
+		since = 3600
+	}
+
+	// since=0：实时模式
+	if since == 0 {
+		app.overviewMonitorRealtime(c)
+		return
+	}
+
+	if since < 0 {
 		since = 3600
 	}
 
@@ -90,7 +100,7 @@ func (app *App) overviewMonitor(c *gin.Context) {
 		}
 		records, err := svcMonitor.ReadSince[svcMonitor.Record](
 			app.monitorCollector.DataDir(),
-			svcMonitor.ContainerFilePrefix(id),
+			svcMonitor.ContainerPrefix+"_"+id,
 			since,
 		)
 		if err != nil {
@@ -101,7 +111,7 @@ func (app *App) overviewMonitor(c *gin.Context) {
 	default:
 		records, err := svcMonitor.ReadSince[svcMonitor.Record](
 			app.monitorCollector.DataDir(),
-			svcMonitor.HostFilePrefix(),
+			svcMonitor.HostPrefix,
 			since,
 		)
 		if err != nil {
@@ -109,5 +119,43 @@ func (app *App) overviewMonitor(c *gin.Context) {
 			return
 		}
 		respondSuccess(c, "ok", records)
+	}
+}
+
+// overviewMonitorRealtime 实时模式：优先返回最近 30s 内已有数据，否则主动采集（不写入）
+func (app *App) overviewMonitorRealtime(c *gin.Context) {
+	ctx := c.Request.Context()
+	const recentSeconds = 30
+
+	switch c.DefaultQuery("type", "host") {
+	case "container":
+		id := c.Query("id")
+		if id == "" {
+			respondError(c, http.StatusBadRequest, "缺少容器 ID")
+			return
+		}
+		records, _ := svcMonitor.ReadSince[svcMonitor.Record](
+			app.monitorCollector.DataDir(),
+			svcMonitor.ContainerPrefix+"_"+id,
+			recentSeconds,
+		)
+		if len(records) > 0 {
+			respondSuccess(c, "ok", records[len(records)-1])
+			return
+		}
+		rec := app.monitorCollector.CollectContainerStatNow(ctx, id)
+		respondSuccess(c, "ok", rec)
+	default:
+		records, _ := svcMonitor.ReadSince[svcMonitor.Record](
+			app.monitorCollector.DataDir(),
+			svcMonitor.HostPrefix,
+			recentSeconds,
+		)
+		if len(records) > 0 {
+			respondSuccess(c, "ok", records[len(records)-1])
+			return
+		}
+		rec := app.monitorCollector.CollectHostStatNow(ctx)
+		respondSuccess(c, "ok", rec)
 	}
 }

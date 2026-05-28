@@ -72,6 +72,10 @@ export interface MarketplaceConfig {
     url: string
 }
 
+export interface MonitorConfig {
+    interval: number  // 采集间隔（秒），合法值：5/15/30/60；其他值均视为禁用
+}
+
 export interface LinkConfig {
     label: string
     url: string
@@ -85,6 +89,7 @@ export interface AllConfig {
     apisix: ApisixConfig
     caddy: CaddyConfig
     docker: DockerConfig
+    monitor: MonitorConfig
     marketplace: MarketplaceConfig
     links: LinkConfig[]
 }

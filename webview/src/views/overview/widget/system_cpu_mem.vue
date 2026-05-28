@@ -129,12 +129,12 @@ class SystemCpuMem extends Vue {
         }
     }
 
-    pushData(payload: SystemStat) {
+    pushData(payload: SystemStat, ts: number) {
         const s = payload.system
         this.current = { cpuPercent: s.cpuPercent, cpuModel: s.cpuModel, memoryUsed: s.memoryUsed, memoryTotal: s.memoryTotal }
 
-        const now = new Date()
-        const label = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+        const t = new Date(ts * 1000)
+        const label = `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}:${t.getSeconds().toString().padStart(2, '0')}`
 
         this.cpuHistory.labels.push(label)
         this.cpuHistory.data.push(this.avgCpuPercent(s.cpuPercent))

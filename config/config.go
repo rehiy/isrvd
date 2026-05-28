@@ -15,6 +15,8 @@ var (
 	Caddy = &CaddyConfig{}
 	// Docker 配置
 	Docker = &DockerConfig{}
+	// Monitor 监控配置
+	Monitor = MonitorNormalize(nil)
 	// 应用市场配置
 	Marketplace = &MarketplaceConfig{}
 	// 工具栏链接配置
@@ -50,6 +52,7 @@ func Save() error {
 		Apisix:      Apisix,
 		Caddy:       Caddy,
 		Docker:      Docker,
+		Monitor:     Monitor,
 		Marketplace: Marketplace,
 		Links:       Links,
 		Members:     members,
@@ -84,6 +87,8 @@ func Apply(conf *Config) {
 		Docker = conf.Docker
 		Docker.ContainerRoot = PathToAbs(Server.RootDirectory, Docker.ContainerRoot)
 	}
+
+	Monitor = MonitorNormalize(conf.Monitor)
 
 	if conf.Marketplace != nil {
 		Marketplace = conf.Marketplace
@@ -123,6 +128,21 @@ func ServerNormalize(server *ServerConfig) *ServerConfig {
 		}
 	}
 	return server
+}
+
+// MonitorNormalize 填充 Monitor 默认值
+func MonitorNormalize(monitor *MonitorConfig) *MonitorConfig {
+	if monitor == nil {
+		monitor = &MonitorConfig{}
+	}
+	// Interval 合法值：5、15、30、60；其他值均视为禁用，置 0
+	switch monitor.Interval {
+	case 5, 15, 30, 60:
+		// 合法值，保留
+	default:
+		monitor.Interval = 0
+	}
+	return monitor
 }
 
 // OIDCNormalize 填充 OIDC 默认值

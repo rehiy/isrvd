@@ -124,12 +124,12 @@ class SystemGpu extends Vue {
         chart.update('none')
     }
 
-    pushData(payload: SystemStat) {
+    pushData(payload: SystemStat, ts: number) {
         this.currentGpus = payload.gpu || []
         if (!payload.gpu?.length) return
 
-        const now = new Date()
-        const label = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+        const t = new Date(ts * 1000)
+        const label = `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}:${t.getSeconds().toString().padStart(2, '0')}`
 
         payload.gpu.forEach(gpu => {
             const key = this.gpuKey(gpu)

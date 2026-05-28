@@ -4,8 +4,7 @@ import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { SystemStat } from '@/service/types'
-
+import type { MonitorHostRecord } from '@/service/types'
 import { POLL_INTERVAL } from '@/helper/utils'
 
 import SystemCpuMem from './system_cpu_mem.vue'
@@ -36,16 +35,28 @@ class SystemOverview extends Vue {
     @Ref readonly goRef!: InstanceType<typeof SystemGo>
 
     // ─── 方法 ───
-    private dispatchData(payload: SystemStat) {
-        if (payload.version) {
-            this.portal.currentVersion = payload.version
+    private dispatchData(rec: MonitorHostRecord) {
+        const { ts, data } = rec
+        if (data.version) {
+            this.portal.currentVersion = data.version
         }
-        this.infoRef?.pushData(payload)
-        this.cpuMemRef?.pushData(payload)
-        this.gpuRef?.pushData(payload)
-        this.diskRef?.pushData(payload)
-        this.networkRef?.pushData(payload)
-        this.goRef?.pushData(payload)
+        this.infoRef?.pushData(data)
+        this.cpuMemRef?.pushData(data, ts)
+        this.gpuRef?.pushData(data, ts)
+        this.diskRef?.pushData(data, ts)
+        this.networkRef?.pushData(data, ts)
+        this.goRef?.pushData(data)
+    }
+
+    /** 获取最新一条实时数据并分发，返回是否成功 */
+    private async fetchLatest(): Promise<boolean> {
+        const res = await api.overviewMonitor({ type: 'host', since: 0 })
+        const rec = res.payload as MonitorHostRecord | null
+        if (rec) {
+            this.dispatchData(rec)
+            return true
+        }
+        return false
     }
 
     async loadHistory() {
@@ -53,7 +64,7 @@ class SystemOverview extends Vue {
             const res = await api.overviewMonitor({ type: 'host', since: 3600 })
             if (res.payload && res.payload.length > 0) {
                 for (const rec of res.payload) {
-                    this.dispatchData(rec.data)
+                    this.dispatchData(rec)
                 }
             }
         } catch { /* ignore */ }
@@ -62,12 +73,8 @@ class SystemOverview extends Vue {
     async loadData() {
         this.loading = true
         try {
-            const res = await api.overviewMonitor({ type: 'host', since: 60 })
-            const last = res.payload?.[res.payload.length - 1]
-            if (last) {
-                this.ready = true
-                this.dispatchData(last.data)
-            }
+            const ok = await this.fetchLatest()
+            if (ok) this.ready = true
         } catch { /* ignore */ } finally {
             this.loading = false
         }
@@ -79,16 +86,25 @@ class SystemOverview extends Vue {
             return
         }
         try {
-            const res = await api.overviewMonitor({ type: 'host', since: 60 })
-            const last = res.payload?.[res.payload.length - 1]
-            if (last) {
-                this.dispatchData(last.data)
-            }
+            await this.fetchLatest()
         } catch { /* ignore */ }
     }
 
-    startPoll() {
-        this.pollTimer = setInterval(() => this.poll(), POLL_INTERVAL)
+    /** 从系统配置读取 monitor.interval，合法值(5/15/30/60)转为毫秒，否则使用默认值 */
+    private async getPollInterval(): Promise<number> {
+        try {
+            const res = await api.systemConfig()
+            const interval = res.payload?.monitor?.interval
+            if (interval === 5 || interval === 15 || interval === 30 || interval === 60) {
+                return interval * 1000
+            }
+        } catch { /* ignore */ }
+        return POLL_INTERVAL
+    }
+
+    async startPoll() {
+        const interval = await this.getPollInterval()
+        this.pollTimer = setInterval(() => this.poll(), interval)
     }
 
     stopPoll() {
@@ -99,7 +115,7 @@ class SystemOverview extends Vue {
         this.stopPoll()
         await this.loadHistory()
         await this.loadData()
-        this.startPoll()
+        await this.startPoll()
     }
 
     // ─── 生命周期 ───
@@ -131,7 +147,7 @@ export default toNative(SystemOverview)
       <SystemGo ref="goRef" />
     </div>
 
-    <div v-show="!loading && !ready" class="flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50">
+    <div v-if="!loading && !ready" class="flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50">
       <i class="fas fa-triangle-exclamation text-2xl text-slate-300"></i>
       <p class="text-sm text-slate-500">获取系统信息失败</p>
     </div>
