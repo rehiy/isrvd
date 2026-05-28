@@ -314,11 +314,11 @@ export default toNative(AuditLogs)
         <div class="flex items-center gap-2">
           <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium font-mono" :class="methodClass(detailLog?.method || '')">{{ detailLog?.method }}</span>
           <code class="text-sm text-slate-700 font-mono truncate">{{ detailLog?.uri }}</code>
-        </template>
-        <div class="editor-container">
-          <Codemirror :model-value="detailBody" :style="{ height: '50vh' }" :extensions="jsonExtensions" :disabled="true" />
         </div>
-      </BaseModal>
-    </div>
+      </template>
+      <div class="editor-container">
+        <Codemirror :model-value="detailBody" :style="{ height: '50vh' }" :extensions="jsonExtensions" :disabled="true" />
+      </div>
+    </BaseModal>
   </div>
 </template>
