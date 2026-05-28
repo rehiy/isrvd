@@ -8,19 +8,19 @@
 
 | 模块 | 功能 |
 |------|------|
-| 系统概览 | CPU、内存、磁盘、网络、GPU 实时监控 |
-| 文件管理 | 浏览、上传、下载、编辑、压缩解压、权限修改 |
-| Web 终端 | 基于 xterm.js 的 Shell 终端与容器终端 |
-| AI 助手 | 内置 Agent，支持自然语言操作 |
-| 计划任务 | 定时任务调度，支持 Shell/BAT/PowerShell/Docker 执行模式 |
+| 系统概览 | CPU、内存、磁盘、网络、GPU 实时监控，服务可用性探测，在线升级 |
+| 文件管理 | 浏览、上传、下载、编辑、创建/删除目录、重命名、权限修改、压缩/解压 |
+| Web 终端 | 基于 xterm.js 的 Shell 终端，支持容器终端接入 |
 | SSH 远程管理 | 管理 SSH 主机，在浏览器中连接远程服务器，支持密码与私钥认证 |
-| APISIX | 路由、Consumer、上游、SSL、插件配置、白名单 |
-| Caddy | 路由、TLS 证书、全局选项管理 |
-| Docker | 容器、镜像、网络、卷、镜像仓库管理 |
-| Swarm | 集群、节点、服务、任务管理 |
-| Compose | 文件编辑、Docker/Swarm 部署与重部署 |
-| 成员管理 | 多用户、家目录隔离、模块权限控制 |
-| 系统管理 | 配置管理、操作审计日志 |
+| AI 助手 | 内置 Agent，支持自然语言操作，兼容 OpenAI API 的 LLM 接入 |
+| 计划任务 | 定时任务调度，支持 Shell/BAT/PowerShell/Docker 执行模式，执行历史查看 |
+| APISIX | 路由、Consumer、上游(Upstream)、SSL 证书、插件配置(PluginConfig)、插件列表、白名单管理 |
+| Caddy | 路由、TLS 证书、全局选项管理，支持原始配置编辑 |
+| Docker | 容器、镜像、网络、卷、镜像仓库管理，容器日志(实时流式)、资源统计、终端接入、镜像构建/推送/拉取 |
+| Swarm | 集群信息、节点、服务、任务管理，服务日志、强制更新、加入令牌管理 |
+| Compose | 文件编辑、Docker Compose / Swarm Stack 部署与重部署 |
+| 成员管理 | 多用户、家目录隔离、模块权限控制、API 令牌管理 |
+| 系统管理 | 配置管理、操作审计日志、OIDC 认证集成 |
 | 移动端 | 响应式布局，适配移动设备 |
 
 ## 技术栈
@@ -49,12 +49,13 @@ CNB 流水线会同步推送到 CNB Docker 制品库，镜像路径为 `docker.c
 
 ### 创建网络
 
-根据实际网络环境，创建 `sdnet` 网络（二选一），并将容器加入该网络。
+根据实际部署场景选择网络驱动，并创建 `sdnet` 网络：
 
 ```bash
-# 本地通信
+# 单机通信（推荐用于单机部署）
 docker network create --driver=bridge sdnet
-# 跨主机通信
+
+# 跨主机通信（需要先 docker swarm init）
 docker network create --driver=overlay --attachable sdnet
 ```
 
@@ -130,14 +131,22 @@ services:
     image: rehiy/isrvd:slim
     container_name: isrvd
     restart: unless-stopped
+    networks:
+      - sdnet
     ports:
       - "8080:8080"
     volumes:
       - /srv/data:/data
       - /var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  sdnet:
+    external: true
 ```
 
-> **注意**：请始终挂载整个 `/data` 目录，避免容器重建时数据丢失。
+> **注意**：
+> - 请先创建 `sdnet` 网络（见上方「创建网络」章节），Compose 中通过 `external: true` 引用已有网络
+> - 请始终挂载整个 `/data` 目录，避免容器重建时数据丢失
 
 ## 二进制部署
 
@@ -224,52 +233,81 @@ cd webview && python3 sort-imports.py --dry-run src
 
 | 配置段 | 说明 |
 |--------|------|
-| `server` | 端口、JWT 密钥、代理认证头、数据目录 |
+| `server` | 端口、JWT 密钥、代理认证头、数据目录、CORS 允许源、最大上传大小 |
 | `oidc` | OIDC 认证（issuerUrl / clientId / clientSecret / redirectUrl） |
 | `agent` | AI 助手模型接入（model / baseUrl / apiKey） |
 | `apisix` | APISIX Admin API 地址和密钥 |
 | `caddy` | Caddy Admin API 地址 |
 | `docker` | Docker 守护进程地址、容器数据目录、镜像仓库账号 |
-| `marketplace` | 应用市场地址 |
-| `links` | 自定义快捷链接 |
+| `marketplace` | 应用市场地址列表 |
+| `links` | 自定义快捷链接（名称、URL、图标） |
 | `members` | 用户账号、家目录、模块权限 |
 
 ### 权限模块
 
 权限基于路由进行细粒度控制，每个用户可以独立授予各模块下具体 API 路由的访问权限。
 
-**权限格式**：`<METHOD> /api/<模块>/<路由>`（如 `GET /api/overview/status`、`POST /api/account/member`）
+**权限格式**：`<METHOD> /api/<模块>/<路由>`（如 `GET /api/overview/probe`、`POST /api/account/login`）
 
-**前端权限判断**：使用 `actions.hasPerm('<METHOD> /api/<路由>')` 控制按钮/操作的显示
+**前端权限判断**：使用 `portal.hasPerm('<METHOD> /api/<路由>')` 控制按钮/操作的显示
 
-**常用模块与路由示例**：
+> 留空 = 无权限；具体可用路由见各模块 API 文档或通过 `GET /api/account/routes` 获取
 
 | 模块 | 路由权限点示例 | 说明 |
 |------|---------------|------|
-| `overview` | `GET /api/overview/status` | 系统概览 |
-| `system` | `GET /api/system/config` | 系统设置 |
+| `overview` | `GET /api/overview/probe` | 系统概览（服务探测） |
+| `overview` | `GET /api/overview/monitor` | 系统概览（监控数据） |
+| `system` | `GET /api/system/config` | 系统设置（获取配置） |
+| `system` | `PUT /api/system/config` | 系统设置（保存配置） |
+| `system` | `GET /api/system/audit/logs` | 系统设置（审计日志） |
+| `account` | `GET /api/account/info` | 账号（获取当前用户信息） |
+| `account` | `POST /api/account/login` | 账号（登录） |
 | `account` | `GET /api/account/members` | 成员管理（列出） |
 | `account` | `POST /api/account/member` | 成员管理（创建） |
 | `account` | `PUT /api/account/member/:username` | 成员管理（更新） |
 | `account` | `DELETE /api/account/member/:username` | 成员管理（删除） |
+| `account` | `POST /api/account/token` | 成员管理（创建 API 令牌） |
+| `account` | `PUT /api/account/password` | 成员管理（修改密码） |
+| `account` | `GET /api/account/routes` | 成员管理（路由权限列表） |
 | `filer` | `GET /api/filer/list` | 文件管理（列出） |
+| `filer` | `GET /api/filer/read` | 文件管理（读取） |
 | `filer` | `POST /api/filer/upload` | 文件管理（上传） |
 | `filer` | `POST /api/filer/modify` | 文件管理（修改） |
+| `filer` | `POST /api/filer/mkdir` | 文件管理（创建目录） |
+| `filer` | `POST /api/filer/delete` | 文件管理（删除） |
+| `filer` | `POST /api/filer/rename` | 文件管理（重命名） |
+| `filer` | `POST /api/filer/chmod` | 文件管理（修改权限） |
+| `filer` | `POST /api/filer/zip` | 文件管理（压缩） |
+| `filer` | `POST /api/filer/unzip` | 文件管理（解压） |
 | `shell` | `GET /api/shell` | Web 终端 |
 | `ssh` | `GET /api/ssh/hosts` | SSH 远程管理（列出主机） |
 | `ssh` | `POST /api/ssh/host` | SSH 远程管理（添加主机） |
 | `ssh` | `GET /api/ssh/to/:id` | SSH 远程管理（连接终端） |
 | `agent` | `ANY /api/agent/*path` | AI 助手（LLM 代理） |
+| `cron` | `GET /api/cron/types` | 计划任务（可用脚本类型） |
 | `cron` | `GET /api/cron/jobs` | 计划任务（列出） |
 | `cron` | `POST /api/cron/jobs` | 计划任务（创建） |
 | `cron` | `POST /api/cron/jobs/:id/run` | 计划任务（立即执行） |
 | `cron` | `GET /api/cron/jobs/:id/logs` | 计划任务（查看日志） |
-| `apisix` | `GET /api/apisix/routes` | APISIX 管理（列出） |
-| `docker` | `GET /api/docker/containers` | Docker 管理（列出） |
-| `swarm` | `GET /api/swarm/services` | Swarm 管理（列出） |
-| `compose` | `POST /api/compose/deploy` | Compose 管理（部署） |
-
-> 留空 = 无权限；具体可用路由见各模块 API 文档
+| `apisix` | `GET /api/apisix/routes` | APISIX 管理（路由列出） |
+| `apisix` | `GET /api/apisix/consumers` | APISIX 管理（消费者列出） |
+| `apisix` | `GET /api/apisix/upstreams` | APISIX 管理（上游列出） |
+| `apisix` | `GET /api/apisix/ssls` | APISIX 管理（证书列出） |
+| `docker` | `GET /api/docker/info` | Docker 管理（服务信息） |
+| `docker` | `GET /api/docker/containers` | Docker 管理（容器列出） |
+| `docker` | `GET /api/docker/images` | Docker 管理（镜像列出） |
+| `docker` | `GET /api/docker/networks` | Docker 管理（网络列出） |
+| `docker` | `GET /api/docker/volumes` | Docker 管理（卷列出） |
+| `docker` | `GET /api/docker/registries` | Docker 管理（镜像仓库列出） |
+| `swarm` | `GET /api/swarm/info` | Swarm 管理（集群信息） |
+| `swarm` | `GET /api/swarm/nodes` | Swarm 管理（节点列出） |
+| `swarm` | `GET /api/swarm/services` | Swarm 管理（服务列出） |
+| `swarm` | `GET /api/swarm/tasks` | Swarm 管理（任务列出） |
+| `compose` | `GET /api/compose/docker/:name` | Compose 管理（读取配置） |
+| `compose` | `POST /api/compose/docker/deploy` | Compose 管理（部署） |
+| `caddy` | `GET /api/caddy/info` | Caddy 管理（概览） |
+| `caddy` | `GET /api/caddy/routes` | Caddy 管理（路由列出） |
+| `caddy` | `GET /api/caddy/certs` | Caddy 管理（证书列出） |
 
 ## GPU 监控
 
