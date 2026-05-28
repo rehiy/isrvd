@@ -1,5 +1,6 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
+import * as yaml from 'js-yaml'
 
 import { usePortal } from '@/stores'
 
@@ -39,6 +40,14 @@ class ComposeDeploy extends Vue {
         return !this.loading && !!this.content.trim()
     }
 
+    /** 编辑器警告/提示文案 */
+    get dynamicWarning(): string {
+        if (this.fromMarketplace) {
+            return '已从应用市场预填模板，可在此基础上直接部署或调整后再部署'
+        }
+        return '项目名来自 compose 文件的 name 字段；变量插值需在客户端完成，后端仅按原文落盘与加载'
+    }
+
     // ─── 方法 ───
     selectTarget(t: ComposeDeployTarget) {
         if (t === 'swarm' && !this.swarmAvailable) return
@@ -50,7 +59,21 @@ class ComposeDeploy extends Vue {
     }
 
     onMarketplacePick(payload: ComposeMarketplacePick) {
-        this.content = payload.compose
+        let composeContent = payload.compose
+        try {
+            const doc = yaml.load(composeContent) as Record<string, unknown> | null
+            if (doc && typeof doc === 'object' && !doc.name) {
+                const nameValue = payload.name || 'compose-project'
+                // 移除 BOM 和开头的 ---
+                composeContent = composeContent.replace(/^\uFEFF/, '').replace(/^---\n?/, '')
+                // 在文件最前面添加 name 字段
+                composeContent = `name: ${nameValue}\n` + composeContent
+            }
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : '未知错误'
+            this.portal.showNotification('warning', `模板格式异常，已按原文加载：${msg}`)
+        }
+        this.content = composeContent
         this.initURL = payload.initURL || ''
         this.target = 'docker'
         this.fromMarketplace = true
@@ -181,16 +204,8 @@ export default toNative(ComposeDeploy)
           </button>
         </div>
 
-        <!-- 应用市场预填提示 -->
-        <div v-if="fromMarketplace" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-2 text-xs">
-          <i class="fas fa-circle-info text-amber-500 mt-0.5"></i>
-          <div class="text-amber-800">
-            已从应用市场预填模板，可在此基础上直接部署或调整后再部署。
-          </div>
-        </div>
-
         <!-- Compose 内容 -->
-        <ComposeEditor v-model="content" :disabled="loading" warning="项目名来自 compose 文件的 name 字段；变量插值需在客户端完成，后端仅按原文落盘与加载" />
+        <ComposeEditor v-model="content" :disabled="loading" :warning="dynamicWarning" />
 
         <!-- 附加文件 -->
         <div>
