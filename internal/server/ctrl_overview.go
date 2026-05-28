@@ -95,7 +95,7 @@ func (app *App) overviewMonitorHistory(c *gin.Context) {
 		}
 		records, err := svcMonitor.ReadSince[svcMonitor.ContainerRecord](
 			app.monitorCollector.DataDir(),
-			app.monitorCollector.ContainerFilePrefix(id),
+			svcMonitor.ContainerFilePrefix(id),
 			since,
 		)
 		if err != nil {
@@ -106,7 +106,7 @@ func (app *App) overviewMonitorHistory(c *gin.Context) {
 	default:
 		records, err := svcMonitor.ReadSince[svcMonitor.HostRecord](
 			app.monitorCollector.DataDir(),
-			app.monitorCollector.HostFilePrefix(),
+			svcMonitor.HostFilePrefix(),
 			since,
 		)
 		if err != nil {

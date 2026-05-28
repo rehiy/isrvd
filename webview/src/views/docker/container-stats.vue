@@ -85,6 +85,68 @@ class ContainerStats extends Vue {
         }
     }
 
+    async loadHistory() {
+        try {
+            const res = await api.overviewMonitorHistory({ type: 'container', id: this.containerId, since: 3600 })
+            if (!res.payload || res.payload.length < 2) return
+            // 历史数据需要相邻两条计算速率，逐对推入
+            for (let i = 0; i < res.payload.length; i++) {
+                const rec = res.payload[i]
+                const data = rec.data
+                const ts = rec.ts * 1000 // 转毫秒
+
+                const label = new Date(ts).toLocaleTimeString('zh-CN', { hour12: false })
+                this.labels.push(label)
+                this.cpuData.push(+(data.cpuPercent || 0).toFixed(2))
+                this.memData.push(+(data.memoryPercent || 0).toFixed(2))
+
+                if (i > 0) {
+                    const prevRec = res.payload[i - 1]
+                    const elapsed = rec.ts - prevRec.ts
+                    if (elapsed > 0) {
+                        const rxRate = +Math.max(0, ((data.networkRx || 0) - (prevRec.data.networkRx || 0)) / elapsed).toFixed(0)
+                        const txRate = +Math.max(0, ((data.networkTx || 0) - (prevRec.data.networkTx || 0)) / elapsed).toFixed(0)
+                        const brRate = +Math.max(0, ((data.blockRead || 0) - (prevRec.data.blockRead || 0)) / elapsed).toFixed(0)
+                        const bwRate = +Math.max(0, ((data.blockWrite || 0) - (prevRec.data.blockWrite || 0)) / elapsed).toFixed(0)
+                        this.netRxData.push(rxRate)
+                        this.netTxData.push(txRate)
+                        this.blkRData.push(brRate)
+                        this.blkWData.push(bwRate)
+                    } else {
+                        this.netRxData.push(0)
+                        this.netTxData.push(0)
+                        this.blkRData.push(0)
+                        this.blkWData.push(0)
+                    }
+                } else {
+                    this.netRxData.push(0)
+                    this.netTxData.push(0)
+                    this.blkRData.push(0)
+                    this.blkWData.push(0)
+                }
+
+                if (this.labels.length > this.MAX_POINTS) {
+                    this.labels.shift()
+                    this.cpuData.shift()
+                    this.memData.shift()
+                    this.netRxData.shift()
+                    this.netTxData.shift()
+                    this.blkRData.shift()
+                    this.blkWData.shift()
+                }
+            }
+            // 用最后一条记录初始化 prev 状态，供后续实时轮询计算速率
+            const last = res.payload[res.payload.length - 1]
+            this.prevNetRx = last.data.networkRx || 0
+            this.prevNetTx = last.data.networkTx || 0
+            this.prevBlkR = last.data.blockRead || 0
+            this.prevBlkW = last.data.blockWrite || 0
+            this.prevTime = last.ts * 1000
+            // 用最后一条记录初始化 statsData，触发图表渲染
+            this.statsData = last.data
+        } catch { /* ignore */ }
+    }
+
     async loadStats() {
         try {
             const res = await api.dockerContainerStats(this.containerId)
@@ -305,13 +367,19 @@ class ContainerStats extends Vue {
         }
     }
 
-    onContainerLoaded(ct: DockerContainerInfo) {
+    async onContainerLoaded(ct: DockerContainerInfo) {
         this.container = ct
         if (ct.state === 'running') {
-            this.loadStats().then(() => {
-                this.statsLoading = false
-                this.startStatsTimer()
-            })
+            await this.loadHistory()
+            if (this.statsData) {
+                // 历史数据加载成功，先渲染图表再开始实时轮询
+                await nextTick()
+                this.initCharts()
+                this.renderCharts()
+            }
+            await this.loadStats()
+            this.statsLoading = false
+            this.startStatsTimer()
         } else {
             this.statsLoading = false
         }

@@ -1,3 +1,5 @@
+import type { DockerContainerStats } from './docker'
+
 // ─── 系统探测 ───
 
 export interface SystemProbe {
@@ -97,4 +99,9 @@ export interface SystemStat {
 export interface MonitorHostRecord {
     ts: number
     data: SystemStat
+}
+
+export interface MonitorContainerRecord {
+    ts: number
+    data: DockerContainerStats
 }

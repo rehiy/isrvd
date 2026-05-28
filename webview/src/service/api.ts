@@ -5,6 +5,7 @@ import type {
     SystemProbe,
     SystemStat,
     MonitorHostRecord,
+    MonitorContainerRecord,
     // System
     AllConfig,
     AuditLog,
@@ -99,8 +100,10 @@ class ApiService {
         return http.get<SystemStat>('overview/status')
     }
 
+    overviewMonitorHistory(params?: { type?: 'host'; id?: string; since?: number }): Promise<{ payload?: MonitorHostRecord[] }>
+    overviewMonitorHistory(params?: { type: 'container'; id: string; since?: number }): Promise<{ payload?: MonitorContainerRecord[] }>
     overviewMonitorHistory(params?: { type?: 'host' | 'container'; id?: string; since?: number }) {
-return http.get<MonitorHostRecord[]>('overview/history', { params })
+        return http.get<MonitorHostRecord[] | MonitorContainerRecord[]>('overview/history', { params })
     }
 
     overviewUpgrade() {

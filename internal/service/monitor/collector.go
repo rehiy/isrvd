@@ -81,19 +81,19 @@ func (c *Collector) Start(ctx context.Context) {
 	}()
 }
 
-// HostFilePrefix 返回主机数据文件前缀
-func (c *Collector) HostFilePrefix() string {
-	return hostPrefix
-}
-
-// ContainerFilePrefix 返回指定容器数据文件前缀
-func (c *Collector) ContainerFilePrefix(id string) string {
-	return containerPrefix + "_" + id
-}
-
 // DataDir 返回数据目录
 func (c *Collector) DataDir() string {
 	return c.dataDir
+}
+
+// HostFilePrefix 返回主机监控文件前缀
+func HostFilePrefix() string {
+	return hostPrefix
+}
+
+// ContainerFilePrefix 返回指定容器监控文件前缀
+func ContainerFilePrefix(id string) string {
+	return containerPrefix + "_" + id
 }
 
 // collect 执行一次采集
