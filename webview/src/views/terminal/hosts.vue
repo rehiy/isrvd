@@ -99,7 +99,7 @@ export default toNative(SSHHosts)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">SSH 连接</h1>
-              <p class="text-xs text-slate-500">通过 SSH 管理主机，通过浏览器直接连接远程终端</p>
+              <p class="text-xs text-slate-500">管理 SSH 主机，在浏览器中连接远程服务器</p>
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
@@ -120,7 +120,7 @@ export default toNative(SSHHosts)
             </div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">SSH 连接</h1>
-              <p class="text-xs text-slate-500 truncate">通过 SSH 管理主机</p>
+              <p class="text-xs text-slate-500 truncate">管理 SSH 主机</p>
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
@@ -246,7 +246,7 @@ export default toNative(SSHHosts)
           </div>
 
           <div v-if="filteredHosts.length === 0" class="rounded-xl border border-slate-200 bg-white py-10 px-4 text-center">
-            <p class="text-sm text-slate-500">{{ hosts.length === 0 ? '暂无 SSH 主机' : '未找到匹配主机' }}</p>
+            <p class="text-sm text-slate-500">{{ hosts.length === 0 ? '暂无 SSH 主机，点击右上角添加' : '未找到匹配主机' }}</p>
           </div>
         </div>
 
@@ -256,7 +256,7 @@ export default toNative(SSHHosts)
             <i class="fas fa-server text-4xl text-slate-300"></i>
           </div>
           <p class="text-slate-600 font-medium mb-1">{{ hosts.length === 0 ? '暂无 SSH 主机' : '未找到匹配主机' }}</p>
-          <p class="text-sm text-slate-400">{{ hosts.length === 0 ? '点击「添加主机」配置 SSH 连接信息' : '尝试更换关键词或清空搜索条件' }}</p>
+          <p class="text-sm text-slate-400">{{ hosts.length === 0 ? '点击右上角「添加主机」开始配置' : '尝试更换关键词或清空搜索条件' }}</p>
         </div>
       </div>
     </div>

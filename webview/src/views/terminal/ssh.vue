@@ -73,15 +73,15 @@ export default toNative(SSHTerminalPage)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800">{{ host?.name || 'SSH 终端' }}</h1>
-              <p class="text-xs text-slate-500">{{ host ? `${host.user}@${host.addr}` : '加载中...' }}</p>
+              <p class="text-xs text-slate-500">{{ host ? `${host.user} @ ${host.addr}` : '正在加载主机信息...' }}</p>
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
             <button v-if="!connected" class="btn btn-emerald" @click="handleConnect()">
-              <i class="fas fa-plug"></i>连接
+              <i class="fas fa-plug"></i>连接终端
             </button>
             <button v-else class="btn btn-secondary" @click="handleDisconnect()">
-              <i class="fas fa-plug-circle-xmark"></i>断开
+              <i class="fas fa-plug-circle-xmark"></i>断开连接
             </button>
           </div>
         </div>
@@ -93,11 +93,11 @@ export default toNative(SSHTerminalPage)
             </div>
             <div class="min-w-0">
               <h1 class="text-lg font-semibold text-slate-800 truncate">{{ host?.name || 'SSH 终端' }}</h1>
-              <p class="text-xs text-slate-500 truncate">{{ host ? `${host.user}@${host.addr}` : '加载中...' }}</p>
+              <p class="text-xs text-slate-500 truncate">{{ host ? `${host.user} @ ${host.addr}` : '正在加载主机信息...' }}</p>
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
-            <button v-if="!connected" class="btn btn-emerald w-9 h-9 !px-0" title="连接" @click="handleConnect()">
+            <button v-if="!connected" class="btn btn-emerald w-9 h-9 !px-0" title="连接终端" @click="handleConnect()">
               <i class="fas fa-plug text-sm"></i>
             </button>
             <button v-else class="btn btn-secondary w-9 h-9 !px-0" title="断开连接" @click="handleDisconnect()">
