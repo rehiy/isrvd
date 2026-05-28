@@ -42,9 +42,6 @@ isrvd_get "/overview/monitor?since=0"
 isrvd_get "/overview/monitor?type=container&id=<CONTAINER_ID>&since=0"
 ```
 
-传 `since=0` 时返回单条记录（非数组）：
-
-1. 优先返回最近 **30s** 内已有的最新一条采集数据
-2. 若无缓存数据（采集禁用或刚启动），则主动实时采集一次，**不写入文件**
+传 `since=0` 时直接实时采集当前数据，返回单条记录（非数组），**不写入文件**。
 
 响应格式：`{ ts: number, data: HostStat }` 或 `null`（采集失败时）。

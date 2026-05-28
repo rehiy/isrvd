@@ -68,7 +68,7 @@ func (app *App) overviewUpgrade(c *gin.Context) {
 // 查询参数：
 //   - type:  "host"（默认）或 "container"
 //   - id:    容器 ID（type=container 时必填）
-//   - since: 时间窗口（秒），默认 3600；传 0 为实时模式（优先返回最近 30s 内已有数据，否则主动采集一次，不写入文件）
+//   - since: 时间窗口（秒），默认 3600；传 0 为实时模式（直接采集当前数据，不写入文件）
 func (app *App) overviewMonitor(c *gin.Context) {
 	if app.monitorCollector == nil {
 		respondError(c, http.StatusServiceUnavailable, "监控采集器未启动")
@@ -122,10 +122,9 @@ func (app *App) overviewMonitor(c *gin.Context) {
 	}
 }
 
-// overviewMonitorRealtime 实时模式：优先返回最近 30s 内已有数据，否则主动采集（不写入）
+// overviewMonitorRealtime 实时模式：直接采集当前数据，不写入文件
 func (app *App) overviewMonitorRealtime(c *gin.Context) {
 	ctx := c.Request.Context()
-	const recentSeconds = 30
 
 	switch c.DefaultQuery("type", "host") {
 	case "container":
@@ -134,28 +133,8 @@ func (app *App) overviewMonitorRealtime(c *gin.Context) {
 			respondError(c, http.StatusBadRequest, "缺少容器 ID")
 			return
 		}
-		records, _ := svcMonitor.ReadSince[svcMonitor.Record](
-			app.monitorCollector.DataDir(),
-			svcMonitor.ContainerPrefix+"_"+id,
-			recentSeconds,
-		)
-		if len(records) > 0 {
-			respondSuccess(c, "ok", records[len(records)-1])
-			return
-		}
-		rec := app.monitorCollector.CollectContainerStatNow(ctx, id)
-		respondSuccess(c, "ok", rec)
+		respondSuccess(c, "ok", app.monitorCollector.CollectContainerStatNow(ctx, id))
 	default:
-		records, _ := svcMonitor.ReadSince[svcMonitor.Record](
-			app.monitorCollector.DataDir(),
-			svcMonitor.HostPrefix,
-			recentSeconds,
-		)
-		if len(records) > 0 {
-			respondSuccess(c, "ok", records[len(records)-1])
-			return
-		}
-		rec := app.monitorCollector.CollectHostStatNow(ctx)
-		respondSuccess(c, "ok", rec)
+		respondSuccess(c, "ok", app.monitorCollector.CollectHostStatNow(ctx))
 	}
 }

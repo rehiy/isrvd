@@ -25,6 +25,7 @@ class SystemOverview extends Vue {
     ready   = false
 
     private pollTimer: ReturnType<typeof setInterval> | null = null
+    private destroyed = false
 
     // ─── Refs ───
     @Ref readonly infoRef!: InstanceType<typeof SystemInfo>
@@ -51,6 +52,7 @@ class SystemOverview extends Vue {
     /** 获取最新一条实时数据并分发，返回是否成功 */
     private async fetchLatest(): Promise<boolean> {
         const res = await api.overviewMonitor({ type: 'host', since: 0 })
+        if (this.destroyed) return false
         const rec = res.payload as MonitorHostRecord | null
         if (rec) {
             this.dispatchData(rec)
@@ -90,21 +92,16 @@ class SystemOverview extends Vue {
         } catch { /* ignore */ }
     }
 
-    /** 从系统配置读取 monitor.interval，合法值(5/15/30/60)转为毫秒，否则使用默认值 */
-    private async getPollInterval(): Promise<number> {
-        try {
-            const res = await api.systemConfig()
-            const interval = res.payload?.monitor?.interval
-            if (interval === 5 || interval === 15 || interval === 30 || interval === 60) {
-                return interval * 1000
-            }
-        } catch { /* ignore */ }
-        return POLL_INTERVAL
+    handleVisibilityChange() {
+        if (document.hidden) {
+            this.stopPoll()
+        } else {
+            this.startPoll()
+        }
     }
 
-    async startPoll() {
-        const interval = await this.getPollInterval()
-        this.pollTimer = setInterval(() => this.poll(), interval)
+    startPoll() {
+        this.pollTimer = setInterval(() => this.poll(), POLL_INTERVAL)
     }
 
     stopPoll() {
@@ -115,16 +112,19 @@ class SystemOverview extends Vue {
         this.stopPoll()
         await this.loadHistory()
         await this.loadData()
-        await this.startPoll()
+        this.startPoll()
     }
 
     // ─── 生命周期 ───
     mounted() {
+        document.addEventListener('visibilitychange', this.handleVisibilityChange)
         this.load()
     }
 
     unmounted() {
+        this.destroyed = true
         this.stopPoll()
+        document.removeEventListener('visibilitychange', this.handleVisibilityChange)
     }
 }
 
