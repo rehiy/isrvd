@@ -101,13 +101,13 @@ isrvd_delete "/ssh/host/<ID>"
 通过 WebSocket 连接到指定主机的 SSH 终端：
 
 ```
-GET /api/ssh/<ID>  (WebSocket, 支持 ?token= 查询参数)
+GET /api/ssh/to/<ID>  (WebSocket, 支持 ?token= 查询参数)
 ```
 
 ```bash
 # 示例：使用 wscat 连接（需先获取 token）
 TOKEN=$(isrvd_login "$ISRVD_APIURL" "$ISRVD_USERNAME" "$ISRVD_PASSWORD" | jq -r '.payload.token')
-wscat -c "ws://<HOST>/api/ssh/<ID>?token=$TOKEN"
+wscat -c "ws://<HOST>/api/ssh/to/<ID>?token=$TOKEN"
 ```
 
 ---

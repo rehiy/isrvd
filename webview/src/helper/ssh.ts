@@ -21,7 +21,7 @@ export function create(el: HTMLElement, token: string, hostId: string): void {
     resizeHandler = () => fitAddon?.fit()
     window.addEventListener('resize', resizeHandler)
 
-    socket = new WebSocket(wsUrl(`ssh/${encodeURIComponent(hostId)}?token=${token}`))
+    socket = new WebSocket(wsUrl(`ssh/to/${encodeURIComponent(hostId)}?token=${token}`))
 
     term.onData(data => socket?.readyState === WebSocket.OPEN && socket.send(data))
     socket.onopen = () => term && term.write('[连接中...]\r\n')

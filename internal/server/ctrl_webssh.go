@@ -19,7 +19,7 @@ func (app *App) defineWebSSHRoutes() []Route {
 		{Method: "PUT", Path: "/ssh/host/:id", Handler: app.websshHostUpdate, Module: "ssh", Label: "更新 SSH 主机"},
 		{Method: "DELETE", Path: "/ssh/host/:id", Handler: app.websshHostDelete, Module: "ssh", Label: "删除 SSH 主机"},
 		// SSH 终端
-		{Method: "GET", Path: "/ssh/:id", Handler: app.websshTerminal, Module: "ssh", Label: "打开 SSH 终端", QueryToken: true},
+		{Method: "GET", Path: "/ssh/to/:id", Handler: app.websshTerminal, Module: "ssh", Label: "打开 SSH 终端", QueryToken: true},
 	}
 }
 

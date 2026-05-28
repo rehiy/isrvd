@@ -56,7 +56,7 @@ class SSHHosts extends Vue {
     }
 
     openTerminal(host: SSHHostInfo) {
-        this.$router.push(`/ssh/${host.id}`)
+        this.$router.push(`/ssh/to/${host.id}`)
     }
 
     handleDelete(host: SSHHostInfo) {
@@ -186,7 +186,7 @@ export default toNative(SSHHosts)
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex justify-end items-center gap-1">
-                    <button v-if="portal.hasPerm('GET /api/ssh/:id')" class="btn-icon btn-icon-teal" title="连接终端" @click="openTerminal(host)">
+                    <button v-if="portal.hasPerm('GET /api/ssh/to/:id')" class="btn-icon btn-icon-teal" title="连接终端" @click="openTerminal(host)">
                       <i class="fas fa-terminal text-xs"></i>
                     </button>
                     <button v-if="portal.hasPerm('PUT /api/ssh/host/:id')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(host)">
@@ -233,7 +233,7 @@ export default toNative(SSHHosts)
             </div>
 
             <div class="card-actions">
-              <button v-if="portal.hasPerm('GET /api/ssh/:id')" class="btn-icon btn-icon-teal" title="连接终端" @click="openTerminal(host)">
+              <button v-if="portal.hasPerm('GET /api/ssh/to/:id')" class="btn-icon btn-icon-teal" title="连接终端" @click="openTerminal(host)">
                 <i class="fas fa-terminal text-xs"></i><span class="text-xs ml-1">连接</span>
               </button>
               <button v-if="portal.hasPerm('PUT /api/ssh/host/:id')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(host)">
