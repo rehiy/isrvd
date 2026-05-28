@@ -91,3 +91,10 @@ export interface SystemStat {
     version: string
     versionCheck: SystemVersionCheck
 }
+
+// ─── 监控历史 ───
+
+export interface MonitorHostRecord {
+    ts: number
+    data: SystemStat
+}

@@ -69,7 +69,7 @@ isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
 
 | 文档 | 覆盖内容 |
 |------|----------|
-| [docs/system/overview.md](docs/system/overview.md) | 服务探测、系统资源统计 |
+| [docs/system/overview.md](docs/system/overview.md) | 服务探测、系统资源统计、监控历史数据 |
 | [docs/system/config.md](docs/system/config.md) | 系统配置、审计日志 |
 | [docs/system/account.md](docs/system/account.md) | 登录、OIDC 登录、成员管理、权限、API Token |
 | [docs/system/filer.md](docs/system/filer.md) | 文件 CRUD、上传下载（含 inline 预览）、压缩解压 |
@@ -107,6 +107,7 @@ isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
 │   ├── 路由/上游/插件    → docs/apisix/ 下对应文件
 │   ├── Caddy 路由/配置   → docs/caddy/ 下对应文件
 │   ├── 系统状态          → docs/system/overview.md
+│   ├── 监控历史数据      → docs/system/overview.md
 │   ├── 日志             → docs/docker/containers.md 或 docs/swarm/services.md
 │   └── 文件管理         → docs/system/filer.md
 │

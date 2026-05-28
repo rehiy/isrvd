@@ -13,6 +13,7 @@ import (
 	svcCron "isrvd/internal/service/cron"
 	svcDocker "isrvd/internal/service/docker"
 	svcFiler "isrvd/internal/service/filer"
+	svcMonitor "isrvd/internal/service/monitor"
 	svcOverview "isrvd/internal/service/overview"
 	svcShell "isrvd/internal/service/shell"
 	svcSwarm "isrvd/internal/service/swarm"
@@ -26,22 +27,23 @@ import (
 // App 应用实例，持有各业务服务
 type App struct {
 	*gin.Engine
-	wsConfig    *websocket.ServerConfig
-	overviewSvc *svcOverview.Service
-	configSvc   *svcSystem.ConfigService
-	auditSvc    *svcSystem.AuditService
-	accountSvc  *svcAccount.Service
-	filerSvc    *svcFiler.Service
-	apisixSvc   *svcApisix.Service
-	caddySvc    *svcCaddy.Service
-	dockerSvc   *svcDocker.Service
-	swarmSvc    *svcSwarm.Service
-	composeSvc  *svcCompose.Service
-	cronSvc     *svcCron.Service
-	agentSvc    *svcAgent.Service
-	shellSvc    *svcShell.Service
-	websshSvc   *svcWebSSH.Service
-	routeIndex  map[string]Route // METHOD+完整路径 → 路由索引
+	wsConfig         *websocket.ServerConfig
+	monitorCollector *svcMonitor.Collector
+	overviewSvc      *svcOverview.Service
+	configSvc        *svcSystem.ConfigService
+	auditSvc         *svcSystem.AuditService
+	accountSvc       *svcAccount.Service
+	filerSvc         *svcFiler.Service
+	apisixSvc        *svcApisix.Service
+	caddySvc         *svcCaddy.Service
+	dockerSvc        *svcDocker.Service
+	swarmSvc         *svcSwarm.Service
+	composeSvc       *svcCompose.Service
+	cronSvc          *svcCron.Service
+	agentSvc         *svcAgent.Service
+	shellSvc         *svcShell.Service
+	websshSvc        *svcWebSSH.Service
+	routeIndex       map[string]Route // METHOD+完整路径 → 路由索引
 }
 
 // RouteAccess 路由访问级别
@@ -87,6 +89,7 @@ func StartApp() {
 	}
 
 	app.initServices()
+	app.startMonitor()
 
 	app.initRoutes()
 	httpd.StaticEmbed(public.Efs, "", "")

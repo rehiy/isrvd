@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -18,6 +19,7 @@ import (
 	svcCron "isrvd/internal/service/cron"
 	svcDocker "isrvd/internal/service/docker"
 	svcFiler "isrvd/internal/service/filer"
+	svcMonitor "isrvd/internal/service/monitor"
 	svcOverview "isrvd/internal/service/overview"
 	svcShell "isrvd/internal/service/shell"
 	svcSwarm "isrvd/internal/service/swarm"
@@ -142,6 +144,12 @@ func (app *App) watchReload() {
 	}()
 }
 
+// startMonitor 启动后台监控采集协程
+func (app *App) startMonitor() {
+	app.monitorCollector = svcMonitor.NewCollector(app.overviewSvc, registry.DockerService)
+	app.monitorCollector.Start(context.Background())
+}
+
 // reload 重新加载配置和服务
 func (app *App) reload() {
 	if err := config.Load(); err != nil {
@@ -150,5 +158,9 @@ func (app *App) reload() {
 	}
 	registry.Init()
 	app.initServices()
+	// 同步更新监控采集器中的 Docker 服务实例
+	if app.monitorCollector != nil {
+		app.monitorCollector.UpdateDockerSvc(registry.DockerService)
+	}
 	logman.Info("reload complete")
 }

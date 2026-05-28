@@ -4,6 +4,7 @@ import type {
     // Overview
     SystemProbe,
     SystemStat,
+    MonitorHostRecord,
     // System
     AllConfig,
     AuditLog,
@@ -96,6 +97,10 @@ class ApiService {
 
     overviewStatus() {
         return http.get<SystemStat>('overview/status')
+    }
+
+    overviewMonitorHistory(params?: { type?: 'host' | 'container'; id?: string; since?: number }) {
+return http.get<MonitorHostRecord[]>('overview/history', { params })
     }
 
     overviewUpgrade() {

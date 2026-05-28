@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/upgrade"
+
+	svcMonitor "isrvd/internal/service/monitor"
 )
 
 // defineOverviewRoutes 定义 Overview 模块路由
@@ -15,6 +18,7 @@ func (app *App) defineOverviewRoutes() []Route {
 	return []Route{
 		{Method: "GET", Path: "/overview/probe", Handler: app.overviewProbe, Module: "overview", Label: "探测服务可用性", Access: AccessAuth},
 		{Method: "GET", Path: "/overview/status", Handler: app.overviewStat, Module: "overview", Label: "获取系统概览统计"},
+		{Method: "GET", Path: "/overview/history", Handler: app.overviewMonitorHistory, Module: "overview", Label: "获取监控历史数据"},
 		{Method: "POST", Path: "/overview/upgrade", Handler: app.overviewUpgrade, Module: "overview", Label: "升级程序至最新版本"},
 	}
 }
@@ -63,4 +67,52 @@ func (app *App) overviewUpgrade(c *gin.Context) {
 		time.Sleep(500 * time.Millisecond)
 		app.overviewSvc.RestartSelf()
 	}()
+}
+
+// overviewMonitorHistory 返回监控历史数据
+// 查询参数：
+//   - type: "host"（默认）或 "container"
+//   - id:   容器 ID（type=container 时必填）
+//   - since: 时间窗口（秒），默认 3600
+func (app *App) overviewMonitorHistory(c *gin.Context) {
+	if app.monitorCollector == nil {
+		respondError(c, http.StatusServiceUnavailable, "监控采集器未启动")
+		return
+	}
+
+	sinceStr := c.DefaultQuery("since", "3600")
+	since, err := strconv.ParseInt(sinceStr, 10, 64)
+	if err != nil || since <= 0 {
+		since = 3600
+	}
+
+	switch c.DefaultQuery("type", "host") {
+	case "container":
+		id := c.Query("id")
+		if id == "" {
+			respondError(c, http.StatusBadRequest, "缺少容器 ID")
+			return
+		}
+		records, err := svcMonitor.ReadSince[svcMonitor.ContainerRecord](
+			app.monitorCollector.DataDir(),
+			app.monitorCollector.ContainerFilePrefix(id),
+			since,
+		)
+		if err != nil {
+			respondError(c, http.StatusInternalServerError, err.Error())
+			return
+		}
+		respondSuccess(c, "ok", records)
+	default:
+		records, err := svcMonitor.ReadSince[svcMonitor.HostRecord](
+			app.monitorCollector.DataDir(),
+			app.monitorCollector.HostFilePrefix(),
+			since,
+		)
+		if err != nil {
+			respondError(c, http.StatusInternalServerError, err.Error())
+			return
+		}
+		respondSuccess(c, "ok", records)
+	}
 }

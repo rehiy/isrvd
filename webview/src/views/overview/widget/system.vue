@@ -45,6 +45,17 @@ class SystemOverview extends Vue {
         this.goRef?.pushData(payload)
     }
 
+    async loadHistory() {
+        try {
+            const res = await api.overviewMonitorHistory({ type: 'host', since: 3600 })
+            if (res.payload && res.payload.length > 0) {
+                for (const rec of res.payload) {
+                    this.dispatchData(rec.data)
+                }
+            }
+        } catch { /* ignore */ }
+    }
+
     async loadData() {
         this.loading = true
         try {
@@ -81,6 +92,7 @@ class SystemOverview extends Vue {
 
     async load() {
         this.stopPoll()
+        await this.loadHistory()
         await this.loadData()
         this.startPoll()
     }
