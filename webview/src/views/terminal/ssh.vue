@@ -48,10 +48,12 @@ class SSHTerminalPage extends Vue {
     // ─── 生命周期 ───
     async mounted() {
         await this.loadHost()
+        this.handleConnect()
     }
 
     unmounted() {
         SSHTerminal.destroy()
+        this.connected = false
     }
 }
 
