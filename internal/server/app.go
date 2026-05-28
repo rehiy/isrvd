@@ -104,10 +104,10 @@ func (app *App) initRoutes() {
 	r.Use(app.wsConfig.CorsMiddleware())
 	r.Use(securityHeadersMiddleware())
 	r.Use(app.serviceAvailableMiddleware())
-	// Gin 中间件执行顺序与注册顺序相反，需确保 Auth 先于 Audit 执行
-	r.Use(AuditMiddleware(app.routeIndex, app.auditSvc))
-	r.Use(PermMiddleware(app.routeIndex, app.accountSvc))
+	// 中间件按注册顺序执行：Auth 先认证设置 username → Perm 再校验权限 → Audit 最后记录审计
 	r.Use(AuthMiddleware(app.routeIndex, app.accountSvc))
+	r.Use(PermMiddleware(app.routeIndex, app.accountSvc))
+	r.Use(AuditMiddleware(app.routeIndex, app.auditSvc))
 
 	for _, route := range app.collectRoutes() {
 		app.registerRoute(r, route)

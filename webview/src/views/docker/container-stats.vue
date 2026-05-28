@@ -545,7 +545,7 @@ export default toNative(ContainerStats)
               ></div>
             </div>
           </div>
-<div v-if="statsData.processList && statsData.processList.processes && statsData.processList.processes.length > 0" class="overflow-x-auto">
+          <div v-if="statsData.processList && statsData.processList.processes && statsData.processList.processes.length > 0" class="overflow-x-auto">
             <table class="w-full text-xs">
               <thead class="bg-slate-100">
                 <tr>
@@ -562,15 +562,15 @@ export default toNative(ContainerStats)
             </table>
           </div>
           <div v-else class="text-xs text-slate-400">暂无进程信息</div>
-        </template>
-
-        <!-- 容器未运行提示 -->
-        <div v-else-if="container && container.state !== 'running'" class="flex flex-col items-center justify-center py-12 gap-3 text-slate-400 text-sm">
-          <div class="empty-state-icon !mb-0">
-            <i class="fas fa-stop text-slate-400 text-lg"></i>
-          </div>
-          <span>容器未运行，无法采集监控数据</span>
         </div>
+      </template>
+
+      <!-- 容器未运行提示 -->
+      <div v-else-if="container && container.state !== 'running'" class="flex flex-col items-center justify-center py-12 gap-3 text-slate-400 text-sm">
+        <div class="empty-state-icon !mb-0">
+          <i class="fas fa-stop text-slate-400 text-lg"></i>
+        </div>
+        <span>容器未运行，无法采集监控数据</span>
       </div>
     </div>
   </div>
