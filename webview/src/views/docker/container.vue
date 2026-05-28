@@ -37,6 +37,10 @@ class ContainerDetail extends Vue {
         return (this.detail?.cmd || []).join(' ')
     }
 
+    formatVolume(v: DockerVolumeMapping) {
+        return `${v.source || v.hostPath || '-'} → ${v.containerPath}${v.readOnly ? ' (ro)' : ''}`
+    }
+
     async loadContainer() {
         try {
             const res = await api.dockerContainerList(true)
@@ -49,11 +53,6 @@ class ContainerDetail extends Vue {
             this.portal.showNotification('error', '加载容器信息失败')
             this.$router.push('/docker/containers')
         }
-    }
-
-    formatVolume
-    formatVolume(v: DockerVolumeMapping) {
-        return `${v.source || v.hostPath || '-'} → ${v.containerPath}${v.readOnly ? ' (ro)' : ''}`
     }
 
     async loadDetail() {
