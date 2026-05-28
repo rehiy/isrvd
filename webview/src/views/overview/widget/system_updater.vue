@@ -131,7 +131,7 @@ export default toNative(SystemUpdater)
         <!-- 二进制原地升级 -->
         <button
           v-if="portal.hasPerm('POST /api/overview/upgrade')"
-          class="btn btn-secondary"
+          class="btn btn-primary"
           title="下载最新版本并重启"
           :disabled="deploying"
           @click="handleBinaryUpgrade"
@@ -143,12 +143,12 @@ export default toNative(SystemUpdater)
         <button
           v-if="inDocker && portal.hasPerm('POST /api/docker/container')"
           class="btn btn-emerald"
-          title="一键升级当前容器"
+          title="升级当前容器"
           :disabled="deploying"
           @click="openUpdaterModal"
         >
           <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying }"></i>
-          <span class="hidden xs:inline">{{ deploying ? '升级中...' : '一键升级' }}</span>
+          <span class="hidden xs:inline">{{ deploying ? '升级中...' : '容器升级' }}</span>
         </button>
       </div>
     </div>
