@@ -18,6 +18,7 @@ class SystemUpdater extends Vue {
     get currentVersion() { return this.portal.currentVersion }
 
     deploying = false
+    upgrading = false
     updaterModalOpen = false
     updaterContainer = ''
     updaterAutoRemove = true
@@ -69,12 +70,12 @@ class SystemUpdater extends Vue {
                 ],
                 cmd: [containerName],
             }
-            const res = await api.dockerContainerCreate(spec)
-            this.portal.showNotification('success', `已部署临时 updater 容器 ${res.payload?.name || spec.name}，正在升级容器 ${containerName}`)
+            await api.dockerContainerCreate(spec)
             this.updaterModalOpen = false
+            this.deploying = false
+            await this.waitForNewVersion()
         } catch {
             // Axios 拦截器会显示错误通知
-        } finally {
             this.deploying = false
         }
     }
@@ -85,11 +86,45 @@ class SystemUpdater extends Vue {
         this.deploying = true
         try {
             await api.overviewUpgrade()
-            this.portal.showNotification('success', '升级成功，程序正在重启...')
+            this.deploying = false
+            await this.waitForNewVersion()
         } catch {
             // Axios 拦截器会显示错误通知
-        } finally {
             this.deploying = false
+        }
+    }
+
+    /** 升级触发后轮询版本号，直到版本变化或超时 */
+    async waitForNewVersion() {
+        const oldVersion = this.portal.currentVersion
+        const maxWait = 300_000  // 最长等待 300 秒（5 分钟）
+        const interval = 3_000   // 每 3 秒轮询一次
+        const start = Date.now()
+
+        this.upgrading = true
+        let succeeded = false
+        while (Date.now() - start < maxWait) {
+            await new Promise(r => setTimeout(r, interval))
+            try {
+                const res = await api.overviewMonitor({ type: 'host', since: 0 })
+                const newVersion = res.payload?.data?.version
+                if (newVersion && newVersion !== oldVersion) {
+                    succeeded = true
+                    break
+                }
+            } catch {
+                // 服务重启中，请求失败属正常，继续等待
+            }
+        }
+
+        if (succeeded) {
+            // 保持 upgrading = true，按钮继续显示"等待重启..."直到页面刷新
+            this.portal.showNotification('success', `升级成功，即将刷新页面...`)
+            setTimeout(() => window.location.reload(), 2000)
+        } else {
+            // 超时
+            this.upgrading = false
+            this.portal.showNotification('error', '升级超时，请手动检查服务状态')
         }
     }
 }
@@ -133,22 +168,22 @@ export default toNative(SystemUpdater)
           v-if="portal.hasPerm('POST /api/overview/upgrade')"
           class="btn btn-primary"
           title="下载最新版本并重启"
-          :disabled="deploying"
+          :disabled="deploying || upgrading"
           @click="handleBinaryUpgrade"
         >
-          <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying }"></i>
-          <span class="hidden xs:inline">二进制升级</span>
+          <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying || upgrading }"></i>
+          <span class="hidden xs:inline">{{ deploying ? '升级中...' : upgrading ? '等待重启...' : '二进制升级' }}</span>
         </button>
         <!-- Docker 容器升级（仅 Docker 环境） -->
         <button
           v-if="inDocker && portal.hasPerm('POST /api/docker/container')"
           class="btn btn-emerald"
           title="升级当前容器"
-          :disabled="deploying"
+          :disabled="deploying || upgrading"
           @click="openUpdaterModal"
         >
-          <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying }"></i>
-          <span class="hidden xs:inline">{{ deploying ? '升级中...' : '容器升级' }}</span>
+          <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying || upgrading }"></i>
+          <span class="hidden xs:inline">{{ deploying ? '升级中...' : upgrading ? '等待重启...' : '容器升级' }}</span>
         </button>
       </div>
     </div>
