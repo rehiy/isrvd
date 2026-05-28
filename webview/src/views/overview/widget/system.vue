@@ -50,7 +50,7 @@ class SystemOverview extends Vue {
 
     async loadHistory() {
         try {
-            const res = await api.overviewMonitorHistory({ type: 'host', since: 3600 })
+            const res = await api.overviewMonitor({ type: 'host', since: 3600 })
             if (res.payload && res.payload.length > 0) {
                 for (const rec of res.payload) {
                     this.dispatchData(rec.data)
@@ -62,7 +62,7 @@ class SystemOverview extends Vue {
     async loadData() {
         this.loading = true
         try {
-            const res = await api.overviewMonitorHistory({ type: 'host', since: 60 })
+            const res = await api.overviewMonitor({ type: 'host', since: 60 })
             const last = res.payload?.[res.payload.length - 1]
             if (last) {
                 this.ready = true
@@ -79,7 +79,7 @@ class SystemOverview extends Vue {
             return
         }
         try {
-            const res = await api.overviewMonitorHistory({ type: 'host', since: 60 })
+            const res = await api.overviewMonitor({ type: 'host', since: 60 })
             const last = res.payload?.[res.payload.length - 1]
             if (last) {
                 this.dispatchData(last.data)

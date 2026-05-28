@@ -87,7 +87,7 @@ class ContainerStats extends Vue {
 
     async loadHistory() {
         try {
-            const res = await api.overviewMonitorHistory({ type: 'container', id: this.containerId, since: 3600 })
+const res = await api.overviewMonitor({ type: 'container', id: this.containerId, since: 3600 })
             if (!res.payload || res.payload.length < 2) return
             // 历史数据需要相邻两条计算速率，逐对推入
             for (let i = 0; i < res.payload.length; i++) {

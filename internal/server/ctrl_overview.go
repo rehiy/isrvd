@@ -17,7 +17,7 @@ import (
 func (app *App) defineOverviewRoutes() []Route {
 	return []Route{
 		{Method: "GET", Path: "/overview/probe", Handler: app.overviewProbe, Module: "overview", Label: "探测服务可用性", Access: AccessAuth},
-		{Method: "GET", Path: "/overview/monitor", Handler: app.overviewMonitorHistory, Module: "overview", Label: "获取监控历史数据"},
+		{Method: "GET", Path: "/overview/monitor", Handler: app.overviewMonitor, Module: "overview", Label: "获取监控数据"},
 		{Method: "POST", Path: "/overview/upgrade", Handler: app.overviewUpgrade, Module: "overview", Label: "升级程序至最新版本"},
 	}
 }
@@ -64,12 +64,12 @@ func (app *App) overviewUpgrade(c *gin.Context) {
 	}()
 }
 
-// overviewMonitorHistory 返回监控历史数据
+// overviewMonitor 返回监控数据
 // 查询参数：
 //   - type: "host"（默认）或 "container"
 //   - id:   容器 ID（type=container 时必填）
 //   - since: 时间窗口（秒），默认 3600
-func (app *App) overviewMonitorHistory(c *gin.Context) {
+func (app *App) overviewMonitor(c *gin.Context) {
 	if app.monitorCollector == nil {
 		respondError(c, http.StatusServiceUnavailable, "监控采集器未启动")
 		return

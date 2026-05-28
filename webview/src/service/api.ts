@@ -96,9 +96,9 @@ class ApiService {
         return http.get<SystemProbe>('overview/probe')
     }
 
-    overviewMonitorHistory(params?: { type?: 'host'; id?: string; since?: number }): Promise<{ payload?: MonitorHostRecord[] }>
-    overviewMonitorHistory(params?: { type: 'container'; id: string; since?: number }): Promise<{ payload?: MonitorContainerRecord[] }>
-    overviewMonitorHistory(params?: { type?: 'host' | 'container'; id?: string; since?: number }) {
+    overviewMonitor(params?: { type?: 'host'; id?: string; since?: number }): Promise<{ payload?: MonitorHostRecord[] }>
+    overviewMonitor(params?: { type: 'container'; id: string; since?: number }): Promise<{ payload?: MonitorContainerRecord[] }>
+    overviewMonitor(params?: { type?: 'host' | 'container'; id?: string; since?: number }) {
         return http.get<MonitorHostRecord[] | MonitorContainerRecord[]>('overview/monitor', { params })
     }
 
