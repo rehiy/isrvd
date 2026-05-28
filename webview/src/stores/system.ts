@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
 
 import api from '@/service/api'
-import type { LinkConfig } from '@/service/types'
+import type { LinkConfig, SystemVersionCheck } from '@/service/types'
 import { initTheme } from '@/helper/theme'
 
 interface ServiceAvailability {
@@ -37,6 +37,8 @@ export const useSystemStore = defineStore('system', () => {
         swarm: false,
         compose: false
     })
+    const versionCheck = ref<SystemVersionCheck | null>(null)
+    const currentVersion = ref<string>('')
     const toolbarLinks = ref<LinkConfig[]>([])
 
     // ─── 操作定义 ───
@@ -73,6 +75,7 @@ export const useSystemStore = defineStore('system', () => {
                 swarm: probe.swarm || false,
                 compose: probe.compose || false
             })
+            versionCheck.value = probe.versionCheck ?? null
         }
 
         toolbarLinks.value = configRes?.payload?.links || []
@@ -106,6 +109,8 @@ export const useSystemStore = defineStore('system', () => {
         initialized,
         initError,
         serviceAvailability,
+        versionCheck,
+        currentVersion,
         toolbarLinks,
         // 操作
         initialize,

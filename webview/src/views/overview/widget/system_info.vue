@@ -3,11 +3,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import type { SystemStat } from '@/service/types'
 
-import SystemUpdater from './system_updater.vue'
-
-@Component({
-    components: { SystemUpdater }
-})
+@Component({})
 class SystemInfo extends Vue {
     current: SystemStat | null = null
 
@@ -34,9 +30,6 @@ export default toNative(SystemInfo)
 
 <template>
   <div v-if="current?.system" class="space-y-3">
-    <!-- 版本更新横幅（有新版时展示） -->
-    <SystemUpdater :version-check="current.versionCheck" :current-version="current.version" />
-
     <!-- 系统信息卡片组 -->
     <div class="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-5 gap-3">
       <div class="rounded-xl border border-slate-200 bg-white p-4">

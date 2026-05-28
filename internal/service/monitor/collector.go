@@ -2,14 +2,14 @@ package monitor
 
 import (
 	"context"
+	"encoding/json"
 	"path/filepath"
 	"time"
 
 	"github.com/rehiy/libgo/logman"
 
 	"isrvd/config"
-	svcOverview "isrvd/internal/service/overview"
-	pkgdocker "isrvd/pkgs/docker"
+	"isrvd/internal/registry"
 )
 
 const (
@@ -22,32 +22,22 @@ const (
 	containerPrefix = "ctr"
 )
 
-// HostRecord 主机监控记录（一行 NDJSON）
-type HostRecord struct {
-	Ts   int64                     `json:"ts"`
-	Data *svcOverview.StatResponse `json:"data"`
+// Record 通用监控记录（一行 NDJSON）
+// Data 为原始 JSON，存储时不感知具体数据结构
+type Record struct {
+	Ts   int64           `json:"ts"`
+	Data json.RawMessage `json:"data"`
 }
 
-// ContainerRecord 容器监控记录（一行 NDJSON）
-type ContainerRecord struct {
-	Ts   int64                             `json:"ts"`
-	Data *pkgdocker.ContainerStatsResponse `json:"data"`
-}
-
-// Collector 后台监控采集器
+// Collector 后台监控采集器，负责定时采集和文件存储
 type Collector struct {
-	overviewSvc *svcOverview.Service
-	dockerSvc   *pkgdocker.DockerService // 可为 nil（无 Docker 时跳过容器采集）
-	dataDir     string
+	dataDir string
 }
 
 // NewCollector 创建采集器
-func NewCollector(overviewSvc *svcOverview.Service, dockerSvc *pkgdocker.DockerService) *Collector {
-	dataDir := filepath.Join(config.Server.RootDirectory, "monitor")
+func NewCollector() *Collector {
 	return &Collector{
-		overviewSvc: overviewSvc,
-		dockerSvc:   dockerSvc,
-		dataDir:     dataDir,
+		dataDir: filepath.Join(config.Server.RootDirectory, "monitor"),
 	}
 }
 
@@ -81,6 +71,43 @@ func (c *Collector) Start(ctx context.Context) {
 	}()
 }
 
+// collect 执行一次采集
+func (c *Collector) collect(ctx context.Context) {
+	ts := time.Now().Unix()
+
+	// ── 主机数据 ──
+	c.Append(hostPrefix, ts, CollectHostStat(ctx))
+
+	// ── 容器数据 ──
+	if registry.DockerService == nil {
+		return
+	}
+	containers, err := registry.DockerService.ContainerList(ctx, false)
+	if err != nil {
+		logman.Warn("monitor: list containers failed", "error", err)
+		return
+	}
+	for _, ct := range containers {
+		stats, err := registry.DockerService.ContainerStats(ctx, ct.ID)
+		if err != nil {
+			continue
+		}
+		c.Append(containerPrefix+"_"+ct.ID, ts, stats)
+	}
+}
+
+// Append 将任意数据序列化后追加到指定前缀的当天文件
+func (c *Collector) Append(prefix string, ts int64, data any) {
+	raw, err := json.Marshal(data)
+	if err != nil {
+		logman.Warn("monitor: marshal data failed", "prefix", prefix, "error", err)
+		return
+	}
+	if err := AppendRecord(c.dataDir, prefix, &Record{Ts: ts, Data: raw}); err != nil {
+		logman.Warn("monitor: write record failed", "prefix", prefix, "error", err)
+	}
+}
+
 // DataDir 返回数据目录
 func (c *Collector) DataDir() string {
 	return c.dataDir
@@ -96,55 +123,13 @@ func ContainerFilePrefix(id string) string {
 	return containerPrefix + "_" + id
 }
 
-// collect 执行一次采集
-func (c *Collector) collect(ctx context.Context) {
-	ts := time.Now().Unix()
-
-	// ── 主机数据 ──
-	stat := c.overviewSvc.Stat(ctx)
-	rec := &HostRecord{Ts: ts, Data: stat}
-	if err := AppendRecord(c.dataDir, hostPrefix, rec); err != nil {
-		logman.Warn("monitor: write host record failed", "error", err)
-	}
-
-	// ── 容器数据 ──
-	if c.dockerSvc == nil {
-		return
-	}
-
-	containers, err := c.dockerSvc.ContainerList(ctx, false) // 只采集运行中的容器
-	if err != nil {
-		logman.Warn("monitor: list containers failed", "error", err)
-		return
-	}
-
-	for _, ct := range containers {
-		id := ct.ID
-		stats, err := c.dockerSvc.ContainerStats(ctx, id)
-		if err != nil {
-			// 单个容器失败不影响其他容器
-			continue
-		}
-		crec := &ContainerRecord{Ts: ts, Data: stats}
-		if err := AppendRecord(c.dataDir, containerPrefix+"_"+id, crec); err != nil {
-			logman.Warn("monitor: write container record failed", "id", id, "error", err)
-		}
-	}
-}
-
 // cleanOld 清理所有过期文件
 func (c *Collector) cleanOld() {
 	CleanOldFiles(c.dataDir)
 }
 
-// UpdateDockerSvc 更新 Docker 服务（用于 reload 后同步最新实例）
-func (c *Collector) UpdateDockerSvc(dockerSvc *pkgdocker.DockerService) {
-	c.dockerSvc = dockerSvc
-}
-
 // nextMidnight 返回下一个凌晨 00:05 的时间（留 5 分钟余量避免边界问题）
 func nextMidnight() time.Time {
 	now := time.Now()
-	next := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 5, 0, 0, now.Location())
-	return next
+	return time.Date(now.Year(), now.Month(), now.Day()+1, 0, 5, 0, 0, now.Location())
 }

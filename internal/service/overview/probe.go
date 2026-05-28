@@ -10,12 +10,13 @@ import (
 
 // ProbeResponse 探活响应
 type ProbeResponse struct {
-	Agent   bool `json:"agent"`
-	Apisix  bool `json:"apisix"`
-	Caddy   bool `json:"caddy"`
-	Docker  bool `json:"docker"`
-	Swarm   bool `json:"swarm"`
-	Compose bool `json:"compose"`
+	Agent        bool          `json:"agent"`
+	Apisix       bool          `json:"apisix"`
+	Caddy        bool          `json:"caddy"`
+	Docker       bool          `json:"docker"`
+	Swarm        bool          `json:"swarm"`
+	Compose      bool          `json:"compose"`
+	VersionCheck *VersionCheck `json:"versionCheck,omitempty"`
 }
 
 // UptimeResponse 服务启动时间响应
@@ -52,7 +53,8 @@ func (s *Service) Probe(ctx context.Context, probes map[string]func(context.Cont
 	}
 
 	resp := &ProbeResponse{
-		Agent: config.Agent.BaseURL != "" && config.Agent.APIKey != "",
+		Agent:        config.Agent.BaseURL != "" && config.Agent.APIKey != "",
+		VersionCheck: s.CheckVersion(ctx),
 	}
 
 	var (

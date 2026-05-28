@@ -17,14 +17,9 @@ import (
 func (app *App) defineOverviewRoutes() []Route {
 	return []Route{
 		{Method: "GET", Path: "/overview/probe", Handler: app.overviewProbe, Module: "overview", Label: "探测服务可用性", Access: AccessAuth},
-		{Method: "GET", Path: "/overview/status", Handler: app.overviewStat, Module: "overview", Label: "获取系统概览统计"},
-		{Method: "GET", Path: "/overview/history", Handler: app.overviewMonitorHistory, Module: "overview", Label: "获取监控历史数据"},
+		{Method: "GET", Path: "/overview/monitor", Handler: app.overviewMonitorHistory, Module: "overview", Label: "获取监控历史数据"},
 		{Method: "POST", Path: "/overview/upgrade", Handler: app.overviewUpgrade, Module: "overview", Label: "升级程序至最新版本"},
 	}
-}
-
-func (app *App) overviewStat(c *gin.Context) {
-	respondSuccess(c, "ok", app.overviewSvc.Stat(c.Request.Context()))
 }
 
 func (app *App) overviewProbe(c *gin.Context) {
@@ -93,7 +88,7 @@ func (app *App) overviewMonitorHistory(c *gin.Context) {
 			respondError(c, http.StatusBadRequest, "缺少容器 ID")
 			return
 		}
-		records, err := svcMonitor.ReadSince[svcMonitor.ContainerRecord](
+		records, err := svcMonitor.ReadSince[svcMonitor.Record](
 			app.monitorCollector.DataDir(),
 			svcMonitor.ContainerFilePrefix(id),
 			since,
@@ -104,7 +99,7 @@ func (app *App) overviewMonitorHistory(c *gin.Context) {
 		}
 		respondSuccess(c, "ok", records)
 	default:
-		records, err := svcMonitor.ReadSince[svcMonitor.HostRecord](
+		records, err := svcMonitor.ReadSince[svcMonitor.Record](
 			app.monitorCollector.DataDir(),
 			svcMonitor.HostFilePrefix(),
 			since,

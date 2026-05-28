@@ -159,7 +159,7 @@ kill -HUP $(pgrep isrvd)
 
 ```bash
 isrvd_get "/overview/probe"
-isrvd_get "/overview/status"
+isrvd_get "/overview/monitor?type=host&since=60"
 isrvd_get "/docker/containers"
 isrvd_get "/swarm/services"
 ```

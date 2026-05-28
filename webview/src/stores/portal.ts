@@ -92,6 +92,8 @@ export const usePortalStore = defineStore('portal', () => {
         initialized: systemRefs.initialized,
         initError: systemRefs.initError,
         serviceAvailability: systemRefs.serviceAvailability,
+        versionCheck: systemRefs.versionCheck,
+        currentVersion: systemRefs.currentVersion,
         toolbarLinks: systemRefs.toolbarLinks,
         // System Store 方法
         loadSystemData: systemStore.loadSystemData,

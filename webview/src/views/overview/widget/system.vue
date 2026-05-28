@@ -37,6 +37,9 @@ class SystemOverview extends Vue {
 
     // ─── 方法 ───
     private dispatchData(payload: SystemStat) {
+        if (payload.version) {
+            this.portal.currentVersion = payload.version
+        }
         this.infoRef?.pushData(payload)
         this.cpuMemRef?.pushData(payload)
         this.gpuRef?.pushData(payload)
@@ -59,10 +62,11 @@ class SystemOverview extends Vue {
     async loadData() {
         this.loading = true
         try {
-            const res = await api.overviewStatus()
-            if (res.payload) {
+            const res = await api.overviewMonitorHistory({ type: 'host', since: 60 })
+            const last = res.payload?.[res.payload.length - 1]
+            if (last) {
                 this.ready = true
-                this.dispatchData(res.payload)
+                this.dispatchData(last.data)
             }
         } catch { /* ignore */ } finally {
             this.loading = false
@@ -75,9 +79,10 @@ class SystemOverview extends Vue {
             return
         }
         try {
-            const res = await api.overviewStatus()
-            if (res.payload) {
-                this.dispatchData(res.payload)
+            const res = await api.overviewMonitorHistory({ type: 'host', since: 60 })
+            const last = res.payload?.[res.payload.length - 1]
+            if (last) {
+                this.dispatchData(last.data)
             }
         } catch { /* ignore */ }
     }

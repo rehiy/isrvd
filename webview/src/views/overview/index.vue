@@ -3,6 +3,7 @@ import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
+import SystemUpdater from './widget/system_updater.vue'
 import ApisixOverview from './widget/apisix.vue'
 import CaddyOverview from './widget/caddy.vue'
 import DockerOverview from './widget/docker.vue'
@@ -10,7 +11,7 @@ import SwarmOverview from './widget/swarm.vue'
 import SystemOverview from './widget/system.vue'
 
 @Component({
-    components: { ApisixOverview, CaddyOverview, DockerOverview, SwarmOverview, SystemOverview }
+    components: { SystemUpdater, ApisixOverview, CaddyOverview, DockerOverview, SwarmOverview, SystemOverview }
 })
 class Overview extends Vue {
     portal = usePortal()
@@ -34,7 +35,7 @@ class Overview extends Vue {
             this.portal.hasPerm('GET /api/caddy/info') ||
             this.portal.hasPerm('GET /api/docker/containers') ||
             this.portal.hasPerm('GET /api/swarm/info') ||
-            this.portal.hasPerm('GET /api/overview/status')
+            this.portal.hasPerm('GET /api/overview/monitor')
         )
     }
 
@@ -59,14 +60,14 @@ class Overview extends Vue {
         if (this.portal.hasPerm('GET /api/swarm/info')) {
             this.swarmRef?.load()
         }
-        if (this.portal.hasPerm('GET /api/overview/status')) {
+        if (this.portal.hasPerm('GET /api/overview/monitor')) {
             this.systemRef?.load()
         }
     }
 
     // ─── 生命周期 ───
     unmounted() {
-        if (this.portal.hasPerm('GET /api/overview/status')) {
+        if (this.portal.hasPerm('GET /api/overview/monitor')) {
             this.systemRef?.stopPoll()
         }
     }
@@ -149,12 +150,15 @@ export default toNative(Overview)
       </div>
 
       <!-- 系统信息区块 -->
-      <div v-if="portal.hasPerm('GET /api/overview/status')" class="p-6 border-b border-slate-100">
+      <div v-if="portal.hasPerm('GET /api/overview/monitor')" class="p-6 border-b border-slate-100">
         <div class="flex items-center gap-2 mb-4">
           <i class="fas fa-server text-slate-500 text-lg"></i>
           <h1 class="text-lg font-semibold text-slate-700">系统信息</h1>
         </div>
-        <SystemOverview ref="systemRef" />
+        <div class="space-y-3">
+          <SystemUpdater />
+          <SystemOverview ref="systemRef" />
+        </div>
       </div>
 
       <!-- 无任何权限时的空状态 -->

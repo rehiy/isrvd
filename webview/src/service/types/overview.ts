@@ -2,6 +2,12 @@ import type { DockerContainerStats } from './docker'
 
 // ─── 系统探测 ───
 
+export interface SystemVersionCheck {
+    latest: string
+    update: boolean
+    release: string
+}
+
 export interface SystemProbe {
     agent: boolean
     apisix: boolean
@@ -9,15 +15,10 @@ export interface SystemProbe {
     docker: boolean
     swarm: boolean
     compose: boolean
+    versionCheck?: SystemVersionCheck
 }
 
 // ─── 系统统计 ───
-
-export interface SystemVersionCheck {
-    latest: string
-    update: boolean
-    release: string
-}
 
 export interface SystemNetInterface {
     name: string
@@ -37,6 +38,8 @@ export interface SystemDiskIO {
     Name: string
     ReadBytes: number
     WriteBytes: number
+    ReadCount: number
+    WriteCount: number
 }
 
 export interface SystemGoRuntimeStat {
@@ -91,7 +94,6 @@ export interface SystemStat {
     gpu: SystemGPU[]
     go: SystemGoRuntimeStat
     version: string
-    versionCheck: SystemVersionCheck
 }
 
 // ─── 监控历史 ───

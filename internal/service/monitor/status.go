@@ -1,4 +1,4 @@
-package overview
+package monitor
 
 import (
 	"context"
@@ -47,18 +47,17 @@ type SystemGPU struct {
 	FanSpeed    int     `json:"fanSpeed"`
 }
 
-// StatResponse 系统统计响应
-type StatResponse struct {
-	System       *psutil.DetailStat `json:"system"`
-	DiskIO       []*DiskIOStat      `json:"diskIO"`
-	GPU          []*SystemGPU       `json:"gpu"`
-	Go           *GoRuntimeStat     `json:"go"`
-	Version      string             `json:"version"`
-	VersionCheck *VersionCheck      `json:"versionCheck,omitempty"`
+// HostStat 主机监控采集数据
+type HostStat struct {
+	System  *psutil.DetailStat `json:"system"`
+	DiskIO  []*DiskIOStat      `json:"diskIO"`
+	GPU     []*SystemGPU       `json:"gpu"`
+	Go      *GoRuntimeStat     `json:"go"`
+	Version string             `json:"version"`
 }
 
-// Stat 获取系统统计信息
-func (s *Service) Stat(ctx context.Context) *StatResponse {
+// CollectHostStat 采集主机监控数据
+func CollectHostStat(ctx context.Context) *HostStat {
 	detail := psutil.Detail(false)
 	detail.DiskPartition = filterDiskPartitions(detail.DiskPartition)
 
@@ -81,13 +80,12 @@ func (s *Service) Stat(ctx context.Context) *StatResponse {
 		GoMemoryStat: psutil.GoMemory(),
 	}
 
-	return &StatResponse{
-		System:       detail,
-		DiskIO:       diskIO,
-		GPU:          buildSystemGPUs(ctx),
-		Go:           goStat,
-		Version:      config.Version,
-		VersionCheck: s.CheckVersion(ctx),
+	return &HostStat{
+		System:  detail,
+		DiskIO:  diskIO,
+		GPU:     buildSystemGPUs(ctx),
+		Go:      goStat,
+		Version: config.Version,
 	}
 }
 

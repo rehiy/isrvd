@@ -146,7 +146,7 @@ func (app *App) watchReload() {
 
 // startMonitor 启动后台监控采集协程
 func (app *App) startMonitor() {
-	app.monitorCollector = svcMonitor.NewCollector(app.overviewSvc, registry.DockerService)
+	app.monitorCollector = svcMonitor.NewCollector()
 	app.monitorCollector.Start(context.Background())
 }
 
@@ -158,9 +158,5 @@ func (app *App) reload() {
 	}
 	registry.Init()
 	app.initServices()
-	// 同步更新监控采集器中的 Docker 服务实例
-	if app.monitorCollector != nil {
-		app.monitorCollector.UpdateDockerSvc(registry.DockerService)
-	}
 	logman.Info("reload complete")
 }

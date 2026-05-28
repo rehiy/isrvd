@@ -1,10 +1,10 @@
 <script lang="ts">
-import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { DockerContainerCreate, SystemVersionCheck } from '@/service/types'
+import type { DockerContainerCreate } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -14,8 +14,8 @@ import BaseModal from '@/component/modal.vue'
 class SystemUpdater extends Vue {
     portal = usePortal()
 
-    @Prop({ type: Object, default: null }) readonly versionCheck!: SystemVersionCheck | null
-    @Prop({ type: String, default: '' }) readonly currentVersion!: string
+    get versionCheck() { return this.portal.versionCheck }
+    get currentVersion() { return this.portal.currentVersion }
 
     deploying = false
     updaterModalOpen = false
