@@ -19,7 +19,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/shell',
     name: 'shell',
-    component: () => import('@/views/shell.vue')
+    component: () => import('@/views/terminal/shell.vue')
   },
   {
     path: '/apisix',
@@ -195,6 +195,21 @@ const routes: RouteRecordRaw[] = [
     path: '/cron/jobs',
     name: 'cron-jobs',
     component: () => import('@/views/cron/jobs.vue')
+  },
+  {
+    path: '/ssh',
+    name: 'ssh',
+    redirect: '/ssh/hosts'
+  },
+  {
+    path: '/ssh/hosts',
+    name: 'ssh-hosts',
+    component: () => import('@/views/terminal/hosts.vue')
+  },
+  {
+    path: '/ssh/:id',
+    name: 'ssh-terminal',
+    component: () => import('@/views/terminal/ssh.vue')
   },
   {
     path: '/account/members',

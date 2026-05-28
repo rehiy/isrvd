@@ -17,6 +17,7 @@ import (
 	svcShell "isrvd/internal/service/shell"
 	svcSwarm "isrvd/internal/service/swarm"
 	svcSystem "isrvd/internal/service/system"
+	svcWebSSH "isrvd/internal/service/webssh"
 
 	"isrvd/config"
 	"isrvd/public"
@@ -39,6 +40,7 @@ type App struct {
 	cronSvc     *svcCron.Service
 	agentSvc    *svcAgent.Service
 	shellSvc    *svcShell.Service
+	websshSvc   *svcWebSSH.Service
 	routeIndex  map[string]Route // METHOD+完整路径 → 路由索引
 }
 
@@ -115,6 +117,7 @@ func (app *App) collectRoutes() []Route {
 	routes = append(routes, app.defineSystemRoutes()...)
 	routes = append(routes, app.defineAccountRoutes()...)
 	routes = append(routes, app.defineShellRoutes()...)
+	routes = append(routes, app.defineWebSSHRoutes()...)
 	routes = append(routes, app.defineFilerRoutes()...)
 	routes = append(routes, app.defineAgentRoutes()...)
 	routes = append(routes, app.defineApisixRoutes()...)

@@ -341,4 +341,24 @@
   .badge-primary  { @apply bg-primary-100 text-primary-700; }
   .badge-warning  { @apply bg-amber-100 text-amber-700; }
 
+
+  /* ============================================================
+   * 9. 终端页面（Terminal Page）
+   * ============================================================ */
+
+  /* 终端页面外层容器：撑满视口减去顶栏高度 */
+  .terminal-page {
+    @apply h-[calc(100vh-100px)];
+  }
+
+  /* 终端内容区域：内边距 + flex 纵向布局 */
+  .terminal-body {
+    @apply flex-1 flex flex-col overflow-hidden p-3 md:p-4;
+  }
+
+  /* 终端黑色面板：深色背景圆角容器 */
+  .terminal-pane {
+    @apply flex-1 bg-slate-900 rounded-xl p-2 md:p-3 overflow-hidden;
+  }
+
 }

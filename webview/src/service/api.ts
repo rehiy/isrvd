@@ -81,6 +81,9 @@ import type {
     CronJobList,
     CronJobLogList,
     CronTypeInfo,
+    // SSH
+    SSHHostInfo,
+    SSHHostUpsert,
 } from './types'
 
 // API 服务类，统一管理所有 API 请求
@@ -636,6 +639,28 @@ class ApiService {
 
     cronJobLogs(id: string, limit = 50) {
         return http.get<CronJobLogList>(`cron/jobs/${id}/logs`, { params: { limit } })
+    }
+
+    // ==================== SSH 主机管理 ====================
+
+    sshHostList() {
+        return http.get<SSHHostInfo[]>('ssh/hosts')
+    }
+
+    sshHost(id: string) {
+        return http.get<SSHHostInfo>(`ssh/host/${id}`)
+    }
+
+    sshHostCreate(data: SSHHostUpsert) {
+        return http.post<SSHHostInfo>('ssh/host', data)
+    }
+
+    sshHostUpdate(id: string, data: SSHHostUpsert) {
+        return http.put<SSHHostInfo>(`ssh/host/${id}`, data)
+    }
+
+    sshHostDelete(id: string) {
+        return http.delete<void>(`ssh/host/${id}`)
     }
 }
 

@@ -22,6 +22,7 @@ import (
 	svcShell "isrvd/internal/service/shell"
 	svcSwarm "isrvd/internal/service/swarm"
 	svcSystem "isrvd/internal/service/system"
+	svcWebSSH "isrvd/internal/service/webssh"
 
 	"isrvd/config"
 	"isrvd/internal/registry"
@@ -37,6 +38,14 @@ func (app *App) initServices() {
 	app.filerSvc = svcFiler.NewService()
 	app.shellSvc = svcShell.NewService()
 	app.agentSvc = svcAgent.NewService()
+
+	if websshSvc, err := svcWebSSH.NewService(); err != nil {
+		logman.Warn("WebSSH service unavailable", "error", err)
+		app.websshSvc = nil
+	} else {
+		app.websshSvc = websshSvc
+	}
+
 	app.cronSvc = svcCron.NewService(registry.DockerService)
 
 	if apisixSvc, err := svcApisix.NewService(); err != nil {
@@ -108,6 +117,8 @@ func (app *App) isServiceAvailable(module string) bool {
 		return app.dockerSvc != nil && app.swarmSvc != nil
 	case "compose":
 		return app.dockerSvc != nil && app.composeSvc != nil
+	case "webssh":
+		return app.websshSvc != nil
 	default:
 		return true
 	}

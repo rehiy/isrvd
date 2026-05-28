@@ -39,10 +39,10 @@ export default toNative(Shell)
 </script>
 
 <template>
-  <div class="h-[calc(100vh-100px)]">
+  <div class="terminal-page">
     <div class="h-full card flex flex-col overflow-hidden">
       <!-- Toolbar Bar -->
-      <div class="bg-slate-50 border-b border-slate-200 px-4 md:px-6 py-3">
+      <div class="card-toolbar">
         <!-- 桌面端工具栏 -->
         <div class="hidden md:flex md:items-center justify-between">
           <div class="flex items-center gap-3">
@@ -102,9 +102,8 @@ export default toNative(Shell)
       </div>
 
       <!-- 内容区域 -->
-      <div class="flex-1 flex flex-col overflow-hidden p-3 md:p-4">
-        <!-- Terminal -->
-        <div class="flex-1 bg-slate-900 rounded-xl p-2 md:p-3 overflow-hidden">
+      <div class="terminal-body">
+        <div class="terminal-pane">
           <div ref="xtermRef" class="h-full rounded-lg overflow-hidden"></div>
         </div>
       </div>

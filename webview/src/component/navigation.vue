@@ -180,9 +180,15 @@ export default toNative(NavigationBar)
         <i class="fas fa-folder-open"></i>
         <span v-if="!collapsed">文件管理</span>
       </router-link>
+      <!-- Shell 终端 -->
       <router-link v-if="portal.hasPerm('GET /api/shell')" to="/shell" class="nav-link" active-class="bg-blue-50 text-blue-700" :title="collapsed ? 'Shell 终端' : ''">
         <i class="fas fa-terminal"></i>
         <span v-if="!collapsed">Shell 终端</span>
+      </router-link>
+      <!-- SSH 连接 -->
+      <router-link v-if="portal.hasPerm('GET /api/ssh/hosts')" to="/ssh/hosts" class="nav-link" :class="{ 'bg-blue-50 text-blue-700': isActive('/ssh') }" :title="collapsed ? 'SSH 连接' : ''">
+        <i class="fas fa-server"></i>
+        <span v-if="!collapsed">SSH 连接</span>
       </router-link>
 
       <!-- APISIX 折叠子菜单 -->
