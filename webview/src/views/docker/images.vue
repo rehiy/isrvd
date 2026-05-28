@@ -226,7 +226,7 @@ export default toNative(Images)
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <PageSearch v-model="searchText" search-key="docker-images" placeholder="搜索镜像名称、标签、ID..." width-class="w-64" focus-color="blue" type-to-search />
+          <PageSearch v-model="searchText" search-key="docker-images" placeholder="搜索镜像名称、标签、ID..." focus-color="blue" type-to-search />
           <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
             <button :class="['tab-btn', !showAllImages ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="showAllImages = false; loadImages()">
               <i class="fas fa-cube"></i><span>顶层</span>

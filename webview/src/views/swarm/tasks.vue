@@ -114,7 +114,7 @@ export default toNative(Tasks)
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <PageSearch v-model="searchText" search-key="swarm-tasks" placeholder="搜索任务、服务、节点、状态或消息..." width-class="w-64" focus-color="cyan" type-to-search />
+          <PageSearch v-model="searchText" search-key="swarm-tasks" placeholder="搜索任务、服务、节点、状态或消息..." focus-color="cyan" type-to-search />
           <select v-model="selectedServiceId" class="select-sm min-w-[160px]">
             <option value="">全部服务</option>
             <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>

@@ -107,7 +107,7 @@ export default toNative(Consumers)
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <PageSearch v-model="searchText" search-key="apisix-consumers" placeholder="搜索消费者..." width-class="w-48" focus-color="violet" type-to-search />
+          <PageSearch v-model="searchText" search-key="apisix-consumers" placeholder="搜索消费者..." focus-color="violet" type-to-search />
           <button class="btn btn-secondary" @click="loadConsumers()">
             <i class="fas fa-rotate"></i>刷新
           </button>

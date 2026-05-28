@@ -112,7 +112,7 @@ export default toNative(Networks)
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <PageSearch v-model="searchText" search-key="docker-networks" placeholder="搜索网络名称、ID、驱动或子网..." width-class="w-64" focus-color="purple" type-to-search />
+          <PageSearch v-model="searchText" search-key="docker-networks" placeholder="搜索网络名称、ID、驱动或子网..." focus-color="purple" type-to-search />
           <button class="btn btn-secondary" @click="loadNetworks()">
             <i class="fas fa-rotate"></i>刷新
           </button>

@@ -150,7 +150,7 @@ export default toNative(Nodes)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <PageSearch v-model="searchText" search-key="swarm-nodes" placeholder="搜索主机名、ID、角色、状态或 IP..." width-class="w-64" focus-color="blue" type-to-search />
+            <PageSearch v-model="searchText" search-key="swarm-nodes" placeholder="搜索主机名、ID、角色、状态或 IP..." focus-color="blue" type-to-search />
             <button class="btn btn-secondary" @click="loadNodes">
               <i class="fas fa-rotate"></i>刷新
             </button>

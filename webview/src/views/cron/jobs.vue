@@ -152,7 +152,7 @@ export default toNative(CronJobs)
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <PageSearch v-model="searchText" search-key="cron-jobs" placeholder="搜索任务名称、执行计划..." width-class="w-60" focus-color="amber" type-to-search />
+          <PageSearch v-model="searchText" search-key="cron-jobs" placeholder="搜索任务名称、执行计划..." focus-color="amber" type-to-search />
           <button class="btn btn-secondary" @click="loadJobs()">
             <i class="fas fa-rotate"></i>刷新
           </button>

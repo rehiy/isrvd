@@ -102,7 +102,7 @@ export default toNative(SSHHosts)
           </div>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
-          <PageSearch v-model="searchText" search-key="ssh-hosts" placeholder="搜索主机名、地址或用户名..." width-class="w-64" focus-color="teal" type-to-search />
+          <PageSearch v-model="searchText" search-key="ssh-hosts" placeholder="搜索主机名、地址或用户名..." focus-color="teal" type-to-search />
           <button class="btn btn-secondary" @click="loadHosts()">
             <i class="fas fa-rotate"></i>刷新
           </button>

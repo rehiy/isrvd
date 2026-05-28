@@ -125,7 +125,7 @@ export default toNative(Registries)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <PageSearch v-model="searchText" search-key="docker-registries" placeholder="搜索仓库名称、地址或账号..." width-class="w-64" focus-color="purple" type-to-search />
+            <PageSearch v-model="searchText" search-key="docker-registries" placeholder="搜索仓库名称、地址或账号..." focus-color="purple" type-to-search />
             <button class="btn btn-secondary" @click="loadRegistries()">
               <i class="fas fa-rotate"></i>刷新
             </button>

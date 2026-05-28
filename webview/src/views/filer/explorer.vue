@@ -124,7 +124,7 @@ export default toNative(FileExplorer)
           </nav>
 
           <div class="hidden md:flex items-center gap-2 flex-shrink-0">
-            <PageSearch v-model="searchText" search-key="filer-explorer" placeholder="搜索文件名、路径或权限..." width-class="w-72" focus-color="primary" type-to-search />
+            <PageSearch v-model="searchText" search-key="filer-explorer" placeholder="搜索文件名、路径或权限..." focus-color="primary" type-to-search />
             <button v-if="portal.hasPerm('GET /api/filer/list')" class="btn btn-secondary" @click="refreshFiles()">
               <i class="fas fa-rotate"></i><span>刷新</span>
             </button>

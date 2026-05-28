@@ -128,7 +128,7 @@ export default toNative(Upstreams)
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <PageSearch v-model="searchText" search-key="apisix-upstreams" placeholder="搜索上游、节点或策略..." width-class="w-56" focus-color="emerald" type-to-search />
+          <PageSearch v-model="searchText" search-key="apisix-upstreams" placeholder="搜索上游、节点或策略..." focus-color="emerald" type-to-search />
           <button class="btn btn-secondary" @click="loadUpstreams()">
             <i class="fas fa-rotate"></i>刷新
           </button>

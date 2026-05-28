@@ -98,7 +98,7 @@ export default toNative(Volumes)
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <PageSearch v-model="searchText" search-key="docker-volumes" placeholder="搜索卷名称、驱动或挂载点..." width-class="w-64" focus-color="amber" type-to-search />
+          <PageSearch v-model="searchText" search-key="docker-volumes" placeholder="搜索卷名称、驱动或挂载点..." focus-color="amber" type-to-search />
           <button class="btn btn-secondary" @click="loadVolumes()">
             <i class="fas fa-rotate"></i>刷新
           </button>

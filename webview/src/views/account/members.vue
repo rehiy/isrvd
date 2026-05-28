@@ -99,7 +99,7 @@ export default toNative(Members)
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <PageSearch v-model="searchText" search-key="account-members" placeholder="搜索用户名、描述、家目录或权限..." width-class="w-64" focus-color="blue" type-to-search />
+          <PageSearch v-model="searchText" search-key="account-members" placeholder="搜索用户名、描述、家目录或权限..." focus-color="blue" type-to-search />
           <button type="button" class="btn btn-secondary" @click="loadMembers">
             <i class="fas fa-rotate"></i>刷新
           </button>

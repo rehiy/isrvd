@@ -166,7 +166,7 @@ export default toNative(Routes)
           <div><h1 class="text-lg font-semibold text-slate-800">路由管理</h1><p class="text-xs text-slate-500">管理 APISIX 路由，配置匹配规则、上游转发与插件</p></div>
         </div>
         <div class="flex items-center gap-2">
-          <PageSearch v-model="searchText" search-key="apisix-routes" placeholder="搜索路由、URI、描述或上游..." width-class="w-64" focus-color="indigo" type-to-search />
+          <PageSearch v-model="searchText" search-key="apisix-routes" placeholder="搜索路由、URI、描述或上游..." focus-color="indigo" type-to-search />
           <div class="tab-group">
             <button class="tab-btn" :class="viewMode === 'route' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive'" @click="setViewMode('route')">
               <i class="fas fa-list text-xs"></i>默认

@@ -140,7 +140,7 @@ export default toNative(CaddyRoutes)
           <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">Caddy 路由</h1><p class="text-xs text-slate-500 truncate">配置请求匹配规则与处理器，支持多种转发方式</p></div>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
-          <PageSearch v-model="searchText" search-key="caddy-routes" placeholder="搜索 host、path、上游..." width-class="w-64" focus-color="indigo" type-to-search />
+          <PageSearch v-model="searchText" search-key="caddy-routes" placeholder="搜索 host、path、上游..." focus-color="indigo" type-to-search />
           <button class="btn btn-secondary" @click="loadRoutes()"><i class="fas fa-rotate"></i>刷新</button>
           <button v-if="portal.hasPerm('POST /api/caddy/route')" class="btn btn-indigo" @click="openCreateModal()"><i class="fas fa-plus"></i>新建路由</button>
         </div>

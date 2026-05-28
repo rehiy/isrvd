@@ -146,7 +146,7 @@ export default toNative(AuditLogs)
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <PageSearch v-model="searchText" search-key="system-audit-logs" placeholder="搜索用户、方法、URI、IP 或状态..." width-class="w-64" focus-color="rose" type-to-search />
+          <PageSearch v-model="searchText" search-key="system-audit-logs" placeholder="搜索用户、方法、URI、IP 或状态..." focus-color="rose" type-to-search />
           <select v-model="selectedUsername" class="select-sm min-w-[140px]">
             <option value="">所有用户</option>
             <option v-for="username in uniqueUsernames" :key="username" :value="username">{{ username }}</option>
