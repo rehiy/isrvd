@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/websocket"
@@ -20,6 +21,13 @@ func (app *App) defineWebSSHRoutes() []Route {
 		{Method: "DELETE", Path: "/ssh/host/:id", Handler: app.websshHostDelete, Module: "ssh", Label: "删除 SSH 主机"},
 		// SSH 终端
 		{Method: "GET", Path: "/ssh/to/:id", Handler: app.websshTerminal, Module: "ssh", Label: "打开 SSH 终端", QueryToken: true},
+		// SFTP 文件管理
+		{Method: "GET", Path: "/ssh/sftp/:id/ls", Handler: app.websshSFTPList, Module: "ssh", Label: "SFTP 列出目录"},
+		{Method: "GET", Path: "/ssh/sftp/:id/download", Handler: app.websshSFTPDownload, Module: "ssh", Label: "SFTP 下载文件", QueryToken: true},
+		{Method: "POST", Path: "/ssh/sftp/:id/upload", Handler: app.websshSFTPUpload, Module: "ssh", Label: "SFTP 上传文件"},
+		{Method: "DELETE", Path: "/ssh/sftp/:id/rm", Handler: app.websshSFTPRemove, Module: "ssh", Label: "SFTP 删除文件"},
+		{Method: "POST", Path: "/ssh/sftp/:id/mkdir", Handler: app.websshSFTPMkdir, Module: "ssh", Label: "SFTP 创建目录"},
+		{Method: "POST", Path: "/ssh/sftp/:id/rename", Handler: app.websshSFTPRename, Module: "ssh", Label: "SFTP 重命名"},
 	}
 }
 
@@ -83,4 +91,104 @@ func (app *App) websshTerminal(c *gin.Context) {
 	app.wsConfig.Handler(func(conn *websocket.ServerConn) {
 		app.websshSvc.RunTerminal(conn, id)
 	})(c)
+}
+
+func (app *App) websshSFTPList(c *gin.Context) {
+	id := c.Param("id")
+	dirPath := c.Query("path")
+	result, err := app.websshSvc.SFTPList(id, dirPath)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "", result)
+}
+
+func (app *App) websshSFTPDownload(c *gin.Context) {
+	id := c.Param("id")
+	filePath := c.Query("path")
+	if filePath == "" {
+		respondError(c, http.StatusBadRequest, "path 参数不能为空")
+		return
+	}
+
+	reader, size, err := app.websshSvc.SFTPDownload(id, filePath)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	defer reader.Close()
+
+	filename := filepath.Base(filePath)
+	c.Header("Content-Disposition", `attachment; filename="`+filename+`"`)
+	c.DataFromReader(http.StatusOK, size, "application/octet-stream", reader, nil)
+}
+
+func (app *App) websshSFTPUpload(c *gin.Context) {
+	id := c.Param("id")
+	dirPath := c.Query("path")
+	if dirPath == "" {
+		respondError(c, http.StatusBadRequest, "path 参数不能为空")
+		return
+	}
+
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		respondError(c, http.StatusBadRequest, "获取上传文件失败: "+err.Error())
+		return
+	}
+	defer file.Close()
+
+	if err := app.websshSvc.SFTPUpload(id, dirPath, file, header.Filename); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "上传成功", nil)
+}
+
+func (app *App) websshSFTPRemove(c *gin.Context) {
+	id := c.Param("id")
+	targetPath := c.Query("path")
+	if targetPath == "" {
+		respondError(c, http.StatusBadRequest, "path 参数不能为空")
+		return
+	}
+	if err := app.websshSvc.SFTPRemove(id, targetPath); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "删除成功", nil)
+}
+
+func (app *App) websshSFTPMkdir(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		Path string `json:"path" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := app.websshSvc.SFTPMkdir(id, req.Path); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "创建成功", nil)
+}
+
+func (app *App) websshSFTPRename(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		OldPath string `json:"oldPath" binding:"required"`
+		NewPath string `json:"newPath" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := app.websshSvc.SFTPRename(id, req.OldPath, req.NewPath); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "重命名成功", nil)
 }

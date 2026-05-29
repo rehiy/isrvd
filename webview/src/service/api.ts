@@ -85,6 +85,9 @@ import type {
     // SSH
     SSHHostInfo,
     SSHHostUpsert,
+    SFTPListResult,
+    SFTPRename,
+    SFTPMkdir,
 } from './types'
 
 // API 服务类，统一管理所有 API 请求
@@ -666,6 +669,42 @@ class ApiService {
 
     sshHostDelete(id: string) {
         return http.delete<void>(`ssh/host/${id}`)
+    }
+
+    // ==================== SFTP 文件管理 ====================
+
+    sftpList(hostId: string, path: string) {
+        return http.get<SFTPListResult>(`ssh/sftp/${hostId}/ls`, { params: { path } })
+    }
+
+    sftpUpload(hostId: string, path: string, formData: FormData, config: AxiosRequestConfig = {}) {
+        return http.post<void>(`ssh/sftp/${hostId}/upload`, formData, {
+            params: { path },
+            headers: { 'Content-Type': 'multipart/form-data' },
+            ...config
+        })
+    }
+
+    sftpDownload(hostId: string, path: string) {
+        return httpBlob.get(`ssh/sftp/${hostId}/download`, { params: { path }, responseType: 'blob' })
+    }
+
+    sftpDownloadURL(hostId: string, path: string, token = '') {
+        const params = new URLSearchParams({ path })
+        if (token) params.set('token', token)
+        return `api/ssh/sftp/${hostId}/download?${params.toString()}`
+    }
+
+    sftpRemove(hostId: string, path: string) {
+        return http.delete<void>(`ssh/sftp/${hostId}/rm`, { params: { path } })
+    }
+
+    sftpMkdir(hostId: string, data: SFTPMkdir) {
+        return http.post<void>(`ssh/sftp/${hostId}/mkdir`, data)
+    }
+
+    sftpRename(hostId: string, data: SFTPRename) {
+        return http.post<void>(`ssh/sftp/${hostId}/rename`, data)
     }
 }
 

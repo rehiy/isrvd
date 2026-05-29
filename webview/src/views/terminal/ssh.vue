@@ -7,8 +7,9 @@ import api from '@/service/api'
 import type { SSHHostInfo } from '@/service/types'
 
 import * as SSHTerminal from '@/helper/ssh'
+import SftpPanel from './widget/sftp-panel.vue'
 
-@Component
+@Component({ components: { SftpPanel } })
 class SSHTerminalPage extends Vue {
     portal = usePortal()
 
@@ -113,6 +114,9 @@ export default toNative(SSHTerminalPage)
           <div ref="xtermRef" class="h-full rounded-lg overflow-hidden"></div>
         </div>
       </div>
+
+      <!-- SFTP 文件管理面板 -->
+      <SftpPanel :host-id="hostId" />
     </div>
   </div>
 </template>

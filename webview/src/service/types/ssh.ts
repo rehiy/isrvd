@@ -18,3 +18,29 @@ export interface SSHHostUpsert {
     privateKey: string
     description: string
 }
+
+// SFTP 文件/目录信息
+export interface SFTPFileInfo {
+    name: string
+    size: number
+    mode: string
+    modTime: number
+    isDir: boolean
+}
+
+// SFTP 目录列表结果
+export interface SFTPListResult {
+    path: string
+    files: SFTPFileInfo[]
+}
+
+// SFTP 重命名请求
+export interface SFTPRename {
+    oldPath: string
+    newPath: string
+}
+
+// SFTP 创建目录请求
+export interface SFTPMkdir {
+    path: string
+}

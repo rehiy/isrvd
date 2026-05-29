@@ -112,6 +112,90 @@ wscat -c "ws://<HOST>/api/ssh/to/<ID>?token=$TOKEN"
 
 ---
 
+## SFTP 文件管理
+
+基于 SSH 主机配置，通过 SFTP 协议进行远程文件管理。所有接口复用主机认证信息，无需额外配置。
+
+### 列出目录
+
+```bash
+isrvd_get "/ssh/sftp/<ID>/ls?path=/home/user"
+```
+
+**响应字段（SFTPFileInfo[]）：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `name` | string | 文件/目录名称 |
+| `size` | int64 | 文件大小（字节），目录为 0 |
+| `mode` | string | 权限字符串（如 `-rw-r--r--`） |
+| `modTime` | int64 | 修改时间（Unix 时间戳） |
+| `isDir` | bool | 是否为目录 |
+
+---
+
+### 下载文件
+
+```
+GET /api/ssh/sftp/<ID>/download?path=/path/to/file  (支持 ?token= 查询参数)
+```
+
+---
+
+### 上传文件
+
+```bash
+isrvd_upload "/ssh/sftp/<ID>/upload" "file" "/local/file.txt" "path=/remote/dir"
+```
+
+**Query 参数：**
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| `path` | ✓ | 目标目录路径 |
+
+**Form 字段：**
+
+| 字段 | 说明 |
+|------|------|
+| `file` | 上传的文件（multipart） |
+
+---
+
+### 删除文件或目录
+
+```bash
+# 删除文件
+isrvd_delete "/ssh/sftp/<ID>/rm?path=/path/to/file"
+# 删除空目录
+isrvd_delete "/ssh/sftp/<ID>/rm?path=/path/to/dir"
+```
+
+> **注意**：目录必须为空才能删除。
+
+---
+
+### 创建目录
+
+```bash
+isrvd_post "/ssh/sftp/<ID>/mkdir" '{"path": "/path/to/newdir"}'
+```
+
+支持多级目录（等同于 `mkdir -p`）。
+
+---
+
+### 重命名/移动
+
+```bash
+isrvd_post "/ssh/sftp/<ID>/rename" '{
+  "oldPath": "/path/to/old",
+  "newPath": "/path/to/new"
+}'
+```
+
+---
+
 ## 存储说明
 
 主机配置存储于 `{rootDirectory}/webssh.yml`，格式示例：
