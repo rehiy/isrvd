@@ -126,16 +126,24 @@ func (app *App) isServiceAvailable(module string) bool {
 	}
 }
 
-// watchReload 监听 SIGHUP 信号和 etcd 配置变更，触发重载
+// watchReload 监听 SIGHUP 信号和 etcd 配置变更，触发重载；
+// 同时监听 SIGTERM/SIGINT，进程退出前释放所有资源
 func (app *App) watchReload() {
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGHUP)
+	signal.Notify(sig, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
 		for {
 			select {
-			case <-sig:
-				logman.Info("received SIGHUP, reloading...")
-				app.reload()
+			case s := <-sig:
+				switch s {
+				case syscall.SIGHUP:
+					logman.Info("received SIGHUP, reloading...")
+					app.reload()
+				default:
+					logman.Info("received signal, shutting down...", "signal", s)
+					app.closeServices()
+					os.Exit(0)
+				}
 			case <-config.ReloadCh:
 				logman.Info("config changed, reloading...")
 				app.reload()
@@ -157,9 +165,18 @@ func (app *App) reload() {
 		return
 	}
 	registry.Init()
+	// 关闭旧服务持有的资源，再重新初始化
+	app.closeServices()
 	app.initServices()
 	if app.monitorCollector != nil {
 		app.monitorCollector.Restart(context.Background())
 	}
 	logman.Info("reload complete")
+}
+
+// closeServices 释放所有有状态服务持有的资源
+func (app *App) closeServices() {
+	if app.websshSvc != nil {
+		app.websshSvc.Close()
+	}
 }

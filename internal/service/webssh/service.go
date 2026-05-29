@@ -31,6 +31,11 @@ func NewService() (*Service, error) {
 	return &Service{store: s, sftpPool: newSFTPPool()}, nil
 }
 
+// Close 释放 Service 持有的所有资源（连接池等），应在应用退出时调用
+func (s *Service) Close() {
+	s.sftpPool.close()
+}
+
 // HostList 列出所有主机（密码不回显）
 func (s *Service) HostList() []*HostView {
 	return s.store.hostList()
