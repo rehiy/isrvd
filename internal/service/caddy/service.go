@@ -26,6 +26,7 @@ const (
 	HandlerKindFileServer   = "file_server"
 	HandlerKindStaticResp   = "static_response"
 	HandlerKindRewrite      = "rewrite" // URI 重写
+	HandlerKindHeaders      = "headers" // 请求头/响应头操作
 	HandlerKindRaw          = "raw"     // 透传原始 handle 数组
 )
 

@@ -26,6 +26,8 @@ isrvd_get "/caddy/routes?server=srv0"          # 显式指定 server
 | hosts | string[] | 匹配 Host，留空表示不限制 |
 | paths | string[] | 匹配 Path，支持 `*` 通配符 |
 | methods | string[] | 匹配 HTTP 方法 |
+| headers | object | 按请求头匹配，key 为头字段名，value 为匹配值列表；value 为空数组表示只要该头存在即匹配 |
+| protocol | string | 匹配协议：`http` / `https`，留空不限制 |
 
 > 字段为空数组等价于"不限制"。
 
@@ -35,8 +37,11 @@ handler 通过 `kind` 字段区分类型，每种类型只填对应字段。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| kind | string | 处理器类型：`reverse_proxy` / `file_server` / `static_response` / `rewrite` / `raw` |
+| kind | string | 处理器类型：`reverse_proxy` / `file_server` / `static_response` / `rewrite` / `headers` / `raw` |
 | upstreams | string[] | 反向代理上游 `host:port` 列表（`kind=reverse_proxy`）；Web UI 可选择运行中 Docker 容器与端口自动填充 |
+| dialTimeout | string | 建立 TCP 连接的超时，如 `10s`（`kind=reverse_proxy`，非 FastCGI 时有效） |
+| readTimeout | string | 等待上游响应头的超时，如 `30s`（`kind=reverse_proxy`，非 FastCGI 时有效） |
+| writeTimeout | string | 向上游写入请求的超时，如 `30s`（`kind=reverse_proxy`，非 FastCGI 时有效） |
 | root | string | 静态文件根目录（`kind=file_server`） |
 | browse | boolean | 是否开启目录浏览（`kind=file_server`） |
 | statusCode | number | 响应状态码（`kind=static_response`） |
@@ -46,7 +51,17 @@ handler 通过 `kind` 字段区分类型，每种类型只填对应字段。
 | stripPathSuffix | string | 去掉路径后缀（`kind=rewrite`） |
 | uriSubstringFind | string | URI 子串查找（`kind=rewrite`） |
 | uriSubstringReplace | string | URI 子串替换（`kind=rewrite`） |
+| requestHeaders | HeaderOp[] | 请求头操作列表（`kind=headers`） |
+| responseHeaders | HeaderOp[] | 响应头操作列表（`kind=headers`） |
 | raw | any | 原始 handle 数组，任意 Caddy 模块，高级用法（`kind=raw`） |
+
+#### HeaderOp 结构（`kind=headers` 使用）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| op | string | 操作类型：`set`（覆盖写入）/ `add`（追加，允许多值）/ `delete`（删除该头） |
+| field | string | 头字段名，如 `X-Real-IP`、`X-Frame-Options` |
+| value | string | 值（`delete` 时留空）；支持 Caddy 占位符，如 `{http.request.remote.host}` |
 
 ## 查看路由详情
 
@@ -58,10 +73,46 @@ isrvd_get "/caddy/route/0?server=srv0"
 ## 创建路由
 
 ```bash
-# 反向代理
+# 反向代理（含超时）
 isrvd_post "/caddy/route" '{
   "match": {"hosts": ["api.example.com"], "paths": ["/v1/*"]},
-  "handler": {"kind": "reverse_proxy", "upstreams": ["backend:8080"]}
+  "handler": {"kind": "reverse_proxy", "upstreams": ["backend:8080"], "dialTimeout": "10s", "readTimeout": "30s"}
+}'
+
+# 按协议匹配（HTTP 跳转）
+isrvd_post "/caddy/route" '{
+  "match": {"protocol": "http"},
+  "handler": {"kind": "static_response", "statusCode": 301, "body": ""},
+  "terminal": true
+}'
+
+# 按请求头匹配
+isrvd_post "/caddy/route" '{
+  "match": {"headers": {"X-Internal": []}},
+  "handler": {"kind": "reverse_proxy", "upstreams": ["internal-svc:8080"]}
+}'
+
+# 设置响应头（CORS / 安全头）
+isrvd_post "/caddy/route" '{
+  "match": {"paths": ["/api/*"]},
+  "handler": {
+    "kind": "headers",
+    "responseHeaders": [
+      {"op": "set", "field": "Access-Control-Allow-Origin", "value": "*"},
+      {"op": "set", "field": "X-Frame-Options", "value": "SAMEORIGIN"}
+    ]
+  }
+}'
+
+# 透传真实 IP（请求头）
+isrvd_post "/caddy/route" '{
+  "handler": {
+    "kind": "headers",
+    "requestHeaders": [
+      {"op": "set", "field": "X-Real-IP", "value": "{http.request.remote.host}"},
+      {"op": "set", "field": "X-Forwarded-For", "value": "{http.request.remote.host}"}
+    ]
+  }
 }'
 
 # 静态文件

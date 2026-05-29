@@ -164,6 +164,18 @@
   .btn-panel-toggle-active  { @apply border-indigo-300 text-indigo-600 bg-indigo-50; }
   .btn-panel-toggle-inactive{ @apply border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50; }
 
+  /* 协议 / 枚举选择按钮（如 不限 / HTTP / HTTPS） */
+  .btn-proto         { @apply px-3 py-2 rounded-lg text-sm font-medium border transition-colors; }
+  .btn-proto-active  { @apply border-indigo-300 bg-indigo-50 text-indigo-700; }
+  .btn-proto-inactive{ @apply border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50; }
+
+  /* 虚线添加行按钮（表格式编辑区底部） */
+  .btn-add-row {
+    @apply w-full flex items-center justify-center gap-2 py-3 rounded-lg border border-dashed border-slate-200;
+    @apply text-slate-400 text-sm transition-colors;
+    @apply hover:border-indigo-300 hover:text-indigo-500 hover:bg-indigo-50;
+  }
+
   /* 多选标签的删除按钮（×） */
   .btn-tag-remove {
     @apply w-3.5 h-3.5 flex items-center justify-center rounded-full hover:bg-black/10 transition-colors;

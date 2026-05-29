@@ -6,6 +6,15 @@ export interface CaddyMatchForm {
     hosts?: string[]
     paths?: string[]
     methods?: string[]
+    headers?: Record<string, string[]>  // 按请求头匹配，key 为头字段名，value 为匹配值列表
+    protocol?: string                   // 匹配协议：http / https
+}
+
+// 单条请求头/响应头操作
+export interface CaddyHeaderOp {
+    op: 'set' | 'add' | 'delete'  // 操作类型
+    field: string                  // 头字段名，如 X-Real-IP
+    value: string                  // 值（delete 时留空）
 }
 
 export interface CaddyHandlerForm {
@@ -13,6 +22,9 @@ export interface CaddyHandlerForm {
     upstreams?: string[]
     fastcgi?: boolean      // 启用 FastCGI 传输（PHP-FPM 等）
     fastcgiRoot?: string   // FastCGI 文档根目录
+    dialTimeout?: string   // 连接上游超时，如 10s
+    readTimeout?: string   // 读取上游响应头超时，如 30s
+    writeTimeout?: string  // 向上游写入请求超时，如 30s
     root?: string
     browse?: boolean
     statusCode?: number
@@ -23,6 +35,9 @@ export interface CaddyHandlerForm {
     stripPathSuffix?: string     // 去掉路径后缀
     uriSubstringFind?: string    // 子串查找
     uriSubstringReplace?: string // 子串替换
+    // headers
+    requestHeaders?: CaddyHeaderOp[]   // 请求头操作列表
+    responseHeaders?: CaddyHeaderOp[]  // 响应头操作列表
     raw?: unknown
 }
 
@@ -60,7 +75,7 @@ export interface CaddyHandlerKindCard {
     title: string
     desc: string
     icon: string
-    tone: 'indigo' | 'emerald' | 'amber' | 'violet' | 'slate'
+    tone: 'indigo' | 'emerald' | 'amber' | 'violet' | 'rose' | 'slate'
 }
 
 // ─── 全局选项 ───
