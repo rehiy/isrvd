@@ -402,10 +402,10 @@ export default toNative(NavigationBar)
         <i class="fas fa-file-code"></i>
         <span v-if="!collapsed">Compose 部署</span>
       </router-link>
-      <!-- SSH 远程连接 -->
-      <router-link v-if="portal.hasPerm('GET /api/ssh/hosts')" to="/ssh/hosts" class="nav-link" :class="{ 'bg-blue-50 text-blue-700': isActive('/ssh') }" :title="collapsed ? 'SSH 远程连接' : ''">
+      <!-- SSH/SFTP 连接 -->
+      <router-link v-if="portal.hasPerm('GET /api/ssh/hosts')" to="/ssh/hosts" class="nav-link" :class="{ 'bg-blue-50 text-blue-700': isActive('/ssh') }" :title="collapsed ? 'SSH/SFTP 连接' : ''">
         <i class="fas fa-server"></i>
-        <span v-if="!collapsed">SSH 远程连接</span>
+        <span v-if="!collapsed">SSH/SFTP 连接</span>
       </router-link>
 
       <!-- 计划任务 -->

@@ -97,8 +97,8 @@ export default toNative(SSHHosts)
             <i class="fas fa-server text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">SSH 远程连接</h1>
-            <p class="text-xs text-slate-500">管理 SSH 主机，在浏览器中连接远程服务器</p>
+            <h1 class="text-lg font-semibold text-slate-800">SSH/SFTP 连接</h1>
+            <p class="text-xs text-slate-500">通过 SSH 协议管理主机，在浏览器中连接远程服务器</p>
           </div>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
@@ -118,8 +118,8 @@ export default toNative(SSHHosts)
             <i class="fas fa-server text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">SSH 远程连接</h1>
-            <p class="text-xs text-slate-500 truncate">管理 SSH 主机</p>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">SSH/SFTP 连接</h1>
+            <p class="text-xs text-slate-500 truncate">通过 SSH 协议管理主机</p>
           </div>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
