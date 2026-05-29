@@ -70,7 +70,7 @@ export default toNative(SwarmOverview)
     </div>
     <div v-else-if="swarmInfo" class="space-y-4">
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-        <div v-for="card in statCards" :key="card.key" class="rounded-xl border border-slate-200 bg-white p-4 hover:shadow-md transition-shadow">
+        <div v-for="card in statCards" :key="card.key" class="stat-card">
           <div class="flex flex-col items-center gap-2 text-center">
             <div :class="['page-icon', card.bgColor]">
               <i :class="['fas', card.icon, 'text-white']"></i>

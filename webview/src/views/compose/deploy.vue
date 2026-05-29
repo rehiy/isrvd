@@ -1,6 +1,6 @@
 <script lang="ts">
-import { Component, Vue, toNative } from 'vue-facing-decorator'
 import * as yaml from 'js-yaml'
+import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 

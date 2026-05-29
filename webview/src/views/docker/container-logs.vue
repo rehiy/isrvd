@@ -125,7 +125,7 @@ export default toNative(ContainerLogs)
 </script>
 
 <template>
-<div class="h-[calc(100vh-100px)]">
+  <div class="h-[calc(100vh-100px)]">
     <div class="h-full card flex flex-col overflow-hidden">
       <!-- Toolbar -->
       <div class="card-toolbar">

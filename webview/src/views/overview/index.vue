@@ -3,12 +3,12 @@ import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
-import SystemUpdater from './widget/system_updater.vue'
 import ApisixOverview from './widget/apisix.vue'
 import CaddyOverview from './widget/caddy.vue'
 import DockerOverview from './widget/docker.vue'
 import SwarmOverview from './widget/swarm.vue'
 import SystemOverview from './widget/system.vue'
+import SystemUpdater from './widget/system_updater.vue'
 
 @Component({
     components: { SystemUpdater, ApisixOverview, CaddyOverview, DockerOverview, SwarmOverview, SystemOverview }

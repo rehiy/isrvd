@@ -3,7 +3,6 @@ import { http, httpBlob } from './axios'
 import type {
     // Overview
     SystemProbe,
-    SystemStat,
     MonitorHostRecord,
     MonitorContainerRecord,
     // System
@@ -100,8 +99,8 @@ class ApiService {
     overviewMonitor(params: { type: 'container'; id: string; since: 0 }): Promise<{ payload?: MonitorContainerRecord | null }>
     overviewMonitor(params?: { type?: 'host'; id?: string; since?: number }): Promise<{ payload?: MonitorHostRecord[] }>
     overviewMonitor(params?: { type: 'container'; id: string; since?: number }): Promise<{ payload?: MonitorContainerRecord[] }>
-    overviewMonitor(params?: { type?: 'host' | 'container'; id?: string; since?: number }) {
-        return http.get<MonitorHostRecord | MonitorContainerRecord | MonitorHostRecord[] | MonitorContainerRecord[]>('overview/monitor', { params })
+    overviewMonitor(params?: { type?: 'host' | 'container'; id?: string; since?: number }): Promise<{ payload?: MonitorHostRecord | MonitorContainerRecord | MonitorHostRecord[] | MonitorContainerRecord[] | null }> {
+        return http.get<MonitorHostRecord | MonitorContainerRecord | MonitorHostRecord[] | MonitorContainerRecord[] | null>('overview/monitor', { params })
     }
 
     overviewUpgrade() {

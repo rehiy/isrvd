@@ -8,8 +8,8 @@ import type { DockerImageInfo, DockerRegistryInfo } from '@/service/types'
 
 import { formatFileSize, formatTime } from '@/helper/utils'
 
-import PageSearch from '@/component/page-search.vue'
 import Modal from '@/component/modal.vue'
+import PageSearch from '@/component/page-search.vue'
 
 import ImageBuildModal from './widget/image-build-modal.vue'
 import ImagePullModal from './widget/image-pull-modal.vue'
@@ -265,7 +265,7 @@ export default toNative(Images)
             <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadImages()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-          <button v-if="portal.hasPerm('POST /api/docker/image/prune')" class="btn btn-danger w-9 h-9 !px-0" title="清理镜像" @click="handleImagePrune()">
+            <button v-if="portal.hasPerm('POST /api/docker/image/prune')" class="btn btn-danger w-9 h-9 !px-0" title="清理镜像" @click="handleImagePrune()">
               <i class="fas fa-broom text-sm"></i>
             </button>
             <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn btn-blue w-9 h-9 !px-0" title="构建" @click="buildModalRef?.show()">
@@ -443,8 +443,10 @@ export default toNative(Images)
           <span class="text-sm text-slate-700">同时清理有标签但未被使用的镜像</span>
           <p class="text-xs text-slate-400 mt-0.5">等同于 <code class="font-mono bg-slate-100 px-1 rounded">docker image prune -a</code>，会删除更多空间</p>
         </div>
-        <button type="button" class="toggle" :class="{ 'toggle-on': pruneAll }"
-                role="switch" :aria-checked="pruneAll" @click="pruneAll = !pruneAll">
+        <button
+          type="button" class="toggle" :class="{ 'toggle-on': pruneAll }"
+          role="switch" :aria-checked="pruneAll" @click="pruneAll = !pruneAll"
+        >
           <span class="toggle-thumb" />
         </button>
       </div>

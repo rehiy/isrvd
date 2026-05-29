@@ -236,7 +236,7 @@ export default toNative(Config)
             <option :value="30">30 秒</option>
             <option :value="60">60 秒</option>
           </select>
-              <p class="mt-1 text-xs text-slate-400">系统与容器监控数据的采集频率，禁用后不再写入监控文件</p>
+          <p class="mt-1 text-xs text-slate-400">系统与容器监控数据的采集频率，禁用后不再写入监控文件</p>
         </div>
       </section>
 
@@ -388,7 +388,7 @@ export default toNative(Config)
         </button>
         <p class="text-xs text-slate-400 flex items-start gap-1">
           <i class="fas fa-circle-info mt-0.5 flex-shrink-0"></i>
-<span>保存后立即写入配置文件，监听地址变更需重启服务生效。</span>
+          <span>保存后立即写入配置文件，监听地址变更需重启服务生效。</span>
         </p>
       </div>
     </form>

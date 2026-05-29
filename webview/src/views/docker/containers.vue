@@ -232,8 +232,11 @@ export default toNative(Containers)
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex flex-wrap gap-1">
-                    <span :class="['inline-flex items-center px-1.5 py-0.5 rounded-lg text-[11px] font-medium', ct.state === 'running' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200']" :title="ct.status">{{ ct.state }}</span>
-                    <span v-if="isCompose(ct)" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-100" :title="composeBadgeTitle(ct)">
+                    <span
+                      :class="['text-[11px]', ct.state === 'running' ? 'text-emerald-600 font-medium' : 'text-slate-500']"
+                      :title="ct.status"
+                    >{{ ct.state }}</span>
+                    <span v-if="isCompose(ct)" class="badge badge-warning" :title="composeBadgeTitle(ct)">
                       <i class="fas fa-layer-group text-[10px]"></i>
                       <span>Compose</span>
                     </span>
@@ -299,8 +302,11 @@ export default toNative(Containers)
 
             <!-- 状态 -->
             <div class="flex items-center gap-1 flex-wrap mb-3">
-              <span :class="['inline-flex items-center px-1.5 py-0.5 rounded-lg text-[11px] font-medium', ct.state === 'running' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200']" :title="ct.status">{{ ct.state }}</span>
-              <span v-if="isCompose(ct)" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-100" :title="composeBadgeTitle(ct)">
+              <span
+                :class="['text-xs', ct.state === 'running' ? 'text-emerald-600 font-medium' : 'text-slate-500']"
+                :title="ct.status"
+              >{{ ct.state }}</span>
+              <span v-if="isCompose(ct)" class="badge badge-warning" :title="composeBadgeTitle(ct)">
                 <i class="fas fa-layer-group text-[10px]"></i>
                 <span>Compose</span>
               </span>
