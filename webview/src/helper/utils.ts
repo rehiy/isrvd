@@ -255,6 +255,26 @@ export const bindTypeToSearchFocus = (getInput: () => SearchInputRef): (() => vo
 }
 
 /**
+ * 拼接路径，自动处理末尾多余的斜杠
+ * joinPath('/foo/', 'bar') → '/foo/bar'
+ */
+export const joinPath = (...parts: string[]): string => {
+    return parts.reduce((acc, part) => acc.replace(/\/+$/, '') + '/' + part.replace(/^\/+/, ''))
+}
+
+/**
+ * 用 Blob 触发浏览器下载，下载完成后自动释放 ObjectURL
+ */
+export const downloadBlob = (blob: Blob, filename: string): void => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 10000)
+}
+
+/**
  * 复制文本到剪贴板
  * 优先使用 Clipboard API，降级到 execCommand
  * @returns 是否复制成功

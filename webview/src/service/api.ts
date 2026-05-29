@@ -677,16 +677,24 @@ class ApiService {
         return http.get<SFTPListResult>(`ssh/sftp/${hostId}/ls`, { params: { path } })
     }
 
-    sftpUpload(hostId: string, path: string, formData: FormData, config: AxiosRequestConfig = {}) {
+    sftpUpload(hostId: string, path: string, formData: FormData, onProgress?: (percent: number) => void) {
         return http.post<void>(`ssh/sftp/${hostId}/upload`, formData, {
             params: { path },
             headers: { 'Content-Type': 'multipart/form-data' },
-            ...config
+            onUploadProgress: onProgress
+                ? (e) => { if (e.total) onProgress(Math.round((e.loaded / e.total) * 100)) }
+                : undefined,
         })
     }
 
-    sftpDownload(hostId: string, path: string) {
-        return httpBlob.get(`ssh/sftp/${hostId}/download`, { params: { path }, responseType: 'blob' })
+    sftpDownload(hostId: string, path: string, onProgress?: (percent: number) => void) {
+        return httpBlob.get(`ssh/sftp/${hostId}/download`, {
+            params: { path },
+            responseType: 'blob',
+            onDownloadProgress: onProgress
+                ? (e) => { if (e.total) onProgress(Math.round((e.loaded / e.total) * 100)) }
+                : undefined,
+        })
     }
 
     sftpDownloadURL(hostId: string, path: string, token = '') {

@@ -6,7 +6,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { SFTPFileInfo, SFTPListResult } from '@/service/types'
 
-import { formatFileSize, formatUnixTime, getFileIcon } from '@/helper/utils'
+import { formatFileSize, formatUnixTime, getFileIcon, joinPath, downloadBlob } from '@/helper/utils'
+import { type UploadTask, collectFileSystemEntries } from '@/helper/ssh'
 
 @Component
 class SftpPanel extends Vue {
@@ -22,13 +23,23 @@ class SftpPanel extends Vue {
     sftpFiles: SFTPFileInfo[] = []
     sftpLoading = false
     sftpError = ''
-    sftpUploading = false
     renamingFile: SFTPFileInfo | null = null
     renameNewName = ''
     mkdirMode = false
     mkdirName = ''
     pathEditMode = false
     pathEditValue = ''
+
+    // ─── 上传进度 ───
+    uploadTasks: UploadTask[] = []
+    get sftpUploading() { return this.uploadTasks.some(t => !t.done && !t.error) }
+
+    // ─── 拖拽状态 ───
+    dragOver = false
+    dragCounter = 0   // 用计数器避免子元素 dragenter/dragleave 抖动
+
+    // ─── 下载状态 ───
+    downloadingFile = ''
 
     // ─── 计算属性 ───
     get sftpPathParts() {
@@ -50,10 +61,8 @@ class SftpPanel extends Vue {
         try {
             const res = await api.sftpList(this.hostId, this.sftpPath)
             const result = res.payload as SFTPListResult
-            // 后端返回实际路径（初始加载时同步 home 目录）
             this.sftpPath = result.path
             const files = result.files || []
-            // 目录在前，文件在后，各自按名称排序
             this.sftpFiles = [
                 ...files.filter((f: SFTPFileInfo) => f.isDir).sort((a: SFTPFileInfo, b: SFTPFileInfo) => a.name.localeCompare(b.name)),
                 ...files.filter((f: SFTPFileInfo) => !f.isDir).sort((a: SFTPFileInfo, b: SFTPFileInfo) => a.name.localeCompare(b.name)),
@@ -68,8 +77,7 @@ class SftpPanel extends Vue {
     // ─── 导航 ───
     sftpEnter(file: SFTPFileInfo) {
         if (!file.isDir) return
-        const newPath = this.sftpPath.replace(/\/+$/, '') + '/' + file.name
-        this.sftpLoad(newPath)
+        this.sftpLoad(joinPath(this.sftpPath, file.name))
     }
 
     sftpGoUp() {
@@ -97,19 +105,23 @@ class SftpPanel extends Vue {
         this.sftpLoad(p)
     }
 
-    // ─── 下载 ───
-    sftpDownload(file: SFTPFileInfo) {
-        const filePath = this.sftpPath.replace(/\/+$/, '') + '/' + file.name
-        const url = api.sftpDownloadURL(this.hostId, filePath, this.portal.token || '')
-        const a = document.createElement('a')
-        a.href = url
-        a.download = file.name
-        a.click()
+    // ─── 下载（带进度提示）───
+    async sftpDownload(file: SFTPFileInfo) {
+        const filePath = joinPath(this.sftpPath, file.name)
+        this.downloadingFile = file.name
+        try {
+            const blob = await api.sftpDownload(this.hostId, filePath)
+            downloadBlob(blob, file.name)
+        } catch {
+            // 错误已由 axios 拦截器统一弹出通知
+        } finally {
+            this.downloadingFile = ''
+        }
     }
 
     // ─── 删除 ───
     async sftpDelete(file: SFTPFileInfo) {
-        const filePath = this.sftpPath.replace(/\/+$/, '') + '/' + file.name
+        const filePath = joinPath(this.sftpPath, file.name)
         const isDir = file.isDir
         this.portal.showConfirm({
             title: '删除确认',
@@ -146,9 +158,8 @@ class SftpPanel extends Vue {
 
     async confirmRename() {
         if (!this.renamingFile || !this.renameNewName.trim()) return
-        const base = this.sftpPath.replace(/\/+$/, '')
-        const oldPath = base + '/' + this.renamingFile.name
-        const newPath = base + '/' + this.renameNewName.trim()
+        const oldPath = joinPath(this.sftpPath, this.renamingFile.name)
+        const newPath = joinPath(this.sftpPath, this.renameNewName.trim())
         try {
             await api.sftpRename(this.hostId, { oldPath, newPath })
             this.portal.showNotification('success', '重命名成功')
@@ -173,7 +184,7 @@ class SftpPanel extends Vue {
 
     async confirmMkdir() {
         if (!this.mkdirName.trim()) return
-        const dirPath = this.sftpPath.replace(/\/+$/, '') + '/' + this.mkdirName.trim()
+        const dirPath = joinPath(this.sftpPath, this.mkdirName.trim())
         try {
             await api.sftpMkdir(this.hostId, { path: dirPath })
             this.portal.showNotification('success', '创建成功')
@@ -184,7 +195,26 @@ class SftpPanel extends Vue {
         }
     }
 
-    // ─── 上传 ───
+    // ─── 上传核心：带进度的单文件上传 ───
+    async uploadOneFile(file: File, destDir: string): Promise<void> {
+        const task: UploadTask = { name: file.name, percent: 0, done: false, error: '' }
+        this.uploadTasks.push(task)
+        const form = new FormData()
+        form.append('file', file)
+        try {
+            await api.sftpUpload(this.hostId, destDir, form, (percent) => {
+                task.percent = percent
+            })
+            task.percent = 100
+            task.done = true
+        } catch (e: unknown) {
+            task.error = (e instanceof Error ? e.message : '') || '上传失败'
+            task.done = true
+            throw e
+        }
+    }
+
+    // ─── 上传入口（input 选择）───
     triggerUpload() {
         this.uploadInputRef?.click()
     }
@@ -193,21 +223,87 @@ class SftpPanel extends Vue {
         const input = e.target as HTMLInputElement
         const files = input.files
         if (!files || files.length === 0) return
-        this.sftpUploading = true
-        try {
-            for (const file of Array.from(files)) {
-                const form = new FormData()
-                form.append('file', file)
-                await api.sftpUpload(this.hostId, this.sftpPath, form)
+        this.uploadTasks = []
+        let failCount = 0
+        for (const file of Array.from(files)) {
+            try {
+                await this.uploadOneFile(file, this.sftpPath)
+            } catch {
+                failCount++
             }
-            this.portal.showNotification('success', `上传成功（${files.length} 个文件）`)
-            this.sftpLoad()
-        } catch (e: unknown) {
-            this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '上传失败')
-        } finally {
-            this.sftpUploading = false
-            input.value = ''
         }
+        input.value = ''
+        const total = files.length
+        if (failCount === 0) {
+            this.portal.showNotification('success', `上传成功（${total} 个文件）`)
+        } else {
+            this.portal.showNotification('error', `${total - failCount} 个成功，${failCount} 个失败`)
+        }
+        // 延迟清除进度条，让用户看到 100%
+        setTimeout(() => { this.uploadTasks = [] }, 1500)
+        this.sftpLoad()
+    }
+
+    // ─── 拖拽上传 ───
+    onDragEnter(e: DragEvent) {
+        e.preventDefault()
+        this.dragCounter++
+        this.dragOver = true
+    }
+
+    onDragOver(e: DragEvent) {
+        e.preventDefault()
+    }
+
+    onDragLeave(e: DragEvent) {
+        e.preventDefault()
+        this.dragCounter--
+        if (this.dragCounter <= 0) {
+            this.dragCounter = 0
+            this.dragOver = false
+        }
+    }
+
+    async onDrop(e: DragEvent) {
+        e.preventDefault()
+        this.dragOver = false
+        this.dragCounter = 0
+        const items = e.dataTransfer?.items
+        if (!items || items.length === 0) return
+
+        // 必须在同步代码中一次性取出所有 entry，
+        // DataTransfer 在首次 await 后会被浏览器清空
+        const entries: FileSystemEntry[] = []
+        for (let i = 0; i < items.length; i++) {
+            const entry = items[i].webkitGetAsEntry()
+            if (entry) entries.push(entry)
+        }
+
+        const tasks = await collectFileSystemEntries(
+            entries,
+            this.sftpPath,
+            async (path) => { try { await api.sftpMkdir(this.hostId, { path }) } catch { /* 已存在则忽略 */ } },
+        )
+
+        if (tasks.length === 0) return
+
+        this.uploadTasks = []
+        let failCount = 0
+        for (const { file, destDir } of tasks) {
+            try {
+                await this.uploadOneFile(file, destDir)
+            } catch {
+                failCount++
+            }
+        }
+        const total = tasks.length
+        if (failCount === 0) {
+            this.portal.showNotification('success', `上传成功（${total} 个文件）`)
+        } else {
+            this.portal.showNotification('error', `${total - failCount} 个成功，${failCount} 个失败`)
+        }
+        setTimeout(() => { this.uploadTasks = [] }, 1500)
+        this.sftpLoad()
     }
 
     // ─── 格式化（复用 utils）───
@@ -277,8 +373,46 @@ export default toNative(SftpPanel)
       </div>
     </div>
 
-    <!-- 文件列表 -->
-    <div class="flex-1 overflow-y-auto">
+    <!-- 上传进度条区域 -->
+    <div v-if="uploadTasks.length > 0" class="flex-shrink-0 border-b border-slate-200 bg-slate-50 px-3 py-2 space-y-1.5 max-h-28 overflow-y-auto">
+      <div v-for="task in uploadTasks" :key="task.name" class="flex items-center gap-2 text-xs">
+        <i
+          class="fas w-3 flex-shrink-0"
+          :class="task.error ? 'fa-circle-exclamation text-red-400' : task.done ? 'fa-circle-check text-teal-500' : 'fa-arrow-up-from-bracket text-slate-400'"
+        ></i>
+        <span class="truncate flex-1 text-slate-600 min-w-0">{{ task.name }}</span>
+        <span v-if="task.error" class="text-red-400 flex-shrink-0">失败</span>
+        <template v-else>
+          <div class="w-20 h-1.5 bg-slate-200 rounded-full flex-shrink-0 overflow-hidden">
+            <div
+              class="h-full rounded-full transition-all duration-200"
+              :class="task.done ? 'bg-teal-500' : 'bg-teal-400'"
+              :style="{ width: task.percent + '%' }"
+            ></div>
+          </div>
+          <span class="text-slate-400 w-7 text-right flex-shrink-0">{{ task.percent }}%</span>
+        </template>
+      </div>
+    </div>
+
+    <!-- 文件列表（拖拽区域） -->
+    <div
+      class="flex-1 overflow-y-auto relative"
+      @dragenter="onDragEnter"
+      @dragover="onDragOver"
+      @dragleave="onDragLeave"
+      @drop="onDrop"
+    >
+      <!-- 拖拽遮罩 -->
+      <div
+        v-if="dragOver"
+        class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-teal-50/90 border-2 border-dashed border-teal-400 rounded pointer-events-none"
+      >
+        <i class="fas fa-cloud-arrow-up text-2xl text-teal-500"></i>
+        <span class="text-sm text-teal-600 font-medium">松手上传到当前目录</span>
+        <span class="text-xs text-teal-400">支持文件夹</span>
+      </div>
+
       <!-- 加载中 -->
       <div v-if="sftpLoading" class="flex items-center justify-center h-full text-slate-400 text-sm gap-2">
         <div class="w-4 h-4 spinner"></div>加载中...
@@ -353,7 +487,7 @@ export default toNative(SftpPanel)
                     class="truncate"
                     :class="file.isDir ? 'text-slate-700 font-medium cursor-pointer hover:text-teal-600' : 'text-slate-600'"
                     @click="file.isDir && sftpEnter(file)"
-                  >{{ file.name }}<span v-if="file.isLink" class="ml-1 text-slate-400 text-xs font-normal">{{ file.linkTarget }}</span></span>
+                  >{{ file.name }}<span v-if="file.isLink && file.linkTarget" class="ml-1 text-slate-400 text-xs font-normal">{{ file.linkTarget }}</span></span>
                 </template>
               </div>
             </td>
@@ -374,8 +508,17 @@ export default toNative(SftpPanel)
                   </button>
                 </template>
                 <template v-else>
-                  <button class="btn-icon btn-icon-slate !w-6 !h-6" title="下载" @click="sftpDownload(file)">
-                    <i class="fas fa-download text-xs"></i>
+                  <button
+                    class="btn-icon !w-6 !h-6"
+                    :class="downloadingFile === file.name ? 'btn-icon-teal' : 'btn-icon-slate'"
+                    title="下载"
+                    :disabled="!!downloadingFile"
+                    @click="sftpDownload(file)"
+                  >
+                    <i
+                      class="fas text-xs"
+                      :class="downloadingFile === file.name ? 'fa-spinner animate-spin' : 'fa-download'"
+                    ></i>
                   </button>
                 </template>
                 <button class="btn-icon btn-icon-slate !w-6 !h-6" title="重命名" @click="startRename(file)">
