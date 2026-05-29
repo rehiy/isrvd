@@ -134,17 +134,39 @@ func (app *App) websshSFTPUpload(c *gin.Context) {
 		return
 	}
 
-	file, header, err := c.Request.FormFile("file")
-	if err != nil {
-		respondError(c, http.StatusBadRequest, "获取上传文件失败: "+err.Error())
+	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+		respondError(c, http.StatusBadRequest, "解析上传表单失败: "+err.Error())
 		return
 	}
-	defer file.Close()
 
-	if err := app.websshSvc.SFTPUpload(id, dirPath, file, header.Filename); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+	files := c.Request.MultipartForm.File["file"]
+	if len(files) == 0 {
+		respondError(c, http.StatusBadRequest, "未找到上传文件")
 		return
 	}
+
+	// relativePaths 与 files 数组一一对应（目录上传时前端传入 webkitRelativePath）
+	relativePaths := c.Request.MultipartForm.Value["relativePath"]
+
+	for i, header := range files {
+		relativePath := header.Filename
+		if i < len(relativePaths) && relativePaths[i] != "" {
+			relativePath = relativePaths[i]
+		}
+
+		f, err := header.Open()
+		if err != nil {
+			respondError(c, http.StatusBadRequest, "打开文件失败: "+err.Error())
+			return
+		}
+		uploadErr := app.websshSvc.SFTPUpload(id, dirPath, f, relativePath)
+		f.Close()
+		if uploadErr != nil {
+			respondError(c, http.StatusBadRequest, uploadErr.Error())
+			return
+		}
+	}
+
 	respondSuccess(c, "上传成功", nil)
 }
 

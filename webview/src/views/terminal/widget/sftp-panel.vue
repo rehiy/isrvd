@@ -6,10 +6,12 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { SFTPFileInfo, SFTPListResult } from '@/service/types'
 
+import { type UploadNode, buildUploadTree, shouldIgnoreUploadEntry } from '@/helper/ssh'
 import { formatFileSize, formatUnixTime, getFileIcon, joinPath, downloadBlob } from '@/helper/utils'
-import { type UploadTask, collectFileSystemEntries } from '@/helper/ssh'
 
-@Component
+import UploadWidget from './sftp-upload.vue'
+
+@Component({ components: { UploadWidget } })
 class SftpPanel extends Vue {
     @Prop({ required: true }) readonly hostId!: string
     @Prop({ default: 280 }) readonly height!: number
@@ -17,6 +19,7 @@ class SftpPanel extends Vue {
     portal = usePortal()
 
     @Ref readonly uploadInputRef!: HTMLInputElement
+    @Ref readonly uploadWidgetRef!: InstanceType<typeof UploadWidget>
 
     // ─── 状态 ───
     sftpPath = '/'
@@ -30,13 +33,9 @@ class SftpPanel extends Vue {
     pathEditMode = false
     pathEditValue = ''
 
-    // ─── 上传进度 ───
-    uploadTasks: UploadTask[] = []
-    get sftpUploading() { return this.uploadTasks.some(t => !t.done && !t.error) }
-
     // ─── 拖拽状态 ───
     dragOver = false
-    dragCounter = 0   // 用计数器避免子元素 dragenter/dragleave 抖动
+    dragCounter = 0
 
     // ─── 下载状态 ───
     downloadingFile = ''
@@ -105,7 +104,7 @@ class SftpPanel extends Vue {
         this.sftpLoad(p)
     }
 
-    // ─── 下载（带进度提示）───
+    // ─── 下载 ───
     async sftpDownload(file: SFTPFileInfo) {
         const filePath = joinPath(this.sftpPath, file.name)
         this.downloadingFile = file.name
@@ -195,25 +194,6 @@ class SftpPanel extends Vue {
         }
     }
 
-    // ─── 上传核心：带进度的单文件上传 ───
-    async uploadOneFile(file: File, destDir: string): Promise<void> {
-        const task: UploadTask = { name: file.name, percent: 0, done: false, error: '' }
-        this.uploadTasks.push(task)
-        const form = new FormData()
-        form.append('file', file)
-        try {
-            await api.sftpUpload(this.hostId, destDir, form, (percent) => {
-                task.percent = percent
-            })
-            task.percent = 100
-            task.done = true
-        } catch (e: unknown) {
-            task.error = (e instanceof Error ? e.message : '') || '上传失败'
-            task.done = true
-            throw e
-        }
-    }
-
     // ─── 上传入口（input 选择）───
     triggerUpload() {
         this.uploadInputRef?.click()
@@ -223,25 +203,21 @@ class SftpPanel extends Vue {
         const input = e.target as HTMLInputElement
         const files = input.files
         if (!files || files.length === 0) return
-        this.uploadTasks = []
-        let failCount = 0
-        for (const file of Array.from(files)) {
-            try {
-                await this.uploadOneFile(file, this.sftpPath)
-            } catch {
-                failCount++
-            }
-        }
+        const nodes: UploadNode[] = Array.from(files)
+            .filter(file => !shouldIgnoreUploadEntry(file.name))
+            .map(file => ({
+                type: 'file' as const,
+                name: file.name,
+                size: file.size,
+                destDir: this.sftpPath,
+                file,
+                percent: 0,
+                done: false,
+                error: '',
+                cancelled: false,
+            }))
         input.value = ''
-        const total = files.length
-        if (failCount === 0) {
-            this.portal.showNotification('success', `上传成功（${total} 个文件）`)
-        } else {
-            this.portal.showNotification('error', `${total - failCount} 个成功，${failCount} 个失败`)
-        }
-        // 延迟清除进度条，让用户看到 100%
-        setTimeout(() => { this.uploadTasks = [] }, 1500)
-        this.sftpLoad()
+        this.uploadWidgetRef?.upload(nodes)
     }
 
     // ─── 拖拽上传 ───
@@ -271,39 +247,16 @@ class SftpPanel extends Vue {
         const items = e.dataTransfer?.items
         if (!items || items.length === 0) return
 
-        // 必须在同步代码中一次性取出所有 entry，
-        // DataTransfer 在首次 await 后会被浏览器清空
         const entries: FileSystemEntry[] = []
         for (let i = 0; i < items.length; i++) {
             const entry = items[i].webkitGetAsEntry()
             if (entry) entries.push(entry)
         }
+        if (entries.length === 0) return
 
-        const tasks = await collectFileSystemEntries(
-            entries,
-            this.sftpPath,
-            async (path) => { try { await api.sftpMkdir(this.hostId, { path }) } catch { /* 已存在则忽略 */ } },
-        )
-
-        if (tasks.length === 0) return
-
-        this.uploadTasks = []
-        let failCount = 0
-        for (const { file, destDir } of tasks) {
-            try {
-                await this.uploadOneFile(file, destDir)
-            } catch {
-                failCount++
-            }
-        }
-        const total = tasks.length
-        if (failCount === 0) {
-            this.portal.showNotification('success', `上传成功（${total} 个文件）`)
-        } else {
-            this.portal.showNotification('error', `${total - failCount} 个成功，${failCount} 个失败`)
-        }
-        setTimeout(() => { this.uploadTasks = [] }, 1500)
-        this.sftpLoad()
+        const nodes = await buildUploadTree(entries, this.sftpPath)
+        if (nodes.length === 0) return
+        this.uploadWidgetRef?.upload(nodes)
     }
 
     // ─── 格式化（复用 utils）───
@@ -324,7 +277,6 @@ export default toNative(SftpPanel)
   <div class="border-t border-slate-200 flex flex-col" :style="{ height: height + 'px', minHeight: '120px' }">
     <!-- 工具栏 -->
     <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 flex-shrink-0">
-      <!-- 路径输入框（编辑模式） -->
       <input
         v-if="pathEditMode"
         v-model="pathEditValue"
@@ -333,7 +285,6 @@ export default toNative(SftpPanel)
         @keyup.enter="confirmPathEdit()"
         @keyup.esc="cancelPathEdit()"
       />
-      <!-- 面包屑（普通模式） -->
       <div v-else class="flex items-center gap-1 text-xs text-slate-600 min-w-0 flex-1 overflow-x-auto">
         <template v-for="(part, i) in sftpPathParts" :key="part.path">
           <span v-if="i > 0" class="text-slate-300 flex-shrink-0">/</span>
@@ -347,7 +298,6 @@ export default toNative(SftpPanel)
           </button>
         </template>
       </div>
-      <!-- 操作按钮 -->
       <div class="flex items-center gap-1 flex-shrink-0">
         <button
           class="btn-icon flex-shrink-0"
@@ -366,38 +316,24 @@ export default toNative(SftpPanel)
         <button class="btn-icon btn-icon-slate" title="新建目录" @click="startMkdir()">
           <i class="fas fa-folder-plus text-xs"></i>
         </button>
-        <button class="btn-icon btn-icon-teal" title="上传文件" :disabled="sftpUploading" @click="triggerUpload()">
-          <i class="fas fa-upload text-xs" :class="{ 'animate-pulse': sftpUploading }"></i>
+        <button class="btn-icon btn-icon-teal" title="上传文件" @click="triggerUpload()">
+          <i class="fas fa-upload text-xs"></i>
         </button>
         <input ref="uploadInputRef" type="file" multiple class="hidden" @change="handleUpload" />
       </div>
     </div>
 
-    <!-- 上传进度条区域 -->
-    <div v-if="uploadTasks.length > 0" class="flex-shrink-0 border-b border-slate-200 bg-slate-50 px-3 py-2 space-y-1.5 max-h-28 overflow-y-auto">
-      <div v-for="task in uploadTasks" :key="task.name" class="flex items-center gap-2 text-xs">
-        <i
-          class="fas w-3 flex-shrink-0"
-          :class="task.error ? 'fa-circle-exclamation text-red-400' : task.done ? 'fa-circle-check text-teal-500' : 'fa-arrow-up-from-bracket text-slate-400'"
-        ></i>
-        <span class="truncate flex-1 text-slate-600 min-w-0">{{ task.name }}</span>
-        <span v-if="task.error" class="text-red-400 flex-shrink-0">失败</span>
-        <template v-else>
-          <div class="w-20 h-1.5 bg-slate-200 rounded-full flex-shrink-0 overflow-hidden">
-            <div
-              class="h-full rounded-full transition-all duration-200"
-              :class="task.done ? 'bg-teal-500' : 'bg-teal-400'"
-              :style="{ width: task.percent + '%' }"
-            ></div>
-          </div>
-          <span class="text-slate-400 w-7 text-right flex-shrink-0">{{ task.percent }}%</span>
-        </template>
-      </div>
-    </div>
+    <!-- 上传进度 Widget -->
+    <UploadWidget
+      ref="uploadWidgetRef"
+      :host-id="hostId"
+      :sftp-path="sftpPath"
+      @done="sftpLoad()"
+    />
 
     <!-- 文件列表（拖拽区域） -->
     <div
-      class="flex-1 overflow-y-auto relative"
+      class="flex-1 min-h-20 overflow-y-auto relative"
       @dragenter="onDragEnter"
       @dragover="onDragOver"
       @dragleave="onDragLeave"
@@ -421,14 +357,13 @@ export default toNative(SftpPanel)
       <div v-else-if="sftpError" class="flex items-center justify-center h-full text-red-400 text-sm gap-2">
         <i class="fas fa-circle-exclamation"></i>{{ sftpError }}
       </div>
-      <!-- 空目录（且不在新建目录模式） -->
+      <!-- 空目录 -->
       <div v-else-if="sftpFiles.length === 0 && !mkdirMode" class="flex items-center justify-center h-full text-slate-400 text-sm gap-2">
         <i class="fas fa-folder-open"></i>空目录
       </div>
       <!-- 文件表格 -->
       <table v-else class="w-full text-xs">
         <tbody>
-          <!-- 新建目录输入行（插在列表顶部） -->
           <tr v-if="mkdirMode" class="border-b border-teal-100 bg-teal-50">
             <td class="px-3 py-1.5" colspan="4">
               <div class="flex items-center gap-2">
@@ -457,7 +392,6 @@ export default toNative(SftpPanel)
             :key="file.name"
             class="border-b border-slate-100 hover:bg-slate-50 transition-colors group"
           >
-            <!-- 图标 + 名称 -->
             <td class="px-3 py-2 w-full">
               <div class="flex items-center gap-2 min-w-0">
                 <div class="relative w-5 h-5 flex-shrink-0">
@@ -466,7 +400,6 @@ export default toNative(SftpPanel)
                   </div>
                   <i v-if="file.isLink" class="fas fa-link absolute -bottom-0.5 -right-0.5 text-white text-[8px]" style="text-shadow: 0 0 2px rgba(0,0,0,0.6)"></i>
                 </div>
-                <!-- 重命名输入 -->
                 <template v-if="renamingFile?.name === file.name">
                   <input
                     v-model="renameNewName"
@@ -491,15 +424,12 @@ export default toNative(SftpPanel)
                 </template>
               </div>
             </td>
-            <!-- 大小 -->
             <td class="px-2 py-2 text-slate-400 whitespace-nowrap hidden sm:table-cell">
               {{ file.isDir ? '—' : formatSize(file.size) }}
             </td>
-            <!-- 修改时间 -->
             <td class="px-2 py-2 text-slate-400 whitespace-nowrap hidden md:table-cell">
               {{ formatTime(file.modTime) }}
             </td>
-            <!-- 操作 -->
             <td class="px-2 py-2 whitespace-nowrap">
               <div class="flex items-center gap-1 justify-end">
                 <template v-if="file.isDir">
@@ -515,10 +445,7 @@ export default toNative(SftpPanel)
                     :disabled="!!downloadingFile"
                     @click="sftpDownload(file)"
                   >
-                    <i
-                      class="fas text-xs"
-                      :class="downloadingFile === file.name ? 'fa-spinner animate-spin' : 'fa-download'"
-                    ></i>
+                    <i class="fas text-xs" :class="downloadingFile === file.name ? 'fa-spinner animate-spin' : 'fa-download'"></i>
                   </button>
                 </template>
                 <button class="btn-icon btn-icon-slate !w-6 !h-6" title="重命名" @click="startRename(file)">

@@ -17,8 +17,8 @@ var logger = logman.Named("webssh")
 
 // Service WebSSH 业务服务
 type Service struct {
-	store    *store
-	sftpPool *sftpPool
+	store      *store
+	sftpClient *libwebssh.SFTPClient
 }
 
 // NewService 创建 WebSSH 业务服务
@@ -28,12 +28,12 @@ func NewService() (*Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("初始化 WebSSH 存储失败: %w", err)
 	}
-	return &Service{store: s, sftpPool: newSFTPPool()}, nil
+	return &Service{store: s, sftpClient: libwebssh.NewSFTPClient(0)}, nil
 }
 
 // Close 释放 Service 持有的所有资源（连接池等），应在应用退出时调用
 func (s *Service) Close() {
-	s.sftpPool.close()
+	s.sftpClient.Close()
 }
 
 // HostList 列出所有主机（密码不回显）
@@ -91,25 +91,18 @@ func (s *Service) HostDelete(id string) error {
 
 // RunTerminal 建立到指定主机的 SSH 终端会话并与 WebSocket 连接桥接
 func (s *Service) RunTerminal(conn *websocket.ServerConn, hostID string) {
-	host, err := s.store.hostGetOption(hostID)
+	opt, err := s.store.hostGetOption(hostID)
 	if err != nil {
 		conn.Die("[错误: " + err.Error() + "]\r\n")
 		return
 	}
 
-	opt := &libwebssh.SSHClientOption{
-		Addr:       host.Addr,
-		User:       host.User,
-		Password:   host.Password,
-		PrivateKey: host.PrivateKey,
-	}
-
-	logger.Info("WebSSH 会话开始", "host", host.Name, "addr", host.Addr, "user", host.User)
+	logger.Info("WebSSH 会话开始", "hostID", hostID, "addr", opt.Addr, "user", opt.User)
 
 	if err := libwebssh.Connect(conn.Conn, opt); err != nil {
-		logger.Error("WebSSH 会话结束", "host", host.Name, "error", err)
+		logger.Error("WebSSH 会话结束", "hostID", hostID, "error", err)
 	} else {
-		logger.Info("WebSSH 会话正常结束", "host", host.Name)
+		logger.Info("WebSSH 会话正常结束", "hostID", hostID)
 	}
 }
 

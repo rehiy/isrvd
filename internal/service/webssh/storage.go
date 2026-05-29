@@ -8,6 +8,7 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/rehiy/libgo/strutil"
+	libwebssh "github.com/rehiy/libgo/webssh"
 )
 
 // Host SSH 主机配置
@@ -157,16 +158,20 @@ func (s *store) hostDelete(id string) error {
 	return s.save()
 }
 
-// hostGetOption 获取指定 ID 主机的完整配置（含密码/私钥），返回副本
-func (s *store) hostGetOption(id string) (*Host, error) {
+// hostGetOption 获取指定 ID 主机的 SSH 连接配置
+func (s *store) hostGetOption(id string) (*libwebssh.SSHClientOption, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	h := s.findByID(id)
 	if h == nil {
 		return nil, fmt.Errorf("主机 %s 不存在", id)
 	}
-	cp := *h
-	return &cp, nil
+	return &libwebssh.SSHClientOption{
+		Addr:       h.Addr,
+		User:       h.User,
+		Password:   h.Password,
+		PrivateKey: h.PrivateKey,
+	}, nil
 }
 
 // findByID 按 ID 查找主机（调用方须持锁）

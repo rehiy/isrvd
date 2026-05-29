@@ -7,6 +7,7 @@ import api from '@/service/api'
 import type { SSHHostInfo } from '@/service/types'
 
 import * as SSHTerminal from '@/helper/ssh'
+
 import SftpPanel from './widget/sftp-panel.vue'
 
 @Component({ components: { SftpPanel } })
