@@ -37,7 +37,9 @@ build() {
     if [ x"$1" = x"windows" ]; then
         target="${target}.exe"
     fi
-    GOOS=$1 GOARCH=$2 go build -ldflags="-s -w" -o "$target" cmd/server/main.go
+    GOOS=$1 GOARCH=$2 go build \
+        -tags netgo -trimpath -buildvcs=false \
+        -ldflags="-s -w -buildid=" -o "$target" cmd/server/main.go
 }
 
 ###########################################
