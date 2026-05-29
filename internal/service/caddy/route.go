@@ -21,7 +21,7 @@ type MatchForm struct {
 
 // HandlerForm 简化的 handler 编辑模型，按 Kind 解释字段
 type HandlerForm struct {
-	Kind string `json:"kind"` // reverse_proxy / file_server / static_response / raw
+	Kind string `json:"kind"` // reverse_proxy / file_server / static_response / rewrite / raw
 
 	// reverse_proxy
 	Upstreams   []string `json:"upstreams,omitempty"`
@@ -35,6 +35,13 @@ type HandlerForm struct {
 	// static_response
 	StatusCode int    `json:"statusCode,omitempty"`
 	Body       string `json:"body,omitempty"`
+
+	// rewrite：URI 重写
+	RewriteURI          string `json:"rewriteUri,omitempty"`          // 完整 URI 替换（支持 Caddy 占位符）
+	StripPathPrefix     string `json:"stripPathPrefix,omitempty"`     // 去掉路径前缀
+	StripPathSuffix     string `json:"stripPathSuffix,omitempty"`     // 去掉路径后缀
+	URISubstringFind    string `json:"uriSubstringFind,omitempty"`    // 子串查找（配合 uriSubstringReplace）
+	URISubstringReplace string `json:"uriSubstringReplace,omitempty"` // 子串替换
 
 	// raw：透传原始 handle 数组
 	Raw json.RawMessage `json:"raw,omitempty"`
@@ -164,6 +171,13 @@ func validateRouteForm(req RouteForm) error {
 		if req.Handler.StatusCode == 0 && req.Handler.Body == "" {
 			return fmt.Errorf("静态响应至少需要 status 或 body")
 		}
+	case HandlerKindRewrite:
+		if req.Handler.RewriteURI == "" &&
+			req.Handler.StripPathPrefix == "" &&
+			req.Handler.StripPathSuffix == "" &&
+			req.Handler.URISubstringFind == "" {
+			return fmt.Errorf("rewrite 至少需要填写一个重写规则")
+		}
 	case HandlerKindRaw:
 		if len(req.Handler.Raw) == 0 {
 			return fmt.Errorf("原始 handle 不能为空")
@@ -212,6 +226,24 @@ func formToRoute(req RouteForm) (pkgcaddy.Route, error) {
 		r.Handle = []pkgcaddy.Handler{pkgcaddy.HandlerFileServer(req.Handler.Root, req.Handler.Browse)}
 	case HandlerKindStaticResp:
 		r.Handle = []pkgcaddy.Handler{pkgcaddy.HandlerStaticResponse(req.Handler.StatusCode, req.Handler.Body)}
+	case HandlerKindRewrite:
+		h := pkgcaddy.Handler{"handler": "rewrite"}
+		if req.Handler.RewriteURI != "" {
+			h["uri"] = req.Handler.RewriteURI
+		}
+		if req.Handler.StripPathPrefix != "" {
+			h["strip_path_prefix"] = req.Handler.StripPathPrefix
+		}
+		if req.Handler.StripPathSuffix != "" {
+			h["strip_path_suffix"] = req.Handler.StripPathSuffix
+		}
+		if req.Handler.URISubstringFind != "" {
+			h["uri_substring"] = []map[string]any{{
+				"find":    req.Handler.URISubstringFind,
+				"replace": req.Handler.URISubstringReplace,
+			}}
+		}
+		r.Handle = []pkgcaddy.Handler{h}
 	case HandlerKindRaw:
 		var handlers []pkgcaddy.Handler
 		if err := json.Unmarshal(req.Handler.Raw, &handlers); err != nil {
@@ -281,6 +313,18 @@ func handlerToForm(handlers []pkgcaddy.Handler) *HandlerForm {
 			status, _ = strconv.Atoi(v)
 		}
 		return &HandlerForm{Kind: kind, StatusCode: status, Body: body}
+	case HandlerKindRewrite:
+		form := &HandlerForm{Kind: kind}
+		form.RewriteURI, _ = h["uri"].(string)
+		form.StripPathPrefix, _ = h["strip_path_prefix"].(string)
+		form.StripPathSuffix, _ = h["strip_path_suffix"].(string)
+		if subs, ok := h["uri_substring"].([]any); ok && len(subs) > 0 {
+			if sub, ok := subs[0].(map[string]any); ok {
+				form.URISubstringFind, _ = sub["find"].(string)
+				form.URISubstringReplace, _ = sub["replace"].(string)
+			}
+		}
+		return form
 	default:
 		return rawHandler(handlers)
 	}

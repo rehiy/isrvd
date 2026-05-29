@@ -35,12 +35,17 @@ handler 通过 `kind` 字段区分类型，每种类型只填对应字段。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| kind | string | 处理器类型：`reverse_proxy` / `file_server` / `static_response` / `raw` |
+| kind | string | 处理器类型：`reverse_proxy` / `file_server` / `static_response` / `rewrite` / `raw` |
 | upstreams | string[] | 反向代理上游 `host:port` 列表（`kind=reverse_proxy`）；Web UI 可选择运行中 Docker 容器与端口自动填充 |
 | root | string | 静态文件根目录（`kind=file_server`） |
 | browse | boolean | 是否开启目录浏览（`kind=file_server`） |
 | statusCode | number | 响应状态码（`kind=static_response`） |
 | body | string | 响应体内容（`kind=static_response`） |
+| rewriteUri | string | 完整替换请求 URI，支持 Caddy 占位符（`kind=rewrite`） |
+| stripPathPrefix | string | 去掉路径前缀（`kind=rewrite`） |
+| stripPathSuffix | string | 去掉路径后缀（`kind=rewrite`） |
+| uriSubstringFind | string | URI 子串查找（`kind=rewrite`） |
+| uriSubstringReplace | string | URI 子串替换（`kind=rewrite`） |
 | raw | any | 原始 handle 数组，任意 Caddy 模块，高级用法（`kind=raw`） |
 
 ## 查看路由详情
@@ -69,6 +74,24 @@ isrvd_post "/caddy/route" '{
 isrvd_post "/caddy/route" '{
   "match": {"paths": ["/health"]},
   "handler": {"kind": "static_response", "statusCode": 200, "body": "OK"}
+}'
+
+# URI 重写
+ isrvd_post "/caddy/route" '{
+  "match": {"paths": ["/api/*"]},
+  "handler": {"kind": "rewrite", "stripPathPrefix": "/api"}
+}'
+
+# 完整 URI 替换（支持占位符）
+isrvd_post "/caddy/route" '{
+  "match": {"paths": ["/old/*"]},
+  "handler": {"kind": "rewrite", "rewriteUri": "/new/{http.request.uri.path.1}"}
+}'
+
+# 子串替换
+isrvd_post "/caddy/route" '{
+  "match": {"paths": ["/v1/*"]},
+  "handler": {"kind": "rewrite", "uriSubstringFind": "/v1", "uriSubstringReplace": "/v2"}
 }'
 
 # 原始 handle 数组（如 headers + reverse_proxy 链式组合）

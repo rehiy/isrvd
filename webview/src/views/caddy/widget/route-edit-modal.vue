@@ -17,17 +17,17 @@ const HANDLER_KIND_CARDS: CaddyHandlerKindCard[] = [
     { value: 'reverse_proxy', title: '反向代理', desc: '将请求转发到一个或多个上游服务器', icon: 'fa-diagram-project', tone: 'indigo' },
     { value: 'file_server', title: '静态文件服务', desc: '提供本地目录中的静态文件访问', icon: 'fa-folder-open', tone: 'emerald' },
     { value: 'static_response', title: '静态响应', desc: '直接返回指定的 HTTP 状态码和响应体', icon: 'fa-bolt', tone: 'amber' },
-    { value: 'raw', title: '原始 JSON', desc: '直接编辑 Caddy 原生 handle 数组', icon: 'fa-code', tone: 'slate' }
+    { value: 'rewrite', title: 'URI 重写', desc: '重写请求 URI、去除路径前后缀或替换子串', icon: 'fa-pen-to-square', tone: 'violet' }
 ]
 
 const TONE_CARD_ACTIVE: Record<string, string> = {
     indigo: 'border-indigo-300 bg-indigo-50 text-indigo-700',
     emerald: 'border-emerald-300 bg-emerald-50 text-emerald-700',
     amber: 'border-amber-300 bg-amber-50 text-amber-700',
-    slate: 'border-slate-300 bg-slate-100 text-slate-700'
+    violet: 'border-violet-300 bg-violet-50 text-violet-700'
 }
 const TONE_ICON_ACTIVE: Record<string, string> = {
-    indigo: 'bg-indigo-100', emerald: 'bg-emerald-100', amber: 'bg-amber-100', slate: 'bg-slate-200'
+    indigo: 'bg-indigo-100', emerald: 'bg-emerald-100', amber: 'bg-amber-100', violet: 'bg-violet-100'
 }
 
 const defaultFormData = () => ({
@@ -44,6 +44,11 @@ const defaultFormData = () => ({
     browse: false,
     statusCode: 200,
     body: '',
+    rewriteUri: '',
+    stripPathPrefix: '',
+    stripPathSuffix: '',
+    uriSubstringFind: '',
+    uriSubstringReplace: '',
     rawText: ''
 })
 
@@ -60,6 +65,7 @@ class RouteEditModal extends Vue {
     isEditMode = false
     editingIndex = -1
     containers: DockerContainerInfo[] = []
+    showRawPreview = false
 
     formData = defaultFormData()
 
@@ -78,6 +84,54 @@ class RouteEditModal extends Vue {
 
     setKind(kind: CaddyHandlerKind) {
         this.formData.kind = kind
+    }
+
+    // 根据当前表单数据生成 handle 数组 JSON（用于原始 JSON 预览）
+    buildRawFromCurrent(): string {
+        const f = this.formData
+        let handler: Record<string, unknown> | null = null
+        switch (f.kind) {
+            case 'reverse_proxy': {
+                const upstreams = f.upstreams.split('\n').map(t => t.trim()).filter(Boolean)
+                if (upstreams.length) {
+                    handler = {
+                        handler: 'reverse_proxy',
+                        upstreams: upstreams.map(d => ({ dial: d }))
+                    }
+                    if (f.fastcgi) {
+                        const transport: Record<string, unknown> = { protocol: 'fastcgi' }
+                        if (f.fastcgiRoot.trim()) transport.root = f.fastcgiRoot.trim()
+                        handler.transport = transport
+                    }
+                }
+                break
+            }
+            case 'file_server': {
+                if (f.root.trim()) {
+                    handler = { handler: 'file_server', root: f.root.trim() }
+                    if (f.browse) handler.browse = {}
+                }
+                break
+            }
+            case 'static_response': {
+                handler = { handler: 'static_response' }
+                if (f.statusCode) handler.status_code = f.statusCode
+                if (f.body) handler.body = f.body
+                break
+            }
+            case 'rewrite': {
+                handler = { handler: 'rewrite' }
+                if (f.rewriteUri.trim()) handler.uri = f.rewriteUri.trim()
+                if (f.stripPathPrefix.trim()) handler.strip_path_prefix = f.stripPathPrefix.trim()
+                if (f.stripPathSuffix.trim()) handler.strip_path_suffix = f.stripPathSuffix.trim()
+                if (f.uriSubstringFind.trim()) {
+                    handler.uri_substring = [{ find: f.uriSubstringFind.trim(), replace: f.uriSubstringReplace.trim() }]
+                }
+                break
+            }
+        }
+        if (!handler) return ''
+        try { return JSON.stringify([handler], null, 2) } catch { return '' }
     }
 
     getPortsByHost(host: string): string[] {
@@ -127,6 +181,7 @@ class RouteEditModal extends Vue {
 
     show(route: CaddyRoute | null) {
         Object.assign(this.formData, defaultFormData())
+        this.showRawPreview = false
         void this.loadContainers()
         if (route) {
             this.isEditMode = true
@@ -146,8 +201,13 @@ class RouteEditModal extends Vue {
                 this.formData.browse = !!h.browse
                 this.formData.statusCode = h.statusCode || 200
                 this.formData.body = h.body || ''
-                if (h.kind === 'raw' && h.raw) {
-                    try { this.formData.rawText = JSON.stringify(h.raw, null, 2) } catch { this.formData.rawText = '' }
+                this.formData.rewriteUri = h.rewriteUri || ''
+                this.formData.stripPathPrefix = h.stripPathPrefix || ''
+                this.formData.stripPathSuffix = h.stripPathSuffix || ''
+                this.formData.uriSubstringFind = h.uriSubstringFind || ''
+                this.formData.uriSubstringReplace = h.uriSubstringReplace || ''
+                if (h.kind === 'raw') {
+                    try { this.formData.rawText = h.raw != null ? JSON.stringify(h.raw, null, 2) : '' } catch { this.formData.rawText = '' }
                 }
             }
         } else {
@@ -195,6 +255,21 @@ class RouteEditModal extends Vue {
                     return null
                 }
                 handler = { kind: 'static_response', statusCode: f.statusCode || 200, body: f.body }
+                break
+            }
+            case 'rewrite': {
+                if (!f.rewriteUri.trim() && !f.stripPathPrefix.trim() && !f.stripPathSuffix.trim() && !f.uriSubstringFind.trim()) {
+                    this.portal.showNotification('error', '请至少填写一个重写规则')
+                    return null
+                }
+                handler = {
+                    kind: 'rewrite',
+                    rewriteUri: f.rewriteUri.trim() || undefined,
+                    stripPathPrefix: f.stripPathPrefix.trim() || undefined,
+                    stripPathSuffix: f.stripPathSuffix.trim() || undefined,
+                    uriSubstringFind: f.uriSubstringFind.trim() || undefined,
+                    uriSubstringReplace: f.uriSubstringReplace.trim() || undefined
+                }
                 break
             }
             case 'raw': {
@@ -263,6 +338,12 @@ export default toNative(RouteEditModal)
             <div class="text-xs opacity-80 leading-5">{{ item.desc }}</div>
           </button>
         </div>
+        <!-- raw 模式提示条：当后端返回多 handler 或不识别类型时显示 -->
+        <div v-if="formData.kind === 'raw'" class="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-slate-100 border border-slate-300 text-slate-600">
+          <i class="fas fa-code text-sm"></i>
+          <span class="text-sm font-medium">原始 JSON 模式</span>
+          <span class="text-xs text-slate-400 ml-1">（当前路由包含多个 handler 或系统不支持的类型，仅支持直接编辑 JSON）</span>
+        </div>
 
         <!-- reverse_proxy -->
         <div v-if="formData.kind === 'reverse_proxy'" class="space-y-3">
@@ -324,10 +405,58 @@ export default toNative(RouteEditModal)
           </div>
         </div>
 
+        <!-- rewrite -->
+        <div v-else-if="formData.kind === 'rewrite'" class="space-y-3">
+          <div>
+            <label class="form-label">URI 替换</label>
+            <input v-model="formData.rewriteUri" type="text" class="input font-mono text-sm" placeholder="/new-path/{http.request.uri.path.1}" />
+            <p class="text-xs text-slate-400 mt-1">完整替换请求 URI，支持 Caddy 占位符（如 <code class="px-1 bg-slate-100 rounded">{http.request.uri.path.1}</code>）</p>
+          </div>
+          <div>
+            <label class="form-label">去掉路径前缀</label>
+            <input v-model="formData.stripPathPrefix" type="text" class="input font-mono text-sm" placeholder="/api" />
+            <p class="text-xs text-slate-400 mt-1">从请求路径开头去掉指定前缀，例如 <code class="px-1 bg-slate-100 rounded">/api</code> → 将 <code class="px-1 bg-slate-100 rounded">/api/v1/foo</code> 改写为 <code class="px-1 bg-slate-100 rounded">/v1/foo</code></p>
+          </div>
+          <div>
+            <label class="form-label">去掉路径后缀</label>
+            <input v-model="formData.stripPathSuffix" type="text" class="input font-mono text-sm" placeholder=".php" />
+            <p class="text-xs text-slate-400 mt-1">从请求路径末尾去掉指定后缀</p>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="form-label">子串查找</label>
+              <input v-model="formData.uriSubstringFind" type="text" class="input font-mono text-sm" placeholder="/old" />
+            </div>
+            <div>
+              <label class="form-label">子串替换</label>
+              <input v-model="formData.uriSubstringReplace" type="text" class="input font-mono text-sm" placeholder="/new" />
+            </div>
+          </div>
+          <p class="text-xs text-slate-400">子串替换：将 URI 中第一个匹配的字符串替换为新值，留空替换为空字符串</p>
+        </div>
+
+        <!-- 原始 JSON 预览 -->
+        <div v-if="formData.kind !== 'raw'" class="space-y-3 mt-4">
+          <div class="toggle-row">
+            <div>
+              <span class="text-sm text-slate-600">显示原始 JSON 预览</span>
+              <p class="text-xs text-slate-400 mt-0.5">查看当前配置的原始 JSON 格式</p>
+            </div>
+            <button type="button" class="toggle" :class="{ 'toggle-on': showRawPreview }" role="switch" :aria-checked="showRawPreview" @click="showRawPreview = !showRawPreview">
+              <span class="toggle-thumb" />
+            </button>
+          </div>
+          <div v-if="showRawPreview">
+            <label class="form-label">原始 handle 数组（JSON）</label>
+            <textarea :value="buildRawFromCurrent()" rows="10" class="input font-mono text-xs" readonly></textarea>
+            <p class="text-xs text-slate-400 mt-1">当前配置的原始 JSON 格式</p>
+          </div>
+        </div>
+
         <!-- raw -->
-        <div v-else>
+        <div v-else class="space-y-3">
           <label class="form-label">原始 handle 数组（JSON）<span class="text-red-500">*</span></label>
-          <textarea v-model="formData.rawText" rows="10" class="input font-mono text-xs" placeholder='[{"handler":"reverse_proxy","upstreams":[{"dial":"x:80"}]}]'></textarea>
+          <textarea v-model="formData.rawText" rows="10" class="input font-mono text-xs"></textarea>
           <p class="text-xs text-slate-400 mt-1">直接编辑 caddy json 中 routes[i].handle 的原始数组</p>
         </div>
       </div>

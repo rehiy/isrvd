@@ -25,7 +25,8 @@ const (
 	HandlerKindReverseProxy = "reverse_proxy"
 	HandlerKindFileServer   = "file_server"
 	HandlerKindStaticResp   = "static_response"
-	HandlerKindRaw          = "raw" // 透传原始 handle 数组
+	HandlerKindRewrite      = "rewrite" // URI 重写
+	HandlerKindRaw          = "raw"     // 透传原始 handle 数组
 )
 
 // CertSource 证书来源类型

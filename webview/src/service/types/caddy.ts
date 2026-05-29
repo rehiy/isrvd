@@ -1,6 +1,6 @@
 // ─── Caddy 相关 ───
 
-export type CaddyHandlerKind = 'reverse_proxy' | 'file_server' | 'static_response' | 'raw'
+export type CaddyHandlerKind = 'reverse_proxy' | 'file_server' | 'static_response' | 'rewrite' | 'raw'
 
 export interface CaddyMatchForm {
     hosts?: string[]
@@ -17,6 +17,12 @@ export interface CaddyHandlerForm {
     browse?: boolean
     statusCode?: number
     body?: string
+    // rewrite
+    rewriteUri?: string          // 完整 URI 替换（支持 Caddy 占位符）
+    stripPathPrefix?: string     // 去掉路径前缀
+    stripPathSuffix?: string     // 去掉路径后缀
+    uriSubstringFind?: string    // 子串查找
+    uriSubstringReplace?: string // 子串替换
     raw?: unknown
 }
 
@@ -54,7 +60,7 @@ export interface CaddyHandlerKindCard {
     title: string
     desc: string
     icon: string
-    tone: 'indigo' | 'emerald' | 'amber' | 'slate'
+    tone: 'indigo' | 'emerald' | 'amber' | 'violet' | 'slate'
 }
 
 // ─── 全局选项 ───
