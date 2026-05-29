@@ -180,7 +180,6 @@ export default toNative(CaddyRoutes)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
-              <th class="th">序号</th>
               <th class="th">Host</th>
               <th class="th">Path</th>
               <th class="th">Method</th>
@@ -193,13 +192,12 @@ export default toNative(CaddyRoutes)
             <tr v-for="route in filteredRoutes" :key="route.index" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3">
                 <div class="flex items-center gap-2 min-w-0">
-                  <div class="row-icon bg-indigo-400">
+                  <div class="row-icon bg-indigo-400 flex-shrink-0">
                     <i class="fas fa-route text-white text-sm"></i>
                   </div>
-                  <span class="font-medium text-slate-800">{{ route.index }}</span>
+                  <span :class="getRouteHosts(route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm break-all">{{ getRouteHosts(route) }}</span>
                 </div>
               </td>
-              <td class="px-4 py-3"><span :class="getRouteHosts(route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm break-all">{{ getRouteHosts(route) }}</span></td>
               <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getRoutePaths(route) }}</code></td>
               <td class="px-4 py-3"><span class="text-xs text-slate-600">{{ getRouteMethods(route) }}</span></td>
               <td class="px-4 py-3"><span :class="getHandlerTagClass(route)" class="inline-block text-xs px-2 py-0.5 rounded-lg">{{ getHandlerKindLabel(route.handler?.kind) }}</span></td>
@@ -223,7 +221,7 @@ export default toNative(CaddyRoutes)
               <i class="fas fa-route text-white text-base"></i>
             </div>
             <div class="min-w-0">
-              <span class="font-medium text-slate-800 text-sm truncate block">路由 #{{ route.index }}</span>
+              <span class="font-medium text-slate-800 text-sm truncate block">{{ getRouteHosts(route) }}</span>
               <span class="text-xs text-slate-400 truncate block mt-0.5">{{ getHandlerKindLabel(route.handler?.kind) }}</span>
             </div>
           </div>
