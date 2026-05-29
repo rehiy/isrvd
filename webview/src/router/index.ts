@@ -12,14 +12,19 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/overview/index.vue')
   },
   {
-    path: '/filer',
-    name: 'filer',
-    component: () => import('@/views/filer/explorer.vue')
+    path: '/local',
+    name: 'local',
+    redirect: '/local/explorer'
   },
   {
-    path: '/shell',
-    name: 'shell',
-    component: () => import('@/views/terminal/shell.vue')
+    path: '/local/explorer',
+    name: 'local-explorer',
+    component: () => import('@/views/local/explorer.vue')
+  },
+  {
+    path: '/local/shell',
+    name: 'local-shell',
+    component: () => import('@/views/local/shell.vue')
   },
   {
     path: '/apisix',
@@ -262,7 +267,7 @@ router.beforeEach((to) => {
 
   // 从路由路径提取模块名（/api/<module>/...）
   const module = to.path.match(/^\/([^/]+)/)?.[1]
-  if (module && !['overview', 'account'].includes(module)) {
+  if (module && !['overview', 'account', 'local'].includes(module)) {
     if (!_hasPerm?.(module)) return { path: '/overview' }
   }
   return true
