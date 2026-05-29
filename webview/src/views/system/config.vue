@@ -371,12 +371,9 @@ export default toNative(Config)
             <i class="fas fa-trash-can text-sm"></i>
           </button>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-[1fr_2fr_1.2fr_auto] gap-3 items-center">
-          <div class="hidden sm:block sm:col-span-3"></div>
-          <button type="button" class="btn-icon btn-icon-slate w-11 h-11 border border-dashed border-slate-300" @click="addLink()">
-            <i class="fas fa-plus text-sm"></i>
-          </button>
-        </div>
+        <button type="button" class="btn-add-row" @click="addLink()">
+          <i class="fas fa-plus text-xs"></i>添加链接
+        </button>
       </section>
 
       <!-- 统一保存 -->
