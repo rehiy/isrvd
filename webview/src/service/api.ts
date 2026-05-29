@@ -695,8 +695,8 @@ class ApiService {
         return `api/ssh/sftp/${hostId}/download?${params.toString()}`
     }
 
-    sftpRemove(hostId: string, path: string) {
-        return http.delete<void>(`ssh/sftp/${hostId}/rm`, { params: { path } })
+    sftpRemove(hostId: string, path: string, recursive = false) {
+        return http.delete<void>(`ssh/sftp/${hostId}/rm`, { params: { path, recursive: recursive || undefined } })
     }
 
     sftpMkdir(hostId: string, data: SFTPMkdir) {

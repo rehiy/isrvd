@@ -14,10 +14,17 @@ class SSHTerminalPage extends Vue {
     portal = usePortal()
 
     @Ref readonly xtermRef!: HTMLDivElement
+    @Ref readonly containerRef!: HTMLDivElement
 
     // ─── 数据属性 ───
     host: SSHHostInfo | null = null
     connected = false
+
+    // ─── 拖拽分隔条 ───
+    sftpHeight = 280
+    isDragging = false
+    dragStartY = 0
+    dragStartHeight = 0
 
     // ─── 计算属性 ───
     get hostId() {
@@ -46,6 +53,36 @@ class SSHTerminalPage extends Vue {
         this.connected = false
     }
 
+    // ─── 拖拽逻辑 ───
+    onDragStart(e: MouseEvent) {
+        this.isDragging = true
+        this.dragStartY = e.clientY
+        this.dragStartHeight = this.sftpHeight
+        document.addEventListener('mousemove', this.onDragMove)
+        document.addEventListener('mouseup', this.onDragEnd)
+        document.body.style.cursor = 'row-resize'
+        document.body.style.userSelect = 'none'
+    }
+
+    onDragMove(e: MouseEvent) {
+        if (!this.isDragging) return
+        const containerH = this.containerRef?.clientHeight ?? 600
+        const delta = this.dragStartY - e.clientY
+        const newHeight = Math.min(
+            Math.max(this.dragStartHeight + delta, 120),
+            containerH - 120
+        )
+        this.sftpHeight = newHeight
+    }
+
+    onDragEnd() {
+        this.isDragging = false
+        document.removeEventListener('mousemove', this.onDragMove)
+        document.removeEventListener('mouseup', this.onDragEnd)
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+    }
+
     // ─── 生命周期 ───
     async mounted() {
         await this.loadHost()
@@ -55,6 +92,8 @@ class SSHTerminalPage extends Vue {
     unmounted() {
         SSHTerminal.destroy()
         this.connected = false
+        document.removeEventListener('mousemove', this.onDragMove)
+        document.removeEventListener('mouseup', this.onDragEnd)
     }
 }
 
@@ -63,7 +102,7 @@ export default toNative(SSHTerminalPage)
 
 <template>
   <div class="terminal-page">
-    <div class="h-full card flex flex-col overflow-hidden">
+    <div ref="containerRef" class="h-full card flex flex-col overflow-hidden">
       <!-- Toolbar -->
       <div class="card-toolbar">
         <!-- 桌面端 -->
@@ -109,14 +148,23 @@ export default toNative(SSHTerminalPage)
       </div>
 
       <!-- 终端区域 -->
-      <div class="terminal-body">
-        <div class="terminal-pane">
+      <div class="terminal-body flex-1 min-h-0">
+        <div class="terminal-pane h-full">
           <div ref="xtermRef" class="h-full rounded-lg overflow-hidden"></div>
         </div>
       </div>
 
+      <!-- 拖拽分隔条 -->
+      <div
+        class="flex-shrink-0 h-1.5 bg-slate-100 hover:bg-teal-200 cursor-row-resize transition-colors flex items-center justify-center group"
+        :class="{ 'bg-teal-200': isDragging }"
+        @mousedown.prevent="onDragStart"
+      >
+        <div class="w-8 h-0.5 rounded-full bg-slate-300 group-hover:bg-teal-400 transition-colors" :class="{ 'bg-teal-400': isDragging }"></div>
+      </div>
+
       <!-- SFTP 文件管理面板 -->
-      <SftpPanel :host-id="hostId" />
+      <SftpPanel :host-id="hostId" :height="sftpHeight" />
     </div>
   </div>
 </template>

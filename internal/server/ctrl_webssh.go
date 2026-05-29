@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"net/url"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
@@ -120,7 +121,8 @@ func (app *App) websshSFTPDownload(c *gin.Context) {
 	defer reader.Close()
 
 	filename := filepath.Base(filePath)
-	c.Header("Content-Disposition", `attachment; filename="`+filename+`"`)
+	encoded := url.PathEscape(filename)
+	c.Header("Content-Disposition", `attachment; filename="`+filename+`"; filename*=UTF-8''`+encoded)
 	c.DataFromReader(http.StatusOK, size, "application/octet-stream", reader, nil)
 }
 
@@ -153,7 +155,8 @@ func (app *App) websshSFTPRemove(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "path 参数不能为空")
 		return
 	}
-	if err := app.websshSvc.SFTPRemove(id, targetPath); err != nil {
+	recursive := c.Query("recursive") == "true"
+	if err := app.websshSvc.SFTPRemove(id, targetPath, recursive); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}

@@ -26,6 +26,8 @@ export interface SFTPFileInfo {
     mode: string
     modTime: number
     isDir: boolean
+    isLink: boolean
+    linkTarget?: string
 }
 
 // SFTP 目录列表结果

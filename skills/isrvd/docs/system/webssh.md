@@ -130,7 +130,9 @@ isrvd_get "/ssh/sftp/<ID>/ls?path=/home/user"
 | `size` | int64 | 文件大小（字节），目录为 0 |
 | `mode` | string | 权限字符串（如 `-rw-r--r--`） |
 | `modTime` | int64 | 修改时间（Unix 时间戳） |
-| `isDir` | bool | 是否为目录 |
+| `isDir` | bool | 是否为目录（软链接目录也为 true） |
+| `isLink` | bool | 是否为软链接 |
+| `linkTarget` | string | 软链接指向的目标路径（仅软链接时存在） |
 
 ---
 
@@ -169,9 +171,18 @@ isrvd_upload "/ssh/sftp/<ID>/upload" "file" "/local/file.txt" "path=/remote/dir"
 isrvd_delete "/ssh/sftp/<ID>/rm?path=/path/to/file"
 # 删除空目录
 isrvd_delete "/ssh/sftp/<ID>/rm?path=/path/to/dir"
+# 递归删除目录（含所有内容，等同于 rm -rf）
+isrvd_delete "/ssh/sftp/<ID>/rm?path=/path/to/dir&recursive=true"
 ```
 
-> **注意**：目录必须为空才能删除。
+**Query 参数：**
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| `path` | ✓ | 目标路径 |
+| `recursive` | | `true` 时递归删除目录及其所有内容，默认 `false` |
+
+> **注意**：`recursive=false`（默认）时，目录必须为空才能删除。
 
 ---
 

@@ -17,7 +17,8 @@ var logger = logman.Named("webssh")
 
 // Service WebSSH 业务服务
 type Service struct {
-	store *store
+	store    *store
+	sftpPool *sftpPool
 }
 
 // NewService 创建 WebSSH 业务服务
@@ -27,7 +28,7 @@ func NewService() (*Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("初始化 WebSSH 存储失败: %w", err)
 	}
-	return &Service{store: s}, nil
+	return &Service{store: s, sftpPool: newSFTPPool()}, nil
 }
 
 // HostList 列出所有主机（密码不回显）

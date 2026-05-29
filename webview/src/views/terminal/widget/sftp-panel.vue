@@ -6,9 +6,12 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { SFTPFileInfo, SFTPListResult } from '@/service/types'
 
+import { formatFileSize, formatUnixTime, getFileIcon } from '@/helper/utils'
+
 @Component
 class SftpPanel extends Vue {
     @Prop({ required: true }) readonly hostId!: string
+    @Prop({ default: 280 }) readonly height!: number
 
     portal = usePortal()
 
@@ -107,16 +110,19 @@ class SftpPanel extends Vue {
     // ─── 删除 ───
     async sftpDelete(file: SFTPFileInfo) {
         const filePath = this.sftpPath.replace(/\/+$/, '') + '/' + file.name
+        const isDir = file.isDir
         this.portal.showConfirm({
             title: '删除确认',
-            message: `确定要删除 <strong class="text-slate-900">${file.name}</strong> 吗？`,
+            message: isDir
+                ? `确定要删除目录 <strong class="text-slate-900">${file.name}</strong> 及其所有内容吗？`
+                : `确定要删除 <strong class="text-slate-900">${file.name}</strong> 吗？`,
             icon: 'fa-trash',
             iconColor: 'red',
             confirmText: '确认删除',
             danger: true,
             onConfirm: async () => {
                 try {
-                    await api.sftpRemove(this.hostId, filePath)
+                    await api.sftpRemove(this.hostId, filePath, isDir)
                     this.portal.showNotification('success', '删除成功')
                     this.sftpLoad()
                 } catch (e: unknown) {
@@ -204,17 +210,10 @@ class SftpPanel extends Vue {
         }
     }
 
-    // ─── 格式化 ───
-    formatSize(size: number): string {
-        if (size < 1024) return size + ' B'
-        if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB'
-        if (size < 1024 * 1024 * 1024) return (size / 1024 / 1024).toFixed(1) + ' MB'
-        return (size / 1024 / 1024 / 1024).toFixed(2) + ' GB'
-    }
-
-    formatTime(ts: number): string {
-        return new Date(ts * 1000).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-    }
+    // ─── 格式化（复用 utils）───
+    formatSize = formatFileSize
+    formatTime = formatUnixTime
+    getFileIcon = getFileIcon
 
     // ─── 生命周期 ───
     mounted() {
@@ -226,15 +225,14 @@ export default toNative(SftpPanel)
 </script>
 
 <template>
-  <div class="border-t border-slate-200 flex flex-col" style="height: 280px; min-height: 200px;">
+  <div class="border-t border-slate-200 flex flex-col" :style="{ height: height + 'px', minHeight: '120px' }">
     <!-- 工具栏 -->
     <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 flex-shrink-0">
-      <i class="fas fa-folder-open text-amber-500 text-sm flex-shrink-0"></i>
       <!-- 路径输入框（编辑模式） -->
       <input
         v-if="pathEditMode"
         v-model="pathEditValue"
-        class="flex-1 min-w-0 text-xs border border-teal-300 rounded px-2 py-0.5 outline-none focus:ring-1 focus:ring-teal-400 bg-white font-mono"
+        class="input text-xs py-0.5 font-mono"
         autofocus
         @keyup.enter="confirmPathEdit()"
         @keyup.esc="cancelPathEdit()"
@@ -242,12 +240,15 @@ export default toNative(SftpPanel)
       <!-- 面包屑（普通模式） -->
       <div v-else class="flex items-center gap-1 text-xs text-slate-600 min-w-0 flex-1 overflow-x-auto">
         <template v-for="(part, i) in sftpPathParts" :key="part.path">
-          <span v-if="i > 1" class="text-slate-300 flex-shrink-0">/</span>
+          <span v-if="i > 0" class="text-slate-300 flex-shrink-0">/</span>
           <button
             class="flex-shrink-0 max-w-32 truncate transition-colors hover:text-teal-600"
             :class="i === sftpPathParts.length - 1 ? 'text-slate-800 font-medium' : 'text-slate-500'"
             @click="sftpLoad(part.path)"
-          >{{ part.label }}</button>
+          >
+            <template v-if="i === 0"><i class="fas fa-home text-xs"></i></template>
+            <span v-else>{{ part.label }}</span>
+          </button>
         </template>
       </div>
       <!-- 操作按钮 -->
@@ -276,21 +277,6 @@ export default toNative(SftpPanel)
       </div>
     </div>
 
-    <!-- 新建目录输入行 -->
-    <div v-if="mkdirMode" class="flex items-center gap-2 px-3 py-1.5 bg-teal-50 border-b border-teal-100 flex-shrink-0">
-      <i class="fas fa-folder text-amber-400 text-sm flex-shrink-0"></i>
-      <input
-        v-model="mkdirName"
-        class="flex-1 text-xs border border-teal-300 rounded px-2 py-1 outline-none focus:ring-1 focus:ring-teal-400 bg-white"
-        placeholder="输入目录名称..."
-        autofocus
-        @keyup.enter="confirmMkdir()"
-        @keyup.esc="cancelMkdir()"
-      />
-      <button class="btn-icon btn-icon-teal" title="确认" @click="confirmMkdir()"><i class="fas fa-check text-xs"></i></button>
-      <button class="btn-icon btn-icon-slate" title="取消" @click="cancelMkdir()"><i class="fas fa-xmark text-xs"></i></button>
-    </div>
-
     <!-- 文件列表 -->
     <div class="flex-1 overflow-y-auto">
       <!-- 加载中 -->
@@ -301,60 +287,97 @@ export default toNative(SftpPanel)
       <div v-else-if="sftpError" class="flex items-center justify-center h-full text-red-400 text-sm gap-2">
         <i class="fas fa-circle-exclamation"></i>{{ sftpError }}
       </div>
-      <!-- 空目录 -->
-      <div v-else-if="sftpFiles.length === 0" class="flex items-center justify-center h-full text-slate-400 text-sm gap-2">
+      <!-- 空目录（且不在新建目录模式） -->
+      <div v-else-if="sftpFiles.length === 0 && !mkdirMode" class="flex items-center justify-center h-full text-slate-400 text-sm gap-2">
         <i class="fas fa-folder-open"></i>空目录
       </div>
       <!-- 文件表格 -->
       <table v-else class="w-full text-xs">
         <tbody>
+          <!-- 新建目录输入行（插在列表顶部） -->
+          <tr v-if="mkdirMode" class="border-b border-teal-100 bg-teal-50">
+            <td class="px-3 py-1.5" colspan="4">
+              <div class="flex items-center gap-2">
+                <div class="w-5 h-5 rounded bg-amber-400 flex items-center justify-center flex-shrink-0">
+                  <i class="fas fa-folder text-white text-xs"></i>
+                </div>
+                <input
+                  v-model="mkdirName"
+                  class="input text-xs py-0.5"
+                  placeholder="输入目录名称..."
+                  autofocus
+                  @keyup.enter="confirmMkdir()"
+                  @keyup.esc="cancelMkdir()"
+                />
+                <button class="btn-icon btn-icon-teal !w-6 !h-6 flex-shrink-0" title="确认" @click="confirmMkdir()">
+                  <i class="fas fa-check text-xs"></i>
+                </button>
+                <button class="btn-icon btn-icon-slate !w-6 !h-6 flex-shrink-0" title="取消" @click="cancelMkdir()">
+                  <i class="fas fa-xmark text-xs"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
           <tr
             v-for="file in sftpFiles"
             :key="file.name"
             class="border-b border-slate-100 hover:bg-slate-50 transition-colors group"
           >
             <!-- 图标 + 名称 -->
-            <td class="px-3 py-1.5 w-full">
+            <td class="px-3 py-2 w-full">
               <div class="flex items-center gap-2 min-w-0">
-                <i
-                  class="text-sm flex-shrink-0 w-4 text-center"
-                  :class="file.isDir ? 'fas fa-folder text-amber-400' : 'fas fa-file text-slate-400'"
-                ></i>
+                <div class="relative w-5 h-5 flex-shrink-0">
+                  <div :class="['w-5 h-5 rounded flex items-center justify-center', file.isDir ? 'bg-amber-400' : 'bg-slate-400']">
+                    <i :class="getFileIcon(file)" class="text-white text-xs"></i>
+                  </div>
+                  <i v-if="file.isLink" class="fas fa-link absolute -bottom-0.5 -right-0.5 text-white text-[8px]" style="text-shadow: 0 0 2px rgba(0,0,0,0.6)"></i>
+                </div>
                 <!-- 重命名输入 -->
                 <template v-if="renamingFile?.name === file.name">
                   <input
                     v-model="renameNewName"
-                    class="flex-1 text-xs border border-teal-300 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-teal-400 bg-white min-w-0"
+                    class="input text-xs py-0.5 min-w-0"
                     autofocus
                     @keyup.enter="confirmRename()"
                     @keyup.esc="cancelRename()"
                   />
-                  <button class="btn-icon btn-icon-teal !w-6 !h-6" @click="confirmRename()"><i class="fas fa-check text-xs"></i></button>
-                  <button class="btn-icon btn-icon-slate !w-6 !h-6" @click="cancelRename()"><i class="fas fa-xmark text-xs"></i></button>
+                  <button class="btn-icon btn-icon-teal !w-6 !h-6 flex-shrink-0" @click="confirmRename()">
+                    <i class="fas fa-check text-xs"></i>
+                  </button>
+                  <button class="btn-icon btn-icon-slate !w-6 !h-6 flex-shrink-0" @click="cancelRename()">
+                    <i class="fas fa-xmark text-xs"></i>
+                  </button>
                 </template>
                 <template v-else>
                   <span
                     class="truncate"
                     :class="file.isDir ? 'text-slate-700 font-medium cursor-pointer hover:text-teal-600' : 'text-slate-600'"
                     @click="file.isDir && sftpEnter(file)"
-                  >{{ file.name }}</span>
+                  >{{ file.name }}<span v-if="file.isLink" class="ml-1 text-slate-400 text-xs font-normal">{{ file.linkTarget }}</span></span>
                 </template>
               </div>
             </td>
             <!-- 大小 -->
-            <td class="px-2 py-1.5 text-slate-400 whitespace-nowrap hidden sm:table-cell">
+            <td class="px-2 py-2 text-slate-400 whitespace-nowrap hidden sm:table-cell">
               {{ file.isDir ? '—' : formatSize(file.size) }}
             </td>
             <!-- 修改时间 -->
-            <td class="px-2 py-1.5 text-slate-400 whitespace-nowrap hidden md:table-cell">
+            <td class="px-2 py-2 text-slate-400 whitespace-nowrap hidden md:table-cell">
               {{ formatTime(file.modTime) }}
             </td>
             <!-- 操作 -->
-            <td class="px-2 py-1.5 whitespace-nowrap">
-              <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                <button v-if="!file.isDir" class="btn-icon btn-icon-blue !w-6 !h-6" title="下载" @click="sftpDownload(file)">
-                  <i class="fas fa-download text-xs"></i>
-                </button>
+            <td class="px-2 py-2 whitespace-nowrap">
+              <div class="flex items-center gap-1 justify-end">
+                <template v-if="file.isDir">
+                  <button class="btn-icon btn-icon-slate !w-6 !h-6" title="进入目录" @click="sftpEnter(file)">
+                    <i class="fas fa-folder-open text-xs"></i>
+                  </button>
+                </template>
+                <template v-else>
+                  <button class="btn-icon btn-icon-slate !w-6 !h-6" title="下载" @click="sftpDownload(file)">
+                    <i class="fas fa-download text-xs"></i>
+                  </button>
+                </template>
                 <button class="btn-icon btn-icon-slate !w-6 !h-6" title="重命名" @click="startRename(file)">
                   <i class="fas fa-spell-check text-xs"></i>
                 </button>
