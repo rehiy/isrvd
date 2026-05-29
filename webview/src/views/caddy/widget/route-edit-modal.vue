@@ -304,7 +304,8 @@ class RouteEditModal extends Vue {
                 this.formData.requestHeaders = h.requestHeaders ? [...h.requestHeaders] : []
                 this.formData.responseHeaders = h.responseHeaders ? [...h.responseHeaders] : []
                 if (h.kind === 'raw') {
-                    try { this.formData.rawText = h.raw != null ? JSON.stringify(h.raw, null, 2) : '' } catch { this.formData.rawText = '' }
+                    try { this.formData.rawText = h.raw !== null && h.raw !== undefined ? JSON.stringify(h.raw, null, 2) : '' }
+                    catch { this.formData.rawText = '' }
                 }
             }
         } else {
@@ -437,7 +438,6 @@ export default toNative(RouteEditModal)
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? '编辑路由' : '新建路由'" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
     <div class="space-y-5 p-1">
-
       <!-- ── 匹配条件 ── -->
       <div class="space-y-4">
         <p class="section-title">匹配条件</p>
@@ -464,9 +464,13 @@ export default toNative(RouteEditModal)
           <div>
             <label class="form-label">协议</label>
             <div class="flex gap-2 mt-0.5">
-              <button v-for="proto in ['', 'http', 'https']" :key="proto" type="button"
+              <button
+                v-for="proto in ['', 'http', 'https']"
+                :key="proto"
+                type="button"
                 :class="['btn-proto', formData.protocol === proto ? 'btn-proto-active' : 'btn-proto-inactive']"
-                @click="formData.protocol = proto">
+                @click="formData.protocol = proto"
+              >
                 {{ proto === '' ? '不限' : proto.toUpperCase() }}
               </button>
             </div>
@@ -686,7 +690,6 @@ export default toNative(RouteEditModal)
       <div v-if="formData.kind !== 'raw' && showRawPreview">
         <textarea :value="buildRawFromCurrent()" rows="10" class="input font-mono text-xs" readonly></textarea>
       </div>
-
     </div>
 
     <template #confirm-text>
