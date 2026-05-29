@@ -236,7 +236,7 @@ export default toNative(SystemUpdater)
       </form>
 
       <template #confirm-text>
-        {{ deploying ? '升级中...' : '部署并升级' }}
+        {{ deploying ? '升级中...' : upgrading ? '等待重启...' : '部署并升级' }}
       </template>
     </BaseModal>
   </template>
