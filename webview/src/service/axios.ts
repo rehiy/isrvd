@@ -90,6 +90,7 @@ export const interceptors = (
      * @param isBlob 是否为 Blob 下载请求
      */
     const handleError = (error: unknown, isBlob = false) => {
+        if (axios.isCancel(error)) return Promise.reject(error)
         const err = error as { response?: { status?: number; data?: { message?: string } }; request?: unknown }
         if (err.response?.status === 401) {
             actions.showNotification('error', '登录已过期，请重新登录')

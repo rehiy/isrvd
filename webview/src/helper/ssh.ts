@@ -54,6 +54,7 @@ export interface UploadFileNode {
     done: boolean
     error: string
     cancelled: boolean   // 是否已被用户取消
+    controller?: AbortController // 当前上传请求控制器
 }
 
 // 上传目录节点（中间节点）
@@ -63,6 +64,7 @@ export interface UploadDirNode {
     destDir: string      // 服务器目标目录
     children: UploadNode[]
     expanded: boolean
+    cancelled: boolean   // 是否已被用户取消
     // 聚合进度（只读计算，由组件自行计算）
 }
 
@@ -70,7 +72,7 @@ export type UploadNode = UploadFileNode | UploadDirNode
 
 // 需要过滤掉的系统/隐藏文件名（精确匹配）
 const UPLOAD_IGNORE_NAMES = new Set([
-    '.DS_Store', '.DS_Store?', '._*',
+    '.DS_Store', '.DS_Store?',
     'Thumbs.db', 'desktop.ini',
     '.Spotlight-V100', '.Trashes', '.fseventsd',
 ])
@@ -114,7 +116,7 @@ export const buildUploadTree = async (
                 })
             const children = await readAll()
             const childNodes = (await Promise.all(children.map(c => collect(c, newDir)))).filter(isUploadNode)
-            return { type: 'dir', name: entry.name, destDir: newDir, children: childNodes, expanded: true }
+            return { type: 'dir', name: entry.name, destDir: newDir, children: childNodes, expanded: true, cancelled: false }
         }
     }
     const nodes = await Promise.all(entries.map(e => collect(e, baseDir)))

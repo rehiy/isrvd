@@ -1,4 +1,5 @@
 <script lang="ts">
+import axios from 'axios'
 import { defineComponent, h, resolveComponent, type VNodeChild } from 'vue'
 import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
@@ -16,7 +17,7 @@ const UploadNodeItem = defineComponent({
         node: { type: Object as () => UploadNode, required: true },
         depth: { type: Number, default: 0 },
     },
-    emits: ['cancel'],
+    emits: ['cancel', 'retry', 'clearCancelled'],
     setup(props, { emit }): () => VNodeChild {
         return (): VNodeChild => {
             const node = props.node
@@ -32,6 +33,8 @@ const UploadNodeItem = defineComponent({
                 const fail = files.filter(f => !!f.error).length
                 const cancelled = files.filter(f => f.cancelled).length
                 const allFinished = done + fail + cancelled >= total
+                const hasFailed = fail > 0
+                const hasCancelled = cancelled > 0
 
                 return [
                     h('div', {
@@ -56,6 +59,20 @@ const UploadNodeItem = defineComponent({
                                 onClick: (e: Event) => { e.stopPropagation(); emit('cancel') },
                             }, h('i', { class: 'fas fa-xmark text-slate-400 text-[10px]' }))
                             : null,
+                        depth === 0 && hasFailed
+                            ? h('button', {
+                                class: 'ml-1 w-4 h-4 flex items-center justify-center rounded hover:bg-slate-200 flex-shrink-0',
+                                title: '重试失败项',
+                                onClick: (e: Event) => { e.stopPropagation(); emit('retry') },
+                            }, h('i', { class: 'fas fa-rotate-right text-slate-400 text-[10px]' }))
+                            : null,
+                        depth === 0 && hasCancelled
+                            ? h('button', {
+                                class: 'ml-1 w-4 h-4 flex items-center justify-center rounded hover:bg-slate-200 flex-shrink-0',
+                                title: '清理已取消项',
+                                onClick: (e: Event) => { e.stopPropagation(); emit('clearCancelled') },
+                            }, h('i', { class: 'fas fa-broom text-slate-400 text-[10px]' }))
+                            : null,
                     ]),
                     dir.expanded
                         ? dir.children.map(child =>
@@ -63,6 +80,9 @@ const UploadNodeItem = defineComponent({
                                 key: child.name,
                                 node: child,
                                 depth: depth + 1,
+                                onCancel: () => emit('cancel'),
+                                onRetry: () => emit('retry'),
+                                onClearCancelled: () => emit('clearCancelled'),
                             })
                         )
                         : null,
@@ -103,6 +123,20 @@ const UploadNodeItem = defineComponent({
                             onClick: () => emit('cancel'),
                         }, h('i', { class: 'fas fa-xmark text-slate-400 text-[10px]' }))
                         : null,
+                    depth === 0 && !!file.error
+                        ? h('button', {
+                            class: 'ml-1 w-4 h-4 flex items-center justify-center rounded hover:bg-slate-200 flex-shrink-0',
+                            title: '重试',
+                            onClick: () => emit('retry'),
+                        }, h('i', { class: 'fas fa-rotate-right text-slate-400 text-[10px]' }))
+                        : null,
+                    depth === 0 && file.cancelled
+                        ? h('button', {
+                            class: 'ml-1 w-4 h-4 flex items-center justify-center rounded hover:bg-slate-200 flex-shrink-0',
+                            title: '清理已取消项',
+                            onClick: () => emit('clearCancelled'),
+                        }, h('i', { class: 'fas fa-broom text-slate-400 text-[10px]' }))
+                        : null,
                 ])
             }
         }
@@ -130,11 +164,19 @@ class UploadWidget extends Vue {
 
     get hasNodes() { return this.uploadNodes.length > 0 }
 
+    private getUploadState() {
+        const files = flattenUploadTree(this.uploadNodes)
+        const allDone = files.every(f => f.done || f.cancelled)
+        const hasFailed = files.some(f => !!f.error)
+        return { files, allDone, hasFailed }
+    }
+
     private collectDirs(nodes: UploadNode[]): string[] {
         const dirs = new Set<string>()
         const walk = (items: UploadNode[]) => {
             for (const item of items) {
                 if (item.type === 'dir') {
+                    if (item.cancelled) continue
                     dirs.add(item.destDir)
                     walk(item.children)
                 }
@@ -144,16 +186,93 @@ class UploadWidget extends Vue {
         return [...dirs]
     }
 
+    private isNodeCancelled(node: UploadNode): boolean {
+        if (node.type === 'file') return node.cancelled
+        return node.cancelled || flattenUploadTree(node.children).every(f => f.cancelled)
+    }
+
+    private isBatchCancelled(files: UploadFileNode[], nodesForDirs?: UploadNode[]): boolean {
+        if (nodesForDirs && nodesForDirs.length > 0 && nodesForDirs.every(node => this.isNodeCancelled(node))) return true
+        return files.length > 0 && files.every(f => f.cancelled)
+    }
+
+    private markNodeCancelled(node: UploadNode) {
+        if (node.type === 'file') {
+            if (!node.done) {
+                node.cancelled = true
+                node.controller?.abort()
+            }
+            return
+        }
+        node.cancelled = true
+        for (const child of node.children) this.markNodeCancelled(child)
+    }
+
     private scheduleClear(delay: number) {
         if (this.clearTimer) clearTimeout(this.clearTimer)
         this.clearTimer = setTimeout(() => {
             this.clearTimer = null
             if (this.pendingBatches !== 0) return
-            const allDone = flattenUploadTree(this.uploadNodes).every(f => f.done || f.cancelled)
-            if (!allDone) return
+            const { allDone, hasFailed } = this.getUploadState()
+            if (!allDone || hasFailed) return
             this.uploadNodes = []
             this.uploadVersion++
         }, delay)
+    }
+
+    private finishBatch() {
+        this.pendingBatches = Math.max(0, this.pendingBatches - 1)
+        if (this.pendingBatches !== 0) return
+        const { allDone, hasFailed } = this.getUploadState()
+        if (!allDone) return
+        this.$emit('done')
+        if (!hasFailed) this.scheduleClear(1500)
+    }
+
+    private async cleanupPartialFile(fileNode: UploadFileNode): Promise<boolean> {
+        try {
+            await api.sftpRemove(this.hostId, `${fileNode.destDir.replace(/\/+$/, '')}/${fileNode.name}`)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    private retryFiles(files: UploadFileNode[]) {
+        const failedFiles = files.filter(f => !!f.error)
+        if (failedFiles.length === 0) return
+        if (this.clearTimer) {
+            clearTimeout(this.clearTimer)
+            this.clearTimer = null
+        }
+        for (const file of failedFiles) {
+            file.percent = 0
+            file.done = false
+            file.error = ''
+            file.cancelled = false
+            file.controller = undefined
+        }
+        this.pendingBatches++
+        this.uploadVersion++
+        this.uploadQueue = this.uploadQueue.then(() => this.doUploadFiles(failedFiles))
+    }
+
+    private pruneCancelledFromNode(node: UploadNode): UploadNode[] {
+        if (node.type === 'file') return node.cancelled ? [] : [node]
+        node.children = node.children.flatMap(child => this.pruneCancelledFromNode(child))
+        return node.children.length > 0 ? [node] : []
+    }
+
+    private cleanupAfterPrune() {
+        if (this.uploadNodes.length === 0) {
+            if (this.clearTimer) {
+                clearTimeout(this.clearTimer)
+                this.clearTimer = null
+            }
+            return
+        }
+        const { allDone, hasFailed } = this.getUploadState()
+        if (allDone && !hasFailed) this.scheduleClear(800)
     }
 
     // 供父组件通过 ref 调用
@@ -179,13 +298,26 @@ class UploadWidget extends Vue {
     }
 
     async doUpload(nodes: UploadNode[]) {
-        const files = flattenUploadTree(nodes)
+        await this.doUploadFiles(flattenUploadTree(nodes), nodes)
+    }
+
+    async doUploadFiles(files: UploadFileNode[], nodesForDirs?: UploadNode[]) {
         let failCount = 0
         let cancelCount = 0
-        // 收集本批次需要创建的目录（去重），包含空目录和文件所在目录
-        const dirsToCreate = new Set([...this.collectDirs(nodes), ...files.map(f => f.destDir)])
+        let cleanupFailCount = 0
+        // 收集本批次需要创建的目录（去重），包含空目录和文件所在目录，排除根目录
+        const dirsToCreate = new Set([
+            ...(nodesForDirs ? this.collectDirs(nodesForDirs) : []),
+            ...files.map(f => f.destDir),
+        ].filter(d => d !== '/'))
         for (const dir of dirsToCreate) {
+            if (this.isBatchCancelled(files, nodesForDirs)) break
             try { await api.sftpMkdir(this.hostId, { path: dir }) } catch { /* 已存在则忽略 */ }
+        }
+
+        if (this.isBatchCancelled(files, nodesForDirs)) {
+            this.finishBatch()
+            return
         }
 
         // 并发池上传
@@ -195,24 +327,38 @@ class UploadWidget extends Vue {
         const uploadOne = async (fileNode: UploadFileNode) => {
             if (fileNode.cancelled) { cancelCount++; return }
             const form = new FormData()
+            const controller = new AbortController()
+            fileNode.controller = controller
             form.append('file', fileNode.file)
             try {
                 await api.sftpUpload(this.hostId, fileNode.destDir, form, (percent) => {
                     fileNode.percent = percent
                     this.uploadVersion++
-                })
+                }, { signal: controller.signal })
                 fileNode.percent = 100
                 fileNode.done = true
             } catch (err: unknown) {
-                fileNode.error = (err instanceof Error ? err.message : '') || '上传失败'
-                fileNode.done = true
-                failCount++
+                if (axios.isCancel(err) || controller.signal.aborted || fileNode.cancelled) {
+                    fileNode.cancelled = true
+                    cancelCount++
+                } else {
+                    const cleanupOk = await this.cleanupPartialFile(fileNode)
+                    if (!cleanupOk) cleanupFailCount++
+                    fileNode.error = cleanupOk
+                        ? ((err instanceof Error ? err.message : '') || '上传失败，已尝试清理远端残留文件')
+                        : ((err instanceof Error ? err.message : '') || '上传失败，远端可能残留不完整文件')
+                    fileNode.done = true
+                    failCount++
+                }
+            } finally {
+                fileNode.controller = undefined
             }
             this.uploadVersion++
         }
 
         const worker = async () => {
             while (queue.length > 0) {
+                if (this.isBatchCancelled(files, nodesForDirs)) return
                 const fileNode = queue.shift()
                 if (!fileNode) return
                 await uploadOne(fileNode)
@@ -226,32 +372,35 @@ class UploadWidget extends Vue {
             if (failCount === 0) {
                 this.portal.showNotification('success', `上传成功（${total} 个文件）`)
             } else {
-                this.portal.showNotification('error', `${total - failCount} 个成功，${failCount} 个失败`)
+                this.portal.showNotification('error', `${total - failCount} 个成功，${failCount} 个失败${cleanupFailCount > 0 ? '，部分残留文件清理失败' : ''}`)
             }
         }
-        this.pendingBatches--
-        // 只有所有批次都完成后才清空列表
+        this.finishBatch()
+    }
+
+    cancelNode(node: UploadNode) {
+        this.markNodeCancelled(node)
+        this.uploadNodes = [...this.uploadNodes]
+        this.uploadVersion++
+        // 只有没有进行中的批次时才主动结束，避免与 finishBatch 双重 emit
         if (this.pendingBatches === 0) {
-            const allDone = flattenUploadTree(this.uploadNodes).every(f => f.done || f.cancelled)
+            const { allDone, hasFailed } = this.getUploadState()
             if (allDone) {
-                this.scheduleClear(1500)
                 this.$emit('done')
+                if (!hasFailed) this.scheduleClear(800)
             }
         }
     }
 
-    cancelNode(node: UploadNode) {
+    retryNode(node: UploadNode) {
         const files = node.type === 'file' ? [node] : flattenUploadTree((node as UploadDirNode).children)
-        for (const f of files) {
-            if (!f.done) f.cancelled = true
-        }
-        this.uploadNodes = [...this.uploadNodes]
+        this.retryFiles(files)
+    }
+
+    clearCancelledNode(node: UploadNode) {
+        this.uploadNodes = this.uploadNodes.flatMap(item => item === node ? this.pruneCancelledFromNode(item) : [item])
         this.uploadVersion++
-        const allDone = flattenUploadTree(this.uploadNodes).every(f => f.done || f.cancelled)
-        if (allDone) {
-            this.scheduleClear(800)
-            this.$emit('done')
-        }
+        this.cleanupAfterPrune()
     }
 }
 
@@ -270,6 +419,8 @@ export default toNative(UploadWidget)
       :node="uploadNode"
       :depth="0"
       @cancel="cancelNode(uploadNode)"
+      @retry="retryNode(uploadNode)"
+      @clear-cancelled="clearCancelledNode(uploadNode)"
     />
   </div>
 </template>

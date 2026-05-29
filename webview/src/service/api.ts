@@ -677,10 +677,11 @@ class ApiService {
         return http.get<SFTPListResult>(`ssh/sftp/${hostId}/ls`, { params: { path } })
     }
 
-    sftpUpload(hostId: string, path: string, formData: FormData, onProgress?: (percent: number) => void) {
+    sftpUpload(hostId: string, path: string, formData: FormData, onProgress?: (percent: number) => void, config: AxiosRequestConfig = {}) {
         return http.post<void>(`ssh/sftp/${hostId}/upload`, formData, {
-            params: { path },
-            headers: { 'Content-Type': 'multipart/form-data' },
+            ...config,
+            params: { ...config.params, path },
+            headers: { ...config.headers, 'Content-Type': 'multipart/form-data' },
             onUploadProgress: onProgress
                 ? (e) => { if (e.total) onProgress(Math.round((e.loaded / e.total) * 100)) }
                 : undefined,
