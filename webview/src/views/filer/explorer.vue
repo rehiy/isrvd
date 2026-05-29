@@ -230,11 +230,11 @@ export default toNative(FileExplorer)
                       <button v-if="portal.hasPerm('POST /api/filer/zip')" class="btn-icon btn-icon-amber" title="压缩" @click="zipModalRef.show(file)">
                         <i class="fas fa-file-zipper text-xs"></i>
                       </button>
+                      <button v-if="portal.hasPerm('POST /api/filer/rename')" class="btn-icon btn-icon-blue" title="重命名" @click="renameModalRef.show(file)">
+                        <i class="fas fa-spell-check text-xs"></i>
+                      </button>
                       <button v-if="portal.hasPerm('POST /api/filer/chmod')" class="btn-icon btn-icon-blue" title="权限" @click="chmodModalRef.show(file)">
                         <i class="fas fa-lock text-xs"></i>
-                      </button>
-                      <button v-if="portal.hasPerm('POST /api/filer/rename')" class="btn-icon btn-icon-blue" title="重命名" @click="renameModalRef.show(file)">
-                        <i class="fas fa-pen text-xs"></i>
                       </button>
                       <button v-if="portal.hasPerm('POST /api/filer/delete')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                         <i class="fas fa-trash text-xs"></i>
@@ -260,11 +260,11 @@ export default toNative(FileExplorer)
                       >
                         <i class="fas fa-file-pen text-xs"></i>
                       </button>
+                      <button v-if="portal.hasPerm('POST /api/filer/rename')" class="btn-icon btn-icon-blue" title="重命名" @click="renameModalRef.show(file)">
+                        <i class="fas fa-spell-check text-xs"></i>
+                      </button>
                       <button v-if="portal.hasPerm('POST /api/filer/chmod')" class="btn-icon btn-icon-blue" title="权限" @click="chmodModalRef.show(file)">
                         <i class="fas fa-lock text-xs"></i>
-                      </button>
-                      <button v-if="portal.hasPerm('POST /api/filer/rename')" class="btn-icon btn-icon-blue" title="重命名" @click="renameModalRef.show(file)">
-                        <i class="fas fa-pen text-xs"></i>
                       </button>
                       <button v-if="portal.hasPerm('POST /api/filer/delete')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                         <i class="fas fa-trash text-xs"></i>
@@ -322,11 +322,11 @@ export default toNative(FileExplorer)
                 <button v-if="portal.hasPerm('POST /api/filer/zip')" class="btn-icon btn-icon-amber" title="压缩" @click="zipModalRef.show(file)">
                   <i class="fas fa-file-zipper text-xs"></i><span class="text-xs ml-1">压缩</span>
                 </button>
+                <button v-if="portal.hasPerm('POST /api/filer/rename')" class="btn-icon btn-icon-blue" title="重命名" @click="renameModalRef.show(file)">
+                  <i class="fas fa-spell-check text-xs"></i><span class="text-xs ml-1">重命名</span>
+                </button>
                 <button v-if="portal.hasPerm('POST /api/filer/chmod')" class="btn-icon btn-icon-blue" title="权限" @click="chmodModalRef.show(file)">
                   <i class="fas fa-lock text-xs"></i><span class="text-xs ml-1">权限</span>
-                </button>
-                <button v-if="portal.hasPerm('POST /api/filer/rename')" class="btn-icon btn-icon-blue" title="重命名" @click="renameModalRef.show(file)">
-                  <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">重命名</span>
                 </button>
                 <button v-if="portal.hasPerm('POST /api/filer/delete')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                   <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
@@ -352,11 +352,11 @@ export default toNative(FileExplorer)
                 >
                   <i class="fas fa-file-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
                 </button>
+                <button v-if="portal.hasPerm('POST /api/filer/rename')" class="btn-icon btn-icon-blue" title="重命名" @click="renameModalRef.show(file)">
+                  <i class="fas fa-spell-check text-xs"></i><span class="text-xs ml-1">重命名</span>
+                </button>
                 <button v-if="portal.hasPerm('POST /api/filer/chmod')" class="btn-icon btn-icon-blue" title="权限" @click="chmodModalRef.show(file)">
                   <i class="fas fa-lock text-xs"></i><span class="text-xs ml-1">权限</span>
-                </button>
-                <button v-if="portal.hasPerm('POST /api/filer/rename')" class="btn-icon btn-icon-blue" title="重命名" @click="renameModalRef.show(file)">
-                  <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">重命名</span>
                 </button>
                 <button v-if="portal.hasPerm('POST /api/filer/delete')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                   <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
