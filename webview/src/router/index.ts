@@ -209,12 +209,13 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/ssh/hosts',
     name: 'ssh-hosts',
-    component: () => import('@/views/terminal/hosts.vue')
+    component: () => import('@/views/ssh/hosts.vue')
   },
   {
-    path: '/ssh/to/:id',
-    name: 'ssh-terminal',
-    component: () => import('@/views/terminal/ssh.vue')
+    path: '/ssh/host/:id',
+    name: 'ssh-client',
+    component: () => import('@/views/ssh/client.vue'),
+    meta: { title: 'SSH 客户端' }
   },
   {
     path: '/account/members',

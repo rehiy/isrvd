@@ -6,12 +6,12 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { SSHHostInfo } from '@/service/types'
 
-import * as SSHTerminal from '@/helper/ssh'
+import * as SSHClient from '@/helper/ssh'
 
 import SftpPanel from './widget/sftp-panel.vue'
 
 @Component({ components: { SftpPanel } })
-class SSHTerminalPage extends Vue {
+class SSHClientPage extends Vue {
     portal = usePortal()
 
     @Ref readonly xtermRef!: HTMLDivElement
@@ -43,7 +43,7 @@ class SSHTerminalPage extends Vue {
     }
 
     unmounted() {
-        SSHTerminal.destroy()
+        SSHClient.destroy()
         this.connected = false
         this.cleanupDrag()
     }
@@ -62,11 +62,11 @@ class SSHTerminalPage extends Vue {
     handleConnect() {
         if (this.connected) return
         this.connected = true
-        SSHTerminal.create(this.xtermRef, this.portal.token || '', this.hostId)
+        SSHClient.create(this.xtermRef, this.portal.token || '', this.hostId)
     }
 
     handleDisconnect() {
-        SSHTerminal.destroy()
+        SSHClient.destroy()
         if (this.xtermRef) {
             this.xtermRef.innerHTML = ''
         }
@@ -93,7 +93,7 @@ class SSHTerminalPage extends Vue {
 
     fitTerminalDelayed() {
         setTimeout(() => {
-            SSHTerminal.fitTerminal()
+            SSHClient.fitTerminal()
         }, 100)
     }
 
@@ -124,7 +124,7 @@ class SSHTerminalPage extends Vue {
         this.isDragging = false
         this.cleanupDrag()
         this.$nextTick(() => {
-            SSHTerminal.fitTerminal()
+            SSHClient.fitTerminal()
         })
     }
 
@@ -136,11 +136,11 @@ class SSHTerminalPage extends Vue {
     }
 }
 
-export default toNative(SSHTerminalPage)
+export default toNative(SSHClientPage)
 </script>
 
 <template>
-  <div class="terminal-page">
+  <div class="ssh-client-page">
     <div ref="containerRef" class="h-full card flex flex-col overflow-hidden">
       <!-- Toolbar -->
       <div class="card-toolbar">
