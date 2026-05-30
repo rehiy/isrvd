@@ -23,11 +23,18 @@ class SystemOverview extends Vue {
             { label: '主机名', value: s.hostName, icon: 'fa-server', bgColor: 'bg-blue-500' },
             { label: '操作系统', value: `${s.platform} / ${s.kernelArch}`, icon: 'fa-desktop', bgColor: 'bg-indigo-500' },
             { label: 'CPU 核心', value: `${s.cpuCore} 物理 / ${s.cpuCoreLogic} 逻辑`, icon: 'fa-microchip', bgColor: 'bg-emerald-500' },
-            { label: '运行时间', value: this.fmtUptime(s.uptime), icon: 'fa-clock', bgColor: 'bg-amber-500' },
         ]
-        // 如果有版本信息，插入到最前面
+        // 添加内存信息（放在 CPU 后面）
+        if (s.memoryTotal > 0) {
+            const usedGB = (s.memoryUsed / 1024 / 1024 / 1024).toFixed(1)
+            const totalGB = (s.memoryTotal / 1024 / 1024 / 1024).toFixed(1)
+            cards.push({ label: '内存使用',  value: `${usedGB}GB / ${totalGB}GB`, icon: 'fa-memory', bgColor: 'bg-rose-500'})
+        }
+        // 继续添加其他信息
+        cards.push({ label: '运行时间', value: this.fmtUptime(s.uptime), icon: 'fa-clock', bgColor: 'bg-amber-500' })
+        // 如果有版本信息，放到最后
         if (this.systemInfo.version) {
-            cards.unshift({ label: '程序版本', value: this.systemInfo.version, icon: 'fa-code-branch', bgColor: 'bg-purple-500' })
+            cards.push({ label: '程序版本', value: this.systemInfo.version, icon: 'fa-code-branch', bgColor: 'bg-purple-500' })
         }
         return cards
     }
