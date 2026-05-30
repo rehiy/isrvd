@@ -78,13 +78,13 @@ skills/isrvd/
 
 | 代码变更位置 | 需同步更新的文档 |
 |---|---|
-| `internal/server/ctrl_docker.go` | `skills/isrvd/docs/docker/` 下对应资源文件 |
-| `internal/server/ctrl_swarm.go` | `skills/isrvd/docs/swarm/` 下对应资源文件 |
-| `internal/server/ctrl_apisix.go` | `skills/isrvd/docs/apisix/` 下对应资源文件 |
-| `internal/server/ctrl_caddy.go` | `skills/isrvd/docs/caddy/` 下对应资源文件 |
-| `internal/server/ctrl_compose.go` | `skills/isrvd/docs/compose.md` |
-| `internal/server/ctrl_cron.go` | `skills/isrvd/docs/system/cron.md` |
-| `internal/server/ctrl_system.go` / `ctrl_account.go` | `skills/isrvd/docs/system/` 下对应文件 |
+| `internal/server/ctrl_docker.go` | `docs/references/docker/` 下对应资源文件 |
+| `internal/server/ctrl_swarm.go` | `docs/references/swarm/` 下对应资源文件 |
+| `internal/server/ctrl_apisix.go` | `docs/references/apisix/` 下对应资源文件 |
+| `internal/server/ctrl_caddy.go` | `docs/references/caddy/` 下对应资源文件 |
+| `internal/server/ctrl_compose.go` | `docs/references/compose.md` |
+| `internal/server/ctrl_cron.go` | `docs/references/system/cron.md` |
+| `internal/server/ctrl_system.go` / `ctrl_account.go` | `docs/references/system/` 下对应文件 |
 | `pkgs/*/`（数据结构变更） | 对应 docs 文件中的字段表 |
 | 新增路由/模块 | `skills/isrvd/SKILL.md` 索引表 + 决策树 |
 | 脚本相关变更 | `skills/isrvd/scripts/api.sh` |
