@@ -52,8 +52,8 @@ class SystemGo extends Vue {
                 tooltip: {
                     backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
                     callbacks: {
-                        label: (ctx: any) => {
-                            const value = ctx.parsed.y
+                        label: (ctx: { parsed: { y: number | null }; dataset: { label?: string } }) => {
+                            const value = ctx.parsed.y ?? 0
                             const label = ctx.dataset.label || ''
                             if (label.includes('GC') || label === 'Goroutine' || label === '堆对象') {
                                 return `${label}: ${value}`
@@ -67,7 +67,7 @@ class SystemGo extends Vue {
                 x: { display: false },
                 y: {
                     display: true, beginAtZero: true, grid: { color: 'rgba(148,163,184,0.08)' }, border: { display: false },
-                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => fmtSize(Number(v)) }
+                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4 }
                 }
             },
             elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 1.5 } }
@@ -150,22 +150,52 @@ class SystemGo extends Vue {
                     labels: [...this.goroutineHistory.labels],
                     datasets: [
                         this.makeDataset(this.goroutineHistory.goroutine, '#8b5cf6', 'Goroutine'),
-                        this.makeDataset(this.goroutineHistory.gc, '#ef4444', 'GC 次数'),
-                        { ...this.makeDataset(this.goroutineHistory.heapObjects, '#22c55e', '堆对象'), yAxisID: 'y1' }
+                        { ...this.makeDataset(this.goroutineHistory.heapObjects, '#22c55e', '堆对象'), yAxisID: 'y1' },
+                        { ...this.makeDataset(this.goroutineHistory.gc, '#ef4444', 'GC 次数'), yAxisID: 'y2' }
                     ]
                 },
                 options: {
-                    ...this.goChartOptions(),
+                    responsive: true, maintainAspectRatio: false, animation: false,
+                    interaction: { intersect: false, mode: 'index' as const },
+                    plugins: {
+                        legend: { display: true, position: 'bottom' as const, labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
+                        tooltip: {
+                            backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
+                            callbacks: {
+                                label: (ctx: { parsed: { y: number | null }; dataset: { label?: string } }) => {
+                                    const value = ctx.parsed.y
+                                    const label = ctx.dataset.label || ''
+                                    return `${label}: ${value}`
+                                }
+                            }
+                        }
+                    },
                     scales: {
-                        ...this.goChartOptions().scales,
+                        x: { display: false },
+                        y: {
+                            type: 'linear' as const,
+                            display: true, beginAtZero: true, position: 'left' as const,
+                            grid: { color: 'rgba(148,163,184,0.08)' }, border: { display: false },
+                            ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4 }
+                        },
                         y1: {
+                            type: 'linear' as const,
+                            display: false,
+                            position: 'right' as const,
+                            beginAtZero: true,
+                            grid: { display: false },
+                            border: { display: false }
+                        },
+                        y2: {
+                            type: 'linear' as const,
                             display: false,
                             position: 'right' as const,
                             beginAtZero: true,
                             grid: { display: false },
                             border: { display: false }
                         }
-                    }
+                    },
+                    elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 1.5 } }
                 }
             }))
         }
@@ -213,8 +243,8 @@ class SystemGo extends Vue {
         if (this.goroutineChart) {
             this.goroutineChart.data.labels = [...this.goroutineHistory.labels]
             this.goroutineChart.data.datasets[0].data = [...this.goroutineHistory.goroutine]
-            this.goroutineChart.data.datasets[1].data = [...this.goroutineHistory.gc]
-            this.goroutineChart.data.datasets[2].data = [...this.goroutineHistory.heapObjects]
+            this.goroutineChart.data.datasets[1].data = [...this.goroutineHistory.heapObjects]
+            this.goroutineChart.data.datasets[2].data = [...this.goroutineHistory.gc]
             this.goroutineChart.update()
         }
         if (this.stackChart) {
@@ -352,23 +382,23 @@ export default toNative(SystemGo)
       <!-- Goroutine & GC & 堆对象折线图 -->
       <div class="px-4 py-3">
         <div class="flex items-center justify-between mb-2">
-          <div v-if="current" class="flex items-center gap-3 text-xs text-slate-400">
-            <span class="flex items-center gap-1" title="最后 GC 时间">
-              <i class="fas fa-clock mr-1"></i>{{ lastGCTime }}
-            </span>
-          </div>
+          <span class="text-xs font-medium text-slate-500">计数器</span>
           <div v-if="current" class="flex items-center gap-3 text-xs">
+            <span class="flex items-center gap-1" title="最后 GC 时间">
+              <i class="fas fa-clock mr-1"></i>
+              <span class="font-mono text-slate-600">{{ lastGCTime }}</span>
+            </span>
             <span class="flex items-center gap-1">
               <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ current.numGoroutine }}</span>
             </span>
             <span class="flex items-center gap-1">
-              <span class="w-3 h-0.5 bg-red-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ current.numGC }}</span>
-            </span>
-            <span class="flex items-center gap-1">
               <span class="w-3 h-0.5 bg-green-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ current.heapObjects }}</span>
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="w-3 h-0.5 bg-red-500 rounded-full"></span>
+              <span class="font-mono text-slate-600">{{ current.numGC }}</span>
             </span>
           </div>
         </div>
