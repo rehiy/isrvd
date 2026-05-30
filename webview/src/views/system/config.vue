@@ -177,7 +177,7 @@ export default toNative(Config)
       <p class="text-slate-500">加载中...</p>
     </div>
 
-    <form v-else class="p-4 md:p-6" @submit.prevent="saveAll">
+    <form v-if="portal.hasPerm('PATCH /api/system/config')" class="p-4 md:p-6" @submit.prevent="saveAll">
       <!-- 服务器配置 -->
       <section v-if="activeTab === 'server'" class="max-w-3xl space-y-4">
         <div>
@@ -367,7 +367,7 @@ export default toNative(Config)
           <input v-model="link.url" type="text" placeholder="https://example.com" class="input" />
           <!-- 图标选择器 -->
           <IconSelect v-model="link.icon" />
-          <button type="button" class="btn-icon btn-icon-red w-11 h-11" @click="removeLink(index)">
+          <button v-if="portal.hasPerm('PATCH /api/system/config')" type="button" class="btn-icon btn-icon-red w-11 h-11" @click="removeLink(index)">
             <i class="fas fa-trash-can text-sm"></i>
           </button>
         </div>

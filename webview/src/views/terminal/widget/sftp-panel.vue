@@ -7,7 +7,7 @@ import api from '@/service/api'
 import type { SFTPFileInfo, SFTPListResult } from '@/service/types'
 
 import { type UploadNode, buildUploadTree, shouldIgnoreUploadEntry } from '@/helper/ssh'
-import { formatFileSize, formatUnixTime, getFileIcon, joinPath, downloadBlob } from '@/helper/utils'
+import { formatFileSize, formatUnixTime, getFileIcon, joinPath, downloadBlob, isEditableFile, isPreviewableFile } from '@/helper/utils'
 
 import SftpChmodModal from './sftp-chmod-modal.vue'
 import SftpModifyModal from './sftp-modify-modal.vue'
@@ -47,6 +47,10 @@ class SftpPanel extends Vue {
 
     // ─── 下载状态 ───
     downloadingFile = ''
+
+    // ─── 工具方法 ───
+    isEditableFile = isEditableFile
+    isPreviewableFile = isPreviewableFile
 
     // ─── 计算属性 ───
     get sftpPathParts() {
@@ -329,10 +333,10 @@ export default toNative(SftpPanel)
         <button class="btn-icon btn-icon-slate" title="刷新" :disabled="sftpLoading" @click="sftpLoad()">
           <i class="fas fa-rotate text-xs" :class="{ 'animate-spin': sftpLoading }"></i>
         </button>
-        <button class="btn-icon btn-icon-slate" title="新建目录" @click="startMkdir()">
+        <button v-if="portal.hasPerm('POST /api/ssh/sftp/:id/mkdir')" class="btn-icon btn-icon-slate" title="新建目录" @click="startMkdir()">
           <i class="fas fa-folder-plus text-xs"></i>
         </button>
-        <button class="btn-icon btn-icon-teal" title="上传文件" @click="triggerUpload()">
+        <button v-if="portal.hasPerm('POST /api/ssh/sftp/:id/write')" class="btn-icon btn-icon-teal" title="上传文件" @click="triggerUpload()">
           <i class="fas fa-upload text-xs"></i>
         </button>
         <input ref="uploadInputRef" type="file" multiple class="hidden" @change="handleUpload" />
@@ -454,6 +458,7 @@ export default toNative(SftpPanel)
                 </template>
                 <template v-else>
                   <button
+                    v-if="portal.hasPerm('GET /api/ssh/sftp/:id/download')"
                     class="btn-icon !w-6 !h-6"
                     :class="downloadingFile === file.name ? 'btn-icon-teal' : 'btn-icon-slate'"
                     title="下载"
@@ -463,16 +468,16 @@ export default toNative(SftpPanel)
                     <i class="fas text-xs" :class="downloadingFile === file.name ? 'fa-spinner animate-spin' : 'fa-download'"></i>
                   </button>
                 </template>
-                <button class="btn-icon btn-icon-blue !w-6 !h-6" title="重命名" @click="startRename(file)">
+                <button v-if="portal.hasPerm('POST /api/ssh/sftp/:id/rename')" class="btn-icon btn-icon-blue !w-6 !h-6" title="重命名" @click="startRename(file)">
                   <i class="fas fa-spell-check text-xs"></i>
                 </button>
-                <button v-if="!file.isDir" class="btn-icon btn-icon-blue !w-6 !h-6" title="编辑" @click="startModify(file)">
-                  <i class="fas fa-edit text-xs"></i>
+                <button v-if="!file.isDir && isEditableFile(file.name) && portal.hasPerm('GET /api/ssh/sftp/:id/read') && portal.hasPerm('POST /api/ssh/sftp/:id/write')" class="btn-icon btn-icon-blue !w-6 !h-6" title="编辑" @click="startModify(file)">
+                  <i class="fas fa-file-pen text-xs"></i>
                 </button>
-                <button class="btn-icon btn-icon-slate !w-6 !h-6" title="修改权限" @click="startChmod(file)">
+                <button v-if="portal.hasPerm('POST /api/ssh/sftp/:id/chmod')" class="btn-icon btn-icon-slate !w-6 !h-6" title="修改权限" @click="startChmod(file)">
                   <i class="fas fa-key text-xs"></i>
                 </button>
-                <button class="btn-icon btn-icon-red !w-6 !h-6" title="删除" @click="sftpDelete(file)">
+                <button v-if="portal.hasPerm('DELETE /api/ssh/sftp/:id/rm')" class="btn-icon btn-icon-red !w-6 !h-6" title="删除" @click="sftpDelete(file)">
                   <i class="fas fa-trash text-xs"></i>
                 </button>
               </div>
