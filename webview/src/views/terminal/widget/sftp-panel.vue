@@ -426,10 +426,10 @@ export default toNative(SftpPanel)
                     <i class="fas text-xs" :class="downloadingFile === file.name ? 'fa-spinner animate-spin' : 'fa-download'"></i>
                   </button>
                 </template>
-                <button class="btn-icon btn-icon-slate !w-6 !h-6" title="重命名" @click="startRename(file)">
+                <button class="btn-icon btn-icon-blue !w-6 !h-6" title="重命名" @click="startRename(file)">
                   <i class="fas fa-spell-check text-xs"></i>
                 </button>
-                <button v-if="!file.isDir" class="btn-icon btn-icon-slate !w-6 !h-6" title="编辑" @click="startModify(file)">
+                <button v-if="!file.isDir" class="btn-icon btn-icon-blue !w-6 !h-6" title="编辑" @click="startModify(file)">
                   <i class="fas fa-edit text-xs"></i>
                 </button>
                 <button class="btn-icon btn-icon-slate !w-6 !h-6" title="修改权限" @click="startChmod(file)">
