@@ -135,9 +135,9 @@ export default toNative(SystemUpdater)
 <template>
   <template v-if="versionCheck?.update">
     <!-- 版本更新横幅 -->
-    <div class="flex items-center justify-between gap-3 mb-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100">
       <!-- 左侧：图标 + 文案 -->
-      <div class="flex items-center gap-3 min-w-0">
+      <div class="flex items-center gap-3 min-w-0 flex-1">
         <div class="row-icon bg-emerald-500 text-white">
           <i class="fas fa-arrow-up text-xs"></i>
         </div>
@@ -151,39 +151,39 @@ export default toNative(SystemUpdater)
         </div>
       </div>
 
-      <!-- 右侧：操作按钮 -->
-      <div class="flex items-center gap-2 flex-shrink-0">
+      <!-- 右侧：操作按钮（小屏垂直排列，大屏水平排列） -->
+      <div class="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 w-full sm:w-auto sm:flex-shrink-0">
         <a
           :href="versionCheck.release"
           target="_blank"
           rel="noopener noreferrer"
-          class="btn btn-secondary"
+          class="btn btn-secondary w-full xs:w-auto"
           title="查看更新日志"
         >
           <i class="fas fa-file-alt"></i>
-          <span class="hidden xs:inline">更新日志</span>
+          <span>更新日志</span>
         </a>
         <!-- 二进制原地升级 -->
         <button
           v-if="portal.hasPerm('POST /api/overview/upgrade')"
-          class="btn btn-primary"
+          class="btn btn-primary w-full xs:w-auto"
           title="下载最新版本并重启"
           :disabled="deploying || upgrading"
           @click="handleBinaryUpgrade"
         >
           <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying || upgrading }"></i>
-          <span class="hidden xs:inline">{{ deploying ? '升级中...' : upgrading ? '等待重启...' : '二进制升级' }}</span>
+          <span>{{ deploying ? '升级中...' : upgrading ? '等待重启...' : '二进制升级' }}</span>
         </button>
         <!-- Docker 容器升级（仅 Docker 环境） -->
         <button
           v-if="inDocker && portal.hasPerm('POST /api/docker/container')"
-          class="btn btn-emerald"
+          class="btn btn-emerald w-full xs:w-auto"
           title="升级当前容器"
           :disabled="deploying || upgrading"
           @click="openUpdaterModal"
         >
           <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying || upgrading }"></i>
-          <span class="hidden xs:inline">{{ deploying ? '升级中...' : upgrading ? '等待重启...' : '容器升级' }}</span>
+          <span>{{ deploying ? '升级中...' : upgrading ? '等待重启...' : '容器升级' }}</span>
         </button>
       </div>
     </div>

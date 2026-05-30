@@ -81,14 +81,14 @@ export default toNative(SystemOverview)
       <div class="w-6 h-6 spinner mr-2"></div>
       <span class="text-slate-400 text-sm">加载中...</span>
     </div>
-    <div v-else-if="statCards.length" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-      <div v-for="card in statCards" :key="card.label" class="stat-card">
-        <div class="flex flex-col items-center gap-2 text-center">
-          <div :class="['page-icon', card.bgColor]">
-            <i :class="['fas', card.icon, 'text-white']"></i>
-          </div>
-          <p class="text-sm font-semibold text-slate-800 truncate">{{ card.value }}</p>
-          <p class="text-xs text-slate-500 leading-tight">{{ card.label }}</p>
+    <div v-else-if="statCards.length" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div v-for="card in statCards" :key="card.label" class="stat-card items-center">
+        <div :class="['page-icon', card.bgColor]">
+          <i :class="['fas', card.icon, 'text-white']"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-xs text-slate-400 mb-0.5">{{ card.label }}</p>
+          <p class="font-bold text-slate-800 truncate">{{ card.value }}</p>
         </div>
       </div>
     </div>

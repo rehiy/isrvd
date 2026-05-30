@@ -72,14 +72,14 @@ export default toNative(DockerOverview)
     </div>
 
     <!-- Stats Grid -->
-    <div v-else-if="info" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-      <div v-for="card in statCards" :key="card.key" class="stat-card">
-        <div class="flex flex-col items-center gap-2 text-center">
-          <div :class="['page-icon', card.bgColor]">
-            <i :class="['fas', card.icon, 'text-white']"></i>
-          </div>
-          <p class="text-2xl font-bold text-slate-800">{{ info[card.key] || 0 }}</p>
-          <p class="text-xs text-slate-500 leading-tight">{{ card.label }}</p>
+    <div v-else-if="info" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div v-for="card in statCards" :key="card.key" class="stat-card items-center">
+        <div :class="['page-icon', card.bgColor]">
+          <i :class="['fas', card.icon, 'text-white']"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-xs text-slate-400 mb-0.5">{{ card.label }}</p>
+          <p class="font-semibold text-slate-800">{{ info[card.key] || 0 }}</p>
         </div>
       </div>
     </div>
