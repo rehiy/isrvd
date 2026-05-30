@@ -140,6 +140,15 @@ class SystemDisk extends Vue {
         chart.update('none')
     }
 
+    clearData() {
+        this.current = null
+        this.currentDiskIO = []
+        this.diskIOHistory = {}
+        this.lastDiskIO = {}
+        Object.values(this.diskIOCharts).forEach(c => c.destroy())
+        this.diskIOCharts = {}
+    }
+
     pushData(payload: SystemStat, ts: number) {
         const s = payload.system
         this.current = { diskTotal: s.diskTotal, diskUsed: s.diskUsed, diskPartition: this.sortedDiskPartitions(s.diskPartition) }
@@ -231,15 +240,15 @@ export default toNative(SystemDisk)
               <div class="flex items-center gap-4 text-xs">
                 <span class="flex items-center gap-1">
                   <i class="fas fa-arrow-down text-amber-500"></i>
-                  <span class="font-mono text-slate-600 w-20 text-right">{{ fmtRate(currentDiskRate(devShortName(dp.device), 'read')) }}</span>
+                  <span class="font-mono text-slate-600">{{ fmtRate(currentDiskRate(devShortName(dp.device), 'read')) }}</span>
                 </span>
                 <span class="flex items-center gap-1">
                   <i class="fas fa-arrow-up text-violet-500"></i>
-                  <span class="font-mono text-slate-600 w-20 text-right">{{ fmtRate(currentDiskRate(devShortName(dp.device), 'write')) }}</span>
+                  <span class="font-mono text-slate-600">{{ fmtRate(currentDiskRate(devShortName(dp.device), 'write')) }}</span>
                 </span>
               </div>
             </div>
-            <div class="relative h-16 bg-slate-50 rounded-lg overflow-hidden">
+            <div class="relative h-28 bg-slate-50 rounded-lg overflow-hidden">
               <canvas :data-disk="devShortName(dp.device)" class="w-full h-full"></canvas>
               <div v-if="!diskIOHistory[devShortName(dp.device)]?.read?.length" class="absolute inset-0 flex items-center justify-center">
                 <span class="text-xs text-slate-300">等待数据...</span>

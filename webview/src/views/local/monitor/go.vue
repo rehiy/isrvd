@@ -6,6 +6,7 @@ import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 import type { SystemStat, SystemGoRuntimeStat } from '@/service/types'
 
 import Chart from '@/helper/chart'
+import { hexToRgba } from '@/helper/utils'
 
 const MAX_HISTORY = 60
 
@@ -43,33 +44,40 @@ class SystemGo extends Vue {
         return this.lastGCTime
     }
 
-    bgChartOptions(title?: string): ChartOptions<'line'> {
+    goChartOptions(): ChartOptions<'line'> {
+        const fmtSize = (v: number) => this.fmtSize(v)
         return {
             responsive: true, maintainAspectRatio: false, animation: false,
             interaction: { intersect: false, mode: 'index' as const },
             plugins: {
-                legend: { display: false },
-                title: title ? { display: true, text: title, font: { size: 10 }, color: '#64748b' } : undefined,
+                legend: { display: true, position: 'bottom' as const, labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
                 tooltip: {
-                    backgroundColor: 'rgba(15,23,42,0.85)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 6, cornerRadius: 6,
+                    backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
                     callbacks: {
                         label: (ctx: any) => {
                             const value = ctx.parsed.y
                             const label = ctx.dataset.label || ''
-                            if (label.includes('GC') || label === 'Goroutine') {
+                            if (label.includes('GC') || label === 'Goroutine' || label === '堆对象') {
                                 return `${label}: ${value}`
                             }
-                            return `${label}: ${this.fmtSize(value)}`
+                            return `${label}: ${fmtSize(value)}`
                         }
                     }
                 }
             },
             scales: {
                 x: { display: false },
-                y: { display: false, beginAtZero: true, grid: { display: false }, border: { display: false } }
+                y: {
+                    display: true, beginAtZero: true, grid: { color: 'rgba(148,163,184,0.08)' }, border: { display: false },
+                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => fmtSize(Number(v)) }
+                }
             },
-            elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 2 } }
+            elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 1.5 } }
         }
+    }
+
+    makeDataset(data: number[], color: string, label: string) {
+        return { label, data: [...data], borderColor: color, backgroundColor: hexToRgba(color, 0.1), fill: true }
     }
 
     pushData(payload: SystemStat, ts: number) {
@@ -93,11 +101,6 @@ class SystemGo extends Vue {
         this.goroutineHistory.goroutine.push(payload.go.numGoroutine)
         this.goroutineHistory.gc.push(payload.go.numGC)
         this.goroutineHistory.heapObjects.push(payload.go.heapObjects)
-
-        // Goroutine 和 GC 数据（合并）
-        this.goroutineHistory.labels.push(label)
-        this.goroutineHistory.goroutine.push(payload.go.numGoroutine)
-        this.goroutineHistory.gc.push(payload.go.numGC)
 
         // 栈内存数据
         this.stackHistory.labels.push(label)
@@ -140,15 +143,15 @@ class SystemGo extends Vue {
                 data: {
                     labels: [...this.memHistory.labels],
                     datasets: [
-                        { label: '已分配', data: [...this.memHistory.alloc], borderColor: 'rgba(59,130,246,0.6)', backgroundColor: 'rgba(59,130,246,0.08)', fill: true },
-                        { label: '堆已分配', data: [...this.memHistory.heapAlloc], borderColor: 'rgba(16,185,129,0.6)', backgroundColor: 'rgba(16,185,129,0.08)', fill: true },
-                        { label: '堆使用中', data: [...this.memHistory.heapInuse], borderColor: 'rgba(245,158,11,0.6)', backgroundColor: 'rgba(245,158,11,0.08)', fill: true },
-                        { label: '堆空闲', data: [...this.memHistory.heapIdle], borderColor: 'rgba(168,162,158,0.6)', backgroundColor: 'rgba(168,162,158,0.08)', fill: true },
-                        { label: '堆已释放', data: [...this.memHistory.heapReleased], borderColor: 'rgba(244,63,94,0.6)', backgroundColor: 'rgba(244,63,94,0.08)', fill: true },
-                        { label: '堆已申请', data: [...this.memHistory.heapSys], borderColor: 'rgba(139,92,246,0.6)', backgroundColor: 'rgba(139,92,246,0.08)', fill: true }
+                        this.makeDataset(this.memHistory.alloc, '#3b82f6', '已分配'),
+                        this.makeDataset(this.memHistory.heapAlloc, '#10b981', '堆已分配'),
+                        this.makeDataset(this.memHistory.heapInuse, '#f59e0b', '堆使用中'),
+                        this.makeDataset(this.memHistory.heapIdle, '#a8a29e', '堆空闲'),
+                        this.makeDataset(this.memHistory.heapReleased, '#f43f5e', '堆已释放'),
+                        this.makeDataset(this.memHistory.heapSys, '#8b5cf6', '堆已申请')
                     ]
                 },
-                options: this.bgChartOptions('堆内存')
+                options: this.goChartOptions()
             }))
         }
 
@@ -158,15 +161,15 @@ class SystemGo extends Vue {
                 data: {
                     labels: [...this.goroutineHistory.labels],
                     datasets: [
-                        { label: 'Goroutine', data: [...this.goroutineHistory.goroutine], borderColor: 'rgba(139,92,246,0.6)', backgroundColor: 'rgba(139,92,246,0.08)', fill: true },
-                        { label: 'GC 次数', data: [...this.goroutineHistory.gc], borderColor: 'rgba(239,68,68,0.6)', backgroundColor: 'rgba(239,68,68,0.08)', fill: true },
-                        { label: '堆对象', data: [...this.goroutineHistory.heapObjects], borderColor: 'rgba(34,197,94,0.6)', backgroundColor: 'rgba(34,197,94,0.08)', fill: true, yAxisID: 'y1' }
+                        this.makeDataset(this.goroutineHistory.goroutine, '#8b5cf6', 'Goroutine'),
+                        this.makeDataset(this.goroutineHistory.gc, '#ef4444', 'GC 次数'),
+                        { ...this.makeDataset(this.goroutineHistory.heapObjects, '#22c55e', '堆对象'), yAxisID: 'y1' }
                     ]
                 },
                 options: {
-                    ...this.bgChartOptions('Goroutine & GC & 堆对象'),
+                    ...this.goChartOptions(),
                     scales: {
-                        ...this.bgChartOptions().scales,
+                        ...this.goChartOptions().scales,
                         y1: {
                             display: false,
                             position: 'right' as const,
@@ -185,11 +188,11 @@ class SystemGo extends Vue {
                 data: {
                     labels: [...this.stackHistory.labels],
                     datasets: [
-                        { label: '栈已使用', data: [...this.stackHistory.stackInuse], borderColor: 'rgba(245,158,11,0.6)', backgroundColor: 'rgba(245,158,11,0.08)', fill: true },
-                        { label: '栈已申请', data: [...this.stackHistory.stackSys], borderColor: 'rgba(139,92,246,0.6)', backgroundColor: 'rgba(139,92,246,0.08)', fill: true }
+                        this.makeDataset(this.stackHistory.stackInuse, '#f59e0b', '栈已使用'),
+                        this.makeDataset(this.stackHistory.stackSys, '#8b5cf6', '栈已申请')
                     ]
                 },
-                options: this.bgChartOptions('栈内存')
+                options: this.goChartOptions()
             }))
         }
 
@@ -199,11 +202,11 @@ class SystemGo extends Vue {
                 data: {
                     labels: [...this.sysHistory.labels],
                     datasets: [
-                        { label: '累计分配', data: [...this.sysHistory.totalAlloc], borderColor: 'rgba(59,130,246,0.6)', backgroundColor: 'rgba(59,130,246,0.08)', fill: true },
-                        { label: '系统申请', data: [...this.sysHistory.sys], borderColor: 'rgba(16,185,129,0.6)', backgroundColor: 'rgba(16,185,129,0.08)', fill: true }
+                        this.makeDataset(this.sysHistory.totalAlloc, '#3b82f6', '累计分配'),
+                        this.makeDataset(this.sysHistory.sys, '#10b981', '系统申请')
                     ]
                 },
-                options: this.bgChartOptions('系统内存')
+                options: this.goChartOptions()
             }))
         }
     }
@@ -247,13 +250,14 @@ class SystemGo extends Vue {
         this.goroutineHistory = { labels: [], goroutine: [], gc: [], heapObjects: [] }
         this.stackHistory = { labels: [], stackInuse: [], stackSys: [] }
         this.sysHistory = { labels: [], totalAlloc: [], sys: [] }
-        ;[this.memChart, this.goroutineChart, this.stackChart, this.sysChart].forEach(chart => {
-            if (chart) {
-                chart.data.labels = []
-                chart.data.datasets.forEach(ds => { ds.data = [] })
-                chart.update()
-            }
-        })
+        this.memChart?.destroy()
+        this.goroutineChart?.destroy()
+        this.stackChart?.destroy()
+        this.sysChart?.destroy()
+        this.memChart = null
+        this.goroutineChart = null
+        this.stackChart = null
+        this.sysChart = null
     }
 
     mounted() {
@@ -280,77 +284,110 @@ export default toNative(SystemGo)
       <span class="text-sm font-semibold text-slate-700">Go 运行态</span>
       <span class="ml-auto text-xs text-slate-400 font-mono">{{ current.version }}</span>
     </div>
-
-    <!-- 堆内存折线图 -->
-    <div class="relative p-4 border-b border-slate-100">
-      <div class="flex items-center gap-4 mb-2">
-        <span class="text-xs font-medium text-slate-500">堆内存</span>
-        <div class="flex items-center gap-3 text-xs text-slate-400">
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-blue-500 rounded-full"></span>已分配</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-emerald-500 rounded-full"></span>堆已分配</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-amber-500 rounded-full"></span>堆使用中</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-stone-400 rounded-full"></span>堆空闲</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-rose-500 rounded-full"></span>堆已释放</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>堆已申请</span>
+    <div ref="goContainerRef" class="divide-y divide-slate-100">
+      <!-- 系统内存折线图 -->
+      <div class="px-4 py-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-medium text-slate-500">系统内存</span>
+          <div class="flex items-center gap-3 text-xs" v-if="current">
+            <span class="flex items-center gap-1">
+              <span class="w-3 h-0.5 bg-blue-500 rounded-full"></span>
+              <span class="font-mono text-slate-600">{{ fmtSize(current.totalAlloc) }}</span>
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="w-3 h-0.5 bg-emerald-500 rounded-full"></span>
+              <span class="font-mono text-slate-600">{{ fmtSize(current.sys) }}</span>
+            </span>
+          </div>
+        </div>
+        <div class="relative h-28 bg-slate-50 rounded-lg overflow-hidden">
+          <canvas ref="sysCanvasRef" class="w-full h-full"></canvas>
         </div>
       </div>
-      <div class="relative h-32">
-        <canvas ref="memCanvasRef" class="w-full h-full"></canvas>
+
+      <!-- 堆内存折线图 -->
+      <div class="px-4 py-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-medium text-slate-500">堆内存</span>
+          <div v-if="current" class="flex items-center gap-3 text-xs flex-wrap">
+            <span class="flex items-center gap-1">
+              <span class="w-3 h-0.5 bg-blue-500 rounded-full"></span>
+              <span class="font-mono text-slate-600">{{ fmtSize(current.alloc) }}</span>
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="w-3 h-0.5 bg-emerald-500 rounded-full"></span>
+              <span class="font-mono text-slate-600">{{ fmtSize(current.heapAlloc) }}</span>
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="w-3 h-0.5 bg-amber-500 rounded-full"></span>
+              <span class="font-mono text-slate-600">{{ fmtSize(current.heapInuse) }}</span>
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="w-3 h-0.5 bg-gray-400 rounded-full"></span>
+              <span class="font-mono text-slate-600">{{ fmtSize(current.heapIdle) }}</span>
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="w-3 h-0.5 bg-rose-500 rounded-full"></span>
+              <span class="font-mono text-slate-600">{{ fmtSize(current.heapReleased) }}</span>
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
+              <span class="font-mono text-slate-600">{{ fmtSize(current.heapSys) }}</span>
+            </span>
+          </div>
+        </div>
+        <div class="relative h-28 bg-slate-50 rounded-lg overflow-hidden">
+          <canvas ref="memCanvasRef" class="w-full h-full"></canvas>
+        </div>
+      </div>
+
+      <!-- 栈内存折线图 -->
+      <div class="px-4 py-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-medium text-slate-500">栈内存</span>
+          <div class="flex items-center gap-3 text-xs" v-if="current">
+            <span class="flex items-center gap-1">
+              <span class="w-3 h-0.5 bg-amber-500 rounded-full"></span>
+              <span class="font-mono text-slate-600">{{ fmtSize(current.stackInuse) }}</span>
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
+              <span class="font-mono text-slate-600">{{ fmtSize(current.stackSys) }}</span>
+            </span>
+          </div>
+        </div>
+        <div class="relative h-28 bg-slate-50 rounded-lg overflow-hidden">
+          <canvas ref="stackCanvasRef" class="w-full h-full"></canvas>
+        </div>
+      </div>
+
+      <!-- Goroutine & GC & 堆对象折线图 -->
+      <div class="px-4 py-3">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-3 text-xs text-slate-400" v-if="current">
+            <span class="flex items-center gap-1" title="最后 GC 时间">
+              <i class="fas fa-clock mr-1"></i>{{ lastGCTime }}
+            </span>
+          </div>
+          <div class="flex items-center gap-3 text-xs" v-if="current">
+            <span class="flex items-center gap-1">
+              <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
+              <span class="font-mono text-slate-600">{{ current.numGoroutine }}</span>
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="w-3 h-0.5 bg-red-500 rounded-full"></span>
+              <span class="font-mono text-slate-600">{{ current.numGC }}</span>
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="w-3 h-0.5 bg-green-500 rounded-full"></span>
+              <span class="font-mono text-slate-600">{{ current.heapObjects }}</span>
+            </span>
+          </div>
+        </div>
+        <div class="relative h-28 bg-slate-50 rounded-lg overflow-hidden">
+          <canvas ref="goroutineCanvasRef" class="w-full h-full"></canvas>
+        </div>
       </div>
     </div>
-
-    <!-- 栈内存折线图 -->
-    <div class="relative p-4 border-b border-slate-100">
-      <div class="flex items-center gap-4 mb-2">
-        <span class="text-xs font-medium text-slate-500">栈内存</span>
-        <div class="flex items-center gap-3 text-xs text-slate-400">
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-amber-500 rounded-full"></span>栈已使用</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>栈已申请</span>
-        </div>
-      </div>
-      <div class="relative h-32">
-        <canvas ref="stackCanvasRef" class="w-full h-full"></canvas>
-      </div>
-    </div>
-
-    <!-- 系统内存折线图 -->
-    <div class="relative p-4 border-b border-slate-100">
-      <div class="flex items-center gap-4 mb-2">
-        <span class="text-xs font-medium text-slate-500">系统内存</span>
-        <div class="flex items-center gap-3 text-xs text-slate-400">
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-blue-500 rounded-full"></span>累计分配</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-emerald-500 rounded-full"></span>系统申请</span>
-        </div>
-      </div>
-      <div class="relative h-32">
-        <canvas ref="sysCanvasRef" class="w-full h-full"></canvas>
-      </div>
-    </div>
-
-    <!-- Goroutine & GC & 堆对象折线图 -->
-    <div class="relative p-4 border-b border-slate-100">
-      <div class="flex items-center gap-4 mb-2">
-        <span class="text-xs font-medium text-slate-500">Goroutine & GC & 堆对象</span>
-        <div class="flex items-center gap-3 text-xs text-slate-400 ml-auto">
-          <span class="flex items-center gap-1" title="最后 GC 时间">
-            <i class="fas fa-clock mr-1"></i>{{ lastGCTime }}
-          </span>
-        </div>
-        <div class="flex items-center gap-3 text-xs text-slate-400">
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>Goroutine</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-red-500 rounded-full"></span>GC 次数</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-green-500 rounded-full"></span>堆对象</span>
-        </div>
-      </div>
-      <div class="flex items-center gap-4 mb-2">
-        <span class="text-lg font-bold text-slate-800 tabular-nums">{{ current.numGoroutine }}</span>
-        <span class="text-lg font-bold text-slate-800 tabular-nums">{{ current.numGC }}</span>
-        <span class="text-lg font-bold text-slate-800 tabular-nums">{{ current.heapObjects }}</span>
-      </div>
-      <div class="relative h-32">
-        <canvas ref="goroutineCanvasRef" class="w-full h-full"></canvas>
-      </div>
-    </div>
-
   </div>
 </template>

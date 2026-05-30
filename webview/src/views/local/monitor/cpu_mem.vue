@@ -129,6 +129,16 @@ class SystemCpuMem extends Vue {
         }
     }
 
+    clearData() {
+        this.current = null
+        this.cpuHistory = { labels: [], data: [] }
+        this.memHistory = { labels: [], data: [] }
+        this.cpuChart?.destroy()
+        this.memChart?.destroy()
+        this.cpuChart = null
+        this.memChart = null
+    }
+
     pushData(payload: SystemStat, ts: number) {
         const s = payload.system
         this.current = { cpuPercent: s.cpuPercent, cpuModel: s.cpuModel, memoryUsed: s.memoryUsed, memoryTotal: s.memoryTotal }

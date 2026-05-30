@@ -108,6 +108,14 @@ class SystemNetwork extends Vue {
         chart.update('none')
     }
 
+    clearData() {
+        this.currentIfaces = []
+        this.netHistory = {}
+        this.lastNetIO = {}
+        Object.values(this.netCharts).forEach(c => c.destroy())
+        this.netCharts = {}
+    }
+
     pushData(payload: SystemStat, ts: number) {
         const ifaces = payload.system?.netInterface || []
         const physicalIfaces = this.physicalInterfaces(ifaces)
@@ -182,15 +190,15 @@ export default toNative(SystemNetwork)
           <div class="flex items-center gap-4 text-xs">
             <span class="flex items-center gap-1">
               <i class="fas fa-arrow-down text-emerald-500"></i>
-              <span class="font-mono text-slate-600 w-20 text-right">{{ fmtRate(currentRate(ni.name, 'recv')) }}</span>
+              <span class="font-mono text-slate-600">{{ fmtRate(currentRate(ni.name, 'recv')) }}</span>
             </span>
             <span class="flex items-center gap-1">
               <i class="fas fa-arrow-up text-blue-500"></i>
-              <span class="font-mono text-slate-600 w-20 text-right">{{ fmtRate(currentRate(ni.name, 'sent')) }}</span>
+              <span class="font-mono text-slate-600">{{ fmtRate(currentRate(ni.name, 'sent')) }}</span>
             </span>
           </div>
         </div>
-        <div class="relative h-20 bg-slate-50 rounded-lg overflow-hidden">
+        <div class="relative h-28 bg-slate-50 rounded-lg overflow-hidden">
           <canvas :data-iface="ni.name" class="w-full h-full"></canvas>
           <div v-if="!netHistory[ni.name]?.labels?.length" class="absolute inset-0 flex items-center justify-center">
             <span class="text-xs text-slate-300">等待数据...</span>

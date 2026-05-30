@@ -23,6 +23,15 @@ class MonitorPage extends Vue {
     loading = true
     ready = false
 
+    // ─── 时间区间选择 ───
+    timeRanges = [
+        { label: '1小时', value: 3600 },
+        { label: '6小时', value: 21600 },
+        { label: '12小时', value: 43200 },
+        { label: '24小时', value: 86400 }
+    ]
+    selectedRange = 3600
+
     private pollTimer: ReturnType<typeof setInterval> | null = null
     private destroyed = false
 
@@ -59,8 +68,8 @@ class MonitorPage extends Vue {
 
     async loadHistory() {
         try {
-            const res = await api.overviewMonitor({ type: 'host', since: 3600 })
-            if (res.payload && res.payload.length > 0) {
+            const res = await api.overviewMonitor({ type: 'host', since: this.selectedRange })
+            if (res.payload && Array.isArray(res.payload) && res.payload.length > 0) {
                 for (const rec of res.payload) {
                     this.dispatchData(rec)
                 }
@@ -68,14 +77,26 @@ class MonitorPage extends Vue {
         } catch { /* ignore */ }
     }
 
+    clearAllData() {
+        this.cpuMemRef?.clearData()
+        this.gpuRef?.clearData()
+        this.diskRef?.clearData()
+        this.networkRef?.clearData()
+        this.goRef?.clearData()
+    }
+
+    async switchTimeRange(range: number) {
+        if (this.selectedRange === range) return
+        this.selectedRange = range
+        this.clearAllData()
+        await this.load()
+    }
+
     async loadData() {
-        this.loading = true
         try {
             const ok = await this.fetchLatest()
             if (ok) this.ready = true
-        } catch { /* ignore */ } finally {
-            this.loading = false
-        }
+        } catch { /* ignore */ }
     }
 
     async poll() {
@@ -105,9 +126,13 @@ class MonitorPage extends Vue {
     }
 
     async load() {
+        this.loading = true
+        this.ready = false
         this.stopPoll()
+        this.clearAllData()
         await this.loadHistory()
         await this.loadData()
+        this.loading = false
         this.startPoll()
     }
 
@@ -132,17 +157,54 @@ export default toNative(MonitorPage)
 <template>
   <div class="card">
     <div class="card-toolbar">
-      <div class="flex items-center gap-3">
-        <div class="page-icon bg-blue-600">
-          <i class="fas fa-desktop text-white text-sm"></i>
+      <!-- 桌面端 -->
+      <div class="hidden md:flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="page-icon bg-blue-600">
+            <i class="fas fa-desktop text-white text-sm"></i>
+          </div>
+          <div>
+            <h1 class="text-lg font-semibold text-slate-800">系统监控</h1>
+            <p class="text-xs text-slate-500">实时系统资源监控</p>
+          </div>
         </div>
-        <div>
-          <h1 class="text-lg font-semibold text-slate-800">系统监控</h1>
-          <p class="text-xs text-slate-500">实时系统资源监控</p>
+        <div class="flex items-center gap-3">
+          <div class="tab-group">
+            <button
+              v-for="range in timeRanges"
+              :key="range.value"
+              type="button"
+              :class="['tab-btn', selectedRange === range.value ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']"
+              @click="switchTimeRange(range.value)"
+            >
+              {{ range.label }}
+            </button>
+          </div>
         </div>
       </div>
-      <div class="flex items-center gap-2 flex-shrink-0">
-        <!-- 这里可以添加刷新等功能按钮 -->
+      <!-- 移动端 -->
+      <div class="flex md:hidden items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class="page-icon bg-blue-600">
+            <i class="fas fa-desktop text-white text-sm"></i>
+          </div>
+          <div class="min-w-0">
+            <h1 class="text-lg font-semibold text-slate-800 truncate">系统监控</h1>
+            <p class="text-xs text-slate-500 truncate">实时系统资源监控</p>
+          </div>
+        </div>
+      </div>
+      <!-- 移动端 Tab -->
+      <div class="tab-group md:hidden mt-3 overflow-x-auto">
+        <button
+          v-for="range in timeRanges"
+          :key="range.value"
+          type="button"
+          :class="['tab-btn flex-1 justify-center whitespace-nowrap', selectedRange === range.value ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']"
+          @click="switchTimeRange(range.value)"
+        >
+          {{ range.label }}
+        </button>
       </div>
     </div>
 

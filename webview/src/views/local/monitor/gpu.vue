@@ -124,6 +124,13 @@ class SystemGpu extends Vue {
         chart.update('none')
     }
 
+    clearData() {
+        this.currentGpus = []
+        this.gpuHistories = {}
+        Object.values(this.gpuCharts).forEach(c => c.destroy())
+        this.gpuCharts = {}
+    }
+
     pushData(payload: SystemStat, ts: number) {
         this.currentGpus = payload.gpu || []
         if (!payload.gpu?.length) return
@@ -199,7 +206,7 @@ export default toNative(SystemGpu)
             <i class="fas fa-fan"></i>{{ gpu.fanSpeed }}%
           </span>
         </div>
-        <div class="relative h-20 bg-slate-50 rounded-lg overflow-hidden">
+        <div class="relative h-28 bg-slate-50 rounded-lg overflow-hidden">
           <canvas :data-gpu="gpuKey(gpu)" class="w-full h-full"></canvas>
           <div v-if="!gpuHistories[gpuKey(gpu)]?.labels?.length" class="absolute inset-0 flex items-center justify-center">
             <span class="text-xs text-slate-300">等待数据...</span>

@@ -152,7 +152,7 @@ class NavigationBar extends Vue {
     // ─── 生命周期 ───
     mounted() {
         // 根据当前路由初始化子菜单展开状态
-        this.localExpanded = this.$route.path.startsWith('/local/explorer') || this.$route.path.startsWith('/local/shell')
+        this.localExpanded = this.$route.path.startsWith('/local/')
         this.apisixExpanded = this.$route.path.startsWith('/apisix/')
         this.caddyExpanded = this.$route.path.startsWith('/caddy/')
         this.dockerExpanded = this.$route.path.startsWith('/docker/')
