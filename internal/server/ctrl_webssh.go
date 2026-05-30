@@ -1,9 +1,9 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
-	"net/url"
-	"path/filepath"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/websocket"
@@ -29,6 +29,8 @@ func (app *App) defineWebSSHRoutes() []Route {
 		{Method: "DELETE", Path: "/ssh/sftp/:id/rm", Handler: app.websshSFTPRemove, Module: "ssh", Label: "SFTP 删除文件"},
 		{Method: "POST", Path: "/ssh/sftp/:id/mkdir", Handler: app.websshSFTPMkdir, Module: "ssh", Label: "SFTP 创建目录"},
 		{Method: "POST", Path: "/ssh/sftp/:id/rename", Handler: app.websshSFTPRename, Module: "ssh", Label: "SFTP 重命名"},
+		{Method: "POST", Path: "/ssh/sftp/:id/chmod", Handler: app.websshSFTPChmod, Module: "ssh", Label: "SFTP 修改权限"},
+		{Method: "POST", Path: "/ssh/sftp/:id/chown", Handler: app.websshSFTPChown, Module: "ssh", Label: "SFTP 修改所有者"},
 	}
 }
 
@@ -113,17 +115,12 @@ func (app *App) websshSFTPDownload(c *gin.Context) {
 		return
 	}
 
-	reader, size, err := app.websshSvc.SFTPDownload(id, filePath)
+	// 直接下载到 ResponseWriter
+	err := app.websshSvc.SFTPDownload(id, filePath, c.Writer)
 	if err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	defer reader.Close()
-
-	filename := filepath.Base(filePath)
-	encoded := url.PathEscape(filename)
-	c.Header("Content-Disposition", `attachment; filename="`+filename+`"; filename*=UTF-8''`+encoded)
-	c.DataFromReader(http.StatusOK, size, "application/octet-stream", reader, nil)
 }
 
 func (app *App) websshSFTPUpload(c *gin.Context) {
@@ -216,4 +213,62 @@ func (app *App) websshSFTPRename(c *gin.Context) {
 		return
 	}
 	respondSuccess(c, "重命名成功", nil)
+}
+
+// websshSFTPChmod 修改文件或目录权限
+func (app *App) websshSFTPChmod(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		Path string `json:"path" binding:"required"`
+		Mode string `json:"mode" binding:"required"` // 如 "0755", "0644"
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// 解析权限模式
+	mode, err := parseFileMode(req.Mode)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, "无效的权限格式: "+err.Error())
+		return
+	}
+
+	if err := app.websshSvc.SFTPChmod(id, req.Path, mode); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "权限修改成功", nil)
+}
+
+// websshSFTPChown 修改文件或目录所有者和组
+func (app *App) websshSFTPChown(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		Path string `json:"path" binding:"required"`
+		UID  int    `json:"uid" binding:"required"`
+		GID  int    `json:"gid" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := app.websshSvc.SFTPChown(id, req.Path, req.UID, req.GID); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "所有者修改成功", nil)
+}
+
+// parseFileMode 解析权限字符串（如 "0755", "644"）为 os.FileMode
+func parseFileMode(modeStr string) (os.FileMode, error) {
+	// 如果是 3-4 位的八进制数字字符串
+	if len(modeStr) == 3 || len(modeStr) == 4 {
+		var mode uint32
+		if _, err := fmt.Sscanf(modeStr, "%o", &mode); err == nil {
+			return os.FileMode(mode), nil
+		}
+	}
+	return 0, fmt.Errorf("无法解析权限字符串: %s", modeStr)
 }

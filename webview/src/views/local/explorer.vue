@@ -234,7 +234,7 @@ export default toNative(FileExplorer)
                         <i class="fas fa-spell-check text-xs"></i>
                       </button>
                       <button v-if="portal.hasPerm('POST /api/filer/chmod')" class="btn-icon btn-icon-blue" title="权限" @click="chmodModalRef.show(file)">
-                        <i class="fas fa-lock text-xs"></i>
+                        <i class="fas fa-key text-xs"></i>
                       </button>
                       <button v-if="portal.hasPerm('POST /api/filer/delete')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                         <i class="fas fa-trash text-xs"></i>
@@ -264,7 +264,7 @@ export default toNative(FileExplorer)
                         <i class="fas fa-spell-check text-xs"></i>
                       </button>
                       <button v-if="portal.hasPerm('POST /api/filer/chmod')" class="btn-icon btn-icon-blue" title="权限" @click="chmodModalRef.show(file)">
-                        <i class="fas fa-lock text-xs"></i>
+                        <i class="fas fa-key text-xs"></i>
                       </button>
                       <button v-if="portal.hasPerm('POST /api/filer/delete')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                         <i class="fas fa-trash text-xs"></i>
@@ -326,7 +326,7 @@ export default toNative(FileExplorer)
                   <i class="fas fa-spell-check text-xs"></i><span class="text-xs ml-1">重命名</span>
                 </button>
                 <button v-if="portal.hasPerm('POST /api/filer/chmod')" class="btn-icon btn-icon-blue" title="权限" @click="chmodModalRef.show(file)">
-                  <i class="fas fa-lock text-xs"></i><span class="text-xs ml-1">权限</span>
+                  <i class="fas fa-key text-xs"></i><span class="text-xs ml-1">权限</span>
                 </button>
                 <button v-if="portal.hasPerm('POST /api/filer/delete')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                   <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
@@ -356,7 +356,7 @@ export default toNative(FileExplorer)
                   <i class="fas fa-spell-check text-xs"></i><span class="text-xs ml-1">重命名</span>
                 </button>
                 <button v-if="portal.hasPerm('POST /api/filer/chmod')" class="btn-icon btn-icon-blue" title="权限" @click="chmodModalRef.show(file)">
-                  <i class="fas fa-lock text-xs"></i><span class="text-xs ml-1">权限</span>
+                  <i class="fas fa-key text-xs"></i><span class="text-xs ml-1">权限</span>
                 </button>
                 <button v-if="portal.hasPerm('POST /api/filer/delete')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                   <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>

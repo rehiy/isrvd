@@ -10,8 +10,10 @@ import { type UploadNode, buildUploadTree, shouldIgnoreUploadEntry } from '@/hel
 import { formatFileSize, formatUnixTime, getFileIcon, joinPath, downloadBlob } from '@/helper/utils'
 
 import UploadWidget from './sftp-upload.vue'
+import SftpChmodModal from './sftp-chmod-modal.vue'
+import SftpRenameModal from './sftp-rename-modal.vue'
 
-@Component({ components: { UploadWidget } })
+@Component({ components: { UploadWidget, SftpChmodModal, SftpRenameModal } })
 class SftpPanel extends Vue {
     @Prop({ required: true }) readonly hostId!: string
     @Prop({ default: 280 }) readonly height!: number
@@ -20,14 +22,14 @@ class SftpPanel extends Vue {
 
     @Ref readonly uploadInputRef!: HTMLInputElement
     @Ref readonly uploadWidgetRef!: InstanceType<typeof UploadWidget>
+    @Ref readonly chmodModalRef!: InstanceType<typeof SftpChmodModal>
+    @Ref readonly renameModalRef!: InstanceType<typeof SftpRenameModal>
 
     // ─── 状态 ───
     sftpPath = '/'
     sftpFiles: SFTPFileInfo[] = []
     sftpLoading = false
     sftpError = ''
-    renamingFile: SFTPFileInfo | null = null
-    renameNewName = ''
     mkdirMode = false
     mkdirName = ''
     pathEditMode = false
@@ -143,37 +145,10 @@ class SftpPanel extends Vue {
         })
     }
 
-    // ─── 重命名 ───
-    startRename(file: SFTPFileInfo) {
-        this.renamingFile = file
-        this.renameNewName = file.name
-        this.mkdirMode = false
-    }
-
-    cancelRename() {
-        this.renamingFile = null
-        this.renameNewName = ''
-    }
-
-    async confirmRename() {
-        if (!this.renamingFile || !this.renameNewName.trim()) return
-        const oldPath = joinPath(this.sftpPath, this.renamingFile.name)
-        const newPath = joinPath(this.sftpPath, this.renameNewName.trim())
-        try {
-            await api.sftpRename(this.hostId, { oldPath, newPath })
-            this.portal.showNotification('success', '重命名成功')
-            this.cancelRename()
-            this.sftpLoad()
-        } catch (e: unknown) {
-            this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '重命名失败')
-        }
-    }
-
     // ─── 新建目录 ───
     startMkdir() {
         this.mkdirMode = true
         this.mkdirName = ''
-        this.renamingFile = null
     }
 
     cancelMkdir() {
@@ -263,6 +238,16 @@ class SftpPanel extends Vue {
     formatSize = formatFileSize
     formatTime = formatUnixTime
     getFileIcon = getFileIcon
+
+    // ─── 权限修改 ───
+    startChmod(file: SFTPFileInfo) {
+        this.chmodModalRef?.show(this.hostId, file)
+    }
+
+    // ─── 重命名 ───
+    startRename(file: SFTPFileInfo) {
+        this.renameModalRef?.show(this.hostId, file)
+    }
 
     // ─── 生命周期 ───
     mounted() {
@@ -400,28 +385,11 @@ export default toNative(SftpPanel)
                   </div>
                   <i v-if="file.isLink" class="fas fa-link absolute -bottom-0.5 -right-0.5 text-white text-[8px]" style="text-shadow: 0 0 2px rgba(0,0,0,0.6)"></i>
                 </div>
-                <template v-if="renamingFile?.name === file.name">
-                  <input
-                    v-model="renameNewName"
-                    class="input text-xs py-0.5 min-w-0"
-                    autofocus
-                    @keyup.enter="confirmRename()"
-                    @keyup.esc="cancelRename()"
-                  />
-                  <button class="btn-icon btn-icon-teal !w-6 !h-6 flex-shrink-0" @click="confirmRename()">
-                    <i class="fas fa-check text-xs"></i>
-                  </button>
-                  <button class="btn-icon btn-icon-slate !w-6 !h-6 flex-shrink-0" @click="cancelRename()">
-                    <i class="fas fa-xmark text-xs"></i>
-                  </button>
-                </template>
-                <template v-else>
-                  <span
-                    class="truncate"
-                    :class="file.isDir ? 'text-slate-700 font-medium cursor-pointer hover:text-teal-600' : 'text-slate-600'"
-                    @click="file.isDir && sftpEnter(file)"
-                  >{{ file.name }}<span v-if="file.isLink && file.linkTarget" class="ml-1 text-slate-400 text-xs font-normal">{{ file.linkTarget }}</span></span>
-                </template>
+                <span
+                  class="truncate"
+                  :class="file.isDir ? 'text-slate-700 font-medium cursor-pointer hover:text-teal-600' : 'text-slate-600'"
+                  @click="file.isDir && sftpEnter(file)"
+                >{{ file.name }}<span v-if="file.isLink && file.linkTarget" class="ml-1 text-slate-400 text-xs font-normal">{{ file.linkTarget }}</span></span>
               </div>
             </td>
             <td class="px-2 py-2 text-slate-400 whitespace-nowrap hidden sm:table-cell">
@@ -429,6 +397,9 @@ export default toNative(SftpPanel)
             </td>
             <td class="px-2 py-2 text-slate-400 whitespace-nowrap hidden md:table-cell">
               {{ formatTime(file.modTime) }}
+            </td>
+            <td class="px-2 py-2 text-slate-400 whitespace-nowrap hidden lg:table-cell font-mono text-xs">
+              {{ file.mode }}
             </td>
             <td class="px-2 py-2 whitespace-nowrap">
               <div class="flex items-center gap-1 justify-end">
@@ -451,6 +422,9 @@ export default toNative(SftpPanel)
                 <button class="btn-icon btn-icon-slate !w-6 !h-6" title="重命名" @click="startRename(file)">
                   <i class="fas fa-spell-check text-xs"></i>
                 </button>
+                <button class="btn-icon btn-icon-slate !w-6 !h-6" title="修改权限" @click="startChmod(file)">
+                  <i class="fas fa-key text-xs"></i>
+                </button>
                 <button class="btn-icon btn-icon-red !w-6 !h-6" title="删除" @click="sftpDelete(file)">
                   <i class="fas fa-trash text-xs"></i>
                 </button>
@@ -460,5 +434,9 @@ export default toNative(SftpPanel)
         </tbody>
       </table>
     </div>
+
+    <!-- 模态组件 -->
+    <SftpChmodModal ref="chmodModalRef" @success="sftpLoad()" />
+    <SftpRenameModal ref="renameModalRef" @success="sftpLoad()" />
   </div>
 </template>

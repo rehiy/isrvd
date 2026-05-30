@@ -3,6 +3,7 @@ package webssh
 import (
 	"io"
 	"mime/multipart"
+	"os"
 	"path"
 
 	libwebssh "github.com/rehiy/libgo/webssh"
@@ -23,13 +24,13 @@ func (s *Service) SFTPList(hostID, dirPath string) (*SFTPListResult, error) {
 	return s.sftpClient.List(opt, dirPath)
 }
 
-// SFTPDownload 下载文件，返回文件内容 Reader 和文件大小
-func (s *Service) SFTPDownload(hostID, filePath string) (io.ReadCloser, int64, error) {
+// SFTPDownload 下载文件到 dst
+func (s *Service) SFTPDownload(hostID, filePath string, dst io.Writer) error {
 	opt, err := s.store.hostGetOption(hostID)
 	if err != nil {
-		return nil, 0, err
+		return err
 	}
-	return s.sftpClient.Download(opt, filePath)
+	return s.sftpClient.Download(opt, filePath, dst)
 }
 
 // SFTPUpload 上传单个文件。
@@ -76,4 +77,22 @@ func (s *Service) SFTPRename(hostID, oldPath, newPath string) error {
 		return err
 	}
 	return s.sftpClient.Rename(opt, oldPath, newPath)
+}
+
+// SFTPChmod 修改文件或目录权限
+func (s *Service) SFTPChmod(hostID, targetPath string, mode os.FileMode) error {
+	opt, err := s.store.hostGetOption(hostID)
+	if err != nil {
+		return err
+	}
+	return s.sftpClient.Chmod(opt, targetPath, mode)
+}
+
+// SFTPChown 修改文件或目录所有者和组
+func (s *Service) SFTPChown(hostID, targetPath string, uid, gid int) error {
+	opt, err := s.store.hostGetOption(hostID)
+	if err != nil {
+		return err
+	}
+	return s.sftpClient.Chown(opt, targetPath, uid, gid)
 }

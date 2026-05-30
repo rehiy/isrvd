@@ -46,3 +46,9 @@ export interface SFTPRename {
 export interface SFTPMkdir {
     path: string
 }
+
+// SFTP 修改权限请求
+export interface SFTPChmod {
+    path: string
+    mode: string
+}
