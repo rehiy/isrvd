@@ -41,6 +41,11 @@ export function destroy(): void {
     term = socket = null
 }
 
+/** 手动触发终端自适应容器大小 */
+export function fitTerminal(): void {
+    fitAddon?.fit()
+}
+
 // ==================== SFTP ====================
 
 // 上传文件节点（叶子）

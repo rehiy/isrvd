@@ -82,6 +82,8 @@ class SSHTerminalPage extends Vue {
         document.removeEventListener('mouseup', this.onDragEnd)
         document.body.style.cursor = ''
         document.body.style.userSelect = ''
+        // 拖拽结束后，通知终端重新计算尺寸
+        SSHTerminal.fitTerminal()
     }
 
     // ─── 生命周期 ───
@@ -157,11 +159,11 @@ export default toNative(SSHTerminalPage)
 
       <!-- 拖拽分隔条 -->
       <div
-        class="flex-shrink-0 h-1.5 bg-slate-100 hover:bg-teal-200 cursor-row-resize transition-colors flex items-center justify-center group"
-        :class="{ 'bg-teal-200': isDragging }"
+        class="flex-shrink-0 h-1.5 bg-slate-100 hover:bg-slate-200 cursor-row-resize transition-colors flex items-center justify-center group"
+        :class="{ 'bg-slate-200': isDragging }"
         @mousedown.prevent="onDragStart"
       >
-        <div class="w-8 h-0.5 rounded-full bg-slate-300 group-hover:bg-teal-400 transition-colors" :class="{ 'bg-teal-400': isDragging }"></div>
+        <div class="w-8 h-0.5 rounded-full bg-slate-300 group-hover:bg-slate-400 transition-colors" :class="{ 'bg-slate-400': isDragging }"></div>
       </div>
 
       <!-- SFTP 文件管理面板 -->
