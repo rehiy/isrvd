@@ -50,6 +50,9 @@ export interface SystemGoRuntimeStat {
     sys: number
     heapAlloc: number
     heapInuse: number
+    heapIdle: number
+    heapReleased: number
+    heapObjects: number
     heapSys: number
     stackInuse: number
     stackSys: number
