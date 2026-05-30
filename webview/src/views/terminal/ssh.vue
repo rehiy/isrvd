@@ -20,6 +20,7 @@ class SSHTerminalPage extends Vue {
     // ─── 数据属性 ───
     host: SSHHostInfo | null = null
     connected = false
+    viewMode: 'all' | 'terminal' | 'sftp' = 'all'
 
     // ─── 拖拽分隔条 ───
     sftpHeight = 280
@@ -32,7 +33,22 @@ class SSHTerminalPage extends Vue {
         return this.$route.params.id as string
     }
 
-    // ─── 方法 ───
+    // ─── 生命周期 ───
+    async mounted() {
+        await this.loadHost()
+        this.handleConnect()
+        this.$nextTick(() => {
+            this.initAllViewHeight()
+        })
+    }
+
+    unmounted() {
+        SSHTerminal.destroy()
+        this.connected = false
+        this.cleanupDrag()
+    }
+
+    // ─── 数据加载 ───
     async loadHost() {
         try {
             const res = await api.sshHost(this.hostId)
@@ -42,6 +58,7 @@ class SSHTerminalPage extends Vue {
         }
     }
 
+    // ─── 终端连接管理 ───
     handleConnect() {
         if (this.connected) return
         this.connected = true
@@ -50,12 +67,39 @@ class SSHTerminalPage extends Vue {
 
     handleDisconnect() {
         SSHTerminal.destroy()
-        this.xtermRef.innerHTML = ''
+        if (this.xtermRef) {
+            this.xtermRef.innerHTML = ''
+        }
         this.connected = false
+    }
+
+    // ─── 视图模式切换 ───
+    switchViewMode(mode: 'all' | 'terminal' | 'sftp') {
+        this.viewMode = mode
+        this.$nextTick(() => {
+            if (mode === 'all') {
+                this.initAllViewHeight()
+            }
+            this.fitTerminalDelayed()
+        })
+    }
+
+    // ─── 高度管理 ───
+    initAllViewHeight() {
+        if (this.viewMode !== 'all') return
+        const containerH = this.containerRef?.clientHeight ?? 600
+        this.sftpHeight = Math.floor(containerH * 0.3)
+    }
+
+    fitTerminalDelayed() {
+        setTimeout(() => {
+            SSHTerminal.fitTerminal()
+        }, 100)
     }
 
     // ─── 拖拽逻辑 ───
     onDragStart(e: MouseEvent) {
+        if (this.viewMode !== 'all') return
         this.isDragging = true
         this.dragStartY = e.clientY
         this.dragStartHeight = this.sftpHeight
@@ -66,7 +110,7 @@ class SSHTerminalPage extends Vue {
     }
 
     onDragMove(e: MouseEvent) {
-        if (!this.isDragging) return
+        if (!this.isDragging || this.viewMode !== 'all') return
         const containerH = this.containerRef?.clientHeight ?? 600
         const delta = this.dragStartY - e.clientY
         const newHeight = Math.min(
@@ -78,25 +122,17 @@ class SSHTerminalPage extends Vue {
 
     onDragEnd() {
         this.isDragging = false
+        this.cleanupDrag()
+        this.$nextTick(() => {
+            SSHTerminal.fitTerminal()
+        })
+    }
+
+    cleanupDrag() {
         document.removeEventListener('mousemove', this.onDragMove)
         document.removeEventListener('mouseup', this.onDragEnd)
         document.body.style.cursor = ''
         document.body.style.userSelect = ''
-        // 拖拽结束后，通知终端重新计算尺寸
-        SSHTerminal.fitTerminal()
-    }
-
-    // ─── 生命周期 ───
-    async mounted() {
-        await this.loadHost()
-        this.handleConnect()
-    }
-
-    unmounted() {
-        SSHTerminal.destroy()
-        this.connected = false
-        document.removeEventListener('mousemove', this.onDragMove)
-        document.removeEventListener('mouseup', this.onDragEnd)
     }
 }
 
@@ -119,7 +155,19 @@ export default toNative(SSHTerminalPage)
               <p class="text-xs text-slate-500">{{ host ? `${host.user} @ ${host.addr}` : '正在加载主机信息...' }}</p>
             </div>
           </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="flex items-center gap-3">
+            <!-- 视图切换 -->
+            <div class="tab-group">
+              <button type="button" :class="['tab-btn', viewMode === 'all' ? 'tab-btn-active text-teal-600' : 'tab-btn-inactive']" @click="switchViewMode('all')">
+                <i class="fas fa-border-all"></i>全部
+              </button>
+              <button type="button" :class="['tab-btn', viewMode === 'terminal' ? 'tab-btn-active text-teal-600' : 'tab-btn-inactive']" @click="switchViewMode('terminal')">
+                <i class="fas fa-terminal"></i>终端
+              </button>
+              <button type="button" :class="['tab-btn', viewMode === 'sftp' ? 'tab-btn-active text-teal-600' : 'tab-btn-inactive']" @click="switchViewMode('sftp')">
+                <i class="fas fa-folder-open"></i>文件
+              </button>
+            </div>
             <button v-if="!connected" class="btn btn-emerald" @click="handleConnect()">
               <i class="fas fa-plug"></i>连接终端
             </button>
@@ -140,6 +188,17 @@ export default toNative(SSHTerminalPage)
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="tab-group">
+              <button type="button" class="tab-btn !h-8 !px-2" :class="viewMode === 'all' ? 'tab-btn-active text-teal-600' : 'tab-btn-inactive'" @click="switchViewMode('all')" title="全部">
+                <i class="fas fa-border-all text-xs"></i>
+              </button>
+              <button type="button" class="tab-btn !h-8 !px-2" :class="viewMode === 'terminal' ? 'tab-btn-active text-teal-600' : 'tab-btn-inactive'" @click="switchViewMode('terminal')" title="终端">
+                <i class="fas fa-terminal text-xs"></i>
+              </button>
+              <button type="button" class="tab-btn !h-8 !px-2" :class="viewMode === 'sftp' ? 'tab-btn-active text-teal-600' : 'tab-btn-inactive'" @click="switchViewMode('sftp')" title="文件">
+                <i class="fas fa-folder-open text-xs"></i>
+              </button>
+            </div>
             <button v-if="!connected" class="btn btn-emerald w-9 h-9 !px-0" title="连接终端" @click="handleConnect()">
               <i class="fas fa-plug text-sm"></i>
             </button>
@@ -150,24 +209,46 @@ export default toNative(SSHTerminalPage)
         </div>
       </div>
 
-      <!-- 终端区域 -->
-      <div class="terminal-body flex-1 min-h-0">
-        <div class="terminal-pane h-full">
-          <div ref="xtermRef" class="h-full rounded-lg overflow-hidden"></div>
+      <!-- 主内容区域 -->
+      <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <!-- 终端区域：使用 v-show 保持 DOM 存在 -->
+        <div
+          v-show="viewMode !== 'sftp'"
+          class="min-h-0"
+          :class="{
+            'flex-1': viewMode === 'terminal',
+            'flex-[7_0_0%]': viewMode === 'all'
+          }"
+        >
+          <div class="terminal-body h-full">
+            <div class="terminal-pane h-full">
+              <div ref="xtermRef" class="h-full rounded-lg overflow-hidden"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 全部视图：拖拽条 + SFTP -->
+        <template v-if="viewMode === 'all'">
+          <!-- 拖拽分隔条 -->
+          <div
+            class="flex-shrink-0 h-1.5 bg-slate-100 hover:bg-slate-200 cursor-row-resize transition-colors flex items-center justify-center group"
+            :class="{ 'bg-slate-200': isDragging }"
+            @mousedown.prevent="onDragStart"
+          >
+            <div class="w-8 h-0.5 rounded-full bg-slate-300 group-hover:bg-slate-400 transition-colors" :class="{ 'bg-slate-400': isDragging }"></div>
+          </div>
+
+          <!-- SFTP 文件管理面板 -->
+          <div class="flex-shrink-0 min-h-0 overflow-auto" :style="{ height: sftpHeight + 'px' }">
+            <SftpPanel :host-id="hostId" :height="sftpHeight + 'px'" />
+          </div>
+        </template>
+
+        <!-- 文件独立视图 -->
+        <div v-show="viewMode === 'sftp'" class="flex-1 min-h-0 overflow-auto">
+          <SftpPanel :host-id="hostId" :height="'100%'" />
         </div>
       </div>
-
-      <!-- 拖拽分隔条 -->
-      <div
-        class="flex-shrink-0 h-1.5 bg-slate-100 hover:bg-slate-200 cursor-row-resize transition-colors flex items-center justify-center group"
-        :class="{ 'bg-slate-200': isDragging }"
-        @mousedown.prevent="onDragStart"
-      >
-        <div class="w-8 h-0.5 rounded-full bg-slate-300 group-hover:bg-slate-400 transition-colors" :class="{ 'bg-slate-400': isDragging }"></div>
-      </div>
-
-      <!-- SFTP 文件管理面板 -->
-      <SftpPanel :host-id="hostId" :height="sftpHeight" />
     </div>
   </div>
 </template>

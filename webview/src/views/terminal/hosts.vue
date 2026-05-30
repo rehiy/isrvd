@@ -185,8 +185,8 @@ export default toNative(SSHHosts)
               </td>
               <td class="px-4 py-3">
                 <div class="flex justify-end items-center gap-1">
-                  <button v-if="portal.hasPerm('GET /api/ssh/to/:id')" class="btn-icon btn-icon-teal" title="连接终端" @click="openTerminal(host)">
-                    <i class="fas fa-terminal text-xs"></i>
+                  <button v-if="portal.hasPerm('GET /api/ssh/to/:id')" class="btn-icon btn-icon-teal" title="打开 SSH/SFTP" @click="openTerminal(host)">
+                    <i class="fas fa-external-link-alt text-xs"></i>
                   </button>
                   <button v-if="portal.hasPerm('PUT /api/ssh/host/:id')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(host)">
                     <i class="fas fa-pen text-xs"></i>
