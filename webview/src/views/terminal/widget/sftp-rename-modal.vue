@@ -22,10 +22,10 @@ class SftpRenameModal extends Vue {
     formData = { oldPath: '', newName: '', file: null as SFTPFileInfo | null }
 
     // ─── 方法 ───
-    show(hostId: string, file: SFTPFileInfo) {
+    show(hostId: string, file: SFTPFileInfo, basePath: string) {
         this.hostId = hostId
         this.formData.file = file
-        this.formData.oldPath = file.name
+        this.formData.oldPath = basePath === '/' ? '/' + file.name : basePath + '/' + file.name
         this.formData.newName = file.name
         this.isOpen = true
     }

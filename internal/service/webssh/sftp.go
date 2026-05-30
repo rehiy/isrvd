@@ -1,10 +1,12 @@
 package webssh
 
 import (
+	"bytes"
 	"io"
 	"mime/multipart"
 	"os"
 	"path"
+	"strings"
 
 	libwebssh "github.com/rehiy/libgo/webssh"
 )
@@ -95,4 +97,32 @@ func (s *Service) SFTPChown(hostID, targetPath string, uid, gid int) error {
 		return err
 	}
 	return s.sftpClient.Chown(opt, targetPath, uid, gid)
+}
+
+// SFTPRead 读取文件内容
+func (s *Service) SFTPRead(hostID, filePath string) (string, error) {
+	opt, err := s.store.hostGetOption(hostID)
+	if err != nil {
+		return "", err
+	}
+
+	// 使用 bytes.Buffer 作为目标写入器
+	var buf bytes.Buffer
+	if err := s.sftpClient.Download(opt, filePath, &buf); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+// SFTPWrite 写入文件内容
+func (s *Service) SFTPWrite(hostID, filePath, content string) error {
+	opt, err := s.store.hostGetOption(hostID)
+	if err != nil {
+		return err
+	}
+
+	// 使用 strings.Reader 作为源读取器
+	src := strings.NewReader(content)
+	return s.sftpClient.Upload(opt, filePath, src)
 }

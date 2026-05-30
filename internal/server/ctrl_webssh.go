@@ -31,6 +31,8 @@ func (app *App) defineWebSSHRoutes() []Route {
 		{Method: "POST", Path: "/ssh/sftp/:id/rename", Handler: app.websshSFTPRename, Module: "ssh", Label: "SFTP 重命名"},
 		{Method: "POST", Path: "/ssh/sftp/:id/chmod", Handler: app.websshSFTPChmod, Module: "ssh", Label: "SFTP 修改权限"},
 		{Method: "POST", Path: "/ssh/sftp/:id/chown", Handler: app.websshSFTPChown, Module: "ssh", Label: "SFTP 修改所有者"},
+		{Method: "GET", Path: "/ssh/sftp/:id/read", Handler: app.websshSFTPRead, Module: "ssh", Label: "SFTP 读取文件"},
+		{Method: "POST", Path: "/ssh/sftp/:id/write", Handler: app.websshSFTPWrite, Module: "ssh", Label: "SFTP 写入文件"},
 	}
 }
 
@@ -271,4 +273,44 @@ func parseFileMode(modeStr string) (os.FileMode, error) {
 		}
 	}
 	return 0, fmt.Errorf("无法解析权限字符串: %s", modeStr)
+}
+
+// websshSFTPRead 读取文件内容
+func (app *App) websshSFTPRead(c *gin.Context) {
+	id := c.Param("id")
+	filePath := c.Query("path")
+	if filePath == "" {
+		respondError(c, http.StatusBadRequest, "path 参数不能为空")
+		return
+	}
+
+	content, err := app.websshSvc.SFTPRead(id, filePath)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	respondSuccess(c, "", gin.H{
+		"content": content,
+	})
+}
+
+// websshSFTPWrite 写入文件内容
+func (app *App) websshSFTPWrite(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		Path    string `json:"path" binding:"required"`
+		Content string `json:"content" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := app.websshSvc.SFTPWrite(id, req.Path, req.Content); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	respondSuccess(c, "文件保存成功", nil)
 }

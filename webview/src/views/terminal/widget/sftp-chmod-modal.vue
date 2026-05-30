@@ -22,9 +22,9 @@ class SftpChmodModal extends Vue {
     formData = { path: '', mode: '' }
 
     // ─── 方法 ───
-    show(hostId: string, file: SFTPFileInfo) {
+    show(hostId: string, file: SFTPFileInfo, basePath: string) {
         this.hostId = hostId
-        this.formData.path = file.name
+        this.formData.path = basePath === '/' ? '/' + file.name : basePath + '/' + file.name
         this.formData.mode = this.extractPermissionFromMode(file.mode)
         this.isOpen = true
     }

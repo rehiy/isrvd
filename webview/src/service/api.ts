@@ -89,6 +89,7 @@ import type {
     SFTPRename,
     SFTPMkdir,
     SFTPChmod,
+    SFTPWrite,
 } from './types'
 
 // API 服务类，统一管理所有 API 请求
@@ -720,6 +721,14 @@ class ApiService {
     // ─── SFTP 文件操作 ───
     sftpFileChmod(hostId: string, data: SFTPChmod) {
         return http.post<void>(`ssh/sftp/${hostId}/chmod`, data)
+    }
+
+    sftpRead(hostId: string, path: string) {
+        return http.get<{ content: string }>(`ssh/sftp/${hostId}/read`, { params: { path } })
+    }
+
+    sftpWrite(hostId: string, data: SFTPWrite) {
+        return http.post<void>(`ssh/sftp/${hostId}/write`, data)
     }
 }
 

@@ -12,8 +12,9 @@ import { formatFileSize, formatUnixTime, getFileIcon, joinPath, downloadBlob } f
 import UploadWidget from './sftp-upload.vue'
 import SftpChmodModal from './sftp-chmod-modal.vue'
 import SftpRenameModal from './sftp-rename-modal.vue'
+import SftpModifyModal from './sftp-modify-modal.vue'
 
-@Component({ components: { UploadWidget, SftpChmodModal, SftpRenameModal } })
+@Component({ components: { UploadWidget, SftpChmodModal, SftpRenameModal, SftpModifyModal } })
 class SftpPanel extends Vue {
     @Prop({ required: true }) readonly hostId!: string
     @Prop({ default: 280 }) readonly height!: number
@@ -24,6 +25,7 @@ class SftpPanel extends Vue {
     @Ref readonly uploadWidgetRef!: InstanceType<typeof UploadWidget>
     @Ref readonly chmodModalRef!: InstanceType<typeof SftpChmodModal>
     @Ref readonly renameModalRef!: InstanceType<typeof SftpRenameModal>
+    @Ref readonly modifyModalRef!: InstanceType<typeof SftpModifyModal>
 
     // ─── 状态 ───
     sftpPath = '/'
@@ -241,12 +243,17 @@ class SftpPanel extends Vue {
 
     // ─── 权限修改 ───
     startChmod(file: SFTPFileInfo) {
-        this.chmodModalRef?.show(this.hostId, file)
+        this.chmodModalRef?.show(this.hostId, file, this.sftpPath)
     }
 
     // ─── 重命名 ───
     startRename(file: SFTPFileInfo) {
-        this.renameModalRef?.show(this.hostId, file)
+        this.renameModalRef?.show(this.hostId, file, this.sftpPath)
+    }
+
+    // ─── 编辑文件 ───
+    startModify(file: SFTPFileInfo) {
+        this.modifyModalRef?.show(this.hostId, file, this.sftpPath)
     }
 
     // ─── 生命周期 ───
@@ -422,6 +429,9 @@ export default toNative(SftpPanel)
                 <button class="btn-icon btn-icon-slate !w-6 !h-6" title="重命名" @click="startRename(file)">
                   <i class="fas fa-spell-check text-xs"></i>
                 </button>
+                <button v-if="!file.isDir" class="btn-icon btn-icon-slate !w-6 !h-6" title="编辑" @click="startModify(file)">
+                  <i class="fas fa-edit text-xs"></i>
+                </button>
                 <button class="btn-icon btn-icon-slate !w-6 !h-6" title="修改权限" @click="startChmod(file)">
                   <i class="fas fa-key text-xs"></i>
                 </button>
@@ -438,5 +448,6 @@ export default toNative(SftpPanel)
     <!-- 模态组件 -->
     <SftpChmodModal ref="chmodModalRef" @success="sftpLoad()" />
     <SftpRenameModal ref="renameModalRef" @success="sftpLoad()" />
+    <SftpModifyModal ref="modifyModalRef" @success="sftpLoad()" />
   </div>
 </template>
