@@ -43,7 +43,7 @@ class MonitorPage extends Vue {
         this.gpuRef?.pushData(data, ts)
         this.diskRef?.pushData(data, ts)
         this.networkRef?.pushData(data, ts)
-        this.goRef?.pushData(data)
+        this.goRef?.pushData(data, ts)
     }
 
     private async fetchLatest(): Promise<boolean> {

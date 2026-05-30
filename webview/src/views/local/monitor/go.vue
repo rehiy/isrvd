@@ -279,9 +279,6 @@ export default toNative(SystemGo)
       </div>
       <span class="text-sm font-semibold text-slate-700">Go 运行态</span>
       <span class="ml-auto text-xs text-slate-400 font-mono">{{ current.version }}</span>
-      <span class="text-xs text-slate-400 font-mono ml-3" title="最后 GC 时间">
-        <i class="fas fa-clock mr-1"></i>{{ lastGCTime }}
-      </span>
     </div>
 
     <!-- 堆内存折线图 -->
@@ -299,26 +296,6 @@ export default toNative(SystemGo)
       </div>
       <div class="relative h-32">
         <canvas ref="memCanvasRef" class="w-full h-full"></canvas>
-      </div>
-    </div>
-
-    <!-- Goroutine & GC & 堆对象折线图 -->
-    <div class="relative p-4 border-b border-slate-100">
-      <div class="flex items-center gap-4 mb-2">
-        <span class="text-xs font-medium text-slate-500">Goroutine & GC & 堆对象</span>
-        <div class="flex items-center gap-3 text-xs text-slate-400">
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>Goroutine</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-red-500 rounded-full"></span>GC 次数</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-green-500 rounded-full"></span>堆对象</span>
-        </div>
-      </div>
-      <div class="flex items-center gap-4 mb-2">
-        <span class="text-lg font-bold text-slate-800 tabular-nums">{{ current.numGoroutine }}</span>
-        <span class="text-lg font-bold text-slate-800 tabular-nums">{{ current.numGC }}</span>
-        <span class="text-lg font-bold text-slate-800 tabular-nums">{{ current.heapObjects }}</span>
-      </div>
-      <div class="relative h-32">
-        <canvas ref="goroutineCanvasRef" class="w-full h-full"></canvas>
       </div>
     </div>
 
@@ -349,5 +326,31 @@ export default toNative(SystemGo)
         <canvas ref="sysCanvasRef" class="w-full h-full"></canvas>
       </div>
     </div>
+
+    <!-- Goroutine & GC & 堆对象折线图 -->
+    <div class="relative p-4 border-b border-slate-100">
+      <div class="flex items-center gap-4 mb-2">
+        <span class="text-xs font-medium text-slate-500">Goroutine & GC & 堆对象</span>
+        <div class="flex items-center gap-3 text-xs text-slate-400 ml-auto">
+          <span class="flex items-center gap-1" title="最后 GC 时间">
+            <i class="fas fa-clock mr-1"></i>{{ lastGCTime }}
+          </span>
+        </div>
+        <div class="flex items-center gap-3 text-xs text-slate-400">
+          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>Goroutine</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-red-500 rounded-full"></span>GC 次数</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-green-500 rounded-full"></span>堆对象</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 mb-2">
+        <span class="text-lg font-bold text-slate-800 tabular-nums">{{ current.numGoroutine }}</span>
+        <span class="text-lg font-bold text-slate-800 tabular-nums">{{ current.numGC }}</span>
+        <span class="text-lg font-bold text-slate-800 tabular-nums">{{ current.heapObjects }}</span>
+      </div>
+      <div class="relative h-32">
+        <canvas ref="goroutineCanvasRef" class="w-full h-full"></canvas>
+      </div>
+    </div>
+
   </div>
 </template>
