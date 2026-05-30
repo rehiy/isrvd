@@ -19,7 +19,6 @@ interface ChartCallbackContext {
     dataset: { label?: string }
 }
 
-const MAX_HISTORY = 60
 const NATURAL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
 
 @Component
@@ -186,12 +185,6 @@ class SystemDisk extends Vue {
             h.labels.push(label)
             h.read.push(readRate)
             h.write.push(writeRate)
-
-            if (h.labels.length > MAX_HISTORY) {
-                h.labels.shift()
-                h.read.shift()
-                h.write.shift()
-            }
 
             if (!this.diskIOCharts[name]) {
                 this.$nextTick(() => this.initDiskChart(name))

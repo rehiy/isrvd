@@ -8,8 +8,6 @@ import type { SystemStat, SystemGoRuntimeStat } from '@/service/types'
 import Chart from '@/helper/chart'
 import { hexToRgba } from '@/helper/utils'
 
-const MAX_HISTORY = 60
-
 @Component
 class SystemGo extends Vue {
     @Ref readonly memCanvasRef!: HTMLCanvasElement
@@ -112,17 +110,7 @@ class SystemGo extends Vue {
         this.sysHistory.totalAlloc.push(payload.go.totalAlloc)
         this.sysHistory.sys.push(payload.go.sys)
 
-        // 保持历史数据不超过最大值
-        ;[this.memHistory, this.goroutineHistory, this.stackHistory, this.sysHistory].forEach(h => {
-            if (h.labels.length > MAX_HISTORY) {
-                h.labels.shift()
-                Object.keys(h).forEach(key => {
-                    if (key !== 'labels' && Array.isArray((h as any)[key])) {
-                        (h as any)[key].shift()
-                    }
-                })
-            }
-        })
+        // 不再限制历史数据数量，显示完整数据点
 
         if (!this.memChart || !this.goroutineChart || !this.sysChart) {
             this.initCharts()
@@ -289,7 +277,7 @@ export default toNative(SystemGo)
       <div class="px-4 py-3">
         <div class="flex items-center justify-between mb-2">
           <span class="text-xs font-medium text-slate-500">系统内存</span>
-          <div class="flex items-center gap-3 text-xs" v-if="current">
+          <div v-if="current" class="flex items-center gap-3 text-xs">
             <span class="flex items-center gap-1">
               <span class="w-3 h-0.5 bg-blue-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.totalAlloc) }}</span>
@@ -345,7 +333,7 @@ export default toNative(SystemGo)
       <div class="px-4 py-3">
         <div class="flex items-center justify-between mb-2">
           <span class="text-xs font-medium text-slate-500">栈内存</span>
-          <div class="flex items-center gap-3 text-xs" v-if="current">
+          <div v-if="current" class="flex items-center gap-3 text-xs">
             <span class="flex items-center gap-1">
               <span class="w-3 h-0.5 bg-amber-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.stackInuse) }}</span>
@@ -364,12 +352,12 @@ export default toNative(SystemGo)
       <!-- Goroutine & GC & 堆对象折线图 -->
       <div class="px-4 py-3">
         <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center gap-3 text-xs text-slate-400" v-if="current">
+          <div v-if="current" class="flex items-center gap-3 text-xs text-slate-400">
             <span class="flex items-center gap-1" title="最后 GC 时间">
               <i class="fas fa-clock mr-1"></i>{{ lastGCTime }}
             </span>
           </div>
-          <div class="flex items-center gap-3 text-xs" v-if="current">
+          <div v-if="current" class="flex items-center gap-3 text-xs">
             <span class="flex items-center gap-1">
               <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ current.numGoroutine }}</span>

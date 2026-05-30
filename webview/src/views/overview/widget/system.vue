@@ -6,7 +6,6 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { SystemStat, MonitorHostRecord } from '@/service/types'
 
-
 @Component
 class SystemOverview extends Vue {
     portal = usePortal()

@@ -19,7 +19,6 @@ interface ChartCallbackContext {
     dataset: { label?: string }
 }
 
-const MAX_HISTORY = 60
 const NATURAL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
 
 @Component
@@ -151,12 +150,6 @@ class SystemNetwork extends Vue {
             h.labels.push(label)
             h.recv.push(recvRate)
             h.sent.push(sentRate)
-
-            if (h.labels.length > MAX_HISTORY) {
-                h.labels.shift()
-                h.recv.shift()
-                h.sent.shift()
-            }
 
             if (!this.netCharts[name]) {
                 this.$nextTick(() => this.initNetChart(name))

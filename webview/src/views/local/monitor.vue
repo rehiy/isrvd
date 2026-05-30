@@ -9,10 +9,10 @@ import type { MonitorHostRecord } from '@/service/types'
 import { POLL_INTERVAL } from '@/helper/utils'
 
 import SystemCpuMem from './monitor/cpu_mem.vue'
-import SystemGpu from './monitor/gpu.vue'
 import SystemDisk from './monitor/disk.vue'
-import SystemNetwork from './monitor/network.vue'
 import SystemGo from './monitor/go.vue'
+import SystemGpu from './monitor/gpu.vue'
+import SystemNetwork from './monitor/network.vue'
 
 @Component({
     components: { SystemCpuMem, SystemGpu, SystemDisk, SystemNetwork, SystemGo }
@@ -25,12 +25,13 @@ class MonitorPage extends Vue {
 
     // ─── 时间区间选择 ───
     timeRanges = [
+        { label: '5分钟', value: 300 },
         { label: '1小时', value: 3600 },
         { label: '6小时', value: 21600 },
         { label: '12小时', value: 43200 },
         { label: '24小时', value: 86400 }
     ]
-    selectedRange = 3600
+    selectedRange = 300  // 默认5分钟
 
     private pollTimer: ReturnType<typeof setInterval> | null = null
     private destroyed = false
@@ -56,11 +57,23 @@ class MonitorPage extends Vue {
     }
 
     private async fetchLatest(): Promise<boolean> {
-        const res = await api.overviewMonitor({ type: 'host', since: 0 })
+        // 根据当前选择的时间范围获取数据
+        // 如果 selectedRange > 0，则获取对应时间范围的数据（用于轮询更新）
+        // 如果 selectedRange === 0，则获取实时数据（since=0）
+        const since = this.selectedRange > 0 ? this.selectedRange : 0
+        const res = await api.overviewMonitor({ type: 'host', since })
         if (this.destroyed) return false
-        const rec = res.payload as MonitorHostRecord | null
-        if (rec) {
-            this.dispatchData(rec)
+        
+        // 处理返回数据：since=0 返回单个对象，since>0 返回数组
+        if (Array.isArray(res.payload)) {
+            // 历史数据数组
+            for (const rec of res.payload) {
+                this.dispatchData(rec)
+            }
+            return res.payload.length > 0
+        } else if (res.payload) {
+            // 实时数据单个对象
+            this.dispatchData(res.payload)
             return true
         }
         return false
@@ -89,7 +102,13 @@ class MonitorPage extends Vue {
         if (this.selectedRange === range) return
         this.selectedRange = range
         this.clearAllData()
-        await this.load()
+        this.stopPoll()
+        await this.loadHistory()
+        await this.loadData()
+        // 只有5分钟模式才启动轮询
+        if (this.selectedRange === 300) {
+            this.startPoll()
+        }
     }
 
     async loadData() {
@@ -113,7 +132,10 @@ class MonitorPage extends Vue {
         if (document.hidden) {
             this.stopPoll()
         } else {
-            this.startPoll()
+            // 只有5分钟模式才在页面重新可见时启动轮询
+            if (this.selectedRange === 300) {
+                this.startPoll()
+            }
         }
     }
 
@@ -133,7 +155,10 @@ class MonitorPage extends Vue {
         await this.loadHistory()
         await this.loadData()
         this.loading = false
-        this.startPoll()
+        // 只有5分钟模式才启动轮询
+        if (this.selectedRange === 300) {
+            this.startPoll()
+        }
     }
 
     // ─── 生命周期 ───

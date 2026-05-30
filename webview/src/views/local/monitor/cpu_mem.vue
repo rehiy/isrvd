@@ -12,8 +12,6 @@ interface ChartCallbackContext {
     dataset: { label?: string }
 }
 
-const MAX_HISTORY = 60
-
 @Component
 class SystemCpuMem extends Vue {
     @Ref readonly cpuCanvasRef!: HTMLCanvasElement
@@ -150,15 +148,6 @@ class SystemCpuMem extends Vue {
         this.cpuHistory.data.push(this.avgCpuPercent(s.cpuPercent))
         this.memHistory.labels.push(label)
         this.memHistory.data.push(this.memPercent(s.memoryUsed, s.memoryTotal))
-
-        if (this.cpuHistory.labels.length > MAX_HISTORY) {
-            this.cpuHistory.labels.shift()
-            this.cpuHistory.data.shift()
-        }
-        if (this.memHistory.labels.length > MAX_HISTORY) {
-            this.memHistory.labels.shift()
-            this.memHistory.data.shift()
-        }
 
         if (!this.cpuChart || !this.memChart) {
             this.initCharts()

@@ -20,8 +20,6 @@ interface ChartCallbackContext {
     dataset: { label?: string }
 }
 
-const MAX_HISTORY = 60
-
 @Component
 class SystemGpu extends Vue {
     @Ref readonly gpuContainerRef!: HTMLDivElement
@@ -150,13 +148,6 @@ class SystemGpu extends Vue {
             h.util.push(gpu.utilization)
             h.vram.push(this.memPercent(gpu.memoryUsed, gpu.memoryTotal))
             h.power.push(gpu.powerUsage >= 0 ? gpu.powerUsage : 0)
-
-            if (h.labels.length > MAX_HISTORY) {
-                h.labels.shift()
-                h.util.shift()
-                h.vram.shift()
-                h.power.shift()
-            }
 
             if (!this.gpuCharts[key]) {
                 this.$nextTick(() => this.initGpuChart(key))
