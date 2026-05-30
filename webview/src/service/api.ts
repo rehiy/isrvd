@@ -202,6 +202,10 @@ class ApiService {
         return http.post<void>('filer/chmod', { path, mode })
     }
 
+    filerDirSize(path: string) {
+        return http.get<{ path: string; size: number }>('filer/dir-size', { params: { path } })
+    }
+
     filerZip(path: string) {
         return http.post<void>('filer/zip', { path })
     }
@@ -729,6 +733,10 @@ class ApiService {
 
     sftpWrite(hostId: string, data: SFTPWrite) {
         return http.post<void>(`ssh/sftp/${hostId}/write`, data)
+    }
+
+    sftpDirSize(hostId: string, path: string) {
+        return http.get<{ path: string; size: number }>(`ssh/sftp/${hostId}/dir-size`, { params: { path } })
     }
 }
 

@@ -49,6 +49,10 @@ class FileExplorer extends Vue {
     isEditableFile = isEditableFile
     isPreviewableFile = isPreviewableFile
     searchText = ''
+    // 记录已计算大小的文件夹路径
+    calculatedDirs = new Set<string>()
+    // 记录正在计算大小的文件夹路径
+    calculatingDirs = new Set<string>()
 
     // ─── 计算属性 ───
     get files() {
@@ -82,6 +86,20 @@ class FileExplorer extends Vue {
 
     refreshFiles() {
         this.portal.loadFiles()
+    }
+
+    async calcDirSize(file: FilerFileInfo) {
+        if (!file.isDir || this.calculatingDirs.has(file.path)) return
+        this.calculatingDirs.add(file.path)
+        try {
+            const result = await api.filerDirSize(file.path)
+            file.size = result.payload?.size || 0
+            this.calculatedDirs.add(file.path)
+        } catch (error: unknown) {
+            console.error('计算目录大小失败:', error)
+        } finally {
+            this.calculatingDirs.delete(file.path)
+        }
     }
 
     // ─── 生命周期 ───
@@ -207,7 +225,19 @@ export default toNative(FileExplorer)
                   <span v-if="!file.isDir" class="text-sm text-slate-600">
                     {{ formatFileSize(file.size) }}
                   </span>
-                  <span v-else class="text-slate-400">—</span>
+                  <button 
+                    v-else 
+                    type="button" 
+                    class="group text-sm text-slate-400 hover:text-primary-600 transition-colors w-20 text-left"
+                    @click="calcDirSize(file)"
+                  >
+                    <template v-if="calculatedDirs.has(file.path)">{{ formatFileSize(file.size) }}</template>
+                    <template v-else-if="calculatingDirs.has(file.path)">计算中...</template>
+                    <template v-else>
+                      <span class="group-hover:hidden">--</span>
+                      <span class="group-hover:inline hidden">计算大小</span>
+                    </template>
+                  </button>
                 </td>
                 
                 <td class="px-4 py-3">
@@ -296,7 +326,19 @@ export default toNative(FileExplorer)
                 </button>
                 <span v-else class="font-medium text-slate-800 text-sm truncate block">{{ file.name }}</span>
                 <span v-if="!file.isDir" class="text-xs text-slate-400 truncate block mt-0.5">{{ formatFileSize(file.size) }}</span>
-                <span v-else class="text-xs text-slate-400 truncate block mt-0.5">目录</span>
+                <button 
+                  v-else 
+                  type="button" 
+                  class="group text-xs text-slate-400 hover:text-primary-600 transition-colors truncate block mt-0.5 text-left"
+                  @click="calcDirSize(file)"
+                >
+                  <template v-if="calculatedDirs.has(file.path)">{{ formatFileSize(file.size) }}</template>
+                  <template v-else-if="calculatingDirs.has(file.path)">计算中...</template>
+                  <template v-else>
+                    <span class="group-hover:hidden">--</span>
+                    <span class="group-hover:inline hidden">计算大小</span>
+                  </template>
+                </button>
               </div>
             </div>
 

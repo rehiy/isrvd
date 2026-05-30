@@ -19,6 +19,7 @@ func (app *App) defineFilerRoutes() []Route {
 		{Method: "GET", Path: "/filer/list", Handler: app.filerFileList, Module: "filer", Label: "查询目录文件列表"},
 		{Method: "GET", Path: "/filer/read", Handler: app.filerFileRead, Module: "filer", Label: "读取文件内容"},
 		{Method: "GET", Path: "/filer/download", Handler: app.filerFileDownload, Module: "filer", Label: "下载文件", QueryToken: true},
+		{Method: "GET", Path: "/filer/dir-size", Handler: app.filerDirSize, Module: "filer", Label: "计算目录大小"},
 		// 写入与变更类操作按默认策略审计
 		{Method: "POST", Path: "/filer/mkdir", Handler: app.filerFileMkdir, Module: "filer", Label: "创建目录"},
 		{Method: "POST", Path: "/filer/create", Handler: app.filerFileCreate, Module: "filer", Label: "创建文件"},
@@ -82,6 +83,26 @@ func (app *App) filerFileList(c *gin.Context) {
 		return
 	}
 	respondSuccess(c, "获取文件列表成功", gin.H{"path": req.Path, "files": files})
+}
+
+func (app *App) filerDirSize(c *gin.Context) {
+	var req filerPathReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	absPath, ok := app.filerAbsPath(c, req.Path)
+	if !ok {
+		return
+	}
+
+	size, err := app.filerSvc.DirSize(absPath)
+	if err != nil {
+		logman.Error("Calculate dir size failed", "path", absPath, "error", err)
+		respondError(c, http.StatusInternalServerError, "无法计算目录大小")
+		return
+	}
+	respondSuccess(c, "计算目录大小成功", gin.H{"path": req.Path, "size": size})
 }
 
 func (app *App) filerFileDelete(c *gin.Context) {

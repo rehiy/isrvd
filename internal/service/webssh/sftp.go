@@ -126,3 +126,12 @@ func (s *Service) SFTPWrite(hostID, filePath, content string) error {
 	src := strings.NewReader(content)
 	return s.sftpClient.Upload(opt, filePath, src)
 }
+
+// SFTPDirSize 计算远程目录大小（包含所有子目录和文件）
+func (s *Service) SFTPDirSize(hostID, dirPath string) (int64, error) {
+	opt, err := s.store.hostGetOption(hostID)
+	if err != nil {
+		return 0, err
+	}
+	return s.sftpClient.DirSize(opt, dirPath)
+}

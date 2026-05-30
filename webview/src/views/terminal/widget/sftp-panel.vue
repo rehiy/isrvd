@@ -9,10 +9,10 @@ import type { SFTPFileInfo, SFTPListResult } from '@/service/types'
 import { type UploadNode, buildUploadTree, shouldIgnoreUploadEntry } from '@/helper/ssh'
 import { formatFileSize, formatUnixTime, getFileIcon, joinPath, downloadBlob } from '@/helper/utils'
 
-import UploadWidget from './sftp-upload.vue'
 import SftpChmodModal from './sftp-chmod-modal.vue'
-import SftpRenameModal from './sftp-rename-modal.vue'
 import SftpModifyModal from './sftp-modify-modal.vue'
+import SftpRenameModal from './sftp-rename-modal.vue'
+import UploadWidget from './sftp-upload.vue'
 
 @Component({ components: { UploadWidget, SftpChmodModal, SftpRenameModal, SftpModifyModal } })
 class SftpPanel extends Vue {
@@ -36,6 +36,10 @@ class SftpPanel extends Vue {
     mkdirName = ''
     pathEditMode = false
     pathEditValue = ''
+    // 记录已计算大小的文件夹路径
+    calculatedDirs = new Set<string>()
+    // 记录正在计算大小的文件夹路径
+    calculatingDirs = new Set<string>()
 
     // ─── 拖拽状态 ───
     dragOver = false
@@ -87,6 +91,26 @@ class SftpPanel extends Vue {
         if (this.sftpPath === '/') return
         const parent = this.sftpPath.replace(/\/+$/, '').split('/').slice(0, -1).join('/') || '/'
         this.sftpLoad(parent)
+    }
+
+    // ─── 文件夹大小计算 ───
+    sftpCalcPath(file: SFTPFileInfo): string {
+        return joinPath(this.sftpPath, file.name)
+    }
+
+    async sftpCalcDirSize(file: SFTPFileInfo) {
+        const filePath = this.sftpCalcPath(file)
+        if (!file.isDir || this.calculatingDirs.has(filePath)) return
+        this.calculatingDirs.add(filePath)
+        try {
+            const result = await api.sftpDirSize(this.hostId, filePath)
+            file.size = result.payload?.size || 0
+            this.calculatedDirs.add(filePath)
+        } catch (error: unknown) {
+            console.error('计算目录大小失败:', error)
+        } finally {
+            this.calculatingDirs.delete(filePath)
+        }
     }
 
     // ─── 路径编辑 ───
@@ -400,7 +424,20 @@ export default toNative(SftpPanel)
               </div>
             </td>
             <td class="px-2 py-2 text-slate-400 whitespace-nowrap hidden sm:table-cell">
-              {{ file.isDir ? '—' : formatSize(file.size) }}
+              <span v-if="!file.isDir">{{ formatSize(file.size) }}</span>
+              <button 
+                v-else 
+                type="button" 
+                class="group text-slate-400 hover:text-teal-600 transition-colors w-20 text-left"
+                @click="sftpCalcDirSize(file)"
+              >
+                <template v-if="calculatedDirs.has(sftpCalcPath(file))">{{ formatSize(file.size) }}</template>
+                <template v-else-if="calculatingDirs.has(sftpCalcPath(file))">计算中...</template>
+                <template v-else>
+                  <span class="group-hover:hidden">--</span>
+                  <span class="group-hover:inline hidden">计算大小</span>
+                </template>
+              </button>
             </td>
             <td class="px-2 py-2 text-slate-400 whitespace-nowrap hidden md:table-cell">
               {{ formatTime(file.modTime) }}

@@ -33,6 +33,7 @@ func (app *App) defineWebSSHRoutes() []Route {
 		{Method: "POST", Path: "/ssh/sftp/:id/chown", Handler: app.websshSFTPChown, Module: "ssh", Label: "SFTP 修改所有者"},
 		{Method: "GET", Path: "/ssh/sftp/:id/read", Handler: app.websshSFTPRead, Module: "ssh", Label: "SFTP 读取文件"},
 		{Method: "POST", Path: "/ssh/sftp/:id/write", Handler: app.websshSFTPWrite, Module: "ssh", Label: "SFTP 写入文件"},
+		{Method: "GET", Path: "/ssh/sftp/:id/dir-size", Handler: app.websshSFTPDirSize, Module: "ssh", Label: "SFTP 计算目录大小"},
 	}
 }
 
@@ -313,4 +314,22 @@ func (app *App) websshSFTPWrite(c *gin.Context) {
 	}
 
 	respondSuccess(c, "文件保存成功", nil)
+}
+
+// websshSFTPDirSize 计算远程目录大小
+func (app *App) websshSFTPDirSize(c *gin.Context) {
+	id := c.Param("id")
+	dirPath := c.Query("path")
+	if dirPath == "" {
+		respondError(c, http.StatusBadRequest, "path 参数不能为空")
+		return
+	}
+
+	size, err := app.websshSvc.SFTPDirSize(id, dirPath)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "无法计算目录大小: "+err.Error())
+		return
+	}
+
+	respondSuccess(c, "计算目录大小成功", gin.H{"path": dirPath, "size": size})
 }

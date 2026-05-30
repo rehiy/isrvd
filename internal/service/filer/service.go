@@ -175,6 +175,11 @@ func (s *Service) FileChmod(absPath string, modeStr string) error {
 	return os.Chmod(absPath, os.FileMode(mode))
 }
 
+// DirSize 计算目录大小（包含所有子目录和文件）
+func (s *Service) DirSize(absPath string) (int64, error) {
+	return filer.DirSize(absPath)
+}
+
 // FileZip 压缩文件或目录
 func (s *Service) FileZip(absPath string) error {
 	return archive.NewZipper().Zip(absPath)
