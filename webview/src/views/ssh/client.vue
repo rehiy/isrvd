@@ -189,13 +189,13 @@ export default toNative(SSHClientPage)
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
             <div class="tab-group">
-              <button type="button" class="tab-btn !h-8 !px-2" :class="viewMode === 'all' ? 'tab-btn-active text-teal-600' : 'tab-btn-inactive'" @click="switchViewMode('all')" title="全部">
+              <button type="button" class="tab-btn !h-8 !px-2" :class="viewMode === 'all' ? 'tab-btn-active text-teal-600' : 'tab-btn-inactive'" title="全部" @click="switchViewMode('all')">
                 <i class="fas fa-border-all text-xs"></i>
               </button>
-              <button type="button" class="tab-btn !h-8 !px-2" :class="viewMode === 'terminal' ? 'tab-btn-active text-teal-600' : 'tab-btn-inactive'" @click="switchViewMode('terminal')" title="终端">
+              <button type="button" class="tab-btn !h-8 !px-2" :class="viewMode === 'terminal' ? 'tab-btn-active text-teal-600' : 'tab-btn-inactive'" title="终端" @click="switchViewMode('terminal')">
                 <i class="fas fa-terminal text-xs"></i>
               </button>
-              <button type="button" class="tab-btn !h-8 !px-2" :class="viewMode === 'sftp' ? 'tab-btn-active text-teal-600' : 'tab-btn-inactive'" @click="switchViewMode('sftp')" title="文件">
+              <button type="button" class="tab-btn !h-8 !px-2" :class="viewMode === 'sftp' ? 'tab-btn-active text-teal-600' : 'tab-btn-inactive'" title="文件" @click="switchViewMode('sftp')">
                 <i class="fas fa-folder-open text-xs"></i>
               </button>
             </div>

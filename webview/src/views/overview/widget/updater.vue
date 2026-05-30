@@ -135,7 +135,7 @@ export default toNative(SystemUpdater)
 <template>
   <template v-if="versionCheck?.update">
     <!-- 版本更新横幅 -->
-    <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100">
+    <div class="flex items-center justify-between gap-3 mb-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100">
       <!-- 左侧：图标 + 文案 -->
       <div class="flex items-center gap-3 min-w-0">
         <div class="row-icon bg-emerald-500 text-white">

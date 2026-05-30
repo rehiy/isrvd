@@ -14,7 +14,13 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/local',
     name: 'local',
-    redirect: '/local/explorer'
+    redirect: '/local/monitor'
+  },
+  {
+    path: '/local/monitor',
+    name: 'local-monitor',
+    component: () => import('@/views/local/monitor.vue'),
+    meta: { title: '系统监控' }
   },
   {
     path: '/local/explorer',

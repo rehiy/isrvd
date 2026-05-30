@@ -10,16 +10,16 @@ import { downloadFile, formatFileSize, formatTime, getFileIcon, isEditableFile, 
 
 import PageSearch from '@/component/page-search.vue'
 
-import ChmodModal from './widget/chmod-modal.vue'
-import CreateModal from './widget/create-modal.vue'
-import DeleteModal from './widget/delete-modal.vue'
-import MkdirModal from './widget/mkdir-modal.vue'
-import ModifyModal from './widget/modify-modal.vue'
-import PreviewModal from './widget/preview-modal.vue'
-import RenameModal from './widget/rename-modal.vue'
-import UnzipModal from './widget/unzip-modal.vue'
-import UploadModal from './widget/upload-modal.vue'
-import ZipModal from './widget/zip-modal.vue'
+import ChmodModal from './explorer/chmod-modal.vue'
+import CreateModal from './explorer/create-modal.vue'
+import DeleteModal from './explorer/delete-modal.vue'
+import MkdirModal from './explorer/mkdir-modal.vue'
+import ModifyModal from './explorer/modify-modal.vue'
+import PreviewModal from './explorer/preview-modal.vue'
+import RenameModal from './explorer/rename-modal.vue'
+import UnzipModal from './explorer/unzip-modal.vue'
+import UploadModal from './explorer/upload-modal.vue'
+import ZipModal from './explorer/zip-modal.vue'
 
 @Component({
     components: {

@@ -8,20 +8,20 @@ import CaddyOverview from './widget/caddy.vue'
 import DockerOverview from './widget/docker.vue'
 import SwarmOverview from './widget/swarm.vue'
 import SystemOverview from './widget/system.vue'
-import SystemUpdater from './widget/system_updater.vue'
+import SystemUpdater from './widget/updater.vue'
 
 @Component({
-    components: { SystemUpdater, ApisixOverview, CaddyOverview, DockerOverview, SwarmOverview, SystemOverview }
+    components: { SystemOverview, ApisixOverview, CaddyOverview, DockerOverview, SwarmOverview, SystemUpdater }
 })
 class Overview extends Vue {
     portal = usePortal()
 
     // ─── Refs ───
+    @Ref readonly systemRef!: InstanceType<typeof SystemOverview>
     @Ref readonly apisixRef!: InstanceType<typeof ApisixOverview>
     @Ref readonly caddyRef!: InstanceType<typeof CaddyOverview>
     @Ref readonly dockerRef!: InstanceType<typeof DockerOverview>
     @Ref readonly swarmRef!: InstanceType<typeof SwarmOverview>
-    @Ref readonly systemRef!: InstanceType<typeof SystemOverview>
 
     // ─── 计算属性 ───
     get hasAnyBlock() {
@@ -41,6 +41,7 @@ class Overview extends Vue {
 
     // ─── 方法 ───
     refreshAll() {
+        this.systemRef?.load()
         if (
             this.portal.hasPerm('GET /api/apisix/routes') ||
             this.portal.hasPerm('GET /api/apisix/consumers') ||
@@ -59,16 +60,6 @@ class Overview extends Vue {
         }
         if (this.portal.hasPerm('GET /api/swarm/info')) {
             this.swarmRef?.load()
-        }
-        if (this.portal.hasPerm('GET /api/overview/monitor')) {
-            this.systemRef?.load()
-        }
-    }
-
-    // ─── 生命周期 ───
-    unmounted() {
-        if (this.portal.hasPerm('GET /api/overview/monitor')) {
-            this.systemRef?.stopPoll()
         }
     }
 }
@@ -112,6 +103,12 @@ export default toNative(Overview)
       </div>
     </div>
 
+    <!-- 系统信息区块 -->
+    <div v-if="portal.hasPerm('GET /api/overview/monitor')" class="p-6 border-b border-slate-100">
+      <SystemUpdater />
+      <SystemOverview ref="systemRef" />
+    </div>
+
     <!-- APISIX 概览区块 -->
     <div v-if="portal.hasPerm('GET /api/apisix/routes')" class="p-6 border-b border-slate-100">
       <div class="flex items-center gap-2 mb-4">
@@ -146,18 +143,6 @@ export default toNative(Overview)
         <h1 class="text-lg font-semibold text-slate-700">Swarm 集群</h1>
       </div>
       <SwarmOverview ref="swarmRef" />
-    </div>
-
-    <!-- 系统信息区块 -->
-    <div v-if="portal.hasPerm('GET /api/overview/monitor')" class="p-6 border-b border-slate-100">
-      <div class="flex items-center gap-2 mb-4">
-        <i class="fas fa-server text-slate-500 text-lg"></i>
-        <h1 class="text-lg font-semibold text-slate-700">系统信息</h1>
-      </div>
-      <div class="space-y-3">
-        <SystemUpdater />
-        <SystemOverview ref="systemRef" />
-      </div>
     </div>
 
     <!-- 无任何权限时的空状态 -->
