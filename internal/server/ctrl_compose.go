@@ -39,7 +39,7 @@ func (app *App) composeDocker(c *gin.Context) {
 		return
 	}
 
-	content, err := app.composeSvc.DockerContent(c.Request.Context(), name)
+	content, _, err := app.composeSvc.DockerContent(c.Request.Context(), name)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
