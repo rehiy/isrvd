@@ -15,14 +15,14 @@ import (
 func (app *App) defineAccountRoutes() []Route {
 	return []Route{
 		// 认证与登录
-		{Method: "GET", Path: "/account/info", Handler: app.accountAuthInfo, Module: "account", Label: "获取当前认证信息", Access: AccessAnon},
+		{Method: "GET", Path: "/account/info", Handler: app.accountAuth, Module: "account", Label: "获取当前认证信息", Access: AccessAnon},
 		{Method: "POST", Path: "/account/login", Handler: app.accountLogin, Module: "account", Label: "账号密码登录", Access: AccessAnon},
 		// OIDC 登录
 		{Method: "GET", Path: "/account/oidc/login", Handler: app.accountOIDCLogin, Module: "account", Label: "发起 OIDC 登录", Access: AccessAnon},
 		{Method: "GET", Path: "/account/oidc/callback", Handler: app.accountOIDCCallback, Module: "account", Label: "处理 OIDC 回调", Access: AccessAnon},
 		{Method: "POST", Path: "/account/oidc/exchange", Handler: app.accountOIDCExchange, Module: "account", Label: "交换 OIDC 登录码", Access: AccessAnon},
 		// 凭证管理
-		{Method: "POST", Path: "/account/token", Handler: app.accountApiTokenCreate, Module: "account", Label: "创建 API 令牌"},
+		{Method: "POST", Path: "/account/token", Handler: app.accountTokenCreate, Module: "account", Label: "创建 API 令牌"},
 		{Method: "PUT", Path: "/account/password", Handler: app.accountPasswordChange, Module: "account", Label: "修改当前用户密码", Access: AccessAuth},
 		// 路由权限
 		{Method: "GET", Path: "/account/routes", Handler: app.accountRouteList, Module: "account", Label: "查询路由权限列表", Access: AccessAuth},
@@ -34,8 +34,8 @@ func (app *App) defineAccountRoutes() []Route {
 	}
 }
 
-// accountAuthInfo 返回当前认证模式及已登录用户信息
-func (app *App) accountAuthInfo(c *gin.Context) {
+// accountAuth 返回当前认证模式及已登录用户信息
+func (app *App) accountAuth(c *gin.Context) {
 	username := c.GetString("username")
 	respondSuccess(c, "ok", app.accountSvc.AuthInfo(username))
 }
@@ -90,8 +90,8 @@ func (app *App) accountOIDCExchange(c *gin.Context) {
 	respondSuccess(c, "登录成功", resp)
 }
 
-// accountApiTokenCreate 创建长效 API Token
-func (app *App) accountApiTokenCreate(c *gin.Context) {
+// accountTokenCreate 创建长效 API Token
+func (app *App) accountTokenCreate(c *gin.Context) {
 	var req account.CreateApiTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())

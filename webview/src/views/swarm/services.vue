@@ -103,7 +103,7 @@ class Services extends Vue {
             iconColor: 'blue',
             confirmText: '确认重部署',
             onConfirm: async () => {
-                await api.swarmServiceRedeploy(svc.id)
+                await api.swarmServiceForceUpdate(svc.id)
                 this.portal.showNotification('success', '已触发强制重部署')
                 this.loadServices()
             }

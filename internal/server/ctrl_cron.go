@@ -18,7 +18,7 @@ func (app *App) defineCronRoutes() []Route {
 		{Method: "PUT", Path: "/cron/jobs/:id", Handler: app.cronJobUpdate, Module: "cron", Label: "更新计划任务"},
 		{Method: "DELETE", Path: "/cron/jobs/:id", Handler: app.cronJobDelete, Module: "cron", Label: "删除计划任务"},
 		{Method: "POST", Path: "/cron/jobs/:id/run", Handler: app.cronJobRun, Module: "cron", Label: "立即执行任务"},
-		{Method: "POST", Path: "/cron/jobs/:id/enable", Handler: app.cronJobEnable, Module: "cron", Label: "启用或禁用任务"},
+		{Method: "POST", Path: "/cron/jobs/:id/enable", Handler: app.cronJobStatusPatch, Module: "cron", Label: "启用或禁用任务"},
 		{Method: "GET", Path: "/cron/jobs/:id/logs", Handler: app.cronJobLogs, Module: "cron", Label: "查询任务执行历史"},
 	}
 }
@@ -96,7 +96,7 @@ func (app *App) cronJobRun(c *gin.Context) {
 	respondSuccess(c, "任务已触发执行", nil)
 }
 
-func (app *App) cronJobEnable(c *gin.Context) {
+func (app *App) cronJobStatusPatch(c *gin.Context) {
 	id := c.Param("id")
 
 	var req cronJobEnableReq

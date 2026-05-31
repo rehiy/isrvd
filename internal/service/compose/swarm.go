@@ -84,8 +84,8 @@ func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployRe
 	return &DeployResult{ProjectName: projectName, Items: items, InstallDir: installDir}, nil
 }
 
-// SwarmContentGet 读取项目的 compose.yml；文件不存在时从运行态反推。
-func (s *Service) SwarmContentGet(ctx context.Context, name string) (string, error) {
+// SwarmContent 读取项目的 compose.yml；文件不存在时从运行态反推。
+func (s *Service) SwarmContent(ctx context.Context, name string) (string, error) {
 	if err := ValidateName(name); err != nil {
 		return "", err
 	}
@@ -134,7 +134,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	// 准备新 content：单服务镜像更新 or 全量替换
 	content := req.Content
 	if req.ServiceName != "" {
-		oldContent, err := s.SwarmContentGet(ctx, name)
+		oldContent, err := s.SwarmContent(ctx, name)
 		if err != nil {
 			return nil, err
 		}
@@ -144,7 +144,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 		}
 	}
 
-	oldContent, _ := s.SwarmContentGet(ctx, name)
+	oldContent, _ := s.SwarmContent(ctx, name)
 
 	// 先解析新 content 校验合法性（不写文件、不删旧实例），失败时旧服务保持运行
 	newProject, err := s.projectParse(ctx, name, content, installDir)

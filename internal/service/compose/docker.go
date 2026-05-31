@@ -87,13 +87,13 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 	return &DeployResult{ProjectName: projectName, Items: items, InstallDir: installDir}, nil
 }
 
-// DockerContentGet 读取项目 compose.yml，不存在时从运行态反推。
-func (s *Service) DockerContentGet(ctx context.Context, name string) (string, error) {
-	content, _, err := s.dockerContentGet(ctx, name)
+// DockerContent 读取项目 compose.yml，不存在时从运行态反推。
+func (s *Service) DockerContent(ctx context.Context, name string) (string, error) {
+	content, _, err := s.contentGet(ctx, name)
 	return content, err
 }
 
-func (s *Service) dockerContentGet(ctx context.Context, name string) (string, string, error) {
+func (s *Service) contentGet(ctx context.Context, name string) (string, string, error) {
 	if err := ValidateName(name); err != nil {
 		return "", "", err
 	}
@@ -149,7 +149,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 
 	content := req.Content
 	if req.ServiceName != "" {
-		oldContent, _, err := s.dockerContentGet(ctx, name)
+		oldContent, err := s.DockerContent(ctx, name)
 		if err != nil {
 			return nil, err
 		}
@@ -159,7 +159,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		}
 	}
 
-	oldContent, _, _ := s.dockerContentGet(ctx, name)
+	oldContent, _, _ := s.contentGet(ctx, name)
 
 	// 先校验新 content，失败时旧服务保持运行
 	newProject, err := s.projectParse(ctx, name, content, installDir)

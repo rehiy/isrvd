@@ -537,8 +537,8 @@ type GlobalForm struct {
 	GracePeriod string `json:"gracePeriod,omitempty"` // 优雅关闭等待时间，例如 10s（apps.http.grace_period）
 }
 
-// GlobalGet 获取全局选项
-func (s *Service) GlobalGet(ctx context.Context) (*GlobalForm, error) {
+// Global 获取全局选项
+func (s *Service) Global(ctx context.Context) (*GlobalForm, error) {
 	cfg, err := s.client.ConfigAll(ctx)
 	if err != nil {
 		return nil, err

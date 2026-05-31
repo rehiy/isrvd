@@ -444,7 +444,7 @@ class ApiService {
         return http.get<DockerContainerStats>(`docker/container/${id}/stats`)
     }
 
-    dockerContainerCompose(name: string) {
+    composeDocker(name: string) {
         return http.get<DockerContainerCompose>(`compose/docker/${name}`)
     }
 
@@ -550,7 +550,7 @@ class ApiService {
         return http.get<{ worker: string; manager: string }>('swarm/token')
     }
 
-    swarmNode(id: string) {
+swarmNode(id: string) {
 	return http.get<SwarmNodeDetail>(`swarm/node/${id}`)
     }
 
@@ -575,11 +575,11 @@ class ApiService {
         return http.post('swarm/service', data)
     }
 
-    swarmServiceRedeploy(id: string) {
+    swarmServiceForceUpdate(id: string) {
         return http.post<void>(`swarm/service/${id}/force-update`)
     }
 
-    swarmServiceCompose(name: string) {
+    swarmCompose(name: string) {
         return http.get<SwarmServiceCompose>(`compose/swarm/${name}`)
     }
 
@@ -647,7 +647,7 @@ class ApiService {
         return http.post<void>(`cron/jobs/${id}/run`, {})
     }
 
-    cronJobStatus(id: string, enabled: boolean) {
+    cronJobStatusPatch(id: string, enabled: boolean) {
         return http.post<void>(`cron/jobs/${id}/enable`, { enabled })
     }
 

@@ -108,7 +108,7 @@ class CronJobs extends Vue {
 
     async toggleEnabled(job: CronJob) {
         try {
-            await api.cronJobStatus(job.id, !job.enabled)
+            await api.cronJobStatusPatch(job.id, !job.enabled)
             this.portal.showNotification('success', job.enabled ? '任务已禁用' : '任务已启用')
             await this.loadJobs()
         } catch {
