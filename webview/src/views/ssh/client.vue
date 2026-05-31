@@ -140,7 +140,7 @@ export default toNative(SSHClientPage)
 </script>
 
 <template>
-  <div class="ssh-client-page">
+  <div class="h-[calc(100vh-100px)]">
     <div ref="containerRef" class="h-full card flex flex-col overflow-hidden">
       <!-- Toolbar -->
       <div class="card-toolbar">
@@ -220,10 +220,8 @@ export default toNative(SSHClientPage)
             'flex-[7_0_0%]': viewMode === 'all'
           }"
         >
-          <div class="terminal-body h-full">
-            <div class="terminal-pane h-full">
-              <div ref="xtermRef" class="h-full rounded-lg overflow-hidden"></div>
-            </div>
+          <div class="terminal-pane h-full">
+            <div ref="xtermRef" class="h-full rounded-lg overflow-hidden"></div>
           </div>
         </div>
 

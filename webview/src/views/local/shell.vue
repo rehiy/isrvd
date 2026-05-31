@@ -39,7 +39,7 @@ export default toNative(Shell)
 </script>
 
 <template>
-  <div class="terminal-page">
+  <div class="h-[calc(100vh-100px)]">
     <div class="h-full card flex flex-col overflow-hidden">
       <!-- Toolbar Bar -->
       <div class="card-toolbar">
@@ -102,10 +102,8 @@ export default toNative(Shell)
       </div>
 
       <!-- 内容区域 -->
-      <div class="terminal-body">
-        <div class="terminal-pane">
-          <div ref="xtermRef" class="h-full rounded-lg overflow-hidden"></div>
-        </div>
+      <div class="terminal-pane">
+        <div ref="xtermRef" class="h-full rounded-lg overflow-hidden"></div>
       </div>
     </div>
   </div>

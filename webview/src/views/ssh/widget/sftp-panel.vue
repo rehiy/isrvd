@@ -17,7 +17,7 @@ import UploadWidget from './sftp-upload.vue'
 @Component({ components: { UploadWidget, SftpChmodModal, SftpRenameModal, SftpModifyModal } })
 class SftpPanel extends Vue {
     @Prop({ required: true }) readonly hostId!: string
-    @Prop({ default: 280 }) readonly height!: number
+    @Prop({ default: 280 }) readonly height!: number | string
 
     portal = usePortal()
 
@@ -294,8 +294,8 @@ export default toNative(SftpPanel)
 </script>
 
 <template>
-  <div class="border-t border-slate-200 flex flex-col" :style="{ height: height + 'px', minHeight: '120px' }">
-    <!-- 工具栏 -->
+  <div class="border-t border-slate-200 flex flex-col h-full">
+    <!-- 工具栏（不收缩，不在滚动范围内） -->
     <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 flex-shrink-0">
       <input
         v-if="pathEditMode"
