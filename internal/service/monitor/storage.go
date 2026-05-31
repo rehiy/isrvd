@@ -83,12 +83,13 @@ func (s *store) ensureFile() error {
 
 // append 将一条记录追加写入当天文件（一行 JSON）
 func (s *store) append(v any) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
+	// 先检查日期（在锁外，减少锁持有时间）
 	if err := s.ensureFile(); err != nil {
 		return err
 	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	line, err := json.Marshal(v)
 	if err != nil {
@@ -102,7 +103,9 @@ func (s *store) append(v any) error {
 
 // ReadSince 读取 dir 下 prefix_*.ndjson 中 ts >= (now-sinceSeconds) 的所有行
 // 按时间窗口确定需要读哪几天的文件，合并后按 ts 顺序返回
-func ReadSince[T any](dir, prefix string, sinceSeconds int64) ([]T, error) {
+// containerID 为空时返回所有记录，非空时只返回指定容器的记录
+// limit <= 0 表示不限制条数
+func ReadSince[T any](dir, prefix, containerID string, sinceSeconds int64, limit int) ([]T, error) {
 	cutoff := time.Now().Unix() - sinceSeconds
 
 	// 确定需要读取的日期列表（从最早到今天）
@@ -110,8 +113,11 @@ func ReadSince[T any](dir, prefix string, sinceSeconds int64) ([]T, error) {
 
 	var result []T
 	for _, date := range days {
+		if limit > 0 && len(result) >= limit {
+			break
+		}
 		path := filepath.Join(dir, fmt.Sprintf("%s_%s.ndjson", prefix, date))
-		recs, err := readFileRecords[T](path, cutoff)
+		recs, err := readFileRecords[T](path, cutoff, containerID, limit-len(result))
 		if err != nil {
 			logman.Warn("monitor: read file failed", "path", path, "error", err)
 			continue
@@ -152,7 +158,23 @@ func AppendRecord(dir, prefix string, ts int64, data any) {
 		logman.Warn("monitor: marshal data failed", "prefix", prefix, "error", err)
 		return
 	}
-	record := &Record{Ts: ts, Data: raw}
+	AppendRawRecord(dir, prefix, "", ts, raw)
+}
+
+// AppendRecordWithID 将任意数据序列化后追加到文件，可指定容器 ID
+// containerID 为空时表示主机监控
+func AppendRecordWithID(dir, prefix, containerID string, ts int64, data any) {
+	raw, err := json.Marshal(data)
+	if err != nil {
+		logman.Warn("monitor: marshal data failed", "prefix", prefix, "error", err)
+		return
+	}
+	AppendRawRecord(dir, prefix, containerID, ts, raw)
+}
+
+// AppendRawRecord 直接追加已序列化的数据（避免重复序列化）
+func AppendRawRecord(dir, prefix, containerID string, ts int64, raw json.RawMessage) {
+	record := &Record{Ts: ts, Data: raw, ContainerID: containerID}
 	s, err := getStore(dir, prefix)
 	if err != nil {
 		logman.Warn("monitor: get store failed", "prefix", prefix, "error", err)
@@ -178,8 +200,10 @@ func daysInRange(cutoffUnix int64) []string {
 	return days
 }
 
-// readFileRecords 读取单个文件中 ts >= cutoff 的所有记录
-func readFileRecords[T any](path string, cutoff int64) ([]T, error) {
+// readFileRecords 读取单个文件中 ts >= cutoff 的记录
+// containerID 为空时返回所有记录，非空时只返回指定容器的记录
+// limit <= 0 表示不限制条数
+func readFileRecords[T any](path string, cutoff int64, containerID string, limit int) ([]T, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -192,14 +216,22 @@ func readFileRecords[T any](path string, cutoff int64) ([]T, error) {
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 	scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
 	for scanner.Scan() {
+		if limit > 0 && len(result) >= limit {
+			break
+		}
 		line := scanner.Bytes()
 		if len(line) == 0 {
 			continue
 		}
 		var ts struct {
-			Ts int64 `json:"ts"`
+			Ts          int64  `json:"ts"`
+			ContainerID string `json:"container_id"`
 		}
 		if json.Unmarshal(line, &ts) != nil || ts.Ts < cutoff {
+			continue
+		}
+		// 如果指定了容器 ID，只返回匹配的记录
+		if containerID != "" && ts.ContainerID != containerID {
 			continue
 		}
 		var rec T

@@ -15,8 +15,9 @@ import (
 // Record 通用监控记录（一行 NDJSON）
 // Data 为原始 JSON，存储时不感知具体数据结构
 type Record struct {
-	Ts   int64           `json:"ts"`
-	Data json.RawMessage `json:"data"`
+	Ts          int64           `json:"ts"`
+	Data        json.RawMessage `json:"data"`
+	ContainerID string          `json:"container_id,omitempty"` // 仅容器监控有值
 }
 
 // Collector 后台监控采集器，负责定时采集和文件存储
@@ -112,10 +113,11 @@ func (c *Collector) CollectContainerStatNow(ctx context.Context, id string) *Rec
 
 // collect 执行一次采集
 func (c *Collector) collect(ctx context.Context) {
-	ts := time.Now().Unix()
-
 	// ── 主机数据 ──
-	AppendRecord(c.dataDir, HostPrefix, ts, CollectHostStat(ctx))
+	record := c.CollectHostStatNow(ctx)
+	if record != nil {
+		AppendRawRecord(c.dataDir, HostPrefix, "", record.Ts, record.Data)
+	}
 
 	// ── 容器数据 ──
 	if registry.DockerService == nil {
@@ -127,11 +129,10 @@ func (c *Collector) collect(ctx context.Context) {
 		return
 	}
 	for _, ct := range containers {
-		stats, err := registry.DockerService.ContainerStats(ctx, ct.ID)
-		if err != nil {
-			continue
+		record := c.CollectContainerStatNow(ctx, ct.ID)
+		if record != nil {
+			AppendRawRecord(c.dataDir, ContainerPrefix, ct.ID, record.Ts, record.Data)
 		}
-		AppendRecord(c.dataDir, ContainerPrefix+"_"+ct.ID, ts, stats)
 	}
 }
 
