@@ -1,14 +1,16 @@
 <script lang="ts">
 import type { ChartOptions } from 'chart.js'
 import { markRaw } from 'vue'
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import type { SystemStat, SystemGPU } from '@/service/types'
 
 import Chart from '@/helper/chart'
+import { appendMonitorPoint } from '@/helper/monitor'
 import { hexToRgba } from '@/helper/utils'
 
 interface GpuHistory {
+    ts: number[]
     labels: string[]
     util: number[]
     vram: number[]
@@ -22,6 +24,8 @@ interface ChartCallbackContext {
 
 @Component
 class SystemGpu extends Vue {
+    @Prop({ type: Number, default: 300 }) readonly rangeSeconds!: number
+
     @Ref readonly gpuContainerRef!: HTMLDivElement
 
     private gpuCharts: Record<string, Chart<'line'>> = {}
@@ -92,7 +96,7 @@ class SystemGpu extends Vue {
 
         this.gpuCharts[key]?.destroy()
 
-        const h = this.gpuHistories[key] || { labels: [], util: [], vram: [], power: [] }
+        const h = this.gpuHistories[key] || { ts: [], labels: [], util: [], vram: [], power: [] }
         this.gpuHistories[key] = h
 
         const chart = new Chart(canvas, {
@@ -133,21 +137,29 @@ class SystemGpu extends Vue {
         this.currentGpus = payload.gpu || []
         if (!payload.gpu?.length) return
 
-        const t = new Date(ts * 1000)
-        const label = `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}:${t.getSeconds().toString().padStart(2, '0')}`
-
         payload.gpu.forEach(gpu => {
             const key = this.gpuKey(gpu)
 
             if (!this.gpuHistories[key]) {
-                this.gpuHistories[key] = { labels: [], util: [], vram: [], power: [] }
+                this.gpuHistories[key] = { ts: [], labels: [], util: [], vram: [], power: [] }
             }
             const h = this.gpuHistories[key]
 
-            h.labels.push(label)
-            h.util.push(gpu.utilization)
-            h.vram.push(this.memPercent(gpu.memoryUsed, gpu.memoryTotal))
-            h.power.push(gpu.powerUsage >= 0 ? gpu.powerUsage : 0)
+            appendMonitorPoint(
+                h,
+                ts,
+                this.rangeSeconds,
+                () => {
+                    h.util.push(gpu.utilization)
+                    h.vram.push(this.memPercent(gpu.memoryUsed, gpu.memoryTotal))
+                    h.power.push(gpu.powerUsage >= 0 ? gpu.powerUsage : 0)
+                },
+                count => {
+                    h.util.splice(0, count)
+                    h.vram.splice(0, count)
+                    h.power.splice(0, count)
+                }
+            )
 
             if (!this.gpuCharts[key]) {
                 this.$nextTick(() => this.initGpuChart(key))

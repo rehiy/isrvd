@@ -1,14 +1,16 @@
 <script lang="ts">
 import type { ChartOptions } from 'chart.js'
 import { markRaw } from 'vue'
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import type { SystemStat, SystemNetInterface } from '@/service/types'
 
 import Chart from '@/helper/chart'
+import { appendMonitorPoint } from '@/helper/monitor'
 import { hexToRgba } from '@/helper/utils'
 
 interface TimeSeriesHistory {
+    ts: number[]
     labels: string[]
     recv: number[]
     sent: number[]
@@ -23,6 +25,8 @@ const NATURAL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivi
 
 @Component
 class SystemNetwork extends Vue {
+    @Prop({ type: Number, default: 300 }) readonly rangeSeconds!: number
+
     @Ref readonly netContainerRef!: HTMLDivElement
 
     private netCharts: Record<string, Chart<'line'>> = {}
@@ -87,7 +91,7 @@ class SystemNetwork extends Vue {
         const canvas = this.netContainerRef?.querySelector(`[data-iface="${name}"]`) as HTMLCanvasElement | null
         if (!canvas) return
         this.netCharts[name]?.destroy()
-        const h = this.netHistory[name] || { labels: [], recv: [], sent: [] }
+        const h = this.netHistory[name] || { ts: [], labels: [], recv: [], sent: [] }
         this.netHistory[name] = h
         const chart = new Chart(canvas, {
             type: 'line' as const,
@@ -121,8 +125,6 @@ class SystemNetwork extends Vue {
         this.currentIfaces = physicalIfaces
         if (!ifaces.length) return
 
-        const t = new Date(ts * 1000)
-        const label = `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}:${t.getSeconds().toString().padStart(2, '0')}`
         const nowTime = ts * 1000
 
         physicalIfaces.forEach(ni => {
@@ -143,13 +145,23 @@ class SystemNetwork extends Vue {
             this.lastNetIO[name] = { recv: ni.bytesRecv, sent: ni.bytesSent, time: nowTime }
 
             if (!this.netHistory[name]) {
-                this.netHistory[name] = { labels: [], recv: [], sent: [] }
+                this.netHistory[name] = { ts: [], labels: [], recv: [], sent: [] }
             }
             const h = this.netHistory[name]
 
-            h.labels.push(label)
-            h.recv.push(recvRate)
-            h.sent.push(sentRate)
+            appendMonitorPoint(
+                h,
+                ts,
+                this.rangeSeconds,
+                () => {
+                    h.recv.push(recvRate)
+                    h.sent.push(sentRate)
+                },
+                count => {
+                    h.recv.splice(0, count)
+                    h.sent.splice(0, count)
+                }
+            )
 
             if (!this.netCharts[name]) {
                 this.$nextTick(() => this.initNetChart(name))
