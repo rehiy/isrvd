@@ -5,7 +5,7 @@ import { usePortal } from '@/stores'
 
 import type { ApisixRoute } from '@/service/types'
 
-import { formatRouteUpstreamSummary, formatRouteUpstreamType, formatRouteUpstreamNodes, normalizeUpstreamNodes } from '@/helper/apisix'
+import { formatRouteUpstreamSummary, formatRouteUpstreamNodes, normalizeUpstreamNodes } from '@/helper/apisix'
 
 interface ApisixRouteGroupEntry {
     key: string
@@ -109,10 +109,6 @@ class RouteGroupedList extends Vue {
         return r.uris?.length ? r.uris.join(', ') : (r.uri || '-')
     }
 
-    getRouteUpstreamType(r: ApisixRoute) {
-        return formatRouteUpstreamType(r)
-    }
-
     getRouteUpstreamNodes(r: ApisixRoute) {
         return formatRouteUpstreamNodes(r)
     }
@@ -154,7 +150,6 @@ export default toNative(RouteGroupedList)
           <tr class="bg-slate-50 border-b border-slate-200">
             <th class="th">路由</th>
             <th class="th">URI</th>
-            <th class="th">策略</th>
             <th class="th">上游</th>
             <th class="w-40 th-right">操作</th>
           </tr>
@@ -191,7 +186,6 @@ export default toNative(RouteGroupedList)
                 </div>
               </td>
               <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getRouteUri(entry.route) }}</code></td>
-              <td class="px-4 py-3"><span class="text-xs text-slate-600">{{ getRouteUpstreamType(entry.route) || '-' }}</span></td>
               <td class="px-4 py-3"><span :class="getRouteUpstreamTagClass(entry.route)" class="inline-block text-xs px-2 py-0.5 rounded-lg font-mono break-all">{{ getRouteUpstreamNodes(entry.route) }}</span></td>
               <td class="px-4 py-3">
                 <div class="flex justify-end items-center gap-1">
@@ -240,10 +234,6 @@ export default toNative(RouteGroupedList)
             <div class="flex items-start gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">URI</span>
               <code class="text-xs font-mono text-slate-700 break-all">{{ getRouteUri(entry.route) }}</code>
-            </div>
-            <div class="flex items-center gap-2 mb-3">
-              <span class="text-xs text-slate-400 flex-shrink-0">策略</span>
-              <span class="text-xs text-slate-500">{{ getRouteUpstreamType(entry.route) || '-' }}</span>
             </div>
             <div class="flex items-start gap-2 mb-3">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">上游</span>

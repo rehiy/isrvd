@@ -6,7 +6,7 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { ApisixRoute } from '@/service/types'
 
-import { formatRouteUpstreamSummary, formatRouteUpstreamType, formatRouteUpstreamNodes, normalizeUpstreamNodes } from '@/helper/apisix'
+import { formatRouteUpstreamSummary, formatRouteUpstreamNodes, normalizeUpstreamNodes } from '@/helper/apisix'
 
 import PageSearch from '@/component/page-search.vue'
 
@@ -94,10 +94,6 @@ class Routes extends Vue {
 
     getRouteUpstreamSummary(r: ApisixRoute) {
         return formatRouteUpstreamSummary(r)
-    }
-
-    getRouteUpstreamType(r: ApisixRoute) {
-        return formatRouteUpstreamType(r)
     }
 
     getRouteUpstreamNodes(r: ApisixRoute) {
@@ -235,7 +231,6 @@ export default toNative(Routes)
               <th class="th">名称</th>
               <th class="th">Host</th>
               <th class="th">URI</th>
-              <th class="th">策略</th>
               <th class="th">上游</th>
               <th class="w-40 th-right">操作</th>
             </tr>
@@ -255,7 +250,6 @@ export default toNative(Routes)
               </td>
               <td class="px-4 py-3"><span :class="getRouteHost(route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm break-all">{{ getRouteHost(route) }}</span></td>
               <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getRouteUri(route) }}</code></td>
-              <td class="px-4 py-3"><span class="text-xs text-slate-600">{{ getRouteUpstreamType(route) || '-' }}</span></td>
               <td class="px-4 py-3"><span :class="getRouteUpstreamTagClass(route)" class="inline-block text-xs px-2 py-0.5 rounded-lg font-mono break-all">{{ getRouteUpstreamNodes(route) }}</span></td>
               <td class="px-4 py-3">
                 <div class="flex justify-end items-center gap-1">
@@ -298,10 +292,6 @@ export default toNative(Routes)
             <span :class="getRouteHost(route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-xs break-all">{{ getRouteHost(route) }}</span>
           </div>
 
-          <div class="flex items-center gap-2 mb-3">
-            <span class="text-xs text-slate-400 flex-shrink-0">策略</span>
-            <span class="text-xs text-slate-500">{{ getRouteUpstreamType(route) || '-' }}</span>
-          </div>
           <div class="flex items-start gap-2 mb-3">
             <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">上游</span>
             <span :class="getRouteUpstreamTagClass(route)" class="inline-block text-xs px-2 py-0.5 rounded-lg font-mono break-all">{{ getRouteUpstreamNodes(route) }}</span>
