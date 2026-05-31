@@ -9,6 +9,8 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/rehiy/libgo/strutil"
 	libwebssh "github.com/rehiy/libgo/webssh"
+
+	"isrvd/config"
 )
 
 // Host SSH 主机配置
@@ -53,9 +55,10 @@ type store struct {
 	hosts []*Host
 }
 
-// newStore 创建主机配置存储，storePath 为 webssh.yml 文件路径
-func newStore(storePath string) (*store, error) {
-	s := &store{path: storePath}
+// newStore 创建主机配置存储
+func newStore() (*store, error) {
+	p := filepath.Join(config.Server.RootDirectory, "webssh.yml")
+	s := &store{path: p}
 	if err := s.load(); err != nil {
 		return nil, err
 	}

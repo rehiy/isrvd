@@ -3,13 +3,10 @@ package webssh
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/websocket"
 	libwebssh "github.com/rehiy/libgo/webssh"
-
-	"isrvd/config"
 )
 
 // logger 为 webssh 包创建带名称的 logger
@@ -23,8 +20,7 @@ type Service struct {
 
 // NewService 创建 WebSSH 业务服务
 func NewService() (*Service, error) {
-	storePath := filepath.Join(config.Server.RootDirectory, "webssh.yml")
-	s, err := newStore(storePath)
+	s, err := newStore()
 	if err != nil {
 		return nil, fmt.Errorf("初始化 WebSSH 存储失败: %w", err)
 	}

@@ -21,8 +21,10 @@ type Store struct {
 }
 
 // NewStore 创建计划任务文件存储。
-func NewStore(rootDirectory string) *Store {
-	return &Store{rootDirectory: rootDirectory}
+func NewStore() *Store {
+	return &Store{
+		rootDirectory: config.Server.RootDirectory,
+	}
 }
 
 // LoadJobs 从 cron.yml 加载任务列表。
@@ -42,7 +44,7 @@ func (s *Store) LoadJobs() ([]*Job, error) {
 	}
 
 	for _, job := range jobs {
-		job.WorkDir = config.PathToAbs(s.rootDirectory, job.WorkDir)
+		job.WorkDir = config.PathToAbs(job.WorkDir, s.rootDirectory)
 	}
 
 	return jobs, nil
@@ -66,7 +68,7 @@ func (s *Store) SaveJobs(jobs []*Job) error {
 
 	// 对副本做路径还原
 	for _, job := range copy {
-		job.WorkDir = config.PathToRel(s.rootDirectory, job.WorkDir)
+		job.WorkDir = config.PathToRel(job.WorkDir, s.rootDirectory)
 	}
 
 	data, err := yaml.Marshal(copy)

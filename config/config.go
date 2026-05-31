@@ -85,7 +85,7 @@ func Apply(conf *Config) {
 
 	if conf.Docker != nil {
 		Docker = conf.Docker
-		Docker.ContainerRoot = PathToAbs(Server.RootDirectory, Docker.ContainerRoot)
+		Docker.ContainerRoot = PathToAbs(Docker.ContainerRoot, Server.RootDirectory)
 	}
 
 	Monitor = MonitorNormalize(conf.Monitor)
@@ -100,7 +100,7 @@ func Apply(conf *Config) {
 
 	Members = make(map[string]*MemberConfig, len(conf.Members))
 	for _, m := range conf.Members {
-		m.HomeDirectory = PathToAbs(Server.RootDirectory, m.HomeDirectory)
+		m.HomeDirectory = PathToAbs(m.HomeDirectory, Server.RootDirectory)
 		Members[m.Username] = m
 	}
 }

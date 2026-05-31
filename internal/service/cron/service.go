@@ -15,7 +15,6 @@ import (
 	"github.com/rehiy/libgo/strutil"
 	cronlib "github.com/robfig/cron/v3"
 
-	"isrvd/config"
 	"isrvd/pkgs/docker"
 )
 
@@ -122,7 +121,7 @@ func NewService(dockerSvc *docker.DockerService) *Service {
 		jobs:    make(map[string]*Job),
 		entries: make(map[string]cronlib.EntryID),
 		cron:    cronlib.New(),
-		store:   NewStore(config.Server.RootDirectory),
+		store:   NewStore(),
 		docker:  dockerSvc,
 	}
 
