@@ -2,12 +2,10 @@
 package system
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -17,9 +15,14 @@ import (
 	"github.com/rehiy/libgo/logman"
 
 	"isrvd/config"
+	"isrvd/pkgs/jsonl"
 )
 
-const maxAuditBufferSize = 100 // 内存缓冲最大条数
+const (
+	maxAuditBufferSize = 100 // 内存缓冲最大条数
+	// auditFileSuffix 审计日志文件后缀
+	auditFileSuffix = ".jsonl"
+)
 
 // sensitiveFields 需要脱敏的请求体字段名
 var sensitiveFields = []string{
@@ -46,26 +49,42 @@ type AuditLog struct {
 
 // AuditService 审计日志业务服务
 type AuditService struct {
-	mu      sync.RWMutex
-	buffer  []AuditLog
-	ch      chan AuditLog
-	file    *os.File
-	dateKey string // 当前日志文件对应的日期（YYYY-MM-DD）
+	mu     sync.RWMutex
+	buffer []AuditLog
+	store  *jsonl.Store
+}
+
+// auditNaming 审计日志文件命名规则：YYYY-MM-DD.jsonl
+func auditNaming() jsonl.Naming {
+	return jsonl.Naming{Prefix: "", Sep: "", Suffix: auditFileSuffix}
+}
+
+// auditDir 审计日志根目录
+func auditDir() string {
+	return filepath.Join(config.Server.RootDirectory, "audit")
 }
 
 // NewAuditService 创建审计日志业务服务并自动初始化
 func NewAuditService() *AuditService {
-	s := &AuditService{
-		buffer: make([]AuditLog, 0, maxAuditBufferSize),
-		ch:     make(chan AuditLog, maxAuditBufferSize),
+	dir := auditDir()
+	store, err := jsonl.New(
+		dir,
+		auditNaming(),
+		jsonl.WithBufferSize(4096),
+		jsonl.WithFlushInterval(time.Second),
+		jsonl.WithAsync(maxAuditBufferSize),
+	)
+	if err != nil {
+		logman.Warn("audit log store init failed", "dir", dir, "error", err)
 	}
 
-	today := time.Now().Format("2006-01-02")
-	s.loadFile(auditFilePath(today))
-	s.openFile(today)
+	s := &AuditService{
+		buffer: make([]AuditLog, 0, maxAuditBufferSize),
+		store:  store,
+	}
 
-	go s.process()
-
+	// 启动时加载今日文件最近的 maxAuditBufferSize 条到内存
+	s.loadRecent()
 	return s
 }
 
@@ -81,10 +100,11 @@ func (s *AuditService) LogAdd(entry AuditLog) {
 	s.buffer = append(s.buffer, entry)
 	s.mu.Unlock()
 
-	select {
-	case s.ch <- entry:
-	default:
-		logman.Warn("audit log channel full, discard write", "max_size", maxAuditBufferSize)
+	if s.store == nil {
+		return
+	}
+	if err := s.store.Append(&entry); err != nil {
+		logman.Warn("audit log write failed", "error", err)
 	}
 }
 
@@ -187,76 +207,34 @@ func (s *AuditService) BodyRead(c *gin.Context) string {
 	}
 }
 
+// Close 关闭底层文件句柄，刷盘缓冲数据
+func (s *AuditService) Close() error {
+	if s.store == nil {
+		return nil
+	}
+	return s.store.Close()
+}
+
 // ---- 内部方法 ----------------------------------------------------------------
 
-// process 从通道消费审计条目，按日期轮转文件并写入。
-func (s *AuditService) process() {
-	for entry := range s.ch {
-		today := entry.Timestamp.Format("2006-01-02")
-		if today != s.dateKey {
-			s.openFile(today)
-		}
-		if s.file == nil {
-			continue
-		}
-		data, err := json.Marshal(entry)
-		if err != nil {
-			continue
-		}
-		data = append(data, '\n')
-		if _, err = s.file.Write(data); err != nil {
-			logman.Warn("audit log write failed", "error", err)
-		}
-	}
-}
-
-// loadFile 从指定路径读取日志文件，将最后 maxAuditBufferSize 条记录追加到内存缓冲。
-func (s *AuditService) loadFile(path string) {
-	f, err := os.Open(path)
-	if err != nil {
+// loadRecent 启动时从今日文件尾部读取最近 maxAuditBufferSize 条到内存。
+// 使用 TailLines 反向读取，避免加载整个日志文件。
+func (s *AuditService) loadRecent() {
+	if s.store == nil {
 		return
 	}
-	defer f.Close()
-
-	var buf []AuditLog
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		var entry AuditLog
-		if json.Unmarshal(scanner.Bytes(), &entry) == nil {
-			buf = append(buf, entry)
-		}
-	}
-
-	if len(buf) > maxAuditBufferSize {
-		buf = buf[len(buf)-maxAuditBufferSize:]
-	}
-	s.buffer = append(s.buffer, buf...)
-}
-
-// openFile 打开指定日期的日志文件（追加模式），关闭旧文件。
-func (s *AuditService) openFile(date string) {
-	path := auditFilePath(date)
-
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		logman.Warn("audit log mkdir failed", "path", path, "error", err)
-	}
-
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	path := s.store.FilePath(s.store.Today())
+	entries, err := jsonl.DecodeTail[AuditLog](path, maxAuditBufferSize, nil)
 	if err != nil {
-		logman.Warn("audit log open failed", "path", path, "error", err)
+		logman.Warn("audit log load recent failed", "path", path, "error", err)
 		return
 	}
-
-	if s.file != nil {
-		s.file.Close()
+	// DecodeTail 返回顺序为"由新到旧"，buffer 期望"由旧到新"
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i := len(entries) - 1; i >= 0; i-- {
+		s.buffer = append(s.buffer, entries[i])
 	}
-	s.file = f
-	s.dateKey = date
-}
-
-// auditFilePath 返回指定日期的日志文件绝对路径。
-func auditFilePath(date string) string {
-	return filepath.Join(config.Server.RootDirectory, "audit", date+".log")
 }
 
 // maskSensitiveValue 对敏感字段的值进行脱敏

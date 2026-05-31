@@ -18,6 +18,12 @@ import (
 	"isrvd/pkgs/docker"
 )
 
+// nextCronCleanTime 返回下一个凌晨 00:05 的时间（留 5 分钟余量避免边界问题）
+func nextCronCleanTime() time.Time {
+	tomorrow := time.Now().AddDate(0, 0, 1)
+	return time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 5, 0, 0, tomorrow.Location())
+}
+
 // logger 为 cron 包创建带名称的 logger
 var logger = logman.Named("cron")
 
@@ -146,13 +152,39 @@ func NewService(dockerSvc *docker.DockerService) *Service {
 	s.cron.Start()
 	logger.Info("Cron scheduler started", "jobs", len(s.entries))
 
+	// 启动后立即清理一次过期日志，并启动每日清理协程
+	s.store.CleanOld()
+	cleanCtx, cleanCancel := context.WithCancel(context.Background())
+	go s.runLogCleaner(cleanCtx)
+
 	signal.OnQuit(func() {
+		cleanCancel()
 		ctx := s.cron.Stop()
 		<-ctx.Done()
+		if err := s.store.Close(); err != nil {
+			logger.Warn("Cron log store close failed", "error", err)
+		}
 		logger.Info("Cron scheduler stopped")
 	})
 
 	return s
+}
+
+// runLogCleaner 每日凌晨清理过期日志，ctx 取消时退出
+func (s *Service) runLogCleaner(ctx context.Context) {
+	next := nextCronCleanTime()
+	timer := time.NewTimer(time.Until(next))
+	defer timer.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-timer.C:
+			s.store.CleanOld()
+			next = next.AddDate(0, 0, 1)
+			timer.Reset(time.Until(next))
+		}
+	}
 }
 
 // ─── 公开方法 ───

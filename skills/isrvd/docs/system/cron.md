@@ -28,7 +28,7 @@
 | `nextRun` | string? | 下次预计执行时间（RFC3339，运行时字段，只读，仅已注册任务存在） |
 | `lastRun` | string? | 上次计划调度时间（RFC3339，运行时字段，只读） |
 
-计划任务配置存储在 `server.rootDirectory/cron.yml`，由服务自动读写；`registered`、`entryId`、`runtimeStatus`、`nextRun`、`lastRun` 来自当前内存调度器状态，不写入存储文件。执行历史按任务 ID 拆分为 JSONL 文件，写入 `server.rootDirectory/logs/cron/{jobId}.log`，每次执行追加一行结构化记录。
+计划任务配置存储在 `server.rootDirectory/cron.yml`，由服务自动读写；`registered`、`entryId`、`runtimeStatus`、`nextRun`、`lastRun` 来自当前内存调度器状态，不写入存储文件。执行历史所有任务合并写入按天滚动的 JSONL 文件 `server.rootDirectory/logs/cron/YYYY-MM-DD.jsonl`，每次执行追加一行结构化记录（含 `jobId` 字段用于过滤）；保留最近 3 天，过期文件每日凌晨自动清理。
 
 ### JobLog
 
@@ -172,7 +172,7 @@ Query 参数：
 }
 ```
 
-日志从 `server.rootDirectory/logs/cron/{jobId}.log` 读取，按时间倒序排列（最新的在前）。
+日志从 `server.rootDirectory/logs/cron/YYYY-MM-DD.jsonl` 中按 `jobId` 过滤读取（从最近的当日文件向前回扫至多 3 天），按时间倒序排列（最新的在前）。
 
 ---
 

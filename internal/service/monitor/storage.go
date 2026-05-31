@@ -1,16 +1,13 @@
 package monitor
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/json"
-	"fmt"
-	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
 	"github.com/rehiy/libgo/logman"
+
+	"isrvd/pkgs/jsonl"
 )
 
 const (
@@ -20,227 +17,67 @@ const (
 	HostPrefix = "host"
 	// ContainerPrefix 容器监控文件前缀
 	ContainerPrefix = "ctr"
+	// fileSuffix 监控文件后缀
+	fileSuffix = ".jsonl"
 )
 
-// store 管理单个前缀的按天 NDJSON 文件追加写
-// 每天自动轮转到新文件，无需 compact
-type store struct {
-	mu     sync.Mutex
-	dir    string
-	prefix string
-	date   string // 当前文件对应的日期（YYYY-MM-DD）
-	file   *os.File
-}
-
+// stores 缓存 dir+prefix -> Store，避免同一前缀重复打开句柄
 var (
 	storesMu sync.Mutex
-	stores   = make(map[string]*store) // key: dir+"/"+prefix
+	stores   = make(map[string]*jsonl.Store)
 )
 
-// getStore 获取或创建指定前缀的 store
-func getStore(dir, prefix string) (*store, error) {
+// getStore 获取或创建指定 (dir, prefix) 的 Store
+func getStore(dir, prefix string) *jsonl.Store {
+	key := dir + "/" + prefix
 	storesMu.Lock()
 	defer storesMu.Unlock()
 
-	key := dir + "/" + prefix
 	if s, ok := stores[key]; ok {
-		return s, nil
+		return s
 	}
-
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return nil, err
-	}
-
-	s := &store{dir: dir, prefix: prefix}
-	stores[key] = s
-	return s, nil
-}
-
-// filePath 返回指定日期的文件路径
-func (s *store) filePath(date string) string {
-	return filepath.Join(s.dir, fmt.Sprintf("%s_%s.ndjson", s.prefix, date))
-}
-
-// ensureFile 确保当前文件句柄对应今天的日期，日期变更时自动轮转
-func (s *store) ensureFile() error {
-	today := time.Now().In(time.Local).Format("2006-01-02")
-	if s.file != nil && s.date == today {
+	s, err := jsonl.New(dir, jsonl.Naming{Prefix: prefix, Sep: "_", Suffix: fileSuffix})
+	if err != nil {
+		logman.Warn("monitor: open jsonl store failed", "dir", dir, "prefix", prefix, "error", err)
 		return nil
 	}
-	// 关闭旧句柄
-	if s.file != nil {
-		s.file.Close()
-		s.file = nil
-	}
-	f, err := os.OpenFile(s.filePath(today), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
-	if err != nil {
-		return err
-	}
-	s.file = f
-	s.date = today
-	return nil
-}
-
-// append 将一条记录追加写入当天文件（一行 JSON）
-func (s *store) append(v any) error {
-	// 先检查日期（在锁外，减少锁持有时间）
-	if err := s.ensureFile(); err != nil {
-		return err
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	line, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-	line = append(line, '\n')
-
-	_, err = s.file.Write(line)
-	return err
-}
-
-// ReadSince 读取 dir 下 prefix_*.ndjson 中 ts >= (now-sinceSeconds) 的所有行
-// 按时间窗口确定需要读哪几天的文件，合并后按 ts 顺序返回
-// containerID 为空时返回所有记录，非空时只返回指定容器的记录
-// limit <= 0 表示不限制条数
-func ReadSince[T any](dir, prefix, containerID string, sinceSeconds int64, limit int) ([]T, error) {
-	cutoff := time.Now().Unix() - sinceSeconds
-
-	// 确定需要读取的日期列表（从最早到今天）
-	days := daysInRange(cutoff)
-
-	var result []T
-	for _, date := range days {
-		if limit > 0 && len(result) >= limit {
-			break
-		}
-		path := filepath.Join(dir, fmt.Sprintf("%s_%s.ndjson", prefix, date))
-		recs, err := readFileRecords[T](path, cutoff, containerID, limit-len(result))
-		if err != nil {
-			logman.Warn("monitor: read file failed", "path", path, "error", err)
-			continue
-		}
-		result = append(result, recs...)
-	}
-	return result, nil
-}
-
-// CleanOldFiles 删除 dir 下所有 *_YYYY-MM-DD.ndjson 中超过 retainDays 天的旧文件
-func CleanOldFiles(dir string) {
-	cutoffDate := time.Now().AddDate(0, 0, -retainDays).Format("2006-01-02")
-	pattern := filepath.Join(dir, "*_????-??-??.ndjson")
-	matches, err := filepath.Glob(pattern)
-	if err != nil {
-		return
-	}
-	for _, path := range matches {
-		base := filepath.Base(path)
-		// 提取末尾日期部分：任意前缀_YYYY-MM-DD.ndjson
-		if len(base) < len("_2006-01-02.ndjson") {
-			continue
-		}
-		dateStr := base[len(base)-len("2006-01-02.ndjson") : len(base)-len(".ndjson")]
-		if dateStr <= cutoffDate {
-			if err := os.Remove(path); err == nil {
-				logman.Info("monitor: removed old file", "path", path)
-			}
-		}
-	}
-}
-
-// AppendRecord 将任意数据序列化后追加到 dir/prefix_YYYY-MM-DD.ndjson
-// 内部自动完成 JSON 序列化，写入失败时记录日志
-func AppendRecord(dir, prefix string, ts int64, data any) {
-	raw, err := json.Marshal(data)
-	if err != nil {
-		logman.Warn("monitor: marshal data failed", "prefix", prefix, "error", err)
-		return
-	}
-	AppendRawRecord(dir, prefix, "", ts, raw)
-}
-
-// AppendRecordWithID 将任意数据序列化后追加到文件，可指定容器 ID
-// containerID 为空时表示主机监控
-func AppendRecordWithID(dir, prefix, containerID string, ts int64, data any) {
-	raw, err := json.Marshal(data)
-	if err != nil {
-		logman.Warn("monitor: marshal data failed", "prefix", prefix, "error", err)
-		return
-	}
-	AppendRawRecord(dir, prefix, containerID, ts, raw)
+	stores[key] = s
+	return s
 }
 
 // AppendRawRecord 直接追加已序列化的数据（避免重复序列化）
+// containerID 为空时表示主机监控
 func AppendRawRecord(dir, prefix, containerID string, ts int64, raw json.RawMessage) {
-	record := &Record{Ts: ts, Data: raw, ContainerID: containerID}
-	s, err := getStore(dir, prefix)
-	if err != nil {
-		logman.Warn("monitor: get store failed", "prefix", prefix, "error", err)
+	s := getStore(dir, prefix)
+	if s == nil {
 		return
 	}
-	if err := s.append(record); err != nil {
+	if err := s.Append(&Record{Ts: ts, Data: raw, ContainerID: containerID}); err != nil {
 		logman.Warn("monitor: write record failed", "prefix", prefix, "error", err)
 	}
 }
 
-// daysInRange 返回从 cutoffUnix 所在日期到今天的日期字符串列表（YYYY-MM-DD，本地时区）
-func daysInRange(cutoffUnix int64) []string {
-	loc := time.Local
-	t := time.Unix(cutoffUnix, 0).In(loc)
-	start := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
-	now := time.Now().In(loc)
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
-
-	var days []string
-	for d := start; !d.After(today); d = d.AddDate(0, 0, 1) {
-		days = append(days, d.Format("2006-01-02"))
-	}
-	return days
-}
-
-// readFileRecords 读取单个文件中 ts >= cutoff 的记录
+// ReadSince 读取 dir 下 prefix_*.jsonl 中 ts >= (now-sinceSeconds) 的所有行
+// 按时间窗口确定需要读哪几天的文件，合并后按 ts 顺序返回
 // containerID 为空时返回所有记录，非空时只返回指定容器的记录
 // limit <= 0 表示不限制条数
-func readFileRecords[T any](path string, cutoff int64, containerID string, limit int) ([]T, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, err
+func ReadSince[T any](dir, prefix, containerID string, sinceSeconds int64, limit int) ([]T, error) {
+	s := getStore(dir, prefix)
+	if s == nil {
+		return nil, nil
 	}
+	cutoff := time.Now().Unix() - sinceSeconds
+	extra := jsonl.StrEq("container_id", containerID)
+	return jsonl.DecodeSince[T](s, cutoff, "ts", extra, limit)
+}
 
-	var result []T
-	scanner := bufio.NewScanner(bytes.NewReader(data))
-	scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
-	for scanner.Scan() {
-		if limit > 0 && len(result) >= limit {
-			break
-		}
-		line := scanner.Bytes()
-		if len(line) == 0 {
-			continue
-		}
-		var ts struct {
-			Ts          int64  `json:"ts"`
-			ContainerID string `json:"container_id"`
-		}
-		if json.Unmarshal(line, &ts) != nil || ts.Ts < cutoff {
-			continue
-		}
-		// 如果指定了容器 ID，只返回匹配的记录
-		if containerID != "" && ts.ContainerID != containerID {
-			continue
-		}
-		var rec T
-		if json.Unmarshal(line, &rec) == nil {
-			result = append(result, rec)
-		}
+// CleanOldFiles 删除 dir 下所有 *_YYYY-MM-DD.jsonl 中超过 retainDays 天的旧文件
+func CleanOldFiles(dir string) {
+	for _, prefix := range []string{HostPrefix, ContainerPrefix} {
+		jsonl.CleanOlderThan(
+			dir,
+			jsonl.Naming{Prefix: prefix, Sep: "_", Suffix: fileSuffix},
+			retainDays,
+		)
 	}
-	if err := scanner.Err(); err != nil {
-		logman.Warn("monitor: scanner error", "path", path, "error", err)
-	}
-	return result, nil
 }

@@ -23,7 +23,7 @@ isrvd_get "/overview/monitor?type=host&since=3600"
 isrvd_get "/overview/monitor?type=container&id=<CONTAINER_ID>&since=3600"
 ```
 
-后台协程按 `monitor.interval` 配置的间隔采集主机和所有运行中容器的监控数据，写入 `{RootDirectory}/monitor/` 目录（NDJSON 格式，按天分文件，如 `host_2026-05-28.ndjson`，保留 **3 天**，每日凌晨自动清理）。
+后台协程按 `monitor.interval` 配置的间隔采集主机和所有运行中容器的监控数据，写入 `{RootDirectory}/monitor/` 目录（JSONL 格式，按天分文件，如 `host_2026-05-28.jsonl`，保留 **3 天**，每日凌晨自动清理）。
 
 `monitor.interval` 合法值：`5`、`15`、`30`、`60`，单位为秒；其他值（含不填）均视为禁用。
 
