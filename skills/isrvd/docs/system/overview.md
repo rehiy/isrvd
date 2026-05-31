@@ -45,3 +45,5 @@ isrvd_get "/overview/monitor?type=container&id=<CONTAINER_ID>&since=0"
 传 `since=0` 时直接实时采集当前数据，返回单条记录（非数组），**不写入文件**。
 
 响应格式：`{ ts: number, data: HostStat }` 或 `null`（采集失败时）。
+
+`/local/monitor` 详细监控页提供 `5分钟/1小时/6小时/12小时/24小时` 时间范围；5分钟模式先加载一次历史数据，后续使用 `since=0` 实时单点轮询并按时间窗口裁剪前端图表。

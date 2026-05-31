@@ -35,6 +35,9 @@ class MonitorPage extends Vue {
 
     private pollTimer: ReturnType<typeof setInterval> | null = null
     private destroyed = false
+    private polling = false
+    private lastDispatchedTs = 0
+    private dataVersion = 0
 
     // ─── Refs ───
     @Ref readonly cpuMemRef!: InstanceType<typeof SystemCpuMem>
@@ -44,8 +47,10 @@ class MonitorPage extends Vue {
     @Ref readonly goRef!: InstanceType<typeof SystemGo>
 
     // ─── 方法 ───
-    private dispatchData(rec: MonitorHostRecord) {
+    private dispatchData(rec: MonitorHostRecord): boolean {
         const { ts, data } = rec
+        if (!data || ts <= this.lastDispatchedTs) return false
+        this.lastDispatchedTs = ts
         if (data.version) {
             this.portal.currentVersion = data.version
         }
@@ -54,43 +59,33 @@ class MonitorPage extends Vue {
         this.diskRef?.pushData(data, ts)
         this.networkRef?.pushData(data, ts)
         this.goRef?.pushData(data, ts)
+        return true
     }
 
-    private async fetchLatest(): Promise<boolean> {
-        // 根据当前选择的时间范围获取数据
-        // 如果 selectedRange > 0，则获取对应时间范围的数据（用于轮询更新）
-        // 如果 selectedRange === 0，则获取实时数据（since=0）
-        const since = this.selectedRange > 0 ? this.selectedRange : 0
-        const res = await api.overviewMonitor({ type: 'host', since })
-        if (this.destroyed) return false
-        
-        // 处理返回数据：since=0 返回单个对象，since>0 返回数组
-        if (Array.isArray(res.payload)) {
-            // 历史数据数组
-            for (const rec of res.payload) {
-                this.dispatchData(rec)
-            }
-            return res.payload.length > 0
-        } else if (res.payload) {
-            // 实时数据单个对象
-            this.dispatchData(res.payload)
-            return true
-        }
-        return false
+    private async fetchRealtime(version = this.dataVersion): Promise<boolean> {
+        const res = await api.overviewMonitor({ type: 'host', since: 0 })
+        if (this.destroyed || version !== this.dataVersion) return false
+
+        return !!res.payload && !Array.isArray(res.payload) && this.dispatchData(res.payload)
     }
 
-    async loadHistory() {
+    async loadHistory(version = this.dataVersion): Promise<boolean> {
         try {
             const res = await api.overviewMonitor({ type: 'host', since: this.selectedRange })
+            if (this.destroyed || version !== this.dataVersion) return false
+            let ok = false
             if (res.payload && Array.isArray(res.payload) && res.payload.length > 0) {
-                for (const rec of res.payload) {
-                    this.dispatchData(rec)
+                for (const rec of [...res.payload].sort((a, b) => a.ts - b.ts)) {
+                    ok = this.dispatchData(rec) || ok
                 }
             }
-        } catch { /* ignore */ }
+            return ok
+        } catch { return false }
     }
 
     clearAllData() {
+        this.dataVersion++
+        this.lastDispatchedTs = 0
         this.cpuMemRef?.clearData()
         this.gpuRef?.clearData()
         this.diskRef?.clearData()
@@ -103,43 +98,56 @@ class MonitorPage extends Vue {
         this.selectedRange = range
         this.clearAllData()
         this.stopPoll()
-        await this.loadHistory()
-        await this.loadData()
+        const version = this.dataVersion
+        const historyOk = await this.loadHistory(version)
+        const realtimeOk = await this.loadData(version)
+        this.ready = historyOk || realtimeOk
         // 只有5分钟模式才启动轮询
         if (this.selectedRange === 300) {
             this.startPoll()
         }
     }
 
-    async loadData() {
+    async loadData(version = this.dataVersion) {
         try {
-            const ok = await this.fetchLatest()
+            const ok = await this.fetchRealtime(version)
             if (ok) this.ready = true
+            return ok
         } catch { /* ignore */ }
+        return false
     }
 
     async poll() {
+        if (this.polling) return
         if (!this.portal.token) {
             this.stopPoll()
             return
         }
+        const version = this.dataVersion
+        this.polling = true
         try {
-            await this.fetchLatest()
-        } catch { /* ignore */ }
+            await this.fetchRealtime(version)
+        } catch { /* ignore */ } finally {
+            this.polling = false
+        }
     }
 
-    handleVisibilityChange() {
+    async handleVisibilityChange() {
         if (document.hidden) {
             this.stopPoll()
         } else {
             // 只有5分钟模式才在页面重新可见时启动轮询
             if (this.selectedRange === 300) {
+                const version = this.dataVersion
+                await this.loadHistory(version)
+                await this.loadData(version)
                 this.startPoll()
             }
         }
     }
 
     startPoll() {
+        if (this.pollTimer) return
         this.pollTimer = setInterval(() => this.poll(), POLL_INTERVAL)
     }
 
@@ -152,8 +160,10 @@ class MonitorPage extends Vue {
         this.ready = false
         this.stopPoll()
         this.clearAllData()
-        await this.loadHistory()
-        await this.loadData()
+        const version = this.dataVersion
+        const historyOk = await this.loadHistory(version)
+        const realtimeOk = await this.loadData(version)
+        this.ready = historyOk || realtimeOk
         this.loading = false
         // 只有5分钟模式才启动轮询
         if (this.selectedRange === 300) {
@@ -240,11 +250,11 @@ export default toNative(MonitorPage)
       </div>
 
       <div v-show="!loading && ready" class="space-y-5">
-        <SystemCpuMem ref="cpuMemRef" />
-        <SystemGpu ref="gpuRef" />
-        <SystemDisk ref="diskRef" />
-        <SystemNetwork ref="networkRef" />
-        <SystemGo ref="goRef" />
+        <SystemCpuMem ref="cpuMemRef" :range-seconds="selectedRange" />
+        <SystemGpu ref="gpuRef" :range-seconds="selectedRange" />
+        <SystemDisk ref="diskRef" :range-seconds="selectedRange" />
+        <SystemNetwork ref="networkRef" :range-seconds="selectedRange" />
+        <SystemGo ref="goRef" :range-seconds="selectedRange" />
       </div>
 
       <div v-if="!loading && !ready" class="flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50">

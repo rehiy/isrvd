@@ -1,15 +1,18 @@
 <script lang="ts">
 import type { ChartOptions } from 'chart.js'
 import { markRaw } from 'vue'
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import type { SystemStat, SystemGoRuntimeStat } from '@/service/types'
 
 import Chart from '@/helper/chart'
+import { appendMonitorPoint } from '@/helper/monitor'
 import { hexToRgba } from '@/helper/utils'
 
 @Component
 class SystemGo extends Vue {
+    @Prop({ type: Number, default: 300 }) readonly rangeSeconds!: number
+
     @Ref readonly memCanvasRef!: HTMLCanvasElement
     @Ref readonly goroutineCanvasRef!: HTMLCanvasElement
     @Ref readonly sysCanvasRef!: HTMLCanvasElement
@@ -20,10 +23,10 @@ class SystemGo extends Vue {
     private stackChart: Chart<'line'> | null = null
     private sysChart: Chart<'line'> | null = null
 
-    private memHistory: { labels: string[]; alloc: number[]; heapAlloc: number[]; heapInuse: number[]; heapIdle: number[]; heapReleased: number[]; heapSys: number[] } = { labels: [], alloc: [], heapAlloc: [], heapInuse: [], heapIdle: [], heapReleased: [], heapSys: [] }
-    private goroutineHistory: { labels: string[]; goroutine: number[]; gc: number[]; heapObjects: number[] } = { labels: [], goroutine: [], gc: [], heapObjects: [] }
-    private stackHistory: { labels: string[]; stackInuse: number[]; stackSys: number[] } = { labels: [], stackInuse: [], stackSys: [] }
-    private sysHistory: { labels: string[]; totalAlloc: number[]; sys: number[] } = { labels: [], totalAlloc: [], sys: [] }
+    private memHistory: { ts: number[]; labels: string[]; alloc: number[]; heapAlloc: number[]; heapInuse: number[]; heapIdle: number[]; heapReleased: number[]; heapSys: number[] } = { ts: [], labels: [], alloc: [], heapAlloc: [], heapInuse: [], heapIdle: [], heapReleased: [], heapSys: [] }
+    private goroutineHistory: { ts: number[]; labels: string[]; goroutine: number[]; gc: number[]; heapObjects: number[] } = { ts: [], labels: [], goroutine: [], gc: [], heapObjects: [] }
+    private stackHistory: { ts: number[]; labels: string[]; stackInuse: number[]; stackSys: number[] } = { ts: [], labels: [], stackInuse: [], stackSys: [] }
+    private sysHistory: { ts: number[]; labels: string[]; totalAlloc: number[]; sys: number[] } = { ts: [], labels: [], totalAlloc: [], sys: [] }
 
     current: SystemGoRuntimeStat | null = null
     lastGCTime: string = '从未'
@@ -82,35 +85,75 @@ class SystemGo extends Vue {
         this.current = payload.go
         this.fmtGCTime(payload.go.lastGC)
 
-        const t = new Date(ts * 1000)
-        const label = `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}:${t.getSeconds().toString().padStart(2, '0')}`
-
         // 堆内存数据（包含空闲和释放）
-        this.memHistory.labels.push(label)
-        this.memHistory.alloc.push(payload.go.alloc)
-        this.memHistory.heapAlloc.push(payload.go.heapAlloc)
-        this.memHistory.heapInuse.push(payload.go.heapInuse)
-        this.memHistory.heapIdle.push(payload.go.heapIdle)
-        this.memHistory.heapReleased.push(payload.go.heapReleased)
-        this.memHistory.heapSys.push(payload.go.heapSys)
+        appendMonitorPoint(
+            this.memHistory,
+            ts,
+            this.rangeSeconds,
+            () => {
+                this.memHistory.alloc.push(payload.go.alloc)
+                this.memHistory.heapAlloc.push(payload.go.heapAlloc)
+                this.memHistory.heapInuse.push(payload.go.heapInuse)
+                this.memHistory.heapIdle.push(payload.go.heapIdle)
+                this.memHistory.heapReleased.push(payload.go.heapReleased)
+                this.memHistory.heapSys.push(payload.go.heapSys)
+            },
+            count => {
+                this.memHistory.alloc.splice(0, count)
+                this.memHistory.heapAlloc.splice(0, count)
+                this.memHistory.heapInuse.splice(0, count)
+                this.memHistory.heapIdle.splice(0, count)
+                this.memHistory.heapReleased.splice(0, count)
+                this.memHistory.heapSys.splice(0, count)
+            }
+        )
 
         // Goroutine、GC 和堆对象数据
-        this.goroutineHistory.labels.push(label)
-        this.goroutineHistory.goroutine.push(payload.go.numGoroutine)
-        this.goroutineHistory.gc.push(payload.go.numGC)
-        this.goroutineHistory.heapObjects.push(payload.go.heapObjects)
+        appendMonitorPoint(
+            this.goroutineHistory,
+            ts,
+            this.rangeSeconds,
+            () => {
+                this.goroutineHistory.goroutine.push(payload.go.numGoroutine)
+                this.goroutineHistory.gc.push(payload.go.numGC)
+                this.goroutineHistory.heapObjects.push(payload.go.heapObjects)
+            },
+            count => {
+                this.goroutineHistory.goroutine.splice(0, count)
+                this.goroutineHistory.gc.splice(0, count)
+                this.goroutineHistory.heapObjects.splice(0, count)
+            }
+        )
 
         // 栈内存数据
-        this.stackHistory.labels.push(label)
-        this.stackHistory.stackInuse.push(payload.go.stackInuse)
-        this.stackHistory.stackSys.push(payload.go.stackSys)
+        appendMonitorPoint(
+            this.stackHistory,
+            ts,
+            this.rangeSeconds,
+            () => {
+                this.stackHistory.stackInuse.push(payload.go.stackInuse)
+                this.stackHistory.stackSys.push(payload.go.stackSys)
+            },
+            count => {
+                this.stackHistory.stackInuse.splice(0, count)
+                this.stackHistory.stackSys.splice(0, count)
+            }
+        )
 
         // 系统内存数据
-        this.sysHistory.labels.push(label)
-        this.sysHistory.totalAlloc.push(payload.go.totalAlloc)
-        this.sysHistory.sys.push(payload.go.sys)
-
-        // 不再限制历史数据数量，显示完整数据点
+        appendMonitorPoint(
+            this.sysHistory,
+            ts,
+            this.rangeSeconds,
+            () => {
+                this.sysHistory.totalAlloc.push(payload.go.totalAlloc)
+                this.sysHistory.sys.push(payload.go.sys)
+            },
+            count => {
+                this.sysHistory.totalAlloc.splice(0, count)
+                this.sysHistory.sys.splice(0, count)
+            }
+        )
 
         if (!this.memChart || !this.goroutineChart || !this.sysChart) {
             this.initCharts()
@@ -238,36 +281,36 @@ class SystemGo extends Vue {
             this.memChart.data.datasets[3].data = [...this.memHistory.heapIdle]
             this.memChart.data.datasets[4].data = [...this.memHistory.heapReleased]
             this.memChart.data.datasets[5].data = [...this.memHistory.heapSys]
-            this.memChart.update()
+            this.memChart.update('none')
         }
         if (this.goroutineChart) {
             this.goroutineChart.data.labels = [...this.goroutineHistory.labels]
             this.goroutineChart.data.datasets[0].data = [...this.goroutineHistory.goroutine]
             this.goroutineChart.data.datasets[1].data = [...this.goroutineHistory.heapObjects]
             this.goroutineChart.data.datasets[2].data = [...this.goroutineHistory.gc]
-            this.goroutineChart.update()
+            this.goroutineChart.update('none')
         }
         if (this.stackChart) {
             this.stackChart.data.labels = [...this.stackHistory.labels]
             this.stackChart.data.datasets[0].data = [...this.stackHistory.stackInuse]
             this.stackChart.data.datasets[1].data = [...this.stackHistory.stackSys]
-            this.stackChart.update()
+            this.stackChart.update('none')
         }
         if (this.sysChart) {
             this.sysChart.data.labels = [...this.sysHistory.labels]
             this.sysChart.data.datasets[0].data = [...this.sysHistory.totalAlloc]
             this.sysChart.data.datasets[1].data = [...this.sysHistory.sys]
-            this.sysChart.update()
+            this.sysChart.update('none')
         }
     }
 
     clearData() {
         this.current = null
         this.lastGCTime = '从未'
-        this.memHistory = { labels: [], alloc: [], heapAlloc: [], heapInuse: [], heapIdle: [], heapReleased: [], heapSys: [] }
-        this.goroutineHistory = { labels: [], goroutine: [], gc: [], heapObjects: [] }
-        this.stackHistory = { labels: [], stackInuse: [], stackSys: [] }
-        this.sysHistory = { labels: [], totalAlloc: [], sys: [] }
+        this.memHistory = { ts: [], labels: [], alloc: [], heapAlloc: [], heapInuse: [], heapIdle: [], heapReleased: [], heapSys: [] }
+        this.goroutineHistory = { ts: [], labels: [], goroutine: [], gc: [], heapObjects: [] }
+        this.stackHistory = { ts: [], labels: [], stackInuse: [], stackSys: [] }
+        this.sysHistory = { ts: [], labels: [], totalAlloc: [], sys: [] }
         this.memChart?.destroy()
         this.goroutineChart?.destroy()
         this.stackChart?.destroy()

@@ -1,14 +1,16 @@
 <script lang="ts">
 import type { ChartOptions } from 'chart.js'
 import { markRaw } from 'vue'
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import type { SystemStat, SystemDiskIO, SystemDiskPartition } from '@/service/types'
 
 import Chart from '@/helper/chart'
+import { appendMonitorPoint } from '@/helper/monitor'
 import { hexToRgba } from '@/helper/utils'
 
 interface DiskIOSeriesHistory {
+    ts: number[]
     labels: string[]
     read: number[]
     write: number[]
@@ -23,6 +25,8 @@ const NATURAL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivi
 
 @Component
 class SystemDisk extends Vue {
+    @Prop({ type: Number, default: 300 }) readonly rangeSeconds!: number
+
     @Ref readonly diskIOContainerRef!: HTMLDivElement
 
     private diskIOCharts: Record<string, Chart<'line'>> = {}
@@ -119,7 +123,7 @@ class SystemDisk extends Vue {
         const canvas = this.getDiskCanvas(name)
         if (!canvas) return
         this.diskIOCharts[name]?.destroy()
-        const h = this.diskIOHistory[name] || { labels: [], read: [], write: [] }
+        const h = this.diskIOHistory[name] || { ts: [], labels: [], read: [], write: [] }
         this.diskIOHistory[name] = h
         const chart = new Chart(canvas as HTMLCanvasElement, {
             type: 'line' as const,
@@ -156,8 +160,6 @@ class SystemDisk extends Vue {
 
         if (!diskIO.length || !s.diskPartition) return
 
-        const t = new Date(ts * 1000)
-        const label = `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}:${t.getSeconds().toString().padStart(2, '0')}`
         const nowTime = ts * 1000
 
         diskIO.forEach(dio => {
@@ -178,13 +180,23 @@ class SystemDisk extends Vue {
             this.lastDiskIO[name] = { read: dio.ReadBytes, write: dio.WriteBytes, time: nowTime }
 
             if (!this.diskIOHistory[name]) {
-                this.diskIOHistory[name] = { labels: [], read: [], write: [] }
+                this.diskIOHistory[name] = { ts: [], labels: [], read: [], write: [] }
             }
             const h = this.diskIOHistory[name]
 
-            h.labels.push(label)
-            h.read.push(readRate)
-            h.write.push(writeRate)
+            appendMonitorPoint(
+                h,
+                ts,
+                this.rangeSeconds,
+                () => {
+                    h.read.push(readRate)
+                    h.write.push(writeRate)
+                },
+                count => {
+                    h.read.splice(0, count)
+                    h.write.splice(0, count)
+                }
+            )
 
             if (!this.diskIOCharts[name]) {
                 this.$nextTick(() => this.initDiskChart(name))

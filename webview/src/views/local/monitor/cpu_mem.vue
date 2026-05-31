@@ -1,11 +1,12 @@
 <script lang="ts">
 import type { ChartOptions } from 'chart.js'
 import { markRaw } from 'vue'
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import type { SystemStat } from '@/service/types'
 
 import Chart from '@/helper/chart'
+import { appendMonitorPoint } from '@/helper/monitor'
 
 interface ChartCallbackContext {
     parsed: { y: number | null }
@@ -14,14 +15,16 @@ interface ChartCallbackContext {
 
 @Component
 class SystemCpuMem extends Vue {
+    @Prop({ type: Number, default: 300 }) readonly rangeSeconds!: number
+
     @Ref readonly cpuCanvasRef!: HTMLCanvasElement
     @Ref readonly memCanvasRef!: HTMLCanvasElement
 
     private cpuChart: Chart<'line'> | null = null
     private memChart: Chart<'line'> | null = null
 
-    private cpuHistory: { labels: string[]; data: number[] } = { labels: [], data: [] }
-    private memHistory: { labels: string[]; data: number[] } = { labels: [], data: [] }
+    private cpuHistory: { ts: number[]; labels: string[]; data: number[] } = { ts: [], labels: [], data: [] }
+    private memHistory: { ts: number[]; labels: string[]; data: number[] } = { ts: [], labels: [], data: [] }
 
     current: Pick<SystemStat['system'], 'cpuPercent' | 'cpuModel' | 'memoryUsed' | 'memoryTotal'> | null = null
 
@@ -129,8 +132,8 @@ class SystemCpuMem extends Vue {
 
     clearData() {
         this.current = null
-        this.cpuHistory = { labels: [], data: [] }
-        this.memHistory = { labels: [], data: [] }
+        this.cpuHistory = { ts: [], labels: [], data: [] }
+        this.memHistory = { ts: [], labels: [], data: [] }
         this.cpuChart?.destroy()
         this.memChart?.destroy()
         this.cpuChart = null
@@ -141,13 +144,20 @@ class SystemCpuMem extends Vue {
         const s = payload.system
         this.current = { cpuPercent: s.cpuPercent, cpuModel: s.cpuModel, memoryUsed: s.memoryUsed, memoryTotal: s.memoryTotal }
 
-        const t = new Date(ts * 1000)
-        const label = `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}:${t.getSeconds().toString().padStart(2, '0')}`
-
-        this.cpuHistory.labels.push(label)
-        this.cpuHistory.data.push(this.avgCpuPercent(s.cpuPercent))
-        this.memHistory.labels.push(label)
-        this.memHistory.data.push(this.memPercent(s.memoryUsed, s.memoryTotal))
+        appendMonitorPoint(
+            this.cpuHistory,
+            ts,
+            this.rangeSeconds,
+            () => this.cpuHistory.data.push(this.avgCpuPercent(s.cpuPercent)),
+            count => this.cpuHistory.data.splice(0, count)
+        )
+        appendMonitorPoint(
+            this.memHistory,
+            ts,
+            this.rangeSeconds,
+            () => this.memHistory.data.push(this.memPercent(s.memoryUsed, s.memoryTotal)),
+            count => this.memHistory.data.splice(0, count)
+        )
 
         if (!this.cpuChart || !this.memChart) {
             this.initCharts()
