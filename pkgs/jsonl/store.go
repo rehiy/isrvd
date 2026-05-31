@@ -1,9 +1,13 @@
-// Package jsonl 提供按天滚动的 JSON Lines (.jsonl) 文件读写能力。
+// Package jsonl 提供按天滚动的 JSON Lines 文件读写能力。
 //
-// 设计目标：
-//   - 写入：长开句柄 + bufio.Writer + 锁外序列化，降低 syscall 与锁竞争
-//   - 读取：bufio.Scanner 流式扫描 + gjson 字段过滤，避免全文件载入与重复反序列化
-//   - 支持自定义文件命名（前缀/分隔符/后缀），适配监控、审计等不同场景
+// 写入：长连接 + bufio + 锁外序列化，降低系统调用与锁竞争
+// 读取：流式扫描 + gjson 过滤，避免全量加载
+//
+// 示例：
+//
+//	store, _ := jsonl.New("/var/log", jsonl.Naming{Prefix: "app", Suffix: ".jsonl"})
+//	defer store.Close()
+//	store.Append(map[string]any{"ts": time.Now().Unix(), "msg": "hello"})
 package jsonl
 
 import (
@@ -18,17 +22,12 @@ import (
 	"github.com/rehiy/libgo/logman"
 )
 
-// Naming 描述按天滚动的文件命名规则。
-//
-// 完整文件名为：filepath.Join(Dir, Prefix+Sep+YYYY-MM-DD+Suffix)
-//
-// 例如：
-//   - 监控：Naming{Prefix:"host", Sep:"_", Suffix:".jsonl"} -> host_2026-05-28.jsonl
-//   - 审计：Naming{Prefix:"",     Sep:"",  Suffix:".jsonl"} -> 2026-05-28.jsonl
+// Naming 定义按天滚动的文件命名规则。
+// 完整文件名：filepath.Join(Dir, Prefix+Sep+YYYY-MM-DD+Suffix)
 type Naming struct {
-	Prefix string
-	Sep    string
-	Suffix string
+	Prefix string // 前缀
+	Sep    string // 分隔符
+	Suffix string // 后缀
 }
 
 // FileName 返回指定日期对应的文件名（不含目录）。
@@ -39,51 +38,53 @@ func (n Naming) FileName(date string) string {
 	return n.Prefix + n.Sep + date + n.Suffix
 }
 
-// Store 管理单个目录 + 单个 Naming 下的按天追加写。
-//
-// 多个 Store 实例可指向同一目录但使用不同 Prefix；同一目录+Prefix 的实例
-// 应在调用方层面单例化（监控/审计本身就是单例服务，无需包内全局表）。
+// Store 管理单个目录下按天滚动的 JSONL 文件追加写入。
 type Store struct {
 	dir    string
 	naming Naming
 	opts   options
 
-	mu   sync.Mutex
-	date string // 当前文件对应日期（YYYY-MM-DD）
-	file *os.File
-	bw   *bufio.Writer
-
-	// 异步写入相关（仅 async 模式启用）
+	mu       sync.Mutex
+	date     string
+	file     *os.File
+	bw       *bufio.Writer
 	ch       chan []byte
 	stopOnce sync.Once
 	stopped  chan struct{}
 }
 
-// options Store 的可选参数集合
+// options Store 的可选参数
 type options struct {
-	bufSize       int           // bufio.Writer 缓冲区大小，0 表示不使用 bufio
-	asyncSize     int           // 异步通道大小，0 表示同步写
-	flushInterval time.Duration // 周期 flush 间隔，仅 bufSize>0 时生效
+	bufSize       int
+	asyncSize     int
+	flushInterval time.Duration
 	loc           *time.Location
 }
 
-// Option Store 构造选项
+// Option 定义 Store 构造选项
 type Option func(*options)
 
-// WithBufferSize 设置 bufio.Writer 缓冲区大小（字节）。0 表示直写文件。
-func WithBufferSize(n int) Option { return func(o *options) { o.bufSize = n } }
+// WithBufferSize 设置缓冲区大小（字节），0 表示直写。
+func WithBufferSize(n int) Option {
+	return func(o *options) { o.bufSize = n }
+}
 
 // WithAsync 启用异步写入，channel 容量为 size。
-// 异步模式下 Append 仅做序列化与入队，落盘由后台 goroutine 串行执行。
-func WithAsync(size int) Option { return func(o *options) { o.asyncSize = size } }
+func WithAsync(size int) Option {
+	return func(o *options) { o.asyncSize = size }
+}
 
-// WithFlushInterval 设置周期 flush 间隔；仅在启用 bufio 时有意义。
-func WithFlushInterval(d time.Duration) Option { return func(o *options) { o.flushInterval = d } }
+// WithFlushInterval 设置周期 flush 间隔。
+func WithFlushInterval(d time.Duration) Option {
+	return func(o *options) { o.flushInterval = d }
+}
 
-// WithLocation 指定日期切分的时区，默认 time.Local
-func WithLocation(loc *time.Location) Option { return func(o *options) { o.loc = loc } }
+// WithLocation 指定时区，默认 time.Local。
+func WithLocation(loc *time.Location) Option {
+	return func(o *options) { o.loc = loc }
+}
 
-// New 创建 Store。dir 不存在时自动创建。
+// New 创建 Store，dir 不存在时自动创建。
 func New(dir string, naming Naming, opts ...Option) (*Store, error) {
 	o := options{
 		bufSize:       4096,
@@ -119,19 +120,17 @@ func New(dir string, naming Naming, opts ...Option) (*Store, error) {
 	return s, nil
 }
 
-// FilePath 返回指定日期对应的完整路径
+// FilePath 返回指定日期的完整文件路径
 func (s *Store) FilePath(date string) string {
 	return filepath.Join(s.dir, s.naming.FileName(date))
 }
 
-// Today 返回 Store 时区下的当前日期字符串（YYYY-MM-DD）。
+// Today 返回当前日期（YYYY-MM-DD）。
 func (s *Store) Today() string {
 	return time.Now().In(s.opts.loc).Format(dateLayout)
 }
 
-// Append 序列化后追加一条记录。
-// 异步模式下序列化在调用方 goroutine 完成（避免阻塞业务线程过久），
-// 入队后立即返回；同步模式下落盘成功后返回。
+// Append 序列化并追加一条记录。异步模式入队即返回，同步模式落盘后返回。
 func (s *Store) Append(v any) error {
 	line, err := json.Marshal(v)
 	if err != nil {
@@ -144,20 +143,22 @@ func (s *Store) Append(v any) error {
 		case s.ch <- line:
 			return nil
 		default:
-			logman.Warn("jsonl: async channel full, drop record", "dir", s.dir, "prefix", s.naming.Prefix)
+			logman.Warn("jsonl: async channel full, drop record", "dir", s.dir)
 			return fmt.Errorf("jsonl: async channel full")
 		}
 	}
 	return s.writeLocked(line)
 }
 
-// writeLocked 加锁直写当前文件
+// writeLocked 加锁写入当前文件
 func (s *Store) writeLocked(line []byte) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	if err := s.ensureFileLocked(); err != nil {
 		return err
 	}
+
 	if s.bw != nil {
 		_, err := s.bw.Write(line)
 		return err
@@ -166,13 +167,14 @@ func (s *Store) writeLocked(line []byte) error {
 	return err
 }
 
-// ensureFileLocked 确保 s.file 对应今天，必要时轮转
+// ensureFileLocked 确保文件句柄对应今天，必要时轮转。
 func (s *Store) ensureFileLocked() error {
 	today := s.Today()
+
 	if s.file != nil && s.date == today {
 		return nil
 	}
-	// 轮转：刷盘并关闭旧文件
+
 	if s.file != nil {
 		if s.bw != nil {
 			_ = s.bw.Flush()
@@ -181,6 +183,7 @@ func (s *Store) ensureFileLocked() error {
 		s.file = nil
 		s.bw = nil
 	}
+
 	path := s.FilePath(today)
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
 	if err != nil {
@@ -194,7 +197,7 @@ func (s *Store) ensureFileLocked() error {
 	return nil
 }
 
-// Flush 主动将缓冲区写入磁盘
+// Flush 刷盘，仅 bufio 模式有效。
 func (s *Store) Flush() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -204,7 +207,7 @@ func (s *Store) Flush() error {
 	return nil
 }
 
-// Close 停止异步 goroutine、刷盘并关闭文件句柄
+// Close 停止异步写入、刷盘并关闭文件。可安全调用多次。
 func (s *Store) Close() error {
 	s.stopOnce.Do(func() {
 		if s.ch != nil {
@@ -217,6 +220,7 @@ func (s *Store) Close() error {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	if s.bw != nil {
 		_ = s.bw.Flush()
 		s.bw = nil
@@ -233,11 +237,13 @@ func (s *Store) Close() error {
 func (s *Store) runAsync() {
 	var ticker *time.Ticker
 	var tickC <-chan time.Time
+
 	if s.opts.bufSize > 0 && s.opts.flushInterval > 0 {
 		ticker = time.NewTicker(s.opts.flushInterval)
 		tickC = ticker.C
 		defer ticker.Stop()
 	}
+
 	for {
 		select {
 		case line, ok := <-s.ch:
@@ -255,17 +261,16 @@ func (s *Store) runAsync() {
 	}
 }
 
-// runFlusher 同步模式下的周期 flush
+// runFlusher 同步模式定期刷盘
 func (s *Store) runFlusher() {
 	ticker := time.NewTicker(s.opts.flushInterval)
 	defer ticker.Stop()
-	for range ticker.C {
-		// Close 后无需再 flush；通过 stopped 判断
+	for {
 		select {
 		case <-s.stopped:
 			return
-		default:
+		case <-ticker.C:
+			_ = s.Flush()
 		}
-		_ = s.Flush()
 	}
 }
