@@ -36,7 +36,12 @@ func getStore(dir, prefix string) *jsonl.Store {
 	if s, ok := stores[key]; ok {
 		return s
 	}
-	s, err := jsonl.New(dir, jsonl.Naming{Prefix: prefix, Sep: "_", Suffix: fileSuffix})
+	s, err := jsonl.New(dir,
+		jsonl.Naming{Prefix: prefix, Sep: "_", Suffix: fileSuffix},
+		jsonl.WithBufferSize(32*1024),          // 32KB 缓冲，减少 flush 次数
+		jsonl.WithAsync(256),                   // 异步写入，采集 goroutine 不被 IO 阻塞
+		jsonl.WithFlushInterval(5*time.Second), // 5s flush 一次，与最短采集间隔对齐
+	)
 	if err != nil {
 		logman.Warn("monitor: open jsonl store failed", "dir", dir, "prefix", prefix, "error", err)
 		return nil
