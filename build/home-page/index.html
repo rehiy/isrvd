@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>iSrvd — 轻量级运维管理面板</title>
+    <meta name="description" content="iSrvd 是基于 Go + Vue 3 构建的轻量级运维管理面板，集成文件管理、Docker 容器编排、APISIX/Caddy 网关配置、Web 终端、SSH 远程管理、GPU 监控、计划任务与 AI 助手，为个人服务器与中小型团队提供一站式管理体验。" />
+    <script src="https://jscdn.rehi.org/npm/@tailwindcss/browser@4"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a' },
+                        slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' }
+                    }
+                }
+            }
+        }
+
+        // Call on theme toggle
+        const originalToggleTheme = toggleTheme;
+    </script>
+    <style>
+        * {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .code-block {
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: .75rem;
+            overflow: hidden
+        }
+
+        .dark .code-block {
+            background: #020617;
+        }
+
+        .code-header {
+            background: #1e293b;
+            padding: .5rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: .75rem;
+            color: #94a3b8;
+        }
+
+        .dark .code-header {
+            background: #0f172a;
+            color: #64748b;
+        }
+
+        .code-body {
+            padding: 1rem 1.25rem;
+            overflow-x: auto;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: .875rem;
+            line-height: 1.7
+        }
+
+        .copy-btn {
+            cursor: pointer;
+            padding: .25rem .75rem;
+            border-radius: .375rem;
+            background: #334155;
+            color: #cbd5e1;
+            font-size: .75rem;
+            transition: background .2s
+        }
+
+        .copy-btn:hover {
+            background: #475569
+        }
+
+        .dark .copy-btn {
+            background: #1e293b;
+            color: #94a3b8;
+        }
+
+        .dark .copy-btn:hover {
+            background: #334155;
+        }
+
+        .feature-card {
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            background: white;
+            padding: 1.5rem;
+            transition: box-shadow .2s
+        }
+
+        .dark .feature-card {
+            border-color: #334155;
+            background: #1e293b;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 24px rgba(0, 0, 0, .06)
+        }
+
+        .section-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #1e293b;
+            text-align: center
+        }
+
+        .dark .section-title {
+            color: #f1f5f9;
+        }
+
+        .section-subtitle {
+            color: #64748b;
+            text-align: center;
+            margin-top: .5rem
+        }
+
+        .dark .section-subtitle {
+            color: #94a3b8;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: .125rem .625rem;
+            border-radius: .5rem;
+            font-size: .75rem;
+            font-weight: 500
+        }
+
+        .badge-blue {
+            background: #eff6ff;
+            color: #2563eb
+        }
+
+        .dark .badge-blue {
+            background: #1e3a8a;
+            color: #93c5fd;
+        }
+
+        .badge-emerald {
+            background: #ecfdf5;
+            color: #059669
+        }
+
+        .dark .badge-emerald {
+            background: #064e3b;
+            color: #6ee7b7;
+        }
+
+        .badge-amber {
+            background: #fffbeb;
+            color: #d97706
+        }
+
+        .dark .badge-amber {
+            background: #78350f;
+            color: #fcd34d;
+        }
+
+        .badge-violet {
+            background: #f5f3ff;
+            color: #7c3aed
+        }
+
+        .dark .badge-violet {
+            background: #3b0764;
+            color: #c4b5fd;
+        }
+
+        .badge-rose {
+            background: #fff1f2;
+            color: #e11d48
+        }
+
+        .badge-indigo {
+            background: #eef2ff;
+            color: #4f46e5
+        }
+
+        .badge-cyan {
+            background: #ecfeff;
+            color: #0891b2
+        }
+
+        .tab-group {
+            background: #e2e8f0;
+            padding: .25rem;
+            border-radius: .5rem;
+            display: inline-flex;
+            gap: .125rem
+        }
+
+        .tab-btn {
+            padding: .375rem 1rem;
+            font-size: .75rem;
+            font-weight: 500;
+            border-radius: .375rem;
+            transition: all .2s;
+            color: #64748b;
+            background: transparent;
+            border: none;
+            cursor: pointer
+        }
+
+        .tab-active {
+            background: white;
+            color: #1e293b;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .1)
+        }
+
+        .tab-content {
+            display: none
+        }
+
+        .tab-content.active {
+            display: block
+        }
+
+        .arch-arrow {
+            color: #94a3b8;
+            font-size: 1.25rem;
+            margin: 0 .5rem
+        }
+
+        .dark .feature-card {
+            background: #1e293b;
+            border-color: #334155
+        }
+
+        .dark body {
+            background: #0f172a;
+            color: #e2e8f0
+        }
+
+        .dark .section-title {
+            color: #f1f5f9
+        }
+
+        .dark .section-subtitle {
+            color: #94a3b8
+        }
+
+        .dark .bg-white {
+            background: #1e293b !important
+        }
+
+        .dark .text-slate-800 {
+            color: #e2e8f0 !important
+        }
+
+        /* Navigation dark mode */
+        .dark #main-nav {
+            background: rgba(15, 23, 42, 0.8) !important;
+            border-color: rgba(51, 65, 85, 0.6) !important;
+        }
+
+        .dark .text-slate-600 {
+            color: #94a3b8 !important
+        }
+
+        .dark .text-slate-500 {
+            color: #64748b !important
+        }
+
+        .dark .text-slate-400 {
+            color: #475569 !important
+        }
+
+        /* GPU Table dark mode - pure CSS solution */
+        #gpu-table tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        #gpu-table thead tr {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .dark #gpu-table tbody tr {
+            border-bottom-color: #1e293b !important;
+        }
+
+        .dark #gpu-table thead tr {
+            border-bottom-color: #334155 !important;
+        }
+
+        .dark .border-slate-200 {
+            border-color: #334155 !important
+        }
+
+        .dark .bg-slate-50 {
+            background: #1e293b !important
+        }
+
+        .dark .bg-slate-100 {
+            background: #334155 !important
+        }
+
+        .dark .bg-slate-900 {
+            background: #020617 !important
+        }
+
+        .dark .tab-group {
+            background: #334155
+        }
+
+        .dark .tab-active {
+            background: #1e293b;
+            color: #e2e8f0
+        }
+
+        .dark .tab-btn {
+            color: #94a3b8
+        }
+
+        /* CTA button shadow in dark mode */
+        .dark .shadow-blue-200 {
+            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.5), 0 8px 10px -6px rgba(37, 99, 235, 0.3) !important
+        }
+
+        /* Hero section dark mode */
+        .dark .bg-gradient-to-b.from-slate-50.to-white {
+            background: linear-gradient(to bottom, #0f172a, #1e293b) !important
+        }
+    </style>
+</head>
+
+<body class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 antialiased">
+
+    <!-- Navigation -->
+    <nav id="main-nav" class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/60">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <img src="logo.svg?4" alt="iSrvd" class="w-24">
+                </div>
+                <div class="hidden md:flex items-center gap-6 text-sm">
+                    <a href="#hero" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">首页</a>
+                    <a href="#features" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">功能特性</a>
+                    <a href="#techstack" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">技术栈</a>
+                    <a href="#quickstart" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">快速开始</a>
+                    <a href="#cnb" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">CNB 镜像</a>
+                    <a href="#architecture" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">架构设计</a>
+                    <a href="#security" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">安全特性</a>
+                    <a href="#gpu" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">GPU 监控</a>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="theme-toggle" class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition" onclick="toggleTheme()">
+                        <svg id="icon-sun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="5" />
+                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                        </svg>
+                        <svg id="icon-moon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                        </svg>
+                    </button>
+                    <a href="https://github.com/rehiy/isrvd" target="_blank" class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                        </svg>
+                    </a>
+                    <span class="badge badge-blue">v1.x</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section id="hero" class="pt-28 pb-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-50 to-white">
+        <div class="max-w-6xl mx-auto text-center">
+            <!-- logo -->
+            <div class="flex justify-center mb-8">
+                <img src="logo.svg?4" alt="iSrvd" class="w-64 sm:w-80 lg:w-96">
+            </div>
+
+            <!-- Badge -->
+            <div class="mb-6">
+                <span class="badge badge-emerald">开源 · Apache 2.0</span>
+                <span class="badge badge-blue ml-2">Go 1.24+ · Vue 3</span>
+            </div>
+
+            <!-- Description -->
+            <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-800 mb-4 leading-tight">
+                轻量级运维管理面板
+            </h1>
+            <p class="text-lg sm:text-xl text-slate-500 max-w-5xl mx-auto mb-6 leading-relaxed">
+                基于 Go + Vue 3 构建的轻量级运维面板，集成文件管理、Docker 容器编排、APISIX/Caddy 网关配置、Web 终端、SSH 远程管理、GPU 监控、计划任务与 AI 助手，为个人服务器与中小型团队提供一站式管理体验。
+            </p>
+
+            <!-- Name Origin -->
+            <div class="mb-8 text-sm text-slate-400">
+                <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">it is a server daemon</code>
+                <span class="mx-1">→</span>
+                <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">isrvd</code>
+                <span class="mx-1">=</span>
+                <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">/srv</code> + daemon
+                <span class="mx-2">|</span>
+                发音：<span class="text-slate-500 font-medium">/ˈaɪ sɜːrvd/</span>
+                <span class="text-slate-300 mx-1">→</span>
+                <span class="text-slate-500">"I served"（爱服务）</span>
+            </div>
+
+            <!-- TDP & Contributors -->
+            <div class="mb-10 text-sm text-slate-500 leading-relaxed">
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <span>由 <a href="https://tdp.fan/" target="_blank" class="text-blue-600 hover:underline font-medium">腾讯云开发者先锋（TDP）</a>成员若海主导开发</span>
+                </div>
+                <div>
+                    特别感谢
+                    <a href="https://github.com/rehiy" class="text-slate-700 hover:underline font-medium">没猫饼</a>、
+                    <a href="https://github.com/hugo" class="text-slate-700 hover:underline font-medium">hugo</a>、
+                    <a href="https://github.com/minti" class="text-slate-700 hover:underline font-medium">minti</a>
+                    的代码贡献与测试支持
+                </div>
+            </div>
+
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="#quickstart"
+                    class="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200 dark:bg-blue-500 dark:hover:bg-blue-600 dark:shadow-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M13 10V3l4 14h7v7l9-11h-7z" />
+                    </svg>
+                    快速开始
+                </a>
+                <a href="https://github.com/rehiy/isrvd" target="_blank"
+                    class="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-slate-700 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                    </svg>
+                    GitHub
+                </a>
+            </div>
+        </div>
+    </section>
+    <!-- Features -->
+    <section id="features" class="py-20 bg-slate-50 dark:bg-slate-800">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="section-title">功能特性</h2>
+            <p class="section-subtitle">模块化设计，按需使用</p>
+            <div class="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="feature-card">
+                    <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center mb-4">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-1">系统概览</h3>
+                    <p class="text-sm text-slate-500">CPU、内存、磁盘、网络、GPU 实时监控，服务探测，在线升级</p>
+                </div>
+                <div class="feature-card">
+                    <div class="w-10 h-10 rounded-lg bg-amber-500 flex items-center justify-center mb-4">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-1">文件管理</h3>
+                    <p class="text-sm text-slate-500">浏览、上传、下载、编辑、创建/删除目录、重命名、权限修改、压缩/解压</p>
+                </div>
+                <div class="feature-card">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center mb-4">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-1">Web 终端</h3>
+                    <p class="text-sm text-slate-500">基于 xterm.js 的 Shell 与容器终端，支持多会话</p>
+                </div>
+                <div class="feature-card">
+                    <div class="w-10 h-10 rounded-lg bg-teal-500 flex items-center justify-center mb-4">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-1">SSH 远程管理</h3>
+                    <p class="text-sm text-slate-500">通过 SSH 协议管理主机，支持密码与私钥认证</p>
+                </div>
+                <div class="feature-card">
+                    <div class="w-10 h-10 rounded-lg bg-violet-500 flex items-center justify-center mb-4">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path
+                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-1">AI 助手</h3>
+                    <p class="text-sm text-slate-500">内置 Agent，支持自然语言操作，兼容 OpenAI API</p>
+                </div>
+                <div class="feature-card">
+                    <div class="w-10 h-10 rounded-lg bg-indigo-500 flex items-center justify-center mb-4">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-1">计划任务</h3>
+                    <p class="text-sm text-slate-500">定时任务调度，支持 Shell/BAT/PowerShell/Docker 执行模式，执行历史查看</p>
+                </div>
+                <div class="feature-card">
+                    <div class="w-10 h-10 rounded-lg bg-cyan-500 flex items-center justify-center mb-4">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-1">APISIX 网关</h3>
+                    <p class="text-sm text-slate-500">路由、Consumer、上游、SSL 证书、插件配置、插件列表、白名单管理</p>
+                </div>
+                <div class="feature-card">
+                    <div class="w-10 h-10 rounded-lg bg-rose-500 flex items-center justify-center mb-4">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-1">Caddy 代理</h3>
+                    <p class="text-sm text-slate-500">路由、TLS 证书、全局选项管理，支持原始配置编辑与自动 HTTPS</p>
+                </div>
+                <div class="feature-card">
+                    <div class="w-10 h-10 rounded-lg bg-sky-500 flex items-center justify-center mb-4">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-1">Docker 管理</h3>
+                    <p class="text-sm text-slate-500">容器、镜像、网络、卷、镜像仓库管理，容器日志（实时流式）、资源统计、终端接入、镜像构建/推送/拉取</p>
+                </div>
+                <div class="feature-card">
+                    <div class="w-10 h-10 rounded-lg bg-teal-500 flex items-center justify-center mb-4">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-1">Swarm 集群</h3>
+                    <p class="text-sm text-slate-500">集群、节点、服务、任务管理</p>
+                </div>
+                <div class="feature-card">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center mb-4">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-1">Compose 部署</h3>
+                    <p class="text-sm text-slate-500">文件编辑、Docker Compose / Swarm Stack 部署与重部署</p>
+                </div>
+                <div class="feature-card">
+                    <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center mb-4">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-1">成员管理</h3>
+                    <p class="text-sm text-slate-500">多用户、家目录隔离、模块权限控制、API 令牌管理</p>
+                </div>
+                <div class="feature-card">
+                    <div class="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center mb-4">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-1">OIDC 认证</h3>
+                    <p class="text-sm text-slate-500">集成 OpenID Connect，支持企业级单点登录</p>
+                </div>
+                <div class="feature-card">
+                    <div class="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center mb-4">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-1">系统管理</h3>
+                    <p class="text-sm text-slate-500">配置管理、操作审计日志</p>
+                </div>
+            </div>
+            <div class="mt-8 text-center">
+                <span class="badge badge-indigo">响应式设计</span>
+                <span class="ml-2 text-sm text-slate-500">适配桌面与移动端</span>
+                <span class="ml-2 text-sm text-slate-500">|</span>
+                <span class="ml-2 text-sm text-slate-500">内置 Agent 模式，兼容 OpenAI API</span>
+            </div>
+        </div>
+    </section>
+    <!-- Tech Stack -->
+    <section id="techstack" class="py-20">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="section-title">技术栈</h2>
+            <p class="section-subtitle">现代化技术选型</p>
+            <div class="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
+                    <p class="font-semibold text-slate-800">Go 1.24+</p>
+                    <p class="text-xs text-slate-400 mt-1">后端</p>
+                </div>
+                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
+                    <p class="font-semibold text-slate-800">Gin</p>
+                    <p class="text-xs text-slate-400 mt-1">Web 框架</p>
+                </div>
+                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
+                    <p class="font-semibold text-slate-800">golang-jwt</p>
+                    <p class="text-xs text-slate-400 mt-1">JWT 认证</p>
+                </div>
+                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
+                    <p class="font-semibold text-slate-800">Vue 3 + TypeScript</p>
+                    <p class="text-xs text-slate-400 mt-1">前端框架</p>
+                </div>
+                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
+                    <p class="font-semibold text-slate-800">Pinia</p>
+                    <p class="text-xs text-slate-400 mt-1">状态管理</p>
+                </div>
+                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
+                    <p class="font-semibold text-slate-800">Tailwind CSS</p>
+                    <p class="text-xs text-slate-400 mt-1">样式</p>
+                </div>
+                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
+                    <p class="font-semibold text-slate-800">xterm.js</p>
+                    <p class="text-xs text-slate-400 mt-1">终端</p>
+                </div>
+                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
+                    <p class="font-semibold text-slate-800">Docker / APISIX / Caddy</p>
+                    <p class="text-xs text-slate-400 mt-1">容器 / 网关</p>
+                </div>
+                <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
+                    <p class="font-semibold text-slate-800">OpenAI API 兼容</p>
+                    <p class="text-xs text-slate-400 mt-1">AI 助手</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start -->
+    <section id="quickstart" class="py-20 bg-slate-50 dark:bg-slate-800">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="section-title">快速开始</h2>
+            <p class="section-subtitle">三种方式，即刻体验（支持 Docker Hub 与 CNB 镜像仓库）</p>
+            <div class="mt-10 flex gap-2 bg-slate-200 p-1 rounded-lg w-fit mx-auto tab-group">
+                <button class="tab-btn tab-active" onclick="switchTab('docker', this)">Docker</button>
+                <button class="tab-btn" onclick="switchTab('binary', this)">二进制</button>
+                <button class="tab-btn" onclick="switchTab('compose', this)">Compose</button>
+            </div>
+
+            <!-- Docker Tab -->
+            <div id="tab-docker" class="tab-content active mt-8">
+                <p class="text-sm text-slate-500 mb-6 text-center">提供三个镜像版本，按需求选择</p>
+
+                <!-- Create Network -->
+                <div class="mb-6">
+                    <div class="code-block">
+                        <div class="code-header"><span>bash — 创建网络</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                        <div class="code-body"><span style="color:#64748b"># 本地通信</span><br />docker network create --driver=bridge sdnet<br /><br /><span style="color:#64748b"># 跨主机通信</span><br />docker network create --driver=overlay
+                            --attachable
+                            sdnet</div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2">根据实际网络环境选择，将容器加入该网络</p>
+                </div>
+
+                <div class="mb-8">
+                    <div class="flex items-center gap-2 mb-3"><span class="badge badge-blue">默认</span>
+                        <h3 class="font-semibold text-slate-800">slim — 仅含 isrvd 本体</h3>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2">体积最小，适合文件管理、Docker/Swarm/Compose、计划任务等功能</p>
+                    <div class="code-block">
+                        <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                        <div class="code-body">docker run -d \<br />&nbsp; --name isrvd \<br />&nbsp; --network sdnet \<br />&nbsp; -p 8080:8080 \<br />&nbsp; -v /srv/data:/data \<br />&nbsp; -v /var/run/docker.sock:/var/run/docker.sock
+                            \<br />&nbsp;
+                            rehiy/isrvd:slim</div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2">首次启动自动生成随机密码，通过 <code class="bg-slate-100 px-1 rounded">docker logs isrvd</code> 查看</p>
+                    <p class="text-xs text-slate-400 mt-1">CNB 镜像：<code class="bg-slate-100 px-1 rounded">docker.cnb.cool/rehiy/isrvd:slim</code></p>
+                </div>
+                <div class="mb-8">
+                    <div class="flex items-center gap-2 mb-3"><span class="badge badge-cyan">集成 APISIX</span>
+                        <h3 class="font-semibold text-slate-800">apisix — 集成 API 网关</h3>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2">适合已使用 APISIX 作为 API 网关的场景</p>
+                    <div class="code-block">
+                        <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                        <div class="code-body">docker run -d \<br />&nbsp; --name isrvd \<br />&nbsp; --network sdnet \<br />&nbsp; -p 8080:8080 \<br />&nbsp; -p 80:9080 \<br />&nbsp; -p 443:9443 \<br />&nbsp; -v /srv/data:/data
+                            \<br />&nbsp; -v
+                            /var/run/docker.sock:/var/run/docker.sock \<br />&nbsp; rehiy/isrvd:apisix</div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2">CNB 镜像：<code class="bg-slate-100 px-1 rounded">docker.cnb.cool/rehiy/isrvd:apisix</code></p>
+                </div>
+                <div class="mb-8">
+                    <div class="flex items-center gap-2 mb-3"><span class="badge badge-rose">集成 Caddy</span>
+                        <h3 class="font-semibold text-slate-800">caddy — 集成反向代理与 TLS</h3>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2">适合需要反向代理、自动 HTTPS（ACME）或统一网关管理的场景</p>
+                    <div class="code-block">
+                        <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                        <div class="code-body">docker run -d \<br />&nbsp; --name isrvd \<br />&nbsp; --network sdnet \<br />&nbsp; -p 8080:8080 \<br />&nbsp; -p 80:80 \<br />&nbsp; -p 443:443 \<br />&nbsp; -v /srv/data:/data \<br />&nbsp;
+                            -v
+                            /var/run/docker.sock:/var/run/docker.sock \<br />&nbsp; rehiy/isrvd:caddy</div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2">CNB 镜像：<code class="bg-slate-100 px-1 rounded">docker.cnb.cool/rehiy/isrvd:caddy</code></p>
+                    <p class="text-xs text-slate-400 mt-1">Caddy 默认仅监听 <code class="bg-slate-100 px-1 rounded">:80</code>，关闭自动 HTTPS 跳转；如需 HTTPS，在「Caddy → 全局选项」中开启</p>
+                </div>
+                <div class="mt-6 overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead>
+                            <tr class="bg-slate-100">
+                                <th class="px-4 py-2 rounded-tl-lg">镜像版本</th>
+                                <th class="px-4 py-2">端口 8080<br><span class="text-xs font-normal text-slate-400">isrvd Web 管理</span></th>
+                                <th class="px-4 py-2">端口 80<br><span class="text-xs font-normal text-slate-400">HTTP 服务</span></th>
+                                <th class="px-4 py-2 rounded-tr-lg">端口 443<br><span class="text-xs font-normal text-slate-400">HTTPS 服务</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-t border-slate-200">
+                                <td class="px-4 py-2 font-medium">slim</td>
+                                <td class="px-4 py-2 text-slate-500">✓ isrvd Web</td>
+                                <td class="px-4 py-2 text-slate-400">—</td>
+                                <td class="px-4 py-2 text-slate-400">—</td>
+                            </tr>
+                            <tr class="border-t border-slate-200">
+                                <td class="px-4 py-2 font-medium">apisix</td>
+                                <td class="px-4 py-2 text-slate-500">✓ isrvd Web</td>
+                                <td class="px-4 py-2 text-slate-500">APISIX HTTP (9080)</td>
+                                <td class="px-4 py-2 text-slate-500">APISIX HTTPS (9443)</td>
+                            </tr>
+                            <tr class="border-t border-slate-200">
+                                <td class="px-4 py-2 font-medium">caddy</td>
+                                <td class="px-4 py-2 text-slate-500">✓ isrvd Web</td>
+                                <td class="px-4 py-2 text-slate-500">Caddy HTTP (80)</td>
+                                <td class="px-4 py-2 text-slate-500">Caddy HTTPS (443)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="mt-2 text-xs text-slate-400">说明：所有版本均提供 Web 管理界面（端口 8080），集成 API 网关的版本额外暴露 HTTP/HTTPS 端口</p>
+                </div>
+            </div>
+
+            <!-- Binary Tab -->
+            <div id="tab-binary" class="tab-content mt-8">
+                <p class="text-sm text-slate-500 mb-6 text-center">适用于无 Docker 环境，直接运行二进制文件</p>
+                <p class="text-xs text-slate-400 mb-4 text-center">安装目录：<code class="bg-slate-100 px-1 rounded">/usr/local/isrvd/</code>，限制：无法通过容器内网访问其它容器</p>
+                <p class="text-xs text-slate-400 mb-4 text-center">支持 etcd 配置存储，value 为 YAML 格式，便于与 config.yml 互迁</p>
+                <div class="code-block mb-6">
+                    <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                    <div class="code-body"><span style="color:#64748b"># 一键安装</span><br />bash
+                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install<br /><br /><span style="color:#64748b"># 更新</span><br />bash
+                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) update<br /><br /><span style="color:#64748b"># 卸载</span><br />bash
+                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) uninstall<br /><br /><span style="color:#64748b"># 仅下载</span><br />bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh)
+                            download</div>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header"><span>bash — 直接运行</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                        <div class="code-body"><span style="color:#64748b"># 默认读取 ./config.yml</span><br />./isrvd<br /><br /><span style="color:#64748b"># 本地 YAML</span><br />CONFIG_PATH=/data/conf/isrvd.yml ./isrvd<br /><br /><span
+                                style="color:#64748b"># etcd 配置（value 为 YAML 格式）</span><br />CONFIG_PATH=<span style="color:#34d399">"etcd://user:pass@127.0.0.1:2379/isrvd/config?scheme=http&timeout=5s"</span> ./isrvd<br /><br /><span
+                                style="color:#64748b"># etcd key 不存在时，用 fallback YAML 初始化并写入 etcd</span><br />CONFIG_PATH=<span style="color:#34d399">"etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml"</span> ./isrvd</div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2 text-center">etcd 认证可省略或用 <code class="bg-slate-100 px-1 rounded">ETCD_USERNAME</code> / <code class="bg-slate-100 px-1 rounded">ETCD_PASSWORD</code> 补充</p>
+                </div>
+
+                <!-- Compose Tab -->
+                <div id="tab-compose" class="tab-content mt-8">
+                    <p class="text-sm text-slate-500 mb-6 text-center">使用 Docker Compose 管理容器生命周期</p>
+                    <div class="code-block">
+                        <div class="code-header"><span>docker-compose.yml</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                        <div class="code-body">networks:<br />&nbsp; sdnet:<br />&nbsp;&nbsp;&nbsp; driver: bridge<br /><br />services:<br />&nbsp; isrvd:<br />&nbsp;&nbsp;&nbsp; image: rehiy/isrvd:slim<br />&nbsp;&nbsp;&nbsp;
+                            container_name:
+                            isrvd<br />&nbsp;&nbsp;&nbsp; restart: unless-stopped<br />&nbsp;&nbsp;&nbsp; networks:<br />&nbsp;&nbsp;&nbsp;&nbsp; - sdnet<br />&nbsp;&nbsp;&nbsp; ports:<br />&nbsp;&nbsp;&nbsp;&nbsp; -
+                            "8080:8080"<br />&nbsp;&nbsp;&nbsp;
+                            volumes:<br />&nbsp;&nbsp;&nbsp;&nbsp; - /srv/data:/data<br />&nbsp;&nbsp;&nbsp;&nbsp; - /var/run/docker.sock:/var/run/docker.sock</div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2 text-center">注意：请始终挂载整个 <code class="bg-slate-100 px-1 rounded">/data</code> 目录，避免容器重建时数据丢失</p>
+                    <p class="text-xs text-slate-400 mt-1 text-center">CNB 镜像：<code class="bg-slate-100 px-1 rounded">docker.cnb.cool/rehiy/isrvd:slim</code></p>
+                </div>
+            </div>
+    </section>
+
+    <!-- CNB Mirror -->
+    <section id="cnb" class="py-20">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="section-title">CNB 镜像仓库</h2>
+            <p class="section-subtitle">CNB 流水线同步推送，国内访问更快速</p>
+            <div class="mt-8 bg-white border border-slate-200 rounded-xl p-6">
+                <p class="text-sm text-slate-500 mb-4">镜像路径格式：<code class="bg-slate-100 px-1.5 py-0.5 rounded">docker.cnb.cool/&lt;repo-slug&gt;:&lt;tag&gt;</code></p>
+                <div class="code-block">
+                    <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                    <div class="code-body">docker pull docker.cnb.cool/rehiy/isrvd:slim<br />docker pull docker.cnb.cool/rehiy/isrvd:caddy<br />docker pull docker.cnb.cool/rehiy/isrvd:apisix</div>
+                </div>
+                <p class="text-xs text-slate-400 mt-4">支持 <code class="bg-slate-100 px-1 rounded">slim</code>、<code class="bg-slate-100 px-1 rounded">caddy</code>、<code class="bg-slate-100 px-1 rounded">apisix</code> 三个标签，其中 <code
+                        class="bg-slate-100 px-1 rounded">slim</code> 同时作为 <code class="bg-slate-100 px-1 rounded">latest</code></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section id="architecture" class="py-20 bg-slate-50 dark:bg-slate-800">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="section-title">架构设计</h2>
+            <p class="section-subtitle">分层架构，高内聚低耦合</p>
+            <div class="mt-12 bg-slate-50 rounded-2xl p-8">
+                <div class="flex flex-wrap items-center justify-center gap-2 text-sm">
+                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">config</div>
+                    <span class="arch-arrow">→</span>
+                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">registry</div>
+                    <span class="arch-arrow">→</span>
+                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">pkgs</div>
+                    <span class="arch-arrow">→</span>
+                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">service</div>
+                    <span class="arch-arrow">→</span>
+                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">server</div>
+                    <span class="arch-arrow">→</span>
+                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">webview</div>
+                </div>
+                <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div class="bg-white border border-slate-200 rounded-lg p-4">
+                        <p class="font-semibold text-slate-700 mb-1">config</p>
+                        <p class="text-slate-500">配置加载（YAML/etcd）</p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-lg p-4">
+                        <p class="font-semibold text-slate-700 mb-1">registry</p>
+                        <p class="text-slate-500">外部服务初始化与可用性检查</p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-lg p-4">
+                        <p class="font-semibold text-slate-700 mb-1">pkgs</p>
+                        <p class="text-slate-500">各模块客户端（Docker / Swarm / APISIX / Caddy / GPU / SSH）</p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-lg p-4">
+                        <p class="font-semibold text-slate-700 mb-1">service</p>
+                        <p class="text-slate-500">业务逻辑、类型转换、权限校验</p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-lg p-4">
+                        <p class="font-semibold text-slate-700 mb-1">server</p>
+                        <p class="text-slate-500">HTTP handlers、路由注册、中间件</p>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-lg p-4">
+                        <p class="font-semibold text-slate-700 mb-1">webview</p>
+                        <p class="text-slate-500">Vue 3 前端（Pinia + TypeScript + Tailwind CSS）</p>
+                    </div>
+                </div>
+                <div class="mt-6 text-xs text-slate-400 text-center">
+                    设计原则：高内聚（同领域功能聚合）、低耦合（层间通过接口解耦）、单一职责（Handler 只管 HTTP）
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security -->
+    <section id="security" class="py-20">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="section-title">安全特性</h2>
+            <p class="section-subtitle">多层防护，默认安全</p>
+            <div class="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="bg-white border border-slate-200 rounded-xl p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-slate-800 text-sm">JWT 认证</h3>
+                    </div>
+                    <p class="text-xs text-slate-500">敏感字段（密钥、密码）不返回前端</p>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-xl p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-slate-800 text-sm">路径校验</h3>
+                    </div>
+                    <p class="text-xs text-slate-500">文件路径校验，防止目录遍历攻击</p>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-xl p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-slate-800 text-sm">解压校验</h3>
+                    </div>
+                    <p class="text-xs text-slate-500">解压校验路径，防止 Zip Slip 攻击</p>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-xl p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949l3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-slate-800 text-sm">WebSocket 认证</h3>
+                    </div>
+                    <p class="text-xs text-slate-500">WebSocket 连接需经过认证中间件</p>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-xl p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-slate-800 text-sm">细粒度权限</h3>
+                    </div>
+                    <p class="text-xs text-slate-500">基于路由的权限控制，支持匿名/登录/需权限三级</p>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-xl p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-slate-800 text-sm">操作审计</h3>
+                    </div>
+                    <p class="text-xs text-slate-500">操作审计日志，路由访问与操作全程记录</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- GPU -->
+    <section id="gpu" class="py-20 bg-slate-50 dark:bg-slate-800">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="section-title">GPU 监控</h2>
+            <p class="section-subtitle">支持 NVIDIA / AMD / Intel 独立显卡（含 Apple Silicon）</p>
+            <div class="mt-8 bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 overflow-x-auto">
+                <table id="gpu-table" class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-200 dark:border-slate-700">
+                            <th class="text-left pb-3 text-slate-500 dark:text-slate-400 font-medium">厂商</th>
+                            <th class="text-left pb-3 text-slate-500 dark:text-slate-400 font-medium">首选方式</th>
+                            <th class="text-left pb-3 text-slate-500 dark:text-slate-400 font-medium">回退方式</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b">
+                            <td class="py-3 font-medium text-slate-700 dark:text-slate-200">NVIDIA</td>
+                            <td class="py-3 text-slate-500 dark:text-slate-400">go-nvml</td>
+                            <td class="py-3 text-slate-500 dark:text-slate-400">nvidia-smi</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 font-medium text-slate-700 dark:text-slate-200">AMD</td>
+                            <td class="py-3 text-slate-500 dark:text-slate-400">sysfs</td>
+                            <td class="py-3 text-slate-500 dark:text-slate-400">rocm-smi</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 font-medium text-slate-700 dark:text-slate-200">Intel</td>
+                            <td class="py-3 text-slate-500 dark:text-slate-400">sysfs</td>
+                            <td class="py-3 text-slate-500 dark:text-slate-400">—</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-3 font-medium text-slate-700 dark:text-slate-200">Apple Silicon</td>
+                            <td class="py-3 text-slate-500 dark:text-slate-400">sysctl</td>
+                            <td class="py-3 text-slate-500 dark:text-slate-400">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 py-12">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-2">
+                    <img src="logo.svg?4" alt="iSrvd" class="w-12">
+                </div>
+                <div class="flex items-center gap-4 text-sm text-slate-400">
+                    <a href="https://cnb.cool/rehiy/isrvd" target="_blank" class="hover:text-slate-600 transition">CNB</a>
+                    <a href="https://github.com/rehiy/isrvd" target="_blank" class="hover:text-slate-600 transition">GitHub</a>
+                    <a href="https://github.com/rehiy/isrvd/blob/master/LICENSE" target="_blank" class="hover:text-slate-600 transition">Apache 2.0</a>
+                    <a href="https://github.com/rehiy/isrvd/blob/master/NOTICE" target="_blank" class="hover:text-slate-600 transition">NOTICE</a>
+                </div>
+                <p class="text-xs text-slate-400">© 2024-2026 iSrvd. Built with Go + Vue 3.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const nav = document.getElementById('main-nav');
+            const isDark = html.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.getElementById('icon-sun').classList.toggle('hidden', !isDark);
+            document.getElementById('icon-moon').classList.toggle('hidden', isDark);
+            // Update nav styles
+            if (isDark) {
+                nav.classList.remove('bg-white/80', 'border-slate-200/60');
+                nav.classList.add('bg-slate-900/80', 'border-slate-700/60');
+            } else {
+                nav.classList.remove('bg-slate-900/80', 'border-slate-700/60');
+                nav.classList.add('bg-white/80', 'border-slate-200/60');
+            }
+            // Update GPU table borders
+            // GPU table borders are now handled by pure CSS
+        }
+        // Init theme
+        (function () {
+            const saved = localStorage.getItem('theme');
+            const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const nav = document.getElementById('main-nav');
+            if (saved === 'dark' || (!saved && preferDark)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('icon-sun').classList.remove('hidden');
+                document.getElementById('icon-moon').classList.add('hidden');
+                nav.classList.remove('bg-white/80', 'border-slate-200/60');
+                nav.classList.add('bg-slate-900/80', 'border-slate-700/60');
+            }
+            // Update GPU table borders after DOM is ready
+            // GPU table borders are now handled by pure CSS
+        })();
+        // Tab switch
+        function switchTab(name, btn) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('tab-active'));
+            document.getElementById('tab-' + name).classList.add('active');
+            btn.classList.add('tab-active');
+        }
+        // Copy code
+        function copyCode(btn) {
+            const codeBody = btn.parentElement.nextElementSibling;
+            const text = codeBody.innerText;
+            navigator.clipboard.writeText(text).then(function () {
+                btn.textContent = '已复制';
+                setTimeout(function () { btn.textContent = '复制'; }, 2000);
+            });
+        }
+        // Nav scroll style
+        (function () {
+            const nav = document.querySelector('nav');
+            window.addEventListener('scroll', function () {
+                if (window.scrollY > 10) {
+                    nav.classList.add('shadow-sm');
+                } else {
+                    nav.classList.remove('shadow-sm');
+                }
+            });
+        })();
+    </script>
+</body>
+
+</html>
