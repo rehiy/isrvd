@@ -35,7 +35,6 @@ export const useAuthStore = defineStore('auth', () => {
         permissionsLoaded.value = false
         founder.value = false
         permissions.value = []
-        oidcLoginLabel.value = ''
         localStorage.removeItem('app-token')
         localStorage.removeItem('app-username')
     }
@@ -70,8 +69,6 @@ export const useAuthStore = defineStore('auth', () => {
         }
 
         const payload = authRes.payload as AuthInfo
-        oidcEnabled.value = payload.oidcEnabled || false
-        oidcLoginLabel.value = payload.oidcBtnLabel || ''
 
         // 核心原则：无 username 或无 member = 无权限，直接清理
         if (!payload?.username || !payload?.member) {
@@ -86,6 +83,10 @@ export const useAuthStore = defineStore('auth', () => {
             founder.value = payload.member.founder || false
             permissions.value = payload.member.permissions || []
         }
+
+        // OIDC 配置是服务端配置，无论登录状态如何都需要更新（放在 clearAuth 之后）
+        oidcEnabled.value = payload.oidcEnabled || false
+        oidcLoginLabel.value = payload.oidcBtnLabel || ''
     }
 
     return {

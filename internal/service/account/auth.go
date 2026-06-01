@@ -22,7 +22,7 @@ type AuthInfoResponse struct {
 	Username     string      `json:"username,omitempty"`
 	Member       *MemberInfo `json:"member,omitempty"`
 	OIDCEnabled  bool        `json:"oidcEnabled"`
-	OIDCBtnLabel string      `json:"oidcBtnLabel,omitempty"` // OIDC 登录按钮自定义名称
+	OIDCBtnLabel string      `json:"oidcBtnLabel"`
 }
 
 // LoginRequest 登录请求

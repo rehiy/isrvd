@@ -156,8 +156,5 @@ func OIDCNormalize(oidc *OIDCConfig) *OIDCConfig {
 	if len(oidc.Scopes) == 0 {
 		oidc.Scopes = []string{"openid", "profile", "email"}
 	}
-	if oidc.LoginLabel == "" {
-		oidc.LoginLabel = "使用 OIDC 登录"
-	}
 	return oidc
 }

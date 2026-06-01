@@ -73,6 +73,7 @@ func (s *ConfigService) ConfigAll() *AllConfigResponse {
 			RedirectURL:   oidc.RedirectURL,
 			UsernameClaim: oidc.UsernameClaim,
 			Scopes:        oidc.Scopes,
+			LoginLabel:    oidc.LoginLabel,
 			// ClientSecret 不返回
 		},
 		Agent: &config.AgentConfig{

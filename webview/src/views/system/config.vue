@@ -21,7 +21,7 @@ class Config extends Vue {
   allowedOriginsText = ''
   proxyTrustedCIDRsText = ''
   monitor: MonitorConfig = { interval: 0 }
-  oidc: OIDCConfig = { enabled: false, issuerUrl: '', clientId: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'] }
+  oidc: OIDCConfig = { enabled: false, issuerUrl: '', clientId: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'], loginLabel: '' }
   oidcScopes = 'openid profile email'
   agent: AgentConfig = { model: '', baseUrl: '' }
   apisix: ApisixConfig = { adminUrl: '' }
@@ -40,7 +40,7 @@ class Config extends Vue {
       this.allowedOriginsText = (this.server.allowedOrigins || []).join('\n')
       this.proxyTrustedCIDRsText = (this.server.proxyTrustedCIDRs || []).join('\n')
       this.monitor = { ...(payload.monitor || { interval: 0 }) }
-      this.oidc = { ...(payload.oidc || { enabled: false, issuerUrl: '', clientId: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'] }) }
+      this.oidc = { ...(payload.oidc || { enabled: false, issuerUrl: '', clientId: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'], loginLabel: '' }) }
       this.oidcScopes = (this.oidc.scopes || []).join(' ')
       this.agent = { ...payload.agent }
       this.apisix = { ...payload.apisix }
@@ -275,14 +275,14 @@ export default toNative(Config)
           <p class="mt-1 text-xs text-slate-400">OIDC 用户信息中作为用户名的字段，默认 sub；该字段的值必须与 members.username 完全一致，用户不存在时登录失败</p>
         </div>
         <div>
-          <label class="form-label">登录按钮名称</label>
-          <input v-model="oidc.loginLabel" type="text" placeholder="请输入登录按钮名称" class="input" />
-          <p class="mt-1 text-xs text-slate-400">自定义 OIDC 登录按钮显示名称；留空则使用默认文案「使用 OIDC 登录」</p>
-        </div>
-        <div>
           <label class="form-label">授权范围</label>
           <input v-model="oidcScopes" type="text" placeholder="请输入授权范围" class="input" />
           <p class="mt-1 text-xs text-slate-400">示例：openid profile email；以空格分隔，系统会自动确保包含 openid</p>
+        </div>
+        <div>
+          <label class="form-label">登录按钮名称</label>
+          <input v-model="oidc.loginLabel" type="text" placeholder="请输入登录按钮名称" class="input" />
+          <p class="mt-1 text-xs text-slate-400">自定义 OIDC 登录按钮显示名称；留空则使用默认文案「使用 OIDC 登录」</p>
         </div>
       </section>
 
