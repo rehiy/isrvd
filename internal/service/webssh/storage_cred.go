@@ -56,8 +56,15 @@ type credentialStore struct {
 
 // newCredentialStore 创建凭据存储
 func newCredentialStore() (*credentialStore, error) {
-	p := filepath.Join(config.Server.RootDirectory, "webssh-credentials.yml")
-	s := &credentialStore{path: p}
+	newPath := filepath.Join(config.Server.RootDirectory, "webssh-cred.yml")
+	oldPath := filepath.Join(config.Server.RootDirectory, "webssh-credentials.yml")
+	// 自动迁移：旧文件存在且新文件不存在时，重命名旧文件
+	if _, err := os.Stat(newPath); os.IsNotExist(err) {
+		if _, err := os.Stat(oldPath); err == nil {
+			_ = os.Rename(oldPath, newPath)
+		}
+	}
+	s := &credentialStore{path: newPath}
 	if err := s.load(); err != nil {
 		return nil, err
 	}
@@ -72,11 +79,11 @@ func (s *credentialStore) load() error {
 			s.items = []*Credential{}
 			return nil
 		}
-		return fmt.Errorf("读取 webssh-credentials.yml 失败: %w", err)
+		return fmt.Errorf("读取 webssh-cred.yml 失败: %w", err)
 	}
 	var items []*Credential
 	if err := yaml.Unmarshal(data, &items); err != nil {
-		return fmt.Errorf("解析 webssh-credentials.yml 失败: %w", err)
+		return fmt.Errorf("解析 webssh-cred.yml 失败: %w", err)
 	}
 	s.items = items
 	return nil
@@ -92,7 +99,7 @@ func (s *credentialStore) save() error {
 		return fmt.Errorf("创建配置目录失败: %w", err)
 	}
 	if err := os.WriteFile(s.path, data, 0600); err != nil {
-		return fmt.Errorf("写入 webssh-credentials.yml 失败: %w", err)
+		return fmt.Errorf("写入 webssh-cred.yml 失败: %w", err)
 	}
 	return nil
 }

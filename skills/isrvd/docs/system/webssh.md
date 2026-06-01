@@ -4,7 +4,7 @@
 
 WebSSH 模块支持通过浏览器直接连接远程 SSH 主机，提供可复用认证凭据管理、主机配置管理（支持密码和私钥认证）、WebSocket 终端会话和 SFTP 文件管理。
 
-主机配置独立存储于 `{rootDirectory}/webssh.yml`，认证凭据独立存储于 `{rootDirectory}/webssh-credentials.yml`，均不写入主配置文件。
+主机配置独立存储于 `{rootDirectory}/webssh-host.yml`，认证凭据独立存储于 `{rootDirectory}/webssh-cred.yml`，均不写入主配置文件。
 
 ---
 
@@ -403,7 +403,7 @@ isrvd_get "/ssh/sftp/<ID>/dir-size?path=/path/to/dir"
 
 ## 存储说明
 
-认证凭据存储于 `{rootDirectory}/webssh-credentials.yml`，格式示例：
+认证凭据存储于 `{rootDirectory}/webssh-cred.yml`，格式示例：
 
 ```yaml
 - id: 01j...
@@ -421,7 +421,7 @@ isrvd_get "/ssh/sftp/<ID>/dir-size?path=/path/to/dir"
     -----END PRIVATE KEY-----
 ```
 
-主机配置存储于 `{rootDirectory}/webssh.yml`，格式示例：
+主机配置存储于 `{rootDirectory}/webssh-host.yml`，格式示例：
 
 ```yaml
 - id: 01j...
@@ -441,4 +441,4 @@ isrvd_get "/ssh/sftp/<ID>/dir-size?path=/path/to/dir"
   description: 开发环境
 ```
 
-> 两个文件权限均为 `0600`，密码和私钥以明文存储，请确保文件系统权限安全。绑定 `credentialId` 的主机不会在 `webssh.yml` 中冗余保存凭据密码或私钥，连接时从 `webssh-credentials.yml` 解析认证信息。
+> 两个文件权限均为 `0600`，密码和私钥以明文存储，请确保文件系统权限安全。绑定 `credentialId` 的主机不会在 `webssh-host.yml` 中冗余保存凭据密码或私钥，连接时从 `webssh-cred.yml` 解析认证信息。

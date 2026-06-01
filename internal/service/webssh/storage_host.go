@@ -57,8 +57,15 @@ type store struct {
 
 // newHostStore 创建主机配置存储
 func newHostStore() (*store, error) {
-	p := filepath.Join(config.Server.RootDirectory, "webssh.yml")
-	s := &store{path: p}
+	newPath := filepath.Join(config.Server.RootDirectory, "webssh-host.yml")
+	oldPath := filepath.Join(config.Server.RootDirectory, "webssh.yml")
+	// 自动迁移：旧文件存在且新文件不存在时，重命名旧文件
+	if _, err := os.Stat(newPath); os.IsNotExist(err) {
+		if _, err := os.Stat(oldPath); err == nil {
+			_ = os.Rename(oldPath, newPath)
+		}
+	}
+	s := &store{path: newPath}
 	if err := s.load(); err != nil {
 		return nil, err
 	}
@@ -73,11 +80,11 @@ func (s *store) load() error {
 			s.hosts = []*Host{}
 			return nil
 		}
-		return fmt.Errorf("读取 webssh.yml 失败: %w", err)
+		return fmt.Errorf("读取 webssh-host.yml 失败: %w", err)
 	}
 	var hosts []*Host
 	if err := yaml.Unmarshal(data, &hosts); err != nil {
-		return fmt.Errorf("解析 webssh.yml 失败: %w", err)
+		return fmt.Errorf("解析 webssh-host.yml 失败: %w", err)
 	}
 	s.hosts = hosts
 	return nil
@@ -93,7 +100,7 @@ func (s *store) save() error {
 		return fmt.Errorf("创建配置目录失败: %w", err)
 	}
 	if err := os.WriteFile(s.path, data, 0600); err != nil {
-		return fmt.Errorf("写入 webssh.yml 失败: %w", err)
+		return fmt.Errorf("写入 webssh-host.yml 失败: %w", err)
 	}
 	return nil
 }
