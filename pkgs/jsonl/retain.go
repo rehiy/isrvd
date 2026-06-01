@@ -1,16 +1,46 @@
 package jsonl
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/rehiy/libgo/logman"
 )
 
 // dateLayout 日期格式（YYYY-MM-DD）
 const dateLayout = "2006-01-02"
+
+// CleanOlderThan
+// CleanOlderThan 删除早于 retainDays 天的匹配文件。
+func CleanOlderThan(dir string, naming Naming, retainDays int) error {
+	if retainDays <= 0 {
+		return nil
+	}
+	cutoffDate := time.Now().AddDate(0, 0, -retainDays).Format(dateLayout)
+	pattern := filepath.Join(dir, naming.Prefix+naming.Sep+"????-??-??"+naming.Suffix)
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return fmt.Errorf("jsonl: glob %s: %w", pattern, err)
+	}
+
+	var errs []error
+	for _, path := range matches {
+		base := filepath.Base(path)
+		mid := strings.TrimSuffix(base, naming.Suffix)
+		if naming.Prefix != "" {
+			mid = strings.TrimPrefix(mid, naming.Prefix+naming.Sep)
+		}
+		if len(mid) != len(dateLayout) || mid > cutoffDate {
+			continue
+		}
+		if err := os.Remove(path); err != nil {
+			errs = append(errs, fmt.Errorf("remove %s: %w", path, err))
+		}
+	}
+	return errors.Join(errs...)
+}
 
 // daysInRange 返回 [fromUnix, toUnix] 范围内的所有日期（YYYY-MM-DD）。
 func daysInRange(fromUnix, toUnix int64, loc *time.Location) []string {
@@ -29,30 +59,4 @@ func daysInRange(fromUnix, toUnix int64, loc *time.Location) []string {
 		days = append(days, d.Format(dateLayout))
 	}
 	return days
-}
-
-// CleanOlderThan 删除早于 retainDays 天的匹配文件。
-func CleanOlderThan(dir string, naming Naming, retainDays int) {
-	if retainDays <= 0 {
-		return
-	}
-	cutoffDate := time.Now().AddDate(0, 0, -retainDays).Format(dateLayout)
-	pattern := filepath.Join(dir, naming.Prefix+naming.Sep+"????-??-??"+naming.Suffix)
-	matches, err := filepath.Glob(pattern)
-	if err != nil {
-		return
-	}
-	for _, path := range matches {
-		base := filepath.Base(path)
-		mid := strings.TrimSuffix(base, naming.Suffix)
-		if naming.Prefix != "" {
-			mid = strings.TrimPrefix(mid, naming.Prefix+naming.Sep)
-		}
-		if len(mid) != len(dateLayout) || mid > cutoffDate {
-			continue
-		}
-		if err := os.Remove(path); err == nil {
-			logman.Info("jsonl: removed old file", "path", path)
-		}
-	}
 }

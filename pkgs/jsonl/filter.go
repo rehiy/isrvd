@@ -6,8 +6,14 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// and 组合多个 Filter，全部通过才保留；nil 被忽略；全 nil 返回 nil。
-func and(filters ...Filter) Filter {
+// Filter 行过滤函数，返回 true 保留。
+type Filter func(line []byte) bool
+
+// LineHandler 流式处理回调，返回 false 提前结束。
+type LineHandler func(line []byte) bool
+
+// And 组合多个 Filter，全部通过才保留；nil 被忽略；全 nil 返回 nil。
+func And(filters ...Filter) Filter {
 	var fs []Filter
 	for _, f := range filters {
 		if f != nil {
@@ -48,19 +54,28 @@ func tsGTEFilter(path string, cutoffUnix int64) Filter {
 		return nil
 	}
 	return func(line []byte) bool {
-		v := gjson.GetBytes(line, path)
-		switch v.Type {
-		case gjson.Number:
-			return v.Int() >= cutoffUnix
-		case gjson.String:
+		ts, ok := ParseTimestamp(line, path)
+		return ok && ts >= cutoffUnix
+	}
+}
 
-			t, err := time.Parse(time.RFC3339Nano, v.Str)
-			if err != nil {
-				return false
-			}
-			return t.Unix() >= cutoffUnix
-		default:
-			return false
+// ParseTimestamp 从 JSONL 行中读取指定字段并解析为 Unix 秒。
+// 支持 Unix 秒（number）和 RFC3339 字符串两种格式；字段不存在或解析失败返回 false。
+func ParseTimestamp(line []byte, path string) (int64, bool) {
+	if path == "" {
+		return 0, false
+	}
+	v := gjson.GetBytes(line, path)
+	switch v.Type {
+	case gjson.Number:
+		return v.Int(), true
+	case gjson.String:
+		t, err := time.Parse(time.RFC3339Nano, v.Str)
+		if err != nil {
+			return 0, false
 		}
+		return t.Unix(), true
+	default:
+		return 0, false
 	}
 }

@@ -33,7 +33,7 @@ isrvd_get "/overview/monitor?type=container&id=<CONTAINER_ID>&since=3600"
 | id | string | 容器 ID（type=container 时必填） |
 | since | number | 时间窗口（秒），默认 3600；传 `0` 为实时模式（见下） |
 
-响应为记录数组，每条记录格式：`{ ts: number, data: HostStat }`（host）或 `{ ts: number, data: ContainerStats }`（container）。
+响应为记录数组，每条记录格式：`{ ts: number, data: HostStat }`（host）或 `{ ts: number, data: ContainerStats }`（container）。历史查询会按请求的 `since` 时间窗口在服务端降采样，返回点数控制在约 **300** 个以内，实时模式不降采样。
 
 ### 实时模式（since=0）
 

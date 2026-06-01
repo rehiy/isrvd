@@ -13,6 +13,8 @@ import (
 const (
 	// retainDays 文件保留天数
 	retainDays = 3
+	// samplePoints 监控历史查询目标返回点数
+	samplePoints = 300
 	// HostPrefix 主机监控文件前缀
 	HostPrefix = "host"
 	// ContainerPrefix 容器监控文件前缀
@@ -41,6 +43,9 @@ func getStore(dir, prefix string) *jsonl.Store {
 		jsonl.WithBufferSize(32*1024),          // 32KB 缓冲，减少 flush 次数
 		jsonl.WithAsync(256),                   // 异步写入，采集 goroutine 不被 IO 阻塞
 		jsonl.WithFlushInterval(5*time.Second), // 5s flush 一次，与最短采集间隔对齐
+		jsonl.WithErrorHandler(func(err error) {
+			logman.Warn("monitor: jsonl background write failed", "dir", dir, "prefix", prefix, "error", err)
+		}),
 	)
 	if err != nil {
 		logman.Warn("monitor: open jsonl store failed", "dir", dir, "prefix", prefix, "error", err)
@@ -65,24 +70,26 @@ func AppendRawRecord(dir, prefix, containerID string, ts int64, raw json.RawMess
 // ReadSince 读取 dir 下 prefix_*.jsonl 中 ts >= (now-sinceSeconds) 的所有行
 // 按时间窗口确定需要读哪几天的文件，合并后按 ts 顺序返回
 // containerID 为空时返回所有记录，非空时只返回指定容器的记录
-// limit <= 0 表示不限制条数
-func ReadSince[T any](dir, prefix, containerID string, sinceSeconds int64, limit int) ([]T, error) {
+// 返回结果按请求时间窗口降采样到 samplePoints 左右
+func ReadSince[T any](dir, prefix, containerID string, sinceSeconds int64) ([]T, error) {
 	s := getStore(dir, prefix)
 	if s == nil {
 		return nil, nil
 	}
 	cutoff := time.Now().Unix() - sinceSeconds
 	extra := jsonl.StrEq("container_id", containerID)
-	return jsonl.DecodeSince[T](s, cutoff, "ts", extra, limit)
+	return jsonl.DecodeSinceSampled[T](s, cutoff, "ts", extra, samplePoints)
 }
 
 // CleanOldFiles 删除 dir 下所有 *_YYYY-MM-DD.jsonl 中超过 retainDays 天的旧文件
 func CleanOldFiles(dir string) {
 	for _, prefix := range []string{HostPrefix, ContainerPrefix} {
-		jsonl.CleanOlderThan(
+		if err := jsonl.CleanOlderThan(
 			dir,
 			jsonl.Naming{Prefix: prefix, Sep: "_", Suffix: fileSuffix},
 			retainDays,
-		)
+		); err != nil {
+			logman.Warn("monitor: clean old files failed", "dir", dir, "prefix", prefix, "error", err)
+		}
 	}
 }

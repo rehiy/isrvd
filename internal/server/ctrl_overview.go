@@ -103,7 +103,6 @@ func (app *App) overviewMonitor(c *gin.Context) {
 			svcMonitor.ContainerPrefix,
 			id,
 			since,
-			0, // limit=0 表示不限制
 		)
 		if err != nil {
 			respondError(c, http.StatusInternalServerError, err.Error())
@@ -116,7 +115,6 @@ func (app *App) overviewMonitor(c *gin.Context) {
 			svcMonitor.HostPrefix,
 			"", // containerID 为空表示查询主机
 			since,
-			0, // limit=0 表示不限制
 		)
 		if err != nil {
 			respondError(c, http.StatusInternalServerError, err.Error())

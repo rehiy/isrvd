@@ -18,8 +18,6 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
-
-	"github.com/rehiy/libgo/logman"
 )
 
 // Naming 定义按天滚动的文件命名规则。
@@ -59,10 +57,14 @@ type options struct {
 	asyncSize     int
 	flushInterval time.Duration
 	loc           *time.Location
+	errorHandler  ErrorHandler
 }
 
 // Option 定义 Store 构造选项
 type Option func(*options)
+
+// ErrorHandler 处理后台写入或刷盘错误。
+type ErrorHandler func(error)
 
 // WithBufferSize 设置缓冲区大小（字节），0 表示直写。
 func WithBufferSize(n int) Option {
@@ -82,6 +84,11 @@ func WithFlushInterval(d time.Duration) Option {
 // WithLocation 指定时区，默认 time.Local。
 func WithLocation(loc *time.Location) Option {
 	return func(o *options) { o.loc = loc }
+}
+
+// WithErrorHandler 设置后台写入或刷盘错误处理函数。
+func WithErrorHandler(fn ErrorHandler) Option {
+	return func(o *options) { o.errorHandler = fn }
 }
 
 // New 创建 Store，dir 不存在时自动创建。
@@ -143,7 +150,6 @@ func (s *Store) Append(v any) error {
 		case s.ch <- line:
 			return nil
 		default:
-			logman.Warn("jsonl: async channel full, drop record", "dir", s.dir)
 			return fmt.Errorf("jsonl: async channel full")
 		}
 	}
@@ -221,16 +227,20 @@ func (s *Store) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	var flushErr error
 	if s.bw != nil {
-		_ = s.bw.Flush()
+		flushErr = s.bw.Flush()
 		s.bw = nil
 	}
 	if s.file != nil {
-		err := s.file.Close()
+		closeErr := s.file.Close()
 		s.file = nil
-		return err
+		if flushErr != nil {
+			return flushErr
+		}
+		return closeErr
 	}
-	return nil
+	return flushErr
 }
 
 // runAsync 后台串行落盘
@@ -248,15 +258,13 @@ func (s *Store) runAsync() {
 		select {
 		case line, ok := <-s.ch:
 			if !ok {
-				_ = s.Flush()
+				s.handleError(s.Flush())
 				close(s.stopped)
 				return
 			}
-			if err := s.writeLocked(line); err != nil {
-				logman.Warn("jsonl: async write failed", "dir", s.dir, "prefix", s.naming.Prefix, "error", err)
-			}
+			s.handleError(s.writeLocked(line))
 		case <-tickC:
-			_ = s.Flush()
+			s.handleError(s.Flush())
 		}
 	}
 }
@@ -270,7 +278,14 @@ func (s *Store) runFlusher() {
 		case <-s.stopped:
 			return
 		case <-ticker.C:
-			_ = s.Flush()
+			s.handleError(s.Flush())
 		}
+	}
+}
+
+// handleError 处理后台错误。
+func (s *Store) handleError(err error) {
+	if err != nil && s.opts.errorHandler != nil {
+		s.opts.errorHandler(err)
 	}
 }

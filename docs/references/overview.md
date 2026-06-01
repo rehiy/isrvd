@@ -44,6 +44,10 @@ isrvd_get "/overview/monitor?type=container&since=3600&id=<CONTAINER_ID>"
 
 **响应字段（host）：**
 
+历史查询（`since>0`）返回记录数组，服务端会按请求的 `since` 时间窗口降采样，返回点数控制在约 **300** 个以内；实时模式（`since=0`）返回单条记录且不写入文件。
+
+记录格式：`{ ts: number, data: HostStat }`；下表为 `data` 中的主机监控字段。
+
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | timestamp | number | 时间戳（Unix 秒） |
@@ -59,6 +63,8 @@ isrvd_get "/overview/monitor?type=container&since=3600&id=<CONTAINER_ID>"
 | disk_root_total | number | 根分区总空间（字节） |
 
 **响应字段（container）：**
+
+记录格式：`{ ts: number, data: ContainerStats }`；下表为 `data` 中的容器监控字段。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|

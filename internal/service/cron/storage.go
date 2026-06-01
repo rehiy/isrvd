@@ -47,6 +47,9 @@ func NewStore() *Store {
 		jsonl.WithBufferSize(4096),
 		jsonl.WithFlushInterval(time.Second),
 		jsonl.WithAsync(cronLogChannel),
+		jsonl.WithErrorHandler(func(err error) {
+			logger.Warn("计划任务日志后台写入失败", "error", err)
+		}),
 	)
 	if err != nil {
 		logger.Warn("Cron log store init failed", "dir", dir, "error", err)
@@ -153,7 +156,9 @@ func (s *Store) LoadJobLogs(id string, limit int) []*JobLog {
 
 // CleanOld 清理超过保留天数的日志文件
 func (s *Store) CleanOld() {
-	jsonl.CleanOlderThan(s.logDir(), cronLogNaming(), cronLogRetainDays)
+	if err := jsonl.CleanOlderThan(s.logDir(), cronLogNaming(), cronLogRetainDays); err != nil {
+		logger.Warn("清理计划任务日志失败", "error", err)
+	}
 }
 
 // Close 关闭日志文件句柄并刷盘
