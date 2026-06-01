@@ -83,12 +83,15 @@ import type {
     CronJobLogList,
     CronTypeInfo,
     // SSH
+    SSHCredentialInfo,
+    SSHCredentialUpsert,
     SSHHostInfo,
     SSHHostUpsert,
     SFTPListResult,
     SFTPRename,
     SFTPMkdir,
     SFTPChmod,
+    SFTPChown,
     SFTPWrite,
 } from './types'
 
@@ -655,6 +658,28 @@ swarmNode(id: string) {
         return http.get<CronJobLogList>(`cron/jobs/${id}/logs`, { params: { limit } })
     }
 
+    // ==================== SSH 凭据管理 ====================
+
+    sshCredentialList() {
+        return http.get<SSHCredentialInfo[]>('ssh/credentials')
+    }
+
+    sshCredential(id: string) {
+        return http.get<SSHCredentialInfo>(`ssh/credential/${id}`)
+    }
+
+    sshCredentialCreate(data: SSHCredentialUpsert) {
+        return http.post<SSHCredentialInfo>('ssh/credential', data)
+    }
+
+    sshCredentialUpdate(id: string, data: SSHCredentialUpsert) {
+        return http.put<SSHCredentialInfo>(`ssh/credential/${id}`, data)
+    }
+
+    sshCredentialDelete(id: string) {
+        return http.delete<void>(`ssh/credential/${id}`)
+    }
+
     // ==================== SSH 主机管理 ====================
 
     sshHostList() {
@@ -725,6 +750,10 @@ swarmNode(id: string) {
     // ─── SFTP 文件操作 ───
     sftpFileChmod(hostId: string, data: SFTPChmod) {
         return http.post<void>(`ssh/sftp/${hostId}/chmod`, data)
+    }
+
+    sftpFileChown(hostId: string, data: SFTPChown) {
+        return http.post<void>(`ssh/sftp/${hostId}/chown`, data)
     }
 
     sftpRead(hostId: string, path: string) {

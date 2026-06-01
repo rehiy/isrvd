@@ -6,6 +6,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { SFTPFileInfo } from '@/service/types'
 
+import { joinPath } from '@/helper/utils'
+
 import BaseModal from '@/component/modal.vue'
 
 @Component({
@@ -25,7 +27,7 @@ class SftpRenameModal extends Vue {
     show(hostId: string, file: SFTPFileInfo, basePath: string) {
         this.hostId = hostId
         this.formData.file = file
-        this.formData.oldPath = basePath === '/' ? '/' + file.name : basePath + '/' + file.name
+        this.formData.oldPath = joinPath(basePath, file.name)
         this.formData.newName = file.name
         this.isOpen = true
     }
@@ -35,9 +37,10 @@ class SftpRenameModal extends Vue {
         
         this.loading = true
         try {
+            const basePath = this.formData.oldPath.split('/').slice(0, -1).join('/') || '/'
             await api.sftpRename(this.hostId, { 
                 oldPath: this.formData.oldPath, 
-                newPath: this.formData.newName 
+                newPath: joinPath(basePath, this.formData.newName.trim()) 
             })
             this.portal.showNotification('success', '重命名成功')
             this.isOpen = false

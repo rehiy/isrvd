@@ -17,6 +17,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { SFTPFileInfo } from '@/service/types'
 
+import { joinPath } from '@/helper/utils'
+
 import BaseModal from '@/component/modal.vue'
 
 @Component({
@@ -36,7 +38,7 @@ class SftpModifyModal extends Vue {
     // ─── 方法 ───
     async show(hostId: string, file: SFTPFileInfo, basePath: string) {
         this.hostId = hostId
-        this.formData.path = basePath === '/' ? '/' + file.name : basePath + '/' + file.name
+        this.formData.path = joinPath(basePath, file.name)
         this.formData.filename = file.name
         this.formData.content = ''
         this.isOpen = true

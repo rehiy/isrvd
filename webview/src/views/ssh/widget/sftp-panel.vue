@@ -475,7 +475,7 @@ export default toNative(SftpPanel)
                   <i class="fas fa-file-pen text-xs"></i>
                 </button>
                 <button v-if="portal.hasPerm('POST /api/ssh/sftp/:id/chmod')" class="btn-icon btn-icon-slate !w-6 !h-6" title="修改权限" @click="startChmod(file)">
-                  <i class="fas fa-key text-xs"></i>
+                  <i class="fas fa-unlock text-xs"></i>
                 </button>
                 <button v-if="portal.hasPerm('DELETE /api/ssh/sftp/:id/rm')" class="btn-icon btn-icon-red !w-6 !h-6" title="删除" @click="sftpDelete(file)">
                   <i class="fas fa-trash text-xs"></i>

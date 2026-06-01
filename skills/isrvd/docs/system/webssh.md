@@ -2,9 +2,100 @@
 
 ## 概述
 
-WebSSH 模块支持通过浏览器直接连接远程 SSH 主机，提供主机配置管理（支持密码和私钥认证）和 WebSocket 终端会话。
+WebSSH 模块支持通过浏览器直接连接远程 SSH 主机，提供可复用认证凭据管理、主机配置管理（支持密码和私钥认证）、WebSocket 终端会话和 SFTP 文件管理。
 
-主机配置独立存储于 `{rootDirectory}/webssh.yml`，不写入主配置文件。
+主机配置独立存储于 `{rootDirectory}/webssh.yml`，认证凭据独立存储于 `{rootDirectory}/webssh-credentials.yml`，均不写入主配置文件。
+
+---
+
+## 认证凭据管理
+
+认证凭据可被多台 SSH 主机复用。凭据详情接口会返回 `password` 和 `privateKey` 字段；列表接口不回显敏感内容，仅返回 `authType` 表示认证类型。
+
+### 查询凭据列表
+
+```bash
+isrvd_get "/ssh/credentials"
+```
+
+**响应字段（CredentialView）：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | string | 凭据 ID（只读） |
+| `name` | string | 凭据名称 |
+| `description` | string | 描述 |
+| `user` | string | SSH 用户名 |
+| `authType` | string | 认证类型：`password` / `privateKey` / 空字符串（只读） |
+
+---
+
+### 获取凭据详情
+
+```bash
+isrvd_get "/ssh/credential/<ID>"
+```
+
+**响应字段（Credential）：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | string | 凭据 ID（只读） |
+| `name` | string | 凭据名称 |
+| `description` | string | 描述 |
+| `user` | string | SSH 用户名 |
+| `password` | string | SSH 密码 |
+| `privateKey` | string | SSH 私钥内容（PEM 格式，优先于密码） |
+
+---
+
+### 添加凭据
+
+```bash
+isrvd_post "/ssh/credential" '{
+  "name": "生产环境 root",
+  "description": "生产环境通用 root 凭据",
+  "user": "root",
+  "password": "your-password",
+  "privateKey": ""
+}'
+```
+
+**请求字段（CredentialUpsertRequest）：**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `name` | string | ✓ | 凭据名称 |
+| `description` | string | | 描述 |
+| `user` | string | ✓ | SSH 用户名 |
+| `password` | string | | SSH 密码（与 `privateKey` 二选一） |
+| `privateKey` | string | | SSH 私钥内容（PEM 格式，优先于密码） |
+
+---
+
+### 更新凭据
+
+```bash
+isrvd_put "/ssh/credential/<ID>" '{
+  "name": "生产环境 root",
+  "description": "更新后的描述",
+  "user": "root",
+  "password": "new-password",
+  "privateKey": ""
+}'
+```
+
+> **注意**：凭据更新接口会按请求体整体覆盖 `password` 和 `privateKey`；如需保留原值，先通过详情接口读取后再提交。
+
+---
+
+### 删除凭据
+
+```bash
+isrvd_delete "/ssh/credential/<ID>"
+```
+
+> **注意**：删除凭据不会自动删除已绑定该凭据的主机；这些主机后续连接会因凭据不存在而失败，需要切换到其它凭据或改为手动认证。
 
 ---
 
@@ -23,9 +114,9 @@ isrvd_get "/ssh/hosts"
 | `id` | string | 主机 ID（只读） |
 | `name` | string | 主机名称 |
 | `addr` | string | 地址（`host` 或 `host:port`，默认端口 22） |
+| `credentialId` | string | 绑定的认证凭据 ID（可选） |
+| `credentialName` | string | 绑定的认证凭据名称（只读，可选） |
 | `user` | string | SSH 用户名 |
-| `passwordSet` | bool | 是否已设置密码（只读，密码不回显） |
-| `privateKey` | string | SSH 私钥内容（PEM 格式） |
 | `description` | string | 描述 |
 
 ---
@@ -41,7 +132,15 @@ isrvd_get "/ssh/host/<ID>"
 ### 添加主机
 
 ```bash
-# 密码认证
+# 复用已保存凭据
+isrvd_post "/ssh/host" '{
+  "name": "生产服务器",
+  "addr": "192.168.1.100:22",
+  "credentialId": "<CREDENTIAL_ID>",
+  "description": "生产环境主服务器"
+}'
+
+# 手动密码认证
 isrvd_post "/ssh/host" '{
   "name": "生产服务器",
   "addr": "192.168.1.100:22",
@@ -50,7 +149,7 @@ isrvd_post "/ssh/host" '{
   "description": "生产环境主服务器"
 }'
 
-# 私钥认证
+# 手动私钥认证
 isrvd_post "/ssh/host" '{
   "name": "开发服务器",
   "addr": "dev.example.com",
@@ -60,15 +159,16 @@ isrvd_post "/ssh/host" '{
 }'
 ```
 
-**请求字段：**
+**请求字段（HostUpsertRequest）：**
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `name` | string | ✓ | 主机名称 |
 | `addr` | string | ✓ | 地址（`host` 或 `host:port`） |
-| `user` | string | ✓ | SSH 用户名 |
-| `password` | string | | 密码（与 `privateKey` 二选一） |
-| `privateKey` | string | | 私钥 PEM 内容（与 `password` 二选一） |
+| `credentialId` | string | | 绑定的认证凭据 ID；设置后优先使用该凭据认证 |
+| `user` | string | | SSH 用户名；`credentialId` 为空时使用 |
+| `password` | string | | SSH 密码；`credentialId` 为空时与 `privateKey` 二选一 |
+| `privateKey` | string | | SSH 私钥内容（PEM 格式）；`credentialId` 为空时优先于密码 |
 | `description` | string | | 描述 |
 
 ---
@@ -84,7 +184,7 @@ isrvd_put "/ssh/host/<ID>" '{
 }'
 ```
 
-> **注意**：`password` 和 `privateKey` 为空时保留原值，无需每次都传入敏感信息。
+> **注意**：`credentialId` 不为空时，主机通过对应凭据认证；`credentialId` 为空时使用手动认证信息。手动认证模式下，`password` 和 `privateKey` 为空时保留原值，无需每次都传入敏感信息。
 
 ---
 
@@ -216,7 +316,110 @@ isrvd_post "/ssh/sftp/<ID>/rename" '{
 
 ---
 
+### 修改权限
+
+```bash
+isrvd_post "/ssh/sftp/<ID>/chmod" '{
+  "path": "/path/to/file",
+  "mode": "0644"
+}'
+```
+
+**请求字段：**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `path` | string | ✓ | 文件或目录路径 |
+| `mode` | string | ✓ | 3-4 位八进制权限，如 `755`、`0644` |
+
+---
+
+### 修改所有者
+
+```bash
+isrvd_post "/ssh/sftp/<ID>/chown" '{
+  "path": "/path/to/file",
+  "uid": 1000,
+  "gid": 1000
+}'
+```
+
+**请求字段：**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `path` | string | ✓ | 文件或目录路径 |
+| `uid` | int | ✓ | 用户 ID |
+| `gid` | int | ✓ | 用户组 ID |
+
+---
+
+### 读取文件
+
+```bash
+isrvd_get "/ssh/sftp/<ID>/read?path=/path/to/file"
+```
+
+**响应字段：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `content` | string | 文件内容 |
+
+---
+
+### 写入文件
+
+```bash
+isrvd_post "/ssh/sftp/<ID>/write" '{
+  "path": "/path/to/file",
+  "content": "文件内容"
+}'
+```
+
+**请求字段：**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `path` | string | ✓ | 文件路径 |
+| `content` | string | ✓ | 文件内容 |
+
+---
+
+### 计算目录大小
+
+```bash
+isrvd_get "/ssh/sftp/<ID>/dir-size?path=/path/to/dir"
+```
+
+**响应字段：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `path` | string | 目录路径 |
+| `size` | int64 | 目录总大小（字节） |
+
+---
+
 ## 存储说明
+
+认证凭据存储于 `{rootDirectory}/webssh-credentials.yml`，格式示例：
+
+```yaml
+- id: 01j...
+  name: 生产环境 root
+  description: 生产环境通用 root 凭据
+  user: root
+  password: your-password
+- id: 01j...
+  name: 开发环境 ubuntu
+  description: 开发环境通用私钥
+  user: ubuntu
+  privateKey: |
+    -----BEGIN PRIVATE KEY-----
+    ...
+    -----END PRIVATE KEY-----
+```
 
 主机配置存储于 `{rootDirectory}/webssh.yml`，格式示例：
 
@@ -224,8 +427,8 @@ isrvd_post "/ssh/sftp/<ID>/rename" '{
 - id: 01j...
   name: 生产服务器
   addr: 192.168.1.100:22
+  credentialId: 01j...
   user: root
-  password: your-password
   description: 生产环境主服务器
 - id: 01j...
   name: 开发服务器
@@ -238,4 +441,4 @@ isrvd_post "/ssh/sftp/<ID>/rename" '{
   description: 开发环境
 ```
 
-> 文件权限为 `0600`，密码和私钥以明文存储，请确保文件系统权限安全。
+> 两个文件权限均为 `0600`，密码和私钥以明文存储，请确保文件系统权限安全。绑定 `credentialId` 的主机不会在 `webssh.yml` 中冗余保存凭据密码或私钥，连接时从 `webssh-credentials.yml` 解析认证信息。

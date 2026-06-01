@@ -8,6 +8,8 @@ import type { SFTPFileInfo } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
 
+import { joinPath } from '@/helper/utils'
+
 @Component({
     expose: ['show'],
     components: { BaseModal }
@@ -24,7 +26,7 @@ class SftpChmodModal extends Vue {
     // ─── 方法 ───
     show(hostId: string, file: SFTPFileInfo, basePath: string) {
         this.hostId = hostId
-        this.formData.path = basePath === '/' ? '/' + file.name : basePath + '/' + file.name
+        this.formData.path = joinPath(basePath, file.name)
         this.formData.mode = this.extractPermissionFromMode(file.mode)
         this.isOpen = true
     }
@@ -85,7 +87,7 @@ export default toNative(SftpChmodModal)
         </label>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <i class="fas fa-key text-slate-400"></i>
+            <i class="fas fa-unlock text-slate-400"></i>
           </div>
           <input id="fileMode" v-model="formData.mode" type="text" :disabled="loading" required placeholder="755" class="input pl-11">
         </div>

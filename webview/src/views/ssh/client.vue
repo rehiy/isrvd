@@ -147,15 +147,15 @@ export default toNative(SSHClientPage)
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="page-icon bg-teal-600">
+            <div class="page-icon bg-teal-500">
               <i class="fas fa-terminal text-white text-sm"></i>
             </div>
-            <div>
-              <h1 class="text-lg font-semibold text-slate-800">{{ host?.name || 'SSH 终端' }}</h1>
-              <p class="text-xs text-slate-500">{{ host ? `${host.user} @ ${host.addr}` : '正在加载主机信息...' }}</p>
+            <div class="min-w-0">
+              <h1 class="text-lg font-semibold text-slate-800 truncate">{{ host?.name || 'SSH 终端' }}</h1>
+              <p class="text-xs text-slate-500 truncate">{{ host ? `${host.user} @ ${host.addr}` : '正在加载主机信息...' }}</p>
             </div>
           </div>
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 flex-shrink-0">
             <!-- 视图切换 -->
             <div class="tab-group">
               <button type="button" :class="['tab-btn', viewMode === 'all' ? 'tab-btn-active text-teal-600' : 'tab-btn-inactive']" @click="switchViewMode('all')">
@@ -179,7 +179,7 @@ export default toNative(SSHClientPage)
         <!-- 移动端 -->
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="page-icon bg-teal-600 flex-shrink-0">
+            <div class="page-icon bg-teal-500 flex-shrink-0">
               <i class="fas fa-terminal text-white text-sm"></i>
             </div>
             <div class="min-w-0">

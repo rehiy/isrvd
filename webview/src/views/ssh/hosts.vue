@@ -97,7 +97,7 @@ export default toNative(SSHHosts)
             <i class="fas fa-server text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">SSH/SFTP 连接</h1>
+            <h1 class="text-lg font-semibold text-slate-800">主机连接</h1>
             <p class="text-xs text-slate-500">通过 SSH 协议管理主机，在浏览器中连接远程服务器</p>
           </div>
         </div>
@@ -118,7 +118,7 @@ export default toNative(SSHHosts)
             <i class="fas fa-server text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">SSH/SFTP 连接</h1>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">主机连接</h1>
             <p class="text-xs text-slate-500 truncate">通过 SSH 协议管理主机</p>
           </div>
         </div>
@@ -175,13 +175,12 @@ export default toNative(SSHHosts)
               </td>
               <td class="px-4 py-3 text-sm text-slate-600">{{ host.user }}</td>
               <td class="px-4 py-3 text-sm text-slate-600">
-                <span v-if="host.privateKey" class="inline-flex items-center gap-1 text-xs">
-                  <i class="fas fa-key text-amber-400"></i>私钥
+                <span v-if="host.credentialId" class="inline-flex items-center gap-1 text-xs text-purple-600 font-medium">
+                  <i class="fas fa-id-card text-purple-400"></i>{{ host.credentialName || '已保存凭据' }}
                 </span>
-                <span v-else-if="host.passwordSet" class="inline-flex items-center gap-1 text-xs">
-                  <i class="fas fa-lock text-slate-400"></i>密码
+                <span v-else class="inline-flex items-center gap-1 text-xs text-slate-500">
+                  <i class="fas fa-key text-slate-400"></i>手动认证
                 </span>
-                <span v-else class="text-xs text-slate-400">未设置</span>
               </td>
               <td class="px-4 py-3">
                 <div class="flex justify-end items-center gap-1">
@@ -225,9 +224,8 @@ export default toNative(SSHHosts)
           <div class="flex items-center gap-2 mb-3">
             <span class="text-xs text-slate-400 flex-shrink-0">认证</span>
             <span class="text-xs text-slate-500">
-              <span v-if="host.privateKey"><i class="fas fa-key text-amber-400 mr-1"></i>私钥</span>
-              <span v-else-if="host.passwordSet"><i class="fas fa-lock text-slate-400 mr-1"></i>密码</span>
-              <span v-else class="text-slate-400">未设置</span>
+              <span v-if="host.credentialId" class="text-purple-600 font-medium"><i class="fas fa-id-card text-purple-400 mr-1"></i>{{ host.credentialName || '已保存凭据' }}</span>
+              <span v-else><i class="fas fa-key text-slate-400 mr-1"></i>手动认证</span>
             </span>
           </div>
 
@@ -245,7 +243,7 @@ export default toNative(SSHHosts)
         </div>
 
         <div v-if="filteredHosts.length === 0" class="rounded-xl border border-slate-200 bg-white py-10 px-4 text-center">
-          <p class="text-sm text-slate-500">{{ hosts.length === 0 ? '暂无 SSH 主机，点击右上角添加' : '未找到匹配主机' }}</p>
+          <p class="text-sm text-slate-500">{{ hosts.length === 0 ? '暂无主机连接，点击右上角添加' : '未找到匹配主机' }}</p>
         </div>
       </div>
 
@@ -254,7 +252,7 @@ export default toNative(SSHHosts)
         <div class="empty-state-icon">
           <i class="fas fa-server text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ hosts.length === 0 ? '暂无 SSH 主机' : '未找到匹配主机' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ hosts.length === 0 ? '暂无主机连接' : '未找到匹配主机' }}</p>
         <p class="text-sm text-slate-400">{{ hosts.length === 0 ? '点击右上角「添加主机」开始配置' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
     </div>

@@ -74,7 +74,7 @@ isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
 | [docs/system/account.md](docs/system/account.md) | 登录、OIDC 登录、成员管理、权限、API Token |
 | [docs/system/filer.md](docs/system/filer.md) | 文件 CRUD、上传下载（含 inline 预览）、压缩解压 |
 | [docs/system/cron.md](docs/system/cron.md) | 计划任务 CRUD、立即执行、启用/禁用、执行历史 |
-| [docs/system/webssh.md](docs/system/webssh.md) | SSH 主机管理（密码/私钥认证）、WebSocket 终端会话、SFTP 文件管理（列目录/上传/下载/删除/重命名/创建目录） |
+| [docs/system/webssh.md](docs/system/webssh.md) | SSH 认证凭据管理、SSH 主机管理（凭据复用/密码/私钥认证）、WebSocket 终端会话、SFTP 文件管理（列目录/上传/下载/删除/重命名/创建目录/修改权限/修改所有者/读取文件/写入文件/计算目录大小） |
 | Agent 代理 | `ANY /api/agent/*path` 代理到配置的 OpenAI 兼容 LLM API，自动注入 `agent.apiKey` 并可重写 `agent.model` |
 
 ---
@@ -122,9 +122,10 @@ isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
     ├── 成员/权限/Token/OIDC 登录 → docs/system/account.md
     ├── 文件管理         → docs/system/filer.md
     ├── 计划任务         → docs/system/cron.md
-    ├── SSH 主机管理     → docs/system/webssh.md
+    ├── SSH 认证凭据管理 → docs/system/webssh.md §认证凭据管理
+    ├── SSH 主机管理     → docs/system/webssh.md（支持 credentialId 复用凭据）
     ├── SFTP 文件管理    → docs/system/webssh.md §SFTP
-    └── Web 终端         → GET /api/shell (WebSocket) 或 GET /api/ssh/terminal/:id (WebSocket)
+    └── Web 终端         → GET /api/shell (WebSocket) 或 GET /api/ssh/to/:id (WebSocket)
 ```
 
 ---

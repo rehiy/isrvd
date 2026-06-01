@@ -11,9 +11,71 @@ import (
 	svcWebSSH "isrvd/internal/service/webssh"
 )
 
+// ─── Credential 凭据管理 ───
+
+func (app *App) websshCredentialList(c *gin.Context) {
+	respondSuccess(c, "", app.websshSvc.CredentialList())
+}
+
+func (app *App) websshCredentialInspect(c *gin.Context) {
+	id := c.Param("id")
+	cred := app.websshSvc.CredentialInspect(id)
+	if cred == nil {
+		respondError(c, http.StatusNotFound, "凭据不存在")
+		return
+	}
+	respondSuccess(c, "", cred)
+}
+
+func (app *App) websshCredentialCreate(c *gin.Context) {
+	var req svcWebSSH.CredentialUpsertRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	cred, err := app.websshSvc.CredentialCreate(&req)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "SSH 凭据添加成功", cred)
+}
+
+func (app *App) websshCredentialUpdate(c *gin.Context) {
+	id := c.Param("id")
+	var req svcWebSSH.CredentialUpsertRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	cred, err := app.websshSvc.CredentialUpdate(id, &req)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "SSH 凭据更新成功", cred)
+}
+
+func (app *App) websshCredentialDelete(c *gin.Context) {
+	id := c.Param("id")
+	if err := app.websshSvc.CredentialDelete(id); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "SSH 凭据删除成功", nil)
+}
+
+// ─── Host 主机管理 ───
+
 // defineWebSSHRoutes 定义 WebSSH 模块路由
 func (app *App) defineWebSSHRoutes() []Route {
 	return []Route{
+		// 认证凭据管理
+		{Method: "GET", Path: "/ssh/credentials", Handler: app.websshCredentialList, Module: "ssh", Label: "查询 SSH 凭据列表"},
+		{Method: "GET", Path: "/ssh/credential/:id", Handler: app.websshCredentialInspect, Module: "ssh", Label: "获取 SSH 凭据详情"},
+		{Method: "POST", Path: "/ssh/credential", Handler: app.websshCredentialCreate, Module: "ssh", Label: "添加 SSH 凭据"},
+		{Method: "PUT", Path: "/ssh/credential/:id", Handler: app.websshCredentialUpdate, Module: "ssh", Label: "更新 SSH 凭据"},
+		{Method: "DELETE", Path: "/ssh/credential/:id", Handler: app.websshCredentialDelete, Module: "ssh", Label: "删除 SSH 凭据"},
 		// 主机管理
 		{Method: "GET", Path: "/ssh/hosts", Handler: app.websshHostList, Module: "ssh", Label: "查询 SSH 主机列表"},
 		{Method: "GET", Path: "/ssh/host/:id", Handler: app.websshHostInspect, Module: "ssh", Label: "获取 SSH 主机详情"},

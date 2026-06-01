@@ -15,36 +15,36 @@ import (
 
 // Host SSH 主机配置
 type Host struct {
-	ID          string `yaml:"id" json:"id"`
-	Name        string `yaml:"name" json:"name"`
-	Addr        string `yaml:"addr" json:"addr"`
-	User        string `yaml:"user" json:"user"`
-	Password    string `yaml:"password,omitempty" json:"password,omitempty"`
-	PrivateKey  string `yaml:"privateKey,omitempty" json:"privateKey,omitempty"`
-	Description string `yaml:"description" json:"description"`
+	ID           string `yaml:"id" json:"id"`
+	Name         string `yaml:"name" json:"name"`
+	Addr         string `yaml:"addr" json:"addr"`
+	CredentialID string `yaml:"credentialId,omitempty" json:"credentialId,omitempty"`
+	User         string `yaml:"user" json:"user"`
+	Password     string `yaml:"password,omitempty" json:"password,omitempty"`
+	PrivateKey   string `yaml:"privateKey,omitempty" json:"privateKey,omitempty"`
+	Description  string `yaml:"description" json:"description"`
 }
 
-// HostView 主机视图（密码不回显，仅返回是否已设置）
+// HostView 主机视图（密码/私钥不回显）
 type HostView struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Addr        string `json:"addr"`
-	User        string `json:"user"`
-	PasswordSet bool   `json:"passwordSet"`
-	PrivateKey  string `json:"privateKey,omitempty"`
-	Description string `json:"description"`
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	Addr           string `json:"addr"`
+	CredentialID   string `json:"credentialId,omitempty"`
+	CredentialName string `json:"credentialName,omitempty"`
+	User           string `json:"user"`
+	Description    string `json:"description"`
 }
 
-// toView 将 Host 转为视图（密码不回显）
+// toView 将 Host 转为视图（密码/私钥不回显）
 func (h *Host) toView() *HostView {
 	return &HostView{
-		ID:          h.ID,
-		Name:        h.Name,
-		Addr:        h.Addr,
-		User:        h.User,
-		PasswordSet: h.Password != "",
-		PrivateKey:  h.PrivateKey,
-		Description: h.Description,
+		ID:           h.ID,
+		Name:         h.Name,
+		Addr:         h.Addr,
+		CredentialID: h.CredentialID,
+		User:         h.User,
+		Description:  h.Description,
 	}
 }
 
@@ -55,8 +55,8 @@ type store struct {
 	hosts []*Host
 }
 
-// newStore 创建主机配置存储
-func newStore() (*store, error) {
+// newHostStore 创建主机配置存储
+func newHostStore() (*store, error) {
 	p := filepath.Join(config.Server.RootDirectory, "webssh.yml")
 	s := &store{path: p}
 	if err := s.load(); err != nil {
@@ -120,6 +120,13 @@ func (s *store) hostInspect(id string) *HostView {
 	return h.toView()
 }
 
+// hostInspectRaw 返回指定 ID 的原始 Host（含敏感信息，仅内部使用）
+func (s *store) hostInspectRaw(id string) *Host {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.findByID(id)
+}
+
 // hostCreate 新建主机配置
 func (s *store) hostCreate(h *Host) error {
 	s.mu.Lock()
@@ -129,7 +136,7 @@ func (s *store) hostCreate(h *Host) error {
 	return s.save()
 }
 
-// hostUpdate 更新主机配置；密码/私钥为空时保留原值
+// hostUpdate 更新主机配置
 func (s *store) hostUpdate(id string, h *Host) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -138,13 +145,6 @@ func (s *store) hostUpdate(id string, h *Host) error {
 		return fmt.Errorf("主机 %s 不存在", id)
 	}
 	h.ID = id
-	// 密码/私钥为空时保留原值（前端编辑时不回显敏感信息）
-	if h.Password == "" {
-		h.Password = old.Password
-	}
-	if h.PrivateKey == "" {
-		h.PrivateKey = old.PrivateKey
-	}
 	*old = *h
 	return s.save()
 }
@@ -162,19 +162,30 @@ func (s *store) hostDelete(id string) error {
 }
 
 // hostGetOption 获取指定 ID 主机的 SSH 连接配置
-func (s *store) hostGetOption(id string) (*libwebssh.SSHClientOption, error) {
+// 如果主机绑定了凭据，优先使用凭据中的认证信息
+func (s *store) hostGetOption(id string, credStore *credentialStore) (*libwebssh.SSHClientOption, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	h := s.findByID(id)
 	if h == nil {
 		return nil, fmt.Errorf("主机 %s 不存在", id)
 	}
-	return &libwebssh.SSHClientOption{
+	opt := &libwebssh.SSHClientOption{
 		Addr:       h.Addr,
 		User:       h.User,
 		Password:   h.Password,
 		PrivateKey: h.PrivateKey,
-	}, nil
+	}
+	// 如果绑定了凭据，使用凭据中的认证信息覆盖
+	if h.CredentialID != "" && credStore != nil {
+		c := credStore.get(h.CredentialID)
+		if c != nil {
+			opt.User = c.User
+			opt.Password = c.Password
+			opt.PrivateKey = c.PrivateKey
+		}
+	}
+	return opt, nil
 }
 
 // findByID 按 ID 查找主机（调用方须持锁）

@@ -213,6 +213,11 @@ const routes: RouteRecordRaw[] = [
     redirect: '/ssh/hosts'
   },
   {
+    path: '/ssh/credentials',
+    name: 'ssh-credentials',
+    component: () => import('@/views/ssh/credentials.vue')
+  },
+  {
     path: '/ssh/hosts',
     name: 'ssh-hosts',
     component: () => import('@/views/ssh/hosts.vue')
