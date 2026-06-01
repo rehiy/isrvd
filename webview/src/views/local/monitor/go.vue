@@ -154,12 +154,6 @@ class SystemGo extends Vue {
                 this.sysHistory.sys.splice(0, count)
             }
         )
-
-        if (!this.memChart || !this.goroutineChart || !this.sysChart) {
-            this.initCharts()
-        } else {
-            this.updateCharts()
-        }
     }
 
     initCharts() {
@@ -272,36 +266,48 @@ class SystemGo extends Vue {
         }
     }
 
+    /**
+     * 刷新图表：等待 DOM 更新后初始化或更新图表
+     * 参考 network.vue 的 flushCharts 设计
+     */
+    flushCharts() {
+        this.$nextTick(() => {
+            if (!this.memChart || !this.goroutineChart || !this.stackChart || !this.sysChart) {
+                this.initCharts()
+            } else {
+                this.updateCharts()
+            }
+        })
+    }
+
     updateCharts() {
-        if (this.memChart) {
-            this.memChart.data.labels = [...this.memHistory.labels]
-            this.memChart.data.datasets[0].data = [...this.memHistory.alloc]
-            this.memChart.data.datasets[1].data = [...this.memHistory.heapAlloc]
-            this.memChart.data.datasets[2].data = [...this.memHistory.heapInuse]
-            this.memChart.data.datasets[3].data = [...this.memHistory.heapIdle]
-            this.memChart.data.datasets[4].data = [...this.memHistory.heapReleased]
-            this.memChart.data.datasets[5].data = [...this.memHistory.heapSys]
-            this.memChart.update('none')
+        if (!this.memChart || !this.goroutineChart || !this.stackChart || !this.sysChart) {
+            return
         }
-        if (this.goroutineChart) {
-            this.goroutineChart.data.labels = [...this.goroutineHistory.labels]
-            this.goroutineChart.data.datasets[0].data = [...this.goroutineHistory.goroutine]
-            this.goroutineChart.data.datasets[1].data = [...this.goroutineHistory.heapObjects]
-            this.goroutineChart.data.datasets[2].data = [...this.goroutineHistory.gc]
-            this.goroutineChart.update('none')
-        }
-        if (this.stackChart) {
-            this.stackChart.data.labels = [...this.stackHistory.labels]
-            this.stackChart.data.datasets[0].data = [...this.stackHistory.stackInuse]
-            this.stackChart.data.datasets[1].data = [...this.stackHistory.stackSys]
-            this.stackChart.update('none')
-        }
-        if (this.sysChart) {
-            this.sysChart.data.labels = [...this.sysHistory.labels]
-            this.sysChart.data.datasets[0].data = [...this.sysHistory.totalAlloc]
-            this.sysChart.data.datasets[1].data = [...this.sysHistory.sys]
-            this.sysChart.update('none')
-        }
+        this.memChart.data.labels = [...this.memHistory.labels]
+        this.memChart.data.datasets[0].data = [...this.memHistory.alloc]
+        this.memChart.data.datasets[1].data = [...this.memHistory.heapAlloc]
+        this.memChart.data.datasets[2].data = [...this.memHistory.heapInuse]
+        this.memChart.data.datasets[3].data = [...this.memHistory.heapIdle]
+        this.memChart.data.datasets[4].data = [...this.memHistory.heapReleased]
+        this.memChart.data.datasets[5].data = [...this.memHistory.heapSys]
+        this.memChart.update('none')
+
+        this.goroutineChart.data.labels = [...this.goroutineHistory.labels]
+        this.goroutineChart.data.datasets[0].data = [...this.goroutineHistory.goroutine]
+        this.goroutineChart.data.datasets[1].data = [...this.goroutineHistory.heapObjects]
+        this.goroutineChart.data.datasets[2].data = [...this.goroutineHistory.gc]
+        this.goroutineChart.update('none')
+
+        this.stackChart.data.labels = [...this.stackHistory.labels]
+        this.stackChart.data.datasets[0].data = [...this.stackHistory.stackInuse]
+        this.stackChart.data.datasets[1].data = [...this.stackHistory.stackSys]
+        this.stackChart.update('none')
+
+        this.sysChart.data.labels = [...this.sysHistory.labels]
+        this.sysChart.data.datasets[0].data = [...this.sysHistory.totalAlloc]
+        this.sysChart.data.datasets[1].data = [...this.sysHistory.sys]
+        this.sysChart.update('none')
     }
 
     clearData() {
@@ -321,10 +327,6 @@ class SystemGo extends Vue {
         this.sysChart = null
     }
 
-    mounted() {
-        this.initCharts()
-    }
-
     unmounted() {
         this.memChart?.destroy()
         this.goroutineChart?.destroy()
@@ -337,15 +339,16 @@ export default toNative(SystemGo)
 </script>
 
 <template>
-  <div v-if="current" class="rounded-xl border border-slate-200 bg-white overflow-hidden">
+  <div class="rounded-xl border border-slate-200 bg-white overflow-hidden">
     <div class="card-header">
       <div class="card-icon bg-sky-500">
         <i class="fas fa-code text-white text-xs"></i>
       </div>
       <span class="text-sm font-semibold text-slate-700">Go 运行态</span>
-      <span class="ml-auto text-xs text-slate-400 font-mono">{{ current.version }}</span>
+      <span v-if="current" class="ml-auto text-xs text-slate-400 font-mono">{{ current.version }}</span>
+      <span v-else class="ml-auto text-xs text-slate-400">加载中...</span>
     </div>
-    <div ref="goContainerRef" class="divide-y divide-slate-100">
+    <div v-if="current" ref="goContainerRef" class="divide-y divide-slate-100">
       <!-- 系统内存折线图 -->
       <div class="px-4 py-3">
         <div class="flex items-center justify-between mb-2">

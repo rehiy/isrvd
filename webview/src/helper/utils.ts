@@ -1,5 +1,5 @@
 // 全局自动刷新间隔（毫秒），所有轮询定时器统一使用此常量
-export const POLL_INTERVAL = 3000
+export const POLL_INTERVAL = 5000
 
 /**
  * 解析 host:port 字符串，正确处理 IPv6 字面量地址。

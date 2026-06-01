@@ -111,6 +111,18 @@ class SystemNetwork extends Vue {
         chart.update('none')
     }
 
+    flushCharts() {
+        this.$nextTick(() => {
+            Object.keys(this.netHistory).forEach(name => {
+                if (this.netCharts[name]) {
+                    this.updateNetChart(name)
+                } else {
+                    this.initNetChart(name)
+                }
+            })
+        })
+    }
+
     clearData() {
         this.currentIfaces = []
         this.netHistory = {}
@@ -162,12 +174,6 @@ class SystemNetwork extends Vue {
                     h.sent.splice(0, count)
                 }
             )
-
-            if (!this.netCharts[name]) {
-                this.$nextTick(() => this.initNetChart(name))
-            } else {
-                this.updateNetChart(name)
-            }
         })
     }
 

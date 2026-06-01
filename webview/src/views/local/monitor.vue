@@ -54,6 +54,7 @@ class MonitorPage extends Vue {
         if (data.version) {
             this.portal.currentVersion = data.version
         }
+        // 只更新数据，不更新图表
         this.cpuMemRef?.pushData(data, ts)
         this.gpuRef?.pushData(data, ts)
         this.diskRef?.pushData(data, ts)
@@ -62,11 +63,22 @@ class MonitorPage extends Vue {
         return true
     }
 
+    private updateCharts() {
+        // 显式调用各组件的图表更新方法
+        this.cpuMemRef?.flushCharts()
+        this.gpuRef?.flushCharts()
+        this.diskRef?.flushCharts()
+        this.networkRef?.flushCharts()
+        this.goRef?.flushCharts()
+    }
+
     private async fetchRealtime(version = this.dataVersion): Promise<boolean> {
         const res = await api.overviewMonitor({ type: 'host', since: 0 })
-        if (this.destroyed || version !== this.dataVersion) return false
+        if (this.destroyed || version !== this.dataVersion) {
+            return false
+        }
 
-        return !!res.payload && !Array.isArray(res.payload) && this.dispatchData(res.payload)
+        return !!res.payload && !Array.isArray(res.payload) && this.dispatchData(res.payload as MonitorHostRecord)
     }
 
     async loadHistory(version = this.dataVersion): Promise<boolean> {
@@ -75,9 +87,13 @@ class MonitorPage extends Vue {
             if (this.destroyed || version !== this.dataVersion) return false
             let ok = false
             if (res.payload && Array.isArray(res.payload) && res.payload.length > 0) {
-                for (const rec of [...res.payload].sort((a, b) => a.ts - b.ts)) {
+                const sorted = [...res.payload].sort((a, b) => a.ts - b.ts)
+                for (const rec of sorted) {
+                    // 批量加载时只更新数据，最后统一更新图表
                     ok = this.dispatchData(rec) || ok
                 }
+                // 数据加载完成后，显式更新所有图表
+                if (ok) this.updateCharts()
             }
             return ok
         } catch { return false }
@@ -118,7 +134,9 @@ class MonitorPage extends Vue {
     }
 
     async poll() {
-        if (this.polling) return
+        if (this.polling) {
+            return
+        }
         if (!this.portal.token) {
             this.stopPoll()
             return
@@ -126,8 +144,13 @@ class MonitorPage extends Vue {
         const version = this.dataVersion
         this.polling = true
         try {
-            await this.fetchRealtime(version)
-        } catch { /* ignore */ } finally {
+            const ok = await this.fetchRealtime(version)
+            if (ok) {
+                this.updateCharts()
+            }
+        } catch (e) {
+            // ignore poll error
+        } finally {
             this.polling = false
         }
     }
@@ -147,8 +170,12 @@ class MonitorPage extends Vue {
     }
 
     startPoll() {
-        if (this.pollTimer) return
-        this.pollTimer = setInterval(() => this.poll(), POLL_INTERVAL)
+        if (this.pollTimer) {
+            return
+        }
+        this.pollTimer = setInterval(() => {
+            this.poll()
+        }, POLL_INTERVAL)
     }
 
     stopPoll() {

@@ -143,6 +143,18 @@ class SystemDisk extends Vue {
         chart.update('none')
     }
 
+    flushCharts() {
+        this.$nextTick(() => {
+            Object.keys(this.diskIOHistory).forEach(name => {
+                if (this.diskIOCharts[name]) {
+                    this.updateDiskChart(name)
+                } else {
+                    this.initDiskChart(name)
+                }
+            })
+        })
+    }
+
     clearData() {
         this.current = null
         this.currentDiskIO = []
@@ -197,12 +209,6 @@ class SystemDisk extends Vue {
                     h.write.splice(0, count)
                 }
             )
-
-            if (!this.diskIOCharts[name]) {
-                this.$nextTick(() => this.initDiskChart(name))
-            } else {
-                this.updateDiskChart(name)
-            }
         })
     }
 

@@ -117,17 +117,20 @@ class SystemCpuMem extends Vue {
         }
     }
 
-    updateCharts() {
-        if (this.cpuChart) {
+    flushCharts() {
+        this.$nextTick(() => {
+            if (!this.cpuChart || !this.memChart) {
+                this.initCharts()
+                return
+            }
             this.cpuChart.data.labels = [...this.cpuHistory.labels]
             this.cpuChart.data.datasets[0].data = [...this.cpuHistory.data]
             this.cpuChart.update('none')
-        }
-        if (this.memChart) {
+
             this.memChart.data.labels = [...this.memHistory.labels]
             this.memChart.data.datasets[0].data = [...this.memHistory.data]
             this.memChart.update('none')
-        }
+        })
     }
 
     clearData() {
@@ -158,16 +161,6 @@ class SystemCpuMem extends Vue {
             () => this.memHistory.data.push(this.memPercent(s.memoryUsed, s.memoryTotal)),
             count => this.memHistory.data.splice(0, count)
         )
-
-        if (!this.cpuChart || !this.memChart) {
-            this.initCharts()
-        } else {
-            this.updateCharts()
-        }
-    }
-
-    mounted() {
-        this.initCharts()
     }
 
     unmounted() {

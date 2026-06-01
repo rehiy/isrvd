@@ -126,6 +126,18 @@ class SystemGpu extends Vue {
         chart.update('none')
     }
 
+    flushCharts() {
+        this.$nextTick(() => {
+            Object.keys(this.gpuHistories).forEach(key => {
+                if (this.gpuCharts[key]) {
+                    this.updateGpuChart(key)
+                } else {
+                    this.initGpuChart(key)
+                }
+            })
+        })
+    }
+
     clearData() {
         this.currentGpus = []
         this.gpuHistories = {}
@@ -160,12 +172,6 @@ class SystemGpu extends Vue {
                     h.power.splice(0, count)
                 }
             )
-
-            if (!this.gpuCharts[key]) {
-                this.$nextTick(() => this.initGpuChart(key))
-            } else {
-                this.updateGpuChart(key)
-            }
         })
     }
 
