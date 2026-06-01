@@ -538,18 +538,15 @@ export default toNative(RouteEditModal)
             <div class="grid grid-cols-3 gap-3">
               <div>
                 <label class="form-label">连接超时</label>
-                <input v-model="formData.dialTimeout" type="text" class="input font-mono text-sm" placeholder="请输入连接超时（可选）" />
-                <p class="text-xs text-slate-400 mt-1">例如：10s</p>
+                <input v-model="formData.dialTimeout" type="text" class="input font-mono text-sm" placeholder="如 10s、5m" />
               </div>
               <div>
                 <label class="form-label">响应头超时</label>
-                <input v-model="formData.readTimeout" type="text" class="input font-mono text-sm" placeholder="请输入响应头超时（可选）" />
-                <p class="text-xs text-slate-400 mt-1">例如：30s</p>
+                <input v-model="formData.readTimeout" type="text" class="input font-mono text-sm" placeholder="如 10s、5m" />
               </div>
               <div>
                 <label class="form-label">写入超时</label>
-                <input v-model="formData.writeTimeout" type="text" class="input font-mono text-sm" placeholder="请输入写入超时（可选）" />
-                <p class="text-xs text-slate-400 mt-1">例如：30s</p>
+                <input v-model="formData.writeTimeout" type="text" class="input font-mono text-sm" placeholder="如 10s、5m" />
               </div>
             </div>
           </div>
