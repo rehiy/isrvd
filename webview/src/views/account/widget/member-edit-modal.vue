@@ -267,7 +267,7 @@ export default toNative(MemberEditModal)
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="form-label">用户名 <span class="text-red-500">*</span></label>
-        <input v-model="formData.username" type="text" placeholder="登录用户名" required :disabled="isEdit" class="input disabled:bg-slate-50 disabled:text-slate-500" autocomplete="off" />
+        <input v-model="formData.username" type="text" placeholder="请输入用户名" required :disabled="isEdit" class="input disabled:bg-slate-50 disabled:text-slate-500" autocomplete="off" />
         <p v-if="isEdit" class="mt-1 text-xs text-slate-400">用户名不可修改</p>
       </div>
       <div>
@@ -276,16 +276,16 @@ export default toNative(MemberEditModal)
           <span v-if="!isEdit" class="text-red-500">*</span>
           <span v-else class="text-slate-400 font-normal">(留空则保持不变)</span>
         </label>
-        <input v-model="formData.password" type="password" :placeholder="isEdit ? '留空则保持不变' : '登录密码'" class="input" autocomplete="new-password" />
+        <input v-model="formData.password" type="password" :placeholder="isEdit ? '留空则保持不变' : '请输入登录密码'" class="input" autocomplete="new-password" />
       </div>
       <div>
         <label class="form-label">家目录 <span class="text-slate-400 font-normal">(可选)</span></label>
-        <input v-model="formData.homeDirectory" type="text" placeholder="留空则使用 基础目录/用户名" class="input" />
+        <input v-model="formData.homeDirectory" type="text" placeholder="请输入家目录（可选）" class="input" />
         <p class="mt-1 text-xs text-slate-400">相对路径基于"基础目录"，留空则自动创建为 基础目录/用户名</p>
       </div>
       <div>
         <label class="form-label">描述 <span class="text-slate-400 font-normal">(可选)</span></label>
-        <input v-model="formData.description" type="text" placeholder="成员描述信息" class="input" maxlength="64" />
+        <input v-model="formData.description" type="text" placeholder="请输入成员描述（可选）" class="input" maxlength="64" />
         <p class="mt-1 text-xs text-slate-400">用于标识成员用途，最长 64 字符</p>
       </div>
       <!-- 路由权限 -->

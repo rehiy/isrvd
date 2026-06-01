@@ -178,11 +178,11 @@ export default toNative(ContainerCreateModal)
       <div class="grid grid-cols-2 gap-3">
         <div class="col-span-2">
           <label class="form-label">镜像 <span class="text-red-500">*</span></label>
-          <ImageSelect v-model="formData.image" :images="images" placeholder="选择或输入镜像名称" />
+          <ImageSelect v-model="formData.image" :images="images" placeholder="请输入或选择镜像名" />
         </div>
         <div>
           <label class="form-label">容器名称 <span class="text-red-500">*</span></label>
-          <input v-model="formData.name" type="text" placeholder="my-container" required class="input" />
+          <input v-model="formData.name" type="text" placeholder="请输入容器名称" required class="input" />
         </div>
         <div>
           <label class="form-label">网络模式</label>
@@ -195,21 +195,21 @@ export default toNative(ContainerCreateModal)
       <!-- 端口映射 -->
       <div>
         <label class="form-label">端口映射</label>
-        <textarea v-model="formData.portsStr" rows="2" placeholder="8080:80" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">主机端口:容器端口，每行一条</p>
+        <textarea v-model="formData.portsStr" rows="2" placeholder="请输入端口映射" class="input font-mono text-sm"></textarea>
+        <p class="mt-1 text-xs text-slate-400">格式：主机端口:容器端口，如 8080:80，每行一条</p>
       </div>
 
       <!-- 挂载映射 -->
       <div>
         <label class="form-label">挂载映射</label>
-        <textarea v-model="formData.volumesStr" rows="3" placeholder="./data:/app/data:ro&#10;./config.yaml:/app/config.yaml:ro&#10;volume-name:/data" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">支持宿主机文件/目录或 Docker 卷：来源:容器路径[:ro]，每行一条</p>
+        <textarea v-model="formData.volumesStr" rows="3" placeholder="请输入挂载映射" class="input font-mono text-sm"></textarea>
+        <p class="mt-1 text-xs text-slate-400">格式：来源:容器路径[:ro]，如 ./data:/app/data:ro，每行一条</p>
       </div>
 
       <!-- 环境变量 -->
       <div>
         <label class="form-label">环境变量</label>
-        <textarea v-model="formData.envStr" rows="2" placeholder="KEY=value" class="input font-mono text-sm"></textarea>
+        <textarea v-model="formData.envStr" rows="2" placeholder="请输入环境变量" class="input font-mono text-sm"></textarea>
         <p class="mt-1 text-xs text-slate-400">每行一条，支持 KEY=value 或 KEY: value 格式</p>
       </div>
 
@@ -222,7 +222,7 @@ export default toNative(ContainerCreateModal)
         <div v-if="showAdvanced" class="mt-4 space-y-4">
           <div>
             <label class="form-label">启动命令</label>
-            <input v-model="formData.cmd" type="text" placeholder="覆盖默认命令" class="input font-mono text-sm" />
+            <input v-model="formData.cmd" type="text" placeholder="请输入启动命令" class="input font-mono text-sm" />
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
@@ -233,27 +233,27 @@ export default toNative(ContainerCreateModal)
             </div>
             <div>
               <label class="form-label">主机名</label>
-              <input v-model="formData.hostname" type="text" placeholder="容器主机名" class="input" />
+              <input v-model="formData.hostname" type="text" placeholder="请输入容器主机名" class="input" />
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="form-label">内存限制 (MB)</label>
-              <input v-model="formData.memory" type="number" placeholder="512" class="input" />
+              <input v-model="formData.memory" type="number" placeholder="请输入内存限制（MB）" class="input" />
             </div>
             <div>
               <label class="form-label">CPU 限制 (核心)</label>
-              <input v-model="formData.cpus" type="number" step="0.1" placeholder="1.5" class="input" />
+              <input v-model="formData.cpus" type="number" step="0.1" placeholder="请输入 CPU 限制（核心数）" class="input" />
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="form-label">工作目录</label>
-              <input v-model="formData.workdir" type="text" placeholder="/app" class="input" />
+              <input v-model="formData.workdir" type="text" placeholder="请输入工作目录" class="input" />
             </div>
             <div>
               <label class="form-label">运行用户</label>
-              <input v-model="formData.user" type="text" placeholder="root" class="input" />
+              <input v-model="formData.user" type="text" placeholder="请输入运行用户" class="input" />
             </div>
           </div>
         </div>

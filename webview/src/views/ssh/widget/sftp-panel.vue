@@ -393,7 +393,7 @@ export default toNative(SftpPanel)
                 <input
                   v-model="mkdirName"
                   class="input text-xs py-0.5"
-                  placeholder="输入目录名称..."
+                  placeholder="请输入目录名称"
                   autofocus
                   @keyup.enter="confirmMkdir()"
                   @keyup.esc="cancelMkdir()"

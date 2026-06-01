@@ -134,7 +134,7 @@ export default toNative(CaddyCerts)
           <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">TLS 证书</h1><p class="text-xs text-slate-500 truncate">管理 Caddy 证书来源：文件、PEM、自动签发；已签发证书只读</p></div>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
-          <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="搜索域名、路径、签发机构..." focus-color="cyan" type-to-search />
+          <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="请输入搜索关键词..." focus-color="cyan" type-to-search />
           <button class="btn btn-secondary" @click="loadCerts()"><i class="fas fa-rotate"></i>刷新</button>
           <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="btn btn-cyan" @click="openCreateModal()"><i class="fas fa-plus"></i>新建证书</button>
         </div>
@@ -160,7 +160,7 @@ export default toNative(CaddyCerts)
     </div>
     <!-- 移动端搜索栏 -->
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="搜索域名、路径、签发机构..." width-class="w-full" focus-color="cyan" />
+      <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="请输入搜索关键词..." width-class="w-full" focus-color="cyan" />
     </div>
     <div v-if="loading" class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
     <div v-else-if="filteredCerts.length === 0" class="empty-state">

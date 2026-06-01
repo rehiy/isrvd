@@ -97,7 +97,7 @@ export default toNative(RegistryPushModal)
       </div>
       <div>
         <label class="form-label">命名空间 <span class="text-slate-400 font-normal">(可选)</span></label>
-        <input v-model="pushForm.namespace" type="text" placeholder="例如: myteam" class="input" />
+        <input v-model="pushForm.namespace" type="text" placeholder="请输入命名空间（可选）" class="input" />
         <p class="mt-1 text-xs text-slate-400">镜像将被推送为: {{ pushTargetPreview }}</p>
       </div>
     </form>

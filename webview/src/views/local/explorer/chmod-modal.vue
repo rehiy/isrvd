@@ -47,8 +47,9 @@ export default toNative(ChmodModal)
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <i class="fas fa-key text-slate-400"></i>
           </div>
-          <input id="fileMode" v-model="formData.mode" type="text" :disabled="portal.filerLoading" required placeholder="755" class="input pl-11">
+          <input id="fileMode" v-model="formData.mode" type="text" :disabled="portal.filerLoading" required placeholder="请输入文件权限" class="input pl-11">
         </div>
+        <p class="text-xs text-slate-400 mt-1">三位八进制数，例如：755、644</p>
         <div class="mt-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
           <p class="text-sm font-medium text-slate-700 mb-2">常用权限:</p>
           <div class="flex flex-wrap gap-2">

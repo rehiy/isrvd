@@ -270,12 +270,29 @@ export default toNative(RouteEditModal)
   <BaseModal v-model="isOpen" :title="isEditMode ? '编辑路由' : '新建路由'" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
     <div class="space-y-4 p-1">
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="form-label">名称 <span class="text-red-500">*</span></label><input v-model="formData.name" type="text" class="input" placeholder="路由名称" /></div>
-        <div><label class="form-label">优先级</label><input v-model.number="formData.priority" type="number" class="input" placeholder="0" min="0" /></div>
+        <div>
+          <label class="form-label">名称 <span class="text-red-500">*</span></label>
+          <input v-model="formData.name" type="text" class="input" placeholder="请输入路由名称" />
+        </div>
+        <div>
+          <label class="form-label">优先级</label>
+          <input v-model.number="formData.priority" type="number" class="input" placeholder="请输入优先级（可选）" min="0" />
+        </div>
       </div>
-      <div><label class="form-label">描述</label><textarea v-model="formData.desc" rows="2" class="input" placeholder="路由描述"></textarea></div>
-      <div><label class="form-label">URI（每行一个）<span class="text-red-500">*</span></label><textarea v-model="formData.uris" rows="3" class="input font-mono text-sm" placeholder="/api/v1/*&#10;/api/v2/*"></textarea></div>
-      <div><label class="form-label">Host（每行一个，留空匹配所有）</label><textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="example.com"></textarea></div>
+      <div>
+        <label class="form-label">描述</label>
+        <textarea v-model="formData.desc" rows="2" class="input" placeholder="请输入路由描述（可选）"></textarea>
+      </div>
+      <div>
+        <label class="form-label">URI（每行一个）<span class="text-red-500">*</span></label>
+        <textarea v-model="formData.uris" rows="3" class="input font-mono text-sm" placeholder="请输入 URI（支持通配符）"></textarea>
+        <p class="text-xs text-slate-400 mt-1">例如：/api/v1/* 或 /api/v2/*</p>
+      </div>
+      <div>
+        <label class="form-label">Host（每行一个，留空匹配所有）</label>
+        <textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="请输入 Host（可选）"></textarea>
+        <p class="text-xs text-slate-400 mt-1">例如：example.com 或 *.example.com</p>
+      </div>
 
       <div class="toggle-row">
         <div>
@@ -308,20 +325,21 @@ export default toNative(RouteEditModal)
         <div v-if="formData.upstream_mode === 'nodes'" class="space-y-3">
           <div>
             <div class="grid grid-cols-[2fr_1fr] gap-2 items-center">
-              <ContainerSelect :model-value="formData.upstream_nodes[0]?.host || ''" :containers="containers" placeholder="127.0.0.1 或 容器名" @update:model-value="updateUpstreamNode(0, 'host', $event)" />
-              <ContainerPortSelect :model-value="formData.upstream_nodes[0]?.port || ''" :ports="getPortsByHost(formData.upstream_nodes[0]?.host || '')" placeholder="80" @update:model-value="updateUpstreamNode(0, 'port', $event)" />
+              <ContainerSelect :model-value="formData.upstream_nodes[0]?.host || ''" :containers="containers" placeholder="请输入 Host（IP 或容器名）" @update:model-value="updateUpstreamNode(0, 'host', $event)" />
+              <ContainerPortSelect :model-value="formData.upstream_nodes[0]?.port || ''" :ports="getPortsByHost(formData.upstream_nodes[0]?.host || '')" placeholder="请输入端口" @update:model-value="updateUpstreamNode(0, 'port', $event)" />
             </div>
-            <p class="text-xs text-slate-400 mt-2">直接输入模式仅提交一个上游节点；如需多节点负载均衡，请先在「上游管理」中创建后再引用。</p>
+            <p class="text-xs text-slate-400 mt-2">例如：Host 填写 127.0.0.1 或 nginx，Port 填写 8080</p>
+            <p class="text-xs text-slate-400 mt-1">直接输入模式仅提交一个上游节点；如需多节点负载均衡，请先在「上游管理」中创建后再引用。</p>
           </div>
 
           <div>
             <label class="form-label">超时时间（秒）</label>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-              <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" placeholder="连接 connect" />
-              <input v-model.number="formData.timeout_send" type="number" min="0" class="input" placeholder="发送 send" />
-              <input v-model.number="formData.timeout_read" type="number" min="0" class="input" placeholder="读取 read" />
+              <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" placeholder="请输入连接超时（可选）" />
+              <input v-model.number="formData.timeout_send" type="number" min="0" class="input" placeholder="请输入发送超时（可选）" />
+              <input v-model.number="formData.timeout_read" type="number" min="0" class="input" placeholder="请输入读取超时（可选）" />
             </div>
-            <p class="text-xs text-slate-400 mt-1">留空或 0 表示使用 APISIX 默认超时。</p>
+            <p class="text-xs text-slate-400 mt-1">留空或 0 表示使用 APISIX 默认超时（单位：秒）。</p>
           </div>
           <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
         </div>

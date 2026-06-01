@@ -135,7 +135,7 @@ export default toNative(Services)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <PageSearch v-model="searchText" search-key="swarm-services" placeholder="搜索服务名、镜像、模式或端口..." focus-color="emerald" type-to-search />
+            <PageSearch v-model="searchText" search-key="swarm-services" placeholder="请输入搜索关键词..." focus-color="emerald" type-to-search />
             <button class="btn btn-secondary" @click="loadServices">
               <i class="fas fa-rotate"></i>刷新
             </button>
@@ -166,7 +166,7 @@ export default toNative(Services)
         </div>
       </div>
       <div class="mobile-search">
-        <PageSearch v-model="searchText" search-key="swarm-services" placeholder="搜索服务名、镜像、模式或端口..." width-class="w-full" focus-color="emerald" />
+        <PageSearch v-model="searchText" search-key="swarm-services" placeholder="请输入搜索关键词..." width-class="w-full" focus-color="emerald" />
       </div>
 
       <div v-if="loading" class="empty-state">

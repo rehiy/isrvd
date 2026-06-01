@@ -183,7 +183,7 @@ export default toNative(PluginConfigPanel)
       <div class="px-3 py-2 bg-slate-50 border-b border-slate-100">
         <div class="relative">
           <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
-          <input v-model="pluginSearchKeyword" type="text" placeholder="搜索插件..." class="w-full pl-7 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-300" />
+          <input v-model="pluginSearchKeyword" type="text" placeholder="请输入插件名称..." class="w-full pl-7 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-300" />
         </div>
       </div>
       <div class="max-h-44 overflow-y-auto p-2 grid grid-cols-2 md:grid-cols-3 gap-1">
@@ -226,7 +226,8 @@ export default toNative(PluginConfigPanel)
     </div>
 
     <!-- JSON 编辑器 -->
-    <textarea :value="pluginsJson" rows="8" :class="['input font-mono text-sm mt-3', pluginsJsonError ? 'border-red-300 bg-red-50' : '']" placeholder='{"key-auth": {"key": "your-api-key"}}' @blur="syncPluginsFromJson" @input="onPluginsJsonInput"></textarea>
+    <textarea :value="pluginsJson" rows="8" :class="['input font-mono text-sm mt-3', pluginsJsonError ? 'border-red-300 bg-red-50' : '']" placeholder='请输入插件配置 JSON...' @blur="syncPluginsFromJson" @input="onPluginsJsonInput"></textarea>
+    <p class="mt-1 text-xs text-slate-400">示例：{"key-auth": {"key": "your-api-key"}}</p>
     <p v-if="pluginsJsonError" class="text-xs text-red-500 mt-1">{{ pluginsJsonError }}</p>
   </div>
 </template>

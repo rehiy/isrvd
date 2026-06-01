@@ -56,7 +56,8 @@ const defaultFormData = () => ({
     uriSubstringReplace: '',
     requestHeaders: [] as CaddyHeaderOp[],
     responseHeaders: [] as CaddyHeaderOp[],
-    rawText: ''
+    rawText: '',
+    enableHeaders: false
 })
 
 @Component({
@@ -162,13 +163,16 @@ class RouteEditModal extends Vue {
             return out
         }
         const handles: unknown[] = []
-        const reqOps = f.requestHeaders.filter(op => op.field.trim())
-        const respOps = f.responseHeaders.filter(op => op.field.trim())
-        if (reqOps.length || respOps.length) {
-            const hh: Record<string, unknown> = { handler: 'headers' }
-            if (reqOps.length) hh.request = buildOps(reqOps)
-            if (respOps.length) hh.response = buildOps(respOps)
-            handles.push(hh)
+        // 只有当启用header操作时才添加headers中间件
+        if (f.enableHeaders) {
+            const reqOps = f.requestHeaders.filter(op => op.field.trim())
+            const respOps = f.responseHeaders.filter(op => op.field.trim())
+            if (reqOps.length || respOps.length) {
+                const hh: Record<string, unknown> = { handler: 'headers' }
+                if (reqOps.length) hh.request = buildOps(reqOps)
+                if (respOps.length) hh.response = buildOps(respOps)
+                handles.push(hh)
+            }
         }
         handles.push(terminalHandler)
         try { return JSON.stringify(handles, null, 2) } catch { return '' }
@@ -303,6 +307,8 @@ class RouteEditModal extends Vue {
                 this.formData.uriSubstringReplace = h.uriSubstringReplace || ''
                 this.formData.requestHeaders = h.requestHeaders ? [...h.requestHeaders] : []
                 this.formData.responseHeaders = h.responseHeaders ? [...h.responseHeaders] : []
+                // 如果已有header配置，自动启用header操作
+                this.formData.enableHeaders = !!(h.requestHeaders || h.responseHeaders)
                 if (h.kind === 'raw') {
                     try { this.formData.rawText = h.raw !== null && h.raw !== undefined ? JSON.stringify(h.raw, null, 2) : '' }
                     catch { this.formData.rawText = '' }
@@ -345,8 +351,8 @@ class RouteEditModal extends Vue {
                     dialTimeout: !f.fastcgi && f.dialTimeout.trim() ? f.dialTimeout.trim() : undefined,
                     readTimeout: !f.fastcgi && f.readTimeout.trim() ? f.readTimeout.trim() : undefined,
                     writeTimeout: !f.fastcgi && f.writeTimeout.trim() ? f.writeTimeout.trim() : undefined,
-                    requestHeaders: this.buildHeaderOps('request'),
-                    responseHeaders: this.buildHeaderOps('response')
+                    requestHeaders: f.enableHeaders ? this.buildHeaderOps('request') : undefined,
+                    responseHeaders: f.enableHeaders ? this.buildHeaderOps('response') : undefined
                 }
                 break
             }
@@ -356,8 +362,8 @@ class RouteEditModal extends Vue {
                     return null
                 }
                 handler = { kind: 'file_server', root: f.root.trim(), browse: f.browse,
-                    requestHeaders: this.buildHeaderOps('request'),
-                    responseHeaders: this.buildHeaderOps('response')
+                    requestHeaders: f.enableHeaders ? this.buildHeaderOps('request') : undefined,
+                    responseHeaders: f.enableHeaders ? this.buildHeaderOps('response') : undefined
                 }
                 break
             }
@@ -367,8 +373,8 @@ class RouteEditModal extends Vue {
                     return null
                 }
                 handler = { kind: 'static_response', statusCode: f.statusCode || 200, body: f.body,
-                    requestHeaders: this.buildHeaderOps('request'),
-                    responseHeaders: this.buildHeaderOps('response')
+                    requestHeaders: f.enableHeaders ? this.buildHeaderOps('request') : undefined,
+                    responseHeaders: f.enableHeaders ? this.buildHeaderOps('response') : undefined
                 }
                 break
             }
@@ -384,8 +390,8 @@ class RouteEditModal extends Vue {
                     stripPathSuffix: f.stripPathSuffix.trim() || undefined,
                     uriSubstringFind: f.uriSubstringFind.trim() || undefined,
                     uriSubstringReplace: f.uriSubstringFind.trim() ? (f.uriSubstringReplace.trim() || undefined) : undefined,
-                    requestHeaders: this.buildHeaderOps('request'),
-                    responseHeaders: this.buildHeaderOps('response')
+                    requestHeaders: f.enableHeaders ? this.buildHeaderOps('request') : undefined,
+                    responseHeaders: f.enableHeaders ? this.buildHeaderOps('response') : undefined
                 }
                 break
             }
@@ -445,21 +451,21 @@ export default toNative(RouteEditModal)
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="form-label">Host</label>
-            <textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="example.com&#10;*.example.com"></textarea>
-            <p class="text-xs text-slate-400 mt-1">每行一个，留空匹配所有</p>
+            <textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="请输入 Host（可选）"></textarea>
+            <p class="text-xs text-slate-400 mt-1">每行一个，留空匹配所有，例如：example.com 或 *.example.com</p>
           </div>
           <div>
             <label class="form-label">Path</label>
-            <textarea v-model="formData.paths" rows="2" class="input font-mono text-sm" placeholder="/api/*&#10;/static/*"></textarea>
-            <p class="text-xs text-slate-400 mt-1">每行一个，支持 * 通配符</p>
+            <textarea v-model="formData.paths" rows="2" class="input font-mono text-sm" placeholder="请输入 Path（可选）"></textarea>
+            <p class="text-xs text-slate-400 mt-1">每行一个，支持 * 通配符，例如：/api/* 或 /static/*</p>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="form-label">Method</label>
-            <input v-model="formData.methods" type="text" class="input font-mono text-sm" placeholder="GET POST" />
-            <p class="text-xs text-slate-400 mt-1">空格分隔，留空匹配所有</p>
+            <input v-model="formData.methods" type="text" class="input font-mono text-sm" placeholder="请输入 Method（可选）" />
+            <p class="text-xs text-slate-400 mt-1">空格分隔，留空匹配所有，例如：GET POST</p>
           </div>
           <div>
             <label class="form-label">协议</label>
@@ -482,8 +488,8 @@ export default toNative(RouteEditModal)
           <label class="form-label">匹配请求头 <span class="text-slate-400 font-normal">（可选）</span></label>
           <div v-if="matchHeaderList.length" class="space-y-2 mb-2">
             <div v-for="(entry, idx) in matchHeaderList" :key="idx" class="flex gap-2 items-center">
-              <input v-model="entry.key" type="text" class="input font-mono text-sm flex-1" placeholder="X-Custom-Header" />
-              <input v-model="entry.value" type="text" class="input font-mono text-sm flex-1" placeholder="值（留空表示存在即匹配）" />
+              <input v-model="entry.key" type="text" class="input font-mono text-sm flex-1" placeholder="请输入请求头名称" />
+              <input v-model="entry.value" type="text" class="input font-mono text-sm flex-1" placeholder="请输入值（可选，留空表示存在即匹配）" />
               <button type="button" class="text-slate-400 hover:text-red-500 shrink-0" @click="removeMatchHeaderRow(idx)"><i class="fas fa-trash text-sm"></i></button>
             </div>
           </div>
@@ -518,29 +524,32 @@ export default toNative(RouteEditModal)
           <div>
             <label class="form-label">选择容器与端口</label>
             <div class="grid grid-cols-[2fr_1fr] gap-2">
-              <ContainerSelect :model-value="formData.upstreamHost" :containers="containers" placeholder="127.0.0.1 或 容器名" @update:model-value="setUpstreamHost" />
-              <ContainerPortSelect :model-value="formData.upstreamPort" :ports="getPortsByHost(formData.upstreamHost)" placeholder="80" @update:model-value="setUpstreamPort" />
+              <ContainerSelect :model-value="formData.upstreamHost" :containers="containers" placeholder="请输入容器名（可选）" @update:model-value="setUpstreamHost" />
+              <ContainerPortSelect :model-value="formData.upstreamPort" :ports="getPortsByHost(formData.upstreamHost)" placeholder="请输入端口（可选）" @update:model-value="setUpstreamPort" />
             </div>
-            <p class="text-xs text-slate-400 mt-1">选择后自动填充下方第一个上游，也可手动输入</p>
+            <p class="text-xs text-slate-400 mt-1">可输入容器名或 IP 地址，选择后自动填充下方第一个上游，也可手动输入</p>
           </div>
           <div>
             <label class="form-label">上游地址 <span class="text-red-500">*</span></label>
-            <textarea v-model="formData.upstreams" rows="3" class="input font-mono text-sm" placeholder="backend1:8080&#10;backend2:8080" @input="syncSelectedFromText"></textarea>
-            <p class="text-xs text-slate-400 mt-1">每行一个 host:port，多个上游自动轮询</p>
+            <textarea v-model="formData.upstreams" rows="3" class="input font-mono text-sm" placeholder="请输入上游地址（每行一个）" @input="syncSelectedFromText"></textarea>
+            <p class="text-xs text-slate-400 mt-1">每行一个 host:port，多个上游自动轮询，例如：backend1:8080</p>
           </div>
           <div v-if="!formData.fastcgi">
             <div class="grid grid-cols-3 gap-3">
               <div>
                 <label class="form-label">连接超时</label>
-                <input v-model="formData.dialTimeout" type="text" class="input font-mono text-sm" placeholder="10s" />
+                <input v-model="formData.dialTimeout" type="text" class="input font-mono text-sm" placeholder="请输入连接超时（可选）" />
+                <p class="text-xs text-slate-400 mt-1">例如：10s</p>
               </div>
               <div>
                 <label class="form-label">响应头超时</label>
-                <input v-model="formData.readTimeout" type="text" class="input font-mono text-sm" placeholder="30s" />
+                <input v-model="formData.readTimeout" type="text" class="input font-mono text-sm" placeholder="请输入响应头超时（可选）" />
+                <p class="text-xs text-slate-400 mt-1">例如：30s</p>
               </div>
               <div>
                 <label class="form-label">写入超时</label>
-                <input v-model="formData.writeTimeout" type="text" class="input font-mono text-sm" placeholder="30s" />
+                <input v-model="formData.writeTimeout" type="text" class="input font-mono text-sm" placeholder="请输入写入超时（可选）" />
+                <p class="text-xs text-slate-400 mt-1">例如：30s</p>
               </div>
             </div>
           </div>
@@ -555,8 +564,8 @@ export default toNative(RouteEditModal)
           </div>
           <div v-if="formData.fastcgi">
             <label class="form-label">FastCGI 文档根目录</label>
-            <input v-model="formData.fastcgiRoot" type="text" class="input font-mono text-sm" placeholder="/var/www/html（留空不传 root）" />
-            <p class="text-xs text-slate-400 mt-1">设置 <code class="px-1 bg-slate-100 rounded">DOCUMENT_ROOT</code></p>
+            <input v-model="formData.fastcgiRoot" type="text" class="input font-mono text-sm" placeholder="请输入 FastCGI 根目录（可选）" />
+            <p class="text-xs text-slate-400 mt-1">设置 <code class="px-1 bg-slate-100 rounded">DOCUMENT_ROOT</code>，留空不传 root，例如：/var/www/html</p>
           </div>
         </div>
 
@@ -564,7 +573,8 @@ export default toNative(RouteEditModal)
         <div v-else-if="formData.kind === 'file_server'" class="space-y-3">
           <div>
             <label class="form-label">根目录 <span class="text-red-500">*</span></label>
-            <input v-model="formData.root" type="text" class="input font-mono text-sm" placeholder="/var/www/html" />
+            <input v-model="formData.root" type="text" class="input font-mono text-sm" placeholder="请输入根目录" />
+            <p class="text-xs text-slate-400 mt-1">静态文件根目录，例如：/var/www/html</p>
           </div>
           <div class="toggle-row">
             <div>
@@ -581,11 +591,13 @@ export default toNative(RouteEditModal)
         <div v-else-if="formData.kind === 'static_response'" class="space-y-3">
           <div>
             <label class="form-label">状态码</label>
-            <input v-model.number="formData.statusCode" type="number" min="100" max="599" class="input" placeholder="200" />
+            <input v-model.number="formData.statusCode" type="number" min="100" max="599" class="input" placeholder="请输入状态码" />
+            <p class="text-xs text-slate-400 mt-1">HTTP 状态码，例如：200</p>
           </div>
           <div>
             <label class="form-label">响应体</label>
-            <textarea v-model="formData.body" rows="4" class="input font-mono text-sm" placeholder="OK"></textarea>
+            <textarea v-model="formData.body" rows="4" class="input font-mono text-sm" placeholder="请输入响应体"></textarea>
+            <p class="text-xs text-slate-400 mt-1">留空则返回默认响应，例如：OK</p>
           </div>
         </div>
 
@@ -593,29 +605,31 @@ export default toNative(RouteEditModal)
         <div v-else-if="formData.kind === 'rewrite'" class="space-y-3">
           <div>
             <label class="form-label">URI 替换</label>
-            <input v-model="formData.rewriteUri" type="text" class="input font-mono text-sm" placeholder="/new-path/{http.request.uri.path.1}" />
-            <p class="text-xs text-slate-400 mt-1">完整替换请求 URI，支持 Caddy 占位符</p>
+            <input v-model="formData.rewriteUri" type="text" class="input font-mono text-sm" placeholder="请输入 URI 替换规则" />
+            <p class="text-xs text-slate-400 mt-1">完整替换请求 URI，支持 Caddy 占位符，例如：/new-path/{http.request.uri.path.1}</p>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="form-label">去掉路径前缀</label>
-              <input v-model="formData.stripPathPrefix" type="text" class="input font-mono text-sm" placeholder="/api" />
-              <p class="text-xs text-slate-400 mt-1"><code class="px-1 bg-slate-100 rounded">/api/v1/foo</code> → <code class="px-1 bg-slate-100 rounded">/v1/foo</code></p>
+              <input v-model="formData.stripPathPrefix" type="text" class="input font-mono text-sm" placeholder="请输入要去掉的前缀" />
+              <p class="text-xs text-slate-400 mt-1">例如：<code class="px-1 bg-slate-100 rounded">/api</code>，效果：<code class="px-1 bg-slate-100 rounded">/api/v1/foo</code> → <code class="px-1 bg-slate-100 rounded">/v1/foo</code></p>
             </div>
             <div>
               <label class="form-label">去掉路径后缀</label>
-              <input v-model="formData.stripPathSuffix" type="text" class="input font-mono text-sm" placeholder=".php" />
-              <p class="text-xs text-slate-400 mt-1">从路径末尾去掉指定后缀</p>
+              <input v-model="formData.stripPathSuffix" type="text" class="input font-mono text-sm" placeholder="请输入要去掉的后缀" />
+              <p class="text-xs text-slate-400 mt-1">从路径末尾去掉指定后缀，例如：.php</p>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="form-label">子串查找</label>
-              <input v-model="formData.uriSubstringFind" type="text" class="input font-mono text-sm" placeholder="/old" />
+              <input v-model="formData.uriSubstringFind" type="text" class="input font-mono text-sm" placeholder="请输入要查找的子串" />
+              <p class="text-xs text-slate-400 mt-1">例如：/old</p>
             </div>
             <div>
               <label class="form-label">子串替换</label>
-              <input v-model="formData.uriSubstringReplace" type="text" class="input font-mono text-sm" placeholder="/new" />
+              <input v-model="formData.uriSubstringReplace" type="text" class="input font-mono text-sm" placeholder="请输入替换内容" />
+              <p class="text-xs text-slate-400 mt-1">例如：/new</p>
             </div>
           </div>
         </div>
@@ -629,21 +643,29 @@ export default toNative(RouteEditModal)
       </div>
 
       <!-- ── 请求头 / 响应头操作 ── -->
-      <div v-if="formData.kind !== 'raw'" class="border border-slate-200 rounded-xl p-4 space-y-4">
-        <p class="section-title">请求头 / 响应头操作 <span class="text-xs font-normal text-slate-400">（串联中间件，在处理器前执行）</span></p>
-
+      <div v-if="formData.kind !== 'raw'" class="toggle-row">
+        <div>
+          <span class="text-sm text-slate-600">配置请求头/响应头操作</span>
+          <p class="text-xs text-slate-400 mt-0.5">串联中间件，在处理器前执行，支持占位符如 <code class="px-1 bg-slate-100 rounded">{http.request.remote.host}</code></p>
+        </div>
+        <button type="button" class="toggle" :class="{ 'toggle-on': formData.enableHeaders }" role="switch" :aria-checked="formData.enableHeaders" @click="formData.enableHeaders = !formData.enableHeaders">
+          <span class="toggle-thumb" />
+        </button>
+      </div>
+      <div v-if="formData.kind !== 'raw' && formData.enableHeaders" class="border border-slate-200 rounded-xl p-4 space-y-4">
         <!-- 请求头 -->
         <div>
           <label class="form-label">请求头</label>
+          <p class="text-xs text-slate-400 mt-1 mb-2">例如：字段 X-Real-IP，值 {http.request.remote.host}</p>
           <div v-if="formData.requestHeaders.length" class="space-y-2 mb-2">
             <div v-for="(op, idx) in formData.requestHeaders" :key="idx" class="flex gap-2 items-center">
               <select v-model="op.op" class="input text-sm w-24 shrink-0">
-                <option value="set">Set</option>
-                <option value="add">Add</option>
+                <option value="set">覆盖</option>
+                <option value="add">追加</option>
                 <option value="delete">Delete</option>
               </select>
-              <input v-model="op.field" type="text" class="input font-mono text-sm flex-1" placeholder="X-Real-IP" />
-              <input v-if="op.op !== 'delete'" v-model="op.value" type="text" class="input font-mono text-sm flex-1" placeholder="{http.request.remote.host}" />
+              <input v-model="op.field" type="text" class="input font-mono text-sm flex-1" placeholder="请输入请求头名称" />
+              <input v-if="op.op !== 'delete'" v-model="op.value" type="text" class="input font-mono text-sm flex-1" placeholder="请输入请求头值（支持占位符）" />
               <div v-else class="flex-1"></div>
               <button type="button" class="text-slate-400 hover:text-red-500 shrink-0" @click="removeHeaderOp('request', idx)"><i class="fas fa-trash text-sm"></i></button>
             </div>
@@ -652,19 +674,19 @@ export default toNative(RouteEditModal)
             <i class="fas fa-plus text-xs"></i>添加请求头操作
           </button>
         </div>
-
         <!-- 响应头 -->
         <div>
           <label class="form-label">响应头</label>
+          <p class="text-xs text-slate-400 mt-1 mb-2">例如：字段 X-Frame-Options，值 SAMEORIGIN</p>
           <div v-if="formData.responseHeaders.length" class="space-y-2 mb-2">
             <div v-for="(op, idx) in formData.responseHeaders" :key="idx" class="flex gap-2 items-center">
               <select v-model="op.op" class="input text-sm w-24 shrink-0">
-                <option value="set">Set</option>
-                <option value="add">Add</option>
-                <option value="delete">Delete</option>
+                <option value="set">覆盖</option>
+                <option value="add">追加</option>
+                <option value="delete">删除</option>
               </select>
-              <input v-model="op.field" type="text" class="input font-mono text-sm flex-1" placeholder="X-Frame-Options" />
-              <input v-if="op.op !== 'delete'" v-model="op.value" type="text" class="input font-mono text-sm flex-1" placeholder="SAMEORIGIN" />
+              <input v-model="op.field" type="text" class="input font-mono text-sm flex-1" placeholder="请输入响应头名称" />
+              <input v-if="op.op !== 'delete'" v-model="op.value" type="text" class="input font-mono text-sm flex-1" placeholder="请输入响应头值" />
               <div v-else class="flex-1"></div>
               <button type="button" class="text-slate-400 hover:text-red-500 shrink-0" @click="removeHeaderOp('response', idx)"><i class="fas fa-trash text-sm"></i></button>
             </div>
@@ -673,8 +695,6 @@ export default toNative(RouteEditModal)
             <i class="fas fa-plus text-xs"></i>添加响应头操作
           </button>
         </div>
-
-        <p class="text-xs text-slate-400">Set 覆盖 · Add 追加 · Delete 删除。支持占位符如 <code class="px-1 bg-slate-100 rounded">{http.request.remote.host}</code></p>
       </div>
 
       <!-- ── 原始 JSON 预览 ── -->
@@ -691,7 +711,7 @@ export default toNative(RouteEditModal)
         <textarea :value="buildRawFromCurrent()" rows="10" class="input font-mono text-xs" readonly></textarea>
       </div>
     </div>
-
+  
     <template #confirm-text>
       确认{{ isEditMode ? '更新' : '新建' }}
     </template>

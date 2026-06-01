@@ -143,7 +143,7 @@ export default toNative(ImagePullModal)
       <section v-if="!isRegistryMode">
         <div class="space-y-3">
           <div class="flex gap-2">
-            <input v-model="searchKeyword" type="text" placeholder="例如: nginx、redis、ubuntu" class="input flex-1" @keydown.enter.prevent="handleSearchImage" />
+            <input v-model="searchKeyword" type="text" placeholder="请输入要搜索的镜像名称" class="input flex-1" @keydown.enter.prevent="handleSearchImage" />
             <button type="button" :disabled="searchLoading" class="btn h-[46px] btn-secondary" @click="handleSearchImage">
               <i :class="['fas', searchLoading ? 'fa-spinner fa-spin' : 'fa-search']"></i>
               {{ searchLoading ? '搜索中' : '搜索' }}
@@ -178,7 +178,7 @@ export default toNative(ImagePullModal)
         <div class="space-y-4">
           <div>
             <label class="form-label">镜像引用</label>
-            <input v-model="formData.image" type="text" placeholder="例如: nginx, redis:alpine, library/ubuntu:22.04, myteam/app:v1" required class="input font-mono" />
+            <input v-model="formData.image" type="text" placeholder="请输入镜像引用" required class="input font-mono" />
             <p class="text-xs text-slate-400 mt-1">
               未指定 tag 时默认拉取 latest；选择私有仓库时不需要重复填写仓库地址。
             </p>

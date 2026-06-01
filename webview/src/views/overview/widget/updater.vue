@@ -207,7 +207,7 @@ export default toNative(SystemUpdater)
             :disabled="deploying"
             :readonly="!!selfContainerName"
             class="input"
-            placeholder="例如: isrvd"
+            placeholder="请输入容器名称"
             autocomplete="off"
             required
           />

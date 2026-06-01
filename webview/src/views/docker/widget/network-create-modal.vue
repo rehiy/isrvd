@@ -46,7 +46,7 @@ export default toNative(NetworkCreateModal)
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="form-label">网络名称</label>
-        <input v-model="formData.name" type="text" placeholder="例如: my-network" required class="input" />
+        <input v-model="formData.name" type="text" placeholder="请输入网络名称" required class="input" />
       </div>
       <div>
         <label class="form-label">驱动类型</label>
@@ -59,7 +59,7 @@ export default toNative(NetworkCreateModal)
       </div>
       <div>
         <label class="form-label">子网 CIDR（可选）</label>
-        <input v-model="formData.subnet" type="text" placeholder="例如: 172.20.0.0/16" class="input" />
+        <input v-model="formData.subnet" type="text" placeholder="请输入子网 CIDR" class="input" />
       </div>
     </form>
 

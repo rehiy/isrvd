@@ -213,7 +213,7 @@ export default toNative(ComposeDeploy)
             <span class="text-xs font-normal text-slate-400">（选填，部署前解压到项目目录）</span>
           </label>
           <div class="flex items-center gap-2">
-            <input v-model="initURL" type="text" placeholder="zip 下载 URL，例如 http://example.com/init.zip" class="input flex-1" :disabled="loading || !!initFile" />
+            <input v-model="initURL" type="text" placeholder="请输入 zip 下载 URL" class="input flex-1" :disabled="loading || !!initFile" />
             <span class="text-xs text-slate-400 flex-shrink-0">或</span>
             <!-- 隐藏真实 input，用自定义按钮触发 -->
             <label

@@ -104,11 +104,11 @@ export default toNative(ConsumerEditModal)
       <div class="space-y-3">
         <div>
           <label class="form-label">名称 <span class="text-red-500">*</span></label>
-          <input v-model="formData.username" type="text" :disabled="isEditMode" class="input" :class="{ 'disabled:bg-slate-50 disabled:text-slate-500': isEditMode }" placeholder="消费者名称" />
+          <input v-model="formData.username" type="text" :disabled="isEditMode" class="input" :class="{ 'disabled:bg-slate-50 disabled:text-slate-500': isEditMode }" placeholder="请输入消费者名称" />
         </div>
         <div>
           <label class="form-label">描述</label>
-          <textarea v-model="formData.desc" rows="3" class="input" placeholder="消费者描述"></textarea>
+          <textarea v-model="formData.desc" rows="3" class="input" placeholder="请输入消费者描述（可选）"></textarea>
         </div>
       </div>
 

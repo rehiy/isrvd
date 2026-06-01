@@ -119,16 +119,16 @@ export default toNative(HostEditModal)
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="form-label">名称 <span class="text-red-500">*</span></label>
-        <input v-model="formData.name" type="text" placeholder="例如: 生产服务器" required class="input" />
+        <input v-model="formData.name" type="text" placeholder="请输入主机名称" required class="input" />
       </div>
       <div>
         <label class="form-label">地址 <span class="text-red-500">*</span></label>
-        <input v-model="formData.addr" type="text" placeholder="host 或 host:port" required class="input" />
-        <p class="text-xs text-slate-400 mt-1">默认端口 22</p>
+        <input v-model="formData.addr" type="text" placeholder="请输入主机地址" required class="input" />
+        <p class="text-xs text-slate-400 mt-1">格式：主机名或 IP [:端口]，如 192.168.1.100:2222，默认端口 22</p>
       </div>
       <div>
         <label class="form-label">描述 <span class="text-slate-400 font-normal">(可选)</span></label>
-        <input v-model="formData.description" type="text" placeholder="主机用途说明" class="input" />
+        <input v-model="formData.description" type="text" placeholder="请输入主机描述" class="input" />
       </div>
 
       <!-- 认证信息 -->
@@ -153,21 +153,21 @@ export default toNative(HostEditModal)
       <div v-if="!formData.credentialId" class="space-y-3">
         <div>
           <label class="form-label">用户名 <span class="text-red-500">*</span></label>
-          <input v-model="formData.user" type="text" placeholder="例如: root" required class="input" autocomplete="off" />
+          <input v-model="formData.user" type="text" placeholder="请输入用户名" required class="input" autocomplete="off" />
         </div>
         <div>
           <label class="form-label">密码 <span class="text-slate-400 font-normal">(可选)</span></label>
-          <input v-model="formData.password" type="password" :placeholder="isEdit ? '留空保持不变' : '登录密码'" class="input" autocomplete="new-password" />
+          <input v-model="formData.password" type="password" :placeholder="isEdit ? '留空则保持不变' : '请输入登录密码'" class="input" autocomplete="new-password" />
         </div>
         <div>
           <label class="form-label">SSH 私钥 <span class="text-slate-400 font-normal">(可选，优先于密码)</span></label>
           <textarea
             v-model="formData.privateKey"
             rows="5"
-            :placeholder="isEdit ? '留空保持不变' : '-----BEGIN PRIVATE KEY-----'"
+            :placeholder="isEdit ? '留空则保持不变' : '请输入 SSH 私钥'"
             class="input font-mono text-xs"
           />
-          <p class="text-xs text-slate-400 mt-1">PEM 格式私钥，设置后优先使用私钥认证</p>
+          <p class="text-xs text-slate-400 mt-1">PEM 格式私钥，以 "-----BEGIN" 开头，设置后优先使用私钥认证</p>
         </div>
       </div>
     </form>

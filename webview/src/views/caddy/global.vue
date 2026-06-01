@@ -144,13 +144,13 @@ export default toNative(CaddyGlobalConfig)
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4" :class="{ 'opacity-50 pointer-events-none': localCerts }">
           <div>
             <label class="form-label">ACME 邮箱</label>
-            <input v-model="email" type="email" class="input" placeholder="your@email.com" />
-            <p class="text-xs text-slate-400 mt-1">Let's Encrypt 证书申请邮箱，启用 HTTPS 自动签发时必填</p>
+            <input v-model="email" type="email" class="input" placeholder="请输入 ACME 邮箱" />
+            <p class="text-xs text-slate-400 mt-1">Let's Encrypt 证书申请邮箱，启用 HTTPS 自动签发时必填，例如：your@email.com</p>
           </div>
           <div>
             <label class="form-label">ACME 目录 URL</label>
-            <input v-model="acmeCA" type="text" class="input" placeholder="留空使用 Let's Encrypt" />
-            <p class="text-xs text-slate-400 mt-1">自定义 CA 目录，如 ZeroSSL 或私有 ACME CA</p>
+            <input v-model="acmeCA" type="text" class="input" placeholder="请输入 ACME 目录 URL（可选）" />
+            <p class="text-xs text-slate-400 mt-1">自定义 CA 目录，如 ZeroSSL 或私有 ACME CA，留空则使用 Let's Encrypt</p>
           </div>
         </div>
         <div class="space-y-3">
@@ -174,8 +174,8 @@ export default toNative(CaddyGlobalConfig)
           </div>
           <div v-if="onDemandTLS" class="form-row">
             <label class="form-label">Ask 鉴权端点</label>
-            <input v-model="onDemandAsk" type="text" class="input" placeholder="http://localhost:9090/tls-ask" />
-            <p class="text-xs text-slate-400 mt-1">Caddy 在申请证书前会向此 URL 发起 GET 请求，返回 2xx 则允许；留空时不配置鉴权（仅测试环境使用）</p>
+            <input v-model="onDemandAsk" type="text" class="input" placeholder="请输入 Ask 鉴权端点（可选）" />
+            <p class="text-xs text-slate-400 mt-1">Caddy 在申请证书前会向此 URL 发起 GET 请求，返回 2xx 则允许，例如：http://localhost:9090/tls-ask；留空时不配置鉴权（仅测试环境使用）</p>
           </div>
         </div>
       </div>
@@ -235,7 +235,7 @@ export default toNative(CaddyGlobalConfig)
           </div>
           <div>
             <label class="form-label">优雅关闭等待</label>
-            <input v-model="gracePeriod" type="text" class="input" placeholder="例如 10s、30s" />
+            <input v-model="gracePeriod" type="text" class="input" placeholder="请输入优雅关闭等待时间（可选）" />
             <p class="text-xs text-slate-400 mt-1">重载/关闭时等待现有连接结束的最长时间</p>
           </div>
         </div>

@@ -47,7 +47,7 @@ export default toNative(VolumeCreateModal)
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
         <label class="form-label">卷名称</label>
-        <input v-model="formData.name" type="text" placeholder="例如: my-data" required class="input" />
+        <input v-model="formData.name" type="text" placeholder="请输入数据卷名称" required class="input" />
       </div>
       <div>
         <label class="form-label">驱动类型</label>

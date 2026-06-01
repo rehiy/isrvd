@@ -107,20 +107,21 @@ export default toNative(SSLEditModal)
     <div class="max-w-3xl space-y-4 p-1">
       <div>
         <label class="form-label">SNI 域名 <span class="text-red-500">*</span></label>
-        <textarea v-model="formData.snisText" rows="3" class="input font-mono" placeholder="example.com&#10;*.example.com"></textarea>
+        <textarea v-model="formData.snisText" rows="3" class="input font-mono" placeholder="请输入 SNI（每行一个）"></textarea>
+        <p class="text-xs text-slate-400 mt-1">每行一个域名，支持通配符，例如：example.com 或 *.example.com</p>
         <p class="text-xs text-slate-400 mt-1">每行一个域名，也支持用英文逗号分隔。</p>
       </div>
 
       <div>
         <label class="form-label">证书内容 <span v-if="!isEditMode" class="text-red-500">*</span></label>
-        <textarea v-model="formData.cert" rows="8" class="input font-mono text-xs" :placeholder="isEditMode ? '留空保持不变' : '-----BEGIN CERTIFICATE-----'" autocomplete="new-password"></textarea>
-        <p class="text-xs text-slate-400 mt-1">PEM 格式证书，编辑时留空表示不修改当前证书。</p>
+        <textarea v-model="formData.cert" rows="8" class="input font-mono text-xs" :placeholder="isEditMode ? '留空则保持不变' : '请输入 PEM 格式证书内容'" autocomplete="new-password"></textarea>
+        <p class="text-xs text-slate-400 mt-1">PEM 格式证书，以 -----BEGIN CERTIFICATE----- 开头。编辑时留空表示不修改当前证书。</p>
       </div>
 
       <div>
         <label class="form-label">私钥内容 <span v-if="!isEditMode" class="text-red-500">*</span></label>
-        <textarea v-model="formData.key" rows="8" class="input font-mono text-xs" :placeholder="isEditMode ? '留空保持不变' : '-----BEGIN PRIVATE KEY-----'" autocomplete="new-password"></textarea>
-        <p class="text-xs text-slate-400 mt-1">PEM 格式私钥，编辑时留空表示不修改当前私钥。</p>
+        <textarea v-model="formData.key" rows="8" class="input font-mono text-xs" :placeholder="isEditMode ? '留空则保持不变' : '请输入 PEM 格式私钥内容'" autocomplete="new-password"></textarea>
+        <p class="text-xs text-slate-400 mt-1">PEM 格式私钥，以 -----BEGIN PRIVATE KEY----- 开头。编辑时留空表示不修改当前私钥。</p>
       </div>
 
       <div class="grid grid-cols-1 gap-4">

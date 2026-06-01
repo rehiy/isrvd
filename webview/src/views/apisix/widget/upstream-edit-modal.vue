@@ -29,11 +29,11 @@ const UPSTREAM_TYPE_OPTIONS: Array<{ value: ApisixUpstreamType; label: string; d
 ]
 
 const HASH_ON_OPTIONS: Array<{ value: ApisixUpstreamHashOn; label: string; keyPlaceholder: string; keyHint: string }> = [
-    { value: 'vars', label: '变量', keyPlaceholder: 'remote_addr', keyHint: '按 NGINX 变量取值，例如 remote_addr' },
-    { value: 'header', label: '请求头', keyPlaceholder: 'X-User-ID', keyHint: '按请求头名称取值' },
-    { value: 'cookie', label: 'Cookie', keyPlaceholder: 'session_id', keyHint: '按 Cookie 名称取值' },
-    { value: 'consumer', label: 'Consumer', keyPlaceholder: '', keyHint: '按 APISIX Consumer 取值，通常无需 key' },
-    { value: 'vars_combinations', label: '变量组合', keyPlaceholder: 'remote_addr,uri', keyHint: '按多个变量组合取值' }
+    { value: 'vars', label: '变量', keyPlaceholder: '请输入 Hash Key（可选）', keyHint: '按 NGINX 变量取值，例如：remote_addr' },
+    { value: 'header', label: '请求头', keyPlaceholder: '请输入 Hash Key（可选）', keyHint: '按请求头名称取值，例如：X-User-ID' },
+    { value: 'cookie', label: 'Cookie', keyPlaceholder: '请输入 Hash Key（可选）', keyHint: '按 Cookie 名称取值，例如：session_id' },
+    { value: 'consumer', label: 'Consumer', keyPlaceholder: '无需填写', keyHint: '按 APISIX Consumer 取值，通常无需 key' },
+    { value: 'vars_combinations', label: '变量组合', keyPlaceholder: '请输入 Hash Key（可选）', keyHint: '按多个变量组合取值，例如：remote_addr,uri' }
 ]
 
 const createNode = (): ApisixRouteUpstreamFormNode => ({ host: '', port: '', weight: 1 })
@@ -200,7 +200,7 @@ export default toNative(UpstreamEditModal)
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="form-label">名称 <span class="text-red-500">*</span></label>
-          <input v-model="formData.name" type="text" class="input" placeholder="上游名称" />
+          <input v-model="formData.name" type="text" class="input" placeholder="请输入上游名称" />
         </div>
         <div>
           <label class="form-label">负载均衡策略</label>
@@ -212,17 +212,17 @@ export default toNative(UpstreamEditModal)
 
       <div>
         <label class="form-label">描述</label>
-        <textarea v-model="formData.desc" rows="2" class="input" placeholder="上游描述"></textarea>
+        <textarea v-model="formData.desc" rows="2" class="input" placeholder="请输入上游描述（可选）"></textarea>
       </div>
 
       <div>
         <label class="form-label">超时时间（秒）</label>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-          <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" placeholder="连接 connect" />
-          <input v-model.number="formData.timeout_send" type="number" min="0" class="input" placeholder="发送 send" />
-          <input v-model.number="formData.timeout_read" type="number" min="0" class="input" placeholder="读取 read" />
+          <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" placeholder="请输入连接超时（可选）" />
+          <input v-model.number="formData.timeout_send" type="number" min="0" class="input" placeholder="请输入发送超时（可选）" />
+          <input v-model.number="formData.timeout_read" type="number" min="0" class="input" placeholder="请输入读取超时（可选）" />
         </div>
-        <p class="text-xs text-slate-400 mt-1">留空或 0 表示使用 APISIX 默认超时。</p>
+        <p class="text-xs text-slate-400 mt-1">留空或 0 表示使用 APISIX 默认超时（单位：秒）。</p>
       </div>
 
       <div v-if="formData.type === 'chash'" class="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
@@ -253,11 +253,13 @@ export default toNative(UpstreamEditModal)
           <div v-for="(node, index) in formData.nodes" :key="index" class="grid grid-cols-12 gap-2 p-3 items-end">
             <div class="col-span-12 md:col-span-5">
               <label class="form-label">Host</label>
-              <ContainerSelect :model-value="node.host" :containers="containers" placeholder="127.0.0.1 或 容器名" @update:model-value="updateNode(index, 'host', $event)" />
+              <ContainerSelect :model-value="node.host" :containers="containers" placeholder="请输入 Host（IP 或容器名）" @update:model-value="updateNode(index, 'host', $event)" />
+              <p class="text-xs text-slate-400 mt-1">例如：127.0.0.1 或 nginx</p>
             </div>
             <div class="col-span-5 md:col-span-3">
               <label class="form-label">Port</label>
-              <ContainerPortSelect :model-value="String(node.port || '')" :ports="getPortsByHost(node.host)" placeholder="8080" @update:model-value="updateNode(index, 'port', $event)" />
+              <ContainerPortSelect :model-value="String(node.port || '')" :ports="getPortsByHost(node.host)" placeholder="请输入端口" @update:model-value="updateNode(index, 'port', $event)" />
+              <p class="text-xs text-slate-400 mt-1">例如：8080</p>
             </div>
             <div class="col-span-5 md:col-span-3">
               <label class="form-label">权重</label>

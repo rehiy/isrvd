@@ -115,7 +115,7 @@ export default toNative(PluginConfigEditModal)
       </div>
       <div>
         <label class="form-label">描述</label>
-        <textarea v-model="formData.desc" rows="2" class="input resize-none" placeholder="插件配置描述"></textarea>
+        <textarea v-model="formData.desc" rows="2" class="input resize-none" placeholder="请输入插件配置描述（可选）"></textarea>
       </div>
 
       <PluginConfigPanel :plugins="formData.plugins" :available-plugins="availablePlugins" :show-import="true" :routes="routes" @update:plugins="updatePlugins" />

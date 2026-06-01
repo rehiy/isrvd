@@ -189,43 +189,43 @@ export default toNative(Config)
         </div>
         <div>
           <label class="form-label">监听地址</label>
-          <input v-model="server.listenAddr" type="text" placeholder=":8080" class="input" />
-          <p class="mt-1 text-xs text-slate-400">HTTP 服务监听端口，例如 :8080 或 127.0.0.1:8080（重启生效）</p>
+          <input v-model="server.listenAddr" type="text" placeholder="请输入监听地址" class="input" />
+          <p class="mt-1 text-xs text-slate-400">HTTP 服务监听地址，如 :8080 或 127.0.0.1:8080（重启生效）</p>
         </div>
         <div>
           <label class="form-label">JWT 认证密钥</label>
-          <input v-model="server.jwtSecret" type="password" placeholder="留空保持不变" class="input" autocomplete="new-password" />
+          <input v-model="server.jwtSecret" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
           <p class="mt-1 text-xs text-slate-400">用于签名登录令牌，修改后所有用户需要重新登录</p>
         </div>
         <div>
           <label class="form-label">JWT 有效期（秒）</label>
-          <input v-model.number="server.jwtExpiration" type="number" min="60" placeholder="86400" class="input" />
+          <input v-model.number="server.jwtExpiration" type="number" min="60" placeholder="请输入 JWT 有效期" class="input" />
           <p class="mt-1 text-xs text-slate-400">登录令牌的有效期，默认 86400（24 小时）</p>
         </div>
         <div>
           <label class="form-label">内网代理认证 Header</label>
-          <input v-model="server.proxyHeaderName" type="text" placeholder="例如 X-Auth-User（留空禁用）" class="input" />
-          <p class="mt-1 text-xs text-slate-400">启用时，将使用上游传入的 Header {{ server.proxyHeaderName }} 值作为登录用户</p>
+          <input v-model="server.proxyHeaderName" type="text" placeholder="请输入 Header 名称" class="input" />
+          <p class="mt-1 text-xs text-slate-400">启用时，将使用上游传入的 Header 值作为登录用户；留空则禁用</p>
         </div>
         <div>
           <label class="form-label">代理可信来源 CIDR</label>
-          <textarea v-model="proxyTrustedCIDRsText" rows="3" placeholder="127.0.0.1/32&#10;10.0.0.0/8" class="input font-mono text-xs"></textarea>
-          <p class="mt-1 text-xs text-slate-400">每行一个 CIDR，仅列出的来源 IP 允许使用代理认证；留空则仅信任本机（127.0.0.1）</p>
+          <textarea v-model="proxyTrustedCIDRsText" rows="3" placeholder="请输入代理可信来源 CIDR，每行一个" class="input font-mono text-xs"></textarea>
+          <p class="mt-1 text-xs text-slate-400">示例：127.0.0.1/32、10.0.0.0/8；仅列出的来源 IP 允许使用代理认证；留空则仅信任本机（127.0.0.1）</p>
         </div>
         <div>
           <label class="form-label">允许的跨域 Origin</label>
-          <textarea v-model="allowedOriginsText" rows="3" placeholder="https://example.com&#10;https://*.example.com" class="input font-mono text-xs"></textarea>
-          <p class="mt-1 text-xs text-slate-400">每行一个，支持通配符 *；留空则不限制</p>
+          <textarea v-model="allowedOriginsText" rows="3" placeholder="请输入，每行一个" class="input font-mono text-xs"></textarea>
+          <p class="mt-1 text-xs text-slate-400">示例：https://example.com、https://*.example.com；支持通配符 *；留空则不限制</p>
         </div>
         <div>
           <label class="form-label">文件上传大小限制（字节）</label>
-          <input v-model.number="server.maxUploadSize" type="number" min="0" placeholder="104857600" class="input" />
+          <input v-model.number="server.maxUploadSize" type="number" min="0" placeholder="请输入文件上传大小限制" class="input" />
           <p class="mt-1 text-xs text-slate-400">单次上传的最大文件大小，默认 104857600（100 MB）</p>
         </div>
         <div>
           <label class="form-label">基础目录</label>
-          <input v-model="server.rootDirectory" type="text" placeholder="." class="input" />
-          <p class="mt-1 text-xs text-slate-400">成员家目录及容器数据的基础目录</p>
+          <input v-model="server.rootDirectory" type="text" placeholder="请输入基础目录" class="input" />
+          <p class="mt-1 text-xs text-slate-400">成员家目录及容器数据的基础目录，默认当前目录（.）</p>
         </div>
         <div>
           <label class="form-label">监控采集间隔</label>
@@ -251,38 +251,38 @@ export default toNative(Config)
         </div>
         <div>
           <label class="form-label">颁发者地址</label>
-          <input v-model="oidc.issuerUrl" type="text" placeholder="https://idp.example.com" class="input" />
-          <p class="mt-1 text-xs text-slate-400">Issuer URL；用于自动发现 authorization_endpoint、token_endpoint、jwks_uri 等元数据；保存后立即生效</p>
+          <input v-model="oidc.issuerUrl" type="text" placeholder="请输入颁发者地址" class="input" />
+          <p class="mt-1 text-xs text-slate-400">示例：https://idp.example.com；用于自动发现 authorization_endpoint、token_endpoint、jwks_uri 等元数据；保存后立即生效</p>
         </div>
         <div>
           <label class="form-label">客户端 ID</label>
-          <input v-model="oidc.clientId" type="text" placeholder="iSrvd" class="input" />
-          <p class="mt-1 text-xs text-slate-400">Client ID；在 OIDC Provider 处注册应用时获得</p>
+          <input v-model="oidc.clientId" type="text" placeholder="请输入客户端 ID" class="input" />
+          <p class="mt-1 text-xs text-slate-400">在 OIDC Provider 处注册应用时获得</p>
         </div>
         <div>
           <label class="form-label">客户端密钥</label>
-          <input v-model="oidc.clientSecret" type="password" placeholder="留空保持不变" class="input" autocomplete="new-password" />
-          <p class="mt-1 text-xs text-slate-400">Client Secret；留空表示保持原值不变</p>
+          <input v-model="oidc.clientSecret" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
+          <p class="mt-1 text-xs text-slate-400">在 OIDC Provider 处注册应用时获得</p>
         </div>
         <div>
           <label class="form-label">回调地址</label>
-          <input v-model="oidc.redirectUrl" type="text" placeholder="https://iSrvd.example.com/api/account/oidc/callback" class="input" />
-          <p class="mt-1 text-xs text-slate-400">Redirect URL；开发环境可留空自动生成，生产环境建议填写固定 HTTPS 回调地址</p>
+          <input v-model="oidc.redirectUrl" type="text" placeholder="请输入回调地址" class="input" />
+          <p class="mt-1 text-xs text-slate-400">示例：https://isrvd.example.com/api/account/oidc/callback；开发环境可留空自动生成，生产环境建议填写固定 HTTPS 回调地址</p>
         </div>
         <div>
           <label class="form-label">用户名字段</label>
-          <input v-model="oidc.usernameClaim" type="text" placeholder="sub" class="input" />
-          <p class="mt-1 text-xs text-slate-400">Username Claim；默认 sub，该字段的值必须与 members.username 完全一致，用户不存在时登录失败</p>
+          <input v-model="oidc.usernameClaim" type="text" placeholder="请输入用户名字段" class="input" />
+          <p class="mt-1 text-xs text-slate-400">OIDC 用户信息中作为用户名的字段，默认 sub；该字段的值必须与 members.username 完全一致，用户不存在时登录失败</p>
         </div>
         <div>
           <label class="form-label">登录按钮名称</label>
-          <input v-model="oidc.loginLabel" type="text" placeholder="使用 OIDC 登录" class="input" />
-          <p class="mt-1 text-xs text-slate-400">自定义 OIDC 登录按钮显示名称；留空则使用默认文案"使用 OIDC 登录"</p>
+          <input v-model="oidc.loginLabel" type="text" placeholder="请输入登录按钮名称" class="input" />
+          <p class="mt-1 text-xs text-slate-400">自定义 OIDC 登录按钮显示名称；留空则使用默认文案「使用 OIDC 登录」</p>
         </div>
         <div>
           <label class="form-label">授权范围</label>
-          <input v-model="oidcScopes" type="text" placeholder="openid profile email" class="input" />
-          <p class="mt-1 text-xs text-slate-400">Scopes；以空格分隔，系统会自动确保包含 openid</p>
+          <input v-model="oidcScopes" type="text" placeholder="请输入授权范围" class="input" />
+          <p class="mt-1 text-xs text-slate-400">示例：openid profile email；以空格分隔，系统会自动确保包含 openid</p>
         </div>
       </section>
 
@@ -290,17 +290,17 @@ export default toNative(Config)
       <section v-if="activeTab === 'agent'" class="max-w-3xl space-y-4">
         <div>
           <label class="form-label">模型名称</label>
-          <input v-model="agent.model" type="text" placeholder="例如 gpt-4o-mini" class="input" />
+          <input v-model="agent.model" type="text" placeholder="请输入模型名称" class="input" />
           <p class="mt-1 text-xs text-slate-400">代理转发时强制改写请求体中的 model 字段，留空则不改写</p>
         </div>
         <div>
           <label class="form-label">基础地址</label>
-          <input v-model="agent.baseUrl" type="text" placeholder="https://api.openai.com/v1" class="input" />
-          <p class="mt-1 text-xs text-slate-400">OpenAI 兼容的 LLM API 基础地址，留空则禁用代理</p>
+          <input v-model="agent.baseUrl" type="text" placeholder="请输入基础地址" class="input" />
+          <p class="mt-1 text-xs text-slate-400">示例：https://api.openai.com/v1；OpenAI 兼容的 LLM API 基础地址，留空则禁用代理</p>
         </div>
         <div>
           <label class="form-label">API 密钥</label>
-          <input v-model="agent.apiKey" type="password" placeholder="留空保持不变" class="input" autocomplete="new-password" />
+          <input v-model="agent.apiKey" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
           <p class="mt-1 text-xs text-slate-400">代理转发时以 Bearer 形式注入 Authorization 请求头</p>
         </div>
       </section>
@@ -310,12 +310,12 @@ export default toNative(Config)
         <p class="text-sm font-medium text-slate-500">APISIX</p>
         <div>
           <label class="form-label">Admin URL</label>
-          <input v-model="apisix.adminUrl" type="text" placeholder="http://127.0.0.1:9180" class="input" />
-          <p class="mt-1 text-xs text-slate-400">APISIX Admin API 地址</p>
+          <input v-model="apisix.adminUrl" type="text" placeholder="请输入 Admin URL" class="input" />
+          <p class="mt-1 text-xs text-slate-400">APISIX Admin API 地址，默认 http://127.0.0.1:9180</p>
         </div>
         <div>
           <label class="form-label">Admin Key</label>
-          <input v-model="apisix.adminKey" type="password" placeholder="留空保持不变" class="input" autocomplete="new-password" />
+          <input v-model="apisix.adminKey" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
           <p class="mt-1 text-xs text-slate-400">访问 APISIX Admin API 的密钥</p>
         </div>
         <div class="border-t border-slate-200 pt-4">
@@ -323,8 +323,8 @@ export default toNative(Config)
           <div class="space-y-4">
             <div>
               <label class="form-label">Admin URL</label>
-              <input v-model="caddy.adminUrl" type="text" placeholder="http://127.0.0.1:2019" class="input" />
-              <p class="text-xs text-slate-400 mt-1">Caddy Admin API 地址（默认 127.0.0.1:2019）</p>
+              <input v-model="caddy.adminUrl" type="text" placeholder="请输入 Admin URL" class="input" />
+              <p class="text-xs text-slate-400 mt-1">Caddy Admin API 地址，默认 http://127.0.0.1:2019</p>
             </div>
           </div>
         </div>
@@ -333,13 +333,13 @@ export default toNative(Config)
           <div class="space-y-4">
             <div>
               <label class="form-label">Docker Host</label>
-              <input v-model="docker.host" type="text" placeholder="unix:///var/run/docker.sock 或 tcp://host:2375" class="input" />
-              <p class="mt-1 text-xs text-slate-400">Docker 守护进程地址，留空则使用环境变量</p>
+              <input v-model="docker.host" type="text" placeholder="请输入 Docker Host" class="input" />
+              <p class="mt-1 text-xs text-slate-400">示例：unix:///var/run/docker.sock 或 tcp://host:2375；留空则使用环境变量 DOCKER_HOST</p>
             </div>
             <div>
               <label class="form-label">容器数据根目录</label>
-              <input v-model="docker.containerRoot" type="text" placeholder="containers" class="input" />
-              <p class="mt-1 text-xs text-slate-400">用于存放容器数据卷的基础目录（相对于基础目录）</p>
+              <input v-model="docker.containerRoot" type="text" placeholder="请输入容器数据根目录" class="input" />
+              <p class="mt-1 text-xs text-slate-400">用于存放容器数据卷的基础目录（相对于基础目录），默认 containers</p>
             </div>
           </div>
         </div>
@@ -347,7 +347,7 @@ export default toNative(Config)
           <p class="text-sm font-medium text-slate-500 mb-4">应用市场</p>
           <div>
             <label class="form-label">站点 URL</label>
-            <input v-model="marketplace.url" type="text" placeholder="例如 http://21.214.54.113:8000/" class="input" />
+            <input v-model="marketplace.url" type="text" placeholder="请输入应用市场 URL" class="input" />
             <p class="mt-1 text-xs text-slate-400">应用市场页面以 iframe 方式嵌入，并通过 postMessage 协议接收安装事件</p>
           </div>
         </div>
@@ -363,8 +363,8 @@ export default toNative(Config)
           <span></span>
         </div>
         <div v-for="(link, index) in links" :key="index" class="grid grid-cols-1 sm:grid-cols-[1fr_2fr_1.2fr_auto] gap-3 items-center">
-          <input v-model="link.label" type="text" placeholder="例如 Grafana" class="input" />
-          <input v-model="link.url" type="text" placeholder="https://example.com" class="input" />
+          <input v-model="link.label" type="text" placeholder="请输入名称" class="input" />
+          <input v-model="link.url" type="text" placeholder="请输入链接 URL" class="input" />
           <!-- 图标选择器 -->
           <IconSelect v-model="link.icon" />
           <button v-if="portal.hasPerm('PATCH /api/system/config')" type="button" class="btn-icon btn-icon-red w-11 h-11" @click="removeLink(index)">

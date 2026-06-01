@@ -49,12 +49,12 @@ export default toNative(ImageBuildModal)
     <div class="space-y-4">
       <div>
         <label class="form-label">镜像标签</label>
-        <input v-model="buildTag" type="text" placeholder="例如: myapp:v1, custom-image:latest" class="input" />
+        <input v-model="buildTag" type="text" placeholder="请输入镜像标签" class="input" />
         <p class="mt-1 text-xs text-slate-400">留空则使用 custom:latest</p>
       </div>
       <div>
         <label class="form-label">Dockerfile</label>
-        <textarea v-model="buildDockerfile" rows="14" class="input font-mono text-sm" placeholder="FROM alpine:latest&#10;RUN echo hello" spellcheck="false"></textarea>
+        <textarea v-model="buildDockerfile" rows="14" class="input font-mono text-sm" placeholder="请输入 Dockerfile 内容" spellcheck="false"></textarea>
       </div>
     </div>
 

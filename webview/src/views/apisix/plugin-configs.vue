@@ -115,7 +115,7 @@ export default toNative(PluginConfigs)
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <PageSearch v-model="searchText" search-key="apisix-plugin-configs" placeholder="搜索 ID、描述或插件..." focus-color="rose" type-to-search />
+          <PageSearch v-model="searchText" search-key="apisix-plugin-configs" placeholder="请输入搜索关键词..." focus-color="rose" type-to-search />
           <button class="btn btn-secondary" @click="loadConfigs()">
             <i class="fas fa-rotate"></i>刷新
           </button>
@@ -147,7 +147,7 @@ export default toNative(PluginConfigs)
     </div>
 
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="apisix-plugin-configs" placeholder="搜索插件配置..." width-class="w-full" focus-color="rose" />
+      <PageSearch v-model="searchText" search-key="apisix-plugin-configs" placeholder="请输入搜索关键词..." width-class="w-full" focus-color="rose" />
     </div>
 
     <div v-if="loading" class="empty-state">

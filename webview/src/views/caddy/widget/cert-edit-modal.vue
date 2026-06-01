@@ -178,22 +178,25 @@ export default toNative(CertEditModal)
       <div v-if="formData.source === 'file'" class="space-y-3">
         <div>
           <label class="form-label">证书路径 <span class="text-red-500">*</span></label>
-          <input v-model="formData.certificate" type="text" class="input font-mono text-sm" placeholder="/etc/caddy/cert.pem" />
+          <input v-model="formData.certificate" type="text" class="input font-mono text-sm" placeholder="请输入证书路径" />
+          <p class="text-xs text-slate-400 mt-1">证书文件绝对路径，例如：/etc/caddy/cert.pem</p>
         </div>
         <div>
           <label class="form-label">
             私钥路径 <span v-if="!isEditMode" class="text-red-500">*</span>
           </label>
-          <input v-model="formData.keyContent" type="text" class="input font-mono text-sm" :placeholder="isEditMode ? '留空保持不变' : '/etc/caddy/key.pem'" />
+          <input v-model="formData.keyContent" type="text" class="input font-mono text-sm" :placeholder="isEditMode ? '留空则保持不变' : '请输入私钥路径'" />
+          <p v-if="!isEditMode" class="text-xs text-slate-400 mt-1">私钥文件绝对路径，例如：/etc/caddy/key.pem</p>
         </div>
         <div>
           <label class="form-label">格式</label>
-          <input v-model="formData.format" type="text" class="input" placeholder="pem（默认）" />
+          <input v-model="formData.format" type="text" class="input" placeholder="请输入证书格式（可选）" />
           <p class="text-xs text-slate-400 mt-1">证书格式，留空使用默认 PEM</p>
         </div>
         <div>
           <label class="form-label">标签</label>
-          <input v-model="formData.tags" type="text" class="input" placeholder="逗号分隔，如 example,prod" />
+          <input v-model="formData.tags" type="text" class="input" placeholder="请输入标签（可选）" />
+          <p class="text-xs text-slate-400 mt-1">多个标签用逗号分隔，例如：example,prod</p>
         </div>
       </div>
 
@@ -201,17 +204,20 @@ export default toNative(CertEditModal)
       <div v-else-if="formData.source === 'pem'" class="space-y-3">
         <div>
           <label class="form-label">证书 PEM <span class="text-red-500">*</span></label>
-          <textarea v-model="formData.certificate" rows="6" class="input font-mono text-xs leading-5" placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"></textarea>
+          <textarea v-model="formData.certificate" rows="6" class="input font-mono text-xs leading-5" placeholder="请输入证书 PEM 内容"></textarea>
+          <p class="text-xs text-slate-400 mt-1">格式：-----BEGIN CERTIFICATE----- ... -----END CERTIFICATE-----</p>
         </div>
         <div>
           <label class="form-label">
             私钥 PEM <span v-if="!isEditMode" class="text-red-500">*</span>
           </label>
-          <textarea v-model="formData.keyContent" rows="6" class="input font-mono text-xs leading-5" :placeholder="isEditMode ? '留空保持不变' : '-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----'"></textarea>
+          <textarea v-model="formData.keyContent" rows="6" class="input font-mono text-xs leading-5" :placeholder="isEditMode ? '留空则保持不变' : '请输入私钥 PEM 内容'"></textarea>
+          <p v-if="!isEditMode" class="text-xs text-slate-400 mt-1">格式：-----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----</p>
         </div>
         <div>
           <label class="form-label">标签</label>
-          <input v-model="formData.tags" type="text" class="input" placeholder="逗号分隔" />
+          <input v-model="formData.tags" type="text" class="input" placeholder="请输入标签（可选）" />
+          <p class="text-xs text-slate-400 mt-1">多个标签用逗号分隔，例如：example,prod</p>
         </div>
       </div>
 
@@ -219,8 +225,8 @@ export default toNative(CertEditModal)
       <div v-else-if="formData.source === 'automate'" class="space-y-3">
         <div>
           <label class="form-label">主机名 <span class="text-red-500">*</span></label>
-          <input v-model="formData.subject" type="text" class="input font-mono text-sm" placeholder="example.com" />
-          <p class="text-xs text-slate-400 mt-1">Caddy 将通过 ACME 自动为该主机申请并续期证书</p>
+          <input v-model="formData.subject" type="text" class="input font-mono text-sm" placeholder="请输入主机名" />
+          <p class="text-xs text-slate-400 mt-1">Caddy 将通过 ACME 自动为该主机申请并续期证书，例如：example.com</p>
         </div>
       </div>
     </div>

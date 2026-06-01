@@ -87,11 +87,11 @@ export default toNative(ServiceCreateModal)
       <div class="grid grid-cols-2 gap-3">
         <div class="col-span-2">
           <label class="form-label">镜像 <span class="text-red-500">*</span></label>
-          <ImageSelect v-model="form.image" :images="images" placeholder="选择或输入镜像名称" />
+          <ImageSelect v-model="form.image" :images="images" placeholder="请输入或选择镜像名" />
         </div>
         <div>
           <label class="form-label">服务名 <span class="text-red-500">*</span></label>
-          <input v-model="form.name" type="text" placeholder="my-service" class="input" />
+          <input v-model="form.name" type="text" placeholder="请输入服务名" class="input" />
         </div>
         <div>
           <label class="form-label">网络</label>
@@ -107,21 +107,22 @@ export default toNative(ServiceCreateModal)
       <!-- 端口映射 -->
       <div>
         <label class="form-label">端口映射</label>
-        <textarea v-model="form.ports" rows="2" placeholder="8080:80/tcp" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">每行一条，格式：宿主端口:容器端口/协议</p>
+        <textarea v-model="form.ports" rows="2" placeholder="请输入端口映射（可选）" class="input font-mono text-sm"></textarea>
+        <p class="mt-1 text-xs text-slate-400">每行一条，格式：宿主端口:容器端口/协议，例如：8080:80/tcp</p>
       </div>
 
       <!-- 目录挂载 -->
       <div>
         <label class="form-label">目录挂载</label>
-        <textarea v-model="form.mounts" rows="2" placeholder="/data:/app/data" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">每行一条，格式：宿主路径:容器路径</p>
+        <textarea v-model="form.mounts" rows="2" placeholder="请输入目录挂载（可选）" class="input font-mono text-sm"></textarea>
+        <p class="mt-1 text-xs text-slate-400">每行一条，格式：宿主路径:容器路径，例如：/data:/app/data</p>
       </div>
 
       <!-- 环境变量 -->
       <div>
         <label class="form-label">环境变量</label>
-        <textarea v-model="form.env" rows="2" placeholder="KEY=value" class="input font-mono text-sm"></textarea>
+        <textarea v-model="form.env" rows="2" placeholder="请输入环境变量（可选）" class="input font-mono text-sm"></textarea>
+        <p class="mt-1 text-xs text-slate-400">每行一条，格式：KEY=value，例如：APP_ENV=production</p>
       </div>
 
       <!-- 高级选项 -->
@@ -146,7 +147,7 @@ export default toNative(ServiceCreateModal)
           </div>
           <div>
             <label class="form-label">启动参数</label>
-            <input v-model="form.args" type="text" placeholder="覆盖默认启动参数" class="input font-mono text-sm" />
+            <input v-model="form.args" type="text" placeholder="请输入启动参数（可选）" class="input font-mono text-sm" />
           </div>
         </div>
       </div>

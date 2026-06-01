@@ -127,12 +127,13 @@ export default toNative(JobEditModal)
     <div class="max-w-3xl space-y-4 p-1">
       <div>
         <label class="form-label">任务名称 <span class="text-red-500">*</span></label>
-        <input v-model="formData.name" type="text" class="input" placeholder="如：每日备份" />
+        <input v-model="formData.name" type="text" class="input" placeholder="请输入任务名称" />
+        <p class="text-xs text-slate-400 mt-1">例如：每日备份</p>
       </div>
 
       <div>
         <label class="form-label">描述</label>
-        <textarea v-model="formData.description" rows="2" class="input resize-none" placeholder="可选说明"></textarea>
+        <textarea v-model="formData.description" rows="2" class="input resize-none" placeholder="请输入描述（可选）" />
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -141,7 +142,8 @@ export default toNative(JobEditModal)
             执行计划 <span class="text-red-500">*</span>
             <a href="https://crontab.guru" target="_blank" rel="noreferrer" class="ml-1 text-primary-500 hover:underline normal-case font-normal">格式参考</a>
           </label>
-          <input v-model="formData.schedule" type="text" class="input font-mono" placeholder="如：每天 2 点可填 0 2 * * *" />
+          <input v-model="formData.schedule" type="text" class="input font-mono" placeholder="请输入执行计划（cron 表达式）" />
+          <p class="text-xs text-slate-400 mt-1">标准 cron 表达式，例如：每天 2 点可填 0 2 * * *</p>
         </div>
         <div>
           <label class="form-label">脚本类型 <span class="text-red-500">*</span></label>
@@ -155,11 +157,13 @@ export default toNative(JobEditModal)
       <div v-if="!isDockerType" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="form-label">工作目录</label>
-          <input v-model="formData.workDir" type="text" class="input font-mono" placeholder="可选，默认当前目录" />
+          <input v-model="formData.workDir" type="text" class="input font-mono" placeholder="请输入工作目录（可选）" />
+          <p class="text-xs text-slate-400 mt-1">留空则使用当前目录</p>
         </div>
         <div>
           <label class="form-label">超时时间（秒）</label>
-          <input v-model.number="formData.timeout" type="number" min="0" class="input" placeholder="0 表示不限制" />
+          <input v-model.number="formData.timeout" type="number" min="0" class="input" placeholder="请输入超时时间（可选）" />
+          <p class="text-xs text-slate-400 mt-1">0 或留空表示不限制</p>
         </div>
       </div>
 
@@ -167,18 +171,21 @@ export default toNative(JobEditModal)
       <template v-if="formData.type === 'DOCKER_TMP'">
         <div>
           <label class="form-label">镜像名 <span class="text-red-500">*</span></label>
-          <ImageSelect v-model="formData.image" :images="images" placeholder="选择或输入镜像名，如 python:3.12-slim" />
+          <ImageSelect v-model="formData.image" :images="images" placeholder="请输入或选择镜像名" />
+          <p class="text-xs text-slate-400 mt-1">例如：python:3.12-slim、nginx:alpine</p>
         </div>
         <div>
           <label class="form-label">
             额外挂载
             <span class="text-xs font-normal text-slate-400 normal-case ml-1">每行 /host:/container[:ro]</span>
           </label>
-          <textarea v-model="formData.volumes" rows="2" class="input font-mono resize-none" placeholder="/data/files:/data:ro&#10;/config:/etc/app:ro" />
+          <textarea v-model="formData.volumes" rows="2" class="input font-mono resize-none" placeholder="请输入挂载配置（可选）" />
+          <p class="text-xs text-slate-400 mt-1">例如：/data/files:/data:ro</p>
         </div>
         <div>
           <label class="form-label">超时时间（秒）</label>
-          <input v-model.number="formData.timeout" type="number" min="0" class="input" placeholder="0 表示不限制" />
+          <input v-model.number="formData.timeout" type="number" min="0" class="input" placeholder="请输入超时时间（可选）" />
+          <p class="text-xs text-slate-400 mt-1">0 或留空表示不限制</p>
         </div>
       </template>
 
@@ -186,18 +193,20 @@ export default toNative(JobEditModal)
       <template v-if="formData.type === 'DOCKER_CTR'">
         <div>
           <label class="form-label">目标容器 <span class="text-red-500">*</span></label>
-          <ContainerSelect v-model="formData.container" :containers="containers" placeholder="选择或输入容器名" />
+          <ContainerSelect v-model="formData.container" :containers="containers" placeholder="请输入或选择容器名" />
         </div>
         <div>
           <label class="form-label">超时时间（秒）</label>
-          <input v-model.number="formData.timeout" type="number" min="0" class="input" placeholder="0 表示不限制" />
+          <input v-model.number="formData.timeout" type="number" min="0" class="input" placeholder="请输入超时时间（可选）" />
+          <p class="text-xs text-slate-400 mt-1">0 或留空表示不限制</p>
         </div>
       </template>
 
       <div>
         <label class="form-label">脚本内容 <span class="text-red-500">*</span></label>
         <div class="editor-container">
-          <Codemirror v-model="formData.content" :style="{ height: '240px' }" :disabled="modalLoading" placeholder="输入脚本内容，如：#!/bin/bash&#10;echo &quot;hello&quot;" />
+          <Codemirror v-model="formData.content" :style="{ height: '240px' }" :disabled="modalLoading" placeholder="请输入脚本内容" />
+          <p class="text-xs text-slate-400 mt-1">例如：#!/bin/bash<br>echo "hello"</p>
         </div>
       </div>
 

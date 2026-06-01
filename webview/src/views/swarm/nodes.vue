@@ -150,7 +150,7 @@ export default toNative(Nodes)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <PageSearch v-model="searchText" search-key="swarm-nodes" placeholder="搜索主机名、ID、角色、状态或 IP..." focus-color="blue" type-to-search />
+            <PageSearch v-model="searchText" search-key="swarm-nodes" placeholder="请输入搜索关键词..." focus-color="blue" type-to-search />
             <button class="btn btn-secondary" @click="loadNodes">
               <i class="fas fa-rotate"></i>刷新
             </button>
@@ -181,7 +181,7 @@ export default toNative(Nodes)
         </div>
       </div>
       <div class="mobile-search">
-        <PageSearch v-model="searchText" search-key="swarm-nodes" placeholder="搜索主机名、ID、角色、状态或 IP..." width-class="w-full" focus-color="blue" />
+        <PageSearch v-model="searchText" search-key="swarm-nodes" placeholder="请输入搜索关键词..." width-class="w-full" focus-color="blue" />
       </div>
 
       <div v-if="loading" class="empty-state">
@@ -342,7 +342,7 @@ export default toNative(Nodes)
       <!-- Manager 地址 -->
       <div>
         <label class="form-label">Manager 地址</label>
-        <input v-model="joinAddr" type="text" class="input" placeholder="例如: 192.168.1.100:2377" />
+        <input v-model="joinAddr" type="text" class="input" placeholder="请输入 Manager 地址" />
         <p class="mt-1 text-xs text-slate-400">留空则使用占位符，填写后命令可直接使用</p>
       </div>
       <!-- 加入命令 -->
