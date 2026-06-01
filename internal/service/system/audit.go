@@ -73,9 +73,6 @@ func NewAuditService() *AuditService {
 		jsonl.WithBufferSize(4096),
 		jsonl.WithFlushInterval(time.Second),
 		jsonl.WithAsync(maxAuditBufferSize),
-		jsonl.WithErrorHandler(func(err error) {
-			logman.Warn("audit log background write failed", "error", err)
-		}),
 	)
 	if err != nil {
 		logman.Warn("audit log store init failed", "dir", dir, "error", err)

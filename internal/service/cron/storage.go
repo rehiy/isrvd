@@ -47,9 +47,6 @@ func NewStore() *Store {
 		jsonl.WithBufferSize(4096),
 		jsonl.WithFlushInterval(time.Second),
 		jsonl.WithAsync(cronLogChannel),
-		jsonl.WithErrorHandler(func(err error) {
-			logger.Warn("计划任务日志后台写入失败", "error", err)
-		}),
 	)
 	if err != nil {
 		logger.Warn("Cron log store init failed", "dir", dir, "error", err)
