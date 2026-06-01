@@ -360,7 +360,9 @@
   /* 通用徽章基类 */
   .badge          { @apply inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium; }
   .badge-primary  { @apply bg-primary-100 text-primary-700; }
+  .badge-success  { @apply bg-emerald-100 text-emerald-700; }
   .badge-warning  { @apply bg-amber-100 text-amber-700; }
+  .badge-muted    { @apply bg-slate-100 text-slate-600; }
 
 
   /* ============================================================

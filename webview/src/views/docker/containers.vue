@@ -111,6 +111,10 @@ class Containers extends Vue {
         return `Compose: ${project}${service ? ` / ${service}` : ''}`
     }
 
+    stateBadgeClass(state: string) {
+        return state === 'running' ? 'badge-success' : 'badge-muted'
+    }
+
     composeEditTitle(container: DockerContainerInfo) {
         return container.isSwarm
             ? '由 Swarm 管理，不支持直接编辑'
@@ -232,14 +236,8 @@ export default toNative(Containers)
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex flex-wrap gap-1">
-                    <span
-                      :class="['text-[11px]', ct.state === 'running' ? 'text-emerald-600 font-medium' : 'text-slate-500']"
-                      :title="ct.status"
-                    >{{ ct.state }}</span>
-                    <span v-if="isCompose(ct)" class="badge badge-warning" :title="composeBadgeTitle(ct)">
-                      <i class="fas fa-layer-group text-[10px]"></i>
-                      <span>Compose</span>
-                    </span>
+                    <span :class="['badge', stateBadgeClass(ct.state)]" :title="ct.status">{{ ct.state }}</span>
+                    <span v-if="isCompose(ct)" class="badge badge-warning" :title="composeBadgeTitle(ct)">Compose</span>
                   </div>
                 </td>
                 <td class="px-4 py-3 font-mono text-xs text-slate-600">
@@ -302,14 +300,8 @@ export default toNative(Containers)
 
             <!-- 状态 -->
             <div class="flex items-center gap-1 flex-wrap mb-3">
-              <span
-                :class="['text-xs', ct.state === 'running' ? 'text-emerald-600 font-medium' : 'text-slate-500']"
-                :title="ct.status"
-              >{{ ct.state }}</span>
-              <span v-if="isCompose(ct)" class="badge badge-warning" :title="composeBadgeTitle(ct)">
-                <i class="fas fa-layer-group text-[10px]"></i>
-                <span>Compose</span>
-              </span>
+              <span :class="['badge', stateBadgeClass(ct.state)]" :title="ct.status">{{ ct.state }}</span>
+              <span v-if="isCompose(ct)" class="badge badge-warning" :title="composeBadgeTitle(ct)">Compose</span>
             </div>
             <!-- 创建时间 -->
             <div class="flex items-center gap-2 mb-3">
