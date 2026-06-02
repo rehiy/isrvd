@@ -125,12 +125,14 @@ export default toNative(SSLEditModal)
       </div>
 
       <div class="grid grid-cols-1 gap-4">
-        <div>
-          <label class="form-label">状态</label>
-          <select v-model.number="formData.status" class="input">
-            <option :value="1">启用</option>
-            <option :value="0">禁用</option>
-          </select>
+        <div class="toggle-row">
+          <div>
+            <span class="text-sm text-slate-600">状态</span>
+            <p class="text-xs text-slate-400 mt-0.5">启用后证书生效</p>
+          </div>
+          <button type="button" class="toggle" :class="{ 'toggle-on': formData.status === 1 }" role="switch" :aria-checked="formData.status === 1" @click="formData.status = formData.status === 1 ? 0 : 1">
+            <span class="toggle-thumb" />
+          </button>
         </div>
       </div>
     </div>

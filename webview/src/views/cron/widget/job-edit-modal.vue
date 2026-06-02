@@ -210,12 +210,14 @@ export default toNative(JobEditModal)
         </div>
       </div>
 
-      <div>
-        <label class="form-label">状态</label>
-        <select v-model="formData.enabled" class="input">
-          <option :value="true">启用</option>
-          <option :value="false">禁用</option>
-        </select>
+      <div class="toggle-row">
+        <div>
+          <span class="text-sm text-slate-600">状态</span>
+          <p class="text-xs text-slate-400 mt-0.5">启用后任务将按计划执行</p>
+        </div>
+        <button type="button" class="toggle" :class="{ 'toggle-on': formData.enabled }" role="switch" :aria-checked="formData.enabled" @click="formData.enabled = !formData.enabled">
+          <span class="toggle-thumb" />
+        </button>
       </div>
     </div>
   </BaseModal>

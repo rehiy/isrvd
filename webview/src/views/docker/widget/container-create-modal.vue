@@ -269,12 +269,14 @@ export default toNative(ContainerCreateModal)
           </span>
         </button>
         <div v-if="showSecurity" class="mt-4 space-y-4">
-          <div>
-            <label class="form-label">特权模式</label>
-            <select v-model="formData.privileged" class="input">
-              <option :value="false">禁用</option>
-              <option :value="true">启用（⚠️ 赋予容器所有主机权限，谨慎使用）</option>
-            </select>
+          <div class="toggle-row">
+            <div>
+              <span class="text-sm text-slate-600">特权模式</span>
+              <p class="text-xs text-slate-400 mt-0.5">⚠️ 赋予容器所有主机权限，谨慎使用</p>
+            </div>
+            <button type="button" class="toggle" :class="{ 'toggle-on': formData.privileged }" role="switch" :aria-checked="formData.privileged" @click="formData.privileged = !formData.privileged">
+              <span class="toggle-thumb" />
+            </button>
           </div>
           <div>
             <label class="form-label">添加权限 (CapAdd)</label>

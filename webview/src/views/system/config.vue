@@ -182,12 +182,14 @@ export default toNative(Config)
     <form v-if="portal.hasPerm('PATCH /api/system/config')" class="card-body" @submit.prevent="saveAll">
       <!-- 服务器配置 -->
       <section v-if="activeTab === 'server'" class="max-w-3xl space-y-4">
-        <div>
-          <label class="form-label">Debug 模式</label>
-          <select v-model="server.debug" class="input">
-            <option :value="false">禁用</option>
-            <option :value="true">启用</option>
-          </select>
+        <div class="toggle-row">
+          <div>
+            <span class="text-sm text-slate-600">Debug 模式</span>
+            <p class="text-xs text-slate-400 mt-0.5">开启后输出详细调试日志</p>
+          </div>
+          <button type="button" class="toggle" :class="{ 'toggle-on': server.debug }" role="switch" :aria-checked="server.debug" @click="server.debug = !server.debug">
+            <span class="toggle-thumb" />
+          </button>
         </div>
         <div>
           <label class="form-label">监听地址</label>
@@ -244,12 +246,14 @@ export default toNative(Config)
 
       <!-- OIDC 配置 -->
       <section v-if="activeTab === 'oidc'" class="max-w-3xl space-y-4">
-        <div>
-          <label class="form-label">启用 OIDC 登录</label>
-          <select v-model="oidc.enabled" class="input">
-            <option :value="false">禁用</option>
-            <option :value="true">启用</option>
-          </select>
+        <div class="toggle-row">
+          <div>
+            <span class="text-sm text-slate-600">启用 OIDC 登录</span>
+            <p class="text-xs text-slate-400 mt-0.5">使用 OpenID Connect 进行单点登录</p>
+          </div>
+          <button type="button" class="toggle" :class="{ 'toggle-on': oidc.enabled }" role="switch" :aria-checked="oidc.enabled" @click="oidc.enabled = !oidc.enabled">
+            <span class="toggle-thumb" />
+          </button>
         </div>
         <div>
           <label class="form-label">颁发者地址</label>
