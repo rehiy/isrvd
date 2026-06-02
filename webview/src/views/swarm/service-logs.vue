@@ -73,7 +73,7 @@ export default toNative(ServiceLogs)
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+          <div class="tab-group">
             <button v-if="portal.hasPerm('GET /api/swarm/service/:id')" :class="['tab-btn', activeTab() === 'swarm-service' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('swarm-service')">
               <i class="fas fa-circle-info"></i><span>详情</span>
             </button>
@@ -102,7 +102,7 @@ export default toNative(ServiceLogs)
             <i class="fas fa-rotate text-sm"></i>
           </button>
         </div>
-        <div class="flex justify-center gap-1 bg-slate-100 p-1 rounded-lg">
+        <div class="tab-group">
           <button v-if="portal.hasPerm('GET /api/swarm/service/:id')" :class="['tab-btn', activeTab() === 'swarm-service' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('swarm-service')">
             <i class="fas fa-circle-info"></i><span>详情</span>
           </button>

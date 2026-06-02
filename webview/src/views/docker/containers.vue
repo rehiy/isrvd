@@ -150,7 +150,7 @@ export default toNative(Containers)
           </div>
           <div class="flex items-center gap-2">
             <PageSearch v-model="searchText" search-key="docker-containers" placeholder="搜索容器名称、ID、镜像或端口..." focus-color="emerald" type-to-search />
-            <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+            <div class="tab-group">
               <button :class="['tab-btn', !showAll ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="showAll = false; loadContainers()">
                 <i class="fas fa-play"></i><span>运行中</span>
               </button>

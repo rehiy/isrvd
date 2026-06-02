@@ -187,7 +187,7 @@ export default toNative(ComposeDeploy)
       <!-- 表单 -->
       <div class="p-4 md:p-6 space-y-4 max-w-5xl">
         <!-- 部署目标 -->
-        <div class="inline-flex gap-1 bg-slate-100 p-1 rounded-lg">
+        <div class="tab-group inline-flex">
           <button type="button" :class="['tab-btn', target === 'docker' ? 'tab-btn-active text-amber-600' : 'tab-btn-inactive']" @click="selectTarget('docker')">
             <i class="fab fa-docker"></i><span>单机容器</span>
           </button>
@@ -217,7 +217,7 @@ export default toNative(ComposeDeploy)
             <span class="text-xs text-slate-400 flex-shrink-0">或</span>
             <!-- 隐藏真实 input，用自定义按钮触发 -->
             <label
-              :class="['flex-shrink-0 flex items-center gap-1.5 h-[46px] px-4 rounded-xl border text-sm font-medium cursor-pointer transition-colors select-none',
+              :class="['inline-flex items-center gap-1.5 h-[46px] px-4 rounded-xl border text-sm font-medium cursor-pointer transition-colors select-none',
                        loading ? 'opacity-50 cursor-not-allowed' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50',
                        initFile ? 'border-blue-300 bg-blue-50 text-blue-600' : '']"
             >
