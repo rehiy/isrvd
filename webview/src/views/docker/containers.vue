@@ -144,11 +144,11 @@ export default toNative(Containers)
               <i class="fas fa-cube text-white"></i>
             </div>
             <div>
-              <h1 class="text-lg font-semibold text-slate-800">容器管理</h1>
+              <h1 class="text-lg font-semibold text-slate-800 truncate">容器管理</h1>
               <p class="text-xs text-slate-500">管理 Docker 容器的生命周期与运行状态</p>
             </div>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-shrink-0">
             <PageSearch v-model="searchText" search-key="docker-containers" placeholder="搜索容器名称、ID、镜像或端口..." focus-color="emerald" type-to-search />
             <div class="tab-group">
               <button :class="['tab-btn', !showAll ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="showAll = false; loadContainers()">
@@ -201,15 +201,17 @@ export default toNative(Containers)
         <PageSearch v-model="searchText" search-key="docker-containers" placeholder="搜索容器名称、镜像或端口..." width-class="w-full" focus-color="emerald" />
       </div>
       <!-- Loading -->
-      <div v-if="loading" class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
-        <p class="text-slate-500">加载中...</p>
+      <div v-if="loading" class="card-body">
+        <div class="empty-state">
+          <div class="w-12 h-12 spinner mb-3"></div>
+          <p class="text-slate-500">加载中...</p>
+        </div>
       </div>
 
       <!-- Container List -->
-      <div v-else-if="filteredContainers.length > 0">
+      <template v-else-if="filteredContainers.length > 0">
         <!-- 桌面端表格视图 -->
-        <div class="hidden md:block overflow-x-auto">
+        <div class="card-table hidden md:block">
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
@@ -284,7 +286,7 @@ export default toNative(Containers)
         </div>
 
         <!-- 移动端卡片视图 -->
-        <div class="md:hidden space-y-3 p-4">
+        <div class="card-body md:hidden space-y-3">
           <div v-for="ct in filteredContainers" :key="ct.id" class="card-interactive">
             <!-- 顶部：名称和状态 -->
             <div class="card-info-row">
@@ -349,15 +351,17 @@ export default toNative(Containers)
             </div>
           </div>
         </div>
-      </div>
+      </template>
 
       <!-- Empty State -->
-      <div v-else class="empty-state">
-        <div class="empty-state-icon">
-          <i class="fab fa-docker text-4xl text-slate-300"></i>
+      <div v-else class="card-body">
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <i class="fab fa-docker text-4xl text-slate-300"></i>
+          </div>
+          <p class="text-slate-600 font-medium mb-1">{{ containers.length === 0 ? '暂无容器' : '未找到匹配容器' }}</p>
+          <p class="text-sm text-slate-400">{{ containers.length === 0 ? '点击「新建容器」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ containers.length === 0 ? '暂无容器' : '未找到匹配容器' }}</p>
-        <p class="text-sm text-slate-400">{{ containers.length === 0 ? '点击「新建容器」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
     </div>
 

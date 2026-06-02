@@ -114,7 +114,7 @@ export default toNative(ServiceLogs)
     </div>
 
     <!-- 内容 -->
-    <div class="p-4 md:p-6 space-y-3">
+    <div class="card-body space-y-3">
       <div class="flex items-center gap-2">
         <label class="text-xs text-slate-500 flex-shrink-0">最近行数</label>
         <select v-model="logsTail" class="w-24 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-700" @change="loadLogs()">

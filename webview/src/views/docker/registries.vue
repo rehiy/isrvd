@@ -120,11 +120,11 @@ export default toNative(Registries)
               <i class="fas fa-warehouse text-white"></i>
             </div>
             <div>
-              <h1 class="text-lg font-semibold text-slate-800">镜像仓库</h1>
+              <h1 class="text-lg font-semibold text-slate-800 truncate">镜像仓库</h1>
               <p class="text-xs text-slate-500">管理私有镜像仓库认证信息与镜像加速器</p>
             </div>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-shrink-0">
             <PageSearch v-model="searchText" search-key="docker-registries" placeholder="搜索仓库名称、地址或账号..." focus-color="purple" type-to-search />
             <button class="btn btn-secondary" @click="loadRegistries()">
               <i class="fas fa-rotate"></i>刷新
@@ -161,15 +161,17 @@ export default toNative(Registries)
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
-        <p class="text-slate-500">加载中...</p>
+      <div v-if="loading" class="card-body">
+        <div class="empty-state">
+          <div class="w-12 h-12 spinner mb-3"></div>
+          <p class="text-slate-500">加载中...</p>
+        </div>
       </div>
 
       <!-- Registry Table -->
-      <div v-else>
+      <template v-else>
         <!-- 桌面端表格视图 -->
-        <div class="hidden md:block overflow-x-auto">
+        <div class="card-table hidden md:block">
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
@@ -246,7 +248,7 @@ export default toNative(Registries)
         </div>
 
         <!-- 移动端卡片视图 -->
-        <div class="md:hidden space-y-3 p-4">
+        <div class="card-body md:hidden space-y-3">
           <!-- Docker Hub 卡片 -->
           <div v-if="showDockerHub" class="card-interactive">
             <div class="flex items-center justify-between mb-3">
@@ -321,14 +323,14 @@ export default toNative(Registries)
           </div>
         </div>
 
-        <div v-if="!showDockerHub && filteredRegistries.length === 0" class="hidden md:flex flex-col items-center justify-center py-20">
+        <div v-if="!showDockerHub && filteredRegistries.length === 0" class="hidden md:flex flex-col items-center justify-center py-10">
           <div class="empty-state-icon">
             <i class="fas fa-warehouse text-4xl text-slate-300"></i>
           </div>
           <p class="text-slate-600 font-medium mb-1">{{ registries.length === 0 ? '暂无镜像仓库' : '未找到匹配仓库' }}</p>
           <p class="text-sm text-slate-400">{{ registries.length === 0 ? '点击「新建仓库」创建私有镜像仓库' : '尝试更换关键词或清空搜索条件' }}</p>
         </div>
-      </div>
+      </template>
     </div>
 
     <RegistryEditModal ref="editModalRef" @success="loadRegistries" />

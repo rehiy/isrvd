@@ -148,7 +148,7 @@ class MonitorPage extends Vue {
             if (ok) {
                 this.updateCharts()
             }
-        } catch (e) {
+        } catch {
             // ignore poll error
         } finally {
             this.polling = false
@@ -270,24 +270,30 @@ export default toNative(MonitorPage)
       </div>
     </div>
 
-    <div class="card-body p-4 md:p-6">
-      <div v-if="loading" class="flex items-center justify-center py-10">
-        <div class="w-8 h-8 spinner mr-2"></div>
-        <span class="text-slate-400 text-sm">加载中...</span>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
       </div>
+    </div>
 
-      <div v-show="!loading && ready" class="space-y-5">
-        <SystemCpuMem ref="cpuMemRef" :range-seconds="selectedRange" />
-        <SystemGpu ref="gpuRef" :range-seconds="selectedRange" />
-        <SystemDisk ref="diskRef" :range-seconds="selectedRange" />
-        <SystemNetwork ref="networkRef" :range-seconds="selectedRange" />
-        <SystemGo ref="goRef" :range-seconds="selectedRange" />
+    <div v-else-if="!ready" class="card-body">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-triangle-exclamation text-3xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-600 font-medium mb-1">获取系统信息失败</p>
+        <p class="text-sm text-slate-400">请检查服务状态后刷新重试</p>
       </div>
+    </div>
 
-      <div v-if="!loading && !ready" class="flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50">
-        <i class="fas fa-triangle-exclamation text-2xl text-slate-300"></i>
-        <p class="text-sm text-slate-500">获取系统信息失败</p>
-      </div>
+    <!-- 图表组件用 v-show 保持挂载，避免切换时销毁重建 -->
+    <div v-show="!loading && ready" class="card-body space-y-4">
+      <SystemCpuMem ref="cpuMemRef" :range-seconds="selectedRange" />
+      <SystemGpu ref="gpuRef" :range-seconds="selectedRange" />
+      <SystemDisk ref="diskRef" :range-seconds="selectedRange" />
+      <SystemNetwork ref="networkRef" :range-seconds="selectedRange" />
+      <SystemGo ref="goRef" :range-seconds="selectedRange" />
     </div>
   </div>
 </template>

@@ -178,23 +178,28 @@ export default toNative(FileExplorer)
       </div>
 
       <!-- Loading State -->
-      <div v-if="portal.filerLoading" class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
-        <p class="text-slate-500">加载中...</p>
+      <div v-if="portal.filerLoading" class="card-body">
+        <div class="empty-state">
+          <div class="w-12 h-12 spinner mb-3"></div>
+          <p class="text-slate-500">加载中...</p>
+        </div>
       </div>
 
-      <div v-else>
-        <!-- File List -->
-        <!-- Empty State -->
-        <div v-if="filteredFiles.length === 0" class="empty-state">
+      <!-- Empty State -->
+      <div v-else-if="filteredFiles.length === 0" class="card-body">
+        <div class="empty-state">
           <div class="empty-state-icon">
             <i class="fas fa-folder-open text-4xl text-slate-300"></i>
           </div>
           <p class="text-slate-600 font-medium mb-1">{{ files.length === 0 ? '此目录为空' : '未找到匹配文件' }}</p>
           <p class="text-sm text-slate-400">{{ files.length === 0 ? '上传文件或创建新目录开始使用' : '尝试更换关键词或清空搜索条件' }}</p>
         </div>
+      </div>
+
+      <!-- 文件列表 -->
+      <template v-else>
         <!-- 桌面端表格视图 -->
-        <div v-else class="hidden md:block overflow-x-auto">
+        <div class="card-table hidden md:block">
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
@@ -308,7 +313,7 @@ export default toNative(FileExplorer)
         </div>
 
         <!-- 移动端卡片视图 -->
-        <div v-if="filteredFiles.length > 0" class="md:hidden space-y-3 p-4">
+        <div class="card-body md:hidden space-y-3">
           <div v-for="file in filteredFiles" :key="file.path" class="card-interactive">
             <!-- 顶部：文件信息和图标 -->
             <div class="card-info-row">
@@ -407,7 +412,7 @@ export default toNative(FileExplorer)
             </div>
           </div>
         </div>
-      </div>
+      </template>
     </div>
 
     <!-- Modals -->

@@ -88,11 +88,11 @@ export default toNative(Whitelist)
             <i class="fas fa-shield-halved text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">白名单管理</h1>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">白名单管理</h1>
             <p class="text-xs text-slate-500">配置路由级别的 Consumer 访问白名单</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-shrink-0">
           <PageSearch v-model="searchText" search-key="apisix-whitelist" placeholder="搜索路由或用户..." focus-color="amber" type-to-search />
           <button class="btn btn-secondary" @click="loadWhitelist()">
             <i class="fas fa-rotate"></i>刷新
@@ -110,9 +110,11 @@ export default toNative(Whitelist)
             <p class="text-xs text-slate-500 truncate">路由级 Consumer 白名单</p>
           </div>
         </div>
-        <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadWhitelist()">
-          <i class="fas fa-rotate text-sm"></i>
-        </button>
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadWhitelist()">
+            <i class="fas fa-rotate text-sm"></i>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -122,24 +124,28 @@ export default toNative(Whitelist)
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
     </div>
 
     <!-- Empty -->
-    <div v-else-if="filteredWhitelist.length === 0" class="empty-state">
-      <div class="empty-state-icon">
-        <i class="fas fa-shield-halved text-4xl text-slate-300"></i>
+    <div v-else-if="filteredWhitelist.length === 0" class="card-body">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-shield-halved text-4xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-600 font-medium mb-1">{{ whitelist.length === 0 ? '暂无白名单数据' : '未找到匹配白名单' }}</p>
+        <p class="text-sm text-slate-400">{{ whitelist.length === 0 ? '配置路由的 Consumer 白名单后将在此显示' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
-      <p class="text-slate-600 font-medium mb-1">{{ whitelist.length === 0 ? '暂无白名单数据' : '未找到匹配白名单' }}</p>
-      <p class="text-sm text-slate-400">{{ whitelist.length === 0 ? '配置路由的 Consumer 白名单后将在此显示' : '尝试更换关键词或清空搜索条件' }}</p>
     </div>
 
     <!-- 列表 -->
-    <div v-else class="space-y-3">
+    <template v-else>
       <!-- 桌面端表格 -->
-      <div class="hidden md:block overflow-x-auto">
+      <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
@@ -179,7 +185,7 @@ export default toNative(Whitelist)
       </div>
 
       <!-- 移动端卡片 -->
-      <div class="md:hidden space-y-3 p-4">
+      <div class="card-body md:hidden space-y-3">
         <div v-for="route in filteredWhitelist" :key="route.id" class="card-interactive">
           <!-- 顶部：路由标识 -->
           <div class="flex items-center justify-between mb-3">
@@ -213,6 +219,6 @@ export default toNative(Whitelist)
           </div>
         </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>

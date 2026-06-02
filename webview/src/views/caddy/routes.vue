@@ -168,15 +168,19 @@ export default toNative(CaddyRoutes)
     <div class="mobile-search">
       <PageSearch v-model="searchText" search-key="caddy-routes" placeholder="请输入搜索关键词..." width-class="w-full" focus-color="indigo" />
     </div>
-    <div v-if="loading" class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
-    <div v-else-if="filteredRoutes.length === 0" class="empty-state">
-      <div class="empty-state-icon"><i class="fas fa-route text-4xl text-slate-300"></i></div>
-      <p class="text-slate-600 font-medium mb-1">{{ routes.length === 0 ? '暂无路由' : '未找到匹配路由' }}</p>
-      <p class="text-sm text-slate-400">{{ routes.length === 0 ? '点击「新建路由」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
     </div>
-    <div v-else class="space-y-3">
+    <div v-else-if="filteredRoutes.length === 0" class="card-body">
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-route text-4xl text-slate-300"></i></div>
+        <p class="text-slate-600 font-medium mb-1">{{ routes.length === 0 ? '暂无路由' : '未找到匹配路由' }}</p>
+        <p class="text-sm text-slate-400">{{ routes.length === 0 ? '点击「新建路由」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
+      </div>
+    </div>
+    <template v-else>
       <!-- 桌面端表格 -->
-      <div class="hidden md:block overflow-x-auto">
+      <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
@@ -214,7 +218,7 @@ export default toNative(CaddyRoutes)
       </div>
 
       <!-- 移动端卡片 -->
-      <div class="md:hidden space-y-3 p-4">
+      <div class="card-body md:hidden space-y-3">
         <div v-for="route in filteredRoutes" :key="route.index" class="card-interactive">
           <div class="card-info-row">
             <div class="list-icon bg-indigo-400">
@@ -253,7 +257,7 @@ export default toNative(CaddyRoutes)
           </div>
         </div>
       </div>
-    </div>
+    </template>
   </div>
 
   <RouteEditModal ref="editModalRef" @success="loadRoutes" />

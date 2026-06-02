@@ -107,11 +107,11 @@ export default toNative(Networks)
             <i class="fas fa-network-wired text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">网络管理</h1>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">网络管理</h1>
             <p class="text-xs text-slate-500">管理 Docker 网络，配置容器间通信</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-shrink-0">
           <PageSearch v-model="searchText" search-key="docker-networks" placeholder="搜索网络名称、ID、驱动或子网..." focus-color="purple" type-to-search />
           <button class="btn btn-secondary" @click="loadNetworks()">
             <i class="fas fa-rotate"></i>刷新
@@ -148,15 +148,17 @@ export default toNative(Networks)
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
     </div>
 
     <!-- Network List -->
-    <div v-else-if="filteredNetworks.length > 0" class="space-y-3">
+    <template v-else-if="filteredNetworks.length > 0">
       <!-- 桌面端表格视图 -->
-      <div class="hidden md:block overflow-x-auto">
+      <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
@@ -203,7 +205,7 @@ export default toNative(Networks)
       </div>
 
       <!-- 移动端卡片视图 -->
-      <div class="md:hidden space-y-3 p-4">
+      <div class="card-body md:hidden space-y-3">
         <div v-for="net in filteredNetworks" :key="net.id" class="card-interactive">
           <!-- 顶部：网络信息和图标 -->
           <div class="card-info-row">
@@ -246,15 +248,17 @@ export default toNative(Networks)
           </div>
         </div>
       </div>
-    </div>
+    </template>
 
     <!-- Empty State -->
-    <div v-else class="empty-state">
-      <div class="empty-state-icon">
-        <i class="fas fa-network-wired text-4xl text-slate-300"></i>
+    <div v-else class="card-body">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-network-wired text-4xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-600 font-medium mb-1">{{ networks.length === 0 ? '暂无自定义网络' : '未找到匹配网络' }}</p>
+        <p class="text-sm text-slate-400">{{ networks.length === 0 ? '点击「新建网络」添加自定义网络' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
-      <p class="text-slate-600 font-medium mb-1">{{ networks.length === 0 ? '暂无自定义网络' : '未找到匹配网络' }}</p>
-      <p class="text-sm text-slate-400">{{ networks.length === 0 ? '点击「新建网络」添加自定义网络' : '尝试更换关键词或清空搜索条件' }}</p>
     </div>
   </div>
 

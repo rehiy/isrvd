@@ -97,7 +97,7 @@ export default toNative(SSHHosts)
             <i class="fas fa-server text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">主机连接</h1>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">主机连接</h1>
             <p class="text-xs text-slate-500">通过 SSH 协议管理主机，在浏览器中连接远程服务器</p>
           </div>
         </div>
@@ -122,7 +122,7 @@ export default toNative(SSHHosts)
             <p class="text-xs text-slate-500 truncate">通过 SSH 协议管理主机</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="flex items-center gap-1 flex-shrink-0">
           <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadHosts()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
@@ -139,14 +139,26 @@ export default toNative(SSHHosts)
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
     </div>
 
-    <div v-else>
+    <div v-else-if="filteredHosts.length === 0" class="card-body">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-server text-4xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-600 font-medium mb-1">{{ hosts.length === 0 ? '暂无主机连接' : '未找到匹配主机' }}</p>
+        <p class="text-sm text-slate-400">{{ hosts.length === 0 ? '点击右上角「添加主机」开始配置' : '尝试更换关键词或清空搜索条件' }}</p>
+      </div>
+    </div>
+
+    <template v-else>
       <!-- 桌面端表格 -->
-      <div class="hidden md:block overflow-x-auto">
+      <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
@@ -201,7 +213,7 @@ export default toNative(SSHHosts)
       </div>
 
       <!-- 移动端卡片 -->
-      <div class="md:hidden space-y-3 p-4">
+      <div class="card-body md:hidden space-y-3">
         <div v-for="host in filteredHosts" :key="host.id" class="card-interactive">
           <div class="card-info-row">
             <div class="list-icon bg-teal-400 flex-shrink-0">
@@ -241,21 +253,8 @@ export default toNative(SSHHosts)
             </button>
           </div>
         </div>
-
-        <div v-if="filteredHosts.length === 0" class="rounded-xl border border-slate-200 bg-white py-10 px-4 text-center">
-          <p class="text-sm text-slate-500">{{ hosts.length === 0 ? '暂无主机连接，点击右上角添加' : '未找到匹配主机' }}</p>
-        </div>
       </div>
-
-      <!-- 桌面端空状态 -->
-      <div v-if="filteredHosts.length === 0" class="hidden md:flex flex-col items-center justify-center py-20">
-        <div class="empty-state-icon">
-          <i class="fas fa-server text-4xl text-slate-300"></i>
-        </div>
-        <p class="text-slate-600 font-medium mb-1">{{ hosts.length === 0 ? '暂无主机连接' : '未找到匹配主机' }}</p>
-        <p class="text-sm text-slate-400">{{ hosts.length === 0 ? '点击右上角「添加主机」开始配置' : '尝试更换关键词或清空搜索条件' }}</p>
-      </div>
-    </div>
+    </template>
   </div>
 
   <HostEditModal ref="editModalRef" @success="loadHosts" />

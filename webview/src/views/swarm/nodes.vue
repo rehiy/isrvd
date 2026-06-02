@@ -145,11 +145,11 @@ export default toNative(Nodes)
               <i class="fas fa-server text-white"></i>
             </div>
             <div>
-              <h1 class="text-lg font-semibold text-slate-800">节点管理</h1>
+              <h1 class="text-lg font-semibold text-slate-800 truncate">节点管理</h1>
               <p class="text-xs text-slate-500">管理 Swarm 集群节点</p>
             </div>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-shrink-0">
             <PageSearch v-model="searchText" search-key="swarm-nodes" placeholder="请输入搜索关键词..." focus-color="blue" type-to-search />
             <button class="btn btn-secondary" @click="loadNodes">
               <i class="fas fa-rotate"></i>刷新
@@ -184,13 +184,15 @@ export default toNative(Nodes)
         <PageSearch v-model="searchText" search-key="swarm-nodes" placeholder="请输入搜索关键词..." width-class="w-full" focus-color="blue" />
       </div>
 
-      <div v-if="loading" class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
-        <p class="text-slate-500">加载中...</p>
+      <div v-if="loading" class="card-body">
+        <div class="empty-state">
+          <div class="w-12 h-12 spinner mb-3"></div>
+          <p class="text-slate-500">加载中...</p>
+        </div>
       </div>
-      <div v-else-if="filteredNodes.length > 0" class="space-y-3">
+      <template v-else-if="filteredNodes.length > 0">
         <!-- 桌面端表格视图 -->
-        <div class="hidden md:block overflow-x-auto">
+        <div class="card-table hidden md:block">
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
@@ -243,7 +245,7 @@ export default toNative(Nodes)
         </div>
 
         <!-- 移动端卡片视图 -->
-        <div class="md:hidden space-y-3 p-4">
+        <div class="card-body md:hidden space-y-3">
           <div v-for="n in filteredNodes" :key="n.id" class="card-interactive">
             <!-- 顶部：主机名和图标 -->
             <div class="card-info-row">
@@ -301,22 +303,24 @@ export default toNative(Nodes)
             </div>
           </div>
         </div>
-      </div>
-      <div v-else class="empty-state">
-        <div class="empty-state-icon">
-          <i class="fas fa-server text-4xl text-slate-300"></i>
+      </template>
+      <div v-else class="card-body">
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <i class="fas fa-server text-4xl text-slate-300"></i>
+          </div>
+          <p class="text-slate-600 font-medium mb-1">{{ nodes.length === 0 ? '暂无节点' : '未找到匹配节点' }}</p>
+          <p class="text-sm text-slate-400">{{ nodes.length === 0 ? '当前集群没有可用节点' : '尝试更换关键词或清空搜索条件' }}</p>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ nodes.length === 0 ? '暂无节点' : '未找到匹配节点' }}</p>
-        <p class="text-sm text-slate-400">{{ nodes.length === 0 ? '当前集群没有可用节点' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
     </div>
   </div>
 
   <!-- 加入集群弹窗 -->
   <BaseModal v-model="showJoinModal" title="加入集群" :loading="joinTokensLoading" :show-confirm="false">
-    <div v-if="joinTokensLoading" class="flex flex-col items-center justify-center py-8">
-      <div class="w-10 h-10 spinner mb-3"></div>
-      <p class="text-slate-500 text-sm">加载中...</p>
+    <div v-if="joinTokensLoading" class="empty-state">
+      <div class="w-12 h-12 spinner mb-3"></div>
+      <p class="text-slate-500">加载中...</p>
     </div>
     <div v-else-if="joinTokens" class="space-y-4">
       <!-- 角色选择 -->

@@ -426,7 +426,7 @@ export default toNative(ContainerStats)
       </div>
     </div>
     <!-- 内容区域 -->
-    <div class="p-4 md:p-6 space-y-4">
+    <div class="card-body space-y-4">
       <!-- 加载状态 -->
       <div v-if="statsLoading && !statsData" class="empty-state gap-3 text-slate-400 text-sm">
         <div class="w-8 h-8 spinner"></div>

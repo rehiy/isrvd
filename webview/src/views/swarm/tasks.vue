@@ -109,11 +109,11 @@ export default toNative(Tasks)
             <i class="fas fa-list-check text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">任务列表</h1>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">任务列表</h1>
             <p class="text-xs text-slate-500">查看 Swarm 集群任务状态</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-shrink-0">
           <PageSearch v-model="searchText" search-key="swarm-tasks" placeholder="请输入搜索关键词..." focus-color="cyan" type-to-search />
           <select v-model="selectedServiceId" class="select-sm min-w-[160px]">
             <option value="">全部服务</option>
@@ -153,13 +153,15 @@ export default toNative(Tasks)
     </div>
 
     <!-- 内容 -->
-    <div v-if="tasksLoading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
+    <div v-if="tasksLoading" class="card-body">
+      <div class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
     </div>
-    <div v-else-if="filteredTasks.length > 0">
+    <template v-else-if="filteredTasks.length > 0">
       <!-- 桌面端表格视图 -->
-      <div class="hidden md:block overflow-x-auto">
+      <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
@@ -201,7 +203,7 @@ export default toNative(Tasks)
       </div>
 
       <!-- 移动端卡片视图 -->
-      <div class="md:hidden space-y-3 p-4">
+      <div class="card-body md:hidden space-y-3">
         <div v-for="t in filteredTasks" :key="t.id" class="card-interactive">
           <!-- 顶部：图标 + ID -->
           <div class="card-info-row">
@@ -243,13 +245,15 @@ export default toNative(Tasks)
           </div>
         </div>
       </div>
-    </div>
-    <div v-else class="empty-state">
-      <div class="empty-state-icon">
-        <i class="fas fa-list-check text-4xl text-slate-300"></i>
+    </template>
+    <div v-else class="card-body">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-list-check text-4xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-600 font-medium mb-1">{{ tasks.length === 0 ? '暂无任务' : '未找到匹配任务' }}</p>
+        <p class="text-sm text-slate-400">{{ tasks.length === 0 ? '当前没有运行中的任务' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
-      <p class="text-slate-600 font-medium mb-1">{{ tasks.length === 0 ? '暂无任务' : '未找到匹配任务' }}</p>
-      <p class="text-sm text-slate-400">{{ tasks.length === 0 ? '当前没有运行中的任务' : '尝试更换关键词或清空搜索条件' }}</p>
     </div>
   </div>
 </template>

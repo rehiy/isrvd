@@ -108,11 +108,11 @@ export default toNative(Config)
             <i class="fas fa-gear text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">系统配置</h1>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">系统配置</h1>
             <p class="text-xs text-slate-500">管理服务器、认证、网关与容器引擎参数</p>
           </div>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 flex-shrink-0">
           <!-- Tab 切换 -->
           <div class="tab-group">
             <button type="button" :class="['tab-btn', activeTab === 'server' ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="activeTab = 'server'">
@@ -172,12 +172,14 @@ export default toNative(Config)
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
     </div>
 
-    <form v-if="portal.hasPerm('PATCH /api/system/config')" class="p-4 md:p-6" @submit.prevent="saveAll">
+    <form v-if="portal.hasPerm('PATCH /api/system/config')" class="card-body" @submit.prevent="saveAll">
       <!-- 服务器配置 -->
       <section v-if="activeTab === 'server'" class="max-w-3xl space-y-4">
         <div>

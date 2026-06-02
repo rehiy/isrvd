@@ -70,6 +70,9 @@
 - 副标题：`<p class="text-xs text-slate-500 truncate">`
 - 移动端左侧容器：`flex items-center gap-3 min-w-0 flex-1`，图标加 `flex-shrink-0`，文字容器加 `min-w-0`
 - 桌面端右侧按钮区：`flex items-center gap-2 flex-shrink-0`（刷新等功能按钮）
+- 移动端右侧按钮区：`flex items-center gap-1 flex-shrink-0`
+- 移动端 toolbar 内有多行内容（如标题行 + tab 行）时，行间距用 `mb-3`；移动端 tab 行用 `mt-3`
+- 桌面端 toolbar 左侧标题区：`flex items-center gap-3`（图标 + 标题文字块）
 
 **图标样式（强制）**：
 
@@ -78,8 +81,34 @@
 
 ### 1.7 列表双视图与搜索（强制）
 
-- 桌面：`hidden md:block overflow-x-auto` + `<table>`
-- 移动：`md:hidden space-y-3 p-4` + `.card-interactive` 卡片列表（**`p-4` 不得省略**，禁止手写等价卡片 Tailwind 组合）
+- 桌面：`.card-table hidden md:block` + `<table>`（表格直接贴边，无内边距，`overflow-x-auto` 由 `.card-table` 提供）
+- 移动：`.card-body md:hidden space-y-3` + `.card-interactive` 卡片列表
+- loading / 空状态：`.card-body`（带内边距）包裹 `.empty-state`
+- 列表有数据时用 `<template v-else>` 包裹桌面和移动两个分支，**不得用 `<div v-else>`**（减少无意义 DOM 层级）
+
+**标准列表页结构**：
+
+```html
+<!-- Loading -->
+<div v-if="loading" class="card-body">
+  <div class="empty-state">...</div>
+</div>
+
+<!-- 空状态 -->
+<div v-else-if="list.length === 0" class="card-body">
+  <div class="empty-state">...</div>
+</div>
+
+<!-- 列表 -->
+<template v-else>
+  <div class="card-table hidden md:block">
+    <table>...</table>
+  </div>
+  <div class="card-body md:hidden space-y-3">
+    ...移动端卡片...
+  </div>
+</template>
+```
 - 所有资源列表页必须提供 `searchText` + `filteredXxx` 过滤逻辑，并使用 `webview/src/component/page-search.vue`，禁止手写重复的搜索框 HTML
 - 页面级键盘输入直达搜索只能通过 `PageSearch` 的 `type-to-search` 启用；禁止页面直接调用 `bindTypeToSearchFocus`
 - 每个列表页只允许一个 `PageSearch` 设置 `type-to-search`（通常为桌面搜索框）；移动端搜索框复用同一个 `search-key`，但不设置 `type-to-search`
@@ -218,6 +247,21 @@
 
 ### 1.11 表单与敏感字段
 
+**间距规范（强制）**：
+
+| 场景 | 类 |
+|---|---|
+| 表单字段间距 | `space-y-4` |
+| 表单分组（section）间距 | `space-y-6`，或 `divide-y divide-slate-100` + 每组 `py-6`（首组 `pb-6`，末组 `pt-6`） |
+| 表单内嵌子分组分隔线 | `border-t border-slate-200 pt-6`，分组标题 `mb-4` |
+| 表单保存/操作按钮区 | `mt-6 pt-4 border-t border-slate-200` |
+| 表单提交按钮与说明文字 | `flex items-center gap-3` 或 `flex flex-col sm:flex-row sm:items-center gap-3` |
+| **card-body 内容区（详情/图表/通用内容）** | `card-body space-y-4` |
+| **card-body 移动端卡片列表** | `card-body md:hidden space-y-3` |
+| **card-body 日志/紧凑内容区** | `card-body space-y-3` |
+
+> `space-y-6` 仅用于表单分组（section）间距，**禁止**用于 `card-body` 内容区（详情页等）。
+
 - 表单容器 `max-w-3xl space-y-4`
 - label：`block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1`，input 通用 `.input`，help `text-xs text-slate-400 mt-1`
 - 密钥/密码：后端敏感字段 `json:"-"`，前端 `type="password" autocomplete="new-password"`，留空保存=不修改，placeholder："留空保持不变"
@@ -322,8 +366,10 @@
 |---|---|---|
 | `.card` | 页面级主卡片 | `bg-white rounded-2xl shadow-soft border border-slate-200/60` |
 | `.card-interactive` | 列表交互式卡片（悬停阴影） | `rounded-xl border border-slate-200 bg-white p-4 hover:shadow-sm` |
-| `.card-toolbar` | 页面级卡片顶栏（灰底） | `bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3` |
+| `.card-toolbar` | 页面级卡片顶栏（灰底） | `bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 py-3` |
 | `.card-header` | 小卡片标题栏（widget/模态框内部） | `px-4 py-3 border-b border-slate-100 flex items-center gap-2` |
+| `.card-body` | 卡片内容区（表单/详情/loading/empty/移动端卡片列表），带内边距 | `p-4` |
+| `.card-table` | 卡片表格区（桌面端表格），无内边距，表格直接贴边 | `overflow-x-auto` |
 | `.card-actions` | 移动端卡片底部操作按钮栏 | `flex flex-wrap gap-1.5 pt-2 border-t border-slate-100` |
 | `.card-info-row` | 移动端卡片主信息行（图标+文字） | `flex items-center gap-3 min-w-0 flex-1 mb-3` |
 | `.option-card` / `.option-card-inactive` / `.option-card-disabled` / `.option-card-icon` | 单选模式/来源选择卡片 | `text-left rounded-xl border p-3 transition-colors`、`w-8 h-8 rounded-lg flex items-center justify-center` |

@@ -130,12 +130,14 @@ export default toNative(CaddyGlobalConfig)
     </div>
 
     <!-- 内容区 -->
-    <div v-if="loading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
     </div>
 
-    <div v-else class="p-4 md:p-6 divide-y divide-slate-100">
+    <div v-else class="card-body divide-y divide-slate-100">
       <!-- 证书签发 -->
       <div class="pb-6">
         <h2 class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">

@@ -79,13 +79,15 @@ export default toNative(NetworkDetail)
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
     </div>
 
     <!-- Detail Content -->
-    <div v-else-if="detailData" class="p-4 md:p-6 space-y-6 text-sm">
+    <div v-else-if="detailData" class="card-body space-y-4 text-sm">
       <!-- 基本信息 -->
       <div>
         <h2 class="section-title">基本信息</h2>
@@ -163,11 +165,13 @@ export default toNative(NetworkDetail)
     </div>
 
     <!-- Empty -->
-    <div v-else class="empty-state">
-      <div class="empty-state-icon">
-        <i class="fas fa-network-wired text-4xl text-slate-300"></i>
+    <div v-else class="card-body">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-network-wired text-4xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-600 font-medium">未找到网络详情</p>
       </div>
-      <p class="text-slate-600 font-medium">未找到网络详情</p>
     </div>
   </div>
 </template>

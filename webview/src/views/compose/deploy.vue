@@ -150,11 +150,11 @@ export default toNative(ComposeDeploy)
               <i class="fas fa-file-code text-white"></i>
             </div>
             <div>
-              <h1 class="text-lg font-semibold text-slate-800">Compose 部署</h1>
+              <h1 class="text-lg font-semibold text-slate-800 truncate">Compose 部署</h1>
               <p class="text-xs text-slate-500">直接粘贴 compose.yml 或从应用市场选择模板</p>
             </div>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-shrink-0">
             <button type="button" :disabled="loading" class="btn btn-secondary" @click="resetForm()">
               <i class="fas fa-rotate-left"></i>清空
             </button>
@@ -173,7 +173,7 @@ export default toNative(ComposeDeploy)
               <p class="text-xs text-slate-500 truncate">粘贴 compose.yml 或从应用市场选择</p>
             </div>
           </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="flex items-center gap-1 flex-shrink-0">
             <button type="button" :disabled="loading" class="btn btn-secondary w-9 h-9 !px-0" title="清空" @click="resetForm()">
               <i class="fas fa-rotate-left"></i>
             </button>
@@ -185,7 +185,7 @@ export default toNative(ComposeDeploy)
       </div>
 
       <!-- 表单 -->
-      <div class="p-4 md:p-6 space-y-4 max-w-5xl">
+      <div class="card-body max-w-3xl space-y-4">
         <!-- 部署目标 -->
         <div class="tab-group inline-flex">
           <button type="button" :class="['tab-btn', target === 'docker' ? 'tab-btn-active text-amber-600' : 'tab-btn-inactive']" @click="selectTarget('docker')">
@@ -239,7 +239,7 @@ export default toNative(ComposeDeploy)
         </div>
 
         <!-- 操作按钮 -->
-        <div class="flex flex-col sm:flex-row sm:items-center gap-3 pt-2">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 mt-6 pt-4 border-t border-slate-200">
           <button type="button" :disabled="!canSubmit" class="btn btn-amber rounded-xl whitespace-nowrap flex-shrink-0 self-start" @click="handleDeploy()">
             <i v-if="loading" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-rocket"></i>

@@ -115,11 +115,11 @@ export default toNative(Profile)
             <i class="fas fa-user-circle text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">个人设置</h1>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">个人设置</h1>
             <p class="text-xs text-slate-500">修改密码、管理 API 令牌</p>
           </div>
         </div>
-        <div class="tab-group">
+        <div class="tab-group flex-shrink-0">
           <button type="button" :class="['tab-btn', activeTab === 'password' ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="activeTab = 'password'">
             <i class="fas fa-lock"></i>修改密码
           </button>
@@ -150,7 +150,7 @@ export default toNative(Profile)
     </div>
 
     <!-- 修改密码 -->
-    <div v-if="activeTab === 'password'" class="p-4 md:p-6">
+    <div v-if="activeTab === 'password'" class="card-body">
       <form class="max-w-3xl space-y-4" @submit.prevent="handleChangePassword">
         <div>
           <label class="form-label">原密码</label>
@@ -182,7 +182,7 @@ export default toNative(Profile)
     </div>
 
     <!-- API 令牌 -->
-    <div v-else-if="portal.hasPerm('POST /api/account/token')" class="p-4 md:p-6">
+    <div v-else-if="portal.hasPerm('POST /api/account/token')" class="card-body">
       <!-- 新令牌提示 -->
       <div v-if="newToken" class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
         <div class="flex items-start gap-3">
@@ -253,7 +253,7 @@ export default toNative(Profile)
         </div>
       </div>
     </div>
-    <div v-else class="p-4 md:p-6">
+    <div v-else class="card-body">
       <div class="flex flex-col items-center justify-center py-12 text-slate-400">
         <i class="fas fa-lock text-4xl mb-3"></i>
         <p class="text-sm">无权限创建 API 令牌</p>

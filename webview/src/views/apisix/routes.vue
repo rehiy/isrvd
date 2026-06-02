@@ -159,9 +159,9 @@ export default toNative(Routes)
       <div class="hidden md:flex items-center justify-between">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-indigo-500"><i class="fas fa-route text-white"></i></div>
-          <div><h1 class="text-lg font-semibold text-slate-800">路由管理</h1><p class="text-xs text-slate-500">管理 APISIX 路由，配置匹配规则、上游转发与插件</p></div>
+          <div><h1 class="text-lg font-semibold text-slate-800 truncate">路由管理</h1><p class="text-xs text-slate-500">管理 APISIX 路由，配置匹配规则、上游转发与插件</p></div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-shrink-0">
           <PageSearch v-model="searchText" search-key="apisix-routes" placeholder="搜索路由、URI、描述或上游..." focus-color="indigo" type-to-search />
           <div class="tab-group">
             <button class="tab-btn" :class="viewMode === 'route' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive'" @click="setViewMode('route')">
@@ -195,7 +195,7 @@ export default toNative(Routes)
       </div>
     </div>
     <!-- 移动端搜索栏 -->
-    <div class="mobile-search space-y-2">
+    <div class="mobile-search">
       <PageSearch v-model="searchText" search-key="apisix-routes" placeholder="搜索路由、URI、上游..." width-class="w-full" focus-color="indigo" />
       <div class="tab-group w-full">
         <button class="tab-btn flex-1 justify-center" :class="viewMode === 'route' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive'" @click="setViewMode('route')">
@@ -206,11 +206,15 @@ export default toNative(Routes)
         </button>
       </div>
     </div>
-    <div v-if="loading" class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
-    <div v-else-if="filteredRoutes.length === 0" class="empty-state">
-      <div class="empty-state-icon"><i class="fas fa-route text-4xl text-slate-300"></i></div>
-      <p class="text-slate-600 font-medium mb-1">{{ routes.length === 0 ? '暂无路由' : '未找到匹配路由' }}</p>
-      <p class="text-sm text-slate-400">{{ routes.length === 0 ? '点击「新建路由」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
+    </div>
+    <div v-else-if="filteredRoutes.length === 0" class="card-body">
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-route text-4xl text-slate-300"></i></div>
+        <p class="text-slate-600 font-medium mb-1">{{ routes.length === 0 ? '暂无路由' : '未找到匹配路由' }}</p>
+        <p class="text-sm text-slate-400">{{ routes.length === 0 ? '点击「新建路由」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
+      </div>
     </div>
 
     <RouteGroupedList
@@ -222,9 +226,9 @@ export default toNative(Routes)
       @delete="deleteRoute"
     />
 
-    <div v-else class="space-y-3">
+    <template v-else>
       <!-- 桌面端表格视图 -->
-      <div class="hidden md:block overflow-x-auto">
+      <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
@@ -266,7 +270,7 @@ export default toNative(Routes)
       </div>
 
       <!-- 移动端卡片视图 -->
-      <div class="md:hidden space-y-3 p-4">
+      <div class="card-body md:hidden space-y-3">
         <div v-for="route in filteredRoutes" :key="route.id" class="card-interactive">
           <!-- 顶部：路由信息和状态 -->
           <div class="flex items-center justify-between mb-3">
@@ -311,7 +315,7 @@ export default toNative(Routes)
           </div>
         </div>
       </div>
-    </div>
+    </template>
   </div>
 
   <RouteEditModal ref="editModalRef" @success="loadRoutes" />

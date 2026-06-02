@@ -4,9 +4,9 @@
    * 1. 卡片（Card）
    * ============================================================ */
 
-  /* 页面级主卡片：白底、柔和阴影 */
+  /* 页面级主卡片：白底、柔和阴影；overflow-hidden 确保子元素（表格/表单）受圆角裁剪 */
   .card {
-    @apply bg-white rounded-2xl shadow-soft border border-slate-200/60;
+    @apply bg-white rounded-2xl shadow-soft border border-slate-200/60 overflow-hidden;
   }
 
   /* 移动端圆角稍小 */
@@ -23,7 +23,7 @@
 
   /* 卡片顶部工具栏（页面级，灰底，含圆角）：33 个页面 */
   .card-toolbar {
-    @apply bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 md:px-6 py-3;
+    @apply bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 py-3;
   }
 
   /* 卡片标题栏（widget 小卡片内部头部） */
@@ -44,6 +44,18 @@
   /* 移动端卡片底部操作按钮栏 */
   .card-actions {
     @apply flex flex-wrap gap-1.5 pt-2 border-t border-slate-100;
+  }
+
+  /* 卡片内容区（表单/详情/loading/empty/移动端卡片列表）：带内边距 */
+  .card-body {
+    @apply p-4;
+  }
+
+  /* 卡片表格区（桌面端表格列表）：无内边距，overflow 滚动，table 直接贴边
+   * 用法：<div class="card-table hidden md:block"><table>...</table></div>
+   * 不需要额外的 -mx-* 负边距层 */
+  .card-table {
+    @apply overflow-x-auto;
   }
 
   /* 移动端卡片主信息行（图标 + 文字，带下间距） */

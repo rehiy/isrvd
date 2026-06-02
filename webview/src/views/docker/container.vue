@@ -121,7 +121,7 @@ export default toNative(ContainerDetail)
       <p class="text-slate-500">加载中...</p>
     </div>
 
-    <div v-else-if="detail" class="p-4 md:p-6 space-y-6">
+    <div v-else-if="detail" class="card-body space-y-4">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- 基本信息 -->
         <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">

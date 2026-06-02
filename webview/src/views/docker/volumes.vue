@@ -93,11 +93,11 @@ export default toNative(Volumes)
             <i class="fas fa-database text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">数据卷管理</h1>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">数据卷管理</h1>
             <p class="text-xs text-slate-500">管理 Docker 数据卷，持久化容器数据</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-shrink-0">
           <PageSearch v-model="searchText" search-key="docker-volumes" placeholder="搜索卷名称、驱动或挂载点..." focus-color="amber" type-to-search />
           <button class="btn btn-secondary" @click="loadVolumes()">
             <i class="fas fa-rotate"></i>刷新
@@ -134,15 +134,17 @@ export default toNative(Volumes)
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
     </div>
 
     <!-- Volume List -->
-    <div v-else-if="filteredVolumes.length > 0" class="space-y-3">
+    <template v-else-if="filteredVolumes.length > 0">
       <!-- 桌面端表格视图 -->
-      <div class="hidden md:block overflow-x-auto">
+      <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
@@ -184,7 +186,7 @@ export default toNative(Volumes)
       </div>
 
       <!-- 移动端卡片视图 -->
-      <div class="md:hidden space-y-3 p-4">
+      <div class="card-body md:hidden space-y-3">
         <div v-for="vol in filteredVolumes" :key="vol.name" class="card-interactive">
           <!-- 顶部：卷信息和图标 -->
           <div class="card-info-row">
@@ -221,15 +223,17 @@ export default toNative(Volumes)
           </div>
         </div>
       </div>
-    </div>
+    </template>
 
     <!-- Empty State -->
-    <div v-else class="empty-state">
-      <div class="empty-state-icon">
-        <i class="fas fa-database text-4xl text-slate-300"></i>
+    <div v-else class="card-body">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-database text-4xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-600 font-medium mb-1">{{ volumes.length === 0 ? '暂无数据卷' : '未找到匹配数据卷' }}</p>
+        <p class="text-sm text-slate-400">{{ volumes.length === 0 ? '点击「新建卷」创建数据卷' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
-      <p class="text-slate-600 font-medium mb-1">{{ volumes.length === 0 ? '暂无数据卷' : '未找到匹配数据卷' }}</p>
-      <p class="text-sm text-slate-400">{{ volumes.length === 0 ? '点击「新建卷」创建数据卷' : '尝试更换关键词或清空搜索条件' }}</p>
     </div>
   </div>
 

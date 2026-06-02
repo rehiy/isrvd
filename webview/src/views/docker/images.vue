@@ -221,11 +221,11 @@ export default toNative(Images)
             <i class="fas fa-layer-group text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">镜像管理</h1>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">镜像管理</h1>
             <p class="text-xs text-slate-500">拉取、导入、导出和删除 Docker 镜像</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-shrink-0">
           <PageSearch v-model="searchText" search-key="docker-images" placeholder="搜索镜像名称、标签、ID..." focus-color="blue" type-to-search />
           <div class="tab-group">
             <button :class="['tab-btn', !showAllImages ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="showAllImages = false; loadImages()">
@@ -292,15 +292,17 @@ export default toNative(Images)
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
     </div>
 
     <!-- Image List -->
-    <div v-else-if="filteredImages.length > 0" class="space-y-3">
+    <template v-else-if="filteredImages.length > 0">
       <!-- 桌面端表格视图 -->
-      <div class="hidden md:block overflow-x-auto">
+      <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
@@ -358,7 +360,7 @@ export default toNative(Images)
       </div>
 
       <!-- 移动端卡片视图 -->
-      <div class="md:hidden space-y-3 p-4">
+      <div class="card-body md:hidden space-y-3">
         <div v-for="img in filteredImages" :key="img.id" class="card-interactive">
           <!-- 顶部：镜像信息和图标 -->
           <div class="card-info-row">
@@ -411,14 +413,16 @@ export default toNative(Images)
           </div>
         </div>
       </div>
-    </div>
+    </template>
 
-    <div v-else class="empty-state">
-      <div class="empty-state-icon">
-        <i class="fas fa-compact-disc text-4xl text-slate-300"></i>
+    <div v-else class="card-body">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-compact-disc text-4xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-600 font-medium mb-1">{{ images.length === 0 ? '暂无镜像' : '未找到匹配镜像' }}</p>
+        <p class="text-sm text-slate-400">{{ images.length === 0 ? '点击「拉取」从 Registry 获取' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
-      <p class="text-slate-600 font-medium mb-1">{{ images.length === 0 ? '暂无镜像' : '未找到匹配镜像' }}</p>
-      <p class="text-sm text-slate-400">{{ images.length === 0 ? '点击「拉取」从 Registry 获取' : '尝试更换关键词或清空搜索条件' }}</p>
     </div>
   </div>
 

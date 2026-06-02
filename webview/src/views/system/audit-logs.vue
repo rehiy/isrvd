@@ -141,11 +141,11 @@ export default toNative(AuditLogs)
             <i class="fas fa-clipboard-list text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">操作审计</h1>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">操作审计</h1>
             <p class="text-xs text-slate-500">查看和检索所有用户的操作记录</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-shrink-0">
           <PageSearch v-model="searchText" search-key="system-audit-logs" placeholder="搜索用户、方法、URI、IP 或状态..." focus-color="rose" type-to-search />
           <select v-model="selectedUsername" class="select-sm min-w-[140px]">
             <option value="">所有用户</option>
@@ -168,7 +168,7 @@ export default toNative(AuditLogs)
               <p class="text-xs text-slate-500 truncate">查看用户操作记录</p>
             </div>
           </div>
-          <div class="flex items-center gap-1.5 flex-shrink-0">
+          <div class="flex items-center gap-1 flex-shrink-0">
             <select v-model="selectedUsername" class="w-28 select-sm">
               <option value="">所有用户</option>
               <option v-for="username in uniqueUsernames" :key="username" :value="username">{{ username }}</option>
@@ -185,24 +185,28 @@ export default toNative(AuditLogs)
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="filteredLogs.length === 0" class="empty-state">
-      <div class="empty-state-icon">
-        <i class="fas fa-clipboard-list text-4xl text-slate-300"></i>
+    <div v-else-if="filteredLogs.length === 0" class="card-body">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-clipboard-list text-4xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-600 font-medium mb-1">{{ logs.length === 0 ? '暂无审计日志' : '未找到匹配日志' }}</p>
+        <p class="text-sm text-slate-400">{{ logs.length === 0 ? '用户操作记录将在此展示' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
-      <p class="text-slate-600 font-medium mb-1">{{ logs.length === 0 ? '暂无审计日志' : '未找到匹配日志' }}</p>
-      <p class="text-sm text-slate-400">{{ logs.length === 0 ? '用户操作记录将在此展示' : '尝试更换关键词或清空搜索条件' }}</p>
     </div>
 
     <!-- 日志列表 -->
-    <div v-else>
+    <template v-else>
       <!-- 桌面表格 -->
-      <div class="hidden md:block overflow-x-auto">
+      <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
@@ -263,7 +267,7 @@ export default toNative(AuditLogs)
       </div>
 
       <!-- 移动卡片列表 -->
-      <div class="md:hidden space-y-3 p-4">
+      <div class="card-body md:hidden space-y-3">
         <div v-for="(log, idx) in filteredLogs" :key="idx" class="card-interactive">
           <!-- 顶部：用户 + 时间 -->
           <div class="flex items-center justify-between mb-3">
@@ -306,7 +310,7 @@ export default toNative(AuditLogs)
           </div>
         </div>
       </div>
-    </div>
+    </template>
 
     <!-- Body 详情 Modal -->
     <BaseModal v-model="detailOpen" :show-footer="false">

@@ -162,15 +162,19 @@ export default toNative(CaddyCerts)
     <div class="mobile-search">
       <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="请输入搜索关键词..." width-class="w-full" focus-color="cyan" />
     </div>
-    <div v-if="loading" class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
-    <div v-else-if="filteredCerts.length === 0" class="empty-state">
-      <div class="empty-state-icon"><i class="fas fa-certificate text-4xl text-slate-300"></i></div>
-      <p class="text-slate-600 font-medium mb-1">{{ certs.length === 0 ? '暂无证书' : '未找到匹配证书' }}</p>
-      <p class="text-sm text-slate-400">{{ certs.length === 0 ? '点击「新建证书」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
     </div>
-    <div v-else class="space-y-3">
+    <div v-else-if="filteredCerts.length === 0" class="card-body">
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-certificate text-4xl text-slate-300"></i></div>
+        <p class="text-slate-600 font-medium mb-1">{{ certs.length === 0 ? '暂无证书' : '未找到匹配证书' }}</p>
+        <p class="text-sm text-slate-400">{{ certs.length === 0 ? '点击「新建证书」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
+      </div>
+    </div>
+    <template v-else>
       <!-- 桌面端表格 -->
-      <div class="hidden md:block overflow-x-auto">
+      <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
@@ -216,7 +220,7 @@ export default toNative(CaddyCerts)
       </div>
 
       <!-- 移动端卡片 -->
-      <div class="md:hidden space-y-3 p-4">
+      <div class="card-body md:hidden space-y-3">
         <div v-for="cert in filteredCerts" :key="cert.key || cert.subject" class="card-interactive">
           <div class="card-info-row">
             <div class="list-icon bg-cyan-400">
@@ -257,7 +261,7 @@ export default toNative(CaddyCerts)
           </div>
         </div>
       </div>
-    </div>
+    </template>
   </div>
 
   <CertDetailModal ref="detailModalRef" />

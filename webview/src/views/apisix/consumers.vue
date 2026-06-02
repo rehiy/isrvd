@@ -102,11 +102,11 @@ export default toNative(Consumers)
             <i class="fas fa-users text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">消费者管理</h1>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">消费者管理</h1>
             <p class="text-xs text-slate-500">管理 APISIX Consumer 及其认证凭据</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-shrink-0">
           <PageSearch v-model="searchText" search-key="apisix-consumers" placeholder="搜索消费者..." focus-color="violet" type-to-search />
           <button class="btn btn-secondary" @click="loadConsumers()">
             <i class="fas fa-rotate"></i>刷新
@@ -143,24 +143,28 @@ export default toNative(Consumers)
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="filteredConsumers.length === 0" class="empty-state">
-      <div class="empty-state-icon">
-        <i class="fas fa-users text-4xl text-slate-300"></i>
+    <div v-else-if="filteredConsumers.length === 0" class="card-body">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-users text-4xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-600 font-medium mb-1">{{ consumers.length === 0 ? '暂无消费者' : '未找到匹配消费者' }}</p>
+        <p class="text-sm text-slate-400">{{ consumers.length === 0 ? '点击「新建消费者」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
-      <p class="text-slate-600 font-medium mb-1">{{ consumers.length === 0 ? '暂无消费者' : '未找到匹配消费者' }}</p>
-      <p class="text-sm text-slate-400">{{ consumers.length === 0 ? '点击「新建消费者」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
     </div>
 
     <!-- 消费者列表 -->
-    <div v-else class="space-y-3">
+    <template v-else>
       <!-- 桌面端表格视图 -->
-      <div class="hidden md:block overflow-x-auto">
+      <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
@@ -215,18 +219,16 @@ export default toNative(Consumers)
       </div>
 
       <!-- 移动端卡片视图 -->
-      <div class="md:hidden space-y-3 p-4">
+      <div class="card-body md:hidden space-y-3">
         <div v-for="consumer in filteredConsumers" :key="consumer.username" class="card-interactive">
           <!-- 顶部：消费者信息和图标 -->
-          <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3 min-w-0 flex-1">
-              <div class="list-icon bg-violet-400">
-                <i class="fas fa-user text-white text-base"></i>
-              </div>
-              <div class="min-w-0">
-                <span class="font-medium text-slate-800 text-sm truncate block">{{ consumer.username }}</span>
-                <span v-if="consumer.desc" class="text-xs text-slate-400 truncate block mt-0.5">{{ consumer.desc }}</span>
-              </div>
+          <div class="card-info-row">
+            <div class="list-icon bg-violet-400 flex-shrink-0">
+              <i class="fas fa-user text-white text-base"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="font-medium text-slate-800 text-sm truncate block">{{ consumer.username }}</span>
+              <span v-if="consumer.desc" class="text-xs text-slate-400 truncate block mt-0.5">{{ consumer.desc }}</span>
             </div>
           </div>
           
@@ -264,7 +266,7 @@ export default toNative(Consumers)
           </div>
         </div>
       </div>
-    </div>
+    </template>
   </div>
 
   <ConsumerEditModal ref="editModalRef" @success="loadConsumers" />

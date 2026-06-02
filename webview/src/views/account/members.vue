@@ -94,11 +94,11 @@ export default toNative(Members)
             <i class="fas fa-users text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">用户管理</h1>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">用户管理</h1>
             <p class="text-xs text-slate-500">管理可登录系统的成员与权限</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-shrink-0">
           <PageSearch v-model="searchText" search-key="account-members" placeholder="请输入搜索关键词..." focus-color="blue" type-to-search />
           <button type="button" class="btn btn-secondary" @click="loadMembers">
             <i class="fas fa-rotate"></i>刷新
@@ -134,24 +134,28 @@ export default toNative(Members)
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
     </div>
 
     <!-- Empty -->
-    <div v-else-if="filteredMembers.length === 0" class="empty-state">
-      <div class="empty-state-icon">
-        <i class="fas fa-users text-4xl text-slate-300"></i>
+    <div v-else-if="filteredMembers.length === 0" class="card-body">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-users text-4xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-600 font-medium mb-1">{{ members.length === 0 ? '暂无成员' : '未找到匹配成员' }}</p>
+        <p class="text-sm text-slate-400">{{ members.length === 0 ? '点击「新建用户」创建成员' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
-      <p class="text-slate-600 font-medium mb-1">{{ members.length === 0 ? '暂无成员' : '未找到匹配成员' }}</p>
-      <p class="text-sm text-slate-400">{{ members.length === 0 ? '点击「新建用户」创建成员' : '尝试更换关键词或清空搜索条件' }}</p>
     </div>
 
     <!-- Table -->
-    <div v-else class="space-y-3">
+    <template v-else>
       <!-- 桌面端表格 -->
-      <div class="hidden md:block overflow-x-auto">
+      <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
@@ -198,7 +202,7 @@ export default toNative(Members)
       </div>
 
       <!-- 移动端卡片 -->
-      <div class="md:hidden space-y-3 p-4">
+      <div class="card-body md:hidden space-y-3">
         <div v-for="m in filteredMembers" :key="m.username" class="card-interactive">
           <!-- 顶部：用户信息 -->
           <div class="flex items-center justify-between mb-3">
@@ -239,7 +243,7 @@ export default toNative(Members)
           </div>
         </div>
       </div>
-    </div>
+    </template>
   </div>
 
   <MemberEditModal ref="memberEditModalRef" @success="loadMembers" />
