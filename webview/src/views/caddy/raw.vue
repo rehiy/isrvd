@@ -74,12 +74,12 @@ export default toNative(CaddyRaw)
       <!-- 桌面端 -->
       <div class="hidden md:flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="page-icon bg-slate-700"><i class="fas fa-code text-white"></i></div>
+          <div class="page-icon bg-slate-500"><i class="fas fa-code text-white"></i></div>
           <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">Caddy 原始配置</h1><p class="text-xs text-slate-500 truncate">直接查看和编辑 Caddy 的 JSON 运行配置</p></div>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
           <button class="btn btn-secondary" @click="loadConfig()"><i class="fas fa-rotate"></i>刷新</button>
-          <button v-if="portal.hasPerm('POST /api/caddy/config')" :disabled="saving" class="btn btn-indigo" @click="saveConfig()">
+          <button v-if="portal.hasPerm('POST /api/caddy/config')" :disabled="saving" class="btn btn-slate" @click="saveConfig()">
             <i v-if="saving" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-cloud-arrow-up"></i>
             <span>{{ saving ? '提交中...' : '提交配置' }}</span>
@@ -89,7 +89,7 @@ export default toNative(CaddyRaw)
       <!-- 移动端 -->
       <div class="flex md:hidden items-center justify-between">
         <div class="flex items-center gap-3 min-w-0 flex-1">
-          <div class="page-icon bg-slate-700"><i class="fas fa-code text-white"></i></div>
+          <div class="page-icon bg-slate-500"><i class="fas fa-code text-white"></i></div>
           <div class="min-w-0">
             <h1 class="text-lg font-semibold text-slate-800 truncate">Caddy 原始配置</h1>
             <p class="text-xs text-slate-500 truncate">查看和编辑 JSON 配置</p>
@@ -97,7 +97,7 @@ export default toNative(CaddyRaw)
         </div>
         <div class="flex items-center gap-1 flex-shrink-0">
           <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadConfig()"><i class="fas fa-rotate text-sm"></i></button>
-          <button v-if="portal.hasPerm('POST /api/caddy/config')" :disabled="saving" class="btn btn-indigo w-9 h-9 !px-0" title="提交配置" @click="saveConfig()"><i class="fas fa-cloud-arrow-up text-sm"></i></button>
+          <button v-if="portal.hasPerm('POST /api/caddy/config')" :disabled="saving" class="btn btn-slate w-9 h-9 !px-0" title="提交配置" @click="saveConfig()"><i class="fas fa-cloud-arrow-up text-sm"></i></button>
         </div>
       </div>
     </div>
