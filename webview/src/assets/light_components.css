@@ -51,6 +51,92 @@
     @apply p-4;
   }
 
+  /* ============================================================
+   * 详情信息卡片（Detail Card）
+   * 用法：<div class="detail-card"><h2 class="detail-card-title">...</h2><div class="detail-card-body"><div class="detail-row">...</div></div></div>
+   * ============================================================ */
+
+  /* 详情卡片容器：浅灰背景、圆角、边框、顶部彩色条
+   * 用法：<div class="detail-card"><div class="detail-card-bar detail-card-bar-emerald"></div><h2 class="detail-card-title">...</h2></div>
+   * 颜色 modifier：detail-card-bar-emerald / detail-card-bar-blue / detail-card-bar-indigo 等
+   */
+  .detail-card {
+    @apply bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden;
+  }
+  .detail-card-bar {
+    @apply absolute top-0 left-0 right-0 h-0.5;
+  }
+  .detail-card-bar-emerald { @apply bg-gradient-to-r from-emerald-400 to-transparent; }
+  .detail-card-bar-blue    { @apply bg-gradient-to-r from-blue-400 to-transparent; }
+  .detail-card-bar-indigo  { @apply bg-gradient-to-r from-indigo-400 to-transparent; }
+  .detail-card-bar-amber   { @apply bg-gradient-to-r from-amber-400 to-transparent; }
+  .detail-card-bar-slate   { @apply bg-gradient-to-r from-slate-400 to-transparent; }
+  .detail-card-bar-purple  { @apply bg-gradient-to-r from-purple-400 to-transparent; }
+
+  /* 详情卡片标题：小号加粗、带图标容器 */
+  .detail-card-title {
+    @apply text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2;
+  }
+
+  /* 详情卡片标题图标容器 24×24 */
+  .detail-card-icon {
+    @apply w-6 h-6 rounded-lg flex items-center justify-center;
+  }
+
+  /* 详情卡片内容区 */
+  .detail-card-body {
+    @apply space-y-2 text-sm;
+  }
+
+  /* 详情数据行：左右布局、白色背景、圆角
+   * 用法：<div class="detail-row"><span class="detail-label">标签</span><span class="detail-value">值</span></div>
+   */
+  .detail-row {
+    @apply flex justify-between gap-4 py-1.5 px-3 rounded-lg bg-white;
+  }
+
+  /* 详情列表项：垂直列表中的单行数据（如端口映射、挂载）
+   * 用法：<div class="detail-list-item"><span>左侧</span><span>右侧</span></div>
+   */
+  .detail-list-item {
+    @apply flex items-center justify-between text-sm bg-white rounded-lg px-3 py-2;
+  }
+
+  /* 详情代码块：用于显示代码、环境变量等
+   * 用法：<code class="detail-code-block">内容</code>
+   */
+  .detail-code-block {
+    @apply block text-xs text-slate-600 bg-white rounded-lg px-3 py-2 break-all;
+  }
+
+  /* 详情网格：用于多列展示（如环境变量、Labels）
+   * 用法：<div class="detail-grid"><code class="detail-grid-item">...</code></div>
+   */
+  .detail-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-2;
+  }
+  .detail-grid-item {
+    @apply text-xs bg-white rounded-lg px-3 py-2 break-all;
+  }
+
+  /* 详情空状态 */
+  .detail-empty {
+    @apply text-sm text-slate-400;
+  }
+
+  /* 详情标签：左侧灰色文字 */
+  .detail-label {
+    @apply text-slate-500 flex-shrink-0;
+  }
+
+  /* 详情值：右侧深色文字、可截断 */
+  .detail-value {
+    @apply font-medium text-slate-800 truncate text-right;
+  }
+  .detail-value.code {
+    @apply text-xs text-slate-600 font-mono;
+  }
+
   /* 卡片表格区（桌面端表格列表）：无内边距，overflow 滚动，table 直接贴边
    * 用法：<div class="card-table hidden md:block"><table>...</table></div>
    * 不需要额外的 -mx-* 负边距层 */

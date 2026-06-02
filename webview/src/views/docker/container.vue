@@ -124,87 +124,87 @@ export default toNative(ContainerDetail)
     <div v-else-if="detail" class="card-body space-y-4">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- 基本信息 -->
-        <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
-          <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-400 to-transparent"></div>
-          <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center"><i class="fas fa-circle-info text-white text-[9px]"></i></div>基本信息</h2>
-          <div class="space-y-2 text-sm">
-            <div class="flex justify-between gap-4"><span class="text-slate-500">名称</span><span class="font-medium text-slate-800 truncate">{{ detail.name }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">ID</span><code class="text-xs text-slate-600 truncate">{{ detail.id }}</code></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">状态</span><span :class="detail.state === 'running' ? 'text-emerald-600 font-medium' : 'text-slate-500'">{{ detail.state }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">创建时间</span><span class="text-slate-700">{{ formatTime(detail.createdAt) }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">镜像</span><code class="text-xs text-slate-600 truncate">{{ detail.image }}</code></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">重启策略</span><span class="text-slate-700">{{ detail.restart || 'no' }}</span></div>
+        <div class="detail-card detail-card-emerald">
+          <div class="detail-card-bar detail-card-bar-emerald"></div>
+          <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-emerald-500 to-emerald-600"><i class="fas fa-circle-info text-white text-[9px]"></i></div>基本信息</h2>
+          <div class="detail-card-body">
+            <div class="detail-row"><span class="detail-label">名称</span><span class="detail-value">{{ detail.name }}</span></div>
+            <div class="detail-row"><span class="detail-label">ID</span><code class="detail-value code">{{ detail.id }}</code></div>
+            <div class="detail-row"><span class="detail-label">状态</span><span :class="detail.state === 'running' ? 'text-emerald-600 font-medium' : 'text-slate-500'">{{ detail.state }}</span></div>
+            <div class="detail-row"><span class="detail-label">创建时间</span><span class="detail-value">{{ formatTime(detail.createdAt) }}</span></div>
+            <div class="detail-row"><span class="detail-label">镜像</span><code class="detail-value code">{{ detail.image }}</code></div>
+            <div class="detail-row"><span class="detail-label">重启策略</span><span class="detail-value">{{ detail.restart || 'no' }}</span></div>
           </div>
         </div>
 
         <!-- 运行配置 -->
-        <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
-          <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-transparent"></div>
-          <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center"><i class="fas fa-sliders text-white text-[9px]"></i></div>运行配置</h2>
-          <div class="space-y-2 text-sm">
-            <div class="flex justify-between gap-4"><span class="text-slate-500">网络</span><span class="text-slate-700">{{ detail.network || '-' }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">工作目录</span><span class="text-slate-700">{{ detail.workdir || '-' }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">用户</span><span class="text-slate-700">{{ detail.user || '-' }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">主机名</span><span class="text-slate-700">{{ detail.hostname || '-' }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">特权模式</span><span class="text-slate-700">{{ detail.privileged ? '是' : '否' }}</span></div>
-            <div class="flex justify-between gap-4"><span class="text-slate-500">资源限制</span><span class="text-slate-700">{{ detail.memory || 0 }} MB / {{ detail.cpus || 0 }} CPU</span></div>
+        <div class="detail-card detail-card-blue">
+          <div class="detail-card-bar detail-card-bar-blue"></div>
+          <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-blue-500 to-blue-600"><i class="fas fa-sliders text-white text-[9px]"></i></div>运行配置</h2>
+          <div class="detail-card-body">
+            <div class="detail-row"><span class="detail-label">网络</span><span class="detail-value">{{ detail.network || '-' }}</span></div>
+            <div class="detail-row"><span class="detail-label">工作目录</span><span class="detail-value">{{ detail.workdir || '-' }}</span></div>
+            <div class="detail-row"><span class="detail-label">用户</span><span class="detail-value">{{ detail.user || '-' }}</span></div>
+            <div class="detail-row"><span class="detail-label">主机名</span><span class="detail-value">{{ detail.hostname || '-' }}</span></div>
+            <div class="detail-row"><span class="detail-label">特权模式</span><span class="detail-value">{{ detail.privileged ? '是' : '否' }}</span></div>
+            <div class="detail-row"><span class="detail-label">资源限制</span><span class="detail-value">{{ detail.memory || 0 }} MB / {{ detail.cpus || 0 }} CPU</span></div>
           </div>
         </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- 端口映射 -->
-        <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
-          <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-400 to-transparent"></div>
-          <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center"><i class="fas fa-network-wired text-white text-[9px]"></i></div>端口映射</h2>
+        <div class="detail-card detail-card-indigo">
+          <div class="detail-card-bar detail-card-bar-indigo"></div>
+          <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-indigo-500 to-indigo-600"><i class="fas fa-network-wired text-white text-[9px]"></i></div>端口映射</h2>
           <div v-if="portEntries.length" class="space-y-2">
-            <div v-for="[host, target] in portEntries" :key="host" class="flex items-center justify-between text-sm bg-white rounded-lg px-3 py-2">
+            <div v-for="[host, target] in portEntries" :key="host" class="detail-list-item">
               <code class="text-slate-700">{{ host }}</code><i class="fas fa-arrow-right text-slate-300"></i><code class="text-slate-700">{{ target }}</code>
             </div>
           </div>
-          <p v-else class="text-sm text-slate-400">无端口映射</p>
+          <p v-else class="detail-empty">无端口映射</p>
         </div>
 
         <!-- 挂载 -->
-        <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
-          <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-transparent"></div>
-          <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center"><i class="fas fa-hard-drive text-white text-[9px]"></i></div>挂载</h2>
+        <div class="detail-card detail-card-amber">
+          <div class="detail-card-bar detail-card-bar-amber"></div>
+          <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-amber-500 to-amber-600"><i class="fas fa-hard-drive text-white text-[9px]"></i></div>挂载</h2>
           <div v-if="detail.volumes?.length" class="space-y-2">
-            <code v-for="vol in detail.volumes" :key="formatVolume(vol)" class="block text-xs text-slate-600 bg-white rounded-lg px-3 py-2 break-all">{{ formatVolume(vol) }}</code>
+            <code v-for="vol in detail.volumes" :key="formatVolume(vol)" class="detail-code-block">{{ formatVolume(vol) }}</code>
           </div>
-          <p v-else class="text-sm text-slate-400">无挂载</p>
+          <p v-else class="detail-empty">无挂载</p>
         </div>
       </div>
 
       <!-- 命令与环境变量 -->
-      <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
-        <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-slate-400 to-transparent"></div>
-        <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center"><i class="fas fa-terminal text-white text-[9px]"></i></div>命令与环境变量</h2>
+      <div class="detail-card detail-card-slate">
+        <div class="detail-card-bar detail-card-bar-slate"></div>
+        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-slate-500 to-slate-600"><i class="fas fa-terminal text-white text-[9px]"></i></div>命令与环境变量</h2>
         <div class="space-y-4">
           <div>
             <div class="text-xs text-slate-500 mb-1">启动命令</div>
-            <code class="block text-xs text-slate-600 bg-white rounded-lg px-3 py-2 break-all">{{ cmdText || '-' }}</code>
+            <code class="detail-code-block">{{ cmdText || '-' }}</code>
           </div>
           <div>
             <div class="text-xs text-slate-500 mb-1">环境变量</div>
-            <div v-if="envList.length" class="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <code v-for="env in envList" :key="env" class="text-xs text-slate-600 bg-white rounded-lg px-3 py-2 break-all">{{ env }}</code>
+            <div v-if="envList.length" class="detail-grid">
+              <code v-for="env in envList" :key="env" class="detail-grid-item">{{ env }}</code>
             </div>
-            <p v-else class="text-sm text-slate-400">无环境变量</p>
+            <p v-else class="detail-empty">无环境变量</p>
           </div>
         </div>
       </div>
 
       <!-- Labels -->
-      <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
-        <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-transparent"></div>
-        <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2"><div class="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center"><i class="fas fa-tags text-white text-[9px]"></i></div>Labels</h2>
-        <div v-if="labelEntries.length" class="grid grid-cols-1 md:grid-cols-2 gap-2">
-          <div v-for="[key, value] in labelEntries" :key="key" class="text-xs bg-white rounded-lg px-3 py-2 break-all">
+      <div class="detail-card detail-card-purple">
+        <div class="detail-card-bar detail-card-bar-purple"></div>
+        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-purple-500 to-purple-600"><i class="fas fa-tags text-white text-[9px]"></i></div>Labels</h2>
+        <div v-if="labelEntries.length" class="detail-grid">
+          <div v-for="[key, value] in labelEntries" :key="key" class="detail-grid-item">
             <span class="text-slate-500">{{ key }}</span><span class="text-slate-300 mx-1">=</span><span class="text-slate-700">{{ value }}</span>
           </div>
         </div>
-        <p v-else class="text-sm text-slate-400">无标签</p>
+        <p v-else class="detail-empty">无标签</p>
       </div>
     </div>
 

@@ -147,66 +147,53 @@ export default toNative(ServiceInfo)
     <!-- 内容 -->
     <div v-else class="card-body space-y-4 text-sm">
       <!-- 基本信息 -->
-      <div>
-        <h2 class="section-title">基本信息</h2>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="col-span-2">
-            <label class="form-label">服务 ID</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ serviceData.id }}</code>
-          </div>
-          <div class="col-span-2">
-            <label class="form-label">镜像</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ serviceData.image }}</code>
-          </div>
-          <div>
-            <label class="form-label">模式</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 capitalize">{{ serviceData.mode }}</div>
-          </div>
-          <div>
-            <label class="form-label">副本</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">
-              <span class="text-emerald-600 font-medium">{{ serviceData.runningTasks }}</span>
-              <span v-if="serviceData.mode === 'replicated'" class="text-slate-400"> / {{ serviceData.replicas ?? '?' }}</span>
-              <span v-else class="text-slate-400"> 运行中</span>
-            </div>
-          </div>
-          <div>
-            <label class="form-label">创建时间</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(serviceData.createdAt) }}</div>
-          </div>
-          <div>
-            <label class="form-label">更新时间</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(serviceData.updatedAt) }}</div>
-          </div>
+      <div class="detail-card detail-card-emerald">
+        <div class="detail-card-bar detail-card-bar-emerald"></div>
+        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-emerald-500 to-emerald-600"><i class="fas fa-info-circle text-white text-[9px]"></i></div>基本信息</h2>
+        <div class="detail-card-body">
+          <div class="detail-row"><span class="detail-label">服务 ID</span><code class="detail-value code">{{ serviceData.id }}</code></div>
+          <div class="detail-row"><span class="detail-label">镜像</span><code class="detail-value code">{{ serviceData.image }}</code></div>
+          <div class="detail-row"><span class="detail-label">模式</span><span class="detail-value capitalize">{{ serviceData.mode }}</span></div>
+          <div class="detail-row"><span class="detail-label">副本</span><span class="detail-value"><span class="text-emerald-600 font-medium">{{ serviceData.runningTasks }}</span><span v-if="serviceData.mode === 'replicated'" class="text-slate-400"> / {{ serviceData.replicas ?? '?' }}</span><span v-else class="text-slate-400"> 运行中</span></span></div>
+          <div class="detail-row"><span class="detail-label">创建时间</span><span class="detail-value">{{ formatTime(serviceData.createdAt) }}</span></div>
+          <div class="detail-row"><span class="detail-label">更新时间</span><span class="detail-value">{{ formatTime(serviceData.updatedAt) }}</span></div>
         </div>
       </div>
 
       <!-- 网络 -->
-      <div v-if="serviceData.networks && serviceData.networks.length > 0">
-        <h2 class="section-title">网络</h2>
+      <div v-if="serviceData.networks && serviceData.networks.length > 0" class="detail-card detail-card-blue">
+        <div class="detail-card-bar detail-card-bar-blue"></div>
+        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-blue-500 to-blue-600"><i class="fas fa-network-wired text-white text-[9px]"></i></div>网络</h2>
+        <div class="detail-card-body">
         <div class="flex flex-wrap gap-1.5">
           <span v-for="n in serviceData.networks" :key="n" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700">{{ n }}</span>
+        </div>
         </div>
       </div>
 
       <!-- 端口 -->
-      <div v-if="serviceData.ports && serviceData.ports.length > 0">
-        <h2 class="section-title">端口映射</h2>
-        <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
-          <div v-for="(p, idx) in serviceData.ports" :key="idx" class="px-3 py-2 flex items-center gap-3">
+      <div v-if="serviceData.ports && serviceData.ports.length > 0" class="detail-card detail-card-amber">
+        <div class="detail-card-bar detail-card-bar-amber"></div>
+        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-amber-500 to-amber-600"><i class="fas fa-ethernet text-white text-[9px]"></i></div>端口映射</h2>
+        <div class="detail-card-body">
+        <div class="space-y-1">
+          <div v-for="(p, idx) in serviceData.ports" :key="idx" class="detail-list-item">
             <code class="text-xs font-mono text-emerald-700 font-medium">{{ p.publishedPort }}</code>
             <i class="fas fa-arrow-right text-slate-300 text-xs"></i>
             <code class="text-xs font-mono text-slate-600">{{ p.targetPort }}/{{ p.protocol }}</code>
             <span class="ml-auto text-xs text-slate-400 capitalize">{{ p.publishMode }}</span>
           </div>
         </div>
+        </div>
       </div>
 
       <!-- 挂载 -->
-      <div v-if="serviceData.mounts && serviceData.mounts.length > 0">
-        <h2 class="section-title">挂载</h2>
-        <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
-          <div v-for="(mt, idx) in serviceData.mounts" :key="idx" class="px-3 py-2">
+      <div v-if="serviceData.mounts && serviceData.mounts.length > 0" class="detail-card detail-card-purple">
+        <div class="detail-card-bar detail-card-bar-purple"></div>
+        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-purple-500 to-purple-600"><i class="fas fa-folder-open text-white text-[9px]"></i></div>挂载</h2>
+        <div class="detail-card-body">
+        <div class="space-y-1">
+          <div v-for="(mt, idx) in serviceData.mounts" :key="idx" class="detail-list-item">
             <div class="flex items-center gap-2 text-xs font-mono flex-wrap">
               <span class="text-slate-400 capitalize">{{ mt.type }}</span>
               <code class="text-slate-700">{{ mt.source || '(匿名)' }}</code>
@@ -216,39 +203,51 @@ export default toNative(ServiceInfo)
             </div>
           </div>
         </div>
+        </div>
       </div>
 
       <!-- 环境变量 -->
-      <div v-if="serviceData.env && serviceData.env.length > 0">
-        <h2 class="section-title">环境变量</h2>
-        <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
-          <div v-for="(env, idx) in serviceData.env" :key="idx" class="px-3 py-1.5">
+      <div v-if="serviceData.env && serviceData.env.length > 0" class="detail-card detail-card-slate">
+        <div class="detail-card-bar detail-card-bar-slate"></div>
+        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-slate-500 to-slate-600"><i class="fas fa-code text-white text-[9px]"></i></div>环境变量</h2>
+        <div class="detail-card-body">
+        <div class="space-y-1">
+          <div v-for="(env, idx) in serviceData.env" :key="idx" class="detail-list-item">
             <code class="text-xs font-mono text-slate-600">{{ env }}</code>
           </div>
+        </div>
         </div>
       </div>
 
       <!-- 启动参数 -->
-      <div v-if="serviceData.args && serviceData.args.length > 0">
-        <h2 class="section-title">启动参数</h2>
-        <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700">{{ serviceData.args.join(' ') }}</code>
+      <div v-if="serviceData.args && serviceData.args.length > 0" class="detail-card detail-card-rose">
+        <div class="detail-card-bar detail-card-bar-rose"></div>
+        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-rose-500 to-rose-600"><i class="fas fa-terminal text-white text-[9px]"></i></div>启动参数</h2>
+        <div class="detail-card-body">
+          <code class="detail-code-block">{{ serviceData.args.join(' ') }}</code>
+        </div>
       </div>
 
       <!-- 约束 -->
-      <div v-if="serviceData.constraints && serviceData.constraints.length > 0">
-        <h2 class="section-title">调度约束</h2>
-        <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
-          <div v-for="(c, idx) in serviceData.constraints" :key="idx" class="px-3 py-1.5">
+      <div v-if="serviceData.constraints && serviceData.constraints.length > 0" class="detail-card detail-card-indigo">
+        <div class="detail-card-bar detail-card-bar-indigo"></div>
+        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-indigo-500 to-indigo-600"><i class="fas fa-sliders text-white text-[9px]"></i></div>调度约束</h2>
+        <div class="detail-card-body">
+        <div class="space-y-1">
+          <div v-for="(c, idx) in serviceData.constraints" :key="idx" class="detail-list-item">
             <code class="text-xs font-mono text-slate-600">{{ c }}</code>
           </div>
+        </div>
         </div>
       </div>
 
       <!-- 节点分布 -->
-      <div v-if="nodeDistribution.length > 0 && portal.hasPerm('GET /api/swarm/node/:id')">
-        <h2 class="section-title">节点分布</h2>
-        <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
-          <div v-for="node in nodeDistribution" :key="node.nodeName" class="px-3 py-2 flex items-center gap-3 transition-colors cursor-pointer hover:bg-slate-50" @click="$router.push({ name: 'swarm-node', params: { id: node.nodeID } })">
+      <div v-if="nodeDistribution.length > 0 && portal.hasPerm('GET /api/swarm/node/:id')" class="detail-card detail-card-cyan">
+        <div class="detail-card-bar detail-card-bar-cyan"></div>
+        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-cyan-500 to-cyan-600"><i class="fas fa-server text-white text-[9px]"></i></div>节点分布</h2>
+        <div class="detail-card-body">
+        <div class="space-y-1">
+          <div v-for="node in nodeDistribution" :key="node.nodeName" class="detail-list-item cursor-pointer hover:bg-slate-50" @click="$router.push({ name: 'swarm-node', params: { id: node.nodeID } })">
             <i class="fas fa-server text-slate-400 text-xs w-3"></i>
             <span class="text-xs font-mono text-slate-700 flex-1 truncate">{{ node.nodeName }}</span>
             <span class="text-xs">
@@ -258,16 +257,16 @@ export default toNative(ServiceInfo)
             <span class="text-xs text-slate-500">{{ node.running > 0 ? '运行中' : '空闲' }}</span>
           </div>
         </div>
+        </div>
       </div>
 
       <!-- Labels -->
-      <div v-if="serviceData.labels && Object.keys(serviceData.labels).length > 0">
-        <h2 class="section-title">Labels</h2>
-        <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
-          <div v-for="(val, key) in serviceData.labels" :key="key" class="px-3 py-1.5 flex gap-2 flex-wrap">
-            <code class="text-xs font-mono text-blue-600 shrink-0">{{ key }}</code>
-            <span class="text-slate-400">=</span>
-            <code class="text-xs font-mono text-slate-600 break-all">{{ val }}</code>
+      <div v-if="serviceData.labels && Object.keys(serviceData.labels).length > 0" class="detail-card detail-card-violet">
+        <div class="detail-card-bar detail-card-bar-violet"></div>
+        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-violet-500 to-violet-600"><i class="fas fa-tags text-white text-[9px]"></i></div>Labels</h2>
+        <div class="detail-grid">
+          <div v-for="(val, key) in serviceData.labels" :key="key" class="detail-grid-item">
+            <code class="text-blue-600">{{ key }}</code><span class="text-slate-400 mx-1">=</span><code class="text-slate-600">{{ val }}</code>
           </div>
         </div>
       </div>

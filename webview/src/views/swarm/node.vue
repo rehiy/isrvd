@@ -105,89 +105,49 @@ export default toNative(NodeDetail)
     <!-- Detail -->
     <div v-else-if="nodeData" class="card-body space-y-4 text-sm">
       <!-- 基本信息 -->
-      <div>
-        <h2 class="section-title">基本信息</h2>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="col-span-2">
-            <label class="form-label">节点 ID</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ nodeData.id }}</code>
-          </div>
-          <div>
-            <label class="form-label">主机名</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 flex items-center gap-2">
-              {{ nodeData.hostname }}
-              <span v-if="nodeData.leader" class="text-xs text-indigo-600"><i class="fas fa-crown mr-1"></i>Leader</span>
-            </div>
-          </div>
-          <div>
-            <label class="form-label">地址</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg font-mono text-slate-700">{{ nodeData.addr || '-' }}</div>
-          </div>
-          <div>
-            <label class="form-label">角色</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 capitalize">{{ nodeData.role }}</div>
-          </div>
-          <div>
-            <label class="form-label">状态</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 capitalize">{{ nodeData.state }}</div>
-          </div>
-          <div>
-            <label class="form-label">可用性</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 capitalize">{{ nodeData.availability }}</div>
-          </div>
-          <div>
-            <label class="form-label">引擎版本</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ nodeData.engineVersion || '-' }}</div>
-          </div>
+      <div class="detail-card detail-card-blue">
+        <div class="detail-card-bar detail-card-bar-blue"></div>
+        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-blue-500 to-blue-600"><i class="fas fa-info-circle text-white text-[9px]"></i></div>基本信息</h2>
+        <div class="detail-card-body">
+          <div class="detail-row"><span class="detail-label">节点 ID</span><code class="detail-value code">{{ nodeData.id }}</code></div>
+            <div class="detail-row"><span class="detail-label">主机名</span><span class="detail-value">{{ nodeData.hostname }} <span v-if="nodeData.leader" class="text-xs text-indigo-600"><i class="fas fa-crown mr-1"></i>Leader</span></span></div>
+            <div class="detail-row"><span class="detail-label">地址</span><span class="detail-value font-mono">{{ nodeData.addr || '-' }}</span></div>
+            <div class="detail-row"><span class="detail-label">角色</span><span class="detail-value capitalize">{{ nodeData.role }}</span></div>
+            <div class="detail-row"><span class="detail-label">状态</span><span class="detail-value capitalize">{{ nodeData.state }}</span></div>
+            <div class="detail-row"><span class="detail-label">可用性</span><span class="detail-value capitalize">{{ nodeData.availability }}</span></div>
+            <div class="detail-row"><span class="detail-label">引擎版本</span><span class="detail-value">{{ nodeData.engineVersion || '-' }}</span></div>
         </div>
       </div>
 
       <!-- 硬件资源 -->
-      <div>
-        <h2 class="section-title">硬件资源</h2>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="form-label">操作系统</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 capitalize">{{ nodeData.os || '-' }}</div>
-          </div>
-          <div>
-            <label class="form-label">架构</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ nodeData.architecture || '-' }}</div>
-          </div>
-          <div>
-            <label class="form-label">CPU 核数</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ nodeData.cpus || '-' }}</div>
-          </div>
-          <div>
-            <label class="form-label">内存</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ nodeData.memoryBytes ? formatFileSize(nodeData.memoryBytes) : '-' }}</div>
-          </div>
+      <div class="detail-card detail-card-amber">
+        <div class="detail-card-bar detail-card-bar-amber"></div>
+        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-amber-500 to-amber-600"><i class="fas fa-microchip text-white text-[9px]"></i></div>硬件资源</h2>
+        <div class="detail-card-body">
+          <div class="detail-row"><span class="detail-label">操作系统</span><span class="detail-value capitalize">{{ nodeData.os || '-' }}</span></div>
+          <div class="detail-row"><span class="detail-label">架构</span><span class="detail-value">{{ nodeData.architecture || '-' }}</span></div>
+          <div class="detail-row"><span class="detail-label">CPU 核数</span><span class="detail-value">{{ nodeData.cpus || '-' }}</span></div>
+          <div class="detail-row"><span class="detail-label">内存</span><span class="detail-value">{{ nodeData.memoryBytes ? formatFileSize(nodeData.memoryBytes) : '-' }}</span></div>
         </div>
       </div>
 
       <!-- 时间信息 -->
-      <div>
-        <h2 class="section-title">时间信息</h2>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="form-label">创建时间</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(nodeData.createdAt) }}</div>
-          </div>
-          <div>
-            <label class="form-label">更新时间</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(nodeData.updatedAt) }}</div>
-          </div>
+      <div class="detail-card detail-card-slate">
+        <div class="detail-card-bar detail-card-bar-slate"></div>
+        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-slate-500 to-slate-600"><i class="fas fa-clock text-white text-[9px]"></i></div>时间信息</h2>
+        <div class="detail-card-body">
+          <div class="detail-row"><span class="detail-label">创建时间</span><span class="detail-value">{{ formatTime(nodeData.createdAt) }}</span></div>
+          <div class="detail-row"><span class="detail-label">更新时间</span><span class="detail-value">{{ formatTime(nodeData.updatedAt) }}</span></div>
         </div>
       </div>
 
       <!-- Labels -->
-      <div v-if="nodeData.labels && Object.keys(nodeData.labels).length > 0">
-        <h2 class="section-title">Labels</h2>
-        <div class="border border-slate-200 rounded-lg divide-y divide-slate-100">
-          <div v-for="(val, key) in nodeData.labels" :key="key" class="px-3 py-1.5 flex gap-2">
-            <code class="text-xs font-mono text-blue-600 shrink-0">{{ key }}</code>
-            <span class="text-slate-400">=</span>
-            <code class="text-xs font-mono text-slate-600 break-all">{{ val }}</code>
+      <div v-if="nodeData.labels && Object.keys(nodeData.labels).length > 0" class="detail-card detail-card-purple">
+        <div class="detail-card-bar detail-card-bar-purple"></div>
+        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-purple-500 to-purple-600"><i class="fas fa-tags text-white text-[9px]"></i></div>Labels</h2>
+        <div class="detail-grid">
+          <div v-for="(val, key) in nodeData.labels" :key="key" class="detail-grid-item">
+            <code class="text-blue-600">{{ key }}</code><span class="text-slate-400 mx-1">=</span><code class="text-slate-600">{{ val }}</code>
           </div>
         </div>
       </div>
