@@ -165,9 +165,9 @@ export default toNative(ServiceInfo)
         <div class="detail-card-bar detail-card-bar-blue"></div>
         <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-blue-500 to-blue-600"><i class="fas fa-network-wired text-white text-[9px]"></i></div>网络</h2>
         <div class="detail-card-body">
-        <div class="flex flex-wrap gap-1.5">
-          <span v-for="n in serviceData.networks" :key="n" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700">{{ n }}</span>
-        </div>
+          <div class="flex flex-wrap gap-1.5">
+            <span v-for="n in serviceData.networks" :key="n" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700">{{ n }}</span>
+          </div>
         </div>
       </div>
 
@@ -176,14 +176,14 @@ export default toNative(ServiceInfo)
         <div class="detail-card-bar detail-card-bar-amber"></div>
         <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-amber-500 to-amber-600"><i class="fas fa-ethernet text-white text-[9px]"></i></div>端口映射</h2>
         <div class="detail-card-body">
-        <div class="space-y-1">
-          <div v-for="(p, idx) in serviceData.ports" :key="idx" class="detail-list-item">
-            <code class="text-xs font-mono text-emerald-700 font-medium">{{ p.publishedPort }}</code>
-            <i class="fas fa-arrow-right text-slate-300 text-xs"></i>
-            <code class="text-xs font-mono text-slate-600">{{ p.targetPort }}/{{ p.protocol }}</code>
-            <span class="ml-auto text-xs text-slate-400 capitalize">{{ p.publishMode }}</span>
+          <div class="space-y-1">
+            <div v-for="(p, idx) in serviceData.ports" :key="idx" class="detail-list-item">
+              <code class="text-xs font-mono text-emerald-700 font-medium">{{ p.publishedPort }}</code>
+              <i class="fas fa-arrow-right text-slate-300 text-xs"></i>
+              <code class="text-xs font-mono text-slate-600">{{ p.targetPort }}/{{ p.protocol }}</code>
+              <span class="ml-auto text-xs text-slate-400 capitalize">{{ p.publishMode }}</span>
+            </div>
           </div>
-        </div>
         </div>
       </div>
 
@@ -192,17 +192,17 @@ export default toNative(ServiceInfo)
         <div class="detail-card-bar detail-card-bar-purple"></div>
         <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-purple-500 to-purple-600"><i class="fas fa-folder-open text-white text-[9px]"></i></div>挂载</h2>
         <div class="detail-card-body">
-        <div class="space-y-1">
-          <div v-for="(mt, idx) in serviceData.mounts" :key="idx" class="detail-list-item">
-            <div class="flex items-center gap-2 text-xs font-mono flex-wrap">
-              <span class="text-slate-400 capitalize">{{ mt.type }}</span>
-              <code class="text-slate-700">{{ mt.source || '(匿名)' }}</code>
-              <i class="fas fa-arrow-right text-slate-300"></i>
-              <code class="text-slate-700">{{ mt.target }}</code>
-              <span v-if="mt.readOnly" class="ml-auto text-amber-600">只读</span>
+          <div class="space-y-1">
+            <div v-for="(mt, idx) in serviceData.mounts" :key="idx" class="detail-list-item">
+              <div class="flex items-center gap-2 text-xs font-mono flex-wrap">
+                <span class="text-slate-400 capitalize">{{ mt.type }}</span>
+                <code class="text-slate-700">{{ mt.source || '(匿名)' }}</code>
+                <i class="fas fa-arrow-right text-slate-300"></i>
+                <code class="text-slate-700">{{ mt.target }}</code>
+                <span v-if="mt.readOnly" class="ml-auto text-amber-600">只读</span>
+              </div>
             </div>
           </div>
-        </div>
         </div>
       </div>
 
@@ -211,11 +211,11 @@ export default toNative(ServiceInfo)
         <div class="detail-card-bar detail-card-bar-slate"></div>
         <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-slate-500 to-slate-600"><i class="fas fa-code text-white text-[9px]"></i></div>环境变量</h2>
         <div class="detail-card-body">
-        <div class="space-y-1">
-          <div v-for="(env, idx) in serviceData.env" :key="idx" class="detail-list-item">
-            <code class="text-xs font-mono text-slate-600">{{ env }}</code>
+          <div class="space-y-1">
+            <div v-for="(env, idx) in serviceData.env" :key="idx" class="detail-list-item">
+              <code class="text-xs font-mono text-slate-600">{{ env }}</code>
+            </div>
           </div>
-        </div>
         </div>
       </div>
 
@@ -233,11 +233,11 @@ export default toNative(ServiceInfo)
         <div class="detail-card-bar detail-card-bar-indigo"></div>
         <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-indigo-500 to-indigo-600"><i class="fas fa-sliders text-white text-[9px]"></i></div>调度约束</h2>
         <div class="detail-card-body">
-        <div class="space-y-1">
-          <div v-for="(c, idx) in serviceData.constraints" :key="idx" class="detail-list-item">
-            <code class="text-xs font-mono text-slate-600">{{ c }}</code>
+          <div class="space-y-1">
+            <div v-for="(c, idx) in serviceData.constraints" :key="idx" class="detail-list-item">
+              <code class="text-xs font-mono text-slate-600">{{ c }}</code>
+            </div>
           </div>
-        </div>
         </div>
       </div>
 
@@ -246,17 +246,17 @@ export default toNative(ServiceInfo)
         <div class="detail-card-bar detail-card-bar-cyan"></div>
         <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-cyan-500 to-cyan-600"><i class="fas fa-server text-white text-[9px]"></i></div>节点分布</h2>
         <div class="detail-card-body">
-        <div class="space-y-1">
-          <div v-for="node in nodeDistribution" :key="node.nodeName" class="detail-list-item cursor-pointer hover:bg-slate-50" @click="$router.push({ name: 'swarm-node', params: { id: node.nodeID } })">
-            <i class="fas fa-server text-slate-400 text-xs w-3"></i>
-            <span class="text-xs font-mono text-slate-700 flex-1 truncate">{{ node.nodeName }}</span>
-            <span class="text-xs">
-              <span class="text-emerald-600 font-medium">{{ node.running }}</span>
-              <span class="text-slate-400"> / {{ node.total }} 任务</span>
-            </span>
-            <span class="text-xs text-slate-500">{{ node.running > 0 ? '运行中' : '空闲' }}</span>
+          <div class="space-y-1">
+            <div v-for="node in nodeDistribution" :key="node.nodeName" class="detail-list-item cursor-pointer hover:bg-slate-50" @click="$router.push({ name: 'swarm-node', params: { id: node.nodeID } })">
+              <i class="fas fa-server text-slate-400 text-xs w-3"></i>
+              <span class="text-xs font-mono text-slate-700 flex-1 truncate">{{ node.nodeName }}</span>
+              <span class="text-xs">
+                <span class="text-emerald-600 font-medium">{{ node.running }}</span>
+                <span class="text-slate-400"> / {{ node.total }} 任务</span>
+              </span>
+              <span class="text-xs text-slate-500">{{ node.running > 0 ? '运行中' : '空闲' }}</span>
+            </div>
           </div>
-        </div>
         </div>
       </div>
 

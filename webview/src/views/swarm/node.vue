@@ -110,12 +110,12 @@ export default toNative(NodeDetail)
         <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-blue-500 to-blue-600"><i class="fas fa-info-circle text-white text-[9px]"></i></div>基本信息</h2>
         <div class="detail-card-body">
           <div class="detail-row"><span class="detail-label">节点 ID</span><code class="detail-value code">{{ nodeData.id }}</code></div>
-            <div class="detail-row"><span class="detail-label">主机名</span><span class="detail-value">{{ nodeData.hostname }} <span v-if="nodeData.leader" class="text-xs text-indigo-600"><i class="fas fa-crown mr-1"></i>Leader</span></span></div>
-            <div class="detail-row"><span class="detail-label">地址</span><span class="detail-value font-mono">{{ nodeData.addr || '-' }}</span></div>
-            <div class="detail-row"><span class="detail-label">角色</span><span class="detail-value capitalize">{{ nodeData.role }}</span></div>
-            <div class="detail-row"><span class="detail-label">状态</span><span class="detail-value capitalize">{{ nodeData.state }}</span></div>
-            <div class="detail-row"><span class="detail-label">可用性</span><span class="detail-value capitalize">{{ nodeData.availability }}</span></div>
-            <div class="detail-row"><span class="detail-label">引擎版本</span><span class="detail-value">{{ nodeData.engineVersion || '-' }}</span></div>
+          <div class="detail-row"><span class="detail-label">主机名</span><span class="detail-value">{{ nodeData.hostname }} <span v-if="nodeData.leader" class="text-xs text-indigo-600"><i class="fas fa-crown mr-1"></i>Leader</span></span></div>
+          <div class="detail-row"><span class="detail-label">地址</span><span class="detail-value font-mono">{{ nodeData.addr || '-' }}</span></div>
+          <div class="detail-row"><span class="detail-label">角色</span><span class="detail-value capitalize">{{ nodeData.role }}</span></div>
+          <div class="detail-row"><span class="detail-label">状态</span><span class="detail-value capitalize">{{ nodeData.state }}</span></div>
+          <div class="detail-row"><span class="detail-label">可用性</span><span class="detail-value capitalize">{{ nodeData.availability }}</span></div>
+          <div class="detail-row"><span class="detail-label">引擎版本</span><span class="detail-value">{{ nodeData.engineVersion || '-' }}</span></div>
         </div>
       </div>
 
