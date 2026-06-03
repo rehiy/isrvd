@@ -4,7 +4,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { AllConfig, ServerConfig, AgentConfig, OIDCConfig, ApisixConfig, CaddyConfig, DockerConfig, MonitorConfig, MarketplaceConfig, LinkConfig } from '@/service/types'
+import type { AllConfig, ServerConfig, AgentConfig, OIDCConfig, PasskeyConfig, ApisixConfig, CaddyConfig, DockerConfig, MonitorConfig, MarketplaceConfig, LinkConfig } from '@/service/types'
 
 import IconSelect from '@/component/icon-select.vue'
 
@@ -15,7 +15,7 @@ class Config extends Vue {
   // ─── 数据属性 ───
   loading = false
   saving = false
-  activeTab: 'server' | 'agent' | 'oidc' | 'app' | 'links' = 'server'
+  activeTab: 'server' | 'auth' | 'agent' | 'app' | 'links' = 'server'
 
   server: ServerConfig = { debug: false, listenAddr: '', jwtExpiration: 86400, maxUploadSize: 104857600, proxyHeaderName: '', proxyTrustedCIDRs: [], rootDirectory: '', allowedOrigins: [] }
   allowedOriginsText = ''
@@ -23,6 +23,8 @@ class Config extends Vue {
   monitor: MonitorConfig = { interval: 0 }
   oidc: OIDCConfig = { enabled: false, issuerUrl: '', clientId: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'], loginLabel: '' }
   oidcScopes = 'openid profile email'
+  passkey: PasskeyConfig = { enabled: false, rpName: '', rpId: '', rpOrigins: [], timeout: 60000 }
+  passkeyOriginsText = ''
   agent: AgentConfig = { model: '', baseUrl: '' }
   apisix: ApisixConfig = { adminUrl: '' }
   caddy: CaddyConfig = { adminUrl: '' }
@@ -42,6 +44,8 @@ class Config extends Vue {
       this.monitor = { ...(payload.monitor || { interval: 0 }) }
       this.oidc = { ...(payload.oidc || { enabled: false, issuerUrl: '', clientId: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'], loginLabel: '' }) }
       this.oidcScopes = (this.oidc.scopes || []).join(' ')
+      this.passkey = { ...(payload.passkey || { enabled: false, rpName: '', rpId: '', rpOrigins: [], timeout: 60000 }) }
+      this.passkeyOriginsText = (this.passkey.rpOrigins || []).join('\n')
       this.agent = { ...payload.agent }
       this.apisix = { ...payload.apisix }
       this.caddy = { ...(payload.caddy || { adminUrl: '' }) }
@@ -61,9 +65,10 @@ class Config extends Vue {
   async saveAll() {
     this.saving = true
     try {
-      await api.systemConfigUpdate({
+      const payload = {
         server: { ...this.server, allowedOrigins: this.allowedOriginsText.split(/\s+/).filter(Boolean), proxyTrustedCIDRs: this.proxyTrustedCIDRsText.split(/\s+/).filter(Boolean) },
         oidc: { ...this.oidc, scopes: this.oidcScopes.split(/\s+/).filter(Boolean) },
+        passkey: { ...this.passkey, rpOrigins: this.passkeyOriginsText.split(/\s+/).filter(Boolean) },
         agent: this.agent,
         apisix: this.apisix,
         caddy: this.caddy,
@@ -71,10 +76,13 @@ class Config extends Vue {
         monitor: this.monitor,
         marketplace: this.marketplace,
         links: this.links,
-      })
-this.portal.showNotification('success', '全部配置已保存，监听地址变更需重启生效')
+      }
+      await api.systemConfigUpdate(payload)
+      this.portal.showNotification('success', '全部配置已保存，监听地址变更需重启生效')
       this.loadConfig()
-    } catch {
+    } catch (e) {
+      console.error('保存配置失败:', e)
+      this.portal.showNotification('error', '保存配置失败')
     } finally {
       this.saving = false
     }
@@ -118,8 +126,8 @@ export default toNative(Config)
             <button type="button" :class="['tab-btn', activeTab === 'server' ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="activeTab = 'server'">
               <i class="fas fa-server"></i>全局
             </button>
-            <button type="button" :class="['tab-btn', activeTab === 'oidc' ? 'tab-btn-active text-purple-600' : 'tab-btn-inactive']" @click="activeTab = 'oidc'">
-              <i class="fas fa-id-card"></i>OIDC
+            <button type="button" :class="['tab-btn', activeTab === 'auth' ? 'tab-btn-active text-purple-600' : 'tab-btn-inactive']" @click="activeTab = 'auth'">
+              <i class="fas fa-shield-halved"></i>鉴权
             </button>
             <button type="button" :class="['tab-btn', activeTab === 'agent' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="activeTab = 'agent'">
               <i class="fas fa-robot"></i>Agent
@@ -167,8 +175,8 @@ export default toNative(Config)
         <button type="button" :class="['tab-btn flex-1 justify-center whitespace-nowrap', activeTab === 'server' ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="activeTab = 'server'">
           <i class="fas fa-server"></i>全局
         </button>
-        <button type="button" :class="['tab-btn flex-1 justify-center whitespace-nowrap', activeTab === 'oidc' ? 'tab-btn-active text-purple-600' : 'tab-btn-inactive']" @click="activeTab = 'oidc'">
-          <i class="fas fa-id-card"></i>OIDC
+        <button type="button" :class="['tab-btn flex-1 justify-center whitespace-nowrap', activeTab === 'auth' ? 'tab-btn-active text-purple-600' : 'tab-btn-inactive']" @click="activeTab = 'auth'">
+          <i class="fas fa-shield-halved"></i>鉴权
         </button>
         <button type="button" :class="['tab-btn flex-1 justify-center whitespace-nowrap', activeTab === 'agent' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="activeTab = 'agent'">
           <i class="fas fa-robot"></i>Agent
@@ -255,8 +263,8 @@ export default toNative(Config)
         </div>
       </section>
 
-      <!-- OIDC 配置 -->
-      <section v-if="activeTab === 'oidc'" class="max-w-3xl space-y-4">
+      <!-- 鉴权配置（OIDC + Passkey） -->
+      <section v-if="activeTab === 'auth'" class="max-w-3xl space-y-4">
         <div class="toggle-row">
           <div>
             <span class="text-sm text-slate-600">启用 OIDC 登录</span>
@@ -301,6 +309,37 @@ export default toNative(Config)
           <input v-model="oidc.loginLabel" type="text" placeholder="请输入登录按钮名称" class="input" />
           <p class="mt-1 text-xs text-slate-400">自定义 OIDC 登录按钮显示名称；留空则使用默认文案「使用 OIDC 登录」</p>
         </div>
+
+        <!-- Passkey 配置 -->
+        <div class="toggle-row">
+          <div>
+            <span class="text-sm text-slate-600">启用 Passkey 登录</span>
+            <p class="text-xs text-slate-400 mt-0.5">使用 WebAuthn/FIDO2 进行无密码登录</p>
+          </div>
+          <button type="button" class="toggle" :class="{ 'toggle-on': passkey.enabled }" role="switch" :aria-checked="passkey.enabled" @click="passkey.enabled = !passkey.enabled">
+            <span class="toggle-thumb" />
+          </button>
+        </div>
+        <div>
+          <label class="form-label">Relying Party 名称</label>
+          <input v-model="passkey.rpName" type="text" placeholder="请输入 RP 名称" class="input" />
+          <p class="mt-1 text-xs text-slate-400">显示在 Passkey 注册/登录界面上的名称，如 iSrvd</p>
+        </div>
+        <div>
+          <label class="form-label">Relying Party ID</label>
+          <input v-model="passkey.rpId" type="text" placeholder="请输入 RP ID" class="input" />
+          <p class="mt-1 text-xs text-slate-400">通常是您的域名，如 example.com</p>
+        </div>
+        <div>
+          <label class="form-label">允许的 Origin</label>
+          <textarea v-model="passkeyOriginsText" rows="3" placeholder="请输入允许的 Origin，每行一个" class="input font-mono text-xs"></textarea>
+          <p class="mt-1 text-xs text-slate-400">示例：https://example.com、https://*.example.com；必须与访问地址一致</p>
+        </div>
+        <div>
+          <label class="form-label">超时时间（毫秒）</label>
+          <input v-model.number="passkey.timeout" type="number" min="1000" placeholder="请输入超时时间" class="input" />
+          <p class="mt-1 text-xs text-slate-400">Passkey 操作的超时时间，默认 60000（60 秒）</p>
+        </div>
       </section>
 
       <!-- Agent 配置 -->
@@ -335,38 +374,28 @@ export default toNative(Config)
           <input v-model="apisix.adminKey" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
           <p class="mt-1 text-xs text-slate-400">访问 APISIX Admin API 的密钥</p>
         </div>
-        <div class="border-t border-slate-200 pt-4">
-          <p class="text-sm font-medium text-slate-500 mb-4">Caddy</p>
-          <div class="space-y-4">
-            <div>
-              <label class="form-label">Admin URL</label>
-              <input v-model="caddy.adminUrl" type="text" placeholder="请输入 Admin URL" class="input" />
-              <p class="text-xs text-slate-400 mt-1">Caddy Admin API 地址，默认 http://127.0.0.1:2019</p>
-            </div>
-          </div>
+        <p class="text-sm font-medium text-slate-500 mb-4">Caddy</p>
+        <div>
+          <label class="form-label">Admin URL</label>
+          <input v-model="caddy.adminUrl" type="text" placeholder="请输入 Admin URL" class="input" />
+          <p class="text-xs text-slate-400 mt-1">Caddy Admin API 地址，默认 http://127.0.0.1:2019</p>
         </div>
-        <div class="border-t border-slate-200 pt-4">
-          <p class="text-sm font-medium text-slate-500 mb-4">Docker</p>
-          <div class="space-y-4">
-            <div>
-              <label class="form-label">Docker Host</label>
-              <input v-model="docker.host" type="text" placeholder="请输入 Docker Host" class="input" />
-              <p class="mt-1 text-xs text-slate-400">示例：unix:///var/run/docker.sock 或 tcp://host:2375；留空则使用环境变量 DOCKER_HOST</p>
-            </div>
-            <div>
-              <label class="form-label">容器数据根目录</label>
-              <input v-model="docker.containerRoot" type="text" placeholder="请输入容器数据根目录" class="input" />
-              <p class="mt-1 text-xs text-slate-400">用于存放容器数据卷的基础目录（相对于基础目录），默认 containers</p>
-            </div>
-          </div>
+        <p class="text-sm font-medium text-slate-500 mb-4">Docker</p>
+        <div>
+          <label class="form-label">Docker Host</label>
+          <input v-model="docker.host" type="text" placeholder="请输入 Docker Host" class="input" />
+          <p class="mt-1 text-xs text-slate-400">示例：unix:///var/run/docker.sock 或 tcp://host:2375；留空则使用环境变量 DOCKER_HOST</p>
         </div>
-        <div class="border-t border-slate-200 pt-4">
-          <p class="text-sm font-medium text-slate-500 mb-4">应用市场</p>
-          <div>
-            <label class="form-label">站点 URL</label>
-            <input v-model="marketplace.url" type="text" placeholder="请输入应用市场 URL" class="input" />
-            <p class="mt-1 text-xs text-slate-400">应用市场页面以 iframe 方式嵌入，并通过 postMessage 协议接收安装事件</p>
-          </div>
+        <div>
+          <label class="form-label">容器数据根目录</label>
+          <input v-model="docker.containerRoot" type="text" placeholder="请输入容器数据根目录" class="input" />
+          <p class="mt-1 text-xs text-slate-400">用于存放容器数据卷的基础目录（相对于基础目录），默认 containers</p>
+        </div>
+        <p class="text-sm font-medium text-slate-500 mb-4">应用市场</p>
+        <div>
+          <label class="form-label">站点 URL</label>
+          <input v-model="marketplace.url" type="text" placeholder="请输入应用市场 URL" class="input" />
+          <p class="mt-1 text-xs text-slate-400">应用市场页面以 iframe 方式嵌入，并通过 postMessage 协议接收安装事件</p>
         </div>
       </section>
 

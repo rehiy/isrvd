@@ -11,6 +11,7 @@ class Login extends Vue {
 
     // ─── 数据属性 ───
     loading = false
+    passkeyLoading = false
     loginForm = {
         username: '',
         password: ''
@@ -34,6 +35,48 @@ class Login extends Vue {
 
     handleOIDCLogin() {
         window.location.href = 'api/account/oidc/login'
+    }
+
+    // ─── Passkey 登录 ───
+    async handlePasskeyLogin() {
+        this.passkeyLoading = true
+        try {
+            // 1. 开始 Passkey 登录流程
+            const { payload: beginData } = await api.accountPasskeyLoginBegin({
+                username: this.loginForm.username || undefined
+            })
+            
+            if (!beginData) {
+                throw new Error('无法开始 Passkey 登录')
+            }
+
+            // 2. 调用 WebAuthn API
+            const credential = await navigator.credentials.get({
+                publicKey: beginData.options as PublicKeyCredentialRequestOptions
+            })
+
+            if (!credential) {
+                throw new Error('Passkey 认证失败')
+            }
+
+            // 3. 完成登录
+            const { payload: loginResult } = await api.accountPasskeyLoginFinish({
+                sessionId: beginData.sessionId
+            })
+
+            if (!loginResult) {
+                throw new Error('登录失败')
+            }
+
+            // 4. 设置认证状态
+            this.portal.setAuth({ authMode: 'jwt', ...loginResult })
+            await this.portal.initialize()
+
+        } catch (e) {
+            console.error('Passkey 登录失败:', e)
+        } finally {
+            this.passkeyLoading = false
+        }
     }
 }
 
@@ -98,12 +141,35 @@ export default toNative(Login)
               <div class="relative flex justify-center text-xs">
                 <span class="bg-white px-2 text-slate-400">或</span>
               </div>
+              <button type="button" class="btn btn-secondary w-full" @click="handleOIDCLogin">
+                <i class="fas fa-right-to-bracket mr-2"></i>
+                {{ portal.oidcLoginLabel || '使用 OIDC 登录' }}
+              </button>
             </div>
-            <button type="button" class="btn btn-secondary w-full" @click="handleOIDCLogin">
-              <i class="fas fa-right-to-bracket mr-2"></i>
-              {{ portal.oidcLoginLabel || '使用 OIDC 登录' }}
-            </button>
           </template>
+
+          <!-- Passkey 登录 -->
+          <div class="relative py-1">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-slate-200"></div>
+            </div>
+            <div class="relative flex justify-center text-xs">
+              <span class="bg-white px-2 text-slate-400">或</span>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <button 
+              type="button" 
+              class="btn btn-secondary w-full" 
+              @click="handlePasskeyLogin"
+              :disabled="passkeyLoading"
+            >
+              <i v-if="passkeyLoading" class="fas fa-spinner fa-spin mr-2"></i>
+              <i v-else class="fas fa-key mr-2"></i>
+              {{ passkeyLoading ? 'Passkey 认证中...' : '使用 Passkey 登录' }}
+            </button>
+          </div>
         </form>
       </div>
 

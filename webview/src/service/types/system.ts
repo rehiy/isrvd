@@ -27,13 +27,6 @@ export interface ServerConfig {
     jwtSecret?: string
 }
 
-export interface AgentConfig {
-    model: string
-    baseUrl: string
-    // 写入时为空表示保留原值（不通过 JSON 返回）
-    apiKey?: string
-}
-
 export interface OIDCConfig {
     enabled: boolean
     issuerUrl: string
@@ -45,6 +38,21 @@ export interface OIDCConfig {
     scopes: string[]
     // OIDC 登录按钮自定义名称，留空时使用默认文案
     loginLabel?: string
+}
+
+export interface PasskeyConfig {
+    enabled: boolean
+    rpName: string
+    rpId: string
+    rpOrigins: string[]
+    timeout: number
+}
+
+export interface AgentConfig {
+    model: string
+    baseUrl: string
+    // 写入时为空表示保留原值（不通过 JSON 返回）
+    apiKey?: string
 }
 
 export interface ApisixConfig {
@@ -86,8 +94,9 @@ export interface LinkConfig {
 
 export interface AllConfig {
     server: ServerConfig
-    agent: AgentConfig
     oidc: OIDCConfig
+    passkey: PasskeyConfig
+    agent: AgentConfig
     apisix: ApisixConfig
     caddy: CaddyConfig
     docker: DockerConfig

@@ -32,6 +32,8 @@ func (y *YamlProvider) Load() (*Config, error) {
 		return nil, err
 	}
 
+	logman.Info("Loading YAML file", "file", y.file)
+
 	conf := &Config{}
 	if err := yaml.Unmarshal(data, conf); err != nil {
 		return nil, err

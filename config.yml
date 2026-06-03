@@ -20,6 +20,14 @@ oidc:
   # scopes: [openid, profile, email]（默认值，openid 始终被自动包含）
   # loginLabel: ""（默认值，留空则使用默认文案"使用 OIDC 登录"）
 
+passkey:
+  enabled: false                     # 是否启用 Passkey 认证
+  # rpName: "iSrvd"                # Relying Party 名称，如 "My App"
+  # rpId: "localhost"               # Relying Party ID（通常是域名）
+  # rpOrigins:                      # 允许的 Origin 列表
+  #   - "http://localhost:8080"
+  # timeout: 60000                  # 超时时间（毫秒），默认 60000（60 秒）
+
 agent:
   # model: your-model
   # baseUrl: https://ai.rehiy.wang/v1

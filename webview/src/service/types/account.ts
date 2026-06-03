@@ -74,3 +74,42 @@ export interface ChangePassword {
     oldPassword: string
     newPassword: string
 }
+
+// ─── Passkey 认证 ───
+
+// 开始注册/登录（前端 → 后端）
+export interface PasskeyBegin {
+    username?: string  // 注册时必填，登录时可选
+}
+
+// 开始注册/登录的响应（后端 → 前端）
+export interface PasskeyBeginResult {
+    sessionId: string
+    options: CredentialCreationOptions | CredentialRequestOptions  // 根据场景自动推断
+}
+
+// 完成注册/登录（前端 → 后端）
+export interface PasskeyFinish {
+    sessionId: string
+}
+
+// Passkey 登录结果
+export interface PasskeyLoginResult {
+    token: string
+    username: string
+}
+
+// Passkey 凭证信息
+export interface PasskeyCredential {
+    idBase64: string        // 凭证 ID (Base64 编码)
+    displayName: string      // 显示名称
+    addedAt: string         // 添加时间 (ISO 8601)
+    signCount: number       // 使用次数
+    attestationType: string // 认证类型
+    flags: {
+        userPresent: boolean
+        userVerified: boolean
+        backupEligible: boolean
+        backupState: boolean
+    }
+}

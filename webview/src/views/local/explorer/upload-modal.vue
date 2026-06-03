@@ -142,8 +142,8 @@ class UploadModal extends Vue {
                         this.currentFileProgress = e.total ? Math.round((e.loaded / e.total) * 100) : 0
                     }
                 })
-            } catch (error) {
-                console.error('Upload failed:', error)
+            } catch (e) {
+                console.error('Upload failed:', e)
                 this.portal.showNotification('error', `文件 "${file.name}" 上传失败`)
             }
             this.uploadProgress++

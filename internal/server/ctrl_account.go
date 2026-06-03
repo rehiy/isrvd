@@ -17,6 +17,14 @@ func (app *App) defineAccountRoutes() []Route {
 		// 认证与登录
 		{Method: "GET", Path: "/account/info", Handler: app.accountAuth, Module: "account", Label: "获取当前认证信息", Access: AccessAnon},
 		{Method: "POST", Path: "/account/login", Handler: app.accountLogin, Module: "account", Label: "账号密码登录", Access: AccessAnon},
+		// Passkey 登录（无需认证）
+		{Method: "POST", Path: "/account/passkey/login/begin", Handler: app.accountPasskeyLoginBegin, Module: "account", Label: "开始 Passkey 登录", Access: AccessAnon},
+		{Method: "POST", Path: "/account/passkey/login/finish", Handler: app.accountPasskeyLoginFinish, Module: "account", Label: "完成 Passkey 登录", Access: AccessAnon},
+		// Passkey 注册/绑定（需要认证）
+		{Method: "POST", Path: "/account/passkey/register/begin", Handler: app.accountPasskeyRegisterBegin, Module: "account", Label: "开始 Passkey 绑定", Access: AccessAuth},
+		{Method: "POST", Path: "/account/passkey/register/finish", Handler: app.accountPasskeyRegisterFinish, Module: "account", Label: "完成 Passkey 绑定", Access: AccessAuth},
+		{Method: "GET", Path: "/account/passkey/credentials", Handler: app.accountPasskeyListCredentials, Module: "account", Label: "查询 Passkey 凭证列表", Access: AccessAuth},
+		{Method: "DELETE", Path: "/account/passkey/credential/:credentialID", Handler: app.accountPasskeyDeleteCredential, Module: "account", Label: "删除 Passkey 凭证", Access: AccessAuth},
 		// OIDC 登录
 		{Method: "GET", Path: "/account/oidc/login", Handler: app.accountOIDCLogin, Module: "account", Label: "发起 OIDC 登录", Access: AccessAnon},
 		{Method: "GET", Path: "/account/oidc/callback", Handler: app.accountOIDCCallback, Module: "account", Label: "处理 OIDC 回调", Access: AccessAnon},
@@ -48,6 +56,66 @@ func (app *App) accountLogin(c *gin.Context) {
 		return
 	}
 	resp, err := app.accountSvc.Login(req)
+	if err != nil {
+		respondError(c, http.StatusUnauthorized, err.Error())
+		return
+	}
+	respondSuccess(c, "登录成功", resp)
+}
+
+// accountPasskeyRegisterBegin 开始 Passkey 注册
+func (app *App) accountPasskeyRegisterBegin(c *gin.Context) {
+	var req account.PasskeyBeginRegistrationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	resp, err := app.accountSvc.PasskeyBeginRegistration(c, req)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "开始注册", resp)
+}
+
+// accountPasskeyRegisterFinish 完成 Passkey 注册
+func (app *App) accountPasskeyRegisterFinish(c *gin.Context) {
+	var req account.PasskeyFinishRegistrationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	err := app.accountSvc.PasskeyFinishRegistration(c, req)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "Passkey 注册成功", nil)
+}
+
+// accountPasskeyLoginBegin 开始 Passkey 登录
+func (app *App) accountPasskeyLoginBegin(c *gin.Context) {
+	var req account.PasskeyBeginLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	resp, err := app.accountSvc.PasskeyBeginLogin(c, req)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "开始登录", resp)
+}
+
+// accountPasskeyLoginFinish 完成 Passkey 登录
+func (app *App) accountPasskeyLoginFinish(c *gin.Context) {
+	var req account.PasskeyFinishLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	resp, err := app.accountSvc.PasskeyFinishLogin(c, req)
 	if err != nil {
 		respondError(c, http.StatusUnauthorized, err.Error())
 		return
@@ -192,4 +260,26 @@ func (app *App) accountMemberDelete(c *gin.Context) {
 		return
 	}
 	respondSuccess(c, "成员删除成功", nil)
+}
+
+// accountPasskeyListCredentials 查询当前用户的 Passkey 凭证列表
+func (app *App) accountPasskeyListCredentials(c *gin.Context) {
+	username := c.GetString("username")
+	credentials, err := app.accountSvc.PasskeyListCredentials(username)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "查询成功", credentials)
+}
+
+// accountPasskeyDeleteCredential 删除当前用户的指定 Passkey 凭证
+func (app *App) accountPasskeyDeleteCredential(c *gin.Context) {
+	username := c.GetString("username")
+	credentialID := c.Param("credentialID")
+	if err := app.accountSvc.PasskeyDeleteCredential(username, credentialID); err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "凭证删除成功", nil)
 }

@@ -1,9 +1,12 @@
 package config
 
+import "time"
+
 // 配置结构
 type Config struct {
 	Server      *ServerConfig      `yaml:"server"`
 	OIDC        *OIDCConfig        `yaml:"oidc"`
+	Passkey     *PasskeyConfig     `yaml:"passkey"`
 	Agent       *AgentConfig       `yaml:"agent"`
 	Apisix      *ApisixConfig      `yaml:"apisix"`
 	Caddy       *CaddyConfig       `yaml:"caddy"`
@@ -37,6 +40,15 @@ type OIDCConfig struct {
 	UsernameClaim string   `yaml:"usernameClaim" json:"usernameClaim"`
 	Scopes        []string `yaml:"scopes" json:"scopes"`
 	LoginLabel    string   `yaml:"loginLabel" json:"loginLabel"` // OIDC 登录按钮自定义名称，留空时使用默认文案
+}
+
+// Passkey 配置
+type PasskeyConfig struct {
+	Enabled   bool     `yaml:"enabled" json:"enabled"`
+	RPName    string   `yaml:"rpName" json:"rpName"`       // Relying Party 名称
+	RPID      string   `yaml:"rpId" json:"rpId"`           // Relying Party ID（通常是域名）
+	RPOrigins []string `yaml:"rpOrigins" json:"rpOrigins"` // 允许的 Origin 列表
+	Timeout   int      `yaml:"timeout" json:"timeout"`     // 超时时间（毫秒），默认 60000
 }
 
 // Agent LLM 配置
@@ -92,13 +104,37 @@ type LinkConfig struct {
 
 // 成员配置
 type MemberConfig struct {
-	Username      string `yaml:"username" json:"username"`
-	Password      string `yaml:"password" json:"-"` // 敏感字段不序列化到 JSON
-	HomeDirectory string `yaml:"homeDirectory" json:"homeDirectory"`
+	Username      string               `yaml:"username" json:"username"`
+	Password      string               `yaml:"password" json:"-"` // 敏感字段不序列化到 JSON
+	HomeDirectory string               `yaml:"homeDirectory" json:"homeDirectory"`
+	Passkeys      []*PasskeyCredential `yaml:"passkeys" json:"passkeys,omitempty"` // Passkey 凭证列表
 	// Founder 创始人标志，创始人拥有所有模块的完整权限
 	Founder bool `yaml:"founder" json:"founder"`
 	// Description 成员描述信息（可选）
 	Description string `yaml:"description,omitempty" json:"description,omitempty"`
 	// Permissions 允许访问的路由列表，格式为 "METHOD /api/path"，如 "GET /api/docker/containers"
 	Permissions []string `yaml:"permissions,omitempty" json:"permissions,omitempty"`
+}
+
+// PasskeyCredential 存储用户的 Passkey 凭证信息
+type PasskeyCredential struct {
+	ID              []byte `yaml:"id" json:"-"`                            // 凭证 ID（二进制，不序列化到 JSON）
+	IDBase64        string `yaml:"idBase64" json:"idBase64"`               // 凭证 ID（Base64 编码，用于 JSON）
+	PublicKey       []byte `yaml:"publicKey" json:"-"`                     // 公钥（二进制，不序列化到 JSON）
+	PublicKeyBase64 string `yaml:"publicKeyBase64" json:"publicKeyBase64"` // 公钥（Base64 编码）
+	AttestationType string `yaml:"attestationType" json:"attestationType"`
+	Authenticator   struct {
+		AAGUID       []byte `yaml:"aaguid" json:"-"`
+		AAGUIDBase64 string `yaml:"aaguidBase64" json:"aaguidBase64"`
+		SignCount    uint32 `yaml:"signCount" json:"signCount"`
+		CloneWarning bool   `yaml:"cloneWarning" json:"cloneWarning"`
+	} `yaml:"authenticator" json:"authenticator"`
+	Flags struct {
+		UserPresent    bool `yaml:"userPresent" json:"userPresent"`
+		UserVerified   bool `yaml:"userVerified" json:"userVerified"`
+		BackupEligible bool `yaml:"backupEligible" json:"backupEligible"`
+		BackupState    bool `yaml:"backupState" json:"backupState"`
+	} `yaml:"flags" json:"flags"`
+	DisplayName string    `yaml:"displayName" json:"displayName"`
+	AddedAt     time.Time `yaml:"addedAt" json:"addedAt"`
 }

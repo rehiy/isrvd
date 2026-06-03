@@ -24,6 +24,7 @@ type AllConfigResponse struct {
 type UpdateAllConfigRequest struct {
 	Server      *config.ServerConfig      `json:"server"`
 	OIDC        *config.OIDCConfig        `json:"oidc"`
+	Passkey     *config.PasskeyConfig     `json:"passkey"`
 	Agent       *config.AgentConfig       `json:"agent"`
 	Apisix      *config.ApisixConfig      `json:"apisix"`
 	Caddy       *config.CaddyConfig       `json:"caddy"`
@@ -126,6 +127,9 @@ func (s *ConfigService) ConfigUpdateAll(req UpdateAllConfigRequest) error {
 	}
 	if req.Marketplace != nil {
 		config.Marketplace.URL = req.Marketplace.URL
+	}
+	if req.Passkey != nil {
+		config.Passkey = config.PasskeyNormalize(req.Passkey)
 	}
 	if req.Links != nil {
 		config.Links = req.Links

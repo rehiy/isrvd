@@ -7,6 +7,8 @@ var (
 	Server = ServerNormalize(nil)
 	// OIDC 配置
 	OIDC = OIDCNormalize(nil)
+	// Passkey 配置
+	Passkey = &PasskeyConfig{}
 	// Agent LLM 配置
 	Agent = &AgentConfig{}
 	// Apisix 配置
@@ -48,6 +50,7 @@ func Save() error {
 	conf := &Config{
 		Server:      Server,
 		OIDC:        OIDC,
+		Passkey:     Passkey,
 		Agent:       Agent,
 		Apisix:      Apisix,
 		Caddy:       Caddy,
@@ -70,6 +73,10 @@ func Apply(conf *Config) {
 	Server = ServerNormalize(conf.Server)
 
 	OIDC = OIDCNormalize(conf.OIDC)
+
+	if conf.Passkey != nil {
+		Passkey = conf.Passkey
+	}
 
 	if conf.Agent != nil {
 		Agent = conf.Agent
@@ -157,4 +164,15 @@ func OIDCNormalize(oidc *OIDCConfig) *OIDCConfig {
 		oidc.Scopes = []string{"openid", "profile", "email"}
 	}
 	return oidc
+}
+
+// PasskeyNormalize 填充 Passkey 默认值
+func PasskeyNormalize(passkey *PasskeyConfig) *PasskeyConfig {
+	if passkey == nil {
+		passkey = &PasskeyConfig{}
+	}
+	if passkey.Timeout == 0 {
+		passkey.Timeout = 60000
+	}
+	return passkey
 }

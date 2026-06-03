@@ -19,6 +19,11 @@ import type {
     ApiTokenCreate,
     ApiTokenResult,
     ChangePassword,
+    // Passkey
+    PasskeyBegin,
+    PasskeyBeginResult,
+    PasskeyFinish,
+    PasskeyLoginResult,
     // Filer
     FilerList,
     FilerRead,
@@ -169,6 +174,32 @@ class ApiService {
 
     accountPasswordChange(data: ChangePassword) {
         return http.put<void>('account/password', data)
+    }
+
+    // ==================== Passkey 认证相关 ====================
+
+    accountPasskeyRegisterBegin(data: PasskeyBegin) {
+        return http.post<PasskeyBeginResult>('account/passkey/register/begin', data)
+    }
+
+    accountPasskeyRegisterFinish(data: PasskeyFinish) {
+        return http.post<void>('account/passkey/register/finish', data)
+    }
+
+    accountPasskeyLoginBegin(data: PasskeyBegin) {
+        return http.post<PasskeyBeginResult>('account/passkey/login/begin', data)
+    }
+
+    accountPasskeyLoginFinish(data: PasskeyFinish) {
+        return http.post<PasskeyLoginResult>('account/passkey/login/finish', data)
+    }
+
+    accountPasskeyListCredentials() {
+        return http.get<any[]>('account/passkey/credentials')
+    }
+
+    accountPasskeyDeleteCredential(credentialId: string) {
+        return http.delete<void>(`account/passkey/credential/${credentialId}`)
     }
 
     // ==================== Filer 文件管理相关 ====================
