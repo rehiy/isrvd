@@ -385,7 +385,7 @@ export default toNative(SftpPanel)
       <table v-else class="w-full text-xs">
         <tbody>
           <tr v-if="mkdirMode" class="border-b border-teal-100 bg-teal-50">
-            <td class="px-3 py-1.5" colspan="4">
+            <td class="px-3 py-1.5" colspan="5">
               <div class="flex items-center gap-2">
                 <div class="w-5 h-5 rounded bg-amber-400 flex items-center justify-center flex-shrink-0">
                   <i class="fas fa-folder text-white text-xs"></i>
