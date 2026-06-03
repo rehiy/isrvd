@@ -6,7 +6,7 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { SFTPFileInfo, SFTPListResult } from '@/service/types'
 
-import { type UploadNode, buildUploadTree, shouldIgnoreUploadEntry } from '@/helper/ssh'
+import { buildUploadTree } from '@/helper/ssh'
 import { formatFileSize, formatUnixTime, getFileIcon, joinPath, downloadBlob, isEditableFile, isPreviewableFile } from '@/helper/utils'
 
 import SftpChmodModal from './sftp-chmod-modal.vue'
@@ -21,7 +21,6 @@ class SftpPanel extends Vue {
 
     portal = usePortal()
 
-    @Ref readonly uploadInputRef!: HTMLInputElement
     @Ref readonly uploadWidgetRef!: InstanceType<typeof UploadWidget>
     @Ref readonly chmodModalRef!: InstanceType<typeof SftpChmodModal>
     @Ref readonly renameModalRef!: InstanceType<typeof SftpRenameModal>
@@ -201,28 +200,16 @@ class SftpPanel extends Vue {
 
     // ─── 上传入口（input 选择）───
     triggerUpload() {
-        this.uploadInputRef?.click()
-    }
-
-    async handleUpload(e: Event) {
-        const input = e.target as HTMLInputElement
-        const files = input.files
-        if (!files || files.length === 0) return
-        const nodes: UploadNode[] = Array.from(files)
-            .filter(file => !shouldIgnoreUploadEntry(file.name))
-            .map(file => ({
-                type: 'file' as const,
-                name: file.name,
-                size: file.size,
-                destDir: this.sftpPath,
-                file,
-                percent: 0,
-                done: false,
-                error: '',
-                cancelled: false,
-            }))
-        input.value = ''
-        this.uploadWidgetRef?.upload(nodes)
+        this.dragOver = true
+        this.dragCounter = 1
+        
+        // 3秒后自动关闭拖拽提示
+        setTimeout(() => {
+            if (this.dragOver) {
+                this.dragOver = false
+                this.dragCounter = 0
+            }
+        }, 3000)
     }
 
     // ─── 拖拽上传 ───
@@ -339,7 +326,6 @@ export default toNative(SftpPanel)
         <button v-if="portal.hasPerm('POST /api/ssh/sftp/:id/write')" class="btn-icon btn-icon-teal" title="上传文件" @click="triggerUpload()">
           <i class="fas fa-upload text-xs"></i>
         </button>
-        <input ref="uploadInputRef" type="file" multiple class="hidden" @change="handleUpload" />
       </div>
     </div>
 
