@@ -78,21 +78,21 @@ export interface ChangePassword {
 
 // ─── Passkey 认证 ───
 
-// 开始注册/登录（前端 → 后端）
-export interface PasskeyBegin {
-    username?: string  // 注册时必填，登录时可选
+// 开始登录请求数据
+export interface PasskeyBeginLoginData {
+    username?: string  // 可选，为空则使用可发现凭证
 }
 
-// 开始注册/登录的响应（后端 → 前端）
-export interface PasskeyBeginResult {
+// 开始注册/登录的统一数据
+export interface PasskeyBeginData {
     sessionId: string
-    options: CredentialCreationOptions | CredentialRequestOptions  // 根据场景自动推断
+    options: CredentialCreationOptions | CredentialRequestOptions
 }
 
-// 完成注册/登录（前端 → 后端）
-export interface PasskeyFinish {
+// 完成注册/登录的统一数据
+export interface PasskeyFinishData {
     sessionId: string
-    credential?: any  // 注册时携带浏览器生成的凭证数据；登录时携带断言数据
+    credential: any
 }
 
 // Passkey 登录结果

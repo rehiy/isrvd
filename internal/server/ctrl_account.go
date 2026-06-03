@@ -80,7 +80,7 @@ func (app *App) accountPasskeyRegisterBegin(c *gin.Context) {
 
 // accountPasskeyRegisterFinish 完成 Passkey 注册
 func (app *App) accountPasskeyRegisterFinish(c *gin.Context) {
-	var req account.PasskeyFinishRegistrationRequest
+	var req account.PasskeyFinishData
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -110,7 +110,7 @@ func (app *App) accountPasskeyLoginBegin(c *gin.Context) {
 
 // accountPasskeyLoginFinish 完成 Passkey 登录
 func (app *App) accountPasskeyLoginFinish(c *gin.Context) {
-	var req account.PasskeyFinishLoginRequest
+	var req account.PasskeyFinishData
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return

@@ -6,7 +6,7 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { ApiTokenResult, PasskeyCredential } from '@/service/types'
 
-import { copyToClipboard } from '@/helper/utils'
+import { copyToClipboard, base64urlToBuffer, bufferToBase64url } from '@/helper/utils'
 import BaseModal from '@/component/modal.vue'
 
 @Component({
@@ -138,24 +138,39 @@ class Profile extends Vue {
                 throw new Error('无法开始 Passkey 注册')
             }
 
-            // 2. 调用 WebAuthn API，获取浏览器生成的凭证
-            const credential = await navigator.credentials.create(
-                beginData.options as CredentialCreationOptions
-            ) as PublicKeyCredential | null
+            // 2. 将 options 中的 base64url 字段转为 ArrayBuffer（WebAuthn API 要求）
+            const publicKey = beginData.options.publicKey as any
+            const creationOptions: CredentialCreationOptions = {
+                publicKey: {
+                    ...publicKey,
+                    challenge: base64urlToBuffer(publicKey.challenge),
+                    user: {
+                        ...publicKey.user,
+                        id: base64urlToBuffer(publicKey.user.id),
+                    },
+                    excludeCredentials: (publicKey.excludeCredentials || []).map((c: any) => ({
+                        ...c,
+                        id: base64urlToBuffer(c.id),
+                    })),
+                },
+            }
+
+            // 3. 调用 WebAuthn API，获取浏览器生成的凭证
+            const credential = await navigator.credentials.create(creationOptions) as PublicKeyCredential | null
 
             if (!credential) {
                 throw new Error('用户取消了 Passkey 注册')
             }
 
-            // 3. 将凭证数据序列化后发送给后端完成注册
+            // 4. 将凭证数据序列化后发送给后端完成注册
             const response = credential.response as AuthenticatorAttestationResponse
             const credentialData = {
                 id: credential.id,
-                rawId: btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
+                rawId: bufferToBase64url(credential.rawId),
                 type: credential.type,
                 response: {
-                    attestationObject: btoa(String.fromCharCode(...new Uint8Array(response.attestationObject))),
-                    clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(response.clientDataJSON))),
+                    attestationObject: bufferToBase64url(response.attestationObject),
+                    clientDataJSON: bufferToBase64url(response.clientDataJSON),
                 },
             }
 

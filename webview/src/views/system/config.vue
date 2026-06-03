@@ -327,8 +327,8 @@ export default toNative(Config)
         </div>
         <div>
           <label class="form-label">Relying Party ID</label>
-          <input v-model="passkey.rpId" type="text" placeholder="请输入 RP ID" class="input" />
-          <p class="mt-1 text-xs text-slate-400">通常是您的域名，如 example.com</p>
+          <input v-model="passkey.rpId" type="text" placeholder="纯域名，如 example.com" class="input" />
+          <p class="mt-1 text-xs text-slate-400">必须是纯域名，不含 https:// 前缀，如 example.com；填写带 scheme 的地址将自动提取域名部分</p>
         </div>
         <div>
           <label class="form-label">允许的 Origin</label>

@@ -299,3 +299,26 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
     }
 }
 
+// ─── WebAuthn 工具函数 ───
+
+/**
+ * base64url 字符串 → ArrayBuffer
+ * WebAuthn API 要求 challenge / id 等字段为 BufferSource
+ */
+export function base64urlToBuffer(base64url: string): ArrayBuffer {
+    const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/')
+    const bin = atob(base64)
+    const buf = new Uint8Array(bin.length)
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i)
+    return buf.buffer
+}
+
+/**
+ * ArrayBuffer → base64url 字符串
+ * 用于将 WebAuthn 凭证数据序列化后发送给后端
+ */
+export function bufferToBase64url(buf: ArrayBuffer): string {
+    const bin = String.fromCharCode(...new Uint8Array(buf))
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+}
+

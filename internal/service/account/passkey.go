@@ -1,10 +1,14 @@
 package account
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"sync"
 	"time"
 
@@ -146,15 +150,16 @@ func getPasskeyUser(username string, member *config.MemberConfig) *passkeyUser {
 // PasskeyBeginRegistrationRequest 开始注册请求（username 由认证中间件注入，无需请求体）
 type PasskeyBeginRegistrationRequest struct{}
 
-// PasskeyBeginRegistrationResponse 开始注册响应
-type PasskeyBeginRegistrationResponse struct {
+// PasskeyBeginData 开始注册/登录的统一数据
+type PasskeyBeginData struct {
 	SessionID string `json:"sessionId"`
 	Options   any    `json:"options"`
 }
 
-// PasskeyFinishRegistrationRequest 完成注册请求
-type PasskeyFinishRegistrationRequest struct {
-	SessionID string `json:"sessionId" binding:"required"`
+// PasskeyFinishData 完成注册/登录的统一数据
+type PasskeyFinishData struct {
+	SessionID  string `json:"sessionId" binding:"required"`
+	Credential any    `json:"credential" binding:"required"`
 }
 
 // PasskeyBeginLoginRequest 开始登录请求
@@ -162,21 +167,10 @@ type PasskeyBeginLoginRequest struct {
 	Username string `json:"username"` // 可选，为空则使用可发现凭证
 }
 
-// PasskeyBeginLoginResponse 开始登录响应
-type PasskeyBeginLoginResponse struct {
-	SessionID string `json:"sessionId"`
-	Options   any    `json:"options"`
-}
-
-// PasskeyFinishLoginRequest 完成登录请求
-type PasskeyFinishLoginRequest struct {
-	SessionID string `json:"sessionId" binding:"required"`
-}
-
 // ─── Service 方法 ─────────────
 
 // PasskeyBeginRegistration 开始 Passkey 注册流程
-func (s *Service) PasskeyBeginRegistration(c *gin.Context, req PasskeyBeginRegistrationRequest) (*PasskeyBeginRegistrationResponse, error) {
+func (s *Service) PasskeyBeginRegistration(c *gin.Context, req PasskeyBeginRegistrationRequest) (*PasskeyBeginData, error) {
 	username := c.GetString("username")
 	member, exists := config.Members[username]
 	if !exists {
@@ -201,14 +195,14 @@ func (s *Service) PasskeyBeginRegistration(c *gin.Context, req PasskeyBeginRegis
 		ExpiresAt: time.Now().Add(5 * time.Minute),
 	})
 
-	return &PasskeyBeginRegistrationResponse{
+	return &PasskeyBeginData{
 		SessionID: sessionID,
 		Options:   credential,
 	}, nil
 }
 
 // PasskeyFinishRegistration 完成 Passkey 注册
-func (s *Service) PasskeyFinishRegistration(c *gin.Context, req PasskeyFinishRegistrationRequest) error {
+func (s *Service) PasskeyFinishRegistration(c *gin.Context, req PasskeyFinishData) error {
 	session := loadPasskeySession(req.SessionID)
 	if session == nil {
 		return fmt.Errorf("注册会话不存在或已过期")
@@ -228,11 +222,20 @@ func (s *Service) PasskeyFinishRegistration(c *gin.Context, req PasskeyFinishReg
 	user := getPasskeyUser(session.Username, member)
 	sessionData := webauthn.SessionData{Challenge: session.Challenge}
 
-	credential, err := w.FinishRegistration(user, sessionData, c.Request)
+	// 将前端序列化的凭证重建为 HTTP Request，供 webauthn 库解析
+	credBody, err := json.Marshal(req.Credential)
+	if err != nil {
+		return fmt.Errorf("凭证序列化失败: %w", err)
+	}
+	fakeReq := &http.Request{
+		Header: http.Header{"Content-Type": []string{"application/json"}},
+		Body:   io.NopCloser(bytes.NewReader(credBody)),
+	}
+
+	credential, err := w.FinishRegistration(user, sessionData, fakeReq)
 	if err != nil {
 		return fmt.Errorf("完成注册失败: %w", err)
 	}
-
 	pk := &config.PasskeyCredential{
 		IDBase64:        base64.URLEncoding.EncodeToString(credential.ID),
 		PublicKeyBase64: base64.URLEncoding.EncodeToString(credential.PublicKey),
@@ -265,7 +268,7 @@ func (s *Service) PasskeyFinishRegistration(c *gin.Context, req PasskeyFinishReg
 }
 
 // PasskeyBeginLogin 开始 Passkey 登录流程
-func (s *Service) PasskeyBeginLogin(c *gin.Context, req PasskeyBeginLoginRequest) (*PasskeyBeginLoginResponse, error) {
+func (s *Service) PasskeyBeginLogin(c *gin.Context, req PasskeyBeginLoginRequest) (*PasskeyBeginData, error) {
 	w, err := s.getWebAuthn()
 	if err != nil {
 		return nil, err
@@ -292,7 +295,7 @@ func (s *Service) PasskeyBeginLogin(c *gin.Context, req PasskeyBeginLoginRequest
 			ExpiresAt: time.Now().Add(5 * time.Minute),
 		})
 
-		return &PasskeyBeginLoginResponse{SessionID: sessionID, Options: assertion}, nil
+		return &PasskeyBeginData{SessionID: sessionID, Options: assertion}, nil
 	}
 
 	// 用户身份未知，使用可发现凭证
@@ -306,11 +309,11 @@ func (s *Service) PasskeyBeginLogin(c *gin.Context, req PasskeyBeginLoginRequest
 		ExpiresAt: time.Now().Add(5 * time.Minute),
 	})
 
-	return &PasskeyBeginLoginResponse{SessionID: sessionID, Options: assertion}, nil
+	return &PasskeyBeginData{SessionID: sessionID, Options: assertion}, nil
 }
 
 // PasskeyFinishLogin 完成 Passkey 登录
-func (s *Service) PasskeyFinishLogin(c *gin.Context, req PasskeyFinishLoginRequest) (*LoginResponse, error) {
+func (s *Service) PasskeyFinishLogin(c *gin.Context, req PasskeyFinishData) (*LoginResponse, error) {
 	session := loadPasskeySession(req.SessionID)
 	if session == nil {
 		return nil, fmt.Errorf("登录会话不存在或已过期")
@@ -324,6 +327,16 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, req PasskeyFinishLoginReque
 
 	sessionData := webauthn.SessionData{Challenge: session.Challenge}
 
+	// 将前端序列化的凭证重建为 HTTP Request，供 webauthn 库解析
+	credBody, err := json.Marshal(req.Credential)
+	if err != nil {
+		return nil, fmt.Errorf("凭证序列化失败: %w", err)
+	}
+	fakeReq := &http.Request{
+		Header: http.Header{"Content-Type": []string{"application/json"}},
+		Body:   io.NopCloser(bytes.NewReader(credBody)),
+	}
+
 	var username string
 	if session.Username != "" {
 		// 指定用户登录
@@ -333,7 +346,7 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, req PasskeyFinishLoginReque
 			return nil, fmt.Errorf("用户不存在")
 		}
 		user := getPasskeyUser(username, member)
-		if _, err = w.FinishLogin(user, sessionData, c.Request); err != nil {
+		if _, err = w.FinishLogin(user, sessionData, fakeReq); err != nil {
 			return nil, fmt.Errorf("验证失败: %w", err)
 		}
 	} else {
@@ -352,7 +365,7 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, req PasskeyFinishLoginReque
 			}
 			return nil, fmt.Errorf("凭证不存在")
 		}
-		if _, err = w.FinishDiscoverableLogin(handler, sessionData, c.Request); err != nil {
+		if _, err = w.FinishDiscoverableLogin(handler, sessionData, fakeReq); err != nil {
 			return nil, fmt.Errorf("验证失败: %w", err)
 		}
 	}

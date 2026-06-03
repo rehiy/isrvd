@@ -4,6 +4,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
+import { base64urlToBuffer, bufferToBase64url } from '@/helper/utils'
 
 @Component
 class Login extends Vue {
@@ -56,26 +57,37 @@ class Login extends Vue {
                 throw new Error('无法开始 Passkey 登录')
             }
 
-            // 2. 调用 WebAuthn API，获取浏览器断言数据
-            const credential = await navigator.credentials.get(
-                beginData.options as CredentialRequestOptions
-            ) as PublicKeyCredential | null
+            // 2. 将 options 中的 base64url 字段转为 ArrayBuffer（WebAuthn API 要求）
+            const publicKey = beginData.options.publicKey as any
+            const requestOptions: CredentialRequestOptions = {
+                publicKey: {
+                    ...publicKey,
+                    challenge: base64urlToBuffer(publicKey.challenge),
+                    allowCredentials: (publicKey.allowCredentials || []).map((c: any) => ({
+                        ...c,
+                        id: base64urlToBuffer(c.id),
+                    })),
+                },
+            }
+
+            // 3. 调用 WebAuthn API，获取浏览器断言数据
+            const credential = await navigator.credentials.get(requestOptions) as PublicKeyCredential | null
 
             if (!credential) {
                 throw new Error('用户取消了 Passkey 认证')
             }
 
-            // 3. 将断言数据序列化后发送给后端完成登录
+            // 4. 将断言数据序列化后发送给后端完成登录
             const response = credential.response as AuthenticatorAssertionResponse
             const credentialData = {
                 id: credential.id,
-                rawId: btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
+                rawId: bufferToBase64url(credential.rawId),
                 type: credential.type,
                 response: {
-                    authenticatorData: btoa(String.fromCharCode(...new Uint8Array(response.authenticatorData))),
-                    clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(response.clientDataJSON))),
-                    signature: btoa(String.fromCharCode(...new Uint8Array(response.signature))),
-                    userHandle: response.userHandle ? btoa(String.fromCharCode(...new Uint8Array(response.userHandle))) : null,
+                    authenticatorData: bufferToBase64url(response.authenticatorData),
+                    clientDataJSON: bufferToBase64url(response.clientDataJSON),
+                    signature: bufferToBase64url(response.signature),
+                    userHandle: response.userHandle ? bufferToBase64url(response.userHandle) : null,
                 },
             }
 

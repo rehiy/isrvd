@@ -20,9 +20,9 @@ import type {
     ApiTokenResult,
     ChangePassword,
     // Passkey
-    PasskeyBegin,
-    PasskeyBeginResult,
-    PasskeyFinish,
+    PasskeyBeginLoginData,
+    PasskeyBeginData,
+    PasskeyFinishData,
     PasskeyLoginResult,
     PasskeyCredential,
     // Filer
@@ -179,19 +179,19 @@ class ApiService {
 
     // ==================== Passkey 认证相关 ====================
 
-    accountPasskeyRegisterBegin(data: PasskeyBegin) {
-        return http.post<PasskeyBeginResult>('account/passkey/register/begin', data)
+    accountPasskeyRegisterBegin() {
+        return http.post<PasskeyBeginData>('account/passkey/register/begin', {})
     }
 
-    accountPasskeyRegisterFinish(data: PasskeyFinish) {
+    accountPasskeyRegisterFinish(data: PasskeyFinishData) {
         return http.post<void>('account/passkey/register/finish', data)
     }
 
-    accountPasskeyLoginBegin(data: PasskeyBegin) {
-        return http.post<PasskeyBeginResult>('account/passkey/login/begin', data)
+    accountPasskeyLoginBegin(data: PasskeyBeginLoginData) {
+        return http.post<PasskeyBeginData>('account/passkey/login/begin', data)
     }
 
-    accountPasskeyLoginFinish(data: PasskeyFinish) {
+    accountPasskeyLoginFinish(data: PasskeyFinishData) {
         return http.post<PasskeyLoginResult>('account/passkey/login/finish', data)
     }
 
