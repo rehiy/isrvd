@@ -112,12 +112,15 @@ class MonitorPage extends Vue {
     async switchTimeRange(range: number) {
         if (this.selectedRange === range) return
         this.selectedRange = range
+        this.loading = true
+        this.ready = false
         this.clearAllData()
         this.stopPoll()
         const version = this.dataVersion
         const historyOk = await this.loadHistory(version)
         const realtimeOk = await this.loadData(version)
         this.ready = historyOk || realtimeOk
+        this.loading = false
         // 只有5分钟模式才启动轮询
         if (this.selectedRange === 300) {
             this.startPoll()
@@ -161,9 +164,12 @@ class MonitorPage extends Vue {
         } else {
             // 只有5分钟模式才在页面重新可见时启动轮询
             if (this.selectedRange === 300) {
+                this.loading = true
+                this.ready = false
                 const version = this.dataVersion
                 await this.loadHistory(version)
                 await this.loadData(version)
+                this.loading = false
                 this.startPoll()
             }
         }
