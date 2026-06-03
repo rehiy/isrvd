@@ -49,7 +49,7 @@ class Config extends Vue {
       this.marketplace = { ...(payload.marketplace || { url: '' }) }
       this.links = payload.links ? payload.links.map(l => ({ ...l })) : []
       if (reload) {
-        this.portal.showNotification('success', '配置已从文件重载配置')
+        this.portal.showNotification('success', '配置已重载')
       }
     } catch {
       this.portal.showNotification('error', reload ? '重载配置失败' : '加载配置失败')
@@ -131,8 +131,13 @@ export default toNative(Config)
               <i class="fas fa-link"></i>导航
             </button>
           </div>
-          <button type="button" class="btn btn-indigo" @click="loadConfig(true)">
-            <i class="fas fa-rotate"></i>重载配置
+          <button type="button" class="btn btn-secondary" @click="loadConfig(true)">
+            <i class="fas fa-rotate"></i>重载
+          </button>
+          <button v-if="portal.hasPerm('PATCH /api/system/config')" type="button" class="btn btn-indigo rounded-xl whitespace-nowrap" :disabled="saving" @click="saveAll">
+            <i v-if="saving" class="fas fa-spinner fa-spin"></i>
+            <i v-else class="fas fa-save"></i>
+            <span>{{ saving ? '保存中...' : '保存配置' }}</span>
           </button>
         </div>
       </div>
@@ -147,9 +152,15 @@ export default toNative(Config)
             <p class="text-xs text-slate-500 truncate">服务器、认证、网关与容器参数</p>
           </div>
         </div>
-        <button type="button" class="btn btn-indigo w-9 h-9 !px-0" title="重载配置" @click="loadConfig(true)">
-          <i class="fas fa-rotate text-sm"></i>
-        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadConfig(true)">
+            <i class="fas fa-rotate text-sm"></i>
+          </button>
+          <button v-if="portal.hasPerm('PATCH /api/system/config')" type="button" class="btn btn-indigo w-9 h-9 !px-0" title="保存配置" :disabled="saving" @click="saveAll">
+            <i v-if="saving" class="fas fa-spinner fa-spin text-sm"></i>
+            <i v-else class="fas fa-save text-sm"></i>
+          </button>
+        </div>
       </div>
       <!-- 移动端 Tab -->
       <div class="tab-group md:hidden mt-3 overflow-x-auto">
@@ -382,13 +393,8 @@ export default toNative(Config)
         </button>
       </section>
 
-      <!-- 统一保存 -->
-      <div class="max-w-3xl mt-6 pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center gap-3">
-        <button type="submit" :disabled="saving" class="btn btn-indigo rounded-xl whitespace-nowrap flex-shrink-0 self-start">
-          <i v-if="saving" class="fas fa-spinner fa-spin"></i>
-          <i v-else class="fas fa-save"></i>
-          <span>{{ saving ? '保存中...' : '保存配置' }}</span>
-        </button>
+      <!-- 提示信息 -->
+      <div class="max-w-3xl mt-6 pt-4 border-t border-slate-200">
         <p class="text-xs text-slate-400 flex items-start gap-1">
           <i class="fas fa-circle-info mt-0.5 flex-shrink-0"></i>
           <span>保存后立即写入配置文件，监听地址变更需重启服务生效。</span>
