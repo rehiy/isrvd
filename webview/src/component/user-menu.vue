@@ -50,17 +50,25 @@ export default toNative(UserMenu)
       </button>
     </template>
 
-    <!-- 个人设置 -->
-    <router-link to="/account/profile" class="dropdown-item" @click="menuOpen = false">
-      <i class="fas fa-user-circle"></i>
-      个人设置
-    </router-link>
-
     <!-- 主题切换：浅色 / 深色 / 跟随系统 -->
     <button class="dropdown-item" :title="`当前：${themeLabel}，点击切换`" @click.stop="toggleTheme">
       <i :class="themeIcon" class="w-4 text-center"></i>
       <span>{{ themeLabel }}</span>
     </button>
+
+    <!-- 账户设置 -->
+    <router-link to="/account/password" class="dropdown-item" @click="menuOpen = false">
+      <i class="fas fa-lock"></i>
+      修改密码
+    </router-link>
+    <router-link to="/account/passkeys" class="dropdown-item" @click="menuOpen = false">
+      <i class="fas fa-fingerprint"></i>
+      Passkey
+    </router-link>
+    <router-link to="/account/apikey" class="dropdown-item" @click="menuOpen = false">
+      <i class="fas fa-key"></i>
+      API Key
+    </router-link>
 
     <!-- 分割线 -->
     <div class="border-t border-slate-100 my-1"></div>

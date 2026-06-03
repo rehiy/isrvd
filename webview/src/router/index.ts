@@ -236,7 +236,22 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/account/profile',
     name: 'account-profile',
-    component: () => import('@/views/account/profile.vue')
+    redirect: '/account/password'
+  },
+  {
+    path: '/account/password',
+    name: 'account-password',
+    component: () => import('@/views/account/password.vue')
+  },
+  {
+    path: '/account/passkeys',
+    name: 'account-passkeys',
+    component: () => import('@/views/account/passkeys.vue')
+  },
+  {
+    path: '/account/apikey',
+    name: 'account-apikey',
+    component: () => import('@/views/account/apikey.vue')
   },
   {
     path: '/system/config',
