@@ -18,6 +18,7 @@ var (
 	ErrMemberExists     = errors.New("用户名已存在")
 	ErrInvalidRequest   = errors.New("用户名不能为空")
 	ErrFounderProtected = errors.New("创始人不可修改或删除")
+	ErrPasskeyNotFound  = errors.New("凭证不存在")
 )
 
 // MemberInspect 获取单个成员信息

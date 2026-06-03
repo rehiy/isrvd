@@ -15,6 +15,7 @@ export const useAuthStore = defineStore('auth', () => {
     const permissions = ref<string[]>([])
     const oidcEnabled = ref(false)
     const oidcLoginLabel = ref('')
+    const passkeyEnabled = ref(false)
 
     // ─── 操作定义 ───
 
@@ -84,9 +85,10 @@ export const useAuthStore = defineStore('auth', () => {
             permissions.value = payload.member.permissions || []
         }
 
-        // OIDC 配置是服务端配置，无论登录状态如何都需要更新（放在 clearAuth 之后）
+        // OIDC / Passkey 配置是服务端配置，无论登录状态如何都需要更新（放在 clearAuth 之后）
         oidcEnabled.value = payload.oidcEnabled || false
         oidcLoginLabel.value = payload.oidcBtnLabel || ''
+        passkeyEnabled.value = payload.passkeyEnabled || false
     }
 
     return {
@@ -99,6 +101,7 @@ export const useAuthStore = defineStore('auth', () => {
         permissions,
         oidcEnabled,
         oidcLoginLabel,
+        passkeyEnabled,
         // 操作
         setAuth,
         clearAuth,

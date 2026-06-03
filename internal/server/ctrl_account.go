@@ -278,7 +278,12 @@ func (app *App) accountPasskeyDeleteCredential(c *gin.Context) {
 	username := c.GetString("username")
 	credentialID := c.Param("credentialID")
 	if err := app.accountSvc.PasskeyDeleteCredential(username, credentialID); err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		switch {
+		case errors.Is(err, account.ErrPasskeyNotFound):
+			respondError(c, http.StatusNotFound, err.Error())
+		default:
+			respondError(c, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 	respondSuccess(c, "凭证删除成功", nil)

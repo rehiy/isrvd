@@ -115,8 +115,7 @@ class Profile extends Vue {
         try {
             const { payload } = await api.accountPasskeyListCredentials()
             this.passkeyCredentials = payload || []
-        } catch (e) {
-            const errorMessage = e instanceof Error ? e.message : String(e)
+        } catch {
             this.portal.showNotification('error', '加载 Passkey 列表失败')
         } finally {
             this.passkeyLoading = false
@@ -124,29 +123,45 @@ class Profile extends Vue {
     }
 
     async handleRegisterPasskey() {
+        // 检查浏览器是否支持 WebAuthn
+        if (!window.PublicKeyCredential || !navigator.credentials?.create) {
+            this.portal.showNotification('error', '当前浏览器或环境不支持 Passkey（需要 HTTPS 且浏览器支持 WebAuthn）')
+            return
+        }
+
         this.registerLoading = true
         try {
             // 1. 开始注册流程
-            const { payload: beginData } = await api.accountPasskeyRegisterBegin({
-                username: this.portal.username || ''
-            })
+            const { payload: beginData } = await api.accountPasskeyRegisterBegin({})
 
             if (!beginData) {
                 throw new Error('无法开始 Passkey 注册')
             }
 
-            // 2. 调用 WebAuthn API
-            const credential = await navigator.credentials.create({
-                publicKey: beginData.options as PublicKeyCredentialCreationOptions
-            })
+            // 2. 调用 WebAuthn API，获取浏览器生成的凭证
+            const credential = await navigator.credentials.create(
+                beginData.options as CredentialCreationOptions
+            ) as PublicKeyCredential | null
 
             if (!credential) {
-                throw new Error('Passkey 注册失败')
+                throw new Error('用户取消了 Passkey 注册')
             }
 
-            // 3. 完成注册
+            // 3. 将凭证数据序列化后发送给后端完成注册
+            const response = credential.response as AuthenticatorAttestationResponse
+            const credentialData = {
+                id: credential.id,
+                rawId: btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
+                type: credential.type,
+                response: {
+                    attestationObject: btoa(String.fromCharCode(...new Uint8Array(response.attestationObject))),
+                    clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(response.clientDataJSON))),
+                },
+            }
+
             await api.accountPasskeyRegisterFinish({
-                sessionId: beginData.sessionId
+                sessionId: beginData.sessionId,
+                credential: credentialData,
             })
 
             this.portal.showNotification('success', 'Passkey 绑定成功！')
@@ -155,7 +170,8 @@ class Profile extends Vue {
 
         } catch (e) {
             console.error('Passkey 注册失败:', e)
-            this.portal.showNotification('error', 'Passkey 注册失败')
+            const msg = e instanceof Error ? e.message : 'Passkey 注册失败'
+            this.portal.showNotification('error', msg)
         } finally {
             this.registerLoading = false
         }
@@ -404,7 +420,7 @@ export default toNative(Profile)
               <div class="flex items-center gap-3 text-xs text-slate-500 mt-1">
                 <span>添加于 {{ new Date(cred.addedAt).toLocaleDateString() }}</span>
                 <span>·</span>
-                <span>使用次数: {{ cred.signCount }}</span>
+                <span>使用次数: {{ cred.authenticator.signCount }}</span>
               </div>
             </div>
           </div>

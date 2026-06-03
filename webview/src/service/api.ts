@@ -24,6 +24,7 @@ import type {
     PasskeyBeginResult,
     PasskeyFinish,
     PasskeyLoginResult,
+    PasskeyCredential,
     // Filer
     FilerList,
     FilerRead,
@@ -195,7 +196,7 @@ class ApiService {
     }
 
     accountPasskeyListCredentials() {
-        return http.get<any[]>('account/passkey/credentials')
+        return http.get<PasskeyCredential[]>('account/passkey/credentials')
     }
 
     accountPasskeyDeleteCredential(credentialId: string) {

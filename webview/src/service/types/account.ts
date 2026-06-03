@@ -7,6 +7,7 @@ export interface AuthInfo {
     oidcEnabled: boolean
     // OIDC 登录按钮自定义名称
     oidcBtnLabel?: string
+    passkeyEnabled: boolean
 }
 
 export interface AuthLogin {
@@ -91,6 +92,7 @@ export interface PasskeyBeginResult {
 // 完成注册/登录（前端 → 后端）
 export interface PasskeyFinish {
     sessionId: string
+    credential?: any  // 注册时携带浏览器生成的凭证数据；登录时携带断言数据
 }
 
 // Passkey 登录结果
@@ -99,13 +101,17 @@ export interface PasskeyLoginResult {
     username: string
 }
 
-// Passkey 凭证信息
+// Passkey 凭证信息（与后端 config.PasskeyCredential 对应）
 export interface PasskeyCredential {
     idBase64: string        // 凭证 ID (Base64 编码)
-    displayName: string      // 显示名称
+    displayName: string     // 显示名称
     addedAt: string         // 添加时间 (ISO 8601)
-    signCount: number       // 使用次数
     attestationType: string // 认证类型
+    authenticator: {
+        aaguidBase64: string
+        signCount: number   // 使用次数
+        cloneWarning: boolean
+    }
     flags: {
         userPresent: boolean
         userVerified: boolean

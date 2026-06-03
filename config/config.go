@@ -74,9 +74,7 @@ func Apply(conf *Config) {
 
 	OIDC = OIDCNormalize(conf.OIDC)
 
-	if conf.Passkey != nil {
-		Passkey = conf.Passkey
-	}
+	Passkey = PasskeyNormalize(conf.Passkey)
 
 	if conf.Agent != nil {
 		Agent = conf.Agent

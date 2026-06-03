@@ -11,6 +11,7 @@ import (
 type AllConfigResponse struct {
 	Server      *config.ServerConfig      `json:"server"`
 	OIDC        *config.OIDCConfig        `json:"oidc"`
+	Passkey     *config.PasskeyConfig     `json:"passkey"`
 	Agent       *config.AgentConfig       `json:"agent"`
 	Apisix      *config.ApisixConfig      `json:"apisix"`
 	Caddy       *config.CaddyConfig       `json:"caddy"`
@@ -76,6 +77,13 @@ func (s *ConfigService) ConfigAll() *AllConfigResponse {
 			Scopes:        oidc.Scopes,
 			LoginLabel:    oidc.LoginLabel,
 			// ClientSecret 不返回
+		},
+		Passkey: &config.PasskeyConfig{
+			Enabled:   config.Passkey.Enabled,
+			RPName:    config.Passkey.RPName,
+			RPID:      config.Passkey.RPID,
+			RPOrigins: config.Passkey.RPOrigins,
+			Timeout:   config.Passkey.Timeout,
 		},
 		Agent: &config.AgentConfig{
 			Model:   config.Agent.Model,

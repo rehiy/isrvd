@@ -18,11 +18,12 @@ import (
 
 // AuthInfoResponse 认证模式及当前用户信息
 type AuthInfoResponse struct {
-	Mode         string      `json:"mode"`
-	Username     string      `json:"username,omitempty"`
-	Member       *MemberInfo `json:"member,omitempty"`
-	OIDCEnabled  bool        `json:"oidcEnabled"`
-	OIDCBtnLabel string      `json:"oidcBtnLabel"`
+	Mode           string      `json:"mode"`
+	Username       string      `json:"username,omitempty"`
+	Member         *MemberInfo `json:"member,omitempty"`
+	OIDCEnabled    bool        `json:"oidcEnabled"`
+	OIDCBtnLabel   string      `json:"oidcBtnLabel"`
+	PasskeyEnabled bool        `json:"passkeyEnabled"`
 }
 
 // LoginRequest 登录请求
@@ -74,10 +75,11 @@ func (s *Service) AuthInfo(username string) *AuthInfoResponse {
 	}
 	oidcEnabled := mode == "jwt" && config.OIDC.Enabled && config.OIDC.IssuerURL != "" && config.OIDC.ClientID != ""
 	resp := &AuthInfoResponse{
-		Mode:        mode,
-		Username:    username,
-		Member:      s.MemberInspect(username),
-		OIDCEnabled: oidcEnabled,
+		Mode:           mode,
+		Username:       username,
+		Member:         s.MemberInspect(username),
+		OIDCEnabled:    oidcEnabled,
+		PasskeyEnabled: s.PasskeyEnabled(),
 	}
 	if oidcEnabled {
 		resp.OIDCBtnLabel = config.OIDC.LoginLabel

@@ -39,6 +39,12 @@ class Login extends Vue {
 
     // ─── Passkey 登录 ───
     async handlePasskeyLogin() {
+        // 检查浏览器是否支持 WebAuthn
+        if (!window.PublicKeyCredential || !navigator.credentials?.get) {
+            this.portal.showNotification('error', '当前浏览器或环境不支持 Passkey（需要 HTTPS 且浏览器支持 WebAuthn）')
+            return
+        }
+
         this.passkeyLoading = true
         try {
             // 1. 开始 Passkey 登录流程
@@ -50,18 +56,32 @@ class Login extends Vue {
                 throw new Error('无法开始 Passkey 登录')
             }
 
-            // 2. 调用 WebAuthn API
-            const credential = await navigator.credentials.get({
-                publicKey: beginData.options as PublicKeyCredentialRequestOptions
-            })
+            // 2. 调用 WebAuthn API，获取浏览器断言数据
+            const credential = await navigator.credentials.get(
+                beginData.options as CredentialRequestOptions
+            ) as PublicKeyCredential | null
 
             if (!credential) {
-                throw new Error('Passkey 认证失败')
+                throw new Error('用户取消了 Passkey 认证')
             }
 
-            // 3. 完成登录
+            // 3. 将断言数据序列化后发送给后端完成登录
+            const response = credential.response as AuthenticatorAssertionResponse
+            const credentialData = {
+                id: credential.id,
+                rawId: btoa(String.fromCharCode(...new Uint8Array(credential.rawId))),
+                type: credential.type,
+                response: {
+                    authenticatorData: btoa(String.fromCharCode(...new Uint8Array(response.authenticatorData))),
+                    clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(response.clientDataJSON))),
+                    signature: btoa(String.fromCharCode(...new Uint8Array(response.signature))),
+                    userHandle: response.userHandle ? btoa(String.fromCharCode(...new Uint8Array(response.userHandle))) : null,
+                },
+            }
+
             const { payload: loginResult } = await api.accountPasskeyLoginFinish({
-                sessionId: beginData.sessionId
+                sessionId: beginData.sessionId,
+                credential: credentialData,
             })
 
             if (!loginResult) {
@@ -74,6 +94,8 @@ class Login extends Vue {
 
         } catch (e) {
             console.error('Passkey 登录失败:', e)
+            const msg = e instanceof Error ? e.message : 'Passkey 登录失败'
+            this.portal.showNotification('error', msg)
         } finally {
             this.passkeyLoading = false
         }
@@ -149,27 +171,29 @@ export default toNative(Login)
           </template>
 
           <!-- Passkey 登录 -->
-          <div class="relative py-1">
-            <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-slate-200"></div>
+          <template v-if="portal.passkeyEnabled">
+            <div class="relative py-1">
+              <div class="absolute inset-0 flex items-center">
+                <div class="w-full border-t border-slate-200"></div>
+              </div>
+              <div class="relative flex justify-center text-xs">
+                <span class="bg-white px-2 text-slate-400">或</span>
+              </div>
             </div>
-            <div class="relative flex justify-center text-xs">
-              <span class="bg-white px-2 text-slate-400">或</span>
-            </div>
-          </div>
 
-          <div class="space-y-3">
-            <button 
-              type="button" 
-              class="btn btn-secondary w-full" 
-              @click="handlePasskeyLogin"
-              :disabled="passkeyLoading"
-            >
-              <i v-if="passkeyLoading" class="fas fa-spinner fa-spin mr-2"></i>
-              <i v-else class="fas fa-key mr-2"></i>
-              {{ passkeyLoading ? 'Passkey 认证中...' : '使用 Passkey 登录' }}
-            </button>
-          </div>
+            <div class="space-y-3">
+              <button
+                type="button"
+                class="btn btn-secondary w-full"
+                @click="handlePasskeyLogin"
+                :disabled="passkeyLoading"
+              >
+                <i v-if="passkeyLoading" class="fas fa-spinner fa-spin mr-2"></i>
+                <i v-else class="fas fa-key mr-2"></i>
+                {{ passkeyLoading ? 'Passkey 认证中...' : '使用 Passkey 登录' }}
+              </button>
+            </div>
+          </template>
         </form>
       </div>
 
