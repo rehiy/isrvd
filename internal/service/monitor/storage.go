@@ -5,9 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rehiy/libgo/jsonl"
 	"github.com/rehiy/libgo/logman"
-
-	"isrvd/pkgs/jsonl"
 )
 
 const (

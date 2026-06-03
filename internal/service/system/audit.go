@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rehiy/libgo/jsonl"
 	"github.com/rehiy/libgo/logman"
 
 	"isrvd/config"
-	"isrvd/pkgs/jsonl"
 )
 
 const (

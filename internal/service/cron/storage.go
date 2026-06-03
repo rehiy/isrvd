@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/goccy/go-yaml"
+	"github.com/rehiy/libgo/jsonl"
 
 	"isrvd/config"
-	"isrvd/pkgs/jsonl"
 )
 
 const (
