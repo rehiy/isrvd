@@ -62,16 +62,20 @@
 ### Skill 文件结构
 
 ```
-skills/isrvd/
+docs/
 ├── SKILL.md                      ← 索引 + 决策树 + 常见工作流
-├── scripts/api.sh                ← 认证持久化 + API 调用封装
-└── docs/
+├── scripts/
+│   └── api.sh                    ← 认证持久化 + API 调用封装
+└── references/
     ├── docker/{containers,images,networks,volumes,registries}.md
     ├── swarm/{info,services,tasks}.md
-    ├── compose.md
     ├── apisix/{routes,upstreams,consumers,ssl}.md
-    ├── caddy/{routes,certs,global,raw}.md
-    └── system/{overview,config,account,filer,cron}.md
+    ├── caddy/{routes,certs,config}.md
+    ├── system/{overview,config,account,filer,cron}.md
+    ├── overview/
+    ├── compose.md
+    ├── shell.md
+    └── ssh/{hosts,sftp}.md
 ```
 
 ### 需要同步更新的文件
@@ -86,8 +90,8 @@ skills/isrvd/
 | `internal/server/ctrl_cron.go` | `docs/references/system/cron.md` |
 | `internal/server/ctrl_system.go` / `ctrl_account.go` | `docs/references/system/` 下对应文件 |
 | `pkgs/*/`（数据结构变更） | 对应 docs 文件中的字段表 |
-| 新增路由/模块 | `skills/isrvd/SKILL.md` 索引表 + 决策树 |
-| 脚本相关变更 | `skills/isrvd/scripts/api.sh` |
+| 新增路由/模块 | `docs/SKILL.md` 索引表 + 决策树 |
+| 脚本相关变更 | `docs/scripts/api.sh` |
 
 ### 执行步骤
 
