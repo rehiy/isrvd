@@ -96,6 +96,7 @@ export const usePortalStore = defineStore('portal', () => {
         versionCheck: systemRefs.versionCheck,
         currentVersion: systemRefs.currentVersion,
         toolbarLinks: systemRefs.toolbarLinks,
+        maxUploadSize: systemRefs.maxUploadSize,
         // System Store 方法
         loadSystemData: systemStore.loadSystemData,
         hasPerm,

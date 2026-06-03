@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
 
 import api from '@/service/api'
-import type { LinkConfig, SystemVersionCheck } from '@/service/types'
+import type { LinkConfig, SystemVersionCheck, ServerConfig } from '@/service/types'
 import { initTheme } from '@/helper/theme'
 
 interface ServiceAvailability {
@@ -23,6 +23,7 @@ interface ServiceAvailability {
  * 2. 工具栏链接配置
  * 3. 主题设置
  * 4. 应用初始化状态
+ * 5. 服务器配置（如上传大小限制）
  */
 export const useSystemStore = defineStore('system', () => {
     // ─── 状态定义 ───
@@ -40,6 +41,8 @@ export const useSystemStore = defineStore('system', () => {
     const versionCheck = ref<SystemVersionCheck | null>(null)
     const currentVersion = ref<string>('')
     const toolbarLinks = ref<LinkConfig[]>([])
+    // 服务器配置
+    const maxUploadSize = ref<number>(104857600) // 默认 100MB
 
     // ─── 操作定义 ───
 
@@ -78,6 +81,12 @@ export const useSystemStore = defineStore('system', () => {
             versionCheck.value = probe.versionCheck ?? null
         }
 
+        // 获取服务器配置（如上传大小限制）
+        const config = configRes?.payload as ServerConfig | undefined
+        if (config?.maxUploadSize) {
+            maxUploadSize.value = config.maxUploadSize
+        }
+
         toolbarLinks.value = configRes?.payload?.links || []
     }
 
@@ -112,6 +121,7 @@ export const useSystemStore = defineStore('system', () => {
         versionCheck,
         currentVersion,
         toolbarLinks,
+        maxUploadSize,
         // 操作
         initialize,
         loadSystemData,
