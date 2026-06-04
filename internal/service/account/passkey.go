@@ -116,6 +116,8 @@ func (s *Service) PasskeyFinishRegistration(c *gin.Context, sessionID string) er
 		PublicKeyBase64: base64.RawURLEncoding.EncodeToString(credential.PublicKey),
 		AAGUIDBase64:    base64.RawURLEncoding.EncodeToString(credential.Authenticator.AAGUID),
 		SignCount:       credential.Authenticator.SignCount,
+		BackupEligible:  credential.Flags.BackupEligible,
+		BackupState:     credential.Flags.BackupState,
 		DisplayName:     displayName,
 		AddedAt:         time.Now(),
 	})
@@ -205,6 +207,9 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginRe
 			return nil, fmt.Errorf("凭证可能被克隆，登录被拒绝")
 		}
 		s.indexMu.Unlock()
+
+		// 同步更新 BackupState（BS 标志可能随设备备份状态变化）
+		s.updateBackupState(username, credIDStr, credential.Flags.BackupState)
 	} else {
 		// Discoverable login：通过 credIndex 查找用户
 		credential, err := s.webAuthn.FinishDiscoverableLogin(func(rawID, _ []byte) (webauthn.User, error) {
@@ -240,6 +245,9 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginRe
 			return nil, fmt.Errorf("凭证可能被克隆，登录被拒绝")
 		}
 		s.indexMu.Unlock()
+
+		// 同步更新 BackupState（BS 标志可能随设备备份状态变化）
+		s.updateBackupState(username, credIDStr, credential.Flags.BackupState)
 	}
 
 	resp, err := s.IssueLoginToken(username)
@@ -248,6 +256,22 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginRe
 	}
 	logman.Info("Passkey login", "username", username)
 	return resp, nil
+}
+
+// updateBackupState 在登录成功后同步更新凭证的 BackupState（BS 标志可能随设备备份状态变化）
+func (s *Service) updateBackupState(username, credIDStr string, backupState bool) {
+	member, exists := config.Members[username]
+	if !exists {
+		return
+	}
+	for _, pk := range member.Passkeys {
+		if pk.IDBase64 == credIDStr && pk.BackupState != backupState {
+			pk.BackupState = backupState
+			config.Members[username] = member
+			_ = config.Save()
+			break
+		}
+	}
 }
 
 // PasskeyListCredentials 查询用户的 Passkey 凭证列表
@@ -339,6 +363,10 @@ func (s *Service) buildPasskeyUser(username string, member *config.MemberConfig)
 		credentials = append(credentials, webauthn.Credential{
 			ID:        credID,
 			PublicKey: pubKey,
+			Flags: webauthn.CredentialFlags{
+				BackupEligible: pk.BackupEligible,
+				BackupState:    pk.BackupState,
+			},
 			Authenticator: webauthn.Authenticator{
 				AAGUID:    aaguid,
 				SignCount: signCount,

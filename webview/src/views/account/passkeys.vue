@@ -230,9 +230,6 @@ export default toNative(AccountPasskeys)
       @cancel="closeRegisterDialog"
     >
       <div class="space-y-4">
-        <p class="text-sm text-slate-500">
-          请确保您的设备支持 Passkey（如 Touch ID、Face ID 或安全密钥）。
-        </p>
         <div>
           <label class="form-label">凭证名称 <span class="text-slate-400 font-normal">（可选）</span></label>
           <input
@@ -244,6 +241,9 @@ export default toNative(AccountPasskeys)
             @keyup.enter="handleRegisterPasskey"
           />
         </div>
+        <p class="text-sm text-slate-500">
+          请确保您的设备支持 Passkey（如 Touch ID、Face ID 或安全密钥）。
+        </p>
       </div>
       <template #confirm-text>
         {{ registerLoading ? '绑定中...' : '开始绑定' }}

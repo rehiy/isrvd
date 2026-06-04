@@ -123,7 +123,7 @@ func (app *App) accountPasskeyLoginFinish(c *gin.Context) {
 	}
 	resp, err := app.accountSvc.PasskeyFinishLogin(c, sessionID)
 	if err != nil {
-		respondError(c, http.StatusUnauthorized, err.Error())
+		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	respondSuccess(c, "登录成功", resp)

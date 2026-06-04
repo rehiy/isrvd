@@ -68,8 +68,6 @@ class Login extends Vue {
             await this.portal.initialize()
         } catch (e) {
             console.error('Passkey 登录失败:', e)
-            const msg = e instanceof Error ? e.message : 'Passkey 登录失败'
-            this.portal.showNotification('error', msg)
         } finally {
             this.passkeyLoading = false
         }

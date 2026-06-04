@@ -134,6 +134,8 @@ type PasskeyCredential struct {
 	PublicKeyBase64 string    `yaml:"publicKeyBase64" json:"publicKeyBase64"` // 公鑰（Base64 编码）
 	AAGUIDBase64    string    `yaml:"aaguidBase64" json:"aaguidBase64"`       // 认证器 AAGUID
 	SignCount       uint32    `yaml:"signCount" json:"signCount"`             // 初始签名计数（仅存储初始值，运行时由内存维护）
+	BackupEligible  bool      `yaml:"backupEligible" json:"backupEligible"`   // 凭证是否支持跨设备备份（BE 标志，注册后不变）
+	BackupState     bool      `yaml:"backupState" json:"backupState"`         // 凭证当前是否已备份（BS 标志，可变）
 	DisplayName     string    `yaml:"displayName" json:"displayName"`
 	AddedAt         time.Time `yaml:"addedAt" json:"addedAt"`
 }
