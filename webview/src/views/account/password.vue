@@ -32,9 +32,6 @@ class AccountPassword extends Vue {
         try {
             const { payload } = await api.accountTwoFactorStatus()
             this.twoFactorEnabled = !!payload?.enabled
-        } catch (e: unknown) {
-            const err = e as { response?: { data?: { message?: string } } }
-            this.portal.showNotification('error', err.response?.data?.message || '二次验证状态加载失败')
         } finally {
             this.twoFactorLoading = false
         }
@@ -47,9 +44,6 @@ class AccountPassword extends Vue {
             const uri = payload?.uri || ''
             const qrcode = uri ? await QRCode.toDataURL(uri, { width: 200, margin: 1 }) : ''
             this.totpSetup = { secret: payload?.secret || '', qrcode, code: '' }
-        } catch (e: unknown) {
-            const err = e as { response?: { data?: { message?: string } } }
-            this.portal.showNotification('error', err.response?.data?.message || '开始绑定失败')
         } finally {
             this.twoFactorLoading = false
         }
@@ -66,9 +60,6 @@ class AccountPassword extends Vue {
             this.portal.showNotification('success', 'TOTP 二次验证已启用')
             this.totpSetup = { secret: '', qrcode: '', code: '' }
             await this.loadTwoFactorStatus()
-        } catch (e: unknown) {
-            const err = e as { response?: { data?: { message?: string } } }
-            this.portal.showNotification('error', err.response?.data?.message || '启用失败')
         } finally {
             this.twoFactorLoading = false
         }
@@ -88,9 +79,6 @@ class AccountPassword extends Vue {
             if (!this.twoFactorEnabled) {
                 await this.handleTOTPBegin()
             }
-        } catch (e: unknown) {
-            const err = e as { response?: { data?: { message?: string } } }
-            this.portal.showNotification('error', err.response?.data?.message || '禁用失败')
         } finally {
             this.twoFactorLoading = false
         }
@@ -122,9 +110,6 @@ class AccountPassword extends Vue {
             })
             this.portal.showNotification('success', '密码修改成功')
             this.passwordForm = { oldPassword: '', newPassword: '', confirmPassword: '' }
-        } catch (e: unknown) {
-            const err = e as { response?: { data?: { message?: string } } }
-            this.portal.showNotification('error', err.response?.data?.message || '密码修改失败')
         } finally {
             this.passwordLoading = false
         }

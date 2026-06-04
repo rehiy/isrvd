@@ -35,7 +35,6 @@ class ServiceLogs extends Vue {
             this.logsContent = res.payload?.logs || []
         } catch {
             this.logsContent = []
-            this.portal.showNotification('error', '获取日志失败')
         }
         this.logsLoading = false
     }

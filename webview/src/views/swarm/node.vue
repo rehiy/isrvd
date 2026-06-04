@@ -41,10 +41,9 @@ class NodeDetail extends Vue {
         try {
             const res = await api.swarmNode(this.nodeId)
             this.nodeData = res.payload ?? null
-        } catch {
-            this.portal.showNotification('error', '获取节点详情失败')
+        } finally {
+            this.loading = false
         }
-        this.loading = false
     }
 
     // ─── 生命周期 ───

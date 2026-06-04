@@ -61,8 +61,6 @@ class Nodes extends Vue {
             const list = res.payload || []
             // leader 节点排最前
             this.nodes = list.sort((a: SwarmNodeInfo, b: SwarmNodeInfo) => (b.leader ? 1 : 0) - (a.leader ? 1 : 0))
-        } catch {
-            this.portal.showNotification('error', '获取节点列表失败')
         } finally {
             this.loading = false
         }
@@ -94,9 +92,6 @@ class Nodes extends Vue {
         try {
             const res = await api.swarmJoinToken()
             this.joinTokens = res.payload || null
-        } catch {
-            this.portal.showNotification('error', '获取加入令牌失败')
-            this.showJoinModal = false
         } finally {
             this.joinTokensLoading = false
         }

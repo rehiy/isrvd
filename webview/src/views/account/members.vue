@@ -41,8 +41,6 @@ class Members extends Vue {
         try {
             const res = await api.accountMemberList()
             this.members = res.payload || []
-        } catch {
-            this.portal.showNotification('error', '加载成员列表失败')
         } finally {
             this.loading = false
         }

@@ -45,8 +45,6 @@ class CaddyGlobalConfig extends Vue {
             this.autoHttpsDisable          = data.autoHttpsDisable          ?? false
             this.autoHttpsDisableRedirects = data.autoHttpsDisableRedirects ?? false
             this.gracePeriod   = data.gracePeriod   ?? ''
-        } catch {
-            this.portal.showNotification('error', '加载全局选项失败')
         } finally {
             this.loading = false
         }
@@ -70,8 +68,6 @@ class CaddyGlobalConfig extends Vue {
             await api.caddyGlobalUpdate(payload)
             this.portal.showNotification('success', '全局选项已保存')
             this.load()
-        } catch (e: unknown) {
-            this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '保存失败')
         } finally {
             this.saving = false
         }

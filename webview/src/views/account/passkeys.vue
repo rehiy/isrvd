@@ -36,8 +36,6 @@ class AccountPasskeys extends Vue {
         try {
             const { payload } = await api.accountPasskeyListCredentials()
             this.passkeyCredentials = payload || []
-        } catch {
-            this.portal.showNotification('error', '加载 Passkey 列表失败')
         } finally {
             this.passkeyLoading = false
         }
@@ -64,10 +62,6 @@ class AccountPasskeys extends Vue {
             this.portal.showNotification('success', 'Passkey 绑定成功！')
             this.showRegisterDialog = false
             await this.loadPasskeyCredentials()
-        } catch (e) {
-            console.error('Passkey 注册失败:', e)
-            const msg = e instanceof Error ? e.message : 'Passkey 注册失败'
-            this.portal.showNotification('error', msg)
         } finally {
             this.registerLoading = false
         }
@@ -94,8 +88,6 @@ class AccountPasskeys extends Vue {
             await api.accountPasskeyRenameCredential(cred.idBase64, name)
             cred.displayName = name
             this.portal.showNotification('success', '凭证已重命名')
-        } catch {
-            this.portal.showNotification('error', '重命名失败')
         } finally {
             this.cancelRename()
         }

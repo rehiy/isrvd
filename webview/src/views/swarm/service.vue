@@ -55,10 +55,9 @@ class ServiceInfo extends Vue {
             ])
             this.serviceData = detailRes.payload ?? null
             this.tasks = tasksRes.payload ?? []
-        } catch {
-            this.portal.showNotification('error', '获取服务详情失败')
+        } finally {
+            this.loading = false
         }
-        this.loading = false
     }
 
     // ─── 生命周期 ───

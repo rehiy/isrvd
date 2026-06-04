@@ -42,8 +42,6 @@ class AccountTokens extends Vue {
             this.newToken = res.payload ?? null
             this.tokenForm.name = ''
             this.portal.showNotification('success', '令牌创建成功')
-        } catch {
-            this.portal.showNotification('error', '令牌创建失败')
         } finally {
             this.tokenLoading = false
         }

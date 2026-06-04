@@ -119,8 +119,6 @@ class MemberEditModal extends Vue {
                 ordered.push({ module: mod, label: meta.label, icon: meta.icon, routes })
             }
             this.routeGroups = ordered
-        } catch {
-            this.portal.showNotification('error', '加载路由列表失败')
         } finally {
             this.routesLoading = false
         }

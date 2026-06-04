@@ -42,8 +42,6 @@ class CaddyRoutes extends Vue {
         this.loading = true
         try {
             this.routes = (await api.caddyRouteList()).payload || []
-        } catch {
-            this.portal.showNotification('error', '加载路由列表失败')
         } finally {
             this.loading = false
         }
@@ -115,9 +113,7 @@ class CaddyRoutes extends Vue {
                     await api.caddyRouteDelete(route.index)
                     this.portal.showNotification('success', '删除成功')
                     this.loadRoutes()
-                } catch (e: unknown) {
-                    this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '删除失败')
-                }
+                } catch {}
             }
         })
     }
