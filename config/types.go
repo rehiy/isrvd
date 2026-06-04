@@ -116,28 +116,12 @@ type MemberConfig struct {
 	Permissions []string `yaml:"permissions,omitempty" json:"permissions,omitempty"`
 }
 
-// PasskeyAuthenticator 认证器信息
-type PasskeyAuthenticator struct {
-	AAGUIDBase64 string `yaml:"aaguidBase64" json:"aaguidBase64"`
-	SignCount    uint32 `yaml:"signCount" json:"signCount"`
-	CloneWarning bool   `yaml:"cloneWarning" json:"cloneWarning"`
-}
-
-// PasskeyFlags 凭证标志位
-type PasskeyFlags struct {
-	UserPresent    bool `yaml:"userPresent" json:"userPresent"`
-	UserVerified   bool `yaml:"userVerified" json:"userVerified"`
-	BackupEligible bool `yaml:"backupEligible" json:"backupEligible"`
-	BackupState    bool `yaml:"backupState" json:"backupState"`
-}
-
 // PasskeyCredential 存储用户的 Passkey 凭证信息
 type PasskeyCredential struct {
-	IDBase64        string               `yaml:"idBase64" json:"idBase64"`               // 凭证 ID（Base64 编码）
-	PublicKeyBase64 string               `yaml:"publicKeyBase64" json:"publicKeyBase64"` // 公钥（Base64 编码）
-	AttestationType string               `yaml:"attestationType" json:"attestationType"`
-	Authenticator   PasskeyAuthenticator `yaml:"authenticator" json:"authenticator"`
-	Flags           PasskeyFlags         `yaml:"flags" json:"flags"`
-	DisplayName     string               `yaml:"displayName" json:"displayName"`
-	AddedAt         time.Time            `yaml:"addedAt" json:"addedAt"`
+	IDBase64        string    `yaml:"idBase64" json:"idBase64"`               // 凭证 ID（Base64 编码）
+	PublicKeyBase64 string    `yaml:"publicKeyBase64" json:"publicKeyBase64"` // 公鑰（Base64 编码）
+	AAGUIDBase64    string    `yaml:"aaguidBase64" json:"aaguidBase64"`       // 认证器 AAGUID
+	SignCount       uint32    `yaml:"signCount" json:"signCount"`             // 初始签名计数（仅存储初始值，运行时由内存维护）
+	DisplayName     string    `yaml:"displayName" json:"displayName"`
+	AddedAt         time.Time `yaml:"addedAt" json:"addedAt"`
 }

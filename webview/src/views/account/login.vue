@@ -4,7 +4,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import { base64urlToBuffer, bufferToBase64url } from '@/helper/utils'
+import { loginWithPasskey } from '@/helper/webauthn'
 
 @Component
 class Login extends Vue {
@@ -40,70 +40,11 @@ class Login extends Vue {
 
     // ─── Passkey 登录 ───
     async handlePasskeyLogin() {
-        // 检查浏览器是否支持 WebAuthn
-        if (!window.PublicKeyCredential || !navigator.credentials?.get) {
-            this.portal.showNotification('error', '当前浏览器或环境不支持 Passkey（需要 HTTPS 且浏览器支持 WebAuthn）')
-            return
-        }
-
         this.passkeyLoading = true
         try {
-            // 1. 开始 Passkey 登录流程
-            const { payload: beginData } = await api.accountPasskeyLoginBegin({
-                username: this.loginForm.username || undefined
-            })
-            
-            if (!beginData) {
-                throw new Error('无法开始 Passkey 登录')
-            }
-
-            // 2. 将 options 中的 base64url 字段转为 ArrayBuffer（WebAuthn API 要求）
-            const publicKey = beginData.options.publicKey as any
-            const requestOptions: CredentialRequestOptions = {
-                publicKey: {
-                    ...publicKey,
-                    challenge: base64urlToBuffer(publicKey.challenge),
-                    allowCredentials: (publicKey.allowCredentials || []).map((c: any) => ({
-                        ...c,
-                        id: base64urlToBuffer(c.id),
-                    })),
-                },
-            }
-
-            // 3. 调用 WebAuthn API，获取浏览器断言数据
-            const credential = await navigator.credentials.get(requestOptions) as PublicKeyCredential | null
-
-            if (!credential) {
-                throw new Error('用户取消了 Passkey 认证')
-            }
-
-            // 4. 将断言数据序列化后发送给后端完成登录
-            const response = credential.response as AuthenticatorAssertionResponse
-            const credentialData = {
-                id: credential.id,
-                rawId: bufferToBase64url(credential.rawId),
-                type: credential.type,
-                response: {
-                    authenticatorData: bufferToBase64url(response.authenticatorData),
-                    clientDataJSON: bufferToBase64url(response.clientDataJSON),
-                    signature: bufferToBase64url(response.signature),
-                    userHandle: response.userHandle ? bufferToBase64url(response.userHandle) : null,
-                },
-            }
-
-            const { payload: loginResult } = await api.accountPasskeyLoginFinish({
-                sessionId: beginData.sessionId,
-                credential: credentialData,
-            })
-
-            if (!loginResult) {
-                throw new Error('登录失败')
-            }
-
-            // 4. 设置认证状态
-            this.portal.setAuth({ authMode: 'jwt', ...loginResult })
+            const result = await loginWithPasskey(this.loginForm.username || undefined)
+            this.portal.setAuth({ authMode: 'jwt', ...result })
             await this.portal.initialize()
-
         } catch (e) {
             console.error('Passkey 登录失败:', e)
             const msg = e instanceof Error ? e.message : 'Passkey 登录失败'

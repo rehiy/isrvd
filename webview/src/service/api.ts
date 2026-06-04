@@ -22,7 +22,6 @@ import type {
     // Passkey
     PasskeyBeginLoginData,
     PasskeyBeginData,
-    PasskeyFinishData,
     PasskeyLoginResult,
     PasskeyCredential,
     // Filer
@@ -179,24 +178,28 @@ class ApiService {
 
     // ==================== Passkey 认证相关 ====================
 
-    accountPasskeyRegisterBegin() {
-        return http.post<PasskeyBeginData>('account/passkey/register/begin', {})
+    accountPasskeyRegisterBegin(data: { displayName?: string } = {}) {
+        return http.post<PasskeyBeginData>('account/passkey/register/begin', data)
     }
 
-    accountPasskeyRegisterFinish(data: PasskeyFinishData) {
-        return http.post<void>('account/passkey/register/finish', data)
+    accountPasskeyRegisterFinish(sessionId: string, credential: any) {
+        return http.post<void>(`account/passkey/register/finish?sessionId=${encodeURIComponent(sessionId)}`, credential)
     }
 
     accountPasskeyLoginBegin(data: PasskeyBeginLoginData) {
         return http.post<PasskeyBeginData>('account/passkey/login/begin', data)
     }
 
-    accountPasskeyLoginFinish(data: PasskeyFinishData) {
-        return http.post<PasskeyLoginResult>('account/passkey/login/finish', data)
+    accountPasskeyLoginFinish(sessionId: string, credential: any) {
+        return http.post<PasskeyLoginResult>(`account/passkey/login/finish?sessionId=${encodeURIComponent(sessionId)}`, credential)
     }
 
     accountPasskeyListCredentials() {
         return http.get<PasskeyCredential[]>('account/passkey/credentials')
+    }
+
+    accountPasskeyRenameCredential(credentialId: string, displayName: string) {
+        return http.put<void>(`account/passkey/credential/${credentialId}`, { displayName })
     }
 
     accountPasskeyDeleteCredential(credentialId: string) {

@@ -89,11 +89,8 @@ export interface PasskeyBeginData {
     options: CredentialCreationOptions | CredentialRequestOptions
 }
 
-// 完成注册/登录的统一数据
-export interface PasskeyFinishData {
-    sessionId: string
-    credential: any
-}
+// 完成注册/登录：sessionId 通过 query param 传递，body 直接为 credential JSON
+// （已无需单独类型）
 
 // Passkey 登录结果
 export interface PasskeyLoginResult {
@@ -104,18 +101,8 @@ export interface PasskeyLoginResult {
 // Passkey 凭证信息（与后端 config.PasskeyCredential 对应）
 export interface PasskeyCredential {
     idBase64: string        // 凭证 ID (Base64 编码)
+    aaguidBase64: string    // 认证器 AAGUID
+    signCount: number       // 初始签名计数
     displayName: string     // 显示名称
     addedAt: string         // 添加时间 (ISO 8601)
-    attestationType: string // 认证类型
-    authenticator: {
-        aaguidBase64: string
-        signCount: number   // 使用次数
-        cloneWarning: boolean
-    }
-    flags: {
-        userPresent: boolean
-        userVerified: boolean
-        backupEligible: boolean
-        backupState: boolean
-    }
 }

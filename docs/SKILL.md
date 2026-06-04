@@ -150,6 +150,8 @@ isrvd_login "$ISRVD_APIURL" "$ISRVD_USERNAME" "$ISRVD_PASSWORD"
 - **审计日志**：`GET /system/audit/logs`
 - **认证信息**：`GET /account/info`
 - **登录**：`POST /account/login`、`GET /account/oidc/login`、`GET /account/oidc/callback`、`POST /account/oidc/exchange`
+- **Passkey 登录**（无需认证）：`POST /account/passkey/login/begin`、`POST /account/passkey/login/finish`
+- **Passkey 管理**（需认证）：`POST /account/passkey/register/begin`、`POST /account/passkey/register/finish`、`GET /account/passkey/credentials`、`PUT /account/passkey/credential/:credentialID`（重命名）、`DELETE /account/passkey/credential/:credentialID`
 - **凭证管理**：`POST /account/token`、`PUT /account/password`
 - **路由权限**：`GET /account/routes`
 - **成员管理**：`GET /account/members`、`POST /account/member`、`PUT /account/member/:username`、`DELETE /account/member/:username`

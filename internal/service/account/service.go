@@ -10,6 +10,8 @@ import (
 	"slices"
 	"sync"
 	"time"
+
+	"github.com/go-webauthn/webauthn/webauthn"
 )
 
 // Service 账号业务服务
@@ -20,8 +22,15 @@ type Service struct {
 	oidcLoginCodes map[string]oidcLoginCode
 	oidcProvider   oidcProviderCache
 
-	// Passkey 会话存储
+	// Passkey
 	passkeyStore *passkeySessionStore
+	webAuthn     *webauthn.WebAuthn
+
+	// credIndex: credentialID → username（Discoverable Login 查找）
+	// signCounts: credentialID → signCount（内存维护，不回写配置）
+	indexMu    sync.RWMutex
+	credIndex  map[string]string
+	signCounts map[string]uint32
 }
 
 // NewService 创建账号业务服务
@@ -30,7 +39,10 @@ func NewService() *Service {
 		oidcStates:     make(map[string]oidcState),
 		oidcLoginCodes: make(map[string]oidcLoginCode),
 		passkeyStore:   newPasskeySessionStore(),
+		credIndex:      make(map[string]string),
+		signCounts:     make(map[string]uint32),
 	}
+	s.initPasskey()
 	// 后台定期清理过期的 OIDC 临时状态
 	go func() {
 		ticker := time.NewTicker(5 * time.Minute)

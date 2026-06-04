@@ -4,9 +4,9 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { PasskeyBeginData, PasskeyCredential } from '@/service/types'
+import type { PasskeyCredential } from '@/service/types'
+import { registerPasskey, isWebAuthnSupported } from '@/helper/webauthn'
 
-import { base64urlToBuffer, bufferToBase64url } from '@/helper/utils'
 import BaseModal from '@/component/modal.vue'
 
 @Component({
@@ -17,10 +17,15 @@ class AccountPasskeys extends Vue {
 
     passkeyLoading = false
     passkeyCredentials: Array<PasskeyCredential> = []
+
+    // ─── 注册 ───
     showRegisterDialog = false
     registerLoading = false
-    registerPrepareLoading = false
-    passkeyBeginData: PasskeyBeginData | null = null
+    registerDisplayName = ''
+
+    // ─── 重命名 ───
+    renamingCredId = ''
+    renameValue = ''
 
     mounted() {
         this.loadPasskeyCredentials()
@@ -38,61 +43,26 @@ class AccountPasskeys extends Vue {
         }
     }
 
-    async handleRegisterPasskey() {
-        if (!window.PublicKeyCredential || !navigator.credentials?.create) {
+    openRegisterDialog() {
+        if (!isWebAuthnSupported()) {
             this.portal.showNotification('error', '当前浏览器或环境不支持 Passkey（需要 HTTPS 且浏览器支持 WebAuthn）')
             return
         }
+        this.registerDisplayName = ''
+        this.showRegisterDialog = true
+    }
 
-        if (!this.passkeyBeginData) {
-            this.portal.showNotification('error', '注册数据未就绪，请稍后重试')
-            return
-        }
+    closeRegisterDialog() {
+        this.showRegisterDialog = false
+        this.registerDisplayName = ''
+    }
 
+    async handleRegisterPasskey() {
         this.registerLoading = true
         try {
-            const beginData = this.passkeyBeginData
-            const publicKey = beginData.options.publicKey as any
-            const creationOptions: CredentialCreationOptions = {
-                publicKey: {
-                    ...publicKey,
-                    challenge: base64urlToBuffer(publicKey.challenge),
-                    user: {
-                        ...publicKey.user,
-                        id: base64urlToBuffer(publicKey.user.id),
-                    },
-                    excludeCredentials: (publicKey.excludeCredentials || []).map((c: any) => ({
-                        ...c,
-                        id: base64urlToBuffer(c.id),
-                    })),
-                },
-            }
-
-            // 直接响应「开始绑定」点击调用，确保 Bitwarden 等扩展能识别用户手势。
-            const credential = await navigator.credentials.create(creationOptions) as PublicKeyCredential | null
-            if (!credential) {
-                throw new Error('用户取消了 Passkey 注册')
-            }
-
-            const response = credential.response as AuthenticatorAttestationResponse
-            const credentialData = {
-                id: credential.id,
-                rawId: bufferToBase64url(credential.rawId),
-                type: credential.type,
-                response: {
-                    attestationObject: bufferToBase64url(response.attestationObject),
-                    clientDataJSON: bufferToBase64url(response.clientDataJSON),
-                },
-            }
-
-            await api.accountPasskeyRegisterFinish({
-                sessionId: beginData.sessionId,
-                credential: credentialData,
-            })
-
+            await registerPasskey(this.registerDisplayName || undefined)
             this.portal.showNotification('success', 'Passkey 绑定成功！')
             this.showRegisterDialog = false
-            this.passkeyBeginData = null
             await this.loadPasskeyCredentials()
         } catch (e) {
             console.error('Passkey 注册失败:', e)
@@ -103,47 +73,42 @@ class AccountPasskeys extends Vue {
         }
     }
 
-    async openRegisterDialog() {
-        if (!window.PublicKeyCredential || !navigator.credentials?.create) {
-            this.portal.showNotification('error', '当前浏览器或环境不支持 Passkey（需要 HTTPS 且浏览器支持 WebAuthn）')
+    // ─── 重命名 ───
+    startRename(cred: PasskeyCredential) {
+        this.renamingCredId = cred.idBase64
+        this.renameValue = cred.displayName || ''
+    }
+
+    cancelRename() {
+        this.renamingCredId = ''
+        this.renameValue = ''
+    }
+
+    async confirmRename(cred: PasskeyCredential) {
+        const name = this.renameValue.trim()
+        if (!name || name === cred.displayName) {
+            this.cancelRename()
             return
         }
-
-        this.passkeyBeginData = null
-        this.showRegisterDialog = true
-        this.registerPrepareLoading = true
-
         try {
-            const { payload: beginData } = await api.accountPasskeyRegisterBegin()
-            if (!beginData) {
-                throw new Error('无法开始 Passkey 注册')
-            }
-            this.passkeyBeginData = beginData
-        } catch (e) {
-            console.error('获取 Passkey 注册参数失败:', e)
-            this.portal.showNotification('error', '获取注册参数失败，请重试')
-            this.showRegisterDialog = false
+            await api.accountPasskeyRenameCredential(cred.idBase64, name)
+            cred.displayName = name
+            this.portal.showNotification('success', '凭证已重命名')
+        } catch {
+            this.portal.showNotification('error', '重命名失败')
         } finally {
-            this.registerPrepareLoading = false
+            this.cancelRename()
         }
     }
 
-    closeRegisterDialog() {
-        this.showRegisterDialog = false
-        this.passkeyBeginData = null
-    }
-
+    // ─── 删除 ───
     async handleDeletePasskey(credentialId: string) {
-        if (!confirm('确定要删除这个 Passkey 凭证吗？')) {
-            return
-        }
-
+        if (!confirm('确定要删除这个 Passkey 凭证吗？')) return
         try {
             await api.accountPasskeyDeleteCredential(credentialId)
             this.portal.showNotification('success', 'Passkey 凭证已删除')
             await this.loadPasskeyCredentials()
-        } catch (e) {
-            console.error('Passkey 删除失败:', e)
+        } catch {
             this.portal.showNotification('error', '删除失败')
         }
     }
@@ -169,10 +134,9 @@ export default toNative(AccountPasskeys)
           type="button"
           class="btn btn-purple flex-shrink-0"
           @click="openRegisterDialog"
-          :disabled="passkeyLoading || registerPrepareLoading"
+          :disabled="passkeyLoading"
         >
-          <i v-if="!registerPrepareLoading" class="fas fa-plus mr-2"></i>
-          <i v-else class="fas fa-spinner fa-spin mr-2"></i>
+          <i class="fas fa-plus mr-2"></i>
           绑定新 Passkey
         </button>
       </div>
@@ -203,11 +167,37 @@ export default toNative(AccountPasskeys)
               <i class="fas fa-fingerprint text-purple-600"></i>
             </div>
             <div class="min-w-0">
-              <h4 class="text-sm font-medium text-slate-800 truncate">{{ cred.displayName || 'Passkey #' + cred.idBase64.slice(0, 8) }}</h4>
+              <!-- 重命名编辑态 -->
+              <div v-if="renamingCredId === cred.idBase64" class="flex items-center gap-2">
+                <input
+                  v-model="renameValue"
+                  class="input input-sm py-0.5 px-2 text-sm w-40"
+                  @keyup.enter="confirmRename(cred)"
+                  @keyup.escape="cancelRename"
+                  autofocus
+                />
+                <button class="btn btn-ghost btn-xs text-green-600" @click="confirmRename(cred)">
+                  <i class="fas fa-check"></i>
+                </button>
+                <button class="btn btn-ghost btn-xs text-slate-400" @click="cancelRename">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              <!-- 展示态 -->
+              <div v-else class="flex items-center gap-1 group">
+                <h4 class="text-sm font-medium text-slate-800 truncate">
+                  {{ cred.displayName || 'Passkey #' + cred.idBase64.slice(0, 8) }}
+                </h4>
+                <button
+                  class="btn btn-ghost btn-xs text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="重命名"
+                  @click="startRename(cred)"
+                >
+                  <i class="fas fa-pencil-alt text-xs"></i>
+                </button>
+              </div>
               <div class="flex items-center gap-3 text-xs text-slate-500 mt-1">
                 <span>添加于 {{ new Date(cred.addedAt).toLocaleDateString() }}</span>
-                <span>·</span>
-                <span>使用次数: {{ cred.authenticator.signCount }}</span>
               </div>
             </div>
           </div>
@@ -222,6 +212,7 @@ export default toNative(AccountPasskeys)
       </div>
     </div>
 
+    <!-- 注册弹窗 -->
     <BaseModal
       v-model="showRegisterDialog"
       title="绑定新 Passkey"
@@ -230,12 +221,21 @@ export default toNative(AccountPasskeys)
       @confirm="handleRegisterPasskey"
       @cancel="closeRegisterDialog"
     >
-      <p class="text-sm text-slate-500 mb-6">
-        点击下方按钮开始绑定 Passkey。请确保您的设备支持 Passkey（如 Touch ID、Face ID 或安全密钥）。
-      </p>
-      <div v-if="registerPrepareLoading" class="flex items-center gap-2 text-xs text-slate-400 mb-2">
-        <i class="fas fa-spinner fa-spin"></i>
-        正在准备注册参数...
+      <div class="space-y-4">
+        <p class="text-sm text-slate-500">
+          请确保您的设备支持 Passkey（如 Touch ID、Face ID 或安全密钥）。
+        </p>
+        <div>
+          <label class="form-label">凭证名称 <span class="text-slate-400 font-normal">（可选）</span></label>
+          <input
+            v-model="registerDisplayName"
+            type="text"
+            class="input"
+            placeholder="如：MacBook Touch ID"
+            maxlength="50"
+            @keyup.enter="handleRegisterPasskey"
+          />
+        </div>
       </div>
       <template #confirm-text>
         {{ registerLoading ? '绑定中...' : '开始绑定' }}

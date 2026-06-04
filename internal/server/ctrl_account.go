@@ -24,6 +24,7 @@ func (app *App) defineAccountRoutes() []Route {
 		{Method: "POST", Path: "/account/passkey/register/begin", Handler: app.accountPasskeyRegisterBegin, Module: "account", Label: "开始 Passkey 绑定", Access: AccessAuth},
 		{Method: "POST", Path: "/account/passkey/register/finish", Handler: app.accountPasskeyRegisterFinish, Module: "account", Label: "完成 Passkey 绑定", Access: AccessAuth},
 		{Method: "GET", Path: "/account/passkey/credentials", Handler: app.accountPasskeyListCredentials, Module: "account", Label: "查询 Passkey 凭证列表", Access: AccessAuth},
+		{Method: "PUT", Path: "/account/passkey/credential/:credentialID", Handler: app.accountPasskeyRenameCredential, Module: "account", Label: "重命名 Passkey 凭证", Access: AccessAuth},
 		{Method: "DELETE", Path: "/account/passkey/credential/:credentialID", Handler: app.accountPasskeyDeleteCredential, Module: "account", Label: "删除 Passkey 凭证", Access: AccessAuth},
 		// OIDC 登录
 		{Method: "GET", Path: "/account/oidc/login", Handler: app.accountOIDCLogin, Module: "account", Label: "发起 OIDC 登录", Access: AccessAnon},
@@ -65,12 +66,12 @@ func (app *App) accountLogin(c *gin.Context) {
 
 // accountPasskeyRegisterBegin 开始 Passkey 注册
 func (app *App) accountPasskeyRegisterBegin(c *gin.Context) {
-	var req account.PasskeyBeginRegistrationRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
-		return
+	var req struct {
+		DisplayName string `json:"displayName"`
 	}
-	resp, err := app.accountSvc.PasskeyBeginRegistration(c, req)
+	// 允许空 body（displayName 可选）
+	_ = c.ShouldBindJSON(&req)
+	resp, err := app.accountSvc.PasskeyBeginRegistration(c, req.DisplayName)
 	if err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -79,14 +80,14 @@ func (app *App) accountPasskeyRegisterBegin(c *gin.Context) {
 }
 
 // accountPasskeyRegisterFinish 完成 Passkey 注册
+// sessionId 通过 query param 传递，body 完整留给 go-webauthn 解析
 func (app *App) accountPasskeyRegisterFinish(c *gin.Context) {
-	var req account.PasskeyFinishData
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+	sessionID := c.Query("sessionId")
+	if sessionID == "" {
+		respondError(c, http.StatusBadRequest, "缺少 sessionId")
 		return
 	}
-	err := app.accountSvc.PasskeyFinishRegistration(c, req)
-	if err != nil {
+	if err := app.accountSvc.PasskeyFinishRegistration(c, sessionID); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -95,12 +96,12 @@ func (app *App) accountPasskeyRegisterFinish(c *gin.Context) {
 
 // accountPasskeyLoginBegin 开始 Passkey 登录
 func (app *App) accountPasskeyLoginBegin(c *gin.Context) {
-	var req account.PasskeyBeginLoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
-		return
+	var req struct {
+		Username string `json:"username"`
 	}
-	resp, err := app.accountSvc.PasskeyBeginLogin(c, req)
+	// 允许空 body（username 可选）
+	_ = c.ShouldBindJSON(&req)
+	resp, err := app.accountSvc.PasskeyBeginLogin(req.Username)
 	if err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -109,13 +110,14 @@ func (app *App) accountPasskeyLoginBegin(c *gin.Context) {
 }
 
 // accountPasskeyLoginFinish 完成 Passkey 登录
+// sessionId 通过 query param 传递，body 完整留给 go-webauthn 解析
 func (app *App) accountPasskeyLoginFinish(c *gin.Context) {
-	var req account.PasskeyFinishData
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+	sessionID := c.Query("sessionId")
+	if sessionID == "" {
+		respondError(c, http.StatusBadRequest, "缺少 sessionId")
 		return
 	}
-	resp, err := app.accountSvc.PasskeyFinishLogin(c, req)
+	resp, err := app.accountSvc.PasskeyFinishLogin(c, sessionID)
 	if err != nil {
 		respondError(c, http.StatusUnauthorized, err.Error())
 		return
@@ -271,6 +273,29 @@ func (app *App) accountPasskeyListCredentials(c *gin.Context) {
 		return
 	}
 	respondSuccess(c, "查询成功", credentials)
+}
+
+// accountPasskeyRenameCredential 重命名当前用户的指定 Passkey 凭证
+func (app *App) accountPasskeyRenameCredential(c *gin.Context) {
+	username := c.GetString("username")
+	credentialID := c.Param("credentialID")
+	var req struct {
+		DisplayName string `json:"displayName" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := app.accountSvc.PasskeyUpdateCredentialName(username, credentialID, req.DisplayName); err != nil {
+		switch {
+		case errors.Is(err, account.ErrPasskeyNotFound):
+			respondError(c, http.StatusNotFound, err.Error())
+		default:
+			respondError(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	respondSuccess(c, "凭证重命名成功", nil)
 }
 
 // accountPasskeyDeleteCredential 删除当前用户的指定 Passkey 凭证
