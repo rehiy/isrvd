@@ -21,6 +21,8 @@ var (
 	ErrPasskeyNotFound  = errors.New("凭证不存在")
 )
 
+// ─── 成员查询 ──────────
+
 // MemberInspect 获取单个成员信息
 func (s *Service) MemberInspect(username string) *MemberInfo {
 	m, exists := config.Members[username]
@@ -62,6 +64,8 @@ func (s *Service) memberInfoBuild(m *config.MemberConfig) *MemberInfo {
 		Permissions:   perms,
 	}
 }
+
+// ─── 成员创建/更新/删除 ──
 
 // homeDirEnsure 生成并创建成员 home 目录（空值时使用基础目录 + 用户名）
 func (s *Service) homeDirEnsure(home, username string) (string, error) {
@@ -173,6 +177,8 @@ func (s *Service) MemberDelete(username string) error {
 	logman.Info("Member deleted", "username", username)
 	return nil
 }
+
+// ─── 密码修改 ──────────
 
 // ChangePasswordRequest 修改密码请求
 type ChangePasswordRequest struct {

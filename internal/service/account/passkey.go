@@ -19,134 +19,6 @@ import (
 	"isrvd/config"
 )
 
-// ─── 会话存储 ─────────────────
-
-// passkeySession 存储 WebAuthn 会话数据
-type passkeySession struct {
-	Challenge string    `yaml:"challenge" json:"challenge"`
-	Username  string    `yaml:"username" json:"username"`
-	ExpiresAt time.Time `yaml:"expiresAt" json:"expiresAt"`
-}
-
-var (
-	passkeySessionsMu sync.Mutex
-	passkeySessions   = make(map[string]*passkeySession)
-)
-
-func init() {
-	// 定期清理过期会话
-	go func() {
-		ticker := time.NewTicker(5 * time.Minute)
-		defer ticker.Stop()
-		for range ticker.C {
-			passkeySessionsMu.Lock()
-			now := time.Now()
-			for k, v := range passkeySessions {
-				if v.ExpiresAt.Before(now) {
-					delete(passkeySessions, k)
-				}
-			}
-			passkeySessionsMu.Unlock()
-		}
-	}()
-}
-
-func savePasskeySession(sessionID string, session *passkeySession) {
-	passkeySessionsMu.Lock()
-	defer passkeySessionsMu.Unlock()
-	passkeySessions[sessionID] = session
-}
-
-func loadPasskeySession(sessionID string) *passkeySession {
-	passkeySessionsMu.Lock()
-	defer passkeySessionsMu.Unlock()
-	return passkeySessions[sessionID]
-}
-
-func deletePasskeySession(sessionID string) {
-	passkeySessionsMu.Lock()
-	defer passkeySessionsMu.Unlock()
-	delete(passkeySessions, sessionID)
-}
-
-// newSessionID 生成随机 sessionID
-func newSessionID() string {
-	b := make([]byte, 16)
-	rand.Read(b)
-	return hex.EncodeToString(b)
-}
-
-// ─── WebAuthn 实例 ────────────
-
-// getWebAuthn 创建 WebAuthn 实例
-func (s *Service) getWebAuthn() (*webauthn.WebAuthn, error) {
-	if config.Passkey == nil || !config.Passkey.Enabled {
-		return nil, fmt.Errorf("passkey 未启用")
-	}
-
-	timeout := time.Duration(config.Passkey.Timeout) * time.Millisecond
-	wconfig := &webauthn.Config{
-		RPDisplayName: config.Passkey.RPName,
-		RPID:          config.Passkey.RPID,
-		RPOrigins:     config.Passkey.RPOrigins,
-		Timeouts: webauthn.TimeoutsConfig{
-			Login:        webauthn.TimeoutConfig{Timeout: timeout},
-			Registration: webauthn.TimeoutConfig{Timeout: timeout},
-		},
-	}
-	return webauthn.New(wconfig)
-}
-
-// ─── 用户模型适配 ─────────────
-
-// passkeyUser 实现 webauthn.User 接口
-type passkeyUser struct {
-	ID          []byte
-	Name        string
-	DisplayName string
-	Credentials []webauthn.Credential
-}
-
-func (u *passkeyUser) WebAuthnID() []byte                         { return u.ID }
-func (u *passkeyUser) WebAuthnName() string                       { return u.Name }
-func (u *passkeyUser) WebAuthnDisplayName() string                { return u.DisplayName }
-func (u *passkeyUser) WebAuthnCredentials() []webauthn.Credential { return u.Credentials }
-func (u *passkeyUser) WebAuthnIcon() string                       { return "" }
-
-// getPasskeyUser 从 MemberConfig 构建 webauthn.User
-func getPasskeyUser(username string, member *config.MemberConfig) *passkeyUser {
-	credentials := make([]webauthn.Credential, 0, len(member.Passkeys))
-	for _, pk := range member.Passkeys {
-		credID, _ := base64.URLEncoding.DecodeString(pk.IDBase64)
-		pubKey, _ := base64.URLEncoding.DecodeString(pk.PublicKeyBase64)
-		aaguid, _ := base64.URLEncoding.DecodeString(pk.Authenticator.AAGUIDBase64)
-		credentials = append(credentials, webauthn.Credential{
-			ID:              credID,
-			PublicKey:       pubKey,
-			AttestationType: pk.AttestationType,
-			Authenticator: webauthn.Authenticator{
-				AAGUID:       aaguid,
-				SignCount:    pk.Authenticator.SignCount,
-				CloneWarning: pk.Authenticator.CloneWarning,
-			},
-			Flags: webauthn.CredentialFlags{
-				UserPresent:    pk.Flags.UserPresent,
-				UserVerified:   pk.Flags.UserVerified,
-				BackupEligible: pk.Flags.BackupEligible,
-				BackupState:    pk.Flags.BackupState,
-			},
-		})
-	}
-	return &passkeyUser{
-		ID:          []byte(username),
-		Name:        username,
-		DisplayName: member.Username,
-		Credentials: credentials,
-	}
-}
-
-// ─── 请求/响应类型 ────────────
-
 // PasskeyBeginRegistrationRequest 开始注册请求（username 由认证中间件注入，无需请求体）
 type PasskeyBeginRegistrationRequest struct{}
 
@@ -167,7 +39,7 @@ type PasskeyBeginLoginRequest struct {
 	Username string `json:"username"` // 可选，为空则使用可发现凭证
 }
 
-// ─── Service 方法 ─────────────
+// ─── 公开业务方法 ──────────
 
 // PasskeyBeginRegistration 开始 Passkey 注册流程
 func (s *Service) PasskeyBeginRegistration(c *gin.Context, req PasskeyBeginRegistrationRequest) (*PasskeyBeginData, error) {
@@ -189,7 +61,7 @@ func (s *Service) PasskeyBeginRegistration(c *gin.Context, req PasskeyBeginRegis
 	}
 
 	sessionID := newSessionID()
-	savePasskeySession(sessionID, &passkeySession{
+	s.passkeyStore.save(sessionID, &passkeySession{
 		Challenge: sessionData.Challenge,
 		Username:  username,
 		ExpiresAt: time.Now().Add(5 * time.Minute),
@@ -203,11 +75,11 @@ func (s *Service) PasskeyBeginRegistration(c *gin.Context, req PasskeyBeginRegis
 
 // PasskeyFinishRegistration 完成 Passkey 注册
 func (s *Service) PasskeyFinishRegistration(c *gin.Context, req PasskeyFinishData) error {
-	session := loadPasskeySession(req.SessionID)
+	session := s.passkeyStore.load(req.SessionID)
 	if session == nil {
 		return fmt.Errorf("注册会话不存在或已过期")
 	}
-	defer deletePasskeySession(req.SessionID)
+	defer s.passkeyStore.delete(req.SessionID)
 
 	w, err := s.getWebAuthn()
 	if err != nil {
@@ -289,7 +161,7 @@ func (s *Service) PasskeyBeginLogin(c *gin.Context, req PasskeyBeginLoginRequest
 			return nil, fmt.Errorf("开始登录失败: %w", err)
 		}
 
-		savePasskeySession(sessionID, &passkeySession{
+		s.passkeyStore.save(sessionID, &passkeySession{
 			Challenge: sessionData.Challenge,
 			Username:  req.Username,
 			ExpiresAt: time.Now().Add(5 * time.Minute),
@@ -304,7 +176,7 @@ func (s *Service) PasskeyBeginLogin(c *gin.Context, req PasskeyBeginLoginRequest
 		return nil, fmt.Errorf("开始登录失败: %w", err)
 	}
 
-	savePasskeySession(sessionID, &passkeySession{
+	s.passkeyStore.save(sessionID, &passkeySession{
 		Challenge: sessionData.Challenge,
 		ExpiresAt: time.Now().Add(5 * time.Minute),
 	})
@@ -314,11 +186,11 @@ func (s *Service) PasskeyBeginLogin(c *gin.Context, req PasskeyBeginLoginRequest
 
 // PasskeyFinishLogin 完成 Passkey 登录
 func (s *Service) PasskeyFinishLogin(c *gin.Context, req PasskeyFinishData) (*LoginResponse, error) {
-	session := loadPasskeySession(req.SessionID)
+	session := s.passkeyStore.load(req.SessionID)
 	if session == nil {
 		return nil, fmt.Errorf("登录会话不存在或已过期")
 	}
-	defer deletePasskeySession(req.SessionID)
+	defer s.passkeyStore.delete(req.SessionID)
 
 	w, err := s.getWebAuthn()
 	if err != nil {
@@ -426,4 +298,146 @@ func (s *Service) PasskeyDeleteCredential(username string, credentialID string) 
 
 	logman.Info("Passkey credential deleted", "username", username, "credentialID", credentialID)
 	return nil
+}
+
+// ─── 辅助方法与类型定义 ──────
+
+// passkeySession 存储 WebAuthn 会话数据
+type passkeySession struct {
+	Challenge string    `yaml:"challenge" json:"challenge"`
+	Username  string    `yaml:"username" json:"username"`
+	ExpiresAt time.Time `yaml:"expiresAt" json:"expiresAt"`
+}
+
+// passkeySessionStore 封装会话存储逻辑
+type passkeySessionStore struct {
+	mu       sync.Mutex
+	sessions map[string]*passkeySession
+	cleanup  *time.Ticker
+}
+
+// newPasskeySessionStore 创建并初始化会话存储
+func newPasskeySessionStore() *passkeySessionStore {
+	store := &passkeySessionStore{
+		sessions: make(map[string]*passkeySession),
+		cleanup:  time.NewTicker(5 * time.Minute),
+	}
+	go store.startCleanup()
+	return store
+}
+
+// startCleanup 启动定期清理协程
+func (s *passkeySessionStore) startCleanup() {
+	for range s.cleanup.C {
+		s.mu.Lock()
+		now := time.Now()
+		for k, v := range s.sessions {
+			if v.ExpiresAt.Before(now) {
+				delete(s.sessions, k)
+			}
+		}
+		s.mu.Unlock()
+	}
+}
+
+// save 保存会话
+func (s *passkeySessionStore) save(sessionID string, session *passkeySession) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.sessions[sessionID] = session
+}
+
+// load 加载会话
+func (s *passkeySessionStore) load(sessionID string) *passkeySession {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.sessions[sessionID]
+}
+
+// delete 删除会话
+func (s *passkeySessionStore) delete(sessionID string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.sessions, sessionID)
+}
+
+// stop 停止清理协程
+func (s *passkeySessionStore) stop() {
+	s.cleanup.Stop()
+}
+
+// newSessionID 生成随机 sessionID
+func newSessionID() string {
+	b := make([]byte, 16)
+	rand.Read(b)
+	return hex.EncodeToString(b)
+}
+
+// ─── WebAuthn 实例 ────────────
+
+// getWebAuthn 创建 WebAuthn 实例
+func (s *Service) getWebAuthn() (*webauthn.WebAuthn, error) {
+	if config.Passkey == nil || !config.Passkey.Enabled {
+		return nil, fmt.Errorf("passkey 未启用")
+	}
+
+	timeout := time.Duration(config.Passkey.Timeout) * time.Millisecond
+	wconfig := &webauthn.Config{
+		RPDisplayName: config.Passkey.RPName,
+		RPID:          config.Passkey.RPID,
+		RPOrigins:     config.Passkey.RPOrigins,
+		Timeouts: webauthn.TimeoutsConfig{
+			Login:        webauthn.TimeoutConfig{Timeout: timeout},
+			Registration: webauthn.TimeoutConfig{Timeout: timeout},
+		},
+	}
+	return webauthn.New(wconfig)
+}
+
+// ─── 用户模型适配 ─────────────
+
+// passkeyUser 实现 webauthn.User 接口
+type passkeyUser struct {
+	ID          []byte
+	Name        string
+	DisplayName string
+	Credentials []webauthn.Credential
+}
+
+func (u *passkeyUser) WebAuthnID() []byte                         { return u.ID }
+func (u *passkeyUser) WebAuthnName() string                       { return u.Name }
+func (u *passkeyUser) WebAuthnDisplayName() string                { return u.DisplayName }
+func (u *passkeyUser) WebAuthnCredentials() []webauthn.Credential { return u.Credentials }
+func (u *passkeyUser) WebAuthnIcon() string                       { return "" }
+
+// getPasskeyUser 从 MemberConfig 构建 webauthn.User
+func getPasskeyUser(username string, member *config.MemberConfig) *passkeyUser {
+	credentials := make([]webauthn.Credential, 0, len(member.Passkeys))
+	for _, pk := range member.Passkeys {
+		credID, _ := base64.URLEncoding.DecodeString(pk.IDBase64)
+		pubKey, _ := base64.URLEncoding.DecodeString(pk.PublicKeyBase64)
+		aaguid, _ := base64.URLEncoding.DecodeString(pk.Authenticator.AAGUIDBase64)
+		credentials = append(credentials, webauthn.Credential{
+			ID:              credID,
+			PublicKey:       pubKey,
+			AttestationType: pk.AttestationType,
+			Authenticator: webauthn.Authenticator{
+				AAGUID:       aaguid,
+				SignCount:    pk.Authenticator.SignCount,
+				CloneWarning: pk.Authenticator.CloneWarning,
+			},
+			Flags: webauthn.CredentialFlags{
+				UserPresent:    pk.Flags.UserPresent,
+				UserVerified:   pk.Flags.UserVerified,
+				BackupEligible: pk.Flags.BackupEligible,
+				BackupState:    pk.Flags.BackupState,
+			},
+		})
+	}
+	return &passkeyUser{
+		ID:          []byte(username),
+		Name:        username,
+		DisplayName: member.Username,
+		Credentials: credentials,
+	}
 }

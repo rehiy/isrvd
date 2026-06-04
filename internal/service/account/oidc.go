@@ -19,8 +19,6 @@ import (
 	"isrvd/config"
 )
 
-// ─── 常量与内部类型 ───
-
 const (
 	oidcStateTTL     = 10 * time.Minute
 	oidcLoginCodeTTL = 2 * time.Minute
@@ -44,35 +42,7 @@ type OIDCExchangeRequest struct {
 	Code string `json:"code" binding:"required"`
 }
 
-// ─── Provider 缓存 ────
-
-// oidcProviderCache 缓存 OIDC Provider，避免每次请求都重新拉取元数据
-type oidcProviderCache struct {
-	mu        sync.Mutex
-	provider  *oidc.Provider
-	issuerURL string
-	expiresAt time.Time
-}
-
-func (c *oidcProviderCache) get(ctx context.Context, issuerURL string) (*oidc.Provider, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	if c.provider != nil && c.issuerURL == issuerURL && time.Now().Before(c.expiresAt) {
-		return c.provider, nil
-	}
-
-	p, err := oidc.NewProvider(ctx, issuerURL)
-	if err != nil {
-		return nil, fmt.Errorf("OIDC Provider 初始化失败: %w", err)
-	}
-	c.provider = p
-	c.issuerURL = issuerURL
-	c.expiresAt = time.Now().Add(oidcProviderTTL)
-	return p, nil
-}
-
-// ─── 公开业务方法 ─────
+// ─── 公开业务方法 ──────────
 
 // OIDCLoginURL 生成 OIDC 授权跳转地址
 func (s *Service) OIDCLoginURL(c *gin.Context) (string, error) {
@@ -184,7 +154,7 @@ func (s *Service) OIDCExchange(code string) (*LoginResponse, error) {
 	return s.IssueLoginToken(username)
 }
 
-// ─── 内部辅助方法 ─────
+// ─── 内部辅助方法 ──────────
 
 // newOAuthConfig 构建 oauth2.Config，供 OIDCLoginURL 和 OIDCCallback 共用
 func (s *Service) newOAuthConfig(ctx context.Context, c *gin.Context) (*oidc.Provider, *oauth2.Config, error) {
@@ -269,7 +239,35 @@ func (s *Service) cleanupOIDC() {
 	}
 }
 
-// ─── 纯函数辅助 ───────
+// ─── Provider 缓存 ──────────
+
+// oidcProviderCache 缓存 OIDC Provider，避免每次请求都重新拉取元数据
+type oidcProviderCache struct {
+	mu        sync.Mutex
+	provider  *oidc.Provider
+	issuerURL string
+	expiresAt time.Time
+}
+
+func (c *oidcProviderCache) get(ctx context.Context, issuerURL string) (*oidc.Provider, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.provider != nil && c.issuerURL == issuerURL && time.Now().Before(c.expiresAt) {
+		return c.provider, nil
+	}
+
+	p, err := oidc.NewProvider(ctx, issuerURL)
+	if err != nil {
+		return nil, fmt.Errorf("OIDC Provider 初始化失败: %w", err)
+	}
+	c.provider = p
+	c.issuerURL = issuerURL
+	c.expiresAt = time.Now().Add(oidcProviderTTL)
+	return p, nil
+}
+
+// ─── 纯函数辅助 ──────────
 
 // oidcUsername 从 id_token claims 或 UserInfo endpoint 中提取用户名
 func oidcUsername(ctx context.Context, provider *oidc.Provider, tokenSource oauth2.TokenSource, idToken *oidc.IDToken, claimName string) (string, error) {

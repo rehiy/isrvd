@@ -14,7 +14,7 @@ import (
 	"isrvd/config"
 )
 
-// ─── 请求/响应类型 ────
+// ─── 请求/响应类型 ──────────
 
 // AuthInfoResponse 认证模式及当前用户信息
 type AuthInfoResponse struct {
@@ -50,7 +50,7 @@ type CreateApiTokenResponse struct {
 	Name  string `json:"name"`
 }
 
-// ─── 认证入口 ─────────
+// ─── 认证入口 ──────────────
 
 // Auth 根据配置选择认证方式，返回用户名和错误原因。
 // 供中间件统一调用，避免在 server 层判断认证模式。
@@ -87,7 +87,7 @@ func (s *Service) AuthInfo(username string) *AuthInfoResponse {
 	return resp
 }
 
-// ─── 登录与 Token 签发 ────────────────────────────────────────────────────────
+// ─── 登录与 Token 签发 ──────────────
 
 // Login 校验用户名密码并签发 JWT Token
 func (s *Service) Login(req LoginRequest) (*LoginResponse, error) {
@@ -163,7 +163,7 @@ func (s *Service) signJWT(username string, extra jwt.MapClaims) (string, error) 
 	return tokenStr, nil
 }
 
-// ─── JWT 认证 ─────────
+// ─── JWT 认证 ──────────────
 
 // JWTCheck 解析 JWT 并返回用户名；失败时返回空用户名和具体错误原因。
 func (s *Service) JWTCheck(c *gin.Context) (username, errMsg string) {
@@ -231,7 +231,7 @@ func (s *Service) extractJWT(c *gin.Context) string {
 	return ""
 }
 
-// ─── Header 代理认证 ──────────────────────────────────────────────────────────
+// ─── Header 代理认证 ────────────────
 
 // HeaderTokenCheck 从可信代理 Header 读取用户名；失败时返回空用户名和具体错误原因。
 func (s *Service) HeaderTokenCheck(c *gin.Context) (username, errMsg string) {
