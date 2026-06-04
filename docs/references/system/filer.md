@@ -22,6 +22,16 @@ filer 管理的是 **isrvd 容器内部**挂载的卷，这些路径只在 isrvd
 
 **禁止用 base64**：不要用 `base64 -d` 方式在 Dockerfile 或 RUN 命令里写入文件内容。应使用 `isrvd_upload` 或直接 `isrvd_post "/filer/modify"` 写入。
 
+## 计算目录大小
+
+```bash
+isrvd_get "/filer/dir-size?path=<DIR>"
+```
+
+返回：`{"path": "<DIR>", "size": <BYTES>}`
+
+---
+
 ## 列出文件
 
 ```bash

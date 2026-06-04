@@ -103,3 +103,36 @@ isrvd_put "/account/member/<USER>" '{"description":"<DESC>","permissions":["GET 
 ```bash
 isrvd_delete "/account/member/<USER>"
 ```
+
+## Passkey 登录（无需认证）
+
+```bash
+# 开始登录（username 为空则使用可发现凭证）
+isrvd_post "/account/passkey/login/begin" '{"username":"<USER>"}'
+# 返回：{"sessionId":"...","options":{...}}
+
+# 完成登录（凭证数据由浏览器 WebAuthn API 生成，直接发送 JSON）
+isrvd_post "/account/passkey/login/finish?sessionId=<SESSION_ID>" '<CREDENTIAL_JSON>'
+# 返回：{"token":"eyJ...","username":"<USER>"}
+```
+
+## Passkey 管理（需认证）
+
+```bash
+# 开始注册
+isrvd_post "/account/passkey/register/begin" '{"displayName":"<NAME>"}'
+# 返回：{"sessionId":"...","options":{...}}
+
+# 完成注册（凭证数据由浏览器 WebAuthn API 生成，直接发送 JSON）
+isrvd_post "/account/passkey/register/finish?sessionId=<SESSION_ID>" '<CREDENTIAL_JSON>'
+
+# 列出当前用户的凭证
+isrvd_get "/account/passkey/credentials"
+# 返回：[{"idBase64":"...","aaguidBase64":"...","signCount":0,"displayName":"...","addedAt":"..."}]
+
+# 重命名凭证
+isrvd_put "/account/passkey/credential/<CREDENTIAL_ID>" '{"displayName":"<NEW_NAME>"}'
+
+# 删除凭证
+isrvd_delete "/account/passkey/credential/<CREDENTIAL_ID>"
+```

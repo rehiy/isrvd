@@ -26,142 +26,38 @@ isrvd_login "$ISRVD_APIURL" "$ISRVD_USERNAME" "$ISRVD_PASSWORD"
 
 ---
 
-## API 文档索引
+## 文档索引
 
-### Overview（概览与监控）
+按使用场景查找对应文档：
 
-| 文档 | 覆盖内容 |
-|------|----------|
-| [references/overview.md](references/overview.md) | 服务探测、系统资源统计、监控历史数据（支持实时/1h/6h/12h/24h 时间区间） |
+| 模块 | 文档 | 说明 |
+|------|------|------|
+| 概览 | [references/overview.md](references/overview.md) | 服务探测、监控数据 |
+| 容器 | [references/docker/containers.md](references/docker/containers.md) | 容器 CRUD、日志、终端 |
+| 镜像 | [references/docker/images.md](references/docker/images.md) | 镜像搜索/拉取/构建/推送 |
+| 网络 | [references/docker/networks.md](references/docker/networks.md) | Docker 网络管理 |
+| 数据卷 | [references/docker/volumes.md](references/docker/volumes.md) | Docker 数据卷管理 |
+| 仓库 | [references/docker/registries.md](references/docker/registries.md) | 镜像仓库配置 |
+| Swarm | [references/swarm/info.md](references/swarm/info.md) | 集群、节点、令牌 |
+| Swarm | [references/swarm/services.md](references/swarm/services.md) | 服务部署/扩缩容/更新 |
+| Swarm | [references/swarm/tasks.md](references/swarm/tasks.md) | 任务列表 |
+| Compose | [references/compose.md](references/compose.md) | Docker Compose / Swarm Stack 部署与重部署 |
+| APISIX | [references/apisix/routes.md](references/apisix/routes.md) | 路由 CRUD、启用/禁用 |
+| APISIX | [references/apisix/upstreams.md](references/apisix/upstreams.md) | 上游、负载均衡 |
+| APISIX | [references/apisix/consumers.md](references/apisix/consumers.md) | Consumer、白名单 |
+| APISIX | [references/apisix/ssl.md](references/apisix/ssl.md) | SSL 证书、PluginConfig |
+| Caddy | [references/caddy/routes.md](references/caddy/routes.md) | 路由 CRUD（反向代理/静态文件） |
+| Caddy | [references/caddy/certs.md](references/caddy/certs.md) | TLS 证书管理 |
+| Caddy | [references/caddy/config.md](references/caddy/config.md) | 全局配置、原始 JSON 配置 |
+| 系统 | [references/system/config.md](references/system/config.md) | 系统配置、审计日志 |
+| 系统 | [references/system/account.md](references/system/account.md) | 登录、成员管理、API Token |
+| 系统 | [references/system/filer.md](references/system/filer.md) | 文件管理、上传下载、压缩解压 |
+| 系统 | [references/system/cron.md](references/system/cron.md) | 计划任务 |
+| 系统 | [references/system/ssh.md](references/system/ssh.md) | SSH 主机/凭据管理、SFTP、SSH 终端 |
+| 终端 | [references/shell.md](references/shell.md) | Web Shell（本地终端） |
+| Agent | [references/agent.md](references/agent.md) | Agent 代理（OpenAI 兼容 API） |
 
-**API 端点：**
-- `GET /overview/probe` — 探测服务可用性
-- `GET /overview/monitor?type=host|container&since=3600&id=<容器ID>` — 获取监控数据（since=0 为实时模式）
-- `POST /overview/upgrade` — 升级程序至最新版本
-
----
-
-### Docker（容器管理）
-
-| 文档 | 覆盖内容 |
-|------|----------|
-| [references/docker/containers.md](references/docker/containers.md) | 容器列表、详情、创建、操作（start/stop/restart/remove/exec）、日志、stats、终端 |
-| [references/docker/images.md](references/docker/images.md) | 镜像列表、详情、搜索、构建、标签、拉取、推送、删除、清理（prune） |
-| [references/docker/networks.md](references/docker/networks.md) | 网络列表、详情、创建、删除 |
-| [references/docker/volumes.md](references/docker/volumes.md) | 数据卷列表、详情、创建、删除 |
-| [references/docker/registries.md](references/docker/registries.md) | 镜像仓库 CRUD |
-
-**API 端点：**
-- **信息**：`GET /docker/info`
-- **容器**：`GET /docker/containers`、`GET /docker/container/:id`、`POST /docker/container`、`GET /docker/container/:id/stats`、`POST /docker/container/:id/action`、`GET /docker/container/:id/logs`、`GET /docker/container/:id/logs/stream`（WebSocket）、`GET /docker/container/:id/exec`
-- **镜像**：`GET /docker/images`、`GET /docker/images/search`、`POST /docker/image/:id/action`、`POST /docker/image/:id/tag`、`GET /docker/image/:id`、`POST /docker/image/build`、`POST /docker/image/prune`、`POST /docker/image/push`、`POST /docker/image/pull`
-- **网络**：`GET /docker/networks`、`POST /docker/network/:id/action`、`POST /docker/network`、`GET /docker/network/:id`
-- **数据卷**：`GET /docker/volumes`、`POST /docker/volume/:name/action`、`POST /docker/volume`、`GET /docker/volume/:name`
-- **镜像仓库**：`GET /docker/registries`、`POST /docker/registry`、`PUT /docker/registry`、`DELETE /docker/registry`
-
----
-
-### Swarm（集群管理）
-
-| 文档 | 覆盖内容 |
-|------|----------|
-| [references/swarm/info.md](references/swarm/info.md) | 集群信息、节点列表/详情/操作、加入令牌 |
-| [references/swarm/services.md](references/swarm/services.md) | 服务列表、详情、创建、扩缩容、强制更新、日志 |
-| [references/swarm/tasks.md](references/swarm/tasks.md) | 任务列表 |
-
-**API 端点：**
-- **信息**：`GET /swarm/info`
-- **节点**：`GET /swarm/nodes`、`GET /swarm/node/:id`、`POST /swarm/node/:id/action`、`GET /swarm/token`
-- **服务**：`GET /swarm/services`、`GET /swarm/service/:id`、`POST /swarm/service`、`POST /swarm/service/:id/action`、`POST /swarm/service/:id/force-update`、`GET /swarm/service/:id/logs`
-- **任务**：`GET /swarm/tasks`
-
----
-
-### Compose（多容器部署）
-
-| 文档 | 覆盖内容 |
-|------|----------|
-| [references/compose.md](references/compose.md) | Docker Compose 与 Swarm Stack 的部署、读取配置、重部署（含外部 Compose 标签聚合接管、全量重建与按服务更新镜像）、forcePull 强制拉取 |
-
-**API 端点：**
-- `GET /compose/docker/:name` — 读取 Docker Compose 配置
-- `GET /compose/swarm/:name` — 读取 Swarm Stack 配置
-- `POST /compose/docker/deploy` — 部署 Docker Compose 应用
-- `POST /compose/swarm/deploy` — 部署 Swarm Stack 应用
-- `POST /compose/docker/:name/redeploy` — 重新部署 Docker Compose 应用（支持按服务更新镜像）
-- `POST /compose/swarm/:name/redeploy` — 重新部署 Swarm Stack 应用（支持按服务更新镜像）
-
----
-
-### APISIX（API 网关）
-
-| 文档 | 覆盖内容 |
-|------|----------|
-| [references/apisix/routes.md](references/apisix/routes.md) | 路由 CRUD、启用/禁用（status patch） |
-| [references/apisix/upstreams.md](references/apisix/upstreams.md) | 上游 CRUD、负载均衡配置 |
-| [references/apisix/consumers.md](references/apisix/consumers.md) | Consumer CRUD、白名单管理 |
-| [references/apisix/ssl.md](references/apisix/ssl.md) | SSL 证书 CRUD、PluginConfig 管理、插件列表 |
-
-**API 端点：**
-- **路由**：`GET /apisix/routes`、`GET /apisix/route/:id`、`POST /apisix/route`、`PUT /apisix/route/:id`、`PATCH /apisix/route/:id/status`、`DELETE /apisix/route/:id`
-- **消费者**：`GET /apisix/consumers`、`POST /apisix/consumer`、`PUT /apisix/consumer/:username`、`DELETE /apisix/consumer/:username`
-- **白名单**：`GET /apisix/whitelist`、`POST /apisix/whitelist/revoke`
-- **插件配置**：`GET /apisix/plugin-configs`、`GET /apisix/plugin-config/:id`、`POST /apisix/plugin-config`、`PUT /apisix/plugin-config/:id`、`DELETE /apisix/plugin-config/:id`
-- **上游**：`GET /apisix/upstreams`、`GET /apisix/upstream/:id`、`POST /apisix/upstream`、`PUT /apisix/upstream/:id`、`DELETE /apisix/upstream/:id`
-- **SSL 证书**：`GET /apisix/ssls`、`GET /apisix/ssl/:id`、`POST /apisix/ssl`、`PUT /apisix/ssl/:id`、`DELETE /apisix/ssl/:id`
-- **插件列表**：`GET /apisix/plugins`
-
----
-
-### Caddy（Web 服务器）
-
-| 文档 | 覆盖内容 |
-|------|----------|
-| [references/caddy/routes.md](references/caddy/routes.md) | 路由 CRUD（match + handler，含反向代理/文件服务/静态响应/原始 handle） |
-| [references/caddy/certs.md](references/caddy/certs.md) | TLS 证书 CRUD（磁盘文件 / 内联 PEM / 自动签发三种来源） |
-| [references/caddy/config.md](references/caddy/config.md) | 概览、全局选项（Admin/日志/端口/优雅关闭）、获取/整体替换原始 JSON 配置 |
-
-**API 端点：**
-- **概览与配置**：`GET /caddy/info`、`GET /caddy/config`、`POST /caddy/config`
-- **全局选项**：`GET /caddy/global`、`PUT /caddy/global`
-- **路由**：`GET /caddy/routes`、`GET /caddy/route/:index`、`POST /caddy/route`、`PUT /caddy/route/:index`、`DELETE /caddy/route/:index`
-- **TLS 证书**：`GET /caddy/certs`、`POST /caddy/cert`、`PUT /caddy/cert/:key`、`DELETE /caddy/cert/:key`
-
----
-
-### System（系统管理）
-
-| 文档 | 覆盖内容 |
-|------|----------|
-| [references/overview.md](references/overview.md) | 服务探测、系统资源统计、监控历史数据 |
-| [references/system/config.md](references/system/config.md) | 系统配置（GET/PUT）、审计日志 |
-| [references/system/account.md](references/system/account.md) | 登录（账号密码/OIDC）、成员管理、权限、API Token |
-| [references/system/filer.md](references/system/filer.md) | 文件 CRUD、上传下载（含 inline 预览）、压缩解压、目录大小计算 |
-| [references/system/cron.md](references/system/cron.md) | 计划任务 CRUD、立即执行、启用/禁用、执行历史、可用脚本类型 |
-| [references/ssh/hosts.md](references/ssh/hosts.md) | SSH 主机管理（密码/私钥认证） |
-| [references/ssh/sftp.md](references/ssh/sftp.md) | SFTP 文件管理（列出/上传/下载/删除/重命名/权限） |
-| [references/shell.md](references/shell.md) | Web Shell 终端（WebSocket） |
-| [references/agent.md](references/agent.md) | Agent 代理（OpenAI 兼容 LLM API） |
-| [references/shell.md](references/shell.md) | Web Shell 终端（WebSocket） |
-| | [references/agent.md](references/agent.md) | Agent 代理（OpenAI 兼容 LLM API） |
-
-**API 端点：**
-- **配置**：`GET /system/config`、`PUT /system/config`
-- **审计日志**：`GET /system/audit/logs`
-- **认证信息**：`GET /account/info`
-- **登录**：`POST /account/login`、`GET /account/oidc/login`、`GET /account/oidc/callback`、`POST /account/oidc/exchange`
-- **Passkey 登录**（无需认证）：`POST /account/passkey/login/begin`、`POST /account/passkey/login/finish`
-- **Passkey 管理**（需认证）：`POST /account/passkey/register/begin`、`POST /account/passkey/register/finish`、`GET /account/passkey/credentials`、`PUT /account/passkey/credential/:credentialID`（重命名）、`DELETE /account/passkey/credential/:credentialID`
-- **凭证管理**：`POST /account/token`、`PUT /account/password`
-- **路由权限**：`GET /account/routes`
-- **成员管理**：`GET /account/members`、`POST /account/member`、`PUT /account/member/:username`、`DELETE /account/member/:username`
-- **文件管理**：`GET /filer/list`、`GET /filer/read`、`GET /filer/download`、`GET /filer/dir-size`、`POST /filer/mkdir`、`POST /filer/create`、`POST /filer/modify`、`POST /filer/rename`、`POST /filer/delete`、`POST /filer/chmod`、`POST /filer/upload`、`POST /filer/zip`、`POST /filer/unzip`
-- **计划任务**：`GET /cron/types`、`GET /cron/jobs`、`POST /cron/jobs`、`PUT /cron/jobs/:id`、`DELETE /cron/jobs/:id`、`POST /cron/jobs/:id/run`、`POST /cron/jobs/:id/enable`、`GET /cron/jobs/:id/logs`
-- **Web Shell**：`GET /shell`（WebSocket）
-- **SSH 主机**：`GET /ssh/hosts`、`POST /ssh/host`、`PUT /ssh/host/:id`、`DELETE /ssh/host/:id`
-- **SSH 终端**：`GET /ssh/to/:id`（WebSocket）
-- **SFTP**：`GET /ssh/sftp/:id/ls`、`GET /ssh/sftp/:id/read`、`GET /ssh/sftp/:id/download`、`POST /ssh/sftp/:id/upload`、`POST /ssh/sftp/:id/rm`、`POST /ssh/sftp/:id/mkdir`、`POST /ssh/sftp/:id/rename`、`POST /ssh/sftp/:id/chmod`、`POST /ssh/sftp/:id/chown`、`GET /ssh/sftp/:id/dir-size`
-- **Agent 代理**：`ANY /agent/*path`
+> 📌 各文档中包含完整的 API 端点列表、请求/响应字段说明和示例。
 
 ---
 
@@ -200,7 +96,7 @@ isrvd_login "$ISRVD_APIURL" "$ISRVD_USERNAME" "$ISRVD_PASSWORD"
 ├── 删除/清理
 │   ├── 容器/镜像/网络/卷 → references/docker/ 下对应文件（action=remove）
 │   ├── Swarm 服务        → references/swarm/services.md（action=remove）
-│   ├── 路由/消费者       → references/apisix/routes.md 或 docs/apisix/consumers.md
+│   ├── 路由/消费者       → references/apisix/routes.md 或 references/apisix/consumers.md
 │   └── Caddy 路由        → references/caddy/routes.md (DELETE /caddy/route/:index)
 │
 └── 管理
@@ -208,10 +104,9 @@ isrvd_login "$ISRVD_APIURL" "$ISRVD_USERNAME" "$ISRVD_PASSWORD"
     ├── 成员/权限/Token/OIDC 登录 → references/system/account.md
     ├── 文件管理         → references/system/filer.md
     ├── 计划任务         → references/system/cron.md
-│   ├── SSH 主机管理     → references/ssh/hosts.md
-│   ├── SFTP 文件管理    → references/ssh/sftp.md
-│   ├── Shell 终端       → references/shell.md (GET /shell WebSocket)
-│   └── WebSSH 终端     → references/ssh/hosts.md (GET /ssh/to/:id WebSocket)
+    ├── SSH 主机管理     → references/system/ssh.md
+    ├── Shell 终端       → references/shell.md (GET /shell WebSocket)
+    └── WebSSH 终端     → references/system/ssh.md (GET /ssh/to/:id WebSocket)
 ```
 
 ---
@@ -306,33 +201,22 @@ isrvd_post "/swarm/service/<SVC_ID>/force-update"
 ### 为新服务配置路由
 
 ```bash
-# 先查现有路由
+# APISIX
 isrvd_get "/apisix/routes"
-# 创建（upstream 的 nodes 地址通过查询实际容器/服务获取）
 isrvd_post "/apisix/route" '{"name":"<NAME>","uri":"<URI>","status":1,"upstream":{"type":"roundrobin","nodes":{"<HOST>:<PORT>":1}}}'
-```
 
-### 临时禁用/启用路由
-
-```bash
-isrvd_patch "/apisix/route/<ROUTE_ID>/status" '{"status":0}'
-isrvd_patch "/apisix/route/<ROUTE_ID>/status" '{"status":1}'
-```
-
-### 为新服务配置 Caddy 路由
-
-```bash
-# 反向代理（最常见）
+# Caddy（反向代理）
 isrvd_post "/caddy/route" '{
   "match": {"hosts": ["<DOMAIN>"], "paths": ["/*"]},
   "handler": {"kind": "reverse_proxy", "upstreams": ["<HOST>:<PORT>"]}
 }'
+```
 
-# 查看当前所有 Caddy 路由
-isrvd_get "/caddy/routes"
+### 临时禁用/启用 APISIX 路由
 
-# 备份完整配置（推荐在重大变更前执行）
-isrvd_get "/caddy/config" > /tmp/caddy-backup.json
+```bash
+isrvd_patch "/apisix/route/<ROUTE_ID>/status" '{"status":0}'
+isrvd_patch "/apisix/route/<ROUTE_ID>/status" '{"status":1}'
 ```
 
 ### 更新静态文件（无需重建容器）
