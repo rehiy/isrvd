@@ -293,9 +293,9 @@ export default toNative(MemberEditModal)
         <div class="flex items-center gap-2 mb-2">
           <label class="form-label">路由权限</label>
           <div class="ml-auto flex items-center gap-1">
-            <button type="button" class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-medium transition-colors" @click="selectAllRoutes">全选</button>
-            <button type="button" class="px-2 py-0.5 rounded-md bg-slate-50 text-slate-600 hover:bg-slate-100 text-xs font-medium transition-colors" @click="selectReadOnlyRoutes">只读</button>
-            <button type="button" class="px-2 py-0.5 rounded-md bg-red-50 text-red-600 hover:bg-red-100 text-xs font-medium transition-colors" @click="clearRoutes">清空</button>
+            <button type="button" class="tab-btn tab-btn-text bg-blue-50 text-blue-600 hover:bg-blue-100" @click="selectAllRoutes">全选</button>
+            <button type="button" class="tab-btn tab-btn-text bg-slate-50 text-slate-600 hover:bg-slate-100" @click="selectReadOnlyRoutes">只读</button>
+            <button type="button" class="tab-btn tab-btn-text bg-red-50 text-red-600 hover:bg-red-100" @click="clearRoutes">清空</button>
           </div>
         </div>
         <div class="space-y-2">
@@ -330,7 +330,7 @@ export default toNative(MemberEditModal)
                   {{ methodOf(item.key) }}
                 </span>
                 <span class="min-w-0 flex-1 flex items-center gap-2">
-                  <span class="text-xs font-medium text-slate-700 truncate">{{ item.label }}</span>
+                  <span class="text-xs text-slate-700 truncate">{{ item.label }}</span>
                   <code class="hidden sm:inline text-xs text-slate-400 font-mono truncate">{{ pathOf(item.key) }}</code>
                 </span>
                 <span v-if="isAuto(item.key)" class="ml-auto text-xs text-slate-400 flex-shrink-0">自动</span>

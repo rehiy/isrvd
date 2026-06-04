@@ -102,17 +102,23 @@ class AccountPasskeys extends Vue {
     }
 
     // ─── 删除 ───
-    async handleDeletePasskey(credentialId: string) {
-        if (!confirm('确定要删除这个 Passkey 凭证吗？')) return
-        try {
-            await api.accountPasskeyDeleteCredential(credentialId)
-            this.portal.showNotification('success', 'Passkey 凭证已删除')
-            await this.loadPasskeyCredentials()
-        } catch {
-            this.portal.showNotification('error', '删除失败')
-        }
-    }
-}
+    handleDeletePasskey(credentialId: string) {
+        this.portal.showConfirm({
+            title: '删除 Passkey',
+            message: '确定要删除这个 Passkey 凭证吗？',
+            icon: 'fa-trash',
+            iconColor: 'red',
+            confirmText: '确认删除',
+            danger: true,
+            onConfirm: async () => {
+                try {
+                    await api.accountPasskeyDeleteCredential(credentialId)
+                    this.portal.showNotification('success', 'Passkey 凭证已删除')
+                    await this.loadPasskeyCredentials()
+                } catch {}
+            }
+        })
+    }}
 
 export default toNative(AccountPasskeys)
 </script>
@@ -143,9 +149,11 @@ export default toNative(AccountPasskeys)
     </div>
 
     <div class="card-body">
-      <div v-if="passkeyLoading" class="text-center py-8">
-        <i class="fas fa-spinner fa-spin text-2xl text-slate-400"></i>
-        <p class="text-sm text-slate-500 mt-2">加载中...</p>
+    <div v-if="passkeyLoading" class="card-body">
+        <div class="empty-state">
+          <div class="w-12 h-12 spinner mb-3"></div>
+          <p class="text-slate-500">加载中...</p>
+        </div>
       </div>
 
       <div v-else-if="passkeyCredentials.length === 0" class="empty-state">
@@ -163,8 +171,8 @@ export default toNative(AccountPasskeys)
           class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200"
         >
           <div class="flex items-center gap-4 min-w-0">
-            <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-              <i class="fas fa-fingerprint text-purple-600"></i>
+          <div class="list-icon bg-purple-100 text-purple-600">
+              <i class="fas fa-fingerprint"></i>
             </div>
             <div class="min-w-0">
               <!-- 重命名编辑态 -->
@@ -176,11 +184,11 @@ export default toNative(AccountPasskeys)
                   @keyup.escape="cancelRename"
                   autofocus
                 />
-                <button class="btn btn-ghost btn-xs text-green-600" @click="confirmRename(cred)">
-                  <i class="fas fa-check"></i>
+                <button class="btn-icon btn-icon-emerald" @click="confirmRename(cred)">
+                  <i class="fas fa-check text-xs"></i>
                 </button>
-                <button class="btn btn-ghost btn-xs text-slate-400" @click="cancelRename">
-                  <i class="fas fa-times"></i>
+                <button class="btn-icon btn-icon-slate" @click="cancelRename">
+                  <i class="fas fa-times text-xs"></i>
                 </button>
               </div>
               <!-- 展示态 -->
@@ -189,11 +197,11 @@ export default toNative(AccountPasskeys)
                   {{ cred.displayName || 'Passkey #' + cred.idBase64.slice(0, 8) }}
                 </h4>
                 <button
-                  class="btn btn-ghost btn-xs text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                  class="btn-icon btn-icon-slate"
                   title="重命名"
                   @click="startRename(cred)"
                 >
-                  <i class="fas fa-pencil-alt text-xs"></i>
+                  <i class="fas fa-pen text-xs"></i>
                 </button>
               </div>
               <div class="flex items-center gap-3 text-xs text-slate-500 mt-1">
@@ -201,12 +209,12 @@ export default toNative(AccountPasskeys)
               </div>
             </div>
           </div>
-          <button
-            type="button"
-            class="btn btn-ghost text-red-500 hover:bg-red-50 flex-shrink-0"
-            @click="handleDeletePasskey(cred.idBase64)"
-          >
-            <i class="fas fa-trash-alt"></i>
+                <button
+                  class="btn-icon btn-icon-red flex-shrink-0"
+                  title="删除"
+                  @click="handleDeletePasskey(cred.idBase64)"
+                >
+            <i class="fas fa-trash-alt text-xs"></i>
           </button>
         </div>
       </div>

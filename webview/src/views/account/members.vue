@@ -120,10 +120,10 @@ export default toNative(Members)
           </div>
         </div>
         <div class="flex items-center gap-1 flex-shrink-0">
-          <button type="button" class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadMembers">
+          <button type="button" class="btn-icon-sm" title="刷新" @click="loadMembers">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/account/member')" type="button" class="btn btn-blue w-9 h-9 !px-0" title="新建用户" @click="openAddMember">
+          <button v-if="portal.hasPerm('POST /api/account/member')" type="button" class="btn-icon-sm" title="新建用户" @click="openAddMember">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
