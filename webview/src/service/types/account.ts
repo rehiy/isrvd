@@ -89,9 +89,6 @@ export interface PasskeyBeginData {
     options: CredentialCreationOptions | CredentialRequestOptions
 }
 
-// 完成注册/登录：sessionId 通过 query param 传递，body 直接为 credential JSON
-// （已无需单独类型）
-
 // Passkey 登录结果
 export interface PasskeyLoginResult {
     token: string

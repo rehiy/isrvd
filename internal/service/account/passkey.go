@@ -35,16 +35,20 @@ func (s *Service) initPasskey() {
 			logman.Error("WebAuthn 初始化失败", "err", err)
 		} else {
 			s.webAuthn = w
+			// 从配置构建内存索引
+			for username, member := range config.Members {
+				for _, pk := range member.Passkeys {
+					s.credIndex[pk.IDBase64] = username
+					s.signCounts[pk.IDBase64] = pk.SignCount
+				}
+			}
 		}
 	}
+}
 
-	// 从配置构建内存索引
-	for username, member := range config.Members {
-		for _, pk := range member.Passkeys {
-			s.credIndex[pk.IDBase64] = username
-			s.signCounts[pk.IDBase64] = pk.SignCount
-		}
-	}
+// PasskeyEnabled 返回当前是否已启用 Passkey 功能
+func (s *Service) PasskeyEnabled() bool {
+	return s.webAuthn != nil
 }
 
 // PasskeyBeginData 开始注册/登录的统一响应
@@ -52,9 +56,6 @@ type PasskeyBeginData struct {
 	SessionID string `json:"sessionId"`
 	Options   any    `json:"options"`
 }
-
-// PasskeyFinishData 已废弃，sessionId 改为 query param 传递，保留仅供兼容
-// Deprecated: 使用 query param ?sessionId=... 代替
 
 // PasskeyBeginRegistration 开始 Passkey 注册
 func (s *Service) PasskeyBeginRegistration(c *gin.Context, displayName string) (*PasskeyBeginData, error) {
@@ -189,6 +190,21 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginRe
 			return nil, fmt.Errorf("验证失败: %w", err)
 		}
 		credID = credential.ID
+
+		// 更新内存 signCount（取最大值，并做克隆检测）
+		credIDStr := base64.RawURLEncoding.EncodeToString(credID)
+		newCount := credential.Authenticator.SignCount
+
+		s.indexMu.Lock()
+		stored := s.signCounts[credIDStr]
+		if newCount > stored {
+			s.signCounts[credIDStr] = newCount
+		} else if newCount != 0 && newCount <= stored {
+			// 克隆检测：signCount 未增长或倒退，凭证可能被克隆
+			s.indexMu.Unlock()
+			return nil, fmt.Errorf("凭证可能被克隆，登录被拒绝")
+		}
+		s.indexMu.Unlock()
 	} else {
 		// Discoverable login：通过 credIndex 查找用户
 		credential, err := s.webAuthn.FinishDiscoverableLogin(func(rawID, _ []byte) (webauthn.User, error) {
@@ -209,12 +225,22 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginRe
 			return nil, fmt.Errorf("验证失败: %w", err)
 		}
 		credID = credential.ID
-	}
 
-	// 更新内存 signCount
-	s.indexMu.Lock()
-	s.signCounts[base64.RawURLEncoding.EncodeToString(credID)]++
-	s.indexMu.Unlock()
+		// 更新内存 signCount（取最大值，并做克隆检测）
+		credIDStr := base64.RawURLEncoding.EncodeToString(credID)
+		newCount := credential.Authenticator.SignCount
+
+		s.indexMu.Lock()
+		stored := s.signCounts[credIDStr]
+		if newCount > stored {
+			s.signCounts[credIDStr] = newCount
+		} else if newCount != 0 && newCount <= stored {
+			// 克隆检测：signCount 未增长或倒退，凭证可能被克隆
+			s.indexMu.Unlock()
+			return nil, fmt.Errorf("凭证可能被克隆，登录被拒绝")
+		}
+		s.indexMu.Unlock()
+	}
 
 	resp, err := s.IssueLoginToken(username)
 	if err != nil {
@@ -340,23 +366,40 @@ const passkeySessionMaxSize = 100
 type passkeySessionStore struct {
 	mu       sync.Mutex
 	sessions map[string]*passkeySession
+	ticker   *time.Ticker
+	done     chan struct{}
 }
 
 func newPasskeySessionStore() *passkeySessionStore {
-	store := &passkeySessionStore{sessions: make(map[string]*passkeySession)}
+	store := &passkeySessionStore{
+		sessions: make(map[string]*passkeySession),
+		done:     make(chan struct{}),
+	}
+	store.ticker = time.NewTicker(5 * time.Minute)
 	go func() {
-		for range time.NewTicker(5 * time.Minute).C {
-			store.mu.Lock()
-			now := time.Now()
-			for k, v := range store.sessions {
-				if v.ExpiresAt.Before(now) {
-					delete(store.sessions, k)
+		for {
+			select {
+			case <-store.ticker.C:
+				store.mu.Lock()
+				now := time.Now()
+				for k, v := range store.sessions {
+					if v.ExpiresAt.Before(now) {
+						delete(store.sessions, k)
+					}
 				}
+				store.mu.Unlock()
+			case <-store.done:
+				return
 			}
-			store.mu.Unlock()
 		}
 	}()
 	return store
+}
+
+// Stop 停止会话清理协程，防止资源泄漏
+func (s *passkeySessionStore) Stop() {
+	s.ticker.Stop()
+	close(s.done)
 }
 
 func (s *passkeySessionStore) save(id string, sess *passkeySession) {
