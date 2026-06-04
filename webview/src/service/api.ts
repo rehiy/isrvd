@@ -19,6 +19,9 @@ import type {
     ApiTokenCreate,
     ApiTokenResult,
     ChangePassword,
+    TOTPBeginResult,
+    TOTPVerify,
+    TwoFactorStatus,
     // Passkey
     PasskeyBeginLoginData,
     PasskeyBeginData,
@@ -174,6 +177,22 @@ class ApiService {
 
     accountPasswordChange(data: ChangePassword) {
         return http.put<void>('account/password', data)
+    }
+
+    accountTwoFactorStatus() {
+        return http.get<TwoFactorStatus>('account/2fa/status')
+    }
+
+    accountTOTPBegin() {
+        return http.post<TOTPBeginResult>('account/2fa/totp/begin', {})
+    }
+
+    accountTOTPEnable(data: TOTPVerify) {
+        return http.post<void>('account/2fa/totp/enable', data)
+    }
+
+    accountTOTPDisable(data: TOTPVerify) {
+        return http.post<void>('account/2fa/totp/disable', data)
     }
 
     // ==================== Passkey 认证相关 ====================

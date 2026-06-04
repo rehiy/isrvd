@@ -45,8 +45,8 @@ class App extends Vue {
 
         try {
             const { payload } = await api.accountOIDCExchange({ code: code ?? '' })
-            if (!payload) return
-            this.portal.setAuth({ authMode: 'jwt', ...payload })
+            if (!payload?.token) return
+            this.portal.setAuth({ authMode: 'jwt', token: payload.token, username: payload.username })
             await this.portal.initialize()
         } catch {
             this.portal.showNotification('error', 'OIDC 登录失败，请重试')

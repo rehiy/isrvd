@@ -108,12 +108,24 @@ type MemberConfig struct {
 	Password      string               `yaml:"password" json:"-"` // 敏感字段不序列化到 JSON
 	HomeDirectory string               `yaml:"homeDirectory" json:"homeDirectory"`
 	Passkeys      []*PasskeyCredential `yaml:"passkeys" json:"passkeys,omitempty"` // Passkey 凭证列表
+	TwoFactor     *TwoFactorConfig     `yaml:"twoFactor,omitempty" json:"twoFactor,omitempty"`
 	// Founder 创始人标志，创始人拥有所有模块的完整权限
 	Founder bool `yaml:"founder" json:"founder"`
 	// Description 成员描述信息（可选）
 	Description string `yaml:"description,omitempty" json:"description,omitempty"`
 	// Permissions 允许访问的路由列表，格式为 "METHOD /api/path"，如 "GET /api/docker/containers"
 	Permissions []string `yaml:"permissions,omitempty" json:"permissions,omitempty"`
+}
+
+// TwoFactorConfig 存储用户二次验证配置
+type TwoFactorConfig struct {
+	TOTP *TOTPConfig `yaml:"totp,omitempty" json:"totp,omitempty"`
+}
+
+// TOTPConfig 存储用户 TOTP 二次验证配置
+type TOTPConfig struct {
+	Enabled bool   `yaml:"enabled" json:"enabled"`
+	Secret  string `yaml:"secret" json:"-"` // 敏感字段不序列化到 JSON
 }
 
 // PasskeyCredential 存储用户的 Passkey 凭证信息

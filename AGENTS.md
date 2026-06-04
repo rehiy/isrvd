@@ -200,7 +200,7 @@ docs/
 - Caddy：`/caddy/routes`、`/caddy/certs`、`/caddy/global`、`/caddy/raw`
 - Docker：`/docker/containers`、`/docker/images`、`/docker/networks`、`/docker/volumes`、`/docker/registries` 及对应详情页
 - Swarm：`/swarm/nodes`、`/swarm/services`、`/swarm/tasks` 及对应详情/日志页
-- 系统模块：`/system/config`、`/system/audit/logs`；用户管理：`/account/members`；账户设置：`/account/password`、`/account/passkeys`、`/account/apikey`（`/account/profile` 兼容重定向到修改密码）
+- 系统模块：`/system/config`、`/system/audit/logs`；用户管理：`/account/members`；账户设置：`/account/password`、`/account/passkeys`、`/account/apikey`
 - 计划任务：`/cron/jobs`；Compose：`/compose/deploy`
 - 折叠子菜单展开状态跟随当前路由（`@Watch` immediate）
 - 侧边栏宽度 `w-16`（折叠）→ `w-64`（展开）

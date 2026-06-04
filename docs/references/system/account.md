@@ -6,7 +6,7 @@
 isrvd_get "/account/info"
 ```
 
-返回：`{mode, username, member, oidcEnabled, oidcBtnLabel}`
+返回：`{mode, username, member, oidcEnabled, oidcBtnLabel, passkeyEnabled}`
 
 > `oidcBtnLabel` 为 OIDC 登录按钮自定义名称，未配置时为空字符串。
 
@@ -18,7 +18,25 @@ isrvd_post "/account/login" '{"username":"<USER>","password":"<PASS>"}'
 
 返回：`{"token": "eyJ...", "username": "<USER>"}`
 
-> 通常使用 `isrvd_login` 命令而非直接调用此接口。
+已启用 TOTP 二次验证的账号首次密码校验通过时返回：
+
+```json
+{"username":"<USER>","twoFactorRequired":true}
+```
+
+随后携带认证器验证码再次登录：
+
+```bash
+isrvd_post "/account/login" '{"username":"<USER>","password":"<PASS>","totpCode":"123456"}'
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| username | string | 用户名 |
+| password | string | 密码 |
+| totpCode | string | TOTP 二次验证码；仅账号启用 TOTP 且密码登录时需要 |
+
+> 通常使用 `isrvd_login` 命令而非直接调用此接口。启用 TOTP 后可使用 `isrvd_login <base_url> <username> <password> <totpCode>`，或使用已创建的 API Token。
 
 ## OIDC 登录
 
@@ -70,6 +88,33 @@ isrvd_post "/account/token" '{"name":"<TOKEN_NAME>","expiresIn":2592000}'
 isrvd_put "/account/password" '{"oldPassword":"<OLD>","newPassword":"<NEW>"}'
 ```
 
+## TOTP 二次验证
+
+TOTP 仅作用于账号密码登录；Passkey、OIDC 登录和已签发的 API Token 不触发二次验证。
+
+```bash
+# 查询状态
+isrvd_get "/account/2fa/status"
+# 返回：{"enabled":true}
+
+# 开始绑定，返回 secret 和 otpauth URI
+isrvd_post "/account/2fa/totp/begin" '{}'
+# 返回：{"secret":"BASE32...","uri":"otpauth://totp/..."}
+
+# 在认证器 App 中添加后，提交验证码完成启用
+isrvd_post "/account/2fa/totp/enable" '{"secret":"BASE32...","code":"123456"}'
+
+# 禁用前需输入当前验证码
+isrvd_post "/account/2fa/totp/disable" '{"code":"123456"}'
+```
+
+| 接口 | 请求字段 | 响应字段 | 说明 |
+|------|----------|----------|------|
+| `/account/2fa/status` | - | `enabled` boolean | 当前用户是否启用 TOTP |
+| `/account/2fa/totp/begin` | - | `secret` string, `uri` string | 生成绑定密钥；`secret` 仅绑定流程返回 |
+| `/account/2fa/totp/enable` | `secret` string, `code` string | - | 验证通过后保存密钥并启用 |
+| `/account/2fa/totp/disable` | `code` string | - | 验证当前验证码后禁用 |
+
 ## 列出成员
 
 ```bash
@@ -83,6 +128,7 @@ isrvd_get "/account/members"
 | founder | boolean | 是否为创建者 |
 | description | string | 描述 |
 | permissions | string[] | 权限列表 |
+| twoFactor | object | 二次验证配置；`totp.secret` 不返回 |
 
 ## 创建成员
 

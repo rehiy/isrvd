@@ -59,7 +59,7 @@ export default toNative(UserMenu)
     <!-- 账户设置 -->
     <router-link to="/account/password" class="dropdown-item" @click="menuOpen = false">
       <i class="fas fa-lock"></i>
-      修改密码
+      账号安全
     </router-link>
     <router-link to="/account/passkeys" class="dropdown-item" @click="menuOpen = false">
       <i class="fas fa-fingerprint"></i>

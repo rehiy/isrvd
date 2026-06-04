@@ -30,12 +30,14 @@ type AuthInfoResponse struct {
 type LoginRequest struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
+	TOTPCode string `json:"totpCode"`
 }
 
 // LoginResponse 登录响应
 type LoginResponse struct {
-	Token    string `json:"token"`
-	Username string `json:"username"`
+	Token             string `json:"token,omitempty"`
+	Username          string `json:"username"`
+	TwoFactorRequired bool   `json:"twoFactorRequired,omitempty"`
 }
 
 // CreateApiTokenRequest 创建 API Token 请求
@@ -95,6 +97,15 @@ func (s *Service) Login(req LoginRequest) (*LoginResponse, error) {
 	if !exists || !secure.BcryptVerify(req.Password, member.Password) {
 		logman.Warn("Login failed", "username", req.Username)
 		return nil, fmt.Errorf("invalid credentials")
+	}
+	if s.TOTPEnabled(member) {
+		if req.TOTPCode == "" {
+			return &LoginResponse{Username: req.Username, TwoFactorRequired: true}, nil
+		}
+		if !s.TOTPValidate(member.TwoFactor.TOTP.Secret, req.TOTPCode) {
+			logman.Warn("TOTP login failed", "username", req.Username)
+			return nil, fmt.Errorf("验证码无效")
+		}
 	}
 	resp, err := s.IssueLoginToken(req.Username)
 	if err != nil {

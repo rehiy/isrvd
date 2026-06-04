@@ -33,6 +33,10 @@ func (app *App) defineAccountRoutes() []Route {
 		// 凭证管理
 		{Method: "POST", Path: "/account/token", Handler: app.accountTokenCreate, Module: "account", Label: "创建 API 令牌"},
 		{Method: "PUT", Path: "/account/password", Handler: app.accountPasswordChange, Module: "account", Label: "修改当前用户密码", Access: AccessAuth},
+		{Method: "GET", Path: "/account/2fa/status", Handler: app.accountTwoFactorStatus, Module: "account", Label: "查询二次验证状态", Access: AccessAuth},
+		{Method: "POST", Path: "/account/2fa/totp/begin", Handler: app.accountTOTPBegin, Module: "account", Label: "开始绑定 TOTP 二次验证", Access: AccessAuth},
+		{Method: "POST", Path: "/account/2fa/totp/enable", Handler: app.accountTOTPEnable, Module: "account", Label: "启用 TOTP 二次验证", Access: AccessAuth},
+		{Method: "POST", Path: "/account/2fa/totp/disable", Handler: app.accountTOTPDisable, Module: "account", Label: "禁用 TOTP 二次验证", Access: AccessAuth},
 		// 路由权限
 		{Method: "GET", Path: "/account/routes", Handler: app.accountRouteList, Module: "account", Label: "查询路由权限列表", Access: AccessAuth},
 		// 成员管理
@@ -189,6 +193,58 @@ func (app *App) accountPasswordChange(c *gin.Context) {
 		return
 	}
 	respondSuccess(c, "密码修改成功", nil)
+}
+
+// accountTwoFactorStatus 查询当前用户二次验证状态
+func (app *App) accountTwoFactorStatus(c *gin.Context) {
+	username := c.GetString("username")
+	resp, err := app.accountSvc.TwoFactorStatus(username)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "查询成功", resp)
+}
+
+// accountTOTPBegin 开始绑定 TOTP 二次验证
+func (app *App) accountTOTPBegin(c *gin.Context) {
+	username := c.GetString("username")
+	resp, err := app.accountSvc.TOTPBegin(username)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "开始绑定", resp)
+}
+
+// accountTOTPEnable 启用 TOTP 二次验证
+func (app *App) accountTOTPEnable(c *gin.Context) {
+	var req account.TOTPVerifyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	username := c.GetString("username")
+	if err := app.accountSvc.TOTPEnable(username, req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "TOTP 二次验证已启用", nil)
+}
+
+// accountTOTPDisable 禁用 TOTP 二次验证
+func (app *App) accountTOTPDisable(c *gin.Context) {
+	var req account.TOTPVerifyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	username := c.GetString("username")
+	if err := app.accountSvc.TOTPDisable(username, req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "TOTP 二次验证已禁用", nil)
 }
 
 // accountRouteList 返回所有已注册路由及其权限元信息

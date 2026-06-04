@@ -13,11 +13,13 @@ export interface AuthInfo {
 export interface AuthLogin {
     username: string
     password: string
+    totpCode?: string
 }
 
 export interface AuthLoginResult {
-    token: string
+    token?: string
     username: string
+    twoFactorRequired?: boolean
 }
 
 export interface OIDCExchange {
@@ -74,6 +76,22 @@ export interface ApiTokenResult {
 export interface ChangePassword {
     oldPassword: string
     newPassword: string
+}
+
+// ─── TOTP 二次验证 ───
+
+export interface TwoFactorStatus {
+    enabled: boolean
+}
+
+export interface TOTPBeginResult {
+    secret: string
+    uri: string
+}
+
+export interface TOTPVerify {
+    code: string
+    secret?: string
 }
 
 // ─── Passkey 认证 ───

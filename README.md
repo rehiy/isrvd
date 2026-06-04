@@ -267,7 +267,7 @@ cd webview && python3 sort-imports.py --dry-run src
 | `account` | `PUT /api/account/member/:username` | 成员管理（更新） |
 | `account` | `DELETE /api/account/member/:username` | 成员管理（删除） |
 | `account` | `POST /api/account/token` | 成员管理（创建 API 令牌） |
-| `account` | `PUT /api/account/password` | 成员管理（修改密码） |
+| `account` | `PUT /api/account/password` | 成员管理（账号安全） |
 | `account` | `GET /api/account/routes` | 成员管理（路由权限列表） |
 | `filer` | `GET /api/filer/list` | 文件管理（列出） |
 | `filer` | `GET /api/filer/read` | 文件管理（读取） |

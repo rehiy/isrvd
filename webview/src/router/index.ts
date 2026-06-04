@@ -234,11 +234,6 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/account/members.vue')
   },
   {
-    path: '/account/profile',
-    name: 'account-profile',
-    redirect: '/account/password'
-  },
-  {
     path: '/account/password',
     name: 'account-password',
     component: () => import('@/views/account/password.vue')

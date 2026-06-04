@@ -144,7 +144,7 @@ export default toNative(ImagePullModal)
         <div class="space-y-3">
           <div class="flex gap-2">
             <input v-model="searchKeyword" type="text" placeholder="请输入要搜索的镜像名称" class="input flex-1" @keydown.enter.prevent="handleSearchImage" />
-            <button type="button" :disabled="searchLoading" class="btn h-[46px] btn-secondary" @click="handleSearchImage">
+            <button type="button" :disabled="searchLoading" class="btn btn-secondary" @click="handleSearchImage">
               <i :class="['fas', searchLoading ? 'fa-spinner fa-spin' : 'fa-search']"></i>
               {{ searchLoading ? '搜索中' : '搜索' }}
             </button>

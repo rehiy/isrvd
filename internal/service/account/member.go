@@ -34,11 +34,12 @@ func (s *Service) MemberInspect(username string) *MemberInfo {
 
 // MemberInfo 成员信息（不包含密码明文）
 type MemberInfo struct {
-	Username      string   `json:"username"`
-	HomeDirectory string   `json:"homeDirectory"`
-	Founder       bool     `json:"founder"`
-	Description   string   `json:"description"`
-	Permissions   []string `json:"permissions"`
+	Username      string                  `json:"username"`
+	HomeDirectory string                  `json:"homeDirectory"`
+	Founder       bool                    `json:"founder"`
+	Description   string                  `json:"description"`
+	Permissions   []string                `json:"permissions"`
+	TwoFactor     *config.TwoFactorConfig `json:"twoFactor,omitempty"`
 }
 
 // MemberList 列出所有成员
@@ -62,6 +63,7 @@ func (s *Service) memberInfoBuild(m *config.MemberConfig) *MemberInfo {
 		Founder:       m.Founder,
 		Description:   m.Description,
 		Permissions:   perms,
+		TwoFactor:     m.TwoFactor,
 	}
 }
 

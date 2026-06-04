@@ -49,19 +49,27 @@ _isrvd_load_config() {
 # isrvd_login — 用账号密码登录，token 保存到配置文件
 # ---------------------------------------------------------------------------
 isrvd_login() {
-  local base_url="${1:?用法: isrvd_login <base_url> <username> <password>}"
+  local base_url="${1:?用法: isrvd_login <base_url> <username> <password> [totpCode]}"
   local username="${2:?缺少 username}"
   local password="${3:?缺少 password}"
+  local totp_code="${4:-}"
 
   ISRVD_BASE_URL="${base_url%/}"
   ISRVD_USERNAME="$username"
 
   _blue "→ 登录 $ISRVD_BASE_URL ..."
 
+  local body
+  body=$(jq -cn \
+    --arg username "$username" \
+    --arg password "$password" \
+    --arg totpCode "$totp_code" \
+    '{username:$username,password:$password} + (if $totpCode == "" then {} else {totpCode:$totpCode} end)')
+
   local resp
   resp=$(curl -sf -X POST "$ISRVD_BASE_URL/api/account/login" \
     -H "Content-Type: application/json" \
-    -d "{\"username\":\"$username\",\"password\":\"$password\"}" 2>&1) || {
+    -d "$body" 2>&1) || {
     _red "✗ 登录失败: $resp"
     return 1
   }
@@ -73,7 +81,18 @@ isrvd_login() {
     return 1
   fi
 
-  ISRVD_TOKEN=$(echo "$resp" | jq -r '.payload.token')
+  local two_factor_required
+  two_factor_required=$(echo "$resp" | jq -r '.payload.twoFactorRequired // false')
+  if [ "$two_factor_required" = "true" ]; then
+    _red "✗ 该账号已启用 TOTP 二次验证。请使用: isrvd_login <base_url> <username> <password> <totpCode>"
+    return 1
+  fi
+
+  ISRVD_TOKEN=$(echo "$resp" | jq -r '.payload.token // empty')
+  if [ -z "$ISRVD_TOKEN" ]; then
+    _red "✗ 登录失败: 响应中缺少 token"
+    return 1
+  fi
   _isrvd_save_config
   _green "✓ 登录成功，已保存到 $ISRVD_CONFIG_FILE"
 }
@@ -333,7 +352,7 @@ isrvd_help() {
 isrvd API Harness
 
   认证（持久化到 ~/.config/isrvd/profile.json）:
-    isrvd_login  <url> <user> <pass>     账号密码登录
+    isrvd_login  <url> <user> <pass> [totp]  账号密码登录；启用 TOTP 时传入验证码
     isrvd_token  <url> <token>           直接用 token
     isrvd_logout                         清除认证
     isrvd_status                         查看当前配置

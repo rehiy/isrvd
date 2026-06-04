@@ -4,6 +4,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
+
 import { loginWithPasskey } from '@/helper/webauthn'
 
 @Component
@@ -17,21 +18,41 @@ class Login extends Vue {
         username: '',
         password: ''
     }
+    totpForm = {
+        code: ''
+    }
+    twoFactorRequired = false
 
     // ─── 方法 ───
     async handleLogin() {
         this.loading = true
         try {
-            const { payload } = await api.accountLogin(this.loginForm)
+            const { payload } = await api.accountLogin({
+                ...this.loginForm,
+                totpCode: this.twoFactorRequired ? this.totpForm.code : undefined
+            })
             if (!payload) return
+            if (payload.twoFactorRequired) {
+                this.twoFactorRequired = true
+                this.totpForm.code = ''
+                return
+            }
+            if (!payload.token) return
 
-            this.portal.setAuth({ authMode: 'jwt', ...payload })
+            this.portal.setAuth({ authMode: 'jwt', token: payload.token, username: payload.username })
             await this.portal.initialize()
             this.loginForm.username = ''
             this.loginForm.password = ''
+            this.totpForm.code = ''
+            this.twoFactorRequired = false
         } finally {
             this.loading = false
         }
+    }
+
+    resetTwoFactor() {
+        this.twoFactorRequired = false
+        this.totpForm.code = ''
     }
 
     handleOIDCLogin() {
@@ -86,7 +107,7 @@ export default toNative(Login)
               <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <i class="fas fa-user text-slate-400"></i>
               </div>
-              <input id="username" v-model="loginForm.username" type="text" required class="input pl-11" placeholder="请输入用户名">
+              <input id="username" v-model="loginForm.username" type="text" required class="input pl-11" placeholder="请输入用户名" @input="resetTwoFactor">
             </div>
           </div>
 
@@ -98,52 +119,45 @@ export default toNative(Login)
               <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <i class="fas fa-lock text-slate-400"></i>
               </div>
-              <input id="password" v-model="loginForm.password" type="password" required class="input pl-11" placeholder="请输入密码">
+              <input id="password" v-model="loginForm.password" type="password" required class="input pl-11" placeholder="请输入密码" @input="resetTwoFactor">
             </div>
           </div>
 
-          <button type="submit" :disabled="loading" class="btn btn-primary w-full mt-6">
+          <div v-if="twoFactorRequired">
+            <label for="totp-code" class="form-label">
+              二次验证码
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i class="fas fa-shield-halved text-slate-400"></i>
+              </div>
+              <input id="totp-code" v-model="totpForm.code" type="text" inputmode="numeric" autocomplete="one-time-code" required class="input pl-11" placeholder="请输入 6 位验证码">
+            </div>
+            <p class="text-xs text-slate-400 mt-1">该账户已启用 TOTP 二次验证，请输入认证器 App 中的动态验证码。</p>
+          </div>
+
+          <button type="submit" :disabled="loading || (twoFactorRequired && !totpForm.code)" class="btn btn-primary w-full mt-6">
             <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
             <i v-else class="fas fa-sign-in-alt mr-2"></i>
-            {{ loading ? '登录中...' : '登录' }}
+            {{ loading ? '登录中...' : (twoFactorRequired ? '验证并登录' : '登录') }}
           </button>
 
-          <template v-if="portal.oidcEnabled">
-            <div class="relative py-1">
-              <div class="absolute inset-0 flex items-center">
-                <div class="w-full border-t border-slate-200"></div>
-              </div>
-              <div class="relative flex justify-center text-xs">
-                <span class="bg-white px-2 text-slate-400">或</span>
-              </div>
-              <button type="button" class="btn btn-secondary w-full" @click="handleOIDCLogin">
-                <i class="fas fa-right-to-bracket mr-2"></i>
-                {{ portal.oidcLoginLabel || '使用 OIDC 登录' }}
-              </button>
-            </div>
-          </template>
-
-          <!-- Passkey 登录 -->
-          <template v-if="portal.passkeyEnabled">
-            <div class="relative py-1">
-              <div class="absolute inset-0 flex items-center">
-                <div class="w-full border-t border-slate-200"></div>
-              </div>
-              <div class="relative flex justify-center text-xs">
-                <span class="bg-white px-2 text-slate-400">或</span>
-              </div>
-            </div>
-
-            <div class="space-y-3">
+          <template v-if="portal.oidcEnabled || portal.passkeyEnabled">
+            <div class="border-t border-slate-200 pt-4 space-y-3">
               <button
+                v-if="portal.passkeyEnabled"
                 type="button"
-                class="btn btn-secondary w-full"
-                @click="handlePasskeyLogin"
+                class="btn btn-emerald w-full"
                 :disabled="passkeyLoading"
+                @click="handlePasskeyLogin"
               >
                 <i v-if="passkeyLoading" class="fas fa-spinner fa-spin mr-2"></i>
-                <i v-else class="fas fa-key mr-2"></i>
+                <i v-else class="fas fa-fingerprint mr-2"></i>
                 {{ passkeyLoading ? 'Passkey 认证中...' : '使用 Passkey 登录' }}
+              </button>
+              <button v-if="portal.oidcEnabled" type="button" class="btn btn-indigo w-full" @click="handleOIDCLogin">
+                <i class="fas fa-id-badge mr-2"></i>
+                {{ portal.oidcLoginLabel || '使用 OIDC 登录' }}
               </button>
             </div>
           </template>

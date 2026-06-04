@@ -361,6 +361,11 @@
     @apply hover:border-slate-300;
   }
 
+  /* input 后紧跟的按钮与输入框等高 */
+  .input + .btn {
+    height: 46px;
+  }
+
   /* select 公共基础：自定义箭头、边框交互、禁用状态 */
   select {
     @apply bg-white border border-slate-200 text-slate-700 appearance-none truncate;

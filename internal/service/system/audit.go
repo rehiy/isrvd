@@ -29,7 +29,7 @@ var sensitiveFields = []string{
 	// 系统配置
 	"jwtSecret", "apiKey", "adminKey", "clientSecret", "client_secret",
 	// 账户模块
-	"password", "oldPassword", "newPassword", "token", "accessToken", "refreshToken", "idToken",
+	"password", "oldPassword", "newPassword", "totpCode", "token", "accessToken", "refreshToken", "idToken",
 	// APISIX 插件 + SSL 证书私钥
 	"key", "secret", "public_key", "key_id", "secret_key",
 }

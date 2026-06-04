@@ -101,7 +101,7 @@ isrvd_login "$ISRVD_APIURL" "$ISRVD_USERNAME" "$ISRVD_PASSWORD"
 │
 └── 管理
     ├── 镜像仓库         → references/docker/registries.md
-    ├── 成员/权限/Token/OIDC 登录 → references/system/account.md
+    ├── 成员/权限/Token/OIDC/TOTP 2FA → references/system/account.md
     ├── 文件管理         → references/system/filer.md
     ├── 计划任务         → references/system/cron.md
     ├── SSH 主机管理     → references/system/ssh.md
