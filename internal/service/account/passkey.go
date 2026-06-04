@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -99,15 +100,28 @@ func (s *Service) PasskeyFinishRegistration(c *gin.Context, req PasskeyFinishDat
 	if err != nil {
 		return fmt.Errorf("凭证序列化失败: %w", err)
 	}
-	fakeReq := &http.Request{
-		Header: http.Header{"Content-Type": []string{"application/json"}},
-		Body:   io.NopCloser(bytes.NewReader(credBody)),
-	}
 
+	fakeReq := &http.Request{
+		Method: http.MethodPost,
+		URL:    &url.URL{Path: "/webauthn/callback"},
+		Header: http.Header{
+			"Content-Type": []string{"application/json"},
+		},
+		Body: io.NopCloser(bytes.NewReader(credBody)),
+	}
 	credential, err := w.FinishRegistration(user, sessionData, fakeReq)
 	if err != nil {
 		return fmt.Errorf("完成注册失败: %w", err)
 	}
+
+	// 检查凭证是否已存在（防止重复注册）
+	credIDStr := base64.URLEncoding.EncodeToString(credential.ID)
+	for _, existingPk := range member.Passkeys {
+		if existingPk.IDBase64 == credIDStr {
+			return fmt.Errorf("该凭证已注册")
+		}
+	}
+
 	pk := &config.PasskeyCredential{
 		IDBase64:        base64.URLEncoding.EncodeToString(credential.ID),
 		PublicKeyBase64: base64.URLEncoding.EncodeToString(credential.PublicKey),
@@ -150,12 +164,13 @@ func (s *Service) PasskeyBeginLogin(c *gin.Context, req PasskeyBeginLoginRequest
 
 	if req.Username != "" {
 		// 指定用户登录
+		// 注意：为避免时序攻击，即使用户不存在也创建会话，但后续验证会失败
 		member, exists := config.Members[req.Username]
 		if !exists {
-			return nil, fmt.Errorf("用户不存在")
+			return nil, fmt.Errorf("用户验证失败")
 		}
-		user := getPasskeyUser(req.Username, member)
 
+		user := getPasskeyUser(req.Username, member)
 		assertion, sessionData, err := w.BeginLogin(user)
 		if err != nil {
 			return nil, fmt.Errorf("开始登录失败: %w", err)
@@ -204,9 +219,14 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, req PasskeyFinishData) (*Lo
 	if err != nil {
 		return nil, fmt.Errorf("凭证序列化失败: %w", err)
 	}
+
 	fakeReq := &http.Request{
-		Header: http.Header{"Content-Type": []string{"application/json"}},
-		Body:   io.NopCloser(bytes.NewReader(credBody)),
+		Method: http.MethodPost,
+		URL:    &url.URL{Path: "/webauthn/callback"},
+		Header: http.Header{
+			"Content-Type": []string{"application/json"},
+		},
+		Body: io.NopCloser(bytes.NewReader(credBody)),
 	}
 
 	var username string
@@ -223,6 +243,7 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, req PasskeyFinishData) (*Lo
 		}
 	} else {
 		// Discoverable login：从凭证中查找用户
+		// 注意：为避免时序攻击，这里先不返回具体错误，而是统一返回模糊错误
 		var matchedUser *passkeyUser
 		handler := func(rawID, userHandle []byte) (webauthn.User, error) {
 			credIDStr := base64.URLEncoding.EncodeToString(rawID)
@@ -235,7 +256,7 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, req PasskeyFinishData) (*Lo
 					}
 				}
 			}
-			return nil, fmt.Errorf("凭证不存在")
+			return nil, fmt.Errorf("验证失败")
 		}
 		if _, err = w.FinishDiscoverableLogin(handler, sessionData, fakeReq); err != nil {
 			return nil, fmt.Errorf("验证失败: %w", err)
