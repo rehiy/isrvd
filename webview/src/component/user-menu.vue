@@ -61,7 +61,7 @@ export default toNative(UserMenu)
       <i class="fas fa-lock"></i>
       账号安全
     </router-link>
-    <router-link to="/account/passkeys" class="dropdown-item" @click="menuOpen = false">
+    <router-link v-if="portal.passkeyEnabled" to="/account/passkeys" class="dropdown-item" @click="menuOpen = false">
       <i class="fas fa-fingerprint"></i>
       Passkey
     </router-link>
