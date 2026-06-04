@@ -35,9 +35,7 @@ class ContainerTerminal extends Vue {
                 return
             }
             setTimeout(() => this.handleTerminalConnect(), 200)
-        } catch {
-            this.portal.showNotification('error', '加载容器信息失败')
-        }
+        } catch {}
     }
 
     handleTerminalConnect() {

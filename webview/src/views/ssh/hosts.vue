@@ -40,8 +40,6 @@ class SSHHosts extends Vue {
         try {
             const res = await api.sshHostList()
             this.hosts = res.payload || []
-        } catch {
-            this.portal.showNotification('error', '加载主机列表失败')
         } finally {
             this.loading = false
         }

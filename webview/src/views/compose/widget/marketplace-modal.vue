@@ -83,10 +83,9 @@ class MarketplaceModal extends Vue {
             } else {
                 this.iframeOrigin = ''
             }
-        } catch {
-            this.portal.showNotification('error', '加载应用市场配置失败')
+        } finally {
+          this.loading = false
         }
-        this.loading = false
     }
 
     bindEvents() {

@@ -50,7 +50,6 @@ class ContainerDetail extends Vue {
                 this.$router.push('/docker/containers')
             }
         } catch {
-            this.portal.showNotification('error', '加载容器信息失败')
             this.$router.push('/docker/containers')
         }
     }
@@ -60,10 +59,9 @@ class ContainerDetail extends Vue {
         try {
             const res = await api.dockerContainer(this.containerId)
             this.detail = res.payload || null
-        } catch {
-            this.portal.showNotification('error', '加载容器详情失败')
+        } finally {
+            this.loading = false
         }
-        this.loading = false
     }
 
     mounted() {

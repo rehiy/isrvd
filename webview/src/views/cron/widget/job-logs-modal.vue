@@ -41,8 +41,6 @@ class JobLogsModal extends Vue {
         try {
             const res = await api.cronJobLogs(this.job.id, 50)
             this.logs = res.payload?.logs || []
-        } catch {
-            this.portal.showNotification('error', '获取执行日志失败')
         } finally {
             this.loading = false
         }

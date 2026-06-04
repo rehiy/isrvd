@@ -44,9 +44,7 @@ class ContainerLogs extends Vue {
                 return
             }
             this.loadLogs()
-        } catch {
-            this.portal.showNotification('error', '加载容器信息失败')
-        }
+        } catch {}
     }
 
     async loadLogs() {

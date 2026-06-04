@@ -90,8 +90,6 @@ class ImagePullModal extends Vue {
         try {
             const res = await api.dockerImageSearch(keyword)
             this.searchResults = res.payload || []
-        } catch {
-            this.portal.showNotification('error', '搜索镜像失败')
         } finally {
             this.searchLoading = false
         }

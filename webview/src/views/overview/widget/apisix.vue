@@ -65,7 +65,6 @@ class ApisixOverview extends Vue {
 
             this.info = info as ApisixInfo
         } catch {
-            this.portal.showNotification('error', '获取 APISIX 信息失败')
             this.info = null
         } finally {
             this.loading = false

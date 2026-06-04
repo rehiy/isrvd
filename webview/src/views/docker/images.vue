@@ -62,8 +62,6 @@ class Images extends Vue {
         try {
             const res = await api.dockerImageList(this.showAllImages)
             this.images = res.payload || []
-        } catch {
-            this.portal.showNotification('error', '加载镜像列表失败')
         } finally {
             this.loading = false
         }
@@ -157,9 +155,7 @@ class Images extends Vue {
                     await api.dockerImagePull(pullImageRef, registryUrl, '')
                     this.portal.showNotification('success', '镜像拉取成功')
                     this.loadImages()
-                } catch (e: unknown) {
-                    this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '镜像拉取失败')
-                }
+                } catch {}
             }
         })
     }
@@ -193,8 +189,6 @@ class Images extends Vue {
             this.portal.showNotification('success', `镜像清理完成，回收 ${formatFileSize(payload?.spaceReclaimed || 0)}`)
             this.pruneModalOpen = false
             this.loadImages()
-        } catch {
-            this.portal.showNotification('error', '镜像清理失败')
         } finally {
             this.pruneLoading = false
         }

@@ -24,8 +24,6 @@ class CaddyRaw extends Vue {
         try {
             const cfg = (await api.caddyConfig()).payload
             this.raw = JSON.stringify(cfg ?? null, null, 2)
-        } catch {
-            this.portal.showNotification('error', '加载 Caddy 配置失败')
         } finally {
             this.loading = false
         }
@@ -51,8 +49,6 @@ class CaddyRaw extends Vue {
                     await api.caddyConfigLoad(parsed)
                     this.portal.showNotification('success', '配置已应用')
                     this.loadConfig()
-                } catch (e: unknown) {
-                    this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '应用失败')
                 } finally {
                     this.saving = false
                 }

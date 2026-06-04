@@ -53,9 +53,7 @@ class SSHClientPage extends Vue {
         try {
             const res = await api.sshHost(this.hostId)
             this.host = res.payload || null
-        } catch {
-            this.portal.showNotification('error', '加载主机信息失败')
-        }
+        } catch {}
     }
 
     // ─── 终端连接管理 ───

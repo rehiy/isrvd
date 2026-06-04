@@ -18,16 +18,14 @@ class NetworkDetail extends Vue {
         return this.$route.params.id as string
     }
 
-    // ─── 方法 ───
     async loadDetail() {
         this.loading = true
         try {
             const res = await api.dockerNetwork(this.networkId)
             this.detailData = res.payload ?? null
-        } catch {
-            this.portal.showNotification('error', '获取网络详情失败')
+        } finally {
+            this.loading = false
         }
-        this.loading = false
     }
     // ─── 生命周期 ───
     mounted() {

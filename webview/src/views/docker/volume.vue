@@ -28,10 +28,9 @@ class VolumeDetail extends Vue {
         try {
             const res = await api.dockerVolume(this.volumeName)
             this.detailData = res.payload ?? null
-        } catch {
-            this.portal.showNotification('error', '获取数据卷详情失败')
+        } finally {
+            this.loading = false
         }
-        this.loading = false
     }
     // ─── 生命周期 ───
     mounted() {

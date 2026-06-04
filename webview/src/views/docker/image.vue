@@ -28,12 +28,10 @@ class ImageDetail extends Vue {
         try {
             const res = await api.dockerImage(this.imageId)
             this.inspectData = res.payload ?? null
-        } catch {
-            this.portal.showNotification('error', '获取镜像详情失败')
+        } finally {
+            this.loading = false
         }
-        this.loading = false
     }
-
     // ─── 生命周期 ───
     mounted() {
         this.loadDetail()

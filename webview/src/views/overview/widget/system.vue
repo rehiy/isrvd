@@ -64,8 +64,6 @@ class SystemOverview extends Vue {
                 }
                 this.systemInfo = record.data
             }
-        } catch {
-            this.portal.showNotification('error', '加载系统信息失败')
         } finally {
             this.loading = false
         }

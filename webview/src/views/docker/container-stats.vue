@@ -362,7 +362,6 @@ const res = await api.overviewMonitor({ type: 'container', id: this.containerId,
             }
             this.onContainerLoaded(ct)
         } catch {
-            this.portal.showNotification('error', '加载容器信息失败')
             this.$router.push('/docker/containers')
         }
     }

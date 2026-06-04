@@ -51,7 +51,6 @@ class SwarmOverview extends Vue {
 
             this.swarmInfo = (Object.keys(info).length ? info : null) as unknown as SwarmInfo
         } catch {
-            this.portal.showNotification('error', '获取 Swarm 信息失败，请确认集群已初始化')
             this.swarmInfo = null
         } finally {
             this.loading = false

@@ -39,8 +39,6 @@ class CaddyCerts extends Vue {
         this.loading = true
         try {
             this.certs = (await api.caddyCertList()).payload || []
-        } catch {
-            this.portal.showNotification('error', '加载证书列表失败')
         } finally {
             this.loading = false
         }
@@ -109,11 +107,8 @@ class CaddyCerts extends Vue {
                     await api.caddyCertDelete(cert.key as string)
                     this.portal.showNotification('success', '删除成功')
                     this.loadCerts()
-                } catch (e: unknown) {
-                    this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '删除失败')
-                }
-            }
-        })
+                } catch {}
+            }        })
     }
 
     mounted() {

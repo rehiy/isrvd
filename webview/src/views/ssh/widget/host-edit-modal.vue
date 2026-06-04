@@ -40,8 +40,6 @@ class HostEditModal extends Vue {
         try {
             const res = await api.sshCredentialList()
             this.credentials = res.payload || []
-        } catch {
-            this.portal.showNotification('error', '加载凭据列表失败')
         } finally {
             this.credentialsLoading = false
         }

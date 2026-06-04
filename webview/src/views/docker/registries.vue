@@ -64,14 +64,11 @@ class Registries extends Vue {
         this.loading = true
         try {
             const res = await api.dockerRegistryList()
-            this.registries = res.payload || []
-        } catch {
-            this.portal.showNotification('error', '加载仓库列表失败')
+            this.registries = res.payload ?? []
         } finally {
             this.loading = false
         }
     }
-
     openAdd() {
         this.editModalRef?.show(null)
     }

@@ -32,7 +32,6 @@ class CaddyOverview extends Vue {
 
             this.info = (await api.caddyInfo()).payload || null
         } catch {
-            this.portal.showNotification('error', '获取 Caddy 信息失败')
             this.info = null
         } finally {
             this.loading = false

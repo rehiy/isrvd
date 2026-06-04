@@ -49,8 +49,6 @@ class CredentialEditModal extends Vue {
                     password: detail.password || '',
                     privateKey: detail.privateKey || '',
                 }
-            } catch {
-                this.portal.showNotification('error', '加载凭据详情失败')
             } finally {
                 this.modalLoading = false
             }
