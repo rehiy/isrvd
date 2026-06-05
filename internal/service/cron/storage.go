@@ -1,15 +1,15 @@
 package cron
 
 import (
-	"os"
+	"fmt"
 	"path/filepath"
 	"sync"
 	"time"
 
-	"github.com/goccy/go-yaml"
 	"github.com/rehiy/libgo/jsonl"
 
 	"isrvd/config"
+	"isrvd/pkgs/cstore"
 )
 
 const (
@@ -19,23 +19,27 @@ const (
 	cronLogChannel = 256
 )
 
-// Store 负责计划任务配置和执行日志的文件存储。
+// Store 负责计划任务配置和执行日志的存储。
 //
 // 任务配置：rootDirectory/cron.yml （yaml）
 // 执行日志：rootDirectory/cron/YYYY-MM-DD.jsonl （所有任务合并、按天滚动）
 type Store struct {
-	cfgFile string // cron.yml 绝对路径
+	ts      *cstore.TypedStore[[]*Job]
 	dataDir string // 日志目录绝对路径
 	jobMu   sync.Mutex
 
 	logStore *jsonl.Store
 }
 
-// NewStore 创建计划任务文件存储。
+// NewStore 创建计划任务存储。
 func NewStore() *Store {
 	rootDir := config.Server.RootDirectory
+	ts, err := cstore.NewTyped[[]*Job](rootDir, "cron.yml")
+	if err != nil {
+		logger.Warn("Cron config store init failed", "dir", rootDir, "error", err)
+	}
 	s := &Store{
-		cfgFile: filepath.Join(rootDir, "cron.yml"),
+		ts:      ts,
 		dataDir: filepath.Join(rootDir, "cron"),
 	}
 
@@ -54,66 +58,48 @@ func NewStore() *Store {
 	return s
 }
 
-// LoadJobs 从 cron.yml 加载任务列表。
-// 读取时将 rootDirectory 内的 WorkDir 转为绝对路径。
+// LoadJobs 从 cron.yml 加载任务列表，WorkDir 转为绝对路径。
 func (s *Store) LoadJobs() ([]*Job, error) {
-	data, err := os.ReadFile(s.cfgFile)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
+	if s.ts == nil {
+		return nil, fmt.Errorf("cron: 配置存储未初始化")
+	}
+	raw, err := s.ts.Get()
+	if err != nil || raw == nil {
 		return nil, err
 	}
-
-	var jobs []*Job
-	if err := yaml.Unmarshal(data, &jobs); err != nil {
-		return nil, err
+	rootDir := config.Server.RootDirectory
+	jobs := make([]*Job, len(raw))
+	for i, job := range raw {
+		cp := *job
+		cp.WorkDir = config.PathToAbs(job.WorkDir, rootDir)
+		jobs[i] = &cp
 	}
-
-	rootDir := filepath.Dir(s.cfgFile)
-	for _, job := range jobs {
-		job.WorkDir = config.PathToAbs(job.WorkDir, rootDir)
-	}
-
 	return jobs, nil
 }
 
-// SaveJobs 将任务列表写入 cron.yml。
-// 对 jobs 做深拷贝，对副本还原相对路径后序列化，不影响原对象。
+// SaveJobs 将任务列表写入 cron.yml，WorkDir 还原为相对路径。
 func (s *Store) SaveJobs(jobs []*Job) error {
+	if s.ts == nil {
+		return fmt.Errorf("cron: 配置存储未初始化")
+	}
+
+	// 构造副本并还原相对路径，锁外执行，避免序列化期间长时间持锁
+	rootDir := config.Server.RootDirectory
+	snapshot := make([]*Job, len(jobs))
+	for i, job := range jobs {
+		cp := *job
+		cp.WorkDir = config.PathToRel(job.WorkDir, rootDir)
+		snapshot[i] = &cp
+	}
+
 	s.jobMu.Lock()
 	defer s.jobMu.Unlock()
 
-	// 深拷贝：序列化再反序列化，得到独立副本
-	buf, err := yaml.Marshal(jobs)
-	if err != nil {
-		return err
-	}
-	var copy []*Job
-	if err := yaml.Unmarshal(buf, &copy); err != nil {
-		return err
-	}
-
-	// 对副本做路径还原
-	rootDir := filepath.Dir(s.cfgFile)
-	for _, job := range copy {
-		job.WorkDir = config.PathToRel(job.WorkDir, rootDir)
-	}
-
-	data, err := yaml.Marshal(copy)
-	if err != nil {
-		return err
-	}
-
-	if err := os.MkdirAll(filepath.Dir(s.cfgFile), 0755); err != nil {
-		return err
-	}
-
-	logger.Debug("Save cron jobs", "path", s.cfgFile, "count", len(jobs))
-	return os.WriteFile(s.cfgFile, data, 0644)
+	logger.Debug("Save cron jobs", "key", "cron.yml", "count", len(jobs))
+	return s.ts.Set(snapshot)
 }
 
-// AppendJobLog 将任务执行日志追加到 logs/cron/YYYY-MM-DD.jsonl，所有任务合并。
+// AppendJobLog 将任务执行日志追加到 cron/YYYY-MM-DD.jsonl。
 func (s *Store) AppendJobLog(entry *JobLog) {
 	if entry == nil || entry.JobID == "" {
 		return
@@ -126,9 +112,7 @@ func (s *Store) AppendJobLog(entry *JobLog) {
 	}
 }
 
-// LoadJobLogs 按 jobID 倒序读取最近的执行日志（最新在前）。
-// 实现：从今日文件起，逐天向前回扫并仅保留 jobId==id 的行；
-// 直到凑够 limit 条或回扫到超过 retainDays 范围，避免把整天的所有任务日志加载到内存。
+// LoadJobLogs 按 jobID 倒序读取最近 limit 条执行日志。
 func (s *Store) LoadJobLogs(id string, limit int) []*JobLog {
 	if id == "" || limit <= 0 {
 		return nil
@@ -165,7 +149,7 @@ func (s *Store) Close() error {
 	return s.logStore.Close()
 }
 
-// cronLogNaming cron 日志文件命名规则：YYYY-MM-DD.jsonl（无前缀）
+// cronLogNaming 日志文件命名规则：YYYY-MM-DD.jsonl
 func cronLogNaming() jsonl.Naming {
-	return jsonl.Naming{Prefix: "", Sep: "", Suffix: ".jsonl"}
+	return jsonl.Naming{Suffix: ".jsonl"}
 }

@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/goccy/go-yaml"
 	"github.com/rehiy/libgo/strutil"
 	libwebssh "github.com/rehiy/libgo/webssh"
 
 	"isrvd/config"
+	"isrvd/pkgs/cstore"
 )
 
 // Host SSH 主机配置
@@ -36,7 +36,6 @@ type HostView struct {
 	Description    string `json:"description"`
 }
 
-// toView 将 Host 转为视图（密码/私钥不回显）
 func (h *Host) toView() *HostView {
 	return &HostView{
 		ID:           h.ID,
@@ -48,61 +47,44 @@ func (h *Host) toView() *HostView {
 	}
 }
 
-// store 负责 WebSSH 主机配置的文件存储
+// store 负责 WebSSH 主机配置的存储
 type store struct {
-	cfgFile string
-	hosts   []*Host
-	mu      sync.RWMutex
+	ts    *cstore.TypedStore[[]*Host]
+	hosts []*Host
+	mu    sync.RWMutex
 }
 
 // newHostStore 创建主机配置存储
 func newHostStore() (*store, error) {
-	newPath := filepath.Join(config.Server.RootDirectory, "webssh-host.yml")
-	oldPath := filepath.Join(config.Server.RootDirectory, "webssh.yml")
+	rootDir := config.Server.RootDirectory
+	const key = "webssh-host.yml"
+
 	// 自动迁移：旧文件存在且新文件不存在时，重命名旧文件
+	newPath := filepath.Join(rootDir, key)
+	oldPath := filepath.Join(rootDir, "webssh.yml")
 	if _, err := os.Stat(newPath); os.IsNotExist(err) {
 		if _, err := os.Stat(oldPath); err == nil {
 			_ = os.Rename(oldPath, newPath)
 		}
 	}
-	s := &store{cfgFile: newPath}
-	if err := s.load(); err != nil {
+
+	ts, err := cstore.NewTyped[[]*Host](rootDir, key)
+	if err != nil {
 		return nil, err
 	}
-	return s, nil
-}
-
-// load 从文件加载主机列表（文件不存在时初始化为空列表）
-func (s *store) load() error {
-	data, err := os.ReadFile(s.cfgFile)
+	hosts, err := ts.Get()
 	if err != nil {
-		if os.IsNotExist(err) {
-			s.hosts = []*Host{}
-			return nil
-		}
-		return fmt.Errorf("读取 webssh-host.yml 失败: %w", err)
+		return nil, err
 	}
-	var hosts []*Host
-	if err := yaml.Unmarshal(data, &hosts); err != nil {
-		return fmt.Errorf("解析 webssh-host.yml 失败: %w", err)
+	if hosts == nil {
+		hosts = []*Host{}
 	}
-	s.hosts = hosts
-	return nil
+	return &store{ts: ts, hosts: hosts}, nil
 }
 
-// save 将主机列表写入文件
+// save 将主机列表写入存储
 func (s *store) save() error {
-	data, err := yaml.Marshal(s.hosts)
-	if err != nil {
-		return fmt.Errorf("序列化主机配置失败: %w", err)
-	}
-	if err := os.MkdirAll(filepath.Dir(s.cfgFile), 0755); err != nil {
-		return fmt.Errorf("创建配置目录失败: %w", err)
-	}
-	if err := os.WriteFile(s.cfgFile, data, 0600); err != nil {
-		return fmt.Errorf("写入 webssh-host.yml 失败: %w", err)
-	}
-	return nil
+	return s.ts.Set(s.hosts)
 }
 
 // hostList 返回所有主机的视图列表（密码不回显）
@@ -183,7 +165,6 @@ func (s *store) hostGetOption(id string, credStore *credentialStore) (*libwebssh
 		Password:   h.Password,
 		PrivateKey: h.PrivateKey,
 	}
-	// 如果绑定了凭据，使用凭据中的认证信息覆盖
 	if h.CredentialID != "" && credStore != nil {
 		c := credStore.get(h.CredentialID)
 		if c != nil {

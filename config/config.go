@@ -31,42 +31,6 @@ var (
 	Version = "v0.0.0"
 )
 
-// Load 从配置提供者加载配置
-func Load() error {
-	conf, err := provider.Load()
-	if err != nil {
-		return err
-	}
-
-	Apply(conf)
-	return nil
-}
-
-// Save 将当前全局配置保存到配置文件
-func Save() error {
-	members := make([]*MemberConfig, 0, len(Members))
-	for _, m := range Members {
-		members = append(members, m)
-	}
-
-	conf := &Config{
-		Server:      Server,
-		THA:         THA,
-		OIDC:        OIDC,
-		Passkey:     Passkey,
-		Agent:       Agent,
-		Apisix:      Apisix,
-		Caddy:       Caddy,
-		Docker:      Docker,
-		Monitor:     Monitor,
-		Marketplace: Marketplace,
-		Links:       Links,
-		Members:     members,
-	}
-
-	return provider.Save(conf)
-}
-
 // Apply 应用配置到全局变量（不存储）
 func Apply(conf *Config) {
 	if conf == nil {

@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/goccy/go-yaml"
 	"github.com/rehiy/libgo/strutil"
 
 	"isrvd/config"
+	"isrvd/pkgs/cstore"
 )
 
 // Credential SSH 认证凭据（可被多台主机复用）
@@ -31,7 +31,6 @@ type CredentialView struct {
 	AuthType    string `json:"authType"` // "password" | "privateKey" | ""
 }
 
-// toView 将 Credential 转为视图（密码/私钥不回显）
 func (c *Credential) toView() *CredentialView {
 	cv := &CredentialView{
 		ID:          c.ID,
@@ -47,61 +46,44 @@ func (c *Credential) toView() *CredentialView {
 	return cv
 }
 
-// credentialStore 负责 Credential 的文件存储
+// credentialStore 负责 Credential 的存储
 type credentialStore struct {
-	cfgFile string
-	items   []*Credential
-	mu      sync.RWMutex
+	ts    *cstore.TypedStore[[]*Credential]
+	items []*Credential
+	mu    sync.RWMutex
 }
 
 // newCredentialStore 创建凭据存储
 func newCredentialStore() (*credentialStore, error) {
-	newPath := filepath.Join(config.Server.RootDirectory, "webssh-cred.yml")
-	oldPath := filepath.Join(config.Server.RootDirectory, "webssh-credentials.yml")
+	rootDir := config.Server.RootDirectory
+	const key = "webssh-cred.yml"
+
 	// 自动迁移：旧文件存在且新文件不存在时，重命名旧文件
+	newPath := filepath.Join(rootDir, key)
+	oldPath := filepath.Join(rootDir, "webssh-credentials.yml")
 	if _, err := os.Stat(newPath); os.IsNotExist(err) {
 		if _, err := os.Stat(oldPath); err == nil {
 			_ = os.Rename(oldPath, newPath)
 		}
 	}
-	s := &credentialStore{cfgFile: newPath}
-	if err := s.load(); err != nil {
+
+	ts, err := cstore.NewTyped[[]*Credential](rootDir, key)
+	if err != nil {
 		return nil, err
 	}
-	return s, nil
-}
-
-// load 从文件加载凭据列表（文件不存在时初始化为空列表）
-func (s *credentialStore) load() error {
-	data, err := os.ReadFile(s.cfgFile)
+	items, err := ts.Get()
 	if err != nil {
-		if os.IsNotExist(err) {
-			s.items = []*Credential{}
-			return nil
-		}
-		return fmt.Errorf("读取 webssh-cred.yml 失败: %w", err)
+		return nil, err
 	}
-	var items []*Credential
-	if err := yaml.Unmarshal(data, &items); err != nil {
-		return fmt.Errorf("解析 webssh-cred.yml 失败: %w", err)
+	if items == nil {
+		items = []*Credential{}
 	}
-	s.items = items
-	return nil
+	return &credentialStore{ts: ts, items: items}, nil
 }
 
-// save 将凭据列表写入文件
+// save 将凭据列表写入存储
 func (s *credentialStore) save() error {
-	data, err := yaml.Marshal(s.items)
-	if err != nil {
-		return fmt.Errorf("序列化凭据配置失败: %w", err)
-	}
-	if err := os.MkdirAll(filepath.Dir(s.cfgFile), 0755); err != nil {
-		return fmt.Errorf("创建配置目录失败: %w", err)
-	}
-	if err := os.WriteFile(s.cfgFile, data, 0600); err != nil {
-		return fmt.Errorf("写入 webssh-cred.yml 失败: %w", err)
-	}
-	return nil
+	return s.ts.Set(s.items)
 }
 
 // list 返回所有凭据的视图列表

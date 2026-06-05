@@ -2,47 +2,37 @@ package config
 
 import (
 	"context"
-	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/goccy/go-yaml"
 	"github.com/rehiy/libgo/logman"
+
+	"isrvd/pkgs/cstore"
 )
 
 // ReloadCh 配置变更通知通道，etcd 变更时触发服务重载
 var ReloadCh = make(chan struct{}, 1)
 
-// ConfigProvider 配置提供者接口
-type ConfigProvider interface {
-	Type() string
-	Load() (*Config, error)
-	Save(*Config) error
-}
-
-type ConfigWatcher interface {
-	Watch(context.Context) (<-chan struct{}, <-chan error)
-}
-
-var provider ConfigProvider
+// store 全局配置存储实例
+var store *cstore.TypedStore[*Config]
 
 func Init() error {
-	path := envOrDefault("CONFIG_PATH", "config.yml")
-	switch {
-	case strings.HasPrefix(strings.ToLower(path), "etcd://"):
-		p, err := NewEtcdProvider(path)
-		if err != nil {
-			return err
-		}
-		provider = p
-	case strings.HasPrefix(strings.ToLower(path), "file://"):
-		provider = NewYamlProvider(strings.TrimPrefix(path, "file://"))
-	case strings.Contains(path, "://"):
-		return fmt.Errorf("不支持的配置路径: %s", path)
-	default:
-		provider = NewYamlProvider(path)
+	uri := envOrDefault("CONFIG_PATH", "config.yml")
+
+	var err error
+	store, err = cstore.NewTypedFromPath[*Config](uri, "config.yml")
+	if err != nil {
+		return err
 	}
 
-	logman.Info("load config", "provider", provider.Type())
+	if !strings.Contains(uri, "://") {
+		if abs, err := filepath.Abs(uri); err == nil {
+			uri = abs
+		}
+	}
+	logman.Info("load config", "path", uri)
 	if err := Load(); err != nil {
 		return err
 	}
@@ -51,41 +41,89 @@ func Init() error {
 	return nil
 }
 
-// watchConfigChanges 监听 etcd 配置变更，变更时通知 server 层触发重载
 func watchConfigChanges() {
-	watcher, ok := provider.(ConfigWatcher)
-	if !ok {
+	ch := store.Watch(context.Background())
+	if ch == nil {
 		return
 	}
-
-	changes, errs := watcher.Watch(context.Background())
 	go func() {
-		for changes != nil || errs != nil {
-			select {
-			case _, ok := <-changes:
-				if !ok {
-					changes = nil
-					continue
-				}
-				logman.Info("Config changed, triggering reload", "provider", provider.Type())
+		for ev := range ch {
+			switch ev.Type {
+			case cstore.EventPut:
+				logman.Info("Config changed, triggering reload", "key", ev.Key)
 				select {
 				case ReloadCh <- struct{}{}:
 				default:
 				}
-			case err, ok := <-errs:
-				if !ok {
-					errs = nil
-					continue
-				}
-				logman.Warn("Config watch error", "provider", provider.Type(), "error", err)
+			case cstore.EventDelete:
+				logman.Warn("Config deleted in etcd", "key", ev.Key)
 			}
 		}
 	}()
 }
 
+// Load 从 store 加载配置并应用到全局变量
+func Load() error {
+	conf, err := store.Get()
+	if err != nil {
+		return err
+	}
+	if conf == nil {
+		logman.Warn("未找到配置文件", "key", store.Key())
+		Apply(nil)
+		return nil
+	}
+
+	if raw, _ := store.Store().Get(store.Key()); migrate(conf, raw) {
+		if err := store.Set(conf); err != nil {
+			logman.Warn("配置迁移保存失败", "error", err)
+		} else {
+			logman.Info("配置已自动更新（配置迁移）")
+		}
+	}
+
+	Apply(conf)
+	return nil
+}
+
+// Save 将当前全局配置保存到 store
+func Save() error {
+	members := make([]*MemberConfig, 0, len(Members))
+	for _, m := range Members {
+		members = append(members, m)
+	}
+
+	conf := &Config{
+		Server:      Server,
+		THA:         THA,
+		OIDC:        OIDC,
+		Passkey:     Passkey,
+		Agent:       Agent,
+		Apisix:      Apisix,
+		Caddy:       Caddy,
+		Docker:      Docker,
+		Monitor:     Monitor,
+		Marketplace: Marketplace,
+		Links:       Links,
+		Members:     members,
+	}
+
+	// 深拷贝后 denormalize，避免修改全局指针指向的对象
+	buf, err := yaml.Marshal(conf)
+	if err != nil {
+		return err
+	}
+	var snapshot Config
+	if err := yaml.Unmarshal(buf, &snapshot); err != nil {
+		return err
+	}
+	denormalizePaths(&snapshot)
+	return store.Set(&snapshot)
+}
+
 func envOrDefault(key, fallback string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
+	if v := os.Getenv(key); v != "" {
+		return v
 	}
 	return fallback
 }
