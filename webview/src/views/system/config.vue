@@ -8,6 +8,8 @@ import type { AllConfig, ServerConfig, THAConfig, AgentConfig, OIDCConfig, Passk
 
 import IconSelect from '@/component/icon-select.vue'
 
+type ConfigTab = 'server' | 'monitor' | 'tha' | 'oidc' | 'passkey' | 'agent' | 'apisix' | 'caddy' | 'docker' | 'marketplace' | 'links'
+
 @Component({ components: { IconSelect } })
 class Config extends Vue {
   portal = usePortal()
@@ -15,7 +17,7 @@ class Config extends Vue {
   // ─── 数据属性 ───
   loading = false
   saving = false
-  activeTab: 'server' | 'auth' | 'agent' | 'app' | 'links' = 'server'
+  activeTab: ConfigTab = 'server'
 
   server: ServerConfig = { debug: false, listenAddr: '', jwtExpiration: 86400, maxUploadSize: 104857600, rootDirectory: '', allowedOrigins: [] }
   allowedOriginsText = ''
@@ -32,6 +34,22 @@ class Config extends Vue {
   monitor: MonitorConfig = { interval: 0 }
   marketplace: MarketplaceConfig = { url: '' }
   links: LinkConfig[] = []
+
+  get configSections(): Array<{ id: ConfigTab; label: string; description: string; icon: string }> {
+    return [
+      { id: 'server', label: 'Server', description: '服务、JWT、上传与基础目录', icon: 'fa-server' },
+      { id: 'monitor', label: 'Monitor', description: '系统与容器监控采集', icon: 'fa-chart-line' },
+      { id: 'tha', label: '可信认证', description: 'Header 认证与可信来源', icon: 'fa-user-shield' },
+      { id: 'oidc', label: 'OIDC', description: '单点登录 Provider 参数', icon: 'fa-circle-nodes' },
+      { id: 'passkey', label: 'Passkey', description: 'WebAuthn/FIDO2 登录', icon: 'fa-fingerprint' },
+      { id: 'agent', label: 'Agent', description: 'LLM 代理与模型改写', icon: 'fa-robot' },
+      { id: 'apisix', label: 'APISIX', description: 'Admin API 连接参数', icon: 'fa-route' },
+      { id: 'caddy', label: 'Caddy', description: 'Admin API 连接参数', icon: 'fa-globe' },
+      { id: 'docker', label: 'Docker', description: '引擎连接与容器根目录', icon: 'fa-boxes-stacked' },
+      { id: 'marketplace', label: '应用市场', description: '市场 iframe 站点地址', icon: 'fa-store' },
+      { id: 'links', label: '导航链接', description: '顶部工具栏外部链接', icon: 'fa-link' }
+    ]
+  }
 
   // ─── 方法 ───
   async loadConfig(reload = false) {
@@ -99,6 +117,17 @@ class Config extends Vue {
     this.links.splice(index, 1)
   }
 
+  scrollToConfigSection(id: ConfigTab) {
+    this.activeTab = id
+    this.$nextTick(() => {
+      const el = document.getElementById(`config-${id}`)
+      if (!el) return
+      const offset = window.innerWidth < 1024 ? 136 : 88
+      const top = el.getBoundingClientRect().top + window.scrollY - offset
+      window.scrollTo({ top, behavior: 'smooth' })
+    })
+  }
+
   // ─── 生命周期 ───
   mounted() {
     this.loadConfig()
@@ -109,7 +138,7 @@ export default toNative(Config)
 </script>
 
 <template>
-  <div class="card">
+  <div class="card overflow-visible">
     <!-- Toolbar -->
     <div class="card-toolbar">
       <!-- 桌面端 -->
@@ -124,25 +153,6 @@ export default toNative(Config)
           </div>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
-          <!-- Tab 切换 -->
-          <div class="tab-group">
-            <button type="button" :class="['tab-btn', activeTab === 'server' ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="activeTab = 'server'">
-              <i class="fas fa-server"></i>全局
-            </button>
-
-            <button type="button" :class="['tab-btn', activeTab === 'auth' ? 'tab-btn-active text-purple-600' : 'tab-btn-inactive']" @click="activeTab = 'auth'">
-              <i class="fas fa-shield-halved"></i>鉴权
-            </button>
-            <button type="button" :class="['tab-btn', activeTab === 'agent' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="activeTab = 'agent'">
-              <i class="fas fa-robot"></i>Agent
-            </button>
-            <button type="button" :class="['tab-btn', activeTab === 'app' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive']" @click="activeTab = 'app'">
-              <i class="fas fa-layer-group"></i>应用
-            </button>
-            <button type="button" :class="['tab-btn', activeTab === 'links' ? 'tab-btn-active text-orange-600' : 'tab-btn-inactive']" @click="activeTab = 'links'">
-              <i class="fas fa-link"></i>导航
-            </button>
-          </div>
           <button type="button" class="btn btn-secondary" @click="loadConfig(true)">
             <i class="fas fa-rotate"></i>重载
           </button>
@@ -174,25 +184,6 @@ export default toNative(Config)
           </button>
         </div>
       </div>
-      <!-- 移动端 Tab -->
-      <div class="tab-group md:hidden mt-3 overflow-x-auto">
-        <button type="button" :class="['tab-btn flex-1 justify-center whitespace-nowrap', activeTab === 'server' ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="activeTab = 'server'">
-          <i class="fas fa-server"></i>全局
-        </button>
-
-        <button type="button" :class="['tab-btn flex-1 justify-center whitespace-nowrap', activeTab === 'auth' ? 'tab-btn-active text-purple-600' : 'tab-btn-inactive']" @click="activeTab = 'auth'">
-          <i class="fas fa-shield-halved"></i>鉴权
-        </button>
-        <button type="button" :class="['tab-btn flex-1 justify-center whitespace-nowrap', activeTab === 'agent' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="activeTab = 'agent'">
-          <i class="fas fa-robot"></i>Agent
-        </button>
-        <button type="button" :class="['tab-btn flex-1 justify-center whitespace-nowrap', activeTab === 'app' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive']" @click="activeTab = 'app'">
-          <i class="fas fa-layer-group"></i>应用
-        </button>
-        <button type="button" :class="['tab-btn flex-1 justify-center whitespace-nowrap', activeTab === 'links' ? 'tab-btn-active text-orange-600' : 'tab-btn-inactive']" @click="activeTab = 'links'">
-          <i class="fas fa-link"></i>导航
-        </button>
-      </div>
     </div>
 
     <!-- Loading -->
@@ -203,251 +194,403 @@ export default toNative(Config)
       </div>
     </div>
 
-    <form v-if="portal.hasPerm('PATCH /api/system/config')" class="card-body" @submit.prevent="saveAll">
-      <!-- 服务器配置 -->
-      <section v-if="activeTab === 'server'" class="max-w-3xl space-y-4">
-        <div class="toggle-row">
-          <div>
-            <span class="text-sm text-slate-600">Debug 模式</span>
-            <p class="text-xs text-slate-400 mt-0.5">开启后输出详细调试日志</p>
+    <form v-else-if="portal.hasPerm('PATCH /api/system/config')" class="card-body" @submit.prevent="saveAll">
+      <div class="lg:hidden sticky top-16 z-30 w-full min-w-0 overflow-hidden pb-3 bg-white border-b border-slate-100">
+        <div class="block w-full max-w-full min-w-0 overflow-x-auto overflow-y-hidden pb-1">
+          <div class="tab-group inline-flex w-max max-w-none">
+            <button
+              v-for="item in configSections"
+              :key="item.id"
+              type="button"
+              class="tab-btn whitespace-nowrap flex-shrink-0"
+              :class="activeTab === item.id ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive'"
+              @click="scrollToConfigSection(item.id)"
+            >
+              <i class="fas" :class="item.icon"></i>
+              {{ item.label }}
+            </button>
           </div>
-          <button type="button" class="toggle" :class="{ 'toggle-on': server.debug }" role="switch" :aria-checked="server.debug" @click="server.debug = !server.debug">
-            <span class="toggle-thumb" />
-          </button>
         </div>
-        <div>
-          <label class="form-label">监听地址</label>
-          <input v-model="server.listenAddr" type="text" placeholder="请输入监听地址" class="input" />
-          <p class="mt-1 text-xs text-slate-400">HTTP 服务监听地址，如 :8080 或 127.0.0.1:8080（重启生效）</p>
-        </div>
-        <div>
-          <label class="form-label">JWT 认证密钥</label>
-          <input v-model="server.jwtSecret" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
-          <p class="mt-1 text-xs text-slate-400">用于签名登录令牌，修改后所有用户需要重新登录</p>
-        </div>
-        <div>
-          <label class="form-label">JWT 有效期（秒）</label>
-          <input v-model.number="server.jwtExpiration" type="number" min="60" placeholder="请输入 JWT 有效期" class="input" />
-          <p class="mt-1 text-xs text-slate-400">登录令牌的有效期，默认 86400（24 小时）</p>
-        </div>
-        <div>
-          <label class="form-label">允许的跨域 Origin</label>
-          <textarea v-model="allowedOriginsText" rows="3" placeholder="请输入，每行一个" class="input font-mono text-xs"></textarea>
-          <p class="mt-1 text-xs text-slate-400">示例：https://example.com、https://*.example.com；支持通配符 *；留空则不限制</p>
-        </div>
-        <div>
-          <label class="form-label">文件上传大小限制（字节）</label>
-          <input v-model.number="server.maxUploadSize" type="number" min="0" placeholder="请输入文件上传大小限制" class="input" />
-          <p class="mt-1 text-xs text-slate-400">单次上传的最大文件大小，默认 104857600（100 MB）</p>
-        </div>
-        <div>
-          <label class="form-label">基础目录</label>
-          <input v-model="server.rootDirectory" type="text" placeholder="请输入基础目录" class="input" />
-          <p class="mt-1 text-xs text-slate-400">成员家目录及容器数据的基础目录，默认当前目录（.）</p>
-        </div>
-        <div>
-          <label class="form-label">监控采集间隔</label>
-          <select v-model.number="monitor.interval" class="input">
-            <option :value="0">禁用</option>
-            <option :value="5">5 秒</option>
-            <option :value="15">15 秒</option>
-            <option :value="30">30 秒</option>
-            <option :value="60">60 秒</option>
-          </select>
-          <p class="mt-1 text-xs text-slate-400">系统与容器监控数据的采集频率，禁用后不再写入监控文件</p>
-        </div>
-      </section>
+      </div>
+
+      <div class="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+        <div class="min-w-0 order-2 lg:order-1 space-y-8">
+          <!-- 服务器配置 -->
+          <section id="config-server" class="max-w-3xl space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-server"></i></span>
+              <div>
+                <h2 class="text-sm font-semibold text-slate-700">Server</h2>
+                <p class="text-xs text-slate-400 mt-0.5">服务、JWT、上传与基础目录</p>
+              </div>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <span class="text-sm text-slate-600">Debug 模式</span>
+                <p class="text-xs text-slate-400 mt-0.5">开启后输出详细调试日志</p>
+              </div>
+              <button type="button" class="toggle" :class="{ 'toggle-on': server.debug }" role="switch" :aria-checked="server.debug" @click="server.debug = !server.debug">
+                <span class="toggle-thumb" />
+              </button>
+            </div>
+            <div>
+              <label class="form-label">监听地址</label>
+              <input v-model="server.listenAddr" type="text" placeholder="请输入监听地址" class="input" />
+              <p class="mt-1 text-xs text-slate-400">HTTP 服务监听地址，如 :8080 或 127.0.0.1:8080（重启生效）</p>
+            </div>
+            <div>
+              <label class="form-label">JWT 认证密钥</label>
+              <input v-model="server.jwtSecret" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
+              <p class="mt-1 text-xs text-slate-400">用于签名登录令牌，修改后所有用户需要重新登录</p>
+            </div>
+            <div>
+              <label class="form-label">JWT 有效期（秒）</label>
+              <input v-model.number="server.jwtExpiration" type="number" min="60" placeholder="请输入 JWT 有效期" class="input" />
+              <p class="mt-1 text-xs text-slate-400">登录令牌的有效期，默认 86400（24 小时）</p>
+            </div>
+            <div>
+              <label class="form-label">允许的跨域 Origin</label>
+              <textarea v-model="allowedOriginsText" rows="3" placeholder="请输入，每行一个" class="input font-mono text-xs"></textarea>
+              <p class="mt-1 text-xs text-slate-400">示例：https://example.com、https://*.example.com；支持通配符 *；留空则不限制</p>
+            </div>
+            <div>
+              <label class="form-label">文件上传大小限制（字节）</label>
+              <input v-model.number="server.maxUploadSize" type="number" min="0" placeholder="请输入文件上传大小限制" class="input" />
+              <p class="mt-1 text-xs text-slate-400">单次上传的最大文件大小，默认 104857600（100 MB）</p>
+            </div>
+            <div>
+              <label class="form-label">基础目录</label>
+              <input v-model="server.rootDirectory" type="text" placeholder="请输入基础目录" class="input" />
+              <p class="mt-1 text-xs text-slate-400">成员家目录及容器数据的基础目录，默认当前目录（.）</p>
+            </div>
+          </section>
+
+          <!-- Monitor 配置 -->
+          <section id="config-monitor" class="max-w-3xl space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-chart-line"></i></span>
+              <div>
+                <h2 class="text-sm font-semibold text-slate-700">Monitor</h2>
+                <p class="text-xs text-slate-400 mt-0.5">系统与容器监控采集</p>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">监控采集间隔</label>
+              <select v-model.number="monitor.interval" class="input">
+                <option :value="0">禁用</option>
+                <option :value="5">5 秒</option>
+                <option :value="15">15 秒</option>
+                <option :value="30">30 秒</option>
+                <option :value="60">60 秒</option>
+              </select>
+              <p class="mt-1 text-xs text-slate-400">系统与容器监控数据的采集频率，禁用后不再写入监控文件</p>
+            </div>
+          </section>
+
+          <!-- 可信认证配置 -->
+          <section id="config-tha" class="max-w-3xl space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-user-shield"></i></span>
+              <div>
+                <h2 class="text-sm font-semibold text-slate-700">可信认证</h2>
+                <p class="text-xs text-slate-400 mt-0.5">Header 认证与可信来源</p>
+              </div>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <span class="text-sm text-slate-600">启用可信认证模式</span>
+                <p class="text-xs text-slate-400 mt-0.5">开启后使用可信来源的认证 Header</p>
+              </div>
+              <button type="button" class="toggle" :class="{ 'toggle-on': tha.enabled }" role="switch" :aria-checked="tha.enabled" @click="tha.enabled = !tha.enabled">
+                <span class="toggle-thumb" />
+              </button>
+            </div>
+            <div>
+              <label class="form-label">可信认证 Header</label>
+              <input v-model="tha.headerName" type="text" placeholder="请输入 Header 名称" class="input" />
+              <p class="mt-1 text-xs text-slate-400">启用时，将使用可信来源传入的 Header 值作为登录用户；留空则禁用</p>
+            </div>
+            <div>
+              <label class="form-label">可信来源 CIDR</label>
+              <textarea v-model="thaTrustedCIDRsText" rows="3" placeholder="请输入可信来源 CIDR，每行一个" class="input font-mono text-xs"></textarea>
+              <p class="mt-1 text-xs text-slate-400">示例：127.0.0.1/32、10.0.0.0/8；仅列出的来源 IP 允许使用可信认证；留空则不做来源限制</p>
+            </div>
+          </section>
+
+          <!-- OIDC 配置 -->
+          <section id="config-oidc" class="max-w-3xl space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-circle-nodes"></i></span>
+              <div>
+                <h2 class="text-sm font-semibold text-slate-700">OIDC</h2>
+                <p class="text-xs text-slate-400 mt-0.5">单点登录 Provider 参数</p>
+              </div>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <span class="text-sm text-slate-600">启用 OIDC 登录</span>
+                <p class="text-xs text-slate-400 mt-0.5">使用 OpenID Connect 进行单点登录</p>
+              </div>
+              <button type="button" class="toggle" :class="{ 'toggle-on': oidc.enabled }" role="switch" :aria-checked="oidc.enabled" @click="oidc.enabled = !oidc.enabled">
+                <span class="toggle-thumb" />
+              </button>
+            </div>
+            <div>
+              <label class="form-label">颁发者地址</label>
+              <input v-model="oidc.issuerUrl" type="text" placeholder="请输入颁发者地址" class="input" />
+              <p class="mt-1 text-xs text-slate-400">示例：https://idp.example.com；用于自动发现 authorization_endpoint、token_endpoint、jwks_uri 等元数据；保存后立即生效</p>
+            </div>
+            <div>
+              <label class="form-label">客户端 ID</label>
+              <input v-model="oidc.clientId" type="text" placeholder="请输入客户端 ID" class="input" />
+              <p class="mt-1 text-xs text-slate-400">在 OIDC Provider 处注册应用时获得</p>
+            </div>
+            <div>
+              <label class="form-label">客户端密钥</label>
+              <input v-model="oidc.clientSecret" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
+              <p class="mt-1 text-xs text-slate-400">在 OIDC Provider 处注册应用时获得</p>
+            </div>
+            <div>
+              <label class="form-label">回调地址</label>
+              <input v-model="oidc.redirectUrl" type="text" placeholder="请输入回调地址" class="input" />
+              <p class="mt-1 text-xs text-slate-400">示例：https://isrvd.example.com/api/account/oidc/callback；开发环境可留空自动生成，生产环境建议填写固定 HTTPS 回调地址</p>
+            </div>
+            <div>
+              <label class="form-label">用户名字段</label>
+              <input v-model="oidc.usernameClaim" type="text" placeholder="请输入用户名字段" class="input" />
+              <p class="mt-1 text-xs text-slate-400">OIDC 用户信息中作为用户名的字段，默认 sub；该字段的值必须与 members.username 完全一致，用户不存在时登录失败</p>
+            </div>
+            <div>
+              <label class="form-label">授权范围</label>
+              <input v-model="oidcScopes" type="text" placeholder="请输入授权范围" class="input" />
+              <p class="mt-1 text-xs text-slate-400">示例：openid profile email；以空格分隔，系统会自动确保包含 openid</p>
+            </div>
+            <div>
+              <label class="form-label">登录按钮名称</label>
+              <input v-model="oidc.loginLabel" type="text" placeholder="请输入登录按钮名称" class="input" />
+              <p class="mt-1 text-xs text-slate-400">自定义 OIDC 登录按钮显示名称；留空则使用默认文案「使用 OIDC 登录」</p>
+            </div>
+          </section>
+
+          <!-- Passkey 配置 -->
+          <section id="config-passkey" class="max-w-3xl space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-fingerprint"></i></span>
+              <div>
+                <h2 class="text-sm font-semibold text-slate-700">Passkey</h2>
+                <p class="text-xs text-slate-400 mt-0.5">WebAuthn/FIDO2 登录</p>
+              </div>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <span class="text-sm text-slate-600">启用 Passkey 登录</span>
+                <p class="text-xs text-slate-400 mt-0.5">使用 WebAuthn/FIDO2 进行无密码登录</p>
+              </div>
+              <button type="button" class="toggle" :class="{ 'toggle-on': passkey.enabled }" role="switch" :aria-checked="passkey.enabled" @click="passkey.enabled = !passkey.enabled">
+                <span class="toggle-thumb" />
+              </button>
+            </div>
+            <div>
+              <label class="form-label">Relying Party 名称</label>
+              <input v-model="passkey.rpName" type="text" placeholder="请输入 RP 名称" class="input" />
+              <p class="mt-1 text-xs text-slate-400">显示在 Passkey 注册/登录界面上的名称，如 iSrvd</p>
+            </div>
+            <div>
+              <label class="form-label">Relying Party ID</label>
+              <input v-model="passkey.rpId" type="text" placeholder="纯域名，如 example.com" class="input" />
+              <p class="mt-1 text-xs text-slate-400">必须是纯域名，不含 https:// 前缀，如 example.com；填写带 scheme 的地址将自动提取域名部分</p>
+            </div>
+            <div>
+              <label class="form-label">允许的 Origin</label>
+              <textarea v-model="passkeyOriginsText" rows="3" placeholder="请输入允许的 Origin，每行一个" class="input font-mono text-xs"></textarea>
+              <p class="mt-1 text-xs text-slate-400">示例：https://example.com、https://*.example.com；必须与访问地址一致</p>
+            </div>
+            <div>
+              <label class="form-label">超时时间（毫秒）</label>
+              <input v-model.number="passkey.timeout" type="number" min="1000" placeholder="请输入超时时间" class="input" />
+              <p class="mt-1 text-xs text-slate-400">Passkey 操作的超时时间，默认 60000（60 秒）</p>
+            </div>
+          </section>
 
 
+          <!-- Agent 配置 -->
+          <section id="config-agent" class="max-w-3xl space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-robot"></i></span>
+              <div>
+                <h2 class="text-sm font-semibold text-slate-700">Agent</h2>
+                <p class="text-xs text-slate-400 mt-0.5">LLM 代理与模型改写</p>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">模型名称</label>
+              <input v-model="agent.model" type="text" placeholder="请输入模型名称" class="input" />
+              <p class="mt-1 text-xs text-slate-400">代理转发时强制改写请求体中的 model 字段，留空则不改写</p>
+            </div>
+            <div>
+              <label class="form-label">基础地址</label>
+              <input v-model="agent.baseUrl" type="text" placeholder="请输入基础地址" class="input" />
+              <p class="mt-1 text-xs text-slate-400">示例：https://api.openai.com/v1；OpenAI 兼容的 LLM API 基础地址，留空则禁用代理</p>
+            </div>
+            <div>
+              <label class="form-label">API 密钥</label>
+              <input v-model="agent.apiKey" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
+              <p class="mt-1 text-xs text-slate-400">代理转发时以 Bearer 形式注入 Authorization 请求头</p>
+            </div>
+          </section>
 
-      <!-- 鉴权配置（可信认证 + OIDC + Passkey） -->
-      <section v-if="activeTab === 'auth'" class="max-w-3xl space-y-4">
-        <!-- 可信认证配置 -->
-        <p class="text-sm font-medium text-slate-500 mb-4">可信认证</p>
-        <div class="toggle-row">
-          <div>
-            <span class="text-sm text-slate-600">启用可信认证模式</span>
-            <p class="text-xs text-slate-400 mt-0.5">开启后使用可信来源的认证 Header</p>
+
+          <!-- APISIX 配置 -->
+          <section id="config-apisix" class="max-w-3xl space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-route"></i></span>
+              <div>
+                <h2 class="text-sm font-semibold text-slate-700">APISIX</h2>
+                <p class="text-xs text-slate-400 mt-0.5">Admin API 连接参数</p>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Admin URL</label>
+              <input v-model="apisix.adminUrl" type="text" placeholder="请输入 Admin URL" class="input" />
+              <p class="mt-1 text-xs text-slate-400">APISIX Admin API 地址，默认 http://127.0.0.1:9180</p>
+            </div>
+            <div>
+              <label class="form-label">Admin Key</label>
+              <input v-model="apisix.adminKey" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
+              <p class="mt-1 text-xs text-slate-400">访问 APISIX Admin API 的密钥</p>
+            </div>
+          </section>
+
+          <!-- Caddy 配置 -->
+          <section id="config-caddy" class="max-w-3xl space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-globe"></i></span>
+              <div>
+                <h2 class="text-sm font-semibold text-slate-700">Caddy</h2>
+                <p class="text-xs text-slate-400 mt-0.5">Admin API 连接参数</p>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Admin URL</label>
+              <input v-model="caddy.adminUrl" type="text" placeholder="请输入 Admin URL" class="input" />
+              <p class="text-xs text-slate-400 mt-1">Caddy Admin API 地址，默认 http://127.0.0.1:2019</p>
+            </div>
+          </section>
+
+          <!-- Docker 配置 -->
+          <section id="config-docker" class="max-w-3xl space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-boxes-stacked"></i></span>
+              <div>
+                <h2 class="text-sm font-semibold text-slate-700">Docker</h2>
+                <p class="text-xs text-slate-400 mt-0.5">引擎连接与容器根目录</p>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Docker Host</label>
+              <input v-model="docker.host" type="text" placeholder="请输入 Docker Host" class="input" />
+              <p class="mt-1 text-xs text-slate-400">示例：unix:///var/run/docker.sock 或 tcp://host:2375；留空则使用环境变量 DOCKER_HOST</p>
+            </div>
+            <div>
+              <label class="form-label">容器数据根目录</label>
+              <input v-model="docker.containerRoot" type="text" placeholder="请输入容器数据根目录" class="input" />
+              <p class="mt-1 text-xs text-slate-400">用于存放容器数据卷的基础目录（相对于基础目录），默认 containers</p>
+            </div>
+          </section>
+
+          <!-- 应用市场配置 -->
+          <section id="config-marketplace" class="max-w-3xl space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-store"></i></span>
+              <div>
+                <h2 class="text-sm font-semibold text-slate-700">应用市场</h2>
+                <p class="text-xs text-slate-400 mt-0.5">市场 iframe 站点地址</p>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">站点 URL</label>
+              <input v-model="marketplace.url" type="text" placeholder="请输入应用市场 URL" class="input" />
+              <p class="mt-1 text-xs text-slate-400">应用市场页面以 iframe 方式嵌入，并通过 postMessage 协议接收安装事件</p>
+            </div>
+          </section>
+
+
+          <!-- Links 配置 -->
+          <section id="config-links" class="max-w-3xl space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-link"></i></span>
+              <div>
+                <h2 class="text-sm font-semibold text-slate-700">导航链接</h2>
+                <p class="text-xs text-slate-400 mt-0.5">顶部工具栏外部链接</p>
+              </div>
+            </div>
+            <!-- 列标题（仅在有数据时显示） -->
+            <div v-if="links.length" class="hidden sm:grid sm:grid-cols-[1fr_2fr_1.2fr_auto] gap-3 px-0.5">
+              <span class="text-xs font-medium text-slate-500">名称</span>
+              <span class="text-xs font-medium text-slate-500">URL</span>
+              <span class="text-xs font-medium text-slate-500">图标</span>
+              <span></span>
+            </div>
+            <div v-for="(link, index) in links" :key="index" class="grid grid-cols-1 sm:grid-cols-[1fr_2fr_1.2fr_auto] gap-3 items-center">
+              <input v-model="link.label" type="text" placeholder="请输入名称" class="input" />
+              <input v-model="link.url" type="text" placeholder="请输入链接 URL" class="input" />
+              <!-- 图标选择器 -->
+              <IconSelect v-model="link.icon" />
+              <button v-if="portal.hasPerm('PATCH /api/system/config')" type="button" class="btn-icon btn-icon-red w-11 h-11" @click="removeLink(index)">
+                <i class="fas fa-trash-can text-sm"></i>
+              </button>
+            </div>
+            <button type="button" class="btn-add-row" @click="addLink()">
+              <i class="fas fa-plus text-xs"></i>添加链接
+            </button>
+          </section>
+
+          <!-- 提示信息 -->
+          <div class="max-w-3xl mt-6 pt-4 border-t border-slate-200">
+            <p class="text-xs text-slate-400 flex items-start gap-1">
+              <i class="fas fa-circle-info mt-0.5 flex-shrink-0"></i>
+              <span>保存后立即写入配置文件，监听地址变更需重启服务生效。</span>
+            </p>
           </div>
-          <button type="button" class="toggle" :class="{ 'toggle-on': tha.enabled }" role="switch" :aria-checked="tha.enabled" @click="tha.enabled = !tha.enabled">
-            <span class="toggle-thumb" />
-          </button>
-        </div>
-        <div>
-          <label class="form-label">可信认证 Header</label>
-          <input v-model="tha.headerName" type="text" placeholder="请输入 Header 名称" class="input" />
-          <p class="mt-1 text-xs text-slate-400">启用时，将使用可信来源传入的 Header 值作为登录用户；留空则禁用</p>
-        </div>
-        <div>
-          <label class="form-label">可信来源 CIDR</label>
-          <textarea v-model="thaTrustedCIDRsText" rows="3" placeholder="请输入可信来源 CIDR，每行一个" class="input font-mono text-xs"></textarea>
-          <p class="mt-1 text-xs text-slate-400">示例：127.0.0.1/32、10.0.0.0/8；仅列出的来源 IP 允许使用可信认证；留空则不做来源限制</p>
         </div>
 
-        <div class="toggle-row">
-          <div>
-            <span class="text-sm text-slate-600">启用 OIDC 登录</span>
-            <p class="text-xs text-slate-400 mt-0.5">使用 OpenID Connect 进行单点登录</p>
+        <aside class="order-1 min-w-0 overflow-hidden lg:order-2 lg:border-l lg:border-slate-200 lg:pl-6 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+          <div class="hidden lg:block space-y-3">
+            <h2 class="section-title">配置块</h2>
+            <button
+              v-for="item in configSections"
+              :key="item.id"
+              type="button"
+              class="option-card w-full"
+              :class="activeTab === item.id ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'option-card-inactive'"
+              @click="scrollToConfigSection(item.id)"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <span
+                  class="option-card-icon flex-shrink-0"
+                  :class="activeTab === item.id ? 'bg-white text-indigo-600' : 'bg-slate-100 text-slate-500'"
+                >
+                  <i class="fas" :class="item.icon"></i>
+                </span>
+                <span class="min-w-0">
+                  <span class="font-medium text-sm truncate block">{{ item.label }}</span>
+                  <span class="text-xs opacity-75 truncate block mt-0.5">{{ item.description }}</span>
+                </span>
+              </div>
+            </button>
           </div>
-          <button type="button" class="toggle" :class="{ 'toggle-on': oidc.enabled }" role="switch" :aria-checked="oidc.enabled" @click="oidc.enabled = !oidc.enabled">
-            <span class="toggle-thumb" />
-          </button>
-        </div>
-        <div>
-          <label class="form-label">颁发者地址</label>
-          <input v-model="oidc.issuerUrl" type="text" placeholder="请输入颁发者地址" class="input" />
-          <p class="mt-1 text-xs text-slate-400">示例：https://idp.example.com；用于自动发现 authorization_endpoint、token_endpoint、jwks_uri 等元数据；保存后立即生效</p>
-        </div>
-        <div>
-          <label class="form-label">客户端 ID</label>
-          <input v-model="oidc.clientId" type="text" placeholder="请输入客户端 ID" class="input" />
-          <p class="mt-1 text-xs text-slate-400">在 OIDC Provider 处注册应用时获得</p>
-        </div>
-        <div>
-          <label class="form-label">客户端密钥</label>
-          <input v-model="oidc.clientSecret" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
-          <p class="mt-1 text-xs text-slate-400">在 OIDC Provider 处注册应用时获得</p>
-        </div>
-        <div>
-          <label class="form-label">回调地址</label>
-          <input v-model="oidc.redirectUrl" type="text" placeholder="请输入回调地址" class="input" />
-          <p class="mt-1 text-xs text-slate-400">示例：https://isrvd.example.com/api/account/oidc/callback；开发环境可留空自动生成，生产环境建议填写固定 HTTPS 回调地址</p>
-        </div>
-        <div>
-          <label class="form-label">用户名字段</label>
-          <input v-model="oidc.usernameClaim" type="text" placeholder="请输入用户名字段" class="input" />
-          <p class="mt-1 text-xs text-slate-400">OIDC 用户信息中作为用户名的字段，默认 sub；该字段的值必须与 members.username 完全一致，用户不存在时登录失败</p>
-        </div>
-        <div>
-          <label class="form-label">授权范围</label>
-          <input v-model="oidcScopes" type="text" placeholder="请输入授权范围" class="input" />
-          <p class="mt-1 text-xs text-slate-400">示例：openid profile email；以空格分隔，系统会自动确保包含 openid</p>
-        </div>
-        <div>
-          <label class="form-label">登录按钮名称</label>
-          <input v-model="oidc.loginLabel" type="text" placeholder="请输入登录按钮名称" class="input" />
-          <p class="mt-1 text-xs text-slate-400">自定义 OIDC 登录按钮显示名称；留空则使用默认文案「使用 OIDC 登录」</p>
-        </div>
-
-        <!-- Passkey 配置 -->
-        <div class="toggle-row">
-          <div>
-            <span class="text-sm text-slate-600">启用 Passkey 登录</span>
-            <p class="text-xs text-slate-400 mt-0.5">使用 WebAuthn/FIDO2 进行无密码登录</p>
-          </div>
-          <button type="button" class="toggle" :class="{ 'toggle-on': passkey.enabled }" role="switch" :aria-checked="passkey.enabled" @click="passkey.enabled = !passkey.enabled">
-            <span class="toggle-thumb" />
-          </button>
-        </div>
-        <div>
-          <label class="form-label">Relying Party 名称</label>
-          <input v-model="passkey.rpName" type="text" placeholder="请输入 RP 名称" class="input" />
-          <p class="mt-1 text-xs text-slate-400">显示在 Passkey 注册/登录界面上的名称，如 iSrvd</p>
-        </div>
-        <div>
-          <label class="form-label">Relying Party ID</label>
-          <input v-model="passkey.rpId" type="text" placeholder="纯域名，如 example.com" class="input" />
-          <p class="mt-1 text-xs text-slate-400">必须是纯域名，不含 https:// 前缀，如 example.com；填写带 scheme 的地址将自动提取域名部分</p>
-        </div>
-        <div>
-          <label class="form-label">允许的 Origin</label>
-          <textarea v-model="passkeyOriginsText" rows="3" placeholder="请输入允许的 Origin，每行一个" class="input font-mono text-xs"></textarea>
-          <p class="mt-1 text-xs text-slate-400">示例：https://example.com、https://*.example.com；必须与访问地址一致</p>
-        </div>
-        <div>
-          <label class="form-label">超时时间（毫秒）</label>
-          <input v-model.number="passkey.timeout" type="number" min="1000" placeholder="请输入超时时间" class="input" />
-          <p class="mt-1 text-xs text-slate-400">Passkey 操作的超时时间，默认 60000（60 秒）</p>
-        </div>
-      </section>
-
-      <!-- Agent 配置 -->
-      <section v-if="activeTab === 'agent'" class="max-w-3xl space-y-4">
-        <div>
-          <label class="form-label">模型名称</label>
-          <input v-model="agent.model" type="text" placeholder="请输入模型名称" class="input" />
-          <p class="mt-1 text-xs text-slate-400">代理转发时强制改写请求体中的 model 字段，留空则不改写</p>
-        </div>
-        <div>
-          <label class="form-label">基础地址</label>
-          <input v-model="agent.baseUrl" type="text" placeholder="请输入基础地址" class="input" />
-          <p class="mt-1 text-xs text-slate-400">示例：https://api.openai.com/v1；OpenAI 兼容的 LLM API 基础地址，留空则禁用代理</p>
-        </div>
-        <div>
-          <label class="form-label">API 密钥</label>
-          <input v-model="agent.apiKey" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
-          <p class="mt-1 text-xs text-slate-400">代理转发时以 Bearer 形式注入 Authorization 请求头</p>
-        </div>
-      </section>
-
-      <!-- 应用配置（APISIX + Docker） -->
-      <section v-if="activeTab === 'app'" class="max-w-3xl space-y-4">
-        <p class="text-sm font-medium text-slate-500">APISIX</p>
-        <div>
-          <label class="form-label">Admin URL</label>
-          <input v-model="apisix.adminUrl" type="text" placeholder="请输入 Admin URL" class="input" />
-          <p class="mt-1 text-xs text-slate-400">APISIX Admin API 地址，默认 http://127.0.0.1:9180</p>
-        </div>
-        <div>
-          <label class="form-label">Admin Key</label>
-          <input v-model="apisix.adminKey" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
-          <p class="mt-1 text-xs text-slate-400">访问 APISIX Admin API 的密钥</p>
-        </div>
-        <p class="text-sm font-medium text-slate-500 mb-4">Caddy</p>
-        <div>
-          <label class="form-label">Admin URL</label>
-          <input v-model="caddy.adminUrl" type="text" placeholder="请输入 Admin URL" class="input" />
-          <p class="text-xs text-slate-400 mt-1">Caddy Admin API 地址，默认 http://127.0.0.1:2019</p>
-        </div>
-        <p class="text-sm font-medium text-slate-500 mb-4">Docker</p>
-        <div>
-          <label class="form-label">Docker Host</label>
-          <input v-model="docker.host" type="text" placeholder="请输入 Docker Host" class="input" />
-          <p class="mt-1 text-xs text-slate-400">示例：unix:///var/run/docker.sock 或 tcp://host:2375；留空则使用环境变量 DOCKER_HOST</p>
-        </div>
-        <div>
-          <label class="form-label">容器数据根目录</label>
-          <input v-model="docker.containerRoot" type="text" placeholder="请输入容器数据根目录" class="input" />
-          <p class="mt-1 text-xs text-slate-400">用于存放容器数据卷的基础目录（相对于基础目录），默认 containers</p>
-        </div>
-        <p class="text-sm font-medium text-slate-500 mb-4">应用市场</p>
-        <div>
-          <label class="form-label">站点 URL</label>
-          <input v-model="marketplace.url" type="text" placeholder="请输入应用市场 URL" class="input" />
-          <p class="mt-1 text-xs text-slate-400">应用市场页面以 iframe 方式嵌入，并通过 postMessage 协议接收安装事件</p>
-        </div>
-      </section>
-
-      <!-- Links 配置 -->
-      <section v-if="activeTab === 'links'" class="max-w-3xl space-y-3">
-        <!-- 列标题（仅在有数据时显示） -->
-        <div v-if="links.length" class="hidden sm:grid sm:grid-cols-[1fr_2fr_1.2fr_auto] gap-3 px-0.5">
-          <span class="text-xs font-medium text-slate-500">名称</span>
-          <span class="text-xs font-medium text-slate-500">URL</span>
-          <span class="text-xs font-medium text-slate-500">图标</span>
-          <span></span>
-        </div>
-        <div v-for="(link, index) in links" :key="index" class="grid grid-cols-1 sm:grid-cols-[1fr_2fr_1.2fr_auto] gap-3 items-center">
-          <input v-model="link.label" type="text" placeholder="请输入名称" class="input" />
-          <input v-model="link.url" type="text" placeholder="请输入链接 URL" class="input" />
-          <!-- 图标选择器 -->
-          <IconSelect v-model="link.icon" />
-          <button v-if="portal.hasPerm('PATCH /api/system/config')" type="button" class="btn-icon btn-icon-red w-11 h-11" @click="removeLink(index)">
-            <i class="fas fa-trash-can text-sm"></i>
-          </button>
-        </div>
-        <button type="button" class="btn-add-row" @click="addLink()">
-          <i class="fas fa-plus text-xs"></i>添加链接
-        </button>
-      </section>
-
-      <!-- 提示信息 -->
-      <div class="max-w-3xl mt-6 pt-4 border-t border-slate-200">
-        <p class="text-xs text-slate-400 flex items-start gap-1">
-          <i class="fas fa-circle-info mt-0.5 flex-shrink-0"></i>
-          <span>保存后立即写入配置文件，监听地址变更需重启服务生效。</span>
-        </p>
+        </aside>
       </div>
     </form>
+
+    <div v-else class="card-body">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-lock text-4xl text-slate-300"></i>
+        </div>
+        <p class="text-slate-600 font-medium mb-1">无权限修改系统配置</p>
+        <p class="text-sm text-slate-400">请联系管理员调整账号权限</p>
+      </div>
+    </div>
   </div>
 </template>
