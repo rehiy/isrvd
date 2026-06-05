@@ -5,6 +5,7 @@ import "time"
 // 配置结构
 type Config struct {
 	Server      *ServerConfig      `yaml:"server"`
+	THA         *THAConfig         `yaml:"tha"`
 	OIDC        *OIDCConfig        `yaml:"oidc"`
 	Passkey     *PasskeyConfig     `yaml:"passkey"`
 	Agent       *AgentConfig       `yaml:"agent"`
@@ -19,15 +20,20 @@ type Config struct {
 
 // 服务器配置
 type ServerConfig struct {
-	Debug             bool     `yaml:"debug" json:"debug"`
-	ListenAddr        string   `yaml:"listenAddr" json:"listenAddr"`
-	JWTSecret         string   `yaml:"jwtSecret" json:"jwtSecret,omitempty"`       // 写入时为空表示保留原值；响应时不返回
-	JWTExpiration     int64    `yaml:"jwtExpiration" json:"jwtExpiration"`         // JWT 过期时间（秒），默认 86400
-	ProxyHeaderName   string   `yaml:"proxyHeaderName" json:"proxyHeaderName"`     // 使用代理认证的请求头名称
-	ProxyTrustedCIDRs []string `yaml:"proxyTrustedCIDRs" json:"proxyTrustedCIDRs"` // Header 代理认证可信来源 CIDR；为空时仅信任本机
-	AllowedOrigins    []string `yaml:"allowedOrigins" json:"allowedOrigins"`       // 允许的 Origin 列表，支持通配符 *
-	MaxUploadSize     int64    `yaml:"maxUploadSize" json:"maxUploadSize"`         // 文件上传最大大小（字节），默认 100MB
-	RootDirectory     string   `yaml:"rootDirectory" json:"rootDirectory"`
+	Debug          bool     `yaml:"debug" json:"debug"`
+	ListenAddr     string   `yaml:"listenAddr" json:"listenAddr"`
+	JWTSecret      string   `yaml:"jwtSecret" json:"jwtSecret,omitempty"` // 写入时为空表示保留原值；响应时不返回
+	JWTExpiration  int64    `yaml:"jwtExpiration" json:"jwtExpiration"`   // JWT 过期时间（秒），默认 86400
+	AllowedOrigins []string `yaml:"allowedOrigins" json:"allowedOrigins"` // 允许的 Origin 列表，支持通配符 *
+	MaxUploadSize  int64    `yaml:"maxUploadSize" json:"maxUploadSize"`   // 文件上传最大大小（字节），默认 100MB
+	RootDirectory  string   `yaml:"rootDirectory" json:"rootDirectory"`
+}
+
+// 可信认证配置
+type THAConfig struct {
+	Enabled      bool     `yaml:"enabled" json:"enabled"`           // 是否启用可信认证模式
+	HeaderName   string   `yaml:"headerName" json:"headerName"`     // 使用可信认证的请求头名称
+	TrustedCIDRs []string `yaml:"trustedCIDRs" json:"trustedCIDRs"` // Header 可信认证可信来源 CIDR；为空时仅信任本机
 }
 
 // OIDC 配置

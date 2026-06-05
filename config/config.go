@@ -5,6 +5,8 @@ import "path/filepath"
 var (
 	// Server 服务器配置
 	Server = ServerNormalize(nil)
+	// THA 可信头认证配置
+	THA = &THAConfig{}
 	// OIDC 配置
 	OIDC = OIDCNormalize(nil)
 	// Passkey 配置
@@ -49,6 +51,7 @@ func Save() error {
 
 	conf := &Config{
 		Server:      Server,
+		THA:         THA,
 		OIDC:        OIDC,
 		Passkey:     Passkey,
 		Agent:       Agent,
@@ -71,6 +74,10 @@ func Apply(conf *Config) {
 	}
 
 	Server = ServerNormalize(conf.Server)
+
+	if conf.THA != nil {
+		THA = THANormalize(conf.THA)
+	}
 
 	OIDC = OIDCNormalize(conf.OIDC)
 
@@ -173,4 +180,15 @@ func PasskeyNormalize(passkey *PasskeyConfig) *PasskeyConfig {
 		passkey.Timeout = 60000
 	}
 	return passkey
+}
+
+// THANormalize 填充 THA 默认值
+func THANormalize(tha *THAConfig) *THAConfig {
+	if tha == nil {
+		tha = &THAConfig{}
+	}
+	if tha.HeaderName == "" {
+		tha.HeaderName = "X-Username"
+	}
+	return tha
 }

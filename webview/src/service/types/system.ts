@@ -19,12 +19,16 @@ export interface ServerConfig {
     listenAddr: string
     jwtExpiration: number
     maxUploadSize: number
-    proxyHeaderName: string
-    proxyTrustedCIDRs: string[]
     rootDirectory: string
     allowedOrigins: string[]
     // 写入时为空表示保留原值（不通过 JSON 返回）
     jwtSecret?: string
+}
+
+export interface THAConfig {
+    enabled: boolean
+    headerName: string
+    trustedCIDRs: string[]
 }
 
 export interface OIDCConfig {
@@ -94,6 +98,7 @@ export interface LinkConfig {
 
 export interface AllConfig {
     server: ServerConfig
+    tha: THAConfig
     oidc: OIDCConfig
     passkey: PasskeyConfig
     agent: AgentConfig

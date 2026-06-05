@@ -57,7 +57,7 @@ type CreateApiTokenResponse struct {
 // Auth 根据配置选择认证方式，返回用户名和错误原因。
 // 供中间件统一调用，避免在 server 层判断认证模式。
 func (s *Service) Auth(c *gin.Context) (username, errMsg string) {
-	if config.Server.ProxyHeaderName != "" {
+	if config.THA != nil && config.THA.Enabled {
 		return s.HeaderTokenCheck(c)
 	}
 	return s.JWTCheck(c)
@@ -72,7 +72,7 @@ func (s *Service) AuthMix(c *gin.Context) string {
 // AuthInfo 返回当前认证模式及已登录用户信息
 func (s *Service) AuthInfo(username string) *AuthInfoResponse {
 	mode := "jwt"
-	if config.Server.ProxyHeaderName != "" {
+	if config.THA != nil && config.THA.Enabled {
 		mode = "header"
 	}
 	oidcEnabled := mode == "jwt" && config.OIDC.Enabled && config.OIDC.IssuerURL != "" && config.OIDC.ClientID != ""
@@ -250,7 +250,7 @@ func (s *Service) HeaderTokenCheck(c *gin.Context) (username, errMsg string) {
 		return "", "代理 Header 来源不可信"
 	}
 
-	raw := c.GetHeader(config.Server.ProxyHeaderName)
+	raw := c.GetHeader(config.THA.HeaderName)
 	if raw == "" {
 		return "", "代理 Header 缺失"
 	}
@@ -263,7 +263,7 @@ func (s *Service) HeaderTokenCheck(c *gin.Context) (username, errMsg string) {
 
 // HeaderUsernameExtract 从代理 Header 中读取并验证用户名
 func (s *Service) HeaderUsernameExtract(c *gin.Context) string {
-	username := c.GetHeader(config.Server.ProxyHeaderName)
+	username := c.GetHeader(config.THA.HeaderName)
 	if username == "" {
 		return ""
 	}
@@ -274,8 +274,8 @@ func (s *Service) HeaderUsernameExtract(c *gin.Context) string {
 }
 
 func (s *Service) headerSourceTrusted(c *gin.Context) bool {
-	// 未配置 ProxyTrustedCIDRs 时，向后兼容：不做来源限制
-	if len(config.Server.ProxyTrustedCIDRs) == 0 {
+	// 未配置 TrustedCIDRs 时，向后兼容：不做来源限制
+	if config.THA == nil || len(config.THA.TrustedCIDRs) == 0 {
 		return true
 	}
 	host, _, err := net.SplitHostPort(c.Request.RemoteAddr)
@@ -286,7 +286,7 @@ func (s *Service) headerSourceTrusted(c *gin.Context) bool {
 	if ip == nil {
 		return false
 	}
-	for _, cidr := range config.Server.ProxyTrustedCIDRs {
+	for _, cidr := range config.THA.TrustedCIDRs {
 		if trustedIP := net.ParseIP(cidr); trustedIP != nil && trustedIP.Equal(ip) {
 			return true
 		}

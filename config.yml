@@ -1,32 +1,34 @@
 server:
   debug: false
   listenAddr: :8080
-  # jwtSecret: your-jwt-secret         # JWT 签名密钥，修改后所有用户需重新登录
-  # jwtExpiration: 86400               # JWT 有效期（秒），默认 86400（24小时）
-  # maxUploadSize: 104857600           # 文件上传最大字节数，默认 104857600（100MB）
-  # allowedOrigins: [https://example.com]  # 允许的跨域 Origin，支持通配符 *
-  # proxyHeaderName: X-Username        # 内网代理认证 Header，留空禁用
-  # proxyTrustedCIDRs: [127.0.0.1/32]  # 代理认证可信来源 CIDR，为空时仅信任本机
+  jwtSecret: your-jwt-secret  # JWT 签名密钥，修改后所有用户需重新登录
+  jwtExpiration: 86400        # JWT 有效期（秒），默认 86400（24小时）
+  maxUploadSize: 104857600    # 文件上传最大字节数，默认 104857600（100MB）
+  allowedOrigins: []          # 允许的跨域 Origin，支持通配符 *
   rootDirectory: /srv/data
 
+tha:
+  enabled: false                # 是否启用可信头认证 (Trusted Header Authentication)
+  headerName: X-Username        # 认证 Header 名称（存储用户名）
+  trustedCIDRs: [127.0.0.1/32]  # 可信来源 CIDR，为空时仅信任本机
+
 oidc:
-  enabled: false
-  # 元数据（authorization_endpoint、token_endpoint、jwks_uri 等）由 issuerUrl 自动发现
-  # issuerUrl: https://idp.example.com
-  # clientId: isrvd
-  # clientSecret: your-client-secret
-  # redirectUrl: https://isrvd.example.com/api/account/oidc/callback
-  # usernameClaim: sub（默认值，稳定且不可复用；如使用 email 需确保 IdP 已验证邮箱）
-  # scopes: [openid, profile, email]（默认值，openid 始终被自动包含）
-  # loginLabel: ""（默认值，留空则使用默认文案"使用 OIDC 登录"）
+  enabled: false                      # 是否启用 OIDC 认证
+  issuerUrl: https://idp.example.com  # OIDC 发行方 URL
+  clientId: isrvd                     # OIDC 客户端 ID
+  clientSecret: your-client-secret    # OIDC 客户端密钥
+  redirectUrl: https://isrvd/api/account/oidc/callback # OIDC 重定向 URL
+  usernameClaim: sub                  # OIDC 用户名声明字段
+  scopes: [openid, profile, email]    # OIDC 请求的作用域
+  loginLabel: ""                      # OIDC 登录按钮显示文本，为空时使用默认值
 
 passkey:
-  enabled: false                     # 是否启用 Passkey 认证
-  # rpName: "iSrvd"                # Relying Party 名称，如 "My App"
-  # rpId: "localhost"               # Relying Party ID（通常是域名）
-  # rpOrigins:                      # 允许的 Origin 列表
-  #   - "http://localhost:8080"
-  # timeout: 60000                  # 超时时间（毫秒），默认 60000（60 秒）
+  enabled: false                  # 是否启用 Passkey 认证
+  rpName: "iSrvd"                 # Relying Party 名称，如 "My App"
+  rpId: "localhost"               # Relying Party ID（通常是域名）
+  rpOrigins:                      # 允许的 Origin 列表
+    - "http://localhost:8080"
+  timeout: 60000                  # 超时时间（毫秒），默认 60000（60 秒）
 
 agent:
   # model: your-model
@@ -55,22 +57,20 @@ marketplace:
   url: https://apps.rehi.org
 
 links:
-- label: 工具箱
-  url: https://api.rehi.org
-  icon: fas fa-cloud-bolt
+  - label: 工具箱
+    url: https://api.rehi.org
+    icon: fas fa-cloud-bolt
 
 members:
   - username: admin
     password: admin
     homeDirectory: .
     founder: true
-
   - username: user1
     password: password1
     homeDirectory: member/user1/
-    # permissions 未配置则所有路由无权限
-    # 格式："METHOD /api/path"，如 "GET /api/docker/containers"
     permissions:
+      # 格式："METHOD /api/path"，如 "GET /api/docker/containers"
       - GET /api/overview/status
       - GET /api/docker/containers
       - GET /api/docker/container/:id

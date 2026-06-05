@@ -4,7 +4,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { AllConfig, ServerConfig, AgentConfig, OIDCConfig, PasskeyConfig, ApisixConfig, CaddyConfig, DockerConfig, MonitorConfig, MarketplaceConfig, LinkConfig } from '@/service/types'
+import type { AllConfig, ServerConfig, THAConfig, AgentConfig, OIDCConfig, PasskeyConfig, ApisixConfig, CaddyConfig, DockerConfig, MonitorConfig, MarketplaceConfig, LinkConfig } from '@/service/types'
 
 import IconSelect from '@/component/icon-select.vue'
 
@@ -17,10 +17,10 @@ class Config extends Vue {
   saving = false
   activeTab: 'server' | 'auth' | 'agent' | 'app' | 'links' = 'server'
 
-  server: ServerConfig = { debug: false, listenAddr: '', jwtExpiration: 86400, maxUploadSize: 104857600, proxyHeaderName: '', proxyTrustedCIDRs: [], rootDirectory: '', allowedOrigins: [] }
+  server: ServerConfig = { debug: false, listenAddr: '', jwtExpiration: 86400, maxUploadSize: 104857600, rootDirectory: '', allowedOrigins: [] }
   allowedOriginsText = ''
-  proxyTrustedCIDRsText = ''
-  monitor: MonitorConfig = { interval: 0 }
+  tha: THAConfig = { enabled: false, headerName: '', trustedCIDRs: [] }
+  thaTrustedCIDRsText = ''
   oidc: OIDCConfig = { enabled: false, issuerUrl: '', clientId: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'], loginLabel: '' }
   oidcScopes = 'openid profile email'
   passkey: PasskeyConfig = { enabled: false, rpName: '', rpId: '', rpOrigins: [], timeout: 60000 }
@@ -29,6 +29,7 @@ class Config extends Vue {
   apisix: ApisixConfig = { adminUrl: '' }
   caddy: CaddyConfig = { adminUrl: '' }
   docker: DockerConfig = { host: '', containerRoot: '' }
+  monitor: MonitorConfig = { interval: 0 }
   marketplace: MarketplaceConfig = { url: '' }
   links: LinkConfig[] = []
 
@@ -40,8 +41,8 @@ class Config extends Vue {
       const payload = res.payload as AllConfig
       this.server = { ...payload.server }
       this.allowedOriginsText = (this.server.allowedOrigins || []).join('\n')
-      this.proxyTrustedCIDRsText = (this.server.proxyTrustedCIDRs || []).join('\n')
-      this.monitor = { ...(payload.monitor || { interval: 0 }) }
+      this.tha = { ...payload.tha }
+      this.thaTrustedCIDRsText = (this.tha.trustedCIDRs || []).join('\n')
       this.oidc = { ...(payload.oidc || { enabled: false, issuerUrl: '', clientId: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'], loginLabel: '' }) }
       this.oidcScopes = (this.oidc.scopes || []).join(' ')
       this.passkey = { ...(payload.passkey || { enabled: false, rpName: '', rpId: '', rpOrigins: [], timeout: 60000 }) }
@@ -50,6 +51,7 @@ class Config extends Vue {
       this.apisix = { ...payload.apisix }
       this.caddy = { ...(payload.caddy || { adminUrl: '' }) }
       this.docker = { ...payload.docker }
+      this.monitor = { ...(payload.monitor || { interval: 0 }) }
       this.marketplace = { ...(payload.marketplace || { url: '' }) }
       this.links = payload.links ? payload.links.map(l => ({ ...l })) : []
       if (reload) {
@@ -66,7 +68,8 @@ class Config extends Vue {
     this.saving = true
     try {
       const payload = {
-        server: { ...this.server, allowedOrigins: this.allowedOriginsText.split(/\s+/).filter(Boolean), proxyTrustedCIDRs: this.proxyTrustedCIDRsText.split(/\s+/).filter(Boolean) },
+        server: { ...this.server, allowedOrigins: this.allowedOriginsText.split(/\s+/).filter(Boolean) },
+        tha: { ...this.tha, trustedCIDRs: this.thaTrustedCIDRsText.split(/\s+/).filter(Boolean) },
         oidc: { ...this.oidc, scopes: this.oidcScopes.split(/\s+/).filter(Boolean) },
         passkey: { ...this.passkey, rpOrigins: this.passkeyOriginsText.split(/\s+/).filter(Boolean) },
         agent: this.agent,
@@ -126,6 +129,7 @@ export default toNative(Config)
             <button type="button" :class="['tab-btn', activeTab === 'server' ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="activeTab = 'server'">
               <i class="fas fa-server"></i>全局
             </button>
+
             <button type="button" :class="['tab-btn', activeTab === 'auth' ? 'tab-btn-active text-purple-600' : 'tab-btn-inactive']" @click="activeTab = 'auth'">
               <i class="fas fa-shield-halved"></i>鉴权
             </button>
@@ -175,6 +179,7 @@ export default toNative(Config)
         <button type="button" :class="['tab-btn flex-1 justify-center whitespace-nowrap', activeTab === 'server' ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="activeTab = 'server'">
           <i class="fas fa-server"></i>全局
         </button>
+
         <button type="button" :class="['tab-btn flex-1 justify-center whitespace-nowrap', activeTab === 'auth' ? 'tab-btn-active text-purple-600' : 'tab-btn-inactive']" @click="activeTab = 'auth'">
           <i class="fas fa-shield-halved"></i>鉴权
         </button>
@@ -226,16 +231,6 @@ export default toNative(Config)
           <p class="mt-1 text-xs text-slate-400">登录令牌的有效期，默认 86400（24 小时）</p>
         </div>
         <div>
-          <label class="form-label">内网代理认证 Header</label>
-          <input v-model="server.proxyHeaderName" type="text" placeholder="请输入 Header 名称" class="input" />
-          <p class="mt-1 text-xs text-slate-400">启用时，将使用上游传入的 Header 值作为登录用户；留空则禁用</p>
-        </div>
-        <div>
-          <label class="form-label">代理可信来源 CIDR</label>
-          <textarea v-model="proxyTrustedCIDRsText" rows="3" placeholder="请输入代理可信来源 CIDR，每行一个" class="input font-mono text-xs"></textarea>
-          <p class="mt-1 text-xs text-slate-400">示例：127.0.0.1/32、10.0.0.0/8；仅列出的来源 IP 允许使用代理认证；留空则仅信任本机（127.0.0.1）</p>
-        </div>
-        <div>
           <label class="form-label">允许的跨域 Origin</label>
           <textarea v-model="allowedOriginsText" rows="3" placeholder="请输入，每行一个" class="input font-mono text-xs"></textarea>
           <p class="mt-1 text-xs text-slate-400">示例：https://example.com、https://*.example.com；支持通配符 *；留空则不限制</p>
@@ -263,8 +258,32 @@ export default toNative(Config)
         </div>
       </section>
 
-      <!-- 鉴权配置（OIDC + Passkey） -->
+
+
+      <!-- 鉴权配置（可信认证 + OIDC + Passkey） -->
       <section v-if="activeTab === 'auth'" class="max-w-3xl space-y-4">
+        <!-- 可信认证配置 -->
+        <p class="text-sm font-medium text-slate-500 mb-4">可信认证</p>
+        <div class="toggle-row">
+          <div>
+            <span class="text-sm text-slate-600">启用可信认证模式</span>
+            <p class="text-xs text-slate-400 mt-0.5">开启后使用可信来源的认证 Header</p>
+          </div>
+          <button type="button" class="toggle" :class="{ 'toggle-on': tha.enabled }" role="switch" :aria-checked="tha.enabled" @click="tha.enabled = !tha.enabled">
+            <span class="toggle-thumb" />
+          </button>
+        </div>
+        <div>
+          <label class="form-label">可信认证 Header</label>
+          <input v-model="tha.headerName" type="text" placeholder="请输入 Header 名称" class="input" />
+          <p class="mt-1 text-xs text-slate-400">启用时，将使用可信来源传入的 Header 值作为登录用户；留空则禁用</p>
+        </div>
+        <div>
+          <label class="form-label">可信来源 CIDR</label>
+          <textarea v-model="thaTrustedCIDRsText" rows="3" placeholder="请输入可信来源 CIDR，每行一个" class="input font-mono text-xs"></textarea>
+          <p class="mt-1 text-xs text-slate-400">示例：127.0.0.1/32、10.0.0.0/8；仅列出的来源 IP 允许使用可信认证；留空则不做来源限制</p>
+        </div>
+
         <div class="toggle-row">
           <div>
             <span class="text-sm text-slate-600">启用 OIDC 登录</span>

@@ -10,6 +10,7 @@ import (
 // AllConfigResponse 全部配置聚合响应
 type AllConfigResponse struct {
 	Server      *config.ServerConfig      `json:"server"`
+	THA         *config.THAConfig         `json:"tha"`
 	OIDC        *config.OIDCConfig        `json:"oidc"`
 	Passkey     *config.PasskeyConfig     `json:"passkey"`
 	Agent       *config.AgentConfig       `json:"agent"`
@@ -24,6 +25,7 @@ type AllConfigResponse struct {
 // UpdateAllConfigRequest 全量更新请求
 type UpdateAllConfigRequest struct {
 	Server      *config.ServerConfig      `json:"server"`
+	THA         *config.THAConfig         `json:"tha"`
 	OIDC        *config.OIDCConfig        `json:"oidc"`
 	Passkey     *config.PasskeyConfig     `json:"passkey"`
 	Agent       *config.AgentConfig       `json:"agent"`
@@ -58,15 +60,18 @@ func (s *ConfigService) ConfigAll() *AllConfigResponse {
 
 	return &AllConfigResponse{
 		Server: &config.ServerConfig{
-			Debug:             srv.Debug,
-			ListenAddr:        srv.ListenAddr,
-			JWTExpiration:     srv.JWTExpiration,
-			ProxyHeaderName:   srv.ProxyHeaderName,
-			ProxyTrustedCIDRs: srv.ProxyTrustedCIDRs,
-			AllowedOrigins:    srv.AllowedOrigins,
-			MaxUploadSize:     srv.MaxUploadSize,
-			RootDirectory:     srv.RootDirectory,
+			Debug:          srv.Debug,
+			ListenAddr:     srv.ListenAddr,
+			JWTExpiration:  srv.JWTExpiration,
+			AllowedOrigins: srv.AllowedOrigins,
+			MaxUploadSize:  srv.MaxUploadSize,
+			RootDirectory:  srv.RootDirectory,
 			// JWTSecret 不返回
+		},
+		THA: &config.THAConfig{
+			Enabled:      config.THA.Enabled,
+			HeaderName:   config.THA.HeaderName,
+			TrustedCIDRs: config.THA.TrustedCIDRs,
 		},
 		OIDC: &config.OIDCConfig{
 			Enabled:       oidc.Enabled,
@@ -109,6 +114,9 @@ func (s *ConfigService) ConfigUpdateAll(req UpdateAllConfigRequest) error {
 	if req.Server != nil {
 		req.Server.JWTSecret = pickSecret(req.Server.JWTSecret, config.Server.JWTSecret)
 		config.Server = config.ServerNormalize(req.Server)
+	}
+	if req.THA != nil {
+		config.THA = config.THANormalize(req.THA)
 	}
 	if req.OIDC != nil {
 		req.OIDC.ClientSecret = pickSecret(req.OIDC.ClientSecret, config.OIDC.ClientSecret)
