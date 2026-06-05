@@ -6,9 +6,9 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { SFTPFileInfo } from '@/service/types'
 
-import BaseModal from '@/component/modal.vue'
-
 import { joinPath } from '@/helper/utils'
+
+import BaseModal from '@/component/modal.vue'
 
 @Component({
     expose: ['show'],

@@ -101,10 +101,55 @@ export interface PasskeyBeginLoginData {
     username?: string  // 可选，为空则使用可发现凭证
 }
 
+export interface PasskeyCredentialDescriptorJSON extends Omit<PublicKeyCredentialDescriptor, 'id'> {
+    id: string
+}
+
+export interface PasskeyCredentialCreationOptionsJSON
+    extends Omit<PublicKeyCredentialCreationOptions, 'challenge' | 'excludeCredentials' | 'user'> {
+    challenge: string
+    excludeCredentials?: PasskeyCredentialDescriptorJSON[]
+    user: Omit<PublicKeyCredentialUserEntity, 'id'> & {
+        id: string
+    }
+}
+
+export interface PasskeyCredentialRequestOptionsJSON
+    extends Omit<PublicKeyCredentialRequestOptions, 'allowCredentials' | 'challenge'> {
+    allowCredentials?: PasskeyCredentialDescriptorJSON[]
+    challenge: string
+}
+
+export interface PasskeyBeginOptions<TPublicKey> {
+    publicKey: TPublicKey
+}
+
 // 开始注册/登录的统一数据
-export interface PasskeyBeginData {
+export interface PasskeyBeginData<TPublicKey> {
     sessionId: string
-    options: CredentialCreationOptions | CredentialRequestOptions
+    options: PasskeyBeginOptions<TPublicKey>
+}
+
+export interface PasskeyRegisterCredential {
+    id: string
+    rawId: string
+    response: {
+        attestationObject: string
+        clientDataJSON: string
+    }
+    type: PublicKeyCredential['type']
+}
+
+export interface PasskeyLoginCredential {
+    id: string
+    rawId: string
+    response: {
+        authenticatorData: string
+        clientDataJSON: string
+        signature: string
+        userHandle: string | null
+    }
+    type: PublicKeyCredential['type']
 }
 
 // Passkey 登录结果

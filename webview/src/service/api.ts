@@ -25,7 +25,11 @@ import type {
     // Passkey
     PasskeyBeginLoginData,
     PasskeyBeginData,
+    PasskeyCredentialCreationOptionsJSON,
+    PasskeyCredentialRequestOptionsJSON,
+    PasskeyLoginCredential,
     PasskeyLoginResult,
+    PasskeyRegisterCredential,
     PasskeyCredential,
     // Filer
     FilerList,
@@ -198,18 +202,24 @@ class ApiService {
     // ==================== Passkey 认证相关 ====================
 
     accountPasskeyRegisterBegin(data: { displayName?: string } = {}) {
-        return http.post<PasskeyBeginData>('account/passkey/register/begin', data)
+        return http.post<PasskeyBeginData<PasskeyCredentialCreationOptionsJSON>>(
+            'account/passkey/register/begin',
+            data,
+        )
     }
 
-    accountPasskeyRegisterFinish(sessionId: string, credential: any) {
+    accountPasskeyRegisterFinish(sessionId: string, credential: PasskeyRegisterCredential) {
         return http.post<void>(`account/passkey/register/finish?sessionId=${encodeURIComponent(sessionId)}`, credential)
     }
 
     accountPasskeyLoginBegin(data: PasskeyBeginLoginData) {
-        return http.post<PasskeyBeginData>('account/passkey/login/begin', data)
+        return http.post<PasskeyBeginData<PasskeyCredentialRequestOptionsJSON>>(
+            'account/passkey/login/begin',
+            data,
+        )
     }
 
-    accountPasskeyLoginFinish(sessionId: string, credential: any) {
+    accountPasskeyLoginFinish(sessionId: string, credential: PasskeyLoginCredential) {
         return http.post<PasskeyLoginResult>(`account/passkey/login/finish?sessionId=${encodeURIComponent(sessionId)}`, credential)
     }
 

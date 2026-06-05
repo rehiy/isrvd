@@ -5,6 +5,7 @@ import { usePortal } from '@/stores'
 
 import api from '@/service/api'
 import type { PasskeyCredential } from '@/service/types'
+
 import { registerPasskey, isWebAuthnSupported } from '@/helper/webauthn'
 
 import BaseModal from '@/component/modal.vue'
@@ -131,8 +132,8 @@ export default toNative(AccountPasskeys)
         <button
           type="button"
           class="btn btn-purple flex-shrink-0"
-          @click="openRegisterDialog"
           :disabled="passkeyLoading"
+          @click="openRegisterDialog"
         >
           <i class="fas fa-plus mr-2"></i>
           绑定新 Passkey
@@ -141,7 +142,7 @@ export default toNative(AccountPasskeys)
     </div>
 
     <div class="card-body">
-    <div v-if="passkeyLoading" class="card-body">
+      <div v-if="passkeyLoading" class="card-body">
         <div class="empty-state">
           <div class="w-12 h-12 spinner mb-3"></div>
           <p class="text-slate-500">加载中...</p>
@@ -163,7 +164,7 @@ export default toNative(AccountPasskeys)
           class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200"
         >
           <div class="flex items-center gap-4 min-w-0">
-          <div class="list-icon bg-purple-100 text-purple-600">
+            <div class="list-icon bg-purple-100 text-purple-600">
               <i class="fas fa-fingerprint"></i>
             </div>
             <div class="min-w-0">
@@ -172,9 +173,9 @@ export default toNative(AccountPasskeys)
                 <input
                   v-model="renameValue"
                   class="input input-sm py-0.5 px-2 text-sm w-40"
+                  autofocus
                   @keyup.enter="confirmRename(cred)"
                   @keyup.escape="cancelRename"
-                  autofocus
                 />
                 <button class="btn-icon btn-icon-emerald" @click="confirmRename(cred)">
                   <i class="fas fa-check text-xs"></i>
@@ -201,11 +202,11 @@ export default toNative(AccountPasskeys)
               </div>
             </div>
           </div>
-                <button
-                  class="btn-icon btn-icon-red flex-shrink-0"
-                  title="删除"
-                  @click="handleDeletePasskey(cred.idBase64)"
-                >
+          <button
+            class="btn-icon btn-icon-red flex-shrink-0"
+            title="删除"
+            @click="handleDeletePasskey(cred.idBase64)"
+          >
             <i class="fas fa-trash-alt text-xs"></i>
           </button>
         </div>

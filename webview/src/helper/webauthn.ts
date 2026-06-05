@@ -12,6 +12,7 @@
 
 import { base64urlToBuffer, bufferToBase64url } from '@/helper/utils'
 import api from '@/service/api'
+import type { PasskeyLoginCredential, PasskeyRegisterCredential } from '@/service/types/account'
 
 /** 检查当前环境是否支持 WebAuthn */
 export function isWebAuthnSupported(): boolean {
@@ -36,7 +37,11 @@ export async function registerPasskey(displayName?: string): Promise<void> {
     }
 
     // 2. 将 base64url 字段转为 ArrayBuffer（WebAuthn API 要求）
-    const publicKey = (beginData.options as any).publicKey
+    const publicKey = beginData.options.publicKey
+    const excludeCredentials: PublicKeyCredentialDescriptor[] | undefined = publicKey.excludeCredentials?.map((item) => ({
+        ...item,
+        id: base64urlToBuffer(item.id),
+    }))
     const creationOptions: CredentialCreationOptions = {
         publicKey: {
             ...publicKey,
@@ -45,10 +50,7 @@ export async function registerPasskey(displayName?: string): Promise<void> {
                 ...publicKey.user,
                 id: base64urlToBuffer(publicKey.user.id),
             },
-            excludeCredentials: (publicKey.excludeCredentials || []).map((c: any) => ({
-                ...c,
-                id: base64urlToBuffer(c.id),
-            })),
+            excludeCredentials,
         },
     }
 
@@ -61,7 +63,7 @@ export async function registerPasskey(displayName?: string): Promise<void> {
     // 4. 序列化凭证数据，发送给后端完成注册
     //    go-webauthn 直接从 Request.Body 解析，格式必须符合 WebAuthn 规范
     const response = credential.response as AuthenticatorAttestationResponse
-    const credentialJSON = {
+    const credentialJSON: PasskeyRegisterCredential = {
         id: credential.id,
         rawId: bufferToBase64url(credential.rawId),
         type: credential.type,
@@ -92,15 +94,16 @@ export async function loginWithPasskey(username?: string): Promise<{ token: stri
     }
 
     // 2. 将 base64url 字段转为 ArrayBuffer
-    const publicKey = (beginData.options as any).publicKey
+    const publicKey = beginData.options.publicKey
+    const allowCredentials: PublicKeyCredentialDescriptor[] | undefined = publicKey.allowCredentials?.map((item) => ({
+        ...item,
+        id: base64urlToBuffer(item.id),
+    }))
     const requestOptions: CredentialRequestOptions = {
         publicKey: {
             ...publicKey,
             challenge: base64urlToBuffer(publicKey.challenge),
-            allowCredentials: (publicKey.allowCredentials || []).map((c: any) => ({
-                ...c,
-                id: base64urlToBuffer(c.id),
-            })),
+            allowCredentials,
         },
     }
 
@@ -112,7 +115,7 @@ export async function loginWithPasskey(username?: string): Promise<{ token: stri
 
     // 4. 序列化断言数据，发送给后端完成登录
     const response = credential.response as AuthenticatorAssertionResponse
-    const credentialJSON = {
+    const credentialJSON: PasskeyLoginCredential = {
         id: credential.id,
         rawId: bufferToBase64url(credential.rawId),
         type: credential.type,
