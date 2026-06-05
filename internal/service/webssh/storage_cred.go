@@ -18,32 +18,20 @@ type Credential struct {
 	Name        string `yaml:"name" json:"name"`
 	Description string `yaml:"description" json:"description"`
 	User        string `yaml:"user" json:"user"`
-	Password    string `yaml:"password,omitempty" json:"password,omitempty"`
-	PrivateKey  string `yaml:"privateKey,omitempty" json:"privateKey,omitempty"`
+	AuthType    string `yaml:"authType,omitempty" json:"authType,omitempty"` // "password" | "privateKey" | ""
+	Password    string `yaml:"password,omitempty" json:"-"`
+	PrivateKey  string `yaml:"privateKey,omitempty" json:"-"`
 }
 
-// CredentialView 凭据视图（密码不回显）
-type CredentialView struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	User        string `json:"user"`
-	AuthType    string `json:"authType"` // "password" | "privateKey" | ""
-}
-
-func (c *Credential) toView() *CredentialView {
-	cv := &CredentialView{
-		ID:          c.ID,
-		Name:        c.Name,
-		Description: c.Description,
-		User:        c.User,
-	}
+// setAuthType 根据当前认证字段计算并设置 AuthType
+func (c *Credential) setAuthType() {
 	if c.PrivateKey != "" {
-		cv.AuthType = "privateKey"
+		c.AuthType = "privateKey"
 	} else if c.Password != "" {
-		cv.AuthType = "password"
+		c.AuthType = "password"
+	} else {
+		c.AuthType = ""
 	}
-	return cv
 }
 
 // credentialStore 负责 Credential 的存储
@@ -86,15 +74,13 @@ func (s *credentialStore) save() error {
 	return s.ts.Set(s.items)
 }
 
-// list 返回所有凭据的视图列表
-func (s *credentialStore) list() []*CredentialView {
+// list 返回所有凭据列表
+func (s *credentialStore) list() []*Credential {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	views := make([]*CredentialView, 0, len(s.items))
-	for _, c := range s.items {
-		views = append(views, c.toView())
-	}
-	return views
+	result := make([]*Credential, len(s.items))
+	copy(result, s.items)
+	return result
 }
 
 // get 返回指定 ID 的凭据（含敏感信息，仅内部使用）
@@ -114,6 +100,7 @@ func (s *credentialStore) create(c *Credential) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	c.ID = strutil.NewString()
+	c.setAuthType()
 	s.items = append(s.items, c)
 	return s.save()
 }
@@ -127,6 +114,7 @@ func (s *credentialStore) update(id string, c *Credential) error {
 		return fmt.Errorf("凭据 %s 不存在", id)
 	}
 	c.ID = id
+	c.setAuthType()
 	s.items[idx] = c
 	return s.save()
 }

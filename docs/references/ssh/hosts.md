@@ -13,6 +13,18 @@
 isrvd_get "/ssh/credentials"
 ```
 
+**响应字段：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | string | 凭据 ID（只读） |
+| `name` | string | 凭据名称 |
+| `description` | string | 描述 |
+| `user` | string | SSH 用户名 |
+| `authType` | string | 认证方式（只读）：`"password"` \| `"privateKey"` \| `""`（未设置） |
+
+> `password` 和 `privateKey` 为敏感字段，不在响应中返回。
+
 ### 获取凭据详情
 
 ```bash
@@ -59,7 +71,7 @@ isrvd_delete "/ssh/credential/<ID>"
 isrvd_get "/ssh/hosts"
 ```
 
-**响应字段（HostView）：**
+**响应字段：**
 
 | 字段 | 类型 | 说明 |
 |------|------|------|

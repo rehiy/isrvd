@@ -15,36 +15,15 @@ import (
 
 // Host SSH 主机配置
 type Host struct {
-	ID           string `yaml:"id" json:"id"`
-	Name         string `yaml:"name" json:"name"`
-	Addr         string `yaml:"addr" json:"addr"`
-	CredentialID string `yaml:"credentialId,omitempty" json:"credentialId,omitempty"`
-	User         string `yaml:"user" json:"user"`
-	Password     string `yaml:"password,omitempty" json:"password,omitempty"`
-	PrivateKey   string `yaml:"privateKey,omitempty" json:"privateKey,omitempty"`
-	Description  string `yaml:"description" json:"description"`
-}
-
-// HostView 主机视图（密码/私钥不回显）
-type HostView struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	Addr           string `json:"addr"`
-	CredentialID   string `json:"credentialId,omitempty"`
-	CredentialName string `json:"credentialName,omitempty"`
-	User           string `json:"user"`
-	Description    string `json:"description"`
-}
-
-func (h *Host) toView() *HostView {
-	return &HostView{
-		ID:           h.ID,
-		Name:         h.Name,
-		Addr:         h.Addr,
-		CredentialID: h.CredentialID,
-		User:         h.User,
-		Description:  h.Description,
-	}
+	ID             string `yaml:"id" json:"id"`
+	Name           string `yaml:"name" json:"name"`
+	Addr           string `yaml:"addr" json:"addr"`
+	CredentialID   string `yaml:"credentialId,omitempty" json:"credentialId,omitempty"`
+	CredentialName string `yaml:"-" json:"credentialName,omitempty"`
+	User           string `yaml:"user" json:"user"`
+	Password       string `yaml:"password,omitempty" json:"-"`
+	PrivateKey     string `yaml:"privateKey,omitempty" json:"-"`
+	Description    string `yaml:"description" json:"description"`
 }
 
 // store 负责 WebSSH 主机配置的存储
@@ -87,30 +66,17 @@ func (s *store) save() error {
 	return s.ts.Set(s.hosts)
 }
 
-// hostList 返回所有主机的视图列表（密码不回显）
-func (s *store) hostList() []*HostView {
+// hostList 返回所有主机列表（密码/私钥不序列化）
+func (s *store) hostList() []*Host {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	views := make([]*HostView, 0, len(s.hosts))
-	for _, h := range s.hosts {
-		views = append(views, h.toView())
-	}
-	return views
+	result := make([]*Host, len(s.hosts))
+	copy(result, s.hosts)
+	return result
 }
 
-// hostInspect 返回指定 ID 的主机视图
-func (s *store) hostInspect(id string) *HostView {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	h := s.findByID(id)
-	if h == nil {
-		return nil
-	}
-	return h.toView()
-}
-
-// hostInspectRaw 返回指定 ID 的原始 Host（含敏感信息，仅内部使用）
-func (s *store) hostInspectRaw(id string) *Host {
+// hostInspect 返回指定 ID 的主机
+func (s *store) hostInspect(id string) *Host {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.findByID(id)

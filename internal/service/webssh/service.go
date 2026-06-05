@@ -40,7 +40,7 @@ func (s *Service) Close() {
 // ─── Credential 凭据管理 ───
 
 // CredentialList 列出所有凭据（密码/私钥不回显）
-func (s *Service) CredentialList() []*CredentialView {
+func (s *Service) CredentialList() []*Credential {
 	return s.credentialStore.list()
 }
 
@@ -50,7 +50,7 @@ func (s *Service) CredentialInspect(id string) *Credential {
 }
 
 // CredentialCreate 新建凭据
-func (s *Service) CredentialCreate(req *CredentialUpsertRequest) (*CredentialView, error) {
+func (s *Service) CredentialCreate(req *CredentialUpsertRequest) (*Credential, error) {
 	c := &Credential{
 		Name:        req.Name,
 		Description: req.Description,
@@ -62,11 +62,11 @@ func (s *Service) CredentialCreate(req *CredentialUpsertRequest) (*CredentialVie
 		return nil, fmt.Errorf("创建凭据失败: %w", err)
 	}
 	logger.Info("SSH 凭据已创建", "id", c.ID, "name", c.Name, "user", c.User)
-	return c.toView(), nil
+	return c, nil
 }
 
 // CredentialUpdate 更新凭据
-func (s *Service) CredentialUpdate(id string, req *CredentialUpsertRequest) (*CredentialView, error) {
+func (s *Service) CredentialUpdate(id string, req *CredentialUpsertRequest) (*Credential, error) {
 	c := &Credential{
 		Name:        req.Name,
 		Description: req.Description,
@@ -78,7 +78,7 @@ func (s *Service) CredentialUpdate(id string, req *CredentialUpsertRequest) (*Cr
 		return nil, fmt.Errorf("更新凭据失败: %w", err)
 	}
 	logger.Info("SSH 凭据已更新", "id", id, "name", req.Name)
-	return s.credentialStore.get(id).toView(), nil
+	return s.credentialStore.get(id), nil
 }
 
 // CredentialDelete 删除凭据
@@ -93,35 +93,38 @@ func (s *Service) CredentialDelete(id string) error {
 // ─── Host 主机管理 ───
 
 // HostList 列出所有主机（密码不回显，附凭据名称）
-func (s *Service) HostList() []*HostView {
+func (s *Service) HostList() []*Host {
 	hosts := s.store.hostList()
-	// 填充 credentialName
 	credMap := make(map[string]string)
 	for _, c := range s.credentialStore.list() {
 		credMap[c.ID] = c.Name
 	}
-	for _, h := range hosts {
-		if h.CredentialID != "" {
-			h.CredentialName = credMap[h.CredentialID]
-		}
+	result := make([]*Host, len(hosts))
+	for i, h := range hosts {
+		copy := *h
+		copy.CredentialName = credMap[h.CredentialID]
+		result[i] = &copy
 	}
-	return hosts
+	return result
 }
 
 // HostInspect 查看指定主机详情（密码不回显）
-func (s *Service) HostInspect(id string) *HostView {
+func (s *Service) HostInspect(id string) *Host {
 	h := s.store.hostInspect(id)
-	if h != nil && h.CredentialID != "" {
-		c := s.credentialStore.get(h.CredentialID)
-		if c != nil {
-			h.CredentialName = c.Name
+	if h == nil {
+		return nil
+	}
+	copy := *h
+	if h.CredentialID != "" {
+		if c := s.credentialStore.get(h.CredentialID); c != nil {
+			copy.CredentialName = c.Name
 		}
 	}
-	return h
+	return &copy
 }
 
 // HostCreate 新建主机配置
-func (s *Service) HostCreate(req *HostUpsertRequest) (*HostView, error) {
+func (s *Service) HostCreate(req *HostUpsertRequest) (*Host, error) {
 	h := &Host{
 		Name:         req.Name,
 		Addr:         req.Addr,
@@ -150,9 +153,9 @@ func (s *Service) HostCreate(req *HostUpsertRequest) (*HostView, error) {
 }
 
 // HostUpdate 更新主机配置
-func (s *Service) HostUpdate(id string, req *HostUpsertRequest) (*HostView, error) {
+func (s *Service) HostUpdate(id string, req *HostUpsertRequest) (*Host, error) {
 	// 先获取现有主机
-	old := s.store.hostInspectRaw(id)
+	old := s.store.hostInspect(id)
 	if old == nil {
 		return nil, fmt.Errorf("主机 %s 不存在", id)
 	}
