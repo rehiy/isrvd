@@ -18,8 +18,6 @@ const (
 	HostPrefix = "host"
 	// ContainerPrefix 容器监控文件前缀
 	ContainerPrefix = "ctr"
-	// fileSuffix 监控文件后缀
-	fileSuffix = ".jsonl"
 )
 
 // stores 缓存 dir+prefix -> Store，避免同一前缀重复打开句柄
@@ -38,7 +36,7 @@ func getStore(dir, prefix string) *jsonl.Store {
 		return s
 	}
 	s, err := jsonl.New(dir,
-		jsonl.Naming{Prefix: prefix, Sep: "_", Suffix: fileSuffix},
+		jsonl.Naming{Prefix: prefix, Sep: "_", Suffix: ".jsonl"},
 		jsonl.WithBufferSize(32*1024),          // 32KB 缓冲，减少 flush 次数
 		jsonl.WithAsync(256),                   // 异步写入，采集 goroutine 不被 IO 阻塞
 		jsonl.WithFlushInterval(5*time.Second), // 5s flush 一次，与最短采集间隔对齐
@@ -82,7 +80,7 @@ func CleanOldFiles(dir string) {
 	for _, prefix := range []string{HostPrefix, ContainerPrefix} {
 		if err := jsonl.CleanOlderThan(
 			dir,
-			jsonl.Naming{Prefix: prefix, Sep: "_", Suffix: fileSuffix},
+			jsonl.Naming{Prefix: prefix, Sep: "_", Suffix: ".jsonl"},
 			retainDays,
 		); err != nil {
 			logman.Warn("monitor: clean old files failed", "dir", dir, "prefix", prefix, "error", err)

@@ -89,12 +89,12 @@ type JobLog struct {
 
 // Service 计划任务服务
 type Service struct {
-	mu      sync.RWMutex
 	cron    *cronlib.Cron
 	store   *Store
 	docker  *docker.DockerService      // 可选，DOCKER 类型任务需要
 	jobs    map[string]*Job            // jobID → Job
 	entries map[string]cronlib.EntryID // jobID → cron entry ID
+	mu      sync.RWMutex
 }
 
 // AvailableTypes 按当前 OS 及 Docker 可用性返回可用脚本类型

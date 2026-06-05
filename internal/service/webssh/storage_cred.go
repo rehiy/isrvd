@@ -49,9 +49,9 @@ func (c *Credential) toView() *CredentialView {
 
 // credentialStore 负责 Credential 的文件存储
 type credentialStore struct {
-	path  string
-	mu    sync.RWMutex
-	items []*Credential
+	cfgFile string
+	items   []*Credential
+	mu      sync.RWMutex
 }
 
 // newCredentialStore 创建凭据存储
@@ -64,7 +64,7 @@ func newCredentialStore() (*credentialStore, error) {
 			_ = os.Rename(oldPath, newPath)
 		}
 	}
-	s := &credentialStore{path: newPath}
+	s := &credentialStore{cfgFile: newPath}
 	if err := s.load(); err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func newCredentialStore() (*credentialStore, error) {
 
 // load 从文件加载凭据列表（文件不存在时初始化为空列表）
 func (s *credentialStore) load() error {
-	data, err := os.ReadFile(s.path)
+	data, err := os.ReadFile(s.cfgFile)
 	if err != nil {
 		if os.IsNotExist(err) {
 			s.items = []*Credential{}
@@ -95,10 +95,10 @@ func (s *credentialStore) save() error {
 	if err != nil {
 		return fmt.Errorf("序列化凭据配置失败: %w", err)
 	}
-	if err := os.MkdirAll(filepath.Dir(s.path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(s.cfgFile), 0755); err != nil {
 		return fmt.Errorf("创建配置目录失败: %w", err)
 	}
-	if err := os.WriteFile(s.path, data, 0600); err != nil {
+	if err := os.WriteFile(s.cfgFile, data, 0600); err != nil {
 		return fmt.Errorf("写入 webssh-cred.yml 失败: %w", err)
 	}
 	return nil

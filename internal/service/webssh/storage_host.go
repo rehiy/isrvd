@@ -50,9 +50,9 @@ func (h *Host) toView() *HostView {
 
 // store 负责 WebSSH 主机配置的文件存储
 type store struct {
-	path  string
-	mu    sync.RWMutex
-	hosts []*Host
+	cfgFile string
+	hosts   []*Host
+	mu      sync.RWMutex
 }
 
 // newHostStore 创建主机配置存储
@@ -65,7 +65,7 @@ func newHostStore() (*store, error) {
 			_ = os.Rename(oldPath, newPath)
 		}
 	}
-	s := &store{path: newPath}
+	s := &store{cfgFile: newPath}
 	if err := s.load(); err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func newHostStore() (*store, error) {
 
 // load 从文件加载主机列表（文件不存在时初始化为空列表）
 func (s *store) load() error {
-	data, err := os.ReadFile(s.path)
+	data, err := os.ReadFile(s.cfgFile)
 	if err != nil {
 		if os.IsNotExist(err) {
 			s.hosts = []*Host{}
@@ -96,10 +96,10 @@ func (s *store) save() error {
 	if err != nil {
 		return fmt.Errorf("序列化主机配置失败: %w", err)
 	}
-	if err := os.MkdirAll(filepath.Dir(s.path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(s.cfgFile), 0755); err != nil {
 		return fmt.Errorf("创建配置目录失败: %w", err)
 	}
-	if err := os.WriteFile(s.path, data, 0600); err != nil {
+	if err := os.WriteFile(s.cfgFile, data, 0600); err != nil {
 		return fmt.Errorf("写入 webssh-host.yml 失败: %w", err)
 	}
 	return nil

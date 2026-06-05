@@ -49,9 +49,10 @@ type AuditLog struct {
 
 // AuditService 审计日志业务服务
 type AuditService struct {
-	mu     sync.RWMutex
-	buffer []AuditLog
-	store  *jsonl.Store
+	dataDir string
+	buffer  []AuditLog
+	store   *jsonl.Store
+	mu      sync.RWMutex
 }
 
 // auditNaming 审计日志文件命名规则：YYYY-MM-DD.jsonl
@@ -59,28 +60,24 @@ func auditNaming() jsonl.Naming {
 	return jsonl.Naming{Prefix: "", Sep: "", Suffix: auditFileSuffix}
 }
 
-// auditDir 审计日志根目录
-func auditDir() string {
-	return filepath.Join(config.Server.RootDirectory, "audit")
-}
-
 // NewAuditService 创建审计日志业务服务并自动初始化
 func NewAuditService() *AuditService {
-	dir := auditDir()
+	dataDir := filepath.Join(config.Server.RootDirectory, "audit")
 	store, err := jsonl.New(
-		dir,
+		dataDir,
 		auditNaming(),
 		jsonl.WithBufferSize(4096),
 		jsonl.WithFlushInterval(time.Second),
 		jsonl.WithAsync(maxAuditBufferSize),
 	)
 	if err != nil {
-		logman.Warn("audit log store init failed", "dir", dir, "error", err)
+		logman.Warn("audit log store init failed", "dir", dataDir, "error", err)
 	}
 
 	s := &AuditService{
-		buffer: make([]AuditLog, 0, maxAuditBufferSize),
-		store:  store,
+		dataDir: dataDir,
+		buffer:  make([]AuditLog, 0, maxAuditBufferSize),
+		store:   store,
 	}
 
 	// 启动时加载今日文件最近的 maxAuditBufferSize 条到内存

@@ -28,9 +28,10 @@ type Service struct {
 
 	// credIndex: credentialID → username（Discoverable Login 查找）
 	// signCounts: credentialID → signCount（内存维护，不回写配置）
-	indexMu    sync.RWMutex
 	credIndex  map[string]string
 	signCounts map[string]uint32
+
+	indexMu sync.RWMutex
 }
 
 // NewService 创建账号业务服务

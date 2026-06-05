@@ -13,10 +13,6 @@ import (
 )
 
 const (
-	// cronLogDir 任务执行日志的子目录（位于 rootDirectory 下）
-	cronLogDir = "logs/cron"
-	// cronLogSuffix 当前日志文件后缀
-	cronLogSuffix = ".jsonl"
 	// cronLogRetainDays 日志保留天数
 	cronLogRetainDays = 3
 	// cronLogChannel 异步写入队列长度
@@ -26,30 +22,32 @@ const (
 // Store 负责计划任务配置和执行日志的文件存储。
 //
 // 任务配置：rootDirectory/cron.yml （yaml）
-// 执行日志：rootDirectory/logs/cron/YYYY-MM-DD.jsonl （所有任务合并、按天滚动）
+// 执行日志：rootDirectory/cron/YYYY-MM-DD.jsonl （所有任务合并、按天滚动）
 type Store struct {
-	rootDirectory string
-	jobMu         sync.Mutex
+	cfgFile string // cron.yml 绝对路径
+	dataDir string // 日志目录绝对路径
+	jobMu   sync.Mutex
 
 	logStore *jsonl.Store
 }
 
 // NewStore 创建计划任务文件存储。
 func NewStore() *Store {
+	rootDir := config.Server.RootDirectory
 	s := &Store{
-		rootDirectory: config.Server.RootDirectory,
+		cfgFile: filepath.Join(rootDir, "cron.yml"),
+		dataDir: filepath.Join(rootDir, "cron"),
 	}
 
-	dir := s.logDir()
 	store, err := jsonl.New(
-		dir,
+		s.dataDir,
 		cronLogNaming(),
 		jsonl.WithBufferSize(4096),
 		jsonl.WithFlushInterval(time.Second),
 		jsonl.WithAsync(cronLogChannel),
 	)
 	if err != nil {
-		logger.Warn("Cron log store init failed", "dir", dir, "error", err)
+		logger.Warn("Cron log store init failed", "dir", s.dataDir, "error", err)
 	} else {
 		s.logStore = store
 	}
@@ -59,7 +57,7 @@ func NewStore() *Store {
 // LoadJobs 从 cron.yml 加载任务列表。
 // 读取时将 rootDirectory 内的 WorkDir 转为绝对路径。
 func (s *Store) LoadJobs() ([]*Job, error) {
-	data, err := os.ReadFile(filepath.Join(s.rootDirectory, "cron.yml"))
+	data, err := os.ReadFile(s.cfgFile)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -72,8 +70,9 @@ func (s *Store) LoadJobs() ([]*Job, error) {
 		return nil, err
 	}
 
+	rootDir := filepath.Dir(s.cfgFile)
 	for _, job := range jobs {
-		job.WorkDir = config.PathToAbs(job.WorkDir, s.rootDirectory)
+		job.WorkDir = config.PathToAbs(job.WorkDir, rootDir)
 	}
 
 	return jobs, nil
@@ -96,8 +95,9 @@ func (s *Store) SaveJobs(jobs []*Job) error {
 	}
 
 	// 对副本做路径还原
+	rootDir := filepath.Dir(s.cfgFile)
 	for _, job := range copy {
-		job.WorkDir = config.PathToRel(job.WorkDir, s.rootDirectory)
+		job.WorkDir = config.PathToRel(job.WorkDir, rootDir)
 	}
 
 	data, err := yaml.Marshal(copy)
@@ -105,13 +105,12 @@ func (s *Store) SaveJobs(jobs []*Job) error {
 		return err
 	}
 
-	path := filepath.Join(s.rootDirectory, "cron.yml")
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(s.cfgFile), 0755); err != nil {
 		return err
 	}
 
-	logger.Debug("Save cron jobs", "path", path, "count", len(jobs))
-	return os.WriteFile(path, data, 0644)
+	logger.Debug("Save cron jobs", "path", s.cfgFile, "count", len(jobs))
+	return os.WriteFile(s.cfgFile, data, 0644)
 }
 
 // AppendJobLog 将任务执行日志追加到 logs/cron/YYYY-MM-DD.jsonl，所有任务合并。
@@ -153,7 +152,7 @@ func (s *Store) LoadJobLogs(id string, limit int) []*JobLog {
 
 // CleanOld 清理超过保留天数的日志文件
 func (s *Store) CleanOld() {
-	if err := jsonl.CleanOlderThan(s.logDir(), cronLogNaming(), cronLogRetainDays); err != nil {
+	if err := jsonl.CleanOlderThan(s.dataDir, cronLogNaming(), cronLogRetainDays); err != nil {
 		logger.Warn("清理计划任务日志失败", "error", err)
 	}
 }
@@ -168,10 +167,5 @@ func (s *Store) Close() error {
 
 // cronLogNaming cron 日志文件命名规则：YYYY-MM-DD.jsonl（无前缀）
 func cronLogNaming() jsonl.Naming {
-	return jsonl.Naming{Prefix: "", Sep: "", Suffix: cronLogSuffix}
-}
-
-// logDir 返回日志目录的绝对路径
-func (s *Store) logDir() string {
-	return filepath.Join(s.rootDirectory, cronLogDir)
+	return jsonl.Naming{Prefix: "", Sep: "", Suffix: ".jsonl"}
 }
