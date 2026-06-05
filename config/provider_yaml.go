@@ -6,8 +6,6 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/rehiy/libgo/logman"
-	"github.com/rehiy/libgo/secure"
-	"github.com/rehiy/libgo/strutil"
 )
 
 // YamlProvider YAML 文件配置提供者
@@ -39,16 +37,14 @@ func (y *YamlProvider) Load() (*Config, error) {
 		return nil, err
 	}
 
-	if conf.Server.JWTSecret == "" {
-		conf.Server.JWTSecret = strutil.Rand(32)
+	if migrate(conf, data) {
 		if err := y.Save(conf); err != nil {
-			logman.Warn("无法保存JWT密钥", "error", err)
+			logman.Warn("配置迁移保存失败", "error", err)
 		} else {
-			logman.Info("YAML 配置已自动更新（保存JWT密钥）")
+			logman.Info("YAML 配置已自动更新（配置迁移）")
 		}
 	}
 
-	y.migratePasswords(conf)
 	return conf, nil
 }
 
@@ -77,33 +73,4 @@ func (y *YamlProvider) Save(conf *Config) error {
 	}
 
 	return os.WriteFile(y.file, data, 0644)
-}
-
-// migratePasswords 迁移 YAML 历史明文密码为加密格式
-func (y *YamlProvider) migratePasswords(conf *Config) {
-	migrated := false
-
-	for _, m := range conf.Members {
-		if m == nil || m.Password == "" || secure.IsBcrypt(m.Password) {
-			continue
-		}
-
-		hashedPassword, err := secure.BcryptHash(m.Password)
-		if err != nil {
-			logman.Warn("密码加密失败", "username", m.Username, "error", err)
-			continue
-		}
-
-		logman.Info("密码已自动迁移为加密格式", "username", m.Username)
-		m.Password = hashedPassword
-		migrated = true
-	}
-
-	if migrated {
-		if err := y.Save(conf); err != nil {
-			logman.Warn("密码迁移保存失败", "error", err)
-		} else {
-			logman.Info("YAML 配置已自动更新（密码迁移）")
-		}
-	}
 }
