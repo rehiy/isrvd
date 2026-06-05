@@ -122,6 +122,9 @@ func (s *ConfigService) ConfigUpdateAll(req UpdateAllConfigRequest) error {
 		req.OIDC.ClientSecret = pickSecret(req.OIDC.ClientSecret, config.OIDC.ClientSecret)
 		config.OIDC = config.OIDCNormalize(req.OIDC)
 	}
+	if req.Passkey != nil {
+		config.Passkey = config.PasskeyNormalize(req.Passkey)
+	}
 	if req.Agent != nil {
 		config.Agent.Model = req.Agent.Model
 		config.Agent.BaseURL = req.Agent.BaseURL
@@ -143,9 +146,6 @@ func (s *ConfigService) ConfigUpdateAll(req UpdateAllConfigRequest) error {
 	}
 	if req.Marketplace != nil {
 		config.Marketplace.URL = req.Marketplace.URL
-	}
-	if req.Passkey != nil {
-		config.Passkey = config.PasskeyNormalize(req.Passkey)
 	}
 	if req.Links != nil {
 		config.Links = req.Links
