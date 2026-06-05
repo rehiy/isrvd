@@ -2,8 +2,6 @@ package webssh
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"sync"
 
 	"github.com/rehiy/libgo/strutil"
@@ -37,15 +35,6 @@ type store struct {
 func newHostStore() (*store, error) {
 	rootDir := config.Server.RootDirectory
 	const key = "webssh-host.yml"
-
-	// 自动迁移：旧文件存在且新文件不存在时，重命名旧文件
-	newPath := filepath.Join(rootDir, key)
-	oldPath := filepath.Join(rootDir, "webssh.yml")
-	if _, err := os.Stat(newPath); os.IsNotExist(err) {
-		if _, err := os.Stat(oldPath); err == nil {
-			_ = os.Rename(oldPath, newPath)
-		}
-	}
 
 	ts, err := cstore.NewTyped[[]*Host](rootDir, key)
 	if err != nil {
