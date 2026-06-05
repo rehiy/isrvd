@@ -106,19 +106,15 @@ func ServerNormalize(server *ServerConfig) *ServerConfig {
 	return server
 }
 
-// MonitorNormalize 填充 Monitor 默认值
-func MonitorNormalize(monitor *MonitorConfig) *MonitorConfig {
-	if monitor == nil {
-		monitor = &MonitorConfig{}
+// THANormalize 填充 THA 默认值
+func THANormalize(tha *THAConfig) *THAConfig {
+	if tha == nil {
+		tha = &THAConfig{}
 	}
-	// Interval 合法值：5、15、30、60；其他值均视为禁用，置 0
-	switch monitor.Interval {
-	case 5, 15, 30, 60:
-		// 合法值，保留
-	default:
-		monitor.Interval = 0
+	if tha.HeaderName == "" {
+		tha.HeaderName = "X-Username"
 	}
-	return monitor
+	return tha
 }
 
 // OIDCNormalize 填充 OIDC 默认值
@@ -146,13 +142,17 @@ func PasskeyNormalize(passkey *PasskeyConfig) *PasskeyConfig {
 	return passkey
 }
 
-// THANormalize 填充 THA 默认值
-func THANormalize(tha *THAConfig) *THAConfig {
-	if tha == nil {
-		tha = &THAConfig{}
+// MonitorNormalize 填充 Monitor 默认值
+func MonitorNormalize(monitor *MonitorConfig) *MonitorConfig {
+	if monitor == nil {
+		monitor = &MonitorConfig{}
 	}
-	if tha.HeaderName == "" {
-		tha.HeaderName = "X-Username"
+	// Interval 合法值：5、15、30、60；其他值均视为禁用，置 0
+	switch monitor.Interval {
+	case 5, 15, 30, 60:
+		// 合法值，保留
+	default:
+		monitor.Interval = 0
 	}
-	return tha
+	return monitor
 }
