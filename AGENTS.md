@@ -171,17 +171,17 @@ docs/
 - 镜像仓库 `DockerRegistry`（含 `Name`、`URL`、`Username`、`Password`、`Description`）
 - 字段使用指针类型 `*` 和 YAML 标签；配置持久化以 YAML 结构为准，禁止用 API 响应的 `json:"-"` 语义保存配置
 
-**配置 Provider 规范（强制）**
+**配置 Provider / cstore 规范（强制）**
 
-- `provider.go` 只定义 `ConfigProvider` 抽象、全局 provider、`Init/SetProvider` 和基于 `CONFIG_PATH` 的适配器分发；禁止在其中解析具体存储细节
-- 适配器文件自解析自身配置：`provider_yaml.go` 处理文件路径；`provider_etcd.go` 处理 `etcd://user:pass@host/key?query` URI
-- `CONFIG_PATH` 是唯一入口：普通路径/`file://` 使用 YAML；`etcd://` 使用 etcd；禁止新增 `CONFIG_PROVIDER`、`ETCD_ENDPOINTS`、`ETCD_CONFIG_KEY` 等平行入口
-- etcd value 存储完整 `config.yml` 同款 YAML 文本，便于 `config.yml` 与 etcd 互迁；禁止改为 JSON，避免敏感字段因 `json:"-"` 丢失
-- etcd URI 使用标准形式：`etcd://user:pass@host1:2379,host2:2379/isrvd/config?scheme=http&timeout=5s&fallback=/path/config.yml`
+- `config/provider.go` 负责基于 `CONFIG_PATH` 初始化全局 `cstore.TypedStore[*Config]`、加载/保存配置、监听变更并发送 `ReloadCh`；禁止在业务层绕过 `config.Load/Save` 直接读写配置存储
+- 存储适配由 `pkgs/cstore/` 负责：`store.go` 定义统一 `Store` 抽象和 URI 分发，`file.go` 处理本地 YAML 文件，`etcd.go` 处理 etcd URI，`typed.go` 负责 YAML 序列化/反序列化
+- `CONFIG_PATH` 是唯一入口：普通路径/`file://` 使用本地 YAML；`etcd://` 使用 etcd；禁止新增 `CONFIG_PROVIDER`、`ETCD_ENDPOINTS`、`ETCD_CONFIG_KEY` 等平行入口
+- etcd value 存储完整 `config.yml` 同款 YAML 文本，便于本地 YAML 与 etcd 互迁；禁止改为 JSON，避免敏感字段因 `json:"-"` 丢失
+- etcd URI 中的 path 表示完整配置 key，且必须显式提供；系统配置推荐 key 为 `/isrvd/config`，标准形式：`etcd://user:pass@host1:2379,host2:2379/isrvd/config?scheme=http&timeout=5s&fallback=/path/config.yml`
+- `fallback` 是本地 YAML 文件路径，且只在 etcd key 不存在时触发：读取该 YAML 后写入 etcd；etcd 连接失败、权限错误、超时、已有值解析失败均不得 fallback
 - etcd 认证优先从 URI userinfo 读取；生产场景可用 `ETCD_USERNAME`、`ETCD_PASSWORD` 补充或覆盖；特殊字符必须 URL encode
-- `fallback` 只在 etcd key 不存在时触发：读取 YAML 后写入 etcd；etcd 连接失败、权限错误、超时、已有值解析失败均不得 fallback
-- etcd watch 只允许做变更检测和重启提示，禁止自动 `Apply` 或静默重建 registry/service
-- YAML 明文密码迁移是 `provider_yaml.go` 的历史兼容逻辑，禁止放入 provider 抽象或 etcd provider
+- etcd watch 只允许做变更检测并发送重载信号；服务重建必须走 `server/app.go` 的 reload 流程，禁止在 cstore 层自动 `Apply` 或静默重建 registry/service
+- YAML 明文密码迁移属于 `config/migrate.go` 的兼容逻辑，禁止放入 `pkgs/cstore` 抽象或 etcd 存储适配
 
 ---
 

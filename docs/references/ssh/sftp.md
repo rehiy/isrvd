@@ -26,21 +26,21 @@ isrvd_get "/ssh/sftp/<ID>/ls?path=/home/user"
 
 ## 读取文件
 
-```
-GET /api/ssh/sftp/<ID>/read?path=/path/to/file
+```bash
+isrvd_get "/ssh/sftp/<ID>/read?path=/path/to/file"
 ```
 
-返回文件内容（text/plain 或 application/octet-stream）。
+响应 `payload`：`{"content":"<FILE_CONTENT>"}`。
 
 ---
 
 ## 下载文件
 
-```
-GET /api/ssh/sftp/<ID>/download?path=/path/to/file  (支持 ?token= 查询参数)
+```bash
+isrvd_get "/ssh/sftp/<ID>/download?path=/path/to/file"
 ```
 
-返回 attachment 文件流，支持 HTTP Range。
+返回 attachment 文件流；浏览器直连下载可携带 `token` 查询参数认证。
 
 ---
 
@@ -63,7 +63,8 @@ isrvd_post "/ssh/sftp/<ID>/mkdir" '{"path":"/remote/new/dir"}'
 ## 删除文件或目录
 
 ```bash
-isrvd_post "/ssh/sftp/<ID>/rm" '{"path":"/remote/file/or/dir"}'
+isrvd_delete "/ssh/sftp/<ID>/rm?path=/remote/file/or/dir"
+isrvd_delete "/ssh/sftp/<ID>/rm?path=/remote/dir&recursive=true"
 ```
 
 ---
@@ -71,7 +72,7 @@ isrvd_post "/ssh/sftp/<ID>/rm" '{"path":"/remote/file/or/dir"}'
 ## 重命名
 
 ```bash
-isrvd_post "/ssh/sftp/<ID>/rename" '{"path":"/remote/old","target":"/remote/new"}'
+isrvd_post "/ssh/sftp/<ID>/rename" '{"oldPath":"/remote/old","newPath":"/remote/new"}'
 ```
 
 ---
@@ -104,4 +105,3 @@ isrvd_get "/ssh/sftp/<ID>/dir-size?path=/remote/dir"
 |------|------|------|
 | `path` | string | 目录路径 |
 | `size` | int64 | 目录总大小（字节） |
-| `count` | int | 文件总数 |

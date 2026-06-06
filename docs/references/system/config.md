@@ -9,7 +9,7 @@ CONFIG_PATH=/data/conf/isrvd.yml ./isrvd
 CONFIG_PATH="etcd://user:pass@127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" ./isrvd
 ```
 
-说明：etcd value 使用同款 YAML；`fallback` 仅在 key 不存在时用于初始化。
+说明：etcd value 使用同款 YAML；`CONFIG_PATH` 中的 path 是完整 etcd key，必须显式提供；系统配置推荐 key 为 `/isrvd/config`；`fallback` 是本地 YAML 文件路径，且仅在 etcd key 不存在时用于初始化。
 
 ## 配置重载
 
