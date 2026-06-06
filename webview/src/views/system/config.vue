@@ -122,7 +122,7 @@ class Config extends Vue {
     this.$nextTick(() => {
       const el = document.getElementById(`config-${id}`)
       if (!el) return
-      const offset = window.innerWidth < 1024 ? 136 : 88
+      const offset = window.innerWidth < 1024 ? 152 : 88
       const top = el.getBoundingClientRect().top + window.scrollY - offset
       window.scrollTo({ top, behavior: 'smooth' })
     })
@@ -195,7 +195,7 @@ export default toNative(Config)
     </div>
 
     <form v-else-if="portal.hasPerm('PATCH /api/system/config')" class="card-body" @submit.prevent="saveAll">
-      <div class="lg:hidden sticky top-16 z-30 w-full min-w-0 overflow-hidden pb-3 bg-white border-b border-slate-100">
+      <div class="lg:hidden sticky top-16 z-30 w-full min-w-0 overflow-hidden bg-white pt-4 pb-3 border-b border-slate-100">
         <div class="block w-full max-w-full min-w-0 overflow-x-auto overflow-y-hidden pb-1">
           <div class="tab-group inline-flex w-max max-w-none">
             <button
