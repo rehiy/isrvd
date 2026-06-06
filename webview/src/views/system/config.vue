@@ -99,8 +99,9 @@ class Config extends Vue {
         links: this.links,
       }
       await api.systemConfigUpdate(payload)
+      await this.portal.loadSystemData()
       this.portal.showNotification('success', '全部配置已保存，监听地址变更需重启生效')
-      this.loadConfig()
+      await this.loadConfig()
     } catch (e) {
       console.error('保存配置失败:', e)
       this.portal.showNotification('error', '保存配置失败')

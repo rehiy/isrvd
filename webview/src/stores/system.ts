@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
 
 import api from '@/service/api'
-import type { LinkConfig, SystemVersionCheck, ServerConfig } from '@/service/types'
+import type { LinkConfig, SystemVersionCheck, AllConfig } from '@/service/types'
 import { initTheme } from '@/helper/theme'
 
 interface ServiceAvailability {
@@ -82,12 +82,12 @@ export const useSystemStore = defineStore('system', () => {
         }
 
         // 获取服务器配置（如上传大小限制）
-        const config = configRes?.payload as ServerConfig | undefined
-        if (config?.maxUploadSize) {
-            maxUploadSize.value = config.maxUploadSize
+        const config = configRes?.payload as AllConfig | undefined
+        if (typeof config?.server?.maxUploadSize === 'number') {
+            maxUploadSize.value = config.server.maxUploadSize
         }
 
-        toolbarLinks.value = configRes?.payload?.links || []
+        toolbarLinks.value = config?.links || []
     }
 
     function hasPerm(module: string, founder: boolean, permissions: string[]): boolean {
