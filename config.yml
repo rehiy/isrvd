@@ -1,11 +1,11 @@
 server:
-  debug: false
   listenAddr: :8080
-  jwtSecret: your-jwt-secret  # JWT 签名密钥，修改后所有用户需重新登录
-  jwtExpiration: 86400        # JWT 有效期（秒），默认 86400（24小时）
+  rootDirectory: /srv/data
   maxUploadSize: 104857600    # 文件上传最大字节数，默认 104857600（100MB）
   allowedOrigins: []          # 允许的跨域 Origin，支持通配符 *
-  rootDirectory: /srv/data
+  jwtSecret: your-jwt-secret  # JWT 签名密钥，修改后所有用户需重新登录
+  jwtExpiration: 86400        # JWT 有效期（秒），默认 86400（24小时）
+  debug: false
 
 tha:
   enabled: false                # 是否启用代理 Header 登录

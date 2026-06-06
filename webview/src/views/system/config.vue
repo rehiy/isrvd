@@ -19,7 +19,7 @@ class Config extends Vue {
   saving = false
   activeTab: ConfigTab = 'server'
 
-  server: ServerConfig = { debug: false, listenAddr: '', jwtExpiration: 86400, maxUploadSize: 104857600, rootDirectory: '', allowedOrigins: [] }
+  server: ServerConfig = { listenAddr: '', rootDirectory: '', maxUploadSize: 104857600, allowedOrigins: [], jwtExpiration: 86400, debug: false }
   allowedOriginsText = ''
   tha: THAConfig = { enabled: false, headerName: '', trustedCIDRs: [] }
   thaTrustedCIDRsText = ''
@@ -37,7 +37,7 @@ class Config extends Vue {
 
   get configSections(): Array<{ id: ConfigTab; label: string; description: string; icon: string }> {
     return [
-      { id: 'server', label: 'Server', description: '服务、JWT、上传与基础目录', icon: 'fa-server' },
+      { id: 'server', label: 'Server', description: '端口、目录、上传、跨域与 JWT', icon: 'fa-server' },
       { id: 'tha', label: '代理 Header 登录', description: '从上游代理 Header 读取用户名', icon: 'fa-user-shield' },
       { id: 'oidc', label: 'OIDC 登录', description: '单点登录 Provider 参数', icon: 'fa-circle-nodes' },
       { id: 'passkey', label: 'Passkey 登录', description: 'WebAuthn/FIDO2 登录', icon: 'fa-fingerprint' },
@@ -221,22 +221,28 @@ export default toNative(Config)
               <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-server"></i></span>
               <div>
                 <h2 class="text-sm font-semibold text-slate-700">Server</h2>
-                <p class="text-xs text-slate-400 mt-0.5">服务、JWT、上传与基础目录</p>
+                <p class="text-xs text-slate-400 mt-0.5">端口、目录、上传、跨域与 JWT</p>
               </div>
-            </div>
-            <div class="toggle-row">
-              <div>
-                <span class="text-sm text-slate-600">Debug 模式</span>
-                <p class="text-xs text-slate-400 mt-0.5">开启后输出详细调试日志</p>
-              </div>
-              <button type="button" class="toggle" :class="{ 'toggle-on': server.debug }" role="switch" :aria-checked="server.debug" @click="server.debug = !server.debug">
-                <span class="toggle-thumb" />
-              </button>
             </div>
             <div>
               <label class="form-label">监听地址</label>
               <input v-model="server.listenAddr" type="text" placeholder="请输入监听地址" class="input" />
               <p class="mt-1 text-xs text-slate-400">HTTP 服务监听地址，如 :8080 或 127.0.0.1:8080（重启生效）</p>
+            </div>
+            <div>
+              <label class="form-label">基础目录</label>
+              <input v-model="server.rootDirectory" type="text" placeholder="请输入基础目录" class="input" />
+              <p class="mt-1 text-xs text-slate-400">成员家目录及容器数据的基础目录，默认当前目录（.）</p>
+            </div>
+            <div>
+              <label class="form-label">文件上传大小限制（字节）</label>
+              <input v-model.number="server.maxUploadSize" type="number" min="0" placeholder="请输入文件上传大小限制" class="input" />
+              <p class="mt-1 text-xs text-slate-400">单次上传的最大文件大小，默认 104857600（100 MB）</p>
+            </div>
+            <div>
+              <label class="form-label">允许的跨域 Origin</label>
+              <textarea v-model="allowedOriginsText" rows="3" placeholder="请输入，每行一个" class="input font-mono text-xs"></textarea>
+              <p class="mt-1 text-xs text-slate-400">示例：https://example.com、https://*.example.com；支持通配符 *；留空则不限制</p>
             </div>
             <div>
               <label class="form-label">JWT 认证密钥</label>
@@ -248,20 +254,14 @@ export default toNative(Config)
               <input v-model.number="server.jwtExpiration" type="number" min="60" placeholder="请输入 JWT 有效期" class="input" />
               <p class="mt-1 text-xs text-slate-400">登录令牌的有效期，默认 86400（24 小时）</p>
             </div>
-            <div>
-              <label class="form-label">允许的跨域 Origin</label>
-              <textarea v-model="allowedOriginsText" rows="3" placeholder="请输入，每行一个" class="input font-mono text-xs"></textarea>
-              <p class="mt-1 text-xs text-slate-400">示例：https://example.com、https://*.example.com；支持通配符 *；留空则不限制</p>
-            </div>
-            <div>
-              <label class="form-label">文件上传大小限制（字节）</label>
-              <input v-model.number="server.maxUploadSize" type="number" min="0" placeholder="请输入文件上传大小限制" class="input" />
-              <p class="mt-1 text-xs text-slate-400">单次上传的最大文件大小，默认 104857600（100 MB）</p>
-            </div>
-            <div>
-              <label class="form-label">基础目录</label>
-              <input v-model="server.rootDirectory" type="text" placeholder="请输入基础目录" class="input" />
-              <p class="mt-1 text-xs text-slate-400">成员家目录及容器数据的基础目录，默认当前目录（.）</p>
+            <div class="toggle-row">
+              <div>
+                <span class="text-sm text-slate-600">Debug 模式</span>
+                <p class="text-xs text-slate-400 mt-0.5">开启后输出详细调试日志</p>
+              </div>
+              <button type="button" class="toggle" :class="{ 'toggle-on': server.debug }" role="switch" :aria-checked="server.debug" @click="server.debug = !server.debug">
+                <span class="toggle-thumb" />
+              </button>
             </div>
           </section>
 

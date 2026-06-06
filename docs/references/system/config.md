@@ -54,7 +54,7 @@ isrvd_get "/system/config"
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| server | object | `{debug, listenAddr, jwtExpiration, maxUploadSize, rootDirectory, allowedOrigins}`（jwtSecret 不返回） |
+| server | object | `{listenAddr, rootDirectory, maxUploadSize, allowedOrigins, jwtExpiration, debug}`（jwtSecret 不返回，写入时位于 JWT 配置项） |
 | tha | object | `{enabled, headerName, trustedCIDRs}`（代理 Header 登录配置） |
 | oidc | object | `{enabled, issuerUrl, clientId, redirectUrl, usernameClaim, scopes, loginLabel}`（clientSecret 不返回） |
 | passkey | object | `{enabled, rpName, rpId, rpOrigins, timeout}` |

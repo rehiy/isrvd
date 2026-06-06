@@ -15,14 +15,14 @@ export interface AuditLog {
 // ─── 系统配置（复用后端结构） ───
 
 export interface ServerConfig {
-    debug: boolean
     listenAddr: string
-    jwtExpiration: number
-    maxUploadSize: number
     rootDirectory: string
+    maxUploadSize: number
     allowedOrigins: string[]
     // 写入时为空表示保留原值（不通过 JSON 返回）
     jwtSecret?: string
+    jwtExpiration: number
+    debug: boolean
 }
 
 export interface THAConfig {

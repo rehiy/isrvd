@@ -1,11 +1,11 @@
 server:
-  debug: false
   listenAddr: :8080
-  jwtSecret: __JWT_SECRET__
-  jwtExpiration: 86400
+  rootDirectory: /data/
   maxUploadSize: 104857600
   allowedOrigins: []
-  rootDirectory: /data/
+  jwtSecret: __JWT_SECRET__
+  jwtExpiration: 86400
+  debug: false
 
 tha:
   enabled: false

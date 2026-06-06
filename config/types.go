@@ -20,13 +20,13 @@ type Config struct {
 
 // 服务器配置
 type ServerConfig struct {
-	Debug          bool     `yaml:"debug" json:"debug"`
 	ListenAddr     string   `yaml:"listenAddr" json:"listenAddr"`
+	RootDirectory  string   `yaml:"rootDirectory" json:"rootDirectory"`
+	MaxUploadSize  int64    `yaml:"maxUploadSize" json:"maxUploadSize"`   // 文件上传最大大小（字节），默认 100MB
+	AllowedOrigins []string `yaml:"allowedOrigins" json:"allowedOrigins"` // 允许的 Origin 列表，支持通配符 *
 	JWTSecret      string   `yaml:"jwtSecret" json:"jwtSecret,omitempty"` // 写入时为空表示保留原值；响应时不返回
 	JWTExpiration  int64    `yaml:"jwtExpiration" json:"jwtExpiration"`   // JWT 过期时间（秒），默认 86400
-	AllowedOrigins []string `yaml:"allowedOrigins" json:"allowedOrigins"` // 允许的 Origin 列表，支持通配符 *
-	MaxUploadSize  int64    `yaml:"maxUploadSize" json:"maxUploadSize"`   // 文件上传最大大小（字节），默认 100MB
-	RootDirectory  string   `yaml:"rootDirectory" json:"rootDirectory"`
+	Debug          bool     `yaml:"debug" json:"debug"`
 }
 
 // 代理 Header 登录配置
