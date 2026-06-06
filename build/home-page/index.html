@@ -653,12 +653,12 @@
                 <!-- Create Network -->
                 <div class="mb-6">
                     <div class="code-block">
-                        <div class="code-header"><span>bash — 创建网络</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
-                        <div class="code-body"><span style="color:#64748b"># 本地通信</span><br />docker network create --driver=bridge sdnet<br /><br /><span style="color:#64748b"># 跨主机通信</span><br />docker network create --driver=overlay
+                        <div class="code-header"><span>bash — 安装 Docker / 创建网络</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                        <div class="code-body"><span style="color:#64748b"># 未安装 Docker 时执行；已安装可跳过</span><br />curl -fsSL https://get.docker.com -o get-docker.sh && \<br />sh get-docker.sh --mirror Aliyun && \<br />echo '{"registry-mirrors":["https://docker.1ms.run"]}' | tee /etc/docker/daemon.json && \<br />systemctl restart docker<br /><br /><span style="color:#64748b"># 创建网络：本地通信和跨主机通信二选一</span><br /><br /><span style="color:#64748b"># 本地通信</span><br />docker network create --driver=bridge sdnet<br /><br /><span style="color:#64748b"># 跨主机通信</span><br />docker network create --driver=overlay
                             --attachable
                             sdnet</div>
                     </div>
-                    <p class="text-xs text-slate-400 mt-2">根据实际网络环境选择，将容器加入该网络</p>
+                    <p class="text-xs text-slate-400 mt-2">Docker 已安装时跳过安装命令；根据实际网络环境在本地通信和跨主机通信中选择一种创建网络，并将容器加入该网络</p>
                 </div>
 
                 <div class="mb-8">
