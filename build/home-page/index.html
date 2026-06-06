@@ -739,13 +739,16 @@
 
             <!-- Binary Tab -->
             <div id="tab-binary" class="tab-content mt-8">
-                <p class="text-sm text-slate-500 mb-6 text-center">适用于无 Docker 环境，直接运行二进制文件</p>
-                <p class="text-xs text-slate-400 mb-4 text-center">安装目录：<code class="bg-slate-100 px-1 rounded">/usr/local/isrvd/</code>，限制：无法通过容器内网访问其它容器</p>
+                <p class="text-sm text-slate-500 mb-6 text-center">适用于宿主机直接运行二进制文件，也可按选项自动安装 Docker/Caddy/APISIX</p>
+                <p class="text-xs text-slate-400 mb-4 text-center">安装目录：<code class="bg-slate-100 px-1 rounded">/usr/local/isrvd/</code>；带 <code class="bg-slate-100 px-1 rounded">--caddy</code> / <code class="bg-slate-100 px-1 rounded">--apisix</code> 时会用 Docker 安装网关组件并写入配置</p>
                 <p class="text-xs text-slate-400 mb-4 text-center">支持 etcd 配置存储，value 为 YAML 格式，便于与 config.yml 互迁</p>
                 <div class="code-block mb-6">
                     <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
-                    <div class="code-body"><span style="color:#64748b"># 一键安装</span><br />bash
-                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install<br /><br /><span style="color:#64748b"># 更新</span><br />bash
+                    <div class="code-body"><span style="color:#64748b"># 一键安装二进制版 isrvd</span><br />bash
+                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install<br /><br /><span style="color:#64748b"># 安装 isrvd，并自动安装 Docker</span><br />bash
+                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --docker<br /><br /><span style="color:#64748b"># 安装 isrvd + Docker 版 Caddy，并自动写入 caddy.adminUrl</span><br />bash
+                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --caddy<br /><br /><span style="color:#64748b"># 安装 isrvd + Docker 版 APISIX，并自动写入 apisix.adminUrl/adminKey</span><br />bash
+                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --apisix<br /><br /><span style="color:#64748b"># 更新</span><br />bash
                         <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) update<br /><br /><span style="color:#64748b"># 卸载</span><br />bash
                         <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) uninstall<br /><br /><span style="color:#64748b"># 仅下载</span><br />bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh)
                             download</div>
