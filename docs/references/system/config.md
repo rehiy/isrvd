@@ -55,7 +55,7 @@ isrvd_get "/system/config"
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | server | object | `{debug, listenAddr, jwtExpiration, maxUploadSize, rootDirectory, allowedOrigins}`（jwtSecret 不返回） |
-| tha | object | `{enabled, headerName, trustedCIDRs}`（可信头认证配置） |
+| tha | object | `{enabled, headerName, trustedCIDRs}`（代理 Header 登录配置） |
 | oidc | object | `{enabled, issuerUrl, clientId, redirectUrl, usernameClaim, scopes, loginLabel}`（clientSecret 不返回） |
 | passkey | object | `{enabled, rpName, rpId, rpOrigins, timeout}` |
 | agent | object | `{model, baseUrl}`（apiKey 不返回） |
@@ -78,7 +78,7 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 
 - `clientSecret`、`jwtSecret`、`apiKey`、`adminKey`、`docker.registries[].password` 等敏感字段不会通过 GET 返回；PUT 时为空表示保留原值。
 - `monitor.interval` 合法值为 `5/15/30/60`（秒），其他值（含 `0`、负数）均视为禁用自动采集；修改后重启生效。
-- 启用可信头认证时，必须配置 `tha.headerName`；`tha.trustedCIDRs` 可限制可信来源（如 `["10.0.0.0/8"]`），**未配置时不做来源限制**（向后兼容）。
+- 启用代理 Header 登录时，必须配置 `tha.headerName`；该 Header 的值会作为登录用户名，且必须存在于 `members.username`。`tha.trustedCIDRs` 可限制允许传入 Header 的代理来源（如 `["10.0.0.0/8"]`），未配置时不限制来源（向后兼容）。
 - `oidc.redirectUrl` 生产环境建议显式配置固定 HTTPS 地址；留空会按当前请求 Host 自动生成，适合本地开发。
 - `oidc.usernameClaim` 默认 `sub`；如改用 `email`，需确保 IdP 已验证邮箱且本地 `members.username` 与邮箱完全一致。
 - `oidc.loginLabel` 自定义 OIDC 登录按钮显示名称；留空则使用默认文案"使用 OIDC 登录"。

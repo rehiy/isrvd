@@ -5,7 +5,7 @@ import "path/filepath"
 var (
 	// Server 服务器配置
 	Server = ServerNormalize(nil)
-	// THA 可信头认证配置
+	// THA 代理 Header 登录配置
 	THA = &THAConfig{}
 	// OIDC 配置
 	OIDC = OIDCNormalize(nil)

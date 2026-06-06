@@ -82,12 +82,12 @@ export interface DockerConfig {
     registries?: DockerRegistry[]
 }
 
-export interface MarketplaceConfig {
-    url: string
-}
-
 export interface MonitorConfig {
     interval: number  // 采集间隔（秒），合法值：5/15/30/60；其他值均视为禁用
+}
+
+export interface MarketplaceConfig {
+    url: string
 }
 
 export interface LinkConfig {

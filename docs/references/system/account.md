@@ -55,7 +55,7 @@ isrvd_post "/account/oidc/exchange" '{"code":"<OIDC_CODE>"}'
 
 返回：`{"token": "eyJ...", "username": "<USER>"}`
 
-> OIDC 提取的用户名由 `oidc.usernameClaim` 指定，默认 `sub`，必须存在于 `members.username`；不存在时与 Header 认证一致，登录失败且不会自动创建成员。一次性 `oidc_code` 是短期凭证，勿复制或写入外部日志；Header 代理认证模式下不显示 OIDC 登录入口。
+> OIDC 提取的用户名由 `oidc.usernameClaim` 指定，默认 `sub`，必须存在于 `members.username`；不存在时与代理 Header 登录一致，登录失败且不会自动创建成员。一次性 `oidc_code` 是短期凭证，勿复制或写入外部日志；代理 Header 登录模式下不显示 OIDC 登录入口。
 
 ## 列出路由权限
 

@@ -2,19 +2,57 @@ server:
   debug: false
   listenAddr: :8080
   jwtSecret: __JWT_SECRET__
+  jwtExpiration: 86400
+  maxUploadSize: 104857600
+  allowedOrigins: []
   rootDirectory: /data/
+
+tha:
+  enabled: false
+  headerName: X-Username
+  trustedCIDRs: [127.0.0.1/32]
+
+oidc:
+  enabled: false
+  usernameClaim: sub
+  scopes: [openid, profile, email]
+  loginLabel: ""
+
+passkey:
+  enabled: false
+  rpName: "iSrvd"
+  rpId: "localhost"
+  rpOrigins:
+    - "http://localhost:8080"
+  timeout: 60000
+
+agent:
+  # model: your-model
+  # baseUrl: https://ai.example.com/v1
+  # apiKey: your-api-key
+
+apisix:
+  # adminUrl: http://127.0.0.1:9180/apisix/admin
+  # adminKey: your-admin-key
+
+caddy:
+  # adminUrl: http://127.0.0.1:2019
 
 docker:
   host: unix:///var/run/docker.sock
   containerRoot: container/
+  registries: []
+
+monitor:
+  interval: 0
 
 marketplace:
   url: https://apps.rehi.org
 
 links:
-- label: 工具箱
-  url: https://api.rehi.org
-  icon: fas fa-cloud-bolt
+  - label: 工具箱
+    url: https://api.rehi.org
+    icon: fas fa-cloud-bolt
 
 members:
   - username: admin

@@ -4,11 +4,11 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { AllConfig, ServerConfig, THAConfig, AgentConfig, OIDCConfig, PasskeyConfig, ApisixConfig, CaddyConfig, DockerConfig, MonitorConfig, MarketplaceConfig, LinkConfig } from '@/service/types'
+import type { AllConfig, ServerConfig, THAConfig, OIDCConfig, PasskeyConfig, AgentConfig, ApisixConfig, CaddyConfig, DockerConfig, MonitorConfig, MarketplaceConfig, LinkConfig } from '@/service/types'
 
 import IconSelect from '@/component/icon-select.vue'
 
-type ConfigTab = 'server' | 'monitor' | 'tha' | 'oidc' | 'passkey' | 'agent' | 'apisix' | 'caddy' | 'docker' | 'marketplace' | 'links'
+type ConfigTab = 'server' | 'tha' | 'oidc' | 'passkey' | 'agent' | 'apisix' | 'caddy' | 'docker' | 'monitor' | 'marketplace' | 'links'
 
 @Component({ components: { IconSelect } })
 class Config extends Vue {
@@ -38,14 +38,14 @@ class Config extends Vue {
   get configSections(): Array<{ id: ConfigTab; label: string; description: string; icon: string }> {
     return [
       { id: 'server', label: 'Server', description: '服务、JWT、上传与基础目录', icon: 'fa-server' },
-      { id: 'monitor', label: 'Monitor', description: '系统与容器监控采集', icon: 'fa-chart-line' },
-      { id: 'tha', label: '可信认证', description: 'Header 认证与可信来源', icon: 'fa-user-shield' },
-      { id: 'oidc', label: 'OIDC', description: '单点登录 Provider 参数', icon: 'fa-circle-nodes' },
-      { id: 'passkey', label: 'Passkey', description: 'WebAuthn/FIDO2 登录', icon: 'fa-fingerprint' },
-      { id: 'agent', label: 'Agent', description: 'LLM 代理与模型改写', icon: 'fa-robot' },
+      { id: 'tha', label: '代理 Header 登录', description: '从上游代理 Header 读取用户名', icon: 'fa-user-shield' },
+      { id: 'oidc', label: 'OIDC 登录', description: '单点登录 Provider 参数', icon: 'fa-circle-nodes' },
+      { id: 'passkey', label: 'Passkey 登录', description: 'WebAuthn/FIDO2 登录', icon: 'fa-fingerprint' },
+      { id: 'agent', label: 'AI 助手', description: 'LLM 代理与模型改写', icon: 'fa-robot' },
       { id: 'apisix', label: 'APISIX', description: 'Admin API 连接参数', icon: 'fa-route' },
       { id: 'caddy', label: 'Caddy', description: 'Admin API 连接参数', icon: 'fa-globe' },
       { id: 'docker', label: 'Docker', description: '引擎连接与容器根目录', icon: 'fa-boxes-stacked' },
+      { id: 'monitor', label: '监控日志', description: '系统与容器监控采集', icon: 'fa-chart-line' },
       { id: 'marketplace', label: '应用市场', description: '市场 iframe 站点地址', icon: 'fa-store' },
       { id: 'links', label: '导航链接', description: '顶部工具栏外部链接', icon: 'fa-link' }
     ]
@@ -265,55 +265,33 @@ export default toNative(Config)
             </div>
           </section>
 
-          <!-- Monitor 配置 -->
-          <section id="config-monitor" class="max-w-3xl space-y-4">
-            <div class="flex items-center gap-2">
-              <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-chart-line"></i></span>
-              <div>
-                <h2 class="text-sm font-semibold text-slate-700">Monitor</h2>
-                <p class="text-xs text-slate-400 mt-0.5">系统与容器监控采集</p>
-              </div>
-            </div>
-            <div>
-              <label class="form-label">监控采集间隔</label>
-              <select v-model.number="monitor.interval" class="input">
-                <option :value="0">禁用</option>
-                <option :value="5">5 秒</option>
-                <option :value="15">15 秒</option>
-                <option :value="30">30 秒</option>
-                <option :value="60">60 秒</option>
-              </select>
-              <p class="mt-1 text-xs text-slate-400">系统与容器监控数据的采集频率，禁用后不再写入监控文件</p>
-            </div>
-          </section>
-
-          <!-- 可信认证配置 -->
+          <!-- 代理 Header 登录配置 -->
           <section id="config-tha" class="max-w-3xl space-y-4">
             <div class="flex items-center gap-2">
               <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-user-shield"></i></span>
               <div>
-                <h2 class="text-sm font-semibold text-slate-700">可信认证</h2>
-                <p class="text-xs text-slate-400 mt-0.5">Header 认证与可信来源</p>
+                <h2 class="text-sm font-semibold text-slate-700">代理 Header 登录</h2>
+                <p class="text-xs text-slate-400 mt-0.5">从上游代理 Header 读取用户名</p>
               </div>
             </div>
             <div class="toggle-row">
               <div>
-                <span class="text-sm text-slate-600">启用可信认证模式</span>
-                <p class="text-xs text-slate-400 mt-0.5">开启后使用可信来源的认证 Header</p>
+                <span class="text-sm text-slate-600">启用代理 Header 登录</span>
+                <p class="text-xs text-slate-400 mt-0.5">开启后使用上游代理传入的用户名 Header</p>
               </div>
               <button type="button" class="toggle" :class="{ 'toggle-on': tha.enabled }" role="switch" :aria-checked="tha.enabled" @click="tha.enabled = !tha.enabled">
                 <span class="toggle-thumb" />
               </button>
             </div>
             <div>
-              <label class="form-label">可信认证 Header</label>
+              <label class="form-label">用户名 Header</label>
               <input v-model="tha.headerName" type="text" placeholder="请输入 Header 名称" class="input" />
-              <p class="mt-1 text-xs text-slate-400">启用时，将使用可信来源传入的 Header 值作为登录用户；留空则禁用</p>
+              <p class="mt-1 text-xs text-slate-400">启用时，将使用该 Header 值作为登录用户名；留空则禁用</p>
             </div>
             <div>
-              <label class="form-label">可信来源 CIDR</label>
-              <textarea v-model="thaTrustedCIDRsText" rows="3" placeholder="请输入可信来源 CIDR，每行一个" class="input font-mono text-xs"></textarea>
-              <p class="mt-1 text-xs text-slate-400">示例：127.0.0.1/32、10.0.0.0/8；仅列出的来源 IP 允许使用可信认证；留空则不做来源限制</p>
+              <label class="form-label">可信代理 CIDR</label>
+              <textarea v-model="thaTrustedCIDRsText" rows="3" placeholder="请输入代理来源 CIDR，每行一个" class="input font-mono text-xs"></textarea>
+              <p class="mt-1 text-xs text-slate-400">示例：127.0.0.1/32、10.0.0.0/8；仅列出的代理来源 IP 允许传入用户名 Header；留空则不限制来源</p>
             </div>
           </section>
 
@@ -495,6 +473,28 @@ export default toNative(Config)
               <label class="form-label">容器数据根目录</label>
               <input v-model="docker.containerRoot" type="text" placeholder="请输入容器数据根目录" class="input" />
               <p class="mt-1 text-xs text-slate-400">用于存放容器数据卷的基础目录（相对于基础目录），默认 containers</p>
+            </div>
+          </section>
+
+          <!-- Monitor 配置 -->
+          <section id="config-monitor" class="max-w-3xl space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-chart-line"></i></span>
+              <div>
+                <h2 class="text-sm font-semibold text-slate-700">Monitor</h2>
+                <p class="text-xs text-slate-400 mt-0.5">系统与容器监控采集</p>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">监控采集间隔</label>
+              <select v-model.number="monitor.interval" class="input">
+                <option :value="0">禁用</option>
+                <option :value="5">5 秒</option>
+                <option :value="15">15 秒</option>
+                <option :value="30">30 秒</option>
+                <option :value="60">60 秒</option>
+              </select>
+              <p class="mt-1 text-xs text-slate-400">系统与容器监控数据的采集频率，禁用后不再写入监控文件</p>
             </div>
           </section>
 

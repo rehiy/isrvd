@@ -29,14 +29,14 @@ type ServerConfig struct {
 	RootDirectory  string   `yaml:"rootDirectory" json:"rootDirectory"`
 }
 
-// 可信认证配置
+// 代理 Header 登录配置
 type THAConfig struct {
-	Enabled      bool     `yaml:"enabled" json:"enabled"`           // 是否启用可信认证模式
-	HeaderName   string   `yaml:"headerName" json:"headerName"`     // 使用可信认证的请求头名称
-	TrustedCIDRs []string `yaml:"trustedCIDRs" json:"trustedCIDRs"` // Header 可信认证可信来源 CIDR；为空时仅信任本机
+	Enabled      bool     `yaml:"enabled" json:"enabled"`           // 是否启用代理 Header 登录
+	HeaderName   string   `yaml:"headerName" json:"headerName"`     // 上游代理传入登录用户名的 Header 名称
+	TrustedCIDRs []string `yaml:"trustedCIDRs" json:"trustedCIDRs"` // 允许传入登录 Header 的代理来源 CIDR；为空时不限制来源
 }
 
-// OIDC 配置
+// OIDC 登陆配置
 type OIDCConfig struct {
 	Enabled       bool     `yaml:"enabled" json:"enabled"`
 	IssuerURL     string   `yaml:"issuerUrl" json:"issuerUrl"`
@@ -48,7 +48,7 @@ type OIDCConfig struct {
 	LoginLabel    string   `yaml:"loginLabel" json:"loginLabel"` // OIDC 登录按钮自定义名称，留空时使用默认文案
 }
 
-// Passkey 配置
+// Passkey 登录配置
 type PasskeyConfig struct {
 	Enabled   bool     `yaml:"enabled" json:"enabled"`
 	RPName    string   `yaml:"rpName" json:"rpName"`       // Relying Party 名称

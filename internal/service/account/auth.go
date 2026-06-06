@@ -242,9 +242,9 @@ func (s *Service) extractJWT(c *gin.Context) string {
 	return ""
 }
 
-// ─── Header 代理认证 ────────────────
+// ─── 代理 Header 登录 ────────────────
 
-// HeaderTokenCheck 从可信代理 Header 读取用户名；失败时返回空用户名和具体错误原因。
+// HeaderTokenCheck 从上游代理传入的 Header 读取用户名；失败时返回空用户名和具体错误原因。
 func (s *Service) HeaderTokenCheck(c *gin.Context) (username, errMsg string) {
 	if !s.headerSourceTrusted(c) {
 		return "", "代理 Header 来源不可信"

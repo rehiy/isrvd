@@ -8,19 +8,19 @@ server:
   rootDirectory: /srv/data
 
 tha:
-  enabled: false                # 是否启用可信头认证 (Trusted Header Authentication)
-  headerName: X-Username        # 认证 Header 名称（存储用户名）
-  trustedCIDRs: [127.0.0.1/32]  # 可信来源 CIDR，为空时仅信任本机
+  enabled: false                # 是否启用代理 Header 登录
+  headerName: X-Username        # 上游代理传入登录用户名的 Header 名称
+  trustedCIDRs: [127.0.0.1/32]  # 允许传入登录 Header 的代理来源 CIDR；为空时不限制来源
 
 oidc:
-  enabled: false                      # 是否启用 OIDC 认证
-  issuerUrl: https://idp.example.com  # OIDC 发行方 URL
-  clientId: isrvd                     # OIDC 客户端 ID
-  clientSecret: your-client-secret    # OIDC 客户端密钥
-  redirectUrl: https://isrvd/api/account/oidc/callback # OIDC 重定向 URL
-  usernameClaim: sub                  # OIDC 用户名声明字段
-  scopes: [openid, profile, email]    # OIDC 请求的作用域
-  loginLabel: ""                      # OIDC 登录按钮显示文本，为空时使用默认值
+  enabled: false                                        # 是否启用 OIDC 认证
+  issuerUrl: https://idp.example.com                    # OIDC 发行方 URL
+  clientId: isrvd                                       # OIDC 客户端 ID
+  clientSecret: your-client-secret                      # OIDC 客户端密钥
+  redirectUrl: https://isrvd/api/account/oidc/callback  # OIDC 重定向 URL
+  usernameClaim: sub                                    # OIDC 用户名声明字段
+  scopes: [openid, profile, email]                      # OIDC 请求的作用域
+  loginLabel: ""                                        # OIDC 登录按钮显示文本，为空时使用默认值
 
 passkey:
   enabled: false                  # 是否启用 Passkey 认证
@@ -40,7 +40,7 @@ apisix:
   # adminKey: your-admin-key
 
 caddy:
-  # adminUrl: http://127.0.0.1:2019    # Caddy Admin API 地址，默认 127.0.0.1:2019
+  # adminUrl: http://127.0.0.1:2019
 
 docker:
   # host: unix:///var/run/docker.sock
