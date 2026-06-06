@@ -1,15 +1,15 @@
 // Package cstore 提供统一的配置存储抽象，支持本地文件和 etcd 两种后端。
 //
-// key 语义：配置文件名（如 "config.yml"），FileStore 拼接到 base 目录，EtcdStore 拼接到 key 前缀。
+// key 语义：配置文件名（如 "config.yml"），FileStore 拼接到 base 目录；EtcdStore 在 OpenWithKey 场景使用 URI path 作为完整 key。
 //
 // Open 传入目录/前缀 URI：
-//   - etcd://[user:pass@]host:port[,host:port][/prefix][?scheme=http&timeout=5s&fallback=/path/to/dir]
+//   - etcd://[user:pass@]host:port[,host:port][/key-or-prefix][?scheme=http&timeout=5s&fallback=/path/config.yml]
 //   - file:///abs/dir 或 /abs/dir 或 rel/dir  → FileStore
 //
 // OpenWithKey 传入完整文件路径，自动拆分目录和文件名：
 //   - /abs/path/to/config.yml 或 rel/config.yml  → FileStore
 //   - file:///abs/path/to/config.yml             → FileStore
-//   - etcd://...                                 → EtcdStore，key = defaultKey
+//   - etcd://...                                 → EtcdStore，key = URI path（必填）
 package cstore
 
 import (
@@ -69,16 +69,16 @@ func Open(uri string) (Store, error) {
 // 调用方无需自行解析 URI，直接将 CONFIG_PATH 等环境变量传入即可。
 //
 // 解析规则：
-//   - etcd://...                → EtcdStore，key = defaultKey
+//   - etcd://...                → EtcdStore，key = URI path（必填）
 //   - file:///path/to/file.yml  → FileStore(dir)，key = file.yml
 //   - /path/to/file.yml         → FileStore(dir)，key = file.yml
 //   - rel/file.yml              → FileStore(dir)，key = file.yml
-func OpenWithKey(uri, defaultKey string) (Store, string, error) {
+func OpenWithKey(uri string) (Store, string, error) {
 	lower := strings.ToLower(uri)
 	switch {
 	case strings.HasPrefix(lower, "etcd://"):
 		s, err := newEtcdStore(uri)
-		return s, defaultKey, err
+		return s, "", err
 	case strings.HasPrefix(lower, "file://"):
 		filePath := strings.TrimPrefix(uri, "file://")
 		s, err := newFileStore(filepath.Dir(filePath))

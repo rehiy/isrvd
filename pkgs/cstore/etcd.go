@@ -15,11 +15,11 @@ import (
 
 // EtcdStore 基于 etcd 的配置存储。
 type EtcdStore struct {
-	client    *etcd.Client
-	keyPrefix string // etcd key 前缀，如 "/isrvd/"
-	fallback  string // 可选：文件回退目录，key 不存在时从此目录读取并写入 etcd
-	timeout   time.Duration
-	mu        sync.Mutex
+	client   *etcd.Client
+	keyPath  string // etcd key，如 "/isrvd/config"
+	fallback string // 可选：fallback YAML 文件路径，key 不存在时读取并写入 etcd
+	timeout  time.Duration
+	mu       sync.Mutex
 }
 
 func newEtcdStore(uri string) (*EtcdStore, error) {
@@ -55,12 +55,9 @@ func newEtcdStore(uri string) (*EtcdStore, error) {
 	password, _ := u.User.Password()
 	password = envOrDefault("ETCD_PASSWORD", password)
 
-	// 确保 keyPrefix 以 "/" 结尾
-	keyPrefix := u.Path
-	if keyPrefix == "" || keyPrefix == "/" {
-		keyPrefix = "/isrvd/"
-	} else if !strings.HasSuffix(keyPrefix, "/") {
-		keyPrefix += "/"
+	keyPath := u.Path
+	if keyPath == "" || keyPath == "/" {
+		return nil, fmt.Errorf("cstore/etcd: URI 缺少配置 key")
 	}
 
 	cli := etcd.New(etcd.Config{
@@ -71,18 +68,31 @@ func newEtcdStore(uri string) (*EtcdStore, error) {
 	})
 
 	return &EtcdStore{
-		client:    cli,
-		keyPrefix: keyPrefix,
-		fallback:  q.Get("fallback"),
-		timeout:   timeout,
+		client:   cli,
+		keyPath:  keyPath,
+		fallback: q.Get("fallback"),
+		timeout:  timeout,
 	}, nil
 }
 
 func (e *EtcdStore) etcdKey(key string) string {
-	return e.keyPrefix + key
+	if key == "" {
+		return e.keyPath
+	}
+	if strings.HasSuffix(e.keyPath, "/") {
+		return e.keyPath + key
+	}
+	return e.keyPath + "/" + key
 }
 
-// Get 读取 key 对应的值；etcd 中不存在时若配置了 fallback 目录则从文件读取并回写。
+func (e *EtcdStore) fallbackPath(key string) string {
+	if key == "" || filepath.Ext(e.fallback) != "" {
+		return e.fallback
+	}
+	return filepath.Join(e.fallback, key)
+}
+
+// Get 读取 key 对应的值；etcd 中不存在时若配置了 fallback 文件则读取并回写。
 func (e *EtcdStore) Get(key string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), e.timeout)
 	defer cancel()
@@ -98,12 +108,12 @@ func (e *EtcdStore) Get(key string) ([]byte, error) {
 	return e.getFromFallback(key)
 }
 
-// getFromFallback 从 fallback 目录读取文件并回写到 etcd。
+// getFromFallback 从 fallback 文件读取并回写到 etcd。
 func (e *EtcdStore) getFromFallback(key string) ([]byte, error) {
 	if e.fallback == "" {
 		return nil, nil
 	}
-	data, err := os.ReadFile(filepath.Join(e.fallback, key))
+	data, err := os.ReadFile(e.fallbackPath(key))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil

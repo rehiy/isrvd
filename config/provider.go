@@ -22,7 +22,7 @@ func Init() error {
 	uri := envOrDefault("CONFIG_PATH", "config.yml")
 
 	var err error
-	store, err = cstore.NewTypedFromPath[*Config](uri, "config.yml")
+	store, err = cstore.NewTypedFromPath[*Config](uri)
 	if err != nil {
 		return err
 	}

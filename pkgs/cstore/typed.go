@@ -26,9 +26,9 @@ func NewTyped[T any](uri, key string) (*TypedStore[T], error) {
 }
 
 // NewTypedFromPath 根据完整文件路径或 etcd URI 创建 TypedStore，自动拆分目录和文件名。
-// etcd URI 使用 defaultKey 作为 key；文件路径取 Base 作为 key。
-func NewTypedFromPath[T any](path, defaultKey string) (*TypedStore[T], error) {
-	s, key, err := OpenWithKey(path, defaultKey)
+// etcd URI 使用 URI path 作为完整 key（必填）；文件路径取 Base 作为 key。
+func NewTypedFromPath[T any](path string) (*TypedStore[T], error) {
+	s, key, err := OpenWithKey(path)
 	if err != nil {
 		return nil, err
 	}
