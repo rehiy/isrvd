@@ -45,6 +45,10 @@ _isrvd_load_config() {
   return 1
 }
 
+_isrvd_auth_header() {
+  printf 'Authorization: Bearer %s' "$ISRVD_TOKEN"
+}
+
 # ---------------------------------------------------------------------------
 # isrvd_login — 用账号密码登录，token 保存到配置文件
 # ---------------------------------------------------------------------------
@@ -112,7 +116,7 @@ isrvd_token() {
   _blue "→ 验证 token ..."
   local resp
   resp=$(curl -sf "$ISRVD_BASE_URL/api/account/info" \
-    -H "Authorization: Bearer $ISRVD_TOKEN" 2>&1) || {
+    -H "$(_isrvd_auth_header)" 2>&1) || {
     _red "✗ token 无效或服务不可达"
     return 1
   }
@@ -235,7 +239,7 @@ _isrvd_curl() {
   local args=(
     -s -w "\n%{http_code}"
     -X "$method"
-    -H "Authorization: Bearer $ISRVD_TOKEN"
+    -H "$(_isrvd_auth_header)"
     -H "Content-Type: application/json"
   )
 
@@ -297,7 +301,7 @@ isrvd_upload() {
   local args=(
     -s
     -X POST
-    -H "Authorization: Bearer $ISRVD_TOKEN"
+    -H "$(_isrvd_auth_header)"
     -F "${file_field}=@${file_path}"
   )
 
