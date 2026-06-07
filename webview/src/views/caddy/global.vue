@@ -6,7 +6,9 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { CaddyGlobal } from '@/service/types'
 
-@Component
+import ToggleCard from '@/component/toggle-card.vue'
+
+@Component({ components: { ToggleCard } })
 class CaddyGlobalConfig extends Vue {
     portal = usePortal()
 
@@ -152,24 +154,10 @@ export default toNative(CaddyGlobalConfig)
           </div>
         </div>
         <div class="space-y-3">
-          <div class="toggle-row">
-            <div>
-              <span class="text-sm text-slate-700">使用本地自签证书（internal issuer）</span>
-              <p class="text-xs text-slate-400 mt-0.5">不走 ACME，由 Caddy 自动签发本地信任证书；启用后 ACME 邮箱和目录设置将被忽略</p>
-            </div>
-            <button type="button" class="toggle toggle-violet" :class="{ 'toggle-on': localCerts }" role="switch" :aria-checked="localCerts" @click="localCerts = !localCerts">
-              <span class="toggle-thumb" />
-            </button>
-          </div>
-          <div class="toggle-row">
-            <div>
-              <span class="text-sm text-slate-700">启用 On-Demand TLS</span>
-              <p class="text-xs text-slate-400 mt-0.5">连接时动态申请证书，适合域名数量不固定的多租户场景；生产环境需配合 <code class="px-1 bg-slate-100 rounded">ask</code> 端点防滥用</p>
-            </div>
-            <button type="button" class="toggle toggle-violet" :class="{ 'toggle-on': onDemandTLS }" role="switch" :aria-checked="onDemandTLS" @click="onDemandTLS = !onDemandTLS">
-              <span class="toggle-thumb" />
-            </button>
-          </div>
+          <ToggleCard v-model="localCerts" :violet="true" label="使用本地自签证书（internal issuer）" desc="不走 ACME，由 Caddy 自动签发本地信任证书；启用后 ACME 邮箱和目录设置将被忽略" />
+          <ToggleCard v-model="onDemandTLS" :violet="true" label="启用 On-Demand TLS">
+            <template #desc>连接时动态申请证书，适合域名数量不固定的多租户场景；生产环境需配合 <code class="px-1 bg-slate-100 rounded">ask</code> 端点防滥用</template>
+          </ToggleCard>
           <div v-if="onDemandTLS" class="form-row">
             <label class="form-label">Ask 鉴权端点</label>
             <input v-model="onDemandAsk" type="text" class="input" placeholder="请输入 Ask 鉴权端点（可选）" />
@@ -184,24 +172,8 @@ export default toNative(CaddyGlobalConfig)
           <i class="fas fa-arrow-right-arrow-left text-violet-500"></i>HTTPS 行为
         </h2>
         <div class="space-y-3">
-          <div class="toggle-row">
-            <div>
-              <span class="text-sm text-slate-700">禁用自动 HTTPS</span>
-              <p class="text-xs text-slate-400 mt-0.5">开启后 Caddy 不再自动申请或续签证书，也不插入 HTTP→HTTPS 跳转路由；关闭后配合 ACME 邮箱即可启用全自动证书管理</p>
-            </div>
-            <button type="button" class="toggle toggle-violet" :class="{ 'toggle-on': autoHttpsDisable }" role="switch" :aria-checked="autoHttpsDisable" @click="autoHttpsDisable = !autoHttpsDisable">
-              <span class="toggle-thumb" />
-            </button>
-          </div>
-          <div class="toggle-row">
-            <div>
-              <span class="text-sm text-slate-700">禁用 HTTP→HTTPS 自动跳转</span>
-              <p class="text-xs text-slate-400 mt-0.5">不插入 301 重定向路由；适合需要同时提供 HTTP 和 HTTPS 服务的场景</p>
-            </div>
-            <button type="button" class="toggle toggle-violet" :class="{ 'toggle-on': autoHttpsDisableRedirects }" role="switch" :aria-checked="autoHttpsDisableRedirects" @click="autoHttpsDisableRedirects = !autoHttpsDisableRedirects">
-              <span class="toggle-thumb" />
-            </button>
-          </div>
+          <ToggleCard v-model="autoHttpsDisable" :violet="true" label="禁用自动 HTTPS" desc="开启后 Caddy 不再自动申请或续签证书，也不插入 HTTP→HTTPS 跳转路由；关闭后配合 ACME 邮箱即可启用全自动证书管理" />
+          <ToggleCard v-model="autoHttpsDisableRedirects" :violet="true" label="禁用 HTTP→HTTPS 自动跳转" desc="不插入 301 重定向路由；适合需要同时提供 HTTP 和 HTTPS 服务的场景" />
         </div>
       </div>
 

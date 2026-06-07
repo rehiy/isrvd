@@ -9,6 +9,7 @@ import type { CaddyRoute, CaddyRouteUpsert, CaddyHandlerKind, CaddyHandlerKindCa
 import { parseHostPort } from '@/helper/utils'
 
 import BaseModal from '@/component/modal.vue'
+import ToggleCard from '@/component/toggle-card.vue'
 
 import ContainerPortSelect from '@/views/docker/widget/container-port-select.vue'
 import ContainerSelect from '@/views/docker/widget/container-select.vue'
@@ -70,7 +71,7 @@ const defaultFormData = () => ({
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, ContainerPortSelect, ContainerSelect },
+    components: { BaseModal, ContainerPortSelect, ContainerSelect, ToggleCard },
     emits: ['success']
 })
 class RouteEditModal extends Vue {
@@ -84,6 +85,7 @@ class RouteEditModal extends Vue {
 
     // 匹配请求头多行编辑列表
     matchHeaderList: { key: string; value: string }[] = []
+    enableMatchHeaders = false
 
     formData = defaultFormData()
     // raw 模式下用户直接编辑的完整路由 JSON
@@ -327,6 +329,7 @@ class RouteEditModal extends Vue {
     show(route: CaddyRoute | null) {
         Object.assign(this.formData, defaultFormData())
         this.matchHeaderList = []
+        this.enableMatchHeaders = false
         void this.loadContainers()
         if (route) {
             this.isEditMode = true
@@ -339,6 +342,7 @@ class RouteEditModal extends Vue {
                 this.formData.methods = (matchSet.method || []).join(' ')
                 this.formData.protocol = matchSet.protocol || ''
                 this.matchHeaderList = this.headersToList(matchSet.header)
+                this.enableMatchHeaders = this.matchHeaderList.length > 0
             }
             // 解析 handle
             const handles = route.handle || []
@@ -582,19 +586,23 @@ export default toNative(RouteEditModal)
           </div>
         </div>
 
-        <div>
-          <label class="form-label">匹配请求头 <span class="text-slate-400 font-normal">（可选）</span></label>
-          <div v-if="matchHeaderList.length" class="space-y-2 mb-2">
+        <ToggleCard
+          v-model="enableMatchHeaders"
+          label="匹配请求头"
+          desc="仅转发包含指定请求头的请求，留空匹配所有"
+          @update:model-value="(v: boolean) => { if (!v) matchHeaderList = []; else if (!matchHeaderList.length) addMatchHeaderRow() }"
+        >
+          <div class="space-y-2">
             <div v-for="(entry, idx) in matchHeaderList" :key="idx" class="flex gap-2 items-center">
-              <input v-model="entry.key" type="text" class="input font-mono text-sm flex-1" placeholder="请输入请求头名称" />
-              <input v-model="entry.value" type="text" class="input font-mono text-sm flex-1" placeholder="请输入值（可选，留空表示存在即匹配）" />
+              <input v-model="entry.key" type="text" class="input font-mono text-sm flex-1" placeholder="请求头名称" />
+              <input v-model="entry.value" type="text" class="input font-mono text-sm flex-1" placeholder="值（留空表示存在即匹配）" />
               <button type="button" class="text-slate-400 hover:text-red-500 shrink-0" @click="removeMatchHeaderRow(idx)"><i class="fas fa-trash text-sm"></i></button>
             </div>
+            <button type="button" class="btn-add-row" @click="addMatchHeaderRow">
+              <i class="fas fa-plus text-xs"></i>添加匹配请求头
+            </button>
           </div>
-          <button type="button" class="btn-add-row" @click="addMatchHeaderRow">
-            <i class="fas fa-plus text-xs"></i>添加匹配请求头
-          </button>
-        </div>
+        </ToggleCard>
       </div>
 
       <!-- ── 处理器 ── -->
@@ -642,70 +650,55 @@ export default toNative(RouteEditModal)
               </div>
             </div>
           </div>
-          <div class="toggle-row">
-            <div>
-              <span class="text-sm text-slate-600">FastCGI 协议</span>
-              <p class="text-xs text-slate-400 mt-0.5">适用于 PHP-FPM 等 FastCGI 进程</p>
-            </div>
-            <button type="button" class="toggle" :class="{ 'toggle-on': formData.fastcgi }" role="switch" :aria-checked="formData.fastcgi" @click="formData.fastcgi = !formData.fastcgi">
-              <span class="toggle-thumb" />
-            </button>
-          </div>
-          <div v-if="formData.fastcgi">
-            <label class="form-label">FastCGI 文档根目录</label>
-            <input v-model="formData.fastcgiRoot" type="text" class="input font-mono text-sm" placeholder="请输入 FastCGI 根目录（可选）" />
-            <p class="text-xs text-slate-400 mt-1">设置 <code class="px-1 bg-slate-100 rounded">DOCUMENT_ROOT</code>，留空不传 root，例如：/var/www/html</p>
-          </div>
-          <div class="toggle-row">
-            <div>
-              <span class="text-sm text-slate-600">代理前 URI 重写</span>
-              <p class="text-xs text-slate-400 mt-0.5">写入 <code class="px-1 bg-slate-100 rounded">reverse_proxy.rewrite</code>，仅影响转发给上游的请求 URI</p>
-            </div>
-            <button type="button" class="toggle" :class="{ 'toggle-on': formData.proxyRewriteEnabled }" role="switch" :aria-checked="formData.proxyRewriteEnabled" @click="formData.proxyRewriteEnabled = !formData.proxyRewriteEnabled">
-              <span class="toggle-thumb" />
-            </button>
-          </div>
-          <div v-if="formData.proxyRewriteEnabled" class="space-y-4">
-            <!-- 覆盖请求方法 -->
-            <div>
-              <label class="form-label">覆盖请求方法 <span class="text-slate-400 font-normal">（可选）</span></label>
-              <input v-model="formData.proxyRewriteMethod" type="text" class="input font-mono text-sm" placeholder="如 GET、POST，留空不修改" />
-            </div>
-            <!-- URI 整体替换 -->
-            <div>
-              <label class="form-label">URI 整体替换 <span class="text-slate-400 font-normal">（可选）</span></label>
-              <input v-model="formData.proxyRewriteUri" type="text" class="input font-mono text-sm" placeholder="如 /backend/{http.request.uri.path.1}" />
-              <p class="text-xs text-slate-400 mt-1">完整替换转发给上游的 URI，留空不修改</p>
-            </div>
-            <!-- 路径前后缀裁剪 -->
-            <div>
-              <p class="form-label">路径前后缀裁剪 <span class="text-slate-400 font-normal">（可选）</span></p>
-              <div class="grid grid-cols-2 gap-3 mt-1">
-                <div>
-                  <label class="text-xs text-slate-500 mb-1 block">去掉前缀</label>
-                  <input v-model="formData.proxyStripPathPrefix" type="text" class="input font-mono text-sm" placeholder="如 /api" />
+          <ToggleCard v-model="formData.fastcgi" label="FastCGI 协议" desc="适用于 PHP-FPM 等 FastCGI 进程">
+              <label class="form-label">FastCGI 文档根目录</label>
+              <input v-model="formData.fastcgiRoot" type="text" class="input font-mono text-sm" placeholder="请输入 FastCGI 根目录（可选）" />
+              <p class="text-xs text-slate-400 mt-1">设置 <code class="px-1 bg-slate-100 rounded">DOCUMENT_ROOT</code>，留空不传 root，例如：/var/www/html</p>
+          </ToggleCard>
+          <ToggleCard v-model="formData.proxyRewriteEnabled" label="代理前 URI 重写">
+            <template #desc>写入 <code class="px-1 bg-slate-100 rounded">reverse_proxy.rewrite</code>，仅影响转发给上游的请求 URI</template>
+            <div class="space-y-4">
+              <!-- 覆盖请求方法 -->
+              <div>
+                <label class="form-label">覆盖请求方法 <span class="text-slate-400 font-normal">（可选）</span></label>
+                <input v-model="formData.proxyRewriteMethod" type="text" class="input font-mono text-sm" placeholder="如 GET、POST，留空不修改" />
+              </div>
+              <!-- URI 整体替换 -->
+              <div>
+                <label class="form-label">URI 整体替换 <span class="text-slate-400 font-normal">（可选）</span></label>
+                <input v-model="formData.proxyRewriteUri" type="text" class="input font-mono text-sm" placeholder="如 /backend/{http.request.uri.path.1}" />
+                <p class="text-xs text-slate-400 mt-1">完整替换转发给上游的 URI，留空不修改</p>
+              </div>
+              <!-- 路径前后缀裁剪 -->
+              <div>
+                <p class="form-label">路径前后缀裁剪 <span class="text-slate-400 font-normal">（可选）</span></p>
+                <div class="grid grid-cols-2 gap-3 mt-1">
+                  <div>
+                    <label class="text-xs text-slate-500 mb-1 block">去掉前缀</label>
+                    <input v-model="formData.proxyStripPathPrefix" type="text" class="input font-mono text-sm" placeholder="如 /api" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-500 mb-1 block">去掉后缀</label>
+                    <input v-model="formData.proxyStripPathSuffix" type="text" class="input font-mono text-sm" placeholder="如 .php" />
+                  </div>
                 </div>
-                <div>
-                  <label class="text-xs text-slate-500 mb-1 block">去掉后缀</label>
-                  <input v-model="formData.proxyStripPathSuffix" type="text" class="input font-mono text-sm" placeholder="如 .php" />
+              </div>
+              <!-- 子串查找替换 -->
+              <div>
+                <p class="form-label">子串查找替换 <span class="text-slate-400 font-normal">（可选）</span></p>
+                <div class="grid grid-cols-2 gap-3 mt-1">
+                  <div>
+                    <label class="text-xs text-slate-500 mb-1 block">查找</label>
+                    <input v-model="formData.proxyUriSubstringFind" type="text" class="input font-mono text-sm" placeholder="如 /old" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-500 mb-1 block">替换为</label>
+                    <input v-model="formData.proxyUriSubstringReplace" type="text" class="input font-mono text-sm" placeholder="如 /new" />
+                  </div>
                 </div>
               </div>
             </div>
-            <!-- 子串查找替换 -->
-            <div>
-              <p class="form-label">子串查找替换 <span class="text-slate-400 font-normal">（可选）</span></p>
-              <div class="grid grid-cols-2 gap-3 mt-1">
-                <div>
-                  <label class="text-xs text-slate-500 mb-1 block">查找</label>
-                  <input v-model="formData.proxyUriSubstringFind" type="text" class="input font-mono text-sm" placeholder="如 /old" />
-                </div>
-                <div>
-                  <label class="text-xs text-slate-500 mb-1 block">替换为</label>
-                  <input v-model="formData.proxyUriSubstringReplace" type="text" class="input font-mono text-sm" placeholder="如 /new" />
-                </div>
-              </div>
-            </div>
-          </div>
+          </ToggleCard>
         </div>
 
         <!-- file_server -->
@@ -715,15 +708,7 @@ export default toNative(RouteEditModal)
             <input v-model="formData.root" type="text" class="input font-mono text-sm" placeholder="请输入根目录" />
             <p class="text-xs text-slate-400 mt-1">静态文件根目录，例如：/var/www/html</p>
           </div>
-          <div class="toggle-row">
-            <div>
-              <span class="text-sm text-slate-600">启用目录浏览</span>
-              <p class="text-xs text-slate-400 mt-0.5">允许访客浏览目录内文件列表</p>
-            </div>
-            <button type="button" class="toggle" :class="{ 'toggle-on': formData.browse }" role="switch" :aria-checked="formData.browse" @click="formData.browse = !formData.browse">
-              <span class="toggle-thumb" />
-            </button>
-          </div>
+          <ToggleCard v-model="formData.browse" label="启用目录浏览" desc="允许访客浏览目录内文件列表" />
         </div>
 
         <!-- static_response -->
@@ -782,16 +767,9 @@ export default toNative(RouteEditModal)
       </div>
 
       <!-- ── 请求头 / 响应头操作 ── -->
-      <div v-if="formData.kind !== 'raw'" class="toggle-row">
-        <div>
-          <span class="text-sm text-slate-600">配置请求头/响应头操作</span>
-          <p class="text-xs text-slate-400 mt-0.5">串联中间件，在处理器前执行，支持占位符如 <code class="px-1 bg-slate-100 rounded">{http.request.remote.host}</code></p>
-        </div>
-        <button type="button" class="toggle" :class="{ 'toggle-on': formData.enableHeaders }" role="switch" :aria-checked="formData.enableHeaders" @click="formData.enableHeaders = !formData.enableHeaders">
-          <span class="toggle-thumb" />
-        </button>
-      </div>
-      <div v-if="formData.kind !== 'raw' && formData.enableHeaders" class="space-y-4">
+      <ToggleCard v-if="formData.kind !== 'raw'" v-model="formData.enableHeaders" label="配置请求头/响应头操作">
+        <template #desc>串联中间件，在处理器前执行，支持占位符如 <code class="px-1 bg-slate-100 rounded">{http.request.remote.host}</code></template>
+        <div class="space-y-4">
         <!-- 请求头 -->
         <div>
           <label class="form-label">请求头</label>
@@ -834,7 +812,8 @@ export default toNative(RouteEditModal)
             <i class="fas fa-plus text-xs"></i>添加响应头操作
           </button>
         </div>
-      </div>
+        </div>
+      </ToggleCard>
 
     </div>
   

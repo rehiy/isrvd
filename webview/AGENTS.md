@@ -266,22 +266,32 @@
 - label：`block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1`，input 通用 `.input`，help `text-xs text-slate-400 mt-1`
 - 密钥/密码：后端敏感字段 `json:"-"`，前端 `type="password" autocomplete="new-password"`，留空保存=不修改，placeholder："留空保持不变"
 
-- **Toggle Switch 规范**（单一功能启用/禁用开关）：使用 `.toggle-row` + `.toggle` + `.toggle-thumb` CSS 类；通过 `:class="{ 'toggle-on': value }"` 控制激活态；默认激活色为 indigo，确需 violet 场景（如 Caddy Global）加 `toggle-violet` 修饰符；禁止手写内联 Tailwind toggle 样式：
+- **Toggle Switch 规范**（单一功能启用/禁用开关）：统一使用 `<ToggleCard>` 组件（`webview/src/component/toggle-card.vue`），禁止手写内联 Tailwind toggle 样式或直接使用底层 CSS 类：
+
+  | Prop | 类型 | 说明 |
+  |---|---|---|
+  | `v-model` | `boolean` | 开关状态 |
+  | `label` | `string`（必填） | 开关标题 |
+  | `desc` | `string` | 描述文字（可选，也可用 `#desc` slot 传入富文本） |
+  | `violet` | `boolean` | 激活色改为 violet（如 Caddy Global 场景） |
+  | `disabled` | `boolean` | 禁用状态 |
 
   ```html
-  <div class="toggle-row">
-    <div>
-      <span class="text-sm text-slate-700">开关文字</span>
-      <p class="text-xs text-slate-400 mt-0.5">描述说明（可选）</p>
-    </div>
-    <button type="button" class="toggle" :class="{ 'toggle-on': field }"
-            role="switch" :aria-checked="field" @click="field = !field">
-      <span class="toggle-thumb" />
-    </button>
-  </div>
+  <!-- 无 body：普通 toggle 行 -->
+  <ToggleCard v-model="field" label="开关文字" desc="描述说明（可选）" />
+
+  <!-- 有 body：展开时变 card，收缩时仍是普通 toggle 行 -->
+  <ToggleCard v-model="field" label="开关文字">
+    <!-- 展开后显示的内容 -->
+  </ToggleCard>
+
+  <!-- desc 含 HTML 时用 #desc slot -->
+  <ToggleCard v-model="field" label="开关文字">
+    <template #desc>描述 <code>示例</code></template>
+  </ToggleCard>
   ```
 
-  使用场景：单个布尔型功能开关，且有描述文字（如 WebSocket 代理、FastCGI、目录浏览、TLS 配置项等）。
+  使用场景：单个布尔型功能开关（如 WebSocket 代理、FastCGI、目录浏览、TLS 配置项等）；有子配置项时传入 default slot，展开后自动呈现 card 样式。
 
 - **Checkbox 规范**（多选列表 / 无描述的简单开关）：统一使用以下结构，`<label>` 包裹 checkbox + 文字，描述段落在 `<label>` 外同级；禁止使用独立 `id`/`for` 绑定方式，禁止使用 `accent-*` 或裸 `w-4 h-4` 类（权限多选列表除外）：
 
@@ -442,7 +452,8 @@
 | `.select-footer` | 下拉选择器底部工具栏 | `px-3 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between` |
 | `.mobile-search` | 移动端搜索栏容器（桌面端隐藏） | `md:hidden px-4 py-2 border-b border-slate-100` |
 | `.check-label` | checkbox/radio label 包裹层 | `flex items-center gap-2 cursor-pointer select-none w-fit` |
-| `.toggle-row` / `.toggle` / `.toggle-on` / `.toggle-violet` / `.toggle-thumb` | 功能启用/禁用开关 | — |
+| `.toggle-row` / `.toggle` / `.toggle-on` / `.toggle-violet` / `.toggle-thumb` | 功能启用/禁用开关底层样式（由 `<ToggleCard>` 组件封装，禁止直接使用） | — |
+| `.toggle-expand-card` / `.toggle-expand-card-open` / `.toggle-expand-body` | 展开式 toggle card 底层样式（由 `<ToggleCard>` 传入 default slot 时自动使用，禁止直接使用） | — |
 | `.text-mono-muted` | 代码/ID 副文字（灰色 mono 截断） | `block font-mono text-xs text-slate-400 truncate mt-0.5` |
 
 **8. 徽章与标签（Badge）**

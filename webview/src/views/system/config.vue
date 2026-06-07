@@ -7,10 +7,11 @@ import api from '@/service/api'
 import type { AllConfig, ServerConfig, THAConfig, OIDCConfig, PasskeyConfig, AgentConfig, ApisixConfig, CaddyConfig, DockerConfig, MonitorConfig, MarketplaceConfig, LinkConfig } from '@/service/types'
 
 import IconSelect from '@/component/icon-select.vue'
+import ToggleCard from '@/component/toggle-card.vue'
 
 type ConfigTab = 'server' | 'tha' | 'oidc' | 'passkey' | 'agent' | 'apisix' | 'caddy' | 'docker' | 'monitor' | 'marketplace' | 'links'
 
-@Component({ components: { IconSelect } })
+@Component({ components: { IconSelect, ToggleCard } })
 class Config extends Vue {
   portal = usePortal()
 
@@ -255,15 +256,7 @@ export default toNative(Config)
               <input v-model.number="server.jwtExpiration" type="number" min="60" placeholder="请输入 JWT 有效期" class="input" />
               <p class="mt-1 text-xs text-slate-400">登录令牌的有效期，默认 86400（24 小时）</p>
             </div>
-            <div class="toggle-row">
-              <div>
-                <span class="text-sm text-slate-600">Debug 模式</span>
-                <p class="text-xs text-slate-400 mt-0.5">开启后输出详细调试日志</p>
-              </div>
-              <button type="button" class="toggle" :class="{ 'toggle-on': server.debug }" role="switch" :aria-checked="server.debug" @click="server.debug = !server.debug">
-                <span class="toggle-thumb" />
-              </button>
-            </div>
+            <ToggleCard v-model="server.debug" label="Debug 模式" desc="开启后输出详细调试日志" />
           </section>
 
           <!-- 代理 Header 登录配置 -->
@@ -275,15 +268,7 @@ export default toNative(Config)
                 <p class="text-xs text-slate-400 mt-0.5">从上游代理 Header 读取用户名</p>
               </div>
             </div>
-            <div class="toggle-row">
-              <div>
-                <span class="text-sm text-slate-600">启用代理 Header 登录</span>
-                <p class="text-xs text-slate-400 mt-0.5">开启后使用上游代理传入的用户名 Header</p>
-              </div>
-              <button type="button" class="toggle" :class="{ 'toggle-on': tha.enabled }" role="switch" :aria-checked="tha.enabled" @click="tha.enabled = !tha.enabled">
-                <span class="toggle-thumb" />
-              </button>
-            </div>
+            <ToggleCard v-model="tha.enabled" label="启用代理 Header 登录" desc="开启后使用上游代理传入的用户名 Header" />
             <div>
               <label class="form-label">用户名 Header</label>
               <input v-model="tha.headerName" type="text" placeholder="请输入 Header 名称" class="input" />
@@ -305,15 +290,7 @@ export default toNative(Config)
                 <p class="text-xs text-slate-400 mt-0.5">单点登录 Provider 参数</p>
               </div>
             </div>
-            <div class="toggle-row">
-              <div>
-                <span class="text-sm text-slate-600">启用 OIDC 登录</span>
-                <p class="text-xs text-slate-400 mt-0.5">使用 OpenID Connect 进行单点登录</p>
-              </div>
-              <button type="button" class="toggle" :class="{ 'toggle-on': oidc.enabled }" role="switch" :aria-checked="oidc.enabled" @click="oidc.enabled = !oidc.enabled">
-                <span class="toggle-thumb" />
-              </button>
-            </div>
+            <ToggleCard v-model="oidc.enabled" label="启用 OIDC 登录" desc="使用 OpenID Connect 进行单点登录" />
             <div>
               <label class="form-label">颁发者地址</label>
               <input v-model="oidc.issuerUrl" type="text" placeholder="请输入颁发者地址" class="input" />
@@ -360,15 +337,7 @@ export default toNative(Config)
                 <p class="text-xs text-slate-400 mt-0.5">WebAuthn/FIDO2 登录</p>
               </div>
             </div>
-            <div class="toggle-row">
-              <div>
-                <span class="text-sm text-slate-600">启用 Passkey 登录</span>
-                <p class="text-xs text-slate-400 mt-0.5">使用 WebAuthn/FIDO2 进行无密码登录</p>
-              </div>
-              <button type="button" class="toggle" :class="{ 'toggle-on': passkey.enabled }" role="switch" :aria-checked="passkey.enabled" @click="passkey.enabled = !passkey.enabled">
-                <span class="toggle-thumb" />
-              </button>
-            </div>
+            <ToggleCard v-model="passkey.enabled" label="启用 Passkey 登录" desc="使用 WebAuthn/FIDO2 进行无密码登录" />
             <div>
               <label class="form-label">Relying Party 名称</label>
               <input v-model="passkey.rpName" type="text" placeholder="请输入 RP 名称" class="input" />

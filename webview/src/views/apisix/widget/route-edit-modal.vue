@@ -22,6 +22,7 @@ import {
 } from '@/helper/apisix'
 
 import BaseModal from '@/component/modal.vue'
+import ToggleCard from '@/component/toggle-card.vue'
 
 import ContainerPortSelect from '@/views/docker/widget/container-port-select.vue'
 import ContainerSelect from '@/views/docker/widget/container-select.vue'
@@ -63,7 +64,7 @@ const defaultFormData = () => ({
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, ContainerPortSelect, ContainerSelect, PluginConfigPanel },
+    components: { BaseModal, ContainerPortSelect, ContainerSelect, PluginConfigPanel, ToggleCard },
     emits: ['success']
 })
 class RouteEditModal extends Vue {
@@ -294,15 +295,7 @@ export default toNative(RouteEditModal)
         <p class="text-xs text-slate-400 mt-1">例如：example.com 或 *.example.com</p>
       </div>
 
-      <div class="toggle-row">
-        <div>
-          <span class="text-sm text-slate-700">WebSocket 代理</span>
-          <p class="text-xs text-slate-400 mt-0.5">启用后支持 WebSocket 协议升级（ws:// / wss://）</p>
-        </div>
-        <button type="button" class="toggle" :class="{ 'toggle-on': formData.enable_websocket }" role="switch" :aria-checked="formData.enable_websocket" @click="formData.enable_websocket = !formData.enable_websocket">
-          <span class="toggle-thumb" />
-        </button>
-      </div>
+      <ToggleCard v-model="formData.enable_websocket" label="WebSocket 代理" desc="启用后支持 WebSocket 协议升级（ws:// / wss://）" />
 
       <div class="border border-slate-200 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">

@@ -413,18 +413,8 @@
     @apply flex items-center gap-2 cursor-pointer select-none w-fit;
   }
 
-  /* toggle switch —— 功能启用/禁用开关
-   * 用法：
-   *   <div class="toggle-row">
-   *     <div>
-   *       <span class="text-sm text-slate-700">开关文字</span>
-   *       <p class="text-xs text-slate-400 mt-0.5">描述说明（可选）</p>
-   *     </div>
-   *     <button type="button" class="toggle" :class="{ 'toggle-on': value }"
-   *             role="switch" :aria-checked="value" @click="value = !value">
-   *       <span class="toggle-thumb" />
-   *     </button>
-   *   </div>
+  /* toggle switch —— 功能启用/禁用开关底层样式
+   * 请使用 <ToggleCard> 组件，支持 label / desc / #desc slot / violet / disabled
    * 颜色 modifier：默认主色 indigo；violet 场景加 .toggle-violet
    */
   .toggle-row {
@@ -440,6 +430,25 @@
     @apply inline-block h-5 w-5 translate-x-0 transform rounded-full bg-white shadow ring-0 transition duration-200;
   }
   .toggle.toggle-on .toggle-thumb { @apply translate-x-5; }
+
+  /* toggle-expand-card —— 收缩时是普通 toggle-row，展开时外层变 card
+   * 传入 default slot 时 <ToggleCard> 自动使用此样式
+   */
+  .toggle-expand-card {
+    @apply rounded-xl;
+  }
+  .toggle-expand-card .toggle-row {
+    @apply border border-slate-200;
+  }
+  .toggle-expand-card-open {
+    @apply border border-slate-300 rounded-xl overflow-hidden;
+  }
+  .toggle-expand-card-open .toggle-row {
+    @apply border-0 rounded-none bg-slate-50;
+  }
+  .toggle-expand-body {
+    @apply px-4 pb-4 pt-3 border-t border-slate-100;
+  }
 
   /* 代码/ID 副文字（表格/卡片中灰色 mono 截断） */
   .text-mono-muted {

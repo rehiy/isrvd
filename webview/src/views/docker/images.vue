@@ -10,6 +10,7 @@ import { formatFileSize, formatTime } from '@/helper/utils'
 
 import Modal from '@/component/modal.vue'
 import PageSearch from '@/component/page-search.vue'
+import ToggleCard from '@/component/toggle-card.vue'
 
 import ImageBuildModal from './widget/image-build-modal.vue'
 import ImagePullModal from './widget/image-pull-modal.vue'
@@ -17,7 +18,7 @@ import ImageTagModal from './widget/image-tag-modal.vue'
 import RegistryPushModal from './widget/registry-push-modal.vue'
 
 @Component({
-    components: { PageSearch, Modal, ImagePullModal, ImageTagModal, ImageBuildModal, RegistryPushModal }
+    components: { PageSearch, Modal, ImagePullModal, ImageTagModal, ImageBuildModal, RegistryPushModal, ToggleCard }
 })
 class Images extends Vue {
     portal = usePortal()
@@ -436,18 +437,9 @@ export default toNative(Images)
     <template #confirm-text>确认清理</template>
     <div class="space-y-4">
       <p class="text-sm text-slate-600">将清理未被任何容器使用的悬空镜像层，不会删除正在被容器使用的镜像。</p>
-      <div class="toggle-row">
-        <div>
-          <span class="text-sm text-slate-700">同时清理有标签但未被使用的镜像</span>
-          <p class="text-xs text-slate-400 mt-0.5">等同于 <code class="font-mono bg-slate-100 px-1 rounded">docker image prune -a</code>，会删除更多空间</p>
-        </div>
-        <button
-          type="button" class="toggle" :class="{ 'toggle-on': pruneAll }"
-          role="switch" :aria-checked="pruneAll" @click="pruneAll = !pruneAll"
-        >
-          <span class="toggle-thumb" />
-        </button>
-      </div>
+      <ToggleCard v-model="pruneAll" label="同时清理有标签但未被使用的镜像">
+        <template #desc>等同于 <code class="font-mono bg-slate-100 px-1 rounded">docker image prune -a</code>，会删除更多空间</template>
+      </ToggleCard>
     </div>
   </Modal>
 </template>

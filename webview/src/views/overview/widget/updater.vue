@@ -7,9 +7,10 @@ import api from '@/service/api'
 import type { DockerContainerCreate } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
+import ToggleCard from '@/component/toggle-card.vue'
 
 @Component({
-    components: { BaseModal }
+    components: { BaseModal, ToggleCard }
 })
 class SystemUpdater extends Vue {
     portal = usePortal()
@@ -212,23 +213,7 @@ export default toNative(SystemUpdater)
             required
           />
         </div>
-        <div class="toggle-row">
-          <div>
-            <span class="text-sm text-slate-700">升级完成后自动销毁容器</span>
-            <p class="text-xs text-slate-400 mt-0.5">关闭后可通过容器日志查看升级过程</p>
-          </div>
-          <button
-            type="button"
-            class="toggle"
-            :class="{ 'toggle-on': updaterAutoRemove }"
-            role="switch"
-            :aria-checked="updaterAutoRemove"
-            :disabled="deploying"
-            @click="updaterAutoRemove = !updaterAutoRemove"
-          >
-            <span class="toggle-thumb" />
-          </button>
-        </div>
+        <ToggleCard v-model="updaterAutoRemove" label="升级完成后自动销毁容器" desc="关闭后可通过容器日志查看升级过程" />
         <p class="text-sm text-slate-600">
           将通过 <code class="px-1 py-0.5 rounded bg-slate-100 font-mono text-xs">rehiy/docker-updater</code>
           临时容器拉取最新镜像并重启，升级期间服务会短暂中断。

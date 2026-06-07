@@ -8,13 +8,14 @@ import api from '@/service/api'
 import type { DockerImageInfo, DockerNetworkInfo } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
+import ToggleCard from '@/component/toggle-card.vue'
 
 import CapSelect from './cap-select.vue'
 import ImageSelect from './image-select.vue'
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, CapSelect, ImageSelect },
+    components: { BaseModal, CapSelect, ImageSelect, ToggleCard },
     emits: ['success']
 })
 class ContainerCreateModal extends Vue {
@@ -269,15 +270,7 @@ export default toNative(ContainerCreateModal)
           </span>
         </button>
         <div v-if="showSecurity" class="mt-4 space-y-4">
-          <div class="toggle-row">
-            <div>
-              <span class="text-sm text-slate-600">特权模式</span>
-              <p class="text-xs text-slate-400 mt-0.5">⚠️ 赋予容器所有主机权限，谨慎使用</p>
-            </div>
-            <button type="button" class="toggle" :class="{ 'toggle-on': formData.privileged }" role="switch" :aria-checked="formData.privileged" @click="formData.privileged = !formData.privileged">
-              <span class="toggle-thumb" />
-            </button>
-          </div>
+          <ToggleCard v-model="formData.privileged" label="特权模式" desc="⚠️ 赋予容器所有主机权限，谨慎使用" />
           <div>
             <label class="form-label">添加权限 (CapAdd)</label>
             <CapSelect v-model="formData.capAdd" />

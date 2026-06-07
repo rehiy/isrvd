@@ -8,6 +8,7 @@ import api from '@/service/api'
 import type { CronJob, CronJobCreate, CronTypeInfo, DockerContainerInfo, DockerImageInfo } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
+import ToggleCard from '@/component/toggle-card.vue'
 
 import ContainerSelect from '@/views/docker/widget/container-select.vue'
 import ImageSelect from '@/views/docker/widget/image-select.vue'
@@ -28,7 +29,7 @@ const defaultFormData = (type = 'SHELL'): CronJobCreate => ({
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, Codemirror, ImageSelect, ContainerSelect },
+    components: { BaseModal, Codemirror, ImageSelect, ContainerSelect, ToggleCard },
     emits: ['success']
 })
 class JobEditModal extends Vue {
@@ -210,15 +211,7 @@ export default toNative(JobEditModal)
         </div>
       </div>
 
-      <div class="toggle-row">
-        <div>
-          <span class="text-sm text-slate-600">状态</span>
-          <p class="text-xs text-slate-400 mt-0.5">启用后任务将按计划执行</p>
-        </div>
-        <button type="button" class="toggle" :class="{ 'toggle-on': formData.enabled }" role="switch" :aria-checked="formData.enabled" @click="formData.enabled = !formData.enabled">
-          <span class="toggle-thumb" />
-        </button>
-      </div>
+      <ToggleCard v-model="formData.enabled" label="状态" desc="启用后任务将按计划执行" />
     </div>
   </BaseModal>
 </template>

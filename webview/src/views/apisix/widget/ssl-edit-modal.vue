@@ -7,6 +7,7 @@ import api from '@/service/api'
 import type { ApisixSSLCreate, ApisixSSL, ApisixSSLUpdate } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
+import ToggleCard from '@/component/toggle-card.vue'
 
 const defaultFormData = () => ({
     id: '',
@@ -18,7 +19,7 @@ const defaultFormData = () => ({
 
 @Component({
     expose: ['show'],
-    components: { BaseModal },
+    components: { BaseModal, ToggleCard },
     emits: ['success']
 })
 class SSLEditModal extends Vue {
@@ -124,17 +125,7 @@ export default toNative(SSLEditModal)
         <p class="text-xs text-slate-400 mt-1">PEM 格式私钥，以 -----BEGIN PRIVATE KEY----- 开头。编辑时留空表示不修改当前私钥。</p>
       </div>
 
-      <div class="grid grid-cols-1 gap-4">
-        <div class="toggle-row">
-          <div>
-            <span class="text-sm text-slate-600">状态</span>
-            <p class="text-xs text-slate-400 mt-0.5">启用后证书生效</p>
-          </div>
-          <button type="button" class="toggle" :class="{ 'toggle-on': formData.status === 1 }" role="switch" :aria-checked="formData.status === 1" @click="formData.status = formData.status === 1 ? 0 : 1">
-            <span class="toggle-thumb" />
-          </button>
-        </div>
-      </div>
+      <ToggleCard :model-value="formData.status === 1" label="状态" desc="启用后证书生效" @update:model-value="(v: boolean) => formData.status = v ? 1 : 0" />
     </div>
 
     <template #confirm-text>
