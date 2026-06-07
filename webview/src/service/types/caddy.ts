@@ -1,72 +1,104 @@
 // ─── Caddy 相关 ───
 
+// 前端表单内部使用的 handler 类型标识（不提交到后端）
 export type CaddyHandlerKind = 'reverse_proxy' | 'file_server' | 'static_response' | 'rewrite' | 'raw'
 
-export interface CaddyMatchForm {
-    hosts?: string[]
-    paths?: string[]
-    methods?: string[]
-    headers?: Record<string, string[]>  // 按请求头匹配，key 为头字段名，value 为匹配值列表
-    protocol?: string                   // 匹配协议：http / https
-}
-
-// 单条请求头/响应头操作
+// 单条请求头/响应头操作（前端表单内部使用）
 export interface CaddyHeaderOp {
-    op: 'set' | 'add' | 'delete'  // 操作类型
-    field: string                  // 头字段名，如 X-Real-IP
-    value: string                  // 值（delete 时留空）
+    op: 'set' | 'add' | 'delete'
+    field: string
+    value: string
 }
 
-export interface CaddyRewriteForm {
+// Caddy 原生 MatchSet（对应 routes[i].match[] 的单个元素）
+export interface CaddyMatchSet {
+    host?: string[]
+    path?: string[]
+    method?: string[]
+    header?: Record<string, string[]>
+    protocol?: string
+    [key: string]: unknown   // 允许其他 Caddy 扩展匹配器
+}
+
+// Caddy 原生 Handler（对应 routes[i].handle[] 的单个元素）
+export interface CaddyHandler {
+    handler: string          // 模块名，如 reverse_proxy / file_server / headers 等
+    [key: string]: unknown   // 各模块自有字段
+}
+
+// reverse_proxy transport 子结构
+export interface CaddyTransport {
+    protocol?: string        // http / fastcgi
+    root?: string            // fastcgi 文档根目录
+    dial_timeout?: string
+    response_header_timeout?: string
+    write_timeout?: string
+}
+
+// reverse_proxy 内嵌 rewrite 子结构
+export interface CaddyProxyRewrite {
     method?: string
-    rewriteUri?: string
-    stripPathPrefix?: string
-    stripPathSuffix?: string
-    uriSubstringFind?: string
-    uriSubstringReplace?: string
+    uri?: string
+    strip_path_prefix?: string
+    strip_path_suffix?: string
+    uri_substring?: Array<{ find: string; replace: string }>
 }
 
-export interface CaddyHandlerForm {
-    kind: CaddyHandlerKind
-    upstreams?: string[]
-    fastcgi?: boolean      // 启用 FastCGI 传输（PHP-FPM 等）
-    fastcgiRoot?: string   // FastCGI 文档根目录
-    dialTimeout?: string   // 连接上游超时，如 10s
-    readTimeout?: string   // 读取上游响应头超时，如 30s
-    writeTimeout?: string  // 向上游写入请求超时，如 30s
-    proxyRewrite?: CaddyRewriteForm // reverse_proxy.rewrite 配置
+// reverse_proxy handler
+export interface CaddyHandlerReverseProxy extends CaddyHandler {
+    handler: 'reverse_proxy'
+    upstreams?: Array<{ dial: string }>
+    transport?: CaddyTransport
+    rewrite?: CaddyProxyRewrite
+}
+
+// file_server handler
+export interface CaddyHandlerFileServer extends CaddyHandler {
+    handler: 'file_server'
     root?: string
-    browse?: boolean
-    statusCode?: number
-    body?: string
-    // rewrite
-    rewriteUri?: string          // 完整 URI 替换（支持 Caddy 占位符）
-    stripPathPrefix?: string     // 去掉路径前缀
-    stripPathSuffix?: string     // 去掉路径后缀
-    uriSubstringFind?: string    // 子串查找
-    uriSubstringReplace?: string // 子串替换
-    // headers
-    requestHeaders?: CaddyHeaderOp[]   // 请求头操作列表
-    responseHeaders?: CaddyHeaderOp[]  // 响应头操作列表
-    raw?: unknown
+    browse?: Record<string, unknown>
 }
 
+// static_response handler
+export interface CaddyHandlerStaticResponse extends CaddyHandler {
+    handler: 'static_response'
+    status_code?: number | string
+    body?: string
+}
+
+// rewrite handler
+export interface CaddyHandlerRewrite extends CaddyHandler {
+    handler: 'rewrite'
+    uri?: string
+    strip_path_prefix?: string
+    strip_path_suffix?: string
+    uri_substring?: Array<{ find: string; replace: string }>
+}
+
+// headers 中间件 handler
+export interface CaddyHandlerHeaders extends CaddyHandler {
+    handler: 'headers'
+    request?: Record<string, unknown>
+    response?: Record<string, unknown>
+}
+
+// CaddyRoute 路由视图（后端返回，含 index）
 export interface CaddyRoute {
     index: number
     group?: string
-    match?: CaddyMatchForm
-    handler?: CaddyHandlerForm
+    match?: CaddyMatchSet[]
+    handle?: CaddyHandler[]
     terminal?: boolean
-    id?: string
+    '@id'?: string
 }
 
-// 编辑/创建请求体（不带 index）
+// CaddyRouteUpsert 创建/更新请求体（直接提交 Caddy 原生 JSON，不含 index）
 export interface CaddyRouteUpsert {
     group?: string
-    match?: CaddyMatchForm
-    handler: CaddyHandlerForm
+    match?: CaddyMatchSet[]
+    handle?: CaddyHandler[]
     terminal?: boolean
-    id?: string
+    '@id'?: string
 }
 
 // 概览

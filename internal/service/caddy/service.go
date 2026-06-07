@@ -3,7 +3,7 @@
 // 资源映射（业务约定）：
 //   - 单 server 模式：默认 server 名为 srv0
 //   - Route：servers/srv0/routes 数组项，对外用数组下标做主键
-//   - 编辑器使用 RouteForm 简化模型，service 层负责与 Caddy 原生 Handler/Match 互转
+//   - 路由直接使用 pkgcaddy.Route 原生结构收发，前端负责组装 Caddy JSON
 package caddy
 
 import (
@@ -19,16 +19,6 @@ import (
 
 // DefaultServerName 默认 server 名（业务约定，唯一一份）
 const DefaultServerName = "srv0"
-
-// HandlerKindReverseProxy 等：路由后端类型
-const (
-	HandlerKindReverseProxy = "reverse_proxy"
-	HandlerKindFileServer   = "file_server"
-	HandlerKindStaticResp   = "static_response"
-	HandlerKindRewrite      = "rewrite" // URI 重写
-	HandlerKindHeaders      = "headers" // 请求头/响应头操作
-	HandlerKindRaw          = "raw"     // 透传原始 handle 数组
-)
 
 // CertSource 证书来源类型
 const (
@@ -110,32 +100,6 @@ func ensureTLS(cfg *pkgcaddy.Config) *pkgcaddy.TLSApp {
 		cfg.Apps.TLS = &pkgcaddy.TLSApp{}
 	}
 	return cfg.Apps.TLS
-}
-
-func nonEmpty(in []string) []string {
-	out := make([]string, 0, len(in))
-	for _, s := range in {
-		if v := strings.TrimSpace(s); v != "" {
-			out = append(out, v)
-		}
-	}
-	return out
-}
-
-func toStrSlice(v any) []string {
-	switch arr := v.(type) {
-	case []string:
-		return arr
-	case []any:
-		out := make([]string, 0, len(arr))
-		for _, item := range arr {
-			if s, ok := item.(string); ok {
-				out = append(out, s)
-			}
-		}
-		return out
-	}
-	return nil
 }
 
 // pickSecretStr 新值非空时用新值，否则保留旧值（与 system/config.go pickSecret 逻辑一致）

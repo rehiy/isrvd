@@ -4,7 +4,7 @@ import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { CaddyRoute } from '@/service/types'
+import type { CaddyRoute, CaddyHandler } from '@/service/types'
 
 import PageSearch from '@/component/page-search.vue'
 
@@ -26,14 +26,16 @@ class CaddyRoutes extends Vue {
         const keyword = this.searchText.trim().toLowerCase()
         if (!keyword) return this.routes
         return this.routes.filter((r: CaddyRoute) => {
-            const m = r.match
-            const h = r.handler
+            const m = r.match?.[0]
+            const ups = (r.handle?.[r.handle.length - 1]?.upstreams as Array<{ dial: string }> | undefined)?.map(u => u.dial || '') || []
+            const root = (r.handle?.[r.handle.length - 1]?.root as string) || ''
+            const handler = r.handle?.[r.handle.length - 1]?.handler || ''
             return (
-                (m?.hosts || []).some((s: string) => s.toLowerCase().includes(keyword)) ||
-                (m?.paths || []).some((s: string) => s.toLowerCase().includes(keyword)) ||
-                (h?.upstreams || []).some((s: string) => s.toLowerCase().includes(keyword)) ||
-                (h?.root || '').toLowerCase().includes(keyword) ||
-                (h?.kind || '').toLowerCase().includes(keyword)
+                (m?.host || []).some((s: string) => s.toLowerCase().includes(keyword)) ||
+                (m?.path || []).some((s: string) => s.toLowerCase().includes(keyword)) ||
+                ups.some((s: string) => s.toLowerCase().includes(keyword)) ||
+                root.toLowerCase().includes(keyword) ||
+                handler.toLowerCase().includes(keyword)
             )
         })
     }
@@ -56,17 +58,17 @@ class CaddyRoutes extends Vue {
     }
 
     getRouteHosts(r: CaddyRoute) {
-        const hosts = r.match?.hosts || []
+        const hosts = r.match?.[0]?.host || []
         return hosts.length ? hosts.join(', ') : '*'
     }
 
     getRoutePaths(r: CaddyRoute) {
-        const paths = r.match?.paths || []
+        const paths = r.match?.[0]?.path || []
         return paths.length ? paths.join(', ') : '/*'
     }
 
     getRouteMethods(r: CaddyRoute) {
-        const methods = r.match?.methods || []
+        const methods = r.match?.[0]?.method || []
         return methods.length ? methods.join(' ') : 'ANY'
     }
 
@@ -80,20 +82,27 @@ class CaddyRoutes extends Vue {
         return map[kind || ''] || kind || '-'
     }
 
+    getTerminalHandler(r: CaddyRoute): CaddyHandler | undefined {
+        if (!r.handle?.length) return undefined
+        return r.handle[r.handle.length - 1]
+    }
+
     getHandlerSummary(r: CaddyRoute) {
-        const h = r.handler
+        const h = this.getTerminalHandler(r)
         if (!h) return '-'
-        switch (h.kind) {
-            case 'reverse_proxy': return (h.upstreams || []).join(', ')
-            case 'file_server': return h.root || '-'
-            case 'static_response': return `${h.statusCode || 200} ${h.body ? '+' : ''}`
-            case 'raw': return '(自定义)'
+        switch (h.handler) {
+            case 'reverse_proxy': {
+                const ups = (h.upstreams as Array<{ dial: string }> | undefined) || []
+                return ups.map(u => u.dial || '').filter(Boolean).join(', ') || '-'
+            }
+            case 'file_server': return (h.root as string) || '-'
+            case 'static_response': return `${h.status_code || 200}${h.body ? ' +' : ''}`
         }
-        return '-'
+        return '(自定义)'
     }
 
     getHandlerTagClass(r: CaddyRoute) {
-        const kind = r.handler?.kind
+        const kind = this.getTerminalHandler(r)?.handler
         if (kind === 'reverse_proxy') return 'bg-indigo-50 text-indigo-700'
         if (kind === 'file_server') return 'bg-emerald-50 text-emerald-700'
         if (kind === 'static_response') return 'bg-amber-50 text-amber-700'
@@ -200,7 +209,7 @@ export default toNative(CaddyRoutes)
               </td>
               <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getRoutePaths(route) }}</code></td>
               <td class="px-4 py-3"><span class="text-xs text-slate-600">{{ getRouteMethods(route) }}</span></td>
-              <td class="px-4 py-3"><span :class="getHandlerTagClass(route)" class="inline-block text-xs px-2 py-0.5 rounded-lg">{{ getHandlerKindLabel(route.handler?.kind) }}</span></td>
+<td class="px-4 py-3"><span :class="getHandlerTagClass(route)" class="inline-block text-xs px-2 py-0.5 rounded-lg">{{ getHandlerKindLabel(getTerminalHandler(route)?.handler as string) }}</span></td>
               <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getHandlerSummary(route) }}</code></td>
               <td class="px-4 py-3">
                 <div class="flex justify-end items-center gap-1">
@@ -222,7 +231,7 @@ export default toNative(CaddyRoutes)
             </div>
             <div class="min-w-0">
               <span class="font-medium text-slate-800 text-sm truncate block">{{ getRouteHosts(route) }}</span>
-              <span class="text-xs text-slate-400 truncate block mt-0.5">{{ getHandlerKindLabel(route.handler?.kind) }}</span>
+<span class="text-xs text-slate-400 truncate block mt-0.5">{{ getHandlerKindLabel(getTerminalHandler(route)?.handler as string) }}</span>
             </div>
           </div>
 

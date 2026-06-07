@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	svccaddy "isrvd/internal/service/caddy"
+	pkgcaddy "isrvd/pkgs/caddy"
 )
 
 // defineCaddyRoutes 定义 Caddy 模块路由
@@ -122,7 +123,7 @@ func (app *App) caddyRouteInspect(c *gin.Context) {
 
 func (app *App) caddyRouteCreate(c *gin.Context) {
 	server := c.Query("server")
-	var req svccaddy.RouteForm
+	var req pkgcaddy.Route
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -142,7 +143,7 @@ func (app *App) caddyRouteUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "index 必须为整数")
 		return
 	}
-	var req svccaddy.RouteForm
+	var req pkgcaddy.Route
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
