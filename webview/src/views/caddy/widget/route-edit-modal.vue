@@ -45,6 +45,13 @@ const defaultFormData = () => ({
     dialTimeout: '',
     readTimeout: '',
     writeTimeout: '',
+    proxyRewriteEnabled: false,
+    proxyRewriteMethod: '',
+    proxyRewriteUri: '',
+    proxyStripPathPrefix: '',
+    proxyStripPathSuffix: '',
+    proxyUriSubstringFind: '',
+    proxyUriSubstringReplace: '',
     root: '',
     browse: false,
     statusCode: 200,
@@ -120,6 +127,8 @@ class RouteEditModal extends Vue {
                         if (f.writeTimeout.trim()) transport.write_timeout = f.writeTimeout.trim()
                         terminalHandler.transport = transport
                     }
+                    const rewrite = this.buildProxyRewriteRaw()
+                    if (rewrite) terminalHandler.rewrite = rewrite
                 }
                 break
             }
@@ -176,6 +185,34 @@ class RouteEditModal extends Vue {
         }
         handles.push(terminalHandler)
         try { return JSON.stringify(handles, null, 2) } catch { return '' }
+    }
+
+    buildProxyRewriteRaw(): Record<string, unknown> | null {
+        const f = this.formData
+        if (!f.proxyRewriteEnabled) return null
+        const rewrite: Record<string, unknown> = {}
+        if (f.proxyRewriteMethod.trim()) rewrite.method = f.proxyRewriteMethod.trim().toUpperCase()
+        if (f.proxyRewriteUri.trim()) rewrite.uri = f.proxyRewriteUri.trim()
+        if (f.proxyStripPathPrefix.trim()) rewrite.strip_path_prefix = f.proxyStripPathPrefix.trim()
+        if (f.proxyStripPathSuffix.trim()) rewrite.strip_path_suffix = f.proxyStripPathSuffix.trim()
+        if (f.proxyUriSubstringFind.trim()) {
+            rewrite.uri_substring = [{ find: f.proxyUriSubstringFind.trim(), replace: f.proxyUriSubstringReplace.trim() }]
+        }
+        return Object.keys(rewrite).length ? rewrite : null
+    }
+
+    buildProxyRewritePayload() {
+        const f = this.formData
+        if (!f.proxyRewriteEnabled) return undefined
+        const payload = {
+            method: f.proxyRewriteMethod.trim() ? f.proxyRewriteMethod.trim().toUpperCase() : undefined,
+            rewriteUri: f.proxyRewriteUri.trim() || undefined,
+            stripPathPrefix: f.proxyStripPathPrefix.trim() || undefined,
+            stripPathSuffix: f.proxyStripPathSuffix.trim() || undefined,
+            uriSubstringFind: f.proxyUriSubstringFind.trim() || undefined,
+            uriSubstringReplace: f.proxyUriSubstringFind.trim() ? (f.proxyUriSubstringReplace.trim() || undefined) : undefined
+        }
+        return Object.values(payload).some(Boolean) ? payload : undefined
     }
 
     // ── 匹配请求头操作 ──
@@ -295,6 +332,14 @@ class RouteEditModal extends Vue {
                 this.formData.dialTimeout = h.dialTimeout || ''
                 this.formData.readTimeout = h.readTimeout || ''
                 this.formData.writeTimeout = h.writeTimeout || ''
+                const proxyRewrite = h.proxyRewrite
+                this.formData.proxyRewriteEnabled = !!proxyRewrite
+                this.formData.proxyRewriteMethod = proxyRewrite?.method || ''
+                this.formData.proxyRewriteUri = proxyRewrite?.rewriteUri || ''
+                this.formData.proxyStripPathPrefix = proxyRewrite?.stripPathPrefix || ''
+                this.formData.proxyStripPathSuffix = proxyRewrite?.stripPathSuffix || ''
+                this.formData.proxyUriSubstringFind = proxyRewrite?.uriSubstringFind || ''
+                this.formData.proxyUriSubstringReplace = proxyRewrite?.uriSubstringReplace || ''
 
                 this.formData.root = h.root || ''
                 this.formData.browse = !!h.browse
@@ -351,6 +396,7 @@ class RouteEditModal extends Vue {
                     dialTimeout: !f.fastcgi && f.dialTimeout.trim() ? f.dialTimeout.trim() : undefined,
                     readTimeout: !f.fastcgi && f.readTimeout.trim() ? f.readTimeout.trim() : undefined,
                     writeTimeout: !f.fastcgi && f.writeTimeout.trim() ? f.writeTimeout.trim() : undefined,
+                    proxyRewrite: this.buildProxyRewritePayload(),
                     requestHeaders: f.enableHeaders ? this.buildHeaderOps('request') : undefined,
                     responseHeaders: f.enableHeaders ? this.buildHeaderOps('response') : undefined
                 }
@@ -563,6 +609,48 @@ export default toNative(RouteEditModal)
             <label class="form-label">FastCGI 文档根目录</label>
             <input v-model="formData.fastcgiRoot" type="text" class="input font-mono text-sm" placeholder="请输入 FastCGI 根目录（可选）" />
             <p class="text-xs text-slate-400 mt-1">设置 <code class="px-1 bg-slate-100 rounded">DOCUMENT_ROOT</code>，留空不传 root，例如：/var/www/html</p>
+          </div>
+          <div class="toggle-row">
+            <div>
+              <span class="text-sm text-slate-600">代理前 URI 重写</span>
+              <p class="text-xs text-slate-400 mt-0.5">写入 <code class="px-1 bg-slate-100 rounded">reverse_proxy.rewrite</code>，仅影响转发给上游的请求 URI</p>
+            </div>
+            <button type="button" class="toggle" :class="{ 'toggle-on': formData.proxyRewriteEnabled }" role="switch" :aria-checked="formData.proxyRewriteEnabled" @click="formData.proxyRewriteEnabled = !formData.proxyRewriteEnabled">
+              <span class="toggle-thumb" />
+            </button>
+          </div>
+          <div v-if="formData.proxyRewriteEnabled" class="space-y-3 rounded-lg border border-indigo-100 bg-indigo-50/40 p-3">
+            <div class="grid grid-cols-[1fr_2fr] gap-3">
+              <div>
+                <label class="form-label">请求方法</label>
+                <input v-model="formData.proxyRewriteMethod" type="text" class="input font-mono text-sm" placeholder="如 GET" />
+              </div>
+              <div>
+                <label class="form-label">URI 替换</label>
+                <input v-model="formData.proxyRewriteUri" type="text" class="input font-mono text-sm" placeholder="请输入 URI 替换规则" />
+                <p class="text-xs text-slate-400 mt-1">完整替换转发给上游的 URI，例如：/backend/{http.request.uri.path.1}</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="form-label">去掉路径前缀</label>
+                <input v-model="formData.proxyStripPathPrefix" type="text" class="input font-mono text-sm" placeholder="请输入要去掉的前缀" />
+              </div>
+              <div>
+                <label class="form-label">去掉路径后缀</label>
+                <input v-model="formData.proxyStripPathSuffix" type="text" class="input font-mono text-sm" placeholder="请输入要去掉的后缀" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="form-label">子串查找</label>
+                <input v-model="formData.proxyUriSubstringFind" type="text" class="input font-mono text-sm" placeholder="请输入要查找的子串" />
+              </div>
+              <div>
+                <label class="form-label">子串替换</label>
+                <input v-model="formData.proxyUriSubstringReplace" type="text" class="input font-mono text-sm" placeholder="请输入替换内容" />
+              </div>
+            </div>
           </div>
         </div>
 

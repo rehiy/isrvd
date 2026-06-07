@@ -17,6 +17,15 @@ export interface CaddyHeaderOp {
     value: string                  // 值（delete 时留空）
 }
 
+export interface CaddyRewriteForm {
+    method?: string
+    rewriteUri?: string
+    stripPathPrefix?: string
+    stripPathSuffix?: string
+    uriSubstringFind?: string
+    uriSubstringReplace?: string
+}
+
 export interface CaddyHandlerForm {
     kind: CaddyHandlerKind
     upstreams?: string[]
@@ -25,6 +34,7 @@ export interface CaddyHandlerForm {
     dialTimeout?: string   // 连接上游超时，如 10s
     readTimeout?: string   // 读取上游响应头超时，如 30s
     writeTimeout?: string  // 向上游写入请求超时，如 30s
+    proxyRewrite?: CaddyRewriteForm // reverse_proxy.rewrite 配置
     root?: string
     browse?: boolean
     statusCode?: number

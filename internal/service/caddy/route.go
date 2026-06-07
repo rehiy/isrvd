@@ -28,17 +28,28 @@ type HeaderOp struct {
 	Value string `json:"value"` // 值（delete 时留空）
 }
 
+// RewriteForm 简化的 URI rewrite 配置。
+type RewriteForm struct {
+	Method              string `json:"method,omitempty"`              // 转发前改写请求方法
+	RewriteURI          string `json:"rewriteUri,omitempty"`          // 完整 URI 替换（支持 Caddy 占位符）
+	StripPathPrefix     string `json:"stripPathPrefix,omitempty"`     // 去掉路径前缀
+	StripPathSuffix     string `json:"stripPathSuffix,omitempty"`     // 去掉路径后缀
+	URISubstringFind    string `json:"uriSubstringFind,omitempty"`    // 子串查找（配合 uriSubstringReplace）
+	URISubstringReplace string `json:"uriSubstringReplace,omitempty"` // 子串替换
+}
+
 // HandlerForm 简化的 handler 编辑模型，按 Kind 解释字段
 type HandlerForm struct {
 	Kind string `json:"kind"` // reverse_proxy / file_server / static_response / rewrite / raw
 
 	// reverse_proxy
-	Upstreams    []string `json:"upstreams,omitempty"`
-	FastCGI      bool     `json:"fastcgi,omitempty"`      // 启用 FastCGI 传输协议（PHP-FPM 等）
-	FastCGIRoot  string   `json:"fastcgiRoot,omitempty"`  // FastCGI 文档根目录
-	DialTimeout  string   `json:"dialTimeout,omitempty"`  // 连接上游超时，如 10s
-	ReadTimeout  string   `json:"readTimeout,omitempty"`  // 读取上游响应超时，如 30s
-	WriteTimeout string   `json:"writeTimeout,omitempty"` // 向上游写入请求超时，如 30s
+	Upstreams    []string     `json:"upstreams,omitempty"`
+	FastCGI      bool         `json:"fastcgi,omitempty"`      // 启用 FastCGI 传输协议（PHP-FPM 等）
+	FastCGIRoot  string       `json:"fastcgiRoot,omitempty"`  // FastCGI 文档根目录
+	DialTimeout  string       `json:"dialTimeout,omitempty"`  // 连接上游超时，如 10s
+	ReadTimeout  string       `json:"readTimeout,omitempty"`  // 读取上游响应超时，如 30s
+	WriteTimeout string       `json:"writeTimeout,omitempty"` // 向上游写入请求超时，如 30s
+	ProxyRewrite *RewriteForm `json:"proxyRewrite,omitempty"` // reverse_proxy.rewrite 配置
 
 	// file_server
 	Root   string `json:"root,omitempty"`
@@ -208,6 +219,58 @@ func validateRouteForm(req RouteForm) error {
 	return nil
 }
 
+func hasRewriteForm(r *RewriteForm) bool {
+	return r != nil && (strings.TrimSpace(r.Method) != "" ||
+		strings.TrimSpace(r.RewriteURI) != "" ||
+		strings.TrimSpace(r.StripPathPrefix) != "" ||
+		strings.TrimSpace(r.StripPathSuffix) != "" ||
+		strings.TrimSpace(r.URISubstringFind) != "")
+}
+
+func buildRewriteMap(r *RewriteForm) map[string]any {
+	h := map[string]any{}
+	if r == nil {
+		return h
+	}
+	if r.Method != "" {
+		h["method"] = r.Method
+	}
+	if r.RewriteURI != "" {
+		h["uri"] = r.RewriteURI
+	}
+	if r.StripPathPrefix != "" {
+		h["strip_path_prefix"] = r.StripPathPrefix
+	}
+	if r.StripPathSuffix != "" {
+		h["strip_path_suffix"] = r.StripPathSuffix
+	}
+	if r.URISubstringFind != "" {
+		h["uri_substring"] = []map[string]any{{
+			"find":    r.URISubstringFind,
+			"replace": r.URISubstringReplace,
+		}}
+	}
+	return h
+}
+
+func parseRewriteMap(h map[string]any) *RewriteForm {
+	out := &RewriteForm{}
+	out.Method, _ = h["method"].(string)
+	out.RewriteURI, _ = h["uri"].(string)
+	out.StripPathPrefix, _ = h["strip_path_prefix"].(string)
+	out.StripPathSuffix, _ = h["strip_path_suffix"].(string)
+	if subs, ok := h["uri_substring"].([]any); ok && len(subs) > 0 {
+		if sub, ok := subs[0].(map[string]any); ok {
+			out.URISubstringFind, _ = sub["find"].(string)
+			out.URISubstringReplace, _ = sub["replace"].(string)
+		}
+	}
+	if !hasRewriteForm(out) {
+		return nil
+	}
+	return out
+}
+
 // buildHeadersOps 将 HeaderOp 列表转换为 Caddy headers handler 的 set/add/delete 结构
 func buildHeadersOps(ops []HeaderOp) map[string]any {
 	set := map[string][]string{}
@@ -323,6 +386,9 @@ func formToRoute(req RouteForm) (pkgcaddy.Route, error) {
 			}
 			h["transport"] = transport
 		}
+		if hasRewriteForm(req.Handler.ProxyRewrite) {
+			h["rewrite"] = buildRewriteMap(req.Handler.ProxyRewrite)
+		}
 		terminalHandlers = []pkgcaddy.Handler{h}
 	case HandlerKindFileServer:
 		terminalHandlers = []pkgcaddy.Handler{pkgcaddy.HandlerFileServer(req.Handler.Root, req.Handler.Browse)}
@@ -330,20 +396,14 @@ func formToRoute(req RouteForm) (pkgcaddy.Route, error) {
 		terminalHandlers = []pkgcaddy.Handler{pkgcaddy.HandlerStaticResponse(req.Handler.StatusCode, req.Handler.Body)}
 	case HandlerKindRewrite:
 		h := pkgcaddy.Handler{"handler": "rewrite"}
-		if req.Handler.RewriteURI != "" {
-			h["uri"] = req.Handler.RewriteURI
-		}
-		if req.Handler.StripPathPrefix != "" {
-			h["strip_path_prefix"] = req.Handler.StripPathPrefix
-		}
-		if req.Handler.StripPathSuffix != "" {
-			h["strip_path_suffix"] = req.Handler.StripPathSuffix
-		}
-		if req.Handler.URISubstringFind != "" {
-			h["uri_substring"] = []map[string]any{{
-				"find":    req.Handler.URISubstringFind,
-				"replace": req.Handler.URISubstringReplace,
-			}}
+		for k, v := range buildRewriteMap(&RewriteForm{
+			RewriteURI:          req.Handler.RewriteURI,
+			StripPathPrefix:     req.Handler.StripPathPrefix,
+			StripPathSuffix:     req.Handler.StripPathSuffix,
+			URISubstringFind:    req.Handler.URISubstringFind,
+			URISubstringReplace: req.Handler.URISubstringReplace,
+		}) {
+			h[k] = v
 		}
 		terminalHandlers = []pkgcaddy.Handler{h}
 	case HandlerKindRaw:
@@ -435,6 +495,9 @@ func handlerToForm(handlers []pkgcaddy.Handler) *HandlerForm {
 	switch kind {
 	case HandlerKindReverseProxy:
 		form = &HandlerForm{Kind: kind, Upstreams: extractUpstreams(h)}
+		if rw, ok := h["rewrite"].(map[string]any); ok {
+			form.ProxyRewrite = parseRewriteMap(rw)
+		}
 		if t, ok := h["transport"].(map[string]any); ok {
 			if proto, _ := t["protocol"].(string); proto == "fastcgi" {
 				form.FastCGI = true
@@ -463,14 +526,12 @@ func handlerToForm(handlers []pkgcaddy.Handler) *HandlerForm {
 		form = &HandlerForm{Kind: kind, StatusCode: status, Body: body}
 	case HandlerKindRewrite:
 		form = &HandlerForm{Kind: kind}
-		form.RewriteURI, _ = h["uri"].(string)
-		form.StripPathPrefix, _ = h["strip_path_prefix"].(string)
-		form.StripPathSuffix, _ = h["strip_path_suffix"].(string)
-		if subs, ok := h["uri_substring"].([]any); ok && len(subs) > 0 {
-			if sub, ok := subs[0].(map[string]any); ok {
-				form.URISubstringFind, _ = sub["find"].(string)
-				form.URISubstringReplace, _ = sub["replace"].(string)
-			}
+		if rw := parseRewriteMap(h); rw != nil {
+			form.RewriteURI = rw.RewriteURI
+			form.StripPathPrefix = rw.StripPathPrefix
+			form.StripPathSuffix = rw.StripPathSuffix
+			form.URISubstringFind = rw.URISubstringFind
+			form.URISubstringReplace = rw.URISubstringReplace
 		}
 	default:
 		return rawHandler(handlers)

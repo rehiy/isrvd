@@ -42,6 +42,13 @@ handler 通过 `kind` 字段区分类型，每种类型只填对应字段。
 | dialTimeout | string | 建立 TCP 连接的超时，如 `10s`（`kind=reverse_proxy`，非 FastCGI 时有效） |
 | readTimeout | string | 等待上游响应头的超时，如 `30s`（`kind=reverse_proxy`，非 FastCGI 时有效） |
 | writeTimeout | string | 向上游写入请求的超时，如 `30s`（`kind=reverse_proxy`，非 FastCGI 时有效） |
+| proxyRewrite | object | 转发前 URI 重写配置，写入 Caddy `reverse_proxy.rewrite`（`kind=reverse_proxy`） |
+| proxyRewrite.method | string | 转发前改写请求方法，如 `GET` / `POST` |
+| proxyRewrite.rewriteUri | string | 完整替换转发给上游的 URI，支持 Caddy 占位符 |
+| proxyRewrite.stripPathPrefix | string | 转发前去掉路径前缀 |
+| proxyRewrite.stripPathSuffix | string | 转发前去掉路径后缀 |
+| proxyRewrite.uriSubstringFind | string | 转发前 URI 子串查找 |
+| proxyRewrite.uriSubstringReplace | string | 转发前 URI 子串替换 |
 | root | string | 静态文件根目录（`kind=file_server`） |
 | browse | boolean | 是否开启目录浏览（`kind=file_server`） |
 | statusCode | number | 响应状态码（`kind=static_response`） |
@@ -90,6 +97,16 @@ isrvd_post "/caddy/route" '{
 isrvd_post "/caddy/route" '{
   "match": {"headers": {"X-Internal": []}},
   "handler": {"kind": "reverse_proxy", "upstreams": ["internal-svc:8080"]}
+}'
+
+# 反向代理转发前重写 URI（生成 reverse_proxy.rewrite）
+isrvd_post "/caddy/route" '{
+  "match": {"paths": ["/api/*"]},
+  "handler": {
+    "kind": "reverse_proxy",
+    "upstreams": ["backend:8080"],
+    "proxyRewrite": {"method": "GET", "stripPathPrefix": "/api"}
+  }
 }'
 
 # 设置响应头（CORS / 安全头）
