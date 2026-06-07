@@ -33,6 +33,27 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/local/shell.vue')
   },
   {
+    path: '/ssh',
+    name: 'ssh',
+    redirect: '/ssh/hosts'
+  },
+  {
+    path: '/ssh/hosts',
+    name: 'ssh-hosts',
+    component: () => import('@/views/ssh/hosts.vue')
+  },
+  {
+    path: '/ssh/host/:id',
+    name: 'ssh-client',
+    component: () => import('@/views/ssh/client.vue'),
+    meta: { title: 'SSH 客户端' }
+  },
+  {
+    path: '/ssh/credentials',
+    name: 'ssh-credentials',
+    component: () => import('@/views/ssh/credentials.vue')
+  },
+  {
     path: '/apisix',
     name: 'apisix',
     redirect: '/apisix/routes'
@@ -206,27 +227,6 @@ const routes: RouteRecordRaw[] = [
     path: '/cron/jobs',
     name: 'cron-jobs',
     component: () => import('@/views/cron/jobs.vue')
-  },
-  {
-    path: '/ssh',
-    name: 'ssh',
-    redirect: '/ssh/hosts'
-  },
-  {
-    path: '/ssh/credentials',
-    name: 'ssh-credentials',
-    component: () => import('@/views/ssh/credentials.vue')
-  },
-  {
-    path: '/ssh/hosts',
-    name: 'ssh-hosts',
-    component: () => import('@/views/ssh/hosts.vue')
-  },
-  {
-    path: '/ssh/host/:id',
-    name: 'ssh-client',
-    component: () => import('@/views/ssh/client.vue'),
-    meta: { title: 'SSH 客户端' }
   },
   {
     path: '/account/members',

@@ -249,6 +249,30 @@ export default toNative(NavigationBar)
           </div>
         </template>
       </div>
+      <!-- SSH/SFTP 折叠子菜单 -->
+      <div v-if="portal.hasPerm('GET /api/ssh/hosts') || portal.hasPerm('GET /api/ssh/credentials')">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'bg-blue-50 text-blue-700': isSshActive }" title="SSH / SFTP" @click.stop="toggleSsh">
+          <i class="fas fa-server"></i>
+        </button>
+        <template v-else>
+          <button class="nav-link w-full" :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isSshActive }" @click.stop="toggleSsh">
+            <i class="fas fa-server"></i>
+            <span>SSH / SFTP</span>
+            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': sshExpanded }"></i>
+          </button>
+          <div v-show="sshExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+            <router-link v-if="portal.hasPerm('GET /api/ssh/hosts')" to="/ssh/hosts" class="nav-link" :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/ssh/hosts') || isActive('/ssh/host/') }">
+              <i class="fas fa-server"></i>
+              <span>主机连接</span>
+            </router-link>
+            <router-link v-if="portal.hasPerm('GET /api/ssh/credentials')" to="/ssh/credentials" class="nav-link" :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/ssh/credentials') }">
+              <i class="fas fa-id-card"></i>
+              <span>认证凭据</span>
+            </router-link>
+          </div>
+        </template>
+      </div>
+
       <!-- APISIX 折叠子菜单 -->
       <div v-if="portal.hasPerm('apisix')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
@@ -466,29 +490,6 @@ export default toNative(NavigationBar)
         <i class="fas fa-file-code"></i>
         <span v-if="!collapsed">Compose 部署</span>
       </router-link>
-      <!-- SSH/SFTP 折叠子菜单 -->
-      <div v-if="portal.hasPerm('GET /api/ssh/hosts') || portal.hasPerm('GET /api/ssh/credentials')">
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'bg-blue-50 text-blue-700': isSshActive }" title="SSH & SFTP" @click.stop="toggleSsh">
-          <i class="fas fa-server"></i>
-        </button>
-        <template v-else>
-          <button class="nav-link w-full" :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isSshActive }" @click.stop="toggleSsh">
-            <i class="fas fa-server"></i>
-            <span>SSH & SFTP</span>
-            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': sshExpanded }"></i>
-          </button>
-          <div v-show="sshExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
-            <router-link v-if="portal.hasPerm('GET /api/ssh/hosts')" to="/ssh/hosts" class="nav-link" :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/ssh/hosts') || isActive('/ssh/host/') }">
-              <i class="fas fa-server"></i>
-              <span>主机连接</span>
-            </router-link>
-            <router-link v-if="portal.hasPerm('GET /api/ssh/credentials')" to="/ssh/credentials" class="nav-link" :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/ssh/credentials') }">
-              <i class="fas fa-id-card"></i>
-              <span>认证凭据</span>
-            </router-link>
-          </div>
-        </template>
-      </div>
 
       <!-- 计划任务 -->
       <router-link v-if="portal.hasPerm('GET /api/cron/jobs')" to="/cron/jobs" class="nav-link" active-class="bg-blue-50 text-blue-700" :title="collapsed ? '计划任务' : ''">
