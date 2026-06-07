@@ -30,6 +30,10 @@ class Tasks extends Vue {
         if (this.selectedServiceId) {
             list = list.filter((t: SwarmTask) => t.serviceID === this.selectedServiceId)
         }
+        // 按更新时间降序排列（最新在前）
+        list = [...list].sort((a: SwarmTask, b: SwarmTask) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        )
         const keyword = this.searchText.trim().toLowerCase()
         if (!keyword) return list
         return list.filter((t: SwarmTask) =>
@@ -169,7 +173,7 @@ export default toNative(Tasks)
               <th class="w-28 th">状态</th>
               <th class="th">消息</th>
               <th class="w-36 th">节点</th>
-              <th class="w-40 th">更新时间</th>
+              <th class="w-52 th">更新时间</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-slate-100">
