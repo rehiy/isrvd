@@ -651,9 +651,9 @@ export default toNative(RouteEditModal)
             </div>
           </div>
           <ToggleCard v-model="formData.fastcgi" label="FastCGI 协议" desc="适用于 PHP-FPM 等 FastCGI 进程">
-              <label class="form-label">FastCGI 文档根目录</label>
-              <input v-model="formData.fastcgiRoot" type="text" class="input font-mono text-sm" placeholder="请输入 FastCGI 根目录（可选）" />
-              <p class="text-xs text-slate-400 mt-1">设置 <code class="px-1 bg-slate-100 rounded">DOCUMENT_ROOT</code>，留空不传 root，例如：/var/www/html</p>
+            <label class="form-label">FastCGI 文档根目录</label>
+            <input v-model="formData.fastcgiRoot" type="text" class="input font-mono text-sm" placeholder="请输入 FastCGI 根目录（可选）" />
+            <p class="text-xs text-slate-400 mt-1">设置 <code class="px-1 bg-slate-100 rounded">DOCUMENT_ROOT</code>，留空不传 root，例如：/var/www/html</p>
           </ToggleCard>
           <ToggleCard v-model="formData.proxyRewriteEnabled" label="代理前 URI 重写">
             <template #desc>写入 <code class="px-1 bg-slate-100 rounded">reverse_proxy.rewrite</code>，仅影响转发给上游的请求 URI</template>
@@ -770,51 +770,50 @@ export default toNative(RouteEditModal)
       <ToggleCard v-if="formData.kind !== 'raw'" v-model="formData.enableHeaders" label="配置请求头/响应头操作">
         <template #desc>串联中间件，在处理器前执行，支持占位符如 <code class="px-1 bg-slate-100 rounded">{http.request.remote.host}</code></template>
         <div class="space-y-4">
-        <!-- 请求头 -->
-        <div>
-          <label class="form-label">请求头</label>
-          <p class="text-xs text-slate-400 mt-1 mb-2">例如：字段 X-Real-IP，值 {http.request.remote.host}</p>
-          <div v-if="formData.requestHeaders.length" class="space-y-2 mb-2">
-            <div v-for="(op, idx) in formData.requestHeaders" :key="idx" class="flex gap-2 items-center">
-              <select v-model="op.op" class="input text-sm w-24 shrink-0">
-                <option value="set">覆盖</option>
-                <option value="add">追加</option>
-                <option value="delete">Delete</option>
-              </select>
-              <input v-model="op.field" type="text" class="input font-mono text-sm flex-1" placeholder="请输入请求头名称" />
-              <input v-if="op.op !== 'delete'" v-model="op.value" type="text" class="input font-mono text-sm flex-1" placeholder="请输入请求头值（支持占位符）" />
-              <div v-else class="flex-1"></div>
-              <button type="button" class="text-slate-400 hover:text-red-500 shrink-0" @click="removeHeaderOp('request', idx)"><i class="fas fa-trash text-sm"></i></button>
+          <!-- 请求头 -->
+          <div>
+            <label class="form-label">请求头</label>
+            <p class="text-xs text-slate-400 mt-1 mb-2">例如：字段 X-Real-IP，值 {http.request.remote.host}</p>
+            <div v-if="formData.requestHeaders.length" class="space-y-2 mb-2">
+              <div v-for="(op, idx) in formData.requestHeaders" :key="idx" class="flex gap-2 items-center">
+                <select v-model="op.op" class="input text-sm w-24 shrink-0">
+                  <option value="set">覆盖</option>
+                  <option value="add">追加</option>
+                  <option value="delete">Delete</option>
+                </select>
+                <input v-model="op.field" type="text" class="input font-mono text-sm flex-1" placeholder="请输入请求头名称" />
+                <input v-if="op.op !== 'delete'" v-model="op.value" type="text" class="input font-mono text-sm flex-1" placeholder="请输入请求头值（支持占位符）" />
+                <div v-else class="flex-1"></div>
+                <button type="button" class="text-slate-400 hover:text-red-500 shrink-0" @click="removeHeaderOp('request', idx)"><i class="fas fa-trash text-sm"></i></button>
+              </div>
             </div>
+            <button type="button" class="btn-add-row" @click="addHeaderOp('request')">
+              <i class="fas fa-plus text-xs"></i>添加请求头操作
+            </button>
           </div>
-          <button type="button" class="btn-add-row" @click="addHeaderOp('request')">
-            <i class="fas fa-plus text-xs"></i>添加请求头操作
-          </button>
-        </div>
-        <!-- 响应头 -->
-        <div>
-          <label class="form-label">响应头</label>
-          <p class="text-xs text-slate-400 mt-1 mb-2">例如：字段 X-Frame-Options，值 SAMEORIGIN</p>
-          <div v-if="formData.responseHeaders.length" class="space-y-2 mb-2">
-            <div v-for="(op, idx) in formData.responseHeaders" :key="idx" class="flex gap-2 items-center">
-              <select v-model="op.op" class="input text-sm w-24 shrink-0">
-                <option value="set">覆盖</option>
-                <option value="add">追加</option>
-                <option value="delete">删除</option>
-              </select>
-              <input v-model="op.field" type="text" class="input font-mono text-sm flex-1" placeholder="请输入响应头名称" />
-              <input v-if="op.op !== 'delete'" v-model="op.value" type="text" class="input font-mono text-sm flex-1" placeholder="请输入响应头值" />
-              <div v-else class="flex-1"></div>
-              <button type="button" class="text-slate-400 hover:text-red-500 shrink-0" @click="removeHeaderOp('response', idx)"><i class="fas fa-trash text-sm"></i></button>
+          <!-- 响应头 -->
+          <div>
+            <label class="form-label">响应头</label>
+            <p class="text-xs text-slate-400 mt-1 mb-2">例如：字段 X-Frame-Options，值 SAMEORIGIN</p>
+            <div v-if="formData.responseHeaders.length" class="space-y-2 mb-2">
+              <div v-for="(op, idx) in formData.responseHeaders" :key="idx" class="flex gap-2 items-center">
+                <select v-model="op.op" class="input text-sm w-24 shrink-0">
+                  <option value="set">覆盖</option>
+                  <option value="add">追加</option>
+                  <option value="delete">删除</option>
+                </select>
+                <input v-model="op.field" type="text" class="input font-mono text-sm flex-1" placeholder="请输入响应头名称" />
+                <input v-if="op.op !== 'delete'" v-model="op.value" type="text" class="input font-mono text-sm flex-1" placeholder="请输入响应头值" />
+                <div v-else class="flex-1"></div>
+                <button type="button" class="text-slate-400 hover:text-red-500 shrink-0" @click="removeHeaderOp('response', idx)"><i class="fas fa-trash text-sm"></i></button>
+              </div>
             </div>
+            <button type="button" class="btn-add-row" @click="addHeaderOp('response')">
+              <i class="fas fa-plus text-xs"></i>添加响应头操作
+            </button>
           </div>
-          <button type="button" class="btn-add-row" @click="addHeaderOp('response')">
-            <i class="fas fa-plus text-xs"></i>添加响应头操作
-          </button>
-        </div>
         </div>
       </ToggleCard>
-
     </div>
   
     <template #confirm-text>

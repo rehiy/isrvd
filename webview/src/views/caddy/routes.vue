@@ -209,7 +209,7 @@ export default toNative(CaddyRoutes)
               </td>
               <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getRoutePaths(route) }}</code></td>
               <td class="px-4 py-3"><span class="text-xs text-slate-600">{{ getRouteMethods(route) }}</span></td>
-<td class="px-4 py-3"><span :class="getHandlerTagClass(route)" class="inline-block text-xs px-2 py-0.5 rounded-lg">{{ getHandlerKindLabel(getTerminalHandler(route)?.handler as string) }}</span></td>
+              <td class="px-4 py-3"><span :class="getHandlerTagClass(route)" class="inline-block text-xs px-2 py-0.5 rounded-lg">{{ getHandlerKindLabel(getTerminalHandler(route)?.handler as string) }}</span></td>
               <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getHandlerSummary(route) }}</code></td>
               <td class="px-4 py-3">
                 <div class="flex justify-end items-center gap-1">
@@ -231,7 +231,7 @@ export default toNative(CaddyRoutes)
             </div>
             <div class="min-w-0">
               <span class="font-medium text-slate-800 text-sm truncate block">{{ getRouteHosts(route) }}</span>
-<span class="text-xs text-slate-400 truncate block mt-0.5">{{ getHandlerKindLabel(getTerminalHandler(route)?.handler as string) }}</span>
+              <span class="text-xs text-slate-400 truncate block mt-0.5">{{ getHandlerKindLabel(getTerminalHandler(route)?.handler as string) }}</span>
             </div>
           </div>
 

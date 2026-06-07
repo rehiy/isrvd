@@ -51,7 +51,6 @@
     @apply p-4;
   }
 
-  /* 卡片表格区
   /* 卡片表格区（桌面端表格列表）：无内边距，overflow 滚动，table 直接贴边
    * 用法：<div class="card-table hidden md:block"><table>...</table></div>
    * 不需要额外的 -mx-* 负边距层 */

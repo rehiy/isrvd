@@ -368,7 +368,7 @@
 
 #### 文件结构与类清单
 
-`light_components.css` 包含 8 个模块，按功能分组：
+`light_components.css` 包含 11 个模块，按功能分组：
 
 **1. 卡片（Card）**
 
@@ -444,7 +444,8 @@
 | 类 | 用途 | 禁止手写 |
 |---|---|---|
 | `.form-label` | 字段 label（灰色大写标题） | `block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1` |
-| `.section-title` | 详情页信息分组标题 | `text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3` |
+| `.section-title` | 详情页信息分组标题 | `text-sm font-semibold text-slate-700 mb-3 pb-2 border-b border-slate-200` |
+| `.section-title-table` | 后面紧跟表格时（去掉 margin，横线充当表格顶边框） | `mb-0` |
 | `.input` | 文本输入框 | `w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 text-slate-700 hover:border-slate-300` |
 | `.select-sm` | 小尺寸 select（toolbar 内使用，固定 `h-9`；基础颜色/边框来自全局 `select`） | `h-9 px-3 pr-8 rounded-md text-xs` |
 | `.select-search-header` | 下拉选择器粘性搜索头部 | `px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-2 sticky top-0 z-10` |
@@ -458,9 +459,31 @@
 
 **8. 徽章与标签（Badge）**
 
-| 类 | 用途 |
-|---|---|
-| `.badge` / `.badge-primary` / `.badge-warning` | 通用徽章（`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium`） |
+| 类 | 用途 | 禁止手写 |
+|---|---|---|
+| `.badge` / `.badge-primary` / `.badge-warning` / `.badge-success` / `.badge-muted` | 通用徽章 | `inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium` |
+
+**9. 概览统计卡片（Stat Card）**
+
+| 类 | 用途 | 禁止手写 |
+|---|---|---|
+| `.stat-card` | 概览 Widget 统计卡片（规范 1.12） | `rounded-xl border border-slate-200 bg-white p-4 hover:shadow-md transition-shadow flex items-center gap-3` |
+
+**10. 终端页面（Terminal Page）**
+
+| 类 | 用途 | 禁止手写 |
+|---|---|---|
+| `.terminal-pane` | 终端黑色面板（固定深色背景，不跟随主题切换） | `flex-1 p-2 md:p-3 overflow-hidden`，背景 `#0f172a` |
+
+**11. 表单补充（Form Supplement）**
+
+| 类 | 用途 | 说明 |
+|---|---|---|
+| `select` 全局 | select 基础样式（自定义箭头、边框交互） | 定义在 `light_components.css` 的 `select {}` 选择器中 |
+| `select.input` | select 表单尺寸（配合 `.input` 使用） | `pr-10 rounded-xl`，固定高度 46px |
+| `.input + .btn` | input 后紧跟的按钮等高处理 | `height: 46px` |
+| `.btn-proto` / `-active` / `-inactive` | 协议/枚举选择按钮（如 不限/HTTP/HTTPS） | `px-3 py-2 rounded-lg text-sm font-medium border transition-colors` |
+| `.btn-add-row` | 虚线添加行按钮（表格式编辑区底部） | `w-full flex items-center justify-center gap-2 py-3 rounded-lg border border-dashed ...` |
 
 #### 使用规则
 
@@ -472,14 +495,22 @@
 - **卡片操作栏（移动端）**：使用 `.card-actions`，`gap-1.5` 不得用 `gap-1`
 - **单选模式/来源卡片**：使用 `.option-card` + `.option-card-inactive` / `.option-card-disabled` + `.option-card-icon`
 - **Tab 切换**：使用 `.tab-group` + `.tab-btn` / `.tab-btn-text`，整体高度 36px
+- **协议/枚举选择按钮**：使用 `.btn-proto` + `.btn-proto-active` / `.btn-proto-inactive`
+- **虚线添加行按钮**：使用 `.btn-add-row`（表格式编辑区底部）
+- **概览统计卡片**：使用 `.stat-card`（规范 1.12）
 - **独立详情页 toolbar**：去掉 `<ContainerNav>` Tab 导航，改用独立 `.card-toolbar`（图标+标题在左，操作控件在右），不添加返回按钮
 - **header 区域文字按钮统一**：`app.vue` header 中的文字按钮（如工具箱链接、AI 助手）统一使用 `btn btn-ghost px-4 py-2 text-sm gap-2`，禁止个别按钮手写冗余 inline class
+- **`.section-title` 强制规范**：
+  - 文字颜色 `text-slate-700`、字号 `text-sm`、加底部边框 `border-b border-slate-200 pb-2`
+  - 后面紧跟表格时，追加 `section-title-table` 类（去掉 margin，横线直接紧贴表格）
+  - 禁止手写 `text-xs ... text-slate-500` 等过时写法
 
 #### 禁止
 
 - 在有对应 CSS 类的情况下使用等价的 inline Tailwind 类
 - 在组件中使用 `dark:` 前缀（暗黑模式样式统一在 `dark.css`）
 - `.btn-icon-sm` 用于表格/移动卡片行级操作（应使用 `.btn-icon-{color}`）
+- `.section-title` 后紧跟表格时，手写 `border-b` 或 `mb-3`（应使用 `.section-title-table`）
 
 #### 样式自检脚本
 
@@ -487,11 +518,11 @@
 
 ---
 
-## 1.12 Explorer 与 SFTP 强一致性规范
+## 1.18 Explorer 与 SFTP 强一致性规范
 
 Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似的文件管理模块，**必须保持强一致性**，包括样式、交互、逻辑三个层面。
 
-### 1.12.1 组件结构一致性
+### 1.18.1 组件结构一致性
 
 | 要求 | 说明 |
 |---|---|
@@ -500,7 +531,7 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 | 模态框状态 | 使用局部 `loading` 状态（非全局 `portal` 状态），通过 `:loading="loading"` 绑定 |
 | 成功回调 | 通过 `this.$emit('success')` 通知父组件刷新，而非直接调用全局方法 |
 
-### 1.12.2 样式一致性
+### 1.18.2 样式一致性
 
 | 要求 | 说明 |
 |---|---|
@@ -509,7 +540,7 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 | CSS 类 | 使用相同的 CSS 类（如 `btn-icon-slate`、`input`、`form-label` 等） |
 | 布局结构 | 模态框内部布局、表单结构、提示信息样式必须一致 |
 
-### 1.12.3 交互一致性
+### 1.18.3 交互一致性
 
 | 要求 | 说明 |
 |---|---|
@@ -518,7 +549,7 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 | 通知提示 | 成功/失败通知格式一致（如 `"文件保存成功"`、`"权限修改失败: " + error`） |
 | 路径处理 | 文件路径构建逻辑一致（都使用 `basePath + '/' + file.name` 格式） |
 
-### 1.12.4 配色对照表
+### 1.18.4 配色对照表
 
 | 操作 | 配色 | Explorer | SFTP |
 |---|---|---|---|
@@ -529,12 +560,12 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 | 压缩/解压 | `amber` | `btn-icon-amber` | - |
 | 上传 | `teal` | - | `btn-icon-teal` |
 
-### 1.12.5 检查清单
+### 1.18.5 检查清单
 
 在修改 Explorer 或 SFTP 相关代码时，必须检查：
 
 - [ ] 模态框组件结构是否与对方一致（`BaseModal`、`expose`、`ref`）
-- [ ] 按钮配色是否与对方一致（参考 1.12.4 配色对照表）
+- [ ] 按钮配色是否与对方一致（参考 1.18.4 配色对照表）
 - [ ] 图标是否与对方一致（相同功能用相同图标）
 - [ ] 表单样式是否与对方一致（相同的 CSS 类）
 - [ ] 按钮文本动态显示是否一致（"操作中..." / "操作名"）
