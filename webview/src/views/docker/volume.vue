@@ -128,11 +128,11 @@ export default toNative(VolumeDetail)
 
       <!-- 使用此卷的容器 -->
       <div>
-        <h2 class="section-title">
+        <h2 class="section-title section-title-table">
           使用此卷的容器
           <span v-if="detailData.usedBy" class="text-slate-400 normal-case font-normal ml-1">({{ detailData.usedBy.length }})</span>
         </h2>
-        <div v-if="detailData.usedBy && detailData.usedBy.length > 0" class="border border-slate-200 rounded-xl overflow-hidden">
+        <div v-if="detailData.usedBy && detailData.usedBy.length > 0" class="border-x border-b border-slate-200 rounded-b-xl overflow-hidden">
           <table class="w-full">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">

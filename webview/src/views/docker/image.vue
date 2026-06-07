@@ -151,124 +151,161 @@ export default toNative(ImageDetail)
       <p class="text-slate-500">加载中...</p>
     </div>
 
-    <div v-else-if="inspectData" class="card-body space-y-4">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <!-- 基本信息 -->
-        <div class="detail-card detail-card-blue">
-          <div class="detail-card-bar detail-card-bar-blue"></div>
-          <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-blue-500 to-blue-600"><i class="fas fa-circle-info text-white text-[9px]"></i></div>基本信息</h2>
-          <div class="detail-card-body">
+    <div v-else-if="inspectData" class="card-body space-y-4 text-sm">
+      <!-- 基本信息 & 平台信息 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+          <h2 class="section-title">基本信息</h2>
+          <div class="space-y-3">
             <div>
-              <div class="text-xs text-slate-500 mb-1">镜像 ID</div>
-              <code class="detail-code-block">{{ inspectData.id }}</code>
+              <label class="form-label">镜像 ID</label>
+              <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ inspectData.id }}</code>
             </div>
-            <div class="detail-row"><span class="detail-label">短 ID</span><code class="detail-value code">{{ shortHash(inspectData.shortId || inspectData.id) }}</code></div>
-            <div class="detail-row"><span class="detail-label">创建时间</span><span class="detail-value">{{ formatTime(inspectData.created) }}</span></div>
-            <div class="detail-row"><span class="detail-label">大小</span><span class="detail-value">{{ formatFileSize(inspectData.size) }}</span></div>
-            <div class="detail-row"><span class="detail-label">层数</span><span class="detail-value">{{ inspectData.layers }}</span></div>
-            <div v-if="inspectData.author" class="detail-row"><span class="detail-label">作者</span><span class="detail-value">{{ inspectData.author }}</span></div>
+            <div>
+              <label class="form-label">短 ID</label>
+              <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ shortHash(inspectData.shortId || inspectData.id) }}</code>
+            </div>
+            <div>
+              <label class="form-label">创建时间</label>
+              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(inspectData.created) }}</div>
+            </div>
+            <div>
+              <label class="form-label">大小</label>
+              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatFileSize(inspectData.size) }}</div>
+            </div>
+            <div>
+              <label class="form-label">层数</label>
+              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.layers }}</div>
+            </div>
+            <div v-if="inspectData.author">
+              <label class="form-label">作者</label>
+              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.author }}</div>
+            </div>
           </div>
         </div>
 
-        <!-- 平台信息 -->
-        <div class="detail-card detail-card-indigo">
-          <div class="detail-card-bar detail-card-bar-indigo"></div>
-          <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-indigo-500 to-indigo-600"><i class="fas fa-microchip text-white text-[9px]"></i></div>平台信息</h2>
-          <div class="detail-card-body">
-            <div class="detail-row"><span class="detail-label">操作系统</span><span class="detail-value">{{ inspectData.os || '-' }}</span></div>
-            <div class="detail-row"><span class="detail-label">架构</span><span class="detail-value">{{ inspectData.architecture || '-' }}</span></div>
-            <div class="detail-row"><span class="detail-label">标签数</span><span class="detail-value">{{ repoTags.length }}</span></div>
-            <div class="detail-row"><span class="detail-label">Digest 数</span><span class="detail-value">{{ repoDigests.length }}</span></div>
+        <div>
+          <h2 class="section-title">平台信息</h2>
+          <div class="space-y-3">
+            <div>
+              <label class="form-label">操作系统</label>
+              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.os || '-' }}</div>
+            </div>
+            <div>
+              <label class="form-label">架构</label>
+              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.architecture || '-' }}</div>
+            </div>
+            <div>
+              <label class="form-label">标签数</label>
+              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ repoTags.length }}</div>
+            </div>
+            <div>
+              <label class="form-label">Digest 数</label>
+              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ repoDigests.length }}</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <!-- 标签 -->
-        <div class="detail-card detail-card-blue">
-          <div class="detail-card-bar detail-card-bar-blue"></div>
-          <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-blue-500 to-blue-600"><i class="fas fa-tags text-white text-[9px]"></i></div>标签</h2>
+      <!-- 标签 & Digest -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+          <h2 class="section-title">标签</h2>
           <div v-if="repoTags.length" class="space-y-2">
-            <code v-for="tag in repoTags" :key="tag" class="detail-code-block">{{ tag }}</code>
+            <code v-for="tag in repoTags" :key="tag" class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ tag }}</code>
           </div>
-          <p v-else class="detail-empty">无标签</p>
+          <div v-else class="px-3 py-2 bg-slate-50 rounded-lg text-slate-400 text-sm">无标签</div>
         </div>
 
-        <!-- Digest -->
-        <div class="detail-card detail-card-slate">
-          <div class="detail-card-bar detail-card-bar-slate"></div>
-          <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-slate-500 to-slate-600"><i class="fas fa-fingerprint text-white text-[9px]"></i></div>Digest</h2>
+        <div>
+          <h2 class="section-title">Digest</h2>
           <div v-if="repoDigests.length" class="space-y-2">
-            <code v-for="digest in repoDigests" :key="digest" class="detail-code-block text-slate-700" :title="digest">{{ formatDigest(digest) }}</code>
+            <code v-for="digest in repoDigests" :key="digest" class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all" :title="digest">{{ formatDigest(digest) }}</code>
           </div>
-          <p v-else class="detail-empty">无 Digest</p>
+          <div v-else class="px-3 py-2 bg-slate-50 rounded-lg text-slate-400 text-sm">无 Digest</div>
         </div>
       </div>
 
       <!-- 运行配置 -->
-      <div class="detail-card detail-card-amber">
-        <div class="detail-card-bar detail-card-bar-amber"></div>
-        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-amber-500 to-amber-600"><i class="fas fa-sliders text-white text-[9px]"></i></div>运行配置</h2>
-        <div class="space-y-4">
+      <div>
+        <h2 class="section-title">运行配置</h2>
+        <div class="space-y-3">
           <div>
-            <div class="text-xs text-slate-500 mb-1">工作目录</div>
-            <code class="detail-code-block">{{ inspectData.workingDir || '-' }}</code>
+            <label class="form-label">工作目录</label>
+            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ inspectData.workingDir || '-' }}</code>
           </div>
           <div>
-            <div class="text-xs text-slate-500 mb-1">Entrypoint</div>
-            <code class="detail-code-block">{{ entrypointText || '-' }}</code>
+            <label class="form-label">Entrypoint</label>
+            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ entrypointText || '-' }}</code>
           </div>
           <div>
-            <div class="text-xs text-slate-500 mb-1">CMD</div>
-            <code class="detail-code-block">{{ cmdText || '-' }}</code>
+            <label class="form-label">CMD</label>
+            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ cmdText || '-' }}</code>
           </div>
           <div>
-            <div class="text-xs text-slate-500 mb-1">暴露端口</div>
-            <code class="detail-code-block">{{ exposedPortsText || '-' }}</code>
+            <label class="form-label">暴露端口</label>
+            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ exposedPortsText || '-' }}</code>
           </div>
         </div>
       </div>
 
       <!-- 环境变量 -->
-      <div class="detail-card detail-card-slate">
-        <div class="detail-card-bar detail-card-bar-slate"></div>
-        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-slate-500 to-slate-600"><i class="fas fa-terminal text-white text-[9px]"></i></div>环境变量</h2>
-        <div v-if="envList.length" class="detail-grid">
-          <code v-for="env in envList" :key="env" class="detail-grid-item">{{ env }}</code>
+      <div>
+        <h2 class="section-title">环境变量</h2>
+        <div v-if="envList.length" class="space-y-2">
+          <code v-for="env in envList" :key="env" class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ env }}</code>
         </div>
-        <p v-else class="detail-empty">无环境变量</p>
+        <div v-else class="px-3 py-2 bg-slate-50 rounded-lg text-slate-400 text-sm">无环境变量</div>
       </div>
 
       <!-- Labels -->
-      <div class="detail-card detail-card-purple">
-        <div class="detail-card-bar detail-card-bar-purple"></div>
-        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-purple-500 to-purple-600"><i class="fas fa-tags text-white text-[9px]"></i></div>Labels</h2>
-        <div v-if="labelEntries.length" class="detail-grid">
-          <div v-for="[key, value] in labelEntries" :key="key" class="detail-grid-item">
+      <div>
+        <h2 class="section-title">Labels</h2>
+        <div v-if="labelEntries.length" class="space-y-2">
+          <div v-for="[key, value] in labelEntries" :key="key" class="px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono break-all">
             <span class="text-slate-500">{{ key }}</span><span class="text-slate-300 mx-1">=</span><span class="text-slate-700">{{ value }}</span>
           </div>
         </div>
-        <p v-else class="detail-empty">无标签</p>
+        <div v-else class="px-3 py-2 bg-slate-50 rounded-lg text-slate-400 text-sm">无标签</div>
       </div>
 
       <!-- 层信息 -->
-      <div class="detail-card detail-card-indigo">
-        <div class="detail-card-bar detail-card-bar-indigo"></div>
-        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-indigo-500 to-indigo-600"><i class="fas fa-layer-group text-white text-[9px]"></i></div>层信息（{{ inspectData.layers }} 个实际层，共 {{ layerDetails.length }} 步）</h2>
-        <div v-if="layerDetails.length" class="space-y-2">
-          <div v-for="(layer, idx) in layerDetails" :key="idx" class="detail-list-item grid grid-cols-[1.75rem_3.75rem_minmax(0,1fr)_8.5rem] gap-2 items-center" :class="layer.empty ? 'bg-slate-100/70' : 'bg-white'">
-            <span
-              class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold"
-              :class="layer.empty ? 'bg-slate-200 text-slate-400' : 'bg-blue-50 text-blue-600'"
-            >{{ layerDetails.length - idx }}</span>
-            <span v-if="!layer.empty" class="text-xs text-slate-500 text-right tabular-nums">{{ formatFileSize(layer.size) }}</span>
-            <span v-else class="text-xs text-slate-400 text-right">空层</span>
-            <code class="text-xs font-mono text-slate-700 truncate min-w-0">{{ layer.createdBy || '(无命令)' }}</code>
-            <code v-if="!layer.empty && layer.digest" class="text-xs font-mono text-slate-400 truncate text-right" :title="layer.digest">{{ formatDigest(layer.digest) }}</code>
-            <span v-else class="text-xs text-slate-300 text-right">-</span>
-          </div>
+      <div>
+        <h2 class="section-title section-title-table">
+          层信息
+          <span class="text-slate-400 normal-case font-normal ml-1">（{{ inspectData.layers }} 个实际层，共 {{ layerDetails.length }} 步）</span>
+        </h2>
+        <div v-if="layerDetails.length" class="border-x border-b border-slate-200 rounded-b-xl overflow-hidden">
+          <table class="w-full">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="th-sm w-10">#</th>
+                <th class="th-sm w-28">大小</th>
+                <th class="th-sm">命令</th>
+                <th class="th-sm w-36">Digest</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-slate-100">
+              <tr v-for="(layer, idx) in layerDetails" :key="idx" class="hover:bg-slate-50 transition-colors" :class="layer.empty ? 'opacity-50' : ''">
+                <td class="px-3 py-2 text-center">
+                  <span class="text-xs font-bold" :class="layer.empty ? 'text-slate-400' : 'text-slate-600'">{{ layerDetails.length - idx }}</span>
+                </td>
+                <td class="px-3 py-2 text-right">
+                  <span v-if="!layer.empty" class="text-xs text-slate-500 tabular-nums">{{ formatFileSize(layer.size) }}</span>
+                  <span v-else class="text-xs text-slate-400">空层</span>
+                </td>
+                <td class="px-3 py-2">
+                  <code class="text-xs font-mono text-slate-700 truncate block max-w-xs">{{ layer.createdBy || '(无命令)' }}</code>
+                </td>
+                <td class="px-3 py-2 text-right">
+                  <code v-if="!layer.empty && layer.digest" class="text-xs font-mono text-slate-400 truncate block" :title="layer.digest">{{ formatDigest(layer.digest) }}</code>
+                  <span v-else class="text-xs text-slate-300">-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <p v-else class="detail-empty">无层信息</p>
+        <div v-else class="px-3 py-2 bg-slate-50 rounded-lg text-slate-400 text-sm">无层信息</div>
       </div>
     </div>
 

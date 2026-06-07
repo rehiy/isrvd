@@ -119,90 +119,138 @@ export default toNative(ContainerDetail)
       <p class="text-slate-500">加载中...</p>
     </div>
 
-    <div v-else-if="detail" class="card-body space-y-4">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <!-- 基本信息 -->
-        <div class="detail-card detail-card-emerald">
-          <div class="detail-card-bar detail-card-bar-emerald"></div>
-          <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-emerald-500 to-emerald-600"><i class="fas fa-circle-info text-white text-[9px]"></i></div>基本信息</h2>
-          <div class="detail-card-body">
-            <div class="detail-row"><span class="detail-label">名称</span><span class="detail-value">{{ detail.name }}</span></div>
-            <div class="detail-row"><span class="detail-label">ID</span><code class="detail-value code">{{ detail.id }}</code></div>
-            <div class="detail-row"><span class="detail-label">状态</span><span :class="detail.state === 'running' ? 'text-emerald-600 font-medium' : 'text-slate-500'">{{ detail.state }}</span></div>
-            <div class="detail-row"><span class="detail-label">创建时间</span><span class="detail-value">{{ formatTime(detail.createdAt) }}</span></div>
-            <div class="detail-row"><span class="detail-label">镜像</span><code class="detail-value code">{{ detail.image }}</code></div>
-            <div class="detail-row"><span class="detail-label">重启策略</span><span class="detail-value">{{ detail.restart || 'no' }}</span></div>
+    <div v-else-if="detail" class="card-body space-y-4 text-sm">
+      <!-- 基本信息 -->
+      <div>
+        <h2 class="section-title">基本信息</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="col-span-2">
+            <label class="form-label">名称</label>
+            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 break-all">{{ detail.name }}</div>
           </div>
-        </div>
-
-        <!-- 运行配置 -->
-        <div class="detail-card detail-card-blue">
-          <div class="detail-card-bar detail-card-bar-blue"></div>
-          <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-blue-500 to-blue-600"><i class="fas fa-sliders text-white text-[9px]"></i></div>运行配置</h2>
-          <div class="detail-card-body">
-            <div class="detail-row"><span class="detail-label">网络</span><span class="detail-value">{{ detail.network || '-' }}</span></div>
-            <div class="detail-row"><span class="detail-label">工作目录</span><span class="detail-value">{{ detail.workdir || '-' }}</span></div>
-            <div class="detail-row"><span class="detail-label">用户</span><span class="detail-value">{{ detail.user || '-' }}</span></div>
-            <div class="detail-row"><span class="detail-label">主机名</span><span class="detail-value">{{ detail.hostname || '-' }}</span></div>
-            <div class="detail-row"><span class="detail-label">特权模式</span><span class="detail-value">{{ detail.privileged ? '是' : '否' }}</span></div>
-            <div class="detail-row"><span class="detail-label">资源限制</span><span class="detail-value">{{ detail.memory || 0 }} MB / {{ detail.cpus || 0 }} CPU</span></div>
+          <div class="col-span-2">
+            <label class="form-label">ID</label>
+            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ detail.id }}</code>
+          </div>
+          <div>
+            <label class="form-label">状态</label>
+            <div :class="['px-3 py-2 bg-slate-50 rounded-lg font-medium', detail.state === 'running' ? 'text-emerald-600' : 'text-slate-500']">{{ detail.state }}</div>
+          </div>
+          <div>
+            <label class="form-label">重启策略</label>
+            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detail.restart || 'no' }}</div>
+          </div>
+          <div>
+            <label class="form-label">创建时间</label>
+            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(detail.createdAt) }}</div>
+          </div>
+          <div>
+            <label class="form-label">镜像</label>
+            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ detail.image }}</code>
           </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <!-- 端口映射 -->
-        <div class="detail-card detail-card-indigo">
-          <div class="detail-card-bar detail-card-bar-indigo"></div>
-          <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-indigo-500 to-indigo-600"><i class="fas fa-network-wired text-white text-[9px]"></i></div>端口映射</h2>
-          <div v-if="portEntries.length" class="space-y-2">
-            <div v-for="[host, target] in portEntries" :key="host" class="detail-list-item">
-              <code class="text-slate-700">{{ host }}</code><i class="fas fa-arrow-right text-slate-300"></i><code class="text-slate-700">{{ target }}</code>
-            </div>
+      <!-- 运行配置 -->
+      <div>
+        <h2 class="section-title">运行配置</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="form-label">网络</label>
+            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detail.network || '-' }}</div>
           </div>
-          <p v-else class="detail-empty">无端口映射</p>
+          <div>
+            <label class="form-label">主机名</label>
+            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detail.hostname || '-' }}</div>
+          </div>
+          <div>
+            <label class="form-label">工作目录</label>
+            <div class="px-3 py-2 bg-slate-50 rounded-lg font-mono text-slate-700">{{ detail.workdir || '-' }}</div>
+          </div>
+          <div>
+            <label class="form-label">用户</label>
+            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detail.user || '-' }}</div>
+          </div>
+          <div>
+            <label class="form-label">特权模式</label>
+            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detail.privileged ? '是' : '否' }}</div>
+          </div>
+          <div>
+            <label class="form-label">资源限制</label>
+            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detail.memory || 0 }} MB / {{ detail.cpus || 0 }} CPU</div>
+          </div>
         </div>
+      </div>
 
-        <!-- 挂载 -->
-        <div class="detail-card detail-card-amber">
-          <div class="detail-card-bar detail-card-bar-amber"></div>
-          <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-amber-500 to-amber-600"><i class="fas fa-hard-drive text-white text-[9px]"></i></div>挂载</h2>
-          <div v-if="detail.volumes?.length" class="space-y-2">
-            <code v-for="vol in detail.volumes" :key="formatVolume(vol)" class="detail-code-block">{{ formatVolume(vol) }}</code>
-          </div>
-          <p v-else class="detail-empty">无挂载</p>
+      <!-- 端口映射 -->
+      <div>
+        <h2 class="section-title section-title-table">端口映射</h2>
+        <div v-if="portEntries.length" class="border-x border-b border-slate-200 rounded-b-xl overflow-hidden">
+          <table class="w-full">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="th-sm">主机端口</th>
+                <th class="th-sm">容器端口</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-slate-100">
+              <tr v-for="[host, target] in portEntries" :key="host" class="hover:bg-slate-50 transition-colors">
+                <td class="px-3 py-2 font-mono text-xs text-slate-700">{{ host }}</td>
+                <td class="px-3 py-2 font-mono text-xs text-slate-700">{{ target }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+        <div v-else class="text-sm text-slate-400 py-6 text-center bg-slate-50 rounded-xl">无端口映射</div>
+      </div>
+
+      <!-- 挂载 -->
+      <div>
+        <h2 class="section-title">挂载</h2>
+        <div v-if="detail.volumes?.length" class="space-y-2">
+          <code v-for="vol in detail.volumes" :key="formatVolume(vol)" class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ formatVolume(vol) }}</code>
+        </div>
+        <div v-else class="text-sm text-slate-400 py-6 text-center bg-slate-50 rounded-xl">无挂载</div>
       </div>
 
       <!-- 命令与环境变量 -->
-      <div class="detail-card detail-card-slate">
-        <div class="detail-card-bar detail-card-bar-slate"></div>
-        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-slate-500 to-slate-600"><i class="fas fa-terminal text-white text-[9px]"></i></div>命令与环境变量</h2>
-        <div class="space-y-4">
+      <div>
+        <h2 class="section-title">命令与环境变量</h2>
+        <div class="space-y-3">
           <div>
-            <div class="text-xs text-slate-500 mb-1">启动命令</div>
-            <code class="detail-code-block">{{ cmdText || '-' }}</code>
+            <label class="form-label">启动命令</label>
+            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ cmdText || '-' }}</code>
           </div>
           <div>
-            <div class="text-xs text-slate-500 mb-1">环境变量</div>
-            <div v-if="envList.length" class="detail-grid">
-              <code v-for="env in envList" :key="env" class="detail-grid-item">{{ env }}</code>
+            <label class="form-label">环境变量</label>
+            <div v-if="envList.length" class="space-y-1">
+              <code v-for="env in envList" :key="env" class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ env }}</code>
             </div>
-            <p v-else class="detail-empty">无环境变量</p>
+            <div v-else class="text-sm text-slate-400 py-6 text-center bg-slate-50 rounded-xl">无环境变量</div>
           </div>
         </div>
       </div>
 
       <!-- Labels -->
-      <div class="detail-card detail-card-purple">
-        <div class="detail-card-bar detail-card-bar-purple"></div>
-        <h2 class="detail-card-title"><div class="detail-card-icon bg-gradient-to-br from-purple-500 to-purple-600"><i class="fas fa-tags text-white text-[9px]"></i></div>Labels</h2>
-        <div v-if="labelEntries.length" class="detail-grid">
-          <div v-for="[key, value] in labelEntries" :key="key" class="detail-grid-item">
-            <span class="text-slate-500">{{ key }}</span><span class="text-slate-300 mx-1">=</span><span class="text-slate-700">{{ value }}</span>
-          </div>
+      <div>
+        <h2 class="section-title section-title-table">Labels</h2>
+        <div v-if="labelEntries.length" class="border-x border-b border-slate-200 rounded-b-xl overflow-hidden">
+          <table class="w-full">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="th-sm">Key</th>
+                <th class="th-sm">Value</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-slate-100">
+              <tr v-for="[key, value] in labelEntries" :key="key" class="hover:bg-slate-50 transition-colors">
+                <td class="px-3 py-2 font-mono text-xs text-slate-500">{{ key }}</td>
+                <td class="px-3 py-2 font-mono text-xs text-slate-700">{{ value }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <p v-else class="detail-empty">无标签</p>
+        <div v-else class="text-sm text-slate-400 py-6 text-center bg-slate-50 rounded-xl">无标签</div>
       </div>
     </div>
 

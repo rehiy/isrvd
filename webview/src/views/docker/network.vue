@@ -127,11 +127,11 @@ export default toNative(NetworkDetail)
 
       <!-- 已连接的容器 -->
       <div>
-        <h2 class="section-title">
+        <h2 class="section-title section-title-table">
           已连接容器
           <span v-if="detailData.containers" class="text-slate-400 normal-case font-normal ml-1">({{ detailData.containers.length }})</span>
         </h2>
-        <div v-if="detailData.containers && detailData.containers.length > 0" class="border border-slate-200 rounded-xl overflow-hidden">
+        <div v-if="detailData.containers && detailData.containers.length > 0" class="border-x border-b border-slate-200 rounded-b-xl overflow-hidden">
           <table class="w-full">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
