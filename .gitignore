@@ -27,6 +27,7 @@ Thumbs.db
 
 # Log files
 *.log
+*.jsonl
 logs/
 
 # Environment files
