@@ -58,6 +58,11 @@ func ServiceToSwarmRequest(project *types.Project, svc types.ServiceConfig) (swa
 		})
 	}
 
+	// placement constraints
+	if svc.Deploy != nil && len(svc.Deploy.Placement.Constraints) > 0 {
+		req.Constraints = svc.Deploy.Placement.Constraints
+	}
+
 	return req, nil
 }
 
