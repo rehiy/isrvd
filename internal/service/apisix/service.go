@@ -4,6 +4,7 @@ package apisix
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/strutil"
@@ -164,6 +165,67 @@ func (s *Service) ConsumerDelete(ctx context.Context, username string) error {
 }
 
 // ─── 白名单管理 ───
+
+// WhitelistRouteCreateRequest 配置白名单路由请求
+type WhitelistRouteCreateRequest struct {
+	RouteID   string         `json:"route_id"`
+	Consumers []string       `json:"consumers"`
+	KeyAuth   map[string]any `json:"key_auth"`
+}
+
+// WhitelistRouteCreate 为已有路由配置 Consumer 白名单
+func (s *Service) WhitelistRouteCreate(ctx context.Context, req WhitelistRouteCreateRequest) (*pkgapisix.Route, error) {
+	routeID := strings.TrimSpace(req.RouteID)
+	if routeID == "" {
+		return nil, fmt.Errorf("路由 ID 不能为空")
+	}
+	if len(req.Consumers) == 0 {
+		return nil, fmt.Errorf("白名单用户不能为空")
+	}
+	if len(req.KeyAuth) == 0 {
+		return nil, fmt.Errorf("key-auth 配置不能为空")
+	}
+	header, _ := req.KeyAuth["header"].(string)
+	if strings.TrimSpace(header) == "" {
+		return nil, fmt.Errorf("key-auth 请求头名称不能为空")
+	}
+
+	// 去重并过滤空用户名
+	seen := make(map[string]struct{}, len(req.Consumers))
+	consumers := make([]string, 0, len(req.Consumers))
+	for _, name := range req.Consumers {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		consumers = append(consumers, name)
+	}
+	if len(consumers) == 0 {
+		return nil, fmt.Errorf("白名单用户不能为空")
+	}
+
+	existingConsumers, err := s.client.ConsumerList(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("获取消费者列表失败: %w", err)
+	}
+	existingConsumerMap := make(map[string]struct{}, len(existingConsumers))
+	for _, consumer := range existingConsumers {
+		existingConsumerMap[consumer.Username] = struct{}{}
+	}
+	for _, consumer := range consumers {
+		if _, ok := existingConsumerMap[consumer]; !ok {
+			return nil, fmt.Errorf("Consumer %s 不存在，请先创建该 Consumer", consumer)
+		}
+	}
+	if err := s.client.RouteConsumerRestrictionUpdate(ctx, routeID, consumers, req.KeyAuth); err != nil {
+		return nil, fmt.Errorf("配置白名单失败: %w", err)
+	}
+	return s.RouteInspect(ctx, routeID)
+}
 
 // WhitelistList 获取白名单
 func (s *Service) WhitelistList(ctx context.Context) ([]pkgapisix.Route, error) {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	apisixsvc "isrvd/internal/service/apisix"
 	pkgapisix "isrvd/pkgs/apisix"
 )
 
@@ -25,6 +26,7 @@ func (app *App) defineApisixRoutes() []Route {
 		{Method: "DELETE", Path: "/apisix/consumer/:username", Handler: app.apisixConsumerDelete, Module: "apisix", Label: "删除 APISIX 消费者"},
 		// 白名单
 		{Method: "GET", Path: "/apisix/whitelist", Handler: app.apisixWhitelistList, Module: "apisix", Label: "查询 APISIX 白名单"},
+		{Method: "POST", Path: "/apisix/whitelist", Handler: app.apisixWhitelistCreate, Module: "apisix", Label: "配置 APISIX 路由白名单"},
 		{Method: "POST", Path: "/apisix/whitelist/revoke", Handler: app.apisixWhitelistRevoke, Module: "apisix", Label: "撤销 APISIX 白名单授权"},
 		// PluginConfig 管理
 		{Method: "GET", Path: "/apisix/plugin-configs", Handler: app.apisixPluginConfigList, Module: "apisix", Label: "查询 APISIX 插件配置列表"},
@@ -177,6 +179,20 @@ func (app *App) apisixWhitelistList(c *gin.Context) {
 		return
 	}
 	respondSuccess(c, "", result)
+}
+
+func (app *App) apisixWhitelistCreate(c *gin.Context) {
+	var req apisixsvc.WhitelistRouteCreateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := app.apisixSvc.WhitelistRouteCreate(c.Request.Context(), req)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "白名单配置成功", result)
 }
 
 func (app *App) apisixWhitelistRevoke(c *gin.Context) {

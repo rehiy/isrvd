@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -8,11 +8,15 @@ import type { ApisixRoute } from '@/service/types'
 
 import PageSearch from '@/component/page-search.vue'
 
+import WhitelistEditModal from './widget/whitelist-edit-modal.vue'
+
 @Component({
-    components: { PageSearch }
+    components: { PageSearch, WhitelistEditModal }
 })
 class Whitelist extends Vue {
     portal = usePortal()
+
+    @Ref readonly editModalRef!: InstanceType<typeof WhitelistEditModal>
 
     // ─── 数据属性 ───
     whitelist: ApisixRoute[] = []
@@ -50,6 +54,10 @@ class Whitelist extends Vue {
         return r.hosts?.length ? r.hosts.join(', ') : (r.host || '*')
     }
 
+    openCreateModal() {
+        this.editModalRef?.show()
+    }
+
     revokeConsumer(route: ApisixRoute, consumer: string) {
         const routeId = route.id
         if (!routeId) return
@@ -61,7 +69,7 @@ class Whitelist extends Vue {
             confirmText: '确认撤销',
             danger: true,
             onConfirm: async () => {
-                await api.apisixWhitelistRevoke({ routeId, consumer })
+                await api.apisixWhitelistRevoke({ route_id: routeId, consumer_name: consumer })
                 this.portal.showNotification('success', '撤销成功')
                 this.loadWhitelist()
             }
@@ -97,6 +105,9 @@ export default toNative(Whitelist)
           <button class="btn btn-secondary" @click="loadWhitelist()">
             <i class="fas fa-rotate"></i>刷新
           </button>
+          <button v-if="portal.hasPerm('POST /api/apisix/whitelist')" class="btn btn-amber" @click="openCreateModal()">
+            <i class="fas fa-plus"></i>配置白名单
+          </button>
         </div>
       </div>
       <!-- 移动端 -->
@@ -113,6 +124,9 @@ export default toNative(Whitelist)
         <div class="flex items-center gap-1 flex-shrink-0">
           <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadWhitelist()">
             <i class="fas fa-rotate text-sm"></i>
+          </button>
+          <button v-if="portal.hasPerm('POST /api/apisix/whitelist')" class="btn btn-amber w-9 h-9 !px-0" title="配置白名单" @click="openCreateModal()">
+            <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
       </div>
@@ -221,4 +235,6 @@ export default toNative(Whitelist)
       </div>
     </template>
   </div>
+
+  <WhitelistEditModal ref="editModalRef" @success="loadWhitelist" />
 </template>

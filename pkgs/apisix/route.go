@@ -152,11 +152,11 @@ func (c *Client) RouteWhitelistRevoke(ctx context.Context, routeID, consumerName
 	if !found {
 		return fmt.Errorf("用户 %s 不在路由 %s 的白名单中", consumerName, routeID)
 	}
-	return c.RouteConsumerRestrictionUpdate(ctx, routeID, newConsumers)
+	return c.RouteConsumerRestrictionUpdate(ctx, routeID, newConsumers, nil)
 }
 
 // RouteConsumerRestrictionUpdate 更新路由的 consumer-restriction 白名单
-func (c *Client) RouteConsumerRestrictionUpdate(ctx context.Context, routeID string, consumers []string) error {
+func (c *Client) RouteConsumerRestrictionUpdate(ctx context.Context, routeID string, consumers []string, keyAuth map[string]any) error {
 	routeData, err := c.doRequest(ctx, http.MethodGet, "/routes/"+url.PathEscape(routeID), nil)
 	if err != nil {
 		return err
@@ -173,6 +173,9 @@ func (c *Client) RouteConsumerRestrictionUpdate(ctx context.Context, routeID str
 		plugins = make(map[string]any)
 	}
 	if len(consumers) > 0 {
+		if keyAuth != nil {
+			plugins["key-auth"] = keyAuth
+		}
 		plugins["consumer-restriction"] = map[string]any{"whitelist": consumers}
 	} else {
 		delete(plugins, "consumer-restriction")

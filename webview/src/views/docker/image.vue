@@ -157,7 +157,7 @@ export default toNative(ImageDetail)
         <div>
           <h2 class="section-title">基本信息</h2>
           <div class="space-y-3">
-          <div>
+            <div>
               <label class="form-label">镜像 ID</label>
               <code class="detail-value-mono">{{ inspectData.id }}</code>
             </div>

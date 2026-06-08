@@ -132,8 +132,20 @@ export type ApisixSSLCreate = ApisixSSL
 export type ApisixSSLUpdate = ApisixSSL
 
 export interface ApisixRevokeWhitelist {
-    routeId: string
-    consumer: string
+    route_id: string
+    consumer_name: string
+}
+
+export interface ApisixKeyAuthConfig {
+    header: string
+    query?: string
+    hide_credentials?: boolean
+}
+
+export interface ApisixCreateWhitelist {
+    route_id: string
+    consumers: string[]
+    key_auth: ApisixKeyAuthConfig
 }
 
 // Apisix 概览统计

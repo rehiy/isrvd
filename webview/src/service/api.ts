@@ -48,6 +48,7 @@ import type {
     ApisixUpstream,
     ApisixPluginConfig,
     ApisixRevokeWhitelist,
+    ApisixCreateWhitelist,
     // Caddy
     CaddyInfo,
     CaddyGlobal,
@@ -334,7 +335,7 @@ class ApiService {
     }
 
     apisixConsumerCreate(data: ApisixConsumerCreate) {
-        return http.post('apisix/consumer', data)
+        return http.post<ApisixConsumer>('apisix/consumer', data)
     }
 
     apisixConsumerUpdate(username: string, data: ApisixConsumerUpdate) {
@@ -348,6 +349,10 @@ class ApiService {
     // 白名单管理
     apisixWhitelist() {
         return http.get<ApisixRoute[]>('apisix/whitelist')
+    }
+
+    apisixWhitelistCreate(payload: ApisixCreateWhitelist) {
+        return http.post<ApisixRoute>('apisix/whitelist', payload)
     }
 
     apisixWhitelistRevoke(payload: ApisixRevokeWhitelist) {
