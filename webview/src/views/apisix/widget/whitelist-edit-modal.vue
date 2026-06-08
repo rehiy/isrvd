@@ -12,8 +12,8 @@ import Combobox from '@/component/combobox.vue'
 
 const defaultFormData = () => ({
     routeId: '',
-    keyAuthHeader: 'apikey',
-    keyAuthQuery: 'apikey',
+    keyAuthHeader: 'token',
+    keyAuthQuery: 'token',
     hideCredentials: false,
 })
 
@@ -155,12 +155,12 @@ export default toNative(WhitelistEditModal)
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
             <label class="form-label">请求头名称 <span class="text-red-500">*</span></label>
-            <input v-model="formData.keyAuthHeader" type="text" class="input" placeholder="例如：apikey" />
+            <input v-model="formData.keyAuthHeader" type="text" class="input" placeholder="例如：token" />
             <p class="mt-1 text-xs text-slate-400">客户端通过该 Header 传递 Consumer API Key</p>
           </div>
           <div>
             <label class="form-label">查询参数名称</label>
-            <input v-model="formData.keyAuthQuery" type="text" class="input" placeholder="例如：apikey（可选）" />
+            <input v-model="formData.keyAuthQuery" type="text" class="input" placeholder="例如：token（可选）" />
             <p class="mt-1 text-xs text-slate-400">留空表示不启用 Query 参数取 key</p>
           </div>
         </div>

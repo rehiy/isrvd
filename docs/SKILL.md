@@ -231,7 +231,7 @@ isrvd_post "/apisix/route" '{"name":"<NAME>","uri":"<URI>","status":1,"upstream"
 # APISIX（为已有路由配置 Consumer 白名单；缺失 Consumer 需先创建并配置 key-auth）
 ROUTE_ID=<ROUTE_ID>  # 从 isrvd_get "/apisix/routes" 结果中获取
 isrvd_post "/apisix/consumer" '{"username":"<NEW_USERNAME>","plugins":{"key-auth":{"key":"<AUTH_KEY>"}}}'
-isrvd_post "/apisix/whitelist" '{"route_id":"'"$ROUTE_ID"'","consumers":["<USERNAME>","<NEW_USERNAME>"],"key_auth":{"header":"apikey","query":"apikey","hide_credentials":false}}'
+isrvd_post "/apisix/whitelist" '{"route_id":"'"$ROUTE_ID"'","consumers":["<USERNAME>","<NEW_USERNAME>"],"key_auth":{"header":"token","query":"token","hide_credentials":false}}'
 
 # Caddy（反向代理）
 isrvd_post "/caddy/route" '{

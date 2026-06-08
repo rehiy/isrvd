@@ -153,7 +153,7 @@ class Whitelist extends Vue {
         // 获取路由当前的 key-auth 配置（从 plugins 中读取）
         const routeKeyAuth = (route.plugins?.['key-auth'] as Record<string, unknown>) || {}
         const keyAuthConfig = {
-            header: (routeKeyAuth['header'] as string) || 'apikey',
+            header: (routeKeyAuth['header'] as string) || 'token',
             query: (routeKeyAuth['query'] as string) || undefined,
             hide_credentials: (routeKeyAuth['hide_credentials'] as boolean) || false,
         }

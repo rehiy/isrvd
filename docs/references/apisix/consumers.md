@@ -55,7 +55,7 @@ isrvd_post "/apisix/consumer" '{"username":"<NEW_USERNAME>","plugins":{"key-auth
 再配置路由白名单：
 
 ```bash
-isrvd_post "/apisix/whitelist" '{"route_id":"<ROUTE_ID>","consumers":["<USERNAME>","<NEW_USERNAME>"],"key_auth":{"header":"apikey","query":"apikey","hide_credentials":false}}'
+isrvd_post "/apisix/whitelist" '{"route_id":"<ROUTE_ID>","consumers":["<USERNAME>","<NEW_USERNAME>"],"key_auth":{"header":"token","query":"token","hide_credentials":false}}'
 ```
 
 请求体字段：
