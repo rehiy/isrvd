@@ -128,6 +128,8 @@ func (s *AuditService) LogList(username string, limit int) []AuditLog {
 // AuditRecord 根据请求类型记录审计日志，供中间件在 c.Next() 后调用。
 // WebSocket 升级请求记录 "WS" 方法；其余记录方法、URI、请求体、状态码。
 func (s *AuditService) AuditRecord(c *gin.Context, startTime time.Time, body string) {
+	username := auditUsername(c, body)
+
 	// WebSocket
 	if strings.EqualFold(c.GetHeader("Upgrade"), "websocket") {
 		statusCode := c.Writer.Status()
@@ -136,7 +138,7 @@ func (s *AuditService) AuditRecord(c *gin.Context, startTime time.Time, body str
 		}
 		s.LogAdd(AuditLog{
 			Timestamp:  startTime,
-			Username:   c.GetString("username"),
+			Username:   username,
 			Method:     "WS",
 			URI:        c.Request.RequestURI,
 			IP:         c.ClientIP(),
@@ -153,7 +155,7 @@ func (s *AuditService) AuditRecord(c *gin.Context, startTime time.Time, body str
 	}
 	s.LogAdd(AuditLog{
 		Timestamp:  startTime,
-		Username:   c.GetString("username"),
+		Username:   username,
 		Method:     c.Request.Method,
 		URI:        c.Request.RequestURI,
 		Body:       body,
@@ -280,4 +282,21 @@ func maskMap(m map[string]any) {
 			}
 		}
 	}
+}
+
+// auditUsername 获取审计日志中的操作人。
+// 登录等匿名路由没有认证上下文时，尝试从 JSON 请求体读取 username，仍为空则标记为匿名。
+func auditUsername(c *gin.Context, body string) string {
+	if username := strings.TrimSpace(c.GetString("username")); username != "" {
+		return username
+	}
+
+	var data map[string]any
+	if json.Unmarshal([]byte(body), &data) == nil {
+		if username, ok := data["username"].(string); ok && strings.TrimSpace(username) != "" {
+			return strings.TrimSpace(username)
+		}
+	}
+
+	return "匿名"
 }
