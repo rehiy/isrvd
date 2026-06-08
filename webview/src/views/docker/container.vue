@@ -114,9 +114,11 @@ export default toNative(ContainerDetail)
       </div>
     </div>
 
-    <div v-if="loading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
-      <p class="text-slate-500">加载中...</p>
+    <div v-if="loading" class="card-body">
+      <div class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
     </div>
 
     <div v-else-if="detail" class="card-body space-y-4 text-sm">
@@ -126,27 +128,27 @@ export default toNative(ContainerDetail)
         <div class="grid grid-cols-2 gap-3">
           <div class="col-span-2">
             <label class="form-label">名称</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 break-all">{{ detail.name }}</div>
+            <div class="detail-value text-slate-700 break-all">{{ detail.name }}</div>
           </div>
           <div class="col-span-2">
             <label class="form-label">ID</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ detail.id }}</code>
+            <code class="detail-value-mono">{{ detail.id }}</code>
           </div>
           <div>
             <label class="form-label">状态</label>
-            <div :class="['px-3 py-2 bg-slate-50 rounded-lg font-medium', detail.state === 'running' ? 'text-emerald-600' : 'text-slate-500']">{{ detail.state }}</div>
+            <div :class="['detail-value font-medium', detail.state === 'running' ? 'text-emerald-600' : 'text-slate-500']">{{ detail.state }}</div>
           </div>
           <div>
             <label class="form-label">重启策略</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detail.restart || 'no' }}</div>
+            <div class="detail-value text-slate-700">{{ detail.restart || 'no' }}</div>
           </div>
           <div>
             <label class="form-label">创建时间</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(detail.createdAt) }}</div>
+            <div class="detail-value text-slate-700">{{ formatTime(detail.createdAt) }}</div>
           </div>
           <div>
             <label class="form-label">镜像</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ detail.image }}</code>
+            <code class="detail-value-mono">{{ detail.image }}</code>
           </div>
         </div>
       </div>
@@ -157,27 +159,27 @@ export default toNative(ContainerDetail)
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="form-label">网络</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detail.network || '-' }}</div>
+            <div class="detail-value text-slate-700">{{ detail.network || '-' }}</div>
           </div>
           <div>
             <label class="form-label">主机名</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detail.hostname || '-' }}</div>
+            <div class="detail-value text-slate-700">{{ detail.hostname || '-' }}</div>
           </div>
           <div>
             <label class="form-label">工作目录</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg font-mono text-slate-700">{{ detail.workdir || '-' }}</div>
+            <div class="detail-value font-mono text-slate-700">{{ detail.workdir || '-' }}</div>
           </div>
           <div>
             <label class="form-label">用户</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detail.user || '-' }}</div>
+            <div class="detail-value text-slate-700">{{ detail.user || '-' }}</div>
           </div>
           <div>
             <label class="form-label">特权模式</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detail.privileged ? '是' : '否' }}</div>
+            <div class="detail-value text-slate-700">{{ detail.privileged ? '是' : '否' }}</div>
           </div>
           <div>
             <label class="form-label">资源限制</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detail.memory || 0 }} MB / {{ detail.cpus || 0 }} CPU</div>
+            <div class="detail-value text-slate-700">{{ detail.memory || 0 }} MB / {{ detail.cpus || 0 }} CPU</div>
           </div>
         </div>
       </div>
@@ -208,7 +210,7 @@ export default toNative(ContainerDetail)
       <div>
         <h2 class="section-title">挂载</h2>
         <div v-if="detail.volumes?.length" class="space-y-2">
-          <code v-for="vol in detail.volumes" :key="formatVolume(vol)" class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ formatVolume(vol) }}</code>
+          <code v-for="vol in detail.volumes" :key="formatVolume(vol)" class="detail-value-mono">{{ formatVolume(vol) }}</code>
         </div>
         <div v-else class="text-sm text-slate-400 py-6 text-center bg-slate-50 rounded-xl">无挂载</div>
       </div>
@@ -219,12 +221,12 @@ export default toNative(ContainerDetail)
         <div class="space-y-3">
           <div>
             <label class="form-label">启动命令</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ cmdText || '-' }}</code>
+            <code class="detail-value-mono">{{ cmdText || '-' }}</code>
           </div>
           <div>
             <label class="form-label">环境变量</label>
             <div v-if="envList.length" class="space-y-1">
-              <code v-for="env in envList" :key="env" class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ env }}</code>
+              <code v-for="env in envList" :key="env" class="detail-value-mono">{{ env }}</code>
             </div>
             <div v-else class="text-sm text-slate-400 py-6 text-center bg-slate-50 rounded-xl">无环境变量</div>
           </div>

@@ -50,7 +50,7 @@ export default toNative(ImageTagModal)
     <div v-if="tagImage" class="space-y-4">
       <div>
         <label class="form-label">当前镜像</label>
-        <div class="px-3 py-2 bg-slate-50 rounded-lg text-sm text-slate-500">{{ tagImage.repoTags[0] || tagImage.shortId }}</div>
+        <div class="detail-value text-slate-500">{{ tagImage.repoTags[0] || tagImage.shortId }}</div>
       </div>
       <div v-if="tagImage.repoTags.length > 1">
         <label class="form-label">已有标签</label>
@@ -62,7 +62,7 @@ export default toNative(ImageTagModal)
       </div>
       <div>
         <label class="form-label">新标签</label>
-        <input v-model="tagRepoTag" type="text" placeholder="请输入镜像标签" />
+        <input v-model="tagRepoTag" type="text" class="input" placeholder="请输入镜像标签" />
         <p class="mt-1 text-xs text-slate-400">格式: 仓库路径:标签，如 myapp:v1.0</p>
       </div>
     </div>

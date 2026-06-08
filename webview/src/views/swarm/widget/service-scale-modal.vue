@@ -45,7 +45,7 @@ export default toNative(ServiceScaleModal)
     <div v-if="service" class="space-y-4">
       <div>
         <label class="form-label">服务</label>
-        <div class="px-3 py-2 bg-slate-50 rounded-lg text-sm text-slate-600">{{ service.name }}</div>
+        <div class="detail-value text-slate-600">{{ service.name }}</div>
       </div>
       <div>
         <label class="form-label">目标副本数</label>

@@ -92,35 +92,35 @@ export default toNative(NetworkDetail)
         <div class="grid grid-cols-2 gap-3">
           <div class="col-span-2">
             <label class="form-label">名称</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 break-all">{{ detailData.name }}</div>
+            <div class="detail-value">{{ detailData.name }}</div>
           </div>
           <div class="col-span-2">
             <label class="form-label">ID</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ detailData.id }}</code>
+            <code class="detail-value-mono">{{ detailData.id }}</code>
           </div>
           <div>
             <label class="form-label">驱动</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detailData.driver }}</div>
+            <div class="detail-value">{{ detailData.driver }}</div>
           </div>
           <div>
             <label class="form-label">范围</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detailData.scope }}</div>
+            <div class="detail-value">{{ detailData.scope }}</div>
           </div>
           <div>
             <label class="form-label">子网</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg font-mono text-slate-700">{{ detailData.subnet || '-' }}</div>
+            <div class="detail-value">{{ detailData.subnet || '-' }}</div>
           </div>
           <div>
             <label class="form-label">网关</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg font-mono text-slate-700">{{ detailData.gateway || '-' }}</div>
+            <div class="detail-value">{{ detailData.gateway || '-' }}</div>
           </div>
           <div>
             <label class="form-label">内部网络</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detailData.internal ? '是' : '否' }}</div>
+            <div class="detail-value">{{ detailData.internal ? '是' : '否' }}</div>
           </div>
           <div>
             <label class="form-label">IPv6</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detailData.enableIPv6 ? '已启用' : '未启用' }}</div>
+            <div class="detail-value">{{ detailData.enableIPv6 ? '已启用' : '未启用' }}</div>
           </div>
         </div>
       </div>
@@ -156,7 +156,7 @@ export default toNative(NetworkDetail)
             </tbody>
           </table>
         </div>
-        <div v-else class="text-sm text-slate-400 py-8 text-center bg-slate-50 rounded-xl">
+        <div v-else class="detail-value text-slate-400 py-8 text-center rounded-xl">
           暂无容器连接到此网络
         </div>
       </div>

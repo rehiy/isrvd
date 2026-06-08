@@ -368,7 +368,7 @@
 
 #### 文件结构与类清单
 
-`light_components.css` 包含 11 个模块，按功能分组：
+`light_components.css` 包含 10 个模块，按功能分组：
 
 **1. 卡片（Card）**
 
@@ -382,6 +382,10 @@
 | `.card-table` | 卡片表格区（桌面端表格），无内边距，表格直接贴边 | `overflow-x-auto` |
 | `.card-actions` | 移动端卡片底部操作按钮栏 | `flex flex-wrap gap-1.5 pt-2 border-t border-slate-100` |
 | `.card-info-row` | 移动端卡片主信息行（图标+文字） | `flex items-center gap-3 min-w-0 flex-1 mb-3` |
+| `.card-prop-row` | 移动端卡片属性行（标签+纯文本值） | `flex items-center gap-2 mb-3` |
+| `.card-prop-row-start` | 移动端卡片属性行（标签+badge/code，值换行对齐） | `flex items-start gap-2 mb-3` |
+| `.detail-value` | 详情页属性值容器（灰色圆角背景块） | `px-3 py-2 bg-slate-50 rounded-lg` |
+| `.detail-value-mono` | 详情页属性值容器（等宽字体，用于 ID/代码/路径） | `block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all` |
 | `.option-card` / `.option-card-inactive` / `.option-card-disabled` / `.option-card-icon` | 单选模式/来源选择卡片 | `text-left rounded-xl border p-3 transition-colors`、`w-8 h-8 rounded-lg flex items-center justify-center` |
 | `.editor-container` | 代码编辑器/内容外层边框 | `rounded-xl overflow-hidden border border-slate-200` |
 | `.modal-card` | 模态框卡片容器 | `bg-white rounded-2xl shadow-2xl border border-slate-200` |
@@ -421,6 +425,8 @@
 | `.btn-category` / `-active` / `-inactive` | 分类过滤标签按钮 | — |
 | `.btn-panel-toggle` / `-active` / `-inactive` | 面板模式切换按钮 | — |
 | `.btn-tag-remove` | 多选标签删除按钮（×） | — |
+| `.btn-proto` / `-active` / `-inactive` | 协议/枚举选择按钮（如 不限/HTTP/HTTPS） | `px-3 py-2 rounded-lg text-sm font-medium border transition-colors` |
+| `.btn-add-row` | 虚线添加行按钮（表格式编辑区底部） | `w-full flex items-center justify-center gap-2 py-3 rounded-lg border border-dashed ...` |
 
 **5. 导航与菜单（Navigation）**
 
@@ -447,7 +453,10 @@
 | `.section-title` | 详情页信息分组标题 | `text-sm font-semibold text-slate-700 mb-3 pb-2 border-b border-slate-200` |
 | `.section-title-table` | 后面紧跟表格时（去掉 margin，横线充当表格顶边框） | `mb-0` |
 | `.input` | 文本输入框 | `w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 text-slate-700 hover:border-slate-300` |
-| `.select-sm` | 小尺寸 select（toolbar 内使用，固定 `h-9`；基础颜色/边框来自全局 `select`） | `h-9 px-3 pr-8 rounded-md text-xs` |
+| `.input + .btn` | input 后紧跟的按钮等高处理 | `height: 46px` |
+| `select` | select 基础样式（自定义箭头、边框交互） | `bg-white border border-slate-200 text-slate-700 appearance-none truncate hover:border-slate-300` |
+| `select.input` | select 表单尺寸（配合 `.input` 使用） | `pr-10 rounded-xl`，固定高度 46px |
+| `.select-sm` | 小尺寸 select（toolbar 内使用，固定 `h-9`） | `h-9 px-3 pr-8 rounded-md text-xs` |
 | `.select-search-header` | 下拉选择器粘性搜索头部 | `px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-2 sticky top-0 z-10` |
 | `.select-list` | 下拉选择器选项列表容器 | `px-2 py-1.5 grid grid-cols-1 gap-0.5 bg-white` |
 | `.select-footer` | 下拉选择器底部工具栏 | `px-3 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between` |
@@ -474,16 +483,6 @@
 | 类 | 用途 | 禁止手写 |
 |---|---|---|
 | `.terminal-pane` | 终端黑色面板（固定深色背景，不跟随主题切换） | `flex-1 p-2 md:p-3 overflow-hidden`，背景 `#0f172a` |
-
-**11. 表单补充（Form Supplement）**
-
-| 类 | 用途 | 说明 |
-|---|---|---|
-| `select` 全局 | select 基础样式（自定义箭头、边框交互） | 定义在 `light_components.css` 的 `select {}` 选择器中 |
-| `select.input` | select 表单尺寸（配合 `.input` 使用） | `pr-10 rounded-xl`，固定高度 46px |
-| `.input + .btn` | input 后紧跟的按钮等高处理 | `height: 46px` |
-| `.btn-proto` / `-active` / `-inactive` | 协议/枚举选择按钮（如 不限/HTTP/HTTPS） | `px-3 py-2 rounded-lg text-sm font-medium border transition-colors` |
-| `.btn-add-row` | 虚线添加行按钮（表格式编辑区底部） | `w-full flex items-center justify-center gap-2 py-3 rounded-lg border border-dashed ...` |
 
 #### 使用规则
 

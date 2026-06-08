@@ -105,27 +105,27 @@ export default toNative(CertDetailModal)
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label class="form-label">来源</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg">
+            <div class="detail-value">
               <span :class="sourceTagClass(cert.source)" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium">{{ sourceLabel(cert.source) }}</span>
             </div>
           </div>
           <div>
             <label class="form-label">状态</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg" :class="cert.source === 'cached' ? 'text-slate-500' : 'text-emerald-600 font-medium'">
+            <div class="detail-value" :class="cert.source === 'cached' ? 'text-slate-500' : 'text-emerald-600 font-medium'">
               {{ cert.source === 'cached' ? '运行时缓存，只读' : '配置证书，可管理' }}
             </div>
           </div>
           <div>
             <label class="form-label">Key</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-600 break-all">{{ cert.key || '-' }}</code>
+            <code class="detail-value-mono">{{ cert.key || '-' }}</code>
           </div>
           <div>
             <label class="form-label">格式</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ cert.format || 'PEM' }}</div>
+            <div class="detail-value">{{ cert.format || 'PEM' }}</div>
           </div>
           <div class="md:col-span-2">
             <label class="form-label">主体</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ certSummary(cert) }}</code>
+            <code class="detail-value-mono">{{ certSummary(cert) }}</code>
           </div>
         </div>
       </section>
@@ -135,15 +135,15 @@ export default toNative(CertDetailModal)
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label class="form-label">生效时间</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatDate(cert.notBefore) }}</div>
+            <div class="detail-value">{{ formatDate(cert.notBefore) }}</div>
           </div>
           <div>
             <label class="form-label">过期时间</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatDate(cert.notAfter) }}</div>
+            <div class="detail-value">{{ formatDate(cert.notAfter) }}</div>
           </div>
           <div>
             <label class="form-label">剩余时间</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg" :class="expireClass(cert.notAfter)">{{ expireLabel(cert.notAfter) }}</div>
+            <div class="detail-value" :class="expireClass(cert.notAfter)">{{ expireLabel(cert.notAfter) }}</div>
           </div>
         </div>
       </section>
@@ -153,14 +153,14 @@ export default toNative(CertDetailModal)
         <div class="space-y-3">
           <div>
             <label class="form-label">签发机构</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ cert.issuer || '-' }}</div>
+            <div class="detail-value">{{ cert.issuer || '-' }}</div>
           </div>
           <div>
             <label class="form-label">SAN 域名</label>
             <div v-if="cert.sans && cert.sans.length" class="flex flex-wrap gap-1.5">
               <span v-for="san in cert.sans" :key="san" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-mono bg-cyan-50 text-cyan-700">{{ san }}</span>
             </div>
-            <div v-else class="px-3 py-2 bg-slate-50 rounded-lg text-slate-400">-</div>
+            <div v-else class="detail-value text-slate-400">-</div>
           </div>
         </div>
       </section>
@@ -177,11 +177,11 @@ export default toNative(CertDetailModal)
           </div>
           <div v-else>
             <label class="form-label">自动签发域名</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ cert.subject || '-' }}</code>
+            <code class="detail-value-mono">{{ cert.subject || '-' }}</code>
           </div>
           <div v-if="cert.source === 'file' || cert.source === 'pem'">
             <label class="form-label">私钥</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-500">响应不返回私钥；编辑时留空表示保持原值</div>
+            <div class="detail-value text-slate-500">响应不返回私钥；编辑时留空表示保持原值</div>
           </div>
           <div v-if="cert.tags && cert.tags.length">
             <label class="form-label">标签</label>

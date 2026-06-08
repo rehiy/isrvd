@@ -97,31 +97,31 @@ export default toNative(VolumeDetail)
         <div class="grid grid-cols-2 gap-3">
           <div class="col-span-2">
             <label class="form-label">名称</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 break-all">{{ detailData.name }}</div>
+            <div class="detail-value">{{ detailData.name }}</div>
           </div>
           <div>
             <label class="form-label">驱动</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detailData.driver }}</div>
+            <div class="detail-value">{{ detailData.driver }}</div>
           </div>
           <div>
             <label class="form-label">范围</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detailData.scope }}</div>
+            <div class="detail-value">{{ detailData.scope }}</div>
           </div>
           <div class="col-span-2">
             <label class="form-label">挂载点</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ detailData.mountpoint }}</code>
+            <code class="detail-value-mono">{{ detailData.mountpoint }}</code>
           </div>
           <div>
             <label class="form-label">创建时间</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(detailData.createdAt) }}</div>
+            <div class="detail-value">{{ formatTime(detailData.createdAt) }}</div>
           </div>
           <div>
             <label class="form-label">占用空间</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detailData.size > 0 ? formatFileSize(detailData.size) : '-' }}</div>
+            <div class="detail-value">{{ detailData.size > 0 ? formatFileSize(detailData.size) : '-' }}</div>
           </div>
           <div>
             <label class="form-label">引用数</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ detailData.refCount || 0 }}</div>
+            <div class="detail-value">{{ detailData.refCount || 0 }}</div>
           </div>
         </div>
       </div>
@@ -157,7 +157,7 @@ export default toNative(VolumeDetail)
             </tbody>
           </table>
         </div>
-        <div v-else class="text-sm text-slate-400 py-8 text-center bg-slate-50 rounded-xl">
+        <div v-else class="detail-value text-slate-400 py-8 text-center rounded-xl">
           暂无容器使用此数据卷
         </div>
       </div>

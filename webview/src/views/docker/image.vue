@@ -157,29 +157,29 @@ export default toNative(ImageDetail)
         <div>
           <h2 class="section-title">基本信息</h2>
           <div class="space-y-3">
-            <div>
+          <div>
               <label class="form-label">镜像 ID</label>
-              <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ inspectData.id }}</code>
+              <code class="detail-value-mono">{{ inspectData.id }}</code>
             </div>
             <div>
               <label class="form-label">短 ID</label>
-              <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ shortHash(inspectData.shortId || inspectData.id) }}</code>
+              <code class="detail-value-mono">{{ shortHash(inspectData.shortId || inspectData.id) }}</code>
             </div>
             <div>
               <label class="form-label">创建时间</label>
-              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(inspectData.created) }}</div>
+              <div class="detail-value">{{ formatTime(inspectData.created) }}</div>
             </div>
             <div>
               <label class="form-label">大小</label>
-              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatFileSize(inspectData.size) }}</div>
+              <div class="detail-value">{{ formatFileSize(inspectData.size) }}</div>
             </div>
             <div>
               <label class="form-label">层数</label>
-              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.layers }}</div>
+              <div class="detail-value">{{ inspectData.layers }}</div>
             </div>
             <div v-if="inspectData.author">
               <label class="form-label">作者</label>
-              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.author }}</div>
+              <div class="detail-value">{{ inspectData.author }}</div>
             </div>
           </div>
         </div>
@@ -189,19 +189,19 @@ export default toNative(ImageDetail)
           <div class="space-y-3">
             <div>
               <label class="form-label">操作系统</label>
-              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.os || '-' }}</div>
+              <div class="detail-value">{{ inspectData.os || '-' }}</div>
             </div>
             <div>
               <label class="form-label">架构</label>
-              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ inspectData.architecture || '-' }}</div>
+              <div class="detail-value">{{ inspectData.architecture || '-' }}</div>
             </div>
             <div>
               <label class="form-label">标签数</label>
-              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ repoTags.length }}</div>
+              <div class="detail-value">{{ repoTags.length }}</div>
             </div>
             <div>
               <label class="form-label">Digest 数</label>
-              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ repoDigests.length }}</div>
+              <div class="detail-value">{{ repoDigests.length }}</div>
             </div>
           </div>
         </div>
@@ -212,17 +212,17 @@ export default toNative(ImageDetail)
         <div>
           <h2 class="section-title">标签</h2>
           <div v-if="repoTags.length" class="space-y-2">
-            <code v-for="tag in repoTags" :key="tag" class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ tag }}</code>
+            <code v-for="tag in repoTags" :key="tag" class="detail-value-mono">{{ tag }}</code>
           </div>
-          <div v-else class="px-3 py-2 bg-slate-50 rounded-lg text-slate-400 text-sm">无标签</div>
+          <div v-else class="detail-value text-slate-400 text-sm">无标签</div>
         </div>
 
         <div>
           <h2 class="section-title">Digest</h2>
           <div v-if="repoDigests.length" class="space-y-2">
-            <code v-for="digest in repoDigests" :key="digest" class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all" :title="digest">{{ formatDigest(digest) }}</code>
+            <code v-for="digest in repoDigests" :key="digest" class="detail-value-mono" :title="digest">{{ formatDigest(digest) }}</code>
           </div>
-          <div v-else class="px-3 py-2 bg-slate-50 rounded-lg text-slate-400 text-sm">无 Digest</div>
+          <div v-else class="detail-value text-slate-400 text-sm">无 Digest</div>
         </div>
       </div>
 
@@ -232,19 +232,19 @@ export default toNative(ImageDetail)
         <div class="space-y-3">
           <div>
             <label class="form-label">工作目录</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ inspectData.workingDir || '-' }}</code>
+            <code class="detail-value-mono">{{ inspectData.workingDir || '-' }}</code>
           </div>
           <div>
             <label class="form-label">Entrypoint</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ entrypointText || '-' }}</code>
+            <code class="detail-value-mono">{{ entrypointText || '-' }}</code>
           </div>
           <div>
             <label class="form-label">CMD</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ cmdText || '-' }}</code>
+            <code class="detail-value-mono">{{ cmdText || '-' }}</code>
           </div>
           <div>
             <label class="form-label">暴露端口</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ exposedPortsText || '-' }}</code>
+            <code class="detail-value-mono">{{ exposedPortsText || '-' }}</code>
           </div>
         </div>
       </div>
@@ -253,20 +253,20 @@ export default toNative(ImageDetail)
       <div>
         <h2 class="section-title">环境变量</h2>
         <div v-if="envList.length" class="space-y-2">
-          <code v-for="env in envList" :key="env" class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ env }}</code>
+          <code v-for="env in envList" :key="env" class="detail-value-mono">{{ env }}</code>
         </div>
-        <div v-else class="px-3 py-2 bg-slate-50 rounded-lg text-slate-400 text-sm">无环境变量</div>
+        <div v-else class="detail-value text-slate-400 text-sm">无环境变量</div>
       </div>
 
       <!-- Labels -->
       <div>
         <h2 class="section-title">Labels</h2>
         <div v-if="labelEntries.length" class="space-y-2">
-          <div v-for="[key, value] in labelEntries" :key="key" class="px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono break-all">
+          <div v-for="[key, value] in labelEntries" :key="key" class="detail-value-mono">
             <span class="text-slate-500">{{ key }}</span><span class="text-slate-300 mx-1">=</span><span class="text-slate-700">{{ value }}</span>
           </div>
         </div>
-        <div v-else class="px-3 py-2 bg-slate-50 rounded-lg text-slate-400 text-sm">无标签</div>
+        <div v-else class="detail-value text-slate-400 text-sm">无标签</div>
       </div>
 
       <!-- 层信息 -->
@@ -305,7 +305,7 @@ export default toNative(ImageDetail)
             </tbody>
           </table>
         </div>
-        <div v-else class="px-3 py-2 bg-slate-50 rounded-lg text-slate-400 text-sm">无层信息</div>
+        <div v-else class="detail-value text-slate-400 text-sm">无层信息</div>
       </div>
     </div>
 

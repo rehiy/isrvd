@@ -151,20 +151,20 @@ export default toNative(ServiceInfo)
         <div class="space-y-3">
           <div>
             <label class="form-label">服务 ID</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ serviceData.id }}</code>
+            <code class="detail-value-mono">{{ serviceData.id }}</code>
           </div>
           <div>
             <label class="form-label">镜像</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ serviceData.image }}</code>
+            <code class="detail-value-mono">{{ serviceData.image }}</code>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="form-label">模式</label>
-              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 capitalize">{{ serviceData.mode }}</div>
+              <div class="detail-value capitalize">{{ serviceData.mode }}</div>
             </div>
             <div>
               <label class="form-label">副本</label>
-              <div class="px-3 py-2 bg-slate-50 rounded-lg">
+              <div class="detail-value">
                 <span class="text-emerald-600 font-medium">{{ serviceData.runningTasks }}</span>
                 <span v-if="serviceData.mode === 'replicated'" class="text-slate-400"> / {{ serviceData.replicas ?? '?' }}</span>
                 <span v-else class="text-slate-400"> 运行中</span>
@@ -172,11 +172,11 @@ export default toNative(ServiceInfo)
             </div>
             <div>
               <label class="form-label">创建时间</label>
-              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(serviceData.createdAt) }}</div>
+              <div class="detail-value">{{ formatTime(serviceData.createdAt) }}</div>
             </div>
             <div>
               <label class="form-label">更新时间</label>
-              <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(serviceData.updatedAt) }}</div>
+              <div class="detail-value">{{ formatTime(serviceData.updatedAt) }}</div>
             </div>
           </div>
         </div>
@@ -194,7 +194,7 @@ export default toNative(ServiceInfo)
       <div v-if="serviceData.ports && serviceData.ports.length > 0">
         <h2 class="section-title">端口映射</h2>
         <div class="space-y-2">
-          <div v-for="(p, idx) in serviceData.ports" :key="idx" class="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg">
+          <div v-for="(p, idx) in serviceData.ports" :key="idx" class="detail-value flex items-center gap-2">
             <code class="text-xs font-mono text-emerald-700 font-medium">{{ p.publishedPort }}</code>
             <i class="fas fa-arrow-right text-slate-300 text-xs"></i>
             <code class="text-xs font-mono text-slate-600">{{ p.targetPort }}/{{ p.protocol }}</code>
@@ -207,7 +207,7 @@ export default toNative(ServiceInfo)
       <div v-if="serviceData.mounts && serviceData.mounts.length > 0">
         <h2 class="section-title">挂载</h2>
         <div class="space-y-2">
-          <div v-for="(mt, idx) in serviceData.mounts" :key="idx" class="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono flex-wrap">
+          <div v-for="(mt, idx) in serviceData.mounts" :key="idx" class="detail-value text-xs font-mono flex items-center gap-2 flex-wrap">
             <span class="text-slate-400 capitalize">{{ mt.type }}</span>
             <code class="text-slate-700">{{ mt.source || '(匿名)' }}</code>
             <i class="fas fa-arrow-right text-slate-300"></i>
@@ -221,21 +221,21 @@ export default toNative(ServiceInfo)
       <div v-if="serviceData.env && serviceData.env.length > 0">
         <h2 class="section-title">环境变量</h2>
         <div class="space-y-2">
-          <code v-for="(env, idx) in serviceData.env" :key="idx" class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-600 break-all">{{ env }}</code>
+          <code v-for="(env, idx) in serviceData.env" :key="idx" class="detail-value-mono">{{ env }}</code>
         </div>
       </div>
 
       <!-- 启动参数 -->
       <div v-if="serviceData.args && serviceData.args.length > 0">
         <h2 class="section-title">启动参数</h2>
-        <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-600 break-all">{{ serviceData.args.join(' ') }}</code>
+        <code class="detail-value-mono">{{ serviceData.args.join(' ') }}</code>
       </div>
 
       <!-- 约束 -->
       <div v-if="serviceData.constraints && serviceData.constraints.length > 0">
         <h2 class="section-title">调度约束</h2>
         <div class="space-y-2">
-          <code v-for="(c, idx) in serviceData.constraints" :key="idx" class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-600 break-all">{{ c }}</code>
+          <code v-for="(c, idx) in serviceData.constraints" :key="idx" class="detail-value-mono">{{ c }}</code>
         </div>
       </div>
 
@@ -243,7 +243,7 @@ export default toNative(ServiceInfo)
       <div v-if="nodeDistribution.length > 0 && portal.hasPerm('GET /api/swarm/node/:id')">
         <h2 class="section-title">节点分布</h2>
         <div class="space-y-2">
-          <div v-for="node in nodeDistribution" :key="node.nodeName" class="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors" @click="$router.push({ name: 'swarm-node', params: { id: node.nodeID } })">
+          <div v-for="node in nodeDistribution" :key="node.nodeName" class="detail-value flex items-center gap-2 cursor-pointer hover:bg-slate-100 transition-colors" @click="$router.push({ name: 'swarm-node', params: { id: node.nodeID } })">
             <i class="fas fa-server text-slate-400 text-xs w-3"></i>
             <span class="text-xs font-mono text-slate-700 flex-1 truncate">{{ node.nodeName }}</span>
             <span class="text-xs">
@@ -259,7 +259,7 @@ export default toNative(ServiceInfo)
       <div v-if="serviceData.labels && Object.keys(serviceData.labels).length > 0">
         <h2 class="section-title">Labels</h2>
         <div class="space-y-2">
-          <div v-for="(val, key) in serviceData.labels" :key="key" class="px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono break-all">
+          <div v-for="(val, key) in serviceData.labels" :key="key" class="detail-value-mono">
             <span class="text-blue-600">{{ key }}</span><span class="text-slate-400 mx-1">=</span><span class="text-slate-600">{{ val }}</span>
           </div>
         </div>

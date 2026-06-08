@@ -109,34 +109,34 @@ export default toNative(NodeDetail)
         <div class="grid grid-cols-2 gap-3">
           <div class="col-span-2">
             <label class="form-label">节点 ID</label>
-            <code class="block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all">{{ nodeData.id }}</code>
+            <code class="detail-value-mono">{{ nodeData.id }}</code>
           </div>
           <div>
             <label class="form-label">主机名</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 flex items-center gap-2">
+            <div class="detail-value flex items-center gap-2">
               {{ nodeData.hostname }}
               <span v-if="nodeData.leader" class="text-xs text-indigo-600"><i class="fas fa-crown mr-1"></i>Leader</span>
             </div>
           </div>
           <div>
             <label class="form-label">地址</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg font-mono text-slate-700">{{ nodeData.addr || '-' }}</div>
+            <div class="detail-value">{{ nodeData.addr || '-' }}</div>
           </div>
           <div>
             <label class="form-label">角色</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 capitalize">{{ nodeData.role }}</div>
+            <div class="detail-value capitalize">{{ nodeData.role }}</div>
           </div>
           <div>
             <label class="form-label">状态</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 capitalize">{{ nodeData.state }}</div>
+            <div class="detail-value capitalize">{{ nodeData.state }}</div>
           </div>
           <div>
             <label class="form-label">可用性</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 capitalize">{{ nodeData.availability }}</div>
+            <div class="detail-value capitalize">{{ nodeData.availability }}</div>
           </div>
           <div>
             <label class="form-label">引擎版本</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ nodeData.engineVersion || '-' }}</div>
+            <div class="detail-value">{{ nodeData.engineVersion || '-' }}</div>
           </div>
         </div>
       </div>
@@ -147,19 +147,19 @@ export default toNative(NodeDetail)
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="form-label">操作系统</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700 capitalize">{{ nodeData.os || '-' }}</div>
+            <div class="detail-value capitalize">{{ nodeData.os || '-' }}</div>
           </div>
           <div>
             <label class="form-label">架构</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ nodeData.architecture || '-' }}</div>
+            <div class="detail-value">{{ nodeData.architecture || '-' }}</div>
           </div>
           <div>
             <label class="form-label">CPU 核数</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ nodeData.cpus || '-' }}</div>
+            <div class="detail-value">{{ nodeData.cpus || '-' }}</div>
           </div>
           <div>
             <label class="form-label">内存</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ nodeData.memoryBytes ? formatFileSize(nodeData.memoryBytes) : '-' }}</div>
+            <div class="detail-value">{{ nodeData.memoryBytes ? formatFileSize(nodeData.memoryBytes) : '-' }}</div>
           </div>
         </div>
       </div>
@@ -170,11 +170,11 @@ export default toNative(NodeDetail)
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="form-label">创建时间</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(nodeData.createdAt) }}</div>
+            <div class="detail-value">{{ formatTime(nodeData.createdAt) }}</div>
           </div>
           <div>
             <label class="form-label">更新时间</label>
-            <div class="px-3 py-2 bg-slate-50 rounded-lg text-slate-700">{{ formatTime(nodeData.updatedAt) }}</div>
+            <div class="detail-value">{{ formatTime(nodeData.updatedAt) }}</div>
           </div>
         </div>
       </div>
