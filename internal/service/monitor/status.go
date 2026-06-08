@@ -15,11 +15,11 @@ import (
 
 // DiskIOStat 硬盘 IO 统计
 type DiskIOStat struct {
-	Name       string `json:"Name"`
-	ReadBytes  uint64 `json:"ReadBytes"`
-	WriteBytes uint64 `json:"WriteBytes"`
-	ReadCount  uint64 `json:"ReadCount"`
-	WriteCount uint64 `json:"WriteCount"`
+	Name       string `json:"name"`
+	ReadBytes  uint64 `json:"readBytes"`
+	WriteBytes uint64 `json:"writeBytes"`
+	ReadCount  uint64 `json:"readCount"`
+	WriteCount uint64 `json:"writeCount"`
 }
 
 // GoRuntimeStat Go 运行态统计
@@ -59,11 +59,16 @@ type HostStat struct {
 // CollectHostStat 采集主机监控数据
 func CollectHostStat(ctx context.Context) *HostStat {
 	detail := psutil.Detail(false)
-	detail.DiskPartition = filterDiskPartitions(detail.DiskPartition)
+	detail.DiskPartition, detail.DiskTotal, detail.DiskUsed = filterDiskPartitions(detail.DiskPartition)
 
 	ioCounters, _ := disk.IOCounters()
 	diskIO := make([]*DiskIOStat, 0, len(ioCounters))
+
 	for name, counter := range ioCounters {
+		if hasDevicePrefix(name) {
+			continue
+		}
+
 		diskIO = append(diskIO, &DiskIOStat{
 			Name:       name,
 			ReadBytes:  counter.ReadBytes,
@@ -89,24 +94,35 @@ func CollectHostStat(ctx context.Context) *HostStat {
 	}
 }
 
-// filterDiskPartitions 过滤磁盘分区，去除容器中的重复单文件挂载
-func filterDiskPartitions(partitions []psutil.DiskPartition) []psutil.DiskPartition {
+// filterDiskPartitions 过滤磁盘分区，去除虚拟挂载和重复分区，
+// 同步返回过滤后的 diskTotal 和 diskUsed 汇总值
+func filterDiskPartitions(partitions []psutil.DiskPartition) (result []psutil.DiskPartition, diskTotal, diskUsed uint64) {
 	type bestEntry struct {
-		index int
-		mpLen int
+		partition psutil.DiskPartition
+		mpLen     int
 	}
 	best := make(map[string]*bestEntry)
-	for i, dp := range partitions {
+
+	for _, dp := range partitions {
+		if isMountExcluded(dp.Mountpoint, dp.Fstype) {
+			continue
+		}
+
+		// 同一设备保留挂载路径最短的分区（通常是根挂载点）
 		key := fmt.Sprintf("%s:%d", dp.Device, dp.Total)
 		if b, ok := best[key]; !ok || len(dp.Mountpoint) < b.mpLen {
-			best[key] = &bestEntry{index: i, mpLen: len(dp.Mountpoint)}
+			best[key] = &bestEntry{partition: dp, mpLen: len(dp.Mountpoint)}
 		}
 	}
-	result := make([]psutil.DiskPartition, 0, len(best))
+
+	// 汇总并构建结果
+	result = make([]psutil.DiskPartition, 0, len(best))
 	for _, b := range best {
-		result = append(result, partitions[b.index])
+		result = append(result, b.partition)
+		diskTotal += b.partition.Total
+		diskUsed += b.partition.Used
 	}
-	return result
+	return
 }
 
 func buildGPUDeviceKey(vendor, address, name string, index int) string {
@@ -128,8 +144,8 @@ func buildGPUDeviceKey(vendor, address, name string, index int) string {
 }
 
 func buildSystemGPUs(ctx context.Context) []*SystemGPU {
-	deviceStats, err := gpu.GetGPUStats(ctx)
-	if err != nil && len(deviceStats) == 0 {
+	deviceStats, _ := gpu.GetGPUStats(ctx)
+	if len(deviceStats) == 0 {
 		return nil
 	}
 

@@ -351,14 +351,14 @@ export default toNative(SystemGo)
     <div v-if="current" ref="goContainerRef" class="divide-y divide-slate-100">
       <!-- 系统内存折线图 -->
       <div class="px-4 py-3">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-medium text-slate-500">系统内存</span>
-          <div v-if="current" class="flex items-center gap-3 text-xs">
-            <span class="flex items-center gap-1">
+        <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
+          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">系统内存</span>
+          <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
               <span class="w-3 h-0.5 bg-blue-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.totalAlloc) }}</span>
             </span>
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
               <span class="w-3 h-0.5 bg-emerald-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.sys) }}</span>
             </span>
@@ -371,30 +371,30 @@ export default toNative(SystemGo)
 
       <!-- 堆内存折线图 -->
       <div class="px-4 py-3">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-medium text-slate-500">堆内存</span>
-          <div v-if="current" class="flex items-center gap-3 text-xs flex-wrap">
-            <span class="flex items-center gap-1">
+        <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
+          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">堆内存</span>
+          <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
               <span class="w-3 h-0.5 bg-blue-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.alloc) }}</span>
             </span>
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
               <span class="w-3 h-0.5 bg-emerald-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.heapAlloc) }}</span>
             </span>
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
               <span class="w-3 h-0.5 bg-amber-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.heapInuse) }}</span>
             </span>
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
               <span class="w-3 h-0.5 bg-gray-400 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.heapIdle) }}</span>
             </span>
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
               <span class="w-3 h-0.5 bg-rose-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.heapReleased) }}</span>
             </span>
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
               <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.heapSys) }}</span>
             </span>
@@ -407,14 +407,14 @@ export default toNative(SystemGo)
 
       <!-- 栈内存折线图 -->
       <div class="px-4 py-3">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-medium text-slate-500">栈内存</span>
-          <div v-if="current" class="flex items-center gap-3 text-xs">
-            <span class="flex items-center gap-1">
+        <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
+          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">栈内存</span>
+          <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
               <span class="w-3 h-0.5 bg-amber-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.stackInuse) }}</span>
             </span>
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
               <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.stackSys) }}</span>
             </span>
@@ -427,22 +427,22 @@ export default toNative(SystemGo)
 
       <!-- Goroutine & GC & 堆对象折线图 -->
       <div class="px-4 py-3">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-medium text-slate-500">计数器</span>
-          <div v-if="current" class="flex items-center gap-3 text-xs">
-            <span class="flex items-center gap-1" title="最后 GC 时间">
+        <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
+          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">计数器</span>
+          <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap" title="最后 GC 时间">
               <i class="fas fa-clock mr-1"></i>
               <span class="font-mono text-slate-600">{{ lastGCTime }}</span>
             </span>
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
               <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ current.numGoroutine }}</span>
             </span>
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
               <span class="w-3 h-0.5 bg-green-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ current.heapObjects }}</span>
             </span>
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
               <span class="w-3 h-0.5 bg-red-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ current.numGC }}</span>
             </span>

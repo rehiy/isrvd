@@ -35,11 +35,11 @@ export interface SystemDiskPartition {
 }
 
 export interface SystemDiskIO {
-    Name: string
-    ReadBytes: number
-    WriteBytes: number
-    ReadCount: number
-    WriteCount: number
+    name: string
+    readBytes: number
+    writeBytes: number
+    readCount: number
+    writeCount: number
 }
 
 export interface SystemGoRuntimeStat {

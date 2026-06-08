@@ -196,14 +196,14 @@ export default toNative(SystemNetwork)
     </div>
     <div ref="netContainerRef" class="divide-y divide-slate-100">
       <div v-for="ni in currentIfaces" :key="ni.name" class="px-4 py-3">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-1">
-          <p class="text-xs font-semibold text-slate-700">{{ ni.name }}</p>
-          <div class="flex items-center gap-4 text-xs">
-            <span class="flex items-center gap-1">
+        <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
+          <p class="text-xs font-semibold text-slate-700 shrink-0 whitespace-nowrap">{{ ni.name }}</p>
+          <div class="flex items-center justify-end gap-x-4 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
               <i class="fas fa-arrow-down text-emerald-500"></i>
               <span class="font-mono text-slate-600">{{ fmtRate(currentRate(ni.name, 'recv')) }}</span>
             </span>
-            <span class="flex items-center gap-1">
+            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
               <i class="fas fa-arrow-up text-blue-500"></i>
               <span class="font-mono text-slate-600">{{ fmtRate(currentRate(ni.name, 'sent')) }}</span>
             </span>
@@ -215,9 +215,9 @@ export default toNative(SystemNetwork)
             <span class="text-xs text-slate-300">等待数据...</span>
           </div>
         </div>
-        <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-1.5 text-xs text-slate-400">
-          <span>累计收: {{ fmtBytes(ni.bytesRecv) }}</span>
-          <span>累计发: {{ fmtBytes(ni.bytesSent) }}</span>
+        <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-slate-400">
+          <span class="shrink-0 whitespace-nowrap">累计收: {{ fmtBytes(ni.bytesRecv) }}</span>
+          <span class="shrink-0 whitespace-nowrap">累计发: {{ fmtBytes(ni.bytesSent) }}</span>
         </div>
       </div>
     </div>
