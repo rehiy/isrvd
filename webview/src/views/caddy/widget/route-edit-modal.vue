@@ -609,7 +609,7 @@ export default toNative(RouteEditModal)
       <div class="border-t border-slate-100 pt-4 space-y-4">
         <p class="section-title">处理器</p>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
           <button v-for="item in handlerKindCards" :key="item.value" type="button" :class="[modeCardClass(item), 'flex flex-col']" @click="setKind(item.value)">
             <div class="flex items-center gap-2 mb-1.5">
               <div :class="modeCardIconClass(item)"><i class="fas text-sm" :class="item.icon"></i></div>
