@@ -12,16 +12,10 @@ import Combobox from '@/component/combobox.vue'
 
 const defaultFormData = () => ({
     routeId: '',
-    consumerName: '',
     keyAuthHeader: 'apikey',
     keyAuthQuery: 'apikey',
     hideCredentials: false,
 })
-
-interface WhitelistConsumerEntry {
-    username: string
-    key: string
-}
 
 @Component({
     expose: ['show'],
@@ -36,20 +30,13 @@ class WhitelistEditModal extends Vue {
     modalLoading = false
     routes: ApisixRoute[] = []
     consumers: ApisixConsumer[] = []
-    whitelistEntries: WhitelistConsumerEntry[] = []
+    whitelistConsumers: string[] = []
     formData = defaultFormData()
 
     // ─── 计算属性 ───
-    get whitelistConsumers() {
-        return this.whitelistEntries.map(entry => entry.username)
-    }
-
-    get existingConsumerNames() {
-        return new Set(this.consumers.map(consumer => consumer.username))
-    }
-
-    get missingWhitelistEntries() {
-        return this.whitelistEntries.filter(entry => !this.existingConsumerNames.has(entry.username))
+    /** 只展示已有 key-auth 插件的 Consumer */
+    get keyAuthConsumers() {
+        return this.consumers.filter(c => c.plugins?.['key-auth'])
     }
 
     get selectableRoutes() {
@@ -75,13 +62,9 @@ class WhitelistEditModal extends Vue {
     }
 
     // ─── 方法 ───
-    routeLabel(route: ApisixRoute) {
-        return route.name || route.id || '未命名路由'
-    }
-
     resetForm() {
         Object.assign(this.formData, defaultFormData())
-        this.whitelistEntries = []
+        this.whitelistConsumers = []
     }
 
     async show() {
@@ -99,34 +82,9 @@ class WhitelistEditModal extends Vue {
         }
     }
 
-    isExistingConsumer(username: string) {
-        return this.existingConsumerNames.has(username)
-    }
-
-    addWhitelistConsumer() {
-        const names = this.formData.consumerName
-            .split(/[,\n]/)
-            .map(name => name.trim())
-            .filter(Boolean)
-        if (names.length === 0) return this.portal.showNotification('error', '请输入 Consumer 用户名')
-
-        let added = 0
-        names.forEach(username => {
-            if (this.whitelistEntries.some(entry => entry.username === username)) return
-            this.whitelistEntries.push({ username, key: '' })
-            added += 1
-        })
-        if (added === 0) return this.portal.showNotification('error', '用户已在白名单列表中')
-        this.formData.consumerName = ''
-    }
-
-    updateConsumerName(value: string | string[]) {
-        this.formData.consumerName = Array.isArray(value) ? value.join(',') : value
-    }
-
     filteredConsumers(query: string) {
-        return this.consumers
-            .filter(consumer => !this.whitelistEntries.some(entry => entry.username === consumer.username))
+        return this.keyAuthConsumers
+            .filter(consumer => !this.whitelistConsumers.includes(consumer.username))
             .filter(consumer => {
                 if (!query) return true
                 return consumer.username.toLowerCase().includes(query) || (consumer.desc || '').toLowerCase().includes(query)
@@ -134,50 +92,21 @@ class WhitelistEditModal extends Vue {
             .slice(0, 8)
     }
 
-    useConsumerSuggestion(username: string, select: (value: string) => void) {
-        select(username)
-        this.formData.consumerName = username
-        this.addWhitelistConsumer()
+    consumerTagClass() {
+        return 'bg-amber-50 text-amber-800 border border-amber-200'
     }
 
-    removeWhitelistConsumer(username: string) {
-        this.whitelistEntries = this.whitelistEntries.filter(entry => entry.username !== username)
-    }
-
-    async createMissingConsumers() {
-        const entries = this.missingWhitelistEntries
-        for (let index = 0; index < entries.length; index += 1) {
-            const entry = entries[index]
-            const username = entry.username.trim()
-            const key = entry.key.trim()
-            try {
-                const created = await api.apisixConsumerCreate({
-                    username,
-                    plugins: {
-                        'key-auth': { key },
-                    },
-                })
-                if (created.payload) this.consumers.push(created.payload)
-                this.portal.showNotification('success', `Consumer ${username} 创建成功（${index + 1}/${entries.length}）`)
-            } catch (e: unknown) {
-                const message = e instanceof Error ? e.message : '创建失败'
-                const err = new Error(`Consumer ${username} 创建失败：${message}`)
-                ;(err as Error & { cause: unknown }).cause = e
-                throw err
-            }
-        }
+    updateWhitelistConsumers(value: string | string[]) {
+        this.whitelistConsumers = Array.isArray(value) ? value : []
     }
 
     async handleConfirm() {
         if (!this.formData.routeId) return this.portal.showNotification('error', '请选择要配置白名单的路由')
         if (this.whitelistConsumers.length === 0) return this.portal.showNotification('error', '白名单用户不能为空')
-        const missingKeyEntry = this.missingWhitelistEntries.find(entry => !entry.key.trim())
-        if (missingKeyEntry) return this.portal.showNotification('error', `Consumer ${missingKeyEntry.username} 不存在，请填写 key-auth key`)
         if (!this.formData.keyAuthHeader.trim()) return this.portal.showNotification('error', 'key-auth 请求头名称不能为空')
 
         this.modalLoading = true
         try {
-            await this.createMissingConsumers()
             await api.apisixWhitelistCreate({
                 route_id: this.formData.routeId,
                 consumers: this.whitelistConsumers,
@@ -221,7 +150,7 @@ export default toNative(WhitelistEditModal)
       <div class="space-y-3">
         <div>
           <label class="form-label">key-auth 插件配置</label>
-          <p class="mt-1 text-xs text-slate-400">配置路由认证插件参数；新增 Consumer 会使用下方输入的 key-auth.key 创建</p>
+          <p class="mt-1 text-xs text-slate-400">配置路由认证插件参数</p>
         </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
@@ -241,85 +170,48 @@ export default toNative(WhitelistEditModal)
       <div class="space-y-3">
         <div>
           <label class="form-label">白名单用户 <span class="text-red-500">*</span></label>
-          <div class="flex gap-2">
-            <div class="relative flex-1">
-              <Combobox
-                :model-value="formData.consumerName"
-                placeholder="输入 Consumer 用户名，支持英文逗号分隔"
-                search-placeholder="搜索 Consumer"
-                max-height="320px"
-                @update:model-value="updateConsumerName"
-              >
-                <template #hint-extra="{ query }">
-                  <span class="text-xs text-slate-400">{{ filteredConsumers(query.toLowerCase()).length }} 个匹配</span>
-                </template>
-
-                <template #default="{ query, select }">
-                  <div class="select-list p-2">
-                    <button
-                      v-for="consumer in filteredConsumers(query.toLowerCase())"
-                      :key="consumer.username"
-                      type="button"
-                      class="flex w-full items-center gap-2.5 rounded-lg border border-transparent px-2.5 py-2 text-left transition-all duration-150 hover:bg-slate-50"
-                      @click="useConsumerSuggestion(consumer.username, select)"
-                    >
-                      <span class="row-icon bg-violet-50 text-violet-600">
-                        <i class="fas fa-user text-xs"></i>
-                      </span>
-                      <span class="min-w-0 flex-1">
-                        <span class="block truncate text-sm font-medium text-slate-700">{{ consumer.username }}</span>
-                        <span v-if="consumer.desc" class="mt-0.5 block truncate text-xs text-slate-400">{{ consumer.desc }}</span>
-                      </span>
-                      <span class="rounded-lg bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700">已存在</span>
-                    </button>
-                  </div>
-                </template>
-
-                <template #empty="{ query }">
-                  <div v-if="filteredConsumers(query.toLowerCase()).length === 0" class="py-8 text-center">
-                    <i class="fas fa-search text-2xl text-slate-300 mb-2"></i>
-                    <p class="text-sm text-slate-400">{{ consumers.length === 0 ? '暂无 Consumer' : '无匹配 Consumer，可直接输入新用户名' }}</p>
-                  </div>
-                </template>
-              </Combobox>
-            </div>
-            <button type="button" class="btn btn-amber h-[46px] flex-shrink-0" @click="addWhitelistConsumer">
-              <i class="fas fa-plus"></i>添加
-            </button>
-          </div>
-          <p class="text-xs text-slate-400 mt-1">已存在的 Consumer 会直接加入白名单；不存在的 Consumer 需要填写 key-auth key，提交时会逐个创建并提示结果</p>
-        </div>
-
-        <div v-if="whitelistEntries.length > 0" class="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          <div
-            v-for="entry in whitelistEntries"
-            :key="entry.username"
-            class="border-b border-slate-100 px-3 py-2.5 last:border-b-0"
+          <Combobox
+            :model-value="whitelistConsumers"
+            multiple
+            placeholder="搜索并选择 Consumer，可多选"
+            search-placeholder="搜索 Consumer"
+            max-height="320px"
+            :tag-class="consumerTagClass"
+            @update:model-value="updateWhitelistConsumers"
           >
-            <div class="flex items-center justify-between gap-3">
-              <div class="min-w-0">
-                <div class="flex items-center gap-2 min-w-0">
-                  <span class="font-medium text-slate-700 truncate">{{ entry.username }}</span>
-                  <span v-if="isExistingConsumer(entry.username)" class="inline-flex items-center rounded-lg bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700">已存在</span>
-                  <span v-else class="inline-flex items-center rounded-lg bg-amber-50 px-1.5 py-0.5 text-xs text-amber-700">待创建</span>
-                </div>
-                <p class="mt-0.5 text-xs text-slate-400">
-                  {{ isExistingConsumer(entry.username) ? '保存后加入路由白名单' : '该 Consumer 不存在，提交时将使用下方 key 先创建' }}
-                </p>
-              </div>
-              <button type="button" class="btn-icon btn-icon-red flex-shrink-0" title="移除" @click="removeWhitelistConsumer(entry.username)">
-                <i class="fas fa-xmark text-xs"></i>
-              </button>
-            </div>
-            <div v-if="!isExistingConsumer(entry.username)" class="mt-2">
-              <label class="form-label">key-auth key <span class="text-red-500">*</span></label>
-              <input v-model="entry.key" type="text" class="input" placeholder="请输入该 Consumer 的 API Key" />
-            </div>
-          </div>
-        </div>
+            <template #hint-extra="{ query }">
+              <span class="text-xs text-slate-400">{{ filteredConsumers(query.toLowerCase()).length }} 个可选</span>
+            </template>
 
-        <div v-else class="rounded-lg border border-dashed border-slate-200 bg-slate-50/70 px-3 py-3 text-center text-xs text-slate-400">
-          暂未添加白名单用户
+            <template #default="{ query, select }">
+              <div class="select-list p-2">
+                <button
+                  v-for="consumer in filteredConsumers(query.toLowerCase())"
+                  :key="consumer.username"
+                  type="button"
+                  class="flex w-full items-center gap-2.5 rounded-lg border border-transparent px-2.5 py-2 text-left transition-all duration-150 hover:bg-slate-50"
+                  @click="select(consumer.username)"
+                >
+                  <span class="row-icon bg-violet-50 text-violet-600">
+                    <i class="fas fa-user text-xs"></i>
+                  </span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block truncate text-sm font-medium text-slate-700">{{ consumer.username }}</span>
+                    <span v-if="consumer.desc" class="mt-0.5 block truncate text-xs text-slate-400">{{ consumer.desc }}</span>
+                  </span>
+                  <span class="rounded-lg bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700">key-auth</span>
+                </button>
+              </div>
+            </template>
+
+            <template #empty>
+              <div v-if="filteredConsumers('').length === 0" class="py-8 text-center">
+                <i class="fas fa-search text-2xl text-slate-300 mb-2"></i>
+                <p class="text-sm text-slate-400">{{ keyAuthConsumers.length === 0 ? '暂无已配置 key-auth 的 Consumer' : '全部已选' }}</p>
+              </div>
+            </template>
+          </Combobox>
+          <p class="text-xs text-slate-400 mt-1">仅展示已配置 key-auth 插件的 Consumer；如需添加新用户，请先在 Consumer 管理中创建</p>
         </div>
       </div>
     </div>
