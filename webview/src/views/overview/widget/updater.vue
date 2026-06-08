@@ -25,6 +25,7 @@ class SystemUpdater extends Vue {
     updaterAutoRemove = true
     selfContainerName = ''
     inDocker = false
+    upgradeType: 'binary' | 'docker' | null = null
 
     async mounted() {
         await this.loadSelfContainer()
@@ -61,6 +62,7 @@ class SystemUpdater extends Vue {
         }
 
         this.deploying = true
+        this.upgradeType = 'docker'
         try {
             const spec: DockerContainerCreate = {
                 image: 'rehiy/docker-updater:latest',
@@ -78,6 +80,7 @@ class SystemUpdater extends Vue {
         } catch {
             // Axios 拦截器会显示错误通知
             this.deploying = false
+            this.upgradeType = null
         }
     }
 
@@ -85,6 +88,7 @@ class SystemUpdater extends Vue {
     async handleBinaryUpgrade() {
         if (this.deploying) return
         this.deploying = true
+        this.upgradeType = 'binary'
         try {
             await api.overviewUpgrade()
             this.deploying = false
@@ -92,6 +96,7 @@ class SystemUpdater extends Vue {
         } catch {
             // Axios 拦截器会显示错误通知
             this.deploying = false
+            this.upgradeType = null
         }
     }
 
@@ -121,10 +126,14 @@ class SystemUpdater extends Vue {
         if (succeeded) {
             // 保持 upgrading = true，按钮继续显示"等待重启..."直到页面刷新
             this.portal.showNotification('success', `升级成功，即将刷新页面...`)
-            setTimeout(() => window.location.reload(), 2000)
+            setTimeout(() => {
+                this.upgradeType = null
+                window.location.reload()
+            }, 2000)
         } else {
             // 超时
             this.upgrading = false
+            this.upgradeType = null
             this.portal.showNotification('error', '升级超时，请手动检查服务状态')
         }
     }
@@ -166,25 +175,25 @@ export default toNative(SystemUpdater)
         </a>
         <!-- 二进制原地升级 -->
         <button
-          v-if="portal.hasPerm('POST /api/overview/upgrade')"
+          v-if="portal.hasPerm('POST /api/overview/upgrade') && (upgradeType === 'binary' || (!deploying && !upgrading))"
           class="btn btn-primary w-full xs:w-auto"
           title="下载最新版本并重启"
           :disabled="deploying || upgrading"
           @click="handleBinaryUpgrade"
         >
           <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying || upgrading }"></i>
-          <span>{{ deploying ? '升级中...' : upgrading ? '等待重启...' : '二进制升级' }}</span>
+          <span>{{ deploying ? '升级中...' : upgrading ? '等待重启...' : '升级二进制' }}</span>
         </button>
         <!-- Docker 容器升级（仅 Docker 环境） -->
         <button
-          v-if="inDocker && portal.hasPerm('POST /api/docker/container')"
+          v-if="inDocker && portal.hasPerm('POST /api/docker/container') && (upgradeType === 'docker' || (!deploying && !upgrading))"
           class="btn btn-emerald w-full xs:w-auto"
           title="升级当前容器"
           :disabled="deploying || upgrading"
           @click="openUpdaterModal"
         >
           <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying || upgrading }"></i>
-          <span>{{ deploying ? '升级中...' : upgrading ? '等待重启...' : '容器升级' }}</span>
+          <span>{{ deploying ? '升级中...' : upgrading ? '等待重启...' : '升级容器' }}</span>
         </button>
       </div>
     </div>
