@@ -321,17 +321,19 @@ export default toNative(Nodes)
       <!-- 角色选择 -->
       <div>
         <label class="form-label">节点角色</label>
-        <div class="flex gap-2">
+        <div class="tab-group w-full">
           <button
-            :class="joinTokenRole === 'worker' ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
-            class="flex-1 px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
+            type="button"
+            class="tab-btn flex-1 justify-center"
+            :class="joinTokenRole === 'worker' ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive'"
             @click="joinTokenRole = 'worker'"
           >
             Worker
           </button>
           <button
-            :class="joinTokenRole === 'manager' ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
-            class="flex-1 px-3 py-2 rounded-lg border text-sm font-medium transition-colors"
+            type="button"
+            class="tab-btn flex-1 justify-center"
+            :class="joinTokenRole === 'manager' ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive'"
             @click="joinTokenRole = 'manager'"
           >
             Manager
