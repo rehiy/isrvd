@@ -71,7 +71,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: build/docker/Dockerfile
+          file: build/docker-apisix/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: rehiy/isrvd:apisix

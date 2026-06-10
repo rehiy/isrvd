@@ -68,7 +68,7 @@ $:
           script: |
             docker buildx build --push --platform linux/amd64,linux/arm64 \
             --build-arg "ISRVD_VERSION=$CNB_BRANCH" --build-arg "ISRVD_DOWNLOAD_BASE=$ISRVD_DOWNLOAD_BASE" \
-            -t $IMAGE_URL:apisix -f build/docker/Dockerfile .
+            -t $IMAGE_URL:apisix -f build/docker-apisix/Dockerfile .
 
         - name: Build and push caddy image
           timeout: 2h

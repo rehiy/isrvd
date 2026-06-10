@@ -57,5 +57,5 @@ links:
 members:
   - username: admin
     password: __ISRVD_PASSWORD__
-    homeDirectory: .
+    homeDirectory: /
     founder: true
