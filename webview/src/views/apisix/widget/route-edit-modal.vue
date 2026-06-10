@@ -196,7 +196,7 @@ class RouteEditModal extends Vue {
             this.modalLoading = true
             this.isOpen = true
             try {
-                const r = (await api.apisixRoute(route.id)).payload
+const r = (await api.apisixRouteInspect(route.id)).payload
                 if (!r) {
                     this.portal.showNotification('error', '加载路由详情失败')
                     this.isOpen = false

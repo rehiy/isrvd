@@ -47,7 +47,7 @@ class NavigationBar extends Vue {
 
     // Compose 部署菜单可见性
     get composeDeployVisible() {
-        return this.portal.hasPerm('POST /api/compose/docker/deploy')
+        return this.portal.hasPerm('POST /api/compose/docker')
     }
 
     // ─── 监听器 ───
@@ -221,7 +221,7 @@ export default toNative(NavigationBar)
         <span v-if="!collapsed">概览</span>
       </router-link>
       <!-- 本机管理折叠子菜单 -->
-      <div v-if="portal.hasPerm('GET /api/filer/list') || portal.hasPerm('GET /api/shell')">
+      <div v-if="portal.hasPerm('GET /api/filer/files') || portal.hasPerm('GET /api/shell')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
         <button v-if="collapsed" class="nav-link justify-center" :class="{ 'bg-blue-50 text-blue-700': isLocalActive }" title="本机管理" @click.stop="toggleLocal">
           <i class="fas fa-computer"></i>
@@ -238,7 +238,7 @@ export default toNative(NavigationBar)
               <i class="fas fa-desktop"></i>
               <span>系统监控</span>
             </router-link>
-            <router-link v-if="portal.hasPerm('GET /api/filer/list')" to="/local/explorer" class="nav-link" :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/local/explorer') }">
+            <router-link v-if="portal.hasPerm('GET /api/filer/files')" to="/local/explorer" class="nav-link" :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/local/explorer') }">
               <i class="fas fa-folder-open"></i>
               <span>文件管理</span>
             </router-link>

@@ -25,10 +25,10 @@ func (app *App) defineApisixRoutes() []Route {
 		{Method: "PUT", Path: "/apisix/consumer/:username", Handler: app.apisixConsumerUpdate, Module: "apisix", Label: "更新 APISIX 消费者"},
 		{Method: "DELETE", Path: "/apisix/consumer/:username", Handler: app.apisixConsumerDelete, Module: "apisix", Label: "删除 APISIX 消费者"},
 		// 白名单
-		{Method: "GET", Path: "/apisix/whitelist", Handler: app.apisixWhitelistList, Module: "apisix", Label: "查询 APISIX 白名单"},
+		{Method: "GET", Path: "/apisix/whitelist", Handler: app.apisixWhitelistInspect, Module: "apisix", Label: "查询 APISIX 白名单"},
 		{Method: "POST", Path: "/apisix/whitelist", Handler: app.apisixWhitelistCreate, Module: "apisix", Label: "配置 APISIX 路由白名单"},
 		{Method: "POST", Path: "/apisix/whitelist/user", Handler: app.apisixWhitelistUserCreate, Module: "apisix", Label: "新建用户并加入 APISIX 白名单"},
-		{Method: "DELETE", Path: "/apisix/whitelist/user", Handler: app.apisixWhitelistUserDelete, Module: "apisix", Label: "从 APISIX 白名单移除用户"},
+		{Method: "DELETE", Path: "/apisix/whitelist/user/:routeID/:consumerName", Handler: app.apisixWhitelistUserDelete, Module: "apisix", Label: "从 APISIX 白名单移除用户"},
 		// PluginConfig 管理
 		{Method: "GET", Path: "/apisix/plugin-configs", Handler: app.apisixPluginConfigList, Module: "apisix", Label: "查询 APISIX 插件配置列表"},
 		{Method: "GET", Path: "/apisix/plugin-config/:id", Handler: app.apisixPluginConfigInspect, Module: "apisix", Label: "获取 APISIX 插件配置详情"},
@@ -173,7 +173,7 @@ func (app *App) apisixConsumerDelete(c *gin.Context) {
 	respondSuccess(c, "消费者删除成功", nil)
 }
 
-func (app *App) apisixWhitelistList(c *gin.Context) {
+func (app *App) apisixWhitelistInspect(c *gin.Context) {
 	result, err := app.apisixSvc.WhitelistList(c.Request.Context())
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
@@ -183,12 +183,12 @@ func (app *App) apisixWhitelistList(c *gin.Context) {
 }
 
 func (app *App) apisixWhitelistCreate(c *gin.Context) {
-	var req apisixsvc.WhitelistRouteCreateRequest
+	var req apisixsvc.WhitelistCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	result, err := app.apisixSvc.WhitelistRouteCreate(c.Request.Context(), req)
+	result, err := app.apisixSvc.WhitelistCreate(c.Request.Context(), req)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -211,10 +211,10 @@ func (app *App) apisixWhitelistUserCreate(c *gin.Context) {
 }
 
 func (app *App) apisixWhitelistUserDelete(c *gin.Context) {
-	routeID := c.Query("route_id")
-	consumerName := c.Query("consumer_name")
+	routeID := c.Param("routeID")
+	consumerName := c.Param("consumerName")
 	if routeID == "" || consumerName == "" {
-		respondError(c, http.StatusBadRequest, "route_id 和 consumer_name 不能为空")
+		respondError(c, http.StatusBadRequest, "routeID 和 consumerName 不能为空")
 		return
 	}
 	if err := app.apisixSvc.WhitelistUserDelete(c.Request.Context(), routeID, consumerName); err != nil {

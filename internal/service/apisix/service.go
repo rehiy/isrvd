@@ -166,15 +166,15 @@ func (s *Service) ConsumerDelete(ctx context.Context, username string) error {
 
 // ─── 白名单管理 ───
 
-// WhitelistRouteCreateRequest 配置白名单路由请求
-type WhitelistRouteCreateRequest struct {
+// WhitelistCreateRequest 配置白名单路由请求
+type WhitelistCreateRequest struct {
 	RouteID   string         `json:"route_id"`
 	Consumers []string       `json:"consumers"`
 	KeyAuth   map[string]any `json:"key_auth"`
 }
 
-// WhitelistRouteCreate 为已有路由配置 Consumer 白名单
-func (s *Service) WhitelistRouteCreate(ctx context.Context, req WhitelistRouteCreateRequest) (*pkgapisix.Route, error) {
+// WhitelistCreate 为已有路由配置 Consumer 白名单
+func (s *Service) WhitelistCreate(ctx context.Context, req WhitelistCreateRequest) (*pkgapisix.Route, error) {
 	routeID := strings.TrimSpace(req.RouteID)
 	if routeID == "" {
 		return nil, fmt.Errorf("路由 ID 不能为空")
@@ -301,7 +301,7 @@ func (s *Service) WhitelistUserCreate(ctx context.Context, req WhitelistUserCrea
 
 // WhitelistList 获取白名单
 func (s *Service) WhitelistList(ctx context.Context) ([]pkgapisix.Route, error) {
-	list, err := s.client.RouteWhitelist(ctx)
+	list, err := s.client.RouteWhitelistInspect(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("获取白名单失败: %w", err)
 	}

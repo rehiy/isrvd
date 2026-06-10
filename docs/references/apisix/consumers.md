@@ -96,5 +96,7 @@ isrvd_post "/apisix/whitelist/user" '{"route_id":"<ROUTE_ID>","username":"<USERN
 ### 撤销白名单
 
 ```bash
-isrvd_delete "/apisix/whitelist/user?route_id=<ROUTE_ID>&consumer_name=<USERNAME>"
+isrvd_delete "/apisix/whitelist/user/<ROUTE_ID>/<USERNAME>"
 ```
+
+该接口会从指定路由的 `consumer-restriction.whitelist` 中移除指定 Consumer，路径参数分别为路由 ID 和 Consumer 用户名。

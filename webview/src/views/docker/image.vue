@@ -89,7 +89,7 @@ class ImageDetail extends Vue {
     async loadDetail() {
         this.loading = true
         try {
-            const res = await api.dockerImage(this.imageId)
+            const res = await api.dockerImageInspect(this.imageId)
             this.inspectData = res.payload ?? null
         } finally {
             this.loading = false

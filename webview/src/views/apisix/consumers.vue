@@ -39,7 +39,7 @@ class Consumers extends Vue {
     async loadConsumers() {
         this.loading = true
         try {
-            const [consRes, wlRes] = await Promise.all([api.apisixConsumerList(), api.apisixWhitelist()])
+const [consRes, wlRes] = await Promise.all([api.apisixConsumerList(), api.apisixWhitelistInspect()])
             this.consumers = consRes.payload || []
             this.whitelist = wlRes.payload || []
         } catch {

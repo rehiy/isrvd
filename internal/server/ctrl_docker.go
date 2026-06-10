@@ -382,6 +382,10 @@ func (app *App) dockerRegistryCreate(c *gin.Context) {
 
 func (app *App) dockerRegistryUpdate(c *gin.Context) {
 	originalURL := c.Query("url")
+	if originalURL == "" {
+		respondError(c, http.StatusBadRequest, "缺少 url 参数")
+		return
+	}
 	var req svcDockerRegistryUpsertRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -396,6 +400,10 @@ func (app *App) dockerRegistryUpdate(c *gin.Context) {
 
 func (app *App) dockerRegistryDelete(c *gin.Context) {
 	url := c.Query("url")
+	if url == "" {
+		respondError(c, http.StatusBadRequest, "缺少 url 参数")
+		return
+	}
 	if err := app.dockerSvc.RegistryDelete(url); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return

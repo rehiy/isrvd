@@ -128,7 +128,7 @@ class PluginConfigPanel extends Vue {
         if (!this.importRouteId) return
         this.importRoutePluginsLoading = true
         try {
-            const src = (await api.apisixRoute(this.importRouteId)).payload?.plugins || {}
+const src = (await api.apisixRouteInspect(this.importRouteId)).payload?.plugins || {}
             this.importRoutePlugins = src
             this.selectedImportPlugins = new Set(Object.keys(src))
         } catch {

@@ -39,7 +39,7 @@ class NodeDetail extends Vue {
     async loadDetail() {
         this.loading = true
         try {
-            const res = await api.swarmNode(this.nodeId)
+            const res = await api.swarmNodeInspect(this.nodeId)
             this.nodeData = res.payload ?? null
         } finally {
             this.loading = false

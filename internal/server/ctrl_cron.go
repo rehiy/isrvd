@@ -18,7 +18,7 @@ func (app *App) defineCronRoutes() []Route {
 		{Method: "PUT", Path: "/cron/jobs/:id", Handler: app.cronJobUpdate, Module: "cron", Label: "更新计划任务"},
 		{Method: "DELETE", Path: "/cron/jobs/:id", Handler: app.cronJobDelete, Module: "cron", Label: "删除计划任务"},
 		{Method: "POST", Path: "/cron/jobs/:id/run", Handler: app.cronJobRun, Module: "cron", Label: "立即执行任务"},
-		{Method: "POST", Path: "/cron/jobs/:id/enable", Handler: app.cronJobStatusPatch, Module: "cron", Label: "启用或禁用任务"},
+		{Method: "PATCH", Path: "/cron/jobs/:id", Handler: app.cronJobStatusPatch, Module: "cron", Label: "启用或禁用任务"},
 		{Method: "GET", Path: "/cron/jobs/:id/logs", Handler: app.cronJobLogs, Module: "cron", Label: "查询任务执行历史"},
 	}
 }
@@ -106,7 +106,7 @@ func (app *App) cronJobStatusPatch(c *gin.Context) {
 	}
 
 	if err := app.cronSvc.JobStatusPatch(id, req.Enabled); err != nil {
-		logman.Error("Toggle cron job failed", "id", id, "enabled", req.Enabled, "error", err)
+		logman.Error("Patch cron job failed", "id", id, "enabled", req.Enabled, "error", err)
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}

@@ -87,7 +87,7 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 
 ## 审计日志
 
-审计策略由后端路由的 `Audit` 字段控制：`0` 按 Method 审计（非 GET 与 WebSocket 记录），`-1` 忽略，`1` 强制记录。未显式配置时默认为 `0`。文件管理读取类接口 `/filer/list`、`/filer/read`、`/filer/download` 配置为 `-1`，不记录审计日志。
+审计策略由后端路由的 `Audit` 字段控制：`0` 按 Method 审计（非 GET 与 WebSocket 记录），`-1` 忽略，`1` 强制记录。未显式配置时默认为 `0`。文件管理读取类接口 `/filer/files`、`/filer/file`、`/filer/download` 配置为 `-1`，不记录审计日志。
 
 ```bash
 isrvd_get "/system/audit/logs?limit=20"

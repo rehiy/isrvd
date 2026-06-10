@@ -22,7 +22,7 @@ class CaddyRaw extends Vue {
     async loadConfig() {
         this.loading = true
         try {
-            const cfg = (await api.caddyConfig()).payload
+const cfg = (await api.caddyConfigInspect()).payload
             this.raw = JSON.stringify(cfg ?? null, null, 2)
         } finally {
             this.loading = false

@@ -56,7 +56,7 @@
 | PUT | `/api/cron/jobs/:id` | 更新计划任务 |
 | DELETE | `/api/cron/jobs/:id` | 删除计划任务 |
 | POST | `/api/cron/jobs/:id/run` | 立即触发一次执行（异步） |
-| POST | `/api/cron/jobs/:id/enable` | 启用或禁用任务 |
+| PATCH | `/api/cron/jobs/:id` | 启用或禁用任务（部分更新 `enabled` 字段） |
 | GET | `/api/cron/jobs/:id/logs` | 查询执行历史 |
 
 ---
@@ -144,9 +144,9 @@
 
 ### 启用/禁用
 
-**POST** `/api/cron/jobs/:id/enable`
+**PATCH** `/api/cron/jobs/:id`
 
-请求体：
+请求体（仅需传递要更新的字段）：
 
 ```json
 { "enabled": true }
@@ -196,7 +196,7 @@ isrvd_post "/cron/jobs" '{
 isrvd_post "/cron/jobs/<JOB_ID>/run" '{}'
 
 # 禁用任务
-isrvd_post "/cron/jobs/<JOB_ID>/enable" '{"enabled": false}'
+isrvd_patch "/cron/jobs/<JOB_ID>" '{"enabled": false}'
 
 # 查看最近 20 条执行日志
 isrvd_get "/cron/jobs/<JOB_ID>/logs?limit=20"

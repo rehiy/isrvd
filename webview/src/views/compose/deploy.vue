@@ -33,7 +33,7 @@ class ComposeDeploy extends Vue {
 
     // ─── 计算属性 ───
     get swarmAvailable(): boolean {
-        return this.portal.hasPerm('POST /api/compose/swarm/deploy')
+        return this.portal.hasPerm('POST /api/compose/swarm')
     }
 
     get canSubmit(): boolean {
@@ -158,7 +158,7 @@ export default toNative(ComposeDeploy)
             <button type="button" :disabled="loading" class="btn btn-secondary" @click="resetForm()">
               <i class="fas fa-rotate-left"></i>清空
             </button>
-            <button v-if="portal.hasPerm('POST /api/compose/docker/deploy')" type="button" class="btn btn-amber" @click="openMarketplace()">
+            <button v-if="portal.hasPerm('POST /api/compose/docker')" type="button" class="btn btn-amber" @click="openMarketplace()">
               <i class="fas fa-store"></i>应用市场
             </button>
           </div>
@@ -177,7 +177,7 @@ export default toNative(ComposeDeploy)
             <button type="button" :disabled="loading" class="btn btn-secondary w-9 h-9 !px-0" title="清空" @click="resetForm()">
               <i class="fas fa-rotate-left"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/compose/docker/deploy')" type="button" class="btn btn-amber w-9 h-9 !px-0" title="从应用市场选择" @click="openMarketplace()">
+            <button v-if="portal.hasPerm('POST /api/compose/docker')" type="button" class="btn btn-amber w-9 h-9 !px-0" title="从应用市场选择" @click="openMarketplace()">
               <i class="fas fa-store"></i>
             </button>
           </div>

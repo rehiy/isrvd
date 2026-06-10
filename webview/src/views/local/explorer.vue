@@ -143,13 +143,13 @@ export default toNative(FileExplorer)
 
           <div class="hidden md:flex items-center gap-2 flex-shrink-0">
             <PageSearch v-model="searchText" search-key="filer-explorer" placeholder="搜索文件名、路径或权限..." focus-color="primary" type-to-search />
-            <button v-if="portal.hasPerm('GET /api/filer/list')" class="btn btn-secondary" @click="refreshFiles()">
+            <button v-if="portal.hasPerm('GET /api/filer/files')" class="btn btn-secondary" @click="refreshFiles()">
               <i class="fas fa-rotate"></i><span>刷新</span>
             </button>
-            <button v-if="portal.hasPerm('POST /api/filer/mkdir')" class="btn btn-secondary" @click="mkdirModalRef.show()">
+            <button v-if="portal.hasPerm('POST /api/filer/dir')" class="btn btn-secondary" @click="mkdirModalRef.show()">
               <i class="fas fa-folder"></i><span>新建目录</span>
             </button>
-            <button v-if="portal.hasPerm('POST /api/filer/create')" class="btn btn-secondary" @click="createModalRef.show()">
+            <button v-if="portal.hasPerm('POST /api/filer/file')" class="btn btn-secondary" @click="createModalRef.show()">
               <i class="fas fa-file"></i><span>新建文件</span>
             </button>
             <button v-if="portal.hasPerm('POST /api/filer/upload')" class="btn btn-primary" @click="uploadModal.show()">
@@ -158,13 +158,13 @@ export default toNative(FileExplorer)
           </div>
           <!-- 移动端图标按钮 -->
           <div class="flex md:hidden items-center gap-1.5 flex-shrink-0">
-            <button v-if="portal.hasPerm('GET /api/filer/list')" class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="refreshFiles()">
+            <button v-if="portal.hasPerm('GET /api/filer/files')" class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="refreshFiles()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/filer/mkdir')" class="btn btn-secondary w-9 h-9 !px-0" title="新建目录" @click="mkdirModalRef.show()">
+            <button v-if="portal.hasPerm('POST /api/filer/dir')" class="btn btn-secondary w-9 h-9 !px-0" title="新建目录" @click="mkdirModalRef.show()">
               <i class="fas fa-folder text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/filer/create')" class="btn btn-secondary w-9 h-9 !px-0" title="新建文件" @click="createModalRef.show()">
+            <button v-if="portal.hasPerm('POST /api/filer/file')" class="btn btn-secondary w-9 h-9 !px-0" title="新建文件" @click="createModalRef.show()">
               <i class="fas fa-file text-sm"></i>
             </button>
             <button v-if="portal.hasPerm('POST /api/filer/upload')" class="btn btn-primary w-9 h-9 !px-0" title="上传文件" @click="uploadModal.show()">
@@ -259,7 +259,7 @@ export default toNative(FileExplorer)
                   <div class="flex justify-end items-center gap-1">
                     <!-- Directory Actions -->
                     <template v-if="file.isDir">
-                      <button v-if="portal.hasPerm('GET /api/filer/list')" class="btn-icon btn-icon-slate" title="进入目录" @click="navigateTo(file.path)">
+                      <button v-if="portal.hasPerm('GET /api/filer/files')" class="btn-icon btn-icon-slate" title="进入目录" @click="navigateTo(file.path)">
                         <i class="fas fa-folder-open text-xs"></i>
                       </button>
                       <button v-if="portal.hasPerm('POST /api/filer/zip')" class="btn-icon btn-icon-amber" title="压缩" @click="zipModalRef.show(file)">
@@ -268,10 +268,10 @@ export default toNative(FileExplorer)
                       <button v-if="portal.hasPerm('POST /api/filer/rename')" class="btn-icon btn-icon-blue" title="重命名" @click="renameModalRef.show(file)">
                         <i class="fas fa-spell-check text-xs"></i>
                       </button>
-                      <button v-if="portal.hasPerm('POST /api/filer/chmod')" class="btn-icon btn-icon-slate" title="权限" @click="chmodModalRef.show(file)">
+                      <button v-if="portal.hasPerm('PUT /api/filer/chmod')" class="btn-icon btn-icon-slate" title="权限" @click="chmodModalRef.show(file)">
                         <i class="fas fa-key text-xs"></i>
                       </button>
-                      <button v-if="portal.hasPerm('POST /api/filer/delete')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
+                      <button v-if="portal.hasPerm('DELETE /api/filer/file')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                         <i class="fas fa-trash text-xs"></i>
                       </button>
                     </template>
@@ -288,7 +288,7 @@ export default toNative(FileExplorer)
                         <i class="fas fa-file-zipper text-xs"></i>
                       </button>
                       <button 
-                        v-if="isEditableFile(file.name) && portal.hasPerm('GET /api/filer/read') && portal.hasPerm('POST /api/filer/modify')"
+                        v-if="isEditableFile(file.name) && portal.hasPerm('GET /api/filer/file') && portal.hasPerm('PUT /api/filer/file')"
                         class="btn-icon btn-icon-blue"
                         title="编辑" 
                         @click="modifyModalRef.show(file)"
@@ -298,10 +298,10 @@ export default toNative(FileExplorer)
                       <button v-if="portal.hasPerm('POST /api/filer/rename')" class="btn-icon btn-icon-blue" title="重命名" @click="renameModalRef.show(file)">
                         <i class="fas fa-spell-check text-xs"></i>
                       </button>
-                      <button v-if="portal.hasPerm('POST /api/filer/chmod')" class="btn-icon btn-icon-slate" title="权限" @click="chmodModalRef.show(file)">
+                      <button v-if="portal.hasPerm('PUT /api/filer/chmod')" class="btn-icon btn-icon-slate" title="权限" @click="chmodModalRef.show(file)">
                         <i class="fas fa-key text-xs"></i>
                       </button>
-                      <button v-if="portal.hasPerm('POST /api/filer/delete')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
+                      <button v-if="portal.hasPerm('DELETE /api/filer/file')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                         <i class="fas fa-trash text-xs"></i>
                       </button>
                     </template>
@@ -363,7 +363,7 @@ export default toNative(FileExplorer)
             <div class="card-actions">
               <!-- Directory Actions -->
               <template v-if="file.isDir">
-                <button v-if="portal.hasPerm('GET /api/filer/list')" class="btn-icon btn-icon-slate" title="进入目录" @click="navigateTo(file.path)">
+                <button v-if="portal.hasPerm('GET /api/filer/files')" class="btn-icon btn-icon-slate" title="进入目录" @click="navigateTo(file.path)">
                   <i class="fas fa-folder-open text-xs"></i><span class="text-xs ml-1">进入</span>
                 </button>
                 <button v-if="portal.hasPerm('POST /api/filer/zip')" class="btn-icon btn-icon-amber" title="压缩" @click="zipModalRef.show(file)">
@@ -372,10 +372,10 @@ export default toNative(FileExplorer)
                 <button v-if="portal.hasPerm('POST /api/filer/rename')" class="btn-icon btn-icon-blue" title="重命名" @click="renameModalRef.show(file)">
                   <i class="fas fa-spell-check text-xs"></i><span class="text-xs ml-1">重命名</span>
                 </button>
-                <button v-if="portal.hasPerm('POST /api/filer/chmod')" class="btn-icon btn-icon-slate" title="权限" @click="chmodModalRef.show(file)">
+                <button v-if="portal.hasPerm('PUT /api/filer/chmod')" class="btn-icon btn-icon-slate" title="权限" @click="chmodModalRef.show(file)">
                   <i class="fas fa-key text-xs"></i><span class="text-xs ml-1">权限</span>
                 </button>
-                <button v-if="portal.hasPerm('POST /api/filer/delete')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
+                <button v-if="portal.hasPerm('DELETE /api/filer/file')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                   <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
                 </button>
               </template>
@@ -392,7 +392,7 @@ export default toNative(FileExplorer)
                   <i class="fas fa-file-zipper text-xs"></i><span class="text-xs ml-1">解压</span>
                 </button>
                 <button 
-                  v-if="isEditableFile(file.name) && portal.hasPerm('GET /api/filer/read') && portal.hasPerm('POST /api/filer/modify')"
+                  v-if="isEditableFile(file.name) && portal.hasPerm('GET /api/filer/file') && portal.hasPerm('PUT /api/filer/file')"
                   class="btn-icon btn-icon-blue"
                   title="编辑" 
                   @click="modifyModalRef.show(file)"
@@ -402,10 +402,10 @@ export default toNative(FileExplorer)
                 <button v-if="portal.hasPerm('POST /api/filer/rename')" class="btn-icon btn-icon-blue" title="重命名" @click="renameModalRef.show(file)">
                   <i class="fas fa-spell-check text-xs"></i><span class="text-xs ml-1">重命名</span>
                 </button>
-                <button v-if="portal.hasPerm('POST /api/filer/chmod')" class="btn-icon btn-icon-slate" title="权限" @click="chmodModalRef.show(file)">
+                <button v-if="portal.hasPerm('PUT /api/filer/chmod')" class="btn-icon btn-icon-slate" title="权限" @click="chmodModalRef.show(file)">
                   <i class="fas fa-key text-xs"></i><span class="text-xs ml-1">权限</span>
                 </button>
-                <button v-if="portal.hasPerm('POST /api/filer/delete')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
+                <button v-if="portal.hasPerm('DELETE /api/filer/file')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                   <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
                 </button>
               </template>

@@ -51,7 +51,7 @@ class SSHClientPage extends Vue {
     // ─── 数据加载 ───
     async loadHost() {
         try {
-            const res = await api.sshHost(this.hostId)
+            const res = await api.sshHostInspect(this.hostId)
             this.host = res.payload || null
         } catch {}
     }

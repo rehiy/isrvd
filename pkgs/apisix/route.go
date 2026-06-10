@@ -86,24 +86,8 @@ func (c *Client) RouteDelete(ctx context.Context, routeID string) error {
 	return err
 }
 
-// RouteWhitelistList 获取管控路由列表（仅返回同时配置了 key-auth 和 consumer-restriction 的路由）
-func (c *Client) RouteWhitelistList(ctx context.Context) ([]Route, error) {
-	routes, err := c.fetchRoutes(ctx)
-	if err != nil {
-		return nil, err
-	}
-	result := make([]Route, 0, len(routes))
-	for _, v := range routes {
-		if !hasPlugin(v.Plugins, "key-auth") || !hasPlugin(v.Plugins, "consumer-restriction") {
-			continue
-		}
-		result = append(result, v)
-	}
-	return result, nil
-}
-
-// RouteWhitelist 获取所有路由的 consumer-restriction 白名单
-func (c *Client) RouteWhitelist(ctx context.Context) ([]Route, error) {
+// RouteWhitelistInspect 获取所有路由的 consumer-restriction 白名单
+func (c *Client) RouteWhitelistInspect(ctx context.Context) ([]Route, error) {
 	routes, err := c.fetchRoutes(ctx)
 	if err != nil {
 		return nil, err
@@ -122,7 +106,7 @@ func (c *Client) RouteWhitelist(ctx context.Context) ([]Route, error) {
 
 // getRouteConsumers 获取指定路由的白名单消费者列表
 func (c *Client) getRouteConsumers(ctx context.Context, routeID string) ([]string, error) {
-	whitelist, err := c.RouteWhitelist(ctx)
+	whitelist, err := c.RouteWhitelistInspect(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -15,11 +15,11 @@ import (
 func (app *App) defineCaddyRoutes() []Route {
 	return []Route{
 		// 概览与原始配置
-		{Method: "GET", Path: "/caddy/info", Handler: app.caddyInfo, Module: "caddy", Label: "查询 Caddy 概览"},
-		{Method: "GET", Path: "/caddy/config", Handler: app.caddyConfig, Module: "caddy", Label: "查询 Caddy 完整配置"},
+		{Method: "GET", Path: "/caddy/info", Handler: app.caddyInfoInspect, Module: "caddy", Label: "查询 Caddy 概览"},
+		{Method: "GET", Path: "/caddy/config", Handler: app.caddyConfigInspect, Module: "caddy", Label: "查询 Caddy 完整配置"},
 		{Method: "POST", Path: "/caddy/config", Handler: app.caddyConfigLoad, Module: "caddy", Label: "整体替换 Caddy 配置"},
 		// 全局选项
-		{Method: "GET", Path: "/caddy/global", Handler: app.caddyGlobal, Module: "caddy", Label: "查询 Caddy 全局选项"},
+		{Method: "GET", Path: "/caddy/global", Handler: app.caddyGlobalInspect, Module: "caddy", Label: "查询 Caddy 全局选项"},
 		{Method: "PUT", Path: "/caddy/global", Handler: app.caddyGlobalUpdate, Module: "caddy", Label: "更新 Caddy 全局选项"},
 		// 路由 CRUD（默认 server=srv0，可通过 query 指定）
 		{Method: "GET", Path: "/caddy/routes", Handler: app.caddyRouteList, Module: "caddy", Label: "查询 Caddy 路由列表"},
@@ -37,7 +37,7 @@ func (app *App) defineCaddyRoutes() []Route {
 
 // ─── 概览与原始配置 ───
 
-func (app *App) caddyInfo(c *gin.Context) {
+func (app *App) caddyInfoInspect(c *gin.Context) {
 	result, err := app.caddySvc.Info(c.Request.Context())
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
@@ -46,7 +46,7 @@ func (app *App) caddyInfo(c *gin.Context) {
 	respondSuccess(c, "", result)
 }
 
-func (app *App) caddyConfig(c *gin.Context) {
+func (app *App) caddyConfigInspect(c *gin.Context) {
 	result, err := app.caddySvc.ConfigAll(c.Request.Context())
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
@@ -72,7 +72,7 @@ func (app *App) caddyConfigLoad(c *gin.Context) {
 
 // ─── 全局选项 ───
 
-func (app *App) caddyGlobal(c *gin.Context) {
+func (app *App) caddyGlobalInspect(c *gin.Context) {
 	result, err := app.caddySvc.Global(c.Request.Context())
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())

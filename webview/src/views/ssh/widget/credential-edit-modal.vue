@@ -39,7 +39,7 @@ class CredentialEditModal extends Vue {
             this.isOpen = true
             this.modalLoading = true
             try {
-                const res = await api.sshCredential(cred.id)
+                const res = await api.sshCredentialInspect(cred.id)
                 const detail = res.payload
                 if (!detail) throw new Error('凭据详情为空')
                 this.formData = {

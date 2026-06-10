@@ -201,7 +201,7 @@ docs/
 - Docker：`/docker/containers`、`/docker/images`、`/docker/networks`、`/docker/volumes`、`/docker/registries` 及对应详情页
 - Swarm：`/swarm/nodes`、`/swarm/services`、`/swarm/tasks` 及对应详情/日志页
 - 系统模块：`/system/config`、`/system/audit/logs`；用户管理：`/account/members`；账户设置：`/account/password`、`/account/passkeys`、`/account/apikey`
-- 计划任务：`/cron/jobs`；Compose：`/compose/deploy`
+- 计划任务：`/cron/jobs`；Compose：`/compose`
 - 折叠子菜单展开状态跟随当前路由（`@Watch` immediate）
 - 侧边栏宽度 `w-16`（折叠）→ `w-64`（展开）
 - 移动端：遮罩 + 抽屉式（`-translate-x-full lg:translate-x-0`），`toggleMobileSidebar`/`closeMobileSidebar`/`openMobileSidebar`；窗口 ≥ 1024px 自动关闭

@@ -51,7 +51,7 @@ class ApisixOverview extends Vue {
                 keys.push('ssl')
             }
             if (this.portal.hasPerm('GET /api/apisix/whitelist')) {
-                requests.push(api.apisixWhitelist())
+                requests.push(api.apisixWhitelistInspect())
                 keys.push('whitelist')
             }
 

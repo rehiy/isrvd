@@ -101,7 +101,7 @@ class Services extends Vue {
             iconColor: 'blue',
             confirmText: '确认重部署',
             onConfirm: async () => {
-                await api.swarmServiceForceUpdate(svc.id)
+                await api.swarmServiceAction(svc.id, 'force-update')
                 this.portal.showNotification('success', '已触发强制重部署')
                 this.loadServices()
             }
@@ -218,8 +218,8 @@ export default toNative(Services)
                     <button v-if="portal.hasPerm('GET /api/swarm/service/:id')" class="btn-icon btn-icon-slate" title="详情" @click="$router.push({ name: 'swarm-service', params: { id: svc.id } })"><i class="fas fa-circle-info text-xs"></i></button>
                     <button v-if="portal.hasPerm('GET /api/swarm/service/:id/logs')" class="btn-icon btn-icon-slate" title="日志" @click="$router.push({ name: 'swarm-service-logs', params: { id: svc.id } })"><i class="fas fa-file-lines text-xs"></i></button>
                     <button v-if="svc.mode === 'replicated' && portal.hasPerm('POST /api/swarm/service/:id/action')" class="btn-icon btn-icon-indigo" title="扩缩容" @click="openScaleModal(svc)"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>
-                    <button v-if="portal.hasPerm('POST /api/swarm/service/:id/force-update')" class="btn-icon btn-icon-blue" title="强制重部署" @click="handleRedeploy(svc)"><i class="fas fa-arrows-rotate text-xs"></i></button>
-                    <button v-if="portal.hasPerm('GET /api/compose/swarm/:name') && portal.hasPerm('POST /api/compose/swarm/:name/redeploy')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(svc)"><i class="fas fa-pen text-xs"></i></button>
+                    <button v-if="portal.hasPerm('POST /api/swarm/service/:id/action')" class="btn-icon btn-icon-blue" title="强制重部署" @click="handleRedeploy(svc)"><i class="fas fa-arrows-rotate text-xs"></i></button>
+                    <button v-if="portal.hasPerm('GET /api/compose/swarm/:name') && portal.hasPerm('PUT /api/compose/swarm/:name')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(svc)"><i class="fas fa-pen text-xs"></i></button>
                     <button v-if="portal.hasPerm('POST /api/swarm/service/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleServiceRemove(svc)"><i class="fas fa-trash text-xs"></i></button>
                   </div>
                 </td>
@@ -285,10 +285,10 @@ export default toNative(Services)
               <button v-if="svc.mode === 'replicated' && portal.hasPerm('POST /api/swarm/service/:id/action')" class="btn-icon btn-icon-indigo" title="扩缩容" @click="openScaleModal(svc)">
                 <i class="fas fa-up-right-and-down-left-from-center text-xs"></i><span class="text-xs ml-1">扩缩容</span>
               </button>
-              <button v-if="portal.hasPerm('POST /api/swarm/service/:id/force-update')" class="btn-icon btn-icon-blue" title="强制重部署" @click="handleRedeploy(svc)">
+              <button v-if="portal.hasPerm('POST /api/swarm/service/:id/action')" class="btn-icon btn-icon-blue" title="强制重部署" @click="handleRedeploy(svc)">
                 <i class="fas fa-arrows-rotate text-xs"></i><span class="text-xs ml-1">重部署</span>
               </button>
-              <button v-if="portal.hasPerm('GET /api/compose/swarm/:name') && portal.hasPerm('POST /api/compose/swarm/:name/redeploy')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(svc)">
+              <button v-if="portal.hasPerm('GET /api/compose/swarm/:name') && portal.hasPerm('PUT /api/compose/swarm/:name')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(svc)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
               <button v-if="portal.hasPerm('POST /api/swarm/service/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleServiceRemove(svc)">

@@ -270,7 +270,7 @@ export default toNative(Containers)
                     <button v-if="!ct.isSelf && ct.state === 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-amber" title="停止" @click="handleContainerAction(ct, 'stop')">
                       <i class="fas fa-stop text-xs"></i>
                     </button>
-                    <button v-if="!ct.isSelf && portal.hasPerm('GET /api/compose/docker/:name') && portal.hasPerm('POST /api/compose/docker/:name/redeploy')" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'btn-icon-blue']" :title="composeEditTitle(ct)" @click="!ct.isSwarm && containerEditModalRef?.show(ct)">
+                    <button v-if="!ct.isSelf && portal.hasPerm('GET /api/compose/docker/:name') && portal.hasPerm('PUT /api/compose/docker/:name')" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'btn-icon-blue']" :title="composeEditTitle(ct)" @click="!ct.isSwarm && containerEditModalRef?.show(ct)">
                       <i class="fas fa-pen text-xs"></i>
                     </button>
                     <button v-if="!ct.isSelf && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleContainerAction(ct, 'remove')">
@@ -340,7 +340,7 @@ export default toNative(Containers)
               <button v-if="!ct.isSelf && ct.state === 'running' && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-amber" title="停止" @click="handleContainerAction(ct, 'stop')">
                 <i class="fas fa-stop text-xs"></i><span class="text-xs ml-1">停止</span>
               </button>
-              <button v-if="!ct.isSelf && portal.hasPerm('GET /api/compose/docker/:name') && portal.hasPerm('POST /api/compose/docker/:name/redeploy')" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'btn-icon-blue']" :title="composeEditTitle(ct)" @click="!ct.isSwarm && containerEditModalRef?.show(ct)">
+              <button v-if="!ct.isSelf && portal.hasPerm('GET /api/compose/docker/:name') && portal.hasPerm('PUT /api/compose/docker/:name')" :disabled="ct.isSwarm" :class="['btn-icon', ct.isSwarm ? 'text-slate-300 cursor-not-allowed' : 'btn-icon-blue']" :title="composeEditTitle(ct)" @click="!ct.isSwarm && containerEditModalRef?.show(ct)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
               </button>
               <button v-if="!ct.isSelf && portal.hasPerm('POST /api/docker/container/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleContainerAction(ct, 'remove')">

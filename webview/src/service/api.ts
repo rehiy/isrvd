@@ -47,7 +47,6 @@ import type {
     ApisixSSL,
     ApisixSSLCreate,
     ApisixSSLUpdate,
-    ApisixWhitelistUserDelete,
     ApisixWhitelistCreate,
     ApisixWhitelistUserCreate,
     // Caddy
@@ -240,11 +239,11 @@ class ApiService {
     // ==================== Filer 文件管理相关 ====================
 
     filerList(path: string) {
-        return http.get<FilerList>('filer/list', { params: { path } })
+        return http.get<FilerList>('filer/files', { params: { path } })
     }
 
     filerDelete(path: string) {
-        return http.post<void>('filer/delete', { path })
+        return http.delete<void>('filer/file', { params: { path } })
     }
 
     filerRename(path: string, target: string) {
@@ -252,23 +251,23 @@ class ApiService {
     }
 
     filerMkdir(path: string) {
-        return http.post<void>('filer/mkdir', { path })
+        return http.post<void>('filer/dir', { path })
     }
 
     filerCreate(path: string, content = '') {
-        return http.post<void>('filer/create', { path, content })
+        return http.post<void>('filer/file', { path, content })
     }
 
     filerRead(path: string) {
-        return http.get<FilerRead>('filer/read', { params: { path } })
+        return http.get<FilerRead>('filer/file', { params: { path } })
     }
 
     filerModify(path: string, content: string) {
-        return http.post<void>('filer/modify', { path, content })
+        return http.put<void>('filer/file', { path, content })
     }
 
     filerChmod(path: string, mode: string) {
-        return http.post<void>('filer/chmod', { path, mode })
+        return http.put<void>('filer/chmod', { path, mode })
     }
 
     filerDirSize(path: string) {
@@ -310,7 +309,7 @@ class ApiService {
         return http.get<ApisixRoute[]>('apisix/routes')
     }
 
-    apisixRoute(id: string) {
+    apisixRouteInspect(id: string) {
         return http.get<ApisixRoute>(`apisix/route/${id}`)
     }
 
@@ -348,7 +347,7 @@ class ApiService {
     }
 
     // 白名单管理
-    apisixWhitelist() {
+    apisixWhitelistInspect() {
         return http.get<ApisixRoute[]>('apisix/whitelist')
     }
 
@@ -360,8 +359,8 @@ class ApiService {
         return http.post<ApisixRoute>('apisix/whitelist/user', payload)
     }
 
-    apisixWhitelistUserDelete(payload: ApisixWhitelistUserDelete) {
-        return http.delete<void>('apisix/whitelist/user', { params: payload })
+    apisixWhitelistUserDelete(routeID: string, consumerName: string) {
+        return http.delete<void>(`apisix/whitelist/user/${routeID}/${consumerName}`)
     }
 
     // PluginConfig 管理
@@ -369,7 +368,7 @@ class ApiService {
         return http.get<ApisixPluginConfig[]>('apisix/plugin-configs')
     }
 
-    apisixPluginConfig(id: string) {
+    apisixPluginConfigInspect(id: string) {
         return http.get<ApisixPluginConfig>(`apisix/plugin-config/${id}`)
     }
 
@@ -390,7 +389,7 @@ class ApiService {
         return http.get<ApisixUpstream[]>('apisix/upstreams')
     }
 
-    apisixUpstream(id: string) {
+    apisixUpstreamInspect(id: string) {
         return http.get<ApisixUpstream>(`apisix/upstream/${id}`)
     }
 
@@ -411,7 +410,7 @@ class ApiService {
         return http.get<ApisixSSL[]>('apisix/ssls')
     }
 
-    apisixSSL(id: string) {
+    apisixSSLInspect(id: string) {
         return http.get<ApisixSSL>(`apisix/ssl/${id}`)
     }
 
@@ -433,11 +432,11 @@ class ApiService {
 
     // ==================== Caddy 网关相关 ====================
 
-    caddyInfo() {
+    caddyInfoInspect() {
         return http.get<CaddyInfo>('caddy/info')
     }
 
-    caddyGlobal() {
+    caddyGlobalInspect() {
         return http.get<CaddyGlobal>('caddy/global')
     }
 
@@ -445,7 +444,7 @@ class ApiService {
         return http.put<void>('caddy/global', data)
     }
 
-    caddyConfig() {
+    caddyConfigInspect() {
         return http.get<unknown>('caddy/config')
     }
 
@@ -457,7 +456,7 @@ class ApiService {
         return http.get<CaddyRoute[]>('caddy/routes', { params: server ? { server } : {} })
     }
 
-    caddyRoute(index: number, server?: string) {
+    caddyRouteInspect(index: number, server?: string) {
         return http.get<CaddyRoute>(`caddy/route/${index}`, { params: server ? { server } : {} })
     }
 
@@ -501,7 +500,7 @@ class ApiService {
         return http.get<DockerContainerInfo[]>('docker/containers', { params: { all } })
     }
 
-    dockerContainer(id: string) {
+    dockerContainerInspect(id: string) {
         return http.get<DockerContainerDetail>(`docker/container/${id}`)
     }
 
@@ -521,7 +520,7 @@ class ApiService {
         return http.get<DockerContainerStats>(`docker/container/${id}/stats`)
     }
 
-    composeDocker(name: string) {
+    composeDockerInspect(name: string) {
         return http.get<DockerContainerCompose>(`compose/docker/${name}`)
     }
 
@@ -530,7 +529,7 @@ class ApiService {
         return http.get<DockerImageInfo[]>('docker/images', { params: { all } })
     }
 
-    dockerImage(id: string) {
+    dockerImageInspect(id: string) {
 	return http.get<DockerImageDetail>(`docker/image/${id}`)
     }
 
@@ -567,7 +566,7 @@ class ApiService {
         return http.get<DockerNetworkInfo[]>('docker/networks')
     }
 
-    dockerNetwork(id: string) {
+    dockerNetworkInspect(id: string) {
 	return http.get<DockerNetworkDetail>(`docker/network/${id}`)
     }
 
@@ -584,7 +583,7 @@ class ApiService {
         return http.get<DockerVolumeInfo[]>('docker/volumes')
     }
 
-    dockerVolume(name: string) {
+    dockerVolumeInspect(name: string) {
 	return http.get<DockerVolumeDetail>(`docker/volume/${encodeURIComponent(name)}`)
     }
 
@@ -606,11 +605,11 @@ class ApiService {
     }
 
     dockerRegistryUpdate(url: string, data: DockerRegistryUpsert) {
-        return http.put<void>('docker/registry', data, { params: { url } })
+        return http.put<void>(`docker/registry?url=${encodeURIComponent(url)}`, data)
     }
 
     dockerRegistryDelete(url: string) {
-        return http.delete<void>('docker/registry', { params: { url } })
+        return http.delete<void>(`docker/registry?url=${encodeURIComponent(url)}`)
     }
 
     // ==================== Docker Swarm 管理相关 ====================
@@ -627,7 +626,7 @@ class ApiService {
         return http.get<{ worker: string; manager: string }>('swarm/token')
     }
 
-swarmNode(id: string) {
+    swarmNodeInspect(id: string) {
 	return http.get<SwarmNodeDetail>(`swarm/node/${id}`)
     }
 
@@ -640,7 +639,7 @@ swarmNode(id: string) {
         return http.get<SwarmServiceInfo[]>('swarm/services')
     }
 
-    swarmService(id: string) {
+    swarmServiceInspect(id: string) {
         return http.get<SwarmServiceDetail>(`swarm/service/${id}`)
     }
 
@@ -652,11 +651,7 @@ swarmNode(id: string) {
         return http.post('swarm/service', data)
     }
 
-    swarmServiceForceUpdate(id: string) {
-        return http.post<void>(`swarm/service/${id}/force-update`)
-    }
-
-    swarmCompose(name: string) {
+    composeSwarmInspect(name: string) {
         return http.get<SwarmServiceCompose>(`compose/swarm/${name}`)
     }
 
@@ -671,11 +666,11 @@ swarmNode(id: string) {
     // ==================== Compose 部署 ====================
 
     composeDockerDeploy(data: ComposeDeploy) {
-        return http.post<ComposeDeployResult>('compose/docker/deploy', this.composeDeployForm(data))
+        return http.post<ComposeDeployResult>('compose/docker', this.composeDeployForm(data))
     }
 
     composeSwarmDeploy(data: ComposeDeploy) {
-        return http.post<ComposeDeployResult>('compose/swarm/deploy', this.composeDeployForm(data))
+        return http.post<ComposeDeployResult>('compose/swarm', this.composeDeployForm(data))
     }
 
     private composeDeployForm(data: ComposeDeploy) {
@@ -691,11 +686,11 @@ swarmNode(id: string) {
     }
 
     composeDockerRedeploy(name: string, data: ComposeRedeploy) {
-        return http.post<ComposeDeployResult>(`compose/docker/${name}/redeploy`, data)
+        return http.put<ComposeDeployResult>(`compose/docker/${name}`, data)
     }
 
     composeSwarmRedeploy(name: string, data: ComposeRedeploy) {
-        return http.post<ComposeDeployResult>(`compose/swarm/${name}/redeploy`, data)
+        return http.put<ComposeDeployResult>(`compose/swarm/${name}`, data)
     }
 
     // ==================== Cron 计划任务 ====================
@@ -725,7 +720,7 @@ swarmNode(id: string) {
     }
 
     cronJobStatusPatch(id: string, enabled: boolean) {
-        return http.post<void>(`cron/jobs/${id}/enable`, { enabled })
+        return http.patch<void>(`cron/jobs/${id}`, { enabled })
     }
 
     cronJobLogs(id: string, limit = 50) {
@@ -738,7 +733,7 @@ swarmNode(id: string) {
         return http.get<SSHCredentialInfo[]>('ssh/credentials')
     }
 
-    sshCredential(id: string) {
+    sshCredentialInspect(id: string) {
         return http.get<SSHCredentialInfo>(`ssh/credential/${id}`)
     }
 
@@ -760,7 +755,7 @@ swarmNode(id: string) {
         return http.get<SSHHostInfo[]>('ssh/hosts')
     }
 
-    sshHost(id: string) {
+    sshHostInspect(id: string) {
         return http.get<SSHHostInfo>(`ssh/host/${id}`)
     }
 

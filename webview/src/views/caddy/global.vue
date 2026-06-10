@@ -36,7 +36,7 @@ class CaddyGlobalConfig extends Vue {
     async load() {
         this.loading = true
         try {
-            const data: CaddyGlobal = (await api.caddyGlobal()).payload || {}
+const data: CaddyGlobal = (await api.caddyGlobalInspect()).payload || {}
             this.logLevel      = data.logLevel      ?? ''
             this.logFormat     = data.logFormat     ?? ''
             this.email         = data.email         ?? ''

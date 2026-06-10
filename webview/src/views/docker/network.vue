@@ -21,7 +21,7 @@ class NetworkDetail extends Vue {
     async loadDetail() {
         this.loading = true
         try {
-            const res = await api.dockerNetwork(this.networkId)
+            const res = await api.dockerNetworkInspect(this.networkId)
             this.detailData = res.payload ?? null
         } finally {
             this.loading = false

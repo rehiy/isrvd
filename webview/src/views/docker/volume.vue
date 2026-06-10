@@ -26,7 +26,7 @@ class VolumeDetail extends Vue {
     async loadDetail() {
         this.loading = true
         try {
-            const res = await api.dockerVolume(this.volumeName)
+            const res = await api.dockerVolumeInspect(this.volumeName)
             this.detailData = res.payload ?? null
         } finally {
             this.loading = false

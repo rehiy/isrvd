@@ -23,7 +23,6 @@ func (app *App) defineSwarmRoutes() []Route {
 		{Method: "GET", Path: "/swarm/service/:id", Handler: app.swarmServiceInspect, Module: "swarm", Label: "获取 Swarm 服务详情"},
 		{Method: "POST", Path: "/swarm/service", Handler: app.swarmServiceCreate, Module: "swarm", Label: "创建 Swarm 服务"},
 		{Method: "POST", Path: "/swarm/service/:id/action", Handler: app.swarmServiceAction, Module: "swarm", Label: "执行 Swarm 服务操作"},
-		{Method: "POST", Path: "/swarm/service/:id/force-update", Handler: app.swarmServiceForceUpdate, Module: "swarm", Label: "强制更新 Swarm 服务"},
 		{Method: "GET", Path: "/swarm/service/:id/logs", Handler: app.swarmServiceLogs, Module: "swarm", Label: "获取 Swarm 服务日志"},
 		// 任务
 		{Method: "GET", Path: "/swarm/tasks", Handler: app.swarmTaskList, Module: "swarm", Label: "查询 Swarm 任务列表"},
@@ -120,14 +119,6 @@ func (app *App) swarmServiceAction(c *gin.Context) {
 		return
 	}
 	respondSuccess(c, "服务操作成功", nil)
-}
-
-func (app *App) swarmServiceForceUpdate(c *gin.Context) {
-	if err := app.swarmSvc.ServiceForceUpdate(c.Request.Context(), c.Param("id")); err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "服务强制更新成功", nil)
 }
 
 func (app *App) swarmServiceLogs(c *gin.Context) {

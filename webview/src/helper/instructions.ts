@@ -15,7 +15,7 @@ export const systemInstruction = `
 - 服务管理：列表、创建、更新、扩缩容、强制更新、删除、日志
 - 任务管理：任务列表及状态跟踪
 
-### Compose 部署（/compose/deploy）
+### Compose 部署（/compose）
 - Docker Compose 部署/重部署，支持按服务更新镜像并重建
 - Swarm Stack 部署/重部署，支持按服务更新镜像并重建
 - 内嵌「应用市场」弹窗，提供模板一键回填
@@ -157,7 +157,7 @@ export function getPageInstruction(url: string): string {
     }
 
     // Compose 部署
-    if (path.includes('/compose/deploy')) {
+    if (path.includes('/compose') && !path.includes('docker') && !path.includes('swarm')) {
         return '当前页面：Compose 部署。可直接粘贴 compose.yml 文本部署（Docker Compose 或 Swarm Stack），或点击「应用市场」打开弹窗挑选模板回填；项目名自动从 compose 文件的 name 字段获取，无需手动填写。'
     }
 

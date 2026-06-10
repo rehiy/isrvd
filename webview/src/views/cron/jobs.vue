@@ -156,7 +156,7 @@ export default toNative(CronJobs)
           <button class="btn btn-secondary" @click="loadJobs()">
             <i class="fas fa-rotate"></i>刷新
           </button>
-          <button v-if="portal.hasPerm('POST /api/cron/job')" class="btn btn-amber" @click="openCreate()">
+          <button v-if="portal.hasPerm('POST /api/cron/jobs')" class="btn btn-amber" @click="openCreate()">
             <i class="fas fa-plus"></i>新建任务
           </button>
         </div>
@@ -177,7 +177,7 @@ export default toNative(CronJobs)
             <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadJobs()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/cron/job')" class="btn btn-amber w-9 h-9 !px-0" title="新建任务" @click="openCreate()">
+            <button v-if="portal.hasPerm('POST /api/cron/jobs')" class="btn btn-amber w-9 h-9 !px-0" title="新建任务" @click="openCreate()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
@@ -239,7 +239,7 @@ export default toNative(CronJobs)
                 <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium font-mono bg-slate-100 text-slate-700">{{ job.type }}</span>
               </td>
               <td class="px-4 py-3">
-                <button v-if="portal.hasPerm('PATCH /api/cron/job/:id')" :title="job.enabled ? '点击禁用' : '点击启用'" class="text-xs font-medium transition-colors" :class="runtimeStatusClass(job)" @click="toggleEnabled(job)">
+                <button v-if="portal.hasPerm('PATCH /api/cron/jobs/:id')" :title="job.enabled ? '点击禁用' : '点击启用'" class="text-xs font-medium transition-colors" :class="runtimeStatusClass(job)" @click="toggleEnabled(job)">
                   {{ runtimeStatusText(job) }}
                 </button>
               </td>
@@ -247,16 +247,16 @@ export default toNative(CronJobs)
               <td class="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{{ formatTime(job.lastRun) }}</td>
               <td class="px-4 py-3">
                 <div class="flex items-center justify-end gap-1.5">
-                  <button v-if="portal.hasPerm('POST /api/cron/job/:id/run')" class="btn-icon btn-icon-emerald" title="立即执行" @click="runNow(job)">
+                  <button v-if="portal.hasPerm('POST /api/cron/jobs/:id/run')" class="btn-icon btn-icon-emerald" title="立即执行" @click="runNow(job)">
                     <i class="fas fa-play text-xs"></i>
                   </button>
-                  <button v-if="portal.hasPerm('GET /api/cron/job/:id/logs')" class="btn-icon btn-icon-slate" title="执行日志" @click="openLogs(job)">
+                  <button v-if="portal.hasPerm('GET /api/cron/jobs/:id/logs')" class="btn-icon btn-icon-slate" title="执行日志" @click="openLogs(job)">
                     <i class="fas fa-list-ul text-xs"></i>
                   </button>
-                  <button v-if="portal.hasPerm('PUT /api/cron/job/:id')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(job)">
+                  <button v-if="portal.hasPerm('PUT /api/cron/jobs/:id')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(job)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
-                  <button v-if="portal.hasPerm('DELETE /api/cron/job/:id')" class="btn-icon btn-icon-red" title="删除" @click="openDelete(job)">
+                  <button v-if="portal.hasPerm('DELETE /api/cron/jobs/:id')" class="btn-icon btn-icon-red" title="删除" @click="openDelete(job)">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
@@ -307,10 +307,10 @@ export default toNative(CronJobs)
           </div>
 
           <div class="flex items-center justify-end gap-1.5 pt-3 mt-3 border-t border-slate-100">
-            <button v-if="portal.hasPerm('POST /api/cron/job/:id/run')" class="btn-icon btn-icon-emerald" title="立即执行" @click="runNow(job)"><i class="fas fa-play text-xs"></i></button>
-            <button v-if="portal.hasPerm('GET /api/cron/job/:id/logs')" class="btn-icon btn-icon-slate" title="执行日志" @click="openLogs(job)"><i class="fas fa-list-ul text-xs"></i></button>
-            <button v-if="portal.hasPerm('PUT /api/cron/job/:id')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(job)"><i class="fas fa-pen text-xs"></i></button>
-            <button v-if="portal.hasPerm('DELETE /api/cron/job/:id')" class="btn-icon btn-icon-red" title="删除" @click="openDelete(job)"><i class="fas fa-trash text-xs"></i></button>
+            <button v-if="portal.hasPerm('POST /api/cron/jobs/:id/run')" class="btn-icon btn-icon-emerald" title="立即执行" @click="runNow(job)"><i class="fas fa-play text-xs"></i></button>
+            <button v-if="portal.hasPerm('GET /api/cron/jobs/:id/logs')" class="btn-icon btn-icon-slate" title="执行日志" @click="openLogs(job)"><i class="fas fa-list-ul text-xs"></i></button>
+            <button v-if="portal.hasPerm('PUT /api/cron/jobs/:id')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(job)"><i class="fas fa-pen text-xs"></i></button>
+            <button v-if="portal.hasPerm('DELETE /api/cron/jobs/:id')" class="btn-icon btn-icon-red" title="删除" @click="openDelete(job)"><i class="fas fa-trash text-xs"></i></button>
           </div>
         </div>
       </div>

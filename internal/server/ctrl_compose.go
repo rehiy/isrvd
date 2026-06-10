@@ -15,13 +15,13 @@ import (
 func (app *App) defineComposeRoutes() []Route {
 	return []Route{
 		// Docker Compose
-		{Method: "GET", Path: "/compose/docker/:name", Handler: app.composeDocker, Module: "compose", Label: "读取 Docker Compose 配置"},
-		{Method: "GET", Path: "/compose/swarm/:name", Handler: app.composeSwarm, Module: "compose", Label: "读取 Swarm Stack 配置"},
-		{Method: "POST", Path: "/compose/docker/deploy", Handler: app.composeDockerDeploy, Module: "compose", Label: "部署 Docker Compose 应用"},
+		{Method: "GET", Path: "/compose/docker/:name", Handler: app.composeDockerInspect, Module: "compose", Label: "读取 Docker Compose 配置"},
+		{Method: "POST", Path: "/compose/docker", Handler: app.composeDockerDeploy, Module: "compose", Label: "部署 Docker Compose 应用"},
+		{Method: "PUT", Path: "/compose/docker/:name", Handler: app.composeDockerRedeploy, Module: "compose", Label: "重新部署 Docker Compose 应用"},
 		// Swarm Compose
-		{Method: "POST", Path: "/compose/swarm/deploy", Handler: app.composeSwarmDeploy, Module: "compose", Label: "部署 Swarm Stack 应用"},
-		{Method: "POST", Path: "/compose/docker/:name/redeploy", Handler: app.composeDockerRedeploy, Module: "compose", Label: "重新部署 Docker Compose 应用"},
-		{Method: "POST", Path: "/compose/swarm/:name/redeploy", Handler: app.composeSwarmRedeploy, Module: "compose", Label: "重新部署 Swarm Stack 应用"},
+		{Method: "GET", Path: "/compose/swarm/:name", Handler: app.composeSwarmInspect, Module: "compose", Label: "读取 Swarm Stack 配置"},
+		{Method: "POST", Path: "/compose/swarm", Handler: app.composeSwarmDeploy, Module: "compose", Label: "部署 Swarm Stack 应用"},
+		{Method: "PUT", Path: "/compose/swarm/:name", Handler: app.composeSwarmRedeploy, Module: "compose", Label: "重新部署 Swarm Stack 应用"},
 	}
 }
 
@@ -34,7 +34,7 @@ func composeNameParam(c *gin.Context) (string, bool) {
 	return name, true
 }
 
-func (app *App) composeDocker(c *gin.Context) {
+func (app *App) composeDockerInspect(c *gin.Context) {
 	name, ok := composeNameParam(c)
 	if !ok {
 		return
@@ -48,7 +48,7 @@ func (app *App) composeDocker(c *gin.Context) {
 	respondSuccess(c, "获取 compose 文件成功", gin.H{"content": content})
 }
 
-func (app *App) composeSwarm(c *gin.Context) {
+func (app *App) composeSwarmInspect(c *gin.Context) {
 	name, ok := composeNameParam(c)
 	if !ok {
 		return

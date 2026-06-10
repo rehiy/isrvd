@@ -43,7 +43,7 @@ isrvd_post "/docker/container" '{"image":"...","name":"..."}'
 
 **⚠️ 操作规范（必须遵守）：**
 1. **禁止硬编码**：不要假设任何 IP、端口、路径、容器名——全部通过 API 查询或环境变量获取
-2. **禁止 base64**：不要用 base64 编码内容写入文件，使用 `isrvd_post "/filer/modify"` 或 `isrvd_upload`
+2. **禁止 base64**：不要用 base64 编码内容写入文件，使用 `isrvd_put "/filer/file"` 或 `isrvd_upload`
 3. **filer 路径 ≠ 宿主机路径**：volume mount 的 hostPath 必须是宿主机真实路径，先通过 inspect isrvd 容器确认映射关系，见 [references/system/filer.md](references/system/filer.md)
 4. **不要重复重建容器**：静态文件更新直接写 filer 即可，容器无需重建；只有初次部署或更换镜像时才需要重建
 
@@ -100,7 +100,7 @@ isrvd_post "/docker/container" '{"image":"...","name":"..."}'
 │   ├── 更新/接管 Compose 项目 → references/compose.md (project 标签聚合、redeploy + serviceName/image)
 │   ├── 更新容器镜像     → references/docker/images.md (拉取) + references/docker/containers.md (重建)
 │   ├── 扩缩容           → references/swarm/services.md
-│   ├── 重新部署         → references/swarm/services.md (force-update)
+│   ├── 重新部署         → references/swarm/services.md (action: force-update)
 │   ├── 修改路由/上游    → references/apisix/routes.md 或 references/apisix/upstreams.md
 │   ├── 修改 Caddy 路由  → references/caddy/routes.md（更新触发 /load 整体替换）
 │   ├── 修改 Caddy 全局选项 → references/caddy/config.md (PUT /caddy/global)
@@ -191,15 +191,15 @@ isrvd_post "/docker/container" '{"image":"<NEW_IMAGE>","name":"<NAME>","ports":{
 ### Compose 部署
 
 ```bash
-isrvd_post "/compose/docker/deploy" "$(jq -n --arg content "$(cat docker-compose.yml)" '{content:$content}')"
-isrvd_post "/compose/swarm/deploy" "$(jq -n --arg content "$(cat stack.yml)" '{content:$content}')"
+isrvd_post "/compose/docker" "$(jq -n --arg content "$(cat docker-compose.yml)" '{content:$content}')"
+isrvd_post "/compose/swarm" "$(jq -n --arg content "$(cat stack.yml)" '{content:$content}')"
 ```
 
 ### 更新 Compose 服务镜像并重建
 
 ```bash
-isrvd_post "/compose/docker/<NAME>/redeploy" '{"serviceName":"<SERVICE_NAME>","image":"<NEW_IMAGE>"}'
-isrvd_post "/compose/swarm/<NAME>/redeploy" '{"serviceName":"<SERVICE_NAME>","image":"<NEW_IMAGE>"}'
+isrvd_put "/compose/docker/<NAME>" '{"serviceName":"<SERVICE_NAME>","image":"<NEW_IMAGE>"}'
+isrvd_put "/compose/swarm/<NAME>" '{"serviceName":"<SERVICE_NAME>","image":"<NEW_IMAGE>"}'
 ```
 
 ### 部署 Swarm 服务并验证
@@ -215,10 +215,10 @@ isrvd_get "/swarm/services"
 isrvd_post "/swarm/service/<SVC_ID>/action" '{"action":"scale","replicas":<N>}'
 ```
 
-### 滚动更新
+### 强制重新部署（滚动更新）
 
 ```bash
-isrvd_post "/swarm/service/<SVC_ID>/force-update"
+isrvd_post "/swarm/service/<SVC_ID>/action" '{"action":"force-update"}'
 ```
 
 ### 为新服务配置路由
@@ -232,6 +232,7 @@ isrvd_post "/apisix/route" '{"name":"<NAME>","uri":"<URI>","status":1,"upstream"
 ROUTE_ID=<ROUTE_ID>  # 从 isrvd_get "/apisix/routes" 结果中获取
 isrvd_post "/apisix/consumer" '{"username":"<NEW_USERNAME>","plugins":{"key-auth":{"key":"<AUTH_KEY>"}}}'
 isrvd_post "/apisix/whitelist" '{"route_id":"'"$ROUTE_ID"'","consumers":["<USERNAME>","<NEW_USERNAME>"],"key_auth":{"header":"token","query":"token","hide_credentials":false}}'
+isrvd_delete "/apisix/whitelist/user/$ROUTE_ID/<USERNAME>"
 
 # Caddy（反向代理）
 isrvd_post "/caddy/route" '{
@@ -253,10 +254,10 @@ isrvd_patch "/apisix/route/<ROUTE_ID>/status" '{"status":1}'
 
 ```bash
 # 先查看 filer 可用目录
-isrvd_get "/filer/list?path=/"
+isrvd_get "/filer/files?path=/"
 
 # 写入小文件
-isrvd_post "/filer/modify" '{"path":"<FILER_PATH>/<FILE>","content":"..."}'
+isrvd_put "/filer/file" '{"path":"<FILER_PATH>/<FILE>","content":"..."}'
 
 # 写入大文件：先写到本地再上传（禁止用 base64）
 cat > /tmp/<FILE> << 'EOF'
@@ -270,8 +271,8 @@ isrvd_upload "/filer/upload" "file" "/tmp/<FILE>" "path=<FILER_PATH>"
 ### 其他文件操作
 
 ```bash
-isrvd_get "/filer/list?path=<DIR>"
-isrvd_get "/filer/read?path=<FILE>" '.content'
-isrvd_post "/filer/modify" '{"path":"<FILE>","content":"<CONTENT>"}'
+isrvd_get "/filer/files?path=<DIR>"
+isrvd_get "/filer/file?path=<FILE>" '.content'
+isrvd_put "/filer/file" '{"path":"<FILE>","content":"<CONTENT>"}'
 isrvd_upload "/filer/upload" "file" "<LOCAL_FILE>" "path=<FILER_DIR>"
 ```

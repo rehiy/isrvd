@@ -42,7 +42,7 @@ class ContainerEditModal extends Vue {
         this.modalLoading = true
         this.isOpen = true
         try {
-            const res = await api.composeDocker(this.projectName)
+const res = await api.composeDockerInspect(this.projectName)
             this.composeContent = res.payload?.content || ''
         } catch {
             this.isOpen = false

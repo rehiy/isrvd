@@ -269,14 +269,15 @@ cd webview && python3 sort-imports.py --dry-run src
 | `account` | `POST /api/account/token` | 成员管理（创建 API 令牌） |
 | `account` | `PUT /api/account/password` | 成员管理（账号安全） |
 | `account` | `GET /api/account/routes` | 成员管理（路由权限列表） |
-| `filer` | `GET /api/filer/list` | 文件管理（列出） |
-| `filer` | `GET /api/filer/read` | 文件管理（读取） |
+| `filer` | `GET /api/filer/files` | 文件管理（列出） |
+| `filer` | `GET /api/filer/file` | 文件管理（读取） |
+| `filer` | `POST /api/filer/file` | 文件管理（创建文件） |
+| `filer` | `PUT /api/filer/file` | 文件管理（修改） |
+| `filer` | `DELETE /api/filer/file` | 文件管理（删除） |
+| `filer` | `POST /api/filer/dir` | 文件管理（创建目录） |
 | `filer` | `POST /api/filer/upload` | 文件管理（上传） |
-| `filer` | `POST /api/filer/modify` | 文件管理（修改） |
-| `filer` | `POST /api/filer/mkdir` | 文件管理（创建目录） |
-| `filer` | `POST /api/filer/delete` | 文件管理（删除） |
 | `filer` | `POST /api/filer/rename` | 文件管理（重命名） |
-| `filer` | `POST /api/filer/chmod` | 文件管理（修改权限） |
+| `filer` | `PUT /api/filer/chmod` | 文件管理（修改权限） |
 | `filer` | `POST /api/filer/zip` | 文件管理（压缩） |
 | `filer` | `POST /api/filer/unzip` | 文件管理（解压） |
 | `shell` | `GET /api/shell` | Web 终端 |
@@ -293,6 +294,7 @@ cd webview && python3 sort-imports.py --dry-run src
 | `apisix` | `GET /api/apisix/consumers` | APISIX 管理（消费者列出） |
 | `apisix` | `GET /api/apisix/upstreams` | APISIX 管理（上游列出） |
 | `apisix` | `GET /api/apisix/ssls` | APISIX 管理（证书列出） |
+| `apisix` | `DELETE /api/apisix/whitelist/user/:routeID/:consumerName` | APISIX 管理（撤销白名单用户） |
 | `docker` | `GET /api/docker/info` | Docker 管理（服务信息） |
 | `docker` | `GET /api/docker/containers` | Docker 管理（容器列出） |
 | `docker` | `GET /api/docker/images` | Docker 管理（镜像列出） |
@@ -304,10 +306,21 @@ cd webview && python3 sort-imports.py --dry-run src
 | `swarm` | `GET /api/swarm/services` | Swarm 管理（服务列出） |
 | `swarm` | `GET /api/swarm/tasks` | Swarm 管理（任务列出） |
 | `compose` | `GET /api/compose/docker/:name` | Compose 管理（读取配置） |
-| `compose` | `POST /api/compose/docker/deploy` | Compose 管理（部署） |
+| `compose` | `POST /api/compose/docker` | Compose 管理（部署） |
+| `compose` | `PUT /api/compose/docker/:name` | Compose 管理（重部署） |
+| `compose` | `GET /api/compose/swarm/:name` | Compose 管理（读取配置） |
+| `compose` | `POST /api/compose/swarm` | Compose 管理（部署） |
+| `compose` | `PUT /api/compose/swarm/:name` | Compose 管理（重部署） |
 | `caddy` | `GET /api/caddy/info` | Caddy 管理（概览） |
+| `caddy` | `GET /api/caddy/config` | Caddy 管理（读取原始配置） |
+| `caddy` | `POST /api/caddy/config` | Caddy 管理（整体替换配置） |
+| `caddy` | `GET /api/caddy/global` | Caddy 管理（读取全局选项） |
+| `caddy` | `PUT /api/caddy/global` | Caddy 管理（更新全局选项） |
 | `caddy` | `GET /api/caddy/routes` | Caddy 管理（路由列出） |
 | `caddy` | `GET /api/caddy/certs` | Caddy 管理（证书列出） |
+| `caddy` | `POST /api/caddy/cert` | Caddy 管理（创建证书） |
+| `caddy` | `PUT /api/caddy/cert/:key` | Caddy 管理（更新证书） |
+| `caddy` | `DELETE /api/caddy/cert/:key` | Caddy 管理（删除证书） |
 
 ## GPU 监控
 

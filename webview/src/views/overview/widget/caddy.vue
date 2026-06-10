@@ -30,7 +30,7 @@ class CaddyOverview extends Vue {
                 return
             }
 
-            this.info = (await api.caddyInfo()).payload || null
+this.info = (await api.caddyInfoInspect()).payload || null
         } catch {
             this.info = null
         } finally {

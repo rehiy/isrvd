@@ -21,7 +21,7 @@ func (s *SwarmService) ServiceList(ctx context.Context) ([]dockerswarm.Service, 
 	return services, nil
 }
 
-// ServiceAction 服务操作（scale/remove）
+// ServiceAction 服务操作（scale/remove/force-update）
 func (s *SwarmService) ServiceAction(ctx context.Context, id, action string, replicas *uint64) error {
 	if action == "remove" {
 		if err := s.client.ServiceRemove(ctx, id); err != nil {
@@ -46,6 +46,10 @@ func (s *SwarmService) ServiceAction(ctx context.Context, id, action string, rep
 			return err
 		}
 		return nil
+	}
+
+	if action == "force-update" {
+		return s.ServiceForceUpdate(ctx, id)
 	}
 
 	return fmt.Errorf("不支持的操作: %s", action)

@@ -41,19 +41,19 @@ Docker Compose 部署支持 JSON；上传附加运行文件时使用 multipart f
 仅提交 compose 内容：
 
 ```bash
-isrvd_post "/compose/docker/deploy" "$(jq -n --arg content "$(cat docker-compose.yml)" '{content:$content}')"
+isrvd_post "/compose/docker" "$(jq -n --arg content "$(cat docker-compose.yml)" '{content:$content}')"
 ```
 
 上传本地附加文件：
 
 ```bash
-isrvd_upload "/compose/docker/deploy" "initFile" "./init.zip" "content=$(cat docker-compose.yml)"
+isrvd_upload "/compose/docker" "initFile" "./init.zip" "content=$(cat docker-compose.yml)"
 ```
 
 使用远程附加文件：
 
 ```bash
-isrvd_post "/compose/docker/deploy" '{"content":"<COMPOSE_YAML>","initURL":"<HTTPS_ZIP_URL>"}'
+isrvd_post "/compose/docker" '{"content":"<COMPOSE_YAML>","initURL":"<HTTPS_ZIP_URL>"}'
 ```
 
 > `initURL` 仅允许 `http/https` 公网地址，不允许指向本机、内网或链路本地地址。
@@ -107,7 +107,7 @@ services:
 ### 重部署
 
 ```bash
-isrvd_post "/compose/docker/<NAME>/redeploy" "$(jq -n --arg content "$(cat docker-compose.yml)" '{content:$content}')"
+isrvd_put "/compose/docker/<NAME>" "$(jq -n --arg content "$(cat docker-compose.yml)" '{content:$content}')"
 ```
 
 `<NAME>` 可以是项目名，也可以是该项目下任意一个容器名；后端会通过 `com.docker.compose.project` 解析到项目名后整体重建关联容器。
@@ -115,7 +115,7 @@ isrvd_post "/compose/docker/<NAME>/redeploy" "$(jq -n --arg content "$(cat docke
 ### 按服务更新镜像并重建
 
 ```bash
-isrvd_post "/compose/docker/<NAME>/redeploy" '{"serviceName":"<SERVICE_NAME>","image":"<NEW_IMAGE>"}'
+isrvd_put "/compose/docker/<NAME>" '{"serviceName":"<SERVICE_NAME>","image":"<NEW_IMAGE>"}'
 ```
 
 ## Swarm Compose
@@ -125,19 +125,19 @@ isrvd_post "/compose/docker/<NAME>/redeploy" '{"serviceName":"<SERVICE_NAME>","i
 Swarm Compose 部署用法与 Docker Compose 一致，同样支持 JSON 与 multipart form：
 
 ```bash
-isrvd_post "/compose/swarm/deploy" "$(jq -n --arg content "$(cat stack.yml)" '{content:$content}')"
+isrvd_post "/compose/swarm" "$(jq -n --arg content "$(cat stack.yml)" '{content:$content}')"
 ```
 
 上传本地附加文件：
 
 ```bash
-isrvd_upload "/compose/swarm/deploy" "initFile" "./init.zip" "content=$(cat stack.yml)"
+isrvd_upload "/compose/swarm" "initFile" "./init.zip" "content=$(cat stack.yml)"
 ```
 
 使用远程附加文件：
 
 ```bash
-isrvd_post "/compose/swarm/deploy" '{"content":"<COMPOSE_YAML>","initURL":"<HTTPS_ZIP_URL>"}'
+isrvd_post "/compose/swarm" '{"content":"<COMPOSE_YAML>","initURL":"<HTTPS_ZIP_URL>"}'
 ```
 
 ### 读取 compose 文件
@@ -151,11 +151,11 @@ Swarm Compose 与 Docker Compose 共用容器目录 `docker.containerRoot/<NAME>
 ### 重部署
 
 ```bash
-isrvd_post "/compose/swarm/<NAME>/redeploy" "$(jq -n --arg content "$(cat stack.yml)" '{content:$content}')"
+isrvd_put "/compose/swarm/<NAME>" "$(jq -n --arg content "$(cat stack.yml)" '{content:$content}')"
 ```
 
 ### 按服务更新镜像并重建
 
 ```bash
-isrvd_post "/compose/swarm/<NAME>/redeploy" '{"serviceName":"<SERVICE_NAME>","image":"<NEW_IMAGE>"}'
+isrvd_put "/compose/swarm/<NAME>" '{"serviceName":"<SERVICE_NAME>","image":"<NEW_IMAGE>"}'
 ```

@@ -57,7 +57,7 @@ class ContainerDetail extends Vue {
     async loadDetail() {
         this.loading = true
         try {
-            const res = await api.dockerContainer(this.containerId)
+            const res = await api.dockerContainerInspect(this.containerId)
             this.detail = res.payload || null
         } finally {
             this.loading = false

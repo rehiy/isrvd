@@ -67,7 +67,7 @@ isrvd_post "/swarm/service/<SVC_ID>/action" '{"action":"remove"}'
 ## 强制更新（重新部署）
 
 ```bash
-isrvd_post "/swarm/service/<SVC_ID>/force-update"
+isrvd_post "/swarm/service/<SVC_ID>/action" '{"action":"force-update"}'
 ```
 
 ## 服务日志
