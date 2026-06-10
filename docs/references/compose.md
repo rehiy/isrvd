@@ -78,9 +78,9 @@ isrvd_get "/compose/docker/<PROJECT>"
 isrvd_get "/compose/docker/<CONTAINER_NAME>"
 ```
 
-Docker Compose 中的相对 bind path 会基于容器目录 `docker.containerRoot/<PROJECT>` 解析，部署、全量重部署、按服务更新镜像和失败回滚保持一致。后端统一使用 compose-go loader 解析与标准化 YAML，再直接生成 Docker SDK `container.Config` / `container.HostConfig` 或 `swarm.ServiceSpec` 原始结构；`entrypoint`、`command`、`dns`、`dns_opt`、`dns_search`、`extra_hosts`、`tty`、`stdin_open`、`read_only`、`stop_signal`、`sysctls`、`device_cgroup_rules`、`devices`、`cap_add`、`cap_drop`、`deploy.resources` 等字段不再经过 iSrvd 自定义中间 DTO。
+Docker Compose 中的相对 bind path 会基于容器目录 `docker.containerRoot/<PROJECT>` 解析，部署、全量重部署、按服务更新镜像和失败回滚保持一致。后端统一使用 compose-go loader 解析与标准化 YAML，再直接生成 Docker SDK `container.Config` / `container.HostConfig` 或 `swarm.ServiceSpec` 原始结构；`entrypoint`、`command`、`dns`、`dns_opt`、`dns_search`、`extra_hosts`、`tty`、`stdin_open`、`read_only`、`stop_signal`、`sysctls`、`device_cgroup_rules`、`devices`、`security_opt`、`group_add`、`ipc`、`pid`、`uts`、`cgroup`、`runtime`、`shm_size`、`tmpfs`、`ulimits`、`cap_add`、`cap_drop`、`deploy.resources` 等字段不再经过 iSrvd 自定义中间 DTO。
 
-Docker Compose 部署会将 `deploy.resources.reservations.devices` 映射为 Docker `HostConfig.DeviceRequests`。GPU 场景可使用：
+Docker Compose 部署会将顶层 `gpus` 以及 `deploy.resources.reservations.devices` 映射为 Docker `HostConfig.DeviceRequests`，并保留 `options`。GPU 场景可使用：
 
 ```yaml
 services:
@@ -95,7 +95,7 @@ services:
               capabilities: [gpu]
 ```
 
-当 `compose.yml` 不存在、需要从运行态反推生成时，bind mount 的 `source` 会按该容器目录输出为相对路径（例如 `./data`）；只有路径不在容器目录内时才保留宿主机绝对路径。命名卷输出卷名，不输出 Docker 内部挂载目录，`--device` 会反推到 Compose `devices`，GPU 设备请求会反推到 `deploy.resources.reservations.devices`。
+当 `compose.yml` 不存在、需要从运行态反推生成时，bind mount 的 `source` 会按该容器目录输出为相对路径（例如 `./data`）；只有路径不在容器目录内时才保留宿主机绝对路径。命名卷输出卷名，不输出 Docker 内部挂载目录，`--device` 会反推到 Compose `devices`，GPU 设备请求会反推到 `deploy.resources.reservations.devices` 并保留 `options`。反推会尽量与镜像 Dockerfile 默认配置做差分，避免把镜像内已有的 `CMD`、`ENTRYPOINT`、`ENV`、`EXPOSE`、`LABEL`、`STOPSIGNAL`、`USER`、`WORKDIR` 重复写入 compose。`ports` 未指定 `published` 时会保持 Docker 随机宿主端口发布语义，不会降级为仅 `expose`。
 
 外部 Compose 项目接管说明：
 

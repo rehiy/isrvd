@@ -9,8 +9,6 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	dockerswarm "github.com/docker/docker/api/types/swarm"
 	"github.com/rehiy/libgo/logman"
-
-	"isrvd/pkgs/docker"
 )
 
 // ServiceList 获取服务列表，直接返回 Docker SDK 原始服务结构。
@@ -98,7 +96,7 @@ func (s *SwarmService) ServiceLogs(ctx context.Context, serviceID, tail string) 
 	if err != nil {
 		return nil, err
 	}
-	return docker.ParseDockerLogs(raw), nil
+	return parseDockerLogs(raw), nil
 }
 
 // ServiceInspect 获取服务详情，直接返回 Docker SDK 原始服务结构。
@@ -144,4 +142,21 @@ func (s *SwarmService) ServiceInspectRaw(ctx context.Context, id string) (docker
 		return dockerswarm.Service{}, err
 	}
 	return svc, nil
+}
+
+func parseDockerLogs(data []byte) []string {
+	var logs []string
+	for i := 0; i < len(data); {
+		if i+8 > len(data) {
+			break
+		}
+		size := int(data[i+4])<<24 | int(data[i+5])<<16 | int(data[i+6])<<8 | int(data[i+7])
+		i += 8
+		if i+size > len(data) || size <= 0 {
+			break
+		}
+		logs = append(logs, string(data[i:i+size]))
+		i += size
+	}
+	return logs
 }

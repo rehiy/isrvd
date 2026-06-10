@@ -10,6 +10,8 @@ import (
 	dockerswarm "github.com/docker/docker/api/types/swarm"
 )
 
+// ==================== Compose service -> Swarm service spec ====================
+
 // ServiceToSwarmSpec 将 compose ServiceConfig 转为 Docker SDK Swarm ServiceSpec。
 func ServiceToSwarmSpec(project *types.Project, svc types.ServiceConfig) (dockerswarm.ServiceSpec, error) {
 	if svc.Image == "" {
@@ -61,6 +63,8 @@ func ServiceToSwarmSpec(project *types.Project, svc types.ServiceConfig) (docker
 
 	return spec, nil
 }
+
+// ==================== Swarm task/service mapping ====================
 
 func applySwarmMode(svc types.ServiceConfig, spec *dockerswarm.ServiceSpec) {
 	replicas := uint64(1)
@@ -163,6 +167,8 @@ func applySwarmResources(svc types.ServiceConfig, spec *dockerswarm.ServiceSpec)
 		}
 	}
 }
+
+// ==================== Swarm value converters ====================
 
 func swarmHosts(hosts types.HostsList) []string {
 	if len(hosts) == 0 {

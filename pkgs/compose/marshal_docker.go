@@ -1,6 +1,7 @@
 package compose
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strconv"
@@ -9,9 +10,82 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
-	"github.com/docker/docker/api/types/swarm"
 	"github.com/moby/docker-image-spec/specs-go/v1"
 )
+
+// ==================== Docker inspect -> Compose ====================
+
+// DockerImageConfigResolver 按镜像引用读取镜像 Dockerfile 默认配置。
+type DockerImageConfigResolver func(context.Context, string) (*v1.DockerOCIImageConfig, error)
+
+// DockerImageConfigFromInspect 根据容器 inspect 信息解析镜像默认配置。
+// 优先使用容器创建时的镜像引用，失败后回退到 inspect 中的镜像 ID。
+func DockerImageConfigFromInspect(ctx context.Context, info container.InspectResponse, resolve DockerImageConfigResolver) *v1.DockerOCIImageConfig {
+	if resolve == nil {
+		return nil
+	}
+	if info.Config != nil && info.Config.Image != "" {
+		if cfg, err := resolve(ctx, info.Config.Image); err == nil {
+			return cfg
+		}
+	}
+	if info.Image != "" {
+		if cfg, err := resolve(ctx, info.Image); err == nil {
+			return cfg
+		}
+	}
+	return nil
+}
+
+// DockerImageConfigMapFromInspects 为一组容器 inspect 结果构建镜像默认配置缓存。
+func DockerImageConfigMapFromInspects(ctx context.Context, infos []container.InspectResponse, resolve DockerImageConfigResolver) map[string]*v1.DockerOCIImageConfig {
+	configs := make(map[string]*v1.DockerOCIImageConfig, len(infos))
+	for _, info := range infos {
+		if info.Config == nil || info.Config.Image == "" {
+			continue
+		}
+		if _, ok := configs[info.Config.Image]; ok {
+			continue
+		}
+		if cfg := DockerImageConfigFromInspect(ctx, info, resolve); cfg != nil {
+			configs[info.Config.Image] = cfg
+			if info.Image != "" {
+				configs[info.Image] = cfg
+			}
+		}
+	}
+	return configs
+}
+
+// DockerProjectYAMLFromInspect 将单个 Docker 容器 inspect 结果反推为 compose YAML。
+func DockerProjectYAMLFromInspect(ctx context.Context, info container.InspectResponse, resolve DockerImageConfigResolver, containerDir string) (string, error) {
+	imageConfig := DockerImageConfigFromInspect(ctx, info, resolve)
+	project, err := ProjectFromDockerInspect(info, imageConfig, containerDir)
+	if err != nil {
+		return "", err
+	}
+	data, err := ProjectToYAML(project)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+// DockerProjectYAMLFromInspects 将同一 Compose 项目的多个 Docker 容器 inspect 结果反推为 compose YAML。
+func DockerProjectYAMLFromInspects(ctx context.Context, infos []container.InspectResponse, resolve DockerImageConfigResolver, projectName, containerDir string) (string, error) {
+	configs := DockerImageConfigMapFromInspects(ctx, infos, resolve)
+	project, err := ProjectFromDockerInspects(infos, configs, projectName, containerDir)
+	if err != nil {
+		return "", err
+	}
+	data, err := ProjectToYAML(project)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+// ==================== Docker inspect -> Project ====================
 
 // ProjectFromDockerInspect 将 docker inspect 结果反推为单服务 compose Project。
 // containerDir 非空时，位于该目录内的 bind source 会输出为相对路径。
@@ -99,18 +173,34 @@ func serviceFromDockerInspect(info container.InspectResponse, imageConfig *v1.Do
 		Command:           types.ShellCommand(diffCmd(info.Config.Cmd, imageConfig)),
 		Entrypoint:        entrypoint,
 		Environment:       sliceToEnv(diffEnv(info.Config.Env, imageConfig)),
+		DomainName:        info.Config.Domainname,
 		WorkingDir:        diffString(info.Config.WorkingDir, imageConfig, func(c *v1.DockerOCIImageConfig) string { return c.WorkingDir }),
 		User:              diffString(info.Config.User, imageConfig, func(c *v1.DockerOCIImageConfig) string { return c.User }),
 		Hostname:          hostname,
 		Privileged:        info.HostConfig.Privileged,
+		CgroupParent:      info.HostConfig.CgroupParent,
+		Cgroup:            string(info.HostConfig.CgroupnsMode),
 		CapAdd:            []string(info.HostConfig.CapAdd),
 		CapDrop:           []string(info.HostConfig.CapDrop),
 		Restart:           restartPolicy(string(info.HostConfig.RestartPolicy.Name)),
 		ExtraHosts:        extraHostsToMap(info.HostConfig.ExtraHosts),
+		GroupAdd:          info.HostConfig.GroupAdd,
+		Init:              info.HostConfig.Init,
+		Ipc:               string(info.HostConfig.IpcMode),
+		Isolation:         string(info.HostConfig.Isolation),
+		OomKillDisable:    boolValue(info.HostConfig.OomKillDisable),
+		Pid:               string(info.HostConfig.PidMode),
+		PidsLimit:         int64Value(info.HostConfig.PidsLimit),
+		Runtime:           info.HostConfig.Runtime,
+		SecurityOpt:       info.HostConfig.SecurityOpt,
+		ShmSize:           types.UnitBytes(info.HostConfig.ShmSize),
+		Tmpfs:             tmpfsToList(info.HostConfig.Tmpfs),
+		Ulimits:           inspectUlimits(info.HostConfig.Ulimits),
+		Uts:               string(info.HostConfig.UTSMode),
 		Tty:               info.Config.Tty,
 		StdinOpen:         info.Config.OpenStdin,
 		ReadOnly:          info.HostConfig.ReadonlyRootfs,
-		StopSignal:        info.Config.StopSignal,
+		StopSignal:        diffString(info.Config.StopSignal, imageConfig, func(c *v1.DockerOCIImageConfig) string { return c.StopSignal }),
 		Sysctls:           types.Mapping(info.HostConfig.Sysctls),
 		DeviceCgroupRules: info.HostConfig.DeviceCgroupRules,
 		Devices:           inspectDeviceMappings(info.HostConfig.Devices),
@@ -119,7 +209,7 @@ func serviceFromDockerInspect(info container.InspectResponse, imageConfig *v1.Do
 
 	applyInspectDNS(&svc, info)
 	projectNetworks := applyInspectNetworks(&svc, info, containerName)
-	applyInspectPorts(&svc, info)
+	applyInspectPorts(&svc, info, imageConfig)
 	applyInspectVolumes(&svc, info, containerDir)
 	applyInspectResources(&svc, info)
 	applyInspectDeviceRequests(&svc, info)
@@ -145,92 +235,7 @@ func dockerComposeOneoff(info container.InspectResponse) bool {
 	return strings.EqualFold(info.Config.Labels[ComposeOneoffLabel], "true")
 }
 
-// ProjectFromSwarmInspect 将 swarm Service 原始配置反推为单服务 compose Project。
-// containerDir 非空时，位于该目录内的 bind source 会输出为相对路径。
-func ProjectFromSwarmInspect(svc swarm.Service, containerDir string) (*types.Project, error) {
-	spec := svc.Spec
-	cs := spec.TaskTemplate.ContainerSpec
-	if cs == nil || cs.Image == "" {
-		return nil, fmt.Errorf("swarm 服务数据不完整")
-	}
-
-	name := defaultString(spec.Name, svc.ID)
-	composeSvc := types.ServiceConfig{
-		Name:        name,
-		Image:       cs.Image,
-		Environment: sliceToEnv(cs.Env),
-		Entrypoint:  types.ShellCommand(cs.Command),
-		Command:     types.ShellCommand(cs.Args),
-		WorkingDir:  cs.Dir,
-		User:        cs.User,
-		Hostname:    cs.Hostname,
-		ExtraHosts:  swarmExtraHostsToMap(cs.Hosts),
-		Tty:         cs.TTY,
-		StdinOpen:   cs.OpenStdin,
-		ReadOnly:    cs.ReadOnly,
-		StopSignal:  cs.StopSignal,
-		Sysctls:     types.Mapping(cs.Sysctls),
-		CapAdd:      cs.CapabilityAdd,
-		CapDrop:     cs.CapabilityDrop,
-		Labels:      spec.Labels,
-	}
-
-	if cs.DNSConfig != nil {
-		composeSvc.DNS = types.StringList(cs.DNSConfig.Nameservers)
-		composeSvc.DNSOpts = cs.DNSConfig.Options
-		composeSvc.DNSSearch = types.StringList(cs.DNSConfig.Search)
-	}
-
-	if spec.Mode.Global != nil {
-		composeSvc.Deploy = &types.DeployConfig{Mode: "global"}
-	} else if spec.Mode.Replicated != nil {
-		r := int(*spec.Mode.Replicated.Replicas)
-		composeSvc.Deploy = &types.DeployConfig{Mode: "replicated", Replicas: &r}
-	}
-	if spec.TaskTemplate.Placement != nil && len(spec.TaskTemplate.Placement.Constraints) > 0 {
-		if composeSvc.Deploy == nil {
-			composeSvc.Deploy = &types.DeployConfig{}
-		}
-		composeSvc.Deploy.Placement.Constraints = spec.TaskTemplate.Placement.Constraints
-	}
-
-	if spec.EndpointSpec != nil {
-		for _, p := range spec.EndpointSpec.Ports {
-			composeSvc.Ports = append(composeSvc.Ports, types.ServicePortConfig{
-				Target:    p.TargetPort,
-				Published: strconv.Itoa(int(p.PublishedPort)),
-				Protocol:  defaultString(string(p.Protocol), "tcp"),
-				Mode:      defaultString(string(p.PublishMode), "ingress"),
-			})
-		}
-	}
-
-	for _, m := range cs.Mounts {
-		composeSvc.Volumes = append(composeSvc.Volumes, types.ServiceVolumeConfig{
-			Type:     string(m.Type),
-			Source:   swarmMountSource(m, containerDir),
-			Target:   m.Target,
-			ReadOnly: m.ReadOnly,
-		})
-	}
-
-	var projectNetworks types.Networks
-	if len(spec.TaskTemplate.Networks) > 0 {
-		composeSvc.Networks = make(map[string]*types.ServiceNetworkConfig, len(spec.TaskTemplate.Networks))
-		projectNetworks = make(types.Networks, len(spec.TaskTemplate.Networks))
-		for _, n := range spec.TaskTemplate.Networks {
-			netCfg := &types.ServiceNetworkConfig{Aliases: n.Aliases}
-			composeSvc.Networks[n.Target] = netCfg
-			projectNetworks[n.Target] = types.NetworkConfig{Name: n.Target, Driver: "overlay"}
-		}
-	}
-
-	return &types.Project{
-		Name:     name,
-		Services: types.Services{name: composeSvc},
-		Networks: projectNetworks,
-	}, nil
-}
+// ==================== Docker inspect field mapping ====================
 
 func applyInspectDNS(svc *types.ServiceConfig, info container.InspectResponse) {
 	if len(info.HostConfig.DNS) > 0 {
@@ -275,19 +280,16 @@ func applyInspectNetworks(svc *types.ServiceConfig, info container.InspectRespon
 	return projectNetworks
 }
 
-func applyInspectPorts(svc *types.ServiceConfig, info container.InspectResponse) {
+func applyInspectPorts(svc *types.ServiceConfig, info container.InspectResponse, imageConfig *v1.DockerOCIImageConfig) {
+	seen := map[string]struct{}{}
 	for containerPort, bindings := range info.HostConfig.PortBindings {
 		target := parsePort(containerPort.Port())
 		proto := defaultString(containerPort.Proto(), "tcp")
 		if len(bindings) == 0 {
-			svc.Ports = append(svc.Ports, types.ServicePortConfig{
-				Target:   target,
-				Protocol: proto,
-				Mode:     "ingress",
-			})
 			continue
 		}
 		for _, b := range bindings {
+			seen[string(containerPort)] = struct{}{}
 			svc.Ports = append(svc.Ports, types.ServicePortConfig{
 				Target:    target,
 				Published: b.HostPort,
@@ -297,6 +299,23 @@ func applyInspectPorts(svc *types.ServiceConfig, info container.InspectResponse)
 			})
 		}
 	}
+	for containerPort := range info.Config.ExposedPorts {
+		if _, ok := seen[string(containerPort)]; ok {
+			continue
+		}
+		if imageHasExposedPort(imageConfig, string(containerPort)) {
+			continue
+		}
+		svc.Expose = append(svc.Expose, strconv.Itoa(containerPort.Int()))
+	}
+}
+
+func imageHasExposedPort(imageConfig *v1.DockerOCIImageConfig, port string) bool {
+	if imageConfig == nil || len(imageConfig.ExposedPorts) == 0 {
+		return false
+	}
+	_, ok := imageConfig.ExposedPorts[port]
+	return ok
 }
 
 func applyInspectVolumes(svc *types.ServiceConfig, info container.InspectResponse, containerDir string) {
@@ -344,17 +363,6 @@ func inspectMountSource(m container.MountPoint, containerDir string) string {
 	return m.Source
 }
 
-func swarmMountSource(m mount.Mount, containerDir string) string {
-	switch m.Type {
-	case mount.TypeBind:
-		return relativeBindSource(m.Source, containerDir)
-	case mount.TypeVolume:
-		// swarm Mount.Source 对 named volume 即为卷名
-		return m.Source
-	}
-	return m.Source
-}
-
 func relativeBindSource(source, baseDir string) string {
 	if source == "" || baseDir == "" || !filepath.IsAbs(source) {
 		return source
@@ -380,6 +388,55 @@ func applyInspectResources(svc *types.ServiceConfig, info container.InspectRespo
 		MemoryBytes: types.UnitBytes(info.HostConfig.Memory),
 		NanoCPUs:    types.NanoCPUs(float64(info.HostConfig.NanoCPUs) / 1e9),
 	}
+}
+
+// ==================== Docker inspect value converters ====================
+
+func boolValue(v *bool) bool {
+	return v != nil && *v
+}
+
+func int64Value(v *int64) int64 {
+	if v == nil {
+		return 0
+	}
+	return *v
+}
+
+func tmpfsToList(tmpfs map[string]string) types.StringList {
+	if len(tmpfs) == 0 {
+		return nil
+	}
+	result := make(types.StringList, 0, len(tmpfs))
+	for target, options := range tmpfs {
+		if options == "" {
+			result = append(result, target)
+		} else {
+			result = append(result, target+":"+options)
+		}
+	}
+	return result
+}
+
+func inspectUlimits(ulimits []*container.Ulimit) map[string]*types.UlimitsConfig {
+	if len(ulimits) == 0 {
+		return nil
+	}
+	result := make(map[string]*types.UlimitsConfig, len(ulimits))
+	for _, u := range ulimits {
+		if u == nil || u.Name == "" {
+			continue
+		}
+		if u.Soft == u.Hard {
+			result[u.Name] = &types.UlimitsConfig{Single: int(u.Soft)}
+		} else {
+			result[u.Name] = &types.UlimitsConfig{Soft: int(u.Soft), Hard: int(u.Hard)}
+		}
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
 }
 
 func inspectDeviceMappings(devices []container.DeviceMapping) []types.DeviceMapping {
@@ -415,6 +472,7 @@ func applyInspectDeviceRequests(svc *types.ServiceConfig, info container.Inspect
 			Count:        types.DeviceCount(req.Count),
 			IDs:          req.DeviceIDs,
 			Capabilities: caps,
+			Options:      types.Mapping(req.Options),
 		})
 	}
 }
@@ -424,6 +482,8 @@ func ensureDeploy(svc *types.ServiceConfig) {
 		svc.Deploy = &types.DeployConfig{}
 	}
 }
+
+// ==================== Dockerfile default diff helpers ====================
 
 // diffCmd 若容器 CMD 与镜像默认 CMD 相同则返回 nil（不写入 compose）
 func diffCmd(containerCmd []string, imageConfig *v1.DockerOCIImageConfig) []string {
@@ -492,6 +552,8 @@ func diffString(containerVal string, imageConfig *v1.DockerOCIImageConfig, gette
 	return containerVal
 }
 
+// ==================== Small conversion helpers ====================
+
 // extraHostsToMap 将 []string{"host:ip"} 转换为 compose HostsList（map[string][]string）
 func extraHostsToMap(hosts []string) types.HostsList {
 	if len(hosts) == 0 {
@@ -502,23 +564,6 @@ func extraHostsToMap(hosts []string) types.HostsList {
 		parts := strings.SplitN(host, ":", 2)
 		if len(parts) == 2 && parts[0] != "" && parts[1] != "" {
 			result[parts[0]] = append(result[parts[0]], parts[1])
-		}
-	}
-	if len(result) == 0 {
-		return nil
-	}
-	return result
-}
-
-func swarmExtraHostsToMap(hosts []string) types.HostsList {
-	if len(hosts) == 0 {
-		return nil
-	}
-	result := types.HostsList{}
-	for _, host := range hosts {
-		fields := strings.Fields(host)
-		if len(fields) >= 2 && fields[0] != "" && fields[1] != "" {
-			result[fields[1]] = append(result[fields[1]], fields[0])
 		}
 	}
 	if len(result) == 0 {

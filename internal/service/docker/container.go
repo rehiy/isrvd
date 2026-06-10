@@ -4,9 +4,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -14,9 +18,80 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/websocket"
+	"github.com/shirou/gopsutil/v3/cpu"
 
 	pkgdocker "isrvd/pkgs/docker"
 )
+
+var (
+	cpuFreqCache      float64
+	cpuFreqMu         sync.Mutex
+	cpuFreqLastUpdate time.Time
+)
+
+// CPUThrottledData CPU 节流数据，保持前端稳定响应结构。
+type CPUThrottledData struct {
+	Periods          uint64 `json:"periods"`
+	ThrottledPeriods uint64 `json:"throttledPeriods"`
+	ThrottledTime    uint64 `json:"throttledTime"`
+}
+
+// StatsNetDetail 网卡详细统计，保持前端稳定响应结构。
+type StatsNetDetail struct {
+	RxBytes   uint64 `json:"rxBytes"`
+	RxPackets uint64 `json:"rxPackets"`
+	RxErrors  uint64 `json:"rxErrors"`
+	RxDropped uint64 `json:"rxDropped"`
+	TxBytes   uint64 `json:"txBytes"`
+	TxPackets uint64 `json:"txPackets"`
+	TxErrors  uint64 `json:"txErrors"`
+	TxDropped uint64 `json:"txDropped"`
+}
+
+// StatsBlockDetail 硬盘设备详细统计，保持前端稳定响应结构。
+type StatsBlockDetail struct {
+	Major uint64 `json:"major"`
+	Minor uint64 `json:"minor"`
+	Read  uint64 `json:"read"`
+	Write uint64 `json:"write"`
+}
+
+// ContainerProcessList 容器进程列表，保持前端稳定响应结构。
+type ContainerProcessList struct {
+	Titles    []string   `json:"titles"`
+	Processes [][]string `json:"processes"`
+}
+
+// ContainerStatsResponse 容器统计信息响应，保持前端稳定响应结构。
+type ContainerStatsResponse struct {
+	ID            string                     `json:"id"`
+	Name          string                     `json:"name"`
+	CPUPercent    float64                    `json:"cpuPercent"`
+	CPUCores      int                        `json:"cpuCores"`
+	CPUFreq       float64                    `json:"cpuFreq"`
+	MemoryUsage   int64                      `json:"memoryUsage"`
+	MemoryLimit   int64                      `json:"memoryLimit"`
+	MemoryPercent float64                    `json:"memoryPercent"`
+	NetworkRx     int64                      `json:"networkRx"`
+	NetworkTx     int64                      `json:"networkTx"`
+	BlockRead     int64                      `json:"blockRead"`
+	BlockWrite    int64                      `json:"blockWrite"`
+	Pids          int64                      `json:"pids"`
+	PidsLimit     int64                      `json:"pidsLimit"`
+	CPUThrottled  *CPUThrottledData          `json:"cpuThrottled"`
+	NetworkDetail map[string]*StatsNetDetail `json:"networkDetail"`
+	BlockDetail   []*StatsBlockDetail        `json:"blockDetail"`
+	ProcessList   *ContainerProcessList      `json:"processList"`
+}
+
+// VolumeMapping 挂载映射，保持 HTTP API 兼容。
+type VolumeMapping struct {
+	Type          string `json:"type,omitempty"`
+	Source        string `json:"source,omitempty"`
+	HostPath      string `json:"hostPath,omitempty"`
+	ContainerPath string `json:"containerPath"`
+	ReadOnly      bool   `json:"readOnly"`
+}
 
 // ContainerInfo Docker 容器信息（列表项），保持前端稳定响应结构。
 type ContainerInfo struct {
@@ -45,24 +120,36 @@ type ContainerDetail struct {
 
 // ContainerSpec 容器可写配置（创建/更新共用），保持 HTTP API 兼容。
 type ContainerSpec struct {
-	Image      string                    `json:"image" binding:"required"`
-	Name       string                    `json:"name" binding:"required"`
-	Cmd        []string                  `json:"cmd"`
-	Env        []string                  `json:"env"`
-	Ports      map[string]string         `json:"ports"`
-	Volumes    []pkgdocker.VolumeMapping `json:"volumes"`
-	Network    string                    `json:"network"`
-	Restart    string                    `json:"restart"`
-	Memory     int64                     `json:"memory"`
-	Cpus       float64                   `json:"cpus"`
-	Workdir    string                    `json:"workdir"`
-	User       string                    `json:"user"`
-	Hostname   string                    `json:"hostname"`
-	Privileged bool                      `json:"privileged"`
-	CapAdd     []string                  `json:"capAdd"`
-	CapDrop    []string                  `json:"capDrop"`
-	AutoRemove bool                      `json:"autoRemove"`
-	Labels     map[string]string         `json:"labels,omitempty"`
+	Image      string            `json:"image" binding:"required"`
+	Name       string            `json:"name" binding:"required"`
+	Cmd        []string          `json:"cmd"`
+	Env        []string          `json:"env"`
+	Ports      map[string]string `json:"ports"`
+	Volumes    []VolumeMapping   `json:"volumes"`
+	Network    string            `json:"network"`
+	Restart    string            `json:"restart"`
+	Memory     int64             `json:"memory"`
+	Cpus       float64           `json:"cpus"`
+	Workdir    string            `json:"workdir"`
+	User       string            `json:"user"`
+	Hostname   string            `json:"hostname"`
+	Privileged bool              `json:"privileged"`
+	CapAdd     []string          `json:"capAdd"`
+	CapDrop    []string          `json:"capDrop"`
+	AutoRemove bool              `json:"autoRemove"`
+	Labels     map[string]string `json:"labels,omitempty"`
+}
+
+// ContainerLogsRequest 日志请求，保持 HTTP API 兼容。
+type ContainerLogsRequest struct {
+	ID   string `json:"id" binding:"required"`
+	Tail string `json:"tail"`
+}
+
+// ContainerLogsResult 容器日志结果，保持前端稳定响应结构。
+type ContainerLogsResult struct {
+	ID   string   `json:"id"`
+	Logs []string `json:"logs"`
 }
 
 // ContainerCreateResult 创建容器结果
@@ -129,9 +216,9 @@ func (s *Service) ContainerInspect(ctx context.Context, id string) (*ContainerDe
 			ports[hostPort+"/"+containerPort.Proto()] = containerPort.Port()
 		}
 	}
-	volumes := make([]pkgdocker.VolumeMapping, 0, len(info.Mounts))
+	volumes := make([]VolumeMapping, 0, len(info.Mounts))
 	for _, m := range info.Mounts {
-		volumes = append(volumes, pkgdocker.VolumeMapping{
+		volumes = append(volumes, VolumeMapping{
 			Type:          string(m.Type),
 			Source:        m.Source,
 			ContainerPath: m.Destination,
@@ -176,7 +263,7 @@ func (s *Service) ContainerCreate(ctx context.Context, req ContainerSpec) (*Cont
 	if err != nil {
 		return nil, err
 	}
-	id, err := s.docker.ContainerCreate(ctx, req.Name, containerConfig, hostConfig, nil)
+	id, err := s.docker.ContainerCreateAndStart(ctx, req.Name, containerConfig, hostConfig, nil)
 	if err != nil {
 		return nil, fmt.Errorf("创建容器失败: %w", err)
 	}
@@ -191,7 +278,7 @@ func (s *Service) ContainerCreateRaw(ctx context.Context, name string, container
 	if err := s.docker.ImageEnsure(ctx, containerConfig.Image, false); err != nil {
 		return nil, fmt.Errorf("镜像 %s 不存在，拉取失败: %w", containerConfig.Image, err)
 	}
-	id, err := s.docker.ContainerCreate(ctx, name, containerConfig, hostConfig, networkingConfig)
+	id, err := s.docker.ContainerCreateAndStart(ctx, name, containerConfig, hostConfig, networkingConfig)
 	if err != nil {
 		return nil, fmt.Errorf("创建容器失败: %w", err)
 	}
@@ -263,7 +350,7 @@ func (s *Service) containerCreateConfig(req ContainerSpec) (*container.Config, *
 	return containerConfig, hostConfig, nil
 }
 
-func (s *Service) buildMount(containerName string, vol pkgdocker.VolumeMapping) (mount.Mount, error) {
+func (s *Service) buildMount(containerName string, vol VolumeMapping) (mount.Mount, error) {
 	mountType := strings.ToLower(strings.TrimSpace(vol.Type))
 	source := firstNonEmpty(vol.Source, vol.HostPath)
 	if source == "" {
@@ -348,19 +435,118 @@ func firstNonEmpty(values ...string) string {
 }
 
 // ContainerStats 获取容器统计信息
-func (s *Service) ContainerStats(ctx context.Context, id string) (*pkgdocker.ContainerStatsResponse, error) {
+func (s *Service) ContainerStats(ctx context.Context, id string) (*ContainerStatsResponse, error) {
 	if id == "" {
 		return nil, fmt.Errorf("容器ID不能为空")
 	}
-	stats, err := s.docker.ContainerStats(ctx, id)
+	stats, top, err := s.docker.ContainerStats(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("获取容器统计信息失败: %w", err)
 	}
-	return stats, nil
+	return containerStatsResponse(id, stats, top), nil
+}
+
+func containerStatsResponse(id string, v container.StatsResponse, top *container.TopResponse) *ContainerStatsResponse {
+	cpuCores := int(v.CPUStats.OnlineCPUs)
+	if cpuCores == 0 {
+		cpuCores = len(v.CPUStats.CPUUsage.PercpuUsage)
+	}
+	if cpuCores == 0 {
+		cpuCores = 1
+	}
+
+	cpuDelta := float64(v.CPUStats.CPUUsage.TotalUsage - v.PreCPUStats.CPUUsage.TotalUsage)
+	systemDelta := float64(v.CPUStats.SystemUsage - v.PreCPUStats.SystemUsage)
+	var cpuPercent float64
+	if systemDelta > 0 && cpuDelta > 0 {
+		cpuPercent = (cpuDelta / systemDelta) * float64(cpuCores) * 100.0
+	}
+
+	memCache := v.MemoryStats.Stats["inactive_file"]
+	if memCache == 0 {
+		memCache = v.MemoryStats.Stats["cache"]
+	}
+	memoryUsage := v.MemoryStats.Usage - memCache
+	var memoryPercent float64
+	if v.MemoryStats.Limit > 0 {
+		memoryPercent = float64(memoryUsage) / float64(v.MemoryStats.Limit) * 100.0
+	}
+
+	var networkRx, networkTx int64
+	networkDetail := make(map[string]*StatsNetDetail)
+	for name, netStats := range v.Networks {
+		networkRx += int64(netStats.RxBytes)
+		networkTx += int64(netStats.TxBytes)
+		networkDetail[name] = &StatsNetDetail{
+			RxBytes: netStats.RxBytes, RxPackets: netStats.RxPackets, RxErrors: netStats.RxErrors, RxDropped: netStats.RxDropped,
+			TxBytes: netStats.TxBytes, TxPackets: netStats.TxPackets, TxErrors: netStats.TxErrors, TxDropped: netStats.TxDropped,
+		}
+	}
+
+	var blockRead, blockWrite int64
+	blockDetailMap := make(map[string]*StatsBlockDetail)
+	for _, blkStats := range v.BlkioStats.IoServiceBytesRecursive {
+		switch blkStats.Op {
+		case "read":
+			blockRead += int64(blkStats.Value)
+		case "write":
+			blockWrite += int64(blkStats.Value)
+		}
+		if blkStats.Op == "read" || blkStats.Op == "write" {
+			key := fmt.Sprintf("%d:%d", blkStats.Major, blkStats.Minor)
+			if _, ok := blockDetailMap[key]; !ok {
+				blockDetailMap[key] = &StatsBlockDetail{Major: blkStats.Major, Minor: blkStats.Minor}
+			}
+			if blkStats.Op == "read" {
+				blockDetailMap[key].Read += blkStats.Value
+			} else {
+				blockDetailMap[key].Write += blkStats.Value
+			}
+		}
+	}
+	blockDetail := make([]*StatsBlockDetail, 0, len(blockDetailMap))
+	for _, detail := range blockDetailMap {
+		blockDetail = append(blockDetail, detail)
+	}
+	sort.Slice(blockDetail, func(i, j int) bool {
+		if blockDetail[i].Major != blockDetail[j].Major {
+			return blockDetail[i].Major < blockDetail[j].Major
+		}
+		return blockDetail[i].Minor < blockDetail[j].Minor
+	})
+
+	name := strings.TrimPrefix(v.Name, "/")
+	var processList *ContainerProcessList
+	if top != nil {
+		processList = &ContainerProcessList{Titles: top.Titles, Processes: top.Processes}
+	}
+
+	return &ContainerStatsResponse{
+		ID: id, Name: name, CPUPercent: math.Round(cpuPercent*100) / 100, CPUCores: cpuCores, CPUFreq: math.Round(getCPUFreq()*100) / 100,
+		MemoryUsage: int64(memoryUsage), MemoryLimit: int64(v.MemoryStats.Limit), MemoryPercent: math.Round(memoryPercent*100) / 100,
+		NetworkRx: networkRx, NetworkTx: networkTx, BlockRead: blockRead, BlockWrite: blockWrite,
+		Pids: int64(v.PidsStats.Current), PidsLimit: int64(v.PidsStats.Limit),
+		CPUThrottled:  &CPUThrottledData{Periods: v.CPUStats.ThrottlingData.Periods, ThrottledPeriods: v.CPUStats.ThrottlingData.ThrottledPeriods, ThrottledTime: v.CPUStats.ThrottlingData.ThrottledTime},
+		NetworkDetail: networkDetail, BlockDetail: blockDetail, ProcessList: processList,
+	}
+}
+
+func getCPUFreq() float64 {
+	cpuFreqMu.Lock()
+	defer cpuFreqMu.Unlock()
+	if time.Since(cpuFreqLastUpdate) < 5*time.Minute && cpuFreqCache > 0 {
+		return cpuFreqCache
+	}
+	cpuFreqCache = 0
+	if cpuInfos, err := cpu.Info(); err == nil && len(cpuInfos) > 0 {
+		cpuFreqCache = cpuInfos[0].Mhz
+	}
+	cpuFreqLastUpdate = time.Now()
+	return cpuFreqCache
 }
 
 // ContainerAction 容器操作
-func (s *Service) ContainerAction(ctx context.Context, req pkgdocker.ActionRequest) error {
+func (s *Service) ContainerAction(ctx context.Context, req ActionRequest) error {
 	if req.ID == "" {
 		return fmt.Errorf("容器ID不能为空")
 	}
@@ -374,20 +560,20 @@ func (s *Service) ContainerAction(ctx context.Context, req pkgdocker.ActionReque
 }
 
 // ContainerLogs 获取容器日志
-func (s *Service) ContainerLogs(ctx context.Context, req pkgdocker.ContainerLogsRequest) (*pkgdocker.ContainerLogsResult, error) {
+func (s *Service) ContainerLogs(ctx context.Context, req ContainerLogsRequest) (*ContainerLogsResult, error) {
 	if req.ID == "" {
 		return nil, fmt.Errorf("容器ID不能为空")
 	}
-	result, err := s.docker.ContainerLogs(ctx, req)
+	logs, err := s.docker.ContainerLogs(ctx, req.ID, req.Tail)
 	if err != nil {
 		return nil, fmt.Errorf("获取容器日志失败: %w", err)
 	}
-	return result, nil
+	return &ContainerLogsResult{ID: req.ID, Logs: logs}, nil
 }
 
 // ContainerLogsStream 容器实时日志流
-func (s *Service) ContainerLogsStream(ctx context.Context, w io.Writer, req pkgdocker.ContainerLogsRequest) {
-	s.docker.ContainerLogsStream(ctx, w, req)
+func (s *Service) ContainerLogsStream(ctx context.Context, w io.Writer, req ContainerLogsRequest) {
+	s.docker.ContainerLogsStream(ctx, w, req.ID, req.Tail)
 }
 
 // ContainerExec 容器终端 WebSocket 桥接：建立 exec 会话后与 WebSocket 双向转发
@@ -438,10 +624,55 @@ func (s *Service) ContainerExec(ctx context.Context, conn *websocket.ServerConn,
 }
 
 // Info 获取 Docker 概览信息
-func (s *Service) Info(ctx context.Context) (*pkgdocker.DockerInfo, error) {
-	info, err := s.docker.Info(ctx)
+func (s *Service) Info(ctx context.Context) (*DockerInfo, error) {
+	daemonInfo, err := s.docker.Info(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("获取 Docker 信息失败: %w", err)
 	}
-	return info, nil
+
+	containers, err := s.docker.ContainerList(ctx, true)
+	if err != nil {
+		return nil, fmt.Errorf("获取容器列表失败: %w", err)
+	}
+
+	var running, stopped, paused int64
+	for _, ct := range containers {
+		switch ct.State {
+		case "running":
+			running++
+		case "paused":
+			paused++
+		default:
+			stopped++
+		}
+	}
+
+	images, err := s.docker.ImageList(ctx, true)
+	if err != nil {
+		logman.Warn("ImageList failed", "error", err)
+	}
+	volumes, err := s.docker.VolumeList(ctx)
+	if err != nil {
+		logman.Warn("VolumeList failed", "error", err)
+	}
+	networks, err := s.docker.NetworkList(ctx)
+	if err != nil {
+		logman.Warn("NetworkList failed", "error", err)
+	}
+
+	var mirrors []string
+	if daemonInfo.RegistryConfig != nil {
+		mirrors = daemonInfo.RegistryConfig.Mirrors
+	}
+
+	return &DockerInfo{
+		ContainersRunning:  running,
+		ContainersStopped:  stopped,
+		ContainersPaused:   paused,
+		ImagesTotal:        int64(len(images)),
+		VolumesTotal:       int64(len(volumes)),
+		NetworksTotal:      int64(len(networks)),
+		RegistryMirrors:    mirrors,
+		IndexServerAddress: daemonInfo.IndexServerAddress,
+	}, nil
 }

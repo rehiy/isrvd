@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/docker/docker/api/types/mount"
 	"github.com/rehiy/libgo/command"
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/signal"
@@ -530,9 +531,9 @@ func (s *Service) runDockerJob(job *Job) (string, error) {
 	return "", fmt.Errorf("未知的 Docker 任务类型: %s", job.Type)
 }
 
-// parseVolumeLines 将换行分隔的 /host:/container[:ro] 字符串转为 VolumeMapping 列表
-func parseVolumeLines(s string) []docker.VolumeMapping {
-	var result []docker.VolumeMapping
+// parseVolumeLines 将换行分隔的 /host:/container[:ro] 字符串转为 Docker mount 列表
+func parseVolumeLines(s string) []mount.Mount {
+	var result []mount.Mount
 	for _, line := range strings.Split(s, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -542,10 +543,10 @@ func parseVolumeLines(s string) []docker.VolumeMapping {
 		if len(parts) < 2 {
 			continue
 		}
-		vol := docker.VolumeMapping{
-			Type:          "bind",
-			Source:        parts[0],
-			ContainerPath: parts[1],
+		vol := mount.Mount{
+			Type:   mount.TypeBind,
+			Source: parts[0],
+			Target: parts[1],
 		}
 		if len(parts) == 3 && strings.Contains(parts[2], "ro") {
 			vol.ReadOnly = true

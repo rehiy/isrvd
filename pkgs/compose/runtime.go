@@ -25,6 +25,8 @@ type InitPayload struct {
 	File io.Reader
 }
 
+// ==================== Project names ====================
+
 // ValidateProjectName 校验 Compose 项目名，防止路径逃逸。
 func ValidateProjectName(name string) error {
 	if name == "" || !safeProjectName.MatchString(name) {
@@ -33,11 +35,10 @@ func ValidateProjectName(name string) error {
 	return nil
 }
 
-// ContentProjectName 从 compose 内容解析项目名，缺失时使用内容短哈希。
-func ContentProjectName(ctx context.Context, content string) (string, error) {
-	project, err := LoadProjectFromContent(ctx, content, "")
-	if err != nil {
-		return "", err
+// ProjectNameFromProject 从 loader 结果和原始内容确定项目名。
+func ProjectNameFromProject(project *types.Project, content string) (string, error) {
+	if project == nil {
+		return "", fmt.Errorf("project 为空")
 	}
 	name := project.Name
 	if name == "" || name == "." {
@@ -48,6 +49,17 @@ func ContentProjectName(ctx context.Context, content string) (string, error) {
 	}
 	return name, nil
 }
+
+// ContentProjectName 从 compose 内容解析项目名，缺失时使用内容短哈希。
+func ContentProjectName(ctx context.Context, content string) (string, error) {
+	project, err := LoadProjectFromContent(ctx, content, "")
+	if err != nil {
+		return "", err
+	}
+	return ProjectNameFromProject(project, content)
+}
+
+// ==================== Project loading and persistence ====================
 
 // ProjectLoad 写入 compose.yml 并以 installDir 为 WorkingDir 加载，确保相对路径正确展开。
 func ProjectLoad(ctx context.Context, name, content, installDir string) (*types.Project, error) {
@@ -112,6 +124,8 @@ func InitFilesHandle(installDir string, payload InitPayload) error {
 	return nil
 }
 
+// ==================== Content mutation ====================
+
 // UpdateServiceImage 将 compose 内容中指定服务的镜像替换为 image，返回更新后的 YAML 文本。
 func UpdateServiceImage(ctx context.Context, name, content, serviceName, image string) (string, error) {
 	if content == "" {
@@ -144,6 +158,8 @@ func UpdateServiceImage(ctx context.Context, name, content, serviceName, image s
 	}
 	return string(data), nil
 }
+
+// ==================== Runtime naming helpers ====================
 
 func ShortHash(content string) string {
 	h := sha256.Sum256([]byte(content))
@@ -187,6 +203,8 @@ func DockerComposeProjectName(info container.InspectResponse) string {
 	}
 	return info.Config.Labels[ComposeProjectLabel]
 }
+
+// ==================== File helpers ====================
 
 func writeAndUnzip(zipPath string, r io.Reader) error {
 	f, err := os.Create(zipPath)

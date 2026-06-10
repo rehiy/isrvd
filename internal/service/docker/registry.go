@@ -8,6 +8,28 @@ import (
 	pkgdocker "isrvd/pkgs/docker"
 )
 
+// RegistryInfo 镜像仓库信息，保持前端稳定响应结构且不包含密码。
+type RegistryInfo struct {
+	Name        string `json:"name"`
+	URL         string `json:"url"`
+	Username    string `json:"username"`
+	Description string `json:"description"`
+}
+
+// ImagePushRequest 镜像推送请求。
+type ImagePushRequest struct {
+	Image       string `json:"image" binding:"required"`
+	RegistryURL string `json:"registryUrl" binding:"required"`
+	Namespace   string `json:"namespace"`
+}
+
+// ImagePullRequest 拉取镜像请求。
+type ImagePullRequest struct {
+	Image       string `json:"image" binding:"required"`
+	RegistryURL string `json:"registryUrl"`
+	Namespace   string `json:"namespace"`
+}
+
 // RegistryUpsertRequest 仓库新建/更新请求
 type RegistryUpsertRequest struct {
 	Name        string `json:"name" binding:"required"`
@@ -17,9 +39,19 @@ type RegistryUpsertRequest struct {
 	Description string `json:"description"`
 }
 
-// RegistryList 列出已配置的镜像仓库
-func (s *Service) RegistryList() any {
-	return s.docker.RegistryList()
+// RegistryList 列出已配置的镜像仓库。
+func (s *Service) RegistryList() []*RegistryInfo {
+	regs := s.docker.Registries()
+	result := make([]*RegistryInfo, 0, len(regs))
+	for _, r := range regs {
+		result = append(result, &RegistryInfo{
+			Name:        r.Name,
+			URL:         r.URL,
+			Username:    r.Username,
+			Description: r.Description,
+		})
+	}
+	return result
 }
 
 // registriesConfigSync 将当前 DockerService 的仓库同步到全局 config 并落盘
@@ -88,8 +120,8 @@ func (s *Service) RegistryDelete(url string) error {
 }
 
 // ImagePush 推送镜像到仓库
-func (s *Service) ImagePush(ctx context.Context, req pkgdocker.ImagePushRequest) (map[string]string, error) {
-	msg, targetRef, err := s.docker.ImagePush(ctx, req)
+func (s *Service) ImagePush(ctx context.Context, req ImagePushRequest) (map[string]string, error) {
+	msg, targetRef, err := s.docker.ImagePush(ctx, req.Image, req.RegistryURL, req.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +129,8 @@ func (s *Service) ImagePush(ctx context.Context, req pkgdocker.ImagePushRequest)
 }
 
 // ImagePull 从仓库拉取镜像
-func (s *Service) ImagePull(ctx context.Context, req pkgdocker.ImagePullRequest) (map[string]string, error) {
-	msg, imageRef, err := s.docker.ImagePull(ctx, req)
+func (s *Service) ImagePull(ctx context.Context, req ImagePullRequest) (map[string]string, error) {
+	msg, imageRef, err := s.docker.ImagePull(ctx, req.Image, req.RegistryURL, req.Namespace)
 	if err != nil {
 		return nil, err
 	}

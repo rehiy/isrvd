@@ -8,7 +8,6 @@ import (
 	"github.com/rehiy/libgo/websocket"
 
 	svcDocker "isrvd/internal/service/docker"
-	pkgdocker "isrvd/pkgs/docker"
 )
 
 // defineDockerRoutes 定义 Docker 模块路由
@@ -110,7 +109,7 @@ func (app *App) dockerContainerStats(c *gin.Context) {
 }
 
 func (app *App) dockerContainerAction(c *gin.Context) {
-	req := pkgdocker.ActionRequest{
+	req := svcDocker.ActionRequest{
 		ID: c.Param("id"),
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -125,7 +124,7 @@ func (app *App) dockerContainerAction(c *gin.Context) {
 }
 
 func (app *App) dockerContainerLogs(c *gin.Context) {
-	req := pkgdocker.ContainerLogsRequest{
+	req := svcDocker.ContainerLogsRequest{
 		ID:   c.Param("id"),
 		Tail: c.DefaultQuery("tail", "100"),
 	}
@@ -142,7 +141,7 @@ func (app *App) dockerContainerLogs(c *gin.Context) {
 }
 
 func (app *App) dockerContainerLogsStream(c *gin.Context) {
-	req := pkgdocker.ContainerLogsRequest{
+	req := svcDocker.ContainerLogsRequest{
 		ID:   c.Param("id"),
 		Tail: c.DefaultQuery("tail", "100"),
 	}
@@ -185,7 +184,7 @@ func (app *App) dockerImageList(c *gin.Context) {
 }
 
 func (app *App) dockerImageAction(c *gin.Context) {
-	req := pkgdocker.ActionRequest{
+	req := svcDocker.ActionRequest{
 		ID: c.Param("id"),
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -200,7 +199,7 @@ func (app *App) dockerImageAction(c *gin.Context) {
 }
 
 func (app *App) dockerImageTag(c *gin.Context) {
-	var req pkgdocker.ImageTagRequest
+	var req svcDocker.ImageTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -224,7 +223,7 @@ func (app *App) dockerImageSearch(c *gin.Context) {
 }
 
 func (app *App) dockerImageBuild(c *gin.Context) {
-	var req pkgdocker.ImageBuildRequest
+	var req svcDocker.ImageBuildRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -238,7 +237,7 @@ func (app *App) dockerImageBuild(c *gin.Context) {
 }
 
 func (app *App) dockerImagePrune(c *gin.Context) {
-	var req pkgdocker.ImagePruneRequest
+	var req svcDocker.ImagePruneRequest
 	// 请求体可选；空 JSON 表示仅清理悬空层
 	if err := c.ShouldBindJSON(&req); err != nil && err.Error() != "EOF" {
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -274,7 +273,7 @@ func (app *App) dockerNetworkList(c *gin.Context) {
 }
 
 func (app *App) dockerNetworkAction(c *gin.Context) {
-	req := pkgdocker.ActionRequest{
+	req := svcDocker.ActionRequest{
 		ID: c.Param("id"),
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -289,7 +288,7 @@ func (app *App) dockerNetworkAction(c *gin.Context) {
 }
 
 func (app *App) dockerNetworkCreate(c *gin.Context) {
-	var req pkgdocker.NetworkSpec
+	var req svcDocker.NetworkSpec
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -324,7 +323,7 @@ func (app *App) dockerVolumeList(c *gin.Context) {
 }
 
 func (app *App) dockerVolumeAction(c *gin.Context) {
-	req := pkgdocker.ActionRequest{
+	req := svcDocker.ActionRequest{
 		ID: c.Param("name"),
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -339,7 +338,7 @@ func (app *App) dockerVolumeAction(c *gin.Context) {
 }
 
 func (app *App) dockerVolumeCreate(c *gin.Context) {
-	var req pkgdocker.VolumeSpec
+	var req svcDocker.VolumeSpec
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -405,7 +404,7 @@ func (app *App) dockerRegistryDelete(c *gin.Context) {
 }
 
 func (app *App) dockerImagePush(c *gin.Context) {
-	var req pkgdocker.ImagePushRequest
+	var req svcDocker.ImagePushRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -419,7 +418,7 @@ func (app *App) dockerImagePush(c *gin.Context) {
 }
 
 func (app *App) dockerImagePull(c *gin.Context) {
-	var req pkgdocker.ImagePullRequest
+	var req svcDocker.ImagePullRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return

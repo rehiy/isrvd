@@ -3,21 +3,107 @@ package docker
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/volume"
 
 	pkgdocker "isrvd/pkgs/docker"
 )
 
+// NetworkSpec 创建网络请求。
+type NetworkSpec struct {
+	Name   string `json:"name" binding:"required"`
+	Driver string `json:"driver"`
+	Subnet string `json:"subnet"`
+}
+
+// VolumeSpec 创建卷请求。
+type VolumeSpec struct {
+	Name   string `json:"name" binding:"required"`
+	Driver string `json:"driver"`
+}
+
+// NetworkInfo Docker 网络信息，保持前端稳定响应结构。
+type NetworkInfo struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Driver string `json:"driver"`
+	Subnet string `json:"subnet"`
+	Scope  string `json:"scope"`
+}
+
+// NetworkContainerInfo 网络中的容器信息，保持前端稳定响应结构。
+type NetworkContainerInfo struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	IPv4       string `json:"ipv4"`
+	IPv6       string `json:"ipv6"`
+	MacAddress string `json:"macAddress"`
+}
+
+// NetworkDetail 网络详情响应，保持前端稳定响应结构。
+type NetworkDetail struct {
+	ID         string                  `json:"id"`
+	Name       string                  `json:"name"`
+	Driver     string                  `json:"driver"`
+	Scope      string                  `json:"scope"`
+	Subnet     string                  `json:"subnet"`
+	Gateway    string                  `json:"gateway"`
+	Internal   bool                    `json:"internal"`
+	EnableIPv6 bool                    `json:"enableIPv6"`
+	Containers []*NetworkContainerInfo `json:"containers"`
+}
+
+// VolumeInfo Docker 卷信息，保持前端稳定响应结构。
+type VolumeInfo struct {
+	Name       string `json:"name"`
+	Driver     string `json:"driver"`
+	Mountpoint string `json:"mountpoint"`
+	CreatedAt  string `json:"createdAt"`
+	Size       int64  `json:"size"`
+}
+
+// VolumeUsedByContainer 使用卷的容器信息，保持前端稳定响应结构。
+type VolumeUsedByContainer struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	MountPath string `json:"mountPath"`
+	ReadOnly  bool   `json:"readOnly"`
+}
+
+// VolumeDetail 数据卷详情响应，保持前端稳定响应结构。
+type VolumeDetail struct {
+	Name       string                   `json:"name"`
+	Driver     string                   `json:"driver"`
+	Mountpoint string                   `json:"mountpoint"`
+	CreatedAt  string                   `json:"createdAt"`
+	Scope      string                   `json:"scope"`
+	Size       int64                    `json:"size"`
+	RefCount   int64                    `json:"refCount"`
+	UsedBy     []*VolumeUsedByContainer `json:"usedBy"`
+}
+
 // NetworkList 列出网络
-func (s *Service) NetworkList(ctx context.Context) ([]*pkgdocker.NetworkInfo, error) {
+func (s *Service) NetworkList(ctx context.Context) ([]*NetworkInfo, error) {
 	list, err := s.docker.NetworkList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("获取网络列表失败: %w", err)
 	}
-	return list, nil
+	result := make([]*NetworkInfo, 0, len(list))
+	for _, net := range list {
+		subnet := ""
+		if len(net.IPAM.Config) > 0 && net.IPAM.Config[0].Subnet != "" {
+			subnet = net.IPAM.Config[0].Subnet
+		}
+		result = append(result, &NetworkInfo{ID: pkgdocker.ShortID(net.ID), Name: net.Name, Driver: net.Driver, Subnet: subnet, Scope: net.Scope})
+	}
+	return result, nil
 }
 
 // NetworkAction 网络操作
-func (s *Service) NetworkAction(ctx context.Context, req pkgdocker.ActionRequest) error {
+func (s *Service) NetworkAction(ctx context.Context, req ActionRequest) error {
 	if req.ID == "" {
 		return fmt.Errorf("网络ID不能为空")
 	}
@@ -31,7 +117,7 @@ func (s *Service) NetworkAction(ctx context.Context, req pkgdocker.ActionRequest
 }
 
 // NetworkCreate 创建网络
-func (s *Service) NetworkCreate(ctx context.Context, req pkgdocker.NetworkSpec) (map[string]string, error) {
+func (s *Service) NetworkCreate(ctx context.Context, req NetworkSpec) (map[string]string, error) {
 	id, err := s.docker.NetworkCreate(ctx, req.Name, req.Driver, req.Subnet)
 	if err != nil {
 		return nil, err
@@ -40,24 +126,35 @@ func (s *Service) NetworkCreate(ctx context.Context, req pkgdocker.NetworkSpec) 
 }
 
 // NetworkInspect 获取网络详情
-func (s *Service) NetworkInspect(ctx context.Context, id string) (*pkgdocker.NetworkDetail, error) {
+func (s *Service) NetworkInspect(ctx context.Context, id string) (*NetworkDetail, error) {
 	if id == "" {
 		return nil, fmt.Errorf("网络ID不能为空")
 	}
-	return s.docker.NetworkInspect(ctx, id)
+	netInfo, err := s.docker.NetworkInspect(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("获取网络详情失败: %w", err)
+	}
+	return networkDetail(netInfo), nil
 }
 
 // VolumeList 列出卷
-func (s *Service) VolumeList(ctx context.Context) ([]*pkgdocker.VolumeInfo, error) {
+func (s *Service) VolumeList(ctx context.Context) ([]*VolumeInfo, error) {
 	list, err := s.docker.VolumeList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("获取数据卷列表失败: %w", err)
 	}
-	return list, nil
+	result := make([]*VolumeInfo, 0, len(list))
+	for _, vol := range list {
+		if vol == nil {
+			continue
+		}
+		result = append(result, &VolumeInfo{Name: vol.Name, Driver: vol.Driver, Mountpoint: vol.Mountpoint, CreatedAt: vol.CreatedAt})
+	}
+	return result, nil
 }
 
 // VolumeAction 卷操作（ID 字段即卷名）
-func (s *Service) VolumeAction(ctx context.Context, req pkgdocker.ActionRequest) error {
+func (s *Service) VolumeAction(ctx context.Context, req ActionRequest) error {
 	if req.ID == "" {
 		return fmt.Errorf("数据卷名称不能为空")
 	}
@@ -71,7 +168,7 @@ func (s *Service) VolumeAction(ctx context.Context, req pkgdocker.ActionRequest)
 }
 
 // VolumeCreate 创建卷
-func (s *Service) VolumeCreate(ctx context.Context, req pkgdocker.VolumeSpec) (map[string]string, error) {
+func (s *Service) VolumeCreate(ctx context.Context, req VolumeSpec) (map[string]string, error) {
 	name, mountpoint, err := s.docker.VolumeCreate(ctx, req.Name, req.Driver)
 	if err != nil {
 		return nil, err
@@ -80,9 +177,47 @@ func (s *Service) VolumeCreate(ctx context.Context, req pkgdocker.VolumeSpec) (m
 }
 
 // VolumeInspect 获取卷详情
-func (s *Service) VolumeInspect(ctx context.Context, name string) (*pkgdocker.VolumeDetail, error) {
+func (s *Service) VolumeInspect(ctx context.Context, name string) (*VolumeDetail, error) {
 	if name == "" {
 		return nil, fmt.Errorf("卷名称不能为空")
 	}
-	return s.docker.VolumeInspect(ctx, name)
+	volInfo, err := s.docker.VolumeInspect(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("获取卷详情失败: %w", err)
+	}
+	containers, _ := s.docker.ContainerList(ctx, true)
+	return volumeDetail(volInfo, containers), nil
+}
+
+func networkDetail(netInfo network.Inspect) *NetworkDetail {
+	containers := make([]*NetworkContainerInfo, 0, len(netInfo.Containers))
+	for endpointID, ep := range netInfo.Containers {
+		name := ep.Name
+		if name == "" {
+			name = pkgdocker.ShortID(endpointID)
+		}
+		containers = append(containers, &NetworkContainerInfo{ID: pkgdocker.ShortID(endpointID), Name: strings.TrimPrefix(name, "/"), IPv4: ep.IPv4Address, IPv6: ep.IPv6Address, MacAddress: ep.MacAddress})
+	}
+	result := &NetworkDetail{ID: netInfo.ID, Name: netInfo.Name, Driver: netInfo.Driver, Scope: netInfo.Scope, Internal: netInfo.Internal, EnableIPv6: netInfo.EnableIPv6, Containers: containers}
+	if len(netInfo.IPAM.Config) > 0 {
+		result.Subnet = netInfo.IPAM.Config[0].Subnet
+		result.Gateway = netInfo.IPAM.Config[0].Gateway
+	}
+	return result
+}
+
+func volumeDetail(volInfo volume.Volume, containers []container.Summary) *VolumeDetail {
+	usedBy := make([]*VolumeUsedByContainer, 0)
+	for _, ct := range containers {
+		for _, m := range ct.Mounts {
+			if m.Type == "volume" && m.Name == volInfo.Name {
+				ctName := ""
+				if len(ct.Names) > 0 {
+					ctName = strings.TrimPrefix(ct.Names[0], "/")
+				}
+				usedBy = append(usedBy, &VolumeUsedByContainer{ID: pkgdocker.ShortID(ct.ID), Name: ctName, MountPath: m.Destination, ReadOnly: !m.RW})
+			}
+		}
+	}
+	return &VolumeDetail{Name: volInfo.Name, Driver: volInfo.Driver, Mountpoint: volInfo.Mountpoint, CreatedAt: volInfo.CreatedAt, Scope: volInfo.Scope, Size: volInfo.UsageData.Size, RefCount: volInfo.UsageData.RefCount, UsedBy: usedBy}
 }

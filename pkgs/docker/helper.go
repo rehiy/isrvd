@@ -14,13 +14,6 @@ import (
 	"github.com/docker/docker/api/types/container"
 )
 
-// ActionRequest 资源操作请求（容器/镜像/网络/卷通用）。
-// ID 字段对所有资源使用，卷场景下 ID 即卷名。
-type ActionRequest struct {
-	ID     string `json:"id" binding:"required"`
-	Action string `json:"action" binding:"required"`
-}
-
 // ShortID 返回 ID 的前 12 字符，不足 12 则返回原值
 func ShortID(id string) string {
 	id = strings.TrimPrefix(id, "sha256:")
@@ -30,8 +23,7 @@ func ShortID(id string) string {
 	return id
 }
 
-// ParseDockerLogs 解析 Docker multiplexed stream 格式的日志数据
-// 移除每帧前 8 字节的头部，返回纯文本行列表
+// ParseDockerLogs 解析 Docker multiplexed stream 格式的日志数据。
 func ParseDockerLogs(data []byte) []string {
 	var logs []string
 	for i := 0; i < len(data); {

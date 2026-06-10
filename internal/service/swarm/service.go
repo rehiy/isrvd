@@ -14,6 +14,52 @@ import (
 	pkgswarm "isrvd/pkgs/swarm"
 )
 
+// NodeInfo Swarm 节点信息（列表项），保持前端稳定响应结构。
+type NodeInfo struct {
+	ID            string `json:"id"`
+	Hostname      string `json:"hostname"`
+	Role          string `json:"role"`
+	Availability  string `json:"availability"`
+	State         string `json:"state"`
+	Addr          string `json:"addr"`
+	EngineVersion string `json:"engineVersion"`
+	Leader        bool   `json:"leader"`
+}
+
+// NodeDetail 节点详情，保持前端稳定响应结构。
+type NodeDetail struct {
+	ID            string            `json:"id"`
+	Hostname      string            `json:"hostname"`
+	Role          string            `json:"role"`
+	Availability  string            `json:"availability"`
+	State         string            `json:"state"`
+	Addr          string            `json:"addr"`
+	EngineVersion string            `json:"engineVersion"`
+	Leader        bool              `json:"leader"`
+	OS            string            `json:"os"`
+	Architecture  string            `json:"architecture"`
+	CPUs          int64             `json:"cpus"`
+	MemoryBytes   int64             `json:"memoryBytes"`
+	Labels        map[string]string `json:"labels"`
+	CreatedAt     string            `json:"createdAt"`
+	UpdatedAt     string            `json:"updatedAt"`
+}
+
+// Task Swarm 任务信息，保持前端稳定响应结构。
+type Task struct {
+	ID          string `json:"id"`
+	ServiceID   string `json:"serviceID"`
+	ServiceName string `json:"serviceName"`
+	NodeID      string `json:"nodeID"`
+	NodeName    string `json:"nodeName"`
+	Slot        int    `json:"slot"`
+	Image       string `json:"image"`
+	State       string `json:"state"`
+	Message     string `json:"message"`
+	Err         string `json:"err"`
+	UpdatedAt   string `json:"updatedAt"`
+}
+
 // ServiceInfo 服务列表信息（精简视图），保持前端稳定响应结构。
 type ServiceInfo struct {
 	ID           string        `json:"id"`
@@ -113,12 +159,16 @@ func (s *Service) JoinToken(ctx context.Context) (map[string]string, error) {
 }
 
 // NodeList 获取节点列表
-func (s *Service) NodeList(ctx context.Context) ([]pkgswarm.NodeInfo, error) {
+func (s *Service) NodeList(ctx context.Context) ([]NodeInfo, error) {
 	list, err := s.svc.NodeList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("获取节点列表失败: %w", err)
 	}
-	return list, nil
+	result := make([]NodeInfo, 0, len(list))
+	for _, node := range list {
+		result = append(result, nodeInfoFromRaw(node))
+	}
+	return result, nil
 }
 
 // NodeAction 节点操作
@@ -136,15 +186,15 @@ func (s *Service) NodeAction(ctx context.Context, id, action string) error {
 }
 
 // NodeInspect 获取节点详情
-func (s *Service) NodeInspect(ctx context.Context, id string) (*pkgswarm.NodeDetail, error) {
+func (s *Service) NodeInspect(ctx context.Context, id string) (*NodeDetail, error) {
 	if id == "" {
 		return nil, fmt.Errorf("缺少节点 ID")
 	}
-	detail, err := s.svc.NodeInspect(ctx, id)
+	node, err := s.svc.NodeInspect(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("获取节点详情失败: %w", err)
 	}
-	return detail, nil
+	return nodeDetailFromRaw(node), nil
 }
 
 // ServiceList 获取服务列表
@@ -367,10 +417,60 @@ func (s *Service) ServiceLogs(ctx context.Context, serviceID, tail string) ([]st
 }
 
 // TaskList 获取任务列表
-func (s *Service) TaskList(ctx context.Context, serviceID string) ([]pkgswarm.Task, error) {
-	list, err := s.svc.TaskList(ctx, serviceID)
+func (s *Service) TaskList(ctx context.Context, serviceID string) ([]Task, error) {
+	tasks, err := s.svc.TaskList(ctx, serviceID)
 	if err != nil {
 		return nil, fmt.Errorf("获取任务列表失败: %w", err)
 	}
-	return list, nil
+	services, _ := s.svc.ServiceList(ctx)
+	nodes, _ := s.svc.NodeList(ctx)
+	return tasksFromRaw(tasks, services, nodes), nil
+}
+
+func nodeInfoFromRaw(node dockerswarm.Node) NodeInfo {
+	return NodeInfo{
+		ID:            node.ID,
+		Hostname:      node.Description.Hostname,
+		Role:          string(node.Spec.Role),
+		Availability:  string(node.Spec.Availability),
+		State:         string(node.Status.State),
+		Addr:          node.Status.Addr,
+		EngineVersion: node.Description.Engine.EngineVersion,
+		Leader:        node.ManagerStatus != nil && node.ManagerStatus.Leader,
+	}
+}
+
+func nodeDetailFromRaw(node dockerswarm.Node) *NodeDetail {
+	info := nodeInfoFromRaw(node)
+	return &NodeDetail{
+		ID: info.ID, Hostname: info.Hostname, Role: info.Role, Availability: info.Availability, State: info.State,
+		Addr: info.Addr, EngineVersion: info.EngineVersion, Leader: info.Leader,
+		OS: node.Description.Platform.OS, Architecture: node.Description.Platform.Architecture,
+		CPUs: node.Description.Resources.NanoCPUs / 1e9, MemoryBytes: node.Description.Resources.MemoryBytes,
+		Labels: node.Spec.Labels, CreatedAt: node.Meta.CreatedAt.Format(time.RFC3339), UpdatedAt: node.Meta.UpdatedAt.Format(time.RFC3339),
+	}
+}
+
+func tasksFromRaw(tasks []dockerswarm.Task, services []dockerswarm.Service, nodes []dockerswarm.Node) []Task {
+	svcNameMap := map[string]string{}
+	for _, svc := range services {
+		svcNameMap[svc.ID] = svc.Spec.Name
+	}
+	nodeNameMap := map[string]string{}
+	for _, node := range nodes {
+		nodeNameMap[node.ID] = node.Description.Hostname
+	}
+	result := make([]Task, 0, len(tasks))
+	for _, task := range tasks {
+		image := ""
+		if task.Spec.ContainerSpec != nil {
+			image = task.Spec.ContainerSpec.Image
+		}
+		result = append(result, Task{
+			ID: task.ID, ServiceID: task.ServiceID, ServiceName: svcNameMap[task.ServiceID],
+			NodeID: task.NodeID, NodeName: nodeNameMap[task.NodeID], Slot: task.Slot, Image: image,
+			State: string(task.Status.State), Message: task.Status.Message, Err: task.Status.Err, UpdatedAt: task.UpdatedAt.Format(time.RFC3339),
+		})
+	}
+	return result
 }

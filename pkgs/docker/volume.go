@@ -3,39 +3,19 @@ package docker
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/rehiy/libgo/logman"
 )
 
-// VolumeInfo Docker 卷信息
-type VolumeInfo struct {
-	Name       string `json:"name"`
-	Driver     string `json:"driver"`
-	Mountpoint string `json:"mountpoint"`
-	CreatedAt  string `json:"createdAt"`
-	Size       int64  `json:"size"`
-}
-
-// VolumeList 列出卷
-func (s *DockerService) VolumeList(ctx context.Context) ([]*VolumeInfo, error) {
+// VolumeList 列出卷，直接返回 Docker SDK 原始卷结构。
+func (s *DockerService) VolumeList(ctx context.Context) ([]*volume.Volume, error) {
 	volumes, err := s.client.VolumeList(ctx, volume.ListOptions{})
 	if err != nil {
 		logman.Error("List volumes failed", "error", err)
 		return nil, err
 	}
-
-	var result []*VolumeInfo
-	for _, vol := range volumes.Volumes {
-		result = append(result, &VolumeInfo{
-			Name: vol.Name, Driver: vol.Driver,
-			Mountpoint: vol.Mountpoint, CreatedAt: vol.CreatedAt,
-		})
-	}
-
-	return result, nil
+	return volumes.Volumes, nil
 }
 
 // VolumeAction 卷操作
@@ -54,12 +34,6 @@ func (s *DockerService) VolumeAction(ctx context.Context, name, action string) e
 	return nil
 }
 
-// VolumeSpec 创建卷请求
-type VolumeSpec struct {
-	Name   string `json:"name" binding:"required"`
-	Driver string `json:"driver"`
-}
-
 // VolumeCreate 创建卷
 func (s *DockerService) VolumeCreate(ctx context.Context, name, driver string) (string, string, error) {
 	if driver == "" {
@@ -76,69 +50,12 @@ func (s *DockerService) VolumeCreate(ctx context.Context, name, driver string) (
 	return resp.Name, resp.Mountpoint, nil
 }
 
-// VolumeUsedByContainer 使用卷的容器信息
-type VolumeUsedByContainer struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	MountPath string `json:"mountPath"`
-	ReadOnly  bool   `json:"readOnly"`
-}
-
-// VolumeDetail 数据卷详情响应
-type VolumeDetail struct {
-	Name       string                   `json:"name"`
-	Driver     string                   `json:"driver"`
-	Mountpoint string                   `json:"mountpoint"`
-	CreatedAt  string                   `json:"createdAt"`
-	Scope      string                   `json:"scope"`
-	Size       int64                    `json:"size"`
-	RefCount   int64                    `json:"refCount"`
-	UsedBy     []*VolumeUsedByContainer `json:"usedBy"`
-}
-
-// VolumeInspect 获取卷详情
-func (s *DockerService) VolumeInspect(ctx context.Context, name string) (*VolumeDetail, error) {
+// VolumeInspect 获取卷原始详情。
+func (s *DockerService) VolumeInspect(ctx context.Context, name string) (volume.Volume, error) {
 	volInfo, err := s.client.VolumeInspect(ctx, name)
 	if err != nil {
 		logman.Error("Volume inspect failed", "name", name, "error", err)
-		return nil, err
+		return volume.Volume{}, err
 	}
-
-	// 查找使用此卷的容器
-	var usedBy []*VolumeUsedByContainer
-	containers, err := s.client.ContainerList(ctx, container.ListOptions{All: true})
-	if err == nil {
-		for _, ct := range containers {
-			for _, mount := range ct.Mounts {
-				if mount.Type == "volume" && mount.Name == name {
-					ctName := ""
-					if len(ct.Names) > 0 {
-						ctName = strings.TrimPrefix(ct.Names[0], "/")
-					}
-					usedBy = append(usedBy, &VolumeUsedByContainer{
-						ID:        ShortID(ct.ID),
-						Name:      ctName,
-						MountPath: mount.Destination,
-						ReadOnly:  !mount.RW,
-					})
-				}
-			}
-		}
-	}
-
-	result := &VolumeDetail{
-		Name:       volInfo.Name,
-		Driver:     volInfo.Driver,
-		Mountpoint: volInfo.Mountpoint,
-		CreatedAt:  volInfo.CreatedAt,
-		Scope:      volInfo.Scope,
-		UsedBy:     usedBy,
-	}
-
-	if volInfo.UsageData != nil {
-		result.Size = volInfo.UsageData.Size
-		result.RefCount = volInfo.UsageData.RefCount
-	}
-
-	return result, nil
+	return volInfo, nil
 }

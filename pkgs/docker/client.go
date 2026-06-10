@@ -4,10 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/volume"
+	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/client"
 	"github.com/rehiy/libgo/logman"
 )
@@ -76,71 +73,12 @@ func (s *DockerService) Registries() []*RegistryConfig {
 	return s.config.Registries
 }
 
-// DockerInfo Docker 信息概览
-type DockerInfo struct {
-	ContainersRunning  int64    `json:"containersRunning"`
-	ContainersStopped  int64    `json:"containersStopped"`
-	ContainersPaused   int64    `json:"containersPaused"`
-	ImagesTotal        int64    `json:"imagesTotal"`
-	VolumesTotal       int64    `json:"volumesTotal"`
-	NetworksTotal      int64    `json:"networksTotal"`
-	RegistryMirrors    []string `json:"registryMirrors"`
-	IndexServerAddress string   `json:"indexServerAddress"`
-}
-
-// Info 获取 Docker 概览信息
-func (s *DockerService) Info(ctx context.Context) (*DockerInfo, error) {
-	daemonInfo, err := s.client.Info(ctx)
+// Info 获取 Docker daemon 原始信息。
+func (s *DockerService) Info(ctx context.Context) (system.Info, error) {
+	info, err := s.client.Info(ctx)
 	if err != nil {
 		logman.Error("Docker info failed", "error", err)
-		return nil, err
+		return system.Info{}, err
 	}
-
-	containers, err := s.client.ContainerList(ctx, container.ListOptions{All: true})
-	if err != nil {
-		logman.Error("Container list failed", "error", err)
-		return nil, err
-	}
-
-	var running, stopped, paused int64
-	for _, ct := range containers {
-		switch ct.State {
-		case "running":
-			running++
-		case "paused":
-			paused++
-		default:
-			stopped++
-		}
-	}
-
-	images, err := s.client.ImageList(ctx, image.ListOptions{All: true})
-	if err != nil {
-		logman.Warn("ImageList failed", "error", err)
-	}
-	volList, err := s.client.VolumeList(ctx, volume.ListOptions{})
-	if err != nil {
-		logman.Warn("VolumeList failed", "error", err)
-	}
-	networks, err := s.client.NetworkList(ctx, network.ListOptions{})
-	if err != nil {
-		logman.Warn("NetworkList failed", "error", err)
-	}
-
-	// 读取镜像加速器配置
-	var mirrors []string
-	if daemonInfo.RegistryConfig != nil {
-		mirrors = daemonInfo.RegistryConfig.Mirrors
-	}
-
-	return &DockerInfo{
-		ContainersRunning:  running,
-		ContainersStopped:  stopped,
-		ContainersPaused:   paused,
-		ImagesTotal:        int64(len(images)),
-		VolumesTotal:       int64(len(volList.Volumes)),
-		NetworksTotal:      int64(len(networks)),
-		RegistryMirrors:    mirrors,
-		IndexServerAddress: daemonInfo.IndexServerAddress,
-	}, nil
+	return info, nil
 }

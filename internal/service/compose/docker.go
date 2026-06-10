@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/compose-spec/compose-go/v2/types"
-	v1 "github.com/moby/docker-image-spec/specs-go/v1"
 	"github.com/rehiy/libgo/logman"
 
 	"isrvd/pkgs/compose"
@@ -26,11 +25,8 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 	if err != nil {
 		return nil, err
 	}
-	projectName := project.Name
-	if projectName == "" || projectName == "." {
-		projectName = compose.ShortHash(req.Content)
-	}
-	if err := compose.ValidateProjectName(projectName); err != nil {
+	projectName, err := compose.ProjectNameFromProject(project, req.Content)
+	if err != nil {
 		return nil, err
 	}
 
@@ -109,16 +105,11 @@ func (s *Service) DockerContent(ctx context.Context, name string) (string, strin
 	if err != nil {
 		return "", "", fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
 	}
-	imageConfig, _ := s.docker.ImageConfig(ctx, info.Config.Image)
-	project, err := compose.ProjectFromDockerInspect(info, imageConfig, filepath.Join(root, name))
+	content, err := compose.DockerProjectYAMLFromInspect(ctx, info, s.docker.ImageConfig, filepath.Join(root, name))
 	if err != nil {
 		return "", "", err
 	}
-	data, err := compose.ProjectToYAML(project)
-	if err != nil {
-		return "", "", err
-	}
-	return string(data), name, nil
+	return content, name, nil
 }
 
 // DockerRedeploy 重建 Docker Compose 项目。
@@ -229,7 +220,7 @@ func (s *Service) dockerServiceCreate(ctx context.Context, project *types.Projec
 	if err != nil {
 		return "", "", err
 	}
-	id, err := s.docker.ContainerCreate(ctx, spec.Name, spec.Config, spec.HostConfig, spec.NetworkingConfig)
+	id, err := s.docker.ContainerCreateAndStart(ctx, spec.Name, spec.Config, spec.HostConfig, spec.NetworkingConfig)
 	if err != nil {
 		return "", "", fmt.Errorf("创建容器 %s 失败: %w", spec.Name, err)
 	}
@@ -322,27 +313,11 @@ func (s *Service) dockerProjectContentFromContainers(ctx context.Context, projec
 		return "", false, nil
 	}
 
-	configs := make(map[string]*v1.DockerOCIImageConfig, len(infos))
-	for _, info := range infos {
-		if info.Config == nil || info.Config.Image == "" {
-			continue
-		}
-		if _, ok := configs[info.Config.Image]; ok {
-			continue
-		}
-		if cfg, err := s.docker.ImageConfig(ctx, info.Config.Image); err == nil {
-			configs[info.Config.Image] = cfg
-		}
-	}
-	project, err := compose.ProjectFromDockerInspects(infos, configs, projectName, filepath.Join(root, projectName))
+	content, err := compose.DockerProjectYAMLFromInspects(ctx, infos, s.docker.ImageConfig, projectName, filepath.Join(root, projectName))
 	if err != nil {
 		return "", true, err
 	}
-	data, err := compose.ProjectToYAML(project)
-	if err != nil {
-		return "", true, err
-	}
-	return string(data), true, nil
+	return content, true, nil
 }
 
 // dockerRollback 用指定配置内容重建容器（回滚用）

@@ -34,3 +34,21 @@ func (s *Service) CheckAvailability(ctx context.Context) bool {
 	_, err := s.docker.Info(ctx)
 	return err == nil
 }
+
+// DockerInfo Docker 信息概览，保持前端稳定响应结构。
+type DockerInfo struct {
+	ContainersRunning  int64    `json:"containersRunning"`
+	ContainersStopped  int64    `json:"containersStopped"`
+	ContainersPaused   int64    `json:"containersPaused"`
+	ImagesTotal        int64    `json:"imagesTotal"`
+	VolumesTotal       int64    `json:"volumesTotal"`
+	NetworksTotal      int64    `json:"networksTotal"`
+	RegistryMirrors    []string `json:"registryMirrors"`
+	IndexServerAddress string   `json:"indexServerAddress"`
+}
+
+// ActionRequest 资源操作请求（容器/镜像/网络/卷通用）。
+type ActionRequest struct {
+	ID     string `json:"id" binding:"required"`
+	Action string `json:"action" binding:"required"`
+}

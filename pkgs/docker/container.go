@@ -3,25 +3,12 @@ package docker
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/rehiy/libgo/logman"
 )
-
-// VolumeMapping 挂载映射
-type VolumeMapping struct {
-	Type          string `json:"type,omitempty"`
-	Source        string `json:"source,omitempty"`
-	HostPath      string `json:"hostPath,omitempty"`
-	ContainerPath string `json:"containerPath"`
-	ReadOnly      bool   `json:"readOnly"`
-}
 
 // ContainerList 获取容器列表，直接返回 Docker SDK 原始列表项。
 func (s *DockerService) ContainerList(ctx context.Context, all bool) ([]container.Summary, error) {
@@ -113,7 +100,7 @@ func (s *DockerService) ContainerAction(ctx context.Context, id, action string) 
 	return nil
 }
 
-// ContainerCreate 创建并启动容器，直接接收 Docker SDK 原始配置。
+// ContainerCreate 创建容器，直接接收 Docker SDK 原始配置。
 func (s *DockerService) ContainerCreate(ctx context.Context, name string, containerConfig *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig) (string, error) {
 	if containerConfig == nil {
 		return "", fmt.Errorf("container config 不能为空")
@@ -128,84 +115,30 @@ func (s *DockerService) ContainerCreate(ctx context.Context, name string, contai
 		return "", err
 	}
 
-	if err := s.client.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
-		logman.Error("Start container failed", "id", ShortID(resp.ID), "name", name, "error", err)
-		if rmErr := s.client.ContainerRemove(ctx, resp.ID, container.RemoveOptions{Force: true}); rmErr != nil {
-			logman.Warn("Remove container after start failure", "id", ShortID(resp.ID), "error", rmErr)
-		}
-		return "", fmt.Errorf("启动容器失败: %w", err)
-	}
-
 	logman.Info("Container created", "id", ShortID(resp.ID), "name", name)
 	return resp.ID, nil
 }
 
-func (s *DockerService) buildMount(containerName string, vol VolumeMapping) (mount.Mount, error) {
-	mountType := strings.ToLower(strings.TrimSpace(vol.Type))
-	source := firstNonEmpty(vol.Source, vol.HostPath)
-	if source == "" {
-		return mount.Mount{}, fmt.Errorf("挂载源不能为空")
+// ContainerStart 启动容器。
+func (s *DockerService) ContainerStart(ctx context.Context, id string) error {
+	if err := s.client.ContainerStart(ctx, id, container.StartOptions{}); err != nil {
+		logman.Error("Start container failed", "id", ShortID(id), "error", err)
+		return err
 	}
-	if vol.ContainerPath == "" {
-		return mount.Mount{}, fmt.Errorf("挂载目标不能为空")
-	}
-	if mountType == "" {
-		mountType = inferMountType(source)
-	}
-
-	switch mountType {
-	case string(mount.TypeVolume):
-		// volume 名不能含路径分隔符
-		if strings.ContainsRune(source, '/') {
-			return mount.Mount{}, fmt.Errorf("volume 名称不能包含路径分隔符，请使用 bind 类型或改用合法的 volume 名: %s", source)
-		}
-		return mount.Mount{
-			Type:     mount.TypeVolume,
-			Source:   source,
-			Target:   vol.ContainerPath,
-			ReadOnly: vol.ReadOnly,
-		}, nil
-	case string(mount.TypeBind):
-		bindSource, err := s.resolveBindSource(containerName, source)
-		if err != nil {
-			return mount.Mount{}, err
-		}
-		return mount.Mount{
-			Type:        mount.TypeBind,
-			Source:      bindSource,
-			Target:      vol.ContainerPath,
-			ReadOnly:    vol.ReadOnly,
-			BindOptions: &mount.BindOptions{CreateMountpoint: true},
-		}, nil
-	default:
-		return mount.Mount{}, fmt.Errorf("不支持的挂载类型: %s", mountType)
-	}
+	return nil
 }
 
-func (s *DockerService) resolveBindSource(containerName string, source string) (string, error) {
-	bindSource := source
-	if s.config.ContainerRoot != "" && !filepath.IsAbs(bindSource) {
-		bindSource = filepath.Join(s.config.ContainerRoot, containerName, bindSource)
+// ContainerCreateAndStart 创建并启动容器；启动失败时自动移除已创建容器。
+func (s *DockerService) ContainerCreateAndStart(ctx context.Context, name string, containerConfig *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig) (string, error) {
+	id, err := s.ContainerCreate(ctx, name, containerConfig, hostConfig, networkingConfig)
+	if err != nil {
+		return "", err
 	}
-
-	if _, err := os.Stat(bindSource); err != nil && !os.IsNotExist(err) {
-		return "", fmt.Errorf("检查挂载源失败: %w", err)
-	}
-	return bindSource, nil
-}
-
-func inferMountType(source string) string {
-	if filepath.IsAbs(source) || strings.HasPrefix(source, ".") {
-		return string(mount.TypeBind)
-	}
-	return string(mount.TypeVolume)
-}
-
-func firstNonEmpty(values ...string) string {
-	for _, v := range values {
-		if v != "" {
-			return v
+	if err := s.ContainerStart(ctx, id); err != nil {
+		if rmErr := s.client.ContainerRemove(ctx, id, container.RemoveOptions{Force: true}); rmErr != nil {
+			logman.Warn("Remove container after start failure", "id", ShortID(id), "error", rmErr)
 		}
+		return "", fmt.Errorf("启动容器失败: %w", err)
 	}
-	return ""
+	return id, nil
 }

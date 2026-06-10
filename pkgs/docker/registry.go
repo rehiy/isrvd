@@ -12,30 +12,6 @@ import (
 	"github.com/rehiy/libgo/logman"
 )
 
-// RegistryInfo 镜像仓库信息
-type RegistryInfo struct {
-	Name        string `json:"name"`
-	URL         string `json:"url"`
-	Username    string `json:"username"`
-	Description string `json:"description"`
-}
-
-// RegistryList 列出已配置的镜像仓库
-func (s *DockerService) RegistryList() []*RegistryInfo {
-	s.registryMu.RLock()
-	defer s.registryMu.RUnlock()
-	var registries []*RegistryInfo
-	for _, r := range s.config.Registries {
-		registries = append(registries, &RegistryInfo{
-			Name:        r.Name,
-			URL:         r.URL,
-			Username:    r.Username,
-			Description: r.Description,
-		})
-	}
-	return registries
-}
-
 // RegistryCreate 添加仓库
 func (s *DockerService) RegistryCreate(reg *RegistryConfig) error {
 	if reg == nil {
@@ -100,26 +76,19 @@ func (s *DockerService) RegistryDelete(url string) error {
 	return nil
 }
 
-// ImagePushRequest 镜像推送请求
-type ImagePushRequest struct {
-	Image       string `json:"image" binding:"required"`
-	RegistryURL string `json:"registryUrl" binding:"required"`
-	Namespace   string `json:"namespace"`
-}
-
 // ImagePush 推送镜像到仓库
-func (s *DockerService) ImagePush(ctx context.Context, req ImagePushRequest) (string, string, error) {
+func (s *DockerService) ImagePush(ctx context.Context, imageRef, registryURL, namespace string) (string, string, error) {
 	// 提取镜像的短名称
-	imageName := req.Image
+	imageName := imageRef
 	if idx := strings.LastIndex(imageName, "/"); idx >= 0 {
 		imageName = imageName[idx+1:]
 	}
 
 	// 构建完整的目标镜像引用
-	host := registryHost(req.RegistryURL)
+	host := registryHost(registryURL)
 	var targetRef string
-	if req.Namespace != "" {
-		targetRef = host + "/" + req.Namespace + "/" + imageName
+	if namespace != "" {
+		targetRef = host + "/" + namespace + "/" + imageName
 	} else {
 		targetRef = host + "/" + imageName
 	}
@@ -128,8 +97,8 @@ func (s *DockerService) ImagePush(ctx context.Context, req ImagePushRequest) (st
 	}
 
 	// 先给镜像打标签
-	if err := s.client.ImageTag(ctx, req.Image, targetRef); err != nil {
-		logman.Error("Tag image for push failed", "image", req.Image, "target", targetRef, "error", err)
+	if err := s.client.ImageTag(ctx, imageRef, targetRef); err != nil {
+		logman.Error("Tag image for push failed", "image", imageRef, "target", targetRef, "error", err)
 		return "", targetRef, err
 	}
 
@@ -149,37 +118,30 @@ func (s *DockerService) ImagePush(ctx context.Context, req ImagePushRequest) (st
 		return "", targetRef, err
 	}
 
-	logman.Info("Image pushed", "image", req.Image, "target", targetRef)
+	logman.Info("Image pushed", "image", imageRef, "target", targetRef)
 	return lastMessage, targetRef, nil
-}
-
-// ImagePullRequest 拉取镜像请求
-type ImagePullRequest struct {
-	Image       string `json:"image" binding:"required"`
-	RegistryURL string `json:"registryUrl"`
-	Namespace   string `json:"namespace"`
 }
 
 // ImagePull 从仓库拉取镜像到本地
 // RegistryURL 为空时直接从 Docker Hub / daemon 配置的 mirror 拉取
-func (s *DockerService) ImagePull(ctx context.Context, req ImagePullRequest) (string, string, error) {
+func (s *DockerService) ImagePull(ctx context.Context, imageName, registryURL, namespace string) (string, string, error) {
 	// 构建完整镜像引用
 	var imageRef string
-	if req.RegistryURL == "" {
+	if registryURL == "" {
 		// 无私有仓库：直接使用镜像名，依赖 daemon mirror 配置
-		imageRef = req.Image
+		imageRef = imageName
 		if !strings.Contains(imageRef, ":") && !strings.Contains(imageRef, "@") {
 			imageRef += ":latest"
 		}
 	} else {
 		// 拼接私有仓库完整引用
-		host := registryHost(req.RegistryURL)
-		if req.Namespace != "" {
-			imageRef = host + "/" + req.Namespace + "/" + req.Image
+		host := registryHost(registryURL)
+		if namespace != "" {
+			imageRef = host + "/" + namespace + "/" + imageName
 		} else {
-			imageRef = host + "/" + req.Image
+			imageRef = host + "/" + imageName
 		}
-		if !strings.Contains(req.Image, ":") && !strings.Contains(req.Image, "@") {
+		if !strings.Contains(imageName, ":") && !strings.Contains(imageName, "@") {
 			imageRef += ":latest"
 		}
 	}
@@ -189,7 +151,7 @@ func (s *DockerService) ImagePull(ctx context.Context, req ImagePullRequest) (st
 		return "", imageRef, err
 	}
 
-	logman.Info("Image pulled from registry", "image", imageRef, "registry", req.RegistryURL)
+	logman.Info("Image pulled from registry", "image", imageRef, "registry", registryURL)
 	return lastMsg, imageRef, nil
 }
 

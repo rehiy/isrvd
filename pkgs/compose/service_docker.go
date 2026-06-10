@@ -10,7 +10,10 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
+	"github.com/docker/go-units"
 )
+
+// ==================== Compose service -> Docker create spec ====================
 
 // DockerCreateSpec 是 Docker SDK ContainerCreate 的参数集合。
 type DockerCreateSpec struct {
@@ -31,6 +34,7 @@ func ServiceToDockerCreateSpec(project *types.Project, svc types.ServiceConfig) 
 		Name: name,
 		Config: &container.Config{
 			Image:      svc.Image,
+			Domainname: svc.DomainName,
 			Cmd:        []string(svc.Command),
 			Entrypoint: []string(svc.Entrypoint),
 			Env:        envToSlice(svc.Environment),
@@ -49,20 +53,37 @@ func ServiceToDockerCreateSpec(project *types.Project, svc types.ServiceConfig) 
 			Privileged:     svc.Privileged,
 			CapAdd:         svc.CapAdd,
 			CapDrop:        svc.CapDrop,
+			CgroupnsMode:   container.CgroupnsMode(svc.Cgroup),
 			DNS:            []string(svc.DNS),
 			DNSOptions:     svc.DNSOpts,
 			DNSSearch:      []string(svc.DNSSearch),
 			ExtraHosts:     svc.ExtraHosts.AsList(":"),
+			GroupAdd:       svc.GroupAdd,
+			Init:           svc.Init,
+			IpcMode:        container.IpcMode(svc.Ipc),
+			Isolation:      container.Isolation(svc.Isolation),
+			PidMode:        container.PidMode(svc.Pid),
 			ReadonlyRootfs: svc.ReadOnly,
-			Sysctls:        map[string]string(svc.Sysctls),
 			RestartPolicy:  container.RestartPolicy{Name: container.RestartPolicyMode(restartPolicyName(svc.Restart))},
+			Resources: container.Resources{
+				CgroupParent:      svc.CgroupParent,
+				DeviceCgroupRules: svc.DeviceCgroupRules,
+				Devices:           dockerDeviceMappings(svc.Devices),
+				OomKillDisable:    boolPtr(svc.OomKillDisable),
+				PidsLimit:         int64Ptr(svc.PidsLimit),
+				Ulimits:           dockerUlimits(svc.Ulimits),
+			},
+			Runtime:     svc.Runtime,
+			SecurityOpt: svc.SecurityOpt,
+			ShmSize:     int64(svc.ShmSize),
+			Sysctls:     map[string]string(svc.Sysctls),
+			Tmpfs:       tmpfsMap(svc.Tmpfs),
+			UTSMode:     container.UTSMode(svc.Uts),
 		},
 	}
 
-	spec.HostConfig.Devices = dockerDeviceMappings(svc.Devices)
-	spec.HostConfig.DeviceCgroupRules = svc.DeviceCgroupRules
-
 	applyDockerNetwork(project, svc, spec.HostConfig)
+	applyDockerExpose(svc, spec.Config)
 	applyDockerPorts(svc, spec.Config, spec.HostConfig)
 	applyDockerVolumes(svc, spec.HostConfig)
 	applyDockerResources(svc, spec.HostConfig)
@@ -70,6 +91,8 @@ func ServiceToDockerCreateSpec(project *types.Project, svc types.ServiceConfig) 
 
 	return spec, nil
 }
+
+// ==================== Docker host/config mapping ====================
 
 func restartPolicyName(name string) string {
 	switch name {
@@ -91,21 +114,38 @@ func applyDockerNetwork(project *types.Project, svc types.ServiceConfig, hostCon
 	}
 }
 
+func applyDockerExpose(svc types.ServiceConfig, containerConfig *container.Config) {
+	if len(svc.Expose) == 0 {
+		return
+	}
+	if containerConfig.ExposedPorts == nil {
+		containerConfig.ExposedPorts = make(nat.PortSet)
+	}
+	for _, raw := range svc.Expose {
+		proto := "tcp"
+		port := raw
+		if idx := strings.LastIndex(raw, "/"); idx >= 0 {
+			port = raw[:idx]
+			proto = raw[idx+1:]
+		}
+		containerConfig.ExposedPorts[nat.Port(port+"/"+proto)] = struct{}{}
+	}
+}
+
 func applyDockerPorts(svc types.ServiceConfig, containerConfig *container.Config, hostConfig *container.HostConfig) {
 	if len(svc.Ports) == 0 {
 		return
 	}
+	if containerConfig.ExposedPorts == nil {
+		containerConfig.ExposedPorts = make(nat.PortSet)
+	}
 	portBindings := make(nat.PortMap)
-	exposedPorts := make(nat.PortSet)
 	for _, p := range svc.Ports {
 		if p.Target == 0 {
 			continue
 		}
 		proto := defaultString(strings.ToLower(p.Protocol), "tcp")
 		host := p.Published
-		if host == "" {
-			host = strconv.Itoa(int(p.Target))
-		}
 		hostIP := "0.0.0.0"
 		if p.HostIP != "" && p.HostIP != "0.0.0.0" {
 			hostIP = p.HostIP
@@ -115,12 +155,11 @@ func applyDockerPorts(svc types.ServiceConfig, containerConfig *container.Config
 			host = host[idx+1:]
 		}
 		port := nat.Port(strconv.Itoa(int(p.Target)) + "/" + proto)
-		portBindings[port] = []nat.PortBinding{{HostIP: hostIP, HostPort: host}}
-		exposedPorts[port] = struct{}{}
+		portBindings[port] = append(portBindings[port], nat.PortBinding{HostIP: hostIP, HostPort: host})
+		containerConfig.ExposedPorts[port] = struct{}{}
 	}
 	if len(portBindings) > 0 {
 		hostConfig.PortBindings = portBindings
-		containerConfig.ExposedPorts = exposedPorts
 	}
 }
 
@@ -164,6 +203,62 @@ func applyDockerResources(svc types.ServiceConfig, hostConfig *container.HostCon
 	}
 }
 
+// ==================== Docker value converters ====================
+
+func boolPtr(v bool) *bool {
+	if !v {
+		return nil
+	}
+	return &v
+}
+
+func int64Ptr(v int64) *int64 {
+	if v == 0 {
+		return nil
+	}
+	return &v
+}
+
+func tmpfsMap(tmpfs types.StringList) map[string]string {
+	if len(tmpfs) == 0 {
+		return nil
+	}
+	result := make(map[string]string, len(tmpfs))
+	for _, raw := range tmpfs {
+		target, options, _ := strings.Cut(raw, ":")
+		if target == "" {
+			continue
+		}
+		result[target] = options
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
+func dockerUlimits(ulimits map[string]*types.UlimitsConfig) []*container.Ulimit {
+	if len(ulimits) == 0 {
+		return nil
+	}
+	result := make([]*container.Ulimit, 0, len(ulimits))
+	for name, cfg := range ulimits {
+		if cfg == nil || name == "" {
+			continue
+		}
+		soft := int64(cfg.Soft)
+		hard := int64(cfg.Hard)
+		if cfg.Single != 0 {
+			soft = int64(cfg.Single)
+			hard = int64(cfg.Single)
+		}
+		result = append(result, &units.Ulimit{Name: name, Soft: soft, Hard: hard})
+	}
+	return result
+}
+
+// ==================== Docker device/GPU mapping ====================
+
 func dockerDeviceMappings(devices []types.DeviceMapping) []container.DeviceMapping {
 	if len(devices) == 0 {
 		return nil
@@ -180,19 +275,34 @@ func dockerDeviceMappings(devices []types.DeviceMapping) []container.DeviceMappi
 }
 
 func applyDockerDeviceRequests(svc types.ServiceConfig, hostConfig *container.HostConfig) {
+	for _, dev := range svc.Gpus {
+		hostConfig.DeviceRequests = append(hostConfig.DeviceRequests, dockerDeviceRequest(dev))
+	}
 	if svc.Deploy == nil || svc.Deploy.Resources.Reservations == nil {
 		return
 	}
 	for _, dev := range svc.Deploy.Resources.Reservations.Devices {
-		caps := dev.Capabilities
-		if len(caps) == 0 {
-			caps = []string{"gpu"}
-		}
-		hostConfig.DeviceRequests = append(hostConfig.DeviceRequests, container.DeviceRequest{
-			Driver:       dev.Driver,
-			Count:        int(dev.Count),
-			DeviceIDs:    dev.IDs,
-			Capabilities: [][]string{caps},
-		})
+		hostConfig.DeviceRequests = append(hostConfig.DeviceRequests, dockerDeviceRequest(dev))
 	}
+}
+
+func dockerDeviceRequest(dev types.DeviceRequest) container.DeviceRequest {
+	caps := dev.Capabilities
+	if len(caps) == 0 {
+		caps = []string{"gpu"}
+	}
+	return container.DeviceRequest{
+		Driver:       dev.Driver,
+		Count:        int(dev.Count),
+		DeviceIDs:    dev.IDs,
+		Capabilities: [][]string{caps},
+		Options:      stringMap(dev.Options),
+	}
+}
+
+func stringMap(values types.Mapping) map[string]string {
+	if len(values) == 0 {
+		return nil
+	}
+	return map[string]string(values)
 }

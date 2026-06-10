@@ -24,11 +24,8 @@ func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployRe
 	if err != nil {
 		return nil, err
 	}
-	projectName := project.Name
-	if projectName == "" || projectName == "." {
-		projectName = compose.ShortHash(req.Content)
-	}
-	if err := compose.ValidateProjectName(projectName); err != nil {
+	projectName, err := compose.ProjectNameFromProject(project, req.Content)
+	if err != nil {
 		return nil, err
 	}
 

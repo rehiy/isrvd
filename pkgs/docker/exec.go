@@ -117,7 +117,7 @@ func (s *DockerService) ContainerExecRun(ctx context.Context, containerID, shell
 // ContainerRunScript 创建临时容器运行脚本，完成后收集日志并删除容器和临时文件。
 // 脚本内容通过临时文件 bind mount 进容器执行，不依赖现有容器。
 // image: 镜像名；shell: 容器内 shell（默认 /bin/sh）；script: 脚本内容；timeout: 超时秒数（0 不限）。
-func (s *DockerService) ContainerRunScript(ctx context.Context, image, shell, script string, timeout uint, volumes []VolumeMapping) (string, error) {
+func (s *DockerService) ContainerRunScript(ctx context.Context, image, shell, script string, timeout uint, extraMounts []mount.Mount) (string, error) {
 	if err := s.ImageEnsure(ctx, image, false); err != nil {
 		return "", fmt.Errorf("镜像 %s 不可用: %w", image, err)
 	}
@@ -153,13 +153,7 @@ func (s *DockerService) ContainerRunScript(ctx context.Context, image, shell, sc
 			ReadOnly: true,
 		},
 	}
-	for _, vol := range volumes {
-		m, err := s.buildMount("", vol)
-		if err != nil {
-			return "", fmt.Errorf("处理挂载配置失败: %w", err)
-		}
-		mounts = append(mounts, m)
-	}
+	mounts = append(mounts, extraMounts...)
 
 	containerName := fmt.Sprintf("cron-%x", time.Now().UnixNano())
 	containerCfg := &container.Config{
