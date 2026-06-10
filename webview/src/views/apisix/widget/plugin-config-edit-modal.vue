@@ -6,7 +6,7 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type {
     ApisixPluginConfig,
-    ApisixPluginConfigPayload,
+    ApisixPluginConfigUpsert,
     ApisixRoute
 } from '@/service/types'
 
@@ -72,7 +72,7 @@ class PluginConfigEditModal extends Vue {
         this.formData.plugins = plugins
     }
 
-    buildPayload(): ApisixPluginConfigPayload {
+    buildPayload(): ApisixPluginConfigUpsert {
         return {
             desc: this.formData.desc.trim(),
             plugins: this.formData.plugins,

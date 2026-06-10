@@ -1,5 +1,7 @@
 // ─── Apisix 相关 ───
 
+// ==================== 公共类型 ====================
+
 export type ApisixRouteUpstreamMode = 'none' | 'nodes' | 'upstream_id'
 
 export type ApisixUpstreamType = 'roundrobin' | 'chash' | 'ewma' | 'least_conn'
@@ -41,6 +43,8 @@ export interface ApisixRouteUpstreamModeCard {
     tone: 'indigo' | 'emerald' | 'slate'
 }
 
+// ==================== Route ====================
+
 export interface ApisixRoute {
     id?: string
     name: string
@@ -62,12 +66,14 @@ export interface ApisixRoute {
     update_time?: number
 }
 
+// ==================== Consumer ====================
+
 export interface ApisixConsumer {
     username: string
     desc: string
     plugins?: Record<string, unknown>
     create_time: number
-    update_time: number
+    update_time?: number
 }
 
 export interface ApisixConsumerCreate {
@@ -81,18 +87,22 @@ export interface ApisixConsumerUpdate {
     plugins?: Record<string, unknown>
 }
 
+// ==================== PluginConfig ====================
+
 export interface ApisixPluginConfig {
     id?: string
     desc: string
     plugins?: Record<string, unknown>
     create_time: number
-    update_time: number
+    update_time?: number
 }
 
-export interface ApisixPluginConfigPayload {
+export interface ApisixPluginConfigUpsert {
     desc?: string
     plugins?: Record<string, unknown>
 }
+
+// ==================== Upstream ====================
 
 export interface ApisixUpstream {
     id?: string
@@ -117,6 +127,8 @@ export type ApisixUpstreamCreate = ApisixUpstream
 
 export type ApisixUpstreamUpdate = ApisixUpstream
 
+// ==================== SSL ====================
+
 export interface ApisixSSL {
     id?: string
     snis: string[]
@@ -131,6 +143,20 @@ export type ApisixSSLCreate = ApisixSSL
 
 export type ApisixSSLUpdate = ApisixSSL
 
+// ==================== Whitelist ====================
+
+export interface ApisixKeyAuthConfig {
+    header: string
+    query?: string
+    hide_credentials?: boolean
+}
+
+export interface ApisixWhitelistCreate {
+    route_id: string
+    consumers: string[]
+    key_auth: ApisixKeyAuthConfig
+}
+
 export interface ApisixWhitelistUserCreate {
     route_id: string
     username: string
@@ -143,19 +169,8 @@ export interface ApisixWhitelistUserDelete {
     consumer_name: string
 }
 
-export interface ApisixKeyAuthConfig {
-    header: string
-    query?: string
-    hide_credentials?: boolean
-}
+// ==================== 概览统计 ====================
 
-export interface ApisixCreateWhitelist {
-    route_id: string
-    consumers: string[]
-    key_auth: ApisixKeyAuthConfig
-}
-
-// Apisix 概览统计
 export interface ApisixInfo {
     routes: number
     consumers: number

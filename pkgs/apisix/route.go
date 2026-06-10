@@ -134,8 +134,8 @@ func (c *Client) getRouteConsumers(ctx context.Context, routeID string) ([]strin
 	return []string{}, nil
 }
 
-// RouteWhitelistRevoke 从路由的白名单中移除 consumer
-func (c *Client) RouteWhitelistRevoke(ctx context.Context, routeID, consumerName string) error {
+// RouteWhitelistUserDelete 从路由的白名单中移除 consumer
+func (c *Client) RouteWhitelistUserDelete(ctx context.Context, routeID, consumerName string) error {
 	consumers, err := c.getRouteConsumers(ctx, routeID)
 	if err != nil {
 		return err

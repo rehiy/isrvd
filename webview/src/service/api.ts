@@ -39,16 +39,16 @@ import type {
     ApisixConsumer,
     ApisixConsumerCreate,
     ApisixConsumerUpdate,
-    ApisixPluginConfigPayload,
-    ApisixSSLCreate,
-    ApisixSSLUpdate,
-    ApisixSSL,
+    ApisixPluginConfig,
+    ApisixPluginConfigUpsert,
+    ApisixUpstream,
     ApisixUpstreamCreate,
     ApisixUpstreamUpdate,
-    ApisixUpstream,
-    ApisixPluginConfig,
+    ApisixSSL,
+    ApisixSSLCreate,
+    ApisixSSLUpdate,
     ApisixWhitelistUserDelete,
-    ApisixCreateWhitelist,
+    ApisixWhitelistCreate,
     ApisixWhitelistUserCreate,
     // Caddy
     CaddyInfo,
@@ -352,7 +352,7 @@ class ApiService {
         return http.get<ApisixRoute[]>('apisix/whitelist')
     }
 
-    apisixWhitelistCreate(payload: ApisixCreateWhitelist) {
+    apisixWhitelistCreate(payload: ApisixWhitelistCreate) {
         return http.post<ApisixRoute>('apisix/whitelist', payload)
     }
 
@@ -373,11 +373,11 @@ class ApiService {
         return http.get<ApisixPluginConfig>(`apisix/plugin-config/${id}`)
     }
 
-    apisixPluginConfigCreate(data: ApisixPluginConfigPayload) {
+    apisixPluginConfigCreate(data: ApisixPluginConfigUpsert) {
         return http.post('apisix/plugin-config', data)
     }
 
-    apisixPluginConfigUpdate(id: string, data: ApisixPluginConfigPayload) {
+    apisixPluginConfigUpdate(id: string, data: ApisixPluginConfigUpsert) {
         return http.put(`apisix/plugin-config/${id}`, data)
     }
 

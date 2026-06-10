@@ -150,7 +150,7 @@ docs/
 | 获取详情 | `{Resource}Inspect` | `NodeInspect(ctx, id)` |
 | 创建/更新/删除 | `{Resource}Create/Update/Delete` | `RouteCreate(req)`、`RouteDelete(id)` |
 | 状态切换 | `{Resource}StatusPatch` | `RouteStatusPatch(id, status)` |
-| 特殊操作 | `{Resource}{Verb}` | `ContainerAction(id, action)`、`WhitelistRevoke(...)` |
+| 特殊操作 | `{Resource}{Verb}` | `ContainerAction(id, action)`、`WhitelistUserDelete(...)` |
 
 - **查询接口不加 `Get` 后缀**：方法名本身已表达"获取"语义（`Stat()`、`Probe()`、`Info()`、`JoinToken()`、`ConfigAll()`），禁止改为 `StatGet()`、`probeGet()` 等形式
 - **`Get` 仅用于必要场景**：当方法名去掉 `Get` 后会与已有方法冲突或语义不明时，才可保留 `Get` 后缀
