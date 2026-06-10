@@ -8,6 +8,7 @@ import (
 
 	"isrvd/config"
 	svcCompose "isrvd/internal/service/compose"
+	pkgCompose "isrvd/pkgs/compose"
 )
 
 // defineComposeRoutes 定义 Compose 模块路由
@@ -26,7 +27,7 @@ func (app *App) defineComposeRoutes() []Route {
 
 func composeNameParam(c *gin.Context) (string, bool) {
 	name := c.Param("name")
-	if err := svcCompose.ValidateName(name); err != nil {
+	if err := pkgCompose.ValidateProjectName(name); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return "", false
 	}

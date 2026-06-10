@@ -6,62 +6,97 @@ import (
 	"strings"
 
 	"github.com/compose-spec/compose-go/v2/types"
-
-	"isrvd/pkgs/docker"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/network"
+	"github.com/docker/go-connections/nat"
 )
 
-// ServiceToDockerRequest 将 compose ServiceConfig 转换为 docker.ContainerSpec
-// 只覆盖 ContainerSpec 已有的字段，未覆盖的 compose 特性
-// (healthcheck / ulimits / sysctls 等) 保持忽略，后续按需扩展即可。
-// project 用于将 service.Networks 的 key 解析为顶层 networks.<key>.name 指定的真实 docker 网络名。
-func ServiceToDockerRequest(project *types.Project, svc types.ServiceConfig) (docker.ContainerSpec, error) {
+// DockerCreateSpec 是 Docker SDK ContainerCreate 的参数集合。
+type DockerCreateSpec struct {
+	Name             string
+	Config           *container.Config
+	HostConfig       *container.HostConfig
+	NetworkingConfig *network.NetworkingConfig
+}
+
+// ServiceToDockerCreateSpec 将 compose ServiceConfig 转换为 Docker SDK 创建参数。
+func ServiceToDockerCreateSpec(project *types.Project, svc types.ServiceConfig) (DockerCreateSpec, error) {
 	if svc.Image == "" {
-		return docker.ContainerSpec{}, fmt.Errorf("service %q 缺少 image", svc.Name)
+		return DockerCreateSpec{}, fmt.Errorf("service %q 缺少 image", svc.Name)
 	}
 
 	name := defaultString(svc.ContainerName, svc.Name)
-	req := docker.ContainerSpec{
-		Image:      svc.Image,
-		Name:       name,
-		Cmd:        []string(svc.Command),
-		Env:        envToSlice(svc.Environment),
-		Network:    svc.NetworkMode,
-		Workdir:    svc.WorkingDir,
-		User:       svc.User,
-		Hostname:   svc.Hostname,
-		Privileged: svc.Privileged,
-		CapAdd:     svc.CapAdd,
-		CapDrop:    svc.CapDrop,
-		Restart:    defaultString(svc.Restart, "always"), // compose 未指定时默认 always（与 restartPolicy 方向相反：inspect→compose 映射空串为"no"）
-		Labels: buildServiceLabels(project, svc, map[string]string{
-			ComposeContainerNumberLabel: "1",
-			ComposeOneoffLabel:          "False",
-		}),
+	spec := DockerCreateSpec{
+		Name: name,
+		Config: &container.Config{
+			Image:      svc.Image,
+			Cmd:        []string(svc.Command),
+			Entrypoint: []string(svc.Entrypoint),
+			Env:        envToSlice(svc.Environment),
+			WorkingDir: svc.WorkingDir,
+			User:       svc.User,
+			Hostname:   svc.Hostname,
+			Tty:        svc.Tty,
+			OpenStdin:  svc.StdinOpen,
+			StopSignal: svc.StopSignal,
+			Labels: buildServiceLabels(project, svc, map[string]string{
+				ComposeContainerNumberLabel: "1",
+				ComposeOneoffLabel:          "False",
+			}),
+		},
+		HostConfig: &container.HostConfig{
+			Privileged:     svc.Privileged,
+			CapAdd:         svc.CapAdd,
+			CapDrop:        svc.CapDrop,
+			DNS:            []string(svc.DNS),
+			DNSOptions:     svc.DNSOpts,
+			DNSSearch:      []string(svc.DNSSearch),
+			ExtraHosts:     svc.ExtraHosts.AsList(":"),
+			ReadonlyRootfs: svc.ReadOnly,
+			Sysctls:        map[string]string(svc.Sysctls),
+			RestartPolicy:  container.RestartPolicy{Name: container.RestartPolicyMode(restartPolicyName(svc.Restart))},
+		},
 	}
 
-	applyDockerNetwork(project, svc, &req)
-	applyDockerPorts(svc, &req)
-	applyDockerVolumes(svc, &req)
-	applyDockerResources(svc, &req)
+	spec.HostConfig.Devices = dockerDeviceMappings(svc.Devices)
+	spec.HostConfig.DeviceCgroupRules = svc.DeviceCgroupRules
 
-	return req, nil
+	applyDockerNetwork(project, svc, spec.HostConfig)
+	applyDockerPorts(svc, spec.Config, spec.HostConfig)
+	applyDockerVolumes(svc, spec.HostConfig)
+	applyDockerResources(svc, spec.HostConfig)
+	applyDockerDeviceRequests(svc, spec.HostConfig)
+
+	return spec, nil
 }
 
-func applyDockerNetwork(project *types.Project, svc types.ServiceConfig, req *docker.ContainerSpec) {
-	if req.Network != "" {
+func restartPolicyName(name string) string {
+	switch name {
+	case "always", "on-failure", "unless-stopped":
+		return name
+	default:
+		return "no"
+	}
+}
+
+func applyDockerNetwork(project *types.Project, svc types.ServiceConfig, hostConfig *container.HostConfig) {
+	if svc.NetworkMode != "" {
+		hostConfig.NetworkMode = container.NetworkMode(svc.NetworkMode)
 		return
 	}
-	for k := range svc.Networks {
-		req.Network = resolveNetworkName(project, k)
+	for _, k := range svc.NetworksByPriority() {
+		hostConfig.NetworkMode = container.NetworkMode(resolveNetworkName(project, k))
 		break
 	}
 }
 
-func applyDockerPorts(svc types.ServiceConfig, req *docker.ContainerSpec) {
+func applyDockerPorts(svc types.ServiceConfig, containerConfig *container.Config, hostConfig *container.HostConfig) {
 	if len(svc.Ports) == 0 {
 		return
 	}
-	req.Ports = make(map[string]string, len(svc.Ports))
+	portBindings := make(nat.PortMap)
+	exposedPorts := make(nat.PortSet)
 	for _, p := range svc.Ports {
 		if p.Target == 0 {
 			continue
@@ -71,14 +106,25 @@ func applyDockerPorts(svc types.ServiceConfig, req *docker.ContainerSpec) {
 		if host == "" {
 			host = strconv.Itoa(int(p.Target))
 		}
+		hostIP := "0.0.0.0"
 		if p.HostIP != "" && p.HostIP != "0.0.0.0" {
-			host = p.HostIP + ":" + host
+			hostIP = p.HostIP
 		}
-		req.Ports[host+"/"+proto] = strconv.Itoa(int(p.Target))
+		if idx := strings.LastIndex(host, ":"); idx >= 0 {
+			hostIP = host[:idx]
+			host = host[idx+1:]
+		}
+		port := nat.Port(strconv.Itoa(int(p.Target)) + "/" + proto)
+		portBindings[port] = []nat.PortBinding{{HostIP: hostIP, HostPort: host}}
+		exposedPorts[port] = struct{}{}
+	}
+	if len(portBindings) > 0 {
+		hostConfig.PortBindings = portBindings
+		containerConfig.ExposedPorts = exposedPorts
 	}
 }
 
-func applyDockerVolumes(svc types.ServiceConfig, req *docker.ContainerSpec) {
+func applyDockerVolumes(svc types.ServiceConfig, hostConfig *container.HostConfig) {
 	for _, v := range svc.Volumes {
 		if v.Source == "" || v.Target == "" {
 			continue
@@ -91,29 +137,62 @@ func applyDockerVolumes(svc types.ServiceConfig, req *docker.ContainerSpec) {
 				mountType = types.VolumeTypeVolume
 			}
 		}
-		req.Volumes = append(req.Volumes, docker.VolumeMapping{
-			Type:          string(mountType),
-			Source:        v.Source,
-			ContainerPath: v.Target,
-			ReadOnly:      v.ReadOnly,
+		hostConfig.Mounts = append(hostConfig.Mounts, mount.Mount{
+			Type:     mount.Type(mountType),
+			Source:   v.Source,
+			Target:   v.Target,
+			ReadOnly: v.ReadOnly,
 		})
 	}
 }
 
-func applyDockerResources(svc types.ServiceConfig, req *docker.ContainerSpec) {
+func applyDockerResources(svc types.ServiceConfig, hostConfig *container.HostConfig) {
 	if svc.Deploy != nil && svc.Deploy.Resources.Limits != nil {
 		lim := svc.Deploy.Resources.Limits
 		if lim.MemoryBytes > 0 {
-			req.Memory = int64(lim.MemoryBytes) / (1024 * 1024)
+			hostConfig.Memory = int64(lim.MemoryBytes)
 		}
 		if lim.NanoCPUs > 0 {
-			req.Cpus = float64(lim.NanoCPUs) / 1e9
+			hostConfig.NanoCPUs = int64(float64(lim.NanoCPUs) * 1e9)
 		}
 	}
-	if req.Memory == 0 && svc.MemLimit > 0 {
-		req.Memory = int64(svc.MemLimit) / (1024 * 1024)
+	if hostConfig.Memory == 0 && svc.MemLimit > 0 {
+		hostConfig.Memory = int64(svc.MemLimit)
 	}
-	if req.Cpus == 0 && svc.CPUS > 0 {
-		req.Cpus = float64(svc.CPUS)
+	if hostConfig.NanoCPUs == 0 && svc.CPUS > 0 {
+		hostConfig.NanoCPUs = int64(float64(svc.CPUS) * 1e9)
+	}
+}
+
+func dockerDeviceMappings(devices []types.DeviceMapping) []container.DeviceMapping {
+	if len(devices) == 0 {
+		return nil
+	}
+	result := make([]container.DeviceMapping, 0, len(devices))
+	for _, dev := range devices {
+		result = append(result, container.DeviceMapping{
+			PathOnHost:        dev.Source,
+			PathInContainer:   defaultString(dev.Target, dev.Source),
+			CgroupPermissions: defaultString(dev.Permissions, "rwm"),
+		})
+	}
+	return result
+}
+
+func applyDockerDeviceRequests(svc types.ServiceConfig, hostConfig *container.HostConfig) {
+	if svc.Deploy == nil || svc.Deploy.Resources.Reservations == nil {
+		return
+	}
+	for _, dev := range svc.Deploy.Resources.Reservations.Devices {
+		caps := dev.Capabilities
+		if len(caps) == 0 {
+			caps = []string{"gpu"}
+		}
+		hostConfig.DeviceRequests = append(hostConfig.DeviceRequests, container.DeviceRequest{
+			Driver:       dev.Driver,
+			Count:        int(dev.Count),
+			DeviceIDs:    dev.IDs,
+			Capabilities: [][]string{caps},
+		})
 	}
 }

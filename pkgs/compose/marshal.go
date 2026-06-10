@@ -93,21 +93,28 @@ func serviceFromDockerInspect(info container.InspectResponse, imageConfig *v1.Do
 	}
 
 	svc := types.ServiceConfig{
-		Name:          serviceName,
-		Image:         info.Config.Image,
-		ContainerName: containerName,
-		Command:       types.ShellCommand(diffCmd(info.Config.Cmd, imageConfig)),
-		Entrypoint:    entrypoint,
-		Environment:   sliceToEnv(diffEnv(info.Config.Env, imageConfig)),
-		WorkingDir:    diffString(info.Config.WorkingDir, imageConfig, func(c *v1.DockerOCIImageConfig) string { return c.WorkingDir }),
-		User:          diffString(info.Config.User, imageConfig, func(c *v1.DockerOCIImageConfig) string { return c.User }),
-		Hostname:      hostname,
-		Privileged:    info.HostConfig.Privileged,
-		CapAdd:        []string(info.HostConfig.CapAdd),
-		CapDrop:       []string(info.HostConfig.CapDrop),
-		Restart:       restartPolicy(string(info.HostConfig.RestartPolicy.Name)),
-		ExtraHosts:    extraHostsToMap(info.HostConfig.ExtraHosts),
-		Labels:        diffLabels(info.Config.Labels, imageConfig),
+		Name:              serviceName,
+		Image:             info.Config.Image,
+		ContainerName:     containerName,
+		Command:           types.ShellCommand(diffCmd(info.Config.Cmd, imageConfig)),
+		Entrypoint:        entrypoint,
+		Environment:       sliceToEnv(diffEnv(info.Config.Env, imageConfig)),
+		WorkingDir:        diffString(info.Config.WorkingDir, imageConfig, func(c *v1.DockerOCIImageConfig) string { return c.WorkingDir }),
+		User:              diffString(info.Config.User, imageConfig, func(c *v1.DockerOCIImageConfig) string { return c.User }),
+		Hostname:          hostname,
+		Privileged:        info.HostConfig.Privileged,
+		CapAdd:            []string(info.HostConfig.CapAdd),
+		CapDrop:           []string(info.HostConfig.CapDrop),
+		Restart:           restartPolicy(string(info.HostConfig.RestartPolicy.Name)),
+		ExtraHosts:        extraHostsToMap(info.HostConfig.ExtraHosts),
+		Tty:               info.Config.Tty,
+		StdinOpen:         info.Config.OpenStdin,
+		ReadOnly:          info.HostConfig.ReadonlyRootfs,
+		StopSignal:        info.Config.StopSignal,
+		Sysctls:           types.Mapping(info.HostConfig.Sysctls),
+		DeviceCgroupRules: info.HostConfig.DeviceCgroupRules,
+		Devices:           inspectDeviceMappings(info.HostConfig.Devices),
+		Labels:            diffLabels(info.Config.Labels, imageConfig),
 	}
 
 	applyInspectDNS(&svc, info)
@@ -115,6 +122,7 @@ func serviceFromDockerInspect(info container.InspectResponse, imageConfig *v1.Do
 	applyInspectPorts(&svc, info)
 	applyInspectVolumes(&svc, info, containerDir)
 	applyInspectResources(&svc, info)
+	applyInspectDeviceRequests(&svc, info)
 
 	return svc, projectNetworks, nil
 }
@@ -151,8 +159,26 @@ func ProjectFromSwarmInspect(svc swarm.Service, containerDir string) (*types.Pro
 		Name:        name,
 		Image:       cs.Image,
 		Environment: sliceToEnv(cs.Env),
+		Entrypoint:  types.ShellCommand(cs.Command),
 		Command:     types.ShellCommand(cs.Args),
+		WorkingDir:  cs.Dir,
+		User:        cs.User,
+		Hostname:    cs.Hostname,
+		ExtraHosts:  swarmExtraHostsToMap(cs.Hosts),
+		Tty:         cs.TTY,
+		StdinOpen:   cs.OpenStdin,
+		ReadOnly:    cs.ReadOnly,
+		StopSignal:  cs.StopSignal,
+		Sysctls:     types.Mapping(cs.Sysctls),
+		CapAdd:      cs.CapabilityAdd,
+		CapDrop:     cs.CapabilityDrop,
 		Labels:      spec.Labels,
+	}
+
+	if cs.DNSConfig != nil {
+		composeSvc.DNS = types.StringList(cs.DNSConfig.Nameservers)
+		composeSvc.DNSOpts = cs.DNSConfig.Options
+		composeSvc.DNSSearch = types.StringList(cs.DNSConfig.Search)
 	}
 
 	if spec.Mode.Global != nil {
@@ -349,11 +375,53 @@ func applyInspectResources(svc *types.ServiceConfig, info container.InspectRespo
 	if info.HostConfig.Memory == 0 && info.HostConfig.NanoCPUs == 0 {
 		return
 	}
-	svc.Deploy = &types.DeployConfig{
-		Resources: types.Resources{Limits: &types.Resource{
-			MemoryBytes: types.UnitBytes(info.HostConfig.Memory),
-			NanoCPUs:    types.NanoCPUs(float64(info.HostConfig.NanoCPUs) / 1e9),
-		}},
+	ensureDeploy(svc)
+	svc.Deploy.Resources.Limits = &types.Resource{
+		MemoryBytes: types.UnitBytes(info.HostConfig.Memory),
+		NanoCPUs:    types.NanoCPUs(float64(info.HostConfig.NanoCPUs) / 1e9),
+	}
+}
+
+func inspectDeviceMappings(devices []container.DeviceMapping) []types.DeviceMapping {
+	if len(devices) == 0 {
+		return nil
+	}
+	result := make([]types.DeviceMapping, 0, len(devices))
+	for _, dev := range devices {
+		result = append(result, types.DeviceMapping{
+			Source:      dev.PathOnHost,
+			Target:      dev.PathInContainer,
+			Permissions: dev.CgroupPermissions,
+		})
+	}
+	return result
+}
+
+func applyInspectDeviceRequests(svc *types.ServiceConfig, info container.InspectResponse) {
+	if len(info.HostConfig.DeviceRequests) == 0 {
+		return
+	}
+	ensureDeploy(svc)
+	if svc.Deploy.Resources.Reservations == nil {
+		svc.Deploy.Resources.Reservations = &types.Resource{}
+	}
+	for _, req := range info.HostConfig.DeviceRequests {
+		var caps []string
+		if len(req.Capabilities) > 0 {
+			caps = req.Capabilities[0]
+		}
+		svc.Deploy.Resources.Reservations.Devices = append(svc.Deploy.Resources.Reservations.Devices, types.DeviceRequest{
+			Driver:       req.Driver,
+			Count:        types.DeviceCount(req.Count),
+			IDs:          req.DeviceIDs,
+			Capabilities: caps,
+		})
+	}
+}
+
+func ensureDeploy(svc *types.ServiceConfig) {
+	if svc.Deploy == nil {
+		svc.Deploy = &types.DeployConfig{}
 	}
 }
 
@@ -429,11 +497,28 @@ func extraHostsToMap(hosts []string) types.HostsList {
 	if len(hosts) == 0 {
 		return nil
 	}
-	result := make(types.HostsList, len(hosts))
-	for _, h := range hosts {
-		parts := strings.SplitN(h, ":", 2)
+	result := types.HostsList{}
+	for _, host := range hosts {
+		parts := strings.SplitN(host, ":", 2)
 		if len(parts) == 2 && parts[0] != "" && parts[1] != "" {
 			result[parts[0]] = append(result[parts[0]], parts[1])
+		}
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
+func swarmExtraHostsToMap(hosts []string) types.HostsList {
+	if len(hosts) == 0 {
+		return nil
+	}
+	result := types.HostsList{}
+	for _, host := range hosts {
+		fields := strings.Fields(host)
+		if len(fields) >= 2 && fields[0] != "" && fields[1] != "" {
+			result[fields[1]] = append(result[fields[1]], fields[0])
 		}
 	}
 	if len(result) == 0 {

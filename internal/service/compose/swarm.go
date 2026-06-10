@@ -26,9 +26,9 @@ func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployRe
 	}
 	projectName := project.Name
 	if projectName == "" || projectName == "." {
-		projectName = shortHash(req.Content)
+		projectName = compose.ShortHash(req.Content)
 	}
-	if err := ValidateName(projectName); err != nil {
+	if err := compose.ValidateProjectName(projectName); err != nil {
 		return nil, err
 	}
 
@@ -51,11 +51,11 @@ func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployRe
 	if err := os.MkdirAll(installDir, 0755); err != nil {
 		return nil, fmt.Errorf("创建安装目录失败: %w", err)
 	}
-	if err := s.initFileHandle(installDir, req); err != nil {
+	if err := compose.InitFilesHandle(installDir, compose.InitPayload{URL: req.InitURL, File: req.InitFile}); err != nil {
 		return nil, err
 	}
 
-	project, err = s.projectLoad(ctx, projectName, req.Content, installDir)
+	project, err = compose.ProjectLoad(ctx, projectName, req.Content, installDir)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployRe
 
 // SwarmContent 读取项目的 compose.yml；文件不存在时从运行态反推。
 func (s *Service) SwarmContent(ctx context.Context, name string) (string, error) {
-	if err := ValidateName(name); err != nil {
+	if err := compose.ValidateProjectName(name); err != nil {
 		return "", err
 	}
 	root := s.docker.ContainerRoot()
@@ -118,7 +118,7 @@ func (s *Service) SwarmContent(ctx context.Context, name string) (string, error)
 // req.ServiceName + req.Image 非空时：仅更新指定服务的镜像后全量重建；
 // 否则：用 req.Content 全量重建。
 func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRequest) (*DeployResult, error) {
-	if err := ValidateName(name); err != nil {
+	if err := compose.ValidateProjectName(name); err != nil {
 		return nil, err
 	}
 	if err := req.Validate(); err != nil {
@@ -138,7 +138,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 		if err != nil {
 			return nil, err
 		}
-		content, err = updateServiceImage(ctx, name, oldContent, req.ServiceName, req.Image)
+		content, err = compose.UpdateServiceImage(ctx, name, oldContent, req.ServiceName, req.Image)
 		if err != nil {
 			return nil, err
 		}
@@ -147,7 +147,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	oldContent, _ := s.SwarmContent(ctx, name)
 
 	// 先解析新 content 校验合法性（不写文件、不删旧实例），失败时旧服务保持运行
-	newProject, err := s.projectParse(ctx, name, content, installDir)
+	newProject, err := compose.ProjectParse(ctx, name, content, installDir)
 	if err != nil {
 		return nil, err
 	}
@@ -163,10 +163,10 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 
 	rollback := func() {
 		s.swarmRollback(ctx, name, oldContent, installDir)
-		s.contentSave(installDir, oldContent, "")
+		compose.ContentSave(installDir, oldContent, "")
 	}
 
-	project, err := s.projectLoad(ctx, name, content, installDir)
+	project, err := compose.ProjectLoad(ctx, name, content, installDir)
 	if err != nil {
 		rollback()
 		return nil, err
@@ -178,7 +178,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 		return nil, err
 	}
 
-	s.contentSave(installDir, content, oldContent)
+	compose.ContentSave(installDir, content, oldContent)
 
 	logman.Info("Swarm compose redeployed", "name", name)
 	return &DeployResult{ProjectName: name, Items: items, InstallDir: installDir}, nil
@@ -220,15 +220,15 @@ func (s *Service) swarmServicesCreate(ctx context.Context, project *types.Projec
 // swarmServiceCreate 根据 compose service 创建对应 Swarm 服务。
 // 不负责镜像拉取，调用前须确保镜像已存在。
 func (s *Service) swarmServiceCreate(ctx context.Context, project *types.Project, svc types.ServiceConfig) (string, string, error) {
-	req, err := compose.ServiceToSwarmRequest(project, svc)
+	spec, err := compose.ServiceToSwarmSpec(project, svc)
 	if err != nil {
 		return "", "", err
 	}
-	id, err := s.swarm.ServiceCreate(ctx, req)
+	id, err := s.swarm.ServiceCreate(ctx, spec)
 	if err != nil {
-		return "", "", fmt.Errorf("创建服务 %s 失败: %w", req.Name, err)
+		return "", "", fmt.Errorf("创建服务 %s 失败: %w", spec.Name, err)
 	}
-	return id, req.Name, nil
+	return id, spec.Name, nil
 }
 
 // swarmServicesRemove 移除 project 中的所有 Swarm 服务
@@ -250,7 +250,7 @@ func (s *Service) swarmRollback(ctx context.Context, name, content, installDir s
 	if content == "" {
 		return
 	}
-	project, err := s.projectParse(ctx, name, content, installDir)
+	project, err := compose.ProjectParse(ctx, name, content, installDir)
 	if err != nil {
 		logman.Warn("Rollback load project failed", "name", name, "error", err)
 		return

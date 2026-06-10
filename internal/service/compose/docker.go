@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/compose-spec/compose-go/v2/types"
-	"github.com/docker/docker/api/types/container"
 	v1 "github.com/moby/docker-image-spec/specs-go/v1"
 	"github.com/rehiy/libgo/logman"
 
@@ -29,9 +28,9 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 	}
 	projectName := project.Name
 	if projectName == "" || projectName == "." {
-		projectName = shortHash(req.Content)
+		projectName = compose.ShortHash(req.Content)
 	}
-	if err := ValidateName(projectName); err != nil {
+	if err := compose.ValidateProjectName(projectName); err != nil {
 		return nil, err
 	}
 
@@ -54,11 +53,11 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 	if err := os.MkdirAll(installDir, 0755); err != nil {
 		return nil, fmt.Errorf("创建安装目录失败: %w", err)
 	}
-	if err := s.initFileHandle(installDir, req); err != nil {
+	if err := compose.InitFilesHandle(installDir, compose.InitPayload{URL: req.InitURL, File: req.InitFile}); err != nil {
 		return nil, err
 	}
 
-	project, err = s.projectLoad(ctx, projectName, req.Content, installDir)
+	project, err = compose.ProjectLoad(ctx, projectName, req.Content, installDir)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +66,7 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 	}
 
 	for _, svc := range project.Services {
-		cname := dockerContainerNameOf(svc)
+		cname := compose.DockerContainerNameOf(svc)
 		if _, err := s.docker.ContainerInspectRaw(ctx, cname); err == nil {
 			return nil, fmt.Errorf("容器 %s 已存在，请使用重部署接口", cname)
 		}
@@ -88,7 +87,7 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 }
 
 func (s *Service) DockerContent(ctx context.Context, name string) (string, string, error) {
-	if err := ValidateName(name); err != nil {
+	if err := compose.ValidateProjectName(name); err != nil {
 		return "", "", err
 	}
 	root := s.docker.ContainerRoot()
@@ -125,7 +124,7 @@ func (s *Service) DockerContent(ctx context.Context, name string) (string, strin
 // DockerRedeploy 重建 Docker Compose 项目。
 // ServiceName+Image 非空时仅更新指定服务镜像，否则用 Content 全量重建。
 func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployRequest) (*DeployResult, error) {
-	if err := ValidateName(name); err != nil {
+	if err := compose.ValidateProjectName(name); err != nil {
 		return nil, err
 	}
 	if err := req.Validate(); err != nil {
@@ -147,7 +146,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		if err != nil {
 			return nil, err
 		}
-		content, err = updateServiceImage(ctx, name, oldContent, req.ServiceName, req.Image)
+		content, err = compose.UpdateServiceImage(ctx, name, oldContent, req.ServiceName, req.Image)
 		if err != nil {
 			return nil, err
 		}
@@ -156,7 +155,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	oldContent, _, _ := s.DockerContent(ctx, name)
 
 	// 先校验新 content，失败时旧服务保持运行
-	newProject, err := s.projectParse(ctx, name, content, installDir)
+	newProject, err := compose.ProjectParse(ctx, name, content, installDir)
 	if err != nil {
 		return nil, err
 	}
@@ -171,10 +170,10 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 
 	rollback := func() {
 		s.dockerRollback(ctx, name, oldContent, installDir)
-		s.contentSave(installDir, oldContent, "")
+		compose.ContentSave(installDir, oldContent, "")
 	}
 
-	project, err := s.projectLoad(ctx, name, content, installDir)
+	project, err := compose.ProjectLoad(ctx, name, content, installDir)
 	if err != nil {
 		rollback()
 		return nil, err
@@ -186,44 +185,13 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		return nil, err
 	}
 
-	s.contentSave(installDir, content, oldContent)
+	compose.ContentSave(installDir, content, oldContent)
 
 	logman.Info("Compose redeployed", "name", name)
 	return &DeployResult{ProjectName: name, Items: items, InstallDir: installDir}, nil
 }
 
 // ==================== 辅助函数 ====================
-
-func dockerContainerNameOf(svc types.ServiceConfig) string {
-	if svc.ContainerName != "" {
-		return svc.ContainerName
-	}
-	return svc.Name
-}
-
-func dockerContainerNameCandidates(projectName string, svc types.ServiceConfig) []string {
-	candidates := []string{dockerContainerNameOf(svc)}
-	if svc.ContainerName == "" {
-		candidates = append(candidates,
-			svc.Name,
-			fmt.Sprintf("%s-%s-1", projectName, svc.Name),
-			fmt.Sprintf("%s_%s_1", projectName, svc.Name),
-		)
-	}
-	result := make([]string, 0, len(candidates))
-	seen := map[string]struct{}{}
-	for _, name := range candidates {
-		if name == "" {
-			continue
-		}
-		if _, ok := seen[name]; ok {
-			continue
-		}
-		seen[name] = struct{}{}
-		result = append(result, name)
-	}
-	return result
-}
 
 // dockerServicesCreate 批量创建 project 中的所有容器，失败时回滚。
 func (s *Service) dockerServicesCreate(ctx context.Context, project *types.Project) ([]string, error) {
@@ -257,15 +225,15 @@ func (s *Service) dockerServicesCreate(ctx context.Context, project *types.Proje
 
 // dockerServiceCreate 根据 compose service 创建对应 Docker 容器（不负责镜像拉取）。
 func (s *Service) dockerServiceCreate(ctx context.Context, project *types.Project, svc types.ServiceConfig) (string, string, error) {
-	req, err := compose.ServiceToDockerRequest(project, svc)
+	spec, err := compose.ServiceToDockerCreateSpec(project, svc)
 	if err != nil {
 		return "", "", err
 	}
-	id, err := s.docker.ContainerCreate(ctx, req)
+	id, err := s.docker.ContainerCreate(ctx, spec.Name, spec.Config, spec.HostConfig, spec.NetworkingConfig)
 	if err != nil {
-		return "", "", fmt.Errorf("创建容器 %s 失败: %w", req.Name, err)
+		return "", "", fmt.Errorf("创建容器 %s 失败: %w", spec.Name, err)
 	}
-	return id, req.Name, nil
+	return id, spec.Name, nil
 }
 
 // dockerContainersRemove 移除 project 中的所有 Docker 容器
@@ -299,7 +267,7 @@ func (s *Service) dockerContainersRemove(ctx context.Context, name, content stri
 		project, err := compose.LoadProjectFromContent(ctx, content, name)
 		if err == nil {
 			for _, svc := range project.Services {
-				for _, cname := range dockerContainerNameCandidates(name, svc) {
+				for _, cname := range compose.DockerContainerNameCandidates(name, svc) {
 					info, err := s.docker.ContainerInspectRaw(ctx, cname)
 					if err != nil {
 						continue
@@ -308,7 +276,7 @@ func (s *Service) dockerContainersRemove(ctx context.Context, name, content stri
 						continue
 					}
 					// 归属其他项目，拒绝删除
-					if p := dockerComposeProjectName(info); p != "" && p != name {
+					if p := compose.DockerComposeProjectName(info); p != "" && p != name {
 						logman.Warn("Skip removing container belonging to another project",
 							"container", cname, "container_project", p, "expected_project", name)
 						continue
@@ -334,8 +302,8 @@ func (s *Service) dockerProjectName(ctx context.Context, name, root string) stri
 	if info, err := s.docker.ContainerInspectRaw(ctx, name); err == nil {
 		containerName := strings.TrimPrefix(info.Name, "/")
 		if containerName == name {
-			if projectName := dockerComposeProjectName(info); projectName != "" {
-				if err := ValidateName(projectName); err == nil {
+			if projectName := compose.DockerComposeProjectName(info); projectName != "" {
+				if err := compose.ValidateProjectName(projectName); err == nil {
 					return projectName
 				}
 				logman.Warn("Ignore invalid compose project label", "container", name, "project", projectName)
@@ -377,19 +345,12 @@ func (s *Service) dockerProjectContentFromContainers(ctx context.Context, projec
 	return string(data), true, nil
 }
 
-func dockerComposeProjectName(info container.InspectResponse) string {
-	if info.Config == nil || info.Config.Labels == nil {
-		return ""
-	}
-	return info.Config.Labels[compose.ComposeProjectLabel]
-}
-
 // dockerRollback 用指定配置内容重建容器（回滚用）
 func (s *Service) dockerRollback(ctx context.Context, name, content, installDir string) {
 	if content == "" {
 		return
 	}
-	project, err := s.projectParse(ctx, name, content, installDir)
+	project, err := compose.ProjectParse(ctx, name, content, installDir)
 	if err != nil {
 		logman.Warn("Rollback load project failed", "name", name, "error", err)
 		return

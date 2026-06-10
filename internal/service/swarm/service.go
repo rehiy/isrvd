@@ -4,10 +4,68 @@ package swarm
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
+	"github.com/docker/docker/api/types/mount"
+	dockerswarm "github.com/docker/docker/api/types/swarm"
 
 	"isrvd/internal/registry"
 	pkgswarm "isrvd/pkgs/swarm"
 )
+
+// ServiceInfo 服务列表信息（精简视图），保持前端稳定响应结构。
+type ServiceInfo struct {
+	ID           string        `json:"id"`
+	Name         string        `json:"name"`
+	Image        string        `json:"image"`
+	Mode         string        `json:"mode"`
+	Replicas     *uint64       `json:"replicas"`
+	RunningTasks int           `json:"runningTasks"`
+	Ports        []ServicePort `json:"ports"`
+	CreatedAt    string        `json:"createdAt"`
+	UpdatedAt    string        `json:"updatedAt"`
+}
+
+// ServiceDetail 服务详情（完整视图）。
+type ServiceDetail struct {
+	ServiceSpec
+	ID           string `json:"id"`
+	RunningTasks int    `json:"runningTasks"`
+	CreatedAt    string `json:"createdAt"`
+	UpdatedAt    string `json:"updatedAt"`
+}
+
+// ServiceSpec 服务可写配置（创建/更新共用），保持 HTTP API 兼容。
+type ServiceSpec struct {
+	Name        string            `json:"name"`
+	Image       string            `json:"image"`
+	Mode        string            `json:"mode"`
+	Replicas    *uint64           `json:"replicas"`
+	Env         []string          `json:"env"`
+	Args        []string          `json:"args"`
+	Networks    []string          `json:"networks"`
+	Ports       []ServicePort     `json:"ports"`
+	Mounts      []ServiceMount    `json:"mounts"`
+	Labels      map[string]string `json:"labels"`
+	Constraints []string          `json:"constraints"`
+}
+
+// ServicePort 服务端口信息。
+type ServicePort struct {
+	Protocol      string `json:"protocol"`
+	TargetPort    uint32 `json:"targetPort"`
+	PublishedPort uint32 `json:"publishedPort"`
+	PublishMode   string `json:"publishMode"`
+}
+
+// ServiceMount 服务挂载信息。
+type ServiceMount struct {
+	Type     string `json:"type"`
+	Source   string `json:"source"`
+	Target   string `json:"target"`
+	ReadOnly bool   `json:"readOnly"`
+}
 
 // Service Swarm 业务服务
 type Service struct {
@@ -90,16 +148,21 @@ func (s *Service) NodeInspect(ctx context.Context, id string) (*pkgswarm.NodeDet
 }
 
 // ServiceList 获取服务列表
-func (s *Service) ServiceList(ctx context.Context) ([]pkgswarm.ServiceInfo, error) {
+func (s *Service) ServiceList(ctx context.Context) ([]ServiceInfo, error) {
 	list, err := s.svc.ServiceList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("获取服务列表失败: %w", err)
 	}
-	return list, nil
+	runningMap := s.svc.ServiceRunningTasksMap(ctx)
+	result := make([]ServiceInfo, 0, len(list))
+	for _, svc := range list {
+		result = append(result, serviceInfoFromRaw(svc, runningMap[svc.ID]))
+	}
+	return result, nil
 }
 
 // ServiceInspect 获取服务详情
-func (s *Service) ServiceInspect(ctx context.Context, id string) (*pkgswarm.ServiceDetail, error) {
+func (s *Service) ServiceInspect(ctx context.Context, id string) (*ServiceDetail, error) {
 	if id == "" {
 		return nil, fmt.Errorf("缺少服务 ID")
 	}
@@ -107,22 +170,163 @@ func (s *Service) ServiceInspect(ctx context.Context, id string) (*pkgswarm.Serv
 	if err != nil {
 		return nil, fmt.Errorf("获取服务详情失败: %w", err)
 	}
-	return detail, nil
+	return serviceDetailFromRaw(detail, s.svc.ServiceRunningTasks(ctx, detail.ID)), nil
 }
 
-// ServiceCreate 创建服务
-func (s *Service) ServiceCreate(ctx context.Context, req pkgswarm.ServiceSpec) (string, error) {
+// ServiceCreate 创建服务。
+func (s *Service) ServiceCreate(ctx context.Context, req ServiceSpec) (string, error) {
 	if req.Name == "" {
 		return "", fmt.Errorf("服务名称不能为空")
 	}
 	if req.Image == "" {
 		return "", fmt.Errorf("镜像名称不能为空")
 	}
-	id, err := s.svc.ServiceCreate(ctx, req)
+	id, err := s.svc.ServiceCreate(ctx, serviceSpecToRaw(req))
 	if err != nil {
 		return "", fmt.Errorf("创建服务失败: %w", err)
 	}
 	return id, nil
+}
+
+// ServiceCreateRaw 使用 Docker SDK 原始结构创建服务，供 Compose 部署链路复用。
+func (s *Service) ServiceCreateRaw(ctx context.Context, spec dockerswarm.ServiceSpec) (string, error) {
+	if spec.Name == "" {
+		return "", fmt.Errorf("服务名称不能为空")
+	}
+	if spec.TaskTemplate.ContainerSpec == nil || spec.TaskTemplate.ContainerSpec.Image == "" {
+		return "", fmt.Errorf("镜像名称不能为空")
+	}
+	id, err := s.svc.ServiceCreate(ctx, spec)
+	if err != nil {
+		return "", fmt.Errorf("创建服务失败: %w", err)
+	}
+	return id, nil
+}
+
+func serviceInfoFromRaw(svc dockerswarm.Service, runningTasks int) ServiceInfo {
+	info := ServiceInfo{
+		ID:           svc.ID,
+		Name:         svc.Spec.Name,
+		Mode:         "replicated",
+		RunningTasks: runningTasks,
+		CreatedAt:    svc.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:    svc.UpdatedAt.Format(time.RFC3339),
+	}
+	if svc.Spec.TaskTemplate.ContainerSpec != nil {
+		info.Image = svc.Spec.TaskTemplate.ContainerSpec.Image
+	}
+	if svc.Spec.Mode.Global != nil {
+		info.Mode = "global"
+	} else if svc.Spec.Mode.Replicated != nil {
+		info.Replicas = svc.Spec.Mode.Replicated.Replicas
+	}
+	for _, p := range svc.Endpoint.Ports {
+		if p.PublishedPort == 0 && p.TargetPort == 0 {
+			continue
+		}
+		info.Ports = append(info.Ports, ServicePort{
+			Protocol:      string(p.Protocol),
+			TargetPort:    p.TargetPort,
+			PublishedPort: p.PublishedPort,
+			PublishMode:   string(p.PublishMode),
+		})
+	}
+	return info
+}
+
+func serviceDetailFromRaw(svc dockerswarm.Service, runningTasks int) *ServiceDetail {
+	info := serviceInfoFromRaw(svc, runningTasks)
+	detail := &ServiceDetail{
+		ServiceSpec: ServiceSpec{
+			Name:     info.Name,
+			Image:    info.Image,
+			Mode:     info.Mode,
+			Replicas: info.Replicas,
+		},
+		ID:           info.ID,
+		RunningTasks: info.RunningTasks,
+		CreatedAt:    info.CreatedAt,
+		UpdatedAt:    info.UpdatedAt,
+	}
+	if svc.Spec.TaskTemplate.ContainerSpec != nil {
+		detail.Env = svc.Spec.TaskTemplate.ContainerSpec.Env
+		detail.Args = svc.Spec.TaskTemplate.ContainerSpec.Args
+		detail.Labels = svc.Spec.Labels
+		for _, mt := range svc.Spec.TaskTemplate.ContainerSpec.Mounts {
+			detail.Mounts = append(detail.Mounts, ServiceMount{
+				Type:     string(mt.Type),
+				Source:   mt.Source,
+				Target:   mt.Target,
+				ReadOnly: mt.ReadOnly,
+			})
+		}
+	}
+	for _, n := range svc.Spec.TaskTemplate.Networks {
+		detail.Networks = append(detail.Networks, n.Target)
+	}
+	if svc.Spec.TaskTemplate.Placement != nil {
+		detail.Constraints = svc.Spec.TaskTemplate.Placement.Constraints
+	}
+	detail.Ports = info.Ports
+	return detail
+}
+
+func serviceSpecToRaw(req ServiceSpec) dockerswarm.ServiceSpec {
+	spec := dockerswarm.ServiceSpec{
+		Annotations: dockerswarm.Annotations{Name: req.Name, Labels: req.Labels},
+		TaskTemplate: dockerswarm.TaskSpec{
+			ContainerSpec: &dockerswarm.ContainerSpec{
+				Image: req.Image,
+				Env:   req.Env,
+				Args:  req.Args,
+			},
+		},
+		EndpointSpec: &dockerswarm.EndpointSpec{},
+	}
+	if req.Mode == "global" {
+		spec.Mode = dockerswarm.ServiceMode{Global: &dockerswarm.GlobalService{}}
+	} else {
+		replicas := uint64(1)
+		if req.Replicas != nil && *req.Replicas > 0 {
+			replicas = *req.Replicas
+		}
+		spec.Mode = dockerswarm.ServiceMode{Replicated: &dockerswarm.ReplicatedService{Replicas: &replicas}}
+	}
+	for _, p := range req.Ports {
+		proto := dockerswarm.PortConfigProtocolTCP
+		if strings.EqualFold(p.Protocol, "udp") {
+			proto = dockerswarm.PortConfigProtocolUDP
+		}
+		publishMode := dockerswarm.PortConfigPublishModeIngress
+		if strings.EqualFold(p.PublishMode, "host") {
+			publishMode = dockerswarm.PortConfigPublishModeHost
+		}
+		spec.EndpointSpec.Ports = append(spec.EndpointSpec.Ports, dockerswarm.PortConfig{
+			Protocol:      proto,
+			PublishedPort: p.PublishedPort,
+			TargetPort:    p.TargetPort,
+			PublishMode:   publishMode,
+		})
+	}
+	for _, mt := range req.Mounts {
+		mountType := mount.TypeBind
+		if mt.Type == "volume" {
+			mountType = mount.TypeVolume
+		}
+		spec.TaskTemplate.ContainerSpec.Mounts = append(spec.TaskTemplate.ContainerSpec.Mounts, mount.Mount{
+			Type:     mountType,
+			Source:   mt.Source,
+			Target:   mt.Target,
+			ReadOnly: mt.ReadOnly,
+		})
+	}
+	for _, n := range req.Networks {
+		spec.TaskTemplate.Networks = append(spec.TaskTemplate.Networks, dockerswarm.NetworkAttachmentConfig{Target: n})
+	}
+	if len(req.Constraints) > 0 {
+		spec.TaskTemplate.Placement = &dockerswarm.Placement{Constraints: req.Constraints}
+	}
+	return spec
 }
 
 // ServiceAction 服务操作

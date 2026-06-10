@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	pkgswarm "isrvd/pkgs/swarm"
+	svcSwarm "isrvd/internal/service/swarm"
 )
 
 // defineSwarmRoutes 定义 Swarm 模块路由
@@ -93,7 +93,7 @@ func (app *App) swarmServiceInspect(c *gin.Context) {
 }
 
 func (app *App) swarmServiceCreate(c *gin.Context) {
-	var req pkgswarm.ServiceSpec
+	var req svcSwarm.ServiceSpec
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return

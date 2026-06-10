@@ -78,9 +78,24 @@ isrvd_get "/compose/docker/<PROJECT>"
 isrvd_get "/compose/docker/<CONTAINER_NAME>"
 ```
 
-Docker Compose 中的相对 bind path 会基于容器目录 `docker.containerRoot/<PROJECT>` 解析，部署、全量重部署、按服务更新镜像和失败回滚保持一致。
+Docker Compose 中的相对 bind path 会基于容器目录 `docker.containerRoot/<PROJECT>` 解析，部署、全量重部署、按服务更新镜像和失败回滚保持一致。后端统一使用 compose-go loader 解析与标准化 YAML，再直接生成 Docker SDK `container.Config` / `container.HostConfig` 或 `swarm.ServiceSpec` 原始结构；`entrypoint`、`command`、`dns`、`dns_opt`、`dns_search`、`extra_hosts`、`tty`、`stdin_open`、`read_only`、`stop_signal`、`sysctls`、`device_cgroup_rules`、`devices`、`cap_add`、`cap_drop`、`deploy.resources` 等字段不再经过 iSrvd 自定义中间 DTO。
 
-当 `compose.yml` 不存在、需要从运行态反推生成时，bind mount 的 `source` 会按该容器目录输出为相对路径（例如 `./data`）；只有路径不在容器目录内时才保留宿主机绝对路径。命名卷输出卷名，不输出 Docker 内部挂载目录。
+Docker Compose 部署会将 `deploy.resources.reservations.devices` 映射为 Docker `HostConfig.DeviceRequests`。GPU 场景可使用：
+
+```yaml
+services:
+  worker:
+    image: nvidia/cuda:12.4.1-base-ubuntu22.04
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+```
+
+当 `compose.yml` 不存在、需要从运行态反推生成时，bind mount 的 `source` 会按该容器目录输出为相对路径（例如 `./data`）；只有路径不在容器目录内时才保留宿主机绝对路径。命名卷输出卷名，不输出 Docker 内部挂载目录，`--device` 会反推到 Compose `devices`，GPU 设备请求会反推到 `deploy.resources.reservations.devices`。
 
 外部 Compose 项目接管说明：
 
@@ -131,7 +146,7 @@ isrvd_post "/compose/swarm/deploy" '{"content":"<COMPOSE_YAML>","initURL":"<HTTP
 isrvd_get "/compose/swarm/<NAME>"
 ```
 
-Swarm Compose 与 Docker Compose 共用容器目录 `docker.containerRoot/<NAME>`：相对 bind path 基于该目录解析；从运行态反推时也按此目录输出相对路径。注意 Swarm 是分布式部署，落盘目录仅在主节点；非主节点上的相对 bind path 需各节点自行准备。
+Swarm Compose 与 Docker Compose 共用容器目录 `docker.containerRoot/<NAME>`：相对 bind path 基于该目录解析；从运行态反推时也按此目录输出相对路径。注意 Swarm 是分布式部署，落盘目录仅在主节点；非主节点上的相对 bind path 需各节点自行准备。Swarm Stack 暂不映射 Docker 单机 `--gpus` / `HostConfig.DeviceRequests` 语义；GPU 调度需通过 Docker Swarm generic resources 等集群级配置另行管理。
 
 ### 重部署
 

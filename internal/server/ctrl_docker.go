@@ -76,7 +76,7 @@ func (app *App) dockerContainerList(c *gin.Context) {
 }
 
 func (app *App) dockerContainerCreate(c *gin.Context) {
-	var req pkgdocker.ContainerSpec
+	var req svcDocker.ContainerSpec
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
