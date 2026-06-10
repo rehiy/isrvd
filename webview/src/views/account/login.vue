@@ -39,12 +39,19 @@ class Login extends Vue {
             }
             if (!payload.token) return
 
+            // 使用默认密码登录，在清空表单之前检测
+            const isDefaultPassword = this.loginForm.password === 'admin'
+
             this.portal.setAuth({ authMode: 'jwt', token: payload.token, username: payload.username })
             await this.portal.initialize()
             this.loginForm.username = ''
             this.loginForm.password = ''
             this.totpForm.code = ''
             this.twoFactorRequired = false
+            // 使用默认密码登录，跳转修改密码页面
+            if (isDefaultPassword) {
+                this.$router.push('/account/password')
+            }
         } finally {
             this.loading = false
         }

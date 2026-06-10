@@ -45,7 +45,7 @@
 
 CNB 流水线会同步推送到 CNB Docker 制品库，镜像路径为 `docker.cnb.cool/<repo-slug>:<tag>`，支持 `slim`、`caddy`、`apisix` 三个标签，其中 `slim` 同时作为 `latest`。
 
-首次启动自动生成随机密码，通过 `docker logs isrvd` 查看。
+Docker 版默认管理员账号为 `admin` / `admin`，首次登录成功后会自动跳转至修改密码页面。
 
 ### 创建网络
 

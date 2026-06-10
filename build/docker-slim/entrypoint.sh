@@ -47,13 +47,6 @@ if grep -rq '__JWT_SECRET__' "$CONF_DIR/" 2>/dev/null; then
     echo "[init] Generated random JWT secret"
 fi
 
-# 生成随机 isrvd 管理员密码（12 位字母数字）
-if grep -rq '__ISRVD_PASSWORD__' "$CONF_DIR/" 2>/dev/null; then
-    ISRVD_PASSWORD=$(head -c 12 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 12)
-    replace_placeholder '__ISRVD_PASSWORD__' "$ISRVD_PASSWORD"
-    echo "[init] Generated random isrvd admin password"
-fi
-
 # ------------------------------------------
 # 确保关键配置文件确实存在
 # ------------------------------------------
@@ -65,17 +58,16 @@ for required in isrvd.yml; do
 done
 
 # ------------------------------------------
-# 输出生成的密码信息（仅首次生成时显示）
+# 输出默认密码提示信息
 # ------------------------------------------
-if [ -n "$ISRVD_PASSWORD" ]; then
+if grep -q 'password: admin' "$CONF_DIR/isrvd.yml" 2>/dev/null; then
     echo "=========================================="
-    echo "  首次启动 - 已生成随机密码"
+    echo "  首次启动 - 默认密码为 admin"
     echo "=========================================="
     echo "  isrvd 管理员用户: admin"
-    echo "  isrvd 管理员密码: $ISRVD_PASSWORD"
+    echo "  isrvd 管理员密码: admin"
     echo ""
-    echo "  密码已写入: $CONF_DIR/isrvd.yml"
-    echo "  如需修改请编辑该文件后重启容器"
+    echo "  请登录后立即修改密码"
     echo "=========================================="
 fi
 
