@@ -227,6 +227,78 @@ func (s *Service) WhitelistRouteCreate(ctx context.Context, req WhitelistRouteCr
 	return s.RouteInspect(ctx, routeID)
 }
 
+// WhitelistUserCreateRequest 新建用户并加入白名单请求
+type WhitelistUserCreateRequest struct {
+	RouteID  string         `json:"route_id"`
+	Username string         `json:"username"`
+	Key      string         `json:"key"`
+	KeyAuth  map[string]any `json:"key_auth"`
+}
+
+// WhitelistUserCreate 原子操作：创建 Consumer（含 key-auth）并加入路由白名单。
+// 若 Consumer 已存在则直接复用，不报错，保证接口幂等。
+func (s *Service) WhitelistUserCreate(ctx context.Context, req WhitelistUserCreateRequest) (*pkgapisix.Route, error) {
+	routeID := strings.TrimSpace(req.RouteID)
+	username := strings.TrimSpace(req.Username)
+	key := strings.TrimSpace(req.Key)
+
+	if routeID == "" {
+		return nil, fmt.Errorf("路由 ID 不能为空")
+	}
+	if username == "" {
+		return nil, fmt.Errorf("用户名不能为空")
+	}
+	if key == "" {
+		return nil, fmt.Errorf("key-auth key 不能为空")
+	}
+	if len(req.KeyAuth) == 0 {
+		return nil, fmt.Errorf("key-auth 配置不能为空")
+	}
+	header, _ := req.KeyAuth["header"].(string)
+	if strings.TrimSpace(header) == "" {
+		return nil, fmt.Errorf("key-auth 请求头名称不能为空")
+	}
+
+	// 步骤一：创建 Consumer，若已存在则跳过
+	existingConsumers, err := s.client.ConsumerList(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("获取消费者列表失败: %w", err)
+	}
+	exists := false
+	for _, c := range existingConsumers {
+		if c.Username == username {
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		plugins := map[string]any{
+			"key-auth": map[string]any{"key": key},
+		}
+		if _, err := s.client.ConsumerCreate(ctx, username, "", plugins); err != nil {
+			return nil, fmt.Errorf("创建消费者失败: %w", err)
+		}
+	}
+
+	// 步骤二：将 Consumer 加入路由白名单
+	route, err := s.client.RouteInspect(ctx, routeID)
+	if err != nil {
+		return nil, fmt.Errorf("获取路由详情失败: %w", err)
+	}
+	consumers := route.Consumers
+	for _, c := range consumers {
+		if c == username {
+			// 已在白名单中，直接返回当前路由
+			return route, nil
+		}
+	}
+	consumers = append(consumers, username)
+	if err := s.client.RouteConsumerRestrictionUpdate(ctx, routeID, consumers, req.KeyAuth); err != nil {
+		return nil, fmt.Errorf("配置白名单失败: %w", err)
+	}
+	return s.RouteInspect(ctx, routeID)
+}
+
 // WhitelistList 获取白名单
 func (s *Service) WhitelistList(ctx context.Context) ([]pkgapisix.Route, error) {
 	list, err := s.client.RouteWhitelist(ctx)

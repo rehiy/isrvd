@@ -47,8 +47,9 @@ import type {
     ApisixUpstreamUpdate,
     ApisixUpstream,
     ApisixPluginConfig,
-    ApisixRevokeWhitelist,
+    ApisixWhitelistUserDelete,
     ApisixCreateWhitelist,
+    ApisixWhitelistUserCreate,
     // Caddy
     CaddyInfo,
     CaddyGlobal,
@@ -355,8 +356,12 @@ class ApiService {
         return http.post<ApisixRoute>('apisix/whitelist', payload)
     }
 
-    apisixWhitelistRevoke(payload: ApisixRevokeWhitelist) {
-        return http.post<void>('apisix/whitelist/revoke', payload)
+    apisixWhitelistUserCreate(payload: ApisixWhitelistUserCreate) {
+        return http.post<ApisixRoute>('apisix/whitelist/user', payload)
+    }
+
+    apisixWhitelistUserDelete(payload: ApisixWhitelistUserDelete) {
+        return http.delete<void>('apisix/whitelist/user', { params: payload })
     }
 
     // PluginConfig 管理

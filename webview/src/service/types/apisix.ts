@@ -131,7 +131,14 @@ export type ApisixSSLCreate = ApisixSSL
 
 export type ApisixSSLUpdate = ApisixSSL
 
-export interface ApisixRevokeWhitelist {
+export interface ApisixWhitelistUserCreate {
+    route_id: string
+    username: string
+    key: string
+    key_auth: ApisixKeyAuthConfig
+}
+
+export interface ApisixWhitelistUserDelete {
     route_id: string
     consumer_name: string
 }

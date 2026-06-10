@@ -27,7 +27,8 @@ func (app *App) defineApisixRoutes() []Route {
 		// 白名单
 		{Method: "GET", Path: "/apisix/whitelist", Handler: app.apisixWhitelistList, Module: "apisix", Label: "查询 APISIX 白名单"},
 		{Method: "POST", Path: "/apisix/whitelist", Handler: app.apisixWhitelistCreate, Module: "apisix", Label: "配置 APISIX 路由白名单"},
-		{Method: "POST", Path: "/apisix/whitelist/revoke", Handler: app.apisixWhitelistRevoke, Module: "apisix", Label: "撤销 APISIX 白名单授权"},
+		{Method: "POST", Path: "/apisix/whitelist/user", Handler: app.apisixWhitelistUserCreate, Module: "apisix", Label: "新建用户并加入 APISIX 白名单"},
+		{Method: "DELETE", Path: "/apisix/whitelist/user", Handler: app.apisixWhitelistRevoke, Module: "apisix", Label: "撤销 APISIX 白名单授权"},
 		// PluginConfig 管理
 		{Method: "GET", Path: "/apisix/plugin-configs", Handler: app.apisixPluginConfigList, Module: "apisix", Label: "查询 APISIX 插件配置列表"},
 		{Method: "GET", Path: "/apisix/plugin-config/:id", Handler: app.apisixPluginConfigInspect, Module: "apisix", Label: "获取 APISIX 插件配置详情"},
@@ -195,16 +196,28 @@ func (app *App) apisixWhitelistCreate(c *gin.Context) {
 	respondSuccess(c, "白名单配置成功", result)
 }
 
-func (app *App) apisixWhitelistRevoke(c *gin.Context) {
-	var req struct {
-		RouteID      string `json:"route_id" binding:"required"`
-		ConsumerName string `json:"consumer_name" binding:"required"`
-	}
+func (app *App) apisixWhitelistUserCreate(c *gin.Context) {
+	var req apisixsvc.WhitelistUserCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.apisixSvc.WhitelistRevoke(c.Request.Context(), req.RouteID, req.ConsumerName); err != nil {
+	result, err := app.apisixSvc.WhitelistUserCreate(c.Request.Context(), req)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "用户创建并加入白名单成功", result)
+}
+
+func (app *App) apisixWhitelistRevoke(c *gin.Context) {
+	routeID := c.Query("route_id")
+	consumerName := c.Query("consumer_name")
+	if routeID == "" || consumerName == "" {
+		respondError(c, http.StatusBadRequest, "route_id 和 consumer_name 不能为空")
+		return
+	}
+	if err := app.apisixSvc.WhitelistRevoke(c.Request.Context(), routeID, consumerName); err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}

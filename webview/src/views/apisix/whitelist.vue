@@ -182,6 +182,7 @@ class Whitelist extends Vue {
                 this.addUser.loading = false
             }
         } else {
+            // ── 新建用户模式：由后端原子接口完成「创建 Consumer + 加入白名单」两步操作 ──
             const username = this.addUser.newUsername.trim()
             const key = this.addUser.newKey.trim()
             if (!username) return this.portal.showNotification('error', '请输入用户名')
@@ -192,21 +193,16 @@ class Whitelist extends Vue {
 
             this.addUser.loading = true
             try {
-                // 先创建 Consumer
-                const created = await api.apisixConsumerCreate({
-                    username,
-                    plugins: { 'key-auth': { key } },
-                })
-                if (created.payload) this.consumers.push(created.payload)
-                this.portal.showNotification('success', `Consumer "${username}" 创建成功`)
-
-                // 再加入白名单
-                await api.apisixWhitelistCreate({
+                const result = await api.apisixWhitelistUserCreate({
                     route_id: route.id,
-                    consumers: [...currentConsumers, username],
+                    username,
+                    key,
                     key_auth: keyAuthConfig,
                 })
-                this.portal.showNotification('success', `用户 "${username}" 已加入白名单`)
+                if (result.payload && !this.consumers.some(c => c.username === username)) {
+                    this.consumers.push({ username, desc: '', create_time: 0, update_time: 0 })
+                }
+                this.portal.showNotification('success', `用户 "${username}" 已创建并加入白名单`)
                 this.addUser.open = false
                 this.loadWhitelist()
             } catch (e: unknown) {
@@ -228,7 +224,7 @@ class Whitelist extends Vue {
             confirmText: '确认撤销',
             danger: true,
             onConfirm: async () => {
-                await api.apisixWhitelistRevoke({ route_id: routeId, consumer_name: consumer })
+                await api.apisixWhitelistUserDelete({ route_id: routeId, consumer_name: consumer })
                 this.portal.showNotification('success', '撤销成功')
                 this.loadWhitelist()
             }
@@ -349,7 +345,7 @@ export default toNative(Whitelist)
                   <span v-for="consumer in (route.consumers || [])" :key="consumer" class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 text-amber-800 rounded-lg text-xs group">
                     <i class="fas fa-user text-amber-500 text-[10px]"></i>
                     <span class="break-all">{{ consumer }}</span>
-                    <button v-if="portal.hasPerm('POST /api/apisix/whitelist/revoke')" class="opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all" title="撤销" @click="revokeConsumer(route, consumer)"><i class="fas fa-xmark text-[10px]"></i></button>
+                    <button v-if="portal.hasPerm('DELETE /api/apisix/whitelist/user')" class="opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all" title="撤销" @click="revokeConsumer(route, consumer)"><i class="fas fa-xmark text-[10px]"></i></button>
                   </span>
                 </div>
               </td>
@@ -398,7 +394,7 @@ export default toNative(Whitelist)
               <span v-for="consumer in (route.consumers || [])" :key="consumer" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-800 rounded-lg text-xs">
                 <i class="fas fa-user text-amber-500 text-[10px]"></i>
                 <span class="break-all">{{ consumer }}</span>
-                <button v-if="portal.hasPerm('POST /api/apisix/whitelist/revoke')" class="hover:text-red-500 transition-colors" title="撤销" @click="revokeConsumer(route, consumer)"><i class="fas fa-xmark text-[10px]"></i></button>
+                <button v-if="portal.hasPerm('DELETE /api/apisix/whitelist/user')" class="hover:text-red-500 transition-colors" title="撤销" @click="revokeConsumer(route, consumer)"><i class="fas fa-xmark text-[10px]"></i></button>
               </span>
             </div>
           </div>
