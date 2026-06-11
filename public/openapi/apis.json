@@ -5706,6 +5706,187 @@
         },
         "type": "object"
       },
+      "config.AgentConfig": {
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          },
+          "baseUrl": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "config.ApisixConfig": {
+        "properties": {
+          "adminKey": {
+            "type": "string"
+          },
+          "adminUrl": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "config.CaddyConfig": {
+        "properties": {
+          "adminUrl": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "config.DockerConfig": {
+        "properties": {
+          "containerRoot": {
+            "type": "string"
+          },
+          "host": {
+            "type": "string"
+          },
+          "registries": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "config.LinkConfig": {
+        "properties": {
+          "icon": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "config.MarketplaceConfig": {
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "config.MonitorConfig": {
+        "properties": {
+          "interval": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "config.OIDCConfig": {
+        "properties": {
+          "clientId": {
+            "type": "string"
+          },
+          "clientSecret": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "issuerUrl": {
+            "type": "string"
+          },
+          "loginLabel": {
+            "type": "string"
+          },
+          "redirectUrl": {
+            "type": "string"
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "usernameClaim": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "config.PasskeyConfig": {
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "rpId": {
+            "type": "string"
+          },
+          "rpName": {
+            "type": "string"
+          },
+          "rpOrigins": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "timeout": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "config.ServerConfig": {
+        "properties": {
+          "allowedOrigins": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "debug": {
+            "type": "boolean"
+          },
+          "jwtExpiration": {
+            "type": "integer"
+          },
+          "jwtSecret": {
+            "type": "string"
+          },
+          "listenAddr": {
+            "type": "string"
+          },
+          "maxUploadSize": {
+            "type": "integer"
+          },
+          "rootDirectory": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "config.THAConfig": {
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "headerName": {
+            "type": "string"
+          },
+          "trustedCIDRs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
       "cron.JobUpsertRequest": {
         "properties": {
           "container": {

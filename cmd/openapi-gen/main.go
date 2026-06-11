@@ -795,8 +795,27 @@ func resolveStructSchema(typeName string, localTypes map[string]string, ctrlFile
 		structCache[normalizedKey] = schema
 		// 同时也用原始 key
 		structCache[cacheKey] = schema
+
+		// 5. 递归解析嵌套结构体字段类型（如 *config.AgentConfig）
+		resolveNestedTypesInSchema(schema, ctrlFile)
 	}
 	return schema
+}
+
+// resolveNestedTypesInSchema 解析 schema 字段中引用的嵌套结构体类型
+func resolveNestedTypesInSchema(schema *SchemaInfo, ctrlFile string) {
+	for _, field := range schema.Fields {
+		goType := strings.TrimPrefix(field.Type, "*")
+		goType = strings.TrimPrefix(goType, "[]")
+		goType = strings.TrimPrefix(goType, "*")
+		if !strings.Contains(goType, ".") || intTypes[goType] {
+			continue
+		}
+		if goType == "json.RawMessage" || goType == "any" || goType == "interface{}" {
+			continue
+		}
+		resolveStructSchema(goType, nil, ctrlFile)
+	}
 }
 
 // normalizeAliasToDir 将 import 别名规范化为包目录名
@@ -848,11 +867,13 @@ func buildSearchDirs(serviceDir, pkgsDir, pkgAlias string) []string {
 	if pkgAlias != "" {
 		dirs = append(dirs, filepath.Join(serviceDir, pkgAlias))
 		dirs = append(dirs, filepath.Join(pkgsDir, pkgAlias))
+		dirs = append(dirs, filepath.Join(projectRoot, pkgAlias)) // 根级包
 	}
 
-	if normalized := normalizeAliasToDir(pkgAlias); normalized != "" {
+	if normalized := normalizeAliasToDir(pkgAlias); normalized != "" && normalized != pkgAlias {
 		dirs = append(dirs, filepath.Join(serviceDir, normalized))
 		dirs = append(dirs, filepath.Join(pkgsDir, normalized))
+		dirs = append(dirs, filepath.Join(projectRoot, normalized)) // 根级包
 	}
 	return dirs
 }
