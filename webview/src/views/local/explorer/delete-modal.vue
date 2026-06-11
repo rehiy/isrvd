@@ -64,11 +64,9 @@ export default toNative(DeleteModal)
       <p class="text-lg text-slate-700 mb-2">
         确定要删除 <strong class="text-slate-900">{{ targetText }}</strong> 吗？
       </p>
-      <p v-if="hasDir" class="text-sm text-amber-600 mb-2">
-        包含目录，目录及其内容将被删除。
-      </p>
       <p class="text-sm text-red-600 flex items-center justify-center">
         <i class="fas fa-exclamation-triangle mr-2"></i>
+        <span v-if="hasDir">包含目录，目录及其内容将被删除；</span>
         此操作不可恢复！
       </p>
     </div>
