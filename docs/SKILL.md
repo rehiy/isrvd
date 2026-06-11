@@ -274,5 +274,8 @@ isrvd_upload "/filer/upload" "file" "/tmp/<FILE>" "path=<FILER_PATH>"
 isrvd_get "/filer/files?path=<DIR>"
 isrvd_get "/filer/file?path=<FILE>" '.content'
 isrvd_put "/filer/file" '{"path":"<FILE>","content":"<CONTENT>"}'
+isrvd_post "/filer/rename" '{"path":"<OLD_PATH>","target":"<NEW_NAME_OR_TARGET_PATH>"}'
 isrvd_upload "/filer/upload" "file" "<LOCAL_FILE>" "path=<FILER_DIR>"
 ```
+
+`/filer/rename` 可用于重命名或移动；`target` 支持相对当前文件所在目录的路径或绝对 filer 路径，目标父目录由后端创建，并由后端校验用户目录边界。

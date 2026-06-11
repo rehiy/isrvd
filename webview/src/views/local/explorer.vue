@@ -15,6 +15,7 @@ import CreateModal from './explorer/create-modal.vue'
 import DeleteModal from './explorer/delete-modal.vue'
 import MkdirModal from './explorer/mkdir-modal.vue'
 import ModifyModal from './explorer/modify-modal.vue'
+import MoveModal from './explorer/move-modal.vue'
 import PreviewModal from './explorer/preview-modal.vue'
 import RenameModal from './explorer/rename-modal.vue'
 import UnzipModal from './explorer/unzip-modal.vue'
@@ -24,7 +25,7 @@ import ZipModal from './explorer/zip-modal.vue'
 @Component({
     components: {
         PageSearch, ChmodModal, CreateModal, DeleteModal, MkdirModal,
-        ModifyModal, PreviewModal, RenameModal, UnzipModal, UploadModal, ZipModal
+        ModifyModal, MoveModal, PreviewModal, RenameModal, UnzipModal, UploadModal, ZipModal
     }
 })
 class FileExplorer extends Vue {
@@ -32,6 +33,7 @@ class FileExplorer extends Vue {
 
     // ─── Refs ───
     @Ref readonly modifyModalRef!: InstanceType<typeof ModifyModal>
+    @Ref readonly moveModalRef!: InstanceType<typeof MoveModal>
     @Ref readonly previewModalRef!: InstanceType<typeof PreviewModal>
     @Ref readonly renameModalRef!: InstanceType<typeof RenameModal>
     @Ref readonly chmodModalRef!: InstanceType<typeof ChmodModal>
@@ -40,7 +42,7 @@ class FileExplorer extends Vue {
     @Ref readonly unzipModalRef!: InstanceType<typeof UnzipModal>
     @Ref readonly mkdirModalRef!: InstanceType<typeof MkdirModal>
     @Ref readonly createModalRef!: InstanceType<typeof CreateModal>
-    @Ref readonly uploadModal!: InstanceType<typeof UploadModal>
+    @Ref readonly uploadModalRef!: InstanceType<typeof UploadModal>
 
     // ─── 数据属性 ───
     formatFileSize = formatFileSize
@@ -84,6 +86,18 @@ class FileExplorer extends Vue {
         return this.selectedFiles.length
     }
 
+    get canDelete() {
+        return this.portal.hasPerm('DELETE /api/filer/file')
+    }
+
+    get canMove() {
+        return this.portal.hasPerm('POST /api/filer/rename')
+    }
+
+    get canSelect() {
+        return this.canDelete || this.canMove
+    }
+
     get allVisibleSelected() {
         return this.filteredFiles.length > 0 && this.filteredFiles.every((file: FilerFileInfo) => this.selectedPaths.includes(file.path))
     }
@@ -100,6 +114,7 @@ class FileExplorer extends Vue {
     }
 
     refreshFiles() {
+        this.clearSelection()
         this.portal.loadFiles()
     }
 
@@ -108,11 +123,9 @@ class FileExplorer extends Vue {
     }
 
     toggleFileSelection(file: FilerFileInfo) {
-        if (this.isSelected(file)) {
-            this.selectedPaths = this.selectedPaths.filter(path => path !== file.path)
-            return
-        }
-        this.selectedPaths = [...this.selectedPaths, file.path]
+        this.selectedPaths = this.isSelected(file)
+            ? this.selectedPaths.filter(path => path !== file.path)
+            : [...this.selectedPaths, file.path]
     }
 
     toggleAllVisibleFiles() {
@@ -133,9 +146,9 @@ class FileExplorer extends Vue {
         this.deleteModalRef.show(this.selectedFiles)
     }
 
-    handleDeleteSuccess() {
-        this.clearSelection()
-        this.refreshFiles()
+    showBatchMove() {
+        if (this.selectedCount === 0) return
+        this.moveModalRef.show(this.selectedFiles)
     }
 
     async calcDirSize(file: FilerFileInfo) {
@@ -179,8 +192,8 @@ export default toNative(FileExplorer)
                 <li class="text-slate-300 flex-shrink-0">
                   <i class="fas fa-chevron-right text-xs"></i>
                 </li>
-                <li v-if="Number(index) < paths.length - 1" class="flex-shrink-0">
-                  <button type="button" class="breadcrumb-btn" @click="navigateTo('/' + paths.slice(0, Number(index) + 1).join('/'))">
+                <li v-if="index < paths.length - 1" class="flex-shrink-0">
+                  <button type="button" class="breadcrumb-btn" @click="navigateTo('/' + paths.slice(0, index + 1).join('/'))">
                     {{ part }}
                   </button>
                 </li>
@@ -196,16 +209,21 @@ export default toNative(FileExplorer)
             <button v-if="portal.hasPerm('GET /api/filer/files')" class="btn btn-secondary" @click="refreshFiles()">
               <i class="fas fa-rotate"></i><span>刷新</span>
             </button>
-            <button v-if="portal.hasPerm('POST /api/filer/dir')" class="btn btn-secondary" @click="mkdirModalRef.show()">
+            <button v-if="selectedCount === 0 && portal.hasPerm('POST /api/filer/dir')" class="btn btn-secondary" @click="mkdirModalRef.show()">
               <i class="fas fa-folder"></i><span>新建目录</span>
             </button>
-            <button v-if="portal.hasPerm('POST /api/filer/file')" class="btn btn-secondary" @click="createModalRef.show()">
+            <button v-if="selectedCount === 0 && portal.hasPerm('POST /api/filer/file')" class="btn btn-secondary" @click="createModalRef.show()">
               <i class="fas fa-file"></i><span>新建文件</span>
             </button>
-            <button v-if="selectedCount > 0 && portal.hasPerm('DELETE /api/filer/file')" class="btn btn-danger" @click="showBatchDelete()">
-              <i class="fas fa-trash"></i><span>删除 {{ selectedCount }} 项</span>
-            </button>
-            <button v-else-if="portal.hasPerm('POST /api/filer/upload')" class="btn btn-primary" @click="uploadModal.show()">
+            <template v-if="selectedCount > 0">
+              <button v-if="canMove" class="btn btn-blue" @click="showBatchMove()">
+                <i class="fas fa-folder-plus"></i><span>移动 {{ selectedCount }} 项</span>
+              </button>
+              <button v-if="canDelete" class="btn btn-danger" @click="showBatchDelete()">
+                <i class="fas fa-trash"></i><span>删除 {{ selectedCount }} 项</span>
+              </button>
+            </template>
+            <button v-else-if="portal.hasPerm('POST /api/filer/upload')" class="btn btn-primary" @click="uploadModalRef.show()">
               <i class="fas fa-upload"></i><span>上传文件</span>
             </button>
           </div>
@@ -214,16 +232,21 @@ export default toNative(FileExplorer)
             <button v-if="portal.hasPerm('GET /api/filer/files')" class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="refreshFiles()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/filer/dir')" class="btn btn-secondary w-9 h-9 !px-0" title="新建目录" @click="mkdirModalRef.show()">
+            <button v-if="selectedCount === 0 && portal.hasPerm('POST /api/filer/dir')" class="btn btn-secondary w-9 h-9 !px-0" title="新建目录" @click="mkdirModalRef.show()">
               <i class="fas fa-folder text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/filer/file')" class="btn btn-secondary w-9 h-9 !px-0" title="新建文件" @click="createModalRef.show()">
+            <button v-if="selectedCount === 0 && portal.hasPerm('POST /api/filer/file')" class="btn btn-secondary w-9 h-9 !px-0" title="新建文件" @click="createModalRef.show()">
               <i class="fas fa-file text-sm"></i>
             </button>
-            <button v-if="selectedCount > 0 && portal.hasPerm('DELETE /api/filer/file')" class="btn btn-danger w-9 h-9 !px-0" :title="`删除 ${selectedCount} 项`" @click="showBatchDelete()">
-              <i class="fas fa-trash text-sm"></i>
-            </button>
-            <button v-else-if="portal.hasPerm('POST /api/filer/upload')" class="btn btn-primary w-9 h-9 !px-0" title="上传文件" @click="uploadModal.show()">
+            <template v-if="selectedCount > 0">
+              <button v-if="canMove" class="btn btn-blue w-9 h-9 !px-0" :title="`移动 ${selectedCount} 项`" @click="showBatchMove()">
+                <i class="fas fa-folder-plus text-sm"></i>
+              </button>
+              <button v-if="canDelete" class="btn btn-danger w-9 h-9 !px-0" :title="`删除 ${selectedCount} 项`" @click="showBatchDelete()">
+                <i class="fas fa-trash text-sm"></i>
+              </button>
+            </template>
+            <button v-else-if="portal.hasPerm('POST /api/filer/upload')" class="btn btn-primary w-9 h-9 !px-0" title="上传文件" @click="uploadModalRef.show()">
               <i class="fas fa-upload text-sm"></i>
             </button>
           </div>
@@ -259,9 +282,9 @@ export default toNative(FileExplorer)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
-                <th v-if="portal.hasPerm('DELETE /api/filer/file')" class="w-12 th">
+                <th v-if="canSelect" class="w-12 th">
                   <label class="check-label" title="选择全部可见文件">
-                    <input type="checkbox" class="rounded border-slate-300 text-red-500 focus:ring-red-500" :checked="allVisibleSelected" @change="toggleAllVisibleFiles()">
+                    <input type="checkbox" class="rounded border-slate-300 text-primary-500 focus:ring-primary-500" :checked="allVisibleSelected" @change="toggleAllVisibleFiles()">
                     <span class="sr-only">选择全部可见文件</span>
                   </label>
                 </th>
@@ -274,9 +297,9 @@ export default toNative(FileExplorer)
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="file in filteredFiles" :key="file.path" class="hover:bg-slate-50 transition-colors">
-                <td v-if="portal.hasPerm('DELETE /api/filer/file')" class="px-4 py-3 w-12">
+                <td v-if="canSelect" class="px-4 py-3 w-12">
                   <label class="check-label" :title="`选择 ${file.name}`">
-                    <input type="checkbox" class="rounded border-slate-300 text-red-500 focus:ring-red-500" :checked="isSelected(file)" @change="toggleFileSelection(file)">
+                    <input type="checkbox" class="rounded border-slate-300 text-primary-500 focus:ring-primary-500" :checked="isSelected(file)" @change="toggleFileSelection(file)">
                     <span class="sr-only">选择 {{ file.name }}</span>
                   </label>
                 </td>
@@ -339,7 +362,7 @@ export default toNative(FileExplorer)
                       <button v-if="portal.hasPerm('PUT /api/filer/chmod')" class="btn-icon btn-icon-slate" title="权限" @click="chmodModalRef.show(file)">
                         <i class="fas fa-key text-xs"></i>
                       </button>
-                      <button v-if="portal.hasPerm('DELETE /api/filer/file')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
+                      <button v-if="canDelete" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                         <i class="fas fa-trash text-xs"></i>
                       </button>
                     </template>
@@ -369,7 +392,7 @@ export default toNative(FileExplorer)
                       <button v-if="portal.hasPerm('PUT /api/filer/chmod')" class="btn-icon btn-icon-slate" title="权限" @click="chmodModalRef.show(file)">
                         <i class="fas fa-key text-xs"></i>
                       </button>
-                      <button v-if="portal.hasPerm('DELETE /api/filer/file')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
+                      <button v-if="canDelete" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                         <i class="fas fa-trash text-xs"></i>
                       </button>
                     </template>
@@ -385,8 +408,8 @@ export default toNative(FileExplorer)
           <div v-for="file in filteredFiles" :key="file.path" class="card-interactive">
             <!-- 顶部：文件信息和图标 -->
             <div class="card-info-row">
-              <label v-if="portal.hasPerm('DELETE /api/filer/file')" class="check-label flex-shrink-0" :title="`选择 ${file.name}`">
-                <input type="checkbox" class="rounded border-slate-300 text-red-500 focus:ring-red-500" :checked="isSelected(file)" @change="toggleFileSelection(file)">
+              <label v-if="canSelect" class="check-label flex-shrink-0" :title="`选择 ${file.name}`">
+                <input type="checkbox" class="rounded border-slate-300 text-primary-500 focus:ring-primary-500" :checked="isSelected(file)" @change="toggleFileSelection(file)">
                 <span class="sr-only">选择 {{ file.name }}</span>
               </label>
               <div :class="['list-icon', file.isDir ? 'bg-amber-400' : 'bg-blue-400']">
@@ -447,7 +470,7 @@ export default toNative(FileExplorer)
                 <button v-if="portal.hasPerm('PUT /api/filer/chmod')" class="btn-icon btn-icon-slate" title="权限" @click="chmodModalRef.show(file)">
                   <i class="fas fa-key text-xs"></i><span class="text-xs ml-1">权限</span>
                 </button>
-                <button v-if="portal.hasPerm('DELETE /api/filer/file')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
+                <button v-if="canDelete" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                   <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
                 </button>
               </template>
@@ -477,7 +500,7 @@ export default toNative(FileExplorer)
                 <button v-if="portal.hasPerm('PUT /api/filer/chmod')" class="btn-icon btn-icon-slate" title="权限" @click="chmodModalRef.show(file)">
                   <i class="fas fa-key text-xs"></i><span class="text-xs ml-1">权限</span>
                 </button>
-                <button v-if="portal.hasPerm('DELETE /api/filer/file')" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
+                <button v-if="canDelete" class="btn-icon btn-icon-red" title="删除" @click="deleteModalRef.show(file)">
                   <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
                 </button>
               </template>
@@ -489,14 +512,15 @@ export default toNative(FileExplorer)
 
     <!-- Modals -->
     <ModifyModal ref="modifyModalRef" />
+    <MoveModal ref="moveModalRef" @success="refreshFiles" />
     <PreviewModal ref="previewModalRef" />
     <RenameModal ref="renameModalRef" />
     <ChmodModal ref="chmodModalRef" />
-    <DeleteModal ref="deleteModalRef" @success="handleDeleteSuccess" />
+    <DeleteModal ref="deleteModalRef" @success="refreshFiles" />
     <ZipModal ref="zipModalRef" />
     <UnzipModal ref="unzipModalRef" />
     <MkdirModal ref="mkdirModalRef" />
     <CreateModal ref="createModalRef" />
-    <UploadModal ref="uploadModal" />
+    <UploadModal ref="uploadModalRef" />
   </div>
 </template>

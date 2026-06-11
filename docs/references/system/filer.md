@@ -64,11 +64,18 @@ isrvd_get "/filer/file?path=<FILE>"
 isrvd_put "/filer/file" '{"path":"<FILE>","content":"<CONTENT>"}'
 ```
 
-## 重命名
+## 重命名 / 移动
 
 ```bash
+# 重命名：target 为新名称或相对当前文件所在目录的路径
 isrvd_post "/filer/rename" '{"path":"<OLD_PATH>","target":"<NEW_NAME>"}'
+
+# 移动：target 可为相对当前文件所在目录的路径，也可为绝对 filer 路径
+isrvd_post "/filer/rename" '{"path":"<OLD_PATH>","target":"<TARGET_DIR>/<NAME>"}'
+isrvd_post "/filer/rename" '{"path":"<OLD_PATH>","target":"/<TARGET_DIR>/<NAME>"}'
 ```
+
+`target` 由后端解析并校验用户目录边界；目标父目录不存在时会自动创建，越界路径会被拒绝。
 
 ## 删除
 

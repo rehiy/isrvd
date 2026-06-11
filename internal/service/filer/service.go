@@ -161,8 +161,13 @@ func (s *Service) FileDelete(absPath string) error {
 	return os.RemoveAll(absPath)
 }
 
-// FileRename 重命名文件
+// FileRename 重命名或移动文件
+// 当目标父目录不存在时会自动创建（0755）。如果后续 rename 失败，已创建的空目录不会被清理。
+// 调用方需保证 targetPath 已通过 AbsPath 校验，确保不越界。
 func (s *Service) FileRename(absPath, targetPath string) error {
+	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+		return err
+	}
 	return os.Rename(absPath, targetPath)
 }
 

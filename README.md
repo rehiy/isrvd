@@ -276,7 +276,7 @@ cd webview && python3 sort-imports.py --dry-run src
 | `filer` | `DELETE /api/filer/file` | 文件管理（删除） |
 | `filer` | `POST /api/filer/dir` | 文件管理（创建目录） |
 | `filer` | `POST /api/filer/upload` | 文件管理（上传） |
-| `filer` | `POST /api/filer/rename` | 文件管理（重命名） |
+| `filer` | `POST /api/filer/rename` | 文件管理（重命名/移动，后端校验目标路径边界） |
 | `filer` | `PUT /api/filer/chmod` | 文件管理（修改权限） |
 | `filer` | `POST /api/filer/zip` | 文件管理（压缩） |
 | `filer` | `POST /api/filer/unzip` | 文件管理（解压） |

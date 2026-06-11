@@ -58,8 +58,8 @@ type filerRenameBody struct {
 }
 
 type filerUnzipBody struct {
-	Path       string `json:"path" binding:"required"`
-	TargetDir  string `json:"targetDir"` // 可选：指定解压目标目录名（仅允许标准目录名，无 / 等分隔符）
+	Path      string `json:"path" binding:"required"`
+	TargetDir string `json:"targetDir"` // 可选：指定解压目标目录名（仅允许标准目录名，无 / 等分隔符）
 }
 
 func (app *App) filerAbsPath(c *gin.Context, path string) (string, bool) {
@@ -223,7 +223,11 @@ func (app *App) filerFileRename(c *gin.Context) {
 		return
 	}
 
-	targetPath, ok := app.filerAbsPath(c, filepath.Join(filepath.Dir(req.Path), req.Target))
+	target := req.Target
+	if !filepath.IsAbs(target) {
+		target = filepath.Join(filepath.Dir(req.Path), target)
+	}
+	targetPath, ok := app.filerAbsPath(c, target)
 	if !ok {
 		return
 	}
