@@ -10,12 +10,12 @@ import (
 	"github.com/rehiy/libgo/strutil"
 
 	"isrvd/internal/registry"
-	pkgapisix "isrvd/pkgs/apisix"
+	pkgApisix "isrvd/pkgs/apisix"
 )
 
 // Service Apisix 业务服务
 type Service struct {
-	client *pkgapisix.Client
+	client *pkgApisix.Client
 }
 
 // NewService 创建 Apisix 业务服务
@@ -44,7 +44,7 @@ func (s *Service) CheckAvailability(ctx context.Context) bool {
 // ─── 路由管理 ───
 
 // RouteList 获取所有路由列表
-func (s *Service) RouteList(ctx context.Context) ([]pkgapisix.Route, error) {
+func (s *Service) RouteList(ctx context.Context) ([]pkgApisix.Route, error) {
 	list, err := s.client.RouteList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("获取路由列表失败: %w", err)
@@ -53,7 +53,7 @@ func (s *Service) RouteList(ctx context.Context) ([]pkgapisix.Route, error) {
 }
 
 // RouteInspect 获取单条路由详情
-func (s *Service) RouteInspect(ctx context.Context, routeID string) (*pkgapisix.Route, error) {
+func (s *Service) RouteInspect(ctx context.Context, routeID string) (*pkgApisix.Route, error) {
 	if routeID == "" {
 		return nil, fmt.Errorf("路由 ID 不能为空")
 	}
@@ -65,7 +65,7 @@ func (s *Service) RouteInspect(ctx context.Context, routeID string) (*pkgapisix.
 }
 
 // RouteCreate 创建路由
-func (s *Service) RouteCreate(ctx context.Context, req pkgapisix.Route) (*pkgapisix.Route, error) {
+func (s *Service) RouteCreate(ctx context.Context, req pkgApisix.Route) (*pkgApisix.Route, error) {
 	if req.Name == "" {
 		return nil, fmt.Errorf("路由名称不能为空")
 	}
@@ -80,7 +80,7 @@ func (s *Service) RouteCreate(ctx context.Context, req pkgapisix.Route) (*pkgapi
 }
 
 // RouteUpdate 更新路由
-func (s *Service) RouteUpdate(ctx context.Context, routeID string, req pkgapisix.Route) (*pkgapisix.Route, error) {
+func (s *Service) RouteUpdate(ctx context.Context, routeID string, req pkgApisix.Route) (*pkgApisix.Route, error) {
 	if routeID == "" {
 		return nil, fmt.Errorf("路由 ID 不能为空")
 	}
@@ -122,7 +122,7 @@ func (s *Service) RouteDelete(ctx context.Context, routeID string) error {
 // ─── Consumer 管理 ───
 
 // ConsumerList 获取 Consumer 列表
-func (s *Service) ConsumerList(ctx context.Context) ([]pkgapisix.Consumer, error) {
+func (s *Service) ConsumerList(ctx context.Context) ([]pkgApisix.Consumer, error) {
 	list, err := s.client.ConsumerList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("获取消费者列表失败: %w", err)
@@ -131,7 +131,7 @@ func (s *Service) ConsumerList(ctx context.Context) ([]pkgapisix.Consumer, error
 }
 
 // ConsumerCreate 创建 Consumer，支持传入完整 plugins
-func (s *Service) ConsumerCreate(ctx context.Context, username, desc string, plugins map[string]any) (*pkgapisix.Consumer, error) {
+func (s *Service) ConsumerCreate(ctx context.Context, username, desc string, plugins map[string]any) (*pkgApisix.Consumer, error) {
 	if username == "" {
 		return nil, fmt.Errorf("用户名不能为空")
 	}
@@ -174,7 +174,7 @@ type WhitelistCreateRequest struct {
 }
 
 // WhitelistCreate 为已有路由配置 Consumer 白名单
-func (s *Service) WhitelistCreate(ctx context.Context, req WhitelistCreateRequest) (*pkgapisix.Route, error) {
+func (s *Service) WhitelistCreate(ctx context.Context, req WhitelistCreateRequest) (*pkgApisix.Route, error) {
 	routeID := strings.TrimSpace(req.RouteID)
 	if routeID == "" {
 		return nil, fmt.Errorf("路由 ID 不能为空")
@@ -237,7 +237,7 @@ type WhitelistUserCreateRequest struct {
 
 // WhitelistUserCreate 原子操作：创建 Consumer（含 key-auth）并加入路由白名单。
 // 若 Consumer 已存在则直接复用，不报错，保证接口幂等。
-func (s *Service) WhitelistUserCreate(ctx context.Context, req WhitelistUserCreateRequest) (*pkgapisix.Route, error) {
+func (s *Service) WhitelistUserCreate(ctx context.Context, req WhitelistUserCreateRequest) (*pkgApisix.Route, error) {
 	routeID := strings.TrimSpace(req.RouteID)
 	username := strings.TrimSpace(req.Username)
 	key := strings.TrimSpace(req.Key)
@@ -300,7 +300,7 @@ func (s *Service) WhitelistUserCreate(ctx context.Context, req WhitelistUserCrea
 }
 
 // WhitelistList 获取白名单
-func (s *Service) WhitelistList(ctx context.Context) ([]pkgapisix.Route, error) {
+func (s *Service) WhitelistList(ctx context.Context) ([]pkgApisix.Route, error) {
 	list, err := s.client.RouteWhitelistInspect(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("获取白名单失败: %w", err)
@@ -319,7 +319,7 @@ func (s *Service) WhitelistUserDelete(ctx context.Context, routeID, consumerName
 // ─── Upstream 管理 ───
 
 // UpstreamList 获取 Upstream 列表
-func (s *Service) UpstreamList(ctx context.Context) ([]pkgapisix.Upstream, error) {
+func (s *Service) UpstreamList(ctx context.Context) ([]pkgApisix.Upstream, error) {
 	list, err := s.client.UpstreamList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("获取上游列表失败: %w", err)
@@ -328,7 +328,7 @@ func (s *Service) UpstreamList(ctx context.Context) ([]pkgapisix.Upstream, error
 }
 
 // UpstreamInspect 获取单条 Upstream 详情
-func (s *Service) UpstreamInspect(ctx context.Context, upstreamID string) (*pkgapisix.Upstream, error) {
+func (s *Service) UpstreamInspect(ctx context.Context, upstreamID string) (*pkgApisix.Upstream, error) {
 	if upstreamID == "" {
 		return nil, fmt.Errorf("Upstream ID 不能为空")
 	}
@@ -340,14 +340,14 @@ func (s *Service) UpstreamInspect(ctx context.Context, upstreamID string) (*pkga
 }
 
 // UpstreamCreate 创建 Upstream
-func (s *Service) UpstreamCreate(ctx context.Context, req pkgapisix.Upstream) (*pkgapisix.Upstream, error) {
+func (s *Service) UpstreamCreate(ctx context.Context, req pkgApisix.Upstream) (*pkgApisix.Upstream, error) {
 	if req.Name == "" {
 		return nil, fmt.Errorf("Upstream 名称不能为空")
 	}
 	if req.Type == "" {
 		return nil, fmt.Errorf("Upstream 类型不能为空")
 	}
-	if !pkgapisix.HasUpstreamNodes(req.Nodes) {
+	if !pkgApisix.HasUpstreamNodes(req.Nodes) {
 		return nil, fmt.Errorf("Upstream 节点不能为空")
 	}
 	upstream, err := s.client.UpstreamCreate(ctx, req)
@@ -358,7 +358,7 @@ func (s *Service) UpstreamCreate(ctx context.Context, req pkgapisix.Upstream) (*
 }
 
 // UpstreamUpdate 更新 Upstream
-func (s *Service) UpstreamUpdate(ctx context.Context, upstreamID string, req pkgapisix.Upstream) (*pkgapisix.Upstream, error) {
+func (s *Service) UpstreamUpdate(ctx context.Context, upstreamID string, req pkgApisix.Upstream) (*pkgApisix.Upstream, error) {
 	if upstreamID == "" {
 		return nil, fmt.Errorf("Upstream ID 不能为空")
 	}
@@ -368,7 +368,7 @@ func (s *Service) UpstreamUpdate(ctx context.Context, upstreamID string, req pkg
 	if req.Type == "" {
 		return nil, fmt.Errorf("Upstream 类型不能为空")
 	}
-	if !pkgapisix.HasUpstreamNodes(req.Nodes) {
+	if !pkgApisix.HasUpstreamNodes(req.Nodes) {
 		return nil, fmt.Errorf("Upstream 节点不能为空")
 	}
 	upstream, err := s.client.UpstreamUpdate(ctx, upstreamID, req)
@@ -392,7 +392,7 @@ func (s *Service) UpstreamDelete(ctx context.Context, upstreamID string) error {
 // ─── SSL 证书管理 ───
 
 // SSLList 获取 SSL 证书列表
-func (s *Service) SSLList(ctx context.Context) ([]pkgapisix.SSL, error) {
+func (s *Service) SSLList(ctx context.Context) ([]pkgApisix.SSL, error) {
 	list, err := s.client.SSLList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("获取证书列表失败: %w", err)
@@ -401,7 +401,7 @@ func (s *Service) SSLList(ctx context.Context) ([]pkgapisix.SSL, error) {
 }
 
 // SSLInspect 获取单个 SSL 证书详情
-func (s *Service) SSLInspect(ctx context.Context, sslID string) (*pkgapisix.SSL, error) {
+func (s *Service) SSLInspect(ctx context.Context, sslID string) (*pkgApisix.SSL, error) {
 	if sslID == "" {
 		return nil, fmt.Errorf("SSL 证书 ID 不能为空")
 	}
@@ -413,7 +413,7 @@ func (s *Service) SSLInspect(ctx context.Context, sslID string) (*pkgapisix.SSL,
 }
 
 // SSLCreate 创建 SSL 证书
-func (s *Service) SSLCreate(ctx context.Context, req pkgapisix.SSL) (*pkgapisix.SSL, error) {
+func (s *Service) SSLCreate(ctx context.Context, req pkgApisix.SSL) (*pkgApisix.SSL, error) {
 	if len(req.Snis) == 0 {
 		return nil, fmt.Errorf("SNI 不能为空")
 	}
@@ -431,7 +431,7 @@ func (s *Service) SSLCreate(ctx context.Context, req pkgapisix.SSL) (*pkgapisix.
 }
 
 // SSLUpdate 更新 SSL 证书
-func (s *Service) SSLUpdate(ctx context.Context, sslID string, req pkgapisix.SSL) (*pkgapisix.SSL, error) {
+func (s *Service) SSLUpdate(ctx context.Context, sslID string, req pkgApisix.SSL) (*pkgApisix.SSL, error) {
 	if sslID == "" {
 		return nil, fmt.Errorf("SSL 证书 ID 不能为空")
 	}
@@ -459,7 +459,7 @@ func (s *Service) SSLDelete(ctx context.Context, sslID string) error {
 // ─── 辅助资源 ───
 
 // PluginConfigList 获取 Plugin Config 列表
-func (s *Service) PluginConfigList(ctx context.Context) ([]pkgapisix.PluginConfig, error) {
+func (s *Service) PluginConfigList(ctx context.Context) ([]pkgApisix.PluginConfig, error) {
 	list, err := s.client.PluginConfigList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("获取插件配置列表失败: %w", err)
@@ -468,7 +468,7 @@ func (s *Service) PluginConfigList(ctx context.Context) ([]pkgapisix.PluginConfi
 }
 
 // PluginConfigInspect 获取单个 Plugin Config 详情
-func (s *Service) PluginConfigInspect(ctx context.Context, configID string) (*pkgapisix.PluginConfig, error) {
+func (s *Service) PluginConfigInspect(ctx context.Context, configID string) (*pkgApisix.PluginConfig, error) {
 	if configID == "" {
 		return nil, fmt.Errorf("Plugin Config ID 不能为空")
 	}
@@ -480,7 +480,7 @@ func (s *Service) PluginConfigInspect(ctx context.Context, configID string) (*pk
 }
 
 // PluginConfigCreate 创建 Plugin Config
-func (s *Service) PluginConfigCreate(ctx context.Context, req pkgapisix.PluginConfig) (*pkgapisix.PluginConfig, error) {
+func (s *Service) PluginConfigCreate(ctx context.Context, req pkgApisix.PluginConfig) (*pkgApisix.PluginConfig, error) {
 	if len(req.Plugins) == 0 {
 		return nil, fmt.Errorf("插件配置不能为空")
 	}
@@ -493,7 +493,7 @@ func (s *Service) PluginConfigCreate(ctx context.Context, req pkgapisix.PluginCo
 }
 
 // PluginConfigUpdate 更新 Plugin Config
-func (s *Service) PluginConfigUpdate(ctx context.Context, configID string, req pkgapisix.PluginConfig) (*pkgapisix.PluginConfig, error) {
+func (s *Service) PluginConfigUpdate(ctx context.Context, configID string, req pkgApisix.PluginConfig) (*pkgApisix.PluginConfig, error) {
 	if configID == "" {
 		return nil, fmt.Errorf("Plugin Config ID 不能为空")
 	}

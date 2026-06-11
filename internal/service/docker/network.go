@@ -9,7 +9,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/volume"
 
-	pkgdocker "isrvd/pkgs/docker"
+	pkgDocker "isrvd/pkgs/docker"
 )
 
 // NetworkSpec 创建网络请求。
@@ -97,7 +97,7 @@ func (s *Service) NetworkList(ctx context.Context) ([]*NetworkInfo, error) {
 		if len(net.IPAM.Config) > 0 && net.IPAM.Config[0].Subnet != "" {
 			subnet = net.IPAM.Config[0].Subnet
 		}
-		result = append(result, &NetworkInfo{ID: pkgdocker.ShortID(net.ID), Name: net.Name, Driver: net.Driver, Subnet: subnet, Scope: net.Scope})
+		result = append(result, &NetworkInfo{ID: pkgDocker.ShortID(net.ID), Name: net.Name, Driver: net.Driver, Subnet: subnet, Scope: net.Scope})
 	}
 	return result, nil
 }
@@ -194,9 +194,9 @@ func networkDetail(netInfo network.Inspect) *NetworkDetail {
 	for endpointID, ep := range netInfo.Containers {
 		name := ep.Name
 		if name == "" {
-			name = pkgdocker.ShortID(endpointID)
+			name = pkgDocker.ShortID(endpointID)
 		}
-		containers = append(containers, &NetworkContainerInfo{ID: pkgdocker.ShortID(endpointID), Name: strings.TrimPrefix(name, "/"), IPv4: ep.IPv4Address, IPv6: ep.IPv6Address, MacAddress: ep.MacAddress})
+		containers = append(containers, &NetworkContainerInfo{ID: pkgDocker.ShortID(endpointID), Name: strings.TrimPrefix(name, "/"), IPv4: ep.IPv4Address, IPv6: ep.IPv6Address, MacAddress: ep.MacAddress})
 	}
 	result := &NetworkDetail{ID: netInfo.ID, Name: netInfo.Name, Driver: netInfo.Driver, Scope: netInfo.Scope, Internal: netInfo.Internal, EnableIPv6: netInfo.EnableIPv6, Containers: containers}
 	if len(netInfo.IPAM.Config) > 0 {
@@ -215,7 +215,7 @@ func volumeDetail(volInfo volume.Volume, containers []container.Summary) *Volume
 				if len(ct.Names) > 0 {
 					ctName = strings.TrimPrefix(ct.Names[0], "/")
 				}
-				usedBy = append(usedBy, &VolumeUsedByContainer{ID: pkgdocker.ShortID(ct.ID), Name: ctName, MountPath: m.Destination, ReadOnly: !m.RW})
+				usedBy = append(usedBy, &VolumeUsedByContainer{ID: pkgDocker.ShortID(ct.ID), Name: ctName, MountPath: m.Destination, ReadOnly: !m.RW})
 			}
 		}
 	}

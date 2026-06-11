@@ -3,7 +3,7 @@
 // 资源映射（业务约定）：
 //   - 单 server 模式：默认 server 名为 srv0
 //   - Route：servers/srv0/routes 数组项，对外用数组下标做主键
-//   - 路由直接使用 pkgcaddy.Route 原生结构收发，前端负责组装 Caddy JSON
+//   - 路由直接使用 pkgCaddy.Route 原生结构收发，前端负责组装 Caddy JSON
 package caddy
 
 import (
@@ -14,7 +14,7 @@ import (
 	"github.com/rehiy/libgo/logman"
 
 	"isrvd/internal/registry"
-	pkgcaddy "isrvd/pkgs/caddy"
+	pkgCaddy "isrvd/pkgs/caddy"
 )
 
 // DefaultServerName 默认 server 名（业务约定，唯一一份）
@@ -30,7 +30,7 @@ const (
 
 // Service Caddy 业务服务
 type Service struct {
-	client *pkgcaddy.Client
+	client *pkgCaddy.Client
 }
 
 // NewService 创建 Caddy 业务服务
@@ -66,7 +66,7 @@ func normalizeServer(name string) string {
 }
 
 // getServer 取 server，不存在返回 nil
-func getServer(cfg *pkgcaddy.Config, name string) *pkgcaddy.HTTPServer {
+func getServer(cfg *pkgCaddy.Config, name string) *pkgCaddy.HTTPServer {
 	if cfg == nil || cfg.Apps == nil || cfg.Apps.HTTP == nil {
 		return nil
 	}
@@ -74,30 +74,30 @@ func getServer(cfg *pkgcaddy.Config, name string) *pkgcaddy.HTTPServer {
 }
 
 // ensureServer 取 server，不存在则创建并初始化 listen
-func ensureServer(cfg *pkgcaddy.Config, name string) *pkgcaddy.HTTPServer {
+func ensureServer(cfg *pkgCaddy.Config, name string) *pkgCaddy.HTTPServer {
 	if cfg.Apps == nil {
-		cfg.Apps = &pkgcaddy.AppsConfig{}
+		cfg.Apps = &pkgCaddy.AppsConfig{}
 	}
 	if cfg.Apps.HTTP == nil {
-		cfg.Apps.HTTP = &pkgcaddy.HTTPApp{}
+		cfg.Apps.HTTP = &pkgCaddy.HTTPApp{}
 	}
 	if cfg.Apps.HTTP.Servers == nil {
-		cfg.Apps.HTTP.Servers = map[string]*pkgcaddy.HTTPServer{}
+		cfg.Apps.HTTP.Servers = map[string]*pkgCaddy.HTTPServer{}
 	}
 	srv, ok := cfg.Apps.HTTP.Servers[name]
 	if !ok {
-		srv = &pkgcaddy.HTTPServer{Listen: []string{":80"}}
+		srv = &pkgCaddy.HTTPServer{Listen: []string{":80"}}
 		cfg.Apps.HTTP.Servers[name] = srv
 	}
 	return srv
 }
 
-func ensureTLS(cfg *pkgcaddy.Config) *pkgcaddy.TLSApp {
+func ensureTLS(cfg *pkgCaddy.Config) *pkgCaddy.TLSApp {
 	if cfg.Apps == nil {
-		cfg.Apps = &pkgcaddy.AppsConfig{}
+		cfg.Apps = &pkgCaddy.AppsConfig{}
 	}
 	if cfg.Apps.TLS == nil {
-		cfg.Apps.TLS = &pkgcaddy.TLSApp{}
+		cfg.Apps.TLS = &pkgCaddy.TLSApp{}
 	}
 	return cfg.Apps.TLS
 }

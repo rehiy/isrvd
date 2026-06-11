@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"isrvd/config"
-	pkgdocker "isrvd/pkgs/docker"
+	pkgDocker "isrvd/pkgs/docker"
 )
 
 // RegistryInfo 镜像仓库信息，保持前端稳定响应结构且不包含密码。
@@ -73,7 +73,7 @@ func (s *Service) registriesConfigSync() error {
 
 // RegistryCreate 新建镜像仓库
 func (s *Service) RegistryCreate(req RegistryUpsertRequest) error {
-	reg := &pkgdocker.RegistryConfig{
+	reg := &pkgDocker.RegistryConfig{
 		Name:        req.Name,
 		URL:         req.URL,
 		Username:    req.Username,
@@ -91,7 +91,7 @@ func (s *Service) RegistryUpdate(originalURL string, req RegistryUpsertRequest) 
 	if originalURL == "" {
 		return fmt.Errorf("缺少 url 参数")
 	}
-	reg := &pkgdocker.RegistryConfig{
+	reg := &pkgDocker.RegistryConfig{
 		Name:        req.Name,
 		URL:         req.URL,
 		Username:    req.Username,

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	pkgcaddy "isrvd/pkgs/caddy"
+	pkgCaddy "isrvd/pkgs/caddy"
 )
 
 // ─── TLS 证书 CRUD ───
@@ -48,7 +48,7 @@ func (s *Service) CertList(ctx context.Context) ([]CertForm, error) {
 	return s.certListFromConfig(cfg), nil
 }
 
-func (s *Service) certListFromConfig(cfg *pkgcaddy.Config) []CertForm {
+func (s *Service) certListFromConfig(cfg *pkgCaddy.Config) []CertForm {
 	out := make([]CertForm, 0)
 	if cfg.Apps != nil && cfg.Apps.TLS != nil {
 		tls := cfg.Apps.TLS
@@ -109,14 +109,14 @@ func (s *Service) CertCreate(ctx context.Context, req CertForm) error {
 
 	switch req.Source {
 	case CertSourceFile:
-		ensureCerts(tls).LoadFiles = append(tls.Certificates.LoadFiles, pkgcaddy.TLSLoadFile{
+		ensureCerts(tls).LoadFiles = append(tls.Certificates.LoadFiles, pkgCaddy.TLSLoadFile{
 			Certificate: req.Certificate,
 			Key:         req.KeyContent,
 			Tags:        req.Tags,
 			Format:      req.Format,
 		})
 	case CertSourcePEM:
-		ensureCerts(tls).LoadPEM = append(tls.Certificates.LoadPEM, pkgcaddy.TLSLoadPEM{
+		ensureCerts(tls).LoadPEM = append(tls.Certificates.LoadPEM, pkgCaddy.TLSLoadPEM{
 			Certificate: req.Certificate,
 			Key:         req.KeyContent,
 			Tags:        req.Tags,
@@ -153,7 +153,7 @@ func (s *Service) CertUpdate(ctx context.Context, key string, req CertForm) erro
 		if tls.Certificates == nil || index < 0 || index >= len(tls.Certificates.LoadFiles) {
 			return fmt.Errorf("证书不存在")
 		}
-		tls.Certificates.LoadFiles[index] = pkgcaddy.TLSLoadFile{
+		tls.Certificates.LoadFiles[index] = pkgCaddy.TLSLoadFile{
 			Certificate: req.Certificate,
 			// 私钥留空则保留原值（客户端编辑时可不回填路径）
 			Key:    pickSecretStr(req.KeyContent, tls.Certificates.LoadFiles[index].Key),
@@ -164,7 +164,7 @@ func (s *Service) CertUpdate(ctx context.Context, key string, req CertForm) erro
 		if tls.Certificates == nil || index < 0 || index >= len(tls.Certificates.LoadPEM) {
 			return fmt.Errorf("证书不存在")
 		}
-		tls.Certificates.LoadPEM[index] = pkgcaddy.TLSLoadPEM{
+		tls.Certificates.LoadPEM[index] = pkgCaddy.TLSLoadPEM{
 			Certificate: req.Certificate,
 			// 私钥留空则保留原值
 			Key:  pickSecretStr(req.KeyContent, tls.Certificates.LoadPEM[index].Key),
@@ -263,9 +263,9 @@ func validateCertForm(req CertForm, create bool) error {
 	return nil
 }
 
-func ensureCerts(tls *pkgcaddy.TLSApp) *pkgcaddy.TLSCerts {
+func ensureCerts(tls *pkgCaddy.TLSApp) *pkgCaddy.TLSCerts {
 	if tls.Certificates == nil {
-		tls.Certificates = &pkgcaddy.TLSCerts{}
+		tls.Certificates = &pkgCaddy.TLSCerts{}
 	}
 	return tls.Certificates
 }
@@ -273,19 +273,19 @@ func ensureCerts(tls *pkgcaddy.TLSApp) *pkgcaddy.TLSCerts {
 // appendAutomateSubject 把 subject 追加到自动签发列表
 //
 // 如果 automation.policies 为空，创建一个新策略；否则追加到第一个策略
-func appendAutomateSubject(tls *pkgcaddy.TLSApp, subject string) {
+func appendAutomateSubject(tls *pkgCaddy.TLSApp, subject string) {
 	if tls.Automation == nil {
-		tls.Automation = &pkgcaddy.TLSAutomation{}
+		tls.Automation = &pkgCaddy.TLSAutomation{}
 	}
 	if len(tls.Automation.Policies) == 0 {
-		tls.Automation.Policies = []pkgcaddy.TLSPolicy{{Subjects: []string{subject}}}
+		tls.Automation.Policies = []pkgCaddy.TLSPolicy{{Subjects: []string{subject}}}
 		return
 	}
 	tls.Automation.Policies[0].Subjects = append(tls.Automation.Policies[0].Subjects, subject)
 }
 
 // replaceAutomateSubject 按全局 index 替换 subject，返回是否成功
-func replaceAutomateSubject(tls *pkgcaddy.TLSApp, index int, subject string) bool {
+func replaceAutomateSubject(tls *pkgCaddy.TLSApp, index int, subject string) bool {
 	if tls.Automation == nil {
 		return false
 	}
@@ -304,7 +304,7 @@ func replaceAutomateSubject(tls *pkgcaddy.TLSApp, index int, subject string) boo
 }
 
 // removeAutomateSubject 按全局 index 删除 subject，返回是否成功
-func removeAutomateSubject(tls *pkgcaddy.TLSApp, index int) bool {
+func removeAutomateSubject(tls *pkgCaddy.TLSApp, index int) bool {
 	if tls.Automation == nil {
 		return false
 	}
@@ -329,7 +329,7 @@ func removeAutomateSubject(tls *pkgcaddy.TLSApp, index int) bool {
 //
 // Caddy ACME 证书存储路径：<storage_root>/certificates/<acme_server_host>/<domain>/<domain>.crt
 // 文件格式：PEM，包含私钥 + 证书链（多个 block），与 certify.certToPEM 输出格式一致。
-func (s *Service) scanCertCache(cfg *pkgcaddy.Config) ([]CertForm, error) {
+func (s *Service) scanCertCache(cfg *pkgCaddy.Config) ([]CertForm, error) {
 	if cfg.Storage == nil {
 		return nil, nil
 	}

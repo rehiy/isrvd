@@ -6,7 +6,7 @@ import (
 
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/websocket"
-	libwebssh "github.com/rehiy/libgo/webssh"
+	libWebSSH "github.com/rehiy/libgo/webssh"
 )
 
 // logger 为 webssh 包创建带名称的 logger
@@ -16,7 +16,7 @@ var logger = logman.Named("webssh")
 type Service struct {
 	store           *store
 	credentialStore *credentialStore
-	sftpClient      *libwebssh.SFTPClient
+	sftpClient      *libWebSSH.SFTPClient
 }
 
 // NewService 创建 WebSSH 业务服务
@@ -29,7 +29,7 @@ func NewService() (*Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("初始化凭据存储失败: %w", err)
 	}
-	return &Service{store: s, credentialStore: cs, sftpClient: libwebssh.NewSFTPClient(0)}, nil
+	return &Service{store: s, credentialStore: cs, sftpClient: libWebSSH.NewSFTPClient(0)}, nil
 }
 
 // Close 释放 Service 持有的所有资源（连接池等），应在应用退出时调用
@@ -217,7 +217,7 @@ func (s *Service) RunTerminal(conn *websocket.ServerConn, hostID string) {
 
 	logger.Info("WebSSH 会话开始", "hostID", hostID, "addr", opt.Addr, "user", opt.User)
 
-	if err := libwebssh.Connect(conn.Conn, opt); err != nil {
+	if err := libWebSSH.Connect(conn.Conn, opt); err != nil {
 		logger.Error("WebSSH 会话结束", "hostID", hostID, "error", err)
 	} else {
 		logger.Info("WebSSH 会话正常结束", "hostID", hostID)

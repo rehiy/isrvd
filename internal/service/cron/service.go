@@ -14,7 +14,7 @@ import (
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/signal"
 	"github.com/rehiy/libgo/strutil"
-	cronlib "github.com/robfig/cron/v3"
+	libCron "github.com/robfig/cron/v3"
 
 	"isrvd/pkgs/docker"
 )
@@ -90,11 +90,11 @@ type JobLog struct {
 
 // Service 计划任务服务
 type Service struct {
-	cron    *cronlib.Cron
+	cron    *libCron.Cron
 	store   *Store
 	docker  *docker.DockerService      // 可选，DOCKER 类型任务需要
 	jobs    map[string]*Job            // jobID → Job
-	entries map[string]cronlib.EntryID // jobID → cron entry ID
+	entries map[string]libCron.EntryID // jobID → cron entry ID
 	mu      sync.RWMutex
 }
 
@@ -126,8 +126,8 @@ func (s *Service) AvailableTypes() []TypeInfo {
 func NewService(dockerSvc *docker.DockerService) *Service {
 	s := &Service{
 		jobs:    make(map[string]*Job),
-		entries: make(map[string]cronlib.EntryID),
-		cron:    cronlib.New(),
+		entries: make(map[string]libCron.EntryID),
+		cron:    libCron.New(),
 		store:   NewStore(),
 		docker:  dockerSvc,
 	}
@@ -569,7 +569,7 @@ func (s *Service) validateJob(job *Job) error {
 	if job.Schedule == "" {
 		return fmt.Errorf("job schedule is required")
 	}
-	if _, err := cronlib.ParseStandard(job.Schedule); err != nil {
+	if _, err := libCron.ParseStandard(job.Schedule); err != nil {
 		return fmt.Errorf("invalid schedule %q: %w", job.Schedule, err)
 	}
 	typeAllowed := false

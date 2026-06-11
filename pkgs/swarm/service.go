@@ -7,13 +7,13 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
-	dockerswarm "github.com/docker/docker/api/types/swarm"
+	dockerSwarm "github.com/docker/docker/api/types/swarm"
 	"github.com/rehiy/libgo/logman"
 )
 
 // ServiceList 获取服务列表，直接返回 Docker SDK 原始服务结构。
-func (s *SwarmService) ServiceList(ctx context.Context) ([]dockerswarm.Service, error) {
-	services, err := s.client.ServiceList(ctx, dockerswarm.ServiceListOptions{})
+func (s *SwarmService) ServiceList(ctx context.Context) ([]dockerSwarm.Service, error) {
+	services, err := s.client.ServiceList(ctx, dockerSwarm.ServiceListOptions{})
 	if err != nil {
 		logman.Error("ServiceList failed", "error", err)
 		return nil, err
@@ -32,7 +32,7 @@ func (s *SwarmService) ServiceAction(ctx context.Context, id, action string, rep
 	}
 
 	if action == "scale" && replicas != nil {
-		svc, _, err := s.client.ServiceInspectWithRaw(ctx, id, dockerswarm.ServiceInspectOptions{InsertDefaults: true})
+		svc, _, err := s.client.ServiceInspectWithRaw(ctx, id, dockerSwarm.ServiceInspectOptions{InsertDefaults: true})
 		if err != nil {
 			logman.Error("ServiceInspect failed", "id", id, "error", err)
 			return err
@@ -41,7 +41,7 @@ func (s *SwarmService) ServiceAction(ctx context.Context, id, action string, rep
 			return fmt.Errorf("仅 replicated 模式服务支持 scale")
 		}
 		svc.Spec.Mode.Replicated.Replicas = replicas
-		if _, err := s.client.ServiceUpdate(ctx, id, svc.Version, svc.Spec, dockerswarm.ServiceUpdateOptions{}); err != nil {
+		if _, err := s.client.ServiceUpdate(ctx, id, svc.Version, svc.Spec, dockerSwarm.ServiceUpdateOptions{}); err != nil {
 			logman.Error("ServiceScale failed", "id", id, "replicas", *replicas, "error", err)
 			return err
 		}
@@ -56,8 +56,8 @@ func (s *SwarmService) ServiceAction(ctx context.Context, id, action string, rep
 }
 
 // ServiceCreate 创建服务，直接接收 Docker SDK 原始 ServiceSpec。
-func (s *SwarmService) ServiceCreate(ctx context.Context, spec dockerswarm.ServiceSpec) (string, error) {
-	resp, err := s.client.ServiceCreate(ctx, spec, dockerswarm.ServiceCreateOptions{})
+func (s *SwarmService) ServiceCreate(ctx context.Context, spec dockerSwarm.ServiceSpec) (string, error) {
+	resp, err := s.client.ServiceCreate(ctx, spec, dockerSwarm.ServiceCreateOptions{})
 	if err != nil {
 		logman.Error("ServiceCreate failed", "error", err)
 		return "", err
@@ -67,7 +67,7 @@ func (s *SwarmService) ServiceCreate(ctx context.Context, spec dockerswarm.Servi
 
 // ServiceForceUpdate 强制重新部署服务
 func (s *SwarmService) ServiceForceUpdate(ctx context.Context, id string) error {
-	svc, _, err := s.client.ServiceInspectWithRaw(ctx, id, dockerswarm.ServiceInspectOptions{InsertDefaults: true})
+	svc, _, err := s.client.ServiceInspectWithRaw(ctx, id, dockerSwarm.ServiceInspectOptions{InsertDefaults: true})
 	if err != nil {
 		logman.Error("ServiceInspect failed", "id", id, "error", err)
 		return err
@@ -75,7 +75,7 @@ func (s *SwarmService) ServiceForceUpdate(ctx context.Context, id string) error 
 
 	svc.Spec.TaskTemplate.ForceUpdate++
 
-	if _, err := s.client.ServiceUpdate(ctx, id, svc.Version, svc.Spec, dockerswarm.ServiceUpdateOptions{}); err != nil {
+	if _, err := s.client.ServiceUpdate(ctx, id, svc.Version, svc.Spec, dockerSwarm.ServiceUpdateOptions{}); err != nil {
 		logman.Error("ServiceForceUpdate failed", "error", err)
 		return err
 	}
@@ -104,20 +104,20 @@ func (s *SwarmService) ServiceLogs(ctx context.Context, serviceID, tail string) 
 }
 
 // ServiceInspect 获取服务详情，直接返回 Docker SDK 原始服务结构。
-func (s *SwarmService) ServiceInspect(ctx context.Context, id string) (dockerswarm.Service, error) {
+func (s *SwarmService) ServiceInspect(ctx context.Context, id string) (dockerSwarm.Service, error) {
 	return s.ServiceInspectRaw(ctx, id)
 }
 
 // ServiceRunningTasksMap 一次性统计所有服务运行中的任务数。
 func (s *SwarmService) ServiceRunningTasksMap(ctx context.Context) map[string]int {
-	tasks, err := s.client.TaskList(ctx, dockerswarm.TaskListOptions{})
+	tasks, err := s.client.TaskList(ctx, dockerSwarm.TaskListOptions{})
 	if err != nil {
 		logman.Warn("TaskList failed in ServiceRunningTasksMap", "error", err)
 		return map[string]int{}
 	}
 	runningMap := map[string]int{}
 	for _, t := range tasks {
-		if t.Status.State == dockerswarm.TaskStateRunning {
+		if t.Status.State == dockerSwarm.TaskStateRunning {
 			runningMap[t.ServiceID]++
 		}
 	}
@@ -128,10 +128,10 @@ func (s *SwarmService) ServiceRunningTasksMap(ctx context.Context) map[string]in
 func (s *SwarmService) ServiceRunningTasks(ctx context.Context, serviceID string) int {
 	f := filters.NewArgs()
 	f.Add("service", serviceID)
-	tasks, _ := s.client.TaskList(ctx, dockerswarm.TaskListOptions{Filters: f})
+	tasks, _ := s.client.TaskList(ctx, dockerSwarm.TaskListOptions{Filters: f})
 	runningTasks := 0
 	for _, t := range tasks {
-		if t.Status.State == dockerswarm.TaskStateRunning {
+		if t.Status.State == dockerSwarm.TaskStateRunning {
 			runningTasks++
 		}
 	}
@@ -139,11 +139,11 @@ func (s *SwarmService) ServiceRunningTasks(ctx context.Context, serviceID string
 }
 
 // ServiceInspectRaw 获取服务原始配置。
-func (s *SwarmService) ServiceInspectRaw(ctx context.Context, id string) (dockerswarm.Service, error) {
-	svc, _, err := s.client.ServiceInspectWithRaw(ctx, id, dockerswarm.ServiceInspectOptions{InsertDefaults: true})
+func (s *SwarmService) ServiceInspectRaw(ctx context.Context, id string) (dockerSwarm.Service, error) {
+	svc, _, err := s.client.ServiceInspectWithRaw(ctx, id, dockerSwarm.ServiceInspectOptions{InsertDefaults: true})
 	if err != nil {
 		logman.Error("InspectService failed", "id", id, "error", err)
-		return dockerswarm.Service{}, err
+		return dockerSwarm.Service{}, err
 	}
 	return svc, nil
 }

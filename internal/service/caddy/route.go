@@ -4,15 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	pkgcaddy "isrvd/pkgs/caddy"
+	pkgCaddy "isrvd/pkgs/caddy"
 )
 
 // ─── 路由 CRUD ───
 
-// RouteView 路由响应视图，在 pkgcaddy.Route 基础上附加列表下标
+// RouteView 路由响应视图，在 pkgCaddy.Route 基础上附加列表下标
 type RouteView struct {
 	Index int `json:"index"`
-	pkgcaddy.Route
+	pkgCaddy.Route
 }
 
 // RouteList 列出指定 server 的所有路由
@@ -49,7 +49,7 @@ func (s *Service) RouteInspect(ctx context.Context, server string, index int) (*
 }
 
 // RouteCreate 追加一条路由，返回新下标
-func (s *Service) RouteCreate(ctx context.Context, server string, req pkgcaddy.Route) (int, error) {
+func (s *Service) RouteCreate(ctx context.Context, server string, req pkgCaddy.Route) (int, error) {
 	server = normalizeServer(server)
 	cfg, err := s.client.ConfigAll(ctx)
 	if err != nil {
@@ -64,7 +64,7 @@ func (s *Service) RouteCreate(ctx context.Context, server string, req pkgcaddy.R
 }
 
 // RouteUpdate 更新指定下标的路由
-func (s *Service) RouteUpdate(ctx context.Context, server string, index int, req pkgcaddy.Route) error {
+func (s *Service) RouteUpdate(ctx context.Context, server string, index int, req pkgCaddy.Route) error {
 	server = normalizeServer(server)
 	cfg, err := s.client.ConfigAll(ctx)
 	if err != nil {
@@ -205,12 +205,12 @@ func (s *Service) GlobalUpdate(ctx context.Context, req GlobalForm) error {
 	// 日志
 	if req.LogLevel != "" || req.LogFormat != "" {
 		if cfg.Logging == nil {
-			cfg.Logging = &pkgcaddy.LoggingConfig{}
+			cfg.Logging = &pkgCaddy.LoggingConfig{}
 		}
 		if cfg.Logging.Logs == nil {
-			cfg.Logging.Logs = map[string]*pkgcaddy.Log{}
+			cfg.Logging.Logs = map[string]*pkgCaddy.Log{}
 		}
-		log := &pkgcaddy.Log{}
+		log := &pkgCaddy.Log{}
 		if req.LogLevel != "" {
 			log.Level = req.LogLevel
 		}
@@ -226,13 +226,13 @@ func (s *Service) GlobalUpdate(ctx context.Context, req GlobalForm) error {
 
 	// TLS 自动化
 	if cfg.Apps == nil {
-		cfg.Apps = &pkgcaddy.AppsConfig{}
+		cfg.Apps = &pkgCaddy.AppsConfig{}
 	}
 	if cfg.Apps.TLS == nil {
-		cfg.Apps.TLS = &pkgcaddy.TLSApp{}
+		cfg.Apps.TLS = &pkgCaddy.TLSApp{}
 	}
 	if cfg.Apps.TLS.Automation == nil {
-		cfg.Apps.TLS.Automation = &pkgcaddy.TLSAutomation{}
+		cfg.Apps.TLS.Automation = &pkgCaddy.TLSAutomation{}
 	}
 	auto := cfg.Apps.TLS.Automation
 
@@ -257,7 +257,7 @@ func (s *Service) GlobalUpdate(ctx context.Context, req GlobalForm) error {
 	}
 	issuer := buildIssuer(req)
 	if issuer != nil || req.OnDemandTLS {
-		policy := pkgcaddy.TLSPolicy{
+		policy := pkgCaddy.TLSPolicy{
 			Issuers:  []map[string]any{},
 			OnDemand: req.OnDemandTLS,
 		}
@@ -269,7 +269,7 @@ func (s *Service) GlobalUpdate(ctx context.Context, req GlobalForm) error {
 		if globalPolicyIdx >= 0 {
 			auto.Policies[globalPolicyIdx] = policy
 		} else {
-			auto.Policies = append([]pkgcaddy.TLSPolicy{policy}, auto.Policies...)
+			auto.Policies = append([]pkgCaddy.TLSPolicy{policy}, auto.Policies...)
 		}
 	} else if globalPolicyIdx >= 0 {
 		auto.Policies = append(auto.Policies[:globalPolicyIdx], auto.Policies[globalPolicyIdx+1:]...)
@@ -283,7 +283,7 @@ func (s *Service) GlobalUpdate(ctx context.Context, req GlobalForm) error {
 	// automatic_https（server 级，作用于默认 server srv0）
 	srv := ensureServer(cfg, DefaultServerName)
 	if req.AutoHTTPSDisable || req.AutoHTTPSDisableRedirects {
-		srv.AutomaticHTTPS = &pkgcaddy.AutomaticHTTPS{
+		srv.AutomaticHTTPS = &pkgCaddy.AutomaticHTTPS{
 			Disable:          req.AutoHTTPSDisable,
 			DisableRedirects: req.AutoHTTPSDisableRedirects,
 		}

@@ -7,8 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	svccaddy "isrvd/internal/service/caddy"
-	pkgcaddy "isrvd/pkgs/caddy"
+	svcCaddy "isrvd/internal/service/caddy"
+	pkgCaddy "isrvd/pkgs/caddy"
 )
 
 // defineCaddyRoutes 定义 Caddy 模块路由
@@ -82,7 +82,7 @@ func (app *App) caddyGlobalInspect(c *gin.Context) {
 }
 
 func (app *App) caddyGlobalUpdate(c *gin.Context) {
-	var req svccaddy.GlobalForm
+	var req svcCaddy.GlobalForm
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -123,7 +123,7 @@ func (app *App) caddyRouteInspect(c *gin.Context) {
 
 func (app *App) caddyRouteCreate(c *gin.Context) {
 	server := c.Query("server")
-	var req pkgcaddy.Route
+	var req pkgCaddy.Route
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -143,7 +143,7 @@ func (app *App) caddyRouteUpdate(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "index 必须为整数")
 		return
 	}
-	var req pkgcaddy.Route
+	var req pkgCaddy.Route
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -181,7 +181,7 @@ func (app *App) caddyCertList(c *gin.Context) {
 }
 
 func (app *App) caddyCertCreate(c *gin.Context) {
-	var req svccaddy.CertForm
+	var req svcCaddy.CertForm
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -194,7 +194,7 @@ func (app *App) caddyCertCreate(c *gin.Context) {
 }
 
 func (app *App) caddyCertUpdate(c *gin.Context) {
-	var req svccaddy.CertForm
+	var req svcCaddy.CertForm
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return

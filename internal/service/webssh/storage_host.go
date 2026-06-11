@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/rehiy/libgo/strutil"
-	libwebssh "github.com/rehiy/libgo/webssh"
+	libWebSSH "github.com/rehiy/libgo/webssh"
 
 	"isrvd/config"
 	"isrvd/pkgs/cstore"
@@ -107,14 +107,14 @@ func (s *store) hostDelete(id string) error {
 
 // hostGetOption 获取指定 ID 主机的 SSH 连接配置
 // 如果主机绑定了凭据，优先使用凭据中的认证信息
-func (s *store) hostGetOption(id string, credStore *credentialStore) (*libwebssh.SSHClientOption, error) {
+func (s *store) hostGetOption(id string, credStore *credentialStore) (*libWebSSH.SSHClientOption, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	h := s.findByID(id)
 	if h == nil {
 		return nil, fmt.Errorf("主机 %s 不存在", id)
 	}
-	opt := &libwebssh.SSHClientOption{
+	opt := &libWebSSH.SSHClientOption{
 		Addr:       h.Addr,
 		User:       h.User,
 		Password:   h.Password,

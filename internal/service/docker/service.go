@@ -8,12 +8,12 @@ import (
 	"github.com/rehiy/libgo/logman"
 
 	"isrvd/internal/registry"
-	pkgdocker "isrvd/pkgs/docker"
+	pkgDocker "isrvd/pkgs/docker"
 )
 
 // Service Docker 业务服务
 type Service struct {
-	docker *pkgdocker.DockerService
+	docker *pkgDocker.DockerService
 }
 
 // NewService 创建 Docker 业务服务

@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apisixsvc "isrvd/internal/service/apisix"
-	pkgapisix "isrvd/pkgs/apisix"
+	svcApisix "isrvd/internal/service/apisix"
+	pkgApisix "isrvd/pkgs/apisix"
 )
 
 // defineApisixRoutes 定义 Apisix 模块路由
@@ -71,7 +71,7 @@ func (app *App) apisixRouteInspect(c *gin.Context) {
 }
 
 func (app *App) apisixRouteCreate(c *gin.Context) {
-	var req pkgapisix.Route
+	var req pkgApisix.Route
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -85,7 +85,7 @@ func (app *App) apisixRouteCreate(c *gin.Context) {
 }
 
 func (app *App) apisixRouteUpdate(c *gin.Context) {
-	var req pkgapisix.Route
+	var req pkgApisix.Route
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -183,7 +183,7 @@ func (app *App) apisixWhitelistInspect(c *gin.Context) {
 }
 
 func (app *App) apisixWhitelistCreate(c *gin.Context) {
-	var req apisixsvc.WhitelistCreateRequest
+	var req svcApisix.WhitelistCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -197,7 +197,7 @@ func (app *App) apisixWhitelistCreate(c *gin.Context) {
 }
 
 func (app *App) apisixWhitelistUserCreate(c *gin.Context) {
-	var req apisixsvc.WhitelistUserCreateRequest
+	var req svcApisix.WhitelistUserCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -243,7 +243,7 @@ func (app *App) apisixPluginConfigInspect(c *gin.Context) {
 }
 
 func (app *App) apisixPluginConfigCreate(c *gin.Context) {
-	var req pkgapisix.PluginConfig
+	var req pkgApisix.PluginConfig
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -257,7 +257,7 @@ func (app *App) apisixPluginConfigCreate(c *gin.Context) {
 }
 
 func (app *App) apisixPluginConfigUpdate(c *gin.Context) {
-	var req pkgapisix.PluginConfig
+	var req pkgApisix.PluginConfig
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -297,7 +297,7 @@ func (app *App) apisixUpstreamInspect(c *gin.Context) {
 }
 
 func (app *App) apisixUpstreamCreate(c *gin.Context) {
-	var req pkgapisix.Upstream
+	var req pkgApisix.Upstream
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -311,7 +311,7 @@ func (app *App) apisixUpstreamCreate(c *gin.Context) {
 }
 
 func (app *App) apisixUpstreamUpdate(c *gin.Context) {
-	var req pkgapisix.Upstream
+	var req pkgApisix.Upstream
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -351,7 +351,7 @@ func (app *App) apisixSSLInspect(c *gin.Context) {
 }
 
 func (app *App) apisixSSLCreate(c *gin.Context) {
-	var req pkgapisix.SSL
+	var req pkgApisix.SSL
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -365,7 +365,7 @@ func (app *App) apisixSSLCreate(c *gin.Context) {
 }
 
 func (app *App) apisixSSLUpdate(c *gin.Context) {
-	var req pkgapisix.SSL
+	var req pkgApisix.SSL
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return

@@ -7,25 +7,25 @@ import (
 
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/docker/docker/api/types/mount"
-	dockerswarm "github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/api/types/swarm"
 )
 
 // ==================== Compose service -> Swarm service spec ====================
 
 // ServiceToSwarmSpec 将 compose ServiceConfig 转为 Docker SDK Swarm ServiceSpec。
-func ServiceToSwarmSpec(project *types.Project, svc types.ServiceConfig) (dockerswarm.ServiceSpec, error) {
+func ServiceToSwarmSpec(project *types.Project, svc types.ServiceConfig) (swarm.ServiceSpec, error) {
 	if svc.Image == "" {
-		return dockerswarm.ServiceSpec{}, fmt.Errorf("service %q 缺少 image", svc.Name)
+		return swarm.ServiceSpec{}, fmt.Errorf("service %q 缺少 image", svc.Name)
 	}
 
 	name := defaultString(svc.Name, svc.ContainerName)
-	spec := dockerswarm.ServiceSpec{
-		Annotations: dockerswarm.Annotations{
+	spec := swarm.ServiceSpec{
+		Annotations: swarm.Annotations{
 			Name:   name,
 			Labels: buildServiceLabels(project, svc, nil),
 		},
-		TaskTemplate: dockerswarm.TaskSpec{
-			ContainerSpec: &dockerswarm.ContainerSpec{
+		TaskTemplate: swarm.TaskSpec{
+			ContainerSpec: &swarm.ContainerSpec{
 				Image:          svc.Image,
 				Env:            envToSlice(svc.Environment),
 				Command:        []string(svc.Entrypoint),
@@ -43,11 +43,11 @@ func ServiceToSwarmSpec(project *types.Project, svc types.ServiceConfig) (docker
 				CapabilityDrop: svc.CapDrop,
 			},
 		},
-		EndpointSpec: &dockerswarm.EndpointSpec{},
+		EndpointSpec: &swarm.EndpointSpec{},
 	}
 
 	if len(svc.DNS) > 0 || len(svc.DNSOpts) > 0 || len(svc.DNSSearch) > 0 {
-		spec.TaskTemplate.ContainerSpec.DNSConfig = &dockerswarm.DNSConfig{
+		spec.TaskTemplate.ContainerSpec.DNSConfig = &swarm.DNSConfig{
 			Nameservers: []string(svc.DNS),
 			Options:     svc.DNSOpts,
 			Search:      []string(svc.DNSSearch),
@@ -66,27 +66,27 @@ func ServiceToSwarmSpec(project *types.Project, svc types.ServiceConfig) (docker
 
 // ==================== Swarm task/service mapping ====================
 
-func applySwarmMode(svc types.ServiceConfig, spec *dockerswarm.ServiceSpec) {
+func applySwarmMode(svc types.ServiceConfig, spec *swarm.ServiceSpec) {
 	replicas := uint64(1)
 	if svc.Deploy != nil {
 		if svc.Deploy.Mode == "global" {
-			spec.Mode = dockerswarm.ServiceMode{Global: &dockerswarm.GlobalService{}}
+			spec.Mode = swarm.ServiceMode{Global: &swarm.GlobalService{}}
 			return
 		}
 		if svc.Deploy.Replicas != nil && *svc.Deploy.Replicas > 0 {
 			replicas = uint64(*svc.Deploy.Replicas)
 		}
 	}
-	spec.Mode = dockerswarm.ServiceMode{Replicated: &dockerswarm.ReplicatedService{Replicas: &replicas}}
+	spec.Mode = swarm.ServiceMode{Replicated: &swarm.ReplicatedService{Replicas: &replicas}}
 }
 
-func applySwarmNetworks(project *types.Project, svc types.ServiceConfig, spec *dockerswarm.ServiceSpec) {
+func applySwarmNetworks(project *types.Project, svc types.ServiceConfig, spec *swarm.ServiceSpec) {
 	for _, k := range svc.NetworksByPriority() {
-		spec.TaskTemplate.Networks = append(spec.TaskTemplate.Networks, dockerswarm.NetworkAttachmentConfig{Target: resolveNetworkName(project, k)})
+		spec.TaskTemplate.Networks = append(spec.TaskTemplate.Networks, swarm.NetworkAttachmentConfig{Target: resolveNetworkName(project, k)})
 	}
 }
 
-func applySwarmPorts(svc types.ServiceConfig, spec *dockerswarm.ServiceSpec) {
+func applySwarmPorts(svc types.ServiceConfig, spec *swarm.ServiceSpec) {
 	for _, p := range svc.Ports {
 		if p.Target == 0 {
 			continue
@@ -99,15 +99,15 @@ func applySwarmPorts(svc types.ServiceConfig, spec *dockerswarm.ServiceSpec) {
 		if published == 0 {
 			published = int(p.Target)
 		}
-		proto := dockerswarm.PortConfigProtocolTCP
+		proto := swarm.PortConfigProtocolTCP
 		if strings.EqualFold(p.Protocol, "udp") {
-			proto = dockerswarm.PortConfigProtocolUDP
+			proto = swarm.PortConfigProtocolUDP
 		}
-		publishMode := dockerswarm.PortConfigPublishModeIngress
+		publishMode := swarm.PortConfigPublishModeIngress
 		if strings.EqualFold(p.Mode, "host") {
-			publishMode = dockerswarm.PortConfigPublishModeHost
+			publishMode = swarm.PortConfigPublishModeHost
 		}
-		spec.EndpointSpec.Ports = append(spec.EndpointSpec.Ports, dockerswarm.PortConfig{
+		spec.EndpointSpec.Ports = append(spec.EndpointSpec.Ports, swarm.PortConfig{
 			PublishedPort: uint32(published),
 			TargetPort:    p.Target,
 			Protocol:      proto,
@@ -116,7 +116,7 @@ func applySwarmPorts(svc types.ServiceConfig, spec *dockerswarm.ServiceSpec) {
 	}
 }
 
-func applySwarmVolumes(svc types.ServiceConfig, spec *dockerswarm.ServiceSpec) {
+func applySwarmVolumes(svc types.ServiceConfig, spec *swarm.ServiceSpec) {
 	for _, v := range svc.Volumes {
 		if v.Source == "" || v.Target == "" {
 			continue
@@ -138,19 +138,19 @@ func applySwarmVolumes(svc types.ServiceConfig, spec *dockerswarm.ServiceSpec) {
 	}
 }
 
-func applySwarmPlacement(svc types.ServiceConfig, spec *dockerswarm.ServiceSpec) {
+func applySwarmPlacement(svc types.ServiceConfig, spec *swarm.ServiceSpec) {
 	if svc.Deploy == nil || len(svc.Deploy.Placement.Constraints) == 0 {
 		return
 	}
-	spec.TaskTemplate.Placement = &dockerswarm.Placement{Constraints: svc.Deploy.Placement.Constraints}
+	spec.TaskTemplate.Placement = &swarm.Placement{Constraints: svc.Deploy.Placement.Constraints}
 }
 
-func applySwarmResources(svc types.ServiceConfig, spec *dockerswarm.ServiceSpec) {
+func applySwarmResources(svc types.ServiceConfig, spec *swarm.ServiceSpec) {
 	if svc.Deploy == nil {
 		return
 	}
 	if limits := svc.Deploy.Resources.Limits; limits != nil {
-		spec.TaskTemplate.Resources.Limits = &dockerswarm.Limit{
+		spec.TaskTemplate.Resources.Limits = &swarm.Limit{
 			MemoryBytes: int64(limits.MemoryBytes),
 			Pids:        limits.Pids,
 		}
@@ -159,7 +159,7 @@ func applySwarmResources(svc types.ServiceConfig, spec *dockerswarm.ServiceSpec)
 		}
 	}
 	if reservations := svc.Deploy.Resources.Reservations; reservations != nil {
-		spec.TaskTemplate.Resources.Reservations = &dockerswarm.Resources{
+		spec.TaskTemplate.Resources.Reservations = &swarm.Resources{
 			MemoryBytes: int64(reservations.MemoryBytes),
 		}
 		if reservations.NanoCPUs > 0 {

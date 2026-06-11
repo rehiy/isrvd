@@ -9,7 +9,7 @@ import (
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/registry"
 
-	pkgdocker "isrvd/pkgs/docker"
+	pkgDocker "isrvd/pkgs/docker"
 )
 
 // ImageTagRequest 镜像标签请求。
@@ -103,7 +103,7 @@ func (s *Service) ImageList(ctx context.Context, all bool) ([]*ImageInfo, error)
 		}
 		result = append(result, &ImageInfo{
 			ID:          img.ID,
-			ShortID:     pkgdocker.ShortID(img.ID),
+			ShortID:     pkgDocker.ShortID(img.ID),
 			RepoTags:    img.RepoTags,
 			RepoDigests: img.RepoDigests,
 			Size:        img.Size,
@@ -227,7 +227,7 @@ func imageDetail(img *image.InspectResponse, history []image.HistoryResponseItem
 	}
 	layerDetails := imageLayerDetails(img, history)
 	return &ImageDetail{
-		ID: img.ID, ShortID: pkgdocker.ShortID(img.ID), RepoTags: img.RepoTags, RepoDigests: img.RepoDigests,
+		ID: img.ID, ShortID: pkgDocker.ShortID(img.ID), RepoTags: img.RepoTags, RepoDigests: img.RepoDigests,
 		Size: img.Size, Created: img.Created, Author: img.Author, Architecture: img.Architecture, OS: img.Os,
 		Cmd: cmd, Entrypoint: entrypoint, Env: env, WorkingDir: workingDir, ExposedPorts: exposedPorts, Labels: labels,
 		Layers: layers, LayerDetails: layerDetails,

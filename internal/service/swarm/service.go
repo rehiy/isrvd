@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/mount"
-	dockerswarm "github.com/docker/docker/api/types/swarm"
+	dockerSwarm "github.com/docker/docker/api/types/swarm"
 
 	"isrvd/internal/registry"
-	pkgswarm "isrvd/pkgs/swarm"
+	pkgSwarm "isrvd/pkgs/swarm"
 )
 
 // NodeInfo Swarm 节点信息（列表项），保持前端稳定响应结构。
@@ -115,7 +115,7 @@ type ServiceMount struct {
 
 // Service Swarm 业务服务
 type Service struct {
-	svc *pkgswarm.SwarmService
+	svc *pkgSwarm.SwarmService
 }
 
 // NewService 创建 Swarm 业务服务，验证节点是否是 Swarm manager
@@ -239,7 +239,7 @@ func (s *Service) ServiceCreate(ctx context.Context, req ServiceSpec) (string, e
 }
 
 // ServiceCreateRaw 使用 Docker SDK 原始结构创建服务，供 Compose 部署链路复用。
-func (s *Service) ServiceCreateRaw(ctx context.Context, spec dockerswarm.ServiceSpec) (string, error) {
+func (s *Service) ServiceCreateRaw(ctx context.Context, spec dockerSwarm.ServiceSpec) (string, error) {
 	if spec.Name == "" {
 		return "", fmt.Errorf("服务名称不能为空")
 	}
@@ -253,7 +253,7 @@ func (s *Service) ServiceCreateRaw(ctx context.Context, spec dockerswarm.Service
 	return id, nil
 }
 
-func serviceInfoFromRaw(svc dockerswarm.Service, runningTasks int) ServiceInfo {
+func serviceInfoFromRaw(svc dockerSwarm.Service, runningTasks int) ServiceInfo {
 	info := ServiceInfo{
 		ID:           svc.ID,
 		Name:         svc.Spec.Name,
@@ -284,7 +284,7 @@ func serviceInfoFromRaw(svc dockerswarm.Service, runningTasks int) ServiceInfo {
 	return info
 }
 
-func serviceDetailFromRaw(svc dockerswarm.Service, runningTasks int) *ServiceDetail {
+func serviceDetailFromRaw(svc dockerSwarm.Service, runningTasks int) *ServiceDetail {
 	info := serviceInfoFromRaw(svc, runningTasks)
 	detail := &ServiceDetail{
 		ServiceSpec: ServiceSpec{
@@ -321,37 +321,37 @@ func serviceDetailFromRaw(svc dockerswarm.Service, runningTasks int) *ServiceDet
 	return detail
 }
 
-func serviceSpecToRaw(req ServiceSpec) dockerswarm.ServiceSpec {
-	spec := dockerswarm.ServiceSpec{
-		Annotations: dockerswarm.Annotations{Name: req.Name, Labels: req.Labels},
-		TaskTemplate: dockerswarm.TaskSpec{
-			ContainerSpec: &dockerswarm.ContainerSpec{
+func serviceSpecToRaw(req ServiceSpec) dockerSwarm.ServiceSpec {
+	spec := dockerSwarm.ServiceSpec{
+		Annotations: dockerSwarm.Annotations{Name: req.Name, Labels: req.Labels},
+		TaskTemplate: dockerSwarm.TaskSpec{
+			ContainerSpec: &dockerSwarm.ContainerSpec{
 				Image: req.Image,
 				Env:   req.Env,
 				Args:  req.Args,
 			},
 		},
-		EndpointSpec: &dockerswarm.EndpointSpec{},
+		EndpointSpec: &dockerSwarm.EndpointSpec{},
 	}
 	if req.Mode == "global" {
-		spec.Mode = dockerswarm.ServiceMode{Global: &dockerswarm.GlobalService{}}
+		spec.Mode = dockerSwarm.ServiceMode{Global: &dockerSwarm.GlobalService{}}
 	} else {
 		replicas := uint64(1)
 		if req.Replicas != nil && *req.Replicas > 0 {
 			replicas = *req.Replicas
 		}
-		spec.Mode = dockerswarm.ServiceMode{Replicated: &dockerswarm.ReplicatedService{Replicas: &replicas}}
+		spec.Mode = dockerSwarm.ServiceMode{Replicated: &dockerSwarm.ReplicatedService{Replicas: &replicas}}
 	}
 	for _, p := range req.Ports {
-		proto := dockerswarm.PortConfigProtocolTCP
+		proto := dockerSwarm.PortConfigProtocolTCP
 		if strings.EqualFold(p.Protocol, "udp") {
-			proto = dockerswarm.PortConfigProtocolUDP
+			proto = dockerSwarm.PortConfigProtocolUDP
 		}
-		publishMode := dockerswarm.PortConfigPublishModeIngress
+		publishMode := dockerSwarm.PortConfigPublishModeIngress
 		if strings.EqualFold(p.PublishMode, "host") {
-			publishMode = dockerswarm.PortConfigPublishModeHost
+			publishMode = dockerSwarm.PortConfigPublishModeHost
 		}
-		spec.EndpointSpec.Ports = append(spec.EndpointSpec.Ports, dockerswarm.PortConfig{
+		spec.EndpointSpec.Ports = append(spec.EndpointSpec.Ports, dockerSwarm.PortConfig{
 			Protocol:      proto,
 			PublishedPort: p.PublishedPort,
 			TargetPort:    p.TargetPort,
@@ -371,10 +371,10 @@ func serviceSpecToRaw(req ServiceSpec) dockerswarm.ServiceSpec {
 		})
 	}
 	for _, n := range req.Networks {
-		spec.TaskTemplate.Networks = append(spec.TaskTemplate.Networks, dockerswarm.NetworkAttachmentConfig{Target: n})
+		spec.TaskTemplate.Networks = append(spec.TaskTemplate.Networks, dockerSwarm.NetworkAttachmentConfig{Target: n})
 	}
 	if len(req.Constraints) > 0 {
-		spec.TaskTemplate.Placement = &dockerswarm.Placement{Constraints: req.Constraints}
+		spec.TaskTemplate.Placement = &dockerSwarm.Placement{Constraints: req.Constraints}
 	}
 	return spec
 }
@@ -427,7 +427,7 @@ func (s *Service) TaskList(ctx context.Context, serviceID string) ([]Task, error
 	return tasksFromRaw(tasks, services, nodes), nil
 }
 
-func nodeInfoFromRaw(node dockerswarm.Node) NodeInfo {
+func nodeInfoFromRaw(node dockerSwarm.Node) NodeInfo {
 	return NodeInfo{
 		ID:            node.ID,
 		Hostname:      node.Description.Hostname,
@@ -440,7 +440,7 @@ func nodeInfoFromRaw(node dockerswarm.Node) NodeInfo {
 	}
 }
 
-func nodeDetailFromRaw(node dockerswarm.Node) *NodeDetail {
+func nodeDetailFromRaw(node dockerSwarm.Node) *NodeDetail {
 	info := nodeInfoFromRaw(node)
 	return &NodeDetail{
 		ID: info.ID, Hostname: info.Hostname, Role: info.Role, Availability: info.Availability, State: info.State,
@@ -451,7 +451,7 @@ func nodeDetailFromRaw(node dockerswarm.Node) *NodeDetail {
 	}
 }
 
-func tasksFromRaw(tasks []dockerswarm.Task, services []dockerswarm.Service, nodes []dockerswarm.Node) []Task {
+func tasksFromRaw(tasks []dockerSwarm.Task, services []dockerSwarm.Service, nodes []dockerSwarm.Node) []Task {
 	svcNameMap := map[string]string{}
 	for _, svc := range services {
 		svcNameMap[svc.ID] = svc.Spec.Name

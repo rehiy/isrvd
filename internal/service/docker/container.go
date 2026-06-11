@@ -20,7 +20,7 @@ import (
 	"github.com/rehiy/libgo/websocket"
 	"github.com/shirou/gopsutil/v3/cpu"
 
-	pkgdocker "isrvd/pkgs/docker"
+	pkgDocker "isrvd/pkgs/docker"
 )
 
 var (
@@ -178,7 +178,7 @@ func (s *Service) ContainerList(ctx context.Context, all bool) ([]*ContainerInfo
 			}
 		}
 		result = append(result, &ContainerInfo{
-			ID:       pkgdocker.ShortID(ct.ID),
+			ID:       pkgDocker.ShortID(ct.ID),
 			Name:     name,
 			Image:    ct.Image,
 			State:    string(ct.State),
@@ -243,7 +243,7 @@ func (s *Service) ContainerInspect(ctx context.Context, id string) (*ContainerDe
 			CapAdd:     []string(info.HostConfig.CapAdd),
 			CapDrop:    []string(info.HostConfig.CapDrop),
 		},
-		ID:        pkgdocker.ShortID(info.ID),
+		ID:        pkgDocker.ShortID(info.ID),
 		Name:      strings.TrimPrefix(info.Name, "/"),
 		State:     info.State.Status,
 		CreatedAt: info.Created,
@@ -267,7 +267,7 @@ func (s *Service) ContainerCreate(ctx context.Context, req ContainerSpec) (*Cont
 	if err != nil {
 		return nil, fmt.Errorf("创建容器失败: %w", err)
 	}
-	return &ContainerCreateResult{ID: pkgdocker.ShortID(id), Name: req.Name}, nil
+	return &ContainerCreateResult{ID: pkgDocker.ShortID(id), Name: req.Name}, nil
 }
 
 // ContainerCreateRaw 使用 Docker SDK 原始结构创建容器，供 Compose 部署链路复用。
@@ -282,7 +282,7 @@ func (s *Service) ContainerCreateRaw(ctx context.Context, name string, container
 	if err != nil {
 		return nil, fmt.Errorf("创建容器失败: %w", err)
 	}
-	return &ContainerCreateResult{ID: pkgdocker.ShortID(id), Name: name}, nil
+	return &ContainerCreateResult{ID: pkgDocker.ShortID(id), Name: name}, nil
 }
 
 func (s *Service) containerCreateConfig(req ContainerSpec) (*container.Config, *container.HostConfig, error) {
