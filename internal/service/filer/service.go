@@ -186,8 +186,35 @@ func (s *Service) FileZip(absPath string) error {
 }
 
 // FileUnzip 解压 zip 文件
-func (s *Service) FileUnzip(absPath string) error {
-	return archive.NewZipper().Unzip(absPath)
+// absPath: zip 文件的绝对路径
+// targetPath: 空值则在文件同级目录解压；非空则在该绝对路径目录解压
+func (s *Service) FileUnzip(absPath, targetPath string) error {
+	if targetPath == "" {
+		return archive.NewZipper().Unzip(absPath)
+	}
+
+	zipName := filepath.Base(absPath)
+	zipTargetPath := filepath.Join(targetPath, zipName)
+
+	// 确保目标目录存在
+	if err := os.MkdirAll(targetPath, 0755); err != nil {
+		return fmt.Errorf("无法创建目标目录: %w", err)
+	}
+
+	// 移动 zip 到目标目录
+	if err := os.Rename(absPath, zipTargetPath); err != nil {
+		return fmt.Errorf("无法移动文件到目标目录: %w", err)
+	}
+
+	// 解压
+	if err := archive.NewZipper().Unzip(zipTargetPath); err != nil {
+		// 解压失败，移回原位置
+		_ = os.Rename(zipTargetPath, absPath)
+		return err
+	}
+
+	// 移回 zip 文件
+	return os.Rename(zipTargetPath, absPath)
 }
 
 // previewContentTypes 支持在线预览的文件扩展名 → Content-Type 映射

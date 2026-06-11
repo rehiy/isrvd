@@ -112,6 +112,18 @@ isrvd_post "/filer/zip" '{"path":"<DIR_OR_FILE>"}'
 
 ## 解压
 
+### 基础解压（默认解压到 zip 文件同级目录）
+
 ```bash
 isrvd_post "/filer/unzip" '{"path":"<FILE>.zip"}'
 ```
+
+### 解压到指定目录
+
+```bash
+isrvd_post "/filer/unzip" '{"path":"<FILE>.zip","targetDir":"<DIR_NAME>"}'
+```
+
+`targetDir` 仅允许输入标准目录名（不能包含 `/` 等路径分隔符），会自动在 zip 文件的当前目录下创建。
+
+解压后，`<FILE>.zip` 文件会移回原位置。

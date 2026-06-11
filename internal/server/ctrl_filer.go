@@ -57,6 +57,11 @@ type filerRenameBody struct {
 	Target string `json:"target" binding:"required"`
 }
 
+type filerUnzipBody struct {
+	Path       string `json:"path" binding:"required"`
+	TargetDir  string `json:"targetDir"` // 可选：指定解压目标目录名（仅允许标准目录名，无 / 等分隔符）
+}
+
 func (app *App) filerAbsPath(c *gin.Context, path string) (string, bool) {
 	absPath, err := app.filerSvc.AbsPath(c.GetString("username"), path)
 	if err != nil {
@@ -352,7 +357,7 @@ func (app *App) filerFileZip(c *gin.Context) {
 }
 
 func (app *App) filerFileUnzip(c *gin.Context) {
-	var req filerPathQuery
+	var req filerUnzipBody
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -363,8 +368,20 @@ func (app *App) filerFileUnzip(c *gin.Context) {
 		return
 	}
 
-	if err := app.filerSvc.FileUnzip(absPath); err != nil {
-		logman.Error("Unzip failed", "path", absPath, "error", err)
+	// 如果指定了目标目录名，验证其有效性并拼接到 zip 文件当前目录
+	var targetPath string
+	if req.TargetDir != "" {
+		// 验证目录名：不能是绝对路径、不能含路径分隔符、不能是 . 或 ..
+		if filepath.IsAbs(req.TargetDir) || filepath.Base(req.TargetDir) != req.TargetDir || req.TargetDir == "." || req.TargetDir == ".." {
+			respondError(c, http.StatusBadRequest, "无效的目录名，不允许包含路径分隔符")
+			return
+		}
+		// 拼接到 zip 文件的当前目录
+		targetPath = filepath.Join(filepath.Dir(absPath), req.TargetDir)
+	}
+
+	if err := app.filerSvc.FileUnzip(absPath, targetPath); err != nil {
+		logman.Error("Unzip failed", "path", absPath, "targetDir", req.TargetDir, "error", err)
 		respondError(c, http.StatusInternalServerError, "无法解压文件")
 		return
 	}

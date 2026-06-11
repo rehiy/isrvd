@@ -278,8 +278,8 @@ class ApiService {
         return http.post<void>('filer/zip', { path })
     }
 
-    filerUnzip(path: string) {
-        return http.post<void>('filer/unzip', { path })
+    filerUnzip(path: string, targetDir?: string) {
+        return http.post<void>('filer/unzip', { path, targetDir: targetDir || undefined })
     }
 
     filerUpload(formData: FormData, config: AxiosRequestConfig = {}) {
