@@ -3,7 +3,12 @@ set -e
 
 # ------------------------------------------
 # isrvd 服务管理脚本
-# 用法: isrvd.sh install [--docker] [--caddy|--apisix] | update | uninstall | download
+# 用法:
+#   isrvd.sh install [--docker] [--caddy|--apisix] [--cn|--global|--auto]
+#   isrvd.sh update [--cn|--global|--auto]
+#   isrvd.sh download [--cn|--global|--auto]
+#   isrvd.sh uninstall
+# iSrvd 源: 默认按 IP country_code 自动选择；可用 --cn/--global 手动指定
 # ------------------------------------------
 
 # 配置
@@ -15,6 +20,7 @@ SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 DOCKER_NETWORK="sdnet"
 DOCKER_DATA_DIR="/srv/data"
 DOCKER_CONF_DIR="$INSTALL_DIR/docker"
+SERVICE_AREA="auto"
 
 # ------------------------------------------
 # 版本信息
@@ -29,14 +35,78 @@ get_arch() {
     esac
 }
 
-get_latest_version() {
-    curl -sI https://github.com/rehiy/isrvd/releases/latest 2>/dev/null | \
-        grep -i "location:" | sed 's#.*/tag/##' | tr -d '\r\n' || echo "unknown"
+json_string_field() {
+    local json="$1"
+    local field="$2"
+
+    printf '%s' "$json" | tr -d '\r\n' | \
+        sed -n 's/.*"'"$field"'"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1
+}
+
+parse_service_area_option() {
+    case "$1" in
+        --cn)     SERVICE_AREA="cn" ;;
+        --global) SERVICE_AREA="global" ;;
+        --auto)   SERVICE_AREA="auto" ;;
+        *) return 1 ;;
+    esac
+    return 0
+}
+
+detect_country_code() {
+    local json
+    local code
+
+    json=$(curl -fsSL --connect-timeout 2 --max-time 5 -A "isrvd-installer" "https://ipip.rehi.org/json" 2>/dev/null) || return 1
+    code=$(json_string_field "$json" "country_code")
+    if [ -z "$code" ]; then
+        return 1
+    fi
+
+    printf '%s' "$code" | tr '[:lower:]' '[:upper:]'
+}
+
+resolve_service_area() {
+    local country
+
+    if [ "$SERVICE_AREA" = "auto" ]; then
+        country=$(detect_country_code || true)
+        if [ "$country" = "CN" ]; then
+            printf 'cn:%s' "$country"
+        else
+            printf 'global:%s' "$country"
+        fi
+    else
+        printf '%s:' "$SERVICE_AREA"
+    fi
+}
+
+
+setup_release() {
+    local area_info
+
+    area_info=$(resolve_service_area)
+    RELEASE_AREA="${area_info%%:*}"
+    RELEASE_COUNTRY="${area_info#*:}"
+
+    if [ "$RELEASE_AREA" = "cn" ]; then
+        RELEASE_URL="https://cnb.cool/rehiy/isrvd/-/releases/download/latest/isrvd-$ARCH.tar.gz"
+        RELEASE_SOURCE="CNB"
+    else
+        RELEASE_URL="https://github.com/rehiy/isrvd/releases/latest/download/isrvd-$ARCH.tar.gz"
+        RELEASE_SOURCE="GitHub"
+    fi
+}
+
+print_release_info() {
+    local area="$RELEASE_AREA"
+    [ -n "$RELEASE_COUNTRY" ] && area="$area (country: $RELEASE_COUNTRY)"
+    echo "  Arch:    $ARCH"
+    echo "  Area:    $area"
+    echo "  Source:  $RELEASE_SOURCE"
 }
 
 ARCH=$(uname -s | tr '[:upper:]' '[:lower:]')-$(get_arch)
-LATEST=$(get_latest_version)
-DOWNLOAD_URL="https://github.com/rehiy/isrvd/releases/download/$LATEST/isrvd-$ARCH.tar.gz"
 
 # ------------------------------------------
 # systemctl 服务管理
@@ -154,12 +224,13 @@ files_uninstall() {
 # ------------------------------------------
 
 download_package() {
+    local download_url="$1"
     local tmp_file
 
     tmp_file=$(mktemp)
-    echo "[info] Downloading: $DOWNLOAD_URL"
+    echo "[info] Downloading: $download_url"
 
-    if ! curl -fL --progress-bar -o "$tmp_file" "$DOWNLOAD_URL"; then
+    if ! curl -fL --progress-bar -o "$tmp_file" "$download_url"; then
         echo "[error] Download failed"
         rm -f "$tmp_file"
         return 1
@@ -416,11 +487,15 @@ check_root() {
 install_binary() {
     check_root
 
+    if ! setup_release; then
+        echo "[error] Failed to resolve latest release"
+        exit 1
+    fi
+
     echo "=========================================="
     echo "  isrvd Installer"
     echo "=========================================="
-    echo "  Version: $LATEST"
-    echo "  Arch:    $ARCH"
+    print_release_info
     echo "=========================================="
 
     if [ -d "$INSTALL_DIR" ]; then
@@ -429,7 +504,7 @@ install_binary() {
         exit 1
     fi
 
-    if ! download_package; then
+    if ! download_package "$RELEASE_URL"; then
         exit 1
     fi
 
@@ -469,6 +544,9 @@ install() {
 
     while [ "$#" -gt 0 ]; do
         case "$1" in
+            --cn|--global|--auto)
+                parse_service_area_option "$1"
+                ;;
             --docker) with_docker=1 ;;
             --caddy)  with_caddy=1 ;;
             --apisix) with_apisix=1 ;;
@@ -490,6 +568,11 @@ install() {
         exit 1
     fi
 
+    if [ "$with_docker" -eq 0 ] && [ "$with_caddy" -eq 0 ] && [ "$with_apisix" -eq 0 ]; then
+        install_binary
+        return
+    fi
+
     ensure_isrvd_installed
 
     if [ "$with_docker" -eq 1 ] || [ "$with_caddy" -eq 1 ] || [ "$with_apisix" -eq 1 ]; then
@@ -505,12 +588,35 @@ install() {
 }
 
 update() {
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --cn|--global|--auto)
+                parse_service_area_option "$1"
+                ;;
+            --help|-h)
+                print_usage
+                return
+                ;;
+            *)
+                echo "[error] Unknown update option: $1"
+                print_usage
+                exit 1
+                ;;
+        esac
+        shift
+    done
+
     check_root
+
+    if ! setup_release; then
+        echo "[error] Failed to resolve latest release"
+        exit 1
+    fi
 
     echo "=========================================="
     echo "  isrvd Updater"
     echo "=========================================="
-    echo "  Latest: $LATEST"
+    print_release_info
     echo "=========================================="
 
     if [ ! -d "$INSTALL_DIR" ]; then
@@ -521,7 +627,7 @@ update() {
 
     service_stop
 
-    if ! download_package; then
+    if ! download_package "$RELEASE_URL"; then
         service_start
         exit 1
     fi
@@ -561,15 +667,37 @@ uninstall() {
 }
 
 download() {
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --cn|--global|--auto)
+                parse_service_area_option "$1"
+                ;;
+            --help|-h)
+                print_usage
+                return
+                ;;
+            *)
+                echo "[error] Unknown download option: $1"
+                print_usage
+                exit 1
+                ;;
+        esac
+        shift
+    done
+
+    if ! setup_release; then
+        echo "[error] Failed to resolve latest release"
+        exit 1
+    fi
+
     echo "=========================================="
     echo "  isrvd Downloader"
     echo "=========================================="
-    echo "  Version: $LATEST"
-    echo "  Arch:    $ARCH"
-    echo "  URL:     $DOWNLOAD_URL"
+    print_release_info
+    echo "  URL:     $RELEASE_URL"
     echo "=========================================="
 
-    if ! download_package; then
+    if ! download_package "$RELEASE_URL"; then
         exit 1
     fi
 
@@ -581,8 +709,10 @@ download() {
 }
 
 print_usage() {
-    echo "Usage: $0 install [--docker] [--caddy|--apisix]"
-    echo "       $0 {update|uninstall|download}"
+    echo "Usage: $0 install [--docker] [--caddy|--apisix] [--cn|--global|--auto]"
+    echo "       $0 update [--cn|--global|--auto]"
+    echo "       $0 download [--cn|--global|--auto]"
+    echo "       $0 uninstall"
     echo ""
     echo "Commands:"
     echo "  install               - Download and install isrvd systemd service"
@@ -593,7 +723,12 @@ print_usage() {
     echo "  uninstall             - Remove isrvd systemd service and config"
     echo "  download              - Download latest package to current directory"
     echo ""
-    echo "Latest version: $LATEST"
+    echo "iSrvd source:"
+    echo "  --auto               - Detect country_code via IP and use CNB when country_code=CN (default)"
+    echo "  --cn                 - Use CNB releases and docker.cnb.cool/rehiy/isrvd for isrvd"
+    echo "  --global             - Use GitHub releases and rehiy/isrvd for isrvd"
+    echo ""
+    echo "Note: source options do not change Docker Engine, Caddy, APISIX, or etcd image sources."
 }
 
 # ------------------------------------------
@@ -605,9 +740,15 @@ case "${1:-}" in
         shift
         install "$@"
         ;;
-    update)         update ;;
+    update)
+        shift
+        update "$@"
+        ;;
     uninstall)      uninstall ;;
-    download)       download ;;
+    download)
+        shift
+        download "$@"
+        ;;
     *)
         print_usage
         exit 1
