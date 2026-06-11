@@ -31,6 +31,11 @@ import ZipModal from './explorer/zip-modal.vue'
 class FileExplorer extends Vue {
     portal = usePortal()
 
+    // ─── Filer 状态（本组件独占）───
+    files: FilerFileInfo[] = []
+    currentPath = '/'
+    loading = false
+
     // ─── Refs ───
     @Ref readonly modifyModalRef!: InstanceType<typeof ModifyModal>
     @Ref readonly moveModalRef!: InstanceType<typeof MoveModal>
@@ -59,10 +64,6 @@ class FileExplorer extends Vue {
     selectedPaths: string[] = []
 
     // ─── 计算属性 ───
-    get files() {
-        return this.portal.files
-    }
-
     get filteredFiles() {
         const keyword = this.searchText.trim().toLowerCase()
         if (!keyword) return this.files
@@ -74,8 +75,8 @@ class FileExplorer extends Vue {
     }
 
     get paths() {
-        if (!this.portal.currentPath || this.portal.currentPath === '/') return []
-        return this.portal.currentPath.split('/').filter((part: string) => part)
+        if (!this.currentPath || this.currentPath === '/') return []
+        return this.currentPath.split('/').filter((part: string) => part)
     }
 
     get selectedFiles() {
@@ -103,9 +104,23 @@ class FileExplorer extends Vue {
     }
 
     // ─── 方法 ───
+    async loadFiles(path?: string) {
+        const targetPath = path ?? this.currentPath
+        this.loading = true
+        try {
+            const res = await api.filerList(targetPath)
+            this.files = res.payload?.files || []
+            this.currentPath = res.payload?.path ?? '/'
+        } catch {
+            this.files = []
+        } finally {
+            this.loading = false
+        }
+    }
+
     navigateTo(path: string) {
         this.clearSelection()
-        this.portal.loadFiles(path)
+        this.loadFiles(path)
     }
 
     async download(file: FilerFileInfo) {
@@ -115,7 +130,7 @@ class FileExplorer extends Vue {
 
     refreshFiles() {
         this.clearSelection()
-        this.portal.loadFiles()
+        this.loadFiles()
     }
 
     isSelected(file: FilerFileInfo) {
@@ -167,7 +182,7 @@ class FileExplorer extends Vue {
 
     // ─── 生命周期 ───
     mounted() {
-        this.portal.loadFiles('/')
+        this.loadFiles('/')
     }
 }
 
@@ -257,7 +272,7 @@ export default toNative(FileExplorer)
       </div>
 
       <!-- Loading State -->
-      <div v-if="portal.filerLoading" class="card-body">
+      <div v-if="loading" class="card-body">
         <div class="empty-state">
           <div class="w-12 h-12 spinner mb-3"></div>
           <p class="text-slate-500">加载中...</p>
@@ -511,16 +526,16 @@ export default toNative(FileExplorer)
     </div>
 
     <!-- Modals -->
-    <ModifyModal ref="modifyModalRef" />
+    <ModifyModal ref="modifyModalRef" @success="refreshFiles" />
     <MoveModal ref="moveModalRef" @success="refreshFiles" />
     <PreviewModal ref="previewModalRef" />
-    <RenameModal ref="renameModalRef" />
-    <ChmodModal ref="chmodModalRef" />
+    <RenameModal ref="renameModalRef" @success="refreshFiles" />
+    <ChmodModal ref="chmodModalRef" @success="refreshFiles" />
     <DeleteModal ref="deleteModalRef" @success="refreshFiles" />
-    <ZipModal ref="zipModalRef" />
-    <UnzipModal ref="unzipModalRef" />
-    <MkdirModal ref="mkdirModalRef" />
-    <CreateModal ref="createModalRef" />
-    <UploadModal ref="uploadModalRef" />
+    <ZipModal ref="zipModalRef" @success="refreshFiles" />
+    <UnzipModal ref="unzipModalRef" @success="refreshFiles" />
+    <MkdirModal ref="mkdirModalRef" :current-path="currentPath" @success="refreshFiles" />
+    <CreateModal ref="createModalRef" :current-path="currentPath" @success="refreshFiles" />
+    <UploadModal ref="uploadModalRef" :current-path="currentPath" @success="refreshFiles" />
   </div>
 </template>

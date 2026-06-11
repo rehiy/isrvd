@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -9,9 +9,12 @@ import BaseModal from '@/component/modal.vue'
 
 @Component({
     expose: ['show'],
+    emits: ['success'],
     components: { BaseModal }
 })
 class UploadModal extends Vue {
+    @Prop({ required: true }) readonly currentPath!: string
+
     portal = usePortal()
     @Ref readonly fileInput!: HTMLInputElement
 
@@ -135,7 +138,7 @@ class UploadModal extends Vue {
         for (const file of this.uploadFiles) {
             const formData = new FormData()
             formData.append('file', file)
-            formData.append('path', this.portal.currentPath)
+            formData.append('path', this.currentPath)
             try {
                 await api.filerUpload(formData, {
                     onUploadProgress: (e) => {
@@ -151,10 +154,10 @@ class UploadModal extends Vue {
         }
         
         this.isUploading = false
-        this.portal.loadFiles()
         this.uploadFiles = []
         this.uploadProgress = 0
         this.isOpen = false
+        this.$emit('success')
     }
 }
 

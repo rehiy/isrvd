@@ -5,12 +5,11 @@ import { interceptors } from '@/service/axios'
 import { useAuthStore } from './auth'
 import { useSystemStore } from './system'
 import { useUIStore } from './ui'
-import { useFilerStore } from './filer'
 
 /**
  * Portal Store - 统一入口
  * 
- * 组合 auth、system、ui、filer 四个子 store，提供统一的访问接口
+ * 组合 auth、system、ui 三个子 store，提供统一的访问接口
  * 主要职责：
  * 1. 协调各子 store 的初始化
  * 2. 注册 axios 拦截器
@@ -22,7 +21,6 @@ export const usePortalStore = defineStore('portal', () => {
     const authStore = useAuthStore()
     const systemStore = useSystemStore()
     const uiStore = useUIStore()
-    const filerStore = useFilerStore()
 
     // ─── 初始化 ───
 
@@ -69,7 +67,6 @@ export const usePortalStore = defineStore('portal', () => {
     const authRefs = storeToRefs(authStore)
     const systemRefs = storeToRefs(systemStore)
     const uiRefs = storeToRefs(uiStore)
-    const filerRefs = storeToRefs(filerStore)
 
     return {
         // Portal 方法
@@ -112,13 +109,6 @@ export const usePortalStore = defineStore('portal', () => {
         confirmLoading: uiStore.confirmLoading,
         closeConfirm: uiStore.closeConfirm,
         handleConfirm: uiStore.handleConfirm,
-
-        // Filer Store 状态（响应式）
-        filerLoading: filerRefs.loading,
-        currentPath: filerRefs.currentPath,
-        files: filerRefs.files,
-        // Filer Store 方法
-        loadFiles: filerStore.loadFiles,
     }
 })
 

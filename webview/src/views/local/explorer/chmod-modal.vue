@@ -1,8 +1,6 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
-import { usePortal } from '@/stores'
-
 import api from '@/service/api'
 import type { FilerFileInfo } from '@/service/types'
 
@@ -10,12 +8,13 @@ import BaseModal from '@/component/modal.vue'
 
 @Component({
     expose: ['show'],
+    emits: ['success'],
     components: { BaseModal }
 })
 class ChmodModal extends Vue {
-    portal = usePortal()
     // ─── 数据属性 ───
     isOpen = false
+    loading = false
     formData = { path: '', mode: '' }
 
     // ─── 方法 ───
@@ -27,9 +26,14 @@ class ChmodModal extends Vue {
 
     async handleConfirm() {
         if (!this.formData.mode.trim()) return
-        await api.filerChmod(this.formData.path, this.formData.mode)
-        this.portal.loadFiles()
-        this.isOpen = false
+        this.loading = true
+        try {
+            await api.filerChmod(this.formData.path, this.formData.mode)
+            this.$emit('success')
+            this.isOpen = false
+        } finally {
+            this.loading = false
+        }
     }
 }
 
@@ -37,7 +41,7 @@ export default toNative(ChmodModal)
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" title="修改权限" :loading="portal.filerLoading" :confirm-disabled="!formData.mode.trim()" @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" title="修改权限" :loading="loading" :confirm-disabled="!formData.mode.trim()" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm">
       <div>
         <label for="fileMode" class="form-label">
@@ -47,7 +51,7 @@ export default toNative(ChmodModal)
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <i class="fas fa-key text-slate-400"></i>
           </div>
-          <input id="fileMode" v-model="formData.mode" type="text" :disabled="portal.filerLoading" required placeholder="请输入文件权限" class="input pl-11">
+          <input id="fileMode" v-model="formData.mode" type="text" :disabled="loading" required placeholder="请输入文件权限" class="input pl-11">
         </div>
         <p class="text-xs text-slate-400 mt-1">三位八进制数，例如：755、644</p>
         <div class="mt-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
@@ -62,7 +66,7 @@ export default toNative(ChmodModal)
     </form>
 
     <template #confirm-text>
-      {{ portal.filerLoading ? '修改中...' : '确认修改' }}
+      {{ loading ? '修改中...' : '确认修改' }}
     </template>
   </BaseModal>
 </template>

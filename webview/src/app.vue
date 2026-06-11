@@ -65,11 +65,11 @@ export default toNative(App)
 
 <template>
   <div class="min-h-screen bg-slate-50">
-    <!-- 初始化加载状态 -->
+    <!-- 加载状态 -->
     <div v-if="!portal.initialized" class="flex items-center justify-center min-h-screen">
       <div class="flex flex-col items-center gap-4">
         <div class="w-12 h-12 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
-        <span class="text-slate-500 text-sm">正在初始化...</span>
+        <span class="text-slate-500 text-sm">加载中...</span>
       </div>
     </div>
 

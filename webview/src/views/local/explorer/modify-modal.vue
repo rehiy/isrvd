@@ -12,8 +12,6 @@ import { yaml } from '@codemirror/lang-yaml'
 import { Codemirror } from 'vue-codemirror'
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
-import { usePortal } from '@/stores'
-
 import api from '@/service/api'
 import type { FilerFileInfo } from '@/service/types'
 
@@ -21,12 +19,13 @@ import BaseModal from '@/component/modal.vue'
 
 @Component({
     expose: ['show'],
+    emits: ['success'],
     components: { BaseModal, Codemirror }
 })
 class ModifyModal extends Vue {
-    portal = usePortal()
     // ─── 数据属性 ───
     isOpen = false
+    loading = false
     formData = { filename: '', content: '', path: '' }
     readonly extensions = [css(), go(), html(), javascript(), json(), markdown(), python(), sql(), xml(), yaml()]
 
@@ -40,9 +39,14 @@ class ModifyModal extends Vue {
     }
 
     async handleConfirm() {
-        await api.filerModify(this.formData.path, this.formData.content)
-        this.portal.loadFiles()
-        this.isOpen = false
+        this.loading = true
+        try {
+            await api.filerModify(this.formData.path, this.formData.content)
+            this.$emit('success')
+            this.isOpen = false
+        } finally {
+            this.loading = false
+        }
     }
 }
 
@@ -50,13 +54,13 @@ export default toNative(ModifyModal)
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" :title="'编辑: ' + formData.filename" :loading="portal.filerLoading" @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" :title="'编辑: ' + formData.filename" :loading="loading" @confirm="handleConfirm">
     <div class="editor-container">
-      <Codemirror v-model="formData.content" :style="{ height: '60vh' }" :extensions="extensions" :disabled="portal.filerLoading" />
+      <Codemirror v-model="formData.content" :style="{ height: '60vh' }" :extensions="extensions" :disabled="loading" />
     </div>
 
     <template #confirm-text>
-      {{ portal.filerLoading ? '保存中...' : '保存文件' }}
+      {{ loading ? '保存中...' : '保存文件' }}
     </template>
   </BaseModal>
 </template>

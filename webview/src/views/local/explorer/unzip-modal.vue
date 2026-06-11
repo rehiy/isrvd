@@ -1,8 +1,6 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
-import { usePortal } from '@/stores'
-
 import api from '@/service/api'
 import type { FilerFileInfo } from '@/service/types'
 
@@ -10,11 +8,10 @@ import BaseModal from '@/component/modal.vue'
 
 @Component({
     expose: ['show'],
+    emits: ['success'],
     components: { BaseModal }
 })
 class UnzipModal extends Vue {
-    portal = usePortal()
-
     // ─── 数据属性 ───
     isOpen = false
     loading = false
@@ -34,7 +31,7 @@ class UnzipModal extends Vue {
         this.loading = true
         try {
             await api.filerUnzip(this.formData.file?.path ?? '', this.formData.targetDir.trim() || undefined)
-            this.portal.loadFiles()
+            this.$emit('success')
             this.isOpen = false
         } finally {
             this.loading = false
