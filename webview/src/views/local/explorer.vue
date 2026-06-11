@@ -53,6 +53,8 @@ class FileExplorer extends Vue {
     calculatedDirs = new Set<string>()
     // 记录正在计算大小的文件夹路径
     calculatingDirs = new Set<string>()
+    // 记录已选择的文件路径
+    selectedPaths: string[] = []
 
     // ─── 计算属性 ───
     get files() {
@@ -74,8 +76,21 @@ class FileExplorer extends Vue {
         return this.portal.currentPath.split('/').filter((part: string) => part)
     }
 
+    get selectedFiles() {
+        return this.files.filter((file: FilerFileInfo) => this.selectedPaths.includes(file.path))
+    }
+
+    get selectedCount() {
+        return this.selectedFiles.length
+    }
+
+    get allVisibleSelected() {
+        return this.filteredFiles.length > 0 && this.filteredFiles.every((file: FilerFileInfo) => this.selectedPaths.includes(file.path))
+    }
+
     // ─── 方法 ───
     navigateTo(path: string) {
+        this.clearSelection()
         this.portal.loadFiles(path)
     }
 
@@ -86,6 +101,41 @@ class FileExplorer extends Vue {
 
     refreshFiles() {
         this.portal.loadFiles()
+    }
+
+    isSelected(file: FilerFileInfo) {
+        return this.selectedPaths.includes(file.path)
+    }
+
+    toggleFileSelection(file: FilerFileInfo) {
+        if (this.isSelected(file)) {
+            this.selectedPaths = this.selectedPaths.filter(path => path !== file.path)
+            return
+        }
+        this.selectedPaths = [...this.selectedPaths, file.path]
+    }
+
+    toggleAllVisibleFiles() {
+        const visiblePaths = this.filteredFiles.map((file: FilerFileInfo) => file.path)
+        if (this.allVisibleSelected) {
+            this.selectedPaths = this.selectedPaths.filter(path => !visiblePaths.includes(path))
+            return
+        }
+        this.selectedPaths = Array.from(new Set([...this.selectedPaths, ...visiblePaths]))
+    }
+
+    clearSelection() {
+        this.selectedPaths = []
+    }
+
+    showBatchDelete() {
+        if (this.selectedCount === 0) return
+        this.deleteModalRef.show(this.selectedFiles)
+    }
+
+    handleDeleteSuccess() {
+        this.clearSelection()
+        this.refreshFiles()
     }
 
     async calcDirSize(file: FilerFileInfo) {
@@ -152,7 +202,10 @@ export default toNative(FileExplorer)
             <button v-if="portal.hasPerm('POST /api/filer/file')" class="btn btn-secondary" @click="createModalRef.show()">
               <i class="fas fa-file"></i><span>新建文件</span>
             </button>
-            <button v-if="portal.hasPerm('POST /api/filer/upload')" class="btn btn-primary" @click="uploadModal.show()">
+            <button v-if="selectedCount > 0 && portal.hasPerm('DELETE /api/filer/file')" class="btn btn-danger" @click="showBatchDelete()">
+              <i class="fas fa-trash"></i><span>删除 {{ selectedCount }} 项</span>
+            </button>
+            <button v-else-if="portal.hasPerm('POST /api/filer/upload')" class="btn btn-primary" @click="uploadModal.show()">
               <i class="fas fa-upload"></i><span>上传文件</span>
             </button>
           </div>
@@ -167,7 +220,10 @@ export default toNative(FileExplorer)
             <button v-if="portal.hasPerm('POST /api/filer/file')" class="btn btn-secondary w-9 h-9 !px-0" title="新建文件" @click="createModalRef.show()">
               <i class="fas fa-file text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/filer/upload')" class="btn btn-primary w-9 h-9 !px-0" title="上传文件" @click="uploadModal.show()">
+            <button v-if="selectedCount > 0 && portal.hasPerm('DELETE /api/filer/file')" class="btn btn-danger w-9 h-9 !px-0" :title="`删除 ${selectedCount} 项`" @click="showBatchDelete()">
+              <i class="fas fa-trash text-sm"></i>
+            </button>
+            <button v-else-if="portal.hasPerm('POST /api/filer/upload')" class="btn btn-primary w-9 h-9 !px-0" title="上传文件" @click="uploadModal.show()">
               <i class="fas fa-upload text-sm"></i>
             </button>
           </div>
@@ -203,6 +259,12 @@ export default toNative(FileExplorer)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200">
+                <th v-if="portal.hasPerm('DELETE /api/filer/file')" class="w-12 th">
+                  <label class="check-label" title="选择全部可见文件">
+                    <input type="checkbox" class="rounded border-slate-300 text-red-500 focus:ring-red-500" :checked="allVisibleSelected" @change="toggleAllVisibleFiles()">
+                    <span class="sr-only">选择全部可见文件</span>
+                  </label>
+                </th>
                 <th class="th">名称</th>
                 <th class="w-32 th">大小</th>
                 <th class="w-32 th">权限</th>
@@ -212,6 +274,12 @@ export default toNative(FileExplorer)
             </thead>
             <tbody class="bg-white divide-y divide-slate-100">
               <tr v-for="file in filteredFiles" :key="file.path" class="hover:bg-slate-50 transition-colors">
+                <td v-if="portal.hasPerm('DELETE /api/filer/file')" class="px-4 py-3 w-12">
+                  <label class="check-label" :title="`选择 ${file.name}`">
+                    <input type="checkbox" class="rounded border-slate-300 text-red-500 focus:ring-red-500" :checked="isSelected(file)" @change="toggleFileSelection(file)">
+                    <span class="sr-only">选择 {{ file.name }}</span>
+                  </label>
+                </td>
                 <td class="px-4 py-3 max-w-[280px]">
                   <div class="flex items-center gap-2 min-w-0">
                     <div :class="['row-icon', file.isDir ? 'bg-amber-400' : 'bg-blue-400']">
@@ -317,6 +385,10 @@ export default toNative(FileExplorer)
           <div v-for="file in filteredFiles" :key="file.path" class="card-interactive">
             <!-- 顶部：文件信息和图标 -->
             <div class="card-info-row">
+              <label v-if="portal.hasPerm('DELETE /api/filer/file')" class="check-label flex-shrink-0" :title="`选择 ${file.name}`">
+                <input type="checkbox" class="rounded border-slate-300 text-red-500 focus:ring-red-500" :checked="isSelected(file)" @change="toggleFileSelection(file)">
+                <span class="sr-only">选择 {{ file.name }}</span>
+              </label>
               <div :class="['list-icon', file.isDir ? 'bg-amber-400' : 'bg-blue-400']">
                 <i :class="getFileIcon(file)" class="text-white text-base"></i>
               </div>
@@ -420,7 +492,7 @@ export default toNative(FileExplorer)
     <PreviewModal ref="previewModalRef" />
     <RenameModal ref="renameModalRef" />
     <ChmodModal ref="chmodModalRef" />
-    <DeleteModal ref="deleteModalRef" />
+    <DeleteModal ref="deleteModalRef" @success="handleDeleteSuccess" />
     <ZipModal ref="zipModalRef" />
     <UnzipModal ref="unzipModalRef" />
     <MkdirModal ref="mkdirModalRef" />
