@@ -2,7 +2,7 @@
 //
 // 用法:
 //
-//	go run ./cmd/openapi-gen/               # 生成到 public/openapi.json
+//	go run ./cmd/openapi-gen/  # 生成到 public/openapi/apis.json
 //	go run ./cmd/openapi-gen/ -o openapi.json  # 生成到指定路径
 //
 // 工作原理:
@@ -110,7 +110,7 @@ var intTypes = map[string]bool{
 
 // ─── 入口 ────────────────────────────────────────────
 
-var outFile = flag.String("o", "public/openapi.json", "输出文件路径，默认 public/openapi.json")
+var outFile = flag.String("o", "public/openapi/apis.json", "输出文件路径，默认 public/openapi/apis.json")
 
 func main() {
 	flag.Parse()

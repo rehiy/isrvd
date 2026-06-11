@@ -1,0 +1,6255 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "isrvd API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "API 服务"
+    }
+  ],
+  "paths": {
+    "/account/2fa/status": {
+      "get": {
+        "operationId": "get_account_2fa_status",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询二次验证状态",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/2fa/totp/begin": {
+      "post": {
+        "operationId": "post_account_2fa_totp_begin",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "开始绑定 TOTP 二次验证",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/2fa/totp/disable": {
+      "post": {
+        "operationId": "post_account_2fa_totp_disable",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/account.TOTPVerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "禁用 TOTP 二次验证",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/2fa/totp/enable": {
+      "post": {
+        "operationId": "post_account_2fa_totp_enable",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/account.TOTPVerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "启用 TOTP 二次验证",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/info": {
+      "get": {
+        "operationId": "get_account_info",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取当前认证信息",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/login": {
+      "post": {
+        "operationId": "post_account_login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/account.LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "账号密码登录",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/member": {
+      "post": {
+        "operationId": "post_account_member",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/account.MemberUpsertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建成员",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/member/{username}": {
+      "delete": {
+        "operationId": "delete_account_member_username",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "删除成员",
+        "tags": [
+          "account"
+        ]
+      },
+      "put": {
+        "operationId": "put_account_member_username",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/account.MemberUpsertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新成员",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/members": {
+      "get": {
+        "operationId": "get_account_members",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询成员列表",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/oidc/callback": {
+      "get": {
+        "operationId": "get_account_oidc_callback",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "处理 OIDC 回调",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/oidc/exchange": {
+      "post": {
+        "operationId": "post_account_oidc_exchange",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/account.OIDCExchangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "交换 OIDC 登录码",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/oidc/login": {
+      "get": {
+        "operationId": "get_account_oidc_login",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "发起 OIDC 登录",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/passkey/credential/{credentialID}": {
+      "delete": {
+        "operationId": "delete_account_passkey_credential_credentialID",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "credentialID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "删除 Passkey 凭证",
+        "tags": [
+          "account"
+        ]
+      },
+      "put": {
+        "operationId": "put_account_passkey_credential_credentialID",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "credentialID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/account.accountPasskeyRenameCredential"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "重命名 Passkey 凭证",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/passkey/credentials": {
+      "get": {
+        "operationId": "get_account_passkey_credentials",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 Passkey 凭证列表",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/passkey/login/begin": {
+      "post": {
+        "operationId": "post_account_passkey_login_begin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/account.accountPasskeyLoginBegin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "开始 Passkey 登录",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/passkey/login/finish": {
+      "post": {
+        "operationId": "post_account_passkey_login_finish",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sessionId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "完成 Passkey 登录",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/passkey/register/begin": {
+      "post": {
+        "operationId": "post_account_passkey_register_begin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/account.accountPasskeyRegisterBegin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "开始 Passkey 绑定",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/passkey/register/finish": {
+      "post": {
+        "operationId": "post_account_passkey_register_finish",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sessionId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "完成 Passkey 绑定",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/password": {
+      "put": {
+        "operationId": "put_account_password",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/account.ChangePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "修改当前用户密码",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/routes": {
+      "get": {
+        "operationId": "get_account_routes",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询路由权限列表",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/account/token": {
+      "post": {
+        "operationId": "post_account_token",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/account.CreateApiTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建 API 令牌",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/apisix/consumer": {
+      "post": {
+        "operationId": "post_apisix_consumer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apisix.apisixConsumerCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建 APISIX 消费者",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/consumer/{username}": {
+      "delete": {
+        "operationId": "delete_apisix_consumer_username",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "删除 APISIX 消费者",
+        "tags": [
+          "apisix"
+        ]
+      },
+      "put": {
+        "operationId": "put_apisix_consumer_username",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apisix.apisixConsumerUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新 APISIX 消费者",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/consumers": {
+      "get": {
+        "operationId": "get_apisix_consumers",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 APISIX 消费者列表",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/plugin-config": {
+      "post": {
+        "operationId": "post_apisix_plugin_config",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apisix.PluginConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建 APISIX 插件配置",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/plugin-config/{id}": {
+      "delete": {
+        "operationId": "delete_apisix_plugin_config_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "删除 APISIX 插件配置",
+        "tags": [
+          "apisix"
+        ]
+      },
+      "get": {
+        "operationId": "get_apisix_plugin_config_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取 APISIX 插件配置详情",
+        "tags": [
+          "apisix"
+        ]
+      },
+      "put": {
+        "operationId": "put_apisix_plugin_config_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apisix.PluginConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新 APISIX 插件配置",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/plugin-configs": {
+      "get": {
+        "operationId": "get_apisix_plugin_configs",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 APISIX 插件配置列表",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/plugins": {
+      "get": {
+        "operationId": "get_apisix_plugins",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 APISIX 插件列表",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/route": {
+      "post": {
+        "operationId": "post_apisix_route",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apisix.Route"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建 APISIX 路由",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/route/{id}": {
+      "delete": {
+        "operationId": "delete_apisix_route_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "删除 APISIX 路由",
+        "tags": [
+          "apisix"
+        ]
+      },
+      "get": {
+        "operationId": "get_apisix_route_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取 APISIX 路由详情",
+        "tags": [
+          "apisix"
+        ]
+      },
+      "put": {
+        "operationId": "put_apisix_route_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apisix.Route"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新 APISIX 路由",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/route/{id}/status": {
+      "patch": {
+        "operationId": "patch_apisix_route_id_status",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apisix.apisixRouteStatusPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "切换 APISIX 路由状态",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/routes": {
+      "get": {
+        "operationId": "get_apisix_routes",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 APISIX 路由列表",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/ssl": {
+      "post": {
+        "operationId": "post_apisix_ssl",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apisix.SSL"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建 APISIX 证书",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/ssl/{id}": {
+      "delete": {
+        "operationId": "delete_apisix_ssl_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "删除 APISIX 证书",
+        "tags": [
+          "apisix"
+        ]
+      },
+      "get": {
+        "operationId": "get_apisix_ssl_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取 APISIX 证书详情",
+        "tags": [
+          "apisix"
+        ]
+      },
+      "put": {
+        "operationId": "put_apisix_ssl_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apisix.SSL"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新 APISIX 证书",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/ssls": {
+      "get": {
+        "operationId": "get_apisix_ssls",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 APISIX 证书列表",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/upstream": {
+      "post": {
+        "operationId": "post_apisix_upstream",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apisix.Upstream"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建 APISIX 上游",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/upstream/{id}": {
+      "delete": {
+        "operationId": "delete_apisix_upstream_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "删除 APISIX 上游",
+        "tags": [
+          "apisix"
+        ]
+      },
+      "get": {
+        "operationId": "get_apisix_upstream_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取 APISIX 上游详情",
+        "tags": [
+          "apisix"
+        ]
+      },
+      "put": {
+        "operationId": "put_apisix_upstream_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apisix.Upstream"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新 APISIX 上游",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/upstreams": {
+      "get": {
+        "operationId": "get_apisix_upstreams",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 APISIX 上游列表",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/whitelist": {
+      "get": {
+        "operationId": "get_apisix_whitelist",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 APISIX 白名单",
+        "tags": [
+          "apisix"
+        ]
+      },
+      "post": {
+        "operationId": "post_apisix_whitelist",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apisix.WhitelistCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "配置 APISIX 路由白名单",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/whitelist/user": {
+      "post": {
+        "operationId": "post_apisix_whitelist_user",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apisix.WhitelistUserCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "新建用户并加入 APISIX 白名单",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/apisix/whitelist/user/{routeID}/{consumerName}": {
+      "delete": {
+        "operationId": "delete_apisix_whitelist_user_routeID_consumerName",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "routeID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "consumerName",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "从 APISIX 白名单移除用户",
+        "tags": [
+          "apisix"
+        ]
+      }
+    },
+    "/caddy/cert": {
+      "post": {
+        "operationId": "post_caddy_cert",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/caddy.CertForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建 Caddy TLS 证书",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/caddy/cert/{key}": {
+      "delete": {
+        "operationId": "delete_caddy_cert_key",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "删除 Caddy TLS 证书",
+        "tags": [
+          "caddy"
+        ]
+      },
+      "put": {
+        "operationId": "put_caddy_cert_key",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/caddy.CertForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新 Caddy TLS 证书",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/caddy/certs": {
+      "get": {
+        "operationId": "get_caddy_certs",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 Caddy TLS 证书列表",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/caddy/config": {
+      "get": {
+        "operationId": "get_caddy_config",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 Caddy 完整配置",
+        "tags": [
+          "caddy"
+        ]
+      },
+      "post": {
+        "operationId": "post_caddy_config",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/caddy.caddyConfigLoad"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "整体替换 Caddy 配置",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/caddy/global": {
+      "get": {
+        "operationId": "get_caddy_global",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 Caddy 全局选项",
+        "tags": [
+          "caddy"
+        ]
+      },
+      "put": {
+        "operationId": "put_caddy_global",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/caddy.GlobalForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新 Caddy 全局选项",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/caddy/info": {
+      "get": {
+        "operationId": "get_caddy_info",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 Caddy 概览",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/caddy/route": {
+      "post": {
+        "operationId": "post_caddy_route",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "server",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/caddy.Route"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建 Caddy 路由",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/caddy/route/{index}": {
+      "delete": {
+        "operationId": "delete_caddy_route_index",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "index",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "server",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "删除 Caddy 路由",
+        "tags": [
+          "caddy"
+        ]
+      },
+      "get": {
+        "operationId": "get_caddy_route_index",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "index",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "server",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取 Caddy 路由详情",
+        "tags": [
+          "caddy"
+        ]
+      },
+      "put": {
+        "operationId": "put_caddy_route_index",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "index",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "server",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/caddy.Route"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新 Caddy 路由",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/caddy/routes": {
+      "get": {
+        "operationId": "get_caddy_routes",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "server",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 Caddy 路由列表",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/compose/docker": {
+      "post": {
+        "operationId": "post_compose_docker",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/compose.DeployRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "部署 Docker Compose 应用",
+        "tags": [
+          "compose"
+        ]
+      }
+    },
+    "/compose/docker/{name}": {
+      "get": {
+        "operationId": "get_compose_docker_name",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "读取 Docker Compose 配置",
+        "tags": [
+          "compose"
+        ]
+      },
+      "put": {
+        "operationId": "put_compose_docker_name",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/compose.RedeployRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "重新部署 Docker Compose 应用",
+        "tags": [
+          "compose"
+        ]
+      }
+    },
+    "/compose/swarm": {
+      "post": {
+        "operationId": "post_compose_swarm",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/compose.DeployRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "部署 Swarm Stack 应用",
+        "tags": [
+          "compose"
+        ]
+      }
+    },
+    "/compose/swarm/{name}": {
+      "get": {
+        "operationId": "get_compose_swarm_name",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "读取 Swarm Stack 配置",
+        "tags": [
+          "compose"
+        ]
+      },
+      "put": {
+        "operationId": "put_compose_swarm_name",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/compose.RedeployRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "重新部署 Swarm Stack 应用",
+        "tags": [
+          "compose"
+        ]
+      }
+    },
+    "/cron/jobs": {
+      "get": {
+        "operationId": "get_cron_jobs",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "列出计划任务",
+        "tags": [
+          "cron"
+        ]
+      },
+      "post": {
+        "operationId": "post_cron_jobs",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/cron.JobUpsertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建计划任务",
+        "tags": [
+          "cron"
+        ]
+      }
+    },
+    "/cron/jobs/{id}": {
+      "delete": {
+        "operationId": "delete_cron_jobs_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "删除计划任务",
+        "tags": [
+          "cron"
+        ]
+      },
+      "patch": {
+        "operationId": "patch_cron_jobs_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/cronJobEnableReq"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "启用或禁用任务",
+        "tags": [
+          "cron"
+        ]
+      },
+      "put": {
+        "operationId": "put_cron_jobs_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/cron.JobUpsertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新计划任务",
+        "tags": [
+          "cron"
+        ]
+      }
+    },
+    "/cron/jobs/{id}/logs": {
+      "get": {
+        "operationId": "get_cron_jobs_id_logs",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询任务执行历史",
+        "tags": [
+          "cron"
+        ]
+      }
+    },
+    "/cron/jobs/{id}/run": {
+      "post": {
+        "operationId": "post_cron_jobs_id_run",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "立即执行任务",
+        "tags": [
+          "cron"
+        ]
+      }
+    },
+    "/cron/types": {
+      "get": {
+        "operationId": "get_cron_types",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取可用脚本类型",
+        "tags": [
+          "cron"
+        ]
+      }
+    },
+    "/docker/container": {
+      "post": {
+        "operationId": "post_docker_container",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.ContainerSpec"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建容器",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/container/{id}": {
+      "get": {
+        "operationId": "get_docker_container_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取容器详情",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/container/{id}/action": {
+      "post": {
+        "operationId": "post_docker_container_id_action",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.ActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "执行容器操作",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/container/{id}/exec": {
+      "get": {
+        "description": "[WebSocket] 打开容器终端",
+        "operationId": "get_docker_container_id_exec",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "shell",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "打开容器终端",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/container/{id}/logs": {
+      "get": {
+        "operationId": "get_docker_container_id_logs",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tail",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取容器日志",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/container/{id}/logs/stream": {
+      "get": {
+        "description": "[SSE] 实时查看容器日志",
+        "operationId": "get_docker_container_id_logs_stream",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tail",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "实时查看容器日志",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/container/{id}/stats": {
+      "get": {
+        "operationId": "get_docker_container_id_stats",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取容器资源统计",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/containers": {
+      "get": {
+        "operationId": "get_docker_containers",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "all",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询容器列表",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/image/build": {
+      "post": {
+        "operationId": "post_docker_image_build",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.ImageBuildRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "构建镜像",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/image/prune": {
+      "post": {
+        "operationId": "post_docker_image_prune",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.ImagePruneRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "清理镜像",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/image/pull": {
+      "post": {
+        "operationId": "post_docker_image_pull",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.ImagePullRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "拉取镜像",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/image/push": {
+      "post": {
+        "operationId": "post_docker_image_push",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.ImagePushRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "推送镜像",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/image/{id}": {
+      "get": {
+        "operationId": "get_docker_image_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取镜像详情",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/image/{id}/action": {
+      "post": {
+        "operationId": "post_docker_image_id_action",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.ActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "执行镜像操作",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/image/{id}/tag": {
+      "post": {
+        "operationId": "post_docker_image_id_tag",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.ImageTagRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "添加镜像标签",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/images": {
+      "get": {
+        "operationId": "get_docker_images",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "all",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询镜像列表",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/images/search": {
+      "get": {
+        "operationId": "get_docker_images_search",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "搜索镜像",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/info": {
+      "get": {
+        "operationId": "get_docker_info",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取 Docker 服务信息",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/network": {
+      "post": {
+        "operationId": "post_docker_network",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.NetworkSpec"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建网络",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/network/{id}": {
+      "get": {
+        "operationId": "get_docker_network_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取网络详情",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/network/{id}/action": {
+      "post": {
+        "operationId": "post_docker_network_id_action",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.ActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "执行网络操作",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/networks": {
+      "get": {
+        "operationId": "get_docker_networks",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询网络列表",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/registries": {
+      "get": {
+        "operationId": "get_docker_registries",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询镜像仓库列表",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/registry": {
+      "delete": {
+        "operationId": "delete_docker_registry",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "url",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "删除镜像仓库",
+        "tags": [
+          "docker"
+        ]
+      },
+      "post": {
+        "operationId": "post_docker_registry",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.RegistryUpsertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "添加镜像仓库",
+        "tags": [
+          "docker"
+        ]
+      },
+      "put": {
+        "operationId": "put_docker_registry",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "url",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.RegistryUpsertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新镜像仓库",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/volume": {
+      "post": {
+        "operationId": "post_docker_volume",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.VolumeSpec"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建数据卷",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/volume/{name}": {
+      "get": {
+        "operationId": "get_docker_volume_name",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取数据卷详情",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/volume/{name}/action": {
+      "post": {
+        "operationId": "post_docker_volume_name_action",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.ActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "执行数据卷操作",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/volumes": {
+      "get": {
+        "operationId": "get_docker_volumes",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询数据卷列表",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/filer/chmod": {
+      "put": {
+        "operationId": "put_filer_chmod",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/filerChmodBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "修改文件权限",
+        "tags": [
+          "filer"
+        ]
+      }
+    },
+    "/filer/dir": {
+      "post": {
+        "operationId": "post_filer_dir",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/filer.filerFileMkdir"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建目录",
+        "tags": [
+          "filer"
+        ]
+      }
+    },
+    "/filer/dir-size": {
+      "get": {
+        "operationId": "get_filer_dir_size",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "计算目录大小",
+        "tags": [
+          "filer"
+        ]
+      }
+    },
+    "/filer/download": {
+      "get": {
+        "operationId": "get_filer_download",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "inline",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "下载文件",
+        "tags": [
+          "filer"
+        ]
+      }
+    },
+    "/filer/file": {
+      "delete": {
+        "operationId": "delete_filer_file",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "删除文件或目录",
+        "tags": [
+          "filer"
+        ]
+      },
+      "get": {
+        "operationId": "get_filer_file",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "读取文件内容",
+        "tags": [
+          "filer"
+        ]
+      },
+      "post": {
+        "operationId": "post_filer_file",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/filerContentBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建文件",
+        "tags": [
+          "filer"
+        ]
+      },
+      "put": {
+        "operationId": "put_filer_file",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/filerContentBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "保存文件内容",
+        "tags": [
+          "filer"
+        ]
+      }
+    },
+    "/filer/files": {
+      "get": {
+        "operationId": "get_filer_files",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询目录文件列表",
+        "tags": [
+          "filer"
+        ]
+      }
+    },
+    "/filer/rename": {
+      "post": {
+        "operationId": "post_filer_rename",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/filerRenameBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "重命名文件或目录",
+        "tags": [
+          "filer"
+        ]
+      }
+    },
+    "/filer/unzip": {
+      "post": {
+        "operationId": "post_filer_unzip",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/filerPathQuery"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "解压文件",
+        "tags": [
+          "filer"
+        ]
+      }
+    },
+    "/filer/upload": {
+      "post": {
+        "operationId": "post_filer_upload",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "上传文件",
+        "tags": [
+          "filer"
+        ]
+      }
+    },
+    "/filer/zip": {
+      "post": {
+        "operationId": "post_filer_zip",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/filerPathQuery"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "压缩文件或目录",
+        "tags": [
+          "filer"
+        ]
+      }
+    },
+    "/overview/monitor": {
+      "get": {
+        "operationId": "get_overview_monitor",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取监控数据",
+        "tags": [
+          "overview"
+        ]
+      }
+    },
+    "/overview/probe": {
+      "get": {
+        "operationId": "get_overview_probe",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "探测服务可用性",
+        "tags": [
+          "overview"
+        ]
+      }
+    },
+    "/overview/upgrade": {
+      "post": {
+        "operationId": "post_overview_upgrade",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "升级程序至最新版本",
+        "tags": [
+          "overview"
+        ]
+      }
+    },
+    "/shell": {
+      "get": {
+        "description": "[WebSocket] 打开 Shell 终端",
+        "operationId": "get_shell",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "shell",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "打开 Shell 终端",
+        "tags": [
+          "shell"
+        ]
+      }
+    },
+    "/ssh/credential": {
+      "post": {
+        "operationId": "post_ssh_credential",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/webssh.CredentialUpsertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "添加 SSH 凭据",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/credential/{id}": {
+      "delete": {
+        "operationId": "delete_ssh_credential_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "删除 SSH 凭据",
+        "tags": [
+          "ssh"
+        ]
+      },
+      "get": {
+        "operationId": "get_ssh_credential_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取 SSH 凭据详情",
+        "tags": [
+          "ssh"
+        ]
+      },
+      "put": {
+        "operationId": "put_ssh_credential_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/webssh.CredentialUpsertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新 SSH 凭据",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/credentials": {
+      "get": {
+        "operationId": "get_ssh_credentials",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 SSH 凭据列表",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/host": {
+      "post": {
+        "operationId": "post_ssh_host",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/webssh.HostUpsertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "添加 SSH 主机",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/host/{id}": {
+      "delete": {
+        "operationId": "delete_ssh_host_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "删除 SSH 主机",
+        "tags": [
+          "ssh"
+        ]
+      },
+      "get": {
+        "operationId": "get_ssh_host_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取 SSH 主机详情",
+        "tags": [
+          "ssh"
+        ]
+      },
+      "put": {
+        "operationId": "put_ssh_host_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/webssh.HostUpsertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新 SSH 主机",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/hosts": {
+      "get": {
+        "operationId": "get_ssh_hosts",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 SSH 主机列表",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/sftp/{id}/chmod": {
+      "post": {
+        "operationId": "post_ssh_sftp_id_chmod",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ssh.websshSFTPChmod"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 修改权限",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/sftp/{id}/chown": {
+      "post": {
+        "operationId": "post_ssh_sftp_id_chown",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ssh.websshSFTPChown"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 修改所有者",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/sftp/{id}/dir-size": {
+      "get": {
+        "operationId": "get_ssh_sftp_id_dir_size",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 计算目录大小",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/sftp/{id}/download": {
+      "get": {
+        "operationId": "get_ssh_sftp_id_download",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 下载文件",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/sftp/{id}/ls": {
+      "get": {
+        "operationId": "get_ssh_sftp_id_ls",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 列出目录",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/sftp/{id}/mkdir": {
+      "post": {
+        "operationId": "post_ssh_sftp_id_mkdir",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ssh.websshSFTPMkdir"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 创建目录",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/sftp/{id}/read": {
+      "get": {
+        "operationId": "get_ssh_sftp_id_read",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 读取文件",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/sftp/{id}/rename": {
+      "post": {
+        "operationId": "post_ssh_sftp_id_rename",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ssh.websshSFTPRename"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 重命名",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/sftp/{id}/rm": {
+      "delete": {
+        "operationId": "delete_ssh_sftp_id_rm",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "recursive",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 删除文件",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/sftp/{id}/upload": {
+      "post": {
+        "operationId": "post_ssh_sftp_id_upload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 上传文件",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/sftp/{id}/write": {
+      "post": {
+        "operationId": "post_ssh_sftp_id_write",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ssh.websshSFTPWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 写入文件",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/ssh/to/{id}": {
+      "get": {
+        "description": "[WebSocket] 打开 SSH 终端",
+        "operationId": "get_ssh_to_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "打开 SSH 终端",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/swarm/info": {
+      "get": {
+        "operationId": "get_swarm_info",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取 Swarm 集群信息",
+        "tags": [
+          "swarm"
+        ]
+      }
+    },
+    "/swarm/node/{id}": {
+      "get": {
+        "operationId": "get_swarm_node_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取 Swarm 节点详情",
+        "tags": [
+          "swarm"
+        ]
+      }
+    },
+    "/swarm/node/{id}/action": {
+      "post": {
+        "operationId": "post_swarm_node_id_action",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/swarm.swarmNodeAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "执行 Swarm 节点操作",
+        "tags": [
+          "swarm"
+        ]
+      }
+    },
+    "/swarm/nodes": {
+      "get": {
+        "operationId": "get_swarm_nodes",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 Swarm 节点列表",
+        "tags": [
+          "swarm"
+        ]
+      }
+    },
+    "/swarm/service": {
+      "post": {
+        "operationId": "post_swarm_service",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/swarm.ServiceSpec"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建 Swarm 服务",
+        "tags": [
+          "swarm"
+        ]
+      }
+    },
+    "/swarm/service/{id}": {
+      "get": {
+        "operationId": "get_swarm_service_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取 Swarm 服务详情",
+        "tags": [
+          "swarm"
+        ]
+      }
+    },
+    "/swarm/service/{id}/action": {
+      "post": {
+        "operationId": "post_swarm_service_id_action",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/swarm.swarmServiceAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "执行 Swarm 服务操作",
+        "tags": [
+          "swarm"
+        ]
+      }
+    },
+    "/swarm/service/{id}/logs": {
+      "get": {
+        "operationId": "get_swarm_service_id_logs",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tail",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取 Swarm 服务日志",
+        "tags": [
+          "swarm"
+        ]
+      }
+    },
+    "/swarm/services": {
+      "get": {
+        "operationId": "get_swarm_services",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 Swarm 服务列表",
+        "tags": [
+          "swarm"
+        ]
+      }
+    },
+    "/swarm/tasks": {
+      "get": {
+        "operationId": "get_swarm_tasks",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "serviceID",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 Swarm 任务列表",
+        "tags": [
+          "swarm"
+        ]
+      }
+    },
+    "/swarm/token": {
+      "get": {
+        "operationId": "get_swarm_token",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取 Swarm 加入令牌",
+        "tags": [
+          "swarm"
+        ]
+      }
+    },
+    "/system/audit/logs": {
+      "get": {
+        "operationId": "get_system_audit_logs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "username",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询操作审计日志",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/system/config": {
+      "get": {
+        "operationId": "get_system_config",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "reload",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取系统配置",
+        "tags": [
+          "system"
+        ]
+      },
+      "put": {
+        "operationId": "put_system_config",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/system.UpdateAllConfigRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "保存系统配置",
+        "tags": [
+          "system"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "APIResponse": {
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "payload": {},
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "type": "object"
+      },
+      "account.ChangePasswordRequest": {
+        "properties": {
+          "newPassword": {
+            "type": "string"
+          },
+          "oldPassword": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "newPassword"
+        ],
+        "type": "object"
+      },
+      "account.CreateApiTokenRequest": {
+        "properties": {
+          "expiresIn": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "account.LoginRequest": {
+        "properties": {
+          "password": {
+            "type": "string"
+          },
+          "totpCode": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ],
+        "type": "object"
+      },
+      "account.MemberUpsertRequest": {
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "homeDirectory": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "account.OIDCExchangeRequest": {
+        "properties": {
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "type": "object"
+      },
+      "account.TOTPVerifyRequest": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "secret": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "type": "object"
+      },
+      "account.accountPasskeyLoginBegin": {
+        "properties": {
+          "username": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "account.accountPasskeyRegisterBegin": {
+        "properties": {
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "account.accountPasskeyRenameCredential": {
+        "properties": {
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "displayName"
+        ],
+        "type": "object"
+      },
+      "apisix.PluginConfig": {
+        "properties": {
+          "create_time": {
+            "type": "integer"
+          },
+          "desc": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "plugins": {
+            "type": "object"
+          },
+          "update_time": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "apisix.Route": {
+        "properties": {
+          "consumers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "create_time": {
+            "type": "integer"
+          },
+          "desc": {
+            "type": "string"
+          },
+          "enable_websocket": {
+            "type": "boolean"
+          },
+          "host": {
+            "type": "string"
+          },
+          "hosts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "plugin_config_id": {
+            "type": "string"
+          },
+          "plugins": {
+            "type": "object"
+          },
+          "priority": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "timeout": {
+            "type": "object"
+          },
+          "update_time": {
+            "type": "integer"
+          },
+          "upstream": {
+            "type": "object"
+          },
+          "upstream_id": {
+            "type": "string"
+          },
+          "uri": {
+            "type": "string"
+          },
+          "uris": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "apisix.SSL": {
+        "properties": {
+          "cert": {
+            "type": "string"
+          },
+          "create_time": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "snis": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "update_time": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "apisix.Upstream": {
+        "properties": {
+          "create_time": {
+            "type": "integer"
+          },
+          "desc": {
+            "type": "string"
+          },
+          "hash_on": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "nodes": {},
+          "pass_host": {
+            "type": "string"
+          },
+          "retries": {
+            "type": "integer"
+          },
+          "retry_timeout": {
+            "type": "integer"
+          },
+          "scheme": {
+            "type": "string"
+          },
+          "timeout": {
+            "type": "object"
+          },
+          "type": {
+            "type": "string"
+          },
+          "update_time": {
+            "type": "integer"
+          },
+          "upstream_host": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "apisix.WhitelistCreateRequest": {
+        "properties": {
+          "consumers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "key_auth": {
+            "type": "object"
+          },
+          "route_id": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "apisix.WhitelistUserCreateRequest": {
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "key_auth": {
+            "type": "object"
+          },
+          "route_id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "apisix.apisixConsumerCreate": {
+        "properties": {
+          "desc": {
+            "type": "string"
+          },
+          "plugins": {
+            "type": "object"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "username"
+        ],
+        "type": "object"
+      },
+      "apisix.apisixConsumerUpdate": {
+        "properties": {
+          "desc": {
+            "type": "string"
+          },
+          "plugins": {
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "apisix.apisixRouteStatusPatch": {
+        "properties": {
+          "status": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.CertForm": {
+        "properties": {
+          "certificate": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string"
+          },
+          "issuer": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "keyContent": {
+            "type": "string"
+          },
+          "notAfter": {
+            "$ref": "#/components/schemas/time.Time"
+          },
+          "notBefore": {
+            "$ref": "#/components/schemas/time.Time"
+          },
+          "sans": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "source": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.GlobalForm": {
+        "properties": {
+          "acmeCA": {
+            "type": "string"
+          },
+          "autoHttpsDisable": {
+            "type": "boolean"
+          },
+          "autoHttpsDisableRedirects": {
+            "type": "boolean"
+          },
+          "email": {
+            "type": "string"
+          },
+          "gracePeriod": {
+            "type": "string"
+          },
+          "localCerts": {
+            "type": "boolean"
+          },
+          "logFormat": {
+            "type": "string"
+          },
+          "logLevel": {
+            "type": "string"
+          },
+          "onDemandAsk": {
+            "type": "string"
+          },
+          "onDemandTLS": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.Route": {
+        "properties": {
+          "@id": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          },
+          "handle": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "match": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "terminal": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.caddyConfigLoad": {
+        "properties": {
+          "config": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "config"
+        ],
+        "type": "object"
+      },
+      "compose.DeployRequest": {
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "forcePull": {
+            "type": "boolean"
+          },
+          "initURL": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "type": "object"
+      },
+      "compose.RedeployRequest": {
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "forcePull": {
+            "type": "boolean"
+          },
+          "image": {
+            "type": "string"
+          },
+          "serviceName": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "cron.JobUpsertRequest": {
+        "properties": {
+          "container": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "image": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "schedule": {
+            "type": "string"
+          },
+          "timeout": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "volumes": {
+            "type": "string"
+          },
+          "workDir": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "schedule",
+          "type",
+          "content"
+        ],
+        "type": "object"
+      },
+      "docker.ActionRequest": {
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "action"
+        ],
+        "type": "object"
+      },
+      "docker.ContainerSpec": {
+        "properties": {
+          "autoRemove": {
+            "type": "boolean"
+          },
+          "capAdd": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "capDrop": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "cmd": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "cpus": {
+            "type": "number"
+          },
+          "env": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "hostname": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "labels": {
+            "type": "object"
+          },
+          "memory": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "network": {
+            "type": "string"
+          },
+          "ports": {
+            "type": "object"
+          },
+          "privileged": {
+            "type": "boolean"
+          },
+          "restart": {
+            "type": "string"
+          },
+          "user": {
+            "type": "string"
+          },
+          "volumes": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "workdir": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "image",
+          "name"
+        ],
+        "type": "object"
+      },
+      "docker.ImageBuildRequest": {
+        "properties": {
+          "dockerfile": {
+            "type": "string"
+          },
+          "tag": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "dockerfile"
+        ],
+        "type": "object"
+      },
+      "docker.ImagePruneRequest": {
+        "properties": {
+          "all": {
+            "type": "boolean"
+          },
+          "until": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "docker.ImagePullRequest": {
+        "properties": {
+          "image": {
+            "type": "string"
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "registryUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "image"
+        ],
+        "type": "object"
+      },
+      "docker.ImagePushRequest": {
+        "properties": {
+          "image": {
+            "type": "string"
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "registryUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "image",
+          "registryUrl"
+        ],
+        "type": "object"
+      },
+      "docker.ImageTagRequest": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "repoTag": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "repoTag"
+        ],
+        "type": "object"
+      },
+      "docker.NetworkSpec": {
+        "properties": {
+          "driver": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "subnet": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "docker.RegistryUpsertRequest": {
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "url"
+        ],
+        "type": "object"
+      },
+      "docker.VolumeSpec": {
+        "properties": {
+          "driver": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "filer.filerFileDownload": {
+        "properties": {
+          "inline": {
+            "type": "boolean"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "filer.filerFileMkdir": {
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "ssh.websshSFTPChmod": {
+        "properties": {
+          "mode": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "mode"
+        ],
+        "type": "object"
+      },
+      "ssh.websshSFTPChown": {
+        "properties": {
+          "gid": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          },
+          "uid": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "uid",
+          "gid"
+        ],
+        "type": "object"
+      },
+      "ssh.websshSFTPMkdir": {
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "ssh.websshSFTPRename": {
+        "properties": {
+          "newPath": {
+            "type": "string"
+          },
+          "oldPath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "oldPath",
+          "newPath"
+        ],
+        "type": "object"
+      },
+      "ssh.websshSFTPWrite": {
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "content"
+        ],
+        "type": "object"
+      },
+      "swarm.ServiceSpec": {
+        "properties": {
+          "args": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "constraints": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "env": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "image": {
+            "type": "string"
+          },
+          "labels": {
+            "type": "object"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "mounts": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "networks": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "ports": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "replicas": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "swarm.swarmNodeAction": {
+        "properties": {
+          "action": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "swarm.swarmServiceAction": {
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "replicas": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "system.UpdateAllConfigRequest": {
+        "properties": {
+          "agent": {
+            "$ref": "#/components/schemas/config.AgentConfig"
+          },
+          "apisix": {
+            "$ref": "#/components/schemas/config.ApisixConfig"
+          },
+          "caddy": {
+            "$ref": "#/components/schemas/config.CaddyConfig"
+          },
+          "docker": {
+            "$ref": "#/components/schemas/config.DockerConfig"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/config.LinkConfig"
+            },
+            "type": "array"
+          },
+          "marketplace": {
+            "$ref": "#/components/schemas/config.MarketplaceConfig"
+          },
+          "monitor": {
+            "$ref": "#/components/schemas/config.MonitorConfig"
+          },
+          "oidc": {
+            "$ref": "#/components/schemas/config.OIDCConfig"
+          },
+          "passkey": {
+            "$ref": "#/components/schemas/config.PasskeyConfig"
+          },
+          "server": {
+            "$ref": "#/components/schemas/config.ServerConfig"
+          },
+          "tha": {
+            "$ref": "#/components/schemas/config.THAConfig"
+          }
+        },
+        "type": "object"
+      },
+      "webssh.CredentialUpsertRequest": {
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "privateKey": {
+            "type": "string"
+          },
+          "user": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "user"
+        ],
+        "type": "object"
+      },
+      "webssh.HostUpsertRequest": {
+        "properties": {
+          "addr": {
+            "type": "string"
+          },
+          "credentialId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "privateKey": {
+            "type": "string"
+          },
+          "user": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "addr"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  }
+}
