@@ -3749,7 +3749,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/filerPathQuery"
+                "$ref": "#/components/schemas/filerUnzipBody"
               }
             }
           },
@@ -5574,10 +5574,10 @@
             "type": "string"
           },
           "notAfter": {
-            "$ref": "#/components/schemas/time.Time"
+            "type": "string"
           },
           "notBefore": {
-            "$ref": "#/components/schemas/time.Time"
+            "type": "string"
           },
           "sans": {
             "items": {
@@ -5931,6 +5931,22 @@
         ],
         "type": "object"
       },
+      "cronJobEnableReq": {
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "cronJobLogsReq": {
+        "properties": {
+          "limit": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "docker.ActionRequest": {
         "properties": {
           "action": {
@@ -6171,6 +6187,76 @@
       "filer.filerFileMkdir": {
         "properties": {
           "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "filerChmodBody": {
+        "properties": {
+          "mode": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "mode"
+        ],
+        "type": "object"
+      },
+      "filerContentBody": {
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "content"
+        ],
+        "type": "object"
+      },
+      "filerPathQuery": {
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "filerRenameBody": {
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "target"
+        ],
+        "type": "object"
+      },
+      "filerUnzipBody": {
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "targetDir": {
             "type": "string"
           }
         },

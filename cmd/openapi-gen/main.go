@@ -108,8 +108,13 @@ var intTypes = map[string]bool{
 	"uint": true, "uint8": true, "uint16": true, "uint32": true, "uint64": true,
 }
 
-// ─── 入口 ────────────────────────────────────────────
+// 标准库类型，避免在 buildProperty 中生成无效 $ref
+var stdTypes = map[string]bool{
+	"time.Time":     true,
+	"time.Duration": true,
+}
 
+// ─── 入口 ────────────────────────────────────────────
 var outFile = flag.String("o", "public/openapi/apis.json", "输出文件路径，默认 public/openapi/apis.json")
 
 func main() {
@@ -378,24 +383,32 @@ func collectAllTypesFromFile(filename string) {
 			if !ok || sel.Sel.Name != "ShouldBindJSON" {
 				return true
 			}
-			// 在函数体中反向查找 var req Xxx 声明
+			// 在函数体中反向查找 var req Xxx 声明 或 req := &Xxx{} 赋值
 			ast.Inspect(fd.Body, func(n2 ast.Node) bool {
-				ds, ok := n2.(*ast.DeclStmt)
-				if !ok {
-					return true
-				}
-				gd, ok := ds.Decl.(*ast.GenDecl)
-				if !ok || gd.Tok != token.VAR {
-					return true
-				}
-				for _, spec := range gd.Specs {
-					if vs, ok := spec.(*ast.ValueSpec); ok && len(vs.Names) == 1 {
-						typeName := typeExprToString(vs.Type)
-						if sel, ok := vs.Type.(*ast.SelectorExpr); ok {
-							typeName = fullSelName(sel)
+				// 模式1: var req Xxx — DeclStmt
+				if ds, ok := n2.(*ast.DeclStmt); ok {
+					gd, ok := ds.Decl.(*ast.GenDecl)
+					if !ok || gd.Tok != token.VAR {
+						return true
+					}
+					for _, spec := range gd.Specs {
+						if vs, ok := spec.(*ast.ValueSpec); ok && len(vs.Names) == 1 {
+							typeName := typeExprToString(vs.Type)
+							if sel, ok := vs.Type.(*ast.SelectorExpr); ok {
+								typeName = fullSelName(sel)
+							}
+							if typeName != "" && typeName != "struct" {
+								resolveStructSchema(typeName, nil, filename)
+							}
 						}
+					}
+					return true
+				}
+				// 模式2: req := &pkg.Type{} — AssignStmt
+				if as, ok := n2.(*ast.AssignStmt); ok && as.Tok == token.DEFINE && len(as.Rhs) == 1 {
+					if comp, ok := as.Rhs[0].(*ast.CompositeLit); ok {
+						typeName := typeExprToString(comp.Type)
 						if typeName != "" && typeName != "struct" {
-							// 预热缓存
 							resolveStructSchema(typeName, nil, filename)
 						}
 					}
@@ -614,6 +627,8 @@ func analyzeDeclStmt(stmt *ast.DeclStmt, r *RouteDef, lastVarType *string) {
 					schema.PkgName = r.Module
 					structCache[cacheKey] = schema
 					*lastVarType = cacheKey
+					// 递归解析内联 struct 的嵌套类型
+					resolveNestedTypesInSchema(schema, "")
 				}
 			}
 		}
@@ -765,6 +780,11 @@ func resolveStructSchema(typeName string, localTypes map[string]string, ctrlFile
 			if name == typeName || strings.HasPrefix(typeName, name+".") {
 				info := parseFieldsString(name, fields)
 				if info != nil {
+					// 缓存本地类型到 structCache，避免孤立引用
+					cacheKey := name
+					structCache[cacheKey] = info
+					// 递归解析嵌套结构体字段类型
+					resolveNestedTypesInSchema(info, ctrlFile)
 					return info
 				}
 			}
@@ -1082,6 +1102,10 @@ func buildProperty(goType string, allSchemas map[string]*SchemaInfo) map[string]
 	case goType == "any" || goType == "interface{}":
 		return map[string]any{} // any type
 	default:
+		// 标准库类型降级为基本类型
+		if stdTypes[goType] {
+			return map[string]any{"type": "string"}
+		}
 		// 尝试引用其他 schema
 		parts := strings.SplitN(goType, ".", 2)
 		if len(parts) == 2 {
