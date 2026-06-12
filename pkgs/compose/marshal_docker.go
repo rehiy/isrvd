@@ -162,7 +162,7 @@ func serviceFromDockerInspect(info container.InspectResponse, imageConfig *v1.Do
 	}
 
 	hostname := info.Config.Hostname
-	if hostname == containerName {
+	if hostname == containerName || isContainerID(hostname) {
 		hostname = ""
 	}
 
@@ -179,21 +179,21 @@ func serviceFromDockerInspect(info container.InspectResponse, imageConfig *v1.Do
 		Hostname:          hostname,
 		Privileged:        info.HostConfig.Privileged,
 		CgroupParent:      info.HostConfig.CgroupParent,
-		Cgroup:            string(info.HostConfig.CgroupnsMode),
+		Cgroup:            diffDefaultString(string(info.HostConfig.CgroupnsMode), "private"),
 		CapAdd:            []string(info.HostConfig.CapAdd),
 		CapDrop:           []string(info.HostConfig.CapDrop),
 		Restart:           restartPolicy(string(info.HostConfig.RestartPolicy.Name)),
 		ExtraHosts:        extraHostsToMap(info.HostConfig.ExtraHosts),
 		GroupAdd:          info.HostConfig.GroupAdd,
 		Init:              info.HostConfig.Init,
-		Ipc:               string(info.HostConfig.IpcMode),
+		Ipc:               diffDefaultString(string(info.HostConfig.IpcMode), "private"),
 		Isolation:         string(info.HostConfig.Isolation),
 		OomKillDisable:    boolValue(info.HostConfig.OomKillDisable),
 		Pid:               string(info.HostConfig.PidMode),
 		PidsLimit:         int64Value(info.HostConfig.PidsLimit),
-		Runtime:           info.HostConfig.Runtime,
+		Runtime:           diffDefaultString(info.HostConfig.Runtime, "runc"),
 		SecurityOpt:       info.HostConfig.SecurityOpt,
-		ShmSize:           types.UnitBytes(info.HostConfig.ShmSize),
+		ShmSize:           diffDefaultShmSize(info.HostConfig.ShmSize),
 		Tmpfs:             tmpfsToList(info.HostConfig.Tmpfs),
 		Ulimits:           inspectUlimits(info.HostConfig.Ulimits),
 		Uts:               string(info.HostConfig.UTSMode),
@@ -606,6 +606,23 @@ func sliceEqual(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+// diffDefaultString 若值等于 Docker 默认值则返回空字符串，避免将默认行为写入 compose
+func diffDefaultString(val, dockerDefault string) string {
+	if val == dockerDefault {
+		return ""
+	}
+	return val
+}
+
+// diffDefaultShmSize 若 shm_size 等于 Docker 默认值（64MB）则返回 0，不写入 compose
+func diffDefaultShmSize(size int64) types.UnitBytes {
+	const dockerDefaultShmSize int64 = 67108864 // 64MB
+	if size == dockerDefaultShmSize {
+		return 0
+	}
+	return types.UnitBytes(size)
 }
 
 // parsePort 解析 "8080" 或 "8080/tcp" 为端口号
