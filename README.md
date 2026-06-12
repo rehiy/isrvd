@@ -44,6 +44,7 @@
 | `rehiy/isrvd:caddy` | isrvd + Caddy，集成反向代理与 TLS 管理 |
 
 CNB 流水线会同步推送到 CNB Docker 制品库，镜像路径为 `docker.cnb.cool/<repo-slug>:<tag>`，支持 `slim`、`caddy`、`apisix` 三个标签，其中 `slim` 同时作为 `latest`。
+国内 Docker 部署可将下方示例中的 `rehiy/isrvd:<tag>` 替换为 `docker.cnb.cool/rehiy/isrvd:<tag>`。
 
 Docker 版默认管理员账号为 `admin` / `admin`，首次登录成功后会自动跳转至修改密码页面。
 
@@ -154,11 +155,13 @@ networks:
 - 限制：无法通过容器内网访问其它容器
 
 ```bash
-# 一键安装
+# 一键安装（默认自动按 IP 选择 CNB/GitHub 源，可用 --cn / --global 手动指定）
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --cn
 
 # 更新/卸载/仅下载
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) update
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) update --global
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) uninstall
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) download
 ```
