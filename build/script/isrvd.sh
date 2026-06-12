@@ -35,14 +35,6 @@ get_arch() {
     esac
 }
 
-json_string_field() {
-    local json="$1"
-    local field="$2"
-
-    printf '%s' "$json" | tr -d '\r\n' | \
-        sed -n 's/.*"'"$field"'"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1
-}
-
 parse_service_area_option() {
     case "$1" in
         --cn)     SERVICE_AREA="cn" ;;
@@ -54,16 +46,14 @@ parse_service_area_option() {
 }
 
 detect_country_code() {
-    local json
     local code
 
-    json=$(curl -fsSL --connect-timeout 2 --max-time 5 -A "isrvd-installer" "https://ipip.rehi.org/json" 2>/dev/null) || return 1
-    code=$(json_string_field "$json" "country_code")
+    code=$(curl -fsSL --connect-timeout 2 --max-time 5 -A "isrvd-installer" "https://ipip.rehi.org/country_code" 2>/dev/null) || return 1
     if [ -z "$code" ]; then
         return 1
     fi
 
-    printf '%s' "$code" | tr '[:lower:]' '[:upper:]'
+    printf '%s' "$code" | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]'
 }
 
 resolve_service_area() {
