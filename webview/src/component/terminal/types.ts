@@ -54,7 +54,7 @@ export class WsTerminal implements TerminalAdapter {
         const term = this.term
         this.term = null
         this.fitAddon = null
-        term!.dispose()
+        term?.dispose()
     }
 
     fit(): void {

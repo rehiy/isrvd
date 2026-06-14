@@ -315,7 +315,6 @@ export default toNative(ExplorerPanel)
 
     <!-- ─── 内容区（showCard=false 时需要 flex-1 overflow-y-auto 让列表可滚动）── -->
     <div :class="showCard ? 'contents' : 'flex-1 overflow-y-auto min-h-0'">
-
       <!-- ─── 加载中 ──────────────────────────────────────────────────────────── -->
       <div v-if="loading" class="card-body">
         <div class="empty-state">
@@ -485,7 +484,6 @@ export default toNative(ExplorerPanel)
           </div>
         </div>
       </template>
-
     </div>
 
     <!-- ─── 弹窗 ────────────────────────────────────────────────────────────── -->

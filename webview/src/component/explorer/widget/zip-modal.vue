@@ -26,7 +26,7 @@ class ZipModal extends Vue {
         if (!this.file || !this.adapter) return
         this.loading = true
         try {
-            await this.adapter.zip!(this.file.path)
+            await this.adapter.zip?.(this.file.path)
             this.$emit('success')
             this.isOpen = false
         } finally {

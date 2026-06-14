@@ -79,7 +79,7 @@ class RenameModal extends Vue {
                 await Promise.all(
                     batch.map(f => {
                         const newPath = this.toAbs(this.resolveTarget(f), f)
-                        return this.adapter!.rename(f.path, newPath)
+                        return this.adapter?.rename(f.path, newPath)
                     })
                 )
             }

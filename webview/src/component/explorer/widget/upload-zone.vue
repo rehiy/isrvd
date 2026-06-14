@@ -82,5 +82,5 @@ export default toNative(UploadZone)
 </script>
 
 <template>
-  <!-- 无渲染组件，不输出任何 DOM -->
+  <span style="display:none"></span>
 </template>

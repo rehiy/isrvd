@@ -40,7 +40,7 @@ function createSftpAdapter(hostId: string): ExplorerAdapter {
         can,
         async list(path: string): Promise<ListResult> {
             const res = await api.sftpList(hostId, path)
-            const payload = res.payload!
+            const payload = res.payload ?? { path: '', files: [] }
             return {
                 path: payload.path,
                 files: (payload.files || []).map((f): FileInfo => ({

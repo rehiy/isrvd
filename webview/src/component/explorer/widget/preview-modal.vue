@@ -38,7 +38,7 @@ class PreviewModal extends Vue {
         this.error = ''
         // PDF 不依赖 load 事件，直接不显示 loading
         this.loading = this.previewType !== 'pdf'
-        this.previewUrl = adapter.previewUrl!(file.path, this.portal.token || '', true)
+        this.previewUrl = adapter.previewUrl?.(file.path, this.portal.token || '', true) ?? ''
         this.isOpen = true
     }
 

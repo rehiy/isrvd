@@ -27,7 +27,7 @@ function createFilerAdapter(): ExplorerAdapter {
         can,
         async list(path: string): Promise<ListResult> {
             const res = await api.filerList(path)
-            const payload = res.payload!
+            const payload = res.payload ?? { path: '', files: [] }
             return {
                 path: payload.path,
                 files: (payload.files || []).map((f): FileInfo => ({

@@ -29,7 +29,7 @@ class CreateModal extends Vue {
         this.loading = true
         try {
             const path = this.currentPath.replace(/\/+$/, '') + '/' + this.formData.name.trim()
-            await this.adapter.createFile!(path, this.formData.content)
+            await this.adapter.createFile?.(path, this.formData.content)
             this.$emit('success')
             this.isOpen = false
         } finally {

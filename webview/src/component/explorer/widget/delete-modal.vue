@@ -36,7 +36,7 @@ class DeleteModal extends Vue {
         try {
             for (let i = 0; i < this.files.length; i += 5) {
                 const batch = this.files.slice(i, i + 5)
-                await Promise.all(batch.map(f => this.adapter!.remove(f.path, f.isDir)))
+                await Promise.all(batch.map(f => this.adapter?.remove(f.path, f.isDir)))
             }
             this.$emit('success')
             this.isOpen = false

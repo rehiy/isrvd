@@ -28,7 +28,7 @@ class UnzipModal extends Vue {
         if (!this.file || !this.adapter) return
         this.loading = true
         try {
-            await this.adapter.unzip!(this.file.path, this.targetDir.trim() || undefined)
+            await this.adapter.unzip?.(this.file.path, this.targetDir.trim() || undefined)
             this.$emit('success')
             this.isOpen = false
         } finally {
