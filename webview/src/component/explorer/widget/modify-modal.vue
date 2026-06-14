@@ -14,40 +14,33 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
-import api from '@/service/api'
-import type { SFTPFileInfo } from '@/service/types'
-
-import { joinPath } from '@/helper/utils'
-
 import BaseModal from '@/component/modal.vue'
+
+import type { FileInfo, ExplorerAdapter } from '../types'
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, Codemirror }
+    emits: ['success'],
+    components: { BaseModal, Codemirror },
 })
-class SftpModifyModal extends Vue {
+class ModifyModal extends Vue {
     portal = usePortal()
-    
-    // ─── 数据属性 ───
+
     isOpen = false
     loading = false
-    hostId = ''
+    adapter: ExplorerAdapter | null = null
     formData = { filename: '', content: '', path: '' }
     readonly extensions = [css(), go(), html(), javascript(), json(), markdown(), python(), sql(), xml(), yaml()]
 
-    // ─── 方法 ───
-    async show(hostId: string, file: SFTPFileInfo, basePath: string) {
-        this.hostId = hostId
-        this.formData.path = joinPath(basePath, file.name)
+    async show(adapter: ExplorerAdapter, file: FileInfo) {
+        this.adapter = adapter
+        this.formData.path = file.path
         this.formData.filename = file.name
         this.formData.content = ''
         this.isOpen = true
-        
-        // 读取文件内容
         try {
             this.loading = true
-            const res = await api.sftpRead(this.hostId, this.formData.path)
-            this.formData.content = res.payload?.content ?? ''
+            this.formData.content = await adapter.readFile(file.path)
         } catch (e: unknown) {
             this.portal.showNotification('error', '读取文件失败: ' + (e instanceof Error ? e.message : ''))
             this.isOpen = false
@@ -57,16 +50,13 @@ class SftpModifyModal extends Vue {
     }
 
     async handleConfirm() {
+        if (!this.adapter) return
         this.loading = true
         try {
-            await api.sftpWrite(this.hostId, {
-                path: this.formData.path,
-                content: this.formData.content
-            })
+            await this.adapter.writeFile(this.formData.path, this.formData.content)
             this.portal.showNotification('success', '文件保存成功')
-            this.isOpen = false
-            // 触发父组件刷新
             this.$emit('success')
+            this.isOpen = false
         } catch (e: unknown) {
             this.portal.showNotification('error', '文件保存失败: ' + (e instanceof Error ? e.message : ''))
         } finally {
@@ -75,17 +65,14 @@ class SftpModifyModal extends Vue {
     }
 }
 
-export default toNative(SftpModifyModal)
+export default toNative(ModifyModal)
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" :title="'编辑: ' + formData.filename" :loading="loading" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="'编辑: ' + formData.filename" :loading="loading" @confirm="handleConfirm">
     <div class="editor-container">
       <Codemirror v-model="formData.content" :style="{ height: '60vh' }" :extensions="extensions" :disabled="loading" />
     </div>
-
-    <template #confirm-text>
-      {{ loading ? '保存中...' : '保存文件' }}
-    </template>
+    <template #confirm-text>{{ loading ? '保存中...' : '保存文件' }}</template>
   </BaseModal>
 </template>

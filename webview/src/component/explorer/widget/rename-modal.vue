@@ -1,37 +1,34 @@
 <script lang="ts">
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api'
-import type { FilerFileInfo } from '@/service/types'
-
 import BaseModal from '@/component/modal.vue'
+
+import type { FileInfo, ExplorerAdapter } from '../types'
 
 @Component({
     expose: ['show'],
     emits: ['success'],
-    components: { BaseModal }
+    components: { BaseModal },
 })
 class RenameModal extends Vue {
     isOpen = false
     loading = false
-    files: FilerFileInfo[] = []
+    adapter: ExplorerAdapter | null = null
+    files: FileInfo[] = []
     input = ''
 
-    get trimmedInput() {
-        return this.input.trim()
+    get trimmedInput() { return this.input.trim() }
+    get inputIsDir() { return this.trimmedInput.endsWith('/') }
+
+    // 计算单个文件的目标路径
+    resolveTarget(file: FileInfo): string {
+        const t = this.trimmedInput
+        // 以 / 结尾 → 移入该目录并保持原名
+        return this.inputIsDir ? `${t}${file.name}` : t
     }
 
-    get inputIsDir() {
-        return this.trimmedInput.endsWith('/')
-    }
-
-    // 计算单个文件的 target，透传给后端
-    resolveTarget(file: FilerFileInfo): string {
-        return this.inputIsDir ? `${this.trimmedInput}${file.name}` : this.trimmedInput
-    }
-
-    // 将 target 还原为逻辑绝对路径，仅用于预览
-    toAbs(target: string, file: FilerFileInfo): string {
+    // 将相对/绝对 target 还原为逻辑绝对路径（仅用于预览）
+    toAbs(target: string, file: FileInfo): string {
         if (!target) return ''
         if (target.startsWith('/')) return target
         const idx = file.path.lastIndexOf('/')
@@ -66,19 +63,25 @@ class RenameModal extends Vue {
         }))
     }
 
-    show(target: FilerFileInfo | FilerFileInfo[]) {
+    show(adapter: ExplorerAdapter, target: FileInfo | FileInfo[]) {
+        this.adapter = adapter
         this.files = Array.isArray(target) ? target : [target]
         this.input = this.files.length === 1 ? (this.files[0]?.name ?? '') : ''
         this.isOpen = true
     }
 
     async handleConfirm() {
-        if (!this.isValidInput || this.files.length === 0) return
+        if (!this.isValidInput || this.files.length === 0 || !this.adapter) return
         this.loading = true
         try {
             for (let i = 0; i < this.files.length; i += 5) {
                 const batch = this.files.slice(i, i + 5)
-                await Promise.all(batch.map(f => api.filerRename(f.path, this.resolveTarget(f))))
+                await Promise.all(
+                    batch.map(f => {
+                        const newPath = this.toAbs(this.resolveTarget(f), f)
+                        return this.adapter!.rename(f.path, newPath)
+                    })
+                )
             }
             this.$emit('success')
             this.isOpen = false
@@ -94,15 +97,14 @@ export default toNative(RenameModal)
 <template>
   <BaseModal v-model="isOpen" :title="title" :loading="loading" :confirm-disabled="!isValidInput" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
-      <!-- 输入区 -->
       <div>
-        <label for="renameInput" class="form-label">目标路径</label>
+        <label for="fmRenameInput" class="form-label">目标路径</label>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <i :class="inputIsDir ? 'fas fa-folder text-blue-400' : 'fas fa-file-export text-slate-400'"></i>
           </div>
           <input
-            id="renameInput"
+            id="fmRenameInput"
             v-model="input"
             type="text"
             :disabled="loading"
@@ -116,14 +118,11 @@ export default toNative(RenameModal)
         </p>
       </div>
 
-      <!-- 预览表格 -->
       <div>
         <p class="text-xs font-medium text-slate-500 mb-1.5">操作预览（共 {{ files.length }} 项）</p>
         <div class="rounded-lg border border-slate-200 overflow-hidden">
           <div class="grid grid-cols-[1fr_auto_1fr] bg-slate-100 border-b border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500">
-            <span>原路径</span>
-            <span></span>
-            <span>目标路径</span>
+            <span>原路径</span><span></span><span>目标路径</span>
           </div>
           <div class="max-h-52 overflow-auto divide-y divide-slate-100">
             <div
@@ -137,13 +136,12 @@ export default toNative(RenameModal)
                 class="font-mono truncate"
                 :class="item.abs ? 'text-blue-600' : 'text-slate-300 italic'"
                 :title="item.abs"
-              >
-                {{ item.abs || '请输入目标路径' }}
-              </span>
+              >{{ item.abs || '请输入目标路径' }}</span>
             </div>
           </div>
         </div>
       </div>
     </form>
+    <template #confirm-text>{{ loading ? '处理中...' : '确认' }}</template>
   </BaseModal>
 </template>

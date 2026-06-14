@@ -250,8 +250,8 @@ class ApiService {
         return http.post<void>('filer/rename', { path, target })
     }
 
-    filerMkdir(path: string) {
-        return http.post<void>('filer/dir', { path })
+    filerMkdir(path: string, config?: AxiosRequestConfig) {
+        return http.post<void>('filer/dir', { path }, config)
     }
 
     filerCreate(path: string, content = '') {
@@ -808,8 +808,8 @@ class ApiService {
         return http.delete<void>(`ssh/sftp/${hostId}/rm`, { params: { path, recursive: recursive || undefined } })
     }
 
-    sftpMkdir(hostId: string, data: SFTPMkdir) {
-        return http.post<void>(`ssh/sftp/${hostId}/mkdir`, data)
+    sftpMkdir(hostId: string, data: SFTPMkdir, config?: AxiosRequestConfig) {
+        return http.post<void>(`ssh/sftp/${hostId}/mkdir`, data, config)
     }
 
     sftpRename(hostId: string, data: SFTPRename) {

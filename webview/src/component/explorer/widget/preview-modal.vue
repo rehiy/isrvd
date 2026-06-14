@@ -3,21 +3,20 @@ import { Component, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
-import api from '@/service/api'
-import type { FilerFileInfo } from '@/service/types'
-
 import { getPreviewMimeType, getPreviewType } from '@/helper/utils'
 import type { PreviewFileType } from '@/helper/utils'
 
 import BaseModal from '@/component/modal.vue'
 
+import type { FileInfo, ExplorerAdapter } from '../types'
+
 @Component({
     expose: ['show'],
-    components: { BaseModal }
+    components: { BaseModal },
 })
 class PreviewModal extends Vue {
     portal = usePortal()
-    // ─── 数据属性 ───
+
     isOpen = false
     filename = ''
     previewUrl = ''
@@ -26,14 +25,12 @@ class PreviewModal extends Vue {
     loading = false
     error = ''
 
-    // ─── 监听器 ───
     @Watch('isOpen')
     onOpenChange(value: boolean) {
         if (!value) this.resetPreview()
     }
 
-    // ─── 方法 ───
-    show(file: FilerFileInfo) {
+    show(adapter: ExplorerAdapter, file: FileInfo) {
         this.resetPreview()
         this.filename = file.name
         this.previewType = getPreviewType(file.name)
@@ -41,7 +38,7 @@ class PreviewModal extends Vue {
         this.error = ''
         // PDF 不依赖 load 事件，直接不显示 loading
         this.loading = this.previewType !== 'pdf'
-        this.previewUrl = api.filerDownloadURL(file.path, this.portal.token || '', true)
+        this.previewUrl = adapter.previewUrl!(file.path, this.portal.token || '', true)
         this.isOpen = true
     }
 
@@ -50,14 +47,8 @@ class PreviewModal extends Vue {
         this.resetPreview()
     }
 
-    handleLoaded() {
-        this.loading = false
-    }
-
-    handleError() {
-        this.loading = false
-        this.error = '文件加载失败'
-    }
+    handleLoaded() { this.loading = false }
+    handleError() { this.loading = false; this.error = '文件加载失败' }
 
     resetPreview() {
         this.previewUrl = ''
@@ -103,7 +94,15 @@ export default toNative(PreviewModal)
       @error="handleError"
     />
 
-    <audio v-if="previewUrl && previewType === 'audio' && !error" v-show="!loading" class="w-full" controls preload="metadata" @loadedmetadata="handleLoaded" @error="handleError">
+    <audio
+      v-if="previewUrl && previewType === 'audio' && !error"
+      v-show="!loading"
+      class="w-full"
+      controls
+      preload="metadata"
+      @loadedmetadata="handleLoaded"
+      @error="handleError"
+    >
       <source :src="previewUrl" :type="mimeType" />
     </audio>
 
@@ -119,7 +118,13 @@ export default toNative(PreviewModal)
       <source :src="previewUrl" :type="mimeType" />
     </video>
 
-    <object v-else-if="previewUrl && previewType === 'pdf'" :data="previewUrl" type="application/pdf" class="w-full border-0" style="height: calc(100vh - 10rem);">
+    <object
+      v-else-if="previewUrl && previewType === 'pdf'"
+      :data="previewUrl"
+      type="application/pdf"
+      class="w-full border-0"
+      style="height: calc(100vh - 10rem);"
+    >
       <div class="flex flex-col items-center justify-center gap-3 py-20">
         <div class="empty-state-icon !mb-0">
           <i class="fas fa-file-pdf text-4xl text-slate-400"></i>

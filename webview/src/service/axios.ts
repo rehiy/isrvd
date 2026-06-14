@@ -1,5 +1,12 @@
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 
+declare module 'axios' {
+    interface AxiosRequestConfig {
+        /** 静默错误：不触发全局错误通知弹窗 */
+        silentError?: boolean
+    }
+}
+
 /**
  * 标准 API 响应结构
  */
@@ -91,7 +98,9 @@ export const interceptors = (
      */
     const handleError = (error: unknown, isBlob = false) => {
         if (axios.isCancel(error)) return Promise.reject(error)
-        const err = error as { response?: { status?: number; data?: { message?: string } }; request?: unknown }
+        const err = error as { config?: { silentError?: boolean }; response?: { status?: number; data?: { message?: string } }; request?: unknown }
+        // 静默请求：不弹错误通知，直接 reject
+        if (err.config?.silentError) return Promise.reject(error)
         if (err.response?.status === 401) {
             actions.showNotification('error', '登录已过期，请重新登录')
             actions.clearAuth()
