@@ -1,30 +1,33 @@
 <script lang="ts">
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
-
 import api from '@/service/api'
 import type { DockerContainerInfo } from '@/service/types'
+import { wsUrl } from '@/service/axios'
+import { TerminalPanel, WsTerminal } from '@/component/terminal'
+import type { TerminalAdapter } from '@/component/terminal'
 
-import * as ContainerExec from '@/helper/container-exec'
-
-@Component
+@Component({ components: { TerminalPanel } })
 class ContainerTerminal extends Vue {
     portal = usePortal()
 
-    // ─── Refs ───
-    @Ref readonly xtermRef!: HTMLDivElement
-
-    // ─── 数据属性 ───
     container: DockerContainerInfo | null = null
-    terminalConnected = false
-    terminalShell = '/bin/sh'
+    adapter: TerminalAdapter | null = null
+    shell = '/bin/sh'
 
-    get containerId() {
-        return this.$route.params.id as string
+    get containerId() { return this.$route.params.id as string }
+    get connected() { return this.adapter !== null }
+
+    async mounted() {
+        await this.loadContainer()
     }
 
-    // ─── 方法 ───
+    unmounted() {
+        this.adapter?.disconnect()
+        this.adapter = null
+    }
+
     async loadContainer() {
         try {
             const res = await api.dockerContainerList(true)
@@ -34,36 +37,25 @@ class ContainerTerminal extends Vue {
                 this.$router.push('/docker/containers')
                 return
             }
-            setTimeout(() => this.handleTerminalConnect(), 200)
+            this.handleConnect()
         } catch {}
     }
 
-    handleTerminalConnect() {
-        if (this.terminalConnected || !this.container) return
-        this.terminalConnected = true
-        ContainerExec.create(this.xtermRef, this.portal.token ?? '', this.containerId, this.terminalShell)
+    handleConnect() {
+        if (this.connected || !this.container) return
+        this.adapter = new WsTerminal(wsUrl(`docker/container/${encodeURIComponent(this.containerId)}/exec?token=${this.portal.token ?? ''}&shell=${encodeURIComponent(this.shell)}`))
     }
 
-    handleTerminalDisconnect() {
-        ContainerExec.destroy()
-        if (this.xtermRef) this.xtermRef.innerHTML = ''
-        this.terminalConnected = false
+    handleDisconnect() {
+        this.adapter?.disconnect()
+        this.adapter = null
     }
 
     handleShellChange() {
-        if (this.terminalConnected) {
-            this.handleTerminalDisconnect()
-            setTimeout(() => this.handleTerminalConnect(), 100)
+        if (this.connected) {
+            this.handleDisconnect()
+            this.$nextTick(() => this.handleConnect())
         }
-    }
-
-    // ─── 生命周期 ───
-    mounted() {
-        this.loadContainer()
-    }
-
-    unmounted() {
-        this.handleTerminalDisconnect()
     }
 }
 
@@ -75,7 +67,6 @@ export default toNative(ContainerTerminal)
     <div class="h-full card flex flex-col overflow-hidden">
       <!-- Toolbar -->
       <div class="card-toolbar">
-        <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
@@ -87,20 +78,19 @@ export default toNative(ContainerTerminal)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <select v-model="terminalShell" :disabled="terminalConnected" class="w-28 select-sm" @change="handleShellChange">
+            <select v-model="shell" :disabled="connected" class="w-28 select-sm" @change="handleShellChange">
               <option value="/bin/sh">/bin/sh</option>
               <option value="/bin/bash">/bin/bash</option>
               <option value="/bin/ash">/bin/ash</option>
             </select>
-            <button v-if="!terminalConnected" type="button" class="btn btn-emerald" @click="handleTerminalConnect()">
+            <button v-if="!connected" type="button" class="btn btn-emerald" @click="handleConnect()">
               <i class="fas fa-plug"></i>连接
             </button>
-            <button v-else type="button" class="btn btn-secondary" @click="handleTerminalDisconnect()">
+            <button v-else type="button" class="btn btn-secondary" @click="handleDisconnect()">
               <i class="fas fa-plug-circle-xmark"></i>断开
             </button>
           </div>
         </div>
-        <!-- 移动端 -->
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
             <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
@@ -112,24 +102,24 @@ export default toNative(ContainerTerminal)
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            <select v-model="terminalShell" :disabled="terminalConnected" class="w-24 select-sm" @change="handleShellChange">
+            <select v-model="shell" :disabled="connected" class="w-24 select-sm" @change="handleShellChange">
               <option value="/bin/sh">/bin/sh</option>
               <option value="/bin/bash">/bin/bash</option>
               <option value="/bin/ash">/bin/ash</option>
             </select>
-            <button v-if="!terminalConnected" type="button" class="btn btn-emerald w-9 h-9 !px-0" title="连接" @click="handleTerminalConnect()">
+            <button v-if="!connected" type="button" class="btn btn-emerald w-9 h-9 !px-0" title="连接" @click="handleConnect()">
               <i class="fas fa-plug text-sm"></i>
             </button>
-            <button v-else type="button" class="btn btn-secondary w-9 h-9 !px-0" title="断开" @click="handleTerminalDisconnect()">
+            <button v-else type="button" class="btn btn-secondary w-9 h-9 !px-0" title="断开" @click="handleDisconnect()">
               <i class="fas fa-plug-circle-xmark text-sm"></i>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- 内容区域 -->
+      <!-- 终端 -->
       <div class="terminal-pane">
-        <div ref="xtermRef" class="h-full rounded-lg overflow-hidden"></div>
+        <TerminalPanel v-if="adapter" :adapter="adapter" />
       </div>
     </div>
   </div>

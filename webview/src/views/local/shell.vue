@@ -1,37 +1,44 @@
 <script lang="ts">
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
+import { wsUrl } from '@/service/axios'
+import { TerminalPanel, WsTerminal } from '@/component/terminal'
+import type { TerminalAdapter } from '@/component/terminal'
 
-import * as ShellTerminal from '@/helper/shell'
-
-@Component
+@Component({ components: { TerminalPanel } })
 class Shell extends Vue {
     portal = usePortal()
 
-    // ─── Refs ───
-    @Ref readonly xtermRef!: HTMLDivElement
-
-    // ─── 数据属性 ───
+    adapter: TerminalAdapter | null = null
     shellType = 'bash'
-    connected = false
 
-    // ─── 方法 ───
+    get connected() { return this.adapter !== null }
+
+    mounted() {
+        this.handleConnect()
+    }
+
+    unmounted() {
+        this.adapter?.disconnect()
+        this.adapter = null
+    }
+
     handleConnect() {
         if (this.connected) return
-        this.connected = true
-        ShellTerminal.create(this.xtermRef, this.portal.token || '', this.shellType)
+        this.adapter = new WsTerminal(wsUrl(`shell?token=${this.portal.token || ''}&shell=${encodeURIComponent(this.shellType)}`))
     }
 
     handleDisconnect() {
-        ShellTerminal.destroy()
-        this.xtermRef.innerHTML = ''
-        this.connected = false
+        this.adapter?.disconnect()
+        this.adapter = null
     }
 
-    // ─── 生命周期 ───
-    unmounted() {
-        ShellTerminal.destroy()
+    handleShellChange() {
+        if (this.connected) {
+            this.handleDisconnect()
+            this.$nextTick(() => this.handleConnect())
+        }
     }
 }
 
@@ -41,9 +48,8 @@ export default toNative(Shell)
 <template>
   <div class="h-[calc(100vh-100px)]">
     <div class="h-full card flex flex-col overflow-hidden">
-      <!-- Toolbar Bar -->
+      <!-- Toolbar -->
       <div class="card-toolbar">
-        <!-- 桌面端工具栏 -->
         <div class="hidden md:flex md:items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="page-icon bg-slate-700">
@@ -55,7 +61,7 @@ export default toNative(Shell)
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <select v-model="shellType" :disabled="connected" class="w-28 select-sm">
+            <select v-model="shellType" :disabled="connected" class="w-28 select-sm" @change="handleShellChange">
               <option value="bash">bash</option>
               <option value="sh">sh</option>
               <option value="zsh">zsh</option>
@@ -71,7 +77,6 @@ export default toNative(Shell)
             </button>
           </div>
         </div>
-        <!-- 移动端工具栏 -->
         <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
             <div class="page-icon bg-slate-700">
@@ -83,7 +88,7 @@ export default toNative(Shell)
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
-            <select v-model="shellType" :disabled="connected" class="w-24 select-sm">
+            <select v-model="shellType" :disabled="connected" class="w-24 select-sm" @change="handleShellChange">
               <option value="bash">bash</option>
               <option value="sh">sh</option>
               <option value="zsh">zsh</option>
@@ -101,9 +106,9 @@ export default toNative(Shell)
         </div>
       </div>
 
-      <!-- 内容区域 -->
+      <!-- 终端 -->
       <div class="terminal-pane">
-        <div ref="xtermRef" class="h-full rounded-lg overflow-hidden"></div>
+        <TerminalPanel v-if="adapter" :adapter="adapter" />
       </div>
     </div>
   </div>

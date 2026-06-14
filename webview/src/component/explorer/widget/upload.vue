@@ -14,7 +14,7 @@ import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
-import { buildUploadTree, type UploadDirNode, type UploadFileNode, type UploadNode, flattenUploadTree } from '@/helper/ssh'
+import { buildUploadTree, type UploadDirNode, type UploadFileNode, type UploadNode, flattenUploadTree } from './upload-ssh'
 
 import type { ExplorerAdapter } from '../types'
 
@@ -195,6 +195,7 @@ class Upload extends Vue {
         const nodes: UploadNode[] = fileList.map(f => ({
             type: 'file' as const,
             name: f.name,
+            size: f.size,
             destDir: this.currentPath,
             file: f,
             percent: 0,

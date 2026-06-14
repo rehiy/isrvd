@@ -2,26 +2,26 @@
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
-
 import api from '@/service/api'
 import type { SSHHostInfo } from '@/service/types'
 
-import * as SSHClient from '@/helper/ssh'
+import { wsUrl } from '@/service/axios'
+import { TerminalPanel, WsTerminal } from '@/component/terminal'
+import type { TerminalAdapter } from '@/component/terminal'
 
 import SftpPanel from './widget/sftp-panel.vue'
 
-@Component({ components: { SftpPanel } })
+@Component({ components: { TerminalPanel, SftpPanel } })
 class SSHClientPage extends Vue {
     portal = usePortal()
 
-    @Ref readonly xtermRef!: HTMLDivElement
     @Ref readonly containerRef!: HTMLDivElement
 
     host: SSHHostInfo | null = null
-    connected = false
+    adapter: TerminalAdapter | null = null
 
     // ─── 拖拽分隔条 ───
-    sftpHeight = 0  // 由 initSftpHeight() 在 mounted 后根据容器高度计算
+    sftpHeight = 0
     isDragging = false
     dragStartY = 0
     dragStartHeight = 0
@@ -30,13 +30,11 @@ class SSHClientPage extends Vue {
 
     async mounted() {
         await this.loadHost()
-        this.handleConnect()
+        this.adapter = new WsTerminal(wsUrl(`ssh/to/${encodeURIComponent(this.hostId)}?token=${this.portal.token || ''}`))
         this.$nextTick(() => this.initSftpHeight())
     }
 
     unmounted() {
-        SSHClient.destroy()
-        this.connected = false
         this.cleanupDrag()
     }
 
@@ -47,17 +45,16 @@ class SSHClientPage extends Vue {
         } catch {}
     }
 
-    handleConnect() {
-        if (this.connected) return
-        this.connected = true
-        SSHClient.create(this.xtermRef, this.portal.token || '', this.hostId)
+    handleDisconnect() {
+        this.adapter?.disconnect()
+        this.adapter = null
     }
 
-    handleDisconnect() {
-        SSHClient.destroy()
-        if (this.xtermRef) this.xtermRef.innerHTML = ''
-        this.connected = false
+    handleReconnect() {
+        this.adapter = new WsTerminal(wsUrl(`ssh/to/${encodeURIComponent(this.hostId)}?token=${this.portal.token || ''}`))
     }
+
+    get connected() { return this.adapter !== null }
 
     initSftpHeight() {
         const containerH = this.containerRef?.clientHeight ?? 600
@@ -85,7 +82,7 @@ class SSHClientPage extends Vue {
     onDragEnd() {
         this.isDragging = false
         this.cleanupDrag()
-        this.$nextTick(() => SSHClient.fitTerminal())
+        // TerminalPanel 内部 ResizeObserver 会自动触发 fit，无需手动调用
     }
 
     cleanupDrag() {
@@ -115,7 +112,7 @@ export default toNative(SSHClientPage)
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
-            <button v-if="!connected" class="btn btn-emerald" @click="handleConnect()">
+            <button v-if="!connected" class="btn btn-emerald" @click="handleReconnect()">
               <i class="fas fa-plug"></i><span class="hidden md:inline">连接终端</span>
             </button>
             <button v-else class="btn btn-secondary" @click="handleDisconnect()">
@@ -128,10 +125,8 @@ export default toNative(SSHClientPage)
       <!-- 主内容区：终端 + 分隔条 + 文件管理 -->
       <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
         <!-- 终端 -->
-        <div class="flex-1 min-h-0">
-          <div class="terminal-pane h-full">
-            <div ref="xtermRef" class="h-full rounded-lg overflow-hidden"></div>
-          </div>
+        <div class="flex-1 min-h-0 p-2">
+          <TerminalPanel v-if="adapter" :adapter="adapter" />
         </div>
 
         <!-- 拖拽分隔条 -->
