@@ -45,7 +45,7 @@ Indirect dependencies (selected):
 | github.com/docker/go-units                   | Apache-2.0    |
 | github.com/fatih/color                       | MIT           |
 | github.com/felixge/httpsnoop                 | Apache-2.0    |
-| github.com/forgoer/openssl                  | BSD-2-Clause  |
+| github.com/go-think/openssl                  | BSD-2-Clause  |
 | github.com/gabriel-vasile/mimetype           | MIT           |
 | github.com/gin-contrib/sse                   | MIT           |
 | github.com/go-jose/go-jose/v4               | Apache-2.0    |
