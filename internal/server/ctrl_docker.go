@@ -1,7 +1,9 @@
 package server
 
 import (
+	"mime"
 	"net/http"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/httpd"
@@ -24,6 +26,16 @@ func (app *App) defineDockerRoutes() []Route {
 		{Method: "GET", Path: "/docker/container/:id/logs", Handler: app.dockerContainerLogs, Module: "docker", Label: "获取容器日志"},
 		{Method: "GET", Path: "/docker/container/:id/logs/stream", Handler: app.dockerContainerLogsStream, Module: "docker", Label: "实时查看容器日志", QueryToken: true},
 		{Method: "GET", Path: "/docker/container/:id/exec", Handler: app.dockerContainerExec, Module: "docker", Label: "打开容器终端"},
+		// 容器文件管理
+		{Method: "GET", Path: "/docker/container/:id/file/ls", Handler: app.dockerContainerFileLs, Module: "docker", Label: "容器文件列目录"},
+		{Method: "GET", Path: "/docker/container/:id/file/download", Handler: app.dockerContainerFileDownload, Module: "docker", Label: "容器文件下载", QueryToken: true},
+		{Method: "POST", Path: "/docker/container/:id/file/upload", Handler: app.dockerContainerFileUpload, Module: "docker", Label: "容器文件上传"},
+		{Method: "DELETE", Path: "/docker/container/:id/file/rm", Handler: app.dockerContainerFileRemove, Module: "docker", Label: "容器文件删除"},
+		{Method: "POST", Path: "/docker/container/:id/file/mkdir", Handler: app.dockerContainerFileMkdir, Module: "docker", Label: "容器文件创建目录"},
+		{Method: "POST", Path: "/docker/container/:id/file/rename", Handler: app.dockerContainerFileRename, Module: "docker", Label: "容器文件重命名"},
+		{Method: "GET", Path: "/docker/container/:id/file/read", Handler: app.dockerContainerFileRead, Module: "docker", Label: "容器文件读取"},
+		{Method: "POST", Path: "/docker/container/:id/file/write", Handler: app.dockerContainerFileWrite, Module: "docker", Label: "容器文件写入"},
+		{Method: "POST", Path: "/docker/container/:id/file/chmod", Handler: app.dockerContainerFileChmod, Module: "docker", Label: "容器文件修改权限"},
 		// 镜像管理
 		{Method: "GET", Path: "/docker/images", Handler: app.dockerImageList, Module: "docker", Label: "查询镜像列表"},
 		{Method: "GET", Path: "/docker/images/search", Handler: app.dockerImageSearch, Module: "docker", Label: "搜索镜像"},
@@ -437,4 +449,167 @@ func (app *App) dockerImagePull(c *gin.Context) {
 		return
 	}
 	respondSuccess(c, "镜像拉取成功", result)
+}
+
+// ─── 容器文件管理 ───
+
+func (app *App) dockerContainerFileLs(c *gin.Context) {
+	id := c.Param("id")
+	dirPath := c.DefaultQuery("path", "/")
+	result, err := app.dockerSvc.ContainerFileList(c.Request.Context(), id, dirPath)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "", result)
+}
+
+func (app *App) dockerContainerFileDownload(c *gin.Context) {
+	id := c.Param("id")
+	filePath := c.Query("path")
+	if filePath == "" {
+		respondError(c, http.StatusBadRequest, "path 参数不能为空")
+		return
+	}
+	filename := filepath.Base(filePath)
+	c.Header("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": filename}))
+	c.Header("Content-Type", "application/octet-stream")
+	if err := app.dockerSvc.ContainerFileDownload(c.Request.Context(), id, filePath, c.Writer); err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+}
+
+func (app *App) dockerContainerFileUpload(c *gin.Context) {
+	id := c.Param("id")
+	dirPath := c.Query("path")
+	if dirPath == "" {
+		respondError(c, http.StatusBadRequest, "path 参数不能为空")
+		return
+	}
+	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+		respondError(c, http.StatusBadRequest, "解析上传表单失败: "+err.Error())
+		return
+	}
+	files := c.Request.MultipartForm.File["file"]
+	if len(files) == 0 {
+		respondError(c, http.StatusBadRequest, "未找到上传文件")
+		return
+	}
+	relativePaths := c.Request.MultipartForm.Value["relativePath"]
+	for i, header := range files {
+		fileName := header.Filename
+		if i < len(relativePaths) && relativePaths[i] != "" {
+			fileName = relativePaths[i]
+		}
+		f, err := header.Open()
+		if err != nil {
+			respondError(c, http.StatusBadRequest, "打开文件失败: "+err.Error())
+			return
+		}
+		uploadErr := app.dockerSvc.ContainerFileUpload(c.Request.Context(), id, dirPath, fileName, f)
+		f.Close()
+		if uploadErr != nil {
+			respondError(c, http.StatusInternalServerError, uploadErr.Error())
+			return
+		}
+	}
+	respondSuccess(c, "上传成功", nil)
+}
+
+func (app *App) dockerContainerFileRemove(c *gin.Context) {
+	id := c.Param("id")
+	targetPath := c.Query("path")
+	if targetPath == "" {
+		respondError(c, http.StatusBadRequest, "path 参数不能为空")
+		return
+	}
+	recursive := c.Query("recursive") == "true"
+	if err := app.dockerSvc.ContainerFileRemove(c.Request.Context(), id, targetPath, recursive); err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "删除成功", nil)
+}
+
+func (app *App) dockerContainerFileMkdir(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		Path string `json:"path" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := app.dockerSvc.ContainerFileMkdir(c.Request.Context(), id, req.Path); err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "创建成功", nil)
+}
+
+func (app *App) dockerContainerFileRename(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		OldPath string `json:"oldPath" binding:"required"`
+		NewPath string `json:"newPath" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := app.dockerSvc.ContainerFileRename(c.Request.Context(), id, req.OldPath, req.NewPath); err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "重命名成功", nil)
+}
+
+func (app *App) dockerContainerFileRead(c *gin.Context) {
+	id := c.Param("id")
+	filePath := c.Query("path")
+	if filePath == "" {
+		respondError(c, http.StatusBadRequest, "path 参数不能为空")
+		return
+	}
+	content, err := app.dockerSvc.ContainerFileRead(c.Request.Context(), id, filePath)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "", gin.H{"content": content})
+}
+
+func (app *App) dockerContainerFileWrite(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		Path    string `json:"path" binding:"required"`
+		Content string `json:"content"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := app.dockerSvc.ContainerFileWrite(c.Request.Context(), id, req.Path, req.Content); err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "文件保存成功", nil)
+}
+
+func (app *App) dockerContainerFileChmod(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		Path string `json:"path" binding:"required"`
+		Mode string `json:"mode" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := app.dockerSvc.ContainerFileChmod(c.Request.Context(), id, req.Path, req.Mode); err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "权限修改成功", nil)
 }

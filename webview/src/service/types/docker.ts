@@ -16,6 +16,17 @@ export interface DockerInfo {
     indexServerAddress: string
 }
 
+// ─── 容器文件管理 ───
+
+export interface ContainerFileInfo {
+    name: string
+    size: number
+    mode: string    // 如 "-rw-r--r--" 或 "drwxr-xr-x"
+    modTime: number // Unix 时间戳
+    isDir: boolean
+    isLink: boolean
+}
+
 // ─── 容器 ───
 
 export interface DockerContainerInfo {

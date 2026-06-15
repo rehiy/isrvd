@@ -131,3 +131,74 @@ GET /api/docker/container/:id/exec?shell=/bin/sh
 ```
 
 用于打开容器的交互式终端会话。
+
+## 容器文件管理
+
+> 通过 Docker SDK `CopyToContainer` / `CopyFromContainer` + exec 实现，支持列目录、上传下载、编辑、删除、重命名、创建目录、修改权限。
+
+### 列出目录
+
+```bash
+isrvd_get "/docker/container/<ID>/file/ls?path=/"
+```
+
+返回 `{path, files: ContainerFileInfo[]}`：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| name | string | 文件名 |
+| size | number | 大小（字节） |
+| mode | string | 权限字符串，如 `drwxr-xr-x` |
+| modTime | number | 修改时间（Unix 时间戳） |
+| isDir | boolean | 是否目录 |
+| isLink | boolean | 是否软链接 |
+
+### 读取文件
+
+```bash
+isrvd_get "/docker/container/<ID>/file/read?path=/etc/hostname"
+```
+
+返回：`{content: string}`
+
+### 写入文件
+
+```bash
+isrvd_post "/docker/container/<ID>/file/write" '{"path":"/tmp/hello.txt","content":"Hello"}'
+```
+
+### 下载文件
+
+```bash
+GET /api/docker/container/<ID>/file/download?path=/etc/hosts&token=<JWT>
+```
+
+### 上传文件
+
+```bash
+isrvd_upload "/docker/container/<ID>/file/upload" "file" "./local.txt" "path=/tmp"
+```
+
+### 删除文件或目录
+
+```bash
+isrvd_delete "/docker/container/<ID>/file/rm?path=/tmp/old&recursive=true"
+```
+
+### 创建目录
+
+```bash
+isrvd_post "/docker/container/<ID>/file/mkdir" '{"path":"/tmp/newdir"}'
+```
+
+### 重命名 / 移动
+
+```bash
+isrvd_post "/docker/container/<ID>/file/rename" '{"oldPath":"/tmp/a","newPath":"/tmp/b"}'
+```
+
+### 修改权限
+
+```bash
+isrvd_post "/docker/container/<ID>/file/chmod" '{"path":"/tmp/script.sh","mode":"755"}'
+```

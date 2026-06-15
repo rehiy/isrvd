@@ -20,7 +20,7 @@ function extractOctalMode(mode: string): string {
 
 function createSftpAdapter(hostId: string): ExplorerAdapter {
     const portal = usePortal()
-    const perm = (p: string) => portal.hasPerm(p.replace(':id', hostId))
+    const perm = (p: string) => portal.hasPerm(p)
     const can: ExplorerAdapter['can'] = {
         list: perm('GET /api/ssh/sftp/:id/ls'),
         download: perm('GET /api/ssh/sftp/:id/download'),

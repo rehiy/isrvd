@@ -57,6 +57,7 @@ import type {
     CaddyCert,
     // Docker
     DockerInfo,
+    ContainerFileInfo,
     DockerContainerInfo,
     DockerContainerStats,
     DockerContainerCreate,
@@ -518,6 +519,63 @@ class ApiService {
 
     dockerContainerStats(id: string) {
         return http.get<DockerContainerStats>(`docker/container/${id}/stats`)
+    }
+
+    // ==================== 容器文件管理 ====================
+
+    dockerContainerFileLs(id: string, path: string) {
+        return http.get<{ path: string; files: ContainerFileInfo[] }>(`docker/container/${id}/file/ls`, { params: { path } })
+    }
+
+    dockerContainerFileDownload(id: string, path: string, onProgress?: (percent: number) => void) {
+        return httpBlob.get(`docker/container/${id}/file/download`, {
+            params: { path },
+            responseType: 'blob',
+            onDownloadProgress: onProgress
+                ? (e) => { if (e.total) onProgress(Math.round((e.loaded / e.total) * 100)) }
+                : undefined,
+        })
+    }
+
+    dockerContainerFileDownloadURL(id: string, path: string, token = '') {
+        const params = new URLSearchParams({ path })
+        if (token) params.set('token', token)
+        return `api/docker/container/${id}/file/download?${params.toString()}`
+    }
+
+    dockerContainerFileUpload(id: string, path: string, formData: FormData, onProgress?: (percent: number) => void, config: AxiosRequestConfig = {}) {
+        return http.post<void>(`docker/container/${id}/file/upload`, formData, {
+            ...config,
+            params: { ...config.params, path },
+            headers: { ...config.headers, 'Content-Type': 'multipart/form-data' },
+            onUploadProgress: onProgress
+                ? (e) => { if (e.total) onProgress(Math.round((e.loaded / e.total) * 100)) }
+                : undefined,
+        })
+    }
+
+    dockerContainerFileRemove(id: string, path: string, recursive = false) {
+        return http.delete<void>(`docker/container/${id}/file/rm`, { params: { path, recursive: recursive || undefined } })
+    }
+
+    dockerContainerFileMkdir(id: string, path: string, config?: AxiosRequestConfig) {
+        return http.post<void>(`docker/container/${id}/file/mkdir`, { path }, config)
+    }
+
+    dockerContainerFileRename(id: string, oldPath: string, newPath: string) {
+        return http.post<void>(`docker/container/${id}/file/rename`, { oldPath, newPath })
+    }
+
+    dockerContainerFileRead(id: string, path: string) {
+        return http.get<{ content: string }>(`docker/container/${id}/file/read`, { params: { path } })
+    }
+
+    dockerContainerFileWrite(id: string, path: string, content: string) {
+        return http.post<void>(`docker/container/${id}/file/write`, { path, content })
+    }
+
+    dockerContainerFileChmod(id: string, path: string, mode: string) {
+        return http.post<void>(`docker/container/${id}/file/chmod`, { path, mode })
     }
 
     composeDockerInspect(name: string) {
