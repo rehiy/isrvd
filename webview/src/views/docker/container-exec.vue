@@ -17,7 +17,7 @@ class ContainerTerminal extends Vue {
     shell = '/bin/sh'
 
     get containerId() { return this.$route.params.id as string }
-    get connected() { return this.adapter !== null }
+    get connected() { return this.adapter?.connected ?? false }
 
     async mounted() {
         await this.loadContainer()
@@ -91,7 +91,7 @@ export default toNative(ContainerTerminal)
             </button>
           </div>
         </div>
-        <div class="flex md:hidden items-center justify-between">
+          <div class="flex md:hidden items-center justify-between">
           <div class="flex items-center gap-3 min-w-0 flex-1">
             <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
               <i class="fas fa-terminal text-white text-sm"></i>

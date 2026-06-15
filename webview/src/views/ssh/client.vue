@@ -27,6 +27,7 @@ class SSHClientPage extends Vue {
     dragStartHeight = 0
 
     get hostId() { return this.$route.params.id as string }
+    get connected() { return this.adapter?.connected ?? false }
 
     async mounted() {
         await this.loadHost()
@@ -53,8 +54,6 @@ class SSHClientPage extends Vue {
     handleReconnect() {
         this.adapter = new WsTerminal(wsUrl(`ssh/to/${encodeURIComponent(this.hostId)}?token=${this.portal.token || ''}`))
     }
-
-    get connected() { return this.adapter !== null }
 
     initSftpHeight() {
         const containerH = this.containerRef?.clientHeight ?? 600

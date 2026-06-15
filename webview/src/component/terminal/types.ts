@@ -1,10 +1,12 @@
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import '@xterm/xterm/css/xterm.css'
 
 /**
  * 终端适配器接口
  */
 export interface TerminalAdapter {
+    readonly connected: boolean
     connect(el: HTMLElement): void
     disconnect(): void
     fit(): void
@@ -17,6 +19,10 @@ export class WsTerminal implements TerminalAdapter {
     private term: Terminal | null = null
     private socket: WebSocket | null = null
     private fitAddon: FitAddon | null = null
+
+    get connected(): boolean {
+        return this.socket !== null
+    }
 
     constructor(private wsUrl: string) {}
 
