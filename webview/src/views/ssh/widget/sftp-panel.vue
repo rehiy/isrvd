@@ -24,7 +24,7 @@ function createSftpAdapter(hostId: string): ExplorerAdapter {
     const can: ExplorerAdapter['can'] = {
         list: perm('GET /api/ssh/sftp/:id/ls'),
         download: perm('GET /api/ssh/sftp/:id/download'),
-        upload: perm('POST /api/ssh/sftp/:id/write'),
+        upload: perm('POST /api/ssh/sftp/:id/upload'),
         remove: perm('DELETE /api/ssh/sftp/:id/rm'),
         rename: perm('POST /api/ssh/sftp/:id/rename'),
         mkdir: perm('POST /api/ssh/sftp/:id/mkdir'),

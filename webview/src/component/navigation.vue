@@ -234,7 +234,7 @@ export default toNative(NavigationBar)
             <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': localExpanded }"></i>
           </button>
           <div v-show="localExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
-            <router-link v-if="portal.hasPerm('GET /api/overview/monitor') || portal.hasPerm('GET /api/system/info') || portal.hasPerm('GET /api/system/stat') || portal.hasPerm('GET /api/gpu/info')" to="/local/monitor" class="nav-link" :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/local/monitor') }">
+            <router-link v-if="portal.hasPerm('GET /api/overview/monitor')" to="/local/monitor" class="nav-link" :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/local/monitor') }">
               <i class="fas fa-desktop"></i>
               <span>系统监控</span>
             </router-link>

@@ -158,7 +158,7 @@ export default toNative(Config)
           <button type="button" class="btn btn-secondary" @click="loadConfig(true)">
             <i class="fas fa-rotate"></i>重载
           </button>
-          <button v-if="portal.hasPerm('PATCH /api/system/config')" type="button" class="btn btn-indigo rounded-xl whitespace-nowrap" :disabled="saving" @click="saveAll">
+          <button v-if="portal.hasPerm('PUT /api/system/config')" type="button" class="btn btn-indigo rounded-xl whitespace-nowrap" :disabled="saving" @click="saveAll">
             <i v-if="saving" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-save"></i>
             <span>{{ saving ? '保存中...' : '保存配置' }}</span>
@@ -180,7 +180,7 @@ export default toNative(Config)
           <button type="button" class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadConfig(true)">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('PATCH /api/system/config')" type="button" class="btn btn-indigo w-9 h-9 !px-0" title="保存配置" :disabled="saving" @click="saveAll">
+          <button v-if="portal.hasPerm('PUT /api/system/config')" type="button" class="btn btn-indigo w-9 h-9 !px-0" title="保存配置" :disabled="saving" @click="saveAll">
             <i v-if="saving" class="fas fa-spinner fa-spin text-sm"></i>
             <i v-else class="fas fa-save text-sm"></i>
           </button>
@@ -196,7 +196,7 @@ export default toNative(Config)
       </div>
     </div>
 
-    <form v-else-if="portal.hasPerm('PATCH /api/system/config')" class="card-body" @submit.prevent="saveAll">
+    <form v-else-if="portal.hasPerm('PUT /api/system/config')" class="card-body" @submit.prevent="saveAll">
       <div class="lg:hidden sticky top-16 z-30 w-full min-w-0 overflow-hidden bg-white pt-4 pb-3 border-b border-slate-100">
         <div class="block w-full max-w-full min-w-0 overflow-x-auto overflow-y-hidden pb-1">
           <div class="tab-group inline-flex w-max max-w-none">
@@ -506,7 +506,7 @@ export default toNative(Config)
               <input v-model="link.url" type="text" placeholder="请输入链接 URL" class="input" />
               <!-- 图标选择器 -->
               <IconSelect v-model="link.icon" />
-              <button v-if="portal.hasPerm('PATCH /api/system/config')" type="button" class="btn-icon btn-icon-red w-11 h-11" @click="removeLink(index)">
+              <button v-if="portal.hasPerm('PUT /api/system/config')" type="button" class="btn-icon btn-icon-red w-11 h-11" @click="removeLink(index)">
                 <i class="fas fa-trash-can text-sm"></i>
               </button>
             </div>
