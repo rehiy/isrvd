@@ -1,59 +1,39 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>isrvd API 文档</title>
-  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
-  <style>
-    html {
-      box-sizing: border-box;
-      overflow: -moz-scrollbars-vertical;
-      overflow-y: scroll;
-    }
-
-    *,
-    *:before,
-    *:after {
-      box-sizing: inherit;
-    }
-
-    body {
-      margin: 0;
-      background: #fafafa;
-    }
-
-    .swagger-ui .topbar {
-      display: none;
-    }
-
-    .swagger-ui .scheme-container {
-      box-shadow: none;
-    }
-  </style>
-</head>
-
-<body>
-  <div id="swagger-ui"></div>
-  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js" crossorigin></script>
-  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js" crossorigin></script>
-  <script>
-    window.onload = function () {
-      SwaggerUIBundle({
-        url: "./apis.json",
-        dom_id: "#swagger-ui",
-        deepLinking: true,
-        presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
-        plugins: [SwaggerUIBundle.plugins.DownloadUrl],
-        layout: "StandaloneLayout",
-        defaultModelsExpandDepth: -1,
-        docExpansion: "list",
-        filter: true,
-        tryItOutEnabled: true,
-      });
-    };
-  </script>
-</body>
-
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>iSrvd API 文档</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Scalar API Reference -->
+    <script id="api-reference"></script>
+    
+    <script>
+      var configuration = {
+        url: './apis.json',
+        'theme': 'purple',
+        'layout': 'modern',
+        'defaultHttpClient': {
+          targetKey: 'shell',
+          clientKey: 'curl'
+        },
+        'hideModels': false,
+        'showSidebar': true,
+        'searchHotKey': 'k',
+        'hideClientButton': true  // 隐藏 API Client 按钮
+      }
+      
+      document.getElementById('api-reference').dataset.configuration = JSON.stringify(configuration)
+    </script>
+    
+    <!-- Scalar CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  </body>
 </html>
