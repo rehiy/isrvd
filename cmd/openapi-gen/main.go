@@ -87,9 +87,10 @@ type SchemaInfo struct {
 }
 
 type FieldInfo struct {
-	Name     string // json tag name
-	Type     string // go type as string
-	Required bool   // has binding:"required"
+	Name        string // json tag name
+	Type        string // go type as string
+	Required    bool   // has binding:"required"
+	Description string // from description tag or field comment
 }
 
 // ─── 全局状态 ────────────────────────────────────────
@@ -919,24 +920,57 @@ func findStructInFile(filename, structName, pkgAlias string) *SchemaInfo {
 			if !ok {
 				continue
 			}
-			return buildSchemaFromStruct(pkgAlias, structName, st)
+			// 提取结构体注释（GenDecl.Doc 或 TypeSpec.Doc）
+			structComment := extractComment(gd.Doc)
+			if structComment == "" {
+				structComment = extractComment(ts.Doc)
+			}
+			return buildSchemaFromStruct(pkgAlias, structName, st, filename, structComment)
 		}
 	}
 	return nil
 }
 
+// extractComment 从 AST CommentGroup 中提取注释文本
+func extractComment(cg *ast.CommentGroup) string {
+	if cg == nil {
+		return ""
+	}
+	var lines []string
+	for _, c := range cg.List {
+		line := strings.TrimPrefix(c.Text, "//")
+		line = strings.TrimPrefix(line, "/*")
+		line = strings.TrimSuffix(line, "*/")
+		lines = append(lines, strings.TrimSpace(line))
+	}
+	return strings.Join(lines, " ")
+}
+
 // buildSchemaFromStruct 从 AST StructType 构建 SchemaInfo
-func buildSchemaFromStruct(pkgAlias, structName string, st *ast.StructType) *SchemaInfo {
+func buildSchemaFromStruct(pkgAlias, structName string, st *ast.StructType, filename, structComment string) *SchemaInfo {
 	schema := &SchemaInfo{
 		PkgName:  pkgAlias,
 		TypeName: structName,
 	}
+
+	// 读取文件内容以获取字段注释
+	fieldComments := make(map[string]string)
+	if filename != "" {
+		fieldComments = extractFieldComments(filename, st)
+	}
+
 	for _, field := range st.Fields.List {
 		if field.Names == nil {
 			continue // embedded
 		}
 		for _, name := range field.Names {
 			fieldInfo := extractFieldInfo(name.Name, field)
+			
+			// 优先使用字段注释，其次使用 json tag 中的 description
+			if comment, ok := fieldComments[name.Name]; ok && comment != "" {
+				fieldInfo.Description = comment
+			}
+			
 			if fieldInfo.Name != "-" {
 				schema.Fields = append(schema.Fields, fieldInfo)
 			}
@@ -945,14 +979,80 @@ func buildSchemaFromStruct(pkgAlias, structName string, st *ast.StructType) *Sch
 	return schema
 }
 
+// extractFieldComments 从结构体定义中提取字段注释
+// 支持三种格式：
+//  1. 字段上方注释：// 字段描述
+//  2. 字段后面注释：FieldName Type `json:"..."` // 字段描述
+//  3. tag 中的 description："description" 字段描述
+func extractFieldComments(filename string, st *ast.StructType) map[string]string {
+	comments := make(map[string]string)
+	
+	// 读取文件内容
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		return comments
+	}
+	lines := strings.Split(string(content), "\n")
+	
+	// 遍历结构体字段，查找注释
+	for _, field := range st.Fields.List {
+		if field.Names == nil {
+			continue
+		}
+		
+		// 获取字段所在的行号（AST 行号从 1 开始）
+		fieldLine := fsetCache.Position(field.Pos()).Line
+		
+		// 1. 检查字段所在行的行内注释（trailing comment）
+		if fieldLine <= len(lines) {
+			lineText := lines[fieldLine-1] // 数组索引从 0 开始
+			if idx := strings.Index(lineText, "//"); idx >= 0 {
+				commentText := strings.TrimSpace(lineText[idx+2:])
+				// 排除 tag 定义部分，只取注释
+				for _, name := range field.Names {
+					comments[name.Name] = commentText
+				}
+			}
+		}
+		
+		// 2. 向上查找字段上方注释
+		if fieldLine > 1 {
+			commentLine := fieldLine - 1
+			if commentLine <= len(lines) {
+				prevLine := strings.TrimSpace(lines[commentLine-1])
+				// 如果上一行是注释，且当前行不是注释（避免重复）
+				if strings.HasPrefix(prevLine, "//") && !strings.HasPrefix(strings.TrimSpace(lines[fieldLine-1]), "//") {
+					commentText := strings.TrimSpace(strings.TrimPrefix(prevLine, "//"))
+					
+					// 检查注释格式：
+					// 1. "FieldName 描述" - 明确指定字段名
+					// 2. "描述" - 直接是描述
+					for _, name := range field.Names {
+						if strings.HasPrefix(commentText, name.Name+" ") {
+							// 格式："FieldName 描述"
+							comments[name.Name] = strings.TrimPrefix(commentText, name.Name+" ")
+						} else if comments[name.Name] == "" {
+							// 格式："描述"（假设短注释是描述，且没有被行内注释设置过）
+							comments[name.Name] = commentText
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	return comments
+}
+
 // extractFieldInfo 从结构体字段中提取信息
 func extractFieldInfo(fieldName string, field *ast.Field) FieldInfo {
 	goType := typeExprToString(field.Type)
 	jsonName := fieldName
 	required := false
+	description := ""
 
 	if field.Tag == nil {
-		return FieldInfo{Name: jsonName, Type: goType, Required: required}
+		return FieldInfo{Name: jsonName, Type: goType, Required: required, Description: description}
 	}
 
 	tag := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
@@ -969,7 +1069,12 @@ func extractFieldInfo(fieldName string, field *ast.Field) FieldInfo {
 		required = true
 	}
 
-	return FieldInfo{Name: jsonName, Type: goType, Required: required}
+	// 提取 description tag 作为字段描述
+	if desc := tag.Get("description"); desc != "" {
+		description = desc
+	}
+
+	return FieldInfo{Name: jsonName, Type: goType, Required: required, Description: description}
 }
 
 func parseFieldsString(name string, s string) *SchemaInfo {
@@ -1061,6 +1166,12 @@ func buildSchemaObject(schema *SchemaInfo, allSchemas map[string]*SchemaInfo) ma
 
 	for _, f := range schema.Fields {
 		prop := buildProperty(f.Type, allSchemas)
+		
+		// 添加字段描述（如果有）
+		if f.Description != "" {
+			prop["description"] = f.Description
+		}
+		
 		props[f.Name] = prop
 		if f.Required {
 			required = append(required, f.Name)
