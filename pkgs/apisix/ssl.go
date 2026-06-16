@@ -10,13 +10,13 @@ import (
 
 // SSL Apisix SSL 证书信息
 type SSL struct {
-	ID         string   `json:"id,omitempty"`
-	Snis       []string `json:"snis"`
-	Cert       string   `json:"cert,omitempty"`
-	Key        string   `json:"key,omitempty"`
-	Status     *int     `json:"status,omitempty"`
-	CreateTime int64    `json:"create_time"`
-	UpdateTime int64    `json:"update_time"`
+	ID         string   `json:"id,omitempty"`     // 证书 ID（创建时由 Apisix 自动生成）
+	Snis       []string `json:"snis"`             // SNI 域名列表（用于 HTTPS 证书匹配）
+	Cert       string   `json:"cert,omitempty"`   // PEM 格式证书
+	Key        string   `json:"key,omitempty"`    // PEM 格式私钥
+	Status     *int     `json:"status,omitempty"` // 状态：1=启用，0=禁用（默认为 1）
+	CreateTime int64    `json:"create_time"`      // 创建时间（Unix 时间戳，只读）
+	UpdateTime int64    `json:"update_time"`      // 更新时间（Unix 时间戳，只读）
 }
 
 // SSLList 获取所有 SSL 证书列表

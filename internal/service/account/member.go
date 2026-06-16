@@ -34,12 +34,12 @@ func (s *Service) MemberInspect(username string) *MemberInfo {
 
 // MemberInfo 成员信息（不包含密码明文）
 type MemberInfo struct {
-	Username      string                  `json:"username"`
-	HomeDirectory string                  `json:"homeDirectory"`
-	Founder       bool                    `json:"founder"`
-	Description   string                  `json:"description"`
-	Permissions   []string                `json:"permissions"`
-	TwoFactor     *config.TwoFactorConfig `json:"twoFactor,omitempty"`
+	Username      string                  `json:"username"`            // 用户名（唯一标识）
+	HomeDirectory string                  `json:"homeDirectory"`       // 家目录（绝对路径）
+	Founder       bool                    `json:"founder"`             // 是否为创始人（不可删除/修改）
+	Description   string                  `json:"description"`         // 成员描述
+	Permissions   []string                `json:"permissions"`         // 权限列表
+	TwoFactor     *config.TwoFactorConfig `json:"twoFactor,omitempty"` // 二步验证配置
 }
 
 // MemberList 列出所有成员
@@ -85,11 +85,11 @@ func (s *Service) homeDirEnsure(home, username string) (string, error) {
 
 // MemberUpsertRequest 成员新建/更新请求
 type MemberUpsertRequest struct {
-	Username      string   `json:"username"`
-	Password      string   `json:"password"`
-	HomeDirectory string   `json:"homeDirectory"`
-	Description   string   `json:"description"`
-	Permissions   []string `json:"permissions"`
+	Username      string   `json:"username"`      // 用户名（创建时必填，更新时从 URL 读取）
+	Password      string   `json:"password"`      // 密码（创建时必填，更新时为空则保留原密码）
+	HomeDirectory string   `json:"homeDirectory"` // 家目录（绝对路径或基于 RootDirectory 的相对路径）
+	Description   string   `json:"description"`   // 成员描述
+	Permissions   []string `json:"permissions"`   // 权限列表
 }
 
 // MemberCreate 新建成员
@@ -184,8 +184,8 @@ func (s *Service) MemberDelete(username string) error {
 
 // ChangePasswordRequest 修改密码请求
 type ChangePasswordRequest struct {
-	OldPassword string `json:"oldPassword"`
-	NewPassword string `json:"newPassword" binding:"required"`
+	OldPassword string `json:"oldPassword"`                    // 原密码
+	NewPassword string `json:"newPassword" binding:"required"` // 新密码
 }
 
 // PasswordChange 修改当前用户密码

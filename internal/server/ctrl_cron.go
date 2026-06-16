@@ -26,11 +26,11 @@ func (app *App) defineCronRoutes() []Route {
 // ─── 请求结构 ───
 
 type cronJobEnableReq struct {
-	Enabled bool `json:"enabled"`
+	Enabled bool `json:"enabled"` // 是否启用任务
 }
 
 type cronJobLogsReq struct {
-	Limit int `form:"limit"`
+	Limit int `form:"limit"` // 返回记录数上限（默认 50，最大 100）
 }
 
 // ─── Handler 方法 ───

@@ -7,34 +7,34 @@ import (
 	"isrvd/config"
 )
 
-// AllConfigResponse 全部配置聚合响应
+// AllConfigResponse 全部配置聚合响应（敏感字段已脱敏）
 type AllConfigResponse struct {
-	Server      *config.ServerConfig      `json:"server"`
-	THA         *config.THAConfig         `json:"tha"`
-	OIDC        *config.OIDCConfig        `json:"oidc"`
-	Passkey     *config.PasskeyConfig     `json:"passkey"`
-	Agent       *config.AgentConfig       `json:"agent"`
-	Apisix      *config.ApisixConfig      `json:"apisix"`
-	Caddy       *config.CaddyConfig       `json:"caddy"`
-	Docker      *config.DockerConfig      `json:"docker"`
-	Monitor     *config.MonitorConfig     `json:"monitor"`
-	Marketplace *config.MarketplaceConfig `json:"marketplace"`
-	Links       []*config.LinkConfig      `json:"links"`
+	Server      *config.ServerConfig      `json:"server"`      // 服务配置（JWTSecret 已脱敏）
+	THA         *config.THAConfig         `json:"tha"`         // 代理 Header 认证配置
+	OIDC        *config.OIDCConfig        `json:"oidc"`        // OIDC 认证配置（ClientSecret 已脱敏）
+	Passkey     *config.PasskeyConfig     `json:"passkey"`     // Passkey 认证配置
+	Agent       *config.AgentConfig       `json:"agent"`       // Agent LLM 配置（APIKey 已脱敏）
+	Apisix      *config.ApisixConfig      `json:"apisix"`      // APISIX 配置（AdminKey 已脱敏）
+	Caddy       *config.CaddyConfig       `json:"caddy"`       // Caddy 配置
+	Docker      *config.DockerConfig      `json:"docker"`      // Docker 配置
+	Monitor     *config.MonitorConfig     `json:"monitor"`     // 监控配置
+	Marketplace *config.MarketplaceConfig `json:"marketplace"` // 应用市场配置
+	Links       []*config.LinkConfig      `json:"links"`       // 导航链接列表
 }
 
-// UpdateAllConfigRequest 全量更新请求
+// UpdateAllConfigRequest 全量更新请求（空分区跳过更新，空字符串保留原值）
 type UpdateAllConfigRequest struct {
-	Server      *config.ServerConfig      `json:"server"`
-	THA         *config.THAConfig         `json:"tha"`
-	OIDC        *config.OIDCConfig        `json:"oidc"`
-	Passkey     *config.PasskeyConfig     `json:"passkey"`
-	Agent       *config.AgentConfig       `json:"agent"`
-	Apisix      *config.ApisixConfig      `json:"apisix"`
-	Caddy       *config.CaddyConfig       `json:"caddy"`
-	Docker      *config.DockerConfig      `json:"docker"`
-	Monitor     *config.MonitorConfig     `json:"monitor"`
-	Marketplace *config.MarketplaceConfig `json:"marketplace"`
-	Links       []*config.LinkConfig      `json:"links"`
+	Server      *config.ServerConfig      `json:"server"`      // 服务配置（JWTSecret 为空保留原值）
+	THA         *config.THAConfig         `json:"tha"`         // 代理 Header 认证配置
+	OIDC        *config.OIDCConfig        `json:"oidc"`        // OIDC 配置（ClientSecret 为空保留原值）
+	Passkey     *config.PasskeyConfig     `json:"passkey"`     // Passkey 配置
+	Agent       *config.AgentConfig       `json:"agent"`       // Agent 配置（APIKey 为空保留原值）
+	Apisix      *config.ApisixConfig      `json:"apisix"`      // APISIX 配置（AdminKey 为空保留原值）
+	Caddy       *config.CaddyConfig       `json:"caddy"`       // Caddy 配置
+	Docker      *config.DockerConfig      `json:"docker"`      // Docker 配置
+	Monitor     *config.MonitorConfig     `json:"monitor"`     // 监控配置
+	Marketplace *config.MarketplaceConfig `json:"marketplace"` // 应用市场配置
+	Links       []*config.LinkConfig      `json:"links"`       // 导航链接列表
 }
 
 // ConfigService 系统配置业务服务

@@ -13,11 +13,11 @@ import (
 //
 // Extras 用于保留未建模的顶层字段，Marshal/Unmarshal 时自动透传。
 type Config struct {
-	Admin   *AdminConfig   `json:"admin,omitempty"`
-	Logging *LoggingConfig `json:"logging,omitempty"`
-	Storage map[string]any `json:"storage,omitempty"`
-	Apps    *AppsConfig    `json:"apps,omitempty"`
-	ID      string         `json:"@id,omitempty"`
+	Admin   *AdminConfig   `json:"admin,omitempty"`   // Admin API 配置
+	Logging *LoggingConfig `json:"logging,omitempty"` // 日志配置
+	Storage map[string]any `json:"storage,omitempty"` // 存储后端配置
+	Apps    *AppsConfig    `json:"apps,omitempty"`    // 应用配置（http/tls/pki 等）
+	ID      string         `json:"@id,omitempty"`     // 配置 ID（用于引用）
 
 	// Extras 保存所有未识别的顶层字段；Marshal 时与已知字段合并输出
 	Extras map[string]json.RawMessage `json:"-"`
@@ -53,49 +53,49 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 
 // AdminConfig admin 端点配置
 type AdminConfig struct {
-	Disabled      bool             `json:"disabled,omitempty"`
-	Listen        string           `json:"listen,omitempty"`
-	EnforceOrigin bool             `json:"enforce_origin,omitempty"`
-	Origins       []string         `json:"origins,omitempty"`
-	Config        *AdminAutoConfig `json:"config,omitempty"`
+	Disabled      bool             `json:"disabled,omitempty"`       // 是否禁用 admin API
+	Listen        string           `json:"listen,omitempty"`         // 监听地址，如 "localhost:2019"
+	EnforceOrigin bool             `json:"enforce_origin,omitempty"` // 是否校验 Origin
+	Origins       []string         `json:"origins,omitempty"`        // 允许的 Origin 列表
+	Config        *AdminAutoConfig `json:"config,omitempty"`         // 自动配置（如持久化）
 }
 
 // AdminAutoConfig admin.config，例如 persist 持久化
 type AdminAutoConfig struct {
-	Persist *bool `json:"persist,omitempty"`
+	Persist *bool `json:"persist,omitempty"` // 是否持久化配置到磁盘
 }
 
 // LoggingConfig 日志配置
 type LoggingConfig struct {
-	Sink *LogSink        `json:"sink,omitempty"`
-	Logs map[string]*Log `json:"logs,omitempty"`
-	ID   string          `json:"@id,omitempty"`
+	Sink *LogSink        `json:"sink,omitempty"` // 全局日志输出配置
+	Logs map[string]*Log `json:"logs,omitempty"` // 各模块日志配置
+	ID   string          `json:"@id,omitempty"`  // 配置 ID
 }
 
 // LogSink 全局 sink
 type LogSink struct {
-	Writer map[string]any `json:"writer,omitempty"`
+	Writer map[string]any `json:"writer,omitempty"` // 日志写入器配置
 }
 
 // Log 单个 logger
 type Log struct {
-	Writer   map[string]any `json:"writer,omitempty"`
-	Encoder  map[string]any `json:"encoder,omitempty"`
-	Level    string         `json:"level,omitempty"`
-	Sampling map[string]any `json:"sampling,omitempty"`
-	Include  []string       `json:"include,omitempty"`
-	Exclude  []string       `json:"exclude,omitempty"`
+	Writer   map[string]any `json:"writer,omitempty"`   // 写入器
+	Encoder  map[string]any `json:"encoder,omitempty"`  // 编码器（json/formatted）
+	Level    string         `json:"level,omitempty"`    // 日志级别：DEBUG|INFO|WARN|ERROR
+	Sampling map[string]any `json:"sampling,omitempty"` // 采样配置
+	Include  []string       `json:"include,omitempty"`  // 包含的模块列表
+	Exclude  []string       `json:"exclude,omitempty"`  // 排除的模块列表
 }
 
 // AppsConfig 应用集合
 //
 // Extras 透传其他 app（layer4 / dynamic_dns / 第三方等）。
 type AppsConfig struct {
-	HTTP *HTTPApp `json:"http,omitempty"`
-	TLS  *TLSApp  `json:"tls,omitempty"`
-	PKI  *PKIApp  `json:"pki,omitempty"`
+	HTTP *HTTPApp `json:"http,omitempty"` // HTTP 应用配置
+	TLS  *TLSApp  `json:"tls,omitempty"`  // TLS 应用配置
+	PKI  *PKIApp  `json:"pki,omitempty"`  // PKI（CA）应用配置
 
-	Extras map[string]json.RawMessage `json:"-"`
+	Extras map[string]json.RawMessage `json:"-"` // 其他未建模的 app 配置
 }
 
 // appsKnownKeys 已建模的 apps JSON key

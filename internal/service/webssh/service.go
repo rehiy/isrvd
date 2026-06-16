@@ -14,9 +14,9 @@ var logger = logman.Named("webssh")
 
 // Service WebSSH 业务服务
 type Service struct {
-	store           *store
-	credentialStore *credentialStore
-	sftpClient      *libWebSSH.SFTPClient
+	store           *store                // 主机配置存储
+	credentialStore *credentialStore      // 凭据存储
+	sftpClient      *libWebSSH.SFTPClient // SFTP 客户端（用于文件管理）
 }
 
 // NewService 创建 WebSSH 业务服务
@@ -228,20 +228,20 @@ func (s *Service) RunTerminal(conn *websocket.ServerConn, hostID string) {
 
 // HostUpsertRequest 主机新建/更新请求
 type HostUpsertRequest struct {
-	Name         string `json:"name" binding:"required"`
-	Addr         string `json:"addr" binding:"required"`
-	CredentialID string `json:"credentialId"`
-	User         string `json:"user"`
-	Password     string `json:"password"`
-	PrivateKey   string `json:"privateKey"`
-	Description  string `json:"description"`
+	Name         string `json:"name" binding:"required"` // 主机名称
+	Addr         string `json:"addr" binding:"required"` // 主机地址（host:port）
+	CredentialID string `json:"credentialId"`            // 引用的凭据 ID（优先于下方认证字段）
+	User         string `json:"user"`                    // 用户名（credentialId 为空时使用）
+	Password     string `json:"password"`                // 密码（credentialId 为空时使用）
+	PrivateKey   string `json:"privateKey"`              // 私钥（credentialId 为空时使用）
+	Description  string `json:"description"`             // 主机描述
 }
 
 // CredentialUpsertRequest 凭据新建/更新请求
 type CredentialUpsertRequest struct {
-	Name        string `json:"name" binding:"required"`
-	Description string `json:"description"`
-	User        string `json:"user" binding:"required"`
-	Password    string `json:"password"`
-	PrivateKey  string `json:"privateKey"`
+	Name        string `json:"name" binding:"required"` // 凭据名称
+	Description string `json:"description"`             // 凭据描述
+	User        string `json:"user" binding:"required"` // 用户名
+	Password    string `json:"password"`                // 密码（与 privateKey 二选一）
+	PrivateKey  string `json:"privateKey"`              // 私钥（与 password 二选一）
 }

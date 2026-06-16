@@ -10,21 +10,21 @@ import (
 
 // Upstream Apisix Upstream 信息
 type Upstream struct {
-	ID           string         `json:"id,omitempty"`
-	Name         string         `json:"name"`
-	Desc         string         `json:"desc,omitempty"`
-	Type         string         `json:"type"`
-	Nodes        any            `json:"nodes,omitempty"`
-	HashOn       string         `json:"hash_on,omitempty"`
-	Key          string         `json:"key,omitempty"`
-	Scheme       string         `json:"scheme,omitempty"`
-	PassHost     string         `json:"pass_host,omitempty"`
-	UpstreamHost string         `json:"upstream_host,omitempty"`
-	Retries      int            `json:"retries,omitempty"`
-	RetryTimeout int            `json:"retry_timeout,omitempty"`
-	Timeout      map[string]any `json:"timeout,omitempty"`
-	CreateTime   int64          `json:"create_time"`
-	UpdateTime   int64          `json:"update_time"`
+	ID           string         `json:"id,omitempty"`            // Upstream ID（创建时由 Apisix 自动生成）
+	Name         string         `json:"name"`                    // Upstream 名称
+	Desc         string         `json:"desc,omitempty"`          // Upstream 描述
+	Type         string         `json:"type"`                    // 负载均衡算法：roundrobin | chash | ewma | least_conn
+	Nodes        any            `json:"nodes,omitempty"`         // 节点配置：map[string]int 格式，如 {"host:port": weight}
+	HashOn       string         `json:"hash_on,omitempty"`       // chash 模式的哈希源：vars | header | cookie
+	Key          string         `json:"key,omitempty"`           // chash 模式的哈希键（配合 hash_on 使用）
+	Scheme       string         `json:"scheme,omitempty"`        // 转发协议：http | https | grpc | grpcs
+	PassHost     string         `json:"pass_host,omitempty"`     // Host 传递方式：pass | node | rewrite
+	UpstreamHost string         `json:"upstream_host,omitempty"` // pass_host=rewrite 时设置的上游 Host
+	Retries      int            `json:"retries,omitempty"`       // 重试次数
+	RetryTimeout int            `json:"retry_timeout,omitempty"` // 重试超时（秒）
+	Timeout      map[string]any `json:"timeout,omitempty"`       // 超时配置：{"connect": 15, "send": 15, "read": 15}
+	CreateTime   int64          `json:"create_time"`             // 创建时间（Unix 时间戳，只读）
+	UpdateTime   int64          `json:"update_time"`             // 更新时间（Unix 时间戳，只读）
 }
 
 // UpstreamList 获取所有 Upstream 列表

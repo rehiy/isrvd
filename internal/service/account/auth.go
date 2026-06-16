@@ -18,26 +18,26 @@ import (
 
 // AuthInfoResponse 认证模式及当前用户信息
 type AuthInfoResponse struct {
-	Mode           string      `json:"mode"`
-	Username       string      `json:"username,omitempty"`
-	Member         *MemberInfo `json:"member,omitempty"`
-	OIDCEnabled    bool        `json:"oidcEnabled"`
-	OIDCBtnLabel   string      `json:"oidcBtnLabel"`
-	PasskeyEnabled bool        `json:"passkeyEnabled"`
+	Mode           string      `json:"mode"`               // 认证模式：jwt | header
+	Username       string      `json:"username,omitempty"` // 当前登录用户名（未登录时为空）
+	Member         *MemberInfo `json:"member,omitempty"`   // 成员详细信息
+	OIDCEnabled    bool        `json:"oidcEnabled"`        // 是否启用 OIDC 登录
+	OIDCBtnLabel   string      `json:"oidcBtnLabel"`       // OIDC 登录按钮文案
+	PasskeyEnabled bool        `json:"passkeyEnabled"`     // 是否启用 Passkey 登录
 }
 
 // LoginRequest 登录请求
 type LoginRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-	TOTPCode string `json:"totpCode"`
+	Username string `json:"username" binding:"required"` // 用户名
+	Password string `json:"password" binding:"required"` // 密码
+	TOTPCode string `json:"totpCode"`                    // TOTP 验证码（启用二步验证时必填）
 }
 
 // LoginResponse 登录响应
 type LoginResponse struct {
-	Token             string `json:"token,omitempty"`
-	Username          string `json:"username"`
-	TwoFactorRequired bool   `json:"twoFactorRequired,omitempty"`
+	Token             string `json:"token,omitempty"`             // JWT Token（二步验证时为空）
+	Username          string `json:"username"`                    // 用户名
+	TwoFactorRequired bool   `json:"twoFactorRequired,omitempty"` // 是否需要二步验证
 }
 
 // CreateApiTokenRequest 创建 API Token 请求
@@ -48,8 +48,8 @@ type CreateApiTokenRequest struct {
 
 // CreateApiTokenResponse 创建 API Token 响应
 type CreateApiTokenResponse struct {
-	Token string `json:"token"`
-	Name  string `json:"name"`
+	Token string `json:"token"` // 新创建的 API Token（仅创建时返回明文）
+	Name  string `json:"name"`  // 令牌名称
 }
 
 // ─── 认证入口 ──────────────

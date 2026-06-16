@@ -13,11 +13,11 @@ import (
 
 // Consumer Apisix Consumer 信息
 type Consumer struct {
-	Username   string         `json:"username"`
-	Desc       string         `json:"desc"`
-	Plugins    map[string]any `json:"plugins,omitempty"`
-	CreateTime int64          `json:"create_time"`
-	UpdateTime int64          `json:"update_time"`
+	Username   string         `json:"username"`          // Consumer 用户名（唯一标识）
+	Desc       string         `json:"desc"`              // Consumer 描述
+	Plugins    map[string]any `json:"plugins,omitempty"` // 插件配置（如 key-auth、jwt-auth 等认证插件）
+	CreateTime int64          `json:"create_time"`       // 创建时间（Unix 时间戳，只读）
+	UpdateTime int64          `json:"update_time"`       // 更新时间（Unix 时间戳，只读）
 }
 
 // ConsumerList 获取所有 Consumer 列表

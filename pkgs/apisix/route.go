@@ -8,33 +8,33 @@ import (
 	"net/url"
 )
 
-// RouteTimeout Apisix 路由超时配置
+// RouteTimeout Apisix 路由超时配置（单位：秒）
 type RouteTimeout struct {
-	Connect int `json:"connect,omitempty"`
-	Send    int `json:"send,omitempty"`
-	Read    int `json:"read,omitempty"`
+	Connect int `json:"connect,omitempty"` // 连接超时
+	Send    int `json:"send,omitempty"`    // 发送超时
+	Read    int `json:"read,omitempty"`    // 读取超时
 }
 
-// Route Apisix Route 信息
+// Route Apisix 路由信息
 type Route struct {
-	ID              string         `json:"id,omitempty"`
-	Name            string         `json:"name"`
-	URI             string         `json:"uri,omitempty"`
-	URIs            []string       `json:"uris,omitempty"`
-	Host            string         `json:"host,omitempty"`
-	Hosts           []string       `json:"hosts,omitempty"`
-	Desc            string         `json:"desc,omitempty"`
-	Status          int            `json:"status"`
-	Priority        int            `json:"priority"`
-	EnableWebsocket bool           `json:"enable_websocket"`
-	PluginConfigID  string         `json:"plugin_config_id,omitempty"`
-	UpstreamID      string         `json:"upstream_id,omitempty"`
-	Upstream        map[string]any `json:"upstream,omitempty"`
-	Plugins         map[string]any `json:"plugins,omitempty"`
-	Consumers       []string       `json:"consumers,omitempty"`
-	Timeout         *RouteTimeout  `json:"timeout,omitempty"`
-	CreateTime      int64          `json:"create_time"`
-	UpdateTime      int64          `json:"update_time"`
+	ID              string         `json:"id,omitempty"`               // 路由 ID（创建时由 Apisix 自动生成）
+	Name            string         `json:"name"`                       // 路由名称
+	URI             string         `json:"uri,omitempty"`              // 单个路由匹配 URI（与 URIs 二选一）
+	URIs            []string       `json:"uris,omitempty"`             // 路由匹配 URI 列表
+	Host            string         `json:"host,omitempty"`             // 单个匹配 Host（与 Hosts 二选一）
+	Hosts           []string       `json:"hosts,omitempty"`            // 匹配 Host 列表
+	Desc            string         `json:"desc,omitempty"`             // 路由描述
+	Status          int            `json:"status"`                     // 路由状态：1=启用，0=禁用
+	Priority        int            `json:"priority"`                   // 路由优先级（数值越大优先级越高）
+	EnableWebsocket bool           `json:"enable_websocket"`           // 是否启用 WebSocket 代理
+	PluginConfigID  string         `json:"plugin_config_id,omitempty"` // 引用的 PluginConfig ID
+	UpstreamID      string         `json:"upstream_id,omitempty"`      // 引用的 Upstream ID
+	Upstream        map[string]any `json:"upstream,omitempty"`         // 内联 Upstream 配置（与 UpstreamID 二选一）
+	Plugins         map[string]any `json:"plugins,omitempty"`          // 插件配置
+	Consumers       []string       `json:"consumers,omitempty"`        // 白名单 Consumer 列表
+	Timeout         *RouteTimeout  `json:"timeout,omitempty"`          // 超时配置
+	CreateTime      int64          `json:"create_time"`                // 创建时间（Unix 时间戳，只读）
+	UpdateTime      int64          `json:"update_time"`                // 更新时间（Unix 时间戳，只读）
 }
 
 // RouteList 获取所有路由列表（不过滤插件，用于路由管理页面展示）

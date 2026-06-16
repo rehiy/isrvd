@@ -10,11 +10,11 @@ import (
 
 // PluginConfig Apisix Plugin Config 信息
 type PluginConfig struct {
-	ID         string         `json:"id,omitempty"`
-	Desc       string         `json:"desc,omitempty"`
-	Plugins    map[string]any `json:"plugins,omitempty"`
-	CreateTime int64          `json:"create_time"`
-	UpdateTime int64          `json:"update_time"`
+	ID         string         `json:"id,omitempty"`      // PluginConfig ID（创建时指定）
+	Desc       string         `json:"desc,omitempty"`    // PluginConfig 描述
+	Plugins    map[string]any `json:"plugins,omitempty"` // 插件配置（可被路由引用）
+	CreateTime int64          `json:"create_time"`       // 创建时间（Unix 时间戳，只读）
+	UpdateTime int64          `json:"update_time"`       // 更新时间（Unix 时间戳，只读）
 }
 
 // PluginConfigList 获取所有 Plugin Config 列表

@@ -13,22 +13,22 @@ import (
 
 // Host SSH 主机配置
 type Host struct {
-	ID             string `yaml:"id" json:"id"`
-	Name           string `yaml:"name" json:"name"`
-	Addr           string `yaml:"addr" json:"addr"`
-	CredentialID   string `yaml:"credentialId,omitempty" json:"credentialId,omitempty"`
-	CredentialName string `yaml:"-" json:"credentialName,omitempty"`
-	User           string `yaml:"user" json:"user"`
-	Password       string `yaml:"password,omitempty" json:"-"`
-	PrivateKey     string `yaml:"privateKey,omitempty" json:"-"`
-	Description    string `yaml:"description" json:"description"`
+	ID             string `yaml:"id" json:"id"`                                         // 主机 ID（自动生成）
+	Name           string `yaml:"name" json:"name"`                                     // 主机名称
+	Addr           string `yaml:"addr" json:"addr"`                                     // 主机地址（host:port）
+	CredentialID   string `yaml:"credentialId,omitempty" json:"credentialId,omitempty"` // 引用的凭据 ID
+	CredentialName string `yaml:"-" json:"credentialName,omitempty"`                    // 凭据名称（只读，展示用）
+	User           string `yaml:"user" json:"user"`                                     // 用户名（独立认证模式）
+	Password       string `yaml:"password,omitempty" json:"-"`                          // 密码（仅独立认证模式，不序列化到 JSON）
+	PrivateKey     string `yaml:"privateKey,omitempty" json:"-"`                        // 私钥（仅独立认证模式，不序列化到 JSON）
+	Description    string `yaml:"description" json:"description"`                       // 主机描述
 }
 
 // store 负责 WebSSH 主机配置的存储
 type store struct {
-	ts    *cstore.TypedStore[[]*Host]
-	hosts []*Host
-	mu    sync.RWMutex
+	ts    *cstore.TypedStore[[]*Host] // 类型化存储实例
+	hosts []*Host                     // 内存中的主机列表
+	mu    sync.RWMutex                // 保护 hosts 的并发访问
 }
 
 // newHostStore 创建主机配置存储

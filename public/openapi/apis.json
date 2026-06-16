@@ -5583,9 +5583,11 @@
       "account.ChangePasswordRequest": {
         "properties": {
           "newPassword": {
+            "description": "新密码",
             "type": "string"
           },
           "oldPassword": {
+            "description": "原密码",
             "type": "string"
           }
         },
@@ -5597,9 +5599,11 @@
       "account.CreateApiTokenRequest": {
         "properties": {
           "expiresIn": {
+            "description": "过期时间（秒），0 表示永不过期",
             "type": "integer"
           },
           "name": {
+            "description": "令牌名称（用于标识）",
             "type": "string"
           }
         },
@@ -5608,12 +5612,15 @@
       "account.LoginRequest": {
         "properties": {
           "password": {
+            "description": "密码",
             "type": "string"
           },
           "totpCode": {
+            "description": "TOTP 验证码（启用二步验证时必填）",
             "type": "string"
           },
           "username": {
+            "description": "用户名",
             "type": "string"
           }
         },
@@ -5626,21 +5633,26 @@
       "account.MemberUpsertRequest": {
         "properties": {
           "description": {
+            "description": "成员描述",
             "type": "string"
           },
           "homeDirectory": {
+            "description": "家目录（绝对路径或基于 RootDirectory 的相对路径）",
             "type": "string"
           },
           "password": {
+            "description": "密码（创建时必填，更新时为空则保留原密码）",
             "type": "string"
           },
           "permissions": {
+            "description": "权限列表",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "username": {
+            "description": "用户名（创建时必填，更新时从 URL 读取）",
             "type": "string"
           }
         },
@@ -5701,18 +5713,23 @@
       "apisix.PluginConfig": {
         "properties": {
           "create_time": {
+            "description": "创建时间（Unix 时间戳，只读）",
             "type": "integer"
           },
           "desc": {
+            "description": "PluginConfig 描述",
             "type": "string"
           },
           "id": {
+            "description": "PluginConfig ID（创建时指定）",
             "type": "string"
           },
           "plugins": {
+            "description": "插件配置（可被路由引用）",
             "type": "object"
           },
           "update_time": {
+            "description": "更新时间（Unix 时间戳，只读）",
             "type": "integer"
           }
         },
@@ -5721,63 +5738,81 @@
       "apisix.Route": {
         "properties": {
           "consumers": {
+            "description": "白名单 Consumer 列表",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "create_time": {
+            "description": "创建时间（Unix 时间戳，只读）",
             "type": "integer"
           },
           "desc": {
+            "description": "路由描述",
             "type": "string"
           },
           "enable_websocket": {
+            "description": "是否启用 WebSocket 代理",
             "type": "boolean"
           },
           "host": {
+            "description": "单个匹配 Host（与 Hosts 二选一）",
             "type": "string"
           },
           "hosts": {
+            "description": "匹配 Host 列表",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "id": {
+            "description": "路由 ID（创建时由 Apisix 自动生成）",
             "type": "string"
           },
           "name": {
+            "description": "路由名称",
             "type": "string"
           },
           "plugin_config_id": {
+            "description": "引用的 PluginConfig ID",
             "type": "string"
           },
           "plugins": {
+            "description": "插件配置",
             "type": "object"
           },
           "priority": {
+            "description": "路由优先级（数值越大优先级越高）",
             "type": "integer"
           },
           "status": {
+            "description": "路由状态：1=启用，0=禁用",
             "type": "integer"
           },
           "timeout": {
+            "description": "超时配置",
             "type": "object"
           },
           "update_time": {
+            "description": "更新时间（Unix 时间戳，只读）",
             "type": "integer"
           },
           "upstream": {
+            "description": "内联 Upstream 配置（与 UpstreamID 二选一）",
             "type": "object"
           },
           "upstream_id": {
+            "description": "引用的 Upstream ID",
             "type": "string"
           },
           "uri": {
+            "description": "单个路由匹配 URI（与 URIs 二选一）",
             "type": "string"
           },
           "uris": {
+            "description": "路由匹配 URI 列表",
             "items": {
               "type": "string"
             },
@@ -5789,27 +5824,34 @@
       "apisix.SSL": {
         "properties": {
           "cert": {
+            "description": "PEM 格式证书",
             "type": "string"
           },
           "create_time": {
+            "description": "创建时间（Unix 时间戳，只读）",
             "type": "integer"
           },
           "id": {
+            "description": "证书 ID（创建时由 Apisix 自动生成）",
             "type": "string"
           },
           "key": {
+            "description": "PEM 格式私钥",
             "type": "string"
           },
           "snis": {
+            "description": "SNI 域名列表（用于 HTTPS 证书匹配）",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "status": {
+            "description": "状态：1=启用，0=禁用（默认为 1）",
             "type": "integer"
           },
           "update_time": {
+            "description": "更新时间（Unix 时间戳，只读）",
             "type": "integer"
           }
         },
@@ -5818,46 +5860,62 @@
       "apisix.Upstream": {
         "properties": {
           "create_time": {
+            "description": "创建时间（Unix 时间戳，只读）",
             "type": "integer"
           },
           "desc": {
+            "description": "Upstream 描述",
             "type": "string"
           },
           "hash_on": {
+            "description": "chash 模式的哈希源：vars | header | cookie",
             "type": "string"
           },
           "id": {
+            "description": "Upstream ID（创建时由 Apisix 自动生成）",
             "type": "string"
           },
           "key": {
+            "description": "chash 模式的哈希键（配合 hash_on 使用）",
             "type": "string"
           },
           "name": {
+            "description": "Upstream 名称",
             "type": "string"
           },
-          "nodes": {},
+          "nodes": {
+            "description": "节点配置：map[string]int 格式，如 {\"host:port\": weight}"
+          },
           "pass_host": {
+            "description": "Host 传递方式：pass | node | rewrite",
             "type": "string"
           },
           "retries": {
+            "description": "重试次数",
             "type": "integer"
           },
           "retry_timeout": {
+            "description": "重试超时（秒）",
             "type": "integer"
           },
           "scheme": {
+            "description": "转发协议：http | https | grpc | grpcs",
             "type": "string"
           },
           "timeout": {
+            "description": "超时配置：{\"connect\": 15, \"send\": 15, \"read\": 15}",
             "type": "object"
           },
           "type": {
+            "description": "负载均衡算法：roundrobin | chash | ewma | least_conn",
             "type": "string"
           },
           "update_time": {
+            "description": "更新时间（Unix 时间戳，只读）",
             "type": "integer"
           },
           "upstream_host": {
+            "description": "pass_host=rewrite 时设置的上游 Host",
             "type": "string"
           }
         },
@@ -5936,39 +5994,50 @@
       "caddy.CertForm": {
         "properties": {
           "certificate": {
+            "description": "file：证书文件路径；pem：证书 PEM 文本",
             "type": "string"
           },
           "format": {
+            "description": "证书格式，仅 file 使用（默认 PEM）",
             "type": "string"
           },
           "issuer": {
+            "description": "签发机构 Common Name",
             "type": "string"
           },
           "key": {
+            "description": "复合主键 \u003csource\u003e-\u003cindex\u003e，仅响应使用（cached 无此字段）",
             "type": "string"
           },
           "keyContent": {
+            "description": "file：私钥文件路径；pem：私钥 PEM 文本（响应时不返回）",
             "type": "string"
           },
           "notAfter": {
+            "description": "证书过期时间",
             "type": "string"
           },
           "notBefore": {
+            "description": "证书生效时间",
             "type": "string"
           },
           "sans": {
+            "description": "Subject Alternative Names（DNS）",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "source": {
+            "description": "file / pem / automate / cached",
             "type": "string"
           },
           "subject": {
+            "description": "automate/cached：目标域名；file/pem：解析自证书 CN",
             "type": "string"
           },
           "tags": {
+            "description": "Caddy 内部标签（file/pem 可选）",
             "items": {
               "type": "string"
             },
@@ -5980,33 +6049,43 @@
       "caddy.GlobalForm": {
         "properties": {
           "acmeCA": {
+            "description": "自定义 ACME 目录 URL，留空使用 Let's Encrypt",
             "type": "string"
           },
           "autoHttpsDisable": {
+            "description": "禁用自动 HTTPS",
             "type": "boolean"
           },
           "autoHttpsDisableRedirects": {
+            "description": "禁用 HTTP→HTTPS 自动跳转",
             "type": "boolean"
           },
           "email": {
+            "description": "ACME 注册邮箱",
             "type": "string"
           },
           "gracePeriod": {
+            "description": "优雅关闭等待时间，例如 10s（apps.http.grace_period）",
             "type": "string"
           },
           "localCerts": {
+            "description": "使用本地自签证书（internal issuer），不走 ACME",
             "type": "boolean"
           },
           "logFormat": {
+            "description": "日志格式：json / console，留空使用默认",
             "type": "string"
           },
           "logLevel": {
+            "description": "全局日志级别：DEBUG / INFO / WARN / ERROR",
             "type": "string"
           },
           "onDemandAsk": {
+            "description": "ask 鉴权端点 URL（防滥用，Caddy v2.8+ 必须配置）",
             "type": "string"
           },
           "onDemandTLS": {
+            "description": "启用 on_demand TLS（连接时动态申请证书）",
             "type": "boolean"
           }
         },
@@ -6015,24 +6094,29 @@
       "caddy.Route": {
         "properties": {
           "@id": {
+            "description": "路由 ID（用于引用）",
             "type": "string"
           },
           "group": {
+            "description": "路由组名（同组路由聚合）",
             "type": "string"
           },
           "handle": {
+            "description": "处理器链",
             "items": {
               "type": "object"
             },
             "type": "array"
           },
           "match": {
+            "description": "匹配条件（多个 MatchSet 为 OR 关系）",
             "items": {
               "type": "object"
             },
             "type": "array"
           },
           "terminal": {
+            "description": "是否终止后续路由匹配",
             "type": "boolean"
           }
         },
@@ -6055,6 +6139,7 @@
             "type": "string"
           },
           "forcePull": {
+            "description": "是否强制拉取最新镜像",
             "type": "boolean"
           },
           "initURL": {
@@ -6072,6 +6157,7 @@
             "type": "string"
           },
           "forcePull": {
+            "description": "是否强制拉取最新镜像",
             "type": "boolean"
           },
           "image": {
@@ -6086,12 +6172,15 @@
       "config.AgentConfig": {
         "properties": {
           "apiKey": {
+            "description": "写入时为空表示保留原值；响应时不返回",
             "type": "string"
           },
           "baseUrl": {
+            "description": "LLM API 基础地址（OpenAI 兼容）",
             "type": "string"
           },
           "model": {
+            "description": "模型名称",
             "type": "string"
           }
         },
@@ -6100,9 +6189,11 @@
       "config.ApisixConfig": {
         "properties": {
           "adminKey": {
+            "description": "写入时为空表示保留原值；响应时不返回",
             "type": "string"
           },
           "adminUrl": {
+            "description": "Apisix Admin API 地址",
             "type": "string"
           }
         },
@@ -6111,6 +6202,7 @@
       "config.CaddyConfig": {
         "properties": {
           "adminUrl": {
+            "description": "Caddy Admin API 地址，例如 http://127.0.0.1:2019",
             "type": "string"
           }
         },
@@ -6119,12 +6211,15 @@
       "config.DockerConfig": {
         "properties": {
           "containerRoot": {
+            "description": "容器数据根目录",
             "type": "string"
           },
           "host": {
+            "description": "Docker 连接地址",
             "type": "string"
           },
           "registries": {
+            "description": "镜像仓库配置列表",
             "items": {
               "type": "object"
             },
@@ -6136,12 +6231,15 @@
       "config.LinkConfig": {
         "properties": {
           "icon": {
+            "description": "Font Awesome 图标类名（可选，如 fa-link）",
             "type": "string"
           },
           "label": {
+            "description": "显示名称",
             "type": "string"
           },
           "url": {
+            "description": "链接地址",
             "type": "string"
           }
         },
@@ -6150,6 +6248,7 @@
       "config.MarketplaceConfig": {
         "properties": {
           "url": {
+            "description": "应用市场站点地址，通过 iframe 嵌入",
             "type": "string"
           }
         },
@@ -6158,6 +6257,7 @@
       "config.MonitorConfig": {
         "properties": {
           "interval": {
+            "description": "采集间隔（秒），合法值：5/15/30/60；其他值均视为禁用",
             "type": "integer"
           }
         },
@@ -6169,6 +6269,7 @@
             "type": "string"
           },
           "clientSecret": {
+            "description": "写入时为空表示保留原值；响应时不返回",
             "type": "string"
           },
           "enabled": {
@@ -6178,6 +6279,7 @@
             "type": "string"
           },
           "loginLabel": {
+            "description": "OIDC 登录按钮自定义名称，留空时使用默认文案",
             "type": "string"
           },
           "redirectUrl": {
@@ -6201,18 +6303,22 @@
             "type": "boolean"
           },
           "rpId": {
+            "description": "Relying Party ID（通常是域名）",
             "type": "string"
           },
           "rpName": {
+            "description": "Relying Party 名称",
             "type": "string"
           },
           "rpOrigins": {
+            "description": "允许的 Origin 列表",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "timeout": {
+            "description": "超时时间（毫秒），默认 60000",
             "type": "integer"
           }
         },
@@ -6221,6 +6327,7 @@
       "config.ServerConfig": {
         "properties": {
           "allowedOrigins": {
+            "description": "允许的 Origin 列表，支持通配符 *",
             "items": {
               "type": "string"
             },
@@ -6230,15 +6337,18 @@
             "type": "boolean"
           },
           "jwtExpiration": {
+            "description": "JWT 过期时间（秒），默认 86400",
             "type": "integer"
           },
           "jwtSecret": {
+            "description": "写入时为空表示保留原值；响应时不返回",
             "type": "string"
           },
           "listenAddr": {
             "type": "string"
           },
           "maxUploadSize": {
+            "description": "文件上传最大大小（字节），默认 100MB",
             "type": "integer"
           },
           "rootDirectory": {
@@ -6250,12 +6360,15 @@
       "config.THAConfig": {
         "properties": {
           "enabled": {
+            "description": "是否启用代理 Header 登录",
             "type": "boolean"
           },
           "headerName": {
+            "description": "上游代理传入登录用户名的 Header 名称",
             "type": "string"
           },
           "trustedCIDRs": {
+            "description": "允许传入登录 Header 的代理来源 CIDR；为空时不限制来源",
             "items": {
               "type": "string"
             },
@@ -6267,36 +6380,47 @@
       "cron.JobUpsertRequest": {
         "properties": {
           "container": {
+            "description": "DOCKER_CTR：目标容器名",
             "type": "string"
           },
           "content": {
+            "description": "脚本内容",
             "type": "string"
           },
           "description": {
+            "description": "任务描述",
             "type": "string"
           },
           "enabled": {
+            "description": "是否启用",
             "type": "boolean"
           },
           "image": {
+            "description": "DOCKER_TMP：镜像名",
             "type": "string"
           },
           "name": {
+            "description": "任务名称",
             "type": "string"
           },
           "schedule": {
+            "description": "cron 表达式",
             "type": "string"
           },
           "timeout": {
+            "description": "超时（秒）",
             "type": "integer"
           },
           "type": {
+            "description": "脚本类型",
             "type": "string"
           },
           "volumes": {
+            "description": "DOCKER_TMP：额外挂载",
             "type": "string"
           },
           "workDir": {
+            "description": "工作目录",
             "type": "string"
           }
         },
@@ -6850,40 +6974,51 @@
       "system.UpdateAllConfigRequest": {
         "properties": {
           "agent": {
-            "$ref": "#/components/schemas/config.AgentConfig"
+            "$ref": "#/components/schemas/config.AgentConfig",
+            "description": "Agent 配置（APIKey 为空保留原值）"
           },
           "apisix": {
-            "$ref": "#/components/schemas/config.ApisixConfig"
+            "$ref": "#/components/schemas/config.ApisixConfig",
+            "description": "APISIX 配置（AdminKey 为空保留原值）"
           },
           "caddy": {
-            "$ref": "#/components/schemas/config.CaddyConfig"
+            "$ref": "#/components/schemas/config.CaddyConfig",
+            "description": "Caddy 配置"
           },
           "docker": {
-            "$ref": "#/components/schemas/config.DockerConfig"
+            "$ref": "#/components/schemas/config.DockerConfig",
+            "description": "Docker 配置"
           },
           "links": {
+            "description": "导航链接列表",
             "items": {
               "$ref": "#/components/schemas/config.LinkConfig"
             },
             "type": "array"
           },
           "marketplace": {
-            "$ref": "#/components/schemas/config.MarketplaceConfig"
+            "$ref": "#/components/schemas/config.MarketplaceConfig",
+            "description": "应用市场配置"
           },
           "monitor": {
-            "$ref": "#/components/schemas/config.MonitorConfig"
+            "$ref": "#/components/schemas/config.MonitorConfig",
+            "description": "监控配置"
           },
           "oidc": {
-            "$ref": "#/components/schemas/config.OIDCConfig"
+            "$ref": "#/components/schemas/config.OIDCConfig",
+            "description": "OIDC 配置（ClientSecret 为空保留原值）"
           },
           "passkey": {
-            "$ref": "#/components/schemas/config.PasskeyConfig"
+            "$ref": "#/components/schemas/config.PasskeyConfig",
+            "description": "Passkey 配置"
           },
           "server": {
-            "$ref": "#/components/schemas/config.ServerConfig"
+            "$ref": "#/components/schemas/config.ServerConfig",
+            "description": "服务配置（JWTSecret 为空保留原值）"
           },
           "tha": {
-            "$ref": "#/components/schemas/config.THAConfig"
+            "$ref": "#/components/schemas/config.THAConfig",
+            "description": "代理 Header 认证配置"
           }
         },
         "type": "object"
@@ -6891,18 +7026,23 @@
       "webssh.CredentialUpsertRequest": {
         "properties": {
           "description": {
+            "description": "凭据描述",
             "type": "string"
           },
           "name": {
+            "description": "凭据名称",
             "type": "string"
           },
           "password": {
+            "description": "密码（与 privateKey 二选一）",
             "type": "string"
           },
           "privateKey": {
+            "description": "私钥（与 password 二选一）",
             "type": "string"
           },
           "user": {
+            "description": "用户名",
             "type": "string"
           }
         },
@@ -6915,24 +7055,31 @@
       "webssh.HostUpsertRequest": {
         "properties": {
           "addr": {
+            "description": "主机地址（host:port）",
             "type": "string"
           },
           "credentialId": {
+            "description": "引用的凭据 ID（优先于下方认证字段）",
             "type": "string"
           },
           "description": {
+            "description": "主机描述",
             "type": "string"
           },
           "name": {
+            "description": "主机名称",
             "type": "string"
           },
           "password": {
+            "description": "密码（credentialId 为空时使用）",
             "type": "string"
           },
           "privateKey": {
+            "description": "私钥（credentialId 为空时使用）",
             "type": "string"
           },
           "user": {
+            "description": "用户名（credentialId 为空时使用）",
             "type": "string"
           }
         },

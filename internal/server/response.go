@@ -8,9 +8,9 @@ import (
 
 // APIResponse 通用API响应结构
 type APIResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message,omitempty"`
-	Payload any    `json:"payload,omitempty"`
+	Success bool   `json:"success"`           // 请求是否成功
+	Message string `json:"message,omitempty"` // 提示信息
+	Payload any    `json:"payload,omitempty"` // 响应数据负载
 }
 
 // respondSuccess 返回成功响应

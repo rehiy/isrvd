@@ -965,12 +965,12 @@ func buildSchemaFromStruct(pkgAlias, structName string, st *ast.StructType, file
 		}
 		for _, name := range field.Names {
 			fieldInfo := extractFieldInfo(name.Name, field)
-			
+
 			// 优先使用字段注释，其次使用 json tag 中的 description
 			if comment, ok := fieldComments[name.Name]; ok && comment != "" {
 				fieldInfo.Description = comment
 			}
-			
+
 			if fieldInfo.Name != "-" {
 				schema.Fields = append(schema.Fields, fieldInfo)
 			}
@@ -986,23 +986,23 @@ func buildSchemaFromStruct(pkgAlias, structName string, st *ast.StructType, file
 //  3. tag 中的 description："description" 字段描述
 func extractFieldComments(filename string, st *ast.StructType) map[string]string {
 	comments := make(map[string]string)
-	
+
 	// 读取文件内容
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		return comments
 	}
 	lines := strings.Split(string(content), "\n")
-	
+
 	// 遍历结构体字段，查找注释
 	for _, field := range st.Fields.List {
 		if field.Names == nil {
 			continue
 		}
-		
+
 		// 获取字段所在的行号（AST 行号从 1 开始）
 		fieldLine := fsetCache.Position(field.Pos()).Line
-		
+
 		// 1. 检查字段所在行的行内注释（trailing comment）
 		if fieldLine <= len(lines) {
 			lineText := lines[fieldLine-1] // 数组索引从 0 开始
@@ -1014,7 +1014,7 @@ func extractFieldComments(filename string, st *ast.StructType) map[string]string
 				}
 			}
 		}
-		
+
 		// 2. 向上查找字段上方注释
 		if fieldLine > 1 {
 			commentLine := fieldLine - 1
@@ -1023,7 +1023,7 @@ func extractFieldComments(filename string, st *ast.StructType) map[string]string
 				// 如果上一行是注释，且当前行不是注释（避免重复）
 				if strings.HasPrefix(prevLine, "//") && !strings.HasPrefix(strings.TrimSpace(lines[fieldLine-1]), "//") {
 					commentText := strings.TrimSpace(strings.TrimPrefix(prevLine, "//"))
-					
+
 					// 检查注释格式：
 					// 1. "FieldName 描述" - 明确指定字段名
 					// 2. "描述" - 直接是描述
@@ -1040,7 +1040,7 @@ func extractFieldComments(filename string, st *ast.StructType) map[string]string
 			}
 		}
 	}
-	
+
 	return comments
 }
 
@@ -1166,12 +1166,12 @@ func buildSchemaObject(schema *SchemaInfo, allSchemas map[string]*SchemaInfo) ma
 
 	for _, f := range schema.Fields {
 		prop := buildProperty(f.Type, allSchemas)
-		
+
 		// 添加字段描述（如果有）
 		if f.Description != "" {
 			prop["description"] = f.Description
 		}
-		
+
 		props[f.Name] = prop
 		if f.Required {
 			required = append(required, f.Name)

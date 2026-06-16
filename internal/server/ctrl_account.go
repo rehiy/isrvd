@@ -64,7 +64,7 @@ func (app *App) accountLogin(c *gin.Context) {
 // accountPasskeyRegisterBegin 开始 Passkey 注册
 func (app *App) accountPasskeyRegisterBegin(c *gin.Context) {
 	var req struct {
-		DisplayName string `json:"displayName"`
+		DisplayName string `json:"displayName"` // 凭证展示名称（可选）
 	}
 	// 允许空 body（displayName 可选）
 	_ = c.ShouldBindJSON(&req)
@@ -94,7 +94,7 @@ func (app *App) accountPasskeyRegisterFinish(c *gin.Context) {
 // accountPasskeyLoginBegin 开始 Passkey 登录
 func (app *App) accountPasskeyLoginBegin(c *gin.Context) {
 	var req struct {
-		Username string `json:"username"`
+		Username string `json:"username"` // 用户名（可选，为空时允许任意用户登录）
 	}
 	// 允许空 body（username 可选）
 	_ = c.ShouldBindJSON(&req)
@@ -329,7 +329,7 @@ func (app *App) accountPasskeyRenameCredential(c *gin.Context) {
 	username := c.GetString("username")
 	credentialID := c.Param("credentialID")
 	var req struct {
-		DisplayName string `json:"displayName" binding:"required"`
+		DisplayName string `json:"displayName" binding:"required"` // 新的凭证展示名称
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())

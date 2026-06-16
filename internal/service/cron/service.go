@@ -30,72 +30,72 @@ var logger = logman.Named("cron")
 
 // TypeInfo 脚本类型描述
 type TypeInfo struct {
-	Value string `json:"value"`
-	Label string `json:"label"`
+	Value string `json:"value"` // 类型值：SHELL | EXEC | BAT | POWERSHELL | DOCKER_TMP | DOCKER_CTR
+	Label string `json:"label"` // 类型显示名称
 }
 
 // Job 计划任务业务类型
 type Job struct {
-	ID          string `yaml:"id" json:"id"`
-	Name        string `yaml:"name" json:"name"`
-	Schedule    string `yaml:"schedule" json:"schedule"`
-	Type        string `yaml:"type" json:"type"` // SHELL | EXEC | BAT | POWERSHELL | DOCKER_TMP | DOCKER_CTR
-	Content     string `yaml:"content" json:"content"`
-	WorkDir     string `yaml:"workDir" json:"workDir"`
+	ID          string `yaml:"id" json:"id"`                                   // 任务 ID（自动生成）
+	Name        string `yaml:"name" json:"name"`                               // 任务名称
+	Schedule    string `yaml:"schedule" json:"schedule"`                       // cron 表达式（如 "0 3 * * *"）
+	Type        string `yaml:"type" json:"type"`                               // 脚本类型：SHELL | EXEC | BAT | POWERSHELL | DOCKER_TMP | DOCKER_CTR
+	Content     string `yaml:"content" json:"content"`                         // 脚本内容或命令
+	WorkDir     string `yaml:"workDir" json:"workDir"`                         // 工作目录（SHELL/EXEC 类型）
 	Image       string `yaml:"image,omitempty" json:"image,omitempty"`         // DOCKER_TMP：镜像名
 	Container   string `yaml:"container,omitempty" json:"container,omitempty"` // DOCKER_CTR：目标容器名
 	Volumes     string `yaml:"volumes,omitempty" json:"volumes,omitempty"`     // DOCKER_TMP：额外挂载，格式：/host:/container[:ro]，换行分隔
-	Timeout     uint   `yaml:"timeout" json:"timeout"`                         // 秒，0 表示不限制
-	Enabled     bool   `yaml:"enabled" json:"enabled"`
-	Description string `yaml:"description" json:"description"`
+	Timeout     uint   `yaml:"timeout" json:"timeout"`                         // 超时（秒），0 表示不限制
+	Enabled     bool   `yaml:"enabled" json:"enabled"`                         // 是否启用
+	Description string `yaml:"description" json:"description"`                 // 任务描述
 }
 
 // JobUpsertRequest 创建/更新任务请求（由 server 层传入，service 层负责构建 Job）
 type JobUpsertRequest struct {
-	Name        string `json:"name" binding:"required"`
-	Schedule    string `json:"schedule" binding:"required"`
-	Type        string `json:"type" binding:"required"`
-	Content     string `json:"content" binding:"required"`
-	WorkDir     string `json:"workDir"`
-	Image       string `json:"image"`
-	Container   string `json:"container"`
-	Volumes     string `json:"volumes"`
-	Timeout     uint   `json:"timeout"`
-	Enabled     bool   `json:"enabled"`
-	Description string `json:"description"`
+	Name        string `json:"name" binding:"required"`     // 任务名称
+	Schedule    string `json:"schedule" binding:"required"` // cron 表达式
+	Type        string `json:"type" binding:"required"`     // 脚本类型
+	Content     string `json:"content" binding:"required"`  // 脚本内容
+	WorkDir     string `json:"workDir"`                     // 工作目录
+	Image       string `json:"image"`                       // DOCKER_TMP：镜像名
+	Container   string `json:"container"`                   // DOCKER_CTR：目标容器名
+	Volumes     string `json:"volumes"`                     // DOCKER_TMP：额外挂载
+	Timeout     uint   `json:"timeout"`                     // 超时（秒）
+	Enabled     bool   `json:"enabled"`                     // 是否启用
+	Description string `json:"description"`                 // 任务描述
 }
 
 // JobDetail 任务详情（含运行时调度状态）
 type JobDetail struct {
 	*Job
-	Registered    bool       `json:"registered"`
-	EntryID       int        `json:"entryId,omitempty"`
-	RuntimeStatus string     `json:"runtimeStatus"` // scheduled | disabled | unregistered
-	NextRun       *time.Time `json:"nextRun,omitempty"`
-	LastRun       *time.Time `json:"lastRun,omitempty"`
+	Registered    bool       `json:"registered"`        // 是否已注册到调度器
+	EntryID       int        `json:"entryId,omitempty"` // cron 条目 ID
+	RuntimeStatus string     `json:"runtimeStatus"`     // 运行状态：scheduled | disabled | unregistered
+	NextRun       *time.Time `json:"nextRun,omitempty"` // 下次运行时间
+	LastRun       *time.Time `json:"lastRun,omitempty"` // 上次运行时间
 }
 
 // JobLog 任务执行日志
 type JobLog struct {
-	RunID     string    `json:"runId"`
-	JobID     string    `json:"jobId"`
-	JobName   string    `json:"jobName"`
-	StartTime time.Time `json:"startTime"`
-	EndTime   time.Time `json:"endTime"`
-	Duration  int64     `json:"duration"` // 毫秒
-	Success   bool      `json:"success"`
-	Output    string    `json:"output"`
-	Error     string    `json:"error,omitempty"`
+	RunID     string    `json:"runId"`           // 执行 ID
+	JobID     string    `json:"jobId"`           // 所属任务 ID
+	JobName   string    `json:"jobName"`         // 任务名称（冗余，便于展示）
+	StartTime time.Time `json:"startTime"`       // 开始时间
+	EndTime   time.Time `json:"endTime"`         // 结束时间
+	Duration  int64     `json:"duration"`        // 耗时（毫秒）
+	Success   bool      `json:"success"`         // 是否执行成功
+	Output    string    `json:"output"`          // 标准输出
+	Error     string    `json:"error,omitempty"` // 错误信息（失败时非空）
 }
 
 // Service 计划任务服务
 type Service struct {
-	cron    *libCron.Cron
-	store   *Store
+	cron    *libCron.Cron              // cron 调度器实例
+	store   *Store                     // 任务持久化存储
 	docker  *docker.DockerService      // 可选，DOCKER 类型任务需要
-	jobs    map[string]*Job            // jobID → Job
-	entries map[string]libCron.EntryID // jobID → cron entry ID
-	mu      sync.RWMutex
+	jobs    map[string]*Job            // jobID → Job 映射
+	entries map[string]libCron.EntryID // jobID → cron entry ID 映射
+	mu      sync.RWMutex               // 保护 jobs 和 entries 的并发访问
 }
 
 // AvailableTypes 按当前 OS 及 Docker 可用性返回可用脚本类型

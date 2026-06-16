@@ -39,27 +39,27 @@ func (app *App) defineFilerRoutes() []Route {
 // ─── 请求结构 ───
 
 type filerPathQuery struct {
-	Path string `form:"path" binding:"required"`
+	Path string `form:"path" binding:"required"` // 文件或目录路径
 }
 
 type filerContentBody struct {
-	Path    string `json:"path" binding:"required"`
-	Content string `json:"content" binding:"required"`
+	Path    string `json:"path" binding:"required"`    // 文件路径
+	Content string `json:"content" binding:"required"` // 文件内容
 }
 
 type filerChmodBody struct {
-	Path string `json:"path" binding:"required"`
-	Mode string `json:"mode" binding:"required"`
+	Path string `json:"path" binding:"required"` // 文件路径
+	Mode string `json:"mode" binding:"required"` // 权限模式（如 "0755"）
 }
 
 type filerRenameBody struct {
-	Path   string `json:"path" binding:"required"`
-	Target string `json:"target" binding:"required"`
+	Path   string `json:"path" binding:"required"`   // 原路径
+	Target string `json:"target" binding:"required"` // 目标路径或名称
 }
 
 type filerUnzipBody struct {
-	Path      string `json:"path" binding:"required"`
-	TargetDir string `json:"targetDir"` // 可选：指定解压目标目录名（仅允许标准目录名，无 / 等分隔符）
+	Path      string `json:"path" binding:"required"` // 压缩文件路径
+	TargetDir string `json:"targetDir"`               // 可选：指定解压目标目录名（仅允许标准目录名，无 / 等分隔符）
 }
 
 func (app *App) filerAbsPath(c *gin.Context, path string) (string, bool) {

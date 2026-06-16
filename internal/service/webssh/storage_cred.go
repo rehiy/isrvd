@@ -12,13 +12,13 @@ import (
 
 // Credential SSH 认证凭据（可被多台主机复用）
 type Credential struct {
-	ID          string `yaml:"id" json:"id"`
-	Name        string `yaml:"name" json:"name"`
-	Description string `yaml:"description" json:"description"`
-	User        string `yaml:"user" json:"user"`
-	AuthType    string `yaml:"authType,omitempty" json:"authType,omitempty"` // "password" | "privateKey" | ""
-	Password    string `yaml:"password,omitempty" json:"-"`
-	PrivateKey  string `yaml:"privateKey,omitempty" json:"-"`
+	ID          string `yaml:"id" json:"id"`                                 // 凭据 ID（自动生成）
+	Name        string `yaml:"name" json:"name"`                             // 凭据名称
+	Description string `yaml:"description" json:"description"`               // 凭据描述
+	User        string `yaml:"user" json:"user"`                             // 用户名
+	AuthType    string `yaml:"authType,omitempty" json:"authType,omitempty"` // 认证类型："password" | "privateKey" | ""
+	Password    string `yaml:"password,omitempty" json:"-"`                  // 密码（不序列化到 JSON）
+	PrivateKey  string `yaml:"privateKey,omitempty" json:"-"`                // 私钥（不序列化到 JSON）
 }
 
 // setAuthType 根据当前认证字段计算并设置 AuthType
@@ -34,9 +34,9 @@ func (c *Credential) setAuthType() {
 
 // credentialStore 负责 Credential 的存储
 type credentialStore struct {
-	ts    *cstore.TypedStore[[]*Credential]
-	items []*Credential
-	mu    sync.RWMutex
+	ts    *cstore.TypedStore[[]*Credential] // 类型化存储实例
+	items []*Credential                     // 内存中的凭据列表
+	mu    sync.RWMutex                      // 保护 items 的并发访问
 }
 
 // newCredentialStore 创建凭据存储
