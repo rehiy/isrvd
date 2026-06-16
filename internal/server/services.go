@@ -95,6 +95,9 @@ func (app *App) closeServices() {
 	if app.websshSvc != nil {
 		app.websshSvc.Close()
 	}
+	if app.monitorCollector != nil {
+		app.monitorCollector.Stop()
+	}
 }
 
 // serviceAvailableMiddleware 根据路由 Module 动态检查服务是否可用，不可用返回 503
