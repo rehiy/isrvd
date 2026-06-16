@@ -20,13 +20,13 @@ type Config struct {
 
 // 服务器配置
 type ServerConfig struct {
-	ListenAddr     string   `yaml:"listenAddr" json:"listenAddr"`
-	RootDirectory  string   `yaml:"rootDirectory" json:"rootDirectory"`
+	ListenAddr     string   `yaml:"listenAddr" json:"listenAddr"`       // 监听地址（如 :8080）
+	RootDirectory  string   `yaml:"rootDirectory" json:"rootDirectory"`  // 根目录路径
 	MaxUploadSize  int64    `yaml:"maxUploadSize" json:"maxUploadSize"`   // 文件上传最大大小（字节），默认 100MB
 	AllowedOrigins []string `yaml:"allowedOrigins" json:"allowedOrigins"` // 允许的 Origin 列表，支持通配符 *
 	JWTSecret      string   `yaml:"jwtSecret" json:"jwtSecret,omitempty"` // 写入时为空表示保留原值；响应时不返回
 	JWTExpiration  int64    `yaml:"jwtExpiration" json:"jwtExpiration"`   // JWT 过期时间（秒），默认 86400
-	Debug          bool     `yaml:"debug" json:"debug"`
+	Debug          bool     `yaml:"debug" json:"debug"`                  // 是否启用调试模式
 }
 
 // 代理 Header 登录配置
@@ -38,19 +38,19 @@ type THAConfig struct {
 
 // OIDC 登陆配置
 type OIDCConfig struct {
-	Enabled       bool     `yaml:"enabled" json:"enabled"`
-	IssuerURL     string   `yaml:"issuerUrl" json:"issuerUrl"`
-	ClientID      string   `yaml:"clientId" json:"clientId"`
+	Enabled       bool     `yaml:"enabled" json:"enabled"`       // 是否启用 OIDC 登录
+	IssuerURL     string   `yaml:"issuerUrl" json:"issuerUrl"`   // OIDC 提供者 Issuer 地址
+	ClientID      string   `yaml:"clientId" json:"clientId"`     // OIDC 客户端 ID
 	ClientSecret  string   `yaml:"clientSecret" json:"clientSecret,omitempty"` // 写入时为空表示保留原值；响应时不返回
-	RedirectURL   string   `yaml:"redirectUrl" json:"redirectUrl"`
-	UsernameClaim string   `yaml:"usernameClaim" json:"usernameClaim"`
-	Scopes        []string `yaml:"scopes" json:"scopes"`
+	RedirectURL   string   `yaml:"redirectUrl" json:"redirectUrl"` // 回调地址
+	UsernameClaim string   `yaml:"usernameClaim" json:"usernameClaim"` // 从哪个 claim 提取用户名（如 sub、email、preferred_username）
+	Scopes        []string `yaml:"scopes" json:"scopes"`         // 请求的 Scope 列表
 	LoginLabel    string   `yaml:"loginLabel" json:"loginLabel"` // OIDC 登录按钮自定义名称，留空时使用默认文案
 }
 
 // Passkey 登录配置
 type PasskeyConfig struct {
-	Enabled   bool     `yaml:"enabled" json:"enabled"`
+	Enabled   bool     `yaml:"enabled" json:"enabled"`       // 是否启用 Passkey 登录
 	RPName    string   `yaml:"rpName" json:"rpName"`       // Relying Party 名称
 	RPID      string   `yaml:"rpId" json:"rpId"`           // Relying Party ID（通常是域名）
 	RPOrigins []string `yaml:"rpOrigins" json:"rpOrigins"` // 允许的 Origin 列表

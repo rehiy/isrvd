@@ -127,6 +127,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	// 0. 预注册 APIResponse schema（从源文件提取字段注释）
+	responseFile := filepath.Join(projectRoot, "internal", "server", "response.go")
+	if schema := parseServiceStruct("", "APIResponse", responseFile); schema != nil {
+		structCache["APIResponse"] = schema
+	} else {
+		// 降级处理：如果无法从文件提取，使用默认值
+		structCache["APIResponse"] = &SchemaInfo{
+			TypeName: "APIResponse",
+			Fields: []FieldInfo{
+				{Name: "success", Type: "bool", Required: true, Description: "请求是否成功"},
+				{Name: "message", Type: "string", Description: "提示信息"},
+				{Name: "payload", Type: "any", Description: "响应数据负载"},
+			},
+		}
+	}
+
 	// 1-2. 解析 ctrl 文件 & 预收集类型信息
 	ctrlDir := filepath.Join(projectRoot, "internal", "server")
 	entries, err := os.ReadDir(ctrlDir)
@@ -1170,6 +1186,9 @@ func buildSchemaObject(schema *SchemaInfo, allSchemas map[string]*SchemaInfo) ma
 		// 添加字段描述（如果有）
 		if f.Description != "" {
 			prop["description"] = f.Description
+		} else {
+			// 为缺少注释的字段使用字段名作为默认描述
+			prop["description"] = f.Name
 		}
 
 		props[f.Name] = prop
@@ -1441,14 +1460,7 @@ func generateOperationID(r RouteDef) string {
 	return strings.ToLower(r.Method) + "_" + buf.String()
 }
 
+// init() 保留给其他初始化逻辑
 func init() {
-	// 预注册 APIResponse schema
-	structCache["APIResponse"] = &SchemaInfo{
-		TypeName: "APIResponse",
-		Fields: []FieldInfo{
-			{Name: "success", Type: "bool", Required: true},
-			{Name: "message", Type: "string"},
-			{Name: "payload", Type: "any"},
-		},
-	}
+	// APIResponse 的提取已在 main() 中处理
 }

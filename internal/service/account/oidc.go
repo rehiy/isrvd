@@ -39,7 +39,7 @@ type oidcLoginCode struct {
 
 // OIDCExchangeRequest OIDC 一次性登录码交换请求
 type OIDCExchangeRequest struct {
-	Code string `json:"code" binding:"required"`
+	Code string `json:"code" binding:"required"` // OIDC 授权码
 }
 
 // ─── 公开业务方法 ──────────

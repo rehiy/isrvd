@@ -120,24 +120,24 @@ type ContainerDetail struct {
 
 // ContainerSpec 容器可写配置（创建/更新共用），保持 HTTP API 兼容。
 type ContainerSpec struct {
-	Image      string            `json:"image" binding:"required"`
-	Name       string            `json:"name" binding:"required"`
-	Cmd        []string          `json:"cmd"`
-	Env        []string          `json:"env"`
-	Ports      map[string]string `json:"ports"`
-	Volumes    []VolumeMapping   `json:"volumes"`
-	Network    string            `json:"network"`
-	Restart    string            `json:"restart"`
-	Memory     int64             `json:"memory"`
-	Cpus       float64           `json:"cpus"`
-	Workdir    string            `json:"workdir"`
-	User       string            `json:"user"`
-	Hostname   string            `json:"hostname"`
-	Privileged bool              `json:"privileged"`
-	CapAdd     []string          `json:"capAdd"`
-	CapDrop    []string          `json:"capDrop"`
-	AutoRemove bool              `json:"autoRemove"`
-	Labels     map[string]string `json:"labels,omitempty"`
+	Image      string            `json:"image" binding:"required"`    // 镜像名称（含 tag）
+	Name       string            `json:"name" binding:"required"`     // 容器名称
+	Cmd        []string          `json:"cmd"`                        // 容器启动命令
+	Env        []string          `json:"env"`                        // 环境变量列表（格式：KEY=VALUE）
+	Ports      map[string]string `json:"ports"`                      // 端口映射（格式：容器端口:主机端口）
+	Volumes    []VolumeMapping   `json:"volumes"`                    // 挂载卷列表
+	Network    string            `json:"network"`                    // 网络模式
+	Restart    string            `json:"restart"`                    // 重启策略（no/on-failure/always/unless-stopped）
+	Memory     int64             `json:"memory"`                     // 内存限制（字节）
+	Cpus       float64           `json:"cpus"`                      // CPU 核数限制
+	Workdir    string            `json:"workdir"`                    // 工作目录
+	User       string            `json:"user"`                       // 运行用户
+	Hostname   string            `json:"hostname"`                   // 主机名
+	Privileged bool              `json:"privileged"`                 // 是否特权模式
+	CapAdd     []string          `json:"capAdd"`                     // 添加的内核能力
+	CapDrop    []string          `json:"capDrop"`                    // 删除的内核能力
+	AutoRemove bool              `json:"autoRemove"`                 // 退出时自动删除容器
+	Labels     map[string]string `json:"labels,omitempty"`           // 标签列表
 }
 
 // ContainerLogsRequest 日志请求，保持 HTTP API 兼容。

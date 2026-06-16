@@ -5568,10 +5568,14 @@
       "APIResponse": {
         "properties": {
           "message": {
+            "description": "提示信息",
             "type": "string"
           },
-          "payload": {},
+          "payload": {
+            "description": "响应数据负载"
+          },
           "success": {
+            "description": "请求是否成功",
             "type": "boolean"
           }
         },
@@ -5661,6 +5665,7 @@
       "account.OIDCExchangeRequest": {
         "properties": {
           "code": {
+            "description": "OIDC 授权码",
             "type": "string"
           }
         },
@@ -5672,9 +5677,11 @@
       "account.TOTPVerifyRequest": {
         "properties": {
           "code": {
+            "description": "code",
             "type": "string"
           },
           "secret": {
+            "description": "secret",
             "type": "string"
           }
         },
@@ -5686,6 +5693,7 @@
       "account.accountPasskeyLoginBegin": {
         "properties": {
           "username": {
+            "description": "username",
             "type": "string"
           }
         },
@@ -5694,6 +5702,7 @@
       "account.accountPasskeyRegisterBegin": {
         "properties": {
           "displayName": {
+            "description": "displayName",
             "type": "string"
           }
         },
@@ -5702,6 +5711,7 @@
       "account.accountPasskeyRenameCredential": {
         "properties": {
           "displayName": {
+            "description": "displayName",
             "type": "string"
           }
         },
@@ -5924,15 +5934,18 @@
       "apisix.WhitelistCreateRequest": {
         "properties": {
           "consumers": {
+            "description": "白名单 Consumer 列表",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "key_auth": {
+            "description": "Key Auth 插件配置",
             "type": "object"
           },
           "route_id": {
+            "description": "路由 ID",
             "type": "string"
           }
         },
@@ -5941,15 +5954,19 @@
       "apisix.WhitelistUserCreateRequest": {
         "properties": {
           "key": {
+            "description": "key",
             "type": "string"
           },
           "key_auth": {
+            "description": "key_auth",
             "type": "object"
           },
           "route_id": {
+            "description": "route_id",
             "type": "string"
           },
           "username": {
+            "description": "username",
             "type": "string"
           }
         },
@@ -5958,12 +5975,15 @@
       "apisix.apisixConsumerCreate": {
         "properties": {
           "desc": {
+            "description": "desc",
             "type": "string"
           },
           "plugins": {
+            "description": "plugins",
             "type": "object"
           },
           "username": {
+            "description": "username",
             "type": "string"
           }
         },
@@ -5975,9 +5995,11 @@
       "apisix.apisixConsumerUpdate": {
         "properties": {
           "desc": {
+            "description": "desc",
             "type": "string"
           },
           "plugins": {
+            "description": "plugins",
             "type": "object"
           }
         },
@@ -5986,6 +6008,7 @@
       "apisix.apisixRouteStatusPatch": {
         "properties": {
           "status": {
+            "description": "status",
             "type": "integer"
           }
         },
@@ -6125,6 +6148,7 @@
       "caddy.caddyConfigLoad": {
         "properties": {
           "config": {
+            "description": "config",
             "type": "object"
           }
         },
@@ -6136,6 +6160,7 @@
       "compose.DeployRequest": {
         "properties": {
           "content": {
+            "description": "content",
             "type": "string"
           },
           "forcePull": {
@@ -6143,6 +6168,7 @@
             "type": "boolean"
           },
           "initURL": {
+            "description": "initURL",
             "type": "string"
           }
         },
@@ -6154,6 +6180,7 @@
       "compose.RedeployRequest": {
         "properties": {
           "content": {
+            "description": "content",
             "type": "string"
           },
           "forcePull": {
@@ -6161,9 +6188,11 @@
             "type": "boolean"
           },
           "image": {
+            "description": "image",
             "type": "string"
           },
           "serviceName": {
+            "description": "serviceName",
             "type": "string"
           }
         },
@@ -6266,6 +6295,7 @@
       "config.OIDCConfig": {
         "properties": {
           "clientId": {
+            "description": "OIDC 客户端 ID",
             "type": "string"
           },
           "clientSecret": {
@@ -6273,9 +6303,11 @@
             "type": "string"
           },
           "enabled": {
+            "description": "是否启用 OIDC 登录",
             "type": "boolean"
           },
           "issuerUrl": {
+            "description": "OIDC 提供者 Issuer 地址",
             "type": "string"
           },
           "loginLabel": {
@@ -6283,15 +6315,18 @@
             "type": "string"
           },
           "redirectUrl": {
+            "description": "回调地址",
             "type": "string"
           },
           "scopes": {
+            "description": "请求的 Scope 列表",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "usernameClaim": {
+            "description": "从哪个 claim 提取用户名（如 sub、email、preferred_username）",
             "type": "string"
           }
         },
@@ -6300,6 +6335,7 @@
       "config.PasskeyConfig": {
         "properties": {
           "enabled": {
+            "description": "是否启用 Passkey 登录",
             "type": "boolean"
           },
           "rpId": {
@@ -6334,6 +6370,7 @@
             "type": "array"
           },
           "debug": {
+            "description": "是否启用调试模式",
             "type": "boolean"
           },
           "jwtExpiration": {
@@ -6345,6 +6382,7 @@
             "type": "string"
           },
           "listenAddr": {
+            "description": "监听地址（如 :8080）",
             "type": "string"
           },
           "maxUploadSize": {
@@ -6352,6 +6390,7 @@
             "type": "integer"
           },
           "rootDirectory": {
+            "description": "根目录路径",
             "type": "string"
           }
         },
@@ -6435,6 +6474,7 @@
       "cronJobEnableReq": {
         "properties": {
           "enabled": {
+            "description": "enabled",
             "type": "boolean"
           }
         },
@@ -6443,6 +6483,7 @@
       "cronJobLogsReq": {
         "properties": {
           "limit": {
+            "description": "limit",
             "type": "integer"
           }
         },
@@ -6451,9 +6492,11 @@
       "docker.ActionRequest": {
         "properties": {
           "action": {
+            "description": "action",
             "type": "string"
           },
           "id": {
+            "description": "id",
             "type": "string"
           }
         },
@@ -6466,72 +6509,90 @@
       "docker.ContainerSpec": {
         "properties": {
           "autoRemove": {
+            "description": "退出时自动删除容器",
             "type": "boolean"
           },
           "capAdd": {
+            "description": "添加的内核能力",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "capDrop": {
+            "description": "删除的内核能力",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "cmd": {
+            "description": "容器启动命令",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "cpus": {
+            "description": "CPU 核数限制",
             "type": "number"
           },
           "env": {
+            "description": "环境变量列表（格式：KEY=VALUE）",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "hostname": {
+            "description": "主机名",
             "type": "string"
           },
           "image": {
+            "description": "镜像名称（含 tag）",
             "type": "string"
           },
           "labels": {
+            "description": "标签列表",
             "type": "object"
           },
           "memory": {
+            "description": "内存限制（字节）",
             "type": "integer"
           },
           "name": {
+            "description": "容器名称",
             "type": "string"
           },
           "network": {
+            "description": "网络模式",
             "type": "string"
           },
           "ports": {
+            "description": "端口映射（格式：容器端口:主机端口）",
             "type": "object"
           },
           "privileged": {
+            "description": "是否特权模式",
             "type": "boolean"
           },
           "restart": {
+            "description": "重启策略（no/on-failure/always/unless-stopped）",
             "type": "string"
           },
           "user": {
+            "description": "运行用户",
             "type": "string"
           },
           "volumes": {
+            "description": "挂载卷列表",
             "items": {
               "type": "object"
             },
             "type": "array"
           },
           "workdir": {
+            "description": "工作目录",
             "type": "string"
           }
         },
@@ -6544,9 +6605,11 @@
       "docker.ImageBuildRequest": {
         "properties": {
           "dockerfile": {
+            "description": "dockerfile",
             "type": "string"
           },
           "tag": {
+            "description": "tag",
             "type": "string"
           }
         },
@@ -6558,9 +6621,11 @@
       "docker.ImagePruneRequest": {
         "properties": {
           "all": {
+            "description": "all",
             "type": "boolean"
           },
           "until": {
+            "description": "until",
             "type": "string"
           }
         },
@@ -6569,12 +6634,15 @@
       "docker.ImagePullRequest": {
         "properties": {
           "image": {
+            "description": "image",
             "type": "string"
           },
           "namespace": {
+            "description": "namespace",
             "type": "string"
           },
           "registryUrl": {
+            "description": "registryUrl",
             "type": "string"
           }
         },
@@ -6586,12 +6654,15 @@
       "docker.ImagePushRequest": {
         "properties": {
           "image": {
+            "description": "image",
             "type": "string"
           },
           "namespace": {
+            "description": "namespace",
             "type": "string"
           },
           "registryUrl": {
+            "description": "registryUrl",
             "type": "string"
           }
         },
@@ -6604,9 +6675,11 @@
       "docker.ImageTagRequest": {
         "properties": {
           "id": {
+            "description": "id",
             "type": "string"
           },
           "repoTag": {
+            "description": "repoTag",
             "type": "string"
           }
         },
@@ -6619,12 +6692,15 @@
       "docker.NetworkSpec": {
         "properties": {
           "driver": {
+            "description": "driver",
             "type": "string"
           },
           "name": {
+            "description": "name",
             "type": "string"
           },
           "subnet": {
+            "description": "subnet",
             "type": "string"
           }
         },
@@ -6636,18 +6712,23 @@
       "docker.RegistryUpsertRequest": {
         "properties": {
           "description": {
+            "description": "description",
             "type": "string"
           },
           "name": {
+            "description": "name",
             "type": "string"
           },
           "password": {
+            "description": "password",
             "type": "string"
           },
           "url": {
+            "description": "url",
             "type": "string"
           },
           "username": {
+            "description": "username",
             "type": "string"
           }
         },
@@ -6660,9 +6741,11 @@
       "docker.VolumeSpec": {
         "properties": {
           "driver": {
+            "description": "driver",
             "type": "string"
           },
           "name": {
+            "description": "name",
             "type": "string"
           }
         },
@@ -6674,9 +6757,11 @@
       "docker.dockerContainerFileChmod": {
         "properties": {
           "mode": {
+            "description": "mode",
             "type": "string"
           },
           "path": {
+            "description": "path",
             "type": "string"
           }
         },
@@ -6689,6 +6774,7 @@
       "docker.dockerContainerFileMkdir": {
         "properties": {
           "path": {
+            "description": "path",
             "type": "string"
           }
         },
@@ -6700,9 +6786,11 @@
       "docker.dockerContainerFileRename": {
         "properties": {
           "newPath": {
+            "description": "newPath",
             "type": "string"
           },
           "oldPath": {
+            "description": "oldPath",
             "type": "string"
           }
         },
@@ -6715,9 +6803,11 @@
       "docker.dockerContainerFileWrite": {
         "properties": {
           "content": {
+            "description": "content",
             "type": "string"
           },
           "path": {
+            "description": "path",
             "type": "string"
           }
         },
@@ -6729,9 +6819,11 @@
       "filer.filerFileDownload": {
         "properties": {
           "inline": {
+            "description": "inline",
             "type": "boolean"
           },
           "path": {
+            "description": "path",
             "type": "string"
           }
         },
@@ -6743,6 +6835,7 @@
       "filer.filerFileMkdir": {
         "properties": {
           "path": {
+            "description": "path",
             "type": "string"
           }
         },
@@ -6754,9 +6847,11 @@
       "filerChmodBody": {
         "properties": {
           "mode": {
+            "description": "mode",
             "type": "string"
           },
           "path": {
+            "description": "path",
             "type": "string"
           }
         },
@@ -6769,9 +6864,11 @@
       "filerContentBody": {
         "properties": {
           "content": {
+            "description": "content",
             "type": "string"
           },
           "path": {
+            "description": "path",
             "type": "string"
           }
         },
@@ -6784,6 +6881,7 @@
       "filerPathQuery": {
         "properties": {
           "path": {
+            "description": "path",
             "type": "string"
           }
         },
@@ -6795,9 +6893,11 @@
       "filerRenameBody": {
         "properties": {
           "path": {
+            "description": "path",
             "type": "string"
           },
           "target": {
+            "description": "target",
             "type": "string"
           }
         },
@@ -6810,9 +6910,11 @@
       "filerUnzipBody": {
         "properties": {
           "path": {
+            "description": "path",
             "type": "string"
           },
           "targetDir": {
+            "description": "targetDir",
             "type": "string"
           }
         },
@@ -6824,9 +6926,11 @@
       "ssh.websshSFTPChmod": {
         "properties": {
           "mode": {
+            "description": "mode",
             "type": "string"
           },
           "path": {
+            "description": "path",
             "type": "string"
           }
         },
@@ -6839,12 +6943,15 @@
       "ssh.websshSFTPChown": {
         "properties": {
           "gid": {
+            "description": "gid",
             "type": "integer"
           },
           "path": {
+            "description": "path",
             "type": "string"
           },
           "uid": {
+            "description": "uid",
             "type": "integer"
           }
         },
@@ -6858,6 +6965,7 @@
       "ssh.websshSFTPMkdir": {
         "properties": {
           "path": {
+            "description": "path",
             "type": "string"
           }
         },
@@ -6869,9 +6977,11 @@
       "ssh.websshSFTPRename": {
         "properties": {
           "newPath": {
+            "description": "newPath",
             "type": "string"
           },
           "oldPath": {
+            "description": "oldPath",
             "type": "string"
           }
         },
@@ -6884,9 +6994,11 @@
       "ssh.websshSFTPWrite": {
         "properties": {
           "content": {
+            "description": "content",
             "type": "string"
           },
           "path": {
+            "description": "path",
             "type": "string"
           }
         },
@@ -6899,54 +7011,65 @@
       "swarm.ServiceSpec": {
         "properties": {
           "args": {
+            "description": "args",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "constraints": {
+            "description": "constraints",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "env": {
+            "description": "env",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "image": {
+            "description": "image",
             "type": "string"
           },
           "labels": {
+            "description": "labels",
             "type": "object"
           },
           "mode": {
+            "description": "mode",
             "type": "string"
           },
           "mounts": {
+            "description": "mounts",
             "items": {
               "type": "object"
             },
             "type": "array"
           },
           "name": {
+            "description": "name",
             "type": "string"
           },
           "networks": {
+            "description": "networks",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "ports": {
+            "description": "ports",
             "items": {
               "type": "object"
             },
             "type": "array"
           },
           "replicas": {
+            "description": "replicas",
             "type": "integer"
           }
         },
@@ -6955,6 +7078,7 @@
       "swarm.swarmNodeAction": {
         "properties": {
           "action": {
+            "description": "action",
             "type": "string"
           }
         },
@@ -6963,9 +7087,11 @@
       "swarm.swarmServiceAction": {
         "properties": {
           "action": {
+            "description": "action",
             "type": "string"
           },
           "replicas": {
+            "description": "replicas",
             "type": "integer"
           }
         },
