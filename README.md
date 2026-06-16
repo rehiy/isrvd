@@ -19,15 +19,15 @@
 | Docker | 容器、镜像、网络、卷、镜像仓库管理，容器日志(实时流式)、资源统计、终端接入、镜像构建/推送/拉取 |
 | Swarm | 集群信息、节点、服务、任务管理，服务日志、强制更新、加入令牌管理 |
 | Compose | 文件编辑、Docker Compose / Swarm Stack 部署与重部署 |
-| 成员管理 | 多用户、家目录隔离、模块权限控制、API 令牌管理 |
-| 系统管理 | 配置管理、操作审计日志、OIDC 认证集成 |
+| 成员管理 | 多用户、家目录隔离、模块权限控制、API 令牌管理、Passkey 无密码登录 |
+| 系统管理 | 配置管理、操作审计日志、OIDC 认证集成、代理认证头登录 |
 | 移动端 | 响应式布局，适配移动设备 |
 
 ## 技术栈
 
 | 层级 | 技术 |
 |------|------|
-| 后端 | Go 1.24+ / Gin / golang-jwt |
+| 后端 | Go 1.25+ / Gin / golang-jwt |
 | 前端 | Vue 3 / TypeScript / Tailwind CSS / Pinia |
 | 终端 | xterm.js |
 | 容器 | Docker / APISIX / Caddy |
@@ -237,7 +237,9 @@ cd webview && python3 sort-imports.py --dry-run src
 | 配置段 | 说明 |
 |--------|------|
 | `server` | 端口、JWT 密钥、代理认证头、数据目录、CORS 允许源、最大上传大小 |
-| `oidc` | OIDC 认证（issuerUrl / clientId / clientSecret / redirectUrl / loginLabel） |
+| `tha` | 代理认证头登录（enabled / headerName / trustedCIDRs） |
+| `oidc` | OIDC 认证（enabled / issuerUrl / clientId / clientSecret / redirectUrl / usernameClaim / scopes / loginLabel） |
+| `passkey` | WebAuthn/Passkey 认证（enabled / rpName / rpId / rpOrigins / timeout） |
 | `agent` | AI 助手模型接入（model / baseUrl / apiKey） |
 | `apisix` | APISIX Admin API 地址和密钥 |
 | `caddy` | Caddy Admin API 地址 |
@@ -259,7 +261,9 @@ cd webview && python3 sort-imports.py --dry-run src
 | 模块 | 路由权限点示例 | 说明 |
 |------|---------------|------|
 | `overview` | `GET /api/overview/bootstrap` | 系统概览（启动数据） |
+| `overview` | `GET /api/overview/version` | 系统概览（版本信息） |
 | `overview` | `GET /api/overview/monitor` | 系统概览（监控数据） |
+| `overview` | `POST /api/overview/upgrade` | 系统概览（在线升级） |
 | `system` | `GET /api/system/config` | 系统设置（获取配置） |
 | `system` | `PUT /api/system/config` | 系统设置（保存配置） |
 | `system` | `GET /api/system/audit/logs` | 系统设置（审计日志） |
