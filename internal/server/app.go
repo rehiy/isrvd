@@ -89,7 +89,6 @@ func StartApp() {
 	}
 
 	app.initServices()
-	app.startMonitor()
 
 	app.initRoutes()
 	httpd.StaticEmbed(public.Efs, "", "")

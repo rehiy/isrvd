@@ -84,6 +84,17 @@ func (app *App) initServices() {
 	} else {
 		app.composeSvc = composeSvc
 	}
+
+	// 启动后台监控采集
+	app.monitorCollector = svcMonitor.NewCollector()
+	app.monitorCollector.Start(context.Background())
+}
+
+// closeServices 释放所有有状态服务持有的资源
+func (app *App) closeServices() {
+	if app.websshSvc != nil {
+		app.websshSvc.Close()
+	}
 }
 
 // serviceAvailableMiddleware 根据路由 Module 动态检查服务是否可用，不可用返回 503
@@ -152,12 +163,6 @@ func (app *App) watchReload() {
 	}()
 }
 
-// startMonitor 启动后台监控采集协程
-func (app *App) startMonitor() {
-	app.monitorCollector = svcMonitor.NewCollector()
-	app.monitorCollector.Start(context.Background())
-}
-
 // reload 重新加载配置和服务
 func (app *App) reload() {
 	if err := config.Load(); err != nil {
@@ -165,18 +170,8 @@ func (app *App) reload() {
 		return
 	}
 	registry.Init()
-	// 关闭旧服务持有的资源，再重新初始化
+	// 关闭旧服务持有的资源，再重新初始化（含监控采集器）
 	app.closeServices()
 	app.initServices()
-	if app.monitorCollector != nil {
-		app.monitorCollector.Restart(context.Background())
-	}
 	logman.Info("reload complete")
-}
-
-// closeServices 释放所有有状态服务持有的资源
-func (app *App) closeServices() {
-	if app.websshSvc != nil {
-		app.websshSvc.Close()
-	}
 }
