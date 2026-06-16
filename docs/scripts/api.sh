@@ -115,7 +115,7 @@ isrvd_token() {
   # 验证 token 有效性
   _blue "→ 验证 token ..."
   local resp
-  resp=$(curl -sf "$ISRVD_BASE_URL/api/account/info" \
+  resp=$(curl -sf "$ISRVD_BASE_URL/api/overview/bootstrap" \
     -H "$(_isrvd_auth_header)" 2>&1) || {
     _red "✗ token 无效或服务不可达"
     return 1
@@ -128,7 +128,7 @@ isrvd_token() {
     return 1
   fi
 
-  ISRVD_USERNAME=$(echo "$resp" | jq -r '.payload.username // "unknown"')
+  ISRVD_USERNAME=$(echo "$resp" | jq -r '.payload.auth.username // "unknown"')
   _isrvd_save_config
   _green "✓ token 有效 (用户: $ISRVD_USERNAME)，已保存到 $ISRVD_CONFIG_FILE"
 }
@@ -318,7 +318,7 @@ isrvd_upload() {
 isrvd_whoami() {
   _isrvd_check || return 1
   _blue "→ $ISRVD_BASE_URL (用户: ${ISRVD_USERNAME:-unknown})"
-  isrvd_get "/account/info"
+  isrvd_get "/overview/bootstrap"
 }
 
 # ---------------------------------------------------------------------------

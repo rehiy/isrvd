@@ -4,7 +4,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { DockerContainerCreate } from '@/service/types'
+import type { DockerContainerCreate, SystemVersionInfo } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
@@ -15,8 +15,7 @@ import ToggleCard from '@/component/toggle-card.vue'
 class SystemUpdater extends Vue {
     portal = usePortal()
 
-    get versionCheck() { return this.portal.versionCheck }
-    get currentVersion() { return this.portal.currentVersion }
+    version: SystemVersionInfo | null = null
 
     deploying = false
     upgrading = false
@@ -28,7 +27,18 @@ class SystemUpdater extends Vue {
     upgradeType: 'binary' | 'docker' | null = null
 
     async mounted() {
-        await this.loadSelfContainer()
+        if (!this.portal.hasPerm('POST /api/overview/upgrade')) return
+        await Promise.all([this.loadSelfContainer(), this.loadVersionInfo()])
+    }
+
+    async loadVersionInfo() {
+        if (!this.portal.hasPerm('GET /api/overview/version')) return
+        try {
+            const res = await api.overviewVersion()
+            this.version = res.payload ?? null
+        } catch {
+            // 静默处理，不影响主流程
+        }
     }
 
     async loadSelfContainer() {
@@ -102,7 +112,7 @@ class SystemUpdater extends Vue {
 
     /** 升级触发后轮询版本号，直到版本变化或超时 */
     async waitForNewVersion() {
-        const oldVersion = this.portal.currentVersion
+        const oldVersion = this.version?.current ?? ''
         const maxWait = 300_000  // 最长等待 300 秒（5 分钟）
         const interval = 3_000   // 每 3 秒轮询一次
         const start = Date.now()
@@ -112,8 +122,8 @@ class SystemUpdater extends Vue {
         while (Date.now() - start < maxWait) {
             await new Promise(r => setTimeout(r, interval))
             try {
-                const res = await api.overviewMonitor({ type: 'host', since: 0 })
-                const newVersion = res.payload?.data?.version
+                const res = await api.overviewVersion()
+                const newVersion = res.payload?.current
                 if (newVersion && newVersion !== oldVersion) {
                     succeeded = true
                     break
@@ -143,7 +153,7 @@ export default toNative(SystemUpdater)
 </script>
 
 <template>
-  <template v-if="versionCheck?.update">
+  <template v-if="version?.hasUpdate">
     <!-- 版本更新横幅 -->
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100">
       <!-- 左侧：图标 + 文案 -->
@@ -154,9 +164,9 @@ export default toNative(SystemUpdater)
         <div class="min-w-0">
           <p class="text-xs font-semibold text-emerald-700">发现新版本</p>
           <p class="flex items-center gap-1 text-xs text-slate-500 mt-0.5">
-            <span class="text-slate-400 line-through">{{ currentVersion }}</span>
+            <span class="text-slate-400 line-through">{{ version?.current }}</span>
             <i class="fas fa-arrow-right text-[9px] text-slate-400"></i>
-            <span class="text-emerald-600 font-semibold">{{ versionCheck.latest }}</span>
+            <span class="text-emerald-600 font-semibold">{{ version.latest }}</span>
           </p>
         </div>
       </div>
@@ -164,7 +174,7 @@ export default toNative(SystemUpdater)
       <!-- 右侧：操作按钮（小屏垂直排列，大屏水平排列） -->
       <div class="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 w-full sm:w-auto sm:flex-shrink-0">
         <a
-          :href="versionCheck.release"
+          :href="version.release"
           target="_blank"
           rel="noopener noreferrer"
           class="btn btn-secondary w-full xs:w-auto"

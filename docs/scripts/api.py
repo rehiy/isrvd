@@ -229,11 +229,11 @@ def cmd_login(args: argparse.Namespace) -> None:
 def cmd_token(args: argparse.Namespace) -> None:
     base_url = args.base_url.rstrip('/')
     blue('→ 验证 token ...')
-    data = request_json('GET', base_url + '/api/account/info', args.token)
+    data = request_json('GET', base_url + '/api/overview/bootstrap', args.token)
     if not isinstance(data, dict) or data.get('success') is not True:
         red(f'✗ token 无效: {data.get("message", "未知错误") if isinstance(data, dict) else data}')
         raise SystemExit(1)
-    username = str((data.get('payload') or {}).get('username') or 'unknown')
+    username = str((data.get('payload') or {}).get('auth', {}).get('username') or 'unknown')
     save_config({'base_url': base_url, 'token': args.token, 'username': username})
     green(f'✓ token 有效 (用户: {username})，已保存到 {CONFIG_FILE}')
 
@@ -293,7 +293,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('fields', nargs='*')
     p.set_defaults(func=cmd_upload)
     p = sub.add_parser('whoami')
-    p.set_defaults(func=lambda args: api_call('GET', '/account/info'))
+    p.set_defaults(func=lambda args: api_call('GET', '/overview/bootstrap'))
     p = sub.add_parser('status')
     p.set_defaults(func=cmd_status)
     p = sub.add_parser('logout')

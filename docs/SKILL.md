@@ -55,7 +55,7 @@ isrvd_post "/docker/container" '{"image":"...","name":"..."}'
 
 | 模块 | 文档 | 说明 |
 |------|------|------|
-| 概览 | [references/overview.md](references/overview.md) | 服务探测、监控数据 |
+| 概览 | [references/overview.md](references/overview.md) | 启动聚合、服务探测、系统版本、监控数据 |
 | 容器 | [references/docker/containers.md](references/docker/containers.md) | 容器 CRUD、日志、终端 |
 | 镜像 | [references/docker/images.md](references/docker/images.md) | 镜像搜索/拉取/构建/推送 |
 | 网络 | [references/docker/networks.md](references/docker/networks.md) | Docker 网络管理 |
@@ -164,7 +164,7 @@ kill -HUP $(pgrep isrvd)
 ### 健康检查
 
 ```bash
-isrvd_get "/overview/probe"
+isrvd_get "/overview/bootstrap"
 isrvd_get "/overview/monitor?type=host&since=3600"
 isrvd_get "/docker/containers"
 isrvd_get "/swarm/services"

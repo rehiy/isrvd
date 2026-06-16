@@ -9,8 +9,6 @@ import (
 	"github.com/rehiy/libgo/gpu"
 	"github.com/rehiy/libgo/psutil"
 	"github.com/shirou/gopsutil/v3/disk"
-
-	"isrvd/config"
 )
 
 // DiskIOStat 硬盘 IO 统计
@@ -49,11 +47,10 @@ type SystemGPU struct {
 
 // HostStat 主机监控采集数据
 type HostStat struct {
-	System  *psutil.DetailStat `json:"system"`
-	DiskIO  []*DiskIOStat      `json:"diskIO"`
-	GPU     []*SystemGPU       `json:"gpu"`
-	Go      *GoRuntimeStat     `json:"go"`
-	Version string             `json:"version"`
+	System *psutil.DetailStat `json:"system"`
+	DiskIO []*DiskIOStat      `json:"diskIO"`
+	GPU    []*SystemGPU       `json:"gpu"`
+	Go     *GoRuntimeStat     `json:"go"`
 }
 
 // CollectHostStat 采集主机监控数据
@@ -86,11 +83,10 @@ func CollectHostStat(ctx context.Context) *HostStat {
 	}
 
 	return &HostStat{
-		System:  detail,
-		DiskIO:  diskIO,
-		GPU:     buildSystemGPUs(ctx),
-		Go:      goStat,
-		Version: config.Version,
+		System: detail,
+		DiskIO: diskIO,
+		GPU:    buildSystemGPUs(ctx),
+		Go:     goStat,
 	}
 }
 

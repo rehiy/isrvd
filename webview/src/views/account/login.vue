@@ -43,7 +43,7 @@ class Login extends Vue {
             const isDefaultPassword = this.loginForm.password === 'admin'
 
             this.portal.setAuth({ authMode: 'jwt', token: payload.token, username: payload.username })
-            await this.portal.initialize()
+            await this.portal.refresh()
             this.loginForm.username = ''
             this.loginForm.password = ''
             this.totpForm.code = ''
@@ -72,7 +72,7 @@ class Login extends Vue {
         try {
             const result = await loginWithPasskey(this.loginForm.username || undefined)
             this.portal.setAuth({ authMode: 'jwt', ...result })
-            await this.portal.initialize()
+            await this.portal.refresh()
         } catch (e) {
             console.error('Passkey 登录失败:', e)
         } finally {

@@ -4,7 +4,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { SystemStat, MonitorHostRecord } from '@/service/types'
+import type { SystemStat, MonitorHostRecord, SystemVersionInfo } from '@/service/types'
 
 @Component
 class SystemOverview extends Vue {
@@ -12,6 +12,7 @@ class SystemOverview extends Vue {
 
     // ─── 数据属性 ───
     systemInfo: SystemStat | null = null
+    versionInfo: SystemVersionInfo | null = null
     loading = false
 
     // ─── 计算属性 ───
@@ -29,11 +30,10 @@ class SystemOverview extends Vue {
             const totalGB = (s.memoryTotal / 1024 / 1024 / 1024).toFixed(1)
             cards.push({ label: '内存使用',  value: `${usedGB}GB / ${totalGB}GB`, icon: 'fa-memory', bgColor: 'bg-rose-500'})
         }
-        // 继续添加其他信息
         cards.push({ label: '运行时间', value: this.fmtUptime(s.uptime), icon: 'fa-clock', bgColor: 'bg-amber-500' })
-        // 如果有版本信息，放到最后
-        if (this.systemInfo.version) {
-            cards.push({ label: '程序版本', value: this.systemInfo.version, icon: 'fa-code-branch', bgColor: 'bg-purple-500' })
+        // 有权限且已获取到版本信息时显示
+        if (this.versionInfo?.current) {
+            cards.push({ label: '程序版本', value: this.versionInfo.current, icon: 'fa-code-branch', bgColor: 'bg-purple-500' })
         }
         return cards
     }
@@ -53,19 +53,30 @@ class SystemOverview extends Vue {
     }
 
     async load() {
-        if (!this.portal.hasPerm('GET /api/overview/monitor')) return
         this.loading = true
         try {
-            const res = await api.overviewMonitor({ since: 0 })
-            const record = res.payload as MonitorHostRecord | null
-            if (record && record.data) {
-                if (record.data.version) {
-                    this.portal.currentVersion = record.data.version
-                }
-                this.systemInfo = record.data
-            }
+            await Promise.all([this.loadSystemInfo(), this.loadVersionInfo()])
         } finally {
             this.loading = false
+        }
+    }
+
+    async loadSystemInfo() {
+        if (!this.portal.hasPerm('GET /api/overview/monitor')) return
+        const res = await api.overviewMonitor({ since: 0 })
+        const record = res.payload as MonitorHostRecord | null
+        if (record?.data) {
+            this.systemInfo = record.data
+        }
+    }
+
+    async loadVersionInfo() {
+        if (!this.portal.hasPerm('GET /api/overview/version')) return
+        try {
+            const res = await api.overviewVersion()
+            this.versionInfo = res.payload ?? null
+        } catch {
+            // 静默处理
         }
     }
 

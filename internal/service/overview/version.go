@@ -1,7 +1,6 @@
 package overview
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"runtime"
@@ -19,11 +18,12 @@ import (
 
 const upgradeServer = "https://isrvd.rehiy.com/update/"
 
-// VersionCheck 版本检测结果
-type VersionCheck struct {
-	Latest  string `json:"latest"`
-	Update  bool   `json:"update"`
-	Release string `json:"release,omitempty"`
+// VersionInfo 版本信息
+type VersionInfo struct {
+	Current   string `json:"current"`
+	Latest    string `json:"latest"`
+	Release   string `json:"release,omitempty"`
+	HasUpdate bool   `json:"hasUpdate"`
 }
 
 var (
@@ -31,42 +31,21 @@ var (
 	cachedTag      string
 	cachedURL      string
 	cacheTime      time.Time
-	cacheDuration  = 4 * time.Hour
+	cacheDuration  = 1 * time.Hour
 )
 
 // executablePath 启动时记录，避免升级替换后 /proc/self/exe 失效
 var executablePath, _ = os.Executable()
 
 // CheckVersion 从升级服务器检测最新版本，带 4 小时缓存
-func (s *Service) CheckVersion(ctx context.Context) *VersionCheck {
+func (s *Service) CheckVersion() *VersionInfo {
 	latest, releaseURL := fetchLatestTag()
-	return &VersionCheck{
-		Latest:  latest,
-		Update:  isNewerVersion(latest, config.Version),
-		Release: releaseURL,
+	return &VersionInfo{
+		Current:   config.Version,
+		Latest:    latest,
+		Release:   releaseURL,
+		HasUpdate: isNewerVersion(latest, config.Version),
 	}
-}
-
-// fetchLatestTag 调用升级服务器获取最新版本号和 Release URL，带内存缓存
-func fetchLatestTag() (tag, releaseURL string) {
-	versionCacheMu.Lock()
-	defer versionCacheMu.Unlock()
-
-	if cachedTag != "" && time.Since(cacheTime) < cacheDuration {
-		return cachedTag, cachedURL
-	}
-
-	info, err := upgrade.NewUpdater(upgradeServer, config.Version).Check()
-	if err != nil && (info == nil || info.Version == "") {
-		logman.Warn("version check failed", "error", err)
-		return cachedTag, cachedURL
-	}
-
-	if info != nil && info.Version != "" {
-		cachedTag, cachedURL, cacheTime = info.Version, info.Release, time.Now()
-	}
-
-	return cachedTag, cachedURL
 }
 
 // ApplySelfUpgrade 从升级服务器下载最新 tar.gz，提取二进制并替换当前程序
@@ -140,4 +119,26 @@ func verPart(s []string, i int) int {
 		}
 	}
 	return n
+}
+
+// fetchLatestTag 调用升级服务器获取最新版本号和 Release URL，带内存缓存
+func fetchLatestTag() (tag, releaseURL string) {
+	versionCacheMu.Lock()
+	defer versionCacheMu.Unlock()
+
+	if cachedTag != "" && time.Since(cacheTime) < cacheDuration {
+		return cachedTag, cachedURL
+	}
+
+	info, err := upgrade.NewUpdater(upgradeServer, config.Version).Check()
+	if err != nil && (info == nil || info.Version == "") {
+		logman.Warn("version check failed", "error", err)
+		return cachedTag, cachedURL
+	}
+
+	if info != nil && info.Version != "" {
+		cachedTag, cachedURL, cacheTime = info.Version, info.Release, time.Now()
+	}
+
+	return cachedTag, cachedURL
 }

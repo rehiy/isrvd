@@ -1,20 +1,35 @@
 # Overview（概览与监控）API
 
-## 服务探测
+## 启动聚合（Bootstrap）
 
 ```bash
-isrvd_get "/overview/probe"
+isrvd_get "/overview/bootstrap"
 ```
 
-返回各服务的可用性状态：
+前端启动专用接口，**无需登录即可调用**（`AccessAnon`）。一次返回 auth、probe、config 三段数据，替代原来串行的三次请求。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| Docker | boolean | Docker 服务是否可用 |
-| Swarm | boolean | Swarm 服务是否可用 |
-| Compose | boolean | Compose 服务是否可用 |
-| Apisix | boolean | APISIX 服务是否可用 |
-| Caddy | boolean | Caddy 服务是否可用 |
+| `auth` | object | 当前认证信息（`mode`、`username`、`member`、`oidcEnabled`、`oidcBtnLabel`、`passkeyEnabled`） |
+| `probe` | object \| null | 服务可用性，已登录时返回（`agent`、`apisix`、`caddy`、`docker`、`swarm`、`compose`） |
+| `config` | object \| null | 前端启动所需的最小配置，已登录时返回（`maxUploadSize`、`links`） |
+
+---
+
+## 版本信息
+
+```bash
+isrvd_get "/overview/version"
+```
+
+获取当前版本及最新版本信息，需要升级权限（`POST /api/overview/upgrade`）。
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `current` | string | 当前运行版本 |
+| `latest` | string | 远端最新版本（4 小时缓存） |
+| `release` | string | 最新版 Release URL |
+| `hasUpdate` | boolean | 是否有可用更新 |
 
 ---
 

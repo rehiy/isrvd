@@ -51,9 +51,6 @@ class MonitorPage extends Vue {
         const { ts, data } = rec
         if (!data || ts <= this.lastDispatchedTs) return false
         this.lastDispatchedTs = ts
-        if (data.version) {
-            this.portal.currentVersion = data.version
-        }
         // 只更新数据，不更新图表
         this.cpuMemRef?.pushData(data, ts)
         this.gpuRef?.pushData(data, ts)

@@ -5,25 +5,70 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/upgrade"
 
+	"isrvd/config"
+	svcAccount "isrvd/internal/service/account"
 	svcMonitor "isrvd/internal/service/monitor"
+	svcOverview "isrvd/internal/service/overview"
 )
 
 // defineOverviewRoutes 定义 Overview 模块路由
 func (app *App) defineOverviewRoutes() []Route {
 	return []Route{
-		{Method: "GET", Path: "/overview/probe", Handler: app.overviewProbe, Module: "overview", Label: "探测服务可用性", Access: AccessAuth},
+		{Method: "GET", Path: "/overview/bootstrap", Handler: app.overviewBootstrap, Module: "overview", Label: "获取启动数据", Access: AccessAnon},
+		{Method: "GET", Path: "/overview/version", Handler: app.overviewVersion, Module: "overview", Label: "获取版本信息"},
 		{Method: "GET", Path: "/overview/monitor", Handler: app.overviewMonitor, Module: "overview", Label: "获取监控数据", Access: AccessAuth},
 		{Method: "POST", Path: "/overview/upgrade", Handler: app.overviewUpgrade, Module: "overview", Label: "升级程序至最新版本"},
 	}
 }
 
-func (app *App) overviewProbe(c *gin.Context) {
-	respondSuccess(c, "ok", app.overviewSvc.Probe(c.Request.Context(), app.collectProbes()))
+// BootstrapConfig 启动所需的最小系统配置
+type BootstrapConfig struct {
+	MaxUploadSize int64                `json:"maxUploadSize"`
+	Links         []*config.LinkConfig `json:"links"`
+}
+
+// BootstrapResponse 前端启动所需的聚合数据
+type BootstrapResponse struct {
+	Auth   *svcAccount.AuthInfoResponse `json:"auth"`
+	Probe  *svcOverview.ProbeResponse   `json:"probe,omitempty"`
+	Config *BootstrapConfig             `json:"config,omitempty"`
+}
+
+// overviewBootstrap 聚合启动所需数据：auth + probe + config
+// AccessAnon：未登录也可调用，probe/config 仅登录后返回
+func (app *App) overviewBootstrap(c *gin.Context) {
+	ctx := c.Request.Context()
+	username := c.GetString("username")
+
+	resp := &BootstrapResponse{
+		Auth: app.accountSvc.AuthInfo(username),
+	}
+
+	// 已登录时并发获取 probe + config
+	if username != "" {
+		var wg sync.WaitGroup
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			resp.Probe = app.overviewSvc.Probe(ctx, app.collectProbes())
+		}()
+		go func() {
+			defer wg.Done()
+			resp.Config = &BootstrapConfig{
+				MaxUploadSize: config.Server.MaxUploadSize,
+				Links:         config.Links,
+			}
+		}()
+		wg.Wait()
+	}
+
+	respondSuccess(c, "ok", resp)
 }
 
 // collectProbes 收集当前可用服务的探活函数映射
@@ -45,6 +90,10 @@ func (app *App) collectProbes() map[string]func(context.Context) bool {
 		probes["Compose"] = app.composeSvc.CheckAvailability
 	}
 	return probes
+}
+
+func (app *App) overviewVersion(c *gin.Context) {
+	respondSuccess(c, "ok", app.overviewSvc.CheckVersion())
 }
 
 func (app *App) overviewUpgrade(c *gin.Context) {

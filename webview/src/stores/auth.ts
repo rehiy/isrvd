@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import api from '@/service/api'
-import type { AuthInfo } from '@/service/types'
+import type { BootstrapData } from '@/service/types'
 
 export const useAuthStore = defineStore('auth', () => {
     // ─── 状态定义 ───
@@ -44,8 +43,29 @@ export const useAuthStore = defineStore('auth', () => {
         return !!username.value
     }
 
-    async function loadAuth() {
-        // 恢复 token
+    // apply 将 bootstrap 响应中的 auth 字段写入 store
+    function apply(data: BootstrapData) {
+        const auth = data.auth
+
+        if (!auth?.username || !auth?.member) {
+            clearAuth()
+        } else {
+            if (auth.mode === 'header') {
+                setAuth({ authMode: 'header', token: '', username: auth.username })
+            }
+            permissionsLoaded.value = true
+            founder.value = auth.member.founder || false
+            permissions.value = auth.member.permissions || []
+        }
+
+        // OIDC / Passkey 配置无论登录状态都更新（放在 clearAuth 之后）
+        oidcEnabled.value = auth?.oidcEnabled || false
+        oidcLoginLabel.value = auth?.oidcBtnLabel || ''
+        passkeyEnabled.value = auth?.passkeyEnabled || false
+    }
+
+    // restoreToken 从 localStorage 恢复 token（冷启动时使用）
+    function restoreToken() {
         const savedToken = localStorage.getItem('app-token')
         const savedUsername = localStorage.getItem('app-username')
         if (savedToken && savedUsername) {
@@ -53,42 +73,6 @@ export const useAuthStore = defineStore('auth', () => {
             username.value = savedUsername
             authMode.value = 'jwt'
         }
-
-        // 验证认证（网络错误时不清除已有 token，避免抖动导致误登出）
-        let authRes
-        try {
-            authRes = await api.accountInfo()
-        } catch {
-            // 网络层异常：保持现有登录状态，不清空 token
-            return
-        }
-
-        if (!authRes?.payload) {
-            // 后端明确返回无 payload（如 401），说明 token 确实无效
-            clearAuth()
-            return
-        }
-
-        const payload = authRes.payload as AuthInfo
-
-        // 核心原则：无 username 或无 member = 无权限，直接清理
-        if (!payload?.username || !payload?.member) {
-            clearAuth()
-        } else {
-            // 认证模式处理
-            if (payload.mode === 'header') {
-                setAuth({ authMode: 'header', token: '', username: payload.username })
-            }
-            // 权限赋值内聚在一处，确保有 member 才写入
-            permissionsLoaded.value = true
-            founder.value = payload.member.founder || false
-            permissions.value = payload.member.permissions || []
-        }
-
-        // OIDC / Passkey 配置是服务端配置，无论登录状态如何都需要更新（放在 clearAuth 之后）
-        oidcEnabled.value = payload.oidcEnabled || false
-        oidcLoginLabel.value = payload.oidcBtnLabel || ''
-        passkeyEnabled.value = payload.passkeyEnabled || false
     }
 
     return {
@@ -106,7 +90,8 @@ export const useAuthStore = defineStore('auth', () => {
         setAuth,
         clearAuth,
         isAuthenticated,
-        loadAuth
+        restoreToken,
+        apply,
     }
 })
 

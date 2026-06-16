@@ -250,7 +250,7 @@ cd webview && python3 sort-imports.py --dry-run src
 
 权限基于路由进行细粒度控制，每个用户可以独立授予各模块下具体 API 路由的访问权限。
 
-**权限格式**：`<METHOD> /api/<模块>/<路由>`（如 `GET /api/overview/probe`、`POST /api/account/login`）
+**权限格式**：`<METHOD> /api/<模块>/<路由>`（如 `GET /api/overview/bootstrap`、`POST /api/account/login`）
 
 **前端权限判断**：使用 `portal.hasPerm('<METHOD> /api/<路由>')` 控制按钮/操作的显示
 
@@ -258,12 +258,11 @@ cd webview && python3 sort-imports.py --dry-run src
 
 | 模块 | 路由权限点示例 | 说明 |
 |------|---------------|------|
-| `overview` | `GET /api/overview/probe` | 系统概览（服务探测） |
+| `overview` | `GET /api/overview/bootstrap` | 系统概览（启动数据） |
 | `overview` | `GET /api/overview/monitor` | 系统概览（监控数据） |
 | `system` | `GET /api/system/config` | 系统设置（获取配置） |
 | `system` | `PUT /api/system/config` | 系统设置（保存配置） |
 | `system` | `GET /api/system/audit/logs` | 系统设置（审计日志） |
-| `account` | `GET /api/account/info` | 账号（获取当前用户信息） |
 | `account` | `POST /api/account/login` | 账号（登录） |
 | `account` | `GET /api/account/members` | 成员管理（列出） |
 | `account` | `POST /api/account/member` | 成员管理（创建） |

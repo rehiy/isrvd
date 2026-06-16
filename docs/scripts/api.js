@@ -229,9 +229,9 @@ async function main() {
         if (!base || !token) throw new Error('usage: api.js token <base_url> <token>');
         const baseUrl = base.replace(/\/$/, '');
         blue('→ 验证 token ...');
-        const data = await httpRequest('GET', `${baseUrl}/api/account/info`, token);
+        const data = await httpRequest('GET', `${baseUrl}/api/overview/bootstrap`, token);
         if (!data || data.success !== true) throw new Error(`token 无效: ${data && data.message ? data.message : '未知错误'}`);
-        const username = (data.payload && data.payload.username) || 'unknown';
+        const username = (data.payload && data.payload.auth && data.payload.auth.username) || 'unknown';
         saveConfig({ base_url: baseUrl, token, username });
         green(`✓ token 有效 (用户: ${username})，已保存到 ${configFile}`);
         break;
@@ -248,7 +248,7 @@ async function main() {
         printResult(await multipartRequest(`${cfg.base_url}/api${apiPath}`, cfg.token, field, file, fields));
         break;
       }
-      case 'whoami': await apiCall('GET', '/account/info'); break;
+      case 'whoami': await apiCall('GET', '/overview/bootstrap'); break;
       case 'status': {
         const cfg = loadConfig();
         if (fs.existsSync(configFile)) green(`✓ 配置文件: ${configFile}`); else yellow('○ 无配置文件');

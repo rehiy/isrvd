@@ -2,7 +2,8 @@ import type { AxiosRequestConfig } from 'axios'
 import { http, httpBlob } from './axios'
 import type {
     // Overview
-    SystemProbe,
+    BootstrapData,
+    SystemVersionInfo,
     MonitorHostRecord,
     MonitorContainerRecord,
     // System
@@ -12,7 +13,6 @@ import type {
     AuthLogin,
     AuthLoginResult,
     OIDCExchange,
-    AuthInfo,
     MemberInfo,
     MemberUpsert,
     Route,
@@ -113,8 +113,8 @@ import type {
 class ApiService {
     // ==================== Overview 系统概览 ====================
 
-    overviewProbe() {
-        return http.get<SystemProbe>('overview/probe')
+    overviewBootstrap() {
+        return http.get<BootstrapData>('overview/bootstrap')
     }
 
     overviewMonitor(params: { type?: 'host'; id?: string; since: 0 }): Promise<{ payload?: MonitorHostRecord | null }>
@@ -123,6 +123,10 @@ class ApiService {
     overviewMonitor(params?: { type: 'container'; id: string; since?: number }): Promise<{ payload?: MonitorContainerRecord[] }>
     overviewMonitor(params?: { type?: 'host' | 'container'; id?: string; since?: number }): Promise<{ payload?: MonitorHostRecord | MonitorContainerRecord | MonitorHostRecord[] | MonitorContainerRecord[] | null }> {
         return http.get<MonitorHostRecord | MonitorContainerRecord | MonitorHostRecord[] | MonitorContainerRecord[] | null>('overview/monitor', { params })
+    }
+
+    overviewVersion() {
+        return http.get<SystemVersionInfo>('overview/version')
     }
 
     overviewUpgrade() {
@@ -151,10 +155,6 @@ class ApiService {
 
     accountOIDCExchange(data: OIDCExchange) {
         return http.post<AuthLoginResult>('account/oidc/exchange', data)
-    }
-
-    accountInfo() {
-        return http.get<AuthInfo>('account/info')
     }
 
     accountRouteList() {

@@ -10,29 +10,12 @@ import (
 
 // ProbeResponse 探活响应
 type ProbeResponse struct {
-	Agent        bool          `json:"agent"`
-	Apisix       bool          `json:"apisix"`
-	Caddy        bool          `json:"caddy"`
-	Docker       bool          `json:"docker"`
-	Swarm        bool          `json:"swarm"`
-	Compose      bool          `json:"compose"`
-	VersionCheck *VersionCheck `json:"versionCheck,omitempty"`
-}
-
-// UptimeResponse 服务启动时间响应
-type UptimeResponse struct {
-	StartTime int64 `json:"startTime"`
-	Uptime    int64 `json:"uptime"`
-}
-
-var startTime = time.Now()
-
-// Uptime 获取服务启动时间
-func (s *Service) Uptime() *UptimeResponse {
-	return &UptimeResponse{
-		StartTime: startTime.Unix(),
-		Uptime:    int64(time.Since(startTime).Seconds()),
-	}
+	Agent   bool `json:"agent"`
+	Apisix  bool `json:"apisix"`
+	Caddy   bool `json:"caddy"`
+	Docker  bool `json:"docker"`
+	Swarm   bool `json:"swarm"`
+	Compose bool `json:"compose"`
 }
 
 // probeTask 定义一项探活任务
@@ -53,8 +36,7 @@ func (s *Service) Probe(ctx context.Context, probes map[string]func(context.Cont
 	}
 
 	resp := &ProbeResponse{
-		Agent:        config.Agent.BaseURL != "" && config.Agent.APIKey != "",
-		VersionCheck: s.CheckVersion(ctx),
+		Agent: config.Agent.BaseURL != "" && config.Agent.APIKey != "",
 	}
 
 	var (

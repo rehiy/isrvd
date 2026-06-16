@@ -100,7 +100,7 @@ class Config extends Vue {
         links: this.links,
       }
       await api.systemConfigUpdate(payload)
-      await this.portal.loadSystemData()
+      await this.portal.refresh()
       this.portal.showNotification('success', '全部配置已保存，监听地址变更需重启生效')
       await this.loadConfig()
     } catch (e) {

@@ -50,7 +50,7 @@ export default toNative(Shell)
     <div class="h-full card flex flex-col overflow-hidden">
       <!-- Toolbar -->
       <div class="card-toolbar">
-          <div class="hidden md:flex md:items-center justify-between">
+        <div class="hidden md:flex md:items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="page-icon bg-slate-700">
               <i class="fas fa-terminal text-white text-sm"></i>

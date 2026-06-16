@@ -1,10 +1,26 @@
 import type { DockerContainerStats } from './docker'
+import type { AuthInfo } from './account'
+import type { LinkConfig } from './system'
+
+// ─── 启动聚合 ───
+
+export interface BootstrapConfig {
+    maxUploadSize: number
+    links: LinkConfig[]
+}
+
+export interface BootstrapData {
+    auth: AuthInfo
+    probe?: SystemProbe
+    config?: BootstrapConfig
+}
 
 // ─── 系统探测 ───
 
-export interface SystemVersionCheck {
+export interface SystemVersionInfo {
+    current: string
     latest: string
-    update: boolean
+    hasUpdate: boolean
     release: string
 }
 
@@ -15,7 +31,6 @@ export interface SystemProbe {
     docker: boolean
     swarm: boolean
     compose: boolean
-    versionCheck?: SystemVersionCheck
 }
 
 // ─── 系统统计 ───
@@ -96,7 +111,6 @@ export interface SystemStat {
     diskIO: SystemDiskIO[]
     gpu: SystemGPU[]
     go: SystemGoRuntimeStat
-    version: string
 }
 
 // ─── 监控历史 ───

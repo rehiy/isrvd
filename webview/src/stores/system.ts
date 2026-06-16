@@ -1,9 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
 
-import api from '@/service/api'
-import type { LinkConfig, SystemVersionCheck, AllConfig } from '@/service/types'
-import { initTheme } from '@/helper/theme'
+import type { BootstrapData, LinkConfig } from '@/service/types'
 
 interface ServiceAvailability {
     agent: boolean
@@ -16,14 +14,9 @@ interface ServiceAvailability {
 
 /**
  * 系统 Store
- * 
- * 管理系统级配置和服务状态
- * 主要职责：
- * 1. 服务可用性检测 (agent, apisix, docker, swarm, compose)
- * 2. 工具栏链接配置
- * 3. 主题设置
- * 4. 应用初始化状态
- * 5. 服务器配置（如上传大小限制）
+ *
+ * 持有服务可用性、版本信息、系统配置等运行时状态。
+ * 数据通过 apply(data) 由 portal 统一注入，不直接发起网络请求。
  */
 export const useSystemStore = defineStore('system', () => {
     // ─── 状态定义 ───
@@ -36,39 +29,17 @@ export const useSystemStore = defineStore('system', () => {
         caddy: false,
         docker: false,
         swarm: false,
-        compose: false
+        compose: false,
     })
-    const versionCheck = ref<SystemVersionCheck | null>(null)
-    const currentVersion = ref<string>('')
     const toolbarLinks = ref<LinkConfig[]>([])
-    // 服务器配置
     const maxUploadSize = ref<number>(104857600) // 默认 100MB
 
     // ─── 操作定义 ───
 
-    async function initialize() {
-        initialized.value = false
-        initError.value = null
+    // apply 将 bootstrap 响应中的 probe 和 config 写入 store
+    function apply(data: BootstrapData) {
+        const { probe, config } = data
 
-        initTheme() // 初始化主题
-
-        try {
-            await loadSystemData()
-            initialized.value = true
-        } catch (e) {
-            console.error('Initialize failed:', e)
-            initError.value = e instanceof Error ? e.message : '初始化失败'
-            initialized.value = true
-        }
-    }
-
-    async function loadSystemData() {
-        const [probeRes, configRes] = await Promise.all([
-            api.overviewProbe(),
-            api.systemConfig(),
-        ])
-
-        const probe = probeRes?.payload
         if (probe) {
             Object.assign(serviceAvailability, {
                 agent: probe.agent || false,
@@ -76,18 +47,16 @@ export const useSystemStore = defineStore('system', () => {
                 caddy: probe.caddy || false,
                 docker: probe.docker || false,
                 swarm: probe.swarm || false,
-                compose: probe.compose || false
+                compose: probe.compose || false,
             })
-            versionCheck.value = probe.versionCheck ?? null
         }
 
-        // 获取服务器配置（如上传大小限制）
-        const config = configRes?.payload as AllConfig | undefined
-        if (typeof config?.server?.maxUploadSize === 'number') {
-            maxUploadSize.value = config.server.maxUploadSize
+        if (config) {
+            if (typeof config.maxUploadSize === 'number') {
+                maxUploadSize.value = config.maxUploadSize
+            }
+            toolbarLinks.value = config.links || []
         }
-
-        toolbarLinks.value = config?.links || []
     }
 
     function hasPerm(module: string, founder: boolean, permissions: string[]): boolean {
@@ -96,7 +65,6 @@ export const useSystemStore = defineStore('system', () => {
             return !(key in serviceAvailability && !serviceAvailability[key])
         }
 
-        // 精确路由匹配
         if (module.includes(' ')) {
             const path = module.split(' ')[1]
             const seg = path?.match(/^\/api\/([^/]+)/)?.[1]
@@ -104,7 +72,6 @@ export const useSystemStore = defineStore('system', () => {
             return founder || permissions.includes(module)
         }
 
-        // 模块匹配
         if (!checkAvailability(module)) return false
         if (founder) return true
         return permissions.some(key => {
@@ -118,14 +85,11 @@ export const useSystemStore = defineStore('system', () => {
         initialized,
         initError,
         serviceAvailability,
-        versionCheck,
-        currentVersion,
         toolbarLinks,
         maxUploadSize,
         // 操作
-        initialize,
-        loadSystemData,
-        hasPerm
+        apply,
+        hasPerm,
     }
 })
 

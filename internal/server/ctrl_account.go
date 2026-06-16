@@ -8,14 +8,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"isrvd/internal/service/account"
+	svcAccount "isrvd/internal/service/account"
 )
 
 // defineAccountRoutes 定义 Account 模块路由
 func (app *App) defineAccountRoutes() []Route {
 	return []Route{
 		// 认证与登录
-		{Method: "GET", Path: "/account/info", Handler: app.accountAuth, Module: "account", Label: "获取当前认证信息", Access: AccessAnon},
 		{Method: "POST", Path: "/account/login", Handler: app.accountLogin, Module: "account", Label: "账号密码登录", Access: AccessAnon},
 		// Passkey 登录（无需认证）
 		{Method: "POST", Path: "/account/passkey/login/begin", Handler: app.accountPasskeyLoginBegin, Module: "account", Label: "开始 Passkey 登录", Access: AccessAnon},
@@ -47,15 +46,9 @@ func (app *App) defineAccountRoutes() []Route {
 	}
 }
 
-// accountAuth 返回当前认证模式及已登录用户信息
-func (app *App) accountAuth(c *gin.Context) {
-	username := c.GetString("username")
-	respondSuccess(c, "ok", app.accountSvc.AuthInfo(username))
-}
-
 // accountLogin 校验用户名密码并签发 JWT Token
 func (app *App) accountLogin(c *gin.Context) {
-	var req account.LoginRequest
+	var req svcAccount.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -151,7 +144,7 @@ func (app *App) accountOIDCCallback(c *gin.Context) {
 
 // accountOIDCExchange 使用一次性登录码换取 JWT Token
 func (app *App) accountOIDCExchange(c *gin.Context) {
-	var req account.OIDCExchangeRequest
+	var req svcAccount.OIDCExchangeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -166,7 +159,7 @@ func (app *App) accountOIDCExchange(c *gin.Context) {
 
 // accountTokenCreate 创建长效 API Token
 func (app *App) accountTokenCreate(c *gin.Context) {
-	var req account.CreateApiTokenRequest
+	var req svcAccount.CreateApiTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -182,7 +175,7 @@ func (app *App) accountTokenCreate(c *gin.Context) {
 
 // accountPasswordChange 修改当前用户密码
 func (app *App) accountPasswordChange(c *gin.Context) {
-	var req account.ChangePasswordRequest
+	var req svcAccount.ChangePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -219,7 +212,7 @@ func (app *App) accountTOTPBegin(c *gin.Context) {
 
 // accountTOTPEnable 启用 TOTP 二次验证
 func (app *App) accountTOTPEnable(c *gin.Context) {
-	var req account.TOTPVerifyRequest
+	var req svcAccount.TOTPVerifyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -234,7 +227,7 @@ func (app *App) accountTOTPEnable(c *gin.Context) {
 
 // accountTOTPDisable 禁用 TOTP 二次验证
 func (app *App) accountTOTPDisable(c *gin.Context) {
-	var req account.TOTPVerifyRequest
+	var req svcAccount.TOTPVerifyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -269,14 +262,14 @@ func (app *App) accountMemberList(c *gin.Context) {
 
 // accountMemberCreate 新建成员
 func (app *App) accountMemberCreate(c *gin.Context) {
-	var req account.MemberUpsertRequest
+	var req svcAccount.MemberUpsertRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err := app.accountSvc.MemberCreate(req); err != nil {
 		switch {
-		case errors.Is(err, account.ErrInvalidRequest), errors.Is(err, account.ErrMemberExists):
+		case errors.Is(err, svcAccount.ErrInvalidRequest), errors.Is(err, svcAccount.ErrMemberExists):
 			respondError(c, http.StatusBadRequest, err.Error())
 		default:
 			respondError(c, http.StatusInternalServerError, err.Error())
@@ -289,13 +282,13 @@ func (app *App) accountMemberCreate(c *gin.Context) {
 // accountMemberUpdate 更新成员
 func (app *App) accountMemberUpdate(c *gin.Context) {
 	username := c.Param("username")
-	var req account.MemberUpsertRequest
+	var req svcAccount.MemberUpsertRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err := app.accountSvc.MemberUpdate(username, req); err != nil {
-		if errors.Is(err, account.ErrMemberNotFound) {
+		if errors.Is(err, svcAccount.ErrMemberNotFound) {
 			respondError(c, http.StatusNotFound, err.Error())
 		} else {
 			respondError(c, http.StatusInternalServerError, err.Error())
@@ -310,7 +303,7 @@ func (app *App) accountMemberDelete(c *gin.Context) {
 	username := c.Param("username")
 	if err := app.accountSvc.MemberDelete(username); err != nil {
 		switch {
-		case errors.Is(err, account.ErrMemberNotFound):
+		case errors.Is(err, svcAccount.ErrMemberNotFound):
 			respondError(c, http.StatusNotFound, err.Error())
 		default:
 			respondError(c, http.StatusInternalServerError, err.Error())
@@ -344,7 +337,7 @@ func (app *App) accountPasskeyRenameCredential(c *gin.Context) {
 	}
 	if err := app.accountSvc.PasskeyUpdateCredentialName(username, credentialID, req.DisplayName); err != nil {
 		switch {
-		case errors.Is(err, account.ErrPasskeyNotFound):
+		case errors.Is(err, svcAccount.ErrPasskeyNotFound):
 			respondError(c, http.StatusNotFound, err.Error())
 		default:
 			respondError(c, http.StatusInternalServerError, err.Error())
@@ -360,7 +353,7 @@ func (app *App) accountPasskeyDeleteCredential(c *gin.Context) {
 	credentialID := c.Param("credentialID")
 	if err := app.accountSvc.PasskeyDeleteCredential(username, credentialID); err != nil {
 		switch {
-		case errors.Is(err, account.ErrPasskeyNotFound):
+		case errors.Is(err, svcAccount.ErrPasskeyNotFound):
 			respondError(c, http.StatusNotFound, err.Error())
 		default:
 			respondError(c, http.StatusInternalServerError, err.Error())

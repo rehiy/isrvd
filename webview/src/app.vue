@@ -29,34 +29,38 @@ class App extends Vue {
 
     // 处理 OIDC 回调（query 参数中的 oidc_code / oidc_error）
     // 放在 App 入口而非 Login 组件，确保已登录状态下也能处理。
-    async handleOIDCCallback() {
+    // 返回 true 表示已处理回调（refresh 已完成），调用方无需再 initialize。
+    async handleOIDCCallback(): Promise<boolean> {
         const params = new URLSearchParams(window.location.search)
         const error = params.get('oidc_error')
         const code = params.get('oidc_code')
-        if (!error && !code) return
+        if (!error && !code) return false
 
         // 立即清除 query，避免刷新时重复处理
         window.history.replaceState({}, document.title, window.location.pathname + window.location.hash)
 
         if (error) {
             this.portal.showNotification('error', error)
-            return
+            return false
         }
 
         try {
             const { payload } = await api.accountOIDCExchange({ code: code ?? '' })
-            if (!payload?.token) return
+            if (!payload?.token) return false
             this.portal.setAuth({ authMode: 'jwt', token: payload.token, username: payload.username })
-            await this.portal.initialize()
+            await this.portal.refresh()
+            return true
         } catch {
             this.portal.showNotification('error', 'OIDC 登录失败，请重试')
+            return false
         }
     }
 
     async mounted() {
-        // OIDC 回调需在 initialize 之前处理，确保 token 已就位
-        await this.handleOIDCCallback()
-        await this.portal.initialize()
+        const oidcHandled = await this.handleOIDCCallback()
+        if (!oidcHandled) {
+            await this.portal.initialize()
+        }
     }
 }
 

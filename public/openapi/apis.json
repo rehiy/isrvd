@@ -115,27 +115,6 @@
         ]
       }
     },
-    "/account/info": {
-      "get": {
-        "operationId": "get_account_info",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "获取当前认证信息",
-        "tags": [
-          "account"
-        ]
-      }
-    },
     "/account/login": {
       "post": {
         "operationId": "post_account_login",
@@ -2601,6 +2580,383 @@
         ]
       }
     },
+    "/docker/container/{id}/file/chmod": {
+      "post": {
+        "operationId": "post_docker_container_id_file_chmod",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.dockerContainerFileChmod"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "容器文件修改权限",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/container/{id}/file/download": {
+      "get": {
+        "operationId": "get_docker_container_id_file_download",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "容器文件下载",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/container/{id}/file/ls": {
+      "get": {
+        "operationId": "get_docker_container_id_file_ls",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "容器文件列目录",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/container/{id}/file/mkdir": {
+      "post": {
+        "operationId": "post_docker_container_id_file_mkdir",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.dockerContainerFileMkdir"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "容器文件创建目录",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/container/{id}/file/read": {
+      "get": {
+        "operationId": "get_docker_container_id_file_read",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "容器文件读取",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/container/{id}/file/rename": {
+      "post": {
+        "operationId": "post_docker_container_id_file_rename",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.dockerContainerFileRename"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "容器文件重命名",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/container/{id}/file/rm": {
+      "delete": {
+        "operationId": "delete_docker_container_id_file_rm",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "recursive",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "容器文件删除",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/container/{id}/file/upload": {
+      "post": {
+        "operationId": "post_docker_container_id_file_upload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "容器文件上传",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
+    "/docker/container/{id}/file/write": {
+      "post": {
+        "operationId": "post_docker_container_id_file_write",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/docker.dockerContainerFileWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "容器文件写入",
+        "tags": [
+          "docker"
+        ]
+      }
+    },
     "/docker/container/{id}/logs": {
       "get": {
         "operationId": "get_docker_container_id_logs",
@@ -3845,6 +4201,27 @@
         ]
       }
     },
+    "/overview/bootstrap": {
+      "get": {
+        "operationId": "get_overview_bootstrap",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取启动数据",
+        "tags": [
+          "overview"
+        ]
+      }
+    },
     "/overview/monitor": {
       "get": {
         "operationId": "get_overview_monitor",
@@ -3892,27 +4269,6 @@
         ]
       }
     },
-    "/overview/probe": {
-      "get": {
-        "operationId": "get_overview_probe",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "探测服务可用性",
-        "tags": [
-          "overview"
-        ]
-      }
-    },
     "/overview/upgrade": {
       "post": {
         "operationId": "post_overview_upgrade",
@@ -3929,6 +4285,27 @@
           }
         },
         "summary": "升级程序至最新版本",
+        "tags": [
+          "overview"
+        ]
+      }
+    },
+    "/overview/version": {
+      "get": {
+        "operationId": "get_overview_version",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取版本信息",
         "tags": [
           "overview"
         ]
@@ -6167,6 +6544,61 @@
         },
         "required": [
           "name"
+        ],
+        "type": "object"
+      },
+      "docker.dockerContainerFileChmod": {
+        "properties": {
+          "mode": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "mode"
+        ],
+        "type": "object"
+      },
+      "docker.dockerContainerFileMkdir": {
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "docker.dockerContainerFileRename": {
+        "properties": {
+          "newPath": {
+            "type": "string"
+          },
+          "oldPath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "oldPath",
+          "newPath"
+        ],
+        "type": "object"
+      },
+      "docker.dockerContainerFileWrite": {
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
         ],
         "type": "object"
       },
