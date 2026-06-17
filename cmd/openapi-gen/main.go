@@ -2,7 +2,7 @@
 //
 // 用法:
 //
-//	go run ./cmd/openapi-gen/  # 生成到 public/openapi/apis.json
+//	go run ./cmd/openapi-gen/  # 生成到 public/openapi/data.json
 //	go run ./cmd/openapi-gen/ -o openapi.json  # 生成到指定路径
 //
 // 工作原理:
@@ -132,7 +132,7 @@ func DefaultConfig() *ProjectConfig {
 		Version:        "1.0.0",
 		ServerURL:      "/api",
 		ServerDesc:     "API 服务",
-		OutputFile:     "public/openapi/apis.json",
+		OutputFile:     "public/openapi/data.json",
 	}
 }
 
