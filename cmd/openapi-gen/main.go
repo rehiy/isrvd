@@ -71,8 +71,7 @@ type RouteDef struct {
 	IsSSE       bool        // SSE 路由
 
 	// 响应信息
-	ResponseBody     *SchemaInfo // respondSuccess 第三个参数的类型（结构体）
-	ResponseBodyType string      // 响应类型的 Go 类型字符串（用于 slice/map 等复杂类型）
+	ResponseBodyType string // 响应类型的 Go 类型字符串（用于 slice/map 等复杂类型）
 }
 
 type ParamDef struct {
@@ -408,31 +407,6 @@ func hasParam(params []ParamDef, name string) bool {
 	return false
 }
 
-func findFuncReturnType(filename, funcName string) string {
-	f := parseFile(filename)
-	if f == nil {
-		return ""
-	}
-	for _, decl := range f.Decls {
-		fd, ok := decl.(*ast.FuncDecl)
-		if !ok || fd.Name.Name != funcName || fd.Type.Results == nil {
-			continue
-		}
-		// 返回类型可能是 (Type, bool) 形式的 tuple
-		for _, field := range fd.Type.Results.List {
-			if sel, ok := field.Type.(*ast.SelectorExpr); ok {
-				return fullSelName(sel)
-			}
-			if ident, ok := field.Type.(*ast.Ident); ok {
-				if ident.Name != "bool" && ident.Name != "error" {
-					return ident.Name
-				}
-			}
-		}
-	}
-	return ""
-}
-
 // collectServiceTypes 遍历 service 及额外类型目录，解析所有类型定义
 func collectServiceTypes() {
 	// 遍历 service 目录
@@ -715,6 +689,9 @@ func inlineStructToSchema(st *ast.StructType) *SchemaInfo {
 }
 
 func structTypeToJSONSchema(st *ast.StructType, _ *token.FileSet) string {
+	if st.Fields == nil {
+		return ""
+	}
 	var fields []string
 	for _, field := range st.Fields.List {
 		if field.Names == nil {
@@ -731,10 +708,9 @@ func structTypeToJSONSchema(st *ast.StructType, _ *token.FileSet) string {
 
 // handlerAnalysisState 保存 handler 函数分析过程中的状态
 type handlerAnalysisState struct {
-	varTypes     map[string]string // 变量名 → 类型名（如 "resp" → "account.LoginResponse"）
-	localTypes   map[string]string // 本地类型别名
-	filename     string            // 当前分析的文件
-	responseBody *SchemaInfo       // 提取到的响应类型
+	varTypes   map[string]string // 变量名 → 类型名（如 "resp" → "account.LoginResponse"）
+	localTypes map[string]string // 本地类型别名
+	filename   string            // 当前分析的文件
 }
 
 func analyzeFuncBody(r *RouteDef, body *ast.BlockStmt, fset *token.FileSet, localTypes map[string]string, filename string) {
@@ -755,8 +731,6 @@ func analyzeFuncBody(r *RouteDef, body *ast.BlockStmt, fset *token.FileSet, loca
 		}
 		return true
 	})
-
-	r.ResponseBody = state.responseBody
 }
 
 // analyzeAssignStmtV2 处理赋值语句，跟踪变量类型
@@ -829,6 +803,9 @@ func analyzeDeclStmtV2(stmt *ast.DeclStmt, r *RouteDef, state *handlerAnalysisSt
 	for _, spec := range gd.Specs {
 		if vs, ok := spec.(*ast.ValueSpec); ok && len(vs.Names) == 1 {
 			varName := vs.Names[0].Name
+			if vs.Type == nil {
+				continue // 类型推断形式（var x = ...），跳过
+			}
 			typeName := typeExprToString(vs.Type)
 			if sel, ok := vs.Type.(*ast.SelectorExpr); ok {
 				typeName = fullSelName(sel)
@@ -1740,32 +1717,6 @@ func normalizeSchemaName(s string) string {
 	return s
 }
 
-func sanitizeLabel(label string) string {
-	// 从中文标签中提取英文部分作为 schema 名
-	// 例如 "重命名 Passkey 凭证" -> "PasskeyRequest"
-	words := strings.Fields(label)
-	// 收集其中的英文单词
-	var englishWords []string
-	for _, w := range words {
-		hasLetter := false
-		for _, r := range w {
-			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
-				hasLetter = true
-				break
-			}
-		}
-		if hasLetter {
-			englishWords = append(englishWords, w)
-		}
-	}
-	if len(englishWords) > 0 {
-		result := strings.Join(englishWords, "")
-		result = strings.ReplaceAll(result, "/", "")
-		return result + "Request"
-	}
-	return "Request"
-}
-
 func sanitizeRef(s string) string {
 	return normalizeSchemaName(s)
 }
@@ -2118,9 +2069,4 @@ func generateOperationID(r RouteDef) string {
 		buf.WriteString(p)
 	}
 	return strings.ToLower(r.Method) + "_" + buf.String()
-}
-
-// init() 保留给其他初始化逻辑
-func init() {
-	// APIResponse 的提取已在 main() 中处理
 }
