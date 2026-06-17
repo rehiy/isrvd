@@ -23,8 +23,8 @@ func (app *App) defineAccountRoutes() []Route {
 		{Method: "POST", Path: "/account/passkey/register/begin", Handler: app.accountPasskeyRegisterBegin, Module: "account", Label: "开始 Passkey 绑定", Access: AccessAuth},
 		{Method: "POST", Path: "/account/passkey/register/finish", Handler: app.accountPasskeyRegisterFinish, Module: "account", Label: "完成 Passkey 绑定", Access: AccessAuth},
 		{Method: "GET", Path: "/account/passkey/credentials", Handler: app.accountPasskeyListCredentials, Module: "account", Label: "查询 Passkey 凭证列表", Access: AccessAuth},
-		{Method: "PUT", Path: "/account/passkey/credential/:credentialID", Handler: app.accountPasskeyRenameCredential, Module: "account", Label: "重命名 Passkey 凭证", Access: AccessAuth},
-		{Method: "DELETE", Path: "/account/passkey/credential/:credentialID", Handler: app.accountPasskeyDeleteCredential, Module: "account", Label: "删除 Passkey 凭证", Access: AccessAuth},
+		{Method: "PUT", Path: "/account/passkey/credential/:id", Handler: app.accountPasskeyRenameCredential, Module: "account", Label: "重命名 Passkey 凭证", Access: AccessAuth},
+		{Method: "DELETE", Path: "/account/passkey/credential/:id", Handler: app.accountPasskeyDeleteCredential, Module: "account", Label: "删除 Passkey 凭证", Access: AccessAuth},
 		// OIDC 登录
 		{Method: "GET", Path: "/account/oidc/login", Handler: app.accountOIDCLogin, Module: "account", Label: "发起 OIDC 登录", Access: AccessAnon},
 		{Method: "GET", Path: "/account/oidc/callback", Handler: app.accountOIDCCallback, Module: "account", Label: "处理 OIDC 回调", Access: AccessAnon},
@@ -327,7 +327,7 @@ func (app *App) accountPasskeyListCredentials(c *gin.Context) {
 // accountPasskeyRenameCredential 重命名当前用户的指定 Passkey 凭证
 func (app *App) accountPasskeyRenameCredential(c *gin.Context) {
 	username := c.GetString("username")
-	credentialID := c.Param("credentialID")
+	credentialID := c.Param("id")
 	var req struct {
 		DisplayName string `json:"displayName" binding:"required"` // 新的凭证展示名称
 	}
@@ -350,7 +350,7 @@ func (app *App) accountPasskeyRenameCredential(c *gin.Context) {
 // accountPasskeyDeleteCredential 删除当前用户的指定 Passkey 凭证
 func (app *App) accountPasskeyDeleteCredential(c *gin.Context) {
 	username := c.GetString("username")
-	credentialID := c.Param("credentialID")
+	credentialID := c.Param("id")
 	if err := app.accountSvc.PasskeyDeleteCredential(username, credentialID); err != nil {
 		switch {
 		case errors.Is(err, svcAccount.ErrPasskeyNotFound):
