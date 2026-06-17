@@ -229,10 +229,10 @@ func (s *Service) WhitelistCreate(ctx context.Context, req WhitelistCreateReques
 
 // WhitelistUserCreateRequest 新建用户并加入白名单请求
 type WhitelistUserCreateRequest struct {
-	RouteID  string         `json:"route_id"`
-	Username string         `json:"username"`
-	Key      string         `json:"key"`
-	KeyAuth  map[string]any `json:"key_auth"`
+	RouteID  string         `json:"route_id"` // 目标路由 ID
+	Username string         `json:"username"` // Consumer 用户名
+	Key      string         `json:"key"`      // key-auth 密钥
+	KeyAuth  map[string]any `json:"key_auth"` // key-auth 插件的附加配置
 }
 
 // WhitelistUserCreate 原子操作：创建 Consumer（含 key-auth）并加入路由白名单。

@@ -11,7 +11,7 @@ import (
 
 // RouteView 路由响应视图，在 pkgCaddy.Route 基础上附加列表下标
 type RouteView struct {
-	Index int `json:"index"`
+	Index int `json:"index"` // 路由在列表中的下标（用于定位/删除）
 	pkgCaddy.Route
 }
 

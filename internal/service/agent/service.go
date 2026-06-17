@@ -31,18 +31,18 @@ func NewService() *Service {
 
 // ProxyRequest 代理请求参数
 type ProxyRequest struct {
-	Method   string
-	SubPath  string
-	RawQuery string
-	Headers  http.Header
-	Body     []byte
+	Method   string      // HTTP 方法
+	SubPath  string      // 转发到上游的子路径
+	RawQuery string      // 原始查询字符串
+	Headers  http.Header // 透传的请求头
+	Body     []byte      // 请求体原始字节
 }
 
 // ProxyResponse 代理响应
 type ProxyResponse struct {
-	StatusCode int
-	Headers    http.Header
-	Body       io.ReadCloser
+	StatusCode int           // 上游响应状态码
+	Headers    http.Header   // 上游响应头
+	Body       io.ReadCloser // 上游响应体（流式，调用方负责关闭）
 }
 
 // Proxy 转发请求到上游 LLM，并自动注入 APIKey 和 model 覆盖。

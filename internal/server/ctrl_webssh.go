@@ -250,7 +250,7 @@ func (app *App) websshSFTPRemove(c *gin.Context) {
 func (app *App) websshSFTPMkdir(c *gin.Context) {
 	id := c.Param("id")
 	var req struct {
-		Path string `json:"path" binding:"required"`
+		Path string `json:"path" binding:"required"` // 要创建的目录路径
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -266,8 +266,8 @@ func (app *App) websshSFTPMkdir(c *gin.Context) {
 func (app *App) websshSFTPRename(c *gin.Context) {
 	id := c.Param("id")
 	var req struct {
-		OldPath string `json:"oldPath" binding:"required"`
-		NewPath string `json:"newPath" binding:"required"`
+		OldPath string `json:"oldPath" binding:"required"` // 原路径
+		NewPath string `json:"newPath" binding:"required"` // 新路径
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -284,8 +284,8 @@ func (app *App) websshSFTPRename(c *gin.Context) {
 func (app *App) websshSFTPChmod(c *gin.Context) {
 	id := c.Param("id")
 	var req struct {
-		Path string `json:"path" binding:"required"`
-		Mode string `json:"mode" binding:"required"` // 如 "0755", "0644"
+		Path string `json:"path" binding:"required"` // 目标文件/目录路径
+		Mode string `json:"mode" binding:"required"` // 权限模式，如 "0755", "0644"
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -310,9 +310,9 @@ func (app *App) websshSFTPChmod(c *gin.Context) {
 func (app *App) websshSFTPChown(c *gin.Context) {
 	id := c.Param("id")
 	var req struct {
-		Path string `json:"path" binding:"required"`
-		UID  int    `json:"uid" binding:"required"`
-		GID  int    `json:"gid" binding:"required"`
+		Path string `json:"path" binding:"required"` // 目标文件/目录路径
+		UID  int    `json:"uid" binding:"required"`  // 新所有者用户 ID
+		GID  int    `json:"gid" binding:"required"`  // 新所属组 ID
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -362,8 +362,8 @@ func (app *App) websshSFTPRead(c *gin.Context) {
 func (app *App) websshSFTPWrite(c *gin.Context) {
 	id := c.Param("id")
 	var req struct {
-		Path    string `json:"path" binding:"required"`
-		Content string `json:"content" binding:"required"`
+		Path    string `json:"path" binding:"required"`    // 目标文件路径
+		Content string `json:"content" binding:"required"` // 文件文本内容
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())

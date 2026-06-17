@@ -37,8 +37,8 @@ type TOTPBeginResponse struct {
 
 // TOTPVerifyRequest TOTP 验证请求
 type TOTPVerifyRequest struct {
-	Code   string `json:"code" binding:"required"`
-	Secret string `json:"secret"`
+	Code   string `json:"code" binding:"required"` // 认证器中的 6 位验证码
+	Secret string `json:"secret"`                  // TOTP 密钥（启用时提交，禁用时可省略）
 }
 
 // TwoFactorStatus 查询当前用户二次验证状态

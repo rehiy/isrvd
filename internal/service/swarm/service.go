@@ -76,10 +76,10 @@ type ServiceInfo struct {
 // ServiceDetail 服务详情（完整视图）。
 type ServiceDetail struct {
 	ServiceSpec
-	ID           string `json:"id"`
-	RunningTasks int    `json:"runningTasks"`
-	CreatedAt    string `json:"createdAt"`
-	UpdatedAt    string `json:"updatedAt"`
+	ID           string `json:"id"`           // 服务 ID
+	RunningTasks int    `json:"runningTasks"` // 运行中的任务数
+	CreatedAt    string `json:"createdAt"`    // 创建时间
+	UpdatedAt    string `json:"updatedAt"`    // 更新时间
 }
 
 // ServiceSpec 服务可写配置（创建/更新共用），保持 HTTP API 兼容。
@@ -99,18 +99,18 @@ type ServiceSpec struct {
 
 // ServicePort 服务端口信息。
 type ServicePort struct {
-	Protocol      string `json:"protocol"`
-	TargetPort    uint32 `json:"targetPort"`
-	PublishedPort uint32 `json:"publishedPort"`
-	PublishMode   string `json:"publishMode"`
+	Protocol      string `json:"protocol"`      // 协议（tcp/udp）
+	TargetPort    uint32 `json:"targetPort"`    // 容器内端口
+	PublishedPort uint32 `json:"publishedPort"` // 对外发布端口
+	PublishMode   string `json:"publishMode"`   // 发布模式（ingress/host）
 }
 
 // ServiceMount 服务挂载信息。
 type ServiceMount struct {
-	Type     string `json:"type"`
-	Source   string `json:"source"`
-	Target   string `json:"target"`
-	ReadOnly bool   `json:"readOnly"`
+	Type     string `json:"type"`     // 挂载类型（volume/bind）
+	Source   string `json:"source"`   // 来源（卷名或宿主机路径）
+	Target   string `json:"target"`   // 容器内挂载路径
+	ReadOnly bool   `json:"readOnly"` // 是否只读
 }
 
 // Service Swarm 业务服务

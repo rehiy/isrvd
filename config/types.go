@@ -4,29 +4,29 @@ import "time"
 
 // 配置结构
 type Config struct {
-	Server      *ServerConfig      `yaml:"server"`
-	THA         *THAConfig         `yaml:"tha"`
-	OIDC        *OIDCConfig        `yaml:"oidc"`
-	Passkey     *PasskeyConfig     `yaml:"passkey"`
-	Agent       *AgentConfig       `yaml:"agent"`
-	Apisix      *ApisixConfig      `yaml:"apisix"`
-	Caddy       *CaddyConfig       `yaml:"caddy"`
-	Docker      *DockerConfig      `yaml:"docker"`
-	Monitor     *MonitorConfig     `yaml:"monitor"`
-	Marketplace *MarketplaceConfig `yaml:"marketplace"`
-	Links       []*LinkConfig      `yaml:"links"`
-	Members     []*MemberConfig    `yaml:"members"`
+	Server      *ServerConfig      `yaml:"server"`      // 服务配置
+	THA         *THAConfig         `yaml:"tha"`         // 代理 Header 登录配置
+	OIDC        *OIDCConfig        `yaml:"oidc"`        // OIDC 登录配置
+	Passkey     *PasskeyConfig     `yaml:"passkey"`     // Passkey 登录配置
+	Agent       *AgentConfig       `yaml:"agent"`       // Agent LLM 配置
+	Apisix      *ApisixConfig      `yaml:"apisix"`      // APISIX 配置
+	Caddy       *CaddyConfig       `yaml:"caddy"`       // Caddy 配置
+	Docker      *DockerConfig      `yaml:"docker"`      // Docker 配置
+	Monitor     *MonitorConfig     `yaml:"monitor"`     // 监控配置
+	Marketplace *MarketplaceConfig `yaml:"marketplace"` // 应用市场配置
+	Links       []*LinkConfig      `yaml:"links"`       // 工具栏链接列表
+	Members     []*MemberConfig    `yaml:"members"`     // 成员列表
 }
 
 // 服务器配置
 type ServerConfig struct {
-	ListenAddr     string   `yaml:"listenAddr" json:"listenAddr"`       // 监听地址（如 :8080）
-	RootDirectory  string   `yaml:"rootDirectory" json:"rootDirectory"`  // 根目录路径
+	ListenAddr     string   `yaml:"listenAddr" json:"listenAddr"`         // 监听地址（如 :8080）
+	RootDirectory  string   `yaml:"rootDirectory" json:"rootDirectory"`   // 根目录路径
 	MaxUploadSize  int64    `yaml:"maxUploadSize" json:"maxUploadSize"`   // 文件上传最大大小（字节），默认 100MB
 	AllowedOrigins []string `yaml:"allowedOrigins" json:"allowedOrigins"` // 允许的 Origin 列表，支持通配符 *
 	JWTSecret      string   `yaml:"jwtSecret" json:"jwtSecret,omitempty"` // 写入时为空表示保留原值；响应时不返回
 	JWTExpiration  int64    `yaml:"jwtExpiration" json:"jwtExpiration"`   // JWT 过期时间（秒），默认 86400
-	Debug          bool     `yaml:"debug" json:"debug"`                  // 是否启用调试模式
+	Debug          bool     `yaml:"debug" json:"debug"`                   // 是否启用调试模式
 }
 
 // 代理 Header 登录配置
@@ -38,19 +38,19 @@ type THAConfig struct {
 
 // OIDC 登陆配置
 type OIDCConfig struct {
-	Enabled       bool     `yaml:"enabled" json:"enabled"`       // 是否启用 OIDC 登录
-	IssuerURL     string   `yaml:"issuerUrl" json:"issuerUrl"`   // OIDC 提供者 Issuer 地址
-	ClientID      string   `yaml:"clientId" json:"clientId"`     // OIDC 客户端 ID
+	Enabled       bool     `yaml:"enabled" json:"enabled"`                     // 是否启用 OIDC 登录
+	IssuerURL     string   `yaml:"issuerUrl" json:"issuerUrl"`                 // OIDC 提供者 Issuer 地址
+	ClientID      string   `yaml:"clientId" json:"clientId"`                   // OIDC 客户端 ID
 	ClientSecret  string   `yaml:"clientSecret" json:"clientSecret,omitempty"` // 写入时为空表示保留原值；响应时不返回
-	RedirectURL   string   `yaml:"redirectUrl" json:"redirectUrl"` // 回调地址
-	UsernameClaim string   `yaml:"usernameClaim" json:"usernameClaim"` // 从哪个 claim 提取用户名（如 sub、email、preferred_username）
-	Scopes        []string `yaml:"scopes" json:"scopes"`         // 请求的 Scope 列表
-	LoginLabel    string   `yaml:"loginLabel" json:"loginLabel"` // OIDC 登录按钮自定义名称，留空时使用默认文案
+	RedirectURL   string   `yaml:"redirectUrl" json:"redirectUrl"`             // 回调地址
+	UsernameClaim string   `yaml:"usernameClaim" json:"usernameClaim"`         // 从哪个 claim 提取用户名（如 sub、email、preferred_username）
+	Scopes        []string `yaml:"scopes" json:"scopes"`                       // 请求的 Scope 列表
+	LoginLabel    string   `yaml:"loginLabel" json:"loginLabel"`               // OIDC 登录按钮自定义名称，留空时使用默认文案
 }
 
 // Passkey 登录配置
 type PasskeyConfig struct {
-	Enabled   bool     `yaml:"enabled" json:"enabled"`       // 是否启用 Passkey 登录
+	Enabled   bool     `yaml:"enabled" json:"enabled"`     // 是否启用 Passkey 登录
 	RPName    string   `yaml:"rpName" json:"rpName"`       // Relying Party 名称
 	RPID      string   `yaml:"rpId" json:"rpId"`           // Relying Party ID（通常是域名）
 	RPOrigins []string `yaml:"rpOrigins" json:"rpOrigins"` // 允许的 Origin 列表
@@ -110,11 +110,11 @@ type LinkConfig struct {
 
 // 成员配置
 type MemberConfig struct {
-	Username      string               `yaml:"username" json:"username"`
-	Password      string               `yaml:"password" json:"-"` // 敏感字段不序列化到 JSON
-	HomeDirectory string               `yaml:"homeDirectory" json:"homeDirectory"`
-	Passkeys      []*PasskeyCredential `yaml:"passkeys" json:"passkeys,omitempty"` // Passkey 凭证列表
-	TwoFactor     *TwoFactorConfig     `yaml:"twoFactor,omitempty" json:"twoFactor,omitempty"`
+	Username      string               `yaml:"username" json:"username"`                       // 用户名
+	Password      string               `yaml:"password" json:"-"`                              // 敏感字段不序列化到 JSON
+	HomeDirectory string               `yaml:"homeDirectory" json:"homeDirectory"`             // 主目录
+	Passkeys      []*PasskeyCredential `yaml:"passkeys" json:"passkeys,omitempty"`             // Passkey 凭证列表
+	TwoFactor     *TwoFactorConfig     `yaml:"twoFactor,omitempty" json:"twoFactor,omitempty"` // 二次验证配置
 	// Founder 创始人标志，创始人拥有所有模块的完整权限
 	Founder bool `yaml:"founder" json:"founder"`
 	// Description 成员描述信息（可选）
@@ -125,13 +125,13 @@ type MemberConfig struct {
 
 // TwoFactorConfig 存储用户二次验证配置
 type TwoFactorConfig struct {
-	TOTP *TOTPConfig `yaml:"totp,omitempty" json:"totp,omitempty"`
+	TOTP *TOTPConfig `yaml:"totp,omitempty" json:"totp,omitempty"` // TOTP 二次验证配置
 }
 
 // TOTPConfig 存储用户 TOTP 二次验证配置
 type TOTPConfig struct {
-	Enabled bool   `yaml:"enabled" json:"enabled"`
-	Secret  string `yaml:"secret" json:"-"` // 敏感字段不序列化到 JSON
+	Enabled bool   `yaml:"enabled" json:"enabled"` // 是否已启用 TOTP
+	Secret  string `yaml:"secret" json:"-"`        // 敏感字段不序列化到 JSON
 }
 
 // PasskeyCredential 存储用户的 Passkey 凭证信息
@@ -142,6 +142,6 @@ type PasskeyCredential struct {
 	SignCount       uint32    `yaml:"signCount" json:"signCount"`             // 初始签名计数（仅存储初始值，运行时由内存维护）
 	BackupEligible  bool      `yaml:"backupEligible" json:"backupEligible"`   // 凭证是否支持跨设备备份（BE 标志，注册后不变）
 	BackupState     bool      `yaml:"backupState" json:"backupState"`         // 凭证当前是否已备份（BS 标志，可变）
-	DisplayName     string    `yaml:"displayName" json:"displayName"`
-	AddedAt         time.Time `yaml:"addedAt" json:"addedAt"`
+	DisplayName     string    `yaml:"displayName" json:"displayName"`         // 凭证显示名称
+	AddedAt         time.Time `yaml:"addedAt" json:"addedAt"`                 // 添加时间
 }

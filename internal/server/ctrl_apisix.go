@@ -100,7 +100,7 @@ func (app *App) apisixRouteUpdate(c *gin.Context) {
 
 func (app *App) apisixRouteStatusPatch(c *gin.Context) {
 	var req struct {
-		Status int `json:"status"`
+		Status int `json:"status"` // 路由状态：1 启用，0 禁用
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -132,9 +132,9 @@ func (app *App) apisixConsumerList(c *gin.Context) {
 
 func (app *App) apisixConsumerCreate(c *gin.Context) {
 	var req struct {
-		Username string         `json:"username" binding:"required"`
-		Desc     string         `json:"desc"`
-		Plugins  map[string]any `json:"plugins"`
+		Username string         `json:"username" binding:"required"` // 消费者用户名
+		Desc     string         `json:"desc"`                        // 描述
+		Plugins  map[string]any `json:"plugins"`                     // 插件配置
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -151,8 +151,8 @@ func (app *App) apisixConsumerCreate(c *gin.Context) {
 func (app *App) apisixConsumerUpdate(c *gin.Context) {
 	username := c.Param("username")
 	var req struct {
-		Desc    string         `json:"desc"`
-		Plugins map[string]any `json:"plugins"`
+		Desc    string         `json:"desc"`    // 描述
+		Plugins map[string]any `json:"plugins"` // 插件配置
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())

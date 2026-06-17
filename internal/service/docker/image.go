@@ -15,32 +15,32 @@ import (
 // ImageTagRequest 镜像标签请求。
 // ID 来自 URL path（:id），由 handler 在绑定前注入。
 type ImageTagRequest struct {
-	ID      string `json:"id" binding:"required"`
-	RepoTag string `json:"repoTag" binding:"required"`
+	ID      string `json:"id" binding:"required"`      // 源镜像 ID（来自 URL path）
+	RepoTag string `json:"repoTag" binding:"required"` // 目标镜像标签（repo:tag）
 }
 
 // ImageBuildRequest 镜像构建请求。
 type ImageBuildRequest struct {
-	Dockerfile string `json:"dockerfile" binding:"required"`
-	Tag        string `json:"tag"`
+	Dockerfile string `json:"dockerfile" binding:"required"` // Dockerfile 文本内容
+	Tag        string `json:"tag"`                           // 构建产物的镜像标签
 }
 
 // ImagePruneRequest 镜像清理请求。
 type ImagePruneRequest struct {
-	All   bool   `json:"all"`
-	Until string `json:"until,omitempty"`
+	All   bool   `json:"all"`             // true 清理所有未使用镜像，false 仅清理悬空镜像
+	Until string `json:"until,omitempty"` // 仅清理早于该时间的镜像（如 "24h"）
 }
 
 // ImagePruneReport 镜像清理结果。
 type ImagePruneReport struct {
-	ImagesDeleted  []ImagePruneDeleted `json:"imagesDeleted"`
-	SpaceReclaimed uint64              `json:"spaceReclaimed"`
+	ImagesDeleted  []ImagePruneDeleted `json:"imagesDeleted"`  // 被删除的镜像条目
+	SpaceReclaimed uint64              `json:"spaceReclaimed"` // 回收的磁盘空间（字节）
 }
 
 // ImagePruneDeleted 单次删除条目。
 type ImagePruneDeleted struct {
-	Untagged string `json:"untagged,omitempty"`
-	Deleted  string `json:"deleted,omitempty"`
+	Untagged string `json:"untagged,omitempty"` // 被取消标签的镜像引用
+	Deleted  string `json:"deleted,omitempty"`  // 被删除的镜像层 ID
 }
 
 // ImageInfo Docker 镜像信息，保持前端稳定响应结构。
@@ -55,40 +55,40 @@ type ImageInfo struct {
 
 // ImageSearchResult 镜像搜索结果，保持前端稳定响应结构。
 type ImageSearchResult struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	IsOfficial  bool   `json:"isOfficial"`
-	StarCount   int    `json:"starCount"`
+	Name        string `json:"name"`        // 镜像名称
+	Description string `json:"description"` // 镜像描述
+	IsOfficial  bool   `json:"isOfficial"`  // 是否官方镜像
+	StarCount   int    `json:"starCount"`   // 星标数
 }
 
 // ImageLayerInfo 镜像层信息，保持前端稳定响应结构。
 type ImageLayerInfo struct {
-	Digest    string `json:"digest"`
-	CreatedBy string `json:"createdBy"`
-	Created   string `json:"created"`
-	Size      int64  `json:"size"`
-	Empty     bool   `json:"empty"`
+	Digest    string `json:"digest"`    // 层摘要
+	CreatedBy string `json:"createdBy"` // 生成该层的构建指令
+	Created   string `json:"created"`   // 层创建时间
+	Size      int64  `json:"size"`      // 层大小（字节）
+	Empty     bool   `json:"empty"`     // 是否为空层（无文件变更）
 }
 
 // ImageDetail 镜像详情响应，保持前端稳定响应结构。
 type ImageDetail struct {
-	ID           string            `json:"id"`
-	ShortID      string            `json:"shortId"`
-	RepoTags     []string          `json:"repoTags"`
-	RepoDigests  []string          `json:"repoDigests"`
-	Size         int64             `json:"size"`
-	Created      string            `json:"created"`
-	Author       string            `json:"author"`
-	Architecture string            `json:"architecture"`
-	OS           string            `json:"os"`
-	Cmd          []string          `json:"cmd"`
-	Entrypoint   []string          `json:"entrypoint"`
-	Env          []string          `json:"env"`
-	WorkingDir   string            `json:"workingDir"`
-	ExposedPorts []string          `json:"exposedPorts"`
-	Labels       map[string]string `json:"labels"`
-	Layers       int               `json:"layers"`
-	LayerDetails []*ImageLayerInfo `json:"layerDetails"`
+	ID           string            `json:"id"`           // 镜像完整 ID
+	ShortID      string            `json:"shortId"`      // 镜像短 ID
+	RepoTags     []string          `json:"repoTags"`     // 仓库标签列表
+	RepoDigests  []string          `json:"repoDigests"`  // 仓库摘要列表
+	Size         int64             `json:"size"`         // 镜像大小（字节）
+	Created      string            `json:"created"`      // 创建时间
+	Author       string            `json:"author"`       // 作者
+	Architecture string            `json:"architecture"` // CPU 架构
+	OS           string            `json:"os"`           // 操作系统
+	Cmd          []string          `json:"cmd"`          // 默认启动命令
+	Entrypoint   []string          `json:"entrypoint"`   // 入口点
+	Env          []string          `json:"env"`          // 环境变量列表
+	WorkingDir   string            `json:"workingDir"`   // 工作目录
+	ExposedPorts []string          `json:"exposedPorts"` // 暴露的端口列表
+	Labels       map[string]string `json:"labels"`       // 镜像标签
+	Layers       int               `json:"layers"`       // 镜像层数
+	LayerDetails []*ImageLayerInfo `json:"layerDetails"` // 各层详情
 }
 
 // ImageList 列出镜像

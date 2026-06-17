@@ -16,18 +16,18 @@ import (
 
 // ContainerFileInfo 容器内文件信息
 type ContainerFileInfo struct {
-	Name    string `json:"name"`
-	Size    int64  `json:"size"`
+	Name    string `json:"name"`    // 文件名
+	Size    int64  `json:"size"`    // 文件大小（字节）
 	Mode    string `json:"mode"`    // 字符串权限，如 "-rw-r--r--"
-	ModTime int64  `json:"modTime"` // Unix 时间戳
-	IsDir   bool   `json:"isDir"`
-	IsLink  bool   `json:"isLink"`
+	ModTime int64  `json:"modTime"` // 修改时间（Unix 时间戳）
+	IsDir   bool   `json:"isDir"`   // 是否为目录
+	IsLink  bool   `json:"isLink"`  // 是否为符号链接
 }
 
 // ContainerFileListResult 目录列表结果
 type ContainerFileListResult struct {
-	Path  string              `json:"path"`
-	Files []ContainerFileInfo `json:"files"`
+	Path  string              `json:"path"`  // 当前目录路径
+	Files []ContainerFileInfo `json:"files"` // 目录下的文件/子目录列表
 }
 
 // ContainerFileList 列出容器内目录内容，通过 exec ls 实现（兼容所有镜像）

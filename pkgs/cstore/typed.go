@@ -66,10 +66,10 @@ func (t *TypedStore[T]) Set(val T) error {
 
 // TypedEvent 类型化的变更事件。
 type TypedEvent[T any] struct {
-	Key   string
-	Type  EventType
-	Value T    // PUT 时有效
-	Valid bool // Value 是否成功反序列化
+	Key   string    // 变更的键
+	Type  EventType // 事件类型（PUT/DELETE）
+	Value T         // PUT 时有效
+	Valid bool      // Value 是否成功反序列化
 }
 
 // Watch 监听 key 变更，返回类型化事件 channel。FileStore 返回 nil。

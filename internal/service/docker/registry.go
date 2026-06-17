@@ -10,33 +10,33 @@ import (
 
 // RegistryInfo 镜像仓库信息，保持前端稳定响应结构且不包含密码。
 type RegistryInfo struct {
-	Name        string `json:"name"`
-	URL         string `json:"url"`
-	Username    string `json:"username"`
-	Description string `json:"description"`
+	Name        string `json:"name"`        // 仓库名称（唯一标识）
+	URL         string `json:"url"`         // 仓库地址
+	Username    string `json:"username"`    // 登录用户名
+	Description string `json:"description"` // 仓库描述
 }
 
 // ImagePushRequest 镜像推送请求。
 type ImagePushRequest struct {
-	Image       string `json:"image" binding:"required"`
-	RegistryURL string `json:"registryUrl" binding:"required"`
-	Namespace   string `json:"namespace"`
+	Image       string `json:"image" binding:"required"`       // 待推送的本地镜像（repo:tag）
+	RegistryURL string `json:"registryUrl" binding:"required"` // 目标仓库地址
+	Namespace   string `json:"namespace"`                      // 仓库命名空间（可选）
 }
 
 // ImagePullRequest 拉取镜像请求。
 type ImagePullRequest struct {
-	Image       string `json:"image" binding:"required"`
-	RegistryURL string `json:"registryUrl"`
-	Namespace   string `json:"namespace"`
+	Image       string `json:"image" binding:"required"` // 待拉取的镜像（repo:tag）
+	RegistryURL string `json:"registryUrl"`              // 来源仓库地址（可选，缺省用默认仓库）
+	Namespace   string `json:"namespace"`                // 仓库命名空间（可选）
 }
 
 // RegistryUpsertRequest 仓库新建/更新请求
 type RegistryUpsertRequest struct {
-	Name        string `json:"name" binding:"required"`
-	URL         string `json:"url" binding:"required"`
-	Username    string `json:"username"`
-	Password    string `json:"password"`
-	Description string `json:"description"`
+	Name        string `json:"name" binding:"required"` // 仓库名称（唯一标识）
+	URL         string `json:"url" binding:"required"`  // 仓库地址
+	Username    string `json:"username"`                // 登录用户名
+	Password    string `json:"password"`                // 登录密码（为空保留原值）
+	Description string `json:"description"`             // 仓库描述
 }
 
 // RegistryList 列出已配置的镜像仓库。

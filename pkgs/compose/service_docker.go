@@ -17,10 +17,10 @@ import (
 
 // DockerCreateSpec 是 Docker SDK ContainerCreate 的参数集合。
 type DockerCreateSpec struct {
-	Name             string
-	Config           *container.Config
-	HostConfig       *container.HostConfig
-	NetworkingConfig *network.NetworkingConfig
+	Name             string                    // 容器名称
+	Config           *container.Config         // 容器配置（镜像、命令、环境等）
+	HostConfig       *container.HostConfig     // 主机配置（端口、挂载、资源限制等）
+	NetworkingConfig *network.NetworkingConfig // 网络配置
 }
 
 // ServiceToDockerCreateSpec 将 compose ServiceConfig 转换为 Docker SDK 创建参数。

@@ -12,12 +12,12 @@ import (
 
 // Info Caddy 概览信息
 type Info struct {
-	AdminURL  string `json:"adminUrl"`
-	Servers   int    `json:"servers"`
-	Routes    int    `json:"routes"`
-	Certs     int    `json:"certs"`
-	HasTLS    bool   `json:"hasTls"`
-	Available bool   `json:"available"`
+	AdminURL  string `json:"adminUrl"`  // Caddy Admin API 地址
+	Servers   int    `json:"servers"`   // HTTP server 数量
+	Routes    int    `json:"routes"`    // 路由总数
+	Certs     int    `json:"certs"`     // 证书数量
+	HasTLS    bool   `json:"hasTls"`    // 是否配置了 TLS
+	Available bool   `json:"available"` // Caddy 服务是否可用
 }
 
 // Info 获取概览

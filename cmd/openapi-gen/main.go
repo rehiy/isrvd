@@ -712,8 +712,19 @@ func inlineStructToSchema(st *ast.StructType) *SchemaInfo {
 		if field.Names == nil {
 			continue
 		}
+		// 内联结构体的字段描述：优先行尾注释，其次字段上方注释（AST 已带注释解析）
+		comment := extractComment(field.Comment)
+		if comment == "" {
+			comment = extractComment(field.Doc)
+		}
 		for _, name := range field.Names {
+			if !name.IsExported() {
+				continue
+			}
 			fieldInfo := extractFieldInfo(name.Name, field)
+			if comment != "" && fieldInfo.Description == "" {
+				fieldInfo.Description = comment
+			}
 			if fieldInfo.Name != "-" {
 				schema.Fields = append(schema.Fields, fieldInfo)
 			}

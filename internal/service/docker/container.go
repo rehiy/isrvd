@@ -31,66 +31,66 @@ var (
 
 // CPUThrottledData CPU 节流数据，保持前端稳定响应结构。
 type CPUThrottledData struct {
-	Periods          uint64 `json:"periods"`
-	ThrottledPeriods uint64 `json:"throttledPeriods"`
-	ThrottledTime    uint64 `json:"throttledTime"`
+	Periods          uint64 `json:"periods"`          // 调度周期总数
+	ThrottledPeriods uint64 `json:"throttledPeriods"` // 被节流的周期数
+	ThrottledTime    uint64 `json:"throttledTime"`    // 被节流的累计时间（纳秒）
 }
 
 // StatsNetDetail 网卡详细统计，保持前端稳定响应结构。
 type StatsNetDetail struct {
-	RxBytes   uint64 `json:"rxBytes"`
-	RxPackets uint64 `json:"rxPackets"`
-	RxErrors  uint64 `json:"rxErrors"`
-	RxDropped uint64 `json:"rxDropped"`
-	TxBytes   uint64 `json:"txBytes"`
-	TxPackets uint64 `json:"txPackets"`
-	TxErrors  uint64 `json:"txErrors"`
-	TxDropped uint64 `json:"txDropped"`
+	RxBytes   uint64 `json:"rxBytes"`   // 接收字节数
+	RxPackets uint64 `json:"rxPackets"` // 接收包数
+	RxErrors  uint64 `json:"rxErrors"`  // 接收错误数
+	RxDropped uint64 `json:"rxDropped"` // 接收丢包数
+	TxBytes   uint64 `json:"txBytes"`   // 发送字节数
+	TxPackets uint64 `json:"txPackets"` // 发送包数
+	TxErrors  uint64 `json:"txErrors"`  // 发送错误数
+	TxDropped uint64 `json:"txDropped"` // 发送丢包数
 }
 
 // StatsBlockDetail 硬盘设备详细统计，保持前端稳定响应结构。
 type StatsBlockDetail struct {
-	Major uint64 `json:"major"`
-	Minor uint64 `json:"minor"`
-	Read  uint64 `json:"read"`
-	Write uint64 `json:"write"`
+	Major uint64 `json:"major"` // 设备主号
+	Minor uint64 `json:"minor"` // 设备次号
+	Read  uint64 `json:"read"`  // 读取字节数
+	Write uint64 `json:"write"` // 写入字节数
 }
 
 // ContainerProcessList 容器进程列表，保持前端稳定响应结构。
 type ContainerProcessList struct {
-	Titles    []string   `json:"titles"`
-	Processes [][]string `json:"processes"`
+	Titles    []string   `json:"titles"`    // 列标题（如 PID/USER/CMD）
+	Processes [][]string `json:"processes"` // 进程行数据，每行与 titles 对应
 }
 
 // ContainerStatsResponse 容器统计信息响应，保持前端稳定响应结构。
 type ContainerStatsResponse struct {
-	ID            string                     `json:"id"`
-	Name          string                     `json:"name"`
-	CPUPercent    float64                    `json:"cpuPercent"`
-	CPUCores      int                        `json:"cpuCores"`
-	CPUFreq       float64                    `json:"cpuFreq"`
-	MemoryUsage   int64                      `json:"memoryUsage"`
-	MemoryLimit   int64                      `json:"memoryLimit"`
-	MemoryPercent float64                    `json:"memoryPercent"`
-	NetworkRx     int64                      `json:"networkRx"`
-	NetworkTx     int64                      `json:"networkTx"`
-	BlockRead     int64                      `json:"blockRead"`
-	BlockWrite    int64                      `json:"blockWrite"`
-	Pids          int64                      `json:"pids"`
-	PidsLimit     int64                      `json:"pidsLimit"`
-	CPUThrottled  *CPUThrottledData          `json:"cpuThrottled"`
-	NetworkDetail map[string]*StatsNetDetail `json:"networkDetail"`
-	BlockDetail   []*StatsBlockDetail        `json:"blockDetail"`
-	ProcessList   *ContainerProcessList      `json:"processList"`
+	ID            string                     `json:"id"`            // 容器 ID
+	Name          string                     `json:"name"`          // 容器名称
+	CPUPercent    float64                    `json:"cpuPercent"`    // CPU 使用率（百分比）
+	CPUCores      int                        `json:"cpuCores"`      // 可用 CPU 核数
+	CPUFreq       float64                    `json:"cpuFreq"`       // CPU 主频（MHz）
+	MemoryUsage   int64                      `json:"memoryUsage"`   // 内存使用量（字节）
+	MemoryLimit   int64                      `json:"memoryLimit"`   // 内存上限（字节）
+	MemoryPercent float64                    `json:"memoryPercent"` // 内存使用率（百分比）
+	NetworkRx     int64                      `json:"networkRx"`     // 网络接收总量（字节）
+	NetworkTx     int64                      `json:"networkTx"`     // 网络发送总量（字节）
+	BlockRead     int64                      `json:"blockRead"`     // 磁盘读取总量（字节）
+	BlockWrite    int64                      `json:"blockWrite"`    // 磁盘写入总量（字节）
+	Pids          int64                      `json:"pids"`          // 当前进程数
+	PidsLimit     int64                      `json:"pidsLimit"`     // 进程数上限
+	CPUThrottled  *CPUThrottledData          `json:"cpuThrottled"`  // CPU 节流明细
+	NetworkDetail map[string]*StatsNetDetail `json:"networkDetail"` // 各网卡明细（按网卡名）
+	BlockDetail   []*StatsBlockDetail        `json:"blockDetail"`   // 各块设备明细
+	ProcessList   *ContainerProcessList      `json:"processList"`   // 容器内进程列表
 }
 
 // VolumeMapping 挂载映射，保持 HTTP API 兼容。
 type VolumeMapping struct {
-	Type          string `json:"type,omitempty"`
-	Source        string `json:"source,omitempty"`
-	HostPath      string `json:"hostPath,omitempty"`
-	ContainerPath string `json:"containerPath"`
-	ReadOnly      bool   `json:"readOnly"`
+	Type          string `json:"type,omitempty"`     // 挂载类型（volume/bind）
+	Source        string `json:"source,omitempty"`   // 卷名（volume 类型）
+	HostPath      string `json:"hostPath,omitempty"` // 宿主机路径（bind 类型）
+	ContainerPath string `json:"containerPath"`      // 容器内挂载路径
+	ReadOnly      bool   `json:"readOnly"`           // 是否只读
 }
 
 // ContainerInfo Docker 容器信息（列表项），保持前端稳定响应结构。
@@ -111,11 +111,11 @@ type ContainerInfo struct {
 // ContainerDetail 容器详情，保持前端稳定响应结构。
 type ContainerDetail struct {
 	ContainerSpec
-	ID        string            `json:"id"`
-	Name      string            `json:"name"`
-	State     string            `json:"state"`
-	CreatedAt string            `json:"createdAt"`
-	Labels    map[string]string `json:"labels,omitempty"`
+	ID        string            `json:"id"`               // 容器 ID
+	Name      string            `json:"name"`             // 容器名称
+	State     string            `json:"state"`            // 运行状态
+	CreatedAt string            `json:"createdAt"`        // 创建时间
+	Labels    map[string]string `json:"labels,omitempty"` // 容器标签
 }
 
 // ContainerSpec 容器可写配置（创建/更新共用），保持 HTTP API 兼容。
@@ -142,20 +142,20 @@ type ContainerSpec struct {
 
 // ContainerLogsRequest 日志请求，保持 HTTP API 兼容。
 type ContainerLogsRequest struct {
-	ID   string `json:"id" binding:"required"`
-	Tail string `json:"tail"`
+	ID   string `json:"id" binding:"required"` // 容器 ID
+	Tail string `json:"tail"`                  // 返回末尾行数（如 "100"，空表示全部）
 }
 
 // ContainerLogsResult 容器日志结果，保持前端稳定响应结构。
 type ContainerLogsResult struct {
-	ID   string   `json:"id"`
-	Logs []string `json:"logs"`
+	ID   string   `json:"id"`   // 容器 ID
+	Logs []string `json:"logs"` // 日志行列表
 }
 
 // ContainerCreateResult 创建容器结果
 type ContainerCreateResult struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID   string `json:"id"`   // 新建容器 ID
+	Name string `json:"name"` // 新建容器名称
 }
 
 // ContainerList 列出容器

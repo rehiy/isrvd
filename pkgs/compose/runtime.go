@@ -21,8 +21,8 @@ var safeProjectName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]*$`)
 
 // InitPayload 描述 Compose 部署前需要解压到安装目录的附加运行文件。
 type InitPayload struct {
-	URL  string
-	File io.Reader
+	URL  string    // 附加运行文件 zip 的下载地址
+	File io.Reader // 附加运行文件流（multipart 上传）
 }
 
 // ==================== Project names ====================

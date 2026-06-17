@@ -59,7 +59,7 @@ func (app *App) swarmNodeInspect(c *gin.Context) {
 
 func (app *App) swarmNodeAction(c *gin.Context) {
 	var req struct {
-		Action string `json:"action"`
+		Action string `json:"action"` // 节点操作（如 drain/active/pause/remove）
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -107,8 +107,8 @@ func (app *App) swarmServiceCreate(c *gin.Context) {
 
 func (app *App) swarmServiceAction(c *gin.Context) {
 	var req struct {
-		Action   string  `json:"action"`
-		Replicas *uint64 `json:"replicas,omitempty"`
+		Action   string  `json:"action"`             // 服务操作（如 scale/restart/remove）
+		Replicas *uint64 `json:"replicas,omitempty"` // 目标副本数（action=scale 时使用）
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())

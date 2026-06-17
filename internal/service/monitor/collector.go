@@ -15,8 +15,8 @@ import (
 // Record 通用监控记录（一行 NDJSON）
 // Data 为原始 JSON，存储时不感知具体数据结构
 type Record struct {
-	Ts          int64           `json:"ts"`
-	Data        json.RawMessage `json:"data"`
+	Ts          int64           `json:"ts"`                     // 采集时间戳（Unix 秒）
+	Data        json.RawMessage `json:"data"`                   // 原始监控数据（主机或容器）
 	ContainerID string          `json:"container_id,omitempty"` // 仅容器监控有值
 }
 

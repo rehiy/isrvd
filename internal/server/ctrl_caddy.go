@@ -57,7 +57,7 @@ func (app *App) caddyConfigInspect(c *gin.Context) {
 
 func (app *App) caddyConfigLoad(c *gin.Context) {
 	var req struct {
-		Config json.RawMessage `json:"config" binding:"required"`
+		Config json.RawMessage `json:"config" binding:"required"` // 完整的 Caddy JSON 配置
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())

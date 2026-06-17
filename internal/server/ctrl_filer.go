@@ -134,7 +134,7 @@ func (app *App) filerFileDelete(c *gin.Context) {
 
 func (app *App) filerFileMkdir(c *gin.Context) {
 	var req struct {
-		Path string `json:"path" binding:"required"`
+		Path string `json:"path" binding:"required"` // 要创建的目录路径
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -299,8 +299,8 @@ func (app *App) filerFileUpload(c *gin.Context) {
 
 func (app *App) filerFileDownload(c *gin.Context) {
 	var req struct {
-		Path   string `form:"path" binding:"required"`
-		Inline bool   `form:"inline"`
+		Path   string `form:"path" binding:"required"` // 要下载的文件路径
+		Inline bool   `form:"inline"`                  // true 内联预览（Content-Disposition: inline），false 触发下载
 	}
 	if err := c.ShouldBindQuery(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())

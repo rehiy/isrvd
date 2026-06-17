@@ -37,18 +37,18 @@ func (s *Service) CheckAvailability(ctx context.Context) bool {
 
 // DockerInfo Docker 信息概览，保持前端稳定响应结构。
 type DockerInfo struct {
-	ContainersRunning  int64    `json:"containersRunning"`
-	ContainersStopped  int64    `json:"containersStopped"`
-	ContainersPaused   int64    `json:"containersPaused"`
-	ImagesTotal        int64    `json:"imagesTotal"`
-	VolumesTotal       int64    `json:"volumesTotal"`
-	NetworksTotal      int64    `json:"networksTotal"`
-	RegistryMirrors    []string `json:"registryMirrors"`
-	IndexServerAddress string   `json:"indexServerAddress"`
+	ContainersRunning  int64    `json:"containersRunning"`  // 运行中的容器数
+	ContainersStopped  int64    `json:"containersStopped"`  // 已停止的容器数
+	ContainersPaused   int64    `json:"containersPaused"`   // 已暂停的容器数
+	ImagesTotal        int64    `json:"imagesTotal"`        // 镜像总数
+	VolumesTotal       int64    `json:"volumesTotal"`       // 卷总数
+	NetworksTotal      int64    `json:"networksTotal"`      // 网络总数
+	RegistryMirrors    []string `json:"registryMirrors"`    // 镜像加速器地址列表
+	IndexServerAddress string   `json:"indexServerAddress"` // 默认镜像仓库地址
 }
 
 // ActionRequest 资源操作请求（容器/镜像/网络/卷通用）。
 type ActionRequest struct {
-	ID     string `json:"id" binding:"required"`
-	Action string `json:"action" binding:"required"`
+	ID     string `json:"id" binding:"required"`     // 目标资源 ID
+	Action string `json:"action" binding:"required"` // 操作动作（如 start/stop/restart/remove）
 }

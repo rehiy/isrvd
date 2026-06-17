@@ -538,7 +538,7 @@ func (app *App) dockerContainerFileRemove(c *gin.Context) {
 func (app *App) dockerContainerFileMkdir(c *gin.Context) {
 	id := c.Param("id")
 	var req struct {
-		Path string `json:"path" binding:"required"`
+		Path string `json:"path" binding:"required"` // 要创建的目录路径
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -554,8 +554,8 @@ func (app *App) dockerContainerFileMkdir(c *gin.Context) {
 func (app *App) dockerContainerFileRename(c *gin.Context) {
 	id := c.Param("id")
 	var req struct {
-		OldPath string `json:"oldPath" binding:"required"`
-		NewPath string `json:"newPath" binding:"required"`
+		OldPath string `json:"oldPath" binding:"required"` // 原路径
+		NewPath string `json:"newPath" binding:"required"` // 新路径
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -586,8 +586,8 @@ func (app *App) dockerContainerFileRead(c *gin.Context) {
 func (app *App) dockerContainerFileWrite(c *gin.Context) {
 	id := c.Param("id")
 	var req struct {
-		Path    string `json:"path" binding:"required"`
-		Content string `json:"content"`
+		Path    string `json:"path" binding:"required"` // 目标文件路径
+		Content string `json:"content"`                 // 文件文本内容
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -603,8 +603,8 @@ func (app *App) dockerContainerFileWrite(c *gin.Context) {
 func (app *App) dockerContainerFileChmod(c *gin.Context) {
 	id := c.Param("id")
 	var req struct {
-		Path string `json:"path" binding:"required"`
-		Mode string `json:"mode" binding:"required"`
+		Path string `json:"path" binding:"required"` // 目标文件/目录路径
+		Mode string `json:"mode" binding:"required"` // 权限模式（如 "0644"）
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())

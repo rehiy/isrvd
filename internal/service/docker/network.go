@@ -14,15 +14,15 @@ import (
 
 // NetworkSpec 创建网络请求。
 type NetworkSpec struct {
-	Name   string `json:"name" binding:"required"`
-	Driver string `json:"driver"`
-	Subnet string `json:"subnet"`
+	Name   string `json:"name" binding:"required"` // 网络名称（必填）
+	Driver string `json:"driver"`                  // 驱动类型（默认 bridge）
+	Subnet string `json:"subnet"`                  // 子网 CIDR（可选）
 }
 
 // VolumeSpec 创建卷请求。
 type VolumeSpec struct {
-	Name   string `json:"name" binding:"required"`
-	Driver string `json:"driver"`
+	Name   string `json:"name" binding:"required"` // 卷名称（必填）
+	Driver string `json:"driver"`                  // 驱动类型（默认 local）
 }
 
 // NetworkInfo Docker 网络信息，保持前端稳定响应结构。
@@ -36,24 +36,24 @@ type NetworkInfo struct {
 
 // NetworkContainerInfo 网络中的容器信息，保持前端稳定响应结构。
 type NetworkContainerInfo struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	IPv4       string `json:"ipv4"`
-	IPv6       string `json:"ipv6"`
-	MacAddress string `json:"macAddress"`
+	ID         string `json:"id"`         // 容器 ID
+	Name       string `json:"name"`       // 容器名称
+	IPv4       string `json:"ipv4"`       // 容器 IPv4 地址
+	IPv6       string `json:"ipv6"`       // 容器 IPv6 地址
+	MacAddress string `json:"macAddress"` // 容器 MAC 地址
 }
 
 // NetworkDetail 网络详情响应，保持前端稳定响应结构。
 type NetworkDetail struct {
-	ID         string                  `json:"id"`
-	Name       string                  `json:"name"`
-	Driver     string                  `json:"driver"`
-	Scope      string                  `json:"scope"`
-	Subnet     string                  `json:"subnet"`
-	Gateway    string                  `json:"gateway"`
-	Internal   bool                    `json:"internal"`
-	EnableIPv6 bool                    `json:"enableIPv6"`
-	Containers []*NetworkContainerInfo `json:"containers"`
+	ID         string                  `json:"id"`         // 网络 ID
+	Name       string                  `json:"name"`       // 网络名称
+	Driver     string                  `json:"driver"`     // 驱动类型
+	Scope      string                  `json:"scope"`      // 作用域（local/swarm）
+	Subnet     string                  `json:"subnet"`     // 子网 CIDR
+	Gateway    string                  `json:"gateway"`    // 网关地址
+	Internal   bool                    `json:"internal"`   // 是否为内部网络
+	EnableIPv6 bool                    `json:"enableIPv6"` // 是否启用 IPv6
+	Containers []*NetworkContainerInfo `json:"containers"` // 接入该网络的容器列表
 }
 
 // VolumeInfo Docker 卷信息，保持前端稳定响应结构。
@@ -67,22 +67,22 @@ type VolumeInfo struct {
 
 // VolumeUsedByContainer 使用卷的容器信息，保持前端稳定响应结构。
 type VolumeUsedByContainer struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	MountPath string `json:"mountPath"`
-	ReadOnly  bool   `json:"readOnly"`
+	ID        string `json:"id"`        // 容器 ID
+	Name      string `json:"name"`      // 容器名称
+	MountPath string `json:"mountPath"` // 容器内挂载路径
+	ReadOnly  bool   `json:"readOnly"`  // 是否只读挂载
 }
 
 // VolumeDetail 数据卷详情响应，保持前端稳定响应结构。
 type VolumeDetail struct {
-	Name       string                   `json:"name"`
-	Driver     string                   `json:"driver"`
-	Mountpoint string                   `json:"mountpoint"`
-	CreatedAt  string                   `json:"createdAt"`
-	Scope      string                   `json:"scope"`
-	Size       int64                    `json:"size"`
-	RefCount   int64                    `json:"refCount"`
-	UsedBy     []*VolumeUsedByContainer `json:"usedBy"`
+	Name       string                   `json:"name"`       // 卷名称
+	Driver     string                   `json:"driver"`     // 驱动类型
+	Mountpoint string                   `json:"mountpoint"` // 挂载点路径
+	CreatedAt  string                   `json:"createdAt"`  // 创建时间
+	Scope      string                   `json:"scope"`      // 作用域（local/global）
+	Size       int64                    `json:"size"`       // 卷大小（字节，-1 表示未知）
+	RefCount   int64                    `json:"refCount"`   // 引用该卷的容器数（-1 表示未知）
+	UsedBy     []*VolumeUsedByContainer `json:"usedBy"`     // 使用该卷的容器列表
 }
 
 // NetworkList 列出网络

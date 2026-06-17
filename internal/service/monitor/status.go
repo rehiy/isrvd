@@ -13,18 +13,18 @@ import (
 
 // DiskIOStat 硬盘 IO 统计
 type DiskIOStat struct {
-	Name       string `json:"name"`
-	ReadBytes  uint64 `json:"readBytes"`
-	WriteBytes uint64 `json:"writeBytes"`
-	ReadCount  uint64 `json:"readCount"`
-	WriteCount uint64 `json:"writeCount"`
+	Name       string `json:"name"`       // 磁盘设备名
+	ReadBytes  uint64 `json:"readBytes"`  // 累计读取字节数
+	WriteBytes uint64 `json:"writeBytes"` // 累计写入字节数
+	ReadCount  uint64 `json:"readCount"`  // 累计读取次数
+	WriteCount uint64 `json:"writeCount"` // 累计写入次数
 }
 
 // GoRuntimeStat Go 运行态统计
 type GoRuntimeStat struct {
-	Version      string `json:"version"`
-	NumCPU       int    `json:"numCPU"`
-	NumGoroutine int    `json:"numGoroutine"`
+	Version      string `json:"version"`      // Go 版本
+	NumCPU       int    `json:"numCPU"`       // 可用 CPU 核数
+	NumGoroutine int    `json:"numGoroutine"` // 当前 goroutine 数
 	*psutil.GoMemoryStat
 }
 
@@ -47,10 +47,10 @@ type SystemGPU struct {
 
 // HostStat 主机监控采集数据
 type HostStat struct {
-	System *psutil.DetailStat `json:"system"`
-	DiskIO []*DiskIOStat      `json:"diskIO"`
-	GPU    []*SystemGPU       `json:"gpu"`
-	Go     *GoRuntimeStat     `json:"go"`
+	System *psutil.DetailStat `json:"system"` // 系统资源明细（CPU/内存/磁盘等）
+	DiskIO []*DiskIOStat      `json:"diskIO"` // 各磁盘 IO 统计
+	GPU    []*SystemGPU       `json:"gpu"`    // GPU 统计列表
+	Go     *GoRuntimeStat     `json:"go"`     // Go 运行态统计
 }
 
 // CollectHostStat 采集主机监控数据
