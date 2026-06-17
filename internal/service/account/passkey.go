@@ -59,6 +59,9 @@ type PasskeyBeginData struct {
 
 // PasskeyBeginRegistration 开始 Passkey 注册
 func (s *Service) PasskeyBeginRegistration(c *gin.Context, displayName string) (*PasskeyBeginData, error) {
+	if !s.PasskeyEnabled() {
+		return nil, fmt.Errorf("Passkey 未启用")
+	}
 	username := c.GetString("username")
 	member, exists := config.Members[username]
 	if !exists {
@@ -139,6 +142,9 @@ func (s *Service) PasskeyFinishRegistration(c *gin.Context, sessionID string) er
 
 // PasskeyBeginLogin 开始 Passkey 登录，username 为空则使用可发现凭证
 func (s *Service) PasskeyBeginLogin(username string) (*PasskeyBeginData, error) {
+	if !s.PasskeyEnabled() {
+		return nil, fmt.Errorf("Passkey 未启用")
+	}
 	sessionID := newSessionID()
 
 	if username != "" {
