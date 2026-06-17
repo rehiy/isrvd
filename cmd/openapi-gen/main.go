@@ -639,10 +639,10 @@ func analyzeHandler(r *RouteDef) {
 			}
 
 			// 收集本地类型别名（如 filerPathQuery, cronJobEnableReq）
-			localTypes := collectLocalTypes(f, fsetCache, funcName)
+			localTypes := collectLocalTypes(f)
 
 			// 分析函数体
-			analyzeFuncBody(r, fd.Body, fsetCache, localTypes, filename)
+			analyzeFuncBody(r, fd.Body, localTypes, filename)
 			return
 		}
 	}
@@ -662,7 +662,7 @@ func isAppReceiver(fd *ast.FuncDecl) bool {
 	return ok && ident.Name == "App"
 }
 
-func collectLocalTypes(f *ast.File, fset *token.FileSet, _ string) map[string]string {
+func collectLocalTypes(f *ast.File) map[string]string {
 	result := make(map[string]string)
 	typeAliases := make(map[string]string) // 本地别名 → 原始类型
 
@@ -681,7 +681,7 @@ func collectLocalTypes(f *ast.File, fset *token.FileSet, _ string) map[string]st
 				// type X = Y 类型别名
 				collectTypeAlias(ts, typeAliases)
 			} else if st, ok := ts.Type.(*ast.StructType); ok {
-				result[typeName] = structTypeToJSONSchema(st, fset)
+				result[typeName] = structTypeToJSONSchema(st, fsetCache)
 			}
 		}
 	}
@@ -747,7 +747,7 @@ type handlerAnalysisState struct {
 	filename   string            // 当前分析的文件
 }
 
-func analyzeFuncBody(r *RouteDef, body *ast.BlockStmt, fset *token.FileSet, localTypes map[string]string, filename string) {
+func analyzeFuncBody(r *RouteDef, body *ast.BlockStmt, localTypes map[string]string, filename string) {
 	state := &handlerAnalysisState{
 		varTypes:   make(map[string]string),
 		localTypes: localTypes,
@@ -1168,10 +1168,7 @@ func findMethodReturnTypeInFile(filename, methodName string) string {
 				continue
 			}
 			// 去除所有指针前缀
-			goType = strings.TrimPrefix(goType, "*")
-			for strings.HasPrefix(goType, "*") {
-				goType = goType[1:]
-			}
+			goType = strings.TrimLeft(goType, "*")
 			return goType
 		}
 	}
@@ -1292,7 +1289,7 @@ func resolveStructSchema(typeName string, localTypes map[string]string, ctrlFile
 		}
 	}
 
-	// 2. 检查是否为带包名的类型
+	// 3. 检查是否为带包名的类型
 	parts := strings.SplitN(typeName, ".", 2)
 	var pkgAlias, structName string
 	if len(parts) == 2 {
@@ -1302,13 +1299,13 @@ func resolveStructSchema(typeName string, localTypes map[string]string, ctrlFile
 		structName = typeName
 	}
 
-	// 3. 从缓存中查找
+	// 4. 从缓存中查找
 	cacheKey := pkgAlias + "." + structName
 	if cached, ok := structCache[cacheKey]; ok {
 		return cached
 	}
 
-	// 4. 解析对应的 service 文件
+	// 5. 解析对应的 service 文件
 	schema := parseServiceStruct(pkgAlias, structName, ctrlFile)
 	if schema != nil {
 		// 使用规范化名称作为缓存 key
@@ -1317,7 +1314,7 @@ func resolveStructSchema(typeName string, localTypes map[string]string, ctrlFile
 		// 同时也用原始 key
 		structCache[cacheKey] = schema
 
-		// 5. 递归解析嵌套结构体字段类型（如 *config.AgentConfig）
+		// 6. 递归解析嵌套结构体字段类型（如 *config.AgentConfig）
 		resolveNestedTypesInSchema(schema, ctrlFile)
 	}
 	return schema
@@ -1424,12 +1421,7 @@ func findStructInFile(filename, structName, pkgAlias string) *SchemaInfo {
 			if !ok {
 				continue
 			}
-			// 提取结构体注释（GenDecl.Doc 或 TypeSpec.Doc）
-			structComment := extractComment(gd.Doc)
-			if structComment == "" {
-				structComment = extractComment(ts.Doc)
-			}
-			return buildSchemaFromStruct(pkgAlias, structName, st, filename, structComment)
+			return buildSchemaFromStruct(pkgAlias, structName, st, filename)
 		}
 	}
 	return nil
@@ -1451,7 +1443,7 @@ func extractComment(cg *ast.CommentGroup) string {
 }
 
 // buildSchemaFromStruct 从 AST StructType 构建 SchemaInfo
-func buildSchemaFromStruct(pkgAlias, structName string, st *ast.StructType, filename, structComment string) *SchemaInfo {
+func buildSchemaFromStruct(pkgAlias, structName string, st *ast.StructType, filename string) *SchemaInfo {
 	schema := &SchemaInfo{
 		PkgName:  pkgAlias,
 		TypeName: structName,

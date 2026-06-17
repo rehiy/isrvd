@@ -7233,128 +7233,12 @@
         ],
         "type": "object"
       },
-      "account.oidcLoginCode": {
-        "properties": {
-          "ExpiresAt": {
-            "description": "ExpiresAt",
-            "type": "string"
-          },
-          "Username": {
-            "description": "Username",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "account.oidcProviderCache": {
-        "properties": {
-          "expiresAt": {
-            "description": "expiresAt",
-            "type": "string"
-          },
-          "issuerURL": {
-            "description": "issuerURL",
-            "type": "string"
-          },
-          "mu": {
-            "$ref": "#/components/schemas/sync.Mutex",
-            "description": "mu"
-          },
-          "provider": {
-            "$ref": "#/components/schemas/oidc.Provider",
-            "description": "provider"
-          }
-        },
-        "type": "object"
-      },
-      "account.oidcState": {
-        "properties": {
-          "ExpiresAt": {
-            "description": "ExpiresAt",
-            "type": "string"
-          },
-          "Nonce": {
-            "description": "Nonce",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "account.passkeySession": {
-        "properties": {
-          "Data": {
-            "$ref": "#/components/schemas/webauthn.SessionData",
-            "description": "Data"
-          },
-          "DisplayName": {
-            "description": "DisplayName",
-            "type": "string"
-          },
-          "ExpiresAt": {
-            "description": "ExpiresAt",
-            "type": "string"
-          },
-          "Username": {
-            "description": "Username",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "account.passkeySessionStore": {
-        "properties": {
-          "done": {
-            "$ref": "#/components/schemas/ast.ChanType",
-            "description": "done"
-          },
-          "mu": {
-            "$ref": "#/components/schemas/sync.Mutex",
-            "description": "mu"
-          },
-          "sessions": {
-            "description": "sessions",
-            "type": "object"
-          },
-          "ticker": {
-            "$ref": "#/components/schemas/time.Ticker",
-            "description": "ticker"
-          }
-        },
-        "type": "object"
-      },
-      "account.passkeyUser": {
-        "properties": {
-          "credentials": {
-            "description": "credentials",
-            "items": {
-              "$ref": "#/components/schemas/webauthn.Credential"
-            },
-            "type": "array"
-          },
-          "displayName": {
-            "description": "displayName",
-            "type": "string"
-          },
-          "id": {
-            "description": "id",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "name": {
-            "description": "name",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "agent.ProxyRequest": {
         "properties": {
           "Body": {
             "description": "Body",
             "items": {
-              "type": "object"
+              "type": "integer"
             },
             "type": "array"
           },
@@ -9268,7 +9152,7 @@
           "Value": {
             "description": "PUT 时为新值，DELETE 时为 nil",
             "items": {
-              "type": "object"
+              "type": "integer"
             },
             "type": "array"
           }
@@ -10904,19 +10788,6 @@
         },
         "type": "object"
       },
-      "overview.probeTask": {
-        "properties": {
-          "fn": {
-            "$ref": "#/components/schemas/ast.FuncType",
-            "description": "fn"
-          },
-          "name": {
-            "description": "name",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "shell.Service": {
         "properties": {},
         "type": "object"
@@ -11681,46 +11552,6 @@
           "store": {
             "description": "主机配置存储",
             "type": "object"
-          }
-        },
-        "type": "object"
-      },
-      "webssh.credentialStore": {
-        "properties": {
-          "items": {
-            "description": "内存中的凭据列表",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "mu": {
-            "$ref": "#/components/schemas/sync.RWMutex",
-            "description": "保护 items 的并发访问"
-          },
-          "ts": {
-            "$ref": "#/components/schemas/ast.IndexExpr",
-            "description": "类型化存储实例"
-          }
-        },
-        "type": "object"
-      },
-      "webssh.store": {
-        "properties": {
-          "hosts": {
-            "description": "内存中的主机列表",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "mu": {
-            "$ref": "#/components/schemas/sync.RWMutex",
-            "description": "保护 hosts 的并发访问"
-          },
-          "ts": {
-            "$ref": "#/components/schemas/ast.IndexExpr",
-            "description": "类型化存储实例"
           }
         },
         "type": "object"
