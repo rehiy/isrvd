@@ -219,5 +219,11 @@ func volumeDetail(volInfo volume.Volume, containers []container.Summary) *Volume
 			}
 		}
 	}
-	return &VolumeDetail{Name: volInfo.Name, Driver: volInfo.Driver, Mountpoint: volInfo.Mountpoint, CreatedAt: volInfo.CreatedAt, Scope: volInfo.Scope, Size: volInfo.UsageData.Size, RefCount: volInfo.UsageData.RefCount, UsedBy: usedBy}
+	// UsageData 仅在带 size 参数查询时返回，可能为 nil；缺省以 -1 表示未知
+	size, refCount := int64(-1), int64(-1)
+	if volInfo.UsageData != nil {
+		size = volInfo.UsageData.Size
+		refCount = volInfo.UsageData.RefCount
+	}
+	return &VolumeDetail{Name: volInfo.Name, Driver: volInfo.Driver, Mountpoint: volInfo.Mountpoint, CreatedAt: volInfo.CreatedAt, Scope: volInfo.Scope, Size: size, RefCount: refCount, UsedBy: usedBy}
 }

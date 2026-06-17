@@ -121,7 +121,7 @@ export default toNative(VolumeDetail)
           </div>
           <div>
             <label class="form-label">引用数</label>
-            <div class="detail-value">{{ detailData.refCount || 0 }}</div>
+            <div class="detail-value">{{ detailData.refCount >= 0 ? detailData.refCount : '-' }}</div>
           </div>
         </div>
       </div>
