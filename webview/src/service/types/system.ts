@@ -75,6 +75,8 @@ export interface DockerRegistry {
     description?: string
     url: string
     username?: string
+    // 写入时为空表示保留原值（不通过 JSON 返回）
+    password?: string
 }
 
 export interface DockerConfig {

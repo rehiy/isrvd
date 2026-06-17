@@ -2,36 +2,24 @@
 package system
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"isrvd/config"
 )
 
-// AllConfigResponse 全部配置聚合响应（敏感字段已脱敏）
-type AllConfigResponse struct {
-	Server      *config.ServerConfig      `json:"server"`      // 服务配置（JWTSecret 已脱敏）
+// AllConfig 全部配置聚合（请求/响应共用）。
+// 作 GET 响应时：敏感字段已脱敏；作 PUT 请求时：nil 分区跳过更新，密钥为空保留原值。
+type AllConfig struct {
+	Server      *config.ServerConfig      `json:"server"`      // 服务配置（JWTSecret：响应脱敏 / 请求空保留）
 	THA         *config.THAConfig         `json:"tha"`         // 代理 Header 认证配置
-	OIDC        *config.OIDCConfig        `json:"oidc"`        // OIDC 认证配置（ClientSecret 已脱敏）
+	OIDC        *config.OIDCConfig        `json:"oidc"`        // OIDC 配置（ClientSecret：响应脱敏 / 请求空保留）
 	Passkey     *config.PasskeyConfig     `json:"passkey"`     // Passkey 认证配置
-	Agent       *config.AgentConfig       `json:"agent"`       // Agent LLM 配置（APIKey 已脱敏）
-	Apisix      *config.ApisixConfig      `json:"apisix"`      // APISIX 配置（AdminKey 已脱敏）
+	Agent       *config.AgentConfig       `json:"agent"`       // Agent LLM 配置（APIKey：响应脱敏 / 请求空保留）
+	Apisix      *config.ApisixConfig      `json:"apisix"`      // APISIX 配置（AdminKey：响应脱敏 / 请求空保留）
 	Caddy       *config.CaddyConfig       `json:"caddy"`       // Caddy 配置
-	Docker      *config.DockerConfig      `json:"docker"`      // Docker 配置
-	Monitor     *config.MonitorConfig     `json:"monitor"`     // 监控配置
-	Marketplace *config.MarketplaceConfig `json:"marketplace"` // 应用市场配置
-	Links       []*config.LinkConfig      `json:"links"`       // 导航链接列表
-}
-
-// UpdateAllConfigRequest 全量更新请求（空分区跳过更新，空字符串保留原值）
-type UpdateAllConfigRequest struct {
-	Server      *config.ServerConfig      `json:"server"`      // 服务配置（JWTSecret 为空保留原值）
-	THA         *config.THAConfig         `json:"tha"`         // 代理 Header 认证配置
-	OIDC        *config.OIDCConfig        `json:"oidc"`        // OIDC 配置（ClientSecret 为空保留原值）
-	Passkey     *config.PasskeyConfig     `json:"passkey"`     // Passkey 配置
-	Agent       *config.AgentConfig       `json:"agent"`       // Agent 配置（APIKey 为空保留原值）
-	Apisix      *config.ApisixConfig      `json:"apisix"`      // APISIX 配置（AdminKey 为空保留原值）
-	Caddy       *config.CaddyConfig       `json:"caddy"`       // Caddy 配置
-	Docker      *config.DockerConfig      `json:"docker"`      // Docker 配置
+	Docker      *config.DockerConfig      `json:"docker"`      // Docker 配置（registry.Password：响应脱敏 / 请求空保留）
 	Monitor     *config.MonitorConfig     `json:"monitor"`     // 监控配置
 	Marketplace *config.MarketplaceConfig `json:"marketplace"` // 应用市场配置
 	Links       []*config.LinkConfig      `json:"links"`       // 导航链接列表
@@ -45,108 +33,113 @@ func NewConfigService() *ConfigService {
 	return &ConfigService{}
 }
 
-// pickSecret 新值为空时保留原值，否则用新值
-func pickSecret(newVal, oldVal string) string {
-	if newVal == "" {
-		return oldVal
-	}
-	return newVal
-}
-
-// ConfigAll 获取全部配置（显式拷贝，过滤敏感字段）
-func (s *ConfigService) ConfigAll() *AllConfigResponse {
-	srv := config.Server
-	oidc := config.OIDC
-
-	return &AllConfigResponse{
-		Server: &config.ServerConfig{
-			Debug:          srv.Debug,
-			ListenAddr:     srv.ListenAddr,
-			JWTExpiration:  srv.JWTExpiration,
-			AllowedOrigins: srv.AllowedOrigins,
-			MaxUploadSize:  srv.MaxUploadSize,
-			RootDirectory:  srv.RootDirectory,
-			OpenAPI:        srv.OpenAPI,
-			// JWTSecret 不返回
-		},
-		THA: &config.THAConfig{
-			Enabled:      config.THA.Enabled,
-			HeaderName:   config.THA.HeaderName,
-			TrustedCIDRs: config.THA.TrustedCIDRs,
-		},
-		OIDC: &config.OIDCConfig{
-			Enabled:       oidc.Enabled,
-			IssuerURL:     oidc.IssuerURL,
-			ClientID:      oidc.ClientID,
-			RedirectURL:   oidc.RedirectURL,
-			UsernameClaim: oidc.UsernameClaim,
-			Scopes:        oidc.Scopes,
-			LoginLabel:    oidc.LoginLabel,
-			// ClientSecret 不返回
-		},
-		Passkey: &config.PasskeyConfig{
-			Enabled:   config.Passkey.Enabled,
-			RPName:    config.Passkey.RPName,
-			RPID:      config.Passkey.RPID,
-			RPOrigins: config.Passkey.RPOrigins,
-			Timeout:   config.Passkey.Timeout,
-		},
-		Agent: &config.AgentConfig{
-			Model:   config.Agent.Model,
-			BaseURL: config.Agent.BaseURL,
-			// APIKey 不返回
-		},
-		Apisix: &config.ApisixConfig{
-			AdminURL: config.Apisix.AdminURL,
-			// AdminKey 不返回
-		},
-		Caddy: &config.CaddyConfig{
-			AdminURL: config.Caddy.AdminURL,
-		},
+// ConfigAll 获取全部配置：深拷贝隔离全局 config 后清空敏感字段
+func (s *ConfigService) ConfigAll() *AllConfig {
+	src := &AllConfig{
+		Server:      config.Server,
+		THA:         config.THA,
+		OIDC:        config.OIDC,
+		Passkey:     config.Passkey,
+		Agent:       config.Agent,
+		Apisix:      config.Apisix,
+		Caddy:       config.Caddy,
 		Docker:      config.Docker,
 		Monitor:     config.Monitor,
 		Marketplace: config.Marketplace,
 		Links:       config.Links,
 	}
+	dst, err := deepCopyJSON(src)
+	if err != nil || dst == nil {
+		return &AllConfig{}
+	}
+	// 脱敏：清空所有密钥/密码
+	if dst.Server != nil {
+		dst.Server.JWTSecret = ""
+	}
+	if dst.OIDC != nil {
+		dst.OIDC.ClientSecret = ""
+	}
+	if dst.Agent != nil {
+		dst.Agent.APIKey = ""
+	}
+	if dst.Apisix != nil {
+		dst.Apisix.AdminKey = ""
+	}
+	if dst.Docker != nil {
+		for _, r := range dst.Docker.Registries {
+			if r != nil {
+				r.Password = ""
+			}
+		}
+	}
+	return dst
 }
 
-// ConfigUpdateAll 一次性更新全部配置（任何 nil 分区将跳过）
-func (s *ConfigService) ConfigUpdateAll(req UpdateAllConfigRequest) error {
+// ConfigUpdate 一次性更新全部配置（任何 nil 分区将跳过）
+func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 	if req.Server != nil {
-		req.Server.JWTSecret = pickSecret(req.Server.JWTSecret, config.Server.JWTSecret)
+		oldSecret := ""
+		if config.Server != nil {
+			oldSecret = config.Server.JWTSecret
+		}
+		req.Server.JWTSecret = pickSecret(req.Server.JWTSecret, oldSecret)
 		config.Server = config.ServerNormalize(req.Server)
 	}
 	if req.THA != nil {
 		config.THA = config.THANormalize(req.THA)
 	}
 	if req.OIDC != nil {
-		req.OIDC.ClientSecret = pickSecret(req.OIDC.ClientSecret, config.OIDC.ClientSecret)
+		oldSecret := ""
+		if config.OIDC != nil {
+			oldSecret = config.OIDC.ClientSecret
+		}
+		req.OIDC.ClientSecret = pickSecret(req.OIDC.ClientSecret, oldSecret)
 		config.OIDC = config.OIDCNormalize(req.OIDC)
 	}
 	if req.Passkey != nil {
 		config.Passkey = config.PasskeyNormalize(req.Passkey)
 	}
 	if req.Agent != nil {
-		config.Agent.Model = req.Agent.Model
-		config.Agent.BaseURL = req.Agent.BaseURL
-		config.Agent.APIKey = pickSecret(req.Agent.APIKey, config.Agent.APIKey)
+		oldSecret := ""
+		if config.Agent != nil {
+			oldSecret = config.Agent.APIKey
+		}
+		req.Agent.APIKey = pickSecret(req.Agent.APIKey, oldSecret)
+		config.Agent = req.Agent
 	}
 	if req.Apisix != nil {
-		config.Apisix.AdminURL = req.Apisix.AdminURL
-		config.Apisix.AdminKey = pickSecret(req.Apisix.AdminKey, config.Apisix.AdminKey)
+		oldSecret := ""
+		if config.Apisix != nil {
+			oldSecret = config.Apisix.AdminKey
+		}
+		req.Apisix.AdminKey = pickSecret(req.Apisix.AdminKey, oldSecret)
+		config.Apisix = req.Apisix
 	}
 	if req.Caddy != nil {
-		config.Caddy.AdminURL = req.Caddy.AdminURL
+		config.Caddy = req.Caddy
 	}
 	if req.Docker != nil {
-		config.Docker.Host = req.Docker.Host
-		config.Docker.ContainerRoot = req.Docker.ContainerRoot
+		// Registries 密码：空值按 url+username 匹配保留原值，非空则更新（改 url/username 会丢匹配，需重填）
+		if config.Docker != nil {
+			for _, reg := range req.Docker.Registries {
+				if reg == nil || reg.Password != "" {
+					continue
+				}
+				for _, old := range config.Docker.Registries {
+					if old != nil && old.URL == reg.URL && old.Username == reg.Username {
+						reg.Password = old.Password
+						break
+					}
+				}
+			}
+		}
+		config.Docker = req.Docker
 	}
 	if req.Monitor != nil {
 		config.Monitor = config.MonitorNormalize(req.Monitor)
 	}
 	if req.Marketplace != nil {
-		config.Marketplace.URL = req.Marketplace.URL
+		config.Marketplace = req.Marketplace
 	}
 	if req.Links != nil {
 		config.Links = req.Links
@@ -160,4 +153,24 @@ func (s *ConfigService) ConfigUpdateAll(req UpdateAllConfigRequest) error {
 	default:
 	}
 	return nil
+}
+
+// deepCopyJSON 通过 JSON 序列化-反序列化深拷贝，结果与源对象无共享指针
+func deepCopyJSON[T any](src T) (T, error) {
+	var dst T
+	data, err := json.Marshal(src)
+	if err != nil {
+		return dst, err
+	}
+	err = json.Unmarshal(data, &dst)
+	return dst, err
+}
+
+// pickSecret 新值为空（含纯空白）时保留原值，否则用裁剪首尾空白后的新值
+func pickSecret(newVal, oldVal string) string {
+	newVal = strings.TrimSpace(newVal)
+	if newVal == "" {
+		return oldVal
+	}
+	return newVal
 }

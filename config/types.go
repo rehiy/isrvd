@@ -90,11 +90,11 @@ type DockerConfig struct {
 
 // 镜像仓库配置
 type DockerRegistry struct {
-	Name        string `yaml:"name" json:"name"`               // 仓库名称（用于显示）
-	Description string `yaml:"description" json:"description"` // 仓库描述（可选）
-	URL         string `yaml:"url" json:"url"`                 // 仓库地址，如 registry.example.com
-	Username    string `yaml:"username" json:"username"`       // 用户名（可选）
-	Password    string `yaml:"password" json:"-"`              // 敏感字段不序列化到 JSON；写入时为空表示保留原值
+	Name        string `yaml:"name" json:"name"`                   // 仓库名称（用于显示）
+	Description string `yaml:"description" json:"description"`     // 仓库描述（可选）
+	URL         string `yaml:"url" json:"url"`                     // 仓库地址，如 registry.example.com
+	Username    string `yaml:"username" json:"username"`           // 用户名（可选）
+	Password    string `yaml:"password" json:"password,omitempty"` // 登录密码：GET 响应由 ConfigAll 脱敏清空；PUT 时为空表示按 url+username 匹配保留原值，非空则更新（修改 url/username 会导致匹配不到旧值，需重新填写密码）
 }
 
 // 应用市场配置
@@ -111,17 +111,14 @@ type LinkConfig struct {
 
 // 成员配置
 type MemberConfig struct {
-	Username      string               `yaml:"username" json:"username"`                       // 用户名
-	Password      string               `yaml:"password" json:"-"`                              // 敏感字段不序列化到 JSON
-	HomeDirectory string               `yaml:"homeDirectory" json:"homeDirectory"`             // 主目录
-	Passkeys      []*PasskeyCredential `yaml:"passkeys" json:"passkeys,omitempty"`             // Passkey 凭证列表
-	TwoFactor     *TwoFactorConfig     `yaml:"twoFactor,omitempty" json:"twoFactor,omitempty"` // 二次验证配置
-	// Founder 创始人标志，创始人拥有所有模块的完整权限
-	Founder bool `yaml:"founder" json:"founder"`
-	// Description 成员描述信息（可选）
-	Description string `yaml:"description,omitempty" json:"description,omitempty"`
-	// Permissions 允许访问的路由列表，格式为 "METHOD /api/path"，如 "GET /api/docker/containers"
-	Permissions []string `yaml:"permissions,omitempty" json:"permissions,omitempty"`
+	Username      string               `yaml:"username" json:"username"`                           // 用户名
+	Password      string               `yaml:"password" json:"-"`                                  // 敏感字段不序列化到 JSON
+	HomeDirectory string               `yaml:"homeDirectory" json:"homeDirectory"`                 // 主目录
+	Passkeys      []*PasskeyCredential `yaml:"passkeys" json:"passkeys,omitempty"`                 // Passkey 凭证列表
+	TwoFactor     *TwoFactorConfig     `yaml:"twoFactor,omitempty" json:"twoFactor,omitempty"`     // 二次验证配置
+	Founder       bool                 `yaml:"founder" json:"founder"`                             // Founder 创始人标志，创始人拥有所有模块的完整权限
+	Description   string               `yaml:"description,omitempty" json:"description,omitempty"` // Description 成员描述信息（可选）
+	Permissions   []string             `yaml:"permissions,omitempty" json:"permissions,omitempty"` // Permissions 允许访问的路由列表，格式为 "METHOD /api/path"，如 "GET /api/docker/containers"
 }
 
 // TwoFactorConfig 存储用户二次验证配置

@@ -33,12 +33,12 @@ func (app *App) systemConfig(c *gin.Context) {
 }
 
 func (app *App) systemConfigUpdate(c *gin.Context) {
-	var req svcSystem.UpdateAllConfigRequest
+	var req svcSystem.AllConfig
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.configSvc.ConfigUpdateAll(req); err != nil {
+	if err := app.configSvc.ConfigUpdate(req); err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
