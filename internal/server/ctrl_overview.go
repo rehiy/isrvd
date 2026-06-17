@@ -43,7 +43,6 @@ type BootstrapResponse struct {
 }
 
 // overviewBootstrap 聚合启动所需数据：auth + probe + config
-// AccessAnon：未登录也可调用，probe/config 仅登录后返回
 func (app *App) overviewBootstrap(c *gin.Context) {
 	ctx := c.Request.Context()
 	username := c.GetString("username")
@@ -73,27 +72,6 @@ func (app *App) overviewBootstrap(c *gin.Context) {
 	}
 
 	respondSuccess(c, "ok", resp)
-}
-
-// collectProbes 收集当前可用服务的探活函数映射
-func (app *App) collectProbes() map[string]func(context.Context) bool {
-	probes := map[string]func(context.Context) bool{}
-	if app.apisixSvc != nil {
-		probes["Apisix"] = app.apisixSvc.CheckAvailability
-	}
-	if app.caddySvc != nil {
-		probes["Caddy"] = app.caddySvc.CheckAvailability
-	}
-	if app.dockerSvc != nil {
-		probes["Docker"] = app.dockerSvc.CheckAvailability
-	}
-	if app.swarmSvc != nil {
-		probes["Swarm"] = app.swarmSvc.CheckAvailability
-	}
-	if app.composeSvc != nil {
-		probes["Compose"] = app.composeSvc.CheckAvailability
-	}
-	return probes
 }
 
 func (app *App) overviewVersion(c *gin.Context) {
@@ -177,6 +155,8 @@ func (app *App) overviewMonitor(c *gin.Context) {
 	}
 }
 
+// ─── 内部方法 ───
+
 // overviewMonitorRealtime 实时模式：直接采集当前数据，不写入文件
 func (app *App) overviewMonitorRealtime(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -192,4 +172,25 @@ func (app *App) overviewMonitorRealtime(c *gin.Context) {
 	default:
 		respondSuccess(c, "ok", app.monitorCollector.CollectHostStatNow(ctx))
 	}
+}
+
+// collectProbes 收集当前可用服务的探活函数映射
+func (app *App) collectProbes() map[string]func(context.Context) bool {
+	probes := map[string]func(context.Context) bool{}
+	if app.apisixSvc != nil {
+		probes["Apisix"] = app.apisixSvc.CheckAvailability
+	}
+	if app.caddySvc != nil {
+		probes["Caddy"] = app.caddySvc.CheckAvailability
+	}
+	if app.dockerSvc != nil {
+		probes["Docker"] = app.dockerSvc.CheckAvailability
+	}
+	if app.swarmSvc != nil {
+		probes["Swarm"] = app.swarmSvc.CheckAvailability
+	}
+	if app.composeSvc != nil {
+		probes["Compose"] = app.composeSvc.CheckAvailability
+	}
+	return probes
 }

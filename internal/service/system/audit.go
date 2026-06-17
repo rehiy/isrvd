@@ -55,11 +55,6 @@ type AuditService struct {
 	mu      sync.RWMutex
 }
 
-// auditNaming 审计日志文件命名规则：YYYY-MM-DD.jsonl
-func auditNaming() jsonl.Naming {
-	return jsonl.Naming{Prefix: "", Sep: "", Suffix: auditFileSuffix}
-}
-
 // NewAuditService 创建审计日志业务服务并自动初始化
 func NewAuditService() *AuditService {
 	dataDir := filepath.Join(config.Server.RootDirectory, "audit")
@@ -299,4 +294,11 @@ func auditUsername(c *gin.Context, body string) string {
 	}
 
 	return "匿名"
+}
+
+// ─── 辅助函数 ───
+
+// auditNaming 审计日志文件命名规则：YYYY-MM-DD.jsonl
+func auditNaming() jsonl.Naming {
+	return jsonl.Naming{Prefix: "", Sep: "", Suffix: auditFileSuffix}
 }

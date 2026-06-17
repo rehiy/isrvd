@@ -36,42 +36,11 @@ func (app *App) defineFilerRoutes() []Route {
 	}
 }
 
-// ─── 请求结构 ───
+// ─── Handler 方法 ───
 
 type filerPathQuery struct {
 	Path string `form:"path" binding:"required"` // 文件或目录路径
 }
-
-type filerContentBody struct {
-	Path    string `json:"path" binding:"required"`    // 文件路径
-	Content string `json:"content" binding:"required"` // 文件内容
-}
-
-type filerChmodBody struct {
-	Path string `json:"path" binding:"required"` // 文件路径
-	Mode string `json:"mode" binding:"required"` // 权限模式（如 "0755"）
-}
-
-type filerRenameBody struct {
-	Path   string `json:"path" binding:"required"`   // 原路径
-	Target string `json:"target" binding:"required"` // 目标路径或名称
-}
-
-type filerUnzipBody struct {
-	Path      string `json:"path" binding:"required"` // 压缩文件路径
-	TargetDir string `json:"targetDir"`               // 可选：指定解压目标目录名（仅允许标准目录名，无 / 等分隔符）
-}
-
-func (app *App) filerAbsPath(c *gin.Context, path string) (string, bool) {
-	absPath, err := app.filerSvc.AbsPath(c.GetString("username"), path)
-	if err != nil {
-		respondError(c, http.StatusForbidden, err.Error())
-		return "", false
-	}
-	return absPath, true
-}
-
-// ─── Handler 方法 ───
 
 func (app *App) filerFileList(c *gin.Context) {
 	var req filerPathQuery
@@ -153,6 +122,11 @@ func (app *App) filerFileMkdir(c *gin.Context) {
 	respondSuccess(c, "目录创建成功", nil)
 }
 
+type filerContentBody struct {
+	Path    string `json:"path" binding:"required"`    // 文件路径
+	Content string `json:"content" binding:"required"` // 文件内容
+}
+
 func (app *App) filerFileCreate(c *gin.Context) {
 	var req filerContentBody
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -211,6 +185,11 @@ func (app *App) filerFileModify(c *gin.Context) {
 	respondSuccess(c, "文件保存成功", nil)
 }
 
+type filerRenameBody struct {
+	Path   string `json:"path" binding:"required"`   // 原路径
+	Target string `json:"target" binding:"required"` // 目标路径或名称
+}
+
 func (app *App) filerFileRename(c *gin.Context) {
 	var req filerRenameBody
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -237,6 +216,11 @@ func (app *App) filerFileRename(c *gin.Context) {
 		return
 	}
 	respondSuccess(c, "文件重命名成功", nil)
+}
+
+type filerChmodBody struct {
+	Path string `json:"path" binding:"required"` // 文件路径
+	Mode string `json:"mode" binding:"required"` // 权限模式（如 "0755"）
 }
 
 func (app *App) filerFileChmod(c *gin.Context) {
@@ -360,6 +344,11 @@ func (app *App) filerFileZip(c *gin.Context) {
 	respondSuccess(c, "压缩文件创建成功", nil)
 }
 
+type filerUnzipBody struct {
+	Path      string `json:"path" binding:"required"` // 压缩文件路径
+	TargetDir string `json:"targetDir"`               // 可选：指定解压目标目录名（仅允许标准目录名，无 / 等分隔符）
+}
+
 func (app *App) filerFileUnzip(c *gin.Context) {
 	var req filerUnzipBody
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -390,4 +379,15 @@ func (app *App) filerFileUnzip(c *gin.Context) {
 		return
 	}
 	respondSuccess(c, "文件解压成功", nil)
+}
+
+// ─── 内部方法 ───
+
+func (app *App) filerAbsPath(c *gin.Context, path string) (string, bool) {
+	absPath, err := app.filerSvc.AbsPath(c.GetString("username"), path)
+	if err != nil {
+		respondError(c, http.StatusForbidden, err.Error())
+		return "", false
+	}
+	return absPath, true
 }

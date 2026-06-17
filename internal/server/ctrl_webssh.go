@@ -326,18 +326,6 @@ func (app *App) websshSFTPChown(c *gin.Context) {
 	respondSuccess(c, "所有者修改成功", nil)
 }
 
-// parseFileMode 解析权限字符串（如 "0755", "644"）为 os.FileMode
-func parseFileMode(modeStr string) (os.FileMode, error) {
-	// 如果是 3-4 位的八进制数字字符串
-	if len(modeStr) == 3 || len(modeStr) == 4 {
-		var mode uint32
-		if _, err := fmt.Sscanf(modeStr, "%o", &mode); err == nil {
-			return os.FileMode(mode), nil
-		}
-	}
-	return 0, fmt.Errorf("无法解析权限字符串: %s", modeStr)
-}
-
 // websshSFTPRead 读取文件内容
 func (app *App) websshSFTPRead(c *gin.Context) {
 	id := c.Param("id")
@@ -394,4 +382,18 @@ func (app *App) websshSFTPDirSize(c *gin.Context) {
 	}
 
 	respondSuccess(c, "计算目录大小成功", gin.H{"path": dirPath, "size": size})
+}
+
+// ─── 辅助函数 ───
+
+// parseFileMode 解析权限字符串（如 "0755", "644"）为 os.FileMode
+func parseFileMode(modeStr string) (os.FileMode, error) {
+	// 如果是 3-4 位的八进制数字字符串
+	if len(modeStr) == 3 || len(modeStr) == 4 {
+		var mode uint32
+		if _, err := fmt.Sscanf(modeStr, "%o", &mode); err == nil {
+			return os.FileMode(mode), nil
+		}
+	}
+	return 0, fmt.Errorf("无法解析权限字符串: %s", modeStr)
 }

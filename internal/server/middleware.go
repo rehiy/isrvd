@@ -97,14 +97,6 @@ func AuditMiddleware(routeIndex map[string]Route, svc *svcSystem.AuditService) g
 	}
 }
 
-func matchRoute(routeIndex map[string]Route, method, path string) (Route, bool) {
-	route, ok := routeIndex[method+" "+path]
-	if !ok {
-		route, ok = routeIndex["ANY "+path]
-	}
-	return route, ok
-}
-
 // securityHeadersMiddleware 安全响应头中间件
 func securityHeadersMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -121,4 +113,14 @@ func securityHeadersMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// ─── 辅助函数 ───
+
+func matchRoute(routeIndex map[string]Route, method, path string) (Route, bool) {
+	route, ok := routeIndex[method+" "+path]
+	if !ok {
+		route, ok = routeIndex["ANY "+path]
+	}
+	return route, ok
 }

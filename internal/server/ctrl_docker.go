@@ -66,9 +66,6 @@ func (app *App) defineDockerRoutes() []Route {
 	}
 }
 
-// svcDockerRegistryUpsertRequest 是 service/docker 中 RegistryUpsertRequest 的本地别名
-type svcDockerRegistryUpsertRequest = svcDocker.RegistryUpsertRequest
-
 func (app *App) dockerInfo(c *gin.Context) {
 	result, err := app.dockerSvc.Info(c.Request.Context())
 	if err != nil {
@@ -377,6 +374,9 @@ func (app *App) dockerVolumeInspect(c *gin.Context) {
 }
 
 // ─── 镜像仓库 ───
+
+// svcDockerRegistryUpsertRequest 是 service/docker 中 RegistryUpsertRequest 的本地别名
+type svcDockerRegistryUpsertRequest = svcDocker.RegistryUpsertRequest
 
 func (app *App) dockerRegistryList(c *gin.Context) {
 	respondSuccess(c, "获取镜像仓库列表成功", app.dockerSvc.RegistryList())

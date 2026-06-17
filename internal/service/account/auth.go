@@ -14,44 +14,6 @@ import (
 	"isrvd/config"
 )
 
-// ─── 请求/响应类型 ──────────
-
-// AuthInfoResponse 认证模式及当前用户信息
-type AuthInfoResponse struct {
-	Mode           string      `json:"mode"`               // 认证模式：jwt | header
-	Username       string      `json:"username,omitempty"` // 当前登录用户名（未登录时为空）
-	Member         *MemberInfo `json:"member,omitempty"`   // 成员详细信息
-	OIDCEnabled    bool        `json:"oidcEnabled"`        // 是否启用 OIDC 登录
-	OIDCBtnLabel   string      `json:"oidcBtnLabel"`       // OIDC 登录按钮文案
-	PasskeyEnabled bool        `json:"passkeyEnabled"`     // 是否启用 Passkey 登录
-}
-
-// LoginRequest 登录请求
-type LoginRequest struct {
-	Username string `json:"username" binding:"required"` // 用户名
-	Password string `json:"password" binding:"required"` // 密码
-	TOTPCode string `json:"totpCode"`                    // TOTP 验证码（启用二步验证时必填）
-}
-
-// LoginResponse 登录响应
-type LoginResponse struct {
-	Token             string `json:"token,omitempty"`             // JWT Token（二步验证时为空）
-	Username          string `json:"username"`                    // 用户名
-	TwoFactorRequired bool   `json:"twoFactorRequired,omitempty"` // 是否需要二步验证
-}
-
-// CreateApiTokenRequest 创建 API Token 请求
-type CreateApiTokenRequest struct {
-	Name      string `json:"name"`      // 令牌名称（用于标识）
-	ExpiresIn int64  `json:"expiresIn"` // 过期时间（秒），0 表示永不过期
-}
-
-// CreateApiTokenResponse 创建 API Token 响应
-type CreateApiTokenResponse struct {
-	Token string `json:"token"` // 新创建的 API Token（仅创建时返回明文）
-	Name  string `json:"name"`  // 令牌名称
-}
-
 // ─── 认证入口 ──────────────
 
 // Auth 根据配置选择认证方式，返回用户名和错误原因。
@@ -67,6 +29,16 @@ func (s *Service) Auth(c *gin.Context) (username, errMsg string) {
 func (s *Service) AuthMix(c *gin.Context) string {
 	username, _ := s.Auth(c)
 	return username
+}
+
+// AuthInfoResponse 认证模式及当前用户信息
+type AuthInfoResponse struct {
+	Mode           string      `json:"mode"`               // 认证模式：jwt | header
+	Username       string      `json:"username,omitempty"` // 当前登录用户名（未登录时为空）
+	Member         *MemberInfo `json:"member,omitempty"`   // 成员详细信息
+	OIDCEnabled    bool        `json:"oidcEnabled"`        // 是否启用 OIDC 登录
+	OIDCBtnLabel   string      `json:"oidcBtnLabel"`       // OIDC 登录按钮文案
+	PasskeyEnabled bool        `json:"passkeyEnabled"`     // 是否启用 Passkey 登录
 }
 
 // AuthInfo 返回当前认证模式及已登录用户信息
@@ -90,6 +62,20 @@ func (s *Service) AuthInfo(username string) *AuthInfoResponse {
 }
 
 // ─── 登录与 Token 签发 ──────────────
+
+// LoginRequest 登录请求
+type LoginRequest struct {
+	Username string `json:"username" binding:"required"` // 用户名
+	Password string `json:"password" binding:"required"` // 密码
+	TOTPCode string `json:"totpCode"`                    // TOTP 验证码（启用二步验证时必填）
+}
+
+// LoginResponse 登录响应
+type LoginResponse struct {
+	Token             string `json:"token,omitempty"`             // JWT Token（二步验证时为空）
+	Username          string `json:"username"`                    // 用户名
+	TwoFactorRequired bool   `json:"twoFactorRequired,omitempty"` // 是否需要二步验证
+}
 
 // Login 校验用户名密码并签发 JWT Token
 func (s *Service) Login(req LoginRequest) (*LoginResponse, error) {
@@ -126,6 +112,18 @@ func (s *Service) IssueLoginToken(username string) (*LoginResponse, error) {
 	return &LoginResponse{Token: tokenStr, Username: username}, nil
 }
 
+// CreateApiTokenRequest 创建 API Token 请求
+type CreateApiTokenRequest struct {
+	Name      string `json:"name"`      // 令牌名称（用于标识）
+	ExpiresIn int64  `json:"expiresIn"` // 过期时间（秒），0 表示永不过期
+}
+
+// CreateApiTokenResponse 创建 API Token 响应
+type CreateApiTokenResponse struct {
+	Token string `json:"token"` // 新创建的 API Token（仅创建时返回明文）
+	Name  string `json:"name"`  // 令牌名称
+}
+
 // ApiTokenCreate 为已认证用户创建长效 API Token
 func (s *Service) ApiTokenCreate(username string, req CreateApiTokenRequest) (*CreateApiTokenResponse, error) {
 	extra := jwt.MapClaims{
@@ -141,37 +139,6 @@ func (s *Service) ApiTokenCreate(username string, req CreateApiTokenRequest) (*C
 	}
 	logman.Info("API token created", "username", username, "name", req.Name)
 	return &CreateApiTokenResponse{Token: tokenStr, Name: req.Name}, nil
-}
-
-// signJWT 为指定用户签发 JWT，extra 中的 claims 会合并到标准 claims 中
-func (s *Service) signJWT(username string, extra jwt.MapClaims) (string, error) {
-	member, exists := config.Members[username]
-	if !exists {
-		return "", fmt.Errorf("用户不存在")
-	}
-
-	// 密码 hash 后 8 位作为校验，修改密码后 token 自动失效
-	// bcrypt hash 前 7 位是固定格式（如 $2a$10$），后 8 位会随密码重置而变化
-	pwd := ""
-	if len(member.Password) >= 8 {
-		pwd = member.Password[len(member.Password)-8:]
-	}
-
-	claims := jwt.MapClaims{
-		"sub": username,
-		"iat": time.Now().Unix(),
-		"pwd": pwd,
-	}
-	for k, v := range extra {
-		claims[k] = v
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString([]byte(config.Server.JWTSecret))
-	if err != nil {
-		return "", fmt.Errorf("token 生成失败: %w", err)
-	}
-	return tokenStr, nil
 }
 
 // ─── JWT 认证 ──────────────
@@ -226,22 +193,6 @@ func (s *Service) JWTUsername(c *gin.Context) string {
 	return sub
 }
 
-// extractJWT 从 Authorization Header 或（路由标记了 QueryToken 时）query ?token= 中提取原始 JWT 字符串。
-func (s *Service) extractJWT(c *gin.Context) string {
-	tokenStr := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
-	if tokenStr != "" {
-		return tokenStr
-	}
-	// WebSocket 及标记了 QueryToken 的路由（SSE、文件预览下载）允许 query token
-	if c.GetHeader("Upgrade") == "websocket" {
-		return c.Query("token")
-	}
-	if v, exists := c.Get("routeQueryToken"); exists && v.(bool) {
-		return c.Query("token")
-	}
-	return ""
-}
-
 // ─── 代理 Header 登录 ────────────────
 
 // HeaderTokenCheck 从上游代理传入的 Header 读取用户名；失败时返回空用户名和具体错误原因。
@@ -271,6 +222,55 @@ func (s *Service) HeaderUsernameExtract(c *gin.Context) string {
 		return ""
 	}
 	return username
+}
+
+// ─── 内部方法 ───
+
+// signJWT 为指定用户签发 JWT，extra 中的 claims 会合并到标准 claims 中
+func (s *Service) signJWT(username string, extra jwt.MapClaims) (string, error) {
+	member, exists := config.Members[username]
+	if !exists {
+		return "", fmt.Errorf("用户不存在")
+	}
+
+	// 密码 hash 后 8 位作为校验，修改密码后 token 自动失效
+	// bcrypt hash 前 7 位是固定格式（如 $2a$10$），后 8 位会随密码重置而变化
+	pwd := ""
+	if len(member.Password) >= 8 {
+		pwd = member.Password[len(member.Password)-8:]
+	}
+
+	claims := jwt.MapClaims{
+		"sub": username,
+		"iat": time.Now().Unix(),
+		"pwd": pwd,
+	}
+	for k, v := range extra {
+		claims[k] = v
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenStr, err := token.SignedString([]byte(config.Server.JWTSecret))
+	if err != nil {
+		return "", fmt.Errorf("token 生成失败: %w", err)
+	}
+	return tokenStr, nil
+}
+
+// extractJWT 从 Authorization Header 或（路由标记了 QueryToken 时）query ?token= 中提取原始 JWT 字符串。
+func (s *Service) extractJWT(c *gin.Context) string {
+	tokenStr := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
+	if tokenStr != "" {
+		return tokenStr
+	}
+	// WebSocket 及标记了 QueryToken 的路由（SSE、文件预览下载）允许 query token
+	if c.GetHeader("Upgrade") == "websocket" {
+		return c.Query("token")
+	}
+	if v, exists := c.Get("routeQueryToken"); exists && v.(bool) {
+		return c.Query("token")
+	}
+	return ""
 }
 
 func (s *Service) headerSourceTrusted(c *gin.Context) bool {

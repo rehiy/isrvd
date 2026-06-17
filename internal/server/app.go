@@ -27,6 +27,20 @@ import (
 	"isrvd/public"
 )
 
+const APINamespace = "/api"
+
+const (
+	AccessAnon RouteAccess = -1 // 匿名
+	AccessPerm RouteAccess = 0  // 需要具体权限
+	AccessAuth RouteAccess = 1  // 登录即可访问
+)
+
+const (
+	AuditIgnore   AuditLevel = -1 // 忽略
+	AuditByMethod AuditLevel = 0  // 按 Method 审计
+	AuditAlways   AuditLevel = 1  // 强制审计
+)
+
 // App 应用实例，持有各业务服务
 type App struct {
 	*gin.Engine
@@ -67,20 +81,6 @@ type Route struct {
 	Audit      AuditLevel      `json:"-"`             // 审计级别，0：按 Method 审计，-1：忽略，1：强制审计
 	QueryToken bool            `json:"-"`             // 允许从 query ?token= 提取 JWT（用于 SSE/文件下载等无法携带 Header 的场景）
 }
-
-const APINamespace = "/api"
-
-const (
-	AccessAnon RouteAccess = -1 // 匿名
-	AccessPerm RouteAccess = 0  // 需要具体权限
-	AccessAuth RouteAccess = 1  // 登录即可访问
-)
-
-const (
-	AuditIgnore   AuditLevel = -1 // 忽略
-	AuditByMethod AuditLevel = 0  // 按 Method 审计
-	AuditAlways   AuditLevel = 1  // 强制审计
-)
 
 func StartApp() {
 	app := &App{

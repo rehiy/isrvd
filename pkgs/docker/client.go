@@ -53,8 +53,8 @@ func NewDockerService(cfg *DockerConfig) (*DockerService, error) {
 	return &DockerService{client: cli, config: cfg}, nil
 }
 
-// GetClient 获取 Docker 客户端
-func (s *DockerService) GetClient() *client.Client {
+// Client 获取 Docker 客户端
+func (s *DockerService) Client() *client.Client {
 	return s.client
 }
 

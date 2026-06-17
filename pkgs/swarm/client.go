@@ -19,8 +19,8 @@ func NewSwarmService(dockerClient *client.Client) *SwarmService {
 	return &SwarmService{client: dockerClient}
 }
 
-// GetClient 获取 Docker 客户端
-func (s *SwarmService) GetClient() *client.Client {
+// Client 获取 Docker 客户端
+func (s *SwarmService) Client() *client.Client {
 	return s.client
 }
 

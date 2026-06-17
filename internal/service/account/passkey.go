@@ -15,6 +15,8 @@ import (
 	"isrvd/config"
 )
 
+const passkeySessionMaxSize = 100
+
 // initPasskey 初始化 WebAuthn 单例并构建内存索引，由 NewService 调用
 func (s *Service) initPasskey() {
 	if config.Passkey != nil && config.Passkey.Enabled {
@@ -55,6 +57,75 @@ func (s *Service) PasskeyEnabled() bool {
 type PasskeyBeginData struct {
 	SessionID string `json:"sessionId"` // Passkey 会话 ID
 	Options   any    `json:"options"`   // WebAuthn 选项（传递给浏览器 API）
+}
+
+// passkeySession 存储注册/登录过程中的临时会话数据
+type passkeySession struct {
+	Data        webauthn.SessionData
+	Username    string
+	DisplayName string
+	ExpiresAt   time.Time
+}
+
+// passkeySessionStore 管理注册/登录临时会话
+type passkeySessionStore struct {
+	mu       sync.Mutex
+	sessions map[string]*passkeySession
+	ticker   *time.Ticker
+	done     chan struct{}
+}
+
+func newPasskeySessionStore() *passkeySessionStore {
+	store := &passkeySessionStore{
+		sessions: make(map[string]*passkeySession),
+		done:     make(chan struct{}),
+	}
+	store.ticker = time.NewTicker(5 * time.Minute)
+	go func() {
+		for {
+			select {
+			case <-store.ticker.C:
+				store.mu.Lock()
+				now := time.Now()
+				for k, v := range store.sessions {
+					if v.ExpiresAt.Before(now) {
+						delete(store.sessions, k)
+					}
+				}
+				store.mu.Unlock()
+			case <-store.done:
+				return
+			}
+		}
+	}()
+	return store
+}
+
+// Stop 停止会话清理协程，防止资源泄漏
+func (s *passkeySessionStore) Stop() {
+	s.ticker.Stop()
+	close(s.done)
+}
+
+func (s *passkeySessionStore) save(id string, sess *passkeySession) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(s.sessions) < passkeySessionMaxSize {
+		s.sessions[id] = sess
+	}
+}
+
+// pop 取出并删除会话（一次性消费，防重放）
+func (s *passkeySessionStore) pop(id string) *passkeySession {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sess := s.sessions[id]
+	if sess == nil || sess.ExpiresAt.Before(time.Now()) {
+		delete(s.sessions, id)
+		return nil
+	}
+	delete(s.sessions, id)
+	return sess
 }
 
 // PasskeyBeginRegistration 开始 Passkey 注册
@@ -264,22 +335,6 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginRe
 	return resp, nil
 }
 
-// updateBackupState 在登录成功后同步更新凭证的 BackupState（BS 标志可能随设备备份状态变化）
-func (s *Service) updateBackupState(username, credIDStr string, backupState bool) {
-	member, exists := config.Members[username]
-	if !exists {
-		return
-	}
-	for _, pk := range member.Passkeys {
-		if pk.IDBase64 == credIDStr && pk.BackupState != backupState {
-			pk.BackupState = backupState
-			config.Members[username] = member
-			_ = config.Save()
-			break
-		}
-	}
-}
-
 // PasskeyListCredentials 查询用户的 Passkey 凭证列表
 func (s *Service) PasskeyListCredentials(username string) ([]*config.PasskeyCredential, error) {
 	member, exists := config.Members[username]
@@ -336,6 +391,8 @@ func (s *Service) PasskeyUpdateCredentialName(username, credentialID, displayNam
 	return ErrPasskeyNotFound
 }
 
+// ─── 内部方法 ───
+
 // passkeyUser 实现 webauthn.User 接口
 type passkeyUser struct {
 	id          []byte
@@ -349,6 +406,22 @@ func (u *passkeyUser) WebAuthnName() string                       { return u.nam
 func (u *passkeyUser) WebAuthnDisplayName() string                { return u.displayName }
 func (u *passkeyUser) WebAuthnCredentials() []webauthn.Credential { return u.credentials }
 func (u *passkeyUser) WebAuthnIcon() string                       { return "" }
+
+// updateBackupState 在登录成功后同步更新凭证的 BackupState（BS 标志可能随设备备份状态变化）
+func (s *Service) updateBackupState(username, credIDStr string, backupState bool) {
+	member, exists := config.Members[username]
+	if !exists {
+		return
+	}
+	for _, pk := range member.Passkeys {
+		if pk.IDBase64 == credIDStr && pk.BackupState != backupState {
+			pk.BackupState = backupState
+			config.Members[username] = member
+			_ = config.Save()
+			break
+		}
+	}
+}
 
 // buildPasskeyUser 构建 webauthn.User 实例，从配置和内存索引读取凭证信息
 func (s *Service) buildPasskeyUser(username string, member *config.MemberConfig) *passkeyUser {
@@ -387,75 +460,7 @@ func (s *Service) buildPasskeyUser(username string, member *config.MemberConfig)
 	}
 }
 
-// passkeySession 存储注册/登录过程中的临时会话数据
-type passkeySession struct {
-	Data        webauthn.SessionData
-	Username    string
-	DisplayName string
-	ExpiresAt   time.Time
-}
-
-const passkeySessionMaxSize = 100
-
-type passkeySessionStore struct {
-	mu       sync.Mutex
-	sessions map[string]*passkeySession
-	ticker   *time.Ticker
-	done     chan struct{}
-}
-
-func newPasskeySessionStore() *passkeySessionStore {
-	store := &passkeySessionStore{
-		sessions: make(map[string]*passkeySession),
-		done:     make(chan struct{}),
-	}
-	store.ticker = time.NewTicker(5 * time.Minute)
-	go func() {
-		for {
-			select {
-			case <-store.ticker.C:
-				store.mu.Lock()
-				now := time.Now()
-				for k, v := range store.sessions {
-					if v.ExpiresAt.Before(now) {
-						delete(store.sessions, k)
-					}
-				}
-				store.mu.Unlock()
-			case <-store.done:
-				return
-			}
-		}
-	}()
-	return store
-}
-
-// Stop 停止会话清理协程，防止资源泄漏
-func (s *passkeySessionStore) Stop() {
-	s.ticker.Stop()
-	close(s.done)
-}
-
-func (s *passkeySessionStore) save(id string, sess *passkeySession) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if len(s.sessions) < passkeySessionMaxSize {
-		s.sessions[id] = sess
-	}
-}
-
-// pop 取出并删除会话（一次性消费，防重放）
-func (s *passkeySessionStore) pop(id string) *passkeySession {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	sess := s.sessions[id]
-	if sess == nil || sess.ExpiresAt.Before(time.Now()) {
-		delete(s.sessions, id)
-		return nil
-	}
-	delete(s.sessions, id)
-	return sess
-}
+// ─── 辅助函数 ───
 
 // newSessionID 生成随机 session ID（32 位十六进制字符串）
 func newSessionID() string {

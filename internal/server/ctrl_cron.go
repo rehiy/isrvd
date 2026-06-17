@@ -23,16 +23,6 @@ func (app *App) defineCronRoutes() []Route {
 	}
 }
 
-// ─── 请求结构 ───
-
-type cronJobEnableReq struct {
-	Enabled bool `json:"enabled"` // 是否启用任务
-}
-
-type cronJobLogsReq struct {
-	Limit int `form:"limit"` // 返回记录数上限（默认 50，最大 100）
-}
-
 // ─── Handler 方法 ───
 
 func (app *App) cronTypes(c *gin.Context) {
@@ -40,7 +30,7 @@ func (app *App) cronTypes(c *gin.Context) {
 }
 
 func (app *App) cronJobList(c *gin.Context) {
-	jobs := app.cronSvc.ListJobs()
+	jobs := app.cronSvc.JobList()
 	respondSuccess(c, "获取任务列表成功", gin.H{"jobs": jobs})
 }
 
@@ -51,7 +41,7 @@ func (app *App) cronJobCreate(c *gin.Context) {
 		return
 	}
 
-	job, err := app.cronSvc.CreateJobFromRequest(req)
+	job, err := app.cronSvc.JobCreateFromRequest(req)
 	if err != nil {
 		logman.Error("Create cron job failed", "name", req.Name, "error", err)
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -69,7 +59,7 @@ func (app *App) cronJobUpdate(c *gin.Context) {
 		return
 	}
 
-	job, err := app.cronSvc.UpdateJobFromRequest(id, req)
+	job, err := app.cronSvc.JobUpdateFromRequest(id, req)
 	if err != nil {
 		logman.Error("Update cron job failed", "id", id, "error", err)
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -80,7 +70,7 @@ func (app *App) cronJobUpdate(c *gin.Context) {
 
 func (app *App) cronJobDelete(c *gin.Context) {
 	id := c.Param("id")
-	if err := app.cronSvc.DeleteJob(id); err != nil {
+	if err := app.cronSvc.JobDelete(id); err != nil {
 		respondError(c, http.StatusNotFound, err.Error())
 		return
 	}
@@ -94,6 +84,11 @@ func (app *App) cronJobRun(c *gin.Context) {
 		return
 	}
 	respondSuccess(c, "任务已触发执行", nil)
+}
+
+// cronJobEnableReq 启用/禁用请求
+type cronJobEnableReq struct {
+	Enabled bool `json:"enabled"` // 是否启用任务
 }
 
 func (app *App) cronJobStatusPatch(c *gin.Context) {
@@ -111,6 +106,11 @@ func (app *App) cronJobStatusPatch(c *gin.Context) {
 		return
 	}
 	respondSuccess(c, "任务状态更新成功", nil)
+}
+
+// cronJobLogsReq 日志查询请求
+type cronJobLogsReq struct {
+	Limit int `form:"limit"` // 返回记录数上限（默认 50，最大 100）
 }
 
 func (app *App) cronJobLogs(c *gin.Context) {

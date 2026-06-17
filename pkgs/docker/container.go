@@ -65,7 +65,7 @@ func (s *DockerService) ContainerInspectRaw(ctx context.Context, id string) (con
 func (s *DockerService) ContainerAction(ctx context.Context, id, action string) error {
 	switch action {
 	case "stop", "restart", "remove", "pause":
-		selfID := s.GetSelfContainerID(ctx)
+		selfID := s.SelfContainerID(ctx)
 		if selfID != "" && (id == selfID || ShortID(id) == ShortID(selfID)) {
 			return fmt.Errorf("禁止操作当前 iSrvd 所在容器")
 		}

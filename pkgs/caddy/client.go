@@ -76,8 +76,19 @@ func (c *Client) ConfigAll(ctx context.Context) (*Config, error) {
 
 // ConfigRaw 获取指定路径的配置原始 JSON，path 为空表示根配置
 func (c *Client) ConfigRaw(ctx context.Context, path string) ([]byte, error) {
-	return c.do(ctx, http.MethodGet, joinConfig(path), nil, "")
+	path = strings.Trim(path, "/")
+	cfgPath := "/config/"
+	if path != "" {
+		segs := strings.Split(path, "/")
+		for i, s := range segs {
+			segs[i] = url.PathEscape(s)
+		}
+		cfgPath = "/config/" + strings.Join(segs, "/")
+	}
+	return c.do(ctx, http.MethodGet, cfgPath, nil, "")
 }
+
+// --- 辅助函数 ---
 
 func (c *Client) do(ctx context.Context, method, path string, body []byte, contentType string) ([]byte, error) {
 	var reader io.Reader
@@ -105,17 +116,4 @@ func (c *Client) do(ctx context.Context, method, path string, body []byte, conte
 		return nil, fmt.Errorf("caddy %s %s 状态码 %d: %s", method, path, resp.StatusCode, string(raw))
 	}
 	return raw, nil
-}
-
-// joinConfig 把 path 拼接到 /config 之下，并对每段做 PathEscape
-func joinConfig(path string) string {
-	path = strings.Trim(path, "/")
-	if path == "" {
-		return "/config/"
-	}
-	segs := strings.Split(path, "/")
-	for i, s := range segs {
-		segs[i] = url.PathEscape(s)
-	}
-	return "/config/" + strings.Join(segs, "/")
 }

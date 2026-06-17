@@ -23,15 +23,6 @@ var (
 
 // ─── 成员查询 ──────────
 
-// MemberInspect 获取单个成员信息
-func (s *Service) MemberInspect(username string) *MemberInfo {
-	m, exists := config.Members[username]
-	if !exists {
-		return nil
-	}
-	return s.memberInfoBuild(m)
-}
-
 // MemberInfo 成员信息（不包含密码明文）
 type MemberInfo struct {
 	Username      string                  `json:"username"`            // 用户名（唯一标识）
@@ -40,6 +31,15 @@ type MemberInfo struct {
 	Description   string                  `json:"description"`         // 成员描述
 	Permissions   []string                `json:"permissions"`         // 权限列表
 	TwoFactor     *config.TwoFactorConfig `json:"twoFactor,omitempty"` // 二步验证配置
+}
+
+// MemberInspect 获取单个成员信息
+func (s *Service) MemberInspect(username string) *MemberInfo {
+	m, exists := config.Members[username]
+	if !exists {
+		return nil
+	}
+	return s.memberInfoBuild(m)
 }
 
 // MemberList 列出所有成员
@@ -51,37 +51,7 @@ func (s *Service) MemberList() []*MemberInfo {
 	return list
 }
 
-// memberInfoBuild 从配置构建成员信息（确保权限不为 nil）
-func (s *Service) memberInfoBuild(m *config.MemberConfig) *MemberInfo {
-	perms := m.Permissions
-	if perms == nil {
-		perms = []string{}
-	}
-	return &MemberInfo{
-		Username:      m.Username,
-		HomeDirectory: m.HomeDirectory,
-		Founder:       m.Founder,
-		Description:   m.Description,
-		Permissions:   perms,
-		TwoFactor:     m.TwoFactor,
-	}
-}
-
 // ─── 成员创建/更新/删除 ──
-
-// homeDirEnsure 生成并创建成员 home 目录（空值时使用基础目录 + 用户名）
-func (s *Service) homeDirEnsure(home, username string) (string, error) {
-	if home == "" {
-		home = username
-	}
-	if !filepath.IsAbs(home) {
-		home = filepath.Join(config.Server.RootDirectory, home)
-	}
-	if err := os.MkdirAll(home, 0755); err != nil {
-		return "", err
-	}
-	return home, nil
-}
 
 // MemberUpsertRequest 成员新建/更新请求
 type MemberUpsertRequest struct {
@@ -216,4 +186,36 @@ func (s *Service) PasswordChange(username string, req ChangePasswordRequest) err
 
 	logman.Info("Password changed", "username", username)
 	return nil
+}
+
+// ─── 辅助函数 ──────────
+
+// memberInfoBuild 从配置构建成员信息（确保权限不为 nil）
+func (s *Service) memberInfoBuild(m *config.MemberConfig) *MemberInfo {
+	perms := m.Permissions
+	if perms == nil {
+		perms = []string{}
+	}
+	return &MemberInfo{
+		Username:      m.Username,
+		HomeDirectory: m.HomeDirectory,
+		Founder:       m.Founder,
+		Description:   m.Description,
+		Permissions:   perms,
+		TwoFactor:     m.TwoFactor,
+	}
+}
+
+// homeDirEnsure 生成并创建成员 home 目录（空值时使用基础目录 + 用户名）
+func (s *Service) homeDirEnsure(home, username string) (string, error) {
+	if home == "" {
+		home = username
+	}
+	if !filepath.IsAbs(home) {
+		home = filepath.Join(config.Server.RootDirectory, home)
+	}
+	if err := os.MkdirAll(home, 0755); err != nil {
+		return "", err
+	}
+	return home, nil
 }

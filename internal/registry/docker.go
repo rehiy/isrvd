@@ -39,7 +39,7 @@ func initDocker() error {
 	}
 
 	DockerService = svc
-	SwarmService = swarm.NewSwarmService(svc.GetClient())
+	SwarmService = swarm.NewSwarmService(svc.Client())
 
 	return nil
 }

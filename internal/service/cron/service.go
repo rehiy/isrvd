@@ -19,12 +19,6 @@ import (
 	"isrvd/pkgs/docker"
 )
 
-// nextCronCleanTime 返回下一个凌晨 00:05 的时间（留 5 分钟余量避免边界问题）
-func nextCronCleanTime() time.Time {
-	tomorrow := time.Now().AddDate(0, 0, 1)
-	return time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 5, 0, 0, tomorrow.Location())
-}
-
 // logger 为 cron 包创建带名称的 logger
 var logger = logman.Named("cron")
 
@@ -48,44 +42,6 @@ type Job struct {
 	Timeout     uint   `yaml:"timeout" json:"timeout"`                         // 超时（秒），0 表示不限制
 	Enabled     bool   `yaml:"enabled" json:"enabled"`                         // 是否启用
 	Description string `yaml:"description" json:"description"`                 // 任务描述
-}
-
-// JobUpsertRequest 创建/更新任务请求（由 server 层传入，service 层负责构建 Job）
-type JobUpsertRequest struct {
-	Name        string `json:"name" binding:"required"`     // 任务名称
-	Schedule    string `json:"schedule" binding:"required"` // cron 表达式
-	Type        string `json:"type" binding:"required"`     // 脚本类型
-	Content     string `json:"content" binding:"required"`  // 脚本内容
-	WorkDir     string `json:"workDir"`                     // 工作目录
-	Image       string `json:"image"`                       // DOCKER_TMP：镜像名
-	Container   string `json:"container"`                   // DOCKER_CTR：目标容器名
-	Volumes     string `json:"volumes"`                     // DOCKER_TMP：额外挂载
-	Timeout     uint   `json:"timeout"`                     // 超时（秒）
-	Enabled     bool   `json:"enabled"`                     // 是否启用
-	Description string `json:"description"`                 // 任务描述
-}
-
-// JobDetail 任务详情（含运行时调度状态）
-type JobDetail struct {
-	*Job
-	Registered    bool       `json:"registered"`        // 是否已注册到调度器
-	EntryID       int        `json:"entryId,omitempty"` // cron 条目 ID
-	RuntimeStatus string     `json:"runtimeStatus"`     // 运行状态：scheduled | disabled | unregistered
-	NextRun       *time.Time `json:"nextRun,omitempty"` // 下次运行时间
-	LastRun       *time.Time `json:"lastRun,omitempty"` // 上次运行时间
-}
-
-// JobLog 任务执行日志
-type JobLog struct {
-	RunID     string    `json:"runId"`           // 执行 ID
-	JobID     string    `json:"jobId"`           // 所属任务 ID
-	JobName   string    `json:"jobName"`         // 任务名称（冗余，便于展示）
-	StartTime time.Time `json:"startTime"`       // 开始时间
-	EndTime   time.Time `json:"endTime"`         // 结束时间
-	Duration  int64     `json:"duration"`        // 耗时（毫秒）
-	Success   bool      `json:"success"`         // 是否执行成功
-	Output    string    `json:"output"`          // 标准输出
-	Error     string    `json:"error,omitempty"` // 错误信息（失败时非空）
 }
 
 // Service 计划任务服务
@@ -190,8 +146,18 @@ func (s *Service) runLogCleaner(ctx context.Context) {
 
 // ─── 公开方法 ───
 
-// ListJobs 返回所有任务（含运行状态）
-func (s *Service) ListJobs() []*JobDetail {
+// JobDetail 任务详情（含运行时调度状态）
+type JobDetail struct {
+	*Job
+	Registered    bool       `json:"registered"`        // 是否已注册到调度器
+	EntryID       int        `json:"entryId,omitempty"` // cron 条目 ID
+	RuntimeStatus string     `json:"runtimeStatus"`     // 运行状态：scheduled | disabled | unregistered
+	NextRun       *time.Time `json:"nextRun,omitempty"` // 下次运行时间
+	LastRun       *time.Time `json:"lastRun,omitempty"` // 上次运行时间
+}
+
+// JobList 返回所有任务（含运行状态）
+func (s *Service) JobList() []*JobDetail {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -220,8 +186,23 @@ func (s *Service) ListJobs() []*JobDetail {
 	return result
 }
 
-// CreateJobFromRequest 从请求创建任务（生成 ID、构建 Job、持久化）
-func (s *Service) CreateJobFromRequest(req JobUpsertRequest) (*Job, error) {
+// JobUpsertRequest 创建/更新任务请求（由 server 层传入，service 层负责构建 Job）
+type JobUpsertRequest struct {
+	Name        string `json:"name" binding:"required"`     // 任务名称
+	Schedule    string `json:"schedule" binding:"required"` // cron 表达式
+	Type        string `json:"type" binding:"required"`     // 脚本类型
+	Content     string `json:"content" binding:"required"`  // 脚本内容
+	WorkDir     string `json:"workDir"`                     // 工作目录
+	Image       string `json:"image"`                       // DOCKER_TMP：镜像名
+	Container   string `json:"container"`                   // DOCKER_CTR：目标容器名
+	Volumes     string `json:"volumes"`                     // DOCKER_TMP：额外挂载
+	Timeout     uint   `json:"timeout"`                     // 超时（秒）
+	Enabled     bool   `json:"enabled"`                     // 是否启用
+	Description string `json:"description"`                 // 任务描述
+}
+
+// JobCreateFromRequest 从请求创建任务（生成 ID、构建 Job、持久化）
+func (s *Service) JobCreateFromRequest(req JobUpsertRequest) (*Job, error) {
 	job := &Job{
 		ID:          strutil.NewString(),
 		Name:        req.Name,
@@ -236,14 +217,14 @@ func (s *Service) CreateJobFromRequest(req JobUpsertRequest) (*Job, error) {
 		Enabled:     req.Enabled,
 		Description: req.Description,
 	}
-	if err := s.CreateJob(job); err != nil {
+	if err := s.JobCreate(job); err != nil {
 		return nil, err
 	}
 	return job, nil
 }
 
-// UpdateJobFromRequest 从请求更新任务
-func (s *Service) UpdateJobFromRequest(id string, req JobUpsertRequest) (*Job, error) {
+// JobUpdateFromRequest 从请求更新任务
+func (s *Service) JobUpdateFromRequest(id string, req JobUpsertRequest) (*Job, error) {
 	if id == "" {
 		return nil, fmt.Errorf("任务 ID 不能为空")
 	}
@@ -261,14 +242,14 @@ func (s *Service) UpdateJobFromRequest(id string, req JobUpsertRequest) (*Job, e
 		Enabled:     req.Enabled,
 		Description: req.Description,
 	}
-	if err := s.UpdateJob(job); err != nil {
+	if err := s.JobUpdate(job); err != nil {
 		return nil, err
 	}
 	return job, nil
 }
 
-// CreateJob 创建任务并持久化
-func (s *Service) CreateJob(job *Job) error {
+// JobCreate 创建任务并持久化
+func (s *Service) JobCreate(job *Job) error {
 	if err := s.validateJob(job); err != nil {
 		return err
 	}
@@ -299,8 +280,8 @@ func (s *Service) CreateJob(job *Job) error {
 	return nil
 }
 
-// UpdateJob 更新任务并重新注册
-func (s *Service) UpdateJob(job *Job) error {
+// JobUpdate 更新任务并重新注册
+func (s *Service) JobUpdate(job *Job) error {
 	if err := s.validateJob(job); err != nil {
 		return err
 	}
@@ -348,8 +329,8 @@ func (s *Service) UpdateJob(job *Job) error {
 	return nil
 }
 
-// DeleteJob 删除任务
-func (s *Service) DeleteJob(id string) error {
+// JobDelete 删除任务
+func (s *Service) JobDelete(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -465,6 +446,19 @@ func (s *Service) persist() error {
 		jobs = append(jobs, j)
 	}
 	return s.store.SaveJobs(jobs)
+}
+
+// JobLog 任务执行日志
+type JobLog struct {
+	RunID     string    `json:"runId"`           // 执行 ID
+	JobID     string    `json:"jobId"`           // 所属任务 ID
+	JobName   string    `json:"jobName"`         // 任务名称（冗余，便于展示）
+	StartTime time.Time `json:"startTime"`       // 开始时间
+	EndTime   time.Time `json:"endTime"`         // 结束时间
+	Duration  int64     `json:"duration"`        // 耗时（毫秒）
+	Success   bool      `json:"success"`         // 是否执行成功
+	Output    string    `json:"output"`          // 标准输出
+	Error     string    `json:"error,omitempty"` // 错误信息（失败时非空）
 }
 
 // runJob 执行指定 ID 的任务
@@ -592,4 +586,12 @@ func (s *Service) validateJob(job *Job) error {
 		return fmt.Errorf("DOCKER_CTR 类型任务必须指定目标容器名")
 	}
 	return nil
+}
+
+// ─── 辅助函数 ───
+
+// nextCronCleanTime 返回下一个凌晨 00:05 的时间（留 5 分钟余量避免边界问题）
+func nextCronCleanTime() time.Time {
+	tomorrow := time.Now().AddDate(0, 0, 1)
+	return time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 5, 0, 0, tomorrow.Location())
 }

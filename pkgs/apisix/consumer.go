@@ -11,6 +11,17 @@ import (
 	"github.com/rehiy/libgo/strutil"
 )
 
+// sensitiveFields 各 auth 插件中需要脱敏/还原的敏感字段名
+var sensitiveFields = []string{
+	"key",        // key-auth + SSL 证书私钥
+	"username",   // basic-auth
+	"password",   // basic-auth
+	"secret",     // jwt-auth
+	"public_key", // jwt-auth
+	"key_id",     // hmac-auth
+	"secret_key", // hmac-auth
+}
+
 // Consumer Apisix Consumer 信息
 type Consumer struct {
 	Username   string         `json:"username"`          // Consumer 用户名（唯一标识）
@@ -106,17 +117,6 @@ func (c *Client) ConsumerDelete(ctx context.Context, username string) error {
 }
 
 // --- 辅助函数 ---
-
-// sensitiveFields 各 auth 插件中需要脱敏/还原的敏感字段名
-var sensitiveFields = []string{
-	"key",        // key-auth + SSL 证书私钥
-	"username",   // basic-auth
-	"password",   // basic-auth
-	"secret",     // jwt-auth
-	"public_key", // jwt-auth
-	"key_id",     // hmac-auth
-	"secret_key", // hmac-auth
-}
 
 // unmaskPlugins 将 plugins 中的脱敏值（包含 ******）替换为原始值
 func unmaskPlugins(plugins, rawPlugins map[string]any) {

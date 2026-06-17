@@ -42,27 +42,6 @@ func Init() error {
 	return nil
 }
 
-func watchConfigChanges() {
-	ch := store.Watch(context.Background())
-	if ch == nil {
-		return
-	}
-	go func() {
-		for ev := range ch {
-			switch ev.Type {
-			case cstore.EventPut:
-				logman.Info("Config changed, triggering reload", "key", ev.Key)
-				select {
-				case ReloadCh <- struct{}{}:
-				default:
-				}
-			case cstore.EventDelete:
-				logman.Warn("Config deleted in etcd", "key", ev.Key)
-			}
-		}
-	}()
-}
-
 // Load 从 store 加载配置并应用到全局变量
 func Load() error {
 	conf, err := store.Get()
@@ -123,6 +102,29 @@ func Save() error {
 	}
 	denormalizePaths(&snapshot)
 	return store.Set(&snapshot)
+}
+
+// --- 辅助函数 ---
+
+func watchConfigChanges() {
+	ch := store.Watch(context.Background())
+	if ch == nil {
+		return
+	}
+	go func() {
+		for ev := range ch {
+			switch ev.Type {
+			case cstore.EventPut:
+				logman.Info("Config changed, triggering reload", "key", ev.Key)
+				select {
+				case ReloadCh <- struct{}{}:
+				default:
+				}
+			case cstore.EventDelete:
+				logman.Warn("Config deleted in etcd", "key", ev.Key)
+			}
+		}
+	}()
 }
 
 func envOrDefault(key, fallback string) string {

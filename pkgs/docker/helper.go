@@ -14,6 +14,8 @@ import (
 	"github.com/docker/docker/api/types/container"
 )
 
+// ─── 辅助函数 ───
+
 // ShortID 返回 ID 的前 12 字符，不足 12 则返回原值
 func ShortID(id string) string {
 	id = strings.TrimPrefix(id, "sha256:")
@@ -129,8 +131,8 @@ func consumeImageStream(dec *json.Decoder) (string, error) {
 	return lastMessage, nil
 }
 
-// GetSelfContainerID 获取并缓存当前容器的完整 ID。如果不在容器中，返回空字符串。
-func (s *DockerService) GetSelfContainerID(ctx context.Context) string {
+// SelfContainerID 获取并缓存当前容器的完整 ID。如果不在容器中，返回空字符串。
+func (s *DockerService) SelfContainerID(ctx context.Context) string {
 	s.selfIDOnce.Do(func() {
 		s.selfID = s.resolveSelfContainerID(ctx)
 	})

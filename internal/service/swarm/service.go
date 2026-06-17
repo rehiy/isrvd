@@ -14,105 +14,6 @@ import (
 	pkgSwarm "isrvd/pkgs/swarm"
 )
 
-// NodeInfo Swarm 节点信息（列表项），保持前端稳定响应结构。
-type NodeInfo struct {
-	ID            string `json:"id"`            // 节点 ID
-	Hostname      string `json:"hostname"`      // 主机名
-	Role          string `json:"role"`          // 角色（manager/worker）
-	Availability  string `json:"availability"`  // 可用状态（active/pause/drain）
-	State         string `json:"state"`         // 节点状态（ready/down）
-	Addr          string `json:"addr"`          // 节点地址
-	EngineVersion string `json:"engineVersion"` // Docker 引擎版本
-	Leader        bool   `json:"leader"`        // 是否为 Leader 节点
-}
-
-// NodeDetail 节点详情，保持前端稳定响应结构。
-type NodeDetail struct {
-	ID            string            `json:"id"`            // 节点 ID
-	Hostname      string            `json:"hostname"`      // 主机名
-	Role          string            `json:"role"`          // 角色（manager/worker）
-	Availability  string            `json:"availability"`  // 可用状态
-	State         string            `json:"state"`         // 节点状态
-	Addr          string            `json:"addr"`          // 节点地址
-	EngineVersion string            `json:"engineVersion"` // Docker 引擎版本
-	Leader        bool              `json:"leader"`        // 是否为 Leader
-	OS            string            `json:"os"`            // 操作系统
-	Architecture  string            `json:"architecture"`  // CPU 架构
-	CPUs          int64             `json:"cpus"`          // CPU 核心数
-	MemoryBytes   int64             `json:"memoryBytes"`   // 内存大小（字节）
-	Labels        map[string]string `json:"labels"`        // 节点标签
-	CreatedAt     string            `json:"createdAt"`     // 创建时间
-	UpdatedAt     string            `json:"updatedAt"`     // 更新时间
-}
-
-// Task Swarm 任务信息，保持前端稳定响应结构。
-type Task struct {
-	ID          string `json:"id"`          // 任务 ID
-	ServiceID   string `json:"serviceID"`   // 所属服务 ID
-	ServiceName string `json:"serviceName"` // 所属服务名称
-	NodeID      string `json:"nodeID"`      // 运行节点 ID
-	NodeName    string `json:"nodeName"`    // 运行节点名称
-	Slot        int    `json:"slot"`        // 任务槽位
-	Image       string `json:"image"`       // 镜像名称
-	State       string `json:"state"`       // 任务状态
-	Message     string `json:"message"`     // 状态消息
-	Err         string `json:"err"`         // 错误信息
-	UpdatedAt   string `json:"updatedAt"`   // 更新时间
-}
-
-// ServiceInfo 服务列表信息（精简视图），保持前端稳定响应结构。
-type ServiceInfo struct {
-	ID           string        `json:"id"`           // 服务 ID
-	Name         string        `json:"name"`         // 服务名称
-	Image        string        `json:"image"`        // 镜像名称
-	Mode         string        `json:"mode"`         // 部署模式（replicated/global）
-	Replicas     *uint64       `json:"replicas"`     // 副本数
-	RunningTasks int           `json:"runningTasks"` // 运行中的任务数
-	Ports        []ServicePort `json:"ports"`        // 端口映射列表
-	CreatedAt    string        `json:"createdAt"`    // 创建时间
-	UpdatedAt    string        `json:"updatedAt"`    // 更新时间
-}
-
-// ServiceDetail 服务详情（完整视图）。
-type ServiceDetail struct {
-	ServiceSpec
-	ID           string `json:"id"`           // 服务 ID
-	RunningTasks int    `json:"runningTasks"` // 运行中的任务数
-	CreatedAt    string `json:"createdAt"`    // 创建时间
-	UpdatedAt    string `json:"updatedAt"`    // 更新时间
-}
-
-// ServiceSpec 服务可写配置（创建/更新共用），保持 HTTP API 兼容。
-type ServiceSpec struct {
-	Name        string            `json:"name"`        // 服务名称
-	Image       string            `json:"image"`       // 镜像名称
-	Mode        string            `json:"mode"`        // 部署模式（replicated/global）
-	Replicas    *uint64           `json:"replicas"`    // 副本数
-	Env         []string          `json:"env"`         // 环境变量列表
-	Args        []string          `json:"args"`        // 启动参数
-	Networks    []string          `json:"networks"`    // 网络列表
-	Ports       []ServicePort     `json:"ports"`       // 端口映射
-	Mounts      []ServiceMount    `json:"mounts"`      // 挂载卷
-	Labels      map[string]string `json:"labels"`      // 标签
-	Constraints []string          `json:"constraints"` // 调度约束
-}
-
-// ServicePort 服务端口信息。
-type ServicePort struct {
-	Protocol      string `json:"protocol"`      // 协议（tcp/udp）
-	TargetPort    uint32 `json:"targetPort"`    // 容器内端口
-	PublishedPort uint32 `json:"publishedPort"` // 对外发布端口
-	PublishMode   string `json:"publishMode"`   // 发布模式（ingress/host）
-}
-
-// ServiceMount 服务挂载信息。
-type ServiceMount struct {
-	Type     string `json:"type"`     // 挂载类型（volume/bind）
-	Source   string `json:"source"`   // 来源（卷名或宿主机路径）
-	Target   string `json:"target"`   // 容器内挂载路径
-	ReadOnly bool   `json:"readOnly"` // 是否只读
-}
-
 // Service Swarm 业务服务
 type Service struct {
 	svc *pkgSwarm.SwarmService
@@ -125,7 +26,7 @@ func NewService() (*Service, error) {
 		return nil, fmt.Errorf("Swarm 服务未初始化")
 	}
 	// 验证节点是否加入 Swarm 且为 manager
-	if _, err := svc.GetClient().SwarmInspect(context.Background()); err != nil {
+	if _, err := svc.Client().SwarmInspect(context.Background()); err != nil {
 		return nil, fmt.Errorf("Swarm 不可用: %w", err)
 	}
 	return &Service{svc: svc}, nil
@@ -136,7 +37,7 @@ func (s *Service) CheckAvailability(ctx context.Context) bool {
 	if s.svc == nil {
 		return false
 	}
-	_, err := s.svc.GetClient().SwarmInspect(ctx)
+	_, err := s.svc.Client().SwarmInspect(ctx)
 	return err == nil
 }
 
@@ -156,6 +57,18 @@ func (s *Service) JoinToken(ctx context.Context) (map[string]string, error) {
 		return nil, fmt.Errorf("获取加入令牌失败: %w", err)
 	}
 	return tokens, nil
+}
+
+// NodeInfo Swarm 节点信息（列表项），保持前端稳定响应结构。
+type NodeInfo struct {
+	ID            string `json:"id"`            // 节点 ID
+	Hostname      string `json:"hostname"`      // 主机名
+	Role          string `json:"role"`          // 角色（manager/worker）
+	Availability  string `json:"availability"`  // 可用状态（active/pause/drain）
+	State         string `json:"state"`         // 节点状态（ready/down）
+	Addr          string `json:"addr"`          // 节点地址
+	EngineVersion string `json:"engineVersion"` // Docker 引擎版本
+	Leader        bool   `json:"leader"`        // 是否为 Leader 节点
 }
 
 // NodeList 获取节点列表
@@ -185,6 +98,25 @@ func (s *Service) NodeAction(ctx context.Context, id, action string) error {
 	return nil
 }
 
+// NodeDetail 节点详情，保持前端稳定响应结构。
+type NodeDetail struct {
+	ID            string            `json:"id"`            // 节点 ID
+	Hostname      string            `json:"hostname"`      // 主机名
+	Role          string            `json:"role"`          // 角色（manager/worker）
+	Availability  string            `json:"availability"`  // 可用状态
+	State         string            `json:"state"`         // 节点状态
+	Addr          string            `json:"addr"`          // 节点地址
+	EngineVersion string            `json:"engineVersion"` // Docker 引擎版本
+	Leader        bool              `json:"leader"`        // 是否为 Leader
+	OS            string            `json:"os"`            // 操作系统
+	Architecture  string            `json:"architecture"`  // CPU 架构
+	CPUs          int64             `json:"cpus"`          // CPU 核心数
+	MemoryBytes   int64             `json:"memoryBytes"`   // 内存大小（字节）
+	Labels        map[string]string `json:"labels"`        // 节点标签
+	CreatedAt     string            `json:"createdAt"`     // 创建时间
+	UpdatedAt     string            `json:"updatedAt"`     // 更新时间
+}
+
 // NodeInspect 获取节点详情
 func (s *Service) NodeInspect(ctx context.Context, id string) (*NodeDetail, error) {
 	if id == "" {
@@ -195,6 +127,27 @@ func (s *Service) NodeInspect(ctx context.Context, id string) (*NodeDetail, erro
 		return nil, fmt.Errorf("获取节点详情失败: %w", err)
 	}
 	return nodeDetailFromRaw(node), nil
+}
+
+// ServicePort 服务端口信息。
+type ServicePort struct {
+	Protocol      string `json:"protocol"`      // 协议（tcp/udp）
+	TargetPort    uint32 `json:"targetPort"`    // 容器内端口
+	PublishedPort uint32 `json:"publishedPort"` // 对外发布端口
+	PublishMode   string `json:"publishMode"`   // 发布模式（ingress/host）
+}
+
+// ServiceInfo 服务列表信息（精简视图），保持前端稳定响应结构。
+type ServiceInfo struct {
+	ID           string        `json:"id"`           // 服务 ID
+	Name         string        `json:"name"`         // 服务名称
+	Image        string        `json:"image"`        // 镜像名称
+	Mode         string        `json:"mode"`         // 部署模式（replicated/global）
+	Replicas     *uint64       `json:"replicas"`     // 副本数
+	RunningTasks int           `json:"runningTasks"` // 运行中的任务数
+	Ports        []ServicePort `json:"ports"`        // 端口映射列表
+	CreatedAt    string        `json:"createdAt"`    // 创建时间
+	UpdatedAt    string        `json:"updatedAt"`    // 更新时间
 }
 
 // ServiceList 获取服务列表
@@ -209,6 +162,38 @@ func (s *Service) ServiceList(ctx context.Context) ([]ServiceInfo, error) {
 		result = append(result, serviceInfoFromRaw(svc, runningMap[svc.ID]))
 	}
 	return result, nil
+}
+
+// ServiceMount 服务挂载信息。
+type ServiceMount struct {
+	Type     string `json:"type"`     // 挂载类型（volume/bind）
+	Source   string `json:"source"`   // 来源（卷名或宿主机路径）
+	Target   string `json:"target"`   // 容器内挂载路径
+	ReadOnly bool   `json:"readOnly"` // 是否只读
+}
+
+// ServiceSpec 服务可写配置（创建/更新共用），保持 HTTP API 兼容。
+type ServiceSpec struct {
+	Name        string            `json:"name"`        // 服务名称
+	Image       string            `json:"image"`       // 镜像名称
+	Mode        string            `json:"mode"`        // 部署模式（replicated/global）
+	Replicas    *uint64           `json:"replicas"`    // 副本数
+	Env         []string          `json:"env"`         // 环境变量列表
+	Args        []string          `json:"args"`        // 启动参数
+	Networks    []string          `json:"networks"`    // 网络列表
+	Ports       []ServicePort     `json:"ports"`       // 端口映射
+	Mounts      []ServiceMount    `json:"mounts"`      // 挂载卷
+	Labels      map[string]string `json:"labels"`      // 标签
+	Constraints []string          `json:"constraints"` // 调度约束
+}
+
+// ServiceDetail 服务详情（完整视图）。
+type ServiceDetail struct {
+	ServiceSpec
+	ID           string `json:"id"`           // 服务 ID
+	RunningTasks int    `json:"runningTasks"` // 运行中的任务数
+	CreatedAt    string `json:"createdAt"`    // 创建时间
+	UpdatedAt    string `json:"updatedAt"`    // 更新时间
 }
 
 // ServiceInspect 获取服务详情
@@ -252,6 +237,71 @@ func (s *Service) ServiceCreateRaw(ctx context.Context, spec dockerSwarm.Service
 	}
 	return id, nil
 }
+
+// ServiceAction 服务操作
+func (s *Service) ServiceAction(ctx context.Context, id, action string, replicas *uint64) error {
+	if id == "" {
+		return fmt.Errorf("服务 ID 不能为空")
+	}
+	if action == "" {
+		return fmt.Errorf("操作类型不能为空")
+	}
+	if err := s.svc.ServiceAction(ctx, id, action, replicas); err != nil {
+		return fmt.Errorf("服务操作 %s 失败: %w", action, err)
+	}
+	return nil
+}
+
+// ServiceForceUpdate 强制重新部署服务
+func (s *Service) ServiceForceUpdate(ctx context.Context, id string) error {
+	if id == "" {
+		return fmt.Errorf("服务 ID 不能为空")
+	}
+	if err := s.svc.ServiceForceUpdate(ctx, id); err != nil {
+		return fmt.Errorf("强制重新部署服务失败: %w", err)
+	}
+	return nil
+}
+
+// ServiceLogs 获取服务日志
+func (s *Service) ServiceLogs(ctx context.Context, serviceID, tail string) ([]string, error) {
+	if serviceID == "" {
+		return nil, fmt.Errorf("缺少服务 ID")
+	}
+	logs, err := s.svc.ServiceLogs(ctx, serviceID, tail)
+	if err != nil {
+		return nil, fmt.Errorf("获取服务日志失败: %w", err)
+	}
+	return logs, nil
+}
+
+// Task Swarm 任务信息，保持前端稳定响应结构。
+type Task struct {
+	ID          string `json:"id"`          // 任务 ID
+	ServiceID   string `json:"serviceID"`   // 所属服务 ID
+	ServiceName string `json:"serviceName"` // 所属服务名称
+	NodeID      string `json:"nodeID"`      // 运行节点 ID
+	NodeName    string `json:"nodeName"`    // 运行节点名称
+	Slot        int    `json:"slot"`        // 任务槽位
+	Image       string `json:"image"`       // 镜像名称
+	State       string `json:"state"`       // 任务状态
+	Message     string `json:"message"`     // 状态消息
+	Err         string `json:"err"`         // 错误信息
+	UpdatedAt   string `json:"updatedAt"`   // 更新时间
+}
+
+// TaskList 获取任务列表
+func (s *Service) TaskList(ctx context.Context, serviceID string) ([]Task, error) {
+	tasks, err := s.svc.TaskList(ctx, serviceID)
+	if err != nil {
+		return nil, fmt.Errorf("获取任务列表失败: %w", err)
+	}
+	services, _ := s.svc.ServiceList(ctx)
+	nodes, _ := s.svc.NodeList(ctx)
+	return tasksFromRaw(tasks, services, nodes), nil
+}
+
+// ─── 内部方法 ───
 
 func serviceInfoFromRaw(svc dockerSwarm.Service, runningTasks int) ServiceInfo {
 	info := ServiceInfo{
@@ -377,54 +427,6 @@ func serviceSpecToRaw(req ServiceSpec) dockerSwarm.ServiceSpec {
 		spec.TaskTemplate.Placement = &dockerSwarm.Placement{Constraints: req.Constraints}
 	}
 	return spec
-}
-
-// ServiceAction 服务操作
-func (s *Service) ServiceAction(ctx context.Context, id, action string, replicas *uint64) error {
-	if id == "" {
-		return fmt.Errorf("服务 ID 不能为空")
-	}
-	if action == "" {
-		return fmt.Errorf("操作类型不能为空")
-	}
-	if err := s.svc.ServiceAction(ctx, id, action, replicas); err != nil {
-		return fmt.Errorf("服务操作 %s 失败: %w", action, err)
-	}
-	return nil
-}
-
-// ServiceForceUpdate 强制重新部署服务
-func (s *Service) ServiceForceUpdate(ctx context.Context, id string) error {
-	if id == "" {
-		return fmt.Errorf("服务 ID 不能为空")
-	}
-	if err := s.svc.ServiceForceUpdate(ctx, id); err != nil {
-		return fmt.Errorf("强制重新部署服务失败: %w", err)
-	}
-	return nil
-}
-
-// ServiceLogs 获取服务日志
-func (s *Service) ServiceLogs(ctx context.Context, serviceID, tail string) ([]string, error) {
-	if serviceID == "" {
-		return nil, fmt.Errorf("缺少服务 ID")
-	}
-	logs, err := s.svc.ServiceLogs(ctx, serviceID, tail)
-	if err != nil {
-		return nil, fmt.Errorf("获取服务日志失败: %w", err)
-	}
-	return logs, nil
-}
-
-// TaskList 获取任务列表
-func (s *Service) TaskList(ctx context.Context, serviceID string) ([]Task, error) {
-	tasks, err := s.svc.TaskList(ctx, serviceID)
-	if err != nil {
-		return nil, fmt.Errorf("获取任务列表失败: %w", err)
-	}
-	services, _ := s.svc.ServiceList(ctx)
-	nodes, _ := s.svc.NodeList(ctx)
-	return tasksFromRaw(tasks, services, nodes), nil
 }
 
 func nodeInfoFromRaw(node dockerSwarm.Node) NodeInfo {

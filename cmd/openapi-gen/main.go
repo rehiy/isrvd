@@ -27,6 +27,43 @@ import (
 	"strings"
 )
 
+// ─── 全局状态 ────────────────────────────────────────
+
+var (
+	projectRoot  string
+	cfg          *ProjectConfig
+	structCache  = map[string]*SchemaInfo{} // "pkg.TypeName" -> schema
+	routes       []RouteDef
+	fileCache    = map[string]*ast.File{} // 缓存已解析的文件
+	fsetCache    = token.NewFileSet()     // 复用 FileSet
+	contentCache = map[string][]string{}  // 文件内容行缓存
+	ctrlEntries  []os.DirEntry            // ctrl 目录条目缓存
+)
+
+// 整数类型集合（用于 buildProperty 和 extractDefaultQueryParam 的快速判断）
+var intTypes = map[string]bool{
+	"int": true, "int8": true, "int16": true, "int32": true, "int64": true,
+	"uint": true, "uint8": true, "uint16": true, "uint32": true, "uint64": true,
+	"byte": true, "rune": true,
+}
+
+// basicTypes 基本类型集合（用于 isBasicType 快速判断）
+var basicTypes = map[string]bool{
+	"string": true, "bool": true, "byte": true, "rune": true,
+	"int": true, "int8": true, "int16": true, "int32": true, "int64": true,
+	"uint": true, "uint8": true, "uint16": true, "uint32": true, "uint64": true,
+	"float32": true, "float64": true,
+}
+
+// 标准库类型，避免在 buildProperty 中生成无效 $ref
+var stdTypes = map[string]bool{
+	"time.Time":     true,
+	"time.Duration": true,
+}
+
+// outFile 输出文件路径（覆盖默认值）
+var outFile = flag.String("o", "", "输出文件路径（覆盖默认值）")
+
 // ─── OpenAPI 输出类型 ────────────────────────────────
 
 type OpenAPI struct {
@@ -135,43 +172,6 @@ func DefaultConfig() *ProjectConfig {
 		OutputFile:     "public/openapi/data.json",
 	}
 }
-
-// ─── 全局状态 ────────────────────────────────────────
-
-var (
-	projectRoot  string
-	cfg          *ProjectConfig
-	structCache  = map[string]*SchemaInfo{} // "pkg.TypeName" -> schema
-	routes       []RouteDef
-	fileCache    = map[string]*ast.File{} // 缓存已解析的文件
-	fsetCache    = token.NewFileSet()     // 复用 FileSet
-	contentCache = map[string][]string{}  // 文件内容行缓存
-	ctrlEntries  []os.DirEntry            // ctrl 目录条目缓存
-)
-
-// 整数类型集合（用于 buildProperty 和 extractDefaultQueryParam 的快速判断）
-var intTypes = map[string]bool{
-	"int": true, "int8": true, "int16": true, "int32": true, "int64": true,
-	"uint": true, "uint8": true, "uint16": true, "uint32": true, "uint64": true,
-	"byte": true, "rune": true,
-}
-
-// basicTypes 基本类型集合（用于 isBasicType 快速判断）
-var basicTypes = map[string]bool{
-	"string": true, "bool": true, "byte": true, "rune": true,
-	"int": true, "int8": true, "int16": true, "int32": true, "int64": true,
-	"uint": true, "uint8": true, "uint16": true, "uint32": true, "uint64": true,
-	"float32": true, "float64": true,
-}
-
-// 标准库类型，避免在 buildProperty 中生成无效 $ref
-var stdTypes = map[string]bool{
-	"time.Time":     true,
-	"time.Duration": true,
-}
-
-// ─── 入口 ────────────────────────────────────────────
-var outFile = flag.String("o", "", "输出文件路径（覆盖默认值）")
 
 func main() {
 	flag.Parse()

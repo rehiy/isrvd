@@ -25,15 +25,6 @@ func (app *App) defineComposeRoutes() []Route {
 	}
 }
 
-func composeNameParam(c *gin.Context) (string, bool) {
-	name := c.Param("name")
-	if err := pkgCompose.ValidateProjectName(name); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
-		return "", false
-	}
-	return name, true
-}
-
 func (app *App) composeDockerInspect(c *gin.Context) {
 	name, ok := composeNameParam(c)
 	if !ok {
@@ -88,6 +79,53 @@ func (app *App) composeSwarmDeploy(c *gin.Context) {
 	respondSuccess(c, "部署成功", result)
 }
 
+func (app *App) composeDockerRedeploy(c *gin.Context) {
+	var req svcCompose.RedeployRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	name, ok := composeNameParam(c)
+	if !ok {
+		return
+	}
+	result, err := app.composeSvc.DockerRedeploy(c.Request.Context(), name, req)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "重建成功", result)
+}
+
+func (app *App) composeSwarmRedeploy(c *gin.Context) {
+	var req svcCompose.RedeployRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	name, ok := composeNameParam(c)
+	if !ok {
+		return
+	}
+	result, err := app.composeSvc.SwarmRedeploy(c.Request.Context(), name, req)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "重建成功", result)
+}
+
+// ─── 辅助函数 ───
+
+func composeNameParam(c *gin.Context) (string, bool) {
+	name := c.Param("name")
+	if err := pkgCompose.ValidateProjectName(name); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return "", false
+	}
+	return name, true
+}
+
 // bindComposeDeployRequest 解析 JSON 或 multipart form 的部署请求。
 func bindComposeDeployRequest(c *gin.Context) (svcCompose.DeployRequest, bool) {
 	var req svcCompose.DeployRequest
@@ -123,40 +161,4 @@ func bindComposeDeployRequest(c *gin.Context) (svcCompose.DeployRequest, bool) {
 		return req, false
 	}
 	return req, true
-}
-
-func (app *App) composeDockerRedeploy(c *gin.Context) {
-	var req svcCompose.RedeployRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
-		return
-	}
-	name, ok := composeNameParam(c)
-	if !ok {
-		return
-	}
-	result, err := app.composeSvc.DockerRedeploy(c.Request.Context(), name, req)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "重建成功", result)
-}
-
-func (app *App) composeSwarmRedeploy(c *gin.Context) {
-	var req svcCompose.RedeployRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
-		return
-	}
-	name, ok := composeNameParam(c)
-	if !ok {
-		return
-	}
-	result, err := app.composeSvc.SwarmRedeploy(c.Request.Context(), name, req)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "重建成功", result)
 }

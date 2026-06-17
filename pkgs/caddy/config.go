@@ -9,6 +9,16 @@ import (
 
 // ----- 顶层 -----
 
+// configKnownKeys 已建模的顶层 JSON key，用于分离 unknown fields
+var configKnownKeys = map[string]struct{}{
+	"admin": {}, "logging": {}, "storage": {}, "apps": {}, "@id": {},
+}
+
+// appsKnownKeys 已建模的 apps JSON key
+var appsKnownKeys = map[string]struct{}{
+	"http": {}, "tls": {}, "pki": {},
+}
+
 // Config Caddy 顶层配置
 //
 // Extras 用于保留未建模的顶层字段，Marshal/Unmarshal 时自动透传。
@@ -21,11 +31,6 @@ type Config struct {
 
 	// Extras 保存所有未识别的顶层字段；Marshal 时与已知字段合并输出
 	Extras map[string]json.RawMessage `json:"-"`
-}
-
-// configKnownKeys 已建模的顶层 JSON key，用于分离 unknown fields
-var configKnownKeys = map[string]struct{}{
-	"admin": {}, "logging": {}, "storage": {}, "apps": {}, "@id": {},
 }
 
 // MarshalJSON 合并已知字段 + Extras 输出
@@ -96,11 +101,6 @@ type AppsConfig struct {
 	PKI  *PKIApp  `json:"pki,omitempty"`  // PKI（CA）应用配置
 
 	Extras map[string]json.RawMessage `json:"-"` // 其他未建模的 app 配置
-}
-
-// appsKnownKeys 已建模的 apps JSON key
-var appsKnownKeys = map[string]struct{}{
-	"http": {}, "tls": {}, "pki": {},
 }
 
 // MarshalJSON 合并已知字段 + Extras
