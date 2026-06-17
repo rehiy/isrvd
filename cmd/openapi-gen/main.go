@@ -139,18 +139,29 @@ func DefaultConfig() *ProjectConfig {
 // ─── 全局状态 ────────────────────────────────────────
 
 var (
-	projectRoot string
-	cfg         *ProjectConfig
-	structCache = map[string]*SchemaInfo{} // "pkg.TypeName" -> schema
-	routes      []RouteDef
-	fileCache   = map[string]*ast.File{} // 缓存已解析的文件
-	fsetCache   = token.NewFileSet()     // 复用 FileSet
+	projectRoot  string
+	cfg          *ProjectConfig
+	structCache  = map[string]*SchemaInfo{} // "pkg.TypeName" -> schema
+	routes       []RouteDef
+	fileCache    = map[string]*ast.File{} // 缓存已解析的文件
+	fsetCache    = token.NewFileSet()     // 复用 FileSet
+	contentCache = map[string][]string{}  // 文件内容行缓存
+	ctrlEntries  []os.DirEntry            // ctrl 目录条目缓存
 )
 
 // 整数类型集合（用于 buildProperty 和 extractDefaultQueryParam 的快速判断）
 var intTypes = map[string]bool{
 	"int": true, "int8": true, "int16": true, "int32": true, "int64": true,
 	"uint": true, "uint8": true, "uint16": true, "uint32": true, "uint64": true,
+	"byte": true, "rune": true,
+}
+
+// basicTypes 基本类型集合（用于 isBasicType 快速判断）
+var basicTypes = map[string]bool{
+	"string": true, "bool": true, "byte": true, "rune": true,
+	"int": true, "int8": true, "int16": true, "int32": true, "int64": true,
+	"uint": true, "uint8": true, "uint16": true, "uint32": true, "uint64": true,
+	"float32": true, "float64": true,
 }
 
 // 标准库类型，避免在 buildProperty 中生成无效 $ref
@@ -250,6 +261,20 @@ func parseFile(filename string) *ast.File {
 	}
 	fileCache[filename] = f
 	return f
+}
+
+// getFileLines 获取文件内容行（带缓存）
+func getFileLines(filename string) []string {
+	if cached, ok := contentCache[filename]; ok {
+		return cached
+	}
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		return nil
+	}
+	lines := strings.Split(string(content), "\n")
+	contentCache[filename] = lines
+	return lines
 }
 
 // getCtrlFiles 从目录 entries 中筛选 handler 文件并返回完整路径列表
@@ -454,7 +479,6 @@ func collectTypeDefinitionsFromFile(filename string) {
 	pkgName := extractPkgNameFromPath(filename)
 
 	for _, decl := range f.Decls {
-		// 查找类型定义: type Xxx struct { ... }
 		gd, ok := decl.(*ast.GenDecl)
 		if !ok || gd.Tok != token.TYPE {
 			continue
@@ -466,16 +490,21 @@ func collectTypeDefinitionsFromFile(filename string) {
 				continue
 			}
 
-			typeName := ts.Name.Name
-
-			// 构建完整的类型名 (包名.类型名)
-			var fullTypeName string
-			if pkgName != "" {
-				fullTypeName = pkgName + "." + typeName
+			// 只收集 struct 类型，跳过 interface、type alias 等
+			if _, isStruct := ts.Type.(*ast.StructType); !isStruct {
+				continue
 			}
 
-			if fullTypeName != "" {
-				resolveStructSchema(fullTypeName, nil, filename)
+			typeName := ts.Name.Name
+
+			// 跳过非导出类型和 Service/Client 等内部实现类型
+			if len(typeName) == 0 || typeName[0] < 'A' || typeName[0] > 'Z' {
+				continue
+			}
+
+			// 构建完整的类型名 (包名.类型名)
+			if pkgName != "" {
+				resolveStructSchema(pkgName+"."+typeName, nil, filename)
 			}
 		}
 	}
@@ -578,12 +607,17 @@ func analyzeHandler(r *RouteDef) {
 	funcName := handlerParts[1]
 
 	ctrlDir := filepath.Join(projectRoot, cfg.CtrlDir)
-	entries, err := os.ReadDir(ctrlDir)
-	if err != nil {
-		return
+
+	// 缓存目录条目，避免每个路由重复读取
+	if ctrlEntries == nil {
+		var err error
+		ctrlEntries, err = os.ReadDir(ctrlDir)
+		if err != nil {
+			return
+		}
 	}
 
-	for _, entry := range entries {
+	for _, entry := range ctrlEntries {
 		if !strings.HasPrefix(entry.Name(), cfg.CtrlPrefix) || !strings.HasSuffix(entry.Name(), ".go") {
 			continue
 		}
@@ -1457,12 +1491,11 @@ func buildSchemaFromStruct(pkgAlias, structName string, st *ast.StructType, file
 func extractFieldComments(filename string, st *ast.StructType) map[string]string {
 	comments := make(map[string]string)
 
-	// 读取文件内容
-	content, err := os.ReadFile(filename)
-	if err != nil {
+	// 使用缓存的文件内容
+	lines := getFileLines(filename)
+	if lines == nil {
 		return comments
 	}
-	lines := strings.Split(string(content), "\n")
 
 	// 遍历结构体字段，查找注释
 	for _, field := range st.Fields.List {
@@ -1903,15 +1936,7 @@ func buildDataSchema(typeName string, allSchemas map[string]*SchemaInfo) map[str
 
 // isBasicType 判断是否是 Go 基本类型
 func isBasicType(typeName string) bool {
-	basicTypes := []string{"string", "int", "int8", "int16", "int32", "int64",
-		"uint", "uint8", "uint16", "uint32", "uint64",
-		"float32", "float64", "bool", "byte", "rune"}
-	for _, t := range basicTypes {
-		if typeName == t {
-			return true
-		}
-	}
-	return false
+	return basicTypes[typeName]
 }
 
 // getOpenAPIType 将 Go 类型转换为 OpenAPI 类型
