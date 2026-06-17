@@ -5359,6 +5359,505 @@
         ]
       }
     },
+    "/sftp/{id}/chmod": {
+      "post": {
+        "operationId": "post_sftp_id_chmod",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ssh.websshSFTPChmod"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 修改权限",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/sftp/{id}/chown": {
+      "post": {
+        "operationId": "post_sftp_id_chown",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ssh.websshSFTPChown"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 修改所有者",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/sftp/{id}/dir-size": {
+      "get": {
+        "operationId": "get_sftp_id_dir_size",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 计算目录大小",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/sftp/{id}/download": {
+      "get": {
+        "operationId": "get_sftp_id_download",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 下载文件",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/sftp/{id}/ls": {
+      "get": {
+        "operationId": "get_sftp_id_ls",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "description": "Schema not found: webssh.SFTPListResult",
+                      "type": "object"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 列出目录",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/sftp/{id}/mkdir": {
+      "post": {
+        "operationId": "post_sftp_id_mkdir",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ssh.websshSFTPMkdir"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 创建目录",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/sftp/{id}/read": {
+      "get": {
+        "operationId": "get_sftp_id_read",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 读取文件",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/sftp/{id}/rename": {
+      "post": {
+        "operationId": "post_sftp_id_rename",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ssh.websshSFTPRename"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 重命名",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/sftp/{id}/rm": {
+      "delete": {
+        "operationId": "delete_sftp_id_rm",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "recursive",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 删除文件",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/sftp/{id}/upload": {
+      "post": {
+        "operationId": "post_sftp_id_upload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 上传文件",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
+    "/sftp/{id}/write": {
+      "post": {
+        "operationId": "post_sftp_id_write",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ssh.websshSFTPWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "SFTP 写入文件",
+        "tags": [
+          "ssh"
+        ]
+      }
+    },
     "/shell": {
       "get": {
         "description": "[WebSocket] 打开 Shell 终端",
@@ -5798,505 +6297,6 @@
           }
         },
         "summary": "查询 SSH 主机列表",
-        "tags": [
-          "ssh"
-        ]
-      }
-    },
-    "/ssh/sftp/{id}/chmod": {
-      "post": {
-        "operationId": "post_ssh_sftp_id_chmod",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ssh.websshSFTPChmod"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "SFTP 修改权限",
-        "tags": [
-          "ssh"
-        ]
-      }
-    },
-    "/ssh/sftp/{id}/chown": {
-      "post": {
-        "operationId": "post_ssh_sftp_id_chown",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ssh.websshSFTPChown"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "SFTP 修改所有者",
-        "tags": [
-          "ssh"
-        ]
-      }
-    },
-    "/ssh/sftp/{id}/dir-size": {
-      "get": {
-        "operationId": "get_ssh_sftp_id_dir_size",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "path",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "description": "Schema not found: gin.H",
-                      "type": "object"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "SFTP 计算目录大小",
-        "tags": [
-          "ssh"
-        ]
-      }
-    },
-    "/ssh/sftp/{id}/download": {
-      "get": {
-        "operationId": "get_ssh_sftp_id_download",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "path",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "SFTP 下载文件",
-        "tags": [
-          "ssh"
-        ]
-      }
-    },
-    "/ssh/sftp/{id}/ls": {
-      "get": {
-        "operationId": "get_ssh_sftp_id_ls",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "path",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "description": "Schema not found: webssh.SFTPListResult",
-                      "type": "object"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "SFTP 列出目录",
-        "tags": [
-          "ssh"
-        ]
-      }
-    },
-    "/ssh/sftp/{id}/mkdir": {
-      "post": {
-        "operationId": "post_ssh_sftp_id_mkdir",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ssh.websshSFTPMkdir"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "SFTP 创建目录",
-        "tags": [
-          "ssh"
-        ]
-      }
-    },
-    "/ssh/sftp/{id}/read": {
-      "get": {
-        "operationId": "get_ssh_sftp_id_read",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "path",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "description": "Schema not found: gin.H",
-                      "type": "object"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "SFTP 读取文件",
-        "tags": [
-          "ssh"
-        ]
-      }
-    },
-    "/ssh/sftp/{id}/rename": {
-      "post": {
-        "operationId": "post_ssh_sftp_id_rename",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ssh.websshSFTPRename"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "SFTP 重命名",
-        "tags": [
-          "ssh"
-        ]
-      }
-    },
-    "/ssh/sftp/{id}/rm": {
-      "delete": {
-        "operationId": "delete_ssh_sftp_id_rm",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "path",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "recursive",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "SFTP 删除文件",
-        "tags": [
-          "ssh"
-        ]
-      }
-    },
-    "/ssh/sftp/{id}/upload": {
-      "post": {
-        "operationId": "post_ssh_sftp_id_upload",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "path",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "SFTP 上传文件",
-        "tags": [
-          "ssh"
-        ]
-      }
-    },
-    "/ssh/sftp/{id}/write": {
-      "post": {
-        "operationId": "post_ssh_sftp_id_write",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ssh.websshSFTPWrite"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "SFTP 写入文件",
         "tags": [
           "ssh"
         ]
@@ -6868,7 +6868,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/system.UpdateAllConfigRequest"
+                "$ref": "#/components/schemas/system.AllConfig"
               }
             }
           },
@@ -8512,6 +8512,10 @@
             "description": "仓库名称（用于显示）",
             "type": "string"
           },
+          "password": {
+            "description": "登录密码：GET 响应由 ConfigAll 脱敏清空；PUT 时为空表示按 url+username 匹配保留原值，非空则更新（修改 url/username 会导致匹配不到旧值，需重新填写密码）",
+            "type": "string"
+          },
           "url": {
             "description": "仓库地址，如 registry.example.com",
             "type": "string"
@@ -8552,11 +8556,11 @@
       "config.MemberConfig": {
         "properties": {
           "description": {
-            "description": "成员描述信息（可选）",
+            "description": "Description 成员描述信息（可选）",
             "type": "string"
           },
           "founder": {
-            "description": "创始人标志，创始人拥有所有模块的完整权限",
+            "description": "Founder 创始人标志，创始人拥有所有模块的完整权限",
             "type": "boolean"
           },
           "homeDirectory": {
@@ -8571,7 +8575,7 @@
             "type": "array"
           },
           "permissions": {
-            "description": "允许访问的路由列表，格式为 \"METHOD /api/path\"，如 \"GET /api/docker/containers\"",
+            "description": "Permissions 允许访问的路由列表，格式为 \"METHOD /api/path\"，如 \"GET /api/docker/containers\"",
             "items": {
               "type": "string"
             },
@@ -8730,6 +8734,10 @@
           "maxUploadSize": {
             "description": "文件上传最大大小（字节），默认 100MB",
             "type": "integer"
+          },
+          "openapi": {
+            "description": "是否对外提供 OpenAPI 文档（/openapi/），默认关闭",
+            "type": "boolean"
           },
           "rootDirectory": {
             "description": "根目录路径",
@@ -11024,15 +11032,15 @@
         },
         "type": "object"
       },
-      "system.AllConfigResponse": {
+      "system.AllConfig": {
         "properties": {
           "agent": {
             "$ref": "#/components/schemas/config.AgentConfig",
-            "description": "Agent LLM 配置（APIKey 已脱敏）"
+            "description": "Agent LLM 配置（APIKey：响应脱敏 / 请求空保留）"
           },
           "apisix": {
             "$ref": "#/components/schemas/config.ApisixConfig",
-            "description": "APISIX 配置（AdminKey 已脱敏）"
+            "description": "APISIX 配置（AdminKey：响应脱敏 / 请求空保留）"
           },
           "caddy": {
             "$ref": "#/components/schemas/config.CaddyConfig",
@@ -11040,7 +11048,7 @@
           },
           "docker": {
             "$ref": "#/components/schemas/config.DockerConfig",
-            "description": "Docker 配置"
+            "description": "Docker 配置（registry.Password：响应脱敏 / 请求空保留）"
           },
           "links": {
             "description": "导航链接列表",
@@ -11059,7 +11067,7 @@
           },
           "oidc": {
             "$ref": "#/components/schemas/config.OIDCConfig",
-            "description": "OIDC 认证配置（ClientSecret 已脱敏）"
+            "description": "OIDC 配置（ClientSecret：响应脱敏 / 请求空保留）"
           },
           "passkey": {
             "$ref": "#/components/schemas/config.PasskeyConfig",
@@ -11067,7 +11075,7 @@
           },
           "server": {
             "$ref": "#/components/schemas/config.ServerConfig",
-            "description": "服务配置（JWTSecret 已脱敏）"
+            "description": "服务配置（JWTSecret：响应脱敏 / 请求空保留）"
           },
           "tha": {
             "$ref": "#/components/schemas/config.THAConfig",
@@ -11123,58 +11131,6 @@
       },
       "system.ConfigService": {
         "properties": {},
-        "type": "object"
-      },
-      "system.UpdateAllConfigRequest": {
-        "properties": {
-          "agent": {
-            "$ref": "#/components/schemas/config.AgentConfig",
-            "description": "Agent 配置（APIKey 为空保留原值）"
-          },
-          "apisix": {
-            "$ref": "#/components/schemas/config.ApisixConfig",
-            "description": "APISIX 配置（AdminKey 为空保留原值）"
-          },
-          "caddy": {
-            "$ref": "#/components/schemas/config.CaddyConfig",
-            "description": "Caddy 配置"
-          },
-          "docker": {
-            "$ref": "#/components/schemas/config.DockerConfig",
-            "description": "Docker 配置"
-          },
-          "links": {
-            "description": "导航链接列表",
-            "items": {
-              "$ref": "#/components/schemas/config.LinkConfig"
-            },
-            "type": "array"
-          },
-          "marketplace": {
-            "$ref": "#/components/schemas/config.MarketplaceConfig",
-            "description": "应用市场配置"
-          },
-          "monitor": {
-            "$ref": "#/components/schemas/config.MonitorConfig",
-            "description": "监控配置"
-          },
-          "oidc": {
-            "$ref": "#/components/schemas/config.OIDCConfig",
-            "description": "OIDC 配置（ClientSecret 为空保留原值）"
-          },
-          "passkey": {
-            "$ref": "#/components/schemas/config.PasskeyConfig",
-            "description": "Passkey 配置"
-          },
-          "server": {
-            "$ref": "#/components/schemas/config.ServerConfig",
-            "description": "服务配置（JWTSecret 为空保留原值）"
-          },
-          "tha": {
-            "$ref": "#/components/schemas/config.THAConfig",
-            "description": "代理 Header 认证配置"
-          }
-        },
         "type": "object"
       },
       "webssh.Credential": {
