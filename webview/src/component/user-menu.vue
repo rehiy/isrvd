@@ -20,6 +20,9 @@ class UserMenu extends Vue {
   get themeIcon() { return THEME_META[this.themeMode].icon }
   get themeLabel() { return THEME_META[this.themeMode].label }
 
+  // Passkey 入口：功能已启用且具备查看权限时显示
+  get showPasskeyEntry() { return this.portal.passkeyEnabled && this.portal.hasPerm('GET /api/account/passkey/credentials') }
+
   // ─── 方法 ───
   toggleTheme() {
     this.themeMode = cycleTheme()
@@ -61,7 +64,7 @@ export default toNative(UserMenu)
       <i class="fas fa-lock"></i>
       账号安全
     </router-link>
-    <router-link v-if="portal.passkeyEnabled && portal.hasPerm('GET /api/account/passkey/credentials')" to="/account/passkeys" class="dropdown-item" @click="menuOpen = false">
+    <router-link v-if="showPasskeyEntry" to="/account/passkeys" class="dropdown-item" @click="menuOpen = false">
       <i class="fas fa-fingerprint"></i>
       Passkey
     </router-link>
