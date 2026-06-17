@@ -49,6 +49,8 @@ isrvd_get "/overview/monitor?type=host&since=86400"  # 最近24小时
 isrvd_get "/overview/monitor?type=container&since=3600&id=<CONTAINER_ID>"
 ```
 
+前端 `/local/monitor` 入口按 `GET /api/overview/monitor` 权限显示。
+
 **查询参数：**
 
 | 参数 | 类型 | 必填 | 说明 |
