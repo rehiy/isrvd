@@ -82,6 +82,8 @@ isrvd_put "/account/password" '{"oldPassword":"<OLD>","newPassword":"<NEW>"}'
 
 TOTP 仅作用于账号密码登录；Passkey、OIDC 登录和已签发的 API Token 不触发二次验证。
 
+> 以下 4 个接口均为 `AccessPerm`（需具体路由权限），可按成员授权/撤销：`GET /api/account/2fa/status`、`POST /api/account/2fa/totp/begin`、`POST /api/account/2fa/totp/enable`、`POST /api/account/2fa/totp/disable`。非 founder 成员需在 `permissions` 中显式包含对应 key 才能管理自己的二次验证；founder 始终有权。
+
 ```bash
 # 查询状态
 isrvd_get "/account/2fa/status"
@@ -152,7 +154,9 @@ isrvd_post "/account/passkey/login/finish?sessionId=<SESSION_ID>" '<CREDENTIAL_J
 # 返回：{"token":"eyJ...","username":"<USER>"}
 ```
 
-## Passkey 管理（需认证）
+## Passkey 管理（需权限）
+
+> 以下管理接口均为 `AccessPerm`（需具体路由权限），可按成员授权/撤销：`POST /api/account/passkey/register/begin`、`POST /api/account/passkey/register/finish`、`GET /api/account/passkey/credentials`、`PUT /api/account/passkey/credential/:id`、`DELETE /api/account/passkey/credential/:id`。非 founder 成员需在 `permissions` 中显式包含对应 key；founder 始终有权。Passkey **登录**（`/account/passkey/login/*`）仍为匿名访问，不受此限制。
 
 ```bash
 # 开始注册

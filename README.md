@@ -275,6 +275,15 @@ cd webview && python3 sort-imports.py --dry-run src
 | `account` | `POST /api/account/token` | 成员管理（创建 API 令牌） |
 | `account` | `PUT /api/account/password` | 成员管理（账号安全） |
 | `account` | `GET /api/account/routes` | 成员管理（路由权限列表） |
+| `account` | `GET /api/account/2fa/status` | 二次验证（查询状态） |
+| `account` | `POST /api/account/2fa/totp/begin` | 二次验证（开始绑定 TOTP） |
+| `account` | `POST /api/account/2fa/totp/enable` | 二次验证（启用 TOTP） |
+| `account` | `POST /api/account/2fa/totp/disable` | 二次验证（禁用 TOTP） |
+| `account` | `POST /api/account/passkey/register/begin` | Passkey（开始绑定） |
+| `account` | `POST /api/account/passkey/register/finish` | Passkey（完成绑定） |
+| `account` | `GET /api/account/passkey/credentials` | Passkey（查询凭证列表） |
+| `account` | `PUT /api/account/passkey/credential/:id` | Passkey（重命名凭证） |
+| `account` | `DELETE /api/account/passkey/credential/:id` | Passkey（删除凭证） |
 | `filer` | `GET /api/filer/files` | 文件管理（列出） |
 | `filer` | `GET /api/filer/file` | 文件管理（读取） |
 | `filer` | `POST /api/filer/file` | 文件管理（创建文件） |

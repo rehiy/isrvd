@@ -20,9 +20,18 @@ class AccountPassword extends Vue {
     totpSetup = { secret: '', qrcode: '', code: '' }
     totpDisableCode = ''
 
+    // ─── 权限 ───
+    get canViewTOTP() { return this.portal.hasPerm('GET /api/account/2fa/status') }
+    get canEnableTOTP() {
+        return this.portal.hasPerm('POST /api/account/2fa/totp/begin')
+            && this.portal.hasPerm('POST /api/account/2fa/totp/enable')
+    }
+    get canDisableTOTP() { return this.portal.hasPerm('POST /api/account/2fa/totp/disable') }
+
     async mounted() {
+        if (!this.canViewTOTP) return
         await this.loadTwoFactorStatus()
-        if (!this.twoFactorEnabled) {
+        if (!this.twoFactorEnabled && this.canEnableTOTP) {
             await this.handleTOTPBegin()
         }
     }
@@ -186,7 +195,7 @@ export default toNative(AccountPassword)
       </section>
 
       <!-- 二次验证 -->
-      <section class="max-w-3xl space-y-4 border-t border-slate-200 pt-4">
+      <section v-if="canViewTOTP" class="max-w-3xl space-y-4 border-t border-slate-200 pt-4">
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-2">
             <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-shield-halved"></i></span>
@@ -201,7 +210,7 @@ export default toNative(AccountPassword)
         </div>
 
         <!-- 未启用：绑定入口 -->
-        <div v-if="!twoFactorEnabled" class="flex flex-col sm:flex-row gap-4 items-start">
+        <div v-if="!twoFactorEnabled && canEnableTOTP" class="flex flex-col sm:flex-row gap-4 items-start">
           <img v-if="totpSetup.qrcode" :src="totpSetup.qrcode" alt="TOTP QR Code" class="w-40 h-40 rounded-lg border border-slate-200 flex-shrink-0" />
           <div v-else class="w-40 h-40 rounded-lg border border-slate-200 flex-shrink-0 flex items-center justify-center bg-slate-50">
             <i class="fas fa-spinner fa-spin text-slate-400 text-2xl"></i>
@@ -231,7 +240,7 @@ export default toNative(AccountPassword)
         </div>
 
         <!-- 已启用：禁用入口 -->
-        <div v-else class="space-y-2">
+        <div v-else-if="twoFactorEnabled && canDisableTOTP" class="space-y-2">
           <label class="form-label">输入当前验证码以禁用</label>
           <div class="flex gap-2">
             <input

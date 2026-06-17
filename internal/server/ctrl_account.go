@@ -19,12 +19,12 @@ func (app *App) defineAccountRoutes() []Route {
 		// Passkey 登录（无需认证）
 		{Method: "POST", Path: "/account/passkey/login/begin", Handler: app.accountPasskeyLoginBegin, Module: "account", Label: "开始 Passkey 登录", Access: AccessAnon},
 		{Method: "POST", Path: "/account/passkey/login/finish", Handler: app.accountPasskeyLoginFinish, Module: "account", Label: "完成 Passkey 登录", Access: AccessAnon},
-		// Passkey 注册/绑定（需要认证）
-		{Method: "POST", Path: "/account/passkey/register/begin", Handler: app.accountPasskeyRegisterBegin, Module: "account", Label: "开始 Passkey 绑定", Access: AccessAuth},
-		{Method: "POST", Path: "/account/passkey/register/finish", Handler: app.accountPasskeyRegisterFinish, Module: "account", Label: "完成 Passkey 绑定", Access: AccessAuth},
-		{Method: "GET", Path: "/account/passkey/credentials", Handler: app.accountPasskeyListCredentials, Module: "account", Label: "查询 Passkey 凭证列表", Access: AccessAuth},
-		{Method: "PUT", Path: "/account/passkey/credential/:id", Handler: app.accountPasskeyRenameCredential, Module: "account", Label: "重命名 Passkey 凭证", Access: AccessAuth},
-		{Method: "DELETE", Path: "/account/passkey/credential/:id", Handler: app.accountPasskeyDeleteCredential, Module: "account", Label: "删除 Passkey 凭证", Access: AccessAuth},
+		// Passkey 注册/绑定（需要 account 模块对应路由权限，可按成员授权/撤销）
+		{Method: "POST", Path: "/account/passkey/register/begin", Handler: app.accountPasskeyRegisterBegin, Module: "account", Label: "开始 Passkey 绑定"},
+		{Method: "POST", Path: "/account/passkey/register/finish", Handler: app.accountPasskeyRegisterFinish, Module: "account", Label: "完成 Passkey 绑定"},
+		{Method: "GET", Path: "/account/passkey/credentials", Handler: app.accountPasskeyListCredentials, Module: "account", Label: "查询 Passkey 凭证列表"},
+		{Method: "PUT", Path: "/account/passkey/credential/:id", Handler: app.accountPasskeyRenameCredential, Module: "account", Label: "重命名 Passkey 凭证"},
+		{Method: "DELETE", Path: "/account/passkey/credential/:id", Handler: app.accountPasskeyDeleteCredential, Module: "account", Label: "删除 Passkey 凭证"},
 		// OIDC 登录
 		{Method: "GET", Path: "/account/oidc/login", Handler: app.accountOIDCLogin, Module: "account", Label: "发起 OIDC 登录", Access: AccessAnon},
 		{Method: "GET", Path: "/account/oidc/callback", Handler: app.accountOIDCCallback, Module: "account", Label: "处理 OIDC 回调", Access: AccessAnon},
@@ -32,10 +32,10 @@ func (app *App) defineAccountRoutes() []Route {
 		// 凭证管理
 		{Method: "POST", Path: "/account/token", Handler: app.accountTokenCreate, Module: "account", Label: "创建 API 令牌"},
 		{Method: "PUT", Path: "/account/password", Handler: app.accountPasswordChange, Module: "account", Label: "修改当前用户密码", Access: AccessAuth},
-		{Method: "GET", Path: "/account/2fa/status", Handler: app.accountTwoFactorStatus, Module: "account", Label: "查询二次验证状态", Access: AccessAuth},
-		{Method: "POST", Path: "/account/2fa/totp/begin", Handler: app.accountTOTPBegin, Module: "account", Label: "开始绑定 TOTP 二次验证", Access: AccessAuth},
-		{Method: "POST", Path: "/account/2fa/totp/enable", Handler: app.accountTOTPEnable, Module: "account", Label: "启用 TOTP 二次验证", Access: AccessAuth},
-		{Method: "POST", Path: "/account/2fa/totp/disable", Handler: app.accountTOTPDisable, Module: "account", Label: "禁用 TOTP 二次验证", Access: AccessAuth},
+		{Method: "GET", Path: "/account/2fa/status", Handler: app.accountTwoFactorStatus, Module: "account", Label: "查询二次验证状态"},
+		{Method: "POST", Path: "/account/2fa/totp/begin", Handler: app.accountTOTPBegin, Module: "account", Label: "开始绑定 TOTP 二次验证"},
+		{Method: "POST", Path: "/account/2fa/totp/enable", Handler: app.accountTOTPEnable, Module: "account", Label: "启用 TOTP 二次验证"},
+		{Method: "POST", Path: "/account/2fa/totp/disable", Handler: app.accountTOTPDisable, Module: "account", Label: "禁用 TOTP 二次验证"},
 		// 路由权限
 		{Method: "GET", Path: "/account/routes", Handler: app.accountRouteList, Module: "account", Label: "查询路由权限列表", Access: AccessAuth},
 		// 成员管理

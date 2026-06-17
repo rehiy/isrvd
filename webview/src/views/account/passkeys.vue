@@ -28,8 +28,19 @@ class AccountPasskeys extends Vue {
     renamingCredId = ''
     renameValue = ''
 
+    // ─── 权限 ───
+    get canView() { return this.portal.hasPerm('GET /api/account/passkey/credentials') }
+    get canRegister() {
+        return this.portal.hasPerm('POST /api/account/passkey/register/begin')
+            && this.portal.hasPerm('POST /api/account/passkey/register/finish')
+    }
+    get canRename() { return this.portal.hasPerm('PUT /api/account/passkey/credential/:id') }
+    get canDelete() { return this.portal.hasPerm('DELETE /api/account/passkey/credential/:id') }
+
     mounted() {
-        this.loadPasskeyCredentials()
+        if (this.canView) {
+            this.loadPasskeyCredentials()
+        }
     }
 
     async loadPasskeyCredentials() {
@@ -130,6 +141,7 @@ export default toNative(AccountPasskeys)
           </div>
         </div>
         <button
+          v-if="canRegister"
           type="button"
           class="btn btn-purple flex-shrink-0"
           :disabled="passkeyLoading"
@@ -141,7 +153,7 @@ export default toNative(AccountPasskeys)
       </div>
     </div>
 
-    <div class="card-body">
+    <div v-if="canView" class="card-body">
       <div v-if="passkeyLoading" class="card-body">
         <div class="empty-state">
           <div class="w-12 h-12 spinner mb-3"></div>
@@ -190,6 +202,7 @@ export default toNative(AccountPasskeys)
                   {{ cred.displayName || 'Passkey #' + cred.idBase64.slice(0, 8) }}
                 </h4>
                 <button
+                  v-if="canRename"
                   class="btn-icon btn-icon-slate"
                   title="重命名"
                   @click="startRename(cred)"
@@ -203,6 +216,7 @@ export default toNative(AccountPasskeys)
             </div>
           </div>
           <button
+            v-if="canDelete"
             class="btn-icon btn-icon-red flex-shrink-0"
             title="删除"
             @click="handleDeletePasskey(cred.idBase64)"
