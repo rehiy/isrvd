@@ -120,8 +120,15 @@ func (app *App) initRoutes() {
 	// NoRoute: /api/* 返回 JSON 404，其他路径走静态文件 + SPA fallback
 	staticHandler := httpd.StaticServe(http.FS(public.Efs), "")
 	app.NoRoute(func(c *gin.Context) {
-		if strings.HasPrefix(c.Request.URL.Path, APINamespace) {
+		path := c.Request.URL.Path
+		// 非 API 路径，直接返回 404
+		if strings.HasPrefix(path, APINamespace) {
 			respondError(c, http.StatusNotFound, "api not found")
+			return
+		}
+		// OpenAPI 文档默认关闭，未在配置中显式开启时不对外提供
+		if !config.Server.OpenAPI && strings.HasPrefix(path, "/openapi") {
+			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
 		staticHandler(c)

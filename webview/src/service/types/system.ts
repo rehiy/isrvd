@@ -22,6 +22,7 @@ export interface ServerConfig {
     // 写入时为空表示保留原值（不通过 JSON 返回）
     jwtSecret?: string
     jwtExpiration: number
+    openapi: boolean
     debug: boolean
 }
 

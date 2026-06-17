@@ -529,6 +529,7 @@ export default toNative(NavigationBar)
         <i class="fab fa-github text-base"></i>
       </a>
       <a
+        v-if="portal.openapiEnabled"
         href="openapi/"
         target="_blank"
         rel="noopener noreferrer"

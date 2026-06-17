@@ -31,6 +31,7 @@ func (app *App) defineOverviewRoutes() []Route {
 type BootstrapConfig struct {
 	MaxUploadSize  int64                `json:"maxUploadSize"`
 	MarketplaceURL string               `json:"marketplaceUrl"`
+	OpenAPIEnabled bool                 `json:"openapiEnabled"`
 	Links          []*config.LinkConfig `json:"links"`
 }
 
@@ -64,6 +65,7 @@ func (app *App) overviewBootstrap(c *gin.Context) {
 			resp.Config = &BootstrapConfig{
 				MaxUploadSize:  config.Server.MaxUploadSize,
 				MarketplaceURL: config.Marketplace.URL,
+				OpenAPIEnabled: config.Server.OpenAPI,
 				Links:          config.Links,
 			}
 		}()

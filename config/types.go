@@ -26,6 +26,7 @@ type ServerConfig struct {
 	AllowedOrigins []string `yaml:"allowedOrigins" json:"allowedOrigins"` // 允许的 Origin 列表，支持通配符 *
 	JWTSecret      string   `yaml:"jwtSecret" json:"jwtSecret,omitempty"` // 写入时为空表示保留原值；响应时不返回
 	JWTExpiration  int64    `yaml:"jwtExpiration" json:"jwtExpiration"`   // JWT 过期时间（秒），默认 86400
+	OpenAPI        bool     `yaml:"openapi" json:"openapi"`               // 是否对外提供 OpenAPI 文档（/openapi/），默认关闭
 	Debug          bool     `yaml:"debug" json:"debug"`                   // 是否启用调试模式
 }
 

@@ -20,7 +20,7 @@ class Config extends Vue {
   saving = false
   activeTab: ConfigTab = 'server'
 
-  server: ServerConfig = { listenAddr: '', rootDirectory: '', maxUploadSize: 104857600, allowedOrigins: [], jwtExpiration: 86400, debug: false }
+  server: ServerConfig = { listenAddr: '', rootDirectory: '', maxUploadSize: 104857600, allowedOrigins: [], jwtExpiration: 86400, openapi: false, debug: false }
   allowedOriginsText = ''
   tha: THAConfig = { enabled: false, headerName: '', trustedCIDRs: [] }
   thaTrustedCIDRsText = ''
@@ -256,6 +256,7 @@ export default toNative(Config)
               <input v-model.number="server.jwtExpiration" type="number" min="60" placeholder="请输入 JWT 有效期" class="input" />
               <p class="mt-1 text-xs text-slate-400">登录令牌的有效期，默认 86400（24 小时）</p>
             </div>
+            <ToggleCard v-model="server.openapi" label="API 文档" desc="开启后对外提供 /openapi/ 接口文档页（含全部接口结构，建议生产环境关闭）" />
             <ToggleCard v-model="server.debug" label="Debug 模式" desc="开启后输出详细调试日志" />
           </section>
 

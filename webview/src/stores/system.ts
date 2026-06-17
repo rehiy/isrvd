@@ -34,6 +34,7 @@ export const useSystemStore = defineStore('system', () => {
     const toolbarLinks = ref<LinkConfig[]>([])
     const maxUploadSize = ref<number>(104857600) // 默认 100MB
     const marketplaceUrl = ref<string>('')
+    const openapiEnabled = ref<boolean>(false)
 
     // ─── 操作定义 ───
 
@@ -57,6 +58,7 @@ export const useSystemStore = defineStore('system', () => {
                 maxUploadSize.value = config.maxUploadSize
             }
             marketplaceUrl.value = config.marketplaceUrl || ''
+            openapiEnabled.value = config.openapiEnabled || false
             toolbarLinks.value = config.links || []
         }
     }
@@ -90,6 +92,7 @@ export const useSystemStore = defineStore('system', () => {
         toolbarLinks,
         maxUploadSize,
         marketplaceUrl,
+        openapiEnabled,
         // 操作
         apply,
         hasPerm,

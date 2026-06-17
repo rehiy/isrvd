@@ -66,6 +66,7 @@ func (s *ConfigService) ConfigAll() *AllConfigResponse {
 			AllowedOrigins: srv.AllowedOrigins,
 			MaxUploadSize:  srv.MaxUploadSize,
 			RootDirectory:  srv.RootDirectory,
+			OpenAPI:        srv.OpenAPI,
 			// JWTSecret 不返回
 		},
 		THA: &config.THAConfig{

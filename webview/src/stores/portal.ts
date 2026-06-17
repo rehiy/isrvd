@@ -133,6 +133,7 @@ export const usePortalStore = defineStore('portal', () => {
         toolbarLinks: systemRefs.toolbarLinks,
         maxUploadSize: systemRefs.maxUploadSize,
         marketplaceUrl: systemRefs.marketplaceUrl,
+        openapiEnabled: systemRefs.openapiEnabled,
         // System Store 方法
         hasPerm,
 
