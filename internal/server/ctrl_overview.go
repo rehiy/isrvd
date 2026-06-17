@@ -29,8 +29,9 @@ func (app *App) defineOverviewRoutes() []Route {
 
 // BootstrapConfig 启动所需的最小系统配置
 type BootstrapConfig struct {
-	MaxUploadSize int64                `json:"maxUploadSize"`
-	Links         []*config.LinkConfig `json:"links"`
+	MaxUploadSize  int64                `json:"maxUploadSize"`
+	MarketplaceURL string               `json:"marketplaceUrl"`
+	Links          []*config.LinkConfig `json:"links"`
 }
 
 // BootstrapResponse 前端启动所需的聚合数据
@@ -61,8 +62,9 @@ func (app *App) overviewBootstrap(c *gin.Context) {
 		go func() {
 			defer wg.Done()
 			resp.Config = &BootstrapConfig{
-				MaxUploadSize: config.Server.MaxUploadSize,
-				Links:         config.Links,
+				MaxUploadSize:  config.Server.MaxUploadSize,
+				MarketplaceURL: config.Marketplace.URL,
+				Links:          config.Links,
 			}
 		}()
 		wg.Wait()

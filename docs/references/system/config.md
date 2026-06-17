@@ -52,6 +52,8 @@ kill -HUP $(pgrep isrvd)
 isrvd_get "/system/config"
 ```
 
+> 该接口返回完整系统配置（含基础设施地址等敏感拓扑信息），需要 `system` 模块权限，普通登录用户无权访问。前端启动所需的最小配置（如应用市场地址 `marketplaceUrl`）已下放至 `GET /api/overview/bootstrap` 的 `config` 段。
+
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | server | object | `{listenAddr, rootDirectory, maxUploadSize, allowedOrigins, jwtExpiration, debug}`（jwtSecret 不返回，写入时位于 JWT 配置项） |

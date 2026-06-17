@@ -6,6 +6,7 @@ import type { LinkConfig } from './system'
 
 export interface BootstrapConfig {
     maxUploadSize: number
+    marketplaceUrl: string
     links: LinkConfig[]
 }
 

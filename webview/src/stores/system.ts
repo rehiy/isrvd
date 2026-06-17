@@ -33,6 +33,7 @@ export const useSystemStore = defineStore('system', () => {
     })
     const toolbarLinks = ref<LinkConfig[]>([])
     const maxUploadSize = ref<number>(104857600) // 默认 100MB
+    const marketplaceUrl = ref<string>('')
 
     // ─── 操作定义 ───
 
@@ -55,6 +56,7 @@ export const useSystemStore = defineStore('system', () => {
             if (typeof config.maxUploadSize === 'number') {
                 maxUploadSize.value = config.maxUploadSize
             }
+            marketplaceUrl.value = config.marketplaceUrl || ''
             toolbarLinks.value = config.links || []
         }
     }
@@ -87,6 +89,7 @@ export const useSystemStore = defineStore('system', () => {
         serviceAvailability,
         toolbarLinks,
         maxUploadSize,
+        marketplaceUrl,
         // 操作
         apply,
         hasPerm,

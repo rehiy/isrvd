@@ -3,8 +3,7 @@ import { Component, Prop, Ref, Vue, Watch, toNative } from 'vue-facing-decorator
 
 import { usePortal } from '@/stores'
 
-import api from '@/service/api'
-import type { AllConfig, ComposeMarketplacePick } from '@/service/types'
+import type { ComposeMarketplacePick } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -43,7 +42,6 @@ class MarketplaceModal extends Vue {
     @Ref readonly iframeRef!: HTMLIFrameElement
 
     // ─── 数据属性 ───
-    loading = false
     iframeUrl = ''
     iframeOrigin = ''
 
@@ -67,24 +65,17 @@ class MarketplaceModal extends Vue {
     }
 
     // ─── 方法 ───
-    async loadUrl() {
-        this.loading = true
-        try {
-            const res = await api.systemConfig()
-            const payload = res.payload as AllConfig
-            const url = payload.marketplace?.url || ''
-            this.iframeUrl = url
-            if (url) {
-                try {
-                    this.iframeOrigin = new URL(url).origin
-                } catch {
-                    this.iframeOrigin = ''
-                }
-            } else {
+    loadUrl() {
+        const url = this.portal.marketplaceUrl || ''
+        this.iframeUrl = url
+        if (url) {
+            try {
+                this.iframeOrigin = new URL(url).origin
+            } catch {
                 this.iframeOrigin = ''
             }
-        } finally {
-          this.loading = false
+        } else {
+            this.iframeOrigin = ''
         }
     }
 
@@ -170,14 +161,8 @@ export default toNative(MarketplaceModal)
     </template>
 
     <div class="h-full flex-1 min-h-0 overflow-hidden">
-      <!-- Loading -->
-      <div v-if="loading" class="h-full flex flex-col items-center justify-center">
-        <div class="w-12 h-12 spinner mb-3"></div>
-        <p class="text-slate-500">加载中...</p>
-      </div>
-
       <!-- Empty -->
-      <div v-else-if="!iframeUrl" class="h-full flex flex-col items-center justify-center px-4 text-center">
+      <div v-if="!iframeUrl" class="h-full flex flex-col items-center justify-center px-4 text-center">
         <div class="empty-state-icon bg-amber-100">
           <i class="fas fa-store text-amber-500 text-2xl"></i>
         </div>
