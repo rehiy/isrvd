@@ -33,16 +33,16 @@ type GoRuntimeStat struct {
 // deviceKey 优先使用 PCI 地址，无法获取时退化为 vendor/name/index 组合
 // 这样前端图表与列表 key 不会因过滤顺序变化而漂移
 type SystemGPU struct {
-	Index       int     `json:"index"`
-	DeviceKey   string  `json:"deviceKey"`
-	Name        string  `json:"name"`
-	Vendor      string  `json:"vendor"`
-	MemoryUsed  uint64  `json:"memoryUsed"`
-	MemoryTotal uint64  `json:"memoryTotal"`
-	Utilization float64 `json:"utilization"`
-	Temperature int     `json:"temperature"`
-	PowerUsage  float64 `json:"powerUsage"`
-	FanSpeed    int     `json:"fanSpeed"`
+	Index       int     `json:"index"`       // GPU 索引
+	DeviceKey   string  `json:"deviceKey"`   // 设备标识
+	Name        string  `json:"name"`        // GPU 名称
+	Vendor      string  `json:"vendor"`      // 厂商
+	MemoryUsed  uint64  `json:"memoryUsed"`  // 已用显存（字节）
+	MemoryTotal uint64  `json:"memoryTotal"` // 总显存（字节）
+	Utilization float64 `json:"utilization"` // GPU 利用率（0-100）
+	Temperature int     `json:"temperature"` // 温度（℃）
+	PowerUsage  float64 `json:"powerUsage"`  // 功耗（W）
+	FanSpeed    int     `json:"fanSpeed"`    // 风扇转速（%）
 }
 
 // HostStat 主机监控采集数据

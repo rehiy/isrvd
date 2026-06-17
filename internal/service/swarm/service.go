@@ -16,61 +16,61 @@ import (
 
 // NodeInfo Swarm 节点信息（列表项），保持前端稳定响应结构。
 type NodeInfo struct {
-	ID            string `json:"id"`
-	Hostname      string `json:"hostname"`
-	Role          string `json:"role"`
-	Availability  string `json:"availability"`
-	State         string `json:"state"`
-	Addr          string `json:"addr"`
-	EngineVersion string `json:"engineVersion"`
-	Leader        bool   `json:"leader"`
+	ID            string `json:"id"`            // 节点 ID
+	Hostname      string `json:"hostname"`      // 主机名
+	Role          string `json:"role"`          // 角色（manager/worker）
+	Availability  string `json:"availability"`  // 可用状态（active/pause/drain）
+	State         string `json:"state"`         // 节点状态（ready/down）
+	Addr          string `json:"addr"`          // 节点地址
+	EngineVersion string `json:"engineVersion"` // Docker 引擎版本
+	Leader        bool   `json:"leader"`        // 是否为 Leader 节点
 }
 
 // NodeDetail 节点详情，保持前端稳定响应结构。
 type NodeDetail struct {
-	ID            string            `json:"id"`
-	Hostname      string            `json:"hostname"`
-	Role          string            `json:"role"`
-	Availability  string            `json:"availability"`
-	State         string            `json:"state"`
-	Addr          string            `json:"addr"`
-	EngineVersion string            `json:"engineVersion"`
-	Leader        bool              `json:"leader"`
-	OS            string            `json:"os"`
-	Architecture  string            `json:"architecture"`
-	CPUs          int64             `json:"cpus"`
-	MemoryBytes   int64             `json:"memoryBytes"`
-	Labels        map[string]string `json:"labels"`
-	CreatedAt     string            `json:"createdAt"`
-	UpdatedAt     string            `json:"updatedAt"`
+	ID            string            `json:"id"`            // 节点 ID
+	Hostname      string            `json:"hostname"`      // 主机名
+	Role          string            `json:"role"`          // 角色（manager/worker）
+	Availability  string            `json:"availability"`  // 可用状态
+	State         string            `json:"state"`         // 节点状态
+	Addr          string            `json:"addr"`          // 节点地址
+	EngineVersion string            `json:"engineVersion"` // Docker 引擎版本
+	Leader        bool              `json:"leader"`        // 是否为 Leader
+	OS            string            `json:"os"`            // 操作系统
+	Architecture  string            `json:"architecture"`  // CPU 架构
+	CPUs          int64             `json:"cpus"`          // CPU 核心数
+	MemoryBytes   int64             `json:"memoryBytes"`   // 内存大小（字节）
+	Labels        map[string]string `json:"labels"`        // 节点标签
+	CreatedAt     string            `json:"createdAt"`     // 创建时间
+	UpdatedAt     string            `json:"updatedAt"`     // 更新时间
 }
 
 // Task Swarm 任务信息，保持前端稳定响应结构。
 type Task struct {
-	ID          string `json:"id"`
-	ServiceID   string `json:"serviceID"`
-	ServiceName string `json:"serviceName"`
-	NodeID      string `json:"nodeID"`
-	NodeName    string `json:"nodeName"`
-	Slot        int    `json:"slot"`
-	Image       string `json:"image"`
-	State       string `json:"state"`
-	Message     string `json:"message"`
-	Err         string `json:"err"`
-	UpdatedAt   string `json:"updatedAt"`
+	ID          string `json:"id"`          // 任务 ID
+	ServiceID   string `json:"serviceID"`   // 所属服务 ID
+	ServiceName string `json:"serviceName"` // 所属服务名称
+	NodeID      string `json:"nodeID"`      // 运行节点 ID
+	NodeName    string `json:"nodeName"`    // 运行节点名称
+	Slot        int    `json:"slot"`        // 任务槽位
+	Image       string `json:"image"`       // 镜像名称
+	State       string `json:"state"`       // 任务状态
+	Message     string `json:"message"`     // 状态消息
+	Err         string `json:"err"`         // 错误信息
+	UpdatedAt   string `json:"updatedAt"`   // 更新时间
 }
 
 // ServiceInfo 服务列表信息（精简视图），保持前端稳定响应结构。
 type ServiceInfo struct {
-	ID           string        `json:"id"`
-	Name         string        `json:"name"`
-	Image        string        `json:"image"`
-	Mode         string        `json:"mode"`
-	Replicas     *uint64       `json:"replicas"`
-	RunningTasks int           `json:"runningTasks"`
-	Ports        []ServicePort `json:"ports"`
-	CreatedAt    string        `json:"createdAt"`
-	UpdatedAt    string        `json:"updatedAt"`
+	ID           string        `json:"id"`           // 服务 ID
+	Name         string        `json:"name"`         // 服务名称
+	Image        string        `json:"image"`        // 镜像名称
+	Mode         string        `json:"mode"`         // 部署模式（replicated/global）
+	Replicas     *uint64       `json:"replicas"`     // 副本数
+	RunningTasks int           `json:"runningTasks"` // 运行中的任务数
+	Ports        []ServicePort `json:"ports"`        // 端口映射列表
+	CreatedAt    string        `json:"createdAt"`    // 创建时间
+	UpdatedAt    string        `json:"updatedAt"`    // 更新时间
 }
 
 // ServiceDetail 服务详情（完整视图）。
@@ -84,17 +84,17 @@ type ServiceDetail struct {
 
 // ServiceSpec 服务可写配置（创建/更新共用），保持 HTTP API 兼容。
 type ServiceSpec struct {
-	Name        string            `json:"name"`
-	Image       string            `json:"image"`
-	Mode        string            `json:"mode"`
-	Replicas    *uint64           `json:"replicas"`
-	Env         []string          `json:"env"`
-	Args        []string          `json:"args"`
-	Networks    []string          `json:"networks"`
-	Ports       []ServicePort     `json:"ports"`
-	Mounts      []ServiceMount    `json:"mounts"`
-	Labels      map[string]string `json:"labels"`
-	Constraints []string          `json:"constraints"`
+	Name        string            `json:"name"`        // 服务名称
+	Image       string            `json:"image"`       // 镜像名称
+	Mode        string            `json:"mode"`        // 部署模式（replicated/global）
+	Replicas    *uint64           `json:"replicas"`    // 副本数
+	Env         []string          `json:"env"`         // 环境变量列表
+	Args        []string          `json:"args"`        // 启动参数
+	Networks    []string          `json:"networks"`    // 网络列表
+	Ports       []ServicePort     `json:"ports"`       // 端口映射
+	Mounts      []ServiceMount    `json:"mounts"`      // 挂载卷
+	Labels      map[string]string `json:"labels"`      // 标签
+	Constraints []string          `json:"constraints"` // 调度约束
 }
 
 // ServicePort 服务端口信息。
