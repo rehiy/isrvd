@@ -29,17 +29,17 @@ func (app *App) defineWebSSHRoutes() []Route {
 		// SSH 终端
 		{Method: "GET", Path: "/ssh/to/:id", Handler: app.websshTerminal, Module: "ssh", Label: "打开 SSH 终端", QueryToken: true},
 		// SFTP 文件管理
-		{Method: "GET", Path: "/ssh/sftp/:id/ls", Handler: app.websshSFTPList, Module: "ssh", Label: "SFTP 列出目录"},
-		{Method: "GET", Path: "/ssh/sftp/:id/download", Handler: app.websshSFTPDownload, Module: "ssh", Label: "SFTP 下载文件", QueryToken: true},
-		{Method: "POST", Path: "/ssh/sftp/:id/upload", Handler: app.websshSFTPUpload, Module: "ssh", Label: "SFTP 上传文件"},
-		{Method: "DELETE", Path: "/ssh/sftp/:id/rm", Handler: app.websshSFTPRemove, Module: "ssh", Label: "SFTP 删除文件"},
-		{Method: "POST", Path: "/ssh/sftp/:id/mkdir", Handler: app.websshSFTPMkdir, Module: "ssh", Label: "SFTP 创建目录"},
-		{Method: "POST", Path: "/ssh/sftp/:id/rename", Handler: app.websshSFTPRename, Module: "ssh", Label: "SFTP 重命名"},
-		{Method: "POST", Path: "/ssh/sftp/:id/chmod", Handler: app.websshSFTPChmod, Module: "ssh", Label: "SFTP 修改权限"},
-		{Method: "POST", Path: "/ssh/sftp/:id/chown", Handler: app.websshSFTPChown, Module: "ssh", Label: "SFTP 修改所有者"},
-		{Method: "GET", Path: "/ssh/sftp/:id/read", Handler: app.websshSFTPRead, Module: "ssh", Label: "SFTP 读取文件"},
-		{Method: "POST", Path: "/ssh/sftp/:id/write", Handler: app.websshSFTPWrite, Module: "ssh", Label: "SFTP 写入文件"},
-		{Method: "GET", Path: "/ssh/sftp/:id/dir-size", Handler: app.websshSFTPDirSize, Module: "ssh", Label: "SFTP 计算目录大小"},
+		{Method: "GET", Path: "/sftp/:id/ls", Handler: app.websshSFTPList, Module: "ssh", Label: "SFTP 列出目录"},
+		{Method: "GET", Path: "/sftp/:id/download", Handler: app.websshSFTPDownload, Module: "ssh", Label: "SFTP 下载文件", QueryToken: true},
+		{Method: "POST", Path: "/sftp/:id/upload", Handler: app.websshSFTPUpload, Module: "ssh", Label: "SFTP 上传文件"},
+		{Method: "DELETE", Path: "/sftp/:id/rm", Handler: app.websshSFTPRemove, Module: "ssh", Label: "SFTP 删除文件"},
+		{Method: "POST", Path: "/sftp/:id/mkdir", Handler: app.websshSFTPMkdir, Module: "ssh", Label: "SFTP 创建目录"},
+		{Method: "POST", Path: "/sftp/:id/rename", Handler: app.websshSFTPRename, Module: "ssh", Label: "SFTP 重命名"},
+		{Method: "POST", Path: "/sftp/:id/chmod", Handler: app.websshSFTPChmod, Module: "ssh", Label: "SFTP 修改权限"},
+		{Method: "POST", Path: "/sftp/:id/chown", Handler: app.websshSFTPChown, Module: "ssh", Label: "SFTP 修改所有者"},
+		{Method: "GET", Path: "/sftp/:id/read", Handler: app.websshSFTPRead, Module: "ssh", Label: "SFTP 读取文件"},
+		{Method: "POST", Path: "/sftp/:id/write", Handler: app.websshSFTPWrite, Module: "ssh", Label: "SFTP 写入文件"},
+		{Method: "GET", Path: "/sftp/:id/dir-size", Handler: app.websshSFTPDirSize, Module: "ssh", Label: "SFTP 计算目录大小"},
 	}
 }
 

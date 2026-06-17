@@ -832,11 +832,11 @@ class ApiService {
     // ==================== SFTP 文件管理 ====================
 
     sftpList(hostId: string, path: string) {
-        return http.get<SFTPListResult>(`ssh/sftp/${hostId}/ls`, { params: { path } })
+        return http.get<SFTPListResult>(`sftp/${hostId}/ls`, { params: { path } })
     }
 
     sftpUpload(hostId: string, path: string, formData: FormData, onProgress?: (percent: number) => void, config: AxiosRequestConfig = {}) {
-        return http.post<void>(`ssh/sftp/${hostId}/upload`, formData, {
+        return http.post<void>(`sftp/${hostId}/upload`, formData, {
             ...config,
             params: { ...config.params, path },
             headers: { ...config.headers, 'Content-Type': 'multipart/form-data' },
@@ -847,7 +847,7 @@ class ApiService {
     }
 
     sftpDownload(hostId: string, path: string, onProgress?: (percent: number) => void) {
-        return httpBlob.get(`ssh/sftp/${hostId}/download`, {
+        return httpBlob.get(`sftp/${hostId}/download`, {
             params: { path },
             responseType: 'blob',
             onDownloadProgress: onProgress
@@ -859,40 +859,40 @@ class ApiService {
     sftpDownloadURL(hostId: string, path: string, token = '') {
         const params = new URLSearchParams({ path })
         if (token) params.set('token', token)
-        return `api/ssh/sftp/${hostId}/download?${params.toString()}`
+        return `api/sftp/${hostId}/download?${params.toString()}`
     }
 
     sftpRemove(hostId: string, path: string, recursive = false) {
-        return http.delete<void>(`ssh/sftp/${hostId}/rm`, { params: { path, recursive: recursive || undefined } })
+        return http.delete<void>(`sftp/${hostId}/rm`, { params: { path, recursive: recursive || undefined } })
     }
 
     sftpMkdir(hostId: string, data: SFTPMkdir, config?: AxiosRequestConfig) {
-        return http.post<void>(`ssh/sftp/${hostId}/mkdir`, data, config)
+        return http.post<void>(`sftp/${hostId}/mkdir`, data, config)
     }
 
     sftpRename(hostId: string, data: SFTPRename) {
-        return http.post<void>(`ssh/sftp/${hostId}/rename`, data)
+        return http.post<void>(`sftp/${hostId}/rename`, data)
     }
 
     // ─── SFTP 文件操作 ───
     sftpFileChmod(hostId: string, data: SFTPChmod) {
-        return http.post<void>(`ssh/sftp/${hostId}/chmod`, data)
+        return http.post<void>(`sftp/${hostId}/chmod`, data)
     }
 
     sftpFileChown(hostId: string, data: SFTPChown) {
-        return http.post<void>(`ssh/sftp/${hostId}/chown`, data)
+        return http.post<void>(`sftp/${hostId}/chown`, data)
     }
 
     sftpRead(hostId: string, path: string) {
-        return http.get<{ content: string }>(`ssh/sftp/${hostId}/read`, { params: { path } })
+        return http.get<{ content: string }>(`sftp/${hostId}/read`, { params: { path } })
     }
 
     sftpWrite(hostId: string, data: SFTPWrite) {
-        return http.post<void>(`ssh/sftp/${hostId}/write`, data)
+        return http.post<void>(`sftp/${hostId}/write`, data)
     }
 
     sftpDirSize(hostId: string, path: string) {
-        return http.get<{ path: string; size: number }>(`ssh/sftp/${hostId}/dir-size`, { params: { path } })
+        return http.get<{ path: string; size: number }>(`sftp/${hostId}/dir-size`, { params: { path } })
     }
 }
 

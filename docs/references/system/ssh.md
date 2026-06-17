@@ -64,17 +64,17 @@
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/ssh/sftp/:id/ls` | SFTP 列出目录 |
-| GET | `/api/ssh/sftp/:id/download` | SFTP 下载文件 |
-| POST | `/api/ssh/sftp/:id/upload` | SFTP 上传文件 |
-| DELETE | `/api/ssh/sftp/:id/rm` | SFTP 删除文件或目录 |
-| POST | `/api/ssh/sftp/:id/mkdir` | SFTP 创建目录 |
-| POST | `/api/ssh/sftp/:id/rename` | SFTP 重命名 |
-| POST | `/api/ssh/sftp/:id/chmod` | SFTP 修改权限 |
-| POST | `/api/ssh/sftp/:id/chown` | SFTP 修改所有者 |
-| GET | `/api/ssh/sftp/:id/read` | SFTP 读取文件 |
-| POST | `/api/ssh/sftp/:id/write` | SFTP 写入文件 |
-| GET | `/api/ssh/sftp/:id/dir-size` | SFTP 计算目录大小 |
+| GET | `/api/sftp/:id/ls` | SFTP 列出目录 |
+| GET | `/api/sftp/:id/download` | SFTP 下载文件 |
+| POST | `/api/sftp/:id/upload` | SFTP 上传文件 |
+| DELETE | `/api/sftp/:id/rm` | SFTP 删除文件或目录 |
+| POST | `/api/sftp/:id/mkdir` | SFTP 创建目录 |
+| POST | `/api/sftp/:id/rename` | SFTP 重命名 |
+| POST | `/api/sftp/:id/chmod` | SFTP 修改权限 |
+| POST | `/api/sftp/:id/chown` | SFTP 修改所有者 |
+| GET | `/api/sftp/:id/read` | SFTP 读取文件 |
+| POST | `/api/sftp/:id/write` | SFTP 写入文件 |
+| GET | `/api/sftp/:id/dir-size` | SFTP 计算目录大小 |
 
 ---
 
@@ -216,7 +216,7 @@ terminal.onData((data) => {
 
 ### SFTP 列出目录
 
-**GET** `/api/ssh/sftp/:id/ls?path=<DIR>`
+**GET** `/api/sftp/:id/ls?path=<DIR>`
 
 Query 参数：
 
@@ -230,7 +230,7 @@ Query 参数：
 
 ### SFTP 下载文件
 
-**GET** `/api/ssh/sftp/:id/download?path=<FILE>`
+**GET** `/api/sftp/:id/download?path=<FILE>`
 
 返回文件流（attachment），需携带 `token` 参数认证。
 
@@ -238,7 +238,7 @@ Query 参数：
 
 ### SFTP 上传文件
 
-**POST** `/api/ssh/sftp/:id/upload?path=<DIR>`
+**POST** `/api/sftp/:id/upload?path=<DIR>`
 
 Multipart 表单上传，字段名 `file`。支持目录上传（`webkitRelativePath`）。
 
@@ -246,7 +246,7 @@ Multipart 表单上传，字段名 `file`。支持目录上传（`webkitRelative
 
 ### SFTP 删除
 
-**DELETE** `/api/ssh/sftp/:id/rm?path=<FILE>&recursive=true`
+**DELETE** `/api/sftp/:id/rm?path=<FILE>&recursive=true`
 
 Query 参数：
 
@@ -259,7 +259,7 @@ Query 参数：
 
 ### SFTP 创建目录
 
-**POST** `/api/ssh/sftp/:id/mkdir`
+**POST** `/api/sftp/:id/mkdir`
 
 请求体：
 
@@ -271,7 +271,7 @@ Query 参数：
 
 ### SFTP 重命名
 
-**POST** `/api/ssh/sftp/:id/rename`
+**POST** `/api/sftp/:id/rename`
 
 请求体：
 
@@ -283,7 +283,7 @@ Query 参数：
 
 ### SFTP 修改权限
 
-**POST** `/api/ssh/sftp/:id/chmod`
+**POST** `/api/sftp/:id/chmod`
 
 请求体：
 
@@ -295,7 +295,7 @@ Query 参数：
 
 ### SFTP 修改所有者
 
-**POST** `/api/ssh/sftp/:id/chown`
+**POST** `/api/sftp/:id/chown`
 
 请求体：
 
@@ -307,7 +307,7 @@ Query 参数：
 
 ### SFTP 读取文件
 
-**GET** `/api/ssh/sftp/:id/read?path=<FILE>`
+**GET** `/api/sftp/:id/read?path=<FILE>`
 
 响应 `payload`：`{content: "<FILE_CONTENT>"}`
 
@@ -315,7 +315,7 @@ Query 参数：
 
 ### SFTP 写入文件
 
-**POST** `/api/ssh/sftp/:id/write`
+**POST** `/api/sftp/:id/write`
 
 请求体：
 
@@ -327,7 +327,7 @@ Query 参数：
 
 ### SFTP 计算目录大小
 
-**GET** `/api/ssh/sftp/:id/dir-size?path=<DIR>`
+**GET** `/api/sftp/:id/dir-size?path=<DIR>`
 
 响应 `payload`：`{path: "<DIR>", size: <BYTES>}`
 
@@ -342,4 +342,4 @@ Query 参数：
 | 认证方式 | isrvd JWT | SSH 密码/私钥 |
 | 适用场景 | 服务器本地管理 | 远程服务器管理 |
 | WebSocket 路径 | `/api/shell` | `/api/ssh/to/<ID>` |
-| 文件管理 | `/api/filer/*`（本地） | `/api/ssh/sftp/:id/*`（远程） |
+| 文件管理 | `/api/filer/*`（本地） | `/api/sftp/:id/*`（远程） |

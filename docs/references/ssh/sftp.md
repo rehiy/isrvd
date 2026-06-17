@@ -7,7 +7,7 @@
 ## 列出目录
 
 ```bash
-isrvd_get "/ssh/sftp/<ID>/ls?path=/home/user"
+isrvd_get "/sftp/<ID>/ls?path=/home/user"
 ```
 
 **响应字段（SFTPFileInfo[]）：**
@@ -27,7 +27,7 @@ isrvd_get "/ssh/sftp/<ID>/ls?path=/home/user"
 ## 读取文件
 
 ```bash
-isrvd_get "/ssh/sftp/<ID>/read?path=/path/to/file"
+isrvd_get "/sftp/<ID>/read?path=/path/to/file"
 ```
 
 响应 `payload`：`{"content":"<FILE_CONTENT>"}`。
@@ -37,7 +37,7 @@ isrvd_get "/ssh/sftp/<ID>/read?path=/path/to/file"
 ## 下载文件
 
 ```bash
-isrvd_get "/ssh/sftp/<ID>/download?path=/path/to/file"
+isrvd_get "/sftp/<ID>/download?path=/path/to/file"
 ```
 
 返回 attachment 文件流；浏览器直连下载可携带 `token` 查询参数认证。
@@ -47,7 +47,7 @@ isrvd_get "/ssh/sftp/<ID>/download?path=/path/to/file"
 ## 上传文件
 
 ```bash
-isrvd_upload "/ssh/sftp/<ID>/upload" "file" "/local/file.txt" "path=/remote/dir"
+isrvd_upload "/sftp/<ID>/upload" "file" "/local/file.txt" "path=/remote/dir"
 ```
 
 ---
@@ -55,7 +55,7 @@ isrvd_upload "/ssh/sftp/<ID>/upload" "file" "/local/file.txt" "path=/remote/dir"
 ## 创建目录
 
 ```bash
-isrvd_post "/ssh/sftp/<ID>/mkdir" '{"path":"/remote/new/dir"}'
+isrvd_post "/sftp/<ID>/mkdir" '{"path":"/remote/new/dir"}'
 ```
 
 ---
@@ -63,8 +63,8 @@ isrvd_post "/ssh/sftp/<ID>/mkdir" '{"path":"/remote/new/dir"}'
 ## 删除文件或目录
 
 ```bash
-isrvd_delete "/ssh/sftp/<ID>/rm?path=/remote/file/or/dir"
-isrvd_delete "/ssh/sftp/<ID>/rm?path=/remote/dir&recursive=true"
+isrvd_delete "/sftp/<ID>/rm?path=/remote/file/or/dir"
+isrvd_delete "/sftp/<ID>/rm?path=/remote/dir&recursive=true"
 ```
 
 ---
@@ -72,7 +72,7 @@ isrvd_delete "/ssh/sftp/<ID>/rm?path=/remote/dir&recursive=true"
 ## 重命名
 
 ```bash
-isrvd_post "/ssh/sftp/<ID>/rename" '{"oldPath":"/remote/old","newPath":"/remote/new"}'
+isrvd_post "/sftp/<ID>/rename" '{"oldPath":"/remote/old","newPath":"/remote/new"}'
 ```
 
 ---
@@ -80,7 +80,7 @@ isrvd_post "/ssh/sftp/<ID>/rename" '{"oldPath":"/remote/old","newPath":"/remote/
 ## 修改权限
 
 ```bash
-isrvd_post "/ssh/sftp/<ID>/chmod" '{"path":"/remote/file","mode":"0644"}'
+isrvd_post "/sftp/<ID>/chmod" '{"path":"/remote/file","mode":"0644"}'
 ```
 
 ---
@@ -88,7 +88,7 @@ isrvd_post "/ssh/sftp/<ID>/chmod" '{"path":"/remote/file","mode":"0644"}'
 ## 修改所有者
 
 ```bash
-isrvd_post "/ssh/sftp/<ID>/chown" '{"path":"/remote/file","uid":1000,"gid":1000}'
+isrvd_post "/sftp/<ID>/chown" '{"path":"/remote/file","uid":1000,"gid":1000}'
 ```
 
 ---
@@ -96,7 +96,7 @@ isrvd_post "/ssh/sftp/<ID>/chown" '{"path":"/remote/file","uid":1000,"gid":1000}
 ## 计算目录大小
 
 ```bash
-isrvd_get "/ssh/sftp/<ID>/dir-size?path=/remote/dir"
+isrvd_get "/sftp/<ID>/dir-size?path=/remote/dir"
 ```
 
 **响应字段：**

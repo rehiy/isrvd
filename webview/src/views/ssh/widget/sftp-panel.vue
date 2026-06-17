@@ -22,17 +22,17 @@ function createSftpAdapter(hostId: string): ExplorerAdapter {
     const portal = usePortal()
     const perm = (p: string) => portal.hasPerm(p)
     const can: ExplorerAdapter['can'] = {
-        list: perm('GET /api/ssh/sftp/:id/ls'),
-        download: perm('GET /api/ssh/sftp/:id/download'),
-        upload: perm('POST /api/ssh/sftp/:id/upload'),
-        remove: perm('DELETE /api/ssh/sftp/:id/rm'),
-        rename: perm('POST /api/ssh/sftp/:id/rename'),
-        mkdir: perm('POST /api/ssh/sftp/:id/mkdir'),
-        readFile: perm('GET /api/ssh/sftp/:id/read'),
-        writeFile: perm('POST /api/ssh/sftp/:id/write'),
-        chmod: perm('POST /api/ssh/sftp/:id/chmod'),
-        preview: perm('GET /api/ssh/sftp/:id/download'),
-        createFile: perm('POST /api/ssh/sftp/:id/write'),
+        list: perm('GET /api/sftp/:id/ls'),
+        download: perm('GET /api/sftp/:id/download'),
+        upload: perm('POST /api/sftp/:id/upload'),
+        remove: perm('DELETE /api/sftp/:id/rm'),
+        rename: perm('POST /api/sftp/:id/rename'),
+        mkdir: perm('POST /api/sftp/:id/mkdir'),
+        readFile: perm('GET /api/sftp/:id/read'),
+        writeFile: perm('POST /api/sftp/:id/write'),
+        chmod: perm('POST /api/sftp/:id/chmod'),
+        preview: perm('GET /api/sftp/:id/download'),
+        createFile: perm('POST /api/sftp/:id/write'),
         zip: false,
         unzip: false,
     }
