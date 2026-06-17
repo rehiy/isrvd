@@ -16,14 +16,25 @@ import (
 	"isrvd/config"
 )
 
-const upgradeServer = "https://isrvd.rehiy.com/update/"
+const (
+	upgradeServer = "https://isrvd.rehiy.com/update/"
+
+	// countryCodeURL 国家代码探测服务，与 build/script/isrvd.sh 保持一致
+	countryCodeURL = "https://ipip.rehi.org/country_code"
+
+	// updaterImageCN 中国大陆使用的 docker-updater 镜像（CNB 镜像源）
+	updaterImageCN = "docker.cnb.cool/rehiy/docker-updater:latest"
+	// updaterImageGlobal 默认（海外）使用的 docker-updater 镜像
+	updaterImageGlobal = "rehiy/docker-updater:latest"
+)
 
 // VersionInfo 版本信息
 type VersionInfo struct {
-	Current   string `json:"current"`           // 当前版本号
-	Latest    string `json:"latest"`            // 最新版本号
-	Release   string `json:"release,omitempty"` // 最新版本发布页 URL
-	HasUpdate bool   `json:"hasUpdate"`         // 是否有可用更新
+	Current      string `json:"current"`           // 当前版本号
+	Latest       string `json:"latest"`            // 最新版本号
+	Release      string `json:"release,omitempty"` // 最新版本发布页 URL
+	HasUpdate    bool   `json:"hasUpdate"`         // 是否有可用更新
+	UpdaterImage string `json:"updaterImage"`      // 推荐的 docker-updater 镜像（按国家代码自动选择）
 }
 
 var (
@@ -34,18 +45,48 @@ var (
 	cacheDuration  = 1 * time.Hour
 )
 
+var (
+	countryCacheMu       sync.Mutex
+	cachedUpdaterImage   string
+	countryCacheTime     time.Time
+	countryCacheDuration = 6 * time.Hour
+)
+
 // executablePath 启动时记录，避免升级替换后 /proc/self/exe 失效
 var executablePath, _ = os.Executable()
 
-// CheckVersion 从升级服务器检测最新版本，带 4 小时缓存
+// CheckVersion 从升级服务器检测最新版本，带缓存
 func (s *Service) CheckVersion() *VersionInfo {
 	latest, releaseURL := fetchLatestTag()
 	return &VersionInfo{
-		Current:   config.Version,
-		Latest:    latest,
-		Release:   releaseURL,
-		HasUpdate: isNewerVersion(latest, config.Version),
+		Current:      config.Version,
+		Latest:       latest,
+		Release:      releaseURL,
+		HasUpdate:    isNewerVersion(latest, config.Version),
+		UpdaterImage: resolveUpdaterImage(),
 	}
+}
+
+// resolveUpdaterImage 根据 IP 国家代码选择 docker-updater 镜像，带内存缓存。
+// 国家代码为 CN 时使用 CNB 镜像源，其余情况使用默认镜像；探测失败时回退到默认镜像。
+func resolveUpdaterImage() string {
+	countryCacheMu.Lock()
+	defer countryCacheMu.Unlock()
+
+	if cachedUpdaterImage != "" && time.Since(countryCacheTime) < countryCacheDuration {
+		return cachedUpdaterImage
+	}
+
+	image := updaterImageGlobal
+	code, err := request.TextGet(countryCodeURL, request.Header{"User-Agent": "isrvd"})
+	if err != nil {
+		logman.Warn("country code detect failed", "error", err)
+	} else if strings.EqualFold(strings.TrimSpace(code), "CN") {
+		image = updaterImageCN
+	}
+
+	cachedUpdaterImage, countryCacheTime = image, time.Now()
+	return image
 }
 
 // ApplySelfUpgrade 从升级服务器下载最新 tar.gz，提取二进制并替换当前程序

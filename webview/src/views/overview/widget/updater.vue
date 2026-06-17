@@ -75,7 +75,7 @@ class SystemUpdater extends Vue {
         this.upgradeType = 'docker'
         try {
             const spec: DockerContainerCreate = {
-                image: 'rehiy/docker-updater:latest',
+                image: this.version?.updaterImage || 'rehiy/docker-updater:latest',
                 name: `auto-update-${Date.now()}`,
                 autoRemove: this.updaterAutoRemove,
                 volumes: [
@@ -234,7 +234,7 @@ export default toNative(SystemUpdater)
         </div>
         <ToggleCard v-model="updaterAutoRemove" label="升级完成后自动销毁容器" desc="关闭后可通过容器日志查看升级过程" />
         <p class="text-sm text-slate-600">
-          将通过 <code class="px-1 py-0.5 rounded bg-slate-100 font-mono text-xs">rehiy/docker-updater</code>
+          将通过 <code class="px-1 py-0.5 rounded bg-slate-100 font-mono text-xs">{{ version?.updaterImage || 'rehiy/docker-updater:latest' }}</code>
           临时容器拉取最新镜像并重启，升级期间服务会短暂中断。
         </p>
       </form>

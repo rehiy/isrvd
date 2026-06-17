@@ -22,14 +22,15 @@ isrvd_get "/overview/bootstrap"
 isrvd_get "/overview/version"
 ```
 
-获取当前版本及最新版本信息，需要升级权限（`POST /api/overview/upgrade`）。
+获取当前版本及最新版本信息，登录即可访问（`AccessAuth`）。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `current` | string | 当前运行版本 |
-| `latest` | string | 远端最新版本（4 小时缓存） |
+| `latest` | string | 远端最新版本（1 小时缓存） |
 | `release` | string | 最新版 Release URL |
 | `hasUpdate` | boolean | 是否有可用更新 |
+| `updaterImage` | string | 推荐的 docker-updater 镜像，按国家代码自动选择（6 小时缓存）：探测到 `country_code=CN` 时返回 `docker.cnb.cool/rehiy/docker-updater:latest`，否则返回 `rehiy/docker-updater:latest`。探测失败时回退为默认镜像 |
 
 ---
 
@@ -98,7 +99,9 @@ isrvd_get "/overview/monitor?type=container&since=3600&id=<CONTAINER_ID>"
 isrvd_post "/overview/upgrade"
 ```
 
-触发 isrvd 程序自升级至最新版本（通过 `upgrade` 包实现）。
+触发 isrvd 程序自升级至最新版本（通过 `upgrade` 包实现，二进制原地替换并重启）。
+
+Docker 容器部署场景下，前端改用 `GET /api/overview/version` 返回的 `updaterImage` 字段，通过临时 docker-updater 容器拉取最新镜像并重启当前容器；该镜像按国家代码自动选择（CN 使用 CNB 镜像源）。
 
 > ⚠️ 升级操作会重启服务，请确保已保存所有工作。
 

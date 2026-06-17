@@ -22,6 +22,7 @@ export interface SystemVersionInfo {
     latest: string
     hasUpdate: boolean
     release: string
+    updaterImage: string
 }
 
 export interface SystemProbe {
