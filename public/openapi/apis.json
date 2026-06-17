@@ -409,13 +409,13 @@
         ]
       }
     },
-    "/account/passkey/credential/{credentialID}": {
+    "/account/passkey/credential/{id}": {
       "delete": {
-        "operationId": "delete_account_passkey_credential_credentialID",
+        "operationId": "delete_account_passkey_credential_id",
         "parameters": [
           {
             "in": "path",
-            "name": "credentialID",
+            "name": "id",
             "required": true,
             "schema": {
               "type": "string"
@@ -440,11 +440,11 @@
         ]
       },
       "put": {
-        "operationId": "put_account_passkey_credential_credentialID",
+        "operationId": "put_account_passkey_credential_id",
         "parameters": [
           {
             "in": "path",
-            "name": "credentialID",
+            "name": "id",
             "required": true,
             "schema": {
               "type": "string"
@@ -7125,44 +7125,7 @@
         "type": "object"
       },
       "account.Service": {
-        "properties": {
-          "credIndex": {
-            "description": "signCounts: credentialID → signCount（内存维护，不回写配置）",
-            "type": "object"
-          },
-          "indexMu": {
-            "$ref": "#/components/schemas/sync.RWMutex",
-            "description": "indexMu"
-          },
-          "oidcLoginCodes": {
-            "description": "oidcLoginCodes",
-            "type": "object"
-          },
-          "oidcMu": {
-            "$ref": "#/components/schemas/sync.Mutex",
-            "description": "OIDC 临时状态存储（state/loginCode 均短期有效，内存存储即可）"
-          },
-          "oidcProvider": {
-            "description": "oidcProvider",
-            "type": "object"
-          },
-          "oidcStates": {
-            "description": "oidcStates",
-            "type": "object"
-          },
-          "passkeyStore": {
-            "description": "Passkey",
-            "type": "object"
-          },
-          "signCounts": {
-            "description": "signCounts",
-            "type": "object"
-          },
-          "webAuthn": {
-            "$ref": "#/components/schemas/webauthn.WebAuthn",
-            "description": "webAuthn"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "account.TOTPBeginResponse": {
@@ -7279,29 +7242,11 @@
         "type": "object"
       },
       "agent.Service": {
-        "properties": {
-          "client": {
-            "$ref": "#/components/schemas/http.Client",
-            "description": "client"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "apisix.Client": {
-        "properties": {
-          "adminKey": {
-            "description": "adminKey",
-            "type": "string"
-          },
-          "baseURL": {
-            "description": "baseURL",
-            "type": "string"
-          },
-          "httpClient": {
-            "$ref": "#/components/schemas/http.Client",
-            "description": "httpClient"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "apisix.Consumer": {
@@ -7494,12 +7439,7 @@
         "type": "object"
       },
       "apisix.Service": {
-        "properties": {
-          "client": {
-            "$ref": "#/components/schemas/apisix.Client",
-            "description": "client"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "apisix.Upstream": {
@@ -7794,16 +7734,7 @@
         "type": "object"
       },
       "caddy.Client": {
-        "properties": {
-          "baseURL": {
-            "description": "baseURL",
-            "type": "string"
-          },
-          "httpClient": {
-            "$ref": "#/components/schemas/http.Client",
-            "description": "httpClient"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "caddy.Config": {
@@ -8146,12 +8077,7 @@
         "type": "object"
       },
       "caddy.Service": {
-        "properties": {
-          "client": {
-            "$ref": "#/components/schemas/caddy.Client",
-            "description": "client"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "caddy.TLSApp": {
@@ -8338,7 +8264,7 @@
       "compose.DeployRequest": {
         "properties": {
           "content": {
-            "description": "content",
+            "description": "compose.yml 文件内容（必填）",
             "type": "string"
           },
           "forcePull": {
@@ -8346,7 +8272,7 @@
             "type": "boolean"
           },
           "initURL": {
-            "description": "initURL",
+            "description": "附加运行文件 zip 的下载地址（可选）",
             "type": "string"
           }
         },
@@ -8436,7 +8362,7 @@
       "compose.RedeployRequest": {
         "properties": {
           "content": {
-            "description": "content",
+            "description": "compose.yml 内容（未指定 serviceName 时必填，用于全量重建）",
             "type": "string"
           },
           "forcePull": {
@@ -8444,27 +8370,18 @@
             "type": "boolean"
           },
           "image": {
-            "description": "image",
+            "description": "新镜像（指定 serviceName 时必填）",
             "type": "string"
           },
           "serviceName": {
-            "description": "serviceName",
+            "description": "目标服务名（与 image 配合，仅更新该服务镜像后重建）",
             "type": "string"
           }
         },
         "type": "object"
       },
       "compose.Service": {
-        "properties": {
-          "docker": {
-            "$ref": "#/components/schemas/docker.DockerService",
-            "description": "docker"
-          },
-          "swarm": {
-            "$ref": "#/components/schemas/swarm.SwarmService",
-            "description": "swarm"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "config.AgentConfig": {
@@ -9034,53 +8951,11 @@
         "type": "object"
       },
       "cron.Service": {
-        "properties": {
-          "cron": {
-            "$ref": "#/components/schemas/cron.Cron",
-            "description": "cron 调度器实例"
-          },
-          "docker": {
-            "$ref": "#/components/schemas/docker.DockerService",
-            "description": "可选，DOCKER 类型任务需要"
-          },
-          "entries": {
-            "description": "jobID → cron entry ID 映射",
-            "type": "object"
-          },
-          "jobs": {
-            "description": "jobID → Job 映射",
-            "type": "object"
-          },
-          "mu": {
-            "$ref": "#/components/schemas/sync.RWMutex",
-            "description": "保护 jobs 和 entries 的并发访问"
-          },
-          "store": {
-            "description": "任务持久化存储",
-            "type": "object"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "cron.Store": {
-        "properties": {
-          "dataDir": {
-            "description": "日志目录绝对路径",
-            "type": "string"
-          },
-          "jobMu": {
-            "$ref": "#/components/schemas/sync.Mutex",
-            "description": "jobMu"
-          },
-          "logStore": {
-            "$ref": "#/components/schemas/jsonl.Store",
-            "description": "logStore"
-          },
-          "ts": {
-            "$ref": "#/components/schemas/ast.IndexExpr",
-            "description": "ts"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "cron.TypeInfo": {
@@ -9115,28 +8990,7 @@
         "type": "object"
       },
       "cstore.EtcdStore": {
-        "properties": {
-          "client": {
-            "$ref": "#/components/schemas/etcd.Client",
-            "description": "client"
-          },
-          "fallback": {
-            "description": "可选：fallback YAML 文件路径，key 不存在时读取并写入 etcd",
-            "type": "string"
-          },
-          "keyPath": {
-            "description": "etcd key，如 \"/isrvd/config\"",
-            "type": "string"
-          },
-          "mu": {
-            "$ref": "#/components/schemas/sync.Mutex",
-            "description": "mu"
-          },
-          "timeout": {
-            "description": "timeout",
-            "type": "string"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "cstore.Event": {
@@ -9160,16 +9014,7 @@
         "type": "object"
       },
       "cstore.FileStore": {
-        "properties": {
-          "baseDir": {
-            "description": "baseDir",
-            "type": "string"
-          },
-          "mu": {
-            "$ref": "#/components/schemas/sync.RWMutex",
-            "description": "mu"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "cstore.TypedEvent": {
@@ -9194,16 +9039,7 @@
         "type": "object"
       },
       "cstore.TypedStore": {
-        "properties": {
-          "key": {
-            "description": "key",
-            "type": "string"
-          },
-          "store": {
-            "description": "store",
-            "type": "object"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "docker.ActionRequest": {
@@ -9669,45 +9505,11 @@
         "type": "object"
       },
       "docker.DockerService": {
-        "properties": {
-          "client": {
-            "$ref": "#/components/schemas/client.Client",
-            "description": "client"
-          },
-          "config": {
-            "description": "config",
-            "type": "object"
-          },
-          "registryMu": {
-            "$ref": "#/components/schemas/sync.RWMutex",
-            "description": "保护 config.Registries 的并发读写"
-          },
-          "selfID": {
-            "description": "selfID",
-            "type": "string"
-          },
-          "selfIDOnce": {
-            "$ref": "#/components/schemas/sync.Once",
-            "description": "selfIDOnce"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "docker.ExecSession": {
-        "properties": {
-          "closer": {
-            "$ref": "#/components/schemas/ast.FuncType",
-            "description": "hijackedResp.Close() 返回 void，用 func() 封装"
-          },
-          "reader": {
-            "$ref": "#/components/schemas/io.Reader",
-            "description": "reader"
-          },
-          "writer": {
-            "$ref": "#/components/schemas/io.Writer",
-            "description": "writer"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "docker.ImageBuildRequest": {
@@ -10191,12 +9993,7 @@
         "type": "object"
       },
       "docker.Service": {
-        "properties": {
-          "docker": {
-            "$ref": "#/components/schemas/docker.DockerService",
-            "description": "docker"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "docker.StatsBlockDetail": {
@@ -10591,16 +10388,7 @@
         "type": "object"
       },
       "monitor.Collector": {
-        "properties": {
-          "cancel": {
-            "$ref": "#/components/schemas/context.CancelFunc",
-            "description": "cancel"
-          },
-          "dataDir": {
-            "description": "dataDir",
-            "type": "string"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "monitor.DiskIOStat": {
@@ -10984,12 +10772,7 @@
         "type": "object"
       },
       "swarm.Service": {
-        "properties": {
-          "svc": {
-            "$ref": "#/components/schemas/swarm.SwarmService",
-            "description": "svc"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "swarm.ServiceDetail": {
@@ -11167,12 +10950,7 @@
         "type": "object"
       },
       "swarm.SwarmService": {
-        "properties": {
-          "client": {
-            "$ref": "#/components/schemas/client.Client",
-            "description": "client"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "swarm.Task": {
@@ -11340,27 +11118,7 @@
         "type": "object"
       },
       "system.AuditService": {
-        "properties": {
-          "buffer": {
-            "description": "buffer",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "dataDir": {
-            "description": "dataDir",
-            "type": "string"
-          },
-          "mu": {
-            "$ref": "#/components/schemas/sync.RWMutex",
-            "description": "mu"
-          },
-          "store": {
-            "$ref": "#/components/schemas/jsonl.Store",
-            "description": "store"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "system.ConfigService": {
@@ -11544,20 +11302,7 @@
         "type": "object"
       },
       "webssh.Service": {
-        "properties": {
-          "credentialStore": {
-            "description": "凭据存储",
-            "type": "object"
-          },
-          "sftpClient": {
-            "$ref": "#/components/schemas/webssh.SFTPClient",
-            "description": "SFTP 客户端（用于文件管理）"
-          },
-          "store": {
-            "description": "主机配置存储",
-            "type": "object"
-          }
-        },
+        "properties": {},
         "type": "object"
       }
     },

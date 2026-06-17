@@ -1460,13 +1460,17 @@ func buildSchemaFromStruct(pkgAlias, structName string, st *ast.StructType, file
 			continue // embedded
 		}
 		for _, name := range field.Names {
+			// 跳过未导出字段：encoding/json 不会序列化它们，绝非 HTTP 输入输出参数
+			if !name.IsExported() {
+				continue
+			}
+			// 提取字段信息
 			fieldInfo := extractFieldInfo(name.Name, field)
-
 			// 优先使用字段注释，其次使用 json tag 中的 description
 			if comment, ok := fieldComments[name.Name]; ok && comment != "" {
 				fieldInfo.Description = comment
 			}
-
+			// 跳过字段名为 "-" 的字段
 			if fieldInfo.Name != "-" {
 				schema.Fields = append(schema.Fields, fieldInfo)
 			}
