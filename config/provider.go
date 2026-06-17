@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/goccy/go-yaml"
@@ -92,6 +93,9 @@ func Save() error {
 	for _, m := range Members {
 		members = append(members, m)
 	}
+	sort.Slice(members, func(i, j int) bool {
+		return members[i].Username < members[j].Username
+	})
 
 	conf := &Config{
 		Server:      Server,

@@ -62,7 +62,7 @@ func (s *Service) Proxy(req ProxyRequest) (*ProxyResponse, error) {
 
 	for key, vals := range req.Headers {
 		k := strings.ToLower(key)
-		if k == "host" || k == "authorization" || k == "content-length" {
+		if k == "host" || k == "authorization" || k == "content-length" || k == "cookie" {
 			continue
 		}
 		for _, v := range vals {

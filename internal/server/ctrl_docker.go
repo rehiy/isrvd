@@ -1,6 +1,8 @@
 package server
 
 import (
+	"errors"
+	"io"
 	"mime"
 	"net/http"
 	"path/filepath"
@@ -251,7 +253,7 @@ func (app *App) dockerImageBuild(c *gin.Context) {
 func (app *App) dockerImagePrune(c *gin.Context) {
 	var req svcDocker.ImagePruneRequest
 	// 请求体可选；空 JSON 表示仅清理悬空层
-	if err := c.ShouldBindJSON(&req); err != nil && err.Error() != "EOF" {
+	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
