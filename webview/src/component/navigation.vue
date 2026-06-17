@@ -221,7 +221,7 @@ export default toNative(NavigationBar)
         <span v-if="!collapsed">概览</span>
       </router-link>
       <!-- 本机管理折叠子菜单 -->
-      <div v-if="portal.hasPerm('GET /api/filer/files') || portal.hasPerm('GET /api/shell')">
+      <div v-if="portal.hasPerm('GET /api/overview/monitor') || portal.hasPerm('GET /api/filer/files') || portal.hasPerm('GET /api/shell')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
         <button v-if="collapsed" class="nav-link justify-center" :class="{ 'bg-blue-50 text-blue-700': isLocalActive }" title="本机管理" @click.stop="toggleLocal">
           <i class="fas fa-computer"></i>
