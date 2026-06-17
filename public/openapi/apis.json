@@ -19,7 +19,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/account.TwoFactorStatusResponse"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -40,7 +53,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/account.TOTPBeginResponse"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -133,7 +159,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/account.LoginResponse"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -255,7 +294,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/account.MemberInfo"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -307,7 +362,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/account.LoginResponse"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -419,7 +487,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/config.PasskeyCredential"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -450,7 +534,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/account.PasskeyBeginData"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -481,7 +578,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/account.LoginResponse"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -512,7 +622,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/account.PasskeyBeginData"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -626,7 +749,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/account.CreateApiTokenResponse"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -657,7 +793,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/apisix.Consumer"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -727,7 +876,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -748,7 +911,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/apisix.Consumer"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -779,7 +958,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/apisix.PluginConfig"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -839,7 +1031,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/apisix.PluginConfig"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -878,7 +1083,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/apisix.PluginConfig"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -899,7 +1117,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/apisix.PluginConfig"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -951,7 +1185,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/apisix.Route"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1011,7 +1258,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/apisix.Route"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1050,7 +1310,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/apisix.Route"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1112,7 +1385,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/apisix.Route"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1143,7 +1432,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/apisix.SSL"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1203,7 +1505,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/apisix.SSL"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1242,7 +1557,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/apisix.SSL"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1263,7 +1591,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/apisix.SSL"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1294,7 +1638,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/apisix.Upstream"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1354,7 +1711,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/apisix.Upstream"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1393,7 +1763,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/apisix.Upstream"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1414,7 +1797,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/apisix.Upstream"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1435,7 +1834,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/apisix.Route"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1464,7 +1879,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/apisix.Route"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1495,7 +1923,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/apisix.Route"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1656,7 +2097,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/caddy.CertForm"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1677,7 +2134,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: json.RawMessage",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1727,7 +2198,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/caddy.GlobalForm"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1777,7 +2261,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/caddy.Info"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1818,7 +2315,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1894,7 +2405,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/caddy.RouteView"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1972,7 +2496,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/caddy.RouteView"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1988,22 +2528,25 @@
     "/compose/docker": {
       "post": {
         "operationId": "post_compose_docker",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/compose.DeployRequest"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/compose.DeployResult"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2034,7 +2577,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2073,7 +2630,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/compose.DeployResult"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2089,22 +2659,25 @@
     "/compose/swarm": {
       "post": {
         "operationId": "post_compose_swarm",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/compose.DeployRequest"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/compose.DeployResult"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2135,7 +2708,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2174,7 +2761,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/compose.DeployResult"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2195,7 +2795,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2224,7 +2838,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2333,7 +2961,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2372,7 +3014,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2424,7 +3080,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2455,7 +3125,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/docker.ContainerCreateResult"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2486,7 +3169,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/docker.ContainerDetail"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2686,7 +3382,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/docker.ContainerFileListResult"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2766,7 +3475,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2983,7 +3706,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/docker.ContainerLogsResult"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3054,7 +3790,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/docker.ContainerStatsResponse"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3085,7 +3834,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/docker.ContainerInfo"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3116,7 +3881,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: docker.map[string]string",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3147,7 +3926,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/docker.ImagePruneReport"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3178,7 +3970,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: docker.map[string]string",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3209,7 +4015,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: docker.map[string]string",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3240,7 +4060,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/docker.ImageDetail"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3353,7 +4186,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/docker.ImageInfo"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3384,7 +4233,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/docker.ImageSearchResult"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3405,7 +4270,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/docker.DockerInfo"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3436,7 +4314,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: docker.map[string]string",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3467,7 +4359,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/docker.NetworkDetail"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3529,7 +4434,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/docker.NetworkInfo"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3550,7 +4471,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/docker.RegistryInfo"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3680,7 +4617,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: docker.map[string]string",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3711,7 +4662,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/docker.VolumeDetail"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3773,7 +4737,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/docker.VolumeInfo"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3866,7 +4846,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3965,7 +4959,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -4054,7 +5062,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -4298,7 +5320,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/overview.VersionInfo"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -4361,7 +5396,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/webssh.Credential"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -4421,7 +5469,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/webssh.Credential"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -4460,7 +5521,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/webssh.Credential"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -4481,7 +5555,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/webssh.Credential"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -4512,7 +5602,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/webssh.Host"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -4572,7 +5675,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/webssh.Host"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -4611,7 +5727,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/webssh.Host"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -4632,7 +5761,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/webssh.Host"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -4753,7 +5898,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -4831,7 +5990,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: webssh.SFTPListResult",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -4911,7 +6084,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -5142,7 +6329,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: swarm.map[string]any",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -5173,7 +6374,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/swarm.NodeDetail"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -5235,7 +6449,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/swarm.NodeInfo"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -5266,7 +6496,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -5297,7 +6541,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/swarm.ServiceDetail"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -5377,7 +6634,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -5398,7 +6669,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/swarm.ServiceInfo"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -5429,7 +6716,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/swarm.Task"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -5450,7 +6753,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "description": "Schema not found: swarm.map[string]string",
+                      "type": "object"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -5584,6 +6901,35 @@
         ],
         "type": "object"
       },
+      "account.AuthInfoResponse": {
+        "properties": {
+          "member": {
+            "description": "成员详细信息",
+            "type": "object"
+          },
+          "mode": {
+            "description": "认证模式：jwt | header",
+            "type": "string"
+          },
+          "oidcBtnLabel": {
+            "description": "OIDC 登录按钮文案",
+            "type": "string"
+          },
+          "oidcEnabled": {
+            "description": "是否启用 OIDC 登录",
+            "type": "boolean"
+          },
+          "passkeyEnabled": {
+            "description": "是否启用 Passkey 登录",
+            "type": "boolean"
+          },
+          "username": {
+            "description": "当前登录用户名（未登录时为空）",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "account.ChangePasswordRequest": {
         "properties": {
           "newPassword": {
@@ -5613,6 +6959,19 @@
         },
         "type": "object"
       },
+      "account.CreateApiTokenResponse": {
+        "properties": {
+          "name": {
+            "description": "令牌名称",
+            "type": "string"
+          },
+          "token": {
+            "description": "新创建的 API Token（仅创建时返回明文）",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "account.LoginRequest": {
         "properties": {
           "password": {
@@ -5632,6 +6991,55 @@
           "username",
           "password"
         ],
+        "type": "object"
+      },
+      "account.LoginResponse": {
+        "properties": {
+          "token": {
+            "description": "JWT Token（二步验证时为空）",
+            "type": "string"
+          },
+          "twoFactorRequired": {
+            "description": "是否需要二步验证",
+            "type": "boolean"
+          },
+          "username": {
+            "description": "用户名",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "account.MemberInfo": {
+        "properties": {
+          "description": {
+            "description": "成员描述",
+            "type": "string"
+          },
+          "founder": {
+            "description": "是否为创始人（不可删除/修改）",
+            "type": "boolean"
+          },
+          "homeDirectory": {
+            "description": "家目录（绝对路径）",
+            "type": "string"
+          },
+          "permissions": {
+            "description": "权限列表",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "twoFactor": {
+            "$ref": "#/components/schemas/config.TwoFactorConfig",
+            "description": "二步验证配置"
+          },
+          "username": {
+            "description": "用户名（唯一标识）",
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "account.MemberUpsertRequest": {
@@ -5674,6 +7082,72 @@
         ],
         "type": "object"
       },
+      "account.PasskeyBeginData": {
+        "properties": {
+          "options": {
+            "description": "options"
+          },
+          "sessionId": {
+            "description": "sessionId",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "account.Service": {
+        "properties": {
+          "credIndex": {
+            "description": "signCounts: credentialID → signCount（内存维护，不回写配置）",
+            "type": "object"
+          },
+          "indexMu": {
+            "$ref": "#/components/schemas/sync.RWMutex",
+            "description": "indexMu"
+          },
+          "oidcLoginCodes": {
+            "description": "oidcLoginCodes",
+            "type": "object"
+          },
+          "oidcMu": {
+            "$ref": "#/components/schemas/sync.Mutex",
+            "description": "OIDC 临时状态存储（state/loginCode 均短期有效，内存存储即可）"
+          },
+          "oidcProvider": {
+            "description": "oidcProvider",
+            "type": "object"
+          },
+          "oidcStates": {
+            "description": "oidcStates",
+            "type": "object"
+          },
+          "passkeyStore": {
+            "description": "Passkey",
+            "type": "object"
+          },
+          "signCounts": {
+            "description": "signCounts",
+            "type": "object"
+          },
+          "webAuthn": {
+            "$ref": "#/components/schemas/webauthn.WebAuthn",
+            "description": "webAuthn"
+          }
+        },
+        "type": "object"
+      },
+      "account.TOTPBeginResponse": {
+        "properties": {
+          "secret": {
+            "description": "secret",
+            "type": "string"
+          },
+          "uri": {
+            "description": "uri",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "account.TOTPVerifyRequest": {
         "properties": {
           "code": {
@@ -5688,6 +7162,15 @@
         "required": [
           "code"
         ],
+        "type": "object"
+      },
+      "account.TwoFactorStatusResponse": {
+        "properties": {
+          "enabled": {
+            "description": "enabled",
+            "type": "boolean"
+          }
+        },
         "type": "object"
       },
       "account.accountPasskeyLoginBegin": {
@@ -5718,6 +7201,218 @@
         "required": [
           "displayName"
         ],
+        "type": "object"
+      },
+      "account.oidcLoginCode": {
+        "properties": {
+          "ExpiresAt": {
+            "description": "ExpiresAt",
+            "type": "string"
+          },
+          "Username": {
+            "description": "Username",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "account.oidcProviderCache": {
+        "properties": {
+          "expiresAt": {
+            "description": "expiresAt",
+            "type": "string"
+          },
+          "issuerURL": {
+            "description": "issuerURL",
+            "type": "string"
+          },
+          "mu": {
+            "$ref": "#/components/schemas/sync.Mutex",
+            "description": "mu"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/oidc.Provider",
+            "description": "provider"
+          }
+        },
+        "type": "object"
+      },
+      "account.oidcState": {
+        "properties": {
+          "ExpiresAt": {
+            "description": "ExpiresAt",
+            "type": "string"
+          },
+          "Nonce": {
+            "description": "Nonce",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "account.passkeySession": {
+        "properties": {
+          "Data": {
+            "$ref": "#/components/schemas/webauthn.SessionData",
+            "description": "Data"
+          },
+          "DisplayName": {
+            "description": "DisplayName",
+            "type": "string"
+          },
+          "ExpiresAt": {
+            "description": "ExpiresAt",
+            "type": "string"
+          },
+          "Username": {
+            "description": "Username",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "account.passkeySessionStore": {
+        "properties": {
+          "done": {
+            "$ref": "#/components/schemas/ast.ChanType",
+            "description": "done"
+          },
+          "mu": {
+            "$ref": "#/components/schemas/sync.Mutex",
+            "description": "mu"
+          },
+          "sessions": {
+            "description": "sessions",
+            "type": "object"
+          },
+          "ticker": {
+            "$ref": "#/components/schemas/time.Ticker",
+            "description": "ticker"
+          }
+        },
+        "type": "object"
+      },
+      "account.passkeyUser": {
+        "properties": {
+          "credentials": {
+            "description": "credentials",
+            "items": {
+              "$ref": "#/components/schemas/webauthn.Credential"
+            },
+            "type": "array"
+          },
+          "displayName": {
+            "description": "displayName",
+            "type": "string"
+          },
+          "id": {
+            "description": "id",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "agent.ProxyRequest": {
+        "properties": {
+          "Body": {
+            "description": "Body",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "Headers": {
+            "$ref": "#/components/schemas/http.Header",
+            "description": "Headers"
+          },
+          "Method": {
+            "description": "Method",
+            "type": "string"
+          },
+          "RawQuery": {
+            "description": "RawQuery",
+            "type": "string"
+          },
+          "SubPath": {
+            "description": "SubPath",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "agent.ProxyResponse": {
+        "properties": {
+          "Body": {
+            "$ref": "#/components/schemas/io.ReadCloser",
+            "description": "Body"
+          },
+          "Headers": {
+            "$ref": "#/components/schemas/http.Header",
+            "description": "Headers"
+          },
+          "StatusCode": {
+            "description": "StatusCode",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "agent.Service": {
+        "properties": {
+          "client": {
+            "$ref": "#/components/schemas/http.Client",
+            "description": "client"
+          }
+        },
+        "type": "object"
+      },
+      "apisix.Client": {
+        "properties": {
+          "adminKey": {
+            "description": "adminKey",
+            "type": "string"
+          },
+          "baseURL": {
+            "description": "baseURL",
+            "type": "string"
+          },
+          "httpClient": {
+            "$ref": "#/components/schemas/http.Client",
+            "description": "httpClient"
+          }
+        },
+        "type": "object"
+      },
+      "apisix.Consumer": {
+        "properties": {
+          "create_time": {
+            "description": "创建时间（Unix 时间戳，只读）",
+            "type": "integer"
+          },
+          "desc": {
+            "description": "Consumer 描述",
+            "type": "string"
+          },
+          "plugins": {
+            "description": "插件配置（如 key-auth、jwt-auth 等认证插件）",
+            "type": "object"
+          },
+          "update_time": {
+            "description": "更新时间（Unix 时间戳，只读）",
+            "type": "integer"
+          },
+          "username": {
+            "description": "Consumer 用户名（唯一标识）",
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "apisix.PluginConfig": {
@@ -5831,6 +7526,23 @@
         },
         "type": "object"
       },
+      "apisix.RouteTimeout": {
+        "properties": {
+          "connect": {
+            "description": "连接超时",
+            "type": "integer"
+          },
+          "read": {
+            "description": "读取超时",
+            "type": "integer"
+          },
+          "send": {
+            "description": "发送超时",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "apisix.SSL": {
         "properties": {
           "cert": {
@@ -5863,6 +7575,15 @@
           "update_time": {
             "description": "更新时间（Unix 时间戳，只读）",
             "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "apisix.Service": {
+        "properties": {
+          "client": {
+            "$ref": "#/components/schemas/apisix.Client",
+            "description": "client"
           }
         },
         "type": "object"
@@ -6014,6 +7735,95 @@
         },
         "type": "object"
       },
+      "caddy.AdminAutoConfig": {
+        "properties": {
+          "persist": {
+            "description": "是否持久化配置到磁盘",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.AdminConfig": {
+        "properties": {
+          "config": {
+            "description": "自动配置（如持久化）",
+            "type": "object"
+          },
+          "disabled": {
+            "description": "是否禁用 admin API",
+            "type": "boolean"
+          },
+          "enforce_origin": {
+            "description": "是否校验 Origin",
+            "type": "boolean"
+          },
+          "listen": {
+            "description": "监听地址，如 \"localhost:2019\"",
+            "type": "string"
+          },
+          "origins": {
+            "description": "允许的 Origin 列表",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.AppsConfig": {
+        "properties": {
+          "http": {
+            "description": "HTTP 应用配置",
+            "type": "object"
+          },
+          "pki": {
+            "description": "PKI（CA）应用配置",
+            "type": "object"
+          },
+          "tls": {
+            "description": "TLS 应用配置",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.AutomaticHTTPS": {
+        "properties": {
+          "disable": {
+            "description": "是否禁用自动 HTTPS",
+            "type": "boolean"
+          },
+          "disable_certificates": {
+            "description": "是否禁用自动证书申请",
+            "type": "boolean"
+          },
+          "disable_redirects": {
+            "description": "是否禁用 HTTP→HTTPS 重定向",
+            "type": "boolean"
+          },
+          "ignore_loaded_certificates": {
+            "description": "是否忽略已加载的证书",
+            "type": "boolean"
+          },
+          "skip": {
+            "description": "跳过自动 HTTPS 的 Host 列表",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "skip_certificates": {
+            "description": "跳过自动证书的域名列表",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
       "caddy.CertForm": {
         "properties": {
           "certificate": {
@@ -6069,6 +7879,44 @@
         },
         "type": "object"
       },
+      "caddy.Client": {
+        "properties": {
+          "baseURL": {
+            "description": "baseURL",
+            "type": "string"
+          },
+          "httpClient": {
+            "$ref": "#/components/schemas/http.Client",
+            "description": "httpClient"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.Config": {
+        "properties": {
+          "@id": {
+            "description": "配置 ID（用于引用）",
+            "type": "string"
+          },
+          "admin": {
+            "description": "Admin API 配置",
+            "type": "object"
+          },
+          "apps": {
+            "description": "应用配置（http/tls/pki 等）",
+            "type": "object"
+          },
+          "logging": {
+            "description": "日志配置",
+            "type": "object"
+          },
+          "storage": {
+            "description": "存储后端配置",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
       "caddy.GlobalForm": {
         "properties": {
           "acmeCA": {
@@ -6114,6 +7962,211 @@
         },
         "type": "object"
       },
+      "caddy.HTTPApp": {
+        "properties": {
+          "grace_period": {
+            "description": "优雅关闭等待时间（如 \"5s\"）",
+            "type": "string"
+          },
+          "http_port": {
+            "description": "HTTP 监听端口（默认 80）",
+            "type": "integer"
+          },
+          "https_port": {
+            "description": "HTTPS 监听端口（默认 443）",
+            "type": "integer"
+          },
+          "servers": {
+            "description": "Server 名称 → 配置",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.HTTPErrors": {
+        "properties": {
+          "routes": {
+            "description": "错误处理的路由规则",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.HTTPServer": {
+        "properties": {
+          "@id": {
+            "description": "配置 ID（用于引用）",
+            "type": "string"
+          },
+          "automatic_https": {
+            "description": "自动 HTTPS 配置",
+            "type": "object"
+          },
+          "errors": {
+            "description": "错误处理配置",
+            "type": "object"
+          },
+          "idle_timeout": {
+            "description": "空闲超时（如 \"5s\"）",
+            "type": "string"
+          },
+          "listen": {
+            "description": "监听地址列表，如 [\":80\", \":443\"]",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "logs": {
+            "description": "访问日志配置",
+            "type": "object"
+          },
+          "max_header_bytes": {
+            "description": "最大请求头字节数",
+            "type": "integer"
+          },
+          "metrics": {
+            "description": "指标配置（如 Prometheus）",
+            "type": "object"
+          },
+          "protocols": {
+            "description": "启用的协议：h1|h2|h2c|h3",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "read_timeout": {
+            "description": "读取超时",
+            "type": "string"
+          },
+          "routes": {
+            "description": "路由规则列表",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "strict_sni_host": {
+            "description": "是否严格校验 SNI",
+            "type": "boolean"
+          },
+          "tls_connection_policies": {
+            "description": "TLS 连接策略列表",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "write_timeout": {
+            "description": "写入超时",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.Info": {
+        "properties": {
+          "adminUrl": {
+            "description": "adminUrl",
+            "type": "string"
+          },
+          "available": {
+            "description": "available",
+            "type": "boolean"
+          },
+          "certs": {
+            "description": "certs",
+            "type": "integer"
+          },
+          "hasTls": {
+            "description": "hasTls",
+            "type": "boolean"
+          },
+          "routes": {
+            "description": "routes",
+            "type": "integer"
+          },
+          "servers": {
+            "description": "servers",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.Log": {
+        "properties": {
+          "encoder": {
+            "description": "编码器（json/formatted）",
+            "type": "object"
+          },
+          "exclude": {
+            "description": "排除的模块列表",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "include": {
+            "description": "包含的模块列表",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "level": {
+            "description": "日志级别：DEBUG|INFO|WARN|ERROR",
+            "type": "string"
+          },
+          "sampling": {
+            "description": "采样配置",
+            "type": "object"
+          },
+          "writer": {
+            "description": "写入器",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.LogSink": {
+        "properties": {
+          "writer": {
+            "description": "日志写入器配置",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.LoggingConfig": {
+        "properties": {
+          "@id": {
+            "description": "配置 ID",
+            "type": "string"
+          },
+          "logs": {
+            "description": "各模块日志配置",
+            "type": "object"
+          },
+          "sink": {
+            "description": "全局日志输出配置",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.PKIApp": {
+        "properties": {
+          "certificate_authorities": {
+            "description": "CA 名称 → 配置",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
       "caddy.Route": {
         "properties": {
           "@id": {
@@ -6141,6 +8194,217 @@
           "terminal": {
             "description": "是否终止后续路由匹配",
             "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.RouteView": {
+        "properties": {
+          "index": {
+            "description": "index",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.ServerLogs": {
+        "properties": {
+          "default_logger_name": {
+            "description": "默认日志名",
+            "type": "string"
+          },
+          "logger_names": {
+            "description": "Host → 日志名映射",
+            "type": "object"
+          },
+          "skip_hosts": {
+            "description": "跳过日志的 Host 列表",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "skip_unmapped_hosts": {
+            "description": "是否跳过未映射 Host 的日志",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.Service": {
+        "properties": {
+          "client": {
+            "$ref": "#/components/schemas/caddy.Client",
+            "description": "client"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.TLSApp": {
+        "properties": {
+          "automation": {
+            "description": "自动证书管理",
+            "type": "object"
+          },
+          "cache": {
+            "description": "会话缓存配置",
+            "type": "object"
+          },
+          "certificates": {
+            "description": "证书来源配置",
+            "type": "object"
+          },
+          "dns": {
+            "description": "DNS 挑战提供者配置",
+            "type": "object"
+          },
+          "session_tickets": {
+            "description": "TLS Session Ticket 配置",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.TLSAutomation": {
+        "properties": {
+          "ocsp": {
+            "description": "OCSP 装订配置",
+            "type": "object"
+          },
+          "ocsp_interval": {
+            "description": "OCSP 更新间隔",
+            "type": "string"
+          },
+          "on_demand": {
+            "description": "按需证书配置",
+            "type": "object"
+          },
+          "policies": {
+            "description": "自动化策略列表",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "renew_interval": {
+            "description": "续期检查间隔（如 \"24h\"）",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.TLSCerts": {
+        "properties": {
+          "automate": {
+            "description": "自动管理的域名列表",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "load_files": {
+            "description": "从文件加载证书",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "load_folders": {
+            "description": "从目录加载证书",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "load_pem": {
+            "description": "从内联 PEM 加载证书",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.TLSLoadFile": {
+        "properties": {
+          "certificate": {
+            "description": "证书文件路径",
+            "type": "string"
+          },
+          "format": {
+            "description": "编码格式：pem（默认）| der",
+            "type": "string"
+          },
+          "key": {
+            "description": "私钥文件路径",
+            "type": "string"
+          },
+          "tags": {
+            "description": "标签（用于筛选）",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.TLSLoadPEM": {
+        "properties": {
+          "certificate": {
+            "description": "PEM 格式证书内容",
+            "type": "string"
+          },
+          "key": {
+            "description": "PEM 格式私钥内容",
+            "type": "string"
+          },
+          "tags": {
+            "description": "标签",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.TLSPolicy": {
+        "properties": {
+          "issuers": {
+            "description": "证书颁发者配置（acme/internal）",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "key_type": {
+            "description": "密钥类型：rsa2048|p256|ed25519 等",
+            "type": "string"
+          },
+          "must_staple": {
+            "description": "是否启用 OCSP Must-Staple",
+            "type": "boolean"
+          },
+          "on_demand": {
+            "description": "是否按需申请证书",
+            "type": "boolean"
+          },
+          "renewal_window_ratio": {
+            "description": "续期窗口比例（0-1）",
+            "type": "number"
+          },
+          "storage": {
+            "description": "覆盖默认存储配置",
+            "type": "object"
+          },
+          "subjects": {
+            "description": "适用的域名列表",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           }
         },
         "type": "object"
@@ -6177,6 +8441,84 @@
         ],
         "type": "object"
       },
+      "compose.DeployResult": {
+        "properties": {
+          "installDir": {
+            "description": "installDir",
+            "type": "string"
+          },
+          "items": {
+            "description": "items",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "projectName": {
+            "description": "projectName",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "compose.DockerCreateSpec": {
+        "properties": {
+          "Config": {
+            "$ref": "#/components/schemas/container.Config",
+            "description": "Config"
+          },
+          "HostConfig": {
+            "$ref": "#/components/schemas/container.HostConfig",
+            "description": "HostConfig"
+          },
+          "Name": {
+            "description": "Name",
+            "type": "string"
+          },
+          "NetworkingConfig": {
+            "$ref": "#/components/schemas/network.NetworkingConfig",
+            "description": "NetworkingConfig"
+          }
+        },
+        "type": "object"
+      },
+      "compose.InitPayload": {
+        "properties": {
+          "File": {
+            "$ref": "#/components/schemas/io.Reader",
+            "description": "File"
+          },
+          "URL": {
+            "description": "URL",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "compose.LoadOptions": {
+        "properties": {
+          "ConfigFiles": {
+            "description": "指定要加载的 compose 文件绝对路径；为空则在 WorkingDir 下自动查找",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "Environment": {
+            "description": "额外的环境变量（会与 .env 合并，优先级更高）",
+            "type": "object"
+          },
+          "ProjectName": {
+            "description": "项目名（影响生成的网络/容器默认前缀）",
+            "type": "string"
+          },
+          "WorkingDir": {
+            "description": "compose 文件所在目录（用于解析相对路径和 .env）",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "compose.RedeployRequest": {
         "properties": {
           "content": {
@@ -6194,6 +8536,19 @@
           "serviceName": {
             "description": "serviceName",
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "compose.Service": {
+        "properties": {
+          "docker": {
+            "$ref": "#/components/schemas/docker.DockerService",
+            "description": "docker"
+          },
+          "swarm": {
+            "$ref": "#/components/schemas/swarm.SwarmService",
+            "description": "swarm"
           }
         },
         "type": "object"
@@ -6237,6 +8592,65 @@
         },
         "type": "object"
       },
+      "config.Config": {
+        "properties": {
+          "Agent": {
+            "description": "Agent",
+            "type": "object"
+          },
+          "Apisix": {
+            "description": "Apisix",
+            "type": "object"
+          },
+          "Caddy": {
+            "description": "Caddy",
+            "type": "object"
+          },
+          "Docker": {
+            "description": "Docker",
+            "type": "object"
+          },
+          "Links": {
+            "description": "Links",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "Marketplace": {
+            "description": "Marketplace",
+            "type": "object"
+          },
+          "Members": {
+            "description": "Members",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "Monitor": {
+            "description": "Monitor",
+            "type": "object"
+          },
+          "OIDC": {
+            "description": "OIDC",
+            "type": "object"
+          },
+          "Passkey": {
+            "description": "Passkey",
+            "type": "object"
+          },
+          "Server": {
+            "description": "Server",
+            "type": "object"
+          },
+          "THA": {
+            "description": "THA",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
       "config.DockerConfig": {
         "properties": {
           "containerRoot": {
@@ -6253,6 +8667,27 @@
               "type": "object"
             },
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "config.DockerRegistry": {
+        "properties": {
+          "description": {
+            "description": "仓库描述（可选）",
+            "type": "string"
+          },
+          "name": {
+            "description": "仓库名称（用于显示）",
+            "type": "string"
+          },
+          "url": {
+            "description": "仓库地址，如 registry.example.com",
+            "type": "string"
+          },
+          "username": {
+            "description": "用户名（可选）",
+            "type": "string"
           }
         },
         "type": "object"
@@ -6278,6 +8713,45 @@
         "properties": {
           "url": {
             "description": "应用市场站点地址，通过 iframe 嵌入",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "config.MemberConfig": {
+        "properties": {
+          "description": {
+            "description": "成员描述信息（可选）",
+            "type": "string"
+          },
+          "founder": {
+            "description": "创始人标志，创始人拥有所有模块的完整权限",
+            "type": "boolean"
+          },
+          "homeDirectory": {
+            "description": "homeDirectory",
+            "type": "string"
+          },
+          "passkeys": {
+            "description": "Passkey 凭证列表",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "permissions": {
+            "description": "允许访问的路由列表，格式为 \"METHOD /api/path\"，如 \"GET /api/docker/containers\"",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "twoFactor": {
+            "description": "twoFactor",
+            "type": "object"
+          },
+          "username": {
+            "description": "username",
             "type": "string"
           }
         },
@@ -6360,6 +8834,43 @@
         },
         "type": "object"
       },
+      "config.PasskeyCredential": {
+        "properties": {
+          "aaguidBase64": {
+            "description": "认证器 AAGUID",
+            "type": "string"
+          },
+          "addedAt": {
+            "description": "addedAt",
+            "type": "string"
+          },
+          "backupEligible": {
+            "description": "凭证是否支持跨设备备份（BE 标志，注册后不变）",
+            "type": "boolean"
+          },
+          "backupState": {
+            "description": "凭证当前是否已备份（BS 标志，可变）",
+            "type": "boolean"
+          },
+          "displayName": {
+            "description": "displayName",
+            "type": "string"
+          },
+          "idBase64": {
+            "description": "凭证 ID（Base64 编码）",
+            "type": "string"
+          },
+          "publicKeyBase64": {
+            "description": "公鑰（Base64 编码）",
+            "type": "string"
+          },
+          "signCount": {
+            "description": "初始签名计数（仅存储初始值，运行时由内存维护）",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "config.ServerConfig": {
         "properties": {
           "allowedOrigins": {
@@ -6412,6 +8923,143 @@
               "type": "string"
             },
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "config.TOTPConfig": {
+        "properties": {
+          "enabled": {
+            "description": "enabled",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "config.TwoFactorConfig": {
+        "properties": {
+          "totp": {
+            "description": "totp",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "cron.Job": {
+        "properties": {
+          "container": {
+            "description": "DOCKER_CTR：目标容器名",
+            "type": "string"
+          },
+          "content": {
+            "description": "脚本内容或命令",
+            "type": "string"
+          },
+          "description": {
+            "description": "任务描述",
+            "type": "string"
+          },
+          "enabled": {
+            "description": "是否启用",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "任务 ID（自动生成）",
+            "type": "string"
+          },
+          "image": {
+            "description": "DOCKER_TMP：镜像名",
+            "type": "string"
+          },
+          "name": {
+            "description": "任务名称",
+            "type": "string"
+          },
+          "schedule": {
+            "description": "cron 表达式（如 \"0 3 * * *\"）",
+            "type": "string"
+          },
+          "timeout": {
+            "description": "超时（秒），0 表示不限制",
+            "type": "integer"
+          },
+          "type": {
+            "description": "脚本类型：SHELL | EXEC | BAT | POWERSHELL | DOCKER_TMP | DOCKER_CTR",
+            "type": "string"
+          },
+          "volumes": {
+            "description": "DOCKER_TMP：额外挂载，格式：/host:/container[:ro]，换行分隔",
+            "type": "string"
+          },
+          "workDir": {
+            "description": "工作目录（SHELL/EXEC 类型）",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "cron.JobDetail": {
+        "properties": {
+          "entryId": {
+            "description": "cron 条目 ID",
+            "type": "integer"
+          },
+          "lastRun": {
+            "description": "上次运行时间",
+            "type": "string"
+          },
+          "nextRun": {
+            "description": "下次运行时间",
+            "type": "string"
+          },
+          "registered": {
+            "description": "是否已注册到调度器",
+            "type": "boolean"
+          },
+          "runtimeStatus": {
+            "description": "运行状态：scheduled | disabled | unregistered",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "cron.JobLog": {
+        "properties": {
+          "duration": {
+            "description": "耗时（毫秒）",
+            "type": "integer"
+          },
+          "endTime": {
+            "description": "结束时间",
+            "type": "string"
+          },
+          "error": {
+            "description": "错误信息（失败时非空）",
+            "type": "string"
+          },
+          "jobId": {
+            "description": "所属任务 ID",
+            "type": "string"
+          },
+          "jobName": {
+            "description": "任务名称（冗余，便于展示）",
+            "type": "string"
+          },
+          "output": {
+            "description": "标准输出",
+            "type": "string"
+          },
+          "runId": {
+            "description": "执行 ID",
+            "type": "string"
+          },
+          "startTime": {
+            "description": "开始时间",
+            "type": "string"
+          },
+          "success": {
+            "description": "是否执行成功",
+            "type": "boolean"
           }
         },
         "type": "object"
@@ -6471,6 +9119,69 @@
         ],
         "type": "object"
       },
+      "cron.Service": {
+        "properties": {
+          "cron": {
+            "$ref": "#/components/schemas/cron.Cron",
+            "description": "cron 调度器实例"
+          },
+          "docker": {
+            "$ref": "#/components/schemas/docker.DockerService",
+            "description": "可选，DOCKER 类型任务需要"
+          },
+          "entries": {
+            "description": "jobID → cron entry ID 映射",
+            "type": "object"
+          },
+          "jobs": {
+            "description": "jobID → Job 映射",
+            "type": "object"
+          },
+          "mu": {
+            "$ref": "#/components/schemas/sync.RWMutex",
+            "description": "保护 jobs 和 entries 的并发访问"
+          },
+          "store": {
+            "description": "任务持久化存储",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "cron.Store": {
+        "properties": {
+          "dataDir": {
+            "description": "日志目录绝对路径",
+            "type": "string"
+          },
+          "jobMu": {
+            "$ref": "#/components/schemas/sync.Mutex",
+            "description": "jobMu"
+          },
+          "logStore": {
+            "$ref": "#/components/schemas/jsonl.Store",
+            "description": "logStore"
+          },
+          "ts": {
+            "$ref": "#/components/schemas/ast.IndexExpr",
+            "description": "ts"
+          }
+        },
+        "type": "object"
+      },
+      "cron.TypeInfo": {
+        "properties": {
+          "label": {
+            "description": "类型显示名称",
+            "type": "string"
+          },
+          "value": {
+            "description": "类型值：SHELL | EXEC | BAT | POWERSHELL | DOCKER_TMP | DOCKER_CTR",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "cronJobEnableReq": {
         "properties": {
           "enabled": {
@@ -6485,6 +9196,98 @@
           "limit": {
             "description": "limit",
             "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "cstore.EtcdStore": {
+        "properties": {
+          "client": {
+            "$ref": "#/components/schemas/etcd.Client",
+            "description": "client"
+          },
+          "fallback": {
+            "description": "可选：fallback YAML 文件路径，key 不存在时读取并写入 etcd",
+            "type": "string"
+          },
+          "keyPath": {
+            "description": "etcd key，如 \"/isrvd/config\"",
+            "type": "string"
+          },
+          "mu": {
+            "$ref": "#/components/schemas/sync.Mutex",
+            "description": "mu"
+          },
+          "timeout": {
+            "description": "timeout",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "cstore.Event": {
+        "properties": {
+          "Key": {
+            "description": "变更的 key（文件名）",
+            "type": "string"
+          },
+          "Type": {
+            "description": "PUT | DELETE",
+            "type": "object"
+          },
+          "Value": {
+            "description": "PUT 时为新值，DELETE 时为 nil",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "cstore.FileStore": {
+        "properties": {
+          "baseDir": {
+            "description": "baseDir",
+            "type": "string"
+          },
+          "mu": {
+            "$ref": "#/components/schemas/sync.RWMutex",
+            "description": "mu"
+          }
+        },
+        "type": "object"
+      },
+      "cstore.TypedEvent": {
+        "properties": {
+          "Key": {
+            "description": "Key",
+            "type": "string"
+          },
+          "Type": {
+            "description": "Type",
+            "type": "object"
+          },
+          "Valid": {
+            "description": "Value 是否成功反序列化",
+            "type": "boolean"
+          },
+          "Value": {
+            "description": "PUT 时有效",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "cstore.TypedStore": {
+        "properties": {
+          "key": {
+            "description": "key",
+            "type": "string"
+          },
+          "store": {
+            "description": "store",
+            "type": "object"
           }
         },
         "type": "object"
@@ -6504,6 +9307,215 @@
           "id",
           "action"
         ],
+        "type": "object"
+      },
+      "docker.CPUThrottledData": {
+        "properties": {
+          "periods": {
+            "description": "periods",
+            "type": "integer"
+          },
+          "throttledPeriods": {
+            "description": "throttledPeriods",
+            "type": "integer"
+          },
+          "throttledTime": {
+            "description": "throttledTime",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "docker.ContainerCreateResult": {
+        "properties": {
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "docker.ContainerDetail": {
+        "properties": {
+          "createdAt": {
+            "description": "createdAt",
+            "type": "string"
+          },
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "labels": {
+            "description": "labels",
+            "type": "object"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "state": {
+            "description": "state",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "docker.ContainerFileInfo": {
+        "properties": {
+          "isDir": {
+            "description": "isDir",
+            "type": "boolean"
+          },
+          "isLink": {
+            "description": "isLink",
+            "type": "boolean"
+          },
+          "modTime": {
+            "description": "Unix 时间戳",
+            "type": "integer"
+          },
+          "mode": {
+            "description": "字符串权限，如 \"-rw-r--r--\"",
+            "type": "string"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "size": {
+            "description": "size",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "docker.ContainerFileListResult": {
+        "properties": {
+          "files": {
+            "description": "files",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "path": {
+            "description": "path",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "docker.ContainerInfo": {
+        "properties": {
+          "created": {
+            "description": "created",
+            "type": "integer"
+          },
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "image": {
+            "description": "image",
+            "type": "string"
+          },
+          "isSelf": {
+            "description": "isSelf",
+            "type": "boolean"
+          },
+          "isSwarm": {
+            "description": "isSwarm",
+            "type": "boolean"
+          },
+          "labels": {
+            "description": "labels",
+            "type": "object"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "networks": {
+            "description": "networks",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "ports": {
+            "description": "ports",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "state": {
+            "description": "state",
+            "type": "string"
+          },
+          "status": {
+            "description": "status",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "docker.ContainerLogsRequest": {
+        "properties": {
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "tail": {
+            "description": "tail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "docker.ContainerLogsResult": {
+        "properties": {
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "logs": {
+            "description": "logs",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "docker.ContainerProcessList": {
+        "properties": {
+          "processes": {
+            "description": "processes",
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "titles": {
+            "description": "titles",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
         "type": "object"
       },
       "docker.ContainerSpec": {
@@ -6602,6 +9614,188 @@
         ],
         "type": "object"
       },
+      "docker.ContainerStatsResponse": {
+        "properties": {
+          "blockDetail": {
+            "description": "blockDetail",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "blockRead": {
+            "description": "blockRead",
+            "type": "integer"
+          },
+          "blockWrite": {
+            "description": "blockWrite",
+            "type": "integer"
+          },
+          "cpuCores": {
+            "description": "cpuCores",
+            "type": "integer"
+          },
+          "cpuFreq": {
+            "description": "cpuFreq",
+            "type": "number"
+          },
+          "cpuPercent": {
+            "description": "cpuPercent",
+            "type": "number"
+          },
+          "cpuThrottled": {
+            "description": "cpuThrottled",
+            "type": "object"
+          },
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "memoryLimit": {
+            "description": "memoryLimit",
+            "type": "integer"
+          },
+          "memoryPercent": {
+            "description": "memoryPercent",
+            "type": "number"
+          },
+          "memoryUsage": {
+            "description": "memoryUsage",
+            "type": "integer"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "networkDetail": {
+            "description": "networkDetail",
+            "type": "object"
+          },
+          "networkRx": {
+            "description": "networkRx",
+            "type": "integer"
+          },
+          "networkTx": {
+            "description": "networkTx",
+            "type": "integer"
+          },
+          "pids": {
+            "description": "pids",
+            "type": "integer"
+          },
+          "pidsLimit": {
+            "description": "pidsLimit",
+            "type": "integer"
+          },
+          "processList": {
+            "description": "processList",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "docker.DockerConfig": {
+        "properties": {
+          "ContainerRoot": {
+            "description": "容器数据根目录",
+            "type": "string"
+          },
+          "Host": {
+            "description": "Docker 连接地址",
+            "type": "string"
+          },
+          "Registries": {
+            "description": "镜像仓库配置列表",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "docker.DockerInfo": {
+        "properties": {
+          "containersPaused": {
+            "description": "containersPaused",
+            "type": "integer"
+          },
+          "containersRunning": {
+            "description": "containersRunning",
+            "type": "integer"
+          },
+          "containersStopped": {
+            "description": "containersStopped",
+            "type": "integer"
+          },
+          "imagesTotal": {
+            "description": "imagesTotal",
+            "type": "integer"
+          },
+          "indexServerAddress": {
+            "description": "indexServerAddress",
+            "type": "string"
+          },
+          "networksTotal": {
+            "description": "networksTotal",
+            "type": "integer"
+          },
+          "registryMirrors": {
+            "description": "registryMirrors",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "volumesTotal": {
+            "description": "volumesTotal",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "docker.DockerService": {
+        "properties": {
+          "client": {
+            "$ref": "#/components/schemas/client.Client",
+            "description": "client"
+          },
+          "config": {
+            "description": "config",
+            "type": "object"
+          },
+          "registryMu": {
+            "$ref": "#/components/schemas/sync.RWMutex",
+            "description": "保护 config.Registries 的并发读写"
+          },
+          "selfID": {
+            "description": "selfID",
+            "type": "string"
+          },
+          "selfIDOnce": {
+            "$ref": "#/components/schemas/sync.Once",
+            "description": "selfIDOnce"
+          }
+        },
+        "type": "object"
+      },
+      "docker.ExecSession": {
+        "properties": {
+          "closer": {
+            "$ref": "#/components/schemas/ast.FuncType",
+            "description": "hijackedResp.Close() 返回 void，用 func() 封装"
+          },
+          "reader": {
+            "$ref": "#/components/schemas/io.Reader",
+            "description": "reader"
+          },
+          "writer": {
+            "$ref": "#/components/schemas/io.Writer",
+            "description": "writer"
+          }
+        },
+        "type": "object"
+      },
       "docker.ImageBuildRequest": {
         "properties": {
           "dockerfile": {
@@ -6616,6 +9810,189 @@
         "required": [
           "dockerfile"
         ],
+        "type": "object"
+      },
+      "docker.ImageDetail": {
+        "properties": {
+          "architecture": {
+            "description": "architecture",
+            "type": "string"
+          },
+          "author": {
+            "description": "author",
+            "type": "string"
+          },
+          "cmd": {
+            "description": "cmd",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "created": {
+            "description": "created",
+            "type": "string"
+          },
+          "entrypoint": {
+            "description": "entrypoint",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "env": {
+            "description": "env",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "exposedPorts": {
+            "description": "exposedPorts",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "labels": {
+            "description": "labels",
+            "type": "object"
+          },
+          "layerDetails": {
+            "description": "layerDetails",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "layers": {
+            "description": "layers",
+            "type": "integer"
+          },
+          "os": {
+            "description": "os",
+            "type": "string"
+          },
+          "repoDigests": {
+            "description": "repoDigests",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "repoTags": {
+            "description": "repoTags",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "shortId": {
+            "description": "shortId",
+            "type": "string"
+          },
+          "size": {
+            "description": "size",
+            "type": "integer"
+          },
+          "workingDir": {
+            "description": "workingDir",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "docker.ImageInfo": {
+        "properties": {
+          "created": {
+            "description": "created",
+            "type": "integer"
+          },
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "repoDigests": {
+            "description": "repoDigests",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "repoTags": {
+            "description": "repoTags",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "shortId": {
+            "description": "shortId",
+            "type": "string"
+          },
+          "size": {
+            "description": "size",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "docker.ImageLayerInfo": {
+        "properties": {
+          "created": {
+            "description": "created",
+            "type": "string"
+          },
+          "createdBy": {
+            "description": "createdBy",
+            "type": "string"
+          },
+          "digest": {
+            "description": "digest",
+            "type": "string"
+          },
+          "empty": {
+            "description": "empty",
+            "type": "boolean"
+          },
+          "size": {
+            "description": "size",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "docker.ImagePruneDeleted": {
+        "properties": {
+          "deleted": {
+            "description": "deleted",
+            "type": "string"
+          },
+          "untagged": {
+            "description": "untagged",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "docker.ImagePruneReport": {
+        "properties": {
+          "imagesDeleted": {
+            "description": "imagesDeleted",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "spaceReclaimed": {
+            "description": "spaceReclaimed",
+            "type": "integer"
+          }
+        },
         "type": "object"
       },
       "docker.ImagePruneRequest": {
@@ -6672,6 +10049,27 @@
         ],
         "type": "object"
       },
+      "docker.ImageSearchResult": {
+        "properties": {
+          "description": {
+            "description": "description",
+            "type": "string"
+          },
+          "isOfficial": {
+            "description": "isOfficial",
+            "type": "boolean"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "starCount": {
+            "description": "starCount",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "docker.ImageTagRequest": {
         "properties": {
           "id": {
@@ -6687,6 +10085,100 @@
           "id",
           "repoTag"
         ],
+        "type": "object"
+      },
+      "docker.NetworkContainerInfo": {
+        "properties": {
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "ipv4": {
+            "description": "ipv4",
+            "type": "string"
+          },
+          "ipv6": {
+            "description": "ipv6",
+            "type": "string"
+          },
+          "macAddress": {
+            "description": "macAddress",
+            "type": "string"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "docker.NetworkDetail": {
+        "properties": {
+          "containers": {
+            "description": "containers",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "driver": {
+            "description": "driver",
+            "type": "string"
+          },
+          "enableIPv6": {
+            "description": "enableIPv6",
+            "type": "boolean"
+          },
+          "gateway": {
+            "description": "gateway",
+            "type": "string"
+          },
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "internal": {
+            "description": "internal",
+            "type": "boolean"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "scope": {
+            "description": "scope",
+            "type": "string"
+          },
+          "subnet": {
+            "description": "subnet",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "docker.NetworkInfo": {
+        "properties": {
+          "driver": {
+            "description": "driver",
+            "type": "string"
+          },
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "scope": {
+            "description": "scope",
+            "type": "string"
+          },
+          "subnet": {
+            "description": "subnet",
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "docker.NetworkSpec": {
@@ -6707,6 +10199,52 @@
         "required": [
           "name"
         ],
+        "type": "object"
+      },
+      "docker.RegistryConfig": {
+        "properties": {
+          "Description": {
+            "description": "仓库描述",
+            "type": "string"
+          },
+          "Name": {
+            "description": "仓库名称",
+            "type": "string"
+          },
+          "Password": {
+            "description": "密码",
+            "type": "string"
+          },
+          "URL": {
+            "description": "仓库地址",
+            "type": "string"
+          },
+          "Username": {
+            "description": "用户名",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "docker.RegistryInfo": {
+        "properties": {
+          "description": {
+            "description": "description",
+            "type": "string"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "url": {
+            "description": "url",
+            "type": "string"
+          },
+          "username": {
+            "description": "username",
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "docker.RegistryUpsertRequest": {
@@ -6738,6 +10276,163 @@
         ],
         "type": "object"
       },
+      "docker.Service": {
+        "properties": {
+          "docker": {
+            "$ref": "#/components/schemas/docker.DockerService",
+            "description": "docker"
+          }
+        },
+        "type": "object"
+      },
+      "docker.StatsBlockDetail": {
+        "properties": {
+          "major": {
+            "description": "major",
+            "type": "integer"
+          },
+          "minor": {
+            "description": "minor",
+            "type": "integer"
+          },
+          "read": {
+            "description": "read",
+            "type": "integer"
+          },
+          "write": {
+            "description": "write",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "docker.StatsNetDetail": {
+        "properties": {
+          "rxBytes": {
+            "description": "rxBytes",
+            "type": "integer"
+          },
+          "rxDropped": {
+            "description": "rxDropped",
+            "type": "integer"
+          },
+          "rxErrors": {
+            "description": "rxErrors",
+            "type": "integer"
+          },
+          "rxPackets": {
+            "description": "rxPackets",
+            "type": "integer"
+          },
+          "txBytes": {
+            "description": "txBytes",
+            "type": "integer"
+          },
+          "txDropped": {
+            "description": "txDropped",
+            "type": "integer"
+          },
+          "txErrors": {
+            "description": "txErrors",
+            "type": "integer"
+          },
+          "txPackets": {
+            "description": "txPackets",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "docker.VolumeDetail": {
+        "properties": {
+          "createdAt": {
+            "description": "createdAt",
+            "type": "string"
+          },
+          "driver": {
+            "description": "driver",
+            "type": "string"
+          },
+          "mountpoint": {
+            "description": "mountpoint",
+            "type": "string"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "refCount": {
+            "description": "refCount",
+            "type": "integer"
+          },
+          "scope": {
+            "description": "scope",
+            "type": "string"
+          },
+          "size": {
+            "description": "size",
+            "type": "integer"
+          },
+          "usedBy": {
+            "description": "usedBy",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "docker.VolumeInfo": {
+        "properties": {
+          "createdAt": {
+            "description": "createdAt",
+            "type": "string"
+          },
+          "driver": {
+            "description": "driver",
+            "type": "string"
+          },
+          "mountpoint": {
+            "description": "mountpoint",
+            "type": "string"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "size": {
+            "description": "size",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "docker.VolumeMapping": {
+        "properties": {
+          "containerPath": {
+            "description": "containerPath",
+            "type": "string"
+          },
+          "hostPath": {
+            "description": "hostPath",
+            "type": "string"
+          },
+          "readOnly": {
+            "description": "readOnly",
+            "type": "boolean"
+          },
+          "source": {
+            "description": "source",
+            "type": "string"
+          },
+          "type": {
+            "description": "type",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "docker.VolumeSpec": {
         "properties": {
           "driver": {
@@ -6752,6 +10447,27 @@
         "required": [
           "name"
         ],
+        "type": "object"
+      },
+      "docker.VolumeUsedByContainer": {
+        "properties": {
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "mountPath": {
+            "description": "mountPath",
+            "type": "string"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "readOnly": {
+            "description": "readOnly",
+            "type": "boolean"
+          }
+        },
         "type": "object"
       },
       "docker.dockerContainerFileChmod": {
@@ -6814,6 +10530,43 @@
         "required": [
           "path"
         ],
+        "type": "object"
+      },
+      "filer.FileInfo": {
+        "properties": {
+          "isDir": {
+            "description": "isDir",
+            "type": "boolean"
+          },
+          "modTime": {
+            "description": "modTime",
+            "type": "string"
+          },
+          "mode": {
+            "description": "mode",
+            "type": "string"
+          },
+          "modeO": {
+            "description": "modeO",
+            "type": "string"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "path": {
+            "description": "path",
+            "type": "string"
+          },
+          "size": {
+            "description": "size",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "filer.Service": {
+        "properties": {},
         "type": "object"
       },
       "filer.filerFileDownload": {
@@ -6923,6 +10676,221 @@
         ],
         "type": "object"
       },
+      "monitor.Collector": {
+        "properties": {
+          "cancel": {
+            "$ref": "#/components/schemas/context.CancelFunc",
+            "description": "cancel"
+          },
+          "dataDir": {
+            "description": "dataDir",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "monitor.DiskIOStat": {
+        "properties": {
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "readBytes": {
+            "description": "readBytes",
+            "type": "integer"
+          },
+          "readCount": {
+            "description": "readCount",
+            "type": "integer"
+          },
+          "writeBytes": {
+            "description": "writeBytes",
+            "type": "integer"
+          },
+          "writeCount": {
+            "description": "writeCount",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "monitor.GoRuntimeStat": {
+        "properties": {
+          "numCPU": {
+            "description": "numCPU",
+            "type": "integer"
+          },
+          "numGoroutine": {
+            "description": "numGoroutine",
+            "type": "integer"
+          },
+          "version": {
+            "description": "version",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "monitor.HostStat": {
+        "properties": {
+          "diskIO": {
+            "description": "diskIO",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "go": {
+            "description": "go",
+            "type": "object"
+          },
+          "gpu": {
+            "description": "gpu",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "system": {
+            "$ref": "#/components/schemas/psutil.DetailStat",
+            "description": "system"
+          }
+        },
+        "type": "object"
+      },
+      "monitor.Record": {
+        "properties": {
+          "container_id": {
+            "description": "仅容器监控有值",
+            "type": "string"
+          },
+          "data": {
+            "description": "data",
+            "type": "object"
+          },
+          "ts": {
+            "description": "ts",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "monitor.SystemGPU": {
+        "properties": {
+          "deviceKey": {
+            "description": "deviceKey",
+            "type": "string"
+          },
+          "fanSpeed": {
+            "description": "fanSpeed",
+            "type": "integer"
+          },
+          "index": {
+            "description": "index",
+            "type": "integer"
+          },
+          "memoryTotal": {
+            "description": "memoryTotal",
+            "type": "integer"
+          },
+          "memoryUsed": {
+            "description": "memoryUsed",
+            "type": "integer"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "powerUsage": {
+            "description": "powerUsage",
+            "type": "number"
+          },
+          "temperature": {
+            "description": "temperature",
+            "type": "integer"
+          },
+          "utilization": {
+            "description": "utilization",
+            "type": "number"
+          },
+          "vendor": {
+            "description": "vendor",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "overview.ProbeResponse": {
+        "properties": {
+          "agent": {
+            "description": "agent",
+            "type": "boolean"
+          },
+          "apisix": {
+            "description": "apisix",
+            "type": "boolean"
+          },
+          "caddy": {
+            "description": "caddy",
+            "type": "boolean"
+          },
+          "compose": {
+            "description": "compose",
+            "type": "boolean"
+          },
+          "docker": {
+            "description": "docker",
+            "type": "boolean"
+          },
+          "swarm": {
+            "description": "swarm",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "overview.Service": {
+        "properties": {},
+        "type": "object"
+      },
+      "overview.VersionInfo": {
+        "properties": {
+          "current": {
+            "description": "current",
+            "type": "string"
+          },
+          "hasUpdate": {
+            "description": "hasUpdate",
+            "type": "boolean"
+          },
+          "latest": {
+            "description": "latest",
+            "type": "string"
+          },
+          "release": {
+            "description": "release",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "overview.probeTask": {
+        "properties": {
+          "fn": {
+            "$ref": "#/components/schemas/ast.FuncType",
+            "description": "fn"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "shell.Service": {
+        "properties": {},
+        "type": "object"
+      },
       "ssh.websshSFTPChmod": {
         "properties": {
           "mode": {
@@ -7008,6 +10976,224 @@
         ],
         "type": "object"
       },
+      "swarm.NodeDetail": {
+        "properties": {
+          "addr": {
+            "description": "addr",
+            "type": "string"
+          },
+          "architecture": {
+            "description": "architecture",
+            "type": "string"
+          },
+          "availability": {
+            "description": "availability",
+            "type": "string"
+          },
+          "cpus": {
+            "description": "cpus",
+            "type": "integer"
+          },
+          "createdAt": {
+            "description": "createdAt",
+            "type": "string"
+          },
+          "engineVersion": {
+            "description": "engineVersion",
+            "type": "string"
+          },
+          "hostname": {
+            "description": "hostname",
+            "type": "string"
+          },
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "labels": {
+            "description": "labels",
+            "type": "object"
+          },
+          "leader": {
+            "description": "leader",
+            "type": "boolean"
+          },
+          "memoryBytes": {
+            "description": "memoryBytes",
+            "type": "integer"
+          },
+          "os": {
+            "description": "os",
+            "type": "string"
+          },
+          "role": {
+            "description": "role",
+            "type": "string"
+          },
+          "state": {
+            "description": "state",
+            "type": "string"
+          },
+          "updatedAt": {
+            "description": "updatedAt",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "swarm.NodeInfo": {
+        "properties": {
+          "addr": {
+            "description": "addr",
+            "type": "string"
+          },
+          "availability": {
+            "description": "availability",
+            "type": "string"
+          },
+          "engineVersion": {
+            "description": "engineVersion",
+            "type": "string"
+          },
+          "hostname": {
+            "description": "hostname",
+            "type": "string"
+          },
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "leader": {
+            "description": "leader",
+            "type": "boolean"
+          },
+          "role": {
+            "description": "role",
+            "type": "string"
+          },
+          "state": {
+            "description": "state",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "swarm.Service": {
+        "properties": {
+          "svc": {
+            "$ref": "#/components/schemas/swarm.SwarmService",
+            "description": "svc"
+          }
+        },
+        "type": "object"
+      },
+      "swarm.ServiceDetail": {
+        "properties": {
+          "createdAt": {
+            "description": "createdAt",
+            "type": "string"
+          },
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "runningTasks": {
+            "description": "runningTasks",
+            "type": "integer"
+          },
+          "updatedAt": {
+            "description": "updatedAt",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "swarm.ServiceInfo": {
+        "properties": {
+          "createdAt": {
+            "description": "createdAt",
+            "type": "string"
+          },
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "image": {
+            "description": "image",
+            "type": "string"
+          },
+          "mode": {
+            "description": "mode",
+            "type": "string"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "ports": {
+            "description": "ports",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "replicas": {
+            "description": "replicas",
+            "type": "integer"
+          },
+          "runningTasks": {
+            "description": "runningTasks",
+            "type": "integer"
+          },
+          "updatedAt": {
+            "description": "updatedAt",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "swarm.ServiceMount": {
+        "properties": {
+          "readOnly": {
+            "description": "readOnly",
+            "type": "boolean"
+          },
+          "source": {
+            "description": "source",
+            "type": "string"
+          },
+          "target": {
+            "description": "target",
+            "type": "string"
+          },
+          "type": {
+            "description": "type",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "swarm.ServicePort": {
+        "properties": {
+          "protocol": {
+            "description": "protocol",
+            "type": "string"
+          },
+          "publishMode": {
+            "description": "publishMode",
+            "type": "string"
+          },
+          "publishedPort": {
+            "description": "publishedPort",
+            "type": "integer"
+          },
+          "targetPort": {
+            "description": "targetPort",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "swarm.ServiceSpec": {
         "properties": {
           "args": {
@@ -7075,6 +11261,64 @@
         },
         "type": "object"
       },
+      "swarm.SwarmService": {
+        "properties": {
+          "client": {
+            "$ref": "#/components/schemas/client.Client",
+            "description": "client"
+          }
+        },
+        "type": "object"
+      },
+      "swarm.Task": {
+        "properties": {
+          "err": {
+            "description": "err",
+            "type": "string"
+          },
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "image": {
+            "description": "image",
+            "type": "string"
+          },
+          "message": {
+            "description": "message",
+            "type": "string"
+          },
+          "nodeID": {
+            "description": "nodeID",
+            "type": "string"
+          },
+          "nodeName": {
+            "description": "nodeName",
+            "type": "string"
+          },
+          "serviceID": {
+            "description": "serviceID",
+            "type": "string"
+          },
+          "serviceName": {
+            "description": "serviceName",
+            "type": "string"
+          },
+          "slot": {
+            "description": "slot",
+            "type": "integer"
+          },
+          "state": {
+            "description": "state",
+            "type": "string"
+          },
+          "updatedAt": {
+            "description": "updatedAt",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "swarm.swarmNodeAction": {
         "properties": {
           "action": {
@@ -7095,6 +11339,127 @@
             "type": "integer"
           }
         },
+        "type": "object"
+      },
+      "system.AllConfigResponse": {
+        "properties": {
+          "agent": {
+            "$ref": "#/components/schemas/config.AgentConfig",
+            "description": "Agent LLM 配置（APIKey 已脱敏）"
+          },
+          "apisix": {
+            "$ref": "#/components/schemas/config.ApisixConfig",
+            "description": "APISIX 配置（AdminKey 已脱敏）"
+          },
+          "caddy": {
+            "$ref": "#/components/schemas/config.CaddyConfig",
+            "description": "Caddy 配置"
+          },
+          "docker": {
+            "$ref": "#/components/schemas/config.DockerConfig",
+            "description": "Docker 配置"
+          },
+          "links": {
+            "description": "导航链接列表",
+            "items": {
+              "$ref": "#/components/schemas/config.LinkConfig"
+            },
+            "type": "array"
+          },
+          "marketplace": {
+            "$ref": "#/components/schemas/config.MarketplaceConfig",
+            "description": "应用市场配置"
+          },
+          "monitor": {
+            "$ref": "#/components/schemas/config.MonitorConfig",
+            "description": "监控配置"
+          },
+          "oidc": {
+            "$ref": "#/components/schemas/config.OIDCConfig",
+            "description": "OIDC 认证配置（ClientSecret 已脱敏）"
+          },
+          "passkey": {
+            "$ref": "#/components/schemas/config.PasskeyConfig",
+            "description": "Passkey 认证配置"
+          },
+          "server": {
+            "$ref": "#/components/schemas/config.ServerConfig",
+            "description": "服务配置（JWTSecret 已脱敏）"
+          },
+          "tha": {
+            "$ref": "#/components/schemas/config.THAConfig",
+            "description": "代理 Header 认证配置"
+          }
+        },
+        "type": "object"
+      },
+      "system.AuditLog": {
+        "properties": {
+          "body": {
+            "description": "请求体（文件字段替换为占位符）",
+            "type": "string"
+          },
+          "duration": {
+            "description": "耗时（毫秒）",
+            "type": "integer"
+          },
+          "ip": {
+            "description": "客户端 IP",
+            "type": "string"
+          },
+          "method": {
+            "description": "HTTP 方法（WebSocket 记为 \"WS\"）",
+            "type": "string"
+          },
+          "statusCode": {
+            "description": "响应状态码",
+            "type": "integer"
+          },
+          "success": {
+            "description": "是否成功",
+            "type": "boolean"
+          },
+          "timestamp": {
+            "description": "操作时间",
+            "type": "string"
+          },
+          "uri": {
+            "description": "请求 URI",
+            "type": "string"
+          },
+          "username": {
+            "description": "操作人",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "system.AuditService": {
+        "properties": {
+          "buffer": {
+            "description": "buffer",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "dataDir": {
+            "description": "dataDir",
+            "type": "string"
+          },
+          "mu": {
+            "$ref": "#/components/schemas/sync.RWMutex",
+            "description": "mu"
+          },
+          "store": {
+            "$ref": "#/components/schemas/jsonl.Store",
+            "description": "store"
+          }
+        },
+        "type": "object"
+      },
+      "system.ConfigService": {
+        "properties": {},
         "type": "object"
       },
       "system.UpdateAllConfigRequest": {
@@ -7149,6 +11514,31 @@
         },
         "type": "object"
       },
+      "webssh.Credential": {
+        "properties": {
+          "authType": {
+            "description": "认证类型：\"password\" | \"privateKey\" | \"\"",
+            "type": "string"
+          },
+          "description": {
+            "description": "凭据描述",
+            "type": "string"
+          },
+          "id": {
+            "description": "凭据 ID（自动生成）",
+            "type": "string"
+          },
+          "name": {
+            "description": "凭据名称",
+            "type": "string"
+          },
+          "user": {
+            "description": "用户名",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "webssh.CredentialUpsertRequest": {
         "properties": {
           "description": {
@@ -7176,6 +11566,39 @@
           "name",
           "user"
         ],
+        "type": "object"
+      },
+      "webssh.Host": {
+        "properties": {
+          "addr": {
+            "description": "主机地址（host:port）",
+            "type": "string"
+          },
+          "credentialId": {
+            "description": "引用的凭据 ID",
+            "type": "string"
+          },
+          "credentialName": {
+            "description": "凭据名称（只读，展示用）",
+            "type": "string"
+          },
+          "description": {
+            "description": "主机描述",
+            "type": "string"
+          },
+          "id": {
+            "description": "主机 ID（自动生成）",
+            "type": "string"
+          },
+          "name": {
+            "description": "主机名称",
+            "type": "string"
+          },
+          "user": {
+            "description": "用户名（独立认证模式）",
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "webssh.HostUpsertRequest": {
@@ -7213,6 +11636,63 @@
           "name",
           "addr"
         ],
+        "type": "object"
+      },
+      "webssh.Service": {
+        "properties": {
+          "credentialStore": {
+            "description": "凭据存储",
+            "type": "object"
+          },
+          "sftpClient": {
+            "$ref": "#/components/schemas/webssh.SFTPClient",
+            "description": "SFTP 客户端（用于文件管理）"
+          },
+          "store": {
+            "description": "主机配置存储",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "webssh.credentialStore": {
+        "properties": {
+          "items": {
+            "description": "内存中的凭据列表",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "mu": {
+            "$ref": "#/components/schemas/sync.RWMutex",
+            "description": "保护 items 的并发访问"
+          },
+          "ts": {
+            "$ref": "#/components/schemas/ast.IndexExpr",
+            "description": "类型化存储实例"
+          }
+        },
+        "type": "object"
+      },
+      "webssh.store": {
+        "properties": {
+          "hosts": {
+            "description": "内存中的主机列表",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "mu": {
+            "$ref": "#/components/schemas/sync.RWMutex",
+            "description": "保护 hosts 的并发访问"
+          },
+          "ts": {
+            "$ref": "#/components/schemas/ast.IndexExpr",
+            "description": "类型化存储实例"
+          }
+        },
         "type": "object"
       }
     },

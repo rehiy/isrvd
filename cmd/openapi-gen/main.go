@@ -69,6 +69,10 @@ type RouteDef struct {
 	QueryParams []ParamDef  // c.Query / c.DefaultQuery 参数
 	IsWS        bool        // WebSocket 路由
 	IsSSE       bool        // SSE 路由
+
+	// 响应信息
+	ResponseBody     *SchemaInfo // respondSuccess 第三个参数的类型（结构体）
+	ResponseBodyType string      // 响应类型的 Go 类型字符串（用于 slice/map 等复杂类型）
 }
 
 type ParamDef struct {
@@ -93,10 +97,51 @@ type FieldInfo struct {
 	Description string // from description tag or field comment
 }
 
+// ─── 项目配置 ────────────────────────────────────────
+
+// ProjectConfig 定义项目的目录结构和 OpenAPI 元数据
+// 修改 DefaultConfig() 即可适配不同项目
+type ProjectConfig struct {
+	// 目录配置（相对于 projectRoot）
+	CtrlDir        string   // handler 文件目录
+	CtrlPrefix     string   // handler 文件名前缀
+	ServiceDir     string   // service 层目录
+	TypeDirs       []string // 额外的类型定义目录
+	ResponseFile   string   // 响应结构体定义文件
+	ResponseStruct string   // 响应结构体名称
+
+	// OpenAPI 元数据
+	Title      string // API 标题
+	Version    string // API 版本
+	ServerURL  string // 服务 URL 前缀
+	ServerDesc string // 服务描述
+
+	// 输出
+	OutputFile string // 输出文件路径
+}
+
+// DefaultConfig 返回默认配置
+func DefaultConfig() *ProjectConfig {
+	return &ProjectConfig{
+		CtrlDir:        "internal/server",
+		CtrlPrefix:     "ctrl_",
+		ServiceDir:     "internal/service",
+		TypeDirs:       []string{"config", "pkgs"},
+		ResponseFile:   "internal/server/response.go",
+		ResponseStruct: "APIResponse",
+		Title:          "isrvd API",
+		Version:        "1.0.0",
+		ServerURL:      "/api",
+		ServerDesc:     "API 服务",
+		OutputFile:     "public/openapi/apis.json",
+	}
+}
+
 // ─── 全局状态 ────────────────────────────────────────
 
 var (
 	projectRoot string
+	cfg         *ProjectConfig
 	structCache = map[string]*SchemaInfo{} // "pkg.TypeName" -> schema
 	routes      []RouteDef
 	fileCache   = map[string]*ast.File{} // 缓存已解析的文件
@@ -116,7 +161,7 @@ var stdTypes = map[string]bool{
 }
 
 // ─── 入口 ────────────────────────────────────────────
-var outFile = flag.String("o", "public/openapi/apis.json", "输出文件路径，默认 public/openapi/apis.json")
+var outFile = flag.String("o", "", "输出文件路径（覆盖默认值）")
 
 func main() {
 	flag.Parse()
@@ -127,14 +172,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	// 初始化配置
+	cfg = DefaultConfig()
+	if *outFile != "" {
+		cfg.OutputFile = *outFile
+	}
+
 	// 0. 预注册 APIResponse schema（从源文件提取字段注释）
-	responseFile := filepath.Join(projectRoot, "internal", "server", "response.go")
-	if schema := parseServiceStruct("", "APIResponse", responseFile); schema != nil {
-		structCache["APIResponse"] = schema
+	responseFile := filepath.Join(projectRoot, cfg.ResponseFile)
+	if schema := parseServiceStruct("", cfg.ResponseStruct, responseFile); schema != nil {
+		structCache[cfg.ResponseStruct] = schema
 	} else {
 		// 降级处理：如果无法从文件提取，使用默认值
-		structCache["APIResponse"] = &SchemaInfo{
-			TypeName: "APIResponse",
+		structCache[cfg.ResponseStruct] = &SchemaInfo{
+			TypeName: cfg.ResponseStruct,
 			Fields: []FieldInfo{
 				{Name: "success", Type: "bool", Required: true, Description: "请求是否成功"},
 				{Name: "message", Type: "string", Description: "提示信息"},
@@ -144,7 +195,7 @@ func main() {
 	}
 
 	// 1-2. 解析 ctrl 文件 & 预收集类型信息
-	ctrlDir := filepath.Join(projectRoot, "internal", "server")
+	ctrlDir := filepath.Join(projectRoot, cfg.CtrlDir)
 	entries, err := os.ReadDir(ctrlDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "读取目录失败: %v\n", err)
@@ -156,6 +207,9 @@ func main() {
 		parseCtrlFile(filename)
 		collectAllTypesFromFile(filename)
 	}
+
+	// 2.5 解析 service 及额外类型目录中的类型定义
+	collectServiceTypes()
 
 	// 3. 对每个路由的 handler 分析请求类型
 	for i := range routes {
@@ -171,18 +225,20 @@ func main() {
 	}
 
 	// 确保输出目录存在
-	outputDir := filepath.Dir(*outFile)
+	outputDir := filepath.Dir(cfg.OutputFile)
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		fmt.Fprintf(os.Stderr, "创建输出目录失败: %v\n", err)
 		os.Exit(1)
 	}
 
-	if err := os.WriteFile(*outFile, out, 0644); err != nil {
+	if err := os.WriteFile(cfg.OutputFile, out, 0644); err != nil {
 		fmt.Fprintf(os.Stderr, "写入文件失败: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Fprintf(os.Stderr, "OpenAPI 文档已生成: %s (%d bytes)\n", *outFile, len(out))
+	fmt.Fprintf(os.Stderr, "OpenAPI 文档已生成: %s (%d bytes)\n", cfg.OutputFile, len(out))
 }
+
+
 
 // ─── 第 1 步：解析 Route 定义 ─────────────────────────
 
@@ -199,11 +255,11 @@ func parseFile(filename string) *ast.File {
 	return f
 }
 
-// getCtrlFiles 从目录 entries 中筛选 ctrl_*.go 文件并返回完整路径列表
+// getCtrlFiles 从目录 entries 中筛选 handler 文件并返回完整路径列表
 func getCtrlFiles(dir string, entries []os.DirEntry) []string {
 	var files []string
 	for _, entry := range entries {
-		if !entry.IsDir() && strings.HasPrefix(entry.Name(), "ctrl_") && strings.HasSuffix(entry.Name(), ".go") {
+		if !entry.IsDir() && strings.HasPrefix(entry.Name(), cfg.CtrlPrefix) && strings.HasSuffix(entry.Name(), ".go") {
 			files = append(files, filepath.Join(dir, entry.Name()))
 		}
 	}
@@ -379,6 +435,108 @@ func findFuncReturnType(filename, funcName string) string {
 	return ""
 }
 
+// collectServiceTypes 遍历 service 及额外类型目录，解析所有类型定义
+func collectServiceTypes() {
+	// 遍历 service 目录
+	serviceDir := filepath.Join(projectRoot, cfg.ServiceDir)
+	collectTypesFromDir(serviceDir)
+
+	// 遍历额外的类型定义目录
+	for _, dir := range cfg.TypeDirs {
+		collectTypesFromDir(filepath.Join(projectRoot, dir))
+	}
+}
+
+// collectTypesFromDir 遍历目录，解析所有 Go 文件中的类型定义
+func collectTypesFromDir(dir string) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	
+	for _, entry := range entries {
+		if entry.IsDir() {
+			// 递归遍历子目录
+			subDir := filepath.Join(dir, entry.Name())
+			collectTypesFromDir(subDir)
+			continue
+		}
+		
+		if !strings.HasSuffix(entry.Name(), ".go") {
+			continue
+		}
+		
+		filename := filepath.Join(dir, entry.Name())
+		collectTypeDefinitionsFromFile(filename)
+	}
+}
+
+// collectTypeDefinitionsFromFile 解析文件中的顶层类型定义
+func collectTypeDefinitionsFromFile(filename string) {
+	f := parseFile(filename)
+	if f == nil {
+		return
+	}
+	
+	// 从文件路径提取包名
+	pkgName := extractPkgNameFromPath(filename)
+	
+	for _, decl := range f.Decls {
+		// 查找类型定义: type Xxx struct { ... }
+		gd, ok := decl.(*ast.GenDecl)
+		if !ok || gd.Tok != token.TYPE {
+			continue
+		}
+		
+		for _, spec := range gd.Specs {
+			ts, ok := spec.(*ast.TypeSpec)
+			if !ok {
+				continue
+			}
+			
+			typeName := ts.Name.Name
+			
+			// 构建完整的类型名 (包名.类型名)
+			var fullTypeName string
+			if pkgName != "" {
+				fullTypeName = pkgName + "." + typeName
+			}
+			
+			if fullTypeName != "" {
+				resolveStructSchema(fullTypeName, nil, filename)
+			}
+		}
+	}
+}
+
+// extractPkgNameFromPath 从文件路径提取包名
+// 根据配置的目录结构动态推断包名
+func extractPkgNameFromPath(filename string) string {
+	// 处理 service 目录（如 internal/service/account/member.go → account）
+	svcMarker := "/" + filepath.ToSlash(cfg.ServiceDir) + "/"
+	if idx := strings.Index(filename, svcMarker); idx != -1 {
+		rest := filename[idx+len(svcMarker):]
+		subDir := strings.SplitN(rest, "/", 2)[0]
+		return subDir
+	}
+
+	// 处理额外的类型目录
+	for _, dir := range cfg.TypeDirs {
+		marker := "/" + filepath.ToSlash(dir) + "/"
+		if idx := strings.Index(filename, marker); idx != -1 {
+			rest := filename[idx+len(marker):]
+			// 如果 rest 中还有子目录，取第一层作为包名
+			if subDir := strings.SplitN(rest, "/", 2)[0]; !strings.HasSuffix(subDir, ".go") {
+				return subDir
+			}
+			// 否则直接用目录名作为包名（如 config/types.go → config）
+			return filepath.Base(dir)
+		}
+	}
+
+	return ""
+}
+
 func collectAllTypesFromFile(filename string) {
 	f := parseFile(filename)
 	if f == nil {
@@ -447,14 +605,14 @@ func analyzeHandler(r *RouteDef) {
 	}
 	funcName := handlerParts[1]
 
-	ctrlDir := filepath.Join(projectRoot, "internal", "server")
+	ctrlDir := filepath.Join(projectRoot, cfg.CtrlDir)
 	entries, err := os.ReadDir(ctrlDir)
 	if err != nil {
 		return
 	}
 
 	for _, entry := range entries {
-		if !strings.HasPrefix(entry.Name(), "ctrl_") || !strings.HasSuffix(entry.Name(), ".go") {
+		if !strings.HasPrefix(entry.Name(), cfg.CtrlPrefix) || !strings.HasSuffix(entry.Name(), ".go") {
 			continue
 		}
 		filename := filepath.Join(ctrlDir, entry.Name())
@@ -573,56 +731,87 @@ func structTypeToJSONSchema(st *ast.StructType, _ *token.FileSet) string {
 	return strings.Join(fields, ";")
 }
 
+// handlerAnalysisState 保存 handler 函数分析过程中的状态
+type handlerAnalysisState struct {
+	varTypes     map[string]string  // 变量名 → 类型名（如 "resp" → "account.LoginResponse"）
+	localTypes   map[string]string  // 本地类型别名
+	filename     string            // 当前分析的文件
+	responseBody *SchemaInfo       // 提取到的响应类型
+}
+
 func analyzeFuncBody(r *RouteDef, body *ast.BlockStmt, fset *token.FileSet, localTypes map[string]string, filename string) {
-	var lastVarType string
+	state := &handlerAnalysisState{
+		varTypes:   make(map[string]string),
+		localTypes: localTypes,
+		filename:   filename,
+	}
 
 	ast.Inspect(body, func(n ast.Node) bool {
 		switch stmt := n.(type) {
 		case *ast.AssignStmt:
-			analyzeAssignStmt(stmt, r, localTypes, filename, &lastVarType)
+			analyzeAssignStmtV2(stmt, r, state)
 		case *ast.DeclStmt:
-			analyzeDeclStmt(stmt, r, &lastVarType)
+			analyzeDeclStmtV2(stmt, r, state)
 		case *ast.CallExpr:
-			analyzeCallExpr(stmt, r, localTypes, filename, &lastVarType)
+			analyzeCallExprV2(stmt, r, state)
 		}
 		return true
 	})
+
+	r.ResponseBody = state.responseBody
 }
 
-// analyzeAssignStmt 处理赋值语句
-func analyzeAssignStmt(stmt *ast.AssignStmt, r *RouteDef, localTypes map[string]string, filename string, lastVarType *string) {
-	if stmt.Tok != token.DEFINE || len(stmt.Lhs) < 1 || len(stmt.Rhs) != 1 {
+// analyzeAssignStmtV2 处理赋值语句，跟踪变量类型
+func analyzeAssignStmtV2(stmt *ast.AssignStmt, r *RouteDef, state *handlerAnalysisState) {
+	if len(stmt.Rhs) != 1 {
 		return
 	}
 
-	// req := &pkg.Type{}
-	if comp, ok := stmt.Rhs[0].(*ast.CompositeLit); ok {
-		if sel, ok := comp.Type.(*ast.SelectorExpr); ok {
-			*lastVarType = fullSelName(sel)
-		} else if id, ok := comp.Type.(*ast.Ident); ok {
-			*lastVarType = id.Name
+	// 处理 := 短变量声明
+	if stmt.Tok == token.DEFINE {
+		// 收集左侧变量名
+		var lhsNames []string
+		for _, lhs := range stmt.Lhs {
+			if ident, ok := lhs.(*ast.Ident); ok {
+				lhsNames = append(lhsNames, ident.Name)
+			}
 		}
-		return
+
+		// 情况 1: resp := &pkg.Type{} 或 resp := pkg.Type{}
+		if comp, ok := stmt.Rhs[0].(*ast.CompositeLit); ok {
+			typeName := typeExprToString(comp.Type)
+			if typeName != "" && typeName != "struct" && len(lhsNames) > 0 {
+				state.varTypes[lhsNames[0]] = typeName
+			}
+			return
+		}
+
+		// 情况 2: resp, err := app.svc.Method()
+		if callExpr, ok := stmt.Rhs[0].(*ast.CallExpr); ok && len(lhsNames) >= 1 {
+			retType := resolveCallReturnType(callExpr, state.filename)
+			if retType != "" {
+				state.varTypes[lhsNames[0]] = retType
+			}
+			return
+		}
 	}
 
-	// req, ok := bindXxx(c) - 函数调用返回类型
-	if call, ok := stmt.Rhs[0].(*ast.CallExpr); ok {
-		if ident, ok := call.Fun.(*ast.Ident); ok {
-			if retType := findFuncReturnType(filename, ident.Name); retType != "" {
-				*lastVarType = retType
-				if r.JSONBody == nil {
-					schema := resolveStructSchema(retType, localTypes, filename)
-					if schema != nil {
-						r.JSONBody = schema
-					}
+	// 处理普通赋值 =
+	// 如: result = app.svc.Method()
+	if len(stmt.Lhs) == 1 && len(stmt.Rhs) == 1 {
+		if ident, ok := stmt.Lhs[0].(*ast.Ident); ok {
+			if callExpr, ok := stmt.Rhs[0].(*ast.CallExpr); ok {
+				retType := resolveCallReturnType(callExpr, state.filename)
+				if retType != "" {
+					state.varTypes[ident.Name] = retType
 				}
 			}
 		}
 	}
 }
 
-// analyzeDeclStmt 处理声明语句
-func analyzeDeclStmt(stmt *ast.DeclStmt, r *RouteDef, lastVarType *string) {
+// analyzeDeclStmtV2 处理声明语句，跟踪变量类型
+func analyzeDeclStmtV2(stmt *ast.DeclStmt, r *RouteDef, state *handlerAnalysisState) {
 	gd, ok := stmt.Decl.(*ast.GenDecl)
 	if !ok || gd.Tok != token.VAR {
 		return
@@ -630,12 +819,14 @@ func analyzeDeclStmt(stmt *ast.DeclStmt, r *RouteDef, lastVarType *string) {
 
 	for _, spec := range gd.Specs {
 		if vs, ok := spec.(*ast.ValueSpec); ok && len(vs.Names) == 1 {
-			*lastVarType = typeExprToString(vs.Type)
+			varName := vs.Names[0].Name
+			typeName := typeExprToString(vs.Type)
 			if sel, ok := vs.Type.(*ast.SelectorExpr); ok {
-				*lastVarType = fullSelName(sel)
+				typeName = fullSelName(sel)
 			}
+			state.varTypes[varName] = typeName
 
-			// 内联 struct { ... } 类型
+			// 内联 struct 类型也记录
 			if st, ok := vs.Type.(*ast.StructType); ok {
 				schema := inlineStructToSchema(st)
 				if schema != nil {
@@ -643,8 +834,7 @@ func analyzeDeclStmt(stmt *ast.DeclStmt, r *RouteDef, lastVarType *string) {
 					schema.TypeName = extractHandlerName(r.Handler)
 					schema.PkgName = r.Module
 					structCache[cacheKey] = schema
-					*lastVarType = cacheKey
-					// 递归解析内联 struct 的嵌套类型
+					state.varTypes[varName] = cacheKey
 					resolveNestedTypesInSchema(schema, "")
 				}
 			}
@@ -652,32 +842,35 @@ func analyzeDeclStmt(stmt *ast.DeclStmt, r *RouteDef, lastVarType *string) {
 	}
 }
 
-// analyzeCallExpr 处理函数调用表达式
-func analyzeCallExpr(stmt *ast.CallExpr, r *RouteDef, localTypes map[string]string, filename string, lastVarType *string) {
+// analyzeCallExprV2 处理函数调用表达式
+func analyzeCallExprV2(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
+	// 处理直接函数调用（如 respondSuccess、respondError）
+	if ident, ok := stmt.Fun.(*ast.Ident); ok {
+		switch ident.Name {
+		case "respondSuccess":
+			if len(stmt.Args) >= 3 {
+				analyzeRespondSuccessV2(stmt, r, state)
+			}
+			return
+		case "respondError":
+			// 错误处理，无需特殊处理
+			return
+		default:
+			collectPathParamsFromFunc(state.filename, ident.Name, r)
+			return
+		}
+	}
+
 	sel, ok := stmt.Fun.(*ast.SelectorExpr)
 	if !ok {
-		// 检查本地函数调用
-		if ident, ok := stmt.Fun.(*ast.Ident); ok {
-			collectPathParamsFromFunc(filename, ident.Name, r)
-		}
 		return
 	}
 
 	switch sel.Sel.Name {
 	case "ShouldBindJSON":
-		if r.JSONBody == nil && *lastVarType != "" {
-			schema := resolveStructSchema(*lastVarType, localTypes, filename)
-			if schema != nil {
-				r.JSONBody = schema
-			}
-		}
+		analyzeShouldBindJSON(stmt, r, state)
 	case "ShouldBindQuery":
-		if r.QueryType == nil && *lastVarType != "" {
-			schema := resolveStructSchema(*lastVarType, localTypes, filename)
-			if schema != nil {
-				r.QueryType = schema
-			}
-		}
+		analyzeShouldBindQuery(stmt, r, state)
 	case "Query":
 		extractQueryParam(stmt, r, "string", false)
 	case "DefaultQuery":
@@ -699,6 +892,268 @@ func analyzeCallExpr(stmt *ast.CallExpr, r *RouteDef, localTypes map[string]stri
 	if sel2, ok2 := sel.X.(*ast.SelectorExpr); ok2 && sel2.Sel.Name == "wsConfig" {
 		r.IsWS = true
 	}
+}
+
+// analyzeShouldBindJSON 分析 ShouldBindJSON 调用
+func analyzeShouldBindJSON(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
+	if len(stmt.Args) < 1 {
+		return
+	}
+	var varName string
+	if unary, ok := stmt.Args[0].(*ast.UnaryExpr); ok && unary.Op == token.AND {
+		if ident, ok := unary.X.(*ast.Ident); ok {
+			varName = ident.Name
+		}
+	}
+	if varName == "" {
+		return
+	}
+	if typeName, ok := state.varTypes[varName]; ok && r.JSONBody == nil {
+		schema := resolveStructSchema(typeName, state.localTypes, state.filename)
+		if schema != nil {
+			r.JSONBody = schema
+		}
+	}
+}
+
+// analyzeShouldBindQuery 分析 ShouldBindQuery 调用
+func analyzeShouldBindQuery(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
+	if len(stmt.Args) < 1 {
+		return
+	}
+	var varName string
+	if unary, ok := stmt.Args[0].(*ast.UnaryExpr); ok && unary.Op == token.AND {
+		if ident, ok := unary.X.(*ast.Ident); ok {
+			varName = ident.Name
+		}
+	}
+	if varName == "" {
+		return
+	}
+	if typeName, ok := state.varTypes[varName]; ok && r.QueryType == nil {
+		schema := resolveStructSchema(typeName, state.localTypes, state.filename)
+		if schema != nil {
+			r.QueryType = schema
+		}
+	}
+}
+
+// analyzeRespondSuccessV2 分析 respondSuccess(c, msg, data) 调用
+func analyzeRespondSuccessV2(call *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
+	if len(call.Args) < 3 {
+		return
+	}
+
+	dataArg := call.Args[2]
+
+	// 情况 1: nil → 无 payload
+	if ident, ok := dataArg.(*ast.Ident); ok && ident.Name == "nil" {
+		return
+	}
+
+	// 情况 2: 变量引用，如 resp → 查找变量类型
+	if ident, ok := dataArg.(*ast.Ident); ok {
+		typeName, ok := state.varTypes[ident.Name]
+		if ok && typeName != "" {
+			r.ResponseBodyType = typeName
+		}
+		return
+	}
+
+	// 情况 3: 复合字面量，如 svcType.RespType{...}
+	if comp, ok := dataArg.(*ast.CompositeLit); ok {
+		typeName := typeExprToString(comp.Type)
+		if typeName != "" && typeName != "struct" {
+			r.ResponseBodyType = typeName
+		}
+		return
+	}
+
+	// 情况 4: 函数调用返回值，如 app.svc.Method()
+	if callExpr, ok := dataArg.(*ast.CallExpr); ok {
+		retType := resolveCallReturnType(callExpr, state.filename)
+		if retType != "" {
+			r.ResponseBodyType = retType
+		}
+		return
+	}
+}
+
+// resolveCallReturnType 解析函数调用的返回类型
+func resolveCallReturnType(call *ast.CallExpr, filename string) string {
+	sel, ok := call.Fun.(*ast.SelectorExpr)
+	if !ok {
+		return ""
+	}
+
+	methodName := sel.Sel.Name
+
+	// 处理链式调用: app.accountSvc.Login
+	if recvSel, ok := sel.X.(*ast.SelectorExpr); ok {
+		svcVarName := recvSel.Sel.Name
+		pkgName := inferPkgFromVar(filename, svcVarName)
+		if pkgName != "" {
+			// findMethodReturnType 已经处理了 import 别名解析和 pkgName 前缀
+			return findMethodReturnType(filename, pkgName, methodName)
+		}
+	}
+
+	return ""
+}
+
+// resolveImportAlias 解析导入别名，将别名.类型名 转换为实际的包名.类型名
+// 例如: pkgApisix.Consumer → apisix.Consumer
+func resolveImportAlias(filename, typeName string) string {
+	// 检查是否包含 "."，且第一部分可能是导入别名
+	idx := strings.Index(typeName, ".")
+	if idx == -1 {
+		return typeName
+	}
+	
+	alias := typeName[:idx]
+	typeSuffix := typeName[idx:] // 包含 "."
+	
+	// 从文件中提取导入别名映射
+	importMap := extractImportAliases(filename)
+	
+	// 如果别名在映射中，替换为实际的包名
+	if realPkg, ok := importMap[alias]; ok {
+		return realPkg + typeSuffix
+	}
+	
+	return typeName
+}
+
+// extractImportAliases 从 Go 文件中提取导入别名映射
+// 返回 map[别名]实际包名
+func extractImportAliases(filename string) map[string]string {
+	result := make(map[string]string)
+	
+	f := parseFile(filename)
+	if f == nil {
+		return result
+	}
+	
+	for _, imp := range f.Imports {
+		// 导入路径，如 "isrvd/pkgs/apisix"
+		importPath := strings.Trim(imp.Path.Value, "\"")
+		
+		// 提取包名（路径最后一段）
+		parts := strings.Split(importPath, "/")
+		realPkgName := parts[len(parts)-1]
+		
+		if imp.Name != nil {
+			// 有别名: pkgApisix "isrvd/pkgs/apisix"
+			alias := imp.Name.Name
+			result[alias] = realPkgName
+		} else {
+			// 无别名: "isrvd/pkgs/apisix"
+			result[realPkgName] = realPkgName
+		}
+	}
+	
+	return result
+}
+
+// inferPkgFromVar 从变量名推断包名
+func inferPkgFromVar(filename, varName string) string {
+	if strings.HasSuffix(varName, "Svc") {
+		return strings.ToLower(strings.TrimSuffix(varName, "Svc"))
+	}
+	return ""
+}
+
+// findMethodReturnType 在 service 包中查找方法的返回类型
+func findMethodReturnType(ctrlFile, pkgName, methodName string) string {
+	searchDir := filepath.Join(projectRoot, cfg.ServiceDir, pkgName)
+	entries, err := os.ReadDir(searchDir)
+	if err != nil {
+		return ""
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".go") {
+			continue
+		}
+		filename := filepath.Join(searchDir, entry.Name())
+		retType := findMethodReturnTypeInFile(filename, methodName)
+		if retType != "" {
+			// 解析返回类型中的 import 别名
+			retType = resolveReturnType(filename, pkgName, retType)
+			return retType
+		}
+	}
+	return ""
+}
+
+// resolveReturnType 将方法返回类型解析为最终的 schema 名称格式
+// 处理 slice、指针、import 别名等情况
+// 输入如: []pkgApisix.Consumer, *LoginResponse, []*config.PasskeyCredential
+// 输出如: apisix.[]Consumer, account.LoginResponse, config.[]PasskeyCredential
+func resolveReturnType(svcFilename, pkgName, retType string) string {
+	// 提取 slice 前缀
+	slicePrefix := ""
+	inner := retType
+	if strings.HasPrefix(inner, "[]") {
+		slicePrefix = "[]"
+		inner = inner[2:]
+	}
+	// 去指针
+	inner = strings.TrimPrefix(inner, "*")
+	
+	// 解析 import 别名
+	if strings.Contains(inner, ".") {
+		inner = resolveImportAlias(svcFilename, inner)
+	} else {
+		// 不包含 "."，说明是本包类型，添加 pkgName 前缀
+		inner = pkgName + "." + inner
+	}
+	
+	// 重新组装: pkgName.[]TypeName 格式
+	if slicePrefix != "" {
+		// 将 "pkg.TypeName" → "pkg.[]TypeName"
+		if dotIdx := strings.LastIndex(inner, "."); dotIdx != -1 {
+			return inner[:dotIdx+1] + slicePrefix + inner[dotIdx+1:]
+		}
+		return slicePrefix + inner
+	}
+	
+	return inner
+}
+
+// findMethodReturnTypeInFile 在单个文件中查找方法的返回类型
+func findMethodReturnTypeInFile(filename, methodName string) string {
+	f := parseFile(filename)
+	if f == nil {
+		return ""
+	}
+
+	for _, decl := range f.Decls {
+		fd, ok := decl.(*ast.FuncDecl)
+		if !ok || fd.Name.Name != methodName || fd.Type.Results == nil {
+			continue
+		}
+		for _, field := range fd.Type.Results.List {
+			goType := typeExprToString(field.Type)
+			if goType == "error" {
+				continue
+			}
+			if goType == "bool" {
+				continue
+			}
+			// 过滤掉 any、interface{} 等空接口类型
+			if goType == "any" || goType == "interface{}" {
+				continue
+			}
+			// 去除所有指针前缀
+			goType = strings.TrimPrefix(goType, "*")
+			for strings.HasPrefix(goType, "*") {
+				goType = goType[1:]
+			}
+			return goType
+		}
+	}
+	return ""
 }
 
 // extractHandlerName 从 Handler 字符串提取函数名
@@ -873,11 +1328,10 @@ func normalizeAliasToDir(alias string) string {
 }
 
 func parseServiceStruct(pkgAlias, structName string, ctrlFile string) *SchemaInfo {
-	serviceDir := filepath.Join(projectRoot, "internal", "service")
-	pkgsDir := filepath.Join(projectRoot, "pkgs")
+	serviceDir := filepath.Join(projectRoot, cfg.ServiceDir)
 
 	// 构建搜索目录列表
-	searchDirs := buildSearchDirs(serviceDir, pkgsDir, pkgAlias)
+	searchDirs := buildSearchDirs(serviceDir, pkgAlias)
 
 	for _, dir := range searchDirs {
 		entries, err := os.ReadDir(dir)
@@ -899,17 +1353,22 @@ func parseServiceStruct(pkgAlias, structName string, ctrlFile string) *SchemaInf
 }
 
 // buildSearchDirs 构建需要搜索的目录列表
-func buildSearchDirs(serviceDir, pkgsDir, pkgAlias string) []string {
+func buildSearchDirs(serviceDir, pkgAlias string) []string {
 	var dirs []string
 	if pkgAlias != "" {
 		dirs = append(dirs, filepath.Join(serviceDir, pkgAlias))
-		dirs = append(dirs, filepath.Join(pkgsDir, pkgAlias))
+		// 额外类型目录
+		for _, td := range cfg.TypeDirs {
+			dirs = append(dirs, filepath.Join(projectRoot, td, pkgAlias))
+		}
 		dirs = append(dirs, filepath.Join(projectRoot, pkgAlias)) // 根级包
 	}
 
 	if normalized := normalizeAliasToDir(pkgAlias); normalized != "" && normalized != pkgAlias {
 		dirs = append(dirs, filepath.Join(serviceDir, normalized))
-		dirs = append(dirs, filepath.Join(pkgsDir, normalized))
+		for _, td := range cfg.TypeDirs {
+			dirs = append(dirs, filepath.Join(projectRoot, td, normalized))
+		}
 		dirs = append(dirs, filepath.Join(projectRoot, normalized)) // 根级包
 	}
 	return dirs
@@ -1118,11 +1577,11 @@ func buildOpenAPI() *OpenAPI {
 	oa := &OpenAPI{
 		OpenAPI: "3.0.3",
 		Info: OpenAPIInfo{
-			Title:   "isrvd API",
-			Version: "1.0.0",
+			Title:   cfg.Title,
+			Version: cfg.Version,
 		},
 		Servers: []OpenAPIServer{
-			{URL: "/api", Description: "API 服务"},
+			{URL: cfg.ServerURL, Description: cfg.ServerDesc},
 		},
 		Paths: make(map[string]map[string]any),
 		Components: OpenAPIComponents{
@@ -1322,7 +1781,192 @@ func addPathItem(oa *OpenAPI, r RouteDef, allSchemas map[string]*SchemaInfo) {
 	oa.Paths[oapiPath][method] = operation
 }
 
+// buildResponseSchema 根据 RouteDef 生成响应 schema
+func buildResponseSchema(r RouteDef, allSchemas map[string]*SchemaInfo) map[string]any {
+	// 如果没有指定响应类型，使用默认的 ResponseStruct
+	if r.ResponseBodyType == "" {
+		return map[string]any{"$ref": "#/components/schemas/" + cfg.ResponseStruct}
+	}
+	
+	// 解析响应类型，生成 data 字段的 schema
+	dataSchema := buildDataSchema(r.ResponseBodyType, allSchemas)
+	
+	// 生成完整的响应 schema（包含 code、message、data）
+	return map[string]any{
+		"type": "object",
+		"properties": map[string]any{
+			"code": map[string]any{
+				"type": "integer",
+				"description": "状态码",
+			},
+			"message": map[string]any{
+				"type": "string",
+				"description": "消息",
+			},
+			"data": dataSchema,
+		},
+	}
+}
+
+// buildDataSchema 根据 Go 类型字符串生成 data 字段的 schema
+func buildDataSchema(typeName string, allSchemas map[string]*SchemaInfo) map[string]any {
+	// 处理带包名的 slice 类型，如 account.[]*MemberInfo
+	if idx := strings.Index(typeName, ".[]"); idx != -1 {
+		pkgName := typeName[:idx]
+		elemType := typeName[idx+3:] // 跳过 ".[]" (3个字符)
+		elemType = strings.TrimPrefix(elemType, "*") // 去除指针前缀
+		
+		// 判断是否是基本类型
+		if isBasicType(elemType) {
+			return map[string]any{
+				"type": "array",
+				"items": map[string]any{
+					"type": getOpenAPIType(elemType),
+				},
+			}
+		}
+		
+	// 复杂类型，使用 $ref
+		// elemType 可能已经包含包名（如 account.MemberInfo），也可能不包含
+		schemaName := elemType
+		if !strings.Contains(elemType, ".") {
+			schemaName = pkgName + "." + elemType
+		}
+		
+		// 检查 schema 是否存在，如果不存在则使用基本类型
+		if _, exists := allSchemas[schemaName]; !exists {
+			// 尝试不带包名前缀
+			if _, exists2 := allSchemas[elemType]; exists2 {
+				schemaName = elemType
+			} else {
+				// schema 不存在，返回基本 object 类型
+				return map[string]any{
+					"type": "array",
+					"items": map[string]any{
+						"type": "object",
+						"description": "Schema not found: " + schemaName,
+					},
+				}
+			}
+		}
+		
+		return map[string]any{
+			"type": "array",
+			"items": map[string]any{
+				"$ref": "#/components/schemas/" + schemaName,
+			},
+		}
+	}
+	
+	// 处理不带包名的 slice 类型，如 []*MemberInfo 或 []string
+	if strings.HasPrefix(typeName, "[]") {
+		elemType := strings.TrimPrefix(typeName, "[]")
+		elemType = strings.TrimPrefix(elemType, "*") // 去除指针前缀
+		
+		// 判断是否是基本类型
+		if isBasicType(elemType) {
+			return map[string]any{
+				"type": "array",
+				"items": map[string]any{
+					"type": getOpenAPIType(elemType),
+				},
+			}
+		}
+		
+		// 复杂类型，使用 $ref
+		schemaName := strings.ReplaceAll(elemType, ".", "_")
+		
+		// 检查 schema 是否存在
+		if _, exists := allSchemas[schemaName]; !exists {
+			// schema 不存在，返回基本 object 类型
+			return map[string]any{
+				"type": "array",
+				"items": map[string]any{
+					"type": "object",
+					"description": "Schema not found: " + schemaName,
+				},
+			}
+		}
+		
+		return map[string]any{
+			"type": "array",
+			"items": map[string]any{
+				"$ref": "#/components/schemas/" + schemaName,
+			},
+		}
+	}
+	
+	// 处理 map 类型
+	if strings.HasPrefix(typeName, "map[") {
+		return map[string]any{
+			"type": "object",
+			"description": "Map 类型: " + typeName,
+		}
+	}
+	
+	// 处理指针类型
+	typeName = strings.TrimPrefix(typeName, "*")
+
+	// 判断是否是基本类型
+	if isBasicType(typeName) {
+		return map[string]any{
+			"type": getOpenAPIType(typeName),
+		}
+	}
+
+	// 复杂类型，使用 $ref
+	// 注意：schema 名称可能包含 "."，如 "account.MemberInfo"
+	schemaName := typeName  // 保持原始的包名.类型名格式
+	
+	// 检查 schema 是否存在
+	if _, exists := allSchemas[schemaName]; !exists {
+		// schema 不存在，返回基本 object 类型
+		return map[string]any{
+			"type": "object",
+			"description": "Schema not found: " + schemaName,
+		}
+	}
+	
+	return map[string]any{
+		"$ref": "#/components/schemas/" + schemaName,
+	}
+}
+
+// isBasicType 判断是否是 Go 基本类型
+func isBasicType(typeName string) bool {
+	basicTypes := []string{"string", "int", "int8", "int16", "int32", "int64", 
+		"uint", "uint8", "uint16", "uint32", "uint64",
+		"float32", "float64", "bool", "byte", "rune"}
+	for _, t := range basicTypes {
+		if typeName == t {
+			return true
+		}
+	}
+	return false
+}
+
+// getOpenAPIType 将 Go 类型转换为 OpenAPI 类型
+func getOpenAPIType(goType string) string {
+	switch goType {
+	case "string":
+		return "string"
+	case "int", "int8", "int16", "int32", "uint", "uint8", "uint16", "uint32":
+		return "integer"
+	case "int64", "uint64":
+		return "integer"
+	case "float32", "float64":
+		return "number"
+	case "bool":
+		return "boolean"
+	default:
+		return "string"
+	}
+}
+
 func buildOperation(r RouteDef, allSchemas map[string]*SchemaInfo) map[string]any {
+	// 生成响应 schema
+	responseSchema := buildResponseSchema(r, allSchemas)
+	
 	op := map[string]any{
 		"summary":     r.Label,
 		"operationId": generateOperationID(r),
@@ -1332,9 +1976,7 @@ func buildOperation(r RouteDef, allSchemas map[string]*SchemaInfo) map[string]an
 				"description": "成功",
 				"content": map[string]any{
 					"application/json": map[string]any{
-						"schema": map[string]any{
-							"$ref": "#/components/schemas/APIResponse",
-						},
+						"schema": responseSchema,
 					},
 				},
 			},
