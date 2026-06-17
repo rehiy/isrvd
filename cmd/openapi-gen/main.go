@@ -777,13 +777,24 @@ func analyzeAssignStmtV2(stmt *ast.AssignStmt, r *RouteDef, state *handlerAnalys
 			}
 		}
 
-		// 情况 1: resp := &pkg.Type{} 或 resp := pkg.Type{}
+		// 情况 1: resp := pkg.Type{} 复合字面量
 		if comp, ok := stmt.Rhs[0].(*ast.CompositeLit); ok {
 			typeName := typeExprToString(comp.Type)
 			if typeName != "" && typeName != "struct" && len(lhsNames) > 0 {
 				state.varTypes[lhsNames[0]] = typeName
 			}
 			return
+		}
+
+		// 情况 1b: resp := &pkg.Type{} 取地址的复合字面量
+		if unary, ok := stmt.Rhs[0].(*ast.UnaryExpr); ok && unary.Op == token.AND {
+			if comp, ok := unary.X.(*ast.CompositeLit); ok {
+				typeName := typeExprToString(comp.Type)
+				if typeName != "" && typeName != "struct" && len(lhsNames) > 0 {
+					state.varTypes[lhsNames[0]] = typeName
+				}
+				return
+			}
 		}
 
 		// 情况 2: resp, err := app.svc.Method()
@@ -956,6 +967,8 @@ func analyzeRespondSuccessV2(call *ast.CallExpr, r *RouteDef, state *handlerAnal
 		typeName, ok := state.varTypes[ident.Name]
 		if ok && typeName != "" {
 			r.ResponseBodyType = typeName
+			// 确保类型 schema 被解析到缓存
+			resolveStructSchema(typeName, state.localTypes, state.filename)
 		}
 		return
 	}

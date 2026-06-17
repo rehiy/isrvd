@@ -5231,7 +5231,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "code": {
+                      "description": "状态码",
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/BootstrapResponse"
+                    },
+                    "message": {
+                      "description": "消息",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -6899,6 +6912,23 @@
         "required": [
           "success"
         ],
+        "type": "object"
+      },
+      "BootstrapResponse": {
+        "properties": {
+          "auth": {
+            "$ref": "#/components/schemas/account.AuthInfoResponse",
+            "description": "auth"
+          },
+          "config": {
+            "description": "config",
+            "type": "object"
+          },
+          "probe": {
+            "$ref": "#/components/schemas/overview.ProbeResponse",
+            "description": "probe"
+          }
+        },
         "type": "object"
       },
       "account.AuthInfoResponse": {
@@ -10856,19 +10886,19 @@
       "overview.VersionInfo": {
         "properties": {
           "current": {
-            "description": "current",
+            "description": "当前版本号",
             "type": "string"
           },
           "hasUpdate": {
-            "description": "hasUpdate",
+            "description": "是否有可用更新",
             "type": "boolean"
           },
           "latest": {
-            "description": "latest",
+            "description": "最新版本号",
             "type": "string"
           },
           "release": {
-            "description": "release",
+            "description": "最新版本发布页 URL",
             "type": "string"
           }
         },

@@ -20,10 +20,10 @@ const upgradeServer = "https://isrvd.rehiy.com/update/"
 
 // VersionInfo 版本信息
 type VersionInfo struct {
-	Current   string `json:"current"`
-	Latest    string `json:"latest"`
-	Release   string `json:"release,omitempty"`
-	HasUpdate bool   `json:"hasUpdate"`
+	Current   string `json:"current"`           // 当前版本号
+	Latest    string `json:"latest"`            // 最新版本号
+	Release   string `json:"release,omitempty"` // 最新版本发布页 URL
+	HasUpdate bool   `json:"hasUpdate"`         // 是否有可用更新
 }
 
 var (
