@@ -1263,12 +1263,19 @@ func resolveStructSchema(typeName string, localTypes map[string]string, ctrlFile
 				continue
 			}
 			if name == typeName || strings.HasPrefix(typeName, name+".") {
+				// 优先从源文件提取完整 schema（含注释）
+				if ctrlFile != "" {
+					if schema := findStructInFile(ctrlFile, name, ""); schema != nil {
+						structCache[name] = schema
+						resolveNestedTypesInSchema(schema, ctrlFile)
+						return schema
+					}
+				}
+				// 降级：使用序列化的字段信息（无注释）
 				info := parseFieldsString(name, fields)
 				if info != nil {
-					// 缓存本地类型到 structCache，避免孤立引用
 					cacheKey := name
 					structCache[cacheKey] = info
-					// 递归解析嵌套结构体字段类型
 					resolveNestedTypesInSchema(info, ctrlFile)
 					return info
 				}
