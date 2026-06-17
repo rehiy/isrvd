@@ -5,6 +5,7 @@ server:
   allowedOrigins: []
   jwtSecret: __JWT_SECRET__
   jwtExpiration: 86400
+  openapi: false
   debug: false
 
 tha:
