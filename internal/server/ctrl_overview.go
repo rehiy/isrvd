@@ -35,9 +35,9 @@ type BootstrapConfig struct {
 
 // BootstrapResponse 前端启动所需的聚合数据
 type BootstrapResponse struct {
-	Auth   *svcAccount.AuthInfoResponse `json:"auth"`
-	Probe  *svcOverview.ProbeResponse   `json:"probe,omitempty"`
-	Config *BootstrapConfig             `json:"config,omitempty"`
+	Auth   *svcAccount.AuthInfoResponse `json:"auth"`             // 认证信息
+	Probe  *svcOverview.ProbeResponse   `json:"probe,omitempty"`  // 服务探活结果
+	Config *BootstrapConfig             `json:"config,omitempty"` // 系统配置
 }
 
 // overviewBootstrap 聚合启动所需数据：auth + probe + config

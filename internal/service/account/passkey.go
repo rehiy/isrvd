@@ -53,8 +53,8 @@ func (s *Service) PasskeyEnabled() bool {
 
 // PasskeyBeginData 开始注册/登录的统一响应
 type PasskeyBeginData struct {
-	SessionID string `json:"sessionId"`
-	Options   any    `json:"options"`
+	SessionID string `json:"sessionId"` // Passkey 会话 ID
+	Options   any    `json:"options"`   // WebAuthn 选项（传递给浏览器 API）
 }
 
 // PasskeyBeginRegistration 开始 Passkey 注册

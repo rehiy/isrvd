@@ -10,12 +10,12 @@ import (
 
 // ProbeResponse 探活响应
 type ProbeResponse struct {
-	Agent   bool `json:"agent"`
-	Apisix  bool `json:"apisix"`
-	Caddy   bool `json:"caddy"`
-	Docker  bool `json:"docker"`
-	Swarm   bool `json:"swarm"`
-	Compose bool `json:"compose"`
+	Agent   bool `json:"agent"`   // Agent 服务是否可用
+	Apisix  bool `json:"apisix"`  // Apisix 网关是否可用
+	Caddy   bool `json:"caddy"`   // Caddy 服务是否可用
+	Docker  bool `json:"docker"`  // Docker 引擎是否可用
+	Swarm   bool `json:"swarm"`   // Docker Swarm 是否可用
+	Compose bool `json:"compose"` // Compose 服务是否可用
 }
 
 // probeTask 定义一项探活任务

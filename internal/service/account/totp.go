@@ -25,14 +25,14 @@ const (
 // TwoFactorStatusResponse 二次验证状态
 // 当前仅支持 TOTP。
 type TwoFactorStatusResponse struct {
-	Enabled bool `json:"enabled"`
+	Enabled bool `json:"enabled"` // 是否已启用两步验证
 }
 
 // TOTPBeginResponse 开始绑定 TOTP 的响应
 // Secret 仅在绑定流程中返回一次，后续不会通过状态接口返回。
 type TOTPBeginResponse struct {
-	Secret string `json:"secret"`
-	URI    string `json:"uri"`
+	Secret string `json:"secret"` // TOTP 密钥（Base32 编码）
+	URI    string `json:"uri"`    // otpauth:// URI（用于生成二维码）
 }
 
 // TOTPVerifyRequest TOTP 验证请求
