@@ -10784,6 +10784,10 @@
           "release": {
             "description": "最新版本发布页 URL",
             "type": "string"
+          },
+          "updaterImage": {
+            "description": "推荐的 docker-updater 镜像（按国家代码自动选择）",
+            "type": "string"
           }
         },
         "type": "object"

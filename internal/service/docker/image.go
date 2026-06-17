@@ -13,6 +13,7 @@ import (
 )
 
 // ImageTagRequest 镜像标签请求。
+// ID 来自 URL path（:id），由 handler 在绑定前注入。
 type ImageTagRequest struct {
 	ID      string `json:"id" binding:"required"`
 	RepoTag string `json:"repoTag" binding:"required"`

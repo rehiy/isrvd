@@ -213,12 +213,13 @@ func (app *App) dockerImageAction(c *gin.Context) {
 }
 
 func (app *App) dockerImageTag(c *gin.Context) {
-	var req svcDocker.ImageTagRequest
+	req := svcDocker.ImageTagRequest{
+		ID: c.Param("id"),
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	req.ID = c.Param("id")
 	if err := app.dockerSvc.ImageTag(c.Request.Context(), req); err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
