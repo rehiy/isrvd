@@ -6918,15 +6918,15 @@
         "properties": {
           "auth": {
             "$ref": "#/components/schemas/account.AuthInfoResponse",
-            "description": "auth"
+            "description": "认证信息"
           },
           "config": {
-            "description": "config",
+            "description": "系统配置",
             "type": "object"
           },
           "probe": {
             "$ref": "#/components/schemas/overview.ProbeResponse",
-            "description": "probe"
+            "description": "服务探活结果"
           }
         },
         "type": "object"
@@ -7115,10 +7115,10 @@
       "account.PasskeyBeginData": {
         "properties": {
           "options": {
-            "description": "options"
+            "description": "WebAuthn 选项（传递给浏览器 API）"
           },
           "sessionId": {
-            "description": "sessionId",
+            "description": "Passkey 会话 ID",
             "type": "string"
           }
         },
@@ -7168,11 +7168,11 @@
       "account.TOTPBeginResponse": {
         "properties": {
           "secret": {
-            "description": "secret",
+            "description": "TOTP 密钥（Base32 编码）",
             "type": "string"
           },
           "uri": {
-            "description": "uri",
+            "description": "otpauth:// URI（用于生成二维码）",
             "type": "string"
           }
         },
@@ -7197,7 +7197,7 @@
       "account.TwoFactorStatusResponse": {
         "properties": {
           "enabled": {
-            "description": "enabled",
+            "description": "是否已启用两步验证",
             "type": "boolean"
           }
         },
@@ -9215,7 +9215,7 @@
       "cronJobEnableReq": {
         "properties": {
           "enabled": {
-            "description": "enabled",
+            "description": "是否启用任务",
             "type": "boolean"
           }
         },
@@ -9224,7 +9224,7 @@
       "cronJobLogsReq": {
         "properties": {
           "limit": {
-            "description": "limit",
+            "description": "返回记录数上限（默认 50，最大 100）",
             "type": "integer"
           }
         },
@@ -9442,53 +9442,53 @@
       "docker.ContainerInfo": {
         "properties": {
           "created": {
-            "description": "created",
+            "description": "创建时间戳",
             "type": "integer"
           },
           "id": {
-            "description": "id",
+            "description": "容器 ID",
             "type": "string"
           },
           "image": {
-            "description": "image",
+            "description": "镜像名称",
             "type": "string"
           },
           "isSelf": {
-            "description": "isSelf",
+            "description": "是否为当前服务容器",
             "type": "boolean"
           },
           "isSwarm": {
-            "description": "isSwarm",
+            "description": "是否为 Swarm 管理的容器",
             "type": "boolean"
           },
           "labels": {
-            "description": "labels",
+            "description": "容器标签",
             "type": "object"
           },
           "name": {
-            "description": "name",
+            "description": "容器名称",
             "type": "string"
           },
           "networks": {
-            "description": "networks",
+            "description": "所属网络",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "ports": {
-            "description": "ports",
+            "description": "端口映射列表",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "state": {
-            "description": "state",
+            "description": "运行状态（running/exited/paused）",
             "type": "string"
           },
           "status": {
-            "description": "status",
+            "description": "状态描述",
             "type": "string"
           }
         },
@@ -9939,33 +9939,33 @@
       "docker.ImageInfo": {
         "properties": {
           "created": {
-            "description": "created",
+            "description": "创建时间戳",
             "type": "integer"
           },
           "id": {
-            "description": "id",
+            "description": "镜像完整 ID",
             "type": "string"
           },
           "repoDigests": {
-            "description": "repoDigests",
+            "description": "仓库摘要列表",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "repoTags": {
-            "description": "repoTags",
+            "description": "仓库标签列表",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "shortId": {
-            "description": "shortId",
+            "description": "镜像短 ID",
             "type": "string"
           },
           "size": {
-            "description": "size",
+            "description": "镜像大小（字节）",
             "type": "integer"
           }
         },
@@ -10189,23 +10189,23 @@
       "docker.NetworkInfo": {
         "properties": {
           "driver": {
-            "description": "driver",
+            "description": "驱动类型（bridge/overlay/host）",
             "type": "string"
           },
           "id": {
-            "description": "id",
+            "description": "网络 ID",
             "type": "string"
           },
           "name": {
-            "description": "name",
+            "description": "网络名称",
             "type": "string"
           },
           "scope": {
-            "description": "scope",
+            "description": "作用域（local/swarm）",
             "type": "string"
           },
           "subnet": {
-            "description": "subnet",
+            "description": "子网 CIDR",
             "type": "string"
           }
         },
@@ -10416,23 +10416,23 @@
       "docker.VolumeInfo": {
         "properties": {
           "createdAt": {
-            "description": "createdAt",
+            "description": "创建时间",
             "type": "string"
           },
           "driver": {
-            "description": "driver",
+            "description": "驱动类型",
             "type": "string"
           },
           "mountpoint": {
-            "description": "mountpoint",
+            "description": "挂载点路径",
             "type": "string"
           },
           "name": {
-            "description": "name",
+            "description": "卷名称",
             "type": "string"
           },
           "size": {
-            "description": "size",
+            "description": "卷大小（字节）",
             "type": "integer"
           }
         },
@@ -10565,31 +10565,31 @@
       "filer.FileInfo": {
         "properties": {
           "isDir": {
-            "description": "isDir",
+            "description": "是否为目录",
             "type": "boolean"
           },
           "modTime": {
-            "description": "modTime",
+            "description": "最后修改时间",
             "type": "string"
           },
           "mode": {
-            "description": "mode",
+            "description": "权限字符串（如 -rwxr-xr-x）",
             "type": "string"
           },
           "modeO": {
-            "description": "modeO",
+            "description": "权限八进制表示（如 0755）",
             "type": "string"
           },
           "name": {
-            "description": "name",
+            "description": "文件名",
             "type": "string"
           },
           "path": {
-            "description": "path",
+            "description": "文件完整路径",
             "type": "string"
           },
           "size": {
-            "description": "size",
+            "description": "文件大小（字节）",
             "type": "integer"
           }
         },
@@ -10630,11 +10630,11 @@
       "filerChmodBody": {
         "properties": {
           "mode": {
-            "description": "mode",
+            "description": "权限模式（如 \"0755\"）",
             "type": "string"
           },
           "path": {
-            "description": "path",
+            "description": "文件路径",
             "type": "string"
           }
         },
@@ -10647,11 +10647,11 @@
       "filerContentBody": {
         "properties": {
           "content": {
-            "description": "content",
+            "description": "文件内容",
             "type": "string"
           },
           "path": {
-            "description": "path",
+            "description": "文件路径",
             "type": "string"
           }
         },
@@ -10664,7 +10664,7 @@
       "filerPathQuery": {
         "properties": {
           "path": {
-            "description": "path",
+            "description": "文件或目录路径",
             "type": "string"
           }
         },
@@ -10676,11 +10676,11 @@
       "filerRenameBody": {
         "properties": {
           "path": {
-            "description": "path",
+            "description": "原路径",
             "type": "string"
           },
           "target": {
-            "description": "target",
+            "description": "目标路径或名称",
             "type": "string"
           }
         },
@@ -10693,11 +10693,11 @@
       "filerUnzipBody": {
         "properties": {
           "path": {
-            "description": "path",
+            "description": "压缩文件路径",
             "type": "string"
           },
           "targetDir": {
-            "description": "targetDir",
+            "description": "可选：指定解压目标目录名（仅允许标准目录名，无 / 等分隔符）",
             "type": "string"
           }
         },
@@ -10808,43 +10808,43 @@
       "monitor.SystemGPU": {
         "properties": {
           "deviceKey": {
-            "description": "deviceKey",
+            "description": "设备标识",
             "type": "string"
           },
           "fanSpeed": {
-            "description": "fanSpeed",
+            "description": "风扇转速（%）",
             "type": "integer"
           },
           "index": {
-            "description": "index",
+            "description": "GPU 索引",
             "type": "integer"
           },
           "memoryTotal": {
-            "description": "memoryTotal",
+            "description": "总显存（字节）",
             "type": "integer"
           },
           "memoryUsed": {
-            "description": "memoryUsed",
+            "description": "已用显存（字节）",
             "type": "integer"
           },
           "name": {
-            "description": "name",
+            "description": "GPU 名称",
             "type": "string"
           },
           "powerUsage": {
-            "description": "powerUsage",
+            "description": "功耗（W）",
             "type": "number"
           },
           "temperature": {
-            "description": "temperature",
+            "description": "温度（℃）",
             "type": "integer"
           },
           "utilization": {
-            "description": "utilization",
+            "description": "GPU 利用率（0-100）",
             "type": "number"
           },
           "vendor": {
-            "description": "vendor",
+            "description": "厂商",
             "type": "string"
           }
         },
@@ -10853,27 +10853,27 @@
       "overview.ProbeResponse": {
         "properties": {
           "agent": {
-            "description": "agent",
+            "description": "Agent 服务是否可用",
             "type": "boolean"
           },
           "apisix": {
-            "description": "apisix",
+            "description": "Apisix 网关是否可用",
             "type": "boolean"
           },
           "caddy": {
-            "description": "caddy",
+            "description": "Caddy 服务是否可用",
             "type": "boolean"
           },
           "compose": {
-            "description": "compose",
+            "description": "Compose 服务是否可用",
             "type": "boolean"
           },
           "docker": {
-            "description": "docker",
+            "description": "Docker 引擎是否可用",
             "type": "boolean"
           },
           "swarm": {
-            "description": "swarm",
+            "description": "Docker Swarm 是否可用",
             "type": "boolean"
           }
         },
@@ -11009,63 +11009,63 @@
       "swarm.NodeDetail": {
         "properties": {
           "addr": {
-            "description": "addr",
+            "description": "节点地址",
             "type": "string"
           },
           "architecture": {
-            "description": "architecture",
+            "description": "CPU 架构",
             "type": "string"
           },
           "availability": {
-            "description": "availability",
+            "description": "可用状态",
             "type": "string"
           },
           "cpus": {
-            "description": "cpus",
+            "description": "CPU 核心数",
             "type": "integer"
           },
           "createdAt": {
-            "description": "createdAt",
+            "description": "创建时间",
             "type": "string"
           },
           "engineVersion": {
-            "description": "engineVersion",
+            "description": "Docker 引擎版本",
             "type": "string"
           },
           "hostname": {
-            "description": "hostname",
+            "description": "主机名",
             "type": "string"
           },
           "id": {
-            "description": "id",
+            "description": "节点 ID",
             "type": "string"
           },
           "labels": {
-            "description": "labels",
+            "description": "节点标签",
             "type": "object"
           },
           "leader": {
-            "description": "leader",
+            "description": "是否为 Leader",
             "type": "boolean"
           },
           "memoryBytes": {
-            "description": "memoryBytes",
+            "description": "内存大小（字节）",
             "type": "integer"
           },
           "os": {
-            "description": "os",
+            "description": "操作系统",
             "type": "string"
           },
           "role": {
-            "description": "role",
+            "description": "角色（manager/worker）",
             "type": "string"
           },
           "state": {
-            "description": "state",
+            "description": "节点状态",
             "type": "string"
           },
           "updatedAt": {
-            "description": "updatedAt",
+            "description": "更新时间",
             "type": "string"
           }
         },
@@ -11074,35 +11074,35 @@
       "swarm.NodeInfo": {
         "properties": {
           "addr": {
-            "description": "addr",
+            "description": "节点地址",
             "type": "string"
           },
           "availability": {
-            "description": "availability",
+            "description": "可用状态（active/pause/drain）",
             "type": "string"
           },
           "engineVersion": {
-            "description": "engineVersion",
+            "description": "Docker 引擎版本",
             "type": "string"
           },
           "hostname": {
-            "description": "hostname",
+            "description": "主机名",
             "type": "string"
           },
           "id": {
-            "description": "id",
+            "description": "节点 ID",
             "type": "string"
           },
           "leader": {
-            "description": "leader",
+            "description": "是否为 Leader 节点",
             "type": "boolean"
           },
           "role": {
-            "description": "role",
+            "description": "角色（manager/worker）",
             "type": "string"
           },
           "state": {
-            "description": "state",
+            "description": "节点状态（ready/down）",
             "type": "string"
           }
         },
@@ -11141,42 +11141,42 @@
       "swarm.ServiceInfo": {
         "properties": {
           "createdAt": {
-            "description": "createdAt",
+            "description": "创建时间",
             "type": "string"
           },
           "id": {
-            "description": "id",
+            "description": "服务 ID",
             "type": "string"
           },
           "image": {
-            "description": "image",
+            "description": "镜像名称",
             "type": "string"
           },
           "mode": {
-            "description": "mode",
+            "description": "部署模式（replicated/global）",
             "type": "string"
           },
           "name": {
-            "description": "name",
+            "description": "服务名称",
             "type": "string"
           },
           "ports": {
-            "description": "ports",
+            "description": "端口映射列表",
             "items": {
               "type": "object"
             },
             "type": "array"
           },
           "replicas": {
-            "description": "replicas",
+            "description": "副本数",
             "type": "integer"
           },
           "runningTasks": {
-            "description": "runningTasks",
+            "description": "运行中的任务数",
             "type": "integer"
           },
           "updatedAt": {
-            "description": "updatedAt",
+            "description": "更新时间",
             "type": "string"
           }
         },
@@ -11227,65 +11227,65 @@
       "swarm.ServiceSpec": {
         "properties": {
           "args": {
-            "description": "args",
+            "description": "启动参数",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "constraints": {
-            "description": "constraints",
+            "description": "调度约束",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "env": {
-            "description": "env",
+            "description": "环境变量列表",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "image": {
-            "description": "image",
+            "description": "镜像名称",
             "type": "string"
           },
           "labels": {
-            "description": "labels",
+            "description": "标签",
             "type": "object"
           },
           "mode": {
-            "description": "mode",
+            "description": "部署模式（replicated/global）",
             "type": "string"
           },
           "mounts": {
-            "description": "mounts",
+            "description": "挂载卷",
             "items": {
               "type": "object"
             },
             "type": "array"
           },
           "name": {
-            "description": "name",
+            "description": "服务名称",
             "type": "string"
           },
           "networks": {
-            "description": "networks",
+            "description": "网络列表",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "ports": {
-            "description": "ports",
+            "description": "端口映射",
             "items": {
               "type": "object"
             },
             "type": "array"
           },
           "replicas": {
-            "description": "replicas",
+            "description": "副本数",
             "type": "integer"
           }
         },
@@ -11303,47 +11303,47 @@
       "swarm.Task": {
         "properties": {
           "err": {
-            "description": "err",
+            "description": "错误信息",
             "type": "string"
           },
           "id": {
-            "description": "id",
+            "description": "任务 ID",
             "type": "string"
           },
           "image": {
-            "description": "image",
+            "description": "镜像名称",
             "type": "string"
           },
           "message": {
-            "description": "message",
+            "description": "状态消息",
             "type": "string"
           },
           "nodeID": {
-            "description": "nodeID",
+            "description": "运行节点 ID",
             "type": "string"
           },
           "nodeName": {
-            "description": "nodeName",
+            "description": "运行节点名称",
             "type": "string"
           },
           "serviceID": {
-            "description": "serviceID",
+            "description": "所属服务 ID",
             "type": "string"
           },
           "serviceName": {
-            "description": "serviceName",
+            "description": "所属服务名称",
             "type": "string"
           },
           "slot": {
-            "description": "slot",
+            "description": "任务槽位",
             "type": "integer"
           },
           "state": {
-            "description": "state",
+            "description": "任务状态",
             "type": "string"
           },
           "updatedAt": {
-            "description": "updatedAt",
+            "description": "更新时间",
             "type": "string"
           }
         },

@@ -1807,23 +1807,23 @@ func buildResponseSchema(r RouteDef, allSchemas map[string]*SchemaInfo) map[stri
 	if r.ResponseBodyType == "" {
 		return map[string]any{"$ref": "#/components/schemas/" + cfg.ResponseStruct}
 	}
-	
-	// 解析响应类型，生成 data 字段的 schema
-	dataSchema := buildDataSchema(r.ResponseBodyType, allSchemas)
-	
-	// 生成完整的响应 schema（包含 code、message、data）
+
+	// 解析响应类型，生成 payload 字段的 schema
+	payloadSchema := buildDataSchema(r.ResponseBodyType, allSchemas)
+
+	// 生成完整的响应 schema，与 APIResponse 结构一致
 	return map[string]any{
 		"type": "object",
 		"properties": map[string]any{
-			"code": map[string]any{
-				"type": "integer",
-				"description": "状态码",
+			"success": map[string]any{
+				"type":        "boolean",
+				"description": "请求是否成功",
 			},
 			"message": map[string]any{
-				"type": "string",
-				"description": "消息",
+				"type":        "string",
+				"description": "提示信息",
 			},
-			"data": dataSchema,
+			"payload": payloadSchema,
 		},
 	}
 }
