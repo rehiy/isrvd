@@ -52,11 +52,17 @@ func PermMiddleware(routeIndex map[string]Route, svc *svcAccount.Service) gin.Ha
 			return
 		}
 
-		if route.Access == AccessAuth && c.GetString("username") == "" {
+		// 防御性校验：非匿名路由必须已认证。
+		// 正常情况下 AuthMiddleware 已保证此处 username 非空（否则已返回 401），
+		// 此处作为兜底断言，避免 AuthMiddleware 被误改或绕过时越权放行。
+		if route.Access != AccessAnon && c.GetString("username") == "" {
 			respondError(c, http.StatusForbidden, "请先登录")
 			c.Abort()
 			return
 		}
+
+		// 仅 AccessPerm 且声明了 Module 的路由才执行细粒度权限校验；
+		// AccessAuth 路由登录即可访问，无需 PermCheck。
 		if route.Access == AccessPerm && route.Module != "" {
 			if err := svc.PermCheck(c.GetString("username"), route.Label, c.Request.Method, path); err != nil {
 				respondError(c, http.StatusForbidden, err.Error())

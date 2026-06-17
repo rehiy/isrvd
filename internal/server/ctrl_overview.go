@@ -21,8 +21,8 @@ import (
 func (app *App) defineOverviewRoutes() []Route {
 	return []Route{
 		{Method: "GET", Path: "/overview/bootstrap", Handler: app.overviewBootstrap, Module: "overview", Label: "获取启动数据", Access: AccessAnon},
+		{Method: "GET", Path: "/overview/monitor", Handler: app.overviewMonitor, Module: "overview", Label: "获取监控数据"},
 		{Method: "GET", Path: "/overview/version", Handler: app.overviewVersion, Module: "overview", Label: "获取版本信息"},
-		{Method: "GET", Path: "/overview/monitor", Handler: app.overviewMonitor, Module: "overview", Label: "获取监控数据", Access: AccessAuth},
 		{Method: "POST", Path: "/overview/upgrade", Handler: app.overviewUpgrade, Module: "overview", Label: "升级程序至最新版本"},
 	}
 }
