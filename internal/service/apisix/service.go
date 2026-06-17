@@ -168,9 +168,9 @@ func (s *Service) ConsumerDelete(ctx context.Context, username string) error {
 
 // WhitelistCreateRequest 配置白名单路由请求
 type WhitelistCreateRequest struct {
-	RouteID   string         `json:"route_id"`   // 路由 ID
-	Consumers []string       `json:"consumers"`   // 白名单 Consumer 列表
-	KeyAuth   map[string]any `json:"key_auth"`   // Key Auth 插件配置
+	RouteID   string         `json:"route_id"`  // 路由 ID
+	Consumers []string       `json:"consumers"` // 白名单 Consumer 列表
+	KeyAuth   map[string]any `json:"key_auth"`  // Key Auth 插件配置
 }
 
 // WhitelistCreate 为已有路由配置 Consumer 白名单

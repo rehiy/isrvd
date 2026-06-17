@@ -20,16 +20,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/account.TwoFactorStatusResponse"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -54,16 +54,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/account.TOTPBeginResponse"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -160,16 +160,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/account.LoginResponse"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -295,19 +295,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/account.MemberInfo"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -363,16 +363,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/account.LoginResponse"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -488,19 +488,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/config.PasskeyCredential"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -535,16 +535,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/account.PasskeyBeginData"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -579,16 +579,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/account.LoginResponse"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -623,16 +623,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/account.PasskeyBeginData"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -750,16 +750,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/account.CreateApiTokenResponse"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -794,16 +794,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/apisix.Consumer"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -877,17 +877,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -912,19 +912,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/apisix.Consumer"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -959,16 +959,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/apisix.PluginConfig"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1032,16 +1032,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/apisix.PluginConfig"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1084,16 +1084,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/apisix.PluginConfig"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1118,19 +1118,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/apisix.PluginConfig"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1186,16 +1186,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/apisix.Route"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1259,16 +1259,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/apisix.Route"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1311,16 +1311,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/apisix.Route"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1386,19 +1386,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/apisix.Route"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1433,16 +1433,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/apisix.SSL"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1506,16 +1506,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/apisix.SSL"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1558,16 +1558,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/apisix.SSL"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1592,19 +1592,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/apisix.SSL"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1639,16 +1639,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/apisix.Upstream"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1712,16 +1712,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/apisix.Upstream"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1764,16 +1764,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/apisix.Upstream"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1798,19 +1798,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/apisix.Upstream"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1835,19 +1835,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/apisix.Route"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1880,16 +1880,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/apisix.Route"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -1924,16 +1924,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/apisix.Route"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2098,19 +2098,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/caddy.CertForm"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2135,17 +2135,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: json.RawMessage",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2199,16 +2199,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/caddy.GlobalForm"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2262,16 +2262,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/caddy.Info"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2316,17 +2316,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2406,16 +2406,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/caddy.RouteView"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2497,19 +2497,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/caddy.RouteView"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2534,16 +2534,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/compose.DeployResult"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2578,17 +2578,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2631,16 +2631,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/compose.DeployResult"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2665,16 +2665,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/compose.DeployResult"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2709,17 +2709,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2762,16 +2762,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/compose.DeployResult"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2796,17 +2796,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2839,17 +2839,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -2962,17 +2962,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -3015,17 +3015,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -3081,17 +3081,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -3126,16 +3126,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/docker.ContainerCreateResult"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -3170,16 +3170,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/docker.ContainerDetail"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -3383,16 +3383,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/docker.ContainerFileListResult"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -3476,17 +3476,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -3707,16 +3707,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/docker.ContainerLogsResult"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -3791,16 +3791,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/docker.ContainerStatsResponse"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -3835,19 +3835,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/docker.ContainerInfo"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -3882,17 +3882,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: docker.map[string]string",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -3927,16 +3927,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/docker.ImagePruneReport"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -3971,17 +3971,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: docker.map[string]string",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -4016,17 +4016,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: docker.map[string]string",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -4061,16 +4061,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/docker.ImageDetail"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -4187,19 +4187,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/docker.ImageInfo"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -4234,19 +4234,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/docker.ImageSearchResult"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -4271,16 +4271,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/docker.DockerInfo"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -4315,17 +4315,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: docker.map[string]string",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -4360,16 +4360,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/docker.NetworkDetail"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -4435,19 +4435,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/docker.NetworkInfo"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -4472,19 +4472,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/docker.RegistryInfo"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -4618,17 +4618,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: docker.map[string]string",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -4663,16 +4663,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/docker.VolumeDetail"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -4738,19 +4738,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/docker.VolumeInfo"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -4847,17 +4847,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -4960,17 +4960,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -5063,17 +5063,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -5232,16 +5232,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/BootstrapResponse"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -5334,16 +5334,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/overview.VersionInfo"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -5410,16 +5410,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/webssh.Credential"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -5483,16 +5483,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/webssh.Credential"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -5535,16 +5535,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/webssh.Credential"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -5569,19 +5569,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/webssh.Credential"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -5616,16 +5616,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/webssh.Host"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -5689,16 +5689,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/webssh.Host"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -5741,16 +5741,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/webssh.Host"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -5775,19 +5775,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/webssh.Host"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -5912,17 +5912,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -6004,17 +6004,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: webssh.SFTPListResult",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -6098,17 +6098,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -6343,17 +6343,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: swarm.map[string]any",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -6388,16 +6388,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/swarm.NodeDetail"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -6463,19 +6463,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/swarm.NodeInfo"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -6510,17 +6510,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -6555,16 +6555,16 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "$ref": "#/components/schemas/swarm.ServiceDetail"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -6648,17 +6648,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: gin.H",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -6683,19 +6683,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/swarm.ServiceInfo"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -6730,19 +6730,19 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "items": {
                         "$ref": "#/components/schemas/swarm.Task"
                       },
                       "type": "array"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -6767,17 +6767,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "description": "状态码",
-                      "type": "integer"
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
                     },
-                    "data": {
+                    "payload": {
                       "description": "Schema not found: swarm.map[string]string",
                       "type": "object"
                     },
-                    "message": {
-                      "description": "消息",
-                      "type": "string"
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
                     }
                   },
                   "type": "object"

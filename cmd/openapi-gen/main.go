@@ -238,8 +238,6 @@ func main() {
 	fmt.Fprintf(os.Stderr, "OpenAPI 文档已生成: %s (%d bytes)\n", cfg.OutputFile, len(out))
 }
 
-
-
 // ─── 第 1 步：解析 Route 定义 ─────────────────────────
 
 // parseFile 解析单个文件，结果缓存
@@ -453,7 +451,7 @@ func collectTypesFromDir(dir string) {
 	if err != nil {
 		return
 	}
-	
+
 	for _, entry := range entries {
 		if entry.IsDir() {
 			// 递归遍历子目录
@@ -461,11 +459,11 @@ func collectTypesFromDir(dir string) {
 			collectTypesFromDir(subDir)
 			continue
 		}
-		
+
 		if !strings.HasSuffix(entry.Name(), ".go") {
 			continue
 		}
-		
+
 		filename := filepath.Join(dir, entry.Name())
 		collectTypeDefinitionsFromFile(filename)
 	}
@@ -477,31 +475,31 @@ func collectTypeDefinitionsFromFile(filename string) {
 	if f == nil {
 		return
 	}
-	
+
 	// 从文件路径提取包名
 	pkgName := extractPkgNameFromPath(filename)
-	
+
 	for _, decl := range f.Decls {
 		// 查找类型定义: type Xxx struct { ... }
 		gd, ok := decl.(*ast.GenDecl)
 		if !ok || gd.Tok != token.TYPE {
 			continue
 		}
-		
+
 		for _, spec := range gd.Specs {
 			ts, ok := spec.(*ast.TypeSpec)
 			if !ok {
 				continue
 			}
-			
+
 			typeName := ts.Name.Name
-			
+
 			// 构建完整的类型名 (包名.类型名)
 			var fullTypeName string
 			if pkgName != "" {
 				fullTypeName = pkgName + "." + typeName
 			}
-			
+
 			if fullTypeName != "" {
 				resolveStructSchema(fullTypeName, nil, filename)
 			}
@@ -733,8 +731,8 @@ func structTypeToJSONSchema(st *ast.StructType, _ *token.FileSet) string {
 
 // handlerAnalysisState 保存 handler 函数分析过程中的状态
 type handlerAnalysisState struct {
-	varTypes     map[string]string  // 变量名 → 类型名（如 "resp" → "account.LoginResponse"）
-	localTypes   map[string]string  // 本地类型别名
+	varTypes     map[string]string // 变量名 → 类型名（如 "resp" → "account.LoginResponse"）
+	localTypes   map[string]string // 本地类型别名
 	filename     string            // 当前分析的文件
 	responseBody *SchemaInfo       // 提取到的响应类型
 }
@@ -1022,18 +1020,18 @@ func resolveImportAlias(filename, typeName string) string {
 	if idx == -1 {
 		return typeName
 	}
-	
+
 	alias := typeName[:idx]
 	typeSuffix := typeName[idx:] // 包含 "."
-	
+
 	// 从文件中提取导入别名映射
 	importMap := extractImportAliases(filename)
-	
+
 	// 如果别名在映射中，替换为实际的包名
 	if realPkg, ok := importMap[alias]; ok {
 		return realPkg + typeSuffix
 	}
-	
+
 	return typeName
 }
 
@@ -1041,20 +1039,20 @@ func resolveImportAlias(filename, typeName string) string {
 // 返回 map[别名]实际包名
 func extractImportAliases(filename string) map[string]string {
 	result := make(map[string]string)
-	
+
 	f := parseFile(filename)
 	if f == nil {
 		return result
 	}
-	
+
 	for _, imp := range f.Imports {
 		// 导入路径，如 "isrvd/pkgs/apisix"
 		importPath := strings.Trim(imp.Path.Value, "\"")
-		
+
 		// 提取包名（路径最后一段）
 		parts := strings.Split(importPath, "/")
 		realPkgName := parts[len(parts)-1]
-		
+
 		if imp.Name != nil {
 			// 有别名: pkgApisix "isrvd/pkgs/apisix"
 			alias := imp.Name.Name
@@ -1064,7 +1062,7 @@ func extractImportAliases(filename string) map[string]string {
 			result[realPkgName] = realPkgName
 		}
 	}
-	
+
 	return result
 }
 
@@ -1113,7 +1111,7 @@ func resolveReturnType(svcFilename, pkgName, retType string) string {
 	}
 	// 去指针
 	inner = strings.TrimPrefix(inner, "*")
-	
+
 	// 解析 import 别名
 	if strings.Contains(inner, ".") {
 		inner = resolveImportAlias(svcFilename, inner)
@@ -1121,7 +1119,7 @@ func resolveReturnType(svcFilename, pkgName, retType string) string {
 		// 不包含 "."，说明是本包类型，添加 pkgName 前缀
 		inner = pkgName + "." + inner
 	}
-	
+
 	// 重新组装: pkgName.[]TypeName 格式
 	if slicePrefix != "" {
 		// 将 "pkg.TypeName" → "pkg.[]TypeName"
@@ -1130,7 +1128,7 @@ func resolveReturnType(svcFilename, pkgName, retType string) string {
 		}
 		return slicePrefix + inner
 	}
-	
+
 	return inner
 }
 
@@ -1833,9 +1831,9 @@ func buildDataSchema(typeName string, allSchemas map[string]*SchemaInfo) map[str
 	// 处理带包名的 slice 类型，如 account.[]*MemberInfo
 	if idx := strings.Index(typeName, ".[]"); idx != -1 {
 		pkgName := typeName[:idx]
-		elemType := typeName[idx+3:] // 跳过 ".[]" (3个字符)
+		elemType := typeName[idx+3:]                 // 跳过 ".[]" (3个字符)
 		elemType = strings.TrimPrefix(elemType, "*") // 去除指针前缀
-		
+
 		// 判断是否是基本类型
 		if isBasicType(elemType) {
 			return map[string]any{
@@ -1845,14 +1843,14 @@ func buildDataSchema(typeName string, allSchemas map[string]*SchemaInfo) map[str
 				},
 			}
 		}
-		
-	// 复杂类型，使用 $ref
+
+		// 复杂类型，使用 $ref
 		// elemType 可能已经包含包名（如 account.MemberInfo），也可能不包含
 		schemaName := elemType
 		if !strings.Contains(elemType, ".") {
 			schemaName = pkgName + "." + elemType
 		}
-		
+
 		// 检查 schema 是否存在，如果不存在则使用基本类型
 		if _, exists := allSchemas[schemaName]; !exists {
 			// 尝试不带包名前缀
@@ -1863,13 +1861,13 @@ func buildDataSchema(typeName string, allSchemas map[string]*SchemaInfo) map[str
 				return map[string]any{
 					"type": "array",
 					"items": map[string]any{
-						"type": "object",
+						"type":        "object",
 						"description": "Schema not found: " + schemaName,
 					},
 				}
 			}
 		}
-		
+
 		return map[string]any{
 			"type": "array",
 			"items": map[string]any{
@@ -1877,12 +1875,12 @@ func buildDataSchema(typeName string, allSchemas map[string]*SchemaInfo) map[str
 			},
 		}
 	}
-	
+
 	// 处理不带包名的 slice 类型，如 []*MemberInfo 或 []string
 	if strings.HasPrefix(typeName, "[]") {
 		elemType := strings.TrimPrefix(typeName, "[]")
 		elemType = strings.TrimPrefix(elemType, "*") // 去除指针前缀
-		
+
 		// 判断是否是基本类型
 		if isBasicType(elemType) {
 			return map[string]any{
@@ -1892,22 +1890,22 @@ func buildDataSchema(typeName string, allSchemas map[string]*SchemaInfo) map[str
 				},
 			}
 		}
-		
+
 		// 复杂类型，使用 $ref
 		schemaName := strings.ReplaceAll(elemType, ".", "_")
-		
+
 		// 检查 schema 是否存在
 		if _, exists := allSchemas[schemaName]; !exists {
 			// schema 不存在，返回基本 object 类型
 			return map[string]any{
 				"type": "array",
 				"items": map[string]any{
-					"type": "object",
+					"type":        "object",
 					"description": "Schema not found: " + schemaName,
 				},
 			}
 		}
-		
+
 		return map[string]any{
 			"type": "array",
 			"items": map[string]any{
@@ -1915,15 +1913,15 @@ func buildDataSchema(typeName string, allSchemas map[string]*SchemaInfo) map[str
 			},
 		}
 	}
-	
+
 	// 处理 map 类型
 	if strings.HasPrefix(typeName, "map[") {
 		return map[string]any{
-			"type": "object",
+			"type":        "object",
 			"description": "Map 类型: " + typeName,
 		}
 	}
-	
+
 	// 处理指针类型
 	typeName = strings.TrimPrefix(typeName, "*")
 
@@ -1936,17 +1934,17 @@ func buildDataSchema(typeName string, allSchemas map[string]*SchemaInfo) map[str
 
 	// 复杂类型，使用 $ref
 	// 注意：schema 名称可能包含 "."，如 "account.MemberInfo"
-	schemaName := typeName  // 保持原始的包名.类型名格式
-	
+	schemaName := typeName // 保持原始的包名.类型名格式
+
 	// 检查 schema 是否存在
 	if _, exists := allSchemas[schemaName]; !exists {
 		// schema 不存在，返回基本 object 类型
 		return map[string]any{
-			"type": "object",
+			"type":        "object",
 			"description": "Schema not found: " + schemaName,
 		}
 	}
-	
+
 	return map[string]any{
 		"$ref": "#/components/schemas/" + schemaName,
 	}
@@ -1954,7 +1952,7 @@ func buildDataSchema(typeName string, allSchemas map[string]*SchemaInfo) map[str
 
 // isBasicType 判断是否是 Go 基本类型
 func isBasicType(typeName string) bool {
-	basicTypes := []string{"string", "int", "int8", "int16", "int32", "int64", 
+	basicTypes := []string{"string", "int", "int8", "int16", "int32", "int64",
 		"uint", "uint8", "uint16", "uint32", "uint64",
 		"float32", "float64", "bool", "byte", "rune"}
 	for _, t := range basicTypes {
@@ -1986,7 +1984,7 @@ func getOpenAPIType(goType string) string {
 func buildOperation(r RouteDef, allSchemas map[string]*SchemaInfo) map[string]any {
 	// 生成响应 schema
 	responseSchema := buildResponseSchema(r, allSchemas)
-	
+
 	op := map[string]any{
 		"summary":     r.Label,
 		"operationId": generateOperationID(r),
