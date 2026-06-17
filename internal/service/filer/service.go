@@ -27,13 +27,13 @@ func NewService() *Service {
 
 // FileInfo 文件信息
 type FileInfo struct {
-	Path    string    `json:"path"`
-	Name    string    `json:"name"`
-	Size    int64     `json:"size"`
-	IsDir   bool      `json:"isDir"`
-	Mode    string    `json:"mode"`
-	ModeO   string    `json:"modeO"`
-	ModTime time.Time `json:"modTime"`
+	Path    string    `json:"path"`    // 文件完整路径
+	Name    string    `json:"name"`    // 文件名
+	Size    int64     `json:"size"`    // 文件大小（字节）
+	IsDir   bool      `json:"isDir"`   // 是否为目录
+	Mode    string    `json:"mode"`    // 权限字符串（如 -rwxr-xr-x）
+	ModeO   string    `json:"modeO"`   // 权限八进制表示（如 0755）
+	ModTime time.Time `json:"modTime"` // 最后修改时间
 }
 
 // AbsPath 解析用户相对路径为绝对路径，并防止目录遍历和符号链接逃逸

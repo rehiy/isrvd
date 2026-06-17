@@ -95,17 +95,17 @@ type VolumeMapping struct {
 
 // ContainerInfo Docker 容器信息（列表项），保持前端稳定响应结构。
 type ContainerInfo struct {
-	ID       string            `json:"id"`
-	Name     string            `json:"name"`
-	Image    string            `json:"image"`
-	State    string            `json:"state"`
-	Status   string            `json:"status"`
-	Ports    []string          `json:"ports"`
-	Networks []string          `json:"networks,omitempty"`
-	Created  int64             `json:"created"`
-	IsSwarm  bool              `json:"isSwarm,omitempty"`
-	IsSelf   bool              `json:"isSelf,omitempty"`
-	Labels   map[string]string `json:"labels,omitempty"`
+	ID       string            `json:"id"`                // 容器 ID
+	Name     string            `json:"name"`              // 容器名称
+	Image    string            `json:"image"`             // 镜像名称
+	State    string            `json:"state"`             // 运行状态（running/exited/paused）
+	Status   string            `json:"status"`            // 状态描述
+	Ports    []string          `json:"ports"`             // 端口映射列表
+	Networks []string          `json:"networks,omitempty"` // 所属网络
+	Created  int64             `json:"created"`           // 创建时间戳
+	IsSwarm  bool              `json:"isSwarm,omitempty"` // 是否为 Swarm 管理的容器
+	IsSelf   bool              `json:"isSelf,omitempty"`  // 是否为当前服务容器
+	Labels   map[string]string `json:"labels,omitempty"`  // 容器标签
 }
 
 // ContainerDetail 容器详情，保持前端稳定响应结构。

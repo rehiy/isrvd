@@ -44,12 +44,12 @@ type ImagePruneDeleted struct {
 
 // ImageInfo Docker 镜像信息，保持前端稳定响应结构。
 type ImageInfo struct {
-	ID          string   `json:"id"`
-	ShortID     string   `json:"shortId"`
-	RepoTags    []string `json:"repoTags"`
-	RepoDigests []string `json:"repoDigests"`
-	Size        int64    `json:"size"`
-	Created     int64    `json:"created"`
+	ID          string   `json:"id"`          // 镜像完整 ID
+	ShortID     string   `json:"shortId"`     // 镜像短 ID
+	RepoTags    []string `json:"repoTags"`    // 仓库标签列表
+	RepoDigests []string `json:"repoDigests"` // 仓库摘要列表
+	Size        int64    `json:"size"`        // 镜像大小（字节）
+	Created     int64    `json:"created"`     // 创建时间戳
 }
 
 // ImageSearchResult 镜像搜索结果，保持前端稳定响应结构。

@@ -27,11 +27,11 @@ type VolumeSpec struct {
 
 // NetworkInfo Docker 网络信息，保持前端稳定响应结构。
 type NetworkInfo struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Driver string `json:"driver"`
-	Subnet string `json:"subnet"`
-	Scope  string `json:"scope"`
+	ID     string `json:"id"`     // 网络 ID
+	Name   string `json:"name"`   // 网络名称
+	Driver string `json:"driver"` // 驱动类型（bridge/overlay/host）
+	Subnet string `json:"subnet"` // 子网 CIDR
+	Scope  string `json:"scope"`  // 作用域（local/swarm）
 }
 
 // NetworkContainerInfo 网络中的容器信息，保持前端稳定响应结构。
@@ -58,11 +58,11 @@ type NetworkDetail struct {
 
 // VolumeInfo Docker 卷信息，保持前端稳定响应结构。
 type VolumeInfo struct {
-	Name       string `json:"name"`
-	Driver     string `json:"driver"`
-	Mountpoint string `json:"mountpoint"`
-	CreatedAt  string `json:"createdAt"`
-	Size       int64  `json:"size"`
+	Name       string `json:"name"`       // 卷名称
+	Driver     string `json:"driver"`     // 驱动类型
+	Mountpoint string `json:"mountpoint"` // 挂载点路径
+	CreatedAt  string `json:"createdAt"`  // 创建时间
+	Size       int64  `json:"size"`       // 卷大小（字节）
 }
 
 // VolumeUsedByContainer 使用卷的容器信息，保持前端稳定响应结构。
