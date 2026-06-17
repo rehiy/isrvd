@@ -516,7 +516,7 @@ export default toNative(NavigationBar)
       </router-link>
     </nav>
 
-    <!-- 底部工具条：GitHub 链接 + 折叠按钮 -->
+    <!-- 底部工具条：GitHub 链接 + API 文档 + 折叠按钮 -->
     <div class="border-t border-slate-200/50 p-3" :class="collapsed ? 'space-y-1' : 'flex items-center gap-2'">
       <a
         href="https://github.com/rehiy/isrvd"
@@ -527,6 +527,16 @@ export default toNative(NavigationBar)
         title="GitHub 仓库"
       >
         <i class="fab fa-github text-base"></i>
+      </a>
+      <a
+        href="openapi/"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn-icon btn-icon-slate"
+        :class="collapsed ? 'w-full h-10' : 'w-10 h-10 flex-shrink-0'"
+        title="API 文档"
+      >
+        <i class="fas fa-code text-base"></i>
       </a>
       <button
         class="btn-icon btn-icon-slate"
