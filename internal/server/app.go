@@ -1,6 +1,9 @@
 package server
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/httpd"
 	"github.com/rehiy/libgo/websocket"
@@ -91,7 +94,6 @@ func StartApp() {
 	app.initServices()
 
 	app.initRoutes()
-	httpd.StaticEmbed(public.Efs, "", "")
 
 	app.watchReload()
 	httpd.Server(config.Server.ListenAddr)
@@ -100,17 +102,30 @@ func StartApp() {
 // initRoutes 注册所有路由，服务可用性由 serviceAvailableMiddleware 动态检查
 func (app *App) initRoutes() {
 	r := app.Group(APINamespace)
+
+	// 全局中间件
 	r.Use(app.wsConfig.CorsMiddleware())
 	r.Use(securityHeadersMiddleware())
 	r.Use(app.serviceAvailableMiddleware())
-	// 中间件按注册顺序执行：Auth 先认证设置 username → Perm 再校验权限 → Audit 最后记录审计
+	// Auth 先认证设置 username → Perm 再校验权限 → Audit 最后记录审计
 	r.Use(AuthMiddleware(app.routeIndex, app.accountSvc))
 	r.Use(PermMiddleware(app.routeIndex, app.accountSvc))
 	r.Use(AuditMiddleware(app.routeIndex, app.auditSvc))
 
+	// 注册所有声明的模块路由
 	for _, route := range app.collectRoutes() {
 		app.registerRoute(r, route)
 	}
+
+	// NoRoute: /api/* 返回 JSON 404，其他路径走静态文件 + SPA fallback
+	staticHandler := httpd.StaticServe(http.FS(public.Efs), "")
+	app.NoRoute(func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, APINamespace) {
+			respondError(c, http.StatusNotFound, "api not found")
+			return
+		}
+		staticHandler(c)
+	})
 }
 
 // collectRoutes 收集所有模块的路由定义
