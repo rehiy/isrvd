@@ -67,28 +67,6 @@ func (s *Service) CheckVersion() *VersionInfo {
 	}
 }
 
-// resolveUpdaterImage 根据 IP 国家代码选择 docker-updater 镜像，带内存缓存。
-// 国家代码为 CN 时使用 CNB 镜像源，其余情况使用默认镜像；探测失败时回退到默认镜像。
-func resolveUpdaterImage() string {
-	countryCacheMu.Lock()
-	defer countryCacheMu.Unlock()
-
-	if cachedUpdaterImage != "" && time.Since(countryCacheTime) < countryCacheDuration {
-		return cachedUpdaterImage
-	}
-
-	image := updaterImageGlobal
-	code, err := request.TextGet(countryCodeURL, request.Header{"User-Agent": "isrvd"})
-	if err != nil {
-		logman.Warn("country code detect failed", "error", err)
-	} else if strings.EqualFold(strings.TrimSpace(code), "CN") {
-		image = updaterImageCN
-	}
-
-	cachedUpdaterImage, countryCacheTime = image, time.Now()
-	return image
-}
-
 // ApplySelfUpgrade 从升级服务器下载最新 tar.gz，提取二进制并替换当前程序
 // 替换成功后由调用方负责延迟重启，确保 HTTP 响应先发出
 func (s *Service) ApplySelfUpgrade() error {
@@ -182,4 +160,26 @@ func fetchLatestTag() (tag, releaseURL string) {
 	}
 
 	return cachedTag, cachedURL
+}
+
+// resolveUpdaterImage 根据 IP 国家代码选择 docker-updater 镜像，带内存缓存。
+// 国家代码为 CN 时使用 CNB 镜像源，其余情况使用默认镜像；探测失败时回退到默认镜像。
+func resolveUpdaterImage() string {
+	countryCacheMu.Lock()
+	defer countryCacheMu.Unlock()
+
+	if cachedUpdaterImage != "" && time.Since(countryCacheTime) < countryCacheDuration {
+		return cachedUpdaterImage
+	}
+
+	image := updaterImageGlobal
+	code, err := request.TextGet(countryCodeURL, request.Header{"User-Agent": "isrvd"})
+	if err != nil {
+		logman.Warn("country code detect failed", "error", err)
+	} else if strings.EqualFold(strings.TrimSpace(code), "CN") {
+		image = updaterImageCN
+	}
+
+	cachedUpdaterImage, countryCacheTime = image, time.Now()
+	return image
 }
