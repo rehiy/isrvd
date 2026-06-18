@@ -88,8 +88,8 @@ export default toNative(Login)
   <div class="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-slate-50 to-slate-100">
     <!-- Background Decoration -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute -top-40 -right-40 w-80 h-80 rounded-3xl bg-primary-300/20 blur-3xl"></div>
-      <div class="absolute -bottom-40 -left-40 w-80 h-80 rounded-3xl bg-primary-300/20 blur-3xl"></div>
+      <div class="absolute -top-40 -right-40 w-80 h-80 rounded-xl bg-primary-300/20 blur-3xl"></div>
+      <div class="absolute -bottom-40 -left-40 w-80 h-80 rounded-xl bg-primary-300/20 blur-3xl"></div>
     </div>
 
     <!-- Login Card -->

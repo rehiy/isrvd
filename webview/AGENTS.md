@@ -374,7 +374,7 @@
 
 | 类 | 用途 | 禁止手写 |
 |---|---|---|
-| `.card` | 页面级主卡片 | `bg-white rounded-2xl shadow-soft border border-slate-200/60` |
+| `.card` | 页面级主卡片 | `bg-white rounded-xl shadow-soft border border-slate-200/60` |
 | `.card-interactive` | 列表交互式卡片（悬停阴影） | `rounded-xl border border-slate-200 bg-white p-4 hover:shadow-sm` |
 | `.card-toolbar` | 页面级卡片顶栏（灰底） | `bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 py-3` |
 | `.card-header` | 小卡片标题栏（widget/模态框内部） | `px-4 py-3 border-b border-slate-100 flex items-center gap-2` |
@@ -388,7 +388,7 @@
 | `.detail-value-mono` | 详情页属性值容器（等宽字体，用于 ID/代码/路径） | `block px-3 py-2 bg-slate-50 rounded-lg text-xs font-mono text-slate-700 break-all` |
 | `.option-card` / `.option-card-inactive` / `.option-card-disabled` / `.option-card-icon` | 单选模式/来源选择卡片 | `text-left rounded-xl border p-3 transition-colors`、`w-8 h-8 rounded-lg flex items-center justify-center` |
 | `.editor-container` | 代码编辑器/内容外层边框 | `rounded-xl overflow-hidden border border-slate-200` |
-| `.modal-card` | 模态框卡片容器 | `bg-white rounded-2xl shadow-2xl border border-slate-200` |
+| `.modal-card` | 模态框卡片容器 | `bg-white rounded-xl shadow-2xl border border-slate-200` |
 
 **2. 图标容器（Icon Container）**
 

@@ -436,7 +436,7 @@ export default toNative(ContainerStats)
         <!-- 核心指标：CPU 和 内存 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- CPU 使用率 -->
-          <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+          <div class="bg-slate-50 rounded-xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
             <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-transparent"></div>
             <div class="flex items-center gap-2 mb-1">
               <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
@@ -458,7 +458,7 @@ export default toNative(ContainerStats)
           </div>
 
           <!-- 内存使用 -->
-          <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+          <div class="bg-slate-50 rounded-xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
             <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-transparent"></div>
             <div class="flex items-center gap-2 mb-1">
               <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
@@ -480,7 +480,7 @@ export default toNative(ContainerStats)
         <!-- I/O 指标卡片 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- 网络 I/O -->
-          <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+          <div class="bg-slate-50 rounded-xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
             <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-400 to-transparent"></div>
             <div class="flex items-center gap-2 mb-1">
               <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
@@ -502,7 +502,7 @@ export default toNative(ContainerStats)
           </div>
 
           <!-- 硬盘 I/O -->
-          <div class="bg-slate-50 rounded-2xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+          <div class="bg-slate-50 rounded-xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
             <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-transparent"></div>
             <div class="flex items-center gap-2 mb-1">
               <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
@@ -525,7 +525,7 @@ export default toNative(ContainerStats)
         </div>
 
         <!-- 进程信息 -->
-        <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200/60 relative overflow-hidden">
+        <div class="bg-slate-50 rounded-xl p-5 border border-slate-200/60 relative overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-rose-400 to-transparent"></div>
           <div class="flex items-center gap-2 mb-4">
             <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center">

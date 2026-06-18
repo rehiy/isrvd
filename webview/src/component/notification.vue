@@ -33,7 +33,7 @@ export default toNative(NotificationManager)
         leave-from-class="opacity-100 translate-x-0"
         leave-to-class="opacity-0 translate-x-4"
       >
-        <div v-for="item in portal.notifications" :key="item.id" :class="['flex items-center px-5 py-4 rounded-2xl min-w-80 animate-slide-down', notificationStyle(item.type)]">
+        <div v-for="item in portal.notifications" :key="item.id" :class="['flex items-center px-5 py-4 rounded-xl min-w-80 animate-slide-down', notificationStyle(item.type)]">
           <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mr-3">
             <i :class="['fas', notificationIcon(item.type)]"></i>
           </div>
