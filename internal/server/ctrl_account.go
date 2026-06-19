@@ -269,7 +269,7 @@ func (app *App) accountMemberCreate(c *gin.Context) {
 	}
 	if err := app.accountSvc.MemberCreate(req); err != nil {
 		switch {
-		case errors.Is(err, svcAccount.ErrInvalidRequest), errors.Is(err, svcAccount.ErrMemberExists):
+		case errors.Is(err, svcAccount.ErrInvalidRequest), errors.Is(err, svcAccount.ErrMemberExists), errors.Is(err, svcAccount.ErrPasswordRequired):
 			respondError(c, http.StatusBadRequest, err.Error())
 		default:
 			respondError(c, http.StatusInternalServerError, err.Error())

@@ -40,6 +40,7 @@ type THAConfig struct {
 // OIDC 登陆配置
 type OIDCConfig struct {
 	Enabled       bool     `yaml:"enabled" json:"enabled"`                     // 是否启用 OIDC 登录
+	Only          bool     `yaml:"only" json:"only"`                           // 是否仅允许 OIDC 交互式登录
 	IssuerURL     string   `yaml:"issuerUrl" json:"issuerUrl"`                 // OIDC 提供者 Issuer 地址
 	ClientID      string   `yaml:"clientId" json:"clientId"`                   // OIDC 客户端 ID
 	ClientSecret  string   `yaml:"clientSecret" json:"clientSecret,omitempty"` // 写入时为空表示保留原值；响应时不返回

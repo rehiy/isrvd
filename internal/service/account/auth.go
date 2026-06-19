@@ -37,6 +37,7 @@ type AuthInfoResponse struct {
 	Username       string      `json:"username,omitempty"` // 当前登录用户名（未登录时为空）
 	Member         *MemberInfo `json:"member,omitempty"`   // 成员详细信息
 	OIDCEnabled    bool        `json:"oidcEnabled"`        // 是否启用 OIDC 登录
+	OIDCOnly       bool        `json:"oidcOnly"`           // 是否仅允许 OIDC 交互式登录
 	OIDCBtnLabel   string      `json:"oidcBtnLabel"`       // OIDC 登录按钮文案
 	PasskeyEnabled bool        `json:"passkeyEnabled"`     // 是否启用 Passkey 登录
 }
@@ -48,12 +49,14 @@ func (s *Service) AuthInfo(username string) *AuthInfoResponse {
 		mode = "header"
 	}
 	oidcEnabled := mode == "jwt" && config.OIDC.Enabled && config.OIDC.IssuerURL != "" && config.OIDC.ClientID != ""
+	oidcOnly := oidcEnabled && s.OIDCOnly()
 	resp := &AuthInfoResponse{
 		Mode:           mode,
 		Username:       username,
 		Member:         s.MemberInspect(username),
 		OIDCEnabled:    oidcEnabled,
-		PasskeyEnabled: s.PasskeyEnabled(),
+		OIDCOnly:       oidcOnly,
+		PasskeyEnabled: !oidcOnly && s.PasskeyEnabled(),
 	}
 	if oidcEnabled {
 		resp.OIDCBtnLabel = config.OIDC.LoginLabel
@@ -79,6 +82,9 @@ type LoginResponse struct {
 
 // Login 校验用户名密码并签发 JWT Token
 func (s *Service) Login(req LoginRequest) (*LoginResponse, error) {
+	if s.OIDCOnly() {
+		return nil, fmt.Errorf("仅允许 OIDC 登录")
+	}
 	member, exists := config.Members[req.Username]
 	if !exists || !secure.BcryptVerify(req.Password, member.Password) {
 		logman.Warn("Login failed", "username", req.Username)
@@ -99,6 +105,11 @@ func (s *Service) Login(req LoginRequest) (*LoginResponse, error) {
 	}
 	logman.Info("User logged in", "username", req.Username)
 	return resp, nil
+}
+
+// OIDCOnly 返回当前是否仅允许 OIDC 交互式登录。
+func (s *Service) OIDCOnly() bool {
+	return config.OIDC != nil && config.OIDC.Enabled && config.OIDC.Only
 }
 
 // IssueLoginToken 为已存在成员签发登录 JWT Token

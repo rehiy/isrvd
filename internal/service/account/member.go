@@ -17,6 +17,7 @@ var (
 	ErrMemberNotFound   = errors.New("成员不存在")
 	ErrMemberExists     = errors.New("用户名已存在")
 	ErrInvalidRequest   = errors.New("用户名不能为空")
+	ErrPasswordRequired = errors.New("密码不能为空")
 	ErrFounderProtected = errors.New("创始人不可修改或删除")
 	ErrPasskeyNotFound  = errors.New("凭证不存在")
 )
@@ -69,6 +70,9 @@ func (s *Service) MemberCreate(req MemberUpsertRequest) error {
 	}
 	if _, exists := config.Members[req.Username]; exists {
 		return ErrMemberExists
+	}
+	if req.Password == "" && !s.OIDCOnly() {
+		return ErrPasswordRequired
 	}
 
 	home, err := s.homeDirEnsure(req.HomeDirectory, req.Username)

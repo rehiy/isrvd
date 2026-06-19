@@ -85,6 +85,10 @@ class MemberEditModal extends Vue {
         return this.isEdit ? '编辑成员' : '新建成员'
     }
 
+    get passwordRequired() {
+        return !this.isEdit && !this.portal.oidcOnly
+    }
+
     // ─── 方法 ───
     async loadRoutes() {
         if (this.routeGroups.length > 0) return
@@ -235,7 +239,7 @@ class MemberEditModal extends Vue {
 
     async handleConfirm() {
         if (!this.formData.username?.trim()) return
-        if (!this.isEdit && !this.formData.password?.trim()) {
+        if (this.passwordRequired && !this.formData.password?.trim()) {
             this.portal.showNotification('warning', '请填写登录密码')
             return
         }
@@ -271,10 +275,12 @@ export default toNative(MemberEditModal)
       <div>
         <label class="form-label">
           密码
-          <span v-if="!isEdit" class="text-red-500">*</span>
-          <span v-else class="text-slate-400 font-normal">(留空则保持不变)</span>
+          <span v-if="passwordRequired" class="text-red-500">*</span>
+          <span v-else-if="isEdit" class="text-slate-400 font-normal">(留空则保持不变)</span>
+          <span v-else class="text-slate-400 font-normal">(可选)</span>
         </label>
-        <input v-model="formData.password" type="password" :placeholder="isEdit ? '留空则保持不变' : '请输入登录密码'" class="input" autocomplete="new-password" />
+        <input v-model="formData.password" type="password" :placeholder="passwordRequired ? '请输入登录密码' : '留空则保持不变'" class="input" autocomplete="new-password" />
+        <p v-if="portal.oidcOnly && !isEdit" class="mt-1 text-xs text-slate-400">仅 OIDC 登录模式下可留空，成员用于匹配 OIDC 用户和授权。</p>
       </div>
       <div>
         <label class="form-label">家目录 <span class="text-slate-400 font-normal">(可选)</span></label>

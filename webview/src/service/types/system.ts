@@ -34,6 +34,7 @@ export interface THAConfig {
 
 export interface OIDCConfig {
     enabled: boolean
+    only: boolean
     issuerUrl: string
     clientId: string
     // 写入时为空表示保留原值（不通过 JSON 返回）

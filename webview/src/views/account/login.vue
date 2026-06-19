@@ -103,7 +103,7 @@ export default toNative(Login)
         </div>
 
         <!-- Form -->
-        <form class="space-y-5" @submit.prevent="handleLogin">
+        <form v-if="!portal.oidcOnly" class="space-y-5" @submit.prevent="handleLogin">
           <div>
             <label for="username" class="form-label">
               用户名
@@ -167,6 +167,13 @@ export default toNative(Login)
             </div>
           </template>
         </form>
+
+        <div v-else class="space-y-4">
+          <button v-if="portal.oidcEnabled" type="button" class="btn btn-indigo w-full" @click="handleOIDCLogin">
+            <i class="fas fa-id-badge mr-2"></i>
+            {{ portal.oidcLoginLabel || '使用 OIDC 登录' }}
+          </button>
+        </div>
       </div>
 
       <!-- Footer -->

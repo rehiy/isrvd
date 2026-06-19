@@ -77,6 +77,9 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 
 // ConfigUpdate 一次性更新全部配置（任何 nil 分区将跳过）
 func (s *ConfigService) ConfigUpdate(req AllConfig) error {
+	if err := validateAuthConfig(req); err != nil {
+		return err
+	}
 	if req.Server != nil {
 		oldSecret := ""
 		if config.Server != nil {
@@ -173,4 +176,25 @@ func pickSecret(newVal, oldVal string) string {
 		return oldVal
 	}
 	return newVal
+}
+
+func validateAuthConfig(req AllConfig) error {
+	tha := config.THA
+	if req.THA != nil {
+		tha = config.THANormalize(req.THA)
+	}
+	oidc := config.OIDC
+	if req.OIDC != nil {
+		oidc = config.OIDCNormalize(req.OIDC)
+	}
+	if oidc == nil || !oidc.Only {
+		return nil
+	}
+	if !oidc.Enabled || strings.TrimSpace(oidc.IssuerURL) == "" || strings.TrimSpace(oidc.ClientID) == "" {
+		return fmt.Errorf("仅 OIDC 登录需要先启用 OIDC 并配置 issuerUrl 和 clientId")
+	}
+	if tha != nil && tha.Enabled {
+		return fmt.Errorf("仅 OIDC 登录不能与代理 Header 登录同时启用")
+	}
+	return nil
 }

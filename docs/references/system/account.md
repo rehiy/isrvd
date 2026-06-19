@@ -27,6 +27,7 @@ isrvd_post "/account/login" '{"username":"<USER>","password":"<PASS>","totpCode"
 | totpCode | string | TOTP 二次验证码；仅账号启用 TOTP 且密码登录时需要 |
 
 > 通常使用 `isrvd_login` 命令而非直接调用此接口。启用 TOTP 后可使用 `isrvd_login <base_url> <username> <password> <totpCode>`，或使用已创建的 API Token。
+> 当系统配置 `oidc.only=true` 时，该接口会拒绝账号密码登录，请使用 OIDC 登录入口。
 
 ## OIDC 登录
 
@@ -46,6 +47,7 @@ isrvd_post "/account/oidc/exchange" '{"code":"<OIDC_CODE>"}'
 返回：`{"token": "eyJ...", "username": "<USER>"}`
 
 > OIDC 提取的用户名由 `oidc.usernameClaim` 指定，默认 `sub`，必须存在于 `members.username`；不存在时与代理 Header 登录一致，登录失败且不会自动创建成员。一次性 `oidc_code` 是短期凭证，勿复制或写入外部日志；代理 Header 登录模式下不显示 OIDC 登录入口。
+> `oidc.only=true` 时仅禁用账号密码和 Passkey 交互式登录；OIDC 登录成功后仍签发系统 JWT，成员权限和 API Token 能力保持不变。
 
 ## 列出路由权限
 
@@ -128,6 +130,8 @@ isrvd_get "/account/members"
 isrvd_post "/account/member" '{"username":"<USER>","password":"<PASS>","homeDirectory":"<HOME_DIR>","description":"<DESC>","permissions":["GET /api/docker/containers","GET /api/docker/images"]}'
 ```
 
+> `oidc.only=true` 时 `password` 可留空，成员仍用于匹配 OIDC 用户、授权和设置家目录；普通登录模式下新建成员必须提供密码。
+
 ## 更新成员
 
 ```bash
@@ -143,6 +147,8 @@ isrvd_delete "/account/member/<USER>"
 ```
 
 ## Passkey 登录（无需认证）
+
+> 当系统配置 `oidc.only=true` 时，Passkey 登录接口会拒绝登录，请使用 OIDC 登录入口。
 
 ```bash
 # 开始登录（username 为空则使用可发现凭证）

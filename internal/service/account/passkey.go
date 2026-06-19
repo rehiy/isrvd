@@ -213,6 +213,9 @@ func (s *Service) PasskeyFinishRegistration(c *gin.Context, sessionID string) er
 
 // PasskeyBeginLogin 开始 Passkey 登录，username 为空则使用可发现凭证
 func (s *Service) PasskeyBeginLogin(username string) (*PasskeyBeginData, error) {
+	if s.OIDCOnly() {
+		return nil, fmt.Errorf("仅允许 OIDC 登录")
+	}
 	if !s.PasskeyEnabled() {
 		return nil, fmt.Errorf("Passkey 未启用")
 	}
@@ -248,6 +251,9 @@ func (s *Service) PasskeyBeginLogin(username string) (*PasskeyBeginData, error) 
 
 // PasskeyFinishLogin 完成 Passkey 登录，直接从 c.Request 读取凭证数据
 func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginResponse, error) {
+	if s.OIDCOnly() {
+		return nil, fmt.Errorf("仅允许 OIDC 登录")
+	}
 	session := s.passkeyStore.pop(sessionID)
 	if session == nil {
 		return nil, fmt.Errorf("登录会话不存在或已过期")

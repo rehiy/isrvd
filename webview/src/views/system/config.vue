@@ -24,7 +24,7 @@ class Config extends Vue {
   allowedOriginsText = ''
   tha: THAConfig = { enabled: false, headerName: '', trustedCIDRs: [] }
   thaTrustedCIDRsText = ''
-  oidc: OIDCConfig = { enabled: false, issuerUrl: '', clientId: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'], loginLabel: '' }
+  oidc: OIDCConfig = { enabled: false, only: false, issuerUrl: '', clientId: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'], loginLabel: '' }
   oidcScopes = 'openid profile email'
   passkey: PasskeyConfig = { enabled: false, rpName: '', rpId: '', rpOrigins: [], timeout: 60000 }
   passkeyOriginsText = ''
@@ -62,7 +62,7 @@ class Config extends Vue {
       this.allowedOriginsText = (this.server.allowedOrigins || []).join('\n')
       this.tha = { ...payload.tha }
       this.thaTrustedCIDRsText = (this.tha.trustedCIDRs || []).join('\n')
-      this.oidc = { ...(payload.oidc || { enabled: false, issuerUrl: '', clientId: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'], loginLabel: '' }) }
+      this.oidc = payload.oidc ? { ...payload.oidc, only: payload.oidc.only || false } : { enabled: false, only: false, issuerUrl: '', clientId: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'], loginLabel: '' }
       this.oidcScopes = (this.oidc.scopes || []).join(' ')
       this.passkey = { ...(payload.passkey || { enabled: false, rpName: '', rpId: '', rpOrigins: [], timeout: 60000 }) }
       this.passkeyOriginsText = (this.passkey.rpOrigins || []).join('\n')
@@ -292,6 +292,7 @@ export default toNative(Config)
               </div>
             </div>
             <ToggleCard v-model="oidc.enabled" label="启用 OIDC 登录" desc="使用 OpenID Connect 进行单点登录" />
+            <ToggleCard v-model="oidc.only" label="仅允许 OIDC 登录" desc="开启后禁用账号密码和 Passkey 登录入口，OIDC 登录后仍使用系统权限和 JWT" />
             <div>
               <label class="form-label">颁发者地址</label>
               <input v-model="oidc.issuerUrl" type="text" placeholder="请输入颁发者地址" class="input" />

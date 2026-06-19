@@ -58,7 +58,7 @@ isrvd_get "/system/config"
 |------|------|------|
 | server | object | `{listenAddr, rootDirectory, maxUploadSize, allowedOrigins, jwtExpiration, debug, openapi}`（jwtSecret 不返回，写入时位于 JWT 配置项；`openapi`=是否对外提供 `/openapi/` 文档，默认 false） |
 | tha | object | `{enabled, headerName, trustedCIDRs}`（代理 Header 登录配置） |
-| oidc | object | `{enabled, issuerUrl, clientId, redirectUrl, usernameClaim, scopes, loginLabel}`（clientSecret 不返回） |
+| oidc | object | `{enabled, only, issuerUrl, clientId, redirectUrl, usernameClaim, scopes, loginLabel}`（clientSecret 不返回） |
 | passkey | object | `{enabled, rpName, rpId, rpOrigins, timeout}` |
 | agent | object | `{model, baseUrl}`（apiKey 不返回） |
 | apisix | object | `{adminUrl}`（adminKey 不返回） |
@@ -84,6 +84,7 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 - `oidc.redirectUrl` 生产环境建议显式配置固定 HTTPS 地址；留空会按当前请求 Host 自动生成，适合本地开发。
 - `oidc.usernameClaim` 默认 `sub`；如改用 `email`，需确保 IdP 已验证邮箱且本地 `members.username` 与邮箱完全一致。
 - `oidc.loginLabel` 自定义 OIDC 登录按钮显示名称；留空则使用默认文案"使用 OIDC 登录"。
+- `oidc.only` 开启后仅允许 OIDC 交互式登录，账号密码登录和 Passkey 登录入口会被禁用；OIDC 登录成功后仍签发系统 JWT，成员权限和 API Token 能力保持不变。开启前必须同时启用 `oidc.enabled` 并配置 `oidc.issuerUrl`、`oidc.clientId`，且不能与代理 Header 登录同时启用。
 
 ---
 

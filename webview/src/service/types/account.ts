@@ -5,6 +5,7 @@ export interface AuthInfo {
     username?: string
     member?: MemberInfo
     oidcEnabled: boolean
+    oidcOnly: boolean
     // OIDC 登录按钮自定义名称
     oidcBtnLabel?: string
     passkeyEnabled: boolean

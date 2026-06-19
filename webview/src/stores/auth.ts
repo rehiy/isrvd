@@ -13,6 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
     const founder = ref(false)
     const permissions = ref<string[]>([])
     const oidcEnabled = ref(false)
+    const oidcOnly = ref(false)
     const oidcLoginLabel = ref('')
     const passkeyEnabled = ref(false)
 
@@ -60,6 +61,7 @@ export const useAuthStore = defineStore('auth', () => {
 
         // OIDC / Passkey 配置无论登录状态都更新（放在 clearAuth 之后）
         oidcEnabled.value = auth?.oidcEnabled || false
+        oidcOnly.value = auth?.oidcOnly || false
         oidcLoginLabel.value = auth?.oidcBtnLabel || ''
         passkeyEnabled.value = auth?.passkeyEnabled || false
     }
@@ -84,6 +86,7 @@ export const useAuthStore = defineStore('auth', () => {
         founder,
         permissions,
         oidcEnabled,
+        oidcOnly,
         oidcLoginLabel,
         passkeyEnabled,
         // 操作
