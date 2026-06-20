@@ -144,7 +144,7 @@ export default toNative(ServiceInfo)
     </div>
 
     <!-- 内容 -->
-    <div v-else class="card-body space-y-6 text-sm">
+    <div v-else class="card-body space-y-4 text-sm">
       <!-- 基本信息 -->
       <div>
         <h2 class="section-title">基本信息</h2>

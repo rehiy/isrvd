@@ -284,13 +284,13 @@ export default toNative(AuditLogs)
           </div>
 
           <!-- 方法 + URI -->
-          <div class="flex items-start gap-2 mb-3">
+          <div class="card-prop-row-start">
             <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium font-mono flex-shrink-0" :class="methodClass(log.method)">{{ log.method }}</span>
             <code class="text-xs text-slate-700 font-mono truncate">{{ log.uri }}</code>
           </div>
 
           <!-- Body -->
-          <div v-if="log.body" class="flex items-center gap-2 mb-3">
+          <div v-if="log.body" class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">Body</span>
             <button class="flex items-center gap-1 min-w-0" @click="showDetail(log)">
               <code class="text-xs text-slate-600 font-mono truncate">{{ formatBody(log.body) }}</code>
@@ -321,7 +321,7 @@ export default toNative(AuditLogs)
         </div>
       </template>
       <div class="editor-container">
-        <Codemirror :model-value="detailBody" :style="{ height: '50vh' }" :extensions="jsonExtensions" :disabled="true" />
+        <Codemirror :model-value="detailBody" class="h-[50vh]" :extensions="jsonExtensions" :disabled="true" />
       </div>
     </BaseModal>
   </div>

@@ -304,13 +304,13 @@ export default toNative(Containers)
               <span v-if="isCompose(ct)" class="badge badge-warning" :title="composeBadgeTitle(ct)">Compose</span>
             </div>
             <!-- 创建时间 -->
-            <div class="flex items-center gap-2 mb-3">
+            <div class="card-prop-row">
               <span class="text-xs text-slate-400 flex-shrink-0">创建时间</span>
               <span class="text-xs text-slate-500">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</span>
             </div>
 
             <!-- 端口信息 -->
-            <div v-if="ct.ports && ct.ports.length > 0" class="flex items-start gap-2 mb-3">
+            <div v-if="ct.ports && ct.ports.length > 0" class="card-prop-row-start">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">端口</span>
               <div class="flex flex-wrap gap-1">
                 <code v-for="port in ct.ports" :key="port" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-mono bg-slate-100 text-slate-600">{{ port }}</code>

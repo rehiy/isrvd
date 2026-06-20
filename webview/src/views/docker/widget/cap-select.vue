@@ -4,7 +4,7 @@ import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 import Combobox from '@/component/combobox.vue'
 
 interface CapItem { name: string; desc: string }
-interface CapCategory { name: string; icon: string; color: string; tone: string; caps: CapItem[] }
+interface CapCategory { name: string; icon: string; tone: string; caps: CapItem[] }
 
 @Component({
     components: { Combobox },
@@ -15,7 +15,7 @@ class CapSelect extends Vue {
 
     readonly capabilityCategories: CapCategory[] = [
         {
-            name: '网络', icon: 'fa-network-wired', color: '#3b82f6', tone: 'blue',
+            name: '网络', icon: 'fa-network-wired', tone: 'blue',
             caps: [
                 { name: 'NET_ADMIN', desc: '网络管理（配置接口、路由等）' },
                 { name: 'NET_BIND_SERVICE', desc: '绑定 1024 以下端口' },
@@ -24,7 +24,7 @@ class CapSelect extends Vue {
             ]
         },
         {
-            name: '文件系统', icon: 'fa-folder-open', color: '#10b981', tone: 'emerald',
+            name: '文件系统', icon: 'fa-folder-open', tone: 'emerald',
             caps: [
                 { name: 'DAC_OVERRIDE', desc: '绕过文件读写执行权限检查' },
                 { name: 'DAC_READ_SEARCH', desc: '绕过文件读和目录搜索权限' },
@@ -35,7 +35,7 @@ class CapSelect extends Vue {
             ]
         },
         {
-            name: '用户与进程', icon: 'fa-user-shield', color: '#8b5cf6', tone: 'violet',
+            name: '用户与进程', icon: 'fa-user-shield', tone: 'violet',
             caps: [
                 { name: 'SETUID', desc: '修改进程 UID' },
                 { name: 'SETGID', desc: '修改进程 GID' },
@@ -46,7 +46,7 @@ class CapSelect extends Vue {
             ]
         },
         {
-            name: '系统控制', icon: 'fa-cogs', color: '#f59e0b', tone: 'amber',
+            name: '系统控制', icon: 'fa-cogs', tone: 'amber',
             caps: [
                 { name: 'SYS_CHROOT', desc: '使用 chroot' },
                 { name: 'SYS_PTRACE', desc: '进程跟踪调试' },
@@ -58,7 +58,7 @@ class CapSelect extends Vue {
             ]
         },
         {
-            name: '设备与内核', icon: 'fa-microchip', color: '#f43f5e', tone: 'rose',
+            name: '设备与内核', icon: 'fa-microchip', tone: 'rose',
             caps: [
                 { name: 'SYS_MODULE', desc: '加载/卸载内核模块' },
                 { name: 'SYS_RAWIO', desc: '原始 I/O 端口访问' },
@@ -104,6 +104,19 @@ class CapSelect extends Vue {
         box: 'bg-slate-500 border-slate-500'
     }
 
+    // tone → 图标颜色 Tailwind class
+    readonly toneIconClass: Record<string, string> = {
+        blue: 'text-blue-500',
+        emerald: 'text-emerald-500',
+        violet: 'text-violet-500',
+        amber: 'text-amber-500',
+        rose: 'text-rose-500'
+    }
+
+    iconColor(tone: string) {
+        return this.toneIconClass[tone] || 'text-slate-400'
+    }
+
     toneFor(capName: string) {
         const cat = this.capIndex[capName]
         return cat ? this.toneMap[cat.tone] : this.fallbackTone
@@ -146,7 +159,7 @@ export default toNative(CapSelect)
     <template #default="{ query, select, selected, isSelected }">
       <div v-for="cat in filteredCategories(query)" :key="cat.name" class="border-b border-slate-100 last:border-0">
         <div class="select-search-header">
-          <i :class="['fas text-xs', cat.icon]" :style="{ color: cat.color }"></i>
+          <i :class="['fas text-xs', cat.icon, iconColor(cat.tone)]"></i>
           <span class="text-xs font-semibold text-slate-600">{{ cat.name }}</span>
           <span class="text-xs text-slate-400">{{ selectedCountIn(cat, selected) }}/{{ cat.caps.length }}</span>
         </div>

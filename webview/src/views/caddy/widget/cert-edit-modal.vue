@@ -161,7 +161,7 @@ export default toNative(CertEditModal)
     <div class="space-y-4 p-1">
       <!-- 来源选择：mode cards，直接平铺 -->
       <div>
-        <label class="block section-title">证书来源</label>
+        <h2 class="section-title">证书来源</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <button v-for="item in sourceCards" :key="item.value" type="button" :class="sourceCardClass(item)" :disabled="isEditMode && formData.source !== item.value" @click="setSource(item.value)">
             <div class="flex items-center gap-2 mb-1">

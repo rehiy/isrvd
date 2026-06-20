@@ -67,7 +67,7 @@ export default toNative(JobLogsModal)
           <i class="fas fa-list-ul text-sm"></i>
         </div>
         <div class="min-w-0">
-          <h2 class="text-base font-semibold text-slate-800 truncate">执行历史</h2>
+          <h1 class="text-lg font-semibold text-slate-800 truncate">执行历史</h1>
           <p class="text-xs text-slate-400 truncate">{{ job?.name }}</p>
         </div>
       </div>

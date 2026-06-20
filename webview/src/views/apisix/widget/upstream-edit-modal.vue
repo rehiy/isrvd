@@ -242,10 +242,10 @@ export default toNative(UpstreamEditModal)
       <div class="rounded-xl border border-slate-200 overflow-hidden">
         <div class="flex items-center justify-between bg-slate-50 px-4 py-3 border-b border-slate-200">
           <div>
-            <h3 class="text-sm font-semibold text-slate-700">节点配置</h3>
+            <h2 class="text-sm font-semibold text-slate-700">节点配置</h2>
             <p class="text-xs text-slate-400 mt-0.5">填写后端服务地址和权重</p>
           </div>
-          <button type="button" class="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-emerald-600 text-xs font-medium flex items-center gap-1" @click="addNode()">
+          <button type="button" class="btn btn-secondary text-xs text-emerald-600" @click="addNode()">
             <i class="fas fa-plus"></i>添加节点
           </button>
         </div>

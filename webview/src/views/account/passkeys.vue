@@ -198,9 +198,9 @@ export default toNative(AccountPasskeys)
               </div>
               <!-- 展示态 -->
               <div v-else class="flex items-center gap-1 group">
-                <h4 class="text-sm font-medium text-slate-800 truncate">
+                <span class="text-sm font-medium text-slate-800 truncate">
                   {{ cred.displayName || 'Passkey #' + cred.idBase64.slice(0, 8) }}
-                </h4>
+                </span>
                 <button
                   v-if="canRename"
                   class="btn-icon btn-icon-slate"

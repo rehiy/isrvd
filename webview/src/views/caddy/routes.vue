@@ -235,19 +235,19 @@ export default toNative(CaddyRoutes)
             </div>
           </div>
 
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">Host</span>
             <span :class="getRouteHosts(route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-xs break-all">{{ getRouteHosts(route) }}</span>
           </div>
-          <div class="flex items-start gap-2 mb-3">
+          <div class="card-prop-row-start">
             <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">Path</span>
             <code class="text-xs font-mono text-slate-700 break-all">{{ getRoutePaths(route) }}</code>
           </div>
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">Method</span>
             <span class="text-xs text-slate-500">{{ getRouteMethods(route) }}</span>
           </div>
-          <div class="flex items-start gap-2 mb-3">
+          <div class="card-prop-row-start">
             <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">后端</span>
             <code :class="getHandlerTagClass(route)" class="inline-block text-xs px-2 py-0.5 rounded-lg font-mono break-all">{{ getHandlerSummary(route) }}</code>
           </div>

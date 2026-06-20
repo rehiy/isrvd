@@ -300,7 +300,7 @@ export default toNative(RouteEditModal)
       <div class="border border-slate-200 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">上游配置</label>
+            <label class="form-label">上游配置</label>
             <p class="text-xs text-slate-400 mt-1">支持直接输入单个上游、引用已有上游或暂不配置上游</p>
           </div>
         </div>

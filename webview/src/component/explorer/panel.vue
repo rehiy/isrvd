@@ -458,11 +458,11 @@ export default toNative(ExplorerPanel)
                 <span v-if="!file.isDir" class="text-xs text-slate-400 truncate block mt-0.5">{{ formatFileSize(file.size) }}</span>
               </div>
             </div>
-            <div class="flex items-center gap-2 mb-3">
+            <div class="card-prop-row">
               <span class="text-xs text-slate-400 flex-shrink-0">修改时间</span>
               <span class="text-xs text-slate-500">{{ formatModTime(file.modTime) }}</span>
             </div>
-            <div class="flex items-start gap-2 mb-3">
+            <div class="card-prop-row-start">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">权限</span>
               <code class="text-xs bg-slate-100 px-2 py-0.5 rounded-lg font-mono text-slate-700">{{ file.mode }}</code>
             </div>

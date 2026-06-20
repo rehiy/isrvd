@@ -227,15 +227,15 @@ export default toNative(CaddyCerts)
             </div>
           </div>
 
-          <div v-if="cert.issuer" class="flex items-center gap-2 mb-3">
+          <div v-if="cert.issuer" class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">签发机构</span>
             <span class="text-xs text-slate-500">{{ cert.issuer }}</span>
           </div>
-          <div v-if="cert.notAfter" class="flex items-center gap-2 mb-3">
+          <div v-if="cert.notAfter" class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">有效期</span>
             <span :class="certExpireClass(cert.notAfter)" class="text-xs">{{ certExpireLabel(cert.notAfter) }}</span>
           </div>
-          <div v-if="cert.tags && cert.tags.length" class="flex items-start gap-2 mb-3">
+          <div v-if="cert.tags && cert.tags.length" class="card-prop-row-start">
             <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">标签</span>
             <span class="flex flex-wrap gap-1">
               <span v-for="tag in cert.tags" :key="tag" class="inline-block text-xs px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600">{{ tag }}</span>

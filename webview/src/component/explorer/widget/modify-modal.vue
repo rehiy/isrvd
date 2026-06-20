@@ -71,7 +71,7 @@ export default toNative(ModifyModal)
 <template>
   <BaseModal v-model="isOpen" :title="'编辑: ' + formData.filename" :loading="loading" @confirm="handleConfirm">
     <div class="editor-container">
-      <Codemirror v-model="formData.content" :style="{ height: '60vh' }" :extensions="extensions" :disabled="loading" />
+      <Codemirror v-model="formData.content" class="h-[60vh]" :extensions="extensions" :disabled="loading" />
     </div>
     <template #confirm-text>{{ loading ? '保存中...' : '保存文件' }}</template>
   </BaseModal>

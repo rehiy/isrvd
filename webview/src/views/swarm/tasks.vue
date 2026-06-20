@@ -218,7 +218,7 @@ export default toNative(Tasks)
             </div>
           </div>
           <!-- 服务 + Slot（关联：Slot 是服务副本编号） -->
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">服务</span>
             <button class="text-xs text-emerald-600 hover:text-emerald-700 hover:underline truncate" @click="goServiceDetail(t.serviceID)">
               {{ t.serviceName || t.serviceID?.slice(0, 12) }}
@@ -228,7 +228,7 @@ export default toNative(Tasks)
             <span class="text-xs text-slate-500">{{ t.slot || '-' }}</span>
           </div>
           <!-- 节点（独立） -->
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">节点</span>
             <button v-if="t.nodeID" class="text-xs text-blue-600 hover:text-blue-700 hover:underline" @click="goNodeDetail(t.nodeID)">
               {{ t.nodeName || t.nodeID.slice(0, 12) }}
@@ -236,12 +236,12 @@ export default toNative(Tasks)
             <span v-else class="text-xs text-slate-400">-</span>
           </div>
           <!-- 消息（与状态关联，紧跟） -->
-          <div v-if="t.err || t.message" class="flex items-start gap-2 mb-3">
+          <div v-if="t.err || t.message" class="card-prop-row-start">
             <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">消息</span>
             <span class="text-xs break-words" :class="t.err ? 'text-red-500' : 'text-slate-500'">{{ t.err || t.message }}</span>
           </div>
           <!-- 更新时间（最后） -->
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">更新</span>
             <span class="text-xs text-slate-500">{{ formatTime(t.updatedAt) }}</span>
           </div>

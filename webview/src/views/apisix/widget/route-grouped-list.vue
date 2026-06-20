@@ -144,7 +144,7 @@ export default toNative(RouteGroupedList)
     </div>
 
     <!-- 桌面端 Host 分组表格视图 -->
-    <div v-else class="hidden md:block overflow-x-auto">
+    <div v-else class="card-table hidden md:block">
       <table class="w-full border-collapse">
         <thead>
           <tr class="bg-slate-50 border-b border-slate-200">
@@ -231,11 +231,11 @@ export default toNative(RouteGroupedList)
               </div>
             </div>
 
-            <div class="flex items-start gap-2 mb-3">
+            <div class="card-prop-row-start">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">URI</span>
               <code class="text-xs font-mono text-slate-700 break-all">{{ getRouteUri(entry.route) }}</code>
             </div>
-            <div class="flex items-start gap-2 mb-3">
+            <div class="card-prop-row-start">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">上游</span>
               <span :class="getRouteUpstreamTagClass(entry.route)" class="inline-block text-xs px-2 py-0.5 rounded-lg font-mono break-all">{{ getRouteUpstreamNodes(entry.route) }}</span>
             </div>

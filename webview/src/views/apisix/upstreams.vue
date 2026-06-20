@@ -240,19 +240,19 @@ export default toNative(Upstreams)
             </div>
           </div>
 
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">策略</span>
             <span class="text-xs text-slate-600">{{ upstream.type || '-' }}</span>
           </div>
-          <div v-if="upstream.type === 'chash' && upstream.key" class="flex items-center gap-2 mb-3">
+          <div v-if="upstream.type === 'chash' && upstream.key" class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">哈希</span>
             <span class="text-xs text-slate-500 break-all">{{ upstream.hash_on }}: {{ upstream.key }}</span>
           </div>
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">节点</span>
             <span class="text-xs text-slate-600 break-all">{{ getUpstreamNodes(upstream) }}</span>
           </div>
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">创建</span>
             <span class="text-xs text-slate-500">{{ formatTs(upstream.create_time) }}</span>
           </div>

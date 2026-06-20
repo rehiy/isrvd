@@ -211,11 +211,11 @@ export default toNative(SSHCredentials)
             </div>
           </div>
 
-          <div class="flex items-start gap-2 mb-3">
+          <div class="card-prop-row-start">
             <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">用户</span>
             <code class="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-lg break-all">{{ cred.user }}</code>
           </div>
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">认证</span>
             <span class="text-xs text-slate-500">
               <span v-if="cred.authType === 'privateKey'"><i class="fas fa-key text-amber-400 mr-1"></i>私钥</span>

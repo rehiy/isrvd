@@ -201,13 +201,13 @@ export default toNative(Volumes)
           </div>
 
           <!-- 挂载点 -->
-          <div class="flex items-start gap-2 mb-3">
+          <div class="card-prop-row-start">
             <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">挂载点</span>
             <code class="font-mono text-xs text-slate-500 break-all" :title="vol.mountpoint">{{ vol.mountpoint }}</code>
           </div>
 
           <!-- 创建时间 -->
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">创建时间</span>
             <span class="text-xs text-slate-500">{{ formatTime(vol.createdAt) }}</span>
           </div>

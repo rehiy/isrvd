@@ -206,7 +206,7 @@ export default toNative(JobEditModal)
       <div>
         <label class="form-label">脚本内容 <span class="text-red-500">*</span></label>
         <div class="editor-container">
-          <Codemirror v-model="formData.content" :style="{ height: '240px' }" :disabled="modalLoading" placeholder="请输入脚本内容" />
+          <Codemirror v-model="formData.content" class="h-60" :disabled="modalLoading" placeholder="请输入脚本内容" />
           <p class="text-xs text-slate-400 mt-1">例如：#!/bin/bash<br>echo "hello"</p>
         </div>
       </div>

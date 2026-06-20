@@ -245,7 +245,7 @@ export default toNative(CaddyBasicAuth)
               <span
                 v-for="user in route.users"
                 :key="user.username"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-cyan-50 text-cyan-800 rounded-lg text-xs"
+                class="badge bg-cyan-50 text-cyan-800 gap-1.5"
               >
                 <i class="fas fa-user text-cyan-500 text-[10px]"></i>
                 <span>{{ user.username }}</span>

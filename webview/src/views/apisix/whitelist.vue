@@ -279,7 +279,7 @@ export default toNative(Whitelist)
           <div class="card-prop-row-start">
             <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">用户</span>
             <div class="flex flex-wrap gap-1.5">
-              <span v-for="consumer in (route.consumers || [])" :key="consumer" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-800 rounded-lg text-xs">
+              <span v-for="consumer in (route.consumers || [])" :key="consumer" class="badge bg-amber-50 text-amber-800 gap-1.5">
                 <i class="fas fa-user text-amber-500 text-[10px]"></i>
                 <span class="break-all">{{ consumer }}</span>
               </span>

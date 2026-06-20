@@ -210,12 +210,12 @@ export default toNative(PluginConfigPanel)
       <div v-if="importRoutePluginsLoading" class="py-5 text-center text-xs text-slate-400"><i class="fas fa-spinner fa-spin mr-1"></i>加载中...</div>
       <div v-else-if="Object.keys(importRoutePlugins).length > 0" class="p-2 space-y-2">
         <div class="max-h-32 overflow-y-auto space-y-0.5">
-          <label v-for="(_, name) in importRoutePlugins" :key="name" class="flex items-center gap-2 text-xs cursor-pointer rounded-lg px-2.5 py-1.5 hover:bg-slate-50 transition-colors">
+          <label v-for="(_, name) in importRoutePlugins" :key="name" class="check-label text-xs rounded-lg px-2.5 py-1.5 hover:bg-slate-50 transition-colors">
             <input type="checkbox" :checked="selectedImportPlugins.has(name)" class="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500" @change="toggleImportPlugin(name)" />
             <span class="text-slate-700">{{ name }}</span>
           </label>
         </div>
-        <button class="w-full py-1.5 text-xs bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium" @click="importPluginsFromRoute">导入选中 {{ selectedImportPlugins.size }} 个插件</button>
+        <button class="btn btn-indigo w-full text-xs" @click="importPluginsFromRoute">导入选中 {{ selectedImportPlugins.size }} 个插件</button>
       </div>
       <div v-else-if="importRouteId" class="py-5 text-center text-xs text-slate-400">该路由没有插件配置</div>
     </div>

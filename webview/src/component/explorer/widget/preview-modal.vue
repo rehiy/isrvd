@@ -122,8 +122,7 @@ export default toNative(PreviewModal)
       v-else-if="previewUrl && previewType === 'pdf'"
       :data="previewUrl"
       type="application/pdf"
-      class="w-full border-0"
-      style="height: calc(100vh - 10rem);"
+      class="w-full border-0 h-[calc(100vh-10rem)]"
     >
       <div class="flex flex-col items-center justify-center gap-3 py-20">
         <div class="empty-state-icon !mb-0">

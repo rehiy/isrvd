@@ -260,19 +260,19 @@ export default toNative(Registries)
               </div>
             </div>
 
-            <div class="flex items-start gap-2 mb-3">
+            <div class="card-prop-row-start">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">地址</span>
               <code class="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded break-all">{{ indexServerAddress || 'https://index.docker.io/v1/' }}</code>
             </div>
             <template v-if="daemonMirrors.length > 0">
-              <div v-for="mirror in daemonMirrors" :key="mirror" class="flex items-center gap-2 mb-3">
+              <div v-for="mirror in daemonMirrors" :key="mirror" class="card-prop-row">
                 <span class="text-xs text-slate-400 flex-shrink-0">加速</span>
                 <code class="text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded truncate flex items-center gap-1">
                   <i class="fas fa-bolt text-sky-400 text-xs"></i>{{ mirror }}
                 </code>
               </div>
             </template>
-            <div class="flex items-center gap-2 mb-3">
+            <div class="card-prop-row">
               <span class="text-xs text-slate-400 flex-shrink-0">认证</span>
               <span class="text-xs text-slate-500"><i class="fas fa-lock-open text-slate-400 mr-1"></i>匿名</span>
             </div>
@@ -292,11 +292,11 @@ export default toNative(Registries)
               </div>
             </div>
 
-            <div class="flex items-start gap-2 mb-3">
+            <div class="card-prop-row-start">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">地址</span>
               <code class="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded truncate">{{ reg.url }}</code>
             </div>
-            <div class="flex items-center gap-2 mb-3">
+            <div class="card-prop-row">
               <span class="text-xs text-slate-400 flex-shrink-0">认证</span>
               <span class="text-xs text-slate-500">
                 <template v-if="reg.username"><i class="fas fa-user text-slate-400 mr-1"></i>{{ reg.username }}</template>

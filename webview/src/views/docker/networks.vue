@@ -219,16 +219,16 @@ export default toNative(Networks)
           </div>
 
           <!-- 驱动 / 范围 -->
-          <div class="flex items-start gap-2 mb-3">
+          <div class="card-prop-row-start">
             <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">驱动</span>
             <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700">{{ net.driver }}</span>
           </div>
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">范围</span>
             <span class="text-xs text-slate-500">{{ net.scope }}</span>
           </div>
 
-          <div class="flex items-start gap-2 mb-3">
+          <div class="card-prop-row-start">
             <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">子网</span>
             <code class="font-mono text-xs text-slate-500">{{ net.subnet || '-' }}</code>
           </div>

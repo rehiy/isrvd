@@ -215,17 +215,17 @@ export default toNative(Members)
             </div>
           </div>
           <!-- 创始人标识 -->
-          <div v-if="m.founder" class="flex items-center gap-2 mb-3">
+          <div v-if="m.founder" class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">身份</span>
             <span class="text-xs text-slate-500"><i class="fas fa-crown text-violet-400 mr-1"></i>创始人</span>
           </div>
           <!-- 家目录 -->
-          <div class="flex items-start gap-2 mb-3">
+          <div class="card-prop-row-start">
             <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">家目录</span>
             <code class="text-xs bg-slate-100 px-2 py-0.5 rounded break-all">{{ m.homeDirectory }}</code>
           </div>
           <!-- 路由权限 -->
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">权限</span>
             <span v-if="m.permissions && m.permissions.length > 0" class="text-xs text-slate-500"><i class="fas fa-key text-amber-400 mr-1"></i>{{ m.permissions.length }} 条</span>
             <span v-else class="text-xs text-slate-400">-</span>

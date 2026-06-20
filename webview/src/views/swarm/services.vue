@@ -246,13 +246,13 @@ export default toNative(Services)
             </div>
 
             <!-- 模式 -->
-            <div class="flex items-center gap-2 mb-3">
+            <div class="card-prop-row">
               <span class="text-xs text-slate-400 flex-shrink-0">模式</span>
               <span class="text-xs text-slate-500 capitalize">{{ svc.mode }}</span>
             </div>
 
             <!-- 副本数 -->
-            <div class="flex items-center gap-2 mb-3">
+            <div class="card-prop-row">
               <span class="text-xs text-slate-400 flex-shrink-0">副本</span>
               <span class="text-xs text-slate-500">
                 <span class="text-emerald-600 font-medium">{{ svc.runningTasks }}</span>
@@ -261,7 +261,7 @@ export default toNative(Services)
             </div>
             
             <!-- 端口信息 -->
-            <div v-if="svc.ports && svc.ports.length" class="flex items-start gap-2 mb-3">
+            <div v-if="svc.ports && svc.ports.length" class="card-prop-row-start">
               <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">端口</span>
               <div class="font-mono text-xs text-slate-500">
                 <div v-for="p in svc.ports" :key="p.publishedPort">{{ p.publishedPort }}:{{ p.targetPort }}/{{ p.protocol }}</div>
@@ -269,7 +269,7 @@ export default toNative(Services)
             </div>
 
             <!-- 更新时间 -->
-            <div class="flex items-center gap-2 mb-3">
+            <div class="card-prop-row">
               <span class="text-xs text-slate-400 flex-shrink-0">更新</span>
               <span class="text-xs text-slate-500">{{ svc.updatedAt?.slice(0, 16).replace('T', ' ') }}</span>
             </div>

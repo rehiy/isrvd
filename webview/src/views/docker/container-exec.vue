@@ -84,8 +84,7 @@ class ContainerTerminal extends Vue {
         this.dragStartHeight = this.fileHeight
         document.addEventListener('mousemove', this.onDragMove)
         document.addEventListener('mouseup', this.onDragEnd)
-        document.body.style.cursor = 'row-resize'
-        document.body.style.userSelect = 'none'
+        document.body.classList.add('drag-resizing')
     }
 
     onDragMove(e: MouseEvent) {
@@ -104,8 +103,7 @@ class ContainerTerminal extends Vue {
     cleanupDrag() {
         document.removeEventListener('mousemove', this.onDragMove)
         document.removeEventListener('mouseup', this.onDragEnd)
-        document.body.style.cursor = ''
-        document.body.style.userSelect = ''
+        document.body.classList.remove('drag-resizing')
     }
 }
 

@@ -229,11 +229,11 @@ export default toNative(SSLs)
             <span :class="getStatusClass(ssl)" class="text-xs flex-shrink-0">{{ getStatusText(ssl) }}</span>
           </div>
 
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">SNI</span>
             <span class="text-xs text-slate-500 break-all">{{ getSNISummary(ssl) }}</span>
           </div>
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">更新</span>
             <span class="text-xs text-slate-500">{{ formatTs(ssl.update_time || ssl.create_time) }}</span>
           </div>

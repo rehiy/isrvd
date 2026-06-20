@@ -101,7 +101,7 @@ export default toNative(CaddyRaw)
     <div v-if="loading" class="card-body"><div class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div></div>
     <div v-else class="card-body space-y-3">
       <div class="editor-container">
-        <Codemirror v-model="raw" :style="{ height: '65vh' }" :extensions="extensions" />
+        <Codemirror v-model="raw" class="h-[65vh]" :extensions="extensions" />
       </div>
       <p class="text-xs text-slate-400 flex items-start gap-1">
         <i class="fas fa-circle-info mt-0.5 flex-shrink-0"></i>

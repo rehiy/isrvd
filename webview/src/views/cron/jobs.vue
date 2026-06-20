@@ -284,23 +284,23 @@ export default toNative(CronJobs)
           </div>
 
           <div class="text-xs">
-            <div class="flex items-start gap-2 mb-3">
+            <div class="card-prop-row-start">
               <span class="w-20 flex-shrink-0 text-slate-400">执行计划</span>
               <code class="min-w-0 text-slate-700 font-mono truncate">{{ job.schedule }}</code>
             </div>
-            <div class="flex items-start gap-2 mb-3">
+            <div class="card-prop-row-start">
               <span class="w-20 flex-shrink-0 text-slate-400">类型</span>
               <span class="min-w-0 text-slate-600 font-mono truncate">{{ job.type }}</span>
             </div>
-            <div class="flex items-start gap-2 mb-3">
+            <div class="card-prop-row-start">
               <span class="w-20 flex-shrink-0 text-slate-400">下次执行</span>
               <span class="min-w-0 text-slate-600 truncate">{{ formatTime(job.nextRun) }}</span>
             </div>
-            <div class="flex items-start gap-2 mb-3">
+            <div class="card-prop-row-start">
               <span class="w-20 flex-shrink-0 text-slate-400">上次执行</span>
               <span class="min-w-0 text-slate-600 truncate">{{ formatTime(job.lastRun) }}</span>
             </div>
-            <div v-if="job.description" class="flex items-start gap-2 mb-3">
+            <div v-if="job.description" class="card-prop-row-start">
               <span class="w-20 flex-shrink-0 text-slate-400">描述</span>
               <span class="min-w-0 text-slate-600 break-words">{{ job.description }}</span>
             </div>

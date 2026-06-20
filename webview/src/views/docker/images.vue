@@ -370,7 +370,7 @@ export default toNative(Images)
           </div>
 
           <!-- 标签 -->
-          <div v-if="img.repoTags && img.repoTags.length > 0" class="flex items-start gap-2 mb-3">
+          <div v-if="img.repoTags && img.repoTags.length > 0" class="card-prop-row-start">
             <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">标签</span>
             <div class="flex flex-wrap gap-1">
               <span v-for="(tag, idx) in img.repoTags" :key="idx" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-mono bg-blue-50 text-blue-600">{{ tag }}</span>
@@ -378,12 +378,12 @@ export default toNative(Images)
           </div>
 
           <!-- 创建时间 -->
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">创建时间</span>
             <span class="text-xs text-slate-500">{{ formatTime(new Date(img.created * 1000).toISOString()) }}</span>
           </div>
           <!-- 大小 -->
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">大小</span>
             <span class="text-xs text-slate-500">{{ formatFileSize(img.size) }}</span>
           </div>

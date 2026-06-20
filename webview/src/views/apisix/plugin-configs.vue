@@ -227,14 +227,14 @@ export default toNative(PluginConfigs)
             </div>
           </div>
 
-          <div class="flex items-start gap-2 mb-3">
+          <div class="card-prop-row-start">
             <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">插件</span>
             <div v-if="getPluginNames(config).length > 0" class="flex flex-wrap gap-1">
               <span v-for="name in getPluginNames(config)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded-lg text-xs">{{ name }}</span>
             </div>
             <span v-else class="text-xs text-slate-400">未配置</span>
           </div>
-          <div class="flex items-center gap-2 mb-3">
+          <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">创建</span>
             <span class="text-xs text-slate-500">{{ formatTs(config.create_time) }}</span>
           </div>

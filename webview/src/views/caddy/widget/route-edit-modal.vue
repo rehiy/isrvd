@@ -682,11 +682,11 @@ export default toNative(RouteEditModal)
                 <p class="form-label">路径前后缀裁剪 <span class="text-slate-400 font-normal">（可选）</span></p>
                 <div class="grid grid-cols-2 gap-3 mt-1">
                   <div>
-                    <label class="text-xs text-slate-500 mb-1 block">去掉前缀</label>
+                    <label class="form-label">去掉前缀</label>
                     <input v-model="formData.proxyStripPathPrefix" type="text" class="input font-mono text-sm" placeholder="如 /api" />
                   </div>
                   <div>
-                    <label class="text-xs text-slate-500 mb-1 block">去掉后缀</label>
+                    <label class="form-label">去掉后缀</label>
                     <input v-model="formData.proxyStripPathSuffix" type="text" class="input font-mono text-sm" placeholder="如 .php" />
                   </div>
                 </div>
@@ -696,11 +696,11 @@ export default toNative(RouteEditModal)
                 <p class="form-label">子串查找替换 <span class="text-slate-400 font-normal">（可选）</span></p>
                 <div class="grid grid-cols-2 gap-3 mt-1">
                   <div>
-                    <label class="text-xs text-slate-500 mb-1 block">查找</label>
+                    <label class="form-label">查找</label>
                     <input v-model="formData.proxyUriSubstringFind" type="text" class="input font-mono text-sm" placeholder="如 /old" />
                   </div>
                   <div>
-                    <label class="text-xs text-slate-500 mb-1 block">替换为</label>
+                    <label class="form-label">替换为</label>
                     <input v-model="formData.proxyUriSubstringReplace" type="text" class="input font-mono text-sm" placeholder="如 /new" />
                   </div>
                 </div>

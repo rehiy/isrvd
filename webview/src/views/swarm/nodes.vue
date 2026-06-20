@@ -250,17 +250,17 @@ export default toNative(Nodes)
               <span :class="n.state === 'ready' ? 'text-emerald-600 font-medium' : n.state === 'down' ? 'text-red-500 font-medium' : 'text-slate-500'" class="text-xs capitalize">{{ n.state }}</span>
             </div>
             <!-- 可用性（调度状态，独立） -->
-            <div class="flex items-center gap-2 mb-3">
+            <div class="card-prop-row">
               <span class="text-xs text-slate-400 flex-shrink-0">可用性</span>
               <span :class="n.availability === 'active' ? 'text-emerald-600' : n.availability === 'drain' ? 'text-amber-600' : 'text-slate-500'" class="text-xs capitalize">{{ n.availability }}</span>
             </div>
             <!-- IP 地址（独立） -->
-            <div class="flex items-center gap-2 mb-3">
+            <div class="card-prop-row">
               <span class="text-xs text-slate-400 flex-shrink-0">IP 地址</span>
               <span class="text-xs text-slate-600 font-mono">{{ n.addr || '-' }}</span>
             </div>
             <!-- 引擎版本（独立） -->
-            <div class="flex items-center gap-2 mb-3">
+            <div class="card-prop-row">
               <span class="text-xs text-slate-400 flex-shrink-0">引擎版本</span>
               <span class="text-xs text-slate-500">{{ n.engineVersion || '-' }}</span>
             </div>

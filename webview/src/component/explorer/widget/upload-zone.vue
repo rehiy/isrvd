@@ -82,5 +82,5 @@ export default toNative(UploadZone)
 </script>
 
 <template>
-  <span style="display:none"></span>
+  <span class="hidden"></span>
 </template>
