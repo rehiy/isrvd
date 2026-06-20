@@ -6,11 +6,13 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { DockerContainerInfo } from '@/service/types'
 
-import * as ContainerLogsStream from '@/helper/container-logs'
-
 const MAX_LOG_LENGTH = 300000
 
 type StreamState = 'snapshot' | 'connecting' | 'streaming'
+
+function streamUrl(path: string) {
+    return new URL(`api/${path.replace(/^\/+/, '')}`, window.location.href).toString()
+}
 
 @Component
 class ContainerLogs extends Vue {
@@ -24,6 +26,7 @@ class ContainerLogs extends Vue {
     logContent = ''
     logTail = '100'
     streamState: StreamState = 'snapshot'
+    private source: EventSource | null = null
 
     get containerId() {
         return this.$route.params.id as string
@@ -66,24 +69,33 @@ class ContainerLogs extends Vue {
         this.logLoading = false
         this.logContent = ''
         this.streamState = 'connecting'
-        ContainerLogsStream.create(this.portal.token ?? '', this.containerId, this.logTail, {
-            onOpen: () => {
-                this.streamState = 'streaming'
-            },
-            onMessage: (data: string) => this.appendLog(data),
-            onError: (msg: string) => {
-                ContainerLogsStream.destroy()
-                this.streamState = 'snapshot'
-                this.portal.showNotification('error', msg || '实时日志连接失败')
-            },
-            onClose: () => {
-                this.streamState = 'snapshot'
-            }
+
+        // 清理旧 source，但不重置 streamState（保持 connecting 使 UI 正确显示 spinner）
+        this.source?.close()
+        this.source = null
+
+        const params = new URLSearchParams({ token: this.portal.token ?? '', tail: this.logTail })
+        const url = streamUrl(`docker/container/${encodeURIComponent(this.containerId)}/logs/stream?${params.toString()}`)
+        this.source = new EventSource(url)
+        this.source.onopen = () => {
+            this.streamState = 'streaming'
+        }
+        this.source.onmessage = event => this.appendLog(event.data)
+        this.source.addEventListener('error', event => {
+            const msg = (event as MessageEvent).data ?? ''
+            this.stopStream()
+            this.portal.showNotification('error', msg || '实时日志连接失败')
         })
+        this.source.onerror = () => {
+            if (this.source?.readyState === EventSource.CLOSED) {
+                this.stopStream()
+            }
+        }
     }
 
     stopStream() {
-        ContainerLogsStream.destroy()
+        this.source?.close()
+        this.source = null
         this.streamState = 'snapshot'
     }
 
