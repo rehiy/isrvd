@@ -30,7 +30,7 @@ export const systemInstruction = `
 
 ### Caddy 服务器（/caddy）
 - 路由：CRUD（支持反向代理/文件服务/静态响应/原始 handle 链式组合）
-- TLS 证书：CRUD（磁盘文件/内联 PEM/自动签发）
+- SSL 证书：CRUD（磁盘文件/内联 PEM/自动签发）
 - 全局配置：Admin/日志/端口/优雅关闭，支持获取/整体替换原始 JSON 配置
 
 ### 系统管理（/system）
@@ -111,7 +111,7 @@ const PAGE_INSTRUCTIONS: Array<{ test: (path: string) => boolean; desc: string }
     },
     {
         test: p => p.includes('/caddy/certs'),
-        desc: '当前页面：Caddy TLS 证书管理。支持磁盘文件、内联 PEM、自动签发三种来源，可新建、编辑、删除证书。',
+        desc: '当前页面：Caddy SSL 证书管理。支持磁盘文件、内联 PEM、自动签发三种来源，可新建、编辑、删除证书。',
     },
     {
         test: p => p.includes('/caddy/config'),

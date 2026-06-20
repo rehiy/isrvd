@@ -126,7 +126,7 @@ export default toNative(CaddyCerts)
       <div class="hidden md:flex items-center justify-between">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-cyan-500"><i class="fas fa-certificate text-white"></i></div>
-          <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">TLS 证书</h1><p class="text-xs text-slate-500 truncate">管理 Caddy 证书来源：文件、PEM、自动签发；已签发证书只读</p></div>
+          <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">SSL 证书</h1><p class="text-xs text-slate-500 truncate">管理 Caddy 证书来源：文件、PEM、自动签发；已签发证书只读</p></div>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
           <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="请输入搜索关键词..." focus-color="cyan" type-to-search />
@@ -139,7 +139,7 @@ export default toNative(CaddyCerts)
         <div class="flex items-center gap-3 min-w-0 flex-1">
           <div class="page-icon bg-cyan-500"><i class="fas fa-certificate text-white"></i></div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">TLS 证书</h1>
+            <h1 class="text-lg font-semibold text-slate-800 truncate">SSL 证书</h1>
             <p class="text-xs text-slate-500 truncate">管理证书来源</p>
           </div>
         </div>

@@ -14,9 +14,9 @@ import (
 	pkgCaddy "isrvd/pkgs/caddy"
 )
 
-// ─── TLS 证书 CRUD ───
+// ─── SSL 证书 CRUD ───
 
-// CertForm TLS 证书统一编辑模型
+// CertForm SSL 证书统一编辑模型
 //
 // 通过 Source 区分四种来源：
 //   - file：load_files，Certificate/KeyContent 为磁盘文件路径

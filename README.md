@@ -15,7 +15,7 @@
 | AI 助手 | 内置 Agent，支持自然语言操作，兼容 OpenAI API 的 LLM 接入 |
 | 计划任务 | 定时任务调度，支持 Shell/BAT/PowerShell/Docker 执行模式，执行历史查看 |
 | APISIX | 路由、Consumer、上游(Upstream)、SSL 证书、插件配置(PluginConfig)、插件列表、白名单管理 |
-| Caddy | 路由、TLS 证书、全局选项管理，支持原始配置编辑 |
+| Caddy | 路由、SSL 证书、全局选项管理，支持原始配置编辑 |
 | Docker | 容器、镜像、网络、卷、镜像仓库管理，容器日志(实时流式)、资源统计、终端接入、镜像构建/推送/拉取 |
 | Swarm | 集群信息、节点、服务、任务管理，服务日志、强制更新、加入令牌管理 |
 | Compose | 文件编辑、Docker Compose / Swarm Stack 部署与重部署 |

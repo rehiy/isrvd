@@ -17,7 +17,7 @@ class CaddyOverview extends Vue {
     readonly statCards = [
         { key: 'servers', label: 'Server 数',  icon: 'fa-server',         bgColor: 'bg-indigo-500' },
         { key: 'routes',  label: '路由总数',   icon: 'fa-route',          bgColor: 'bg-orange-500' },
-        { key: 'certs',   label: 'TLS 证书',   icon: 'fa-lock',           bgColor: 'bg-cyan-500' },
+        { key: 'certs',   label: 'SSL 证书',   icon: 'fa-lock',           bgColor: 'bg-cyan-500' },
         { key: 'hasTls',  label: 'TLS 启用',   icon: 'fa-certificate',    bgColor: 'bg-emerald-500' },
     ]
 

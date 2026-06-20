@@ -1,4 +1,4 @@
-# Caddy TLS 证书 API
+# Caddy SSL 证书 API
 
 > Caddy 证书有 4 种来源：`file`（`apps.tls.certificates.load_files`）、`pem`（`apps.tls.certificates.load_pem`）、`automate`（`apps.tls.automation.policies[].subjects`）、`cached`（Caddy 运行时已签发证书缓存）。
 > 后端用复合主键 `<source>-<index>` 统一定位可管理证书（例如 `file-0`、`pem-1`、`automate-2`）；`cached` 为只读运行时证书，不支持编辑/删除。

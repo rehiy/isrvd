@@ -93,7 +93,7 @@ export default toNative(CertDetailModal)
           <i class="fas fa-certificate text-white"></i>
         </div>
         <div class="min-w-0">
-          <h1 class="text-lg font-semibold text-slate-800 truncate">TLS 证书详情</h1>
+          <h1 class="text-lg font-semibold text-slate-800 truncate">SSL 证书详情</h1>
           <p class="text-xs text-slate-500 truncate">{{ certSummary(cert) }}</p>
         </div>
       </div>
