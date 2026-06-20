@@ -252,11 +252,11 @@ export default toNative(Containers)
                     <button v-if="portal.hasPerm('GET /api/docker/container/:id')" class="btn-icon btn-icon-slate" title="详情" @click="$router.push({ path: '/docker/container/' + ct.id })">
                       <i class="fas fa-circle-info text-xs"></i>
                     </button>
-                    <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/stats')" class="btn-icon btn-icon-indigo" title="统计" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats' })">
-                      <i class="fas fa-chart-line text-xs"></i>
-                    </button>
                     <button v-if="portal.hasPerm('GET /api/docker/container/:id/logs')" class="btn-icon btn-icon-slate" title="日志" @click="$router.push({ path: '/docker/container/' + ct.id + '/logs' })">
                       <i class="fas fa-file-lines text-xs"></i>
+                    </button>
+                    <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/stats')" class="btn-icon btn-icon-indigo" title="统计" @click="$router.push({ path: '/docker/container/' + ct.id + '/stats' })">
+                      <i class="fas fa-chart-line text-xs"></i>
                     </button>
                     <button v-if="ct.state === 'running' && portal.hasPerm('GET /api/docker/container/:id/exec')" class="btn-icon btn-icon-teal" title="登录终端" @click="$router.push({ path: '/docker/container/' + ct.id + '/exec' })">
                       <i class="fas fa-terminal text-xs"></i>
