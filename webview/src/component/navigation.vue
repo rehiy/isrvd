@@ -321,7 +321,7 @@ export default toNative(NavigationBar)
               :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/whitelist') }"
             >
               <i class="fas fa-shield-halved"></i>
-              <span>白名单</span>
+              <span>访问授权</span>
             </router-link>
             <router-link v-if="portal.hasPerm('GET /api/apisix/ssls')" to="/apisix/ssls" class="nav-link" :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/apisix/ssl') }">
               <i class="fas fa-certificate"></i>

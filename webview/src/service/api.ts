@@ -350,7 +350,7 @@ class ApiService {
         return http.delete<void>(`apisix/consumer/${username}`)
     }
 
-    // 白名单管理
+    // 访问授权管理
     apisixWhitelistInspect() {
         return http.get<ApisixRoute[]>('apisix/whitelist')
     }

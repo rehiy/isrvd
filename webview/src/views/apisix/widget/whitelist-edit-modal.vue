@@ -42,7 +42,7 @@ class WhitelistEditModal extends Vue {
     }
 
     get modalTitle() {
-        return this.isEdit ? '编辑路由白名单' : '配置路由白名单'
+        return this.isEdit ? '编辑路由访问授权' : '配置路由访问授权'
     }
 
     get confirmText() {
@@ -133,8 +133,8 @@ class WhitelistEditModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.formData.routeId) return this.portal.showNotification('error', '请选择要配置白名单的路由')
-        if (this.whitelistConsumers.length === 0) return this.portal.showNotification('error', '白名单用户不能为空')
+        if (!this.formData.routeId) return this.portal.showNotification('error', '请选择要配置访问授权的路由')
+        if (this.whitelistConsumers.length === 0) return this.portal.showNotification('error', '授权用户不能为空')
         if (!this.formData.keyAuthHeader.trim()) return this.portal.showNotification('error', 'key-auth 请求头名称不能为空')
 
         this.modalLoading = true
@@ -144,7 +144,7 @@ class WhitelistEditModal extends Vue {
                 consumers: this.whitelistConsumers,
                 key_auth: this.keyAuthConfig,
             })
-            this.portal.showNotification('success', this.isEdit ? '白名单更新成功' : '白名单配置成功')
+            this.portal.showNotification('success', this.isEdit ? '访问授权更新成功' : '访问授权配置成功')
             this.isOpen = false
             this.$emit('success')
         } catch (e: unknown) {
@@ -171,7 +171,7 @@ export default toNative(WhitelistEditModal)
       <div v-else>
         <label class="form-label">路由 <span class="text-red-500">*</span></label>
         <select v-model="formData.routeId" class="input">
-          <option value="">请选择未配置白名单的路由</option>
+          <option value="">请选择未配置访问授权的路由</option>
           <option v-for="route in selectableRoutes" :key="route.id" :value="route.id">
             {{ getRouteLabel(route) }}
           </option>
@@ -179,11 +179,11 @@ export default toNative(WhitelistEditModal)
         <p v-if="selectedRoute" class="text-xs text-slate-400 mt-1">
           保存后会为所选路由配置 key-auth 和 consumer-restriction.whitelist 插件
         </p>
-        <p v-else class="text-xs text-slate-400 mt-1">仅展示尚未配置 consumer-restriction 白名单的路由</p>
+        <p v-else class="text-xs text-slate-400 mt-1">仅展示尚未配置访问授权的路由</p>
       </div>
 
       <div v-if="!isEdit && selectableRoutes.length === 0" class="rounded-lg border border-amber-100 bg-amber-50/50 px-3 py-2 text-xs text-amber-700">
-        暂无可配置白名单的路由
+        暂无可配置访问授权的路由
       </div>
 
       <div class="space-y-3">
@@ -208,7 +208,7 @@ export default toNative(WhitelistEditModal)
 
       <div class="space-y-3">
         <div>
-          <label class="form-label">白名单用户 <span class="text-red-500">*</span></label>
+          <label class="form-label">授权用户 <span class="text-red-500">*</span></label>
           <Combobox
             :model-value="whitelistConsumers"
             multiple

@@ -190,7 +190,7 @@
 </td>
 ```
 
-图标配色跟随资源页主色（图标背景通常用 `400` 色阶，toolbar 用 `500` 色阶）：Docker 容器 `emerald/slate`（按状态）、镜像 `blue`、网络 `purple`、数据卷 `amber`、仓库 `purple`；Swarm 节点 `blue`、服务 `emerald`、任务 `cyan`；APISIX 路由 `indigo`、上游 `emerald`、消费者 `violet`、SSL `cyan`、插件配置 `rose`、白名单 `amber`；Caddy 路由 `indigo`、证书 `cyan`、全局配置 `violet`、原始配置 `slate`；Compose `amber`、Cron `amber/violet`、用户 `blue`、Filer `primary`。新模块选未用色（`rose`/`cyan`/`lime` 等）
+图标配色跟随资源页主色（图标背景通常用 `400` 色阶，toolbar 用 `500` 色阶）：Docker 容器 `emerald/slate`（按状态）、镜像 `blue`、网络 `purple`、数据卷 `amber`、仓库 `purple`；Swarm 节点 `blue`、服务 `emerald`、任务 `cyan`；APISIX 路由 `indigo`、上游 `emerald`、消费者 `violet`、SSL `cyan`、插件配置 `rose`、访问授权 `amber`；Caddy 路由 `indigo`、证书 `cyan`、全局配置 `violet`、原始配置 `slate`；Compose `amber`、Cron `amber/violet`、用户 `blue`、Filer `primary`。新模块选未用色（`rose`/`cyan`/`lime` 等）
 
 #### 1.9.1 状态文字颜色（强制）
 

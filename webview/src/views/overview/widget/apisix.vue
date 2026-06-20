@@ -20,7 +20,7 @@ class ApisixOverview extends Vue {
         { key: 'upstreams',     label: '上游总数',   icon: 'fa-server',        bgColor: 'bg-emerald-500' },
         { key: 'pluginConfigs', label: '插件配置',   icon: 'fa-puzzle-piece', bgColor: 'bg-rose-500' },
         { key: 'ssl',           label: 'SSL 证书',   icon: 'fa-lock',          bgColor: 'bg-cyan-500' },
-        { key: 'whitelist',     label: '白名单授权', icon: 'fa-shield-halved', bgColor: 'bg-emerald-500' },
+        { key: 'whitelist',     label: '访问授权', icon: 'fa-shield-halved', bgColor: 'bg-emerald-500' },
     ]
 
     // ─── 方法 ───

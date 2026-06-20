@@ -24,10 +24,10 @@ func (app *App) defineApisixRoutes() []Route {
 		{Method: "POST", Path: "/apisix/consumer", Handler: app.apisixConsumerCreate, Module: "apisix", Label: "创建 APISIX 消费者"},
 		{Method: "PUT", Path: "/apisix/consumer/:username", Handler: app.apisixConsumerUpdate, Module: "apisix", Label: "更新 APISIX 消费者"},
 		{Method: "DELETE", Path: "/apisix/consumer/:username", Handler: app.apisixConsumerDelete, Module: "apisix", Label: "删除 APISIX 消费者"},
-		// 白名单
-		{Method: "GET", Path: "/apisix/whitelist", Handler: app.apisixWhitelistInspect, Module: "apisix", Label: "查询 APISIX 白名单"},
-		{Method: "POST", Path: "/apisix/whitelist", Handler: app.apisixWhitelistCreate, Module: "apisix", Label: "配置 APISIX 路由白名单"},
-		{Method: "POST", Path: "/apisix/whitelist/user", Handler: app.apisixWhitelistUserCreate, Module: "apisix", Label: "新建用户并加入 APISIX 白名单"},
+		// 访问授权
+		{Method: "GET", Path: "/apisix/whitelist", Handler: app.apisixWhitelistInspect, Module: "apisix", Label: "查询 APISIX 访问授权"},
+		{Method: "POST", Path: "/apisix/whitelist", Handler: app.apisixWhitelistCreate, Module: "apisix", Label: "配置 APISIX 路由访问授权"},
+		{Method: "POST", Path: "/apisix/whitelist/user", Handler: app.apisixWhitelistUserCreate, Module: "apisix", Label: "新建用户并加入 APISIX 访问授权"},
 		// PluginConfig 管理
 		{Method: "GET", Path: "/apisix/plugin-configs", Handler: app.apisixPluginConfigList, Module: "apisix", Label: "查询 APISIX 插件配置列表"},
 		{Method: "GET", Path: "/apisix/plugin-config/:id", Handler: app.apisixPluginConfigInspect, Module: "apisix", Label: "获取 APISIX 插件配置详情"},
@@ -192,7 +192,7 @@ func (app *App) apisixWhitelistCreate(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "白名单配置成功", result)
+	respondSuccess(c, "访问授权配置成功", result)
 }
 
 func (app *App) apisixWhitelistUserCreate(c *gin.Context) {
@@ -206,7 +206,7 @@ func (app *App) apisixWhitelistUserCreate(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "用户创建并加入白名单成功", result)
+	respondSuccess(c, "用户创建并加入访问授权成功", result)
 }
 
 func (app *App) apisixPluginConfigList(c *gin.Context) {

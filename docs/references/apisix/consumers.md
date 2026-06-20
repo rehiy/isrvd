@@ -1,4 +1,4 @@
-# APISIX Consumer 与白名单 API
+# APISIX Consumer 与访问授权 API
 
 ## Consumer 字段
 
@@ -34,19 +34,19 @@ isrvd_delete "/apisix/consumer/<USERNAME>"
 
 ---
 
-## 白名单
+## 访问授权
 
-### 获取白名单
+### 获取访问授权
 
 ```bash
 isrvd_get "/apisix/whitelist"
 ```
 
-返回含 key-auth + consumer-restriction 的路由列表，`consumers` 字段标识白名单消费者。
+返回含 key-auth + consumer-restriction 的路由列表，`consumers` 字段标识授权消费者。
 
-### 配置/更新路由白名单
+### 配置/更新路由访问授权
 
-该接口既用于首次配置路由白名单，也用于更新已有白名单的用户列表和路由侧 `key-auth` 参数。
+该接口既用于首次配置路由访问授权，也用于更新已有授权的用户列表和路由侧 `key-auth` 参数。
 
 如需加入不存在的 Consumer，请先创建 Consumer：
 
@@ -54,7 +54,7 @@ isrvd_get "/apisix/whitelist"
 isrvd_post "/apisix/consumer" '{"username":"<NEW_USERNAME>","plugins":{"key-auth":{"key":"<AUTH_KEY>"}}}'
 ```
 
-再配置路由白名单：
+再配置路由访问授权：
 
 ```bash
 isrvd_post "/apisix/whitelist" '{"route_id":"<ROUTE_ID>","consumers":["<USERNAME>","<NEW_USERNAME>"],"key_auth":{"header":"token","query":"token","hide_credentials":false}}'
@@ -65,7 +65,7 @@ isrvd_post "/apisix/whitelist" '{"route_id":"<ROUTE_ID>","consumers":["<USERNAME
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | route_id | string | 已存在的 APISIX Route ID，不能为空 |
-| consumers | string[] | 已存在的白名单 Consumer 用户名列表，不能为空 |
+| consumers | string[] | 已存在的授权 Consumer 用户名列表，不能为空 |
 | key_auth | object | 写入路由的 `key-auth` 插件配置，不能为空 |
 
 `key_auth` 字段：
@@ -76,11 +76,11 @@ isrvd_post "/apisix/whitelist" '{"route_id":"<ROUTE_ID>","consumers":["<USERNAME
 | query | string | URL 查询认证参数名，可选 |
 | hide_credentials | boolean | 是否在转发到上游前隐藏认证凭据 |
 
-该接口会按请求体中的 `key_auth` 写入路由侧 `key-auth` 插件，并用 `consumers` 覆盖写入 `consumer-restriction.whitelist`，用于把已有路由纳入 Consumer 白名单管控或更新已有白名单配置。接口只负责配置路由白名单，不会创建 Consumer；`consumers` 中的用户必须已存在，如需新增用户应先调用 `/apisix/consumer` 创建并配置 `key-auth.key`。
+该接口会按请求体中的 `key_auth` 写入路由侧 `key-auth` 插件，并用 `consumers` 覆盖写入 `consumer-restriction.whitelist`，用于把已有路由纳入 Consumer 访问授权管控或更新已有授权配置。接口只负责配置路由访问授权，不会创建 Consumer；`consumers` 中的用户必须已存在，如需新增用户应先调用 `/apisix/consumer` 创建并配置 `key-auth.key`。
 
-### 新建用户并加入白名单（原子接口）
+### 新建用户并加入访问授权（原子接口）
 
-一次性完成「创建 Consumer + 配置 key-auth + 加入路由白名单」三步操作，若 Consumer 已存在则直接复用（幂等）：
+一次性完成「创建 Consumer + 配置 key-auth + 加入路由访问授权」三步操作，若 Consumer 已存在则直接复用（幂等）：
 
 ```bash
 isrvd_post "/apisix/whitelist/user" '{"route_id":"<ROUTE_ID>","username":"<USERNAME>","key":"<AUTH_KEY>","key_auth":{"header":"token","query":"token","hide_credentials":false}}'

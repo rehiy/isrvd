@@ -89,7 +89,7 @@ export default toNative(CaddyBasicAuth)
           </div>
           <div>
             <h1 class="text-lg font-semibold text-slate-800 truncate">基础认证</h1>
-            <p class="text-xs text-slate-500">管理路由的 HTTP Basic 认证账号</p>
+            <p class="text-xs text-slate-500">基于用户名 + 密码的路由 HTTP Basic 认证</p>
           </div>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
