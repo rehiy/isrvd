@@ -67,7 +67,7 @@ export default toNative(ServiceLogs)
             <i class="fas fa-cubes text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">{{ serviceName || '服务详情' }}</h1>
+            <h1 class="text-lg font-semibold text-slate-800">{{ serviceName || '服务日志' }}</h1>
             <p class="text-xs text-slate-600 font-mono truncate max-w-xs">{{ serviceId }}</p>
           </div>
         </div>
@@ -80,6 +80,13 @@ export default toNative(ServiceLogs)
               <i class="fas fa-file-lines"></i><span>日志</span>
             </button>
           </div>
+          <select v-model="logsTail" class="w-28 select-sm" @change="loadLogs()">
+            <option value="50">显示 50 行</option>
+            <option value="100">显示 100 行</option>
+            <option value="200">显示 200 行</option>
+            <option value="500">显示 500 行</option>
+            <option value="1000">显示 1000 行</option>
+          </select>
           <button class="btn btn-secondary" @click="loadLogs()">
             <i class="fas fa-rotate"></i>刷新
           </button>
@@ -93,13 +100,22 @@ export default toNative(ServiceLogs)
               <i class="fas fa-cubes text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">{{ serviceName || '服务详情' }}</h1>
+              <h1 class="text-lg font-semibold text-slate-800 truncate">{{ serviceName || '服务日志' }}</h1>
               <p class="text-xs text-slate-600 font-mono truncate">{{ serviceId.slice(0, 12) }}</p>
             </div>
           </div>
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadLogs()">
-            <i class="fas fa-rotate text-sm"></i>
-          </button>
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <select v-model="logsTail" class="select-sm" @change="loadLogs()">
+              <option value="50">50 行</option>
+              <option value="100">100 行</option>
+              <option value="200">200 行</option>
+              <option value="500">500 行</option>
+              <option value="1000">1000 行</option>
+            </select>
+            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadLogs()">
+              <i class="fas fa-rotate text-sm"></i>
+            </button>
+          </div>
         </div>
         <div class="tab-group">
           <button v-if="portal.hasPerm('GET /api/swarm/service/:id')" :class="['tab-btn', activeTab() === 'swarm-service' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('swarm-service')">
@@ -112,23 +128,13 @@ export default toNative(ServiceLogs)
       </div>
     </div>
 
-    <!-- 内容 -->
+    <!-- 内容区域 -->
     <div class="card-body space-y-3">
-      <div class="flex items-center gap-2">
-        <label class="text-xs text-slate-500 flex-shrink-0">最近行数</label>
-        <select v-model="logsTail" class="w-24 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-700" @change="loadLogs()">
-          <option value="50">50</option>
-          <option value="100">100</option>
-          <option value="200">200</option>
-          <option value="500">500</option>
-          <option value="1000">1000</option>
-        </select>
-      </div>
       <div v-if="logsLoading" class="empty-state">
         <div class="w-12 h-12 spinner mb-3"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
-      <pre v-else-if="logsContent.length > 0" class="bg-slate-900 text-slate-100 rounded-xl p-3 md:p-4 text-xs font-mono overflow-auto max-h-[600px] whitespace-pre-wrap break-all">{{ logsContent.join('') }}</pre>
+      <pre v-else-if="logsContent.length > 0" class="bg-slate-900 text-slate-100 rounded-xl p-3 md:p-4 text-xs font-mono whitespace-pre-wrap break-all">{{ logsContent.join('') }}</pre>
       <div v-else class="empty-state">
         <div class="empty-state-icon">
           <i class="fas fa-file-lines text-2xl text-slate-300"></i>

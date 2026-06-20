@@ -19,6 +19,14 @@ class ContainerDetail extends Vue {
         return this.$route.params.id as string
     }
 
+    activeTab() {
+        return this.$route.name
+    }
+
+    switchTab(name: string) {
+        this.$router.push({ name, params: { id: this.containerId } })
+    }
+
     get portEntries() {
         if (!this.detail?.ports) return []
         return Object.entries(this.detail.ports)
@@ -90,25 +98,41 @@ export default toNative(ContainerDetail)
           </div>
         </div>
         <div class="flex items-center gap-2">
+          <div class="tab-group">
+            <button v-if="portal.hasPerm('GET /api/docker/container/:id')" :class="['tab-btn', activeTab() === 'docker-container' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('docker-container')">
+              <i class="fas fa-circle-info"></i><span>详情</span>
+            </button>
+            <button v-if="portal.hasPerm('GET /api/docker/container/:id/logs')" :class="['tab-btn', activeTab() === 'docker-container-logs' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('docker-container-logs')">
+              <i class="fas fa-file-lines"></i><span>日志</span>
+            </button>
+          </div>
           <button class="btn btn-secondary" :disabled="loading" @click="loadDetail">
             <i class="fas fa-rotate"></i>刷新
           </button>
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
-          <div :class="['page-icon flex-shrink-0', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
-            <i class="fas fa-cube text-white text-sm"></i>
+      <div class="block md:hidden">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div :class="['page-icon flex-shrink-0', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+              <i class="fas fa-cube text-white text-sm"></i>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
+              <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
+            </div>
           </div>
-          <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
-            <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
           <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" :disabled="loading" @click="loadDetail">
             <i class="fas fa-rotate text-sm"></i>
+          </button>
+        </div>
+        <div class="tab-group">
+          <button v-if="portal.hasPerm('GET /api/docker/container/:id')" :class="['tab-btn', activeTab() === 'docker-container' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('docker-container')">
+            <i class="fas fa-circle-info"></i><span>详情</span>
+          </button>
+          <button v-if="portal.hasPerm('GET /api/docker/container/:id/logs')" :class="['tab-btn', activeTab() === 'docker-container-logs' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('docker-container-logs')">
+            <i class="fas fa-file-lines"></i><span>日志</span>
           </button>
         </div>
       </div>

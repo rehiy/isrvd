@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -15,8 +15,6 @@ type StreamState = 'snapshot' | 'connecting' | 'streaming'
 class ContainerLogs extends Vue {
     portal = usePortal()
 
-    @Ref readonly logRef!: HTMLPreElement
-
     // ─── 数据属性 ───
     container: DockerContainerInfo | null = null
     logLoading = false
@@ -27,6 +25,15 @@ class ContainerLogs extends Vue {
 
     get containerId() {
         return this.$route.params.id as string
+    }
+
+    activeTab() {
+        return this.$route.name
+    }
+
+    switchTab(name: string) {
+        this.stopStream()
+        this.$router.push({ name, params: { id: this.containerId } })
     }
 
     get streamActive() {
@@ -110,12 +117,13 @@ class ContainerLogs extends Vue {
         if (this.logContent.length > MAX_LOG_LENGTH) {
             this.logContent = this.logContent.slice(-MAX_LOG_LENGTH)
         }
-        this.$nextTick(() => this.scrollToBottom())
-    }
-
-    scrollToBottom() {
-        if (!this.logRef) return
-        this.logRef.scrollTop = this.logRef.scrollHeight
+        // 仅在用户已滚到底部附近（100px 内）时才自动追尾，避免打断手动上翻查看历史
+        const nearBottom = document.body.scrollHeight - window.scrollY - window.innerHeight < 100
+        if (nearBottom) {
+            this.$nextTick(() => requestAnimationFrame(() => {
+                window.scrollTo({ top: document.body.scrollHeight })
+            }))
+        }
     }
 
     // ─── 生命周期 ───
@@ -132,42 +140,50 @@ export default toNative(ContainerLogs)
 </script>
 
 <template>
-  <div class="h-[calc(100vh-100px)]">
-    <div class="h-full card flex flex-col overflow-hidden">
-      <!-- Toolbar -->
-      <div class="card-toolbar">
-        <!-- 桌面端 -->
-        <div class="hidden md:flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
-              <i class="fas fa-file-lines text-white text-sm"></i>
-            </div>
-            <div>
-              <h1 class="text-lg font-semibold text-slate-800">容器日志</h1>
-              <p class="text-xs text-slate-500 font-mono truncate max-w-xs">{{ container ? `${container.name || container.id} · ${container.image}` : '加载中...' }}</p>
-            </div>
+  <div class="card">
+    <!-- Toolbar -->
+    <div class="card-toolbar">
+      <!-- 桌面端 -->
+      <div class="hidden md:flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
+            <i class="fas fa-file-lines text-white text-sm"></i>
           </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
-            <select v-model="logTail" class="w-28 select-sm" @change="handleTailChange">
-              <option value="50">显示 50 行</option>
-              <option value="100">显示 100 行</option>
-              <option value="200">显示 200 行</option>
-              <option value="500">显示 500 行</option>
-              <option value="1000">显示 1000 行</option>
-            </select>
-            <button class="btn btn-secondary" :disabled="streamActive" @click="loadLogs">
-              <i class="fas fa-rotate"></i>刷新
-            </button>
-            <button v-if="!streamActive && portal.hasPerm('GET /api/docker/container/:id/logs/stream')" class="btn btn-emerald" @click="startStream">
-              <i class="fas fa-play"></i>实时
-            </button>
-            <button v-else-if="streamActive" class="btn btn-secondary" @click="stopStream">
-              <i :class="streamState === 'connecting' ? 'fas fa-spinner fa-spin' : 'fas fa-stop'"></i>停止
-            </button>
+          <div>
+            <h1 class="text-lg font-semibold text-slate-800">容器日志</h1>
+            <p class="text-xs text-slate-500 font-mono truncate max-w-xs">{{ container ? `${container.name || container.id} · ${container.image}` : '加载中...' }}</p>
           </div>
         </div>
-        <!-- 移动端 -->
-        <div class="flex md:hidden items-center justify-between">
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="tab-group">
+            <button v-if="portal.hasPerm('GET /api/docker/container/:id')" :class="['tab-btn', activeTab() === 'docker-container' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('docker-container')">
+              <i class="fas fa-circle-info"></i><span>详情</span>
+            </button>
+            <button v-if="portal.hasPerm('GET /api/docker/container/:id/logs')" :class="['tab-btn', activeTab() === 'docker-container-logs' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('docker-container-logs')">
+              <i class="fas fa-file-lines"></i><span>日志</span>
+            </button>
+          </div>
+          <select v-model="logTail" class="w-28 select-sm" @change="handleTailChange">
+            <option value="50">显示 50 行</option>
+            <option value="100">显示 100 行</option>
+            <option value="200">显示 200 行</option>
+            <option value="500">显示 500 行</option>
+            <option value="1000">显示 1000 行</option>
+          </select>
+          <button class="btn btn-secondary" :disabled="streamActive" @click="loadLogs">
+            <i class="fas fa-rotate"></i>刷新
+          </button>
+          <button v-if="!streamActive && portal.hasPerm('GET /api/docker/container/:id/logs/stream')" class="btn btn-emerald" @click="startStream">
+            <i class="fas fa-play"></i>实时
+          </button>
+          <button v-else-if="streamActive" class="btn btn-secondary" @click="stopStream">
+            <i :class="streamState === 'connecting' ? 'fas fa-spinner fa-spin' : 'fas fa-stop'"></i>停止
+          </button>
+        </div>
+      </div>
+      <!-- 移动端 -->
+      <div class="block md:hidden">
+        <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-3 min-w-0 flex-1">
             <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
               <i class="fas fa-file-lines text-white text-sm"></i>
@@ -196,21 +212,29 @@ export default toNative(ContainerLogs)
             </button>
           </div>
         </div>
+        <div class="tab-group">
+          <button v-if="portal.hasPerm('GET /api/docker/container/:id')" :class="['tab-btn', activeTab() === 'docker-container' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('docker-container')">
+            <i class="fas fa-circle-info"></i><span>详情</span>
+          </button>
+          <button v-if="portal.hasPerm('GET /api/docker/container/:id/logs')" :class="['tab-btn', activeTab() === 'docker-container-logs' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('docker-container-logs')">
+            <i class="fas fa-file-lines"></i><span>日志</span>
+          </button>
+        </div>
       </div>
+    </div>
 
-      <!-- 内容区域 -->
-      <div class="flex-1 flex flex-col overflow-hidden p-3 md:p-4">
-        <div v-if="logLoading" class="empty-state flex-1">
-          <div class="w-12 h-12 spinner mb-3"></div>
-          <p class="text-slate-500">加载中...</p>
+    <!-- 内容区域 -->
+    <div class="card-body space-y-3">
+      <div v-if="logLoading" class="empty-state">
+        <div class="w-12 h-12 spinner mb-3"></div>
+        <p class="text-slate-500">加载中...</p>
+      </div>
+      <pre v-else-if="logContent || streamActive" class="bg-slate-900 text-slate-100 rounded-xl p-3 md:p-4 text-xs font-mono whitespace-pre-wrap break-all">{{ logContent || '等待日志输出...' }}</pre>
+      <div v-else class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-file-lines text-2xl text-slate-300"></i>
         </div>
-        <pre v-else-if="logContent || streamActive" ref="logRef" class="flex-1 bg-slate-900 text-slate-100 rounded-xl p-3 md:p-4 text-xs font-mono overflow-auto whitespace-pre-wrap break-all">{{ logContent || '等待日志输出...' }}</pre>
-        <div v-else class="empty-state flex-1">
-          <div class="empty-state-icon">
-            <i class="fas fa-file-lines text-2xl text-slate-300"></i>
-          </div>
-          <p class="text-slate-500 text-sm">暂无日志</p>
-        </div>
+        <p class="text-slate-500 text-sm">暂无日志</p>
       </div>
     </div>
   </div>
