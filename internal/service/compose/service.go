@@ -34,6 +34,14 @@ type DeployResult struct {
 	InstallDir  string   `json:"installDir,omitempty"` // 项目落盘目录
 }
 
+// ContentResult Compose 配置读取结果。
+type ContentResult struct {
+	Content     string `json:"content"`               // compose.yml 文本
+	ProjectName string `json:"projectName,omitempty"` // 实际解析到的项目名
+	FileModTime int64  `json:"fileModTime,omitempty"` // compose.yml 修改时间戳（Unix 秒）；无落盘文件时为空
+	Source      string `json:"source,omitempty"`      // 内容来源：file=落盘文件，runtime=运行态反推
+}
+
 // RedeployRequest 重建请求
 // - ServiceName + Image 非空：从现有内容读取后更新指定服务镜像重建
 // - 否则：Content 必须非空，全量重建

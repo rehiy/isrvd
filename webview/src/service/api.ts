@@ -595,8 +595,8 @@ class ApiService {
         return http.post<void>(`docker/container/${id}/file/chmod`, { path, mode })
     }
 
-    composeDockerInspect(name: string) {
-        return http.get<DockerContainerCompose>(`compose/docker/${name}`)
+    composeDockerInspect(name: string, force = false) {
+        return http.get<DockerContainerCompose>(`compose/docker/${name}`, { params: force ? { force: 'true' } : undefined })
     }
 
     // 镜像管理

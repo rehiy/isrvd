@@ -22,12 +22,26 @@ class ContainerEditModal extends Vue {
     // ─── 数据属性 ───
     isOpen = false
     modalLoading = false
+    refreshing = false
     projectName = ''
     displayName = ''
     composeContent = ''
+    composeFileModTime = 0
+    composeSource: 'file' | 'runtime' | '' = ''
 
     get modalTitle() {
         return this.displayName ? `编辑配置：${this.displayName}` : '编辑容器配置'
+    }
+
+    get composeWarning() {
+        const parts: string[] = ['更新配置后将会按 Compose 项目重建关联容器，旧容器将被停止并删除']
+        if (this.composeSource === 'runtime') {
+            parts.push('当前为运行态反推结果，建议核对后再提交')
+        }
+        if (this.composeFileModTime) {
+            parts.push(`文件更新时间：${new Date(this.composeFileModTime * 1000).toLocaleString('zh-CN', { hour12: false })}`)
+        }
+        return parts.join('；')
     }
 
     // ─── 方法 ───
@@ -39,16 +53,34 @@ class ContainerEditModal extends Vue {
             ? `${composeProject} / ${composeService || container.name}`
             : (container.name || container.id)
         this.composeContent = ''
-        this.modalLoading = true
+        this.composeFileModTime = 0
+        this.composeSource = ''
         this.isOpen = true
+        await this.loadCompose(false, true)
+    }
+
+    async loadCompose(force = false, closeOnError = false) {
+        this.modalLoading = true
+        if (force) this.refreshing = true
         try {
-const res = await api.composeDockerInspect(this.projectName)
-            this.composeContent = res.payload?.content || ''
+            const res = await api.composeDockerInspect(this.projectName, force)
+            const payload = res.payload
+            this.composeContent = payload?.content || ''
+            this.projectName = payload?.projectName || this.projectName
+            this.composeFileModTime = payload?.fileModTime || 0
+            this.composeSource = payload?.source || ''
+            if (force) this.portal.showNotification('success', '已从运行态重新反推 Compose 配置')
         } catch {
-            this.isOpen = false
+            if (closeOnError) this.isOpen = false
         } finally {
             this.modalLoading = false
+            this.refreshing = false
         }
+    }
+
+    async handleForceRefresh() {
+        if (this.modalLoading || this.refreshing) return
+        await this.loadCompose(true)
     }
 
     async handleConfirm() {
@@ -69,7 +101,13 @@ export default toNative(ContainerEditModal)
 
 <template>
   <BaseModal v-model="isOpen" :title="modalTitle" :loading="modalLoading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
-    <ComposeEditor v-model="composeContent" warning="更新配置后将会按 Compose 项目重建关联容器，旧容器将被停止并删除" />
+    <template #header-actions>
+      <button type="button" class="btn-icon-sm" :disabled="modalLoading" title="跳过 compose.yml，按当前容器运行态重新反推 Compose" @click="handleForceRefresh()">
+        <i :class="refreshing ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i>
+      </button>
+    </template>
+
+    <ComposeEditor v-model="composeContent" :warning="composeWarning" />
     <template #confirm-text>更新并重建</template>
   </BaseModal>
 </template>

@@ -83,33 +83,48 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 }
 
 func (s *Service) DockerContent(ctx context.Context, name string) (string, string, error) {
-	if err := compose.ValidateProjectName(name); err != nil {
+	result, err := s.DockerContentResult(ctx, name, false)
+	if err != nil {
 		return "", "", err
+	}
+	return result.Content, result.ProjectName, nil
+}
+
+// DockerContentResult 读取项目 compose.yml；forceRuntime 为 true 时跳过落盘文件，直接从运行态反推。
+func (s *Service) DockerContentResult(ctx context.Context, name string, forceRuntime bool) (*ContentResult, error) {
+	if err := compose.ValidateProjectName(name); err != nil {
+		return nil, err
 	}
 	root := s.docker.ContainerRoot()
 	if root == "" {
-		return "", "", fmt.Errorf("未配置容器数据根目录")
+		return nil, fmt.Errorf("未配置容器数据根目录")
 	}
 
 	projectName := s.dockerProjectName(ctx, name, root)
 	path := filepath.Join(root, projectName, "compose.yml")
-	if data, err := os.ReadFile(path); err == nil {
-		return string(data), projectName, nil
+	fileModTime := composeFileModTime(path)
+	if !forceRuntime {
+		if data, err := os.ReadFile(path); err == nil {
+			return &ContentResult{Content: string(data), ProjectName: projectName, FileModTime: fileModTime, Source: "file"}, nil
+		}
 	}
 
 	if content, ok, err := s.dockerProjectContentFromContainers(ctx, projectName, root); ok || err != nil {
-		return content, projectName, err
+		if err != nil {
+			return nil, err
+		}
+		return &ContentResult{Content: content, ProjectName: projectName, FileModTime: fileModTime, Source: "runtime"}, nil
 	}
 
 	info, err := s.docker.ContainerInspectRaw(ctx, name)
 	if err != nil {
-		return "", "", fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
+		return nil, fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
 	}
 	content, err := compose.DockerProjectYAMLFromInspect(ctx, info, s.docker.ImageConfig, filepath.Join(root, name))
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
-	return content, name, nil
+	return &ContentResult{Content: content, ProjectName: projectName, FileModTime: fileModTime, Source: "runtime"}, nil
 }
 
 // DockerRedeploy 重建 Docker Compose 项目。
@@ -346,4 +361,11 @@ func (s *Service) dockerEnsureNetworks(ctx context.Context, project *types.Proje
 		}
 	}
 	return nil
+}
+
+func composeFileModTime(path string) int64 {
+	if st, err := os.Stat(path); err == nil && !st.IsDir() {
+		return st.ModTime().Unix()
+	}
+	return 0
 }
