@@ -308,14 +308,6 @@ func (s *Service) WhitelistList(ctx context.Context) ([]pkgApisix.Route, error) 
 	return list, nil
 }
 
-// WhitelistUserDelete 移除白名单
-func (s *Service) WhitelistUserDelete(ctx context.Context, routeID, consumerName string) error {
-	if err := s.client.RouteWhitelistUserDelete(ctx, routeID, consumerName); err != nil {
-		return fmt.Errorf("撤销白名单授权失败: %w", err)
-	}
-	return nil
-}
-
 // ─── Upstream 管理 ───
 
 // UpstreamList 获取 Upstream 列表

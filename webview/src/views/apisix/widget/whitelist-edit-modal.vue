@@ -7,8 +7,8 @@ import api from '@/service/api'
 import type { ApisixConsumer, ApisixKeyAuthConfig, ApisixRoute } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
-import ToggleCard from '@/component/toggle-card.vue'
 import Combobox from '@/component/combobox.vue'
+import ToggleCard from '@/component/toggle-card.vue'
 
 const defaultFormData = () => ({
     routeId: '',
@@ -19,27 +19,38 @@ const defaultFormData = () => ({
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, ToggleCard, Combobox },
+    components: { BaseModal, Combobox, ToggleCard },
     emits: ['success']
 })
 class WhitelistEditModal extends Vue {
     portal = usePortal()
 
-    // ─── 数据属性 ───
     isOpen = false
     modalLoading = false
+    editingRoute: ApisixRoute | null = null
     routes: ApisixRoute[] = []
     consumers: ApisixConsumer[] = []
     whitelistConsumers: string[] = []
     formData = defaultFormData()
 
-    // ─── 计算属性 ───
-    /** 只展示已有 key-auth 插件的 Consumer */
+    get isEdit() {
+        return !!this.editingRoute
+    }
+
     get keyAuthConsumers() {
         return this.consumers.filter(c => c.plugins?.['key-auth'])
     }
 
+    get modalTitle() {
+        return this.isEdit ? '编辑路由白名单' : '配置路由白名单'
+    }
+
+    get confirmText() {
+        return this.isEdit ? '保存配置' : '确认配置'
+    }
+
     get selectableRoutes() {
+        if (this.isEdit && this.editingRoute) return [this.editingRoute]
         return this.routes.filter(route => {
             if (!route.id) return false
             const plugins = route.plugins || {}
@@ -61,20 +72,40 @@ class WhitelistEditModal extends Vue {
         return config
     }
 
-    // ─── 方法 ───
+    getRouteLabel(route: ApisixRoute) {
+        return `${route.name || route.id} - ${(route.uris?.length ? route.uris.join(', ') : route.uri) || '-'}`
+    }
+
     resetForm() {
+        this.editingRoute = null
         Object.assign(this.formData, defaultFormData())
         this.whitelistConsumers = []
     }
 
-    async show() {
+    async show(route?: ApisixRoute) {
         this.resetForm()
+        this.editingRoute = route || null
+        if (route) {
+            const keyAuth = (route.plugins?.['key-auth'] as Record<string, unknown>) || {}
+            Object.assign(this.formData, {
+                routeId: route.id || '',
+                keyAuthHeader: (keyAuth.header as string) || 'token',
+                keyAuthQuery: (keyAuth.query as string) || '',
+                hideCredentials: !!keyAuth.hide_credentials,
+            })
+            this.whitelistConsumers = [...(route.consumers || [])]
+        }
+
         this.isOpen = true
         this.modalLoading = true
         try {
-            const [routesRes, consumersRes] = await Promise.all([api.apisixRouteList(), api.apisixConsumerList()])
-            this.routes = routesRes.payload || []
-            this.consumers = consumersRes.payload || []
+            if (route) {
+                this.consumers = (await api.apisixConsumerList()).payload || []
+            } else {
+                const [routesRes, consumersRes] = await Promise.all([api.apisixRouteList(), api.apisixConsumerList()])
+                this.routes = routesRes.payload || []
+                this.consumers = consumersRes.payload || []
+            }
         } catch {
             this.portal.showNotification('error', '加载路由或消费者列表失败')
         } finally {
@@ -83,11 +114,12 @@ class WhitelistEditModal extends Vue {
     }
 
     filteredConsumers(query: string) {
+        const q = query.toLowerCase()
         return this.keyAuthConsumers
             .filter(consumer => !this.whitelistConsumers.includes(consumer.username))
             .filter(consumer => {
-                if (!query) return true
-                return consumer.username.toLowerCase().includes(query) || (consumer.desc || '').toLowerCase().includes(query)
+                if (!q) return true
+                return consumer.username.toLowerCase().includes(q) || (consumer.desc || '').toLowerCase().includes(q)
             })
             .slice(0, 8)
     }
@@ -112,7 +144,7 @@ class WhitelistEditModal extends Vue {
                 consumers: this.whitelistConsumers,
                 key_auth: this.keyAuthConfig,
             })
-            this.portal.showNotification('success', '白名单配置成功')
+            this.portal.showNotification('success', this.isEdit ? '白名单更新成功' : '白名单配置成功')
             this.isOpen = false
             this.$emit('success')
         } catch (e: unknown) {
@@ -127,14 +159,21 @@ export default toNative(WhitelistEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" title="配置路由白名单" :loading="modalLoading" confirm-class="btn-amber" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="modalTitle" :loading="modalLoading" confirm-class="btn-amber" @confirm="handleConfirm">
     <div class="max-w-3xl space-y-4 p-1">
-      <div>
+      <div v-if="isEdit">
+        <label class="form-label">路由</label>
+        <div class="detail-value text-sm text-slate-700">
+          {{ editingRoute ? getRouteLabel(editingRoute) : '' }}
+        </div>
+        <p class="text-xs text-slate-400 mt-1">编辑当前路由的 key-auth 和 consumer-restriction.whitelist 配置</p>
+      </div>
+      <div v-else>
         <label class="form-label">路由 <span class="text-red-500">*</span></label>
         <select v-model="formData.routeId" class="input">
           <option value="">请选择未配置白名单的路由</option>
           <option v-for="route in selectableRoutes" :key="route.id" :value="route.id">
-            {{ route.name || route.id }} - {{ (route.uris?.length ? route.uris.join(', ') : route.uri) || '-' }}
+            {{ getRouteLabel(route) }}
           </option>
         </select>
         <p v-if="selectedRoute" class="text-xs text-slate-400 mt-1">
@@ -143,7 +182,7 @@ export default toNative(WhitelistEditModal)
         <p v-else class="text-xs text-slate-400 mt-1">仅展示尚未配置 consumer-restriction 白名单的路由</p>
       </div>
 
-      <div v-if="selectableRoutes.length === 0" class="rounded-lg border border-amber-100 bg-amber-50/50 px-3 py-2 text-xs text-amber-700">
+      <div v-if="!isEdit && selectableRoutes.length === 0" class="rounded-lg border border-amber-100 bg-amber-50/50 px-3 py-2 text-xs text-amber-700">
         暂无可配置白名单的路由
       </div>
 
@@ -180,13 +219,13 @@ export default toNative(WhitelistEditModal)
             @update:model-value="updateWhitelistConsumers"
           >
             <template #hint-extra="{ query }">
-              <span class="text-xs text-slate-400">{{ filteredConsumers(query.toLowerCase()).length }} 个可选</span>
+              <span class="text-xs text-slate-400">{{ filteredConsumers(query).length }} 个可选</span>
             </template>
 
             <template #default="{ query, select }">
               <div class="select-list p-2">
                 <button
-                  v-for="consumer in filteredConsumers(query.toLowerCase())"
+                  v-for="consumer in filteredConsumers(query)"
                   :key="consumer.username"
                   type="button"
                   class="flex w-full items-center gap-2.5 rounded-lg border border-transparent px-2.5 py-2 text-left transition-all duration-150 hover:bg-slate-50"
@@ -217,7 +256,7 @@ export default toNative(WhitelistEditModal)
     </div>
 
     <template #confirm-text>
-      确认配置
+      {{ confirmText }}
     </template>
   </BaseModal>
 </template>

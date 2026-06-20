@@ -164,11 +164,6 @@ export interface ApisixWhitelistUserCreate {
     key_auth: ApisixKeyAuthConfig
 }
 
-export interface ApisixWhitelistUserDelete {
-    route_id: string
-    consumer_name: string
-}
-
 // ==================== 概览统计 ====================
 
 export interface ApisixInfo {

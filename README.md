@@ -309,7 +309,6 @@ cd webview && python3 sort-imports.py --dry-run src
 | `apisix` | `GET /api/apisix/consumers` | APISIX 管理（消费者列出） |
 | `apisix` | `GET /api/apisix/upstreams` | APISIX 管理（上游列出） |
 | `apisix` | `GET /api/apisix/ssls` | APISIX 管理（证书列出） |
-| `apisix` | `DELETE /api/apisix/whitelist/user/:routeID/:consumerName` | APISIX 管理（撤销白名单用户） |
 | `docker` | `GET /api/docker/info` | Docker 管理（服务信息） |
 | `docker` | `GET /api/docker/containers` | Docker 管理（容器列出） |
 | `docker` | `GET /api/docker/images` | Docker 管理（镜像列出） |

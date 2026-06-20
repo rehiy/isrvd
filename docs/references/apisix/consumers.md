@@ -44,7 +44,9 @@ isrvd_get "/apisix/whitelist"
 
 返回含 key-auth + consumer-restriction 的路由列表，`consumers` 字段标识白名单消费者。
 
-### 配置路由白名单
+### 配置/更新路由白名单
+
+该接口既用于首次配置路由白名单，也用于更新已有白名单的用户列表和路由侧 `key-auth` 参数。
 
 如需加入不存在的 Consumer，请先创建 Consumer：
 
@@ -74,7 +76,7 @@ isrvd_post "/apisix/whitelist" '{"route_id":"<ROUTE_ID>","consumers":["<USERNAME
 | query | string | URL 查询认证参数名，可选 |
 | hide_credentials | boolean | 是否在转发到上游前隐藏认证凭据 |
 
-该接口会按请求体中的 `key_auth` 写入路由侧 `key-auth` 插件，并写入 `consumer-restriction.whitelist`，用于把已有路由纳入 Consumer 白名单管控。接口只负责配置路由白名单，不会创建 Consumer；`consumers` 中的用户必须已存在，如需新增用户应先调用 `/apisix/consumer` 创建并配置 `key-auth.key`。
+该接口会按请求体中的 `key_auth` 写入路由侧 `key-auth` 插件，并用 `consumers` 覆盖写入 `consumer-restriction.whitelist`，用于把已有路由纳入 Consumer 白名单管控或更新已有白名单配置。接口只负责配置路由白名单，不会创建 Consumer；`consumers` 中的用户必须已存在，如需新增用户应先调用 `/apisix/consumer` 创建并配置 `key-auth.key`。
 
 ### 新建用户并加入白名单（原子接口）
 
@@ -92,11 +94,3 @@ isrvd_post "/apisix/whitelist/user" '{"route_id":"<ROUTE_ID>","username":"<USERN
 | username | string | 新建 Consumer 的用户名，不能为空 |
 | key | string | key-auth 认证 key，不能为空 |
 | key_auth | object | 写入路由的 `key-auth` 插件配置，不能为空（同上表） |
-
-### 撤销白名单
-
-```bash
-isrvd_delete "/apisix/whitelist/user/<ROUTE_ID>/<USERNAME>"
-```
-
-该接口会从指定路由的 `consumer-restriction.whitelist` 中移除指定 Consumer，路径参数分别为路由 ID 和 Consumer 用户名。

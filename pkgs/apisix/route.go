@@ -104,27 +104,6 @@ func (c *Client) RouteWhitelistInspect(ctx context.Context) ([]Route, error) {
 	return result, nil
 }
 
-// RouteWhitelistUserDelete 从路由的白名单中移除 consumer
-func (c *Client) RouteWhitelistUserDelete(ctx context.Context, routeID, consumerName string) error {
-	consumers, err := c.getRouteConsumers(ctx, routeID)
-	if err != nil {
-		return err
-	}
-	newConsumers := make([]string, 0, len(consumers))
-	found := false
-	for _, name := range consumers {
-		if name == consumerName {
-			found = true
-			continue
-		}
-		newConsumers = append(newConsumers, name)
-	}
-	if !found {
-		return fmt.Errorf("用户 %s 不在路由 %s 的白名单中", consumerName, routeID)
-	}
-	return c.RouteConsumerRestrictionUpdate(ctx, routeID, newConsumers, nil)
-}
-
 // RouteConsumerRestrictionUpdate 更新路由的 consumer-restriction 白名单
 func (c *Client) RouteConsumerRestrictionUpdate(ctx context.Context, routeID string, consumers []string, keyAuth map[string]any) error {
 	routeData, err := c.doRequest(ctx, http.MethodGet, "/routes/"+url.PathEscape(routeID), nil)
@@ -167,20 +146,6 @@ func (c *Client) fetchRoutes(ctx context.Context) ([]Route, error) {
 }
 
 // --- 辅助函数 ---
-
-// getRouteConsumers 获取指定路由的白名单消费者列表
-func (c *Client) getRouteConsumers(ctx context.Context, routeID string) ([]string, error) {
-	whitelist, err := c.RouteWhitelistInspect(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for _, wl := range whitelist {
-		if wl.ID == routeID {
-			return wl.Consumers, nil
-		}
-	}
-	return []string{}, nil
-}
 
 // buildRouteBody 将 Route 转换为 Apisix API 请求体
 func buildRouteBody(req Route) map[string]any {
