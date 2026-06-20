@@ -726,8 +726,8 @@ class ApiService {
         return http.post('swarm/service', data)
     }
 
-    composeSwarmInspect(name: string) {
-        return http.get<SwarmServiceCompose>(`compose/swarm/${name}`)
+    composeSwarmInspect(name: string, force = false) {
+        return http.get<SwarmServiceCompose>(`compose/swarm/${name}`, { params: force ? { force: 'true' } : undefined })
     }
 
     swarmServiceLogs(id: string, tail = '100') {

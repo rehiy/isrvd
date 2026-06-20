@@ -83,32 +83,44 @@ func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployRe
 
 // SwarmContent 读取项目的 compose.yml；文件不存在时从运行态反推。
 func (s *Service) SwarmContent(ctx context.Context, name string) (string, error) {
-	if err := compose.ValidateProjectName(name); err != nil {
+	result, err := s.SwarmContentResult(ctx, name, false)
+	if err != nil {
 		return "", err
+	}
+	return result.Content, nil
+}
+
+// SwarmContentResult 读取项目 compose.yml；forceRuntime 为 true 时跳过落盘文件，直接从运行态反推。
+func (s *Service) SwarmContentResult(ctx context.Context, name string, forceRuntime bool) (*ContentResult, error) {
+	if err := compose.ValidateProjectName(name); err != nil {
+		return nil, err
 	}
 	root := s.docker.ContainerRoot()
 	if root == "" {
-		return "", fmt.Errorf("未配置容器数据根目录")
+		return nil, fmt.Errorf("未配置容器数据根目录")
 	}
 
 	path := filepath.Join(root, name, "compose.yml")
-	if data, err := os.ReadFile(path); err == nil {
-		return string(data), nil
+	fileModTime := composeFileModTime(path)
+	if !forceRuntime {
+		if data, err := os.ReadFile(path); err == nil {
+			return &ContentResult{Content: string(data), ProjectName: name, FileModTime: fileModTime, Source: "file"}, nil
+		}
 	}
 
 	raw, err := s.swarm.ServiceInspectRaw(ctx, name)
 	if err != nil {
-		return "", fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
+		return nil, fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
 	}
 	project, err := compose.ProjectFromSwarmInspect(raw, filepath.Join(root, name))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	data, err := compose.ProjectToYAML(project)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(data), nil
+	return &ContentResult{Content: string(data), ProjectName: name, FileModTime: fileModTime, Source: "runtime"}, nil
 }
 
 // SwarmRedeploy 重建 Swarm Compose 项目。
