@@ -90,6 +90,9 @@ class RouteEditModal extends Vue {
     formData = defaultFormData()
     // raw 模式下用户直接编辑的完整路由 JSON
     rawJson = ''
+    // rawJson 是否已被手动编辑或从已有路由加载。
+    // 为 true 时切换到 raw 模式不会用表单内容覆盖它，避免配置丢失。
+    rawDirty = false
 
     readonly handlerKindCards = HANDLER_KIND_CARDS
 
@@ -106,9 +109,10 @@ class RouteEditModal extends Vue {
 
     setKind(kind: CaddyHandlerKind) {
         if (kind === 'raw') {
-            // 切换到自定义 JSON 时，将当前表单生成的完整路由 JSON 填入
+            // 切换到自定义 JSON 时，将当前表单生成的完整路由 JSON 填入。
+            // 仅在 raw 内容未被手动编辑/加载时自动生成，否则保留原内容，避免覆盖导致配置丢失。
             const prevKind = this.formData.kind
-            if (prevKind !== 'raw') {
+            if (prevKind !== 'raw' && !this.rawDirty) {
                 try {
                     const rawStr = this.buildRawFromCurrent()
                     const handle = rawStr ? JSON.parse(rawStr) : []
@@ -330,6 +334,8 @@ class RouteEditModal extends Vue {
         Object.assign(this.formData, defaultFormData())
         this.matchHeaderList = []
         this.enableMatchHeaders = false
+        this.rawJson = ''
+        this.rawDirty = false
         void this.loadContainers()
         if (route) {
             this.isEditMode = true
@@ -363,6 +369,7 @@ class RouteEditModal extends Vue {
                 // 复杂路由无法解析，降级到 raw 模式
                 this.formData.kind = 'raw'
                 try { this.rawJson = JSON.stringify({ match: route.match, handle: handles }, null, 2) } catch { this.rawJson = '' }
+                this.rawDirty = true
                 this.isOpen = true
                 return
             }
@@ -427,6 +434,7 @@ class RouteEditModal extends Vue {
                     // 未知 handler 类型，降级到 raw 模式
                     this.formData.kind = 'raw'
                     try { this.rawJson = JSON.stringify({ match: route.match, handle: handles }, null, 2) } catch { this.rawJson = '' }
+                    this.rawDirty = true
                     this.isOpen = true
                     return
                 }
@@ -761,7 +769,7 @@ export default toNative(RouteEditModal)
         <!-- raw -->
         <div v-else-if="formData.kind === 'raw'" class="space-y-2">
           <label class="form-label">路由 JSON <span class="text-red-500">*</span></label>
-          <textarea v-model="rawJson" rows="12" class="input font-mono text-xs" placeholder='{ "match": [...], "handle": [...] }'></textarea>
+          <textarea v-model="rawJson" rows="12" class="input font-mono text-xs" placeholder='{ "match": [...], "handle": [...] }' @input="rawDirty = true"></textarea>
           <p class="text-xs text-slate-400">直接编辑完整的 Caddy 路由 JSON，match 字段可选</p>
         </div>
       </div>
