@@ -18,7 +18,7 @@ export const systemInstruction = `
 ### Compose 部署（/compose）
 - Docker Compose 部署/重部署，支持按服务更新镜像并重建
 - Swarm Stack 部署/重部署，支持按服务更新镜像并重建
-- 内嵌「应用市场」弹窗，提供模板一键回填
+- 独立「应用市场」页面（/compose/marketplace），选择应用后跳转部署页并一键回填模板
 - 项目名自动从 compose 文件的 name 字段获取
 
 ### APISIX 网关（/apisix）
@@ -182,8 +182,13 @@ const PAGE_INSTRUCTIONS: Array<{ test: (path: string) => boolean; desc: string }
 
     // Compose 部署（排除 /docker/compose 和 /swarm/compose 等子路径）
     {
-        test: p => p.includes('/compose') && !p.includes('/docker') && !p.includes('/swarm'),
-        desc: '当前页面：Compose 部署。可直接粘贴 compose.yml 文本部署（Docker Compose 或 Swarm Stack），或点击「应用市场」打开弹窗挑选模板回填；项目名自动从 compose 文件的 name 字段获取，无需手动填写。',
+        test: p => p.includes('/compose/deploy'),
+        desc: '当前页面：Compose 部署。可直接粘贴 compose.yml 文本部署（Docker Compose 或 Swarm Stack），也可从左侧「应用市场」选择模板后自动回填；项目名自动从 compose 文件的 name 字段获取，无需手动填写。',
+    },
+    // 应用市场
+    {
+        test: p => p.includes('/compose/marketplace'),
+        desc: '当前页面：应用市场。可挑选应用模板，选定后自动跳转到 Compose 部署页并回填。',
     },
 
     // 计划任务

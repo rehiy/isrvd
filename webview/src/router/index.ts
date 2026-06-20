@@ -219,6 +219,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/swarm/tasks.vue')
   },
   {
+    path: '/compose/marketplace',
+    name: 'compose-marketplace',
+    component: () => import('@/views/compose/marketplace.vue')
+  },
+  {
     path: '/compose/deploy',
     name: 'compose-deploy',
     component: () => import('@/views/compose/deploy.vue')

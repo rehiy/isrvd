@@ -5,13 +5,13 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
+import { MARKETPLACE_PICK_STORAGE_KEY } from '@/service/types'
 import type { ComposeDeployTarget, ComposeMarketplacePick } from '@/service/types'
 
 import ComposeEditor from './widget/compose-editor.vue'
-import MarketplaceModal from './widget/marketplace-modal.vue'
 
 @Component({
-    components: { ComposeEditor, MarketplaceModal }
+    components: { ComposeEditor }
 })
 class ComposeDeploy extends Vue {
     portal = usePortal()
@@ -25,11 +25,13 @@ class ComposeDeploy extends Vue {
     initFile: File | null = null
     content = ''
 
-    // 应用市场 modal 开关
-    marketplaceVisible = false
-
     // 预填态（来自应用市场一键选择）：仅用于头部提示徽章，不锁定输入
     fromMarketplace = false
+
+    // ─── 生命周期 ───
+    mounted() {
+        this.consumeMarketplacePick()
+    }
 
     // ─── 计算属性 ───
     get swarmAvailable(): boolean {
@@ -54,8 +56,24 @@ class ComposeDeploy extends Vue {
         this.target = t
     }
 
-    openMarketplace() {
-        this.marketplaceVisible = true
+    // 消费应用市场页跳转时暂存的选中模板（一次性），有则回填部署表单
+    consumeMarketplacePick() {
+        let raw: string | null
+        try {
+            raw = sessionStorage.getItem(MARKETPLACE_PICK_STORAGE_KEY)
+            if (raw) sessionStorage.removeItem(MARKETPLACE_PICK_STORAGE_KEY)
+        } catch {
+            return
+        }
+        if (!raw) return
+        try {
+            const pick = JSON.parse(raw) as ComposeMarketplacePick
+            if (pick && typeof pick.compose === 'string' && pick.compose) {
+                this.onMarketplacePick(pick)
+            }
+        } catch {
+            // 暂存数据损坏，忽略
+        }
     }
 
     onMarketplacePick(payload: ComposeMarketplacePick) {
@@ -151,15 +169,12 @@ export default toNative(ComposeDeploy)
             </div>
             <div>
               <h1 class="text-lg font-semibold text-slate-800 truncate">Compose 部署</h1>
-              <p class="text-xs text-slate-500">直接粘贴 compose.yml 或从应用市场选择模板</p>
+              <p class="text-xs text-slate-500">直接粘贴 compose.yml，或从左侧应用市场选择模板后回填</p>
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
             <button type="button" :disabled="loading" class="btn btn-secondary" @click="resetForm()">
               <i class="fas fa-rotate-left"></i>清空
-            </button>
-            <button v-if="portal.hasPerm('POST /api/compose/docker')" type="button" class="btn bg-indigo-50 text-indigo-600 hover:bg-indigo-100" @click="openMarketplace()">
-              <i class="fas fa-store"></i>应用市场
             </button>
             <button type="button" :disabled="!canSubmit" class="btn btn-amber" @click="handleDeploy()">
               <i v-if="loading" class="fas fa-spinner fa-spin"></i>
@@ -175,15 +190,12 @@ export default toNative(ComposeDeploy)
             </div>
             <div class="min-w-0 flex-1">
               <h1 class="text-lg font-semibold text-slate-800 truncate">Compose 部署</h1>
-              <p class="text-xs text-slate-500 truncate">粘贴 compose.yml 或从应用市场选择</p>
+              <p class="text-xs text-slate-500 truncate">粘贴 compose.yml，或从应用市场回填</p>
             </div>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
             <button type="button" :disabled="loading" class="btn btn-secondary w-9 h-9 !px-0" title="清空" @click="resetForm()">
               <i class="fas fa-rotate-left"></i>
-            </button>
-            <button v-if="portal.hasPerm('POST /api/compose/docker')" type="button" class="btn bg-indigo-50 text-indigo-600 hover:bg-indigo-100 w-9 h-9 !px-0" title="从应用市场选择" @click="openMarketplace()">
-              <i class="fas fa-store"></i>
             </button>
             <button type="button" :disabled="!canSubmit" class="btn btn-amber w-9 h-9 !px-0" :title="loading ? '部署中...' : '部署'" @click="handleDeploy()">
               <i v-if="loading" class="fas fa-spinner fa-spin"></i>
@@ -248,8 +260,5 @@ export default toNative(ComposeDeploy)
         </div>
       </div>
     </div>
-
-    <!-- 应用市场 Modal -->
-    <MarketplaceModal v-model="marketplaceVisible" @pick="onMarketplacePick" />
   </div>
 </template>

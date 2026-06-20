@@ -1,13 +1,12 @@
 <script lang="ts">
-import { Component, Prop, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
+import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
+import { MARKETPLACE_PICK_STORAGE_KEY } from '@/service/types'
 import type { ComposeMarketplacePick } from '@/service/types'
 
-import BaseModal from '@/component/modal.vue'
-
-// 应用市场 postMessage 协议：仅本组件使用，故就近定义
+// 应用市场 postMessage 协议：仅本页面使用，故就近定义
 interface MarketplaceInstallPayload {
     // 协议识别
     source: 'marketplace'
@@ -30,13 +29,9 @@ function isMarketplaceInstallPayload(data: unknown): data is MarketplaceInstallP
     return true
 }
 
-@Component({
-    components: { BaseModal },
-    emits: ['update:modelValue', 'pick']
-})
-class MarketplaceModal extends Vue {
+@Component
+class ComposeMarketplace extends Vue {
     portal = usePortal()
-    @Prop({ type: Boolean, default: false }) readonly modelValue!: boolean
 
     // ─── Refs ───
     @Ref readonly iframeRef!: HTMLIFrameElement
@@ -44,22 +39,17 @@ class MarketplaceModal extends Vue {
     // ─── 数据属性 ───
     iframeUrl = ''
     iframeOrigin = ''
+    iframeKey = 0
+    iframeLoading = false
 
     private messageHandler: ((e: MessageEvent) => void) | null = null
 
-    // ─── 监听器 ───
-    @Watch('modelValue', { immediate: true })
-    onVisibilityChange(val: boolean) {
-        if (val) {
-            // 打开时加载 URL 并绑定事件
-            this.loadUrl()
-            this.bindEvents()
-        } else {
-            this.unbindEvents()
-        }
+    // ─── 生命周期 ───
+    mounted() {
+        this.loadUrl()
+        this.bindEvents()
     }
 
-    // ─── 生命周期 ───
     unmounted() {
         this.unbindEvents()
     }
@@ -68,6 +58,7 @@ class MarketplaceModal extends Vue {
     loadUrl() {
         const url = this.portal.marketplaceUrl || ''
         this.iframeUrl = url
+        this.iframeLoading = !!url
         if (url) {
             try {
                 this.iframeOrigin = new URL(url).origin
@@ -77,6 +68,15 @@ class MarketplaceModal extends Vue {
         } else {
             this.iframeOrigin = ''
         }
+    }
+
+    refreshMarketplace() {
+        this.loadUrl()
+        if (this.iframeUrl) this.iframeKey += 1
+    }
+
+    onIframeLoad() {
+        this.iframeLoading = false
     }
 
     bindEvents() {
@@ -109,58 +109,68 @@ class MarketplaceModal extends Vue {
         }
 
         const payload = e.data as MarketplaceInstallPayload
-        this.$emit('pick', {
+        const pick: ComposeMarketplacePick = {
             name: payload.name,
             compose: payload.compose,
             initURL: payload.initURL,
-        } satisfies ComposeMarketplacePick)
-        this.close()
+        }
+
+        // 暂存选中模板，跳转到部署页后由其消费预填
+        try {
+            sessionStorage.setItem(MARKETPLACE_PICK_STORAGE_KEY, JSON.stringify(pick))
+        } catch {
+            this.portal.showNotification('error', '暂存模板失败，请重试')
+            return
+        }
+        this.$router.push('/compose/deploy')
     }
 
-    close() {
-        this.$emit('update:modelValue', false)
-    }
-
-    openConfig() {
-        this.close()
+    goConfig() {
         this.$router.push('/system/config')
     }
 }
 
-export default toNative(MarketplaceModal)
+export default toNative(ComposeMarketplace)
 </script>
 
 <template>
-  <BaseModal
-    :model-value="modelValue"
-    :show-footer="false"
-    max-width-class="max-w-5xl"
-    card-class="h-[calc(100vh-4rem)]"
-    body-class="p-0 overflow-hidden"
-    @update:model-value="$emit('update:modelValue', $event)"
-  >
-    <template #title>
-      <div class="flex items-center gap-3 min-w-0">
-        <div class="page-icon bg-amber-500">
-          <i class="fas fa-store text-white"></i>
+  <div class="card flex flex-col h-[calc(100vh-7rem)]">
+    <!-- Toolbar -->
+    <div class="card-toolbar">
+      <!-- 桌面端 -->
+      <div class="hidden md:flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="page-icon bg-amber-500"><i class="fas fa-store text-white"></i></div>
+          <div class="min-w-0">
+            <h1 class="text-lg font-semibold text-slate-800 truncate">应用市场</h1>
+            <p class="text-xs text-slate-500 truncate">选择应用后将自动跳转到部署页并回填模板</p>
+          </div>
         </div>
-        <div class="min-w-0">
-          <h1 class="text-lg font-semibold text-slate-800 truncate">应用市场</h1>
-          <p class="text-xs text-slate-500 truncate">选择应用后将自动回填到部署表单</p>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <button type="button" class="btn btn-secondary" title="刷新" @click="refreshMarketplace()">
+            <i :class="iframeLoading ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i><span>刷新</span>
+          </button>
         </div>
       </div>
-    </template>
+      <!-- 移动端 -->
+      <div class="flex md:hidden items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class="page-icon bg-amber-500"><i class="fas fa-store text-white"></i></div>
+          <div class="min-w-0">
+            <h1 class="text-lg font-semibold text-slate-800 truncate">应用市场</h1>
+            <p class="text-xs text-slate-500 truncate">选择后跳转部署页回填</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <button type="button" class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="refreshMarketplace()">
+            <i :class="iframeLoading ? 'fas fa-spinner fa-spin text-sm' : 'fas fa-rotate text-sm'"></i>
+          </button>
+        </div>
+      </div>
+    </div>
 
-    <template #header-actions>
-      <button type="button" class="hidden md:flex btn btn-secondary" title="刷新" @click="loadUrl()">
-        <i class="fas fa-rotate"></i><span>刷新</span>
-      </button>
-      <button type="button" class="md:hidden btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadUrl()">
-        <i class="fas fa-rotate text-sm"></i>
-      </button>
-    </template>
-
-    <div class="h-full flex-1 min-h-0 overflow-hidden">
+    <!-- Body -->
+    <div class="card-body relative flex-1 min-h-0 p-0 overflow-hidden">
       <!-- Empty -->
       <div v-if="!iframeUrl" class="h-full flex flex-col items-center justify-center px-4 text-center">
         <div class="empty-state-icon bg-amber-100">
@@ -168,20 +178,30 @@ export default toNative(MarketplaceModal)
         </div>
         <h1 class="text-lg font-semibold text-slate-800 mb-1">尚未配置应用市场</h1>
         <p class="text-sm text-slate-500 mb-4">请前往「系统设置 → 应用市场」配置站点 URL</p>
-        <button type="button" class="btn btn-blue" @click="openConfig()">
+        <button type="button" class="btn btn-blue" @click="goConfig()">
           <i class="fas fa-gear"></i>前往配置
         </button>
       </div>
 
+      <!-- Loading -->
+      <div v-if="iframeUrl && iframeLoading" class="absolute inset-0 z-10 bg-white/80">
+        <div class="empty-state h-full py-0">
+          <div class="w-12 h-12 spinner mb-3"></div>
+          <p class="text-slate-500">加载中...</p>
+        </div>
+      </div>
+
       <!-- Iframe -->
       <iframe
-        v-else
+        v-if="iframeUrl"
+        :key="iframeKey"
         ref="iframeRef"
         :src="iframeUrl"
         class="w-full h-full border-0"
         referrerpolicy="no-referrer"
         sandbox="allow-scripts allow-popups allow-forms allow-downloads allow-modals allow-same-origin"
+        @load="onIframeLoad()"
       ></iframe>
     </div>
-  </BaseModal>
+  </div>
 </template>

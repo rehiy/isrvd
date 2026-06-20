@@ -34,3 +34,7 @@ export interface ComposeMarketplacePick {
     compose: string
     initURL?: string
 }
+
+// 应用市场选择后，临时暂存到 sessionStorage 的键。
+// 市场页写入选中模板，部署页挂载时读取并清除，实现跨页面一次性预填。
+export const MARKETPLACE_PICK_STORAGE_KEY = 'isrvd:compose:marketplace-pick'

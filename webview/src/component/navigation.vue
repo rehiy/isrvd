@@ -495,6 +495,12 @@ export default toNative(NavigationBar)
         <span v-if="!collapsed">Compose 部署</span>
       </router-link>
 
+      <!-- 应用市场 -->
+      <router-link v-if="composeDeployVisible" to="/compose/marketplace" class="nav-link" active-class="bg-blue-50 text-blue-700" :title="collapsed ? '应用市场' : ''">
+        <i class="fas fa-store"></i>
+        <span v-if="!collapsed">应用市场</span>
+      </router-link>
+
       <!-- 计划任务 -->
       <router-link v-if="portal.hasPerm('GET /api/cron/jobs')" to="/cron/jobs" class="nav-link" active-class="bg-blue-50 text-blue-700" :title="collapsed ? '计划任务' : ''">
         <i class="fas fa-clock"></i>
