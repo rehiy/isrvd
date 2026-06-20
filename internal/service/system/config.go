@@ -13,9 +13,10 @@ import (
 // 作 GET 响应时：敏感字段已脱敏；作 PUT 请求时：nil 分区跳过更新，密钥为空保留原值。
 type AllConfig struct {
 	Server      *config.ServerConfig      `json:"server"`      // 服务配置（JWTSecret：响应脱敏 / 请求空保留）
-	THA         *config.THAConfig         `json:"tha"`         // 代理 Header 认证配置
-	OIDC        *config.OIDCConfig        `json:"oidc"`        // OIDC 配置（ClientSecret：响应脱敏 / 请求空保留）
+	Password    *config.PasswordConfig    `json:"password"`    // 密码登录配置
 	Passkey     *config.PasskeyConfig     `json:"passkey"`     // Passkey 认证配置
+	OIDC        *config.OIDCConfig        `json:"oidc"`        // OIDC 配置（ClientSecret：响应脱敏 / 请求空保留）
+	THA         *config.THAConfig         `json:"tha"`         // 代理 Header 认证配置
 	Agent       *config.AgentConfig       `json:"agent"`       // Agent LLM 配置（APIKey：响应脱敏 / 请求空保留）
 	Apisix      *config.ApisixConfig      `json:"apisix"`      // APISIX 配置（AdminKey：响应脱敏 / 请求空保留）
 	Caddy       *config.CaddyConfig       `json:"caddy"`       // Caddy 配置
@@ -37,9 +38,10 @@ func NewConfigService() *ConfigService {
 func (s *ConfigService) ConfigAll() *AllConfig {
 	src := &AllConfig{
 		Server:      config.Server,
-		THA:         config.THA,
-		OIDC:        config.OIDC,
+		Password:    config.Password,
 		Passkey:     config.Passkey,
+		OIDC:        config.OIDC,
+		THA:         config.THA,
 		Agent:       config.Agent,
 		Apisix:      config.Apisix,
 		Caddy:       config.Caddy,
@@ -85,8 +87,11 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 		req.Server.JWTSecret = pickSecret(req.Server.JWTSecret, oldSecret)
 		config.Server = config.ServerNormalize(req.Server)
 	}
-	if req.THA != nil {
-		config.THA = config.THANormalize(req.THA)
+	if req.Password != nil {
+		config.Password = config.PasswordNormalize(req.Password)
+	}
+	if req.Passkey != nil {
+		config.Passkey = config.PasskeyNormalize(req.Passkey)
 	}
 	if req.OIDC != nil {
 		oldSecret := ""
@@ -96,8 +101,8 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 		req.OIDC.ClientSecret = pickSecret(req.OIDC.ClientSecret, oldSecret)
 		config.OIDC = config.OIDCNormalize(req.OIDC)
 	}
-	if req.Passkey != nil {
-		config.Passkey = config.PasskeyNormalize(req.Passkey)
+	if req.THA != nil {
+		config.THA = config.THANormalize(req.THA)
 	}
 	if req.Agent != nil {
 		oldSecret := ""
