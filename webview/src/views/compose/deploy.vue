@@ -158,8 +158,13 @@ export default toNative(ComposeDeploy)
             <button type="button" :disabled="loading" class="btn btn-secondary" @click="resetForm()">
               <i class="fas fa-rotate-left"></i>清空
             </button>
-            <button v-if="portal.hasPerm('POST /api/compose/docker')" type="button" class="btn btn-amber" @click="openMarketplace()">
+            <button v-if="portal.hasPerm('POST /api/compose/docker')" type="button" class="btn bg-indigo-50 text-indigo-600 hover:bg-indigo-100" @click="openMarketplace()">
               <i class="fas fa-store"></i>应用市场
+            </button>
+            <button type="button" :disabled="!canSubmit" class="btn btn-amber" @click="handleDeploy()">
+              <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+              <i v-else class="fas fa-rocket"></i>
+              <span>{{ loading ? '部署中...' : '部署' }}</span>
             </button>
           </div>
         </div>
@@ -177,8 +182,12 @@ export default toNative(ComposeDeploy)
             <button type="button" :disabled="loading" class="btn btn-secondary w-9 h-9 !px-0" title="清空" @click="resetForm()">
               <i class="fas fa-rotate-left"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/compose/docker')" type="button" class="btn btn-amber w-9 h-9 !px-0" title="从应用市场选择" @click="openMarketplace()">
+            <button v-if="portal.hasPerm('POST /api/compose/docker')" type="button" class="btn bg-indigo-50 text-indigo-600 hover:bg-indigo-100 w-9 h-9 !px-0" title="从应用市场选择" @click="openMarketplace()">
               <i class="fas fa-store"></i>
+            </button>
+            <button type="button" :disabled="!canSubmit" class="btn btn-amber w-9 h-9 !px-0" :title="loading ? '部署中...' : '部署'" @click="handleDeploy()">
+              <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+              <i v-else class="fas fa-rocket"></i>
             </button>
           </div>
         </div>
@@ -236,15 +245,6 @@ export default toNative(ComposeDeploy)
               </span>
             </template>
           </p>
-        </div>
-
-        <!-- 操作按钮 -->
-        <div class="flex flex-col sm:flex-row sm:items-center gap-3 mt-6 pt-4 border-t border-slate-200">
-          <button type="button" :disabled="!canSubmit" class="btn btn-amber rounded-xl whitespace-nowrap flex-shrink-0 self-start" @click="handleDeploy()">
-            <i v-if="loading" class="fas fa-spinner fa-spin"></i>
-            <i v-else class="fas fa-rocket"></i>
-            <span>{{ loading ? '部署中...' : '部署' }}</span>
-          </button>
         </div>
       </div>
     </div>
