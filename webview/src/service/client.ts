@@ -49,14 +49,19 @@ const axiosInstance = axios.create({ baseURL: 'api/' })
 const axiosBlobInstance = axios.create({ baseURL: 'api/' })
 
 /**
+ * 将 api/ 相对路径转换为绝对 HTTP/HTTPS URL
+ * 兼容部署在 / 或 /xxx/ 子路径下的场景
+ * 用于下载链接、OIDC 跳转、SSE（EventSource）等需要绝对 URL 的场景
+ */
+export const absUrl = (path: string): string =>
+    new URL('api/' + path.replace(/^\/+/, ''), window.location.href).toString()
+
+/**
  * 将 api/ 相对路径转换为 WebSocket 绝对 URL
  * 兼容部署在 / 或 /xxx/ 子路径下的场景
  */
-export const wsUrl = (path: string): string => {
-    const base = new URL('api/' + path.replace(/^\/+/, ''), window.location.href)
-    base.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    return base.toString()
-}
+export const wsUrl = (path: string): string =>
+    absUrl(path).replace(/^https?:/, m => m === 'https:' ? 'wss:' : 'ws:')
 
 /**
  * 导出类型安全的 HTTP 客户端

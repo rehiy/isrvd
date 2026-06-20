@@ -4,15 +4,12 @@ import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
+import { absUrl } from '@/service/client'
 import type { DockerContainerInfo } from '@/service/types'
 
 const MAX_LOG_LENGTH = 300000
 
 type StreamState = 'snapshot' | 'connecting' | 'streaming'
-
-function streamUrl(path: string) {
-    return new URL(`api/${path.replace(/^\/+/, '')}`, window.location.href).toString()
-}
 
 @Component
 class ContainerLogs extends Vue {
@@ -75,7 +72,7 @@ class ContainerLogs extends Vue {
         this.source = null
 
         const params = new URLSearchParams({ token: this.portal.token ?? '', tail: this.logTail })
-        const url = streamUrl(`docker/container/${encodeURIComponent(this.containerId)}/logs/stream?${params.toString()}`)
+        const url = absUrl(`docker/container/${encodeURIComponent(this.containerId)}/logs/stream?${params.toString()}`)
         this.source = new EventSource(url)
         this.source.onopen = () => {
             this.streamState = 'streaming'

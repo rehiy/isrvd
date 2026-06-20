@@ -2,9 +2,11 @@
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
+
 import api from '@/service/api'
+import { wsUrl } from '@/service/client.ts'
 import type { DockerContainerInfo } from '@/service/types'
-import { wsUrl } from '@/service/axios'
+
 import { TerminalPanel, WsTerminal } from '@/component/terminal'
 import type { TerminalAdapter } from '@/component/terminal'
 

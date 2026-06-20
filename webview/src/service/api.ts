@@ -1,5 +1,5 @@
 import type { AxiosRequestConfig } from 'axios'
-import { http, httpBlob } from './axios'
+import { http, httpBlob, absUrl } from './client'
 import type {
     // Overview
     BootstrapData,
@@ -300,7 +300,7 @@ class ApiService {
         const params = new URLSearchParams({ path })
         if (inline) params.set('inline', '1')
         if (token) params.set('token', token)
-        return `api/filer/download?${params.toString()}`
+        return absUrl(`filer/download?${params.toString()}`)
     }
 
     // ==================== APISIX 管理相关 ====================
@@ -540,7 +540,7 @@ class ApiService {
     dockerContainerFileDownloadURL(id: string, path: string, token = '') {
         const params = new URLSearchParams({ path })
         if (token) params.set('token', token)
-        return `api/docker/container/${id}/file/download?${params.toString()}`
+        return absUrl(`docker/container/${id}/file/download?${params.toString()}`)
     }
 
     dockerContainerFileUpload(id: string, path: string, formData: FormData, onProgress?: (percent: number) => void, config: AxiosRequestConfig = {}) {
@@ -859,7 +859,7 @@ class ApiService {
     sftpDownloadURL(hostId: string, path: string, token = '') {
         const params = new URLSearchParams({ path })
         if (token) params.set('token', token)
-        return `api/sftp/${hostId}/download?${params.toString()}`
+        return absUrl(`sftp/${hostId}/download?${params.toString()}`)
     }
 
     sftpRemove(hostId: string, path: string, recursive = false) {

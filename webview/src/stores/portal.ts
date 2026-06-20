@@ -1,7 +1,7 @@
 import { defineStore, storeToRefs } from 'pinia'
 
-import { interceptors } from '@/service/axios'
 import api from '@/service/api'
+import { interceptors } from '@/service/client'
 import type { BootstrapData } from '@/service/types'
 import { initTheme } from '@/helper/theme'
 

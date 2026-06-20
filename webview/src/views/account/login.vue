@@ -4,6 +4,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
+import { absUrl } from '@/service/client'
 
 import { loginWithPasskey } from '@/helper/webauthn'
 
@@ -63,7 +64,7 @@ class Login extends Vue {
     }
 
     handleOIDCLogin() {
-        window.location.href = 'api/account/oidc/login'
+        window.location.href = absUrl('account/oidc/login')
     }
 
     // ─── Passkey 登录 ───

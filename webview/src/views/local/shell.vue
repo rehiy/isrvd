@@ -2,7 +2,7 @@
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
-import { wsUrl } from '@/service/axios'
+import { wsUrl } from '@/service/client'
 import { TerminalPanel, WsTerminal } from '@/component/terminal'
 import type { TerminalAdapter } from '@/component/terminal'
 
