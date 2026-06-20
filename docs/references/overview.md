@@ -10,7 +10,7 @@ isrvd_get "/overview/bootstrap"
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `auth` | object | 当前认证信息（`mode`、`username`、`member`、`oidcEnabled`、`oidcBtnLabel`、`passkeyEnabled`） |
+| `auth` | object | 当前认证信息（`mode`、`username`、`member`、`oidcEnabled`、`oidcBtnLabel`、`passkeyEnabled`、`passwordDisabled`、`passwordMinLength`） |
 | `probe` | object \| null | 服务可用性，已登录时返回（`agent`、`apisix`、`caddy`、`docker`、`swarm`、`compose`） |
 | `config` | object \| null | 前端启动所需的最小配置，已登录时返回（`maxUploadSize`、`marketplaceUrl`、`openapiEnabled`、`links`） |
 

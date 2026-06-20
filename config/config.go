@@ -5,12 +5,14 @@ import "path/filepath"
 var (
 	// Server 服务器配置
 	Server = ServerNormalize(nil)
-	// THA 代理 Header 登录配置
-	THA = &THAConfig{}
-	// OIDC 配置
-	OIDC = OIDCNormalize(nil)
+	// Password 密码登录配置
+	Password = PasswordNormalize(nil)
 	// Passkey 配置
 	Passkey = &PasskeyConfig{}
+	// OIDC 配置
+	OIDC = OIDCNormalize(nil)
+	// THA 代理 Header 登录配置
+	THA = &THAConfig{}
 	// Agent LLM 配置
 	Agent = &AgentConfig{}
 	// Apisix 配置
@@ -39,13 +41,15 @@ func Apply(conf *Config) {
 
 	Server = ServerNormalize(conf.Server)
 
-	if conf.THA != nil {
-		THA = THANormalize(conf.THA)
-	}
+	Password = PasswordNormalize(conf.Password)
+
+	Passkey = PasskeyNormalize(conf.Passkey)
 
 	OIDC = OIDCNormalize(conf.OIDC)
 
-	Passkey = PasskeyNormalize(conf.Passkey)
+	if conf.THA != nil {
+		THA = THANormalize(conf.THA)
+	}
 
 	if conf.Agent != nil {
 		Agent = conf.Agent
@@ -140,6 +144,17 @@ func PasskeyNormalize(passkey *PasskeyConfig) *PasskeyConfig {
 		passkey.Timeout = 60000
 	}
 	return passkey
+}
+
+// PasswordNormalize 填充 Password 默认值
+func PasswordNormalize(password *PasswordConfig) *PasswordConfig {
+	if password == nil {
+		password = &PasswordConfig{}
+	}
+	if password.MinLength == 0 {
+		password.MinLength = 6
+	}
+	return password
 }
 
 // MonitorNormalize 填充 Monitor 默认值

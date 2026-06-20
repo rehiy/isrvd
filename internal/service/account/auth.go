@@ -33,12 +33,14 @@ func (s *Service) AuthMix(c *gin.Context) string {
 
 // AuthInfoResponse 认证模式及当前用户信息
 type AuthInfoResponse struct {
-	Mode           string      `json:"mode"`               // 认证模式：jwt | header
-	Username       string      `json:"username,omitempty"` // 当前登录用户名（未登录时为空）
-	Member         *MemberInfo `json:"member,omitempty"`   // 成员详细信息
-	OIDCEnabled    bool        `json:"oidcEnabled"`        // 是否启用 OIDC 登录
-	OIDCBtnLabel   string      `json:"oidcBtnLabel"`       // OIDC 登录按钮文案
-	PasskeyEnabled bool        `json:"passkeyEnabled"`     // 是否启用 Passkey 登录
+	Mode                  string      `json:"mode"`               // 认证模式：jwt | header
+	Username              string      `json:"username,omitempty"` // 当前登录用户名（未登录时为空）
+	Member                *MemberInfo `json:"member,omitempty"`   // 成员详细信息
+	OIDCEnabled           bool        `json:"oidcEnabled"`        // 是否启用 OIDC 登录
+	OIDCBtnLabel          string      `json:"oidcBtnLabel"`       // OIDC 登录按钮文案
+	PasskeyEnabled        bool        `json:"passkeyEnabled"`     // 是否启用 Passkey 登录
+	PasswordDisabled  bool        `json:"passwordDisabled"`  // 是否禁用密码登录
+	PasswordMinLength int         `json:"passwordMinLength"` // 密码最小长度
 }
 
 // AuthInfo 返回当前认证模式及已登录用户信息
@@ -49,11 +51,13 @@ func (s *Service) AuthInfo(username string) *AuthInfoResponse {
 	}
 	oidcEnabled := mode == "jwt" && config.OIDC.Enabled && config.OIDC.IssuerURL != "" && config.OIDC.ClientID != ""
 	resp := &AuthInfoResponse{
-		Mode:           mode,
-		Username:       username,
-		Member:         s.MemberInspect(username),
-		OIDCEnabled:    oidcEnabled,
-		PasskeyEnabled: s.PasskeyEnabled(),
+		Mode:                  mode,
+		Username:              username,
+		Member:                s.MemberInspect(username),
+		OIDCEnabled:           oidcEnabled,
+		PasskeyEnabled:        s.PasskeyEnabled(),
+		PasswordDisabled:      mode == "jwt" && config.Password.Disabled,
+		PasswordMinLength:     config.Password.MinLength,
 	}
 	if oidcEnabled {
 		resp.OIDCBtnLabel = config.OIDC.LoginLabel
@@ -79,6 +83,9 @@ type LoginResponse struct {
 
 // Login 校验用户名密码并签发 JWT Token
 func (s *Service) Login(req LoginRequest) (*LoginResponse, error) {
+	if config.Password.Disabled {
+		return nil, fmt.Errorf("密码登录已禁用")
+	}
 	member, exists := config.Members[req.Username]
 	if !exists || !secure.BcryptVerify(req.Password, member.Password) {
 		logman.Warn("Login failed", "username", req.Username)

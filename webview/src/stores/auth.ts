@@ -15,6 +15,8 @@ export const useAuthStore = defineStore('auth', () => {
     const oidcEnabled = ref(false)
     const oidcLoginLabel = ref('')
     const passkeyEnabled = ref(false)
+    const passwordDisabled = ref(false)
+    const passwordMinLength = ref(6)
 
     // ─── 操作定义 ───
 
@@ -58,10 +60,12 @@ export const useAuthStore = defineStore('auth', () => {
             permissions.value = auth.member.permissions || []
         }
 
-        // OIDC / Passkey 配置无论登录状态都更新（放在 clearAuth 之后）
+        // OIDC / Passkey / 密码登录 配置无论登录状态都更新（放在 clearAuth 之后）
         oidcEnabled.value = auth?.oidcEnabled || false
         oidcLoginLabel.value = auth?.oidcBtnLabel || ''
         passkeyEnabled.value = auth?.passkeyEnabled || false
+        passwordDisabled.value = auth?.passwordDisabled || false
+        passwordMinLength.value = auth?.passwordMinLength || 6
     }
 
     // restoreToken 从 localStorage 恢复 token（冷启动时使用）
@@ -86,6 +90,8 @@ export const useAuthStore = defineStore('auth', () => {
         oidcEnabled,
         oidcLoginLabel,
         passkeyEnabled,
+        passwordDisabled,
+        passwordMinLength,
         // 操作
         setAuth,
         clearAuth,

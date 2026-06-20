@@ -107,8 +107,9 @@ class AccountPassword extends Vue {
             this.portal.showNotification('error', '两次输入的密码不一致')
             return
         }
-        if (this.passwordForm.newPassword.length < 6) {
-            this.portal.showNotification('error', '密码长度至少 6 位')
+        const minLen = this.portal.passwordMinLength
+        if (this.passwordForm.newPassword.length < minLen) {
+            this.portal.showNotification('error', `密码长度至少 ${minLen} 位`)
             return
         }
         this.passwordLoading = true
@@ -185,7 +186,7 @@ export default toNative(AccountPassword)
         </div>
         <div>
           <label class="form-label">新密码</label>
-          <input v-model="passwordForm.newPassword" type="password" class="input" placeholder="请输入新密码（至少 6 位）" autocomplete="new-password" />
+          <input v-model="passwordForm.newPassword" type="password" class="input" :placeholder="`请输入新密码（至少 ${portal.passwordMinLength} 位）`" autocomplete="new-password" />
         </div>
         <div>
           <label class="form-label">确认密码</label>

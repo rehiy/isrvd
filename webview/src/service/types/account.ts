@@ -8,6 +8,8 @@ export interface AuthInfo {
     // OIDC 登录按钮自定义名称
     oidcBtnLabel?: string
     passkeyEnabled: boolean
+    passwordDisabled: boolean
+    passwordMinLength: number
 }
 
 export interface AuthLogin {

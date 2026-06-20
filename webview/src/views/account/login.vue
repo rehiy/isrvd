@@ -105,51 +105,53 @@ export default toNative(Login)
 
         <!-- Form -->
         <form class="space-y-5" @submit.prevent="handleLogin">
-          <div>
-            <label for="username" class="form-label">
-              用户名
-            </label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <i class="fas fa-user text-slate-400"></i>
+          <template v-if="!portal.passwordDisabled">
+            <div>
+              <label for="username" class="form-label">
+                用户名
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <i class="fas fa-user text-slate-400"></i>
+                </div>
+                <input id="username" v-model="loginForm.username" type="text" required class="input pl-11" placeholder="请输入用户名" @input="resetTwoFactor">
               </div>
-              <input id="username" v-model="loginForm.username" type="text" required class="input pl-11" placeholder="请输入用户名" @input="resetTwoFactor">
             </div>
-          </div>
 
-          <div>
-            <label for="password" class="form-label">
-              密码
-            </label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <i class="fas fa-lock text-slate-400"></i>
+            <div>
+              <label for="password" class="form-label">
+                密码
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <i class="fas fa-lock text-slate-400"></i>
+                </div>
+                <input id="password" v-model="loginForm.password" type="password" required class="input pl-11" placeholder="请输入密码" @input="resetTwoFactor">
               </div>
-              <input id="password" v-model="loginForm.password" type="password" required class="input pl-11" placeholder="请输入密码" @input="resetTwoFactor">
             </div>
-          </div>
 
-          <div v-if="twoFactorRequired">
-            <label for="totp-code" class="form-label">
-              二次验证码
-            </label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <i class="fas fa-shield-halved text-slate-400"></i>
+            <div v-if="twoFactorRequired">
+              <label for="totp-code" class="form-label">
+                二次验证码
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <i class="fas fa-shield-halved text-slate-400"></i>
+                </div>
+                <input id="totp-code" v-model="totpForm.code" type="text" inputmode="numeric" autocomplete="one-time-code" required class="input pl-11" placeholder="请输入 6 位验证码">
               </div>
-              <input id="totp-code" v-model="totpForm.code" type="text" inputmode="numeric" autocomplete="one-time-code" required class="input pl-11" placeholder="请输入 6 位验证码">
+              <p class="text-xs text-slate-400 mt-1">该账户已启用 TOTP 二次验证，请输入认证器 App 中的动态验证码。</p>
             </div>
-            <p class="text-xs text-slate-400 mt-1">该账户已启用 TOTP 二次验证，请输入认证器 App 中的动态验证码。</p>
-          </div>
 
-          <button type="submit" :disabled="loading || (twoFactorRequired && !totpForm.code)" class="btn btn-primary w-full mt-6">
-            <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
-            <i v-else class="fas fa-sign-in-alt mr-2"></i>
-            {{ loading ? '登录中...' : (twoFactorRequired ? '验证并登录' : '登录') }}
-          </button>
+            <button type="submit" :disabled="loading || (twoFactorRequired && !totpForm.code)" class="btn btn-primary w-full mt-6">
+              <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
+              <i v-else class="fas fa-sign-in-alt mr-2"></i>
+              {{ loading ? '登录中...' : (twoFactorRequired ? '验证并登录' : '登录') }}
+            </button>
+          </template>
 
           <template v-if="portal.oidcEnabled || portal.passkeyEnabled">
-            <div class="border-t border-slate-200 pt-4 space-y-3">
+            <div :class="portal.passwordDisabled ? 'space-y-3' : 'border-t border-slate-200 pt-4 space-y-3'">
               <button
                 v-if="portal.passkeyEnabled"
                 type="button"
@@ -167,6 +169,10 @@ export default toNative(Login)
               </button>
             </div>
           </template>
+
+          <div v-if="portal.passwordDisabled && !portal.oidcEnabled && !portal.passkeyEnabled" class="text-center text-slate-400 text-sm py-4">
+            <i class="fas fa-lock mr-2"></i>密码登录已禁用，请联系管理员配置其他登录方式。
+          </div>
         </form>
       </div>
 

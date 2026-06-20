@@ -5,9 +5,10 @@ import "time"
 // 配置结构
 type Config struct {
 	Server      *ServerConfig      `yaml:"server"`      // 服务配置
-	THA         *THAConfig         `yaml:"tha"`         // 代理 Header 登录配置
-	OIDC        *OIDCConfig        `yaml:"oidc"`        // OIDC 登录配置
+	Password    *PasswordConfig    `yaml:"password"`    // 密码登录配置
 	Passkey     *PasskeyConfig     `yaml:"passkey"`     // Passkey 登录配置
+	OIDC        *OIDCConfig        `yaml:"oidc"`        // OIDC 登录配置
+	THA         *THAConfig         `yaml:"tha"`         // 代理 Header 登录配置
 	Agent       *AgentConfig       `yaml:"agent"`       // Agent LLM 配置
 	Apisix      *ApisixConfig      `yaml:"apisix"`      // APISIX 配置
 	Caddy       *CaddyConfig       `yaml:"caddy"`       // Caddy 配置
@@ -20,14 +21,20 @@ type Config struct {
 
 // 服务器配置
 type ServerConfig struct {
-	ListenAddr     string   `yaml:"listenAddr" json:"listenAddr"`         // 监听地址（如 :8080）
-	RootDirectory  string   `yaml:"rootDirectory" json:"rootDirectory"`   // 根目录路径
-	MaxUploadSize  int64    `yaml:"maxUploadSize" json:"maxUploadSize"`   // 文件上传最大大小（字节），默认 100MB
-	AllowedOrigins []string `yaml:"allowedOrigins" json:"allowedOrigins"` // 允许的 Origin 列表，支持通配符 *
-	JWTSecret      string   `yaml:"jwtSecret" json:"jwtSecret,omitempty"` // 写入时为空表示保留原值；响应时不返回
-	JWTExpiration  int64    `yaml:"jwtExpiration" json:"jwtExpiration"`   // JWT 过期时间（秒），默认 86400
-	OpenAPI        bool     `yaml:"openapi" json:"openapi"`               // 是否对外提供 OpenAPI 文档（/openapi/），默认关闭
-	Debug          bool     `yaml:"debug" json:"debug"`                   // 是否启用调试模式
+	ListenAddr       string   `yaml:"listenAddr" json:"listenAddr"`             // 监听地址（如 :8080）
+	RootDirectory    string   `yaml:"rootDirectory" json:"rootDirectory"`       // 根目录路径
+	MaxUploadSize    int64    `yaml:"maxUploadSize" json:"maxUploadSize"`       // 文件上传最大大小（字节），默认 100MB
+	AllowedOrigins   []string `yaml:"allowedOrigins" json:"allowedOrigins"`     // 允许的 Origin 列表，支持通配符 *
+	JWTSecret        string   `yaml:"jwtSecret" json:"jwtSecret,omitempty"`     // 写入时为空表示保留原值；响应时不返回
+	JWTExpiration    int64    `yaml:"jwtExpiration" json:"jwtExpiration"`       // JWT 过期时间（秒），默认 86400
+	OpenAPI          bool     `yaml:"openapi" json:"openapi"`                   // 是否对外提供 OpenAPI 文档（/openapi/），默认关闭
+	Debug            bool     `yaml:"debug" json:"debug"`                       // 是否启用调试模式
+}
+
+// 密码登录配置
+type PasswordConfig struct {
+	Disabled  bool `yaml:"disabled" json:"disabled"`   // 是否禁用密码登录（禁用后仅允许 Passkey/OIDC/THA 登录）
+	MinLength int  `yaml:"minLength" json:"minLength"` // 密码最小长度（默认 6）；创建成员和修改密码时后端同步校验
 }
 
 // 代理 Header 登录配置

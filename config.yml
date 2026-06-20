@@ -8,10 +8,17 @@ server:
   openapi: false              # 是否启用 OpenAPI 文档
   debug: false                # 是否启用调试模式
 
-tha:
-  enabled: false                # 是否启用代理 Header 登录
-  headerName: X-Username        # 上游代理传入登录用户名的 Header 名称
-  trustedCIDRs: [127.0.0.1/32]  # 允许传入登录 Header 的代理来源 CIDR；为空时不限制来源
+password:
+  disabled: false                 # 是否禁用密码登录
+  minLength: 6                    # 密码最小长度，默认 6
+
+passkey:
+  enabled: false                  # 是否启用 Passkey 认证
+  rpName: "iSrvd"                 # Relying Party 名称，如 "My App"
+  rpId: "localhost"               # Relying Party ID（通常是域名）
+  rpOrigins:                      # 允许的 Origin 列表
+    - "http://localhost:8080"
+  timeout: 60000                  # 超时时间（毫秒），默认 60000（60 秒）
 
 oidc:
   enabled: false                                        # 是否启用 OIDC 认证
@@ -23,13 +30,10 @@ oidc:
   scopes: [openid, profile, email]                      # OIDC 请求的作用域
   loginLabel: ""                                        # OIDC 登录按钮显示文本，为空时使用默认值
 
-passkey:
-  enabled: false                  # 是否启用 Passkey 认证
-  rpName: "iSrvd"                 # Relying Party 名称，如 "My App"
-  rpId: "localhost"               # Relying Party ID（通常是域名）
-  rpOrigins:                      # 允许的 Origin 列表
-    - "http://localhost:8080"
-  timeout: 60000                  # 超时时间（毫秒），默认 60000（60 秒）
+tha:
+  enabled: false                # 是否启用代理 Header 登录
+  headerName: X-Username        # 上游代理传入登录用户名的 Header 名称
+  trustedCIDRs: [127.0.0.1/32]  # 允许传入登录 Header 的代理来源 CIDR；为空时不限制来源
 
 agent:
   # model: your-model

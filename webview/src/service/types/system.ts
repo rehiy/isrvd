@@ -26,10 +26,17 @@ export interface ServerConfig {
     debug: boolean
 }
 
-export interface THAConfig {
+export interface PasswordConfig {
+    disabled: boolean
+    minLength: number
+}
+
+export interface PasskeyConfig {
     enabled: boolean
-    headerName: string
-    trustedCIDRs: string[]
+    rpName: string
+    rpId: string
+    rpOrigins: string[]
+    timeout: number
 }
 
 export interface OIDCConfig {
@@ -45,12 +52,10 @@ export interface OIDCConfig {
     loginLabel?: string
 }
 
-export interface PasskeyConfig {
+export interface THAConfig {
     enabled: boolean
-    rpName: string
-    rpId: string
-    rpOrigins: string[]
-    timeout: number
+    headerName: string
+    trustedCIDRs: string[]
 }
 
 export interface AgentConfig {
@@ -101,9 +106,10 @@ export interface LinkConfig {
 
 export interface AllConfig {
     server: ServerConfig
-    tha: THAConfig
-    oidc: OIDCConfig
+    password: PasswordConfig
     passkey: PasskeyConfig
+    oidc: OIDCConfig
+    tha: THAConfig
     agent: AgentConfig
     apisix: ApisixConfig
     caddy: CaddyConfig

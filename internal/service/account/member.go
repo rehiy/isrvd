@@ -70,6 +70,9 @@ func (s *Service) MemberCreate(req MemberUpsertRequest) error {
 	if _, exists := config.Members[req.Username]; exists {
 		return ErrMemberExists
 	}
+	if minLen := config.Password.MinLength; len(req.Password) < minLen {
+		return fmt.Errorf("密码长度不能少于 %d 位", minLen)
+	}
 
 	home, err := s.homeDirEnsure(req.HomeDirectory, req.Username)
 	if err != nil {
@@ -171,6 +174,9 @@ func (s *Service) PasswordChange(username string, req ChangePasswordRequest) err
 	}
 	if !secure.BcryptVerify(req.OldPassword, member.Password) {
 		return fmt.Errorf("原密码错误")
+	}
+	if minLen := config.Password.MinLength; len(req.NewPassword) < minLen {
+		return fmt.Errorf("密码长度不能少于 %d 位", minLen)
 	}
 
 	// 加密新密码
