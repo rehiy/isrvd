@@ -120,6 +120,33 @@ export interface CaddyHandlerKindCard {
     tone: 'indigo' | 'emerald' | 'amber' | 'violet' | 'rose' | 'slate'
 }
 
+// ─── Basic Auth ───
+
+export interface CaddyBasicAuthUser {
+    username: string
+}
+
+export interface CaddyBasicAuthRoute {
+    index: number             // 路由下标（主键）
+    name: string              // 路由 @id（展示用）
+    realm: string             // HTTP Basic realm
+    forwardHeader: string     // 传递用户名的请求头；空表示未开启
+    users: CaddyBasicAuthUser[]
+    handlers: CaddyHandler[]  // 其余 handler（只读展示）
+}
+
+export interface CaddyBasicAuthUserCreate {
+    username: string
+    password: string
+    realm?: string
+    forwardHeader?: string    // 非空时注入 X-Remote-User 等 header
+}
+
+export interface CaddyBasicAuthConfigUpdate {
+    realm: string
+    forwardHeader: string
+}
+
 // ─── 全局选项 ───
 
 export interface CaddyGlobal {
@@ -135,7 +162,7 @@ export interface CaddyGlobal {
     gracePeriod?: string    // 优雅关闭等待时间，例如 10s
 }
 
-// ─── TLS 证书 ───
+// ─── SSL 证书 ───
 
 export type CaddyCertSource = 'file' | 'pem' | 'automate' | 'cached'
 

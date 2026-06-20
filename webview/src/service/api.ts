@@ -55,6 +55,9 @@ import type {
     CaddyRoute,
     CaddyRouteUpsert,
     CaddyCert,
+    CaddyBasicAuthRoute,
+    CaddyBasicAuthUserCreate,
+    CaddyBasicAuthConfigUpdate,
     // Docker
     DockerInfo,
     ContainerFileInfo,
@@ -360,10 +363,6 @@ class ApiService {
         return http.post<ApisixRoute>('apisix/whitelist/user', payload)
     }
 
-    apisixWhitelistUserDelete(routeID: string, consumerName: string) {
-        return http.delete<void>(`apisix/whitelist/user/${routeID}/${consumerName}`)
-    }
-
     // PluginConfig 管理
     apisixPluginConfigList() {
         return http.get<ApisixPluginConfig[]>('apisix/plugin-configs')
@@ -487,6 +486,24 @@ class ApiService {
 
     caddyCertDelete(key: string) {
         return http.delete<void>(`caddy/cert/${encodeURIComponent(key)}`)
+    }
+
+    // ─── Caddy Basic Auth ───
+
+    caddyBasicAuthList() {
+        return http.get<CaddyBasicAuthRoute[]>('caddy/basic-auth')
+    }
+
+    caddyBasicAuthUserCreate(routeIndex: number, data: CaddyBasicAuthUserCreate) {
+        return http.post<void>(`caddy/basic-auth/${routeIndex}/users`, data)
+    }
+
+    caddyBasicAuthUserDelete(routeIndex: number, username: string) {
+        return http.delete<void>(`caddy/basic-auth/${routeIndex}/users/${encodeURIComponent(username)}`)
+    }
+
+    caddyBasicAuthConfigUpdate(routeIndex: number, data: CaddyBasicAuthConfigUpdate) {
+        return http.put<void>(`caddy/basic-auth/${routeIndex}/config`, data)
     }
 
     // ==================== Docker 服务相关 ====================

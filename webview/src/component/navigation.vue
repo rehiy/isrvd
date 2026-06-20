@@ -361,9 +361,13 @@ export default toNative(NavigationBar)
               <i class="fas fa-route"></i>
               <span>路由</span>
             </router-link>
+            <router-link v-if="portal.hasPerm('GET /api/caddy/basic-auth')" to="/caddy/basic-auth" class="nav-link" :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/caddy/basic-auth') }">
+              <i class="fas fa-lock"></i>
+              <span>基础认证</span>
+            </router-link>
             <router-link v-if="portal.hasPerm('GET /api/caddy/certs')" to="/caddy/certs" class="nav-link" :class="{ 'bg-blue-50 text-blue-700 hover:bg-blue-100': isActive('/caddy/cert') }">
               <i class="fas fa-certificate"></i>
-              <span>TLS 证书</span>
+              <span>SSL 证书</span>
             </router-link>
             <router-link
               v-if="portal.hasPerm('GET /api/caddy/global')"

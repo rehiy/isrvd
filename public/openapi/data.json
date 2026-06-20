@@ -1949,13 +1949,191 @@
         ]
       }
     },
-    "/apisix/whitelist/user/{routeID}/{consumerName}": {
-      "delete": {
-        "operationId": "delete_apisix_whitelist_user_routeID_consumerName",
+    "/caddy/basic-auth": {
+      "get": {
+        "operationId": "get_caddy_basic_auth",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "server",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "description": "含 Basic Auth 的路由列表",
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 Caddy Basic Auth 路由列表",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/caddy/basic-auth/{index}/config": {
+      "put": {
+        "operationId": "put_caddy_basic_auth_index_config",
         "parameters": [
           {
             "in": "path",
-            "name": "routeID",
+            "name": "index",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "server",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "forwardHeader": {
+                    "description": "透传用户名的请求头名；空表示关闭透传",
+                    "type": "string"
+                  },
+                  "realm": {
+                    "description": "HTTP Basic realm",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新 Caddy Basic Auth 配置",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/caddy/basic-auth/{index}/users": {
+      "post": {
+        "operationId": "post_caddy_basic_auth_index_users",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "index",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "server",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "forwardHeader": {
+                    "description": "非空时注入 headers handler，将认证用户名透传给上游；空表示移除",
+                    "type": "string"
+                  },
+                  "password": {
+                    "description": "明文密码，后端自动 bcrypt",
+                    "type": "string"
+                  },
+                  "realm": {
+                    "description": "留空时沿用已有 realm",
+                    "type": "string"
+                  },
+                  "username": {
+                    "description": "用户名，同一路由内唯一",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "username",
+                  "password"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "添加 Caddy Basic Auth 账号",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/caddy/basic-auth/{index}/users/{username}": {
+      "delete": {
+        "operationId": "delete_caddy_basic_auth_index_users_username",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "index",
             "required": true,
             "schema": {
               "type": "string"
@@ -1963,8 +2141,16 @@
           },
           {
             "in": "path",
-            "name": "consumerName",
+            "name": "username",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "server",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -1982,9 +2168,9 @@
             "description": "成功"
           }
         },
-        "summary": "从 APISIX 白名单移除用户",
+        "summary": "删除 Caddy Basic Auth 账号",
         "tags": [
-          "apisix"
+          "caddy"
         ]
       }
     },
@@ -2013,7 +2199,7 @@
             "description": "成功"
           }
         },
-        "summary": "创建 Caddy TLS 证书",
+        "summary": "创建 Caddy SSL 证书",
         "tags": [
           "caddy"
         ]
@@ -2044,7 +2230,7 @@
             "description": "成功"
           }
         },
-        "summary": "删除 Caddy TLS 证书",
+        "summary": "删除 Caddy SSL 证书",
         "tags": [
           "caddy"
         ]
@@ -2083,7 +2269,7 @@
             "description": "成功"
           }
         },
-        "summary": "更新 Caddy TLS 证书",
+        "summary": "更新 Caddy SSL 证书",
         "tags": [
           "caddy"
         ]
@@ -2120,7 +2306,7 @@
             "description": "成功"
           }
         },
-        "summary": "查询 Caddy TLS 证书列表",
+        "summary": "查询 Caddy SSL 证书列表",
         "tags": [
           "caddy"
         ]

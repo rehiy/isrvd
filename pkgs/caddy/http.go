@@ -1,6 +1,6 @@
 package caddy
 
-// 本文件定义 HTTP app 相关的配置结构体及常用 Handler/Match 助手函数。
+// 本文件定义 HTTP app 相关的配置结构体及 Basic Auth 助手函数。
 
 // ----- HTTP App -----
 
@@ -70,115 +70,62 @@ type MatchSet map[string]any
 // 必须包含 "handler" 字段（模块名），其余字段视模块而定
 type Handler map[string]any
 
-// ----- 常用 Handler 助手 -----
+// ----- Basic Auth -----
 
-// HandlerStaticResponse 构造 static_response handler
-func HandlerStaticResponse(statusCode int, body string) Handler {
-	h := Handler{"handler": "static_response"}
-	if statusCode > 0 {
-		h["status_code"] = statusCode
-	}
-	if body != "" {
-		h["body"] = body
-	}
-	return h
+// BasicAuthAccount basic_auth 单个账号（密码为 bcrypt hash）
+type BasicAuthAccount struct {
+	Username string `json:"username"`
+	Password string `json:"password"` // bcrypt hash
+	Salt     string `json:"salt,omitempty"`
 }
 
-// HandlerSubroute 构造 subroute handler
-func HandlerSubroute(routes []Route) Handler {
-	return Handler{"handler": "subroute", "routes": routes}
-}
-
-// HandlerHeaders 构造 headers handler，支持 set/add/delete
-func HandlerHeaders(set, add map[string][]string, del []string) Handler {
-	resp := map[string]any{}
-	if len(set) > 0 {
-		resp["set"] = set
+// HandlerBasicAuth 构造 authentication handler（http_basic provider）
+func HandlerBasicAuth(realm string, accounts []BasicAuthAccount) Handler {
+	accs := make([]map[string]any, 0, len(accounts))
+	for _, a := range accounts {
+		m := map[string]any{"username": a.Username, "password": a.Password}
+		if a.Salt != "" {
+			m["salt"] = a.Salt
+		}
+		accs = append(accs, m)
 	}
-	if len(add) > 0 {
-		resp["add"] = add
-	}
-	if len(del) > 0 {
-		resp["delete"] = del
+	provider := map[string]any{"accounts": accs}
+	if realm != "" {
+		provider["realm"] = realm
 	}
 	return Handler{
-		"handler":  "headers",
-		"response": resp,
+		"handler":   "authentication",
+		"providers": map[string]any{"http_basic": provider},
 	}
 }
 
-// HandlerRewrite URI 重写
-func HandlerRewrite(stripPrefix, uri string) Handler {
-	h := Handler{"handler": "rewrite"}
-	if stripPrefix != "" {
-		h["strip_path_prefix"] = stripPrefix
+// BasicAuthFromHandler 从 Handler 中提取 basic_auth 账号列表，失败返回 nil
+func BasicAuthFromHandler(h Handler) (realm string, accounts []BasicAuthAccount, ok bool) {
+	if h["handler"] != "authentication" {
+		return
 	}
-	if uri != "" {
-		h["uri"] = uri
+	providers, _ := h["providers"].(map[string]any)
+	if providers == nil {
+		return
 	}
-	return h
-}
-
-// HandlerReverseProxy 构造 reverse_proxy handler
-func HandlerReverseProxy(upstreams ...string) Handler {
-	ups := make([]map[string]any, 0, len(upstreams))
-	for _, u := range upstreams {
-		ups = append(ups, map[string]any{"dial": u})
+	basic, _ := providers["http_basic"].(map[string]any)
+	if basic == nil {
+		return
 	}
-	return Handler{
-		"handler":   "reverse_proxy",
-		"upstreams": ups,
-	}
-}
-
-// HandlerFileServer 构造 file_server handler
-func HandlerFileServer(root string, browse bool) Handler {
-	h := Handler{"handler": "file_server"}
-	if root != "" {
-		h["root"] = root
-	}
-	if browse {
-		h["browse"] = map[string]any{}
-	}
-	return h
-}
-
-// HandlerEncode 启用响应压缩，例如 gzip / zstd
-func HandlerEncode(encodings ...string) Handler {
-	enc := map[string]any{}
-	for _, e := range encodings {
-		enc[e] = map[string]any{}
-	}
-	return Handler{
-		"handler":   "encode",
-		"encodings": enc,
-	}
-}
-
-// ----- 常用 Match 助手 -----
-
-// MatchHost 主机匹配
-func MatchHost(hosts ...string) MatchSet {
-	return MatchSet{"host": hosts}
-}
-
-// MatchPath 路径匹配
-func MatchPath(paths ...string) MatchSet {
-	return MatchSet{"path": paths}
-}
-
-// MatchMethod 方法匹配
-func MatchMethod(methods ...string) MatchSet {
-	return MatchSet{"method": methods}
-}
-
-// Merge 合并多个匹配条件到一个 MatchSet（AND 关系）
-func Merge(sets ...MatchSet) MatchSet {
-	out := MatchSet{}
-	for _, s := range sets {
-		for k, v := range s {
-			out[k] = v
+	realm, _ = basic["realm"].(string)
+	accsRaw, _ := basic["accounts"].([]any)
+	for _, raw := range accsRaw {
+		m, _ := raw.(map[string]any)
+		if m == nil {
+			continue
+		}
+		username, _ := m["username"].(string)
+		password, _ := m["password"].(string)
+		salt, _ := m["salt"].(string)
+		if username != "" {
+			accounts = append(accounts, BasicAuthAccount{Username: username, Password: password, Salt: salt})
 		}
 	}
-	return out
+	ok = true
+	return
 }

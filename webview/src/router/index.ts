@@ -109,6 +109,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/caddy/global.vue')
   },
   {
+    path: '/caddy/basic-auth',
+    name: 'caddy-basic-auth',
+    component: () => import('@/views/caddy/basic-auth.vue')
+  },
+  {
     path: '/caddy/raw',
     name: 'caddy-raw',
     component: () => import('@/views/caddy/raw.vue')

@@ -70,7 +70,7 @@ isrvd_post "/docker/container" '{"image":"...","name":"..."}'
 | APISIX | [references/apisix/consumers.md](references/apisix/consumers.md) | Consumer、白名单 |
 | APISIX | [references/apisix/ssl.md](references/apisix/ssl.md) | SSL 证书、PluginConfig |
 | Caddy | [references/caddy/routes.md](references/caddy/routes.md) | 路由 CRUD（反向代理/静态文件） |
-| Caddy | [references/caddy/certs.md](references/caddy/certs.md) | TLS 证书管理 |
+| Caddy | [references/caddy/certs.md](references/caddy/certs.md) | SSL 证书管理 |
 | Caddy | [references/caddy/config.md](references/caddy/config.md) | 全局配置、原始 JSON 配置 |
 | 系统 | [references/system/config.md](references/system/config.md) | 系统配置、审计日志 |
 | 系统 | [references/system/account.md](references/system/account.md) | 登录、成员管理、API Token |
@@ -104,6 +104,7 @@ isrvd_post "/docker/container" '{"image":"...","name":"..."}'
 │   ├── 修改路由/上游    → references/apisix/routes.md 或 references/apisix/upstreams.md
 │   ├── 修改 Caddy 路由  → references/caddy/routes.md（更新触发 /load 整体替换）
 │   ├── 修改 Caddy 全局选项 → references/caddy/config.md (PUT /caddy/global)
+│   ├── 管理 Caddy Basic Auth → references/caddy/basic-auth.md
 │   └── 修改系统配置     → references/system/config.md
 │
 ├── 查询/监控
@@ -228,11 +229,10 @@ isrvd_post "/swarm/service/<SVC_ID>/action" '{"action":"force-update"}'
 isrvd_get "/apisix/routes"
 isrvd_post "/apisix/route" '{"name":"<NAME>","uri":"<URI>","status":1,"upstream":{"type":"roundrobin","nodes":{"<HOST>:<PORT>":1}}}'
 
-# APISIX（为已有路由配置 Consumer 白名单；缺失 Consumer 需先创建并配置 key-auth）
+# APISIX（为已有路由配置/更新 Consumer 白名单；缺失 Consumer 需先创建并配置 key-auth）
 ROUTE_ID=<ROUTE_ID>  # 从 isrvd_get "/apisix/routes" 结果中获取
 isrvd_post "/apisix/consumer" '{"username":"<NEW_USERNAME>","plugins":{"key-auth":{"key":"<AUTH_KEY>"}}}'
 isrvd_post "/apisix/whitelist" '{"route_id":"'"$ROUTE_ID"'","consumers":["<USERNAME>","<NEW_USERNAME>"],"key_auth":{"header":"token","query":"token","hide_credentials":false}}'
-isrvd_delete "/apisix/whitelist/user/$ROUTE_ID/<USERNAME>"
 
 # Caddy（反向代理）
 isrvd_post "/caddy/route" '{

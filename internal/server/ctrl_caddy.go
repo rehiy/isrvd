@@ -27,11 +27,16 @@ func (app *App) defineCaddyRoutes() []Route {
 		{Method: "POST", Path: "/caddy/route", Handler: app.caddyRouteCreate, Module: "caddy", Label: "创建 Caddy 路由"},
 		{Method: "PUT", Path: "/caddy/route/:index", Handler: app.caddyRouteUpdate, Module: "caddy", Label: "更新 Caddy 路由"},
 		{Method: "DELETE", Path: "/caddy/route/:index", Handler: app.caddyRouteDelete, Module: "caddy", Label: "删除 Caddy 路由"},
-		// TLS 证书 CRUD
-		{Method: "GET", Path: "/caddy/certs", Handler: app.caddyCertList, Module: "caddy", Label: "查询 Caddy TLS 证书列表"},
-		{Method: "POST", Path: "/caddy/cert", Handler: app.caddyCertCreate, Module: "caddy", Label: "创建 Caddy TLS 证书"},
-		{Method: "PUT", Path: "/caddy/cert/:key", Handler: app.caddyCertUpdate, Module: "caddy", Label: "更新 Caddy TLS 证书"},
-		{Method: "DELETE", Path: "/caddy/cert/:key", Handler: app.caddyCertDelete, Module: "caddy", Label: "删除 Caddy TLS 证书"},
+		// Basic Auth 账号管理
+		{Method: "GET", Path: "/caddy/basic-auth", Handler: app.caddyBasicAuthList, Module: "caddy", Label: "查询 Caddy Basic Auth 路由列表"},
+		{Method: "POST", Path: "/caddy/basic-auth/:index/users", Handler: app.caddyBasicAuthUserCreate, Module: "caddy", Label: "添加 Caddy Basic Auth 账号"},
+		{Method: "DELETE", Path: "/caddy/basic-auth/:index/users/:username", Handler: app.caddyBasicAuthUserDelete, Module: "caddy", Label: "删除 Caddy Basic Auth 账号"},
+		{Method: "PUT", Path: "/caddy/basic-auth/:index/config", Handler: app.caddyBasicAuthConfigUpdate, Module: "caddy", Label: "更新 Caddy Basic Auth 配置"},
+		// SSL 证书 CRUD
+		{Method: "GET", Path: "/caddy/certs", Handler: app.caddyCertList, Module: "caddy", Label: "查询 Caddy SSL 证书列表"},
+		{Method: "POST", Path: "/caddy/cert", Handler: app.caddyCertCreate, Module: "caddy", Label: "创建 Caddy SSL 证书"},
+		{Method: "PUT", Path: "/caddy/cert/:key", Handler: app.caddyCertUpdate, Module: "caddy", Label: "更新 Caddy SSL 证书"},
+		{Method: "DELETE", Path: "/caddy/cert/:key", Handler: app.caddyCertDelete, Module: "caddy", Label: "删除 Caddy SSL 证书"},
 	}
 }
 
@@ -169,7 +174,79 @@ func (app *App) caddyRouteDelete(c *gin.Context) {
 	respondSuccess(c, "Caddy 路由删除成功", nil)
 }
 
-// ─── TLS 证书 CRUD ───
+// ─── Basic Auth 账号管理 ───
+
+func (app *App) caddyBasicAuthList(c *gin.Context) {
+	server := c.Query("server")
+	result, err := app.caddySvc.BasicAuthList(c.Request.Context(), server)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "", result)
+}
+
+func (app *App) caddyBasicAuthUserCreate(c *gin.Context) {
+	server := c.Query("server")
+	idx, err := strconv.Atoi(c.Param("index"))
+	if err != nil {
+		respondError(c, http.StatusBadRequest, "index 必须为整数")
+		return
+	}
+	var req struct {
+		Username      string `json:"username"      binding:"required"`
+		Password      string `json:"password"      binding:"required"`
+		Realm         string `json:"realm"`
+		ForwardHeader string `json:"forwardHeader"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := app.caddySvc.BasicAuthUserCreate(c.Request.Context(), server, idx, req.Username, req.Password, req.Realm, req.ForwardHeader); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "账号添加成功", nil)
+}
+
+func (app *App) caddyBasicAuthUserDelete(c *gin.Context) {
+	server := c.Query("server")
+	idx, err := strconv.Atoi(c.Param("index"))
+	if err != nil {
+		respondError(c, http.StatusBadRequest, "index 必须为整数")
+		return
+	}
+	if err := app.caddySvc.BasicAuthUserDelete(c.Request.Context(), server, idx, c.Param("username")); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "账号删除成功", nil)
+}
+
+func (app *App) caddyBasicAuthConfigUpdate(c *gin.Context) {
+	server := c.Query("server")
+	idx, err := strconv.Atoi(c.Param("index"))
+	if err != nil {
+		respondError(c, http.StatusBadRequest, "index 必须为整数")
+		return
+	}
+	var req struct {
+		Realm         string `json:"realm"`
+		ForwardHeader string `json:"forwardHeader"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := app.caddySvc.BasicAuthConfigUpdate(c.Request.Context(), server, idx, req.Realm, req.ForwardHeader); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondSuccess(c, "配置更新成功", nil)
+}
+
+// ─── SSL 证书 CRUD ───
 
 func (app *App) caddyCertList(c *gin.Context) {
 	result, err := app.caddySvc.CertList(c.Request.Context())
@@ -190,7 +267,7 @@ func (app *App) caddyCertCreate(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Caddy TLS 证书创建成功", nil)
+	respondSuccess(c, "Caddy SSL 证书创建成功", nil)
 }
 
 func (app *App) caddyCertUpdate(c *gin.Context) {
@@ -203,7 +280,7 @@ func (app *App) caddyCertUpdate(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Caddy TLS 证书更新成功", nil)
+	respondSuccess(c, "Caddy SSL 证书更新成功", nil)
 }
 
 func (app *App) caddyCertDelete(c *gin.Context) {
@@ -211,5 +288,5 @@ func (app *App) caddyCertDelete(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "Caddy TLS 证书删除成功", nil)
+	respondSuccess(c, "Caddy SSL 证书删除成功", nil)
 }
