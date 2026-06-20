@@ -250,7 +250,7 @@ export default toNative(UpstreamEditModal)
           </button>
         </div>
         <div class="divide-y divide-slate-100">
-          <div v-for="(node, index) in formData.nodes" :key="index" class="grid grid-cols-12 gap-2 p-3 items-end">
+          <div v-for="(node, index) in formData.nodes" :key="index" class="grid grid-cols-12 gap-2 p-3 items-start">
             <div class="col-span-12 md:col-span-5">
               <label class="form-label">Host</label>
               <ContainerSelect :model-value="node.host" :containers="containers" placeholder="请输入 Host（IP 或容器名）" @update:model-value="updateNode(index, 'host', $event)" />
@@ -265,10 +265,13 @@ export default toNative(UpstreamEditModal)
               <label class="form-label">权重</label>
               <input v-model.number="node.weight" type="number" min="0" class="input" />
             </div>
-            <div class="col-span-2 md:col-span-1 flex h-12 items-center justify-end">
-              <button type="button" :disabled="formData.nodes.length <= 1" class="btn-icon btn-icon-red disabled:text-slate-300 disabled:cursor-not-allowed" title="删除节点" @click="removeNode(index)">
-                <i class="fas fa-trash text-xs"></i>
-              </button>
+            <div class="col-span-2 md:col-span-1">
+              <label class="form-label invisible" aria-hidden="true">·</label>
+              <div class="flex h-[46px] items-center justify-end">
+                <button type="button" :disabled="formData.nodes.length <= 1" class="btn-icon btn-icon-red disabled:text-slate-300 disabled:cursor-not-allowed" title="删除节点" @click="removeNode(index)">
+                  <i class="fas fa-trash text-xs"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
