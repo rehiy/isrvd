@@ -72,7 +72,7 @@ export default toNative(App)
     <!-- 加载状态 -->
     <div v-if="!portal.initialized" class="flex items-center justify-center min-h-screen">
       <div class="flex flex-col items-center gap-4">
-        <div class="w-12 h-12 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+        <div class="w-12 h-12 spinner"></div>
         <span class="text-slate-500 text-sm">加载中...</span>
       </div>
     </div>

@@ -41,19 +41,6 @@ class Nodes extends Vue {
     }
 
     // ─── 方法 ───
-    nodeStateClass(state: string) {
-        if (state === 'ready') return 'bg-emerald-100 text-emerald-700'
-        if (state === 'down') return 'bg-red-100 text-red-700'
-        return 'bg-slate-100 text-slate-600'
-    }
-
-    availabilityClass(avail: string) {
-        if (avail === 'active') return 'bg-emerald-100 text-emerald-700'
-        if (avail === 'drain') return 'bg-amber-100 text-amber-700'
-        if (avail === 'pause') return 'bg-slate-100 text-slate-600'
-        return 'bg-slate-100 text-slate-500'
-    }
-
     async loadNodes() {
         this.loading = true
         try {

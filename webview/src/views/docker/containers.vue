@@ -185,7 +185,7 @@ export default toNative(Containers)
               </button>
             </div>
           </div>
-          <div class="flex justify-center gap-1 bg-slate-100 p-1 rounded-lg">
+          <div class="tab-group justify-center mt-3">
             <button :class="['tab-btn', !showAll ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="showAll = false; loadContainers()">
               <i class="fas fa-play"></i><span>运行中</span>
             </button>
