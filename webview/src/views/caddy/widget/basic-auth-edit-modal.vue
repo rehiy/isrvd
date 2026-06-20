@@ -17,7 +17,7 @@ const defaultForm = () => ({
     username: '',
     password: '',
     realm: '',
-    forwardUser: false,
+    forwardUser: true,
     forwardHeader: 'X-Remote-User',
     users: [] as string[],
 })
