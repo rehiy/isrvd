@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rehiy/libgo/httpd"
 
 	svcSwarm "isrvd/internal/service/swarm"
 )
@@ -24,6 +25,7 @@ func (app *App) defineSwarmRoutes() []Route {
 		{Method: "POST", Path: "/swarm/service", Handler: app.swarmServiceCreate, Module: "swarm", Label: "创建 Swarm 服务"},
 		{Method: "POST", Path: "/swarm/service/:id/action", Handler: app.swarmServiceAction, Module: "swarm", Label: "执行 Swarm 服务操作"},
 		{Method: "GET", Path: "/swarm/service/:id/logs", Handler: app.swarmServiceLogs, Module: "swarm", Label: "获取 Swarm 服务日志"},
+		{Method: "GET", Path: "/swarm/service/:id/logs/stream", Handler: app.swarmServiceLogsStream, Module: "swarm", Label: "实时查看 Swarm 服务日志", QueryToken: true},
 		// 任务
 		{Method: "GET", Path: "/swarm/tasks", Handler: app.swarmTaskList, Module: "swarm", Label: "查询 Swarm 任务列表"},
 	}
@@ -130,6 +132,21 @@ func (app *App) swarmServiceLogs(c *gin.Context) {
 		return
 	}
 	respondSuccess(c, "获取日志成功", gin.H{"logs": logs})
+}
+
+func (app *App) swarmServiceLogsStream(c *gin.Context) {
+	serviceID := c.Param("id")
+	if serviceID == "" {
+		respondError(c, http.StatusBadRequest, "缺少服务 ID")
+		return
+	}
+	tail := c.DefaultQuery("tail", "100")
+	w, err := httpd.NewEventWriter(c.Writer)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	app.swarmSvc.ServiceLogsStream(c.Request.Context(), w, serviceID, tail)
 }
 
 func (app *App) swarmTaskList(c *gin.Context) {

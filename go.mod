@@ -14,9 +14,10 @@ require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/moby/docker-image-spec v1.3.1
-	github.com/rehiy/libgo v0.17.0
+	github.com/rehiy/libgo v0.17.1-0.20260620115136-7cf2afd85392
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil/v3 v3.24.5
+	golang.org/x/crypto v0.53.0
 	golang.org/x/oauth2 v0.36.0
 )
 
@@ -100,7 +101,6 @@ require (
 	go.opentelemetry.io/otel/trace v1.44.0 // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.5 // indirect
 	golang.org/x/arch v0.28.0 // indirect
-	golang.org/x/crypto v0.53.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect

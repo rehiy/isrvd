@@ -2,12 +2,16 @@ package swarm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	dockerSwarm "github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/rehiy/libgo/httpd"
 	"github.com/rehiy/libgo/logman"
 )
 
@@ -84,6 +88,10 @@ func (s *SwarmService) ServiceForceUpdate(ctx context.Context, id string) error 
 
 // ServiceLogs 获取服务日志
 func (s *SwarmService) ServiceLogs(ctx context.Context, serviceID, tail string) ([]string, error) {
+	if tail == "" {
+		tail = "100"
+	}
+
 	reader, err := s.client.ServiceLogs(ctx, serviceID, container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
@@ -101,6 +109,66 @@ func (s *SwarmService) ServiceLogs(ctx context.Context, serviceID, tail string) 
 		return nil, err
 	}
 	return parseDockerLogs(raw), nil
+}
+
+// ServiceLogsStream 实时转发服务日志到 writer。
+// writer 可选实现 httpd.Writer 以区分 error 事件与普通 data 事件。
+func (s *SwarmService) ServiceLogsStream(ctx context.Context, w io.Writer, serviceID, tail string) {
+	if tail == "" {
+		tail = "100"
+	}
+
+	writeError := func(msg string) {
+		if sw, ok := w.(httpd.Writer); ok {
+			_ = sw.WriteEvent("error", msg)
+		} else {
+			_, _ = w.Write([]byte("[" + msg + "]\n"))
+		}
+	}
+
+	reader, err := s.client.ServiceLogs(ctx, serviceID, container.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Tail:       tail,
+		Follow:     true,
+		Timestamps: true,
+	})
+	if err != nil {
+		logman.Error("Start service logs stream failed", "id", serviceID, "error", err)
+		writeError("获取服务日志失败: " + err.Error())
+		return
+	}
+	defer reader.Close()
+
+	// 心跳 ticker，保持 SSE 连接活跃
+	heartbeat := time.NewTicker(25 * time.Second)
+	defer heartbeat.Stop()
+
+	// Swarm 服务日志为多路复用流（无 TTY），使用 stdcopy 解帧
+	errCh := make(chan error, 1)
+	go func() {
+		_, copyErr := stdcopy.StdCopy(w, w, reader)
+		errCh <- copyErr
+	}()
+
+	for {
+		select {
+		case err := <-errCh:
+			if err != nil && ctx.Err() == nil && !errors.Is(err, io.EOF) {
+				logman.Warn("Service logs stream stopped with error", "id", serviceID, "error", err)
+			}
+			return
+		case <-ctx.Done():
+			logman.Info("Service logs stream cancelled by context", "id", serviceID)
+			return
+		case <-heartbeat.C:
+			if sw, ok := w.(httpd.Writer); ok {
+				if err := sw.WriteEvent("heartbeat", "ping"); err != nil {
+					logman.Warn("Failed to send heartbeat", "id", serviceID, "error", err)
+				}
+			}
+		}
+	}
 }
 
 // ServiceInspect 获取服务详情，直接返回 Docker SDK 原始服务结构。

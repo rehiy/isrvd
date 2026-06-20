@@ -77,3 +77,11 @@ isrvd_get "/swarm/service/<SVC_ID>/logs?tail=100"
 ```
 
 返回：`{"logs": ["timestamped log line", ...]}`
+
+实时日志使用 SSE：
+
+```bash
+GET /api/swarm/service/<SVC_ID>/logs/stream?tail=100&token=<JWT>
+```
+
+响应类型为 `text/event-stream`。服务端会先输出最近 `tail` 行，然后持续推送服务所有任务的聚合日志；断开 SSE 连接即停止跟随。

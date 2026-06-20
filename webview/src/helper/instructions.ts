@@ -157,7 +157,7 @@ const PAGE_INSTRUCTIONS: Array<{ test: (path: string) => boolean; desc: string }
     // Swarm - 服务详情页（精确路径优先于列表页）
     {
         test: p => p.includes('/swarm/service') && p.includes('/logs'),
-        desc: '当前页面：Swarm 服务日志。可查看服务所有任务的聚合日志。',
+        desc: '当前页面：Swarm 服务日志。可实时查看服务所有任务的聚合日志，支持行数过滤。',
     },
     {
         test: p => /\/swarm\/service\/[^/]+/.test(p),

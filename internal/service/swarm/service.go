@@ -4,6 +4,7 @@ package swarm
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -273,6 +274,11 @@ func (s *Service) ServiceLogs(ctx context.Context, serviceID, tail string) ([]st
 		return nil, fmt.Errorf("获取服务日志失败: %w", err)
 	}
 	return logs, nil
+}
+
+// ServiceLogsStream 服务实时日志流
+func (s *Service) ServiceLogsStream(ctx context.Context, w io.Writer, serviceID, tail string) {
+	s.svc.ServiceLogsStream(ctx, w, serviceID, tail)
 }
 
 // Task Swarm 任务信息，保持前端稳定响应结构。
