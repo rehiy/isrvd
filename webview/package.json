@@ -39,7 +39,7 @@
     "axios": "^1.16.1",
     "chart.js": "^4.5.1",
     "codemirror": "^6.0.2",
-    "js-yaml": "^4.2.0",
+    "js-yaml": "^5.0.0",
     "jsonrepair": "^3.14.0",
     "page-agent": "^1.8.2",
     "pinia": "^3.0.4",
