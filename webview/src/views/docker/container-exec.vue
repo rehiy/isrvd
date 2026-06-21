@@ -168,7 +168,7 @@ export default toNative(ContainerTerminal)
       <!-- 主内容区：终端 + 分隔条 + 文件管理 -->
       <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
         <!-- 终端 -->
-        <div class="flex-1 min-h-0 p-2">
+        <div class="terminal-pane">
           <TerminalPanel v-if="adapter" :adapter="adapter" />
         </div>
 

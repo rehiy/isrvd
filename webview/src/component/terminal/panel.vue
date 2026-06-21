@@ -57,5 +57,5 @@ export default toNative(TerminalPanel)
 </script>
 
 <template>
-  <div ref="xtermRef" class="h-full w-full rounded-lg overflow-hidden bg-[#0f172a]"></div>
+  <div ref="xtermRef" class="h-full w-full rounded-lg overflow-hidden"></div>
 </template>

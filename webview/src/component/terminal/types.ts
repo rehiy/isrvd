@@ -31,7 +31,11 @@ export class WsTerminal implements TerminalAdapter {
         this.disconnect()
 
         const fitAddon = new FitAddon()
-        const term = new Terminal({ theme: { background: '#0f172a' }, fontSize: 15, cursorBlink: true })
+        const term = new Terminal({
+            fontSize: 15,
+            cursorBlink: true,
+            theme: { background: '#0f172a' }
+        })
         term.loadAddon(fitAddon)
         term.open(el)
         fitAddon.fit()
