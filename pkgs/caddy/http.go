@@ -81,15 +81,7 @@ type BasicAuthAccount struct {
 
 // HandlerBasicAuth 构造 authentication handler（http_basic provider）
 func HandlerBasicAuth(realm string, accounts []BasicAuthAccount) Handler {
-	accs := make([]map[string]any, 0, len(accounts))
-	for _, a := range accounts {
-		m := map[string]any{"username": a.Username, "password": a.Password}
-		if a.Salt != "" {
-			m["salt"] = a.Salt
-		}
-		accs = append(accs, m)
-	}
-	provider := map[string]any{"accounts": accs}
+	provider := map[string]any{"accounts": accounts}
 	if realm != "" {
 		provider["realm"] = realm
 	}

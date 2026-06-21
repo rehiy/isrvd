@@ -110,7 +110,11 @@ func (c *Client) do(ctx context.Context, method, path string, body []byte, conte
 	}
 	defer resp.Body.Close()
 
-	raw, _ := io.ReadAll(resp.Body)
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("读取 Caddy admin 响应失败: %w", err)
+	}
+
 	if resp.StatusCode >= http.StatusMultipleChoices {
 		logman.Error("Caddy admin error", "method", method, "path", path, "status", resp.StatusCode, "body", string(raw))
 		return nil, fmt.Errorf("caddy %s %s 状态码 %d: %s", method, path, resp.StatusCode, string(raw))
