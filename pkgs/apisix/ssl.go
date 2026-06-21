@@ -39,7 +39,7 @@ func (c *Client) SSLInspect(ctx context.Context, sslID string) (*SSL, error) {
 
 // SSLCreate 创建 SSL 证书
 func (c *Client) SSLCreate(ctx context.Context, req SSL) (*SSL, error) {
-	data, err := c.doRequest(ctx, http.MethodPost, "/ssls", buildSSLBody(req, false))
+	data, err := c.doRequest(ctx, http.MethodPost, "/ssls", buildSSLBody(req))
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (c *Client) SSLCreate(ctx context.Context, req SSL) (*SSL, error) {
 
 // SSLUpdate 更新 SSL 证书
 func (c *Client) SSLUpdate(ctx context.Context, sslID string, req SSL) (*SSL, error) {
-	data, err := c.doRequest(ctx, http.MethodPatch, "/ssls/"+url.PathEscape(sslID), buildSSLBody(req, true))
+	data, err := c.doRequest(ctx, http.MethodPatch, "/ssls/"+url.PathEscape(sslID), buildSSLBody(req))
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (c *Client) SSLDelete(ctx context.Context, sslID string) error {
 // --- 辅助函数 ---
 
 // buildSSLBody 将 SSL 转换为 Apisix API 请求体
-func buildSSLBody(req SSL, patch bool) map[string]any {
+func buildSSLBody(req SSL) map[string]any {
 	body := make(map[string]any)
 	if len(req.Snis) > 0 {
 		body["snis"] = req.Snis

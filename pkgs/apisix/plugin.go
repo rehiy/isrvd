@@ -22,15 +22,6 @@ func (c *Client) PluginList(ctx context.Context) (map[string]any, error) {
 
 // --- 辅助函数 ---
 
-// hasPlugin 检查插件列表中是否存在指定插件
-func hasPlugin(plugins map[string]any, name string) bool {
-	if plugins == nil {
-		return false
-	}
-	_, ok := plugins[name]
-	return ok
-}
-
 // pluginConsumerRestrictionWhitelist 从 plugins 中提取 consumer-restriction 白名单
 func pluginConsumerRestrictionWhitelist(plugins map[string]any) []string {
 	if plugins == nil {

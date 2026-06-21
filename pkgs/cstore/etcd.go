@@ -160,7 +160,7 @@ func (e *EtcdStore) Watch(ctx context.Context, key string) <-chan Event {
 					return
 				}
 				event := Event{Key: key, Type: EventType(ev.Type)}
-				if ev.Type == "PUT" {
+				if EventType(ev.Type) == EventPut {
 					event.Value = []byte(ev.Value)
 				}
 				select {

@@ -92,7 +92,7 @@ func (c *Client) RouteWhitelistInspect(ctx context.Context) ([]Route, error) {
 	if err != nil {
 		return nil, err
 	}
-	result := make([]Route, 0)
+	result := make([]Route, 0, len(routes))
 	for _, v := range routes {
 		consumers := pluginConsumerRestrictionWhitelist(v.Plugins)
 		if len(consumers) == 0 {
