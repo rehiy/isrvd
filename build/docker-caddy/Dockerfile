@@ -24,12 +24,13 @@ FROM alpine:3
 # 安装运行依赖
 RUN apk add --no-cache bash ca-certificates runit
 
-# 拷贝二进制文件和配置
+# 复制二进制文件和配置
 COPY --from=builder /usr/local/bin/isrvd /usr/local/bin/caddy /usr/local/bin/
 COPY --chmod=755 build/docker-caddy/entrypoint.sh /entrypoint.sh
 COPY build/docker-caddy/isrvd.yml build/docker-caddy/caddy.json /etc/defaults/
 COPY build/docker-caddy/runit /etc/sv
 
+# 设置环境变量
 ENV CONFIG_PATH=/data/conf/isrvd.yml
 
 # 暴露端口
