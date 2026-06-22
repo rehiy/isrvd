@@ -156,9 +156,9 @@ export default toNative(SSHCredentials)
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
               <th class="th">凭据名称</th>
-              <th class="th">用户名</th>
-              <th class="w-28 th">认证方式</th>
-              <th class="w-32 th">描述</th>
+              <th class="w-36 th">用户名</th>
+              <th class="th">认证方式</th>
+              <th class="th">描述</th>
               <th class="w-32 th-right">操作</th>
             </tr>
           </thead>
