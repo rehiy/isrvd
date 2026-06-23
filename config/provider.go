@@ -79,6 +79,7 @@ func Save() error {
 	conf := &Config{
 		Schema:      schema,
 		Server:      Server,
+		Password:    Password,
 		THA:         THA,
 		OIDC:        OIDC,
 		Passkey:     Passkey,
