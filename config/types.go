@@ -4,6 +4,7 @@ import "time"
 
 // 配置结构
 type Config struct {
+	Schema      *SchemaConfig      `yaml:"schema"`      // 配置格式元信息，用于版本化迁移
 	Server      *ServerConfig      `yaml:"server"`      // 服务配置
 	Password    *PasswordConfig    `yaml:"password"`    // 密码登录配置
 	Passkey     *PasskeyConfig     `yaml:"passkey"`     // Passkey 登录配置
@@ -17,6 +18,11 @@ type Config struct {
 	Marketplace *MarketplaceConfig `yaml:"marketplace"` // 应用市场配置
 	Links       []*LinkConfig      `yaml:"links"`       // 工具栏链接列表
 	Members     []*MemberConfig    `yaml:"members"`     // 成员列表
+}
+
+// SchemaConfig 配置格式元信息
+type SchemaConfig struct {
+	Version int `yaml:"version"` // 配置结构版本号，当前: 1
 }
 
 // 服务器配置

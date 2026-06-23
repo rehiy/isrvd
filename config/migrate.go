@@ -7,14 +7,18 @@ import (
 	"github.com/rehiy/libgo/strutil"
 )
 
+// schema 当前配置格式定义，修改配置结构后需递增其 Version 并添加对应迁移函数
+var schema = &SchemaConfig{Version: 1}
+
 // migrateFn 迁移函数类型：接收当前配置和原始 YAML 字节，返回是否发生了迁移
 type migrateFn func(conf *Config, data []byte) bool
 
 // migrations 按注册顺序依次执行的迁移函数列表，各函数之间相互独立、无依赖关系
 var migrations = []migrateFn{
+	migrateSchema,
 	migrateJWTSecret,
-	migrateTHA,
 	migratePasswords,
+	migrateTHA,
 }
 
 // migrate 依次执行所有迁移函数，返回是否有任何迁移发生
@@ -28,6 +32,20 @@ func migrate(conf *Config, data []byte) bool {
 	return migrated
 }
 
+// migrateSchema 设置配置格式版本号，用于后续版本化迁移
+func migrateSchema(conf *Config, _ []byte) bool {
+	if conf.Schema != nil && conf.Schema.Version == schema.Version {
+		return false
+	}
+	oldVer := 0
+	if conf.Schema != nil {
+		oldVer = conf.Schema.Version
+	}
+	logman.Info("配置格式版本已更新", "from", oldVer, "to", schema.Version)
+	conf.Schema = schema
+	return true
+}
+
 // migrateJWTSecret 首次启动时自动生成 JWT 密钥
 func migrateJWTSecret(conf *Config, _ []byte) bool {
 	if conf.Server == nil || conf.Server.JWTSecret != "" {
@@ -36,6 +54,29 @@ func migrateJWTSecret(conf *Config, _ []byte) bool {
 	conf.Server.JWTSecret = strutil.Rand(32)
 	logman.Info("JWT 密钥已自动生成")
 	return true
+}
+
+// migratePasswords 迁移历史明文密码为加密格式
+func migratePasswords(conf *Config, _ []byte) bool {
+	migrated := false
+
+	for _, m := range conf.Members {
+		if m == nil || m.Password == "" || secure.IsBcrypt(m.Password) {
+			continue
+		}
+
+		hashedPassword, err := secure.BcryptHash(m.Password)
+		if err != nil {
+			logman.Warn("密码加密失败", "username", m.Username, "error", err)
+			continue
+		}
+
+		logman.Info("密码已自动迁移为加密格式", "username", m.Username)
+		m.Password = hashedPassword
+		migrated = true
+	}
+
+	return migrated
 }
 
 // migrateTHA 将旧版 server.proxyHeaderName/proxyTrustedCIDRs 迁移到 tha 配置段
@@ -72,27 +113,4 @@ func migrateTHA(conf *Config, data []byte) bool {
 	}
 
 	return true
-}
-
-// migratePasswords 迁移历史明文密码为加密格式
-func migratePasswords(conf *Config, _ []byte) bool {
-	migrated := false
-
-	for _, m := range conf.Members {
-		if m == nil || m.Password == "" || secure.IsBcrypt(m.Password) {
-			continue
-		}
-
-		hashedPassword, err := secure.BcryptHash(m.Password)
-		if err != nil {
-			logman.Warn("密码加密失败", "username", m.Username, "error", err)
-			continue
-		}
-
-		logman.Info("密码已自动迁移为加密格式", "username", m.Username)
-		m.Password = hashedPassword
-		migrated = true
-	}
-
-	return migrated
 }

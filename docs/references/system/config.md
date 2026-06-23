@@ -56,6 +56,7 @@ isrvd_get "/system/config"
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
+| schema | object | **只读**，`{version}`，配置格式元信息，由系统自动维护，支持版本化迁移 |
 | server | object | `{listenAddr, rootDirectory, maxUploadSize, allowedOrigins, jwtExpiration, debug, openapi}`（jwtSecret 不返回，写入时位于 JWT 配置项；`openapi`=是否对外提供 `/openapi/` 文档，默认 false） |
 | password | object | `{disabled, minLength}`（密码登录配置；`minLength` 默认 6） |
 | passkey | object | `{enabled, rpName, rpId, rpOrigins, timeout}` |

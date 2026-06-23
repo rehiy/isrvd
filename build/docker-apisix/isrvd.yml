@@ -1,3 +1,6 @@
+schema:
+  version: 1
+
 server:
   listenAddr: :8080
   rootDirectory: /data/
