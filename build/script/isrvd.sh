@@ -80,7 +80,7 @@ setup_release() {
     RELEASE_COUNTRY="${area_info#*:}"
 
     if [ "$RELEASE_AREA" = "cn" ]; then
-        RELEASE_URL="https://cnb.cool/rehiy/isrvd/-/releases/download/latest/isrvd-$ARCH.tar.gz"
+        RELEASE_URL="https://cnb.cool/rehiy/isrvd/-/releases/latest/download/isrvd-$ARCH.tar.gz"
         RELEASE_SOURCE="CNB"
     else
         RELEASE_URL="https://github.com/rehiy/isrvd/releases/latest/download/isrvd-$ARCH.tar.gz"
