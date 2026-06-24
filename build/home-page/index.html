@@ -20,8 +20,6 @@
             }
         }
 
-        // Call on theme toggle
-        const originalToggleTheme = toggleTheme;
     </script>
     <style>
         * {
@@ -639,15 +637,39 @@
     <section id="quickstart" class="py-20 bg-slate-50 dark:bg-slate-800">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="section-title">快速开始</h2>
-            <p class="section-subtitle">三种方式，即刻体验（支持 Docker Hub 与 CNB 镜像仓库）</p>
+            <p class="section-subtitle">一键脚本快速安装，或使用 Docker / Compose 方式部署</p>
             <div class="mt-10 flex gap-2 bg-slate-200 p-1 rounded-lg w-fit mx-auto tab-group">
-                <button class="tab-btn tab-active" onclick="switchTab('docker', this)">Docker</button>
-                <button class="tab-btn" onclick="switchTab('binary', this)">二进制</button>
+                <button class="tab-btn tab-active" onclick="switchTab('binary', this)">快速安装</button>
+                <button class="tab-btn" onclick="switchTab('docker', this)">Docker</button>
                 <button class="tab-btn" onclick="switchTab('compose', this)">Compose</button>
             </div>
 
+            <!-- Binary Tab -->
+            <div id="tab-binary" class="tab-content active mt-8">
+                <p class="text-sm text-slate-500 mb-6 text-center">安装 systemd 服务，也可通过选项切换为 Docker 容器部署</p>
+                <p class="text-xs text-slate-400 mb-4 text-center">二进制安装目录：<code class="bg-slate-100 px-1 rounded">/usr/local/isrvd/</code>；<code class="bg-slate-100 px-1 rounded">--docker</code> / <code class="bg-slate-100 px-1 rounded">--caddy</code> / <code class="bg-slate-100 px-1 rounded">--apisix</code> 会改为 Docker 容器部署（含 Swarm 初始化 + sdnet 网络）</p>
+                <div class="code-block mb-6">
+                    <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                    <div class="code-body"><span style="color:#64748b"># 安装 systemd 服务（二进制版）</span><br />bash
+                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install<br /><br /><span style="color:#64748b"># 以 Docker 方式部署（slim 镜像，含 Swarm + sdnet 网络）</span><br />bash
+                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --docker<br /><br /><span style="color:#64748b"># 以 Docker 方式部署（caddy 镜像，含 Caddy 网关）</span><br />bash
+                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --caddy<br /><br /><span style="color:#64748b"># 以 Docker 方式部署（apisix 镜像，含 APISIX 网关）</span><br />bash
+                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --apisix<br /><br /><span style="color:#64748b"># 更新（自动识别二进制或 Docker 部署）</span><br />bash
+                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) update<br /><br /><span style="color:#64748b"># 卸载（同时清理二进制文件和 Docker 容器）</span><br />bash
+                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) uninstall<br /><br /><span style="color:#64748b"># 仅下载二进制包（不安装）</span><br />bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh)
+                            download</div>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header"><span>bash — 直接运行</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                        <div class="code-body"><span style="color:#64748b"># 默认读取 ./config.yml</span><br />./isrvd<br /><br /><span style="color:#64748b"># 本地 YAML</span><br />CONFIG_PATH=/data/conf/isrvd.yml ./isrvd<br /><br /><span
+                                style="color:#64748b"># etcd 配置（value 为 YAML 格式）</span><br />CONFIG_PATH=<span style="color:#34d399">"etcd://user:pass@127.0.0.1:2379/isrvd/config?scheme=http&timeout=5s"</span> ./isrvd<br /><br /><span
+                                style="color:#64748b"># etcd key 不存在时，用 fallback YAML 初始化并写入 etcd</span><br />CONFIG_PATH=<span style="color:#34d399">"etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml"</span> ./isrvd</div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2 text-center">etcd 认证可省略或用 <code class="bg-slate-100 px-1 rounded">ETCD_USERNAME</code> / <code class="bg-slate-100 px-1 rounded">ETCD_PASSWORD</code> 补充</p>
+                </div>
+
             <!-- Docker Tab -->
-            <div id="tab-docker" class="tab-content active mt-8">
+            <div id="tab-docker" class="tab-content mt-8">
                 <p class="text-sm text-slate-500 mb-6 text-center">提供三个镜像版本，按需求选择</p>
 
                 <!-- Create Network -->
@@ -736,31 +758,6 @@
                     <p class="mt-2 text-xs text-slate-400">说明：所有版本均提供 Web 管理界面（端口 8080），集成 API 网关的版本额外暴露 HTTP/HTTPS 端口</p>
                 </div>
             </div>
-
-            <!-- Binary Tab -->
-            <div id="tab-binary" class="tab-content mt-8">
-                <p class="text-sm text-slate-500 mb-6 text-center">适用于宿主机直接运行二进制文件，也可按选项自动安装 Docker/Caddy/APISIX</p>
-                <p class="text-xs text-slate-400 mb-4 text-center">安装目录：<code class="bg-slate-100 px-1 rounded">/usr/local/isrvd/</code>；带 <code class="bg-slate-100 px-1 rounded">--caddy</code> / <code class="bg-slate-100 px-1 rounded">--apisix</code> 时会用 Docker 安装网关组件并写入配置</p>
-                <p class="text-xs text-slate-400 mb-4 text-center">支持 etcd 配置存储，value 为 YAML 格式，便于与 config.yml 互迁</p>
-                <div class="code-block mb-6">
-                    <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
-                    <div class="code-body"><span style="color:#64748b"># 一键安装二进制版 isrvd</span><br />bash
-                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install<br /><br /><span style="color:#64748b"># 安装 isrvd，并自动安装 Docker</span><br />bash
-                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --docker<br /><br /><span style="color:#64748b"># 安装 isrvd + Docker 版 Caddy，并自动写入 caddy.adminUrl</span><br />bash
-                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --caddy<br /><br /><span style="color:#64748b"># 安装 isrvd + Docker 版 APISIX，并自动写入 apisix.adminUrl/adminKey</span><br />bash
-                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --apisix<br /><br /><span style="color:#64748b"># 更新</span><br />bash
-                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) update<br /><br /><span style="color:#64748b"># 卸载</span><br />bash
-                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) uninstall<br /><br /><span style="color:#64748b"># 仅下载</span><br />bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh)
-                            download</div>
-                    </div>
-                    <div class="code-block">
-                        <div class="code-header"><span>bash — 直接运行</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
-                        <div class="code-body"><span style="color:#64748b"># 默认读取 ./config.yml</span><br />./isrvd<br /><br /><span style="color:#64748b"># 本地 YAML</span><br />CONFIG_PATH=/data/conf/isrvd.yml ./isrvd<br /><br /><span
-                                style="color:#64748b"># etcd 配置（value 为 YAML 格式）</span><br />CONFIG_PATH=<span style="color:#34d399">"etcd://user:pass@127.0.0.1:2379/isrvd/config?scheme=http&timeout=5s"</span> ./isrvd<br /><br /><span
-                                style="color:#64748b"># etcd key 不存在时，用 fallback YAML 初始化并写入 etcd</span><br />CONFIG_PATH=<span style="color:#34d399">"etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml"</span> ./isrvd</div>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-2 text-center">etcd 认证可省略或用 <code class="bg-slate-100 px-1 rounded">ETCD_USERNAME</code> / <code class="bg-slate-100 px-1 rounded">ETCD_PASSWORD</code> 补充</p>
-                </div>
 
                 <!-- Compose Tab -->
                 <div id="tab-compose" class="tab-content mt-8">
