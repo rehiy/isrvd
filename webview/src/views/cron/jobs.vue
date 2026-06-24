@@ -25,6 +25,10 @@ class CronJobs extends Vue {
     searchText = ''
     types: CronTypeInfo[] = []
 
+    get dockerAvailable() {
+        return this.portal.serviceAvailability.docker
+    }
+
     get filteredJobs() {
         const keyword = this.searchText.trim().toLowerCase()
         if (!keyword) return this.jobs
@@ -56,10 +60,21 @@ class CronJobs extends Vue {
         return 'text-slate-400 hover:text-slate-500'
     }
 
+    isDockerJob(job: CronJob): boolean {
+        return job.type === 'DOCKER_TMP' || job.type === 'DOCKER_CTR'
+    }
+
+    canOperateJob(job: CronJob): boolean {
+        return !this.isDockerJob(job) || this.dockerAvailable
+    }
+
     async loadTypes() {
         try {
             const res = await api.cronTypes()
-            this.types = res.payload?.types || []
+            const types = res.payload?.types || []
+            this.types = this.dockerAvailable
+                ? types
+                : types.filter(type => type.value !== 'DOCKER_TMP' && type.value !== 'DOCKER_CTR')
         } catch {
             this.types = []
             this.portal.showNotification('error', '获取可用脚本类型失败')
@@ -239,21 +254,22 @@ export default toNative(CronJobs)
                 <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium font-mono bg-slate-100 text-slate-700">{{ job.type }}</span>
               </td>
               <td class="px-4 py-3">
-                <button v-if="portal.hasPerm('PATCH /api/cron/jobs/:id')" :title="job.enabled ? '点击禁用' : '点击启用'" class="text-xs font-medium transition-colors" :class="runtimeStatusClass(job)" @click="toggleEnabled(job)">
+                <button v-if="portal.hasPerm('PATCH /api/cron/jobs/:id') && (canOperateJob(job) || job.enabled)" :title="job.enabled ? '点击禁用' : '点击启用'" class="text-xs font-medium transition-colors" :class="runtimeStatusClass(job)" @click="toggleEnabled(job)">
                   {{ runtimeStatusText(job) }}
                 </button>
+                <span v-else class="text-xs" :class="runtimeStatusClass(job)">{{ runtimeStatusText(job) }}</span>
               </td>
               <td class="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{{ formatTime(job.nextRun) }}</td>
               <td class="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{{ formatTime(job.lastRun) }}</td>
               <td class="px-4 py-3">
                 <div class="flex items-center justify-end gap-1.5">
-                  <button v-if="portal.hasPerm('POST /api/cron/jobs/:id/run')" class="btn-icon btn-icon-emerald" title="立即执行" @click="runNow(job)">
+                  <button v-if="portal.hasPerm('POST /api/cron/jobs/:id/run') && canOperateJob(job)" class="btn-icon btn-icon-emerald" title="立即执行" @click="runNow(job)">
                     <i class="fas fa-play text-xs"></i>
                   </button>
                   <button v-if="portal.hasPerm('GET /api/cron/jobs/:id/logs')" class="btn-icon btn-icon-slate" title="执行日志" @click="openLogs(job)">
                     <i class="fas fa-list-ul text-xs"></i>
                   </button>
-                  <button v-if="portal.hasPerm('PUT /api/cron/jobs/:id')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(job)">
+                  <button v-if="portal.hasPerm('PUT /api/cron/jobs/:id') && canOperateJob(job)" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(job)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
                   <button v-if="portal.hasPerm('DELETE /api/cron/jobs/:id')" class="btn-icon btn-icon-red" title="删除" @click="openDelete(job)">
@@ -278,9 +294,10 @@ export default toNative(CronJobs)
                 <span class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ job.id }}</span>
               </div>
             </div>
-            <button class="text-xs font-medium flex-shrink-0 transition-colors" :class="runtimeStatusClass(job)" @click="toggleEnabled(job)">
+            <button v-if="portal.hasPerm('PATCH /api/cron/jobs/:id') && (canOperateJob(job) || job.enabled)" class="text-xs font-medium flex-shrink-0 transition-colors" :class="runtimeStatusClass(job)" @click="toggleEnabled(job)">
               {{ runtimeStatusText(job) }}
             </button>
+            <span v-else class="text-xs font-medium flex-shrink-0" :class="runtimeStatusClass(job)">{{ runtimeStatusText(job) }}</span>
           </div>
 
           <div class="text-xs">
@@ -307,9 +324,9 @@ export default toNative(CronJobs)
           </div>
 
           <div class="flex items-center justify-end gap-1.5 pt-3 mt-3 border-t border-slate-100">
-            <button v-if="portal.hasPerm('POST /api/cron/jobs/:id/run')" class="btn-icon btn-icon-emerald" title="立即执行" @click="runNow(job)"><i class="fas fa-play text-xs"></i></button>
+            <button v-if="portal.hasPerm('POST /api/cron/jobs/:id/run') && canOperateJob(job)" class="btn-icon btn-icon-emerald" title="立即执行" @click="runNow(job)"><i class="fas fa-play text-xs"></i></button>
             <button v-if="portal.hasPerm('GET /api/cron/jobs/:id/logs')" class="btn-icon btn-icon-slate" title="执行日志" @click="openLogs(job)"><i class="fas fa-list-ul text-xs"></i></button>
-            <button v-if="portal.hasPerm('PUT /api/cron/jobs/:id')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(job)"><i class="fas fa-pen text-xs"></i></button>
+            <button v-if="portal.hasPerm('PUT /api/cron/jobs/:id') && canOperateJob(job)" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(job)"><i class="fas fa-pen text-xs"></i></button>
             <button v-if="portal.hasPerm('DELETE /api/cron/jobs/:id')" class="btn-icon btn-icon-red" title="删除" @click="openDelete(job)"><i class="fas fa-trash text-xs"></i></button>
           </div>
         </div>

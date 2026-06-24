@@ -45,8 +45,14 @@ class JobEditModal extends Vue {
     images: DockerImageInfo[] = []
     containers: DockerContainerInfo[] = []
 
+    get dockerAvailable() {
+        return this.portal.serviceAvailability.docker
+    }
+
     show(job: CronJob | null = null, types: CronTypeInfo[] = []) {
-        this.types = types
+        this.types = this.dockerAvailable
+            ? types
+            : types.filter(type => type.value !== 'DOCKER_TMP' && type.value !== 'DOCKER_CTR')
         this.isEditMode = !!job
         if (job) {
             this.jobID = job.id
@@ -65,10 +71,12 @@ class JobEditModal extends Vue {
             }
         } else {
             this.jobID = ''
-            this.formData = defaultFormData(types[0]?.value)
+            this.formData = defaultFormData(this.types[0]?.value)
         }
         this.isOpen = true
-        this.loadDockerData()
+        if (this.dockerAvailable) {
+            this.loadDockerData()
+        }
     }
 
     get isDockerType() {
