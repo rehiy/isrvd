@@ -48,15 +48,25 @@ CNB 流水线会同步推送到 CNB Docker 制品库，镜像路径为 `docker.c
 
 Docker 版默认管理员账号为 `admin` / `admin`，首次登录成功后会自动跳转至修改密码页面。
 
-### 创建网络
+### 脚本安装（推荐）
 
-根据实际部署场景选择网络驱动，并创建 `sdnet` 网络：
+安装脚本会自动安装 Docker、初始化单节点 Swarm、创建可挂载的 overlay 网络 `sdnet`，并根据参数启动对应的一体化镜像：
 
 ```bash
-# 单机通信（推荐用于单机部署）
-docker network create --driver=bridge sdnet
+# slim / caddy / apisix 三选一
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --docker
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --caddy
+bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --apisix
+```
 
-# 跨主机通信（需要先 docker swarm init）
+Docker 版统一使用容器名 `isrvd`，数据保存在 `/srv/data`；`update` 会按当前镜像类型重建容器，`uninstall` 删除容器但保留数据目录。
+
+### 创建网络
+
+使用安装脚本时无需手动操作。手动部署 Docker 版时，推荐先初始化 Swarm，再创建可挂载的 overlay 网络：
+
+```bash
+docker swarm init
 docker network create --driver=overlay --attachable sdnet
 ```
 

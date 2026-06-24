@@ -1,10 +1,13 @@
 #!/bin/bash
-set -e
+set -euo pipefail
+
+# 清理临时下载文件（若存在）
+trap 'rm -f "${DOWNLOAD_TMP_FILE:-}" >/dev/null 2>&1 || true' EXIT
 
 # ------------------------------------------
 # isrvd 服务管理脚本
 # 用法:
-#   isrvd.sh install [--docker] [--caddy|--apisix] [--cn|--global|--auto]
+#   isrvd.sh install [--docker|--caddy|--apisix] [--cn|--global|--auto]
 #   isrvd.sh update [--cn|--global|--auto]
 #   isrvd.sh download [--cn|--global|--auto]
 #   isrvd.sh uninstall
@@ -19,7 +22,6 @@ BIN_LINK="/usr/local/bin/isrvd"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 DOCKER_NETWORK="sdnet"
 DOCKER_DATA_DIR="/srv/data"
-DOCKER_CONF_DIR="$INSTALL_DIR/docker"
 SERVICE_AREA="auto"
 
 # ------------------------------------------
@@ -72,12 +74,15 @@ resolve_service_area() {
 }
 
 
-setup_release() {
+resolve_release_area() {
     local area_info
-
     area_info=$(resolve_service_area)
     RELEASE_AREA="${area_info%%:*}"
     RELEASE_COUNTRY="${area_info#*:}"
+}
+
+setup_release() {
+    resolve_release_area
 
     if [ "$RELEASE_AREA" = "cn" ]; then
         RELEASE_URL="https://cnb.cool/rehiy/isrvd/-/releases/latest/download/isrvd-$ARCH.tar.gz"
@@ -94,6 +99,7 @@ print_release_info() {
     echo "  Arch:    $ARCH"
     echo "  Area:    $area"
     echo "  Source:  $RELEASE_SOURCE"
+    [ -n "$DOCKER_IMAGE" ] && echo "  Image:   $DOCKER_IMAGE"
 }
 
 ARCH=$(uname -s | tr '[:upper:]' '[:lower:]')-$(get_arch)
@@ -103,7 +109,8 @@ ARCH=$(uname -s | tr '[:upper:]' '[:lower:]')-$(get_arch)
 # ------------------------------------------
 
 service_install() {
-    local bin_file=$(get_bin_file)
+    local bin_file
+    bin_file=$(get_bin_file) || exit 1
 
     cat > "$SERVICE_FILE" << EOF
 [Unit]
@@ -169,7 +176,13 @@ service_stop() {
 # ------------------------------------------
 
 get_bin_file() {
-    find "$INSTALL_DIR" -type f -name "isrvd-*" -executable | head -1
+    local bin
+    bin=$(find "$INSTALL_DIR" -type f -name "isrvd-*" -executable | head -1)
+    if [ -z "$bin" ]; then
+        echo "[error] No executable found in $INSTALL_DIR" >&2
+        return 1
+    fi
+    printf '%s' "$bin"
 }
 
 files_install() {
@@ -180,7 +193,8 @@ files_install() {
     tar xzf "$1" -C "$INSTALL_DIR"
 
     # 创建命令链接
-    local bin_file=$(get_bin_file)
+    local bin_file
+    bin_file=$(get_bin_file) || exit 1
     echo "[info] Creating symlink: $BIN_LINK -> $bin_file"
     ln -sf "$bin_file" "$BIN_LINK"
 }
@@ -190,7 +204,8 @@ files_update() {
     tar xzf "$1" -C "$INSTALL_DIR"
 
     # 更新符号链接
-    local bin_file=$(get_bin_file)
+    local bin_file
+    bin_file=$(get_bin_file) || exit 1
     if [ ! -L "$BIN_LINK" ] || [ "$(readlink -f "$BIN_LINK")" != "$bin_file" ]; then
         echo "[info] Updating symlink: $BIN_LINK -> $bin_file"
         ln -sf "$bin_file" "$BIN_LINK"
@@ -231,17 +246,10 @@ download_package() {
 
 
 # ------------------------------------------
-# Docker 组件安装
+# Docker 版部署
 # ------------------------------------------
 
-random_hex() {
-    local bytes="${1:-16}"
-    head -c "$bytes" /dev/urandom | od -An -tx1 | tr -d ' \n'
-}
-
 install_docker() {
-    check_root
-
     if command -v docker >/dev/null 2>&1; then
         echo "[info] Docker already installed: $(docker --version)"
         return
@@ -250,6 +258,7 @@ install_docker() {
     echo "[info] Installing Docker..."
     curl -fsSL https://get.docker.com -o get-docker.sh && \
         sh get-docker.sh --mirror Aliyun && \
+        rm -f get-docker.sh && \
         mkdir -p /etc/docker && \
         echo '{"registry-mirrors":["https://docker.1ms.run"]}' | tee /etc/docker/daemon.json && \
         systemctl restart docker
@@ -264,203 +273,190 @@ ensure_docker_ready() {
     fi
 }
 
+ensure_swarm_ready() {
+    local state
+    local advertise_addr
+
+    state=$(docker info --format '{{.Swarm.LocalNodeState}}')
+    if [ "$state" = "active" ]; then
+        echo "[info] Docker Swarm already active"
+        return
+    fi
+    if [ "$state" != "inactive" ]; then
+        echo "[error] Docker Swarm state is $state; cannot initialize automatically"
+        exit 1
+    fi
+
+    advertise_addr=$(ip route get 1.1.1.1 2>/dev/null | awk '{ for (i = 1; i <= NF; i++) if ($i == "src") { print $(i + 1); exit } }')
+    echo "[info] Initializing Docker Swarm..."
+    if [ -n "$advertise_addr" ]; then
+        docker swarm init --advertise-addr "$advertise_addr"
+    else
+        docker swarm init
+    fi
+}
+
 ensure_docker_network() {
+    local driver
+    local attachable
+
     if docker network inspect "$DOCKER_NETWORK" >/dev/null 2>&1; then
+        driver=$(docker network inspect --format '{{.Driver}}' "$DOCKER_NETWORK")
+        attachable=$(docker network inspect --format '{{.Attachable}}' "$DOCKER_NETWORK")
+        if [ "$driver" != "overlay" ] || [ "$attachable" != "true" ]; then
+            echo "[error] Docker network $DOCKER_NETWORK must be an attachable overlay network"
+            exit 1
+        fi
         echo "[info] Docker network exists: $DOCKER_NETWORK"
         return
     fi
 
-    echo "[info] Creating Docker network: $DOCKER_NETWORK"
-    docker network create --driver=bridge "$DOCKER_NETWORK"
+    echo "[info] Creating attachable overlay network: $DOCKER_NETWORK"
+    docker network create --driver=overlay --attachable "$DOCKER_NETWORK"
 }
 
-ensure_isrvd_installed() {
-    if [ -d "$INSTALL_DIR" ]; then
-        echo "[info] isrvd already installed: $INSTALL_DIR"
-        return
+setup_docker_image() {
+    local variant="$1"
+    local repository
+
+    resolve_release_area
+
+    if [ "$RELEASE_AREA" = "cn" ]; then
+        repository="docker.cnb.cool/rehiy/isrvd"
+        RELEASE_SOURCE="CNB Docker"
+    else
+        repository="rehiy/isrvd"
+        RELEASE_SOURCE="Docker Hub"
     fi
-    install_binary
+    DOCKER_IMAGE="$repository:$variant"
 }
 
-ensure_container_absent() {
-    local name="$1"
-    if docker ps -a --format '{{.Names}}' | grep -Fxq "$name"; then
-        echo "[error] Docker container already exists: $name"
-        echo "[info] Remove it first: docker rm -f $name"
+docker_variant_from_image() {
+    local image="$1"
+    local tag="${image##*:}"
+
+    case "$tag" in
+        slim|latest) echo "slim" ;;
+        caddy)       echo "caddy" ;;
+        apisix)      echo "apisix" ;;
+        *)
+            echo "[error] Cannot determine isrvd image variant from: $image" >&2
+            return 1
+            ;;
+    esac
+}
+
+run_isrvd_container() {
+    local variant="$1"
+    local image="$2"
+    local ports=(-p 8080:8080)
+
+    case "$variant" in
+        caddy)  ports+=(-p 80:80 -p 443:443) ;;
+        apisix) ports+=(-p 80:9080 -p 443:9443) ;;
+    esac
+
+    docker run -d \
+        --name "$SERVICE_NAME" \
+        --restart unless-stopped \
+        --network "$DOCKER_NETWORK" \
+        "${ports[@]}" \
+        -v "$DOCKER_DATA_DIR:/data" \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        "$image"
+}
+
+install_docker_deployment() {
+    local variant="$1"
+
+    check_root
+
+    if [ -f "$SERVICE_FILE" ]; then
+        echo "[error] Binary isrvd service is already installed"
+        echo "[info] Run '$0 uninstall' before switching to the Docker deployment"
         exit 1
     fi
-}
 
-config_replace_block() {
-    local section="$1"
-    local body="$2"
-    local tmp_file
+    ensure_docker_ready
+    ensure_swarm_ready
+    ensure_docker_network
 
-    mkdir -p "$(dirname "$CONFIG_FILE")"
-    touch "$CONFIG_FILE"
-    tmp_file=$(mktemp)
-
-    awk -v section="$section" -v body="$body" '
-        BEGIN { skip = 0; found = 0 }
-        $0 == section ":" {
-            print
-            print body
-            skip = 1
-            found = 1
-            next
-        }
-        skip && $0 ~ /^[^[:space:]#][^:]*:/ { skip = 0 }
-        !skip { print }
-        END {
-            if (!found) {
-                printf "\n%s:\n%s\n", section, body
-            }
-        }
-    ' "$CONFIG_FILE" > "$tmp_file"
-
-    mv "$tmp_file" "$CONFIG_FILE"
-}
-restart_isrvd() {
-    if systemctl is-active --quiet "$SERVICE_NAME"; then
-        echo "[info] Restarting ${SERVICE_NAME} service..."
-        systemctl restart "$SERVICE_NAME"
+    if docker ps -a --format '{{.Names}}' | grep -Fxq "$SERVICE_NAME"; then
+        echo "[error] Docker container already exists: $SERVICE_NAME"
+        echo "[info] Use '$0 update' to upgrade it"
+        exit 1
     fi
+
+    setup_docker_image "$variant"
+    echo "=========================================="
+    echo "  isrvd Docker Installer"
+    echo "=========================================="
+    print_release_info
+    echo "=========================================="
+
+    mkdir -p "$DOCKER_DATA_DIR"
+    docker pull "$DOCKER_IMAGE"
+    run_isrvd_container "$variant" "$DOCKER_IMAGE"
+
+    echo "[info] Waiting for isrvd container..."
+    sleep 3
+    if ! docker ps --format '{{.Names}}' | grep -Fxq "$SERVICE_NAME"; then
+        echo "[error] isrvd container exited unexpectedly"
+        docker logs "$SERVICE_NAME" || true
+        exit 1
+    fi
+
+    echo ""
+    echo "=========================================="
+    echo "  Installation Complete!"
+    echo "=========================================="
+    echo "  Container: $SERVICE_NAME"
+    echo "  Image:     $DOCKER_IMAGE"
+    echo "  Data:      $DOCKER_DATA_DIR"
+    echo "  Network:   $DOCKER_NETWORK (overlay, attachable)"
+    echo "  Web UI:    http://127.0.0.1:8080"
+    echo "=========================================="
 }
 
-install_caddy_component() {
+update_docker_deployment() {
+    local old_image
+    local old_image_id
+    local variant
+
+    old_image=$(docker inspect --format '{{.Config.Image}}' "$SERVICE_NAME")
+    old_image_id=$(docker inspect --format '{{.Image}}' "$SERVICE_NAME")
+    variant=$(docker_variant_from_image "$old_image") || exit 1
+
+    ensure_docker_ready
+    ensure_swarm_ready
     ensure_docker_network
-    ensure_container_absent isrvd-caddy
+    setup_docker_image "$variant"
 
-    mkdir -p "$DOCKER_CONF_DIR" "$DOCKER_DATA_DIR/caddy" "$DOCKER_DATA_DIR/caddy-config"
-    cat > "$DOCKER_CONF_DIR/caddy.json" << 'EOF'
-{
-  "admin": {
-    "config": {
-      "persist": true
-    },
-    "listen": "0.0.0.0:2019"
-  },
-  "apps": {
-    "http": {
-      "servers": {
-        "srv0": {
-          "automatic_https": {
-            "disable": true,
-            "disable_redirects": true
-          },
-          "listen": [":80", ":443"],
-          "routes": []
-        }
-      }
-    }
-  },
-  "storage": {
-    "module": "file_system",
-    "root": "/data/caddy"
-  }
-}
-EOF
+    echo "=========================================="
+    echo "  isrvd Docker Updater"
+    echo "=========================================="
+    print_release_info
+    echo "=========================================="
 
-    echo "[info] Starting Caddy container..."
-    docker run -d \
-        --name isrvd-caddy \
-        --network "$DOCKER_NETWORK" \
-        -p 80:80 \
-        -p 443:443 \
-        -p 127.0.0.1:2019:2019 \
-        -v "$DOCKER_CONF_DIR/caddy.json:/etc/caddy/caddy.json" \
-        -v "$DOCKER_DATA_DIR/caddy:/data/caddy" \
-        -v "$DOCKER_DATA_DIR/caddy-config:/config" \
-        caddy:2.8.4-alpine \
-        caddy run --config /etc/caddy/caddy.json --adapter json
+    docker pull "$DOCKER_IMAGE"
+    docker rm -f "$SERVICE_NAME"
+    if ! run_isrvd_container "$variant" "$DOCKER_IMAGE"; then
+        echo "[error] Failed to start updated container; restoring previous image"
+        docker rm -f "$SERVICE_NAME" 2>/dev/null || true
+        run_isrvd_container "$variant" "$old_image_id"
+        exit 1
+    fi
 
-    config_replace_block "caddy" "  adminUrl: http://127.0.0.1:2019"
-    restart_isrvd
+    sleep 3
+    if ! docker ps --format '{{.Names}}' | grep -Fxq "$SERVICE_NAME"; then
+        echo "[error] Updated container exited; restoring previous image"
+        docker logs "$SERVICE_NAME" || true
+        docker rm -f "$SERVICE_NAME" >/dev/null 2>&1 || true
+        run_isrvd_container "$variant" "$old_image_id"
+        exit 1
+    fi
 
-    echo "[info] Caddy installed in Docker and configured for isrvd management."
-    echo "[info] Caddy Admin API: http://127.0.0.1:2019"
-}
-
-install_apisix_component() {
-    ensure_docker_network
-    ensure_container_absent isrvd-apisix-etcd
-    ensure_container_absent isrvd-apisix
-
-    local admin_key
-    admin_key=$(random_hex 16)
-
-    mkdir -p "$DOCKER_CONF_DIR" "$DOCKER_DATA_DIR/apisix-etcd"
-    cat > "$DOCKER_CONF_DIR/apisix.yaml" << EOF
-apisix:
-  node_listen: 9080
-  enable_ipv6: false
-  ssl:
-    enable: true
-    listen:
-      - port: 9443
-        enable_http3: false
-  enable_control: true
-  control:
-    ip: 0.0.0.0
-    port: 9090
-  trusted_addresses:
-    - 0.0.0.0/0
-  dns_resolver:
-    - 127.0.0.11
-  dns_resolver_valid: 10
-
-deployment:
-  admin:
-    allow_admin:
-      - 0.0.0.0/0
-    admin_key:
-      - name: admin
-        key: $admin_key
-        role: admin
-    admin_listen:
-      ip: 0.0.0.0
-      port: 9180
-  etcd:
-    host:
-      - http://isrvd-apisix-etcd:2379
-    prefix: /apisix
-    timeout: 30
-
-plugin_attr:
-  prometheus:
-    export_addr:
-      ip: 0.0.0.0
-      port: 9091
-EOF
-
-    echo "[info] Starting APISIX etcd container..."
-    docker run -d \
-        --name isrvd-apisix-etcd \
-        --network "$DOCKER_NETWORK" \
-        -e ALLOW_NONE_AUTHENTICATION=yes \
-        -e ETCD_ADVERTISE_CLIENT_URLS=http://isrvd-apisix-etcd:2379 \
-        -v "$DOCKER_DATA_DIR/apisix-etcd:/bitnami/etcd" \
-        bitnami/etcd:3.5
-
-    echo "[info] Waiting for APISIX etcd..."
-    sleep 5
-
-    echo "[info] Starting APISIX container..."
-    docker run -d \
-        --name isrvd-apisix \
-        --network "$DOCKER_NETWORK" \
-        -p 80:9080 \
-        -p 443:9443 \
-        -p 127.0.0.1:9180:9180 \
-        -v "$DOCKER_CONF_DIR/apisix.yaml:/usr/local/apisix/conf/config.yaml" \
-        apache/apisix:3.16.0-debian
-
-    config_replace_block "apisix" "  adminUrl: http://127.0.0.1:9180/apisix/admin
-  adminKey: $admin_key"
-    restart_isrvd
-
-    echo "[info] APISIX installed in Docker and configured for isrvd management."
-    echo "[info] APISIX Admin API: http://127.0.0.1:9180/apisix/admin"
+    echo "[info] Docker deployment updated: $DOCKER_IMAGE"
 }
 
 # ------------------------------------------
@@ -477,10 +473,7 @@ check_root() {
 install_binary() {
     check_root
 
-    if ! setup_release; then
-        echo "[error] Failed to resolve latest release"
-        exit 1
-    fi
+    setup_release
 
     echo "=========================================="
     echo "  isrvd Installer"
@@ -504,7 +497,8 @@ install_binary() {
 
     rm -f "$DOWNLOAD_TMP_FILE"
 
-    local bin_file=$(get_bin_file)
+    local bin_file
+    bin_file=$(get_bin_file) || bin_file="(unknown)"
 
     echo ""
     echo "=========================================="
@@ -523,23 +517,24 @@ install_binary() {
 }
 
 install() {
-    local with_docker=0
-    local with_caddy=0
-    local with_apisix=0
-
-    if [ "$#" -eq 0 ]; then
-        install_binary
-        return
-    fi
+    local variant=""
 
     while [ "$#" -gt 0 ]; do
         case "$1" in
             --cn|--global|--auto)
                 parse_service_area_option "$1"
                 ;;
-            --docker) with_docker=1 ;;
-            --caddy)  with_caddy=1 ;;
-            --apisix) with_apisix=1 ;;
+            --docker|--caddy|--apisix)
+                if [ -n "$variant" ]; then
+                    echo "[error] Choose only one Docker image option: --docker, --caddy, or --apisix"
+                    exit 1
+                fi
+                case "$1" in
+                    --docker) variant="slim" ;;
+                    --caddy)  variant="caddy" ;;
+                    --apisix) variant="apisix" ;;
+                esac
+                ;;
             --help|-h)
                 print_usage
                 return
@@ -553,28 +548,11 @@ install() {
         shift
     done
 
-    if [ "$with_caddy" -eq 1 ] && [ "$with_apisix" -eq 1 ]; then
-        echo "[error] --caddy and --apisix both expose ports 80/443; choose one gateway option"
-        exit 1
-    fi
-
-    if [ "$with_docker" -eq 0 ] && [ "$with_caddy" -eq 0 ] && [ "$with_apisix" -eq 0 ]; then
+    if [ -z "$variant" ]; then
         install_binary
         return
     fi
-
-    ensure_isrvd_installed
-
-    if [ "$with_docker" -eq 1 ] || [ "$with_caddy" -eq 1 ] || [ "$with_apisix" -eq 1 ]; then
-        ensure_docker_ready
-    fi
-
-    if [ "$with_caddy" -eq 1 ]; then
-        install_caddy_component
-    fi
-    if [ "$with_apisix" -eq 1 ]; then
-        install_apisix_component
-    fi
+    install_docker_deployment "$variant"
 }
 
 update() {
@@ -598,10 +576,14 @@ update() {
 
     check_root
 
-    if ! setup_release; then
-        echo "[error] Failed to resolve latest release"
-        exit 1
+    if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+        if docker ps -a --format '{{.Names}}' | grep -Fxq "$SERVICE_NAME"; then
+            update_docker_deployment
+            return
+        fi
     fi
+
+    setup_release
 
     echo "=========================================="
     echo "  isrvd Updater"
@@ -627,7 +609,8 @@ update() {
 
     rm -f "$DOWNLOAD_TMP_FILE"
 
-    local bin_file=$(get_bin_file)
+    local bin_file
+    bin_file=$(get_bin_file) || bin_file="(unknown)"
 
     echo ""
     echo "=========================================="
@@ -640,15 +623,35 @@ update() {
 }
 
 uninstall() {
-    check_root
+    local container
+    local removed=0
 
+    check_root
     echo "=========================================="
     echo "  isrvd Uninstaller"
     echo "=========================================="
 
-    service_stop
-    service_uninstall
-    files_uninstall
+    if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+        for container in "$SERVICE_NAME" isrvd-caddy isrvd-apisix isrvd-apisix-etcd; do
+            if docker ps -a --format '{{.Names}}' | grep -Fxq "$container"; then
+                echo "[info] Removing Docker container: $container"
+                docker rm -f "$container"
+                removed=1
+            fi
+        done
+        [ "$removed" -eq 1 ] && echo "[info] Docker data preserved: $DOCKER_DATA_DIR"
+    fi
+
+    if [ -f "$SERVICE_FILE" ] || [ -d "$INSTALL_DIR" ]; then
+        service_stop
+        service_uninstall
+        files_uninstall
+        removed=1
+    fi
+
+    if [ "$removed" -eq 0 ]; then
+        echo "[info] isrvd is not installed"
+    fi
 
     echo ""
     echo "=========================================="
@@ -675,10 +678,7 @@ download() {
         shift
     done
 
-    if ! setup_release; then
-        echo "[error] Failed to resolve latest release"
-        exit 1
-    fi
+    setup_release
 
     echo "=========================================="
     echo "  isrvd Downloader"
@@ -699,26 +699,26 @@ download() {
 }
 
 print_usage() {
-    echo "Usage: $0 install [--docker] [--caddy|--apisix] [--cn|--global|--auto]"
+    echo "Usage: $0 install [--docker|--caddy|--apisix] [--cn|--global|--auto]"
     echo "       $0 update [--cn|--global|--auto]"
     echo "       $0 download [--cn|--global|--auto]"
     echo "       $0 uninstall"
     echo ""
     echo "Commands:"
     echo "  install               - Download and install isrvd systemd service"
-    echo "  install --docker      - Install binary isrvd and Docker engine"
-    echo "  install --caddy       - Install binary isrvd, Docker, Caddy container, and caddy.adminUrl"
-    echo "  install --apisix      - Install binary isrvd, Docker, APISIX container, and apisix admin config"
-    echo "  update                - Update systemd installation to latest version"
-    echo "  uninstall             - Remove isrvd systemd service and config"
+    echo "  install --docker      - Install rehiy/isrvd:slim with Docker, Swarm, and sdnet"
+    echo "  install --caddy       - Install rehiy/isrvd:caddy with Docker, Swarm, and sdnet"
+    echo "  install --apisix      - Install rehiy/isrvd:apisix with Docker, Swarm, and sdnet"
+    echo "  update                - Update the current binary or Docker deployment"
+    echo "  uninstall             - Remove the current deployment (Docker data is preserved)"
     echo "  download              - Download latest package to current directory"
     echo ""
     echo "iSrvd source:"
     echo "  --auto               - Detect country_code via IP and use CNB when country_code=CN (default)"
-    echo "  --cn                 - Use CNB releases and docker.cnb.cool/rehiy/isrvd for isrvd"
-    echo "  --global             - Use GitHub releases and rehiy/isrvd for isrvd"
+    echo "  --cn                 - Use CNB releases or docker.cnb.cool/rehiy/isrvd images"
+    echo "  --global             - Use GitHub releases or rehiy/isrvd images from Docker Hub"
     echo ""
-    echo "Note: source options do not change Docker Engine, Caddy, APISIX, or etcd image sources."
+    echo "Note: Docker installs initialize Swarm and create the attachable overlay network sdnet."
 }
 
 # ------------------------------------------
