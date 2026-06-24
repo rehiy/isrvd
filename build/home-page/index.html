@@ -651,12 +651,12 @@
                 <div class="code-block mb-6">
                     <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
                     <div class="code-body"><span style="color:#64748b"># 安装 systemd 服务（二进制版）</span><br />bash
-                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install<br /><br /><span style="color:#64748b"># 以 Docker 方式部署（slim 镜像，含 Swarm + sdnet 网络）</span><br />bash
-                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --docker<br /><br /><span style="color:#64748b"># 以 Docker 方式部署（caddy 镜像，含 Caddy 网关）</span><br />bash
-                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --caddy<br /><br /><span style="color:#64748b"># 以 Docker 方式部署（apisix 镜像，含 APISIX 网关）</span><br />bash
-                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --apisix<br /><br /><span style="color:#64748b"># 更新（自动识别二进制或 Docker 部署）</span><br />bash
-                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) update<br /><br /><span style="color:#64748b"># 卸载（同时清理二进制文件和 Docker 容器）</span><br />bash
-                        <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) uninstall<br /><br /><span style="color:#64748b"># 仅下载二进制包（不安装）</span><br />bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh)
+                        <(curl -sL https://isrvd.rehiy.com/install/) install<br /><br /><span style="color:#64748b"># 以 Docker 方式部署（slim 镜像，含 Swarm + sdnet 网络）</span><br />bash
+                        <(curl -sL https://isrvd.rehiy.com/install/) install --docker<br /><br /><span style="color:#64748b"># 以 Docker 方式部署（caddy 镜像，含 Caddy 网关）</span><br />bash
+                        <(curl -sL https://isrvd.rehiy.com/install/) install --caddy<br /><br /><span style="color:#64748b"># 以 Docker 方式部署（apisix 镜像，含 APISIX 网关）</span><br />bash
+                        <(curl -sL https://isrvd.rehiy.com/install/) install --apisix<br /><br /><span style="color:#64748b"># 更新（自动识别二进制或 Docker 部署）</span><br />bash
+                        <(curl -sL https://isrvd.rehiy.com/install/) update<br /><br /><span style="color:#64748b"># 卸载（同时清理二进制文件和 Docker 容器）</span><br />bash
+                        <(curl -sL https://isrvd.rehiy.com/install/) uninstall<br /><br /><span style="color:#64748b"># 仅下载二进制包（不安装）</span><br />bash <(curl -sL https://isrvd.rehiy.com/install/)
                             download</div>
                     </div>
                     <div class="code-block">
