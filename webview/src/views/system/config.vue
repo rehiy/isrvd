@@ -545,7 +545,7 @@ export default toNative(Config)
           </div>
         </div>
 
-        <aside class="order-1 min-w-0 lg:order-2 lg:border-l lg:border-slate-200 lg:pl-6 lg:sticky lg:top-36 lg:self-start lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto">
+        <aside class="config-section-nav order-1 min-w-0 lg:order-2 lg:border-l lg:border-slate-200 lg:pl-6">
           <div class="hidden lg:block space-y-3">
             <h2 class="section-title">配置块</h2>
             <button

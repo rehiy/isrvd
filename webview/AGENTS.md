@@ -60,7 +60,7 @@
 
 - 列表/详情页最外层统一使用 `.page`，页面内部独立内容块才使用 `.card`
 - 标题栏统一使用 `.page-toolbar` 类（定义于 `light_components.css`），固定在全局 header 下方；容器不写 `flex/justify-between`
-- 内嵌面板使用 `.page-toolbar-static` 取消吸顶；配置页右侧目录由 `aside` 使用 `sticky top-36 self-start` 实现粘连
+- 内嵌面板使用 `.page-toolbar-static` 取消吸顶；配置页右侧目录使用 `.config-section-nav`，仅在桌面且视口高度 ≥ 960px 时启用 `sticky`，矮窗口下保持普通文档流
 - 必须提供桌面 `hidden md:flex` 与移动布局；移动端可用 `flex md:hidden`，也可用 `block md:hidden` 外层 + 内部 `flex items-center justify-between`
 - 详情页右侧仅保留刷新等功能按钮，**不添加返回按钮**
 
