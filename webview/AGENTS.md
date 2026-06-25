@@ -56,10 +56,11 @@
 - **资源名**：单数形式
 - **分组注释**：`// ==================== XXXX 相关 ====================`
 
-### 1.6 卡片与标题栏
+### 1.6 页面容器、卡片与标题栏
 
-- 列表/详情页统一 `.card mb-4`
-- 标题栏：使用 `.card-toolbar` 类（定义于 `light_components.css`），容器不写 `flex/justify-between`
+- 列表/详情页最外层统一使用 `.page`，页面内部独立内容块才使用 `.card`
+- 标题栏统一使用 `.page-toolbar` 类（定义于 `light_components.css`），固定在全局 header 下方；容器不写 `flex/justify-between`
+- 内嵌面板使用 `.page-toolbar-static` 取消吸顶；配置页右侧目录由 `aside` 使用 `sticky top-36 self-start` 实现粘连
 - 必须提供桌面 `hidden md:flex` 与移动布局；移动端可用 `flex md:hidden`，也可用 `block md:hidden` 外层 + 内部 `flex items-center justify-between`
 - 详情页右侧仅保留刷新等功能按钮，**不添加返回按钮**
 
@@ -374,9 +375,11 @@
 
 | 类 | 用途 | 禁止手写 |
 |---|---|---|
-| `.card` | 页面级主卡片 | `bg-white rounded-xl shadow-soft border border-slate-200/60` |
-| `.card-interactive` | 列表交互式卡片（悬停阴影） | `rounded-xl border border-slate-200 bg-white p-4 hover:shadow-sm` |
-| `.card-toolbar` | 页面级卡片顶栏（灰底） | `bg-slate-50 border-b border-slate-200 rounded-t-2xl px-4 py-3` |
+| `.page` | 页面级全宽内容容器 | `min-w-0` |
+| `.page-toolbar` | 页面标题栏，吸附于全局 header 下方 | `sticky top-16 z-30 bg-slate-100/80 backdrop-blur-xl border-b border-slate-200/70 px-4 py-3` |
+| `.page-toolbar-static` | 内嵌面板工具栏修饰类，取消吸顶并防止收缩 | `position: static; z-index: auto; flex-shrink: 0` |
+| `.card` | 页面内部内容卡片 | `rounded-xl shadow-soft border border-slate-200/60 overflow-hidden` |
+| `.card-interactive` | 列表交互式卡片（悬停阴影） | `rounded-xl border border-slate-200 p-4 hover:shadow-sm` |
 | `.card-header` | 小卡片标题栏（widget/模态框内部） | `px-4 py-3 border-b border-slate-100 flex items-center gap-2` |
 | `.card-body` | 卡片内容区（表单/详情/loading/empty/移动端卡片列表），带内边距 | `p-4` |
 | `.card-table` | 卡片表格区（桌面端表格），无内边距，表格直接贴边 | `overflow-x-auto` |
@@ -476,7 +479,7 @@
 
 | 类 | 用途 | 禁止手写 |
 |---|---|---|
-| `.stat-card` | 概览 Widget 统计卡片（规范 1.12） | `rounded-xl border border-slate-200 bg-white p-4 hover:shadow-md transition-shadow flex items-center gap-3` |
+| `.stat-card` | 概览 Widget 统计卡片（规范 1.12） | `rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow flex items-center gap-3` |
 
 **10. 终端页面（Terminal Page）**
 
@@ -497,7 +500,7 @@
 - **协议/枚举选择按钮**：使用 `.btn-proto` + `.btn-proto-active` / `.btn-proto-inactive`
 - **虚线添加行按钮**：使用 `.btn-add-row`（表格式编辑区底部）
 - **概览统计卡片**：使用 `.stat-card`（规范 1.12）
-- **独立详情页 toolbar**：去掉 `<ContainerNav>` Tab 导航，改用独立 `.card-toolbar`（图标+标题在左，操作控件在右），不添加返回按钮
+- **独立详情页 toolbar**：去掉 `<ContainerNav>` Tab 导航，改用独立 `.page-toolbar`（图标+标题在左，操作控件在右），不添加返回按钮
 - **header 区域文字按钮统一**：`app.vue` header 中的文字按钮（如工具箱链接、AI 助手）统一使用 `btn btn-ghost px-4 py-2 text-sm gap-2`，禁止个别按钮手写冗余 inline class
 - **`.section-title` 强制规范**：
   - 文字颜色 `text-slate-700`、字号 `text-sm`、加底部边框 `border-b border-slate-200 pb-2`
