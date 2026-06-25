@@ -130,8 +130,8 @@ export default toNative(AccountPassword)
 </script>
 
 <template>
-  <div class="card mb-4">
-    <div class="card-toolbar">
+  <div class="page">
+    <div class="page-toolbar">
       <div class="hidden md:flex items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
           <div class="page-icon bg-blue-500">

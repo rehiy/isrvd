@@ -187,7 +187,7 @@ export default toNative(SystemNetwork)
 </script>
 
 <template>
-  <div v-if="currentIfaces.length" class="rounded-xl border border-slate-200 bg-white overflow-hidden">
+  <div v-if="currentIfaces.length" class="rounded-xl border border-slate-200 overflow-hidden">
     <div class="card-header">
       <div class="card-icon bg-cyan-500">
         <i class="fas fa-network-wired text-white text-xs"></i>

@@ -120,8 +120,8 @@ export default toNative(CaddyCerts)
 </script>
 
 <template>
-  <div class="card">
-    <div class="card-toolbar">
+  <div class="page">
+    <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="hidden md:flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -181,7 +181,7 @@ export default toNative(CaddyCerts)
               <th class="w-32 th-right">操作</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-slate-100">
+          <tbody class="divide-y divide-slate-100">
             <tr v-for="cert in filteredCerts" :key="cert.key || cert.subject" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[160px]">
                 <div class="flex items-center gap-2 min-w-0">

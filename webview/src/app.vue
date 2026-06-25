@@ -68,7 +68,7 @@ export default toNative(App)
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50">
+  <div class="min-h-screen bg-white">
     <!-- 加载状态 -->
     <div v-if="!portal.initialized" class="flex items-center justify-center min-h-screen">
       <div class="flex flex-col items-center gap-4">
@@ -101,7 +101,7 @@ export default toNative(App)
       </header>
 
       <NavigationBar ref="navigationRef" v-model:collapsed="sidebarCollapsed" />
-      <main class="p-4 pt-20 transition-all duration-300" :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'">
+      <main class="min-w-0 pt-16 transition-all duration-300" :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'">
         <router-view />
       </main>
     </template>

@@ -108,8 +108,8 @@ export default toNative(Registries)
 <template>
   <div>
     <!-- Toolbar Bar -->
-    <div class="card">
-      <div class="card-toolbar">
+    <div class="page">
+      <div class="page-toolbar">
         <!-- 桌面端 -->
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
@@ -178,7 +178,7 @@ export default toNative(Registries)
                 <th class="w-28 th-right">操作</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-slate-100">
+            <tbody class="divide-y divide-slate-100">
               <!-- Docker Hub 行（始终显示） -->
               <tr v-if="showDockerHub" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
@@ -315,7 +315,7 @@ export default toNative(Registries)
             </div>
           </div>
 
-          <div v-if="!showDockerHub && filteredRegistries.length === 0" class="rounded-xl border border-slate-200 bg-white py-10 px-4 text-center">
+          <div v-if="!showDockerHub && filteredRegistries.length === 0" class="rounded-xl border border-slate-200 py-10 px-4 text-center">
             <p class="text-sm text-slate-500">{{ registries.length === 0 ? '暂无镜像仓库' : '未找到匹配仓库' }}</p>
           </div>
         </div>

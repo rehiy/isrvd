@@ -153,8 +153,8 @@ export default toNative(Routes)
 </script>
 
 <template>
-  <div class="card">
-    <div class="card-toolbar">
+  <div class="page">
+    <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="hidden md:flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -239,7 +239,7 @@ export default toNative(Routes)
               <th class="w-40 th-right">操作</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-slate-100">
+          <tbody class="divide-y divide-slate-100">
             <tr v-for="route in filteredRoutes" :key="route.id" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[280px]">
                 <div class="flex items-center gap-2 min-w-0">

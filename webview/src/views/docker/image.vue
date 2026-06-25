@@ -108,8 +108,8 @@ export default toNative(ImageDetail)
 </script>
 
 <template>
-  <div class="card">
-    <div class="card-toolbar">
+  <div class="page">
+    <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="hidden md:flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -285,7 +285,7 @@ export default toNative(ImageDetail)
                 <th class="th-sm w-36">Digest</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-slate-100">
+            <tbody class="divide-y divide-slate-100">
               <tr v-for="(layer, idx) in layerDetails" :key="idx" class="hover:bg-slate-50 transition-colors" :class="layer.empty ? 'opacity-50' : ''">
                 <td class="px-3 py-2 text-center">
                   <span class="text-xs font-bold" :class="layer.empty ? 'text-slate-400' : 'text-slate-600'">{{ layerDetails.length - idx }}</span>

@@ -174,7 +174,7 @@ export default toNative(SystemCpuMem)
 
 <template>
   <div v-if="current" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-    <div class="relative rounded-xl border border-slate-200 bg-white overflow-hidden">
+    <div class="relative rounded-xl border border-slate-200 overflow-hidden">
       <div class="absolute inset-0 pointer-events-none">
         <canvas ref="cpuCanvasRef" class="w-full h-full"></canvas>
       </div>
@@ -195,7 +195,7 @@ export default toNative(SystemCpuMem)
       </div>
     </div>
 
-    <div class="relative rounded-xl border border-slate-200 bg-white overflow-hidden">
+    <div class="relative rounded-xl border border-slate-200 overflow-hidden">
       <div class="absolute inset-0 pointer-events-none">
         <canvas ref="memCanvasRef" class="w-full h-full"></canvas>
       </div>

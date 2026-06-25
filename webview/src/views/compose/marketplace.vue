@@ -134,9 +134,9 @@ export default toNative(ComposeMarketplace)
 </script>
 
 <template>
-  <div class="card flex flex-col h-[calc(100vh-7rem)]">
+  <div class="page flex flex-col h-[calc(100vh-4rem)]">
     <!-- Toolbar -->
-    <div class="card-toolbar">
+    <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="hidden md:flex items-center justify-between">
         <div class="flex items-center gap-3">

@@ -265,7 +265,7 @@ export default toNative(SystemDisk)
 </script>
 
 <template>
-  <div v-if="current?.diskPartition?.length" class="rounded-xl border border-slate-200 bg-white overflow-hidden">
+  <div v-if="current?.diskPartition?.length" class="rounded-xl border border-slate-200 overflow-hidden">
     <div class="card-header">
       <div class="card-icon bg-amber-500">
         <i class="fas fa-hard-drive text-white text-xs"></i>

@@ -71,5 +71,5 @@ export default toNative(FileExplorer)
 </script>
 
 <template>
-  <ExplorerPanel :adapter="adapter" :show-search="true" :show-batch-ops="true" :show-mobile-view="true" />
+  <ExplorerPanel :adapter="adapter" :sticky-toolbar="true" :show-search="true" :show-batch-ops="true" :show-mobile-view="true" />
 </template>

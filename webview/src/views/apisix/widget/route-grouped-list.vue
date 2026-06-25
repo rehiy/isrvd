@@ -154,7 +154,7 @@ export default toNative(RouteGroupedList)
             <th class="w-40 th-right">操作</th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-slate-100">
+        <tbody class="divide-y divide-slate-100">
           <template v-for="group in routeHostGroups" :key="group.key">
             <tr class="bg-slate-50/80 hover:bg-slate-100 transition-colors">
               <td colspan="5" class="px-4 py-3">

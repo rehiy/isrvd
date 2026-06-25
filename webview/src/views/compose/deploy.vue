@@ -159,9 +159,9 @@ export default toNative(ComposeDeploy)
 
 <template>
   <div>
-    <div class="card">
+    <div class="page">
       <!-- Toolbar -->
-      <div class="card-toolbar">
+      <div class="page-toolbar">
         <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="page-icon bg-amber-500">

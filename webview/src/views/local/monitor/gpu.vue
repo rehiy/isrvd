@@ -186,7 +186,7 @@ export default toNative(SystemGpu)
 
 <template>
   <div v-if="currentGpus?.length" ref="gpuContainerRef" class="space-y-3">
-    <div v-for="gpu in currentGpus" :key="gpuKey(gpu)" class="rounded-xl border border-slate-200 bg-white overflow-hidden">
+    <div v-for="gpu in currentGpus" :key="gpuKey(gpu)" class="rounded-xl border border-slate-200 overflow-hidden">
       <div class="card-header">
         <div class="card-icon bg-emerald-500">
           <i class="fas fa-microchip text-white text-xs"></i>

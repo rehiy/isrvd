@@ -95,10 +95,10 @@ export default toNative(SSHClientPage)
 </script>
 
 <template>
-  <div class="h-[calc(100vh-100px)]">
-    <div ref="containerRef" class="h-full card flex flex-col overflow-hidden">
+  <div class="h-[calc(100vh-4rem)]">
+    <div ref="containerRef" class="h-full page flex flex-col overflow-hidden">
       <!-- Toolbar -->
-      <div class="card-toolbar">
+      <div class="page-toolbar page-toolbar-static">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3 min-w-0">
             <div class="page-icon bg-teal-500 flex-shrink-0">

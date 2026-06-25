@@ -84,8 +84,8 @@ export default toNative(ContainerDetail)
 </script>
 
 <template>
-  <div class="card">
-    <div class="card-toolbar">
+  <div class="page">
+    <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="hidden md:flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -219,7 +219,7 @@ export default toNative(ContainerDetail)
                 <th class="th-sm">容器端口</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-slate-100">
+            <tbody class="divide-y divide-slate-100">
               <tr v-for="[host, target] in portEntries" :key="host" class="hover:bg-slate-50 transition-colors">
                 <td class="px-3 py-2 font-mono text-xs text-slate-700">{{ host }}</td>
                 <td class="px-3 py-2 font-mono text-xs text-slate-700">{{ target }}</td>
@@ -268,7 +268,7 @@ export default toNative(ContainerDetail)
                 <th class="th-sm">Value</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-slate-100">
+            <tbody class="divide-y divide-slate-100">
               <tr v-for="[key, value] in labelEntries" :key="key" class="hover:bg-slate-50 transition-colors">
                 <td class="px-3 py-2 font-mono text-xs text-slate-500">{{ key }}</td>
                 <td class="px-3 py-2 font-mono text-xs text-slate-700">{{ value }}</td>

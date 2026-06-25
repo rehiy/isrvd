@@ -220,8 +220,8 @@ export default toNative(MonitorPage)
 </script>
 
 <template>
-  <div class="card">
-    <div class="card-toolbar">
+  <div class="page">
+    <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="hidden md:flex items-center justify-between">
         <div class="flex items-center gap-3">

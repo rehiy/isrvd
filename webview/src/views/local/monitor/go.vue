@@ -339,7 +339,7 @@ export default toNative(SystemGo)
 </script>
 
 <template>
-  <div class="rounded-xl border border-slate-200 bg-white overflow-hidden">
+  <div class="rounded-xl border border-slate-200 overflow-hidden">
     <div class="card-header">
       <div class="card-icon bg-sky-500">
         <i class="fas fa-code text-white text-xs"></i>

@@ -68,9 +68,9 @@ export default toNative(Overview)
 </script>
 
 <template>
-  <div class="card">
+  <div class="page">
     <!-- 页面标题栏 -->
-    <div class="card-toolbar">
+    <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="hidden md:flex items-center justify-between">
         <div class="flex items-center gap-3">

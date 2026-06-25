@@ -397,8 +397,8 @@ export default toNative(ContainerStats)
 </script>
 
 <template>
-  <div class="card">
-    <div class="card-toolbar">
+  <div class="page">
+    <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="hidden md:flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -553,7 +553,7 @@ export default toNative(ContainerStats)
                   </th>
                 </tr>
               </thead>
-              <tbody class="bg-white divide-y divide-slate-100">
+              <tbody class="divide-y divide-slate-100">
                 <tr v-for="(proc, idx) in statsData.processList.processes" :key="idx" class="hover:bg-slate-50">
                   <td v-for="(val, vi) in proc" :key="vi" class="px-3 py-1.5 whitespace-nowrap font-mono text-slate-600">{{ val }}</td>
                 </tr>

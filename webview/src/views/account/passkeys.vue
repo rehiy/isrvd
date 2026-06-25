@@ -128,8 +128,8 @@ export default toNative(AccountPasskeys)
 </script>
 
 <template>
-  <div class="card">
-    <div class="card-toolbar">
+  <div class="page">
+    <div class="page-toolbar">
       <div class="flex items-center justify-between w-full gap-3">
         <div class="flex items-center gap-3 min-w-0">
           <div class="page-icon bg-purple-500">

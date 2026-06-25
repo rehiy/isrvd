@@ -106,5 +106,5 @@ export default toNative(ContainerFilePanel)
 </script>
 
 <template>
-  <ExplorerPanel :adapter="adapter" :show-card="false" :show-batch-ops="true" />
+  <ExplorerPanel :adapter="adapter" :show-batch-ops="true" />
 </template>

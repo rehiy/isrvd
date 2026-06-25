@@ -128,7 +128,7 @@ class Config extends Vue {
     this.$nextTick(() => {
       const el = document.getElementById(`config-${id}`)
       if (!el) return
-      const offset = window.innerWidth < 1024 ? 152 : 88
+      const offset = 144
       const top = el.getBoundingClientRect().top + window.scrollY - offset
       window.scrollTo({ top, behavior: 'smooth' })
     })
@@ -144,9 +144,9 @@ export default toNative(Config)
 </script>
 
 <template>
-  <div class="card overflow-visible">
+  <div class="page">
     <!-- Toolbar -->
-    <div class="card-toolbar">
+    <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="hidden md:flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -201,7 +201,7 @@ export default toNative(Config)
     </div>
 
     <form v-else-if="portal.hasPerm('PUT /api/system/config')" class="card-body" @submit.prevent="saveAll">
-      <div class="lg:hidden sticky top-16 z-30 w-full min-w-0 overflow-hidden bg-white pt-4 pb-3 border-b border-slate-100">
+      <div class="lg:hidden w-full min-w-0 overflow-hidden pb-3 mb-6 border-b border-slate-100">
         <div class="block w-full max-w-full min-w-0 overflow-x-auto overflow-y-hidden pb-1">
           <div class="tab-group inline-flex w-max max-w-none">
             <button
@@ -545,7 +545,7 @@ export default toNative(Config)
           </div>
         </div>
 
-        <aside class="order-1 min-w-0 overflow-hidden lg:order-2 lg:border-l lg:border-slate-200 lg:pl-6 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+        <aside class="order-1 min-w-0 lg:order-2 lg:border-l lg:border-slate-200 lg:pl-6 lg:sticky lg:top-36 lg:self-start lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto">
           <div class="hidden lg:block space-y-3">
             <h2 class="section-title">配置块</h2>
             <button

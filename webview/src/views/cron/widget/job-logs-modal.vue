@@ -86,7 +86,7 @@ export default toNative(JobLogsModal)
       </div>
 
       <div v-else>
-        <div class="rounded-xl bg-white px-4 py-3 mb-4">
+        <div class="rounded-xl px-4 py-3 mb-4">
           <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
             <span class="font-medium text-slate-700">{{ job?.name }}</span>
             <span>执行计划 <code class="font-mono">{{ job?.schedule }}</code></span>

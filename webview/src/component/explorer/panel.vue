@@ -5,17 +5,17 @@
  * Props：
  *   adapter       操作适配器（必填）
  *   initialPath   初始路径，默认 /
- *   showCard      是否包裹 card 外框 + sticky toolbar（默认 true）
+ *   stickyToolbar 页面完整展示时吸顶（默认 false）
  *   showSearch    是否显示搜索框（默认 false）
  *   showBatchOps  是否启用多选/批量删除/移动（默认 false）
  *   showMobileView 是否显示移动端卡片视图（默认 false）
  *
  * 用法：
  *   // 本地文件管理（完整页面）
- *   <ExplorerPanel :adapter="createFilerAdapter()" :show-search="true" :show-batch-ops="true" :show-mobile-view="true" />
+ *   <ExplorerPanel :adapter="createFilerAdapter()" :sticky-toolbar="true" :show-search="true" :show-batch-ops="true" :show-mobile-view="true" />
  *
- *   // SSH SFTP 侧边栏（无 card 外框，其余完全相同）
- *   <ExplorerPanel :adapter="createSftpAdapter(hostId)" :show-card="false" :show-batch-ops="true" />
+ *   // SSH SFTP 侧边栏（嵌入式面板）
+ *   <ExplorerPanel :adapter="createSftpAdapter(hostId)" :show-batch-ops="true" />
  */
 import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
@@ -48,7 +48,7 @@ import type { FileInfo, ExplorerAdapter } from './types'
 class ExplorerPanel extends Vue {
     @Prop({ required: true }) adapter!: ExplorerAdapter
     @Prop({ default: '/' }) initialPath!: string
-    @Prop({ default: true }) showCard!: boolean
+    @Prop({ default: false }) stickyToolbar!: boolean
     @Prop({ default: false }) showSearch!: boolean
     @Prop({ default: false }) showBatchOps!: boolean
     @Prop({ default: false }) showMobileView!: boolean
@@ -206,8 +206,7 @@ export default toNative(ExplorerPanel)
   <UploadZone ref="uploadZoneRef" :enabled="!!can.upload" :upload-ref="uploadRef" />
 
   <div
-    :class="showCard ? 'card flex flex-col flex-1' : 'flex flex-col h-full'"
-    class="relative"
+    class="relative flex flex-col h-full"
     v-bind="uploadZoneRef?.dragAttrs"
   >
     <!-- 拖拽遮罩 -->
@@ -221,7 +220,7 @@ export default toNative(ExplorerPanel)
     </div>
 
     <!-- ─── 工具栏 ──────────────────────────────────────────────────────────── -->
-    <div :class="showCard ? 'card-toolbar sticky top-0 z-10' : 'card-toolbar flex-shrink-0'">
+    <div :class="['page-toolbar', { 'page-toolbar-static': !stickyToolbar }]">
       <div class="flex items-center justify-between gap-3">
         <!-- 面包屑导航 -->
         <nav aria-label="breadcrumb" class="flex-1 min-w-0">
@@ -313,8 +312,8 @@ export default toNative(ExplorerPanel)
       @refresh="debouncedLoadFiles()"
     />
 
-    <!-- ─── 内容区（showCard=false 时需要 flex-1 overflow-y-auto 让列表可滚动）── -->
-    <div :class="showCard ? 'contents' : 'flex-1 overflow-y-auto min-h-0'">
+    <!-- ─── 内容区 ──────────────────────────────────────────────────────────── -->
+    <div class="flex-1 overflow-y-auto min-h-0">
       <!-- ─── 加载中 ──────────────────────────────────────────────────────────── -->
       <div v-if="loading" class="card-body">
         <div class="empty-state">
@@ -361,7 +360,7 @@ export default toNative(ExplorerPanel)
                 <th class="w-48 th-right">操作</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-slate-100">
+            <tbody class="divide-y divide-slate-100">
               <MkdirRow
                 v-if="mkdirMode"
                 :can-select="canSelect"

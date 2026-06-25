@@ -42,9 +42,9 @@ export default toNative(VolumeDetail)
 </script>
 
 <template>
-  <div class="card">
+  <div class="page">
     <!-- Toolbar -->
-    <div class="card-toolbar">
+    <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="hidden md:flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -141,7 +141,7 @@ export default toNative(VolumeDetail)
                 <th class="th-sm">权限</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-slate-100">
+            <tbody class="divide-y divide-slate-100">
               <tr v-for="ct in detailData.usedBy" :key="ct.id" class="hover:bg-slate-50 transition-colors">
                 <td class="px-3 py-2">
                   <div class="flex items-center gap-1.5">
