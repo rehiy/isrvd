@@ -103,46 +103,48 @@ export default toNative(Overview)
       </div>
     </div>
 
-    <!-- 系统信息区块 -->
-    <div v-if="portal.hasPerm('GET /api/overview/monitor')" class="p-6 border-b border-slate-100">
-      <SystemUpdater />
-      <SystemOverview ref="systemRef" />
-    </div>
-
-    <!-- APISIX 概览区块 -->
-    <div v-if="portal.hasPerm('GET /api/apisix/routes')" class="p-6 border-b border-slate-100">
-      <div class="flex items-center gap-2 mb-4">
-        <i class="fas fa-route text-orange-500 text-lg"></i>
-        <h1 class="text-lg font-semibold text-slate-700">APISIX 网关</h1>
+    <div class="divide-y divide-slate-100">
+      <!-- 系统信息区块 -->
+      <div v-if="portal.hasPerm('GET /api/overview/monitor')" class="p-6">
+        <SystemUpdater />
+        <SystemOverview ref="systemRef" />
       </div>
-      <ApisixOverview ref="apisixRef" />
-    </div>
 
-    <!-- Caddy 概览区块 -->
-    <div v-if="portal.hasPerm('GET /api/caddy/info')" class="p-6 border-b border-slate-100">
-      <div class="flex items-center gap-2 mb-4">
-        <i class="fas fa-shield text-indigo-500 text-lg"></i>
-        <h1 class="text-lg font-semibold text-slate-700">Caddy 网关</h1>
+      <!-- APISIX 概览区块 -->
+      <div v-if="portal.hasPerm('GET /api/apisix/routes')" class="p-6">
+        <div class="flex items-center gap-2 mb-4">
+          <i class="fas fa-route text-orange-500 text-lg"></i>
+          <h1 class="text-lg font-semibold text-slate-700">APISIX 网关</h1>
+        </div>
+        <ApisixOverview ref="apisixRef" />
       </div>
-      <CaddyOverview ref="caddyRef" />
-    </div>
 
-    <!-- Docker 概览区块 -->
-    <div v-if="portal.hasPerm('GET /api/docker/containers')" class="p-6 border-b border-slate-100">
-      <div class="flex items-center gap-2 mb-4">
-        <i class="fab fa-docker text-blue-500 text-lg"></i>
-        <h1 class="text-lg font-semibold text-slate-700">Docker 服务</h1>
+      <!-- Caddy 概览区块 -->
+      <div v-if="portal.hasPerm('GET /api/caddy/info')" class="p-6">
+        <div class="flex items-center gap-2 mb-4">
+          <i class="fas fa-shield text-indigo-500 text-lg"></i>
+          <h1 class="text-lg font-semibold text-slate-700">Caddy 网关</h1>
+        </div>
+        <CaddyOverview ref="caddyRef" />
       </div>
-      <DockerOverview ref="dockerRef" />
-    </div>
 
-    <!-- Swarm 概览区块 -->
-    <div v-if="portal.hasPerm('GET /api/swarm/info')" class="p-6 border-b border-slate-100">
-      <div class="flex items-center gap-2 mb-4">
-        <i class="fas fa-circle-nodes text-cyan-600 text-lg"></i>
-        <h1 class="text-lg font-semibold text-slate-700">Swarm 集群</h1>
+      <!-- Docker 概览区块 -->
+      <div v-if="portal.hasPerm('GET /api/docker/containers')" class="p-6">
+        <div class="flex items-center gap-2 mb-4">
+          <i class="fab fa-docker text-blue-500 text-lg"></i>
+          <h1 class="text-lg font-semibold text-slate-700">Docker 服务</h1>
+        </div>
+        <DockerOverview ref="dockerRef" />
       </div>
-      <SwarmOverview ref="swarmRef" />
+
+      <!-- Swarm 概览区块 -->
+      <div v-if="portal.hasPerm('GET /api/swarm/info')" class="p-6">
+        <div class="flex items-center gap-2 mb-4">
+          <i class="fas fa-circle-nodes text-cyan-600 text-lg"></i>
+          <h1 class="text-lg font-semibold text-slate-700">Swarm 集群</h1>
+        </div>
+        <SwarmOverview ref="swarmRef" />
+      </div>
     </div>
 
     <!-- 无任何权限时的空状态 -->
