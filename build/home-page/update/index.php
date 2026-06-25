@@ -135,8 +135,8 @@ function fetchLatestRelease(): ?array
             'method'          => 'GET',
             'header'          => implode("\r\n", [
                 'Accept: application/vnd.github+json',
-                'User-Agent: iSrvd-update-server/1.0',
                 'X-GitHub-Api-Version: 2022-11-28',
+                'User-Agent: iSrvd-Proxy/1.0',
             ]),
             'timeout'         => 10,
             'ignore_errors'   => true,
