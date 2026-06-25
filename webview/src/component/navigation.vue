@@ -192,7 +192,7 @@ export default toNative(NavigationBar)
 
 <template>
   <aside 
-    class="fixed left-0 top-0 h-screen border-r border-slate-200/50 z-50 flex flex-col transition-all duration-300"
+    class="fixed left-0 top-0 h-screen z-50 flex flex-col transition-all duration-300"
     :class="[
       collapsed ? 'w-16' : 'w-64',
       mobileSidebarVisible ? 'translate-x-0 bg-white/95 backdrop-blur-xl shadow-2xl' : '-translate-x-full lg:translate-x-0 lg:bg-white/80 lg:backdrop-blur-xl'

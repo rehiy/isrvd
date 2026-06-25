@@ -78,7 +78,7 @@ export default toNative(App)
     </div>
 
     <!-- 主内容 -->
-    <template v-else-if="portal.username">
+    <div v-else-if="portal.username" class="min-h-screen pt-16">
       <!-- 移动端顶部菜单栏 -->
       <header
         class="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 z-40 flex items-center justify-between px-4 transition-all duration-300"
@@ -101,10 +101,10 @@ export default toNative(App)
       </header>
 
       <NavigationBar ref="navigationRef" v-model:collapsed="sidebarCollapsed" />
-      <main class="min-w-0 pt-16 transition-all duration-300" :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'">
+      <main class="min-w-0 min-h-[calc(100vh-4rem)] transition-all duration-300 lg:border-l lg:border-slate-200/50" :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'">
         <router-view />
       </main>
-    </template>
+    </div>
 
     <!-- 登录页面 -->
     <AuthLogin v-else />
