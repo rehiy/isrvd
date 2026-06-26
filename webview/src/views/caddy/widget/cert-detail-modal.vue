@@ -88,12 +88,12 @@ export default toNative(CertDetailModal)
 <template>
   <BaseModal v-model="isOpen" :show-footer="false" max-width-class="max-w-4xl" body-class="px-6 py-6 overflow-y-auto">
     <template #title>
-      <div v-if="cert" class="flex items-center gap-3 min-w-0">
+      <div v-if="cert" class="title-group-static">
         <div class="page-icon bg-cyan-500">
           <i class="fas fa-certificate text-white"></i>
         </div>
         <div class="min-w-0">
-          <h1 class="text-lg font-semibold text-slate-800 truncate">SSL 证书详情</h1>
+          <h1 class="title-text">SSL 证书详情</h1>
           <p class="text-xs text-slate-500 truncate">{{ certSummary(cert) }}</p>
         </div>
       </div>
@@ -106,7 +106,7 @@ export default toNative(CertDetailModal)
           <div>
             <label class="form-label">来源</label>
             <div class="detail-value">
-              <span :class="sourceTagClass(cert.source)" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium">{{ sourceLabel(cert.source) }}</span>
+              <span :class="sourceTagClass(cert.source)" class="badge-sm">{{ sourceLabel(cert.source) }}</span>
             </div>
           </div>
           <div>

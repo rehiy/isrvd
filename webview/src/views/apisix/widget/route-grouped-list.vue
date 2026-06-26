@@ -165,30 +165,30 @@ export default toNative(RouteGroupedList)
                   </div>
                   <div class="min-w-0 w-[260px] flex-shrink-0">
                     <span :class="group.key === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm truncate block">{{ group.key }}</span>
-                    <span class="text-xs text-slate-400 truncate block mt-0.5">{{ group.entries.length }} 条路由 / {{ group.enabled }} 启用</span>
+                    <span class="item-subtitle">{{ group.entries.length }} 条路由 / {{ group.enabled }} 启用</span>
                   </div>
                   <span class="min-w-0 flex-1 text-xs text-slate-500 truncate">{{ group.preview }}</span>
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium flex-shrink-0 bg-indigo-50 text-indigo-700">{{ group.entries.length }} 条</span>
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium flex-shrink-0 bg-emerald-50 text-emerald-700">{{ group.enabled }} 启用</span>
+                  <span class="badge-sm flex-shrink-0 bg-indigo-50 text-indigo-700">{{ group.entries.length }} 条</span>
+                  <span class="badge-sm flex-shrink-0 bg-emerald-50 text-emerald-700">{{ group.enabled }} 启用</span>
                 </button>
               </td>
             </tr>
             <tr v-for="entry in group.entries" v-show="isGroupExpanded(group)" :key="entry.key" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[280px]">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="inline-info">
                   <div class="row-icon bg-indigo-400">
                     <i class="fas fa-route text-white text-sm"></i>
                   </div>
                   <div class="min-w-0">
-                    <span class="font-medium text-slate-800 truncate block">{{ entry.route.name || entry.route.id }}</span>
-                    <span v-if="entry.route.desc" class="text-xs text-slate-400 truncate block mt-0.5">{{ entry.route.desc }}</span>
+                    <span class="item-title">{{ entry.route.name || entry.route.id }}</span>
+                    <span v-if="entry.route.desc" class="item-subtitle">{{ entry.route.desc }}</span>
                   </div>
                 </div>
               </td>
               <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getRouteUri(entry.route) }}</code></td>
-              <td class="px-4 py-3"><span :class="getRouteUpstreamTagClass(entry.route)" class="inline-block text-xs px-2 py-0.5 rounded-lg font-mono break-all">{{ getRouteUpstreamNodes(entry.route) }}</span></td>
+              <td class="px-4 py-3"><span :class="getRouteUpstreamTagClass(entry.route)" class="code-chip">{{ getRouteUpstreamNodes(entry.route) }}</span></td>
               <td class="px-4 py-3">
-                <div class="flex justify-end items-center gap-1">
+                <div class="table-actions">
                   <button v-if="portal.hasPerm('PATCH /api/apisix/route/:id/status')" :class="['btn-icon', entry.route.status === 1 ? 'btn-icon-amber' : 'btn-icon-emerald']" :title="entry.route.status === 1 ? '禁用' : '启用'" @click="toggleStatus(entry.route)">
                     <i :class="entry.route.status === 1 ? 'fas fa-ban' : 'fas fa-play'" class="text-xs"></i>
                   </button>
@@ -206,14 +206,14 @@ export default toNative(RouteGroupedList)
     <div v-if="routeHostGroups.length > 0" class="md:hidden space-y-4 p-4">
       <template v-for="group in routeHostGroups" :key="group.key">
         <button type="button" class="w-full flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left" :aria-expanded="isGroupExpanded(group)" @click="toggleGroup(group)">
-          <div class="flex items-center gap-3 min-w-0">
+          <div class="title-group-static">
             <i class="fas fa-chevron-right text-slate-400 text-xs transition-transform flex-shrink-0" :class="{ 'rotate-90': isGroupExpanded(group) }"></i>
             <div class="list-icon bg-teal-400">
               <i class="fas fa-globe text-white text-base"></i>
             </div>
             <div class="min-w-0">
               <span :class="group.key === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm truncate block">{{ group.key }}</span>
-              <span class="text-xs text-slate-400 truncate block mt-0.5">{{ group.entries.length }} 条路由 / {{ group.enabled }} 启用</span>
+              <span class="item-subtitle">{{ group.entries.length }} 条路由 / {{ group.enabled }} 启用</span>
             </div>
           </div>
           <span class="text-xs text-slate-400 flex-shrink-0">{{ isGroupExpanded(group) ? '收起' : '展开' }}</span>
@@ -232,12 +232,12 @@ export default toNative(RouteGroupedList)
             </div>
 
             <div class="card-prop-row-start">
-              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">URI</span>
+              <span class="prop-label-start">URI</span>
               <code class="text-xs font-mono text-slate-700 break-all">{{ getRouteUri(entry.route) }}</code>
             </div>
             <div class="card-prop-row-start">
-              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">上游</span>
-              <span :class="getRouteUpstreamTagClass(entry.route)" class="inline-block text-xs px-2 py-0.5 rounded-lg font-mono break-all">{{ getRouteUpstreamNodes(entry.route) }}</span>
+              <span class="prop-label-start">上游</span>
+              <span :class="getRouteUpstreamTagClass(entry.route)" class="code-chip">{{ getRouteUpstreamNodes(entry.route) }}</span>
             </div>
 
             <div class="card-actions">

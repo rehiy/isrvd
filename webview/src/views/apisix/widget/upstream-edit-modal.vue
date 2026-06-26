@@ -239,7 +239,7 @@ export default toNative(UpstreamEditModal)
         </div>
       </div>
 
-      <div class="rounded-xl border border-slate-200 overflow-hidden">
+      <div class="panel-frame">
         <div class="flex items-center justify-between bg-slate-50 px-4 py-3 border-b border-slate-200">
           <div>
             <h2 class="text-sm font-semibold text-slate-700">节点配置</h2>

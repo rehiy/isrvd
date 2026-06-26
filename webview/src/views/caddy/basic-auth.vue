@@ -82,17 +82,17 @@ export default toNative(CaddyBasicAuth)
     <!-- Toolbar -->
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-cyan-500">
             <i class="fas fa-lock text-white text-sm"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800 truncate">基础认证</h1>
+            <h1 class="title-text">基础认证</h1>
             <p class="text-xs text-slate-500">基于用户名 + 密码的路由 HTTP Basic 认证</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <PageSearch v-model="searchText" search-key="caddy-basic-auth" placeholder="搜索路由或用户名..." focus-color="cyan" type-to-search />
           <button class="btn btn-secondary" @click="load()">
             <i class="fas fa-rotate"></i>刷新
@@ -103,21 +103,21 @@ export default toNative(CaddyBasicAuth)
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-cyan-500">
             <i class="fas fa-lock text-white text-sm"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">基础认证</h1>
+            <h1 class="title-text">基础认证</h1>
             <p class="text-xs text-slate-500 truncate">路由 HTTP Basic 认证</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="load()">
+        <div class="action-group-sm">
+          <button class="btn btn-secondary btn-square" title="刷新" @click="load()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/caddy/basic-auth/:index/users')" class="btn btn-cyan w-9 h-9 !px-0" title="配置认证" @click="openAddModal()">
+          <button v-if="portal.hasPerm('POST /api/caddy/basic-auth/:index/users')" class="btn btn-cyan btn-square" title="配置认证" @click="openAddModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -132,7 +132,7 @@ export default toNative(CaddyBasicAuth)
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -169,17 +169,17 @@ export default toNative(CaddyBasicAuth)
           <tbody class="divide-y divide-slate-100">
             <tr v-for="route in filteredRoutes" :key="route.index" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[280px]">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="inline-info">
                   <div class="row-icon bg-cyan-400">
                     <i class="fas fa-lock text-white text-sm"></i>
                   </div>
                   <div class="min-w-0">
-                    <span class="font-medium text-slate-800 truncate block">{{ getRouteName(route) }}</span>
-                    <span class="text-xs text-slate-400 truncate block mt-0.5">{{ getRouteDesc(route) }}</span>
+                    <span class="item-title">{{ getRouteName(route) }}</span>
+                    <span class="item-subtitle">{{ getRouteDesc(route) }}</span>
                   </div>
                 </div>
               </td>
-              <td class="px-4 py-3 text-sm text-slate-600">
+              <td class="td-text">
                 <code v-if="route.forwardHeader" class="text-xs bg-slate-100 px-2 py-0.5 rounded-lg text-slate-600 font-mono">{{ route.forwardHeader }}</code>
                 <span v-else>—</span>
               </td>
@@ -197,7 +197,7 @@ export default toNative(CaddyBasicAuth)
               </td>
               <td class="px-4 py-3 text-right text-sm text-slate-600">{{ route.users.length }}</td>
               <td class="px-4 py-3">
-                <div class="flex justify-end items-center gap-1">
+                <div class="table-actions">
                   <button
                     v-if="portal.hasPerm('PUT /api/caddy/basic-auth/:index/config')"
                     class="btn-icon btn-icon-blue"
@@ -229,18 +229,18 @@ export default toNative(CaddyBasicAuth)
               <i class="fas fa-lock text-white text-base"></i>
             </div>
             <div class="min-w-0">
-              <span class="font-medium text-slate-800 text-sm truncate block">{{ getRouteName(route) }}</span>
-              <span class="text-xs text-slate-400 truncate block mt-0.5">{{ getRouteDesc(route) }}</span>
+              <span class="item-title-sm">{{ getRouteName(route) }}</span>
+              <span class="item-subtitle">{{ getRouteDesc(route) }}</span>
             </div>
           </div>
 
           <div v-if="route.forwardHeader" class="card-prop-row-start">
-            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">转发头</span>
+            <span class="prop-label-start">转发头</span>
             <code class="text-xs bg-slate-100 px-2 py-0.5 rounded-lg text-slate-600 font-mono break-all">{{ route.forwardHeader }}</code>
           </div>
 
           <div class="card-prop-row-start">
-            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">账号</span>
+            <span class="prop-label-start">账号</span>
             <div class="flex flex-wrap gap-1.5">
               <span
                 v-for="user in route.users"

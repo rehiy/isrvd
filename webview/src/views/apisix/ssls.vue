@@ -108,17 +108,17 @@ export default toNative(SSLs)
 <template>
   <div class="page">
     <div class="page-toolbar">
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-cyan-500">
             <i class="fas fa-certificate text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800 truncate">SSL 证书</h1>
+            <h1 class="title-text">SSL 证书</h1>
             <p class="text-xs text-slate-500">管理 APISIX 的 SSL 证书绑定与 SNI 配置</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <PageSearch v-model="searchText" search-key="apisix-ssls" placeholder="搜索证书、SNI 或 ID..." focus-color="cyan" type-to-search />
           <button class="btn btn-secondary" @click="loadSSLs()">
             <i class="fas fa-rotate"></i>刷新
@@ -129,21 +129,21 @@ export default toNative(SSLs)
         </div>
       </div>
 
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-cyan-500">
             <i class="fas fa-certificate text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">SSL 证书</h1>
+            <h1 class="title-text">SSL 证书</h1>
             <p class="text-xs text-slate-500 truncate">管理证书与 SNI 绑定</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadSSLs()">
+        <div class="action-group-sm">
+          <button class="btn btn-secondary btn-square" title="刷新" @click="loadSSLs()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="btn btn-cyan w-9 h-9 !px-0" title="新建证书" @click="openCreateModal()">
+          <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="btn btn-cyan btn-square" title="新建证书" @click="openCreateModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -156,7 +156,7 @@ export default toNative(SSLs)
 
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -185,12 +185,12 @@ export default toNative(SSLs)
           <tbody class="divide-y divide-slate-100">
             <tr v-for="ssl in filteredSSLs" :key="ssl.id" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[280px]">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="inline-info">
                   <div class="row-icon bg-cyan-400">
                     <i class="fas fa-certificate text-white text-sm"></i>
                   </div>
                   <div class="min-w-0">
-                    <span class="font-medium text-slate-800 truncate block">{{ getPrimarySNI(ssl) }}</span>
+                    <span class="item-title">{{ getPrimarySNI(ssl) }}</span>
                     <span class="text-mono-muted">{{ ssl.id }}</span>
                   </div>
                 </div>
@@ -198,9 +198,9 @@ export default toNative(SSLs)
               <td class="px-4 py-3">
                 <span :class="getStatusClass(ssl)" class="text-sm">{{ getStatusText(ssl) }}</span>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTs(ssl.update_time || ssl.create_time) }}</td>
+              <td class="td-text-nowrap">{{ formatTs(ssl.update_time || ssl.create_time) }}</td>
               <td class="px-4 py-3">
-                <div class="flex justify-end items-center gap-1">
+                <div class="table-actions">
                   <button v-if="portal.hasPerm('PUT /api/apisix/ssl/:id')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(ssl)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
@@ -222,7 +222,7 @@ export default toNative(SSLs)
                 <i class="fas fa-certificate text-white text-base"></i>
               </div>
               <div class="min-w-0">
-                <span class="font-medium text-slate-800 text-sm truncate block">{{ getPrimarySNI(ssl) }}</span>
+                <span class="item-title-sm">{{ getPrimarySNI(ssl) }}</span>
                 <span class="text-mono-muted">{{ ssl.id }}</span>
               </div>
             </div>

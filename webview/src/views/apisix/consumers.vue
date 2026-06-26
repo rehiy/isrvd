@@ -96,17 +96,17 @@ export default toNative(Consumers)
   <div class="page">
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-violet-500">
             <i class="fas fa-users text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800 truncate">消费者管理</h1>
+            <h1 class="title-text">消费者管理</h1>
             <p class="text-xs text-slate-500">管理 APISIX Consumer 及其认证凭据</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <PageSearch v-model="searchText" search-key="apisix-consumers" placeholder="搜索消费者..." focus-color="violet" type-to-search />
           <button class="btn btn-secondary" @click="loadConsumers()">
             <i class="fas fa-rotate"></i>刷新
@@ -117,21 +117,21 @@ export default toNative(Consumers)
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-violet-500">
             <i class="fas fa-users text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">消费者管理</h1>
+            <h1 class="title-text">消费者管理</h1>
             <p class="text-xs text-slate-500 truncate">管理 Consumer 与凭据</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadConsumers()">
+        <div class="action-group-sm">
+          <button class="btn btn-secondary btn-square" title="刷新" @click="loadConsumers()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/apisix/consumer')" class="btn btn-violet w-9 h-9 !px-0" title="新建消费者" @click="openCreateModal()">
+          <button v-if="portal.hasPerm('POST /api/apisix/consumer')" class="btn btn-violet btn-square" title="新建消费者" @click="openCreateModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -145,7 +145,7 @@ export default toNative(Consumers)
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -178,13 +178,13 @@ export default toNative(Consumers)
           <tbody class="divide-y divide-slate-100">
             <tr v-for="consumer in filteredConsumers" :key="consumer.username" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[280px]">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="inline-info">
                   <div class="row-icon bg-violet-400">
                     <i class="fas fa-user text-white text-sm"></i>
                   </div>
                   <div class="min-w-0">
-                    <span class="font-medium text-slate-800 truncate block">{{ consumer.username }}</span>
-                    <span v-if="consumer.desc" class="text-xs text-slate-400 truncate block mt-0.5">{{ consumer.desc }}</span>
+                    <span class="item-title">{{ consumer.username }}</span>
+                    <span v-if="consumer.desc" class="item-subtitle">{{ consumer.desc }}</span>
                   </div>
                 </div>
               </td>
@@ -200,11 +200,11 @@ export default toNative(Consumers)
                 </div>
                 <span v-else class="text-xs text-slate-400">-</span>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
+              <td class="td-text-nowrap">
                 {{ formatTs(consumer.create_time) }}
               </td>
               <td class="px-4 py-3">
-                <div class="flex justify-end items-center gap-1">
+                <div class="table-actions">
                   <button v-if="portal.hasPerm('PUT /api/apisix/consumer/:username')" class="btn-icon btn-icon-violet" title="编辑" @click="openEditModal(consumer)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
@@ -227,8 +227,8 @@ export default toNative(Consumers)
               <i class="fas fa-user text-white text-base"></i>
             </div>
             <div class="min-w-0">
-              <span class="font-medium text-slate-800 text-sm truncate block">{{ consumer.username }}</span>
-              <span v-if="consumer.desc" class="text-xs text-slate-400 truncate block mt-0.5">{{ consumer.desc }}</span>
+              <span class="item-title-sm">{{ consumer.username }}</span>
+              <span v-if="consumer.desc" class="item-subtitle">{{ consumer.desc }}</span>
             </div>
           </div>
           
@@ -239,7 +239,7 @@ export default toNative(Consumers)
           </div>
           
           <div class="card-prop-row-start">
-            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">插件</span>
+            <span class="prop-label-start">插件</span>
             <div v-if="Object.keys(consumer.plugins || {}).length > 0" class="flex flex-wrap gap-1">
               <span v-for="(_, name) in consumer.plugins" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-lg text-xs">{{ name }}</span>
             </div>
@@ -248,7 +248,7 @@ export default toNative(Consumers)
 
           <!-- 授权路由 -->
           <div class="card-prop-row-start">
-            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">路由</span>
+            <span class="prop-label-start">路由</span>
             <div v-if="getConsumerRoutes(consumer.username).length > 0" class="flex flex-wrap gap-1">
               <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded-lg text-xs">{{ name }}</span>
             </div>

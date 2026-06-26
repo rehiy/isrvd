@@ -130,17 +130,17 @@ export default toNative(Whitelist)
     <!-- Toolbar -->
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-amber-500">
             <i class="fas fa-shield-halved text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800 truncate">访问授权管理</h1>
+            <h1 class="title-text">访问授权管理</h1>
             <p class="text-xs text-slate-500">配置路由级别的 Consumer 访问授权</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <PageSearch v-model="searchText" search-key="apisix-whitelist" placeholder="搜索路由或用户..." focus-color="amber" type-to-search />
           <button class="btn btn-secondary" @click="loadWhitelist()">
             <i class="fas fa-rotate"></i>刷新
@@ -151,21 +151,21 @@ export default toNative(Whitelist)
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-amber-500">
             <i class="fas fa-shield-halved text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">访问授权管理</h1>
+            <h1 class="title-text">访问授权管理</h1>
             <p class="text-xs text-slate-500 truncate">路由级 Consumer 访问授权</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadWhitelist()">
+        <div class="action-group-sm">
+          <button class="btn btn-secondary btn-square" title="刷新" @click="loadWhitelist()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/apisix/whitelist')" class="btn btn-amber w-9 h-9 !px-0" title="配置授权" @click="openCreateModal()">
+          <button v-if="portal.hasPerm('POST /api/apisix/whitelist')" class="btn btn-amber btn-square" title="配置授权" @click="openCreateModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -180,7 +180,7 @@ export default toNative(Whitelist)
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -213,17 +213,17 @@ export default toNative(Whitelist)
           <tbody class="divide-y divide-slate-100">
             <tr v-for="route in filteredWhitelist" :key="route.id" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[280px]">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="inline-info">
                   <div class="row-icon bg-amber-400">
                     <i class="fas fa-shield-halved text-white text-sm"></i>
                   </div>
                   <div class="min-w-0">
-                    <span class="font-medium text-slate-800 truncate block">{{ getRouteUri(route) }}</span>
-                    <span class="text-xs text-slate-400 truncate block mt-0.5">{{ getRouteHost(route) }}</span>
+                    <span class="item-title">{{ getRouteUri(route) }}</span>
+                    <span class="item-subtitle">{{ getRouteHost(route) }}</span>
                   </div>
                 </div>
               </td>
-              <td class="px-4 py-3 text-sm text-slate-600">{{ route.name || route.id }}</td>
+              <td class="td-text">{{ route.name || route.id }}</td>
               <td class="px-4 py-3">
                 <div class="flex flex-wrap gap-1.5">
                   <span v-for="consumer in (route.consumers || [])" :key="consumer" class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 text-amber-800 rounded-lg text-xs group">
@@ -234,7 +234,7 @@ export default toNative(Whitelist)
               </td>
               <td class="px-4 py-3 text-right text-sm text-slate-600">{{ (route.consumers || []).length }}</td>
               <td class="px-4 py-3">
-                <div class="flex justify-end items-center gap-1">
+                <div class="table-actions">
                   <button
                     v-if="portal.hasPerm('POST /api/apisix/whitelist')"
                     class="btn-icon btn-icon-blue"
@@ -266,8 +266,8 @@ export default toNative(Whitelist)
               <i class="fas fa-shield-halved text-white text-base"></i>
             </div>
             <div class="min-w-0">
-              <span class="font-medium text-slate-800 text-sm truncate block">{{ getRouteUri(route) }}</span>
-              <span class="text-xs text-slate-400 truncate block mt-0.5">{{ getRouteHost(route) }}</span>
+              <span class="item-title-sm">{{ getRouteUri(route) }}</span>
+              <span class="item-subtitle">{{ getRouteHost(route) }}</span>
             </div>
           </div>
 
@@ -277,7 +277,7 @@ export default toNative(Whitelist)
           </div>
 
           <div class="card-prop-row-start">
-            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">用户</span>
+            <span class="prop-label-start">用户</span>
             <div class="flex flex-wrap gap-1.5">
               <span v-for="consumer in (route.consumers || [])" :key="consumer" class="badge bg-amber-50 text-amber-800 gap-1.5">
                 <i class="fas fa-user text-amber-500 text-[10px]"></i>

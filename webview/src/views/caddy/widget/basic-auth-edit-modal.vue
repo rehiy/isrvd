@@ -6,8 +6,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { CaddyBasicAuthRoute, CaddyRoute } from '@/service/types'
 
-import BaseModal from '@/component/modal.vue'
 import Combobox from '@/component/combobox.vue'
+import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
 
 type Mode = 'setup' | 'edit' | 'addUser'

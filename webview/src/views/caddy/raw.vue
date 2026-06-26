@@ -68,12 +68,12 @@ export default toNative(CaddyRaw)
   <div class="page">
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-indigo-500"><i class="fas fa-code text-white"></i></div>
-          <div class="min-w-0"><h1 class="text-lg font-semibold text-slate-800 truncate">Caddy 原始配置</h1><p class="text-xs text-slate-500 truncate">直接查看和编辑 Caddy 的 JSON 运行配置</p></div>
+          <div class="min-w-0"><h1 class="title-text">Caddy 原始配置</h1><p class="text-xs text-slate-500 truncate">直接查看和编辑 Caddy 的 JSON 运行配置</p></div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <button class="btn btn-secondary" @click="loadConfig()"><i class="fas fa-rotate"></i>刷新</button>
           <button v-if="portal.hasPerm('POST /api/caddy/config')" :disabled="saving" class="btn btn-indigo" @click="saveConfig()">
             <i v-if="saving" class="fas fa-spinner fa-spin"></i>
@@ -83,22 +83,22 @@ export default toNative(CaddyRaw)
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-indigo-500"><i class="fas fa-code text-white"></i></div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">Caddy 原始配置</h1>
+            <h1 class="title-text">Caddy 原始配置</h1>
             <p class="text-xs text-slate-500 truncate">查看和编辑 JSON 配置</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadConfig()"><i class="fas fa-rotate text-sm"></i></button>
-          <button v-if="portal.hasPerm('POST /api/caddy/config')" :disabled="saving" class="btn btn-indigo w-9 h-9 !px-0" title="提交配置" @click="saveConfig()"><i class="fas fa-cloud-arrow-up text-sm"></i></button>
+        <div class="action-group-sm">
+          <button class="btn btn-secondary btn-square" title="刷新" @click="loadConfig()"><i class="fas fa-rotate text-sm"></i></button>
+          <button v-if="portal.hasPerm('POST /api/caddy/config')" :disabled="saving" class="btn btn-indigo btn-square" title="提交配置" @click="saveConfig()"><i class="fas fa-cloud-arrow-up text-sm"></i></button>
         </div>
       </div>
     </div>
 
-    <div v-if="loading" class="card-body"><div class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div></div>
+    <div v-if="loading" class="card-body"><div class="empty-state"><div class="spinner-lg"></div><p class="text-slate-500">加载中...</p></div></div>
     <div v-else class="card-body space-y-3">
       <div class="editor-container">
         <Codemirror v-model="raw" class="h-[65vh]" :extensions="extensions" />

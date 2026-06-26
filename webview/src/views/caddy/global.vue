@@ -84,17 +84,17 @@ export default toNative(CaddyGlobalConfig)
     <!-- 页头 -->
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-violet-500">
             <i class="fas fa-sliders text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">Caddy 全局选项</h1>
+            <h1 class="title-text">Caddy 全局选项</h1>
             <p class="text-xs text-slate-500 truncate">配置 TLS 自动化、日志级别与 HTTP 服务器参数</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <button class="btn btn-secondary" @click="load()">
             <i class="fas fa-rotate"></i>刷新
           </button>
@@ -106,21 +106,21 @@ export default toNative(CaddyGlobalConfig)
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-violet-500">
             <i class="fas fa-sliders text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">Caddy 全局选项</h1>
+            <h1 class="title-text">Caddy 全局选项</h1>
             <p class="text-xs text-slate-500 truncate">TLS、日志与 HTTP 参数</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="load()">
+        <div class="action-group-sm">
+          <button class="btn btn-secondary btn-square" title="刷新" @click="load()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('PUT /api/caddy/global')" :disabled="saving || loading" class="btn btn-violet w-9 h-9 !px-0" title="保存" @click="save()">
+          <button v-if="portal.hasPerm('PUT /api/caddy/global')" :disabled="saving || loading" class="btn btn-violet btn-square" title="保存" @click="save()">
             <i class="fas fa-floppy-disk text-sm"></i>
           </button>
         </div>
@@ -130,7 +130,7 @@ export default toNative(CaddyGlobalConfig)
     <!-- 内容区 -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>

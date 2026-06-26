@@ -104,17 +104,17 @@ export default toNative(PluginConfigs)
 <template>
   <div class="page">
     <div class="page-toolbar">
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-rose-500">
             <i class="fas fa-puzzle-piece text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800 truncate">插件配置</h1>
+            <h1 class="title-text">插件配置</h1>
             <p class="text-xs text-slate-500">管理可复用的插件集合，供路由引用</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <PageSearch v-model="searchText" search-key="apisix-plugin-configs" placeholder="请输入搜索关键词..." focus-color="rose" type-to-search />
           <button class="btn btn-secondary" @click="loadConfigs()">
             <i class="fas fa-rotate"></i>刷新
@@ -125,21 +125,21 @@ export default toNative(PluginConfigs)
         </div>
       </div>
 
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-rose-500">
             <i class="fas fa-puzzle-piece text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">插件配置</h1>
+            <h1 class="title-text">插件配置</h1>
             <p class="text-xs text-slate-500 truncate">管理可复用插件集合</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadConfigs()">
+        <div class="action-group-sm">
+          <button class="btn btn-secondary btn-square" title="刷新" @click="loadConfigs()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/apisix/plugin-config')" class="btn btn-rose w-9 h-9 !px-0" title="创建" @click="openCreateModal()">
+          <button v-if="portal.hasPerm('POST /api/apisix/plugin-config')" class="btn btn-rose btn-square" title="创建" @click="openCreateModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -152,7 +152,7 @@ export default toNative(PluginConfigs)
 
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -181,13 +181,13 @@ export default toNative(PluginConfigs)
           <tbody class="divide-y divide-slate-100">
             <tr v-for="config in filteredConfigs" :key="config.id" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[280px]">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="inline-info">
                   <div class="row-icon bg-rose-400">
                     <i class="fas fa-puzzle-piece text-white text-sm"></i>
                   </div>
                   <div class="min-w-0">
-                    <span class="font-medium text-slate-800 truncate block font-mono">{{ config.id || '-' }}</span>
-                    <span v-if="config.desc" class="text-xs text-slate-400 truncate block mt-0.5">{{ config.desc }}</span>
+                    <span class="item-title font-mono">{{ config.id || '-' }}</span>
+                    <span v-if="config.desc" class="item-subtitle">{{ config.desc }}</span>
                   </div>
                 </div>
               </td>
@@ -197,9 +197,9 @@ export default toNative(PluginConfigs)
                 </div>
                 <span v-else class="text-xs text-slate-400">未配置</span>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTs(config.create_time) }}</td>
+              <td class="td-text-nowrap">{{ formatTs(config.create_time) }}</td>
               <td class="px-4 py-3">
-                <div class="flex justify-end items-center gap-1">
+                <div class="table-actions">
                   <button v-if="portal.hasPerm('PUT /api/apisix/plugin-config/:id')" class="btn-icon btn-icon-rose" title="编辑" @click="openEditModal(config)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
@@ -216,7 +216,7 @@ export default toNative(PluginConfigs)
       <div class="card-body md:hidden space-y-3">
         <div v-for="config in filteredConfigs" :key="config.id" class="card-interactive">
           <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="title-group">
               <div class="list-icon bg-rose-400">
                 <i class="fas fa-puzzle-piece text-white text-base"></i>
               </div>
@@ -228,7 +228,7 @@ export default toNative(PluginConfigs)
           </div>
 
           <div class="card-prop-row-start">
-            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">插件</span>
+            <span class="prop-label-start">插件</span>
             <div v-if="getPluginNames(config).length > 0" class="flex flex-wrap gap-1">
               <span v-for="name in getPluginNames(config)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded-lg text-xs">{{ name }}</span>
             </div>

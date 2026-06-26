@@ -117,17 +117,17 @@ export default toNative(Upstreams)
 <template>
   <div class="page">
     <div class="page-toolbar">
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-emerald-500">
             <i class="fas fa-diagram-project text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800 truncate">上游管理</h1>
+            <h1 class="title-text">上游管理</h1>
             <p class="text-xs text-slate-500">管理可复用的后端上游对象与负载均衡策略</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <PageSearch v-model="searchText" search-key="apisix-upstreams" placeholder="搜索上游、节点或策略..." focus-color="emerald" type-to-search />
           <button class="btn btn-secondary" @click="loadUpstreams()">
             <i class="fas fa-rotate"></i>刷新
@@ -138,21 +138,21 @@ export default toNative(Upstreams)
         </div>
       </div>
 
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-emerald-500">
             <i class="fas fa-diagram-project text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">上游管理</h1>
+            <h1 class="title-text">上游管理</h1>
             <p class="text-xs text-slate-500 truncate">管理可复用上游对象</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadUpstreams()">
+        <div class="action-group-sm">
+          <button class="btn btn-secondary btn-square" title="刷新" @click="loadUpstreams()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="btn btn-emerald w-9 h-9 !px-0" title="新建上游" @click="openCreateModal()">
+          <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="btn btn-emerald btn-square" title="新建上游" @click="openCreateModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -165,7 +165,7 @@ export default toNative(Upstreams)
 
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -195,13 +195,13 @@ export default toNative(Upstreams)
           <tbody class="divide-y divide-slate-100">
             <tr v-for="upstream in filteredUpstreams" :key="upstream.id" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[280px]">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="inline-info">
                   <div class="row-icon bg-emerald-400">
                     <i class="fas fa-diagram-project text-white text-sm"></i>
                   </div>
                   <div class="min-w-0">
-                    <span class="font-medium text-slate-800 truncate block">{{ upstream.name || upstream.id }}</span>
-                    <span v-if="upstream.desc" class="text-xs text-slate-400 truncate block mt-0.5">{{ upstream.desc }}</span>
+                    <span class="item-title">{{ upstream.name || upstream.id }}</span>
+                    <span v-if="upstream.desc" class="item-subtitle">{{ upstream.desc }}</span>
                   </div>
                 </div>
               </td>
@@ -210,9 +210,9 @@ export default toNative(Upstreams)
                 <span v-if="upstream.type === 'chash' && upstream.key" class="ml-2 text-xs text-slate-400">{{ upstream.hash_on }}: {{ upstream.key }}</span>
               </td>
               <td class="px-4 py-3 text-xs text-slate-600 break-all">{{ getUpstreamNodes(upstream) }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTs(upstream.create_time) }}</td>
+              <td class="td-text-nowrap">{{ formatTs(upstream.create_time) }}</td>
               <td class="px-4 py-3">
-                <div class="flex justify-end items-center gap-1">
+                <div class="table-actions">
                   <button v-if="portal.hasPerm('PUT /api/apisix/upstream/:id')" class="btn-icon btn-icon-emerald" title="编辑" @click="openEditModal(upstream)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
@@ -229,7 +229,7 @@ export default toNative(Upstreams)
       <div class="card-body md:hidden space-y-3">
         <div v-for="upstream in filteredUpstreams" :key="upstream.id" class="card-interactive">
           <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="title-group">
               <div class="list-icon bg-emerald-400">
                 <i class="fas fa-diagram-project text-white text-base"></i>
               </div>

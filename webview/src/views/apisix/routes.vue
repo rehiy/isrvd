@@ -156,12 +156,12 @@ export default toNative(Routes)
   <div class="page">
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-indigo-500"><i class="fas fa-route text-white"></i></div>
-          <div><h1 class="text-lg font-semibold text-slate-800 truncate">路由管理</h1><p class="text-xs text-slate-500">管理 APISIX 路由，配置匹配规则、上游转发与插件</p></div>
+          <div><h1 class="title-text">路由管理</h1><p class="text-xs text-slate-500">管理 APISIX 路由，配置匹配规则、上游转发与插件</p></div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <PageSearch v-model="searchText" search-key="apisix-routes" placeholder="搜索路由、URI、描述或上游..." focus-color="indigo" type-to-search />
           <div class="tab-group">
             <button class="tab-btn" :class="viewMode === 'route' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive'" @click="setViewMode('route')">
@@ -176,19 +176,19 @@ export default toNative(Routes)
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-indigo-500"><i class="fas fa-route text-white"></i></div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">路由管理</h1>
+            <h1 class="title-text">路由管理</h1>
             <p class="text-xs text-slate-500 truncate">配置匹配规则、上游与插件</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadRoutes()">
+        <div class="action-group-sm">
+          <button class="btn btn-secondary btn-square" title="刷新" @click="loadRoutes()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/apisix/route')" class="btn btn-indigo w-9 h-9 !px-0" title="新建路由" @click="openCreateModal()">
+          <button v-if="portal.hasPerm('POST /api/apisix/route')" class="btn btn-indigo btn-square" title="新建路由" @click="openCreateModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -207,7 +207,7 @@ export default toNative(Routes)
       </div>
     </div>
     <div v-if="loading" class="card-body">
-      <div class="empty-state"><div class="w-12 h-12 spinner mb-3"></div><p class="text-slate-500">加载中...</p></div>
+      <div class="empty-state"><div class="spinner-lg"></div><p class="text-slate-500">加载中...</p></div>
     </div>
     <div v-else-if="filteredRoutes.length === 0" class="card-body">
       <div class="empty-state">
@@ -242,21 +242,21 @@ export default toNative(Routes)
           <tbody class="divide-y divide-slate-100">
             <tr v-for="route in filteredRoutes" :key="route.id" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[280px]">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="inline-info">
                   <div class="row-icon bg-indigo-400">
                     <i class="fas fa-route text-white text-sm"></i>
                   </div>
                   <div class="min-w-0">
-                    <span class="font-medium text-slate-800 truncate block">{{ route.name || route.id }}</span>
-                    <span v-if="route.desc" class="text-xs text-slate-400 truncate block mt-0.5">{{ route.desc }}</span>
+                    <span class="item-title">{{ route.name || route.id }}</span>
+                    <span v-if="route.desc" class="item-subtitle">{{ route.desc }}</span>
                   </div>
                 </div>
               </td>
               <td class="px-4 py-3"><span :class="getRouteHost(route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm break-all">{{ getRouteHost(route) }}</span></td>
               <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getRouteUri(route) }}</code></td>
-              <td class="px-4 py-3"><span :class="getRouteUpstreamTagClass(route)" class="inline-block text-xs px-2 py-0.5 rounded-lg font-mono break-all">{{ getRouteUpstreamNodes(route) }}</span></td>
+              <td class="px-4 py-3"><span :class="getRouteUpstreamTagClass(route)" class="code-chip">{{ getRouteUpstreamNodes(route) }}</span></td>
               <td class="px-4 py-3">
-                <div class="flex justify-end items-center gap-1">
+                <div class="table-actions">
                   <button v-if="portal.hasPerm('PATCH /api/apisix/route/:id/status')" :class="['btn-icon', route.status === 1 ? 'btn-icon-amber' : 'btn-icon-emerald']" :title="route.status === 1 ? '禁用' : '启用'" @click="toggleStatus(route)">
                     <i :class="route.status === 1 ? 'fas fa-ban' : 'fas fa-play'" class="text-xs"></i>
                   </button>
@@ -274,7 +274,7 @@ export default toNative(Routes)
         <div v-for="route in filteredRoutes" :key="route.id" class="card-interactive">
           <!-- 顶部：路由信息和状态 -->
           <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="title-group">
               <div class="list-icon bg-indigo-400">
                 <i class="fas fa-route text-white text-base"></i>
               </div>
@@ -287,7 +287,7 @@ export default toNative(Routes)
 
           <!-- 中间：URI和Host信息 -->
           <div class="card-prop-row-start">
-            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">URI</span>
+            <span class="prop-label-start">URI</span>
             <code class="text-xs font-mono text-slate-700 break-all">{{ getRouteUri(route) }}</code>
           </div>
 
@@ -297,8 +297,8 @@ export default toNative(Routes)
           </div>
 
           <div class="card-prop-row-start">
-            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">上游</span>
-            <span :class="getRouteUpstreamTagClass(route)" class="inline-block text-xs px-2 py-0.5 rounded-lg font-mono break-all">{{ getRouteUpstreamNodes(route) }}</span>
+            <span class="prop-label-start">上游</span>
+            <span :class="getRouteUpstreamTagClass(route)" class="code-chip">{{ getRouteUpstreamNodes(route) }}</span>
           </div>
 
           <!-- 底部：操作按钮 -->

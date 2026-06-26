@@ -6,8 +6,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { ApisixConsumer, ApisixKeyAuthConfig, ApisixRoute } from '@/service/types'
 
-import BaseModal from '@/component/modal.vue'
 import Combobox from '@/component/combobox.vue'
+import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
 
 const defaultFormData = () => ({
