@@ -210,17 +210,17 @@ export default toNative(Images)
   <div class="page">
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-blue-500">
             <i class="fas fa-layer-group text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800 truncate">镜像管理</h1>
+            <h1 class="title-text">镜像管理</h1>
             <p class="text-xs text-slate-500">拉取、导入、导出和删除 Docker 镜像</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <PageSearch v-model="searchText" search-key="docker-images" placeholder="搜索镜像名称、标签、ID..." focus-color="blue" type-to-search />
           <div class="tab-group">
             <button :class="['tab-btn', !showAllImages ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="showAllImages = false; loadImages()">
@@ -247,26 +247,26 @@ export default toNative(Images)
       <!-- 移动端 -->
       <div class="block md:hidden">
         <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class="title-group">
             <div class="page-icon bg-blue-500">
               <i class="fas fa-layer-group text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">镜像管理</h1>
+              <h1 class="title-text">镜像管理</h1>
               <p class="text-xs text-slate-500 truncate">拉取与管理镜像</p>
             </div>
           </div>
-          <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadImages()">
+          <div class="action-group-sm">
+            <button class="btn btn-secondary btn-square" title="刷新" @click="loadImages()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/image/prune')" class="btn btn-danger w-9 h-9 !px-0" title="清理镜像" @click="handleImagePrune()">
+            <button v-if="portal.hasPerm('POST /api/docker/image/prune')" class="btn btn-danger btn-square" title="清理镜像" @click="handleImagePrune()">
               <i class="fas fa-broom text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn btn-blue w-9 h-9 !px-0" title="构建" @click="buildModalRef?.show()">
+            <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn btn-blue btn-square" title="构建" @click="buildModalRef?.show()">
               <i class="fas fa-hammer text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/image/pull')" class="btn btn-blue w-9 h-9 !px-0" title="拉取" @click="pullModalRef?.show()">
+            <button v-if="portal.hasPerm('POST /api/docker/image/pull')" class="btn btn-blue btn-square" title="拉取" @click="pullModalRef?.show()">
               <i class="fas fa-download text-sm"></i>
             </button>
           </div>
@@ -289,7 +289,7 @@ export default toNative(Images)
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -311,14 +311,14 @@ export default toNative(Images)
           <tbody class="divide-y divide-slate-100">
             <tr v-for="img in filteredImages" :key="img.id" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[280px]">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="inline-info">
                   <div class="row-icon bg-blue-400">
                     <i class="fas fa-layer-group text-white text-sm"></i>
                   </div>
                   <div class="min-w-0">
                     <router-link v-if="portal.hasPerm('GET /api/docker/image/:id')" :to="'/docker/image/' + img.id" class="font-medium text-slate-800 hover:text-blue-600 transition-colors truncate block">{{ getImageName(img) }}</router-link>
-                    <span v-else class="font-medium text-slate-800 truncate block">{{ getImageName(img) }}</span>
-                    <code class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ img.shortId }}</code>
+                    <span v-else class="item-title">{{ getImageName(img) }}</span>
+                    <code class="item-subtitle-mono">{{ img.shortId }}</code>
                   </div>
                 </div>
               </td>
@@ -328,10 +328,10 @@ export default toNative(Images)
                 </div>
                 <span v-else class="text-sm text-slate-400">-</span>
               </td>
-              <td class="px-4 py-3 text-sm text-slate-600">{{ formatFileSize(img.size) }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(img.created * 1000).toISOString()) }}</td>
+              <td class="td-text">{{ formatFileSize(img.size) }}</td>
+              <td class="td-text-nowrap">{{ formatTime(new Date(img.created * 1000).toISOString()) }}</td>
               <td class="px-4 py-3">
-                <div class="flex justify-end items-center gap-1">
+                <div class="table-actions">
                   <button v-if="portal.hasPerm('GET /api/docker/image/:id')" class="btn-icon btn-icon-slate" title="查看详情" @click="$router.push('/docker/image/' + img.id)">
                     <i class="fas fa-circle-info text-xs"></i>
                   </button>
@@ -364,14 +364,14 @@ export default toNative(Images)
             </div>
             <div class="min-w-0">
               <router-link v-if="portal.hasPerm('GET /api/docker/image/:id')" :to="'/docker/image/' + img.id" class="font-medium text-slate-800 hover:text-blue-600 transition-colors text-sm truncate block">{{ getImageName(img) }}</router-link>
-              <span v-else class="font-medium text-slate-800 text-sm truncate block">{{ getImageName(img) }}</span>
-              <code class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ img.shortId }}</code>
+              <span v-else class="item-title-sm">{{ getImageName(img) }}</span>
+              <code class="item-subtitle-mono">{{ img.shortId }}</code>
             </div>
           </div>
 
           <!-- 标签 -->
           <div v-if="img.repoTags && img.repoTags.length > 0" class="card-prop-row-start">
-            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">标签</span>
+            <span class="prop-label-start">标签</span>
             <div class="flex flex-wrap gap-1">
               <span v-for="(tag, idx) in img.repoTags" :key="idx" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-mono bg-blue-50 text-blue-600">{{ tag }}</span>
             </div>

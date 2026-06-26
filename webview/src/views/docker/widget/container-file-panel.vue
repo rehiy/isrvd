@@ -1,8 +1,10 @@
 <script lang="ts">
 import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
-import api from '@/service/api'
 import { usePortal } from '@/stores'
+
+import api from '@/service/api'
+
 import { ExplorerPanel } from '@/component/explorer'
 import type { ExplorerAdapter, FileInfo, ListResult } from '@/component/explorer/types'
 

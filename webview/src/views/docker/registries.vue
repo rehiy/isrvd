@@ -111,17 +111,17 @@ export default toNative(Registries)
     <div class="page">
       <div class="page-toolbar">
         <!-- 桌面端 -->
-        <div class="hidden md:flex items-center justify-between">
+        <div class="toolbar-desktop">
           <div class="flex items-center gap-3">
             <div class="page-icon bg-purple-500">
               <i class="fas fa-warehouse text-white"></i>
             </div>
             <div>
-              <h1 class="text-lg font-semibold text-slate-800 truncate">镜像仓库</h1>
+              <h1 class="title-text">镜像仓库</h1>
               <p class="text-xs text-slate-500">管理私有镜像仓库认证信息与镜像加速器</p>
             </div>
           </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="action-group">
             <PageSearch v-model="searchText" search-key="docker-registries" placeholder="搜索仓库名称、地址或账号..." focus-color="purple" type-to-search />
             <button class="btn btn-secondary" @click="loadRegistries()">
               <i class="fas fa-rotate"></i>刷新
@@ -132,21 +132,21 @@ export default toNative(Registries)
           </div>
         </div>
         <!-- 移动端 -->
-        <div class="flex md:hidden items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
+        <div class="toolbar-mobile">
+          <div class="title-group">
             <div class="page-icon bg-purple-500">
               <i class="fas fa-warehouse text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">镜像仓库</h1>
+              <h1 class="title-text">镜像仓库</h1>
               <p class="text-xs text-slate-500 truncate">管理仓库账号与加速器</p>
             </div>
           </div>
-          <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadRegistries()">
+          <div class="action-group-sm">
+            <button class="btn btn-secondary btn-square" title="刷新" @click="loadRegistries()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/registry')" class="btn btn-purple w-9 h-9 !px-0" title="添加" @click="openAdd">
+            <button v-if="portal.hasPerm('POST /api/docker/registry')" class="btn btn-purple btn-square" title="添加" @click="openAdd">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
@@ -160,7 +160,7 @@ export default toNative(Registries)
       <!-- Loading -->
       <div v-if="loading" class="card-body">
         <div class="empty-state">
-          <div class="w-12 h-12 spinner mb-3"></div>
+          <div class="spinner-lg"></div>
           <p class="text-slate-500">加载中...</p>
         </div>
       </div>
@@ -182,13 +182,13 @@ export default toNative(Registries)
               <!-- Docker Hub 行（始终显示） -->
               <tr v-if="showDockerHub" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
-                  <div class="flex items-center gap-2 min-w-0">
+                  <div class="inline-info">
                     <div class="row-icon bg-purple-400">
                       <i class="fas fa-warehouse text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
-                      <span class="font-medium text-slate-800 truncate block">Docker Hub</span>
-                      <span class="text-xs text-slate-400 truncate block mt-0.5">默认</span>
+                      <span class="item-title">Docker Hub</span>
+                      <span class="item-subtitle">默认</span>
                     </div>
                   </div>
                 </td>
@@ -202,7 +202,7 @@ export default toNative(Registries)
                     </template>
                   </div>
                 </td>
-                <td class="px-4 py-3 text-sm text-slate-600">
+                <td class="td-text">
                   <i class="fas fa-lock-open text-slate-400 mr-1"></i>匿名
                 </td>
                 <td class="px-4 py-3 text-right text-xs text-slate-400">—</td>
@@ -210,18 +210,18 @@ export default toNative(Registries)
               <!-- 私有仓库行 -->
               <tr v-for="reg in filteredRegistries" :key="reg.url" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
-                  <div class="flex items-center gap-2 min-w-0">
+                  <div class="inline-info">
                     <div class="row-icon bg-purple-400">
                       <i class="fas fa-warehouse text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
-                      <span class="font-medium text-slate-800 truncate block">{{ reg.name }}</span>
-                      <span v-if="reg.description" class="text-xs text-slate-400 truncate block mt-0.5">{{ reg.description }}</span>
+                      <span class="item-title">{{ reg.name }}</span>
+                      <span v-if="reg.description" class="item-subtitle">{{ reg.description }}</span>
                     </div>
                   </div>
                 </td>
                 <td class="px-4 py-3"><code class="text-xs bg-slate-100 px-2 py-0.5 rounded">{{ reg.url }}</code></td>
-                <td class="px-4 py-3 text-sm text-slate-600">
+                <td class="td-text">
                   <template v-if="reg.username">
                     <i class="fas fa-user text-slate-400 mr-1"></i>{{ reg.username }}
                   </template>
@@ -230,7 +230,7 @@ export default toNative(Registries)
                   </template>
                 </td>
                 <td class="px-4 py-3">
-                  <div class="flex justify-end items-center gap-1">
+                  <div class="table-actions">
                     <button v-if="portal.hasPerm('PUT /api/docker/registry')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(reg)">
                       <i class="fas fa-pen text-xs"></i>
                     </button>
@@ -249,19 +249,19 @@ export default toNative(Registries)
           <!-- Docker Hub 卡片 -->
           <div v-if="showDockerHub" class="card-interactive">
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div class="title-group">
                 <div class="list-icon bg-purple-400">
                   <i class="fas fa-warehouse text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
-                  <span class="font-medium text-slate-800 text-sm truncate block">Docker Hub</span>
-                  <span class="text-xs text-slate-400 truncate block mt-0.5">默认</span>
+                  <span class="item-title-sm">Docker Hub</span>
+                  <span class="item-subtitle">默认</span>
                 </div>
               </div>
             </div>
 
             <div class="card-prop-row-start">
-              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">地址</span>
+              <span class="prop-label-start">地址</span>
               <code class="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded break-all">{{ indexServerAddress || 'https://index.docker.io/v1/' }}</code>
             </div>
             <template v-if="daemonMirrors.length > 0">
@@ -281,19 +281,19 @@ export default toNative(Registries)
           <!-- 私有仓库卡片 -->
           <div v-for="reg in filteredRegistries" :key="reg.url" class="card-interactive">
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div class="title-group">
                 <div class="list-icon bg-purple-400">
                   <i class="fas fa-warehouse text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
-                  <span class="font-medium text-slate-800 text-sm truncate block">{{ reg.name }}</span>
-                  <span v-if="reg.description" class="text-xs text-slate-400 truncate block mt-0.5">{{ reg.description }}</span>
+                  <span class="item-title-sm">{{ reg.name }}</span>
+                  <span v-if="reg.description" class="item-subtitle">{{ reg.description }}</span>
                 </div>
               </div>
             </div>
 
             <div class="card-prop-row-start">
-              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">地址</span>
+              <span class="prop-label-start">地址</span>
               <code class="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded truncate">{{ reg.url }}</code>
             </div>
             <div class="card-prop-row">

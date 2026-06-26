@@ -121,17 +121,17 @@ export default toNative(Nodes)
     <div class="page">
       <div class="page-toolbar">
         <!-- 桌面端 -->
-        <div class="hidden md:flex items-center justify-between">
+        <div class="toolbar-desktop">
           <div class="flex items-center gap-3">
             <div class="page-icon bg-blue-500">
               <i class="fas fa-server text-white"></i>
             </div>
             <div>
-              <h1 class="text-lg font-semibold text-slate-800 truncate">节点管理</h1>
+              <h1 class="title-text">节点管理</h1>
               <p class="text-xs text-slate-500">管理 Swarm 集群节点</p>
             </div>
           </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="action-group">
             <PageSearch v-model="searchText" search-key="swarm-nodes" placeholder="请输入搜索关键词..." focus-color="blue" type-to-search />
             <button class="btn btn-secondary" @click="loadNodes">
               <i class="fas fa-rotate"></i>刷新
@@ -142,21 +142,21 @@ export default toNative(Nodes)
           </div>
         </div>
         <!-- 移动端 -->
-        <div class="flex md:hidden items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
+        <div class="toolbar-mobile">
+          <div class="title-group">
             <div class="page-icon bg-blue-500">
               <i class="fas fa-server text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">节点管理</h1>
+              <h1 class="title-text">节点管理</h1>
               <p class="text-xs text-slate-500 truncate">管理 Swarm 集群节点</p>
             </div>
           </div>
-          <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadNodes">
+          <div class="action-group-sm">
+            <button class="btn btn-secondary btn-square" title="刷新" @click="loadNodes">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('GET /api/swarm/token')" class="btn btn-blue w-9 h-9 !px-0" title="加入集群" @click="openJoinModal">
+            <button v-if="portal.hasPerm('GET /api/swarm/token')" class="btn btn-blue btn-square" title="加入集群" @click="openJoinModal">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
@@ -168,7 +168,7 @@ export default toNative(Nodes)
 
       <div v-if="loading" class="card-body">
         <div class="empty-state">
-          <div class="w-12 h-12 spinner mb-3"></div>
+          <div class="spinner-lg"></div>
           <p class="text-slate-500">加载中...</p>
         </div>
       </div>
@@ -190,14 +190,14 @@ export default toNative(Nodes)
             <tbody class="divide-y divide-slate-100">
               <tr v-for="n in filteredNodes" :key="n.id" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
-                  <div class="flex items-center gap-2 min-w-0">
+                  <div class="inline-info">
                     <div class="row-icon bg-blue-400">
                       <i class="fas fa-server text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
                       <router-link v-if="portal.hasPerm('GET /api/swarm/node/:id')" :to="`/swarm/node/${n.id}`" class="font-medium text-slate-800 hover:text-blue-600 transition-colors truncate block">{{ n.hostname }}</router-link>
-                      <span v-else class="font-medium text-slate-800 truncate block">{{ n.hostname }}</span>
-                      <span class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ n.id }}</span>
+                      <span v-else class="item-title">{{ n.hostname }}</span>
+                      <span class="item-subtitle-mono">{{ n.id }}</span>
                     </div>
                   </div>
                 </td>
@@ -213,7 +213,7 @@ export default toNative(Nodes)
                 <td class="px-4 py-3 font-mono text-xs text-slate-500">{{ n.addr || '-' }}</td>
                 <td class="px-4 py-3 text-xs text-slate-500">{{ n.engineVersion || '-' }}</td>
                 <td class="px-4 py-3">
-                  <div class="flex justify-end items-center gap-1">
+                  <div class="table-actions">
                     <button v-if="portal.hasPerm('GET /api/swarm/node/:id')" class="btn-icon btn-icon-slate" title="查看详情" @click="$router.push(`/swarm/node/${n.id}`)"><i class="fas fa-circle-info text-xs"></i></button>
                     <button v-if="n.availability !== 'active' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon btn-icon-emerald" title="激活" @click="handleNodeAction(n, 'active')"><i class="fas fa-play text-xs"></i></button>
                     <button v-if="n.availability !== 'drain' && portal.hasPerm('POST /api/swarm/node/:id/action')" class="btn-icon btn-icon-amber" title="排空" @click="handleNodeAction(n, 'drain')"><i class="fas fa-arrow-down text-xs"></i></button>
@@ -236,8 +236,8 @@ export default toNative(Nodes)
               </div>
               <div class="min-w-0">
                 <router-link v-if="portal.hasPerm('GET /api/swarm/node/:id')" :to="`/swarm/node/${n.id}`" class="font-medium text-slate-800 hover:text-blue-600 transition-colors text-sm truncate block">{{ n.hostname }}</router-link>
-                <span v-else class="font-medium text-slate-800 text-sm truncate block">{{ n.hostname }}</span>
-                <span class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ n.id }}</span>
+                <span v-else class="item-title-sm">{{ n.hostname }}</span>
+                <span class="item-subtitle-mono">{{ n.id }}</span>
               </div>
             </div>
             
@@ -301,7 +301,7 @@ export default toNative(Nodes)
   <!-- 加入集群弹窗 -->
   <BaseModal v-model="showJoinModal" title="加入集群" :loading="joinTokensLoading" :show-confirm="false">
     <div v-if="joinTokensLoading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
+      <div class="spinner-lg"></div>
       <p class="text-slate-500">加载中...</p>
     </div>
     <div v-else-if="joinTokens" class="space-y-4">

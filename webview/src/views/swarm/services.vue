@@ -122,17 +122,17 @@ export default toNative(Services)
     <div class="page">
       <div class="page-toolbar">
         <!-- 桌面端 -->
-        <div class="hidden md:flex items-center justify-between">
+        <div class="toolbar-desktop">
           <div class="flex items-center gap-3">
             <div class="page-icon bg-emerald-500">
               <i class="fas fa-cubes text-white"></i>
             </div>
             <div>
-              <h1 class="text-lg font-semibold text-slate-800 truncate">服务管理</h1>
+              <h1 class="title-text">服务管理</h1>
               <p class="text-xs text-slate-500">管理 Swarm 服务</p>
             </div>
           </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="action-group">
             <PageSearch v-model="searchText" search-key="swarm-services" placeholder="请输入搜索关键词..." focus-color="emerald" type-to-search />
             <button class="btn btn-secondary" @click="loadServices">
               <i class="fas fa-rotate"></i>刷新
@@ -143,21 +143,21 @@ export default toNative(Services)
           </div>
         </div>
         <!-- 移动端 -->
-        <div class="flex md:hidden items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
+        <div class="toolbar-mobile">
+          <div class="title-group">
             <div class="page-icon bg-emerald-500">
               <i class="fas fa-cubes text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">服务管理</h1>
+              <h1 class="title-text">服务管理</h1>
               <p class="text-xs text-slate-500 truncate">管理 Swarm 服务</p>
             </div>
           </div>
-          <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadServices">
+          <div class="action-group-sm">
+            <button class="btn btn-secondary btn-square" title="刷新" @click="loadServices">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/swarm/service')" class="btn btn-emerald w-9 h-9 !px-0" title="创建" @click="openCreateModal">
+            <button v-if="portal.hasPerm('POST /api/swarm/service')" class="btn btn-emerald btn-square" title="创建" @click="openCreateModal">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
@@ -169,7 +169,7 @@ export default toNative(Services)
 
       <div v-if="loading" class="card-body">
         <div class="empty-state">
-          <div class="w-12 h-12 spinner mb-3"></div>
+          <div class="spinner-lg"></div>
           <p class="text-slate-500">加载中...</p>
         </div>
       </div>
@@ -190,19 +190,19 @@ export default toNative(Services)
             <tbody class="divide-y divide-slate-100">
               <tr v-for="svc in filteredServices" :key="svc.id" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
-                  <div class="flex items-center gap-2 min-w-0">
+                  <div class="inline-info">
                     <div class="row-icon bg-emerald-400">
                       <i class="fas fa-cubes text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
                       <router-link v-if="portal.hasPerm('GET /api/swarm/service/:id')" :to="'/swarm/service/' + svc.id" class="font-medium text-slate-800 hover:text-emerald-600 transition-colors truncate block">{{ svc.name }}</router-link>
-                      <span v-else class="font-medium text-slate-800 truncate block">{{ svc.name }}</span>
-                      <code class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ svc.image }}</code>
+                      <span v-else class="item-title">{{ svc.name }}</span>
+                      <code class="item-subtitle-mono">{{ svc.image }}</code>
                     </div>
                   </div>
                 </td>
-                <td class="px-4 py-3 text-sm text-slate-600 capitalize">{{ svc.mode }}</td>
-                <td class="px-4 py-3 text-sm text-slate-600">
+                <td class="td-text capitalize">{{ svc.mode }}</td>
+                <td class="td-text">
                   <span class="text-emerald-600 font-medium">{{ svc.runningTasks }}</span>
                   <span v-if="svc.mode === 'replicated'" class="text-slate-400"> / {{ svc.replicas ?? '?' }}</span>
                 </td>
@@ -212,9 +212,9 @@ export default toNative(Services)
                   </template>
                   <template v-else>-</template>
                 </td>
-                <td class="px-4 py-3 text-sm text-slate-600">{{ svc.updatedAt?.slice(0, 16).replace('T', ' ') }}</td>
+                <td class="td-text">{{ svc.updatedAt?.slice(0, 16).replace('T', ' ') }}</td>
                 <td class="px-4 py-3">
-                  <div class="flex justify-end items-center gap-1">
+                  <div class="table-actions">
                     <button v-if="portal.hasPerm('GET /api/swarm/service/:id')" class="btn-icon btn-icon-slate" title="详情" @click="$router.push({ name: 'swarm-service', params: { id: svc.id } })"><i class="fas fa-circle-info text-xs"></i></button>
                     <button v-if="portal.hasPerm('GET /api/swarm/service/:id/logs')" class="btn-icon btn-icon-slate" title="日志" @click="$router.push({ name: 'swarm-service-logs', params: { id: svc.id } })"><i class="fas fa-file-lines text-xs"></i></button>
                     <button v-if="svc.mode === 'replicated' && portal.hasPerm('POST /api/swarm/service/:id/action')" class="btn-icon btn-icon-indigo" title="扩缩容" @click="openScaleModal(svc)"><i class="fas fa-up-right-and-down-left-from-center text-xs"></i></button>
@@ -233,14 +233,14 @@ export default toNative(Services)
           <div v-for="svc in filteredServices" :key="svc.id" class="card-interactive">
             <!-- 顶部：服务信息和图标 -->
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div class="title-group">
                 <div class="list-icon bg-emerald-400">
                   <i class="fas fa-cubes text-white text-base"></i>
                 </div>
                 <div class="min-w-0">
                   <router-link v-if="portal.hasPerm('GET /api/swarm/service/:id')" :to="'/swarm/service/' + svc.id" class="font-medium text-slate-800 hover:text-emerald-600 transition-colors text-sm truncate block">{{ svc.name }}</router-link>
-                  <span v-else class="font-medium text-slate-800 text-sm truncate block">{{ svc.name }}</span>
-                  <code class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ svc.image }}</code>
+                  <span v-else class="item-title-sm">{{ svc.name }}</span>
+                  <code class="item-subtitle-mono">{{ svc.image }}</code>
                 </div>
               </div>
             </div>
@@ -262,7 +262,7 @@ export default toNative(Services)
             
             <!-- 端口信息 -->
             <div v-if="svc.ports && svc.ports.length" class="card-prop-row-start">
-              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">端口</span>
+              <span class="prop-label-start">端口</span>
               <div class="font-mono text-xs text-slate-500">
                 <div v-for="p in svc.ports" :key="p.publishedPort">{{ p.publishedPort }}:{{ p.targetPort }}/{{ p.protocol }}</div>
               </div>

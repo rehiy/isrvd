@@ -87,13 +87,13 @@ export default toNative(ContainerDetail)
   <div class="page">
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
             <i class="fas fa-cube text-white text-sm"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
+            <h1 class="title-text">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
             <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
           </div>
         </div>
@@ -114,16 +114,16 @@ export default toNative(ContainerDetail)
       <!-- 移动端 -->
       <div class="block md:hidden">
         <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class="title-group">
             <div :class="['page-icon flex-shrink-0', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
               <i class="fas fa-cube text-white text-sm"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
+              <h1 class="title-text">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
               <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
             </div>
           </div>
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" :disabled="loading" @click="loadDetail">
+          <button class="btn btn-secondary btn-square" title="刷新" :disabled="loading" @click="loadDetail">
             <i class="fas fa-rotate text-sm"></i>
           </button>
         </div>
@@ -140,7 +140,7 @@ export default toNative(ContainerDetail)
 
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -227,7 +227,7 @@ export default toNative(ContainerDetail)
             </tbody>
           </table>
         </div>
-        <div v-else class="text-sm text-slate-400 py-6 text-center bg-slate-50 rounded-xl">无端口映射</div>
+        <div v-else class="empty-note">无端口映射</div>
       </div>
 
       <!-- 挂载 -->
@@ -236,7 +236,7 @@ export default toNative(ContainerDetail)
         <div v-if="detail.volumes?.length" class="space-y-2">
           <code v-for="vol in detail.volumes" :key="formatVolume(vol)" class="detail-value-mono">{{ formatVolume(vol) }}</code>
         </div>
-        <div v-else class="text-sm text-slate-400 py-6 text-center bg-slate-50 rounded-xl">无挂载</div>
+        <div v-else class="empty-note">无挂载</div>
       </div>
 
       <!-- 命令与环境变量 -->
@@ -252,7 +252,7 @@ export default toNative(ContainerDetail)
             <div v-if="envList.length" class="space-y-1">
               <code v-for="env in envList" :key="env" class="detail-value-mono">{{ env }}</code>
             </div>
-            <div v-else class="text-sm text-slate-400 py-6 text-center bg-slate-50 rounded-xl">无环境变量</div>
+            <div v-else class="empty-note">无环境变量</div>
           </div>
         </div>
       </div>
@@ -276,7 +276,7 @@ export default toNative(ContainerDetail)
             </tbody>
           </table>
         </div>
-        <div v-else class="text-sm text-slate-400 py-6 text-center bg-slate-50 rounded-xl">无标签</div>
+        <div v-else class="empty-note">无标签</div>
       </div>
     </div>
 

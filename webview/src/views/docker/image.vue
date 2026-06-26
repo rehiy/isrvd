@@ -111,13 +111,13 @@ export default toNative(ImageDetail)
   <div class="page">
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-blue-500">
             <i class="fas fa-compact-disc text-white text-sm"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">{{ primaryTag }}</h1>
+            <h1 class="title-text">{{ primaryTag }}</h1>
             <p class="text-xs text-slate-600 font-mono truncate max-w-xs">{{ imageSubtitle }}</p>
           </div>
         </div>
@@ -128,18 +128,18 @@ export default toNative(ImageDetail)
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-blue-500 flex-shrink-0">
             <i class="fas fa-compact-disc text-white text-sm"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">{{ primaryTag }}</h1>
+            <h1 class="title-text">{{ primaryTag }}</h1>
             <p class="text-xs text-slate-600 font-mono truncate">{{ imageSubtitle }}</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" :disabled="loading" @click="loadDetail">
+        <div class="action-group-sm">
+          <button class="btn btn-secondary btn-square" title="刷新" :disabled="loading" @click="loadDetail">
             <i class="fas fa-rotate text-sm"></i>
           </button>
         </div>
@@ -147,7 +147,7 @@ export default toNative(ImageDetail)
     </div>
 
     <div v-if="loading" class="empty-state">
-      <div class="w-12 h-12 spinner mb-3"></div>
+      <div class="spinner-lg"></div>
       <p class="text-slate-500">加载中...</p>
     </div>
 

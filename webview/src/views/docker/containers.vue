@@ -136,17 +136,17 @@ export default toNative(Containers)
     <div class="page">
       <div class="page-toolbar">
         <!-- 桌面端 -->
-        <div class="hidden md:flex items-center justify-between">
+        <div class="toolbar-desktop">
           <div class="flex items-center gap-3">
             <div class="page-icon bg-emerald-500">
               <i class="fas fa-cube text-white"></i>
             </div>
             <div>
-              <h1 class="text-lg font-semibold text-slate-800 truncate">容器管理</h1>
+              <h1 class="title-text">容器管理</h1>
               <p class="text-xs text-slate-500">管理 Docker 容器的生命周期与运行状态</p>
             </div>
           </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="action-group">
             <PageSearch v-model="searchText" search-key="docker-containers" placeholder="搜索容器名称、ID、镜像或端口..." focus-color="emerald" type-to-search />
             <div class="tab-group">
               <button :class="['tab-btn', !showAll ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="showAll = false; loadContainers()">
@@ -167,20 +167,20 @@ export default toNative(Containers)
         <!-- 移动端 -->
         <div class="block md:hidden">
           <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="title-group">
               <div class="page-icon bg-emerald-500">
                 <i class="fas fa-cube text-white"></i>
               </div>
               <div class="min-w-0">
-                <h1 class="text-lg font-semibold text-slate-800 truncate">容器管理</h1>
+                <h1 class="title-text">容器管理</h1>
                 <p class="text-xs text-slate-500 truncate">管理容器生命周期</p>
               </div>
             </div>
-            <div class="flex items-center gap-1 flex-shrink-0">
-              <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadContainers()">
+            <div class="action-group-sm">
+              <button class="btn btn-secondary btn-square" title="刷新" @click="loadContainers()">
                 <i class="fas fa-rotate text-sm"></i>
               </button>
-              <button v-if="portal.hasPerm('POST /api/docker/container')" class="btn btn-emerald w-9 h-9 !px-0" title="新建容器" @click="createContainerModal()">
+              <button v-if="portal.hasPerm('POST /api/docker/container')" class="btn btn-emerald btn-square" title="新建容器" @click="createContainerModal()">
                 <i class="fas fa-plus text-sm"></i>
               </button>
             </div>
@@ -201,7 +201,7 @@ export default toNative(Containers)
       <!-- Loading -->
       <div v-if="loading" class="card-body">
         <div class="empty-state">
-          <div class="w-12 h-12 spinner mb-3"></div>
+          <div class="spinner-lg"></div>
           <p class="text-slate-500">加载中...</p>
         </div>
       </div>
@@ -223,13 +223,13 @@ export default toNative(Containers)
             <tbody class="divide-y divide-slate-100">
               <tr v-for="ct in filteredContainers" :key="ct.id" class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 max-w-[280px]">
-                  <div class="flex items-center gap-2 min-w-0">
+                  <div class="inline-info">
                     <div :class="['row-icon', ct.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
                       <i class="fas fa-cube text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
                       <router-link v-if="portal.hasPerm('GET /api/docker/container/:id')" :to="'/docker/container/' + ct.id" class="font-medium text-slate-800 hover:text-emerald-600 transition-colors truncate block" :title="ct.name || ct.id">{{ ct.name || ct.id }}</router-link>
-                      <span v-else class="font-medium text-slate-800 truncate block" :title="ct.name || ct.id">{{ ct.name || ct.id }}</span>
+                      <span v-else class="item-title" :title="ct.name || ct.id">{{ ct.name || ct.id }}</span>
                       <code class="text-xs text-slate-400 truncate block min-w-0 mt-0.5" :title="ct.image">{{ formatImageName(ct.image) }}</code>
                     </div>
                   </div>
@@ -246,9 +246,9 @@ export default toNative(Containers)
                   </template>
                   <template v-else><span class="text-slate-400">-</span></template>
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</td>
+                <td class="td-text-nowrap">{{ formatTime(new Date(ct.created * 1000).toISOString()) }}</td>
                 <td class="px-4 py-3">
-                  <div class="flex justify-end items-center gap-1">
+                  <div class="table-actions">
                     <button v-if="portal.hasPerm('GET /api/docker/container/:id')" class="btn-icon btn-icon-slate" title="详情" @click="$router.push({ path: '/docker/container/' + ct.id })">
                       <i class="fas fa-circle-info text-xs"></i>
                     </button>
@@ -293,7 +293,7 @@ export default toNative(Containers)
               </div>
               <div class="min-w-0">
                 <router-link v-if="portal.hasPerm('GET /api/docker/container/:id')" :to="'/docker/container/' + ct.id" class="font-medium text-slate-800 hover:text-emerald-600 transition-colors text-sm truncate block" :title="ct.name || ct.id">{{ ct.name || ct.id }}</router-link>
-                <span v-else class="font-medium text-slate-800 text-sm truncate block" :title="ct.name || ct.id">{{ ct.name || ct.id }}</span>
+                <span v-else class="item-title-sm" :title="ct.name || ct.id">{{ ct.name || ct.id }}</span>
                 <code class="text-xs text-slate-400 truncate block min-w-0 mt-0.5" :title="ct.image">{{ formatImageName(ct.image) }}</code>
               </div>
             </div>
@@ -311,7 +311,7 @@ export default toNative(Containers)
 
             <!-- 端口信息 -->
             <div v-if="ct.ports && ct.ports.length > 0" class="card-prop-row-start">
-              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">端口</span>
+              <span class="prop-label-start">端口</span>
               <div class="flex flex-wrap gap-1">
                 <code v-for="port in ct.ports" :key="port" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-mono bg-slate-100 text-slate-600">{{ port }}</code>
               </div>

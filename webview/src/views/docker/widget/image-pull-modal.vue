@@ -161,8 +161,8 @@ export default toNative(ImagePullModal)
                   <i v-if="item.isOfficial" class="fas fa-certificate text-slate-400 text-xs flex-shrink-0" title="官方镜像"></i>
                   <span class="text-sm font-medium text-slate-800 truncate">{{ item.name }}</span>
                 </div>
-                <div class="flex items-center gap-2 flex-shrink-0">
-                  <span v-if="item.isOfficial" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-600">官方</span>
+                <div class="action-group">
+                  <span v-if="item.isOfficial" class="badge-xs bg-slate-100 text-slate-600">官方</span>
                   <span class="text-xs text-slate-400"><i class="fas fa-star text-slate-400 mr-0.5"></i>{{ item.starCount }}</span>
                 </div>
               </div>

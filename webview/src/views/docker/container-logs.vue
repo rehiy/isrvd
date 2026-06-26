@@ -144,7 +144,7 @@ export default toNative(ContainerLogs)
     <!-- Toolbar -->
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
             <i class="fas fa-file-lines text-white text-sm"></i>
@@ -154,7 +154,7 @@ export default toNative(ContainerLogs)
             <p class="text-xs text-slate-500 font-mono truncate max-w-xs">{{ container ? `${container.name || container.id} · ${container.image}` : '加载中...' }}</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <div class="tab-group">
             <button v-if="portal.hasPerm('GET /api/docker/container/:id')" :class="['tab-btn', activeTab() === 'docker-container' ? 'tab-btn-active text-emerald-600' : 'tab-btn-inactive']" @click="switchTab('docker-container')">
               <i class="fas fa-circle-info"></i><span>详情</span>
@@ -184,16 +184,16 @@ export default toNative(ContainerLogs)
       <!-- 移动端 -->
       <div class="block md:hidden">
         <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class="title-group">
             <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
               <i class="fas fa-file-lines text-white text-sm"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">容器日志</h1>
+              <h1 class="title-text">容器日志</h1>
               <p class="text-xs text-slate-500 font-mono truncate">{{ container ? `${container.name || container.id} · ${container.image}` : '加载中...' }}</p>
             </div>
           </div>
-          <div class="flex items-center gap-1 flex-shrink-0">
+          <div class="action-group-sm">
             <select v-model="logTail" class="select-sm" @change="handleTailChange">
               <option value="50">50 行</option>
               <option value="100">100 行</option>
@@ -201,13 +201,13 @@ export default toNative(ContainerLogs)
               <option value="500">500 行</option>
               <option value="1000">1000 行</option>
             </select>
-            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" :disabled="streamActive" @click="loadLogs">
+            <button class="btn btn-secondary btn-square" title="刷新" :disabled="streamActive" @click="loadLogs">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="!streamActive && portal.hasPerm('GET /api/docker/container/:id/logs/stream')" class="btn btn-emerald w-9 h-9 !px-0" title="实时" @click="startStream">
+            <button v-if="!streamActive && portal.hasPerm('GET /api/docker/container/:id/logs/stream')" class="btn btn-emerald btn-square" title="实时" @click="startStream">
               <i class="fas fa-play text-sm"></i>
             </button>
-            <button v-else-if="streamActive" class="btn btn-secondary w-9 h-9 !px-0" title="停止" @click="stopStream">
+            <button v-else-if="streamActive" class="btn btn-secondary btn-square" title="停止" @click="stopStream">
               <i :class="streamState === 'connecting' ? 'fas fa-spinner fa-spin text-sm' : 'fas fa-stop text-sm'"></i>
             </button>
           </div>
@@ -226,7 +226,7 @@ export default toNative(ContainerLogs)
     <!-- 内容区域 -->
     <div class="card-body space-y-3">
       <div v-if="logLoading" class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
       <pre v-else-if="logContent || streamActive" class="bg-slate-900 text-slate-100 rounded-xl p-3 md:p-4 text-xs font-mono whitespace-pre-wrap break-all">{{ logContent || '等待日志输出...' }}</pre>

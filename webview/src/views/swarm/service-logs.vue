@@ -137,7 +137,7 @@ export default toNative(ServiceLogs)
     <!-- Toolbar -->
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-emerald-500">
             <i class="fas fa-cubes text-white"></i>
@@ -177,16 +177,16 @@ export default toNative(ServiceLogs)
       <!-- 移动端 -->
       <div class="block md:hidden">
         <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class="title-group">
             <div class="page-icon bg-emerald-500">
               <i class="fas fa-cubes text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">{{ serviceName || '服务日志' }}</h1>
+              <h1 class="title-text">{{ serviceName || '服务日志' }}</h1>
               <p class="text-xs text-slate-600 font-mono truncate">{{ serviceId.slice(0, 12) }}</p>
             </div>
           </div>
-          <div class="flex items-center gap-1 flex-shrink-0">
+          <div class="action-group-sm">
             <select v-model="logTail" class="select-sm" @change="handleTailChange">
               <option value="50">50 行</option>
               <option value="100">100 行</option>
@@ -194,13 +194,13 @@ export default toNative(ServiceLogs)
               <option value="500">500 行</option>
               <option value="1000">1000 行</option>
             </select>
-            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" :disabled="streamActive" @click="loadLogs()">
+            <button class="btn btn-secondary btn-square" title="刷新" :disabled="streamActive" @click="loadLogs()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="!streamActive && portal.hasPerm('GET /api/swarm/service/:id/logs/stream')" class="btn btn-emerald w-9 h-9 !px-0" title="实时" @click="startStream">
+            <button v-if="!streamActive && portal.hasPerm('GET /api/swarm/service/:id/logs/stream')" class="btn btn-emerald btn-square" title="实时" @click="startStream">
               <i class="fas fa-play text-sm"></i>
             </button>
-            <button v-else-if="streamActive" class="btn btn-secondary w-9 h-9 !px-0" title="停止" @click="stopStream">
+            <button v-else-if="streamActive" class="btn btn-secondary btn-square" title="停止" @click="stopStream">
               <i :class="streamState === 'connecting' ? 'fas fa-spinner fa-spin text-sm' : 'fas fa-stop text-sm'"></i>
             </button>
           </div>
@@ -219,7 +219,7 @@ export default toNative(ServiceLogs)
     <!-- 内容区域 -->
     <div class="card-body space-y-3">
       <div v-if="logLoading" class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
       <pre v-else-if="logContent || streamActive" class="bg-slate-900 text-slate-100 rounded-xl p-3 md:p-4 text-xs font-mono whitespace-pre-wrap break-all">{{ logContent || '等待日志输出...' }}</pre>

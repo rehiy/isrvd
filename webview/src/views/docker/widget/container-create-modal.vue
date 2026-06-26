@@ -265,7 +265,7 @@ export default toNative(ContainerCreateModal)
         <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" @click="showSecurity = !showSecurity">
           <i :class="['fas fa-chevron-down text-xs transition-transform', showSecurity ? 'rotate-180' : '']"></i>
           安全配置
-          <span v-if="formData.privileged || formData.capAdd?.length || formData.capDrop?.length" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium bg-amber-100 text-amber-700">
+          <span v-if="formData.privileged || formData.capAdd?.length || formData.capDrop?.length" class="badge-xs bg-amber-100 text-amber-700">
             {{ [formData.privileged ? '特权' : '', formData.capAdd?.length ? `+${formData.capAdd.length}` : '', formData.capDrop?.length ? `-${formData.capDrop.length}` : ''].filter(Boolean).join(' ') }}
           </span>
         </button>

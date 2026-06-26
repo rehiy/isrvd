@@ -400,25 +400,25 @@ export default toNative(ContainerStats)
   <div class="page">
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
             <i class="fas fa-cube text-white text-sm"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
+            <h1 class="title-text">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
             <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
           </div>
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div :class="['page-icon flex-shrink-0', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
             <i class="fas fa-cube text-white text-sm"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
+            <h1 class="title-text">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
             <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
           </div>
         </div>
@@ -436,7 +436,7 @@ export default toNative(ContainerStats)
         <!-- 核心指标：CPU 和 内存 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- CPU 使用率 -->
-          <div class="bg-slate-50 rounded-xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+          <div class="metric-card">
             <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-transparent"></div>
             <div class="flex items-center gap-2 mb-1">
               <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
@@ -447,7 +447,7 @@ export default toNative(ContainerStats)
                 {{ statsData.cpuPercent }}%
               </span>
             </div>
-            <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
+            <div class="metric-legend">
               <span v-if="statsData.cpuCores">核心 <span class="text-slate-600 font-medium">{{ statsData.cpuCores }} 核</span></span>
               <span v-if="statsData.cpuFreq">频率 <span class="text-slate-600 font-medium">{{ statsData.cpuFreq.toFixed(0) }} MHz</span></span>
               <span v-if="statsData.cpuThrottled && statsData.cpuThrottled.throttledPeriods > 0" class="text-amber-500">
@@ -458,7 +458,7 @@ export default toNative(ContainerStats)
           </div>
 
           <!-- 内存使用 -->
-          <div class="bg-slate-50 rounded-xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+          <div class="metric-card">
             <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-transparent"></div>
             <div class="flex items-center gap-2 mb-1">
               <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
@@ -469,7 +469,7 @@ export default toNative(ContainerStats)
                 {{ statsData.memoryPercent }}%
               </span>
             </div>
-            <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
+            <div class="metric-legend">
               <span>内存 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryUsage) }}</span></span>
               <span>限制 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryLimit) }}</span></span>
             </div>
@@ -480,7 +480,7 @@ export default toNative(ContainerStats)
         <!-- I/O 指标卡片 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- 网络 I/O -->
-          <div class="bg-slate-50 rounded-xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+          <div class="metric-card">
             <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-400 to-transparent"></div>
             <div class="flex items-center gap-2 mb-1">
               <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
@@ -493,7 +493,7 @@ export default toNative(ContainerStats)
                 <span class="text-teal-700">↑</span> {{ formatFileSize(netTxRate) }}/s
               </span>
             </div>
-            <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
+            <div class="metric-legend">
               <span v-if="statsData.networkDetail">网卡 <span class="text-slate-600 font-medium">{{ Object.keys(statsData.networkDetail).length }} 块</span></span>
               <span>累计收 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkRx) }}</span></span>
               <span>累计发 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkTx) }}</span></span>
@@ -502,7 +502,7 @@ export default toNative(ContainerStats)
           </div>
 
           <!-- 硬盘 I/O -->
-          <div class="bg-slate-50 rounded-xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden">
+          <div class="metric-card">
             <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-transparent"></div>
             <div class="flex items-center gap-2 mb-1">
               <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
@@ -515,7 +515,7 @@ export default toNative(ContainerStats)
                 <span class="text-amber-700">↑</span> {{ formatFileSize(blkWRate) }}/s
               </span>
             </div>
-            <div class="flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400">
+            <div class="metric-legend">
               <span v-if="statsData.blockDetail">设备 <span class="text-slate-600 font-medium">{{ Object.keys(statsData.blockDetail).length }} 个</span></span>
               <span>累计读 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockRead) }}</span></span>
               <span>累计写 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockWrite) }}</span></span>

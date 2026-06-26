@@ -105,17 +105,17 @@ export default toNative(Tasks)
     <!-- Toolbar -->
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-cyan-500">
             <i class="fas fa-list-check text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800 truncate">任务列表</h1>
+            <h1 class="title-text">任务列表</h1>
             <p class="text-xs text-slate-500">查看 Swarm 集群任务状态</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <PageSearch v-model="searchText" search-key="swarm-tasks" placeholder="请输入搜索关键词..." focus-color="cyan" type-to-search />
           <select v-model="selectedServiceId" class="select-sm min-w-[160px]">
             <option value="">全部服务</option>
@@ -129,12 +129,12 @@ export default toNative(Tasks)
       <!-- 移动端 -->
       <div class="block md:hidden">
         <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class="title-group">
             <div class="page-icon bg-cyan-500">
               <i class="fas fa-list-check text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">任务列表</h1>
+              <h1 class="title-text">任务列表</h1>
               <p class="text-xs text-slate-500 truncate">查看 Swarm 集群任务状态</p>
             </div>
           </div>
@@ -143,7 +143,7 @@ export default toNative(Tasks)
               <option value="">全部服务</option>
               <option v-for="s in services" :key="s.id" :value="s.id">{{ s.name }}</option>
             </select>
-            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadTasks()">
+            <button class="btn btn-secondary btn-square" title="刷新" @click="loadTasks()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
           </div>
@@ -157,7 +157,7 @@ export default toNative(Tasks)
     <!-- 内容 -->
     <div v-if="tasksLoading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -184,7 +184,7 @@ export default toNative(Tasks)
                   {{ t.serviceName || t.serviceID?.slice(0, 12) }}
                 </button>
               </td>
-              <td class="px-4 py-3 text-sm text-slate-600">{{ t.slot || '-' }}</td>
+              <td class="td-text">{{ t.slot || '-' }}</td>
               <td class="px-4 py-3">
                 <span :class="taskStateClass(t.state)" class="text-sm capitalize">{{ t.state }}</span>
               </td>
@@ -198,7 +198,7 @@ export default toNative(Tasks)
                 </button>
                 <span v-else class="text-xs text-slate-400">-</span>
               </td>
-              <td class="px-4 py-3 text-sm text-slate-600">{{ formatTime(t.updatedAt) }}</td>
+              <td class="td-text">{{ formatTime(t.updatedAt) }}</td>
             </tr>
           </tbody>
         </table>
@@ -237,7 +237,7 @@ export default toNative(Tasks)
           </div>
           <!-- 消息（与状态关联，紧跟） -->
           <div v-if="t.err || t.message" class="card-prop-row-start">
-            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">消息</span>
+            <span class="prop-label-start">消息</span>
             <span class="text-xs break-words" :class="t.err ? 'text-red-500' : 'text-slate-500'">{{ t.err || t.message }}</span>
           </div>
           <!-- 更新时间（最后） -->

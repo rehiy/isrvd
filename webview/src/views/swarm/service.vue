@@ -74,7 +74,7 @@ export default toNative(ServiceInfo)
     <!-- Toolbar -->
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-emerald-500">
             <i class="fas fa-cubes text-white"></i>
@@ -101,16 +101,16 @@ export default toNative(ServiceInfo)
       <!-- 移动端 -->
       <div class="block md:hidden">
         <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class="title-group">
             <div class="page-icon bg-emerald-500">
               <i class="fas fa-cubes text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">{{ serviceData?.name || '服务详情' }}</h1>
+              <h1 class="title-text">{{ serviceData?.name || '服务详情' }}</h1>
               <p class="text-xs text-slate-600 font-mono truncate">{{ serviceId.slice(0, 12) }}</p>
             </div>
           </div>
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadDetail()">
+          <button class="btn btn-secondary btn-square" title="刷新" @click="loadDetail()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
         </div>
@@ -128,7 +128,7 @@ export default toNative(ServiceInfo)
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -186,7 +186,7 @@ export default toNative(ServiceInfo)
       <div v-if="serviceData.networks && serviceData.networks.length > 0">
         <h2 class="section-title">网络</h2>
         <div class="flex flex-wrap gap-1.5">
-          <span v-for="n in serviceData.networks" :key="n" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700">{{ n }}</span>
+          <span v-for="n in serviceData.networks" :key="n" class="badge-sm bg-blue-50 text-blue-700">{{ n }}</span>
         </div>
       </div>
 

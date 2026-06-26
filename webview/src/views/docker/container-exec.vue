@@ -115,7 +115,7 @@ export default toNative(ContainerTerminal)
     <div ref="containerRef" class="h-full page flex flex-col overflow-hidden">
       <!-- Toolbar -->
       <div class="page-toolbar page-toolbar-static">
-        <div class="hidden md:flex items-center justify-between">
+        <div class="toolbar-desktop">
           <div class="flex items-center gap-3">
             <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
               <i class="fas fa-terminal text-white text-sm"></i>
@@ -139,26 +139,26 @@ export default toNative(ContainerTerminal)
             </button>
           </div>
         </div>
-        <div class="flex md:hidden items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
+        <div class="toolbar-mobile">
+          <div class="title-group">
             <div :class="['page-icon', container?.state === 'running' ? 'bg-emerald-400' : 'bg-slate-400']">
               <i class="fas fa-terminal text-white text-sm"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">容器终端</h1>
+              <h1 class="title-text">容器终端</h1>
               <p class="text-xs text-slate-500 font-mono truncate">{{ container ? `${container.name || container.id} · ${container.image}` : '加载中...' }}</p>
             </div>
           </div>
-          <div class="flex items-center gap-1 flex-shrink-0">
+          <div class="action-group-sm">
             <select v-model="shell" :disabled="connected" class="w-24 select-sm" @change="handleShellChange">
               <option value="/bin/sh">/bin/sh</option>
               <option value="/bin/bash">/bin/bash</option>
               <option value="/bin/ash">/bin/ash</option>
             </select>
-            <button v-if="!connected" type="button" class="btn btn-emerald w-9 h-9 !px-0" title="连接" @click="handleConnect()">
+            <button v-if="!connected" type="button" class="btn btn-emerald btn-square" title="连接" @click="handleConnect()">
               <i class="fas fa-plug text-sm"></i>
             </button>
-            <button v-else type="button" class="btn btn-secondary w-9 h-9 !px-0" title="断开" @click="handleDisconnect()">
+            <button v-else type="button" class="btn btn-secondary btn-square" title="断开" @click="handleDisconnect()">
               <i class="fas fa-plug-circle-xmark text-sm"></i>
             </button>
           </div>

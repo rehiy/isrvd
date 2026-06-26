@@ -55,7 +55,7 @@ export default toNative(ImageTagModal)
       <div v-if="tagImage.repoTags.length > 1">
         <label class="form-label">已有标签</label>
         <div class="flex flex-wrap gap-1.5">
-          <span v-for="tag in tagImage.repoTags" :key="tag" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700">
+          <span v-for="tag in tagImage.repoTags" :key="tag" class="badge-sm bg-blue-50 text-blue-700">
             {{ tag }}
           </span>
         </div>

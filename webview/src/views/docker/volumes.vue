@@ -87,17 +87,17 @@ export default toNative(Volumes)
   <div class="page">
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-amber-500">
             <i class="fas fa-database text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800 truncate">数据卷管理</h1>
+            <h1 class="title-text">数据卷管理</h1>
             <p class="text-xs text-slate-500">管理 Docker 数据卷，持久化容器数据</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <PageSearch v-model="searchText" search-key="docker-volumes" placeholder="搜索卷名称、驱动或挂载点..." focus-color="amber" type-to-search />
           <button class="btn btn-secondary" @click="loadVolumes()">
             <i class="fas fa-rotate"></i>刷新
@@ -108,21 +108,21 @@ export default toNative(Volumes)
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-amber-500">
             <i class="fas fa-database text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">数据卷管理</h1>
+            <h1 class="title-text">数据卷管理</h1>
             <p class="text-xs text-slate-500 truncate">管理容器数据卷</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadVolumes()">
+        <div class="action-group-sm">
+          <button class="btn btn-secondary btn-square" title="刷新" @click="loadVolumes()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/docker/volume')" class="btn btn-amber w-9 h-9 !px-0" title="新建卷" @click="createModalRef?.show()">
+          <button v-if="portal.hasPerm('POST /api/docker/volume')" class="btn btn-amber btn-square" title="新建卷" @click="createModalRef?.show()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -136,7 +136,7 @@ export default toNative(Volumes)
     <!-- Loading State -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -157,21 +157,21 @@ export default toNative(Volumes)
           <tbody class="divide-y divide-slate-100">
             <tr v-for="vol in filteredVolumes" :key="vol.name" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[280px]">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="inline-info">
                   <div class="row-icon bg-amber-400">
                     <i class="fas fa-database text-white text-sm"></i>
                   </div>
                   <div class="min-w-0">
                     <router-link v-if="portal.hasPerm('GET /api/docker/volume/:name')" :to="'/docker/volume/' + encodeURIComponent(vol.name)" class="font-medium text-slate-800 hover:text-amber-600 transition-colors truncate block" :title="vol.name">{{ vol.name }}</router-link>
-                    <span v-else class="font-medium text-slate-800 truncate block" :title="vol.name">{{ vol.name }}</span>
-                    <span class="text-xs text-slate-400 truncate block mt-0.5">{{ vol.driver }}</span>
+                    <span v-else class="item-title" :title="vol.name">{{ vol.name }}</span>
+                    <span class="item-subtitle">{{ vol.driver }}</span>
                   </div>
                 </div>
               </td>
               <td class="px-4 py-3 font-mono text-xs text-slate-500 truncate max-w-xs" :title="vol.mountpoint">{{ vol.mountpoint }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ formatTime(vol.createdAt) }}</td>
+              <td class="td-text-nowrap">{{ formatTime(vol.createdAt) }}</td>
               <td class="px-4 py-3">
-                <div class="flex justify-end items-center gap-1">
+                <div class="table-actions">
                   <button v-if="portal.hasPerm('GET /api/docker/volume/:name')" class="btn-icon btn-icon-slate" title="详情" @click="viewVolumeDetail(vol)">
                     <i class="fas fa-circle-info text-xs"></i>
                   </button>
@@ -195,14 +195,14 @@ export default toNative(Volumes)
             </div>
             <div class="min-w-0">
               <router-link v-if="portal.hasPerm('GET /api/docker/volume/:name')" :to="'/docker/volume/' + encodeURIComponent(vol.name)" class="font-medium text-slate-800 hover:text-amber-600 transition-colors text-sm truncate block" :title="vol.name">{{ vol.name }}</router-link>
-              <span v-else class="font-medium text-slate-800 text-sm truncate block" :title="vol.name">{{ vol.name }}</span>
-              <span class="text-xs text-slate-400 truncate block mt-0.5">{{ vol.driver }}</span>
+              <span v-else class="item-title-sm" :title="vol.name">{{ vol.name }}</span>
+              <span class="item-subtitle">{{ vol.driver }}</span>
             </div>
           </div>
 
           <!-- 挂载点 -->
           <div class="card-prop-row-start">
-            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">挂载点</span>
+            <span class="prop-label-start">挂载点</span>
             <code class="font-mono text-xs text-slate-500 break-all" :title="vol.mountpoint">{{ vol.mountpoint }}</code>
           </div>
 
