@@ -1,4 +1,5 @@
 <script lang="ts">
+import type { FileInfo, ExplorerAdapter } from '../types'
 import { Component, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
@@ -7,8 +8,6 @@ import { getPreviewMimeType, getPreviewType } from '@/helper/utils'
 import type { PreviewFileType } from '@/helper/utils'
 
 import BaseModal from '@/component/modal.vue'
-
-import type { FileInfo, ExplorerAdapter } from '../types'
 
 @Component({
     expose: ['show'],

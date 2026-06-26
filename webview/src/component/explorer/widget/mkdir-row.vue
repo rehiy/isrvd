@@ -40,7 +40,7 @@ export default toNative(MkdirRow)
     </td>
     <!-- 名称列：图标 + 输入框 -->
     <td class="px-4 py-3" colspan="4">
-      <div class="flex items-center gap-2 min-w-0">
+      <div class="inline-info">
         <div class="row-icon bg-amber-400 flex-shrink-0">
           <i class="fas fa-folder text-white text-sm"></i>
         </div>

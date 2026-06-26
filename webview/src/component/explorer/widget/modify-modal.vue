@@ -1,4 +1,5 @@
 <script lang="ts">
+import type { FileInfo, ExplorerAdapter } from '../types'
 import { css } from '@codemirror/lang-css'
 import { go } from '@codemirror/lang-go'
 import { html } from '@codemirror/lang-html'
@@ -15,8 +16,6 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import BaseModal from '@/component/modal.vue'
-
-import type { FileInfo, ExplorerAdapter } from '../types'
 
 @Component({
     expose: ['show'],

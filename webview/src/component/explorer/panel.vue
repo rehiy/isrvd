@@ -244,7 +244,7 @@ export default toNative(ExplorerPanel)
         <input v-if="showSearch" v-model="searchText" class="input text-sm py-1 w-48 hidden md:block" placeholder="搜索文件..." />
 
         <!-- 桌面端操作按钮 -->
-        <div class="hidden md:flex items-center gap-2 flex-shrink-0">
+        <div class="action-group-desktop">
           <button v-if="can.list" class="btn btn-secondary" @click="refresh()">
             <i class="fas fa-rotate"></i><span>刷新</span>
           </button>
@@ -271,25 +271,25 @@ export default toNative(ExplorerPanel)
 
         <!-- 移动端图标按钮 -->
         <div class="flex md:hidden items-center gap-1.5 flex-shrink-0">
-          <button v-if="can.list" class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="refresh()">
+          <button v-if="can.list" class="btn btn-secondary btn-square" title="刷新" @click="refresh()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
           <template v-if="selectedCount === 0">
-            <button v-if="can.mkdir" class="btn btn-secondary w-9 h-9 !px-0" title="新建目录" @click="startMkdir()">
+            <button v-if="can.mkdir" class="btn btn-secondary btn-square" title="新建目录" @click="startMkdir()">
               <i class="fas fa-folder text-sm"></i>
             </button>
-            <button v-if="can.createFile" class="btn btn-secondary w-9 h-9 !px-0" title="新建文件" @click="startCreate()">
+            <button v-if="can.createFile" class="btn btn-secondary btn-square" title="新建文件" @click="startCreate()">
               <i class="fas fa-file text-sm"></i>
             </button>
-            <button v-if="can.upload" class="btn btn-primary w-9 h-9 !px-0" title="上传文件" @click="triggerUpload()">
+            <button v-if="can.upload" class="btn btn-primary btn-square" title="上传文件" @click="triggerUpload()">
               <i class="fas fa-upload text-sm"></i>
             </button>
           </template>
           <template v-if="showBatchOps && selectedCount > 0">
-            <button v-if="can.rename" class="btn btn-blue w-9 h-9 !px-0" :title="`移动 ${selectedCount} 项`" @click="startBatchMove()">
+            <button v-if="can.rename" class="btn btn-blue btn-square" :title="`移动 ${selectedCount} 项`" @click="startBatchMove()">
               <i class="fas fa-folder-plus text-sm"></i>
             </button>
-            <button v-if="can.remove" class="btn btn-danger w-9 h-9 !px-0" :title="`删除 ${selectedCount} 项`" @click="startBatchDelete()">
+            <button v-if="can.remove" class="btn btn-danger btn-square" :title="`删除 ${selectedCount} 项`" @click="startBatchDelete()">
               <i class="fas fa-trash text-sm"></i>
             </button>
           </template>
@@ -317,7 +317,7 @@ export default toNative(ExplorerPanel)
       <!-- ─── 加载中 ──────────────────────────────────────────────────────────── -->
       <div v-if="loading" class="card-body">
         <div class="empty-state">
-          <div class="w-12 h-12 spinner mb-3"></div>
+          <div class="spinner-lg"></div>
           <p class="text-slate-500">加载中...</p>
         </div>
       </div>
@@ -375,7 +375,7 @@ export default toNative(ExplorerPanel)
                   </label>
                 </td>
                 <td class="px-4 py-3 max-w-[280px]">
-                  <div class="flex items-center gap-2 min-w-0">
+                  <div class="inline-info">
                     <div :class="['row-icon', file.isDir ? 'bg-amber-400' : 'bg-blue-400']">
                       <i :class="getFileIcon(file)" class="text-white text-sm"></i>
                     </div>
@@ -383,7 +383,7 @@ export default toNative(ExplorerPanel)
                       <button v-if="file.isDir" type="button" class="font-medium text-slate-800 hover:text-primary-600 transition-colors truncate block text-left" @click="navigate(file.path)">
                         {{ file.name }}
                       </button>
-                      <span v-else class="font-medium text-slate-800 truncate block">{{ file.name }}</span>
+                      <span v-else class="item-title">{{ file.name }}</span>
                     </div>
                   </div>
                 </td>
@@ -402,7 +402,7 @@ export default toNative(ExplorerPanel)
                   <span class="text-sm text-slate-600 whitespace-nowrap">{{ formatModTime(file.modTime) }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <div class="flex justify-end items-center gap-1">
+                  <div class="table-actions">
                     <template v-if="file.isDir">
                       <button v-if="can.list" class="btn-icon btn-icon-slate" title="进入目录" @click="navigate(file.path)">
                         <i class="fas fa-folder-open text-xs"></i>
@@ -453,8 +453,8 @@ export default toNative(ExplorerPanel)
               </div>
               <div class="min-w-0">
                 <button v-if="file.isDir" type="button" class="font-medium text-slate-800 hover:text-primary-600 transition-colors text-sm truncate block text-left" @click="navigate(file.path)">{{ file.name }}</button>
-                <span v-else class="font-medium text-slate-800 text-sm truncate block">{{ file.name }}</span>
-                <span v-if="!file.isDir" class="text-xs text-slate-400 truncate block mt-0.5">{{ formatFileSize(file.size) }}</span>
+                <span v-else class="item-title-sm">{{ file.name }}</span>
+                <span v-if="!file.isDir" class="item-subtitle">{{ formatFileSize(file.size) }}</span>
               </div>
             </div>
             <div class="card-prop-row">
@@ -462,7 +462,7 @@ export default toNative(ExplorerPanel)
               <span class="text-xs text-slate-500">{{ formatModTime(file.modTime) }}</span>
             </div>
             <div class="card-prop-row-start">
-              <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">权限</span>
+              <span class="prop-label-start">权限</span>
               <code class="text-xs bg-slate-100 px-2 py-0.5 rounded-lg font-mono text-slate-700">{{ file.mode }}</code>
             </div>
             <div class="card-actions">

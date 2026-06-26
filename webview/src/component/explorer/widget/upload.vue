@@ -61,7 +61,7 @@ const UploadNodeItem = defineComponent({
                     }, [
                         h('i', { class: `fas fa-chevron-right text-slate-400 w-3 flex-shrink-0 transition-transform${dir.expanded ? ' rotate-90' : ''}` }),
                         // 与文件列表 row-icon 保持一致：32×32 圆角色块
-                        h('div', { class: 'w-8 h-8 rounded-lg bg-amber-400 flex items-center justify-center flex-shrink-0' },
+                        h('div', { class: 'row-icon bg-amber-400' },
                             h('i', { class: 'fas fa-folder text-white text-sm' })
                         ),
                         h('span', { class: 'text-sm text-slate-700 font-medium flex-1 truncate' }, node.name),
@@ -109,7 +109,7 @@ const UploadNodeItem = defineComponent({
                     class: 'flex items-center gap-2 px-4 py-2 transition-colors',
                     style: { paddingLeft: pl },
                 }, [
-                    h('div', { class: `w-8 h-8 rounded-lg ${iconBg} flex items-center justify-center flex-shrink-0` },
+                    h('div', { class: `row-icon ${iconBg}` },
                         h('i', { class: `fas ${iconName} text-white text-sm` })
                     ),
                     h('div', { class: 'flex-1 min-w-0' }, [

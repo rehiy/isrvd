@@ -104,10 +104,10 @@ export default toNative(BaseModal)
           <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200/50 flex-shrink-0">
             <div class="min-w-0 flex-1 pr-4">
               <slot name="title">
-                <h1 class="text-lg font-semibold text-slate-800 truncate">{{ title }}</h1>
+                <h1 class="title-text">{{ title }}</h1>
               </slot>
             </div>
-            <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="action-group">
               <slot name="header-actions"></slot>
               <button type="button" class="btn-icon-sm" :disabled="loading" @click="handleCancel">
                 <i class="fas fa-times"></i>

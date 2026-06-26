@@ -1,9 +1,8 @@
 <script lang="ts">
+import type { ExplorerAdapter } from '../types'
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import BaseModal from '@/component/modal.vue'
-
-import type { ExplorerAdapter } from '../types'
 
 @Component({
     expose: ['show'],
