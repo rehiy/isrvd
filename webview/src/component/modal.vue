@@ -99,7 +99,7 @@ export default toNative(BaseModal)
         @mousedown="handleBackdropMouseDown"
         @click="handleBackdropClick"
       >
-        <div :class="['w-full max-h-[calc(100vh-2rem)] modal-card animate-scale-in flex flex-col overflow-hidden', maxWidthClass, cardClass]">
+        <div :class="['w-full max-h-[calc(100vh-2rem)] modal-card animate-scale-in flex flex-col overflow-hidden', maxWidthClass, cardClass]" :aria-busy="loading">
           <!-- Header -->
           <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200/50 flex-shrink-0">
             <div class="min-w-0 flex-1 pr-4">
@@ -108,6 +108,7 @@ export default toNative(BaseModal)
               </slot>
             </div>
             <div class="action-group">
+              <div v-if="loading" class="spinner w-5 h-5 border-2" aria-label="加载中"></div>
               <slot name="header-actions"></slot>
               <button type="button" class="btn-icon-sm" :disabled="loading" @click="handleCancel">
                 <i class="fas fa-times"></i>
@@ -116,8 +117,14 @@ export default toNative(BaseModal)
           </div>
 
           <!-- Body -->
-          <div :class="['flex-1 min-h-0', bodyClass]">
+          <div :class="['relative flex-1 min-h-0', bodyClass]">
             <slot></slot>
+            <div v-if="loading" class="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-[1px]">
+              <div class="flex items-center gap-2 text-sm font-medium text-slate-600">
+                <div class="spinner w-6 h-6 border-2"></div>
+                <span>加载中...</span>
+              </div>
+            </div>
           </div>
 
           <!-- Footer -->
