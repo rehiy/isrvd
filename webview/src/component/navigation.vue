@@ -562,5 +562,5 @@ export default toNative(NavigationBar)
   </aside>
 
   <!-- 移动端遮罩层 -->
-  <div v-if="mobileSidebarVisible" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 lg:hidden" @click="closeMobileSidebar"></div>
+  <div v-if="mobileSidebarVisible" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden" @click="closeMobileSidebar"></div>
 </template>
