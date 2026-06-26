@@ -385,6 +385,11 @@
 | `.card-table` | 卡片表格区（桌面端表格），无内边距，表格直接贴边 | `overflow-x-auto` |
 | `.card-actions` | 移动端卡片底部操作按钮栏 | `flex flex-wrap gap-1.5 pt-2 border-t border-slate-100` |
 | `.card-info-row` | 移动端卡片主信息行（图标+文字） | `flex items-center gap-3 min-w-0 flex-1 mb-3` |
+| `.title-text` | 通用标题文字 | `text-lg font-semibold text-slate-800 truncate` |
+| `.toolbar-desktop` / `.toolbar-mobile` | toolbar 桌面/移动外层 | `hidden md:flex items-center justify-between`、`flex md:hidden items-center justify-between` |
+| `.title-group` / `.title-group-static` / `.inline-info` | 图标 + 文本信息组 | `flex items-center gap-3 min-w-0 flex-1`、`flex items-center gap-3 min-w-0`、`flex items-center gap-2 min-w-0` |
+| `.action-group-desktop` / `.action-group` / `.action-group-sm` | 操作按钮组 | `hidden md:flex items-center gap-2 flex-shrink-0`、`flex items-center gap-2 flex-shrink-0`、`flex items-center gap-1 flex-shrink-0` |
+| `.item-title` / `.item-title-sm` / `.item-subtitle` / `.item-subtitle-mono` / `.prop-label-start` | 列表/表格主副标题与属性标签 | 对应常用标题、副标题、mono 副标题、起始属性标签样式 |
 | `.card-prop-row` | 移动端卡片属性行（标签+纯文本值） | `flex items-center gap-2 mb-3` |
 | `.card-prop-row-start` | 移动端卡片属性行（标签+badge/code，值换行对齐） | `flex items-start gap-2 mb-3` |
 | `.detail-value` | 详情页属性值容器（灰色圆角背景块） | `px-3 py-2 bg-slate-50 rounded-lg` |
@@ -408,13 +413,15 @@
 | 类 | 用途 |
 |---|---|
 | `.empty-state` | 加载中 / 空状态块 `flex flex-col items-center justify-center py-20` |
-| `.spinner` | 加载动画 `animate-spin rounded-full border-4 border-slate-200 border-t-primary-500` |
+| `.spinner` | 加载动画基础样式 `animate-spin rounded-full border-4 border-slate-200 border-t-primary-500` |
+| `.spinner-lg` / `.spinner-md` | 加载动画尺寸：`.spinner-lg` 为 `w-12 h-12 mb-3` + spinner 基础样式；`.spinner-md` 为 `w-8 h-8 mr-2` + spinner 基础样式 |
 
 **4. 按钮（Button）**
 
 | 类 | 用途 | 禁止手写 |
 |---|---|---|
 | `.btn` | 基础按钮（inline-flex，焦点&禁用处理） | — |
+| `.btn-square` | toolbar 中仅显示图标的 36×36 方形按钮，需与 `.btn` + 颜色类组合使用 | `w-9 h-9 !px-0` |
 | `.btn-{color}` | 颜色变体（primary/blue/cyan/indigo/amber/emerald/danger/rose/purple/violet/secondary） | — |
 | `.btn-ghost` | 幽灵按钮（透明背景） | — |
 | `.btn-icon` | 图标按钮（正方形 padding，工具栏通用） | — |
@@ -468,18 +475,23 @@
 | `.toggle-row` / `.toggle` / `.toggle-on` / `.toggle-violet` / `.toggle-thumb` | 功能启用/禁用开关底层样式（由 `<ToggleCard>` 组件封装，禁止直接使用） | — |
 | `.toggle-expand-card` / `.toggle-expand-card-open` / `.toggle-expand-body` | 展开式 toggle card 底层样式（由 `<ToggleCard>` 传入 default slot 时自动使用，禁止直接使用） | — |
 | `.text-mono-muted` | 代码/ID 副文字（灰色 mono 截断） | `block font-mono text-xs text-slate-400 truncate mt-0.5` |
+| `.code-chip` | 小号等宽代码片段 | `inline-block text-xs px-2 py-0.5 rounded-lg font-mono break-all` |
+| `.panel-frame` | 轻量边框面板 | `rounded-xl border border-slate-200 overflow-hidden` |
+| `.empty-note` | 紧凑空内容提示 | `text-sm text-slate-400 py-6 text-center bg-slate-50 rounded-xl` |
 
 **8. 徽章与标签（Badge）**
 
 | 类 | 用途 | 禁止手写 |
 |---|---|---|
-| `.badge` / `.badge-primary` / `.badge-warning` / `.badge-success` / `.badge-muted` | 通用徽章 | `inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium` |
+| `.badge` / `.badge-sm` / `.badge-xs` / `.badge-primary` / `.badge-warning` / `.badge-success` / `.badge-muted` | 通用徽章 | `.badge`: `inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium`; `.badge-sm`: `inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium`; `.badge-xs`: `inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium` |
 
 **9. 概览统计卡片（Stat Card）**
 
 | 类 | 用途 | 禁止手写 |
 |---|---|---|
 | `.stat-card` | 概览 Widget 统计卡片（规范 1.12） | `rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow flex items-center gap-3` |
+| `.overview-loading` / `.overview-unavailable` | 概览 Widget 加载/不可用状态 | `flex items-center justify-center py-10`、`flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50` |
+| `.monitor-chart-box` / `.monitor-legend-item` / `.metric-card` / `.metric-legend` | 监控图表与指标块 | 对应监控图表容器、图例项、指标卡片和指标图例样式 |
 
 **10. 终端页面（Terminal Page）**
 

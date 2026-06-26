@@ -571,6 +571,58 @@ def check_enum_badge_rounded(filepath, lines, tmpl, tmpl_line0):
 
 # ─── 主流程 ──────────
 
+def check_redundant_component_classes(filepath, lines, tmpl, tmpl_line0):
+    """已有组件类时，避免继续手写等价 Tailwind。"""
+    patterns = [
+        ("w-9 h-9 !px-0", "btn-square"),
+        ("w-12 h-12 spinner mb-3", "spinner-lg"),
+        ("w-8 h-8 spinner mr-2", "spinner-md"),
+        ("text-lg font-semibold text-slate-800 truncate", "title-text"),
+        ("hidden md:flex items-center justify-between", "toolbar-desktop"),
+        ("flex md:hidden items-center justify-between", "toolbar-mobile"),
+        ("flex items-center gap-3 min-w-0 flex-1", "title-group"),
+        ("flex items-center gap-3 min-w-0", "title-group-static"),
+        ("flex items-center gap-2 min-w-0", "inline-info"),
+        ("hidden md:flex items-center gap-2 flex-shrink-0", "action-group-desktop"),
+        ("flex items-center gap-2 flex-shrink-0", "action-group"),
+        ("flex items-center gap-1 flex-shrink-0", "action-group-sm"),
+        ("flex justify-end items-center gap-1", "table-actions"),
+        ("font-medium text-slate-800 text-sm truncate block", "item-title-sm"),
+        ("font-medium text-slate-800 truncate block", "item-title"),
+        ("text-xs text-slate-400 font-mono truncate block mt-0.5", "item-subtitle-mono"),
+        ("text-xs text-slate-400 truncate block mt-0.5", "item-subtitle"),
+        ("text-xs text-slate-400 flex-shrink-0 mt-0.5", "prop-label-start"),
+        ("px-4 py-3 whitespace-nowrap text-sm text-slate-600", "td-text-nowrap"),
+        ("px-4 py-3 text-sm text-slate-600", "td-text"),
+        ("relative h-28 bg-slate-50 rounded-lg overflow-hidden", "monitor-chart-box"),
+        ("flex items-center gap-1 shrink-0 whitespace-nowrap", "monitor-legend-item"),
+        ("inline-block text-xs px-2 py-0.5 rounded-lg font-mono break-all", "code-chip"),
+        ("rounded-xl border border-slate-200 overflow-hidden", "panel-frame"),
+        ("text-sm text-slate-400 py-6 text-center bg-slate-50 rounded-xl", "empty-note"),
+        ("bg-slate-50 rounded-xl p-4 md:p-5 border border-slate-200/60 relative overflow-hidden", "metric-card"),
+        ("flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400", "metric-legend"),
+        ("flex items-center justify-center py-10", "overview-loading"),
+        ("flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50", "overview-unavailable"),
+    ]
+    for i, line in enumerate(tmpl.splitlines(), 1):
+        for pattern, cls in patterns:
+            if pattern in line:
+                report(filepath, tmpl_line0 + i - 1, "WARN", f"应使用 {cls}，避免手写等价 Tailwind")
+
+
+def check_redundant_badge_classes(filepath, lines, tmpl, tmpl_line0):
+    """已有 badge-sm/badge-xs 时，避免继续手写等价小号 badge。"""
+    patterns = [
+        ("inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium", "badge-sm"),
+        ("inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-medium", "badge-sm gap-1.5"),
+        ("inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium", "badge-xs"),
+    ]
+    for i, line in enumerate(tmpl.splitlines(), 1):
+        for pattern, cls in patterns:
+            if pattern in line:
+                report(filepath, tmpl_line0 + i - 1, "WARN", f"小号 badge 应使用 {cls}，避免手写等价 Tailwind")
+
+
 CHECKS = [
     check_toolbar_layout,
     check_toolbar_icon,
@@ -592,6 +644,8 @@ CHECKS = [
     check_status_text_color_values,
     # 6.9.2 枚举 badge 形状
     check_enum_badge_rounded,
+    check_redundant_component_classes,
+    check_redundant_badge_classes,
 ]
 
 
