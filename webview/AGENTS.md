@@ -359,7 +359,7 @@
 1. 如新增主题色，先在 `light.css @theme` 中补齐浅色变量
 2. 在 `dark.css .dark` 中补齐对应暗色变量
 3. 仅对变量无法覆盖的特殊类写显式选择器，例如透明度类（`bg-white/80`、`bg-slate-900/60`）、终端/日志区域、CodeMirror 等
-4. 显式选择器中包含 `/`、`:`、`group-hover:` 时按 CSS 选择器规则转义
+4. 显式选择器中包含 `/`、`:`、`group-hover:` 时按 CSS 选择器规则转义；透明白底类如 `bg-white/80`、`bg-white/95` 必须在 `dark.css` 中显式覆盖
 
 **终端/日志区域**：使用 `bg-slate-900` 保持深色背景，不跟随主题切换
 
@@ -443,6 +443,7 @@
 | 类 | 用途 |
 |---|---|
 | `.nav-link` | 侧边栏导航链接 |
+| `.nav-link-active` | 侧边栏导航激活态 |
 | `.dropdown-item` | 下拉菜单项（普通） |
 | `.dropdown-item-danger` | 下拉菜单项（危险/注销） |
 | `.breadcrumb-btn` | 面包屑路径按钮 |
@@ -528,7 +529,7 @@
 
 #### 样式自检脚本
 
-`webview/scripts/review-style.py` 是本文件样式规范的辅助检查脚本：当前扫描 `webview/src/views/**/*.vue`，跳过路径中包含 `widget` 的文件；`ERROR` 会返回非零，`WARN` 需要人工处理。脚本不能替代完整人工 review，新增 CSS 组件类或强制规范时需同步更新该脚本。
+`webview/scripts/review-style.py` 是本文件样式规范的辅助检查脚本：当前扫描 `webview/src/views/**/*.vue` 与 `webview/src/component/**/*.vue`；`ERROR` 会返回非零，`WARN` 需要人工处理。脚本不能替代完整人工 review，新增 CSS 组件类或强制规范时需同步更新该脚本。
 
 ---
 

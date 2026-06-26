@@ -9,8 +9,8 @@ import sys
 from pathlib import Path
 from collections import defaultdict
 
-VIEWS_DIR = Path(__file__).parent.parent / "src" / "views"
-SKIP_DIRS = {"widget"}
+SRC_DIR = Path(__file__).parent.parent / "src"
+SCAN_DIRS = [SRC_DIR / "views", SRC_DIR / "component"]
 
 RED    = "\033[31m"
 YELLOW = "\033[33m"
@@ -422,6 +422,8 @@ def check_action_buttons(filepath, lines, tmpl, tmpl_line0):
     inline_re = re.compile(r'\btext-(?:slate|blue|indigo|violet|cyan|teal|emerald|amber|rose|red)-\d+\b.*\bhover:bg-(?:slate|blue|indigo|violet|cyan|teal|emerald|amber|rose|red)-50\b')
     for i, line in enumerate(lines, 1):
         stripped = line.strip()
+        if stripped.startswith('//') or stripped.startswith('<!--') or stripped.startswith('*'):
+            continue
         if 'btn-icon' not in stripped or 'cursor-not-allowed' in stripped:
             continue
         if 'btn-icon-sm' in stripped:
@@ -603,6 +605,7 @@ def check_redundant_component_classes(filepath, lines, tmpl, tmpl_line0):
         ("flex flex-wrap items-center gap-3 mb-3 text-[10px] text-slate-400", "metric-legend"),
         ("flex items-center justify-center py-10", "overview-loading"),
         ("flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50", "overview-unavailable"),
+        ("bg-blue-50 text-blue-700 hover:bg-blue-100", "nav-link-active"),
     ]
     for i, line in enumerate(tmpl.splitlines(), 1):
         for pattern, cls in patterns:
@@ -665,16 +668,16 @@ def review_file(vue_file: Path):
 
 
 def collect_files() -> list[Path]:
-    return sorted(
-        f for f in VIEWS_DIR.rglob("*.vue")
-        if not any(p in SKIP_DIRS for p in f.parts)
-    )
+    files: list[Path] = []
+    for scan_dir in SCAN_DIRS:
+        files.extend(scan_dir.rglob("*.vue"))
+    return sorted(files)
 
 
 def main():
     files = collect_files()
     print(f"{BOLD}{CYAN}=== 前端样式 Review ==={RESET}")
-    print(f"扫描目录：{VIEWS_DIR}")
+    print("扫描目录：" + ", ".join(str(p) for p in SCAN_DIRS))
     print(f"文件数量：{len(files)}\n")
 
     for f in files:
@@ -693,7 +696,7 @@ def main():
 
     for filepath, file_issues in sorted(by_file.items()):
         try:
-            rel = Path(filepath).relative_to(VIEWS_DIR.parent.parent)
+            rel = Path(filepath).relative_to(SRC_DIR.parent)
         except ValueError:
             rel = Path(filepath)
         print(f"\n{BOLD}{rel}{RESET}")

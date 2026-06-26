@@ -117,6 +117,8 @@
 /* === 遮罩层（含 / 透明度的类无法通过变量覆盖）=== */
 .dark .bg-slate-900\/60 { background-color: rgba(10, 14, 36, 0.75) !important; }
 .dark .bg-black\/30     { background-color: rgba(0, 0, 0, 0.5) !important; }
+.dark .bg-white\/80     { background-color: rgba(16, 23, 42, 0.82) !important; }
+.dark .bg-white\/95     { background-color: rgba(16, 23, 42, 0.95) !important; }
 
 /* === CodeMirror 编辑器 === */
 .dark .cm-editor                         { background-color: oklch(18% 0.025 264) !important; }

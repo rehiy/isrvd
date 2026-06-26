@@ -56,7 +56,7 @@ export default toNative(MkdirRow)
     </td>
     <!-- 操作列 -->
     <td class="px-4 py-3 whitespace-nowrap">
-      <div class="flex justify-end items-center gap-2">
+      <div class="table-actions">
         <button class="btn btn-primary" @click="handleConfirm()">
           <i class="fas fa-check"></i><span>确认</span>
         </button>

@@ -38,7 +38,7 @@ export default toNative(NotificationManager)
             <i :class="['fas', notificationIcon(item.type)]"></i>
           </div>
           <span class="flex-1 font-medium">{{ item.message }}</span>
-          <button type="button" class="btn-icon hover:bg-white/20!" @click="portal.clearNotification(item.id)">
+          <button type="button" class="btn-icon-sm text-white! hover:text-white! hover:bg-white/20!" @click="portal.clearNotification(item.id)">
             <i class="fas fa-times"></i>
           </button>
         </div>
