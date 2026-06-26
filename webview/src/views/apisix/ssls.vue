@@ -175,7 +175,7 @@ export default toNative(SSLs)
       <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
-            <tr class="bg-slate-50 border-b border-slate-200">
+            <tr class="bg-slate-100 border-b border-slate-200">
               <th class="th">SNI</th>
               <th class="th">状态</th>
               <th class="th">更新时间</th>

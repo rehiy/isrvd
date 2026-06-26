@@ -202,7 +202,7 @@ export default toNative(Whitelist)
       <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
-            <tr class="bg-slate-50 border-b border-slate-200">
+            <tr class="bg-slate-100 border-b border-slate-200">
               <th class="th">路由</th>
               <th class="th">描述</th>
               <th class="th">授权用户</th>

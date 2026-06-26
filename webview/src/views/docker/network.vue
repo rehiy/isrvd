@@ -134,7 +134,7 @@ export default toNative(NetworkDetail)
         <div v-if="detailData.containers && detailData.containers.length > 0" class="border-x border-b border-slate-200 rounded-b-xl overflow-hidden">
           <table class="w-full">
             <thead>
-              <tr class="bg-slate-50 border-b border-slate-200">
+              <tr class="bg-slate-100 border-b border-slate-200">
                 <th class="th-sm">名称</th>
                 <th class="th-sm">IPv4</th>
                 <th class="th-sm">MAC 地址</th>

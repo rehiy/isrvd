@@ -231,7 +231,7 @@ export default toNative(Routes)
       <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
-            <tr class="bg-slate-50 border-b border-slate-200">
+            <tr class="bg-slate-100 border-b border-slate-200">
               <th class="th">名称</th>
               <th class="th">Host</th>
               <th class="th">URI</th>

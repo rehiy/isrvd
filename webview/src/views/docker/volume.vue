@@ -135,7 +135,7 @@ export default toNative(VolumeDetail)
         <div v-if="detailData.usedBy && detailData.usedBy.length > 0" class="border-x border-b border-slate-200 rounded-b-xl overflow-hidden">
           <table class="w-full">
             <thead>
-              <tr class="bg-slate-50 border-b border-slate-200">
+              <tr class="bg-slate-100 border-b border-slate-200">
                 <th class="th-sm">名称</th>
                 <th class="th-sm">挂载路径</th>
                 <th class="th-sm">权限</th>

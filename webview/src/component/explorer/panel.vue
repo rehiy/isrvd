@@ -347,7 +347,7 @@ export default toNative(ExplorerPanel)
         <div :class="showMobileView ? 'card-table hidden md:block' : 'card-table'">
           <table class="w-full border-collapse">
             <thead>
-              <tr class="bg-slate-50 border-b border-slate-200">
+              <tr class="bg-slate-100 border-b border-slate-200">
                 <th v-if="canSelect" class="w-12 th">
                   <label class="check-label" title="选择全部可见文件">
                     <input type="checkbox" class="rounded border-slate-300 text-primary-500" :checked="allVisibleSelected" @change="toggleAllVisible()">

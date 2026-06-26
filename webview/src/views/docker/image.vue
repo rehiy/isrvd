@@ -278,7 +278,7 @@ export default toNative(ImageDetail)
         <div v-if="layerDetails.length" class="border-x border-b border-slate-200 rounded-b-xl overflow-hidden">
           <table class="w-full">
             <thead>
-              <tr class="bg-slate-50 border-b border-slate-200">
+              <tr class="bg-slate-100 border-b border-slate-200">
                 <th class="th-sm w-10">#</th>
                 <th class="th-sm w-28">大小</th>
                 <th class="th-sm">命令</th>

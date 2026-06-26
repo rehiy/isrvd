@@ -214,7 +214,7 @@ export default toNative(ContainerDetail)
         <div v-if="portEntries.length" class="border-x border-b border-slate-200 rounded-b-xl overflow-hidden">
           <table class="w-full">
             <thead>
-              <tr class="bg-slate-50 border-b border-slate-200">
+              <tr class="bg-slate-100 border-b border-slate-200">
                 <th class="th-sm">主机端口</th>
                 <th class="th-sm">容器端口</th>
               </tr>
@@ -263,7 +263,7 @@ export default toNative(ContainerDetail)
         <div v-if="labelEntries.length" class="border-x border-b border-slate-200 rounded-b-xl overflow-hidden">
           <table class="w-full">
             <thead>
-              <tr class="bg-slate-50 border-b border-slate-200">
+              <tr class="bg-slate-100 border-b border-slate-200">
                 <th class="th-sm">Key</th>
                 <th class="th-sm">Value</th>
               </tr>

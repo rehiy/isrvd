@@ -7,7 +7,7 @@
 
   /* 页面工具栏：固定在全局 header 下方 */
   .page-toolbar {
-    @apply sticky top-16 z-30 bg-slate-100/80 backdrop-blur-xl border-b border-slate-200/70 px-4 py-3;
+    @apply sticky top-16 z-30 bg-slate-50/80 backdrop-blur-xl border-b border-slate-200/70 px-4 py-3;
   }
 
   /* 内嵌面板工具栏：不参与页面吸顶 */

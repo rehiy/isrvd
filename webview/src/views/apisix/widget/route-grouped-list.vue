@@ -147,7 +147,7 @@ export default toNative(RouteGroupedList)
     <div v-else class="card-table hidden md:block">
       <table class="w-full border-collapse">
         <thead>
-          <tr class="bg-slate-50 border-b border-slate-200">
+          <tr class="bg-slate-100 border-b border-slate-200">
             <th class="th">路由</th>
             <th class="th">URI</th>
             <th class="th">上游</th>

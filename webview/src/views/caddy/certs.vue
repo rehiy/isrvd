@@ -172,7 +172,7 @@ export default toNative(CaddyCerts)
       <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
-            <tr class="bg-slate-50 border-b border-slate-200">
+            <tr class="bg-slate-100 border-b border-slate-200">
               <th class="th">来源</th>
               <th class="th">主体</th>
               <th class="th">签发机构</th>

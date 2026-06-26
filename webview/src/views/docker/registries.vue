@@ -171,7 +171,7 @@ export default toNative(Registries)
         <div class="card-table hidden md:block">
           <table class="w-full border-collapse">
             <thead>
-              <tr class="bg-slate-50 border-b border-slate-200">
+              <tr class="bg-slate-100 border-b border-slate-200">
                 <th class="th">名称</th>
                 <th class="th">地址</th>
                 <th class="w-28 th">认证</th>

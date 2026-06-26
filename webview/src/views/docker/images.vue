@@ -300,7 +300,7 @@ export default toNative(Images)
       <div class="card-table hidden md:block">
         <table class="w-full border-collapse">
           <thead>
-            <tr class="bg-slate-50 border-b border-slate-200">
+            <tr class="bg-slate-100 border-b border-slate-200">
               <th class="th">镜像</th>
               <th class="th">标签</th>
               <th class="w-32 th">大小</th>
