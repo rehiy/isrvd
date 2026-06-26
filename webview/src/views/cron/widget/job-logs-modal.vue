@@ -62,12 +62,12 @@ export default toNative(JobLogsModal)
 <template>
   <BaseModal v-model="isOpen" :show-footer="false" body-class="p-0 overflow-y-auto bg-slate-50">
     <template #title>
-      <div class="flex items-center gap-3 min-w-0">
+      <div class="title-group-static">
         <div class="page-icon bg-blue-50 text-blue-600">
           <i class="fas fa-list-ul text-sm"></i>
         </div>
         <div class="min-w-0">
-          <h1 class="text-lg font-semibold text-slate-800 truncate">执行历史</h1>
+          <h1 class="title-text">执行历史</h1>
           <p class="text-xs text-slate-400 truncate">{{ job?.name }}</p>
         </div>
       </div>
@@ -107,7 +107,7 @@ export default toNative(JobLogsModal)
         <div v-else class="divide-y divide-slate-200">
           <div v-for="(log, idx) in logs" :key="log.runId || idx" class="py-3 first:pt-0 last:pb-0">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2">
-              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-medium w-fit" :class="log.success ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'">
+              <span class="badge-sm gap-1.5 w-fit" :class="log.success ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'">
                 <i :class="log.success ? 'fas fa-circle-check' : 'fas fa-circle-xmark'"></i>
                 {{ log.success ? '成功' : '失败' }}
               </span>

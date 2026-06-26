@@ -138,31 +138,31 @@ export default toNative(ComposeMarketplace)
     <!-- Toolbar -->
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-amber-500"><i class="fas fa-store text-white"></i></div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">应用市场</h1>
+            <h1 class="title-text">应用市场</h1>
             <p class="text-xs text-slate-500 truncate">选择应用后将自动跳转到部署页并回填模板</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <button type="button" class="btn btn-secondary" title="刷新" @click="refreshMarketplace()">
             <i :class="iframeLoading ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i><span>刷新</span>
           </button>
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-amber-500"><i class="fas fa-store text-white"></i></div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">应用市场</h1>
+            <h1 class="title-text">应用市场</h1>
             <p class="text-xs text-slate-500 truncate">选择后跳转部署页回填</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button type="button" class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="refreshMarketplace()">
+        <div class="action-group-sm">
+          <button type="button" class="btn btn-secondary btn-square" title="刷新" @click="refreshMarketplace()">
             <i :class="iframeLoading ? 'fas fa-spinner fa-spin text-sm' : 'fas fa-rotate text-sm'"></i>
           </button>
         </div>
@@ -186,7 +186,7 @@ export default toNative(ComposeMarketplace)
       <!-- Loading -->
       <div v-if="iframeUrl && iframeLoading" class="absolute inset-0 z-10 bg-white/80">
         <div class="empty-state h-full py-0">
-          <div class="w-12 h-12 spinner mb-3"></div>
+          <div class="spinner-lg"></div>
           <p class="text-slate-500">加载中...</p>
         </div>
       </div>

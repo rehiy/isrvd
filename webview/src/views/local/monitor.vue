@@ -223,7 +223,7 @@ export default toNative(MonitorPage)
   <div class="page">
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-blue-600">
             <i class="fas fa-desktop text-white text-sm"></i>
@@ -248,13 +248,13 @@ export default toNative(MonitorPage)
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-blue-600">
             <i class="fas fa-desktop text-white text-sm"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">系统监控</h1>
+            <h1 class="title-text">系统监控</h1>
             <p class="text-xs text-slate-500 truncate">实时系统资源监控</p>
           </div>
         </div>
@@ -275,7 +275,7 @@ export default toNative(MonitorPage)
 
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>

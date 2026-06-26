@@ -135,17 +135,17 @@ export default toNative(AuditLogs)
   <div class="page">
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-rose-500">
             <i class="fas fa-clipboard-list text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800 truncate">操作审计</h1>
+            <h1 class="title-text">操作审计</h1>
             <p class="text-xs text-slate-500">查看和检索所有用户的操作记录</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <PageSearch v-model="searchText" search-key="system-audit-logs" placeholder="搜索用户、方法、URI、IP 或状态..." focus-color="rose" type-to-search />
           <select v-model="selectedUsername" class="select-sm min-w-[140px]">
             <option value="">所有用户</option>
@@ -159,21 +159,21 @@ export default toNative(AuditLogs)
       <!-- 移动端 -->
       <div class="block md:hidden">
         <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class="title-group">
             <div class="page-icon bg-rose-500">
               <i class="fas fa-clipboard-list text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">操作审计</h1>
+              <h1 class="title-text">操作审计</h1>
               <p class="text-xs text-slate-500 truncate">查看用户操作记录</p>
             </div>
           </div>
-          <div class="flex items-center gap-1 flex-shrink-0">
+          <div class="action-group-sm">
             <select v-model="selectedUsername" class="w-28 select-sm">
               <option value="">所有用户</option>
               <option v-for="username in uniqueUsernames" :key="username" :value="username">{{ username }}</option>
             </select>
-            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadLogs()">
+            <button class="btn btn-secondary btn-square" title="刷新" @click="loadLogs()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
           </div>
@@ -187,7 +187,7 @@ export default toNative(AuditLogs)
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -223,19 +223,19 @@ export default toNative(AuditLogs)
             <tr v-for="(log, idx) in filteredLogs" :key="idx" class="hover:bg-slate-50 transition-colors">
               <!-- 用户 -->
               <td class="px-4 py-3 max-w-[280px]">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="inline-info">
                   <div class="row-icon bg-rose-400">
                     <i class="fas fa-user text-white text-sm"></i>
                   </div>
                   <div class="min-w-0">
-                    <span class="font-medium text-slate-800 truncate block">{{ log.username }}</span>
-                    <span class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ log.ip }}</span>
+                    <span class="item-title">{{ log.username }}</span>
+                    <span class="item-subtitle-mono">{{ log.ip }}</span>
                   </div>
                 </div>
               </td>
               <!-- 方法 -->
               <td class="px-4 py-3">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium font-mono" :class="methodClass(log.method)">{{ log.method }}</span>
+                <span class="badge-sm font-mono" :class="methodClass(log.method)">{{ log.method }}</span>
               </td>
               <!-- URI -->
               <td class="px-4 py-3 max-w-[240px]">
@@ -271,13 +271,13 @@ export default toNative(AuditLogs)
         <div v-for="(log, idx) in filteredLogs" :key="idx" class="card-interactive">
           <!-- 顶部：用户 + 时间 -->
           <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-2 min-w-0 flex-1">
+            <div class="inline-info flex-1">
               <div class="list-icon bg-rose-400">
                 <i class="fas fa-user text-white text-base"></i>
               </div>
               <div class="min-w-0">
-                <span class="font-medium text-slate-800 text-sm truncate block">{{ log.username }}</span>
-                <span class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ log.ip }}</span>
+                <span class="item-title-sm">{{ log.username }}</span>
+                <span class="item-subtitle-mono">{{ log.ip }}</span>
               </div>
             </div>
             <span class="text-xs text-slate-400 whitespace-nowrap ml-2 flex-shrink-0">{{ formatTimestamp(log.timestamp) }}</span>
@@ -285,7 +285,7 @@ export default toNative(AuditLogs)
 
           <!-- 方法 + URI -->
           <div class="card-prop-row-start">
-            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium font-mono flex-shrink-0" :class="methodClass(log.method)">{{ log.method }}</span>
+            <span class="badge-sm font-mono flex-shrink-0" :class="methodClass(log.method)">{{ log.method }}</span>
             <code class="text-xs text-slate-700 font-mono truncate">{{ log.uri }}</code>
           </div>
 
@@ -316,7 +316,7 @@ export default toNative(AuditLogs)
     <BaseModal v-model="detailOpen" :show-footer="false">
       <template #title>
         <div class="flex items-center gap-2">
-          <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium font-mono" :class="methodClass(detailLog?.method || '')">{{ detailLog?.method }}</span>
+          <span class="badge-sm font-mono" :class="methodClass(detailLog?.method || '')">{{ detailLog?.method }}</span>
           <code class="text-sm text-slate-700 font-mono truncate">{{ detailLog?.uri }}</code>
         </div>
       </template>

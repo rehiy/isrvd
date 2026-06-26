@@ -86,17 +86,17 @@ export default toNative(Members)
     <!-- Toolbar Bar -->
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-blue-500">
             <i class="fas fa-users text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800 truncate">用户管理</h1>
+            <h1 class="title-text">用户管理</h1>
             <p class="text-xs text-slate-500">管理可登录系统的成员与权限</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <PageSearch v-model="searchText" search-key="account-members" placeholder="请输入搜索关键词..." focus-color="blue" type-to-search />
           <button type="button" class="btn btn-secondary" @click="loadMembers">
             <i class="fas fa-rotate"></i>刷新
@@ -107,17 +107,17 @@ export default toNative(Members)
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-blue-500">
             <i class="fas fa-users text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">用户管理</h1>
+            <h1 class="title-text">用户管理</h1>
             <p class="text-xs text-slate-500 truncate">管理可登录系统的成员与权限</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
+        <div class="action-group-sm">
           <button type="button" class="btn-icon-sm" title="刷新" @click="loadMembers">
             <i class="fas fa-rotate text-sm"></i>
           </button>
@@ -134,7 +134,7 @@ export default toNative(Members)
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -166,26 +166,26 @@ export default toNative(Members)
           <tbody class="divide-y divide-slate-100">
             <tr v-for="m in filteredMembers" :key="m.username" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[280px]">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="inline-info">
                   <div class="row-icon bg-blue-500">
                     <i class="fas fa-user text-white text-sm"></i>
                   </div>
                   <div class="min-w-0">
-                    <span class="font-medium text-slate-800 truncate block">{{ m.username }}</span>
-                    <span v-if="m.description" class="text-xs text-slate-400 truncate block mt-0.5">{{ m.description }}</span>
+                    <span class="item-title">{{ m.username }}</span>
+                    <span v-if="m.description" class="item-subtitle">{{ m.description }}</span>
                   </div>
                 </div>
               </td>
               <td class="px-4 py-3">
                 <code class="text-xs text-slate-600 font-mono">{{ m.homeDirectory }}</code>
               </td>
-              <td class="px-4 py-3 text-sm text-slate-600">
+              <td class="td-text">
                 <template v-if="m.founder"><i class="fas fa-crown text-violet-400 mr-1"></i>创始人</template>
                 <template v-else-if="m.permissions && m.permissions.length > 0"><i class="fas fa-key text-amber-400 mr-1"></i>{{ m.permissions.length }} 条</template>
                 <span v-else class="text-slate-400">-</span>
               </td>
               <td class="px-4 py-3">
-                <div class="flex justify-end items-center gap-1">
+                <div class="table-actions">
                   <button v-if="!m.founder && portal.hasPerm('PUT /api/account/member/:username')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditMember(m)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
@@ -204,13 +204,13 @@ export default toNative(Members)
         <div v-for="m in filteredMembers" :key="m.username" class="card-interactive">
           <!-- 顶部：用户信息 -->
           <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="title-group">
               <div class="list-icon bg-blue-500">
                 <i class="fas fa-user text-white text-base"></i>
               </div>
               <div class="min-w-0">
-                <span class="font-medium text-slate-800 text-sm truncate block">{{ m.username }}</span>
-                <span v-if="m.description" class="text-xs text-slate-400 truncate block mt-0.5">{{ m.description }}</span>
+                <span class="item-title-sm">{{ m.username }}</span>
+                <span v-if="m.description" class="item-subtitle">{{ m.description }}</span>
               </div>
             </div>
           </div>
@@ -221,7 +221,7 @@ export default toNative(Members)
           </div>
           <!-- 家目录 -->
           <div class="card-prop-row-start">
-            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">家目录</span>
+            <span class="prop-label-start">家目录</span>
             <code class="text-xs bg-slate-100 px-2 py-0.5 rounded break-all">{{ m.homeDirectory }}</code>
           </div>
           <!-- 路由权限 -->

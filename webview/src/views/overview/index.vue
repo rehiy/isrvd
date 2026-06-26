@@ -72,7 +72,7 @@ export default toNative(Overview)
     <!-- 页面标题栏 -->
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-primary-500">
             <i class="fas fa-gauge-high text-white"></i>
@@ -87,17 +87,17 @@ export default toNative(Overview)
         </button>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-primary-500">
             <i class="fas fa-gauge-high text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">概览</h1>
+            <h1 class="title-text">概览</h1>
             <p class="text-xs text-slate-500 truncate">服务状态总览</p>
           </div>
         </div>
-        <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="refreshAll">
+        <button class="btn btn-secondary btn-square" title="刷新" @click="refreshAll">
           <i class="fas fa-rotate text-sm"></i>
         </button>
       </div>

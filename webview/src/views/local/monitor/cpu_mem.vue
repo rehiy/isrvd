@@ -174,13 +174,13 @@ export default toNative(SystemCpuMem)
 
 <template>
   <div v-if="current" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-    <div class="relative rounded-xl border border-slate-200 overflow-hidden">
+    <div class="relative panel-frame">
       <div class="absolute inset-0 pointer-events-none">
         <canvas ref="cpuCanvasRef" class="w-full h-full"></canvas>
       </div>
       <div class="relative p-4">
         <div class="flex items-center justify-between gap-x-3 gap-y-1 flex-wrap">
-          <div class="flex items-center gap-2 min-w-0">
+          <div class="inline-info">
             <div class="w-7 h-7 rounded-lg bg-blue-500/90 flex items-center justify-center">
               <i class="fas fa-microchip text-white text-xs"></i>
             </div>
@@ -195,13 +195,13 @@ export default toNative(SystemCpuMem)
       </div>
     </div>
 
-    <div class="relative rounded-xl border border-slate-200 overflow-hidden">
+    <div class="relative panel-frame">
       <div class="absolute inset-0 pointer-events-none">
         <canvas ref="memCanvasRef" class="w-full h-full"></canvas>
       </div>
       <div class="relative p-4">
         <div class="flex items-center justify-between gap-x-3 gap-y-1 flex-wrap">
-          <div class="flex items-center gap-2 min-w-0">
+          <div class="inline-info">
             <div class="w-7 h-7 rounded-lg bg-indigo-500/90 flex items-center justify-center">
               <i class="fas fa-memory text-white text-xs"></i>
             </div>

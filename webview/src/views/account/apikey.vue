@@ -63,17 +63,17 @@ export default toNative(AccountTokens)
 <template>
   <div class="page">
     <div class="page-toolbar">
-      <div class="hidden md:flex items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0">
+      <div class="toolbar-desktop">
+        <div class="title-group-static">
           <div class="page-icon bg-blue-500">
             <i class="fas fa-key text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">API Key</h1>
+            <h1 class="title-text">API Key</h1>
             <p class="text-xs text-slate-500 truncate">创建用于自动化调用的账号令牌</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <button
             v-if="portal.hasPerm('POST /api/account/token') && newToken"
             type="button"
@@ -97,17 +97,17 @@ export default toNative(AccountTokens)
         </div>
       </div>
 
-      <div class="flex md:hidden items-center justify-between gap-3">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile gap-3">
+        <div class="title-group">
           <div class="page-icon bg-blue-500 flex-shrink-0">
             <i class="fas fa-key text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">API Key</h1>
+            <h1 class="title-text">API Key</h1>
             <p class="text-xs text-slate-500 truncate">自动化调用令牌</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
+        <div class="action-group-sm">
           <button
             v-if="portal.hasPerm('POST /api/account/token') && newToken"
             type="button"
@@ -153,7 +153,7 @@ export default toNative(AccountTokens)
 
           <section class="max-w-3xl space-y-4 border-t border-slate-200 pt-5">
             <div class="flex items-center justify-between gap-3">
-              <div class="flex items-center gap-2 min-w-0">
+              <div class="inline-info">
                 <span class="card-icon" :class="newToken ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'">
                   <i class="fas" :class="newToken ? 'fa-check' : 'fa-key'"></i>
                 </span>

@@ -2,7 +2,9 @@
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
+
 import { wsUrl } from '@/service/client'
+
 import { TerminalPanel, WsTerminal } from '@/component/terminal'
 import type { TerminalAdapter } from '@/component/terminal'
 
@@ -77,17 +79,17 @@ export default toNative(Shell)
             </button>
           </div>
         </div>
-        <div class="flex md:hidden items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
+        <div class="toolbar-mobile">
+          <div class="title-group">
             <div class="page-icon bg-slate-700">
               <i class="fas fa-terminal text-white text-sm"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">Shell 终端</h1>
+              <h1 class="title-text">Shell 终端</h1>
               <p class="text-xs text-slate-500 truncate">Web 终端连接</p>
             </div>
           </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="action-group">
             <select v-model="shellType" :disabled="connected" class="w-24 select-sm" @change="handleShellChange">
               <option value="bash">bash</option>
               <option value="sh">sh</option>
@@ -96,10 +98,10 @@ export default toNative(Shell)
               <option value="powershell">powershell</option>
               <option value="cmd">cmd</option>
             </select>
-            <button v-if="!connected" class="btn btn-primary w-9 h-9 !px-0" title="连接" @click="handleConnect()">
+            <button v-if="!connected" class="btn btn-primary btn-square" title="连接" @click="handleConnect()">
               <i class="fas fa-plug text-sm"></i>
             </button>
-            <button v-else class="btn btn-secondary w-9 h-9 !px-0" title="断开连接" @click="handleDisconnect()">
+            <button v-else class="btn btn-secondary btn-square" title="断开连接" @click="handleDisconnect()">
               <i class="fas fa-plug-circle-xmark text-sm"></i>
             </button>
           </div>

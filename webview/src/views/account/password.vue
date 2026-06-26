@@ -132,13 +132,13 @@ export default toNative(AccountPassword)
 <template>
   <div class="page">
     <div class="page-toolbar">
-      <div class="hidden md:flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3 min-w-0">
+      <div class="toolbar-desktop gap-3">
+        <div class="title-group-static">
           <div class="page-icon bg-blue-500">
             <i class="fas fa-lock text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">账号安全</h1>
+            <h1 class="title-text">账号安全</h1>
             <p class="text-xs text-slate-500 truncate">更新登录密码，并管理密码登录的二次验证</p>
           </div>
         </div>
@@ -154,13 +154,13 @@ export default toNative(AccountPassword)
         </button>
       </div>
 
-      <div class="flex md:hidden items-center justify-between gap-3">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile gap-3">
+        <div class="title-group">
           <div class="page-icon bg-blue-500 flex-shrink-0">
             <i class="fas fa-lock text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">账号安全</h1>
+            <h1 class="title-text">账号安全</h1>
             <p class="text-xs text-slate-500 truncate">密码与二次验证</p>
           </div>
         </div>

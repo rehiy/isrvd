@@ -162,17 +162,17 @@ export default toNative(ComposeDeploy)
     <div class="page">
       <!-- Toolbar -->
       <div class="page-toolbar">
-        <div class="hidden md:flex items-center justify-between">
+        <div class="toolbar-desktop">
           <div class="flex items-center gap-3">
             <div class="page-icon bg-amber-500">
               <i class="fas fa-file-code text-white"></i>
             </div>
             <div>
-              <h1 class="text-lg font-semibold text-slate-800 truncate">Compose 部署</h1>
+              <h1 class="title-text">Compose 部署</h1>
               <p class="text-xs text-slate-500">直接粘贴 compose.yml，或从左侧应用市场选择模板后回填</p>
             </div>
           </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="action-group">
             <button type="button" :disabled="loading" class="btn btn-secondary" @click="resetForm()">
               <i class="fas fa-rotate-left"></i>清空
             </button>
@@ -183,21 +183,21 @@ export default toNative(ComposeDeploy)
             </button>
           </div>
         </div>
-        <div class="flex md:hidden items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
+        <div class="toolbar-mobile">
+          <div class="title-group">
             <div class="page-icon bg-amber-500">
               <i class="fas fa-file-code text-white"></i>
             </div>
             <div class="min-w-0 flex-1">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">Compose 部署</h1>
+              <h1 class="title-text">Compose 部署</h1>
               <p class="text-xs text-slate-500 truncate">粘贴 compose.yml，或从应用市场回填</p>
             </div>
           </div>
-          <div class="flex items-center gap-1 flex-shrink-0">
-            <button type="button" :disabled="loading" class="btn btn-secondary w-9 h-9 !px-0" title="清空" @click="resetForm()">
+          <div class="action-group-sm">
+            <button type="button" :disabled="loading" class="btn btn-secondary btn-square" title="清空" @click="resetForm()">
               <i class="fas fa-rotate-left"></i>
             </button>
-            <button type="button" :disabled="!canSubmit" class="btn btn-amber w-9 h-9 !px-0" :title="loading ? '部署中...' : '部署'" @click="handleDeploy()">
+            <button type="button" :disabled="!canSubmit" class="btn btn-amber btn-square" :title="loading ? '部署中...' : '部署'" @click="handleDeploy()">
               <i v-if="loading" class="fas fa-spinner fa-spin"></i>
               <i v-else class="fas fa-rocket"></i>
             </button>

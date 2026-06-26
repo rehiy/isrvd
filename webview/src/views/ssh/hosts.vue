@@ -89,17 +89,17 @@ export default toNative(SSHHosts)
   <div class="page">
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-teal-500">
             <i class="fas fa-server text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800 truncate">主机连接</h1>
+            <h1 class="title-text">主机连接</h1>
             <p class="text-xs text-slate-500">通过 SSH 协议管理主机，在浏览器中连接远程服务器</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <PageSearch v-model="searchText" search-key="ssh-hosts" placeholder="搜索主机名、地址或用户名..." focus-color="teal" type-to-search />
           <button class="btn btn-secondary" @click="loadHosts()">
             <i class="fas fa-rotate"></i>刷新
@@ -110,21 +110,21 @@ export default toNative(SSHHosts)
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-teal-500">
             <i class="fas fa-server text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">主机连接</h1>
+            <h1 class="title-text">主机连接</h1>
             <p class="text-xs text-slate-500 truncate">通过 SSH 协议管理主机</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadHosts()">
+        <div class="action-group-sm">
+          <button class="btn btn-secondary btn-square" title="刷新" @click="loadHosts()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/ssh/host')" class="btn btn-emerald w-9 h-9 !px-0" title="添加主机" @click="openAdd">
+          <button v-if="portal.hasPerm('POST /api/ssh/host')" class="btn btn-emerald btn-square" title="添加主机" @click="openAdd">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -139,7 +139,7 @@ export default toNative(SSHHosts)
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -170,21 +170,21 @@ export default toNative(SSHHosts)
           <tbody class="divide-y divide-slate-100">
             <tr v-for="host in filteredHosts" :key="host.id" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[280px]">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="inline-info">
                   <div class="row-icon bg-teal-400">
                     <i class="fas fa-server text-white text-sm"></i>
                   </div>
                   <div class="min-w-0">
-                    <span class="font-medium text-slate-800 truncate block">{{ host.name }}</span>
-                    <span v-if="host.description" class="text-xs text-slate-400 truncate block mt-0.5">{{ host.description }}</span>
+                    <span class="item-title">{{ host.name }}</span>
+                    <span v-if="host.description" class="item-subtitle">{{ host.description }}</span>
                   </div>
                 </div>
               </td>
               <td class="px-4 py-3">
                 <code class="text-xs bg-slate-100 px-2 py-0.5 rounded-lg text-slate-600">{{ host.addr }}</code>
               </td>
-              <td class="px-4 py-3 text-sm text-slate-600">{{ host.user }}</td>
-              <td class="px-4 py-3 text-sm text-slate-600">
+              <td class="td-text">{{ host.user }}</td>
+              <td class="td-text">
                 <span v-if="host.credentialId" class="inline-flex items-center gap-1 text-xs text-purple-600 font-medium">
                   <i class="fas fa-id-card text-purple-400"></i>{{ host.credentialName || '已保存凭据' }}
                 </span>
@@ -193,7 +193,7 @@ export default toNative(SSHHosts)
                 </span>
               </td>
               <td class="px-4 py-3">
-                <div class="flex justify-end items-center gap-1">
+                <div class="table-actions">
                   <button v-if="portal.hasPerm('GET /api/ssh/host/:id')" class="btn-icon btn-icon-teal" title="打开 SSH/SFTP" @click="openTerminal(host)">
                     <i class="fas fa-external-link-alt text-xs"></i>
                   </button>
@@ -218,13 +218,13 @@ export default toNative(SSHHosts)
               <i class="fas fa-server text-white text-base"></i>
             </div>
             <div class="min-w-0">
-              <span class="font-medium text-slate-800 text-sm truncate block">{{ host.name }}</span>
-              <span v-if="host.description" class="text-xs text-slate-400 truncate block mt-0.5">{{ host.description }}</span>
+              <span class="item-title-sm">{{ host.name }}</span>
+              <span v-if="host.description" class="item-subtitle">{{ host.description }}</span>
             </div>
           </div>
 
           <div class="card-prop-row-start">
-            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">地址</span>
+            <span class="prop-label-start">地址</span>
             <code class="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-lg break-all">{{ host.addr }}</code>
           </div>
           <div class="card-prop-row">

@@ -186,7 +186,7 @@ export default toNative(SystemGpu)
 
 <template>
   <div v-if="currentGpus?.length" ref="gpuContainerRef" class="space-y-3">
-    <div v-for="gpu in currentGpus" :key="gpuKey(gpu)" class="rounded-xl border border-slate-200 overflow-hidden">
+    <div v-for="gpu in currentGpus" :key="gpuKey(gpu)" class="panel-frame">
       <div class="card-header">
         <div class="card-icon bg-emerald-500">
           <i class="fas fa-microchip text-white text-xs"></i>
@@ -215,7 +215,7 @@ export default toNative(SystemGpu)
             <i class="fas fa-fan"></i>{{ gpu.fanSpeed }}%
           </span>
         </div>
-        <div class="relative h-28 bg-slate-50 rounded-lg overflow-hidden">
+        <div class="monitor-chart-box">
           <canvas :data-gpu="gpuKey(gpu)" class="w-full h-full"></canvas>
           <div v-if="!gpuHistories[gpuKey(gpu)]?.labels?.length" class="absolute inset-0 flex items-center justify-center">
             <span class="text-xs text-slate-300">等待数据...</span>

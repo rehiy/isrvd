@@ -157,7 +157,7 @@ export default toNative(SystemUpdater)
     <!-- 版本更新横幅 -->
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100">
       <!-- 左侧：图标 + 文案 -->
-      <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="title-group">
         <div class="row-icon bg-emerald-500 text-white">
           <i class="fas fa-arrow-up text-xs"></i>
         </div>

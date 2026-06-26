@@ -84,17 +84,17 @@ export default toNative(SSHCredentials)
   <div class="page">
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-purple-500">
             <i class="fas fa-id-card text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800 truncate">认证凭据</h1>
+            <h1 class="title-text">认证凭据</h1>
             <p class="text-xs text-slate-500">管理 SSH 认证凭据，可被多台主机复用</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <PageSearch v-model="searchText" search-key="ssh-credentials" placeholder="搜索凭据名或用户名..." focus-color="purple" type-to-search />
           <button class="btn btn-secondary" @click="loadCredentials()">
             <i class="fas fa-rotate"></i>刷新
@@ -105,21 +105,21 @@ export default toNative(SSHCredentials)
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-purple-500">
             <i class="fas fa-id-card text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">认证凭据</h1>
+            <h1 class="title-text">认证凭据</h1>
             <p class="text-xs text-slate-500 truncate">可被多台主机复用</p>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadCredentials()">
+        <div class="action-group-sm">
+          <button class="btn btn-secondary btn-square" title="刷新" @click="loadCredentials()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/ssh/credential')" class="btn btn-purple w-9 h-9 !px-0" title="添加凭据" @click="openAdd">
+          <button v-if="portal.hasPerm('POST /api/ssh/credential')" class="btn btn-purple btn-square" title="添加凭据" @click="openAdd">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -134,7 +134,7 @@ export default toNative(SSHCredentials)
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -165,15 +165,15 @@ export default toNative(SSHCredentials)
           <tbody class="divide-y divide-slate-100">
             <tr v-for="cred in filteredCredentials" :key="cred.id" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="inline-info">
                   <div class="row-icon bg-purple-400">
                     <i class="fas fa-id-card text-white text-sm"></i>
                   </div>
                   <span class="font-medium text-slate-800 truncate">{{ cred.name }}</span>
                 </div>
               </td>
-              <td class="px-4 py-3 text-sm text-slate-600"><code class="text-xs bg-slate-100 px-2 py-0.5 rounded-lg text-slate-600">{{ cred.user }}</code></td>
-              <td class="px-4 py-3 text-sm text-slate-600">
+              <td class="td-text"><code class="text-xs bg-slate-100 px-2 py-0.5 rounded-lg text-slate-600">{{ cred.user }}</code></td>
+              <td class="td-text">
                 <span v-if="cred.authType === 'privateKey'" class="inline-flex items-center gap-1 text-xs">
                   <i class="fas fa-key text-amber-400"></i>私钥
                 </span>
@@ -182,9 +182,9 @@ export default toNative(SSHCredentials)
                 </span>
                 <span v-else class="text-xs text-slate-400">未设置</span>
               </td>
-              <td class="px-4 py-3 text-sm text-slate-600 truncate max-w-[200px]">{{ cred.description || '-' }}</td>
+              <td class="td-text truncate max-w-[200px]">{{ cred.description || '-' }}</td>
               <td class="px-4 py-3">
-                <div class="flex justify-end items-center gap-1">
+                <div class="table-actions">
                   <button v-if="portal.hasPerm('PUT /api/ssh/credential/:id')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(cred)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
@@ -206,13 +206,13 @@ export default toNative(SSHCredentials)
               <i class="fas fa-id-card text-white text-base"></i>
             </div>
             <div class="min-w-0">
-              <span class="font-medium text-slate-800 text-sm truncate block">{{ cred.name }}</span>
-              <span v-if="cred.description" class="text-xs text-slate-400 truncate block mt-0.5">{{ cred.description }}</span>
+              <span class="item-title-sm">{{ cred.name }}</span>
+              <span v-if="cred.description" class="item-subtitle">{{ cred.description }}</span>
             </div>
           </div>
 
           <div class="card-prop-row-start">
-            <span class="text-xs text-slate-400 flex-shrink-0 mt-0.5">用户</span>
+            <span class="prop-label-start">用户</span>
             <code class="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-lg break-all">{{ cred.user }}</code>
           </div>
           <div class="card-prop-row">

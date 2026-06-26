@@ -265,7 +265,7 @@ export default toNative(SystemDisk)
 </script>
 
 <template>
-  <div v-if="current?.diskPartition?.length" class="rounded-xl border border-slate-200 overflow-hidden">
+  <div v-if="current?.diskPartition?.length" class="panel-frame">
     <div class="card-header">
       <div class="card-icon bg-amber-500">
         <i class="fas fa-hard-drive text-white text-xs"></i>
@@ -279,7 +279,7 @@ export default toNative(SystemDisk)
       <div v-for="dp in current.diskPartition" :key="dp.mountpoint" class="px-4 py-3">
         <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between gap-x-3 gap-y-1 flex-wrap">
-            <div class="flex items-center gap-2 min-w-0 flex-1">
+            <div class="inline-info flex-1">
               <p class="text-xs font-semibold text-slate-700 truncate">{{ dp.mountpoint }}</p>
               <p class="text-xs text-slate-400 shrink-0">{{ dp.device }} · {{ dp.fstype }}</p>
             </div>
@@ -298,7 +298,7 @@ export default toNative(SystemDisk)
             </div>
           </div>
           <template v-if="diskIOByDevice(dp.device)">
-            <div class="relative h-28 bg-slate-50 rounded-lg overflow-hidden">
+            <div class="monitor-chart-box">
               <canvas :data-disk="diskIOHistoryKey(dp.device)" class="w-full h-full"></canvas>
               <div v-if="!diskIOHistory[diskIOHistoryKey(dp.device)]?.read?.length" class="absolute inset-0 flex items-center justify-center">
                 <span class="text-xs text-slate-300">等待数据...</span>

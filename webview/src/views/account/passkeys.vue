@@ -131,12 +131,12 @@ export default toNative(AccountPasskeys)
   <div class="page">
     <div class="page-toolbar">
       <div class="flex items-center justify-between w-full gap-3">
-        <div class="flex items-center gap-3 min-w-0">
+        <div class="title-group-static">
           <div class="page-icon bg-purple-500">
             <i class="fas fa-fingerprint text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">Passkey</h1>
+            <h1 class="title-text">Passkey</h1>
             <p class="text-xs text-slate-500 truncate">绑定或移除用于免密登录的 Passkey</p>
           </div>
         </div>
@@ -156,7 +156,7 @@ export default toNative(AccountPasskeys)
     <div v-if="canView" class="card-body">
       <div v-if="passkeyLoading" class="card-body">
         <div class="empty-state">
-          <div class="w-12 h-12 spinner mb-3"></div>
+          <div class="spinner-lg"></div>
           <p class="text-slate-500">加载中...</p>
         </div>
       </div>

@@ -156,17 +156,17 @@ export default toNative(CronJobs)
 <template>
   <div class="page">
     <div class="page-toolbar">
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-amber-500">
             <i class="fas fa-clock text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800 truncate">计划任务</h1>
+            <h1 class="title-text">计划任务</h1>
             <p class="text-xs text-slate-500">按设定时间或周期自动执行脚本命令</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <PageSearch v-model="searchText" search-key="cron-jobs" placeholder="搜索任务名称、执行计划..." focus-color="amber" type-to-search />
           <button class="btn btn-secondary" @click="loadJobs()">
             <i class="fas fa-rotate"></i>刷新
@@ -179,20 +179,20 @@ export default toNative(CronJobs)
 
       <div class="block md:hidden">
         <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div class="title-group">
             <div class="page-icon bg-amber-500">
               <i class="fas fa-clock text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">计划任务</h1>
+              <h1 class="title-text">计划任务</h1>
               <p class="text-xs text-slate-500 truncate">定时自动执行脚本</p>
             </div>
           </div>
-          <div class="flex items-center gap-1 flex-shrink-0">
-            <button class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadJobs()">
+          <div class="action-group-sm">
+            <button class="btn btn-secondary btn-square" title="刷新" @click="loadJobs()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/cron/jobs')" class="btn btn-amber w-9 h-9 !px-0" title="新建任务" @click="openCreate()">
+            <button v-if="portal.hasPerm('POST /api/cron/jobs')" class="btn btn-amber btn-square" title="新建任务" @click="openCreate()">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
@@ -205,7 +205,7 @@ export default toNative(CronJobs)
 
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -237,13 +237,13 @@ export default toNative(CronJobs)
           <tbody class="divide-y divide-slate-100">
             <tr v-for="job in filteredJobs" :key="job.id" class="hover:bg-slate-50 transition-colors">
               <td class="px-4 py-3 max-w-[280px]">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="inline-info">
                   <div class="row-icon bg-violet-400">
                     <i class="fas fa-clock text-white text-sm"></i>
                   </div>
                   <div class="min-w-0">
-                    <span class="font-medium text-slate-800 truncate block">{{ job.name }}</span>
-                    <span v-if="job.description" class="text-xs text-slate-400 truncate block mt-0.5">{{ job.description }}</span>
+                    <span class="item-title">{{ job.name }}</span>
+                    <span v-if="job.description" class="item-subtitle">{{ job.description }}</span>
                   </div>
                 </div>
               </td>
@@ -251,7 +251,7 @@ export default toNative(CronJobs)
                 <code class="text-xs text-slate-700 font-mono bg-slate-100 px-1.5 py-0.5 rounded">{{ job.schedule }}</code>
               </td>
               <td class="px-4 py-3">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium font-mono bg-slate-100 text-slate-700">{{ job.type }}</span>
+                <span class="badge-sm font-mono bg-slate-100 text-slate-700">{{ job.type }}</span>
               </td>
               <td class="px-4 py-3">
                 <button v-if="portal.hasPerm('PATCH /api/cron/jobs/:id') && (canOperateJob(job) || job.enabled)" :title="job.enabled ? '点击禁用' : '点击启用'" class="text-xs font-medium transition-colors" :class="runtimeStatusClass(job)" @click="toggleEnabled(job)">
@@ -285,13 +285,13 @@ export default toNative(CronJobs)
       <div class="card-body md:hidden space-y-3">
         <div v-for="job in filteredJobs" :key="job.id" class="card-interactive">
           <div class="flex items-start justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2 min-w-0 flex-1">
+            <div class="inline-info flex-1">
               <div class="list-icon bg-violet-400">
                 <i class="fas fa-clock text-white text-base"></i>
               </div>
               <div class="min-w-0">
-                <span class="font-medium text-slate-800 text-sm truncate block">{{ job.name }}</span>
-                <span class="text-xs text-slate-400 font-mono truncate block mt-0.5">{{ job.id }}</span>
+                <span class="item-title-sm">{{ job.name }}</span>
+                <span class="item-subtitle-mono">{{ job.id }}</span>
               </div>
             </div>
             <button v-if="portal.hasPerm('PATCH /api/cron/jobs/:id') && (canOperateJob(job) || job.enabled)" class="text-xs font-medium flex-shrink-0 transition-colors" :class="runtimeStatusClass(job)" @click="toggleEnabled(job)">

@@ -148,17 +148,17 @@ export default toNative(Config)
     <!-- Toolbar -->
     <div class="page-toolbar">
       <!-- 桌面端 -->
-      <div class="hidden md:flex items-center justify-between">
+      <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-indigo-500">
             <i class="fas fa-gear text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800 truncate">系统配置</h1>
+            <h1 class="title-text">系统配置</h1>
             <p class="text-xs text-slate-500">管理服务器、认证、网关与容器引擎参数</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="action-group">
           <button type="button" class="btn btn-secondary" @click="loadConfig(true)">
             <i class="fas fa-rotate"></i>重载
           </button>
@@ -170,21 +170,21 @@ export default toNative(Config)
         </div>
       </div>
       <!-- 移动端 -->
-      <div class="flex md:hidden items-center justify-between">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
+      <div class="toolbar-mobile">
+        <div class="title-group">
           <div class="page-icon bg-indigo-500">
             <i class="fas fa-gear text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="text-lg font-semibold text-slate-800 truncate">系统配置</h1>
+            <h1 class="title-text">系统配置</h1>
             <p class="text-xs text-slate-500 truncate">服务器、认证、网关与容器参数</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <button type="button" class="btn btn-secondary w-9 h-9 !px-0" title="刷新" @click="loadConfig(true)">
+          <button type="button" class="btn btn-secondary btn-square" title="刷新" @click="loadConfig(true)">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('PUT /api/system/config')" type="button" class="btn btn-indigo w-9 h-9 !px-0" title="保存配置" :disabled="saving" @click="saveAll">
+          <button v-if="portal.hasPerm('PUT /api/system/config')" type="button" class="btn btn-indigo btn-square" title="保存配置" :disabled="saving" @click="saveAll">
             <i v-if="saving" class="fas fa-spinner fa-spin text-sm"></i>
             <i v-else class="fas fa-save text-sm"></i>
           </button>
@@ -195,7 +195,7 @@ export default toNative(Config)
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
-        <div class="w-12 h-12 spinner mb-3"></div>
+        <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
     </div>
@@ -556,7 +556,7 @@ export default toNative(Config)
               :class="activeTab === item.id ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'option-card-inactive'"
               @click="scrollToConfigSection(item.id)"
             >
-              <div class="flex items-center gap-3 min-w-0">
+              <div class="title-group-static">
                 <span
                   class="option-card-icon flex-shrink-0"
                   :class="activeTab === item.id ? 'bg-white text-indigo-600' : 'bg-slate-100 text-slate-500'"

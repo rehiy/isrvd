@@ -187,7 +187,7 @@ export default toNative(SystemNetwork)
 </script>
 
 <template>
-  <div v-if="currentIfaces.length" class="rounded-xl border border-slate-200 overflow-hidden">
+  <div v-if="currentIfaces.length" class="panel-frame">
     <div class="card-header">
       <div class="card-icon bg-cyan-500">
         <i class="fas fa-network-wired text-white text-xs"></i>
@@ -199,17 +199,17 @@ export default toNative(SystemNetwork)
         <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
           <p class="text-xs font-semibold text-slate-700 shrink-0 whitespace-nowrap">{{ ni.name }}</p>
           <div class="flex items-center justify-end gap-x-4 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
+            <span class="monitor-legend-item">
               <i class="fas fa-arrow-down text-emerald-500"></i>
               <span class="font-mono text-slate-600">{{ fmtRate(currentRate(ni.name, 'recv')) }}</span>
             </span>
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
+            <span class="monitor-legend-item">
               <i class="fas fa-arrow-up text-blue-500"></i>
               <span class="font-mono text-slate-600">{{ fmtRate(currentRate(ni.name, 'sent')) }}</span>
             </span>
           </div>
         </div>
-        <div class="relative h-28 bg-slate-50 rounded-lg overflow-hidden">
+        <div class="monitor-chart-box">
           <canvas :data-iface="ni.name" class="w-full h-full"></canvas>
           <div v-if="!netHistory[ni.name]?.labels?.length" class="absolute inset-0 flex items-center justify-center">
             <span class="text-xs text-slate-300">等待数据...</span>

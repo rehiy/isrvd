@@ -339,7 +339,7 @@ export default toNative(SystemGo)
 </script>
 
 <template>
-  <div class="rounded-xl border border-slate-200 overflow-hidden">
+  <div class="panel-frame">
     <div class="card-header">
       <div class="card-icon bg-sky-500">
         <i class="fas fa-code text-white text-xs"></i>
@@ -354,17 +354,17 @@ export default toNative(SystemGo)
         <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
           <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">系统内存</span>
           <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
+            <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-blue-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.totalAlloc) }}</span>
             </span>
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
+            <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-emerald-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.sys) }}</span>
             </span>
           </div>
         </div>
-        <div class="relative h-28 bg-slate-50 rounded-lg overflow-hidden">
+        <div class="monitor-chart-box">
           <canvas ref="sysCanvasRef" class="w-full h-full"></canvas>
         </div>
       </div>
@@ -374,33 +374,33 @@ export default toNative(SystemGo)
         <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
           <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">堆内存</span>
           <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
+            <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-blue-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.alloc) }}</span>
             </span>
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
+            <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-emerald-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.heapAlloc) }}</span>
             </span>
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
+            <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-amber-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.heapInuse) }}</span>
             </span>
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
+            <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-gray-400 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.heapIdle) }}</span>
             </span>
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
+            <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-rose-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.heapReleased) }}</span>
             </span>
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
+            <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.heapSys) }}</span>
             </span>
           </div>
         </div>
-        <div class="relative h-28 bg-slate-50 rounded-lg overflow-hidden">
+        <div class="monitor-chart-box">
           <canvas ref="memCanvasRef" class="w-full h-full"></canvas>
         </div>
       </div>
@@ -410,17 +410,17 @@ export default toNative(SystemGo)
         <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
           <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">栈内存</span>
           <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
+            <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-amber-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.stackInuse) }}</span>
             </span>
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
+            <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ fmtSize(current.stackSys) }}</span>
             </span>
           </div>
         </div>
-        <div class="relative h-28 bg-slate-50 rounded-lg overflow-hidden">
+        <div class="monitor-chart-box">
           <canvas ref="stackCanvasRef" class="w-full h-full"></canvas>
         </div>
       </div>
@@ -430,25 +430,25 @@ export default toNative(SystemGo)
         <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
           <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">计数器</span>
           <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap" title="最后 GC 时间">
+            <span class="monitor-legend-item" title="最后 GC 时间">
               <i class="fas fa-clock mr-1"></i>
               <span class="font-mono text-slate-600">{{ lastGCTime }}</span>
             </span>
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
+            <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ current.numGoroutine }}</span>
             </span>
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
+            <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-green-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ current.heapObjects }}</span>
             </span>
-            <span class="flex items-center gap-1 shrink-0 whitespace-nowrap">
+            <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-red-500 rounded-full"></span>
               <span class="font-mono text-slate-600">{{ current.numGC }}</span>
             </span>
           </div>
         </div>
-        <div class="relative h-28 bg-slate-50 rounded-lg overflow-hidden">
+        <div class="monitor-chart-box">
           <canvas ref="goroutineCanvasRef" class="w-full h-full"></canvas>
         </div>
       </div>

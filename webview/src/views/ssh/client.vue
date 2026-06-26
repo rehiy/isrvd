@@ -100,16 +100,16 @@ export default toNative(SSHClientPage)
       <!-- Toolbar -->
       <div class="page-toolbar page-toolbar-static">
         <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0">
+          <div class="title-group-static">
             <div class="page-icon bg-teal-500 flex-shrink-0">
               <i class="fas fa-terminal text-white text-sm"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="text-lg font-semibold text-slate-800 truncate">{{ host?.name || 'SSH 终端' }}</h1>
+              <h1 class="title-text">{{ host?.name || 'SSH 终端' }}</h1>
               <p class="text-xs text-slate-500 truncate">{{ host ? `${host.user} @ ${host.addr}` : '正在加载主机信息...' }}</p>
             </div>
           </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="action-group">
             <button v-if="!connected" class="btn btn-emerald" @click="handleReconnect()">
               <i class="fas fa-plug"></i><span class="hidden md:inline">连接终端</span>
             </button>

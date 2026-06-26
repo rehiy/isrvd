@@ -65,8 +65,8 @@ export default toNative(DockerOverview)
 <template>
   <div>
     <!-- Loading -->
-    <div v-if="loading" class="flex items-center justify-center py-10">
-      <div class="w-8 h-8 spinner mr-2"></div>
+    <div v-if="loading" class="overview-loading">
+      <div class="spinner-md"></div>
       <span class="text-slate-400 text-sm">加载中...</span>
     </div>
 
@@ -84,7 +84,7 @@ export default toNative(DockerOverview)
     </div>
 
     <!-- Empty/Error State -->
-    <div v-else class="flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50">
+    <div v-else class="overview-unavailable">
       <i class="fab fa-docker text-2xl text-slate-300"></i>
       <div>
         <p class="text-sm font-medium text-slate-600">无法获取 Docker 信息</p>
