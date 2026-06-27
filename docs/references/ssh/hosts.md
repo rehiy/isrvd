@@ -173,3 +173,5 @@ GET /api/ssh/to/<ID>  (WebSocket, 支持 ?token= 查询参数)
 TOKEN=$(isrvd_login "$ISRVD_APIURL" "$ISRVD_USERNAME" "$ISRVD_PASSWORD" | jq -r '.payload.token')
 wscat -c "ws://<HOST>/api/ssh/to/<ID>?token=$TOKEN"
 ```
+
+> 终端 WSS 连接内置约 25s 保活心跳，空闲时不会被中间层（nginx/Caddy、NAT）断开。
