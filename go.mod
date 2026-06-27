@@ -14,7 +14,7 @@ require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/moby/docker-image-spec v1.3.1
-	github.com/rehiy/libgo v0.18.0
+	github.com/rehiy/libgo v0.19.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil/v3 v3.24.5
 	golang.org/x/crypto v0.53.0
@@ -53,6 +53,7 @@ require (
 	github.com/goccy/go-json v0.10.6 // indirect
 	github.com/google/go-tpm v0.9.8 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/jaypipes/ghw v0.24.0 // indirect
 	github.com/jaypipes/pcidb v1.1.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

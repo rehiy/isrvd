@@ -21,6 +21,7 @@ import (
 	"github.com/shirou/gopsutil/v3/cpu"
 
 	pkgDocker "isrvd/pkgs/docker"
+	"isrvd/internal/service/wsterm"
 )
 
 var (
@@ -337,6 +338,10 @@ func (s *Service) ContainerExec(ctx context.Context, conn *websocket.ServerConn,
 	}
 
 	conn.Write([]byte("[容器终端已连接]\r\n"))
+
+	// 终端 WSS 保活心跳，避免空闲被中间层断开
+	stop := wsterm.KeepAlive(conn, wsterm.HeartbeatInterval)
+	defer stop()
 
 	done := make(chan struct{})
 	go func() {

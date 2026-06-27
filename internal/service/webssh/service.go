@@ -7,6 +7,8 @@ import (
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/websocket"
 	libWebSSH "github.com/rehiy/libgo/webssh"
+
+	"isrvd/internal/service/wsterm"
 )
 
 // logger 为 webssh 包创建带名称的 logger
@@ -236,6 +238,10 @@ func (s *Service) RunTerminal(conn *websocket.ServerConn, hostID string) {
 	}
 
 	logger.Info("WebSSH 会话开始", "hostID", hostID, "addr", opt.Addr, "user", opt.User)
+
+	// 终端 WSS 保活心跳，避免空闲被中间层断开
+	stop := wsterm.KeepAlive(conn, wsterm.HeartbeatInterval)
+	defer stop()
 
 	if err := libWebSSH.Connect(conn.Conn, opt); err != nil {
 		logger.Error("WebSSH 会话结束", "hostID", hostID, "error", err)
