@@ -3,7 +3,6 @@ package shell
 
 import (
 	"context"
-	"io"
 	"os/exec"
 	"runtime"
 
@@ -35,7 +34,16 @@ func (s *Service) RunTerminal(conn *websocket.ServerConn, shell, homeDir string)
 		ptmx, err := pty.Start(cmd)
 		if err == nil {
 			defer ptmx.Close()
-			handleIO(conn, ptmx, ptmx, cmd)
+			wsterm.Bridge(conn, ptmx, ptmx, wsterm.BridgeOptions{
+				Name:    "shell",
+				Welcome: "[终端已连接，输入命令后回车]\r\n",
+				Cleanup: func() {
+					if cmd.Process != nil {
+						_ = cmd.Process.Kill()
+						_ = cmd.Wait()
+					}
+				},
+			})
 			return
 		}
 		logman.Warn("PTY 启动失败，降级到 Pipe 模式", "error", err)
@@ -67,55 +75,17 @@ func runWithPipe(conn *websocket.ServerConn, cmd *exec.Cmd) error {
 		stdin.Close()
 		return err
 	}
-	// handleIO 阻塞直到连接断开，返回后再关闭 stdin，避免提前关闭导致写入失败
-	handleIO(conn, stdin, stdout, cmd)
+	// Bridge 阻塞直到连接断开，返回后再关闭 stdin，避免提前关闭导致写入失败
+	wsterm.Bridge(conn, stdin, stdout, wsterm.BridgeOptions{
+		Name:    "shell",
+		Welcome: "[终端已连接，输入命令后回车]\r\n",
+		Cleanup: func() {
+			if cmd.Process != nil {
+				_ = cmd.Process.Kill()
+				_ = cmd.Wait()
+			}
+		},
+	})
 	stdin.Close()
 	return nil
-}
-
-func handleIO(conn *websocket.ServerConn, stdin io.Writer, stdout io.Reader, cmd *exec.Cmd) {
-	// 终端 WSS 保活心跳，避免空闲被中间层断开
-	stop := wsterm.KeepAlive(conn, wsterm.HeartbeatInterval)
-	defer stop()
-
-	// 确保进程被终止
-	defer func() {
-		if cmd.Process != nil {
-			cmd.Process.Kill()
-			cmd.Wait()
-		}
-	}()
-
-	// 读取输出
-	go func() {
-		buf := make([]byte, 1024)
-		for {
-			n, err := stdout.Read(buf)
-			if n > 0 {
-				conn.Write(buf[:n])
-			}
-			if err != nil {
-				logman.Error("shell handleIO: stdout.Read error", "error", err)
-				return
-			}
-		}
-	}()
-
-	conn.Write([]byte("[终端已连接，输入命令后回车]\r\n"))
-
-	// 读取输入
-	buf := make([]byte, 1024)
-	for {
-		n, err := conn.Read(buf)
-		if err != nil {
-			logman.Error("shell handleIO: conn.Read error", "error", err)
-			return
-		}
-		if n > 0 {
-			if _, err = stdin.Write(buf[:n]); err != nil {
-				logman.Error("shell handleIO: stdin.Write error", "error", err)
-				return
-			}
-		}
-	}
 }

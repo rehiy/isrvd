@@ -20,8 +20,8 @@ import (
 	"github.com/rehiy/libgo/websocket"
 	"github.com/shirou/gopsutil/v3/cpu"
 
-	pkgDocker "isrvd/pkgs/docker"
 	"isrvd/internal/service/wsterm"
+	pkgDocker "isrvd/pkgs/docker"
 )
 
 var (
@@ -337,47 +337,13 @@ func (s *Service) ContainerExec(ctx context.Context, conn *websocket.ServerConn,
 		return
 	}
 
-	conn.Write([]byte("[容器终端已连接]\r\n"))
-
-	// 终端 WSS 保活心跳，避免空闲被中间层断开
-	stop := wsterm.KeepAlive(conn, wsterm.HeartbeatInterval)
-	defer stop()
-
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		buf := make([]byte, 1024)
-		for {
-			n, err := session.Read(buf)
-			if n > 0 {
-				conn.Write(buf[:n])
-			}
-			if err != nil {
-				if err != io.EOF {
-					logman.Error("container exec read error", "error", err)
-				}
-				return
-			}
-		}
-	}()
-
-	buf := make([]byte, 1024)
-	for {
-		n, err := conn.Read(buf)
-		if err != nil {
-			logman.Error("websocket read error", "error", err)
-			break
-		}
-		if n > 0 {
-			if _, err := session.Write(buf[:n]); err != nil {
-				logman.Error("container exec write error", "error", err)
-				break
-			}
-		}
-	}
-
-	session.Close()
-	<-done
+	wsterm.Bridge(conn, session, session, wsterm.BridgeOptions{
+		Name:    "container exec",
+		Welcome: "[容器终端已连接]\r\n",
+		Close: func() {
+			_ = session.Close()
+		},
+	})
 }
 
 // Info 获取 Docker 概览信息
