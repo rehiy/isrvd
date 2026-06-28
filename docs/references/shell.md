@@ -30,6 +30,7 @@ wscat -c "ws://<HOST>/api/shell?token=$TOKEN&shell=/bin/bash"
 - 终端工作目录为用户主目录（`member.homeDirectory`）
 - 支持 ANSI 转义序列、颜色、光标定位等
 - 连接关闭后终端会话自动结束
+- 终端 WSS 连接内置约 25s 保活心跳，空闲时不会被中间层（nginx/Caddy、NAT）断开
 
 ---
 

@@ -11,6 +11,8 @@ import (
 	"github.com/rehiy/libgo/command"
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/websocket"
+
+	"isrvd/internal/service/wsterm"
 )
 
 // Service Web 终端业务服务
@@ -72,6 +74,10 @@ func runWithPipe(conn *websocket.ServerConn, cmd *exec.Cmd) error {
 }
 
 func handleIO(conn *websocket.ServerConn, stdin io.Writer, stdout io.Reader, cmd *exec.Cmd) {
+	// 终端 WSS 保活心跳，避免空闲被中间层断开
+	stop := wsterm.KeepAlive(conn, wsterm.HeartbeatInterval)
+	defer stop()
+
 	// 确保进程被终止
 	defer func() {
 		if cmd.Process != nil {
