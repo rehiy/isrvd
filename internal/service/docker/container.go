@@ -20,7 +20,7 @@ import (
 	"github.com/rehiy/libgo/websocket"
 	"github.com/shirou/gopsutil/v3/cpu"
 
-	"isrvd/internal/service/wsterm"
+	svcShell "isrvd/internal/service/shell"
 	pkgDocker "isrvd/pkgs/docker"
 )
 
@@ -337,7 +337,7 @@ func (s *Service) ContainerExec(ctx context.Context, conn *websocket.ServerConn,
 		return
 	}
 
-	wsterm.Bridge(conn, session, session, wsterm.BridgeOptions{
+	svcShell.Bridge(conn, session, session, svcShell.BridgeOptions{
 		Name:    "container exec",
 		Welcome: "[容器终端已连接]\r\n",
 		Close: func() {

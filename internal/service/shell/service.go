@@ -10,8 +10,6 @@ import (
 	"github.com/rehiy/libgo/command"
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/websocket"
-
-	"isrvd/internal/service/wsterm"
 )
 
 // Service Web 终端业务服务
@@ -34,7 +32,7 @@ func (s *Service) RunTerminal(conn *websocket.ServerConn, shell, homeDir string)
 		ptmx, err := pty.Start(cmd)
 		if err == nil {
 			defer ptmx.Close()
-			wsterm.Bridge(conn, ptmx, ptmx, wsterm.BridgeOptions{
+			Bridge(conn, ptmx, ptmx, BridgeOptions{
 				Name:    "shell",
 				Welcome: "[终端已连接，输入命令后回车]\r\n",
 				Cleanup: func() {
@@ -76,7 +74,7 @@ func runWithPipe(conn *websocket.ServerConn, cmd *exec.Cmd) error {
 		return err
 	}
 	// Bridge 阻塞直到连接断开，返回后再关闭 stdin，避免提前关闭导致写入失败
-	wsterm.Bridge(conn, stdin, stdout, wsterm.BridgeOptions{
+	Bridge(conn, stdin, stdout, BridgeOptions{
 		Name:    "shell",
 		Welcome: "[终端已连接，输入命令后回车]\r\n",
 		Cleanup: func() {
