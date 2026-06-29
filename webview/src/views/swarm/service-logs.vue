@@ -217,12 +217,12 @@ export default toNative(ServiceLogs)
     </div>
 
     <!-- 内容区域 -->
-    <div class="card-body space-y-3">
+    <div class="p-4">
       <div v-if="logLoading" class="empty-state">
         <div class="spinner-lg"></div>
         <p class="text-slate-500">加载中...</p>
       </div>
-      <pre v-else-if="logContent || streamActive" class="bg-slate-900 text-slate-100 rounded-xl p-3 md:p-4 text-xs font-mono whitespace-pre-wrap break-all">{{ logContent || '等待日志输出...' }}</pre>
+      <pre v-else-if="logContent || streamActive" class="min-h-[18rem] bg-white text-xs font-mono leading-relaxed text-slate-700 whitespace-pre-wrap break-all">{{ logContent || '等待日志输出...' }}</pre>
       <div v-else class="empty-state">
         <div class="empty-state-icon">
           <i class="fas fa-file-lines text-2xl text-slate-300"></i>
