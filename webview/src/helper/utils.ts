@@ -36,9 +36,21 @@ export function parseHostPort(value: string): { host: string; port: string } {
 }
 
 export const TEXT_EXTENSIONS: string[] = [
-    'txt', 'md', 'js', 'css', 'html', 'htm', 'json', 'xml', 'csv',
-    'log', 'conf', 'ini', 'cfg', 'yaml', 'yml', 'php', 'py', 'go',
-    'java', 'cpp', 'c', 'h', 'sql', 'sh', 'bat', 'env'
+    'txt', 'text', 'md', 'markdown', 'rst', 'adoc', 'log', 'csv', 'tsv',
+    'json', 'jsonc', 'json5', 'xml', 'toml', 'yaml', 'yml', 'ini', 'conf', 'cfg', 'cnf',
+    'env', 'envrc', 'properties', 'editorconfig', 'gitignore', 'gitattributes', 'dockerignore',
+    'npmrc', 'yarnrc', 'pnpmrc', 'nvmrc', 'node-version', 'python-version',
+    'ruby-version', 'tool-versions', 'bashrc', 'bash_profile', 'zshrc', 'zprofile',
+    'profile', 'vimrc', 'gvimrc', 'curlrc', 'wgetrc', 'inputrc',
+    'js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'vue', 'svelte', 'astro',
+    'css', 'scss', 'sass', 'less', 'html', 'htm', 'xhtml', 'svg',
+    'go', 'py', 'pyw', 'rb', 'php', 'java', 'kt', 'kts', 'scala', 'groovy',
+    'c', 'h', 'cc', 'cpp', 'cxx', 'hpp', 'hh', 'cs', 'rs', 'swift', 'm', 'mm',
+    'sh', 'bash', 'zsh', 'fish', 'ps1', 'bat', 'cmd', 'sql', 'lua', 'pl', 'pm',
+    'r', 'dart', 'ex', 'exs', 'erl', 'hrl', 'clj', 'cljs', 'fs', 'fsx', 'vb',
+    'tf', 'tfvars', 'hcl', 'dockerfile', 'compose', 'lock', 'mod', 'sum',
+    'makefile', 'rakefile', 'gemfile', 'podfile', 'procfile',
+    'tmpl', 'tpl', 'template', 'mustache', 'hbs'
 ]
 
 export type PreviewFileType = 'image' | 'audio' | 'video' | 'pdf' | ''
@@ -138,10 +150,16 @@ export const FILE_ICON_MAP: Record<string, string> = {
     'sql': 'fas fa-database text-secondary'
 }
 
+const editableExtension = (filename: string): string => {
+    const parts = filename.toLowerCase().split('.').filter(Boolean)
+    if (parts.length === 0) return ''
+    if (parts.length > 1 && parts[parts.length - 1] === 'bak') return parts[parts.length - 2]
+    return parts[parts.length - 1]
+}
+
 export const isEditableFile = (filename: string): boolean => {
     if (!filename) return false
-    const ext = filename.split('.').pop()?.toLowerCase() ?? ''
-    return TEXT_EXTENSIONS.includes(ext)
+    return TEXT_EXTENSIONS.includes(editableExtension(filename))
 }
 
 export const getPreviewType = (filename: string): PreviewFileType => {
