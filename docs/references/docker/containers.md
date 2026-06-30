@@ -152,6 +152,7 @@ isrvd_get "/docker/container/<ID>/file/ls?path=/"
 | modTime | number | 修改时间（Unix 时间戳） |
 | isDir | boolean | 是否目录 |
 | isLink | boolean | 是否软链接 |
+| linkTarget | string | 软链接目标，仅软链接时返回 |
 
 ### 读取文件
 

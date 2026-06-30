@@ -42,6 +42,7 @@ function createContainerFileAdapter(containerId: string): ExplorerAdapter {
                     modTime:   f.modTime,
                     isDir:     f.isDir,
                     isLink:    f.isLink,
+                    linkTarget: f.linkTarget,
                 })),
             }
         },

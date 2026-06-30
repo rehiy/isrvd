@@ -35,6 +35,7 @@ function createFilerAdapter(): ExplorerAdapter {
                 files: (payload.files || []).map((f): FileInfo => ({
                     name: f.name, path: f.path, size: f.size,
                     mode: f.mode, modeOctal: f.modeO, modTime: f.modTime, isDir: f.isDir,
+                    isLink: f.isLink, linkTarget: f.linkTarget,
                 })),
             }
         },

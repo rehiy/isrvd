@@ -16,12 +16,13 @@ import (
 
 // ContainerFileInfo 容器内文件信息
 type ContainerFileInfo struct {
-	Name    string `json:"name"`    // 文件名
-	Size    int64  `json:"size"`    // 文件大小（字节）
-	Mode    string `json:"mode"`    // 字符串权限，如 "-rw-r--r--"
-	ModTime int64  `json:"modTime"` // 修改时间（Unix 时间戳）
-	IsDir   bool   `json:"isDir"`   // 是否为目录
-	IsLink  bool   `json:"isLink"`  // 是否为符号链接
+	Name       string `json:"name"`                 // 文件名
+	Size       int64  `json:"size"`                 // 文件大小（字节）
+	Mode       string `json:"mode"`                 // 字符串权限，如 "-rw-r--r--"
+	ModTime    int64  `json:"modTime"`              // 修改时间（Unix 时间戳）
+	IsDir      bool   `json:"isDir"`                // 是否为目录
+	IsLink     bool   `json:"isLink"`               // 是否为符号链接
+	LinkTarget string `json:"linkTarget,omitempty"` // 符号链接目标
 }
 
 // ContainerFileListResult 目录列表结果
@@ -37,9 +38,9 @@ func (s *DockerService) ContainerFileList(ctx context.Context, containerID, dirP
 	}
 
 	// 先尝试 GNU find -printf（获取结构化信息），输出含 | 分隔符
-	// format: type|name|size|mode|mtime
+	// format: type|targetType|name|size|mode|mtime|linkTarget
 	findScript := fmt.Sprintf(
-		`find %s -maxdepth 1 -mindepth 1 -printf '%%y|%%f|%%s|%%#m|%%T@\n'`,
+		`find %s -maxdepth 1 -mindepth 1 -printf '%%y|%%Y|%%f|%%s|%%#m|%%T@|%%l\n'`,
 		shellQuote(dirPath),
 	)
 	out, err := s.ContainerExecRun(ctx, containerID, "/bin/sh", findScript, 10)
@@ -193,7 +194,7 @@ func shellQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
 }
 
-// parseFindOutput 解析 find -printf '%y|%f|%s|%#m|%T@\n' 输出
+// parseFindOutput 解析 find -printf 输出
 func parseFindOutput(dirPath, output string) *ContainerFileListResult {
 	result := &ContainerFileListResult{Path: dirPath, Files: []ContainerFileInfo{}}
 	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
@@ -201,11 +202,16 @@ func parseFindOutput(dirPath, output string) *ContainerFileListResult {
 		if line == "" {
 			continue
 		}
-		parts := strings.SplitN(line, "|", 5)
+		parts := strings.SplitN(line, "|", 7)
 		if len(parts) < 5 {
 			continue
 		}
-		ftype, fname, fsize, fmode, fmtime := parts[0], parts[1], parts[2], parts[3], parts[4]
+		ftype, targetType, fname, fsize, fmode, fmtime, linkTarget := "", "", "", "", "", "", ""
+		if len(parts) >= 7 {
+			ftype, targetType, fname, fsize, fmode, fmtime, linkTarget = parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6]
+		} else {
+			ftype, fname, fsize, fmode, fmtime = parts[0], parts[1], parts[2], parts[3], parts[4]
+		}
 		if fname == "" || fname == "." || fname == ".." {
 			continue
 		}
@@ -215,17 +221,18 @@ func parseFindOutput(dirPath, output string) *ContainerFileListResult {
 		var mtime float64
 		fmt.Sscanf(fmtime, "%f", &mtime)
 
-		isDir := ftype == "d"
 		isLink := ftype == "l"
+		isDir := ftype == "d" || (isLink && targetType == "d")
 		mode := octalToStr(fmode, isDir)
 
 		result.Files = append(result.Files, ContainerFileInfo{
-			Name:    fname,
-			Size:    size,
-			Mode:    mode,
-			ModTime: int64(mtime),
-			IsDir:   isDir,
-			IsLink:  isLink,
+			Name:       fname,
+			Size:       size,
+			Mode:       mode,
+			ModTime:    int64(mtime),
+			IsDir:      isDir,
+			IsLink:     isLink,
+			LinkTarget: linkTarget,
 		})
 	}
 	return result
@@ -245,8 +252,9 @@ func parseLsOutput(dirPath, output string) *ContainerFileListResult {
 		}
 		modeStr := fields[0]
 		name := strings.Join(fields[8:], " ")
-		// 去掉 -> 链接目标
+		linkTarget := ""
 		if idx := strings.Index(name, " -> "); idx >= 0 {
+			linkTarget = name[idx+4:]
 			name = name[:idx]
 		}
 		if name == "." || name == ".." {
@@ -261,12 +269,13 @@ func parseLsOutput(dirPath, output string) *ContainerFileListResult {
 		normalizedMode := normalizeLsMode(modeStr, isDir)
 
 		result.Files = append(result.Files, ContainerFileInfo{
-			Name:    name,
-			Size:    size,
-			Mode:    normalizedMode,
-			ModTime: 0,
-			IsDir:   isDir,
-			IsLink:  isLink,
+			Name:       name,
+			Size:       size,
+			Mode:       normalizedMode,
+			ModTime:    0,
+			IsDir:      isDir,
+			IsLink:     isLink,
+			LinkTarget: linkTarget,
 		})
 	}
 	return result

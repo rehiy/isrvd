@@ -25,6 +25,7 @@ export interface ContainerFileInfo {
     modTime: number // Unix 时间戳
     isDir: boolean
     isLink: boolean
+    linkTarget?: string
 }
 
 // ─── 容器 ───

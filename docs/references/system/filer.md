@@ -38,6 +38,20 @@ isrvd_get "/filer/dir-size?path=<DIR>"
 isrvd_get "/filer/files?path=<DIR>"
 ```
 
+响应中的 `files` 字段包含：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `name` | string | 文件名 |
+| `path` | string | filer 内路径 |
+| `size` | number | 文件大小（字节） |
+| `isDir` | boolean | 是否为目录；软链接指向目录时为 `true` |
+| `isLink` | boolean | 是否为软链接 |
+| `linkTarget` | string | 软链接目标；仅软链接时返回 |
+| `mode` | string | 权限字符串 |
+| `modeO` | string | 八进制权限 |
+| `modTime` | string | 最后修改时间 |
+
 ## 创建目录
 
 ```bash

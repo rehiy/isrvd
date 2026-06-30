@@ -27,13 +27,15 @@ func NewService() *Service {
 
 // FileInfo 文件信息
 type FileInfo struct {
-	Path    string    `json:"path"`    // 文件完整路径
-	Name    string    `json:"name"`    // 文件名
-	Size    int64     `json:"size"`    // 文件大小（字节）
-	IsDir   bool      `json:"isDir"`   // 是否为目录
-	Mode    string    `json:"mode"`    // 权限字符串（如 -rwxr-xr-x）
-	ModeO   string    `json:"modeO"`   // 权限八进制表示（如 0755）
-	ModTime time.Time `json:"modTime"` // 最后修改时间
+	Path       string    `json:"path"`                 // 文件完整路径
+	Name       string    `json:"name"`                 // 文件名
+	Size       int64     `json:"size"`                 // 文件大小（字节）
+	IsDir      bool      `json:"isDir"`                // 是否为目录
+	IsLink     bool      `json:"isLink"`               // 是否为符号链接
+	LinkTarget string    `json:"linkTarget,omitempty"` // 符号链接目标
+	Mode       string    `json:"mode"`                 // 权限字符串（如 -rwxr-xr-x）
+	ModeO      string    `json:"modeO"`                // 权限八进制表示（如 0755）
+	ModTime    time.Time `json:"modTime"`              // 最后修改时间
 }
 
 // AbsPath 解析用户相对路径为绝对路径，并防止目录遍历和符号链接逃逸
@@ -96,14 +98,24 @@ func (s *Service) FileList(absPath, relPath string) ([]*FileInfo, error) {
 	var result []*FileInfo
 	for _, f := range list {
 		p := filepath.ToSlash(filepath.Join(relPath, f.Name))
+		itemAbsPath := filepath.Join(absPath, f.Name)
+		isLink, linkTarget := resolveLinkInfo(itemAbsPath)
+		isDir := f.IsDir
+		if isLink {
+			if targetInfo, err := os.Stat(itemAbsPath); err == nil {
+				isDir = targetInfo.IsDir()
+			}
+		}
 		result = append(result, &FileInfo{
-			Path:    p,
-			Name:    f.Name,
-			Size:    f.Size,
-			IsDir:   f.IsDir,
-			Mode:    f.Mode.String(),
-			ModeO:   strconv.FormatInt(int64(f.Mode), 8),
-			ModTime: time.Unix(f.ModTime, 0),
+			Path:       p,
+			Name:       f.Name,
+			Size:       f.Size,
+			IsDir:      isDir,
+			IsLink:     isLink,
+			LinkTarget: linkTarget,
+			Mode:       f.Mode.String(),
+			ModeO:      strconv.FormatInt(int64(f.Mode), 8),
+			ModTime:    time.Unix(f.ModTime, 0),
 		})
 	}
 	sort.Slice(result, func(i, j int) bool {
@@ -252,4 +264,18 @@ var previewContentTypes = map[string]string{
 // 返回空字符串表示不支持预览。
 func (s *Service) PreviewContentType(ext string) string {
 	return previewContentTypes[strings.ToLower(ext)]
+}
+
+// ─── 辅助函数 ───
+
+func resolveLinkInfo(path string) (bool, string) {
+	info, err := os.Lstat(path)
+	if err != nil || info.Mode()&os.ModeSymlink == 0 {
+		return false, ""
+	}
+	target, err := os.Readlink(path)
+	if err != nil {
+		return true, ""
+	}
+	return true, filepath.ToSlash(filepath.Clean(target))
 }

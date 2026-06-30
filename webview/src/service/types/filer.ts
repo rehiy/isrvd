@@ -8,6 +8,8 @@ export interface FilerFileInfo {
     modeO: string
     modTime: string
     isDir: boolean
+    isLink?: boolean
+    linkTarget?: string
 }
 
 export interface FilerList {
