@@ -47,12 +47,6 @@ if grep -rq '__APISIX_ADMIN_KEY__' "$CONF_DIR/" 2>/dev/null; then
     echo "[init] Generated random Apisix admin key"
 fi
 
-# 生成随机 JWT Secret（32 位十六进制）
-if grep -rq '__JWT_SECRET__' "$CONF_DIR/" 2>/dev/null; then
-    JWT_SECRET=$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')
-    replace_placeholder '__JWT_SECRET__' "$JWT_SECRET"
-    echo "[init] Generated random JWT secret"
-fi
 
 # ------------------------------------------
 # 确保关键配置文件确实存在

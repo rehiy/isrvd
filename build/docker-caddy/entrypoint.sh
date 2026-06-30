@@ -26,28 +26,6 @@ for file in "$DEFAULTS_DIR"/*; do
 done
 
 # ------------------------------------------
-# 随机生成密钥（仅首次生成配置时替换占位符）
-# ------------------------------------------
-
-replace_placeholder() {
-    local placeholder="$1"
-    local value="$2"
-    for file in "$CONF_DIR"/*; do
-        if grep -q "$placeholder" "$file" 2>/dev/null; then
-            sed -i "s/$placeholder/$value/g" "$file"
-            echo "[init] Replaced $placeholder in $(basename "$file")"
-        fi
-    done
-}
-
-# 生成随机 JWT Secret（32 位十六进制）
-if grep -rq '__JWT_SECRET__' "$CONF_DIR/" 2>/dev/null; then
-    JWT_SECRET=$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')
-    replace_placeholder '__JWT_SECRET__' "$JWT_SECRET"
-    echo "[init] Generated random JWT secret"
-fi
-
-# ------------------------------------------
 # 确保关键配置文件确实存在
 # ------------------------------------------
 

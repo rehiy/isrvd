@@ -6,7 +6,7 @@ server:
   rootDirectory: /data/
   maxUploadSize: 104857600
   allowedOrigins: []
-  jwtSecret: __JWT_SECRET__
+  jwtSecret: your-jwt-secret
   jwtExpiration: 86400
   openapi: false
   debug: false
