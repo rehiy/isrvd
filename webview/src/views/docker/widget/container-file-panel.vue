@@ -41,7 +41,7 @@ function createContainerFileAdapter(containerId: string): ExplorerAdapter {
                     modeOctal: modeToOctal(f.mode),
                     modTime:   f.modTime,
                     isDir:     f.isDir,
-                    isLink:    f.isLink,
+                    isLink:    f.isLink || !!f.linkTarget,
                     linkTarget: f.linkTarget,
                 })),
             }

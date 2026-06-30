@@ -20,6 +20,7 @@ export interface FileInfo {
     isDir: boolean
     isLink?: boolean
     linkTarget?: string
+    openPath?: string
 }
 
 // ─── 目录列表结果 ────────────────────────────────────────────────────────────────

@@ -51,7 +51,7 @@ function createSftpAdapter(hostId: string): ExplorerAdapter {
                     size: f.size, mode: f.mode,
                     modeOctal: extractOctalMode(f.mode),
                     modTime: f.modTime, isDir: f.isDir,
-                    isLink: f.isLink, linkTarget: f.linkTarget,
+                    isLink: f.isLink || !!f.linkTarget, linkTarget: f.linkTarget,
                 })),
             }
         },

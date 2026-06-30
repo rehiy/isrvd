@@ -141,6 +141,11 @@ class ExplorerPanel extends Vue {
     }
 
     navigate(path: string) { this.clearSelection(); this.loadFiles(path) }
+    fileOpenPath(file: FileInfo): string { return file.openPath || resolveLinkOpenPath(file) }
+    openFile(file: FileInfo): FileInfo {
+        const openPath = this.fileOpenPath(file)
+        return openPath === file.path ? file : { ...file, path: openPath }
+    }
 
     isSelected(file: FileInfo) { return this.selectedPaths.includes(file.path) }
     toggleFileSelection(file: FileInfo) {
@@ -157,17 +162,18 @@ class ExplorerPanel extends Vue {
     clearSelection() { this.selectedPaths = [] }
 
     async calcDirSize(file: FileInfo) {
-        if (!file.isDir || !this.adapter.dirSize || this.calculatingDirs.has(file.path)) return
-        this.calculatingDirs.add(file.path)
+        const openPath = this.fileOpenPath(file)
+        if (!file.isDir || !this.adapter.dirSize || this.calculatingDirs.has(openPath)) return
+        this.calculatingDirs.add(openPath)
         try {
-            const size = await this.adapter.dirSize(file.path)
-            if (size !== null) { file.size = size; this.calculatedDirs.add(file.path) }
-        } catch { } finally { this.calculatingDirs.delete(file.path) }
+            const size = await this.adapter.dirSize(openPath)
+            if (size !== null) { file.size = size; this.calculatedDirs.add(openPath) }
+        } catch { } finally { this.calculatingDirs.delete(openPath) }
     }
 
     async download(file: FileInfo) {
         this.downloadingFile = file.name
-        try { downloadBlob(await this.adapter.download(file.path), file.name) }
+        try { downloadBlob(await this.adapter.download(this.fileOpenPath(file)), file.name) }
         finally { this.downloadingFile = '' }
     }
 
@@ -191,12 +197,30 @@ class ExplorerPanel extends Vue {
     startRename(file: FileInfo) { this.renameModalRef?.show(this.adapter, file) }
     startBatchMove() { if (this.selectedCount > 0) this.renameModalRef?.show(this.adapter, this.selectedFiles) }
     startChmod(file: FileInfo) { this.chmodModalRef?.show(this.adapter, file) }
-    startModify(file: FileInfo) { this.modifyModalRef?.show(this.adapter, file) }
-    startPreview(file: FileInfo) { this.previewModalRef?.show(this.adapter, file) }
+    startModify(file: FileInfo) { this.modifyModalRef?.show(this.adapter, this.openFile(file)) }
+    startPreview(file: FileInfo) { this.previewModalRef?.show(this.adapter, this.openFile(file)) }
     startCreate() { this.createModalRef?.show(this.adapter, this.currentPath) }
     startZip(file: FileInfo) { this.zipModalRef?.show(this.adapter, file) }
     startUnzip(file: FileInfo) { this.unzipModalRef?.show(this.adapter, file) }
     triggerUpload() { this.uploadRef?.triggerFileSelect() }
+}
+
+function resolveLinkOpenPath(file: FileInfo): string {
+    if (!file.isLink || !file.linkTarget) return file.path
+    if (file.linkTarget.startsWith('/')) return normalizeExplorerPath(file.linkTarget)
+    const parent = file.path.replace(/\/[^/]*$/, '') || '/'
+    return normalizeExplorerPath(`${parent}/${file.linkTarget}`)
+}
+
+function normalizeExplorerPath(path: string): string {
+    const absolute = path.startsWith('/')
+    const parts: string[] = []
+    for (const part of path.split('/')) {
+        if (!part || part === '.') continue
+        if (part === '..') { parts.pop(); continue }
+        parts.push(part)
+    }
+    return `${absolute ? '/' : ''}${parts.join('/')}` || '/'
 }
 
 export default toNative(ExplorerPanel)
@@ -381,7 +405,7 @@ export default toNative(ExplorerPanel)
                       <i :class="getFileIcon(file)" class="text-white text-sm"></i>
                     </div>
                     <div class="min-w-0">
-                      <button v-if="file.isDir" type="button" class="font-medium text-slate-800 hover:text-primary-600 transition-colors truncate block text-left" @click="navigate(file.path)">
+                      <button v-if="file.isDir" type="button" class="font-medium text-slate-800 hover:text-primary-600 transition-colors truncate block text-left" @click="navigate(fileOpenPath(file))">
                         {{ file.name }}
                       </button>
                       <span v-else class="item-title">{{ file.name }}</span>
@@ -392,8 +416,8 @@ export default toNative(ExplorerPanel)
                 <td class="px-4 py-3">
                   <span v-if="!file.isDir" class="text-sm text-slate-600">{{ formatFileSize(file.size) }}</span>
                   <button v-else-if="adapter.dirSize" type="button" class="group text-sm text-slate-400 hover:text-primary-600 transition-colors w-20 text-left" @click="calcDirSize(file)">
-                    <template v-if="calculatedDirs.has(file.path)">{{ formatFileSize(file.size) }}</template>
-                    <template v-else-if="calculatingDirs.has(file.path)">计算中...</template>
+                    <template v-if="calculatedDirs.has(fileOpenPath(file))">{{ formatFileSize(file.size) }}</template>
+                    <template v-else-if="calculatingDirs.has(fileOpenPath(file))">计算中...</template>
                     <template v-else><span class="group-hover:hidden">--</span><span class="group-hover:inline hidden">计算大小</span></template>
                   </button>
                 </td>
@@ -406,7 +430,7 @@ export default toNative(ExplorerPanel)
                 <td class="px-4 py-3">
                   <div class="table-actions">
                     <template v-if="file.isDir">
-                      <button v-if="can.list" class="btn-icon btn-icon-slate" title="进入目录" @click="navigate(file.path)">
+                      <button v-if="can.list" class="btn-icon btn-icon-slate" title="进入目录" @click="navigate(fileOpenPath(file))">
                         <i class="fas fa-folder-open text-xs"></i>
                       </button>
                       <button v-if="can.zip" class="btn-icon btn-icon-amber" title="压缩" @click="startZip(file)">
@@ -454,7 +478,7 @@ export default toNative(ExplorerPanel)
                 <i :class="getFileIcon(file)" class="text-white text-base"></i>
               </div>
               <div class="min-w-0">
-                <button v-if="file.isDir" type="button" class="font-medium text-slate-800 hover:text-primary-600 transition-colors text-sm truncate block text-left" @click="navigate(file.path)">{{ file.name }}</button>
+                <button v-if="file.isDir" type="button" class="font-medium text-slate-800 hover:text-primary-600 transition-colors text-sm truncate block text-left" @click="navigate(fileOpenPath(file))">{{ file.name }}</button>
                 <span v-else class="item-title-sm">{{ file.name }}</span>
                 <span v-if="file.isLink && file.linkTarget" class="item-subtitle">{{ file.linkTarget }}</span>
                 <span v-else-if="!file.isDir" class="item-subtitle">{{ formatFileSize(file.size) }}</span>
@@ -470,7 +494,7 @@ export default toNative(ExplorerPanel)
             </div>
             <div class="card-actions">
               <template v-if="file.isDir">
-                <button v-if="can.list" class="btn-icon btn-icon-slate" @click="navigate(file.path)"><i class="fas fa-folder-open text-xs"></i><span class="text-xs ml-1">进入</span></button>
+                <button v-if="can.list" class="btn-icon btn-icon-slate" @click="navigate(fileOpenPath(file))"><i class="fas fa-folder-open text-xs"></i><span class="text-xs ml-1">进入</span></button>
                 <button v-if="can.zip" class="btn-icon btn-icon-amber" @click="startZip(file)"><i class="fas fa-file-zipper text-xs"></i><span class="text-xs ml-1">压缩</span></button>
               </template>
               <template v-else>

@@ -37,28 +37,52 @@ func (s *DockerService) ContainerFileList(ctx context.Context, containerID, dirP
 		dirPath = "/"
 	}
 
+	listPath := containerDirListPath(dirPath)
+
 	// 先尝试 GNU find -printf（获取结构化信息），输出含 | 分隔符
 	// format: type|targetType|name|size|mode|mtime|linkTarget
 	findScript := fmt.Sprintf(
 		`find %s -maxdepth 1 -mindepth 1 -printf '%%y|%%Y|%%f|%%s|%%#m|%%T@|%%l\n'`,
-		shellQuote(dirPath),
+		shellQuote(listPath),
 	)
 	out, err := s.ContainerExecRun(ctx, containerID, "/bin/sh", findScript, 10)
-	// 判断是否为有效的 find -printf 输出（每行含 4 个 |）
+	// 判断是否为有效的 find -printf 输出（每行至少含 4 个 |）
 	if err == nil && isFindOutput(out) {
-		return parseFindOutput(dirPath, out), nil
+		result := parseFindOutput(dirPath, out)
+		s.resolveContainerLinkTargets(ctx, containerID, result)
+		return result, nil
 	}
 
 	// 回退：ls -la（busybox / alpine 兼容）
-	lsScript := fmt.Sprintf(`ls -la %s`, shellQuote(dirPath))
+	lsScript := fmt.Sprintf(`ls -la %s`, shellQuote(listPath))
 	out, err = s.ContainerExecRun(ctx, containerID, "/bin/sh", lsScript, 10)
 	if err != nil && out == "" {
 		return nil, fmt.Errorf("列出目录失败: %w", err)
 	}
-	return parseLsOutput(dirPath, out), nil
+	result := parseLsOutput(dirPath, out)
+	s.resolveContainerLinkTargets(ctx, containerID, result)
+	return result, nil
 }
 
-// isFindOutput 检查输出是否为 find -printf 格式（每行含 4 个 | 分隔符）
+func (s *DockerService) resolveContainerLinkTargets(ctx context.Context, containerID string, result *ContainerFileListResult) {
+	if result == nil {
+		return
+	}
+	for i := range result.Files {
+		file := &result.Files[i]
+		if file.LinkTarget == "" {
+			continue
+		}
+		file.IsLink = true
+		stat, err := s.client.ContainerStatPath(ctx, containerID, containerLinkTargetPath(result.Path, file.LinkTarget))
+		if err == nil && stat.Mode.IsDir() {
+			file.IsDir = true
+			file.Mode = octalToStr(fileModePerm(file.Mode), true)
+		}
+	}
+}
+
+// isFindOutput 检查输出是否为 find -printf 格式（每行至少含 4 个 | 分隔符）
 func isFindOutput(output string) bool {
 	for _, line := range strings.SplitN(strings.TrimSpace(output), "\n", 3) {
 		line = strings.TrimSpace(line)
@@ -189,9 +213,56 @@ func (s *DockerService) ContainerFileChmod(ctx context.Context, containerID, tar
 	return nil
 }
 
+// containerLinkTargetPath 返回软链接目标在容器内的绝对路径。
+func containerLinkTargetPath(parentPath, targetPath string) string {
+	if targetPath == "" {
+		return path.Clean(parentPath)
+	}
+	if path.IsAbs(targetPath) {
+		return path.Clean(targetPath)
+	}
+	return path.Clean(path.Join(parentPath, targetPath))
+}
+
+// containerDirListPath 返回用于列目录的容器内路径。
+// 追加 /. 可让 find/ls 展开命令行参数中的目录软链接，例如 /sbin -> /usr/sbin。
+func containerDirListPath(dirPath string) string {
+	if dirPath == "" {
+		return "/"
+	}
+	cleaned := path.Clean(dirPath)
+	if cleaned == "." {
+		return "."
+	}
+	if cleaned == "/" {
+		return "/"
+	}
+	return strings.TrimRight(cleaned, "/") + "/."
+}
+
 // shellQuote 对路径进行简单单引号转义，防止路径注入
 func shellQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
+}
+
+func fileModePerm(mode string) string {
+	if len(mode) < 10 {
+		return "0644"
+	}
+	toOctal := func(s string) byte {
+		var v byte = '0'
+		if s[0] == 'r' {
+			v += 4
+		}
+		if s[1] == 'w' {
+			v += 2
+		}
+		if s[2] == 'x' || s[2] == 's' || s[2] == 't' {
+			v++
+		}
+		return v
+	}
+	return string([]byte{'0', toOctal(mode[1:4]), toOctal(mode[4:7]), toOctal(mode[7:10])})
 }
 
 // parseFindOutput 解析 find -printf 输出
@@ -221,7 +292,7 @@ func parseFindOutput(dirPath, output string) *ContainerFileListResult {
 		var mtime float64
 		fmt.Sscanf(fmtime, "%f", &mtime)
 
-		isLink := ftype == "l"
+		isLink := ftype == "l" || linkTarget != ""
 		isDir := ftype == "d" || (isLink && targetType == "d")
 		mode := octalToStr(fmode, isDir)
 
@@ -263,8 +334,8 @@ func parseLsOutput(dirPath, output string) *ContainerFileListResult {
 		var size int64
 		fmt.Sscanf(fields[4], "%d", &size)
 
-		isDir := len(modeStr) > 0 && modeStr[0] == 'd'
 		isLink := len(modeStr) > 0 && modeStr[0] == 'l'
+		isDir := len(modeStr) > 0 && modeStr[0] == 'd'
 		// ls -la 已输出字符串权限，转换为标准格式（确保 modeOctal 可用）
 		normalizedMode := normalizeLsMode(modeStr, isDir)
 

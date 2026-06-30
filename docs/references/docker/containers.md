@@ -150,7 +150,7 @@ isrvd_get "/docker/container/<ID>/file/ls?path=/"
 | size | number | 大小（字节） |
 | mode | string | 权限字符串，如 `drwxr-xr-x` |
 | modTime | number | 修改时间（Unix 时间戳） |
-| isDir | boolean | 是否目录 |
+| isDir | boolean | 是否目录；软链接目标为目录时为 `true` |
 | isLink | boolean | 是否软链接 |
 | linkTarget | string | 软链接目标，仅软链接时返回 |
 
