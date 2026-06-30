@@ -4,8 +4,8 @@ import { Component, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
-import { getPreviewMimeType, getPreviewType } from '@/helper/utils'
-import type { PreviewFileType } from '@/helper/utils'
+import { getPreviewMimeType, getPreviewType } from '@/helper/file'
+import type { PreviewFileType } from '@/helper/file'
 
 import BaseModal from '@/component/modal.vue'
 

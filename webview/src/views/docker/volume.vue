@@ -6,7 +6,7 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { DockerVolumeDetail } from '@/service/types'
 
-import { formatFileSize, formatTime } from '@/helper/utils'
+import { formatFileSize, formatTime } from '@/helper/format'
 
 @Component
 class VolumeDetail extends Vue {

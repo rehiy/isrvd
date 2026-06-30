@@ -1,7 +1,7 @@
 <script lang="ts">
 import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import { bindTypeToSearchFocus } from '@/helper/utils'
+import { bindTypeToSearchFocus } from '@/helper/dom'
 
 @Component({
     emits: ['update:modelValue']

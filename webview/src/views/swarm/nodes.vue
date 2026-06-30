@@ -6,7 +6,7 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { SwarmNodeInfo } from '@/service/types'
 
-import { copyToClipboard } from '@/helper/utils'
+import { copyToClipboard } from '@/helper/dom'
 
 import BaseModal from '@/component/modal.vue'
 import PageSearch from '@/component/page-search.vue'

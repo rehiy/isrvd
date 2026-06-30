@@ -6,7 +6,7 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { MonitorHostRecord } from '@/service/types'
 
-import { POLL_INTERVAL } from '@/helper/utils'
+import { POLL_INTERVAL } from '@/helper/format'
 
 import SystemCpuMem from './monitor/cpu_mem.vue'
 import SystemDisk from './monitor/disk.vue'

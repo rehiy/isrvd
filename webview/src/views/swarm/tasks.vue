@@ -6,7 +6,7 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { SwarmTask, SwarmServiceInfo } from '@/service/types'
 
-import { formatTime } from '@/helper/utils'
+import { formatTime } from '@/helper/format'
 
 import PageSearch from '@/component/page-search.vue'
 

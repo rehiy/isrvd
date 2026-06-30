@@ -6,7 +6,7 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { ApiTokenResult } from '@/service/types'
 
-import { copyToClipboard } from '@/helper/utils'
+import { copyToClipboard } from '@/helper/dom'
 
 @Component
 class AccountTokens extends Vue {

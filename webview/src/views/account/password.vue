@@ -6,7 +6,7 @@ import { usePortal } from '@/stores'
 
 import api from '@/service/api'
 
-import { copyToClipboard } from '@/helper/utils'
+import { copyToClipboard } from '@/helper/dom'
 
 @Component
 class AccountPassword extends Vue {

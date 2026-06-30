@@ -6,7 +6,7 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { SwarmServiceDetail, SwarmTask } from '@/service/types'
 
-import { formatTime } from '@/helper/utils'
+import { formatTime } from '@/helper/format'
 
 @Component
 class ServiceInfo extends Vue {

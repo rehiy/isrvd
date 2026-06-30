@@ -6,8 +6,8 @@ import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 import type { SystemStat, SystemNetInterface } from '@/service/types'
 
 import Chart from '@/helper/chart'
+import { hexToRgba } from '@/helper/format'
 import { appendMonitorPoint } from '@/helper/monitor'
-import { hexToRgba } from '@/helper/utils'
 
 interface TimeSeriesHistory {
     ts: number[]

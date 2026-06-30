@@ -7,7 +7,7 @@ import api from '@/service/api'
 import type { DockerContainerInfo } from '@/service/types'
 import { COMPOSE_PROJECT_LABEL, COMPOSE_SERVICE_LABEL } from '@/service/types/docker'
 
-import { formatTime } from '@/helper/utils'
+import { formatTime } from '@/helper/format'
 
 import PageSearch from '@/component/page-search.vue'
 

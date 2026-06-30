@@ -334,7 +334,7 @@
 
 ### 1.13 统一工具与轮询
 
-通用函数复用 `webview/src/helper/utils.ts`；轮询间隔用 `POLL_INTERVAL`，禁止硬编码
+通用函数按职责复用 `webview/src/helper/format.ts`、`file.ts`、`dom.ts` 等细分模块；轮询间隔使用 `helper/format.ts` 的 `POLL_INTERVAL`，禁止硬编码
 
 ### 1.14 import 分组排序
 

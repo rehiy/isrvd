@@ -6,7 +6,7 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { DockerContainerDetail, DockerContainerInfo, DockerVolumeMapping } from '@/service/types'
 
-import { formatTime } from '@/helper/utils'
+import { formatTime } from '@/helper/format'
 
 @Component
 class ContainerDetail extends Vue {

@@ -21,7 +21,8 @@ import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
-import { downloadBlob, formatFileSize, formatTime, formatUnixTime, getFileIcon, isEditableFile, isPreviewableFile } from '@/helper/utils'
+import { downloadBlob, getFileIcon, isEditableFile, isPreviewableFile } from '@/helper/file'
+import { formatFileSize, formatTime, formatUnixTime } from '@/helper/format'
 
 import ChmodModal from './widget/chmod-modal.vue'
 import CreateModal from './widget/create-modal.vue'

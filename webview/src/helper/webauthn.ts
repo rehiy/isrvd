@@ -10,9 +10,29 @@
  * 因此序列化格式必须与 go-webauthn 期望的 JSON 结构完全一致。
  */
 
-import { base64urlToBuffer, bufferToBase64url } from '@/helper/utils'
 import api from '@/service/api'
 import type { PasskeyLoginCredential, PasskeyRegisterCredential } from '@/service/types/account'
+
+/**
+ * base64url 字符串 -> ArrayBuffer
+ * WebAuthn API 要求 challenge / id 等字段为 BufferSource
+ */
+function base64urlToBuffer(base64url: string): ArrayBuffer {
+    const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/')
+    const bin = atob(base64)
+    const buf = new Uint8Array(bin.length)
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i)
+    return buf.buffer
+}
+
+/**
+ * ArrayBuffer -> base64url 字符串
+ * 用于将 WebAuthn 凭证数据序列化后发送给后端
+ */
+function bufferToBase64url(buf: ArrayBuffer): string {
+    const bin = String.fromCharCode(...new Uint8Array(buf))
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+}
 
 /** 检查当前环境是否支持 WebAuthn */
 export function isWebAuthnSupported(): boolean {
