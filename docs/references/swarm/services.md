@@ -34,7 +34,8 @@ isrvd_post "/swarm/service" '{
   "image": "<IMAGE>",
   "replicas": <N>,
   "ports": [{"targetPort": <PORT>, "publishedPort": <PORT>, "protocol": "tcp"}],
-  "mounts": [{"type": "bind", "source": "<HOST_PATH>", "target": "<CONTAINER_PATH>"}]
+  "mounts": [{"type": "bind", "source": "<HOST_PATH>", "target": "<CONTAINER_PATH>"}],
+  "constraints": ["node.hostname == <NODE_HOSTNAME>"]
 }'
 ```
 
@@ -50,7 +51,7 @@ isrvd_post "/swarm/service" '{
 | ports | object[] | | `{targetPort, publishedPort, protocol, publishMode}` |
 | mounts | object[] | | `{type, source, target, readOnly}` |
 | labels | object | | 标签 |
-| constraints | string[] | | 放置约束 |
+| constraints | string[] | | 放置约束；指定运行节点时使用 `node.hostname == <NODE_HOSTNAME>` |
 
 ## 扩缩容
 

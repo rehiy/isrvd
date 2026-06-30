@@ -2,7 +2,7 @@
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import api from '@/service/api'
-import type { DockerImageInfo, DockerNetworkInfo } from '@/service/types'
+import type { DockerImageInfo, DockerNetworkInfo, SwarmNodeInfo } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -18,26 +18,38 @@ class ServiceCreateModal extends Vue {
     isOpen = false
     loading = false
     showAdvanced = false
-    form = { name: '', image: '', mode: 'replicated', replicas: 1, env: '', args: '', network: '', ports: '', mounts: '' }
+    form = { name: '', image: '', mode: 'replicated', replicas: 1, env: '', args: '', network: '', node: '', ports: '', mounts: '' }
     images: DockerImageInfo[] = []
     networks: DockerNetworkInfo[] = []
+    nodes: SwarmNodeInfo[] = []
 
     // ─── 方法 ───
     async loadResources() {
-        try {
-            const [imgRes, netRes] = await Promise.all([api.dockerImageList(false), api.dockerNetworkList()])
-            this.images = imgRes.payload || []
-            this.networks = (netRes.payload || []).filter((n: DockerNetworkInfo) =>
+        const [imgRes, netRes, nodeRes] = await Promise.allSettled([
+            api.dockerImageList(false),
+            api.dockerNetworkList(),
+            api.swarmNodeList(),
+        ])
+        if (imgRes.status === 'fulfilled') {
+            this.images = imgRes.value.payload || []
+        }
+        if (netRes.status === 'fulfilled') {
+            this.networks = (netRes.value.payload || []).filter((n: DockerNetworkInfo) =>
                 n.driver === 'overlay' || n.driver === 'host' || n.driver === 'bridge'
             )
             if (!this.form.network && this.networks.some(n => n.name === 'sdnet')) {
                 this.form.network = 'sdnet'
             }
-        } catch {}
+        }
+        if (nodeRes.status === 'fulfilled') {
+            this.nodes = (nodeRes.value.payload || []).filter((node: SwarmNodeInfo) =>
+                node.state === 'ready' && node.availability === 'active'
+            )
+        }
     }
 
     show() {
-        this.form = { name: '', image: '', mode: 'replicated', replicas: 1, env: '', args: '', network: '', ports: '', mounts: '' }
+        this.form = { name: '', image: '', mode: 'replicated', replicas: 1, env: '', args: '', network: '', node: '', ports: '', mounts: '' }
         this.showAdvanced = false
         this.isOpen = true
         this.loadResources()
@@ -67,6 +79,7 @@ class ServiceCreateModal extends Vue {
                 env: parseLines(this.form.env),
                 args: parseLines(this.form.args),
                 networks: this.form.network ? [this.form.network] : [],
+                constraints: this.form.node ? ['node.hostname == ' + this.form.node] : [],
                 ports: parsePorts(this.form.ports),
                 mounts: parseMounts(this.form.mounts)
             })
@@ -94,6 +107,15 @@ export default toNative(ServiceCreateModal)
           <input v-model="form.name" type="text" placeholder="请输入服务名" class="input" />
         </div>
         <div>
+          <label class="form-label">运行节点</label>
+          <select v-model="form.node" class="input">
+            <option value="">不指定</option>
+            <option v-for="node in nodes" :key="node.id" :value="node.hostname">
+              {{ node.hostname }} ({{ node.role }})
+            </option>
+          </select>
+        </div>
+        <div class="col-span-2">
           <label class="form-label">网络</label>
           <select v-model="form.network" class="input">
             <option value="">不指定</option>
