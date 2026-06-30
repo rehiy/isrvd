@@ -37,6 +37,7 @@ func migrateSchema(conf *Config, _ []byte) bool {
 	if conf.Schema != nil && conf.Schema.Version == schema.Version {
 		return false
 	}
+
 	oldVer := 0
 	if conf.Schema != nil {
 		oldVer = conf.Schema.Version
@@ -46,14 +47,18 @@ func migrateSchema(conf *Config, _ []byte) bool {
 	return true
 }
 
-// migrateJWTSecret 首次启动时自动生成 JWT 密钥
+// migrateJWTSecret 首次启动时自动生成 JWT 密钥，并替换示例占位密钥。
 func migrateJWTSecret(conf *Config, _ []byte) bool {
-	if conf.Server == nil || conf.Server.JWTSecret != "" {
+	if conf.Server == nil {
 		return false
 	}
-	conf.Server.JWTSecret = strutil.Rand(32)
-	logman.Info("JWT 密钥已自动生成")
-	return true
+
+	if conf.Server.JWTSecret == "" || conf.Server.JWTSecret == "your-jwt-secret" {
+		conf.Server.JWTSecret = strutil.Rand(32)
+		logman.Info("JWT 密钥已自动生成")
+		return true
+	}
+	return false
 }
 
 // migratePasswords 迁移历史明文密码为加密格式

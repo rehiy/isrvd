@@ -80,7 +80,7 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 
 配置说明：
 
-- `clientSecret`、`jwtSecret`、`apiKey`、`adminKey`、`docker.registries[].password` 等敏感字段不会通过 GET 返回；PUT 时为空表示保留原值。
+- `clientSecret`、`jwtSecret`、`apiKey`、`adminKey`、`docker.registries[].password` 等敏感字段不会通过 GET 返回；PUT 时为空表示保留原值。启动加载配置时，如果 `server.jwtSecret` 为空或仍为示例值 `your-jwt-secret`，系统会自动生成 32 位随机字符串并写回配置。
 - `password.disabled` 设为 `true` 后，密码登录接口（`POST /api/account/login`）将直接拒绝请求，前端也会隐藏密码登录表单，仅保留 Passkey、OIDC 或代理 Header（THA）登录方式。禁用前请确保至少已配置一种可用的替代登录方式，否则用户将无法登录。
 - `password.minLength` 密码最小长度，默认 6；创建成员和修改密码时后端同步校验，前端提示文案也会动态更新。
 - `oidc.redirectUrl` 生产环境建议显式配置固定 HTTPS 地址；留空会按当前请求 Host 自动生成，适合本地开发。
