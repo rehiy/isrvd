@@ -183,17 +183,6 @@ export default toNative(SystemUpdater)
           <i class="fas fa-file-alt"></i>
           <span>更新日志</span>
         </a>
-        <!-- 二进制原地升级 -->
-        <button
-          v-if="portal.hasPerm('POST /api/overview/upgrade') && (upgradeType === 'binary' || (!deploying && !upgrading))"
-          class="btn btn-primary w-full xs:w-auto"
-          title="下载最新版本并重启"
-          :disabled="deploying || upgrading"
-          @click="handleBinaryUpgrade"
-        >
-          <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying || upgrading }"></i>
-          <span>{{ deploying ? '升级中...' : upgrading ? '等待重启...' : '升级二进制' }}</span>
-        </button>
         <!-- Docker 容器升级（仅 Docker 环境） -->
         <button
           v-if="inDocker && portal.hasPerm('POST /api/docker/container') && (upgradeType === 'docker' || (!deploying && !upgrading))"
@@ -204,6 +193,17 @@ export default toNative(SystemUpdater)
         >
           <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying || upgrading }"></i>
           <span>{{ deploying ? '升级中...' : upgrading ? '等待重启...' : '升级容器' }}</span>
+        </button>
+        <!-- 二进制原地升级 -->
+        <button
+          v-if="portal.hasPerm('POST /api/overview/upgrade') && (upgradeType === 'binary' || (!deploying && !upgrading))"
+          class="btn btn-primary w-full xs:w-auto"
+          title="下载最新版本并重启"
+          :disabled="deploying || upgrading"
+          @click="handleBinaryUpgrade"
+        >
+          <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying || upgrading }"></i>
+          <span>{{ deploying ? '升级中...' : upgrading ? '等待重启...' : '升级二进制' }}</span>
         </button>
       </div>
     </div>
