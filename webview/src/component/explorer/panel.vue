@@ -385,7 +385,7 @@ export default toNative(ExplorerPanel)
                         {{ file.name }}
                       </button>
                       <span v-else class="item-title">{{ file.name }}</span>
-                      <span v-if="file.isLink && file.linkTarget" class="text-xs text-slate-400 truncate block mt-0.5">→ {{ file.linkTarget }}</span>
+                      <span v-if="file.isLink && file.linkTarget" class="text-xs text-slate-400 truncate block mt-0.5">{{ file.linkTarget }}</span>
                     </div>
                   </div>
                 </td>
@@ -456,7 +456,7 @@ export default toNative(ExplorerPanel)
               <div class="min-w-0">
                 <button v-if="file.isDir" type="button" class="font-medium text-slate-800 hover:text-primary-600 transition-colors text-sm truncate block text-left" @click="navigate(file.path)">{{ file.name }}</button>
                 <span v-else class="item-title-sm">{{ file.name }}</span>
-                <span v-if="file.isLink && file.linkTarget" class="item-subtitle">→ {{ file.linkTarget }}</span>
+                <span v-if="file.isLink && file.linkTarget" class="item-subtitle">{{ file.linkTarget }}</span>
                 <span v-else-if="!file.isDir" class="item-subtitle">{{ formatFileSize(file.size) }}</span>
               </div>
             </div>
