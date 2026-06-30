@@ -111,6 +111,8 @@ export interface SystemGPU {
 
 export interface SystemStat {
     system: SystemInfo
+    time: string
+    timezone: string
     diskIO: SystemDiskIO[]
     gpu: SystemGPU[]
     go: SystemGoRuntimeStat

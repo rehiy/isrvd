@@ -30,6 +30,7 @@ class SystemOverview extends Vue {
             const totalGB = (s.memoryTotal / 1024 / 1024 / 1024).toFixed(1)
             cards.push({ label: '内存使用',  value: `${usedGB}GB / ${totalGB}GB`, icon: 'fa-memory', bgColor: 'bg-rose-500'})
         }
+        cards.push({ label: `系统时间（${this.systemInfo.timezone}）`, value: this.systemInfo.time, icon: 'fa-clock', bgColor: 'bg-cyan-500' })
         cards.push({ label: '运行时间', value: this.fmtUptime(s.uptime), icon: 'fa-clock', bgColor: 'bg-amber-500' })
         // 有权限且已获取到版本信息时显示
         if (this.versionInfo?.current) {
@@ -55,10 +56,11 @@ class SystemOverview extends Vue {
     async load() {
         this.loading = true
         try {
-            await Promise.all([this.loadSystemInfo(), this.loadVersionInfo()])
+            await this.loadSystemInfo()
         } finally {
             this.loading = false
         }
+        this.loadVersionInfo()
     }
 
     async loadSystemInfo() {

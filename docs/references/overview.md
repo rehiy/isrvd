@@ -69,6 +69,8 @@ isrvd_get "/overview/monitor?type=container&since=3600&id=<CONTAINER_ID>"
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | timestamp | number | 时间戳（Unix 秒） |
+| time | string | 系统当前本地时间，格式 `YYYY-MM-DD HH:mm:ss` |
+| timezone | string | 系统当前时区，包含 UTC 偏移，如 `CST UTC+08:00` 或 `UTC+00:00` |
 | cpu_percent | number | CPU 使用率（百分比） |
 | mem_percent | number | 内存使用率（百分比） |
 | mem_used | number | 已用内存（字节） |

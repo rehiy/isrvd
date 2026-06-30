@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/rehiy/libgo/gpu"
 	"github.com/rehiy/libgo/psutil"
@@ -47,10 +48,12 @@ type SystemGPU struct {
 
 // HostStat 主机监控采集数据
 type HostStat struct {
-	System *psutil.DetailStat `json:"system"` // 系统资源明细（CPU/内存/磁盘等）
-	DiskIO []*DiskIOStat      `json:"diskIO"` // 各磁盘 IO 统计
-	GPU    []*SystemGPU       `json:"gpu"`    // GPU 统计列表
-	Go     *GoRuntimeStat     `json:"go"`     // Go 运行态统计
+	System   *psutil.DetailStat `json:"system"`   // 系统资源明细（CPU/内存/磁盘等）
+	Time     string             `json:"time"`     // 系统当前本地时间
+	Timezone string             `json:"timezone"` // 系统当前时区
+	DiskIO   []*DiskIOStat      `json:"diskIO"`   // 各磁盘 IO 统计
+	GPU      []*SystemGPU       `json:"gpu"`      // GPU 统计列表
+	Go       *GoRuntimeStat     `json:"go"`       // Go 运行态统计
 }
 
 // CollectHostStat 采集主机监控数据
@@ -82,12 +85,32 @@ func CollectHostStat(ctx context.Context) *HostStat {
 		GoMemoryStat: psutil.GoMemory(),
 	}
 
+	now := time.Now()
+
 	return &HostStat{
-		System: detail,
-		DiskIO: diskIO,
-		GPU:    buildSystemGPUs(ctx),
-		Go:     goStat,
+		System:   detail,
+		Time:     now.Format("2006-01-02 15:04:05"),
+		Timezone: formatTimezone(now),
+		DiskIO:   diskIO,
+		GPU:      buildSystemGPUs(ctx),
+		Go:       goStat,
 	}
+}
+
+func formatTimezone(t time.Time) string {
+	name, offset := t.Zone()
+	sign := "+"
+	if offset < 0 {
+		sign = "-"
+		offset = -offset
+	}
+	hours := offset / 3600
+	minutes := (offset % 3600) / 60
+	utcOffset := fmt.Sprintf("UTC%s%02d:%02d", sign, hours, minutes)
+	if name == "" || name == "UTC" || name == utcOffset {
+		return utcOffset
+	}
+	return fmt.Sprintf("%s %s", name, utcOffset)
 }
 
 // filterDiskPartitions 过滤磁盘分区，去除虚拟挂载和重复分区，
