@@ -1,6 +1,6 @@
 export const TEXT_EXTENSIONS: string[] = [
     'txt', 'text', 'md', 'markdown', 'rst', 'adoc', 'log', 'csv', 'tsv',
-    'json', 'jsonc', 'json5', 'xml', 'toml', 'yaml', 'yml', 'ini', 'conf', 'cfg', 'cnf',
+    'json', 'jsonc', 'json5', 'jsonl', 'xml', 'toml', 'yaml', 'yml', 'ini', 'conf', 'cfg', 'cnf',
     'env', 'envrc', 'properties', 'editorconfig', 'gitignore', 'gitattributes', 'dockerignore',
     'npmrc', 'yarnrc', 'pnpmrc', 'nvmrc', 'node-version', 'python-version',
     'ruby-version', 'tool-versions', 'bashrc', 'bash_profile', 'zshrc', 'zprofile',
