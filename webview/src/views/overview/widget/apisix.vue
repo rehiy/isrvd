@@ -15,12 +15,16 @@ class ApisixOverview extends Vue {
     loading = false
 
     readonly statCards = [
-        { key: 'routes',        label: '路由总数',   icon: 'fa-route',         bgColor: 'bg-orange-500' },
-        { key: 'consumers',     label: '消费者总数', icon: 'fa-user-tag',      bgColor: 'bg-amber-500' },
-        { key: 'upstreams',     label: '上游总数',   icon: 'fa-server',        bgColor: 'bg-emerald-500' },
-        { key: 'pluginConfigs', label: '插件配置',   icon: 'fa-puzzle-piece', bgColor: 'bg-rose-500' },
-        { key: 'ssl',           label: 'SSL 证书',   icon: 'fa-lock',          bgColor: 'bg-cyan-500' },
-        { key: 'whitelist',     label: '访问授权', icon: 'fa-shield-halved', bgColor: 'bg-emerald-500' },
+        { key: 'routes',        label: '路由总数', icon: 'fa-route',              bgColor: 'bg-orange-500' },
+        { key: 'routesEnabled', label: '启用路由', icon: 'fa-toggle-on',          bgColor: 'bg-teal-500' },
+        { key: 'routesDisabled', label: '停用路由', icon: 'fa-toggle-off',        bgColor: 'bg-slate-500' },
+        { key: 'upstreams',     label: '上游总数', icon: 'fa-server',             bgColor: 'bg-emerald-500' },
+        { key: 'routesWithInlineUpstream', label: '直连上游', icon: 'fa-diagram-project', bgColor: 'bg-indigo-500' },
+        { key: 'ssl',           label: 'SSL 证书', icon: 'fa-lock',               bgColor: 'bg-cyan-500' },
+        { key: 'sslEnabled',    label: '启用 SSL', icon: 'fa-certificate',        bgColor: 'bg-cyan-600' },
+        { key: 'consumers',     label: '消费者总数', icon: 'fa-user-tag',         bgColor: 'bg-amber-500' },
+        { key: 'pluginConfigs', label: '插件配置', icon: 'fa-puzzle-piece',       bgColor: 'bg-rose-500' },
+        { key: 'whitelist',     label: '访问授权', icon: 'fa-shield-halved',      bgColor: 'bg-emerald-500' },
     ]
 
     // ─── 方法 ───
@@ -60,7 +64,18 @@ class ApisixOverview extends Vue {
 
             keys.forEach((key, index) => {
                 const res = results[index] as { payload?: unknown[] }
-                info[key] = (res.payload || []).length
+                const payload = res.payload || []
+                info[key] = payload.length
+                if (key === 'routes') {
+                    const routes = payload as { status?: number; upstream?: unknown }[]
+                    info.routesEnabled = routes.filter(route => route.status !== 0).length
+                    info.routesDisabled = routes.filter(route => route.status === 0).length
+                    info.routesWithInlineUpstream = routes.filter(route => Boolean(route.upstream)).length
+                }
+                if (key === 'ssl') {
+                    const ssls = payload as { status?: number }[]
+                    info.sslEnabled = ssls.filter(ssl => ssl.status !== 0).length
+                }
             })
 
             this.info = info as ApisixInfo

@@ -172,5 +172,9 @@ export interface ApisixInfo {
     upstreams: number
     pluginConfigs: number
     ssl: number
+    routesEnabled: number
+    routesDisabled: number
+    sslEnabled: number
+    routesWithInlineUpstream: number
     [key: string]: number
 }

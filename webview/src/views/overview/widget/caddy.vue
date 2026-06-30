@@ -15,10 +15,11 @@ class CaddyOverview extends Vue {
     loading = false
 
     readonly statCards = [
-        { key: 'servers', label: 'Server 数',  icon: 'fa-server',         bgColor: 'bg-indigo-500' },
-        { key: 'routes',  label: '路由总数',   icon: 'fa-route',          bgColor: 'bg-orange-500' },
-        { key: 'certs',   label: 'SSL 证书',   icon: 'fa-lock',           bgColor: 'bg-cyan-500' },
-        { key: 'hasTls',  label: 'TLS 启用',   icon: 'fa-certificate',    bgColor: 'bg-emerald-500' },
+        { key: 'adminUrl', label: 'Admin API',  icon: 'fa-link',        bgColor: 'bg-slate-500' },
+        { key: 'servers',  label: 'Server 数',  icon: 'fa-server',      bgColor: 'bg-indigo-500' },
+        { key: 'routes',   label: '路由总数',   icon: 'fa-route',       bgColor: 'bg-orange-500' },
+        { key: 'certs',    label: 'SSL 证书',   icon: 'fa-lock',        bgColor: 'bg-cyan-500' },
+        { key: 'hasTls',   label: 'TLS 启用',   icon: 'fa-certificate', bgColor: 'bg-emerald-500' },
     ]
 
     // ─── 方法 ───
@@ -30,7 +31,7 @@ class CaddyOverview extends Vue {
                 return
             }
 
-this.info = (await api.caddyInfoInspect()).payload || null
+            this.info = (await api.caddyInfoInspect()).payload || null
         } catch {
             this.info = null
         } finally {
@@ -41,6 +42,7 @@ this.info = (await api.caddyInfoInspect()).payload || null
     cardValue(key: string): string | number {
         if (!this.info) return 0
         if (key === 'hasTls') return this.info.hasTls ? 'Y' : 'N'
+        if (key === 'adminUrl') return this.info.adminUrl || '-'
         const v = (this.info as unknown as Record<string, unknown>)[key]
         return typeof v === 'number' ? v : 0
     }
@@ -68,7 +70,7 @@ export default toNative(CaddyOverview)
         </div>
         <div class="min-w-0 flex-1">
           <p class="text-xs text-slate-400 mb-0.5">{{ card.label }}</p>
-          <p class="font-semibold text-slate-800">{{ cardValue(card.key) }}</p>
+          <p class="font-semibold text-slate-800 truncate">{{ cardValue(card.key) }}</p>
         </div>
       </div>
     </div>

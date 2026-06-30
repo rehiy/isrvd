@@ -15,16 +15,25 @@ class SwarmOverview extends Vue {
     loading = false
 
     readonly statCards: { key: keyof SwarmInfo; label: string; icon: string; bgColor: string }[] = [
-        { key: 'nodes',    label: '总节点数', icon: 'fa-server',       bgColor: 'bg-blue-500' },
-        { key: 'managers', label: 'Manager', icon: 'fa-crown',        bgColor: 'bg-indigo-500' },
-        { key: 'workers',  label: 'Worker',  icon: 'fa-circle-nodes', bgColor: 'bg-slate-400' },
-        { key: 'services', label: '服务总数', icon: 'fa-cubes',        bgColor: 'bg-emerald-500' },
-        { key: 'tasks',    label: '任务总数', icon: 'fa-tasks',        bgColor: 'bg-amber-500' },
+        { key: 'clusterID', label: '集群 ID',  icon: 'fa-fingerprint', bgColor: 'bg-violet-500' },
+        { key: 'createdAt', label: '创建时间', icon: 'fa-calendar',     bgColor: 'bg-cyan-500' },
+        { key: 'nodes',     label: '总节点数', icon: 'fa-server',       bgColor: 'bg-blue-500' },
+        { key: 'managers',  label: 'Manager', icon: 'fa-crown',        bgColor: 'bg-indigo-500' },
+        { key: 'workers',   label: 'Worker',  icon: 'fa-circle-nodes', bgColor: 'bg-slate-400' },
+        { key: 'services',  label: '服务总数', icon: 'fa-cubes',        bgColor: 'bg-emerald-500' },
+        { key: 'tasks',     label: '任务总数', icon: 'fa-tasks',        bgColor: 'bg-amber-500' },
     ]
 
     // ─── 生命周期 ───
     mounted() {
         this.load()
+    }
+
+    cardValue(key: keyof SwarmInfo): string | number {
+        if (!this.swarmInfo) return 0
+        if (key === 'clusterID') return this.swarmInfo.clusterID ? this.swarmInfo.clusterID.slice(0, 12) : '-'
+        if (key === 'createdAt') return this.swarmInfo.createdAt ? new Date(this.swarmInfo.createdAt).toLocaleDateString('zh-CN') : '-'
+        return this.swarmInfo[key] as number
     }
 
     // ─── 方法 ───
@@ -75,7 +84,7 @@ export default toNative(SwarmOverview)
           </div>
           <div class="min-w-0 flex-1">
             <p class="text-xs text-slate-400 mb-0.5">{{ card.label }}</p>
-            <p class="font-semibold text-slate-800">{{ swarmInfo[card.key] ?? 0 }}</p>
+            <p class="font-semibold text-slate-800 truncate">{{ cardValue(card.key) }}</p>
           </div>
         </div>
       </div>
