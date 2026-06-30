@@ -22,7 +22,6 @@ class DockerOverview extends Vue {
         { key: 'networksTotal',     label: '网络总数',   icon: 'fa-network-wired', bgColor: 'bg-purple-500' },
         { key: 'volumesTotal',      label: '数据卷总数', icon: 'fa-database',      bgColor: 'bg-indigo-500' },
         { key: 'registryMirrors',   label: '镜像源',     icon: 'fa-gauge-high',    bgColor: 'bg-cyan-500' },
-        { key: 'indexServerAddress', label: '默认仓库',  icon: 'fa-box-open',      bgColor: 'bg-slate-500' },
     ]
 
     // ─── 方法 ───
@@ -58,7 +57,6 @@ class DockerOverview extends Vue {
     cardValue(key: keyof DockerInfo): string | number {
         if (!this.info) return 0
         if (key === 'registryMirrors') return this.info.registryMirrors?.length ?? 0
-        if (key === 'indexServerAddress') return this.info.indexServerAddress || '-'
         return this.info[key] as number
     }
 
