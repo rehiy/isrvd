@@ -11,12 +11,13 @@ import (
 
 // SwarmService Swarm 业务逻辑服务
 type SwarmService struct {
-	client *client.Client
+	client       *client.Client
+	registryAuth func(imageRef string) string
 }
 
 // NewSwarmService 创建 Swarm 服务
-func NewSwarmService(dockerClient *client.Client) *SwarmService {
-	return &SwarmService{client: dockerClient}
+func NewSwarmService(dockerClient *client.Client, registryAuth func(imageRef string) string) *SwarmService {
+	return &SwarmService{client: dockerClient, registryAuth: registryAuth}
 }
 
 // Client 获取 Docker 客户端
