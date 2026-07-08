@@ -175,3 +175,4 @@ wscat -c "ws://<HOST>/api/ssh/to/<ID>?token=$TOKEN"
 ```
 
 > 终端 WSS 连接内置约 25s 保活心跳，空闲时不会被中间层（nginx/Caddy、NAT）断开。
+> 前端窗口尺寸变化时应发送 resize 控制帧，格式为 `\u0000isrvd:resize:<cols>:<rows>`；服务端会同步远程 SSH PTY 尺寸。

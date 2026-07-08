@@ -340,6 +340,11 @@ func (s *Service) ContainerExec(ctx context.Context, conn *websocket.ServerConn,
 	svcShell.Bridge(conn, session, session, svcShell.BridgeOptions{
 		Name:    "container exec",
 		Welcome: "[容器终端已连接]\r\n",
+		Resize: func(cols, rows int) {
+			if err := session.Resize(cols, rows); err != nil {
+				logman.Warn("container exec resize failed", "container", containerID, "cols", cols, "rows", rows, "error", err)
+			}
+		},
 		Close: func() {
 			_ = session.Close()
 		},

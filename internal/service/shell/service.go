@@ -35,6 +35,11 @@ func (s *Service) RunTerminal(conn *websocket.ServerConn, shell, homeDir string)
 			Bridge(conn, ptmx, ptmx, BridgeOptions{
 				Name:    "shell",
 				Welcome: "[终端已连接，输入命令后回车]\r\n",
+				Resize: func(cols, rows int) {
+					if err := pty.Setsize(ptmx, &pty.Winsize{Cols: uint16(cols), Rows: uint16(rows)}); err != nil {
+						logman.Warn("PTY resize failed", "cols", cols, "rows", rows, "error", err)
+					}
+				},
 				Cleanup: func() {
 					if cmd.Process != nil {
 						_ = cmd.Process.Kill()

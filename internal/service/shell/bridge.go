@@ -2,6 +2,8 @@ package shell
 
 import (
 	"io"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/rehiy/libgo/logman"
@@ -9,10 +11,13 @@ import (
 	"github.com/rehiy/libgo/websocket"
 )
 
+const ResizeControlPrefix = "\x00isrvd:resize:"
+
 // BridgeOptions 定义终端 WebSocket 双向桥接的可选行为。
 type BridgeOptions struct {
 	Name    string
 	Welcome string
+	Resize  func(cols, rows int)
 	Close   func()
 	Cleanup func()
 }
@@ -31,8 +36,13 @@ func Bridge(conn *websocket.ServerConn, stdin io.Writer, stdout io.Reader, opt B
 		_, _ = conn.Write([]byte(opt.Welcome))
 	}
 
+	wsReader := io.Reader(conn)
+	if opt.Resize != nil {
+		wsReader = terminalResizeReader{reader: conn, resize: opt.Resize}
+	}
+
 	err := relay.Bridge(
-		relay.NewEndpoint(conn, conn, conn),
+		relay.NewEndpoint(wsReader, conn, conn),
 		relay.NewEndpoint(stdout, stdin, terminalCloser(stdin, stdout, opt.Close)),
 	)
 	if err != nil && err != io.EOF {
@@ -42,6 +52,48 @@ func Bridge(conn *websocket.ServerConn, stdin io.Writer, stdout io.Reader, opt B
 	if opt.Cleanup != nil {
 		opt.Cleanup()
 	}
+}
+
+type terminalResizeReader struct {
+	reader io.Reader
+	resize func(cols, rows int)
+}
+
+func (r terminalResizeReader) Read(p []byte) (int, error) {
+	for {
+		n, err := r.reader.Read(p)
+		if n > 0 {
+			if cols, rows, ok := parseTerminalResize(p[:n]); ok {
+				r.resize(cols, rows)
+				continue
+			}
+		}
+		return n, err
+	}
+}
+
+func parseTerminalResize(data []byte) (int, int, bool) {
+	msg := string(data)
+	if !strings.HasPrefix(msg, ResizeControlPrefix) {
+		return 0, 0, false
+	}
+	size := strings.TrimPrefix(msg, ResizeControlPrefix)
+	parts := strings.Split(size, ":")
+	if len(parts) != 2 {
+		return 0, 0, true
+	}
+	cols, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return 0, 0, true
+	}
+	rows, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return 0, 0, true
+	}
+	if cols < 10 || rows < 3 || cols > 1000 || rows > 1000 {
+		return 0, 0, true
+	}
+	return cols, rows, true
 }
 
 type closerFunc func()
