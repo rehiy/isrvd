@@ -7,6 +7,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { CronJob, CronJobCreate, CronTypeInfo, DockerContainerInfo, DockerImageInfo } from '@/service/types'
 
+import { loadDockerContainers, loadDockerImages } from '@/helper/docker'
+
 import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
 
@@ -83,16 +85,14 @@ class JobEditModal extends Vue {
         return this.formData.type === 'DOCKER_TMP' || this.formData.type === 'DOCKER_CTR'
     }
 
-    async loadDockerData() {
-        try {
-            const [imgRes, ctRes] = await Promise.all([
-                api.dockerImageList(false),
-                api.dockerContainerList(true)
-            ])
-            this.images = imgRes.payload || []
-            this.containers = ctRes.payload || []
-        } catch {}
-    }
+	async loadDockerData() {
+		const [images, containers] = await Promise.all([
+			loadDockerImages(false),
+			loadDockerContainers({ all: true })
+		])
+		this.images = images
+		this.containers = containers
+	}
 
     async handleConfirm() {
         if (!this.formData.name || !this.formData.schedule || !this.formData.content) {

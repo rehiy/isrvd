@@ -16,10 +16,11 @@ import type {
 } from '@/service/types'
 
 import {
-    buildRoutePayload,
-    detectRouteUpstreamMode,
-    normalizeUpstreamFormNodes
+	buildRoutePayload,
+	detectRouteUpstreamMode,
+	normalizeUpstreamFormNodes
 } from '@/helper/apisix'
+import { loadDockerContainers } from '@/helper/docker'
 
 import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
@@ -171,21 +172,20 @@ class RouteEditModal extends Vue {
         this.formData.upstream_nodes = next
     }
 
-    async loadResources(allRoutes: ApisixRoute[]) {
-        this.routes = allRoutes
-        try {
-            const [pc, us, pl, ct] = await Promise.all([
-                api.apisixPluginConfigList(),
-                api.apisixUpstreamList(),
-                api.apisixPluginList(),
-                api.dockerContainerList()
-            ])
-            this.pluginConfigs = pc.payload || []
-            this.upstreams = us.payload || []
-            this.availablePlugins = pl.payload || {}
-            this.containers = (ct.payload || []).filter(c => c.state === 'running')
-        } catch {}
-    }
+	async loadResources(allRoutes: ApisixRoute[]) {
+		this.routes = allRoutes
+		try {
+			const [pc, us, pl] = await Promise.all([
+				api.apisixPluginConfigList(),
+				api.apisixUpstreamList(),
+				api.apisixPluginList()
+			])
+			this.pluginConfigs = pc.payload || []
+			this.upstreams = us.payload || []
+			this.availablePlugins = pl.payload || {}
+		} catch {}
+		this.containers = await loadDockerContainers({ runningOnly: true })
+	}
 
     async show(route: ApisixRoute | null, allRoutes: ApisixRoute[]) {
         await this.loadResources(allRoutes)
