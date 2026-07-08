@@ -47,9 +47,13 @@ func (s *SwarmService) ServiceAction(ctx context.Context, id, action string, rep
 			return fmt.Errorf("仅 replicated 模式服务支持 scale")
 		}
 		svc.Spec.Mode.Replicated.Replicas = replicas
-		if _, err := s.client.ServiceUpdate(ctx, id, svc.Version, svc.Spec, dockerSwarm.ServiceUpdateOptions{}); err != nil {
+		resp, err := s.client.ServiceUpdate(ctx, id, svc.Version, svc.Spec, s.serviceUpdateOptions(svc.Spec))
+		if err != nil {
 			logman.Error("ServiceScale failed", "id", id, "replicas", *replicas, "error", err)
 			return err
+		}
+		for _, warning := range resp.Warnings {
+			logman.Warn("ServiceScale warning", "id", id, "warning", warning)
 		}
 		return nil
 	}
@@ -63,10 +67,13 @@ func (s *SwarmService) ServiceAction(ctx context.Context, id, action string, rep
 
 // ServiceCreate 创建服务，直接接收 Docker SDK 原始 ServiceSpec。
 func (s *SwarmService) ServiceCreate(ctx context.Context, spec dockerSwarm.ServiceSpec) (string, error) {
-	resp, err := s.client.ServiceCreate(ctx, spec, dockerSwarm.ServiceCreateOptions{})
+	resp, err := s.client.ServiceCreate(ctx, spec, s.serviceCreateOptions(spec))
 	if err != nil {
 		logman.Error("ServiceCreate failed", "error", err)
 		return "", err
+	}
+	for _, warning := range resp.Warnings {
+		logman.Warn("ServiceCreate warning", "service", spec.Name, "warning", warning)
 	}
 	return resp.ID, nil
 }
@@ -81,9 +88,13 @@ func (s *SwarmService) ServiceForceUpdate(ctx context.Context, id string) error 
 
 	svc.Spec.TaskTemplate.ForceUpdate++
 
-	if _, err := s.client.ServiceUpdate(ctx, id, svc.Version, svc.Spec, dockerSwarm.ServiceUpdateOptions{}); err != nil {
+	resp, err := s.client.ServiceUpdate(ctx, id, svc.Version, svc.Spec, s.serviceUpdateOptions(svc.Spec))
+	if err != nil {
 		logman.Error("ServiceForceUpdate failed", "error", err)
 		return err
+	}
+	for _, warning := range resp.Warnings {
+		logman.Warn("ServiceForceUpdate warning", "id", id, "warning", warning)
 	}
 	return nil
 }
@@ -218,4 +229,40 @@ func (s *SwarmService) ServiceInspectRaw(ctx context.Context, id string) (docker
 	return svc, nil
 }
 
+// ─── 辅助函数 ───
 
+func (s *SwarmService) serviceCreateOptions(spec dockerSwarm.ServiceSpec) dockerSwarm.ServiceCreateOptions {
+	return dockerSwarm.ServiceCreateOptions{
+		EncodedRegistryAuth: s.serviceRegistryAuth(spec),
+		QueryRegistry:       true,
+	}
+}
+
+func (s *SwarmService) serviceUpdateOptions(spec dockerSwarm.ServiceSpec) dockerSwarm.ServiceUpdateOptions {
+	return dockerSwarm.ServiceUpdateOptions{
+		EncodedRegistryAuth: s.serviceRegistryAuth(spec),
+		RegistryAuthFrom:    dockerSwarm.RegistryAuthFromPreviousSpec,
+		QueryRegistry:       true,
+	}
+}
+
+func (s *SwarmService) serviceRegistryAuth(spec dockerSwarm.ServiceSpec) string {
+	if s.registryAuth == nil {
+		return ""
+	}
+	imageRef := serviceImageRef(spec)
+	if imageRef == "" {
+		return ""
+	}
+	return s.registryAuth(imageRef)
+}
+
+func serviceImageRef(spec dockerSwarm.ServiceSpec) string {
+	if spec.TaskTemplate.ContainerSpec != nil {
+		return spec.TaskTemplate.ContainerSpec.Image
+	}
+	if spec.TaskTemplate.PluginSpec != nil {
+		return spec.TaskTemplate.PluginSpec.Remote
+	}
+	return ""
+}

@@ -155,6 +155,11 @@ func (s *DockerService) ImagePull(ctx context.Context, imageName, registryURL, n
 	return lastMsg, imageRef, nil
 }
 
+// RegistryAuth 根据镜像引用自动匹配已配置的 registry 认证信息。
+func (s *DockerService) RegistryAuth(imageRef string) string {
+	return s.getRegistryAuth(imageRef)
+}
+
 // getRegistryAuth 根据镜像引用自动匹配已配置的 registry 认证信息
 // imageRef 可以是完整镜像引用（如 "csighub.tencentyun.com/ns/app:v1"）或仓库 URL
 // 匹配规则：提取 imageRef 的 host 部分，与已配置仓库的 host 对比

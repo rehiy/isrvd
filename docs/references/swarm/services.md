@@ -1,5 +1,7 @@
 # Swarm 服务 API
 
+创建服务、扩缩容和强制更新会自动使用 Docker 仓库配置中的认证信息：当服务镜像的 registry host 匹配 `docker.registries[].url` 时，后端会以 Swarm 原生的 registry auth 方式提交，并启用 registry 查询以解析镜像 tag/digest，便于 Worker 节点拉取私有仓库镜像。
+
 ## 列出服务
 
 ```bash
@@ -53,11 +55,15 @@ isrvd_post "/swarm/service" '{
 | labels | object | | 标签 |
 | constraints | string[] | | 放置约束；指定运行节点时使用 `node.hostname == <NODE_HOSTNAME>` |
 
+说明：创建时会按 `image` 自动匹配已配置的 Docker 仓库认证，并请求 registry 解析镜像 tag/digest。
+
 ## 扩缩容
 
 ```bash
 isrvd_post "/swarm/service/<SVC_ID>/action" '{"action":"scale","replicas":<N>}'
 ```
+
+说明：扩缩容会沿用服务当前镜像自动匹配仓库认证，并请求 registry 解析镜像 tag/digest。
 
 ## 删除服务
 
@@ -70,6 +76,8 @@ isrvd_post "/swarm/service/<SVC_ID>/action" '{"action":"remove"}'
 ```bash
 isrvd_post "/swarm/service/<SVC_ID>/action" '{"action":"force-update"}'
 ```
+
+说明：强制更新会沿用服务当前镜像自动匹配仓库认证，并请求 registry 解析镜像 tag/digest。
 
 ## 服务日志
 
