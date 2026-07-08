@@ -6,6 +6,7 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { CaddyRoute, CaddyRouteUpsert, CaddyHandlerKind, CaddyHandlerKindCard, CaddyHeaderOp, CaddyHandler, CaddyHandlerReverseProxy, CaddyHandlerFileServer, CaddyHandlerStaticResponse, CaddyHandlerRewrite, CaddyHandlerHeaders, DockerContainerInfo } from '@/service/types'
 
+import { loadDockerContainers } from '@/helper/docker'
 import { parseHostPort } from '@/helper/format'
 
 import BaseModal from '@/component/modal.vue'
@@ -321,14 +322,9 @@ class RouteEditModal extends Vue {
         this.formData.upstreamPort = port
     }
 
-    async loadContainers() {
-        try {
-            const res = await api.dockerContainerList()
-            this.containers = (res.payload || []).filter(c => c.state === 'running')
-        } catch {
-            this.containers = []
-        }
-    }
+	async loadContainers() {
+		this.containers = await loadDockerContainers({ runningOnly: true })
+	}
 
     show(route: CaddyRoute | null) {
         Object.assign(this.formData, defaultFormData())

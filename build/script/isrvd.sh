@@ -23,6 +23,7 @@ SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 DOCKER_NETWORK="sdnet"
 DOCKER_DATA_DIR="/srv/data"
 SERVICE_AREA="auto"
+DOCKER_IMAGE=""
 
 # ------------------------------------------
 # 版本信息
@@ -99,7 +100,9 @@ print_release_info() {
     echo "  Arch:    $ARCH"
     echo "  Area:    $area"
     echo "  Source:  $RELEASE_SOURCE"
-    [ -n "$DOCKER_IMAGE" ] && echo "  Image:   $DOCKER_IMAGE"
+    if [ -n "${DOCKER_IMAGE:-}" ]; then
+        echo "  Image:   $DOCKER_IMAGE"
+    fi
 }
 
 ARCH=$(uname -s | tr '[:upper:]' '[:lower:]')-$(get_arch)

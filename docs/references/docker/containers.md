@@ -127,10 +127,14 @@ isrvd_get "/docker/container/<CONTAINER_ID>/stats"
 WebSocket 连接，不通过 harness 调用：
 
 ```bash
-GET /api/docker/container/:id/exec?shell=/bin/sh
+# 使用 wscat 连接（需先获取 token）
+TOKEN=$(isrvd_login "$ISRVD_APIURL" "$ISRVD_USERNAME" "$ISRVD_PASSWORD" | jq -r '.payload.token')
+wscat -c "ws://<HOST>/api/docker/container/<CONTAINER_ID>/exec?token=$TOKEN&shell=/bin/sh"
 ```
 
 用于打开容器的交互式终端会话。
+
+前端窗口尺寸变化时应发送 resize 控制帧，格式为 `\u0000isrvd:resize:<cols>:<rows>`；服务端会调用 Docker exec resize 同步容器 TTY 尺寸。
 
 ## 容器文件管理
 

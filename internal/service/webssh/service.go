@@ -8,6 +8,8 @@ import (
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/websocket"
 	libWebSSH "github.com/rehiy/libgo/webssh"
+
+	svcShell "isrvd/internal/service/shell"
 )
 
 // logger 为 webssh 包创建带名称的 logger
@@ -242,7 +244,9 @@ func (s *Service) RunTerminal(conn *websocket.ServerConn, hostID string) {
 	stop := websocket.KeepAlive(conn, 25*time.Second)
 	defer stop()
 
-	if err := libWebSSH.Connect(conn.Conn, opt); err != nil {
+	if err := libWebSSH.ConnectWithOptions(conn.Conn, opt, libWebSSH.ConnectOptions{
+		ResizeControlPrefix: svcShell.ResizeControlPrefix,
+	}); err != nil {
 		logger.Error("WebSSH 会话结束", "hostID", hostID, "error", err)
 	} else {
 		logger.Info("WebSSH 会话正常结束", "hostID", hostID)

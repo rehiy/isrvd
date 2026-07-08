@@ -5,8 +5,8 @@ import { usePortal } from '@/stores'
 
 import api from '@/service/api'
 import type {
-    ApisixUpstreamCreate,
-    ApisixRouteUpstreamFormNode,
+	ApisixUpstreamCreate,
+	ApisixRouteUpstreamFormNode,
     ApisixUpstream,
     ApisixUpstreamHashOn,
     ApisixUpstreamType,
@@ -15,6 +15,7 @@ import type {
 } from '@/service/types'
 
 import { normalizeUpstreamFormNodes, normalizeUpstreamType } from '@/helper/apisix'
+import { loadDockerContainers } from '@/helper/docker'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -122,14 +123,9 @@ class UpstreamEditModal extends Vue {
         }
     }
 
-    async loadContainers() {
-        try {
-            const res = await api.dockerContainerList()
-            this.containers = (res.payload || []).filter(c => c.state === 'running')
-        } catch {
-            this.containers = []
-        }
-    }
+	async loadContainers() {
+		this.containers = await loadDockerContainers({ runningOnly: true })
+	}
 
     buildPayload(): ApisixUpstreamCreate | ApisixUpstreamUpdate {
         const nodes = this.formData.nodes

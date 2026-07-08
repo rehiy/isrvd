@@ -31,6 +31,7 @@ wscat -c "ws://<HOST>/api/shell?token=$TOKEN&shell=/bin/bash"
 - 支持 ANSI 转义序列、颜色、光标定位等
 - 连接关闭后终端会话自动结束
 - 终端 WSS 连接内置约 25s 保活心跳，空闲时不会被中间层（nginx/Caddy、NAT）断开
+- 前端窗口尺寸变化时应发送 resize 控制帧，格式为 `\u0000isrvd:resize:<cols>:<rows>`；服务端会调整 PTY 尺寸，避免回车刷新型输出错列或残留文本
 
 ---
 
@@ -50,6 +51,10 @@ ws.onmessage = (event) => {
 
 terminal.onData((data) => {
   ws.send(data);
+});
+
+terminal.onResize(({ cols, rows }) => {
+  ws.send(`\u0000isrvd:resize:${cols}:${rows}`);
 });
 ```
 

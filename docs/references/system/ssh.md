@@ -191,6 +191,7 @@
 **GET** `/api/ssh/to/:id`
 
 通过 WebSocket 连接到远程 SSH 主机终端。
+前端窗口尺寸变化时应发送 resize 控制帧，格式为 `\u0000isrvd:resize:<cols>:<rows>`，服务端会同步远程 SSH PTY 尺寸。
 
 **Query 参数：**
 
@@ -209,6 +210,10 @@ ws.onmessage = (event) => {
 
 terminal.onData((data) => {
   ws.send(data);
+});
+
+terminal.onResize(({ cols, rows }) => {
+  ws.send(`\u0000isrvd:resize:${cols}:${rows}`);
 });
 ```
 

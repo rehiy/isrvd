@@ -17,6 +17,9 @@ import (
 
 // ExecSession 容器 exec 会话，封装 hijacked 连接，实现 io.ReadWriteCloser
 type ExecSession struct {
+	client *DockerService
+	ctx    context.Context
+	execID string
 	reader io.Reader
 	writer io.Writer
 	closer func() // hijackedResp.Close() 返回 void，用 func() 封装
@@ -29,9 +32,19 @@ func (s *ExecSession) Close() error {
 	return nil
 }
 
-// ContainerExecAttach 创建并连接容器 exec 会话，返回 io.ReadWriteCloser。
+func (s *ExecSession) Resize(cols, rows int) error {
+	if s.client == nil || s.execID == "" {
+		return nil
+	}
+	return s.client.client.ContainerExecResize(s.ctx, s.execID, container.ResizeOptions{
+		Width:  uint(cols),
+		Height: uint(rows),
+	})
+}
+
+// ContainerExecAttach 创建并连接容器 exec 会话。
 // 调用方负责关闭返回的 session。
-func (s *DockerService) ContainerExecAttach(ctx context.Context, containerID, shell string) (io.ReadWriteCloser, error) {
+func (s *DockerService) ContainerExecAttach(ctx context.Context, containerID, shell string) (*ExecSession, error) {
 	if shell == "" {
 		shell = "/bin/sh"
 	}
@@ -57,6 +70,9 @@ func (s *DockerService) ContainerExecAttach(ctx context.Context, containerID, sh
 	// closer 调用 hijackedResp.Close()，它会同时关闭底层连接的读端和写端，
 	// 避免只关闭 Conn 导致 reader goroutine 永久阻塞在 Read 上
 	return &ExecSession{
+		client: s,
+		ctx:    ctx,
+		execID: execResp.ID,
 		reader: hijackedResp.Reader,
 		writer: hijackedResp.Conn,
 		closer: hijackedResp.Close,

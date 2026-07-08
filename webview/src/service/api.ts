@@ -514,8 +514,8 @@ class ApiService {
     }
 
     // 容器管理
-    dockerContainerList(all = false) {
-        return http.get<DockerContainerInfo[]>('docker/containers', { params: { all } })
+    dockerContainerList(all = false, config?: AxiosRequestConfig) {
+        return http.get<DockerContainerInfo[]>('docker/containers', { ...config, params: { ...config?.params, all } })
     }
 
     dockerContainerInspect(id: string) {
@@ -600,8 +600,8 @@ class ApiService {
     }
 
     // 镜像管理
-    dockerImageList(all = false) {
-        return http.get<DockerImageInfo[]>('docker/images', { params: { all } })
+    dockerImageList(all = false, config?: AxiosRequestConfig) {
+        return http.get<DockerImageInfo[]>('docker/images', { ...config, params: { ...config?.params, all } })
     }
 
     dockerImageInspect(id: string) {
