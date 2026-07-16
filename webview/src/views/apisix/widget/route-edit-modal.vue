@@ -16,11 +16,10 @@ import type {
 } from '@/service/types'
 
 import {
-	buildRoutePayload,
-	detectRouteUpstreamMode,
-	normalizeUpstreamFormNodes
+    buildRoutePayload,
+    detectRouteUpstreamMode,
+    normalizeUpstreamFormNodes
 } from '@/helper/apisix'
-import { loadDockerContainers } from '@/helper/docker'
 
 import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
@@ -91,6 +90,10 @@ class RouteEditModal extends Vue {
     readonly upstreamModeCards = UPSTREAM_MODE_CARDS
 
     // ─── 计算属性 ───
+    get canLoadDockerContainers() {
+        return this.portal.hasPerm('GET /api/docker/containers')
+    }
+
     get routeValidationMessage() {
         const mode = this.formData.upstream_mode
         if (mode === 'upstream_id') return this.formData.upstream_id.trim() ? '' : '请选择要引用的上游对象'
@@ -172,20 +175,26 @@ class RouteEditModal extends Vue {
         this.formData.upstream_nodes = next
     }
 
-	async loadResources(allRoutes: ApisixRoute[]) {
-		this.routes = allRoutes
-		try {
-			const [pc, us, pl] = await Promise.all([
-				api.apisixPluginConfigList(),
-				api.apisixUpstreamList(),
-				api.apisixPluginList()
-			])
-			this.pluginConfigs = pc.payload || []
-			this.upstreams = us.payload || []
-			this.availablePlugins = pl.payload || {}
-		} catch {}
-		this.containers = await loadDockerContainers({ runningOnly: true })
-	}
+    async loadResources(allRoutes: ApisixRoute[]) {
+        this.routes = allRoutes
+        try {
+            const [pc, us, pl] = await Promise.all([
+                api.apisixPluginConfigList(),
+                api.apisixUpstreamList(),
+                api.apisixPluginList()
+            ])
+            this.pluginConfigs = pc.payload || []
+            this.upstreams = us.payload || []
+            this.availablePlugins = pl.payload || {}
+        } catch {}
+
+        this.containers = []
+        if (!this.canLoadDockerContainers) return
+        try {
+            const res = await api.dockerContainerList()
+            this.containers = (res.payload || []).filter(c => c.state === 'running')
+        } catch {}
+    }
 
     async show(route: ApisixRoute | null, allRoutes: ApisixRoute[]) {
         await this.loadResources(allRoutes)
@@ -318,8 +327,10 @@ export default toNative(RouteEditModal)
         <div v-if="formData.upstream_mode === 'nodes'" class="space-y-3">
           <div>
             <div class="grid grid-cols-[2fr_1fr] gap-2 items-center">
-              <ContainerSelect :model-value="formData.upstream_nodes[0]?.host || ''" :containers="containers" placeholder="请输入 Host（IP 或容器名）" @update:model-value="updateUpstreamNode(0, 'host', $event)" />
-              <ContainerPortSelect :model-value="formData.upstream_nodes[0]?.port || ''" :ports="getPortsByHost(formData.upstream_nodes[0]?.host || '')" placeholder="请输入端口" @update:model-value="updateUpstreamNode(0, 'port', $event)" />
+              <ContainerSelect v-if="canLoadDockerContainers" :model-value="formData.upstream_nodes[0]?.host || ''" :containers="containers" placeholder="请输入 Host（IP 或容器名）" @update:model-value="updateUpstreamNode(0, 'host', $event)" />
+              <input v-else :value="formData.upstream_nodes[0]?.host || ''" type="text" class="input" placeholder="请输入 Host（IP 或域名）" @input="updateUpstreamNode(0, 'host', ($event.target as HTMLInputElement).value)" />
+              <ContainerPortSelect v-if="canLoadDockerContainers" :model-value="formData.upstream_nodes[0]?.port || ''" :ports="getPortsByHost(formData.upstream_nodes[0]?.host || '')" placeholder="请输入端口" @update:model-value="updateUpstreamNode(0, 'port', $event)" />
+              <input v-else :value="formData.upstream_nodes[0]?.port || ''" type="text" class="input" placeholder="请输入端口" @input="updateUpstreamNode(0, 'port', ($event.target as HTMLInputElement).value)" />
             </div>
             <p class="text-xs text-slate-400 mt-2">例如：Host 填写 127.0.0.1 或 nginx，Port 填写 8080</p>
             <p class="text-xs text-slate-400 mt-1">直接输入模式仅提交一个上游节点；如需多节点负载均衡，请先在「上游管理」中创建后再引用。</p>
