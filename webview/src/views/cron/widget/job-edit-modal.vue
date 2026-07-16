@@ -7,8 +7,6 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { CronJob, CronJobCreate, CronTypeInfo, DockerContainerInfo, DockerImageInfo } from '@/service/types'
 
-import { loadDockerContainers, loadDockerImages } from '@/helper/docker'
-
 import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
 
@@ -51,6 +49,14 @@ class JobEditModal extends Vue {
         return this.portal.serviceAvailability.docker
     }
 
+    get canLoadDockerContainers() {
+        return this.portal.hasPerm('GET /api/docker/containers')
+    }
+
+    get canLoadDockerImages() {
+        return this.portal.hasPerm('GET /api/docker/images')
+    }
+
     show(job: CronJob | null = null, types: CronTypeInfo[] = []) {
         this.types = this.dockerAvailable
             ? types
@@ -76,23 +82,25 @@ class JobEditModal extends Vue {
             this.formData = defaultFormData(this.types[0]?.value)
         }
         this.isOpen = true
-        if (this.dockerAvailable) {
-            this.loadDockerData()
-        }
+        void this.loadDockerData()
     }
 
     get isDockerType() {
         return this.formData.type === 'DOCKER_TMP' || this.formData.type === 'DOCKER_CTR'
     }
 
-	async loadDockerData() {
-		const [images, containers] = await Promise.all([
-			loadDockerImages(false),
-			loadDockerContainers({ all: true })
-		])
-		this.images = images
-		this.containers = containers
-	}
+    async loadDockerData() {
+        this.images = []
+        this.containers = []
+        const requests: Promise<void>[] = []
+        if (this.canLoadDockerImages) {
+            requests.push(api.dockerImageList(false).then(res => { this.images = res.payload || [] }))
+        }
+        if (this.canLoadDockerContainers) {
+            requests.push(api.dockerContainerList(true).then(res => { this.containers = res.payload || [] }))
+        }
+        await Promise.allSettled(requests)
+    }
 
     async handleConfirm() {
         if (!this.formData.name || !this.formData.schedule || !this.formData.content) {
@@ -180,7 +188,8 @@ export default toNative(JobEditModal)
       <template v-if="formData.type === 'DOCKER_TMP'">
         <div>
           <label class="form-label">镜像名 <span class="text-red-500">*</span></label>
-          <ImageSelect v-model="formData.image" :images="images" placeholder="请输入或选择镜像名" />
+          <ImageSelect v-if="canLoadDockerImages" v-model="formData.image" :images="images" placeholder="请输入或选择镜像名" />
+          <input v-else v-model="formData.image" type="text" class="input" placeholder="请输入镜像名" />
           <p class="text-xs text-slate-400 mt-1">例如：python:3.12-slim、nginx:alpine</p>
         </div>
         <div>
@@ -202,7 +211,8 @@ export default toNative(JobEditModal)
       <template v-if="formData.type === 'DOCKER_CTR'">
         <div>
           <label class="form-label">目标容器 <span class="text-red-500">*</span></label>
-          <ContainerSelect v-model="formData.container" :containers="containers" placeholder="请输入或选择容器名" />
+          <ContainerSelect v-if="canLoadDockerContainers" v-model="formData.container" :containers="containers" placeholder="请输入或选择容器名" />
+          <input v-else v-model="formData.container" type="text" class="input" placeholder="请输入容器名" />
         </div>
         <div>
           <label class="form-label">超时时间（秒）</label>

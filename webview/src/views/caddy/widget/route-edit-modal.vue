@@ -6,7 +6,6 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { CaddyRoute, CaddyRouteUpsert, CaddyHandlerKind, CaddyHandlerKindCard, CaddyHeaderOp, CaddyHandler, CaddyHandlerReverseProxy, CaddyHandlerFileServer, CaddyHandlerStaticResponse, CaddyHandlerRewrite, CaddyHandlerHeaders, DockerContainerInfo } from '@/service/types'
 
-import { loadDockerContainers } from '@/helper/docker'
 import { parseHostPort } from '@/helper/format'
 
 import BaseModal from '@/component/modal.vue'
@@ -83,6 +82,10 @@ class RouteEditModal extends Vue {
     isEditMode = false
     editingIndex = -1
     containers: DockerContainerInfo[] = []
+
+    get canLoadDockerContainers() {
+        return this.portal.hasPerm('GET /api/docker/containers')
+    }
 
     // 匹配请求头多行编辑列表
     matchHeaderList: { key: string; value: string }[] = []
@@ -322,9 +325,14 @@ class RouteEditModal extends Vue {
         this.formData.upstreamPort = port
     }
 
-	async loadContainers() {
-		this.containers = await loadDockerContainers({ runningOnly: true })
-	}
+    async loadContainers() {
+        this.containers = []
+        if (!this.canLoadDockerContainers) return
+        try {
+            const res = await api.dockerContainerList()
+            this.containers = (res.payload || []).filter(c => c.state === 'running')
+        } catch {}
+    }
 
     show(route: CaddyRoute | null) {
         Object.assign(this.formData, defaultFormData())
@@ -625,7 +633,7 @@ export default toNative(RouteEditModal)
 
         <!-- reverse_proxy -->
         <div v-if="formData.kind === 'reverse_proxy'" class="space-y-3">
-          <div>
+          <div v-if="canLoadDockerContainers">
             <label class="form-label">选择容器与端口</label>
             <div class="grid grid-cols-[2fr_1fr] gap-2">
               <ContainerSelect :model-value="formData.upstreamHost" :containers="containers" placeholder="请输入容器名（可选）" @update:model-value="setUpstreamHost" />

@@ -5,8 +5,8 @@ import { usePortal } from '@/stores'
 
 import api from '@/service/api'
 import type {
-	ApisixUpstreamCreate,
-	ApisixRouteUpstreamFormNode,
+    ApisixUpstreamCreate,
+    ApisixRouteUpstreamFormNode,
     ApisixUpstream,
     ApisixUpstreamHashOn,
     ApisixUpstreamType,
@@ -15,7 +15,6 @@ import type {
 } from '@/service/types'
 
 import { normalizeUpstreamFormNodes, normalizeUpstreamType } from '@/helper/apisix'
-import { loadDockerContainers } from '@/helper/docker'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -67,6 +66,10 @@ class UpstreamEditModal extends Vue {
 
     readonly upstreamTypeOptions = UPSTREAM_TYPE_OPTIONS
     readonly hashOnOptions = HASH_ON_OPTIONS
+
+    get canLoadDockerContainers() {
+        return this.portal.hasPerm('GET /api/docker/containers')
+    }
 
     get selectedHashOnOption() {
         return this.hashOnOptions.find(item => item.value === this.formData.hash_on) || this.hashOnOptions[0]
@@ -123,9 +126,14 @@ class UpstreamEditModal extends Vue {
         }
     }
 
-	async loadContainers() {
-		this.containers = await loadDockerContainers({ runningOnly: true })
-	}
+    async loadContainers() {
+        this.containers = []
+        if (!this.canLoadDockerContainers) return
+        try {
+            const res = await api.dockerContainerList()
+            this.containers = (res.payload || []).filter(c => c.state === 'running')
+        } catch {}
+    }
 
     buildPayload(): ApisixUpstreamCreate | ApisixUpstreamUpdate {
         const nodes = this.formData.nodes
@@ -249,12 +257,14 @@ export default toNative(UpstreamEditModal)
           <div v-for="(node, index) in formData.nodes" :key="index" class="grid grid-cols-12 gap-2 p-3 items-start">
             <div class="col-span-12 md:col-span-5">
               <label class="form-label">Host</label>
-              <ContainerSelect :model-value="node.host" :containers="containers" placeholder="请输入 Host（IP 或容器名）" @update:model-value="updateNode(index, 'host', $event)" />
+              <ContainerSelect v-if="canLoadDockerContainers" :model-value="node.host" :containers="containers" placeholder="请输入 Host（IP 或容器名）" @update:model-value="updateNode(index, 'host', $event)" />
+              <input v-else v-model="node.host" type="text" class="input" placeholder="请输入 Host（IP 或域名）" />
               <p class="text-xs text-slate-400 mt-1">例如：127.0.0.1 或 nginx</p>
             </div>
             <div class="col-span-5 md:col-span-3">
               <label class="form-label">Port</label>
-              <ContainerPortSelect :model-value="String(node.port || '')" :ports="getPortsByHost(node.host)" placeholder="请输入端口" @update:model-value="updateNode(index, 'port', $event)" />
+              <ContainerPortSelect v-if="canLoadDockerContainers" :model-value="String(node.port || '')" :ports="getPortsByHost(node.host)" placeholder="请输入端口" @update:model-value="updateNode(index, 'port', $event)" />
+              <input v-else v-model="node.port" type="number" min="1" max="65535" class="input" placeholder="请输入端口" />
               <p class="text-xs text-slate-400 mt-1">例如：8080</p>
             </div>
             <div class="col-span-5 md:col-span-3">
