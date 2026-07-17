@@ -21,30 +21,48 @@ function green(text) { console.error(color('0;32', text)); }
 function yellow(text) { console.error(color('0;33', text)); }
 function blue(text) { console.error(color('0;34', text)); }
 
+function normalizeApiRoot(baseUrl) {
+  return baseUrl.replace(/\/+$/, '');
+}
+
+function apiUrl(baseUrl, apiPath) {
+  return `${normalizeApiRoot(baseUrl)}/${apiPath.replace(/^\/+/, '')}`;
+}
+
+function authHeaders(token, authHeader) {
+  if (!token) return {};
+  return authHeader.toLowerCase() === 'authorization'
+    ? { Authorization: `Bearer ${token}` }
+    : { [authHeader]: token };
+}
+
 function loadConfig() {
   const cfg = {
-    base_url: (process.env.ISRVD_BASE_URL || '').replace(/\/$/, ''),
+    base_url: (process.env.ISRVD_BASE_URL || '').replace(/\/+$/, ''),
     token: process.env.ISRVD_TOKEN || '',
     username: process.env.ISRVD_USERNAME || '',
+    auth_header: process.env.ISRVD_AUTH_HEADER || '',
   };
-  if (cfg.base_url && cfg.token) return cfg;
   if (fs.existsSync(configFile)) {
     try {
       const saved = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-      cfg.base_url = cfg.base_url || String(saved.base_url || '').replace(/\/$/, '');
+      cfg.base_url = cfg.base_url || String(saved.base_url || '').replace(/\/+$/, '');
       cfg.token = cfg.token || String(saved.token || '');
       cfg.username = cfg.username || String(saved.username || '');
+      cfg.auth_header = cfg.auth_header || String(saved.auth_header || '');
     } catch (_) {}
   }
+  cfg.auth_header = cfg.auth_header || 'Authorization';
   return cfg;
 }
 
 function saveConfig(cfg) {
   fs.mkdirSync(configDir, { recursive: true });
   fs.writeFileSync(configFile, JSON.stringify({
-    base_url: (cfg.base_url || '').replace(/\/$/, ''),
+    base_url: cfg.base_url ? normalizeApiRoot(cfg.base_url) : '',
     token: cfg.token || '',
     username: cfg.username || '',
+    auth_header: cfg.auth_header || 'Authorization',
   }, null, 2) + '\n', 'utf8');
   fs.chmodSync(configFile, 0o600);
 }
@@ -60,12 +78,11 @@ function requireAuth() {
   return cfg;
 }
 
-function httpRequest(method, urlText, token = '', body = undefined, headers = {}) {
+function httpRequest(method, urlText, token = '', body = undefined, headers = {}, authHeader = 'Authorization') {
   return new Promise((resolve, reject) => {
     const url = new URL(urlText);
     const data = body === undefined ? null : Buffer.from(JSON.stringify(body));
-    const reqHeaders = { ...headers };
-    if (token) reqHeaders.Authorization = `Bearer ${token}`;
+    const reqHeaders = { ...headers, ...authHeaders(token, authHeader) };
     if (data) {
       reqHeaders['Content-Type'] = 'application/json';
       reqHeaders['Content-Length'] = String(data.length);
@@ -91,7 +108,7 @@ function httpRequest(method, urlText, token = '', body = undefined, headers = {}
   });
 }
 
-function multipartRequest(urlText, token, fileField, filePath, fields) {
+function multipartRequest(urlText, token, fileField, filePath, fields, authHeader = 'Authorization') {
   return new Promise((resolve, reject) => {
     const boundary = `isrvd-${crypto.randomUUID()}`;
     const chunks = [];
@@ -110,7 +127,7 @@ function multipartRequest(urlText, token, fileField, filePath, fields) {
     const req = lib.request(url, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        ...authHeaders(token, authHeader),
         'Content-Type': `multipart/form-data; boundary=${boundary}`,
         'Content-Length': String(data.length),
       },
@@ -175,7 +192,7 @@ function printCompactJsonOrRaw(raw) {
 async function apiCall(method, apiPath, bodyText = '', selector = '') {
   const cfg = requireAuth();
   const body = bodyText ? JSON.parse(bodyText) : undefined;
-  const data = await httpRequest(method, `${cfg.base_url}/api${apiPath}`, cfg.token, body);
+  const data = await httpRequest(method, apiUrl(cfg.base_url, apiPath), cfg.token, body, {}, cfg.auth_header);
   printResult(applyFilter(payloadOf(data), selector));
 }
 
@@ -198,7 +215,7 @@ function usage() {
     api.js upload <path> <field> <file> [k=v...]
 
   Examples:
-    api.js token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
+    api.js token "$API_ROOT" "$TOKEN"
     api.js get /docker/containers
     api.js post /docker/container '{"image":"...","name":"..."}'
 `);
@@ -210,29 +227,29 @@ async function main() {
     switch (command) {
       case 'login': {
         const [base, username, password, totp] = args;
-        if (!base || !username || !password) throw new Error('usage: api.js login <base_url> <username> <password> [totpCode]');
-        const baseUrl = base.replace(/\/$/, '');
+        if (!base || !username || !password) throw new Error('usage: api.js login <api_root> <username> <password> [totpCode]');
+        const baseUrl = normalizeApiRoot(base);
         const body = { username, password };
         if (totp) body.totpCode = totp;
         blue(`→ 登录 ${baseUrl} ...`);
-        const data = await httpRequest('POST', `${baseUrl}/api/account/login`, '', body);
+        const data = await httpRequest('POST', apiUrl(baseUrl, '/account/login'), '', body, {}, process.env.ISRVD_AUTH_HEADER || 'Authorization');
         if (!data || data.success !== true) throw new Error(`登录失败: ${data && data.message ? data.message : '未知错误'}`);
-        if (data.payload && data.payload.twoFactorRequired) throw new Error('该账号已启用 TOTP 二次验证。请使用: api.js login <base_url> <username> <password> <totpCode>');
+        if (data.payload && data.payload.twoFactorRequired) throw new Error('该账号已启用 TOTP 二次验证。请使用: api.js login <api_root> <username> <password> <totpCode>');
         const token = data.payload && data.payload.token;
         if (!token) throw new Error('登录失败: 响应中缺少 token');
-        saveConfig({ base_url: baseUrl, token, username });
+        saveConfig({ base_url: baseUrl, token, username, auth_header: process.env.ISRVD_AUTH_HEADER || 'Authorization' });
         green(`✓ 登录成功，已保存到 ${configFile}`);
         break;
       }
       case 'token': {
         const [base, token] = args;
-        if (!base || !token) throw new Error('usage: api.js token <base_url> <token>');
-        const baseUrl = base.replace(/\/$/, '');
+        if (!base || !token) throw new Error('usage: api.js token <api_root> <token>');
+        const baseUrl = normalizeApiRoot(base);
         blue('→ 验证 token ...');
-        const data = await httpRequest('GET', `${baseUrl}/api/overview/bootstrap`, token);
+        const data = await httpRequest('GET', apiUrl(baseUrl, '/overview/bootstrap'), token, undefined, {}, process.env.ISRVD_AUTH_HEADER || 'Authorization');
         if (!data || data.success !== true) throw new Error(`token 无效: ${data && data.message ? data.message : '未知错误'}`);
         const username = (data.payload && data.payload.auth && data.payload.auth.username) || 'unknown';
-        saveConfig({ base_url: baseUrl, token, username });
+        saveConfig({ base_url: baseUrl, token, username, auth_header: process.env.ISRVD_AUTH_HEADER || 'Authorization' });
         green(`✓ token 有效 (用户: ${username})，已保存到 ${configFile}`);
         break;
       }
@@ -245,7 +262,7 @@ async function main() {
         const [apiPath, field, file, ...fields] = args;
         if (!apiPath || !field || !file) throw new Error('usage: api.js upload <path> <file_field> <file_path> [key=value ...]');
         const cfg = requireAuth();
-        printResult(await multipartRequest(`${cfg.base_url}/api${apiPath}`, cfg.token, field, file, fields));
+        printResult(await multipartRequest(apiUrl(cfg.base_url, apiPath), cfg.token, field, file, fields, cfg.auth_header));
         break;
       }
       case 'whoami': await apiCall('GET', '/overview/bootstrap'); break;
