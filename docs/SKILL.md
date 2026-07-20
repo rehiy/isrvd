@@ -9,10 +9,12 @@ description: 通过 isrvd API 进行容器部署、服务管理、镜像操作�
 
 推荐按 **Python → Node.js** 的顺序选择脚本；仅当 Python 和 Node.js 都不可用时，才使用 Bash 版兜底。三者共用 `~/.config/isrvd/profile.json`。
 
+脚本的 URL 参数必须填写从域名到 API 根路径的完整地址，例如 `https://gateway.example.invalid/isrvd/api` 或 `https://gateway.example.invalid/isrvd/api/automation`。不要只填写域名；业务路径仍使用 `/docker/containers` 这类以 `/` 开头的相对路径。默认认证方式是 `Authorization: Bearer <API_TOKEN>`；如果前置网关要求使用其他请求头，可设置 `ISRVD_AUTH_HEADER`，例如 `ISRVD_AUTH_HEADER=token` 会发送 `token: <API_TOKEN>`。
+
 **首选：Python 标准库版**（无 `curl`/`jq` 依赖）
 
 ```bash
-python3 ./scripts/api.py token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
+python3 ./scripts/api.py token "$API_ROOT" "$TOKEN"
 python3 ./scripts/api.py get "/docker/containers"
 python3 ./scripts/api.py post "/docker/container" '{"image":"...","name":"..."}'
 ```
@@ -20,7 +22,7 @@ python3 ./scripts/api.py post "/docker/container" '{"image":"...","name":"..."}'
 **备选：Node.js 内置库版**（无 `curl`/`jq` 依赖）
 
 ```bash
-node ./scripts/api.js token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
+node ./scripts/api.js token "$API_ROOT" "$TOKEN"
 node ./scripts/api.js get "/docker/containers"
 node ./scripts/api.js post "/docker/container" '{"image":"...","name":"..."}'
 ```
@@ -31,9 +33,9 @@ node ./scripts/api.js post "/docker/container" '{"image":"...","name":"..."}'
 source ./scripts/api.sh
 
 # 认证方式（优先使用环境变量，自动保存到 ~/.config/isrvd/profile.json）
-isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
+isrvd_token "$API_ROOT" "$TOKEN"
 # 或
-isrvd_login "$ISRVD_APIURL" "$ISRVD_USERNAME" "$ISRVD_PASSWORD"
+isrvd_login "$API_ROOT" "$ISRVD_USERNAME" "$ISRVD_PASSWORD"
 
 isrvd_get "/docker/containers"
 isrvd_post "/docker/container" '{"image":"...","name":"..."}'

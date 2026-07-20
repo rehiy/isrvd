@@ -41,50 +41,67 @@ def blue(text: str) -> None:
     print(color('0;34', text), file=sys.stderr)
 
 
+def normalize_api_root(base_url: str) -> str:
+    return base_url.rstrip('/')
+
+
+def api_url(base_url: str, path: str) -> str:
+    return normalize_api_root(base_url) + '/' + path.lstrip('/')
+
+
 def load_config() -> dict[str, str]:
     cfg = {
         'base_url': os.environ.get('ISRVD_BASE_URL', '').rstrip('/'),
         'token': os.environ.get('ISRVD_TOKEN', ''),
         'username': os.environ.get('ISRVD_USERNAME', ''),
+        'auth_header': os.environ.get('ISRVD_AUTH_HEADER', ''),
     }
-    if cfg['base_url'] and cfg['token']:
-        return cfg
     if CONFIG_FILE.exists():
         try:
             saved = json.loads(CONFIG_FILE.read_text(encoding='utf-8'))
             cfg['base_url'] = cfg['base_url'] or str(saved.get('base_url') or '').rstrip('/')
             cfg['token'] = cfg['token'] or str(saved.get('token') or '')
             cfg['username'] = cfg['username'] or str(saved.get('username') or '')
+            cfg['auth_header'] = cfg['auth_header'] or str(saved.get('auth_header') or '')
         except json.JSONDecodeError:
             pass
+    cfg['auth_header'] = cfg['auth_header'] or 'Authorization'
     return cfg
 
 
 def save_config(cfg: dict[str, str]) -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     CONFIG_FILE.write_text(json.dumps({
-        'base_url': cfg.get('base_url', '').rstrip('/'),
+        'base_url': normalize_api_root(cfg.get('base_url', '')) if cfg.get('base_url') else '',
         'token': cfg.get('token', ''),
         'username': cfg.get('username', ''),
+        'auth_header': cfg.get('auth_header', 'Authorization'),
     }, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     CONFIG_FILE.chmod(stat.S_IRUSR | stat.S_IWUSR)
+
+
+def auth_headers(token: str, auth_header: str) -> dict[str, str]:
+    if not token:
+        return {}
+    if auth_header.lower() == 'authorization':
+        return {'Authorization': f'Bearer {token}'}
+    return {auth_header: token}
 
 
 def require_auth() -> dict[str, str]:
     cfg = load_config()
     if not cfg.get('base_url') or not cfg.get('token'):
         red('✗ 未认证。请先执行:')
-        red('  api.py login <base_url> <username> <password> [totpCode]')
-        red('  api.py token <base_url> <token>')
+        red('  api.py login <api_root> <username> <password> [totpCode]')
+        red('  api.py token <api_root> <token>')
         raise SystemExit(1)
     return cfg
 
 
-def request_json(method: str, url: str, token: str = '', body: Any = None, headers: dict[str, str] | None = None) -> Any:
+def request_json(method: str, url: str, token: str = '', body: Any = None, headers: dict[str, str] | None = None, auth_header: str = 'Authorization') -> Any:
     data = None
     req_headers = dict(headers or {})
-    if token:
-        req_headers['Authorization'] = f'Bearer {token}'
+    req_headers.update(auth_headers(token, auth_header))
     if body is not None:
         data = json.dumps(body, ensure_ascii=False, separators=(',', ':')).encode('utf-8')
         req_headers['Content-Type'] = 'application/json'
@@ -108,7 +125,7 @@ def request_json(method: str, url: str, token: str = '', body: Any = None, heade
         return raw
 
 
-def request_multipart(url: str, token: str, file_field: str, file_path: str, fields: list[str]) -> Any:
+def request_multipart(url: str, token: str, file_field: str, file_path: str, fields: list[str], auth_header: str = 'Authorization') -> Any:
     path = Path(file_path)
     boundary = f'isrvd-{uuid.uuid4().hex}'
     parts: list[bytes] = []
@@ -124,7 +141,7 @@ def request_multipart(url: str, token: str, file_field: str, file_path: str, fie
     parts.append(f'\r\n--{boundary}--\r\n'.encode())
     data = b''.join(parts)
     req = request.Request(url, data=data, method='POST', headers={
-        'Authorization': f'Bearer {token}',
+        **auth_headers(token, auth_header),
         'Content-Type': f'multipart/form-data; boundary={boundary}',
         'Content-Length': str(len(data)),
     })
@@ -199,48 +216,48 @@ def print_compact_json_or_raw(raw: str) -> None:
 def api_call(method: str, path: str, body_text: str = '', selector: str = '') -> None:
     cfg = require_auth()
     body = json.loads(body_text) if body_text else None
-    url = cfg['base_url'] + '/api' + path
-    data = request_json(method, url, cfg['token'], body)
+    url = api_url(cfg['base_url'], path)
+    data = request_json(method, url, cfg['token'], body, auth_header=cfg['auth_header'])
     print_result(apply_filter(payload_of(data), selector))
 
 
 def cmd_login(args: argparse.Namespace) -> None:
-    base_url = args.base_url.rstrip('/')
+    base_url = normalize_api_root(args.base_url)
     body = {'username': args.username, 'password': args.password}
     if args.totp_code:
         body['totpCode'] = args.totp_code
     blue(f'→ 登录 {base_url} ...')
-    data = request_json('POST', base_url + '/api/account/login', body=body)
+    data = request_json('POST', api_url(base_url, '/account/login'), body=body, auth_header=os.environ.get('ISRVD_AUTH_HEADER', 'Authorization'))
     if not isinstance(data, dict) or data.get('success') is not True:
         red(f'✗ 登录失败: {data.get("message", "未知错误") if isinstance(data, dict) else data}')
         raise SystemExit(1)
     payload = data.get('payload') or {}
     if payload.get('twoFactorRequired'):
-        red('✗ 该账号已启用 TOTP 二次验证。请使用: api.py login <base_url> <username> <password> <totpCode>')
+        red('✗ 该账号已启用 TOTP 二次验证。请使用: api.py login <api_root> <username> <password> <totpCode>')
         raise SystemExit(1)
     token = payload.get('token') or ''
     if not token:
         red('✗ 登录失败: 响应中缺少 token')
         raise SystemExit(1)
-    save_config({'base_url': base_url, 'token': token, 'username': args.username})
+    save_config({'base_url': base_url, 'token': token, 'username': args.username, 'auth_header': os.environ.get('ISRVD_AUTH_HEADER', 'Authorization')})
     green(f'✓ 登录成功，已保存到 {CONFIG_FILE}')
 
 
 def cmd_token(args: argparse.Namespace) -> None:
-    base_url = args.base_url.rstrip('/')
+    base_url = normalize_api_root(args.base_url)
     blue('→ 验证 token ...')
-    data = request_json('GET', base_url + '/api/overview/bootstrap', args.token)
+    data = request_json('GET', api_url(base_url, '/overview/bootstrap'), args.token, auth_header=os.environ.get('ISRVD_AUTH_HEADER', 'Authorization'))
     if not isinstance(data, dict) or data.get('success') is not True:
         red(f'✗ token 无效: {data.get("message", "未知错误") if isinstance(data, dict) else data}')
         raise SystemExit(1)
     username = str((data.get('payload') or {}).get('auth', {}).get('username') or 'unknown')
-    save_config({'base_url': base_url, 'token': args.token, 'username': username})
+    save_config({'base_url': base_url, 'token': args.token, 'username': username, 'auth_header': os.environ.get('ISRVD_AUTH_HEADER', 'Authorization')})
     green(f'✓ token 有效 (用户: {username})，已保存到 {CONFIG_FILE}')
 
 
 def cmd_upload(args: argparse.Namespace) -> None:
     cfg = require_auth()
-    data = request_multipart(cfg['base_url'] + '/api' + args.path, cfg['token'], args.file_field, args.file_path, args.fields)
+    data = request_multipart(api_url(cfg['base_url'], args.path), cfg['token'], args.file_field, args.file_path, args.fields, cfg['auth_header'])
     print_result(data)
 
 
@@ -266,13 +283,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='isrvd API Harness (Python stdlib edition)')
     sub = parser.add_subparsers(dest='command', required=True)
     p = sub.add_parser('login')
-    p.add_argument('base_url')
+    p.add_argument('base_url', metavar='api_root')
     p.add_argument('username')
     p.add_argument('password')
     p.add_argument('totp_code', nargs='?')
     p.set_defaults(func=cmd_login)
     p = sub.add_parser('token')
-    p.add_argument('base_url')
+    p.add_argument('base_url', metavar='api_root')
     p.add_argument('token')
     p.set_defaults(func=cmd_token)
     for name, method in [('get', 'GET'), ('delete', 'DELETE')]:
