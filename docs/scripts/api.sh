@@ -10,6 +10,7 @@ ISRVD_CONFIG_FILE="$ISRVD_CONFIG_DIR/profile.json"
 ISRVD_BASE_URL="${ISRVD_BASE_URL:-}"
 ISRVD_TOKEN="${ISRVD_TOKEN:-}"
 ISRVD_USERNAME="${ISRVD_USERNAME:-}"
+ISRVD_AUTH_HEADER="${ISRVD_AUTH_HEADER:-}"
 
 _red()    { printf '\033[0;31m%s\033[0m\n' "$*"; }
 _green()  { printf '\033[0;32m%s\033[0m\n' "$*"; }
@@ -25,40 +26,55 @@ _isrvd_save_config() {
     --arg url "$ISRVD_BASE_URL" \
     --arg token "$ISRVD_TOKEN" \
     --arg user "$ISRVD_USERNAME" \
-    '{base_url: $url, token: $token, username: $user}' > "$ISRVD_CONFIG_FILE"
+    --arg auth_header "${ISRVD_AUTH_HEADER:-Authorization}" \
+    '{base_url: $url, token: $token, username: $user, auth_header: $auth_header}' > "$ISRVD_CONFIG_FILE"
   chmod 600 "$ISRVD_CONFIG_FILE"
 }
 
 _isrvd_load_config() {
-  # 环境变量优先
-  if [ -n "$ISRVD_BASE_URL" ] && [ -n "$ISRVD_TOKEN" ]; then
-    return 0
-  fi
-
+  # 即使 URL 和 token 来自环境变量，也要从 profile 补齐未设置的认证头等字段。
   if [ -f "$ISRVD_CONFIG_FILE" ]; then
     ISRVD_BASE_URL="${ISRVD_BASE_URL:-$(jq -r '.base_url // empty' "$ISRVD_CONFIG_FILE")}"
     ISRVD_TOKEN="${ISRVD_TOKEN:-$(jq -r '.token // empty' "$ISRVD_CONFIG_FILE")}"
     ISRVD_USERNAME="${ISRVD_USERNAME:-$(jq -r '.username // empty' "$ISRVD_CONFIG_FILE")}"
+    ISRVD_AUTH_HEADER="${ISRVD_AUTH_HEADER:-$(jq -r '.auth_header // empty' "$ISRVD_CONFIG_FILE")}"
     return 0
   fi
 
   return 1
 }
 
+_isrvd_api_root() {
+  local root="${1%/}"
+  while [ "${root%/}" != "$root" ]; do root="${root%/}"; done
+  printf '%s' "$root"
+}
+
+_isrvd_api_url() {
+  local root
+  root=$(_isrvd_api_root "$ISRVD_BASE_URL")
+  printf '%s/%s' "$root" "${1#/}"
+}
+
 _isrvd_auth_header() {
-  printf 'Authorization: Bearer %s' "$ISRVD_TOKEN"
+  local header="${ISRVD_AUTH_HEADER:-Authorization}"
+  if [ "$(printf '%s' "$header" | tr '[:upper:]' '[:lower:]')" = "authorization" ]; then
+    printf 'Authorization: Bearer %s' "$ISRVD_TOKEN"
+  else
+    printf '%s: %s' "$header" "$ISRVD_TOKEN"
+  fi
 }
 
 # ---------------------------------------------------------------------------
 # isrvd_login — 用账号密码登录，token 保存到配置文件
 # ---------------------------------------------------------------------------
 isrvd_login() {
-  local base_url="${1:?用法: isrvd_login <base_url> <username> <password> [totpCode]}"
+  local base_url="${1:?用法: isrvd_login <api_root> <username> <password> [totpCode]}"
   local username="${2:?缺少 username}"
   local password="${3:?缺少 password}"
   local totp_code="${4:-}"
 
-  ISRVD_BASE_URL="${base_url%/}"
+  ISRVD_BASE_URL=$(_isrvd_api_root "$base_url")
   ISRVD_USERNAME="$username"
 
   _blue "→ 登录 $ISRVD_BASE_URL ..."
@@ -71,7 +87,7 @@ isrvd_login() {
     '{username:$username,password:$password} + (if $totpCode == "" then {} else {totpCode:$totpCode} end)')
 
   local resp
-  resp=$(curl -sf -X POST "$ISRVD_BASE_URL/api/account/login" \
+  resp=$(curl -sf -X POST "$(_isrvd_api_url '/account/login')" \
     -H "Content-Type: application/json" \
     -d "$body" 2>&1) || {
     _red "✗ 登录失败: $resp"
@@ -88,7 +104,7 @@ isrvd_login() {
   local two_factor_required
   two_factor_required=$(echo "$resp" | jq -r '.payload.twoFactorRequired // false')
   if [ "$two_factor_required" = "true" ]; then
-    _red "✗ 该账号已启用 TOTP 二次验证。请使用: isrvd_login <base_url> <username> <password> <totpCode>"
+    _red "✗ 该账号已启用 TOTP 二次验证。请使用: isrvd_login <api_root> <username> <password> <totpCode>"
     return 1
   fi
 
@@ -105,17 +121,17 @@ isrvd_login() {
 # isrvd_token — 直接用 token 认证，保存到配置文件
 # ---------------------------------------------------------------------------
 isrvd_token() {
-  local base_url="${1:?用法: isrvd_token <base_url> <token>}"
+  local base_url="${1:?用法: isrvd_token <api_root> <token>}"
   local token="${2:?缺少 token}"
 
-  ISRVD_BASE_URL="${base_url%/}"
+  ISRVD_BASE_URL=$(_isrvd_api_root "$base_url")
   ISRVD_TOKEN="$token"
   ISRVD_USERNAME=""
 
   # 验证 token 有效性
   _blue "→ 验证 token ..."
   local resp
-  resp=$(curl -sf "$ISRVD_BASE_URL/api/overview/bootstrap" \
+  resp=$(curl -sf "$(_isrvd_api_url '/overview/bootstrap')" \
     -H "$(_isrvd_auth_header)" 2>&1) || {
     _red "✗ token 无效或服务不可达"
     return 1
@@ -141,8 +157,8 @@ _isrvd_check() {
 
   if [ -z "$ISRVD_BASE_URL" ] || [ -z "$ISRVD_TOKEN" ]; then
     _red "✗ 未认证。请先执行:" >&2
-    _red "  isrvd_login <base_url> <username> <password>" >&2
-    _red "  isrvd_token <base_url> <token>" >&2
+    _red "  isrvd_login <api_root> <username> <password>" >&2
+    _red "  isrvd_token <api_root> <token>" >&2
     return 1
   fi
 }
@@ -235,7 +251,7 @@ _isrvd_curl() {
 
   _isrvd_check || return 1
 
-  local url="$ISRVD_BASE_URL/api${path}"
+  local url="$(_isrvd_api_url "$path")"
   local args=(
     -s -w "\n%{http_code}"
     -X "$method"
@@ -297,7 +313,7 @@ isrvd_upload() {
 
   _isrvd_check || return 1
 
-  local url="$ISRVD_BASE_URL/api${path}"
+  local url="$(_isrvd_api_url "$path")"
   local args=(
     -s
     -X POST
@@ -356,8 +372,8 @@ isrvd_help() {
 isrvd API Harness
 
   认证（持久化到 ~/.config/isrvd/profile.json）:
-    isrvd_login  <url> <user> <pass> [totp]  账号密码登录；启用 TOTP 时传入验证码
-    isrvd_token  <url> <token>           直接用 token
+    isrvd_login  <api_root> <user> <pass> [totp]  账号密码登录；启用 TOTP 时传入验证码
+    isrvd_token  <api_root> <token>                 直接用 token
     isrvd_logout                         清除认证
     isrvd_status                         查看当前配置
     isrvd_whoami                         当前用户信息
@@ -370,10 +386,10 @@ isrvd API Harness
     isrvd_delete <path>                          DELETE
     isrvd_upload <path> <field> <file> [k=v...]  文件上传
 
-  认证优先级: 环境变量 > 配置文件
+  认证优先级: 环境变量 > 配置文件；ISRVD_AUTH_HEADER 可指定自定义认证头（默认 Authorization）
 
   示例:
-    isrvd_token "$ISRVD_APIURL" "$ISRVD_APITOKEN"
+    isrvd_token "$API_ROOT" "$TOKEN"
     isrvd_get "/docker/containers"
     isrvd_post "/docker/container" '{"image":"...","name":"..."}'
     isrvd_get "/swarm/services"
