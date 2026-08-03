@@ -103,10 +103,12 @@ export const interceptors = (
      */
     const handleError = (error: unknown, isBlob = false) => {
         if (axios.isCancel(error)) return Promise.reject(error)
-        const err = error as { config?: { silentError?: boolean }; response?: { status?: number; data?: { message?: string } }; request?: unknown }
+        const err = error as { config?: { silentError?: boolean; url?: string }; response?: { status?: number; data?: { message?: string } }; request?: unknown }
         // 静默请求：不弹错误通知，直接 reject
         if (err.config?.silentError) return Promise.reject(error)
-        if (err.response?.status === 401) {
+        // 登录接口本身返回的 401（用户名/密码错误等）是登录失败，不是会话过期，走下方通用错误提示
+        const isLoginRequest = err.config?.url?.includes('account/login')
+        if (err.response?.status === 401 && !isLoginRequest) {
             actions.showNotification('error', '登录已过期，请重新登录')
             actions.clearAuth()
         } else if (err.response) {
