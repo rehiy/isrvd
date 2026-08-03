@@ -3,6 +3,7 @@ import type {
     ApisixRouteUpstreamFormNode,
     ApisixRouteUpstreamMode,
     ApisixUpstreamConfig,
+    ApisixUpstreamScheme,
     ApisixUpstreamType,
     ApisixUpstreamNode
 } from '@/service/types'
@@ -24,6 +25,18 @@ export const normalizeUpstreamType = (type?: string): ApisixUpstreamType => {
     if (type === 'chash' || type === 'ewma' || type === 'least_conn') return type
     return DEFAULT_UPSTREAM_TYPE
 }
+
+const DEFAULT_UPSTREAM_SCHEME: ApisixUpstreamScheme = 'http'
+
+export const normalizeUpstreamScheme = (scheme?: string): ApisixUpstreamScheme => {
+    if (scheme === 'https') return 'https'
+    return DEFAULT_UPSTREAM_SCHEME
+}
+
+export const UPSTREAM_SCHEME_OPTIONS: Array<{ value: ApisixUpstreamScheme; label: string; desc: string }> = [
+    { value: 'http', label: 'HTTP', desc: '明文回源（默认）' },
+    { value: 'https', label: 'HTTPS', desc: '加密回源（TLS）' }
+]
 
 export const normalizeUpstreamNodes = (upstream?: ApisixUpstreamConfig): ApisixUpstreamNode[] => {
     const nodes = upstream?.nodes
@@ -118,6 +131,7 @@ interface RouteFormData {
     upstream_mode: ApisixRouteUpstreamMode
     upstream_id?: string
     upstream_nodes: ApisixRouteUpstreamFormNode[]
+    upstream_scheme?: ApisixUpstreamScheme
     timeout_connect?: string | number
     timeout_send?: string | number
     timeout_read?: string | number
@@ -126,7 +140,8 @@ interface RouteFormData {
 const buildInlineUpstream = (
     nodes: ApisixRouteUpstreamFormNode[],
     baseUpstream?: ApisixUpstreamConfig | null,
-    timeout?: { connect?: string | number; send?: string | number; read?: string | number }
+    timeout?: { connect?: string | number; send?: string | number; read?: string | number },
+    scheme?: ApisixUpstreamScheme
 ): ApisixUpstreamConfig | undefined => {
     const node = nodes[0]
     if (!node) return undefined
@@ -141,6 +156,7 @@ const buildInlineUpstream = (
     const result: ApisixUpstreamConfig = {
         ...(baseUpstream || {}),
         type: DEFAULT_UPSTREAM_TYPE,
+        scheme: scheme || DEFAULT_UPSTREAM_SCHEME,
         nodes: [{ host, port: Number(port), weight: 1 }]
     }
 
@@ -179,7 +195,7 @@ export const buildRoutePayload = (formData: RouteFormData, baseUpstream?: Apisix
             connect: formData.timeout_connect,
             send: formData.timeout_send,
             read: formData.timeout_read
-        })
+        }, formData.upstream_scheme)
         if (inlineUpstream) payload.upstream = inlineUpstream
     }
 

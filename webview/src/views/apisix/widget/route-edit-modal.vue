@@ -12,13 +12,15 @@ import type {
     ApisixRouteUpstreamMode,
     ApisixUpstream,
     ApisixUpstreamConfig,
+    ApisixUpstreamScheme,
     DockerContainerInfo
 } from '@/service/types'
 
 import {
     buildRoutePayload,
     detectRouteUpstreamMode,
-    normalizeUpstreamFormNodes
+    normalizeUpstreamFormNodes,
+    normalizeUpstreamScheme
 } from '@/helper/apisix'
 
 import BaseModal from '@/component/modal.vue'
@@ -57,6 +59,7 @@ const defaultFormData = () => ({
     upstream_mode: 'nodes' as ApisixRouteUpstreamMode,
     upstream_id: '',
     upstream_nodes: [{ host: '', port: '', weight: 1 }] as ApisixRouteUpstreamFormNode[],
+    upstream_scheme: 'http' as ApisixUpstreamScheme,
     timeout_connect: '' as string | number,
     timeout_send: '' as string | number,
     timeout_read: '' as string | number,
@@ -226,6 +229,7 @@ const r = (await api.apisixRouteInspect(route.id)).payload
                     upstream_mode: detectRouteUpstreamMode(r),
                     upstream_id: r.upstream_id || '',
                     upstream_nodes: normalizeUpstreamFormNodes(r.upstream).slice(0, 1),
+                    upstream_scheme: normalizeUpstreamScheme(r.upstream?.scheme),
                     timeout_connect: r.upstream?.timeout?.connect ?? '',
                     timeout_send: r.upstream?.timeout?.send ?? '',
                     timeout_read: r.upstream?.timeout?.read ?? '',
@@ -335,6 +339,8 @@ export default toNative(RouteEditModal)
             <p class="text-xs text-slate-400 mt-2">例如：Host 填写 127.0.0.1 或 nginx，Port 填写 8080</p>
             <p class="text-xs text-slate-400 mt-1">直接输入模式仅提交一个上游节点；如需多节点负载均衡，请先在「上游管理」中创建后再引用。</p>
           </div>
+
+          <ToggleCard :model-value="formData.upstream_scheme === 'https'" label="HTTPS 回源" desc="启用后以 HTTPS 协议转发到该上游节点（默认 HTTP）" @update:model-value="formData.upstream_scheme = $event ? 'https' : 'http'" />
 
           <div>
             <label class="form-label">超时时间（秒）</label>
