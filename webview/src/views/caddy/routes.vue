@@ -10,6 +10,17 @@ import PageSearch from '@/component/page-search.vue'
 
 import RouteEditModal from './widget/route-edit-modal.vue'
 
+const handlerLabels: Record<string, string> = {
+    reverse_proxy: '反向代理',
+    file_server: '文件服务',
+    static_response: '静态响应',
+    raw: '原始 JSON'
+}
+
+type RouteListRow =
+    | { type: 'host'; key: string; host: string; count: number }
+    | { type: 'route'; key: string; host: string; grouped: boolean; route: CaddyRoute }
+
 @Component({
     components: { PageSearch, RouteEditModal }
 })
@@ -21,29 +32,57 @@ class CaddyRoutes extends Vue {
     routes: CaddyRoute[] = []
     loading = false
     searchText = ''
+    collapsedHosts: string[] = []
 
     get filteredRoutes() {
         const keyword = this.searchText.trim().toLowerCase()
         if (!keyword) return this.routes
         return this.routes.filter((r: CaddyRoute) => {
             const m = r.match?.[0]
-            const ups = (r.handle?.[r.handle.length - 1]?.upstreams as Array<{ dial: string }> | undefined)?.map(u => u.dial || '') || []
-            const root = (r.handle?.[r.handle.length - 1]?.root as string) || ''
-            const handler = r.handle?.[r.handle.length - 1]?.handler || ''
+            const handler = this.getTerminalHandler(r)
+            const ups = (handler?.upstreams as Array<{ dial: string }> | undefined) || []
             return (
                 (m?.host || []).some((s: string) => s.toLowerCase().includes(keyword)) ||
                 (m?.path || []).some((s: string) => s.toLowerCase().includes(keyword)) ||
-                ups.some((s: string) => s.toLowerCase().includes(keyword)) ||
-                root.toLowerCase().includes(keyword) ||
-                handler.toLowerCase().includes(keyword)
+                ups.some(upstream => upstream.dial?.toLowerCase().includes(keyword)) ||
+                String(handler?.root || '').toLowerCase().includes(keyword) ||
+                (handler?.handler || '').toLowerCase().includes(keyword)
             )
         })
+    }
+
+    get routeListRows(): RouteListRow[] {
+        const hosts = this.routes.map(route => this.getRouteGroupHost(route))
+        const grouped = new Set(hosts).size < hosts.length
+        const routes = grouped
+            ? [...this.filteredRoutes].sort((a, b) => {
+                const hostCompare = this.getRouteGroupHost(a).localeCompare(this.getRouteGroupHost(b))
+                return hostCompare || this.getRoutePaths(a).localeCompare(this.getRoutePaths(b))
+            })
+            : this.filteredRoutes
+        const counts = new Map<string, number>()
+        for (const route of routes) {
+            const host = this.getRouteGroupHost(route)
+            counts.set(host, (counts.get(host) || 0) + 1)
+        }
+        const rows: RouteListRow[] = []
+        let previousHost = ''
+        for (const route of routes) {
+            const host = this.getRouteGroupHost(route)
+            if (grouped && host !== previousHost) {
+                rows.push({ type: 'host', key: `host-${host}`, host, count: counts.get(host) || 0 })
+                previousHost = host
+            }
+            rows.push({ type: 'route', key: `route-${route.index}`, host, grouped, route })
+        }
+        return rows
     }
 
     async loadRoutes() {
         this.loading = true
         try {
             this.routes = (await api.caddyRouteList()).payload || []
+            this.collapsedHosts = []
         } finally {
             this.loading = false
         }
@@ -53,6 +92,12 @@ class CaddyRoutes extends Vue {
         this.editModalRef?.show(null)
     }
 
+    toggleHost(host: string) {
+        this.collapsedHosts = this.collapsedHosts.includes(host)
+            ? this.collapsedHosts.filter(item => item !== host)
+            : [...this.collapsedHosts, host]
+    }
+
     openEditModal(route: CaddyRoute) {
         this.editModalRef?.show(route)
     }
@@ -60,6 +105,10 @@ class CaddyRoutes extends Vue {
     getRouteHosts(r: CaddyRoute) {
         const hosts = r.match?.[0]?.host || []
         return hosts.length ? hosts.join(', ') : '*'
+    }
+
+    getRouteGroupHost(r: CaddyRoute) {
+        return r.match?.[0]?.host?.[0] || '*'
     }
 
     getRoutePaths(r: CaddyRoute) {
@@ -73,13 +122,7 @@ class CaddyRoutes extends Vue {
     }
 
     getHandlerKindLabel(kind?: string) {
-        const map: Record<string, string> = {
-            reverse_proxy: '反向代理',
-            file_server: '文件服务',
-            static_response: '静态响应',
-            raw: '原始 JSON'
-        }
-        return map[kind || ''] || kind || '-'
+        return handlerLabels[kind || ''] || kind || '-'
     }
 
     getTerminalHandler(r: CaddyRoute): CaddyHandler | undefined {
@@ -198,69 +241,87 @@ export default toNative(CaddyRoutes)
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr v-for="route in filteredRoutes" :key="route.index" class="hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3">
-                <div class="inline-info">
-                  <div class="row-icon bg-indigo-400 flex-shrink-0">
-                    <i class="fas fa-route text-white text-sm"></i>
+            <template v-for="row in routeListRows" :key="row.key">
+              <tr v-if="row.type === 'host'" class="bg-slate-50">
+                <td colspan="6" class="px-4 py-2">
+                  <button type="button" class="flex w-full items-center gap-2 text-left" :aria-expanded="!collapsedHosts.includes(row.host)" @click="toggleHost(row.host)">
+                    <i class="fas fa-chevron-right text-slate-400 text-xs transition-transform" :class="{ 'rotate-90': !collapsedHosts.includes(row.host) }"></i>
+                    <i class="fas fa-globe text-teal-500 text-xs"></i>
+                    <span class="text-xs text-slate-400">Host</span>
+                    <span :class="row.host === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm">{{ row.host }}</span>
+                    <span class="ml-auto text-xs text-slate-400">共 <span class="font-medium text-slate-600">{{ row.count }}</span> 条</span>
+                  </button>
+                </td>
+              </tr>
+              <tr v-else v-show="!row.grouped || !collapsedHosts.includes(row.host)" class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3">
+                  <div class="inline-info">
+                    <div class="row-icon bg-indigo-400 flex-shrink-0">
+                      <i class="fas fa-route text-white text-sm"></i>
+                    </div>
+                    <span :class="getRouteHosts(row.route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm break-all">{{ getRouteHosts(row.route) }}</span>
                   </div>
-                  <span :class="getRouteHosts(route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm break-all">{{ getRouteHosts(route) }}</span>
-                </div>
-              </td>
-              <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getRoutePaths(route) }}</code></td>
-              <td class="px-4 py-3"><span class="text-xs text-slate-600">{{ getRouteMethods(route) }}</span></td>
-              <td class="px-4 py-3"><span :class="getHandlerTagClass(route)" class="inline-block text-xs px-2 py-0.5 rounded-lg">{{ getHandlerKindLabel(getTerminalHandler(route)?.handler as string) }}</span></td>
-              <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getHandlerSummary(route) }}</code></td>
-              <td class="px-4 py-3">
-                <div class="table-actions">
-                  <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(route)"><i class="fas fa-pen text-xs"></i></button>
-                  <button v-if="portal.hasPerm('DELETE /api/caddy/route/:index')" class="btn-icon btn-icon-red" title="删除" @click="deleteRoute(route)"><i class="fas fa-trash text-xs"></i></button>
-                </div>
-              </td>
-            </tr>
+                </td>
+                <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getRoutePaths(row.route) }}</code></td>
+                <td class="px-4 py-3"><span class="text-xs text-slate-600">{{ getRouteMethods(row.route) }}</span></td>
+                <td class="px-4 py-3"><span :class="getHandlerTagClass(row.route)" class="inline-block text-xs px-2 py-0.5 rounded-lg">{{ getHandlerKindLabel(getTerminalHandler(row.route)?.handler as string) }}</span></td>
+                <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getHandlerSummary(row.route) }}</code></td>
+                <td class="px-4 py-3">
+                  <div class="table-actions">
+                    <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(row.route)"><i class="fas fa-pen text-xs"></i></button>
+                    <button v-if="portal.hasPerm('DELETE /api/caddy/route/:index')" class="btn-icon btn-icon-red" title="删除" @click="deleteRoute(row.route)"><i class="fas fa-trash text-xs"></i></button>
+                  </div>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
 
       <!-- 移动端卡片 -->
       <div class="card-body md:hidden space-y-3">
-        <div v-for="route in filteredRoutes" :key="route.index" class="card-interactive">
-          <div class="card-info-row">
-            <div class="list-icon bg-indigo-400">
-              <i class="fas fa-route text-white text-base"></i>
+        <template v-for="row in routeListRows" :key="row.key">
+          <button v-if="row.type === 'host'" type="button" class="flex w-full items-center gap-2 border-y border-slate-100 bg-slate-50 px-3 py-2 text-left" :aria-expanded="!collapsedHosts.includes(row.host)" @click="toggleHost(row.host)">
+            <i class="fas fa-chevron-right text-slate-400 text-xs transition-transform" :class="{ 'rotate-90': !collapsedHosts.includes(row.host) }"></i>
+            <i class="fas fa-globe text-teal-500 text-xs"></i>
+            <span class="text-xs text-slate-400">Host</span>
+            <span :class="row.host === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm truncate">{{ row.host }}</span>
+            <span class="ml-auto text-xs text-slate-400 whitespace-nowrap">共 <span class="font-medium text-slate-600">{{ row.count }}</span> 条</span>
+          </button>
+          <div v-else v-show="!row.grouped || !collapsedHosts.includes(row.host)" class="card-interactive">
+            <div class="card-info-row">
+              <div class="list-icon bg-indigo-400">
+                <i class="fas fa-route text-white text-base"></i>
+              </div>
+              <div class="min-w-0">
+                <span class="item-title-sm">{{ getRouteHosts(row.route) }}</span>
+                <span class="item-subtitle">{{ getHandlerKindLabel(getTerminalHandler(row.route)?.handler as string) }}</span>
+              </div>
             </div>
-            <div class="min-w-0">
-              <span class="item-title-sm">{{ getRouteHosts(route) }}</span>
-              <span class="item-subtitle">{{ getHandlerKindLabel(getTerminalHandler(route)?.handler as string) }}</span>
+
+            <div class="card-prop-row-start">
+              <span class="prop-label-start">Path</span>
+              <code class="text-xs font-mono text-slate-700 break-all">{{ getRoutePaths(row.route) }}</code>
+            </div>
+            <div class="card-prop-row">
+              <span class="text-xs text-slate-400 flex-shrink-0">Method</span>
+              <span class="text-xs text-slate-500">{{ getRouteMethods(row.route) }}</span>
+            </div>
+            <div class="card-prop-row-start">
+              <span class="prop-label-start">后端</span>
+              <code :class="getHandlerTagClass(row.route)" class="code-chip">{{ getHandlerSummary(row.route) }}</code>
+            </div>
+
+            <div class="card-actions">
+              <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(row.route)">
+                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
+              </button>
+              <button v-if="portal.hasPerm('DELETE /api/caddy/route/:index')" class="btn-icon btn-icon-red" title="删除" @click="deleteRoute(row.route)">
+                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+              </button>
             </div>
           </div>
-
-          <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">Host</span>
-            <span :class="getRouteHosts(route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-xs break-all">{{ getRouteHosts(route) }}</span>
-          </div>
-          <div class="card-prop-row-start">
-            <span class="prop-label-start">Path</span>
-            <code class="text-xs font-mono text-slate-700 break-all">{{ getRoutePaths(route) }}</code>
-          </div>
-          <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">Method</span>
-            <span class="text-xs text-slate-500">{{ getRouteMethods(route) }}</span>
-          </div>
-          <div class="card-prop-row-start">
-            <span class="prop-label-start">后端</span>
-            <code :class="getHandlerTagClass(route)" class="code-chip">{{ getHandlerSummary(route) }}</code>
-          </div>
-
-          <div class="card-actions">
-            <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(route)">
-              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
-            </button>
-            <button v-if="portal.hasPerm('DELETE /api/caddy/route/:index')" class="btn-icon btn-icon-red" title="删除" @click="deleteRoute(route)">
-              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
-            </button>
-          </div>
-        </div>
+        </template>
       </div>
     </template>
   </div>
