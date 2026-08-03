@@ -6,17 +6,18 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { ApisixRoute } from '@/service/types'
 
-import { formatRouteUpstreamSummary, formatRouteUpstreamNodes, normalizeUpstreamNodes } from '@/helper/apisix'
+import { formatRouteUpstreamNodes, formatRouteUpstreamSummary, normalizeUpstreamNodes } from '@/helper/apisix'
 
 import PageSearch from '@/component/page-search.vue'
 
 import RouteEditModal from './widget/route-edit-modal.vue'
-import RouteGroupedList from './widget/route-grouped-list.vue'
 
-type ViewMode = 'route' | 'host'
+type RouteListRow =
+    | { type: 'host'; key: string; host: string; count: number; active: number; disabled: number }
+    | { type: 'route'; key: string; host: string; route: ApisixRoute }
 
 @Component({
-    components: { PageSearch, RouteEditModal, RouteGroupedList }
+    components: { PageSearch, RouteEditModal }
 })
 class Routes extends Vue {
     portal = usePortal()
@@ -28,43 +29,70 @@ class Routes extends Vue {
     routes: ApisixRoute[] = []
     loading = false
     searchText = ''
-    viewMode: ViewMode = 'route'
+    collapsedHosts: string[] = []
 
     // ─── 计算属性 ───
     get filteredRoutes() {
         const keyword = this.searchText.trim().toLowerCase()
         if (!keyword) return this.routes
         return this.routes.filter((r: ApisixRoute) => {
-            const upstreamSummary = this.getRouteUpstreamSummary(r).toLowerCase()
             return (
                 (r.name || '').toLowerCase().includes(keyword) ||
                 (r.id || '').toLowerCase().includes(keyword) ||
                 (r.uri || '').toLowerCase().includes(keyword) ||
                 (r.uris || []).some((u: string) => u.toLowerCase().includes(keyword)) ||
+                this.getRouteHost(r).toLowerCase().includes(keyword) ||
                 (r.desc || '').toLowerCase().includes(keyword) ||
-                upstreamSummary.includes(keyword)
+                formatRouteUpstreamSummary(r).toLowerCase().includes(keyword)
             )
         })
     }
 
-    // ─── 方法 ───
-    sortRoutes(data: ApisixRoute[]) {
-        data.sort((a: ApisixRoute, b: ApisixRoute) => {
-            const hostA = (a.hosts?.[0]) || a.host || ''
-            const hostB = (b.hosts?.[0]) || b.host || ''
-            const hc = hostA.localeCompare(hostB)
-            if (hc !== 0) return hc
-            const uriA = (a.uris?.[0]) || a.uri || ''
-            const uriB = (b.uris?.[0]) || b.uri || ''
-            return uriA.localeCompare(uriB)
-        })
-        return data
+    get groupByHost() {
+        const counts = new Map<string, number>()
+        for (const route of this.routes) {
+            const host = this.getRouteGroupHost(route)
+            counts.set(host, (counts.get(host) || 0) + 1)
+        }
+        return [...counts.values()].some(count => count > 1)
     }
 
+    get routeListRows(): RouteListRow[] {
+        const routes = [...this.filteredRoutes].sort((a, b) => {
+            const hostCompare = this.getRouteGroupHost(a).localeCompare(this.getRouteGroupHost(b))
+            return hostCompare || this.getRouteUri(a).localeCompare(this.getRouteUri(b))
+        })
+
+        // 统计每个 host 下的路由数量与状态分布
+        const hostStats = new Map<string, { count: number; active: number; disabled: number }>()
+        for (const route of routes) {
+            const host = this.getRouteGroupHost(route)
+            const stat = hostStats.get(host) || { count: 0, active: 0, disabled: 0 }
+            stat.count += 1
+            if (route.status === 1) stat.active += 1
+            else stat.disabled += 1
+            hostStats.set(host, stat)
+        }
+
+        const rows: RouteListRow[] = []
+        let previousHost = ''
+        for (const [index, route] of routes.entries()) {
+            const host = this.getRouteGroupHost(route)
+            if (this.groupByHost && host !== previousHost) {
+                const stat = hostStats.get(host)!
+                rows.push({ type: 'host', key: `host-${host}`, host, count: stat.count, active: stat.active, disabled: stat.disabled })
+                previousHost = host
+            }
+            rows.push({ type: 'route', key: `route-${route.id || index}`, host, route })
+        }
+        return rows
+    }
+
+    // ─── 方法 ───
     async loadRoutes() {
         this.loading = true
         try {
-            this.routes = this.sortRoutes((await api.apisixRouteList()).payload || [])
+            this.routes = (await api.apisixRouteList()).payload || []
         } catch {
             this.portal.showNotification('error', '加载路由列表失败')
         } finally {
@@ -72,8 +100,12 @@ class Routes extends Vue {
         }
     }
 
-    setViewMode(mode: ViewMode) {
-        this.viewMode = mode
+    toggleHost(host: string) {
+        if (this.collapsedHosts.includes(host)) {
+            this.collapsedHosts = this.collapsedHosts.filter(item => item !== host)
+            return
+        }
+        this.collapsedHosts = [...this.collapsedHosts, host]
     }
 
     openCreateModal() {
@@ -92,8 +124,8 @@ class Routes extends Vue {
         return r.hosts?.length ? r.hosts.join(', ') : (r.host || '*')
     }
 
-    getRouteUpstreamSummary(r: ApisixRoute) {
-        return formatRouteUpstreamSummary(r)
+    getRouteGroupHost(r: ApisixRoute) {
+        return r.hosts?.[0] || r.host || '*'
     }
 
     getRouteUpstreamNodes(r: ApisixRoute) {
@@ -163,14 +195,6 @@ export default toNative(Routes)
         </div>
         <div class="action-group">
           <PageSearch v-model="searchText" search-key="apisix-routes" placeholder="搜索路由、URI、描述或上游..." focus-color="indigo" type-to-search />
-          <div class="tab-group">
-            <button class="tab-btn" :class="viewMode === 'route' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive'" @click="setViewMode('route')">
-              <i class="fas fa-list text-xs"></i>默认
-            </button>
-            <button class="tab-btn" :class="viewMode === 'host' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive'" @click="setViewMode('host')">
-              <i class="fas fa-layer-group text-xs"></i>Host 分组
-            </button>
-          </div>
           <button class="btn btn-secondary" @click="loadRoutes()"><i class="fas fa-rotate"></i>刷新</button>
           <button v-if="portal.hasPerm('POST /api/apisix/route')" class="btn btn-indigo" @click="openCreateModal()"><i class="fas fa-plus"></i>新建路由</button>
         </div>
@@ -197,14 +221,6 @@ export default toNative(Routes)
     <!-- 移动端搜索栏 -->
     <div class="mobile-search">
       <PageSearch v-model="searchText" search-key="apisix-routes" placeholder="搜索路由、URI、上游..." width-class="w-full" focus-color="indigo" />
-      <div class="tab-group w-full">
-        <button class="tab-btn flex-1 justify-center" :class="viewMode === 'route' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive'" @click="setViewMode('route')">
-          <i class="fas fa-list text-xs"></i>默认
-        </button>
-        <button class="tab-btn flex-1 justify-center" :class="viewMode === 'host' ? 'tab-btn-active text-indigo-600' : 'tab-btn-inactive'" @click="setViewMode('host')">
-          <i class="fas fa-layer-group text-xs"></i>Host 分组
-        </button>
-      </div>
     </div>
     <div v-if="loading" class="card-body">
       <div class="empty-state"><div class="spinner-lg"></div><p class="text-slate-500">加载中...</p></div>
@@ -216,15 +232,6 @@ export default toNative(Routes)
         <p class="text-sm text-slate-400">{{ routes.length === 0 ? '点击「新建路由」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
       </div>
     </div>
-
-    <RouteGroupedList
-      v-else-if="viewMode === 'host'"
-      :routes="routes"
-      :search-text="searchText"
-      @toggle-status="toggleStatus"
-      @edit="openEditModal"
-      @delete="deleteRoute"
-    />
 
     <template v-else>
       <!-- 桌面端表格视图 -->
@@ -240,80 +247,110 @@ export default toNative(Routes)
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr v-for="route in filteredRoutes" :key="route.id" class="hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3 max-w-[280px]">
-                <div class="inline-info">
-                  <div class="row-icon bg-indigo-400">
-                    <i class="fas fa-route text-white text-sm"></i>
-                  </div>
-                  <div class="min-w-0">
-                    <span class="item-title">{{ route.name || route.id }}</span>
-                    <span v-if="route.desc" class="item-subtitle">{{ route.desc }}</span>
-                  </div>
-                </div>
-              </td>
-              <td class="px-4 py-3"><span :class="getRouteHost(route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm break-all">{{ getRouteHost(route) }}</span></td>
-              <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getRouteUri(route) }}</code></td>
-              <td class="px-4 py-3"><span :class="getRouteUpstreamTagClass(route)" class="code-chip">{{ getRouteUpstreamNodes(route) }}</span></td>
-              <td class="px-4 py-3">
-                <div class="table-actions">
-                  <button v-if="portal.hasPerm('PATCH /api/apisix/route/:id/status')" :class="['btn-icon', route.status === 1 ? 'btn-icon-amber' : 'btn-icon-emerald']" :title="route.status === 1 ? '禁用' : '启用'" @click="toggleStatus(route)">
-                    <i :class="route.status === 1 ? 'fas fa-ban' : 'fas fa-play'" class="text-xs"></i>
+            <template v-for="row in routeListRows" :key="row.key">
+              <tr v-if="row.type === 'host'" class="bg-slate-50">
+                <td colspan="5" class="px-4 py-2">
+                  <button type="button" class="flex w-full items-center gap-2 text-left" :aria-expanded="!collapsedHosts.includes(row.host)" @click="toggleHost(row.host)">
+                    <i class="fas fa-chevron-right text-slate-400 text-xs transition-transform" :class="{ 'rotate-90': !collapsedHosts.includes(row.host) }"></i>
+                    <i class="fas fa-globe text-teal-500 text-xs"></i>
+                    <span class="text-xs text-slate-400">Host</span>
+                    <span :class="row.host === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm">{{ row.host }}</span>
+                    <span class="ml-auto flex items-center gap-3 text-xs">
+                      <span class="text-slate-400">共 <span class="font-medium text-slate-600">{{ row.count }}</span> 条</span>
+                      <span class="text-emerald-600">启用 {{ row.active }}</span>
+                      <span class="text-amber-600">禁用 {{ row.disabled }}</span>
+                    </span>
                   </button>
-                  <button v-if="portal.hasPerm('PUT /api/apisix/route/:id')" class="btn-icon btn-icon-indigo" title="编辑" @click="openEditModal(route)"><i class="fas fa-pen text-xs"></i></button>
-                  <button v-if="portal.hasPerm('DELETE /api/apisix/route/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteRoute(route)"><i class="fas fa-trash text-xs"></i></button>
-                </div>
-              </td>
-            </tr>
+                </td>
+              </tr>
+              <tr v-else v-show="!groupByHost || !collapsedHosts.includes(row.host)" class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 max-w-[280px]">
+                  <div class="inline-info">
+                    <div class="row-icon bg-indigo-400">
+                      <i class="fas fa-route text-white text-sm"></i>
+                    </div>
+                    <div class="min-w-0">
+                      <span class="item-title">{{ row.route.name || row.route.id }}</span>
+                      <span v-if="row.route.desc" class="item-subtitle">{{ row.route.desc }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-4 py-3"><span :class="getRouteHost(row.route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm break-all">{{ getRouteHost(row.route) }}</span></td>
+                <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getRouteUri(row.route) }}</code></td>
+                <td class="px-4 py-3"><span :class="getRouteUpstreamTagClass(row.route)" class="code-chip">{{ getRouteUpstreamNodes(row.route) }}</span></td>
+                <td class="px-4 py-3">
+                  <div class="table-actions">
+                    <button v-if="portal.hasPerm('PATCH /api/apisix/route/:id/status')" :class="['btn-icon', row.route.status === 1 ? 'btn-icon-amber' : 'btn-icon-emerald']" :title="row.route.status === 1 ? '禁用' : '启用'" @click="toggleStatus(row.route)">
+                      <i :class="row.route.status === 1 ? 'fas fa-ban' : 'fas fa-play'" class="text-xs"></i>
+                    </button>
+                    <button v-if="portal.hasPerm('PUT /api/apisix/route/:id')" class="btn-icon btn-icon-indigo" title="编辑" @click="openEditModal(row.route)"><i class="fas fa-pen text-xs"></i></button>
+                    <button v-if="portal.hasPerm('DELETE /api/apisix/route/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteRoute(row.route)"><i class="fas fa-trash text-xs"></i></button>
+                  </div>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
 
       <!-- 移动端卡片视图 -->
       <div class="card-body md:hidden space-y-3">
-        <div v-for="route in filteredRoutes" :key="route.id" class="card-interactive">
-          <!-- 顶部：路由信息和状态 -->
-          <div class="flex items-center justify-between mb-3">
-            <div class="title-group">
-              <div class="list-icon bg-indigo-400">
-                <i class="fas fa-route text-white text-base"></i>
-              </div>
-              <div class="min-w-0">
-                <div class="font-medium text-sm text-slate-800 truncate">{{ route.name || route.id }}</div>
-                <div v-if="route.desc" class="text-xs text-slate-400 mt-0.5 truncate">{{ route.desc }}</div>
+        <template v-for="row in routeListRows" :key="row.key">
+          <button v-if="row.type === 'host'" type="button" class="flex w-full items-center gap-2 border-y border-slate-100 bg-slate-50 px-3 py-2 text-left" :aria-expanded="!collapsedHosts.includes(row.host)" @click="toggleHost(row.host)">
+            <i class="fas fa-chevron-right text-slate-400 text-xs transition-transform" :class="{ 'rotate-90': !collapsedHosts.includes(row.host) }"></i>
+            <i class="fas fa-globe text-teal-500 text-xs"></i>
+            <span class="text-xs text-slate-400">Host</span>
+            <span :class="row.host === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm truncate">{{ row.host }}</span>
+            <span class="ml-auto flex items-center gap-2 text-xs whitespace-nowrap">
+              <span class="text-slate-400">共 <span class="font-medium text-slate-600">{{ row.count }}</span></span>
+              <span class="text-emerald-600">{{ row.active }} 启用</span>
+              <span class="text-amber-600">{{ row.disabled }} 禁用</span>
+            </span>
+          </button>
+          <div v-else v-show="!groupByHost || !collapsedHosts.includes(row.host)" class="card-interactive">
+            <!-- 顶部：路由信息和状态 -->
+            <div class="flex items-center justify-between mb-3">
+              <div class="title-group">
+                <div class="list-icon bg-indigo-400">
+                  <i class="fas fa-route text-white text-base"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="font-medium text-sm text-slate-800 truncate">{{ row.route.name || row.route.id }}</div>
+                  <div v-if="row.route.desc" class="text-xs text-slate-400 mt-0.5 truncate">{{ row.route.desc }}</div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- 中间：URI和Host信息 -->
-          <div class="card-prop-row-start">
-            <span class="prop-label-start">URI</span>
-            <code class="text-xs font-mono text-slate-700 break-all">{{ getRouteUri(route) }}</code>
-          </div>
+            <!-- 中间：URI和Host信息 -->
+            <div class="card-prop-row-start">
+              <span class="prop-label-start">URI</span>
+              <code class="text-xs font-mono text-slate-700 break-all">{{ getRouteUri(row.route) }}</code>
+            </div>
 
-          <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">Host</span>
-            <span :class="getRouteHost(route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-xs break-all">{{ getRouteHost(route) }}</span>
-          </div>
+            <div class="card-prop-row">
+              <span class="text-xs text-slate-400 flex-shrink-0">Host</span>
+              <span :class="getRouteHost(row.route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-xs break-all">{{ getRouteHost(row.route) }}</span>
+            </div>
 
-          <div class="card-prop-row-start">
-            <span class="prop-label-start">上游</span>
-            <span :class="getRouteUpstreamTagClass(route)" class="code-chip">{{ getRouteUpstreamNodes(route) }}</span>
-          </div>
+            <div class="card-prop-row-start">
+              <span class="prop-label-start">上游</span>
+              <span :class="getRouteUpstreamTagClass(row.route)" class="code-chip">{{ getRouteUpstreamNodes(row.route) }}</span>
+            </div>
 
-          <!-- 底部：操作按钮 -->
-          <div class="card-actions">
-            <button v-if="portal.hasPerm('PATCH /api/apisix/route/:id/status')" :class="['btn-icon', route.status === 1 ? 'btn-icon-amber' : 'btn-icon-emerald']" :title="route.status === 1 ? '禁用' : '启用'" @click="toggleStatus(route)">
-              <i :class="route.status === 1 ? 'fas fa-ban' : 'fas fa-play'" class="text-xs"></i><span class="text-xs ml-1">{{ route.status === 1 ? '禁用' : '启用' }}</span>
-            </button>
-            <button v-if="portal.hasPerm('PUT /api/apisix/route/:id')" class="btn-icon btn-icon-indigo" title="编辑" @click="openEditModal(route)">
-              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
-            </button>
-            <button v-if="portal.hasPerm('DELETE /api/apisix/route/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteRoute(route)">
-              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
-            </button>
+            <!-- 底部：操作按钮 -->
+            <div class="card-actions">
+              <button v-if="portal.hasPerm('PATCH /api/apisix/route/:id/status')" :class="['btn-icon', row.route.status === 1 ? 'btn-icon-amber' : 'btn-icon-emerald']" :title="row.route.status === 1 ? '禁用' : '启用'" @click="toggleStatus(row.route)">
+                <i :class="row.route.status === 1 ? 'fas fa-ban' : 'fas fa-play'" class="text-xs"></i><span class="text-xs ml-1">{{ row.route.status === 1 ? '禁用' : '启用' }}</span>
+              </button>
+              <button v-if="portal.hasPerm('PUT /api/apisix/route/:id')" class="btn-icon btn-icon-indigo" title="编辑" @click="openEditModal(row.route)">
+                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
+              </button>
+              <button v-if="portal.hasPerm('DELETE /api/apisix/route/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteRoute(row.route)">
+                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+              </button>
+            </div>
           </div>
-        </div>
+        </template>
       </div>
     </template>
   </div>
