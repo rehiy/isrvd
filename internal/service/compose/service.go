@@ -21,10 +21,11 @@ type Service struct {
 
 // DeployRequest 部署请求
 type DeployRequest struct {
-	Content   string    `json:"content" binding:"required"` // compose.yml 文件内容（必填）
-	InitURL   string    `json:"initURL,omitempty"`          // 附加运行文件 zip 的下载地址（可选）
-	InitFile  io.Reader `json:"-"`                          // 附加运行文件（multipart 上传，不在 JSON 中）
-	ForcePull bool      `json:"forcePull,omitempty"`        // 是否强制拉取最新镜像
+	Content    string    `json:"content" binding:"required"` // compose.yml 文件内容（必填）
+	EnvContent string    `json:"envContent,omitempty"`        // 附加 .env 内容（KEY=VALUE），合并进插值环境并写盘
+	InitURL    string    `json:"initURL,omitempty"`           // 附加运行文件 zip 的下载地址（可选）
+	InitFile   io.Reader `json:"-"`                           // 附加运行文件（multipart 上传，不在 JSON 中）
+	ForcePull  bool      `json:"forcePull,omitempty"`         // 是否强制拉取最新镜像
 }
 
 // DeployResult 部署结果
@@ -37,6 +38,7 @@ type DeployResult struct {
 // ContentResult Compose 配置读取结果。
 type ContentResult struct {
 	Content     string `json:"content"`               // compose.yml 文本
+	EnvContent  string `json:"envContent,omitempty"`  // .env 文本（KEY=VALUE）；无落盘文件时为空
 	ProjectName string `json:"projectName,omitempty"` // 实际解析到的项目名
 	FileModTime int64  `json:"fileModTime,omitempty"` // compose.yml 修改时间戳（Unix 秒）；无落盘文件时为空
 	Source      string `json:"source,omitempty"`      // 内容来源：file=落盘文件，runtime=运行态反推
@@ -44,9 +46,11 @@ type ContentResult struct {
 
 // RedeployRequest 重建请求
 // - ServiceName + Image 非空：从现有内容读取后更新指定服务镜像重建
-// - 否则：Content 必须非空，全量重建
+// - 否则：Content 非空时全量重建（compose 与 .env 均可用新内容替换）
+// - EnvContent 单独变更：Content 可省略，仅更新 .env 后重建
 type RedeployRequest struct {
-	Content     string `json:"content,omitempty"`     // compose.yml 内容（未指定 serviceName 时必填，用于全量重建）
+	Content     string `json:"content,omitempty"`     // compose.yml 内容（未指定 serviceName 时与 envContent 至少其一必填，用于全量重建）
+	EnvContent  string `json:"envContent,omitempty"`  // .env 内容（可单独变更，与 content 一起更新时生效）
 	ServiceName string `json:"serviceName,omitempty"` // 目标服务名（与 image 配合，仅更新该服务镜像后重建）
 	Image       string `json:"image,omitempty"`       // 新镜像（指定 serviceName 时必填）
 	ForcePull   bool   `json:"forcePull,omitempty"`   // 是否强制拉取最新镜像
@@ -57,8 +61,11 @@ func (r RedeployRequest) Validate() error {
 	if r.ServiceName != "" && r.Image == "" {
 		return fmt.Errorf("指定服务名时 image 不能为空")
 	}
-	if r.ServiceName == "" && r.Content == "" {
-		return fmt.Errorf("未指定服务名时 content 不能为空")
+	if r.ServiceName != "" && r.Content != "" {
+		return fmt.Errorf("指定服务名时不能同时提交 content")
+	}
+	if r.ServiceName == "" && r.Content == "" && r.EnvContent == "" {
+		return fmt.Errorf("未指定服务名时 content 或 envContent 至少一项不能为空")
 	}
 	return nil
 }

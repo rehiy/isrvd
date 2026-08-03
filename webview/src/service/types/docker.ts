@@ -89,6 +89,7 @@ export interface DockerContainerDetail extends DockerContainerCreate {
 // 容器 Compose
 export interface DockerContainerCompose {
     content: string
+    envContent?: string
     projectName?: string
     fileModTime?: number
     source?: 'file' | 'runtime'

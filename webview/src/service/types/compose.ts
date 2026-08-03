@@ -5,7 +5,8 @@ export type ComposeDeployTarget = 'docker' | 'swarm'
 // 统一的 compose 部署请求
 // 项目名（projectName）从 compose 文件中的 name: 字段自动获取，无需前端填写
 export interface ComposeDeploy {
-    content: string         // 完整 compose yaml 文本（前端已完成 ${VAR} 插值）
+    content: string         // 完整 compose yaml 文本
+    envContent?: string     // 可选：.env 内容（KEY=VALUE），后端合并进变量插值环境并写盘
     initURL?: string        // 可选：附加运行文件 zip 下载地址
     initFile?: File         // 可选：附加运行文件（与 initURL 互斥，文件优先）
 }
@@ -13,8 +14,10 @@ export interface ComposeDeploy {
 // Compose Redeploy 请求
 // - content 非空，serviceName 为空：全量重建
 // - serviceName + image 非空：按服务更新镜像重建
+// - envContent 单独非空（content 为空）：仅更新 .env 后重建
 export interface ComposeRedeploy {
     content?: string
+    envContent?: string
     serviceName?: string
     image?: string
 }

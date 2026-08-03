@@ -52,6 +52,9 @@ func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployRe
 		return nil, err
 	}
 
+	// 写 .env（显式内容优先；附加文件解压的 .env 已存在则保留，否则兜底空文件）
+	compose.EnvSave(installDir, req.EnvContent, "")
+
 	project, err = compose.ProjectLoad(ctx, projectName, req.Content, installDir)
 	if err != nil {
 		return nil, err
@@ -104,7 +107,13 @@ func (s *Service) SwarmContentResult(ctx context.Context, name string, forceRunt
 	fileModTime := composeFileModTime(path)
 	if !forceRuntime {
 		if data, err := os.ReadFile(path); err == nil {
-			return &ContentResult{Content: string(data), ProjectName: name, FileModTime: fileModTime, Source: "file"}, nil
+			return &ContentResult{
+				Content:     string(data),
+				EnvContent:  compose.EnvContentRead(filepath.Join(root, name)),
+				ProjectName: name,
+				FileModTime: fileModTime,
+				Source:      "file",
+			}, nil
 		}
 	}
 
@@ -120,12 +129,19 @@ func (s *Service) SwarmContentResult(ctx context.Context, name string, forceRunt
 	if err != nil {
 		return nil, err
 	}
-	return &ContentResult{Content: string(data), ProjectName: name, FileModTime: fileModTime, Source: "runtime"}, nil
+	return &ContentResult{
+		Content:     string(data),
+		EnvContent:  compose.EnvContentRead(filepath.Join(root, name)),
+		ProjectName: name,
+		FileModTime: fileModTime,
+		Source:      "runtime",
+	}, nil
 }
 
 // SwarmRedeploy 重建 Swarm Compose 项目。
-// req.ServiceName + req.Image 非空时：仅更新指定服务的镜像后全量重建；
-// 否则：用 req.Content 全量重建。
+// - ServiceName+Image 非空：仅更新指定服务的镜像后全量重建
+// - EnvContent 单独非空（Content 为空）：仅更新 .env 后重建
+// - Content 非空：全量重建（compose 与 .env 均可替换）
 func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRequest) (*DeployResult, error) {
 	if err := compose.ValidateProjectName(name); err != nil {
 		return nil, err
@@ -140,7 +156,9 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 		installDir = filepath.Join(root, name)
 	}
 
-	// 准备新 content：单服务镜像更新 or 全量替换
+	oldEnv := compose.EnvContentRead(installDir)
+
+	// 准备新 content：单服务镜像更新 or 全量替换 or 仅 .env
 	content := req.Content
 	if req.ServiceName != "" {
 		oldContent, err := s.SwarmContent(ctx, name)
@@ -154,9 +172,12 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	}
 
 	oldContent, _ := s.SwarmContent(ctx, name)
+	if content == "" {
+		content = oldContent
+	}
 
 	// 先解析新 content 校验合法性（不写文件、不删旧实例），失败时旧服务保持运行
-	newProject, err := compose.ProjectParse(ctx, name, content, installDir)
+	newProject, err := compose.LoadProjectFromContentWithEnv(ctx, content, installDir, name, req.EnvContent)
 	if err != nil {
 		return nil, err
 	}
@@ -173,6 +194,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	rollback := func() {
 		s.swarmRollback(ctx, name, oldContent, installDir)
 		compose.ContentSave(installDir, oldContent, "")
+		compose.EnvSave(installDir, oldEnv, "")
 	}
 
 	project, err := compose.ProjectLoad(ctx, name, content, installDir)
@@ -188,6 +210,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	}
 
 	compose.ContentSave(installDir, content, oldContent)
+	compose.EnvSave(installDir, req.EnvContent, oldEnv)
 
 	logman.Info("Swarm compose redeployed", "name", name)
 	return &DeployResult{ProjectName: name, Items: items, InstallDir: installDir}, nil

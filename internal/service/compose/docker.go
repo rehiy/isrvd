@@ -53,6 +53,9 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 		return nil, err
 	}
 
+	// 写 .env（显式内容优先；附加文件解压的 .env 已存在则保留，否则兜底空文件）
+	compose.EnvSave(installDir, req.EnvContent, "")
+
 	project, err = compose.ProjectLoad(ctx, projectName, req.Content, installDir)
 	if err != nil {
 		return nil, err
@@ -105,7 +108,13 @@ func (s *Service) DockerContentResult(ctx context.Context, name string, forceRun
 	fileModTime := composeFileModTime(path)
 	if !forceRuntime {
 		if data, err := os.ReadFile(path); err == nil {
-			return &ContentResult{Content: string(data), ProjectName: projectName, FileModTime: fileModTime, Source: "file"}, nil
+			return &ContentResult{
+				Content:     string(data),
+				EnvContent:  compose.EnvContentRead(filepath.Join(root, projectName)),
+				ProjectName: projectName,
+				FileModTime: fileModTime,
+				Source:      "file",
+			}, nil
 		}
 	}
 
@@ -113,7 +122,13 @@ func (s *Service) DockerContentResult(ctx context.Context, name string, forceRun
 		if err != nil {
 			return nil, err
 		}
-		return &ContentResult{Content: content, ProjectName: projectName, FileModTime: fileModTime, Source: "runtime"}, nil
+		return &ContentResult{
+			Content:     content,
+			EnvContent:  compose.EnvContentRead(filepath.Join(root, projectName)),
+			ProjectName: projectName,
+			FileModTime: fileModTime,
+			Source:      "runtime",
+		}, nil
 	}
 
 	info, err := s.docker.ContainerInspectRaw(ctx, name)
@@ -128,7 +143,9 @@ func (s *Service) DockerContentResult(ctx context.Context, name string, forceRun
 }
 
 // DockerRedeploy 重建 Docker Compose 项目。
-// ServiceName+Image 非空时仅更新指定服务镜像，否则用 Content 全量重建。
+// - ServiceName+Image 非空：仅更新指定服务镜像后重建
+// - EnvContent 单独非空（Content 为空）：仅更新 .env 后重建
+// - Content 非空：全量重建（compose 与 .env 均可替换）
 func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployRequest) (*DeployResult, error) {
 	if err := compose.ValidateProjectName(name); err != nil {
 		return nil, err
@@ -146,6 +163,8 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		installDir = filepath.Join(root, name)
 	}
 
+	oldEnv := compose.EnvContentRead(installDir)
+
 	content := req.Content
 	if req.ServiceName != "" {
 		oldContent, _, err := s.DockerContent(ctx, name)
@@ -160,8 +179,13 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 
 	oldContent, _, _ := s.DockerContent(ctx, name)
 
+	// 仅更新 .env（content 为空）时，沿用现有 compose 内容
+	if content == "" {
+		content = oldContent
+	}
+
 	// 先校验新 content，失败时旧服务保持运行
-	newProject, err := compose.ProjectParse(ctx, name, content, installDir)
+	newProject, err := compose.LoadProjectFromContentWithEnv(ctx, content, installDir, name, req.EnvContent)
 	if err != nil {
 		return nil, err
 	}
@@ -177,6 +201,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	rollback := func() {
 		s.dockerRollback(ctx, name, oldContent, installDir)
 		compose.ContentSave(installDir, oldContent, "")
+		compose.EnvSave(installDir, oldEnv, "")
 	}
 
 	project, err := compose.ProjectLoad(ctx, name, content, installDir)
@@ -192,6 +217,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	}
 
 	compose.ContentSave(installDir, content, oldContent)
+	compose.EnvSave(installDir, req.EnvContent, oldEnv)
 
 	logman.Info("Compose redeployed", "name", name)
 	return &DeployResult{ProjectName: name, Items: items, InstallDir: installDir}, nil

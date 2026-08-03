@@ -9,10 +9,11 @@ import type { SwarmServiceInfo } from '@/service/types'
 import BaseModal from '@/component/modal.vue'
 
 import ComposeEditor from '@/views/compose/widget/compose-editor.vue'
+import EnvEditor from '@/views/compose/widget/env-editor.vue'
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, ComposeEditor },
+    components: { BaseModal, ComposeEditor, EnvEditor },
     emits: ['success']
 })
 class ServiceEditModal extends Vue {
@@ -23,6 +24,7 @@ class ServiceEditModal extends Vue {
     modalLoading = false
     refreshing = false
     composeContent = ''
+    envContent = ''
     serviceName = ''
     composeFileModTime = 0
     composeSource: 'file' | 'runtime' | '' = ''
@@ -42,6 +44,7 @@ class ServiceEditModal extends Vue {
     async show(svc: SwarmServiceInfo) {
         this.serviceName = svc.name
         this.composeContent = ''
+        this.envContent = ''
         this.composeFileModTime = 0
         this.composeSource = ''
         this.isOpen = true
@@ -55,6 +58,7 @@ class ServiceEditModal extends Vue {
             const res = await api.composeSwarmInspect(this.serviceName, force)
             const payload = res.payload
             this.composeContent = payload?.content || ''
+            this.envContent = payload?.envContent || ''
             this.composeFileModTime = payload?.fileModTime || 0
             this.composeSource = payload?.source || ''
             if (force) this.portal.showNotification('success', '已从运行态重新反推 Compose 配置')
@@ -75,7 +79,10 @@ class ServiceEditModal extends Vue {
         if (!this.composeContent.trim()) return
         this.modalLoading = true
         try {
-            await api.composeSwarmRedeploy(this.serviceName, { content: this.composeContent })
+            await api.composeSwarmRedeploy(this.serviceName, {
+                content: this.composeContent,
+                envContent: this.envContent || undefined
+            })
             this.portal.showNotification('success', 'Swarm 服务配置更新成功，已重建服务')
             this.isOpen = false
             this.$emit('success')
@@ -96,6 +103,9 @@ export default toNative(ServiceEditModal)
     </template>
 
     <ComposeEditor v-model="composeContent" :warning="composeWarning" />
+    <div class="mt-3">
+      <EnvEditor v-model="envContent" />
+    </div>
     <template #confirm-text>更新并重建</template>
   </BaseModal>
 </template>

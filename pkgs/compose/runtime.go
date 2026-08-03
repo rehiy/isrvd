@@ -97,6 +97,41 @@ func ContentSave(installDir, content, bak string) {
 	}
 }
 
+// EnvFileName 项目 .env 文件名。
+const EnvFileName = ".env"
+
+// EnvSave 持久化 .env；env 非空时写入，否则确保空 .env 文件存在（防止 env_file: .env 因缺文件报错）。
+// bak 非空时同时写 .env.bak。
+func EnvSave(installDir, env, bak string) {
+	if installDir == "" {
+		return
+	}
+	_ = os.MkdirAll(installDir, 0755)
+	envPath := filepath.Join(installDir, EnvFileName)
+	if env != "" {
+		_ = os.WriteFile(envPath, []byte(env), 0644)
+	} else {
+		if _, err := os.Stat(envPath); os.IsNotExist(err) {
+			_ = os.WriteFile(envPath, []byte(""), 0644)
+		}
+	}
+	if bak != "" {
+		_ = os.WriteFile(filepath.Join(installDir, EnvFileName+".bak"), []byte(bak), 0644)
+	}
+}
+
+// EnvContentRead 读取项目 .env 内容；文件不存在时返回空串。
+func EnvContentRead(installDir string) string {
+	if installDir == "" {
+		return ""
+	}
+	data, err := os.ReadFile(filepath.Join(installDir, EnvFileName))
+	if err != nil {
+		return ""
+	}
+	return string(data)
+}
+
 // InitFilesHandle 处理附加运行文件（支持本地上传或 URL 下载），解压到 installDir。
 func InitFilesHandle(installDir string, payload InitPayload) error {
 	if payload.File == nil && payload.URL == "" {

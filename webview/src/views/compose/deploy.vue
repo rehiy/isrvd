@@ -9,9 +9,10 @@ import { MARKETPLACE_PICK_STORAGE_KEY } from '@/service/types'
 import type { ComposeDeployTarget, ComposeMarketplacePick } from '@/service/types'
 
 import ComposeEditor from './widget/compose-editor.vue'
+import EnvEditor from './widget/env-editor.vue'
 
 @Component({
-    components: { ComposeEditor }
+    components: { ComposeEditor, EnvEditor }
 })
 class ComposeDeploy extends Vue {
     portal = usePortal()
@@ -24,6 +25,7 @@ class ComposeDeploy extends Vue {
     initURL = ''
     initFile: File | null = null
     content = ''
+    envContent = ''
 
     // 预填态（来自应用市场一键选择）：仅用于头部提示徽章，不锁定输入
     fromMarketplace = false
@@ -47,7 +49,7 @@ class ComposeDeploy extends Vue {
         if (this.fromMarketplace) {
             return '已从应用市场预填模板，可在此基础上直接部署或调整后再部署'
         }
-        return '项目名来自 compose 文件的 name 字段；变量插值需在客户端完成，后端仅按原文落盘与加载'
+        return '项目名来自 compose 文件的 name 字段；如 compose 中引用了 ${VAR}，请在下方 .env 中填写对应变量'
     }
 
     // ─── 方法 ───
@@ -118,11 +120,13 @@ class ComposeDeploy extends Vue {
             const res = this.target === 'swarm'
                 ? await api.composeSwarmDeploy({
                     content: this.content,
+                    envContent: this.envContent || undefined,
                     initURL: this.initURL.trim() || undefined,
                     initFile: this.initFile ?? undefined,
                 })
                 : await api.composeDockerDeploy({
                     content: this.content,
+                    envContent: this.envContent || undefined,
                     initURL: this.initURL.trim() || undefined,
                     initFile: this.initFile ?? undefined,
                 })
@@ -145,6 +149,7 @@ class ComposeDeploy extends Vue {
 
     resetForm() {
         this.content = ''
+        this.envContent = ''
         this.initURL = ''
         this.initFile = null
         this.target = 'docker'
@@ -227,6 +232,18 @@ export default toNative(ComposeDeploy)
 
         <!-- Compose 内容 -->
         <ComposeEditor v-model="content" :disabled="loading" :warning="dynamicWarning" />
+
+        <!-- 环境变量 .env -->
+        <details class="group" :open="!!envContent">
+          <summary class="form-label cursor-pointer select-none">
+            <i class="fas fa-chevron-right mr-1 text-slate-400 transition-transform group-open:rotate-90"></i>
+            环境变量 .env
+            <span class="text-xs font-normal text-slate-400">（选填，部署时合并进变量插值环境）</span>
+          </summary>
+          <div class="mt-2">
+            <EnvEditor v-model="envContent" :disabled="loading" />
+          </div>
+        </details>
 
         <!-- 附加文件 -->
         <div>
