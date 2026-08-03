@@ -1857,7 +1857,7 @@
             "description": "成功"
           }
         },
-        "summary": "查询 APISIX 白名单",
+        "summary": "查询 APISIX 访问授权",
         "tags": [
           "apisix"
         ]
@@ -1899,7 +1899,7 @@
             "description": "成功"
           }
         },
-        "summary": "配置 APISIX 路由白名单",
+        "summary": "配置 APISIX 路由访问授权",
         "tags": [
           "apisix"
         ]
@@ -1943,7 +1943,7 @@
             "description": "成功"
           }
         },
-        "summary": "新建用户并加入 APISIX 白名单",
+        "summary": "新建用户并加入 APISIX 访问授权",
         "tags": [
           "apisix"
         ]
@@ -1973,9 +1973,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "含 Basic Auth 的路由列表",
                       "items": {
-                        "type": "object"
+                        "$ref": "#/components/schemas/caddy.BasicAuthRouteView"
                       },
                       "type": "array"
                     },
@@ -2022,17 +2021,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "properties": {
-                  "forwardHeader": {
-                    "description": "透传用户名的请求头名；空表示关闭透传",
-                    "type": "string"
-                  },
-                  "realm": {
-                    "description": "HTTP Basic realm",
-                    "type": "string"
-                  }
-                },
-                "type": "object"
+                "$ref": "#/components/schemas/caddy.caddyBasicAuthConfigUpdate"
               }
             }
           },
@@ -2081,29 +2070,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "properties": {
-                  "forwardHeader": {
-                    "description": "非空时注入 headers handler，将认证用户名透传给上游；空表示移除",
-                    "type": "string"
-                  },
-                  "password": {
-                    "description": "明文密码，后端自动 bcrypt",
-                    "type": "string"
-                  },
-                  "realm": {
-                    "description": "留空时沿用已有 realm",
-                    "type": "string"
-                  },
-                  "username": {
-                    "description": "用户名，同一路由内唯一",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "username",
-                  "password"
-                ],
-                "type": "object"
+                "$ref": "#/components/schemas/caddy.caddyBasicAuthUserCreate"
               }
             }
           },
@@ -2756,6 +2723,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "force",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2769,8 +2744,7 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
-                      "type": "object"
+                      "$ref": "#/components/schemas/compose.ContentResult"
                     },
                     "success": {
                       "description": "请求是否成功",
@@ -2887,6 +2861,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "force",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2900,8 +2882,7 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
-                      "type": "object"
+                      "$ref": "#/components/schemas/compose.ContentResult"
                     },
                     "success": {
                       "description": "请求是否成功",
@@ -6860,6 +6841,46 @@
         ]
       }
     },
+    "/swarm/service/{id}/logs/stream": {
+      "get": {
+        "description": "[SSE] 实时查看 Swarm 服务日志",
+        "operationId": "get_swarm_service_id_logs_stream",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tail",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "实时查看 Swarm 服务日志",
+        "tags": [
+          "swarm"
+        ]
+      }
+    },
     "/swarm/services": {
       "get": {
         "operationId": "get_swarm_services",
@@ -7138,6 +7159,14 @@
           "passkeyEnabled": {
             "description": "是否启用 Passkey 登录",
             "type": "boolean"
+          },
+          "passwordDisabled": {
+            "description": "是否禁用密码登录",
+            "type": "boolean"
+          },
+          "passwordMinLength": {
+            "description": "密码最小长度",
+            "type": "integer"
           },
           "username": {
             "description": "当前登录用户名（未登录时为空）",
@@ -7695,7 +7724,7 @@
       "apisix.WhitelistCreateRequest": {
         "properties": {
           "consumers": {
-            "description": "白名单 Consumer 列表",
+            "description": "授权 Consumer 列表",
             "items": {
               "type": "string"
             },
@@ -7860,6 +7889,67 @@
               "type": "string"
             },
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.BasicAuthAccount": {
+        "properties": {
+          "password": {
+            "description": "bcrypt hash",
+            "type": "string"
+          },
+          "salt": {
+            "description": "salt",
+            "type": "string"
+          },
+          "username": {
+            "description": "username",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.BasicAuthRouteView": {
+        "properties": {
+          "forwardHeader": {
+            "description": "传递用户名的请求头；空表示未开启",
+            "type": "string"
+          },
+          "handlers": {
+            "description": "其余 handler 链（只读展示）",
+            "items": {
+              "$ref": "#/components/schemas/caddy.Handler"
+            },
+            "type": "array"
+          },
+          "index": {
+            "description": "路由下标（主键）",
+            "type": "integer"
+          },
+          "name": {
+            "description": "路由名（仅展示）",
+            "type": "string"
+          },
+          "realm": {
+            "description": "HTTP Basic realm",
+            "type": "string"
+          },
+          "users": {
+            "description": "账号列表（不含密码 hash）",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.BasicAuthUser": {
+        "properties": {
+          "username": {
+            "description": "username",
+            "type": "string"
           }
         },
         "type": "object"
@@ -8435,6 +8525,44 @@
         },
         "type": "object"
       },
+      "caddy.caddyBasicAuthConfigUpdate": {
+        "properties": {
+          "forwardHeader": {
+            "description": "forwardHeader",
+            "type": "string"
+          },
+          "realm": {
+            "description": "realm",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.caddyBasicAuthUserCreate": {
+        "properties": {
+          "forwardHeader": {
+            "description": "forwardHeader",
+            "type": "string"
+          },
+          "password": {
+            "description": "password",
+            "type": "string"
+          },
+          "realm": {
+            "description": "realm",
+            "type": "string"
+          },
+          "username": {
+            "description": "username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ],
+        "type": "object"
+      },
       "caddy.caddyConfigLoad": {
         "properties": {
           "config": {
@@ -8445,6 +8573,27 @@
         "required": [
           "config"
         ],
+        "type": "object"
+      },
+      "compose.ContentResult": {
+        "properties": {
+          "content": {
+            "description": "compose.yml 文本",
+            "type": "string"
+          },
+          "fileModTime": {
+            "description": "compose.yml 修改时间戳（Unix 秒）；无落盘文件时为空",
+            "type": "integer"
+          },
+          "projectName": {
+            "description": "实际解析到的项目名",
+            "type": "string"
+          },
+          "source": {
+            "description": "内容来源：file=落盘文件，runtime=运行态反推",
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "compose.DeployRequest": {
@@ -8655,6 +8804,14 @@
           },
           "Passkey": {
             "description": "Passkey 登录配置",
+            "type": "object"
+          },
+          "Password": {
+            "description": "密码登录配置",
+            "type": "object"
+          },
+          "Schema": {
+            "description": "配置格式元信息，用于版本化迁移",
             "type": "object"
           },
           "Server": {
@@ -8887,6 +9044,28 @@
           },
           "signCount": {
             "description": "初始签名计数（仅存储初始值，运行时由内存维护）",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "config.PasswordConfig": {
+        "properties": {
+          "disabled": {
+            "description": "是否禁用密码登录（禁用后仅允许 Passkey/OIDC/THA 登录）",
+            "type": "boolean"
+          },
+          "minLength": {
+            "description": "密码最小长度（默认 6）；创建成员和修改密码时后端同步校验",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "config.SchemaConfig": {
+        "properties": {
+          "Version": {
+            "description": "配置结构版本号，当前: 1",
             "type": "integer"
           }
         },
@@ -9317,6 +9496,10 @@
           "isLink": {
             "description": "是否为符号链接",
             "type": "boolean"
+          },
+          "linkTarget": {
+            "description": "符号链接目标",
+            "type": "string"
           },
           "modTime": {
             "description": "修改时间（Unix 时间戳）",
@@ -10443,6 +10626,14 @@
             "description": "是否为目录",
             "type": "boolean"
           },
+          "isLink": {
+            "description": "是否为符号链接",
+            "type": "boolean"
+          },
+          "linkTarget": {
+            "description": "符号链接目标",
+            "type": "string"
+          },
           "modTime": {
             "description": "最后修改时间",
             "type": "string"
@@ -10650,6 +10841,14 @@
           "system": {
             "$ref": "#/components/schemas/psutil.DetailStat",
             "description": "系统资源明细（CPU/内存/磁盘等）"
+          },
+          "time": {
+            "description": "系统当前本地时间",
+            "type": "string"
+          },
+          "timezone": {
+            "description": "系统当前时区",
+            "type": "string"
           }
         },
         "type": "object"
@@ -10769,6 +10968,31 @@
           },
           "updaterImage": {
             "description": "推荐的 docker-updater 镜像（按国家代码自动选择）",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "shell.BridgeOptions": {
+        "properties": {
+          "Cleanup": {
+            "$ref": "#/components/schemas/ast.FuncType",
+            "description": "Cleanup"
+          },
+          "Close": {
+            "$ref": "#/components/schemas/ast.FuncType",
+            "description": "Close"
+          },
+          "Name": {
+            "description": "Name",
+            "type": "string"
+          },
+          "Resize": {
+            "$ref": "#/components/schemas/ast.FuncType",
+            "description": "Resize"
+          },
+          "Welcome": {
+            "description": "Welcome",
             "type": "string"
           }
         },
@@ -11258,6 +11482,10 @@
           "passkey": {
             "$ref": "#/components/schemas/config.PasskeyConfig",
             "description": "Passkey 认证配置"
+          },
+          "password": {
+            "$ref": "#/components/schemas/config.PasswordConfig",
+            "description": "密码登录配置"
           },
           "server": {
             "$ref": "#/components/schemas/config.ServerConfig",
