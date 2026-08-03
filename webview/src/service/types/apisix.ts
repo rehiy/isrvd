@@ -6,6 +6,8 @@ export type ApisixRouteUpstreamMode = 'none' | 'nodes' | 'upstream_id'
 
 export type ApisixUpstreamType = 'roundrobin' | 'chash' | 'ewma' | 'least_conn'
 
+export type ApisixUpstreamScheme = 'http' | 'https'
+
 export type ApisixUpstreamHashOn = 'vars' | 'header' | 'cookie' | 'consumer' | 'vars_combinations'
 
 export interface ApisixUpstreamNode {
@@ -19,6 +21,7 @@ export interface ApisixUpstreamConfig {
     nodes?: ApisixUpstreamNode[] | Record<string, number>
     hash_on?: ApisixUpstreamHashOn
     key?: string
+    scheme?: ApisixUpstreamScheme | string
     timeout?: ApisixRouteTimeout
     [key: string]: unknown
 }
