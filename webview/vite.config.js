@@ -19,12 +19,16 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true
       },
-      '/api/shell': {
+      '/openapi/': {
+        target: 'http://localhost:8080',
+        changeOrigin: true
+      },
+      '/api/ssh/to': {
         target: 'ws://localhost:8080',
         changeOrigin: true,
         ws: true
       },
-      '/api/ssh/to': {
+      '/api/shell': {
         target: 'ws://localhost:8080',
         changeOrigin: true,
         ws: true
