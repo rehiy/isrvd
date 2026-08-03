@@ -9,12 +9,13 @@ import type {
     ApisixRouteUpstreamFormNode,
     ApisixUpstream,
     ApisixUpstreamHashOn,
+    ApisixUpstreamScheme,
     ApisixUpstreamType,
     ApisixUpstreamUpdate,
     DockerContainerInfo
 } from '@/service/types'
 
-import { normalizeUpstreamFormNodes, normalizeUpstreamType } from '@/helper/apisix'
+import { normalizeUpstreamFormNodes, normalizeUpstreamScheme, normalizeUpstreamType, UPSTREAM_SCHEME_OPTIONS } from '@/helper/apisix'
 
 import BaseModal from '@/component/modal.vue'
 
@@ -43,6 +44,7 @@ const defaultFormData = () => ({
     name: '',
     desc: '',
     type: 'roundrobin' as ApisixUpstreamType,
+    scheme: 'http' as ApisixUpstreamScheme,
     hash_on: 'vars' as ApisixUpstreamHashOn,
     key: 'remote_addr',
     nodes: [createNode()] as ApisixRouteUpstreamFormNode[],
@@ -65,6 +67,7 @@ class UpstreamEditModal extends Vue {
     containers: DockerContainerInfo[] = []
 
     readonly upstreamTypeOptions = UPSTREAM_TYPE_OPTIONS
+    readonly schemeOptions = UPSTREAM_SCHEME_OPTIONS
     readonly hashOnOptions = HASH_ON_OPTIONS
 
     get canLoadDockerContainers() {
@@ -89,6 +92,7 @@ class UpstreamEditModal extends Vue {
                 name: upstream.name || '',
                 desc: upstream.desc || '',
                 type: upstreamType,
+                scheme: normalizeUpstreamScheme(upstream.scheme),
                 hash_on: upstream.hash_on || 'vars',
                 key: upstream.key || (upstreamType === 'chash' ? 'remote_addr' : ''),
                 nodes: normalizeUpstreamFormNodes(upstream),
@@ -148,6 +152,7 @@ class UpstreamEditModal extends Vue {
             name: this.formData.name.trim(),
             desc: this.formData.desc.trim(),
             type: this.formData.type,
+            scheme: this.formData.scheme,
             nodes
         }
 
@@ -201,7 +206,7 @@ export default toNative(UpstreamEditModal)
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? '编辑上游' : '创建上游'" :loading="modalLoading" confirm-class="btn-emerald" @confirm="handleConfirm">
     <div class="max-w-3xl space-y-4 p-1">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label class="form-label">名称 <span class="text-red-500">*</span></label>
           <input v-model="formData.name" type="text" class="input" placeholder="请输入上游名称" />
@@ -210,6 +215,12 @@ export default toNative(UpstreamEditModal)
           <label class="form-label">负载均衡策略</label>
           <select v-model="formData.type" class="input">
             <option v-for="item in upstreamTypeOptions" :key="item.value" :value="item.value">{{ item.label }} - {{ item.desc }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">回源协议</label>
+          <select v-model="formData.scheme" class="input">
+            <option v-for="item in schemeOptions" :key="item.value" :value="item.value">{{ item.label }} - {{ item.desc }}</option>
           </select>
         </div>
       </div>
