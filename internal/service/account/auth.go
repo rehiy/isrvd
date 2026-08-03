@@ -89,7 +89,7 @@ func (s *Service) Login(req LoginRequest) (*LoginResponse, error) {
 	member, exists := config.Members[req.Username]
 	if !exists || !secure.BcryptVerify(req.Password, member.Password) {
 		logman.Warn("Login failed", "username", req.Username)
-		return nil, fmt.Errorf("invalid credentials")
+		return nil, fmt.Errorf("用户名或密码错误")
 	}
 	if s.TOTPEnabled(member) {
 		if req.TOTPCode == "" {
