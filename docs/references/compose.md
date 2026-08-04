@@ -9,28 +9,32 @@ Compose 接口用于单机 Docker Compose 与 Swarm Stack 的部署、读取配�
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
 | `content` | string | 是 | 完整 compose yaml 文本 |
-| `envContent` | string | 否 | `.env` 内容（`KEY=VALUE`），部署时合并进变量插值环境并写盘 |
+| `envContent` | string | 否 | `.env` 内容（`KEY=VALUE`）；省略则保留附加文件解压出的 `.env`，提交则以其为准写盘并合并进变量插值环境 |
 | `initURL` | string | 否 | 附加运行文件 zip 下载地址 |
 | `initFile` | file | 否 | 附加运行文件 zip；与 `initURL` 互斥且文件优先 |
 | `forcePull` | boolean | 否 | `true` 时强制拉取最新镜像（即使本地已存在），默认 `false` |
 
 > Docker 与 Swarm Compose 部署都支持 `initURL` / `initFile`；解压目标为 `docker.containerRoot/<NAME>/`。Swarm 场景下建议 `containerRoot` 指向各节点共享的存储（如 NFS），以便所有节点都能访问解压出的文件。
 
-部署时先浅解析顶层 `name`：支持使用进程环境和请求中 `envContent` 做项目名插值，并按 compose-go 规则转为小写规范名；未声明 `name` 时使用 compose 内容短哈希。随后在任何落盘前做不读取 `env_file` 的结构预检，只在 `.env` 和附加运行文件就位后执行完整 compose 加载。
+部署前先做不读取 `env_file` 的结构预检并从中取得项目名（已插值并按 compose-go 规则规范化为小写）；完全未声明 `name` 时用 compose 内容短哈希兜底；若声明了 `name` 但其插值变量未提供，部署直接报错而不会退回哈希。
 
 ### ComposeRedeploy
 
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
-| `content` | string | 按需 | 完整 compose yaml 文本（全量重建） |
-| `envContent` | string | 按需 | `.env` 内容（`KEY=VALUE`）；可与 `content` 一起提交，也可单独提交仅更新 `.env` 后重建 |
+| `content` | string | 按需 | 完整 compose yaml 文本；省略表示沿用现有 compose.yml，提交空字符串会被拒绝 |
+| `envContent` | string | 按需 | `.env` 内容（`KEY=VALUE`）；省略表示保留现有 `.env`，提交空字符串表示清空，提交内容表示覆盖 |
 | `serviceName` | string | 按需 | 要更新镜像的 compose 服务名（按服务更新） |
 | `image` | string | 按需 | 新镜像名，`serviceName` 非空时必填 |
 | `forcePull` | boolean | 否 | `true` 时强制拉取最新镜像，默认 `false` |
 
-> `content`、`envContent`、`serviceName` 三者至少提交一项；`serviceName` 与 `content` 互斥，`serviceName` 非空时 `image` 必填。
+> 该接口为部分更新，提交哪个字段就改哪个字段，未提交的字段保持不变；`content`、`envContent`、`serviceName` 三者至少提交一项；`serviceName` 与 `content`、`envContent` 均互斥，`serviceName` 非空时 `image` 必填。
 
 重部署会在正式加载和创建容器/服务前写入新 `.env`，确保 `env_file` 和变量插值使用新值；后续失败时会精确恢复原 `.env` 内容，包括空文件或原本不存在的状态，再回滚旧实例。
+
+### 变量插值优先级
+
+插值环境优先级从低到高为：进程环境 < `.env`。提交 `envContent` 时该内容即为 `.env`，不会与磁盘上原有 `.env` 叠加。这与 docker compose（shell 环境覆盖 `.env`）相反，目的是让界面上编辑的 `.env` 成为权威来源。
 
 ### ComposeDeployResult
 
@@ -148,6 +152,12 @@ isrvd_put "/compose/docker/<NAME>" "$(jq -n --arg content "$(cat docker-compose.
 isrvd_put "/compose/docker/<NAME>" "$(jq -n --arg envContent "$(cat .env)" '{envContent:$envContent}')"
 ```
 
+清空 `.env`（提交空字符串）：
+
+```bash
+isrvd_put "/compose/docker/<NAME>" "$(jq -n --arg content "$(cat docker-compose.yml)" '{content:$content,envContent:""}')"
+```
+
 ### 按服务更新镜像并重建
 
 ```bash
@@ -200,6 +210,12 @@ isrvd_put "/compose/swarm/<NAME>" "$(jq -n --arg content "$(cat stack.yml)" --ar
 
 ```bash
 isrvd_put "/compose/swarm/<NAME>" "$(jq -n --arg envContent "$(cat .env)" '{envContent:$envContent}')"
+```
+
+清空 `.env`（提交空字符串）：
+
+```bash
+isrvd_put "/compose/swarm/<NAME>" "$(jq -n --arg content "$(cat stack.yml)" '{content:$content,envContent:""}')"
 ```
 
 ### 按服务更新镜像并重建

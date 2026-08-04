@@ -93,7 +93,7 @@ class ContainerEditModal extends Vue {
         try {
             await api.composeDockerRedeploy(this.projectName, {
                 content: this.composeContent,
-                envContent: this.envContent || undefined
+                envContent: this.envContent
             })
             this.portal.showNotification('success', 'Compose 配置更新成功，已重建关联容器')
             this.isOpen = false

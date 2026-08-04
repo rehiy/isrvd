@@ -20,9 +20,10 @@ type Service struct {
 }
 
 // DeployRequest 部署请求
+// EnvContent 三态：nil 保留附加文件解压出的 .env；非 nil 时以其为准写盘（空串即清空）
 type DeployRequest struct {
 	Content    string    `json:"content" binding:"required"` // compose.yml 文件内容（必填）
-	EnvContent string    `json:"envContent,omitempty"`       // 附加 .env 内容（KEY=VALUE），合并进插值环境并写盘
+	EnvContent *string   `json:"envContent,omitempty"`       // .env 内容（KEY=VALUE）；nil 表示保留附加文件解压出的 .env，非 nil 时以其为准写盘（空串即清空）
 	InitURL    string    `json:"initURL,omitempty"`          // 附加运行文件 zip 的下载地址（可选）
 	InitFile   io.Reader `json:"-"`                          // 附加运行文件（multipart 上传，不在 JSON 中）
 	ForcePull  bool      `json:"forcePull,omitempty"`        // 是否强制拉取最新镜像
@@ -45,15 +46,14 @@ type ContentResult struct {
 }
 
 // RedeployRequest 重建请求
-// - ServiceName + Image 非空：从现有内容读取后更新指定服务镜像重建
-// - 否则：Content 非空时全量重建（compose 与 .env 均可用新内容替换）
-// - EnvContent 单独变更：Content 可省略，仅更新 .env 后重建
+// 部分更新语义——提交哪个字段就改哪个字段，未提交的字段保持不变；ServiceName + Image 用于仅更新指定服务镜像，与 Content / EnvContent 互斥。
+// EnvContent 三态：nil 保留现有 .env，空串清空，非空覆盖
 type RedeployRequest struct {
-	Content     string `json:"content,omitempty"`     // compose.yml 内容（未指定 serviceName 时与 envContent 至少其一必填，用于全量重建）
-	EnvContent  string `json:"envContent,omitempty"`  // .env 内容（可单独变更，与 content 一起更新时生效）
-	ServiceName string `json:"serviceName,omitempty"` // 目标服务名（与 image 配合，仅更新该服务镜像后重建）
-	Image       string `json:"image,omitempty"`       // 新镜像（指定 serviceName 时必填）
-	ForcePull   bool   `json:"forcePull,omitempty"`   // 是否强制拉取最新镜像
+	Content     *string `json:"content,omitempty"`     // compose.yml 内容；nil 表示沿用现有 compose.yml，提交空串报错
+	EnvContent  *string `json:"envContent,omitempty"`  // .env 内容（KEY=VALUE）；nil 表示保留现有 .env，空串表示清空，非空表示覆盖
+	ServiceName string  `json:"serviceName,omitempty"` // 目标服务名（与 image 配合，仅更新该服务镜像后重建）
+	Image       string  `json:"image,omitempty"`       // 新镜像（指定 serviceName 时必填）
+	ForcePull   bool    `json:"forcePull,omitempty"`   // 是否强制拉取最新镜像
 }
 
 // Validate 校验重建请求的互斥参数
@@ -61,11 +61,17 @@ func (r RedeployRequest) Validate() error {
 	if r.ServiceName != "" && r.Image == "" {
 		return fmt.Errorf("指定服务名时 image 不能为空")
 	}
-	if r.ServiceName != "" && r.Content != "" {
+	if r.ServiceName != "" && r.Content != nil {
 		return fmt.Errorf("指定服务名时不能同时提交 content")
 	}
-	if r.ServiceName == "" && r.Content == "" && r.EnvContent == "" {
-		return fmt.Errorf("未指定服务名时 content 或 envContent 至少一项不能为空")
+	if r.ServiceName != "" && r.EnvContent != nil {
+		return fmt.Errorf("指定服务名时不能同时提交 envContent")
+	}
+	if r.Content != nil && *r.Content == "" {
+		return fmt.Errorf("content 不能为空字符串")
+	}
+	if r.ServiceName == "" && r.Content == nil && r.EnvContent == nil {
+		return fmt.Errorf("未指定服务名时 content 与 envContent 至少需提交一项")
 	}
 	return nil
 }

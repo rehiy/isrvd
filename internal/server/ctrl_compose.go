@@ -143,7 +143,9 @@ func bindComposeDeployRequest(c *gin.Context) (svcCompose.DeployRequest, bool) {
 		}
 	} else {
 		req.Content = c.PostForm("content")
-		req.EnvContent = c.PostForm("envContent")
+		if v, ok := c.GetPostForm("envContent"); ok {
+			req.EnvContent = &v
+		}
 		req.InitURL = c.PostForm("initURL")
 		if fh, err := c.FormFile("initFile"); err == nil {
 			if fh.Size > config.Server.MaxUploadSize {

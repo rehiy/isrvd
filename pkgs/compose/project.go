@@ -18,6 +18,7 @@ import (
 	"github.com/compose-spec/compose-go/v2/dotenv"
 	"github.com/compose-spec/compose-go/v2/loader"
 	"github.com/compose-spec/compose-go/v2/types"
+	"github.com/goccy/go-yaml"
 )
 
 // composeFileCandidates 常见的 compose 文件名（按优先级）
@@ -45,8 +46,7 @@ type LoadOptions struct {
 	WorkingDir  string            // compose 文件所在目录（用于解析相对路径和 .env）
 	ConfigFiles []string          // 指定要加载的 compose 文件绝对路径；为空则在 WorkingDir 下自动查找
 	ProjectName string            // 项目名（影响生成的网络/容器默认前缀）
-	Environment map[string]string // 额外的环境变量（会与 .env 合并，优先级更高）
-	EnvContent  string            // 附加的 .env 内容（KEY=VALUE），解析后合并进插值环境；为空则尝试读取 WorkingDir/.env
+	Environment map[string]string // 额外的环境变量（优先级高于进程环境，低于 .env）
 }
 
 // LoadProject 使用 compose-go 官方加载器解析 compose 文件，
@@ -70,7 +70,7 @@ func LoadProject(ctx context.Context, opts LoadOptions) (*types.Project, error) 
 		projectName = filepath.Base(opts.WorkingDir)
 	}
 
-	env, err := projectEnvironmentWithEnvFile(ctx, opts.Environment, opts.EnvContent, opts.WorkingDir)
+	env, err := projectEnvironmentWithEnvFile(ctx, opts.Environment, nil, opts.WorkingDir)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func loadProjectFromContent(ctx context.Context, content, workingDir, projectNam
 		return nil, fmt.Errorf("compose 内容为空")
 	}
 
-	env, err := projectEnvironmentWithEnvFile(ctx, nil, "", workingDir)
+	env, err := projectEnvironmentWithEnvFile(ctx, nil, nil, workingDir)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func loadProjectFromContent(ctx context.Context, content, workingDir, projectNam
 }
 
 // loadProjectFromContentWithEnv 从 yaml 文本加载 compose 项目，并额外合并指定的 .env 内容到插值环境。
-func loadProjectFromContentWithEnv(ctx context.Context, content, workingDir, projectName, envContent string, resolvePaths bool) (*types.Project, error) {
+func loadProjectFromContentWithEnv(ctx context.Context, content, workingDir, projectName string, envContent *string, resolvePaths bool) (*types.Project, error) {
 	if content == "" {
 		return nil, fmt.Errorf("compose 内容为空")
 	}
@@ -168,9 +168,9 @@ func loadProjectWithOptions(ctx context.Context, details types.ConfigDetails, pr
 }
 
 // ProjectValidateWithoutEnvFiles 在不读取 services.env_file 的前提下校验 Compose 结构，
-// 返回解析结果供调用方复用（如项目名，已插值+规范化；无 name 时用内容短哈希兜底）。
+// 返回解析结果供调用方复用（如项目名，已插值+规范化；未声明 name 时用内容短哈希兜底）。
 // 用于部署落盘前预检；env_file 仅在文件就位后的正式加载阶段解析。
-func ProjectValidateWithoutEnvFiles(ctx context.Context, content, envContent string) (*types.Project, error) {
+func ProjectValidateWithoutEnvFiles(ctx context.Context, content string, envContent *string) (*types.Project, error) {
 	if content == "" {
 		return nil, fmt.Errorf("compose 内容为空")
 	}
@@ -186,18 +186,23 @@ func ProjectValidateWithoutEnvFiles(ctx context.Context, content, envContent str
 		}},
 		Environment: env,
 	}
-	project, err := loadProjectWithOptions(ctx, details, "", false, false, func(o *loader.Options) {
+	skipEnvFiles := func(o *loader.Options) {
 		o.SkipResolveEnvironment = true
-	})
-	if err != nil {
-		// 无顶层 name 时 loader 报空名错误，用内容短哈希兜底
-		hash := ShortHash(content)
-		project, err = loadProjectWithOptions(ctx, details, hash, false, true, func(o *loader.Options) {
-			o.SkipResolveEnvironment = true
-		})
-		if err != nil {
-			return nil, err
-		}
+	}
+
+	project, err := loadProjectWithOptions(ctx, details, "", false, false, skipEnvFiles)
+	if err == nil {
+		return project, nil
+	}
+
+	// 首次失败可能仅因未声明顶层 name，此时用内容短哈希兜底。
+	// 但若声明了 name 却解析为空，说明插值变量未提供，必须报错而非静默改名。
+	if declaresProjectName(content) {
+		return nil, err
+	}
+	project, hashErr := loadProjectWithOptions(ctx, details, ShortHash(content), false, true, skipEnvFiles)
+	if hashErr != nil {
+		return nil, err
 	}
 	return project, nil
 }
@@ -216,14 +221,28 @@ func projectEnvironment(extra map[string]string) map[string]string {
 	return env
 }
 
-// projectEnvironmentWithEnvFile 构建插值环境：进程环境 + 显式 envContent + WorkingDir/.env 文件。
-// 优先级从低到高：进程环境 < WorkingDir/.env 文件 < envContent（显式传入的 .env 内容）。
-func projectEnvironmentWithEnvFile(ctx context.Context, extra map[string]string, envContent, workingDir string) (map[string]string, error) {
+// projectEnvironmentWithEnvFile 构建 ${VAR} 插值环境。
+// envContent 非 nil 时以其为准（空串表示无任何变量），不再读取 workingDir/.env；
+// envContent 为 nil 时回退读取 workingDir/.env。
+// 优先级从低到高：进程环境 < extra < .env（显式内容或 workingDir/.env）。
+// 注意：此处 .env 覆盖进程环境，与 docker compose（shell 覆盖 .env）相反，
+// 目的是让用户在界面上编辑的 .env 始终是权威来源。
+func projectEnvironmentWithEnvFile(ctx context.Context, extra map[string]string, envContent *string, workingDir string) (map[string]string, error) {
 	env := projectEnvironment(extra)
 
-	// 读取 WorkingDir 下已存在的 .env 文件（对齐 docker compose 行为）
+	if envContent != nil {
+		if strings.TrimSpace(*envContent) != "" {
+			fileEnv, err := parseEnvContent(*envContent)
+			if err != nil {
+				return nil, fmt.Errorf("解析 .env 内容失败: %w", err)
+			}
+			maps.Copy(env, fileEnv)
+		}
+		return env, nil
+	}
+
 	if workingDir != "" {
-		envFilePath := filepath.Join(workingDir, ".env")
+		envFilePath := filepath.Join(workingDir, EnvFileName)
 		if data, err := os.ReadFile(envFilePath); err == nil {
 			fileEnv, perr := parseEnvContent(string(data))
 			if perr != nil {
@@ -233,15 +252,6 @@ func projectEnvironmentWithEnvFile(ctx context.Context, extra map[string]string,
 		} else if !os.IsNotExist(err) {
 			slog.DebugContext(ctx, "read project .env failed", "path", envFilePath, "error", err)
 		}
-	}
-
-	// 显式传入的 .env 内容优先级最高
-	if strings.TrimSpace(envContent) != "" {
-		fileEnv, perr := parseEnvContent(envContent)
-		if perr != nil {
-			return nil, fmt.Errorf("解析 .env 内容失败: %w", perr)
-		}
-		maps.Copy(env, fileEnv)
 	}
 
 	return env, nil
@@ -306,10 +316,23 @@ func findComposeFile(dir string) (string, bool) {
 }
 
 // LoadProjectFromContentWithEnv 从 yaml 文本加载 compose 项目，并显式合并指定 .env 内容到插值环境。
-// workingDir 用于解析相对路径；envContent 为空时回退读取 workingDir/.env 文件。
-func LoadProjectFromContentWithEnv(ctx context.Context, content, workingDir, projectName, envContent string) (*types.Project, error) {
+// workingDir 用于解析相对路径；envContent 为 nil 时回退读取 workingDir/.env；非 nil 时以其为准。
+func LoadProjectFromContentWithEnv(ctx context.Context, content, workingDir, projectName string, envContent *string) (*types.Project, error) {
 	if workingDir == "" {
 		workingDir = "."
 	}
 	return loadProjectFromContentWithEnv(ctx, content, workingDir, projectName, envContent, true)
+}
+
+// ─── 辅助函数 ───
+
+// declaresProjectName 判断 compose 文本是否声明了顶层 name 键。
+func declaresProjectName(content string) bool {
+	var doc struct {
+		Name *string `yaml:"name"`
+	}
+	if err := yaml.Unmarshal([]byte(content), &doc); err != nil {
+		return false
+	}
+	return doc.Name != nil
 }

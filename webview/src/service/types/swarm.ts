@@ -97,7 +97,7 @@ export type SwarmCreateService = SwarmServiceSpec
 // Swarm 服务 Compose
 export interface SwarmServiceCompose {
     content: string
-    envContent?: string
+    envContent?: string     // 项目 .env 文本；磁盘无文件时不返回
     projectName?: string
     fileModTime?: number
     source?: 'file' | 'runtime'

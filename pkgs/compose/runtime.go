@@ -15,7 +15,11 @@ import (
 	"github.com/rehiy/libgo/request"
 )
 
-const ComposeFileName = "compose.yml"
+const (
+	ComposeFileName = "compose.yml"
+	// EnvFileName 项目 .env 文件名。
+	EnvFileName = ".env"
+)
 
 var safeProjectName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]*$`)
 
@@ -100,10 +104,7 @@ func ContentSave(installDir, content, bak string) {
 	}
 }
 
-// EnvFileName 项目 .env 文件名。
-const EnvFileName = ".env"
-
-// EnvSave 持久化 .env；env 非空时写入，否则确保空 .env 文件存在（防止 env_file: .env 因缺文件报错）。
+// EnvSave 以 env 为准写入 .env，空串表示清空内容。
 // bak 非空时同时写 .env.bak。
 func EnvSave(installDir, env, bak string) error {
 	if installDir == "" {
@@ -112,24 +113,33 @@ func EnvSave(installDir, env, bak string) error {
 	if err := os.MkdirAll(installDir, 0755); err != nil {
 		return fmt.Errorf("创建环境文件目录失败: %w", err)
 	}
-	envPath := filepath.Join(installDir, EnvFileName)
-	if env != "" {
-		if err := os.WriteFile(envPath, []byte(env), 0644); err != nil {
-			return fmt.Errorf("写入 .env 失败: %w", err)
-		}
-	} else {
-		if _, err := os.Stat(envPath); os.IsNotExist(err) {
-			if err := os.WriteFile(envPath, []byte(""), 0644); err != nil {
-				return fmt.Errorf("创建 .env 失败: %w", err)
-			}
-		} else if err != nil {
-			return fmt.Errorf("检查 .env 失败: %w", err)
-		}
+	if err := os.WriteFile(filepath.Join(installDir, EnvFileName), []byte(env), 0644); err != nil {
+		return fmt.Errorf("写入 .env 失败: %w", err)
 	}
 	if bak != "" {
 		if err := os.WriteFile(filepath.Join(installDir, EnvFileName+".bak"), []byte(bak), 0644); err != nil {
 			return fmt.Errorf("写入 .env.bak 失败: %w", err)
 		}
+	}
+	return nil
+}
+
+// EnvEnsure 确保 .env 存在（防止 env_file: .env 因缺文件报错），不修改已有内容。
+func EnvEnsure(installDir string) error {
+	if installDir == "" {
+		return nil
+	}
+	if err := os.MkdirAll(installDir, 0755); err != nil {
+		return fmt.Errorf("创建环境文件目录失败: %w", err)
+	}
+	envPath := filepath.Join(installDir, EnvFileName)
+	if _, err := os.Stat(envPath); err == nil {
+		return nil
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("检查 .env 失败: %w", err)
+	}
+	if err := os.WriteFile(envPath, []byte(""), 0644); err != nil {
+		return fmt.Errorf("创建 .env 失败: %w", err)
 	}
 	return nil
 }

@@ -67,8 +67,12 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 		return nil, err
 	}
 
-	// 写 .env（显式内容优先；附加文件解压的 .env 已存在则保留，否则兜底空文件）
-	if err := compose.EnvSave(installDir, req.EnvContent, ""); err != nil {
+	// 写 .env：显式提交则以其为准（空串即清空），未提交则保留附加文件解压出的 .env 并兜底空文件
+	if req.EnvContent != nil {
+		if err := compose.EnvSave(installDir, *req.EnvContent, ""); err != nil {
+			return nil, err
+		}
+	} else if err := compose.EnvEnsure(installDir); err != nil {
 		return nil, err
 	}
 
@@ -155,13 +159,20 @@ func (s *Service) DockerContentResult(ctx context.Context, name string, forceRun
 	if err != nil {
 		return nil, err
 	}
-	return &ContentResult{Content: content, ProjectName: projectName, FileModTime: fileModTime, Source: "runtime"}, nil
+	return &ContentResult{
+		Content:     content,
+		EnvContent:  compose.EnvContentRead(filepath.Join(root, projectName)),
+		ProjectName: projectName,
+		FileModTime: fileModTime,
+		Source:      "runtime",
+	}, nil
 }
 
 // DockerRedeploy 重建 Docker Compose 项目。
-// - ServiceName+Image 非空：仅更新指定服务镜像后重建
-// - EnvContent 单独非空（Content 为空）：仅更新 .env 后重建
-// - Content 非空：全量重建（compose 与 .env 均可替换）
+// 部分更新：提交哪个字段就改哪个字段，未提交的字段保持不变。
+// - ServiceName+Image：仅更新指定服务镜像后重建
+// - Content：替换 compose.yml 后重建
+// - EnvContent：替换 .env（空串即清空）后重建
 func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployRequest) (*DeployResult, error) {
 	if err := compose.ValidateProjectName(name); err != nil {
 		return nil, err
@@ -185,23 +196,26 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	}
 	oldEnv := oldEnvState.Content
 
-	content := req.Content
-	if req.ServiceName != "" {
-		oldContent, _, err := s.DockerContent(ctx, name)
-		if err != nil {
-			return nil, err
+	oldContent, _, contentErr := s.DockerContent(ctx, name)
+
+	// 准备新 content：未提交则沿用现有 compose 内容
+	content := oldContent
+	switch {
+	case req.ServiceName != "":
+		if contentErr != nil {
+			return nil, contentErr
 		}
 		content, err = compose.UpdateServiceImage(ctx, name, oldContent, req.ServiceName, req.Image)
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	oldContent, _, _ := s.DockerContent(ctx, name)
-
-	// 仅更新 .env（content 为空）时，沿用现有 compose 内容
-	if content == "" {
-		content = oldContent
+	case req.Content != nil:
+		content = *req.Content
+	default:
+		// 仅更新 .env：必须能读到现有 compose 内容
+		if contentErr != nil {
+			return nil, contentErr
+		}
 	}
 
 	// 先校验新 content，失败时旧服务保持运行
@@ -229,7 +243,12 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	}
 
 	// 先落盘新 .env，确保 ProjectLoad 插值读取到新值（与 Deploy 流程顺序一致）
-	if err := compose.EnvSave(installDir, req.EnvContent, oldEnv); err != nil {
+	if req.EnvContent != nil {
+		if err := compose.EnvSave(installDir, *req.EnvContent, oldEnv); err != nil {
+			rollback()
+			return nil, err
+		}
+	} else if err := compose.EnvEnsure(installDir); err != nil {
 		rollback()
 		return nil, err
 	}

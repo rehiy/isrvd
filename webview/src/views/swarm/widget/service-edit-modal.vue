@@ -81,7 +81,7 @@ class ServiceEditModal extends Vue {
         try {
             await api.composeSwarmRedeploy(this.serviceName, {
                 content: this.composeContent,
-                envContent: this.envContent || undefined
+                envContent: this.envContent
             })
             this.portal.showNotification('success', 'Swarm 服务配置更新成功，已重建服务')
             this.isOpen = false

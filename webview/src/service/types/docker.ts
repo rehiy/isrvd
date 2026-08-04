@@ -89,7 +89,7 @@ export interface DockerContainerDetail extends DockerContainerCreate {
 // 容器 Compose
 export interface DockerContainerCompose {
     content: string
-    envContent?: string
+    envContent?: string     // 项目 .env 文本；磁盘无文件时不返回
     projectName?: string
     fileModTime?: number
     source?: 'file' | 'runtime'
