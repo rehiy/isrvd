@@ -22,10 +22,10 @@ type Service struct {
 // DeployRequest 部署请求
 type DeployRequest struct {
 	Content    string    `json:"content" binding:"required"` // compose.yml 文件内容（必填）
-	EnvContent string    `json:"envContent,omitempty"`        // 附加 .env 内容（KEY=VALUE），合并进插值环境并写盘
-	InitURL    string    `json:"initURL,omitempty"`           // 附加运行文件 zip 的下载地址（可选）
-	InitFile   io.Reader `json:"-"`                           // 附加运行文件（multipart 上传，不在 JSON 中）
-	ForcePull  bool      `json:"forcePull,omitempty"`         // 是否强制拉取最新镜像
+	EnvContent string    `json:"envContent,omitempty"`       // 附加 .env 内容（KEY=VALUE），合并进插值环境并写盘
+	InitURL    string    `json:"initURL,omitempty"`          // 附加运行文件 zip 的下载地址（可选）
+	InitFile   io.Reader `json:"-"`                          // 附加运行文件（multipart 上传，不在 JSON 中）
+	ForcePull  bool      `json:"forcePull,omitempty"`        // 是否强制拉取最新镜像
 }
 
 // DeployResult 部署结果

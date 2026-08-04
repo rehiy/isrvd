@@ -167,27 +167,39 @@ func loadProjectWithOptions(ctx context.Context, details types.ConfigDetails, pr
 	return project, nil
 }
 
-// ProjectValidateWithoutEnvFiles 在不读取 services.env_file 的前提下校验 Compose 结构。
+// ProjectValidateWithoutEnvFiles 在不读取 services.env_file 的前提下校验 Compose 结构，
+// 返回解析结果供调用方复用（如项目名，已插值+规范化；无 name 时用内容短哈希兜底）。
 // 用于部署落盘前预检；env_file 仅在文件就位后的正式加载阶段解析。
-func ProjectValidateWithoutEnvFiles(ctx context.Context, projectName, content, envContent string) error {
+func ProjectValidateWithoutEnvFiles(ctx context.Context, content, envContent string) (*types.Project, error) {
 	if content == "" {
-		return fmt.Errorf("compose 内容为空")
+		return nil, fmt.Errorf("compose 内容为空")
 	}
 	env, err := projectEnvironmentWithEnvFile(ctx, nil, envContent, "")
 	if err != nil {
-		return err
+		return nil, err
 	}
-	_, err = loadProjectWithOptions(ctx, types.ConfigDetails{
+	details := types.ConfigDetails{
 		WorkingDir: ".",
 		ConfigFiles: []types.ConfigFile{{
 			Filename: "compose.yml",
 			Content:  []byte(content),
 		}},
 		Environment: env,
-	}, projectName, false, true, func(o *loader.Options) {
+	}
+	project, err := loadProjectWithOptions(ctx, details, "", false, false, func(o *loader.Options) {
 		o.SkipResolveEnvironment = true
 	})
-	return err
+	if err != nil {
+		// 无顶层 name 时 loader 报空名错误，用内容短哈希兜底
+		hash := ShortHash(content)
+		project, err = loadProjectWithOptions(ctx, details, hash, false, true, func(o *loader.Options) {
+			o.SkipResolveEnvironment = true
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	return project, nil
 }
 
 func projectEnvironment(extra map[string]string) map[string]string {

@@ -20,13 +20,14 @@ func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployRe
 		return nil, fmt.Errorf("未配置容器数据根目录")
 	}
 
-	// 项目名探测：浅解析提取顶层 name，不做完整 compose 解析（不解析 env_file），
-	// 避免在 .env 尚未写盘时报 env file not found
-	projectName, err := compose.ProjectNameFromContentShallow(ctx, req.Content, req.EnvContent)
+	// 部署前预检：不解析 env_file（避免 .env 尚未写盘时报错），
+	// 返回的 project.Name 已插值+规范化；无 name 时已用内容短哈希兜底
+	pre, err := compose.ProjectValidateWithoutEnvFiles(ctx, req.Content, req.EnvContent)
 	if err != nil {
 		return nil, err
 	}
-	if err := compose.ProjectValidateWithoutEnvFiles(ctx, projectName, req.Content, req.EnvContent); err != nil {
+	projectName, err := compose.ProjectNameFromProject(pre, req.Content)
+	if err != nil {
 		return nil, err
 	}
 

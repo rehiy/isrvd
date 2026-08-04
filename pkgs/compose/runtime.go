@@ -9,11 +9,8 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/compose-spec/compose-go/v2/interpolation"
-	"github.com/compose-spec/compose-go/v2/loader"
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/docker/docker/api/types/container"
-	"github.com/goccy/go-yaml"
 	"github.com/rehiy/libgo/archive"
 	"github.com/rehiy/libgo/request"
 )
@@ -63,40 +60,6 @@ func ContentProjectName(ctx context.Context, content string) (string, error) {
 		return "", err
 	}
 	return ProjectNameFromProject(project, content)
-}
-
-// ProjectNameFromContentShallow 用 YAML 浅解析提取顶层 name 字段，缺失时使用内容短哈希。
-// 它仅对 name 做插值和 compose-go 同款规范化，不解析 services/env_file。
-func ProjectNameFromContentShallow(ctx context.Context, content, envContent string) (string, error) {
-	var doc struct {
-		Name string `yaml:"name"`
-	}
-	if err := yaml.Unmarshal([]byte(content), &doc); err != nil {
-		return "", fmt.Errorf("解析 compose 失败: %w", err)
-	}
-	if doc.Name == "" || doc.Name == "." {
-		return projectNameOrHash(doc.Name, content)
-	}
-
-	env, err := projectEnvironmentWithEnvFile(ctx, nil, envContent, "")
-	if err != nil {
-		return "", err
-	}
-	result, err := interpolation.Interpolate(map[string]any{"name": doc.Name}, interpolation.Options{
-		LookupValue: func(key string) (string, bool) {
-			value, ok := env[key]
-			return value, ok
-		},
-	})
-	if err != nil {
-		return "", fmt.Errorf("解析 compose 项目名失败: %w", err)
-	}
-	name, _ := result["name"].(string)
-	name = loader.NormalizeProjectName(name)
-	if err := ValidateProjectName(name); err != nil {
-		return "", err
-	}
-	return name, nil
 }
 
 // ==================== Project loading and persistence ====================
