@@ -145,6 +145,10 @@ func loadProjectFromContentWithEnv(ctx context.Context, content, workingDir, pro
 }
 
 func loadProject(ctx context.Context, details types.ConfigDetails, projectName string, resolvePaths bool, setProjectName bool) (*types.Project, error) {
+	return loadProjectWithOptions(ctx, details, projectName, resolvePaths, setProjectName, nil)
+}
+
+func loadProjectWithOptions(ctx context.Context, details types.ConfigDetails, projectName string, resolvePaths bool, setProjectName bool, configure func(*loader.Options)) (*types.Project, error) {
 	projectName = loader.NormalizeProjectName(projectName)
 	project, err := loader.LoadWithContext(ctx, details, func(o *loader.Options) {
 		if setProjectName && projectName != "" {
@@ -153,11 +157,37 @@ func loadProject(ctx context.Context, details types.ConfigDetails, projectName s
 		o.SkipConsistencyCheck = false
 		o.SkipValidation = false
 		o.ResolvePaths = resolvePaths
+		if configure != nil {
+			configure(o)
+		}
 	})
 	if err != nil {
 		return nil, fmt.Errorf("加载 compose 失败: %w", err)
 	}
 	return project, nil
+}
+
+// ProjectValidateWithoutEnvFiles 在不读取 services.env_file 的前提下校验 Compose 结构。
+// 用于部署落盘前预检；env_file 仅在文件就位后的正式加载阶段解析。
+func ProjectValidateWithoutEnvFiles(ctx context.Context, projectName, content, envContent string) error {
+	if content == "" {
+		return fmt.Errorf("compose 内容为空")
+	}
+	env, err := projectEnvironmentWithEnvFile(ctx, nil, envContent, "")
+	if err != nil {
+		return err
+	}
+	_, err = loadProjectWithOptions(ctx, types.ConfigDetails{
+		WorkingDir: ".",
+		ConfigFiles: []types.ConfigFile{{
+			Filename: "compose.yml",
+			Content:  []byte(content),
+		}},
+		Environment: env,
+	}, projectName, false, true, func(o *loader.Options) {
+		o.SkipResolveEnvironment = true
+	})
+	return err
 }
 
 func projectEnvironment(extra map[string]string) map[string]string {

@@ -23,8 +23,11 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 
 	// 项目名探测：浅解析提取顶层 name，不做完整 compose 解析（不解析 env_file），
 	// 避免在 .env 尚未写盘时报 env file not found
-	projectName, err := compose.ProjectNameFromContentShallow(req.Content)
+	projectName, err := compose.ProjectNameFromContentShallow(ctx, req.Content, req.EnvContent)
 	if err != nil {
+		return nil, err
+	}
+	if err := compose.ProjectValidateWithoutEnvFiles(ctx, projectName, req.Content, req.EnvContent); err != nil {
 		return nil, err
 	}
 
@@ -36,11 +39,23 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 
 	_, err = os.Stat(installDir)
 	installDirExists := err == nil
+	initialEnvState, err := compose.EnvStateRead(installDir)
+	if err != nil {
+		return nil, err
+	}
 
 	deployed := false
 	defer func() {
-		if !deployed && !installDirExists {
+		if deployed {
+			return
+		}
+		if !installDirExists {
 			_ = os.RemoveAll(installDir)
+			return
+		}
+		_ = os.Remove(composeFile)
+		if err := compose.EnvStateRestore(installDir, initialEnvState); err != nil {
+			logman.Warn("Restore compose env after failed deploy", "name", projectName, "error", err)
 		}
 	}()
 
@@ -52,7 +67,9 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 	}
 
 	// 写 .env（显式内容优先；附加文件解压的 .env 已存在则保留，否则兜底空文件）
-	compose.EnvSave(installDir, req.EnvContent, "")
+	if err := compose.EnvSave(installDir, req.EnvContent, ""); err != nil {
+		return nil, err
+	}
 
 	project, err := compose.ProjectLoad(ctx, projectName, req.Content, installDir)
 	if err != nil {
@@ -161,7 +178,11 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		installDir = filepath.Join(root, name)
 	}
 
-	oldEnv := compose.EnvContentRead(installDir)
+	oldEnvState, err := compose.EnvStateRead(installDir)
+	if err != nil {
+		return nil, err
+	}
+	oldEnv := oldEnvState.Content
 
 	content := req.Content
 	if req.ServiceName != "" {
@@ -199,12 +220,18 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	rollback := func() {
 		// 先恢复旧 .env 再回滚容器，确保回滚容器使用旧环境变量
 		compose.ContentSave(installDir, oldContent, "")
-		compose.EnvSave(installDir, oldEnv, "")
+		if err := compose.EnvStateRestore(installDir, oldEnvState); err != nil {
+			logman.Warn("Restore compose env before rollback failed", "name", name, "error", err)
+			return
+		}
 		s.dockerRollback(ctx, name, oldContent, installDir)
 	}
 
 	// 先落盘新 .env，确保 ProjectLoad 插值读取到新值（与 Deploy 流程顺序一致）
-	compose.EnvSave(installDir, req.EnvContent, oldEnv)
+	if err := compose.EnvSave(installDir, req.EnvContent, oldEnv); err != nil {
+		rollback()
+		return nil, err
+	}
 
 	project, err := compose.ProjectLoad(ctx, name, content, installDir)
 	if err != nil {

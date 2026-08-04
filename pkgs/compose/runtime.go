@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"regexp"
 
+	"github.com/compose-spec/compose-go/v2/interpolation"
+	"github.com/compose-spec/compose-go/v2/loader"
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/goccy/go-yaml"
@@ -41,7 +43,10 @@ func ProjectNameFromProject(project *types.Project, content string) (string, err
 	if project == nil {
 		return "", fmt.Errorf("project 为空")
 	}
-	name := project.Name
+	return projectNameOrHash(project.Name, content)
+}
+
+func projectNameOrHash(name, content string) (string, error) {
 	if name == "" || name == "." {
 		name = ShortHash(content)
 	}
@@ -61,19 +66,33 @@ func ContentProjectName(ctx context.Context, content string) (string, error) {
 }
 
 // ProjectNameFromContentShallow 用 YAML 浅解析提取顶层 name 字段，缺失时使用内容短哈希。
-// 与 LoadProjectFromContent 不同，它不做完整的 compose 解析（不解析 env_file / 插值），
-// 适用于「仅需拿到项目名」的探测场景，避免在 .env 尚未写盘时报 env file not found。
-func ProjectNameFromContentShallow(content string) (string, error) {
+// 它仅对 name 做插值和 compose-go 同款规范化，不解析 services/env_file。
+func ProjectNameFromContentShallow(ctx context.Context, content, envContent string) (string, error) {
 	var doc struct {
 		Name string `yaml:"name"`
 	}
 	if err := yaml.Unmarshal([]byte(content), &doc); err != nil {
 		return "", fmt.Errorf("解析 compose 失败: %w", err)
 	}
-	name := doc.Name
-	if name == "" || name == "." {
-		name = ShortHash(content)
+	if doc.Name == "" || doc.Name == "." {
+		return projectNameOrHash(doc.Name, content)
 	}
+
+	env, err := projectEnvironmentWithEnvFile(ctx, nil, envContent, "")
+	if err != nil {
+		return "", err
+	}
+	result, err := interpolation.Interpolate(map[string]any{"name": doc.Name}, interpolation.Options{
+		LookupValue: func(key string) (string, bool) {
+			value, ok := env[key]
+			return value, ok
+		},
+	})
+	if err != nil {
+		return "", fmt.Errorf("解析 compose 项目名失败: %w", err)
+	}
+	name, _ := result["name"].(string)
+	name = loader.NormalizeProjectName(name)
 	if err := ValidateProjectName(name); err != nil {
 		return "", err
 	}
@@ -123,34 +142,84 @@ const EnvFileName = ".env"
 
 // EnvSave 持久化 .env；env 非空时写入，否则确保空 .env 文件存在（防止 env_file: .env 因缺文件报错）。
 // bak 非空时同时写 .env.bak。
-func EnvSave(installDir, env, bak string) {
+func EnvSave(installDir, env, bak string) error {
 	if installDir == "" {
-		return
+		return nil
 	}
-	_ = os.MkdirAll(installDir, 0755)
+	if err := os.MkdirAll(installDir, 0755); err != nil {
+		return fmt.Errorf("创建环境文件目录失败: %w", err)
+	}
 	envPath := filepath.Join(installDir, EnvFileName)
 	if env != "" {
-		_ = os.WriteFile(envPath, []byte(env), 0644)
+		if err := os.WriteFile(envPath, []byte(env), 0644); err != nil {
+			return fmt.Errorf("写入 .env 失败: %w", err)
+		}
 	} else {
 		if _, err := os.Stat(envPath); os.IsNotExist(err) {
-			_ = os.WriteFile(envPath, []byte(""), 0644)
+			if err := os.WriteFile(envPath, []byte(""), 0644); err != nil {
+				return fmt.Errorf("创建 .env 失败: %w", err)
+			}
+		} else if err != nil {
+			return fmt.Errorf("检查 .env 失败: %w", err)
 		}
 	}
 	if bak != "" {
-		_ = os.WriteFile(filepath.Join(installDir, EnvFileName+".bak"), []byte(bak), 0644)
+		if err := os.WriteFile(filepath.Join(installDir, EnvFileName+".bak"), []byte(bak), 0644); err != nil {
+			return fmt.Errorf("写入 .env.bak 失败: %w", err)
+		}
 	}
+	return nil
+}
+
+// EnvState 记录 .env 的原始内容及是否存在，用于失败回滚。
+type EnvState struct {
+	Content string
+	Exists  bool
+}
+
+// EnvStateRead 读取可精确恢复的 .env 状态。
+func EnvStateRead(installDir string) (EnvState, error) {
+	if installDir == "" {
+		return EnvState{}, nil
+	}
+	data, err := os.ReadFile(filepath.Join(installDir, EnvFileName))
+	if os.IsNotExist(err) {
+		return EnvState{}, nil
+	}
+	if err != nil {
+		return EnvState{}, fmt.Errorf("读取 .env 失败: %w", err)
+	}
+	return EnvState{Content: string(data), Exists: true}, nil
+}
+
+// EnvStateRestore 精确恢复 .env，包括空文件和原本不存在两种状态。
+func EnvStateRestore(installDir string, state EnvState) error {
+	if installDir == "" {
+		return nil
+	}
+	path := filepath.Join(installDir, EnvFileName)
+	if !state.Exists {
+		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("恢复 .env 缺失状态失败: %w", err)
+		}
+		return nil
+	}
+	if err := os.MkdirAll(installDir, 0755); err != nil {
+		return fmt.Errorf("创建环境文件目录失败: %w", err)
+	}
+	if err := os.WriteFile(path, []byte(state.Content), 0644); err != nil {
+		return fmt.Errorf("恢复 .env 失败: %w", err)
+	}
+	return nil
 }
 
 // EnvContentRead 读取项目 .env 内容；文件不存在时返回空串。
 func EnvContentRead(installDir string) string {
-	if installDir == "" {
-		return ""
-	}
-	data, err := os.ReadFile(filepath.Join(installDir, EnvFileName))
+	state, err := EnvStateRead(installDir)
 	if err != nil {
 		return ""
 	}
-	return string(data)
+	return state.Content
 }
 
 // InitFilesHandle 处理附加运行文件（支持本地上传或 URL 下载），解压到 installDir。
