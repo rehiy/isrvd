@@ -46,7 +46,7 @@ type LoadOptions struct {
 	WorkingDir  string            // compose 文件所在目录（用于解析相对路径和 .env）
 	ConfigFiles []string          // 指定要加载的 compose 文件绝对路径；为空则在 WorkingDir 下自动查找
 	ProjectName string            // 项目名（影响生成的网络/容器默认前缀）
-	Environment map[string]string // 额外的环境变量（优先级高于进程环境，低于 .env）
+	Environment map[string]string // 额外的环境变量（并入进程环境，优先级高于 .env）
 }
 
 // LoadProject 使用 compose-go 官方加载器解析 compose 文件，
@@ -222,24 +222,8 @@ func projectEnvironment(extra map[string]string) map[string]string {
 }
 
 // projectEnvironmentWithEnvFile 构建 ${VAR} 插值环境。
-// envContent 非 nil 时以其为准（空串表示无任何变量），不再读取 workingDir/.env；
-// envContent 为 nil 时回退读取 workingDir/.env。
-// 优先级从低到高：进程环境 < extra < .env（显式内容或 workingDir/.env）。
-// 注意：此处 .env 覆盖进程环境，与 docker compose（shell 覆盖 .env）相反，
-// 目的是让用户在界面上编辑的 .env 始终是权威来源。
 func projectEnvironmentWithEnvFile(ctx context.Context, extra map[string]string, envContent *string, workingDir string) (map[string]string, error) {
-	env := projectEnvironment(extra)
-
-	if envContent != nil {
-		if strings.TrimSpace(*envContent) != "" {
-			fileEnv, err := parseEnvContent(*envContent)
-			if err != nil {
-				return nil, fmt.Errorf("解析 .env 内容失败: %w", err)
-			}
-			maps.Copy(env, fileEnv)
-		}
-		return env, nil
-	}
+	env := make(map[string]string)
 
 	if workingDir != "" {
 		envFilePath := filepath.Join(workingDir, EnvFileName)
@@ -253,6 +237,16 @@ func projectEnvironmentWithEnvFile(ctx context.Context, extra map[string]string,
 			slog.DebugContext(ctx, "read project .env failed", "path", envFilePath, "error", err)
 		}
 	}
+
+	if envContent != nil && strings.TrimSpace(*envContent) != "" {
+		fileEnv, err := parseEnvContent(*envContent)
+		if err != nil {
+			return nil, fmt.Errorf("解析 .env 内容失败: %w", err)
+		}
+		maps.Copy(env, fileEnv)
+	}
+
+	maps.Copy(env, projectEnvironment(extra))
 
 	return env, nil
 }
@@ -316,7 +310,7 @@ func findComposeFile(dir string) (string, bool) {
 }
 
 // LoadProjectFromContentWithEnv 从 yaml 文本加载 compose 项目，并显式合并指定 .env 内容到插值环境。
-// workingDir 用于解析相对路径；envContent 为 nil 时回退读取 workingDir/.env；非 nil 时以其为准。
+// workingDir 用于解析相对路径；envContent 为 nil 时仅读 workingDir/.env；非 nil 时在磁盘 .env 之上叠加。
 func LoadProjectFromContentWithEnv(ctx context.Context, content, workingDir, projectName string, envContent *string) (*types.Project, error) {
 	if workingDir == "" {
 		workingDir = "."

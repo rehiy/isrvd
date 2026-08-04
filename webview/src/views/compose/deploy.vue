@@ -49,7 +49,7 @@ class ComposeDeploy extends Vue {
         if (this.fromMarketplace) {
             return '已从应用市场预填模板，可在此基础上直接部署或调整后再部署'
         }
-        return '项目名来自 compose 文件的 name 字段；如 compose 中引用了 ${VAR}，请在下方 .env 中填写对应变量'
+        return '项目名来自 compose 文件的 name 字段；如 compose 中引用了环境变量，请在 .env 中填写对应变量'
     }
 
     // ─── 方法 ───

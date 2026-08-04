@@ -30,11 +30,13 @@ Compose 接口用于单机 Docker Compose 与 Swarm Stack 的部署、读取配�
 
 > 该接口为部分更新，提交哪个字段就改哪个字段，未提交的字段保持不变；`content`、`envContent`、`serviceName` 三者至少提交一项；`serviceName` 与 `content`、`envContent` 均互斥，`serviceName` 非空时 `image` 必填。
 
-重部署会在正式加载和创建容器/服务前写入新 `.env`，确保 `env_file` 和变量插值使用新值；后续失败时会精确恢复原 `.env` 内容，包括空文件或原本不存在的状态，再回滚旧实例。
+重部署会在正式加载和创建容器/服务前写入新 `.env`，确保 `env_file` 和变量插值使用新值。旧实例删除后若后续步骤失败，会尝试恢复原 `.env`（含空文件或原本不存在的状态）并重建旧容器/服务；`.env` 恢复失败只记日志，不阻断实例回滚。错误响应的 `message` 会附带回滚摘要，例如：`原错误；回滚：.env 回滚失败（…），容器回滚成功`（Swarm 为「服务回滚」）。
+
+读取 Compose 配置时若落盘 `.env` 存在但读取失败（权限/IO），接口直接报错，不会把空串当作「无文件」。
 
 ### 变量插值优先级
 
-插值环境优先级从低到高为：进程环境 < `.env`。提交 `envContent` 时该内容即为 `.env`，不会与磁盘上原有 `.env` 叠加。这与 docker compose（shell 环境覆盖 `.env`）相反，目的是让界面上编辑的 `.env` 成为权威来源。
+插值环境优先级从低到高为：磁盘 `.env` < 请求中显式提交的 `envContent` < 进程环境（与 docker compose 一致，shell 已存在的变量覆盖 `.env`）。显式 `envContent` 在磁盘 `.env` 之上叠加，同键时显式内容优先。
 
 ### ComposeDeployResult
 

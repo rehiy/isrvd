@@ -128,9 +128,13 @@ func (s *Service) DockerContentResult(ctx context.Context, name string, forceRun
 	fileModTime := composeFileModTime(path)
 	if !forceRuntime {
 		if data, err := os.ReadFile(path); err == nil {
+			envContent, err := compose.EnvContentRead(filepath.Join(root, projectName))
+			if err != nil {
+				return nil, err
+			}
 			return &ContentResult{
 				Content:     string(data),
-				EnvContent:  compose.EnvContentRead(filepath.Join(root, projectName)),
+				EnvContent:  envContent,
 				ProjectName: projectName,
 				FileModTime: fileModTime,
 				Source:      "file",
@@ -142,9 +146,13 @@ func (s *Service) DockerContentResult(ctx context.Context, name string, forceRun
 		if err != nil {
 			return nil, err
 		}
+		envContent, err := compose.EnvContentRead(filepath.Join(root, projectName))
+		if err != nil {
+			return nil, err
+		}
 		return &ContentResult{
 			Content:     content,
-			EnvContent:  compose.EnvContentRead(filepath.Join(root, projectName)),
+			EnvContent:  envContent,
 			ProjectName: projectName,
 			FileModTime: fileModTime,
 			Source:      "runtime",
@@ -159,9 +167,13 @@ func (s *Service) DockerContentResult(ctx context.Context, name string, forceRun
 	if err != nil {
 		return nil, err
 	}
+	envContent, err := compose.EnvContentRead(filepath.Join(root, projectName))
+	if err != nil {
+		return nil, err
+	}
 	return &ContentResult{
 		Content:     content,
-		EnvContent:  compose.EnvContentRead(filepath.Join(root, projectName)),
+		EnvContent:  envContent,
 		ProjectName: projectName,
 		FileModTime: fileModTime,
 		Source:      "runtime",
@@ -232,37 +244,37 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 
 	s.dockerContainersRemove(ctx, name, oldContent)
 
-	rollback := func() {
-		// 先恢复旧 .env 再回滚容器，确保回滚容器使用旧环境变量
+	rollback := func() string {
+		// 先恢复旧 .env 再回滚容器；.env 失败不阻断容器回滚
 		compose.ContentSave(installDir, oldContent, "")
-		if err := compose.EnvStateRestore(installDir, oldEnvState); err != nil {
-			logman.Warn("Restore compose env before rollback failed", "name", name, "error", err)
-			return
+		envErr := compose.EnvStateRestore(installDir, oldEnvState)
+		if envErr != nil {
+			logman.Warn("Restore compose env before rollback failed", "name", name, "error", envErr)
 		}
-		s.dockerRollback(ctx, name, oldContent, installDir)
+		runtimeErr := s.dockerRollback(ctx, name, oldContent, installDir)
+		if runtimeErr != nil {
+			logman.Warn("Rollback containers failed", "name", name, "error", runtimeErr)
+		}
+		return formatRedeployRollbackSummary(envErr == nil, envErr, runtimeErr == nil, runtimeErr, "容器")
 	}
 
 	// 先落盘新 .env，确保 ProjectLoad 插值读取到新值（与 Deploy 流程顺序一致）
 	if req.EnvContent != nil {
 		if err := compose.EnvSave(installDir, *req.EnvContent, oldEnv); err != nil {
-			rollback()
-			return nil, err
+			return nil, wrapRedeployError(err, rollback())
 		}
 	} else if err := compose.EnvEnsure(installDir); err != nil {
-		rollback()
-		return nil, err
+		return nil, wrapRedeployError(err, rollback())
 	}
 
 	project, err := compose.ProjectLoad(ctx, name, content, installDir)
 	if err != nil {
-		rollback()
-		return nil, err
+		return nil, wrapRedeployError(err, rollback())
 	}
 
 	items, err := s.dockerServicesCreate(ctx, project)
 	if err != nil {
-		rollback()
-		return nil, err
+		return nil, wrapRedeployError(err, rollback())
 	}
 
 	compose.ContentSave(installDir, content, oldContent)
@@ -410,18 +422,18 @@ func (s *Service) dockerProjectContentFromContainers(ctx context.Context, projec
 }
 
 // dockerRollback 用指定配置内容重建容器（回滚用）
-func (s *Service) dockerRollback(ctx context.Context, name, content, installDir string) {
+func (s *Service) dockerRollback(ctx context.Context, name, content, installDir string) error {
 	if content == "" {
-		return
+		return fmt.Errorf("无可回滚的 compose 内容")
 	}
 	project, err := compose.ProjectParse(ctx, name, content, installDir)
 	if err != nil {
-		logman.Warn("Rollback load project failed", "name", name, "error", err)
-		return
+		return fmt.Errorf("加载回滚配置失败: %w", err)
 	}
 	if _, err := s.dockerServicesCreate(ctx, project); err != nil {
-		logman.Warn("Rollback deploy failed", "name", name, "error", err)
+		return fmt.Errorf("重建容器失败: %w", err)
 	}
+	return nil
 }
 
 // dockerEnsureNetworks 确保 project 所需网络存在，不存在则创建 bridge 网络

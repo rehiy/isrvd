@@ -106,3 +106,25 @@ func (s *Service) imagesEnsure(ctx context.Context, project *types.Project, forc
 	}
 	return nil
 }
+
+// formatRedeployRollbackSummary 汇总重建失败后的回滚结果，供前端展示。
+// runtimeLabel 为「容器」或「服务」。
+func formatRedeployRollbackSummary(envOK bool, envErr error, runtimeOK bool, runtimeErr error, runtimeLabel string) string {
+	envPart := ".env 回滚成功"
+	if !envOK {
+		envPart = fmt.Sprintf(".env 回滚失败（%v）", envErr)
+	}
+	runtimePart := runtimeLabel + "回滚成功"
+	if !runtimeOK {
+		runtimePart = fmt.Sprintf("%s回滚失败（%v）", runtimeLabel, runtimeErr)
+	}
+	return envPart + "，" + runtimePart
+}
+
+// wrapRedeployError 将原始重建错误与回滚摘要一并返回。
+func wrapRedeployError(err error, rollbackSummary string) error {
+	if err == nil {
+		return fmt.Errorf("重建失败；回滚：%s", rollbackSummary)
+	}
+	return fmt.Errorf("%w；回滚：%s", err, rollbackSummary)
+}

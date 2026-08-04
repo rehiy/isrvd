@@ -186,13 +186,13 @@ func EnvStateRestore(installDir string, state EnvState) error {
 	return nil
 }
 
-// EnvContentRead 读取项目 .env 内容；文件不存在时返回空串。
-func EnvContentRead(installDir string) string {
+// EnvContentRead 读取项目 .env 内容；文件不存在时返回空串。读取失败（权限、IO 等）向上返回错误
+func EnvContentRead(installDir string) (string, error) {
 	state, err := EnvStateRead(installDir)
 	if err != nil {
-		return ""
+		return "", err
 	}
-	return state.Content
+	return state.Content, nil
 }
 
 // InitFilesHandle 处理附加运行文件（支持本地上传或 URL 下载），解压到 installDir。
