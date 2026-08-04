@@ -95,16 +95,20 @@ export default toNative(ServiceEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="`编辑服务：${serviceName}`" :loading="modalLoading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="`编辑服务：${serviceName}`" :loading="modalLoading" max-width-class="max-w-[80vw]" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
     <template #header-actions>
       <button type="button" class="btn-icon-sm" :disabled="modalLoading" title="跳过 compose.yml，按当前服务运行态重新反推 Compose" @click="handleForceRefresh()">
         <i :class="refreshing ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i>
       </button>
     </template>
 
-    <ComposeEditor v-model="composeContent" :warning="composeWarning" />
-    <div class="mt-3">
-      <EnvEditor v-model="envContent" />
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div class="min-w-0">
+        <ComposeEditor v-model="composeContent" :warning="composeWarning" />
+      </div>
+      <div class="min-w-0">
+        <EnvEditor v-model="envContent" />
+      </div>
     </div>
     <template #confirm-text>更新并重建</template>
   </BaseModal>

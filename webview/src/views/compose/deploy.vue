@@ -211,7 +211,7 @@ export default toNative(ComposeDeploy)
       </div>
 
       <!-- 表单 -->
-      <div class="card-body max-w-3xl space-y-4">
+      <div class="card-body mx-auto w-full max-w-[1600px] space-y-4">
         <!-- 部署目标 -->
         <div class="tab-group inline-flex">
           <button type="button" :class="['tab-btn', target === 'docker' ? 'tab-btn-active text-amber-600' : 'tab-btn-inactive']" @click="selectTarget('docker')">
@@ -230,20 +230,15 @@ export default toNative(ComposeDeploy)
           </button>
         </div>
 
-        <!-- Compose 内容 -->
-        <ComposeEditor v-model="content" :disabled="loading" :warning="dynamicWarning" />
-
-        <!-- 环境变量 .env -->
-        <details class="group" :open="!!envContent">
-          <summary class="form-label cursor-pointer select-none">
-            <i class="fas fa-chevron-right mr-1 text-slate-400 transition-transform group-open:rotate-90"></i>
-            环境变量 .env
-            <span class="text-xs font-normal text-slate-400">（选填，部署时合并进变量插值环境）</span>
-          </summary>
-          <div class="mt-2">
+        <!-- Compose 内容 + 环境变量 .env：左右布局（compose 左，.env 右） -->
+        <div class="grid gap-4 lg:grid-cols-2">
+          <div class="min-w-0">
+            <ComposeEditor v-model="content" :disabled="loading" :warning="dynamicWarning" />
+          </div>
+          <div class="min-w-0">
             <EnvEditor v-model="envContent" :disabled="loading" />
           </div>
-        </details>
+        </div>
 
         <!-- 附加文件 -->
         <div>
