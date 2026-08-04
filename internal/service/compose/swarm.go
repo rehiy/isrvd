@@ -20,11 +20,9 @@ func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployRe
 		return nil, fmt.Errorf("未配置容器数据根目录")
 	}
 
-	project, err := compose.LoadProjectFromContent(ctx, req.Content, "")
-	if err != nil {
-		return nil, err
-	}
-	projectName, err := compose.ProjectNameFromProject(project, req.Content)
+	// 项目名探测：浅解析提取顶层 name，不做完整 compose 解析（不解析 env_file），
+	// 避免在 .env 尚未写盘时报 env file not found
+	projectName, err := compose.ProjectNameFromContentShallow(req.Content)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +53,7 @@ func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployRe
 	// 写 .env（显式内容优先；附加文件解压的 .env 已存在则保留，否则兜底空文件）
 	compose.EnvSave(installDir, req.EnvContent, "")
 
-	project, err = compose.ProjectLoad(ctx, projectName, req.Content, installDir)
+	project, err := compose.ProjectLoad(ctx, projectName, req.Content, installDir)
 	if err != nil {
 		return nil, err
 	}
@@ -192,10 +190,14 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	s.swarmServicesRemove(ctx, name, oldContent)
 
 	rollback := func() {
-		s.swarmRollback(ctx, name, oldContent, installDir)
+		// 先恢复旧 .env 再回滚服务，确保回滚服务使用旧环境变量
 		compose.ContentSave(installDir, oldContent, "")
 		compose.EnvSave(installDir, oldEnv, "")
+		s.swarmRollback(ctx, name, oldContent, installDir)
 	}
+
+	// 先落盘新 .env，确保 ProjectLoad 插值读取到新值（与 Deploy 流程顺序一致）
+	compose.EnvSave(installDir, req.EnvContent, oldEnv)
 
 	project, err := compose.ProjectLoad(ctx, name, content, installDir)
 	if err != nil {
@@ -210,7 +212,6 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	}
 
 	compose.ContentSave(installDir, content, oldContent)
-	compose.EnvSave(installDir, req.EnvContent, oldEnv)
 
 	logman.Info("Swarm compose redeployed", "name", name)
 	return &DeployResult{ProjectName: name, Items: items, InstallDir: installDir}, nil

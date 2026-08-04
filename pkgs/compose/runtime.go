@@ -11,6 +11,7 @@ import (
 
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/goccy/go-yaml"
 	"github.com/rehiy/libgo/archive"
 	"github.com/rehiy/libgo/request"
 )
@@ -57,6 +58,26 @@ func ContentProjectName(ctx context.Context, content string) (string, error) {
 		return "", err
 	}
 	return ProjectNameFromProject(project, content)
+}
+
+// ProjectNameFromContentShallow 用 YAML 浅解析提取顶层 name 字段，缺失时使用内容短哈希。
+// 与 LoadProjectFromContent 不同，它不做完整的 compose 解析（不解析 env_file / 插值），
+// 适用于「仅需拿到项目名」的探测场景，避免在 .env 尚未写盘时报 env file not found。
+func ProjectNameFromContentShallow(content string) (string, error) {
+	var doc struct {
+		Name string `yaml:"name"`
+	}
+	if err := yaml.Unmarshal([]byte(content), &doc); err != nil {
+		return "", fmt.Errorf("解析 compose 失败: %w", err)
+	}
+	name := doc.Name
+	if name == "" || name == "." {
+		name = ShortHash(content)
+	}
+	if err := ValidateProjectName(name); err != nil {
+		return "", err
+	}
+	return name, nil
 }
 
 // ==================== Project loading and persistence ====================
