@@ -20,11 +20,13 @@ type Service struct {
 }
 
 // DeployRequest 部署请求
+// EnvContent 三态：nil 保留附加文件解压出的 .env；非 nil 时以其为准写盘（空串即清空）
 type DeployRequest struct {
-	Content   string    `json:"content" binding:"required"` // compose.yml 文件内容（必填）
-	InitURL   string    `json:"initURL,omitempty"`          // 附加运行文件 zip 的下载地址（可选）
-	InitFile  io.Reader `json:"-"`                          // 附加运行文件（multipart 上传，不在 JSON 中）
-	ForcePull bool      `json:"forcePull,omitempty"`        // 是否强制拉取最新镜像
+	Content    string    `json:"content" binding:"required"` // compose.yml 文件内容（必填）
+	EnvContent *string   `json:"envContent,omitempty"`       // .env 内容（KEY=VALUE）；nil 表示保留附加文件解压出的 .env，非 nil 时以其为准写盘（空串即清空）
+	InitURL    string    `json:"initURL,omitempty"`          // 附加运行文件 zip 的下载地址（可选）
+	InitFile   io.Reader `json:"-"`                          // 附加运行文件（multipart 上传，不在 JSON 中）
+	ForcePull  bool      `json:"forcePull,omitempty"`        // 是否强制拉取最新镜像
 }
 
 // DeployResult 部署结果
@@ -37,19 +39,21 @@ type DeployResult struct {
 // ContentResult Compose 配置读取结果。
 type ContentResult struct {
 	Content     string `json:"content"`               // compose.yml 文本
+	EnvContent  string `json:"envContent,omitempty"`  // .env 文本（KEY=VALUE）；无落盘文件时为空
 	ProjectName string `json:"projectName,omitempty"` // 实际解析到的项目名
 	FileModTime int64  `json:"fileModTime,omitempty"` // compose.yml 修改时间戳（Unix 秒）；无落盘文件时为空
 	Source      string `json:"source,omitempty"`      // 内容来源：file=落盘文件，runtime=运行态反推
 }
 
 // RedeployRequest 重建请求
-// - ServiceName + Image 非空：从现有内容读取后更新指定服务镜像重建
-// - 否则：Content 必须非空，全量重建
+// 部分更新语义——提交哪个字段就改哪个字段，未提交的字段保持不变；ServiceName + Image 用于仅更新指定服务镜像，与 Content / EnvContent 互斥。
+// EnvContent 三态：nil 保留现有 .env，空串清空，非空覆盖
 type RedeployRequest struct {
-	Content     string `json:"content,omitempty"`     // compose.yml 内容（未指定 serviceName 时必填，用于全量重建）
-	ServiceName string `json:"serviceName,omitempty"` // 目标服务名（与 image 配合，仅更新该服务镜像后重建）
-	Image       string `json:"image,omitempty"`       // 新镜像（指定 serviceName 时必填）
-	ForcePull   bool   `json:"forcePull,omitempty"`   // 是否强制拉取最新镜像
+	Content     *string `json:"content,omitempty"`     // compose.yml 内容；nil 表示沿用现有 compose.yml，提交空串报错
+	EnvContent  *string `json:"envContent,omitempty"`  // .env 内容（KEY=VALUE）；nil 表示保留现有 .env，空串表示清空，非空表示覆盖
+	ServiceName string  `json:"serviceName,omitempty"` // 目标服务名（与 image 配合，仅更新该服务镜像后重建）
+	Image       string  `json:"image,omitempty"`       // 新镜像（指定 serviceName 时必填）
+	ForcePull   bool    `json:"forcePull,omitempty"`   // 是否强制拉取最新镜像
 }
 
 // Validate 校验重建请求的互斥参数
@@ -57,8 +61,17 @@ func (r RedeployRequest) Validate() error {
 	if r.ServiceName != "" && r.Image == "" {
 		return fmt.Errorf("指定服务名时 image 不能为空")
 	}
-	if r.ServiceName == "" && r.Content == "" {
-		return fmt.Errorf("未指定服务名时 content 不能为空")
+	if r.ServiceName != "" && r.Content != nil {
+		return fmt.Errorf("指定服务名时不能同时提交 content")
+	}
+	if r.ServiceName != "" && r.EnvContent != nil {
+		return fmt.Errorf("指定服务名时不能同时提交 envContent")
+	}
+	if r.Content != nil && *r.Content == "" {
+		return fmt.Errorf("content 不能为空字符串")
+	}
+	if r.ServiceName == "" && r.Content == nil && r.EnvContent == nil {
+		return fmt.Errorf("未指定服务名时 content 与 envContent 至少需提交一项")
 	}
 	return nil
 }
@@ -92,4 +105,26 @@ func (s *Service) imagesEnsure(ctx context.Context, project *types.Project, forc
 		}
 	}
 	return nil
+}
+
+// formatRedeployRollbackSummary 汇总重建失败后的回滚结果，供前端展示。
+// runtimeLabel 为「容器」或「服务」。
+func formatRedeployRollbackSummary(envOK bool, envErr error, runtimeOK bool, runtimeErr error, runtimeLabel string) string {
+	envPart := ".env 回滚成功"
+	if !envOK {
+		envPart = fmt.Sprintf(".env 回滚失败（%v）", envErr)
+	}
+	runtimePart := runtimeLabel + "回滚成功"
+	if !runtimeOK {
+		runtimePart = fmt.Sprintf("%s回滚失败（%v）", runtimeLabel, runtimeErr)
+	}
+	return envPart + "，" + runtimePart
+}
+
+// wrapRedeployError 将原始重建错误与回滚摘要一并返回。
+func wrapRedeployError(err error, rollbackSummary string) error {
+	if err == nil {
+		return fmt.Errorf("重建失败；回滚：%s", rollbackSummary)
+	}
+	return fmt.Errorf("%w；回滚：%s", err, rollbackSummary)
 }

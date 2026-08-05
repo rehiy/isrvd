@@ -9,20 +9,34 @@ Compose 接口用于单机 Docker Compose 与 Swarm Stack 的部署、读取配�
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
 | `content` | string | 是 | 完整 compose yaml 文本 |
+| `envContent` | string | 否 | `.env` 内容（`KEY=VALUE`）；省略则保留附加文件解压出的 `.env`，提交则以其为准写盘并合并进变量插值环境 |
 | `initURL` | string | 否 | 附加运行文件 zip 下载地址 |
 | `initFile` | file | 否 | 附加运行文件 zip；与 `initURL` 互斥且文件优先 |
 | `forcePull` | boolean | 否 | `true` 时强制拉取最新镜像（即使本地已存在），默认 `false` |
 
 > Docker 与 Swarm Compose 部署都支持 `initURL` / `initFile`；解压目标为 `docker.containerRoot/<NAME>/`。Swarm 场景下建议 `containerRoot` 指向各节点共享的存储（如 NFS），以便所有节点都能访问解压出的文件。
 
+部署前先做不读取 `env_file` 的结构预检并从中取得项目名（已插值并按 compose-go 规则规范化为小写）；完全未声明 `name` 时用 compose 内容短哈希兜底；若声明了 `name` 但其插值变量未提供，部署直接报错而不会退回哈希。
+
 ### ComposeRedeploy
 
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
-| `content` | string | 二选一 | 完整 compose yaml 文本（全量重建） |
-| `serviceName` | string | 二选一 | 要更新镜像的 compose 服务名（按服务更新） |
+| `content` | string | 按需 | 完整 compose yaml 文本；省略表示沿用现有 compose.yml，提交空字符串会被拒绝 |
+| `envContent` | string | 按需 | `.env` 内容（`KEY=VALUE`）；省略表示保留现有 `.env`，提交空字符串表示清空，提交内容表示覆盖 |
+| `serviceName` | string | 按需 | 要更新镜像的 compose 服务名（按服务更新） |
 | `image` | string | 按需 | 新镜像名，`serviceName` 非空时必填 |
 | `forcePull` | boolean | 否 | `true` 时强制拉取最新镜像，默认 `false` |
+
+> 该接口为部分更新，提交哪个字段就改哪个字段，未提交的字段保持不变；`content`、`envContent`、`serviceName` 三者至少提交一项；`serviceName` 与 `content`、`envContent` 均互斥，`serviceName` 非空时 `image` 必填。
+
+重部署会在正式加载和创建容器/服务前写入新 `.env`，确保 `env_file` 和变量插值使用新值。旧实例删除后若后续步骤失败，会尝试恢复原 `.env`（含空文件或原本不存在的状态）并重建旧容器/服务；`.env` 恢复失败只记日志，不阻断实例回滚。错误响应的 `message` 会附带回滚摘要，例如：`原错误；回滚：.env 回滚失败（…），容器回滚成功`（Swarm 为「服务回滚」）。
+
+读取 Compose 配置时若落盘 `.env` 存在但读取失败（权限/IO），接口直接报错，不会把空串当作「无文件」。
+
+### 变量插值优先级
+
+插值环境优先级从低到高为：磁盘 `.env` < 请求中显式提交的 `envContent` < 进程环境（与 docker compose 一致，shell 已存在的变量覆盖 `.env`）。显式 `envContent` 在磁盘 `.env` 之上叠加，同键时显式内容优先。
 
 ### ComposeDeployResult
 
@@ -37,6 +51,7 @@ Compose 接口用于单机 Docker Compose 与 Swarm Stack 的部署、读取配�
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `content` | string | compose.yml 文本 |
+| `envContent` | string | `.env` 文本（`KEY=VALUE`）；无落盘文件时不返回 |
 | `projectName` | string | 实际解析到的项目名 |
 | `fileModTime` | number | `docker.containerRoot/<PROJECT>/compose.yml` 修改时间（Unix 秒）；无落盘文件时不返回 |
 | `source` | string | 内容来源：`file` 表示落盘文件，`runtime` 表示从运行态反推 |
@@ -127,6 +142,24 @@ isrvd_put "/compose/docker/<NAME>" "$(jq -n --arg content "$(cat docker-compose.
 
 `<NAME>` 可以是项目名，也可以是该项目下任意一个容器名；后端会通过 `com.docker.compose.project` 解析到项目名后整体重建关联容器。
 
+重部署时同时更新 `.env`：
+
+```bash
+isrvd_put "/compose/docker/<NAME>" "$(jq -n --arg content "$(cat docker-compose.yml)" --arg envContent "$(cat .env)" '{content:$content,envContent:$envContent}')"
+```
+
+仅更新 `.env` 后重建（`content` 省略，沿用现有 compose.yml）：
+
+```bash
+isrvd_put "/compose/docker/<NAME>" "$(jq -n --arg envContent "$(cat .env)" '{envContent:$envContent}')"
+```
+
+清空 `.env`（提交空字符串）：
+
+```bash
+isrvd_put "/compose/docker/<NAME>" "$(jq -n --arg content "$(cat docker-compose.yml)" '{content:$content,envContent:""}')"
+```
+
 ### 按服务更新镜像并重建
 
 ```bash
@@ -167,6 +200,24 @@ Swarm Compose 与 Docker Compose 共用容器目录 `docker.containerRoot/<NAME>
 
 ```bash
 isrvd_put "/compose/swarm/<NAME>" "$(jq -n --arg content "$(cat stack.yml)" '{content:$content}')"
+```
+
+重部署时同时更新 `.env`：
+
+```bash
+isrvd_put "/compose/swarm/<NAME>" "$(jq -n --arg content "$(cat stack.yml)" --arg envContent "$(cat .env)" '{content:$content,envContent:$envContent}')"
+```
+
+仅更新 `.env` 后重建（`content` 省略，沿用现有 compose.yml）：
+
+```bash
+isrvd_put "/compose/swarm/<NAME>" "$(jq -n --arg envContent "$(cat .env)" '{envContent:$envContent}')"
+```
+
+清空 `.env`（提交空字符串）：
+
+```bash
+isrvd_put "/compose/swarm/<NAME>" "$(jq -n --arg content "$(cat stack.yml)" '{content:$content,envContent:""}')"
 ```
 
 ### 按服务更新镜像并重建

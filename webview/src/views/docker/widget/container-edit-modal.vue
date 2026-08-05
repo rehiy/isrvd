@@ -10,10 +10,11 @@ import { COMPOSE_PROJECT_LABEL, COMPOSE_SERVICE_LABEL } from '@/service/types/do
 import BaseModal from '@/component/modal.vue'
 
 import ComposeEditor from '@/views/compose/widget/compose-editor.vue'
+import EnvEditor from '@/views/compose/widget/env-editor.vue'
 
 @Component({
     expose: ['show'],
-    components: { BaseModal, ComposeEditor },
+    components: { BaseModal, ComposeEditor, EnvEditor },
     emits: ['success']
 })
 class ContainerEditModal extends Vue {
@@ -26,6 +27,7 @@ class ContainerEditModal extends Vue {
     projectName = ''
     displayName = ''
     composeContent = ''
+    envContent = ''
     composeFileModTime = 0
     composeSource: 'file' | 'runtime' | '' = ''
 
@@ -53,6 +55,7 @@ class ContainerEditModal extends Vue {
             ? `${composeProject} / ${composeService || container.name}`
             : (container.name || container.id)
         this.composeContent = ''
+        this.envContent = ''
         this.composeFileModTime = 0
         this.composeSource = ''
         this.isOpen = true
@@ -66,6 +69,7 @@ class ContainerEditModal extends Vue {
             const res = await api.composeDockerInspect(this.projectName, force)
             const payload = res.payload
             this.composeContent = payload?.content || ''
+            this.envContent = payload?.envContent || ''
             this.projectName = payload?.projectName || this.projectName
             this.composeFileModTime = payload?.fileModTime || 0
             this.composeSource = payload?.source || ''
@@ -87,7 +91,10 @@ class ContainerEditModal extends Vue {
         if (!this.composeContent.trim()) return
         this.modalLoading = true
         try {
-            await api.composeDockerRedeploy(this.projectName, { content: this.composeContent })
+            await api.composeDockerRedeploy(this.projectName, {
+                content: this.composeContent,
+                envContent: this.envContent
+            })
             this.portal.showNotification('success', 'Compose 配置更新成功，已重建关联容器')
             this.isOpen = false
             this.$emit('success')
@@ -100,14 +107,21 @@ export default toNative(ContainerEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="modalTitle" :loading="modalLoading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="modalTitle" :loading="modalLoading" max-width-class="max-w-[80vw]" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
     <template #header-actions>
       <button type="button" class="btn-icon-sm" :disabled="modalLoading" title="跳过 compose.yml，按当前容器运行态重新反推 Compose" @click="handleForceRefresh()">
         <i :class="refreshing ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i>
       </button>
     </template>
 
-    <ComposeEditor v-model="composeContent" :warning="composeWarning" />
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div class="min-w-0">
+        <ComposeEditor v-model="composeContent" :warning="composeWarning" />
+      </div>
+      <div class="min-w-0">
+        <EnvEditor v-model="envContent" />
+      </div>
+    </div>
     <template #confirm-text>更新并重建</template>
   </BaseModal>
 </template>

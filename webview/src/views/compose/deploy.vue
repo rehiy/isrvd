@@ -9,9 +9,10 @@ import { MARKETPLACE_PICK_STORAGE_KEY } from '@/service/types'
 import type { ComposeDeployTarget, ComposeMarketplacePick } from '@/service/types'
 
 import ComposeEditor from './widget/compose-editor.vue'
+import EnvEditor from './widget/env-editor.vue'
 
 @Component({
-    components: { ComposeEditor }
+    components: { ComposeEditor, EnvEditor }
 })
 class ComposeDeploy extends Vue {
     portal = usePortal()
@@ -24,6 +25,7 @@ class ComposeDeploy extends Vue {
     initURL = ''
     initFile: File | null = null
     content = ''
+    envContent = ''
 
     // 预填态（来自应用市场一键选择）：仅用于头部提示徽章，不锁定输入
     fromMarketplace = false
@@ -47,7 +49,7 @@ class ComposeDeploy extends Vue {
         if (this.fromMarketplace) {
             return '已从应用市场预填模板，可在此基础上直接部署或调整后再部署'
         }
-        return '项目名来自 compose 文件的 name 字段；变量插值需在客户端完成，后端仅按原文落盘与加载'
+        return '项目名来自 compose 文件的 name 字段；如 compose 中引用了环境变量，请在 .env 中填写对应变量'
     }
 
     // ─── 方法 ───
@@ -118,11 +120,13 @@ class ComposeDeploy extends Vue {
             const res = this.target === 'swarm'
                 ? await api.composeSwarmDeploy({
                     content: this.content,
+                    envContent: this.envContent || undefined,
                     initURL: this.initURL.trim() || undefined,
                     initFile: this.initFile ?? undefined,
                 })
                 : await api.composeDockerDeploy({
                     content: this.content,
+                    envContent: this.envContent || undefined,
                     initURL: this.initURL.trim() || undefined,
                     initFile: this.initFile ?? undefined,
                 })
@@ -145,6 +149,7 @@ class ComposeDeploy extends Vue {
 
     resetForm() {
         this.content = ''
+        this.envContent = ''
         this.initURL = ''
         this.initFile = null
         this.target = 'docker'
@@ -206,7 +211,7 @@ export default toNative(ComposeDeploy)
       </div>
 
       <!-- 表单 -->
-      <div class="card-body max-w-3xl space-y-4">
+      <div class="card-body mx-auto w-full max-w-[1600px] space-y-4">
         <!-- 部署目标 -->
         <div class="tab-group inline-flex">
           <button type="button" :class="['tab-btn', target === 'docker' ? 'tab-btn-active text-amber-600' : 'tab-btn-inactive']" @click="selectTarget('docker')">
@@ -225,8 +230,15 @@ export default toNative(ComposeDeploy)
           </button>
         </div>
 
-        <!-- Compose 内容 -->
-        <ComposeEditor v-model="content" :disabled="loading" :warning="dynamicWarning" />
+        <!-- Compose 内容 + 环境变量 .env：左右布局（compose 左，.env 右） -->
+        <div class="grid gap-4 lg:grid-cols-2">
+          <div class="min-w-0">
+            <ComposeEditor v-model="content" :disabled="loading" :warning="dynamicWarning" />
+          </div>
+          <div class="min-w-0">
+            <EnvEditor v-model="envContent" :disabled="loading" />
+          </div>
+        </div>
 
         <!-- 附加文件 -->
         <div>

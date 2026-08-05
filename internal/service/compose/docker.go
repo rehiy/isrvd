@@ -21,11 +21,13 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 		return nil, fmt.Errorf("未配置容器数据根目录")
 	}
 
-	project, err := compose.LoadProjectFromContent(ctx, req.Content, "")
+	// 部署前预检：不解析 env_file（避免 .env 尚未写盘时报错），
+	// 返回的 project.Name 已插值+规范化；无 name 时已用内容短哈希兜底
+	pre, err := compose.ProjectValidateWithoutEnvFiles(ctx, req.Content, req.EnvContent)
 	if err != nil {
 		return nil, err
 	}
-	projectName, err := compose.ProjectNameFromProject(project, req.Content)
+	projectName, err := compose.ProjectNameFromProject(pre, req.Content)
 	if err != nil {
 		return nil, err
 	}
@@ -38,11 +40,23 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 
 	_, err = os.Stat(installDir)
 	installDirExists := err == nil
+	initialEnvState, err := compose.EnvStateRead(installDir)
+	if err != nil {
+		return nil, err
+	}
 
 	deployed := false
 	defer func() {
-		if !deployed && !installDirExists {
+		if deployed {
+			return
+		}
+		if !installDirExists {
 			_ = os.RemoveAll(installDir)
+			return
+		}
+		_ = os.Remove(composeFile)
+		if err := compose.EnvStateRestore(installDir, initialEnvState); err != nil {
+			logman.Warn("Restore compose env after failed deploy", "name", projectName, "error", err)
 		}
 	}()
 
@@ -53,7 +67,16 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 		return nil, err
 	}
 
-	project, err = compose.ProjectLoad(ctx, projectName, req.Content, installDir)
+	// 写 .env：显式提交则以其为准（空串即清空），未提交则保留附加文件解压出的 .env 并兜底空文件
+	if req.EnvContent != nil {
+		if err := compose.EnvSave(installDir, *req.EnvContent, ""); err != nil {
+			return nil, err
+		}
+	} else if err := compose.EnvEnsure(installDir); err != nil {
+		return nil, err
+	}
+
+	project, err := compose.ProjectLoad(ctx, projectName, req.Content, installDir)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +128,17 @@ func (s *Service) DockerContentResult(ctx context.Context, name string, forceRun
 	fileModTime := composeFileModTime(path)
 	if !forceRuntime {
 		if data, err := os.ReadFile(path); err == nil {
-			return &ContentResult{Content: string(data), ProjectName: projectName, FileModTime: fileModTime, Source: "file"}, nil
+			envContent, err := compose.EnvContentRead(filepath.Join(root, projectName))
+			if err != nil {
+				return nil, err
+			}
+			return &ContentResult{
+				Content:     string(data),
+				EnvContent:  envContent,
+				ProjectName: projectName,
+				FileModTime: fileModTime,
+				Source:      "file",
+			}, nil
 		}
 	}
 
@@ -113,7 +146,17 @@ func (s *Service) DockerContentResult(ctx context.Context, name string, forceRun
 		if err != nil {
 			return nil, err
 		}
-		return &ContentResult{Content: content, ProjectName: projectName, FileModTime: fileModTime, Source: "runtime"}, nil
+		envContent, err := compose.EnvContentRead(filepath.Join(root, projectName))
+		if err != nil {
+			return nil, err
+		}
+		return &ContentResult{
+			Content:     content,
+			EnvContent:  envContent,
+			ProjectName: projectName,
+			FileModTime: fileModTime,
+			Source:      "runtime",
+		}, nil
 	}
 
 	info, err := s.docker.ContainerInspectRaw(ctx, name)
@@ -124,11 +167,24 @@ func (s *Service) DockerContentResult(ctx context.Context, name string, forceRun
 	if err != nil {
 		return nil, err
 	}
-	return &ContentResult{Content: content, ProjectName: projectName, FileModTime: fileModTime, Source: "runtime"}, nil
+	envContent, err := compose.EnvContentRead(filepath.Join(root, projectName))
+	if err != nil {
+		return nil, err
+	}
+	return &ContentResult{
+		Content:     content,
+		EnvContent:  envContent,
+		ProjectName: projectName,
+		FileModTime: fileModTime,
+		Source:      "runtime",
+	}, nil
 }
 
 // DockerRedeploy 重建 Docker Compose 项目。
-// ServiceName+Image 非空时仅更新指定服务镜像，否则用 Content 全量重建。
+// 部分更新：提交哪个字段就改哪个字段，未提交的字段保持不变。
+// - ServiceName+Image：仅更新指定服务镜像后重建
+// - Content：替换 compose.yml 后重建
+// - EnvContent：替换 .env（空串即清空）后重建
 func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployRequest) (*DeployResult, error) {
 	if err := compose.ValidateProjectName(name); err != nil {
 		return nil, err
@@ -146,22 +202,36 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		installDir = filepath.Join(root, name)
 	}
 
-	content := req.Content
-	if req.ServiceName != "" {
-		oldContent, _, err := s.DockerContent(ctx, name)
-		if err != nil {
-			return nil, err
+	oldEnvState, err := compose.EnvStateRead(installDir)
+	if err != nil {
+		return nil, err
+	}
+	oldEnv := oldEnvState.Content
+
+	oldContent, _, contentErr := s.DockerContent(ctx, name)
+
+	// 准备新 content：未提交则沿用现有 compose 内容
+	content := oldContent
+	switch {
+	case req.ServiceName != "":
+		if contentErr != nil {
+			return nil, contentErr
 		}
 		content, err = compose.UpdateServiceImage(ctx, name, oldContent, req.ServiceName, req.Image)
 		if err != nil {
 			return nil, err
 		}
+	case req.Content != nil:
+		content = *req.Content
+	default:
+		// 仅更新 .env：必须能读到现有 compose 内容
+		if contentErr != nil {
+			return nil, contentErr
+		}
 	}
 
-	oldContent, _, _ := s.DockerContent(ctx, name)
-
 	// 先校验新 content，失败时旧服务保持运行
-	newProject, err := compose.ProjectParse(ctx, name, content, installDir)
+	newProject, err := compose.LoadProjectFromContentWithEnv(ctx, content, installDir, name, req.EnvContent)
 	if err != nil {
 		return nil, err
 	}
@@ -174,21 +244,37 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 
 	s.dockerContainersRemove(ctx, name, oldContent)
 
-	rollback := func() {
-		s.dockerRollback(ctx, name, oldContent, installDir)
+	rollback := func() string {
+		// 先恢复旧 .env 再回滚容器；.env 失败不阻断容器回滚
 		compose.ContentSave(installDir, oldContent, "")
+		envErr := compose.EnvStateRestore(installDir, oldEnvState)
+		if envErr != nil {
+			logman.Warn("Restore compose env before rollback failed", "name", name, "error", envErr)
+		}
+		runtimeErr := s.dockerRollback(ctx, name, oldContent, installDir)
+		if runtimeErr != nil {
+			logman.Warn("Rollback containers failed", "name", name, "error", runtimeErr)
+		}
+		return formatRedeployRollbackSummary(envErr == nil, envErr, runtimeErr == nil, runtimeErr, "容器")
+	}
+
+	// 先落盘新 .env，确保 ProjectLoad 插值读取到新值（与 Deploy 流程顺序一致）
+	if req.EnvContent != nil {
+		if err := compose.EnvSave(installDir, *req.EnvContent, oldEnv); err != nil {
+			return nil, wrapRedeployError(err, rollback())
+		}
+	} else if err := compose.EnvEnsure(installDir); err != nil {
+		return nil, wrapRedeployError(err, rollback())
 	}
 
 	project, err := compose.ProjectLoad(ctx, name, content, installDir)
 	if err != nil {
-		rollback()
-		return nil, err
+		return nil, wrapRedeployError(err, rollback())
 	}
 
 	items, err := s.dockerServicesCreate(ctx, project)
 	if err != nil {
-		rollback()
-		return nil, err
+		return nil, wrapRedeployError(err, rollback())
 	}
 
 	compose.ContentSave(installDir, content, oldContent)
@@ -336,18 +422,18 @@ func (s *Service) dockerProjectContentFromContainers(ctx context.Context, projec
 }
 
 // dockerRollback 用指定配置内容重建容器（回滚用）
-func (s *Service) dockerRollback(ctx context.Context, name, content, installDir string) {
+func (s *Service) dockerRollback(ctx context.Context, name, content, installDir string) error {
 	if content == "" {
-		return
+		return fmt.Errorf("无可回滚的 compose 内容")
 	}
 	project, err := compose.ProjectParse(ctx, name, content, installDir)
 	if err != nil {
-		logman.Warn("Rollback load project failed", "name", name, "error", err)
-		return
+		return fmt.Errorf("加载回滚配置失败: %w", err)
 	}
 	if _, err := s.dockerServicesCreate(ctx, project); err != nil {
-		logman.Warn("Rollback deploy failed", "name", name, "error", err)
+		return fmt.Errorf("重建容器失败: %w", err)
 	}
+	return nil
 }
 
 // dockerEnsureNetworks 确保 project 所需网络存在，不存在则创建 bridge 网络
