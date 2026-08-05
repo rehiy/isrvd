@@ -66,12 +66,7 @@ func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployRe
 		return nil, err
 	}
 
-	// 写 .env：显式提交则以其为准（空串即清空），未提交则保留附加文件解压出的 .env 并兜底空文件
-	if req.EnvContent != nil {
-		if err := compose.EnvSave(installDir, *req.EnvContent, ""); err != nil {
-			return nil, err
-		}
-	} else if err := compose.EnvEnsure(installDir); err != nil {
+	if err := compose.EnvApply(installDir, req.EnvContent); err != nil {
 		return nil, err
 	}
 
@@ -189,7 +184,6 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	if err != nil {
 		return nil, err
 	}
-	oldEnv := oldEnvState.Content
 
 	oldContent, contentErr := s.SwarmContent(ctx, name)
 
@@ -214,7 +208,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	}
 
 	// 先解析新 content 校验合法性（不写文件、不删旧实例），失败时旧服务保持运行
-	newProject, err := compose.LoadProjectFromContentWithEnv(ctx, content, installDir, name, req.EnvContent)
+	newProject, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, req.EnvContent)
 	if err != nil {
 		return nil, err
 	}
@@ -243,11 +237,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	}
 
 	// 先落盘新 .env，确保 ProjectLoad 插值读取到新值（与 Deploy 流程顺序一致）
-	if req.EnvContent != nil {
-		if err := compose.EnvSave(installDir, *req.EnvContent, oldEnv); err != nil {
-			return nil, wrapRedeployError(err, rollback())
-		}
-	} else if err := compose.EnvEnsure(installDir); err != nil {
+	if err := compose.EnvApply(installDir, req.EnvContent); err != nil {
 		return nil, wrapRedeployError(err, rollback())
 	}
 

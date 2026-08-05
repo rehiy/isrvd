@@ -1,5 +1,4 @@
 <script lang="ts">
-import { yaml } from '@codemirror/lang-yaml'
 import { Codemirror } from 'vue-codemirror'
 import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
@@ -12,8 +11,6 @@ class EnvEditor extends Vue {
     @Prop({ default: false }) disabled!: boolean
     @Prop({ default: '25vh' }) height!: string
     @Prop({ default: '' }) warning!: string
-
-    readonly extensions = [yaml()]
 
     get content() {
         return this.modelValue
@@ -35,7 +32,7 @@ export default toNative(EnvEditor)
         <span class="text-xs font-normal text-slate-400">（KEY=VALUE，部署时合并进变量插值环境）</span>
       </label>
       <div class="editor-container">
-        <Codemirror v-model="content" :style="{ height }" :extensions="extensions" :disabled="disabled" />
+        <Codemirror v-model="content" :style="{ height }" :disabled="disabled" />
       </div>
     </div>
     <div v-if="warning" class="bg-amber-50 border border-amber-200 rounded-lg p-3">

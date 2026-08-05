@@ -84,43 +84,21 @@ func LoadProject(ctx context.Context, opts LoadOptions) (*types.Project, error) 
 
 // LoadProjectFromContent 从 yaml 文本加载 compose 项目（不解析相对路径）。
 func LoadProjectFromContent(ctx context.Context, content string, projectName string) (*types.Project, error) {
-	return loadProjectFromContent(ctx, content, ".", projectName, false)
+	return LoadProjectFromContentInDir(ctx, content, ".", projectName, nil)
 }
 
 // LoadProjectFromContentInDir 从 yaml 文本加载 compose 项目，并以 workingDir 解析相对路径。
-func LoadProjectFromContentInDir(ctx context.Context, content, workingDir, projectName string) (*types.Project, error) {
+// envContent 为 nil 时仅读 workingDir/.env；非 nil 时在磁盘 .env 之上叠加。
+func LoadProjectFromContentInDir(ctx context.Context, content, workingDir, projectName string, envContent *string) (*types.Project, error) {
 	if workingDir == "" {
-		return LoadProjectFromContent(ctx, content, projectName)
+		workingDir = "."
 	}
-	return loadProjectFromContent(ctx, content, workingDir, projectName, true)
+	return loadProjectContent(ctx, content, workingDir, projectName, true, envContent)
 }
 
-func loadProjectFromContent(ctx context.Context, content, workingDir, projectName string, resolvePaths bool) (*types.Project, error) {
-	if content == "" {
-		return nil, fmt.Errorf("compose 内容为空")
-	}
-
-	env, err := projectEnvironmentWithEnvFile(ctx, nil, nil, workingDir)
-	if err != nil {
-		return nil, err
-	}
-
-	details := types.ConfigDetails{
-		WorkingDir: workingDir,
-		ConfigFiles: []types.ConfigFile{
-			{
-				Filename: "compose.yml",
-				Content:  []byte(content),
-			},
-		},
-		Environment: env,
-	}
-
-	return loadProject(ctx, details, projectName, resolvePaths, projectName != "")
-}
-
-// loadProjectFromContentWithEnv 从 yaml 文本加载 compose 项目，并额外合并指定的 .env 内容到插值环境。
-func loadProjectFromContentWithEnv(ctx context.Context, content, workingDir, projectName string, envContent *string, resolvePaths bool) (*types.Project, error) {
+// loadProjectContent 从 yaml 文本加载 compose 项目，并合并指定的 .env 内容到插值环境。
+// envContent 为 nil 时仅读 workingDir/.env；非 nil 时在磁盘 .env 之上叠加。
+func loadProjectContent(ctx context.Context, content, workingDir, projectName string, resolvePaths bool, envContent *string) (*types.Project, error) {
 	if content == "" {
 		return nil, fmt.Errorf("compose 内容为空")
 	}
@@ -309,14 +287,7 @@ func findComposeFile(dir string) (string, bool) {
 	return "", false
 }
 
-// LoadProjectFromContentWithEnv 从 yaml 文本加载 compose 项目，并显式合并指定 .env 内容到插值环境。
-// workingDir 用于解析相对路径；envContent 为 nil 时仅读 workingDir/.env；非 nil 时在磁盘 .env 之上叠加。
-func LoadProjectFromContentWithEnv(ctx context.Context, content, workingDir, projectName string, envContent *string) (*types.Project, error) {
-	if workingDir == "" {
-		workingDir = "."
-	}
-	return loadProjectFromContentWithEnv(ctx, content, workingDir, projectName, envContent, true)
-}
+
 
 // ─── 辅助函数 ───
 

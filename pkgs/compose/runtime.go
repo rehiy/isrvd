@@ -87,7 +87,7 @@ func ProjectParse(ctx context.Context, name, content, installDir string) (*types
 	if installDir == "" {
 		return LoadProjectFromContent(ctx, content, name)
 	}
-	return LoadProjectFromContentInDir(ctx, content, installDir, name)
+	return LoadProjectFromContentInDir(ctx, content, installDir, name, nil)
 }
 
 // ContentSave 持久化 compose.yml；bak 非空时同时写 compose.yml.bak。
@@ -184,6 +184,14 @@ func EnvStateRestore(installDir string, state EnvState) error {
 		return fmt.Errorf("恢复 .env 失败: %w", err)
 	}
 	return nil
+}
+
+// EnvApply 统一 .env 写盘/兜底：显式内容非 nil 则以其为准写盘（空串即清空），nil 则确保 .env 存在（兜底空文件）。
+func EnvApply(installDir string, envContent *string) error {
+	if envContent != nil {
+		return EnvSave(installDir, *envContent, "")
+	}
+	return EnvEnsure(installDir)
 }
 
 // EnvContentRead 读取项目 .env 内容；文件不存在时返回空串。读取失败（权限、IO 等）向上返回错误

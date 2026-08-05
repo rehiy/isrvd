@@ -67,12 +67,7 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 		return nil, err
 	}
 
-	// 写 .env：显式提交则以其为准（空串即清空），未提交则保留附加文件解压出的 .env 并兜底空文件
-	if req.EnvContent != nil {
-		if err := compose.EnvSave(installDir, *req.EnvContent, ""); err != nil {
-			return nil, err
-		}
-	} else if err := compose.EnvEnsure(installDir); err != nil {
+	if err := compose.EnvApply(installDir, req.EnvContent); err != nil {
 		return nil, err
 	}
 
@@ -206,7 +201,6 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	if err != nil {
 		return nil, err
 	}
-	oldEnv := oldEnvState.Content
 
 	oldContent, _, contentErr := s.DockerContent(ctx, name)
 
@@ -231,7 +225,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	}
 
 	// 先校验新 content，失败时旧服务保持运行
-	newProject, err := compose.LoadProjectFromContentWithEnv(ctx, content, installDir, name, req.EnvContent)
+	newProject, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, req.EnvContent)
 	if err != nil {
 		return nil, err
 	}
@@ -259,11 +253,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	}
 
 	// 先落盘新 .env，确保 ProjectLoad 插值读取到新值（与 Deploy 流程顺序一致）
-	if req.EnvContent != nil {
-		if err := compose.EnvSave(installDir, *req.EnvContent, oldEnv); err != nil {
-			return nil, wrapRedeployError(err, rollback())
-		}
-	} else if err := compose.EnvEnsure(installDir); err != nil {
+	if err := compose.EnvApply(installDir, req.EnvContent); err != nil {
 		return nil, wrapRedeployError(err, rollback())
 	}
 
