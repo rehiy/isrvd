@@ -4,7 +4,13 @@ NOTICE
 iSrvd — 轻量级运维管理面板
 Copyright (C) 2024-2026 rehiy
 
-This product includes software developed by third parties, listed below.
+This product includes software developed by third parties. Package versions are
+pinned by go.mod/go.sum and webview/package-lock.json. This notice describes
+those pinned dependencies; a platform-specific artifact may contain a subset.
+
+License identifiers in this document use SPDX syntax where possible. A license
+listed for a dependency applies only to that dependency and does not change the
+Apache-2.0 license of iSrvd's own source code.
 
 Go Backend Dependencies
 -----------------------
@@ -30,7 +36,7 @@ Direct dependencies:
 | golang.org/x/crypto                         | BSD-3-Clause  |
 | golang.org/x/oauth2                         | BSD-3-Clause  |
 
-Indirect dependencies (selected):
+Indirect and transitive dependencies:
 
 | Package                                      | License       |
 |----------------------------------------------|---------------|
@@ -148,7 +154,7 @@ Direct dependencies:
 | @codemirror/lang-sql         | MIT                           |
 | @codemirror/lang-xml         | MIT                           |
 | @codemirror/lang-yaml        | MIT                           |
-| @fortawesome/fontawesome-free | CC-BY-4.0 / OFL-1.1 / MIT    |
+| @fortawesome/fontawesome-free | CC-BY-4.0 (docs); OFL-1.1 (fonts); MIT (code) |
 | @xterm/addon-fit             | MIT                           |
 | @xterm/xterm                 | MIT                           |
 | axios                        | MIT                           |
@@ -181,22 +187,36 @@ Dev dependencies:
 | vite                         | MIT                           |
 | vue-tsc                      | MIT                           |
 
-Notable Special Licenses
-------------------------
+License and Distribution Notes
+------------------------------
 
-github.com/opencontainers/go-digest uses Apache-2.0 for its Go source code.
-Its README.md and CONTRIBUTING.md documentation files are licensed under
-CC-BY-SA-4.0. Only the Apache-2.0 source code is included in compiled binaries.
+### github.com/opencontainers/go-digest v1.0.0
 
-github.com/shoenig/go-m1cpu is licensed under MPL-2.0. It is referenced by
-Darwin-specific gopsutil source files and is not part of the Linux binaries
-published by this project.
+- Go source code: Apache-2.0
+- README.md and CONTRIBUTING.md: CC-BY-SA-4.0
+- Source: <https://github.com/opencontainers/go-digest/tree/v1.0.0>
 
-@fortawesome/fontawesome-free is licensed under a triple license:
+Compiled iSrvd binaries contain the Apache-2.0 code, not the CC-BY-SA-4.0
+documentation. Redistributing or adapting those upstream documentation files
+separately remains subject to CC-BY-SA-4.0.
 
-- CC-BY-4.0 (documentation)
-- OFL-1.1 (fonts)
-- MIT (code)
+### github.com/shoenig/go-m1cpu v0.2.2
 
-All three licenses are compatible with the Apache License 2.0 under which
-this project is distributed.
+- License: MPL-2.0
+- Source: <https://github.com/shoenig/go-m1cpu/tree/v0.2.2>
+- License text: <https://www.mozilla.org/MPL/2.0/>
+
+This package is referenced by Darwin-specific gopsutil source files. It is not
+part of iSrvd's Linux binaries, but it is included in macOS binaries. Recipients
+of a macOS binary may obtain the corresponding MPL-2.0 source code from the
+source URL above. Any modifications made by iSrvd to MPL-covered files must
+also be made available under MPL-2.0; iSrvd's own files remain Apache-2.0.
+
+### @fortawesome/fontawesome-free
+
+- Documentation: CC-BY-4.0
+- Fonts: OFL-1.1
+- Code: MIT
+- Source: <https://github.com/FortAwesome/Font-Awesome>
+
+Each license applies only to the corresponding portion of Font Awesome.
