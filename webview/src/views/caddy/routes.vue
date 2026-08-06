@@ -52,28 +52,32 @@ class CaddyRoutes extends Vue {
     }
 
     get routeListRows(): RouteListRow[] {
-        const hosts = this.routes.map(route => this.getRouteGroupHost(route))
-        const grouped = new Set(hosts).size < hosts.length
-        const routes = grouped
-            ? [...this.filteredRoutes].sort((a, b) => {
-                const hostCompare = this.getRouteGroupHost(a).localeCompare(this.getRouteGroupHost(b))
-                return hostCompare || this.getRoutePaths(a).localeCompare(this.getRoutePaths(b))
+        const allEntries = this.routes.flatMap(route =>
+            this.getRouteGroupHosts(route).map(host => ({ host, route }))
+        )
+        const grouped = this.routes.some(route => this.getRouteGroupHosts(route).length > 1) ||
+            new Set(allEntries.map(entry => entry.host)).size < allEntries.length
+        const entries = this.filteredRoutes.flatMap(route =>
+            this.getRouteGroupHosts(route).map(host => ({ host, route }))
+        )
+        if (grouped) {
+            entries.sort((a, b) => {
+                const hostCompare = a.host.localeCompare(b.host)
+                return hostCompare || this.getRoutePaths(a.route).localeCompare(this.getRoutePaths(b.route))
             })
-            : this.filteredRoutes
+        }
         const counts = new Map<string, number>()
-        for (const route of routes) {
-            const host = this.getRouteGroupHost(route)
+        for (const { host } of entries) {
             counts.set(host, (counts.get(host) || 0) + 1)
         }
         const rows: RouteListRow[] = []
         let previousHost = ''
-        for (const route of routes) {
-            const host = this.getRouteGroupHost(route)
+        for (const { host, route } of entries) {
             if (grouped && host !== previousHost) {
                 rows.push({ type: 'host', key: `host-${host}`, host, count: counts.get(host) || 0 })
                 previousHost = host
             }
-            rows.push({ type: 'route', key: `route-${route.index}`, host, grouped, route })
+            rows.push({ type: 'route', key: `route-${host}-${route.index}`, host, grouped, route })
         }
         return rows
     }
@@ -107,8 +111,9 @@ class CaddyRoutes extends Vue {
         return hosts.length ? hosts.join(', ') : '*'
     }
 
-    getRouteGroupHost(r: CaddyRoute) {
-        return r.match?.[0]?.host?.[0] || '*'
+    getRouteGroupHosts(r: CaddyRoute) {
+        const hosts = r.match?.[0]?.host || []
+        return hosts.length ? [...new Set(hosts)] : ['*']
     }
 
     getRoutePaths(r: CaddyRoute) {
