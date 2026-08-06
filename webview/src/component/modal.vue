@@ -108,7 +108,6 @@ export default toNative(BaseModal)
               </slot>
             </div>
             <div class="action-group">
-              <div v-if="loading" class="spinner w-5 h-5 border-2" aria-label="加载中"></div>
               <slot name="header-actions"></slot>
               <button type="button" class="btn-icon-sm" :disabled="loading" @click="handleCancel">
                 <i class="fas fa-times"></i>
@@ -117,14 +116,8 @@ export default toNative(BaseModal)
           </div>
 
           <!-- Body -->
-          <div :class="['relative flex-1 min-h-0', bodyClass]">
+          <div :class="['relative flex-1 min-h-0', bodyClass]" :inert="loading">
             <slot></slot>
-            <div v-if="loading" class="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-[1px]">
-              <div class="flex items-center gap-2 text-sm font-medium text-slate-600">
-                <div class="spinner w-6 h-6 border-2"></div>
-                <span>加载中...</span>
-              </div>
-            </div>
           </div>
 
           <!-- Footer -->
