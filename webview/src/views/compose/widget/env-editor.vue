@@ -9,7 +9,7 @@ import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 class EnvEditor extends Vue {
     @Prop({ default: '' }) modelValue!: string
     @Prop({ default: false }) disabled!: boolean
-    @Prop({ default: '25vh' }) height!: string
+    @Prop({ default: '50vh' }) height!: string
     @Prop({ default: '' }) warning!: string
 
     get content() {
