@@ -128,6 +128,7 @@ func (c *Client) RouteConsumerRestrictionUpdate(ctx context.Context, routeID str
 		plugins["consumer-restriction"] = map[string]any{"whitelist": consumers}
 	} else {
 		delete(plugins, "consumer-restriction")
+		delete(plugins, "key-auth")
 	}
 	route["plugins"] = plugins
 	delete(route, "create_time")

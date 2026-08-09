@@ -46,6 +46,7 @@ class WhitelistEditModal extends Vue {
     }
 
     get confirmText() {
+        if (this.isEdit && this.whitelistConsumers.length === 0) return '删除授权'
         return this.isEdit ? '保存配置' : '确认配置'
     }
 
@@ -134,17 +135,16 @@ class WhitelistEditModal extends Vue {
 
     async handleConfirm() {
         if (!this.formData.routeId) return this.portal.showNotification('error', '请选择要配置访问授权的路由')
-        if (this.whitelistConsumers.length === 0) return this.portal.showNotification('error', '授权用户不能为空')
-        if (!this.formData.keyAuthHeader.trim()) return this.portal.showNotification('error', 'key-auth 请求头名称不能为空')
+        if (!this.isEdit && this.whitelistConsumers.length === 0) return this.portal.showNotification('error', '授权用户不能为空')
 
         this.modalLoading = true
         try {
             await api.apisixWhitelistCreate({
                 route_id: this.formData.routeId,
                 consumers: this.whitelistConsumers,
-                key_auth: this.keyAuthConfig,
+                key_auth: this.whitelistConsumers.length > 0 ? this.keyAuthConfig : ({} as ApisixKeyAuthConfig),
             })
-            this.portal.showNotification('success', this.isEdit ? '访问授权更新成功' : '访问授权配置成功')
+            this.portal.showNotification('success', this.whitelistConsumers.length > 0 ? '访问授权更新成功' : '访问授权删除成功')
             this.isOpen = false
             this.$emit('success')
         } catch (e: unknown) {

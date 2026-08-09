@@ -78,6 +78,8 @@ isrvd_post "/apisix/whitelist" '{"route_id":"<ROUTE_ID>","consumers":["<USERNAME
 
 该接口会按请求体中的 `key_auth` 写入路由侧 `key-auth` 插件，并用 `consumers` 覆盖写入 `consumer-restriction.whitelist`，用于把已有路由纳入 Consumer 访问授权管控或更新已有授权配置。接口只负责配置路由访问授权，不会创建 Consumer；`consumers` 中的用户必须已存在，如需新增用户应先调用 `/apisix/consumer` 创建并配置 `key-auth.key`。
 
+编辑场景下 `consumers` 传空数组则视为删除授权，将移除路由上的 consumer-restriction 和 key-auth 插件配置。
+
 ### 新建用户并加入访问授权（原子接口）
 
 一次性完成「创建 Consumer + 配置 key-auth + 加入路由访问授权」三步操作，若 Consumer 已存在则直接复用（幂等）：

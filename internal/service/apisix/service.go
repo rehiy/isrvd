@@ -173,15 +173,22 @@ type WhitelistCreateRequest struct {
 	KeyAuth   map[string]any `json:"key_auth"`  // Key Auth 插件配置
 }
 
-// WhitelistCreate 为已有路由配置 Consumer 访问授权
+// WhitelistCreate 为已有路由配置 Consumer 访问授权。
+// 编辑场景下 consumers 为空时，视为删除授权（移除 consumer-restriction 和 key-auth 插件）。
 func (s *Service) WhitelistCreate(ctx context.Context, req WhitelistCreateRequest) (*pkgApisix.Route, error) {
 	routeID := strings.TrimSpace(req.RouteID)
 	if routeID == "" {
 		return nil, fmt.Errorf("路由 ID 不能为空")
 	}
+
+	// 编辑场景：consumers 为空 → 删除授权
 	if len(req.Consumers) == 0 {
-		return nil, fmt.Errorf("授权用户不能为空")
+		if err := s.client.RouteConsumerRestrictionUpdate(ctx, routeID, nil, nil); err != nil {
+			return nil, fmt.Errorf("删除访问授权失败: %w", err)
+		}
+		return s.RouteInspect(ctx, routeID)
 	}
+
 	if len(req.KeyAuth) == 0 {
 		return nil, fmt.Errorf("key-auth 配置不能为空")
 	}
