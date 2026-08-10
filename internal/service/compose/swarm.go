@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/rehiy/libgo/logman"
@@ -12,6 +13,9 @@ import (
 	"isrvd/pkgs/compose"
 	"isrvd/pkgs/docker"
 )
+
+// swarmServiceRemoveTimeout 等待旧服务从集群状态中彻底消失的超时时间
+const swarmServiceRemoveTimeout = 10 * time.Second
 
 // SwarmDeploy 部署新的 Swarm Compose 项目。
 func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployResult, error) {
@@ -220,7 +224,11 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 		return nil, err
 	}
 
-	s.swarmServicesRemove(ctx, name, oldContent)
+	// 旧服务尚未确认移除干净前不能进入创建阶段，否则必然撞上 AlreadyExists；
+	// 此时还未写盘任何新内容，直接返回即可，无需走回滚
+	if err := s.swarmServicesRemove(ctx, name, oldContent); err != nil {
+		return nil, fmt.Errorf("移除旧服务失败: %w", err)
+	}
 
 	rollback := func() string {
 		// 先恢复旧 .env 再回滚服务；.env 失败不阻断服务回滚
@@ -271,7 +279,7 @@ func (s *Service) swarmServicesCreate(ctx context.Context, project *types.Projec
 
 	rollback := func() {
 		for _, id := range createdIDs {
-			if err := s.swarm.ServiceAction(ctx, id, "remove", nil); err != nil {
+			if err := s.swarm.ServiceRemoveAndWait(ctx, id, swarmServiceRemoveTimeout); err != nil {
 				logman.Warn("Rollback remove service failed", "id", id, "error", err)
 			}
 		}
@@ -304,18 +312,22 @@ func (s *Service) swarmServiceCreate(ctx context.Context, project *types.Project
 	return id, spec.Name, nil
 }
 
-// swarmServicesRemove 移除 project 中的所有 Swarm 服务
-func (s *Service) swarmServicesRemove(ctx context.Context, name, content string) {
+// swarmServicesRemove 移除 project 中的所有 Swarm 服务，并等待其从集群状态中彻底消失，
+// 避免紧随其后的同名 create 撞上 Docker daemon 异步清理导致的 AlreadyExists。
+func (s *Service) swarmServicesRemove(ctx context.Context, name, content string) error {
 	if content == "" {
-		return
+		return nil
 	}
 	project, err := compose.LoadProjectFromContent(ctx, content, name)
 	if err != nil {
-		return
+		return err
 	}
 	for _, svc := range project.Services {
-		_ = s.swarm.ServiceAction(ctx, svc.Name, "remove", nil)
+		if err := s.swarm.ServiceRemoveAndWait(ctx, svc.Name, swarmServiceRemoveTimeout); err != nil {
+			return fmt.Errorf("移除服务 %s 失败: %w", svc.Name, err)
+		}
 	}
+	return nil
 }
 
 // swarmRollback 用指定配置内容重建 Swarm 服务（回滚用）
