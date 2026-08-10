@@ -6,6 +6,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { CronJob, CronJobLog } from '@/service/types'
 
+import { formatTime as formatLocalTime } from '@/helper/format'
+
 import BaseModal from '@/component/modal.vue'
 
 @Component({
@@ -46,10 +48,7 @@ class JobLogsModal extends Vue {
         }
     }
 
-    formatTime(t?: string): string {
-        if (!t) return '-'
-        return new Date(t).toLocaleString('zh-CN')
-    }
+    formatTime = formatLocalTime
 
     formatDuration(ms: number): string {
         return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`

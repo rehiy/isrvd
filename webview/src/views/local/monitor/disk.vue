@@ -7,7 +7,7 @@ import type { SystemStat, SystemDiskIO, SystemDiskPartition } from '@/service/ty
 
 import Chart from '@/helper/chart'
 import { hexToRgba } from '@/helper/format'
-import { appendMonitorPoint } from '@/helper/monitor'
+import { appendMonitorPoint, formatMonitorBytes } from '@/helper/monitor'
 
 interface DiskIOSeriesHistory {
     ts: number[]
@@ -36,16 +36,8 @@ class SystemDisk extends Vue {
     current: Pick<SystemStat['system'], 'diskTotal' | 'diskUsed' | 'diskPartition'> | null = null
     private currentDiskIO: SystemDiskIO[] = []
 
-    fmtSize(bytes: number, rates = false) {
-        if (!bytes || bytes < 0) return rates ? '0 B/s' : '0 B'
-        const units = rates ? ['B/s', 'KB/s', 'MB/s', 'GB/s'] : ['B', 'KB', 'MB', 'GB', 'TB']
-        let i = 0, v = bytes
-        while (v >= 1024 && i < units.length - 1) { v /= 1024; i++ }
-        return `${v.toFixed(1)} ${units[i]}`
-    }
-
-    fmtBytes(b: number) { return this.fmtSize(b, false) }
-    fmtRate(b: number) { return this.fmtSize(b, true) }
+    fmtBytes(bytes: number) { return formatMonitorBytes(bytes) }
+    fmtRate(bytes: number) { return formatMonitorBytes(bytes, true) }
 
     memPercent(used: number, total: number): number {
         if (!total) return 0

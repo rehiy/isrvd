@@ -83,7 +83,7 @@ class ConsumerEditModal extends Vue {
             if (this.isEditMode) {
                 await api.apisixConsumerUpdate(this.formData.username, payload)
             } else {
-await api.apisixConsumerCreate({ username: this.formData.username, desc: payload.desc, plugins: payload.plugins } as ApisixConsumerCreate)
+                await api.apisixConsumerCreate({ username: this.formData.username, desc: payload.desc, plugins: payload.plugins } as ApisixConsumerCreate)
             }
             this.isOpen = false
             this.$emit('success')

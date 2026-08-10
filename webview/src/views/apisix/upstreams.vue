@@ -7,6 +7,7 @@ import api from '@/service/api'
 import type { ApisixUpstream } from '@/service/types'
 
 import { normalizeUpstreamNodes } from '@/helper/apisix'
+import { formatUnixDateTime } from '@/helper/format'
 
 import PageSearch from '@/component/page-search.vue'
 
@@ -83,10 +84,7 @@ class Upstreams extends Vue {
         return 'bg-indigo-50 text-indigo-700'
     }
 
-    formatTs(ts?: number) {
-        if (!ts) return '-'
-        return new Date(ts * 1000).toLocaleString()
-    }
+    formatTs = formatUnixDateTime
 
     deleteUpstream(upstream: ApisixUpstream) {
         const id = upstream.id

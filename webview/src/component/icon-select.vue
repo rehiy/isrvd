@@ -1,6 +1,6 @@
 <script lang="ts">
 import iconCategoriesYml from '@fortawesome/fontawesome-free/metadata/categories.yml?raw'
-import iconFamilies from '@fortawesome/fontawesome-free/metadata/icon-families.json'
+import iconsYml from '@fortawesome/fontawesome-free/metadata/icons.yml?raw'
 import { load as yamlLoad } from 'js-yaml'
 import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
@@ -23,6 +23,7 @@ const { ALL_ICONS, CATEGORIES } = (() => {
     const iconCategoryMap = new Map<string, string>()
     const categoryEntries: IconCategory[] = []
     const iconCategories = yamlLoad(iconCategoriesYml) as Record<string, { label: string; icons: string[] }>
+    const iconMetadata = yamlLoad(iconsYml) as Record<string, { label: string; styles?: string[] }>
 
     for (const [key, info] of Object.entries(iconCategories)) {
         let count = 0
@@ -39,11 +40,11 @@ const { ALL_ICONS, CATEGORIES } = (() => {
 
     // 构建全部图标列表
     const icons: FaIcon[] = []
-    for (const [name, info] of Object.entries(iconFamilies as Record<string, { label: string; familyStylesByLicense?: { free?: { style: string }[] } }>)) {
-        for (const s of info.familyStylesByLicense?.free ?? []) {
-            if (s.style === 'solid') {
+    for (const [name, info] of Object.entries(iconMetadata)) {
+        for (const style of info.styles ?? []) {
+            if (style === 'solid') {
                 icons.push({ name: `fas fa-${name}`, label: info.label, category: iconCategoryMap.get(name) ?? '' })
-            } else if (s.style === 'brands') {
+            } else if (style === 'brands') {
                 icons.push({ name: `fab fa-${name}`, label: info.label, category: iconCategoryMap.get(name) ?? '' })
             }
         }

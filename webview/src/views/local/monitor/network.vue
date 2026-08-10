@@ -5,9 +5,8 @@ import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import type { SystemStat, SystemNetInterface } from '@/service/types'
 
-import Chart from '@/helper/chart'
-import { hexToRgba } from '@/helper/format'
-import { appendMonitorPoint } from '@/helper/monitor'
+import Chart, { makeLineDataset } from '@/helper/chart'
+import { appendMonitorPoint, formatMonitorBytes } from '@/helper/monitor'
 
 interface TimeSeriesHistory {
     ts: number[]
@@ -34,16 +33,8 @@ class SystemNetwork extends Vue {
     private lastNetIO: Record<string, { recv: number; sent: number; time: number }> = {}
     currentIfaces: SystemNetInterface[] = []
 
-    fmtSize(bytes: number, rates = false) {
-        if (!bytes || bytes < 0) return rates ? '0 B/s' : '0 B'
-        const units = rates ? ['B/s', 'KB/s', 'MB/s', 'GB/s'] : ['B', 'KB', 'MB', 'GB', 'TB']
-        let i = 0, v = bytes
-        while (v >= 1024 && i < units.length - 1) { v /= 1024; i++ }
-        return `${v.toFixed(1)} ${units[i]}`
-    }
-
-    fmtBytes(b: number) { return this.fmtSize(b, false) }
-    fmtRate(b: number) { return this.fmtSize(b, true) }
+    fmtBytes(bytes: number) { return formatMonitorBytes(bytes) }
+    fmtRate(bytes: number) { return formatMonitorBytes(bytes, true) }
 
     physicalInterfaces(list: SystemNetInterface[]) {
         if (!list) return []
@@ -83,10 +74,6 @@ class SystemNetwork extends Vue {
         }
     }
 
-    makeDataset(data: number[], color: string, label: string) {
-        return { label, data: [...data], borderColor: color, backgroundColor: hexToRgba(color, 0.1), fill: true }
-    }
-
     initNetChart(name: string) {
         const canvas = this.netContainerRef?.querySelector(`[data-iface="${name}"]`) as HTMLCanvasElement | null
         if (!canvas) return
@@ -95,7 +82,7 @@ class SystemNetwork extends Vue {
         this.netHistory[name] = h
         const chart = new Chart(canvas, {
             type: 'line' as const,
-            data: { labels: [...h.labels], datasets: [this.makeDataset(h.recv, '#10b981', '下行'), this.makeDataset(h.sent, '#3b82f6', '上行')] },
+            data: { labels: [...h.labels], datasets: [makeLineDataset(h.recv, '#10b981', '下行'), makeLineDataset(h.sent, '#3b82f6', '上行')] },
             options: this.netChartOptions()
         })
         this.netCharts[name] = markRaw(chart)

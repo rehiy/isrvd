@@ -5,9 +5,8 @@ import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import type { SystemStat, SystemGoRuntimeStat } from '@/service/types'
 
-import Chart from '@/helper/chart'
-import { hexToRgba } from '@/helper/format'
-import { appendMonitorPoint } from '@/helper/monitor'
+import Chart, { makeLineDataset } from '@/helper/chart'
+import { appendMonitorPoint, formatMonitorBytes } from '@/helper/monitor'
 
 @Component
 class SystemGo extends Vue {
@@ -32,11 +31,7 @@ class SystemGo extends Vue {
     lastGCTime: string = '从未'
 
     fmtSize(bytes: number) {
-        if (!bytes || bytes < 0) return '0 B'
-        const units = ['B', 'KB', 'MB', 'GB', 'TB']
-        let i = 0, v = bytes
-        while (v >= 1024 && i < units.length - 1) { v /= 1024; i++ }
-        return `${v.toFixed(1)} ${units[i]}`
+        return formatMonitorBytes(bytes)
     }
 
     fmtGCTime(ts: number) {
@@ -75,10 +70,6 @@ class SystemGo extends Vue {
             },
             elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 1.5 } }
         }
-    }
-
-    makeDataset(data: number[], color: string, label: string) {
-        return { label, data: [...data], borderColor: color, backgroundColor: hexToRgba(color, 0.1), fill: true }
     }
 
     pushData(payload: SystemStat, ts: number) {
@@ -168,12 +159,12 @@ class SystemGo extends Vue {
                 data: {
                     labels: [...this.memHistory.labels],
                     datasets: [
-                        this.makeDataset(this.memHistory.alloc, '#3b82f6', '已分配'),
-                        this.makeDataset(this.memHistory.heapAlloc, '#10b981', '堆已分配'),
-                        this.makeDataset(this.memHistory.heapInuse, '#f59e0b', '堆使用中'),
-                        this.makeDataset(this.memHistory.heapIdle, '#a8a29e', '堆空闲'),
-                        this.makeDataset(this.memHistory.heapReleased, '#f43f5e', '堆已释放'),
-                        this.makeDataset(this.memHistory.heapSys, '#8b5cf6', '堆已申请')
+                        makeLineDataset(this.memHistory.alloc, '#3b82f6', '已分配'),
+                        makeLineDataset(this.memHistory.heapAlloc, '#10b981', '堆已分配'),
+                        makeLineDataset(this.memHistory.heapInuse, '#f59e0b', '堆使用中'),
+                        makeLineDataset(this.memHistory.heapIdle, '#a8a29e', '堆空闲'),
+                        makeLineDataset(this.memHistory.heapReleased, '#f43f5e', '堆已释放'),
+                        makeLineDataset(this.memHistory.heapSys, '#8b5cf6', '堆已申请')
                     ]
                 },
                 options: this.goChartOptions()
@@ -186,9 +177,9 @@ class SystemGo extends Vue {
                 data: {
                     labels: [...this.goroutineHistory.labels],
                     datasets: [
-                        this.makeDataset(this.goroutineHistory.goroutine, '#8b5cf6', 'Goroutine'),
-                        { ...this.makeDataset(this.goroutineHistory.heapObjects, '#22c55e', '堆对象'), yAxisID: 'y1' },
-                        { ...this.makeDataset(this.goroutineHistory.gc, '#ef4444', 'GC 次数'), yAxisID: 'y2' }
+                        makeLineDataset(this.goroutineHistory.goroutine, '#8b5cf6', 'Goroutine'),
+                        { ...makeLineDataset(this.goroutineHistory.heapObjects, '#22c55e', '堆对象'), yAxisID: 'y1' },
+                        { ...makeLineDataset(this.goroutineHistory.gc, '#ef4444', 'GC 次数'), yAxisID: 'y2' }
                     ]
                 },
                 options: {
@@ -243,8 +234,8 @@ class SystemGo extends Vue {
                 data: {
                     labels: [...this.stackHistory.labels],
                     datasets: [
-                        this.makeDataset(this.stackHistory.stackInuse, '#f59e0b', '栈已使用'),
-                        this.makeDataset(this.stackHistory.stackSys, '#8b5cf6', '栈已申请')
+                        makeLineDataset(this.stackHistory.stackInuse, '#f59e0b', '栈已使用'),
+                        makeLineDataset(this.stackHistory.stackSys, '#8b5cf6', '栈已申请')
                     ]
                 },
                 options: this.goChartOptions()
@@ -257,8 +248,8 @@ class SystemGo extends Vue {
                 data: {
                     labels: [...this.sysHistory.labels],
                     datasets: [
-                        this.makeDataset(this.sysHistory.totalAlloc, '#3b82f6', '累计分配'),
-                        this.makeDataset(this.sysHistory.sys, '#10b981', '系统申请')
+                        makeLineDataset(this.sysHistory.totalAlloc, '#3b82f6', '累计分配'),
+                        makeLineDataset(this.sysHistory.sys, '#10b981', '系统申请')
                     ]
                 },
                 options: this.goChartOptions()

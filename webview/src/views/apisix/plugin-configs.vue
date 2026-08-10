@@ -6,6 +6,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { ApisixPluginConfig } from '@/service/types'
 
+import { formatUnixDateTime } from '@/helper/format'
+
 import PageSearch from '@/component/page-search.vue'
 
 import PluginConfigEditModal from './widget/plugin-config-edit-modal.vue'
@@ -70,10 +72,7 @@ class PluginConfigs extends Vue {
         return `${names.slice(0, 3).join('、')} 等 ${names.length} 个插件`
     }
 
-    formatTs(ts?: number) {
-        if (!ts) return '-'
-        return new Date(ts * 1000).toLocaleString()
-    }
+    formatTs = formatUnixDateTime
 
     deleteConfig(config: ApisixPluginConfig) {
         const id = config.id

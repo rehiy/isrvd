@@ -5,8 +5,7 @@ import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import type { SystemStat, SystemGPU } from '@/service/types'
 
-import Chart from '@/helper/chart'
-import { hexToRgba } from '@/helper/format'
+import Chart, { makeLineDataset } from '@/helper/chart'
 import { appendMonitorPoint } from '@/helper/monitor'
 
 interface GpuHistory {
@@ -86,10 +85,6 @@ class SystemGpu extends Vue {
         }
     }
 
-    makeDataset(data: number[], color: string, label: string) {
-        return { label, data: [...data], borderColor: color, backgroundColor: hexToRgba(color, 0.1), fill: true }
-    }
-
     initGpuChart(key: string) {
         const canvas = this.gpuContainerRef?.querySelector(`[data-gpu="${key}"]`) as HTMLCanvasElement | null
         if (!canvas) return
@@ -104,9 +99,9 @@ class SystemGpu extends Vue {
             data: {
                 labels: [...h.labels],
                 datasets: [
-                    this.makeDataset(h.util, '#10b981', '使用率'),
-                    this.makeDataset(h.vram, '#8b5cf6', '显存'),
-                    this.makeDataset(h.power, '#f59e0b', '功耗')
+                    makeLineDataset(h.util, '#10b981', '使用率'),
+                    makeLineDataset(h.vram, '#8b5cf6', '显存'),
+                    makeLineDataset(h.power, '#f59e0b', '功耗')
                 ]
             },
             options: this.gpuChartOptions()

@@ -79,8 +79,8 @@ class Routes extends Vue {
         for (const [index, route] of routes.entries()) {
             const host = this.getRouteGroupHost(route)
             if (this.groupByHost && host !== previousHost) {
-                const stat = hostStats.get(host)!
-                rows.push({ type: 'host', key: `host-${host}`, host, count: stat.count, active: stat.active, disabled: stat.disabled })
+                const stat = hostStats.get(host)
+                if (stat) rows.push({ type: 'host', key: `host-${host}`, host, count: stat.count, active: stat.active, disabled: stat.disabled })
                 previousHost = host
             }
             rows.push({ type: 'route', key: `route-${route.id || index}`, host, route })

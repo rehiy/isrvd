@@ -6,6 +6,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { ApisixConsumer, ApisixRoute } from '@/service/types'
 
+import { formatUnixDateTime } from '@/helper/format'
+
 import PageSearch from '@/component/page-search.vue'
 
 import ConsumerEditModal from './widget/consumer-edit-modal.vue'
@@ -39,7 +41,7 @@ class Consumers extends Vue {
     async loadConsumers() {
         this.loading = true
         try {
-const [consRes, wlRes] = await Promise.all([api.apisixConsumerList(), api.apisixWhitelistInspect()])
+            const [consRes, wlRes] = await Promise.all([api.apisixConsumerList(), api.apisixWhitelistInspect()])
             this.consumers = consRes.payload || []
             this.whitelist = wlRes.payload || []
         } catch {
@@ -53,10 +55,7 @@ const [consRes, wlRes] = await Promise.all([api.apisixConsumerList(), api.apisix
         return this.whitelist.filter((r: ApisixRoute) => (r.consumers || []).includes(username)).map((r: ApisixRoute) => r.name || r.id)
     }
 
-    formatTs(ts: number) {
-        if (!ts) return '-'
-        return new Date(ts * 1000).toLocaleString()
-    }
+    formatTs = formatUnixDateTime
 
     openCreateModal() {
         this.editModalRef?.show()

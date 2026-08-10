@@ -40,13 +40,18 @@ export const formatFileSize = (bytes: number): string => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-export const formatTime = (timeString: string): string => {
+export const formatTime = (timeString?: string): string => {
+    if (!timeString) return '-'
     const date = new Date(timeString)
     return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', { hour12: false })
 }
 
 export const formatUnixTime = (ts: number): string => {
     return new Date(ts * 1000).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
+
+export const formatUnixDateTime = (ts?: number): string => {
+    return ts ? new Date(ts * 1000).toLocaleString() : '-'
 }
 
 export const hexToRgba = (hex: string, alpha: number): string => {

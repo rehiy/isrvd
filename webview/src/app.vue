@@ -1,4 +1,5 @@
 <script lang="ts">
+import { defineAsyncComponent } from 'vue'
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
@@ -8,11 +9,12 @@ import api from '@/service/api'
 import ConfirmModal from '@/component/confirm.vue'
 import NavigationBar from '@/component/navigation.vue'
 import NotificationManager from '@/component/notification.vue'
-import PageAgent from '@/component/page-agent.vue'
 import ToolbarLinks from '@/component/toolbar-links.vue'
 import UserMenu from '@/component/user-menu.vue'
 
 import AuthLogin from '@/views/account/login.vue'
+
+const PageAgent = defineAsyncComponent(() => import('@/component/page-agent.vue'))
 
 @Component({
     components: { ConfirmModal, NavigationBar, NotificationManager, PageAgent, ToolbarLinks, UserMenu, AuthLogin }

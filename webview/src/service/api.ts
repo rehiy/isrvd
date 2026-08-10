@@ -68,22 +68,22 @@ import type {
     DockerContainerDetail,
     DockerContainerCompose,
     DockerImageInfo,
-	DockerImageDetail,
+    DockerImageDetail,
     DockerImageSearchResult,
     DockerImagePrune,
     DockerImagePruneResult,
     DockerNetworkInfo,
-	DockerNetworkDetail,
+    DockerNetworkDetail,
     DockerNetworkCreate,
     DockerVolumeInfo,
-	DockerVolumeDetail,
+    DockerVolumeDetail,
     DockerVolumeCreate,
     DockerRegistryInfo,
     DockerRegistryUpsert,
     // Swarm
     SwarmInfo,
     SwarmNodeInfo,
-	SwarmNodeDetail,
+    SwarmNodeDetail,
     SwarmServiceInfo,
     SwarmServiceDetail,
     SwarmTask,
@@ -605,7 +605,7 @@ class ApiService {
     }
 
     dockerImageInspect(id: string) {
-	return http.get<DockerImageDetail>(`docker/image/${id}`)
+        return http.get<DockerImageDetail>(`docker/image/${id}`)
     }
 
     dockerImageAction(id: string, action: string) {
@@ -642,7 +642,7 @@ class ApiService {
     }
 
     dockerNetworkInspect(id: string) {
-	return http.get<DockerNetworkDetail>(`docker/network/${id}`)
+        return http.get<DockerNetworkDetail>(`docker/network/${id}`)
     }
 
     dockerNetworkAction(id: string, action: string) {
@@ -659,7 +659,7 @@ class ApiService {
     }
 
     dockerVolumeInspect(name: string) {
-	return http.get<DockerVolumeDetail>(`docker/volume/${encodeURIComponent(name)}`)
+        return http.get<DockerVolumeDetail>(`docker/volume/${encodeURIComponent(name)}`)
     }
 
     dockerVolumeAction(name: string, action: string) {
@@ -702,7 +702,7 @@ class ApiService {
     }
 
     swarmNodeInspect(id: string) {
-	return http.get<SwarmNodeDetail>(`swarm/node/${id}`)
+        return http.get<SwarmNodeDetail>(`swarm/node/${id}`)
     }
 
     swarmNodeAction(id: string, action: string) {

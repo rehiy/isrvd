@@ -6,6 +6,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { CronJob, CronTypeInfo } from '@/service/types'
 
+import { formatTime as formatLocalTime } from '@/helper/format'
+
 import PageSearch from '@/component/page-search.vue'
 
 import JobEditModal from './widget/job-edit-modal.vue'
@@ -43,10 +45,7 @@ class CronJobs extends Vue {
         )
     }
 
-    formatTime(t?: string): string {
-        if (!t) return '-'
-        return new Date(t).toLocaleString('zh-CN')
-    }
+    formatTime = formatLocalTime
 
     runtimeStatusText(job: CronJob): string {
         if (job.runtimeStatus === 'scheduled') return '调度中'

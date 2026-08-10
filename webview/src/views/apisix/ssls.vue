@@ -6,6 +6,8 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { ApisixSSL } from '@/service/types'
 
+import { formatUnixDateTime } from '@/helper/format'
+
 import PageSearch from '@/component/page-search.vue'
 
 import SSLEditModal from './widget/ssl-edit-modal.vue'
@@ -74,10 +76,7 @@ class SSLs extends Vue {
         return (ssl.status ?? 1) === 0 ? '禁用' : '启用'
     }
 
-    formatTs(ts?: number) {
-        if (!ts) return '-'
-        return new Date(ts * 1000).toLocaleString()
-    }
+    formatTs = formatUnixDateTime
 
     deleteSSL(ssl: ApisixSSL) {
         const id = ssl.id

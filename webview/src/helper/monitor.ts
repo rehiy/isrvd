@@ -3,6 +3,18 @@ interface MonitorWindowHistory {
     labels: string[]
 }
 
+export function formatMonitorBytes(bytes: number, rate = false): string {
+    if (!bytes || bytes < 0) return rate ? '0 B/s' : '0 B'
+    const units = rate ? ['B/s', 'KB/s', 'MB/s', 'GB/s'] : ['B', 'KB', 'MB', 'GB', 'TB']
+    let unitIndex = 0
+    let value = bytes
+    while (value >= 1024 && unitIndex < units.length - 1) {
+        value /= 1024
+        unitIndex++
+    }
+    return `${value.toFixed(1)} ${units[unitIndex]}`
+}
+
 export function monitorTimeLabel(ts: number): string {
     const t = new Date(ts * 1000)
     return `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}:${t.getSeconds().toString().padStart(2, '0')}`
