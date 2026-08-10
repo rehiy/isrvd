@@ -163,7 +163,7 @@ func (s *Service) JobList() []*JobDetail {
 
 	result := make([]*JobDetail, 0, len(s.jobs))
 	for _, job := range s.jobs {
-		detail := &JobDetail{Job: job, RuntimeStatus: "disabled"}
+		detail := &JobDetail{Job: cloneJob(job), RuntimeStatus: "disabled"}
 		if job.Enabled {
 			detail.RuntimeStatus = "unregistered"
 		}
@@ -203,20 +203,7 @@ type JobUpsertRequest struct {
 
 // JobCreateFromRequest 从请求创建任务（生成 ID、构建 Job、持久化）
 func (s *Service) JobCreateFromRequest(req JobUpsertRequest) (*Job, error) {
-	job := &Job{
-		ID:          strutil.NewString(),
-		Name:        req.Name,
-		Schedule:    req.Schedule,
-		Type:        req.Type,
-		Content:     req.Content,
-		WorkDir:     req.WorkDir,
-		Image:       req.Image,
-		Container:   req.Container,
-		Volumes:     req.Volumes,
-		Timeout:     req.Timeout,
-		Enabled:     req.Enabled,
-		Description: req.Description,
-	}
+	job := jobFromRequest(strutil.NewString(), req)
 	if err := s.JobCreate(job); err != nil {
 		return nil, err
 	}
@@ -228,7 +215,15 @@ func (s *Service) JobUpdateFromRequest(id string, req JobUpsertRequest) (*Job, e
 	if id == "" {
 		return nil, fmt.Errorf("任务 ID 不能为空")
 	}
-	job := &Job{
+	job := jobFromRequest(id, req)
+	if err := s.JobUpdate(job); err != nil {
+		return nil, err
+	}
+	return job, nil
+}
+
+func jobFromRequest(id string, req JobUpsertRequest) *Job {
+	return &Job{
 		ID:          id,
 		Name:        req.Name,
 		Schedule:    req.Schedule,
@@ -242,10 +237,6 @@ func (s *Service) JobUpdateFromRequest(id string, req JobUpsertRequest) (*Job, e
 		Enabled:     req.Enabled,
 		Description: req.Description,
 	}
-	if err := s.JobUpdate(job); err != nil {
-		return nil, err
-	}
-	return job, nil
 }
 
 // JobCreate 创建任务并持久化
@@ -253,6 +244,7 @@ func (s *Service) JobCreate(job *Job) error {
 	if err := s.validateJob(job); err != nil {
 		return err
 	}
+	storedJob := cloneJob(job)
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -261,9 +253,9 @@ func (s *Service) JobCreate(job *Job) error {
 		return fmt.Errorf("job already exists: %s", job.ID)
 	}
 
-	s.jobs[job.ID] = job
-	if job.Enabled {
-		if err := s.register(job); err != nil {
+	s.jobs[storedJob.ID] = storedJob
+	if storedJob.Enabled {
+		if err := s.register(storedJob); err != nil {
 			delete(s.jobs, job.ID)
 			return err
 		}
@@ -285,6 +277,7 @@ func (s *Service) JobUpdate(job *Job) error {
 	if err := s.validateJob(job); err != nil {
 		return err
 	}
+	storedJob := cloneJob(job)
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -299,10 +292,10 @@ func (s *Service) JobUpdate(job *Job) error {
 		s.cron.Remove(oldEntryID)
 		delete(s.entries, job.ID)
 	}
-	s.jobs[job.ID] = job
+	s.jobs[job.ID] = storedJob
 
-	if job.Enabled {
-		if err := s.register(job); err != nil {
+	if storedJob.Enabled {
+		if err := s.register(storedJob); err != nil {
 			s.jobs[job.ID] = oldJob
 			if oldEnabled {
 				if oldEntryID, err := s.cron.AddFunc(oldJob.Schedule, func() { s.runJob(oldJob.ID) }); err == nil {
@@ -363,21 +356,22 @@ func (s *Service) JobStatusPatch(id string, enabled bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	job, ok := s.jobs[id]
+	oldJob, ok := s.jobs[id]
 	if !ok {
 		return fmt.Errorf("job not found: %s", id)
 	}
 
-	if job.Enabled == enabled {
+	if oldJob.Enabled == enabled {
 		return nil
 	}
 
-	oldEnabled := job.Enabled
+	job := cloneJob(oldJob)
 	job.Enabled = enabled
+	s.jobs[id] = job
 
 	if enabled {
 		if err := s.register(job); err != nil {
-			job.Enabled = oldEnabled
+			s.jobs[id] = oldJob
 			return err
 		}
 	} else {
@@ -388,14 +382,14 @@ func (s *Service) JobStatusPatch(id string, enabled bool) error {
 	}
 
 	if err := s.persist(); err != nil {
-		job.Enabled = oldEnabled
+		s.jobs[id] = oldJob
 		if enabled {
 			if entryID, ok := s.entries[id]; ok {
 				s.cron.Remove(entryID)
 				delete(s.entries, id)
 			}
-		} else if oldEnabled {
-			if entryID, err := s.cron.AddFunc(job.Schedule, func() { s.runJob(job.ID) }); err == nil {
+		} else {
+			if entryID, err := s.cron.AddFunc(oldJob.Schedule, func() { s.runJob(oldJob.ID) }); err == nil {
 				s.entries[id] = entryID
 			}
 		}
@@ -465,6 +459,9 @@ type JobLog struct {
 func (s *Service) runJob(id string) {
 	s.mu.RLock()
 	job, ok := s.jobs[id]
+	if ok {
+		job = cloneJob(job)
+	}
 	s.mu.RUnlock()
 	if !ok {
 		return
@@ -508,6 +505,14 @@ func (s *Service) runJob(id string) {
 	}
 
 	s.store.AppendJobLog(entry)
+}
+
+func cloneJob(job *Job) *Job {
+	if job == nil {
+		return nil
+	}
+	copy := *job
+	return &copy
 }
 
 // runDockerJob 执行 DOCKER_TMP / DOCKER_CTR 类型任务
