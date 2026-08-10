@@ -460,11 +460,7 @@ func (app *App) dockerContainerFileLs(c *gin.Context) {
 	id := c.Param("id")
 	dirPath := c.DefaultQuery("path", "/")
 	result, err := app.dockerSvc.ContainerFileList(c.Request.Context(), id, dirPath)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) dockerContainerFileDownload(c *gin.Context) {

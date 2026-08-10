@@ -53,20 +53,12 @@ func (app *App) defineApisixRoutes() []Route {
 
 func (app *App) apisixRouteList(c *gin.Context) {
 	result, err := app.apisixSvc.RouteList(c.Request.Context())
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) apisixRouteInspect(c *gin.Context) {
 	result, err := app.apisixSvc.RouteInspect(c.Request.Context(), c.Param("id"))
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) apisixRouteCreate(c *gin.Context) {
@@ -122,11 +114,7 @@ func (app *App) apisixRouteDelete(c *gin.Context) {
 
 func (app *App) apisixConsumerList(c *gin.Context) {
 	result, err := app.apisixSvc.ConsumerList(c.Request.Context())
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) apisixConsumerCreate(c *gin.Context) {
@@ -174,11 +162,7 @@ func (app *App) apisixConsumerDelete(c *gin.Context) {
 
 func (app *App) apisixWhitelistInspect(c *gin.Context) {
 	result, err := app.apisixSvc.WhitelistList(c.Request.Context())
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) apisixWhitelistCreate(c *gin.Context) {
@@ -211,20 +195,12 @@ func (app *App) apisixWhitelistUserCreate(c *gin.Context) {
 
 func (app *App) apisixPluginConfigList(c *gin.Context) {
 	result, err := app.apisixSvc.PluginConfigList(c.Request.Context())
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) apisixPluginConfigInspect(c *gin.Context) {
 	result, err := app.apisixSvc.PluginConfigInspect(c.Request.Context(), c.Param("id"))
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) apisixPluginConfigCreate(c *gin.Context) {
@@ -265,20 +241,12 @@ func (app *App) apisixPluginConfigDelete(c *gin.Context) {
 
 func (app *App) apisixUpstreamList(c *gin.Context) {
 	result, err := app.apisixSvc.UpstreamList(c.Request.Context())
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) apisixUpstreamInspect(c *gin.Context) {
 	result, err := app.apisixSvc.UpstreamInspect(c.Request.Context(), c.Param("id"))
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) apisixUpstreamCreate(c *gin.Context) {
@@ -319,20 +287,12 @@ func (app *App) apisixUpstreamDelete(c *gin.Context) {
 
 func (app *App) apisixSSLList(c *gin.Context) {
 	result, err := app.apisixSvc.SSLList(c.Request.Context())
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) apisixSSLInspect(c *gin.Context) {
 	result, err := app.apisixSvc.SSLInspect(c.Request.Context(), c.Param("id"))
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) apisixSSLCreate(c *gin.Context) {
@@ -373,9 +333,5 @@ func (app *App) apisixSSLDelete(c *gin.Context) {
 
 func (app *App) apisixPluginList(c *gin.Context) {
 	result, err := app.apisixSvc.PluginList(c.Request.Context())
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }

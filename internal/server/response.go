@@ -29,3 +29,12 @@ func respondError(c *gin.Context, statusCode int, message string) {
 		Message: message,
 	})
 }
+
+// respondResult 统一处理返回数据的 service 调用结果。
+func respondResult(c *gin.Context, data any, err error) {
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, "", data)
+}

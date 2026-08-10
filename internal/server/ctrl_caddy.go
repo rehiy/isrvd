@@ -44,20 +44,12 @@ func (app *App) defineCaddyRoutes() []Route {
 
 func (app *App) caddyInfoInspect(c *gin.Context) {
 	result, err := app.caddySvc.Info(c.Request.Context())
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) caddyConfigInspect(c *gin.Context) {
 	result, err := app.caddySvc.ConfigAll(c.Request.Context())
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) caddyConfigLoad(c *gin.Context) {
@@ -79,11 +71,7 @@ func (app *App) caddyConfigLoad(c *gin.Context) {
 
 func (app *App) caddyGlobalInspect(c *gin.Context) {
 	result, err := app.caddySvc.Global(c.Request.Context())
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) caddyGlobalUpdate(c *gin.Context) {
@@ -104,11 +92,7 @@ func (app *App) caddyGlobalUpdate(c *gin.Context) {
 func (app *App) caddyRouteList(c *gin.Context) {
 	server := c.Query("server")
 	result, err := app.caddySvc.RouteList(c.Request.Context(), server)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) caddyRouteInspect(c *gin.Context) {
@@ -179,11 +163,7 @@ func (app *App) caddyRouteDelete(c *gin.Context) {
 func (app *App) caddyBasicAuthList(c *gin.Context) {
 	server := c.Query("server")
 	result, err := app.caddySvc.BasicAuthList(c.Request.Context(), server)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) caddyBasicAuthUserCreate(c *gin.Context) {
@@ -250,11 +230,7 @@ func (app *App) caddyBasicAuthConfigUpdate(c *gin.Context) {
 
 func (app *App) caddyCertList(c *gin.Context) {
 	result, err := app.caddySvc.CertList(c.Request.Context())
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "", result)
+	respondResult(c, result, err)
 }
 
 func (app *App) caddyCertCreate(c *gin.Context) {
