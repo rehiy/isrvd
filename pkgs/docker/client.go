@@ -70,7 +70,11 @@ func (s *DockerService) ContainerRoot() string {
 func (s *DockerService) Registries() []*RegistryConfig {
 	s.registryMu.RLock()
 	defer s.registryMu.RUnlock()
-	return s.config.Registries
+	registries := make([]*RegistryConfig, len(s.config.Registries))
+	for i, registry := range s.config.Registries {
+		registries[i] = cloneRegistry(registry)
+	}
+	return registries
 }
 
 // Info 获取 Docker daemon 原始信息。

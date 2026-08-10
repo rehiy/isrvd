@@ -56,11 +56,6 @@ func (s *DockerService) ContainerInspect(ctx context.Context, id string) (contai
 	return info, nil
 }
 
-// ContainerInspectRaw 保留旧调用名，返回 Docker SDK 原始类型。
-func (s *DockerService) ContainerInspectRaw(ctx context.Context, id string) (container.InspectResponse, error) {
-	return s.ContainerInspect(ctx, id)
-}
-
 // ContainerAction 容器操作（start/stop/restart/remove/pause/unpause）
 func (s *DockerService) ContainerAction(ctx context.Context, id, action string) error {
 	switch action {

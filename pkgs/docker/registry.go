@@ -25,7 +25,7 @@ func (s *DockerService) RegistryCreate(reg *RegistryConfig) error {
 	if s.indexOfRegistry(reg.URL) >= 0 {
 		return fmt.Errorf("仓库地址已存在: %s", reg.URL)
 	}
-	s.config.Registries = append(s.config.Registries, reg)
+	s.config.Registries = append(s.config.Registries, cloneRegistry(reg))
 	return nil
 }
 
@@ -49,7 +49,7 @@ func (s *DockerService) RegistryUpdate(originalURL string, reg *RegistryConfig) 
 			return fmt.Errorf("仓库地址已存在: %s", reg.URL)
 		}
 	}
-	s.config.Registries[idx] = reg
+	s.config.Registries[idx] = cloneRegistry(reg)
 	return nil
 }
 
@@ -222,4 +222,12 @@ func (s *DockerService) indexOfRegistry(url string) int {
 		}
 	}
 	return -1
+}
+
+func cloneRegistry(registry *RegistryConfig) *RegistryConfig {
+	if registry == nil {
+		return nil
+	}
+	copy := *registry
+	return &copy
 }
