@@ -81,7 +81,7 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 
 	for _, svc := range project.Services {
 		cname := compose.DockerContainerNameOf(svc)
-		if _, err := s.docker.ContainerInspectRaw(ctx, cname); err == nil {
+		if _, err := s.docker.ContainerInspect(ctx, cname); err == nil {
 			return nil, fmt.Errorf("容器 %s 已存在，请使用重部署接口", cname)
 		}
 	}
@@ -154,7 +154,7 @@ func (s *Service) DockerContentResult(ctx context.Context, name string, forceRun
 		}, nil
 	}
 
-	info, err := s.docker.ContainerInspectRaw(ctx, name)
+	info, err := s.docker.ContainerInspect(ctx, name)
 	if err != nil {
 		return nil, fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
 	}
@@ -203,36 +203,8 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	}
 
 	oldContent, _, contentErr := s.DockerContent(ctx, name)
-
-	// 准备新 content：未提交则沿用现有 compose 内容
-	content := oldContent
-	switch {
-	case req.ServiceName != "":
-		if contentErr != nil {
-			return nil, contentErr
-		}
-		content, err = compose.UpdateServiceImage(ctx, name, oldContent, req.ServiceName, req.Image)
-		if err != nil {
-			return nil, err
-		}
-	case req.Content != nil:
-		content = *req.Content
-	default:
-		// 仅更新 .env：必须能读到现有 compose 内容
-		if contentErr != nil {
-			return nil, contentErr
-		}
-	}
-
-	// 先校验新 content，失败时旧服务保持运行
-	newProject, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, req.EnvContent)
+	content, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, contentErr, req)
 	if err != nil {
-		return nil, err
-	}
-	if len(newProject.Services) == 0 {
-		return nil, fmt.Errorf("compose 文件中没有定义服务")
-	}
-	if err := s.imagesEnsure(ctx, newProject, req.ForcePull); err != nil {
 		return nil, err
 	}
 
@@ -249,7 +221,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		if runtimeErr != nil {
 			logman.Warn("Rollback containers failed", "name", name, "error", runtimeErr)
 		}
-		return formatRedeployRollbackSummary(envErr == nil, envErr, runtimeErr == nil, runtimeErr, "容器")
+		return formatRedeployRollbackSummary(envErr, runtimeErr, "容器")
 	}
 
 	// 先落盘新 .env，确保 ProjectLoad 插值读取到新值（与 Deploy 流程顺序一致）
@@ -350,7 +322,7 @@ func (s *Service) dockerContainersRemove(ctx context.Context, name, content stri
 		if err == nil {
 			for _, svc := range project.Services {
 				for _, cname := range compose.DockerContainerNameCandidates(name, svc) {
-					info, err := s.docker.ContainerInspectRaw(ctx, cname)
+					info, err := s.docker.ContainerInspect(ctx, cname)
 					if err != nil {
 						continue
 					}
@@ -381,7 +353,7 @@ func (s *Service) dockerProjectName(ctx context.Context, name, root string) stri
 	if infos, err := s.docker.ContainerListByLabel(ctx, compose.ComposeProjectLabel, name); err == nil && len(infos) > 0 {
 		return name
 	}
-	if info, err := s.docker.ContainerInspectRaw(ctx, name); err == nil {
+	if info, err := s.docker.ContainerInspect(ctx, name); err == nil {
 		containerName := strings.TrimPrefix(info.Name, "/")
 		if containerName == name {
 			if projectName := compose.DockerComposeProjectName(info); projectName != "" {

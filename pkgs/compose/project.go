@@ -287,8 +287,6 @@ func findComposeFile(dir string) (string, bool) {
 	return "", false
 }
 
-
-
 // ─── 辅助函数 ───
 
 // declaresProjectName 判断 compose 文本是否声明了顶层 name 键。

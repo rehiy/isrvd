@@ -9,6 +9,7 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 
 	"isrvd/internal/registry"
+	"isrvd/pkgs/compose"
 	"isrvd/pkgs/docker"
 	"isrvd/pkgs/swarm"
 )
@@ -107,15 +108,48 @@ func (s *Service) imagesEnsure(ctx context.Context, project *types.Project, forc
 	return nil
 }
 
+// prepareRedeployContent 合并部分更新、校验新配置并预拉取所需镜像。
+func (s *Service) prepareRedeployContent(ctx context.Context, name, installDir, oldContent string, contentErr error, req RedeployRequest) (string, error) {
+	content := oldContent
+	switch {
+	case req.ServiceName != "":
+		if contentErr != nil {
+			return "", contentErr
+		}
+		var err error
+		content, err = compose.UpdateServiceImage(ctx, name, oldContent, req.ServiceName, req.Image)
+		if err != nil {
+			return "", err
+		}
+	case req.Content != nil:
+		content = *req.Content
+	case contentErr != nil:
+		// 仅更新 .env 时必须能读取现有 compose 内容。
+		return "", contentErr
+	}
+
+	project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, req.EnvContent)
+	if err != nil {
+		return "", err
+	}
+	if len(project.Services) == 0 {
+		return "", fmt.Errorf("compose 文件中没有定义服务")
+	}
+	if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
+		return "", err
+	}
+	return content, nil
+}
+
 // formatRedeployRollbackSummary 汇总重建失败后的回滚结果，供前端展示。
 // runtimeLabel 为「容器」或「服务」。
-func formatRedeployRollbackSummary(envOK bool, envErr error, runtimeOK bool, runtimeErr error, runtimeLabel string) string {
+func formatRedeployRollbackSummary(envErr, runtimeErr error, runtimeLabel string) string {
 	envPart := ".env 回滚成功"
-	if !envOK {
+	if envErr != nil {
 		envPart = fmt.Sprintf(".env 回滚失败（%v）", envErr)
 	}
 	runtimePart := runtimeLabel + "回滚成功"
-	if !runtimeOK {
+	if runtimeErr != nil {
 		runtimePart = fmt.Sprintf("%s回滚失败（%v）", runtimeLabel, runtimeErr)
 	}
 	return envPart + "，" + runtimePart
@@ -123,8 +157,5 @@ func formatRedeployRollbackSummary(envOK bool, envErr error, runtimeOK bool, run
 
 // wrapRedeployError 将原始重建错误与回滚摘要一并返回。
 func wrapRedeployError(err error, rollbackSummary string) error {
-	if err == nil {
-		return fmt.Errorf("重建失败；回滚：%s", rollbackSummary)
-	}
 	return fmt.Errorf("%w；回滚：%s", err, rollbackSummary)
 }

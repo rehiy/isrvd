@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/compose-spec/compose-go/v2/types"
+	"github.com/docker/docker/api/types/mount"
 )
 
 const (
@@ -96,6 +97,31 @@ func defaultString(v, def string) string {
 		return def
 	}
 	return v
+}
+
+// serviceMounts 将 Compose 挂载统一转换为 Docker SDK 挂载配置。
+func serviceMounts(volumes []types.ServiceVolumeConfig) []mount.Mount {
+	result := make([]mount.Mount, 0, len(volumes))
+	for _, volume := range volumes {
+		if volume.Source == "" || volume.Target == "" {
+			continue
+		}
+		mountType := volume.Type
+		if mountType == "" {
+			if strings.HasPrefix(volume.Source, "/") || strings.HasPrefix(volume.Source, ".") {
+				mountType = types.VolumeTypeBind
+			} else {
+				mountType = types.VolumeTypeVolume
+			}
+		}
+		result = append(result, mount.Mount{
+			Type:     mount.Type(mountType),
+			Source:   volume.Source,
+			Target:   volume.Target,
+			ReadOnly: volume.ReadOnly,
+		})
+	}
+	return result
 }
 
 // buildServiceLabels 构建 compose 服务标签基础集合（复制用户标签并写入 project/service 标识）。

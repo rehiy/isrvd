@@ -7,7 +7,6 @@ import (
 
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
 	"github.com/docker/go-units"
@@ -164,25 +163,7 @@ func applyDockerPorts(svc types.ServiceConfig, containerConfig *container.Config
 }
 
 func applyDockerVolumes(svc types.ServiceConfig, hostConfig *container.HostConfig) {
-	for _, v := range svc.Volumes {
-		if v.Source == "" || v.Target == "" {
-			continue
-		}
-		mountType := v.Type
-		if mountType == "" {
-			if strings.HasPrefix(v.Source, "/") || strings.HasPrefix(v.Source, ".") {
-				mountType = types.VolumeTypeBind
-			} else {
-				mountType = types.VolumeTypeVolume
-			}
-		}
-		hostConfig.Mounts = append(hostConfig.Mounts, mount.Mount{
-			Type:     mount.Type(mountType),
-			Source:   v.Source,
-			Target:   v.Target,
-			ReadOnly: v.ReadOnly,
-		})
-	}
+	hostConfig.Mounts = append(hostConfig.Mounts, serviceMounts(svc.Volumes)...)
 }
 
 func applyDockerResources(svc types.ServiceConfig, hostConfig *container.HostConfig) {

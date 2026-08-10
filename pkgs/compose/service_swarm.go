@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/compose-spec/compose-go/v2/types"
-	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
 )
 
@@ -117,25 +116,7 @@ func applySwarmPorts(svc types.ServiceConfig, spec *swarm.ServiceSpec) {
 }
 
 func applySwarmVolumes(svc types.ServiceConfig, spec *swarm.ServiceSpec) {
-	for _, v := range svc.Volumes {
-		if v.Source == "" || v.Target == "" {
-			continue
-		}
-		mountType := v.Type
-		if mountType == "" {
-			if strings.HasPrefix(v.Source, "/") || strings.HasPrefix(v.Source, ".") {
-				mountType = types.VolumeTypeBind
-			} else {
-				mountType = types.VolumeTypeVolume
-			}
-		}
-		spec.TaskTemplate.ContainerSpec.Mounts = append(spec.TaskTemplate.ContainerSpec.Mounts, mount.Mount{
-			Type:     mount.Type(mountType),
-			Source:   v.Source,
-			Target:   v.Target,
-			ReadOnly: v.ReadOnly,
-		})
-	}
+	spec.TaskTemplate.ContainerSpec.Mounts = append(spec.TaskTemplate.ContainerSpec.Mounts, serviceMounts(svc.Volumes)...)
 }
 
 func applySwarmPlacement(svc types.ServiceConfig, spec *swarm.ServiceSpec) {

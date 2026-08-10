@@ -190,37 +190,8 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	}
 
 	oldContent, contentErr := s.SwarmContent(ctx, name)
-
-	// 准备新 content：未提交则沿用现有 compose 内容
-	content := oldContent
-	switch {
-	case req.ServiceName != "":
-		if contentErr != nil {
-			return nil, contentErr
-		}
-		content, err = compose.UpdateServiceImage(ctx, name, oldContent, req.ServiceName, req.Image)
-		if err != nil {
-			return nil, err
-		}
-	case req.Content != nil:
-		content = *req.Content
-	default:
-		// 仅更新 .env：必须能读到现有 compose 内容
-		if contentErr != nil {
-			return nil, contentErr
-		}
-	}
-
-	// 先解析新 content 校验合法性（不写文件、不删旧实例），失败时旧服务保持运行
-	newProject, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, req.EnvContent)
+	content, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, contentErr, req)
 	if err != nil {
-		return nil, err
-	}
-	if len(newProject.Services) == 0 {
-		return nil, fmt.Errorf("compose 文件中没有定义服务")
-	}
-	// 预拉取镜像（manager 节点本地校验，验证镜像引用合法、registry 可达）
-	if err := s.imagesEnsure(ctx, newProject, req.ForcePull); err != nil {
 		return nil, err
 	}
 
@@ -241,7 +212,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 		if runtimeErr != nil {
 			logman.Warn("Rollback swarm services failed", "name", name, "error", runtimeErr)
 		}
-		return formatRedeployRollbackSummary(envErr == nil, envErr, runtimeErr == nil, runtimeErr, "服务")
+		return formatRedeployRollbackSummary(envErr, runtimeErr, "服务")
 	}
 
 	// 先落盘新 .env，确保 ProjectLoad 插值读取到新值（与 Deploy 流程顺序一致）
