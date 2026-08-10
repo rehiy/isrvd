@@ -7,10 +7,10 @@ import (
 	"io"
 	"time"
 
-	cerrdefs "github.com/containerd/errdefs"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	dockerSwarm "github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/rehiy/libgo/httpd"
 	"github.com/rehiy/libgo/logman"
@@ -70,7 +70,7 @@ func (s *SwarmService) ServiceAction(ctx context.Context, id, action string, rep
 // service rm 在 daemon 内部是异步清理的，若不等待确认就立即以同名重建，
 // 存在竞态窗口会导致 create 返回 AlreadyExists。
 func (s *SwarmService) ServiceRemoveAndWait(ctx context.Context, id string, timeout time.Duration) error {
-	if err := s.client.ServiceRemove(ctx, id); err != nil && !cerrdefs.IsNotFound(err) {
+	if err := s.client.ServiceRemove(ctx, id); err != nil && !client.IsErrNotFound(err) {
 		logman.Error("ServiceRemove failed", "id", id, "error", err)
 		return err
 	}
@@ -78,7 +78,7 @@ func (s *SwarmService) ServiceRemoveAndWait(ctx context.Context, id string, time
 	deadline := time.Now().Add(timeout)
 	for {
 		_, _, err := s.client.ServiceInspectWithRaw(ctx, id, dockerSwarm.ServiceInspectOptions{})
-		if cerrdefs.IsNotFound(err) {
+		if client.IsErrNotFound(err) {
 			return nil
 		}
 		if time.Now().After(deadline) {

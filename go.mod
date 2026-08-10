@@ -4,7 +4,6 @@ go 1.25.0
 
 require (
 	github.com/compose-spec/compose-go/v2 v2.12.1
-	github.com/containerd/errdefs v1.0.0
 	github.com/coreos/go-oidc/v3 v3.19.0
 	github.com/creack/pty v1.1.24
 	github.com/docker/docker v28.5.2+incompatible
@@ -32,6 +31,7 @@ require (
 	github.com/cheggaaa/pb/v3 v3.1.7 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/cloudwego/base64x v0.1.7 // indirect
+	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
