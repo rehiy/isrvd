@@ -15,7 +15,11 @@ prev_tag=$(git tag | sort -V | tail -n 2 | head -n 1)
 echo "==> build version: $last_tag"
 
 if [ -n "$last_tag$prev_tag" ]; then
-    git log $prev_tag..$last_tag --pretty=format:"%s" | grep -v "^release" | sed 's/^/- /' | sort > RELEASE.md
+    git log "$prev_tag..$last_tag" --pretty=format:"%s" | awk '
+        /^release/ { next }
+        /^Merge pull request #[0-9]+ from / { next }
+        { print "- " $0 }
+    ' | sort > RELEASE.md
 fi
 
 ###########################################
