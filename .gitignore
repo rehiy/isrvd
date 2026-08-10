@@ -50,11 +50,14 @@ logs/
 *.so
 *.dylib
 *.test
+*_test.go
 *.out
 go.work
 go.work.sum
 
 # Node.js specific
+*_test.js
+*_test.ts
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
