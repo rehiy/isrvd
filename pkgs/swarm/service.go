@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	dockerSwarm "github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/rehiy/libgo/httpd"
 	"github.com/rehiy/libgo/logman"
@@ -63,6 +64,32 @@ func (s *SwarmService) ServiceAction(ctx context.Context, id, action string, rep
 	}
 
 	return fmt.Errorf("不支持的操作: %s", action)
+}
+
+// ServiceRemoveAndWait 移除服务，并轮询等待其从集群状态中彻底消失后再返回。
+// service rm 在 daemon 内部是异步清理的，若不等待确认就立即以同名重建，
+// 存在竞态窗口会导致 create 返回 AlreadyExists。
+func (s *SwarmService) ServiceRemoveAndWait(ctx context.Context, id string, timeout time.Duration) error {
+	if err := s.client.ServiceRemove(ctx, id); err != nil && !client.IsErrNotFound(err) {
+		logman.Error("ServiceRemove failed", "id", id, "error", err)
+		return err
+	}
+
+	deadline := time.Now().Add(timeout)
+	for {
+		_, _, err := s.client.ServiceInspectWithRaw(ctx, id, dockerSwarm.ServiceInspectOptions{})
+		if client.IsErrNotFound(err) {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("等待服务 %s 移除超时", id)
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(200 * time.Millisecond):
+		}
+	}
 }
 
 // ServiceCreate 创建服务，直接接收 Docker SDK 原始 ServiceSpec。
