@@ -16,26 +16,36 @@
 - **先理解再改动**：定位模块、调用链、类型与边界，不基于猜测修改
 - **小步提交**：最小可行改动，每步可解释"为什么改、改了什么、如何验证"
 - **变更后验证**：执行相关静态检查；无法完整验证时说明风险
-- **同步更新文档**：修改代码时，必须同步更新所有相关的说明文档，确保文档与代码始终一致
+- **同步更新文档**：外部可观察的 API、配置、数据结构、工作流或脚本用法发生变化时同步文档；纯重构、格式整理和内部并发封装无需制造无意义文档差异
 
 ---
 
 ## 3) 项目架构
 
-### 分层依赖方向
+### 实际依赖方向
 
-`config → internal/registry → pkgs → internal/service → internal/server`
+仓库不是单一线性依赖链，当前 import 边界为：
 
-- `pkgs/`：原生客户端层，返回 SDK/底层类型
-- `internal/service/`：业务组合、类型转换、参数校验
-- `internal/server/`：HTTP 入口，解析请求 → 调用 service → 返回响应
-- `internal/registry/`：外部服务初始化、生命周期管理与可用性检查
+```text
+cmd/server ───────────────→ config + internal/registry + internal/server
+config ───────────────────→ pkgs/cstore
+internal/registry ────────→ config + pkgs/{apisix,caddy,docker,swarm}
+internal/service/* ───────→ config / internal/registry / pkgs/*
+internal/service/{docker,webssh} → internal/service/shell（终端桥接复用）
+internal/server ──────────→ config + internal/registry + internal/service/* + pkgs/* + public
+```
+
+- `pkgs/`：底层客户端、存储适配和 SDK 类型转换；不依赖 `internal/`
+- `internal/registry/`：根据 `config` 创建 APISIX、Caddy、Docker、Swarm 底层实例
+- `internal/service/`：业务组合、参数校验、稳定 API 类型转换；不得依赖 `internal/server`
+- `internal/server/`：Gin HTTP/WebSocket 入口、路由索引、中间件、服务生命周期与响应封装
+- `cmd/server/`：仅执行 `config.Init → registry.Init → server.StartApp`
 
 ### 禁止
 
 - `pkgs/` 依赖 `internal/`
 - `handler` 中堆叠业务逻辑
-- `service/handler` 直接从配置创建外部客户端
+- `service/handler` 直接从配置创建外部客户端；外部客户端统一由 `registry` 初始化并注入/引用
 
 ### 内聚与耦合
 
@@ -47,11 +57,11 @@
 
 ## 4) 代码变更同步文档规范
 
-修改代码时，必须同步更新所有相关的说明文档，确保文档与代码始终一致。
+外部行为变化时必须同步相关说明文档，确保文档与代码一致。仅移动代码、抽取辅助函数、修复缩进、返回对象快照化等不改变外部契约的修改，不要求更新 API 文档。
 
 ### 适用范围
 
-所有涉及以下变更的场景：
+所有涉及以下外部可观察变更的场景：
 
 - 新增/修改/删除 API 路由或参数
 - 新增/修改/删除 数据结构（Request/Response 字段）
@@ -65,23 +75,27 @@
 docs/
 ├── SKILL.md                      ← 索引 + 决策树 + 常见工作流
 ├── scripts/
-│   └── api.sh                    ← 认证持久化 + API 调用封装
+│   ├── api.sh                    ← Bash API 调用封装
+│   ├── api.js                    ← JavaScript API 调用封装
+│   └── api.py                    ← Python API 调用封装
 └── references/
     ├── docker/{containers,images,networks,volumes,registries}.md
     ├── swarm/{info,services,tasks}.md
     ├── apisix/{routes,upstreams,consumers,ssl}.md
-    ├── caddy/{routes,certs,config}.md
-    ├── system/{overview,config,account,filer,cron}.md
-    ├── overview/
+    ├── caddy/{routes,certs,config,basic-auth}.md
+    ├── system/{config,account,filer,cron,ssh}.md
+    ├── ssh/{hosts,sftp}.md
+    ├── agent.md
+    ├── overview.md
     ├── compose.md
     ├── shell.md
-    └── ssh/{hosts,sftp}.md
+    └── ...
 ```
 
 ### 需要同步更新的文件
 
 | 代码变更位置 | 需同步更新的文档 |
-|---|---|
+| --- | --- |
 | `internal/server/ctrl_docker.go` | `docs/references/docker/` 下对应资源文件 |
 | `internal/server/ctrl_swarm.go` | `docs/references/swarm/` 下对应资源文件 |
 | `internal/server/ctrl_apisix.go` | `docs/references/apisix/` 下对应资源文件 |
@@ -89,9 +103,13 @@ docs/
 | `internal/server/ctrl_compose.go` | `docs/references/compose.md` |
 | `internal/server/ctrl_cron.go` | `docs/references/system/cron.md` |
 | `internal/server/ctrl_system.go` / `ctrl_account.go` | `docs/references/system/` 下对应文件 |
+| `internal/server/ctrl_webssh.go` | `docs/references/ssh/` 下对应文件 |
+| `internal/server/ctrl_agent.go` | `docs/references/agent.md` |
+| `internal/server/ctrl_overview.go` | `docs/references/overview.md` |
 | `pkgs/*/`（数据结构变更） | 对应 docs 文件中的字段表 |
 | 新增路由/模块 | `docs/SKILL.md` 索引表 + 决策树 |
-| 脚本相关变更 | `docs/scripts/api.sh` |
+| API 调用脚本变更 | `docs/scripts/api.sh`、`api.js`、`api.py` 中受影响的实现 |
+| 构建/开发脚本用法变更 | `README.md` 中对应的构建或开发说明 |
 
 ### 执行步骤
 
@@ -115,7 +133,8 @@ docs/
 
 ### HTTP 与响应
 
-- 状态码用 `net/http` 常量；成功 `httpd.RespondSuccess`，失败 `httpd.RespondError`
+- 状态码用 `net/http` 常量；HTTP JSON 响应统一走 `internal/server/response.go` 的 `respondSuccess`、`respondError`、`respondResult`
+- `respondResult` 仅用于“成功 200、service 错误 500”的标准查询；需要 400/404/503 或自定义成功文案时显式调用对应响应函数
 - 绑定优先 `ShouldBindJSON/ShouldBindQuery/ShouldBindURI`，绑定失败返回 `err.Error()`
 - WebSocket 统一用 `wsConfig.Handler()`，不在 handler 中定义私有配置
 
@@ -134,7 +153,7 @@ docs/
 **Handler（`internal/server/`）** — 格式：`{module}{Resource}{Action}`
 
 | 操作 | 命名模式 | 示例 |
-|---|---|---|
+| --- | --- | --- |
 | 列表 | `{module}{Resource}List` | `dockerContainerList`、`apisixRouteList` |
 | 单条 | `{module}{Resource}Inspect` | `dockerImageInspect`、`swarmNodeInspect` |
 | 创建/更新/删除 | `{module}{Resource}Create/Update/Delete` | `apisixRouteCreate`、`dockerImageDelete` |
@@ -145,7 +164,7 @@ docs/
 **Service / Pkgs（`internal/service/`、`pkgs/`）** — 格式：`{Resource}{Action}`（去掉类名前缀）
 
 | 操作 | 命名模式 | 示例 |
-|---|---|---|
+| --- | --- | --- |
 | 列表/单条/查询 | `{Resource}List` / `{Resource}Inspect` / `{Resource}` | `RouteList()`、`ImageInspect(id)`、`Stat(ctx)`、`Probe(ctx)` |
 | 获取详情 | `{Resource}Inspect` | `NodeInspect(ctx, id)` |
 | 创建/更新/删除 | `{Resource}Create/Update/Delete` | `RouteCreate(req)`、`RouteDelete(id)` |
@@ -170,15 +189,15 @@ docs/
 
 其他规则：
 
-- 请求/响应结构体：定义在对应 handler 子包；业务模型：就近定义在对应 `pkgs` 文件
+- handler 私有的 URI/query/body 小结构体放在 `internal/server` 对应控制器；跨 handler 复用或参与业务校验的 Request/Response 放在对应 `internal/service`；SDK 转换模型放在 `pkgs`
 - 避免跨包重复定义语义相同结构体
 
 ### 配置结构体与 Provider
 
-- 顶层 `Config`（`config/types.go`），子配置：`Server`、`AgentConfig`、`ApisixConfig`、`CaddyConfig`、`DockerConfig`、`MarketplaceConfig`、`MemberConfig`
+- 顶层 `Config`（`config/types.go`）当前包含 `Schema`、`Server`、`Password`、`Passkey`、`OIDC`、`THA`、`Agent`、`Apisix`、`Caddy`、`Docker`、`Monitor`、`Marketplace`、`Links`、`Members`
 - `Server` 必须作为 `config.Server` 结构体统一访问，禁止重新展开为 `config.Debug`、`config.ListenAddr` 等包级散变量
 - 镜像仓库 `DockerRegistry`（含 `Name`、`URL`、`Username`、`Password`、`Description`）
-- 字段使用指针类型 `*` 和 YAML 标签；配置持久化以 YAML 结构为准，禁止用 API 响应的 `json:"-"` 语义保存配置
+- 顶层配置分区使用指针并带 YAML 标签；配置持久化以 YAML 结构为准，API 脱敏由 `internal/service/system.ConfigAll` 的深拷贝负责
 
 **配置 Provider / cstore 规范（强制）**
 
@@ -204,13 +223,14 @@ docs/
 
 ## 7) 路由与导航
 
-- `/overview` 概览；`docker/overview`/`swarm/overview` 仅作组件不作独立菜单路由
+- `/overview` 概览；本机能力为 `/local/monitor`、`/local/explorer`、`/local/shell`
+- SSH：`/ssh/hosts`、`/ssh/credentials`、`/ssh/host/:id`
 - APISIX：`/apisix/routes`、`/apisix/upstreams`、`/apisix/plugin-configs`、`/apisix/ssls`、`/apisix/consumers`、`/apisix/whitelist`
 - Caddy：`/caddy/routes`、`/caddy/certs`、`/caddy/global`、`/caddy/basic-auth`、`/caddy/raw`
 - Docker：`/docker/containers`、`/docker/images`、`/docker/networks`、`/docker/volumes`、`/docker/registries` 及对应详情页
 - Swarm：`/swarm/nodes`、`/swarm/services`、`/swarm/tasks` 及对应详情/日志页
 - 系统模块：`/system/config`、`/system/audit/logs`；用户管理：`/account/members`；账户设置：`/account/password`、`/account/passkeys`、`/account/apikey`
-- 计划任务：`/cron/jobs`；Compose：`/compose`
+- 计划任务：`/cron/jobs`；Compose：`/compose/marketplace`、`/compose/deploy`
 - 折叠子菜单展开状态跟随当前路由（`@Watch` immediate）
 - 侧边栏宽度 `w-16`（折叠）→ `w-64`（展开）
 - 桌面端导航与内容分隔线由 `main` 的 `lg:border-l` 提供，侧边栏自身不设置右边框；登录后的主布局容器使用 `pt-16 min-h-screen` 避让全局 header，`main` 使用 `min-h-[calc(100vh-4rem)]` 覆盖剩余视口，避免外边距折叠导致高度偏差
@@ -224,21 +244,24 @@ docs/
 
 可用性检查：由各 `service` 层的 `CheckAvailability(ctx)` 方法负责（`service/docker`、`service/swarm`、`service/apisix`、`service/caddy`、`service/compose`），不再通过 `registry` 层的独立函数检查。
 
-已用命名：`registry.DockerService`、`registry.SwarmService`、`registry.ApisixClient`、`registry.CaddyService`
+已用命名：`registry.DockerService`、`registry.SwarmService`、`registry.ApisixClient`、`registry.CaddyClient`
 
-服务初始化（`server/app.go` `StartApp()`）：
+服务初始化（`internal/server/services.go` 的 `initServices()`）：
+
 - `overviewSvc`、`configSvc`、`auditSvc`、`accountSvc`、`filerSvc`、`shellSvc`、`agentSvc`：直接初始化
+- `websshSvc`：初始化自己的主机/凭据存储和 SFTP 客户端，失败时标记不可用
 - `apisixSvc`、`caddySvc`：根据可用性检查可选初始化
 - `dockerSvc`、`swarmSvc`：根据 Docker 可用性可选初始化
 - `composeSvc`：根据 Docker 可用性可选初始化
 - `cronSvc`：始终初始化，可选依赖 `registry.DockerService`（用于 DOCKER 类型任务）
+- `monitorCollector`：始终创建并启动；reload/退出时与 `websshSvc` 一起释放资源
 
 ---
 
 ## 9) 安全基线（必须遵守）
 
 1. 禁止硬编码密钥/密码/令牌
-2. 敏感配置仅返回 `xxxSet` 布尔值
+2. 配置查询必须深拷贝后清空 JWT、OIDC、Agent、APISIX 和 Registry 密钥；账户密码、TOTP secret、SSH 密码/私钥继续使用 `json:"-"`
 3. 文件系统操作防目录遍历；解压防 Zip Slip
 4. WebSocket 必须经过认证链路
 5. 关键资源（内置角色等）前后端双重校验
@@ -248,23 +271,31 @@ docs/
 ## 10) 质量门禁（提交前自检）
 
 ```bash
-go test ./...                                          # 后端编译/测试
+go test ./...                                          # 后端全包编译（仓库当前不提交测试文件）
+go vet ./...                                           # Go 静态检查
 cd webview && npm run lint                             # 前端类型检查 + ESLint
 cd webview && npm run format:check                     # import 排序/格式检查（dry-run，需关注输出）
 cd webview && python3 scripts/review-style.py          # 前端样式一致性辅助检查
+cd webview && npm run build                            # 前端生产构建
+sh -n build.sh                                         # 构建脚本语法检查（修改 build.sh 时）
+git diff --check                                       # 空白与冲突标记检查
 ```
 
 `npm run format` 会直接修复 import/ESLint；仅在需要改写文件时使用。`review-style.py` 只有 ERROR 阻断，WARN 需人工确认。
 
 - [ ] 编译通过；[ ] 无新增 lint 警告；[ ] 关键路径手动验证；[ ] 错误处理与日志符合规范；[ ] 未引入明文敏感信息；[ ] 相关文档已同步更新
 
+仓库策略是不提交 `*_test.*`、`*.test.*`、`*.spec.*` 测试文件；如需临时验证，应放在仓库外或在交付前清理。不能把“无测试文件”表述为行为测试已覆盖。
+
+`build.sh` 会根据最近两个版本标签生成 `RELEASE.md`；生成时过滤 `release...` 以及 GitHub 默认的 `Merge pull request #<n> from ...` 标题，再执行前端构建、OpenAPI 生成、跨平台 Go 编译和分发打包。
+
 ---
 
 ## 11) Git 约定
 
-提交格式：`<type>: <subject>`（`feat`/`fix`/`refactor`/`style`/`docs`/`chore`）
+提交格式：`<type>(<module>): <subject>`（`feat`/`fix`/`refactor`/`style`/`docs`/`chore`），标题保持简短，详细说明放提交正文
 
-分支：`main`（生产）、`dev`（开发）、`feature/<name>`、`fix/<name>`
+分支：`master`（当前默认/生产）、`dev`（开发）、`feature/<name>`、`fix/<name>`
 
 ---
 

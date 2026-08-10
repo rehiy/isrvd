@@ -25,10 +25,10 @@
 
 ### 1.4 类型定义与命名（强制）
 
-`service/types/` 按域拆分（`docker`、`swarm`、`apisix`、`caddy`、`compose`、`cron`、`system`、`account`、`overview`、`filer`），`service/types.ts` 统一 `export *` 导出
+`service/types/` 按域拆分（`docker`、`swarm`、`apisix`、`caddy`、`compose`、`cron`、`system`、`account`、`overview`、`filer`、`ssh`），`service/types.ts` 统一 `export *` 导出
 
 | 场景 | 命名 | 示例 |
-|---|---|---|
+| --- | --- | --- |
 | 列表/概览 | `XxxInfo` | `DockerContainerInfo`、`SwarmNodeInfo` |
 | 详情/单条查询 | `XxxDetail` | `DockerImageDetail`、`SwarmNodeDetail` |
 | 创建请求 | `XxxCreate` | `DockerContainerCreate`、`ApisixRouteCreate` |
@@ -44,12 +44,12 @@
 `ApiService` 方法命名：`domainResourceAction` 驼峰格式
 
 | 操作 | 命名模式 | 示例 |
-|---|---|---|
+| --- | --- | --- |
 | 列表 | `domainResourceList(params?)` | `dockerContainerList()`、`apisixRouteList()`、`cronJobList()` |
-| 单条 | `domainResource(id)` | `dockerImage(id)`、`swarmNode(id)` |
+| 单条 | `domainResourceInspect(id)` | `dockerImageInspect(id)`、`swarmNodeInspect(id)` |
 | 创建/更新/删除 | `domainResourceCreate/Update/Delete` | `dockerContainerCreate(data)`、`dockerImageDelete(id)`、`cronJobCreate(data)` |
 | 操作/动作 | `domainResourceAction(id, action)` | `dockerContainerAction(id, 'start')`、`cronJobRun(id)` |
-| 状态切换 | `domainResourceStatus(id, status)` | `apisixRouteStatus(id, 0)`、`cronJobEnable(id, enabled)` |
+| 状态切换 | `domainResourceStatus/StatusPatch(id, status)` | `apisixRouteStatus(id, 0)`、`cronJobStatusPatch(id, enabled)` |
 | 统计/日志 | `domainResourceStats/Logs(id)` | `dockerContainerStats(id)`、`cronJobLogs(id)` |
 
 - **域名前缀**：`docker`、`swarm`、`apisix`、`caddy`、`account`、`system`、`filer`、`compose`、`cron`
@@ -110,6 +110,7 @@
   </div>
 </template>
 ```
+
 - 所有资源列表页必须提供 `searchText` + `filteredXxx` 过滤逻辑，并使用 `webview/src/component/page-search.vue`，禁止手写重复的搜索框 HTML
 - 页面级键盘输入直达搜索只能通过 `PageSearch` 的 `type-to-search` 启用；禁止页面直接调用 `bindTypeToSearchFocus`
 - 每个列表页只允许一个 `PageSearch` 设置 `type-to-search`（通常为桌面搜索框）；移动端搜索框复用同一个 `search-key`，但不设置 `type-to-search`
@@ -198,7 +199,7 @@
 **状态值优先用文字颜色区分，不用 badge**；仅枚举型分类字段（驱动、类型等）才用 badge。
 
 | 状态值 | 颜色 | 示例 |
-|---|---|---|
+| --- | --- | --- |
 | 正常/运行/就绪（running / ready / active / enabled） | `text-emerald-600 font-medium` | 容器 running、节点 ready/active |
 | 异常/停止/下线（stopped / down / error） | `text-red-500 font-medium` | 节点 down |
 | 警告/排空/暂停（drain / paused / warning） | `text-amber-600 font-medium` | 节点 drain |
@@ -213,7 +214,7 @@
 枚举型分类字段（驱动、协议、类型等）使用 badge，颜色跟随模块主色：
 
 | 模块/字段 | badge 配色 |
-|---|---|
+| --- | --- |
 | 网络驱动（docker network driver） | `bg-purple-50 text-purple-700` |
 | 路由上游（apisix upstream） | `bg-indigo-50 text-indigo-700` |
 | 其他枚举 | 跟随模块主色，`bg-{color}-50 text-{color}-700` |
@@ -221,7 +222,7 @@
 #### 1.9.3 权限/角色图标颜色
 
 | 角色/权限 | 图标 | 颜色 |
-|---|---|---|
+| --- | --- | --- |
 | 创始人/超级管理员 | `fa-crown` | `text-violet-400` |
 | 有自定义权限 | `fa-key` | `text-amber-400` |
 
@@ -230,7 +231,7 @@
 统一格式：使用 `.btn-icon-{color}` 语义类（如 `.btn-icon-slate`、`.btn-icon-blue`、`.btn-icon-emerald`）
 
 | 操作 | 配色 | 图标 |
-|---|---|---|
+| --- | --- | --- |
 | 创建/启动/激活 | `emerald` | `fa-plus` / `fa-play` |
 | 编辑/重启 | `blue` | `fa-pen` / `fa-rotate` |
 | 停止/排空/告警 | `amber` | `fa-stop` / `fa-arrow-down` |
@@ -251,7 +252,7 @@
 **间距规范（强制）**：
 
 | 场景 | 类 |
-|---|---|
+| --- | --- |
 | 表单字段间距 | `space-y-4` |
 | 表单分组（section）间距 | `space-y-6`，或 `divide-y divide-slate-100` + 每组 `py-6`（首组 `pb-6`，末组 `pt-6`） |
 | 表单内嵌子分组分隔线 | `border-t border-slate-200 pt-6`，分组标题 `mb-4` |
@@ -270,7 +271,7 @@
 - **Toggle Switch 规范**（单一功能启用/禁用开关）：统一使用 `<ToggleCard>` 组件（`webview/src/component/toggle-card.vue`），禁止手写内联 Tailwind toggle 样式或直接使用底层 CSS 类：
 
   | Prop | 类型 | 说明 |
-  |---|---|---|
+  | --- | --- | --- |
   | `v-model` | `boolean` | 开关状态 |
   | `label` | `string`（必填） | 开关标题 |
   | `desc` | `string` | 描述文字（可选，也可用 `#desc` slot 传入富文本） |
@@ -320,7 +321,7 @@
 概览页各服务 widget（`overview/widget/*.vue`）中的统计卡片网格列数按元素数量定：
 
 | 元素数 | 响应式 grid 类 | 示例 |
-|---|---|---|
+| --- | --- | --- |
 | 6 | `grid-cols-2 md:grid-cols-3 lg:grid-cols-6` | Docker、APISIX |
 | 4 | `grid-cols-2 md:grid-cols-3 lg:grid-cols-4` | Caddy |
 | 其他 | `grid-cols-2 md:grid-cols-3 lg:grid-cols-N`（N=元素数） | 按实际补充 |
@@ -334,7 +335,7 @@
 
 ### 1.13 统一工具与轮询
 
-通用函数按职责复用 `webview/src/helper/format.ts`、`file.ts`、`dom.ts` 等细分模块；轮询间隔使用 `helper/format.ts` 的 `POLL_INTERVAL`，禁止硬编码
+通用函数按职责复用 `webview/src/helper/format.ts`、`file.ts`、`dom.ts`、`chart.ts`、`monitor.ts` 等细分模块；轮询间隔使用 `helper/format.ts` 的 `POLL_INTERVAL`，监控容量格式化使用 `helper/monitor.ts`，图表数据集构造使用 `helper/chart.ts`
 
 ### 1.14 import 分组排序
 
@@ -374,7 +375,7 @@
 **1. 卡片（Card）**
 
 | 类 | 用途 | 禁止手写 |
-|---|---|---|
+| --- | --- | --- |
 | `.page` | 页面级全宽内容容器 | `min-w-0` |
 | `.page-toolbar` | 页面标题栏，吸附于全局 header 下方 | `sticky top-16 z-30 bg-slate-100/80 backdrop-blur-xl border-b border-slate-200/70 px-4 py-3` |
 | `.page-toolbar-static` | 内嵌面板工具栏修饰类，取消吸顶并防止收缩 | `position: static; z-index: auto; flex-shrink: 0` |
@@ -401,7 +402,7 @@
 **2. 图标容器（Icon Container）**
 
 | 类 | 尺寸 | 用途 | 禁止手写 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `.page-icon` | 36×36 | Toolbar 模块标识图标（布局） | `w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0` |
 | `.row-icon` | 32×32 | 桌面表格行第一列图标 | `w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0` |
 | `.list-icon` | 40×40 | 移动端卡片列表图标 | `w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0` |
@@ -411,7 +412,7 @@
 **3. 状态占位（Loading / Empty State）**
 
 | 类 | 用途 |
-|---|---|
+| --- | --- |
 | `.empty-state` | 加载中 / 空状态块 `flex flex-col items-center justify-center py-20` |
 | `.spinner` | 加载动画基础样式 `animate-spin rounded-full border-4 border-slate-200 border-t-primary-500` |
 | `.spinner-lg` / `.spinner-md` | 加载动画尺寸：`.spinner-lg` 为 `w-12 h-12 mb-3` + spinner 基础样式；`.spinner-md` 为 `w-8 h-8 mr-2` + spinner 基础样式 |
@@ -419,7 +420,7 @@
 **4. 按钮（Button）**
 
 | 类 | 用途 | 禁止手写 |
-|---|---|---|
+| --- | --- | --- |
 | `.btn` | 基础按钮（inline-flex，焦点&禁用处理） | — |
 | `.btn-square` | toolbar 中仅显示图标的 36×36 方形按钮，需与 `.btn` + 颜色类组合使用 | `w-9 h-9 !px-0` |
 | `.btn-{color}` | 颜色变体（primary/blue/cyan/indigo/amber/emerald/danger/rose/purple/violet/secondary） | — |
@@ -441,7 +442,7 @@
 **5. 导航与菜单（Navigation）**
 
 | 类 | 用途 |
-|---|---|
+| --- | --- |
 | `.nav-link` | 侧边栏导航链接 |
 | `.nav-link-active` | 侧边栏导航激活态 |
 | `.dropdown-item` | 下拉菜单项（普通） |
@@ -451,7 +452,7 @@
 **6. 表格（Table）**
 
 | 类 | 用途 | 禁止手写 |
-|---|---|---|
+| --- | --- | --- |
 | `.th` | th 单元格（左对齐） | `text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider` |
 | `.th-sm` | th 单元格（紧凑型） | `text-left px-3 py-2 text-xs font-semibold text-slate-600 uppercase tracking-wider` |
 | `.th-right` | th 单元格（右对齐，操作列） | `text-right px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider` |
@@ -459,7 +460,7 @@
 **7. 表单（Form）**
 
 | 类 | 用途 | 禁止手写 |
-|---|---|---|
+| --- | --- | --- |
 | `.form-label` | 字段 label（灰色大写标题） | `block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1` |
 | `.section-title` | 详情页信息分组标题 | `text-sm font-semibold text-slate-700 mb-3 pb-2 border-b border-slate-200` |
 | `.section-title-table` | 后面紧跟表格时（去掉 margin，横线充当表格顶边框） | `mb-0` |
@@ -489,7 +490,7 @@
 **9. 概览统计卡片（Stat Card）**
 
 | 类 | 用途 | 禁止手写 |
-|---|---|---|
+| --- | --- | --- |
 | `.stat-card` | 概览 Widget 统计卡片（规范 1.12） | `rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow flex items-center gap-3` |
 | `.overview-loading` / `.overview-unavailable` | 概览 Widget 加载/不可用状态 | `flex items-center justify-center py-10`、`flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50` |
 | `.monitor-chart-box` / `.monitor-legend-item` / `.metric-card` / `.metric-legend` | 监控图表与指标块 | 对应监控图表容器、图例项、指标卡片和指标图例样式 |
@@ -540,7 +541,7 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 ### 1.18.1 组件结构一致性
 
 | 要求 | 说明 |
-|---|---|
+| --- | --- |
 | 模态框组件 | 必须使用 `BaseModal` 组件，通过 `expose: ['show']` 暴露方法 |
 | 模态框引用 | 必须使用 `ref="modalRef"`，并通过 `@Ref` 获取引用 |
 | 模态框状态 | 使用局部 `loading` 状态（非全局 `portal` 状态），通过 `:loading="loading"` 绑定 |
@@ -549,7 +550,7 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 ### 1.18.2 样式一致性
 
 | 要求 | 说明 |
-|---|---|
+| --- | --- |
 | 按钮配色 | 必须遵循 **1.10 操作按钮语义色**规范，且两个模块配色完全一致 |
 | 图标使用 | 相同功能的按钮必须使用相同的图标（如权限都用 `fa-key`） |
 | CSS 类 | 使用相同的 CSS 类（如 `btn-icon-slate`、`input`、`form-label` 等） |
@@ -558,7 +559,7 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 ### 1.18.3 交互一致性
 
 | 要求 | 说明 |
-|---|---|
+| --- | --- |
 | 按钮文本 | 动态按钮文本格式一致（如 `"保存中..."` / `"保存文件"`） |
 | 禁用逻辑 | 相同场景的禁用逻辑一致（如 `:disabled="!formData.newName.trim()"`） |
 | 通知提示 | 成功/失败通知格式一致（如 `"文件保存成功"`、`"权限修改失败: " + error`） |
@@ -567,7 +568,7 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 ### 1.18.4 配色对照表
 
 | 操作 | 配色 | Explorer | SFTP |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 编辑/重命名 | `blue` | `btn-icon-blue` | `btn-icon-blue` |
 | 权限查看 | `slate` | `btn-icon-slate` | `btn-icon-slate` |
 | 删除 | `red` | `btn-icon-red` | `btn-icon-red` |
@@ -597,6 +598,7 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 npm run lint                             # 类型检查 + ESLint
 npm run format:check                     # import 排序/格式检查（dry-run，需关注输出）
 python3 scripts/review-style.py          # 前端样式一致性辅助检查
+npm run build                            # Vite 生产构建
 ```
 
 `npm run format` 会直接修复 import/ESLint；仅在需要改写文件时使用。`review-style.py` 只有 ERROR 阻断，WARN 需人工确认。
