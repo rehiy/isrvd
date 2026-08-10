@@ -68,7 +68,9 @@ func (s *credentialStore) list() []*Credential {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	result := make([]*Credential, len(s.items))
-	copy(result, s.items)
+	for i, c := range s.items {
+		result[i] = cloneCredential(c)
+	}
 	return result
 }
 
@@ -78,7 +80,7 @@ func (s *credentialStore) get(id string) *Credential {
 	defer s.mu.RUnlock()
 	for _, c := range s.items {
 		if c.ID == id {
-			return c
+			return cloneCredential(c)
 		}
 	}
 	return nil
@@ -90,7 +92,7 @@ func (s *credentialStore) create(c *Credential) error {
 	defer s.mu.Unlock()
 	c.ID = strutil.NewString()
 	c.setAuthType()
-	s.items = append(s.items, c)
+	s.items = append(s.items, cloneCredential(c))
 	return s.save()
 }
 
@@ -104,8 +106,16 @@ func (s *credentialStore) update(id string, c *Credential) error {
 	}
 	c.ID = id
 	c.setAuthType()
-	s.items[idx] = c
+	s.items[idx] = cloneCredential(c)
 	return s.save()
+}
+
+func cloneCredential(c *Credential) *Credential {
+	if c == nil {
+		return nil
+	}
+	copy := *c
+	return &copy
 }
 
 // delete 删除凭据

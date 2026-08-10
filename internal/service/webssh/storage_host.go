@@ -60,7 +60,9 @@ func (s *store) hostList() []*Host {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	result := make([]*Host, len(s.hosts))
-	copy(result, s.hosts)
+	for i, h := range s.hosts {
+		result[i] = cloneHost(h)
+	}
 	return result
 }
 
@@ -68,7 +70,7 @@ func (s *store) hostList() []*Host {
 func (s *store) hostInspect(id string) *Host {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.findByID(id)
+	return cloneHost(s.findByID(id))
 }
 
 // hostCreate 新建主机配置
@@ -76,7 +78,7 @@ func (s *store) hostCreate(h *Host) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	h.ID = strutil.NewString()
-	s.hosts = append(s.hosts, h)
+	s.hosts = append(s.hosts, cloneHost(h))
 	return s.save()
 }
 
@@ -84,12 +86,12 @@ func (s *store) hostCreate(h *Host) error {
 func (s *store) hostUpdate(id string, h *Host) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	old := s.findByID(id)
-	if old == nil {
+	idx := s.indexByID(id)
+	if idx < 0 {
 		return fmt.Errorf("主机 %s 不存在", id)
 	}
 	h.ID = id
-	*old = *h
+	s.hosts[idx] = cloneHost(h)
 	return s.save()
 }
 
@@ -108,9 +110,7 @@ func (s *store) hostDelete(id string) error {
 // hostGetOption 获取指定 ID 主机的 SSH 连接配置
 // 如果主机绑定了凭据，优先使用凭据中的认证信息
 func (s *store) hostGetOption(id string, credStore *credentialStore) (*libWebSSH.SSHClientOption, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	h := s.findByID(id)
+	h := s.hostInspect(id)
 	if h == nil {
 		return nil, fmt.Errorf("主机 %s 不存在", id)
 	}
@@ -129,6 +129,14 @@ func (s *store) hostGetOption(id string, credStore *credentialStore) (*libWebSSH
 		}
 	}
 	return opt, nil
+}
+
+func cloneHost(h *Host) *Host {
+	if h == nil {
+		return nil
+	}
+	copy := *h
+	return &copy
 }
 
 // findByID 按 ID 查找主机（调用方须持锁）

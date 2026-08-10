@@ -63,13 +63,7 @@ type CredentialUpsertRequest struct {
 
 // CredentialCreate 新建凭据
 func (s *Service) CredentialCreate(req *CredentialUpsertRequest) (*Credential, error) {
-	c := &Credential{
-		Name:        req.Name,
-		Description: req.Description,
-		User:        req.User,
-		Password:    req.Password,
-		PrivateKey:  req.PrivateKey,
-	}
+	c := credentialFromRequest(req)
 	if err := s.credentialStore.create(c); err != nil {
 		return nil, fmt.Errorf("创建凭据失败: %w", err)
 	}
@@ -79,18 +73,22 @@ func (s *Service) CredentialCreate(req *CredentialUpsertRequest) (*Credential, e
 
 // CredentialUpdate 更新凭据
 func (s *Service) CredentialUpdate(id string, req *CredentialUpsertRequest) (*Credential, error) {
-	c := &Credential{
+	c := credentialFromRequest(req)
+	if err := s.credentialStore.update(id, c); err != nil {
+		return nil, fmt.Errorf("更新凭据失败: %w", err)
+	}
+	logger.Info("SSH 凭据已更新", "id", id, "name", req.Name)
+	return s.credentialStore.get(id), nil
+}
+
+func credentialFromRequest(req *CredentialUpsertRequest) *Credential {
+	return &Credential{
 		Name:        req.Name,
 		Description: req.Description,
 		User:        req.User,
 		Password:    req.Password,
 		PrivateKey:  req.PrivateKey,
 	}
-	if err := s.credentialStore.update(id, c); err != nil {
-		return nil, fmt.Errorf("更新凭据失败: %w", err)
-	}
-	logger.Info("SSH 凭据已更新", "id", id, "name", req.Name)
-	return s.credentialStore.get(id), nil
 }
 
 // CredentialDelete 删除凭据
@@ -111,13 +109,10 @@ func (s *Service) HostList() []*Host {
 	for _, c := range s.credentialStore.list() {
 		credMap[c.ID] = c.Name
 	}
-	result := make([]*Host, len(hosts))
-	for i, h := range hosts {
-		copy := *h
-		copy.CredentialName = credMap[h.CredentialID]
-		result[i] = &copy
+	for _, h := range hosts {
+		h.CredentialName = credMap[h.CredentialID]
 	}
-	return result
+	return hosts
 }
 
 // HostInspect 查看指定主机详情（密码不回显）
@@ -126,13 +121,12 @@ func (s *Service) HostInspect(id string) *Host {
 	if h == nil {
 		return nil
 	}
-	copy := *h
 	if h.CredentialID != "" {
 		if c := s.credentialStore.get(h.CredentialID); c != nil {
-			copy.CredentialName = c.Name
+			h.CredentialName = c.Name
 		}
 	}
-	return &copy
+	return h
 }
 
 // HostUpsertRequest 主机新建/更新请求
@@ -148,25 +142,9 @@ type HostUpsertRequest struct {
 
 // HostCreate 新建主机配置
 func (s *Service) HostCreate(req *HostUpsertRequest) (*Host, error) {
-	h := &Host{
-		Name:         req.Name,
-		Addr:         req.Addr,
-		CredentialID: req.CredentialID,
-		Password:     req.Password,
-		PrivateKey:   req.PrivateKey,
-		Description:  req.Description,
-	}
-	// 如果指定了凭据，仅校验凭据存在；连接时再解析凭据内容，避免在主机配置中冗余保存敏感信息
-	if req.CredentialID != "" {
-		c := s.credentialStore.get(req.CredentialID)
-		if c == nil {
-			return nil, fmt.Errorf("凭据 %s 不存在", req.CredentialID)
-		}
-		h.User = c.User
-		h.Password = ""
-		h.PrivateKey = ""
-	} else {
-		h.User = req.User
+	h, err := s.hostFromRequest(req, nil)
+	if err != nil {
+		return nil, err
 	}
 	if err := s.store.hostCreate(h); err != nil {
 		return nil, fmt.Errorf("创建主机失败: %w", err)
@@ -183,35 +161,9 @@ func (s *Service) HostUpdate(id string, req *HostUpsertRequest) (*Host, error) {
 		return nil, fmt.Errorf("主机 %s 不存在", id)
 	}
 
-	h := &Host{
-		Name:         req.Name,
-		Addr:         req.Addr,
-		CredentialID: req.CredentialID,
-		Description:  req.Description,
-	}
-
-	// 凭据模式 vs 独立认证模式
-	if req.CredentialID != "" {
-		c := s.credentialStore.get(req.CredentialID)
-		if c == nil {
-			return nil, fmt.Errorf("凭据 %s 不存在", req.CredentialID)
-		}
-		h.User = c.User
-		h.Password = ""
-		h.PrivateKey = ""
-	} else {
-		h.User = req.User
-		// 密码/私钥为空时保留原值
-		if req.Password == "" {
-			h.Password = old.Password
-		} else {
-			h.Password = req.Password
-		}
-		if req.PrivateKey == "" {
-			h.PrivateKey = old.PrivateKey
-		} else {
-			h.PrivateKey = req.PrivateKey
-		}
+	h, err := s.hostFromRequest(req, old)
+	if err != nil {
+		return nil, err
 	}
 
 	if err := s.store.hostUpdate(id, h); err != nil {
@@ -219,6 +171,35 @@ func (s *Service) HostUpdate(id string, req *HostUpsertRequest) (*Host, error) {
 	}
 	logger.Info("WebSSH 主机已更新", "id", id, "name", req.Name)
 	return s.HostInspect(id), nil
+}
+
+func (s *Service) hostFromRequest(req *HostUpsertRequest, old *Host) (*Host, error) {
+	h := &Host{
+		Name:         req.Name,
+		Addr:         req.Addr,
+		CredentialID: req.CredentialID,
+		User:         req.User,
+		Password:     req.Password,
+		PrivateKey:   req.PrivateKey,
+		Description:  req.Description,
+	}
+	if req.CredentialID != "" {
+		credential := s.credentialStore.get(req.CredentialID)
+		if credential == nil {
+			return nil, fmt.Errorf("凭据 %s 不存在", req.CredentialID)
+		}
+		h.User = credential.User
+		h.Password = ""
+		h.PrivateKey = ""
+	} else if old != nil {
+		if h.Password == "" {
+			h.Password = old.Password
+		}
+		if h.PrivateKey == "" {
+			h.PrivateKey = old.PrivateKey
+		}
+	}
+	return h, nil
 }
 
 // HostDelete 删除主机配置
