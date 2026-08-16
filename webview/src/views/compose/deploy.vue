@@ -26,6 +26,7 @@ class ComposeDeploy extends Vue {
     initFile: File | null = null
     content = ''
     envContent = ''
+    envTouched = false
 
     // 预填态（来自应用市场一键选择）：仅用于头部提示徽章，不锁定输入
     fromMarketplace = false
@@ -112,6 +113,11 @@ class ComposeDeploy extends Vue {
         if (input) input.value = ''
     }
 
+    onEnvContentChange(value: string) {
+        this.envContent = value
+        this.envTouched = true
+    }
+
     async handleDeploy() {
         if (!this.canSubmit) return
 
@@ -120,13 +126,13 @@ class ComposeDeploy extends Vue {
             const res = this.target === 'swarm'
                 ? await api.composeSwarmDeploy({
                     content: this.content,
-                    envContent: this.envContent || undefined,
+                    envContent: this.envTouched ? this.envContent : undefined,
                     initURL: this.initURL.trim() || undefined,
                     initFile: this.initFile ?? undefined,
                 })
                 : await api.composeDockerDeploy({
                     content: this.content,
-                    envContent: this.envContent || undefined,
+                    envContent: this.envTouched ? this.envContent : undefined,
                     initURL: this.initURL.trim() || undefined,
                     initFile: this.initFile ?? undefined,
                 })
@@ -150,6 +156,7 @@ class ComposeDeploy extends Vue {
     resetForm() {
         this.content = ''
         this.envContent = ''
+        this.envTouched = false
         this.initURL = ''
         this.initFile = null
         this.target = 'docker'
@@ -236,7 +243,7 @@ export default toNative(ComposeDeploy)
             <ComposeEditor v-model="content" :disabled="loading" :warning="dynamicWarning" />
           </div>
           <div class="min-w-0">
-            <EnvEditor v-model="envContent" :disabled="loading" />
+            <EnvEditor :model-value="envContent" :disabled="loading" @update:model-value="onEnvContentChange" />
           </div>
         </div>
 

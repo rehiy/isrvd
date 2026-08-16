@@ -29,7 +29,7 @@ export default toNative(EnvEditor)
     <div>
       <label class="form-label">
         <i class="fas fa-file-code mr-1 text-slate-400"></i>.env
-        <span class="text-xs font-normal text-slate-400">（KEY=VALUE，部署时合并进变量插值环境）</span>
+        <span class="text-xs font-normal text-slate-400">（KEY=VALUE，用于 Compose 变量插值）</span>
       </label>
       <div class="editor-container">
         <Codemirror v-model="content" :style="{ height }" :disabled="disabled" />

@@ -16,6 +16,8 @@ Compose 接口用于单机 Docker Compose 与 Swarm Stack 的部署、读取配�
 
 > Docker 与 Swarm Compose 部署都支持 `initURL` / `initFile`；解压目标为 `docker.containerRoot/<NAME>/`。Swarm 场景下建议 `containerRoot` 指向各节点共享的存储（如 NFS），以便所有节点都能访问解压出的文件。
 
+Web 前端的新建、Docker 编辑和 Swarm 编辑采用一致的 `.env` 提交行为：未修改编辑器时省略 `envContent`；修改后提交精确内容，清空后提交空字符串。因而未修改会保留附加文件或现有 `.env`，主动清空则会写入空 `.env`。
+
 部署前先做不读取 `env_file` 的结构预检并从中取得项目名（已插值并按 compose-go 规则规范化为小写）；完全未声明 `name` 时用 compose 内容短哈希兜底；若声明了 `name` 但其插值变量未提供，部署直接报错而不会退回哈希。
 
 ### ComposeRedeploy

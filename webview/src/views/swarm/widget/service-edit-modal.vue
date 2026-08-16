@@ -25,6 +25,7 @@ class ServiceEditModal extends Vue {
     refreshing = false
     composeContent = ''
     envContent = ''
+    envTouched = false
     serviceName = ''
     composeFileModTime = 0
     composeSource: 'file' | 'runtime' | '' = ''
@@ -45,6 +46,7 @@ class ServiceEditModal extends Vue {
         this.serviceName = svc.name
         this.composeContent = ''
         this.envContent = ''
+        this.envTouched = false
         this.composeFileModTime = 0
         this.composeSource = ''
         this.isOpen = true
@@ -59,6 +61,7 @@ class ServiceEditModal extends Vue {
             const payload = res.payload
             this.composeContent = payload?.content || ''
             this.envContent = payload?.envContent || ''
+            this.envTouched = false
             this.composeFileModTime = payload?.fileModTime || 0
             this.composeSource = payload?.source || ''
             if (force) this.portal.showNotification('success', '已从运行态重新反推 Compose 配置')
@@ -75,13 +78,18 @@ class ServiceEditModal extends Vue {
         await this.loadCompose(true)
     }
 
+    onEnvContentChange(value: string) {
+        this.envContent = value
+        this.envTouched = true
+    }
+
     async handleConfirm() {
         if (!this.composeContent.trim()) return
         this.modalLoading = true
         try {
             await api.composeSwarmRedeploy(this.serviceName, {
                 content: this.composeContent,
-                envContent: this.envContent
+                envContent: this.envTouched ? this.envContent : undefined
             })
             this.portal.showNotification('success', 'Swarm 服务配置更新成功，已重建服务')
             this.isOpen = false
@@ -107,7 +115,7 @@ export default toNative(ServiceEditModal)
         <ComposeEditor v-model="composeContent" :warning="composeWarning" />
       </div>
       <div class="min-w-0">
-        <EnvEditor v-model="envContent" />
+        <EnvEditor :model-value="envContent" @update:model-value="onEnvContentChange" />
       </div>
     </div>
     <template #confirm-text>更新并重建</template>

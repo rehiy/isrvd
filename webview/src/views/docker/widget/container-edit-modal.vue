@@ -28,6 +28,7 @@ class ContainerEditModal extends Vue {
     displayName = ''
     composeContent = ''
     envContent = ''
+    envTouched = false
     composeFileModTime = 0
     composeSource: 'file' | 'runtime' | '' = ''
 
@@ -56,6 +57,7 @@ class ContainerEditModal extends Vue {
             : (container.name || container.id)
         this.composeContent = ''
         this.envContent = ''
+        this.envTouched = false
         this.composeFileModTime = 0
         this.composeSource = ''
         this.isOpen = true
@@ -70,6 +72,7 @@ class ContainerEditModal extends Vue {
             const payload = res.payload
             this.composeContent = payload?.content || ''
             this.envContent = payload?.envContent || ''
+            this.envTouched = false
             this.projectName = payload?.projectName || this.projectName
             this.composeFileModTime = payload?.fileModTime || 0
             this.composeSource = payload?.source || ''
@@ -87,13 +90,18 @@ class ContainerEditModal extends Vue {
         await this.loadCompose(true)
     }
 
+    onEnvContentChange(value: string) {
+        this.envContent = value
+        this.envTouched = true
+    }
+
     async handleConfirm() {
         if (!this.composeContent.trim()) return
         this.modalLoading = true
         try {
             await api.composeDockerRedeploy(this.projectName, {
                 content: this.composeContent,
-                envContent: this.envContent
+                envContent: this.envTouched ? this.envContent : undefined
             })
             this.portal.showNotification('success', 'Compose 配置更新成功，已重建关联容器')
             this.isOpen = false
@@ -119,7 +127,7 @@ export default toNative(ContainerEditModal)
         <ComposeEditor v-model="composeContent" :warning="composeWarning" />
       </div>
       <div class="min-w-0">
-        <EnvEditor v-model="envContent" />
+        <EnvEditor :model-value="envContent" @update:model-value="onEnvContentChange" />
       </div>
     </div>
     <template #confirm-text>更新并重建</template>

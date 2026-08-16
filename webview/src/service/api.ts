@@ -751,7 +751,7 @@ class ApiService {
     private composeDeployForm(data: ComposeDeploy) {
         const form = new FormData()
         form.append('content', data.content)
-        if (data.envContent) {
+        if (data.envContent !== undefined) {
             form.append('envContent', data.envContent)
         }
         // 文件优先，二者互斥
