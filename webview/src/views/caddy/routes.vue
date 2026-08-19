@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
+import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -17,9 +17,22 @@ const handlerLabels: Record<string, string> = {
     raw: '原始 JSON'
 }
 
+const escapeHTML = (value: string) => value.replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+})[char] || char)
+
 type RouteListRow =
     | { type: 'host'; key: string; host: string; count: number }
-    | { type: 'route'; key: string; host: string; grouped: boolean; route: CaddyRoute }
+    | { type: 'route'; key: string; host: string; grouped: boolean; route: RouteWithServer }
+
+type RouteWithServer = CaddyRoute & {
+    serverID: string
+    serverName: string
+}
 
 @Component({
     components: { PageSearch, RouteEditModal }
@@ -29,9 +42,8 @@ class CaddyRoutes extends Vue {
 
     @Ref readonly editModalRef!: InstanceType<typeof RouteEditModal>
 
-    routes: CaddyRoute[] = []
+    routes: RouteWithServer[] = []
     servers: CaddyServerInfo[] = []
-    selectedServer = 'srv0'
     loading = false
     searchText = ''
     collapsedHosts: string[] = []
@@ -41,24 +53,24 @@ class CaddyRoutes extends Vue {
         return this.portal.hasPerm('GET /api/caddy/servers')
     }
 
-    get showServerSelect() {
-        return this.canListServers && this.servers.length > 0
-    }
-
-    get selectedServerName() {
-        return this.servers.find(server => server.id === this.selectedServer)?.name || 'srv0'
+    get routeServerOptions() {
+        if (this.servers.length > 0) {
+            return this.servers.map(server => ({ id: server.id, name: server.name }))
+        }
+        return [{ id: 'srv0', name: 'srv0' }]
     }
 
     get filteredRoutes() {
         const keyword = this.searchText.trim().toLowerCase()
         if (!keyword) return this.routes
-        return this.routes.filter((r: CaddyRoute) => {
+        return this.routes.filter((r: RouteWithServer) => {
             const m = r.match?.[0]
             const handler = this.getTerminalHandler(r)
             const ups = (handler?.upstreams as Array<{ dial: string }> | undefined) || []
             return (
                 (m?.host || []).some((s: string) => s.toLowerCase().includes(keyword)) ||
                 (m?.path || []).some((s: string) => s.toLowerCase().includes(keyword)) ||
+                r.serverName.toLowerCase().includes(keyword) ||
                 ups.some(upstream => upstream.dial?.toLowerCase().includes(keyword)) ||
                 String(handler?.root || '').toLowerCase().includes(keyword) ||
                 (handler?.handler || '').toLowerCase().includes(keyword)
@@ -78,7 +90,8 @@ class CaddyRoutes extends Vue {
         if (grouped) {
             entries.sort((a, b) => {
                 const hostCompare = a.host.localeCompare(b.host)
-                return hostCompare || this.getRoutePaths(a.route).localeCompare(this.getRoutePaths(b.route))
+                const serverCompare = a.route.serverName.localeCompare(b.route.serverName)
+                return hostCompare || serverCompare || this.getRoutePaths(a.route).localeCompare(this.getRoutePaths(b.route))
             })
         }
         const counts = new Map<string, number>()
@@ -92,66 +105,44 @@ class CaddyRoutes extends Vue {
                 rows.push({ type: 'host', key: `host-${host}`, host, count: counts.get(host) || 0 })
                 previousHost = host
             }
-            rows.push({ type: 'route', key: `route-${host}-${route.index}`, host, grouped, route })
+            rows.push({ type: 'route', key: `route-${route.serverID}-${host}-${route.index}`, host, grouped, route })
         }
         return rows
     }
 
     async loadRoutes() {
         const requestID = ++this.loadRequestID
-        const selection = this.selectedServer
-        const server = this.selectedServerName
         this.loading = true
         this.routes = []
         this.collapsedHosts = []
         try {
-            const routes = (await api.caddyRouteList(server)).payload || []
-            if (requestID !== this.loadRequestID || selection !== this.selectedServer) return
-            this.routes = routes
+            if (this.canListServers) {
+                try {
+                    const servers = (await api.caddyServerList()).payload || []
+                    if (requestID !== this.loadRequestID) return
+                    this.servers = servers
+                } catch {
+                    if (requestID !== this.loadRequestID) return
+                    this.servers = []
+                    this.portal.showNotification('warning', '服务加载失败，已回退到 srv0')
+                }
+            } else {
+                this.servers = []
+            }
+            const routesByServer = await Promise.all(this.routeServerOptions.map(async server => {
+                const routes = (await api.caddyRouteList(server.name)).payload || []
+                return routes.map(route => ({ ...route, serverID: server.id, serverName: server.name }))
+            }))
+            if (requestID !== this.loadRequestID) return
+            this.routes = routesByServer.flat()
             this.collapsedHosts = []
         } catch {
-            if (requestID === this.loadRequestID && selection === this.selectedServer) {
+            if (requestID === this.loadRequestID) {
                 this.portal.showNotification('error', '路由加载失败')
             }
         } finally {
             if (requestID === this.loadRequestID) this.loading = false
         }
-    }
-
-    async loadServers() {
-        if (!this.canListServers) {
-            await this.loadRoutes()
-            return
-        }
-
-        let servers: CaddyServerInfo[]
-        try {
-            servers = (await api.caddyServerList()).payload || []
-        } catch {
-            this.portal.showNotification('error', '服务加载失败')
-            await this.loadRoutes()
-            return
-        }
-
-        this.servers = servers
-        const defaultServer = this.servers.find(server => server.name === 'srv0')
-        const nextServer = this.servers.some(server => this.serverID(server) === this.selectedServer)
-            ? this.selectedServer
-            : (defaultServer ? this.serverID(defaultServer) : (this.servers[0] ? this.serverID(this.servers[0]) : 'srv0'))
-        if (nextServer === this.selectedServer) {
-            await this.loadRoutes()
-        } else {
-            this.selectedServer = nextServer
-        }
-    }
-
-    @Watch('selectedServer')
-    onSelectedServerChange() {
-        this.loadRoutes()
-    }
-
-    serverID(server: CaddyServerInfo) {
-        return server.id
     }
 
     openCreateModal() {
@@ -164,8 +155,8 @@ class CaddyRoutes extends Vue {
             : [...this.collapsedHosts, host]
     }
 
-    openEditModal(route: CaddyRoute) {
-        this.editModalRef?.show(route)
+    openEditModal(route: RouteWithServer) {
+        this.editModalRef?.show(route, route.serverName)
     }
 
     getRouteHosts(r: CaddyRoute) {
@@ -219,28 +210,27 @@ class CaddyRoutes extends Vue {
         return 'bg-slate-100 text-slate-500'
     }
 
-    deleteRoute(route: CaddyRoute) {
-        const selection = this.selectedServer
-        const server = this.selectedServerName
+    deleteRoute(route: RouteWithServer) {
+        const serverName = escapeHTML(route.serverName)
         this.portal.showConfirm({
             title: '删除路由',
-            message: `确定要删除路由 <strong class="text-slate-900">#${route.index}</strong> 吗？此操作不可恢复。`,
+            message: `确定要删除服务 <strong class="text-slate-900">${serverName}</strong> 下的路由 <strong class="text-slate-900">#${route.index}</strong> 吗？此操作不可恢复。`,
             icon: 'fa-trash',
             iconColor: 'red',
             confirmText: '确认删除',
             danger: true,
             onConfirm: async () => {
                 try {
-                    await api.caddyRouteDelete(route.index, server)
+                    await api.caddyRouteDelete(route.index, route.serverName)
                     this.portal.showNotification('success', '删除成功')
-                    if (selection === this.selectedServer) this.loadRoutes()
+                    this.loadRoutes()
                 } catch {}
             }
         })
     }
 
     mounted() {
-        this.loadServers()
+        this.loadRoutes()
     }
 }
 
@@ -257,9 +247,6 @@ export default toNative(CaddyRoutes)
           <div class="min-w-0"><h1 class="title-text">路由</h1><p class="text-xs text-slate-500 truncate">配置请求匹配规则与处理器，支持多种转发方式</p></div>
         </div>
         <div class="action-group">
-          <select v-if="showServerSelect" v-model="selectedServer" class="select-sm max-w-40" title="服务" aria-label="服务">
-            <option v-for="server in servers" :key="serverID(server)" :value="serverID(server)">{{ server.name }}</option>
-          </select>
           <PageSearch v-model="searchText" search-key="caddy-routes" placeholder="请输入搜索关键词..." focus-color="indigo" type-to-search />
           <button class="btn btn-secondary" @click="loadRoutes()"><i class="fas fa-rotate"></i>刷新</button>
           <button v-if="portal.hasPerm('POST /api/caddy/route')" class="btn btn-indigo" @click="openCreateModal()"><i class="fas fa-plus"></i>新建路由</button>
@@ -275,9 +262,6 @@ export default toNative(CaddyRoutes)
           </div>
         </div>
         <div class="action-group-sm">
-          <select v-if="showServerSelect" v-model="selectedServer" class="select-sm max-w-28" title="服务" aria-label="服务">
-            <option v-for="server in servers" :key="serverID(server)" :value="serverID(server)">{{ server.name }}</option>
-          </select>
           <button class="btn btn-secondary btn-square" title="刷新" @click="loadRoutes()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
@@ -308,6 +292,7 @@ export default toNative(CaddyRoutes)
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
               <th class="th">Host</th>
+              <th class="th">服务</th>
               <th class="th">Path</th>
               <th class="th">Method</th>
               <th class="th">类型</th>
@@ -318,7 +303,7 @@ export default toNative(CaddyRoutes)
           <tbody class="divide-y divide-slate-100">
             <template v-for="row in routeListRows" :key="row.key">
               <tr v-if="row.type === 'host'" class="bg-slate-50">
-                <td colspan="6" class="px-4 py-2">
+                <td colspan="7" class="px-4 py-2">
                   <button type="button" class="flex w-full items-center gap-2 text-left" :aria-expanded="!collapsedHosts.includes(row.host)" @click="toggleHost(row.host)">
                     <i class="fas fa-chevron-right text-slate-400 text-xs transition-transform" :class="{ 'rotate-90': !collapsedHosts.includes(row.host) }"></i>
                     <i class="fas fa-globe text-teal-500 text-xs"></i>
@@ -337,6 +322,7 @@ export default toNative(CaddyRoutes)
                     <span :class="getRouteHosts(row.route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm break-all">{{ getRouteHosts(row.route) }}</span>
                   </div>
                 </td>
+                <td class="td-text"><span class="font-mono">{{ row.route.serverName }}</span></td>
                 <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getRoutePaths(row.route) }}</code></td>
                 <td class="px-4 py-3"><span class="text-xs text-slate-600">{{ getRouteMethods(row.route) }}</span></td>
                 <td class="px-4 py-3"><span :class="getHandlerTagClass(row.route)" class="inline-block text-xs px-2 py-0.5 rounded-lg">{{ getHandlerKindLabel(getTerminalHandler(row.route)?.handler as string) }}</span></td>
@@ -375,6 +361,10 @@ export default toNative(CaddyRoutes)
             </div>
 
             <div class="card-prop-row-start">
+              <span class="prop-label-start">服务</span>
+              <code class="text-xs font-mono text-slate-700 break-all">{{ row.route.serverName }}</code>
+            </div>
+            <div class="card-prop-row-start">
               <span class="prop-label-start">Path</span>
               <code class="text-xs font-mono text-slate-700 break-all">{{ getRoutePaths(row.route) }}</code>
             </div>
@@ -401,5 +391,5 @@ export default toNative(CaddyRoutes)
     </template>
   </div>
 
-  <RouteEditModal ref="editModalRef" :server="selectedServerName" @success="loadRoutes" />
+  <RouteEditModal ref="editModalRef" :servers="routeServerOptions" @success="loadRoutes" />
 </template>

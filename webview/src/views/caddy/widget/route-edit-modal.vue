@@ -34,6 +34,11 @@ const TONE_ICON_ACTIVE: Record<string, string> = {
     indigo: 'bg-indigo-100', emerald: 'bg-emerald-100', amber: 'bg-amber-100', violet: 'bg-violet-100', rose: 'bg-rose-100', slate: 'bg-slate-200'
 }
 
+interface RouteServerOption {
+    id: string
+    name: string
+}
+
 const defaultFormData = () => ({
     kind: 'reverse_proxy' as CaddyHandlerKind,
     hosts: '',
@@ -77,7 +82,7 @@ const defaultFormData = () => ({
 class RouteEditModal extends Vue {
     portal = usePortal()
 
-    @Prop({ type: String, default: 'srv0' }) readonly server!: string
+    @Prop({ type: Array, default: () => [{ id: 'srv0', name: 'srv0' }] }) readonly servers!: RouteServerOption[]
 
     isOpen = false
     modalLoading = false
@@ -88,6 +93,10 @@ class RouteEditModal extends Vue {
 
     get canLoadDockerContainers() {
         return this.portal.hasPerm('GET /api/docker/containers')
+    }
+
+    get defaultServerName() {
+        return this.servers.find(server => server.name === 'srv0')?.name || this.servers[0]?.name || 'srv0'
     }
 
     // 匹配请求头多行编辑列表
@@ -337,8 +346,8 @@ class RouteEditModal extends Vue {
         } catch {}
     }
 
-    show(route: CaddyRoute | null) {
-        this.targetServer = this.server
+    show(route: CaddyRoute | null, server = '') {
+        this.targetServer = server || this.defaultServerName
         Object.assign(this.formData, defaultFormData())
         this.matchHeaderList = []
         this.enableMatchHeaders = false
@@ -562,6 +571,14 @@ export default toNative(RouteEditModal)
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? '编辑路由' : '新建路由'" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
     <div class="space-y-5 p-1">
+      <div>
+        <label class="form-label">服务 <span class="text-red-500">*</span></label>
+        <select v-model="targetServer" class="input font-mono" :disabled="isEditMode">
+          <option v-for="item in servers" :key="item.id" :value="item.name">{{ item.name }}</option>
+        </select>
+        <p class="text-xs text-slate-400 mt-1">{{ isEditMode ? '路由所属服务不可修改' : '选择新路由所属的服务' }}</p>
+      </div>
+
       <!-- ── 匹配条件 ── -->
       <div class="space-y-4">
         <p class="section-title">匹配条件</p>
