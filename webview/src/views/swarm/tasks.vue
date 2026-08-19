@@ -111,7 +111,7 @@ export default toNative(Tasks)
             <i class="fas fa-list-check text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">任务列表</h1>
+            <h1 class="title-text">任务</h1>
             <p class="text-xs text-slate-500">查看 Swarm 集群任务状态</p>
           </div>
         </div>
@@ -134,7 +134,7 @@ export default toNative(Tasks)
               <i class="fas fa-list-check text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="title-text">任务列表</h1>
+              <h1 class="title-text">任务</h1>
               <p class="text-xs text-slate-500 truncate">查看 Swarm 集群任务状态</p>
             </div>
           </div>

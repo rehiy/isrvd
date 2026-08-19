@@ -428,7 +428,7 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/docker/volume') }"
             >
               <i class="fas fa-database"></i>
-              <span>存储</span>
+              <span>数据卷</span>
             </router-link>
             <router-link
               v-if="portal.hasPerm('GET /api/docker/images')"
@@ -446,7 +446,7 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/docker/registr') }"
             >
               <i class="fas fa-warehouse"></i>
-              <span>镜像源</span>
+              <span>镜像仓库</span>
             </router-link>
           </div>
         </template>

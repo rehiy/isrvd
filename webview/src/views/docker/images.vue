@@ -216,7 +216,7 @@ export default toNative(Images)
             <i class="fas fa-layer-group text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">镜像管理</h1>
+            <h1 class="title-text">镜像</h1>
             <p class="text-xs text-slate-500">拉取、导入、导出和删除 Docker 镜像</p>
           </div>
         </div>
@@ -252,7 +252,7 @@ export default toNative(Images)
               <i class="fas fa-layer-group text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="title-text">镜像管理</h1>
+              <h1 class="title-text">镜像</h1>
               <p class="text-xs text-slate-500 truncate">拉取与管理镜像</p>
             </div>
           </div>

@@ -136,7 +136,7 @@ export default toNative(Whitelist)
             <i class="fas fa-shield-halved text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">访问授权管理</h1>
+            <h1 class="title-text">访问授权</h1>
             <p class="text-xs text-slate-500">配置路由级别的 Consumer 访问授权</p>
           </div>
         </div>
@@ -157,7 +157,7 @@ export default toNative(Whitelist)
             <i class="fas fa-shield-halved text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">访问授权管理</h1>
+            <h1 class="title-text">访问授权</h1>
             <p class="text-xs text-slate-500 truncate">路由级 Consumer 访问授权</p>
           </div>
         </div>

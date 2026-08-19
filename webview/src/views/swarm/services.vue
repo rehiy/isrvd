@@ -128,7 +128,7 @@ export default toNative(Services)
               <i class="fas fa-cubes text-white"></i>
             </div>
             <div>
-              <h1 class="title-text">服务管理</h1>
+              <h1 class="title-text">服务</h1>
               <p class="text-xs text-slate-500">管理 Swarm 服务</p>
             </div>
           </div>
@@ -149,7 +149,7 @@ export default toNative(Services)
               <i class="fas fa-cubes text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="title-text">服务管理</h1>
+              <h1 class="title-text">服务</h1>
               <p class="text-xs text-slate-500 truncate">管理 Swarm 服务</p>
             </div>
           </div>

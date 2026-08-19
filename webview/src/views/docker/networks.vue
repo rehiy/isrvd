@@ -106,7 +106,7 @@ export default toNative(Networks)
             <i class="fas fa-network-wired text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">网络管理</h1>
+            <h1 class="title-text">网络</h1>
             <p class="text-xs text-slate-500">管理 Docker 网络，配置容器间通信</p>
           </div>
         </div>
@@ -127,7 +127,7 @@ export default toNative(Networks)
             <i class="fas fa-network-wired text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">网络管理</h1>
+            <h1 class="title-text">网络</h1>
             <p class="text-xs text-slate-500 truncate">管理容器网络</p>
           </div>
         </div>
