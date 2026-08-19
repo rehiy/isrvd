@@ -142,7 +142,7 @@ export default toNative(Containers)
               <i class="fas fa-cube text-white"></i>
             </div>
             <div>
-              <h1 class="title-text">容器管理</h1>
+              <h1 class="title-text">容器</h1>
               <p class="text-xs text-slate-500">管理 Docker 容器的生命周期与运行状态</p>
             </div>
           </div>
@@ -172,7 +172,7 @@ export default toNative(Containers)
                 <i class="fas fa-cube text-white"></i>
               </div>
               <div class="min-w-0">
-                <h1 class="title-text">容器管理</h1>
+                <h1 class="title-text">容器</h1>
                 <p class="text-xs text-slate-500 truncate">管理容器生命周期</p>
               </div>
             </div>

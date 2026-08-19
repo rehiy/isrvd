@@ -101,7 +101,7 @@ export default toNative(Consumers)
             <i class="fas fa-users text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">消费者管理</h1>
+            <h1 class="title-text">消费者</h1>
             <p class="text-xs text-slate-500">管理 APISIX Consumer 及其认证凭据</p>
           </div>
         </div>
@@ -122,7 +122,7 @@ export default toNative(Consumers)
             <i class="fas fa-users text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">消费者管理</h1>
+            <h1 class="title-text">消费者</h1>
             <p class="text-xs text-slate-500 truncate">管理 Consumer 与凭据</p>
           </div>
         </div>

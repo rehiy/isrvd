@@ -121,7 +121,7 @@ export default toNative(Upstreams)
             <i class="fas fa-diagram-project text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">上游管理</h1>
+            <h1 class="title-text">上游</h1>
             <p class="text-xs text-slate-500">管理可复用的后端上游对象与负载均衡策略</p>
           </div>
         </div>
@@ -142,7 +142,7 @@ export default toNative(Upstreams)
             <i class="fas fa-diagram-project text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">上游管理</h1>
+            <h1 class="title-text">上游</h1>
             <p class="text-xs text-slate-500 truncate">管理可复用上游对象</p>
           </div>
         </div>

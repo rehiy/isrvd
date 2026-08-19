@@ -93,7 +93,7 @@ export default toNative(Volumes)
             <i class="fas fa-database text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">数据卷管理</h1>
+            <h1 class="title-text">数据卷</h1>
             <p class="text-xs text-slate-500">管理 Docker 数据卷，持久化容器数据</p>
           </div>
         </div>
@@ -114,7 +114,7 @@ export default toNative(Volumes)
             <i class="fas fa-database text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">数据卷管理</h1>
+            <h1 class="title-text">数据卷</h1>
             <p class="text-xs text-slate-500 truncate">管理容器数据卷</p>
           </div>
         </div>

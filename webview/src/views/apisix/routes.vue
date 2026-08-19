@@ -191,7 +191,7 @@ export default toNative(Routes)
       <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-indigo-500"><i class="fas fa-route text-white"></i></div>
-          <div><h1 class="title-text">路由管理</h1><p class="text-xs text-slate-500">管理 APISIX 路由，配置匹配规则、上游转发与插件</p></div>
+          <div><h1 class="title-text">路由</h1><p class="text-xs text-slate-500">管理 APISIX 路由，配置匹配规则、上游转发与插件</p></div>
         </div>
         <div class="action-group">
           <PageSearch v-model="searchText" search-key="apisix-routes" placeholder="搜索路由、URI、描述或上游..." focus-color="indigo" type-to-search />
@@ -204,7 +204,7 @@ export default toNative(Routes)
         <div class="title-group">
           <div class="page-icon bg-indigo-500"><i class="fas fa-route text-white"></i></div>
           <div class="min-w-0">
-            <h1 class="title-text">路由管理</h1>
+            <h1 class="title-text">路由</h1>
             <p class="text-xs text-slate-500 truncate">配置匹配规则、上游与插件</p>
           </div>
         </div>
