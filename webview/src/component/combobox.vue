@@ -12,11 +12,14 @@ class Combobox extends Vue {
     @Prop({ type: Boolean, default: false }) readonly multiple!: boolean
     @Prop({ type: String, default: '' }) readonly placeholder!: string
     @Prop({ type: String, default: '' }) readonly searchPlaceholder!: string
+    @Prop({ type: String, default: '' }) readonly ariaLabel!: string
     @Prop({ type: Boolean, default: false }) readonly disabled!: boolean
+    @Prop({ type: Boolean, default: true }) readonly allowCustom!: boolean
     @Prop({ type: String, default: '320px' }) readonly maxHeight!: string
     @Prop({ type: String, default: 'match' }) readonly align!: 'left' | 'right' | 'match' | 'match-right'
     @Prop({ type: Function, default: () => 'bg-slate-100 text-slate-700 border border-slate-200' })
     readonly tagClass!: (val: string) => string
+    @Prop({ type: Function, default: () => false }) readonly tagDisabled!: (val: string) => boolean
 
     // ─── 数据属性 ───
     dropdownOpen = false
@@ -65,15 +68,22 @@ class Combobox extends Vue {
         }
     }
 
+    @Watch('disabled')
+    onDisabledChange(disabled: boolean) {
+        if (disabled) this.dropdownOpen = false
+    }
+
     // ─── 方法 ───
     isSelected(value: string) {
         return this.multiple ? this.selected.includes(value) : this.singleValue === value
     }
 
     select(value: string) {
+        if (this.disabled) return
         if (this.multiple) {
             const v = value.trim()
             if (!v) return
+            if (this.selected.includes(v) && this.tagDisabled(v)) return
             const next = this.selected.includes(v)
                 ? this.selected.filter(x => x !== v)
                 : [...this.selected, v]
@@ -88,23 +98,27 @@ class Combobox extends Vue {
     }
 
     removeTag(value: string) {
-        if (!this.multiple) return
+        if (!this.multiple || this.disabled || this.tagDisabled(value)) return
         this.$emit('update:modelValue', this.selected.filter(x => x !== value))
     }
 
     clearAll() {
-        if (!this.multiple) return
-        this.$emit('update:modelValue', [])
+        if (!this.multiple || this.disabled) return
+        const next = this.selected.filter(value => this.tagDisabled(value))
+        if (next.length !== this.selected.length) this.$emit('update:modelValue', next)
     }
 
     handleInput() {
+        if (this.disabled) return
         if (!this.multiple) this.$emit('update:modelValue', this.searchQuery)
         if (!this.dropdownOpen) this.dropdownOpen = true
     }
 
     handleEnter() {
+        if (this.disabled) return
         const v = this.searchQuery.trim()
         if (this.multiple) {
+            if (!this.allowCustom) return
             if (!v) return
             if (!this.selected.includes(v)) {
                 this.$emit('update:modelValue', [...this.selected, v])
@@ -117,6 +131,7 @@ class Combobox extends Vue {
     }
 
     focusInput() {
+        if (this.disabled) return
         ;(this.$refs.inputRef as HTMLInputElement)?.focus()
         this.dropdownOpen = true
     }
@@ -128,11 +143,27 @@ export default toNative(Combobox)
 <template>
   <Dropdown v-model:open="dropdownOpen" :max-height="maxHeight" :align="align">
     <template #trigger="{ open }">
-      <div class="input min-h-[46px] cursor-text flex items-center gap-2" :class="[open ? '!border-primary-400' : '', multiple ? 'flex-wrap gap-1.5' : '']" @click="focusInput">
+      <div
+        class="input min-h-[46px] flex items-center gap-2"
+        :class="[
+          open ? '!border-primary-400' : '',
+          multiple ? 'flex-wrap gap-1.5' : '',
+          disabled ? 'cursor-not-allowed bg-slate-50 opacity-60' : 'cursor-text'
+        ]"
+        :aria-disabled="disabled"
+        @click="focusInput"
+      >
         <template v-if="multiple">
           <span v-for="tag in selected" :key="tag" :class="['inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all', tagClass(tag)]">
-            {{ tag }}
-            <button type="button" class="btn-tag-remove" @click.stop="removeTag(tag)">
+            <slot name="tag" :value="tag">{{ tag }}</slot>
+            <button
+              type="button"
+              class="btn-tag-remove"
+              :class="disabled || tagDisabled(tag) ? 'cursor-not-allowed opacity-50' : ''"
+              :disabled="disabled || tagDisabled(tag)"
+              :aria-label="`移除 ${tag}`"
+              @click.stop="removeTag(tag)"
+            >
               <i class="fas fa-times text-[8px]"></i>
             </button>
           </span>
@@ -145,6 +176,8 @@ export default toNative(Combobox)
           class="flex-1 min-w-[80px] border-0 outline-none bg-transparent text-sm text-slate-700 placeholder:text-slate-400 p-0 focus:ring-0 focus:border-0 focus:shadow-none"
           :placeholder="effectivePlaceholder"
           :disabled="disabled"
+          :aria-label="ariaLabel || searchPlaceholder || placeholder || '搜索选项'"
+          :aria-expanded="dropdownOpen"
           @focus="dropdownOpen = true"
           @input="handleInput"
           @keydown.enter.prevent="handleEnter"
@@ -155,7 +188,7 @@ export default toNative(Combobox)
     </template>
 
     <template #search-hint>
-      <div v-if="searchQuery.trim()" class="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+      <div v-if="searchQuery.trim() && allowCustom" class="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
         <span class="text-xs text-slate-500">
           <template v-if="multiple">按 Enter 添加: </template>
           <template v-else>使用: </template>
