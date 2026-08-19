@@ -1,8 +1,8 @@
 // Package caddy 提供 Caddy Admin API 业务服务层
 //
 // 资源映射（业务约定）：
-//   - 单 server 模式：默认 server 名为 srv0
-//   - Route：servers/srv0/routes 数组项，对外用数组下标做主键
+//   - 支持管理多个命名 HTTP server；未指定时默认 server 名为 srv0
+//   - Route：servers/{name}/routes 数组项，对外用数组下标做主键
 //   - 路由直接使用 pkgCaddy.Route 原生结构收发，前端负责组装 Caddy JSON
 package caddy
 
@@ -58,11 +58,11 @@ func (s *Service) CheckAvailability(ctx context.Context) bool {
 
 // ─── 共享辅助函数 ───
 
-func normalizeServer(name string) string {
+func normalizeServer(name string) (string, error) {
 	if name == "" {
-		return DefaultServerName
+		return DefaultServerName, nil
 	}
-	return name
+	return validateServerName(name)
 }
 
 // getServer 取 server，不存在返回 nil
@@ -71,25 +71,6 @@ func getServer(cfg *pkgCaddy.Config, name string) *pkgCaddy.HTTPServer {
 		return nil
 	}
 	return cfg.Apps.HTTP.Servers[name]
-}
-
-// ensureServer 取 server，不存在则创建并初始化 listen
-func ensureServer(cfg *pkgCaddy.Config, name string) *pkgCaddy.HTTPServer {
-	if cfg.Apps == nil {
-		cfg.Apps = &pkgCaddy.AppsConfig{}
-	}
-	if cfg.Apps.HTTP == nil {
-		cfg.Apps.HTTP = &pkgCaddy.HTTPApp{}
-	}
-	if cfg.Apps.HTTP.Servers == nil {
-		cfg.Apps.HTTP.Servers = map[string]*pkgCaddy.HTTPServer{}
-	}
-	srv, ok := cfg.Apps.HTTP.Servers[name]
-	if !ok {
-		srv = &pkgCaddy.HTTPServer{Listen: []string{":80"}}
-		cfg.Apps.HTTP.Servers[name] = srv
-	}
-	return srv
 }
 
 func ensureTLS(cfg *pkgCaddy.Config) *pkgCaddy.TLSApp {

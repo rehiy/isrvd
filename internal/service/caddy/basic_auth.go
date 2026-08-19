@@ -9,6 +9,9 @@ import (
 	pkgCaddy "isrvd/pkgs/caddy"
 )
 
+// authUserIDVar 是 Caddy 认证成功后注入的用户名变量
+const authUserIDVar = "{http.auth.user.id}"
+
 // BasicAuthUser basic_auth 账号视图（密码不回显）
 type BasicAuthUser struct {
 	Username string `json:"username"`
@@ -26,14 +29,17 @@ type BasicAuthRouteView struct {
 
 // BasicAuthList 列出所有含 basic_auth 的路由
 func (s *Service) BasicAuthList(ctx context.Context, server string) ([]BasicAuthRouteView, error) {
-	server = normalizeServer(server)
+	server, err := normalizeServer(server)
+	if err != nil {
+		return nil, err
+	}
 	cfg, err := s.client.ConfigAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 	srv := getServer(cfg, server)
 	if srv == nil {
-		return []BasicAuthRouteView{}, nil
+		return nil, ErrServerNotFound
 	}
 	var out []BasicAuthRouteView
 	for i, route := range srv.Routes {
@@ -54,7 +60,7 @@ func (s *Service) BasicAuthList(ctx context.Context, server string) ([]BasicAuth
 			}
 			out = append(out, BasicAuthRouteView{
 				Index:         i,
-				Name:          route.ID,
+				Name:          route.ID.String(),
 				Realm:         realm,
 				ForwardHeader: extractForwardHeader(route.Handle),
 				Users:         users,
@@ -74,48 +80,51 @@ func (s *Service) BasicAuthUserCreate(ctx context.Context, server string, routeI
 	if username == "" || password == "" {
 		return fmt.Errorf("用户名和密码不能为空")
 	}
-	server = normalizeServer(server)
-	cfg, err := s.client.ConfigAll(ctx)
+	server, err := normalizeServer(server)
 	if err != nil {
 		return err
 	}
-	srv := getServer(cfg, server)
-	if srv == nil || routeIndex < 0 || routeIndex >= len(srv.Routes) {
-		return fmt.Errorf("路由不存在")
-	}
-	route := &srv.Routes[routeIndex]
-
-	authIdx := findAuthIndex(route)
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("密码加密失败: %w", err)
 	}
 
-	if authIdx >= 0 {
-		existingRealm, accounts, _ := pkgCaddy.BasicAuthFromHandler(route.Handle[authIdx])
-		for _, a := range accounts {
-			if a.Username == username {
-				return fmt.Errorf("用户 %q 已存在", username)
+	return s.client.ConfigMutate(ctx, func(cfg *pkgCaddy.Config) error {
+		srv := getServer(cfg, server)
+		if srv == nil {
+			return ErrServerNotFound
+		}
+		if routeIndex < 0 || routeIndex >= len(srv.Routes) {
+			return ErrRouteNotFound
+		}
+		route := &srv.Routes[routeIndex]
+		authIdx := findAuthIndex(route)
+
+		if authIdx >= 0 {
+			existingRealm, accounts, _ := pkgCaddy.BasicAuthFromHandler(route.Handle[authIdx])
+			for _, account := range accounts {
+				if account.Username == username {
+					return fmt.Errorf("用户 %q 已存在", username)
+				}
 			}
+			if realm == "" {
+				realm = existingRealm
+			}
+			accounts = append(accounts, pkgCaddy.BasicAuthAccount{
+				Username: username,
+				Password: string(hash),
+			})
+			route.Handle[authIdx] = pkgCaddy.HandlerBasicAuth(realm, accounts)
+		} else {
+			newHandler := pkgCaddy.HandlerBasicAuth(realm, []pkgCaddy.BasicAuthAccount{
+				{Username: username, Password: string(hash)},
+			})
+			route.Handle = append([]pkgCaddy.Handler{newHandler}, route.Handle...)
 		}
-		if realm == "" {
-			realm = existingRealm
-		}
-		accounts = append(accounts, pkgCaddy.BasicAuthAccount{
-			Username: username,
-			Password: string(hash),
-		})
-		route.Handle[authIdx] = pkgCaddy.HandlerBasicAuth(realm, accounts)
-	} else {
-		newHandler := pkgCaddy.HandlerBasicAuth(realm, []pkgCaddy.BasicAuthAccount{
-			{Username: username, Password: string(hash)},
-		})
-		route.Handle = append([]pkgCaddy.Handler{newHandler}, route.Handle...)
-	}
 
-	applyForwardHeader(route, forwardHeader)
-
-	return s.client.ConfigLoad(ctx, cfg)
+		applyForwardHeader(route, forwardHeader)
+		return nil
+	})
 }
 
 // BasicAuthUserDelete 从指定路由移除一个账号
@@ -125,66 +134,72 @@ func (s *Service) BasicAuthUserDelete(ctx context.Context, server string, routeI
 	if username == "" {
 		return fmt.Errorf("用户名不能为空")
 	}
-	server = normalizeServer(server)
-	cfg, err := s.client.ConfigAll(ctx)
+	server, err := normalizeServer(server)
 	if err != nil {
 		return err
 	}
-	srv := getServer(cfg, server)
-	if srv == nil || routeIndex < 0 || routeIndex >= len(srv.Routes) {
-		return fmt.Errorf("路由不存在")
-	}
-	route := &srv.Routes[routeIndex]
-
-	authIdx := findAuthIndex(route)
-	if authIdx < 0 {
-		return fmt.Errorf("该路由未配置 Basic Auth")
-	}
-
-	realm, accounts, _ := pkgCaddy.BasicAuthFromHandler(route.Handle[authIdx])
-	filtered := accounts[:0]
-	for _, a := range accounts {
-		if a.Username != username {
-			filtered = append(filtered, a)
+	return s.client.ConfigMutate(ctx, func(cfg *pkgCaddy.Config) error {
+		srv := getServer(cfg, server)
+		if srv == nil {
+			return ErrServerNotFound
 		}
-	}
-	if len(filtered) == len(accounts) {
-		return fmt.Errorf("用户 %q 不存在", username)
-	}
+		if routeIndex < 0 || routeIndex >= len(srv.Routes) {
+			return ErrRouteNotFound
+		}
+		route := &srv.Routes[routeIndex]
 
-	if len(filtered) == 0 {
-		route.Handle = append(route.Handle[:authIdx], route.Handle[authIdx+1:]...)
-		applyForwardHeader(route, "")
-	} else {
-		route.Handle[authIdx] = pkgCaddy.HandlerBasicAuth(realm, filtered)
-	}
+		authIdx := findAuthIndex(route)
+		if authIdx < 0 {
+			return fmt.Errorf("该路由未配置 Basic Auth")
+		}
 
-	return s.client.ConfigLoad(ctx, cfg)
+		realm, accounts, _ := pkgCaddy.BasicAuthFromHandler(route.Handle[authIdx])
+		filtered := accounts[:0]
+		for _, account := range accounts {
+			if account.Username != username {
+				filtered = append(filtered, account)
+			}
+		}
+		if len(filtered) == len(accounts) {
+			return fmt.Errorf("用户 %q 不存在", username)
+		}
+
+		if len(filtered) == 0 {
+			route.Handle = append(route.Handle[:authIdx], route.Handle[authIdx+1:]...)
+			applyForwardHeader(route, "")
+		} else {
+			route.Handle[authIdx] = pkgCaddy.HandlerBasicAuth(realm, filtered)
+		}
+		return nil
+	})
 }
 
 // BasicAuthConfigUpdate 更新已有认证路由的 realm 和 forwardHeader，不修改账号列表
 func (s *Service) BasicAuthConfigUpdate(ctx context.Context, server string, routeIndex int, realm, forwardHeader string) error {
-	server = normalizeServer(server)
-	cfg, err := s.client.ConfigAll(ctx)
+	server, err := normalizeServer(server)
 	if err != nil {
 		return err
 	}
-	srv := getServer(cfg, server)
-	if srv == nil || routeIndex < 0 || routeIndex >= len(srv.Routes) {
-		return fmt.Errorf("路由不存在")
-	}
-	route := &srv.Routes[routeIndex]
+	return s.client.ConfigMutate(ctx, func(cfg *pkgCaddy.Config) error {
+		srv := getServer(cfg, server)
+		if srv == nil {
+			return ErrServerNotFound
+		}
+		if routeIndex < 0 || routeIndex >= len(srv.Routes) {
+			return ErrRouteNotFound
+		}
+		route := &srv.Routes[routeIndex]
 
-	authIdx := findAuthIndex(route)
-	if authIdx < 0 {
-		return fmt.Errorf("该路由未配置 Basic Auth")
-	}
+		authIdx := findAuthIndex(route)
+		if authIdx < 0 {
+			return fmt.Errorf("该路由未配置 Basic Auth")
+		}
 
-	_, accounts, _ := pkgCaddy.BasicAuthFromHandler(route.Handle[authIdx])
-	route.Handle[authIdx] = pkgCaddy.HandlerBasicAuth(realm, accounts)
-	applyForwardHeader(route, forwardHeader)
-
-	return s.client.ConfigLoad(ctx, cfg)
+		_, accounts, _ := pkgCaddy.BasicAuthFromHandler(route.Handle[authIdx])
+		route.Handle[authIdx] = pkgCaddy.HandlerBasicAuth(realm, accounts)
+		applyForwardHeader(route, forwardHeader)
+		return nil
+	})
 }
 
 func findAuthIndex(route *pkgCaddy.Route) int {
@@ -195,9 +210,6 @@ func findAuthIndex(route *pkgCaddy.Route) int {
 	}
 	return -1
 }
-
-// authUserIDVar 是 Caddy 认证成功后注入的用户名变量
-const authUserIDVar = "{http.auth.user.id}"
 
 // extractForwardHeader 从 handle 链中读取 forward-user 注入的 Header 名；未配置返回空串。
 // 识别方式：handler == "headers" 且 request.set 中某个值包含 authUserIDVar。

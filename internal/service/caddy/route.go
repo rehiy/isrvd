@@ -2,10 +2,12 @@ package caddy
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	pkgCaddy "isrvd/pkgs/caddy"
 )
+
+var ErrRouteNotFound = errors.New("路由不存在")
 
 // ─── 路由 CRUD ───
 
@@ -17,14 +19,17 @@ type RouteView struct {
 
 // RouteList 列出指定 server 的所有路由
 func (s *Service) RouteList(ctx context.Context, server string) ([]RouteView, error) {
-	server = normalizeServer(server)
+	server, err := normalizeServer(server)
+	if err != nil {
+		return nil, err
+	}
 	cfg, err := s.client.ConfigAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 	srv := getServer(cfg, server)
 	if srv == nil {
-		return []RouteView{}, nil
+		return nil, ErrServerNotFound
 	}
 	out := make([]RouteView, len(srv.Routes))
 	for i, r := range srv.Routes {
@@ -35,14 +40,20 @@ func (s *Service) RouteList(ctx context.Context, server string) ([]RouteView, er
 
 // RouteInspect 获取单条路由
 func (s *Service) RouteInspect(ctx context.Context, server string, index int) (*RouteView, error) {
-	server = normalizeServer(server)
+	server, err := normalizeServer(server)
+	if err != nil {
+		return nil, err
+	}
 	cfg, err := s.client.ConfigAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 	srv := getServer(cfg, server)
-	if srv == nil || index < 0 || index >= len(srv.Routes) {
-		return nil, fmt.Errorf("路由不存在")
+	if srv == nil {
+		return nil, ErrServerNotFound
+	}
+	if index < 0 || index >= len(srv.Routes) {
+		return nil, ErrRouteNotFound
 	}
 	v := &RouteView{Index: index, Route: srv.Routes[index]}
 	return v, nil
@@ -50,47 +61,62 @@ func (s *Service) RouteInspect(ctx context.Context, server string, index int) (*
 
 // RouteCreate 追加一条路由，返回新下标
 func (s *Service) RouteCreate(ctx context.Context, server string, req pkgCaddy.Route) (int, error) {
-	server = normalizeServer(server)
-	cfg, err := s.client.ConfigAll(ctx)
+	server, err := normalizeServer(server)
 	if err != nil {
 		return -1, err
 	}
-	srv := ensureServer(cfg, server)
-	srv.Routes = append(srv.Routes, req)
-	if err := s.client.ConfigLoad(ctx, cfg); err != nil {
+	index := -1
+	err = s.client.ConfigMutate(ctx, func(cfg *pkgCaddy.Config) error {
+		srv := getServer(cfg, server)
+		if srv == nil {
+			return ErrServerNotFound
+		}
+		srv.Routes = append(srv.Routes, req)
+		index = len(srv.Routes) - 1
+		return nil
+	})
+	if err != nil {
 		return -1, err
 	}
-	return len(srv.Routes) - 1, nil
+	return index, nil
 }
 
 // RouteUpdate 更新指定下标的路由
 func (s *Service) RouteUpdate(ctx context.Context, server string, index int, req pkgCaddy.Route) error {
-	server = normalizeServer(server)
-	cfg, err := s.client.ConfigAll(ctx)
+	server, err := normalizeServer(server)
 	if err != nil {
 		return err
 	}
-	srv := getServer(cfg, server)
-	if srv == nil || index < 0 || index >= len(srv.Routes) {
-		return fmt.Errorf("路由不存在")
-	}
-	srv.Routes[index] = req
-	return s.client.ConfigLoad(ctx, cfg)
+	return s.client.ConfigMutate(ctx, func(cfg *pkgCaddy.Config) error {
+		srv := getServer(cfg, server)
+		if srv == nil {
+			return ErrServerNotFound
+		}
+		if index < 0 || index >= len(srv.Routes) {
+			return ErrRouteNotFound
+		}
+		srv.Routes[index] = req
+		return nil
+	})
 }
 
 // RouteDelete 删除指定下标的路由
 func (s *Service) RouteDelete(ctx context.Context, server string, index int) error {
-	server = normalizeServer(server)
-	cfg, err := s.client.ConfigAll(ctx)
+	server, err := normalizeServer(server)
 	if err != nil {
 		return err
 	}
-	srv := getServer(cfg, server)
-	if srv == nil || index < 0 || index >= len(srv.Routes) {
-		return fmt.Errorf("路由不存在")
-	}
-	srv.Routes = append(srv.Routes[:index], srv.Routes[index+1:]...)
-	return s.client.ConfigLoad(ctx, cfg)
+	return s.client.ConfigMutate(ctx, func(cfg *pkgCaddy.Config) error {
+		srv := getServer(cfg, server)
+		if srv == nil {
+			return ErrServerNotFound
+		}
+		if index < 0 || index >= len(srv.Routes) {
+			return ErrRouteNotFound
+		}
+		srv.Routes = append(srv.Routes[:index], srv.Routes[index+1:]...)
+		return nil
+	})
 }
 
 // ─── 全局选项 ───
@@ -189,7 +215,7 @@ func (s *Service) Global(ctx context.Context) (*GlobalForm, error) {
 
 	// HTTP app 全局参数
 	if cfg.Apps != nil && cfg.Apps.HTTP != nil {
-		form.GracePeriod = cfg.Apps.HTTP.GracePeriod
+		form.GracePeriod = cfg.Apps.HTTP.GracePeriod.String()
 	}
 
 	return form, nil
@@ -197,104 +223,115 @@ func (s *Service) Global(ctx context.Context) (*GlobalForm, error) {
 
 // GlobalUpdate 更新全局选项
 func (s *Service) GlobalUpdate(ctx context.Context, req GlobalForm) error {
-	cfg, err := s.client.ConfigAll(ctx)
-	if err != nil {
-		return err
-	}
+	return s.client.ConfigMutate(ctx, func(cfg *pkgCaddy.Config) error {
+		// srv0 是全局表单的明确目标；缺失时不隐式创建带 :80 的服务。
+		srv := getServer(cfg, DefaultServerName)
+		if srv == nil {
+			return ErrServerNotFound
+		}
 
-	// 日志
-	if req.LogLevel != "" || req.LogFormat != "" {
-		if cfg.Logging == nil {
-			cfg.Logging = &pkgCaddy.LoggingConfig{}
+		// 日志：只修改表单管理的字段，保留 writer、sampling、include 等配置。
+		var log *pkgCaddy.Log
+		if cfg.Logging != nil && cfg.Logging.Logs != nil {
+			log = cfg.Logging.Logs["default"]
 		}
-		if cfg.Logging.Logs == nil {
-			cfg.Logging.Logs = map[string]*pkgCaddy.Log{}
-		}
-		log := &pkgCaddy.Log{}
-		if req.LogLevel != "" {
+		if log != nil || req.LogLevel != "" || req.LogFormat != "" {
+			if cfg.Logging == nil {
+				cfg.Logging = &pkgCaddy.LoggingConfig{}
+			}
+			if cfg.Logging.Logs == nil {
+				cfg.Logging.Logs = map[string]*pkgCaddy.Log{}
+			}
+			if log == nil {
+				log = &pkgCaddy.Log{}
+				cfg.Logging.Logs["default"] = log
+			}
 			log.Level = req.LogLevel
+			if log.Encoder == nil && req.LogFormat != "" {
+				log.Encoder = map[string]any{}
+			}
+			if log.Encoder != nil {
+				if req.LogFormat == "" {
+					delete(log.Encoder, "format")
+				} else {
+					log.Encoder["format"] = req.LogFormat
+				}
+			}
 		}
-		if req.LogFormat != "" {
-			log.Encoder = map[string]any{"format": req.LogFormat}
+
+		issuer := buildIssuer(req)
+		var auto *pkgCaddy.TLSAutomation
+		if cfg.Apps != nil && cfg.Apps.TLS != nil {
+			auto = cfg.Apps.TLS.Automation
 		}
-		cfg.Logging.Logs["default"] = log
-	} else if cfg.Logging != nil {
-		delete(cfg.Logging.Logs, "default")
-	}
+		if auto != nil || issuer != nil || req.OnDemandTLS {
+			if cfg.Apps.TLS == nil {
+				cfg.Apps.TLS = &pkgCaddy.TLSApp{}
+			}
+			if auto == nil {
+				auto = &pkgCaddy.TLSAutomation{}
+				cfg.Apps.TLS.Automation = auto
+			}
 
-	// 配置持久化与存储后端由 caddy.json 默认配置固定，此处不修改
+			// permission 本身不会启用 on-demand；关闭策略时保留其未暴露参数。
+			if req.OnDemandTLS {
+				if auto.OnDemand == nil {
+					auto.OnDemand = map[string]any{}
+				}
+				permission, _ := auto.OnDemand["permission"].(map[string]any)
+				if permission == nil {
+					permission = map[string]any{}
+				}
+				permission["module"] = "http"
+				if req.OnDemandAsk == "" {
+					delete(permission, "endpoint")
+				} else {
+					permission["endpoint"] = req.OnDemandAsk
+				}
+				auto.OnDemand["permission"] = permission
+			}
 
-	// TLS 自动化
-	if cfg.Apps == nil {
-		cfg.Apps = &pkgCaddy.AppsConfig{}
-	}
-	if cfg.Apps.TLS == nil {
-		cfg.Apps.TLS = &pkgCaddy.TLSApp{}
-	}
-	if cfg.Apps.TLS.Automation == nil {
-		cfg.Apps.TLS.Automation = &pkgCaddy.TLSAutomation{}
-	}
-	auto := cfg.Apps.TLS.Automation
-
-	// on_demand：需同时设置全局 permission 和默认策略的 on_demand: true
-	if req.OnDemandTLS {
-		perm := map[string]any{"module": "http"}
-		if req.OnDemandAsk != "" {
-			perm["endpoint"] = req.OnDemandAsk
+			globalPolicyIdx := -1
+			for i, policy := range auto.Policies {
+				if len(policy.Subjects) == 0 {
+					globalPolicyIdx = i
+					break
+				}
+			}
+			if globalPolicyIdx >= 0 {
+				policy := &auto.Policies[globalPolicyIdx]
+				policy.OnDemand = req.OnDemandTLS
+				if issuer == nil {
+					policy.Issuers = nil
+				} else {
+					policy.Issuers = []map[string]any{issuer}
+				}
+			} else if issuer != nil || req.OnDemandTLS {
+				policy := pkgCaddy.TLSPolicy{OnDemand: req.OnDemandTLS}
+				if issuer != nil {
+					policy.Issuers = []map[string]any{issuer}
+				}
+				auto.Policies = append([]pkgCaddy.TLSPolicy{policy}, auto.Policies...)
+			}
 		}
-		auto.OnDemand = map[string]any{"permission": perm}
-	} else {
-		auto.OnDemand = nil
-	}
 
-	// 全局默认策略（无 subjects），重新构建 issuers 和 on_demand
-	globalPolicyIdx := -1
-	for i, p := range auto.Policies {
-		if len(p.Subjects) == 0 {
-			globalPolicyIdx = i
-			break
+		if srv.AutomaticHTTPS == nil && (req.AutoHTTPSDisable || req.AutoHTTPSDisableRedirects) {
+			srv.AutomaticHTTPS = &pkgCaddy.AutomaticHTTPS{}
 		}
-	}
-	issuer := buildIssuer(req)
-	if issuer != nil || req.OnDemandTLS {
-		policy := pkgCaddy.TLSPolicy{
-			Issuers:  []map[string]any{},
-			OnDemand: req.OnDemandTLS,
+		// automatic_https 是全局表单的完整可编辑字段，清除旧的显式
+		// {} 存在性标记，使关闭所有开关时可恢复为未配置状态。
+		delete(srv.Extras, "automatic_https")
+		if srv.AutomaticHTTPS != nil {
+			srv.AutomaticHTTPS.Disable = req.AutoHTTPSDisable
+			srv.AutomaticHTTPS.DisableRedirects = req.AutoHTTPSDisableRedirects
+			if !req.AutoHTTPSDisable && !req.AutoHTTPSDisableRedirects && !hasUnmanagedAutomaticHTTPS(srv.AutomaticHTTPS) {
+				srv.AutomaticHTTPS = nil
+			}
 		}
-		if issuer != nil {
-			policy.Issuers = []map[string]any{issuer}
-		} else {
-			policy.Issuers = nil
-		}
-		if globalPolicyIdx >= 0 {
-			auto.Policies[globalPolicyIdx] = policy
-		} else {
-			auto.Policies = append([]pkgCaddy.TLSPolicy{policy}, auto.Policies...)
-		}
-	} else if globalPolicyIdx >= 0 {
-		auto.Policies = append(auto.Policies[:globalPolicyIdx], auto.Policies[globalPolicyIdx+1:]...)
-	}
 
-	// 自动化为空时清理
-	if len(auto.Policies) == 0 && auto.OnDemand == nil {
-		cfg.Apps.TLS.Automation = nil
-	}
-
-	// automatic_https（server 级，作用于默认 server srv0）
-	srv := ensureServer(cfg, DefaultServerName)
-	if req.AutoHTTPSDisable || req.AutoHTTPSDisableRedirects {
-		srv.AutomaticHTTPS = &pkgCaddy.AutomaticHTTPS{
-			Disable:          req.AutoHTTPSDisable,
-			DisableRedirects: req.AutoHTTPSDisableRedirects,
-		}
-	} else {
-		srv.AutomaticHTTPS = nil
-	}
-
-	// HTTP app 优雅关闭
-	cfg.Apps.HTTP.GracePeriod = req.GracePeriod
-
-	return s.client.ConfigLoad(ctx, cfg)
+		cfg.Apps.HTTP.GracePeriod = pkgCaddy.Duration(req.GracePeriod)
+		return nil
+	})
 }
 
 // buildIssuer 根据表单构造 issuer map；无有效配置时返回 nil

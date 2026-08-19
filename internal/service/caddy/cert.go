@@ -101,31 +101,27 @@ func (s *Service) CertCreate(ctx context.Context, req CertForm) error {
 	if err := validateCertForm(req, true); err != nil {
 		return err
 	}
-	cfg, err := s.client.ConfigAll(ctx)
-	if err != nil {
-		return err
-	}
-	tls := ensureTLS(cfg)
-
-	switch req.Source {
-	case CertSourceFile:
-		ensureCerts(tls).LoadFiles = append(tls.Certificates.LoadFiles, pkgCaddy.TLSLoadFile{
-			Certificate: req.Certificate,
-			Key:         req.KeyContent,
-			Tags:        req.Tags,
-			Format:      req.Format,
-		})
-	case CertSourcePEM:
-		ensureCerts(tls).LoadPEM = append(tls.Certificates.LoadPEM, pkgCaddy.TLSLoadPEM{
-			Certificate: req.Certificate,
-			Key:         req.KeyContent,
-			Tags:        req.Tags,
-		})
-	case CertSourceAutomate:
-		appendAutomateSubject(tls, req.Subject)
-	}
-
-	return s.client.ConfigLoad(ctx, cfg)
+	return s.client.ConfigMutate(ctx, func(cfg *pkgCaddy.Config) error {
+		tls := ensureTLS(cfg)
+		switch req.Source {
+		case CertSourceFile:
+			ensureCerts(tls).LoadFiles = append(tls.Certificates.LoadFiles, pkgCaddy.TLSLoadFile{
+				Certificate: req.Certificate,
+				Key:         req.KeyContent,
+				Tags:        req.Tags,
+				Format:      req.Format,
+			})
+		case CertSourcePEM:
+			ensureCerts(tls).LoadPEM = append(tls.Certificates.LoadPEM, pkgCaddy.TLSLoadPEM{
+				Certificate: req.Certificate,
+				Key:         req.KeyContent,
+				Tags:        req.Tags,
+			})
+		case CertSourceAutomate:
+			appendAutomateSubject(tls, req.Subject)
+		}
+		return nil
+	})
 }
 
 // CertUpdate 更新证书（按 key 定位）
@@ -142,41 +138,33 @@ func (s *Service) CertUpdate(ctx context.Context, key string, req CertForm) erro
 		return err
 	}
 
-	cfg, err := s.client.ConfigAll(ctx)
-	if err != nil {
-		return err
-	}
-	tls := ensureTLS(cfg)
-
-	switch source {
-	case CertSourceFile:
-		if tls.Certificates == nil || index < 0 || index >= len(tls.Certificates.LoadFiles) {
-			return fmt.Errorf("证书不存在")
+	return s.client.ConfigMutate(ctx, func(cfg *pkgCaddy.Config) error {
+		tls := ensureTLS(cfg)
+		switch source {
+		case CertSourceFile:
+			if tls.Certificates == nil || index < 0 || index >= len(tls.Certificates.LoadFiles) {
+				return fmt.Errorf("证书不存在")
+			}
+			item := &tls.Certificates.LoadFiles[index]
+			item.Certificate = req.Certificate
+			item.Key = pickSecretStr(req.KeyContent, item.Key)
+			item.Tags = req.Tags
+			item.Format = req.Format
+		case CertSourcePEM:
+			if tls.Certificates == nil || index < 0 || index >= len(tls.Certificates.LoadPEM) {
+				return fmt.Errorf("证书不存在")
+			}
+			item := &tls.Certificates.LoadPEM[index]
+			item.Certificate = req.Certificate
+			item.Key = pickSecretStr(req.KeyContent, item.Key)
+			item.Tags = req.Tags
+		case CertSourceAutomate:
+			if !replaceAutomateSubject(tls, index, req.Subject) {
+				return fmt.Errorf("证书不存在")
+			}
 		}
-		tls.Certificates.LoadFiles[index] = pkgCaddy.TLSLoadFile{
-			Certificate: req.Certificate,
-			// 私钥留空则保留原值（客户端编辑时可不回填路径）
-			Key:    pickSecretStr(req.KeyContent, tls.Certificates.LoadFiles[index].Key),
-			Tags:   req.Tags,
-			Format: req.Format,
-		}
-	case CertSourcePEM:
-		if tls.Certificates == nil || index < 0 || index >= len(tls.Certificates.LoadPEM) {
-			return fmt.Errorf("证书不存在")
-		}
-		tls.Certificates.LoadPEM[index] = pkgCaddy.TLSLoadPEM{
-			Certificate: req.Certificate,
-			// 私钥留空则保留原值
-			Key:  pickSecretStr(req.KeyContent, tls.Certificates.LoadPEM[index].Key),
-			Tags: req.Tags,
-		}
-	case CertSourceAutomate:
-		if !replaceAutomateSubject(tls, index, req.Subject) {
-			return fmt.Errorf("证书不存在")
-		}
-	}
-
-	return s.client.ConfigLoad(ctx, cfg)
+		return nil
+	})
 }
 
 // CertDelete 删除证书
@@ -185,30 +173,26 @@ func (s *Service) CertDelete(ctx context.Context, key string) error {
 	if err != nil {
 		return err
 	}
-	cfg, err := s.client.ConfigAll(ctx)
-	if err != nil {
-		return err
-	}
-	tls := ensureTLS(cfg)
-
-	switch source {
-	case CertSourceFile:
-		if tls.Certificates == nil || index < 0 || index >= len(tls.Certificates.LoadFiles) {
-			return fmt.Errorf("证书不存在")
+	return s.client.ConfigMutate(ctx, func(cfg *pkgCaddy.Config) error {
+		tls := ensureTLS(cfg)
+		switch source {
+		case CertSourceFile:
+			if tls.Certificates == nil || index < 0 || index >= len(tls.Certificates.LoadFiles) {
+				return fmt.Errorf("证书不存在")
+			}
+			tls.Certificates.LoadFiles = append(tls.Certificates.LoadFiles[:index], tls.Certificates.LoadFiles[index+1:]...)
+		case CertSourcePEM:
+			if tls.Certificates == nil || index < 0 || index >= len(tls.Certificates.LoadPEM) {
+				return fmt.Errorf("证书不存在")
+			}
+			tls.Certificates.LoadPEM = append(tls.Certificates.LoadPEM[:index], tls.Certificates.LoadPEM[index+1:]...)
+		case CertSourceAutomate:
+			if !removeAutomateSubject(tls, index) {
+				return fmt.Errorf("证书不存在")
+			}
 		}
-		tls.Certificates.LoadFiles = append(tls.Certificates.LoadFiles[:index], tls.Certificates.LoadFiles[index+1:]...)
-	case CertSourcePEM:
-		if tls.Certificates == nil || index < 0 || index >= len(tls.Certificates.LoadPEM) {
-			return fmt.Errorf("证书不存在")
-		}
-		tls.Certificates.LoadPEM = append(tls.Certificates.LoadPEM[:index], tls.Certificates.LoadPEM[index+1:]...)
-	case CertSourceAutomate:
-		if !removeAutomateSubject(tls, index) {
-			return fmt.Errorf("证书不存在")
-		}
-	}
-
-	return s.client.ConfigLoad(ctx, cfg)
+		return nil
+	})
 }
 
 // ─── 辅助：证书 ───
