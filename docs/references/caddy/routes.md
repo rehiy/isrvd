@@ -1,7 +1,7 @@
 # Caddy 路由 API
 
 > Caddy 路由模型与 APISIX 不同：路由是 `apps.http.servers.<name>.routes` 数组中的元素，
-> 用数组下标（index）作为主键。默认 server 名称为 `srv0`，可通过 query 参数 `?server=<name>` 切换。
+> 用数组下标（index）作为主键。默认服务为 `srv0`，可通过 query 参数 `?server=<NAME>` 切换；名称来自服务列表接口。
 >
 > **接口直接使用 Caddy 原生 JSON 结构**，前端负责组装，后端透传给 Caddy，无中间转换层。
 
@@ -9,7 +9,7 @@
 
 ```bash
 isrvd_get "/caddy/routes"                      # 默认 server=srv0
-isrvd_get "/caddy/routes?server=srv0"          # 显式指定 server
+isrvd_get "/caddy/routes?server=srv0"          # 显式指定服务名称
 ```
 
 | 字段 | 类型 | 说明 |

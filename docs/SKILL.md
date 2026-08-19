@@ -72,6 +72,7 @@ isrvd_post "/docker/container" '{"image":"...","name":"..."}'
 | APISIX | [references/apisix/consumers.md](references/apisix/consumers.md) | Consumer、访问授权 |
 | APISIX | [references/apisix/ssl.md](references/apisix/ssl.md) | SSL 证书、PluginConfig |
 | Caddy | [references/caddy/routes.md](references/caddy/routes.md) | 路由 CRUD（反向代理/静态文件） |
+| Caddy | [references/caddy/servers.md](references/caddy/servers.md) | 服务（srv0 等）增删改查 |
 | Caddy | [references/caddy/certs.md](references/caddy/certs.md) | SSL 证书管理 |
 | Caddy | [references/caddy/config.md](references/caddy/config.md) | 全局配置、原始 JSON 配置 |
 | 系统 | [references/system/config.md](references/system/config.md) | 系统配置、审计日志 |
@@ -96,7 +97,8 @@ isrvd_post "/docker/container" '{"image":"...","name":"..."}'
 │   ├── 集群服务(Stack)  → references/compose.md §2
 │   ├── 集群服务(单服务) → references/swarm/services.md
 │   ├── 配置 APISIX 路由 → references/apisix/routes.md
-│   └── 配置 Caddy 路由  → references/caddy/routes.md
+│   ├── 配置 Caddy 路由  → references/caddy/routes.md
+│   └── 创建 Caddy 服务  → references/caddy/servers.md
 │
 ├── 更新/变更
 │   ├── 更新/接管 Compose 项目 → references/compose.md (project 标签聚合、redeploy + serviceName/image)
@@ -105,6 +107,7 @@ isrvd_post "/docker/container" '{"image":"...","name":"..."}'
 │   ├── 重新部署         → references/swarm/services.md (action: force-update)
 │   ├── 修改路由/上游    → references/apisix/routes.md 或 references/apisix/upstreams.md
 │   ├── 修改 Caddy 路由  → references/caddy/routes.md（更新触发 /load 整体替换）
+│   ├── 修改 Caddy 服务  → references/caddy/servers.md
 │   ├── 修改 Caddy 全局选项 → references/caddy/config.md (PUT /caddy/global)
 │   ├── 管理 Caddy Basic Auth → references/caddy/basic-auth.md
 │   └── 修改系统配置     → references/system/config.md
@@ -113,7 +116,7 @@ isrvd_post "/docker/container" '{"image":"...","name":"..."}'
 │   ├── 容器/镜像/网络/卷 → references/docker/ 下对应文件
 │   ├── 集群/服务/任务    → references/swarm/ 下对应文件
 │   ├── 路由/上游/插件    → references/apisix/ 下对应文件
-│   ├── Caddy 路由/配置   → references/caddy/ 下对应文件
+│   ├── Caddy 服务/路由/配置 → references/caddy/ 下对应文件
 │   ├── 系统状态          → references/overview.md
 │   ├── 监控历史数据      → references/overview.md (since=3600|21600|43200|86400)
 │   ├── 日志             → references/docker/containers.md 或 references/swarm/services.md
@@ -123,7 +126,8 @@ isrvd_post "/docker/container" '{"image":"...","name":"..."}'
 │   ├── 容器/镜像/网络/卷 → references/docker/ 下对应文件（action=remove）
 │   ├── Swarm 服务        → references/swarm/services.md（action=remove）
 │   ├── 路由/消费者       → references/apisix/routes.md 或 references/apisix/consumers.md
-│   └── Caddy 路由        → references/caddy/routes.md (DELETE /caddy/route/:index)
+│   ├── Caddy 路由        → references/caddy/routes.md (DELETE /caddy/route/:index)
+│   └── Caddy 服务        → references/caddy/servers.md (DELETE /caddy/server/:name)
 │
 └── 管理
     ├── 镜像仓库         → references/docker/registries.md

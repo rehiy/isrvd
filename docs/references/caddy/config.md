@@ -52,7 +52,7 @@ isrvd_get "/caddy/config"
 返回值是 Caddy 完整 JSON 配置（结构与 `GET /config/` 返回一致），可作为整体替换的输入。
 
 > **`caddy` 镜像说明**：默认配置模板位于 `build/docker-caddy/caddy.json`，首次启动会复制并持久化到 `/data/conf/caddy.json`；Caddy 运行数据（自动签发证书、autosave 等）持久化在 `/data/caddy/`。
-> 默认模板只监听 `:80`，并设置 `automatic_https.disable_redirects=true`，避免没有证书时自动跳转 HTTPS 导致首次访问失败。
+> 默认模板监听 `:80` 与 `:443`，并设置 `automatic_https.disable=true`、`disable_redirects=true`，避免首次启动时自动签发证书或跳转 HTTPS。
 > 顶层字段未建模到强类型时（如 `apps.layer4`、自定义 app）会通过 `Extras` 透传，不会丢失。
 
 ## 整体替换配置
@@ -103,8 +103,8 @@ isrvd_put "/caddy/global" '{"logLevel":"WARN"}'
 # 1. 备份当前配置
 CFG=$(isrvd_get "/caddy/config")
 
-# 2. 修改后提交（需要 HTTPS 时再显式加入 :443）
-echo "$CFG" | jq '.apps.http.servers.srv0.listen = [":80", ":443"]' \
+# 2. 修改后提交（启用自动 HTTPS 与重定向）
+echo "$CFG" | jq '.apps.http.servers.srv0.automatic_https.disable = false' \
   | jq '.apps.http.servers.srv0.automatic_https.disable_redirects = false' \
   | jq '{config: .}' \
   | xargs -0 -I{} isrvd_post "/caddy/config" '{}'

@@ -12,6 +12,7 @@
 
 ```bash
 isrvd_get "/caddy/basic-auth"
+isrvd_get "/caddy/basic-auth?server=internal" # 指定非默认服务名称
 ```
 
 响应示例：
@@ -52,6 +53,7 @@ isrvd_post "/caddy/basic-auth/0/users" '{
   "realm": "Protected Area",
   "forwardHeader": "X-Remote-User"
 }'
+# 非默认服务：在路径后追加服务列表返回的 ?server=<NAME>
 ```
 
 | 字段 | 必填 | 说明 |
@@ -67,6 +69,7 @@ isrvd_post "/caddy/basic-auth/0/users" '{
 
 ```bash
 isrvd_delete "/caddy/basic-auth/0/users/alice"
+# 非默认服务：/caddy/basic-auth/0/users/alice?server=<NAME>
 ```
 
 - 若删除后账号列表为空，自动移除 `authentication` handler 及透传 `headers` handler。
@@ -80,6 +83,7 @@ isrvd_put "/caddy/basic-auth/0/config" '{
   "realm": "New Realm",
   "forwardHeader": "X-Remote-User"
 }'
+# 非默认服务：在路径后追加 ?server=<NAME>
 ```
 
 | 字段 | 必填 | 说明 |

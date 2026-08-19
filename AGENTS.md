@@ -226,7 +226,7 @@ docs/
 - `/overview` 概览；本机能力为 `/local/monitor`、`/local/explorer`、`/local/shell`
 - SSH：`/ssh/hosts`、`/ssh/credentials`、`/ssh/host/:id`
 - APISIX：`/apisix/routes`、`/apisix/upstreams`、`/apisix/plugin-configs`、`/apisix/ssls`、`/apisix/consumers`、`/apisix/whitelist`
-- Caddy：`/caddy/routes`、`/caddy/certs`、`/caddy/global`、`/caddy/basic-auth`、`/caddy/raw`
+- Caddy：`/caddy/servers`、`/caddy/routes`、`/caddy/certs`、`/caddy/global`、`/caddy/basic-auth`、`/caddy/raw`
 - Docker：`/docker/containers`、`/docker/images`、`/docker/networks`、`/docker/volumes`、`/docker/registries` 及对应详情页
 - Swarm：`/swarm/nodes`、`/swarm/services`、`/swarm/tasks` 及对应详情/日志页
 - 系统模块：`/system/config`、`/system/audit/logs`；用户管理：`/account/members`；账户设置：`/account/password`、`/account/passkeys`、`/account/apikey`
