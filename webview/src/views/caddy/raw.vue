@@ -71,7 +71,7 @@ export default toNative(CaddyRaw)
       <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-indigo-500"><i class="fas fa-code text-white"></i></div>
-          <div class="min-w-0"><h1 class="title-text">Caddy 原始配置</h1><p class="text-xs text-slate-500 truncate">直接查看和编辑 Caddy 的 JSON 运行配置</p></div>
+          <div class="min-w-0"><h1 class="title-text">原始配置</h1><p class="text-xs text-slate-500 truncate">直接查看和编辑 Caddy 的 JSON 运行配置</p></div>
         </div>
         <div class="action-group">
           <button class="btn btn-secondary" @click="loadConfig()"><i class="fas fa-rotate"></i>刷新</button>
@@ -87,7 +87,7 @@ export default toNative(CaddyRaw)
         <div class="title-group">
           <div class="page-icon bg-indigo-500"><i class="fas fa-code text-white"></i></div>
           <div class="min-w-0">
-            <h1 class="title-text">Caddy 原始配置</h1>
+            <h1 class="title-text">原始配置</h1>
             <p class="text-xs text-slate-500 truncate">查看和编辑 JSON 配置</p>
           </div>
         </div>

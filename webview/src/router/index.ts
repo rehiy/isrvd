@@ -94,6 +94,11 @@ const routes: RouteRecordRaw[] = [
     redirect: '/caddy/routes'
   },
   {
+    path: '/caddy/servers',
+    name: 'caddy-servers',
+    component: () => import('@/views/caddy/servers.vue')
+  },
+  {
     path: '/caddy/routes',
     name: 'caddy-routes',
     component: () => import('@/views/caddy/routes.vue')

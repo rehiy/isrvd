@@ -89,7 +89,7 @@ export interface CaddyRoute {
     match?: CaddyMatchSet[]
     handle?: CaddyHandler[]
     terminal?: boolean
-    '@id'?: string
+    '@id'?: string | number
 }
 
 // CaddyRouteUpsert 创建/更新请求体（直接提交 Caddy 原生 JSON，不含 index）
@@ -98,7 +98,7 @@ export interface CaddyRouteUpsert {
     match?: CaddyMatchSet[]
     handle?: CaddyHandler[]
     terminal?: boolean
-    '@id'?: string
+    '@id'?: string | number
 }
 
 // 概览
@@ -110,6 +110,34 @@ export interface CaddyInfo {
     hasTls: boolean
     available: boolean
 }
+
+export interface CaddyAutomaticHTTPS {
+    disable?: boolean
+    disable_redirects?: boolean
+}
+
+export interface CaddyServerUpdate {
+    listen: string[]
+    protocols?: string[]
+    automatic_https?: CaddyAutomaticHTTPS
+    strict_sni_host?: boolean
+    idle_timeout?: string
+    read_timeout?: string
+    write_timeout?: string
+    max_header_bytes?: number
+}
+
+export interface CaddyServerInfo extends CaddyServerUpdate {
+    id: string
+    name: string
+    routeCount: number
+}
+
+export interface CaddyServerCreate extends CaddyServerUpdate {
+    name: string
+}
+
+export type CaddyServerDetail = CaddyServerInfo
 
 // handler kind 卡片
 export interface CaddyHandlerKindCard {

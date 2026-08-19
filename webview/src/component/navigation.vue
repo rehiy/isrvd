@@ -352,6 +352,9 @@ export default toNative(NavigationBar)
             <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': caddyExpanded }"></i>
           </button>
           <div v-show="caddyExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+            <router-link v-if="portal.hasPerm('GET /api/caddy/servers')" to="/caddy/servers" class="nav-link" :class="{ 'nav-link-active': isActive('/caddy/servers') }">
+              <i class="fas fa-server"></i><span>服务</span>
+            </router-link>
             <router-link
               v-if="portal.hasPerm('GET /api/caddy/routes')"
               to="/caddy/routes"

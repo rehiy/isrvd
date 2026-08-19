@@ -1,10 +1,10 @@
 <script lang="ts">
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { CaddyBasicAuthRoute } from '@/service/types'
+import type { CaddyBasicAuthRoute, CaddyServerInfo } from '@/service/types'
 
 import PageSearch from '@/component/page-search.vue'
 
@@ -19,8 +19,23 @@ class CaddyBasicAuth extends Vue {
     @Ref readonly editModalRef!: InstanceType<typeof BasicAuthEditModal>
 
     routes: CaddyBasicAuthRoute[] = []
+    servers: CaddyServerInfo[] = []
+    selectedServer = 'srv0'
     loading = false
     searchText = ''
+    loadRequestID = 0
+
+    get canListServers() {
+        return this.portal.hasPerm('GET /api/caddy/servers')
+    }
+
+    get showServerSelect() {
+        return this.canListServers && this.servers.length > 0
+    }
+
+    get selectedServerName() {
+        return this.servers.find(server => server.id === this.selectedServer)?.name || 'srv0'
+    }
 
     get filteredRoutes() {
         const keyword = this.searchText.trim().toLowerCase()
@@ -32,14 +47,58 @@ class CaddyBasicAuth extends Vue {
     }
 
     async load() {
+        const requestID = ++this.loadRequestID
+        const selection = this.selectedServer
+        const server = this.selectedServerName
         this.loading = true
+        this.routes = []
         try {
-            this.routes = (await api.caddyBasicAuthList()).payload || []
+            const routes = (await api.caddyBasicAuthList(server)).payload || []
+            if (requestID !== this.loadRequestID || selection !== this.selectedServer) return
+            this.routes = routes
         } catch {
-            this.portal.showNotification('error', '加载失败')
+            if (requestID === this.loadRequestID && selection === this.selectedServer) {
+                this.portal.showNotification('error', '加载失败')
+            }
         } finally {
-            this.loading = false
+            if (requestID === this.loadRequestID) this.loading = false
         }
+    }
+
+    async loadServers() {
+        if (!this.canListServers) {
+            await this.load()
+            return
+        }
+
+        let servers: CaddyServerInfo[]
+        try {
+            servers = (await api.caddyServerList()).payload || []
+        } catch {
+            this.portal.showNotification('error', '服务加载失败')
+            await this.load()
+            return
+        }
+
+        this.servers = servers
+        const defaultServer = this.servers.find(server => server.name === 'srv0')
+        const nextServer = this.servers.some(server => this.serverID(server) === this.selectedServer)
+            ? this.selectedServer
+            : (defaultServer ? this.serverID(defaultServer) : (this.servers[0] ? this.serverID(this.servers[0]) : 'srv0'))
+        if (nextServer === this.selectedServer) {
+            await this.load()
+        } else {
+            this.selectedServer = nextServer
+        }
+    }
+
+    @Watch('selectedServer')
+    onSelectedServerChange() {
+        this.load()
+    }
+
+    serverID(server: CaddyServerInfo) {
+        return server.id
     }
 
     getRouteName(r: CaddyBasicAuthRoute) {
@@ -70,7 +129,7 @@ class CaddyBasicAuth extends Vue {
     }
 
     mounted() {
-        this.load()
+        this.loadServers()
     }
 }
 
@@ -93,6 +152,9 @@ export default toNative(CaddyBasicAuth)
           </div>
         </div>
         <div class="action-group">
+          <select v-if="showServerSelect" v-model="selectedServer" class="select-sm max-w-40" title="服务" aria-label="服务">
+            <option v-for="server in servers" :key="serverID(server)" :value="serverID(server)">{{ server.name }}</option>
+          </select>
           <PageSearch v-model="searchText" search-key="caddy-basic-auth" placeholder="搜索路由或用户名..." focus-color="cyan" type-to-search />
           <button class="btn btn-secondary" @click="load()">
             <i class="fas fa-rotate"></i>刷新
@@ -114,6 +176,9 @@ export default toNative(CaddyBasicAuth)
           </div>
         </div>
         <div class="action-group-sm">
+          <select v-if="showServerSelect" v-model="selectedServer" class="select-sm max-w-28" title="服务" aria-label="服务">
+            <option v-for="server in servers" :key="serverID(server)" :value="serverID(server)">{{ server.name }}</option>
+          </select>
           <button class="btn btn-secondary btn-square" title="刷新" @click="load()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
@@ -278,5 +343,5 @@ export default toNative(CaddyBasicAuth)
     </template>
   </div>
 
-  <BasicAuthEditModal ref="editModalRef" @success="load" />
+  <BasicAuthEditModal ref="editModalRef" :server="selectedServerName" @success="load" />
 </template>

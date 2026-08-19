@@ -53,6 +53,10 @@ import type {
     CaddyInfo,
     CaddyGlobal,
     CaddyRoute,
+    CaddyServerCreate,
+    CaddyServerDetail,
+    CaddyServerInfo,
+    CaddyServerUpdate,
     CaddyRouteUpsert,
     CaddyCert,
     CaddyBasicAuthRoute,
@@ -452,6 +456,26 @@ class ApiService {
         return http.post<void>('caddy/config', { config })
     }
 
+    caddyServerList() {
+        return http.get<CaddyServerInfo[]>('caddy/servers')
+    }
+
+    caddyServerInspect(id: string) {
+        return http.get<CaddyServerDetail>(`caddy/server/${encodeURIComponent(id)}`)
+    }
+
+    caddyServerCreate(data: CaddyServerCreate) {
+        return http.post<void>('caddy/server', data)
+    }
+
+    caddyServerUpdate(id: string, data: CaddyServerUpdate) {
+        return http.put<void>(`caddy/server/${encodeURIComponent(id)}`, data)
+    }
+
+    caddyServerDelete(id: string) {
+        return http.delete<void>(`caddy/server/${encodeURIComponent(id)}`)
+    }
+
     caddyRouteList(server?: string) {
         return http.get<CaddyRoute[]>('caddy/routes', { params: server ? { server } : {} })
     }
@@ -490,20 +514,20 @@ class ApiService {
 
     // ─── Caddy Basic Auth ───
 
-    caddyBasicAuthList() {
-        return http.get<CaddyBasicAuthRoute[]>('caddy/basic-auth')
+    caddyBasicAuthList(server?: string) {
+        return http.get<CaddyBasicAuthRoute[]>('caddy/basic-auth', { params: server ? { server } : {} })
     }
 
-    caddyBasicAuthUserCreate(routeIndex: number, data: CaddyBasicAuthUserCreate) {
-        return http.post<void>(`caddy/basic-auth/${routeIndex}/users`, data)
+    caddyBasicAuthUserCreate(routeIndex: number, data: CaddyBasicAuthUserCreate, server?: string) {
+        return http.post<void>(`caddy/basic-auth/${routeIndex}/users`, data, { params: server ? { server } : {} })
     }
 
-    caddyBasicAuthUserDelete(routeIndex: number, username: string) {
-        return http.delete<void>(`caddy/basic-auth/${routeIndex}/users/${encodeURIComponent(username)}`)
+    caddyBasicAuthUserDelete(routeIndex: number, username: string, server?: string) {
+        return http.delete<void>(`caddy/basic-auth/${routeIndex}/users/${encodeURIComponent(username)}`, { params: server ? { server } : {} })
     }
 
-    caddyBasicAuthConfigUpdate(routeIndex: number, data: CaddyBasicAuthConfigUpdate) {
-        return http.put<void>(`caddy/basic-auth/${routeIndex}/config`, data)
+    caddyBasicAuthConfigUpdate(routeIndex: number, data: CaddyBasicAuthConfigUpdate, server?: string) {
+        return http.put<void>(`caddy/basic-auth/${routeIndex}/config`, data, { params: server ? { server } : {} })
     }
 
     // ==================== Docker 服务相关 ====================

@@ -90,8 +90,8 @@ export default toNative(CaddyGlobalConfig)
             <i class="fas fa-sliders text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">Caddy 全局选项</h1>
-            <p class="text-xs text-slate-500 truncate">配置 TLS 自动化、日志级别与 HTTP 服务器参数</p>
+            <h1 class="title-text">全局选项</h1>
+            <p class="text-xs text-slate-500 truncate">配置 TLS 自动化、日志级别与服务参数</p>
           </div>
         </div>
         <div class="action-group">
@@ -112,8 +112,8 @@ export default toNative(CaddyGlobalConfig)
             <i class="fas fa-sliders text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">Caddy 全局选项</h1>
-            <p class="text-xs text-slate-500 truncate">TLS、日志与 HTTP 参数</p>
+            <h1 class="title-text">全局选项</h1>
+            <p class="text-xs text-slate-500 truncate">TLS、日志与服务参数</p>
           </div>
         </div>
         <div class="action-group-sm">

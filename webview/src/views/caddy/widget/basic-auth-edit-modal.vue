@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -30,9 +30,12 @@ const defaultForm = () => ({
 class BasicAuthEditModal extends Vue {
     portal = usePortal()
 
+    @Prop({ type: String, default: 'srv0' }) readonly server!: string
+
     open = false
     loading = false
     mode: Mode = 'setup'
+    targetServer = 'srv0'
     routes: CaddyRoute[] = []
     authRoutes: CaddyBasicAuthRoute[] = []
     form = defaultForm()
@@ -77,12 +80,13 @@ class BasicAuthEditModal extends Vue {
     }
 
     async showSetup() {
+        this.targetServer = this.server
         this.resetForm()
         this.mode = 'setup'
         this.open = true
         this.loading = true
         try {
-            const [authRes, routeRes] = await Promise.all([api.caddyBasicAuthList(), api.caddyRouteList()])
+            const [authRes, routeRes] = await Promise.all([api.caddyBasicAuthList(this.targetServer), api.caddyRouteList(this.targetServer)])
             this.authRoutes = authRes.payload || []
             this.routes = routeRes.payload || []
         } catch {
@@ -93,6 +97,7 @@ class BasicAuthEditModal extends Vue {
     }
 
     showEdit(route: CaddyBasicAuthRoute) {
+        this.targetServer = this.server
         this.resetForm()
         this.mode = 'edit'
         this.authRoutes = [route]
@@ -108,6 +113,7 @@ class BasicAuthEditModal extends Vue {
 
     // 为已配置认证的路由追加账号：沿用其 realm 与透传头，仅录入用户名/密码
     showAddUser(route: CaddyBasicAuthRoute) {
+        this.targetServer = this.server
         this.resetForm()
         this.mode = 'addUser'
         this.authRoutes = [route]
@@ -169,7 +175,7 @@ class BasicAuthEditModal extends Vue {
                 password,
                 realm: realm || undefined,
                 forwardHeader: this.forwardHeaderValue,
-            })
+            }, this.targetServer)
             this.portal.showNotification('success', '认证配置成功')
             this.open = false
             this.$emit('success')
@@ -192,7 +198,7 @@ class BasicAuthEditModal extends Vue {
                 password,
                 realm: realm || undefined,
                 forwardHeader: this.forwardHeaderValue,
-            })
+            }, this.targetServer)
             this.portal.showNotification('success', `账号 "${username.trim()}" 添加成功`)
             this.open = false
             this.$emit('success')
@@ -214,9 +220,9 @@ class BasicAuthEditModal extends Vue {
             await api.caddyBasicAuthConfigUpdate(routeIndex, {
                 realm,
                 forwardHeader: this.forwardHeaderValue,
-            })
+            }, this.targetServer)
             for (const name of removedUsers) {
-                await api.caddyBasicAuthUserDelete(routeIndex, name)
+                await api.caddyBasicAuthUserDelete(routeIndex, name, this.targetServer)
             }
             this.portal.showNotification('success', '配置更新成功')
             this.open = false

@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Component, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
@@ -77,10 +77,13 @@ const defaultFormData = () => ({
 class RouteEditModal extends Vue {
     portal = usePortal()
 
+    @Prop({ type: String, default: 'srv0' }) readonly server!: string
+
     isOpen = false
     modalLoading = false
     isEditMode = false
     editingIndex = -1
+    targetServer = 'srv0'
     containers: DockerContainerInfo[] = []
 
     get canLoadDockerContainers() {
@@ -335,6 +338,7 @@ class RouteEditModal extends Vue {
     }
 
     show(route: CaddyRoute | null) {
+        this.targetServer = this.server
         Object.assign(this.formData, defaultFormData())
         this.matchHeaderList = []
         this.enableMatchHeaders = false
@@ -536,10 +540,10 @@ class RouteEditModal extends Vue {
         this.modalLoading = true
         try {
             if (this.isEditMode) {
-                await api.caddyRouteUpdate(this.editingIndex, payload)
+                await api.caddyRouteUpdate(this.editingIndex, payload, this.targetServer)
                 this.portal.showNotification('success', '路由更新成功')
             } else {
-                await api.caddyRouteCreate(payload)
+                await api.caddyRouteCreate(payload, this.targetServer)
                 this.portal.showNotification('success', '路由创建成功')
             }
             this.isOpen = false

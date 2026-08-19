@@ -1,10 +1,10 @@
 <script lang="ts">
-import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
+import { Component, Ref, Vue, Watch, toNative } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { CaddyRoute, CaddyHandler } from '@/service/types'
+import type { CaddyHandler, CaddyRoute, CaddyServerInfo } from '@/service/types'
 
 import PageSearch from '@/component/page-search.vue'
 
@@ -30,9 +30,24 @@ class CaddyRoutes extends Vue {
     @Ref readonly editModalRef!: InstanceType<typeof RouteEditModal>
 
     routes: CaddyRoute[] = []
+    servers: CaddyServerInfo[] = []
+    selectedServer = 'srv0'
     loading = false
     searchText = ''
     collapsedHosts: string[] = []
+    loadRequestID = 0
+
+    get canListServers() {
+        return this.portal.hasPerm('GET /api/caddy/servers')
+    }
+
+    get showServerSelect() {
+        return this.canListServers && this.servers.length > 0
+    }
+
+    get selectedServerName() {
+        return this.servers.find(server => server.id === this.selectedServer)?.name || 'srv0'
+    }
 
     get filteredRoutes() {
         const keyword = this.searchText.trim().toLowerCase()
@@ -83,13 +98,60 @@ class CaddyRoutes extends Vue {
     }
 
     async loadRoutes() {
+        const requestID = ++this.loadRequestID
+        const selection = this.selectedServer
+        const server = this.selectedServerName
         this.loading = true
+        this.routes = []
+        this.collapsedHosts = []
         try {
-            this.routes = (await api.caddyRouteList()).payload || []
+            const routes = (await api.caddyRouteList(server)).payload || []
+            if (requestID !== this.loadRequestID || selection !== this.selectedServer) return
+            this.routes = routes
             this.collapsedHosts = []
+        } catch {
+            if (requestID === this.loadRequestID && selection === this.selectedServer) {
+                this.portal.showNotification('error', '路由加载失败')
+            }
         } finally {
-            this.loading = false
+            if (requestID === this.loadRequestID) this.loading = false
         }
+    }
+
+    async loadServers() {
+        if (!this.canListServers) {
+            await this.loadRoutes()
+            return
+        }
+
+        let servers: CaddyServerInfo[]
+        try {
+            servers = (await api.caddyServerList()).payload || []
+        } catch {
+            this.portal.showNotification('error', '服务加载失败')
+            await this.loadRoutes()
+            return
+        }
+
+        this.servers = servers
+        const defaultServer = this.servers.find(server => server.name === 'srv0')
+        const nextServer = this.servers.some(server => this.serverID(server) === this.selectedServer)
+            ? this.selectedServer
+            : (defaultServer ? this.serverID(defaultServer) : (this.servers[0] ? this.serverID(this.servers[0]) : 'srv0'))
+        if (nextServer === this.selectedServer) {
+            await this.loadRoutes()
+        } else {
+            this.selectedServer = nextServer
+        }
+    }
+
+    @Watch('selectedServer')
+    onSelectedServerChange() {
+        this.loadRoutes()
+    }
+
+    serverID(server: CaddyServerInfo) {
+        return server.id
     }
 
     openCreateModal() {
@@ -158,6 +220,8 @@ class CaddyRoutes extends Vue {
     }
 
     deleteRoute(route: CaddyRoute) {
+        const selection = this.selectedServer
+        const server = this.selectedServerName
         this.portal.showConfirm({
             title: '删除路由',
             message: `确定要删除路由 <strong class="text-slate-900">#${route.index}</strong> 吗？此操作不可恢复。`,
@@ -167,16 +231,16 @@ class CaddyRoutes extends Vue {
             danger: true,
             onConfirm: async () => {
                 try {
-                    await api.caddyRouteDelete(route.index)
+                    await api.caddyRouteDelete(route.index, server)
                     this.portal.showNotification('success', '删除成功')
-                    this.loadRoutes()
+                    if (selection === this.selectedServer) this.loadRoutes()
                 } catch {}
             }
         })
     }
 
     mounted() {
-        this.loadRoutes()
+        this.loadServers()
     }
 }
 
@@ -190,9 +254,12 @@ export default toNative(CaddyRoutes)
       <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-indigo-500"><i class="fas fa-route text-white"></i></div>
-          <div class="min-w-0"><h1 class="title-text">Caddy 路由</h1><p class="text-xs text-slate-500 truncate">配置请求匹配规则与处理器，支持多种转发方式</p></div>
+          <div class="min-w-0"><h1 class="title-text">路由</h1><p class="text-xs text-slate-500 truncate">配置请求匹配规则与处理器，支持多种转发方式</p></div>
         </div>
         <div class="action-group">
+          <select v-if="showServerSelect" v-model="selectedServer" class="select-sm max-w-40" title="服务" aria-label="服务">
+            <option v-for="server in servers" :key="serverID(server)" :value="serverID(server)">{{ server.name }}</option>
+          </select>
           <PageSearch v-model="searchText" search-key="caddy-routes" placeholder="请输入搜索关键词..." focus-color="indigo" type-to-search />
           <button class="btn btn-secondary" @click="loadRoutes()"><i class="fas fa-rotate"></i>刷新</button>
           <button v-if="portal.hasPerm('POST /api/caddy/route')" class="btn btn-indigo" @click="openCreateModal()"><i class="fas fa-plus"></i>新建路由</button>
@@ -203,11 +270,14 @@ export default toNative(CaddyRoutes)
         <div class="title-group">
           <div class="page-icon bg-indigo-500"><i class="fas fa-route text-white"></i></div>
           <div class="min-w-0">
-            <h1 class="title-text">Caddy 路由</h1>
+            <h1 class="title-text">路由</h1>
             <p class="text-xs text-slate-500 truncate">配置匹配规则与处理器</p>
           </div>
         </div>
         <div class="action-group-sm">
+          <select v-if="showServerSelect" v-model="selectedServer" class="select-sm max-w-28" title="服务" aria-label="服务">
+            <option v-for="server in servers" :key="serverID(server)" :value="serverID(server)">{{ server.name }}</option>
+          </select>
           <button class="btn btn-secondary btn-square" title="刷新" @click="loadRoutes()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
@@ -331,5 +401,5 @@ export default toNative(CaddyRoutes)
     </template>
   </div>
 
-  <RouteEditModal ref="editModalRef" @success="loadRoutes" />
+  <RouteEditModal ref="editModalRef" :server="selectedServerName" @success="loadRoutes" />
 </template>
