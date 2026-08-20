@@ -1,18 +1,18 @@
 <script lang="ts">
-import { Component, Vue, toNative } from 'vue-facing-decorator'
+import { Component, toNative, Vue } from 'vue-facing-decorator'
 
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
 import type {
-    ApisixUpstreamCreate,
-    ApisixRouteUpstreamFormNode,
-    ApisixUpstream,
-    ApisixUpstreamHashOn,
-    ApisixUpstreamScheme,
-    ApisixUpstreamType,
-    ApisixUpstreamUpdate,
-    DockerContainerInfo
+  ApisixRouteUpstreamFormNode,
+  ApisixUpstream,
+  ApisixUpstreamCreate,
+  ApisixUpstreamHashOn,
+  ApisixUpstreamScheme,
+  ApisixUpstreamType,
+  ApisixUpstreamUpdate,
+  DockerContainerInfo
 } from '@/service/types'
 
 import { normalizeUpstreamFormNodes, normalizeUpstreamScheme, normalizeUpstreamType, UPSTREAM_SCHEME_OPTIONS } from '@/helper/apisix'
@@ -192,9 +192,7 @@ class UpstreamEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch (e: unknown) {
-            this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '操作失败')
-        } finally {
+        } catch {} finally {
             this.modalLoading = false
         }
     }

@@ -76,7 +76,6 @@ class CronJobs extends Vue {
                 : types.filter(type => type.value !== 'DOCKER_TMP' && type.value !== 'DOCKER_CTR')
         } catch {
             this.types = []
-            this.portal.showNotification('error', '获取可用脚本类型失败')
         }
     }
 
@@ -85,9 +84,7 @@ class CronJobs extends Vue {
         try {
             const res = await api.cronJobList()
             this.jobs = res.payload?.jobs || []
-        } catch {
-            this.portal.showNotification('error', '获取计划任务失败')
-        } finally {
+        } catch {} finally {
             this.loading = false
         }
     }
@@ -125,18 +122,14 @@ class CronJobs extends Vue {
             await api.cronJobStatusPatch(job.id, !job.enabled)
             this.portal.showNotification('success', job.enabled ? '任务已禁用' : '任务已启用')
             await this.loadJobs()
-        } catch {
-            this.portal.showNotification('error', '操作失败')
-        }
+        } catch {}
     }
 
     async runNow(job: CronJob) {
         try {
             await api.cronJobRun(job.id)
             this.portal.showNotification('success', `任务 "${job.name}" 已触发`)
-        } catch {
-            this.portal.showNotification('error', '触发任务失败')
-        }
+        } catch {}
     }
 
     openLogs(job: CronJob) {

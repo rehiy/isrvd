@@ -89,9 +89,7 @@ class BasicAuthEditModal extends Vue {
             const [authRes, routeRes] = await Promise.all([api.caddyBasicAuthList(this.targetServer), api.caddyRouteList(this.targetServer)])
             this.authRoutes = authRes.payload || []
             this.routes = routeRes.payload || []
-        } catch {
-            this.portal.showNotification('error', '加载路由失败')
-        } finally {
+        } catch {} finally {
             this.loading = false
         }
     }
@@ -179,9 +177,7 @@ class BasicAuthEditModal extends Vue {
             this.portal.showNotification('success', '认证配置成功')
             this.open = false
             this.$emit('success')
-        } catch (e: unknown) {
-            this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '操作失败')
-        } finally {
+        } catch {} finally {
             this.loading = false
         }
     }
@@ -202,9 +198,7 @@ class BasicAuthEditModal extends Vue {
             this.portal.showNotification('success', `账号 "${username.trim()}" 添加成功`)
             this.open = false
             this.$emit('success')
-        } catch (e: unknown) {
-            this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '操作失败')
-        } finally {
+        } catch {} finally {
             this.loading = false
         }
     }
@@ -227,9 +221,7 @@ class BasicAuthEditModal extends Vue {
             this.portal.showNotification('success', '配置更新成功')
             this.open = false
             this.$emit('success')
-        } catch (e: unknown) {
-            this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '操作失败')
-        } finally {
+        } catch {} finally {
             this.loading = false
         }
     }

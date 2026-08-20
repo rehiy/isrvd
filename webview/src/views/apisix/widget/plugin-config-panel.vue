@@ -131,9 +131,7 @@ class PluginConfigPanel extends Vue {
             const src = (await api.apisixRouteInspect(this.importRouteId)).payload?.plugins || {}
             this.importRoutePlugins = src
             this.selectedImportPlugins = new Set(Object.keys(src))
-        } catch {
-            this.portal.showNotification('error', '加载路由插件失败')
-        }
+        } catch {}
         this.importRoutePluginsLoading = false
     }
 

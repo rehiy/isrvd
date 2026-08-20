@@ -126,9 +126,7 @@ class JobEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch {
-            this.portal.showNotification('error', this.isEditMode ? '更新任务失败' : '创建任务失败')
-        } finally {
+        } catch {} finally {
             this.modalLoading = false
         }
     }

@@ -67,7 +67,7 @@ function createSftpAdapter(hostId: string): ExplorerAdapter {
         },
         async remove(path, recursive = false): Promise<void> { await api.sftpRemove(hostId, path, recursive) },
         async rename(oldPath, newPath): Promise<void> { await api.sftpRename(hostId, { oldPath, newPath }) },
-        async mkdir(path): Promise<void> { await api.sftpMkdir(hostId, { path }, { silentError: true }) },
+        async mkdir(path): Promise<void> { await api.sftpMkdir(hostId, { path }) },
         async readFile(path): Promise<string> { return (await api.sftpRead(hostId, path)).payload?.content ?? '' },
         async writeFile(path, content): Promise<void> { await api.sftpWrite(hostId, { path, content }) },
         async chmod(path, mode): Promise<void> { await api.sftpFileChmod(hostId, { path, mode }) },

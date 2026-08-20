@@ -24,18 +24,18 @@ import { usePortal } from '@/stores'
 import { downloadBlob, getFileIcon, isEditableFile, isPreviewableFile } from '@/helper/file'
 import { formatFileSize, formatTime, formatUnixTime } from '@/helper/format'
 
+import type { ExplorerAdapter, FileInfo } from './types'
 import ChmodModal from './widget/chmod-modal.vue'
 import CreateModal from './widget/create-modal.vue'
 import DeleteModal from './widget/delete-modal.vue'
+import MkdirRow from './widget/mkdir-row.vue'
 import ModifyModal from './widget/modify-modal.vue'
 import PreviewModal from './widget/preview-modal.vue'
 import RenameModal from './widget/rename-modal.vue'
 import UnzipModal from './widget/unzip-modal.vue'
+import UploadZone from './widget/upload-zone.vue'
 import Upload from './widget/upload.vue'
 import ZipModal from './widget/zip-modal.vue'
-import MkdirRow from './widget/mkdir-row.vue'
-import UploadZone from './widget/upload-zone.vue'
-import type { FileInfo, ExplorerAdapter } from './types'
 
 @Component({
     expose: ['refresh', 'navigate'],
@@ -168,7 +168,7 @@ class ExplorerPanel extends Vue {
         try {
             const size = await this.adapter.dirSize(openPath)
             if (size !== null) { file.size = size; this.calculatedDirs.add(openPath) }
-        } catch { } finally { this.calculatingDirs.delete(openPath) }
+        } catch {} finally { this.calculatingDirs.delete(openPath) }
     }
 
     async download(file: FileInfo) {
@@ -189,9 +189,7 @@ class ExplorerPanel extends Vue {
             await this.adapter.mkdir(this.currentPath.replace(/\/+$/, '') + '/' + dirName)
             this.portal.showNotification('success', '创建成功')
             this.cancelMkdir(); this.loadFiles()
-        } catch (e: unknown) {
-            this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '创建失败')
-        }
+        } catch {}
     }
 
     startRename(file: FileInfo) { this.renameModalRef?.show(this.adapter, file) }

@@ -44,9 +44,7 @@ class Consumers extends Vue {
             const [consRes, wlRes] = await Promise.all([api.apisixConsumerList(), api.apisixWhitelistInspect()])
             this.consumers = consRes.payload || []
             this.whitelist = wlRes.payload || []
-        } catch {
-            this.portal.showNotification('error', '加载消费者列表失败')
-        } finally {
+        } catch {} finally {
             this.loading = false
         }
     }

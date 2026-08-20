@@ -1,5 +1,4 @@
 <script lang="ts">
-import type { FileInfo, ExplorerAdapter } from '../types'
 import { css } from '@codemirror/lang-css'
 import { go } from '@codemirror/lang-go'
 import { html } from '@codemirror/lang-html'
@@ -12,6 +11,7 @@ import { xml } from '@codemirror/lang-xml'
 import { yaml } from '@codemirror/lang-yaml'
 import { Codemirror } from 'vue-codemirror'
 import { Component, Vue, toNative } from 'vue-facing-decorator'
+import type { ExplorerAdapter, FileInfo } from '../types'
 
 import { usePortal } from '@/stores'
 
@@ -40,8 +40,7 @@ class ModifyModal extends Vue {
         try {
             this.loading = true
             this.formData.content = await adapter.readFile(file.path)
-        } catch (e: unknown) {
-            this.portal.showNotification('error', '读取文件失败: ' + (e instanceof Error ? e.message : ''))
+        } catch {
             this.isOpen = false
         } finally {
             this.loading = false
@@ -56,9 +55,7 @@ class ModifyModal extends Vue {
             this.portal.showNotification('success', '文件保存成功')
             this.$emit('success')
             this.isOpen = false
-        } catch (e: unknown) {
-            this.portal.showNotification('error', '文件保存失败: ' + (e instanceof Error ? e.message : ''))
-        } finally {
+        } catch {} finally {
             this.loading = false
         }
     }

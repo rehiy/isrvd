@@ -135,9 +135,7 @@ class ServerEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch (error: unknown) {
-            this.portal.showNotification('error', (error instanceof Error ? error.message : '') || '操作失败')
-        } finally {
+        } catch {} finally {
             this.loading = false
         }
     }

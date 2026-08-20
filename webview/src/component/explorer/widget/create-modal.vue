@@ -31,7 +31,7 @@ class CreateModal extends Vue {
             await this.adapter.createFile?.(path, this.formData.content)
             this.$emit('success')
             this.isOpen = false
-        } finally {
+        } catch {} finally {
             this.loading = false
         }
     }

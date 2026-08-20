@@ -93,9 +93,7 @@ class Routes extends Vue {
         this.loading = true
         try {
             this.routes = (await api.apisixRouteList()).payload || []
-        } catch {
-            this.portal.showNotification('error', '加载路由列表失败')
-        } finally {
+        } catch {} finally {
             this.loading = false
         }
     }

@@ -53,9 +53,7 @@ class Whitelist extends Vue {
         this.loading = true
         try {
             this.whitelist = (await api.apisixWhitelistInspect()).payload || []
-        } catch {
-            this.portal.showNotification('error', '加载访问授权失败')
-        } finally {
+        } catch {} finally {
             this.loading = false
         }
     }
@@ -109,9 +107,7 @@ class Whitelist extends Vue {
             this.portal.showNotification('success', `用户 "${username}" 已创建并加入授权列表`)
             this.addUser.open = false
             this.loadWhitelist()
-        } catch (e: unknown) {
-            this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '操作失败')
-        } finally {
+        } catch {} finally {
             this.addUser.loading = false
         }
     }

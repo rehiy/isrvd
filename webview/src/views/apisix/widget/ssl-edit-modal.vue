@@ -4,7 +4,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { ApisixSSLCreate, ApisixSSL, ApisixSSLUpdate } from '@/service/types'
+import type { ApisixSSL, ApisixSSLCreate, ApisixSSLUpdate } from '@/service/types'
 
 import BaseModal from '@/component/modal.vue'
 import ToggleCard from '@/component/toggle-card.vue'
@@ -92,9 +92,7 @@ class SSLEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch (e: unknown) {
-            this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '操作失败')
-        } finally {
+        } catch {} finally {
             this.modalLoading = false
         }
     }

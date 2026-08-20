@@ -53,7 +53,7 @@ function createFilerAdapter(): ExplorerAdapter {
         },
         async remove(path): Promise<void> { await api.filerDelete(path) },
         async rename(oldPath, newPath): Promise<void> { await api.filerRename(oldPath, newPath) },
-        async mkdir(path): Promise<void> { await api.filerMkdir(path, { silentError: true }) },
+        async mkdir(path): Promise<void> { await api.filerMkdir(path) },
         async readFile(path): Promise<string> { return (await api.filerRead(path)).payload?.content ?? '' },
         async writeFile(path, content): Promise<void> { await api.filerModify(path, content) },
         async chmod(path, mode): Promise<void> { await api.filerChmod(path, mode) },
