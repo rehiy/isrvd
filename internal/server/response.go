@@ -24,6 +24,9 @@ func respondSuccess(c *gin.Context, message string, data any) {
 
 // respondError 返回错误响应
 func respondError(c *gin.Context, statusCode int, message string) {
+	if message == "" {
+		message = "请求失败"
+	}
 	c.JSON(statusCode, APIResponse{
 		Success: false,
 		Message: message,

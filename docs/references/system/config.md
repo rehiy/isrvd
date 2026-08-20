@@ -39,10 +39,8 @@ kill -HUP $(pgrep isrvd)
 
 ```json
 {
-  "error": "apisix service unavailable",
-  "module": "apisix",
-  "label": "查询 APISIX 路由列表",
-  "reload": "send SIGHUP to reload services"
+  "success": false,
+  "message": "查询 APISIX 路由列表服务不可用"
 }
 ```
 

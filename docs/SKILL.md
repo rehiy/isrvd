@@ -159,7 +159,7 @@ kill -HUP $(pgrep isrvd)
 服务初始化失败时，对应模块路由返回 `503`：
 
 ```json
-{"error": "apisix service unavailable", "module": "apisix", "reload": "send SIGHUP to reload services"}
+{"success": false, "message": "查询 APISIX 路由列表服务不可用"}
 ```
 
 ---
