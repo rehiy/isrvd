@@ -197,7 +197,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 
 	// 旧服务尚未确认移除干净前不能进入创建阶段，否则必然撞上 AlreadyExists；
 	// 此时还未写盘任何新内容，直接返回即可，无需走回滚
-	if err := s.swarmServicesRemove(ctx, name, oldContent); err != nil {
+	if err := s.swarmServicesRemove(ctx, name, oldContent, installDir, oldEnvState.Content); err != nil {
 		return nil, fmt.Errorf("移除旧服务失败: %w", err)
 	}
 
@@ -285,11 +285,12 @@ func (s *Service) swarmServiceCreate(ctx context.Context, project *types.Project
 
 // swarmServicesRemove 移除 project 中的所有 Swarm 服务，并等待其从集群状态中彻底消失，
 // 避免紧随其后的同名 create 撞上 Docker daemon 异步清理导致的 AlreadyExists。
-func (s *Service) swarmServicesRemove(ctx context.Context, name, content string) error {
+// installDir 作为 compose 加载的工作目录（解析 env_file 等相对路径），envContent 用于叠加插值环境。
+func (s *Service) swarmServicesRemove(ctx context.Context, name, content, installDir, envContent string) error {
 	if content == "" {
 		return nil
 	}
-	project, err := compose.LoadProjectFromContent(ctx, content, name)
+	project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, &envContent)
 	if err != nil {
 		return err
 	}
