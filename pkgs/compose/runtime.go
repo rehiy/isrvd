@@ -59,7 +59,7 @@ func projectNameOrHash(name, content string) (string, error) {
 
 // ContentProjectName 从 compose 内容解析项目名，缺失时使用内容短哈希。
 func ContentProjectName(ctx context.Context, content string) (string, error) {
-	project, err := LoadProjectFromContent(ctx, content, "")
+	project, err := ProjectValidateWithoutEnvFiles(ctx, content, nil)
 	if err != nil {
 		return "", err
 	}
@@ -71,7 +71,7 @@ func ContentProjectName(ctx context.Context, content string) (string, error) {
 // ProjectLoad 写入 compose.yml 并以 installDir 为 WorkingDir 加载，确保相对路径正确展开。
 func ProjectLoad(ctx context.Context, name, content, installDir string) (*types.Project, error) {
 	if installDir == "" {
-		return LoadProjectFromContent(ctx, content, name)
+		return nil, fmt.Errorf("缺少 compose 项目工作目录")
 	}
 	if err := os.MkdirAll(installDir, 0755); err != nil {
 		return nil, fmt.Errorf("创建安装目录失败: %w", err)
@@ -85,9 +85,9 @@ func ProjectLoad(ctx context.Context, name, content, installDir string) (*types.
 // ProjectParse 解析 compose 内容（不写文件），相对路径基于 installDir 展开。
 func ProjectParse(ctx context.Context, name, content, installDir string) (*types.Project, error) {
 	if installDir == "" {
-		return LoadProjectFromContent(ctx, content, name)
+		return nil, fmt.Errorf("缺少 compose 项目工作目录")
 	}
-	return LoadProjectFromContentInDir(ctx, content, installDir, name, nil)
+	return LoadProjectFromContent(ctx, content, installDir, name, nil)
 }
 
 // ContentSave 持久化 compose.yml；bak 非空时同时写 compose.yml.bak。
@@ -233,11 +233,14 @@ func InitFilesHandle(installDir string, payload InitPayload) error {
 // ==================== Content mutation ====================
 
 // UpdateServiceImage 将 compose 内容中指定服务的镜像替换为 image，返回更新后的 YAML 文本。
-func UpdateServiceImage(ctx context.Context, name, content, serviceName, image string) (string, error) {
+func UpdateServiceImage(ctx context.Context, name, content, serviceName, image, installDir string) (string, error) {
 	if content == "" {
 		return "", fmt.Errorf("compose 内容不能为空")
 	}
-	project, err := LoadProjectFromContent(ctx, content, name)
+	if installDir == "" {
+		return "", fmt.Errorf("缺少 compose 项目工作目录")
+	}
+	project, err := loadProjectContent(ctx, content, installDir, name, false, nil, true)
 	if err != nil {
 		return "", err
 	}

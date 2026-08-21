@@ -208,7 +208,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		return nil, err
 	}
 
-	s.dockerContainersRemove(ctx, name, oldContent)
+	s.dockerContainersRemove(ctx, name, oldContent, installDir)
 
 	rollback := func() string {
 		// 先恢复旧 .env 再回滚容器；.env 失败不阻断容器回滚
@@ -291,7 +291,7 @@ func (s *Service) dockerServiceCreate(ctx context.Context, project *types.Projec
 }
 
 // dockerContainersRemove 移除 project 中的所有 Docker 容器
-func (s *Service) dockerContainersRemove(ctx context.Context, name, content string) {
+func (s *Service) dockerContainersRemove(ctx context.Context, name, content, installDir string) {
 	removed := map[string]struct{}{}
 	removeByID := func(id string) {
 		if id == "" {
@@ -318,7 +318,7 @@ func (s *Service) dockerContainersRemove(ctx context.Context, name, content stri
 
 	// 补充删除无标签的旧容器，inspect 确认归属后再删
 	if content != "" {
-		project, err := compose.LoadProjectFromContent(ctx, content, name)
+		project, err := compose.LoadProjectFromContent(ctx, content, installDir, name, nil)
 		if err == nil {
 			for _, svc := range project.Services {
 				for _, cname := range compose.DockerContainerNameCandidates(name, svc) {

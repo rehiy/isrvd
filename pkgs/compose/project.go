@@ -82,25 +82,21 @@ func LoadProject(ctx context.Context, opts LoadOptions) (*types.Project, error) 
 	}, projectName, true, true)
 }
 
-// LoadProjectFromContent 从 yaml 文本加载 compose 项目（不解析相对路径）。
-func LoadProjectFromContent(ctx context.Context, content string, projectName string) (*types.Project, error) {
-	return LoadProjectFromContentInDir(ctx, content, ".", projectName, nil)
-}
-
-// LoadProjectFromContentInDir 从 yaml 文本加载 compose 项目，并以 workingDir 解析相对路径。
+// LoadProjectFromContent 从 yaml 文本加载 compose 项目，并以 workingDir 作为项目目录解析相对路径。
 // envContent 为 nil 时仅读 workingDir/.env；非 nil 时在磁盘 .env 之上叠加。
-func LoadProjectFromContentInDir(ctx context.Context, content, workingDir, projectName string, envContent *string) (*types.Project, error) {
-	if workingDir == "" {
-		workingDir = "."
-	}
-	return loadProjectContent(ctx, content, workingDir, projectName, true, envContent)
+func LoadProjectFromContent(ctx context.Context, content, workingDir, projectName string, envContent *string) (*types.Project, error) {
+	return loadProjectContent(ctx, content, workingDir, projectName, true, envContent, false)
 }
 
 // loadProjectContent 从 yaml 文本加载 compose 项目，并合并指定的 .env 内容到插值环境。
 // envContent 为 nil 时仅读 workingDir/.env；非 nil 时在磁盘 .env 之上叠加。
-func loadProjectContent(ctx context.Context, content, workingDir, projectName string, resolvePaths bool, envContent *string) (*types.Project, error) {
+// skipServiceEnvironmentResolution 为 true 时不合并 services.environment/env_file。
+func loadProjectContent(ctx context.Context, content, workingDir, projectName string, resolvePaths bool, envContent *string, skipServiceEnvironmentResolution bool) (*types.Project, error) {
 	if content == "" {
 		return nil, fmt.Errorf("compose 内容为空")
+	}
+	if workingDir == "" {
+		return nil, fmt.Errorf("缺少 compose 项目工作目录")
 	}
 
 	env, err := projectEnvironmentWithEnvFile(ctx, nil, envContent, workingDir)
@@ -119,7 +115,13 @@ func loadProjectContent(ctx context.Context, content, workingDir, projectName st
 		Environment: env,
 	}
 
-	return loadProject(ctx, details, projectName, resolvePaths, projectName != "")
+	var configure func(*loader.Options)
+	if skipServiceEnvironmentResolution {
+		configure = func(o *loader.Options) {
+			o.SkipResolveEnvironment = true
+		}
+	}
+	return loadProjectWithOptions(ctx, details, projectName, resolvePaths, projectName != "", configure)
 }
 
 func loadProject(ctx context.Context, details types.ConfigDetails, projectName string, resolvePaths bool, setProjectName bool) (*types.Project, error) {

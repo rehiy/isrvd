@@ -117,7 +117,7 @@ func (s *Service) prepareRedeployContent(ctx context.Context, name, installDir, 
 			return "", contentErr
 		}
 		var err error
-		content, err = compose.UpdateServiceImage(ctx, name, oldContent, req.ServiceName, req.Image)
+		content, err = compose.UpdateServiceImage(ctx, name, oldContent, req.ServiceName, req.Image, installDir)
 		if err != nil {
 			return "", err
 		}
@@ -128,7 +128,7 @@ func (s *Service) prepareRedeployContent(ctx context.Context, name, installDir, 
 		return "", contentErr
 	}
 
-	project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, req.EnvContent)
+	project, err := compose.LoadProjectFromContent(ctx, content, installDir, name, req.EnvContent)
 	if err != nil {
 		return "", err
 	}
