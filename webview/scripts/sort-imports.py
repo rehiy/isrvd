@@ -3,7 +3,7 @@
 批量整理 Vue 文件中 <script> 块内的 import 语句。
 
 分组顺序（组间空一行，组内按字母排序）：
-  1. 第三方库          vue-facing-decorator、vue、vue-router 等（不以 @/ 或 ./ 开头）
+  1. 第三方库          vue-facing-decorator、vue、vue-router 等（不以 @/ 或相对路径开头）
   2. @/stores/... 或 @/stores
   3. @/router
   4. @/service/...
@@ -11,7 +11,7 @@
   6. @/component/...
   7. @/views/...
   8. 其余 @/ 路径（兜底）
-  9. 相对路径导入 ./ 开头（排在最后）
+  9. 相对路径导入 ./ 或 ../ 开头（排在最后）
 
 同一模块的普通导入与 type 导入合并为相邻两行（普通在前，type 在后），
 不跨组拆散。
@@ -22,9 +22,9 @@ import sys
 from pathlib import Path
 
 # ── 分组规则（按优先级匹配，返回 (group_index, sort_key)）──────────────────
-# 注意：./ 开头的相对路径导入排在最后（第8组）
+# 注意：./、../ 开头的相对路径导入排在最后（第8组）
 GROUP_PATTERNS = [
-    (0, re.compile(r"^'(?!\./)(?!@/)")),   # 第三方：不以 @/ 或 ./ 开头
+    (0, re.compile(r"^'(?!\.\.?/)(?!@/)")),  # 第三方：不以 @/ 或相对路径开头
     (1, re.compile(r"^'@/stores(?:/|')")),  # stores
     (2, re.compile(r"^'@/router")),         # router
     (3, re.compile(r"^'@/service/")),       # service
@@ -32,7 +32,7 @@ GROUP_PATTERNS = [
     (5, re.compile(r"^'@/component/")),     # component
     (6, re.compile(r"^'@/views/")),         # views
     (7, re.compile(r"^'@/")),               # 其余 @/ 兜底
-    (8, re.compile(r"^'\./")),              # 相对路径：./ 开头，排在最后
+    (8, re.compile(r"^'\.\.?/")),           # 相对路径：./ 或 ../ 开头，排在最后
 ]
 
 def get_group(import_line: str) -> int:

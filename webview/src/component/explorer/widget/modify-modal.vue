@@ -11,11 +11,12 @@ import { xml } from '@codemirror/lang-xml'
 import { yaml } from '@codemirror/lang-yaml'
 import { Codemirror } from 'vue-codemirror'
 import { Component, Vue, toNative } from 'vue-facing-decorator'
-import type { ExplorerAdapter, FileInfo } from '../types'
 
 import { usePortal } from '@/stores'
 
 import BaseModal from '@/component/modal.vue'
+
+import type { ExplorerAdapter, FileInfo } from '../types'
 
 @Component({
     expose: ['show'],
