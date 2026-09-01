@@ -12,6 +12,13 @@ class ConfirmModal extends Vue {
     portal = usePortal()
 
     // ─── 计算属性 ───
+    get safeMessage() {
+        return this.portal.confirm.message.replace(
+            /<strong(?: class="[^"]*")?>|<\/strong>|[&<>"']/g,
+            (value) => (value.startsWith('<') ? value : `&#${value.charCodeAt(0)};`)
+        )
+    }
+
     get iconColorClass() {
         const colors: Record<string, string> = {
             blue: 'bg-blue-100 text-blue-500',
@@ -41,7 +48,9 @@ export default toNative(ConfirmModal)
       <div class="empty-state-icon mx-auto" :class="iconColorClass.split(' ')[0]">
         <i class="fas text-3xl" :class="[portal.confirm.icon, iconColorClass.split(' ')[1]]"></i>
       </div>
-      <p class="text-lg text-slate-700" v-html="portal.confirm.message"></p>
+      <!-- safeMessage 仅保留 strong 标签，其余 HTML 均已转义 -->
+      <!-- eslint-disable-next-line vue/no-v-html -->
+      <p class="text-lg text-slate-700" v-html="safeMessage"></p>
       <p v-if="portal.confirm.danger" class="text-sm text-red-600 flex items-center justify-center mt-3">
         <i class="fas fa-exclamation-triangle mr-2"></i>
         此操作不可恢复！
