@@ -318,7 +318,7 @@ func (s *Service) dockerContainersRemove(ctx context.Context, name, content, ins
 
 	// 补充删除无标签的旧容器，inspect 确认归属后再删
 	if content != "" {
-		project, err := compose.LoadProjectFromContent(ctx, content, installDir, name, nil)
+		project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, nil)
 		if err == nil {
 			for _, svc := range project.Services {
 				for _, cname := range compose.DockerContainerNameCandidates(name, svc) {

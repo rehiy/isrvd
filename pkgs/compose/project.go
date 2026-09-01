@@ -82,9 +82,10 @@ func LoadProject(ctx context.Context, opts LoadOptions) (*types.Project, error) 
 	}, projectName, true, true)
 }
 
-// LoadProjectFromContent 从 yaml 文本加载 compose 项目，并以 workingDir 作为项目目录解析相对路径。
+// LoadProjectFromContentInDir 从 yaml 文本加载 compose 项目，并以 workingDir 作为项目目录解析相对路径。
+// workingDir 必须显式提供，缺失时直接报错，避免相对路径（env_file、volumes）被静默解析到进程当前目录。
 // envContent 为 nil 时仅读 workingDir/.env；非 nil 时在磁盘 .env 之上叠加。
-func LoadProjectFromContent(ctx context.Context, content, workingDir, projectName string, envContent *string) (*types.Project, error) {
+func LoadProjectFromContentInDir(ctx context.Context, content, workingDir, projectName string, envContent *string) (*types.Project, error) {
 	return loadProjectContent(ctx, content, workingDir, projectName, true, envContent, false)
 }
 

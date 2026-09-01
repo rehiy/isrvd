@@ -87,7 +87,7 @@ func ProjectParse(ctx context.Context, name, content, installDir string) (*types
 	if installDir == "" {
 		return nil, fmt.Errorf("缺少 compose 项目工作目录")
 	}
-	return LoadProjectFromContent(ctx, content, installDir, name, nil)
+	return LoadProjectFromContentInDir(ctx, content, installDir, name, nil)
 }
 
 // ContentSave 持久化 compose.yml；bak 非空时同时写 compose.yml.bak。
