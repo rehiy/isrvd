@@ -94,8 +94,8 @@ export default toNative(SystemOverview)
 <template>
   <div>
     <!-- 系统统计卡片 -->
-    <div v-if="loading" class="flex items-center justify-center py-6">
-      <div class="w-6 h-6 spinner mr-2"></div>
+    <div v-if="loading" class="overview-loading">
+      <div class="spinner-md"></div>
       <span class="text-slate-400 text-sm">加载中...</span>
     </div>
     <div v-else-if="statCards.length" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -109,7 +109,7 @@ export default toNative(SystemOverview)
         </div>
       </div>
     </div>
-    <div v-else class="flex items-center gap-3 py-4 px-4 rounded-xl bg-slate-50">
+    <div v-else class="overview-unavailable">
       <i class="fas fa-triangle-exclamation text-2xl text-slate-300"></i>
       <p class="text-sm text-slate-500">获取系统信息失败</p>
     </div>
