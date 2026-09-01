@@ -318,17 +318,11 @@
 
 ### 1.12 概览 Widget 统计卡片（强制）
 
-概览页各服务 widget（`overview/widget/*.vue`）中的统计卡片网格列数按元素数量定：
+概览页各服务 widget（`overview/widget/*.vue`）统一使用 `grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3`：
 
-| 元素数 | 响应式 grid 类 | 示例 |
-| --- | --- | --- |
-| 6 | `grid-cols-2 md:grid-cols-3 lg:grid-cols-6` | Docker、APISIX |
-| 4 | `grid-cols-2 md:grid-cols-3 lg:grid-cols-4` | Caddy |
-| 其他 | `grid-cols-2 md:grid-cols-3 lg:grid-cols-N`（N=元素数） | 按实际补充 |
-
-- 大屏（`lg:`）下必须一行铺满，禁止多行堆叠
-- 卡片统一：`rounded-xl border border-slate-200 bg-white p-4 hover:shadow-md transition-shadow`
-- 卡片内容：图标（`.page-icon` + 模块主色）+ 数值（`text-2xl font-bold text-slate-800`）+ 标签（`text-xs text-slate-500 leading-tight`），垂直居中 `flex flex-col items-center gap-2 text-center`
+- 大屏最多四列；统计项超过四个时自然换行，禁止为了单行展示使用 `lg:grid-cols-5` 及以上，避免卡片过窄、文字频繁截断
+- 卡片统一使用 `.stat-card`
+- 卡片内容保持横向布局：图标（`.page-icon` + 模块主色）在左，标签和值在右；文字容器使用 `min-w-0 flex-1`，长值按需 `truncate`
 - 加载状态：`flex items-center justify-center py-10` + `spinner`
 - 错误/不可用状态：`flex items-center gap-3 py-6 px-4 rounded-xl bg-slate-50`
 - `available` 字段由后端返回，`load()` 必须完整赋值所有 `CaddyInfo`/`DockerInfo` 字段，不得遗漏
