@@ -8,8 +8,8 @@ import type {
     ApisixPluginConfig,
     ApisixRoute,
     ApisixRouteUpstreamFormNode,
-    ApisixRouteUpstreamModeCard,
     ApisixRouteUpstreamMode,
+    ApisixRouteUpstreamModeCard,
     ApisixUpstream,
     ApisixUpstreamConfig,
     ApisixUpstreamScheme,
@@ -235,7 +235,6 @@ class RouteEditModal extends Vue {
                     timeout_read: r.upstream?.timeout?.read ?? '',
                 })
             } catch {
-                this.portal.showNotification('error', '加载路由详情失败')
                 this.isOpen = false
             } finally {
                 this.modalLoading = false
@@ -269,9 +268,7 @@ class RouteEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch (e: unknown) {
-            this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '操作失败')
-        } finally {
+        } catch {} finally {
             this.modalLoading = false
         }
     }

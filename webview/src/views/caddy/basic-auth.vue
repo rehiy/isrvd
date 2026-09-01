@@ -56,11 +56,7 @@ class CaddyBasicAuth extends Vue {
             const routes = (await api.caddyBasicAuthList(server)).payload || []
             if (requestID !== this.loadRequestID || selection !== this.selectedServer) return
             this.routes = routes
-        } catch {
-            if (requestID === this.loadRequestID && selection === this.selectedServer) {
-                this.portal.showNotification('error', '加载失败')
-            }
-        } finally {
+        } catch {} finally {
             if (requestID === this.loadRequestID) this.loading = false
         }
     }
@@ -75,7 +71,6 @@ class CaddyBasicAuth extends Vue {
         try {
             servers = (await api.caddyServerList()).payload || []
         } catch {
-            this.portal.showNotification('error', '服务加载失败')
             await this.load()
             return
         }

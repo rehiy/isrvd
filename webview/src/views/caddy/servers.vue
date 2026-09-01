@@ -35,9 +35,7 @@ class CaddyServers extends Vue {
         this.loading = true
         try {
             this.servers = (await api.caddyServerList()).payload || []
-        } catch {
-            this.portal.showNotification('error', '服务加载失败')
-        } finally {
+        } catch {} finally {
             this.loading = false
         }
     }
@@ -61,11 +59,12 @@ class CaddyServers extends Vue {
         this.editingServer = id
         try {
             const detail = (await api.caddyServerInspect(id)).payload
-            if (!detail) throw new Error('服务详情不存在')
+            if (!detail) {
+                this.portal.showNotification('error', '服务详情不存在')
+                return
+            }
             this.editModalRef?.show(detail)
-        } catch (error: unknown) {
-            this.portal.showNotification('error', (error instanceof Error ? error.message : '') || '服务详情加载失败')
-        } finally {
+        } catch {} finally {
             this.editingServer = ''
         }
     }

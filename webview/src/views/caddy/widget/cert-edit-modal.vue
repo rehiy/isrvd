@@ -145,9 +145,7 @@ class CertEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch (e: unknown) {
-            this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '操作失败')
-        } finally {
+        } catch {} finally {
             this.modalLoading = false
         }
     }

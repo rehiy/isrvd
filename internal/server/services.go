@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -109,12 +108,7 @@ func (app *App) serviceAvailableMiddleware() gin.HandlerFunc {
 			return
 		}
 		c.Abort()
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error":  fmt.Sprintf("%s service unavailable", route.Module),
-			"module": route.Module,
-			"label":  route.Label,
-			"reload": "send SIGHUP to reload services",
-		})
+		respondError(c, http.StatusServiceUnavailable, route.Label+"服务不可用")
 	}
 }
 

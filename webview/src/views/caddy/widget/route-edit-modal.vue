@@ -4,7 +4,7 @@ import { Component, Prop, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { CaddyRoute, CaddyRouteUpsert, CaddyHandlerKind, CaddyHandlerKindCard, CaddyHeaderOp, CaddyHandler, CaddyHandlerReverseProxy, CaddyHandlerFileServer, CaddyHandlerStaticResponse, CaddyHandlerRewrite, CaddyHandlerHeaders, DockerContainerInfo } from '@/service/types'
+import type { CaddyHandler, CaddyHandlerFileServer, CaddyHandlerHeaders, CaddyHandlerKind, CaddyHandlerKindCard, CaddyHandlerReverseProxy, CaddyHandlerRewrite, CaddyHandlerStaticResponse, CaddyHeaderOp, CaddyRoute, CaddyRouteUpsert, DockerContainerInfo } from '@/service/types'
 
 import { parseHostPort } from '@/helper/format'
 
@@ -557,9 +557,7 @@ class RouteEditModal extends Vue {
             }
             this.isOpen = false
             this.$emit('success')
-        } catch (e: unknown) {
-            this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '操作失败')
-        } finally {
+        } catch {} finally {
             this.modalLoading = false
         }
     }

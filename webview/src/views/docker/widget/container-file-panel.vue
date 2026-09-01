@@ -63,7 +63,7 @@ function createContainerFileAdapter(containerId: string): ExplorerAdapter {
             await api.dockerContainerFileRename(containerId, oldPath, newPath)
         },
         async mkdir(path): Promise<void> {
-            await api.dockerContainerFileMkdir(containerId, path, { silentError: true })
+            await api.dockerContainerFileMkdir(containerId, path)
         },
         async readFile(path): Promise<string> {
             return (await api.dockerContainerFileRead(containerId, path)).payload?.content ?? ''

@@ -1,12 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 
-declare module 'axios' {
-    interface AxiosRequestConfig {
-        /** 静默错误：不触发全局错误通知弹窗 */
-        silentError?: boolean
-    }
-}
-
 /**
  * 标准 API 响应结构
  */
@@ -101,24 +94,31 @@ export const interceptors = (
      * @param error 错误对象
      * @param isBlob 是否为 Blob 下载请求
      */
-    const handleError = (error: unknown, isBlob = false) => {
+    const handleError = async (error: unknown, isBlob = false) => {
         if (axios.isCancel(error)) return Promise.reject(error)
-        const err = error as { config?: { silentError?: boolean; url?: string }; response?: { status?: number; data?: { message?: string } }; request?: unknown }
-        // 静默请求：不弹错误通知，直接 reject
-        if (err.config?.silentError) return Promise.reject(error)
+        if (!axios.isAxiosError<APIResponse | Blob>(error)) {
+            actions.showNotification('error', '发生未知错误')
+            return Promise.reject(error)
+        }
+        let message = ''
+        const data = error.response?.data
+        if (data instanceof Blob) {
+            try {
+                message = (JSON.parse(await data.text()) as APIResponse).message || ''
+            } catch { /* 非 JSON 下载错误使用状态码兜底 */ }
+        } else {
+            message = data?.message || ''
+        }
+
         // 登录接口本身返回的 401（用户名/密码错误等）是登录失败，不是会话过期，走下方通用错误提示
-        const isLoginRequest = err.config?.url?.includes('account/login')
-        if (err.response?.status === 401 && !isLoginRequest) {
-            actions.showNotification('error', '登录已过期，请重新登录')
+        const isLoginRequest = error.config?.url?.includes('account/login')
+        if (error.response?.status === 401 && !isLoginRequest) {
+            actions.showNotification('error', message || '登录已过期，请重新登录')
             actions.clearAuth()
-        } else if (err.response) {
-            if (isBlob) {
-                actions.showNotification('error', `下载失败: ${err.response.status}`)
-            } else {
-                const message = err.response.data?.message
-                actions.showNotification('error', message || `请求失败: ${err.response.status}`)
-            }
-        } else if (err.request) {
+        } else if (error.response) {
+            const fallback = isBlob ? `下载失败: ${error.response.status}` : `请求失败: ${error.response.status}`
+            actions.showNotification('error', message || fallback)
+        } else if (error.request) {
             actions.showNotification('error', '网络连接失败，请检查网络')
         } else {
             actions.showNotification('error', '发生未知错误')

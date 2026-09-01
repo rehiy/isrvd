@@ -107,9 +107,7 @@ class WhitelistEditModal extends Vue {
                 this.routes = routesRes.payload || []
                 this.consumers = consumersRes.payload || []
             }
-        } catch {
-            this.portal.showNotification('error', '加载路由或消费者列表失败')
-        } finally {
+        } catch {} finally {
             this.modalLoading = false
         }
     }
@@ -147,9 +145,7 @@ class WhitelistEditModal extends Vue {
             this.portal.showNotification('success', this.whitelistConsumers.length > 0 ? '访问授权更新成功' : '访问授权删除成功')
             this.isOpen = false
             this.$emit('success')
-        } catch (e: unknown) {
-            this.portal.showNotification('error', (e instanceof Error ? e.message : '') || '操作失败')
-        } finally {
+        } catch {} finally {
             this.modalLoading = false
         }
     }

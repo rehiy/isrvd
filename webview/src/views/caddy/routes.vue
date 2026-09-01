@@ -124,7 +124,6 @@ class CaddyRoutes extends Vue {
                 } catch {
                     if (requestID !== this.loadRequestID) return
                     this.servers = []
-                    this.portal.showNotification('warning', '服务加载失败，已回退到 srv0')
                 }
             } else {
                 this.servers = []
@@ -136,11 +135,7 @@ class CaddyRoutes extends Vue {
             if (requestID !== this.loadRequestID) return
             this.routes = routesByServer.flat()
             this.collapsedHosts = []
-        } catch {
-            if (requestID === this.loadRequestID) {
-                this.portal.showNotification('error', '路由加载失败')
-            }
-        } finally {
+        } catch {} finally {
             if (requestID === this.loadRequestID) this.loading = false
         }
     }

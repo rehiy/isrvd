@@ -79,9 +79,7 @@ class Config extends Vue {
       if (reload) {
         this.portal.showNotification('success', '配置已重载')
       }
-    } catch {
-      this.portal.showNotification('error', reload ? '重载配置失败' : '加载配置失败')
-    } finally {
+    } catch {} finally {
       this.loading = false
     }
   }
@@ -107,10 +105,7 @@ class Config extends Vue {
       await this.portal.refresh()
       this.portal.showNotification('success', '全部配置已保存，监听地址变更需重启生效')
       await this.loadConfig()
-    } catch (e) {
-      console.error('保存配置失败:', e)
-      this.portal.showNotification('error', '保存配置失败')
-    } finally {
+    } catch {} finally {
       this.saving = false
     }
   }

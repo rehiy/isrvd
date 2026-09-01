@@ -53,7 +53,6 @@ class App extends Vue {
             await this.portal.refresh()
             return true
         } catch {
-            this.portal.showNotification('error', 'OIDC 登录失败，请重试')
             return false
         }
     }

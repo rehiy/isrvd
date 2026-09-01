@@ -80,9 +80,7 @@ class AuditLogs extends Vue {
         try {
             const res = await api.systemAuditLogs()
             this.logs = res.payload || []
-        } catch {
-            this.portal.showNotification('error', '获取审计日志失败')
-        } finally {
+        } catch {} finally {
             this.loading = false
         }
     }
@@ -107,7 +105,7 @@ class AuditLogs extends Vue {
 
     unwrapJson(parsed: unknown): unknown {
         if (typeof parsed === 'string') {
-            try { return JSON.parse(parsed) } catch { }
+            try { return JSON.parse(parsed) } catch {}
         }
         return parsed
     }

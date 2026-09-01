@@ -46,9 +46,7 @@ class PluginConfigs extends Vue {
         this.loading = true
         try {
             this.configs = this.sortConfigs((await api.apisixPluginConfigList()).payload || [])
-        } catch {
-            this.portal.showNotification('error', '加载插件配置列表失败')
-        } finally {
+        } catch {} finally {
             this.loading = false
         }
     }

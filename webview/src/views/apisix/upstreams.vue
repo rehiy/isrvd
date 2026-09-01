@@ -49,9 +49,7 @@ class Upstreams extends Vue {
         this.loading = true
         try {
             this.upstreams = this.sortUpstreams((await api.apisixUpstreamList()).payload || [])
-        } catch {
-            this.portal.showNotification('error', '加载上游列表失败')
-        } finally {
+        } catch {} finally {
             this.loading = false
         }
     }
