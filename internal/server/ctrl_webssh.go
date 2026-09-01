@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/websocket"
 
+	"isrvd/config"
 	svcWebSSH "isrvd/internal/service/webssh"
 )
 
@@ -196,6 +197,7 @@ func (app *App) websshSFTPUpload(c *gin.Context) {
 		return
 	}
 
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, config.Server.MaxUploadSize)
 	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
 		respondError(c, http.StatusBadRequest, "解析上传表单失败: "+err.Error())
 		return

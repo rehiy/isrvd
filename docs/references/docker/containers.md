@@ -184,6 +184,8 @@ GET /api/docker/container/<ID>/file/download?path=/etc/hosts&token=<JWT>
 isrvd_upload "/docker/container/<ID>/file/upload" "file" "./local.txt" "path=/tmp"
 ```
 
+> 上传请求总大小受 `server.maxUploadSize` 限制。
+
 ### 删除文件或目录
 
 ```bash

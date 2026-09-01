@@ -50,6 +50,8 @@ isrvd_get "/sftp/<ID>/download?path=/path/to/file"
 isrvd_upload "/sftp/<ID>/upload" "file" "/local/file.txt" "path=/remote/dir"
 ```
 
+> 上传请求总大小受 `server.maxUploadSize` 限制。
+
 ---
 
 ## 创建目录

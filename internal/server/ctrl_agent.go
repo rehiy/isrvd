@@ -25,6 +25,7 @@ func (app *App) agentProxy(c *gin.Context) {
 		return
 	}
 
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, config.Server.MaxUploadSize)
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		respondError(c, http.StatusBadRequest, "读取请求体失败")

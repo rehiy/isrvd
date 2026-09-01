@@ -64,6 +64,8 @@ Web 前端的新建、Docker 编辑和 Swarm 编辑采用一致的 `.env` 提交
 
 Docker Compose 部署支持 JSON；上传附加运行文件时使用 multipart form。
 
+部署请求总大小受 `server.maxUploadSize` 限制。
+
 仅提交 compose 内容：
 
 ```bash

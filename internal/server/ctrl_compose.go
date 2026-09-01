@@ -135,6 +135,7 @@ func bindComposeDeployRequest(c *gin.Context) (svcCompose.DeployRequest, bool) {
 		respondError(c, http.StatusBadRequest, "文件大小超过限制")
 		return req, false
 	}
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, config.Server.MaxUploadSize)
 
 	if strings.HasPrefix(c.ContentType(), "application/json") {
 		if err := c.ShouldBindJSON(&req); err != nil {

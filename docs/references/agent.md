@@ -29,6 +29,7 @@ agent:
 2. 自动在请求头中添加 `Authorization: Bearer <agent.apiKey>`
 3. 如果请求体中指定了 `model` 字段，使用请求中的值；否则使用 `agent.model`
 4. 支持所有 HTTP 方法（GET/POST/PUT/DELETE 等）
+5. 请求体大小受 `server.maxUploadSize` 限制
 
 **示例：**
 
