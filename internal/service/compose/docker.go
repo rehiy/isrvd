@@ -208,7 +208,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		return nil, err
 	}
 
-	s.dockerContainersRemove(ctx, name, oldContent)
+	s.dockerContainersRemove(ctx, name, oldContent, installDir, oldEnvState.Content)
 
 	rollback := func() string {
 		// 先恢复旧 .env 再回滚容器；.env 失败不阻断容器回滚
@@ -290,8 +290,9 @@ func (s *Service) dockerServiceCreate(ctx context.Context, project *types.Projec
 	return id, spec.Name, nil
 }
 
-// dockerContainersRemove 移除 project 中的所有 Docker 容器
-func (s *Service) dockerContainersRemove(ctx context.Context, name, content string) {
+// dockerContainersRemove 移除 project 中的所有 Docker 容器。
+// installDir 作为 compose 加载的工作目录（解析 env_file 等相对路径），envContent 用于叠加插值环境。
+func (s *Service) dockerContainersRemove(ctx context.Context, name, content, installDir, envContent string) {
 	removed := map[string]struct{}{}
 	removeByID := func(id string) {
 		if id == "" {
@@ -318,8 +319,13 @@ func (s *Service) dockerContainersRemove(ctx context.Context, name, content stri
 
 	// 补充删除无标签的旧容器，inspect 确认归属后再删
 	if content != "" {
-		project, err := compose.LoadProjectFromContent(ctx, content, name)
-		if err == nil {
+		project, err := compose.LoadProjectFromContentInDir(ctx, content, installDir, name, &envContent)
+		if err != nil {
+			// 旧配置解析失败只影响无标签容器的补充清理，标签路径已覆盖大部分场景，
+			// 因此不阻断重建，但必须留痕，避免残留容器被静默忽略
+			logman.Warn("Parse old compose content for container cleanup failed",
+				"name", name, "install_dir", installDir, "error", err)
+		} else {
 			for _, svc := range project.Services {
 				for _, cname := range compose.DockerContainerNameCandidates(name, svc) {
 					info, err := s.docker.ContainerInspect(ctx, cname)
