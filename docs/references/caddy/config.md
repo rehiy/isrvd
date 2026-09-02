@@ -26,16 +26,15 @@ isrvd_get "/caddy/global"
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | logLevel | string | 全局日志级别：`DEBUG` / `INFO` / `WARN` / `ERROR` |
-| persistConfig | boolean | 是否持久化配置到磁盘（`admin.config.persist`） |
-| storageModule | string | 证书存储模块名，例如 `file_system`，留空使用默认 |
-| storageRoot | string | 存储根路径（`file_system` 模块的 `root` 字段） |
+| logFormat | string | 日志格式：`json` / `console`，留空使用默认 |
 | email | string | ACME 注册邮箱 |
 | acmeCA | string | 自定义 ACME 目录 URL，留空使用 Let's Encrypt |
 | localCerts | boolean | 使用本地自签证书（`internal` issuer），不走 ACME |
 | onDemandTLS | boolean | 启用 on_demand TLS，连接时动态申请证书（同时设置全局 `permission` 和默认策略的 `on_demand: true`） |
 | onDemandAsk | string | ask 鉴权端点 URL，Caddy 申请证书前向此发 GET 请求，返回 2xx 才允许；Caddy v2.8+ 必须配置，留空则不设（仅测试环境） |
-| autoHttpsDisable | boolean | 全局禁用自动 HTTPS（`apps.http.automatic_https.disable`） |
-| autoHttpsDisableRedirects | boolean | 禁用 HTTP→HTTPS 自动跳转（`apps.http.automatic_https.disable_redirects`） |
+| gracePeriod | string | HTTP app 优雅关闭等待时间，例如 `10s` |
+
+> 自动 HTTPS 与 HTTP→HTTPS 重定向属于 HTTP server 配置，不属于全局选项。请通过服务接口的 `automatic_https` 字段按服务设置，参见 [服务管理](servers.md)。
 
 ### 更新全局选项
 
@@ -85,10 +84,13 @@ isrvd_post "/caddy/config" "$(jq -n '{
 ### 启用 HTTPS 自动签发
 
 ```bash
-# 设置 ACME 邮箱（必填）
+# 设置全局 ACME 邮箱
 isrvd_put "/caddy/global" '{"email":"you@example.com"}'
-# 使用本地自签证书（不走 ACME）
-isrvd_put "/caddy/global" '{"localCerts":true}'
+
+# 为指定服务启用自动 HTTPS 与重定向；listen 等字段按详情响应原样提交
+SERVER=$(isrvd_get "/caddy/server/<ID>")
+echo "$SERVER" | jq 'del(.id, .name, .routeCount) | .automatic_https = null' \
+  | xargs -0 -I{} isrvd_put "/caddy/server/<ID>" '{}'
 ```
 
 ### 调整日志级别

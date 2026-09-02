@@ -23,8 +23,6 @@ class CaddyGlobalConfig extends Vue {
     localCerts    = false
     onDemandTLS   = false
     onDemandAsk   = ''
-    autoHttpsDisable          = false
-    autoHttpsDisableRedirects = false
     gracePeriod   = ''
 
     // ─── 生命周期 ───
@@ -44,8 +42,6 @@ class CaddyGlobalConfig extends Vue {
             this.localCerts    = data.localCerts    ?? false
             this.onDemandTLS   = data.onDemandTLS   ?? false
             this.onDemandAsk   = data.onDemandAsk   ?? ''
-            this.autoHttpsDisable          = data.autoHttpsDisable          ?? false
-            this.autoHttpsDisableRedirects = data.autoHttpsDisableRedirects ?? false
             this.gracePeriod   = data.gracePeriod   ?? ''
         } finally {
             this.loading = false
@@ -61,8 +57,6 @@ class CaddyGlobalConfig extends Vue {
             localCerts:    this.localCerts    || undefined,
             onDemandTLS:   this.onDemandTLS   || undefined,
             onDemandAsk:   this.onDemandAsk   || undefined,
-            autoHttpsDisable:          this.autoHttpsDisable          || undefined,
-            autoHttpsDisableRedirects: this.autoHttpsDisableRedirects || undefined,
             gracePeriod:   this.gracePeriod   || undefined,
         }
         this.saving = true
@@ -166,19 +160,8 @@ export default toNative(CaddyGlobalConfig)
         </div>
       </div>
 
-      <!-- HTTPS 行为 -->
-      <div class="py-6">
-        <h2 class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-          <i class="fas fa-arrow-right-arrow-left text-violet-500"></i>HTTPS 行为
-        </h2>
-        <div class="space-y-3">
-          <ToggleCard v-model="autoHttpsDisable" :violet="true" label="禁用自动 HTTPS" desc="开启后 Caddy 不再自动申请或续签证书，也不插入 HTTP→HTTPS 跳转路由；关闭后配合 ACME 邮箱即可启用全自动证书管理" />
-          <ToggleCard v-model="autoHttpsDisableRedirects" :violet="true" label="禁用 HTTP→HTTPS 自动跳转" desc="不插入 301 重定向路由；适合需要同时提供 HTTP 和 HTTPS 服务的场景" />
-        </div>
-      </div>
-
       <!-- 系统 -->
-      <div class="py-6">
+      <div class="pt-6">
         <h2 class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
           <i class="fas fa-gear text-violet-500"></i>系统
         </h2>

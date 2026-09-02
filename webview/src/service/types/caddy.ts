@@ -185,8 +185,6 @@ export interface CaddyGlobal {
     localCerts?: boolean    // 使用本地自签证书（internal issuer），不走 ACME
     onDemandTLS?: boolean   // 启用 on_demand TLS（连接时动态申请证书）
     onDemandAsk?: string    // ask 鉴权端点 URL，Caddy v2.8+ 必须配置以防滥用
-    autoHttpsDisable?: boolean          // 全局禁用自动 HTTPS
-    autoHttpsDisableRedirects?: boolean // 禁用 HTTP→HTTPS 自动跳转
     gracePeriod?: string    // 优雅关闭等待时间，例如 10s
 }
 

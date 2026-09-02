@@ -94,3 +94,21 @@ isrvd_get "/caddy/basic-auth?server=internal"
 ```
 
 不带 `server` 时使用默认服务 `srv0`。
+
+## HTTPS 行为
+
+自动 HTTPS 与 HTTP→HTTPS 重定向按服务配置，不属于 Caddy 全局选项。更新服务时通过 `automatic_https` 设置：
+
+```bash
+SERVER=$(isrvd_get "/caddy/server/<ID>")
+UPDATED=$(echo "$SERVER" | jq '
+  del(.id, .name, .routeCount)
+  | .automatic_https = {
+      disable: false,
+      disable_redirects: true
+    }
+')
+isrvd_put "/caddy/server/<ID>" "$UPDATED"
+```
+
+`automatic_https` 为 `null` 或缺失时清除这两个显式开关，恢复 Caddy 对该服务的默认行为。

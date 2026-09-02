@@ -134,7 +134,7 @@ docker run -d \
 | 80 → 80 | Caddy | HTTP 代理端口 |
 | 443 → 443 | Caddy | HTTPS 代理端口 |
 
-Caddy 默认 HTTP 服务监听 `:80` 和 `:443`，但禁用了自动 HTTPS 及重定向。如需 HTTPS，可在「Caddy → 全局选项」中开启，或直接编辑「原始配置」。
+Caddy 默认 HTTP 服务监听 `:80` 和 `:443`，但禁用了自动 HTTPS 及重定向。如需 HTTPS，可在「Caddy → 服务」中编辑对应服务的 HTTPS 行为，或直接编辑「原始配置」。
 
 ### Docker Compose
 

@@ -141,10 +141,6 @@ type GlobalForm struct {
 	OnDemandTLS bool   `json:"onDemandTLS,omitempty"` // 启用 on_demand TLS（连接时动态申请证书）
 	OnDemandAsk string `json:"onDemandAsk,omitempty"` // ask 鉴权端点 URL（防滥用，Caddy v2.8+ 必须配置）
 
-	// automatic_https（server 级，作用于默认 server srv0）
-	AutoHTTPSDisable          bool `json:"autoHttpsDisable,omitempty"`          // 禁用自动 HTTPS
-	AutoHTTPSDisableRedirects bool `json:"autoHttpsDisableRedirects,omitempty"` // 禁用 HTTP→HTTPS 自动跳转
-
 	// HTTP app 全局参数
 	GracePeriod string `json:"gracePeriod,omitempty"` // 优雅关闭等待时间，例如 10s（apps.http.grace_period）
 }
@@ -205,14 +201,6 @@ func (s *Service) Global(ctx context.Context) (*GlobalForm, error) {
 		}
 	}
 
-	// automatic_https（server 级，作用于默认 server）
-	if cfg.Apps != nil && cfg.Apps.HTTP != nil {
-		if srv, ok := cfg.Apps.HTTP.Servers[DefaultServerName]; ok && srv != nil && srv.AutomaticHTTPS != nil {
-			form.AutoHTTPSDisable = srv.AutomaticHTTPS.Disable
-			form.AutoHTTPSDisableRedirects = srv.AutomaticHTTPS.DisableRedirects
-		}
-	}
-
 	// HTTP app 全局参数
 	if cfg.Apps != nil && cfg.Apps.HTTP != nil {
 		form.GracePeriod = cfg.Apps.HTTP.GracePeriod.String()
@@ -224,10 +212,11 @@ func (s *Service) Global(ctx context.Context) (*GlobalForm, error) {
 // GlobalUpdate 更新全局选项
 func (s *Service) GlobalUpdate(ctx context.Context, req GlobalForm) error {
 	return s.client.ConfigMutate(ctx, func(cfg *pkgCaddy.Config) error {
-		// srv0 是全局表单的明确目标；缺失时不隐式创建带 :80 的服务。
-		srv := getServer(cfg, DefaultServerName)
-		if srv == nil {
-			return ErrServerNotFound
+		if cfg.Apps == nil {
+			cfg.Apps = &pkgCaddy.AppsConfig{}
+		}
+		if cfg.Apps.HTTP == nil {
+			cfg.Apps.HTTP = &pkgCaddy.HTTPApp{}
 		}
 
 		// 日志：只修改表单管理的字段，保留 writer、sampling、include 等配置。
@@ -312,20 +301,6 @@ func (s *Service) GlobalUpdate(ctx context.Context, req GlobalForm) error {
 					policy.Issuers = []map[string]any{issuer}
 				}
 				auto.Policies = append([]pkgCaddy.TLSPolicy{policy}, auto.Policies...)
-			}
-		}
-
-		if srv.AutomaticHTTPS == nil && (req.AutoHTTPSDisable || req.AutoHTTPSDisableRedirects) {
-			srv.AutomaticHTTPS = &pkgCaddy.AutomaticHTTPS{}
-		}
-		// automatic_https 是全局表单的完整可编辑字段，清除旧的显式
-		// {} 存在性标记，使关闭所有开关时可恢复为未配置状态。
-		delete(srv.Extras, "automatic_https")
-		if srv.AutomaticHTTPS != nil {
-			srv.AutomaticHTTPS.Disable = req.AutoHTTPSDisable
-			srv.AutomaticHTTPS.DisableRedirects = req.AutoHTTPSDisableRedirects
-			if !req.AutoHTTPSDisable && !req.AutoHTTPSDisableRedirects && !hasUnmanagedAutomaticHTTPS(srv.AutomaticHTTPS) {
-				srv.AutomaticHTTPS = nil
 			}
 		}
 

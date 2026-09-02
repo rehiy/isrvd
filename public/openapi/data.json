@@ -8044,14 +8044,6 @@
             "description": "自定义 ACME 目录 URL，留空使用 Let's Encrypt",
             "type": "string"
           },
-          "autoHttpsDisable": {
-            "description": "禁用自动 HTTPS",
-            "type": "boolean"
-          },
-          "autoHttpsDisableRedirects": {
-            "description": "禁用 HTTP→HTTPS 自动跳转",
-            "type": "boolean"
-          },
           "email": {
             "description": "ACME 注册邮箱",
             "type": "string"
