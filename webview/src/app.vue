@@ -77,11 +77,11 @@ export default toNative(App)
       </div>
     </div>
 
-    <!--
-      主内容。始终挂载 CopilotKit Provider（同步），否则异步加载 Provider 时
-      子树内的 useCopilotReadable 会拿不到注入而整页崩溃；无权限时由组件内部跳过侧栏。
-    -->
-    <CopilotAgent v-else-if="portal.username" class="min-h-screen pt-16">
+    <!-- CopilotKit Provider 与页面布局分离，避免第三方样式影响页面 header 与内容间距 -->
+    <CopilotAgent v-else-if="portal.username" />
+
+    <!-- 主内容 -->
+    <div v-if="portal.username" class="min-h-screen pt-16">
       <!-- 移动端顶部菜单栏 -->
       <header
         class="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 z-30 flex items-center justify-between px-4 transition-all duration-300"
@@ -118,7 +118,7 @@ export default toNative(App)
       <main class="min-w-0 min-h-[calc(100vh-4rem)] transition-all duration-300 lg:border-l lg:border-slate-200/50" :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'">
         <router-view />
       </main>
-    </CopilotAgent>
+    </div>
 
     <!-- 登录页面 -->
     <AuthLogin v-else />
