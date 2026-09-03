@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import { CopilotChatConfigurationProvider, CopilotSidebar, useAgent, useCopilotReadable, useFrontendTool } from '@copilotkit/vue'
+import { CopilotChatConfigurationProvider, CopilotSidebar, useAgent, useCopilotAction, useCopilotReadable, useFrontendTool } from '@copilotkit/vue'
 import type { CopilotChatLabels } from '@copilotkit/vue'
-import { computed, onUnmounted, watch } from 'vue'
+import { computed, h, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { usePortal } from '@/stores'
 
 import { http } from '@/service/client'
 
-import { blobRead, packToolResult } from '@/helper/agent-blob'
+import { executeAgentAPI } from '@/helper/agent-api'
+import { blobRead } from '@/helper/agent-blob'
 import { systemInstruction, getPageInstruction } from '@/helper/instructions'
 import { getPageController, disposePageController } from '@/helper/page-controller'
 
+import AgentAPICard from '@/component/agent-api-card.vue'
 import CopilotSidebarToggleBridge from '@/component/copilot-sidebar-bridge.vue'
 
 const route = useRoute()
@@ -139,51 +141,45 @@ useFrontendTool({
     },
 })
 
+const isrvdAPIParameters = [
+    { name: 'method' as const, type: 'string' as const, description: 'HTTP 方法', required: true },
+    { name: 'path' as const, type: 'string' as const, description: '相对 api/ 的路径，以 lookup_api 返回的 path 为准，如 docker/containers', required: true },
+    { name: 'body' as const, type: 'string' as const, description: '请求体 JSON 字符串，仅 post/put/patch 使用', required: false },
+    { name: 'params' as const, type: 'string' as const, description: '查询参数 JSON 字符串', required: false },
+]
+
+const renderAgentAPICard = (props: unknown, approval = false) =>
+    h(AgentAPICard, { ...(props as Record<string, unknown>), approval })
+
 useFrontendTool({
     name: 'isrvd_api',
     description:
-        '调用 iSrvd REST API 完成运维操作。path、方法和请求体以 lookup_api 的结果为准，' +
+        '调用 iSrvd REST API 查询资源，仅允许 GET。path 和查询参数以 lookup_api 的结果为准，' +
         'path 为相对 api/ 的路径（去掉开头的 /）。禁止用于读取密钥类配置。' +
         '返回结果过大时会自动暂存并返回 blobId，请改用 result_read 按需读取，不要重复调用原接口拉全量。',
-    parameters: [
-        { name: 'method', type: 'string', description: 'HTTP 方法：get / post / put / patch / delete', required: true },
-        { name: 'path', type: 'string', description: '相对 api/ 的路径，以 lookup_api 返回的 path 为准，如 docker/containers', required: true },
-        { name: 'body', type: 'string', description: '请求体 JSON 字符串，仅 post/put/patch 使用', required: false },
-        { name: 'params', type: 'string', description: '查询参数 JSON 字符串', required: false },
-    ],
-    handler: async ({ method, path, body, params }) => {
-        try {
-            const config = { params: params ? JSON.parse(params) : undefined }
-            const target = String(path).replace(/^\/+/, '')
-            const payload = body ? JSON.parse(body) : {}
-            let res
-            if (method === 'get') {
-                res = await http.get(target, config)
-            } else if (method === 'delete') {
-                res = await http.delete(target, config)
-            } else if (method === 'put') {
-                res = await http.put(target, payload, config)
-            } else if (method === 'patch') {
-                res = await http.patch(target, payload, config)
-            } else {
-                res = await http.post(target, payload, config)
-            }
-            return packToolResult({ success: res?.success ?? true, message: res?.message ?? '', payload: res?.payload ?? null })
-        } catch (e) {
-            return { success: false, message: e instanceof Error ? e.message : '请求失败' }
-        }
-    },
+    parameters: isrvdAPIParameters,
+    handler: args => executeAgentAPI(args, 'query'),
+    render: (props: unknown) => renderAgentAPICard(props),
 })
 
-// 大结果读取：isrvd_api 返回 truncated 时，按 blobId 从本会话内存中提取所需部分
+useCopilotAction({
+    name: 'isrvd_mutation',
+    description:
+        '调用 iSrvd REST API 执行写操作，仅允许 POST、PUT、PATCH、DELETE。' +
+        'path、方法、参数和请求体必须以 lookup_api 的结果为准。调用后会显示审批卡，只有用户确认才会执行。',
+    parameters: isrvdAPIParameters,
+    renderAndWaitForResponse: (props: unknown) => renderAgentAPICard(props, true),
+})
+
+// 大结果读取：API 工具返回 truncated 时，按 blobId 从本会话内存中提取所需部分
 useFrontendTool({
     name: 'result_read',
     description:
-        '读取 isrvd_api 暂存的大结果。blobId 必填；path 可选，提取子字段' +
+        '读取 API 工具暂存的大结果。blobId 必填；path 可选，提取子字段' +
         '（支持 .key、[0]、[-1]，如 [-1].data.system.memoryUsed）；' +
         'offset/limit 可选，按字符分段读取原文（limit 最大 8000）。',
     parameters: [
-        { name: 'blobId', type: 'string', description: 'isrvd_api 返回的暂存 ID', required: true },
+        { name: 'blobId', type: 'string', description: 'API 工具返回的暂存 ID', required: true },
         { name: 'path', type: 'string', description: '字段路径，如 [-1].data.system.memoryUsed', required: false },
         { name: 'offset', type: 'number', description: '分段读取的起始字符位置，默认 0', required: false },
         { name: 'limit', type: 'number', description: '分段读取的字符数，默认 4000，最大 8000', required: false },

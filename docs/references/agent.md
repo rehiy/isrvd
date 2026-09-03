@@ -198,6 +198,8 @@ const data = await response.json();
 console.log(data.choices[0].message.content);
 ```
 
+Chat iSrvd 会将前端工具调用渲染为操作卡片：GET 查询由 `isrvd_api` 执行，并按返回结构展示资源列表或字段；POST、PUT、PATCH、DELETE 写操作由 `isrvd_mutation` 承接，先展示目标和脱敏后的请求参数，只有用户在审批卡中确认后才会执行。用户取消会作为工具结果返回给 Agent。
+
 ---
 
 ## 安全说明

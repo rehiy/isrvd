@@ -25,7 +25,7 @@ export function blobPut(text: string): string {
     return id
 }
 
-// packToolResult 工具结果打包：超过阈值时暂存原文，返回引用与读取指引
+// packToolResult API 工具结果打包：超过阈值时暂存原文，返回引用与读取指引
 export function packToolResult(result: { success: boolean; message: string; payload: unknown }): unknown {
     const text = JSON.stringify(result)
     if (text.length <= BLOB_THRESHOLD) return result
