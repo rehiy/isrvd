@@ -11,6 +11,9 @@ import { usePortalStore } from './portal'
 import type { PortalStore } from './portal'
 import type { ConfirmOptions } from './ui'
 
+export { useAgentStore } from './agent'
+export type { AgentStore } from './agent'
+
 // 包装 usePortal，提供明确的类型注解
 export function usePortal(): PortalStore {
     return usePortalStore()

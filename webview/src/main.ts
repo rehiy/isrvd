@@ -11,6 +11,9 @@ import '@fortawesome/fontawesome-free/css/all.min.css'
 // 导入 Tailwind CSS 样式
 import './assets/style.css'
 
+// CopilotKit 侧栏自带样式（自包含，不依赖其他 CSS）
+import '@copilotkit/vue/styles.css'
+
 // 创建并挂载应用
 const app = createApp(App)
 const pinia = createPinia()

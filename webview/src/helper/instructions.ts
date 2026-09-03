@@ -63,6 +63,25 @@ export const systemInstruction = `
 - 状态切换：POST /api/{module}/{resource}/:id/status 或 /enable
 
 常用模块前缀：docker、swarm、apisix、caddy、cron、account、system、filer、compose
+
+## 可用工具
+
+### isrvd_api
+调用 iSrvd REST API，路径规则同上。适合查询数据、创建/修改/删除资源等有接口支撑的操作。
+优先使用它，比操作 UI 更稳定、可审计。
+
+### page_action
+直接操作当前页面 UI，用于没有对应接口或需要走界面流程的场景。
+用法：先 \`action=read\` 获取当前页面带序号的可交互元素列表，再按返回的序号执行动作：
+
+- \`click\`（index）：点击元素
+- \`input\`（index, text）：向输入框输入内容
+- \`select\`（index, text）：选择下拉选项
+- \`scroll\` / \`scroll_horizontal\`（down/right, pixels）：滚动页面
+- \`javascript\`（script）：执行 JS，仅在常规动作无法完成时兜底
+
+注意：序号来自最近一次 read 的结果，页面变化后需重新 read；
+执行破坏性操作（删除、停止、重启）前必须先向用户确认。
 `
 
 // 路由表：按匹配精度从高到低排列（具体路径在前，通用前缀在后）
@@ -211,6 +230,11 @@ const PAGE_INSTRUCTIONS: Array<{ test: (path: string) => boolean; desc: string }
 ]
 
 export function getPageInstruction(url: string): string {
-    const path = new URL(url).pathname
+    // 兼容完整 URL 与路由路径两种入参；应用为 hash 路由，页面路径在 hash 段
+    if (url.startsWith('/')) {
+        return PAGE_INSTRUCTIONS.find(rule => rule.test(url.split('?')[0]))?.desc ?? ''
+    }
+    const u = new URL(url, window.location.origin)
+    const path = (u.hash.slice(1) || u.pathname).split('?')[0]
     return PAGE_INSTRUCTIONS.find(rule => rule.test(path))?.desc ?? ''
 }
