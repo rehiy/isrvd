@@ -43,9 +43,37 @@ useCopilotReadable(
     { description: '当前页面功能说明', value: pageInstruction.value },
     [pageInstruction],
 )
-useCopilotReadable({ description: 'iSrvd 助手系统提示与 API 调用规范', value: systemInstruction.trim() })
+useCopilotReadable({ description: 'iSrvd 助手系统提示', value: systemInstruction.trim() })
 
 // ─── 前端工具 ───
+
+useFrontendTool({
+    name: 'lookup_api',
+    description:
+        '查阅 iSrvd 官方 OpenAPI。不确定路径、方法或请求体时必须先查再调用 isrvd_api。' +
+        '不传参数返回模块目录；tag 或 q 返回接口列表；path（可选 method）返回参数与字段。',
+    parameters: [
+        { name: 'tag', type: 'string', description: '模块标签，如 docker、swarm、apisix、caddy、compose、cron、account、system、filer、ssh、overview、shell、agent', required: false },
+        { name: 'q', type: 'string', description: '关键词，匹配路径、摘要、operationId', required: false },
+        { name: 'path', type: 'string', description: 'API 路径，如 docker/containers 或 /docker/container/{id}', required: false },
+        { name: 'method', type: 'string', description: 'HTTP 方法：get / post / put / patch / delete', required: false },
+    ],
+    handler: async ({ tag, q, path, method }) => {
+        try {
+            const res = await http.get('agent/openapi', {
+                params: {
+                    tag: tag || undefined,
+                    q: q || undefined,
+                    path: path || undefined,
+                    method: method || undefined,
+                },
+            })
+            return { success: res?.success ?? true, message: res?.message ?? '', payload: res?.payload ?? null }
+        } catch (e) {
+            return { success: false, message: e instanceof Error ? e.message : '查阅 API 文档失败' }
+        }
+    },
+})
 
 // 页面操作：读取可交互元素树后按序号执行动作，对应原 page-agent 的自动操作能力
 useFrontendTool({
@@ -110,11 +138,11 @@ useFrontendTool({
 useFrontendTool({
     name: 'isrvd_api',
     description:
-        '调用 iSrvd REST API 完成运维操作。path 为相对 api/ 的路径（如 docker/containers），' +
-        'body 为 JSON 字符串请求体，params 为 JSON 字符串查询参数。禁止用于读取密钥类配置。',
+        '调用 iSrvd REST API 完成运维操作。path、方法和请求体以 lookup_api 的结果为准，' +
+        'path 为相对 api/ 的路径（去掉开头的 /）。禁止用于读取密钥类配置。',
     parameters: [
         { name: 'method', type: 'string', description: 'HTTP 方法：get / post / put / patch / delete', required: true },
-        { name: 'path', type: 'string', description: '相对 api/ 的路径，如 docker/containers（单条路由为 docker/container/:id 单数形式）', required: true },
+        { name: 'path', type: 'string', description: '相对 api/ 的路径，以 lookup_api 返回的 path 为准，如 docker/containers', required: true },
         { name: 'body', type: 'string', description: '请求体 JSON 字符串，仅 post/put/patch 使用', required: false },
         { name: 'params', type: 'string', description: '查询参数 JSON 字符串', required: false },
     ],

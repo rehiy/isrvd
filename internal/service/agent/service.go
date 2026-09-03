@@ -22,6 +22,7 @@ var httpClient = &http.Client{Timeout: 10 * time.Minute}
 // Service Agent 代理业务服务
 type Service struct {
 	client *http.Client
+	spec   *openAPISpec // 仅 initServices 赋值一次，之后只读
 }
 
 // NewService 创建 Agent 代理业务服务

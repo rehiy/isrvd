@@ -775,6 +775,96 @@
         ]
       }
     },
+    "/agent/openapi": {
+      "get": {
+        "operationId": "get_agent_openapi",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "method",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "$ref": "#/components/schemas/agent.OpenAPILookupResult"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查阅 OpenAPI 文档",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/agui": {
+      "post": {
+        "description": "[SSE] AG-UI 协议对话",
+        "operationId": "post_agui",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "AG-UI 协议对话",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
     "/apisix/consumer": {
       "post": {
         "operationId": "post_apisix_consumer",
@@ -911,23 +1001,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "items": {
-                        "$ref": "#/components/schemas/apisix.Consumer"
-                      },
-                      "type": "array"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
+                  "$ref": "#/components/schemas/APIResponse"
                 }
               }
             },
@@ -1031,20 +1105,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "$ref": "#/components/schemas/apisix.PluginConfig"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
+                  "$ref": "#/components/schemas/APIResponse"
                 }
               }
             },
@@ -1117,23 +1178,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "items": {
-                        "$ref": "#/components/schemas/apisix.PluginConfig"
-                      },
-                      "type": "array"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
+                  "$ref": "#/components/schemas/APIResponse"
                 }
               }
             },
@@ -1258,20 +1303,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "$ref": "#/components/schemas/apisix.Route"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
+                  "$ref": "#/components/schemas/APIResponse"
                 }
               }
             },
@@ -1385,23 +1417,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "items": {
-                        "$ref": "#/components/schemas/apisix.Route"
-                      },
-                      "type": "array"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
+                  "$ref": "#/components/schemas/APIResponse"
                 }
               }
             },
@@ -1505,20 +1521,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "$ref": "#/components/schemas/apisix.SSL"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
+                  "$ref": "#/components/schemas/APIResponse"
                 }
               }
             },
@@ -1591,23 +1594,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "items": {
-                        "$ref": "#/components/schemas/apisix.SSL"
-                      },
-                      "type": "array"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
+                  "$ref": "#/components/schemas/APIResponse"
                 }
               }
             },
@@ -1711,20 +1698,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "$ref": "#/components/schemas/apisix.Upstream"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
+                  "$ref": "#/components/schemas/APIResponse"
                 }
               }
             },
@@ -1797,23 +1771,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "items": {
-                        "$ref": "#/components/schemas/apisix.Upstream"
-                      },
-                      "type": "array"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
+                  "$ref": "#/components/schemas/APIResponse"
                 }
               }
             },
@@ -1834,23 +1792,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "items": {
-                        "$ref": "#/components/schemas/apisix.Route"
-                      },
-                      "type": "array"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
+                  "$ref": "#/components/schemas/APIResponse"
                 }
               }
             },
@@ -2414,20 +2356,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "$ref": "#/components/schemas/caddy.Info"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
+                  "$ref": "#/components/schemas/APIResponse"
                 }
               }
             },
@@ -2673,6 +2602,156 @@
           }
         },
         "summary": "查询 Caddy 路由列表",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/caddy/server": {
+      "post": {
+        "operationId": "post_caddy_server",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/caddy.ServerCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "创建 Caddy 服务",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/caddy/server/{name}": {
+      "delete": {
+        "operationId": "delete_caddy_server_name",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "删除 Caddy 服务",
+        "tags": [
+          "caddy"
+        ]
+      },
+      "get": {
+        "operationId": "get_caddy_server_name",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "$ref": "#/components/schemas/caddy.ServerView"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "获取 Caddy 服务详情",
+        "tags": [
+          "caddy"
+        ]
+      },
+      "put": {
+        "operationId": "put_caddy_server_name",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/caddy.ServerForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "更新 Caddy 服务",
+        "tags": [
+          "caddy"
+        ]
+      }
+    },
+    "/caddy/servers": {
+      "get": {
+        "operationId": "get_caddy_servers",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "items": {
+                        "$ref": "#/components/schemas/caddy.ServerView"
+                      },
+                      "type": "array"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询 Caddy 服务列表",
         "tags": [
           "caddy"
         ]
@@ -3549,20 +3628,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "$ref": "#/components/schemas/docker.ContainerFileListResult"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
+                  "$ref": "#/components/schemas/APIResponse"
                 }
               }
             },
@@ -7411,6 +7477,137 @@
         ],
         "type": "object"
       },
+      "agent.OpenAPILookupResult": {
+        "properties": {
+          "description": {
+            "description": "detail：补充说明",
+            "type": "string"
+          },
+          "hint": {
+            "description": "下一步查阅建议",
+            "type": "string"
+          },
+          "method": {
+            "description": "detail：HTTP 方法",
+            "type": "string"
+          },
+          "mode": {
+            "description": "catalog / list / detail",
+            "type": "string"
+          },
+          "operationId": {
+            "description": "detail：OpenAPI operationId",
+            "type": "string"
+          },
+          "operations": {
+            "description": "list：接口摘要",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "parameters": {
+            "description": "detail：路径/查询参数",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "path": {
+            "description": "detail：相对于 /api 的路径",
+            "type": "string"
+          },
+          "requestBody": {
+            "description": "detail：请求体字段（已展开 $ref）"
+          },
+          "response": {
+            "description": "detail：200 响应字段（已展开 $ref）"
+          },
+          "summary": {
+            "description": "detail：中文摘要",
+            "type": "string"
+          },
+          "tag": {
+            "description": "detail：模块标签",
+            "type": "string"
+          },
+          "tags": {
+            "description": "catalog：模块目录",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "total": {
+            "description": "list：匹配总数",
+            "type": "integer"
+          },
+          "truncated": {
+            "description": "list：是否截断",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "agent.OpenAPIOpBrief": {
+        "properties": {
+          "method": {
+            "description": "HTTP 方法",
+            "type": "string"
+          },
+          "operationId": {
+            "description": "OpenAPI operationId",
+            "type": "string"
+          },
+          "path": {
+            "description": "相对于 /api 的路径",
+            "type": "string"
+          },
+          "summary": {
+            "description": "中文摘要",
+            "type": "string"
+          },
+          "tag": {
+            "description": "模块标签",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "agent.OpenAPIQuery": {
+        "properties": {
+          "method": {
+            "description": "HTTP 方法：get / post / put / patch / delete",
+            "type": "string"
+          },
+          "path": {
+            "description": "API 路径，如 /docker/containers",
+            "type": "string"
+          },
+          "q": {
+            "description": "关键词，匹配路径、摘要、operationId",
+            "type": "string"
+          },
+          "tag": {
+            "description": "模块标签，如 docker、apisix",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "agent.OpenAPITagInfo": {
+        "properties": {
+          "count": {
+            "description": "该标签下的接口数量",
+            "type": "integer"
+          },
+          "name": {
+            "description": "模块标签",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "agent.ProxyRequest": {
         "properties": {
           "Body": {
@@ -8017,7 +8214,7 @@
         "properties": {
           "@id": {
             "description": "配置 ID（用于引用）",
-            "type": "string"
+            "type": "object"
           },
           "admin": {
             "description": "Admin API 配置",
@@ -8079,7 +8276,7 @@
         "properties": {
           "grace_period": {
             "description": "优雅关闭等待时间（如 \"5s\"）",
-            "type": "string"
+            "type": "object"
           },
           "http_port": {
             "description": "HTTP 监听端口（默认 80）",
@@ -8092,6 +8289,31 @@
           "servers": {
             "description": "Server 名称 → 配置",
             "type": "object"
+          },
+          "shutdown_delay": {
+            "description": "延迟关闭等待时间",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.HTTPError": {
+        "properties": {
+          "Body": {
+            "description": "Body",
+            "type": "string"
+          },
+          "Method": {
+            "description": "Method",
+            "type": "string"
+          },
+          "Path": {
+            "description": "Path",
+            "type": "string"
+          },
+          "StatusCode": {
+            "description": "StatusCode",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -8112,24 +8334,46 @@
         "properties": {
           "@id": {
             "description": "配置 ID（用于引用）",
-            "type": "string"
+            "type": "object"
           },
           "automatic_https": {
             "description": "自动 HTTPS 配置",
             "type": "object"
+          },
+          "client_ip_headers": {
+            "description": "获取客户端 IP 的请求头",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "enable_full_duplex": {
+            "description": "启用 HTTP/1 全双工",
+            "type": "boolean"
           },
           "errors": {
             "description": "错误处理配置",
             "type": "object"
           },
           "idle_timeout": {
-            "description": "空闲超时（如 \"5s\"）",
-            "type": "string"
+            "description": "空闲超时",
+            "type": "object"
+          },
+          "keepalive_interval": {
+            "description": "TCP keepalive 间隔",
+            "type": "object"
           },
           "listen": {
             "description": "监听地址列表，如 [\":80\", \":443\"]",
             "items": {
               "type": "string"
+            },
+            "type": "array"
+          },
+          "listener_wrappers": {
+            "description": "listener wrapper 模块配置",
+            "items": {
+              "type": "object"
             },
             "type": "array"
           },
@@ -8145,6 +8389,10 @@
             "description": "指标配置（如 Prometheus）",
             "type": "object"
           },
+          "named_routes": {
+            "description": "命名路由",
+            "type": "object"
+          },
           "protocols": {
             "description": "启用的协议：h1|h2|h2c|h3",
             "items": {
@@ -8152,9 +8400,13 @@
             },
             "type": "array"
           },
+          "read_header_timeout": {
+            "description": "请求头读取超时",
+            "type": "object"
+          },
           "read_timeout": {
             "description": "读取超时",
-            "type": "string"
+            "type": "object"
           },
           "routes": {
             "description": "路由规则列表",
@@ -8174,9 +8426,17 @@
             },
             "type": "array"
           },
+          "trusted_proxies": {
+            "description": "可信代理源模块",
+            "type": "object"
+          },
+          "trusted_proxies_strict": {
+            "description": "可信代理头解析顺序",
+            "type": "integer"
+          },
           "write_timeout": {
             "description": "写入超时",
-            "type": "string"
+            "type": "object"
           }
         },
         "type": "object"
@@ -8258,7 +8518,7 @@
         "properties": {
           "@id": {
             "description": "配置 ID",
-            "type": "string"
+            "type": "object"
           },
           "logs": {
             "description": "各模块日志配置",
@@ -8284,7 +8544,7 @@
         "properties": {
           "@id": {
             "description": "路由 ID（用于引用）",
-            "type": "string"
+            "type": "object"
           },
           "group": {
             "description": "路由组名（同组路由聚合）",
@@ -8320,6 +8580,77 @@
         },
         "type": "object"
       },
+      "caddy.ServerAutomaticHTTPSForm": {
+        "properties": {
+          "disable": {
+            "description": "disable",
+            "type": "boolean"
+          },
+          "disable_redirects": {
+            "description": "disable_redirects",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.ServerCreateRequest": {
+        "properties": {
+          "name": {
+            "description": "name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "caddy.ServerForm": {
+        "properties": {
+          "automatic_https": {
+            "description": "automatic_https",
+            "type": "object"
+          },
+          "idle_timeout": {
+            "description": "idle_timeout",
+            "type": "string"
+          },
+          "listen": {
+            "description": "listen",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "max_header_bytes": {
+            "description": "max_header_bytes",
+            "type": "integer"
+          },
+          "protocols": {
+            "description": "protocols",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "read_timeout": {
+            "description": "read_timeout",
+            "type": "string"
+          },
+          "strict_sni_host": {
+            "description": "strict_sni_host",
+            "type": "boolean"
+          },
+          "write_timeout": {
+            "description": "write_timeout",
+            "type": "string"
+          }
+        },
+        "required": [
+          "listen"
+        ],
+        "type": "object"
+      },
       "caddy.ServerLogs": {
         "properties": {
           "default_logger_name": {
@@ -8327,8 +8658,12 @@
             "type": "string"
           },
           "logger_names": {
-            "description": "Host → 日志名映射",
+            "description": "Host → 日志名列表映射",
             "type": "object"
+          },
+          "should_log_credentials": {
+            "description": "是否记录凭据请求头",
+            "type": "boolean"
           },
           "skip_hosts": {
             "description": "跳过日志的 Host 列表",
@@ -8340,6 +8675,27 @@
           "skip_unmapped_hosts": {
             "description": "是否跳过未映射 Host 的日志",
             "type": "boolean"
+          },
+          "trace": {
+            "description": "是否记录 handler trace",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "caddy.ServerView": {
+        "properties": {
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "name": {
+            "description": "name",
+            "type": "string"
+          },
+          "routeCount": {
+            "description": "routeCount",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -8381,7 +8737,7 @@
           },
           "ocsp_interval": {
             "description": "OCSP 更新间隔",
-            "type": "string"
+            "type": "object"
           },
           "on_demand": {
             "description": "按需证书配置",
@@ -8396,7 +8752,7 @@
           },
           "renew_interval": {
             "description": "续期检查间隔（如 \"24h\"）",
-            "type": "string"
+            "type": "object"
           }
         },
         "type": "object"
@@ -8573,6 +8929,10 @@
             "description": "compose.yml 文本",
             "type": "string"
           },
+          "envContent": {
+            "description": ".env 文本（KEY=VALUE）；无落盘文件时为空",
+            "type": "string"
+          },
           "fileModTime": {
             "description": "compose.yml 修改时间戳（Unix 秒）；无落盘文件时为空",
             "type": "integer"
@@ -8592,6 +8952,10 @@
         "properties": {
           "content": {
             "description": "compose.yml 文件内容（必填）",
+            "type": "string"
+          },
+          "envContent": {
+            "description": ".env 内容（KEY=VALUE）；nil 表示保留附加文件解压出的 .env，非 nil 时以其为准写盘（空串即清空）",
             "type": "string"
           },
           "forcePull": {
@@ -8649,6 +9013,19 @@
         },
         "type": "object"
       },
+      "compose.EnvState": {
+        "properties": {
+          "Content": {
+            "description": "Content",
+            "type": "string"
+          },
+          "Exists": {
+            "description": "Exists",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
       "compose.InitPayload": {
         "properties": {
           "File": {
@@ -8672,7 +9049,7 @@
             "type": "array"
           },
           "Environment": {
-            "description": "额外的环境变量（会与 .env 合并，优先级更高）",
+            "description": "额外的环境变量（并入进程环境，优先级高于 .env）",
             "type": "object"
           },
           "ProjectName": {
@@ -8689,7 +9066,11 @@
       "compose.RedeployRequest": {
         "properties": {
           "content": {
-            "description": "compose.yml 内容（未指定 serviceName 时必填，用于全量重建）",
+            "description": "compose.yml 内容；nil 表示沿用现有 compose.yml，提交空串报错",
+            "type": "string"
+          },
+          "envContent": {
+            "description": ".env 内容（KEY=VALUE）；nil 表示保留现有 .env，空串表示清空，非空表示覆盖",
             "type": "string"
           },
           "forcePull": {

@@ -16,7 +16,7 @@ import (
 // - 其他路由：强制认证，失败时返回 401
 func AuthMiddleware(routeIndex map[string]Route, svc *svcAccount.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if route, ok := matchRoute(routeIndex, c.Request.Method, c.FullPath()); ok {
+		if route, ok := lookupRoute(routeIndex, c); ok {
 			if route.QueryToken {
 				c.Set("routeQueryToken", true)
 			}
@@ -45,7 +45,7 @@ func AuthMiddleware(routeIndex map[string]Route, svc *svcAccount.Service) gin.Ha
 func PermMiddleware(routeIndex map[string]Route, svc *svcAccount.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.FullPath()
-		route, ok := matchRoute(routeIndex, c.Request.Method, path)
+		route, ok := lookupRoute(routeIndex, c)
 		if path == "" || !ok {
 			respondError(c, http.StatusForbidden, "未授权的访问路径")
 			c.Abort()
@@ -79,7 +79,7 @@ func PermMiddleware(routeIndex map[string]Route, svc *svcAccount.Service) gin.Ha
 // 根据路由 Audit 策略决定是否记录：0 按 Method，<0 忽略，>0 强制记录。
 func AuditMiddleware(routeIndex map[string]Route, svc *svcSystem.AuditService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		route, _ := matchRoute(routeIndex, c.Request.Method, c.FullPath())
+		route, _ := lookupRoute(routeIndex, c)
 		isWS := strings.EqualFold(c.GetHeader("Upgrade"), "websocket")
 		if route.Audit < AuditByMethod || (route.Audit == AuditByMethod && !isWS && c.Request.Method == http.MethodGet) {
 			c.Next()
@@ -116,6 +116,13 @@ func securityHeadersMiddleware() gin.HandlerFunc {
 }
 
 // ─── 辅助函数 ───
+
+func lookupRoute(routeIndex map[string]Route, c *gin.Context) (Route, bool) {
+	if route, ok := matchRoute(routeIndex, c.Request.Method, c.Request.URL.Path); ok {
+		return route, true
+	}
+	return matchRoute(routeIndex, c.Request.Method, c.FullPath())
+}
 
 func matchRoute(routeIndex map[string]Route, method, path string) (Route, bool) {
 	route, ok := routeIndex[method+" "+path]

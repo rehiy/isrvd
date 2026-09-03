@@ -2,10 +2,64 @@
 
 ## 概述
 
-Agent 模块提供两类能力：
+Agent 模块提供三类能力：
 
+- **OpenAPI 查阅**（`GET /api/agent/openapi`）：按模块、路径或关键词检索嵌入的官方 OpenAPI，供 Copilot 与脚本按需读取契约
 - **LLM API 代理**（`ANY /api/agent/*path`）：转发到配置的 OpenAI 兼容 API，自动注入 `agent.apiKey` 并可重写 `agent.model`
 - **AG-UI 协议对话**（`POST /api/agui`）：供前端 CopilotKit 使用，以 SSE 事件流返回 AG-UI 事件
+
+登录即可查阅 OpenAPI，不依赖 `agent.baseUrl`，也不受 `server.openapi`（对外 Scalar 文档页）开关影响。
+
+---
+
+## 查阅 OpenAPI
+
+```bash
+# 模块目录
+isrvd_get "/agent/openapi"
+
+# 按模块列出接口
+isrvd_get "/agent/openapi?tag=docker"
+
+# 按关键词搜索
+isrvd_get "/agent/openapi?q=container"
+
+# 查看单条接口的参数与字段（已展开 $ref）
+isrvd_get "/agent/openapi?path=/docker/containers&method=get"
+```
+
+**查询参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `tag` | string | 否 | 模块标签，如 `docker`、`apisix`、`caddy`、`swarm` |
+| `q` | string | 否 | 关键词，匹配路径、摘要、operationId |
+| `path` | string | 否 | API 路径，如 `/docker/containers` 或 `docker/container/{id}`（也接受 `:id`） |
+| `method` | string | 否 | HTTP 方法：`get` / `post` / `put` / `patch` / `delete` |
+
+均不传时返回 `mode=catalog`（标签与接口数量）。有过滤条件且恰好命中一条时返回 `mode=detail`（参数、请求体、200 响应字段，`$ref` 已展开）；多条时返回 `mode=list`（最多 40 条，超出时 `truncated=true`）。
+
+**响应字段：**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `mode` | string | `catalog` / `list` / `detail` |
+| `hint` | string | 下一步查阅建议 |
+| `tags` | array | catalog：`{name, count}` |
+| `total` | number | list：匹配总数 |
+| `truncated` | boolean | list：是否截断 |
+| `operations` | array | list：`{method, path, summary, operationId, tag}` |
+| `method` | string | detail：HTTP 方法 |
+| `path` | string | detail：相对于 `/api` 的路径 |
+| `summary` | string | detail：中文摘要 |
+| `description` | string | detail：补充说明 |
+| `operationId` | string | detail：OpenAPI operationId |
+| `tag` | string | detail：模块标签 |
+| `parameters` | array | detail：路径/查询参数 |
+| `requestBody` | object | detail：请求体字段 |
+| `response` | object | detail：200 响应字段 |
+
+文档来自构建时生成的 `public/openapi/data.json`（`go run ./cmd/openapi-gen/`），与对外 `/openapi/` 页同一份规格。
 
 ---
 
@@ -118,8 +172,8 @@ curl -X GET "http://<HOST>/api/agent/models" \
 
 ## 权限要求
 
-- 需要登录（任意认证方式）
-- 需要 `agent` 模块权限
+- 查阅 OpenAPI（`GET /api/agent/openapi`）：登录即可
+- 其余接口：需要登录，且需要 `agent` 模块权限
 
 ---
 
