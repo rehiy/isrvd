@@ -2760,6 +2760,36 @@
     "/compose/docker": {
       "post": {
         "operationId": "post_compose_docker",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/compose.DeployRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  },
+                  "envContent": {
+                    "type": "string"
+                  },
+                  "initFile": {
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "initURL": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -2898,6 +2928,36 @@
     "/compose/swarm": {
       "post": {
         "operationId": "post_compose_swarm",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/compose.DeployRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  },
+                  "envContent": {
+                    "type": "string"
+                  },
+                  "initFile": {
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "initURL": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -3848,6 +3908,18 @@
           "content": {
             "multipart/form-data": {
               "schema": {
+                "properties": {
+                  "file": {
+                    "items": {
+                      "format": "binary",
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "relativePath": {
+                    "type": "string"
+                  }
+                },
                 "type": "object"
               }
             }
@@ -5387,20 +5459,19 @@
     "/filer/upload": {
       "post": {
         "operationId": "post_filer_upload",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "path",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "multipart/form-data": {
               "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string"
+                  }
+                },
                 "type": "object"
               }
             }
@@ -6026,6 +6097,18 @@
           "content": {
             "multipart/form-data": {
               "schema": {
+                "properties": {
+                  "file": {
+                    "items": {
+                      "format": "binary",
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "relativePath": {
+                    "type": "string"
+                  }
+                },
                 "type": "object"
               }
             }

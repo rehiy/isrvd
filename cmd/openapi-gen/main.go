@@ -102,6 +102,7 @@ type RouteDef struct {
 	JSONBody    *SchemaInfo // ShouldBindJSON 类型
 	QueryType   *SchemaInfo // ShouldBindQuery 类型
 	FormData    bool        // multipart/form-data
+	FormFields  []ParamDef  // c.PostForm / c.GetPostForm / c.FormFile 字段
 	PathParams  []ParamDef  // c.Param 参数
 	QueryParams []ParamDef  // c.Query / c.DefaultQuery 参数
 	IsWS        bool        // WebSocket 路由
@@ -387,9 +388,16 @@ func parseRouteLiteral(cl *ast.CompositeLit) RouteDef {
 // ─── 第 2a 步：预扫描所有类型引用 ─────────────────────
 
 // findFuncReturnType 在指定文件中查找函数的返回类型名称
-// collectPathParamsFromFunc 分析指定函数的 body，提取其中的 c.Param 调用
-func collectPathParamsFromFunc(filename, funcName string, r *RouteDef) {
-	f := parseFile(filename)
+// analyzeHelperFunc 跟进同文件辅助函数，分析其中的绑定与参数提取调用。
+// 例如 compose 部署把 JSON/multipart 绑定抽到了 bindComposeDeployRequest，
+// 不跟进会导致生成的 OpenAPI 缺失 requestBody。
+func analyzeHelperFunc(r *RouteDef, state *handlerAnalysisState, funcName string) {
+	if state.helpers[funcName] {
+		return
+	}
+	state.helpers[funcName] = true
+
+	f := parseFile(state.filename)
 	if f == nil {
 		return
 	}
@@ -398,27 +406,31 @@ func collectPathParamsFromFunc(filename, funcName string, r *RouteDef) {
 		if !ok || fd.Name.Name != funcName || fd.Body == nil {
 			continue
 		}
+		sub := &handlerAnalysisState{
+			varTypes:   make(map[string]string),
+			localTypes: state.localTypes,
+			filename:   state.filename,
+			helpers:    state.helpers,
+		}
 		ast.Inspect(fd.Body, func(n ast.Node) bool {
-			call, ok := n.(*ast.CallExpr)
-			if !ok {
-				return true
-			}
-			sel, ok := call.Fun.(*ast.SelectorExpr)
-			if !ok || sel.Sel.Name != "Param" {
-				return true
-			}
-			if len(call.Args) >= 1 {
-				if lit, ok := call.Args[0].(*ast.BasicLit); ok {
-					name := strings.Trim(lit.Value, `"`)
-					if !hasParam(r.PathParams, name) {
-						r.PathParams = append(r.PathParams, ParamDef{
-							Name: name, Type: "string", Required: true,
-						})
-					}
-				}
-			}
+			analyzeNode(n, r, sub)
 			return true
 		})
+		return
+	}
+}
+
+// analyzeNode 按节点类型分发到各分析器
+func analyzeNode(n ast.Node, r *RouteDef, state *handlerAnalysisState) {
+	switch stmt := n.(type) {
+	case *ast.AssignStmt:
+		analyzeAssignStmtV2(stmt, r, state)
+	case *ast.DeclStmt:
+		analyzeDeclStmtV2(stmt, r, state)
+	case *ast.CallExpr:
+		analyzeCallExprV2(stmt, r, state)
+	case *ast.IndexExpr:
+		analyzeMultipartIndex(stmt, r)
 	}
 }
 
@@ -756,6 +768,7 @@ type handlerAnalysisState struct {
 	varTypes   map[string]string // 变量名 → 类型名（如 "resp" → "account.LoginResponse"）
 	localTypes map[string]string // 本地类型别名
 	filename   string            // 当前分析的文件
+	helpers    map[string]bool   // 已跟进过的同文件辅助函数（防递归）
 }
 
 func analyzeFuncBody(r *RouteDef, body *ast.BlockStmt, localTypes map[string]string, filename string) {
@@ -763,17 +776,11 @@ func analyzeFuncBody(r *RouteDef, body *ast.BlockStmt, localTypes map[string]str
 		varTypes:   make(map[string]string),
 		localTypes: localTypes,
 		filename:   filename,
+		helpers:    make(map[string]bool),
 	}
 
 	ast.Inspect(body, func(n ast.Node) bool {
-		switch stmt := n.(type) {
-		case *ast.AssignStmt:
-			analyzeAssignStmtV2(stmt, r, state)
-		case *ast.DeclStmt:
-			analyzeDeclStmtV2(stmt, r, state)
-		case *ast.CallExpr:
-			analyzeCallExprV2(stmt, r, state)
-		}
+		analyzeNode(n, r, state)
 		return true
 	})
 }
@@ -887,7 +894,7 @@ func analyzeCallExprV2(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisSt
 			// 错误处理，无需特殊处理
 			return
 		default:
-			collectPathParamsFromFunc(state.filename, ident.Name, r)
+			analyzeHelperFunc(r, state, ident.Name)
 			return
 		}
 	}
@@ -908,11 +915,12 @@ func analyzeCallExprV2(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisSt
 		extractDefaultQueryParam(stmt, r)
 	case "Param":
 		extractParamCall(stmt, r)
-	case "PostForm":
+	case "PostForm", "GetPostForm":
 		r.FormData = true
-		extractQueryParam(stmt, r, "string", false)
+		extractFormField(stmt, r, "string")
 	case "FormFile":
 		r.FormData = true
+		extractFormField(stmt, r, "file")
 	case "ParseMultipartForm":
 		r.FormData = true
 	case "NewEventWriter":
@@ -1204,6 +1212,44 @@ func extractQueryParam(stmt *ast.CallExpr, r *RouteDef, typ string, required boo
 				Name: name, Type: typ, Required: required,
 			})
 		}
+	}
+}
+
+// extractFormField 提取 multipart 表单字段（PostForm/GetPostForm/FormFile）
+func extractFormField(stmt *ast.CallExpr, r *RouteDef, typ string) {
+	if len(stmt.Args) < 1 {
+		return
+	}
+	if lit, ok := stmt.Args[0].(*ast.BasicLit); ok {
+		name := strings.Trim(lit.Value, `"`)
+		if !hasParam(r.FormFields, name) {
+			r.FormFields = append(r.FormFields, ParamDef{Name: name, Type: typ})
+		}
+	}
+}
+
+// analyzeMultipartIndex 提取 c.Request.MultipartForm.File["file"] / .Value["key"] 直取形式的表单字段
+func analyzeMultipartIndex(expr *ast.IndexExpr, r *RouteDef) {
+	sel, ok := expr.X.(*ast.SelectorExpr)
+	if !ok || (sel.Sel.Name != "File" && sel.Sel.Name != "Value") {
+		return
+	}
+	inner, ok := sel.X.(*ast.SelectorExpr)
+	if !ok || inner.Sel.Name != "MultipartForm" {
+		return
+	}
+	lit, ok := expr.Index.(*ast.BasicLit)
+	if !ok {
+		return
+	}
+	r.FormData = true
+	typ := "string"
+	if sel.Sel.Name == "File" {
+		typ = "files" // MultipartForm.File 是多文件切片
+	}
+	name := strings.Trim(lit.Value, `"`)
+	if !hasParam(r.FormFields, name) {
+		r.FormFields = append(r.FormFields, ParamDef{Name: name, Type: typ})
 	}
 }
 
@@ -1964,6 +2010,25 @@ func getOpenAPIType(goType string) string {
 	}
 }
 
+// buildFormDataSchema 根据表单字段构建 multipart/form-data schema
+func buildFormDataSchema(fields []ParamDef) map[string]any {
+	props := map[string]any{}
+	for _, f := range fields {
+		switch f.Type {
+		case "file":
+			props[f.Name] = map[string]any{"type": "string", "format": "binary"}
+		case "files":
+			props[f.Name] = map[string]any{
+				"type":  "array",
+				"items": map[string]any{"type": "string", "format": "binary"},
+			}
+		default:
+			props[f.Name] = map[string]any{"type": f.Type}
+		}
+	}
+	return map[string]any{"type": "object", "properties": props}
+}
+
 func buildOperation(r RouteDef, allSchemas map[string]*SchemaInfo) map[string]any {
 	// 生成响应 schema
 	responseSchema := buildResponseSchema(r, allSchemas)
@@ -2041,37 +2106,29 @@ func buildOperation(r RouteDef, allSchemas map[string]*SchemaInfo) map[string]an
 		op["parameters"] = parameters
 	}
 
-	// Request body
-	if r.JSONBody != nil && !r.FormData {
-		refName := ""
-		if r.JSONBody.PkgName != "" {
-			refName = sanitizeRef(r.JSONBody.PkgName + "." + r.JSONBody.TypeName)
-		} else {
-			refName = sanitizeRef(r.JSONBody.TypeName)
+	// Request body（JSON 与 multipart 可同时存在，如 compose 部署两种提交方式都支持）
+	if r.JSONBody != nil || r.FormData {
+		content := map[string]any{}
+		if r.JSONBody != nil {
+			name := r.JSONBody.TypeName
+			if r.JSONBody.PkgName != "" {
+				name = r.JSONBody.PkgName + "." + name
+			}
+			refName := sanitizeRef(name)
+			content["application/json"] = map[string]any{
+				"schema": map[string]any{
+					"$ref": "#/components/schemas/" + refName,
+				},
+			}
 		}
-
+		if r.FormData {
+			content["multipart/form-data"] = map[string]any{
+				"schema": buildFormDataSchema(r.FormFields),
+			}
+		}
 		op["requestBody"] = map[string]any{
 			"required": true,
-			"content": map[string]any{
-				"application/json": map[string]any{
-					"schema": map[string]any{
-						"$ref": "#/components/schemas/" + refName,
-					},
-				},
-			},
-		}
-	}
-
-	if r.FormData {
-		op["requestBody"] = map[string]any{
-			"required": true,
-			"content": map[string]any{
-				"multipart/form-data": map[string]any{
-					"schema": map[string]any{
-						"type": "object",
-					},
-				},
-			},
+			"content":  content,
 		}
 	}
 
