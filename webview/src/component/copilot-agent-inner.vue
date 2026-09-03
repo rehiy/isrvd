@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { computed, onUnmounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
 import { CopilotChatConfigurationProvider, CopilotSidebar, useAgent, useCopilotReadable, useFrontendTool } from '@copilotkit/vue'
 import type { CopilotChatLabels } from '@copilotkit/vue'
+import { computed, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+
+import { usePortal } from '@/stores'
 
 import { http } from '@/service/client'
-import { usePortal } from '@/stores'
-import CopilotSidebarToggleBridge from '@/component/copilot-sidebar-bridge.vue'
-import { getPageController, disposePageController } from '@/helper/page-controller'
+
+import { blobRead, packToolResult } from '@/helper/agent-blob'
 import { systemInstruction, getPageInstruction } from '@/helper/instructions'
+import { getPageController, disposePageController } from '@/helper/page-controller'
+
+import CopilotSidebarToggleBridge from '@/component/copilot-sidebar-bridge.vue'
 
 const route = useRoute()
 const portal = usePortal()
@@ -139,7 +143,8 @@ useFrontendTool({
     name: 'isrvd_api',
     description:
         '调用 iSrvd REST API 完成运维操作。path、方法和请求体以 lookup_api 的结果为准，' +
-        'path 为相对 api/ 的路径（去掉开头的 /）。禁止用于读取密钥类配置。',
+        'path 为相对 api/ 的路径（去掉开头的 /）。禁止用于读取密钥类配置。' +
+        '返回结果过大时会自动暂存并返回 blobId，请改用 result_read 按需读取，不要重复调用原接口拉全量。',
     parameters: [
         { name: 'method', type: 'string', description: 'HTTP 方法：get / post / put / patch / delete', required: true },
         { name: 'path', type: 'string', description: '相对 api/ 的路径，以 lookup_api 返回的 path 为准，如 docker/containers', required: true },
@@ -163,11 +168,28 @@ useFrontendTool({
             } else {
                 res = await http.post(target, payload, config)
             }
-            return { success: res?.success ?? true, message: res?.message ?? '', payload: res?.payload ?? null }
+            return packToolResult({ success: res?.success ?? true, message: res?.message ?? '', payload: res?.payload ?? null })
         } catch (e) {
             return { success: false, message: e instanceof Error ? e.message : '请求失败' }
         }
     },
+})
+
+// 大结果读取：isrvd_api 返回 truncated 时，按 blobId 从本会话内存中提取所需部分
+useFrontendTool({
+    name: 'result_read',
+    description:
+        '读取 isrvd_api 暂存的大结果。blobId 必填；path 可选，提取子字段' +
+        '（支持 .key、[0]、[-1]，如 [-1].data.system.memoryUsed）；' +
+        'offset/limit 可选，按字符分段读取原文（limit 最大 8000）。',
+    parameters: [
+        { name: 'blobId', type: 'string', description: 'isrvd_api 返回的暂存 ID', required: true },
+        { name: 'path', type: 'string', description: '字段路径，如 [-1].data.system.memoryUsed', required: false },
+        { name: 'offset', type: 'number', description: '分段读取的起始字符位置，默认 0', required: false },
+        { name: 'limit', type: 'number', description: '分段读取的字符数，默认 4000，最大 8000', required: false },
+    ],
+    handler: (p: { blobId?: unknown; path?: unknown; offset?: number; limit?: number }) =>
+        blobRead(String(p.blobId ?? ''), { path: p.path ? String(p.path) : undefined, offset: p.offset, limit: p.limit }),
 })
 
 // CopilotKit 1.70 将 labels 类型声明为英文字面量，运行时实际接受任意字符串。
