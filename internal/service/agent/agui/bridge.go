@@ -62,7 +62,6 @@ type ChatToolCallFunc struct {
 
 // ChatChunk OpenAI 流式响应的单个 data 载荷
 type ChatChunk struct {
-	ID      string        `json:"id"`
 	Choices []ChunkChoice `json:"choices"`
 	Error   *ChunkError   `json:"error,omitempty"`
 }
@@ -212,8 +211,9 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 		return err
 	}
 
-	// toolIDs 记录已发送 TOOL_CALL_START 的工具，用于识别参数分片所属的工具
-	toolIDs := map[string]bool{}
+	// toolIDs 按到达顺序记录已发送 TOOL_CALL_START 的工具，
+	// 用于识别参数分片所属的工具，并保证 TOOL_CALL_END 的发射顺序稳定
+	var toolIDs []string
 	messageStarted := false
 	messageID := input.RunID
 	lastToolID := ""
@@ -281,7 +281,7 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 			// 流式首片带 ID 与函数名，后续分片仅携带参数增量且 ID 为空，
 			// 故以最近一次出现的工具 ID 归属参数分片。
 			if tc.ID != "" {
-				toolIDs[tc.ID] = true
+				toolIDs = append(toolIDs, tc.ID)
 				lastToolID = tc.ID
 				if messageStarted {
 					if err := enc.Write(Event{Type: TextMessageEnd, MessageID: messageID}); err != nil {
@@ -311,8 +311,8 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 		}
 
 		if chunk.Choices[0].FinishReason != nil && *chunk.Choices[0].FinishReason == "tool_calls" {
-			// 工具参数已发送完毕，逐个补发 TOOL_CALL_END，前端据此执行工具
-			for id := range toolIDs {
+			// 工具参数已发送完毕，按开始顺序补发 TOOL_CALL_END，前端据此执行工具
+			for _, id := range toolIDs {
 				if err := enc.Write(Event{Type: ToolCallEnd, ToolCallID: id}); err != nil {
 					return err
 				}

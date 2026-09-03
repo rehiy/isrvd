@@ -28,5 +28,3 @@ export const useAgentStore = defineStore('agent', () => {
 
     return { sidebarOpen, bindSidebar, unbindSidebar, toggleSidebar }
 })
-
-export type AgentStore = ReturnType<typeof useAgentStore>

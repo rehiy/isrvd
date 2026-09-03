@@ -27,7 +27,6 @@ function onError(event: { error: Error }) {
 <template>
   <CopilotKitProvider :self-managed-agents="agents" :headers="authHeaders()" :on-error="onError">
     <CopilotAgentInner />
-    <slot />
   </CopilotKitProvider>
 </template>
 

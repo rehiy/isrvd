@@ -1,18 +1,17 @@
 <script setup lang="ts">
-import { computed, onUnmounted, watch } from 'vue'
+import { computed, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { CopilotChatConfigurationProvider, CopilotModalHeader, CopilotSidebar, useCopilotReadable, useFrontendTool } from '@copilotkit/vue'
+import { CopilotChatConfigurationProvider, CopilotSidebar, useCopilotReadable, useFrontendTool } from '@copilotkit/vue'
 import type { CopilotChatLabels } from '@copilotkit/vue'
 
 import { http } from '@/service/client'
-import { usePortal, useAgentStore } from '@/stores'
+import { usePortal } from '@/stores'
 import CopilotSidebarToggleBridge from '@/component/copilot-sidebar-bridge.vue'
 import { getPageController, disposePageController } from '@/helper/page-controller'
 import { systemInstruction, getPageInstruction } from '@/helper/instructions'
 
 const route = useRoute()
 const portal = usePortal()
-const agent = useAgentStore()
 
 // 无 agent 权限时不出侧栏、不注册工具；Provider 仍由外层挂载以支撑注入
 const hasAgent = computed(() => portal.hasPerm('agent'))
@@ -22,11 +21,7 @@ const hasAgent = computed(() => portal.hasPerm('agent'))
 const pageInstruction = computed(() => getPageInstruction(route.fullPath || '/'))
 
 useCopilotReadable(
-    {
-        description: '当前页面功能说明',
-        value: pageInstruction.value,
-        convert: (_desc, val) => String(val ?? ''),
-    },
+    { description: '当前页面功能说明', value: pageInstruction.value },
     [pageInstruction],
 )
 useCopilotReadable({ description: 'iSrvd 助手系统提示与 API 调用规范', value: systemInstruction.trim() })
@@ -155,23 +150,15 @@ const chineseLabels = {
 
 // 卸载时释放页面控制器，清理高亮与遮罩
 onUnmounted(disposePageController)
-
-// 侧栏卸载时清掉顶栏按钮的开关引用
-watch(hasAgent, v => { if (!v) agent.unbindSidebar() }, { immediate: true })
 </script>
 
 <template>
   <CopilotChatConfigurationProvider :labels="chineseLabels">
     <CopilotSidebar v-if="hasAgent" :default-open="false">
-      <!-- 标题改为 Chat iSrvd：labels 是字面量联合类型改不了文案，故直接换掉 header -->
-      <template #header>
-        <CopilotModalHeader title="Chat iSrvd" />
-      </template>
       <!-- 开合控制转存到 store，按钮由顶栏渲染，避免 z-1200 的侧栏盖住 header -->
       <template #toggle-button="{ isOpen, toggle }">
         <CopilotSidebarToggleBridge :is-open="isOpen" :toggle="toggle" />
       </template>
     </CopilotSidebar>
   </CopilotChatConfigurationProvider>
-  <slot />
 </template>

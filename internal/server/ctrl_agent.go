@@ -24,15 +24,8 @@ func (app *App) defineAgentRoutes() []Route {
 
 // agentAGUI 以 AG-UI 协议与前端 CopilotKit 交互，响应为 SSE 事件流
 func (app *App) agentAGUI(c *gin.Context) {
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, config.Server.MaxUploadSize)
-	body, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		respondError(c, http.StatusBadRequest, "读取请求体失败")
-		return
-	}
-
 	var input svcAgent.AGUIInput
-	if err := json.Unmarshal(body, &input); err != nil {
+	if err := json.NewDecoder(io.LimitReader(c.Request.Body, config.Server.MaxUploadSize)).Decode(&input); err != nil {
 		respondError(c, http.StatusBadRequest, "请求体格式错误")
 		return
 	}
