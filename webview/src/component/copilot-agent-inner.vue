@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { CopilotModalHeader, CopilotSidebar, useCopilotReadable, useFrontendTool } from '@copilotkit/vue'
+import { CopilotChatConfigurationProvider, CopilotModalHeader, CopilotSidebar, useCopilotReadable, useFrontendTool } from '@copilotkit/vue'
+import type { CopilotChatLabels } from '@copilotkit/vue'
 
 import { http } from '@/service/client'
 import { usePortal, useAgentStore } from '@/stores'
@@ -127,6 +128,31 @@ useFrontendTool({
     },
 })
 
+// CopilotKit 1.70 将 labels 类型声明为英文字面量，运行时实际接受任意字符串。
+// 用 unknown 只绕过上游类型限制，不改变配置结构。
+const chineseLabels = {
+    chatInputPlaceholder: '请输入消息...',
+    chatInputToolbarStartTranscribeButtonLabel: '开始语音输入',
+    chatInputToolbarCancelTranscribeButtonLabel: '取消语音输入',
+    chatInputToolbarFinishTranscribeButtonLabel: '完成语音输入',
+    chatInputToolbarAddButtonLabel: '添加图片或文件',
+    chatInputToolbarToolsButtonLabel: '工具',
+    assistantMessageToolbarCopyCodeLabel: '复制代码',
+    assistantMessageToolbarCopyCodeCopiedLabel: '已复制',
+    assistantMessageToolbarCopyMessageLabel: '复制消息',
+    assistantMessageToolbarThumbsUpLabel: '有帮助',
+    assistantMessageToolbarThumbsDownLabel: '没帮助',
+    assistantMessageToolbarReadAloudLabel: '朗读',
+    assistantMessageToolbarRegenerateLabel: '重新生成',
+    userMessageToolbarCopyMessageLabel: '复制消息',
+    userMessageToolbarEditMessageLabel: '编辑消息',
+    chatDisclaimerText: 'AI 可能出错，请核实重要信息。',
+    chatToggleOpenLabel: '打开聊天',
+    chatToggleCloseLabel: '关闭聊天',
+    modalHeaderTitle: 'Chat iSrvd',
+    welcomeMessageText: '你好，我能帮你做什么？',
+} as unknown as Partial<CopilotChatLabels>
+
 // 卸载时释放页面控制器，清理高亮与遮罩
 onUnmounted(disposePageController)
 
@@ -135,15 +161,17 @@ watch(hasAgent, v => { if (!v) agent.unbindSidebar() }, { immediate: true })
 </script>
 
 <template>
-  <CopilotSidebar v-if="hasAgent" :default-open="false">
-    <!-- 标题改为 Chat iSrvd：labels 是字面量联合类型改不了文案，故直接换掉 header -->
-    <template #header>
-      <CopilotModalHeader title="Chat iSrvd" />
-    </template>
-    <!-- 开合控制转存到 store，按钮由顶栏渲染，避免 z-1200 的侧栏盖住 header -->
-    <template #toggle-button="{ isOpen, toggle }">
-      <CopilotSidebarToggleBridge :is-open="isOpen" :toggle="toggle" />
-    </template>
-  </CopilotSidebar>
+  <CopilotChatConfigurationProvider :labels="chineseLabels">
+    <CopilotSidebar v-if="hasAgent" :default-open="false">
+      <!-- 标题改为 Chat iSrvd：labels 是字面量联合类型改不了文案，故直接换掉 header -->
+      <template #header>
+        <CopilotModalHeader title="Chat iSrvd" />
+      </template>
+      <!-- 开合控制转存到 store，按钮由顶栏渲染，避免 z-1200 的侧栏盖住 header -->
+      <template #toggle-button="{ isOpen, toggle }">
+        <CopilotSidebarToggleBridge :is-open="isOpen" :toggle="toggle" />
+      </template>
+    </CopilotSidebar>
+  </CopilotChatConfigurationProvider>
   <slot />
 </template>
