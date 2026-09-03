@@ -45,9 +45,10 @@ type ContainerInfo struct {
 	Labels   map[string]string `json:"labels,omitempty"`   // 容器标签
 }
 
-// ContainerList 列出容器
-func (s *Service) ContainerList(ctx context.Context, all bool) ([]*ContainerInfo, error) {
-	list, err := s.docker.ContainerList(ctx, all)
+// ContainerList 列出容器。
+// filterJSON 为 Docker 原生 filters 的 JSON 编码（如 {"health":["unhealthy"]}），为空时不过滤。
+func (s *Service) ContainerList(ctx context.Context, all bool, filterJSON ...string) ([]*ContainerInfo, error) {
+	list, err := s.docker.ContainerList(ctx, all, filterJSON...)
 	if err != nil {
 		return nil, fmt.Errorf("获取容器列表失败: %w", err)
 	}

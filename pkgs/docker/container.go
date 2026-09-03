@@ -11,8 +11,18 @@ import (
 )
 
 // ContainerList 获取容器列表，直接返回 Docker SDK 原始列表项。
-func (s *DockerService) ContainerList(ctx context.Context, all bool) ([]container.Summary, error) {
-	containers, err := s.client.ContainerList(ctx, container.ListOptions{All: all})
+// filterJSON 为 Docker 原生 filters 的 JSON 编码（如 {"health":["unhealthy"]}），为空时不过滤。
+func (s *DockerService) ContainerList(ctx context.Context, all bool, filterJSON ...string) ([]container.Summary, error) {
+	opts := container.ListOptions{All: all}
+	if len(filterJSON) > 0 && filterJSON[0] != "" {
+		args, err := filters.FromJSON(filterJSON[0])
+		if err != nil {
+			logman.Error("Parse container filters failed", "filters", filterJSON[0], "error", err)
+			return nil, err
+		}
+		opts.Filters = args
+	}
+	containers, err := s.client.ContainerList(ctx, opts)
 	if err != nil {
 		logman.Error("List containers failed", "error", err)
 		return nil, err
