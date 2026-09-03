@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onUnmounted } from 'vue'
+import { computed, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { CopilotChatConfigurationProvider, CopilotSidebar, useCopilotReadable, useFrontendTool } from '@copilotkit/vue'
+import { CopilotChatConfigurationProvider, CopilotSidebar, useAgent, useCopilotReadable, useFrontendTool } from '@copilotkit/vue'
 import type { CopilotChatLabels } from '@copilotkit/vue'
 
 import { http } from '@/service/client'
@@ -12,9 +12,28 @@ import { systemInstruction, getPageInstruction } from '@/helper/instructions'
 
 const route = useRoute()
 const portal = usePortal()
+const { agent: copilotAgent } = useAgent({ agentId: 'default', updates: [] })
 
 // 无 agent 权限时不出侧栏、不注册工具；Provider 仍由外层挂载以支撑注入
 const hasAgent = computed(() => portal.hasPerm('agent'))
+
+// 运行结束后清理页面高亮；工具调用轮结束时先保留，给 CopilotKit 的 follow-up
+// 继续使用 read 返回的序号，最终文本回答轮结束后才清理。
+watch(copilotAgent, (agent, _previous, onCleanup) => {
+    if (!agent) return
+
+    const cleanupWhenAnswerFinished = ({ messages }: { messages: readonly { role: string; toolCalls?: unknown[] }[] }) => {
+        const lastMessage = messages[messages.length - 1]
+        if (lastMessage?.role === 'assistant' && lastMessage.toolCalls?.length) return
+        disposePageController()
+    }
+    const subscription = agent.subscribe({
+        onRunFinalized: cleanupWhenAnswerFinished,
+        onRunFailed: () => disposePageController(),
+        onRunErrorEvent: () => disposePageController(),
+    })
+    onCleanup(() => subscription.unsubscribe())
+}, { immediate: true })
 
 // ─── 页面上下文 ───
 
