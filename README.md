@@ -12,7 +12,7 @@
 | 文件管理 | 浏览、上传、下载、编辑、创建/删除目录、重命名、权限修改、压缩/解压 |
 | Web 终端 | 基于 xterm.js 的 Shell 终端，支持容器终端接入 |
 | SSH 远程管理 | 管理主机与可复用凭据，支持密码/私钥认证、浏览器终端和 SFTP 文件管理 |
-| AI 助手 | 内置 Agent，支持自然语言操作，兼容 OpenAI API 的 LLM 接入 |
+| AI 助手 | 内置 Agent，基于 CopilotKit + AG-UI 协议，支持页面上下文与工具调用，兼容 OpenAI API 的 LLM 接入 |
 | 计划任务 | 定时任务调度，支持 Shell/BAT/PowerShell/可执行文件，以及 Docker 临时容器或已有容器执行模式 |
 | APISIX | 路由、Consumer、上游(Upstream)、SSL 证书、插件配置(PluginConfig)、插件列表、访问授权管理 |
 | Caddy | HTTP 服务、路由、Basic Auth、SSL 证书、全局选项管理，支持原始配置编辑 |
@@ -31,7 +31,7 @@
 | 前端 | Vue 3 / TypeScript / Tailwind CSS / Pinia |
 | 终端 | xterm.js |
 | 容器 | Docker / APISIX / Caddy |
-| AI | 兼容 OpenAI API 的 LLM 接入 |
+| AI | 兼容 OpenAI API 的 LLM 接入，前端基于 CopilotKit + AG-UI 协议 |
 
 ## Docker 部署
 
@@ -326,6 +326,7 @@ git diff --check
 | `ssh` | `GET /api/ssh/to/:id` | SSH 远程管理（连接终端） |
 | `ssh` | `GET /api/sftp/:id/ls` | SSH 远程管理（SFTP 列出目录） |
 | `agent` | `ANY /api/agent/*path` | AI 助手（LLM 代理） |
+| `agent` | `POST /api/agui` | AI 助手（AG-UI 协议对话） |
 | `cron` | `GET /api/cron/jobs` | 计划任务（列出） |
 | `cron` | `POST /api/cron/jobs` | 计划任务（创建） |
 | `cron` | `POST /api/cron/jobs/:id/run` | 计划任务（立即执行） |
