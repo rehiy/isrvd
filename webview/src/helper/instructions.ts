@@ -62,6 +62,12 @@ export const systemInstruction = `
 - 操作：POST /api/{module}/{resource}/:id/action
 - 状态切换：POST /api/{module}/{resource}/:id/status 或 /enable
 
+注意：Docker 模块的单条路由用单数形式（GET /api/docker/container/:id、/api/docker/image/:id、
+/api/docker/network/:id、/api/docker/volume/:id），不要按上面的通用规则拼复数。
+
+容器列表仅支持 all=true 参数，不支持 Docker filters 过滤（如 health）；
+判断容器健康状态请从列表结果的 status 字段读取（如 "Up 5 days (unhealthy)"）。
+
 常用模块前缀：docker、swarm、apisix、caddy、cron、account、system、filer、compose
 
 ## 可用工具

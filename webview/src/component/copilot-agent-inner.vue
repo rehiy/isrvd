@@ -47,12 +47,12 @@ useFrontendTool({
             description: 'read（读取页面元素）/ click / input / select / scroll / scroll_horizontal / javascript',
             required: true,
         },
-        { name: 'index', type: 'number', description: '目标元素序号，来自 read 的结果' },
-        { name: 'text', type: 'string', description: 'input 的输入内容，或 select 的选项文本' },
-        { name: 'down', type: 'boolean', description: 'scroll 时是否向下滚动' },
-        { name: 'right', type: 'boolean', description: 'scroll_horizontal 时是否向右滚动' },
-        { name: 'pixels', type: 'number', description: '滚动像素数，默认一屏' },
-        { name: 'script', type: 'string', description: 'javascript 动作要执行的 JS 代码' },
+        { name: 'index', type: 'number', description: '目标元素序号，来自 read 的结果', required: false },
+        { name: 'text', type: 'string', description: 'input 的输入内容，或 select 的选项文本', required: false },
+        { name: 'down', type: 'boolean', description: 'scroll 时是否向下滚动', required: false },
+        { name: 'right', type: 'boolean', description: 'scroll_horizontal 时是否向右滚动', required: false },
+        { name: 'pixels', type: 'number', description: '滚动像素数，默认一屏', required: false },
+        { name: 'script', type: 'string', description: 'javascript 动作要执行的 JS 代码', required: false },
     ],
     handler: async ({ action, index, text, down, right, pixels, script }) => {
         const pc = getPageController()
@@ -100,9 +100,9 @@ useFrontendTool({
         'body 为 JSON 字符串请求体，params 为 JSON 字符串查询参数。禁止用于读取密钥类配置。',
     parameters: [
         { name: 'method', type: 'string', description: 'HTTP 方法：get / post / put / patch / delete', required: true },
-        { name: 'path', type: 'string', description: '相对 api/ 的路径，如 docker/containers', required: true },
-        { name: 'body', type: 'string', description: '请求体 JSON 字符串，仅 post/put/patch 使用' },
-        { name: 'params', type: 'string', description: '查询参数 JSON 字符串' },
+        { name: 'path', type: 'string', description: '相对 api/ 的路径，如 docker/containers（单条路由为 docker/container/:id 单数形式）', required: true },
+        { name: 'body', type: 'string', description: '请求体 JSON 字符串，仅 post/put/patch 使用', required: false },
+        { name: 'params', type: 'string', description: '查询参数 JSON 字符串', required: false },
     ],
     handler: async ({ method, path, body, params }) => {
         try {
