@@ -81,7 +81,7 @@ isrvd_post "/docker/container" '{"image":"...","name":"..."}'
 | 系统 | [references/system/cron.md](references/system/cron.md) | 计划任务 |
 | 系统 | [references/system/ssh.md](references/system/ssh.md) | SSH 主机/凭据管理、SFTP、SSH 终端 |
 | 终端 | [references/shell.md](references/shell.md) | Web Shell（本地终端） |
-| Agent | [references/agent.md](references/agent.md) | Agent 代理（OpenAI 兼容 API） |
+| Agent | [references/agent.md](references/agent.md) | OpenAPI 查阅、Agent 代理（OpenAI 兼容 API）、AG-UI 协议对话 |
 
 > 📌 各文档中包含完整的 API 端点列表、请求/响应字段说明和示例。
 

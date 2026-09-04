@@ -27,6 +27,7 @@ import (
 
 	"isrvd/config"
 	"isrvd/internal/registry"
+	"isrvd/public"
 )
 
 // initServices 初始化/刷新所有业务服务
@@ -39,6 +40,11 @@ func (app *App) initServices() {
 	app.filerSvc = svcFiler.NewService()
 	app.shellSvc = svcShell.NewService()
 	app.agentSvc = svcAgent.NewService()
+	if spec, err := public.Efs.ReadFile("openapi/data.json"); err != nil {
+		logman.Warn("agent openapi spec unavailable", "error", err)
+	} else if err := app.agentSvc.LoadOpenAPI(spec); err != nil {
+		logman.Warn("agent openapi spec invalid", "error", err)
+	}
 
 	if websshSvc, err := svcWebSSH.NewService(); err != nil {
 		logman.Warn("WebSSH service unavailable", "error", err)
@@ -99,11 +105,12 @@ func (app *App) closeServices() {
 	}
 }
 
-// serviceAvailableMiddleware 根据路由 Module 动态检查服务是否可用，不可用返回 503
+// serviceAvailableMiddleware 根据路由 Module 动态检查服务是否可用，不可用返回 503。
+// 匿名/登录即可访问的路由不因可选后端（如未配置 LLM）而拒绝。
 func (app *App) serviceAvailableMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		route, ok := app.routeIndex[c.Request.Method+" "+c.FullPath()]
-		if !ok || app.isServiceAvailable(route.Module) {
+		route, ok := lookupRoute(app.routeIndex, c)
+		if !ok || route.Access == AccessAnon || route.Access == AccessAuth || app.isServiceAvailable(route.Module) {
 			c.Next()
 			return
 		}

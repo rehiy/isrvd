@@ -80,6 +80,10 @@ type Route struct {
 	Access     RouteAccess     `json:"access"`        // 访问级别，0：需要具体权限，-1：匿名，1：登录即可访问
 	Audit      AuditLevel      `json:"-"`             // 审计级别，0：按 Method 审计，-1：忽略，1：强制审计
 	QueryToken bool            `json:"-"`             // 允许从 query ?token= 提取 JWT（用于 SSE/文件下载等无法携带 Header 的场景）
+	// IndexOnly 只写入权限索引，不注册到 Gin。
+	// Gin 1.12 不允许精确段与同前缀 catch-all 并存（/agent/openapi 与 /agent/*path 会 panic），
+	// 这类路由改由通配 handler 分发，见 agentDispatch。
+	IndexOnly bool `json:"-"`
 }
 
 func StartApp() {
@@ -159,6 +163,9 @@ func (app *App) registerRoute(group *gin.RouterGroup, route Route) {
 	key := route.Method + " " + APINamespace + route.Path
 	route.Key = key
 	app.routeIndex[key] = route
+	if route.IndexOnly {
+		return
+	}
 
 	switch route.Method {
 	case "GET":

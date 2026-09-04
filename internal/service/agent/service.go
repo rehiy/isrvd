@@ -3,6 +3,7 @@ package agent
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"github.com/rehiy/libgo/logman"
 
 	"isrvd/config"
+	"isrvd/internal/service/agent/agui"
 )
 
 var httpClient = &http.Client{Timeout: 10 * time.Minute}
@@ -20,6 +22,7 @@ var httpClient = &http.Client{Timeout: 10 * time.Minute}
 // Service Agent 代理业务服务
 type Service struct {
 	client *http.Client
+	spec   *openAPISpec // 仅 initServices 赋值一次，之后只读
 }
 
 // NewService 创建 Agent 代理业务服务
@@ -87,6 +90,31 @@ func (s *Service) Proxy(req ProxyRequest) (*ProxyResponse, error) {
 		Headers:    resp.Header,
 		Body:       resp.Body,
 	}, nil
+}
+
+// AGUIInput 是 /api/agui 接受的请求体，等价于 agui.RunAgentInput
+type AGUIInput = agui.RunAgentInput
+
+// RunAGUI 以 AG-UI 协议执行一轮对话：将输入转换为 OpenAI 兼容请求，
+// 并把上游流式响应翻译为 AG-UI 事件写入 w。
+func (s *Service) RunAGUI(ctx context.Context, w io.Writer, input AGUIInput) error {
+	return agui.Run(ctx, agui.NewEncoder(w), input, agui.RunOptions{
+		Endpoint: strings.TrimRight(config.Agent.BaseURL, "/") + "/chat/completions",
+		APIKey:   config.Agent.APIKey,
+		Model:    config.Agent.Model,
+		Timeout:  httpClient.Timeout,
+	})
+}
+
+// WriteAGUIError 向已提交响应头的 SSE 流补发 RUN_ERROR 事件。
+// 用于运行开始后失败的场景，此时无法再改用 HTTP 错误码。
+func WriteAGUIError(w io.Writer, input AGUIInput, err error) error {
+	return agui.NewEncoder(w).Write(agui.Event{
+		Type:     agui.RunError,
+		ThreadID: input.ThreadID,
+		RunID:    input.RunID,
+		Error:    err.Error(),
+	})
 }
 
 // rewriteBody 将请求体中的 model 字段替换为配置的 model（若配置非空）

@@ -1,12 +1,12 @@
 <script lang="ts">
-import { defineAsyncComponent } from 'vue'
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import { usePortal } from '@/stores'
+import { usePortal, useAgentStore } from '@/stores'
 
 import api from '@/service/api'
 
 import ConfirmModal from '@/component/confirm.vue'
+import CopilotAgent from '@/component/copilot-agent.vue'
 import NavigationBar from '@/component/navigation.vue'
 import NotificationManager from '@/component/notification.vue'
 import ToolbarLinks from '@/component/toolbar-links.vue'
@@ -14,13 +14,12 @@ import UserMenu from '@/component/user-menu.vue'
 
 import AuthLogin from '@/views/account/login.vue'
 
-const PageAgent = defineAsyncComponent(() => import('@/component/page-agent.vue'))
-
 @Component({
-    components: { ConfirmModal, NavigationBar, NotificationManager, PageAgent, ToolbarLinks, UserMenu, AuthLogin }
+    components: { ConfirmModal, NavigationBar, NotificationManager, CopilotAgent, ToolbarLinks, UserMenu, AuthLogin }
 })
 class App extends Vue {
     portal = usePortal()
+    agentStore = useAgentStore()
     sidebarCollapsed = false
 
     @Ref readonly navigationRef!: InstanceType<typeof NavigationBar>
@@ -78,8 +77,11 @@ export default toNative(App)
       </div>
     </div>
 
+    <!-- CopilotKit Provider 与页面布局分离，避免第三方样式影响页面 header 与内容间距 -->
+    <CopilotAgent v-else-if="portal.username" />
+
     <!-- 主内容 -->
-    <div v-else-if="portal.username" class="min-h-screen pt-16">
+    <div v-if="portal.username" class="min-h-screen pt-16">
       <!-- 移动端顶部菜单栏 -->
       <header
         class="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 z-30 flex items-center justify-between px-4 transition-all duration-300"
@@ -95,7 +97,18 @@ export default toNative(App)
 
         <!-- 用户信息 -->
         <div class="flex items-center gap-1">
-          <PageAgent v-if="portal.hasPerm('agent')" />
+          <button
+            v-if="portal.hasPerm('agent')"
+            title="AI 助手"
+            class="btn btn-ghost gap-2"
+            :class="agentStore.sidebarOpen
+              ? 'text-primary-600 bg-primary-50 hover:bg-primary-100'
+              : 'text-slate-600 hover:text-primary-600 hover:bg-primary-50'"
+            @click="agentStore.toggleSidebar()"
+          >
+            <i class="fas fa-wand-magic-sparkles"></i>
+            <span class="hidden sm:inline">AI 助手</span>
+          </button>
           <div v-if="portal.hasPerm('agent')" class="hidden sm:block w-px h-5 bg-slate-200 mx-1"></div>
           <UserMenu />
         </div>
