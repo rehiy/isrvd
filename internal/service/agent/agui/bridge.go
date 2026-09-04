@@ -216,7 +216,6 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 	var toolIDs []string
 	messageStarted := false
 	messageID := input.RunID
-	lastToolID := ""
 
 	scanner := bufio.NewScanner(body)
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
@@ -282,7 +281,6 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 			// 故以最近一次出现的工具 ID 归属参数分片。
 			if tc.ID != "" {
 				toolIDs = append(toolIDs, tc.ID)
-				lastToolID = tc.ID
 				if messageStarted {
 					if err := enc.Write(Event{Type: TextMessageEnd, MessageID: messageID}); err != nil {
 						return err
@@ -299,11 +297,12 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 				}
 				continue
 			}
-			if tc.Function.Arguments != "" && lastToolID != "" {
+			// 参数分片归属最近一次 START 的工具
+			if args := tc.Function.Arguments; args != "" && len(toolIDs) > 0 {
 				if err := enc.Write(Event{
 					Type:       ToolCallArgs,
-					ToolCallID: lastToolID,
-					Delta:      tc.Function.Arguments,
+					ToolCallID: toolIDs[len(toolIDs)-1],
+					Delta:      args,
 				}); err != nil {
 					return err
 				}

@@ -37,10 +37,7 @@ const preview = computed(() => previewAgentAPICall(props.args))
 const method = computed(() => preview.value.method)
 const path = computed(() => preview.value.path.replace(/^\/+/, ''))
 const previewError = computed(() => preview.value.error || '')
-const isDanger = computed(() => {
-    const content = `${method.value} ${path.value} ${preview.value.summary} ${JSON.stringify(preview.value.body ?? '')}`
-    return method.value === 'DELETE' || /(delete|remove|prune|stop|restart|redeploy|force)/i.test(content)
-})
+const isDanger = computed(() => method.value === 'DELETE')
 const methodClass = computed(() => {
     if (method.value === 'GET') return 'bg-blue-50 text-blue-700'
     if (isDanger.value) return 'bg-red-50 text-red-700'

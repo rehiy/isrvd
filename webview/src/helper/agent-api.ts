@@ -117,7 +117,7 @@ export async function executeAgentAPI(args: AgentAPIArgs, mode: AgentAPIMode): P
 
     const failureKey = canonicalArguments(args.arguments)
     if ((operation.failures.get(failureKey) || 0) >= maxIdenticalFailures) {
-        return agentError('RETRY_LIMIT', '相同调用已连续失败两次，请重新查询接口或调整参数后再试。', false, operation)
+        return agentError('RETRY_LIMIT', '相同调用已连续失败两次，请重新查询接口或调整参数后再试。', false)
     }
 
     const detail = await ensureOperationDetail(operation)
@@ -146,7 +146,7 @@ export async function executeAgentAPI(args: AgentAPIArgs, mode: AgentAPIMode): P
                 res = await http.post(resolved.value.path, resolved.value.body ?? {}, config)
                 break
             default:
-                return recordFailure(operation, failureKey, agentError('UNKNOWN_OPERATION', 'OpenAPI 中的 HTTP 方法不受支持。', false, operation))
+                return recordFailure(operation, failureKey, agentError('UNKNOWN_OPERATION', 'OpenAPI 中的 HTTP 方法不受支持。', false))
         }
 
         operation.failures.delete(failureKey)
@@ -156,7 +156,7 @@ export async function executeAgentAPI(args: AgentAPIArgs, mode: AgentAPIMode): P
             payload: res?.payload ?? null,
         })
     } catch (error) {
-        return recordFailure(operation, failureKey, httpError(error, operation))
+        return recordFailure(operation, failureKey, httpError(error))
     }
 }
 
@@ -206,17 +206,17 @@ async function ensureOperationDetail(operation: RegisteredOperation): Promise<{ 
         const res = await http.get('agent/openapi', { params: { path: operation.path, method: operation.method } })
         const payload = res?.payload
         if (!isRecord(payload)) {
-            return { error: agentError('OPERATION_CHANGED', '接口定义已变化，请重新调用 lookup_api。', true, operation) }
+            return { error: agentError('OPERATION_CHANGED', '接口定义已变化，请重新调用 lookup_api。', true) }
         }
         const detail = operationFromPayload(payload)
         if (!detail || payload.mode !== 'detail' || detail.operationId !== operation.operationId) {
-            return { error: agentError('OPERATION_CHANGED', '接口定义已变化，请重新调用 lookup_api。', true, operation) }
+            return { error: agentError('OPERATION_CHANGED', '接口定义已变化，请重新调用 lookup_api。', true) }
         }
         Object.assign(operation, detail)
         operation.loaded = true
         return { value: operation }
     } catch (error) {
-        return { error: httpError(error, operation, '无法刷新接口定义') }
+        return { error: httpError(error, '无法刷新接口定义') }
     }
 }
 
@@ -224,28 +224,28 @@ function resolveCall(operation: RegisteredOperation, source: string | undefined,
     const isQuery = operation.method === 'get'
     if ((mode === 'query') !== isQuery) {
         const expected = isQuery ? 'isrvd_api' : 'isrvd_mutation'
-        return { error: agentError('WRONG_TOOL', `该操作必须使用 ${expected}。`, true, operation) }
+        return { error: agentError('WRONG_TOOL', `该操作必须使用 ${expected}。`, true) }
     }
 
     const parsed = parseBusinessArguments(source)
-    if ('error' in parsed) return { error: agentError('INVALID_ARGUMENTS', parsed.error, true, operation) }
+    if ('error' in parsed) return { error: agentError('INVALID_ARGUMENTS', parsed.error, true) }
 
     const parameters = operation.parameters || []
     const pathParameters = parameters.filter(parameter => parameter.in === 'path')
     const queryParameters = parameters.filter(parameter => parameter.in === 'query')
     const pathError = validateParameterGroup(parsed.value.path, pathParameters, 'path')
-    if (pathError) return { error: agentError('INVALID_ARGUMENTS', pathError, true, operation) }
+    if (pathError) return { error: agentError('INVALID_ARGUMENTS', pathError, true) }
     const queryError = validateParameterGroup(parsed.value.query, queryParameters, 'query')
-    if (queryError) return { error: agentError('INVALID_ARGUMENTS', queryError, true, operation) }
+    if (queryError) return { error: agentError('INVALID_ARGUMENTS', queryError, true) }
 
     const bodyError = validateRequestBody(parsed.value.body, operation.requestBody, operation.requestBodyRequired)
-    if (bodyError) return { error: agentError('INVALID_ARGUMENTS', bodyError, true, operation) }
+    if (bodyError) return { error: agentError('INVALID_ARGUMENTS', bodyError, true) }
 
     const path = fillPath(operation.path, parsed.value.path)
-    if ('error' in path) return { error: agentError('INVALID_ARGUMENTS', path.error, true, operation) }
+    if ('error' in path) return { error: agentError('INVALID_ARGUMENTS', path.error, true) }
     const target = path.value.replace(/^\/+/, '')
     if (!target || target.includes('://') || target.split('/').includes('..')) {
-        return { error: agentError('INVALID_ARGUMENTS', '解析后的 API 路径不是合法的站内路径。', false, operation) }
+        return { error: agentError('INVALID_ARGUMENTS', '解析后的 API 路径不是合法的站内路径。', false) }
     }
 
     return {
@@ -370,7 +370,7 @@ function recordFailure(operation: RegisteredOperation, key: string, error: Recor
     return error
 }
 
-function agentError(kind: string, message: string, recoverable: boolean, operation?: OpenAPIOperation, status?: number): Record<string, unknown> {
+function agentError(kind: string, message: string, recoverable: boolean, status?: number): Record<string, unknown> {
     return {
         success: false,
         message,
@@ -382,21 +382,21 @@ function agentError(kind: string, message: string, recoverable: boolean, operati
     }
 }
 
-function httpError(error: unknown, operation: OpenAPIOperation, prefix = ''): Record<string, unknown> {
+function httpError(error: unknown, prefix = ''): Record<string, unknown> {
     if (!axios.isAxiosError(error)) {
-        return agentError('EXECUTION_FAILED', prefix || (error instanceof Error ? error.message : '请求失败'), false, operation)
+        return agentError('EXECUTION_FAILED', prefix || (error instanceof Error ? error.message : '请求失败'), false)
     }
     const status = error.response?.status
     const data = error.response?.data
     const detail = isRecord(data) ? stringValue(data.message) : ''
     const message = [prefix, detail || error.message].filter(Boolean).join('：')
-    if (!status) return agentError('TRANSIENT_FAILURE', message || '网络请求失败。', true, operation)
-    if (status === 400 || status === 422) return agentError('INVALID_ARGUMENTS', message, true, operation, status)
-    if (status === 401 || status === 403) return agentError('PERMISSION_DENIED', message, false, operation, status)
-    if (status === 404) return agentError('RESOURCE_NOT_FOUND', message, true, operation, status)
-    if (status === 409) return agentError('PRECONDITION_FAILED', message, true, operation, status)
-    if (status === 429 || status >= 500) return agentError('SERVICE_UNAVAILABLE', message, true, operation, status)
-    return agentError('EXECUTION_FAILED', message, false, operation, status)
+    if (!status) return agentError('TRANSIENT_FAILURE', message || '网络请求失败。', true)
+    if (status === 400 || status === 422) return agentError('INVALID_ARGUMENTS', message, true, status)
+    if (status === 401 || status === 403) return agentError('PERMISSION_DENIED', message, false, status)
+    if (status === 404) return agentError('RESOURCE_NOT_FOUND', message, true, status)
+    if (status === 409) return agentError('PRECONDITION_FAILED', message, true, status)
+    if (status === 429 || status >= 500) return agentError('SERVICE_UNAVAILABLE', message, true, status)
+    return agentError('EXECUTION_FAILED', message, false, status)
 }
 
 function getOperation(callRef: string): RegisteredOperation | null {
