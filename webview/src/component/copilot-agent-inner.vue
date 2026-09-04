@@ -8,7 +8,7 @@ import { usePortal } from '@/stores'
 
 import { http } from '@/service/client'
 
-import { executeAgentAPI } from '@/helper/agent-api'
+import { executeAgentAPI, registerAgentAPILookup, resetAgentAPICallRefs } from '@/helper/agent-api'
 import { blobRead } from '@/helper/agent-blob'
 import { systemInstruction, getPageInstruction } from '@/helper/instructions'
 import { getPageController, disposePageController } from '@/helper/page-controller'
@@ -56,8 +56,8 @@ useCopilotReadable({ description: 'iSrvd 助手系统提示', value: systemInstr
 useFrontendTool({
     name: 'lookup_api',
     description:
-        '查阅 iSrvd 官方 OpenAPI。不确定路径、方法或请求体时必须先查再调用 isrvd_api。' +
-        '不传参数返回模块目录；tag 或 q 返回接口列表；path（可选 method）返回参数与字段。',
+        '查阅 iSrvd 官方 OpenAPI。调用 isrvd_api 或 isrvd_mutation 前必须先查并使用返回的 callRef。' +
+        '不传参数返回模块目录；tag 或 q 返回带 callRef 的接口列表；path + method 精确返回参数、字段和 callRef。',
     parameters: [
         { name: 'tag', type: 'string', description: '模块标签，如 docker、swarm、apisix、caddy、compose、cron、account、system、filer、ssh、overview、shell、agent', required: false },
         { name: 'q', type: 'string', description: '关键词，匹配路径、摘要、operationId', required: false },
@@ -74,7 +74,7 @@ useFrontendTool({
                     method: method || undefined,
                 },
             })
-            return { success: res?.success ?? true, message: res?.message ?? '', payload: res?.payload ?? null }
+            return { success: res?.success ?? true, message: res?.message ?? '', payload: registerAgentAPILookup(res?.payload ?? null) }
         } catch (e) {
             return { success: false, message: e instanceof Error ? e.message : '查阅 API 文档失败' }
         }
@@ -142,10 +142,13 @@ useFrontendTool({
 })
 
 const isrvdAPIParameters = [
-    { name: 'method' as const, type: 'string' as const, description: 'HTTP 方法', required: true },
-    { name: 'path' as const, type: 'string' as const, description: '相对 api/ 的路径，以 lookup_api 返回的 path 为准，如 docker/containers', required: true },
-    { name: 'body' as const, type: 'string' as const, description: '请求体 JSON 字符串，仅 post/put/patch 使用', required: false },
-    { name: 'params' as const, type: 'string' as const, description: '查询参数 JSON 字符串', required: false },
+    { name: 'callRef' as const, type: 'string' as const, description: 'lookup_api 返回的会话级调用引用，禁止自行生成', required: true },
+    {
+        name: 'arguments' as const,
+        type: 'string' as const,
+        description: '业务参数 JSON 字符串，结构为 {"path":{},"query":{},"body":{}}；只填写 lookup_api 声明的字段',
+        required: false,
+    },
 ]
 
 const renderAgentAPICard = (props: unknown, approval = false) =>
@@ -154,8 +157,8 @@ const renderAgentAPICard = (props: unknown, approval = false) =>
 useFrontendTool({
     name: 'isrvd_api',
     description:
-        '调用 iSrvd REST API 查询资源，仅允许 GET。path 和查询参数以 lookup_api 的结果为准，' +
-        'path 为相对 api/ 的路径（去掉开头的 /）。禁止用于读取密钥类配置。' +
+        '使用 lookup_api 返回的 callRef 查询资源，仅执行该引用绑定的 GET 操作。' +
+        '禁止自行填写或猜测 HTTP 方法和路径；callRef 不存在或过期时重新查阅。禁止用于读取密钥类配置。' +
         '返回结果过大时会自动暂存并返回 blobId，请改用 result_read 按需读取，不要重复调用原接口拉全量。',
     parameters: isrvdAPIParameters,
     handler: args => executeAgentAPI(args, 'query'),
@@ -165,8 +168,8 @@ useFrontendTool({
 useCopilotAction({
     name: 'isrvd_mutation',
     description:
-        '调用 iSrvd REST API 执行写操作，仅允许 POST、PUT、PATCH、DELETE。' +
-        'path、方法、参数和请求体必须以 lookup_api 的结果为准。调用后会显示审批卡，只有用户确认才会执行。',
+        '使用 lookup_api 返回的 callRef 执行该引用绑定的写操作。禁止自行填写或猜测 HTTP 方法和路径；' +
+        'callRef 不存在或过期时重新查阅。调用后会显示解析后的真实目标和脱敏参数，只有用户确认才会执行。',
     parameters: isrvdAPIParameters,
     renderAndWaitForResponse: (props: unknown) => renderAgentAPICard(props, true),
 })
@@ -213,8 +216,11 @@ const chineseLabels = {
     welcomeMessageText: '你好，我能帮你做什么？',
 } as unknown as Partial<CopilotChatLabels>
 
-// 卸载时释放页面控制器，清理高亮与遮罩
-onUnmounted(disposePageController)
+// 卸载时释放页面控制器和会话级 API 调用引用。
+onUnmounted(() => {
+    disposePageController()
+    resetAgentAPICallRefs()
+})
 </script>
 
 <template>

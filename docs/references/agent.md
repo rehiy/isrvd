@@ -34,7 +34,7 @@ isrvd_get "/agent/openapi?path=/docker/containers&method=get"
 | --- | --- | --- | --- |
 | `tag` | string | 否 | 模块标签，如 `docker`、`apisix`、`caddy`、`swarm` |
 | `q` | string | 否 | 关键词，匹配路径、摘要、operationId |
-| `path` | string | 否 | API 路径，如 `/docker/containers` 或 `docker/container/{id}`（也接受 `:id`） |
+| `path` | string | 否 | 准确的 API 路径，如 `/docker/containers` 或 `docker/container/{id}`（也接受 `:id`）；模糊查找使用 `q` |
 | `method` | string | 否 | HTTP 方法：`get` / `post` / `put` / `patch` / `delete` |
 
 均不传时返回 `mode=catalog`（标签与接口数量）。有过滤条件且恰好命中一条时返回 `mode=detail`（参数、请求体、200 响应字段，`$ref` 已展开）；多条时返回 `mode=list`（最多 40 条，超出时 `truncated=true`）。
@@ -57,6 +57,7 @@ isrvd_get "/agent/openapi?path=/docker/containers&method=get"
 | `tag` | string | detail：模块标签 |
 | `parameters` | array | detail：路径/查询参数 |
 | `requestBody` | object | detail：请求体字段 |
+| `requestBodyRequired` | boolean | detail：是否必须提交请求体；为 `false` 时省略 |
 | `response` | object | detail：200 响应字段 |
 
 文档来自构建时生成的 `public/openapi/data.json`（`go run ./cmd/openapi-gen/`），与对外 `/openapi/` 页同一份规格。
@@ -198,7 +199,13 @@ const data = await response.json();
 console.log(data.choices[0].message.content);
 ```
 
-Chat iSrvd 会将前端工具调用渲染为操作卡片：GET 查询由 `isrvd_api` 执行，并按返回结构展示资源列表或字段；POST、PUT、PATCH、DELETE 写操作由 `isrvd_mutation` 承接，先展示目标和脱敏后的请求参数，只有用户在审批卡中确认后才会执行。用户取消会作为工具结果返回给 Agent。
+Chat iSrvd 的 API 工具保持为固定的三步流程：
+
+1. `lookup_api` 查询上述 OpenAPI。列表和详情中的每个真实操作都会附加一个仅在当前页面内存中有效的 `callRef`，默认 30 分钟过期，刷新或离开页面后清空。
+2. `isrvd_api` 或 `isrvd_mutation` 只接收 `callRef` 与业务参数，不接收 HTTP 方法和路径。业务参数使用 JSON 字符串 `{"path":{},"query":{},"body":{}}`；执行器根据引用恢复 OpenAPI 操作、校验路径参数/查询参数/请求体，再调用现有业务 REST 接口。列表查询产生的引用会在首次执行前按准确的 `path + method` 自动补全契约。
+3. GET 查询由 `isrvd_api` 执行，并按返回结构展示资源列表或字段；POST、PUT、PATCH、DELETE 写操作由 `isrvd_mutation` 承接，先展示从引用解析出的真实目标和脱敏参数，只有用户在审批卡中确认后才会执行。用户取消会作为工具结果返回给 Agent。
+
+执行失败会返回结构化 `error.kind`。引用不存在或契约变化时要求重新查询；参数错误和资源不存在时要求按契约或当前资源修正。相同 `callRef + arguments` 连续失败两次后返回 `RETRY_LIMIT`，防止模型反复重放同一错误请求。`callRef` 用于约束模型选择真实操作，登录认证与模块权限仍由后端负责。
 
 ---
 

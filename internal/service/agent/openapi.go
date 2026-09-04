@@ -53,21 +53,22 @@ type OpenAPIOpBrief struct {
 
 // OpenAPILookupResult 查阅官方 OpenAPI 的结果，mode 为 catalog / list / detail
 type OpenAPILookupResult struct {
-	Mode        string           `json:"mode"`                  // catalog / list / detail
-	Hint        string           `json:"hint,omitempty"`        // 下一步查阅建议
-	Tags        []OpenAPITagInfo `json:"tags,omitempty"`        // catalog：模块目录
-	Total       int              `json:"total,omitempty"`       // list：匹配总数
-	Truncated   bool             `json:"truncated,omitempty"`   // list：是否截断
-	Operations  []OpenAPIOpBrief `json:"operations,omitempty"`  // list：接口摘要
-	Method      string           `json:"method,omitempty"`      // detail：HTTP 方法
-	Path        string           `json:"path,omitempty"`        // detail：相对于 /api 的路径
-	Summary     string           `json:"summary,omitempty"`     // detail：中文摘要
-	Description string           `json:"description,omitempty"` // detail：补充说明
-	OperationID string           `json:"operationId,omitempty"` // detail：OpenAPI operationId
-	Tag         string           `json:"tag,omitempty"`         // detail：模块标签
-	Parameters  []map[string]any `json:"parameters,omitempty"`  // detail：路径/查询参数
-	RequestBody any              `json:"requestBody,omitempty"` // detail：请求体字段（已展开 $ref）
-	Response    any              `json:"response,omitempty"`    // detail：200 响应字段（已展开 $ref）
+	Mode                string           `json:"mode"`                          // catalog / list / detail
+	Hint                string           `json:"hint,omitempty"`                // 下一步查阅建议
+	Tags                []OpenAPITagInfo `json:"tags,omitempty"`                // catalog：模块目录
+	Total               int              `json:"total,omitempty"`               // list：匹配总数
+	Truncated           bool             `json:"truncated,omitempty"`           // list：是否截断
+	Operations          []OpenAPIOpBrief `json:"operations,omitempty"`          // list：接口摘要
+	Method              string           `json:"method,omitempty"`              // detail：HTTP 方法
+	Path                string           `json:"path,omitempty"`                // detail：相对于 /api 的路径
+	Summary             string           `json:"summary,omitempty"`             // detail：中文摘要
+	Description         string           `json:"description,omitempty"`         // detail：补充说明
+	OperationID         string           `json:"operationId,omitempty"`         // detail：OpenAPI operationId
+	Tag                 string           `json:"tag,omitempty"`                 // detail：模块标签
+	Parameters          []map[string]any `json:"parameters,omitempty"`          // detail：路径/查询参数
+	RequestBody         any              `json:"requestBody,omitempty"`         // detail：请求体字段（已展开 $ref）
+	RequestBodyRequired bool             `json:"requestBodyRequired,omitempty"` // detail：是否必须提交请求体
+	Response            any              `json:"response,omitempty"`            // detail：200 响应字段（已展开 $ref）
 }
 
 // LoadOpenAPI 解析 OpenAPI 3 文档并建立查阅索引。
@@ -159,7 +160,7 @@ func (spec *openAPISpec) catalog() *OpenAPILookupResult {
 	sort.Slice(tags, func(i, j int) bool { return tags[i].Name < tags[j].Name })
 	return &OpenAPILookupResult{
 		Mode: "catalog",
-		Hint: "指定 tag 或 q 查看接口列表，再对具体 path（可选 method）取请求/响应字段。路径均相对于 /api。",
+		Hint: "指定 tag 或 q 查看接口列表，再用准确的 path 与 method 取请求/响应字段。路径均相对于 /api。",
 		Tags: tags,
 	}
 }
@@ -191,7 +192,7 @@ func (spec *openAPISpec) list(ops []openAPIOp) *OpenAPILookupResult {
 		Hint:  "对需要调用的接口再查一次，带上 path 与 method，以获取参数和字段定义。",
 	}
 	if len(ops) == 0 {
-		result.Hint = "没有匹配的接口，换 tag、关键词或更短的 path 再试。"
+		result.Hint = "没有匹配的接口，换 tag 或关键词再试；path 只支持准确匹配。"
 		return result
 	}
 	if len(ops) > openAPIListLimit {
@@ -213,17 +214,18 @@ func (spec *openAPISpec) list(ops []openAPIOp) *OpenAPILookupResult {
 
 func (spec *openAPISpec) detail(op openAPIOp) *OpenAPILookupResult {
 	return &OpenAPILookupResult{
-		Mode:        "detail",
-		Hint:        "调用 isrvd_api 时 path 去掉开头的 /（相对于 /api），路径参数把 {name} 换成实际值。",
-		Method:      op.Method,
-		Path:        op.Path,
-		Summary:     op.Summary,
-		Description: op.Description,
-		OperationID: op.OperationID,
-		Tag:         op.Tag,
-		Parameters:  spec.collectParameters(op.Raw),
-		RequestBody: spec.collectRequestBody(op.Raw),
-		Response:    spec.collectResponse(op.Raw),
+		Mode:                "detail",
+		Hint:                "调用 isrvd_api 时 path 去掉开头的 /（相对于 /api），路径参数把 {name} 换成实际值。",
+		Method:              op.Method,
+		Path:                op.Path,
+		Summary:             op.Summary,
+		Description:         op.Description,
+		OperationID:         op.OperationID,
+		Tag:                 op.Tag,
+		Parameters:          spec.collectParameters(op.Raw),
+		RequestBody:         spec.collectRequestBody(op.Raw),
+		RequestBodyRequired: requestBodyRequired(op.Raw),
+		Response:            spec.collectResponse(op.Raw),
 	}
 }
 
@@ -346,7 +348,7 @@ func normalizeOpenAPIPath(path string) string {
 }
 
 func pathMatches(specPath, queryPath string) bool {
-	return strings.Contains(normalizeOpenAPIPath(specPath), queryPath)
+	return normalizeOpenAPIPath(specPath) == normalizeOpenAPIPath(queryPath)
 }
 
 func mediaSchema(node map[string]any) any {
@@ -362,6 +364,15 @@ func mediaSchema(node map[string]any) any {
 		}
 	}
 	return nil
+}
+
+func requestBodyRequired(op map[string]any) bool {
+	body, ok := op["requestBody"].(map[string]any)
+	if !ok {
+		return false
+	}
+	required, _ := body["required"].(bool)
+	return required
 }
 
 func firstTag(v any) string {

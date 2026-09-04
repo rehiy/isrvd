@@ -12,7 +12,7 @@
 | 文件管理 | 浏览、上传、下载、编辑、创建/删除目录、重命名、权限修改、压缩/解压 |
 | Web 终端 | 基于 xterm.js 的 Shell 终端，支持容器终端接入 |
 | SSH 远程管理 | 管理主机与可复用凭据，支持密码/私钥认证、浏览器终端和 SFTP 文件管理 |
-| AI 助手 | 内置 Agent，基于 CopilotKit + AG-UI 协议，支持页面上下文与工具调用，兼容 OpenAI API 的 LLM 接入 |
+| AI 助手 | 内置 Agent，基于 CopilotKit + AG-UI 协议，支持页面上下文、工具卡片与写操作审批，兼容 OpenAI API 的 LLM 接入 |
 | 计划任务 | 定时任务调度，支持 Shell/BAT/PowerShell/可执行文件，以及 Docker 临时容器或已有容器执行模式 |
 | APISIX | 路由、Consumer、上游(Upstream)、SSL 证书、插件配置(PluginConfig)、插件列表、访问授权管理 |
 | Caddy | HTTP 服务、路由、Basic Auth、SSL 证书、全局选项管理，支持原始配置编辑 |

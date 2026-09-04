@@ -2,9 +2,11 @@
 import { HttpAgent } from '@ag-ui/client'
 import { CopilotKitProvider } from '@copilotkit/vue'
 
-import CopilotAgentInner from '@/component/copilot-agent-inner.vue'
-import { absUrl } from '@/service/client'
 import { usePortal } from '@/stores'
+
+import { absUrl } from '@/service/client'
+
+import CopilotAgentInner from '@/component/copilot-agent-inner.vue'
 
 const portal = usePortal()
 

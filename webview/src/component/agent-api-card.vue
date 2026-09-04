@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { executeAgentAPI } from '@/helper/agent-api'
+import { executeAgentAPI, previewAgentAPICall } from '@/helper/agent-api'
 import type { AgentAPIArgs } from '@/helper/agent-api'
 
 type ToolStatus = 'inProgress' | 'executing' | 'complete'
@@ -33,10 +33,12 @@ const props = withDefaults(defineProps<{
 const submitting = ref(false)
 const localError = ref('')
 
-const method = computed(() => String(props.args.method || '').toUpperCase())
-const path = computed(() => String(props.args.path || '').replace(/^\/+/, ''))
+const preview = computed(() => previewAgentAPICall(props.args))
+const method = computed(() => preview.value.method)
+const path = computed(() => preview.value.path.replace(/^\/+/, ''))
+const previewError = computed(() => preview.value.error || '')
 const isDanger = computed(() => {
-    const content = `${method.value} ${path.value} ${props.args.body || ''}`
+    const content = `${method.value} ${path.value} ${preview.value.summary} ${JSON.stringify(preview.value.body ?? '')}`
     return method.value === 'DELETE' || /(delete|remove|prune|stop|restart|redeploy|force)/i.test(content)
 })
 const methodClass = computed(() => {
@@ -85,8 +87,8 @@ const resourceText = computed(() => {
     if (payload.value === null || payload.value === undefined || Array.isArray(payload.value) || isRecord(payload.value)) return ''
     return formatValue(payload.value)
 })
-const bodyPreview = computed(() => formatJSONPreview(props.args.body))
-const paramsPreview = computed(() => formatJSONPreview(props.args.params))
+const bodyPreview = computed(() => formatJSONPreview(preview.value.body))
+const paramsPreview = computed(() => formatJSONPreview(preview.value.query))
 
 async function approve() {
     if (!props.respond || submitting.value) return
@@ -115,10 +117,8 @@ async function cancel() {
 
 function normalizeArgs(args: Partial<AgentAPIArgs>): AgentAPIArgs {
     return {
-        method: String(args.method || ''),
-        path: String(args.path || ''),
-        body: args.body ? String(args.body) : undefined,
-        params: args.params ? String(args.params) : undefined,
+        callRef: String(args.callRef || ''),
+        arguments: args.arguments ? String(args.arguments) : undefined,
     }
 }
 
@@ -142,13 +142,9 @@ function sanitizeValue(value: unknown, key = ''): unknown {
     return Object.fromEntries(Object.entries(value).map(([name, item]) => [name, sanitizeValue(item, name)]))
 }
 
-function formatJSONPreview(source?: string): string {
-    if (!source) return ''
-    try {
-        return JSON.stringify(sanitizeValue(JSON.parse(source)), null, 2)
-    } catch {
-        return '内容不是合法 JSON，执行时会返回错误。'
-    }
+function formatJSONPreview(value: unknown): string {
+    if (value === undefined || value === null) return ''
+    return JSON.stringify(sanitizeValue(value), null, 2)
 }
 
 function formatResourceItem(value: unknown, index: number): ResourceItem {
@@ -182,7 +178,7 @@ function formatValue(value: unknown): string {
         </div>
         <div class="min-w-0">
           <span class="item-title-sm">{{ cardTitle }}</span>
-          <code class="item-subtitle-mono">{{ path || '等待 API 路径' }}</code>
+          <code class="item-subtitle-mono">{{ path || props.args.callRef || '等待调用引用' }}</code>
         </div>
       </div>
       <span v-if="method" class="inline-flex px-2 py-0.5 rounded-lg text-xs font-semibold" :class="methodClass">{{ method }}</span>
@@ -195,6 +191,9 @@ function formatValue(value: unknown): string {
       </div>
 
       <template v-else-if="approval && status === 'executing'">
+        <div v-if="previewError" class="rounded-lg bg-red-50 border border-red-200 p-3">
+          <p class="text-sm font-medium text-red-600">{{ previewError }}</p>
+        </div>
         <div class="rounded-lg bg-amber-50 border border-amber-200 p-3">
           <p class="text-sm font-medium text-amber-700">此请求会修改服务器状态，请确认后执行。</p>
         </div>
@@ -218,7 +217,7 @@ function formatValue(value: unknown): string {
           <button type="button" class="btn btn-secondary" :disabled="submitting" @click="cancel">
             取消
           </button>
-          <button type="button" class="btn" :class="isDanger ? 'btn-danger' : 'btn-primary'" :disabled="submitting" @click="approve">
+          <button type="button" class="btn" :class="isDanger ? 'btn-danger' : 'btn-primary'" :disabled="submitting || !!previewError" @click="approve">
             <span v-if="submitting" class="spinner w-3.5 h-3.5"></span>
             {{ submitting ? '执行中…' : '确认执行' }}
           </button>
