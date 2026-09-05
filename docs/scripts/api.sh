@@ -394,7 +394,7 @@ isrvd API Harness
     isrvd_upload <path> <field> <file> [k=v...]  文件上传
 
     最后一个 selector 参数可传 --raw，直接输出 SSE/文本（curl 7.76.0+）:
-    isrvd_post "/agui" '<RunAgentInput JSON>' --raw
+    isrvd_post "/copilot/agui" '<RunAgentInput JSON>' --raw
 
   认证优先级: 环境变量 > 配置文件；ISRVD_AUTH_HEADER 可指定自定义认证头（默认 Authorization）
 

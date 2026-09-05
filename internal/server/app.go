@@ -9,10 +9,10 @@ import (
 	"github.com/rehiy/libgo/websocket"
 
 	svcAccount "isrvd/internal/service/account"
-	svcAgent "isrvd/internal/service/agent"
 	svcApisix "isrvd/internal/service/apisix"
 	svcCaddy "isrvd/internal/service/caddy"
 	svcCompose "isrvd/internal/service/compose"
+	svcCopilot "isrvd/internal/service/copilot"
 	svcCron "isrvd/internal/service/cron"
 	svcDocker "isrvd/internal/service/docker"
 	svcFiler "isrvd/internal/service/filer"
@@ -57,7 +57,7 @@ type App struct {
 	swarmSvc         *svcSwarm.Service
 	composeSvc       *svcCompose.Service
 	cronSvc          *svcCron.Service
-	agentSvc         *svcAgent.Service
+	copilotSvc       *svcCopilot.Service
 	shellSvc         *svcShell.Service
 	websshSvc        *svcWebSSH.Service
 	routeIndex       map[string]Route // METHOD+完整路径 → 路由索引
@@ -81,8 +81,6 @@ type Route struct {
 	Audit      AuditLevel      `json:"-"`             // 审计级别，0：按 Method 审计，-1：忽略，1：强制审计
 	QueryToken bool            `json:"-"`             // 允许从 query ?token= 提取 JWT（用于 SSE/文件下载等无法携带 Header 的场景）
 	// IndexOnly 只写入权限索引，不注册到 Gin。
-	// Gin 1.12 不允许精确段与同前缀 catch-all 并存（/agent/openapi 与 /agent/*path 会 panic），
-	// 这类路由改由通配 handler 分发，见 agentDispatch。
 	IndexOnly bool `json:"-"`
 }
 
@@ -148,7 +146,7 @@ func (app *App) collectRoutes() []Route {
 	routes = append(routes, app.defineShellRoutes()...)
 	routes = append(routes, app.defineWebSSHRoutes()...)
 	routes = append(routes, app.defineFilerRoutes()...)
-	routes = append(routes, app.defineAgentRoutes()...)
+	routes = append(routes, app.defineCopilotRoutes()...)
 	routes = append(routes, app.defineApisixRoutes()...)
 	routes = append(routes, app.defineCaddyRoutes()...)
 	routes = append(routes, app.defineDockerRoutes()...)

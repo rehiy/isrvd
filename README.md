@@ -325,8 +325,7 @@ git diff --check
 | `ssh` | `POST /api/ssh/host` | SSH 远程管理（添加主机） |
 | `ssh` | `GET /api/ssh/to/:id` | SSH 远程管理（连接终端） |
 | `ssh` | `GET /api/sftp/:id/ls` | SSH 远程管理（SFTP 列出目录） |
-| `agent` | `ANY /api/agent/*path` | AI 助手（LLM 代理） |
-| `agent` | `POST /api/agui` | AI 助手（AG-UI 协议对话） |
+| `copilot` | `POST /api/copilot/agui` | AI 助手（AG-UI 协议对话） |
 | `cron` | `GET /api/cron/jobs` | 计划任务（列出） |
 | `cron` | `POST /api/cron/jobs` | 计划任务（创建） |
 | `cron` | `POST /api/cron/jobs/:id/run` | 计划任务（立即执行） |

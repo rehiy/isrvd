@@ -248,7 +248,7 @@ docs/
 
 服务初始化（`internal/server/services.go` 的 `initServices()`）：
 
-- `overviewSvc`、`configSvc`、`auditSvc`、`accountSvc`、`filerSvc`、`shellSvc`、`agentSvc`：直接初始化
+- `overviewSvc`、`configSvc`、`auditSvc`、`accountSvc`、`filerSvc`、`shellSvc`、`copilotSvc`：直接初始化
 - `websshSvc`：初始化自己的主机/凭据存储和 SFTP 客户端，失败时标记不可用
 - `apisixSvc`、`caddySvc`：根据可用性检查可选初始化
 - `dockerSvc`、`swarmSvc`：根据 Docker 可用性可选初始化

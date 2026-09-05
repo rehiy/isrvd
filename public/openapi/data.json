@@ -775,74 +775,6 @@
         ]
       }
     },
-    "/agent/openapi": {
-      "get": {
-        "operationId": "get_agent_openapi",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "tag",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "path",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "method",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "q",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "message": {
-                      "description": "提示信息",
-                      "type": "string"
-                    },
-                    "payload": {
-                      "$ref": "#/components/schemas/agent.OpenAPILookupResult"
-                    },
-                    "success": {
-                      "description": "请求是否成功",
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "查阅 OpenAPI 文档",
-        "tags": [
-          "agent"
-        ]
-      }
-    },
     "/apisix/consumer": {
       "post": {
         "operationId": "post_apisix_consumer",
@@ -3068,6 +3000,74 @@
         "summary": "重新部署 Swarm Stack 应用",
         "tags": [
           "compose"
+        ]
+      }
+    },
+    "/copilot/catalog": {
+      "get": {
+        "operationId": "get_copilot_catalog",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "method",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "$ref": "#/components/schemas/copilot.OpenAPILookupResult"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查阅接口目录",
+        "tags": [
+          "copilot"
         ]
       }
     },
@@ -7546,198 +7546,6 @@
         ],
         "type": "object"
       },
-      "agent.OpenAPILookupResult": {
-        "properties": {
-          "description": {
-            "description": "detail：补充说明",
-            "type": "string"
-          },
-          "hint": {
-            "description": "下一步查阅建议",
-            "type": "string"
-          },
-          "method": {
-            "description": "detail：HTTP 方法",
-            "type": "string"
-          },
-          "mode": {
-            "description": "catalog / list / detail",
-            "type": "string"
-          },
-          "operationId": {
-            "description": "detail：OpenAPI operationId",
-            "type": "string"
-          },
-          "operations": {
-            "description": "list：接口摘要",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "parameters": {
-            "description": "detail：路径/查询参数",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "path": {
-            "description": "detail：相对于 /api 的路径",
-            "type": "string"
-          },
-          "requestBody": {
-            "description": "detail：请求体字段（已展开 $ref）"
-          },
-          "requestBodyRequired": {
-            "description": "detail：是否必须提交请求体",
-            "type": "boolean"
-          },
-          "response": {
-            "description": "detail：200 响应字段（已展开 $ref）"
-          },
-          "summary": {
-            "description": "detail：中文摘要",
-            "type": "string"
-          },
-          "tag": {
-            "description": "detail：模块标签",
-            "type": "string"
-          },
-          "tags": {
-            "description": "catalog：模块目录",
-            "items": {
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "toolUnsupportedReason": {
-            "description": "不支持通用 Agent 工具调用的原因",
-            "type": "string"
-          },
-          "total": {
-            "description": "list：匹配总数",
-            "type": "integer"
-          },
-          "truncated": {
-            "description": "list：是否截断",
-            "type": "boolean"
-          }
-        },
-        "type": "object"
-      },
-      "agent.OpenAPIOpBrief": {
-        "properties": {
-          "method": {
-            "description": "HTTP 方法",
-            "type": "string"
-          },
-          "operationId": {
-            "description": "OpenAPI operationId",
-            "type": "string"
-          },
-          "path": {
-            "description": "相对于 /api 的路径",
-            "type": "string"
-          },
-          "summary": {
-            "description": "中文摘要",
-            "type": "string"
-          },
-          "tag": {
-            "description": "模块标签",
-            "type": "string"
-          },
-          "toolUnsupportedReason": {
-            "description": "不支持通用 Agent 工具调用的原因",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "agent.OpenAPIQuery": {
-        "properties": {
-          "method": {
-            "description": "HTTP 方法：get / post / put / patch / delete",
-            "type": "string"
-          },
-          "path": {
-            "description": "API 路径，如 /docker/containers",
-            "type": "string"
-          },
-          "q": {
-            "description": "关键词，匹配路径、摘要、operationId",
-            "type": "string"
-          },
-          "tag": {
-            "description": "模块标签，如 docker、apisix",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "agent.OpenAPITagInfo": {
-        "properties": {
-          "count": {
-            "description": "该标签下的接口数量",
-            "type": "integer"
-          },
-          "name": {
-            "description": "模块标签",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "agent.ProxyRequest": {
-        "properties": {
-          "Body": {
-            "description": "请求体原始字节",
-            "items": {
-              "type": "integer"
-            },
-            "type": "array"
-          },
-          "Headers": {
-            "$ref": "#/components/schemas/http.Header",
-            "description": "透传的请求头"
-          },
-          "Method": {
-            "description": "HTTP 方法",
-            "type": "string"
-          },
-          "RawQuery": {
-            "description": "原始查询字符串",
-            "type": "string"
-          },
-          "SubPath": {
-            "description": "转发到上游的子路径",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "agent.ProxyResponse": {
-        "properties": {
-          "Body": {
-            "$ref": "#/components/schemas/io.ReadCloser",
-            "description": "上游响应体（流式，调用方负责关闭）"
-          },
-          "Headers": {
-            "$ref": "#/components/schemas/http.Header",
-            "description": "上游响应头"
-          },
-          "StatusCode": {
-            "description": "上游响应状态码",
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "agent.Service": {
-        "properties": {},
-        "type": "object"
-      },
       "apisix.Client": {
         "properties": {},
         "type": "object"
@@ -9601,6 +9409,153 @@
             "type": "object"
           }
         },
+        "type": "object"
+      },
+      "copilot.OpenAPILookupResult": {
+        "properties": {
+          "description": {
+            "description": "detail：补充说明",
+            "type": "string"
+          },
+          "hint": {
+            "description": "下一步查阅建议",
+            "type": "string"
+          },
+          "method": {
+            "description": "detail：HTTP 方法",
+            "type": "string"
+          },
+          "mode": {
+            "description": "catalog / list / detail",
+            "type": "string"
+          },
+          "operationId": {
+            "description": "detail：OpenAPI operationId",
+            "type": "string"
+          },
+          "operations": {
+            "description": "list：接口摘要",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "parameters": {
+            "description": "detail：路径/查询参数",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "path": {
+            "description": "detail：相对于 /api 的路径",
+            "type": "string"
+          },
+          "requestBody": {
+            "description": "detail：请求体字段（已展开 $ref）"
+          },
+          "requestBodyRequired": {
+            "description": "detail：是否必须提交请求体",
+            "type": "boolean"
+          },
+          "response": {
+            "description": "detail：200 响应字段（已展开 $ref）"
+          },
+          "summary": {
+            "description": "detail：中文摘要",
+            "type": "string"
+          },
+          "tag": {
+            "description": "detail：模块标签",
+            "type": "string"
+          },
+          "tags": {
+            "description": "catalog：模块目录",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "toolUnsupportedReason": {
+            "description": "不支持通用 Agent 工具调用的原因",
+            "type": "string"
+          },
+          "total": {
+            "description": "list：匹配总数",
+            "type": "integer"
+          },
+          "truncated": {
+            "description": "list：是否截断",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "copilot.OpenAPIOpBrief": {
+        "properties": {
+          "method": {
+            "description": "HTTP 方法",
+            "type": "string"
+          },
+          "operationId": {
+            "description": "OpenAPI operationId",
+            "type": "string"
+          },
+          "path": {
+            "description": "相对于 /api 的路径",
+            "type": "string"
+          },
+          "summary": {
+            "description": "中文摘要",
+            "type": "string"
+          },
+          "tag": {
+            "description": "模块标签",
+            "type": "string"
+          },
+          "toolUnsupportedReason": {
+            "description": "不支持通用 Agent 工具调用的原因",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "copilot.OpenAPIQuery": {
+        "properties": {
+          "method": {
+            "description": "HTTP 方法：get / post / put / patch / delete",
+            "type": "string"
+          },
+          "path": {
+            "description": "API 路径，如 /docker/containers",
+            "type": "string"
+          },
+          "q": {
+            "description": "关键词，匹配路径、摘要、operationId",
+            "type": "string"
+          },
+          "tag": {
+            "description": "模块标签，如 docker、apisix",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "copilot.OpenAPITagInfo": {
+        "properties": {
+          "count": {
+            "description": "该标签下的接口数量",
+            "type": "integer"
+          },
+          "name": {
+            "description": "模块标签",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "copilot.Service": {
+        "properties": {},
         "type": "object"
       },
       "cron.Job": {

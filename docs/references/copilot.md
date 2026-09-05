@@ -1,12 +1,11 @@
-# Agent 代理 API
+# Copilot API
 
 ## 概述
 
-Agent 模块提供三类能力：
+Copilot 模块提供两类能力：
 
-- **OpenAPI 查阅**（`GET /api/agent/openapi`）：按模块、路径或关键词检索嵌入的官方 OpenAPI，供 Copilot 与脚本按需读取契约
-- **LLM API 代理**（`ANY /api/agent/*path`）：转发到配置的 OpenAI 兼容 API，自动注入 `agent.apiKey` 并可重写 `agent.model`
-- **AG-UI 协议对话**（`POST /api/agui`）：供前端 CopilotKit 使用，以 SSE 事件流返回 AG-UI 事件
+- **接口目录**（`GET /api/copilot/catalog`）：按模块、路径或关键词检索嵌入的官方 OpenAPI，供 Copilot 与脚本按需读取契约
+- **AG-UI 协议对话**（`POST /api/copilot/agui`）：供前端 CopilotKit 使用，以 SSE 事件流返回 AG-UI 事件
 
 登录即可查阅 OpenAPI，不依赖 `agent.baseUrl`，也不受 `server.openapi`（对外 Scalar 文档页）开关影响。
 
@@ -16,16 +15,16 @@ Agent 模块提供三类能力：
 
 ```bash
 # 模块目录
-isrvd_get "/agent/openapi"
+isrvd_get "/copilot/catalog"
 
 # 按模块列出接口
-isrvd_get "/agent/openapi?tag=docker"
+isrvd_get "/copilot/catalog?tag=docker"
 
 # 按关键词搜索
-isrvd_get "/agent/openapi?q=container"
+isrvd_get "/copilot/catalog?q=container"
 
 # 查看单条接口的参数与字段（已展开 $ref）
-isrvd_get "/agent/openapi?path=/docker/containers&method=get"
+isrvd_get "/copilot/catalog?path=/docker/containers&method=get"
 ```
 
 **查询参数：**
@@ -72,12 +71,12 @@ SSE、WebSocket、仅支持 multipart 的上传接口，以及 `/swarm/token`、
 ## AG-UI 对话
 
 ```
-POST /api/agui
+POST /api/copilot/agui
 ```
 
 **功能：** 接收 [AG-UI](https://github.com/ag-ui-protocol/ag-ui) 协议的 `RunAgentInput`，转换为 OpenAI 兼容请求发给上游 LLM，再将流式响应翻译为 AG-UI 事件以 SSE 返回。
 
-普通成员需授予 `POST /api/agui` 权限；仅有旧的 LLM 代理权限不足以使用对话。前端助手入口与侧栏同时检查此权限和 Agent 服务可用性。
+普通成员需授予 `POST /api/copilot/agui` 权限；前端助手入口与侧栏同时检查此权限和 Agent 服务可用性。
 
 此端点属于 CopilotKit 内部协议，不纳入通用 OpenAPI 或 `lookup_api` 目录；请求与事件格式以本节为准。
 
@@ -116,7 +115,7 @@ POST /api/agui
 **示例：** Bash 封装的最后一个参数传 `--raw`，直接输出 SSE，不经过 JSON 解析；需要 curl 7.76.0+（`--fail-with-body`）。
 
 ```bash
-isrvd_post "/agui" '{
+isrvd_post "/copilot/agui" '{
     "threadId": "t1",
     "runId": "r1",
     "messages": [{"id": "m1", "role": "user", "content": "列出容器"}],
@@ -133,77 +132,10 @@ isrvd_post "/agui" '{
 
 ---
 
-## 代理请求
-
-```
-ANY /api/agent/*path  (代理到配置的 OpenAI 兼容 API)
-```
-
-**配置要求：**
-
-在 `config.yml` 中配置 `agent` 段：
-
-```yaml
-agent:
-  model: "gpt-3.5-turbo"          # 默认模型
-  baseUrl: "https://api.openai.com/v1"  # API 基础 URL
-  apiKey: "sk-..."                  # API 密钥（敏感，GET 不返回）
-```
-
-**行为说明：**
-
-1. 所有 `/api/agent/*` 的请求都会被代理到 `agent.baseUrl` 对应的地址
-2. 自动在请求头中添加 `Authorization: Bearer <agent.apiKey>`
-3. 如果请求体中指定了 `model` 字段，使用请求中的值；否则使用 `agent.model`
-4. 支持所有 HTTP 方法（GET/POST/PUT/DELETE 等）
-5. 请求体大小受 `server.maxUploadSize` 限制
-
-**示例：**
-
-```bash
-# 聊天补全
-curl -X POST "http://<HOST>/api/agent/chat/completions" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <YOUR_JWT>" \
-  -d '{
-    "model": "gpt-4",
-    "messages": [{"role": "user", "content": "Hello!"}]
-  }'
-
-# 列出模型
-curl -X GET "http://<HOST>/api/agent/models" \
-  -H "Authorization: Bearer <YOUR_JWT>"
-```
-
----
-
 ## 权限要求
 
-- 查阅 OpenAPI（`GET /api/agent/openapi`）：登录即可
-- 其余接口：需要登录，且需要 `agent` 模块权限
-
----
-
-## 前端集成
-
-前端可以通过 `/api/agent/` 路径直接调用 LLM API，无需在客户端暴露 API Key：
-
-```javascript
-const response = await fetch('/api/agent/chat/completions', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${jwtToken}`
-  },
-  body: JSON.stringify({
-    model: 'gpt-3.5-turbo',
-    messages: [{ role: 'user', content: 'Hello!' }]
-  })
-});
-
-const data = await response.json();
-console.log(data.choices[0].message.content);
-```
+- 查阅接口目录（`GET /api/copilot/catalog`）：登录即可
+- 对话（`POST /api/copilot/agui`）：需要 `POST /api/copilot/agui` 权限
 
 Chat iSrvd 的 API 工具保持为固定的三步流程：
 
@@ -218,5 +150,5 @@ Chat iSrvd 的 API 工具保持为固定的三步流程：
 ## 安全说明
 
 - `agent.apiKey` 是敏感字段，通过 `GET /api/system/config` 不会返回
-- 只有具有 `agent` 模块权限的用户才能使用代理功能
+- AG-UI 仅在服务端使用该密钥请求上游模型
 - 建议在配置中使用环境变量或密钥管理工具存储 `apiKey`

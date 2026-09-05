@@ -11,10 +11,10 @@ import (
 	"github.com/rehiy/libgo/logman"
 
 	svcAccount "isrvd/internal/service/account"
-	svcAgent "isrvd/internal/service/agent"
 	svcApisix "isrvd/internal/service/apisix"
 	svcCaddy "isrvd/internal/service/caddy"
 	svcCompose "isrvd/internal/service/compose"
+	svcCopilot "isrvd/internal/service/copilot"
 	svcCron "isrvd/internal/service/cron"
 	svcDocker "isrvd/internal/service/docker"
 	svcFiler "isrvd/internal/service/filer"
@@ -39,11 +39,11 @@ func (app *App) initServices() {
 	app.accountSvc = svcAccount.NewService()
 	app.filerSvc = svcFiler.NewService()
 	app.shellSvc = svcShell.NewService()
-	app.agentSvc = svcAgent.NewService()
+	app.copilotSvc = svcCopilot.NewService()
 	if spec, err := public.Efs.ReadFile("openapi/data.json"); err != nil {
-		logman.Warn("agent openapi spec unavailable", "error", err)
-	} else if err := app.agentSvc.LoadOpenAPI(spec); err != nil {
-		logman.Warn("agent openapi spec invalid", "error", err)
+		logman.Warn("copilot catalog unavailable", "error", err)
+	} else if err := app.copilotSvc.LoadOpenAPI(spec); err != nil {
+		logman.Warn("copilot catalog invalid", "error", err)
 	}
 
 	if websshSvc, err := svcWebSSH.NewService(); err != nil {
@@ -122,7 +122,7 @@ func (app *App) serviceAvailableMiddleware() gin.HandlerFunc {
 // isServiceAvailable 检查指定模块的服务是否可用
 func (app *App) isServiceAvailable(module string) bool {
 	switch module {
-	case "agent":
+	case "copilot":
 		return config.Agent.BaseURL != ""
 	case "apisix":
 		return app.apisixSvc != nil

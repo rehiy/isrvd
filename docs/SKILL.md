@@ -43,7 +43,7 @@ isrvd_post "/docker/container" '{"image":"...","name":"..."}'
 
 脚本默认提取统一响应中的 `.payload`；数组对象会自动转为紧凑表格，降低输出噪音。Python/Node 版支持简单 selector（如 `.content`、`.username`）。Bash 版只作为 Python/Node 都不可用时的兜底兼容方案。
 
-Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/agui" '<RunAgentInput JSON>' --raw`），直接输出 SSE/文本，不经过 JSON 解析，需 curl 7.76.0+。
+Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '<RunAgentInput JSON>' --raw`），直接输出 SSE/文本，不经过 JSON 解析，需 curl 7.76.0+。
 
 **⚠️ 操作规范（必须遵守）：**
 1. **禁止硬编码**：不要假设任何 IP、端口、路径、容器名——全部通过 API 查询或环境变量获取
@@ -83,7 +83,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/agui" '<RunAgen
 | 系统 | [references/system/cron.md](references/system/cron.md) | 计划任务 |
 | 系统 | [references/system/ssh.md](references/system/ssh.md) | SSH 主机/凭据管理、SFTP、SSH 终端 |
 | 终端 | [references/shell.md](references/shell.md) | Web Shell（本地终端） |
-| Agent | [references/agent.md](references/agent.md) | OpenAPI 查阅、Agent 代理（OpenAI 兼容 API）、AG-UI 协议对话 |
+| Copilot | [references/copilot.md](references/copilot.md) | 接口目录与 AG-UI 对话 |
 
 > 📌 各文档中包含完整的 API 端点列表、请求/响应字段说明和示例。
 

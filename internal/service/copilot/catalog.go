@@ -1,4 +1,5 @@
-package agent
+// Package copilot 提供 Copilot 聊天与接口目录服务。
+package copilot
 
 import (
 	"encoding/json"
