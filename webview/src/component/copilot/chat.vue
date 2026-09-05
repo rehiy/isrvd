@@ -14,6 +14,7 @@ import { systemInstruction, getPageInstruction } from '@/helper/instructions'
 import { getPageController, disposePageController } from '@/helper/page-controller'
 
 import APICard from '@/component/copilot/api-card.vue'
+import InspectorButton from '@/component/copilot/inspector-button.vue'
 import SidebarBridge from '@/component/copilot/sidebar-bridge.vue'
 
 const route = useRoute()
@@ -226,6 +227,17 @@ onUnmounted(() => {
 <template>
   <CopilotChatConfigurationProvider :labels="chineseLabels">
     <CopilotSidebar v-if="hasAgent" :default-open="false">
+      <template #header="{ title, onClose }">
+        <header class="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+          <span class="text-sm font-semibold text-slate-700 truncate">{{ title }}</span>
+          <div class="flex items-center gap-1">
+            <InspectorButton />
+            <button type="button" title="关闭助手" aria-label="关闭助手" class="btn btn-icon btn-icon-slate" @click="onClose">
+              <i class="fas fa-xmark"></i>
+            </button>
+          </div>
+        </header>
+      </template>
       <!-- 开合控制转存到 store，按钮由顶栏渲染，避免 z-1200 的侧栏盖住 header -->
       <template #toggle-button="{ isOpen, toggle }">
         <SidebarBridge :is-open="isOpen" :toggle="toggle" />
