@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 
 import { executeAgentAPI, previewAgentAPICall } from '@/helper/agent-api'
 import type { AgentAPIArgs } from '@/helper/agent-api'
+import { sanitizeAgentValue as sanitizeValue } from '@/helper/agent-sanitize'
 
 type ToolStatus = 'inProgress' | 'executing' | 'complete'
 
@@ -130,13 +131,6 @@ function parseResult(value: unknown): unknown {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function sanitizeValue(value: unknown, key = ''): unknown {
-    if (/(password|passphrase|secret|token|api.?key|private.?key|authorization|jwt)/i.test(key)) return '••••••'
-    if (Array.isArray(value)) return value.map(item => sanitizeValue(item))
-    if (!isRecord(value)) return value
-    return Object.fromEntries(Object.entries(value).map(([name, item]) => [name, sanitizeValue(item, name)]))
 }
 
 function formatJSONPreview(value: unknown): string {

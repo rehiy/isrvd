@@ -59,8 +59,13 @@ isrvd_get "/agent/openapi?path=/docker/containers&method=get"
 | `requestBody` | object | detail：请求体字段 |
 | `requestBodyRequired` | boolean | detail：是否必须提交请求体；为 `false` 时省略 |
 | `response` | object | detail：200 响应字段 |
+| `toolUnsupportedReason` | string | detail 或 operations 元素：通用 Agent 工具不支持调用的原因；支持时省略 |
 
 文档来自构建时生成的 `public/openapi/data.json`（`go run ./cmd/openapi-gen/`），与对外 `/openapi/` 页同一份规格。
+
+SSE、WebSocket、仅支持 multipart 的上传接口，以及 `/swarm/token`、`/account/token`、`/account/2fa/totp/begin`，只提供说明，不签发 `callRef`。已有引用在刷新接口定义后也会检查限制。日志请使用同资源的非流式接口，文件上传和令牌操作请由用户在页面完成。Compose 同时支持 JSON 和 multipart，因此 JSON 部署仍可使用工具。
+
+工具结果在返回模型和大结果暂存前统一递归脱敏：密码、secret、token、API key、JWT、authorization、私钥和 `key` 字段替换为占位符；字符串中的 PEM 私钥也会隐藏。卡片使用同一脱敏逻辑，不改变原始业务 API 的响应。该规则不识别任意自由文本中的所有凭据，仍不得用工具读取密钥文件。
 
 ---
 
@@ -71,6 +76,10 @@ POST /api/agui
 ```
 
 **功能：** 接收 [AG-UI](https://github.com/ag-ui-protocol/ag-ui) 协议的 `RunAgentInput`，转换为 OpenAI 兼容请求发给上游 LLM，再将流式响应翻译为 AG-UI 事件以 SSE 返回。
+
+普通成员需授予 `POST /api/agui` 权限；仅有旧的 LLM 代理权限不足以使用对话。前端助手入口与侧栏同时检查此权限和 Agent 服务可用性。
+
+此端点属于 CopilotKit 内部协议，不纳入通用 OpenAPI 或 `lookup_api` 目录；请求与事件格式以本节为准。
 
 **请求头：**
 
@@ -99,24 +108,21 @@ POST /api/agui
 | `TEXT_MESSAGE_CONTENT` | 文本增量，携带 `delta` |
 | `TEXT_MESSAGE_END` | 文本消息结束 |
 | `TOOL_CALL_START` | 工具调用开始，携带 `toolCallId`、`toolCallName` |
-| `TOOL_CALL_ARGS` | 工具参数增量，需按序拼接 |
+| `TOOL_CALL_ARGS` | 工具参数增量，按 `toolCallId` 分别顺序拼接；保留首片参数并支持并行工具分片 |
 | `TOOL_CALL_END` | 工具参数发送完毕，前端据此执行工具 |
 | `RUN_FINISHED` | 运行正常结束 |
-| `RUN_ERROR` | 运行异常，携带 `error` |
+| `RUN_ERROR` | 运行异常，携带 `message`，可选 `code` |
 
-**示例：**
+**示例：** Bash 封装的最后一个参数传 `--raw`，直接输出 SSE，不经过 JSON 解析；需要 curl 7.76.0+（`--fail-with-body`）。
 
 ```bash
-curl -X POST "http://<HOST>/api/agui" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <YOUR_JWT>" \
-  -d '{
+isrvd_post "/agui" '{
     "threadId": "t1",
     "runId": "r1",
     "messages": [{"id": "m1", "role": "user", "content": "列出容器"}],
     "tools": [],
     "context": [{"description": "当前页面", "value": "Docker 容器列表"}]
-  }'
+  }' --raw
 ```
 
 **上游请求说明：**

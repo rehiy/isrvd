@@ -335,6 +335,11 @@ func parseCtrlFile(filename string) {
 						continue
 					}
 					route := parseRouteLiteral(cl)
+					// AG-UI 是 CopilotKit 的内部流式协议，契约见 docs/references/agent.md。
+					// 不加入通用 REST 文档，避免被当作普通 JSON 接口调用。
+					if route.Path == "/agui" {
+						continue
+					}
 					if route.Method != "" {
 						routes = append(routes, route)
 					}

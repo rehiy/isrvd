@@ -843,28 +843,6 @@
         ]
       }
     },
-    "/agui": {
-      "post": {
-        "description": "[SSE] AG-UI 协议对话",
-        "operationId": "post_agui",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
-                }
-              }
-            },
-            "description": "成功"
-          }
-        },
-        "summary": "AG-UI 协议对话",
-        "tags": [
-          "agent"
-        ]
-      }
-    },
     "/apisix/consumer": {
       "post": {
         "operationId": "post_apisix_consumer",
@@ -4128,6 +4106,14 @@
           {
             "in": "query",
             "name": "all",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
             "required": false,
             "schema": {
               "type": "string"
@@ -7603,6 +7589,10 @@
           "requestBody": {
             "description": "detail：请求体字段（已展开 $ref）"
           },
+          "requestBodyRequired": {
+            "description": "detail：是否必须提交请求体",
+            "type": "boolean"
+          },
           "response": {
             "description": "detail：200 响应字段（已展开 $ref）"
           },
@@ -7620,6 +7610,10 @@
               "type": "object"
             },
             "type": "array"
+          },
+          "toolUnsupportedReason": {
+            "description": "不支持通用 Agent 工具调用的原因",
+            "type": "string"
           },
           "total": {
             "description": "list：匹配总数",
@@ -7652,6 +7646,10 @@
           },
           "tag": {
             "description": "模块标签",
+            "type": "string"
+          },
+          "toolUnsupportedReason": {
+            "description": "不支持通用 Agent 工具调用的原因",
             "type": "string"
           }
         },

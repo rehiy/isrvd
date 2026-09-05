@@ -263,6 +263,12 @@ _isrvd_curl() {
     args+=(-d "$body")
   fi
 
+  # --raw 占用 jq_filter 位置，直接透传 SSE/文本响应，保留 HTTP 失败退出码。
+  if [ "$jq_filter" = "--raw" ]; then
+    curl "${args[@]}" --no-buffer --fail-with-body --write-out '' "$url"
+    return $?
+  fi
+
   local output
   output=$(curl "${args[@]}" "$url" 2>&1)
 
@@ -295,6 +301,7 @@ _isrvd_curl() {
 # 便捷方法
 # GET/DELETE: isrvd_get <path> [jq_filter]
 # POST/PUT/PATCH: isrvd_post <path> [body] [jq_filter]
+# jq_filter 可传 --raw：流式输出原始响应，不经过 jq/表格格式化。
 # ---------------------------------------------------------------------------
 isrvd_get()    { _isrvd_curl GET    "$@"; }
 isrvd_post()   { _isrvd_curl POST   "$@"; }
@@ -385,6 +392,9 @@ isrvd API Harness
     isrvd_patch  <path> [body]                   PATCH
     isrvd_delete <path>                          DELETE
     isrvd_upload <path> <field> <file> [k=v...]  文件上传
+
+    最后一个 selector 参数可传 --raw，直接输出 SSE/文本（curl 7.76.0+）:
+    isrvd_post "/agui" '<RunAgentInput JSON>' --raw
 
   认证优先级: 环境变量 > 配置文件；ISRVD_AUTH_HEADER 可指定自定义认证头（默认 Authorization）
 

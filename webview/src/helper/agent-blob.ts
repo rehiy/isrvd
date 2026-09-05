@@ -1,3 +1,5 @@
+import { sanitizeAgentValue } from '@/helper/agent-sanitize'
+
 // AI 助手大结果暂存：仅保存在当前页面内存中，刷新即失效。
 // 生命周期与会话一致，无需服务端清理，也不存在多用户串数据的问题。
 
@@ -25,15 +27,16 @@ export function blobPut(text: string): string {
     return id
 }
 
-// packToolResult API 工具结果打包：超过阈值时暂存原文，返回引用与读取指引
+// packToolResult API 工具结果先脱敏，超过阈值时只暂存脱敏后的内容。
 export function packToolResult(result: { success: boolean; message: string; payload: unknown }): unknown {
-    const text = JSON.stringify(result)
-    if (text.length <= BLOB_THRESHOLD) return result
+    const sanitized = sanitizeAgentValue(result)
+    const text = JSON.stringify(sanitized)
+    if (text.length <= BLOB_THRESHOLD) return sanitized
 
     const blobId = blobPut(text)
     return {
         success: result.success,
-        message: result.message,
+        message: sanitizeAgentValue(result.message),
         truncated: true,
         blobId,
         hint: '结果过大，已暂存到本会话内存，用法见 result_read 工具说明；刷新页面后暂存失效',

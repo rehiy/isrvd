@@ -44,31 +44,33 @@ type OpenAPITagInfo struct {
 
 // OpenAPIOpBrief 接口列表中的单条摘要
 type OpenAPIOpBrief struct {
-	Method      string `json:"method"`                // HTTP 方法
-	Path        string `json:"path"`                  // 相对于 /api 的路径
-	Summary     string `json:"summary"`               // 中文摘要
-	OperationID string `json:"operationId,omitempty"` // OpenAPI operationId
-	Tag         string `json:"tag,omitempty"`         // 模块标签
+	Method                string `json:"method"`                          // HTTP 方法
+	Path                  string `json:"path"`                            // 相对于 /api 的路径
+	Summary               string `json:"summary"`                         // 中文摘要
+	OperationID           string `json:"operationId,omitempty"`           // OpenAPI operationId
+	Tag                   string `json:"tag,omitempty"`                   // 模块标签
+	ToolUnsupportedReason string `json:"toolUnsupportedReason,omitempty"` // 不支持通用 Agent 工具调用的原因
 }
 
 // OpenAPILookupResult 查阅官方 OpenAPI 的结果，mode 为 catalog / list / detail
 type OpenAPILookupResult struct {
-	Mode                string           `json:"mode"`                          // catalog / list / detail
-	Hint                string           `json:"hint,omitempty"`                // 下一步查阅建议
-	Tags                []OpenAPITagInfo `json:"tags,omitempty"`                // catalog：模块目录
-	Total               int              `json:"total,omitempty"`               // list：匹配总数
-	Truncated           bool             `json:"truncated,omitempty"`           // list：是否截断
-	Operations          []OpenAPIOpBrief `json:"operations,omitempty"`          // list：接口摘要
-	Method              string           `json:"method,omitempty"`              // detail：HTTP 方法
-	Path                string           `json:"path,omitempty"`                // detail：相对于 /api 的路径
-	Summary             string           `json:"summary,omitempty"`             // detail：中文摘要
-	Description         string           `json:"description,omitempty"`         // detail：补充说明
-	OperationID         string           `json:"operationId,omitempty"`         // detail：OpenAPI operationId
-	Tag                 string           `json:"tag,omitempty"`                 // detail：模块标签
-	Parameters          []map[string]any `json:"parameters,omitempty"`          // detail：路径/查询参数
-	RequestBody         any              `json:"requestBody,omitempty"`         // detail：请求体字段（已展开 $ref）
-	RequestBodyRequired bool             `json:"requestBodyRequired,omitempty"` // detail：是否必须提交请求体
-	Response            any              `json:"response,omitempty"`            // detail：200 响应字段（已展开 $ref）
+	Mode                  string           `json:"mode"`                            // catalog / list / detail
+	Hint                  string           `json:"hint,omitempty"`                  // 下一步查阅建议
+	Tags                  []OpenAPITagInfo `json:"tags,omitempty"`                  // catalog：模块目录
+	Total                 int              `json:"total,omitempty"`                 // list：匹配总数
+	Truncated             bool             `json:"truncated,omitempty"`             // list：是否截断
+	Operations            []OpenAPIOpBrief `json:"operations,omitempty"`            // list：接口摘要
+	Method                string           `json:"method,omitempty"`                // detail：HTTP 方法
+	Path                  string           `json:"path,omitempty"`                  // detail：相对于 /api 的路径
+	Summary               string           `json:"summary,omitempty"`               // detail：中文摘要
+	Description           string           `json:"description,omitempty"`           // detail：补充说明
+	OperationID           string           `json:"operationId,omitempty"`           // detail：OpenAPI operationId
+	Tag                   string           `json:"tag,omitempty"`                   // detail：模块标签
+	Parameters            []map[string]any `json:"parameters,omitempty"`            // detail：路径/查询参数
+	RequestBody           any              `json:"requestBody,omitempty"`           // detail：请求体字段（已展开 $ref）
+	RequestBodyRequired   bool             `json:"requestBodyRequired,omitempty"`   // detail：是否必须提交请求体
+	Response              any              `json:"response,omitempty"`              // detail：200 响应字段（已展开 $ref）
+	ToolUnsupportedReason string           `json:"toolUnsupportedReason,omitempty"` // 不支持通用 Agent 工具调用的原因
 }
 
 // LoadOpenAPI 解析 OpenAPI 3 文档并建立查阅索引。
@@ -202,11 +204,12 @@ func (spec *openAPISpec) list(ops []openAPIOp) *OpenAPILookupResult {
 	result.Operations = make([]OpenAPIOpBrief, 0, len(ops))
 	for _, op := range ops {
 		result.Operations = append(result.Operations, OpenAPIOpBrief{
-			Method:      op.Method,
-			Path:        op.Path,
-			Summary:     op.Summary,
-			OperationID: op.OperationID,
-			Tag:         op.Tag,
+			Method:                op.Method,
+			Path:                  op.Path,
+			Summary:               op.Summary,
+			OperationID:           op.OperationID,
+			Tag:                   op.Tag,
+			ToolUnsupportedReason: op.toolUnsupportedReason(),
 		})
 	}
 	return result
@@ -214,19 +217,44 @@ func (spec *openAPISpec) list(ops []openAPIOp) *OpenAPILookupResult {
 
 func (spec *openAPISpec) detail(op openAPIOp) *OpenAPILookupResult {
 	return &OpenAPILookupResult{
-		Mode:                "detail",
-		Hint:                "调用 isrvd_api 时 path 去掉开头的 /（相对于 /api），路径参数把 {name} 换成实际值。",
-		Method:              op.Method,
-		Path:                op.Path,
-		Summary:             op.Summary,
-		Description:         op.Description,
-		OperationID:         op.OperationID,
-		Tag:                 op.Tag,
-		Parameters:          spec.collectParameters(op.Raw),
-		RequestBody:         spec.collectRequestBody(op.Raw),
-		RequestBodyRequired: requestBodyRequired(op.Raw),
-		Response:            spec.collectResponse(op.Raw),
+		Mode:                  "detail",
+		Hint:                  "调用 isrvd_api 时 path 去掉开头的 /（相对于 /api），路径参数把 {name} 换成实际值。",
+		Method:                op.Method,
+		Path:                  op.Path,
+		Summary:               op.Summary,
+		Description:           op.Description,
+		OperationID:           op.OperationID,
+		Tag:                   op.Tag,
+		Parameters:            spec.collectParameters(op.Raw),
+		RequestBody:           spec.collectRequestBody(op.Raw),
+		RequestBodyRequired:   requestBodyRequired(op.Raw),
+		Response:              spec.collectResponse(op.Raw),
+		ToolUnsupportedReason: op.toolUnsupportedReason(),
 	}
+}
+
+// toolUnsupportedReason 保留文档可查阅性，但限制通用 JSON 工具不能正确处理的接口。
+func (op openAPIOp) toolUnsupportedReason() string {
+	switch op.Path {
+	case "/swarm/token", "/account/token", "/account/2fa/totp/begin":
+		return "密钥或令牌接口不提供 Agent 调用引用，请由用户在对应页面操作。"
+	}
+	if strings.HasPrefix(op.Description, "[SSE]") {
+		return "通用工具不支持 SSE，请查阅同资源的非流式日志接口或由用户在页面查看。"
+	}
+	if strings.HasPrefix(op.Description, "[WebSocket]") {
+		return "通用工具不支持 WebSocket，请由用户在页面连接。"
+	}
+	if body, ok := op.Raw["requestBody"].(map[string]any); ok {
+		if content, ok := body["content"].(map[string]any); ok {
+			if _, jsonOK := content["application/json"]; !jsonOK {
+				if _, multipartOK := content["multipart/form-data"]; multipartOK {
+					return "通用工具不支持文件上传，请由用户在页面选择文件上传。"
+				}
+			}
+		}
+	}
+	return ""
 }
 
 func (op openAPIOp) matchesKeyword(keyword string) bool {

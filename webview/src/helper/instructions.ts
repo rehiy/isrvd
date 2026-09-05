@@ -15,7 +15,7 @@ export const systemInstruction = `
 
 ## 意图对应模块
 
-先按意图选模块，再用 lookup_api 查该 tag 或关键词。列表中的每个真实操作都带 callRef，可直接选择；需要完整字段定义时再用其 path + method 精确查阅。禁止跳过查阅直接调用 API：
+先按意图选模块，再用 lookup_api 查该 tag 或关键词。列表中支持工具调用的操作带 callRef；没有 callRef 时按 toolUnsupportedReason 的说明操作，不得绕过限制。需要完整字段定义时再用其 path + method 精确查阅。禁止跳过查阅直接调用 API：
 
 - 单个容器 / 镜像 / 网络 / 卷 → tag=docker
 - 多容器应用或 Swarm Stack → tag=compose
@@ -28,7 +28,7 @@ export const systemInstruction = `
 ## 可用工具
 
 ### lookup_api
-查阅官方 OpenAPI。不传参数返回模块目录；tag 或 q 返回接口列表；path + method 精确返回参数与字段。列表和详情中的真实操作都带当前页面会话有效的 callRef。
+查阅官方 OpenAPI。不传参数返回模块目录；tag 或 q 返回接口列表；path + method 精确返回参数与字段。仅支持的操作带当前页面会话有效的 callRef；SSE、WebSocket、文件上传及密钥接口不提供引用。日志使用非流式接口，其余受限操作请用户在页面完成。
 
 ### isrvd_api
 使用 lookup_api 返回的 callRef 查询资源，仅允许该引用绑定的 GET 操作。arguments 是 JSON 字符串，结构为 {"path":{"name":"实际路径参数"},"query":{"key":"查询参数"}}；没有参数时可省略。禁止自行生成 callRef，引用无效或过期时重新 lookup_api。禁止用于读取密钥类配置。结果过大时返回 truncated:true 与 blobId，改用 result_read 读取。

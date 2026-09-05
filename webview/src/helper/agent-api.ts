@@ -3,6 +3,7 @@ import axios from 'axios'
 import { http } from '@/service/client'
 
 import { packToolResult } from '@/helper/agent-blob'
+import { sanitizeAgentValue } from '@/helper/agent-sanitize'
 
 export interface AgentAPIArgs {
     callRef: string
@@ -36,6 +37,7 @@ interface OpenAPIOperation {
     parameters?: OpenAPIParameter[]
     requestBody?: unknown
     requestBodyRequired: boolean
+    toolUnsupportedReason: string
 }
 
 interface RegisteredOperation extends OpenAPIOperation {
@@ -75,7 +77,7 @@ export function registerAgentAPILookup(payload: unknown): unknown {
         return {
             ...payload,
             hint: operations.length
-                ? '从 operations 选择匹配项，使用其 callRef 调用 isrvd_api 或 isrvd_mutation；不要自行填写 HTTP 方法或路径。'
+                ? '从 operations 选择带 callRef 的匹配项；没有 callRef 时按 toolUnsupportedReason 的说明操作。'
                 : payload.hint,
             operations,
         }
@@ -122,6 +124,9 @@ export async function executeAgentAPI(args: AgentAPIArgs, mode: AgentAPIMode): P
 
     const detail = await ensureOperationDetail(operation)
     if ('error' in detail) return recordFailure(operation, failureKey, detail.error)
+    if (operation.toolUnsupportedReason) {
+        return agentError('UNSUPPORTED_OPERATION', operation.toolUnsupportedReason, false)
+    }
 
     const resolved = resolveCall(operation, args.arguments, mode)
     if ('error' in resolved) return recordFailure(operation, failureKey, resolved.error)
@@ -149,6 +154,9 @@ export async function executeAgentAPI(args: AgentAPIArgs, mode: AgentAPIMode): P
                 return recordFailure(operation, failureKey, agentError('UNKNOWN_OPERATION', 'OpenAPI 中的 HTTP 方法不受支持。', false))
         }
 
+        if (!isRecord(res) || typeof res.success !== 'boolean') {
+            return recordFailure(operation, failureKey, agentError('UNSUPPORTED_RESPONSE', '接口未返回标准 JSON 响应，请改用页面操作。', false))
+        }
         operation.failures.delete(failureKey)
         return packToolResult({
             success: res?.success ?? true,
@@ -163,6 +171,7 @@ export async function executeAgentAPI(args: AgentAPIArgs, mode: AgentAPIMode): P
 function registerOperationPayload(payload: Record<string, unknown>): Record<string, unknown> {
     const operation = operationFromPayload(payload)
     if (!operation) return payload
+    if (operation.toolUnsupportedReason) return { ...payload, hint: operation.toolUnsupportedReason }
 
     const bytes = new Uint8Array(16)
     globalThis.crypto.getRandomValues(bytes)
@@ -197,6 +206,7 @@ function operationFromPayload(payload: Record<string, unknown>): OpenAPIOperatio
         parameters: Array.isArray(payload.parameters) ? payload.parameters.filter(isRecord) : undefined,
         requestBody: payload.requestBody,
         requestBodyRequired: payload.requestBodyRequired === true,
+        toolUnsupportedReason: stringValue(payload.toolUnsupportedReason),
     }
 }
 
@@ -373,7 +383,7 @@ function recordFailure(operation: RegisteredOperation, key: string, error: Recor
 function agentError(kind: string, message: string, recoverable: boolean, status?: number): Record<string, unknown> {
     return {
         success: false,
-        message,
+        message: sanitizeAgentValue(message),
         error: {
             kind,
             recoverable,
