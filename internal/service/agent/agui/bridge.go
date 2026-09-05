@@ -72,11 +72,17 @@ type ChunkChoice struct {
 	FinishReason *string    `json:"finish_reason"`
 }
 
+// ChunkToolCall 流式工具分片，index 用于关联同一调用的参数增量。
+type ChunkToolCall struct {
+	Index int `json:"index"`
+	ChatToolCall
+}
+
 // ChunkDelta 流式增量，可能同时携带内容与工具调用
 type ChunkDelta struct {
-	Role      string         `json:"role,omitempty"`
-	Content   string         `json:"content,omitempty"`
-	ToolCalls []ChatToolCall `json:"tool_calls,omitempty"`
+	Role      string          `json:"role,omitempty"`
+	Content   string          `json:"content,omitempty"`
+	ToolCalls []ChunkToolCall `json:"tool_calls,omitempty"`
 }
 
 // ChunkError 上游返回的错误载荷
@@ -211,8 +217,8 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 		return err
 	}
 
-	// toolIDs 按到达顺序记录已发送 TOOL_CALL_START 的工具，
-	// 用于识别参数分片所属的工具，并保证 TOOL_CALL_END 的发射顺序稳定
+	// 参数分片按 index 归属，结束事件按工具开始顺序发送。
+	toolIDByIndex := make(map[int]string)
 	var toolIDs []string
 	messageStarted := false
 	messageID := input.RunID
@@ -277,9 +283,10 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 		}
 
 		for _, tc := range delta.ToolCalls {
-			// 流式首片带 ID 与函数名，后续分片仅携带参数增量且 ID 为空，
-			// 故以最近一次出现的工具 ID 归属参数分片。
-			if tc.ID != "" {
+			id := toolIDByIndex[tc.Index]
+			if tc.ID != "" && id == "" {
+				id = tc.ID
+				toolIDByIndex[tc.Index] = id
 				toolIDs = append(toolIDs, tc.ID)
 				if messageStarted {
 					if err := enc.Write(Event{Type: TextMessageEnd, MessageID: messageID}); err != nil {
@@ -295,13 +302,12 @@ func translate(ctx context.Context, enc *Encoder, body io.Reader, input RunAgent
 				}); err != nil {
 					return err
 				}
-				continue
 			}
-			// 参数分片归属最近一次 START 的工具
-			if args := tc.Function.Arguments; args != "" && len(toolIDs) > 0 {
+			// 首片也可能携带参数，不能在发送 START 后跳过。
+			if args := tc.Function.Arguments; args != "" && id != "" {
 				if err := enc.Write(Event{
 					Type:       ToolCallArgs,
-					ToolCallID: toolIDs[len(toolIDs)-1],
+					ToolCallID: id,
 					Delta:      args,
 				}); err != nil {
 					return err

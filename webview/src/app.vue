@@ -22,6 +22,10 @@ class App extends Vue {
     agentStore = useAgentStore()
     sidebarCollapsed = false
 
+    get hasAgent() {
+        return this.portal.serviceAvailability.agent && this.portal.hasPerm('POST /api/agui')
+    }
+
     @Ref readonly navigationRef!: InstanceType<typeof NavigationBar>
 
     toggleMobileMenu() {
@@ -98,7 +102,7 @@ export default toNative(App)
         <!-- 用户信息 -->
         <div class="flex items-center gap-1">
           <button
-            v-if="portal.hasPerm('agent')"
+            v-if="hasAgent"
             title="AI 助手"
             class="btn btn-ghost gap-2"
             :class="agentStore.sidebarOpen
@@ -109,7 +113,7 @@ export default toNative(App)
             <i class="fas fa-wand-magic-sparkles"></i>
             <span class="hidden sm:inline">AI 助手</span>
           </button>
-          <div v-if="portal.hasPerm('agent')" class="hidden sm:block w-px h-5 bg-slate-200 mx-1"></div>
+          <div v-if="hasAgent" class="hidden sm:block w-px h-5 bg-slate-200 mx-1"></div>
           <UserMenu />
         </div>
       </header>

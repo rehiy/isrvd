@@ -20,8 +20,8 @@ const route = useRoute()
 const portal = usePortal()
 const { agent: copilotAgent } = useAgent({ agentId: 'default', updates: [] })
 
-// 无 agent 权限时不出侧栏、不注册工具；Provider 仍由外层挂载以支撑注入
-const hasAgent = computed(() => portal.hasPerm('agent'))
+// 侧栏与顶栏入口使用对话端点权限，并检查 Agent 服务可用性。
+const hasAgent = computed(() => portal.serviceAvailability.agent && portal.hasPerm('POST /api/agui'))
 
 // 运行结束后清理页面高亮；工具调用轮结束时先保留，给 CopilotKit 的 follow-up
 // 继续使用 read 返回的序号，最终文本回答轮结束后才清理。
@@ -57,7 +57,7 @@ useFrontendTool({
     name: 'lookup_api',
     description:
         '查阅 iSrvd 官方 OpenAPI。调用 isrvd_api 或 isrvd_mutation 前必须先查并使用返回的 callRef。' +
-        '不传参数返回模块目录；tag 或 q 返回带 callRef 的接口列表；path + method 精确返回参数、字段和 callRef。',
+        '不传参数返回模块目录；tag 或 q 返回接口列表；path + method 返回字段。仅支持的接口带 callRef，其余按 toolUnsupportedReason 说明操作。',
     parameters: [
         { name: 'tag', type: 'string', description: '模块标签，如 docker、swarm、apisix、caddy、compose、cron、account、system、filer、ssh、overview、shell、agent', required: false },
         { name: 'q', type: 'string', description: '关键词，匹配路径、摘要、operationId', required: false },

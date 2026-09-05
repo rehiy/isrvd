@@ -80,7 +80,7 @@ type Event struct {
 	ParentMsgID  string `json:"parentMessageId,omitempty"`
 
 	// RunError
-	Error string `json:"error,omitempty"`
+	Error string `json:"message,omitempty"`
 	Code  string `json:"code,omitempty"`
 }
 
