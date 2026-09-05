@@ -1,7 +1,7 @@
 <script lang="ts">
 import { Component, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import { usePortal, useAgentStore } from '@/stores'
+import { useCopilotStore, usePortal } from '@/stores'
 
 import api from '@/service/api'
 
@@ -19,11 +19,11 @@ import AuthLogin from '@/views/account/login.vue'
 })
 class App extends Vue {
     portal = usePortal()
-    agentStore = useAgentStore()
+    copilotStore = useCopilotStore()
     sidebarCollapsed = false
 
     get hasAgent() {
-        return this.portal.serviceAvailability.agent && this.portal.hasPerm('POST /api/agui')
+        return this.portal.serviceAvailability.agent && this.portal.hasPerm('POST /api/copilot/agui')
     }
 
     @Ref readonly navigationRef!: InstanceType<typeof NavigationBar>
@@ -105,10 +105,10 @@ export default toNative(App)
             v-if="hasAgent"
             title="AI 助手"
             class="btn btn-ghost gap-2"
-            :class="agentStore.sidebarOpen
+            :class="copilotStore.sidebarOpen
               ? 'text-primary-600 bg-primary-50 hover:bg-primary-100'
               : 'text-slate-600 hover:text-primary-600 hover:bg-primary-50'"
-            @click="agentStore.toggleSidebar()"
+            @click="copilotStore.toggleSidebar()"
           >
             <i class="fas fa-wand-magic-sparkles"></i>
             <span class="hidden sm:inline">AI 助手</span>

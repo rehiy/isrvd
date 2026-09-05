@@ -10,10 +10,10 @@ import Chat from '@/component/copilot/chat.vue'
 
 const portal = usePortal()
 
-// HttpAgent 直连后端 /api/agui，不经 CopilotKit 的 Node 运行时。
+// HttpAgent 直连后端 /api/copilot/agui，不经 CopilotKit 的 Node 运行时。
 // Provider 必须在应用根同步挂载：composable 的 provide/inject 依赖它，
 // 异步加载会导致子树注入失败而整页崩溃。
-const agents = { default: new HttpAgent({ url: absUrl('agui') }) }
+const agents = { default: new HttpAgent({ url: absUrl('copilot/agui') }) }
 
 // JWT 随登录态变化，经 headers prop 注入每个 agent 请求（core 值优先级最高）
 function authHeaders(): Record<string, string> {

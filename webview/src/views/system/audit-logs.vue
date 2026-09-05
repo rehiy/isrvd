@@ -52,7 +52,7 @@ class AuditLogs extends Vue {
     get filteredLogs() {
         let list = this.logs
         if (this.hideAGUIRequests) {
-            list = list.filter(log => !/^\/api\/agui(?:\?|$)/.test(log.uri))
+            list = list.filter(log => !/^\/api\/copilot\/agui(?:\?|$)/.test(log.uri))
         }
         if (this.selectedUsername) {
             list = list.filter(log => log.username === this.selectedUsername)
@@ -178,7 +178,7 @@ export default toNative(AuditLogs)
               <option value="">所有用户</option>
               <option v-for="username in uniqueUsernames" :key="username" :value="username">{{ username }}</option>
             </select>
-            <button class="btn btn-square" :class="hideAGUIRequests ? 'btn-rose' : 'btn-secondary'" :aria-pressed="hideAGUIRequests" :title="hideAGUIRequests ? '显示 /api/agui 请求' : '屏蔽 /api/agui 请求'" @click="hideAGUIRequests = !hideAGUIRequests">
+            <button class="btn btn-square" :class="hideAGUIRequests ? 'btn-rose' : 'btn-secondary'" :aria-pressed="hideAGUIRequests" :title="hideAGUIRequests ? '显示 /api/copilot/agui 请求' : '屏蔽 /api/copilot/agui 请求'" @click="hideAGUIRequests = !hideAGUIRequests">
               <i class="fas fa-eye-slash text-sm"></i>
             </button>
             <button class="btn btn-secondary btn-square" title="刷新" @click="loadLogs()">

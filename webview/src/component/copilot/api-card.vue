@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { executeAgentAPI, previewAgentAPICall } from '@/helper/agent-api'
-import type { AgentAPIArgs } from '@/helper/agent-api'
-import { sanitizeAgentValue as sanitizeValue } from '@/helper/agent-sanitize'
+import { executeCopilotAPI, previewCopilotAPICall } from '@/helper/copilot/api'
+import type { CopilotAPIArgs } from '@/helper/copilot/api'
+import { sanitizeCopilotValue as sanitizeValue } from '@/helper/copilot/sanitize'
 
 type ToolStatus = 'inProgress' | 'executing' | 'complete'
 
@@ -18,7 +18,7 @@ interface ResourceRow {
 }
 
 const props = withDefaults(defineProps<{
-    args?: Partial<AgentAPIArgs>
+    args?: Partial<CopilotAPIArgs>
     status?: ToolStatus
     result?: unknown
     respond?: (result: unknown) => Promise<void>
@@ -34,7 +34,7 @@ const props = withDefaults(defineProps<{
 const submitting = ref(false)
 const localError = ref('')
 
-const preview = computed(() => previewAgentAPICall(props.args))
+const preview = computed(() => previewCopilotAPICall(props.args))
 const method = computed(() => preview.value.method)
 const path = computed(() => preview.value.path.replace(/^\/+/, ''))
 const previewError = computed(() => preview.value.error || '')
@@ -93,7 +93,7 @@ async function approve() {
     submitting.value = true
     localError.value = ''
     try {
-        const result = await executeAgentAPI(normalizeArgs(props.args), 'mutation')
+        const result = await executeCopilotAPI(normalizeArgs(props.args), 'mutation')
         await props.respond(result)
     } catch (e) {
         localError.value = e instanceof Error ? e.message : '执行失败'
@@ -113,7 +113,7 @@ async function cancel() {
     }
 }
 
-function normalizeArgs(args: Partial<AgentAPIArgs>): AgentAPIArgs {
+function normalizeArgs(args: Partial<CopilotAPIArgs>): CopilotAPIArgs {
     return {
         callRef: String(args.callRef || ''),
         arguments: args.arguments ? String(args.arguments) : undefined,

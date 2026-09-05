@@ -8,7 +8,7 @@ interface SidebarCtl {
     toggle: () => void
 }
 
-export const useAgentStore = defineStore('agent', () => {
+export const useCopilotStore = defineStore('copilot', () => {
     const sidebarOpen = ref(false)
     let ctl: SidebarCtl | null = null
 

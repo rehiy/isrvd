@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 import { CopilotChatConfigurationProvider, CopilotSidebar, useAgent, useCopilotAction, useCopilotReadable, useFrontendTool } from '@copilotkit/vue'
 import type { CopilotChatLabels } from '@copilotkit/vue'
@@ -8,10 +9,10 @@ import { usePortal } from '@/stores'
 
 import { http } from '@/service/client'
 
-import { executeAgentAPI, registerAgentAPILookup, resetAgentAPICallRefs } from '@/helper/agent-api'
-import { blobRead } from '@/helper/agent-blob'
-import { systemInstruction, getPageInstruction } from '@/helper/instructions'
-import { getPageController, disposePageController } from '@/helper/page-controller'
+import { executeCopilotAPI, registerCopilotAPILookup, resetCopilotAPICallRefs } from '@/helper/copilot/api'
+import { blobRead } from '@/helper/copilot/blob'
+import { systemInstruction, getPageInstruction } from '@/helper/copilot/instructions'
+import { getPageController, disposePageController } from '@/helper/copilot/page-controller'
 
 import APICard from '@/component/copilot/api-card.vue'
 import InspectorButton from '@/component/copilot/inspector-button.vue'
@@ -22,7 +23,7 @@ const portal = usePortal()
 const { agent: copilotAgent } = useAgent({ agentId: 'default', updates: [] })
 
 // 侧栏与顶栏入口使用对话端点权限，并检查 Agent 服务可用性。
-const hasAgent = computed(() => portal.serviceAvailability.agent && portal.hasPerm('POST /api/agui'))
+const hasAgent = computed(() => portal.serviceAvailability.agent && portal.hasPerm('POST /api/copilot/agui'))
 
 // 运行结束后清理页面高亮；工具调用轮结束时先保留，给 CopilotKit 的 follow-up
 // 继续使用 read 返回的序号，最终文本回答轮结束后才清理。
@@ -67,7 +68,7 @@ useFrontendTool({
     ],
     handler: async ({ tag, q, path, method }) => {
         try {
-            const res = await http.get('agent/openapi', {
+            const res = await http.get('copilot/catalog', {
                 params: {
                     tag: tag || undefined,
                     q: q || undefined,
@@ -75,7 +76,7 @@ useFrontendTool({
                     method: method || undefined,
                 },
             })
-            return { success: res?.success ?? true, message: res?.message ?? '', payload: registerAgentAPILookup(res?.payload ?? null) }
+            return { success: res?.success ?? true, message: res?.message ?? '', payload: registerCopilotAPILookup(res?.payload ?? null) }
         } catch (e) {
             return { success: false, message: e instanceof Error ? e.message : '查阅 API 文档失败' }
         }
@@ -162,7 +163,7 @@ useFrontendTool({
         '禁止自行填写或猜测 HTTP 方法和路径；callRef 不存在或过期时重新查阅。禁止用于读取密钥类配置。' +
         '返回结果过大时会自动暂存并返回 blobId，请改用 result_read 按需读取，不要重复调用原接口拉全量。',
     parameters: isrvdAPIParameters,
-    handler: args => executeAgentAPI(args, 'query'),
+    handler: args => executeCopilotAPI(args, 'query'),
     render: (props: unknown) => renderAgentAPICard(props),
 })
 
@@ -220,7 +221,7 @@ const chineseLabels = {
 // 卸载时释放页面控制器和会话级 API 调用引用。
 onUnmounted(() => {
     disposePageController()
-    resetAgentAPICallRefs()
+    resetCopilotAPICallRefs()
 })
 </script>
 

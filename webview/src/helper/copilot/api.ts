@@ -2,15 +2,15 @@ import axios from 'axios'
 
 import { http } from '@/service/client'
 
-import { packToolResult } from '@/helper/agent-blob'
-import { sanitizeAgentValue } from '@/helper/agent-sanitize'
+import { packToolResult } from './blob'
+import { sanitizeCopilotValue } from './sanitize'
 
-export interface AgentAPIArgs {
+export interface CopilotAPIArgs {
     callRef: string
     arguments?: string
 }
 
-export interface AgentAPIPreview {
+export interface CopilotAPIPreview {
     method: string
     path: string
     summary: string
@@ -19,7 +19,7 @@ export interface AgentAPIPreview {
     error?: string
 }
 
-export type AgentAPIMode = 'query' | 'mutation'
+export type CopilotAPIMode = 'query' | 'mutation'
 
 interface OpenAPIParameter {
     in?: unknown
@@ -63,9 +63,9 @@ const callRefTTL = 30 * 60 * 1000
 const maxIdenticalFailures = 2
 const callRefs = new Map<string, RegisteredOperation>()
 
-// registerAgentAPILookup 将 OpenAPI 查询结果转换为当前页面会话内可执行的引用。
+// registerCopilotAPILookup 将 OpenAPI 查询结果转换为当前页面会话内可执行的引用。
 // callRef 只存在于内存中，刷新页面后失效，模型无法自行拼接 method/path。
-export function registerAgentAPILookup(payload: unknown): unknown {
+export function registerCopilotAPILookup(payload: unknown): unknown {
     cleanupExpiredCallRefs()
     if (!isRecord(payload)) return payload
 
@@ -85,11 +85,11 @@ export function registerAgentAPILookup(payload: unknown): unknown {
     return payload
 }
 
-export function resetAgentAPICallRefs() {
+export function resetCopilotAPICallRefs() {
     callRefs.clear()
 }
 
-export function previewAgentAPICall(args: Partial<AgentAPIArgs>): AgentAPIPreview {
+export function previewCopilotAPICall(args: Partial<CopilotAPIArgs>): CopilotAPIPreview {
     const operation = getOperation(String(args.callRef || ''))
     if (!operation) {
         return { method: '', path: '', summary: '', error: '调用引用不存在或已过期，请重新调用 lookup_api。' }
@@ -109,9 +109,9 @@ export function previewAgentAPICall(args: Partial<AgentAPIArgs>): AgentAPIPrevie
     }
 }
 
-// executeAgentAPI 是 Chat 工具调用 iSrvd REST API 的唯一入口。
+// executeCopilotAPI 是 Chat 工具调用 iSrvd REST API 的唯一入口。
 // 模型只能提交 lookup_api 签发的 callRef，method/path 均从 OpenAPI 快照解析。
-export async function executeAgentAPI(args: AgentAPIArgs, mode: AgentAPIMode): Promise<unknown> {
+export async function executeCopilotAPI(args: CopilotAPIArgs, mode: CopilotAPIMode): Promise<unknown> {
     const operation = getOperation(String(args.callRef || ''))
     if (!operation) {
         return agentError('UNKNOWN_CALL_REF', '调用引用不存在或已过期，请重新调用 lookup_api。', true)
@@ -213,7 +213,7 @@ function operationFromPayload(payload: Record<string, unknown>): OpenAPIOperatio
 async function ensureOperationDetail(operation: RegisteredOperation): Promise<{ value: RegisteredOperation } | { error: Record<string, unknown> }> {
     if (operation.loaded) return { value: operation }
     try {
-        const res = await http.get('agent/openapi', { params: { path: operation.path, method: operation.method } })
+        const res = await http.get('copilot/catalog', { params: { path: operation.path, method: operation.method } })
         const payload = res?.payload
         if (!isRecord(payload)) {
             return { error: agentError('OPERATION_CHANGED', '接口定义已变化，请重新调用 lookup_api。', true) }
@@ -230,7 +230,7 @@ async function ensureOperationDetail(operation: RegisteredOperation): Promise<{ 
     }
 }
 
-function resolveCall(operation: RegisteredOperation, source: string | undefined, mode: AgentAPIMode): { value: ResolvedCall } | { error: Record<string, unknown> } {
+function resolveCall(operation: RegisteredOperation, source: string | undefined, mode: CopilotAPIMode): { value: ResolvedCall } | { error: Record<string, unknown> } {
     const isQuery = operation.method === 'get'
     if ((mode === 'query') !== isQuery) {
         const expected = isQuery ? 'isrvd_api' : 'isrvd_mutation'
@@ -383,7 +383,7 @@ function recordFailure(operation: RegisteredOperation, key: string, error: Recor
 function agentError(kind: string, message: string, recoverable: boolean, status?: number): Record<string, unknown> {
     return {
         success: false,
-        message: sanitizeAgentValue(message),
+        message: sanitizeCopilotValue(message),
         error: {
             kind,
             recoverable,
