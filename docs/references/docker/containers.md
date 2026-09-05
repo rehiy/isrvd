@@ -13,7 +13,19 @@ isrvd_get "/docker/info"
 ```bash
 isrvd_get "/docker/containers"
 isrvd_get "/docker/containers?all=true"
+# Docker 原生 filters 过滤（JSON 编码，需 URL 编码）
+isrvd_get "/docker/containers?filters={\"status\":[\"exited\"]}"
+isrvd_get "/docker/containers?filters={\"health\":[\"unhealthy\"]}"
+isrvd_get "/docker/containers?filters={\"name\":[\"webshot\"]}"
+isrvd_get "/docker/containers?filters={\"label\":[\"com.docker.compose.project\"]}"
 ```
+
+**查询参数：**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| all | boolean | 是否包含已停止的容器，默认 `false` |
+| filters | string | Docker 原生 filters 的 JSON 编码，如 `{"health":["unhealthy"]}`；支持 `status` / `health` / `name` / `label` / `network` / `volume` / `ancestor` 等 Docker 标准过滤键；格式错误返回 400 |
 
 返回 `ContainerInfo[]`：
 
