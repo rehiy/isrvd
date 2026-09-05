@@ -6,7 +6,7 @@ import { usePortal, useAgentStore } from '@/stores'
 import api from '@/service/api'
 
 import ConfirmModal from '@/component/confirm.vue'
-import CopilotAgent from '@/component/copilot-agent.vue'
+import Copilot from '@/component/copilot/index.vue'
 import NavigationBar from '@/component/navigation.vue'
 import NotificationManager from '@/component/notification.vue'
 import ToolbarLinks from '@/component/toolbar-links.vue'
@@ -15,7 +15,7 @@ import UserMenu from '@/component/user-menu.vue'
 import AuthLogin from '@/views/account/login.vue'
 
 @Component({
-    components: { ConfirmModal, NavigationBar, NotificationManager, CopilotAgent, ToolbarLinks, UserMenu, AuthLogin }
+    components: { ConfirmModal, NavigationBar, NotificationManager, Copilot, ToolbarLinks, UserMenu, AuthLogin }
 })
 class App extends Vue {
     portal = usePortal()
@@ -82,7 +82,7 @@ export default toNative(App)
     </div>
 
     <!-- CopilotKit Provider 与页面布局分离，避免第三方样式影响页面 header 与内容间距 -->
-    <CopilotAgent v-else-if="portal.username" />
+    <Copilot v-else-if="portal.username" />
 
     <!-- 主内容 -->
     <div v-if="portal.username" class="min-h-screen pt-16">

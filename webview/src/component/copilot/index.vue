@@ -6,7 +6,7 @@ import { usePortal } from '@/stores'
 
 import { absUrl } from '@/service/client'
 
-import CopilotAgentInner from '@/component/copilot-agent-inner.vue'
+import Chat from '@/component/copilot/chat.vue'
 
 const portal = usePortal()
 
@@ -28,7 +28,7 @@ function onError(event: { error: Error }) {
 
 <template>
   <CopilotKitProvider :self-managed-agents="agents" :headers="authHeaders()" :on-error="onError">
-    <CopilotAgentInner />
+    <Chat />
   </CopilotKitProvider>
 </template>
 

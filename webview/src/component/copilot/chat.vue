@@ -13,8 +13,8 @@ import { blobRead } from '@/helper/agent-blob'
 import { systemInstruction, getPageInstruction } from '@/helper/instructions'
 import { getPageController, disposePageController } from '@/helper/page-controller'
 
-import AgentAPICard from '@/component/agent-api-card.vue'
-import CopilotSidebarToggleBridge from '@/component/copilot-sidebar-bridge.vue'
+import APICard from '@/component/copilot/api-card.vue'
+import SidebarBridge from '@/component/copilot/sidebar-bridge.vue'
 
 const route = useRoute()
 const portal = usePortal()
@@ -152,7 +152,7 @@ const isrvdAPIParameters = [
 ]
 
 const renderAgentAPICard = (props: unknown, approval = false) =>
-    h(AgentAPICard, { ...(props as Record<string, unknown>), approval })
+    h(APICard, { ...(props as Record<string, unknown>), approval })
 
 useFrontendTool({
     name: 'isrvd_api',
@@ -228,7 +228,7 @@ onUnmounted(() => {
     <CopilotSidebar v-if="hasAgent" :default-open="false">
       <!-- 开合控制转存到 store，按钮由顶栏渲染，避免 z-1200 的侧栏盖住 header -->
       <template #toggle-button="{ isOpen, toggle }">
-        <CopilotSidebarToggleBridge :is-open="isOpen" :toggle="toggle" />
+        <SidebarBridge :is-open="isOpen" :toggle="toggle" />
       </template>
     </CopilotSidebar>
   </CopilotChatConfigurationProvider>
