@@ -1,4 +1,4 @@
-import type { ComposeContent } from './compose'
+import type { ComposeConfigDetail } from './compose'
 
 // ─── Compose 标签常量 ───
 
@@ -88,7 +88,7 @@ export interface DockerContainerDetail extends DockerContainerCreate {
     labels?: Record<string, string>
 }
 
-export type DockerContainerCompose = ComposeContent
+export type DockerContainerCompose = ComposeConfigDetail
 
 // ─── 容器统计 ───
 

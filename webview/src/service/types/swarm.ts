@@ -1,4 +1,4 @@
-import type { ComposeContent } from './compose'
+import type { ComposeConfigDetail } from './compose'
 
 // ─── Docker Swarm ───
 
@@ -96,7 +96,7 @@ export interface SwarmServiceInfo {
 // SwarmCreateService 直接复用 SwarmServiceSpec
 export type SwarmCreateService = SwarmServiceSpec
 
-export type SwarmServiceCompose = ComposeContent
+export type SwarmServiceCompose = ComposeConfigDetail
 
 export interface SwarmTask {
     id: string

@@ -2,7 +2,7 @@
 
 export type ComposeDeployTarget = 'docker' | 'swarm'
 
-export interface ComposeContent {
+export interface ComposeConfigDetail {
     content: string
     envContent?: string
     projectName?: string
