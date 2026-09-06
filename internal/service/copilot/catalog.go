@@ -177,7 +177,7 @@ func (spec *openAPISpec) filter(tag, method, keyword, path string) []openAPIOp {
 		if method != "" && op.Method != method {
 			continue
 		}
-		if path != "" && !pathMatches(op.Path, path) {
+		if path != "" && normalizeOpenAPIPath(op.Path) != normalizeOpenAPIPath(path) {
 			continue
 		}
 		if keyword != "" && !op.matchesKeyword(keyword) {
@@ -374,10 +374,6 @@ func normalizeOpenAPIPath(path string) string {
 		}
 	}
 	return strings.TrimRight(strings.Join(parts, "/"), "/")
-}
-
-func pathMatches(specPath, queryPath string) bool {
-	return normalizeOpenAPIPath(specPath) == normalizeOpenAPIPath(queryPath)
 }
 
 func mediaSchema(node map[string]any) any {

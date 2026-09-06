@@ -188,7 +188,7 @@ func serviceFromDockerInspect(info container.InspectResponse, imageConfig *v1.Do
 		Init:              info.HostConfig.Init,
 		Ipc:               diffDefaultString(string(info.HostConfig.IpcMode), "private"),
 		Isolation:         string(info.HostConfig.Isolation),
-		OomKillDisable:    boolValue(info.HostConfig.OomKillDisable),
+		OomKillDisable:    info.HostConfig.OomKillDisable != nil && *info.HostConfig.OomKillDisable,
 		Pid:               string(info.HostConfig.PidMode),
 		PidsLimit:         int64Value(info.HostConfig.PidsLimit),
 		Runtime:           diffDefaultString(info.HostConfig.Runtime, "runc"),
@@ -391,10 +391,6 @@ func applyInspectResources(svc *types.ServiceConfig, info container.InspectRespo
 }
 
 // ==================== Docker inspect value converters ====================
-
-func boolValue(v *bool) bool {
-	return v != nil && *v
-}
 
 func int64Value(v *int64) int64 {
 	if v == nil {
