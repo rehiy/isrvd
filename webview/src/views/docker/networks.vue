@@ -82,10 +82,6 @@ class Networks extends Vue {
         return `${networkNames[net.name] || '系统网络'}不可删除`
     }
 
-    createNetworkModal() {
-        this.createModalRef?.show()
-    }
-
     // ─── 生命周期 ───
     mounted() {
         this.loadNetworks()

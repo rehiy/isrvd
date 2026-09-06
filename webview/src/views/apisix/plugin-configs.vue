@@ -63,13 +63,6 @@ class PluginConfigs extends Vue {
         return Object.keys(config.plugins || {})
     }
 
-    getPluginSummary(config: ApisixPluginConfig) {
-        const names = this.getPluginNames(config)
-        if (names.length === 0) return '未配置'
-        if (names.length <= 3) return names.join('、')
-        return `${names.slice(0, 3).join('、')} 等 ${names.length} 个插件`
-    }
-
     formatTs = formatUnixDateTime
 
     deleteConfig(config: ApisixPluginConfig) {

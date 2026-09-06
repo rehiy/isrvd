@@ -285,12 +285,6 @@ class RouteEditModal extends Vue {
         this.matchHeaderList.splice(idx, 1)
     }
     // ─── 请求头/响应头中间件操作 ───
-    buildHeaderOps(target: 'request' | 'response'): CaddyHeaderOp[] | undefined {
-        const list = target === 'request' ? this.formData.requestHeaders : this.formData.responseHeaders
-        const ops = list.filter(op => op.field.trim())
-        return ops.length ? ops : undefined
-    }
-
     addHeaderOp(target: 'request' | 'response') {
         const list = target === 'request' ? this.formData.requestHeaders : this.formData.responseHeaders
         list.push({ op: 'set', field: '', value: '' })

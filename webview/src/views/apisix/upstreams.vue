@@ -71,10 +71,6 @@ class Upstreams extends Vue {
         return `${firstLabel} 等 ${nodes.length} 个节点`
     }
 
-    getUpstreamNodeCount(upstream: ApisixUpstream) {
-        return normalizeUpstreamNodes(upstream).length
-    }
-
     getUpstreamTypeClass(type?: string) {
         if (type === 'chash') return 'bg-emerald-50 text-emerald-700'
         if (type === 'ewma') return 'bg-cyan-50 text-cyan-700'

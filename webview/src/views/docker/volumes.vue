@@ -69,10 +69,6 @@ class Volumes extends Vue {
         this.$router.push({ name: 'docker-volume', params: { name: vol.name } })
     }
 
-    createVolumeModal() {
-        this.createModalRef?.show()
-    }
-
     // ─── 生命周期 ───
     mounted() {
         this.loadVolumes()
