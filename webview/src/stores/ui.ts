@@ -103,6 +103,3 @@ export const useUIStore = defineStore('ui', () => {
         handleConfirm
     }
 })
-
-// ─── 类型导出 ───
-export type UIStore = ReturnType<typeof useUIStore>

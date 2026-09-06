@@ -100,6 +100,3 @@ export const useAuthStore = defineStore('auth', () => {
         apply,
     }
 })
-
-// ─── 类型导出 ───
-export type AuthStore = ReturnType<typeof useAuthStore>

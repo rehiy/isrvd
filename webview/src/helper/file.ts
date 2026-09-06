@@ -155,14 +155,3 @@ export const downloadBlob = (blob: Blob, filename: string): void => {
     a.click()
     setTimeout(() => URL.revokeObjectURL(url), 10000)
 }
-
-export const downloadFile = (filename: string, data: BlobPart): void => {
-    const url = window.URL.createObjectURL(new Blob([data]))
-    const link = document.createElement('a')
-    link.href = url
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-}

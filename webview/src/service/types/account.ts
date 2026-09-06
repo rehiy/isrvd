@@ -31,9 +31,7 @@ export interface OIDCExchange {
 // ─── 路由权限 ───
 
 // RouteAccess 路由访问级别（与后端枚举对应）
-export const RouteAccessAnon = -1 // 匿名，无需认证
 export const RouteAccessPerm = 0 // 需要权限控制（默认）
-export const RouteAccessAuth = 1 // 登录即可访问
 
 export interface Route {
     key: string

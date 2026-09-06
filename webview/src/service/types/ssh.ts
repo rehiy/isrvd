@@ -83,11 +83,6 @@ export interface SFTPChown {
     gid: number
 }
 
-// SFTP 读取文件响应
-export interface SFTPRead {
-    content: string
-}
-
 // SFTP 写入文件请求
 export interface SFTPWrite {
     path: string

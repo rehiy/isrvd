@@ -98,6 +98,3 @@ export const useSystemStore = defineStore('system', () => {
         hasPerm,
     }
 })
-
-// ─── 类型导出 ───
-export type SystemStore = ReturnType<typeof useSystemStore>

@@ -65,11 +65,6 @@ export const normalizeUpstreamNodes = (upstream?: ApisixUpstreamConfig): ApisixU
     return []
 }
 
-export const parseUpstreamNode = (upstream?: ApisixUpstreamConfig): { host: string; port: number | string } => {
-    const [first] = normalizeUpstreamNodes(upstream)
-    return { host: first?.host || '', port: first?.port || '' }
-}
-
 export const normalizeUpstreamFormNodes = (upstream?: ApisixUpstreamConfig): ApisixRouteUpstreamFormNode[] => {
     const nodes = normalizeUpstreamNodes(upstream).map(node => ({
         host: String(node.host || ''),
@@ -97,14 +92,6 @@ export const formatRouteUpstreamSummary = (route: Pick<ApisixRoute, 'upstream_id
     const firstLabel = `${first.host || '-'}:${first.port || '-'}`
     if (nodes.length === 1) return `${upstreamType} · ${firstLabel}`
     return `${upstreamType} · ${firstLabel} 等 ${nodes.length} 个节点`
-}
-
-/** 仅返回负载均衡策略名称，引用上游时返回 null */
-export const formatRouteUpstreamType = (route: Pick<ApisixRoute, 'upstream_id' | 'upstream'>): string | null => {
-    if (route.upstream_id) return null
-    const nodes = normalizeUpstreamNodes(route.upstream)
-    if (nodes.length === 0) return null
-    return normalizeUpstreamType(route.upstream?.type)
 }
 
 /** 仅返回节点信息，引用上游时返回完整摘要 */
