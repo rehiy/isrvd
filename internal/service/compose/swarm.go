@@ -103,17 +103,8 @@ func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployRe
 	return &DeployResult{ProjectName: projectName, Items: items, InstallDir: installDir}, nil
 }
 
-// SwarmContent 读取项目的 compose.yml；文件不存在时从运行态反推。
-func (s *Service) SwarmContent(ctx context.Context, name string) (string, error) {
-	result, err := s.SwarmContentResult(ctx, name, false)
-	if err != nil {
-		return "", err
-	}
-	return result.Content, nil
-}
-
-// SwarmContentResult 读取项目 compose.yml；forceRuntime 为 true 时跳过落盘文件，直接从运行态反推。
-func (s *Service) SwarmContentResult(ctx context.Context, name string, forceRuntime bool) (*ContentResult, error) {
+// SwarmInspect 读取项目 Compose 配置；forceRuntime 为 true 时跳过落盘文件，直接从运行态反推。
+func (s *Service) SwarmInspect(ctx context.Context, name string, forceRuntime bool) (*ConfigDetail, error) {
 	if err := compose.ValidateProjectName(name); err != nil {
 		return nil, err
 	}
@@ -130,7 +121,7 @@ func (s *Service) SwarmContentResult(ctx context.Context, name string, forceRunt
 			if err != nil {
 				return nil, err
 			}
-			return &ContentResult{
+			return &ConfigDetail{
 				Content:     string(data),
 				EnvContent:  envContent,
 				ProjectName: name,
@@ -156,7 +147,7 @@ func (s *Service) SwarmContentResult(ctx context.Context, name string, forceRunt
 	if err != nil {
 		return nil, err
 	}
-	return &ContentResult{
+	return &ConfigDetail{
 		Content:     string(data),
 		EnvContent:  envContent,
 		ProjectName: name,
@@ -189,7 +180,11 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 		return nil, err
 	}
 
-	oldContent, contentErr := s.SwarmContent(ctx, name)
+	currentConfig, contentErr := s.SwarmInspect(ctx, name, false)
+	oldContent := ""
+	if currentConfig != nil {
+		oldContent = currentConfig.Content
+	}
 	content, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, contentErr, req)
 	if err != nil {
 		return nil, err

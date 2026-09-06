@@ -37,8 +37,8 @@ type DeployResult struct {
 	InstallDir  string   `json:"installDir,omitempty"` // 项目落盘目录
 }
 
-// ContentResult Compose 配置读取结果。
-type ContentResult struct {
+// ConfigDetail Compose 配置详情。
+type ConfigDetail struct {
 	Content     string `json:"content"`               // compose.yml 文本
 	EnvContent  string `json:"envContent,omitempty"`  // .env 文本（KEY=VALUE）；无落盘文件时为空
 	ProjectName string `json:"projectName,omitempty"` // 实际解析到的项目名

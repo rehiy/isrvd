@@ -32,12 +32,12 @@ func (app *App) composeDockerInspect(c *gin.Context) {
 	}
 
 	forceRuntime := c.Query("force") == "true"
-	result, err := app.composeSvc.DockerContentResult(c.Request.Context(), name, forceRuntime)
+	detail, err := app.composeSvc.DockerInspect(c.Request.Context(), name, forceRuntime)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "获取 compose 文件成功", result)
+	respondSuccess(c, "获取 compose 文件成功", detail)
 }
 
 func (app *App) composeSwarmInspect(c *gin.Context) {
@@ -47,12 +47,12 @@ func (app *App) composeSwarmInspect(c *gin.Context) {
 	}
 
 	forceRuntime := c.Query("force") == "true"
-	result, err := app.composeSvc.SwarmContentResult(c.Request.Context(), name, forceRuntime)
+	detail, err := app.composeSvc.SwarmInspect(c.Request.Context(), name, forceRuntime)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondSuccess(c, "获取 compose 文件成功", result)
+	respondSuccess(c, "获取 compose 文件成功", detail)
 }
 
 func (app *App) composeDockerDeploy(c *gin.Context) {

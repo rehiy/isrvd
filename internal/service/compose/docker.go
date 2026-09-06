@@ -100,16 +100,8 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 	return &DeployResult{ProjectName: projectName, Items: items, InstallDir: installDir}, nil
 }
 
-func (s *Service) DockerContent(ctx context.Context, name string) (string, string, error) {
-	result, err := s.DockerContentResult(ctx, name, false)
-	if err != nil {
-		return "", "", err
-	}
-	return result.Content, result.ProjectName, nil
-}
-
-// DockerContentResult 读取项目 compose.yml；forceRuntime 为 true 时跳过落盘文件，直接从运行态反推。
-func (s *Service) DockerContentResult(ctx context.Context, name string, forceRuntime bool) (*ContentResult, error) {
+// DockerInspect 读取项目 Compose 配置；forceRuntime 为 true 时跳过落盘文件，直接从运行态反推。
+func (s *Service) DockerInspect(ctx context.Context, name string, forceRuntime bool) (*ConfigDetail, error) {
 	if err := compose.ValidateProjectName(name); err != nil {
 		return nil, err
 	}
@@ -127,7 +119,7 @@ func (s *Service) DockerContentResult(ctx context.Context, name string, forceRun
 			if err != nil {
 				return nil, err
 			}
-			return &ContentResult{
+			return &ConfigDetail{
 				Content:     string(data),
 				EnvContent:  envContent,
 				ProjectName: projectName,
@@ -145,7 +137,7 @@ func (s *Service) DockerContentResult(ctx context.Context, name string, forceRun
 		if err != nil {
 			return nil, err
 		}
-		return &ContentResult{
+		return &ConfigDetail{
 			Content:     content,
 			EnvContent:  envContent,
 			ProjectName: projectName,
@@ -166,7 +158,7 @@ func (s *Service) DockerContentResult(ctx context.Context, name string, forceRun
 	if err != nil {
 		return nil, err
 	}
-	return &ContentResult{
+	return &ConfigDetail{
 		Content:     content,
 		EnvContent:  envContent,
 		ProjectName: projectName,
@@ -202,7 +194,11 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		return nil, err
 	}
 
-	oldContent, _, contentErr := s.DockerContent(ctx, name)
+	currentConfig, contentErr := s.DockerInspect(ctx, name, false)
+	oldContent := ""
+	if currentConfig != nil {
+		oldContent = currentConfig.Content
+	}
 	content, err := s.prepareRedeployContent(ctx, name, installDir, oldContent, contentErr, req)
 	if err != nil {
 		return nil, err
