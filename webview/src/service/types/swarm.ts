@@ -1,3 +1,5 @@
+import type { ComposeContent } from './compose'
+
 // ─── Docker Swarm ───
 
 export interface SwarmInfo {
@@ -94,14 +96,7 @@ export interface SwarmServiceInfo {
 // SwarmCreateService 直接复用 SwarmServiceSpec
 export type SwarmCreateService = SwarmServiceSpec
 
-// Swarm 服务 Compose
-export interface SwarmServiceCompose {
-    content: string
-    envContent?: string     // 项目 .env 文本；磁盘无文件时不返回
-    projectName?: string
-    fileModTime?: number
-    source?: 'file' | 'runtime'
-}
+export type SwarmServiceCompose = ComposeContent
 
 export interface SwarmTask {
     id: string

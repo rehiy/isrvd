@@ -2,6 +2,14 @@
 
 export type ComposeDeployTarget = 'docker' | 'swarm'
 
+export interface ComposeContent {
+    content: string
+    envContent?: string
+    projectName?: string
+    fileModTime?: number
+    source?: 'file' | 'runtime'
+}
+
 // 统一的 compose 部署请求
 // 项目名（projectName）从 compose 文件中的 name: 字段自动获取，无需前端填写
 export interface ComposeDeploy {

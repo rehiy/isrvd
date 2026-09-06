@@ -1,3 +1,5 @@
+import type { ComposeContent } from './compose'
+
 // ─── Compose 标签常量 ───
 
 export const COMPOSE_PROJECT_LABEL = 'com.docker.compose.project'
@@ -86,14 +88,7 @@ export interface DockerContainerDetail extends DockerContainerCreate {
     labels?: Record<string, string>
 }
 
-// 容器 Compose
-export interface DockerContainerCompose {
-    content: string
-    envContent?: string     // 项目 .env 文本；磁盘无文件时不返回
-    projectName?: string
-    fileModTime?: number
-    source?: 'file' | 'runtime'
-}
+export type DockerContainerCompose = ComposeContent
 
 // ─── 容器统计 ───
 
