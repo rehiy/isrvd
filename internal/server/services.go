@@ -39,6 +39,7 @@ func (app *App) initServices() {
 	app.accountSvc = svcAccount.NewService()
 	app.filerSvc = svcFiler.NewService()
 	app.shellSvc = svcShell.NewService()
+
 	app.copilotSvc = svcCopilot.NewService()
 	if spec, err := public.Efs.ReadFile("openapi/data.json"); err != nil {
 		logman.Warn("copilot catalog unavailable", "error", err)
