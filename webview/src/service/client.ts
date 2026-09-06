@@ -1,19 +1,12 @@
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 
-/**
- * 标准 API 响应结构
- */
 export interface APIResponse<T = unknown> {
     success: boolean
     message?: string
     payload?: T
 }
 
-/**
- * 类型安全的 HTTP 客户端接口
- * 
- * 响应拦截器已将 AxiosResponse 解包为 APIResponse
- */
+// 响应拦截器已将 AxiosResponse 解包为 APIResponse。
 export interface HttpClient {
     get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<APIResponse<T>>
     post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<APIResponse<T>>
@@ -22,19 +15,12 @@ export interface HttpClient {
     delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<APIResponse<T>>
 }
 
-/**
- * Blob 下载专用客户端接口
- * 
- * 当 responseType 为 'blob' 时，拦截器解包后直接返回 Blob 对象
- */
+// Blob 请求由独立拦截器直接解包为 Blob。
 export interface HttpBlobClient {
     get(url: string, config?: AxiosRequestConfig): Promise<Blob>
     post(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<Blob>
 }
 
-/**
- * 系统通知类型
- */
 export type NotificationType = 'success' | 'error' | 'warning' | 'info'
 
 // API 使用相对 baseURL，业务接口只传模块路径
@@ -56,31 +42,15 @@ export const absUrl = (path: string): string =>
 export const wsUrl = (path: string): string =>
     absUrl(path).replace(/^https?:/, m => m === 'https:' ? 'wss:' : 'ws:')
 
-/**
- * 导出类型安全的 HTTP 客户端
- * 
- * 实际使用 axios 实例，通过类型断言修正拦截器解包后的返回类型
- */
+// 类型断言反映响应拦截器解包后的实际返回值。
 export const http = axiosInstance as unknown as HttpClient
 
-/**
- * 导出 Blob 下载专用客户端
- */
 export const httpBlob = axiosBlobInstance as unknown as HttpBlobClient
 
-/**
- * 注册 Axios 拦截器
- * 
- * @param state 全局状态，包含 token
- * @param actions 全局动作，包含显示通知和清除认证信息的方法
- */
 export const interceptors = (
     state: { token: string | null },
     actions: { showNotification: (type: NotificationType, message: string) => void; clearAuth: () => void }
 ) => {
-    /**
-     * 公共请求拦截器：注入 Authorization header
-     */
     const attachAuth = (config: InternalAxiosRequestConfig) => {
         if (state.token) {
             config.headers['Authorization'] = state.token
@@ -88,12 +58,6 @@ export const interceptors = (
         return config
     }
 
-    /**
-     * 公共错误处理
-     * 
-     * @param error 错误对象
-     * @param isBlob 是否为 Blob 下载请求
-     */
     const handleError = async (error: unknown, isBlob = false) => {
         if (axios.isCancel(error)) return Promise.reject(error)
         if (!axios.isAxiosError<APIResponse | Blob>(error)) {
@@ -126,15 +90,9 @@ export const interceptors = (
         return Promise.reject(error)
     }
 
-    axiosInstance.interceptors.request.use(
-        (config: InternalAxiosRequestConfig) => attachAuth(config),
-        (error: unknown) => Promise.reject(error)
-    )
-
-    axiosBlobInstance.interceptors.request.use(
-        (config: InternalAxiosRequestConfig) => attachAuth(config),
-        (error: unknown) => Promise.reject(error)
-    )
+    for (const instance of [axiosInstance, axiosBlobInstance]) {
+        instance.interceptors.request.use(attachAuth, (error: unknown) => Promise.reject(error))
+    }
 
     axiosBlobInstance.interceptors.response.use(
         (value: AxiosResponse) => value.data,
@@ -151,6 +109,6 @@ export const interceptors = (
             }
             return value.data
         },
-        (error: unknown) => handleError(error, false)
+        (error: unknown) => handleError(error)
     )
 }
