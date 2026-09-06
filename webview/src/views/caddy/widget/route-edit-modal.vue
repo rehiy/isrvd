@@ -299,10 +299,6 @@ class RouteEditModal extends Vue {
         return this.containers.find(c => c.name === host.trim())?.ports || []
     }
 
-    parseUpstream(upstream: string) {
-        return parseHostPort(upstream)
-    }
-
     syncSelectedUpstream() {
         const host = this.formData.upstreamHost.trim()
         const port = this.formData.upstreamPort.trim()
@@ -326,7 +322,7 @@ class RouteEditModal extends Vue {
 
     syncSelectedFromText() {
         const first = this.formData.upstreams.split('\n').map(t => t.trim()).filter(Boolean)[0] || ''
-        const { host, port } = this.parseUpstream(first)
+        const { host, port } = parseHostPort(first)
         this.formData.upstreamHost = host
         this.formData.upstreamPort = port
     }

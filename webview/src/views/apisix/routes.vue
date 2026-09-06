@@ -30,6 +30,7 @@ class Routes extends Vue {
     loading = false
     searchText = ''
     collapsedHosts: string[] = []
+    formatRouteUpstreamNodes = formatRouteUpstreamNodes
 
     // ─── 计算属性 ───
     get filteredRoutes() {
@@ -124,10 +125,6 @@ class Routes extends Vue {
 
     getRouteGroupHost(r: ApisixRoute) {
         return r.hosts?.[0] || r.host || '*'
-    }
-
-    getRouteUpstreamNodes(r: ApisixRoute) {
-        return formatRouteUpstreamNodes(r)
     }
 
     getRouteUpstreamTagClass(r: ApisixRoute) {
@@ -275,7 +272,7 @@ export default toNative(Routes)
                 </td>
                 <td class="px-4 py-3"><span :class="getRouteHost(row.route) === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm break-all">{{ getRouteHost(row.route) }}</span></td>
                 <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getRouteUri(row.route) }}</code></td>
-                <td class="px-4 py-3"><span :class="getRouteUpstreamTagClass(row.route)" class="code-chip">{{ getRouteUpstreamNodes(row.route) }}</span></td>
+                <td class="px-4 py-3"><span :class="getRouteUpstreamTagClass(row.route)" class="code-chip">{{ formatRouteUpstreamNodes(row.route) }}</span></td>
                 <td class="px-4 py-3">
                   <div class="table-actions">
                     <button v-if="portal.hasPerm('PATCH /api/apisix/route/:id/status')" :class="['btn-icon', row.route.status === 1 ? 'btn-icon-amber' : 'btn-icon-emerald']" :title="row.route.status === 1 ? '禁用' : '启用'" @click="toggleStatus(row.route)">
@@ -332,7 +329,7 @@ export default toNative(Routes)
 
             <div class="card-prop-row-start">
               <span class="prop-label-start">上游</span>
-              <span :class="getRouteUpstreamTagClass(row.route)" class="code-chip">{{ getRouteUpstreamNodes(row.route) }}</span>
+              <span :class="getRouteUpstreamTagClass(row.route)" class="code-chip">{{ formatRouteUpstreamNodes(row.route) }}</span>
             </div>
 
             <!-- 底部：操作按钮 -->
