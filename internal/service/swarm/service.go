@@ -224,21 +224,6 @@ func (s *Service) ServiceCreate(ctx context.Context, req ServiceSpec) (string, e
 	return id, nil
 }
 
-// ServiceCreateRaw 使用 Docker SDK 原始结构创建服务，供 Compose 部署链路复用。
-func (s *Service) ServiceCreateRaw(ctx context.Context, spec dockerSwarm.ServiceSpec) (string, error) {
-	if spec.Name == "" {
-		return "", fmt.Errorf("服务名称不能为空")
-	}
-	if spec.TaskTemplate.ContainerSpec == nil || spec.TaskTemplate.ContainerSpec.Image == "" {
-		return "", fmt.Errorf("镜像名称不能为空")
-	}
-	id, err := s.svc.ServiceCreate(ctx, spec)
-	if err != nil {
-		return "", fmt.Errorf("创建服务失败: %w", err)
-	}
-	return id, nil
-}
-
 // ServiceAction 服务操作
 func (s *Service) ServiceAction(ctx context.Context, id, action string, replicas *uint64) error {
 	if id == "" {
@@ -249,17 +234,6 @@ func (s *Service) ServiceAction(ctx context.Context, id, action string, replicas
 	}
 	if err := s.svc.ServiceAction(ctx, id, action, replicas); err != nil {
 		return fmt.Errorf("服务操作 %s 失败: %w", action, err)
-	}
-	return nil
-}
-
-// ServiceForceUpdate 强制重新部署服务
-func (s *Service) ServiceForceUpdate(ctx context.Context, id string) error {
-	if id == "" {
-		return fmt.Errorf("服务 ID 不能为空")
-	}
-	if err := s.svc.ServiceForceUpdate(ctx, id); err != nil {
-		return fmt.Errorf("强制重新部署服务失败: %w", err)
 	}
 	return nil
 }

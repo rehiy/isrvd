@@ -201,14 +201,6 @@ func (s *AuditService) BodyRead(c *gin.Context) string {
 	}
 }
 
-// Close 关闭底层文件句柄，刷盘缓冲数据
-func (s *AuditService) Close() error {
-	if s.store == nil {
-		return nil
-	}
-	return s.store.Close()
-}
-
 // ---- 内部方法 ----------------------------------------------------------------
 
 // loadRecent 启动时从今日文件尾部读取最近 maxAuditBufferSize 条到内存。

@@ -14,7 +14,6 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
-	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/websocket"
@@ -203,21 +202,6 @@ func (s *Service) ContainerCreate(ctx context.Context, req ContainerSpec) (*Cont
 		return nil, fmt.Errorf("创建容器失败: %w", err)
 	}
 	return &ContainerCreateResult{ID: pkgDocker.ShortID(id), Name: req.Name}, nil
-}
-
-// ContainerCreateRaw 使用 Docker SDK 原始结构创建容器，供 Compose 部署链路复用。
-func (s *Service) ContainerCreateRaw(ctx context.Context, name string, containerConfig *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig) (*ContainerCreateResult, error) {
-	if containerConfig == nil || containerConfig.Image == "" {
-		return nil, fmt.Errorf("镜像名称不能为空")
-	}
-	if err := s.docker.ImageEnsure(ctx, containerConfig.Image, false); err != nil {
-		return nil, fmt.Errorf("镜像 %s 不存在，拉取失败: %w", containerConfig.Image, err)
-	}
-	id, err := s.docker.ContainerCreateAndStart(ctx, name, containerConfig, hostConfig, networkingConfig)
-	if err != nil {
-		return nil, fmt.Errorf("创建容器失败: %w", err)
-	}
-	return &ContainerCreateResult{ID: pkgDocker.ShortID(id), Name: name}, nil
 }
 
 // ContainerStatsResponse 容器统计信息响应，保持前端稳定响应结构。

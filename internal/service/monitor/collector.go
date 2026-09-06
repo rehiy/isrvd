@@ -79,14 +79,6 @@ func (c *Collector) Stop() {
 	}
 }
 
-// Restart 重启采集协程（用于 reload 后使新配置生效）
-// 同时更新 dataDir，确保 RootDirectory 变更后写入正确目录。
-func (c *Collector) Restart(ctx context.Context) {
-	c.Stop()
-	c.dataDir = filepath.Join(config.Server.RootDirectory, "monitor")
-	c.Start(ctx)
-}
-
 // CollectHostStatNow 实时采集主机数据，不写入文件
 func (c *Collector) CollectHostStatNow(ctx context.Context) *Record {
 	data := CollectHostStat(ctx)

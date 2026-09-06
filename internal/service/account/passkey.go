@@ -101,12 +101,6 @@ func newPasskeySessionStore() *passkeySessionStore {
 	return store
 }
 
-// Stop 停止会话清理协程，防止资源泄漏
-func (s *passkeySessionStore) Stop() {
-	s.ticker.Stop()
-	close(s.done)
-}
-
 func (s *passkeySessionStore) save(id string, sess *passkeySession) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -405,7 +399,6 @@ func (u *passkeyUser) WebAuthnID() []byte                         { return u.id 
 func (u *passkeyUser) WebAuthnName() string                       { return u.name }
 func (u *passkeyUser) WebAuthnDisplayName() string                { return u.displayName }
 func (u *passkeyUser) WebAuthnCredentials() []webauthn.Credential { return u.credentials }
-func (u *passkeyUser) WebAuthnIcon() string                       { return "" }
 
 // updateBackupState 在登录成功后同步更新凭证的 BackupState（BS 标志可能随设备备份状态变化）
 func (s *Service) updateBackupState(username, credIDStr string, backupState bool) {
