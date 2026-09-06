@@ -104,7 +104,7 @@ func (s *DockerService) ImagePush(ctx context.Context, imageRef, registryURL, na
 
 	// 推送镜像（认证信息从 targetRef 的 host 自动匹配）
 	reader, err := s.client.ImagePush(ctx, targetRef, image.PushOptions{
-		RegistryAuth: s.getRegistryAuth(targetRef),
+		RegistryAuth: s.RegistryAuth(targetRef),
 	})
 	if err != nil {
 		logman.Error("Push image failed", "image", targetRef, "error", err)
@@ -155,15 +155,10 @@ func (s *DockerService) ImagePull(ctx context.Context, imageName, registryURL, n
 	return lastMsg, imageRef, nil
 }
 
-// RegistryAuth 根据镜像引用自动匹配已配置的 registry 认证信息。
-func (s *DockerService) RegistryAuth(imageRef string) string {
-	return s.getRegistryAuth(imageRef)
-}
-
-// getRegistryAuth 根据镜像引用自动匹配已配置的 registry 认证信息
+// RegistryAuth 根据镜像引用自动匹配已配置的 registry 认证信息
 // imageRef 可以是完整镜像引用（如 "csighub.tencentyun.com/ns/app:v1"）或仓库 URL
 // 匹配规则：提取 imageRef 的 host 部分，与已配置仓库的 host 对比
-func (s *DockerService) getRegistryAuth(imageRef string) string {
+func (s *DockerService) RegistryAuth(imageRef string) string {
 	// 提取 host：取第一个 "/" 之前的部分
 	host := imageRef
 	if idx := strings.Index(host, "/"); idx >= 0 {
@@ -198,7 +193,7 @@ func (s *DockerService) getRegistryAuth(imageRef string) string {
 // imagePull 执行镜像拉取，认证信息从 imageRef 的 host 自动匹配已配置的 registry
 func (s *DockerService) imagePull(ctx context.Context, imageRef string) (string, error) {
 	reader, err := s.client.ImagePull(ctx, imageRef, image.PullOptions{
-		RegistryAuth: s.getRegistryAuth(imageRef),
+		RegistryAuth: s.RegistryAuth(imageRef),
 	})
 	if err != nil {
 		logman.Error("Pull image failed", "image", imageRef, "error", err)
