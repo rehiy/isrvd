@@ -140,7 +140,7 @@ func (s *Service) SwarmContentResult(ctx context.Context, name string, forceRunt
 		}
 	}
 
-	raw, err := s.swarm.ServiceInspectRaw(ctx, name)
+	raw, err := s.swarm.ServiceInspect(ctx, name)
 	if err != nil {
 		return nil, fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
 	}

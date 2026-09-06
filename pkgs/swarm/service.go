@@ -211,11 +211,6 @@ func (s *SwarmService) ServiceLogsStream(ctx context.Context, w io.Writer, servi
 	}
 }
 
-// ServiceInspect 获取服务详情，直接返回 Docker SDK 原始服务结构。
-func (s *SwarmService) ServiceInspect(ctx context.Context, id string) (dockerSwarm.Service, error) {
-	return s.ServiceInspectRaw(ctx, id)
-}
-
 // ServiceRunningTasksMap 一次性统计所有服务运行中的任务数。
 func (s *SwarmService) ServiceRunningTasksMap(ctx context.Context) map[string]int {
 	tasks, err := s.client.TaskList(ctx, dockerSwarm.TaskListOptions{})
@@ -246,8 +241,8 @@ func (s *SwarmService) ServiceRunningTasks(ctx context.Context, serviceID string
 	return runningTasks
 }
 
-// ServiceInspectRaw 获取服务原始配置。
-func (s *SwarmService) ServiceInspectRaw(ctx context.Context, id string) (dockerSwarm.Service, error) {
+// ServiceInspect 获取服务详情，直接返回 Docker SDK 原始服务结构。
+func (s *SwarmService) ServiceInspect(ctx context.Context, id string) (dockerSwarm.Service, error) {
 	svc, _, err := s.client.ServiceInspectWithRaw(ctx, id, dockerSwarm.ServiceInspectOptions{InsertDefaults: true})
 	if err != nil {
 		logman.Error("InspectService failed", "id", id, "error", err)
