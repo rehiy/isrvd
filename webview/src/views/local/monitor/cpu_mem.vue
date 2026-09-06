@@ -28,6 +28,7 @@ class SystemCpuMem extends Vue {
     private memHistory: { ts: number[]; labels: string[]; data: number[] } = { ts: [], labels: [], data: [] }
 
     current: Pick<SystemStat['system'], 'cpuPercent' | 'cpuModel' | 'memoryUsed' | 'memoryTotal'> | null = null
+    formatMonitorBytes = formatMonitorBytes
 
     get cpuVal() {
         return this.current ? this.avgCpuPercent(this.current.cpuPercent) : 0
@@ -54,17 +55,11 @@ class SystemCpuMem extends Vue {
         return parseFloat(((used / total) * 100).toFixed(1))
     }
 
-    fmtBytes(bytes: number) {
-        return formatMonitorBytes(bytes)
-    }
-
     semanticColor(pct: number, prefix = 'bg') {
         if (pct >= 90) return `${prefix}-red-500`
         if (pct >= 70) return `${prefix}-amber-500`
         return `${prefix}-emerald-500`
     }
-
-    textColor(pct: number) { return this.semanticColor(pct, 'text') }
 
     bgChartOptions(): ChartOptions<'line'> {
         return {
@@ -183,7 +178,7 @@ export default toNative(SystemCpuMem)
             </div>
             <span class="text-sm font-semibold text-slate-700">CPU 使用率</span>
           </div>
-          <span :class="['text-2xl font-bold tabular-nums', textColor(cpuVal)]">
+          <span :class="['text-2xl font-bold tabular-nums', semanticColor(cpuVal, 'text')]">
             {{ cpuVal }}<span class="text-sm font-medium ml-0.5">%</span>
           </span>
         </div>
@@ -204,11 +199,11 @@ export default toNative(SystemCpuMem)
             </div>
             <span class="text-sm font-semibold text-slate-700">内存使用</span>
           </div>
-          <span :class="['text-2xl font-bold tabular-nums', textColor(memVal)]">
+          <span :class="['text-2xl font-bold tabular-nums', semanticColor(memVal, 'text')]">
             {{ memVal }}<span class="text-sm font-medium ml-0.5">%</span>
           </span>
         </div>
-        <p class="text-xs text-slate-400 mt-3">{{ fmtBytes(memUsed) }} / {{ fmtBytes(memTotal) }}</p>
+        <p class="text-xs text-slate-400 mt-3">{{ formatMonitorBytes(memUsed) }} / {{ formatMonitorBytes(memTotal) }}</p>
       </div>
     </div>
   </div>

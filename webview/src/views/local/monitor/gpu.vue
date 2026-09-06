@@ -42,8 +42,6 @@ class SystemGpu extends Vue {
         return `${prefix}-emerald-500`
     }
 
-    textColor(pct: number) { return this.semanticColor(pct, 'text') }
-
     gpuTempColor(temp: number): string {
         if (temp < 0) return 'text-slate-400'
         if (temp >= 80) return 'text-red-500'
@@ -193,7 +191,7 @@ export default toNative(SystemGpu)
         <div class="flex items-center justify-end mb-2 gap-4 text-xs">
           <span class="flex items-center gap-1">
             <i class="fas fa-gauge text-emerald-500"></i>
-            <span :class="['font-mono w-12 text-right tabular-nums', textColor(gpu.utilization)]">{{ gpu.utilization.toFixed(1) }}%</span>
+            <span :class="['font-mono w-12 text-right tabular-nums', semanticColor(gpu.utilization, 'text')]">{{ gpu.utilization.toFixed(1) }}%</span>
           </span>
           <span v-if="gpu.memoryTotal > 0" class="flex items-center gap-1">
             <i class="fas fa-memory text-violet-500"></i>

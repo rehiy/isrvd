@@ -35,9 +35,7 @@ class SystemDisk extends Vue {
     private lastDiskIO: Record<string, { read: number; write: number; time: number }> = {}
     current: Pick<SystemStat['system'], 'diskTotal' | 'diskUsed' | 'diskPartition'> | null = null
     private currentDiskIO: SystemDiskIO[] = []
-
-    fmtBytes(bytes: number) { return formatMonitorBytes(bytes) }
-    fmtRate(bytes: number) { return formatMonitorBytes(bytes, true) }
+    formatMonitorBytes = formatMonitorBytes
 
     memPercent(used: number, total: number): number {
         if (!total) return 0
@@ -49,8 +47,6 @@ class SystemDisk extends Vue {
         if (pct >= 70) return '#f59e0b'
         return '#10b981'
     }
-
-    devShortName(device: string): string { return device.split('/').pop() || device }
 
     sortedDiskPartitions(list: SystemDiskPartition[] = []) {
         return [...list].sort((a, b) => {
@@ -73,7 +69,7 @@ class SystemDisk extends Vue {
     }
 
     diskIOHistoryKey(device: string): string {
-        return this.diskIOByDevice(device)?.name || this.devShortName(device)
+        return this.diskIOByDevice(device)?.name || device.split('/').pop() || device
     }
 
     currentDiskRate(name: string, dir: string): number {
@@ -90,7 +86,6 @@ class SystemDisk extends Vue {
     }
 
     diskChartOptions(pctColor: string): ChartOptions<'line'> {
-        const fmtRate = (v: number) => this.fmtRate(v)
         return {
             responsive: true, maintainAspectRatio: false, animation: false,
             interaction: { intersect: false, mode: 'index' as const },
@@ -103,7 +98,7 @@ class SystemDisk extends Vue {
                             if (ctx.dataset.yAxisID === 'y1') {
                                 return '使用率: ' + (ctx.parsed.y ?? 0).toFixed(1) + '%'
                             }
-                            return (ctx.dataset.label ?? '') + ': ' + fmtRate(ctx.parsed.y ?? 0)
+                            return (ctx.dataset.label ?? '') + ': ' + formatMonitorBytes(ctx.parsed.y ?? 0, true)
                         }
                     }
                 }
@@ -113,7 +108,7 @@ class SystemDisk extends Vue {
                 y: {
                     display: true, beginAtZero: true, position: 'left' as const,
                     grid: { color: 'rgba(148,163,184,0.08)' }, border: { display: false },
-                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => fmtRate(Number(v)) }
+                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => formatMonitorBytes(Number(v), true) }
                 },
                 y1: {
                     display: true, min: 0, max: 100, position: 'right' as const,
@@ -264,7 +259,7 @@ export default toNative(SystemDisk)
       </div>
       <span class="text-sm font-semibold text-slate-700">硬盘 I/O</span>
       <span class="ml-auto text-xs text-slate-400">
-        总计 {{ fmtBytes(current.diskTotal) }}，已用 {{ fmtBytes(current.diskUsed) }}
+        总计 {{ formatMonitorBytes(current.diskTotal) }}，已用 {{ formatMonitorBytes(current.diskUsed) }}
       </span>
     </div>
     <div ref="diskIOContainerRef" class="divide-y divide-slate-100">
@@ -276,15 +271,15 @@ export default toNative(SystemDisk)
               <p class="text-xs text-slate-400 shrink-0">{{ dp.device }} · {{ dp.fstype }}</p>
             </div>
             <div class="flex items-center justify-end gap-x-3 gap-y-1 flex-wrap flex-1 min-w-0">
-              <span class="text-xs text-slate-600 font-mono shrink-0 whitespace-nowrap">{{ fmtBytes(dp.used) }} / {{ fmtBytes(dp.total) }} ({{ currentUsagePct(dp) }}%)</span>
+              <span class="text-xs text-slate-600 font-mono shrink-0 whitespace-nowrap">{{ formatMonitorBytes(dp.used) }} / {{ formatMonitorBytes(dp.total) }} ({{ currentUsagePct(dp) }}%)</span>
               <template v-if="diskIOByDevice(dp.device)">
                 <span class="flex items-center gap-1 text-xs shrink-0 whitespace-nowrap">
                   <i class="fas fa-arrow-down text-amber-500"></i>
-                  <span class="font-mono text-slate-600">{{ fmtRate(currentDiskRate(diskIOHistoryKey(dp.device), 'read')) }}</span>
+                  <span class="font-mono text-slate-600">{{ formatMonitorBytes(currentDiskRate(diskIOHistoryKey(dp.device), 'read'), true) }}</span>
                 </span>
                 <span class="flex items-center gap-1 text-xs shrink-0 whitespace-nowrap">
                   <i class="fas fa-arrow-up text-violet-500"></i>
-                  <span class="font-mono text-slate-600">{{ fmtRate(currentDiskRate(diskIOHistoryKey(dp.device), 'write')) }}</span>
+                  <span class="font-mono text-slate-600">{{ formatMonitorBytes(currentDiskRate(diskIOHistoryKey(dp.device), 'write'), true) }}</span>
                 </span>
               </template>
             </div>
@@ -297,8 +292,8 @@ export default toNative(SystemDisk)
               </div>
             </div>
             <div class="flex gap-4 text-xs text-slate-400">
-              <span>累计读: {{ fmtBytes(diskIOByDevice(dp.device)?.readBytes ?? 0) }}</span>
-              <span>累计写: {{ fmtBytes(diskIOByDevice(dp.device)?.writeBytes ?? 0) }}</span>
+              <span>累计读: {{ formatMonitorBytes(diskIOByDevice(dp.device)?.readBytes ?? 0) }}</span>
+              <span>累计写: {{ formatMonitorBytes(diskIOByDevice(dp.device)?.writeBytes ?? 0) }}</span>
             </div>
           </template>
         </div>

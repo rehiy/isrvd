@@ -33,9 +33,7 @@ class SystemNetwork extends Vue {
     netHistory: Record<string, TimeSeriesHistory> = {}
     private lastNetIO: Record<string, { recv: number; sent: number; time: number }> = {}
     currentIfaces: SystemNetInterface[] = []
-
-    fmtBytes(bytes: number) { return formatMonitorBytes(bytes) }
-    fmtRate(bytes: number) { return formatMonitorBytes(bytes, true) }
+    formatMonitorBytes = formatMonitorBytes
 
     physicalInterfaces(list: SystemNetInterface[]) {
         if (!list) return []
@@ -53,7 +51,6 @@ class SystemNetwork extends Vue {
     }
 
     netChartOptions(): ChartOptions<'line'> {
-        const fmtRate = (v: number) => this.fmtRate(v)
         return {
             responsive: true, maintainAspectRatio: false, animation: false,
             interaction: { intersect: false, mode: 'index' as const },
@@ -61,14 +58,14 @@ class SystemNetwork extends Vue {
                 legend: { display: true, position: 'bottom' as const, labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
                 tooltip: {
                     backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { size: 10 }, bodyFont: { size: 10 }, padding: 8, cornerRadius: 6,
-                    callbacks: { label: (ctx: ChartCallbackContext) => (ctx.dataset.label ?? '') + ': ' + fmtRate(ctx.parsed.y ?? 0) }
+                    callbacks: { label: (ctx: ChartCallbackContext) => (ctx.dataset.label ?? '') + ': ' + formatMonitorBytes(ctx.parsed.y ?? 0, true) }
                 }
             },
             scales: {
                 x: { display: false },
                 y: {
                     display: true, beginAtZero: true, grid: { color: 'rgba(148,163,184,0.08)' }, border: { display: false },
-                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => fmtRate(Number(v)) }
+                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => formatMonitorBytes(Number(v), true) }
                 }
             },
             elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 1.5 } }
@@ -189,11 +186,11 @@ export default toNative(SystemNetwork)
           <div class="flex items-center justify-end gap-x-4 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
             <span class="monitor-legend-item">
               <i class="fas fa-arrow-down text-emerald-500"></i>
-              <span class="font-mono text-slate-600">{{ fmtRate(currentRate(ni.name, 'recv')) }}</span>
+              <span class="font-mono text-slate-600">{{ formatMonitorBytes(currentRate(ni.name, 'recv'), true) }}</span>
             </span>
             <span class="monitor-legend-item">
               <i class="fas fa-arrow-up text-blue-500"></i>
-              <span class="font-mono text-slate-600">{{ fmtRate(currentRate(ni.name, 'sent')) }}</span>
+              <span class="font-mono text-slate-600">{{ formatMonitorBytes(currentRate(ni.name, 'sent'), true) }}</span>
             </span>
           </div>
         </div>
@@ -204,8 +201,8 @@ export default toNative(SystemNetwork)
           </div>
         </div>
         <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-slate-400">
-          <span class="shrink-0 whitespace-nowrap">累计收: {{ fmtBytes(ni.bytesRecv) }}</span>
-          <span class="shrink-0 whitespace-nowrap">累计发: {{ fmtBytes(ni.bytesSent) }}</span>
+          <span class="shrink-0 whitespace-nowrap">累计收: {{ formatMonitorBytes(ni.bytesRecv) }}</span>
+          <span class="shrink-0 whitespace-nowrap">累计发: {{ formatMonitorBytes(ni.bytesSent) }}</span>
         </div>
       </div>
     </div>

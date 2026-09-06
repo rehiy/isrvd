@@ -30,10 +30,7 @@ class SystemGo extends Vue {
 
     current: SystemGoRuntimeStat | null = null
     lastGCTime: string = '从未'
-
-    fmtSize(bytes: number) {
-        return formatMonitorBytes(bytes)
-    }
+    formatMonitorBytes = formatMonitorBytes
 
     fmtGCTime(ts: number) {
         if (!ts) return '从未'
@@ -42,7 +39,6 @@ class SystemGo extends Vue {
     }
 
     goChartOptions(): ChartOptions<'line'> {
-        const fmtSize = (v: number) => this.fmtSize(v)
         return {
             responsive: true, maintainAspectRatio: false, animation: false,
             interaction: { intersect: false, mode: 'index' as const },
@@ -57,7 +53,7 @@ class SystemGo extends Vue {
                             if (label.includes('GC') || label === 'Goroutine' || label === '堆对象') {
                                 return `${label}: ${value}`
                             }
-                            return `${label}: ${fmtSize(value)}`
+                            return `${label}: ${formatMonitorBytes(value)}`
                         }
                     }
                 }
@@ -348,11 +344,11 @@ export default toNative(SystemGo)
           <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
             <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-blue-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ fmtSize(current.totalAlloc) }}</span>
+              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.totalAlloc) }}</span>
             </span>
             <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-emerald-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ fmtSize(current.sys) }}</span>
+              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.sys) }}</span>
             </span>
           </div>
         </div>
@@ -368,27 +364,27 @@ export default toNative(SystemGo)
           <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
             <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-blue-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ fmtSize(current.alloc) }}</span>
+              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.alloc) }}</span>
             </span>
             <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-emerald-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ fmtSize(current.heapAlloc) }}</span>
+              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.heapAlloc) }}</span>
             </span>
             <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-amber-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ fmtSize(current.heapInuse) }}</span>
+              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.heapInuse) }}</span>
             </span>
             <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-gray-400 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ fmtSize(current.heapIdle) }}</span>
+              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.heapIdle) }}</span>
             </span>
             <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-rose-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ fmtSize(current.heapReleased) }}</span>
+              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.heapReleased) }}</span>
             </span>
             <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ fmtSize(current.heapSys) }}</span>
+              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.heapSys) }}</span>
             </span>
           </div>
         </div>
@@ -404,11 +400,11 @@ export default toNative(SystemGo)
           <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
             <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-amber-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ fmtSize(current.stackInuse) }}</span>
+              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.stackInuse) }}</span>
             </span>
             <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>
-              <span class="font-mono text-slate-600">{{ fmtSize(current.stackSys) }}</span>
+              <span class="font-mono text-slate-600">{{ formatMonitorBytes(current.stackSys) }}</span>
             </span>
           </div>
         </div>
