@@ -2763,7 +2763,7 @@
                       "type": "string"
                     },
                     "payload": {
-                      "$ref": "#/components/schemas/compose.ContentResult"
+                      "$ref": "#/components/schemas/compose.ConfigDetail"
                     },
                     "success": {
                       "description": "请求是否成功",
@@ -2931,7 +2931,7 @@
                       "type": "string"
                     },
                     "payload": {
-                      "$ref": "#/components/schemas/compose.ContentResult"
+                      "$ref": "#/components/schemas/compose.ConfigDetail"
                     },
                     "success": {
                       "description": "请求是否成功",
@@ -8812,7 +8812,7 @@
         ],
         "type": "object"
       },
-      "compose.ContentResult": {
+      "compose.ConfigDetail": {
         "properties": {
           "content": {
             "description": "compose.yml 文本",

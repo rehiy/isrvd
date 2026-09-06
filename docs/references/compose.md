@@ -48,7 +48,7 @@ Web 前端的新建、Docker 编辑和 Swarm 编辑采用一致的 `.env` 提交
 | `items` | string[] | 创建或重建的容器/服务列表 |
 | `installDir` | string | 项目落盘目录（Docker Compose 与 Swarm 均返回） |
 
-### DockerComposeContentResult
+### ComposeConfigDetail
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
