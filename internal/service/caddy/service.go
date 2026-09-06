@@ -73,6 +73,13 @@ func getServer(cfg *pkgCaddy.Config, name string) *pkgCaddy.HTTPServer {
 	return cfg.Apps.HTTP.Servers[name]
 }
 
+func getRoute(srv *pkgCaddy.HTTPServer, index int) (*pkgCaddy.Route, error) {
+	if index < 0 || index >= len(srv.Routes) {
+		return nil, ErrRouteNotFound
+	}
+	return &srv.Routes[index], nil
+}
+
 func ensureTLS(cfg *pkgCaddy.Config) *pkgCaddy.TLSApp {
 	if cfg.Apps == nil {
 		cfg.Apps = &pkgCaddy.AppsConfig{}

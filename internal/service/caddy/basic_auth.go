@@ -94,10 +94,10 @@ func (s *Service) BasicAuthUserCreate(ctx context.Context, server string, routeI
 		if srv == nil {
 			return ErrServerNotFound
 		}
-		if routeIndex < 0 || routeIndex >= len(srv.Routes) {
-			return ErrRouteNotFound
+		route, err := getRoute(srv, routeIndex)
+		if err != nil {
+			return err
 		}
-		route := &srv.Routes[routeIndex]
 		authIdx := findAuthIndex(route)
 
 		if authIdx >= 0 {
@@ -143,10 +143,10 @@ func (s *Service) BasicAuthUserDelete(ctx context.Context, server string, routeI
 		if srv == nil {
 			return ErrServerNotFound
 		}
-		if routeIndex < 0 || routeIndex >= len(srv.Routes) {
-			return ErrRouteNotFound
+		route, err := getRoute(srv, routeIndex)
+		if err != nil {
+			return err
 		}
-		route := &srv.Routes[routeIndex]
 
 		authIdx := findAuthIndex(route)
 		if authIdx < 0 {
@@ -185,10 +185,10 @@ func (s *Service) BasicAuthConfigUpdate(ctx context.Context, server string, rout
 		if srv == nil {
 			return ErrServerNotFound
 		}
-		if routeIndex < 0 || routeIndex >= len(srv.Routes) {
-			return ErrRouteNotFound
+		route, err := getRoute(srv, routeIndex)
+		if err != nil {
+			return err
 		}
-		route := &srv.Routes[routeIndex]
 
 		authIdx := findAuthIndex(route)
 		if authIdx < 0 {

@@ -52,10 +52,11 @@ func (s *Service) RouteInspect(ctx context.Context, server string, index int) (*
 	if srv == nil {
 		return nil, ErrServerNotFound
 	}
-	if index < 0 || index >= len(srv.Routes) {
-		return nil, ErrRouteNotFound
+	route, err := getRoute(srv, index)
+	if err != nil {
+		return nil, err
 	}
-	v := &RouteView{Index: index, Route: srv.Routes[index]}
+	v := &RouteView{Index: index, Route: *route}
 	return v, nil
 }
 
@@ -92,10 +93,11 @@ func (s *Service) RouteUpdate(ctx context.Context, server string, index int, req
 		if srv == nil {
 			return ErrServerNotFound
 		}
-		if index < 0 || index >= len(srv.Routes) {
-			return ErrRouteNotFound
+		route, err := getRoute(srv, index)
+		if err != nil {
+			return err
 		}
-		srv.Routes[index] = req
+		*route = req
 		return nil
 	})
 }
@@ -111,8 +113,8 @@ func (s *Service) RouteDelete(ctx context.Context, server string, index int) err
 		if srv == nil {
 			return ErrServerNotFound
 		}
-		if index < 0 || index >= len(srv.Routes) {
-			return ErrRouteNotFound
+		if _, err := getRoute(srv, index); err != nil {
+			return err
 		}
 		srv.Routes = append(srv.Routes[:index], srv.Routes[index+1:]...)
 		return nil
