@@ -6,7 +6,8 @@ import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 import type { SystemStat, SystemNetInterface } from '@/service/types'
 
 import Chart, { makeLineDataset } from '@/helper/chart'
-import { appendMonitorPoint, formatMonitorBytes } from '@/helper/monitor'
+import { formatMonitorBytes } from '@/helper/format'
+import { appendMonitorPoint } from '@/helper/monitor'
 
 interface TimeSeriesHistory {
     ts: number[]

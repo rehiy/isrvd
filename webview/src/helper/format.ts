@@ -40,6 +40,18 @@ export const formatFileSize = (bytes: number): string => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
+export const formatMonitorBytes = (bytes: number, rate = false): string => {
+    if (!bytes || bytes < 0) return rate ? '0 B/s' : '0 B'
+    const units = rate ? ['B/s', 'KB/s', 'MB/s', 'GB/s'] : ['B', 'KB', 'MB', 'GB', 'TB']
+    let unitIndex = 0
+    let value = bytes
+    while (value >= 1024 && unitIndex < units.length - 1) {
+        value /= 1024
+        unitIndex++
+    }
+    return `${value.toFixed(1)} ${units[unitIndex]}`
+}
+
 export const formatTime = (timeString?: string): string => {
     if (!timeString) return '-'
     const date = new Date(timeString)

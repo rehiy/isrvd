@@ -6,8 +6,8 @@ import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 import type { SystemStat, SystemDiskIO, SystemDiskPartition } from '@/service/types'
 
 import Chart from '@/helper/chart'
-import { hexToRgba } from '@/helper/format'
-import { appendMonitorPoint, formatMonitorBytes } from '@/helper/monitor'
+import { formatMonitorBytes, hexToRgba } from '@/helper/format'
+import { appendMonitorPoint } from '@/helper/monitor'
 
 interface DiskIOSeriesHistory {
     ts: number[]

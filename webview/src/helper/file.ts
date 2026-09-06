@@ -1,4 +1,4 @@
-export const TEXT_EXTENSIONS: string[] = [
+const TEXT_EXTENSIONS = [
     'txt', 'text', 'md', 'markdown', 'rst', 'adoc', 'log', 'csv', 'tsv',
     'json', 'jsonc', 'json5', 'jsonl', 'xml', 'toml', 'yaml', 'yml', 'ini', 'conf', 'cfg', 'cnf',
     'env', 'envrc', 'properties', 'editorconfig', 'gitignore', 'gitattributes', 'dockerignore',
@@ -18,7 +18,7 @@ export const TEXT_EXTENSIONS: string[] = [
 
 export type PreviewFileType = 'image' | 'audio' | 'video' | 'pdf' | ''
 
-export const PREVIEW_MIME_MAP: Record<string, string> = {
+const PREVIEW_MIME_MAP: Record<string, string> = {
     jpg: 'image/jpeg',
     jpeg: 'image/jpeg',
     png: 'image/png',
@@ -43,32 +43,7 @@ export const PREVIEW_MIME_MAP: Record<string, string> = {
     pdf: 'application/pdf'
 }
 
-export const PREVIEW_TYPE_MAP: Record<string, PreviewFileType> = {
-    jpg: 'image',
-    jpeg: 'image',
-    png: 'image',
-    gif: 'image',
-    bmp: 'image',
-    svg: 'image',
-    webp: 'image',
-    ico: 'image',
-    tiff: 'image',
-    tif: 'image',
-    mp3: 'audio',
-    wav: 'audio',
-    ogg: 'audio',
-    m4a: 'audio',
-    flac: 'audio',
-    aac: 'audio',
-    mp4: 'video',
-    webm: 'video',
-    mov: 'video',
-    m4v: 'video',
-    mkv: 'video',
-    pdf: 'pdf'
-}
-
-export const FILE_ICON_MAP: Record<string, string> = {
+const FILE_ICON_MAP: Record<string, string> = {
     'txt': 'fas fa-file-alt text-secondary',
     'md': 'fab fa-markdown text-dark',
     'pdf': 'fas fa-file-pdf text-danger',
@@ -120,6 +95,8 @@ const editableExtension = (filename: string): string => {
     return parts[parts.length - 1]
 }
 
+const fileExtension = (filename: string): string => filename.split('.').pop()?.toLowerCase() ?? ''
+
 export const isEditableFile = (filename: string): boolean => {
     if (!filename) return false
     return TEXT_EXTENSIONS.includes(editableExtension(filename))
@@ -127,21 +104,22 @@ export const isEditableFile = (filename: string): boolean => {
 
 export const getPreviewType = (filename: string): PreviewFileType => {
     if (!filename) return ''
-    const ext = filename.split('.').pop()?.toLowerCase() ?? ''
-    return PREVIEW_TYPE_MAP[ext] || ''
+    const mime = PREVIEW_MIME_MAP[fileExtension(filename)]
+    if (!mime) return ''
+    if (mime === 'application/pdf') return 'pdf'
+    const type = mime.split('/')[0]
+    return type === 'image' || type === 'audio' || type === 'video' ? type : ''
 }
 
 export const isPreviewableFile = (filename: string): boolean => getPreviewType(filename) !== ''
 
 export const getPreviewMimeType = (filename: string): string => {
-    const ext = filename.split('.').pop()?.toLowerCase() ?? ''
-    return PREVIEW_MIME_MAP[ext] || 'application/octet-stream'
+    return PREVIEW_MIME_MAP[fileExtension(filename)] || 'application/octet-stream'
 }
 
 export const getFileIcon = (file: { isDir: boolean; name: string }): string => {
     if (file.isDir) return 'fas fa-folder text-warning'
-    const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
-    return FILE_ICON_MAP[ext] || 'fas fa-file text-secondary'
+    return FILE_ICON_MAP[fileExtension(file.name)] || 'fas fa-file text-secondary'
 }
 
 /**

@@ -6,6 +6,7 @@ import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 import type { SystemStat } from '@/service/types'
 
 import Chart from '@/helper/chart'
+import { formatMonitorBytes } from '@/helper/format'
 import { appendMonitorPoint } from '@/helper/monitor'
 
 interface ChartCallbackContext {
@@ -54,11 +55,7 @@ class SystemCpuMem extends Vue {
     }
 
     fmtBytes(bytes: number) {
-        if (!bytes || bytes < 0) return '0 B'
-        const units = ['B', 'KB', 'MB', 'GB', 'TB']
-        let i = 0, v = bytes
-        while (v >= 1024 && i < units.length - 1) { v /= 1024; i++ }
-        return `${v.toFixed(1)} ${units[i]}`
+        return formatMonitorBytes(bytes)
     }
 
     semanticColor(pct: number, prefix = 'bg') {
