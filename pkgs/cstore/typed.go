@@ -35,11 +35,6 @@ func NewTypedFromPath[T any](path string) (*TypedStore[T], error) {
 	return &TypedStore[T]{store: s, key: key}, nil
 }
 
-// WrapTyped 用已有的 Store 创建 TypedStore，适合多个 key 共用同一 Store 实例。
-func WrapTyped[T any](s Store, key string) *TypedStore[T] {
-	return &TypedStore[T]{store: s, key: key}
-}
-
 // Get 读取并反序列化值。key 不存在时返回零值和 nil error。
 func (t *TypedStore[T]) Get() (val T, err error) {
 	data, err := t.store.Get(t.key)
@@ -107,11 +102,6 @@ func (t *TypedStore[T]) Key() string {
 // Store 返回底层 Store。
 func (t *TypedStore[T]) Store() Store {
 	return t.store
-}
-
-// Close 释放底层 Store 资源。
-func (t *TypedStore[T]) Close() error {
-	return t.store.Close()
 }
 
 // unmarshalVal 将 YAML 反序列化到 v。

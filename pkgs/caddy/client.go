@@ -58,13 +58,6 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
-// ConfigLoad 使用 POST /load 替换全部配置（原子替换）
-func (c *Client) ConfigLoad(ctx context.Context, cfg *Config) error {
-	c.configMu.Lock()
-	defer c.configMu.Unlock()
-	return c.configLoad(ctx, cfg)
-}
-
 // ConfigLoadRaw 使用任意 JSON 字节加载配置。
 func (c *Client) ConfigLoadRaw(ctx context.Context, raw []byte) error {
 	c.configMu.Lock()

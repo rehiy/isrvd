@@ -57,15 +57,6 @@ func projectNameOrHash(name, content string) (string, error) {
 	return name, nil
 }
 
-// ContentProjectName 从 compose 内容解析项目名，缺失时使用内容短哈希。
-func ContentProjectName(ctx context.Context, content string) (string, error) {
-	project, err := ProjectValidateWithoutEnvFiles(ctx, content, nil)
-	if err != nil {
-		return "", err
-	}
-	return ProjectNameFromProject(project, content)
-}
-
 // ==================== Project loading and persistence ====================
 
 // ProjectLoad 写入 compose.yml 并以 installDir 为 WorkingDir 加载，确保相对路径正确展开。
