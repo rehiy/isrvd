@@ -101,6 +101,12 @@ func newPasskeySessionStore() *passkeySessionStore {
 	return store
 }
 
+// Stop 停止会话清理协程。
+func (s *passkeySessionStore) Stop() {
+	s.ticker.Stop()
+	close(s.done)
+}
+
 func (s *passkeySessionStore) save(id string, sess *passkeySession) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

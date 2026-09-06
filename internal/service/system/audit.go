@@ -52,6 +52,7 @@ type AuditService struct {
 	dataDir string
 	buffer  []AuditLog
 	store   *jsonl.Store
+	closed  bool
 	mu      sync.RWMutex
 }
 
@@ -83,6 +84,10 @@ func NewAuditService() *AuditService {
 // LogAdd 将审计条目写入内存缓冲，并异步追加到当日日志文件。
 func (s *AuditService) LogAdd(entry AuditLog) {
 	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
 	if len(s.buffer) >= maxAuditBufferSize {
 		// 重新分配以释放底层数组，避免内存泄漏
 		newBuf := make([]AuditLog, maxAuditBufferSize-1, maxAuditBufferSize)
@@ -90,7 +95,6 @@ func (s *AuditService) LogAdd(entry AuditLog) {
 		s.buffer = newBuf
 	}
 	s.buffer = append(s.buffer, entry)
-	s.mu.Unlock()
 
 	if s.store == nil {
 		return
@@ -199,6 +203,20 @@ func (s *AuditService) BodyRead(c *gin.Context) string {
 		c.Request.Body = io.NopCloser(bytes.NewReader(raw))
 		return maskSensitiveJSON(string(raw))
 	}
+}
+
+// Close 关闭底层文件句柄，刷盘缓冲数据
+func (s *AuditService) Close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.closed {
+		return nil
+	}
+	s.closed = true
+	if s.store == nil {
+		return nil
+	}
+	return s.store.Close()
 }
 
 // ---- 内部方法 ----------------------------------------------------------------

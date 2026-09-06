@@ -6,16 +6,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-
-	svcAccount "isrvd/internal/service/account"
-	svcSystem "isrvd/internal/service/system"
 )
 
 // AuthMiddleware 认证中间件
 // - AccessAnon 路由：可选认证，失败时放行
 // - 其他路由：强制认证，失败时返回 401
-func AuthMiddleware(routeIndex map[string]Route, svc *svcAccount.Service) gin.HandlerFunc {
+func (app *App) authMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		svc := app.accountSvc
 		if route, ok := lookupRoute(routeIndex, c); ok {
 			if route.QueryToken {
 				c.Set("routeQueryToken", true)
@@ -42,8 +40,9 @@ func AuthMiddleware(routeIndex map[string]Route, svc *svcAccount.Service) gin.Ha
 
 // PermMiddleware 权限验证中间件
 // 基于 METHOD+PATH 进行集中式权限校验
-func PermMiddleware(routeIndex map[string]Route, svc *svcAccount.Service) gin.HandlerFunc {
+func (app *App) permMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		svc := app.accountSvc
 		path := c.FullPath()
 		route, ok := lookupRoute(routeIndex, c)
 		if path == "" || !ok {
@@ -77,7 +76,7 @@ func PermMiddleware(routeIndex map[string]Route, svc *svcAccount.Service) gin.Ha
 
 // AuditMiddleware 操作审计中间件
 // 根据路由 Audit 策略决定是否记录：0 按 Method，<0 忽略，>0 强制记录。
-func AuditMiddleware(routeIndex map[string]Route, svc *svcSystem.AuditService) gin.HandlerFunc {
+func (app *App) auditMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		route, _ := lookupRoute(routeIndex, c)
 		isWS := strings.EqualFold(c.GetHeader("Upgrade"), "websocket")
@@ -89,11 +88,11 @@ func AuditMiddleware(routeIndex map[string]Route, svc *svcSystem.AuditService) g
 		startTime := time.Now()
 		var body string
 		if !isWS {
-			body = svc.BodyRead(c)
+			body = app.auditSvc.BodyRead(c)
 		}
 
 		c.Next()
-		svc.AuditRecord(c, startTime, body)
+		app.auditSvc.AuditRecord(c, startTime, body)
 	}
 }
 

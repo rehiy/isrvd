@@ -16,6 +16,8 @@ import (
 
 // Service 账号业务服务
 type Service struct {
+	done chan struct{}
+
 	// OIDC 临时状态存储（state/loginCode 均短期有效，内存存储即可）
 	oidcMu         sync.Mutex
 	oidcStates     map[string]oidcState
@@ -37,6 +39,7 @@ type Service struct {
 // NewService 创建账号业务服务
 func NewService() *Service {
 	s := &Service{
+		done:           make(chan struct{}),
 		oidcStates:     make(map[string]oidcState),
 		oidcLoginCodes: make(map[string]oidcLoginCode),
 		passkeyStore:   newPasskeySessionStore(),
@@ -48,11 +51,22 @@ func NewService() *Service {
 	go func() {
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
-		for range ticker.C {
-			s.cleanupOIDC()
+		for {
+			select {
+			case <-ticker.C:
+				s.cleanupOIDC()
+			case <-s.done:
+				return
+			}
 		}
 	}()
 	return s
+}
+
+// Close 释放账号服务持有的后台资源。
+func (s *Service) Close() {
+	close(s.done)
+	s.passkeyStore.Stop()
 }
 
 // PermCheck 校验用户是否有权访问指定路由（"METHOD /api/path"）。

@@ -97,6 +97,14 @@ func (app *App) initServices() {
 
 // closeServices 释放所有有状态服务持有的资源
 func (app *App) closeServices() {
+	if app.accountSvc != nil {
+		app.accountSvc.Close()
+	}
+	if app.auditSvc != nil {
+		if err := app.auditSvc.Close(); err != nil {
+			logman.Warn("close audit service failed", "error", err)
+		}
+	}
 	if app.websshSvc != nil {
 		app.websshSvc.Close()
 	}

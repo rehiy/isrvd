@@ -110,9 +110,9 @@ func (app *App) initRoutes() {
 	r.Use(securityHeadersMiddleware())
 	r.Use(app.serviceAvailableMiddleware())
 	// Auth 先认证设置 username → Perm 再校验权限 → Audit 最后记录审计
-	r.Use(AuthMiddleware(app.routeIndex, app.accountSvc))
-	r.Use(PermMiddleware(app.routeIndex, app.accountSvc))
-	r.Use(AuditMiddleware(app.routeIndex, app.auditSvc))
+	r.Use(app.authMiddleware(app.routeIndex))
+	r.Use(app.permMiddleware(app.routeIndex))
+	r.Use(app.auditMiddleware(app.routeIndex))
 
 	// 注册所有声明的模块路由
 	for _, route := range app.collectRoutes() {
