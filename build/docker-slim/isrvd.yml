@@ -30,7 +30,7 @@ passkey:
     - "http://localhost:8080"
   timeout: 60000
 
-agent:
+copilot:
   # model: your-model
   # baseUrl: https://ai.example.com/v1
   # apiKey: your-api-key

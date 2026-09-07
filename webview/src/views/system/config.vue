@@ -9,7 +9,7 @@ import type { AllConfig, ServerConfig, PasswordConfig, THAConfig, OIDCConfig, Pa
 import IconSelect from '@/component/icon-select.vue'
 import ToggleCard from '@/component/toggle-card.vue'
 
-type ConfigTab = 'server' | 'password' | 'passkey' | 'oidc' | 'tha' | 'agent' | 'apisix' | 'caddy' | 'docker' | 'monitor' | 'marketplace' | 'links'
+type ConfigTab = 'server' | 'password' | 'passkey' | 'oidc' | 'tha' | 'copilot' | 'apisix' | 'caddy' | 'docker' | 'monitor' | 'marketplace' | 'links'
 
 @Component({ components: { IconSelect, ToggleCard } })
 class Config extends Vue {
@@ -29,7 +29,7 @@ class Config extends Vue {
   oidcScopes = 'openid profile email'
   tha: THAConfig = { enabled: false, headerName: '', trustedCIDRs: [] }
   thaTrustedCIDRsText = ''
-  agent: CopilotConfig = { model: '', baseUrl: '' }
+  copilot: CopilotConfig = { model: '', baseUrl: '' }
   apisix: ApisixConfig = { adminUrl: '' }
   caddy: CaddyConfig = { adminUrl: '' }
   docker: DockerConfig = { host: '', containerRoot: '' }
@@ -44,7 +44,7 @@ class Config extends Vue {
       { id: 'passkey', label: 'Passkey 登录', description: 'WebAuthn/FIDO2 登录', icon: 'fa-fingerprint' },
       { id: 'oidc', label: 'OIDC 登录', description: '单点登录 Provider 参数', icon: 'fa-circle-nodes' },
       { id: 'tha', label: '代理 Header 登录', description: '从上游代理 Header 读取用户名', icon: 'fa-user-shield' },
-      { id: 'agent', label: 'AI 助手', description: 'LLM 代理与模型改写', icon: 'fa-robot' },
+      { id: 'copilot', label: 'AI 助手', description: 'LLM 代理与模型改写', icon: 'fa-robot' },
       { id: 'apisix', label: 'APISIX', description: 'Admin API 连接参数', icon: 'fa-route' },
       { id: 'caddy', label: 'Caddy', description: 'Admin API 连接参数', icon: 'fa-globe' },
       { id: 'docker', label: 'Docker', description: '引擎连接与容器根目录', icon: 'fa-boxes-stacked' },
@@ -69,7 +69,7 @@ class Config extends Vue {
       this.oidcScopes = (this.oidc.scopes || []).join(' ')
       this.tha = { ...payload.tha }
       this.thaTrustedCIDRsText = (this.tha.trustedCIDRs || []).join('\n')
-      this.agent = { ...payload.agent }
+      this.copilot = { ...payload.copilot }
       this.apisix = { ...payload.apisix }
       this.caddy = { ...(payload.caddy || { adminUrl: '' }) }
       this.docker = { ...payload.docker }
@@ -93,7 +93,7 @@ class Config extends Vue {
         passkey: { ...this.passkey, rpOrigins: this.passkeyOriginsText.split(/\s+/).filter(Boolean) },
         oidc: { ...this.oidc, scopes: this.oidcScopes.split(/\s+/).filter(Boolean) },
         tha: { ...this.tha, trustedCIDRs: this.thaTrustedCIDRsText.split(/\s+/).filter(Boolean) },
-        agent: this.agent,
+        copilot: this.copilot,
         apisix: this.apisix,
         caddy: this.caddy,
         docker: this.docker,
@@ -377,28 +377,28 @@ export default toNative(Config)
             </div>
           </section>
 
-          <!-- Agent 配置 -->
-          <section id="config-agent" class="max-w-3xl space-y-4">
+          <!-- Copilot 配置 -->
+          <section id="config-copilot" class="max-w-3xl space-y-4">
             <div class="flex items-center gap-2">
               <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-robot"></i></span>
               <div>
-                <h2 class="text-sm font-semibold text-slate-700">Agent</h2>
+                <h2 class="text-sm font-semibold text-slate-700">Copilot</h2>
                 <p class="text-xs text-slate-400 mt-0.5">LLM 代理与模型改写</p>
               </div>
             </div>
             <div>
               <label class="form-label">模型名称</label>
-              <input v-model="agent.model" type="text" placeholder="请输入模型名称" class="input" />
+              <input v-model="copilot.model" type="text" placeholder="请输入模型名称" class="input" />
               <p class="mt-1 text-xs text-slate-400">代理转发时强制改写请求体中的 model 字段，留空则不改写</p>
             </div>
             <div>
               <label class="form-label">基础地址</label>
-              <input v-model="agent.baseUrl" type="text" placeholder="请输入基础地址" class="input" />
+              <input v-model="copilot.baseUrl" type="text" placeholder="请输入基础地址" class="input" />
               <p class="mt-1 text-xs text-slate-400">示例：https://api.openai.com/v1；OpenAI 兼容的 LLM API 基础地址，留空则禁用代理</p>
             </div>
             <div>
               <label class="form-label">API 密钥</label>
-              <input v-model="agent.apiKey" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
+              <input v-model="copilot.apiKey" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
               <p class="mt-1 text-xs text-slate-400">代理转发时以 Bearer 形式注入 Authorization 请求头</p>
             </div>
           </section>

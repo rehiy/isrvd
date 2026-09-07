@@ -7,7 +7,7 @@ Copilot 模块提供两类能力：
 - **接口目录**（`GET /api/copilot/catalog`）：按模块、路径或关键词检索嵌入的官方 OpenAPI，供 Copilot 与脚本按需读取契约
 - **AG-UI 协议对话**（`POST /api/copilot/agui`）：供前端 CopilotKit 使用，以 SSE 事件流返回 AG-UI 事件
 
-登录即可查阅 OpenAPI，不依赖 `agent.baseUrl`，也不受 `server.openapi`（对外 Scalar 文档页）开关影响。
+登录即可查阅 OpenAPI，不依赖 `copilot.baseUrl`，也不受 `server.openapi`（对外 Scalar 文档页）开关影响。
 
 ---
 
@@ -76,7 +76,7 @@ POST /api/copilot/agui
 
 **功能：** 接收 [AG-UI](https://github.com/ag-ui-protocol/ag-ui) 协议的 `RunAgentInput`，转换为 OpenAI 兼容请求发给上游 LLM，再将流式响应翻译为 AG-UI 事件以 SSE 返回。
 
-普通成员需授予 `POST /api/copilot/agui` 权限；前端助手入口统一检查此权限与 Agent 服务可用性，未通过时不挂载 Copilot，入口与侧栏均不渲染。
+普通成员需授予 `POST /api/copilot/agui` 权限；前端助手入口统一检查此权限与 Copilot 服务可用性，未通过时不挂载 Copilot，入口与侧栏均不渲染。
 
 此端点属于 CopilotKit 内部协议，不纳入通用 OpenAPI 或 `lookup_api` 目录；请求与事件格式以本节为准。
 
@@ -126,8 +126,8 @@ isrvd_post "/copilot/agui" '{
 
 **上游请求说明：**
 
-- 请求发往 `agent.baseUrl` 拼接 `/chat/completions`，并强制 `stream: true`
-- 模型名使用 `agent.model`；`context` 与工具声明分别以 system 消息和 `tools` 字段注入
+- 请求发往 `copilot.baseUrl` 拼接 `/chat/completions`，并强制 `stream: true`
+- 模型名使用 `copilot.model`；`context` 与工具声明分别以 system 消息和 `tools` 字段注入
 - 上游非 200 时返回 `RUN_ERROR` 事件，而非 HTTP 错误码（响应头已提交）
 
 ---
@@ -149,6 +149,6 @@ Chat iSrvd 的 API 工具保持为固定的三步流程：
 
 ## 安全说明
 
-- `agent.apiKey` 是敏感字段，通过 `GET /api/system/config` 不会返回
+- `copilot.apiKey` 是敏感字段，通过 `GET /api/system/config` 不会返回
 - AG-UI 仅在服务端使用该密钥请求上游模型
 - 建议在配置中使用环境变量或密钥管理工具存储 `apiKey`

@@ -17,7 +17,7 @@ type AllConfig struct {
 	Passkey     *config.PasskeyConfig     `json:"passkey"`     // Passkey 认证配置
 	OIDC        *config.OIDCConfig        `json:"oidc"`        // OIDC 配置（ClientSecret：响应脱敏 / 请求空保留）
 	THA         *config.THAConfig         `json:"tha"`         // 代理 Header 认证配置
-	Copilot     *config.CopilotConfig     `json:"agent"`       // Copilot LLM 配置（APIKey：响应脱敏 / 请求空保留）
+	Copilot     *config.CopilotConfig     `json:"copilot"`     // Copilot LLM 配置（APIKey：响应脱敏 / 请求空保留）
 	Apisix      *config.ApisixConfig      `json:"apisix"`      // APISIX 配置（AdminKey：响应脱敏 / 请求空保留）
 	Caddy       *config.CaddyConfig       `json:"caddy"`       // Caddy 配置
 	Docker      *config.DockerConfig      `json:"docker"`      // Docker 配置（registry.Password：响应脱敏 / 请求空保留）

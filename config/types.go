@@ -10,7 +10,7 @@ type Config struct {
 	Passkey     *PasskeyConfig     `yaml:"passkey"`     // Passkey 登录配置
 	OIDC        *OIDCConfig        `yaml:"oidc"`        // OIDC 登录配置
 	THA         *THAConfig         `yaml:"tha"`         // 代理 Header 登录配置
-	Copilot     *CopilotConfig     `yaml:"agent"`       // Copilot LLM 配置
+	Copilot     *CopilotConfig     `yaml:"copilot"`     // Copilot LLM 配置
 	Apisix      *ApisixConfig      `yaml:"apisix"`      // APISIX 配置
 	Caddy       *CaddyConfig       `yaml:"caddy"`       // Caddy 配置
 	Docker      *DockerConfig      `yaml:"docker"`      // Docker 配置

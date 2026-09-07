@@ -110,7 +110,7 @@ export interface AllConfig {
     passkey: PasskeyConfig
     oidc: OIDCConfig
     tha: THAConfig
-    agent: CopilotConfig
+    copilot: CopilotConfig
     apisix: ApisixConfig
     caddy: CaddyConfig
     docker: DockerConfig

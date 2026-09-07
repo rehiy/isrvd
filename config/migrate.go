@@ -8,7 +8,7 @@ import (
 )
 
 // schema 当前配置格式定义，修改配置结构后需递增其 Version 并添加对应迁移函数
-var schema = &SchemaConfig{Version: 1}
+var schema = &SchemaConfig{Version: 2}
 
 // migrateFn 迁移函数类型：接收当前配置和原始 YAML 字节，返回是否发生了迁移
 type migrateFn func(conf *Config, data []byte) bool
@@ -19,6 +19,7 @@ var migrations = []migrateFn{
 	migrateJWTSecret,
 	migratePasswords,
 	migrateTHA,
+	migrateCopilot,
 }
 
 // migrate 依次执行所有迁移函数，返回是否有任何迁移发生
@@ -117,5 +118,33 @@ func migrateTHA(conf *Config, data []byte) bool {
 		TrustedCIDRs: legacy.Server.ProxyTrustedCIDRs,
 	}
 
+	return true
+}
+
+// migrateCopilot 将旧版 agent 配置段迁移到 copilot 配置段
+func migrateCopilot(conf *Config, data []byte) bool {
+	// 已有 copilot 配置段，跳过迁移避免覆盖用户配置
+	if conf.Copilot != nil {
+		return false
+	}
+
+	// 用兼容结构解析旧字段
+	legacy := &struct {
+		Agent *CopilotConfig `yaml:"agent"`
+	}{}
+
+	if err := yaml.Unmarshal(data, legacy); err != nil || legacy.Agent == nil {
+		return false
+	}
+	if legacy.Agent.Model == "" && legacy.Agent.BaseURL == "" && legacy.Agent.APIKey == "" {
+		return false
+	}
+
+	logman.Info("检测到旧版 agent 配置段，自动迁移至 copilot 配置段",
+		"model", legacy.Agent.Model,
+		"baseUrl", legacy.Agent.BaseURL,
+	)
+
+	conf.Copilot = legacy.Agent
 	return true
 }

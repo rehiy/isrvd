@@ -60,7 +60,7 @@ isrvd_get "/system/config"
 | passkey | object | `{enabled, rpName, rpId, rpOrigins, timeout}` |
 | oidc | object | `{enabled, issuerUrl, clientId, redirectUrl, usernameClaim, scopes, loginLabel}`（clientSecret 不返回） |
 | tha | object | `{enabled, headerName, trustedCIDRs}`（代理 Header 登录配置） |
-| agent | object | `{model, baseUrl}`（apiKey 不返回） |
+| copilot | object | `{model, baseUrl}`（apiKey 不返回） |
 | apisix | object | `{adminUrl}`（adminKey 不返回） |
 | caddy | object | `{adminUrl}` |
 | docker | object | `{host, containerRoot, registries}`（registry password 不返回） |

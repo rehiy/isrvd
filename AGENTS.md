@@ -85,7 +85,7 @@ docs/
     ├── caddy/{routes,certs,config,basic-auth}.md
     ├── system/{config,account,filer,cron,ssh}.md
     ├── ssh/{hosts,sftp}.md
-    ├── agent.md
+    ├── copilot.md
     ├── overview.md
     ├── compose.md
     ├── shell.md
@@ -104,7 +104,7 @@ docs/
 | `internal/server/ctrl_cron.go` | `docs/references/system/cron.md` |
 | `internal/server/ctrl_system.go` / `ctrl_account.go` | `docs/references/system/` 下对应文件 |
 | `internal/server/ctrl_webssh.go` | `docs/references/ssh/` 下对应文件 |
-| `internal/server/ctrl_agent.go` | `docs/references/agent.md` |
+| `internal/server/ctrl_copilot.go` | `docs/references/copilot.md` |
 | `internal/server/ctrl_overview.go` | `docs/references/overview.md` |
 | `pkgs/*/`（数据结构变更） | 对应 docs 文件中的字段表 |
 | 新增路由/模块 | `docs/SKILL.md` 索引表 + 决策树 |
@@ -194,7 +194,7 @@ docs/
 
 ### 配置结构体与 Provider
 
-- 顶层 `Config`（`config/types.go`）当前包含 `Schema`、`Server`、`Password`、`Passkey`、`OIDC`、`THA`、`Agent`、`Apisix`、`Caddy`、`Docker`、`Monitor`、`Marketplace`、`Links`、`Members`
+- 顶层 `Config`（`config/types.go`）当前包含 `Schema`、`Server`、`Password`、`Passkey`、`OIDC`、`THA`、`Copilot`、`Apisix`、`Caddy`、`Docker`、`Monitor`、`Marketplace`、`Links`、`Members`
 - `Server` 必须作为 `config.Server` 结构体统一访问，禁止重新展开为 `config.Debug`、`config.ListenAddr` 等包级散变量
 - 镜像仓库 `DockerRegistry`（含 `Name`、`URL`、`Username`、`Password`、`Description`）
 - 顶层配置分区使用指针并带 YAML 标签；配置持久化以 YAML 结构为准，API 脱敏由 `internal/service/system.ConfigAll` 的深拷贝负责
@@ -261,7 +261,7 @@ docs/
 ## 9) 安全基线（必须遵守）
 
 1. 禁止硬编码密钥/密码/令牌
-2. 配置查询必须深拷贝后清空 JWT、OIDC、Agent、APISIX 和 Registry 密钥；账户密码、TOTP secret、SSH 密码/私钥继续使用 `json:"-"`
+2. 配置查询必须深拷贝后清空 JWT、OIDC、Copilot、APISIX 和 Registry 密钥；账户密码、TOTP secret、SSH 密码/私钥继续使用 `json:"-"`
 3. 文件系统操作防目录遍历；解压防 Zip Slip
 4. WebSocket 必须经过认证链路
 5. 关键资源（内置角色等）前后端双重校验
