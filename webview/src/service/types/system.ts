@@ -65,6 +65,23 @@ export interface CopilotConfig {
     apiKey?: string
 }
 
+export interface WebhookConfig {
+    name: string
+    url: string
+    template: string
+}
+
+export interface AlertRule {
+    metric: string
+    threshold: number
+    duration: number
+}
+
+export interface NotifyConfig {
+    webhooks: WebhookConfig[]
+    rules: AlertRule[]
+}
+
 export interface ApisixConfig {
     adminUrl: string
     // 写入时为空表示保留原值（不通过 JSON 返回）
@@ -111,6 +128,7 @@ export interface AllConfig {
     oidc: OIDCConfig
     tha: THAConfig
     copilot: CopilotConfig
+    notify: NotifyConfig
     apisix: ApisixConfig
     caddy: CaddyConfig
     docker: DockerConfig

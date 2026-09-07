@@ -10,6 +10,7 @@ import (
 
 	"isrvd/config"
 	"isrvd/internal/registry"
+	svcNotify "isrvd/internal/service/notify"
 )
 
 // Record 通用监控记录（一行 NDJSON）
@@ -108,9 +109,10 @@ func (c *Collector) CollectContainerStatNow(ctx context.Context, id string) *Rec
 // collect 执行一次采集
 func (c *Collector) collect(ctx context.Context) {
 	// ── 主机数据 ──
-	record := c.CollectHostStatNow(ctx)
-	if record != nil {
-		AppendRawRecord(c.dataDir, HostPrefix, "", record.Ts, record.Data)
+	stat := CollectHostStat(ctx)
+	if raw, err := json.Marshal(stat); err == nil {
+		AppendRawRecord(c.dataDir, HostPrefix, "", time.Now().Unix(), raw)
+		c.checkAlert(stat)
 	}
 
 	// ── 容器数据 ──
@@ -128,6 +130,26 @@ func (c *Collector) collect(ctx context.Context) {
 			AppendRawRecord(c.dataDir, ContainerPrefix, ct.ID, record.Ts, record.Data)
 		}
 	}
+}
+
+// checkAlert 将采集数据换算为使用率后交给告警规则检查。
+func (c *Collector) checkAlert(stat *HostStat) {
+	if stat == nil || stat.System == nil || stat.System.MemoryTotal == 0 {
+		return
+	}
+	sys := stat.System
+	cpu := 0.0
+	for _, value := range sys.CpuPercent {
+		cpu += value
+	}
+	if len(sys.CpuPercent) > 0 {
+		cpu /= float64(len(sys.CpuPercent))
+	}
+	svcNotify.CheckHost(&svcNotify.HostUsage{
+		CPUPercent:    cpu,
+		MemoryPercent: float64(sys.MemoryUsed) / float64(sys.MemoryTotal) * 100,
+		DiskPercent:   float64(sys.DiskUsed) / float64(sys.DiskTotal) * 100,
+	})
 }
 
 // DataDir 返回数据目录

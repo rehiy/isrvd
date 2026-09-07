@@ -11,6 +11,7 @@ type Config struct {
 	OIDC        *OIDCConfig        `yaml:"oidc"`        // OIDC 登录配置
 	THA         *THAConfig         `yaml:"tha"`         // 代理 Header 登录配置
 	Copilot     *CopilotConfig     `yaml:"copilot"`     // Copilot LLM 配置
+	Notify      *NotifyConfig      `yaml:"notify"`      // 告警通知配置
 	Apisix      *ApisixConfig      `yaml:"apisix"`      // APISIX 配置
 	Caddy       *CaddyConfig       `yaml:"caddy"`       // Caddy 配置
 	Docker      *DockerConfig      `yaml:"docker"`      // Docker 配置
@@ -22,7 +23,7 @@ type Config struct {
 
 // SchemaConfig 配置格式元信息
 type SchemaConfig struct {
-	Version int `yaml:"version"` // 配置结构版本号，当前: 1
+	Version int `yaml:"version"` // 配置结构版本号，当前: 2
 }
 
 // 服务器配置
@@ -81,6 +82,31 @@ type CopilotConfig struct {
 // 监控配置
 type MonitorConfig struct {
 	Interval int `yaml:"interval" json:"interval"` // 采集间隔（秒），合法值：5/15/30/60；其他值均视为禁用
+}
+
+// 告警通知配置
+type NotifyConfig struct {
+	Webhooks []*WebhookConfig `yaml:"webhooks" json:"webhooks"` // Webhook 通道列表
+	Rules    []*AlertRule     `yaml:"rules" json:"rules"`       // 资源告警规则
+}
+
+// WebhookConfig 单个 Webhook 通道。
+// 后端统一发送通用 JSON；Template 非空时按其渲染后再发送，
+// 用于适配钉钉、飞书、企业微信等各自的消息格式，模板由前端预置填充。
+type WebhookConfig struct {
+	Name     string `yaml:"name" json:"name"`         // 通道名称
+	URL      string `yaml:"url" json:"url"`           // 接收地址
+	Template string `yaml:"template" json:"template"` // 请求体模板，留空则发送通用 JSON
+}
+
+// AlertRule 资源告警规则。
+// Metric 取值：cpu / memory / disk；Threshold 为百分比阈值；
+// Duration 表示连续超阈值的采集次数，达到后才触发，用于抑制瞬时抖动。
+// 触发时会推送到全部已配置通道。
+type AlertRule struct {
+	Metric    string  `yaml:"metric" json:"metric"`       // 监控指标
+	Threshold float64 `yaml:"threshold" json:"threshold"` // 阈值（%）
+	Duration  int     `yaml:"duration" json:"duration"`   // 连续超阈值次数
 }
 
 // Apisix 配置

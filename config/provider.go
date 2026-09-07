@@ -84,6 +84,7 @@ func Save() error {
 		OIDC:        OIDC,
 		THA:         THA,
 		Copilot:     Copilot,
+		Notify:      Notify,
 		Apisix:      Apisix,
 		Caddy:       Caddy,
 		Docker:      Docker,

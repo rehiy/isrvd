@@ -61,6 +61,7 @@ isrvd_get "/system/config"
 | oidc | object | `{enabled, issuerUrl, clientId, redirectUrl, usernameClaim, scopes, loginLabel}`（clientSecret 不返回） |
 | tha | object | `{enabled, headerName, trustedCIDRs}`（代理 Header 登录配置） |
 | copilot | object | `{model, baseUrl}`（apiKey 不返回） |
+| notify | object | `{webhooks, rules}`；规则触发或恢复时会推送到全部已配置 Webhook |
 | apisix | object | `{adminUrl}`（adminKey 不返回） |
 | caddy | object | `{adminUrl}` |
 | docker | object | `{host, containerRoot, registries}`（registry password 不返回） |
@@ -86,6 +87,7 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 - `oidc.loginLabel` 自定义 OIDC 登录按钮显示名称；留空则使用默认文案"使用 OIDC 登录"。
 - 启用代理 Header 登录时，必须配置 `tha.headerName`；该 Header 的值会作为登录用户名，且必须存在于 `members.username`。`tha.trustedCIDRs` 可限制允许传入 Header 的代理来源（如 `["10.0.0.0/8"]`），未配置时不限制来源（向后兼容）。
 - `monitor.interval` 合法值为 `5/15/30/60`（秒），其他值（含 `0`、负数）均视为禁用自动采集；修改后重启生效。
+- `notify.webhooks` 的每项包含 `name`、`url`、`template`；`template` 留空时发送标准 JSON。`notify.rules` 的每项包含 `metric`（`cpu`、`memory` 或 `disk`）、`threshold` 和 `duration`。Webhook 发送会拒绝内网、回环和重定向目标。
 
 ---
 

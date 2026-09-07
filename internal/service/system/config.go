@@ -18,6 +18,7 @@ type AllConfig struct {
 	OIDC        *config.OIDCConfig        `json:"oidc"`        // OIDC 配置（ClientSecret：响应脱敏 / 请求空保留）
 	THA         *config.THAConfig         `json:"tha"`         // 代理 Header 认证配置
 	Copilot     *config.CopilotConfig     `json:"copilot"`     // Copilot LLM 配置（APIKey：响应脱敏 / 请求空保留）
+	Notify      *config.NotifyConfig      `json:"notify"`      // 告警通知配置
 	Apisix      *config.ApisixConfig      `json:"apisix"`      // APISIX 配置（AdminKey：响应脱敏 / 请求空保留）
 	Caddy       *config.CaddyConfig       `json:"caddy"`       // Caddy 配置
 	Docker      *config.DockerConfig      `json:"docker"`      // Docker 配置（registry.Password：响应脱敏 / 请求空保留）
@@ -43,6 +44,7 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 		OIDC:        config.OIDC,
 		THA:         config.THA,
 		Copilot:     config.Copilot,
+		Notify:      config.Notify,
 		Apisix:      config.Apisix,
 		Caddy:       config.Caddy,
 		Docker:      config.Docker,
@@ -111,6 +113,9 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 		}
 		req.Copilot.APIKey = pickSecret(req.Copilot.APIKey, oldSecret)
 		config.Copilot = req.Copilot
+	}
+	if req.Notify != nil {
+		config.Notify = req.Notify
 	}
 	if req.Apisix != nil {
 		oldSecret := ""

@@ -15,6 +15,8 @@ var (
 	THA = &THAConfig{}
 	// Copilot LLM 配置
 	Copilot = &CopilotConfig{}
+	// 告警通知配置
+	Notify = &NotifyConfig{}
 	// Apisix 配置
 	Apisix = &ApisixConfig{}
 	// Caddy 配置
@@ -53,6 +55,10 @@ func Apply(conf *Config) {
 
 	if conf.Copilot != nil {
 		Copilot = conf.Copilot
+	}
+
+	if conf.Notify != nil {
+		Notify = conf.Notify
 	}
 
 	if conf.Apisix != nil {

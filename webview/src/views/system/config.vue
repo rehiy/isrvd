@@ -4,12 +4,12 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { AllConfig, ServerConfig, PasswordConfig, THAConfig, OIDCConfig, PasskeyConfig, CopilotConfig, ApisixConfig, CaddyConfig, DockerConfig, MonitorConfig, MarketplaceConfig, LinkConfig } from '@/service/types'
+import type { AllConfig, ServerConfig, PasswordConfig, THAConfig, OIDCConfig, PasskeyConfig, CopilotConfig, NotifyConfig, WebhookConfig, ApisixConfig, CaddyConfig, DockerConfig, MonitorConfig, MarketplaceConfig, LinkConfig } from '@/service/types'
 
 import IconSelect from '@/component/icon-select.vue'
 import ToggleCard from '@/component/toggle-card.vue'
 
-type ConfigTab = 'server' | 'password' | 'passkey' | 'oidc' | 'tha' | 'copilot' | 'apisix' | 'caddy' | 'docker' | 'monitor' | 'marketplace' | 'links'
+type ConfigTab = 'server' | 'password' | 'passkey' | 'oidc' | 'tha' | 'copilot' | 'notify' | 'apisix' | 'caddy' | 'docker' | 'monitor' | 'marketplace' | 'links'
 
 @Component({ components: { IconSelect, ToggleCard } })
 class Config extends Vue {
@@ -30,6 +30,7 @@ class Config extends Vue {
   tha: THAConfig = { enabled: false, headerName: '', trustedCIDRs: [] }
   thaTrustedCIDRsText = ''
   copilot: CopilotConfig = { model: '', baseUrl: '' }
+  notify: NotifyConfig = { webhooks: [], rules: [] }
   apisix: ApisixConfig = { adminUrl: '' }
   caddy: CaddyConfig = { adminUrl: '' }
   docker: DockerConfig = { host: '', containerRoot: '' }
@@ -45,6 +46,7 @@ class Config extends Vue {
       { id: 'oidc', label: 'OIDC 登录', description: '单点登录 Provider 参数', icon: 'fa-circle-nodes' },
       { id: 'tha', label: '代理 Header 登录', description: '从上游代理 Header 读取用户名', icon: 'fa-user-shield' },
       { id: 'copilot', label: 'AI 助手', description: 'LLM 代理与模型改写', icon: 'fa-robot' },
+      { id: 'notify', label: '告警通知', description: 'Webhook 通道与资源阈值', icon: 'fa-bell' },
       { id: 'apisix', label: 'APISIX', description: 'Admin API 连接参数', icon: 'fa-route' },
       { id: 'caddy', label: 'Caddy', description: 'Admin API 连接参数', icon: 'fa-globe' },
       { id: 'docker', label: 'Docker', description: '引擎连接与容器根目录', icon: 'fa-boxes-stacked' },
@@ -70,6 +72,10 @@ class Config extends Vue {
       this.tha = { ...payload.tha }
       this.thaTrustedCIDRsText = (this.tha.trustedCIDRs || []).join('\n')
       this.copilot = { ...payload.copilot }
+      this.notify = {
+        webhooks: payload.notify?.webhooks ? payload.notify.webhooks.map(hook => ({ ...hook })) : [],
+        rules: payload.notify?.rules ? payload.notify.rules.map(rule => ({ ...rule })) : []
+      }
       this.apisix = { ...payload.apisix }
       this.caddy = { ...(payload.caddy || { adminUrl: '' }) }
       this.docker = { ...payload.docker }
@@ -94,6 +100,7 @@ class Config extends Vue {
         oidc: { ...this.oidc, scopes: this.oidcScopes.split(/\s+/).filter(Boolean) },
         tha: { ...this.tha, trustedCIDRs: this.thaTrustedCIDRsText.split(/\s+/).filter(Boolean) },
         copilot: this.copilot,
+        notify: this.notify,
         apisix: this.apisix,
         caddy: this.caddy,
         docker: this.docker,
@@ -116,6 +123,33 @@ class Config extends Vue {
 
   removeLink(index: number) {
     this.links.splice(index, 1)
+  }
+
+  addWebhook() {
+    this.notify.webhooks.push({ name: '', url: '', template: '' })
+  }
+
+  removeWebhook(index: number) {
+    this.notify.webhooks.splice(index, 1)
+  }
+
+  addRule() {
+    this.notify.rules.push({ metric: 'cpu', threshold: 80, duration: 3 })
+  }
+
+  removeRule(index: number) {
+    this.notify.rules.splice(index, 1)
+  }
+
+  applyWebhookTemplate(hook: WebhookConfig, event: Event) {
+    const templates: Record<string, string> = {
+      dingtalk: '{"msgtype":"text","text":{"content":"isrvd 告警\\n{{.Title}}\\n{{.Message}}"}}',
+      feishu: '{"msg_type":"text","content":{"text":"isrvd 告警\\n{{.Title}}\\n{{.Message}}"}}',
+      wecom: '{"msgtype":"text","text":{"content":"isrvd 告警\\n{{.Title}}\\n{{.Message}}"}}',
+      slack: '{"text":"isrvd 告警：{{.Title}}\\n{{.Message}}"}'
+    }
+    const kind = (event.target as HTMLSelectElement).value
+    if (templates[kind]) hook.template = templates[kind]
   }
 
   scrollToConfigSection(id: ConfigTab) {
@@ -403,6 +437,72 @@ export default toNative(Config)
             </div>
           </section>
 
+          <!-- 告警通知配置 -->
+          <section id="config-notify" class="max-w-3xl space-y-6">
+            <div class="flex items-center gap-2">
+              <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-bell"></i></span>
+              <div>
+                <h2 class="text-sm font-semibold text-slate-700">告警通知</h2>
+                <p class="text-xs text-slate-400 mt-0.5">规则触发和恢复时推送到全部已配置通道</p>
+              </div>
+            </div>
+
+            <fieldset class="space-y-4">
+              <legend class="section-title w-full">Webhook 通道</legend>
+              <div v-if="notify.webhooks.length === 0" class="empty-note">暂无通道，点击下方按钮添加</div>
+              <div v-else class="space-y-4">
+                <div v-for="(hook, index) in notify.webhooks" :key="index" class="panel-frame">
+                  <div class="card-body space-y-4">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm font-semibold text-slate-700">通道 {{ index + 1 }}</span>
+                      <button type="button" class="btn-icon btn-icon-red" title="删除通道" @click="removeWebhook(index)"><i class="fas fa-trash-can text-xs"></i></button>
+                    </div>
+                    <div>
+                      <label class="form-label">通道名称</label>
+                      <input v-model="hook.name" type="text" required placeholder="如：钉钉告警" class="input" />
+                    </div>
+                    <div>
+                      <label class="form-label">接收地址</label>
+                      <input v-model="hook.url" type="url" required placeholder="https://example.com/webhook" class="input" />
+                    </div>
+                    <div>
+                      <label class="form-label">模板目标</label>
+                      <select class="input" @change="applyWebhookTemplate(hook, $event)">
+                        <option value="">选择渠道填充…</option><option value="dingtalk">钉钉机器人</option><option value="feishu">飞书机器人</option><option value="wecom">企业微信机器人</option><option value="slack">Slack</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="form-label">请求体模板</label>
+                      <textarea v-model="hook.template" rows="3" class="input font-mono text-xs" placeholder='留空则发送标准 JSON'></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button type="button" class="btn-add-row" @click="addWebhook"><i class="fas fa-plus text-xs"></i>添加通道</button>
+            </fieldset>
+
+            <fieldset class="border-t border-slate-200 pt-6 space-y-4">
+              <legend class="section-title w-full">资源告警规则</legend>
+              <div v-if="notify.rules.length === 0" class="empty-note">暂无规则，点击下方按钮添加</div>
+              <div v-else class="space-y-4">
+                <div v-for="(rule, index) in notify.rules" :key="index" class="panel-frame">
+                  <div class="card-body space-y-4">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm font-semibold text-slate-700">规则 {{ index + 1 }}</span>
+                      <button type="button" class="btn-icon btn-icon-red" title="删除规则" @click="removeRule(index)"><i class="fas fa-trash-can text-xs"></i></button>
+                    </div>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div><label class="form-label">指标</label><select v-model="rule.metric" class="input"><option value="cpu">CPU 使用率</option><option value="memory">内存使用率</option><option value="disk">磁盘使用率</option></select></div>
+                      <div><label class="form-label">阈值(%)</label><input v-model.number="rule.threshold" type="number" min="1" max="100" required class="input" /></div>
+                      <div><label class="form-label">持续次数</label><input v-model.number="rule.duration" type="number" min="1" required class="input" /></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button type="button" class="btn-add-row" @click="addRule"><i class="fas fa-plus text-xs"></i>添加规则</button>
+              <p class="text-xs text-slate-400">持续次数指连续多少个采集周期超阈值才告警，用于抑制瞬时抖动。</p>
+            </fieldset>
+          </section>
 
           <!-- APISIX 配置 -->
           <section id="config-apisix" class="max-w-3xl space-y-4">
@@ -510,21 +610,32 @@ export default toNative(Config)
                 <p class="text-xs text-slate-400 mt-0.5">顶部工具栏外部链接</p>
               </div>
             </div>
-            <!-- 列标题（仅在有数据时显示） -->
-            <div v-if="links.length" class="hidden sm:grid sm:grid-cols-[1fr_2fr_1.2fr_auto] gap-3 px-0.5">
-              <span class="text-xs font-medium text-slate-500">名称</span>
-              <span class="text-xs font-medium text-slate-500">URL</span>
-              <span class="text-xs font-medium text-slate-500">图标</span>
-              <span></span>
-            </div>
-            <div v-for="(link, index) in links" :key="index" class="grid grid-cols-1 sm:grid-cols-[1fr_2fr_1.2fr_auto] gap-3 items-center">
-              <input v-model="link.label" type="text" placeholder="请输入名称" class="input" />
-              <input v-model="link.url" type="text" placeholder="请输入链接 URL" class="input" />
-              <!-- 图标选择器 -->
-              <IconSelect v-model="link.icon" />
-              <button v-if="portal.hasPerm('PUT /api/system/config')" type="button" class="btn-icon btn-icon-red w-11 h-11" @click="removeLink(index)">
-                <i class="fas fa-trash-can text-sm"></i>
-              </button>
+            <div v-if="links.length === 0" class="empty-note">暂无链接，点击下方按钮添加</div>
+            <div v-else class="space-y-4">
+              <div v-for="(link, index) in links" :key="index" class="panel-frame">
+                <div class="card-body space-y-4">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-semibold text-slate-700">链接 {{ index + 1 }}</span>
+                    <button type="button" class="btn-icon btn-icon-red" title="删除链接" @click="removeLink(index)">
+                      <i class="fas fa-trash-can text-xs"></i>
+                    </button>
+                  </div>
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div>
+                      <label class="form-label">名称</label>
+                      <input v-model="link.label" type="text" required placeholder="如：工具箱" class="input" />
+                    </div>
+                    <div>
+                      <label class="form-label">链接地址</label>
+                      <input v-model="link.url" type="url" required placeholder="https://example.com" class="input" />
+                    </div>
+                    <div>
+                      <label class="form-label">图标</label>
+                      <IconSelect v-model="link.icon" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             <button type="button" class="btn-add-row" @click="addLink()">
               <i class="fas fa-plus text-xs"></i>添加链接
