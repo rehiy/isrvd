@@ -76,7 +76,7 @@ POST /api/copilot/agui
 
 **功能：** 接收 [AG-UI](https://github.com/ag-ui-protocol/ag-ui) 协议的 `RunAgentInput`，转换为 OpenAI 兼容请求发给上游 LLM，再将流式响应翻译为 AG-UI 事件以 SSE 返回。
 
-普通成员需授予 `POST /api/copilot/agui` 权限；前端助手入口与侧栏同时检查此权限和 Agent 服务可用性。
+普通成员需授予 `POST /api/copilot/agui` 权限；前端助手入口统一检查此权限与 Agent 服务可用性，未通过时不挂载 Copilot，入口与侧栏均不渲染。
 
 此端点属于 CopilotKit 内部协议，不纳入通用 OpenAPI 或 `lookup_api` 目录；请求与事件格式以本节为准。
 
