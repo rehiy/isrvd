@@ -33,6 +33,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/local/shell.vue')
   },
   {
+    path: '/local/process',
+    name: 'local-process',
+    component: () => import('@/views/local/process.vue'),
+    meta: { title: '进程管理' }
+  },
+  {
     path: '/ssh',
     name: 'ssh',
     redirect: '/ssh/hosts'

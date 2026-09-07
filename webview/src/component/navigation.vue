@@ -221,7 +221,7 @@ export default toNative(NavigationBar)
         <span v-if="!collapsed">概览</span>
       </router-link>
       <!-- 本机管理折叠子菜单 -->
-      <div v-if="portal.hasPerm('GET /api/overview/monitor') || portal.hasPerm('GET /api/filer/files') || portal.hasPerm('GET /api/shell')">
+      <div v-if="portal.hasPerm('GET /api/overview/monitor') || portal.hasPerm('GET /api/filer/files') || portal.hasPerm('GET /api/local/processes') || portal.hasPerm('GET /api/shell')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
         <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isLocalActive }" title="本机管理" @click.stop="toggleLocal">
           <i class="fas fa-computer"></i>
@@ -241,6 +241,10 @@ export default toNative(NavigationBar)
             <router-link v-if="portal.hasPerm('GET /api/filer/files')" to="/local/explorer" class="nav-link" :class="{ 'nav-link-active': isActive('/local/explorer') }">
               <i class="fas fa-folder-open"></i>
               <span>文件管理</span>
+            </router-link>
+            <router-link v-if="portal.hasPerm('GET /api/local/processes')" to="/local/process" class="nav-link" :class="{ 'nav-link-active': isActive('/local/process') }">
+              <i class="fas fa-microchip"></i>
+              <span>进程管理</span>
             </router-link>
             <router-link v-if="portal.hasPerm('GET /api/shell')" to="/local/shell" class="nav-link" :class="{ 'nav-link-active': isActive('/local/shell') }">
               <i class="fas fa-terminal"></i>

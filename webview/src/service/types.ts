@@ -1,6 +1,7 @@
 export * from './types/account'
 export * from './types/filer'
 export * from './types/overview'
+export * from './types/local'
 export * from './types/system'
 export * from './types/docker'
 export * from './types/swarm'

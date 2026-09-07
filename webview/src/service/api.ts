@@ -6,6 +6,8 @@ import type {
     SystemVersionInfo,
     MonitorHostRecord,
     MonitorContainerRecord,
+    // Local
+    SystemProcessInfo,
     // System
     AllConfig,
     AuditLog,
@@ -793,6 +795,16 @@ class ApiService {
 
     composeSwarmRedeploy(name: string, data: ComposeRedeploy) {
         return http.put<ComposeDeployResult>(`compose/swarm/${name}`, data)
+    }
+
+    // ==================== Local 本机管理 ====================
+
+    localProcessList() {
+        return http.get<{ processes: SystemProcessInfo[] }>('local/processes')
+    }
+
+    localProcessKill(pid: number, force = false) {
+        return http.post<{ pid: number }>(`local/process/${pid}/kill`, { force })
     }
 
     // ==================== Cron 计划任务 ====================
