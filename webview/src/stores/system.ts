@@ -4,7 +4,7 @@ import { ref, reactive } from 'vue'
 import type { BootstrapData, LinkConfig } from '@/service/types'
 
 interface ServiceAvailability {
-    agent: boolean
+    copilot: boolean
     apisix: boolean
     caddy: boolean
     docker: boolean
@@ -24,7 +24,7 @@ export const useSystemStore = defineStore('system', () => {
     const initialized = ref(false)
     const initError = ref<string | null>(null)
     const serviceAvailability = reactive<ServiceAvailability>({
-        agent: false,
+        copilot: false,
         apisix: false,
         caddy: false,
         docker: false,
@@ -44,7 +44,7 @@ export const useSystemStore = defineStore('system', () => {
 
         if (probe) {
             Object.assign(serviceAvailability, {
-                agent: probe.agent || false,
+                copilot: probe.copilot || false,
                 apisix: probe.apisix || false,
                 caddy: probe.caddy || false,
                 docker: probe.docker || false,

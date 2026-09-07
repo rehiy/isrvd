@@ -10,7 +10,7 @@ import (
 
 // ProbeResponse 探活响应
 type ProbeResponse struct {
-	Agent   bool `json:"agent"`   // Agent 服务是否可用
+	Copilot bool `json:"copilot"` // Copilot 服务是否可用
 	Apisix  bool `json:"apisix"`  // Apisix 网关是否可用
 	Caddy   bool `json:"caddy"`   // Caddy 服务是否可用
 	Docker  bool `json:"docker"`  // Docker 引擎是否可用
@@ -36,7 +36,7 @@ func (s *Service) Probe(ctx context.Context, probes map[string]func(context.Cont
 	}
 
 	resp := &ProbeResponse{
-		Agent: config.Agent.BaseURL != "" && config.Agent.APIKey != "",
+		Copilot: config.Copilot.BaseURL != "" && config.Copilot.APIKey != "",
 	}
 
 	var (

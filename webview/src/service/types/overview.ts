@@ -28,7 +28,7 @@ export interface SystemVersionInfo {
 }
 
 export interface SystemProbe {
-    agent: boolean
+    copilot: boolean
     apisix: boolean
     caddy: boolean
     docker: boolean

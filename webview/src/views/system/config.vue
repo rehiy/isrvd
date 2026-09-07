@@ -4,7 +4,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { AllConfig, ServerConfig, PasswordConfig, THAConfig, OIDCConfig, PasskeyConfig, AgentConfig, ApisixConfig, CaddyConfig, DockerConfig, MonitorConfig, MarketplaceConfig, LinkConfig } from '@/service/types'
+import type { AllConfig, ServerConfig, PasswordConfig, THAConfig, OIDCConfig, PasskeyConfig, CopilotConfig, ApisixConfig, CaddyConfig, DockerConfig, MonitorConfig, MarketplaceConfig, LinkConfig } from '@/service/types'
 
 import IconSelect from '@/component/icon-select.vue'
 import ToggleCard from '@/component/toggle-card.vue'
@@ -29,7 +29,7 @@ class Config extends Vue {
   oidcScopes = 'openid profile email'
   tha: THAConfig = { enabled: false, headerName: '', trustedCIDRs: [] }
   thaTrustedCIDRsText = ''
-  agent: AgentConfig = { model: '', baseUrl: '' }
+  agent: CopilotConfig = { model: '', baseUrl: '' }
   apisix: ApisixConfig = { adminUrl: '' }
   caddy: CaddyConfig = { adminUrl: '' }
   docker: DockerConfig = { host: '', containerRoot: '' }

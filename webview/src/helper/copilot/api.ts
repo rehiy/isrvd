@@ -114,18 +114,18 @@ export function previewCopilotAPICall(args: Partial<CopilotAPIArgs>): CopilotAPI
 export async function executeCopilotAPI(args: CopilotAPIArgs, mode: CopilotAPIMode): Promise<unknown> {
     const operation = getOperation(String(args.callRef || ''))
     if (!operation) {
-        return agentError('UNKNOWN_CALL_REF', '调用引用不存在或已过期，请重新调用 lookup_api。', true)
+        return copilotError('UNKNOWN_CALL_REF', '调用引用不存在或已过期，请重新调用 lookup_api。', true)
     }
 
     const failureKey = canonicalArguments(args.arguments)
     if ((operation.failures.get(failureKey) || 0) >= maxIdenticalFailures) {
-        return agentError('RETRY_LIMIT', '相同调用已连续失败两次，请重新查询接口或调整参数后再试。', false)
+        return copilotError('RETRY_LIMIT', '相同调用已连续失败两次，请重新查询接口或调整参数后再试。', false)
     }
 
     const detail = await ensureOperationDetail(operation)
     if ('error' in detail) return recordFailure(operation, failureKey, detail.error)
     if (operation.toolUnsupportedReason) {
-        return agentError('UNSUPPORTED_OPERATION', operation.toolUnsupportedReason, false)
+        return copilotError('UNSUPPORTED_OPERATION', operation.toolUnsupportedReason, false)
     }
 
     const resolved = resolveCall(operation, args.arguments, mode)
@@ -151,11 +151,11 @@ export async function executeCopilotAPI(args: CopilotAPIArgs, mode: CopilotAPIMo
                 res = await http.post(resolved.value.path, resolved.value.body ?? {}, config)
                 break
             default:
-                return recordFailure(operation, failureKey, agentError('UNKNOWN_OPERATION', 'OpenAPI 中的 HTTP 方法不受支持。', false))
+                return recordFailure(operation, failureKey, copilotError('UNKNOWN_OPERATION', 'OpenAPI 中的 HTTP 方法不受支持。', false))
         }
 
         if (!isRecord(res) || typeof res.success !== 'boolean') {
-            return recordFailure(operation, failureKey, agentError('UNSUPPORTED_RESPONSE', '接口未返回标准 JSON 响应，请改用页面操作。', false))
+            return recordFailure(operation, failureKey, copilotError('UNSUPPORTED_RESPONSE', '接口未返回标准 JSON 响应，请改用页面操作。', false))
         }
         operation.failures.delete(failureKey)
         return packToolResult({
@@ -216,11 +216,11 @@ async function ensureOperationDetail(operation: RegisteredOperation): Promise<{ 
         const res = await http.get('copilot/catalog', { params: { path: operation.path, method: operation.method } })
         const payload = res?.payload
         if (!isRecord(payload)) {
-            return { error: agentError('OPERATION_CHANGED', '接口定义已变化，请重新调用 lookup_api。', true) }
+            return { error: copilotError('OPERATION_CHANGED', '接口定义已变化，请重新调用 lookup_api。', true) }
         }
         const detail = operationFromPayload(payload)
         if (!detail || payload.mode !== 'detail' || detail.operationId !== operation.operationId) {
-            return { error: agentError('OPERATION_CHANGED', '接口定义已变化，请重新调用 lookup_api。', true) }
+            return { error: copilotError('OPERATION_CHANGED', '接口定义已变化，请重新调用 lookup_api。', true) }
         }
         Object.assign(operation, detail)
         operation.loaded = true
@@ -234,28 +234,28 @@ function resolveCall(operation: RegisteredOperation, source: string | undefined,
     const isQuery = operation.method === 'get'
     if ((mode === 'query') !== isQuery) {
         const expected = isQuery ? 'isrvd_api' : 'isrvd_mutation'
-        return { error: agentError('WRONG_TOOL', `该操作必须使用 ${expected}。`, true) }
+        return { error: copilotError('WRONG_TOOL', `该操作必须使用 ${expected}。`, true) }
     }
 
     const parsed = parseBusinessArguments(source)
-    if ('error' in parsed) return { error: agentError('INVALID_ARGUMENTS', parsed.error, true) }
+    if ('error' in parsed) return { error: copilotError('INVALID_ARGUMENTS', parsed.error, true) }
 
     const parameters = operation.parameters || []
     const pathParameters = parameters.filter(parameter => parameter.in === 'path')
     const queryParameters = parameters.filter(parameter => parameter.in === 'query')
     const pathError = validateParameterGroup(parsed.value.path, pathParameters, 'path')
-    if (pathError) return { error: agentError('INVALID_ARGUMENTS', pathError, true) }
+    if (pathError) return { error: copilotError('INVALID_ARGUMENTS', pathError, true) }
     const queryError = validateParameterGroup(parsed.value.query, queryParameters, 'query')
-    if (queryError) return { error: agentError('INVALID_ARGUMENTS', queryError, true) }
+    if (queryError) return { error: copilotError('INVALID_ARGUMENTS', queryError, true) }
 
     const bodyError = validateRequestBody(parsed.value.body, operation.requestBody, operation.requestBodyRequired)
-    if (bodyError) return { error: agentError('INVALID_ARGUMENTS', bodyError, true) }
+    if (bodyError) return { error: copilotError('INVALID_ARGUMENTS', bodyError, true) }
 
     const path = fillPath(operation.path, parsed.value.path)
-    if ('error' in path) return { error: agentError('INVALID_ARGUMENTS', path.error, true) }
+    if ('error' in path) return { error: copilotError('INVALID_ARGUMENTS', path.error, true) }
     const target = path.value.replace(/^\/+/, '')
     if (!target || target.includes('://') || target.split('/').includes('..')) {
-        return { error: agentError('INVALID_ARGUMENTS', '解析后的 API 路径不是合法的站内路径。', false) }
+        return { error: copilotError('INVALID_ARGUMENTS', '解析后的 API 路径不是合法的站内路径。', false) }
     }
 
     return {
@@ -380,7 +380,7 @@ function recordFailure(operation: RegisteredOperation, key: string, error: Recor
     return error
 }
 
-function agentError(kind: string, message: string, recoverable: boolean, status?: number): Record<string, unknown> {
+function copilotError(kind: string, message: string, recoverable: boolean, status?: number): Record<string, unknown> {
     return {
         success: false,
         message: sanitizeCopilotValue(message),
@@ -394,19 +394,19 @@ function agentError(kind: string, message: string, recoverable: boolean, status?
 
 function httpError(error: unknown, prefix = ''): Record<string, unknown> {
     if (!axios.isAxiosError(error)) {
-        return agentError('EXECUTION_FAILED', prefix || (error instanceof Error ? error.message : '请求失败'), false)
+        return copilotError('EXECUTION_FAILED', prefix || (error instanceof Error ? error.message : '请求失败'), false)
     }
     const status = error.response?.status
     const data = error.response?.data
     const detail = isRecord(data) ? stringValue(data.message) : ''
     const message = [prefix, detail || error.message].filter(Boolean).join('：')
-    if (!status) return agentError('TRANSIENT_FAILURE', message || '网络请求失败。', true)
-    if (status === 400 || status === 422) return agentError('INVALID_ARGUMENTS', message, true, status)
-    if (status === 401 || status === 403) return agentError('PERMISSION_DENIED', message, false, status)
-    if (status === 404) return agentError('RESOURCE_NOT_FOUND', message, true, status)
-    if (status === 409) return agentError('PRECONDITION_FAILED', message, true, status)
-    if (status === 429 || status >= 500) return agentError('SERVICE_UNAVAILABLE', message, true, status)
-    return agentError('EXECUTION_FAILED', message, false, status)
+    if (!status) return copilotError('TRANSIENT_FAILURE', message || '网络请求失败。', true)
+    if (status === 400 || status === 422) return copilotError('INVALID_ARGUMENTS', message, true, status)
+    if (status === 401 || status === 403) return copilotError('PERMISSION_DENIED', message, false, status)
+    if (status === 404) return copilotError('RESOURCE_NOT_FOUND', message, true, status)
+    if (status === 409) return copilotError('PRECONDITION_FAILED', message, true, status)
+    if (status === 429 || status >= 500) return copilotError('SERVICE_UNAVAILABLE', message, true, status)
+    return copilotError('EXECUTION_FAILED', message, false, status)
 }
 
 function getOperation(callRef: string): RegisteredOperation | null {

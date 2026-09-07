@@ -10,7 +10,7 @@ type Config struct {
 	Passkey     *PasskeyConfig     `yaml:"passkey"`     // Passkey 登录配置
 	OIDC        *OIDCConfig        `yaml:"oidc"`        // OIDC 登录配置
 	THA         *THAConfig         `yaml:"tha"`         // 代理 Header 登录配置
-	Agent       *AgentConfig       `yaml:"agent"`       // Agent LLM 配置
+	Copilot     *CopilotConfig     `yaml:"agent"`       // Copilot LLM 配置
 	Apisix      *ApisixConfig      `yaml:"apisix"`      // APISIX 配置
 	Caddy       *CaddyConfig       `yaml:"caddy"`       // Caddy 配置
 	Docker      *DockerConfig      `yaml:"docker"`      // Docker 配置
@@ -71,8 +71,8 @@ type PasskeyConfig struct {
 	Timeout   int      `yaml:"timeout" json:"timeout"`     // 超时时间（毫秒），默认 60000
 }
 
-// Agent LLM 配置
-type AgentConfig struct {
+// Copilot LLM 配置
+type CopilotConfig struct {
 	Model   string `yaml:"model" json:"model"`             // 模型名称
 	BaseURL string `yaml:"baseUrl" json:"baseUrl"`         // LLM API 基础地址（OpenAI 兼容）
 	APIKey  string `yaml:"apiKey" json:"apiKey,omitempty"` // 写入时为空表示保留原值；响应时不返回

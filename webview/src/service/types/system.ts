@@ -58,7 +58,7 @@ export interface THAConfig {
     trustedCIDRs: string[]
 }
 
-export interface AgentConfig {
+export interface CopilotConfig {
     model: string
     baseUrl: string
     // 写入时为空表示保留原值（不通过 JSON 返回）
@@ -110,7 +110,7 @@ export interface AllConfig {
     passkey: PasskeyConfig
     oidc: OIDCConfig
     tha: THAConfig
-    agent: AgentConfig
+    agent: CopilotConfig
     apisix: ApisixConfig
     caddy: CaddyConfig
     docker: DockerConfig

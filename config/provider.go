@@ -83,7 +83,7 @@ func Save() error {
 		Passkey:     Passkey,
 		OIDC:        OIDC,
 		THA:         THA,
-		Agent:       Agent,
+		Copilot:     Copilot,
 		Apisix:      Apisix,
 		Caddy:       Caddy,
 		Docker:      Docker,

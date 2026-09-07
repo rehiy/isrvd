@@ -132,7 +132,7 @@ func (app *App) serviceAvailableMiddleware() gin.HandlerFunc {
 func (app *App) isServiceAvailable(module string) bool {
 	switch module {
 	case "copilot":
-		return config.Agent.BaseURL != ""
+		return config.Copilot.BaseURL != ""
 	case "apisix":
 		return app.apisixSvc != nil
 	case "caddy":

@@ -240,7 +240,7 @@ function formatValue(value: unknown): string {
               <span v-if="item.subtitle" class="item-subtitle">{{ item.subtitle }}</span>
             </div>
           </div>
-          <p v-if="payload.length > resourceItems.length" class="text-xs text-slate-400">仅展示前 {{ resourceItems.length }} 项，完整结果仍会提供给 Agent。</p>
+          <p v-if="payload.length > resourceItems.length" class="text-xs text-slate-400">仅展示前 {{ resourceItems.length }} 项，完整结果仍会提供给 AI 助手。</p>
         </template>
 
         <dl v-else-if="resultSuccess && resourceRows.length" class="divide-y divide-slate-100 rounded-lg border border-slate-200 overflow-hidden">

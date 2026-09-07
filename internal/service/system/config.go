@@ -17,7 +17,7 @@ type AllConfig struct {
 	Passkey     *config.PasskeyConfig     `json:"passkey"`     // Passkey 认证配置
 	OIDC        *config.OIDCConfig        `json:"oidc"`        // OIDC 配置（ClientSecret：响应脱敏 / 请求空保留）
 	THA         *config.THAConfig         `json:"tha"`         // 代理 Header 认证配置
-	Agent       *config.AgentConfig       `json:"agent"`       // Agent LLM 配置（APIKey：响应脱敏 / 请求空保留）
+	Copilot     *config.CopilotConfig     `json:"agent"`       // Copilot LLM 配置（APIKey：响应脱敏 / 请求空保留）
 	Apisix      *config.ApisixConfig      `json:"apisix"`      // APISIX 配置（AdminKey：响应脱敏 / 请求空保留）
 	Caddy       *config.CaddyConfig       `json:"caddy"`       // Caddy 配置
 	Docker      *config.DockerConfig      `json:"docker"`      // Docker 配置（registry.Password：响应脱敏 / 请求空保留）
@@ -42,7 +42,7 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 		Passkey:     config.Passkey,
 		OIDC:        config.OIDC,
 		THA:         config.THA,
-		Agent:       config.Agent,
+		Copilot:     config.Copilot,
 		Apisix:      config.Apisix,
 		Caddy:       config.Caddy,
 		Docker:      config.Docker,
@@ -61,8 +61,8 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 	if dst.OIDC != nil {
 		dst.OIDC.ClientSecret = ""
 	}
-	if dst.Agent != nil {
-		dst.Agent.APIKey = ""
+	if dst.Copilot != nil {
+		dst.Copilot.APIKey = ""
 	}
 	if dst.Apisix != nil {
 		dst.Apisix.AdminKey = ""
@@ -104,13 +104,13 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 	if req.THA != nil {
 		config.THA = config.THANormalize(req.THA)
 	}
-	if req.Agent != nil {
+	if req.Copilot != nil {
 		oldSecret := ""
-		if config.Agent != nil {
-			oldSecret = config.Agent.APIKey
+		if config.Copilot != nil {
+			oldSecret = config.Copilot.APIKey
 		}
-		req.Agent.APIKey = pickSecret(req.Agent.APIKey, oldSecret)
-		config.Agent = req.Agent
+		req.Copilot.APIKey = pickSecret(req.Copilot.APIKey, oldSecret)
+		config.Copilot = req.Copilot
 	}
 	if req.Apisix != nil {
 		oldSecret := ""

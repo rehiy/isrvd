@@ -1376,7 +1376,7 @@ func resolveStructSchema(typeName string, localTypes map[string]string, ctrlFile
 		// 同时也用原始 key
 		structCache[cacheKey] = schema
 
-		// 6. 递归解析嵌套结构体字段类型（如 *config.AgentConfig）
+		// 6. 递归解析嵌套结构体字段类型（如 *config.CopilotConfig）
 		resolveNestedTypesInSchema(schema, ctrlFile)
 	}
 	return schema

@@ -50,7 +50,7 @@ type OpenAPIOpBrief struct {
 	Summary               string `json:"summary"`                         // 中文摘要
 	OperationID           string `json:"operationId,omitempty"`           // OpenAPI operationId
 	Tag                   string `json:"tag,omitempty"`                   // 模块标签
-	ToolUnsupportedReason string `json:"toolUnsupportedReason,omitempty"` // 不支持通用 Agent 工具调用的原因
+	ToolUnsupportedReason string `json:"toolUnsupportedReason,omitempty"` // 不支持通用 Copilot 工具调用的原因
 }
 
 // OpenAPILookupResult 查阅官方 OpenAPI 的结果，mode 为 catalog / list / detail
@@ -71,7 +71,7 @@ type OpenAPILookupResult struct {
 	RequestBody           any              `json:"requestBody,omitempty"`           // detail：请求体字段（已展开 $ref）
 	RequestBodyRequired   bool             `json:"requestBodyRequired,omitempty"`   // detail：是否必须提交请求体
 	Response              any              `json:"response,omitempty"`              // detail：200 响应字段（已展开 $ref）
-	ToolUnsupportedReason string           `json:"toolUnsupportedReason,omitempty"` // 不支持通用 Agent 工具调用的原因
+	ToolUnsupportedReason string           `json:"toolUnsupportedReason,omitempty"` // 不支持通用 Copilot 工具调用的原因
 }
 
 // LoadOpenAPI 解析 OpenAPI 3 文档并建立查阅索引。
@@ -238,7 +238,7 @@ func (spec *openAPISpec) detail(op openAPIOp) *OpenAPILookupResult {
 func (op openAPIOp) toolUnsupportedReason() string {
 	switch op.Path {
 	case "/swarm/token", "/account/token", "/account/2fa/totp/begin":
-		return "密钥或令牌接口不提供 Agent 调用引用，请由用户在对应页面操作。"
+		return "密钥或令牌接口不提供 Copilot 调用引用，请由用户在对应页面操作。"
 	}
 	if strings.HasPrefix(op.Description, "[SSE]") {
 		return "通用工具不支持 SSE，请查阅同资源的非流式日志接口或由用户在页面查看。"

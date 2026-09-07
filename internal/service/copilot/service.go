@@ -27,9 +27,9 @@ type AGUIInput = agui.RunAgentInput
 // 并把上游流式响应翻译为 AG-UI 事件写入 w。
 func (s *Service) RunAGUI(ctx context.Context, w io.Writer, input AGUIInput) error {
 	return agui.Run(ctx, agui.NewEncoder(w), input, agui.RunOptions{
-		Endpoint: strings.TrimRight(config.Agent.BaseURL, "/") + "/chat/completions",
-		APIKey:   config.Agent.APIKey,
-		Model:    config.Agent.Model,
+		Endpoint: strings.TrimRight(config.Copilot.BaseURL, "/") + "/chat/completions",
+		APIKey:   config.Copilot.APIKey,
+		Model:    config.Copilot.Model,
 		Timeout:  10 * time.Minute,
 	})
 }

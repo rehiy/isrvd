@@ -35,7 +35,7 @@ useFrontendTool({
         '查阅 iSrvd 官方 OpenAPI。调用 isrvd_api 或 isrvd_mutation 前必须先查并使用返回的 callRef。' +
         '不传参数返回模块目录；tag 或 q 返回接口列表；path + method 返回字段。仅支持的接口带 callRef，其余按 toolUnsupportedReason 说明操作。',
     parameters: [
-        { name: 'tag', type: 'string', description: '模块标签，如 docker、swarm、apisix、caddy、compose、cron、account、system、filer、ssh、overview、shell、agent', required: false },
+        { name: 'tag', type: 'string', description: '模块标签，如 docker、swarm、apisix、caddy、compose、cron、account、system、filer、ssh、overview、shell、copilot', required: false },
         { name: 'q', type: 'string', description: '关键词，匹配路径、摘要、operationId', required: false },
         { name: 'path', type: 'string', description: 'API 路径，如 docker/containers 或 /docker/container/{id}', required: false },
         { name: 'method', type: 'string', description: 'HTTP 方法：get / post / put / patch / delete', required: false },

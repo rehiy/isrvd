@@ -22,8 +22,8 @@ class App extends Vue {
     copilotStore = useCopilotStore()
     sidebarCollapsed = false
 
-    get hasAgent() {
-        return this.portal.serviceAvailability.agent && this.portal.hasPerm('POST /api/copilot/agui')
+    get hasCopilot() {
+        return this.portal.serviceAvailability.copilot && this.portal.hasPerm('POST /api/copilot/agui')
     }
 
     @Ref readonly navigationRef!: InstanceType<typeof NavigationBar>
@@ -82,8 +82,8 @@ export default toNative(App)
     </div>
 
     <!-- CopilotKit Provider 与页面布局分离，避免第三方样式影响页面 header 与内容间距；
-         仅当 Agent 启用时才注入，未启用时不挂载，否则会泄漏悬浮球等全局 UI -->
-    <Copilot v-else-if="portal.username && hasAgent" />
+         仅当 Copilot 启用时才注入，未启用时不挂载，否则会泄漏悬浮球等全局 UI -->
+    <Copilot v-else-if="portal.username && hasCopilot" />
 
     <!-- 主内容 -->
     <div v-if="portal.username" class="min-h-screen pt-16">
@@ -103,7 +103,7 @@ export default toNative(App)
         <!-- 用户信息 -->
         <div class="flex items-center gap-1">
           <button
-            v-if="hasAgent"
+            v-if="hasCopilot"
             title="AI 助手"
             class="btn btn-ghost gap-2"
             :class="copilotStore.sidebarOpen
@@ -114,7 +114,7 @@ export default toNative(App)
             <i class="fas fa-wand-magic-sparkles"></i>
             <span class="hidden sm:inline">AI 助手</span>
           </button>
-          <div v-if="hasAgent" class="hidden sm:block w-px h-5 bg-slate-200 mx-1"></div>
+          <div v-if="hasCopilot" class="hidden sm:block w-px h-5 bg-slate-200 mx-1"></div>
           <UserMenu />
         </div>
       </header>

@@ -13,8 +13,8 @@ var (
 	OIDC = OIDCNormalize(nil)
 	// THA 代理 Header 登录配置
 	THA = &THAConfig{}
-	// Agent LLM 配置
-	Agent = &AgentConfig{}
+	// Copilot LLM 配置
+	Copilot = &CopilotConfig{}
 	// Apisix 配置
 	Apisix = &ApisixConfig{}
 	// Caddy 配置
@@ -51,8 +51,8 @@ func Apply(conf *Config) {
 		THA = THANormalize(conf.THA)
 	}
 
-	if conf.Agent != nil {
-		Agent = conf.Agent
+	if conf.Copilot != nil {
+		Copilot = conf.Copilot
 	}
 
 	if conf.Apisix != nil {
