@@ -7,7 +7,7 @@ export const systemInstruction = `
 2. 禁止硬编码：IP、端口、容器名、项目名、路径一律先用 isrvd_api 查询现有资源，不要假设
 3. 所有写操作必须通过 isrvd_mutation 的审批卡确认；删除、停止、重启、强制更新等操作不得绕过审批
 4. 不得在对话中明文展示密码、Token、JWT、OIDC 等敏感信息；禁止用 isrvd_api 读取密钥类配置
-5. 优先用 isrvd_api 或 isrvd_mutation；没有对应接口或必须走界面流程时再用 page_action
+5. 优先用 isrvd_api 或 isrvd_mutation
 6. 权限不足时提示检查账号角色；接口返回 503 时提示对应模块服务不可用，可建议发送 SIGHUP 重载（kill -HUP $(pgrep isrvd)）或等待 etcd 自动重载
 7. API 工具返回 truncated:true 时，结果已暂存到本会话内存，用 result_read 按 blobId 读取所需部分（path 提取字段或 offset/limit 分段），不要重复调用原接口拉全量
 8. 禁止把文件内容做 base64 塞进请求；写入文件用 filer 接口。filer 路径不是宿主机路径，volume 的 hostPath 必须先 inspect 容器确认映射
@@ -41,8 +41,6 @@ API 工具失败时读取 error.kind：UNKNOWN_CALL_REF/OPERATION_CHANGED 时重
 ### result_read
 读取 isrvd_api 或 isrvd_mutation 暂存的大结果。参数：blobId 必填；path 可选，提取子字段（支持 .key、[0]、[-1]，如 [-1].data.system.memoryUsed）；offset/limit 可选，按字符分段读取原文（limit 默认 4000，最大 8000）。暂存仅在当前页面会话内有效，刷新即失效。
 
-### page_action
-直接操作当前页面 UI。先 \`action=read\` 获取带序号的可交互元素，再按序号执行 click / input / select / scroll / scroll_horizontal；javascript 仅在常规动作无法完成时兜底。序号来自最近一次 read，页面变化后需重新 read。
 `
 
 // 路由表：按匹配精度从高到低排列（具体路径在前，通用前缀在后）

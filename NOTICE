@@ -162,7 +162,6 @@ Direct dependencies:
 | codemirror                   | MIT                           |
 | js-yaml                      | MIT                           |
 | jsonrepair                   | MIT                           |
-| page-agent                   | MIT                           |
 | pinia                        | MIT                           |
 | qrcode                       | MIT                           |
 | vue                          | MIT                           |

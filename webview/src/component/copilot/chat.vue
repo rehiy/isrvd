@@ -1,8 +1,8 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import { CopilotChatConfigurationProvider, CopilotSidebar, useAgent, useCopilotAction, useCopilotReadable, useFrontendTool } from '@copilotkit/vue'
+import { CopilotChatConfigurationProvider, CopilotSidebar, useCopilotAction, useCopilotReadable, useFrontendTool } from '@copilotkit/vue'
 import type { CopilotChatLabels } from '@copilotkit/vue'
-import { computed, h, onUnmounted, watch } from 'vue'
+import { computed, h, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { usePortal } from '@/stores'
@@ -12,7 +12,6 @@ import { http } from '@/service/client'
 import { executeCopilotAPI, registerCopilotAPILookup, resetCopilotAPICallRefs } from '@/helper/copilot/api'
 import { blobRead } from '@/helper/copilot/blob'
 import { systemInstruction, getPageInstruction } from '@/helper/copilot/instructions'
-import { getPageController, disposePageController } from '@/helper/copilot/page-controller'
 
 import APICard from '@/component/copilot/api-card.vue'
 import InspectorButton from '@/component/copilot/inspector-button.vue'
@@ -20,28 +19,9 @@ import SidebarBridge from '@/component/copilot/sidebar-bridge.vue'
 
 const route = useRoute()
 const portal = usePortal()
-const { agent: copilotAgent } = useAgent({ agentId: 'default', updates: [] })
 
 // 侧栏与顶栏入口使用对话端点权限，并检查 Agent 服务可用性。
 const hasAgent = computed(() => portal.serviceAvailability.agent && portal.hasPerm('POST /api/copilot/agui'))
-
-// 运行结束后清理页面高亮；工具调用轮结束时先保留，给 CopilotKit 的 follow-up
-// 继续使用 read 返回的序号，最终文本回答轮结束后才清理。
-watch(copilotAgent, (agent, _previous, onCleanup) => {
-    if (!agent) return
-
-    const cleanupWhenAnswerFinished = ({ messages }: { messages: readonly { role: string; toolCalls?: unknown[] }[] }) => {
-        const lastMessage = messages[messages.length - 1]
-        if (lastMessage?.role === 'assistant' && lastMessage.toolCalls?.length) return
-        disposePageController()
-    }
-    const subscription = agent.subscribe({
-        onRunFinalized: cleanupWhenAnswerFinished,
-        onRunFailed: () => disposePageController(),
-        onRunErrorEvent: () => disposePageController(),
-    })
-    onCleanup(() => subscription.unsubscribe())
-}, { immediate: true })
 
 // ─── 页面上下文 ───
 
@@ -79,66 +59,6 @@ useFrontendTool({
             return { success: res?.success ?? true, message: res?.message ?? '', payload: registerCopilotAPILookup(res?.payload ?? null) }
         } catch (e) {
             return { success: false, message: e instanceof Error ? e.message : '查阅 API 文档失败' }
-        }
-    },
-})
-
-// 页面操作：读取可交互元素树后按序号执行动作，对应原 page-agent 的自动操作能力
-useFrontendTool({
-    name: 'page_action',
-    description:
-        '直接操作当前页面 UI。先调用 action=read 获取带序号的可交互元素列表，' +
-        '再用返回的序号执行 click / input / select / scroll。' +
-        'javascript 可直接执行 JS，仅在常规动作无法完成时作为兜底。',
-    parameters: [
-        {
-            name: 'action',
-            type: 'string',
-            description: 'read（读取页面元素）/ click / input / select / scroll / scroll_horizontal / javascript',
-            required: true,
-        },
-        { name: 'index', type: 'number', description: '目标元素序号，来自 read 的结果', required: false },
-        { name: 'text', type: 'string', description: 'input 的输入内容，或 select 的选项文本', required: false },
-        { name: 'down', type: 'boolean', description: 'scroll 时是否向下滚动', required: false },
-        { name: 'right', type: 'boolean', description: 'scroll_horizontal 时是否向右滚动', required: false },
-        { name: 'pixels', type: 'number', description: '滚动像素数，默认一屏', required: false },
-        { name: 'script', type: 'string', description: 'javascript 动作要执行的 JS 代码', required: false },
-    ],
-    handler: async ({ action, index, text, down, right, pixels, script }) => {
-        const pc = getPageController()
-        try {
-            if (action === 'read') {
-                const state = await pc.getBrowserState()
-                return {
-                    url: state.url,
-                    title: state.title,
-                    header: state.header,
-                    elements: state.content,
-                    footer: state.footer,
-                }
-            }
-            if (action === 'click') {
-                return await pc.clickElement(Number(index))
-            }
-            if (action === 'input') {
-                return await pc.inputText(Number(index), String(text ?? ''))
-            }
-            if (action === 'select') {
-                return await pc.selectOption(Number(index), String(text ?? ''))
-            }
-            if (action === 'scroll') {
-                return await pc.scroll({ down: down !== false, numPages: 1, pixels: Number(pixels ?? 0) || undefined, index })
-            }
-            if (action === 'scroll_horizontal') {
-                return await pc.scrollHorizontally({ right: right !== false, pixels: Number(pixels ?? 0), index })
-            }
-            if (action === 'javascript') {
-                if (!script) return { success: false, message: '缺少 script 参数' }
-                return await pc.executeJavascript(String(script))
-            }
-            return { success: false, message: `未知动作：${action}` }
-        } catch (e) {
-            return { success: false, message: e instanceof Error ? e.message : '页面操作失败' }
         }
     },
 })
@@ -218,9 +138,8 @@ const chineseLabels = {
     welcomeMessageText: '你好，我能帮你做什么？',
 } as unknown as Partial<CopilotChatLabels>
 
-// 卸载时释放页面控制器和会话级 API 调用引用。
+// 卸载时释放会话级 API 调用引用。
 onUnmounted(() => {
-    disposePageController()
     resetCopilotAPICallRefs()
 })
 </script>
