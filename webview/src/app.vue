@@ -81,8 +81,9 @@ export default toNative(App)
       </div>
     </div>
 
-    <!-- CopilotKit Provider 与页面布局分离，避免第三方样式影响页面 header 与内容间距 -->
-    <Copilot v-else-if="portal.username" />
+    <!-- CopilotKit Provider 与页面布局分离，避免第三方样式影响页面 header 与内容间距；
+         仅当 Agent 启用时才注入，未启用时不挂载，否则会泄漏悬浮球等全局 UI -->
+    <Copilot v-else-if="portal.username && hasAgent" />
 
     <!-- 主内容 -->
     <div v-if="portal.username" class="min-h-screen pt-16">

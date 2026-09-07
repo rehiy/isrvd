@@ -5,8 +5,6 @@ import type { CopilotChatLabels } from '@copilotkit/vue'
 import { computed, h, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { usePortal } from '@/stores'
-
 import { http } from '@/service/client'
 
 import { executeCopilotAPI, registerCopilotAPILookup, resetCopilotAPICallRefs } from '@/helper/copilot/api'
@@ -18,10 +16,6 @@ import InspectorButton from '@/component/copilot/inspector-button.vue'
 import SidebarBridge from '@/component/copilot/sidebar-bridge.vue'
 
 const route = useRoute()
-const portal = usePortal()
-
-// 侧栏与顶栏入口使用对话端点权限，并检查 Agent 服务可用性。
-const hasAgent = computed(() => portal.serviceAvailability.agent && portal.hasPerm('POST /api/copilot/agui'))
 
 // ─── 页面上下文 ───
 
@@ -146,7 +140,7 @@ onUnmounted(() => {
 
 <template>
   <CopilotChatConfigurationProvider :labels="chineseLabels">
-    <CopilotSidebar v-if="hasAgent" :default-open="false">
+    <CopilotSidebar :default-open="false">
       <template #header="{ title, onClose }">
         <header class="flex items-center justify-between px-4 py-3 border-b border-slate-200">
           <span class="text-sm font-semibold text-slate-700 truncate">{{ title }}</span>
