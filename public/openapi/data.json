@@ -8981,23 +8981,6 @@
         "properties": {},
         "type": "object"
       },
-      "config.AgentConfig": {
-        "properties": {
-          "apiKey": {
-            "description": "写入时为空表示保留原值；响应时不返回",
-            "type": "string"
-          },
-          "baseUrl": {
-            "description": "LLM API 基础地址（OpenAI 兼容）",
-            "type": "string"
-          },
-          "model": {
-            "description": "模型名称",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "config.ApisixConfig": {
         "properties": {
           "adminKey": {
@@ -9022,16 +9005,16 @@
       },
       "config.Config": {
         "properties": {
-          "Agent": {
-            "description": "Agent LLM 配置",
-            "type": "object"
-          },
           "Apisix": {
             "description": "APISIX 配置",
             "type": "object"
           },
           "Caddy": {
             "description": "Caddy 配置",
+            "type": "object"
+          },
+          "Copilot": {
+            "description": "Copilot LLM 配置",
             "type": "object"
           },
           "Docker": {
@@ -9083,6 +9066,23 @@
           "THA": {
             "description": "代理 Header 登录配置",
             "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "config.CopilotConfig": {
+        "properties": {
+          "apiKey": {
+            "description": "写入时为空表示保留原值；响应时不返回",
+            "type": "string"
+          },
+          "baseUrl": {
+            "description": "LLM API 基础地址（OpenAI 兼容）",
+            "type": "string"
+          },
+          "model": {
+            "description": "模型名称",
+            "type": "string"
           }
         },
         "type": "object"
@@ -9477,7 +9477,7 @@
             "type": "array"
           },
           "toolUnsupportedReason": {
-            "description": "不支持通用 Agent 工具调用的原因",
+            "description": "不支持通用 Copilot 工具调用的原因",
             "type": "string"
           },
           "total": {
@@ -9514,7 +9514,7 @@
             "type": "string"
           },
           "toolUnsupportedReason": {
-            "description": "不支持通用 Agent 工具调用的原因",
+            "description": "不支持通用 Copilot 工具调用的原因",
             "type": "string"
           }
         },
@@ -11326,10 +11326,6 @@
       },
       "overview.ProbeResponse": {
         "properties": {
-          "agent": {
-            "description": "Agent 服务是否可用",
-            "type": "boolean"
-          },
           "apisix": {
             "description": "Apisix 网关是否可用",
             "type": "boolean"
@@ -11340,6 +11336,10 @@
           },
           "compose": {
             "description": "Compose 服务是否可用",
+            "type": "boolean"
+          },
+          "copilot": {
+            "description": "Copilot 服务是否可用",
             "type": "boolean"
           },
           "docker": {
@@ -11853,10 +11853,6 @@
       },
       "system.AllConfig": {
         "properties": {
-          "agent": {
-            "$ref": "#/components/schemas/config.AgentConfig",
-            "description": "Agent LLM 配置（APIKey：响应脱敏 / 请求空保留）"
-          },
           "apisix": {
             "$ref": "#/components/schemas/config.ApisixConfig",
             "description": "APISIX 配置（AdminKey：响应脱敏 / 请求空保留）"
@@ -11864,6 +11860,10 @@
           "caddy": {
             "$ref": "#/components/schemas/config.CaddyConfig",
             "description": "Caddy 配置"
+          },
+          "copilot": {
+            "$ref": "#/components/schemas/config.CopilotConfig",
+            "description": "Copilot LLM 配置（APIKey：响应脱敏 / 请求空保留）"
           },
           "docker": {
             "$ref": "#/components/schemas/config.DockerConfig",
