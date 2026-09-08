@@ -7,7 +7,7 @@ import type {
     MonitorHostRecord,
     MonitorContainerRecord,
     // Local
-    SystemProcessInfo,
+    SystemProcessList,
     // System
     AllConfig,
     AuditLog,
@@ -114,7 +114,6 @@ import type {
     SFTPRename,
     SFTPMkdir,
     SFTPChmod,
-    SFTPChown,
     SFTPWrite,
 } from './types'
 
@@ -395,10 +394,6 @@ class ApiService {
         return http.get<ApisixUpstream[]>('apisix/upstreams')
     }
 
-    apisixUpstreamInspect(id: string) {
-        return http.get<ApisixUpstream>(`apisix/upstream/${id}`)
-    }
-
     apisixUpstreamCreate(data: ApisixUpstreamCreate) {
         return http.post('apisix/upstream', data)
     }
@@ -414,10 +409,6 @@ class ApiService {
     // SSL 管理
     apisixSSLList() {
         return http.get<ApisixSSL[]>('apisix/ssls')
-    }
-
-    apisixSSLInspect(id: string) {
-        return http.get<ApisixSSL>(`apisix/ssl/${id}`)
     }
 
     apisixSSLCreate(data: ApisixSSLCreate) {
@@ -480,10 +471,6 @@ class ApiService {
 
     caddyRouteList(server?: string) {
         return http.get<CaddyRoute[]>('caddy/routes', { params: server ? { server } : {} })
-    }
-
-    caddyRouteInspect(index: number, server?: string) {
-        return http.get<CaddyRoute>(`caddy/route/${index}`, { params: server ? { server } : {} })
     }
 
     caddyRouteCreate(data: CaddyRouteUpsert, server?: string) {
@@ -800,7 +787,7 @@ class ApiService {
     // ==================== Local 本机管理 ====================
 
     localProcessList() {
-        return http.get<{ processes: SystemProcessInfo[] }>('local/processes')
+        return http.get<SystemProcessList>('local/processes')
     }
 
     localProcessKill(pid: number, force = false) {
@@ -933,10 +920,6 @@ class ApiService {
     // ─── SFTP 文件操作 ───
     sftpFileChmod(hostId: string, data: SFTPChmod) {
         return http.post<void>(`sftp/${hostId}/chmod`, data)
-    }
-
-    sftpFileChown(hostId: string, data: SFTPChown) {
-        return http.post<void>(`sftp/${hostId}/chown`, data)
     }
 
     sftpRead(hostId: string, path: string) {

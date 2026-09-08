@@ -30,19 +30,6 @@ export interface ListResult {
     files: FileInfo[]
 }
 
-// ─── 上传节点（用于支持目录递归上传） ──────────────────────────────────────────
-
-export interface UploadNode {
-    name: string
-    destDir: string
-    file?: File
-    children?: UploadNode[]
-    // 运行时状态（由 ExplorerUpload 管理）
-    status?: 'pending' | 'uploading' | 'done' | 'error' | 'cancelled'
-    progress?: number
-    error?: string
-}
-
 // ─── 核心操作接口 ────────────────────────────────────────────────────────────────
 
 export interface ExplorerAdapter {

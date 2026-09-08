@@ -76,13 +76,6 @@ export interface SFTPChmod {
     mode: string
 }
 
-// SFTP 修改所有者请求
-export interface SFTPChown {
-    path: string
-    uid: number
-    gid: number
-}
-
 // SFTP 写入文件请求
 export interface SFTPWrite {
     path: string

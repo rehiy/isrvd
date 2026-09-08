@@ -21,5 +21,4 @@ export function usePortal(): PortalStore {
     return usePortalStore()
 }
 
-export type { PortalStore as Portal }
 export type { ConfirmOptions }

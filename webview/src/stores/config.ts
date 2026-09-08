@@ -226,5 +226,3 @@ export const useConfigStore = defineStore('config', () => {
         reset,
     }
 })
-
-export type ConfigStore = ReturnType<typeof useConfigStore>
