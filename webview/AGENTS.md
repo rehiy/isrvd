@@ -18,6 +18,7 @@
 - `main.ts` 中创建 `createPinia()`，再初始化 `portal = usePortal()` 并注入路由守卫
 - `portal` 聚合 `auth`、`system`、`ui`、`filer` 等子 store；组件内统一 `portal = usePortal()`
 - 权限：`permissionsLoaded`（布尔）、`permissions`（`string[]`，格式为 `"METHOD /api/path"`），通过 `portal.hasPerm(moduleOrRoute)` 检查；支持模块名（如 `docker`）和精确路由（如 `GET /api/docker/containers`）
+- 页面级草稿 store（如 `stores/config.ts`）不进 `portal`，由 `stores/index.ts` 直接导出 `useConfigStore()`：嵌套路由下由父布局统一 `load`/`save`，子页面仅绑定草稿，保存只提交当前分组涉及的分区；登出时由 `portal.clearAuth()` 调用其 `reset()`
 
 ### 1.3 API 服务层
 
@@ -60,9 +61,11 @@
 
 - 列表/详情页最外层统一使用 `.page`，页面内部独立内容块才使用 `.card`
 - 标题栏统一使用 `.page-toolbar` 类（定义于 `light_components.css`），固定在全局 header 下方；容器不写 `flex/justify-between`
-- 内嵌面板使用 `.page-toolbar-static` 取消吸顶；配置页右侧目录使用 `.config-section-nav`，仅在桌面且视口高度 ≥ 960px 时启用 `sticky`，矮窗口下保持普通文档流
+- 内嵌面板使用 `.page-toolbar-static` 取消吸顶
+- 分组式页面（如系统配置）：分组切换入口统一放侧边栏折叠子菜单，页面内不重复提供目录/标签导航，内容区全宽展示
 - 必须提供桌面 `hidden md:flex` 与移动布局；移动端可用 `flex md:hidden`，也可用 `block md:hidden` 外层 + 内部 `flex items-center justify-between`
 - 详情页右侧仅保留刷新等功能按钮，**不添加返回按钮**
+- 嵌套路由页面（如 `/system/config/*`）：父布局负责 `.page`、`.page-toolbar`、权限/加载/失败态与保存动作，子页面只输出 `max-w-3xl` 表单片段，不得重复编写 `.page`/`.page-toolbar`；子页文件名与分组 id 一致
 
 **toolbar 图标与标题（强制）**：
 

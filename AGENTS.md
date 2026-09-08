@@ -194,7 +194,8 @@ docs/
 
 ### 配置结构体与 Provider
 
-- 顶层 `Config`（`config/types.go`）当前包含 `Schema`、`Server`、`Password`、`Passkey`、`OIDC`、`THA`、`Copilot`、`Apisix`、`Caddy`、`Docker`、`Monitor`、`Marketplace`、`Links`、`Members`
+- 顶层 `Config`（`config/types.go`）当前包含 `Schema`、`Server`、`Password`、`Passkey`、`OIDC`、`THA`、`Copilot`、`Notify`、`Apisix`、`Caddy`、`Docker`、`Monitor`、`Marketplace`、`Links`、`Members`
+- `PUT /api/system/config` 支持按分区提交：`AllConfig` 中为 nil 的分区跳过更新，密钥类字段为空表示保留原值
 - `Server` 必须作为 `config.Server` 结构体统一访问，禁止重新展开为 `config.Debug`、`config.ListenAddr` 等包级散变量
 - 镜像仓库 `DockerRegistry`（含 `Name`、`URL`、`Username`、`Password`、`Description`）
 - 顶层配置分区使用指针并带 YAML 标签；配置持久化以 YAML 结构为准，API 脱敏由 `internal/service/system.ConfigAll` 的深拷贝负责
@@ -229,7 +230,7 @@ docs/
 - Caddy：`/caddy/servers`、`/caddy/routes`、`/caddy/certs`、`/caddy/global`、`/caddy/basic-auth`、`/caddy/raw`
 - Docker：`/docker/containers`、`/docker/images`、`/docker/networks`、`/docker/volumes`、`/docker/registries` 及对应详情页
 - Swarm：`/swarm/nodes`、`/swarm/services`、`/swarm/tasks` 及对应详情/日志页
-- 系统模块：`/system/config`、`/system/audit/logs`；用户管理：`/account/members`；账户设置：`/account/password`、`/account/passkeys`、`/account/apikey`
+- 系统模块：`/system/config`（父布局 + 6 个分组子路由 `/system/config/{service,auth,ai,gateway,notify,extensions}`，默认跳转 `service`；侧边栏「系统配置」为折叠子菜单，项名与顺序来自 `webview/src/stores/config.ts` 的 `configGroups`，该常量同时定义分组与后端配置分区的映射）、`/system/audit/logs`；用户管理：`/account/members`；账户设置：`/account/password`、`/account/passkeys`、`/account/apikey`
 - 计划任务：`/cron/jobs`；Compose：`/compose/marketplace`、`/compose/deploy`
 - 折叠子菜单展开状态跟随当前路由（`@Watch` immediate）
 - 侧边栏宽度 `w-16`（折叠）→ `w-64`（展开）
