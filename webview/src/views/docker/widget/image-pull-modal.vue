@@ -107,7 +107,7 @@ export default toNative(ImagePullModal)
 
 <template>
   <BaseModal ref="modalRef" v-model="isOpen" title="拉取镜像" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
-    <form class="max-w-3xl space-y-4" @submit.prevent="handleConfirm">
+    <form class="space-y-4" @submit.prevent="handleConfirm">
       <section>
         <div class="space-y-3">
           <div>

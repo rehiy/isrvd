@@ -105,7 +105,7 @@ export default toNative(PluginConfigEditModal)
 
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? '编辑插件配置' : '新建插件配置'" :loading="modalLoading" confirm-class="btn-rose" @confirm="handleConfirm">
-    <div class="max-w-3xl space-y-4 p-1">
+    <div class="space-y-4 p-1">
       <div v-if="isEditMode">
         <label class="form-label">配置 ID</label>
         <input v-model="formData.id" type="text" class="input" disabled />

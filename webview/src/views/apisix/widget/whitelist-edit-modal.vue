@@ -156,7 +156,7 @@ export default toNative(WhitelistEditModal)
 
 <template>
   <BaseModal v-model="isOpen" :title="modalTitle" :loading="modalLoading" confirm-class="btn-amber" @confirm="handleConfirm">
-    <div class="max-w-3xl space-y-4 p-1">
+    <div class="space-y-4 p-1">
       <div v-if="isEdit">
         <label class="form-label">路由</label>
         <div class="detail-value text-sm text-slate-700">

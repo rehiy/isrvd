@@ -203,7 +203,7 @@ export default toNative(UpstreamEditModal)
 
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? '编辑上游' : '创建上游'" :loading="modalLoading" confirm-class="btn-emerald" @confirm="handleConfirm">
-    <div class="max-w-3xl space-y-4 p-1">
+    <div class="space-y-4 p-1">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label class="form-label">名称 <span class="text-red-500">*</span></label>

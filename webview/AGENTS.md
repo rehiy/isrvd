@@ -267,7 +267,7 @@
 
 > `space-y-6` 仅用于表单分组（section）间距，**禁止**用于 `card-body` 内容区（详情页等）。
 
-- 页面级表单容器 `max-w-4xl space-y-4`（左对齐限宽，不居中）；弹窗内表单内容保持 `max-w-3xl`，由弹窗自身宽度约束
+- 页面级表单容器 `max-w-4xl space-y-4`（左对齐限宽，不居中）；弹窗内**禁止**重复写 `max-w-*`，宽度由 `BaseModal` 的 `maxWidthClass` 控制（默认 `max-w-3xl`，需要更宽时只改该 prop）
 - 编辑器/双栏内容（如 Compose 部署的 yml + .env）不设限宽，占满 `card-body`
 - label：`block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1`，input 通用 `.input`，help `text-xs text-slate-400 mt-1`
 - 密钥/密码：后端敏感字段 `json:"-"`，前端 `type="password" autocomplete="new-password"`，留空保存=不修改，placeholder："留空保持不变"

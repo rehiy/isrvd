@@ -98,7 +98,7 @@ export default toNative(ConsumerEditModal)
 
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? '编辑消费者' : '新建消费者'" :loading="modalLoading" confirm-class="btn-violet" @confirm="handleConfirm">
-    <div class="max-w-3xl space-y-4 p-1">
+    <div class="space-y-4 p-1">
       <div class="space-y-3">
         <div>
           <label class="form-label">名称 <span class="text-red-500">*</span></label>

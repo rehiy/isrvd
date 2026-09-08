@@ -298,7 +298,7 @@ export default toNative(Whitelist)
   <WhitelistEditModal ref="editModalRef" @success="loadWhitelist" />
 
   <BaseModal v-model="addUser.open" title="新建授权用户" :loading="addUser.loading" confirm-class="btn-amber" @confirm="handleAddUser">
-    <div class="max-w-3xl space-y-4 p-1">
+    <div class="space-y-4 p-1">
       <div v-if="addUser.route">
         <label class="form-label">路由</label>
         <div class="detail-value text-sm text-slate-700">

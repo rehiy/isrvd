@@ -146,7 +146,7 @@ export default toNative(ServerEditModal)
 
 <template>
   <BaseModal v-model="isOpen" :title="isEditMode ? '编辑服务' : '新建服务'" :loading="loading" confirm-class="btn-rose" @confirm="handleConfirm">
-    <div class="max-w-3xl space-y-4">
+    <div class="space-y-4">
       <div>
         <label class="form-label">服务名称 <span class="text-red-500">*</span></label>
         <input v-model="formData.name" class="input font-mono" :disabled="isEditMode" placeholder="例如 srv0" />

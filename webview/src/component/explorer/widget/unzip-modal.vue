@@ -58,7 +58,7 @@ export default toNative(UnzipModal)
         </p>
         <p class="text-sm text-slate-500">目标目录留空时，文件将解压到当前目录</p>
       </div>
-      <form class="max-w-3xl space-y-4" @submit.prevent="handleConfirm">
+      <form class="space-y-4" @submit.prevent="handleConfirm">
         <div>
           <label for="fmUnzipTarget" class="form-label">目标目录</label>
           <div class="relative">
