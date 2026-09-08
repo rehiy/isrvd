@@ -88,6 +88,7 @@ docs/
     ├── copilot.md
     ├── overview.md
     ├── compose.md
+    ├── local.md
     ├── shell.md
     └── ...
 ```
@@ -106,6 +107,8 @@ docs/
 | `internal/server/ctrl_webssh.go` | `docs/references/ssh/` 下对应文件 |
 | `internal/server/ctrl_copilot.go` | `docs/references/copilot.md` |
 | `internal/server/ctrl_overview.go` | `docs/references/overview.md` |
+| `internal/server/ctrl_local.go` | `docs/references/local.md` |
+| `internal/server/ctrl_shell.go` | `docs/references/shell.md` |
 | `pkgs/*/`（数据结构变更） | 对应 docs 文件中的字段表 |
 | 新增路由/模块 | `docs/SKILL.md` 索引表 + 决策树 |
 | API 调用脚本变更 | `docs/scripts/api.sh`、`api.js`、`api.py` 中受影响的实现 |
@@ -224,7 +227,7 @@ docs/
 
 ## 7) 路由与导航
 
-- `/overview` 概览；本机能力为 `/local/monitor`、`/local/explorer`、`/local/shell`
+- `/overview` 概览；本机能力为 `/local/monitor`、`/local/explorer`、`/local/process`、`/local/shell`
 - SSH：`/ssh/hosts`、`/ssh/credentials`、`/ssh/host/:id`
 - APISIX：`/apisix/routes`、`/apisix/upstreams`、`/apisix/plugin-configs`、`/apisix/ssls`、`/apisix/consumers`、`/apisix/whitelist`
 - Caddy：`/caddy/servers`、`/caddy/routes`、`/caddy/certs`、`/caddy/global`、`/caddy/basic-auth`、`/caddy/raw`

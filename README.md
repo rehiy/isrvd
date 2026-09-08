@@ -11,6 +11,7 @@
 | 系统概览 | CPU、内存、磁盘、网络、Go 运行时与 GPU 监控，支持历史数据采集、服务可用性探测和在线升级 |
 | 文件管理 | 浏览、上传、下载、编辑、创建/删除目录、重命名、权限修改、压缩/解压 |
 | Web 终端 | 基于 xterm.js 的 Shell 终端，支持容器终端接入 |
+| 本机进程 | 查看主机进程列表（CPU、内存、命令行），终止指定进程（仅创始人，强制审计） |
 | SSH 远程管理 | 管理主机与可复用凭据，支持密码/私钥认证、浏览器终端和 SFTP 文件管理 |
 | AI 助手 | 内置 Copilot，基于 CopilotKit + AG-UI 协议，通过内置 OpenAPI 目录调用后端接口，支持页面上下文、工具卡片与写操作审批，兼容 OpenAI API 的 LLM 接入 |
 | 计划任务 | 定时任务调度，支持 Shell/BAT/PowerShell/可执行文件，以及 Docker 临时容器或已有容器执行模式 |
@@ -320,6 +321,8 @@ git diff --check
 | `filer` | `POST /api/filer/zip` | 文件管理（压缩） |
 | `filer` | `POST /api/filer/unzip` | 文件管理（解压） |
 | `shell` | `GET /api/shell` | Web 终端 |
+| `local` | `GET /api/local/processes` | 本机进程（列出进程） |
+| `local` | `POST /api/local/process/:pid/kill` | 本机进程（终止进程，仅创始人，强制审计） |
 | `ssh` | `GET /api/ssh/hosts` | SSH 远程管理（列出主机） |
 | `ssh` | `GET /api/ssh/credentials` | SSH 远程管理（列出凭据） |
 | `ssh` | `POST /api/ssh/host` | SSH 远程管理（添加主机） |

@@ -26,7 +26,7 @@
 
 ### 1.4 类型定义与命名（强制）
 
-`service/types/` 按域拆分（`docker`、`swarm`、`apisix`、`caddy`、`compose`、`cron`、`system`、`account`、`overview`、`filer`、`ssh`），`service/types.ts` 统一 `export *` 导出
+`service/types/` 按域拆分（`docker`、`swarm`、`apisix`、`caddy`、`compose`、`cron`、`system`、`account`、`overview`、`filer`、`ssh`、`local`），`service/types.ts` 统一 `export *` 导出
 
 | 场景 | 命名 | 示例 |
 | --- | --- | --- |
@@ -53,7 +53,7 @@
 | 状态切换 | `domainResourceStatus/StatusPatch(id, status)` | `apisixRouteStatus(id, 0)`、`cronJobStatusPatch(id, enabled)` |
 | 统计/日志 | `domainResourceStats/Logs(id)` | `dockerContainerStats(id)`、`cronJobLogs(id)` |
 
-- **域名前缀**：`docker`、`swarm`、`apisix`、`caddy`、`account`、`system`、`filer`、`compose`、`cron`
+- **域名前缀**：`docker`、`swarm`、`apisix`、`caddy`、`account`、`system`、`filer`、`compose`、`cron`、`local`
 - **资源名**：单数形式
 - **分组注释**：`// ==================== XXXX 相关 ====================`
 
@@ -62,10 +62,10 @@
 - 列表/详情页最外层统一使用 `.page`，页面内部独立内容块才使用 `.card`
 - 标题栏统一使用 `.page-toolbar` 类（定义于 `light_components.css`），固定在全局 header 下方；容器不写 `flex/justify-between`
 - 内嵌面板使用 `.page-toolbar-static` 取消吸顶
-- 分组式页面（如系统配置）：分组切换入口统一放侧边栏折叠子菜单，页面内不重复提供目录/标签导航，内容区全宽展示
+- 分组式页面（如系统配置）：分组切换入口统一放侧边栏折叠子菜单，页面内不重复提供目录/标签导航；内容区不再分栏，表单按页面级限宽展示
 - 必须提供桌面 `hidden md:flex` 与移动布局；移动端可用 `flex md:hidden`，也可用 `block md:hidden` 外层 + 内部 `flex items-center justify-between`
 - 详情页右侧仅保留刷新等功能按钮，**不添加返回按钮**
-- 嵌套路由页面（如 `/system/config/*`）：父布局负责 `.page`、`.page-toolbar`、权限/加载/失败态与保存动作，子页面只输出 `max-w-3xl` 表单片段，不得重复编写 `.page`/`.page-toolbar`；子页文件名与分组 id 一致
+- 嵌套路由页面（如 `/system/config/*`）：父布局负责 `.page`、`.page-toolbar`、权限/加载/失败态与保存动作，子页面只输出 `max-w-4xl` 表单片段，不得重复编写 `.page`/`.page-toolbar`；子页文件名与分组 id 一致
 
 **toolbar 图标与标题（强制）**：
 
@@ -267,7 +267,8 @@
 
 > `space-y-6` 仅用于表单分组（section）间距，**禁止**用于 `card-body` 内容区（详情页等）。
 
-- 表单容器 `max-w-3xl space-y-4`
+- 页面级表单容器 `max-w-4xl space-y-4`（左对齐限宽，不居中）；弹窗内表单内容保持 `max-w-3xl`，由弹窗自身宽度约束
+- 编辑器/双栏内容（如 Compose 部署的 yml + .env）不设限宽，占满 `card-body`
 - label：`block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1`，input 通用 `.input`，help `text-xs text-slate-400 mt-1`
 - 密钥/密码：后端敏感字段 `json:"-"`，前端 `type="password" autocomplete="new-password"`，留空保存=不修改，placeholder："留空保持不变"
 

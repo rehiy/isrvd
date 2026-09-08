@@ -82,6 +82,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 | 系统 | [references/system/filer.md](references/system/filer.md) | 文件管理、上传下载、压缩解压 |
 | 系统 | [references/system/cron.md](references/system/cron.md) | 计划任务 |
 | 系统 | [references/system/ssh.md](references/system/ssh.md) | SSH 主机/凭据管理、SFTP、SSH 终端 |
+| 本机进程 | [references/local.md](references/local.md) | 进程列表、终止进程 |
 | 终端 | [references/shell.md](references/shell.md) | Web Shell（本地终端） |
 | Copilot | [references/copilot.md](references/copilot.md) | 接口目录与 AG-UI 对话 |
 
@@ -122,14 +123,16 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 │   ├── 系统状态          → references/overview.md
 │   ├── 监控历史数据      → references/overview.md (since=3600|21600|43200|86400)
 │   ├── 日志             → references/docker/containers.md 或 references/swarm/services.md
-│   └── 文件管理         → references/system/filer.md
+│   ├── 文件管理         → references/system/filer.md
+│   └── 主机进程         → references/local.md
 │
 ├── 删除/清理
 │   ├── 容器/镜像/网络/卷 → references/docker/ 下对应文件（action=remove）
 │   ├── Swarm 服务        → references/swarm/services.md（action=remove）
 │   ├── 路由/消费者       → references/apisix/routes.md 或 references/apisix/consumers.md
 │   ├── Caddy 路由        → references/caddy/routes.md (DELETE /caddy/route/:index)
-│   └── Caddy 服务        → references/caddy/servers.md (DELETE /caddy/server/:name)
+│   ├── Caddy 服务        → references/caddy/servers.md (DELETE /caddy/server/:name)
+│   └── 终止进程          → references/local.md (POST /local/process/:pid/kill，仅创始人)
 │
 └── 管理
     ├── 镜像仓库         → references/docker/registries.md
