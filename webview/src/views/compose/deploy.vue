@@ -218,7 +218,7 @@ export default toNative(ComposeDeploy)
       </div>
 
       <!-- 表单 -->
-      <div class="card-body mx-auto w-full max-w-[1600px] space-y-4">
+      <div class="card-body space-y-4">
         <!-- 部署目标 -->
         <div class="tab-group inline-flex">
           <button type="button" :class="['tab-btn', target === 'docker' ? 'tab-btn-active text-amber-600' : 'tab-btn-inactive']" @click="selectTarget('docker')">
