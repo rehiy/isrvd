@@ -278,7 +278,7 @@ const routes: RouteRecordRaw[] = [
         path: 'service',
         name: 'config-service',
         component: () => import('@/views/system/config/service.vue'),
-        meta: { title: '服务', group: 'service' }
+        meta: { title: '基础服务', group: 'service' }
       },
       {
         path: 'auth',

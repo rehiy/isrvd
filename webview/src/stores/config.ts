@@ -39,7 +39,7 @@ export interface ConfigGroupMeta {
 
 /** 配置分组导航定义：顺序即展示顺序 */
 export const configGroups: ConfigGroupMeta[] = [
-    { id: 'service', label: '服务', description: '端口、目录、上传、跨域与 JWT', icon: 'fa-server', sections: ['server'] },
+    { id: 'service', label: '基础服务', description: '端口、目录、上传、跨域与 JWT', icon: 'fa-server', sections: ['server'] },
     { id: 'auth', label: '登录认证', description: '密码、Passkey、OIDC 与代理 Header 登录', icon: 'fa-shield-halved', sections: ['password', 'passkey', 'oidc', 'tha'] },
     { id: 'ai', label: 'AI 助手', description: 'LLM 代理与模型改写', icon: 'fa-robot', sections: ['copilot'] },
     { id: 'gateway', label: '网关容器', description: 'APISIX、Caddy 与 Docker 连接参数', icon: 'fa-route', sections: ['apisix', 'caddy', 'docker'] },
