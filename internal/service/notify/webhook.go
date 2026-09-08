@@ -113,12 +113,7 @@ func newWebhookClient() *http.Client {
 	}
 }
 
-// ValidateWebhookURL 校验 Webhook 的静态地址约束；连接时还会重新校验 DNS 解析出的实际地址。
-func ValidateWebhookURL(rawURL string) error {
-	_, err := validateWebhookURL(rawURL)
-	return err
-}
-
+// validateWebhookURL 校验静态地址约束；连接时还会重新校验 DNS 解析出的实际地址。
 func validateWebhookURL(rawURL string) (*url.URL, error) {
 	target, err := url.Parse(strings.TrimSpace(rawURL))
 	if err != nil {
