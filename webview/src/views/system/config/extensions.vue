@@ -22,7 +22,7 @@ export default toNative(ConfigExtensions)
 </script>
 
 <template>
-  <div class="max-w-3xl space-y-6">
+  <div class="max-w-4xl space-y-6">
     <!-- 监控采集 -->
     <section class="space-y-4">
       <div class="flex items-center gap-2">

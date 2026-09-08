@@ -12,7 +12,7 @@ export default toNative(ConfigAI)
 </script>
 
 <template>
-  <section class="max-w-3xl space-y-4">
+  <section class="max-w-4xl space-y-4">
     <div class="flex items-center gap-2">
       <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-robot"></i></span>
       <div>

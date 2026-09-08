@@ -179,7 +179,7 @@ export default toNative(AccountPassword)
 
     <div class="card-body space-y-4">
       <!-- 修改密码 -->
-      <section class="max-w-3xl space-y-4">
+      <section class="max-w-4xl space-y-4">
         <div>
           <label class="form-label">原密码</label>
           <input v-model="passwordForm.oldPassword" type="password" class="input" placeholder="请输入原密码" autocomplete="current-password" />
@@ -196,7 +196,7 @@ export default toNative(AccountPassword)
       </section>
 
       <!-- 二次验证 -->
-      <section v-if="canViewTOTP" class="max-w-3xl space-y-4 border-t border-slate-200 pt-4">
+      <section v-if="canViewTOTP" class="max-w-4xl space-y-4 border-t border-slate-200 pt-4">
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-2">
             <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-shield-halved"></i></span>
