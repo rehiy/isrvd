@@ -11,7 +11,10 @@ import { usePortalStore } from './portal'
 import type { PortalStore } from './portal'
 import type { ConfirmOptions } from './ui'
 
+export { useConfigStore, configGroups } from './config'
 export { useCopilotStore } from './copilot'
+
+export type { ConfigGroup, ConfigGroupMeta, ConfigSection } from './config'
 
 // 包装 usePortal，提供明确的类型注解
 export function usePortal(): PortalStore {

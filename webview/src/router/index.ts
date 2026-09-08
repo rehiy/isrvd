@@ -271,8 +271,46 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/system/config',
-    name: 'system-config',
-    component: () => import('@/views/system/config.vue')
+    component: () => import('@/views/system/config.vue'),
+    redirect: '/system/config/service',
+    children: [
+      {
+        path: 'service',
+        name: 'config-service',
+        component: () => import('@/views/system/config/service.vue'),
+        meta: { title: '服务', group: 'service' }
+      },
+      {
+        path: 'auth',
+        name: 'config-auth',
+        component: () => import('@/views/system/config/auth.vue'),
+        meta: { title: '登录认证', group: 'auth' }
+      },
+      {
+        path: 'ai',
+        name: 'config-ai',
+        component: () => import('@/views/system/config/ai.vue'),
+        meta: { title: 'AI 助手', group: 'ai' }
+      },
+      {
+        path: 'gateway',
+        name: 'config-gateway',
+        component: () => import('@/views/system/config/gateway.vue'),
+        meta: { title: '网关容器', group: 'gateway' }
+      },
+      {
+        path: 'notify',
+        name: 'config-notify',
+        component: () => import('@/views/system/config/notify.vue'),
+        meta: { title: '告警通知', group: 'notify' }
+      },
+      {
+        path: 'extensions',
+        name: 'config-extensions',
+        component: () => import('@/views/system/config/extensions.vue'),
+        meta: { title: '系统扩展', group: 'extensions' }
+      }
+    ]
   },
   {
     path: '/system/audit/logs',

@@ -1,7 +1,8 @@
 <script lang="ts">
 import { Component, Prop, Vue, Watch, toNative } from 'vue-facing-decorator'
 
-import { usePortal } from '@/stores'
+import { configGroups, useConfigStore, usePortal } from '@/stores'
+import type { ConfigGroup, ConfigGroupMeta } from '@/stores'
 
 @Component({
     expose: ['toggleMobileSidebar', 'closeMobileSidebar', 'openMobileSidebar'],
@@ -9,7 +10,10 @@ import { usePortal } from '@/stores'
 })
 class NavigationBar extends Vue {
     portal = usePortal()
+    configStore = useConfigStore()
     @Prop({ type: Boolean, default: false }) readonly collapsed!: boolean
+
+    configGroups = configGroups
 
     // ─── 数据属性 ───
     mobileSidebarVisible = false
@@ -19,6 +23,7 @@ class NavigationBar extends Vue {
     dockerExpanded = false
     swarmExpanded = false
     sshExpanded = false
+    configExpanded = false
 
     // ─── 计算属性 ───
     get isLocalActive() {
@@ -43,6 +48,10 @@ class NavigationBar extends Vue {
 
     get isSshActive() {
         return this.isActive('/ssh/')
+    }
+
+    get isConfigActive() {
+        return this.isActive('/system/config')
     }
 
     // Compose 部署菜单可见性
@@ -90,6 +99,13 @@ class NavigationBar extends Vue {
     onSshActiveChange(isActive: boolean) {
         if (isActive && !this.collapsed) {
             this.sshExpanded = true
+        }
+    }
+
+    @Watch('isConfigActive', { immediate: true })
+    onConfigActiveChange(isActive: boolean) {
+        if (isActive && !this.collapsed) {
+            this.configExpanded = true
         }
     }
 
@@ -150,6 +166,36 @@ class NavigationBar extends Vue {
         } else {
             this.sshExpanded = !this.sshExpanded
         }
+    }
+
+    toggleConfig() {
+        if (this.collapsed) {
+            this.$emit('update:collapsed', false)
+            this.configExpanded = true
+        } else {
+            this.configExpanded = !this.configExpanded
+        }
+    }
+
+    /** 切换配置分组：当前分组有未保存改动时先确认，避免静默丢失 */
+    goConfigGroup(item: ConfigGroupMeta) {
+        const current = (this.$route.meta.group as ConfigGroup | undefined) || ''
+        const target = `/system/config/${item.id}`
+        if (current && current !== item.id && this.configStore.isDirty(current)) {
+            this.portal.showConfirm({
+                title: '离开当前分组',
+                message: '当前分组有未保存的修改，离开后将丢失。确定继续吗？',
+                icon: 'fa-triangle-exclamation',
+                iconColor: 'amber',
+                confirmText: '放弃修改',
+                danger: true,
+                onConfirm: () => {
+                    this.$router.push(target)
+                },
+            })
+            return
+        }
+        this.$router.push(target)
     }
 
     toggleMobileSidebar() {
@@ -526,11 +572,33 @@ export default toNative(NavigationBar)
         <span v-if="!collapsed">用户管理</span>
       </router-link>
 
-      <!-- 系统配置 -->
-      <router-link v-if="portal.hasPerm('PUT /api/system/config')" to="/system/config" class="nav-link" active-class="nav-link-active" :title="collapsed ? '系统配置' : ''">
-        <i class="fas fa-gear"></i>
-        <span v-if="!collapsed">系统配置</span>
-      </router-link>
+      <!-- 系统配置折叠子菜单 -->
+      <div v-if="portal.hasPerm('PUT /api/system/config')">
+        <!-- 折叠状态只显示图标，点击展开侧边栏 -->
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isConfigActive }" title="系统配置" @click.stop="toggleConfig">
+          <i class="fas fa-gear"></i>
+        </button>
+        <template v-else>
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isConfigActive }" @click.stop="toggleConfig">
+            <i class="fas fa-gear"></i>
+            <span>系统配置</span>
+            <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': configExpanded }"></i>
+          </button>
+          <div v-show="configExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
+            <router-link
+              v-for="item in configGroups"
+              :key="item.id"
+              :to="`/system/config/${item.id}`"
+              class="nav-link"
+              :class="{ 'nav-link-active': isActive(`/system/config/${item.id}`) }"
+              @click.prevent="goConfigGroup(item)"
+            >
+              <i class="fas" :class="item.icon"></i>
+              <span>{{ item.label }}</span>
+            </router-link>
+          </div>
+        </template>
+      </div>
     </nav>
 
     <!-- 底部工具条：GitHub 链接 + API 文档 + 折叠按钮 -->

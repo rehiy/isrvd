@@ -6,6 +6,7 @@ import type { BootstrapData } from '@/service/types'
 import { initTheme } from '@/helper/theme'
 
 import { useAuthStore } from './auth'
+import { useConfigStore } from './config'
 import { useSystemStore } from './system'
 import { useUIStore } from './ui'
 
@@ -82,6 +83,13 @@ export const usePortalStore = defineStore('portal', () => {
         }
     }
 
+    // ─── 登出：清理认证并重置页面级配置草稿（避免残留未提交的密钥）───
+
+    function clearAuth() {
+        authStore.clearAuth()
+        useConfigStore().reset()
+    }
+
     // ─── 权限检查（组合 auth 和 system）───
 
     function hasPerm(module: string): boolean {
@@ -125,7 +133,7 @@ export const usePortalStore = defineStore('portal', () => {
         passwordMinLength: authRefs.passwordMinLength,
         // Auth Store 方法
         setAuth: authStore.setAuth,
-        clearAuth: authStore.clearAuth,
+        clearAuth,
         isAuthenticated: authStore.isAuthenticated,
 
         // System Store 状态（响应式）
