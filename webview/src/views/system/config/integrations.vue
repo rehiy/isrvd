@@ -26,7 +26,6 @@ export default toNative(ConfigIntegrations)
     <!-- AI 助手 -->
     <section class="space-y-4">
       <div class="config-section-heading">
-        <span class="config-section-icon"><i class="fas fa-robot"></i></span>
         <div>
           <h2 class="config-section-title">AI 助手</h2>
           <p class="config-section-description">LLM 代理与模型改写</p>
@@ -52,7 +51,6 @@ export default toNative(ConfigIntegrations)
     <!-- 应用市场 -->
     <section class="space-y-4">
       <div class="config-section-heading">
-        <span class="config-section-icon"><i class="fas fa-store"></i></span>
         <div>
           <h2 class="config-section-title">应用市场</h2>
           <p class="config-section-description">市场 iframe 站点地址</p>
@@ -68,7 +66,6 @@ export default toNative(ConfigIntegrations)
     <!-- 导航链接 -->
     <section class="space-y-4">
       <div class="config-section-heading">
-        <span class="config-section-icon"><i class="fas fa-link"></i></span>
         <div>
           <h2 class="config-section-title">导航链接</h2>
           <p class="config-section-description">顶部工具栏外部链接</p>
@@ -79,7 +76,7 @@ export default toNative(ConfigIntegrations)
         <div v-for="(link, index) in config.draft.links" :key="index" class="panel-frame">
           <div class="card-body space-y-4">
             <div class="flex items-center justify-between">
-              <span class="config-section-title">链接 {{ index + 1 }}</span>
+              <span class="text-sm font-semibold text-slate-700">链接 {{ index + 1 }}</span>
               <button type="button" class="btn-icon btn-icon-red" title="删除链接" @click="removeLink(index)">
                 <i class="fas fa-trash-can text-xs"></i>
               </button>

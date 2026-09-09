@@ -16,13 +16,11 @@ export default toNative(ConfigService)
 <template>
   <section class="max-w-4xl space-y-4">
     <div class="config-section-heading">
-      <span class="config-section-icon"><i class="fas fa-server"></i></span>
       <div>
         <h2 class="config-section-title">基础服务</h2>
         <p class="config-section-description">端口、目录、上传、跨域与 JWT</p>
       </div>
     </div>
-
     <div>
       <label class="form-label">监听地址</label>
       <input v-model="config.draft.server.listenAddr" type="text" placeholder="请输入监听地址" class="input" />

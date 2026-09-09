@@ -18,7 +18,6 @@ export default toNative(ConfigAuth)
     <!-- 密码登录 -->
     <section class="space-y-4">
       <div class="config-section-heading">
-        <span class="config-section-icon"><i class="fas fa-key"></i></span>
         <div>
           <h2 class="config-section-title">密码登录</h2>
           <p class="config-section-description">密码登录开关</p>
@@ -35,7 +34,6 @@ export default toNative(ConfigAuth)
     <!-- Passkey -->
     <section class="space-y-4">
       <div class="config-section-heading">
-        <span class="config-section-icon"><i class="fas fa-fingerprint"></i></span>
         <div>
           <h2 class="config-section-title">Passkey</h2>
           <p class="config-section-description">WebAuthn/FIDO2 登录</p>
@@ -67,7 +65,6 @@ export default toNative(ConfigAuth)
     <!-- OIDC -->
     <section class="space-y-4">
       <div class="config-section-heading">
-        <span class="config-section-icon"><i class="fas fa-circle-nodes"></i></span>
         <div>
           <h2 class="config-section-title">OIDC</h2>
           <p class="config-section-description">单点登录 Provider 参数</p>
@@ -114,7 +111,6 @@ export default toNative(ConfigAuth)
     <!-- 代理 Header 登录 -->
     <section class="space-y-4">
       <div class="config-section-heading">
-        <span class="config-section-icon"><i class="fas fa-user-shield"></i></span>
         <div>
           <h2 class="config-section-title">代理 Header 登录</h2>
           <p class="config-section-description">从上游代理 Header 读取用户名</p>

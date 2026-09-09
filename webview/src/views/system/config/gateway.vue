@@ -16,7 +16,6 @@ export default toNative(ConfigGateway)
     <!-- APISIX -->
     <section class="space-y-4">
       <div class="config-section-heading">
-        <span class="config-section-icon"><i class="fas fa-route"></i></span>
         <div>
           <h2 class="config-section-title">APISIX</h2>
           <p class="config-section-description">Admin API 连接参数</p>
@@ -37,7 +36,6 @@ export default toNative(ConfigGateway)
     <!-- Caddy -->
     <section class="space-y-4">
       <div class="config-section-heading">
-        <span class="config-section-icon"><i class="fas fa-globe"></i></span>
         <div>
           <h2 class="config-section-title">Caddy</h2>
           <p class="config-section-description">Admin API 连接参数</p>
@@ -53,7 +51,6 @@ export default toNative(ConfigGateway)
     <!-- Docker -->
     <section class="space-y-4">
       <div class="config-section-heading">
-        <span class="config-section-icon"><i class="fas fa-boxes-stacked"></i></span>
         <div>
           <h2 class="config-section-title">Docker</h2>
           <p class="config-section-description">引擎连接与容器根目录</p>

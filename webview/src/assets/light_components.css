@@ -140,14 +140,11 @@
     @apply w-6 h-6 rounded-md flex items-center justify-center;
   }
 
-  /* 配置页小节标题：介于页面 toolbar 和卡片标题之间 */
+  /* 配置页子分组标题：紧凑色带区分分组，避免与页面 toolbar 争夺层级 */
   .config-section-heading {
-    @apply flex items-center gap-3 border-b border-slate-200 pb-3;
+    @apply border-l-2 border-indigo-500 rounded-r-lg bg-indigo-50/70 px-3 py-2.5;
   }
-  .config-section-icon {
-    @apply w-8 h-8 rounded-lg bg-indigo-500 text-white flex items-center justify-center flex-shrink-0;
-  }
-  .config-section-title { @apply text-base font-semibold text-slate-800; }
+  .config-section-title { @apply text-sm font-semibold text-slate-700; }
   .config-section-description { @apply mt-0.5 text-xs text-slate-500; }
 
   /* 空状态图标容器 64×64 */
