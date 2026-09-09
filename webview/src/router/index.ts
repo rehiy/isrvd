@@ -287,28 +287,22 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '登录认证', group: 'auth' }
       },
       {
-        path: 'ai',
-        name: 'config-ai',
-        component: () => import('@/views/system/config/ai.vue'),
-        meta: { title: 'AI 助手', group: 'ai' }
-      },
-      {
         path: 'gateway',
         name: 'config-gateway',
         component: () => import('@/views/system/config/gateway.vue'),
         meta: { title: '网关容器', group: 'gateway' }
       },
       {
-        path: 'notify',
-        name: 'config-notify',
-        component: () => import('@/views/system/config/notify.vue'),
-        meta: { title: '告警通知', group: 'notify' }
+        path: 'alert',
+        name: 'config-alert',
+        component: () => import('@/views/system/config/alert.vue'),
+        meta: { title: '监控告警', group: 'alert' }
       },
       {
-        path: 'extensions',
-        name: 'config-extensions',
-        component: () => import('@/views/system/config/extensions.vue'),
-        meta: { title: '系统扩展', group: 'extensions' }
+        path: 'integrations',
+        name: 'config-integrations',
+        component: () => import('@/views/system/config/integrations.vue'),
+        meta: { title: '扩展集成', group: 'integrations' }
       }
     ]
   },

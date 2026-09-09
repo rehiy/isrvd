@@ -6,7 +6,7 @@ import { useConfigStore } from '@/stores'
 import type { WebhookConfig } from '@/service/types'
 
 @Component
-class ConfigNotify extends Vue {
+class ConfigAlert extends Vue {
     config = useConfigStore()
 
     // Go text/template 变量说明；定义为变量后插值输出，避免与 Vue 的 {{ }} 语法冲突
@@ -43,20 +43,35 @@ class ConfigNotify extends Vue {
     }
 }
 
-export default toNative(ConfigNotify)
+export default toNative(ConfigAlert)
 </script>
 
 <template>
-  <section class="max-w-4xl space-y-6">
-    <div class="flex items-center gap-2">
-      <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-bell"></i></span>
-      <div>
-        <h2 class="text-sm font-semibold text-slate-700">告警通知</h2>
-        <p class="text-xs text-slate-400 mt-0.5">规则触发和恢复时推送到全部已配置通道</p>
+  <div class="max-w-4xl space-y-6">
+    <!-- 监控采集 -->
+    <section class="space-y-4">
+      <div class="flex items-center gap-2">
+        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-chart-line"></i></span>
+        <div>
+          <h2 class="text-sm font-semibold text-slate-700">监控日志</h2>
+          <p class="text-xs text-slate-400 mt-0.5">系统与容器监控采集</p>
+        </div>
       </div>
-    </div>
+      <div>
+        <label class="form-label">监控采集间隔</label>
+        <select v-model.number="config.draft.monitor.interval" class="input">
+          <option :value="0">禁用</option>
+          <option :value="5">5 秒</option>
+          <option :value="15">15 秒</option>
+          <option :value="30">30 秒</option>
+          <option :value="60">60 秒</option>
+        </select>
+        <p class="mt-1 text-xs text-slate-400">系统与容器监控数据的采集频率，禁用后不再写入监控文件</p>
+      </div>
+    </section>
 
-    <fieldset class="space-y-4">
+    <!-- Webhook 通道 -->
+    <fieldset class="border-t border-slate-200 pt-6 space-y-4">
       <legend class="section-title w-full">Webhook 通道</legend>
       <div v-if="config.draft.notify.webhooks.length === 0" class="empty-note">暂无通道，点击下方按钮添加</div>
       <div v-else class="space-y-4">
@@ -99,6 +114,7 @@ export default toNative(ConfigNotify)
       </button>
     </fieldset>
 
+    <!-- 资源告警规则 -->
     <fieldset class="border-t border-slate-200 pt-6 space-y-4">
       <legend class="section-title w-full">资源告警规则</legend>
       <div v-if="config.draft.notify.rules.length === 0" class="empty-note">暂无规则，点击下方按钮添加</div>
@@ -137,5 +153,5 @@ export default toNative(ConfigNotify)
       </button>
       <p class="text-xs text-slate-400">持续次数指连续多少个采集周期超阈值才告警，用于抑制瞬时抖动。</p>
     </fieldset>
-  </section>
+  </div>
 </template>

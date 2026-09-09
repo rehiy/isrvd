@@ -127,7 +127,7 @@ class ComposeMarketplace extends Vue {
 
     goConfig() {
         // 应用市场地址位于系统配置的「系统扩展」分组
-        this.$router.push('/system/config/extensions')
+        this.$router.push('/system/config/integrations')
     }
 }
 

@@ -27,7 +27,7 @@ export type ConfigSection =
     | 'links'
 
 /** 配置分组，一个分组包含若干配置分区，对应一个子路由 */
-export type ConfigGroup = 'service' | 'auth' | 'ai' | 'gateway' | 'notify' | 'extensions'
+export type ConfigGroup = 'service' | 'auth' | 'gateway' | 'alert' | 'integrations'
 
 export interface ConfigGroupMeta {
     id: ConfigGroup
@@ -41,10 +41,9 @@ export interface ConfigGroupMeta {
 export const configGroups: ConfigGroupMeta[] = [
     { id: 'service', label: '基础服务', description: '端口、目录、上传、跨域与 JWT', icon: 'fa-server', sections: ['server'] },
     { id: 'auth', label: '登录认证', description: '密码、Passkey、OIDC 与代理 Header 登录', icon: 'fa-shield-halved', sections: ['password', 'passkey', 'oidc', 'tha'] },
-    { id: 'ai', label: 'AI 助手', description: 'LLM 代理与模型改写', icon: 'fa-robot', sections: ['copilot'] },
     { id: 'gateway', label: '网关容器', description: 'APISIX、Caddy 与 Docker 连接参数', icon: 'fa-route', sections: ['apisix', 'caddy', 'docker'] },
-    { id: 'notify', label: '告警通知', description: 'Webhook 通道与资源阈值', icon: 'fa-bell', sections: ['notify'] },
-    { id: 'extensions', label: '系统扩展', description: '监控采集、应用市场与导航链接', icon: 'fa-puzzle-piece', sections: ['monitor', 'marketplace', 'links'] },
+    { id: 'alert', label: '监控告警', description: '采集间隔、Webhook 通道与资源阈值', icon: 'fa-bell', sections: ['monitor', 'notify'] },
+    { id: 'integrations', label: '扩展集成', description: 'AI 助手、应用市场与导航链接', icon: 'fa-puzzle-piece', sections: ['copilot', 'marketplace', 'links'] },
 ]
 
 /** 默认配置，保证各分区字段完整，避免表单绑定出现 undefined */
