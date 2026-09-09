@@ -25,11 +25,11 @@ export default toNative(ConfigIntegrations)
   <div class="max-w-4xl space-y-6">
     <!-- AI 助手 -->
     <section class="space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-robot"></i></span>
+      <div class="config-section-heading">
+        <span class="config-section-icon"><i class="fas fa-robot"></i></span>
         <div>
-          <h2 class="text-sm font-semibold text-slate-700">AI 助手</h2>
-          <p class="text-xs text-slate-400 mt-0.5">LLM 代理与模型改写</p>
+          <h2 class="config-section-title">AI 助手</h2>
+          <p class="config-section-description">LLM 代理与模型改写</p>
         </div>
       </div>
       <div>
@@ -50,12 +50,12 @@ export default toNative(ConfigIntegrations)
     </section>
 
     <!-- 应用市场 -->
-    <section class="border-t border-slate-200 pt-6 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-store"></i></span>
+    <section class="space-y-4">
+      <div class="config-section-heading">
+        <span class="config-section-icon"><i class="fas fa-store"></i></span>
         <div>
-          <h2 class="text-sm font-semibold text-slate-700">应用市场</h2>
-          <p class="text-xs text-slate-400 mt-0.5">市场 iframe 站点地址</p>
+          <h2 class="config-section-title">应用市场</h2>
+          <p class="config-section-description">市场 iframe 站点地址</p>
         </div>
       </div>
       <div>
@@ -66,12 +66,12 @@ export default toNative(ConfigIntegrations)
     </section>
 
     <!-- 导航链接 -->
-    <section class="border-t border-slate-200 pt-6 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-link"></i></span>
+    <section class="space-y-4">
+      <div class="config-section-heading">
+        <span class="config-section-icon"><i class="fas fa-link"></i></span>
         <div>
-          <h2 class="text-sm font-semibold text-slate-700">导航链接</h2>
-          <p class="text-xs text-slate-400 mt-0.5">顶部工具栏外部链接</p>
+          <h2 class="config-section-title">导航链接</h2>
+          <p class="config-section-description">顶部工具栏外部链接</p>
         </div>
       </div>
       <div v-if="config.draft.links.length === 0" class="empty-note">暂无链接，点击下方按钮添加</div>
@@ -79,7 +79,7 @@ export default toNative(ConfigIntegrations)
         <div v-for="(link, index) in config.draft.links" :key="index" class="panel-frame">
           <div class="card-body space-y-4">
             <div class="flex items-center justify-between">
-              <span class="text-sm font-semibold text-slate-700">链接 {{ index + 1 }}</span>
+              <span class="config-section-title">链接 {{ index + 1 }}</span>
               <button type="button" class="btn-icon btn-icon-red" title="删除链接" @click="removeLink(index)">
                 <i class="fas fa-trash-can text-xs"></i>
               </button>

@@ -17,11 +17,11 @@ export default toNative(ConfigAuth)
   <div class="max-w-4xl space-y-6">
     <!-- 密码登录 -->
     <section class="space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-key"></i></span>
+      <div class="config-section-heading">
+        <span class="config-section-icon"><i class="fas fa-key"></i></span>
         <div>
-          <h2 class="text-sm font-semibold text-slate-700">密码登录</h2>
-          <p class="text-xs text-slate-400 mt-0.5">密码登录开关</p>
+          <h2 class="config-section-title">密码登录</h2>
+          <p class="config-section-description">密码登录开关</p>
         </div>
       </div>
       <ToggleCard v-model="config.draft.password.disabled" label="禁用密码登录" desc="禁用后仅允许 Passkey、OIDC 或代理 Header 登录；请确保已配置至少一种可用的替代方式" />
@@ -33,12 +33,12 @@ export default toNative(ConfigAuth)
     </section>
 
     <!-- Passkey -->
-    <section class="border-t border-slate-200 pt-6 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-fingerprint"></i></span>
+    <section class="space-y-4">
+      <div class="config-section-heading">
+        <span class="config-section-icon"><i class="fas fa-fingerprint"></i></span>
         <div>
-          <h2 class="text-sm font-semibold text-slate-700">Passkey</h2>
-          <p class="text-xs text-slate-400 mt-0.5">WebAuthn/FIDO2 登录</p>
+          <h2 class="config-section-title">Passkey</h2>
+          <p class="config-section-description">WebAuthn/FIDO2 登录</p>
         </div>
       </div>
       <ToggleCard v-model="config.draft.passkey.enabled" label="启用 Passkey 登录" desc="使用 WebAuthn/FIDO2 进行无密码登录" />
@@ -65,12 +65,12 @@ export default toNative(ConfigAuth)
     </section>
 
     <!-- OIDC -->
-    <section class="border-t border-slate-200 pt-6 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-circle-nodes"></i></span>
+    <section class="space-y-4">
+      <div class="config-section-heading">
+        <span class="config-section-icon"><i class="fas fa-circle-nodes"></i></span>
         <div>
-          <h2 class="text-sm font-semibold text-slate-700">OIDC</h2>
-          <p class="text-xs text-slate-400 mt-0.5">单点登录 Provider 参数</p>
+          <h2 class="config-section-title">OIDC</h2>
+          <p class="config-section-description">单点登录 Provider 参数</p>
         </div>
       </div>
       <ToggleCard v-model="config.draft.oidc.enabled" label="启用 OIDC 登录" desc="使用 OpenID Connect 进行单点登录" />
@@ -112,12 +112,12 @@ export default toNative(ConfigAuth)
     </section>
 
     <!-- 代理 Header 登录 -->
-    <section class="border-t border-slate-200 pt-6 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-user-shield"></i></span>
+    <section class="space-y-4">
+      <div class="config-section-heading">
+        <span class="config-section-icon"><i class="fas fa-user-shield"></i></span>
         <div>
-          <h2 class="text-sm font-semibold text-slate-700">代理 Header 登录</h2>
-          <p class="text-xs text-slate-400 mt-0.5">从上游代理 Header 读取用户名</p>
+          <h2 class="config-section-title">代理 Header 登录</h2>
+          <p class="config-section-description">从上游代理 Header 读取用户名</p>
         </div>
       </div>
       <ToggleCard v-model="config.draft.tha.enabled" label="启用代理 Header 登录" desc="开启后使用上游代理传入的用户名 Header" />

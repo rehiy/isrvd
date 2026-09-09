@@ -50,11 +50,11 @@ export default toNative(ConfigAlert)
   <div class="max-w-4xl space-y-6">
     <!-- 监控采集 -->
     <section class="space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-chart-line"></i></span>
+      <div class="config-section-heading">
+        <span class="config-section-icon"><i class="fas fa-chart-line"></i></span>
         <div>
-          <h2 class="text-sm font-semibold text-slate-700">监控日志</h2>
-          <p class="text-xs text-slate-400 mt-0.5">系统与容器监控采集</p>
+          <h2 class="config-section-title">监控日志</h2>
+          <p class="config-section-description">系统与容器监控采集</p>
         </div>
       </div>
       <div>
@@ -71,12 +71,12 @@ export default toNative(ConfigAlert)
     </section>
 
     <!-- Webhook 通道 -->
-    <section class="border-t border-slate-200 pt-6 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-paper-plane"></i></span>
+    <section class="space-y-4">
+      <div class="config-section-heading">
+        <span class="config-section-icon"><i class="fas fa-paper-plane"></i></span>
         <div>
-          <h2 class="text-sm font-semibold text-slate-700">Webhook 通道</h2>
-          <p class="text-xs text-slate-400 mt-0.5">规则触发和恢复时推送到全部已配置通道</p>
+          <h2 class="config-section-title">Webhook 通道</h2>
+          <p class="config-section-description">规则触发和恢复时推送到全部已配置通道</p>
         </div>
       </div>
       <div v-if="config.draft.notify.webhooks.length === 0" class="empty-note">暂无通道，点击下方按钮添加</div>
@@ -84,7 +84,7 @@ export default toNative(ConfigAlert)
         <div v-for="(hook, index) in config.draft.notify.webhooks" :key="index" class="panel-frame">
           <div class="card-body space-y-4">
             <div class="flex items-center justify-between">
-              <span class="text-sm font-semibold text-slate-700">通道 {{ index + 1 }}</span>
+              <span class="config-section-title">通道 {{ index + 1 }}</span>
               <button type="button" class="btn-icon btn-icon-red" title="删除通道" @click="removeWebhook(index)">
                 <i class="fas fa-trash-can text-xs"></i>
               </button>
@@ -121,12 +121,12 @@ export default toNative(ConfigAlert)
     </section>
 
     <!-- 资源告警规则 -->
-    <section class="border-t border-slate-200 pt-6 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-bell"></i></span>
+    <section class="space-y-4">
+      <div class="config-section-heading">
+        <span class="config-section-icon"><i class="fas fa-bell"></i></span>
         <div>
-          <h2 class="text-sm font-semibold text-slate-700">资源告警规则</h2>
-          <p class="text-xs text-slate-400 mt-0.5">资源阈值与持续次数，命中后触发推送</p>
+          <h2 class="config-section-title">资源告警规则</h2>
+          <p class="config-section-description">资源阈值与持续次数，命中后触发推送</p>
         </div>
       </div>
       <div v-if="config.draft.notify.rules.length === 0" class="empty-note">暂无规则，点击下方按钮添加</div>
@@ -134,7 +134,7 @@ export default toNative(ConfigAlert)
         <div v-for="(rule, index) in config.draft.notify.rules" :key="index" class="panel-frame">
           <div class="card-body space-y-4">
             <div class="flex items-center justify-between">
-              <span class="text-sm font-semibold text-slate-700">规则 {{ index + 1 }}</span>
+              <span class="config-section-title">规则 {{ index + 1 }}</span>
               <button type="button" class="btn-icon btn-icon-red" title="删除规则" @click="removeRule(index)">
                 <i class="fas fa-trash-can text-xs"></i>
               </button>

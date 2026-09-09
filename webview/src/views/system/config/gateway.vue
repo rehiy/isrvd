@@ -15,11 +15,11 @@ export default toNative(ConfigGateway)
   <div class="max-w-4xl space-y-6">
     <!-- APISIX -->
     <section class="space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-route"></i></span>
+      <div class="config-section-heading">
+        <span class="config-section-icon"><i class="fas fa-route"></i></span>
         <div>
-          <h2 class="text-sm font-semibold text-slate-700">APISIX</h2>
-          <p class="text-xs text-slate-400 mt-0.5">Admin API 连接参数</p>
+          <h2 class="config-section-title">APISIX</h2>
+          <p class="config-section-description">Admin API 连接参数</p>
         </div>
       </div>
       <div>
@@ -35,12 +35,12 @@ export default toNative(ConfigGateway)
     </section>
 
     <!-- Caddy -->
-    <section class="border-t border-slate-200 pt-6 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-globe"></i></span>
+    <section class="space-y-4">
+      <div class="config-section-heading">
+        <span class="config-section-icon"><i class="fas fa-globe"></i></span>
         <div>
-          <h2 class="text-sm font-semibold text-slate-700">Caddy</h2>
-          <p class="text-xs text-slate-400 mt-0.5">Admin API 连接参数</p>
+          <h2 class="config-section-title">Caddy</h2>
+          <p class="config-section-description">Admin API 连接参数</p>
         </div>
       </div>
       <div>
@@ -51,12 +51,12 @@ export default toNative(ConfigGateway)
     </section>
 
     <!-- Docker -->
-    <section class="border-t border-slate-200 pt-6 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-boxes-stacked"></i></span>
+    <section class="space-y-4">
+      <div class="config-section-heading">
+        <span class="config-section-icon"><i class="fas fa-boxes-stacked"></i></span>
         <div>
-          <h2 class="text-sm font-semibold text-slate-700">Docker</h2>
-          <p class="text-xs text-slate-400 mt-0.5">引擎连接与容器根目录</p>
+          <h2 class="config-section-title">Docker</h2>
+          <p class="config-section-description">引擎连接与容器根目录</p>
         </div>
       </div>
       <div>

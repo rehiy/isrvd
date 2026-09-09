@@ -81,7 +81,7 @@
 **图标样式（强制）**：
 
 - 形状：`rounded-lg`（禁止 `rounded-full`/`rounded-2xl`）
-- 尺寸：使用对应 CSS 类——`.empty-state-icon`（空状态/登录 64×64）、`.page-icon`（toolbar 36×36）、`.list-icon`（移动卡片 40×40）、`.row-icon`（桌面表格 32×32）、`.card-icon`（卡片标题 24×24）
+- 尺寸：使用对应 CSS 类——`.empty-state-icon`（空状态/登录 64×64）、`.page-icon`（toolbar 36×36）、`.list-icon`（移动卡片 40×40）、`.row-icon`（桌面表格 32×32）、`.config-section-icon`（配置小节 32×32）、`.card-icon`（卡片标题 24×24）
 
 ### 1.7 列表双视图与搜索（强制）
 
@@ -404,6 +404,7 @@
 | `.page-icon` | 36×36 | Toolbar 模块标识图标（布局） | `w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0` |
 | `.row-icon` | 32×32 | 桌面表格行第一列图标 | `w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0` |
 | `.list-icon` | 40×40 | 移动端卡片列表图标 | `w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0` |
+| `.config-section-heading` / `.config-section-icon` | 32×32 | 配置页小节头；含底部分隔线，层级低于 toolbar、高于卡片 | `flex items-center gap-3 border-b pb-3` / `w-8 h-8 rounded-lg` |
 | `.card-icon` | 24×24 | 卡片标题图标容器 | `w-6 h-6 rounded-md flex items-center justify-center` |
 | `.empty-state-icon` | 64×64 | 空状态图标容器 | `w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center mb-4` |
 
