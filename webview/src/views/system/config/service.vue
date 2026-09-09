@@ -18,7 +18,7 @@ export default toNative(ConfigService)
     <div class="flex items-center gap-2">
       <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-server"></i></span>
       <div>
-        <h2 class="text-sm font-semibold text-slate-700">Server</h2>
+        <h2 class="text-sm font-semibold text-slate-700">基础服务</h2>
         <p class="text-xs text-slate-400 mt-0.5">端口、目录、上传、跨域与 JWT</p>
       </div>
     </div>

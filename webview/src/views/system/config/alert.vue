@@ -71,8 +71,14 @@ export default toNative(ConfigAlert)
     </section>
 
     <!-- Webhook 通道 -->
-    <fieldset class="border-t border-slate-200 pt-6 space-y-4">
-      <legend class="section-title w-full">Webhook 通道</legend>
+    <section class="border-t border-slate-200 pt-6 space-y-4">
+      <div class="flex items-center gap-2">
+        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-paper-plane"></i></span>
+        <div>
+          <h2 class="text-sm font-semibold text-slate-700">Webhook 通道</h2>
+          <p class="text-xs text-slate-400 mt-0.5">规则触发和恢复时推送到全部已配置通道</p>
+        </div>
+      </div>
       <div v-if="config.draft.notify.webhooks.length === 0" class="empty-note">暂无通道，点击下方按钮添加</div>
       <div v-else class="space-y-4">
         <div v-for="(hook, index) in config.draft.notify.webhooks" :key="index" class="panel-frame">
@@ -112,11 +118,17 @@ export default toNative(ConfigAlert)
       <button type="button" class="btn-add-row" @click="addWebhook">
         <i class="fas fa-plus text-xs"></i>添加通道
       </button>
-    </fieldset>
+    </section>
 
     <!-- 资源告警规则 -->
-    <fieldset class="border-t border-slate-200 pt-6 space-y-4">
-      <legend class="section-title w-full">资源告警规则</legend>
+    <section class="border-t border-slate-200 pt-6 space-y-4">
+      <div class="flex items-center gap-2">
+        <span class="card-icon bg-indigo-100 text-indigo-600"><i class="fas fa-bell"></i></span>
+        <div>
+          <h2 class="text-sm font-semibold text-slate-700">资源告警规则</h2>
+          <p class="text-xs text-slate-400 mt-0.5">资源阈值与持续次数，命中后触发推送</p>
+        </div>
+      </div>
       <div v-if="config.draft.notify.rules.length === 0" class="empty-note">暂无规则，点击下方按钮添加</div>
       <div v-else class="space-y-4">
         <div v-for="(rule, index) in config.draft.notify.rules" :key="index" class="panel-frame">
@@ -152,6 +164,6 @@ export default toNative(ConfigAlert)
         <i class="fas fa-plus text-xs"></i>添加规则
       </button>
       <p class="text-xs text-slate-400">持续次数指连续多少个采集周期超阈值才告警，用于抑制瞬时抖动。</p>
-    </fieldset>
+    </section>
   </div>
 </template>
