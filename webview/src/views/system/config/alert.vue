@@ -98,7 +98,7 @@ export default toNative(ConfigAlert)
             <div>
               <label class="form-label">模板目标</label>
               <select class="input" @change="applyWebhookTemplate(hook, $event)">
-                <option value="">选择渠道填充…</option>
+                <option value="">选择渠道填充模板</option>
                 <option value="dingtalk">钉钉机器人</option>
                 <option value="feishu">飞书机器人</option>
                 <option value="wecom">企业微信机器人</option>
