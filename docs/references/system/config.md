@@ -87,7 +87,7 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 - `oidc.loginLabel` 自定义 OIDC 登录按钮显示名称；留空则使用默认文案"使用 OIDC 登录"。
 - 启用代理 Header 登录时，必须配置 `tha.headerName`；该 Header 的值会作为登录用户名，且必须存在于 `members.username`。`tha.trustedCIDRs` 可限制允许传入 Header 的代理来源（如 `["10.0.0.0/8"]`），未配置时不限制来源（向后兼容）。
 - `monitor.interval` 合法值为 `5/15/30/60`（秒），其他值（含 `0`、负数）均视为禁用自动采集；修改后重启生效。
-- `notify.webhooks` 的每项包含 `name`、`url`、`template`；`template` 留空时发送标准 JSON。`notify.rules` 的每项包含 `metric`（`cpu`、`memory` 或 `disk`）、`threshold` 和 `duration`。Webhook 发送会拒绝内网、回环和重定向目标。
+- `notify.webhooks` 的每项包含 `name`、`url`、`template`；`template` 留空时发送标准 JSON。Web 管理界面可直接选择标准 JSON，或套用钉钉、飞书、企业微信、Slack、Discord、Microsoft Teams、Google Chat 和 Telegram Bot 请求体预设；选择预设后仍可编辑模板，Telegram Bot 的 `CHAT_ID` 占位符需替换为实际值。JSON 模板可使用 `json` 函数安全编码动态字段，例如 `{{.Title | json}}`（函数输出已包含 JSON 引号）。`notify.rules` 的每项包含 `metric`（`cpu`、`memory` 或 `disk`）、`threshold` 和 `duration`。Webhook 发送会拒绝内网、回环和重定向目标。
 
 ---
 

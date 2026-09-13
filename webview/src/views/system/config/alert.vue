@@ -5,12 +5,77 @@ import { useConfigStore } from '@/stores'
 
 import type { WebhookConfig } from '@/service/types'
 
+interface WebhookTemplatePreset {
+    value: string
+    label: string
+    template: string
+}
+
+interface WebhookTemplateGroup {
+    label: string
+    presets: WebhookTemplatePreset[]
+}
+
 @Component
 class ConfigAlert extends Vue {
     config = useConfigStore()
+    selectedWebhookTemplates = new WeakMap<WebhookConfig, string>()
 
     // Go text/template 变量说明；定义为变量后插值输出，避免与 Vue 的 {{ }} 语法冲突
-    templateHint = '留空则发送标准 JSON；可用变量 {{.Title}}、{{.Message}}、{{.Level}}、{{.Event}}、{{.Timestamp}}'
+    templateHint = '支持 Go 模板变量；在 JSON 字段中使用 {{.Title | json}} 可安全处理引号和换行。'
+
+    webhookTemplateGroups: WebhookTemplateGroup[] = [
+        {
+            label: '国内协作平台',
+            presets: [
+                {
+                    value: 'dingtalk',
+                    label: '钉钉机器人',
+                    template: '{"msgtype":"text","text":{"content":{{printf "isrvd 告警\\n%s\\n%s" .Title .Message | json}}}}',
+                },
+                {
+                    value: 'feishu',
+                    label: '飞书机器人',
+                    template: '{"msg_type":"text","content":{"text":{{printf "isrvd 告警\\n%s\\n%s" .Title .Message | json}}}}',
+                },
+                {
+                    value: 'wecom',
+                    label: '企业微信机器人',
+                    template: '{"msgtype":"text","text":{"content":{{printf "isrvd 告警\\n%s\\n%s" .Title .Message | json}}}}',
+                },
+            ],
+        },
+        {
+            label: '海外协作与聊天',
+            presets: [
+                {
+                    value: 'slack',
+                    label: 'Slack',
+                    template: '{"text":{{printf "isrvd 告警：%s\\n%s" .Title .Message | json}}}',
+                },
+                {
+                    value: 'discord',
+                    label: 'Discord',
+                    template: '{"content":{{printf "isrvd 告警：%s\\n%s" .Title .Message | json}}}',
+                },
+                {
+                    value: 'teams',
+                    label: 'Microsoft Teams',
+                    template: '{"text":{{printf "isrvd 告警：%s\\n%s" .Title .Message | json}}}',
+                },
+                {
+                    value: 'google-chat',
+                    label: 'Google Chat',
+                    template: '{"text":{{printf "isrvd 告警：%s\\n%s" .Title .Message | json}}}',
+                },
+                {
+                    value: 'telegram',
+                    label: 'Telegram Bot（sendMessage + CHAT_ID）',
+                    template: '{"chat_id":"<CHAT_ID>","text":{{printf "isrvd 告警：%s\\n%s" .Title .Message | json}}}',
+                },
+            ],
+        },
+    ]
 
     addWebhook() {
         this.config.draft.notify.webhooks.push({ name: '', url: '', template: '' })
@@ -28,18 +93,28 @@ class ConfigAlert extends Vue {
         this.config.draft.notify.rules.splice(index, 1)
     }
 
+    webhookTemplateValue(hook: WebhookConfig) {
+        const selected = this.selectedWebhookTemplates.get(hook)
+        if (selected) return selected
+        if (!hook.template.trim()) return 'generic'
+        const matches = this.webhookTemplateGroups.flatMap(group => group.presets).filter(item => item.template === hook.template)
+        return matches.length === 1 ? matches[0].value : 'custom'
+    }
+
     applyWebhookTemplate(hook: WebhookConfig, event: Event) {
-        const templates: Record<string, string> = {
-            dingtalk: '{"msgtype":"text","text":{"content":"isrvd 告警\\n{{.Title}}\\n{{.Message}}"} }',
-            feishu: '{"msg_type":"text","content":{"text":"isrvd 告警\\n{{.Title}}\\n{{.Message}}"} }',
-            wecom: '{"msgtype":"text","text":{"content":"isrvd 告警\\n{{.Title}}\\n{{.Message}}"} }',
-            slack: '{"text":"isrvd 告警：{{.Title}}\\n{{.Message}}"}',
-        }
         const select = event.target as HTMLSelectElement
-        const kind = select.value
-        if (templates[kind]) hook.template = templates[kind]
-        // 复位选择器，保证再次选择同一渠道仍能触发
-        select.value = ''
+        if (select.value === 'generic') {
+            this.selectedWebhookTemplates.set(hook, 'generic')
+            hook.template = ''
+            if (!hook.name.trim()) hook.name = '通用 Webhook'
+            return
+        }
+        const preset = this.webhookTemplateGroups.flatMap(group => group.presets).find(item => item.value === select.value)
+        if (preset) {
+            this.selectedWebhookTemplates.set(hook, preset.value)
+            hook.template = preset.template
+            if (!hook.name.trim()) hook.name = preset.label.replace(/（.*）$/, '')
+        }
     }
 }
 
@@ -73,11 +148,11 @@ export default toNative(ConfigAlert)
     <section class="space-y-4">
       <div class="config-section-heading">
         <div>
-          <h2 class="config-section-title">Webhook 通道</h2>
-          <p class="config-section-description">规则触发和恢复时推送到全部已配置通道</p>
+          <h2 class="config-section-title">通知通道</h2>
+          <p class="config-section-description">配置 Webhook 地址与消息格式，规则触发和恢复时会推送到全部通道</p>
         </div>
       </div>
-      <div v-if="config.draft.notify.webhooks.length === 0" class="empty-note">暂无通道，点击下方按钮添加</div>
+      <div v-if="config.draft.notify.webhooks.length === 0" class="empty-note">暂无通知通道，点击下方按钮开始配置</div>
       <div v-else class="space-y-4">
         <div v-for="(hook, index) in config.draft.notify.webhooks" :key="index" class="panel-frame">
           <div class="card-body space-y-4">
@@ -92,22 +167,23 @@ export default toNative(ConfigAlert)
               <input v-model="hook.name" type="text" required placeholder="如：钉钉告警" class="input" />
             </div>
             <div>
-              <label class="form-label">接收地址</label>
-              <input v-model="hook.url" type="url" required pattern="https?://.*" placeholder="https://example.com/webhook" class="input" />
+              <label class="form-label">Webhook 地址</label>
+              <input v-model="hook.url" type="url" required pattern="https?://.*" placeholder="粘贴渠道提供的 HTTP(S) Webhook 地址" class="input" />
             </div>
             <div>
-              <label class="form-label">模板目标</label>
-              <select class="input" @change="applyWebhookTemplate(hook, $event)">
-                <option value="">选择渠道填充模板</option>
-                <option value="dingtalk">钉钉机器人</option>
-                <option value="feishu">飞书机器人</option>
-                <option value="wecom">企业微信机器人</option>
-                <option value="slack">Slack</option>
+              <label class="form-label">消息渠道模板</label>
+              <select class="input" :value="webhookTemplateValue(hook)" @change="applyWebhookTemplate(hook, $event)">
+                <option value="custom" disabled>已配置请求体模板</option>
+                <option value="generic">使用标准 JSON（无需模板）</option>
+                <optgroup v-for="group in webhookTemplateGroups" :key="group.label" :label="group.label">
+                  <option v-for="preset in group.presets" :key="preset.value" :value="preset.value">{{ preset.label }}</option>
+                </optgroup>
               </select>
+              <p class="mt-1 text-xs text-slate-400">选择后会覆盖下方请求体；带占位符的模板需按提示补充对应参数。</p>
             </div>
             <div>
-              <label class="form-label">请求体模板</label>
-              <textarea v-model="hook.template" rows="3" class="input font-mono text-xs" placeholder="留空则发送标准 JSON"></textarea>
+              <label class="form-label">请求体模板（JSON）</label>
+              <textarea v-model="hook.template" rows="4" class="input font-mono text-xs" placeholder="留空则发送 isrvd 标准事件 JSON"></textarea>
               <p class="mt-1 text-xs text-slate-400">{{ templateHint }}</p>
             </div>
           </div>
