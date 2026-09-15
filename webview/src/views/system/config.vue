@@ -2,7 +2,6 @@
 import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { useConfigStore, usePortal } from '@/stores'
-import type { ConfigGroup } from '@/stores'
 
 @Component
 class ConfigLayout extends Vue {
@@ -13,8 +12,11 @@ class ConfigLayout extends Vue {
         return this.portal.hasPerm('PUT /api/system/config')
     }
 
-    get currentGroup(): ConfigGroup {
-        return (this.$route.meta.group as ConfigGroup | undefined) || 'service'
+    // 刷新/关闭页面时提醒未保存改动（浏览器原生弹窗）
+    onBeforeUnload = (event: BeforeUnloadEvent) => {
+        if (!this.config.hasUnsaved()) return
+        event.preventDefault()
+        event.returnValue = ''
     }
 
     // ─── 方法 ───
@@ -28,10 +30,10 @@ class ConfigLayout extends Vue {
         }
     }
 
-    async saveCurrentGroup() {
+    async saveConfig() {
         if (this.config.saving) return
         try {
-            await this.config.saveGroup(this.currentGroup)
+            await this.config.saveAll()
             await this.portal.refresh()
             this.portal.showNotification('success', '配置已保存，监听地址变更需重启生效')
         } catch {
@@ -41,7 +43,13 @@ class ConfigLayout extends Vue {
 
     // ─── 生命周期 ───
     mounted() {
-        if (this.canUpdate) this.config.load()
+        // 草稿在 store 中常驻，仅在首次进入时加载，避免站内往返导致未保存改动被覆盖
+        if (this.canUpdate && !this.config.loaded) this.config.load()
+        window.addEventListener('beforeunload', this.onBeforeUnload)
+    }
+
+    unmounted() {
+        window.removeEventListener('beforeunload', this.onBeforeUnload)
     }
 }
 
@@ -64,7 +72,7 @@ export default toNative(ConfigLayout)
           </div>
         </div>
         <div class="action-group">
-          <button type="button" class="btn btn-secondary" :disabled="config.loading" @click="reloadConfig">
+          <button type="button" class="btn btn-secondary" :disabled="config.loading || config.saving" @click="reloadConfig">
             <i :class="config.loading ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i>重载
           </button>
           <button v-if="canUpdate" type="submit" form="config-form" class="btn btn-indigo rounded-xl whitespace-nowrap" :disabled="config.saving || config.loading">
@@ -86,7 +94,7 @@ export default toNative(ConfigLayout)
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <button type="button" class="btn btn-secondary btn-square" title="重载" :disabled="config.loading" @click="reloadConfig">
+          <button type="button" class="btn btn-secondary btn-square" title="重载" :disabled="config.loading || config.saving" @click="reloadConfig">
             <i :class="config.loading ? 'fas fa-spinner fa-spin text-sm' : 'fas fa-rotate text-sm'"></i>
           </button>
           <button v-if="canUpdate" type="submit" form="config-form" class="btn btn-indigo btn-square" title="保存配置" :disabled="config.saving || config.loading">
@@ -131,7 +139,7 @@ export default toNative(ConfigLayout)
     </div>
 
     <!-- 配置分组内容（分组切换在侧边栏子菜单） -->
-    <form v-else id="config-form" class="card-body" @submit.prevent="saveCurrentGroup">
+    <form v-else id="config-form" class="card-body" @submit.prevent="saveConfig">
       <router-view />
     </form>
   </div>

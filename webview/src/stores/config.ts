@@ -58,7 +58,7 @@ function defaultConfig(): AllConfig {
         notify: { webhooks: [], rules: [] },
         apisix: { adminUrl: '', adminKey: '' },
         caddy: { adminUrl: '' },
-        docker: { host: '', containerRoot: '' },
+        docker: { host: '', containerRoot: '', registries: [] },
         monitor: { interval: 0 },
         marketplace: { url: '' },
         links: [],
@@ -78,7 +78,7 @@ function splitList(text: string): string[] {
  * 系统配置草稿 Store
  *
  * 由父布局统一加载一次，各配置分组子页共享同一份草稿；
- * 保存时只提交当前分组涉及的分区（后端对 nil 分区跳过更新）。
+ * 保存时一次提交全部分区，因此分组切换不会丢失改动。
  */
 export const useConfigStore = defineStore('config', () => {
     const draft = ref<AllConfig>(defaultConfig())
@@ -97,9 +97,10 @@ export const useConfigStore = defineStore('config', () => {
 
     /** 应用接口返回的全量配置到草稿 */
     function applyPayload(payload: AllConfig) {
-        const server: ServerConfig = { ...defaultConfig().server, ...payload.server }
-        const passkey: PasskeyConfig = { ...defaultConfig().passkey, ...payload.passkey }
-        const oidc: OIDCConfig = { ...defaultConfig().oidc, ...payload.oidc }
+        // 后端 nil 切片会序列化为 null，需归一为数组，否则 isDirty 会误判
+        const server: ServerConfig = { ...defaultConfig().server, ...payload.server, allowedOrigins: payload.server?.allowedOrigins || [] }
+        const passkey: PasskeyConfig = { ...defaultConfig().passkey, ...payload.passkey, rpOrigins: payload.passkey?.rpOrigins || [] }
+        const oidc: OIDCConfig = { ...defaultConfig().oidc, ...payload.oidc, scopes: payload.oidc?.scopes || [] }
         const notify: NotifyConfig = {
             webhooks: (payload.notify?.webhooks || []).map(hook => ({ ...hook })),
             rules: (payload.notify?.rules || []).map(rule => ({ ...rule })),
@@ -110,12 +111,12 @@ export const useConfigStore = defineStore('config', () => {
             password: { ...defaultConfig().password, ...payload.password },
             passkey,
             oidc,
-            tha: { ...defaultConfig().tha, ...payload.tha },
+            tha: { ...defaultConfig().tha, ...payload.tha, trustedCIDRs: payload.tha?.trustedCIDRs || [] },
             copilot: { ...defaultConfig().copilot, ...payload.copilot },
             notify,
             apisix: { ...defaultConfig().apisix, ...payload.apisix },
             caddy: { ...defaultConfig().caddy, ...payload.caddy },
-            docker: { ...defaultConfig().docker, ...payload.docker },
+            docker: { ...defaultConfig().docker, ...payload.docker, registries: (payload.docker?.registries || []).map(item => ({ ...item })) },
             monitor: { ...defaultConfig().monitor, ...payload.monitor },
             marketplace: { ...defaultConfig().marketplace, ...payload.marketplace },
             links: (payload.links || []).map(link => ({ ...link })),
@@ -143,12 +144,10 @@ export const useConfigStore = defineStore('config', () => {
         }
     }
 
-    /** 返回分组的提交载荷：仅包含该分组涉及的分区 */
-    function groupPayload(group: ConfigGroup): Partial<AllConfig> {
-        const meta = configGroups.find(item => item.id === group)
-        if (!meta) return {}
+    /** 返回全量提交载荷（应用多行文本转换） */
+    function allPayload(): Partial<AllConfig> {
         const payload: Record<string, unknown> = {}
-        for (const section of meta.sections) {
+        for (const section of configGroups.flatMap(item => item.sections)) {
             payload[section] = sectionPayload(section)
         }
         return payload as Partial<AllConfig>
@@ -157,10 +156,16 @@ export const useConfigStore = defineStore('config', () => {
     /** 分组是否存在未保存改动 */
     function isDirty(group: ConfigGroup): boolean {
         const meta = configGroups.find(item => item.id === group)
-        if (!meta) return false
+        // 未完成首次加载时基线不可用，避免误判为已修改
+        if (!meta || !loaded.value) return false
         return meta.sections.some(
             section => JSON.stringify(sectionPayload(section)) !== JSON.stringify(baseline.value[section as keyof AllConfig]),
         )
+    }
+
+    /** 是否存在任一分组的未保存改动 */
+    function hasUnsaved(): boolean {
+        return configGroups.some(item => isDirty(item.id))
     }
 
     /** 加载全量配置；force 为 true 时请求后端重载后返回 */
@@ -181,13 +186,13 @@ export const useConfigStore = defineStore('config', () => {
         }
     }
 
-    /** 保存当前分组：只提交该分组涉及的分区 */
-    async function saveGroup(group: ConfigGroup) {
+    /** 保存全部配置：一次提交所有分区，避免分组间切换造成改动丢失 */
+    async function saveAll() {
         if (saving.value) return
         saving.value = true
         error.value = ''
         try {
-            await api.systemConfigUpdate(groupPayload(group))
+            await api.systemConfigUpdate(allPayload())
             // 后端对密钥类字段返回空值，重新加载以刷新基线
             await load()
         } catch (e) {
@@ -220,8 +225,8 @@ export const useConfigStore = defineStore('config', () => {
         oidcScopesText,
         thaTrustedCIDRsText,
         load,
-        saveGroup,
-        isDirty,
+        saveAll,
+        hasUnsaved,
         reset,
     }
 })

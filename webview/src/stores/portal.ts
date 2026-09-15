@@ -41,7 +41,6 @@ export const usePortalStore = defineStore('portal', () => {
 
     async function initialize() {
         systemStore.initialized = false
-        systemStore.initError = null
 
         initTheme()
         authStore.restoreToken()
@@ -49,7 +48,7 @@ export const usePortalStore = defineStore('portal', () => {
         try {
             const res = await api.overviewBootstrap()
             if (!res?.payload) {
-                authStore.clearAuth()
+                clearAuth()
                 systemStore.initialized = true
                 return
             }
@@ -57,7 +56,6 @@ export const usePortalStore = defineStore('portal', () => {
         } catch (e) {
             // 网络异常：保持现有登录状态，标记初始化完成
             console.error('Portal initialize failed:', e)
-            systemStore.initError = e instanceof Error ? e.message : '初始化失败'
             systemStore.initialized = true
         }
     }
@@ -67,7 +65,6 @@ export const usePortalStore = defineStore('portal', () => {
 
     async function refresh() {
         systemStore.initialized = false
-        systemStore.initError = null
 
         try {
             const res = await api.overviewBootstrap()
@@ -78,7 +75,6 @@ export const usePortalStore = defineStore('portal', () => {
             applyBootstrap(res.payload as BootstrapData)
         } catch (e) {
             console.error('Portal refresh failed:', e)
-            systemStore.initError = e instanceof Error ? e.message : '刷新失败'
             systemStore.initialized = true
         }
     }
@@ -105,7 +101,7 @@ export const usePortalStore = defineStore('portal', () => {
 
     interceptors(stateProxy, {
         showNotification: uiStore.showNotification,
-        clearAuth: authStore.clearAuth,
+        clearAuth,
     })
 
     // ─── 导出统一接口 ───
@@ -138,10 +134,8 @@ export const usePortalStore = defineStore('portal', () => {
 
         // System Store 状态（响应式）
         initialized: systemRefs.initialized,
-        initError: systemRefs.initError,
         serviceAvailability: systemRefs.serviceAvailability,
         toolbarLinks: systemRefs.toolbarLinks,
-        maxUploadSize: systemRefs.maxUploadSize,
         marketplaceUrl: systemRefs.marketplaceUrl,
         openapiEnabled: systemRefs.openapiEnabled,
         // System Store 方法
@@ -154,11 +148,7 @@ export const usePortalStore = defineStore('portal', () => {
         showNotification: uiStore.showNotification,
         clearNotification: uiStore.clearNotification,
         showConfirm: uiStore.showConfirm,
-        confirmLoading: uiStore.confirmLoading,
         closeConfirm: uiStore.closeConfirm,
         handleConfirm: uiStore.handleConfirm,
     }
 })
-
-// ─── 类型导出 ───
-export type PortalStore = ReturnType<typeof usePortalStore>
