@@ -27,7 +27,7 @@ class NavigationBar extends Vue {
 
     // ─── 计算属性 ───
     get isLocalActive() {
-        return this.isActive('/local/explorer') || this.isActive('/local/shell') || this.isActive('/local/monitor') || this.isActive('/local/process')
+        return this.isActive('/local/')
     }
 
     get isApisixActive() {
@@ -225,6 +225,7 @@ class NavigationBar extends Vue {
         this.dockerExpanded = this.$route.path.startsWith('/docker/')
         this.swarmExpanded = this.$route.path.startsWith('/swarm/')
         this.sshExpanded = this.$route.path.startsWith('/ssh/')
+        this.configExpanded = this.$route.path.startsWith('/system/config')
         window.addEventListener('resize', this.handleResize)
     }
 
@@ -326,12 +327,12 @@ export default toNative(NavigationBar)
       <!-- APISIX 折叠子菜单 -->
       <div v-if="portal.hasPerm('apisix')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isActive('/apisix/') }" title="APISIX 网关" @click.stop="toggleApisix">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isApisixActive }" title="APISIX 网关" @click.stop="toggleApisix">
           <i class="fas fa-cloud"></i>
         </button>
         <!-- 有权限：展开状态显示完整子菜单 -->
         <template v-else>
-          <button class="nav-link w-full" :class="{ 'nav-link-active': isActive('/apisix/') }" @click.stop="toggleApisix">
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isApisixActive }" @click.stop="toggleApisix">
             <i class="fas fa-cloud"></i>
             <span>APISIX 网关</span>
             <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': apisixExpanded }"></i>
@@ -392,11 +393,11 @@ export default toNative(NavigationBar)
 
       <!-- Caddy 折叠子菜单 -->
       <div v-if="portal.hasPerm('caddy')">
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isActive('/caddy/') }" title="Caddy 网关" @click.stop="toggleCaddy">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isCaddyActive }" title="Caddy 网关" @click.stop="toggleCaddy">
           <i class="fas fa-shield"></i>
         </button>
         <template v-else>
-          <button class="nav-link w-full" :class="{ 'nav-link-active': isActive('/caddy/') }" @click.stop="toggleCaddy">
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isCaddyActive }" @click.stop="toggleCaddy">
             <i class="fas fa-shield"></i>
             <span>Caddy 网关</span>
             <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': caddyExpanded }"></i>
@@ -442,12 +443,12 @@ export default toNative(NavigationBar)
       <!-- Docker 折叠子菜单 -->
       <div v-if="portal.hasPerm('docker')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isActive('/docker/') }" title="Docker 服务" @click.stop="toggleDocker">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isDockerActive }" title="Docker 服务" @click.stop="toggleDocker">
           <i class="fab fa-docker"></i>
         </button>
         <!-- 展开状态：显示完整子菜单 -->
         <template v-else>
-          <button class="nav-link w-full" :class="{ 'nav-link-active': isActive('/docker/') }" @click.stop="toggleDocker">
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isDockerActive }" @click.stop="toggleDocker">
             <i class="fab fa-docker"></i>
             <span>Docker 服务</span>
             <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': dockerExpanded }"></i>
@@ -505,12 +506,12 @@ export default toNative(NavigationBar)
       <!-- Swarm 折叠子菜单 -->
       <div v-if="portal.hasPerm('swarm')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isActive('/swarm') }" title="Swarm 集群" @click.stop="toggleSwarm">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isSwarmSubActive }" title="Swarm 集群" @click.stop="toggleSwarm">
           <i class="fas fa-circle-nodes"></i>
         </button>
         <!-- 有权限：展开状态显示完整子菜单 -->
         <template v-else>
-          <button class="nav-link w-full" :class="{ 'nav-link-active': isActive('/swarm') }" @click.stop="toggleSwarm">
+          <button class="nav-link w-full" :class="{ 'nav-link-active': isSwarmSubActive }" @click.stop="toggleSwarm">
             <i class="fas fa-circle-nodes"></i>
             <span>Swarm 集群</span>
             <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': swarmExpanded }"></i>

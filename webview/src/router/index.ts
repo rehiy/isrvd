@@ -340,7 +340,7 @@ router.beforeEach((to) => {
   // 权限尚未加载完成时放行（刷新页面场景，等 loadMe 完成后由导航菜单 v-if 控制）
   if (!_permsLoaded?.()) return true
 
-  // 从路由路径提取模块名（/api/<module>/...）
+  // 从前端路由路径提取模块名（/<module>/...）
   const module = to.path.match(/^\/([^/]+)/)?.[1]
   if (module && !['overview', 'account', 'local'].includes(module)) {
     if (!_hasPerm?.(module)) return { path: '/overview' }
