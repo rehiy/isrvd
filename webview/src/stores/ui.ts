@@ -69,10 +69,6 @@ export const useUIStore = defineStore('ui', () => {
         })
     }
 
-    function confirmLoading(loading: boolean) {
-        confirm.loading = loading
-    }
-
     function closeConfirm() {
         confirm.show = false
         confirm.loading = false
@@ -98,7 +94,6 @@ export const useUIStore = defineStore('ui', () => {
         showNotification,
         clearNotification,
         showConfirm,
-        confirmLoading,
         closeConfirm,
         handleConfirm
     }

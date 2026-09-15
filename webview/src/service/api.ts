@@ -373,10 +373,6 @@ class ApiService {
         return http.get<ApisixPluginConfig[]>('apisix/plugin-configs')
     }
 
-    apisixPluginConfigInspect(id: string) {
-        return http.get<ApisixPluginConfig>(`apisix/plugin-config/${id}`)
-    }
-
     apisixPluginConfigCreate(data: ApisixPluginConfigUpsert) {
         return http.post('apisix/plugin-config', data)
     }

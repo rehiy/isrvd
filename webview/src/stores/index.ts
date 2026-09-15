@@ -7,18 +7,8 @@
  * 3. 一致的访问接口
  */
 
-import { usePortalStore } from './portal'
-import type { PortalStore } from './portal'
-import type { ConfirmOptions } from './ui'
-
 export { useConfigStore, configGroups } from './config'
 export { useCopilotStore } from './copilot'
+export { usePortalStore as usePortal } from './portal'
 
-export type { ConfigGroup, ConfigGroupMeta, ConfigSection } from './config'
-
-// 包装 usePortal，提供明确的类型注解
-export function usePortal(): PortalStore {
-    return usePortalStore()
-}
-
-export type { ConfirmOptions }
+export type { ConfigGroupMeta } from './config'

@@ -22,7 +22,6 @@ export const useSystemStore = defineStore('system', () => {
     // ─── 状态定义 ───
 
     const initialized = ref(false)
-    const initError = ref<string | null>(null)
     const serviceAvailability = reactive<ServiceAvailability>({
         copilot: false,
         apisix: false,
@@ -32,7 +31,6 @@ export const useSystemStore = defineStore('system', () => {
         compose: false,
     })
     const toolbarLinks = ref<LinkConfig[]>([])
-    const maxUploadSize = ref<number>(104857600) // 默认 100MB
     const marketplaceUrl = ref<string>('')
     const openapiEnabled = ref<boolean>(false)
 
@@ -54,9 +52,6 @@ export const useSystemStore = defineStore('system', () => {
         }
 
         if (config) {
-            if (typeof config.maxUploadSize === 'number') {
-                maxUploadSize.value = config.maxUploadSize
-            }
             marketplaceUrl.value = config.marketplaceUrl || ''
             openapiEnabled.value = config.openapiEnabled || false
             toolbarLinks.value = config.links || []
@@ -87,10 +82,8 @@ export const useSystemStore = defineStore('system', () => {
     return {
         // 状态
         initialized,
-        initError,
         serviceAvailability,
         toolbarLinks,
-        maxUploadSize,
         marketplaceUrl,
         openapiEnabled,
         // 操作
