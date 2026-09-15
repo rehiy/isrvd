@@ -154,7 +154,7 @@ export default toNative(AuditLogs)
             <option v-for="username in uniqueUsernames" :key="username" :value="username">{{ username }}</option>
           </select>
           <button class="btn" :class="hideAGUIRequests ? 'btn-rose' : 'btn-secondary'" :aria-pressed="hideAGUIRequests" @click="hideAGUIRequests = !hideAGUIRequests">
-            <i class="fas fa-eye-slash"></i>{{ hideAGUIRequests ? '已屏蔽 AI 助手请求' : '不看 AI 助手的请求' }}
+            <i class="fas fa-eye-slash"></i>{{ hideAGUIRequests ? '已屏蔽 AI 助手' : '不看 AI 助手' }}
           </button>
           <button class="btn btn-secondary" @click="loadLogs()">
             <i class="fas fa-rotate"></i>刷新

@@ -204,7 +204,9 @@ func renderBody(hook *config.WebhookConfig, evt *Event) ([]byte, error) {
 		return json.Marshal(evt)
 	}
 
-	tpl, err := template.New("webhook").Parse(hook.Template)
+	tpl, err := template.New("webhook").Funcs(template.FuncMap{
+		"json": templateJSON,
+	}).Parse(hook.Template)
 	if err != nil {
 		return nil, fmt.Errorf("解析模板失败: %w", err)
 	}
@@ -214,4 +216,12 @@ func renderBody(hook *config.WebhookConfig, evt *Event) ([]byte, error) {
 		return nil, fmt.Errorf("执行模板失败: %w", err)
 	}
 	return buf.Bytes(), nil
+}
+
+func templateJSON(value any) (string, error) {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return "", fmt.Errorf("JSON 编码模板变量失败: %w", err)
+	}
+	return string(data), nil
 }
