@@ -27,7 +27,7 @@ class NavigationBar extends Vue {
 
     // ─── 计算属性 ───
     get isLocalActive() {
-        return this.isActive('/local/explorer') || this.isActive('/local/shell') || this.isActive('/local/monitor')
+        return this.isActive('/local/explorer') || this.isActive('/local/shell') || this.isActive('/local/monitor') || this.isActive('/local/process')
     }
 
     get isApisixActive() {
