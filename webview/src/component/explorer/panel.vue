@@ -24,6 +24,8 @@ import { usePortal } from '@/stores'
 import { downloadBlob, getFileIcon, isEditableFile, isPreviewableFile } from '@/helper/file'
 import { formatFileSize, formatTime, formatUnixTime } from '@/helper/format'
 
+import PageSearch from '@/component/page-search.vue'
+
 import type { ExplorerAdapter, FileInfo } from './types'
 import ChmodModal from './widget/chmod-modal.vue'
 import CreateModal from './widget/create-modal.vue'
@@ -43,7 +45,7 @@ import ZipModal from './widget/zip-modal.vue'
     components: {
         Upload, ChmodModal, RenameModal, ModifyModal,
         PreviewModal, DeleteModal, CreateModal,
-        ZipModal, UnzipModal, MkdirRow, UploadZone,
+        ZipModal, UnzipModal, MkdirRow, UploadZone, PageSearch,
     },
 })
 class ExplorerPanel extends Vue {
@@ -263,8 +265,10 @@ export default toNative(ExplorerPanel)
           </ol>
         </nav>
 
-        <!-- 搜索框 -->
-        <input v-if="showSearch" v-model="searchText" class="input text-sm py-1 w-48 hidden md:block" placeholder="搜索文件..." />
+        <!-- 桌面端搜索框 -->
+        <div v-if="showSearch" class="hidden md:block">
+          <PageSearch v-model="searchText" search-key="file-explorer" placeholder="搜索文件..." type-to-search />
+        </div>
 
         <!-- 桌面端操作按钮 -->
         <div class="action-group-desktop">
@@ -293,7 +297,7 @@ export default toNative(ExplorerPanel)
         </div>
 
         <!-- 移动端图标按钮 -->
-        <div class="flex md:hidden items-center gap-1.5 flex-shrink-0">
+        <div class="action-group-sm md:hidden">
           <button v-if="can.list" class="btn btn-secondary btn-square" title="刷新" @click="refresh()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
@@ -318,11 +322,11 @@ export default toNative(ExplorerPanel)
           </template>
         </div>
       </div>
+    </div>
 
-      <!-- 移动端搜索框 -->
-      <div v-if="showSearch" class="mt-2 md:hidden">
-        <input v-model="searchText" class="input text-sm py-1 w-full" placeholder="搜索文件..." />
-      </div>
+    <!-- 移动端搜索框 -->
+    <div v-if="showSearch" class="mobile-search">
+      <PageSearch v-model="searchText" search-key="file-explorer" placeholder="搜索文件..." width-class="w-full" />
     </div>
 
     <!-- ─── 上传进度 ────────────────────────────────────────────────────────── -->
