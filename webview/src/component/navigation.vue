@@ -1,8 +1,7 @@
 <script lang="ts">
 import { Component, Prop, Vue, Watch, toNative } from 'vue-facing-decorator'
 
-import { configGroups, useConfigStore, usePortal } from '@/stores'
-import type { ConfigGroup, ConfigGroupMeta } from '@/stores'
+import { configGroups, usePortal } from '@/stores'
 
 @Component({
     expose: ['toggleMobileSidebar', 'closeMobileSidebar', 'openMobileSidebar'],
@@ -10,7 +9,6 @@ import type { ConfigGroup, ConfigGroupMeta } from '@/stores'
 })
 class NavigationBar extends Vue {
     portal = usePortal()
-    configStore = useConfigStore()
     @Prop({ type: Boolean, default: false }) readonly collapsed!: boolean
 
     configGroups = configGroups
@@ -175,27 +173,6 @@ class NavigationBar extends Vue {
         } else {
             this.configExpanded = !this.configExpanded
         }
-    }
-
-    /** 切换配置分组：当前分组有未保存改动时先确认，避免静默丢失 */
-    goConfigGroup(item: ConfigGroupMeta) {
-        const current = (this.$route.meta.group as ConfigGroup | undefined) || ''
-        const target = `/system/config/${item.id}`
-        if (current && current !== item.id && this.configStore.isDirty(current)) {
-            this.portal.showConfirm({
-                title: '离开当前分组',
-                message: '当前分组有未保存的修改，离开后将丢失。确定继续吗？',
-                icon: 'fa-triangle-exclamation',
-                iconColor: 'amber',
-                confirmText: '放弃修改',
-                danger: true,
-                onConfirm: () => {
-                    this.$router.push(target)
-                },
-            })
-            return
-        }
-        this.$router.push(target)
     }
 
     toggleMobileSidebar() {
@@ -592,7 +569,6 @@ export default toNative(NavigationBar)
               :to="`/system/config/${item.id}`"
               class="nav-link"
               :class="{ 'nav-link-active': isActive(`/system/config/${item.id}`) }"
-              @click.prevent="goConfigGroup(item)"
             >
               <i class="fas" :class="item.icon"></i>
               <span>{{ item.label }}</span>

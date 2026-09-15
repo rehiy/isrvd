@@ -278,31 +278,31 @@ const routes: RouteRecordRaw[] = [
         path: 'service',
         name: 'config-service',
         component: () => import('@/views/system/config/service.vue'),
-        meta: { title: '基础服务', group: 'service' }
+        meta: { title: '基础服务' }
       },
       {
         path: 'auth',
         name: 'config-auth',
         component: () => import('@/views/system/config/auth.vue'),
-        meta: { title: '登录认证', group: 'auth' }
+        meta: { title: '登录认证' }
       },
       {
         path: 'gateway',
         name: 'config-gateway',
         component: () => import('@/views/system/config/gateway.vue'),
-        meta: { title: '网关容器', group: 'gateway' }
+        meta: { title: '网关容器' }
       },
       {
         path: 'alert',
         name: 'config-alert',
         component: () => import('@/views/system/config/alert.vue'),
-        meta: { title: '监控告警', group: 'alert' }
+        meta: { title: '监控告警' }
       },
       {
         path: 'integrations',
         name: 'config-integrations',
         component: () => import('@/views/system/config/integrations.vue'),
-        meta: { title: '扩展集成', group: 'integrations' }
+        meta: { title: '扩展集成' }
       }
     ]
   },
@@ -322,7 +322,6 @@ const router = createRouter({
 let _hasPerm: ((module: string) => boolean) | null = null
 let _permsLoaded: (() => boolean) | null = null
 let _isAuthenticated: (() => boolean) | null = null
-
 export const setRouterGuard = (
     hasPerm: (module: string) => boolean,
     permsLoaded: () => boolean,
