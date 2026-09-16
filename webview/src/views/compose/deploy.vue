@@ -45,12 +45,13 @@ class ComposeDeploy extends Vue {
         return !this.loading && !!this.content.trim()
     }
 
-    /** 编辑器警告/提示文案 */
+    /** 编辑器提示文案（整行展示） */
     get dynamicWarning(): string {
+        const parts = ['项目名来自 compose 文件的 name 字段；如 compose 中引用了环境变量，请在 .env 中填写对应变量']
         if (this.fromMarketplace) {
-            return '已从应用市场预填模板，可在此基础上直接部署或调整后再部署'
+            parts.push('已从应用市场预填模板，可在此基础上直接部署或调整后再部署')
         }
-        return '项目名来自 compose 文件的 name 字段；如 compose 中引用了环境变量，请在 .env 中填写对应变量'
+        return parts.join('；')
     }
 
     // ─── 方法 ───
@@ -240,11 +241,18 @@ export default toNative(ComposeDeploy)
         <!-- Compose 内容 + 环境变量 .env：左右布局（compose 左，.env 右） -->
         <div class="grid gap-4 lg:grid-cols-2">
           <div class="min-w-0">
-            <ComposeEditor v-model="content" :disabled="loading" :warning="dynamicWarning" />
+            <ComposeEditor v-model="content" :disabled="loading" />
           </div>
           <div class="min-w-0">
             <EnvEditor :model-value="envContent" :disabled="loading" @update:model-value="onEnvContentChange" />
           </div>
+        </div>
+
+        <!-- 提示：整行展示，不随左右分栏被截断 -->
+        <div v-if="dynamicWarning" class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p class="text-sm text-amber-700">
+            <i class="fas fa-exclamation-triangle mr-1"></i>{{ dynamicWarning }}
+          </p>
         </div>
 
         <!-- 附加文件 -->
