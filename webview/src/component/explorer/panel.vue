@@ -129,8 +129,8 @@ class ExplorerPanel extends Vue {
                 ...result.files.filter(f => !f.isDir).sort((a, b) => a.name.localeCompare(b.name)),
             ]
             this.$emit('path-change', this.currentPath)
-        } catch (e: unknown) {
-            this.error = (e instanceof Error ? e.message : '') || '加载失败'
+        } catch {
+            this.error = '加载失败'
             this.files = []
         } finally { this.loading = false }
     }
@@ -352,10 +352,11 @@ export default toNative(ExplorerPanel)
       <!-- ─── 错误 ────────────────────────────────────────────────────────────── -->
       <div v-else-if="error" class="card-body">
         <div class="empty-state">
-          <i class="fas fa-circle-exclamation text-4xl text-red-300 mb-3"></i>
+          <div class="empty-state-icon">
+            <i class="fas fa-triangle-exclamation text-4xl text-slate-300"></i>
+          </div>
           <p class="text-slate-600 font-medium mb-1">加载失败</p>
-          <p class="text-sm text-slate-400">{{ error }}</p>
-          <button class="btn btn-secondary mt-4" @click="refresh()">重试</button>
+          <p class="text-sm text-slate-400">请检查网络或权限后刷新重试</p>
         </div>
       </div>
 
