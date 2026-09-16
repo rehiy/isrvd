@@ -4,29 +4,26 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
-	"isrvd/config"
 )
 
 // ─── 概览与原始配置 ───
 
 // Info Caddy 概览信息
 type Info struct {
-	AdminURL  string `json:"adminUrl"`  // Caddy Admin API 地址
-	Servers   int    `json:"servers"`   // HTTP server 数量
-	Routes    int    `json:"routes"`    // 路由总数
-	Certs     int    `json:"certs"`     // 证书数量
-	HasTLS    bool   `json:"hasTls"`    // 是否配置了 TLS
-	Available bool   `json:"available"` // Caddy 服务是否可用
+	Servers   int  `json:"servers"`   // HTTP server 数量
+	Routes    int  `json:"routes"`    // 路由总数
+	Certs     int  `json:"certs"`     // 证书数量
+	HasTLS    bool `json:"hasTls"`    // 是否配置了 TLS
+	Available bool `json:"available"` // Caddy 服务是否可用
 }
 
 // Info 获取概览
 func (s *Service) Info(ctx context.Context) (*Info, error) {
 	cfg, err := s.client.ConfigAll(ctx)
 	if err != nil {
-		return &Info{AdminURL: config.Caddy.AdminURL, Available: false}, nil
+		return &Info{Available: false}, nil
 	}
-	info := &Info{AdminURL: config.Caddy.AdminURL, Available: true}
+	info := &Info{Available: true}
 	if cfg.Apps != nil && cfg.Apps.HTTP != nil {
 		for _, srv := range cfg.Apps.HTTP.Servers {
 			info.Servers++

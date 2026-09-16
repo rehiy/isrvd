@@ -8,7 +8,6 @@ isrvd_get "/caddy/info"
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| adminUrl | string | Caddy Admin API 地址（来自系统配置） |
 | servers | number | server 总数 |
 | routes | number | 所有 server 路由总数 |
 | certs | number | SSL 证书总数，包含配置证书与 Caddy 运行时已签发缓存证书 |

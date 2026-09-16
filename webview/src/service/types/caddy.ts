@@ -103,7 +103,6 @@ export interface CaddyRouteUpsert {
 
 // 概览
 export interface CaddyInfo {
-    adminUrl: string
     servers: number
     routes: number
     certs: number

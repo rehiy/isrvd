@@ -15,7 +15,6 @@ class CaddyOverview extends Vue {
     loading = false
 
     readonly statCards = [
-        { key: 'adminUrl', label: 'Admin API',  icon: 'fa-link',        bgColor: 'bg-slate-500' },
         { key: 'servers',  label: 'Server 数',  icon: 'fa-server',      bgColor: 'bg-indigo-500' },
         { key: 'routes',   label: '路由总数',   icon: 'fa-route',       bgColor: 'bg-orange-500' },
         { key: 'certs',    label: 'SSL 证书',   icon: 'fa-lock',        bgColor: 'bg-cyan-500' },
@@ -42,7 +41,6 @@ class CaddyOverview extends Vue {
     cardValue(key: string): string | number {
         if (!this.info) return 0
         if (key === 'hasTls') return this.info.hasTls ? 'Y' : 'N'
-        if (key === 'adminUrl') return this.info.adminUrl || '-'
         const v = (this.info as unknown as Record<string, unknown>)[key]
         return typeof v === 'number' ? v : 0
     }
