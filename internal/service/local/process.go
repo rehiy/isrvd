@@ -15,18 +15,43 @@ import (
 // ErrProtectedProcess 受保护的进程不允许终止
 var ErrProtectedProcess = errors.New("该进程受保护，不允许终止")
 
+var processMetricSamples = struct {
+	sync.Mutex
+	values map[int32]processMetricSample
+}{
+	values: make(map[int32]processMetricSample),
+}
+
+type processMetricSample struct {
+	createTime   int64
+	cpuSeconds   float64
+	readBytes    uint64
+	writeBytes   uint64
+	cpuCollected bool
+	ioCollected  bool
+	sampledAt    time.Time
+}
+
 // ProcessInfo 进程信息
 type ProcessInfo struct {
-	PID           int32   `json:"pid"`               // 进程 ID
-	PPID          int32   `json:"ppid"`              // 父进程 ID
-	Name          string  `json:"name"`              // 进程名
-	Username      string  `json:"username"`          // 运行用户
-	Status        string  `json:"status"`            // 运行状态
-	CPUPercent    float64 `json:"cpuPercent"`        // CPU 占用（%，自启动以来的均值，可超过 100）
-	MemoryPercent float32 `json:"memoryPercent"`     // 内存占用（%）
-	MemoryRSS     uint64  `json:"memoryRss"`         // 常驻内存（字节）
-	CreateTime    int64   `json:"createTime"`        // 启动时间（Unix 毫秒）
-	Cmdline       string  `json:"cmdline,omitempty"` // 完整命令行，仅创始人可见
+	PID           int32    `json:"pid"`                  // 进程 ID
+	PPID          int32    `json:"ppid"`                 // 父进程 ID
+	Name          string   `json:"name"`                 // 进程名
+	Username      string   `json:"username"`             // 运行用户
+	Status        string   `json:"status"`               // 运行状态
+	CPUMillis     uint64   `json:"cpuMillis"`            // 累计 CPU 时间（毫秒）
+	CPUPercent    *float64 `json:"cpuPercent,omitempty"` // CPU 占用（%，相邻采样区间均值，可超过 100）
+	MemoryPercent float32  `json:"memoryPercent"`        // 内存占用（%）
+	MemoryRSS     uint64   `json:"memoryRss"`            // 常驻内存（字节）
+	IOReadBPS     *uint64  `json:"ioReadBps,omitempty"`  // 磁盘读取速率（字节/秒），首次采样或不可用时省略
+	IOWriteBPS    *uint64  `json:"ioWriteBps,omitempty"` // 磁盘写入速率（字节/秒），首次采样或不可用时省略
+	CreateTime    int64    `json:"createTime"`           // 启动时间（Unix 毫秒）
+	Cmdline       string   `json:"cmdline,omitempty"`    // 完整命令行，仅创始人可见
+	cpuSeconds    float64  // 本轮累计 CPU 时间（秒），仅用于计算速率
+	cpuCollected  bool     // 本轮是否成功采集 CPU 时间
+	ioReadBytes   uint64   // 本轮累计读取字节，仅用于计算速率
+	ioWriteBytes  uint64   // 本轮累计写入字节，仅用于计算速率
+	ioCollected   bool     // 本轮是否成功采集 I/O 计数
 }
 
 // ProcessList 采集本机进程列表，按常驻内存降序排列。
@@ -60,6 +85,7 @@ func ProcessList(includeCmdline bool) ([]*ProcessInfo, error) {
 	}
 
 	wg.Wait()
+	applyProcessRates(list, time.Now())
 
 	sort.Slice(list, func(i, j int) bool {
 		if list[i].MemoryRSS == list[j].MemoryRSS {
@@ -96,21 +122,78 @@ func collect(proc *process.Process, includeCmdline bool) *ProcessInfo {
 	if mem, err := proc.MemoryInfo(); err == nil && mem != nil {
 		info.MemoryRSS = mem.RSS
 	}
+	if ioCounters, err := proc.IOCounters(); err == nil && ioCounters != nil {
+		info.ioReadBytes = ioCounters.ReadBytes
+		info.ioWriteBytes = ioCounters.WriteBytes
+		info.ioCollected = true
+	}
 	if includeCmdline {
 		if cmdline, err := proc.Cmdline(); err == nil {
 			info.Cmdline = cmdline
 		}
 	}
 
-	// CPU 占用取自启动以来的均值（与 ps 的 %CPU 口径一致），
-	// 只需一次采样，避免逐进程阻塞等待导致列表接口变慢。
-	if times, err := proc.Times(); err == nil && times != nil && info.CreateTime > 0 {
-		if elapsed := float64(time.Now().UnixMilli()-info.CreateTime) / 1000; elapsed > 0 {
-			info.CPUPercent = (times.User + times.System) / elapsed * 100
-		}
+	if times, err := proc.Times(); err == nil && times != nil {
+		info.cpuSeconds = times.User + times.System
+		info.CPUMillis = uint64(info.cpuSeconds * 1000)
+		info.cpuCollected = true
 	}
 
 	return info
+}
+
+// applyProcessRates 用相邻两次采样计算 CPU 与 I/O 速率；PID 复用或计数回退时不返回速率。
+func applyProcessRates(list []*ProcessInfo, now time.Time) {
+	processMetricSamples.Lock()
+	defer processMetricSamples.Unlock()
+
+	next := make(map[int32]processMetricSample, len(list))
+	for _, info := range list {
+		if !info.cpuCollected && !info.ioCollected {
+			continue
+		}
+
+		previous, sameProcess := processMetricSamples.values[info.PID]
+		sameProcess = sameProcess && info.CreateTime > 0 && previous.createTime == info.CreateTime
+		if sameProcess && info.cpuCollected && previous.cpuCollected {
+			if cpuPercent, ok := cpuRate(previous.cpuSeconds, info.cpuSeconds, now.Sub(previous.sampledAt)); ok {
+				info.CPUPercent = &cpuPercent
+			}
+		}
+		if sameProcess && info.ioCollected && previous.ioCollected {
+			if readBPS, ok := ioRate(previous.readBytes, info.ioReadBytes, now.Sub(previous.sampledAt)); ok {
+				info.IOReadBPS = &readBPS
+			}
+			if writeBPS, ok := ioRate(previous.writeBytes, info.ioWriteBytes, now.Sub(previous.sampledAt)); ok {
+				info.IOWriteBPS = &writeBPS
+			}
+		}
+
+		next[info.PID] = processMetricSample{
+			createTime:   info.CreateTime,
+			cpuSeconds:   info.cpuSeconds,
+			readBytes:    info.ioReadBytes,
+			writeBytes:   info.ioWriteBytes,
+			cpuCollected: info.cpuCollected,
+			ioCollected:  info.ioCollected,
+			sampledAt:    now,
+		}
+	}
+	processMetricSamples.values = next
+}
+
+func cpuRate(previous, current float64, elapsed time.Duration) (float64, bool) {
+	if current < previous || elapsed <= 0 {
+		return 0, false
+	}
+	return (current - previous) / elapsed.Seconds() * 100, true
+}
+
+func ioRate(previous, current uint64, elapsed time.Duration) (uint64, bool) {
+	if current < previous || elapsed <= 0 {
+		return 0, false
+	}
+	return uint64(float64(current-previous) / elapsed.Seconds()), true
 }
 
 // ProcessKill 终止进程；force 为 true 时发送 SIGKILL，否则发送 SIGTERM
