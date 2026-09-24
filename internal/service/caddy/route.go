@@ -2,6 +2,7 @@ package caddy
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	pkgCaddy "isrvd/pkgs/caddy"
@@ -15,6 +16,25 @@ var ErrRouteNotFound = errors.New("路由不存在")
 type RouteView struct {
 	Index int `json:"index"` // 路由在列表中的下标（用于定位/删除）
 	pkgCaddy.Route
+}
+
+// MarshalJSON 显式附加下标，避免内嵌 Route 的序列化方法吞掉视图字段。
+func (v RouteView) MarshalJSON() ([]byte, error) {
+	route, err := v.Route.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(route, &fields); err != nil {
+		return nil, err
+	}
+	index, err := json.Marshal(v.Index)
+	if err != nil {
+		return nil, err
+	}
+	// 下标由服务端生成，覆盖 Extras 中可能存在的同名字段。
+	fields["index"] = index
+	return json.Marshal(fields)
 }
 
 // RouteList 列出指定 server 的所有路由
