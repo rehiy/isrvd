@@ -508,7 +508,8 @@ func collectTypeDefinitionsFromFile(filename string) {
 			}
 
 			// 只收集 struct 类型，跳过 interface、type alias 等
-			if _, isStruct := ts.Type.(*ast.StructType); !isStruct {
+			st, isStruct := ts.Type.(*ast.StructType)
+			if !isStruct {
 				continue
 			}
 
@@ -516,6 +517,11 @@ func collectTypeDefinitionsFromFile(filename string) {
 
 			// 跳过非导出类型和 Service/Client 等内部实现类型
 			if len(typeName) == 0 || typeName[0] < 'A' || typeName[0] > 'Z' {
+				continue
+			}
+
+			// 预收集仅包含 JSON 字段的类型；接口使用的空类型由 handler 分析按需解析。
+			if len(buildSchemaFromStruct(pkgName, typeName, st, filename).Fields) == 0 {
 				continue
 			}
 

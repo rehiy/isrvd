@@ -5513,6 +5513,96 @@
         ]
       }
     },
+    "/local/process/{pid}/kill": {
+      "post": {
+        "operationId": "post_local_process_pid_kill",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/local.localProcessKill"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "终止进程",
+        "tags": [
+          "local"
+        ]
+      }
+    },
+    "/local/processes": {
+      "get": {
+        "operationId": "get_local_processes",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "description": "Schema not found: gin.H",
+                      "type": "object"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "查询进程列表",
+        "tags": [
+          "local"
+        ]
+      }
+    },
     "/overview/bootstrap": {
       "get": {
         "operationId": "get_overview_bootstrap",
@@ -7474,10 +7564,6 @@
         },
         "type": "object"
       },
-      "account.Service": {
-        "properties": {},
-        "type": "object"
-      },
       "account.TOTPBeginResponse": {
         "properties": {
           "secret": {
@@ -7544,10 +7630,6 @@
         "required": [
           "displayName"
         ],
-        "type": "object"
-      },
-      "apisix.Client": {
-        "properties": {},
         "type": "object"
       },
       "apisix.Consumer": {
@@ -7737,10 +7819,6 @@
             "type": "integer"
           }
         },
-        "type": "object"
-      },
-      "apisix.Service": {
-        "properties": {},
         "type": "object"
       },
       "apisix.Upstream": {
@@ -8095,10 +8173,6 @@
         },
         "type": "object"
       },
-      "caddy.Client": {
-        "properties": {},
-        "type": "object"
-      },
       "caddy.Config": {
         "properties": {
           "@id": {
@@ -8332,10 +8406,6 @@
       },
       "caddy.Info": {
         "properties": {
-          "adminUrl": {
-            "description": "Caddy Admin API 地址",
-            "type": "string"
-          },
           "available": {
             "description": "Caddy 服务是否可用",
             "type": "boolean"
@@ -8587,10 +8657,6 @@
             "type": "integer"
           }
         },
-        "type": "object"
-      },
-      "caddy.Service": {
-        "properties": {},
         "type": "object"
       },
       "caddy.TLSApp": {
@@ -8977,8 +9043,21 @@
         },
         "type": "object"
       },
-      "compose.Service": {
-        "properties": {},
+      "config.AlertRule": {
+        "properties": {
+          "duration": {
+            "description": "连续超阈值次数",
+            "type": "integer"
+          },
+          "metric": {
+            "description": "监控指标",
+            "type": "string"
+          },
+          "threshold": {
+            "description": "阈值（%）",
+            "type": "number"
+          }
+        },
         "type": "object"
       },
       "config.ApisixConfig": {
@@ -9041,6 +9120,10 @@
           },
           "Monitor": {
             "description": "监控配置",
+            "type": "object"
+          },
+          "Notify": {
+            "description": "告警通知配置",
             "type": "object"
           },
           "OIDC": {
@@ -9132,6 +9215,35 @@
         },
         "type": "object"
       },
+      "config.FaultAlertConfig": {
+        "properties": {
+          "certificateDays": {
+            "description": "证书提前告警天数，默认 14",
+            "type": "integer"
+          },
+          "certificateEnabled": {
+            "description": "网关证书到期",
+            "type": "boolean"
+          },
+          "containerEnabled": {
+            "description": "容器异常、健康检查失败和频繁重启",
+            "type": "boolean"
+          },
+          "cronEnabled": {
+            "description": "计划任务执行失败",
+            "type": "boolean"
+          },
+          "restartThreshold": {
+            "description": "窗口内重启次数，默认 3",
+            "type": "integer"
+          },
+          "restartWindow": {
+            "description": "重启统计窗口（秒），默认 300",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "config.LinkConfig": {
         "properties": {
           "icon": {
@@ -9202,6 +9314,29 @@
           "interval": {
             "description": "采集间隔（秒），合法值：5/15/30/60；其他值均视为禁用",
             "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "config.NotifyConfig": {
+        "properties": {
+          "events": {
+            "description": "应用故障告警配置",
+            "type": "object"
+          },
+          "rules": {
+            "description": "资源告警规则",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "webhooks": {
+            "description": "Webhook 通道列表",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
           }
         },
         "type": "object"
@@ -9327,7 +9462,7 @@
       "config.SchemaConfig": {
         "properties": {
           "Version": {
-            "description": "配置结构版本号，当前: 1",
+            "description": "配置结构版本号，当前: 2",
             "type": "integer"
           }
         },
@@ -9407,6 +9542,23 @@
           "totp": {
             "description": "TOTP 二次验证配置",
             "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "config.WebhookConfig": {
+        "properties": {
+          "name": {
+            "description": "通道名称",
+            "type": "string"
+          },
+          "template": {
+            "description": "请求体模板，留空则发送通用 JSON",
+            "type": "string"
+          },
+          "url": {
+            "description": "接收地址",
+            "type": "string"
           }
         },
         "type": "object"
@@ -9552,10 +9704,6 @@
             "type": "string"
           }
         },
-        "type": "object"
-      },
-      "copilot.Service": {
-        "properties": {},
         "type": "object"
       },
       "cron.Job": {
@@ -9732,14 +9880,6 @@
         ],
         "type": "object"
       },
-      "cron.Service": {
-        "properties": {},
-        "type": "object"
-      },
-      "cron.Store": {
-        "properties": {},
-        "type": "object"
-      },
       "cron.TypeInfo": {
         "properties": {
           "label": {
@@ -9771,10 +9911,6 @@
         },
         "type": "object"
       },
-      "cstore.EtcdStore": {
-        "properties": {},
-        "type": "object"
-      },
       "cstore.Event": {
         "properties": {
           "Key": {
@@ -9793,10 +9929,6 @@
             "type": "array"
           }
         },
-        "type": "object"
-      },
-      "cstore.FileStore": {
-        "properties": {},
         "type": "object"
       },
       "cstore.TypedEvent": {
@@ -9818,10 +9950,6 @@
             "type": "object"
           }
         },
-        "type": "object"
-      },
-      "cstore.TypedStore": {
-        "properties": {},
         "type": "object"
       },
       "docker.ActionRequest": {
@@ -10288,14 +10416,6 @@
             "type": "integer"
           }
         },
-        "type": "object"
-      },
-      "docker.DockerService": {
-        "properties": {},
-        "type": "object"
-      },
-      "docker.ExecSession": {
-        "properties": {},
         "type": "object"
       },
       "docker.ImageBuildRequest": {
@@ -10778,10 +10898,6 @@
         ],
         "type": "object"
       },
-      "docker.Service": {
-        "properties": {},
-        "type": "object"
-      },
       "docker.StatsBlockDetail": {
         "properties": {
           "major": {
@@ -11070,10 +11186,6 @@
         },
         "type": "object"
       },
-      "filer.Service": {
-        "properties": {},
-        "type": "object"
-      },
       "filer.filerFileDownload": {
         "properties": {
           "inline": {
@@ -11181,8 +11293,70 @@
         ],
         "type": "object"
       },
-      "monitor.Collector": {
-        "properties": {},
+      "local.ProcessInfo": {
+        "properties": {
+          "cmdline": {
+            "description": "完整命令行，仅创始人可见",
+            "type": "string"
+          },
+          "cpuMillis": {
+            "description": "累计 CPU 时间（毫秒）",
+            "type": "integer"
+          },
+          "cpuPercent": {
+            "description": "CPU 占用（%，相邻采样区间均值，可超过 100）",
+            "type": "number"
+          },
+          "createTime": {
+            "description": "启动时间（Unix 毫秒）",
+            "type": "integer"
+          },
+          "ioReadBps": {
+            "description": "磁盘读取速率（字节/秒），首次采样或不可用时省略",
+            "type": "integer"
+          },
+          "ioWriteBps": {
+            "description": "磁盘写入速率（字节/秒），首次采样或不可用时省略",
+            "type": "integer"
+          },
+          "memoryPercent": {
+            "description": "内存占用（%）",
+            "type": "number"
+          },
+          "memoryRss": {
+            "description": "常驻内存（字节）",
+            "type": "integer"
+          },
+          "name": {
+            "description": "进程名",
+            "type": "string"
+          },
+          "pid": {
+            "description": "进程 ID",
+            "type": "integer"
+          },
+          "ppid": {
+            "description": "父进程 ID",
+            "type": "integer"
+          },
+          "status": {
+            "description": "运行状态",
+            "type": "string"
+          },
+          "username": {
+            "description": "运行用户",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "local.localProcessKill": {
+        "properties": {
+          "force": {
+            "description": "force",
+            "type": "boolean"
+          }
+        },
         "type": "object"
       },
       "monitor.DiskIOStat": {
@@ -11324,6 +11498,56 @@
         },
         "type": "object"
       },
+      "notify.Event": {
+        "properties": {
+          "data": {
+            "description": "事件相关数据",
+            "type": "object"
+          },
+          "event": {
+            "description": "事件类型，如 resource.alert / resource.recover",
+            "type": "string"
+          },
+          "level": {
+            "description": "级别：warning / critical / info",
+            "type": "string"
+          },
+          "message": {
+            "description": "详细描述",
+            "type": "string"
+          },
+          "source": {
+            "description": "来源标识，固定为 isrvd",
+            "type": "string"
+          },
+          "timestamp": {
+            "description": "触发时间（Unix 秒）",
+            "type": "integer"
+          },
+          "title": {
+            "description": "标题",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "notify.HostUsage": {
+        "properties": {
+          "CPUPercent": {
+            "description": "CPUPercent",
+            "type": "number"
+          },
+          "DiskPercent": {
+            "description": "DiskPercent",
+            "type": "number"
+          },
+          "MemoryPercent": {
+            "description": "MemoryPercent",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
       "overview.ProbeResponse": {
         "properties": {
           "apisix": {
@@ -11351,10 +11575,6 @@
             "type": "boolean"
           }
         },
-        "type": "object"
-      },
-      "overview.Service": {
-        "properties": {},
         "type": "object"
       },
       "overview.VersionInfo": {
@@ -11405,10 +11625,6 @@
             "type": "string"
           }
         },
-        "type": "object"
-      },
-      "shell.Service": {
-        "properties": {},
         "type": "object"
       },
       "ssh.websshSFTPChmod": {
@@ -11598,10 +11814,6 @@
         },
         "type": "object"
       },
-      "swarm.Service": {
-        "properties": {},
-        "type": "object"
-      },
       "swarm.ServiceDetail": {
         "properties": {
           "createdAt": {
@@ -11776,10 +11988,6 @@
         },
         "type": "object"
       },
-      "swarm.SwarmService": {
-        "properties": {},
-        "type": "object"
-      },
       "swarm.Task": {
         "properties": {
           "err": {
@@ -11884,6 +12092,10 @@
             "$ref": "#/components/schemas/config.MonitorConfig",
             "description": "监控配置"
           },
+          "notify": {
+            "$ref": "#/components/schemas/config.NotifyConfig",
+            "description": "告警通知配置"
+          },
           "oidc": {
             "$ref": "#/components/schemas/config.OIDCConfig",
             "description": "OIDC 配置（ClientSecret：响应脱敏 / 请求空保留）"
@@ -11946,14 +12158,6 @@
             "type": "string"
           }
         },
-        "type": "object"
-      },
-      "system.AuditService": {
-        "properties": {},
-        "type": "object"
-      },
-      "system.ConfigService": {
-        "properties": {},
         "type": "object"
       },
       "webssh.Credential": {
@@ -12078,10 +12282,6 @@
           "name",
           "addr"
         ],
-        "type": "object"
-      },
-      "webssh.Service": {
-        "properties": {},
         "type": "object"
       }
     },
