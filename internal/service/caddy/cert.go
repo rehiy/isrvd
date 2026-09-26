@@ -3,7 +3,6 @@ package caddy
 import (
 	"context"
 	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	pkgCaddy "isrvd/pkgs/caddy"
+	"isrvd/pkgs/certutil"
 )
 
 // ─── SSL 证书 CRUD ───
@@ -71,7 +71,7 @@ func (s *Service) certListFromConfig(cfg *pkgCaddy.Config) []CertForm {
 					Certificate: p.Certificate,
 					Tags:        p.Tags,
 				}
-				fillCertInfo(&form, parseCertPEM([]byte(p.Certificate)))
+				fillCertInfo(&form, certutil.PEMParse([]byte(p.Certificate)))
 				out = append(out, form)
 			}
 		}
@@ -359,28 +359,7 @@ func parseCertFile(path string) *x509.Certificate {
 	if err != nil {
 		return nil
 	}
-	return parseCertPEM(data)
-}
-
-// parseCertPEM 从 PEM 字节中提取第一个 CERTIFICATE block 并解析。
-// 支持多 block 文件（私钥 + 证书链），跳过非证书 block。
-func parseCertPEM(data []byte) *x509.Certificate {
-	for len(data) > 0 {
-		var block *pem.Block
-		block, data = pem.Decode(data)
-		if block == nil {
-			break
-		}
-		if block.Type != "CERTIFICATE" {
-			continue
-		}
-		cert, err := x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			return nil
-		}
-		return cert
-	}
-	return nil
+	return certutil.PEMParse(data)
 }
 
 // fillCertInfo 将 x509.Certificate 中的证书信息填充到 CertForm
