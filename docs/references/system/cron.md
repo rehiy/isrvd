@@ -206,3 +206,17 @@ isrvd_get "/cron/jobs/<JOB_ID>/logs?limit=20"
 # 删除任务
 isrvd_delete "/cron/jobs/<JOB_ID>"
 ```
+
+## 失败通知
+
+在「系统配置 → 监控告警」开启计划任务失败通知，或按 [系统配置文档](config.md#应用故障告警) 更新 `notify.events.cronEnabled`。需要至少一个可用 Webhook 通道。
+
+每次手动或定时执行失败（包括超时）会发送一次 `cron.failed`；事件包含 `jobId`、`jobName`、`runId` 和 `duration`（毫秒），不包含脚本、输出或原始错误。成功执行不推送；失败原因通过执行历史查看：
+
+```bash
+isrvd_get "/cron/jobs/<id>/logs?limit=20"
+```
+
+配置重载会停止旧调度器，防止重复调度；已经接受的手动执行和已经开始的定时任务继续执行，并按其调度器创建时的通知配置发送失败通知。旧实例停止后拒绝新增、修改、删除、启停和手动执行操作。
+
+收到 SIGTERM/SIGINT 退出信号后，HTTP 请求、当前及重载前仍在运行的计划任务、已发出的 Webhook 共用 5 秒宽限期；任务完成后刷盘，并等待通知请求结束。超过宽限时间仍未完成的任务不保证执行日志及失败通知。

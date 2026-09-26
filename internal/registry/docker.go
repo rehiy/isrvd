@@ -15,6 +15,8 @@ var SwarmService *swarm.SwarmService
 
 // initDocker 初始化 Docker 服务
 func initDocker() error {
+	DockerService = nil
+	SwarmService = nil
 	var registries []*docker.RegistryConfig
 	for _, reg := range config.Docker.Registries {
 		registries = append(registries, &docker.RegistryConfig{

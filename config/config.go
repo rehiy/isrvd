@@ -16,7 +16,7 @@ var (
 	// Copilot LLM 配置
 	Copilot = &CopilotConfig{}
 	// 告警通知配置
-	Notify = &NotifyConfig{}
+	Notify = NotifyNormalize(nil)
 	// Apisix 配置
 	Apisix = &ApisixConfig{}
 	// Caddy 配置
@@ -57,9 +57,7 @@ func Apply(conf *Config) {
 		Copilot = conf.Copilot
 	}
 
-	if conf.Notify != nil {
-		Notify = conf.Notify
-	}
+	Notify = NotifyNormalize(conf.Notify)
 
 	if conf.Apisix != nil {
 		Apisix = conf.Apisix
@@ -176,4 +174,35 @@ func MonitorNormalize(monitor *MonitorConfig) *MonitorConfig {
 		monitor.Interval = 0
 	}
 	return monitor
+}
+
+// ─── 辅助函数 ───
+
+// FaultAlertNormalize 填充默认阈值；不自动开启告警。
+func FaultAlertNormalize(events *FaultAlertConfig) FaultAlertConfig {
+	var result FaultAlertConfig
+	if events != nil {
+		result = *events
+	}
+	if result.RestartThreshold <= 0 || result.RestartThreshold > 10000 {
+		result.RestartThreshold = 3
+	}
+	if result.RestartWindow < 30 || result.RestartWindow > 86400 {
+		result.RestartWindow = 300
+	}
+	if result.CertificateDays <= 0 || result.CertificateDays > 3650 {
+		result.CertificateDays = 14
+	}
+	return result
+}
+
+// NotifyNormalize 保证应用故障配置完整，并保留旧配置的关闭状态。
+func NotifyNormalize(value *NotifyConfig) *NotifyConfig {
+	result := &NotifyConfig{}
+	if value != nil {
+		*result = *value
+	}
+	events := FaultAlertNormalize(result.Events)
+	result.Events = &events
+	return result
 }

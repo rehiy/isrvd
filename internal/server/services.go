@@ -2,10 +2,12 @@ package server
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/logman"
@@ -19,6 +21,7 @@ import (
 	svcDocker "isrvd/internal/service/docker"
 	svcFiler "isrvd/internal/service/filer"
 	svcMonitor "isrvd/internal/service/monitor"
+	svcNotify "isrvd/internal/service/notify"
 	svcOverview "isrvd/internal/service/overview"
 	svcShell "isrvd/internal/service/shell"
 	svcSwarm "isrvd/internal/service/swarm"
@@ -91,6 +94,24 @@ func (app *App) initServices() {
 		app.composeSvc = composeSvc
 	}
 
+	// 注入可用服务，故障检测独立于监控日志采集。
+	sources := svcNotify.FaultSources{
+		DockerKey: config.Docker.Host,
+		CaddyKey:  config.Caddy.AdminURL,
+		ApisixKey: config.Apisix.AdminURL,
+	}
+	if registry.DockerService != nil {
+		sources.Docker = registry.DockerService
+	}
+	if app.caddySvc != nil {
+		sources.Caddy = app.caddySvc
+	}
+	if app.apisixSvc != nil {
+		sources.Apisix = app.apisixSvc
+	}
+	app.faultWatcher = svcNotify.NewFaultWatcher(config.Notify, sources, app.faultWatcher)
+	app.faultWatcher.Start(context.Background())
+
 	// 启动后台监控采集
 	app.monitorCollector = svcMonitor.NewCollector()
 	app.monitorCollector.Start(context.Background())
@@ -98,6 +119,16 @@ func (app *App) initServices() {
 
 // closeServices 释放所有有状态服务持有的资源
 func (app *App) closeServices() {
+	if app.cronSvc != nil {
+		done := app.cronSvc.Close()
+		app.cronWG.Go(func() { <-done })
+	}
+	if app.monitorCollector != nil {
+		app.monitorCollector.Stop()
+	}
+	if app.faultWatcher != nil {
+		app.faultWatcher.Stop()
+	}
 	if app.accountSvc != nil {
 		app.accountSvc.Close()
 	}
@@ -108,9 +139,6 @@ func (app *App) closeServices() {
 	}
 	if app.websshSvc != nil {
 		app.websshSvc.Close()
-	}
-	if app.monitorCollector != nil {
-		app.monitorCollector.Stop()
 	}
 }
 
@@ -150,30 +178,77 @@ func (app *App) isServiceAvailable(module string) bool {
 	}
 }
 
-// watchReload 监听 SIGHUP 信号和 etcd 配置变更，触发重载；
-// 同时监听 SIGTERM/SIGINT，进程退出前释放所有资源
-func (app *App) watchReload() {
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
+// watchReload 统一持有 HTTP 服务与信号生命周期，避免多个退出回调抢先终止进程。
+func (app *App) watchReload(server *http.Server) {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
+	hup := make(chan os.Signal, 1)
+	signal.Notify(hup, syscall.SIGHUP)
+	defer signal.Stop(hup)
+	// 单个协程串行重载，退出时等待它结束，避免与服务清理并发。
+	reloadDone := make(chan struct{})
 	go func() {
+		defer close(reloadDone)
 		for {
 			select {
-			case s := <-sig:
-				switch s {
-				case syscall.SIGHUP:
-					logman.Info("received SIGHUP, reloading...")
-					app.reload()
-				default:
-					logman.Info("received signal, shutting down...", "signal", s)
-					app.closeServices()
-					os.Exit(0)
-				}
+			case <-ctx.Done():
+				return
+			case <-hup:
+				logman.Info("received SIGHUP, reloading...")
 			case <-config.ReloadCh:
 				logman.Info("config changed, reloading...")
-				app.reload()
 			}
+			if ctx.Err() != nil {
+				return
+			}
+			app.reload()
 		}
 	}()
+	listenErr := make(chan error, 1)
+	go func() {
+		logman.Info("httpd start", "address", server.Addr)
+		listenErr <- server.ListenAndServe()
+	}()
+	select {
+	case err := <-listenErr:
+		if !errors.Is(err, http.ErrServerClosed) {
+			logman.Error("httpd server stopped", "error", err)
+		}
+	case <-ctx.Done():
+		logman.Info("received signal, shutting down...")
+	}
+	stop()
+	app.shutdown(server, reloadDone)
+}
+
+// shutdown 让 HTTP 请求、所有新旧任务及通知发送共用退出宽限期。
+func (app *App) shutdown(server *http.Server, reloadDone <-chan struct{}) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	defer func() {
+		if !svcNotify.Shutdown(ctx) {
+			logman.Warn("notification shutdown grace period expired")
+		}
+	}()
+	if err := server.Shutdown(ctx); err != nil {
+		logman.Warn("httpd shutdown grace period expired", "error", err)
+		_ = server.Close()
+	}
+	closed := make(chan struct{})
+	go func() {
+		defer close(closed)
+		<-reloadDone
+		if ctx.Err() != nil {
+			return
+		}
+		app.closeServices()
+		app.cronWG.Wait()
+	}()
+	select {
+	case <-closed:
+	case <-ctx.Done():
+		logman.Warn("service shutdown grace period expired")
+	}
 }
 
 // reload 重新加载配置和服务
@@ -182,9 +257,9 @@ func (app *App) reload() {
 		logman.Error("config reload failed", "error", err)
 		return
 	}
-	registry.Init()
 	// 关闭旧服务持有的资源，再重新初始化（含监控采集器）
 	app.closeServices()
+	registry.Init()
 	app.initServices()
 	logman.Info("reload complete")
 }

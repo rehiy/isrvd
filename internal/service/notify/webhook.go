@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 
@@ -26,7 +27,12 @@ import (
 // 单个请求的超时时间，避免接收方不可达时长时间占用
 const sendTimeout = 10 * time.Second
 
-var errWebhookTargetBlocked = errors.New("webhook 目标地址被安全策略拒绝")
+var (
+	errWebhookTargetBlocked = errors.New("webhook 目标地址被安全策略拒绝")
+	sendsMu                 sync.Mutex
+	sendsWG                 sync.WaitGroup
+	sendsClosed             bool
+)
 
 // Event 告警事件，同时作为通用 JSON 载荷与模板渲染的数据源
 type Event struct {
@@ -41,21 +47,66 @@ type Event struct {
 
 // Send 向所有已配置的 Webhook 发送告警事件；无可用通道时直接返回
 func Send(evt *Event) {
-	if config.Notify == nil || len(config.Notify.Webhooks) == 0 || evt == nil {
+	sendTo(snapshotWebhooks(config.Notify), evt)
+}
+
+// snapshotWebhooks 为异步通知保留通道快照，避免重载后引用可变配置。
+func snapshotWebhooks(cfg *config.NotifyConfig) []*config.WebhookConfig {
+	if cfg == nil {
+		return nil
+	}
+	hooks := make([]*config.WebhookConfig, 0, len(cfg.Webhooks))
+	for _, hook := range cfg.Webhooks {
+		if hook != nil && strings.TrimSpace(hook.URL) != "" {
+			copy := *hook
+			hooks = append(hooks, &copy)
+		}
+	}
+	return hooks
+}
+
+func sendTo(hooks []*config.WebhookConfig, evt *Event) {
+	if evt == nil || len(hooks) == 0 {
 		return
 	}
-	if evt.Timestamp == 0 {
-		evt.Timestamp = time.Now().Unix()
+	sendsMu.Lock()
+	if sendsClosed {
+		sendsMu.Unlock()
+		return
 	}
-	if evt.Source == "" {
-		evt.Source = "isrvd"
+	sendsWG.Add(len(hooks))
+	sendsMu.Unlock()
+	copy := *evt
+	if copy.Timestamp == 0 {
+		copy.Timestamp = time.Now().Unix()
 	}
+	if copy.Source == "" {
+		copy.Source = "isrvd"
+	}
+	for _, hook := range hooks {
+		go func() {
+			defer sendsWG.Done()
+			sendOne(hook, &copy)
+		}()
+	}
+}
 
-	for _, hook := range config.Notify.Webhooks {
-		if hook == nil || strings.TrimSpace(hook.URL) == "" {
-			continue
-		}
-		go sendOne(hook, evt)
+// Shutdown 停止接收新通知，并在退出宽限期内等待已经发出的请求。
+// 仅用于进程退出；配置重载不关闭通知发送。
+func Shutdown(ctx context.Context) bool {
+	sendsMu.Lock()
+	sendsClosed = true
+	sendsMu.Unlock()
+	done := make(chan struct{})
+	go func() {
+		sendsWG.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+		return true
+	case <-ctx.Done():
+		return false
 	}
 }
 

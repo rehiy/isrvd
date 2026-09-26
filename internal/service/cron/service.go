@@ -12,10 +12,11 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/rehiy/libgo/command"
 	"github.com/rehiy/libgo/logman"
-	"github.com/rehiy/libgo/signal"
 	"github.com/rehiy/libgo/strutil"
 	libCron "github.com/robfig/cron/v3"
 
+	"isrvd/config"
+	svcNotify "isrvd/internal/service/notify"
 	"isrvd/pkgs/docker"
 )
 
@@ -46,12 +47,17 @@ type Job struct {
 
 // Service 计划任务服务
 type Service struct {
-	cron    *libCron.Cron              // cron 调度器实例
-	store   *Store                     // 任务持久化存储
-	docker  *docker.DockerService      // 可选，DOCKER 类型任务需要
-	jobs    map[string]*Job            // jobID → Job 映射
-	entries map[string]libCron.EntryID // jobID → cron entry ID 映射
-	mu      sync.RWMutex               // 保护 jobs 和 entries 的并发访问
+	cron          *libCron.Cron              // cron 调度器实例
+	store         *Store                     // 任务持久化存储
+	docker        *docker.DockerService      // 可选，DOCKER 类型任务需要
+	jobs          map[string]*Job            // jobID → Job 映射
+	entries       map[string]libCron.EntryID // jobID → cron entry ID 映射
+	cleanCancel   context.CancelFunc
+	closeDone     chan struct{}
+	workers       sync.WaitGroup // 任务执行与日志清理共用等待组
+	closed        bool
+	failureNotify func(string, string, string, int64)
+	mu            sync.RWMutex // 保护任务、调度条目和关闭状态
 }
 
 // AvailableTypes 按当前 OS 及 Docker 可用性返回可用脚本类型
@@ -81,11 +87,13 @@ func (s *Service) AvailableTypes() []TypeInfo {
 // NewService 创建计划任务服务并启动调度器
 func NewService(dockerSvc *docker.DockerService) *Service {
 	s := &Service{
-		jobs:    make(map[string]*Job),
-		entries: make(map[string]libCron.EntryID),
-		cron:    libCron.New(),
-		store:   NewStore(),
-		docker:  dockerSvc,
+		jobs:          make(map[string]*Job),
+		entries:       make(map[string]libCron.EntryID),
+		cron:          libCron.New(),
+		store:         NewStore(),
+		docker:        dockerSvc,
+		closeDone:     make(chan struct{}),
+		failureNotify: svcNotify.JobFailureNotifier(config.Notify),
 	}
 
 	// 从 cron.yml 加载任务
@@ -112,19 +120,35 @@ func NewService(dockerSvc *docker.DockerService) *Service {
 	// 启动后立即清理一次过期日志，并启动每日清理协程
 	s.store.CleanOld()
 	cleanCtx, cleanCancel := context.WithCancel(context.Background())
-	go s.runLogCleaner(cleanCtx)
-
-	signal.OnQuit(func() {
-		cleanCancel()
-		ctx := s.cron.Stop()
-		<-ctx.Done()
-		if err := s.store.Close(); err != nil {
-			logger.Warn("Cron log store close failed", "error", err)
-		}
-		logger.Info("Cron scheduler stopped")
-	})
+	s.cleanCancel = cleanCancel
+	s.workers.Add(1)
+	go func() {
+		defer s.workers.Done()
+		s.runLogCleaner(cleanCtx)
+	}()
 
 	return s
+}
+
+// Close 停止调度和清理协程；正在执行的任务结束后关闭日志存储。
+// 配置重载时必须停止旧调度器，避免同一任务被重复执行和通知。
+func (s *Service) Close() <-chan struct{} {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.closed {
+		s.closed = true
+		s.cleanCancel()
+		s.cron.Stop()
+		go func() {
+			defer close(s.closeDone)
+			s.workers.Wait()
+			if err := s.store.Close(); err != nil {
+				logger.Warn("Cron log store close failed", "error", err)
+			}
+			logger.Info("Cron scheduler stopped")
+		}()
+	}
+	return s.closeDone
 }
 
 // runLogCleaner 每日凌晨清理过期日志，ctx 取消时退出
@@ -248,28 +272,15 @@ func (s *Service) JobCreate(job *Job) error {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return fmt.Errorf("cron scheduler stopped")
+	}
 
 	if _, exists := s.jobs[job.ID]; exists {
 		return fmt.Errorf("job already exists: %s", job.ID)
 	}
 
-	s.jobs[storedJob.ID] = storedJob
-	if storedJob.Enabled {
-		if err := s.register(storedJob); err != nil {
-			delete(s.jobs, job.ID)
-			return err
-		}
-	}
-
-	if err := s.persist(); err != nil {
-		if entryID, ok := s.entries[job.ID]; ok {
-			s.cron.Remove(entryID)
-			delete(s.entries, job.ID)
-		}
-		delete(s.jobs, job.ID)
-		return err
-	}
-	return nil
+	return s.jobReplace(storedJob.ID, storedJob)
 }
 
 // JobUpdate 更新任务并重新注册
@@ -281,80 +292,37 @@ func (s *Service) JobUpdate(job *Job) error {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return fmt.Errorf("cron scheduler stopped")
+	}
 
-	oldJob, ok := s.jobs[job.ID]
-	if !ok {
+	if _, ok := s.jobs[job.ID]; !ok {
 		return fmt.Errorf("job not found: %s", job.ID)
 	}
-	oldEntryID, oldEnabled := s.entries[job.ID]
-
-	if oldEnabled {
-		s.cron.Remove(oldEntryID)
-		delete(s.entries, job.ID)
-	}
-	s.jobs[job.ID] = storedJob
-
-	if storedJob.Enabled {
-		if err := s.register(storedJob); err != nil {
-			s.jobs[job.ID] = oldJob
-			if oldEnabled {
-				if oldEntryID, err := s.cron.AddFunc(oldJob.Schedule, func() { s.runJob(oldJob.ID) }); err == nil {
-					s.entries[oldJob.ID] = oldEntryID
-				}
-			}
-			return err
-		}
-	}
-
-	if err := s.persist(); err != nil {
-		if entryID, ok := s.entries[job.ID]; ok {
-			s.cron.Remove(entryID)
-			delete(s.entries, job.ID)
-		}
-		s.jobs[job.ID] = oldJob
-		if oldEnabled {
-			if entryID, err := s.cron.AddFunc(oldJob.Schedule, func() { s.runJob(oldJob.ID) }); err == nil {
-				s.entries[oldJob.ID] = entryID
-			}
-		}
-		return err
-	}
-	return nil
+	return s.jobReplace(storedJob.ID, storedJob)
 }
 
 // JobDelete 删除任务
 func (s *Service) JobDelete(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return fmt.Errorf("cron scheduler stopped")
+	}
 
-	job, ok := s.jobs[id]
-	if !ok {
+	if _, ok := s.jobs[id]; !ok {
 		return fmt.Errorf("job not found: %s", id)
 	}
-
-	oldEntryID, oldEnabled := s.entries[id]
-	if oldEnabled {
-		s.cron.Remove(oldEntryID)
-		delete(s.entries, id)
-	}
-	delete(s.jobs, id)
-
-	if err := s.persist(); err != nil {
-		s.jobs[id] = job
-		if oldEnabled {
-			if entryID, addErr := s.cron.AddFunc(job.Schedule, func() { s.runJob(job.ID) }); addErr == nil {
-				s.entries[id] = entryID
-			}
-		}
-		return err
-	}
-	return nil
+	return s.jobReplace(id, nil)
 }
 
 // JobStatusPatch 启用或禁用任务
 func (s *Service) JobStatusPatch(id string, enabled bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return fmt.Errorf("cron scheduler stopped")
+	}
 
 	oldJob, ok := s.jobs[id]
 	if !ok {
@@ -367,48 +335,16 @@ func (s *Service) JobStatusPatch(id string, enabled bool) error {
 
 	job := cloneJob(oldJob)
 	job.Enabled = enabled
-	s.jobs[id] = job
-
-	if enabled {
-		if err := s.register(job); err != nil {
-			s.jobs[id] = oldJob
-			return err
-		}
-	} else {
-		if entryID, ok := s.entries[id]; ok {
-			s.cron.Remove(entryID)
-			delete(s.entries, id)
-		}
-	}
-
-	if err := s.persist(); err != nil {
-		s.jobs[id] = oldJob
-		if enabled {
-			if entryID, ok := s.entries[id]; ok {
-				s.cron.Remove(entryID)
-				delete(s.entries, id)
-			}
-		} else {
-			if entryID, err := s.cron.AddFunc(oldJob.Schedule, func() { s.runJob(oldJob.ID) }); err == nil {
-				s.entries[id] = entryID
-			}
-		}
-		return err
-	}
-	return nil
+	return s.jobReplace(id, job)
 }
 
 // JobRun 立即触发一次任务（异步执行）
 func (s *Service) JobRun(id string) error {
-	s.mu.RLock()
-	_, ok := s.jobs[id]
-	s.mu.RUnlock()
-
-	if !ok {
-		return fmt.Errorf("job not found: %s", id)
+	job, err := s.prepareRun(id)
+	if err != nil {
+		return err
 	}
-
-	go s.runJob(id)
+	go s.executeJob(job)
 	return nil
 }
 
@@ -423,6 +359,42 @@ func (s *Service) JobLogs(id string, limit int) []*JobLog {
 
 // ─── 内部方法 ───
 
+// jobReplace 同步任务、调度条目与持久化；失败时恢复原状态。nil 表示删除。
+// 调用前须持有写锁。
+func (s *Service) jobReplace(id string, job *Job) error {
+	oldJob := s.jobs[id]
+	_, registered := s.entries[id]
+	s.unregister(id)
+	var err error
+	if job == nil {
+		delete(s.jobs, id)
+	} else {
+		s.jobs[id] = job
+		if job.Enabled {
+			err = s.register(job)
+		}
+	}
+	if err == nil {
+		err = s.persist()
+	}
+	if err == nil {
+		return nil
+	}
+
+	s.unregister(id)
+	if oldJob == nil {
+		delete(s.jobs, id)
+	} else {
+		s.jobs[id] = oldJob
+		if registered {
+			if restoreErr := s.register(oldJob); restoreErr != nil {
+				logger.Warn("Cron job restore failed", "id", id, "error", restoreErr)
+			}
+		}
+	}
+	return err
+}
+
 // register 向调度器注册一个任务（调用前须持有锁或在初始化阶段）
 func (s *Service) register(job *Job) error {
 	entryID, err := s.cron.AddFunc(job.Schedule, func() { s.runJob(job.ID) })
@@ -431,6 +403,14 @@ func (s *Service) register(job *Job) error {
 	}
 	s.entries[job.ID] = entryID
 	return nil
+}
+
+// unregister 移除任务的调度条目（调用前须持有锁）。
+func (s *Service) unregister(id string) {
+	if entryID, ok := s.entries[id]; ok {
+		s.cron.Remove(entryID)
+		delete(s.entries, id)
+	}
 }
 
 // persist 将当前 jobs 持久化到 cron.yml（调用前须持有锁）
@@ -457,15 +437,31 @@ type JobLog struct {
 
 // runJob 执行指定 ID 的任务
 func (s *Service) runJob(id string) {
-	s.mu.RLock()
-	job, ok := s.jobs[id]
-	if ok {
-		job = cloneJob(job)
-	}
-	s.mu.RUnlock()
-	if !ok {
+	job, err := s.prepareRun(id)
+	if err != nil {
 		return
 	}
+	s.executeJob(job)
+}
+
+// prepareRun 在同一把锁内接受任务并计入等待，保证已接受的手动执行不会被 Close 丢弃。
+func (s *Service) prepareRun(id string) (*Job, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.closed {
+		return nil, fmt.Errorf("cron scheduler stopped")
+	}
+	job, ok := s.jobs[id]
+	if !ok {
+		return nil, fmt.Errorf("job not found: %s", id)
+	}
+	job = cloneJob(job)
+	s.workers.Add(1)
+	return job, nil
+}
+
+func (s *Service) executeJob(job *Job) {
+	defer s.workers.Done()
 
 	start := time.Now()
 	logger.Info("Cron job running", "id", job.ID, "name", job.Name)
@@ -505,6 +501,9 @@ func (s *Service) runJob(id string) {
 	}
 
 	s.store.AppendJobLog(entry)
+	if err != nil {
+		s.failureNotify(entry.JobID, entry.JobName, entry.RunID, entry.Duration)
+	}
 }
 
 func cloneJob(job *Job) *Job {

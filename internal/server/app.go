@@ -3,6 +3,8 @@ package server
 import (
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/httpd"
@@ -17,6 +19,7 @@ import (
 	svcDocker "isrvd/internal/service/docker"
 	svcFiler "isrvd/internal/service/filer"
 	svcMonitor "isrvd/internal/service/monitor"
+	svcNotify "isrvd/internal/service/notify"
 	svcOverview "isrvd/internal/service/overview"
 	svcShell "isrvd/internal/service/shell"
 	svcSwarm "isrvd/internal/service/swarm"
@@ -46,6 +49,7 @@ type App struct {
 	*gin.Engine
 	wsConfig         *websocket.ServerConfig
 	monitorCollector *svcMonitor.Collector
+	faultWatcher     *svcNotify.FaultWatcher
 	overviewSvc      *svcOverview.Service
 	configSvc        *svcSystem.ConfigService
 	auditSvc         *svcSystem.AuditService
@@ -57,6 +61,7 @@ type App struct {
 	swarmSvc         *svcSwarm.Service
 	composeSvc       *svcCompose.Service
 	cronSvc          *svcCron.Service
+	cronWG           sync.WaitGroup // 等待当前及重载前尚未结束的调度器
 	copilotSvc       *svcCopilot.Service
 	shellSvc         *svcShell.Service
 	websshSvc        *svcWebSSH.Service
@@ -97,8 +102,13 @@ func StartApp() {
 
 	app.initRoutes()
 
-	app.watchReload()
-	httpd.Server(config.Server.ListenAddr)
+	server := &http.Server{
+		Addr:         config.Server.ListenAddr,
+		Handler:      app.Engine,
+		ReadTimeout:  300 * time.Second,
+		WriteTimeout: 300 * time.Second,
+	}
+	app.watchReload(server)
 }
 
 // initRoutes 注册所有路由，服务可用性由 serviceAvailableMiddleware 动态检查

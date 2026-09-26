@@ -3,11 +3,15 @@ package system
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
 	"isrvd/config"
 )
+
+// ErrInvalidNotifyConfig 表示提交的应用故障阈值无效。
+var ErrInvalidNotifyConfig = errors.New("故障告警配置无效")
 
 // AllConfig 全部配置聚合（请求/响应共用）。
 // 作 GET 响应时：敏感字段已脱敏；作 PUT 请求时：nil 分区跳过更新，密钥为空保留原值。
@@ -81,6 +85,14 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 
 // ConfigUpdate 一次性更新全部配置（任何 nil 分区将跳过）
 func (s *ConfigService) ConfigUpdate(req AllConfig) error {
+	if req.Notify != nil && req.Notify.Events != nil {
+		e := req.Notify.Events
+		if e.RestartThreshold < 0 || e.RestartThreshold > 10000 ||
+			e.RestartWindow < 0 || (e.RestartWindow > 0 && e.RestartWindow < 30) || e.RestartWindow > 86400 ||
+			e.CertificateDays < 0 || e.CertificateDays > 3650 {
+			return fmt.Errorf("%w：重启次数为 1–10000，窗口为 30–86400 秒，证书提前天数为 1–3650；0 使用默认值", ErrInvalidNotifyConfig)
+		}
+	}
 	if req.Server != nil {
 		oldSecret := ""
 		if config.Server != nil {
@@ -115,7 +127,7 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 		config.Copilot = req.Copilot
 	}
 	if req.Notify != nil {
-		config.Notify = req.Notify
+		config.Notify = config.NotifyNormalize(req.Notify)
 	}
 	if req.Apisix != nil {
 		oldSecret := ""

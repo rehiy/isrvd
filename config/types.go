@@ -86,8 +86,19 @@ type MonitorConfig struct {
 
 // 告警通知配置
 type NotifyConfig struct {
-	Webhooks []*WebhookConfig `yaml:"webhooks" json:"webhooks"` // Webhook 通道列表
-	Rules    []*AlertRule     `yaml:"rules" json:"rules"`       // 资源告警规则
+	Webhooks []*WebhookConfig  `yaml:"webhooks" json:"webhooks"`       // Webhook 通道列表
+	Rules    []*AlertRule      `yaml:"rules" json:"rules"`             // 资源告警规则
+	Events   *FaultAlertConfig `yaml:"events,omitempty" json:"events"` // 应用故障告警配置
+}
+
+// FaultAlertConfig 应用故障告警，默认关闭；检测独立于监控日志采集。
+type FaultAlertConfig struct {
+	ContainerEnabled   bool `yaml:"containerEnabled" json:"containerEnabled"`     // 容器异常、健康检查失败和频繁重启
+	CronEnabled        bool `yaml:"cronEnabled" json:"cronEnabled"`               // 计划任务执行失败
+	CertificateEnabled bool `yaml:"certificateEnabled" json:"certificateEnabled"` // 网关证书到期
+	RestartThreshold   int  `yaml:"restartThreshold" json:"restartThreshold"`     // 窗口内重启次数，默认 3
+	RestartWindow      int  `yaml:"restartWindow" json:"restartWindow"`           // 重启统计窗口（秒），默认 300
+	CertificateDays    int  `yaml:"certificateDays" json:"certificateDays"`       // 证书提前告警天数，默认 14
 }
 
 // WebhookConfig 单个 Webhook 通道。

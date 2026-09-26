@@ -77,7 +77,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 | Caddy | [references/caddy/servers.md](references/caddy/servers.md) | 服务（srv0 等）增删改查 |
 | Caddy | [references/caddy/certs.md](references/caddy/certs.md) | SSL 证书管理 |
 | Caddy | [references/caddy/config.md](references/caddy/config.md) | 全局配置、原始 JSON 配置 |
-| 系统 | [references/system/config.md](references/system/config.md) | 系统配置、审计日志 |
+| 系统 | [references/system/config.md](references/system/config.md) | 系统配置、故障告警、审计日志 |
 | 系统 | [references/system/account.md](references/system/account.md) | 登录、成员管理、API Token |
 | 系统 | [references/system/filer.md](references/system/filer.md) | 文件管理、上传下载、压缩解压 |
 | 系统 | [references/system/cron.md](references/system/cron.md) | 计划任务 |
@@ -122,6 +122,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 │   ├── Caddy 服务/路由/配置 → references/caddy/ 下对应文件
 │   ├── 系统状态          → references/overview.md
 │   ├── 监控历史数据      → references/overview.md (since=3600|21600|43200|86400)
+│   ├── 容器/任务/证书故障告警 → references/system/config.md §应用故障告警
 │   ├── 日志             → references/docker/containers.md 或 references/swarm/services.md
 │   ├── 文件管理         → references/system/filer.md
 │   └── 主机进程         → references/local.md

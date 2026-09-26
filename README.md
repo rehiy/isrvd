@@ -21,7 +21,7 @@
 | Swarm | 集群信息、节点、服务、任务管理，服务日志、强制更新、加入令牌管理 |
 | Compose | 文件编辑、Docker Compose / Swarm Stack 部署与重部署 |
 | 成员管理 | 多用户、家目录隔离、路由级权限控制、API 令牌、TOTP 二次验证和 Passkey 无密码登录 |
-| 系统管理 | 分组配置管理、操作审计日志、资源告警与 Webhook 通知、OIDC 认证集成、代理认证头登录 |
+| 系统管理 | 分组配置管理、操作审计日志、资源及应用故障告警与 Webhook 通知、OIDC 认证集成、代理认证头登录 |
 | 移动端 | 响应式布局，适配移动设备 |
 
 ## 技术栈
@@ -273,7 +273,7 @@ git diff --check
 | `caddy` | Caddy Admin API 地址 |
 | `docker` | Docker 守护进程地址、容器数据目录、镜像仓库账号 |
 | `monitor` | 系统与容器监控的采集间隔（5/15/30/60 秒，其他值禁用自动采集） |
-| `notify` | 告警 Webhook 通道与 CPU、内存、磁盘使用率规则；规则触发或恢复时通知已配置的通道 |
+| `notify` | Webhook 通道、CPU/内存/磁盘规则，以及容器异常、任务失败和网关证书到期告警；默认关闭应用故障告警 |
 | `marketplace` | 应用市场地址 |
 | `links` | 自定义快捷链接（名称、URL、图标） |
 | `members` | 用户账号、家目录、Founder 标记、路由权限、Passkey 与 TOTP 信息 |

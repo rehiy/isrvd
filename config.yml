@@ -43,6 +43,17 @@ copilot:
   # baseUrl: https://ai.rehiy.wang/v1
   # apiKey: your-api-key
 
+notify:
+  webhooks: []
+  rules: []
+  events:
+    containerEnabled: false
+    cronEnabled: false
+    certificateEnabled: false
+    restartThreshold: 3
+    restartWindow: 300
+    certificateDays: 14
+
 apisix:
   # adminUrl: http://127.0.0.1:9180
   # adminKey: your-admin-key

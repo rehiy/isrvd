@@ -11,6 +11,7 @@ import (
 	"isrvd/config"
 	"isrvd/internal/registry"
 	svcNotify "isrvd/internal/service/notify"
+	"isrvd/pkgs/docker"
 )
 
 // Record 通用监控记录（一行 NDJSON）
@@ -24,27 +25,35 @@ type Record struct {
 // Collector 后台监控采集器，负责定时采集和文件存储
 type Collector struct {
 	dataDir string
+	docker  *docker.DockerService // 保留初始化时的实例，实时查询不读取重载中的全局指针
 	cancel  context.CancelFunc
+	done    chan struct{}
 }
 
 // NewCollector 创建采集器
 func NewCollector() *Collector {
 	return &Collector{
 		dataDir: filepath.Join(config.Server.RootDirectory, "monitor"),
+		docker:  registry.DockerService,
 	}
 }
 
 // Start 启动后台采集协程
 // 若 config.Monitor.Interval 不合法（非 5/15/30/60）则不启动采集
 func (c *Collector) Start(ctx context.Context) {
+	if c.cancel != nil {
+		return
+	}
 	interval := time.Duration(config.Monitor.Interval) * time.Second
 	if interval <= 0 {
 		return
 	}
 
 	ctx, c.cancel = context.WithCancel(ctx)
+	c.done = make(chan struct{})
 
 	go func() {
+		defer close(c.done)
 		// 启动后立即采集一次并清理旧文件
 		c.collect(ctx)
 		c.cleanOld()
@@ -76,6 +85,7 @@ func (c *Collector) Start(ctx context.Context) {
 func (c *Collector) Stop() {
 	if c.cancel != nil {
 		c.cancel()
+		<-c.done
 		c.cancel = nil
 	}
 }
@@ -92,10 +102,10 @@ func (c *Collector) CollectHostStatNow(ctx context.Context) *Record {
 
 // CollectContainerStatNow 实时采集指定容器数据，不写入文件
 func (c *Collector) CollectContainerStatNow(ctx context.Context, id string) *Record {
-	if registry.DockerService == nil {
+	if c.docker == nil {
 		return nil
 	}
-	stats, _, err := registry.DockerService.ContainerStats(ctx, id)
+	stats, _, err := c.docker.ContainerStats(ctx, id)
 	if err != nil {
 		return nil
 	}
@@ -108,18 +118,24 @@ func (c *Collector) CollectContainerStatNow(ctx context.Context, id string) *Rec
 
 // collect 执行一次采集
 func (c *Collector) collect(ctx context.Context) {
+	if ctx.Err() != nil {
+		return
+	}
 	// ── 主机数据 ──
 	stat := CollectHostStat(ctx)
+	if ctx.Err() != nil {
+		return
+	}
 	if raw, err := json.Marshal(stat); err == nil {
 		AppendRawRecord(c.dataDir, HostPrefix, "", time.Now().Unix(), raw)
 		c.checkAlert(stat)
 	}
 
 	// ── 容器数据 ──
-	if registry.DockerService == nil {
+	if c.docker == nil {
 		return
 	}
-	containers, err := registry.DockerService.ContainerList(ctx, false)
+	containers, err := c.docker.ContainerList(ctx, false)
 	if err != nil {
 		logman.Warn("monitor: list containers failed", "error", err)
 		return

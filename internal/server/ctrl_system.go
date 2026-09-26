@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -39,7 +40,11 @@ func (app *App) systemConfigUpdate(c *gin.Context) {
 		return
 	}
 	if err := app.configSvc.ConfigUpdate(req); err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		status := http.StatusInternalServerError
+		if errors.Is(err, svcSystem.ErrInvalidNotifyConfig) {
+			status = http.StatusBadRequest
+		}
+		respondError(c, status, err.Error())
 		return
 	}
 	respondSuccess(c, "全部配置已保存，部分项需重启生效", nil)
