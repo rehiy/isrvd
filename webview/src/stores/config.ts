@@ -42,7 +42,7 @@ export const configGroups: ConfigGroupMeta[] = [
     { id: 'service', label: '基础服务', description: '端口、目录、上传、跨域与 JWT', icon: 'fa-server', sections: ['server'] },
     { id: 'auth', label: '登录认证', description: '密码、Passkey、OIDC 与代理 Header 登录', icon: 'fa-shield-halved', sections: ['password', 'passkey', 'oidc', 'tha'] },
     { id: 'gateway', label: '网关容器', description: 'APISIX、Caddy 与 Docker 连接参数', icon: 'fa-route', sections: ['apisix', 'caddy', 'docker'] },
-    { id: 'alert', label: '监控告警', description: '采集间隔、Webhook 通道与资源阈值', icon: 'fa-bell', sections: ['monitor', 'notify'] },
+    { id: 'alert', label: '监控告警', description: '采集间隔、Webhook 通道、资源阈值与应用故障', icon: 'fa-bell', sections: ['monitor', 'notify'] },
     { id: 'integrations', label: '扩展集成', description: 'AI 助手、应用市场与导航链接', icon: 'fa-puzzle-piece', sections: ['copilot', 'marketplace', 'links'] },
 ]
 
@@ -55,7 +55,11 @@ function defaultConfig(): AllConfig {
         oidc: { enabled: false, issuerUrl: '', clientId: '', clientSecret: '', redirectUrl: '', usernameClaim: 'sub', scopes: ['openid', 'profile', 'email'], loginLabel: '' },
         tha: { enabled: false, headerName: '', trustedCIDRs: [] },
         copilot: { model: '', baseUrl: '', apiKey: '' },
-        notify: { webhooks: [], rules: [] },
+        notify: {
+            webhooks: [],
+            rules: [],
+            events: { containerEnabled: false, cronEnabled: false, certificateEnabled: false, restartThreshold: 3, restartWindow: 300, certificateDays: 14 },
+        },
         apisix: { adminUrl: '', adminKey: '' },
         caddy: { adminUrl: '' },
         docker: { host: '', containerRoot: '', registries: [] },
@@ -97,28 +101,30 @@ export const useConfigStore = defineStore('config', () => {
 
     /** 应用接口返回的全量配置到草稿 */
     function applyPayload(payload: AllConfig) {
+        const defaults = defaultConfig()
         // 后端 nil 切片会序列化为 null，需归一为数组，否则 isDirty 会误判
-        const server: ServerConfig = { ...defaultConfig().server, ...payload.server, allowedOrigins: payload.server?.allowedOrigins || [] }
-        const passkey: PasskeyConfig = { ...defaultConfig().passkey, ...payload.passkey, rpOrigins: payload.passkey?.rpOrigins || [] }
-        const oidc: OIDCConfig = { ...defaultConfig().oidc, ...payload.oidc, scopes: payload.oidc?.scopes || [] }
+        const server: ServerConfig = { ...defaults.server, ...payload.server, allowedOrigins: payload.server?.allowedOrigins || [] }
+        const passkey: PasskeyConfig = { ...defaults.passkey, ...payload.passkey, rpOrigins: payload.passkey?.rpOrigins || [] }
+        const oidc: OIDCConfig = { ...defaults.oidc, ...payload.oidc, scopes: payload.oidc?.scopes || [] }
         const notify: NotifyConfig = {
             webhooks: (payload.notify?.webhooks || []).map(hook => ({ ...hook })),
             rules: (payload.notify?.rules || []).map(rule => ({ ...rule })),
+            events: { ...defaults.notify.events, ...payload.notify?.events },
         }
 
         draft.value = {
             server,
-            password: { ...defaultConfig().password, ...payload.password },
+            password: { ...defaults.password, ...payload.password },
             passkey,
             oidc,
-            tha: { ...defaultConfig().tha, ...payload.tha, trustedCIDRs: payload.tha?.trustedCIDRs || [] },
-            copilot: { ...defaultConfig().copilot, ...payload.copilot },
+            tha: { ...defaults.tha, ...payload.tha, trustedCIDRs: payload.tha?.trustedCIDRs || [] },
+            copilot: { ...defaults.copilot, ...payload.copilot },
             notify,
-            apisix: { ...defaultConfig().apisix, ...payload.apisix },
-            caddy: { ...defaultConfig().caddy, ...payload.caddy },
-            docker: { ...defaultConfig().docker, ...payload.docker, registries: (payload.docker?.registries || []).map(item => ({ ...item })) },
-            monitor: { ...defaultConfig().monitor, ...payload.monitor },
-            marketplace: { ...defaultConfig().marketplace, ...payload.marketplace },
+            apisix: { ...defaults.apisix, ...payload.apisix },
+            caddy: { ...defaults.caddy, ...payload.caddy },
+            docker: { ...defaults.docker, ...payload.docker, registries: (payload.docker?.registries || []).map(item => ({ ...item })) },
+            monitor: { ...defaults.monitor, ...payload.monitor },
+            marketplace: { ...defaults.marketplace, ...payload.marketplace },
             links: (payload.links || []).map(link => ({ ...link })),
         }
 

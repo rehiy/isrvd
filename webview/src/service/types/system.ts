@@ -77,9 +77,19 @@ export interface AlertRule {
     duration: number
 }
 
+export interface FaultAlertConfig {
+    containerEnabled: boolean
+    cronEnabled: boolean
+    certificateEnabled: boolean
+    restartThreshold: number
+    restartWindow: number
+    certificateDays: number
+}
+
 export interface NotifyConfig {
     webhooks: WebhookConfig[]
     rules: AlertRule[]
+    events: FaultAlertConfig
 }
 
 export interface ApisixConfig {
