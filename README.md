@@ -28,7 +28,7 @@
 
 | 层级 | 技术 |
 | ------ | ------ |
-| 后端 | Go 1.25+ / Gin / golang-jwt |
+| 后端 | Go 1.26+ / Gin / golang-jwt |
 | 前端 | Vue 3 / TypeScript / Tailwind CSS / Pinia |
 | 终端 | xterm.js |
 | 容器 | Docker / APISIX / Caddy |
