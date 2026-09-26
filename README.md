@@ -14,14 +14,14 @@
 | 本机进程 | 查看主机进程列表（CPU、内存、命令行），终止指定进程（仅创始人，强制审计） |
 | SSH 远程管理 | 管理主机与可复用凭据，支持密码/私钥认证、浏览器终端和 SFTP 文件管理 |
 | AI 助手 | 内置 Copilot，基于 CopilotKit + AG-UI 协议，通过内置 OpenAPI 目录调用后端接口，支持页面上下文、工具卡片与写操作审批，兼容 OpenAI API 的 LLM 接入 |
-| 计划任务 | 定时任务调度，支持 Shell/BAT/PowerShell/可执行文件，以及 Docker 临时容器或已有容器执行模式 |
+| 计划任务 | 定时任务调度；按运行平台提供 Shell 或 BAT/PowerShell 脚本及可执行文件任务，Docker 可用时还支持临时容器或已有容器执行 |
 | APISIX | 路由、Consumer、上游(Upstream)、SSL 证书、插件配置(PluginConfig)、插件列表、访问授权管理 |
 | Caddy | HTTP 服务、路由、Basic Auth、SSL 证书、全局选项管理，支持原始配置编辑 |
 | Docker | 容器、镜像、网络、卷、镜像仓库管理，容器文件、实时日志、资源统计、终端接入、镜像构建/推送/拉取 |
 | Swarm | 集群信息、节点、服务、任务管理，服务日志、强制更新、加入令牌管理 |
 | Compose | 文件编辑、Docker Compose / Swarm Stack 部署与重部署 |
 | 成员管理 | 多用户、家目录隔离、路由级权限控制、API 令牌、TOTP 二次验证和 Passkey 无密码登录 |
-| 系统管理 | 配置管理、操作审计日志、OIDC 认证集成、代理认证头登录 |
+| 系统管理 | 分组配置管理、操作审计日志、资源告警与 Webhook 通知、OIDC 认证集成、代理认证头登录 |
 | 移动端 | 响应式布局，适配移动设备 |
 
 ## 技术栈
@@ -273,6 +273,7 @@ git diff --check
 | `caddy` | Caddy Admin API 地址 |
 | `docker` | Docker 守护进程地址、容器数据目录、镜像仓库账号 |
 | `monitor` | 系统与容器监控的采集间隔（5/15/30/60 秒，其他值禁用自动采集） |
+| `notify` | 告警 Webhook 通道与 CPU、内存、磁盘使用率规则；规则触发或恢复时通知已配置的通道 |
 | `marketplace` | 应用市场地址 |
 | `links` | 自定义快捷链接（名称、URL、图标） |
 | `members` | 用户账号、家目录、Founder 标记、路由权限、Passkey 与 TOTP 信息 |

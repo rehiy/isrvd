@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>iSrvd — 轻量级运维管理面板</title>
-    <meta name="description" content="iSrvd 是基于 Go + Vue 3 构建的轻量级运维管理面板，集成文件管理、Docker 容器编排、APISIX/Caddy 网关配置、Web 终端、SSH 远程管理、GPU 监控、计划任务与 AI 助手，为个人服务器与中小型团队提供一站式管理体验。" />
+    <meta name="description" content="iSrvd 是基于 Go + Vue 3 构建的轻量级运维管理面板，集成文件管理、Docker 容器编排、APISIX/Caddy 网关配置、Web 终端、SSH 远程管理、GPU 监控、计划任务、资源告警与 AI 助手，为个人服务器与中小型团队提供一站式管理体验。" />
     <script src="https://jscdn.rehi.org/npm/@tailwindcss/browser@4"></script>
     <script>
         tailwind.config = {
@@ -383,7 +383,7 @@
             <!-- Badge -->
             <div class="mb-6">
                 <span class="badge badge-emerald">开源 · Apache 2.0</span>
-                <span class="badge badge-blue ml-2">Go 1.24+ · Vue 3</span>
+                <span class="badge badge-blue ml-2">Go 1.26+ · Vue 3</span>
             </div>
 
             <!-- Description -->
@@ -391,7 +391,7 @@
                 轻量级运维管理面板
             </h1>
             <p class="text-lg sm:text-xl text-slate-500 max-w-5xl mx-auto mb-6 leading-relaxed">
-                基于 Go + Vue 3 构建的轻量级运维面板，集成文件管理、Docker 容器编排、APISIX/Caddy 网关配置、Web 终端、SSH 远程管理、GPU 监控、计划任务与 AI 助手，为个人服务器与中小型团队提供一站式管理体验。
+                基于 Go + Vue 3 构建的轻量级运维面板，集成文件管理、Docker 容器编排、APISIX/Caddy 网关配置、Web 终端、SSH 远程管理、GPU 监控、计划任务、资源告警与 AI 助手，为个人服务器与中小型团队提供一站式管理体验。
             </p>
 
             <!-- Name Origin -->
@@ -501,7 +501,7 @@
                         </svg>
                     </div>
                     <h3 class="font-semibold text-slate-800 mb-1">计划任务</h3>
-                    <p class="text-sm text-slate-500">定时任务调度，支持 Shell/BAT/PowerShell/Docker 执行模式，执行历史查看</p>
+                    <p class="text-sm text-slate-500">定时任务调度；按运行平台提供 Shell 或 BAT/PowerShell 脚本与可执行文件，Docker 可用时支持临时容器或已有容器执行，并可查看执行历史</p>
                 </div>
                 <div class="feature-card">
                     <div class="w-10 h-10 rounded-lg bg-cyan-500 flex items-center justify-center mb-4">
@@ -519,7 +519,7 @@
                         </svg>
                     </div>
                     <h3 class="font-semibold text-slate-800 mb-1">Caddy 代理</h3>
-                    <p class="text-sm text-slate-500">路由、SSL 证书、全局选项管理，支持原始配置编辑与自动 HTTPS</p>
+                    <p class="text-sm text-slate-500">HTTP 服务、路由、Basic Auth、证书与全局选项管理，支持原始配置编辑和 HTTPS 配置</p>
                 </div>
                 <div class="feature-card">
                     <div class="w-10 h-10 rounded-lg bg-sky-500 flex items-center justify-center mb-4">
@@ -556,7 +556,7 @@
                         </svg>
                     </div>
                     <h3 class="font-semibold text-slate-800 mb-1">成员管理</h3>
-                    <p class="text-sm text-slate-500">多用户、家目录隔离、模块权限控制、API 令牌管理</p>
+                    <p class="text-sm text-slate-500">多用户、家目录隔离、路由权限、API 令牌、TOTP 二次验证与 Passkey 无密码登录</p>
                 </div>
                 <div class="feature-card">
                     <div class="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center mb-4">
@@ -576,7 +576,7 @@
                         </svg>
                     </div>
                     <h3 class="font-semibold text-slate-800 mb-1">系统管理</h3>
-                    <p class="text-sm text-slate-500">配置管理、操作审计日志</p>
+                    <p class="text-sm text-slate-500">分组配置、操作审计、资源告警与 Webhook 通知</p>
                 </div>
             </div>
             <div class="mt-8 text-center">
@@ -594,7 +594,7 @@
             <p class="section-subtitle">现代化技术选型</p>
             <div class="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
-                    <p class="font-semibold text-slate-800">Go 1.24+</p>
+                    <p class="font-semibold text-slate-800">Go 1.26+</p>
                     <p class="text-xs text-slate-400 mt-1">后端</p>
                 </div>
                 <div class="text-center p-4 rounded-xl border border-slate-200 bg-white">
@@ -655,7 +655,7 @@
                         <(curl -sL https://isrvd.rehiy.com/install/) install --docker<br /><br /><span style="color:#64748b"># 以 Docker 方式部署（caddy 镜像，含 Caddy 网关）</span><br />bash
                         <(curl -sL https://isrvd.rehiy.com/install/) install --caddy<br /><br /><span style="color:#64748b"># 以 Docker 方式部署（apisix 镜像，含 APISIX 网关）</span><br />bash
                         <(curl -sL https://isrvd.rehiy.com/install/) install --apisix<br /><br /><span style="color:#64748b"># 更新（自动识别二进制或 Docker 部署）</span><br />bash
-                        <(curl -sL https://isrvd.rehiy.com/install/) update<br /><br /><span style="color:#64748b"># 卸载（同时清理二进制文件和 Docker 容器）</span><br />bash
+                        <(curl -sL https://isrvd.rehiy.com/install/) update<br /><br /><span style="color:#64748b"># 卸载（清理二进制文件和 Docker 容器，保留数据目录）</span><br />bash
                         <(curl -sL https://isrvd.rehiy.com/install/) uninstall<br /><br /><span style="color:#64748b"># 仅下载二进制包（不安装）</span><br />bash <(curl -sL https://isrvd.rehiy.com/install/)
                             download</div>
                     </div>
@@ -714,7 +714,7 @@
                     <div class="flex items-center gap-2 mb-3"><span class="badge badge-rose">集成 Caddy</span>
                         <h3 class="font-semibold text-slate-800">caddy — 集成反向代理与 TLS</h3>
                     </div>
-                    <p class="text-xs text-slate-500 mb-2">适合需要反向代理、自动 HTTPS（ACME）或统一网关管理的场景</p>
+                    <p class="text-xs text-slate-500 mb-2">适合需要反向代理、配置自动 HTTPS（ACME）或统一网关管理的场景</p>
                     <div class="code-block">
                         <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
                         <div class="code-body">docker run -d \<br />&nbsp; --name isrvd \<br />&nbsp; --network sdnet \<br />&nbsp; -p 8080:8080 \<br />&nbsp; -p 80:80 \<br />&nbsp; -p 443:443 \<br />&nbsp; -v /srv/data:/data \<br />&nbsp;
@@ -722,7 +722,7 @@
                             /var/run/docker.sock:/var/run/docker.sock \<br />&nbsp; rehiy/isrvd:caddy</div>
                     </div>
                     <p class="text-xs text-slate-400 mt-2">CNB 镜像：<code class="bg-slate-100 px-1 rounded">docker.cnb.cool/rehiy/isrvd:caddy</code></p>
-                    <p class="text-xs text-slate-400 mt-1">Caddy 默认仅监听 <code class="bg-slate-100 px-1 rounded">:80</code>，关闭自动 HTTPS 跳转；如需 HTTPS，在「Caddy → 全局选项」中开启</p>
+                    <p class="text-xs text-slate-400 mt-1">Caddy 默认监听 <code class="bg-slate-100 px-1 rounded">:80</code> 和 <code class="bg-slate-100 px-1 rounded">:443</code>，但关闭自动 HTTPS 与 HTTP 跳转；可在「Caddy → 服务」中配置 HTTPS，或编辑原始配置</p>
                 </div>
                 <div class="mt-6 overflow-x-auto">
                     <table class="w-full text-sm text-left">
