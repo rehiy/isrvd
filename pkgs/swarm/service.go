@@ -2,7 +2,6 @@ package swarm
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -11,8 +10,6 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	dockerSwarm "github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/rehiy/libgo/httpd"
 	"github.com/rehiy/libgo/logman"
 
 	pkgDocker "isrvd/pkgs/docker"
@@ -158,14 +155,6 @@ func (s *SwarmService) ServiceLogsStream(ctx context.Context, w io.Writer, servi
 		tail = "100"
 	}
 
-	writeError := func(msg string) {
-		if sw, ok := w.(httpd.Writer); ok {
-			_ = sw.WriteEvent("error", msg)
-		} else {
-			_, _ = w.Write([]byte("[" + msg + "]\n"))
-		}
-	}
-
 	reader, err := s.client.ServiceLogs(ctx, serviceID, container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
@@ -175,39 +164,14 @@ func (s *SwarmService) ServiceLogsStream(ctx context.Context, w io.Writer, servi
 	})
 	if err != nil {
 		logman.Error("Start service logs stream failed", "id", serviceID, "error", err)
-		writeError("获取服务日志失败: " + err.Error())
+		pkgDocker.LogErrorWrite(w, "获取服务日志失败: "+err.Error())
 		return
 	}
-	defer reader.Close()
-
-	// 心跳 ticker，保持 SSE 连接活跃
-	heartbeat := time.NewTicker(25 * time.Second)
-	defer heartbeat.Stop()
-
-	// Swarm 服务日志为多路复用流（无 TTY），使用 stdcopy 解帧
-	errCh := make(chan error, 1)
-	go func() {
-		_, copyErr := stdcopy.StdCopy(w, w, reader)
-		errCh <- copyErr
-	}()
-
-	for {
-		select {
-		case err := <-errCh:
-			if err != nil && ctx.Err() == nil && !errors.Is(err, io.EOF) {
-				logman.Warn("Service logs stream stopped with error", "id", serviceID, "error", err)
-			}
-			return
-		case <-ctx.Done():
-			logman.Info("Service logs stream cancelled by context", "id", serviceID)
-			return
-		case <-heartbeat.C:
-			if sw, ok := w.(httpd.Writer); ok {
-				if err := sw.WriteEvent("heartbeat", "ping"); err != nil {
-					logman.Warn("Failed to send heartbeat", "id", serviceID, "error", err)
-				}
-			}
-		}
+	cancelled, err := pkgDocker.LogStream(ctx, w, reader, false, serviceID)
+	if err != nil {
+		logman.Warn("Service logs stream stopped with error", "id", serviceID, "error", err)
+	} else if cancelled {
+		logman.Info("Service logs stream cancelled by context", "id", serviceID)
 	}
 }
 

@@ -52,24 +52,16 @@ func (s *DockerService) ContainerLogs(ctx context.Context, id, tail string) ([]s
 }
 
 // ContainerLogsStream 实时转发容器日志到 writer。
-// writer 可选实现 sse.Writer 以区分 error 事件与普通 data 事件。
+// writer 可选实现 httpd.Writer 以区分 error 事件与普通 data 事件。
 func (s *DockerService) ContainerLogsStream(ctx context.Context, w io.Writer, id, tail string) {
 	if tail == "" {
 		tail = "100"
 	}
 
-	writeError := func(msg string) {
-		if sw, ok := w.(httpd.Writer); ok {
-			_ = sw.WriteEvent("error", msg)
-		} else {
-			_, _ = w.Write([]byte("[" + msg + "]\n"))
-		}
-	}
-
 	info, err := s.client.ContainerInspect(ctx, id)
 	if err != nil {
 		logman.Error("Inspect container for logs stream failed", "id", id, "error", err)
-		writeError("获取容器信息失败: " + err.Error())
+		LogErrorWrite(w, "获取容器信息失败: "+err.Error())
 		return
 	}
 
@@ -82,47 +74,60 @@ func (s *DockerService) ContainerLogsStream(ctx context.Context, w io.Writer, id
 	})
 	if err != nil {
 		logman.Error("Start container logs stream failed", "id", id, "error", err)
-		writeError("获取容器日志失败: " + err.Error())
+		LogErrorWrite(w, "获取容器日志失败: "+err.Error())
 		return
 	}
-	defer reader.Close()
+	cancelled, err := LogStream(ctx, w, reader, info.Config != nil && info.Config.Tty, id)
+	if err != nil {
+		logman.Warn("Container logs stream stopped with error", "id", id, "error", err)
+	} else if cancelled {
+		logman.Info("Container logs stream cancelled by context", "id", id)
+	}
+}
 
-	// 心跳 ticker，保持 SSE 连接活跃
+// ─── 辅助函数 ───
+
+// LogStream 转发 Docker 日志流、发送 SSE 心跳，并在上下文取消时关闭 reader。
+// tty 为 true 时直接复制文本，否则使用 Docker 多路复用帧格式解码。
+// 返回值分别表示是否因上下文取消而停止、复制过程中发生的错误。
+func LogStream(ctx context.Context, w io.Writer, reader io.ReadCloser, tty bool, id string) (bool, error) {
+	defer reader.Close()
 	heartbeat := time.NewTicker(25 * time.Second)
 	defer heartbeat.Stop()
-
-	// 使用带上下文的复制，检测连接断开
 	errCh := make(chan error, 1)
 	go func() {
 		var copyErr error
-		if info.Config != nil && info.Config.Tty {
+		if tty {
 			_, copyErr = io.Copy(w, reader)
 		} else {
 			_, copyErr = stdcopy.StdCopy(w, w, reader)
 		}
 		errCh <- copyErr
 	}()
-
 	for {
 		select {
 		case err := <-errCh:
-			// 复制完成或出错
 			if err != nil && ctx.Err() == nil && !errors.Is(err, io.EOF) {
-				logman.Warn("Container logs stream stopped with error", "id", id, "error", err)
+				return false, err
 			}
-			return
+			return false, nil
 		case <-ctx.Done():
-			// 上下文取消（客户端断开）
-			// reader.Close() 会被 defer 调用，io.Copy 会很快返回
-			logman.Info("Container logs stream cancelled by context", "id", id)
-			return
+			return true, nil
 		case <-heartbeat.C:
-			// 发送心跳保持连接
 			if sw, ok := w.(httpd.Writer); ok {
 				if err := sw.WriteEvent("heartbeat", "ping"); err != nil {
 					logman.Warn("Failed to send heartbeat", "id", id, "error", err)
 				}
 			}
 		}
+	}
+}
+
+// LogErrorWrite 将日志读取错误写为 SSE error 事件，普通 writer 使用文本格式。
+func LogErrorWrite(w io.Writer, message string) {
+	if sw, ok := w.(httpd.Writer); ok {
+		_ = sw.WriteEvent("error", message)
+	} else {
+		_, _ = w.Write([]byte("[" + message + "]\n"))
 	}
 }
