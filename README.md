@@ -207,7 +207,7 @@ CONFIG_PATH="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" .
 
 ### 环境要求
 
-- **Go**：用于后端服务与命令行构建
+- **Go**：1.26.0 或更高版本，最低版本以 `go.mod` 为准，用于后端服务与命令行构建
 - **Node.js / npm**：用于 `webview` 前端开发与构建（持续集成环境使用 Node.js 24）
 - **Docker**：可选，用于 Docker、Swarm、Compose 相关功能调试
 
@@ -232,6 +232,8 @@ develop.bat
 Windows 脚本直接使用根目录的 `config.yml` 启动后端，并执行 `npm run dev`；需先在 `webview` 目录安装前端依赖。
 
 ### 构建与校验
+
+GitHub Actions 从 `go.mod` 读取 Go 版本，CNB 使用 `golang:1.26-bookworm` 构建镜像。若设置了 `GOTOOLCHAIN=local`，本地已安装的 Go 必须满足 `go.mod` 的最低版本要求。
 
 ```bash
 # 完整分发构建

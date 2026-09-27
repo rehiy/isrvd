@@ -6,7 +6,7 @@ $:
         tags: cnb:arch:amd64
         cpus: 8
       docker:
-        image: golang:1.25-bookworm
+        image: golang:1.26-bookworm
         volumes:
           - /go/pkg/mod
           - /root/.cache/go-build
