@@ -50,7 +50,17 @@ kill -HUP $(pgrep isrvd)
 isrvd_get "/system/config"
 ```
 
-> 该接口返回完整系统配置（含基础设施地址等敏感拓扑信息），需要 `system` 模块权限，普通登录用户无权访问。前端启动所需的最小配置（如应用市场地址 `marketplaceUrl`）已下放至 `GET /api/overview/bootstrap` 的 `config` 段。
+> 该接口返回完整系统配置（含基础设施地址等敏感拓扑信息），需要 `GET /api/system/config` 路由权限，普通登录用户无权访问。前端启动所需的最小配置（如应用市场地址 `marketplaceUrl`）已下放至 `GET /api/overview/bootstrap` 的 `config` 段。
+
+查看与修改为两项独立授权：
+
+| 路由权限 | 能力 |
+|----------|------|
+| `GET /api/system/config` | 查看配置分组（只读）。侧边栏「系统配置」及子菜单可见，表单仅展示不可编辑 |
+| `PUT /api/system/config` | 保存配置。工具栏显示「保存配置」按钮，表单可编辑 |
+
+- 仅授 `PUT` 未授 `GET` 时侧边栏同样可见，但表单保存需依赖 `GET` 读取当前值，建议两项一并授予。
+- 仅授 `GET` 时页面顶部显示「当前账号仅有查看权限，配置项不可修改」，表单控件整体禁用，且不会触发未保存改动提醒。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -72,6 +82,7 @@ isrvd_get "/system/config"
 ## 更新配置
 
 > 先通过 `isrvd_get "/system/config"` 获取当前值，按需修改后提交，不要硬编码配置内容。
+> 该接口需要 `PUT /api/system/config` 路由权限；成员仅有 `GET` 权限时前端表单为只读，无法保存。
 
 ```bash
 isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
