@@ -16,88 +16,22 @@ import (
 
 // DockerDeploy 部署新的 Docker Compose 项目。
 func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployResult, error) {
-	root := s.docker.ContainerRoot()
-	if root == "" {
-		return nil, fmt.Errorf("未配置容器数据根目录")
-	}
-
-	// 部署前预检：不解析 env_file（避免 .env 尚未写盘时报错），
-	// 返回的 project.Name 已插值+规范化；无 name 时已用内容短哈希兜底
-	pre, err := compose.ProjectValidateWithoutEnvFiles(ctx, req.Content, req.EnvContent)
-	if err != nil {
-		return nil, err
-	}
-	projectName, err := compose.ProjectNameFromProject(pre, req.Content)
-	if err != nil {
-		return nil, err
-	}
-
-	installDir := filepath.Join(root, projectName)
-	composeFile := filepath.Join(installDir, "compose.yml")
-	if _, err := os.Stat(composeFile); err == nil {
-		return nil, fmt.Errorf("目录 %s 已包含 compose 配置，请先移除", installDir)
-	}
-
-	_, err = os.Stat(installDir)
-	installDirExists := err == nil
-	initialEnvState, err := compose.EnvStateRead(installDir)
-	if err != nil {
-		return nil, err
-	}
-
-	deployed := false
-	defer func() {
-		if deployed {
-			return
+	result, err := s.projectDeploy(ctx, req, "Restore compose env after failed deploy", func(project *types.Project) ([]string, error) {
+		for _, svc := range project.Services {
+			cname := compose.DockerContainerNameOf(svc)
+			if _, err := s.docker.ContainerInspect(ctx, cname); err == nil {
+				return nil, fmt.Errorf("容器 %s 已存在，请使用重部署接口", cname)
+			}
 		}
-		if !installDirExists {
-			_ = os.RemoveAll(installDir)
-			return
+		if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
+			return nil, err
 		}
-		_ = os.Remove(composeFile)
-		if err := compose.EnvStateRestore(installDir, initialEnvState); err != nil {
-			logman.Warn("Restore compose env after failed deploy", "name", projectName, "error", err)
-		}
-	}()
-
-	if err := os.MkdirAll(installDir, 0755); err != nil {
-		return nil, fmt.Errorf("创建安装目录失败: %w", err)
+		return s.dockerServicesCreate(ctx, project)
+	})
+	if err == nil {
+		logman.Info("Compose deployed", "name", result.ProjectName, "dir", result.InstallDir)
 	}
-	if err := compose.InitFilesHandle(installDir, compose.InitPayload{URL: req.InitURL, File: req.InitFile}); err != nil {
-		return nil, err
-	}
-
-	if err := compose.EnvApply(installDir, req.EnvContent); err != nil {
-		return nil, err
-	}
-
-	project, err := compose.ProjectLoad(ctx, projectName, req.Content, installDir)
-	if err != nil {
-		return nil, err
-	}
-	if len(project.Services) == 0 {
-		return nil, fmt.Errorf("compose 文件中没有定义服务")
-	}
-
-	for _, svc := range project.Services {
-		cname := compose.DockerContainerNameOf(svc)
-		if _, err := s.docker.ContainerInspect(ctx, cname); err == nil {
-			return nil, fmt.Errorf("容器 %s 已存在，请使用重部署接口", cname)
-		}
-	}
-
-	if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
-		return nil, err
-	}
-
-	items, err := s.dockerServicesCreate(ctx, project)
-	if err != nil {
-		return nil, err
-	}
-
-	deployed = true
-	logman.Info("Compose deployed", "name", projectName, "dir", installDir)
-	return &DeployResult{ProjectName: projectName, Items: items, InstallDir: installDir}, nil
+	return result, err
 }
 
 // DockerInspect 读取项目 Compose 配置；forceRuntime 为 true 时跳过落盘文件，直接从运行态反推。
@@ -111,60 +45,17 @@ func (s *Service) DockerInspect(ctx context.Context, name string, forceRuntime b
 	}
 
 	projectName := s.dockerProjectName(ctx, name, root)
-	path := filepath.Join(root, projectName, "compose.yml")
-	fileModTime := composeFileModTime(path)
-	if !forceRuntime {
-		if data, err := os.ReadFile(path); err == nil {
-			envContent, err := compose.EnvContentRead(filepath.Join(root, projectName))
-			if err != nil {
-				return nil, err
-			}
-			return &ConfigDetail{
-				Content:     string(data),
-				EnvContent:  envContent,
-				ProjectName: projectName,
-				FileModTime: fileModTime,
-				Source:      "file",
-			}, nil
+	return inspectComposeConfig(filepath.Join(root, projectName), projectName, forceRuntime, func() (string, error) {
+		if content, ok, err := s.dockerProjectContentFromContainers(ctx, projectName, root); ok || err != nil {
+			return content, err
 		}
-	}
 
-	if content, ok, err := s.dockerProjectContentFromContainers(ctx, projectName, root); ok || err != nil {
+		info, err := s.docker.ContainerInspect(ctx, name)
 		if err != nil {
-			return nil, err
+			return "", fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
 		}
-		envContent, err := compose.EnvContentRead(filepath.Join(root, projectName))
-		if err != nil {
-			return nil, err
-		}
-		return &ConfigDetail{
-			Content:     content,
-			EnvContent:  envContent,
-			ProjectName: projectName,
-			FileModTime: fileModTime,
-			Source:      "runtime",
-		}, nil
-	}
-
-	info, err := s.docker.ContainerInspect(ctx, name)
-	if err != nil {
-		return nil, fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
-	}
-	content, err := compose.DockerProjectYAMLFromInspect(ctx, info, s.docker.ImageConfig, filepath.Join(root, name))
-	if err != nil {
-		return nil, err
-	}
-	envContent, err := compose.EnvContentRead(filepath.Join(root, projectName))
-	if err != nil {
-		return nil, err
-	}
-	return &ConfigDetail{
-		Content:     content,
-		EnvContent:  envContent,
-		ProjectName: projectName,
-		FileModTime: fileModTime,
-		Source:      "runtime",
-	}, nil
+		return compose.DockerProjectYAMLFromInspect(ctx, info, s.docker.ImageConfig, filepath.Join(root, name))
+	})
 }
 
 // DockerRedeploy 重建 Docker Compose 项目。
@@ -411,11 +302,4 @@ func (s *Service) dockerEnsureNetworks(ctx context.Context, project *types.Proje
 		}
 	}
 	return nil
-}
-
-func composeFileModTime(path string) int64 {
-	if st, err := os.Stat(path); err == nil && !st.IsDir() {
-		return st.ModTime().Unix()
-	}
-	return 0
 }

@@ -3,7 +3,6 @@ package compose
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -19,88 +18,21 @@ const swarmServiceRemoveTimeout = 10 * time.Second
 
 // SwarmDeploy 部署新的 Swarm Compose 项目。
 func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployResult, error) {
-	root := s.docker.ContainerRoot()
-	if root == "" {
-		return nil, fmt.Errorf("未配置容器数据根目录")
-	}
-
-	// 部署前预检：不解析 env_file（避免 .env 尚未写盘时报错），
-	// 返回的 project.Name 已插值+规范化；无 name 时已用内容短哈希兜底
-	pre, err := compose.ProjectValidateWithoutEnvFiles(ctx, req.Content, req.EnvContent)
-	if err != nil {
-		return nil, err
-	}
-	projectName, err := compose.ProjectNameFromProject(pre, req.Content)
-	if err != nil {
-		return nil, err
-	}
-
-	installDir := filepath.Join(root, projectName)
-	composeFile := filepath.Join(installDir, "compose.yml")
-	if _, err := os.Stat(composeFile); err == nil {
-		return nil, fmt.Errorf("目录 %s 已包含 compose 配置，请先移除", installDir)
-	}
-
-	_, err = os.Stat(installDir)
-	installDirExists := err == nil
-	initialEnvState, err := compose.EnvStateRead(installDir)
-	if err != nil {
-		return nil, err
-	}
-
-	deployed := false
-	defer func() {
-		if deployed {
-			return
+	result, err := s.projectDeploy(ctx, req, "Restore swarm compose env after failed deploy", func(project *types.Project) ([]string, error) {
+		for _, svc := range project.Services {
+			if _, err := s.swarm.ServiceInspect(ctx, svc.Name); err == nil {
+				return nil, fmt.Errorf("服务 %s 已存在，请先移除", svc.Name)
+			}
 		}
-		if !installDirExists {
-			_ = os.RemoveAll(installDir)
-			return
+		if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
+			return nil, err
 		}
-		_ = os.Remove(composeFile)
-		if err := compose.EnvStateRestore(installDir, initialEnvState); err != nil {
-			logman.Warn("Restore swarm compose env after failed deploy", "name", projectName, "error", err)
-		}
-	}()
-
-	if err := os.MkdirAll(installDir, 0755); err != nil {
-		return nil, fmt.Errorf("创建安装目录失败: %w", err)
+		return s.swarmServicesCreate(ctx, project)
+	})
+	if err == nil {
+		logman.Info("Swarm compose deployed", "name", result.ProjectName, "dir", result.InstallDir)
 	}
-	if err := compose.InitFilesHandle(installDir, compose.InitPayload{URL: req.InitURL, File: req.InitFile}); err != nil {
-		return nil, err
-	}
-
-	if err := compose.EnvApply(installDir, req.EnvContent); err != nil {
-		return nil, err
-	}
-
-	project, err := compose.ProjectLoad(ctx, projectName, req.Content, installDir)
-	if err != nil {
-		return nil, err
-	}
-	if len(project.Services) == 0 {
-		return nil, fmt.Errorf("compose 文件中没有定义服务")
-	}
-
-	for _, svc := range project.Services {
-		if _, err := s.swarm.ServiceInspect(ctx, svc.Name); err == nil {
-			return nil, fmt.Errorf("服务 %s 已存在，请先移除", svc.Name)
-		}
-	}
-
-	// 预拉取所有镜像（manager 节点本地校验）
-	if err := s.imagesEnsure(ctx, project, req.ForcePull); err != nil {
-		return nil, err
-	}
-
-	items, err := s.swarmServicesCreate(ctx, project)
-	if err != nil {
-		return nil, err
-	}
-
-	deployed = true
-	logman.Info("Swarm compose deployed", "name", projectName, "dir", installDir)
-	return &DeployResult{ProjectName: projectName, Items: items, InstallDir: installDir}, nil
+	return result, err
 }
 
 // SwarmInspect 读取项目 Compose 配置；forceRuntime 为 true 时跳过落盘文件，直接从运行态反推。
@@ -113,47 +45,19 @@ func (s *Service) SwarmInspect(ctx context.Context, name string, forceRuntime bo
 		return nil, fmt.Errorf("未配置容器数据根目录")
 	}
 
-	path := filepath.Join(root, name, "compose.yml")
-	fileModTime := composeFileModTime(path)
-	if !forceRuntime {
-		if data, err := os.ReadFile(path); err == nil {
-			envContent, err := compose.EnvContentRead(filepath.Join(root, name))
-			if err != nil {
-				return nil, err
-			}
-			return &ConfigDetail{
-				Content:     string(data),
-				EnvContent:  envContent,
-				ProjectName: name,
-				FileModTime: fileModTime,
-				Source:      "file",
-			}, nil
+	installDir := filepath.Join(root, name)
+	return inspectComposeConfig(installDir, name, forceRuntime, func() (string, error) {
+		raw, err := s.swarm.ServiceInspect(ctx, name)
+		if err != nil {
+			return "", fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
 		}
-	}
-
-	raw, err := s.swarm.ServiceInspect(ctx, name)
-	if err != nil {
-		return nil, fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
-	}
-	project, err := compose.ProjectFromSwarmInspect(raw, filepath.Join(root, name))
-	if err != nil {
-		return nil, err
-	}
-	data, err := compose.ProjectToYAML(project)
-	if err != nil {
-		return nil, err
-	}
-	envContent, err := compose.EnvContentRead(filepath.Join(root, name))
-	if err != nil {
-		return nil, err
-	}
-	return &ConfigDetail{
-		Content:     string(data),
-		EnvContent:  envContent,
-		ProjectName: name,
-		FileModTime: fileModTime,
-		Source:      "runtime",
-	}, nil
+		project, err := compose.ProjectFromSwarmInspect(raw, installDir)
+		if err != nil {
+			return "", err
+		}
+		data, err := compose.ProjectToYAML(project)
+		return string(data), err
+	})
 }
 
 // SwarmRedeploy 重建 Swarm Compose 项目。

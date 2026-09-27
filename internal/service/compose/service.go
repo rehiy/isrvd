@@ -5,8 +5,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 
 	"github.com/compose-spec/compose-go/v2/types"
+	"github.com/rehiy/libgo/logman"
 
 	"isrvd/internal/registry"
 	"isrvd/pkgs/compose"
@@ -108,6 +111,70 @@ func (s *Service) imagesEnsure(ctx context.Context, project *types.Project, forc
 	return nil
 }
 
+// projectDeploy 统一准备部署目录与配置，并在部署失败时还原原有 .env。
+func (s *Service) projectDeploy(ctx context.Context, req DeployRequest, rollbackMessage string, deploy func(*types.Project) ([]string, error)) (*DeployResult, error) {
+	root := s.docker.ContainerRoot()
+	if root == "" {
+		return nil, fmt.Errorf("未配置容器数据根目录")
+	}
+	// .env 尚未写盘，预检时跳过 env_file；项目名由插值后的 name 或内容短哈希确定。
+	pre, err := compose.ProjectValidateWithoutEnvFiles(ctx, req.Content, req.EnvContent)
+	if err != nil {
+		return nil, err
+	}
+	projectName, err := compose.ProjectNameFromProject(pre, req.Content)
+	if err != nil {
+		return nil, err
+	}
+	installDir := filepath.Join(root, projectName)
+	composeFile := filepath.Join(installDir, "compose.yml")
+	if _, err := os.Stat(composeFile); err == nil {
+		return nil, fmt.Errorf("目录 %s 已包含 compose 配置，请先移除", installDir)
+	}
+	_, err = os.Stat(installDir)
+	installDirExists := err == nil
+	initialEnvState, err := compose.EnvStateRead(installDir)
+	if err != nil {
+		return nil, err
+	}
+	deployed := false
+	defer func() {
+		if deployed {
+			return
+		}
+		if !installDirExists {
+			_ = os.RemoveAll(installDir)
+			return
+		}
+		_ = os.Remove(composeFile)
+		if err := compose.EnvStateRestore(installDir, initialEnvState); err != nil {
+			logman.Warn(rollbackMessage, "name", projectName, "error", err)
+		}
+	}()
+	if err := os.MkdirAll(installDir, 0755); err != nil {
+		return nil, fmt.Errorf("创建安装目录失败: %w", err)
+	}
+	if err := compose.InitFilesHandle(installDir, compose.InitPayload{URL: req.InitURL, File: req.InitFile}); err != nil {
+		return nil, err
+	}
+	if err := compose.EnvApply(installDir, req.EnvContent); err != nil {
+		return nil, err
+	}
+	project, err := compose.ProjectLoad(ctx, projectName, req.Content, installDir)
+	if err != nil {
+		return nil, err
+	}
+	if len(project.Services) == 0 {
+		return nil, fmt.Errorf("compose 文件中没有定义服务")
+	}
+	items, err := deploy(project)
+	if err != nil {
+		return nil, err
+	}
+	deployed = true
+	return &DeployResult{ProjectName: projectName, Items: items, InstallDir: installDir}, nil
+}
+
 // prepareRedeployContent 合并部分更新、校验新配置并预拉取所需镜像。
 func (s *Service) prepareRedeployContent(ctx context.Context, name, installDir, oldContent string, contentErr error, req RedeployRequest) (string, error) {
 	content := oldContent
@@ -139,6 +206,47 @@ func (s *Service) prepareRedeployContent(ctx context.Context, name, installDir, 
 		return "", err
 	}
 	return content, nil
+}
+
+// ─── 辅助函数 ───
+
+// inspectComposeConfig 优先读取落盘配置，按需反推运行态，再读取 .env 并组装详情。
+func inspectComposeConfig(installDir, projectName string, forceRuntime bool, runtimeContent func() (string, error)) (*ConfigDetail, error) {
+	path := filepath.Join(installDir, "compose.yml")
+	fileModTime := composeFileModTime(path)
+	var content string
+	source := "runtime"
+	if !forceRuntime {
+		if data, err := os.ReadFile(path); err == nil {
+			content = string(data)
+			source = "file"
+		}
+	}
+	if source == "runtime" {
+		var err error
+		content, err = runtimeContent()
+		if err != nil {
+			return nil, err
+		}
+	}
+	envContent, err := compose.EnvContentRead(installDir)
+	if err != nil {
+		return nil, err
+	}
+	return &ConfigDetail{
+		Content:     content,
+		EnvContent:  envContent,
+		ProjectName: projectName,
+		FileModTime: fileModTime,
+		Source:      source,
+	}, nil
+}
+
+func composeFileModTime(path string) int64 {
+	if st, err := os.Stat(path); err == nil && !st.IsDir() {
+		return st.ModTime().Unix()
+	}
+	return 0
 }
 
 // formatRedeployRollbackSummary 汇总重建失败后的回滚结果，供前端展示。
