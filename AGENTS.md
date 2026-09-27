@@ -37,7 +37,7 @@ internal/server ──────────→ config + internal/registry + i
 
 - `pkgs/`：底层客户端、存储适配和 SDK 类型转换；不依赖 `internal/`
 - `internal/registry/`：根据 `config` 创建 APISIX、Caddy、Docker、Swarm 底层实例
-- `internal/service/`：业务组合、参数校验、稳定 API 类型转换；不得依赖 `internal/server`
+- `internal/service/`：业务组合、参数校验、稳定 API 类型转换；构造时可直接引用 `registry` 中的底层实例，无需重复通过参数传递；不得依赖 `internal/server`
 - `internal/server/`：Gin HTTP/WebSocket 入口、路由索引、中间件、服务生命周期与响应封装
 - `cmd/server/`：仅执行 `config.Init → registry.Init → server.StartApp`
 

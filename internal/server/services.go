@@ -57,7 +57,7 @@ func (app *App) initServices() {
 		app.websshSvc = websshSvc
 	}
 
-	app.cronSvc = svcCron.NewService(registry.DockerService)
+	app.cronSvc = svcCron.NewService()
 
 	if apisixSvc, err := svcApisix.NewService(); err != nil {
 		logman.Warn("Apisix service unavailable", "error", err)

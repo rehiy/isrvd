@@ -412,7 +412,7 @@ internal/server ─────────→ config + internal/registry + inte
 - **config**：通过 `CONFIG_PATH` 加载和保存本地 YAML 或 etcd 配置
 - **internal/registry**：根据配置初始化 APISIX、Caddy、Docker 和 Swarm 底层实例
 - **pkgs**：底层客户端、存储适配和 SDK 类型转换，不依赖 `internal`
-- **internal/service**：业务组合、参数校验与稳定 API 类型转换
+- **internal/service**：业务组合、参数校验与稳定 API 类型转换；构造时直接引用注册中心的底层实例
 - **internal/server**：Gin HTTP/WebSocket 入口、路由、中间件、服务生命周期和响应封装
 
 ### 设计原则

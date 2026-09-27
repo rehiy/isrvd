@@ -16,6 +16,7 @@ import (
 	libCron "github.com/robfig/cron/v3"
 
 	"isrvd/config"
+	"isrvd/internal/registry"
 	svcNotify "isrvd/internal/service/notify"
 	"isrvd/pkgs/docker"
 )
@@ -85,13 +86,13 @@ func (s *Service) AvailableTypes() []TypeInfo {
 }
 
 // NewService 创建计划任务服务并启动调度器
-func NewService(dockerSvc *docker.DockerService) *Service {
+func NewService() *Service {
 	s := &Service{
 		jobs:          make(map[string]*Job),
 		entries:       make(map[string]libCron.EntryID),
 		cron:          libCron.New(),
 		store:         NewStore(),
-		docker:        dockerSvc,
+		docker:        registry.DockerService,
 		closeDone:     make(chan struct{}),
 		failureNotify: svcNotify.JobFailureNotifier(config.Notify),
 	}
