@@ -40,25 +40,12 @@ class SwarmOverview extends Vue {
     async load() {
         this.loading = true
         try {
-            const requests: Promise<unknown>[] = []
-            const keys: string[] = []
-
-            if (this.portal.hasPerm('GET /api/swarm/info')) {
-                requests.push(api.swarmInfo())
-                keys.push('info')
+            if (!this.portal.hasPerm('GET /api/swarm/info')) {
+                this.swarmInfo = null
+                return
             }
-
-            const results = await Promise.all(requests)
-            const info: Record<string, number> = {}
-
-            keys.forEach((key, index) => {
-                const res = results[index] as { payload?: SwarmInfo }
-                if (key === 'info' && res.payload) {
-                    Object.assign(info, res.payload)
-                }
-            })
-
-            this.swarmInfo = (Object.keys(info).length ? info : null) as unknown as SwarmInfo
+            const payload = (await api.swarmInfo()).payload
+            this.swarmInfo = payload && Object.keys(payload).length ? { ...payload } : null
         } catch {
             this.swarmInfo = null
         } finally {
