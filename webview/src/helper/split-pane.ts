@@ -8,7 +8,7 @@ export class SplitPane {
     private moveHandler: ((event: MouseEvent) => void) | null = null
     private endHandler: (() => void) | null = null
 
-    initialize(containerHeight = 600) {
+    initialize(containerHeight: number) {
         this.height = Math.floor(containerHeight * 0.4)
     }
 

@@ -35,7 +35,6 @@ export class LogStream {
         this.loading = false
         this.content = ''
         this.state = 'connecting'
-        this.source?.close()
         const params = new URLSearchParams({ token, tail: this.tail })
         this.source = new EventSource(absUrl(`${path}?${params.toString()}`))
         this.source.onopen = () => {
@@ -47,9 +46,6 @@ export class LogStream {
             this.stop()
             onError(message || '实时日志连接失败')
         })
-        this.source.onerror = () => {
-            if (this.source?.readyState === EventSource.CLOSED) this.stop()
-        }
     }
 
     stop() {

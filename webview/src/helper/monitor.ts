@@ -8,10 +8,10 @@ export function usagePercent(used: number, total: number): number {
     return parseFloat(((used / total) * 100).toFixed(1))
 }
 
-export function semanticColor(pct: number, prefix = 'bg'): string {
-    if (pct >= 90) return `${prefix}-red-500`
-    if (pct >= 70) return `${prefix}-amber-500`
-    return `${prefix}-emerald-500`
+export function semanticColor(pct: number): string {
+    if (pct >= 90) return 'text-red-500'
+    if (pct >= 70) return 'text-amber-500'
+    return 'text-emerald-500'
 }
 
 export function monitorTimeLabel(ts: number): string {

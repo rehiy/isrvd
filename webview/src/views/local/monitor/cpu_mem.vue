@@ -171,7 +171,7 @@ export default toNative(SystemCpuMem)
             </div>
             <span class="text-sm font-semibold text-slate-700">CPU 使用率</span>
           </div>
-          <span :class="['text-2xl font-bold tabular-nums', semanticColor(cpuVal, 'text')]">
+          <span :class="['text-2xl font-bold tabular-nums', semanticColor(cpuVal)]">
             {{ cpuVal }}<span class="text-sm font-medium ml-0.5">%</span>
           </span>
         </div>
@@ -192,7 +192,7 @@ export default toNative(SystemCpuMem)
             </div>
             <span class="text-sm font-semibold text-slate-700">内存使用</span>
           </div>
-          <span :class="['text-2xl font-bold tabular-nums', semanticColor(memVal, 'text')]">
+          <span :class="['text-2xl font-bold tabular-nums', semanticColor(memVal)]">
             {{ memVal }}<span class="text-sm font-medium ml-0.5">%</span>
           </span>
         </div>
