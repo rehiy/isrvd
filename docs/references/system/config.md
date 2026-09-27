@@ -155,7 +155,7 @@ isrvd_put "/system/config" "$notify_config"
 
 审计策略由后端路由的 `Audit` 字段控制：`0` 按 Method 审计（非 GET 与 WebSocket 记录），`-1` 忽略，`1` 强制记录。未显式配置时默认为 `0`。文件管理读取类接口 `/filer/files`、`/filer/file`、`/filer/download` 配置为 `-1`，不记录审计日志。
 
-请求体中的密码、SSH 私钥（`privateKey` / `private_key`）及其他密钥字段会脱敏；请求 URI 中的 `token` 等敏感查询参数统一替换为 `******`，包括 WebSocket 终端请求。脱敏只影响审计记录，不修改实际请求。已有日志不会自动改写。
+请求体中的密码、SSH 私钥（`privateKey`）及其他密钥字段会脱敏；请求 URI 中的 `token` 等敏感查询参数统一替换为 `******`，包括 WebSocket 终端请求。脱敏只影响审计记录，不修改实际请求。已有日志不会自动改写。
 
 ```bash
 isrvd_get "/system/audit/logs?limit=20"

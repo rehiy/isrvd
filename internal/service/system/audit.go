@@ -25,16 +25,16 @@ const (
 	auditFileSuffix = ".jsonl"
 )
 
-// sensitiveFields 需要脱敏的请求体字段名
+// sensitiveFields 审计请求体与 URI 中需要脱敏的字段名
 var sensitiveFields = []string{
 	// 系统配置
-	"jwtSecret", "apiKey", "adminKey", "clientSecret", "client_secret",
+	"jwtSecret", "apiKey", "adminKey", "clientSecret",
 	// 账户模块
 	"password", "oldPassword", "newPassword", "totpCode", "token", "accessToken", "refreshToken", "idToken",
 	// SSH 私钥
-	"privateKey", "private_key",
+	"privateKey",
 	// APISIX 插件 + SSL 证书私钥
-	"key", "secret", "public_key", "key_id", "secret_key",
+	"key", "secret", "public_key", "key_id", "secret_key", "client_secret",
 }
 
 // AuditLog 操作审计日志条目。
