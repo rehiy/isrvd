@@ -11,10 +11,7 @@ import (
 	libWebSSH "github.com/rehiy/libgo/webssh"
 )
 
-// SFTPFileInfo SFTP 文件/目录信息（透传 pkgs/webssh.FileInfo）
-type SFTPFileInfo = libWebSSH.FileInfo
-
-// SFTPListResult 目录列表结果（透传 pkgs/webssh.ListResult）
+// SFTPListResult SFTP 目录列表结果
 type SFTPListResult = libWebSSH.ListResult
 
 // SFTPList 列出目录内容，返回实际路径和文件列表
