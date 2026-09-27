@@ -36,6 +36,8 @@ isrvd_delete "/apisix/consumer/<USERNAME>"
 
 ## 访问授权
 
+以下写操作读取路由详情时，如果 APISIX 成功响应缺少 `value` 或其为 `null`，接口返回 HTTP 500 的错误 JSON，并停止本次路由更新。
+
 ### 获取访问授权
 
 ```bash

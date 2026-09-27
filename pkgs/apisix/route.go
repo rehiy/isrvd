@@ -2,6 +2,7 @@ package apisix
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/url"
 )
@@ -93,6 +94,9 @@ func (c *Client) RouteConsumerRestrictionUpdate(ctx context.Context, routeID str
 		return err
 	}
 	route := *raw
+	if route == nil {
+		return errors.New("APISIX 路由详情响应缺少有效的 value 对象")
+	}
 	plugins, _ := route["plugins"].(map[string]any)
 	if plugins == nil {
 		plugins = make(map[string]any)
