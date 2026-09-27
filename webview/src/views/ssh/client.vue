@@ -7,6 +7,8 @@ import api from '@/service/api'
 import { wsUrl } from '@/service/client.ts'
 import type { SSHHostInfo } from '@/service/types'
 
+import { SplitPane } from '@/helper/split-pane'
+
 import { TerminalPanel, WsTerminal } from '@/component/terminal'
 import type { TerminalAdapter } from '@/component/terminal'
 
@@ -21,11 +23,7 @@ class SSHClientPage extends Vue {
     host: SSHHostInfo | null = null
     adapter: TerminalAdapter | null = null
 
-    // ─── 拖拽分隔条 ───
-    sftpHeight = 0
-    isDragging = false
-    dragStartY = 0
-    dragStartHeight = 0
+    filePane = new SplitPane()
 
     get hostId() { return this.$route.params.id as string }
     get connected() { return this.adapter?.connected ?? false }
@@ -33,11 +31,11 @@ class SSHClientPage extends Vue {
     async mounted() {
         await this.loadHost()
         this.adapter = new WsTerminal(wsUrl(`ssh/to/${encodeURIComponent(this.hostId)}?token=${this.portal.token || ''}`))
-        this.$nextTick(() => this.initSftpHeight())
+        this.$nextTick(() => this.filePane.initialize(this.containerRef?.clientHeight ?? 600))
     }
 
     unmounted() {
-        this.cleanupDrag()
+        this.filePane.stop()
     }
 
     async loadHost() {
@@ -54,40 +52,6 @@ class SSHClientPage extends Vue {
 
     handleReconnect() {
         this.adapter = new WsTerminal(wsUrl(`ssh/to/${encodeURIComponent(this.hostId)}?token=${this.portal.token || ''}`))
-    }
-
-    initSftpHeight() {
-        const containerH = this.containerRef?.clientHeight ?? 600
-        this.sftpHeight = Math.floor(containerH * 0.4)
-    }
-
-    // ─── 拖拽逻辑 ───
-    onDragStart(e: MouseEvent) {
-        this.isDragging = true
-        this.dragStartY = e.clientY
-        this.dragStartHeight = this.sftpHeight
-        document.addEventListener('mousemove', this.onDragMove)
-        document.addEventListener('mouseup', this.onDragEnd)
-        document.body.classList.add('drag-resizing')
-    }
-
-    onDragMove(e: MouseEvent) {
-        if (!this.isDragging) return
-        const containerH = this.containerRef?.clientHeight ?? 600
-        const delta = this.dragStartY - e.clientY
-        this.sftpHeight = Math.min(Math.max(this.dragStartHeight + delta, 120), containerH - 120)
-    }
-
-    onDragEnd() {
-        this.isDragging = false
-        this.cleanupDrag()
-        // TerminalPanel 内部 ResizeObserver 会自动触发 fit，无需手动调用
-    }
-
-    cleanupDrag() {
-        document.removeEventListener('mousemove', this.onDragMove)
-        document.removeEventListener('mouseup', this.onDragEnd)
-        document.body.classList.remove('drag-resizing')
     }
 }
 
@@ -130,14 +94,14 @@ export default toNative(SSHClientPage)
         <!-- 拖拽分隔条 -->
         <div
           class="flex-shrink-0 h-1.5 bg-slate-100 hover:bg-slate-200 cursor-row-resize transition-colors flex items-center justify-center group"
-          :class="{ 'bg-slate-200': isDragging }"
-          @mousedown.prevent="onDragStart"
+          :class="{ 'bg-slate-200': filePane.dragging }"
+          @mousedown.prevent="filePane.start($event, containerRef)"
         >
-          <div class="w-8 h-0.5 rounded-full bg-slate-300 group-hover:bg-slate-400 transition-colors" :class="{ 'bg-slate-400': isDragging }"></div>
+          <div class="w-8 h-0.5 rounded-full bg-slate-300 group-hover:bg-slate-400 transition-colors" :class="{ 'bg-slate-400': filePane.dragging }"></div>
         </div>
 
         <!-- 文件管理面板 -->
-        <div class="flex-shrink-0 min-h-0 overflow-auto" :style="{ height: sftpHeight + 'px' }">
+        <div class="flex-shrink-0 min-h-0 overflow-auto" :style="{ height: filePane.height + 'px' }">
           <SftpPanel :host-id="hostId" />
         </div>
       </div>
