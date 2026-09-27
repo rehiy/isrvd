@@ -27,14 +27,22 @@ const (
 
 // sensitiveFields 审计请求体与 URI 中需要脱敏的字段名
 var sensitiveFields = []string{
-	// 系统配置
+	// 系统配置密钥：JWT、Copilot、APISIX、OIDC
 	"jwtSecret", "apiKey", "adminKey", "clientSecret",
-	// 账户模块
-	"password", "oldPassword", "newPassword", "totpCode", "token", "accessToken", "refreshToken", "idToken",
+	// 跨模块密码与共享密钥：账户、SSH、镜像仓库、APISIX 认证插件
+	"password", "secret",
+	// 账户密码变更与双因素验证码
+	"oldPassword", "newPassword", "totpCode",
+	// 访问令牌
+	"token", "accessToken", "refreshToken", "idToken",
 	// SSH 私钥
 	"privateKey",
-	// APISIX 插件 + SSL 证书私钥
-	"key", "secret", "public_key", "key_id", "secret_key", "client_secret",
+	// APISIX key-auth 密钥与 SSL 证书私钥
+	"key",
+	// APISIX 插件专用字段
+	"client_secret",        // openid-connect
+	"public_key",           // jwt-auth
+	"key_id", "secret_key", // hmac-auth
 }
 
 // AuditLog 操作审计日志条目。

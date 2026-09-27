@@ -11,13 +11,14 @@ import (
 
 // sensitiveFields 各 auth 插件中需要脱敏/还原的敏感字段名
 var sensitiveFields = []string{
-	"key",        // key-auth + SSL 证书私钥
-	"username",   // basic-auth
-	"password",   // basic-auth
-	"secret",     // jwt-auth
-	"public_key", // jwt-auth
-	"key_id",     // hmac-auth
-	"secret_key", // hmac-auth
+	// key-auth
+	"key",
+	// basic-auth
+	"username", "password",
+	// jwt-auth
+	"secret", "public_key",
+	// hmac-auth
+	"key_id", "secret_key",
 }
 
 // Consumer Apisix Consumer 信息
