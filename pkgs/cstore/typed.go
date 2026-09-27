@@ -67,7 +67,7 @@ type TypedEvent[T any] struct {
 	Valid bool      // Value 是否成功反序列化
 }
 
-// Watch 监听 key 变更，返回类型化事件 channel。FileStore 返回 nil。
+// Watch 监听 key 变更，ctx 取消时停止转发并关闭 channel。FileStore 返回 nil。
 func (t *TypedStore[T]) Watch(ctx context.Context) <-chan TypedEvent[T] {
 	raw := t.store.Watch(ctx, t.key)
 	if raw == nil {
@@ -77,7 +77,17 @@ func (t *TypedStore[T]) Watch(ctx context.Context) <-chan TypedEvent[T] {
 	out := make(chan TypedEvent[T], 8)
 	go func() {
 		defer close(out)
-		for ev := range raw {
+		for {
+			var ev Event
+			select {
+			case <-ctx.Done():
+				return
+			case value, ok := <-raw:
+				if !ok {
+					return
+				}
+				ev = value
+			}
 			te := TypedEvent[T]{Type: ev.Type, Key: ev.Key}
 			if ev.Type == EventPut && ev.Value != nil {
 				var val T
@@ -88,7 +98,11 @@ func (t *TypedStore[T]) Watch(ctx context.Context) <-chan TypedEvent[T] {
 					te.Valid = true
 				}
 			}
-			out <- te
+			select {
+			case out <- te:
+			case <-ctx.Done():
+				return
+			}
 		}
 	}()
 	return out
