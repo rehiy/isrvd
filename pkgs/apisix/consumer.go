@@ -2,8 +2,6 @@ package apisix
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -33,39 +31,19 @@ type Consumer struct {
 
 // ConsumerList 获取所有 Consumer 列表
 func (c *Client) ConsumerList(ctx context.Context) ([]Consumer, error) {
-	data, err := c.doRequest(ctx, http.MethodGet, "/consumers", nil)
+	result, err := requestResourceList[Consumer](ctx, c, "/consumers", "解析 Consumer 列表失败")
 	if err != nil {
 		return nil, err
 	}
-	var raw struct {
-		List []struct {
-			Value Consumer `json:"value"`
-		} `json:"list"`
-	}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, fmt.Errorf("解析 Consumer 列表失败: %w", err)
-	}
-	result := make([]Consumer, 0, len(raw.List))
-	for _, item := range raw.List {
-		maskConsumerPlugins(item.Value.Plugins)
-		result = append(result, item.Value)
+	for _, consumer := range result {
+		maskConsumerPlugins(consumer.Plugins)
 	}
 	return result, nil
 }
 
 // ConsumerRaw 获取指定 Consumer 的完整（未脱敏）数据
 func (c *Client) ConsumerRaw(ctx context.Context, username string) (*Consumer, error) {
-	data, err := c.doRequest(ctx, http.MethodGet, "/consumers/"+url.PathEscape(username), nil)
-	if err != nil {
-		return nil, err
-	}
-	var raw struct {
-		Value Consumer `json:"value"`
-	}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, fmt.Errorf("解析 Consumer 失败: %w", err)
-	}
-	return &raw.Value, nil
+	return requestResource[Consumer](ctx, c, http.MethodGet, "/consumers/"+url.PathEscape(username), nil, "解析 Consumer 失败")
 }
 
 // ConsumerUpdate 更新 Consumer，支持传入完整 plugins，
@@ -116,7 +94,7 @@ func (c *Client) ConsumerDelete(ctx context.Context, username string) error {
 	return err
 }
 
-// --- 辅助函数 ---
+// ─── 辅助函数 ───
 
 // unmaskPlugins 将 plugins 中的脱敏值（包含 ******）替换为原始值
 func unmaskPlugins(plugins, rawPlugins map[string]any) {

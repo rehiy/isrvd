@@ -2,8 +2,6 @@ package apisix
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 )
@@ -21,38 +19,22 @@ type SSL struct {
 
 // SSLList 获取所有 SSL 证书列表
 func (c *Client) SSLList(ctx context.Context) ([]SSL, error) {
-	data, err := c.doRequest(ctx, http.MethodGet, "/ssls", nil)
-	if err != nil {
-		return nil, err
-	}
-	return parseSSLList(data)
+	return requestResourceList[SSL](ctx, c, "/ssls", "解析 SSL 证书列表失败")
 }
 
 // SSLInspect 获取单个 SSL 证书详情
 func (c *Client) SSLInspect(ctx context.Context, sslID string) (*SSL, error) {
-	data, err := c.doRequest(ctx, http.MethodGet, "/ssls/"+url.PathEscape(sslID), nil)
-	if err != nil {
-		return nil, err
-	}
-	return parseSingleSSL(data)
+	return requestResource[SSL](ctx, c, http.MethodGet, "/ssls/"+url.PathEscape(sslID), nil, "解析 SSL 证书详情失败")
 }
 
 // SSLCreate 创建 SSL 证书
 func (c *Client) SSLCreate(ctx context.Context, req SSL) (*SSL, error) {
-	data, err := c.doRequest(ctx, http.MethodPost, "/ssls", buildSSLBody(req))
-	if err != nil {
-		return nil, err
-	}
-	return parseSingleSSL(data)
+	return requestResource[SSL](ctx, c, http.MethodPost, "/ssls", buildSSLBody(req), "解析 SSL 证书详情失败")
 }
 
 // SSLUpdate 更新 SSL 证书
 func (c *Client) SSLUpdate(ctx context.Context, sslID string, req SSL) (*SSL, error) {
-	data, err := c.doRequest(ctx, http.MethodPatch, "/ssls/"+url.PathEscape(sslID), buildSSLBody(req))
-	if err != nil {
-		return nil, err
-	}
-	return parseSingleSSL(data)
+	return requestResource[SSL](ctx, c, http.MethodPatch, "/ssls/"+url.PathEscape(sslID), buildSSLBody(req), "解析 SSL 证书详情失败")
 }
 
 // SSLDelete 删除 SSL 证书
@@ -61,7 +43,7 @@ func (c *Client) SSLDelete(ctx context.Context, sslID string) error {
 	return err
 }
 
-// --- 辅助函数 ---
+// ─── 辅助函数 ───
 
 // buildSSLBody 将 SSL 转换为 Apisix API 请求体
 func buildSSLBody(req SSL) map[string]any {
@@ -79,32 +61,4 @@ func buildSSLBody(req SSL) map[string]any {
 		body["status"] = *req.Status
 	}
 	return body
-}
-
-// parseSSLList 解析 Apisix SSL 列表响应
-func parseSSLList(data []byte) ([]SSL, error) {
-	var raw struct {
-		List []struct {
-			Value SSL `json:"value"`
-		} `json:"list"`
-	}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, fmt.Errorf("解析 SSL 证书列表失败: %w", err)
-	}
-	result := make([]SSL, 0, len(raw.List))
-	for _, item := range raw.List {
-		result = append(result, item.Value)
-	}
-	return result, nil
-}
-
-// parseSingleSSL 解析单个 SSL 证书响应
-func parseSingleSSL(data []byte) (*SSL, error) {
-	var raw struct {
-		Value SSL `json:"value"`
-	}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, fmt.Errorf("解析 SSL 证书详情失败: %w", err)
-	}
-	return &raw.Value, nil
 }

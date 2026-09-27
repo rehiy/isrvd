@@ -2,8 +2,6 @@ package apisix
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 )
@@ -29,38 +27,22 @@ type Upstream struct {
 
 // UpstreamList 获取所有 Upstream 列表
 func (c *Client) UpstreamList(ctx context.Context) ([]Upstream, error) {
-	data, err := c.doRequest(ctx, http.MethodGet, "/upstreams", nil)
-	if err != nil {
-		return nil, err
-	}
-	return parseUpstreamList(data)
+	return requestResourceList[Upstream](ctx, c, "/upstreams", "解析 Upstream 列表失败")
 }
 
 // UpstreamInspect 获取单条 Upstream 详情
 func (c *Client) UpstreamInspect(ctx context.Context, upstreamID string) (*Upstream, error) {
-	data, err := c.doRequest(ctx, http.MethodGet, "/upstreams/"+url.PathEscape(upstreamID), nil)
-	if err != nil {
-		return nil, err
-	}
-	return parseSingleUpstream(data)
+	return requestResource[Upstream](ctx, c, http.MethodGet, "/upstreams/"+url.PathEscape(upstreamID), nil, "解析 Upstream 详情失败")
 }
 
 // UpstreamCreate 创建 Upstream
 func (c *Client) UpstreamCreate(ctx context.Context, req Upstream) (*Upstream, error) {
-	data, err := c.doRequest(ctx, http.MethodPost, "/upstreams", buildUpstreamBody(req))
-	if err != nil {
-		return nil, err
-	}
-	return parseSingleUpstream(data)
+	return requestResource[Upstream](ctx, c, http.MethodPost, "/upstreams", buildUpstreamBody(req), "解析 Upstream 详情失败")
 }
 
 // UpstreamUpdate 更新 Upstream
 func (c *Client) UpstreamUpdate(ctx context.Context, upstreamID string, req Upstream) (*Upstream, error) {
-	data, err := c.doRequest(ctx, http.MethodPut, "/upstreams/"+url.PathEscape(upstreamID), buildUpstreamBody(req))
-	if err != nil {
-		return nil, err
-	}
-	return parseSingleUpstream(data)
+	return requestResource[Upstream](ctx, c, http.MethodPut, "/upstreams/"+url.PathEscape(upstreamID), buildUpstreamBody(req), "解析 Upstream 详情失败")
 }
 
 // UpstreamDelete 删除 Upstream
@@ -69,7 +51,7 @@ func (c *Client) UpstreamDelete(ctx context.Context, upstreamID string) error {
 	return err
 }
 
-// --- 辅助函数 ---
+// ─── 辅助函数 ───
 
 // buildUpstreamBody 将 Upstream 转换为 Apisix API 请求体
 func buildUpstreamBody(req Upstream) map[string]any {
@@ -106,34 +88,6 @@ func buildUpstreamBody(req Upstream) map[string]any {
 		body["timeout"] = req.Timeout
 	}
 	return body
-}
-
-// parseUpstreamList 解析 Apisix Upstream 列表响应
-func parseUpstreamList(data []byte) ([]Upstream, error) {
-	var raw struct {
-		List []struct {
-			Value Upstream `json:"value"`
-		} `json:"list"`
-	}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, fmt.Errorf("解析 Upstream 列表失败: %w", err)
-	}
-	result := make([]Upstream, 0, len(raw.List))
-	for _, item := range raw.List {
-		result = append(result, item.Value)
-	}
-	return result, nil
-}
-
-// parseSingleUpstream 解析单个 Upstream 响应
-func parseSingleUpstream(data []byte) (*Upstream, error) {
-	var raw struct {
-		Value Upstream `json:"value"`
-	}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, fmt.Errorf("解析 Upstream 详情失败: %w", err)
-	}
-	return &raw.Value, nil
 }
 
 // HasUpstreamNodes 判断 Upstream 是否配置了有效节点

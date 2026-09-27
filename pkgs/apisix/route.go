@@ -2,8 +2,6 @@ package apisix
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 )
@@ -39,38 +37,22 @@ type Route struct {
 
 // RouteList 获取所有路由列表（不过滤插件，用于路由管理页面展示）
 func (c *Client) RouteList(ctx context.Context) ([]Route, error) {
-	data, err := c.doRequest(ctx, http.MethodGet, "/routes", nil)
-	if err != nil {
-		return nil, err
-	}
-	return parseRouteList(data)
+	return requestResourceList[Route](ctx, c, "/routes", "解析路由列表失败")
 }
 
 // RouteInspect 获取单条路由详情
 func (c *Client) RouteInspect(ctx context.Context, routeID string) (*Route, error) {
-	data, err := c.doRequest(ctx, http.MethodGet, "/routes/"+url.PathEscape(routeID), nil)
-	if err != nil {
-		return nil, err
-	}
-	return parseSingleRoute(data)
+	return requestResource[Route](ctx, c, http.MethodGet, "/routes/"+url.PathEscape(routeID), nil, "解析路由详情失败")
 }
 
 // RouteCreate 创建路由
 func (c *Client) RouteCreate(ctx context.Context, req Route) (*Route, error) {
-	data, err := c.doRequest(ctx, http.MethodPost, "/routes", buildRouteBody(req))
-	if err != nil {
-		return nil, err
-	}
-	return parseSingleRoute(data)
+	return requestResource[Route](ctx, c, http.MethodPost, "/routes", buildRouteBody(req), "解析路由详情失败")
 }
 
 // RouteUpdate 更新路由
 func (c *Client) RouteUpdate(ctx context.Context, routeID string, req Route) (*Route, error) {
-	data, err := c.doRequest(ctx, http.MethodPut, "/routes/"+url.PathEscape(routeID), buildRouteBody(req))
-	if err != nil {
-		return nil, err
-	}
-	return parseSingleRoute(data)
+	return requestResource[Route](ctx, c, http.MethodPut, "/routes/"+url.PathEscape(routeID), buildRouteBody(req), "解析路由详情失败")
 }
 
 // RouteStatusPatch 仅更新路由的启用/禁用状态（1=启用 0=禁用）
@@ -88,7 +70,7 @@ func (c *Client) RouteDelete(ctx context.Context, routeID string) error {
 
 // RouteWhitelistInspect 获取所有路由的 consumer-restriction 白名单
 func (c *Client) RouteWhitelistInspect(ctx context.Context) ([]Route, error) {
-	routes, err := c.fetchRoutes(ctx)
+	routes, err := c.RouteList(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -106,17 +88,11 @@ func (c *Client) RouteWhitelistInspect(ctx context.Context) ([]Route, error) {
 
 // RouteConsumerRestrictionUpdate 更新路由的 consumer-restriction 白名单
 func (c *Client) RouteConsumerRestrictionUpdate(ctx context.Context, routeID string, consumers []string, keyAuth map[string]any) error {
-	routeData, err := c.doRequest(ctx, http.MethodGet, "/routes/"+url.PathEscape(routeID), nil)
+	raw, err := requestResource[map[string]any](ctx, c, http.MethodGet, "/routes/"+url.PathEscape(routeID), nil, "解析路由详情失败")
 	if err != nil {
 		return err
 	}
-	var raw struct {
-		Value map[string]any `json:"value"`
-	}
-	if err := json.Unmarshal(routeData, &raw); err != nil {
-		return fmt.Errorf("解析路由详情失败: %w", err)
-	}
-	route := raw.Value
+	route := *raw
 	plugins, _ := route["plugins"].(map[string]any)
 	if plugins == nil {
 		plugins = make(map[string]any)
@@ -137,16 +113,7 @@ func (c *Client) RouteConsumerRestrictionUpdate(ctx context.Context, routeID str
 	return err
 }
 
-// fetchRoutes 拉取全量路由（内部复用，避免重复 HTTP 调用）
-func (c *Client) fetchRoutes(ctx context.Context) ([]Route, error) {
-	data, err := c.doRequest(ctx, http.MethodGet, "/routes", nil)
-	if err != nil {
-		return nil, err
-	}
-	return parseRouteList(data)
-}
-
-// --- 辅助函数 ---
+// ─── 辅助函数 ───
 
 // buildRouteBody 将 Route 转换为 Apisix API 请求体
 func buildRouteBody(req Route) map[string]any {
@@ -192,32 +159,4 @@ func buildRouteBody(req Route) map[string]any {
 		body["timeout"] = req.Timeout
 	}
 	return body
-}
-
-// parseRouteList 解析 Apisix 路由列表响应
-func parseRouteList(data []byte) ([]Route, error) {
-	var raw struct {
-		List []struct {
-			Value Route `json:"value"`
-		} `json:"list"`
-	}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, fmt.Errorf("解析路由列表失败: %w", err)
-	}
-	routes := make([]Route, 0, len(raw.List))
-	for _, item := range raw.List {
-		routes = append(routes, item.Value)
-	}
-	return routes, nil
-}
-
-// parseSingleRoute 解析单个路由响应
-func parseSingleRoute(data []byte) (*Route, error) {
-	var raw struct {
-		Value Route `json:"value"`
-	}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, fmt.Errorf("解析路由详情失败: %w", err)
-	}
-	return &raw.Value, nil
 }
