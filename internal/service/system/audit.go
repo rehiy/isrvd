@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -30,6 +31,8 @@ var sensitiveFields = []string{
 	"jwtSecret", "apiKey", "adminKey", "clientSecret", "client_secret",
 	// 账户模块
 	"password", "oldPassword", "newPassword", "totpCode", "token", "accessToken", "refreshToken", "idToken",
+	// SSH 私钥
+	"privateKey", "private_key",
 	// APISIX 插件 + SSL 证书私钥
 	"key", "secret", "public_key", "key_id", "secret_key",
 }
@@ -89,10 +92,9 @@ func (s *AuditService) LogAdd(entry AuditLog) {
 		return
 	}
 	if len(s.buffer) >= maxAuditBufferSize {
-		// 重新分配以释放底层数组，避免内存泄漏
-		newBuf := make([]AuditLog, maxAuditBufferSize-1, maxAuditBufferSize)
-		copy(newBuf, s.buffer[1:])
-		s.buffer = newBuf
+		// 复用固定容量缓冲区，移除最旧记录后由 append 覆盖尾部引用。
+		copy(s.buffer, s.buffer[1:])
+		s.buffer = s.buffer[:maxAuditBufferSize-1]
 	}
 	s.buffer = append(s.buffer, entry)
 
@@ -139,7 +141,7 @@ func (s *AuditService) AuditRecord(c *gin.Context, startTime time.Time, body str
 			Timestamp:  startTime,
 			Username:   username,
 			Method:     "WS",
-			URI:        c.Request.RequestURI,
+			URI:        maskSensitiveURI(c.Request.RequestURI),
 			IP:         c.ClientIP(),
 			StatusCode: statusCode,
 			Success:    statusCode == http.StatusSwitchingProtocols,
@@ -156,7 +158,7 @@ func (s *AuditService) AuditRecord(c *gin.Context, startTime time.Time, body str
 		Timestamp:  startTime,
 		Username:   username,
 		Method:     c.Request.Method,
-		URI:        c.Request.RequestURI,
+		URI:        maskSensitiveURI(c.Request.RequestURI),
 		Body:       body,
 		IP:         c.ClientIP(),
 		StatusCode: statusCode,
@@ -307,6 +309,29 @@ func auditUsername(c *gin.Context, body string) string {
 }
 
 // ─── 辅助函数 ───
+
+// maskSensitiveURI 隐藏查询参数中的密钥，保留其他参数的顺序和原始编码。
+func maskSensitiveURI(uri string) string {
+	path, query, ok := strings.Cut(uri, "?")
+	if !ok {
+		return uri
+	}
+	parts := strings.Split(query, "&")
+	for i, part := range parts {
+		key, _, _ := strings.Cut(part, "=")
+		name, err := url.QueryUnescape(key)
+		if err != nil {
+			continue
+		}
+		for _, field := range sensitiveFields {
+			if strings.EqualFold(name, field) {
+				parts[i] = key + "=******"
+				break
+			}
+		}
+	}
+	return path + "?" + strings.Join(parts, "&")
+}
 
 // auditNaming 审计日志文件命名规则：YYYY-MM-DD.jsonl
 func auditNaming() jsonl.Naming {
