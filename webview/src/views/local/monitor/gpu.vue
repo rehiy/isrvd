@@ -6,7 +6,7 @@ import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 import type { SystemStat, SystemGPU } from '@/service/types'
 
 import Chart, { makeLineDataset } from '@/helper/chart'
-import { appendMonitorPoint } from '@/helper/monitor'
+import { appendMonitorPoint, usagePercent, semanticColor } from '@/helper/monitor'
 
 interface GpuHistory {
     ts: number[]
@@ -31,16 +31,9 @@ class SystemGpu extends Vue {
     gpuHistories: Record<string, GpuHistory> = {}
     currentGpus: SystemGPU[] = []
 
-    memPercent(used: number, total: number): number {
-        if (!total) return 0
-        return parseFloat(((used / total) * 100).toFixed(1))
-    }
+    memPercent = usagePercent
 
-    semanticColor(pct: number, prefix = 'bg') {
-        if (pct >= 90) return `${prefix}-red-500`
-        if (pct >= 70) return `${prefix}-amber-500`
-        return `${prefix}-emerald-500`
-    }
+    semanticColor = semanticColor
 
     gpuTempColor(temp: number): string {
         if (temp < 0) return 'text-slate-400'

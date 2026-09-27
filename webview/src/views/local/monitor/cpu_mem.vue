@@ -7,7 +7,7 @@ import type { SystemStat } from '@/service/types'
 
 import Chart from '@/helper/chart'
 import { formatMonitorBytes } from '@/helper/format'
-import { appendMonitorPoint } from '@/helper/monitor'
+import { appendMonitorPoint, usagePercent, semanticColor } from '@/helper/monitor'
 
 interface ChartCallbackContext {
     parsed: { y: number | null }
@@ -50,16 +50,9 @@ class SystemCpuMem extends Vue {
         return parseFloat(((arr.reduce((a, b) => a + b, 0) / arr.length)).toFixed(1))
     }
 
-    memPercent(used: number, total: number): number {
-        if (!total) return 0
-        return parseFloat(((used / total) * 100).toFixed(1))
-    }
+    memPercent = usagePercent
 
-    semanticColor(pct: number, prefix = 'bg') {
-        if (pct >= 90) return `${prefix}-red-500`
-        if (pct >= 70) return `${prefix}-amber-500`
-        return `${prefix}-emerald-500`
-    }
+    semanticColor = semanticColor
 
     bgChartOptions(): ChartOptions<'line'> {
         return {

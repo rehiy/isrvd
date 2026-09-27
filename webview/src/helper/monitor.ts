@@ -3,6 +3,17 @@ interface MonitorWindowHistory {
     labels: string[]
 }
 
+export function usagePercent(used: number, total: number): number {
+    if (!total) return 0
+    return parseFloat(((used / total) * 100).toFixed(1))
+}
+
+export function semanticColor(pct: number, prefix = 'bg'): string {
+    if (pct >= 90) return `${prefix}-red-500`
+    if (pct >= 70) return `${prefix}-amber-500`
+    return `${prefix}-emerald-500`
+}
+
 export function monitorTimeLabel(ts: number): string {
     const t = new Date(ts * 1000)
     return `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}:${t.getSeconds().toString().padStart(2, '0')}`

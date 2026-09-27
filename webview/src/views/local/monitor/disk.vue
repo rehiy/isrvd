@@ -7,7 +7,7 @@ import type { SystemStat, SystemDiskIO, SystemDiskPartition } from '@/service/ty
 
 import Chart from '@/helper/chart'
 import { formatMonitorBytes, hexToRgba } from '@/helper/format'
-import { appendMonitorPoint } from '@/helper/monitor'
+import { appendMonitorPoint, usagePercent } from '@/helper/monitor'
 
 interface DiskIOSeriesHistory {
     ts: number[]
@@ -37,10 +37,7 @@ class SystemDisk extends Vue {
     private currentDiskIO: SystemDiskIO[] = []
     formatMonitorBytes = formatMonitorBytes
 
-    memPercent(used: number, total: number): number {
-        if (!total) return 0
-        return parseFloat(((used / total) * 100).toFixed(1))
-    }
+    memPercent = usagePercent
 
     usageLineColor(pct: number): string {
         if (pct >= 90) return '#ef4444'
