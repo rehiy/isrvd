@@ -13,11 +13,6 @@ interface WebhookTemplatePreset {
     template: string
 }
 
-interface WebhookTemplateGroup {
-    label: string
-    presets: WebhookTemplatePreset[]
-}
-
 @Component({ components: { ToggleCard } })
 class ConfigAlert extends Vue {
     config = useConfigStore()
@@ -25,57 +20,60 @@ class ConfigAlert extends Vue {
 
     // Go text/template 变量说明；定义为变量后插值输出，避免与 Vue 的 {{ }} 语法冲突
     templateHint = '支持 Go 模板变量；在 JSON 字段中使用 {{.Title | json}} 可安全处理引号和换行。'
-
-    webhookTemplateGroups: WebhookTemplateGroup[] = [
+    standardWebhookPreview = JSON.stringify(
         {
-            label: '国内协作平台',
-            presets: [
-                {
-                    value: 'dingtalk',
-                    label: '钉钉机器人',
-                    template: '{"msgtype":"text","text":{"content":{{printf "isrvd 告警\\n%s\\n%s" .Title .Message | json}}}}',
-                },
-                {
-                    value: 'feishu',
-                    label: '飞书机器人',
-                    template: '{"msg_type":"text","content":{"text":{{printf "isrvd 告警\\n%s\\n%s" .Title .Message | json}}}}',
-                },
-                {
-                    value: 'wecom',
-                    label: '企业微信机器人',
-                    template: '{"msgtype":"text","text":{"content":{{printf "isrvd 告警\\n%s\\n%s" .Title .Message | json}}}}',
-                },
-            ],
+            source: 'isrvd',
+            event: '<事件类型>',
+            level: '<告警级别>',
+            title: '<告警标题>',
+            message: '<告警内容>',
+            timestamp: 0,
+            data: {},
+        },
+        null,
+        2,
+    )
+
+    webhookTemplates: WebhookTemplatePreset[] = [
+        {
+            value: 'dingtalk',
+            label: '钉钉机器人',
+            template: '{"msgtype":"text","text":{"content":{{printf "isrvd 告警\\n%s\\n%s" .Title .Message | json}}}}',
         },
         {
-            label: '海外协作与聊天',
-            presets: [
-                {
-                    value: 'slack',
-                    label: 'Slack',
-                    template: '{"text":{{printf "isrvd 告警：%s\\n%s" .Title .Message | json}}}',
-                },
-                {
-                    value: 'discord',
-                    label: 'Discord',
-                    template: '{"content":{{printf "isrvd 告警：%s\\n%s" .Title .Message | json}}}',
-                },
-                {
-                    value: 'teams',
-                    label: 'Microsoft Teams',
-                    template: '{"text":{{printf "isrvd 告警：%s\\n%s" .Title .Message | json}}}',
-                },
-                {
-                    value: 'google-chat',
-                    label: 'Google Chat',
-                    template: '{"text":{{printf "isrvd 告警：%s\\n%s" .Title .Message | json}}}',
-                },
-                {
-                    value: 'telegram',
-                    label: 'Telegram Bot（sendMessage + CHAT_ID）',
-                    template: '{"chat_id":"<CHAT_ID>","text":{{printf "isrvd 告警：%s\\n%s" .Title .Message | json}}}',
-                },
-            ],
+            value: 'feishu',
+            label: '飞书机器人',
+            template: '{"msg_type":"text","content":{"text":{{printf "isrvd 告警\\n%s\\n%s" .Title .Message | json}}}}',
+        },
+        {
+            value: 'wecom',
+            label: '企业微信机器人',
+            template: '{"msgtype":"text","text":{"content":{{printf "isrvd 告警\\n%s\\n%s" .Title .Message | json}}}}',
+        },
+        {
+            value: 'slack',
+            label: 'Slack',
+            template: '{"text":{{printf "isrvd 告警：%s\\n%s" .Title .Message | json}}}',
+        },
+        {
+            value: 'discord',
+            label: 'Discord',
+            template: '{"content":{{printf "isrvd 告警：%s\\n%s" .Title .Message | json}}}',
+        },
+        {
+            value: 'teams',
+            label: 'Microsoft Teams',
+            template: '{"text":{{printf "isrvd 告警：%s\\n%s" .Title .Message | json}}}',
+        },
+        {
+            value: 'google-chat',
+            label: 'Google Chat',
+            template: '{"text":{{printf "isrvd 告警：%s\\n%s" .Title .Message | json}}}',
+        },
+        {
+            value: 'telegram',
+            label: 'Telegram Bot',
+            template: '{"chat_id":"<CHAT_ID>","text":{{printf "isrvd 告警：%s\\n%s" .Title .Message | json}}}',
         },
     ]
 
@@ -97,21 +95,24 @@ class ConfigAlert extends Vue {
 
     webhookTemplateValue(hook: WebhookConfig) {
         const selected = this.selectedWebhookTemplates.get(hook)
-        if (selected) return selected
+        if (selected === 'generic' && !hook.template.trim()) return selected
+        if (selected && this.webhookTemplates.some(item => item.value === selected && item.template === hook.template)) return selected
+        this.selectedWebhookTemplates.delete(hook)
         if (!hook.template.trim()) return 'generic'
-        const matches = this.webhookTemplateGroups.flatMap(group => group.presets).filter(item => item.template === hook.template)
+        const matches = this.webhookTemplates.filter(item => item.template === hook.template)
         return matches.length === 1 ? matches[0].value : 'custom'
     }
 
     applyWebhookTemplate(hook: WebhookConfig, event: Event) {
         const select = event.target as HTMLSelectElement
+        if (select.value === 'custom') return
         if (select.value === 'generic') {
             this.selectedWebhookTemplates.set(hook, 'generic')
             hook.template = ''
             if (!hook.name.trim()) hook.name = '通用 Webhook'
             return
         }
-        const preset = this.webhookTemplateGroups.flatMap(group => group.presets).find(item => item.value === select.value)
+        const preset = this.webhookTemplates.find(item => item.value === select.value)
         if (preset) {
             this.selectedWebhookTemplates.set(hook, preset.value)
             hook.template = preset.template
@@ -175,15 +176,18 @@ export default toNative(ConfigAlert)
             <div>
               <label class="form-label">消息渠道模板</label>
               <select class="input" :value="webhookTemplateValue(hook)" @change="applyWebhookTemplate(hook, $event)">
-                <option value="custom" disabled>已配置请求体模板</option>
+                <option v-if="webhookTemplateValue(hook) === 'custom'" value="custom">自定义请求体模板</option>
                 <option value="generic">使用标准 JSON（无需模板）</option>
-                <optgroup v-for="group in webhookTemplateGroups" :key="group.label" :label="group.label">
-                  <option v-for="preset in group.presets" :key="preset.value" :value="preset.value">{{ preset.label }}</option>
-                </optgroup>
+                <option v-for="preset in webhookTemplates" :key="preset.value" :value="preset.value">{{ preset.label }}</option>
               </select>
               <p class="mt-1 text-xs text-slate-400">选择后会覆盖下方请求体；带占位符的模板需按提示补充对应参数。</p>
             </div>
-            <div>
+            <div v-if="webhookTemplateValue(hook) === 'generic'">
+              <label class="form-label">标准请求体结构预览</label>
+              <textarea :value="standardWebhookPreview" rows="9" readonly class="input font-mono text-xs"></textarea>
+              <p class="mt-1 text-xs text-slate-400">发送时由后端根据实际告警自动生成，配置中无需保存模板内容。</p>
+            </div>
+            <div v-else>
               <label class="form-label">请求体模板（JSON）</label>
               <textarea v-model="hook.template" rows="4" class="input font-mono text-xs" placeholder="留空则发送 isrvd 标准事件 JSON"></textarea>
               <p class="mt-1 text-xs text-slate-400">{{ templateHint }}</p>
