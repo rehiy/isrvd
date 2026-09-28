@@ -3,7 +3,9 @@ package docker
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -11,6 +13,10 @@ import (
 	"github.com/rehiy/libgo/httpd"
 	"github.com/rehiy/libgo/logman"
 )
+
+const maxLogSnapshotBytes int64 = 4 << 20
+
+var errLogSnapshotFull = errors.New("日志快照已达到上限")
 
 // ContainerLogs 获取容器日志快照。
 func (s *DockerService) ContainerLogs(ctx context.Context, id, tail string) ([]string, error) {
@@ -38,17 +44,68 @@ func (s *DockerService) ContainerLogs(ctx context.Context, id, tail string) ([]s
 	}
 	defer reader.Close()
 
-	data, err := io.ReadAll(reader)
+	logs, err := ReadLogSnapshot(reader, info.Config != nil && info.Config.Tty)
 	if err != nil {
 		logman.Error("Read container logs failed", "id", id, "error", err)
 		return nil, err
 	}
+	return logs, nil
+}
 
-	// TTY 模式下日志不带 8 字节帧头，直接作为纯文本处理
-	if info.Config != nil && info.Config.Tty {
-		return []string{string(data)}, nil
+type logSnapshotWriter struct {
+	logs      []string
+	remaining int64
+	truncated bool
+}
+
+func (w *logSnapshotWriter) Write(p []byte) (int, error) {
+	if len(p) == 0 {
+		return 0, nil
 	}
-	return ParseDockerLogs(data), nil
+	if w.remaining <= 0 {
+		w.truncated = true
+		return 0, errLogSnapshotFull
+	}
+	if int64(len(p)) > w.remaining {
+		n := int(w.remaining)
+		w.logs = append(w.logs, string(p[:n]))
+		w.remaining = 0
+		w.truncated = true
+		return n, errLogSnapshotFull
+	}
+	w.logs = append(w.logs, string(p))
+	w.remaining -= int64(len(p))
+	return len(p), nil
+}
+
+// ReadLogSnapshot 读取默认大小限制的 Docker 日志快照，供容器与 Swarm 共用。
+func ReadLogSnapshot(reader io.Reader, tty bool) ([]string, error) {
+	return readLogSnapshot(reader, tty, maxLogSnapshotBytes)
+}
+
+func readLogSnapshot(reader io.Reader, tty bool, limit int64) ([]string, error) {
+	if limit < 0 {
+		return nil, fmt.Errorf("日志读取上限不能为负数")
+	}
+	writer := &logSnapshotWriter{remaining: limit}
+	var err error
+	if tty {
+		_, err = io.Copy(writer, reader)
+	} else {
+		_, err = stdcopy.StdCopy(writer, writer, reader)
+	}
+	truncated := errors.Is(err, errLogSnapshotFull) || writer.truncated
+	if err != nil && !truncated {
+		return nil, err
+	}
+	logs := writer.logs
+	if tty && len(logs) > 1 {
+		logs = []string{strings.Join(logs, "")}
+	}
+	if truncated {
+		logs = append(logs, fmt.Sprintf("\n[output truncated at %d bytes]\n", limit))
+	}
+	return logs, nil
 }
 
 // ContainerLogsStream 实时转发容器日志到 writer。

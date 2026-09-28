@@ -141,11 +141,7 @@ func (s *SwarmService) ServiceLogs(ctx context.Context, serviceID, tail string) 
 	}
 	defer reader.Close()
 
-	raw, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
-	return pkgDocker.ParseDockerLogs(raw), nil
+	return pkgDocker.ReadLogSnapshot(reader, false)
 }
 
 // ServiceLogsStream 实时转发服务日志到 writer。

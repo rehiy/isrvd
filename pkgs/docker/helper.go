@@ -24,24 +24,6 @@ func ShortID(id string) string {
 	return id
 }
 
-// ParseDockerLogs 解析 Docker multiplexed stream 格式的日志数据。
-func ParseDockerLogs(data []byte) []string {
-	var logs []string
-	for i := 0; i < len(data); {
-		if i+8 > len(data) {
-			break
-		}
-		size := int(data[i+4])<<24 | int(data[i+5])<<16 | int(data[i+6])<<8 | int(data[i+7])
-		i += 8
-		if i+size > len(data) || size <= 0 {
-			break
-		}
-		logs = append(logs, string(data[i:i+size]))
-		i += size
-	}
-	return logs
-}
-
 // buildDockerfileTar 构建 Dockerfile 的 tar 包
 func buildDockerfileTar(dockerfile string) (*bytes.Buffer, error) {
 	tarBuf := new(bytes.Buffer)
@@ -154,7 +136,7 @@ func (s *DockerService) resolveSelfContainerID(ctx context.Context) string {
 	for _, ct := range containers {
 		if len(selfMounts) > 0 {
 			if info, err := s.client.ContainerInspect(ctx, ct.ID); err == nil {
-				for _, key := range []string{"UpperDir", "WorkDir", "MergedDir"} {
+				for _, key := range []string{"UpperDir", "WorkDir"} {
 					if selfMounts[info.GraphDriver.Data[key]] {
 						return ct.ID
 					}

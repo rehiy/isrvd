@@ -3,6 +3,7 @@ package docker
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -12,8 +13,32 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/rehiy/libgo/logman"
 )
+
+const maxCommandOutputBytes int64 = 4 << 20
+
+type commandOutputBuffer struct {
+	buf       bytes.Buffer
+	truncated bool
+}
+
+func (b *commandOutputBuffer) Write(p []byte) (int, error) {
+	remaining := maxCommandOutputBytes - int64(b.buf.Len())
+	if remaining > 0 {
+		keep := min(int64(len(p)), remaining)
+		_, _ = b.buf.Write(p[:int(keep)])
+	}
+	if int64(len(p)) > remaining {
+		b.truncated = true
+	}
+	return len(p), nil
+}
+
+func (b *commandOutputBuffer) String() string {
+	return strings.ToValidUTF8(b.buf.String(), "\uFFFD")
+}
 
 // ExecSession 容器 exec 会话，封装 hijacked 连接，实现 io.ReadWriteCloser
 type ExecSession struct {
@@ -105,29 +130,46 @@ func (s *DockerService) ContainerExecRun(ctx context.Context, containerID, shell
 	}
 	defer attachResp.Close()
 
-	// 使用 context 控制读取超时：cancel 后关闭连接使 io.Copy 中断
+	readCtx := ctx
+	var cancel context.CancelFunc
 	if timeout > 0 {
-		timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
+		readCtx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 		defer cancel()
-		go func() {
-			<-timeoutCtx.Done()
-			attachResp.Close()
-		}()
 	}
+	readDone := make(chan struct{})
+	go func() {
+		select {
+		case <-readCtx.Done():
+			attachResp.Close()
+		case <-readDone:
+		}
+	}()
 
-	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, attachResp.Reader); err != nil && err != io.EOF {
-		logman.Warn("ContainerExecRun read error", "container", containerID, "error", err)
+	buf := &commandOutputBuffer{}
+	_, readErr := stdcopy.StdCopy(buf, buf, attachResp.Reader)
+	close(readDone)
+	output := buf.String()
+	if buf.truncated {
+		output += fmt.Sprintf("\n[output truncated at %d bytes]\n", maxCommandOutputBytes)
+	}
+	if err := readCtx.Err(); err != nil {
+		return output, fmt.Errorf("容器命令执行中止: %w", err)
+	}
+	if readErr != nil && !errors.Is(readErr, io.EOF) {
+		return output, fmt.Errorf("读取容器命令输出失败: %w", readErr)
 	}
 
 	inspect, err := s.client.ContainerExecInspect(ctx, execResp.ID)
 	if err != nil {
-		return buf.String(), nil
+		return output, fmt.Errorf("检查容器命令状态失败: %w", err)
+	}
+	if inspect.Running {
+		return output, fmt.Errorf("容器命令仍在运行")
 	}
 	if inspect.ExitCode != 0 {
-		return buf.String(), fmt.Errorf("exit code %d", inspect.ExitCode)
+		return output, fmt.Errorf("exit code %d", inspect.ExitCode)
 	}
-	return buf.String(), nil
+	return output, nil
 }
 
 // ContainerRunScript 创建临时容器运行脚本，完成后收集日志并删除容器和临时文件。
@@ -221,8 +263,11 @@ func (s *DockerService) ContainerRunScript(ctx context.Context, image, shell, sc
 	output := ""
 	if err == nil {
 		defer logReader.Close()
-		raw, _ := io.ReadAll(logReader)
-		output = strings.Join(ParseDockerLogs(raw), "")
+		logs, readErr := ReadLogSnapshot(logReader, false)
+		if readErr != nil {
+			return "", fmt.Errorf("读取临时容器日志失败: %w", readErr)
+		}
+		output = strings.Join(logs, "")
 	}
 
 	if exitCode != 0 {
