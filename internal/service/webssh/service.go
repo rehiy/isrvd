@@ -142,7 +142,7 @@ type HostUpsertRequest struct {
 
 // HostCreate 新建主机配置
 func (s *Service) HostCreate(req *HostUpsertRequest) (*Host, error) {
-	h, err := s.hostFromRequest(req, nil)
+	h, err := s.hostFromRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -155,13 +155,7 @@ func (s *Service) HostCreate(req *HostUpsertRequest) (*Host, error) {
 
 // HostUpdate 更新主机配置
 func (s *Service) HostUpdate(id string, req *HostUpsertRequest) (*Host, error) {
-	// 先获取现有主机
-	old := s.store.hostInspect(id)
-	if old == nil {
-		return nil, fmt.Errorf("主机 %s 不存在", id)
-	}
-
-	h, err := s.hostFromRequest(req, old)
+	h, err := s.hostFromRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +167,7 @@ func (s *Service) HostUpdate(id string, req *HostUpsertRequest) (*Host, error) {
 	return s.HostInspect(id), nil
 }
 
-func (s *Service) hostFromRequest(req *HostUpsertRequest, old *Host) (*Host, error) {
+func (s *Service) hostFromRequest(req *HostUpsertRequest) (*Host, error) {
 	h := &Host{
 		Name:         req.Name,
 		Addr:         req.Addr,
@@ -191,13 +185,6 @@ func (s *Service) hostFromRequest(req *HostUpsertRequest, old *Host) (*Host, err
 		h.User = credential.User
 		h.Password = ""
 		h.PrivateKey = ""
-	} else if old != nil {
-		if h.Password == "" {
-			h.Password = old.Password
-		}
-		if h.PrivateKey == "" {
-			h.PrivateKey = old.PrivateKey
-		}
 	}
 	return h, nil
 }

@@ -50,18 +50,15 @@ func newHostStore() (*store, error) {
 	return &store{ts: ts, hosts: hosts}, nil
 }
 
-// save 将主机列表写入存储
-func (s *store) save() error {
-	return s.ts.Set(s.hosts)
-}
-
 // hostList 返回所有主机列表（密码/私钥不序列化）
 func (s *store) hostList() []*Host {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	result := make([]*Host, len(s.hosts))
-	for i, h := range s.hosts {
-		result[i] = cloneHost(h)
+	result := make([]*Host, 0, len(s.hosts))
+	for _, h := range s.hosts {
+		if h != nil {
+			result = append(result, cloneHost(h))
+		}
 	}
 	return result
 }
@@ -75,24 +72,60 @@ func (s *store) hostInspect(id string) *Host {
 
 // hostCreate 新建主机配置
 func (s *store) hostCreate(h *Host) error {
+	item := cloneHost(h)
+	if item == nil {
+		return fmt.Errorf("主机不能为空")
+	}
+	item.ID = strutil.NewString()
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	h.ID = strutil.NewString()
-	s.hosts = append(s.hosts, cloneHost(h))
-	return s.save()
+	next := make([]*Host, len(s.hosts), len(s.hosts)+1)
+	copy(next, s.hosts)
+	next = append(next, item)
+	if err := s.ts.Set(next); err != nil {
+		return err
+	}
+	s.hosts = next
+	h.ID = item.ID
+	return nil
 }
 
 // hostUpdate 更新主机配置
 func (s *store) hostUpdate(id string, h *Host) error {
+	item := cloneHost(h)
+	if item == nil {
+		return fmt.Errorf("主机不能为空")
+	}
+	item.ID = id
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	idx := s.indexByID(id)
 	if idx < 0 {
 		return fmt.Errorf("主机 %s 不存在", id)
 	}
-	h.ID = id
-	s.hosts[idx] = cloneHost(h)
-	return s.save()
+	old := s.hosts[idx]
+	if item.CredentialID == "" {
+		switch {
+		case item.PrivateKey != "":
+			item.Password = ""
+		case item.Password != "":
+			item.PrivateKey = ""
+		case old != nil:
+			item.Password = old.Password
+			item.PrivateKey = old.PrivateKey
+		}
+	}
+	next := make([]*Host, len(s.hosts))
+	copy(next, s.hosts)
+	next[idx] = item
+	if err := s.ts.Set(next); err != nil {
+		return err
+	}
+	s.hosts = next
+	h.ID = item.ID
+	return nil
 }
 
 // hostDelete 删除主机配置
@@ -103,8 +136,14 @@ func (s *store) hostDelete(id string) error {
 	if idx < 0 {
 		return fmt.Errorf("主机 %s 不存在", id)
 	}
-	s.hosts = append(s.hosts[:idx], s.hosts[idx+1:]...)
-	return s.save()
+	next := make([]*Host, 0, len(s.hosts)-1)
+	next = append(next, s.hosts[:idx]...)
+	next = append(next, s.hosts[idx+1:]...)
+	if err := s.ts.Set(next); err != nil {
+		return err
+	}
+	s.hosts = next
+	return nil
 }
 
 // hostGetOption 获取指定 ID 主机的 SSH 连接配置
@@ -142,7 +181,7 @@ func cloneHost(h *Host) *Host {
 // findByID 按 ID 查找主机（调用方须持锁）
 func (s *store) findByID(id string) *Host {
 	for _, h := range s.hosts {
-		if h.ID == id {
+		if h != nil && h.ID == id {
 			return h
 		}
 	}
@@ -152,7 +191,7 @@ func (s *store) findByID(id string) *Host {
 // indexByID 按 ID 查找主机下标（调用方须持锁）
 func (s *store) indexByID(id string) int {
 	for i, h := range s.hosts {
-		if h.ID == id {
+		if h != nil && h.ID == id {
 			return i
 		}
 	}

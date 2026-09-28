@@ -58,18 +58,15 @@ func newCredentialStore() (*credentialStore, error) {
 	return &credentialStore{ts: ts, items: items}, nil
 }
 
-// save 将凭据列表写入存储
-func (s *credentialStore) save() error {
-	return s.ts.Set(s.items)
-}
-
 // list 返回所有凭据列表
 func (s *credentialStore) list() []*Credential {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	result := make([]*Credential, len(s.items))
-	for i, c := range s.items {
-		result[i] = cloneCredential(c)
+	result := make([]*Credential, 0, len(s.items))
+	for _, c := range s.items {
+		if c != nil {
+			result = append(result, cloneCredential(c))
+		}
 	}
 	return result
 }
@@ -79,7 +76,7 @@ func (s *credentialStore) get(id string) *Credential {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for _, c := range s.items {
-		if c.ID == id {
+		if c != nil && c.ID == id {
 			return cloneCredential(c)
 		}
 	}
@@ -88,26 +85,62 @@ func (s *credentialStore) get(id string) *Credential {
 
 // create 新建凭据
 func (s *credentialStore) create(c *Credential) error {
+	item := cloneCredential(c)
+	if item == nil {
+		return fmt.Errorf("凭据不能为空")
+	}
+	item.ID = strutil.NewString()
+	item.setAuthType()
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	c.ID = strutil.NewString()
-	c.setAuthType()
-	s.items = append(s.items, cloneCredential(c))
-	return s.save()
+	next := make([]*Credential, len(s.items), len(s.items)+1)
+	copy(next, s.items)
+	next = append(next, item)
+	if err := s.ts.Set(next); err != nil {
+		return err
+	}
+	s.items = next
+	c.ID = item.ID
+	c.AuthType = item.AuthType
+	return nil
 }
 
 // update 更新凭据
 func (s *credentialStore) update(id string, c *Credential) error {
+	item := cloneCredential(c)
+	if item == nil {
+		return fmt.Errorf("凭据不能为空")
+	}
+	item.ID = id
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	idx := s.indexOf(id)
 	if idx < 0 {
 		return fmt.Errorf("凭据 %s 不存在", id)
 	}
-	c.ID = id
-	c.setAuthType()
-	s.items[idx] = cloneCredential(c)
-	return s.save()
+	old := s.items[idx]
+	switch {
+	case item.PrivateKey != "":
+		item.Password = ""
+	case item.Password != "":
+		item.PrivateKey = ""
+	case old != nil:
+		item.Password = old.Password
+		item.PrivateKey = old.PrivateKey
+	}
+	item.setAuthType()
+	next := make([]*Credential, len(s.items))
+	copy(next, s.items)
+	next[idx] = item
+	if err := s.ts.Set(next); err != nil {
+		return err
+	}
+	s.items = next
+	c.ID = item.ID
+	c.AuthType = item.AuthType
+	return nil
 }
 
 func cloneCredential(c *Credential) *Credential {
@@ -126,14 +159,20 @@ func (s *credentialStore) delete(id string) error {
 	if idx < 0 {
 		return fmt.Errorf("凭据 %s 不存在", id)
 	}
-	s.items = append(s.items[:idx], s.items[idx+1:]...)
-	return s.save()
+	next := make([]*Credential, 0, len(s.items)-1)
+	next = append(next, s.items[:idx]...)
+	next = append(next, s.items[idx+1:]...)
+	if err := s.ts.Set(next); err != nil {
+		return err
+	}
+	s.items = next
+	return nil
 }
 
 // indexOf 按 ID 查找凭据下标（调用方须持锁）
 func (s *credentialStore) indexOf(id string) int {
 	for i, c := range s.items {
-		if c.ID == id {
+		if c != nil && c.ID == id {
 			return i
 		}
 	}
