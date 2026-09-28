@@ -49,41 +49,46 @@ func Apply(conf *Config) {
 
 	OIDC = OIDCNormalize(conf.OIDC)
 
-	if conf.THA != nil {
-		THA = THANormalize(conf.THA)
-	}
+	THA = THANormalize(conf.THA)
 
-	if conf.Copilot != nil {
-		Copilot = conf.Copilot
+	Copilot = conf.Copilot
+	if Copilot == nil {
+		Copilot = &CopilotConfig{}
 	}
 
 	Notify = NotifyNormalize(conf.Notify)
 
-	if conf.Apisix != nil {
-		Apisix = conf.Apisix
+	Apisix = conf.Apisix
+	if Apisix == nil {
+		Apisix = &ApisixConfig{}
 	}
 
-	if conf.Caddy != nil {
-		Caddy = conf.Caddy
+	Caddy = conf.Caddy
+	if Caddy == nil {
+		Caddy = &CaddyConfig{}
 	}
 
-	if conf.Docker != nil {
-		Docker = conf.Docker
+	Docker = conf.Docker
+	if Docker == nil {
+		Docker = &DockerConfig{}
+	} else {
 		Docker.ContainerRoot = PathToAbs(Docker.ContainerRoot, Server.RootDirectory)
 	}
 
 	Monitor = MonitorNormalize(conf.Monitor)
 
-	if conf.Marketplace != nil {
-		Marketplace = conf.Marketplace
+	Marketplace = conf.Marketplace
+	if Marketplace == nil {
+		Marketplace = &MarketplaceConfig{}
 	}
 
-	if conf.Links != nil {
-		Links = conf.Links
-	}
+	Links = conf.Links
 
 	Members = make(map[string]*MemberConfig, len(conf.Members))
 	for _, m := range conf.Members {
+		if m == nil {
+			continue
+		}
 		m.HomeDirectory = PathToAbs(m.HomeDirectory, Server.RootDirectory)
 		Members[m.Username] = m
 	}
