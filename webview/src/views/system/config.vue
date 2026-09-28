@@ -8,13 +8,19 @@ class ConfigLayout extends Vue {
     portal = usePortal()
     config = useConfigStore()
 
+    // 查看权限：GET 与 PUT 任一即可，保证只读成员也能查看配置
+    get canView() {
+        return this.portal.hasPerm('GET /api/system/config') || this.portal.hasPerm('PUT /api/system/config')
+    }
+
+    // 编辑权限：仅授权 PUT 的成员可保存
     get canUpdate() {
         return this.portal.hasPerm('PUT /api/system/config')
     }
 
     // 刷新/关闭页面时提醒未保存改动（浏览器原生弹窗）
     onBeforeUnload = (event: BeforeUnloadEvent) => {
-        if (!this.config.hasUnsaved()) return
+        if (!this.canUpdate || !this.config.hasUnsaved()) return
         event.preventDefault()
         event.returnValue = ''
     }
@@ -44,7 +50,7 @@ class ConfigLayout extends Vue {
     // ─── 生命周期 ───
     mounted() {
         // 草稿在 store 中常驻，仅在首次进入时加载，避免站内往返导致未保存改动被覆盖
-        if (this.canUpdate && !this.config.loaded) this.config.load()
+        if (this.canView && !this.config.loaded) this.config.load()
         window.addEventListener('beforeunload', this.onBeforeUnload)
     }
 
@@ -105,13 +111,13 @@ export default toNative(ConfigLayout)
       </div>
     </div>
 
-    <!-- 无权限 -->
-    <div v-if="!canUpdate" class="card-body">
+    <!-- 无查看权限 -->
+    <div v-if="!canView" class="card-body">
       <div class="empty-state">
         <div class="empty-state-icon">
           <i class="fas fa-lock text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">无权限修改系统配置</p>
+        <p class="text-slate-600 font-medium mb-1">无权限查看系统配置</p>
         <p class="text-sm text-slate-400">请联系管理员调整账号权限</p>
       </div>
     </div>
@@ -139,8 +145,19 @@ export default toNative(ConfigLayout)
     </div>
 
     <!-- 配置分组内容（分组切换在侧边栏子菜单） -->
-    <form v-else id="config-form" class="card-body" @submit.prevent="saveConfig">
-      <router-view />
-    </form>
+    <template v-else>
+      <!-- 只读提示：仅有查看权限时表单不可编辑 -->
+      <div v-if="!canUpdate" class="card-body pb-0">
+        <div class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-sm">
+          <i class="fas fa-eye"></i>
+          <span>当前账号仅有查看权限，配置项不可修改</span>
+        </div>
+      </div>
+      <form id="config-form" class="card-body" @submit.prevent="saveConfig">
+        <fieldset :disabled="!canUpdate" class="space-y-6 min-w-0">
+          <router-view />
+        </fieldset>
+      </form>
+    </template>
   </div>
 </template>
