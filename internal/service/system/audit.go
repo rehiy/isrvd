@@ -20,9 +20,8 @@ import (
 )
 
 const (
-	maxAuditBufferSize = 100 // 内存缓冲最大条数
-	// auditFileSuffix 审计日志文件后缀
-	auditFileSuffix = ".jsonl"
+	maxAuditBufferSize = 100      // 内存缓冲最大条数
+	maxAuditBodySize   = 64 << 10 // 单次审计最多读取 64 KiB 请求体
 )
 
 // sensitiveFields 审计请求体与 URI 中需要脱敏的字段名
@@ -31,12 +30,13 @@ var sensitiveFields = []string{
 	"jwtSecret", "apiKey", "adminKey", "clientSecret",
 	// 跨模块密码与共享密钥：账户、SSH、镜像仓库、APISIX 认证插件
 	"password", "secret",
-	// 账户密码变更与双因素验证码
-	"oldPassword", "newPassword", "totpCode",
-	// 访问令牌
+	// 账户密码变更、认证码与双因素验证码
+	"oldPassword", "newPassword", "code", "totpCode",
+	// 访问令牌（camelCase 与 snake_case）
 	"token", "accessToken", "refreshToken", "idToken",
-	// SSH 私钥
-	"privateKey",
+	"access_token", "refresh_token", "id_token",
+	// 文件、脚本、环境变量与 SSH 私钥内容不进入审计日志
+	"content", "envContent", "privateKey",
 	// APISIX key-auth 密钥与 SSL 证书私钥
 	"key",
 	// APISIX 插件专用字段
@@ -60,11 +60,10 @@ type AuditLog struct {
 
 // AuditService 审计日志业务服务
 type AuditService struct {
-	dataDir string
-	buffer  []AuditLog
-	store   *jsonl.Store
-	closed  bool
-	mu      sync.RWMutex
+	buffer []AuditLog
+	store  *jsonl.Store
+	closed bool
+	mu     sync.RWMutex
 }
 
 // NewAuditService 创建审计日志业务服务并自动初始化
@@ -72,7 +71,7 @@ func NewAuditService() *AuditService {
 	dataDir := filepath.Join(config.Server.RootDirectory, "audit")
 	store, err := jsonl.New(
 		dataDir,
-		auditNaming(),
+		jsonl.Naming{Suffix: ".jsonl"},
 		jsonl.WithBufferSize(4096),
 		jsonl.WithFlushInterval(time.Second),
 		jsonl.WithAsync(maxAuditBufferSize),
@@ -82,9 +81,8 @@ func NewAuditService() *AuditService {
 	}
 
 	s := &AuditService{
-		dataDir: dataDir,
-		buffer:  make([]AuditLog, 0, maxAuditBufferSize),
-		store:   store,
+		buffer: make([]AuditLog, 0, maxAuditBufferSize),
+		store:  store,
 	}
 
 	// 启动时加载今日文件最近的 maxAuditBufferSize 条到内存
@@ -175,44 +173,51 @@ func (s *AuditService) AuditRecord(c *gin.Context, startTime time.Time, body str
 	})
 }
 
-// BodyRead 读取请求体，按 Content-Type 差异化处理：
-//   - application/octet-stream：返回占位符
-//   - multipart/form-data：保留文本字段，文件字段替换为占位符，敏感字段脱敏
-//   - 其他：读取全部内容并回填 Body，敏感字段脱敏
+// BodyRead 读取有限长度的请求体用于审计，并确保后续 handler 仍可读取完整内容。
+// 文件上传只记录占位符，避免审计层提前解析 multipart 并占用大量内存或临时磁盘。
 func (s *AuditService) BodyRead(c *gin.Context) string {
+	contentType := c.ContentType()
 	switch {
-	case strings.HasPrefix(c.ContentType(), "application/octet-stream"):
+	case strings.HasPrefix(contentType, "application/octet-stream"):
 		return "[Binary Omitted]"
-
-	case strings.HasPrefix(c.ContentType(), "multipart/form-data"):
-		form, err := c.MultipartForm()
-		if err != nil || form == nil {
-			return ""
-		}
-		fields := make(map[string]any)
-		for k, vs := range form.Value {
-			if len(vs) == 1 {
-				fields[k] = maskSensitiveValue(k, vs[0])
-			} else {
-				masked := make([]string, len(vs))
-				for i, v := range vs {
-					masked[i] = maskSensitiveValue(k, v)
-				}
-				fields[k] = masked
-			}
-		}
-		for k := range form.File {
-			fields[k] = "[File Omitted]"
-		}
-		data, _ := json.Marshal(fields)
-		return string(data)
-
-	default:
-		// 读取并回填 body，确保后续 handler 可正常读取
-		raw, _ := io.ReadAll(c.Request.Body)
-		c.Request.Body = io.NopCloser(bytes.NewReader(raw))
-		return maskSensitiveJSON(string(raw))
+	case strings.HasPrefix(contentType, "multipart/form-data"):
+		return "[Multipart Omitted]"
 	}
+
+	original := c.Request.Body
+	if original == nil {
+		return ""
+	}
+	raw, err := io.ReadAll(io.LimitReader(original, maxAuditBodySize+1))
+	c.Request.Body = struct {
+		io.Reader
+		io.Closer
+	}{
+		Reader: io.MultiReader(bytes.NewReader(raw), original),
+		Closer: original,
+	}
+	if err != nil {
+		return "[Body Read Failed]"
+	}
+
+	truncated := len(raw) > maxAuditBodySize
+	if truncated {
+		raw = raw[:maxAuditBodySize]
+	}
+
+	var body string
+	switch {
+	case strings.Contains(contentType, "json"):
+		body = maskSensitiveJSON(string(raw))
+	case strings.HasPrefix(contentType, "application/x-www-form-urlencoded"):
+		body = maskSensitiveForm(string(raw))
+	default:
+		body = "[Body Omitted]"
+	}
+	if truncated {
+		body += " [Truncated]"
+	}
+	return body
 }
 
 // Close 关闭底层文件句柄，刷盘缓冲数据
@@ -251,52 +256,65 @@ func (s *AuditService) loadRecent() {
 	}
 }
 
-// maskSensitiveValue 对敏感字段的值进行脱敏
-// - 长度 > 10：保留前 5 位 + ****** + 后 3 位
-// - 长度 <= 10：保留首尾各 1 位，中间替换为 ******
+// maskSensitiveValue 对敏感字段完全脱敏，不保留秘密首尾字符。
 func maskSensitiveValue(key, value string) string {
-	for _, field := range sensitiveFields {
-		if strings.EqualFold(key, field) {
-			n := len(value)
-			if n > 10 {
-				return value[:5] + "******" + value[n-3:]
-			} else if n > 2 {
-				return value[:1] + "******" + value[n-1:]
-			}
-			return "******"
-		}
+	if isSensitiveField(key) {
+		return "[REDACTED]"
 	}
 	return value
 }
 
+func isSensitiveField(key string) bool {
+	for _, field := range sensitiveFields {
+		if strings.EqualFold(key, field) {
+			return true
+		}
+	}
+	return false
+}
+
 // maskSensitiveJSON 对 JSON 字符串中的敏感字段进行脱敏
 func maskSensitiveJSON(jsonStr string) string {
-	var data map[string]any
+	var data any
 	if json.Unmarshal([]byte(jsonStr), &data) != nil {
-		return jsonStr
+		return "[Invalid JSON Omitted]"
 	}
-	maskMap(data)
+	data = maskValue(data)
 	result, _ := json.Marshal(data)
 	return string(result)
 }
 
-// maskMap 递归脱敏 map 中的敏感字段
-func maskMap(m map[string]any) {
-	for key, val := range m {
-		switch v := val.(type) {
-		case string:
-			m[key] = maskSensitiveValue(key, v)
-		case map[string]any:
-			maskMap(v)
-		case []any:
-			for i, item := range v {
-				if itemMap, ok := item.(map[string]any); ok {
-					maskMap(itemMap)
-					v[i] = itemMap
-				}
-			}
+// maskSensitiveForm 对 URL 编码表单中的敏感字段进行脱敏。
+func maskSensitiveForm(raw string) string {
+	values, err := url.ParseQuery(raw)
+	if err != nil {
+		return "[Invalid Form Omitted]"
+	}
+	for key, items := range values {
+		for i, value := range items {
+			items[i] = maskSensitiveValue(key, value)
 		}
 	}
+	return values.Encode()
+}
+
+// maskValue 递归脱敏任意 JSON 对象和数组；敏感字段无论值类型都完全遮蔽。
+func maskValue(value any) any {
+	switch data := value.(type) {
+	case map[string]any:
+		for key, item := range data {
+			if isSensitiveField(key) {
+				data[key] = "[REDACTED]"
+			} else {
+				data[key] = maskValue(item)
+			}
+		}
+	case []any:
+		for i, item := range data {
+			data[i] = maskValue(item)
+		}
+	}
+	return value
 }
 
 // auditUsername 获取审计日志中的操作人。
@@ -339,9 +357,4 @@ func maskSensitiveURI(uri string) string {
 		}
 	}
 	return path + "?" + strings.Join(parts, "&")
-}
-
-// auditNaming 审计日志文件命名规则：YYYY-MM-DD.jsonl
-func auditNaming() jsonl.Naming {
-	return jsonl.Naming{Prefix: "", Sep: "", Suffix: auditFileSuffix}
 }
