@@ -165,13 +165,15 @@ func (app *App) isServiceAvailable(module string) bool {
 		return app.apisixSvc != nil
 	case "caddy":
 		return app.caddySvc != nil
-	case "docker", "shell":
+	case "docker":
 		return app.dockerSvc != nil
+	case "shell":
+		return app.shellSvc != nil
 	case "swarm":
 		return app.dockerSvc != nil && app.swarmSvc != nil
 	case "compose":
 		return app.dockerSvc != nil && app.composeSvc != nil
-	case "webssh":
+	case "ssh":
 		return app.websshSvc != nil
 	default:
 		return true

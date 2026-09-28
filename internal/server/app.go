@@ -85,8 +85,6 @@ type Route struct {
 	Access     RouteAccess     `json:"access"`        // 访问级别，0：需要具体权限，-1：匿名，1：登录即可访问
 	Audit      AuditLevel      `json:"-"`             // 审计级别，0：按 Method 审计，-1：忽略，1：强制审计
 	QueryToken bool            `json:"-"`             // 允许从 query ?token= 提取 JWT（用于 SSE/文件下载等无法携带 Header 的场景）
-	// IndexOnly 只写入权限索引，不注册到 Gin。
-	IndexOnly bool `json:"-"`
 }
 
 func StartApp() {
@@ -103,10 +101,10 @@ func StartApp() {
 	app.initRoutes()
 
 	server := &http.Server{
-		Addr:         config.Server.ListenAddr,
-		Handler:      app.Engine,
-		ReadTimeout:  300 * time.Second,
-		WriteTimeout: 300 * time.Second,
+		Addr:              config.Server.ListenAddr,
+		Handler:           app.Engine,
+		ReadHeaderTimeout: 10 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 	app.watchReload(server)
 }
@@ -118,9 +116,9 @@ func (app *App) initRoutes() {
 	// 全局中间件
 	r.Use(app.wsConfig.CorsMiddleware())
 	r.Use(securityHeadersMiddleware())
-	r.Use(app.serviceAvailableMiddleware())
-	// Auth 先认证设置 username → Perm 再校验权限 → Audit 最后记录审计
+	// 先认证设置 username，再检查服务可用性；权限检查只在服务可用时执行。
 	r.Use(app.authMiddleware(app.routeIndex))
+	r.Use(app.serviceAvailableMiddleware())
 	r.Use(app.permMiddleware(app.routeIndex))
 	r.Use(app.auditMiddleware(app.routeIndex))
 
@@ -172,9 +170,6 @@ func (app *App) registerRoute(group *gin.RouterGroup, route Route) {
 	key := route.Method + " " + APINamespace + route.Path
 	route.Key = key
 	app.routeIndex[key] = route
-	if route.IndexOnly {
-		return
-	}
 
 	switch route.Method {
 	case "GET":
