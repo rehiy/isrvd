@@ -7,6 +7,10 @@ import (
 	pkgDocker "isrvd/pkgs/docker"
 )
 
+const MaxEditableFileBytes = pkgDocker.MaxEditableFileBytes
+
+var ErrEditableFileTooLarge = pkgDocker.ErrEditableFileTooLarge
+
 // ContainerFileListResult 目录列表结果（透传 pkgs/docker）
 type ContainerFileListResult = pkgDocker.ContainerFileListResult
 

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -338,6 +339,10 @@ func (app *App) websshSFTPRead(c *gin.Context) {
 	}
 
 	content, err := app.websshSvc.SFTPRead(id, filePath)
+	if errors.Is(err, svcWebSSH.ErrEditableFileTooLarge) {
+		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用下载功能")
+		return
+	}
 	if err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -351,12 +356,17 @@ func (app *App) websshSFTPRead(c *gin.Context) {
 // websshSFTPWrite 写入文件内容
 func (app *App) websshSFTPWrite(c *gin.Context) {
 	id := c.Param("id")
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxEditableJSONBytes)
 	var req struct {
 		Path    string `json:"path" binding:"required"`    // 目标文件路径
 		Content string `json:"content" binding:"required"` // 文件文本内容
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		respondBindError(c, err)
+		return
+	}
+	if int64(len(req.Content)) > svcWebSSH.MaxEditableFileBytes {
+		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
 		return
 	}
 

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"io"
 	"mime"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"github.com/rehiy/libgo/logman"
 
 	"isrvd/config"
+	svcFiler "isrvd/internal/service/filer"
 )
 
 // defineFilerRoutes 定义 Filer 模块路由（RESTful）
@@ -128,9 +130,14 @@ type filerContentBody struct {
 }
 
 func (app *App) filerFileCreate(c *gin.Context) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxEditableJSONBytes)
 	var req filerContentBody
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		respondBindError(c, err)
+		return
+	}
+	if int64(len(req.Content)) > svcFiler.MaxEditableFileBytes {
+		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
 		return
 	}
 
@@ -159,6 +166,10 @@ func (app *App) filerFileRead(c *gin.Context) {
 	}
 
 	content, err := app.filerSvc.FileRead(absPath)
+	if errors.Is(err, svcFiler.ErrEditableFileTooLarge) {
+		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用下载功能")
+		return
+	}
 	if err != nil {
 		respondError(c, http.StatusNotFound, "文件未找到")
 		return
@@ -167,9 +178,14 @@ func (app *App) filerFileRead(c *gin.Context) {
 }
 
 func (app *App) filerFileModify(c *gin.Context) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxEditableJSONBytes)
 	var req filerContentBody
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		respondBindError(c, err)
+		return
+	}
+	if int64(len(req.Content)) > svcFiler.MaxEditableFileBytes {
+		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
 		return
 	}
 

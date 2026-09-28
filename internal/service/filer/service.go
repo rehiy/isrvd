@@ -2,7 +2,9 @@
 package filer
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -16,6 +18,10 @@ import (
 
 	"isrvd/config"
 )
+
+const MaxEditableFileBytes int64 = 4 << 20
+
+var ErrEditableFileTooLarge = errors.New("文件超过在线编辑上限")
 
 // Service 文件管理业务服务
 type Service struct{}
@@ -148,9 +154,21 @@ func (s *Service) FileOpen(absPath string) (*os.File, os.FileInfo, error) {
 	return file, info, nil
 }
 
-// FileRead 读取文件内容
+// FileRead 读取用于在线编辑的文本内容，超大文件应使用流式下载接口。
 func (s *Service) FileRead(absPath string) ([]byte, error) {
-	return os.ReadFile(absPath)
+	file, err := os.Open(absPath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	data, err := io.ReadAll(io.LimitReader(file, MaxEditableFileBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(data)) > MaxEditableFileBytes {
+		return nil, ErrEditableFileTooLarge
+	}
+	return data, nil
 }
 
 // FileWrite 写入文件内容（覆盖）

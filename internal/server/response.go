@@ -1,10 +1,13 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
+
+const maxEditableJSONBytes int64 = 32 << 20
 
 // APIResponse 通用API响应结构
 type APIResponse struct {
@@ -31,6 +34,15 @@ func respondError(c *gin.Context, statusCode int, message string) {
 		Success: false,
 		Message: message,
 	})
+}
+
+func respondBindError(c *gin.Context, err error) {
+	var maxBytesErr *http.MaxBytesError
+	if errors.As(err, &maxBytesErr) {
+		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
+		return
+	}
+	respondError(c, http.StatusBadRequest, err.Error())
 }
 
 // respondResult 统一处理返回数据的 service 调用结果。

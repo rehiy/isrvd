@@ -580,6 +580,10 @@ func (app *App) dockerContainerFileRead(c *gin.Context) {
 		return
 	}
 	content, err := app.dockerSvc.ContainerFileRead(c.Request.Context(), id, filePath)
+	if errors.Is(err, svcDocker.ErrEditableFileTooLarge) {
+		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用下载功能")
+		return
+	}
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -589,12 +593,17 @@ func (app *App) dockerContainerFileRead(c *gin.Context) {
 
 func (app *App) dockerContainerFileWrite(c *gin.Context) {
 	id := c.Param("id")
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxEditableJSONBytes)
 	var req struct {
 		Path    string `json:"path" binding:"required"` // 目标文件路径
 		Content string `json:"content"`                 // 文件文本内容
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		respondBindError(c, err)
+		return
+	}
+	if int64(len(req.Content)) > svcDocker.MaxEditableFileBytes {
+		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
 		return
 	}
 	if err := app.dockerSvc.ContainerFileWrite(c.Request.Context(), id, req.Path, req.Content); err != nil {

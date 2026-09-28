@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"path"
@@ -13,6 +14,26 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/rehiy/libgo/logman"
 )
+
+const MaxEditableFileBytes int64 = 4 << 20
+
+var ErrEditableFileTooLarge = errors.New("文件超过在线编辑上限")
+
+type editableFileBuffer struct {
+	bytes.Buffer
+}
+
+func (b *editableFileBuffer) Write(p []byte) (int, error) {
+	remaining := MaxEditableFileBytes + 1 - int64(b.Len())
+	if remaining <= 0 {
+		return 0, ErrEditableFileTooLarge
+	}
+	if int64(len(p)) > remaining {
+		n, _ := b.Buffer.Write(p[:int(remaining)])
+		return n, ErrEditableFileTooLarge
+	}
+	return b.Buffer.Write(p)
+}
 
 // ContainerFileInfo 容器内文件信息
 type ContainerFileInfo struct {
@@ -187,13 +208,17 @@ func (s *DockerService) ContainerFileRename(ctx context.Context, containerID, ol
 	return nil
 }
 
-// ContainerFileRead 读取容器内文件文本内容
+// ContainerFileRead 读取用于在线编辑的容器文件内容，超大文件应使用流式下载接口。
 func (s *DockerService) ContainerFileRead(ctx context.Context, containerID, filePath string) (string, error) {
-	var buf bytes.Buffer
-	if err := s.ContainerFileDownload(ctx, containerID, filePath, &buf); err != nil {
+	buf := &editableFileBuffer{}
+	err := s.ContainerFileDownload(ctx, containerID, filePath, buf)
+	if int64(buf.Len()) > MaxEditableFileBytes {
+		return "", ErrEditableFileTooLarge
+	}
+	if err != nil {
 		return "", err
 	}
-	return buf.String(), nil
+	return strings.ToValidUTF8(buf.String(), "\uFFFD"), nil
 }
 
 // ContainerFileWrite 写入文本内容到容器内文件

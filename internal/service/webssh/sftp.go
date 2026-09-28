@@ -2,6 +2,7 @@ package webssh
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"mime/multipart"
 	"os"
@@ -10,6 +11,26 @@ import (
 
 	libWebSSH "github.com/rehiy/libgo/webssh"
 )
+
+const MaxEditableFileBytes int64 = 4 << 20
+
+var ErrEditableFileTooLarge = errors.New("文件超过在线编辑上限")
+
+type editableFileBuffer struct {
+	bytes.Buffer
+}
+
+func (b *editableFileBuffer) Write(p []byte) (int, error) {
+	remaining := MaxEditableFileBytes + 1 - int64(b.Len())
+	if remaining <= 0 {
+		return 0, ErrEditableFileTooLarge
+	}
+	if int64(len(p)) > remaining {
+		n, _ := b.Buffer.Write(p[:int(remaining)])
+		return n, ErrEditableFileTooLarge
+	}
+	return b.Buffer.Write(p)
+}
 
 // SFTPListResult SFTP 目录列表结果
 type SFTPListResult = libWebSSH.ListResult
@@ -103,13 +124,15 @@ func (s *Service) SFTPRead(hostID, filePath string) (string, error) {
 		return "", err
 	}
 
-	// 使用 bytes.Buffer 作为目标写入器
-	var buf bytes.Buffer
-	if err := s.sftpClient.Download(opt, filePath, &buf); err != nil {
+	buf := &editableFileBuffer{}
+	err = s.sftpClient.Download(opt, filePath, buf)
+	if int64(buf.Len()) > MaxEditableFileBytes {
+		return "", ErrEditableFileTooLarge
+	}
+	if err != nil {
 		return "", err
 	}
-
-	return buf.String(), nil
+	return strings.ToValidUTF8(buf.String(), "\uFFFD"), nil
 }
 
 // SFTPWrite 写入文件内容
