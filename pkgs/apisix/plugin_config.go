@@ -32,7 +32,7 @@ func (c *Client) PluginConfigCreate(ctx context.Context, req PluginConfig) (*Plu
 
 // PluginConfigUpdate 更新 Plugin Config
 func (c *Client) PluginConfigUpdate(ctx context.Context, configID string, req PluginConfig) (*PluginConfig, error) {
-	return requestResource[PluginConfig](ctx, c, http.MethodPatch, "/plugin_configs/"+url.PathEscape(configID), buildPluginConfigBody(req), "解析 Plugin Config 详情失败")
+	return requestResource[PluginConfig](ctx, c, http.MethodPut, "/plugin_configs/"+url.PathEscape(configID), buildPluginConfigBody(req), "解析 Plugin Config 详情失败")
 }
 
 // PluginConfigDelete 删除 Plugin Config

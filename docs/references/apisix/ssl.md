@@ -38,7 +38,7 @@ isrvd_put "/apisix/plugin-config/<CONFIG_ID>" '{"desc":"<DESC>","plugins":{...}}
 isrvd_delete "/apisix/plugin-config/<CONFIG_ID>"
 ```
 
-创建时 `id` 由 isrvd 强制生成 UUID v7，传入请求体的 `id` 会被忽略；创建调用 APISIX `PUT /plugin_configs/<ID>`，更新调用 APISIX `PATCH /plugin_configs/<ID>`。
+创建时 `id` 由 isrvd 强制生成 UUID v7，传入请求体的 `id` 会被忽略；创建、更新均调用 APISIX `PUT /plugin_configs/<ID>`（全量替换，`plugins` 中未包含的插件会被移除）。
 
 ---
 
