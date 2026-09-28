@@ -32,9 +32,8 @@ var sensitiveFields = []string{
 	"password", "secret",
 	// 账户密码变更、认证码与双因素验证码
 	"oldPassword", "newPassword", "code", "totpCode",
-	// 访问令牌（camelCase 与 snake_case）
-	"token", "accessToken", "refreshToken", "idToken",
-	"access_token", "refresh_token", "id_token",
+	// 访问令牌
+	"token",
 	// 文件、脚本、环境变量与 SSH 私钥内容不进入审计日志
 	"content", "envContent", "privateKey",
 	// APISIX key-auth 密钥与 SSL 证书私钥
