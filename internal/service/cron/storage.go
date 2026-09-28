@@ -3,8 +3,10 @@ package cron
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/rehiy/libgo/jsonl"
 
@@ -17,6 +19,9 @@ const (
 	cronLogRetainDays = 3
 	// cronLogChannel 异步写入队列长度
 	cronLogChannel = 256
+	// maxStoredJobOutputBytes 单条任务输出的最大持久化字节数
+	maxStoredJobOutputBytes = 4 << 20
+	jobOutputTruncatedMark  = "\n[output truncated]\n"
 )
 
 // Store 负责计划任务配置和执行日志的存储。
@@ -107,9 +112,23 @@ func (s *Store) AppendJobLog(entry *JobLog) {
 	if s.logStore == nil {
 		return
 	}
-	if err := s.logStore.Append(entry); err != nil {
+	snapshot := *entry
+	snapshot.Output = truncateJobOutput(snapshot.Output)
+	if err := s.logStore.Append(&snapshot); err != nil {
 		logger.Warn("写入计划任务日志失败", "error", err)
 	}
+}
+
+func truncateJobOutput(value string) string {
+	value = strings.ToValidUTF8(value, "?")
+	if len(value) <= maxStoredJobOutputBytes {
+		return value
+	}
+	end := maxStoredJobOutputBytes - len(jobOutputTruncatedMark)
+	for end > 0 && !utf8.RuneStart(value[end]) {
+		end--
+	}
+	return value[:end] + jobOutputTruncatedMark
 }
 
 // LoadJobLogs 按 jobID 倒序读取最近 limit 条执行日志。
