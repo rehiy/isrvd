@@ -113,10 +113,9 @@ type RouteDef struct {
 }
 
 type ParamDef struct {
-	Name        string
-	Type        string // string, integer, boolean
-	Required    bool
-	Description string
+	Name     string
+	Type     string // string, integer, boolean
+	Required bool
 }
 
 // ─── 结构体字段中间表示 ──────────────────────────────
@@ -844,7 +843,7 @@ func analyzeAssignStmtV2(stmt *ast.AssignStmt, r *RouteDef, state *handlerAnalys
 
 	// 处理普通赋值 =
 	// 如: result = app.svc.Method()
-	if len(stmt.Lhs) == 1 && len(stmt.Rhs) == 1 {
+	if len(stmt.Lhs) == 1 {
 		if ident, ok := stmt.Lhs[0].(*ast.Ident); ok {
 			if callExpr, ok := stmt.Rhs[0].(*ast.CallExpr); ok {
 				retType := resolveCallReturnType(callExpr, state.filename)
