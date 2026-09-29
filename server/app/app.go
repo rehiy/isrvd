@@ -27,8 +27,8 @@ import (
 	"isrvd/server/service/system"
 	"isrvd/server/service/webssh"
 
-	"isrvd/server/config"
 	"isrvd/public"
+	"isrvd/server/config"
 )
 
 const APINamespace = "/api"

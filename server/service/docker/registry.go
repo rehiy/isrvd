@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"isrvd/server/config"
 	"isrvd/pkgs/docker"
+	"isrvd/server/config"
 )
 
 // RegistryInfo 镜像仓库信息，保持前端稳定响应结构且不包含密码。
