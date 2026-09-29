@@ -6,7 +6,7 @@
 //	go run ./server/cmd/openapi-gen/ -o openapi.json  # 生成到指定路径
 //
 // 工作原理:
-//  1. 解析 server/ctrl_*.go 中的 define*Routes() 方法，提取所有路由定义
+//  1. 解析 server/app/ctrl_*.go 中的 define*Routes() 方法，提取所有路由定义
 //  2. 分析 handler 函数体，提取 ShouldBindJSON/ShouldBindQuery 引用的请求结构体
 //  3. 从 service/ 下各业务包中解析结构体定义及其 json tag
 //  4. 提取 c.Param / c.Query / c.DefaultQuery 调用，推断路径参数和查询参数

@@ -27,25 +27,23 @@
 仓库不是单一线性依赖链，当前 import 边界为：
 
 ```text
-server/cmd/server ────────────→ server/config + internal/registry + server/app
+server/cmd/server ────────────→ server/config + server/app
 server/config ────────────────→ pkgs/cstore
-internal/registry ─────────→ server/config + pkgs/{apisix,caddy,docker,swarm}
-server/service/{account,apisix,...} → server/config / internal/registry / pkgs/*
+server/service/{account,apisix,...} → server/config / pkgs/*
 server/service/{docker,webssh} → server/service/shell（终端桥接复用）
-server/app ────────────────→ server/config + internal/registry + server/service/{account,apisix,...} + pkgs/* + public
+server/app ────────────────→ server/config + server/service/{account,apisix,...} + pkgs/* + public
 ```
 
 - `pkgs/`：底层客户端、存储适配和 SDK 类型转换；不依赖 `server/service/`、`server/app/`
-- `internal/registry/`：根据 `config` 创建 APISIX、Caddy、Docker、Swarm 底层实例
-- `server/service/{account,apisix,...}`：业务组合、参数校验、稳定 API 类型转换；构造时可直接引用 `registry` 中的底层实例，无需重复通过参数传递；不得依赖 `server/app`
+- `server/service/{account,apisix,...}`：业务组合、参数校验、稳定 API 类型转换；各服务在 `NewService()` 中直接构造底层客户端；不得依赖 `server/app`
 - `server/app/`：Gin HTTP/WebSocket 入口、路由索引、中间件、服务生命周期与响应封装
-- `server/cmd/server/`：仅执行 `config.Init → registry.Init → app.StartApp`
+- `server/cmd/server/`：仅执行 `config.Init → app.StartApp`
 
 ### 禁止
 
 - `pkgs/` 依赖 `server/service/` 或 `server/app/`
 - `handler` 中堆叠业务逻辑
-- `service/handler` 直接从配置创建外部客户端；外部客户端统一由 `registry` 初始化并注入/引用
+- `service/handler` 直接从配置创建外部客户端；外部客户端统一由 service 层在 `NewService()` 时自行初始化
 
 ### 内聚与耦合
 
@@ -212,7 +210,7 @@ docs/
 - etcd URI 中的 path 表示完整配置 key，且必须显式提供；系统配置推荐 key 为 `/isrvd/config`，标准形式：`etcd://user:pass@host1:2379,host2:2379/isrvd/config?scheme=http&timeout=5s&fallback=/path/config.yml`
 - `fallback` 是本地 YAML 文件路径，且只在 etcd key 不存在时触发：读取该 YAML 后写入 etcd；etcd 连接失败、权限错误、超时、已有值解析失败均不得 fallback
 - etcd 认证优先从 URI userinfo 读取；生产场景可用 `ETCD_USERNAME`、`ETCD_PASSWORD` 补充或覆盖；特殊字符必须 URL encode
-- etcd watch 只允许做变更检测并发送重载信号；服务重建必须走 `server/app/app.go` 的 reload 流程，禁止在 cstore 层自动 `Apply` 或静默重建 registry/service
+- etcd watch 只允许做变更检测并发送重载信号；服务重建必须走 `server/app/app.go` 的 reload 流程，禁止在 cstore 层自动 `Apply` 或静默重建 service
 - YAML 明文密码迁移属于 `server/config/migrate.go` 的兼容逻辑，禁止放入 `pkgs/cstore` 抽象或 etcd 存储适配
 
 ---
@@ -242,13 +240,11 @@ docs/
 
 ---
 
-## 8) 注册中心与服务初始化
+## 8) 服务初始化
 
-启动顺序：`main → config.Init → registry.Init → app.StartApp`
+启动顺序：`main → config.Init → app.StartApp`
 
-可用性检查：由各 `service` 层的 `CheckAvailability(ctx)` 方法负责（`server/service/docker`、`server/service/swarm`、`server/service/apisix`、`server/service/caddy`、`server/service/compose`），不再通过 `registry` 层的独立函数检查。
-
-已用命名：`registry.DockerService`、`registry.SwarmService`、`registry.ApisixClient`、`registry.CaddyClient`
+可用性检查：由各 `service` 层的 `CheckAvailability(ctx)` 方法负责（`server/service/docker`、`server/service/swarm`、`server/service/apisix`、`server/service/caddy`、`server/service/compose`）。
 
 服务初始化（`server/app/services.go` 的 `initServices()`）：
 
@@ -257,7 +253,7 @@ docs/
 - `apisixSvc`、`caddySvc`：根据可用性检查可选初始化
 - `dockerSvc`、`swarmSvc`：根据 Docker 可用性可选初始化
 - `composeSvc`：根据 Docker 可用性可选初始化
-- `cronSvc`：始终初始化，可选依赖 `registry.DockerService`（用于 DOCKER 类型任务）
+- `cronSvc`：始终初始化，可选依赖 Docker 原生客户端（用于 DOCKER 类型任务）
 - `monitorCollector`：始终创建并启动；reload/退出时与 `websshSvc` 一起释放资源
 
 ---

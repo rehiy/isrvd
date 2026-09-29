@@ -403,18 +403,16 @@ docker run -d --device /dev/dri:/dev/dri rehiy/isrvd:slim
 ### 分层架构
 
 ```text
-server/cmd/server ────────────→ server/config + internal/registry + server/app
+server/cmd/server ────────────→ server/config + server/app
 server/config ────────────────→ pkgs/cstore
-internal/registry ─────────────→ server/config + pkgs/{apisix,caddy,docker,swarm}
-server/service/{account,apisix,caddy,...} → server/config / internal/registry / pkgs/*
-server/app ────────────────────→ server/config + internal/registry + server/service/{account,apisix,...} + pkgs/* + public
+server/service/{account,apisix,caddy,...} → server/config / pkgs/*
+server/app ────────────────────→ server/config + server/service/{account,apisix,...} + pkgs/* + public
 ```
 
-- **server/cmd/server**：按 `config.Init → registry.Init → app.StartApp` 启动应用
+- **server/cmd/server**：按 `config.Init → app.StartApp` 启动应用
 - **server/config**：通过 `CONFIG_PATH` 加载和保存本地 YAML 或 etcd 配置
-- **internal/registry**：根据配置初始化 APISIX、Caddy、Docker 和 Swarm 底层实例
 - **pkgs**：底层客户端、存储适配和 SDK 类型转换，不依赖 `service`/`app`
-- **server/service/{account,apisix,...}**：业务组合、参数校验与稳定 API 类型转换；构造时直接引用注册中心的底层实例
+- **server/service/{account,apisix,...}**：业务组合、参数校验与稳定 API 类型转换；各服务按需从 `pkgs` 直接构造底层客户端
 - **server/app**：Gin HTTP/WebSocket 入口、路由、中间件、服务生命周期和响应封装
 
 ### 设计原则
