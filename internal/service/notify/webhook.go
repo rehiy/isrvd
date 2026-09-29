@@ -41,19 +41,23 @@ type Event struct {
 	Data      map[string]any `json:"data"`      // 事件相关数据
 }
 
-// snapshotWebhooks 为异步通知保留通道快照，避免重载后引用可变配置。
-func snapshotWebhooks(cfg *config.NotifyConfig) []*config.WebhookConfig {
-	if cfg == nil {
-		return nil
+// Shutdown 停止接收新通知，并在退出宽限期内等待已经发出的请求。
+// 仅用于进程退出；配置重载不关闭通知发送。
+func Shutdown(ctx context.Context) bool {
+	sendsMu.Lock()
+	sendsClosed = true
+	sendsMu.Unlock()
+	done := make(chan struct{})
+	go func() {
+		sendsWG.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+		return true
+	case <-ctx.Done():
+		return false
 	}
-	hooks := make([]*config.WebhookConfig, 0, len(cfg.Webhooks))
-	for _, hook := range cfg.Webhooks {
-		if hook != nil && strings.TrimSpace(hook.URL) != "" {
-			copy := *hook
-			hooks = append(hooks, &copy)
-		}
-	}
-	return hooks
 }
 
 func sendTo(hooks []*config.WebhookConfig, evt *Event) {
@@ -79,25 +83,6 @@ func sendTo(hooks []*config.WebhookConfig, evt *Event) {
 			defer sendsWG.Done()
 			sendOne(hook, &copy)
 		}()
-	}
-}
-
-// Shutdown 停止接收新通知，并在退出宽限期内等待已经发出的请求。
-// 仅用于进程退出；配置重载不关闭通知发送。
-func Shutdown(ctx context.Context) bool {
-	sendsMu.Lock()
-	sendsClosed = true
-	sendsMu.Unlock()
-	done := make(chan struct{})
-	go func() {
-		sendsWG.Wait()
-		close(done)
-	}()
-	select {
-	case <-done:
-		return true
-	case <-ctx.Done():
-		return false
 	}
 }
 
@@ -169,4 +154,20 @@ func templateJSON(value any) (string, error) {
 		return "", fmt.Errorf("JSON 编码模板变量失败: %w", err)
 	}
 	return string(data), nil
+}
+
+// snapshotWebhooks 过滤出可用的 Webhook 通道。
+// config.Current() 返回的快照本身不可变（每次更新都会整体替换为新对象），
+// 因此这里无需再对 WebhookConfig 做防御性拷贝。
+func snapshotWebhooks(cfg *config.NotifyConfig) []*config.WebhookConfig {
+	if cfg == nil {
+		return nil
+	}
+	hooks := make([]*config.WebhookConfig, 0, len(cfg.Webhooks))
+	for _, hook := range cfg.Webhooks {
+		if hook != nil && strings.TrimSpace(hook.URL) != "" {
+			hooks = append(hooks, hook)
+		}
+	}
+	return hooks
 }
