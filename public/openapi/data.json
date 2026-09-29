@@ -8050,15 +8050,15 @@
       "caddy.BasicAuthAccount": {
         "properties": {
           "password": {
-            "description": "bcrypt hash",
+            "description": "登录密码的 bcrypt hash",
             "type": "string"
           },
           "salt": {
-            "description": "salt",
+            "description": "密码 salt（Caddy 兼容字段，可选）",
             "type": "string"
           },
           "username": {
-            "description": "username",
+            "description": "登录用户名",
             "type": "string"
           }
         },
@@ -8102,7 +8102,7 @@
       "caddy.BasicAuthUser": {
         "properties": {
           "username": {
-            "description": "username",
+            "description": "basic_auth 登录用户名",
             "type": "string"
           }
         },
@@ -8253,19 +8253,19 @@
       "caddy.HTTPError": {
         "properties": {
           "Body": {
-            "description": "Body",
+            "description": "上游响应体原文",
             "type": "string"
           },
           "Method": {
-            "description": "Method",
+            "description": "触发错误的 HTTP 方法",
             "type": "string"
           },
           "Path": {
-            "description": "Path",
+            "description": "Caddy Admin API 路径",
             "type": "string"
           },
           "StatusCode": {
-            "description": "StatusCode",
+            "description": "上游返回的 HTTP 状态码",
             "type": "integer"
           }
         },
@@ -8532,11 +8532,11 @@
       "caddy.ServerAutomaticHTTPSForm": {
         "properties": {
           "disable": {
-            "description": "disable",
+            "description": "禁用自动 HTTPS（不再自动申请证书）",
             "type": "boolean"
           },
           "disable_redirects": {
-            "description": "disable_redirects",
+            "description": "禁用 HTTP 到 HTTPS 自动跳转",
             "type": "boolean"
           }
         },
@@ -8545,7 +8545,7 @@
       "caddy.ServerCreateRequest": {
         "properties": {
           "name": {
-            "description": "name",
+            "description": "新服务名称，全局唯一",
             "type": "string"
           }
         },
@@ -8557,41 +8557,41 @@
       "caddy.ServerForm": {
         "properties": {
           "automatic_https": {
-            "description": "automatic_https",
+            "description": "自动 HTTPS 设置；省略使用 Caddy 默认值",
             "type": "object"
           },
           "idle_timeout": {
-            "description": "idle_timeout",
+            "description": "空闲连接超时（Go duration 字符串）",
             "type": "string"
           },
           "listen": {
-            "description": "listen",
+            "description": "监听地址列表，如 [\":80\"]",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "max_header_bytes": {
-            "description": "max_header_bytes",
+            "description": "请求头最大字节数",
             "type": "integer"
           },
           "protocols": {
-            "description": "protocols",
+            "description": "允许的协议（如 h1、h2、h3）；省略使用 Caddy 默认值",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "read_timeout": {
-            "description": "read_timeout",
+            "description": "读取请求超时（Go duration 字符串）",
             "type": "string"
           },
           "strict_sni_host": {
-            "description": "strict_sni_host",
+            "description": "是否严格校验 SNI 主机名",
             "type": "boolean"
           },
           "write_timeout": {
-            "description": "write_timeout",
+            "description": "写入响应超时（Go duration 字符串）",
             "type": "string"
           }
         },
@@ -8635,15 +8635,15 @@
       "caddy.ServerView": {
         "properties": {
           "id": {
-            "description": "id",
+            "description": "服务视图标识（与名称相同）",
             "type": "string"
           },
           "name": {
-            "description": "name",
+            "description": "Caddy server 名称",
             "type": "string"
           },
           "routeCount": {
-            "description": "routeCount",
+            "description": "该服务下的路由数量",
             "type": "integer"
           }
         },
@@ -8821,11 +8821,11 @@
       "caddy.caddyBasicAuthConfigUpdate": {
         "properties": {
           "forwardHeader": {
-            "description": "forwardHeader",
+            "description": "认证成功后传递用户名的请求头；留空不转发",
             "type": "string"
           },
           "realm": {
-            "description": "realm",
+            "description": "HTTP Basic realm；留空使用 Caddy 默认值",
             "type": "string"
           }
         },
@@ -8834,19 +8834,19 @@
       "caddy.caddyBasicAuthUserCreate": {
         "properties": {
           "forwardHeader": {
-            "description": "forwardHeader",
+            "description": "认证成功后传递用户名的请求头；留空不转发",
             "type": "string"
           },
           "password": {
-            "description": "password",
+            "description": "明文密码，由后端转换为 bcrypt hash",
             "type": "string"
           },
           "realm": {
-            "description": "realm",
+            "description": "HTTP Basic realm；留空使用 Caddy 默认值",
             "type": "string"
           },
           "username": {
-            "description": "username",
+            "description": "basic_auth 登录用户名",
             "type": "string"
           }
         },
@@ -8961,11 +8961,11 @@
       "compose.EnvState": {
         "properties": {
           "Content": {
-            "description": "Content",
+            "description": ".env 原始内容",
             "type": "string"
           },
           "Exists": {
-            "description": "Exists",
+            "description": ".env 是否存在",
             "type": "boolean"
           }
         },
@@ -11343,7 +11343,7 @@
       "local.localProcessKill": {
         "properties": {
           "force": {
-            "description": "force",
+            "description": "true 强制终止（SIGKILL），false 优雅终止（SIGTERM）",
             "type": "boolean"
           }
         },
@@ -11524,15 +11524,15 @@
       "notify.HostUsage": {
         "properties": {
           "CPUPercent": {
-            "description": "CPUPercent",
+            "description": "CPU 使用率（%）",
             "type": "number"
           },
           "DiskPercent": {
-            "description": "DiskPercent",
+            "description": "磁盘使用率（%）",
             "type": "number"
           },
           "MemoryPercent": {
-            "description": "MemoryPercent",
+            "description": "内存使用率（%）",
             "type": "number"
           }
         },
@@ -11596,22 +11596,22 @@
         "properties": {
           "Cleanup": {
             "$ref": "#/components/schemas/ast.FuncType",
-            "description": "Cleanup"
+            "description": "清理终端资源的回调"
           },
           "Close": {
             "$ref": "#/components/schemas/ast.FuncType",
-            "description": "Close"
+            "description": "连接结束回调"
           },
           "Name": {
-            "description": "Name",
+            "description": "会话名称，用于日志标识",
             "type": "string"
           },
           "Resize": {
             "$ref": "#/components/schemas/ast.FuncType",
-            "description": "Resize"
+            "description": "终端尺寸变更回调"
           },
           "Welcome": {
-            "description": "Welcome",
+            "description": "建立连接后发送的欢迎内容",
             "type": "string"
           }
         },
