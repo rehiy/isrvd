@@ -15,11 +15,11 @@ const ResizeControlPrefix = "\x00isrvd:resize:"
 
 // BridgeOptions 定义终端 WebSocket 双向桥接的可选行为。
 type BridgeOptions struct {
-	Name    string
-	Welcome string
-	Resize  func(cols, rows int)
-	Close   func()
-	Cleanup func()
+	Name    string               // 会话名称，用于日志标识
+	Welcome string               // 建立连接后发送的欢迎内容
+	Resize  func(cols, rows int) // 终端尺寸变更回调
+	Close   func()               // 连接结束回调
+	Cleanup func()               // 清理终端资源的回调
 }
 
 // Bridge 在 WebSocket 与终端输入/输出流之间做双向转发。

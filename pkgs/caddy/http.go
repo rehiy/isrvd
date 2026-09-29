@@ -314,9 +314,9 @@ type Handler map[string]any
 
 // BasicAuthAccount basic_auth 单个账号（密码为 bcrypt hash）
 type BasicAuthAccount struct {
-	Username string `json:"username"`
-	Password string `json:"password"` // bcrypt hash
-	Salt     string `json:"salt,omitempty"`
+	Username string `json:"username"`       // 登录用户名
+	Password string `json:"password"`       // 登录密码的 bcrypt hash
+	Salt     string `json:"salt,omitempty"` // 密码 salt（Caddy 兼容字段，可选）
 }
 
 // HandlerBasicAuth 构造 authentication handler（http_basic provider）

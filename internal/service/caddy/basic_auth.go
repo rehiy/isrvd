@@ -14,7 +14,7 @@ const authUserIDVar = "{http.auth.user.id}"
 
 // BasicAuthUser basic_auth 账号视图（密码不回显）
 type BasicAuthUser struct {
-	Username string `json:"username"`
+	Username string `json:"username"` // basic_auth 登录用户名
 }
 
 // BasicAuthRouteView 带账号列表的路由视图

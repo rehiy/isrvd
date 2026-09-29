@@ -28,9 +28,9 @@ var (
 
 // HostUsage 主机资源使用率，由监控采集数据换算而来
 type HostUsage struct {
-	CPUPercent    float64
-	MemoryPercent float64
-	DiskPercent   float64
+	CPUPercent    float64 // CPU 使用率（%）
+	MemoryPercent float64 // 内存使用率（%）
+	DiskPercent   float64 // 磁盘使用率（%）
 }
 
 // CheckHost 按配置规则检查主机资源使用率，触发或恢复时发送告警

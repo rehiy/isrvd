@@ -272,10 +272,10 @@ func (app *App) caddyBasicAuthUserCreate(c *gin.Context) {
 		return
 	}
 	var req struct {
-		Username      string `json:"username"      binding:"required"`
-		Password      string `json:"password"      binding:"required"`
-		Realm         string `json:"realm"`
-		ForwardHeader string `json:"forwardHeader"`
+		Username      string `json:"username"      binding:"required"` // basic_auth 登录用户名
+		Password      string `json:"password"      binding:"required"` // 明文密码，由后端转换为 bcrypt hash
+		Realm         string `json:"realm"`                            // HTTP Basic realm；留空使用 Caddy 默认值
+		ForwardHeader string `json:"forwardHeader"`                    // 认证成功后传递用户名的请求头；留空不转发
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
@@ -310,8 +310,8 @@ func (app *App) caddyBasicAuthConfigUpdate(c *gin.Context) {
 		return
 	}
 	var req struct {
-		Realm         string `json:"realm"`
-		ForwardHeader string `json:"forwardHeader"`
+		Realm         string `json:"realm"`         // HTTP Basic realm；留空使用 Caddy 默认值
+		ForwardHeader string `json:"forwardHeader"` // 认证成功后传递用户名的请求头；留空不转发
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())

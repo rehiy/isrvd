@@ -137,8 +137,8 @@ func EnvEnsure(installDir string) error {
 
 // EnvState 记录 .env 的原始内容及是否存在，用于失败回滚。
 type EnvState struct {
-	Content string
-	Exists  bool
+	Content string // .env 原始内容
+	Exists  bool   // .env 是否存在
 }
 
 // EnvStateRead 读取可精确恢复的 .env 状态。

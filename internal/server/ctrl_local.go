@@ -47,7 +47,7 @@ func (app *App) localProcessKill(c *gin.Context) {
 
 	// 无请求体时按优雅终止处理
 	var req struct {
-		Force bool `json:"force"`
+		Force bool `json:"force"` // true 强制终止（SIGKILL），false 优雅终止（SIGTERM）
 	}
 	_ = c.ShouldBindJSON(&req)
 

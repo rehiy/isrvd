@@ -33,10 +33,10 @@ type Client struct {
 //
 // 调用方可通过 errors.As 获取上游状态码，并映射为合适的业务响应。
 type HTTPError struct {
-	Method     string
-	Path       string
-	StatusCode int
-	Body       string
+	Method     string // 触发错误的 HTTP 方法
+	Path       string // Caddy Admin API 路径
+	StatusCode int    // 上游返回的 HTTP 状态码
+	Body       string // 上游响应体原文
 }
 
 // Error 实现 error 接口。
