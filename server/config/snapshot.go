@@ -12,6 +12,11 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
+var (
+	current  atomic.Pointer[Snapshot]
+	updateMu sync.Mutex
+)
+
 // Snapshot 是一次完整、发布后只读的运行时配置。
 type Snapshot struct {
 	Server      *ServerConfig            `yaml:"server"`
@@ -29,11 +34,6 @@ type Snapshot struct {
 	Links       []*LinkConfig            `yaml:"links"`
 	Members     map[string]*MemberConfig `yaml:"members"`
 }
-
-var (
-	current  atomic.Pointer[Snapshot]
-	updateMu sync.Mutex
-)
 
 func init() {
 	snapshot, err := buildSnapshot(&Config{})

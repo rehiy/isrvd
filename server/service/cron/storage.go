@@ -14,6 +14,16 @@ import (
 	"isrvd/server/config"
 )
 
+const (
+	// cronLogRetainDays 日志保留天数
+	cronLogRetainDays = 3
+	// cronLogChannel 异步写入队列长度
+	cronLogChannel = 256
+	// maxStoredJobOutputBytes 单条任务输出的最大持久化字节数
+	maxStoredJobOutputBytes = 4 << 20
+	jobOutputTruncatedMark  = "\n[output truncated]\n"
+)
+
 // JobLog 任务执行日志。
 type JobLog struct {
 	RunID     string    `json:"runId"`           // 执行 ID
@@ -26,16 +36,6 @@ type JobLog struct {
 	Output    string    `json:"output"`          // 标准输出
 	Error     string    `json:"error,omitempty"` // 错误信息（失败时非空）
 }
-
-const (
-	// cronLogRetainDays 日志保留天数
-	cronLogRetainDays = 3
-	// cronLogChannel 异步写入队列长度
-	cronLogChannel = 256
-	// maxStoredJobOutputBytes 单条任务输出的最大持久化字节数
-	maxStoredJobOutputBytes = 4 << 20
-	jobOutputTruncatedMark  = "\n[output truncated]\n"
-)
 
 // Store 负责计划任务配置和执行日志的存储。
 //
