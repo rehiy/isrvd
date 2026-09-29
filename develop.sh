@@ -37,7 +37,7 @@ kill_port 3000
 if [ ! -f .local.yml ]; then
     cp config.yml .local.yml
 fi
-CONFIG_PATH=.local.yml go run cmd/server/main.go &
+CONFIG_PATH=.local.yml go run server/cmd/server/main.go &
 GO_PID=$!
 
 # 启动 NPM 服务

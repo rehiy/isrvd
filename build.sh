@@ -25,7 +25,7 @@ fi
 # 替换版本号
 ###########################################
 
-sed -i "s/Version = \".*\"/Version = \"$last_tag\"/" config/config.go
+sed -i "s/Version = \".*\"/Version = \"$last_tag\"/" server/config/config.go
 
 ###########################################
 # Go 编译环境
@@ -42,7 +42,7 @@ build() {
     fi
     GOOS=$1 GOARCH=$2 go build \
         -tags netgo -trimpath -buildvcs=false \
-        -ldflags="-s -w -buildid=" -o "$target" cmd/server/main.go
+        -ldflags="-s -w -buildid=" -o "$target" server/cmd/server/main.go
 }
 
 ###########################################
@@ -61,7 +61,7 @@ cd ../
 ###########################################
 
 echo "==> 生成 OpenAPI 文档"
-go run ./cmd/openapi-gen/ -o public/openapi/data.json
+go run ./server/cmd/openapi-gen/ -o public/openapi/data.json
 
 ###########################################
 # 编译后端
