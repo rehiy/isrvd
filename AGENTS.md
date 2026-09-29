@@ -27,23 +27,23 @@
 仓库不是单一线性依赖链，当前 import 边界为：
 
 ```text
-cmd/server ───────────────→ config + internal/registry + internal/server
-config ───────────────────→ pkgs/cstore
-internal/registry ────────→ config + pkgs/{apisix,caddy,docker,swarm}
-internal/service/* ───────→ config / internal/registry / pkgs/*
-internal/service/{docker,webssh} → internal/service/shell（终端桥接复用）
-internal/server ──────────→ config + internal/registry + internal/service/* + pkgs/* + public
+server/cmd/server ────────────→ server/config + internal/registry + server/app
+server/config ────────────────→ pkgs/cstore
+internal/registry ─────────→ server/config + pkgs/{apisix,caddy,docker,swarm}
+server/service/{account,apisix,...} → server/config / internal/registry / pkgs/*
+server/service/{docker,webssh} → server/service/shell（终端桥接复用）
+server/app ────────────────→ server/config + internal/registry + server/service/{account,apisix,...} + pkgs/* + public
 ```
 
-- `pkgs/`：底层客户端、存储适配和 SDK 类型转换；不依赖 `internal/`
+- `pkgs/`：底层客户端、存储适配和 SDK 类型转换；不依赖 `server/service/`、`server/app/`
 - `internal/registry/`：根据 `config` 创建 APISIX、Caddy、Docker、Swarm 底层实例
-- `internal/service/`：业务组合、参数校验、稳定 API 类型转换；构造时可直接引用 `registry` 中的底层实例，无需重复通过参数传递；不得依赖 `internal/server`
-- `internal/server/`：Gin HTTP/WebSocket 入口、路由索引、中间件、服务生命周期与响应封装
-- `cmd/server/`：仅执行 `config.Init → registry.Init → server.StartApp`
+- `server/service/{account,apisix,...}`：业务组合、参数校验、稳定 API 类型转换；构造时可直接引用 `registry` 中的底层实例，无需重复通过参数传递；不得依赖 `server/app`
+- `server/app/`：Gin HTTP/WebSocket 入口、路由索引、中间件、服务生命周期与响应封装
+- `server/cmd/server/`：仅执行 `config.Init → registry.Init → app.StartApp`
 
 ### 禁止
 
-- `pkgs/` 依赖 `internal/`
+- `pkgs/` 依赖 `server/service/` 或 `server/app/`
 - `handler` 中堆叠业务逻辑
 - `service/handler` 直接从配置创建外部客户端；外部客户端统一由 `registry` 初始化并注入/引用
 
@@ -97,18 +97,18 @@ docs/
 
 | 代码变更位置 | 需同步更新的文档 |
 | --- | --- |
-| `internal/server/ctrl_docker.go` | `docs/references/docker/` 下对应资源文件 |
-| `internal/server/ctrl_swarm.go` | `docs/references/swarm/` 下对应资源文件 |
-| `internal/server/ctrl_apisix.go` | `docs/references/apisix/` 下对应资源文件 |
-| `internal/server/ctrl_caddy.go` | `docs/references/caddy/` 下对应资源文件 |
-| `internal/server/ctrl_compose.go` | `docs/references/compose.md` |
-| `internal/server/ctrl_cron.go` | `docs/references/system/cron.md` |
-| `internal/server/ctrl_system.go` / `ctrl_account.go` | `docs/references/system/` 下对应文件 |
-| `internal/server/ctrl_webssh.go` | `docs/references/ssh/` 下对应文件 |
-| `internal/server/ctrl_copilot.go` | `docs/references/copilot.md` |
-| `internal/server/ctrl_overview.go` | `docs/references/overview.md` |
-| `internal/server/ctrl_local.go` | `docs/references/local.md` |
-| `internal/server/ctrl_shell.go` | `docs/references/shell.md` |
+| `server/app/ctrl_docker.go` | `docs/references/docker/` 下对应资源文件 |
+| `server/app/ctrl_swarm.go` | `docs/references/swarm/` 下对应资源文件 |
+| `server/app/ctrl_apisix.go` | `docs/references/apisix/` 下对应资源文件 |
+| `server/app/ctrl_caddy.go` | `docs/references/caddy/` 下对应资源文件 |
+| `server/app/ctrl_compose.go` | `docs/references/compose.md` |
+| `server/app/ctrl_cron.go` | `docs/references/system/cron.md` |
+| `server/app/ctrl_system.go` / `ctrl_account.go` | `docs/references/system/` 下对应文件 |
+| `server/app/ctrl_webssh.go` | `docs/references/ssh/` 下对应文件 |
+| `server/app/ctrl_copilot.go` | `docs/references/copilot.md` |
+| `server/app/ctrl_overview.go` | `docs/references/overview.md` |
+| `server/app/ctrl_local.go` | `docs/references/local.md` |
+| `server/app/ctrl_shell.go` | `docs/references/shell.md` |
 | `pkgs/*/`（数据结构变更） | 对应 docs 文件中的字段表 |
 | 新增路由/模块 | `docs/SKILL.md` 索引表 + 决策树 |
 | API 调用脚本变更 | `docs/scripts/api.sh`、`api.js`、`api.py` 中受影响的实现 |
@@ -136,7 +136,7 @@ docs/
 
 ### HTTP 与响应
 
-- 状态码用 `net/http` 常量；HTTP JSON 响应统一走 `internal/server/response.go` 的 `respondSuccess`、`respondError`、`respondResult`
+- 状态码用 `net/http` 常量；HTTP JSON 响应统一走 `server/app/response.go` 的 `respondSuccess`、`respondError`、`respondResult`
 - `respondResult` 仅用于“成功 200、service 错误 500”的标准查询；需要 400/404/503 或自定义成功文案时显式调用对应响应函数
 - 绑定优先 `ShouldBindJSON/ShouldBindQuery/ShouldBindURI`，绑定失败返回 `err.Error()`
 - WebSocket 统一用 `wsConfig.Handler()`，不在 handler 中定义私有配置
@@ -153,7 +153,7 @@ docs/
 
 ### 方法命名规范（强制）
 
-**Handler（`internal/server/`）** — 格式：`{module}{Resource}{Action}`
+**Handler（`server/app/`）** — 格式：`{module}{Resource}{Action}`
 
 | 操作 | 命名模式 | 示例 |
 | --- | --- | --- |
@@ -164,7 +164,7 @@ docs/
 | 状态切换 | `{module}{Resource}StatusPatch` | `apisixRouteStatusPatch` |
 | 日志/统计 | `{module}{Resource}Logs/Stats` | `dockerContainerLogs`、`dockerContainerStats` |
 
-**Service / Pkgs（`internal/service/`、`pkgs/`）** — 格式：`{Resource}{Action}`（去掉类名前缀）
+**Service / Pkgs（`internal/{account,apisix,...}`、`pkgs/`）** — 格式：`{Resource}{Action}`（去掉类名前缀）
 
 | 操作 | 命名模式 | 示例 |
 | --- | --- | --- |
@@ -192,28 +192,28 @@ docs/
 
 其他规则：
 
-- handler 私有的 URI/query/body 小结构体放在 `internal/server` 对应控制器；跨 handler 复用或参与业务校验的 Request/Response 放在对应 `internal/service`；SDK 转换模型放在 `pkgs`
+- handler 私有的 URI/query/body 小结构体放在 `server/app` 对应控制器；跨 handler 复用或参与业务校验的 Request/Response 放在对应 service 包（`server/service/{account,apisix,...}`）；SDK 转换模型放在 `pkgs`
 - 避免跨包重复定义语义相同结构体
 
 ### 配置结构体与 Provider
 
-- 顶层 `Config`（`config/types.go`）当前包含 `Schema`、`Server`、`Password`、`Passkey`、`OIDC`、`THA`、`Copilot`、`Notify`、`Apisix`、`Caddy`、`Docker`、`Monitor`、`Marketplace`、`Links`、`Members`
+- 顶层 `Config`（`server/config/types.go`）当前包含 `Schema`、`Server`、`Password`、`Passkey`、`OIDC`、`THA`、`Copilot`、`Notify`、`Apisix`、`Caddy`、`Docker`、`Monitor`、`Marketplace`、`Links`、`Members`
 - `PUT /api/system/config` 支持按分区提交：`AllConfig` 中为 nil 的分区跳过更新，密钥类字段为空表示保留原值
 - `Server` 必须作为 `config.Server` 结构体统一访问，禁止重新展开为 `config.Debug`、`config.ListenAddr` 等包级散变量
 - 镜像仓库 `DockerRegistry`（含 `Name`、`URL`、`Username`、`Password`、`Description`）
-- 顶层配置分区使用指针并带 YAML 标签；配置持久化以 YAML 结构为准，API 脱敏由 `internal/service/system.ConfigAll` 的深拷贝负责
+- 顶层配置分区使用指针并带 YAML 标签；配置持久化以 YAML 结构为准，API 脱敏由 `service/system.ConfigAll` 的深拷贝负责
 
 **配置 Provider / cstore 规范（强制）**
 
-- `config/provider.go` 负责基于 `CONFIG_PATH` 初始化全局 `cstore.TypedStore[*Config]`、加载/保存配置、监听变更并发送 `ReloadCh`；禁止在业务层绕过 `config.Load/Save` 直接读写配置存储
+- `server/config/provider.go` 负责基于 `CONFIG_PATH` 初始化全局 `cstore.TypedStore[*Config]`、加载/保存配置、监听变更并发送 `ReloadCh`；禁止在业务层绕过 `config.Load/Save` 直接读写配置存储
 - 存储适配由 `pkgs/cstore/` 负责：`store.go` 定义统一 `Store` 抽象和 URI 分发，`file.go` 处理本地 YAML 文件，`etcd.go` 处理 etcd URI，`typed.go` 负责 YAML 序列化/反序列化
 - `CONFIG_PATH` 是唯一入口：普通路径/`file://` 使用本地 YAML；`etcd://` 使用 etcd；禁止新增 `CONFIG_PROVIDER`、`ETCD_ENDPOINTS`、`ETCD_CONFIG_KEY` 等平行入口
 - etcd value 存储完整 `config.yml` 同款 YAML 文本，便于本地 YAML 与 etcd 互迁；禁止改为 JSON，避免敏感字段因 `json:"-"` 丢失
 - etcd URI 中的 path 表示完整配置 key，且必须显式提供；系统配置推荐 key 为 `/isrvd/config`，标准形式：`etcd://user:pass@host1:2379,host2:2379/isrvd/config?scheme=http&timeout=5s&fallback=/path/config.yml`
 - `fallback` 是本地 YAML 文件路径，且只在 etcd key 不存在时触发：读取该 YAML 后写入 etcd；etcd 连接失败、权限错误、超时、已有值解析失败均不得 fallback
 - etcd 认证优先从 URI userinfo 读取；生产场景可用 `ETCD_USERNAME`、`ETCD_PASSWORD` 补充或覆盖；特殊字符必须 URL encode
-- etcd watch 只允许做变更检测并发送重载信号；服务重建必须走 `server/app.go` 的 reload 流程，禁止在 cstore 层自动 `Apply` 或静默重建 registry/service
-- YAML 明文密码迁移属于 `config/migrate.go` 的兼容逻辑，禁止放入 `pkgs/cstore` 抽象或 etcd 存储适配
+- etcd watch 只允许做变更检测并发送重载信号；服务重建必须走 `server/app/app.go` 的 reload 流程，禁止在 cstore 层自动 `Apply` 或静默重建 registry/service
+- YAML 明文密码迁移属于 `server/config/migrate.go` 的兼容逻辑，禁止放入 `pkgs/cstore` 抽象或 etcd 存储适配
 
 ---
 
@@ -244,13 +244,13 @@ docs/
 
 ## 8) 注册中心与服务初始化
 
-启动顺序：`main → config.Init → registry.Init → server.StartApp`
+启动顺序：`main → config.Init → registry.Init → app.StartApp`
 
-可用性检查：由各 `service` 层的 `CheckAvailability(ctx)` 方法负责（`service/docker`、`service/swarm`、`service/apisix`、`service/caddy`、`service/compose`），不再通过 `registry` 层的独立函数检查。
+可用性检查：由各 `service` 层的 `CheckAvailability(ctx)` 方法负责（`server/service/docker`、`server/service/swarm`、`server/service/apisix`、`server/service/caddy`、`server/service/compose`），不再通过 `registry` 层的独立函数检查。
 
 已用命名：`registry.DockerService`、`registry.SwarmService`、`registry.ApisixClient`、`registry.CaddyClient`
 
-服务初始化（`internal/server/services.go` 的 `initServices()`）：
+服务初始化（`server/app/services.go` 的 `initServices()`）：
 
 - `overviewSvc`、`configSvc`、`auditSvc`、`accountSvc`、`filerSvc`、`shellSvc`、`copilotSvc`：直接初始化
 - `websshSvc`：初始化自己的主机/凭据存储和 SFTP 客户端，失败时标记不可用

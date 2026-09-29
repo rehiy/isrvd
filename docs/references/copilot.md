@@ -60,7 +60,7 @@ isrvd_get "/copilot/catalog?path=/docker/containers&method=get"
 | `response` | object | detail：200 响应字段 |
 | `toolUnsupportedReason` | string | detail 或 operations 元素：通用 Agent 工具不支持调用的原因；支持时省略 |
 
-文档来自构建时生成的 `public/openapi/data.json`（`go run ./cmd/openapi-gen/`），与对外 `/openapi/` 页同一份规格。
+文档来自构建时生成的 `public/openapi/data.json`（`go run ./server/cmd/openapi-gen/`），与对外 `/openapi/` 页同一份规格。
 
 SSE、WebSocket、仅支持 multipart 的上传接口，以及 `/swarm/token`、`/account/token`、`/account/2fa/totp/begin`，只提供说明，不签发 `callRef`。已有引用在刷新接口定义后也会检查限制。日志请使用同资源的非流式接口，文件上传和令牌操作请由用户在页面完成。Compose 同时支持 JSON 和 multipart，因此 JSON 部署仍可使用工具。
 
