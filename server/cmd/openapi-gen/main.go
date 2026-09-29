@@ -402,6 +402,14 @@ func parseRouteLiteral(cl *ast.CompositeLit) RouteDef {
 
 // ─── 第 2a 步：预扫描所有类型引用 ─────────────────────
 
+// handlerAnalysisState 保存 handler 函数分析过程中的状态
+type handlerAnalysisState struct {
+	varTypes   map[string]string // 变量名 → 类型名（如 "resp" → "account.LoginResponse"）
+	localTypes map[string]string // 本地类型别名
+	filename   string            // 当前分析的文件
+	helpers    map[string]bool   // 已跟进过的同文件辅助函数（防递归）
+}
+
 // findFuncReturnType 在指定文件中查找函数的返回类型名称
 // analyzeHelperFunc 跟进同文件辅助函数，分析其中的绑定与参数提取调用。
 // 例如 compose 部署把 JSON/multipart 绑定抽到了 bindComposeDeployRequest，
@@ -804,14 +812,6 @@ func structTypeToJSONSchema(st *ast.StructType, _ *token.FileSet) string {
 		}
 	}
 	return strings.Join(fields, ";")
-}
-
-// handlerAnalysisState 保存 handler 函数分析过程中的状态
-type handlerAnalysisState struct {
-	varTypes   map[string]string // 变量名 → 类型名（如 "resp" → "account.LoginResponse"）
-	localTypes map[string]string // 本地类型别名
-	filename   string            // 当前分析的文件
-	helpers    map[string]bool   // 已跟进过的同文件辅助函数（防递归）
 }
 
 func analyzeFuncBody(r *RouteDef, body *ast.BlockStmt, localTypes map[string]string, filename string) {

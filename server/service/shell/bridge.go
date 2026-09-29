@@ -22,6 +22,24 @@ type BridgeOptions struct {
 	Cleanup func()               // 清理终端资源的回调
 }
 
+type terminalResizeReader struct {
+	reader io.Reader
+	resize func(cols, rows int)
+}
+
+func (r terminalResizeReader) Read(p []byte) (int, error) {
+	for {
+		n, err := r.reader.Read(p)
+		if n > 0 {
+			if cols, rows, ok := parseTerminalResize(p[:n]); ok {
+				r.resize(cols, rows)
+				continue
+			}
+		}
+		return n, err
+	}
+}
+
 // Bridge 在 WebSocket 与终端输入/输出流之间做双向转发。
 // stdin/stdout 可来自本地 PTY、进程管道或容器 exec 会话。
 func Bridge(conn *websocket.ServerConn, stdin io.Writer, stdout io.Reader, opt BridgeOptions) {
@@ -51,24 +69,6 @@ func Bridge(conn *websocket.ServerConn, stdin io.Writer, stdout io.Reader, opt B
 
 	if opt.Cleanup != nil {
 		opt.Cleanup()
-	}
-}
-
-type terminalResizeReader struct {
-	reader io.Reader
-	resize func(cols, rows int)
-}
-
-func (r terminalResizeReader) Read(p []byte) (int, error) {
-	for {
-		n, err := r.reader.Read(p)
-		if n > 0 {
-			if cols, rows, ok := parseTerminalResize(p[:n]); ok {
-				r.resize(cols, rows)
-				continue
-			}
-		}
-		return n, err
 	}
 }
 
@@ -103,18 +103,6 @@ func (fn closerFunc) Close() error {
 	return nil
 }
 
-func terminalCloser(stdin io.Writer, stdout io.Reader, closeFn func()) io.Closer {
-	if closeFn != nil {
-		return closerFunc(closeFn)
-	}
-	return multiCloser{closerFrom(stdout), closerFrom(stdin)}
-}
-
-func closerFrom(v any) io.Closer {
-	closer, _ := v.(io.Closer)
-	return closer
-}
-
 type multiCloser []io.Closer
 
 func (closers multiCloser) Close() error {
@@ -128,4 +116,16 @@ func (closers multiCloser) Close() error {
 		}
 	}
 	return firstErr
+}
+
+func terminalCloser(stdin io.Writer, stdout io.Reader, closeFn func()) io.Closer {
+	if closeFn != nil {
+		return closerFunc(closeFn)
+	}
+	return multiCloser{closerFrom(stdout), closerFrom(stdin)}
+}
+
+func closerFrom(v any) io.Closer {
+	closer, _ := v.(io.Closer)
+	return closer
 }
