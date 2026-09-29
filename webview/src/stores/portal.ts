@@ -94,12 +94,7 @@ export const usePortalStore = defineStore('portal', () => {
 
     // ─── 注册 Axios 拦截器 ───
 
-    const stateProxy = {
-        get token() { return authStore.token },
-        set token(val: string | null) { authStore.token = val },
-    }
-
-    interceptors(stateProxy, {
+    interceptors(authStore, {
         showNotification: uiStore.showNotification,
         clearAuth,
     })
