@@ -91,7 +91,10 @@ func (s *SwarmService) ServiceRemoveAndWait(ctx context.Context, id string, time
 
 // ServiceCreate 创建服务，直接接收 Docker SDK 原始 ServiceSpec。
 func (s *SwarmService) ServiceCreate(ctx context.Context, spec dockerSwarm.ServiceSpec) (string, error) {
-	resp, err := s.client.ServiceCreate(ctx, spec, s.serviceCreateOptions(spec))
+	resp, err := s.client.ServiceCreate(ctx, spec, dockerSwarm.ServiceCreateOptions{
+		EncodedRegistryAuth: s.serviceRegistryAuth(spec),
+		QueryRegistry:       true,
+	})
 	if err != nil {
 		logman.Error("ServiceCreate failed", "error", err)
 		return "", err
@@ -212,13 +215,6 @@ func (s *SwarmService) ServiceInspect(ctx context.Context, id string) (dockerSwa
 }
 
 // ─── 辅助函数 ───
-
-func (s *SwarmService) serviceCreateOptions(spec dockerSwarm.ServiceSpec) dockerSwarm.ServiceCreateOptions {
-	return dockerSwarm.ServiceCreateOptions{
-		EncodedRegistryAuth: s.serviceRegistryAuth(spec),
-		QueryRegistry:       true,
-	}
-}
 
 func (s *SwarmService) serviceUpdateOptions(spec dockerSwarm.ServiceSpec) dockerSwarm.ServiceUpdateOptions {
 	return dockerSwarm.ServiceUpdateOptions{

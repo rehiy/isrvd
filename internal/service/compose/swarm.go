@@ -2,6 +2,7 @@ package compose
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -94,10 +95,20 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 		return nil, err
 	}
 
-	// 旧服务尚未确认移除干净前不能进入创建阶段，否则必然撞上 AlreadyExists；
-	// 此时还未写盘任何新内容，直接返回即可，无需走回滚
+	// 旧服务尚未确认移除干净前不能进入创建阶段；部分移除失败时尝试恢复旧服务。
 	if err := s.swarmServicesRemove(ctx, name, oldContent, installDir, oldEnvState.Content); err != nil {
-		return nil, fmt.Errorf("移除旧服务失败: %w", err)
+		cleanupCtx, cleanupCancel := cleanupContext(ctx)
+		cleanupErr := s.swarmServicesRemove(cleanupCtx, name, oldContent, installDir, oldEnvState.Content)
+		cleanupCancel()
+		var rollbackErr error
+		if cleanupErr == nil {
+			rollbackCtx, rollbackCancel := cleanupContext(ctx)
+			rollbackErr = s.swarmRollback(rollbackCtx, name, oldContent, installDir)
+			rollbackCancel()
+		} else {
+			rollbackErr = fmt.Errorf("继续清理旧服务失败: %w", cleanupErr)
+		}
+		return nil, wrapRedeployError(fmt.Errorf("移除旧服务失败: %w", err), formatRedeployRollbackSummary(nil, rollbackErr, "服务"))
 	}
 
 	rollback := func() string {
@@ -107,7 +118,9 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 		if envErr != nil {
 			logman.Warn("Restore swarm compose env before rollback failed", "name", name, "error", envErr)
 		}
-		runtimeErr := s.swarmRollback(ctx, name, oldContent, installDir)
+		rollbackCtx, cancel := cleanupContext(ctx)
+		defer cancel()
+		runtimeErr := s.swarmRollback(rollbackCtx, name, oldContent, installDir)
 		if runtimeErr != nil {
 			logman.Warn("Rollback swarm services failed", "name", name, "error", runtimeErr)
 		}
@@ -148,8 +161,10 @@ func (s *Service) swarmServicesCreate(ctx context.Context, project *types.Projec
 	var items []string
 
 	rollback := func() {
+		cleanupCtx, cancel := cleanupContext(ctx)
+		defer cancel()
 		for _, id := range createdIDs {
-			if err := s.swarm.ServiceRemoveAndWait(ctx, id, swarmServiceRemoveTimeout); err != nil {
+			if err := s.swarm.ServiceRemoveAndWait(cleanupCtx, id, swarmServiceRemoveTimeout); err != nil {
 				logman.Warn("Rollback remove service failed", "id", id, "error", err)
 			}
 		}
@@ -193,12 +208,13 @@ func (s *Service) swarmServicesRemove(ctx context.Context, name, content, instal
 	if err != nil {
 		return err
 	}
+	var removeErrors []error
 	for _, svc := range project.Services {
 		if err := s.swarm.ServiceRemoveAndWait(ctx, svc.Name, swarmServiceRemoveTimeout); err != nil {
-			return fmt.Errorf("移除服务 %s 失败: %w", svc.Name, err)
+			removeErrors = append(removeErrors, fmt.Errorf("移除服务 %s 失败: %w", svc.Name, err))
 		}
 	}
-	return nil
+	return errors.Join(removeErrors...)
 }
 
 // swarmRollback 用指定配置内容重建 Swarm 服务（回滚用）

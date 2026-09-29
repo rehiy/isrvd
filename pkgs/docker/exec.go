@@ -6,15 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/rehiy/libgo/logman"
 )
 
 const maxCommandOutputBytes int64 = 4 << 20
@@ -37,7 +33,7 @@ func (b *commandOutputBuffer) Write(p []byte) (int, error) {
 }
 
 func (b *commandOutputBuffer) String() string {
-	return strings.ToValidUTF8(b.buf.String(), "\uFFFD")
+	return strings.ToValidUTF8(b.buf.String(), "?")
 }
 
 // ExecSession 容器 exec 会话，封装 hijacked 连接，实现 io.ReadWriteCloser
@@ -168,110 +164,6 @@ func (s *DockerService) ContainerExecRun(ctx context.Context, containerID, shell
 	}
 	if inspect.ExitCode != 0 {
 		return output, fmt.Errorf("exit code %d", inspect.ExitCode)
-	}
-	return output, nil
-}
-
-// ContainerRunScript 创建临时容器运行脚本，完成后收集日志并删除容器和临时文件。
-// 脚本内容通过临时文件 bind mount 进容器执行，不依赖现有容器。
-// image: 镜像名；shell: 容器内 shell（默认 /bin/sh）；script: 脚本内容；timeout: 超时秒数（0 不限）。
-func (s *DockerService) ContainerRunScript(ctx context.Context, image, shell, script string, timeout uint, extraMounts []mount.Mount) (string, error) {
-	if err := s.ImageEnsure(ctx, image, false); err != nil {
-		return "", fmt.Errorf("镜像 %s 不可用: %w", image, err)
-	}
-
-	// 写脚本到宿主机临时文件
-	tmpFile, err := os.CreateTemp("", "cron-script-*.sh")
-	if err != nil {
-		return "", fmt.Errorf("创建临时脚本文件失败: %w", err)
-	}
-	tmpPath := tmpFile.Name()
-	defer os.Remove(tmpPath)
-
-	if _, err := tmpFile.WriteString(script); err != nil {
-		tmpFile.Close()
-		return "", fmt.Errorf("写入临时脚本文件失败: %w", err)
-	}
-	tmpFile.Close()
-	if err := os.Chmod(tmpPath, 0755); err != nil {
-		return "", fmt.Errorf("设置脚本权限失败: %w", err)
-	}
-
-	if shell == "" {
-		shell = "/bin/sh"
-	}
-	scriptInContainer := "/tmp/" + filepath.Base(tmpPath)
-
-	// 构建 hostConfig
-	mounts := []mount.Mount{
-		{
-			Type:     mount.TypeBind,
-			Source:   tmpPath,
-			Target:   scriptInContainer,
-			ReadOnly: true,
-		},
-	}
-	mounts = append(mounts, extraMounts...)
-
-	containerName := fmt.Sprintf("cron-%x", time.Now().UnixNano())
-	containerCfg := &container.Config{
-		Image: image,
-		Cmd:   []string{shell, scriptInContainer},
-	}
-	hostCfg := &container.HostConfig{
-		Mounts:      mounts,
-		NetworkMode: "none",
-		AutoRemove:  false, // 手动删除以便读日志
-	}
-
-	resp, err := s.client.ContainerCreate(ctx, containerCfg, hostCfg, nil, nil, containerName)
-	if err != nil {
-		return "", fmt.Errorf("创建临时容器失败: %w", err)
-	}
-	defer s.client.ContainerRemove(ctx, resp.ID, container.RemoveOptions{Force: true})
-
-	if err := s.client.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
-		return "", fmt.Errorf("启动临时容器失败: %w", err)
-	}
-
-	// 等待容器退出
-	waitCtx := ctx
-	var cancel context.CancelFunc
-	if timeout > 0 {
-		waitCtx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
-		defer cancel()
-	}
-
-	statusCh, errCh := s.client.ContainerWait(waitCtx, resp.ID, container.WaitConditionNotRunning)
-	var exitCode int64
-	select {
-	case waitResult := <-statusCh:
-		exitCode = waitResult.StatusCode
-		if waitResult.Error != nil {
-			logman.Warn("ContainerRunScript wait error", "container", containerName, "error", waitResult.Error.Message)
-		}
-	case err := <-errCh:
-		_ = s.client.ContainerStop(ctx, resp.ID, container.StopOptions{})
-		return "", fmt.Errorf("等待容器退出失败: %w", err)
-	}
-
-	// 读取日志
-	logReader, err := s.client.ContainerLogs(ctx, resp.ID, container.LogsOptions{
-		ShowStdout: true,
-		ShowStderr: true,
-	})
-	output := ""
-	if err == nil {
-		defer logReader.Close()
-		logs, readErr := ReadLogSnapshot(logReader, false)
-		if readErr != nil {
-			return "", fmt.Errorf("读取临时容器日志失败: %w", readErr)
-		}
-		output = strings.Join(logs, "")
-	}
-
-	if exitCode != 0 {
-		return output, fmt.Errorf("脚本退出码 %d", exitCode)
 	}
 	return output, nil
 }

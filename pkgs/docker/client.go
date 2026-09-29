@@ -17,6 +17,8 @@ type DockerService struct {
 
 	selfID     string
 	selfIDOnce sync.Once
+	closeOnce  sync.Once
+	closeErr   error
 }
 
 // DockerConfig Docker 配置（由外部注入，解除对 config 的依赖）
@@ -56,6 +58,16 @@ func NewDockerService(cfg *DockerConfig) (*DockerService, error) {
 // Client 获取 Docker 客户端
 func (s *DockerService) Client() *client.Client {
 	return s.client
+}
+
+// Close 幂等关闭底层 Docker SDK 客户端。
+func (s *DockerService) Close() error {
+	s.closeOnce.Do(func() {
+		if s.client != nil {
+			s.closeErr = s.client.Close()
+		}
+	})
+	return s.closeErr
 }
 
 // ContainerRoot 获取容器数据根目录

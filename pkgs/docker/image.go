@@ -182,3 +182,101 @@ func (s *DockerService) ImageInspect(ctx context.Context, id string) (*image.Ins
 	}
 	return &img, history, nil
 }
+
+// ImagePush 推送镜像到仓库
+func (s *DockerService) ImagePush(ctx context.Context, imageRef, registryURL, namespace string) (string, string, error) {
+	// 提取镜像的短名称
+	imageName := imageRef
+	if idx := strings.LastIndex(imageName, "/"); idx >= 0 {
+		imageName = imageName[idx+1:]
+	}
+
+	// 构建完整的目标镜像引用
+	host := registryHost(registryURL)
+	var targetRef string
+	if namespace != "" {
+		targetRef = host + "/" + namespace + "/" + imageName
+	} else {
+		targetRef = host + "/" + imageName
+	}
+	if !strings.Contains(targetRef, ":") {
+		targetRef += ":latest"
+	}
+
+	// 先给镜像打标签
+	if err := s.client.ImageTag(ctx, imageRef, targetRef); err != nil {
+		logman.Error("Tag image for push failed", "image", imageRef, "target", targetRef, "error", err)
+		return "", targetRef, err
+	}
+
+	// 推送镜像（认证信息从 targetRef 的 host 自动匹配）
+	reader, err := s.client.ImagePush(ctx, targetRef, image.PushOptions{
+		RegistryAuth: s.RegistryAuth(targetRef),
+	})
+	if err != nil {
+		logman.Error("Push image failed", "image", targetRef, "error", err)
+		return "", targetRef, err
+	}
+	defer reader.Close()
+
+	lastMessage, err := consumeImageStream(json.NewDecoder(reader))
+	if err != nil {
+		logman.Error("Push image stream error", "image", targetRef, "error", err)
+		return "", targetRef, err
+	}
+
+	logman.Info("Image pushed", "image", imageRef, "target", targetRef)
+	return lastMessage, targetRef, nil
+}
+
+// ImagePull 从仓库拉取镜像到本地
+// RegistryURL 为空时直接从 Docker Hub / daemon 配置的 mirror 拉取
+func (s *DockerService) ImagePull(ctx context.Context, imageName, registryURL, namespace string) (string, string, error) {
+	// 构建完整镜像引用
+	var imageRef string
+	if registryURL == "" {
+		// 无私有仓库：直接使用镜像名，依赖 daemon mirror 配置
+		imageRef = imageName
+		if !strings.Contains(imageRef, ":") && !strings.Contains(imageRef, "@") {
+			imageRef += ":latest"
+		}
+	} else {
+		// 拼接私有仓库完整引用
+		host := registryHost(registryURL)
+		if namespace != "" {
+			imageRef = host + "/" + namespace + "/" + imageName
+		} else {
+			imageRef = host + "/" + imageName
+		}
+		if !strings.Contains(imageName, ":") && !strings.Contains(imageName, "@") {
+			imageRef += ":latest"
+		}
+	}
+
+	lastMsg, err := s.imagePull(ctx, imageRef)
+	if err != nil {
+		return "", imageRef, err
+	}
+
+	logman.Info("Image pulled from registry", "image", imageRef, "registry", registryURL)
+	return lastMsg, imageRef, nil
+}
+
+// imagePull 执行镜像拉取，认证信息从 imageRef 的 host 自动匹配已配置的 registry
+func (s *DockerService) imagePull(ctx context.Context, imageRef string) (string, error) {
+	reader, err := s.client.ImagePull(ctx, imageRef, image.PullOptions{
+		RegistryAuth: s.RegistryAuth(imageRef),
+	})
+	if err != nil {
+		logman.Error("Pull image failed", "image", imageRef, "error", err)
+		return "", fmt.Errorf("拉取镜像 %s 失败: %w", imageRef, err)
+	}
+	defer reader.Close()
+
+	msg, err := consumeImageStream(json.NewDecoder(reader))
+	if err != nil {
+		logman.Error("Pull image stream error", "image", imageRef, "error", err)
+		return "", fmt.Errorf("拉取镜像 %s 失败: %w", imageRef, err)
+	}
+	return msg, nil
+}

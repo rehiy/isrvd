@@ -62,7 +62,8 @@ func NewClient(baseURL string) *Client {
 func (c *Client) ConfigLoadRaw(ctx context.Context, raw []byte) error {
 	c.configMu.Lock()
 	defer c.configMu.Unlock()
-	return c.configLoadRaw(ctx, raw)
+	_, err := c.do(ctx, http.MethodPost, "/load", raw, ctJSON)
+	return err
 }
 
 // ConfigMutate 在同一临界区内读取、修改并加载完整配置。
@@ -104,11 +105,6 @@ func (c *Client) configLoad(ctx context.Context, cfg *Config) error {
 		return fmt.Errorf("序列化 caddy 配置失败: %w", err)
 	}
 	_, err = c.do(ctx, http.MethodPost, "/load", body, ctJSON)
-	return err
-}
-
-func (c *Client) configLoadRaw(ctx context.Context, raw []byte) error {
-	_, err := c.do(ctx, http.MethodPost, "/load", raw, ctJSON)
 	return err
 }
 

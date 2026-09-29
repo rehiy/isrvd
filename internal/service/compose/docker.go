@@ -2,6 +2,7 @@ package compose
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -95,7 +96,20 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		return nil, err
 	}
 
-	s.dockerContainersRemove(ctx, name, oldContent, installDir, oldEnvState.Content)
+	if err := s.dockerContainersRemove(ctx, name, oldContent, installDir, oldEnvState.Content); err != nil {
+		cleanupCtx, cleanupCancel := cleanupContext(ctx)
+		cleanupErr := s.dockerContainersRemove(cleanupCtx, name, oldContent, installDir, oldEnvState.Content)
+		cleanupCancel()
+		var rollbackErr error
+		if cleanupErr == nil {
+			rollbackCtx, rollbackCancel := cleanupContext(ctx)
+			rollbackErr = s.dockerRollback(rollbackCtx, name, oldContent, installDir)
+			rollbackCancel()
+		} else {
+			rollbackErr = fmt.Errorf("继续清理旧容器失败: %w", cleanupErr)
+		}
+		return nil, wrapRedeployError(fmt.Errorf("移除旧容器失败: %w", err), formatRedeployRollbackSummary(nil, rollbackErr, "容器"))
+	}
 
 	rollback := func() string {
 		// 先恢复旧 .env 再回滚容器；.env 失败不阻断容器回滚
@@ -104,7 +118,9 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 		if envErr != nil {
 			logman.Warn("Restore compose env before rollback failed", "name", name, "error", envErr)
 		}
-		runtimeErr := s.dockerRollback(ctx, name, oldContent, installDir)
+		rollbackCtx, cancel := cleanupContext(ctx)
+		defer cancel()
+		runtimeErr := s.dockerRollback(rollbackCtx, name, oldContent, installDir)
 		if runtimeErr != nil {
 			logman.Warn("Rollback containers failed", "name", name, "error", runtimeErr)
 		}
@@ -144,8 +160,10 @@ func (s *Service) dockerServicesCreate(ctx context.Context, project *types.Proje
 	var items []string
 
 	rollback := func() {
+		cleanupCtx, cancel := cleanupContext(ctx)
+		defer cancel()
 		for _, id := range createdIDs {
-			if err := s.docker.ContainerAction(ctx, id, "remove"); err != nil {
+			if err := s.docker.ContainerAction(cleanupCtx, id, "remove"); err != nil {
 				logman.Warn("Rollback remove container failed", "id", docker.ShortID(id), "error", err)
 			}
 		}
@@ -179,8 +197,9 @@ func (s *Service) dockerServiceCreate(ctx context.Context, project *types.Projec
 
 // dockerContainersRemove 移除 project 中的所有 Docker 容器。
 // installDir 作为 compose 加载的工作目录（解析 env_file 等相对路径），envContent 用于叠加插值环境。
-func (s *Service) dockerContainersRemove(ctx context.Context, name, content, installDir, envContent string) {
+func (s *Service) dockerContainersRemove(ctx context.Context, name, content, installDir, envContent string) error {
 	removed := map[string]struct{}{}
+	var removeErrors []error
 	removeByID := func(id string) {
 		if id == "" {
 			return
@@ -189,8 +208,9 @@ func (s *Service) dockerContainersRemove(ctx context.Context, name, content, ins
 			return
 		}
 		removed[id] = struct{}{}
-		_ = s.docker.ContainerAction(ctx, id, "stop")
-		_ = s.docker.ContainerAction(ctx, id, "remove")
+		if err := s.docker.ContainerAction(ctx, id, "remove"); err != nil {
+			removeErrors = append(removeErrors, fmt.Errorf("移除容器 %s 失败: %w", docker.ShortID(id), err))
+		}
 	}
 
 	// 优先通过标签精确查找（ID 级别，无误删风险）
@@ -201,7 +221,7 @@ func (s *Service) dockerContainersRemove(ctx context.Context, name, content, ins
 			removeByID(info.ID)
 		}
 	} else {
-		logman.Warn("List compose project containers failed", "name", name, "error", err)
+		return fmt.Errorf("查询项目容器失败: %w", err)
 	}
 
 	// 补充删除无标签的旧容器，inspect 确认归属后再删
@@ -233,6 +253,7 @@ func (s *Service) dockerContainersRemove(ctx context.Context, name, content, ins
 			}
 		}
 	}
+	return errors.Join(removeErrors...)
 }
 
 // dockerProjectName 将容器名/项目名解析为真实 project 名。

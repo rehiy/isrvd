@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -140,7 +141,9 @@ func (s *DockerService) ContainerCreateAndStart(ctx context.Context, name string
 		return "", err
 	}
 	if err := s.ContainerStart(ctx, id); err != nil {
-		if rmErr := s.client.ContainerRemove(ctx, id, container.RemoveOptions{Force: true}); rmErr != nil {
+		cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+		defer cancel()
+		if rmErr := s.client.ContainerRemove(cleanupCtx, id, container.RemoveOptions{Force: true}); rmErr != nil {
 			logman.Warn("Remove container after start failure", "id", ShortID(id), "error", rmErr)
 		}
 		return "", fmt.Errorf("启动容器失败: %w", err)

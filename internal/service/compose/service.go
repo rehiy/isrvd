@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/rehiy/libgo/logman"
@@ -18,9 +19,15 @@ import (
 )
 
 // Service Compose 部署业务服务
+const composeCleanupTimeout = 30 * time.Second
+
 type Service struct {
 	docker *docker.DockerService
 	swarm  *swarm.SwarmService
+}
+
+func cleanupContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.WithoutCancel(ctx), composeCleanupTimeout)
 }
 
 // DeployRequest 部署请求
