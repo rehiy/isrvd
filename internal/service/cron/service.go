@@ -3,14 +3,12 @@ package cron
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"runtime"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/docker/docker/api/types/mount"
-	"github.com/rehiy/libgo/command"
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/strutil"
 	libCron "github.com/robfig/cron/v3"
@@ -21,8 +19,11 @@ import (
 	"isrvd/pkgs/docker"
 )
 
-// logger 为 cron 包创建带名称的 logger
-var logger = logman.Named("cron")
+var (
+	logger        = logman.Named("cron")
+	ErrJobRunning = errors.New("任务正在运行")
+	activeJobs    sync.Map
+)
 
 // TypeInfo 脚本类型描述
 type TypeInfo struct {
@@ -53,7 +54,10 @@ type Service struct {
 	docker        *docker.DockerService      // 可选，DOCKER 类型任务需要
 	jobs          map[string]*Job            // jobID → Job 映射
 	entries       map[string]libCron.EntryID // jobID → cron entry ID 映射
-	cleanCancel   context.CancelFunc
+	ctx           context.Context
+	cancel        context.CancelFunc
+	running       map[string]context.CancelFunc
+	closeOnce     sync.Once
 	closeDone     chan struct{}
 	workers       sync.WaitGroup // 任务执行与日志清理共用等待组
 	closed        bool
@@ -86,15 +90,23 @@ func (s *Service) AvailableTypes() []TypeInfo {
 }
 
 // NewService 创建计划任务服务并启动调度器
-func NewService() *Service {
+func NewService(parent context.Context) *Service {
+	if parent == nil {
+		parent = context.Background()
+	}
+	cleanCtx, cleanCancel := context.WithCancel(parent)
+	snapshot := config.Current()
 	s := &Service{
 		jobs:          make(map[string]*Job),
 		entries:       make(map[string]libCron.EntryID),
 		cron:          libCron.New(),
-		store:         NewStore(),
+		store:         NewStore(snapshot.Server.RootDirectory),
 		docker:        registry.DockerService,
+		ctx:           parent,
+		cancel:        cleanCancel,
+		running:       make(map[string]context.CancelFunc),
 		closeDone:     make(chan struct{}),
-		failureNotify: svcNotify.JobFailureNotifier(config.Notify),
+		failureNotify: svcNotify.JobFailureNotifier(snapshot.Notify),
 	}
 
 	// 从 cron.yml 加载任务
@@ -102,9 +114,24 @@ func NewService() *Service {
 	if err != nil {
 		logger.Warn("Load cron jobs failed", "error", err)
 	}
+	migrated := false
 	for _, job := range jobs {
+		if job.Type == "DOCKER" {
+			switch {
+			case job.Container != "":
+				job.Type = "DOCKER_CTR"
+				migrated = true
+			case job.Image != "":
+				job.Type = "DOCKER_TMP"
+				migrated = true
+			}
+		}
 		if err := s.validateJob(job); err != nil {
 			logger.Warn("Skip invalid cron job", "error", err)
+			continue
+		}
+		if _, exists := s.jobs[job.ID]; exists {
+			logger.Warn("Skip duplicate cron job", "id", job.ID)
 			continue
 		}
 		s.jobs[job.ID] = job
@@ -114,14 +141,17 @@ func NewService() *Service {
 			}
 		}
 	}
+	if migrated {
+		if err := s.store.SaveJobs(jobs); err != nil {
+			logger.Warn("Cron legacy job migration save failed", "error", err)
+		}
+	}
 
 	s.cron.Start()
 	logger.Info("Cron scheduler started", "jobs", len(s.entries))
 
 	// 启动后立即清理一次过期日志，并启动每日清理协程
 	s.store.CleanOld()
-	cleanCtx, cleanCancel := context.WithCancel(context.Background())
-	s.cleanCancel = cleanCancel
 	s.workers.Add(1)
 	go func() {
 		defer s.workers.Done()
@@ -131,24 +161,25 @@ func NewService() *Service {
 	return s
 }
 
-// Close 停止调度和清理协程；正在执行的任务结束后关闭日志存储。
-// 配置重载时必须停止旧调度器，避免同一任务被重复执行和通知。
+// Close 停止调度和清理协程；已接受的任务继续执行，完成后关闭日志存储。
+// 父 context 取消时，仍在执行的任务会被取消。
 func (s *Service) Close() <-chan struct{} {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if !s.closed {
+	s.closeOnce.Do(func() {
+		s.mu.Lock()
 		s.closed = true
-		s.cleanCancel()
+		s.cancel()
 		s.cron.Stop()
+		s.mu.Unlock()
+
 		go func() {
-			defer close(s.closeDone)
 			s.workers.Wait()
 			if err := s.store.Close(); err != nil {
 				logger.Warn("Cron log store close failed", "error", err)
 			}
 			logger.Info("Cron scheduler stopped")
+			close(s.closeDone)
 		}()
-	}
+	})
 	return s.closeDone
 }
 
@@ -228,7 +259,7 @@ type JobUpsertRequest struct {
 
 // JobCreateFromRequest 从请求创建任务（生成 ID、构建 Job、持久化）
 func (s *Service) JobCreateFromRequest(req JobUpsertRequest) (*Job, error) {
-	job := jobFromRequest(strutil.NewString(), req)
+	job := s.jobFromRequest(strutil.NewString(), req)
 	if err := s.JobCreate(job); err != nil {
 		return nil, err
 	}
@@ -240,21 +271,22 @@ func (s *Service) JobUpdateFromRequest(id string, req JobUpsertRequest) (*Job, e
 	if id == "" {
 		return nil, fmt.Errorf("任务 ID 不能为空")
 	}
-	job := jobFromRequest(id, req)
+	job := s.jobFromRequest(id, req)
 	if err := s.JobUpdate(job); err != nil {
 		return nil, err
 	}
 	return job, nil
 }
 
-func jobFromRequest(id string, req JobUpsertRequest) *Job {
+func (s *Service) jobFromRequest(id string, req JobUpsertRequest) *Job {
+	workDir := config.PathToAbs(req.WorkDir, s.store.rootDir)
 	return &Job{
 		ID:          id,
 		Name:        req.Name,
 		Schedule:    req.Schedule,
 		Type:        req.Type,
 		Content:     req.Content,
-		WorkDir:     req.WorkDir,
+		WorkDir:     workDir,
 		Image:       req.Image,
 		Container:   req.Container,
 		Volumes:     req.Volumes,
@@ -341,11 +373,11 @@ func (s *Service) JobStatusPatch(id string, enabled bool) error {
 
 // JobRun 立即触发一次任务（异步执行）
 func (s *Service) JobRun(id string) error {
-	job, err := s.prepareRun(id)
+	job, ctx, err := s.prepareRun(id)
 	if err != nil {
 		return err
 	}
-	go s.executeJob(job)
+	go s.executeJob(ctx, job)
 	return nil
 }
 
@@ -423,136 +455,12 @@ func (s *Service) persist() error {
 	return s.store.SaveJobs(jobs)
 }
 
-// JobLog 任务执行日志
-type JobLog struct {
-	RunID     string    `json:"runId"`           // 执行 ID
-	JobID     string    `json:"jobId"`           // 所属任务 ID
-	JobName   string    `json:"jobName"`         // 任务名称（冗余，便于展示）
-	StartTime time.Time `json:"startTime"`       // 开始时间
-	EndTime   time.Time `json:"endTime"`         // 结束时间
-	Duration  int64     `json:"duration"`        // 耗时（毫秒）
-	Success   bool      `json:"success"`         // 是否执行成功
-	Output    string    `json:"output"`          // 标准输出
-	Error     string    `json:"error,omitempty"` // 错误信息（失败时非空）
-}
-
-// runJob 执行指定 ID 的任务
-func (s *Service) runJob(id string) {
-	job, err := s.prepareRun(id)
-	if err != nil {
-		return
-	}
-	s.executeJob(job)
-}
-
-// prepareRun 在同一把锁内接受任务并计入等待，保证已接受的手动执行不会被 Close 丢弃。
-func (s *Service) prepareRun(id string) (*Job, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.closed {
-		return nil, fmt.Errorf("cron scheduler stopped")
-	}
-	job, ok := s.jobs[id]
-	if !ok {
-		return nil, fmt.Errorf("job not found: %s", id)
-	}
-	job = cloneJob(job)
-	s.workers.Add(1)
-	return job, nil
-}
-
-func (s *Service) executeJob(job *Job) {
-	defer s.workers.Done()
-
-	start := time.Now()
-	logger.Info("Cron job running", "id", job.ID, "name", job.Name)
-
-	var output string
-	var err error
-
-	if job.Type == "DOCKER_TMP" || job.Type == "DOCKER_CTR" {
-		output, err = s.runDockerJob(job)
-	} else {
-		output, err = command.RunScript(&command.ScriptPayload{
-			Name:       job.Name,
-			ScriptType: job.Type,
-			Content:    job.Content,
-			WorkDir:    job.WorkDir,
-			Timeout:    job.Timeout,
-		})
-	}
-
-	end := time.Now()
-
-	entry := &JobLog{
-		RunID:     strutil.NewString(),
-		JobID:     job.ID,
-		JobName:   job.Name,
-		StartTime: start,
-		EndTime:   end,
-		Duration:  end.Sub(start).Milliseconds(),
-		Success:   err == nil,
-		Output:    output,
-	}
-	if err != nil {
-		entry.Error = err.Error()
-		logger.Warn("Cron job failed", "id", job.ID, "name", job.Name, "error", err)
-	} else {
-		logger.Info("Cron job done", "id", job.ID, "name", job.Name, "duration", entry.Duration)
-	}
-
-	s.store.AppendJobLog(entry)
-	if err != nil {
-		s.failureNotify(entry.JobID, entry.JobName, entry.RunID, entry.Duration)
-	}
-}
-
 func cloneJob(job *Job) *Job {
 	if job == nil {
 		return nil
 	}
 	copy := *job
 	return &copy
-}
-
-// runDockerJob 执行 DOCKER_TMP / DOCKER_CTR 类型任务
-func (s *Service) runDockerJob(job *Job) (string, error) {
-	if s.docker == nil {
-		return "", fmt.Errorf("Docker 服务未启用，无法执行该类型任务")
-	}
-	switch job.Type {
-	case "DOCKER_TMP":
-		vols := parseVolumeLines(job.Volumes)
-		return s.docker.ContainerRunScript(context.Background(), job.Image, "/bin/sh", job.Content, job.Timeout, vols)
-	case "DOCKER_CTR":
-		return s.docker.ContainerExecRun(context.Background(), job.Container, "/bin/sh", job.Content, job.Timeout)
-	}
-	return "", fmt.Errorf("未知的 Docker 任务类型: %s", job.Type)
-}
-
-// parseVolumeLines 将换行分隔的 /host:/container[:ro] 字符串转为 Docker mount 列表
-func parseVolumeLines(s string) []mount.Mount {
-	var result []mount.Mount
-	for _, line := range strings.Split(s, "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		parts := strings.SplitN(line, ":", 3)
-		if len(parts) < 2 {
-			continue
-		}
-		vol := mount.Mount{
-			Type:   mount.TypeBind,
-			Source: parts[0],
-			Target: parts[1],
-		}
-		if len(parts) == 3 && strings.Contains(parts[2], "ro") {
-			vol.ReadOnly = true
-		}
-		result = append(result, vol)
-	}
-	return result
 }
 
 func (s *Service) validateJob(job *Job) error {

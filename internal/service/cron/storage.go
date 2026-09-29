@@ -14,6 +14,19 @@ import (
 	"isrvd/pkgs/cstore"
 )
 
+// JobLog 任务执行日志。
+type JobLog struct {
+	RunID     string    `json:"runId"`
+	JobID     string    `json:"jobId"`
+	JobName   string    `json:"jobName"`
+	StartTime time.Time `json:"startTime"`
+	EndTime   time.Time `json:"endTime"`
+	Duration  int64     `json:"duration"`
+	Success   bool      `json:"success"`
+	Output    string    `json:"output"`
+	Error     string    `json:"error,omitempty"`
+}
+
 const (
 	// cronLogRetainDays 日志保留天数
 	cronLogRetainDays = 3
@@ -30,21 +43,22 @@ const (
 // 执行日志：rootDirectory/cron/YYYY-MM-DD.jsonl （所有任务合并、按天滚动）
 type Store struct {
 	ts      *cstore.TypedStore[[]*Job]
+	rootDir string // 创建该服务代际时的根目录
 	dataDir string // 日志目录绝对路径
 	jobMu   sync.Mutex
 
 	logStore *jsonl.Store
 }
 
-// NewStore 创建计划任务存储。
-func NewStore() *Store {
-	rootDir := config.Server.RootDirectory
+// NewStore 创建绑定指定根目录的计划任务存储。
+func NewStore(rootDir string) *Store {
 	ts, err := cstore.NewTyped[[]*Job](rootDir, "cron.yml")
 	if err != nil {
 		logger.Warn("Cron config store init failed", "dir", rootDir, "error", err)
 	}
 	s := &Store{
 		ts:      ts,
+		rootDir: rootDir,
 		dataDir: filepath.Join(rootDir, "cron"),
 	}
 
@@ -72,12 +86,15 @@ func (s *Store) LoadJobs() ([]*Job, error) {
 	if err != nil || raw == nil {
 		return nil, err
 	}
-	rootDir := config.Server.RootDirectory
-	jobs := make([]*Job, len(raw))
-	for i, job := range raw {
+	jobs := make([]*Job, 0, len(raw))
+	for _, job := range raw {
+		if job == nil {
+			logger.Warn("Skip nil cron job")
+			continue
+		}
 		cp := *job
-		cp.WorkDir = config.PathToAbs(job.WorkDir, rootDir)
-		jobs[i] = &cp
+		cp.WorkDir = config.PathToAbs(job.WorkDir, s.rootDir)
+		jobs = append(jobs, &cp)
 	}
 	return jobs, nil
 }
@@ -89,12 +106,14 @@ func (s *Store) SaveJobs(jobs []*Job) error {
 	}
 
 	// 构造副本并还原相对路径，锁外执行，避免序列化期间长时间持锁
-	rootDir := config.Server.RootDirectory
-	snapshot := make([]*Job, len(jobs))
-	for i, job := range jobs {
+	snapshot := make([]*Job, 0, len(jobs))
+	for _, job := range jobs {
+		if job == nil {
+			continue
+		}
 		cp := *job
-		cp.WorkDir = config.PathToRel(job.WorkDir, rootDir)
-		snapshot[i] = &cp
+		cp.WorkDir = config.PathToRel(job.WorkDir, s.rootDir)
+		snapshot = append(snapshot, &cp)
 	}
 
 	s.jobMu.Lock()

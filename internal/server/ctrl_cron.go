@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -80,7 +81,11 @@ func (app *App) cronJobDelete(c *gin.Context) {
 func (app *App) cronJobRun(c *gin.Context) {
 	id := c.Param("id")
 	if err := app.cronSvc.JobRun(id); err != nil {
-		respondError(c, http.StatusNotFound, err.Error())
+		status := http.StatusNotFound
+		if errors.Is(err, svcCron.ErrJobRunning) {
+			status = http.StatusConflict
+		}
+		respondError(c, status, err.Error())
 		return
 	}
 	respondSuccess(c, "任务已触发执行", nil)
