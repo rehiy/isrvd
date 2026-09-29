@@ -14,3 +14,15 @@ func Init() {
 		logman.Warn("Docker service initialization skipped", "error", err)
 	}
 }
+
+func Close() {
+	if DockerService != nil {
+		if err := DockerService.Close(); err != nil {
+			logman.Warn("Docker service close failed", "error", err)
+		}
+	}
+	ApisixClient = nil
+	CaddyClient = nil
+	DockerService = nil
+	SwarmService = nil
+}

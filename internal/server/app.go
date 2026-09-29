@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"sync"
@@ -47,6 +48,15 @@ const (
 // App 应用实例，持有各业务服务
 type App struct {
 	*gin.Engine
+	servicesMu       sync.RWMutex
+	requestCtxMu     sync.RWMutex
+	cleanupWG        sync.WaitGroup
+	lifecycleCtx     context.Context
+	lifecycleCancel  context.CancelFunc
+	servicesCtx      context.Context
+	servicesCancel   context.CancelFunc
+	requestsCtx      context.Context
+	requestsCancel   context.CancelFunc
 	wsConfig         *websocket.ServerConfig
 	monitorCollector *svcMonitor.Collector
 	faultWatcher     *svcNotify.FaultWatcher
@@ -61,7 +71,6 @@ type App struct {
 	swarmSvc         *svcSwarm.Service
 	composeSvc       *svcCompose.Service
 	cronSvc          *svcCron.Service
-	cronWG           sync.WaitGroup // 等待当前及重载前尚未结束的调度器
 	copilotSvc       *svcCopilot.Service
 	shellSvc         *svcShell.Service
 	websshSvc        *svcWebSSH.Service
@@ -88,20 +97,29 @@ type Route struct {
 }
 
 func StartApp() {
+	lifecycleCtx, lifecycleCancel := context.WithCancel(context.Background())
+	servicesCtx, servicesCancel := context.WithCancel(lifecycleCtx)
+	requestsCtx, requestsCancel := context.WithCancel(lifecycleCtx)
 	app := &App{
-		Engine: httpd.Engine(config.Server.Debug),
+		Engine:          httpd.Engine(config.Current().Server.Debug),
+		lifecycleCtx:    lifecycleCtx,
+		lifecycleCancel: lifecycleCancel,
+		servicesCtx:     servicesCtx,
+		servicesCancel:  servicesCancel,
+		requestsCtx:     requestsCtx,
+		requestsCancel:  requestsCancel,
 		wsConfig: &websocket.ServerConfig{
-			AllowedOrigins: config.Server.AllowedOrigins,
+			AllowedOrigins: config.Current().Server.AllowedOrigins,
 		},
 		routeIndex: make(map[string]Route),
 	}
 
-	app.initServices()
+	app.initServices(app.servicesCtx)
 
 	app.initRoutes()
 
 	server := &http.Server{
-		Addr:              config.Server.ListenAddr,
+		Addr:              config.Current().Server.ListenAddr,
 		Handler:           app.Engine,
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       120 * time.Second,
@@ -113,7 +131,8 @@ func StartApp() {
 func (app *App) initRoutes() {
 	r := app.Group(APINamespace)
 
-	// 全局中间件
+	// 全局中间件。生命周期锁必须先于读取可热更新的 WebSocket/CORS 配置。
+	r.Use(app.serviceLifecycleMiddleware())
 	r.Use(app.wsConfig.CorsMiddleware())
 	r.Use(securityHeadersMiddleware())
 	// 先认证设置 username，再检查服务可用性；权限检查只在服务可用时执行。
@@ -137,7 +156,7 @@ func (app *App) initRoutes() {
 			return
 		}
 		// OpenAPI 文档默认关闭，未在配置中显式开启时不对外提供
-		if !config.Server.OpenAPI && strings.HasPrefix(path, "/openapi") {
+		if !config.Current().Server.OpenAPI && strings.HasPrefix(path, "/openapi") {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
@@ -185,4 +204,13 @@ func (app *App) registerRoute(group *gin.RouterGroup, route Route) {
 	case "ANY":
 		group.Any(route.Path, route.Handler)
 	}
+}
+
+func (app *App) serveWebSocket(c *gin.Context, serve func(*websocket.ServerConn)) {
+	ctx := c.Request.Context()
+	app.wsConfig.Handler(func(conn *websocket.ServerConn) {
+		stop := context.AfterFunc(ctx, func() { _ = conn.Conn.Close() })
+		defer stop()
+		serve(conn)
+	})(c)
 }

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -51,24 +50,15 @@ func (app *App) overviewBootstrap(c *gin.Context) {
 		Auth: app.accountSvc.AuthInfo(username),
 	}
 
-	// 已登录时并发获取 probe + config
 	if username != "" {
-		var wg sync.WaitGroup
-		wg.Add(2)
-		go func() {
-			defer wg.Done()
-			resp.Probe = app.overviewSvc.Probe(ctx, app.collectProbes())
-		}()
-		go func() {
-			defer wg.Done()
-			resp.Config = &BootstrapConfig{
-				MaxUploadSize:  config.Server.MaxUploadSize,
-				MarketplaceURL: config.Marketplace.URL,
-				OpenAPIEnabled: config.Server.OpenAPI,
-				Links:          config.Links,
-			}
-		}()
-		wg.Wait()
+		snapshot := config.Current()
+		resp.Config = &BootstrapConfig{
+			MaxUploadSize:  snapshot.Server.MaxUploadSize,
+			MarketplaceURL: snapshot.Marketplace.URL,
+			OpenAPIEnabled: snapshot.Server.OpenAPI,
+			Links:          snapshot.Links,
+		}
+		resp.Probe = app.overviewSvc.Probe(ctx, app.collectProbes())
 	}
 
 	respondSuccess(c, "ok", resp)
@@ -88,10 +78,11 @@ func (app *App) overviewUpgrade(c *gin.Context) {
 		return
 	}
 	// 先发送响应，延迟重启，确保客户端能收到完整响应
+	service := app.overviewSvc
 	respondSuccess(c, "升级成功，正在重启", nil)
 	go func() {
 		time.Sleep(500 * time.Millisecond)
-		app.overviewSvc.RestartSelf()
+		service.RestartSelf()
 	}()
 }
 

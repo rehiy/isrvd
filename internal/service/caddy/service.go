@@ -34,14 +34,14 @@ type Service struct {
 }
 
 // NewService 创建 Caddy 业务服务
-func NewService() (*Service, error) {
+func NewService(ctx context.Context) (*Service, error) {
 	client := registry.CaddyClient
 	if client == nil {
 		logman.Warn("Caddy client not initialized")
 		return nil, fmt.Errorf("Caddy 未配置")
 	}
 	// 验证连通性，服务不可达时拒绝初始化
-	if _, err := client.ConfigAll(context.Background()); err != nil {
+	if _, err := client.ConfigAll(ctx); err != nil {
 		return nil, fmt.Errorf("Caddy 不可达: %w", err)
 	}
 	return &Service{client: client}, nil

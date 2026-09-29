@@ -41,7 +41,7 @@ type credentialStore struct {
 
 // newCredentialStore 创建凭据存储
 func newCredentialStore() (*credentialStore, error) {
-	rootDir := config.Server.RootDirectory
+	rootDir := config.Current().Server.RootDirectory
 	const key = "webssh-cred.yml"
 
 	ts, err := cstore.NewTyped[[]*Credential](rootDir, key)

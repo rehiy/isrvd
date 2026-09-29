@@ -158,9 +158,9 @@ func (app *App) websshHostDelete(c *gin.Context) {
 
 func (app *App) websshTerminal(c *gin.Context) {
 	id := c.Param("id")
-	app.wsConfig.Handler(func(conn *websocket.ServerConn) {
+	app.serveWebSocket(c, func(conn *websocket.ServerConn) {
 		app.websshSvc.RunTerminal(conn, id)
-	})(c)
+	})
 }
 
 func (app *App) websshSFTPList(c *gin.Context) {
@@ -198,7 +198,7 @@ func (app *App) websshSFTPUpload(c *gin.Context) {
 		return
 	}
 
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, config.Server.MaxUploadSize)
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, config.Current().Server.MaxUploadSize)
 	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
 		respondError(c, http.StatusBadRequest, "解析上传表单失败: "+err.Error())
 		return

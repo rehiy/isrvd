@@ -19,14 +19,14 @@ type Service struct {
 }
 
 // NewService 创建 Apisix 业务服务
-func NewService() (*Service, error) {
+func NewService(ctx context.Context) (*Service, error) {
 	client := registry.ApisixClient
 	if client == nil {
 		logman.Warn("Apisix client not initialized")
 		return nil, fmt.Errorf("Apisix 未配置")
 	}
 	// 验证连通性，服务不可达时拒绝初始化
-	if _, err := client.RouteList(context.Background()); err != nil {
+	if _, err := client.RouteList(ctx); err != nil {
 		return nil, fmt.Errorf("Apisix 不可达: %w", err)
 	}
 	return &Service{client: client}, nil

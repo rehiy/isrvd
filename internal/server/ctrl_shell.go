@@ -24,7 +24,7 @@ func (app *App) shellWebSocket(c *gin.Context) {
 
 	shell := c.DefaultQuery("shell", "")
 
-	app.wsConfig.Handler(func(conn *websocket.ServerConn) {
-		app.shellSvc.RunTerminal(conn, shell, member.HomeDirectory)
-	})(c)
+	app.serveWebSocket(c, func(conn *websocket.ServerConn) {
+		app.shellSvc.RunTerminal(c.Request.Context(), conn, shell, member.HomeDirectory)
+	})
 }

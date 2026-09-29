@@ -183,10 +183,9 @@ func (app *App) dockerContainerExec(c *gin.Context) {
 		return
 	}
 
-	// 使用 Handler 模式处理 WebSocket
-	app.wsConfig.Handler(func(conn *websocket.ServerConn) {
+	app.serveWebSocket(c, func(conn *websocket.ServerConn) {
 		app.dockerSvc.ContainerExec(c.Request.Context(), conn, containerID, shell)
-	})(c)
+	})
 }
 
 // ─── 镜像 ───
@@ -493,7 +492,7 @@ func (app *App) dockerContainerFileUpload(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "path 参数不能为空")
 		return
 	}
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, config.Server.MaxUploadSize)
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, config.Current().Server.MaxUploadSize)
 	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
 		respondError(c, http.StatusBadRequest, "解析上传表单失败: "+err.Error())
 		return

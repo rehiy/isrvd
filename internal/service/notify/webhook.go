@@ -45,11 +45,6 @@ type Event struct {
 	Data      map[string]any `json:"data"`      // 事件相关数据
 }
 
-// Send 向所有已配置的 Webhook 发送告警事件；无可用通道时直接返回
-func Send(evt *Event) {
-	sendTo(snapshotWebhooks(config.Notify), evt)
-}
-
 // snapshotWebhooks 为异步通知保留通道快照，避免重载后引用可变配置。
 func snapshotWebhooks(cfg *config.NotifyConfig) []*config.WebhookConfig {
 	if cfg == nil {

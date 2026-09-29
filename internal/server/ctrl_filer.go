@@ -259,12 +259,12 @@ func (app *App) filerFileChmod(c *gin.Context) {
 }
 
 func (app *App) filerFileUpload(c *gin.Context) {
-	if c.Request.ContentLength > config.Server.MaxUploadSize {
+	if c.Request.ContentLength > config.Current().Server.MaxUploadSize {
 		respondError(c, http.StatusBadRequest, "文件大小超过限制")
 		return
 	}
 
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, config.Server.MaxUploadSize)
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, config.Current().Server.MaxUploadSize)
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {

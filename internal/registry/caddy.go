@@ -12,9 +12,10 @@ var CaddyClient *caddy.Client
 // initCaddy 初始化 Caddy Admin API 客户端
 func initCaddy() error {
 	CaddyClient = nil
-	if config.Caddy.AdminURL == "" {
+	cfg := config.Current().Caddy
+	if cfg.AdminURL == "" {
 		return fmt.Errorf("caddy adminUrl not configured")
 	}
-	CaddyClient = caddy.NewClient(config.Caddy.AdminURL)
+	CaddyClient = caddy.NewClient(cfg.AdminURL)
 	return nil
 }

@@ -17,8 +17,12 @@ var SwarmService *swarm.SwarmService
 func initDocker() error {
 	DockerService = nil
 	SwarmService = nil
+	snapshot := config.Current()
 	var registries []*docker.RegistryConfig
-	for _, reg := range config.Docker.Registries {
+	for _, reg := range snapshot.Docker.Registries {
+		if reg == nil {
+			continue
+		}
 		registries = append(registries, &docker.RegistryConfig{
 			Name:        reg.Name,
 			Description: reg.Description,
@@ -29,8 +33,8 @@ func initDocker() error {
 	}
 
 	cfg := &docker.DockerConfig{
-		Host:          config.Docker.Host,
-		ContainerRoot: config.Docker.ContainerRoot,
+		Host:          snapshot.Docker.Host,
+		ContainerRoot: snapshot.Docker.ContainerRoot,
 		Registries:    registries,
 	}
 

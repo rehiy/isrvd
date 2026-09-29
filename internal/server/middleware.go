@@ -1,12 +1,38 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
+
+// serviceLifecycleMiddleware 固定一次请求使用的服务代际，并在重载时取消长请求。
+func (app *App) serviceLifecycleMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		app.servicesMu.RLock()
+		app.requestCtxMu.RLock()
+		requestGeneration := app.requestsCtx
+		app.requestCtxMu.RUnlock()
+		if requestGeneration == nil || requestGeneration.Err() != nil {
+			app.servicesMu.RUnlock()
+			respondError(c, http.StatusServiceUnavailable, "服务正在重载")
+			c.Abort()
+			return
+		}
+		requestCtx, cancel := context.WithCancel(c.Request.Context())
+		stop := context.AfterFunc(requestGeneration, cancel)
+		c.Request = c.Request.WithContext(requestCtx)
+		defer func() {
+			stop()
+			cancel()
+			app.servicesMu.RUnlock()
+		}()
+		c.Next()
+	}
+}
 
 // AuthMiddleware 认证中间件
 // - AccessAnon 路由：可选认证，失败时放行
@@ -19,7 +45,7 @@ func (app *App) authMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 				c.Set("routeQueryToken", true)
 			}
 			if route.Access == AccessAnon {
-				if username := svc.AuthMix(c); username != "" {
+				if username, _ := svc.Auth(c); username != "" {
 					c.Set("username", username)
 				}
 				c.Next()

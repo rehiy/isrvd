@@ -131,11 +131,11 @@ func composeNameParam(c *gin.Context) (string, bool) {
 // bindComposeDeployRequest 解析 JSON 或 multipart form 的部署请求。
 func bindComposeDeployRequest(c *gin.Context) (svcCompose.DeployRequest, bool) {
 	var req svcCompose.DeployRequest
-	if c.Request.ContentLength > config.Server.MaxUploadSize {
+	if c.Request.ContentLength > config.Current().Server.MaxUploadSize {
 		respondError(c, http.StatusBadRequest, "文件大小超过限制")
 		return req, false
 	}
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, config.Server.MaxUploadSize)
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, config.Current().Server.MaxUploadSize)
 
 	if strings.HasPrefix(c.ContentType(), "application/json") {
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -149,7 +149,7 @@ func bindComposeDeployRequest(c *gin.Context) (svcCompose.DeployRequest, bool) {
 		}
 		req.InitURL = c.PostForm("initURL")
 		if fh, err := c.FormFile("initFile"); err == nil {
-			if fh.Size > config.Server.MaxUploadSize {
+			if fh.Size > config.Current().Server.MaxUploadSize {
 				respondError(c, http.StatusBadRequest, "文件大小超过限制")
 				return req, false
 			}

@@ -26,10 +26,11 @@ type AGUIInput = agui.RunAgentInput
 // RunAGUI 以 AG-UI 协议执行一轮对话：将输入转换为 OpenAI 兼容请求，
 // 并把上游流式响应翻译为 AG-UI 事件写入 w。
 func (s *Service) RunAGUI(ctx context.Context, w io.Writer, input AGUIInput) error {
+	copilot := config.Current().Copilot
 	return agui.Run(ctx, agui.NewEncoder(w), input, agui.RunOptions{
-		Endpoint: strings.TrimRight(config.Copilot.BaseURL, "/") + "/chat/completions",
-		APIKey:   config.Copilot.APIKey,
-		Model:    config.Copilot.Model,
+		Endpoint: strings.TrimRight(copilot.BaseURL, "/") + "/chat/completions",
+		APIKey:   copilot.APIKey,
+		Model:    copilot.Model,
 		Timeout:  10 * time.Minute,
 	})
 }

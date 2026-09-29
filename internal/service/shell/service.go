@@ -22,9 +22,8 @@ func NewService() *Service {
 
 // RunTerminal 在指定 homeDir 下启动终端并与 WebSocket 连接桥接。
 // 优先使用 PTY 模式（非 Windows），失败时降级到 Pipe 模式。
-func (s *Service) RunTerminal(conn *websocket.ServerConn, shell, homeDir string) {
+func (s *Service) RunTerminal(ctx context.Context, conn *websocket.ServerConn, shell, homeDir string) {
 	shell = command.GetShell(shell)
-	ctx := context.Background()
 
 	// PTY 模式（仅非 Windows）
 	if runtime.GOOS != "windows" {

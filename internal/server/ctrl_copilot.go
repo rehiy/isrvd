@@ -44,7 +44,7 @@ func (app *App) copilotCatalog(c *gin.Context) {
 // copilotAGUI 以 AG-UI 协议与前端 CopilotKit 交互，响应为 SSE 事件流。
 func (app *App) copilotAGUI(c *gin.Context) {
 	var input svcCopilot.AGUIInput
-	if err := json.NewDecoder(io.LimitReader(c.Request.Body, config.Server.MaxUploadSize)).Decode(&input); err != nil {
+	if err := json.NewDecoder(io.LimitReader(c.Request.Body, config.Current().Server.MaxUploadSize)).Decode(&input); err != nil {
 		respondError(c, http.StatusBadRequest, "请求体格式错误")
 		return
 	}

@@ -49,6 +49,20 @@ func getStore(dir, prefix string) *jsonl.Store {
 	return s
 }
 
+func closeStores(dir string) {
+	storesMu.Lock()
+	defer storesMu.Unlock()
+	for _, prefix := range []string{HostPrefix, ContainerPrefix} {
+		key := dir + "/" + prefix
+		if store := stores[key]; store != nil {
+			if err := store.Close(); err != nil {
+				logman.Warn("monitor: close jsonl store failed", "prefix", prefix, "error", err)
+			}
+			delete(stores, key)
+		}
+	}
+}
+
 // AppendRawRecord 直接追加已序列化的数据（避免重复序列化）
 // containerID 为空时表示主机监控
 func AppendRawRecord(dir, prefix, containerID string, ts int64, raw json.RawMessage) {

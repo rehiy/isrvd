@@ -33,18 +33,18 @@ type Collector struct {
 // NewCollector 创建采集器
 func NewCollector() *Collector {
 	return &Collector{
-		dataDir: filepath.Join(config.Server.RootDirectory, "monitor"),
+		dataDir: filepath.Join(config.Current().Server.RootDirectory, "monitor"),
 		docker:  registry.DockerService,
 	}
 }
 
 // Start 启动后台采集协程
-// 若 config.Monitor.Interval 不合法（非 5/15/30/60）则不启动采集
+// 若 config.Current().Monitor.Interval 不合法（非 5/15/30/60）则不启动采集
 func (c *Collector) Start(ctx context.Context) {
 	if c.cancel != nil {
 		return
 	}
-	interval := time.Duration(config.Monitor.Interval) * time.Second
+	interval := time.Duration(config.Current().Monitor.Interval) * time.Second
 	if interval <= 0 {
 		return
 	}
@@ -56,7 +56,7 @@ func (c *Collector) Start(ctx context.Context) {
 		defer close(c.done)
 		// 启动后立即采集一次并清理旧文件
 		c.collect(ctx)
-		c.cleanOld()
+		CleanOldFiles(c.dataDir)
 
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
@@ -73,7 +73,7 @@ func (c *Collector) Start(ctx context.Context) {
 			case <-ticker.C:
 				c.collect(ctx)
 			case <-cleanTimer.C:
-				c.cleanOld()
+				CleanOldFiles(c.dataDir)
 				nextClean = nextClean.AddDate(0, 0, 1)
 				cleanTimer.Reset(time.Until(nextClean))
 			}
@@ -88,6 +88,7 @@ func (c *Collector) Stop() {
 		<-c.done
 		c.cancel = nil
 	}
+	closeStores(c.dataDir)
 }
 
 // CollectHostStatNow 实时采集主机数据，不写入文件
@@ -171,11 +172,6 @@ func (c *Collector) checkAlert(stat *HostStat) {
 // DataDir 返回数据目录
 func (c *Collector) DataDir() string {
 	return c.dataDir
-}
-
-// cleanOld 清理所有过期文件
-func (c *Collector) cleanOld() {
-	CleanOldFiles(c.dataDir)
 }
 
 // nextMidnight 返回下一个凌晨 00:05 的时间（留 5 分钟余量避免边界问题）

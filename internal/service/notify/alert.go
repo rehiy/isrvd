@@ -35,12 +35,13 @@ type HostUsage struct {
 
 // CheckHost 按配置规则检查主机资源使用率，触发或恢复时发送告警
 func CheckHost(usage *HostUsage) {
-	if config.Notify == nil || len(config.Notify.Rules) == 0 || usage == nil {
+	notify := config.Current().Notify
+	if notify == nil || len(notify.Rules) == 0 || usage == nil {
 		return
 	}
 
-	activeKeys := make(map[string]struct{}, len(config.Notify.Rules))
-	for _, rule := range config.Notify.Rules {
+	activeKeys := make(map[string]struct{}, len(notify.Rules))
+	for _, rule := range notify.Rules {
 		if rule != nil {
 			activeKeys[alertRuleKey(rule)] = struct{}{}
 		}
@@ -53,16 +54,17 @@ func CheckHost(usage *HostUsage) {
 	}
 	statesMu.Unlock()
 
-	for _, rule := range config.Notify.Rules {
+	webhooks := snapshotWebhooks(notify)
+	for _, rule := range notify.Rules {
 		if rule == nil {
 			continue
 		}
-		checkRule(alertRuleKey(rule), rule, usage)
+		checkRule(alertRuleKey(rule), rule, usage, webhooks)
 	}
 }
 
 // checkRule 检查单条规则；状态变更时发送通知
-func checkRule(key string, rule *config.AlertRule, usage *HostUsage) {
+func checkRule(key string, rule *config.AlertRule, usage *HostUsage, webhooks []*config.WebhookConfig) {
 	value := metricValue(rule.Metric, usage)
 	if value < 0 || rule.Threshold <= 0 {
 		return
@@ -89,13 +91,13 @@ func checkRule(key string, rule *config.AlertRule, usage *HostUsage) {
 		}
 		st.firing = true
 		statesMu.Unlock()
-		Send(buildEvent("resource.alert", rule, value))
+		sendTo(webhooks, buildEvent("resource.alert", rule, value))
 	case st.firing:
 		// 已回落到阈值以下，发送恢复通知
 		st.firing = false
 		st.exceed = 0
 		statesMu.Unlock()
-		Send(buildEvent("resource.recover", rule, value))
+		sendTo(webhooks, buildEvent("resource.recover", rule, value))
 	default:
 		st.exceed = 0
 		statesMu.Unlock()

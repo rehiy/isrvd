@@ -35,8 +35,9 @@ func (s *Service) Probe(ctx context.Context, probes map[string]func(context.Cont
 		tasks = append(tasks, probeTask{name: name, fn: fn})
 	}
 
+	copilot := config.Current().Copilot
 	resp := &ProbeResponse{
-		Copilot: config.Copilot.BaseURL != "" && config.Copilot.APIKey != "",
+		Copilot: copilot.BaseURL != "" && copilot.APIKey != "",
 	}
 
 	var (

@@ -33,7 +33,7 @@ type store struct {
 
 // newHostStore 创建主机配置存储
 func newHostStore() (*store, error) {
-	rootDir := config.Server.RootDirectory
+	rootDir := config.Current().Server.RootDirectory
 	const key = "webssh-host.yml"
 
 	ts, err := cstore.NewTyped[[]*Host](rootDir, key)

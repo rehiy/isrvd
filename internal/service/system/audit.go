@@ -67,7 +67,7 @@ type AuditService struct {
 
 // NewAuditService 创建审计日志业务服务并自动初始化
 func NewAuditService() *AuditService {
-	dataDir := filepath.Join(config.Server.RootDirectory, "audit")
+	dataDir := filepath.Join(config.Current().Server.RootDirectory, "audit")
 	store, err := jsonl.New(
 		dataDir,
 		jsonl.Naming{Suffix: ".jsonl"},

@@ -12,10 +12,11 @@ var ApisixClient *apisix.Client
 // initApisix 初始化 Apisix 服务
 func initApisix() error {
 	ApisixClient = nil
-	if config.Apisix.AdminURL == "" {
+	cfg := config.Current().Apisix
+	if cfg.AdminURL == "" {
 		return fmt.Errorf("apisix adminUrl not configured")
 	}
 
-	ApisixClient = apisix.NewClient(config.Apisix.AdminURL, config.Apisix.AdminKey)
+	ApisixClient = apisix.NewClient(cfg.AdminURL, cfg.AdminKey)
 	return nil
 }
