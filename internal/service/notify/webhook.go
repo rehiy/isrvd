@@ -8,11 +8,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
-	"net"
-	"net/http"
 	"net/url"
 	"strings"
 	"sync"
@@ -20,6 +16,7 @@ import (
 	"time"
 
 	"github.com/rehiy/libgo/logman"
+	"github.com/rehiy/libgo/request"
 
 	"isrvd/config"
 )
@@ -28,10 +25,9 @@ import (
 const sendTimeout = 10 * time.Second
 
 var (
-	errWebhookTargetBlocked = errors.New("webhook 目标地址被安全策略拒绝")
-	sendsMu                 sync.Mutex
-	sendsWG                 sync.WaitGroup
-	sendsClosed             bool
+	sendsMu     sync.Mutex
+	sendsWG     sync.WaitGroup
+	sendsClosed bool
 )
 
 // Event 告警事件，同时作为通用 JSON 载荷与模板渲染的数据源
@@ -106,11 +102,11 @@ func Shutdown(ctx context.Context) bool {
 }
 
 // sendOne 向单个 Webhook 发送；失败仅记录日志，不影响其他通道。
-// 客户端禁用代理和重定向，并在实际建立连接前解析、校验并直连允许的 IP，防御 DNS 重绑定 SSRF。
+// Webhook 地址由管理员在后台配置，属于可信输入，不做内网地址等 SSRF 校验。
 func sendOne(hook *config.WebhookConfig, evt *Event) {
 	target, err := validateWebhookURL(hook.URL)
 	if err != nil {
-		logman.Warn("告警 Webhook 地址被拒绝", "webhook", hook.Name, "error", err)
+		logman.Warn("告警 Webhook 地址无效", "webhook", hook.Name, "error", err)
 		return
 	}
 
@@ -120,46 +116,19 @@ func sendOne(hook *config.WebhookConfig, evt *Event) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), sendTimeout)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, target.String(), bytes.NewReader(body))
-	if err != nil {
-		logman.Warn("创建告警请求失败", "webhook", hook.Name, "error", err)
-		return
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := newWebhookClient().Do(req)
-	if err != nil {
-		logman.Warn("发送告警失败", "webhook", hook.Name, "error", err)
-		return
-	}
-	defer resp.Body.Close()
-	_, _ = io.Copy(io.Discard, resp.Body)
-
-	if resp.StatusCode >= http.StatusMultipleChoices {
-		logman.Warn("告警接收方返回异常状态", "webhook", hook.Name, "status", resp.StatusCode)
-	}
-}
-
-func newWebhookClient() *http.Client {
-	return &http.Client{
+	client := request.Client{
+		Method:  "POST",
+		Url:     target.String(),
+		Data:    string(body),
+		Headers: request.Header{"Content-Type": "application/json"},
 		Timeout: sendTimeout,
-		Transport: &http.Transport{
-			Proxy:                 nil,
-			DialContext:           secureWebhookDialContext,
-			TLSHandshakeTimeout:   sendTimeout,
-			ResponseHeaderTimeout: sendTimeout,
-			IdleConnTimeout:       30 * time.Second,
-		},
-		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
-			return errors.New("webhook 不允许重定向")
-		},
+	}
+	if _, err := client.Request(); err != nil {
+		logman.Warn("发送告警失败", "webhook", hook.Name, "error", err)
 	}
 }
 
-// validateWebhookURL 校验静态地址约束；连接时还会重新校验 DNS 解析出的实际地址。
+// validateWebhookURL 仅做基本格式校验，不限制目标网段（Webhook 地址由管理员配置，可信）。
 func validateWebhookURL(rawURL string) (*url.URL, error) {
 	target, err := url.Parse(strings.TrimSpace(rawURL))
 	if err != nil {
@@ -168,80 +137,10 @@ func validateWebhookURL(rawURL string) (*url.URL, error) {
 	if target.Scheme != "http" && target.Scheme != "https" {
 		return nil, fmt.Errorf("仅允许 HTTP 或 HTTPS 地址")
 	}
-	if target.Hostname() == "" || target.User != nil {
-		return nil, fmt.Errorf("地址必须包含主机且不能含用户信息")
-	}
-	if ip := net.ParseIP(target.Hostname()); ip != nil && isBlockedWebhookIP(ip) {
-		return nil, errWebhookTargetBlocked
+	if target.Hostname() == "" {
+		return nil, fmt.Errorf("地址必须包含主机")
 	}
 	return target, nil
-}
-
-func secureWebhookDialContext(ctx context.Context, network, address string) (net.Conn, error) {
-	host, port, err := net.SplitHostPort(address)
-	if err != nil {
-		return nil, fmt.Errorf("解析 Webhook 连接地址失败: %w", err)
-	}
-
-	ips, err := lookupAllowedWebhookIPs(ctx, host)
-	if err != nil {
-		return nil, err
-	}
-
-	dialer := &net.Dialer{Timeout: sendTimeout}
-	var lastErr error
-	for _, ip := range ips {
-		conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip.String(), port))
-		if err == nil {
-			return conn, nil
-		}
-		lastErr = err
-	}
-	return nil, fmt.Errorf("连接 Webhook 失败: %w", lastErr)
-}
-
-func lookupAllowedWebhookIPs(ctx context.Context, host string) ([]net.IP, error) {
-	if ip := net.ParseIP(host); ip != nil {
-		if isBlockedWebhookIP(ip) {
-			return nil, errWebhookTargetBlocked
-		}
-		return []net.IP{ip}, nil
-	}
-
-	ips, err := net.DefaultResolver.LookupNetIP(ctx, "ip", host)
-	if err != nil {
-		return nil, fmt.Errorf("解析 Webhook 主机失败: %w", err)
-	}
-	allowed := make([]net.IP, 0, len(ips))
-	for _, ip := range ips {
-		address := net.IP(ip.AsSlice())
-		if !isBlockedWebhookIP(address) {
-			allowed = append(allowed, address)
-		}
-	}
-	if len(allowed) == 0 {
-		return nil, errWebhookTargetBlocked
-	}
-	return allowed, nil
-}
-
-// isBlockedWebhookIP 拒绝本机、私网、链路本地、组播及保留网段；9/8、11/8、21/8、30/8 是部署环境保留的内部网段。
-func isBlockedWebhookIP(ip net.IP) bool {
-	if ip == nil || ip.IsUnspecified() || ip.IsLoopback() || ip.IsPrivate() ||
-		ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsMulticast() {
-		return true
-	}
-	if v4 := ip.To4(); v4 != nil {
-		switch v4[0] {
-		case 0, 9, 10, 11, 21, 30, 127:
-			return true
-		case 100:
-			return v4[1]&0xc0 == 0x40 // 100.64.0.0/10（CGNAT）
-		case 198:
-			return v4[1] == 18 || v4[1] == 19 // 198.18.0.0/15（基准测试保留）
-		}
-	}
-	return false
 }
 
 // renderBody 按模板渲染请求体；模板为空时使用标准 JSON
