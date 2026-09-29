@@ -1,0 +1,104 @@
+// Package account 账号与认证业务模块
+//
+// 提供用户认证、登录、成员管理、OIDC、Passkey 等功能。
+// 所有业务方法封装在 Service 中，由 server 层统一调用。
+package account
+
+import (
+	"fmt"
+	"isrvd/server/config"
+	"slices"
+	"sync"
+	"time"
+
+	"github.com/go-webauthn/webauthn/webauthn"
+)
+
+// Service 账号业务服务
+type Service struct {
+	done         chan struct{}
+	memberMu     sync.Mutex
+	credentialMu sync.Mutex
+
+	// OIDC 临时状态存储（state/loginCode 均短期有效，内存存储即可）
+	oidcMu         sync.Mutex
+	oidcStates     map[string]oidcState
+	oidcLoginCodes map[string]oidcLoginCode
+	oidcProvider   oidcProviderCache
+
+	// Passkey
+	passkeyStore *passkeySessionStore
+	webAuthn     *webauthn.WebAuthn
+
+	// credIndex: credentialID → username（Discoverable Login 查找）
+	// signCounts: credentialID → signCount（内存维护，不回写配置）
+	credIndex  map[string]string
+	signCounts map[string]uint32
+
+	indexMu sync.RWMutex
+}
+
+// NewService 创建账号业务服务
+func NewService() *Service {
+	s := &Service{
+		done:           make(chan struct{}),
+		oidcStates:     make(map[string]oidcState),
+		oidcLoginCodes: make(map[string]oidcLoginCode),
+		passkeyStore:   newPasskeySessionStore(),
+		credIndex:      make(map[string]string),
+		signCounts:     make(map[string]uint32),
+	}
+	s.initPasskey()
+	// 后台定期清理过期的 OIDC 临时状态
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				s.cleanupOIDC()
+			case <-s.done:
+				return
+			}
+		}
+	}()
+	return s
+}
+
+// Close 释放账号服务持有的后台资源。
+func (s *Service) Close() {
+	close(s.done)
+	s.passkeyStore.Stop()
+}
+
+// PermCheck 校验用户是否有权访问指定路由（"METHOD /api/path"）。
+// label 用于错误提示；返回 nil 表示有权限，否则返回描述错误原因的 error。
+func (s *Service) PermCheck(username, label, method, path string) error {
+	member, exists := config.Current().Members[username]
+	if !exists {
+		return fmt.Errorf("用户不存在")
+	}
+	if member.Founder {
+		return nil
+	}
+	routeKey := method + " " + path
+	if slices.Contains(member.Permissions, routeKey) {
+		return nil
+	}
+	if label == "" {
+		label = routeKey
+	}
+	return fmt.Errorf("无 %s 访问权限", label)
+}
+
+// FounderCheck 限制高危本机操作仅能由创始人执行。
+func (s *Service) FounderCheck(username string) error {
+	member, exists := config.Current().Members[username]
+	if !exists {
+		return fmt.Errorf("用户不存在")
+	}
+	if !member.Founder {
+		return fmt.Errorf("仅创始人可执行此操作")
+	}
+	return nil
+}

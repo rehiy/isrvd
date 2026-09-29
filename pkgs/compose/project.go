@@ -2,7 +2,7 @@
 // YAML 序列化以及与 pkgs/docker、pkgs/swarm 数据结构的双向转换能力。
 //
 // 本包是纯解析/转换层，不直接操作底层容器/网络/卷的 CRUD —
-// 具体的部署、网络确保、镜像拉取等编排能力由上层 internal/service/compose 完成。
+// 具体的部署、网络确保、镜像拉取等编排能力由上层 service/compose 完成。
 package compose
 
 import (

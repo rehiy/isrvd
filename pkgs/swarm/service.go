@@ -8,16 +8,16 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
-	dockerSwarm "github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"github.com/rehiy/libgo/logman"
 
-	pkgDocker "isrvd/pkgs/docker"
+	"isrvd/pkgs/docker"
 )
 
 // ServiceList 获取服务列表，直接返回 Docker SDK 原始服务结构。
-func (s *SwarmService) ServiceList(ctx context.Context) ([]dockerSwarm.Service, error) {
-	services, err := s.client.ServiceList(ctx, dockerSwarm.ServiceListOptions{})
+func (s *SwarmService) ServiceList(ctx context.Context) ([]swarm.Service, error) {
+	services, err := s.client.ServiceList(ctx, swarm.ServiceListOptions{})
 	if err != nil {
 		logman.Error("ServiceList failed", "error", err)
 		return nil, err
@@ -36,7 +36,7 @@ func (s *SwarmService) ServiceAction(ctx context.Context, id, action string, rep
 	}
 
 	if action == "scale" && replicas != nil {
-		svc, _, err := s.client.ServiceInspectWithRaw(ctx, id, dockerSwarm.ServiceInspectOptions{InsertDefaults: true})
+		svc, _, err := s.client.ServiceInspectWithRaw(ctx, id, swarm.ServiceInspectOptions{InsertDefaults: true})
 		if err != nil {
 			logman.Error("ServiceInspect failed", "id", id, "error", err)
 			return err
@@ -74,7 +74,7 @@ func (s *SwarmService) ServiceRemoveAndWait(ctx context.Context, id string, time
 
 	deadline := time.Now().Add(timeout)
 	for {
-		_, _, err := s.client.ServiceInspectWithRaw(ctx, id, dockerSwarm.ServiceInspectOptions{})
+		_, _, err := s.client.ServiceInspectWithRaw(ctx, id, swarm.ServiceInspectOptions{})
 		if client.IsErrNotFound(err) {
 			return nil
 		}
@@ -90,8 +90,8 @@ func (s *SwarmService) ServiceRemoveAndWait(ctx context.Context, id string, time
 }
 
 // ServiceCreate 创建服务，直接接收 Docker SDK 原始 ServiceSpec。
-func (s *SwarmService) ServiceCreate(ctx context.Context, spec dockerSwarm.ServiceSpec) (string, error) {
-	resp, err := s.client.ServiceCreate(ctx, spec, dockerSwarm.ServiceCreateOptions{
+func (s *SwarmService) ServiceCreate(ctx context.Context, spec swarm.ServiceSpec) (string, error) {
+	resp, err := s.client.ServiceCreate(ctx, spec, swarm.ServiceCreateOptions{
 		EncodedRegistryAuth: s.serviceRegistryAuth(spec),
 		QueryRegistry:       true,
 	})
@@ -107,7 +107,7 @@ func (s *SwarmService) ServiceCreate(ctx context.Context, spec dockerSwarm.Servi
 
 // ServiceForceUpdate 强制重新部署服务
 func (s *SwarmService) ServiceForceUpdate(ctx context.Context, id string) error {
-	svc, _, err := s.client.ServiceInspectWithRaw(ctx, id, dockerSwarm.ServiceInspectOptions{InsertDefaults: true})
+	svc, _, err := s.client.ServiceInspectWithRaw(ctx, id, swarm.ServiceInspectOptions{InsertDefaults: true})
 	if err != nil {
 		logman.Error("ServiceInspect failed", "id", id, "error", err)
 		return err
@@ -144,7 +144,7 @@ func (s *SwarmService) ServiceLogs(ctx context.Context, serviceID, tail string) 
 	}
 	defer reader.Close()
 
-	return pkgDocker.ReadLogSnapshot(reader, false)
+	return docker.ReadLogSnapshot(reader, false)
 }
 
 // ServiceLogsStream 实时转发服务日志到 writer。
@@ -163,10 +163,10 @@ func (s *SwarmService) ServiceLogsStream(ctx context.Context, w io.Writer, servi
 	})
 	if err != nil {
 		logman.Error("Start service logs stream failed", "id", serviceID, "error", err)
-		pkgDocker.LogErrorWrite(w, "获取服务日志失败: "+err.Error())
+		docker.LogErrorWrite(w, "获取服务日志失败: "+err.Error())
 		return
 	}
-	cancelled, err := pkgDocker.LogStream(ctx, w, reader, false, serviceID)
+	cancelled, err := docker.LogStream(ctx, w, reader, false, serviceID)
 	if err != nil {
 		logman.Warn("Service logs stream stopped with error", "id", serviceID, "error", err)
 	} else if cancelled {
@@ -176,14 +176,14 @@ func (s *SwarmService) ServiceLogsStream(ctx context.Context, w io.Writer, servi
 
 // ServiceRunningTasksMap 一次性统计所有服务运行中的任务数。
 func (s *SwarmService) ServiceRunningTasksMap(ctx context.Context) map[string]int {
-	tasks, err := s.client.TaskList(ctx, dockerSwarm.TaskListOptions{})
+	tasks, err := s.client.TaskList(ctx, swarm.TaskListOptions{})
 	if err != nil {
 		logman.Warn("TaskList failed in ServiceRunningTasksMap", "error", err)
 		return map[string]int{}
 	}
 	runningMap := map[string]int{}
 	for _, t := range tasks {
-		if t.Status.State == dockerSwarm.TaskStateRunning {
+		if t.Status.State == swarm.TaskStateRunning {
 			runningMap[t.ServiceID]++
 		}
 	}
@@ -194,10 +194,10 @@ func (s *SwarmService) ServiceRunningTasksMap(ctx context.Context) map[string]in
 func (s *SwarmService) ServiceRunningTasks(ctx context.Context, serviceID string) int {
 	f := filters.NewArgs()
 	f.Add("service", serviceID)
-	tasks, _ := s.client.TaskList(ctx, dockerSwarm.TaskListOptions{Filters: f})
+	tasks, _ := s.client.TaskList(ctx, swarm.TaskListOptions{Filters: f})
 	runningTasks := 0
 	for _, t := range tasks {
-		if t.Status.State == dockerSwarm.TaskStateRunning {
+		if t.Status.State == swarm.TaskStateRunning {
 			runningTasks++
 		}
 	}
@@ -205,26 +205,26 @@ func (s *SwarmService) ServiceRunningTasks(ctx context.Context, serviceID string
 }
 
 // ServiceInspect 获取服务详情，直接返回 Docker SDK 原始服务结构。
-func (s *SwarmService) ServiceInspect(ctx context.Context, id string) (dockerSwarm.Service, error) {
-	svc, _, err := s.client.ServiceInspectWithRaw(ctx, id, dockerSwarm.ServiceInspectOptions{InsertDefaults: true})
+func (s *SwarmService) ServiceInspect(ctx context.Context, id string) (swarm.Service, error) {
+	svc, _, err := s.client.ServiceInspectWithRaw(ctx, id, swarm.ServiceInspectOptions{InsertDefaults: true})
 	if err != nil {
 		logman.Error("InspectService failed", "id", id, "error", err)
-		return dockerSwarm.Service{}, err
+		return swarm.Service{}, err
 	}
 	return svc, nil
 }
 
 // ─── 辅助函数 ───
 
-func (s *SwarmService) serviceUpdateOptions(spec dockerSwarm.ServiceSpec) dockerSwarm.ServiceUpdateOptions {
-	return dockerSwarm.ServiceUpdateOptions{
+func (s *SwarmService) serviceUpdateOptions(spec swarm.ServiceSpec) swarm.ServiceUpdateOptions {
+	return swarm.ServiceUpdateOptions{
 		EncodedRegistryAuth: s.serviceRegistryAuth(spec),
-		RegistryAuthFrom:    dockerSwarm.RegistryAuthFromPreviousSpec,
+		RegistryAuthFrom:    swarm.RegistryAuthFromPreviousSpec,
 		QueryRegistry:       true,
 	}
 }
 
-func (s *SwarmService) serviceRegistryAuth(spec dockerSwarm.ServiceSpec) string {
+func (s *SwarmService) serviceRegistryAuth(spec swarm.ServiceSpec) string {
 	if s.registryAuth == nil {
 		return ""
 	}
@@ -235,7 +235,7 @@ func (s *SwarmService) serviceRegistryAuth(spec dockerSwarm.ServiceSpec) string 
 	return s.registryAuth(imageRef)
 }
 
-func serviceImageRef(spec dockerSwarm.ServiceSpec) string {
+func serviceImageRef(spec swarm.ServiceSpec) string {
 	if spec.TaskTemplate.ContainerSpec != nil {
 		return spec.TaskTemplate.ContainerSpec.Image
 	}

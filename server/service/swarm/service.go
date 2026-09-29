@@ -1,0 +1,468 @@
+// Package swarm 提供 Swarm 业务服务层
+package swarm
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"strings"
+	"time"
+
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/swarm"
+
+	"isrvd/pkgs/docker"
+	pkgSwarm "isrvd/pkgs/swarm"
+)
+
+// Service Swarm 业务服务
+type Service struct {
+	svc *pkgSwarm.SwarmService
+}
+
+// NewService 创建 Swarm 业务服务，验证节点是否是 Swarm manager。
+// dockerRaw 由调用方注入，为 nil 表示 Docker 不可用。
+func NewService(ctx context.Context, dockerRaw *docker.DockerService) (*Service, error) {
+	if dockerRaw == nil {
+		return nil, fmt.Errorf("Docker 服务未初始化")
+	}
+	svc := pkgSwarm.NewSwarmService(dockerRaw.Client(), dockerRaw.RegistryAuth)
+	// 验证节点是否加入 Swarm 且为 manager
+	if _, err := svc.Client().SwarmInspect(ctx); err != nil {
+		return nil, fmt.Errorf("Swarm 不可用: %w", err)
+	}
+	return &Service{svc: svc}, nil
+}
+
+// CheckAvailability 检测 Swarm 可用性
+func (s *Service) CheckAvailability(ctx context.Context) bool {
+	if s.svc == nil {
+		return false
+	}
+	_, err := s.svc.Client().SwarmInspect(ctx)
+	return err == nil
+}
+
+// Raw 返回底层 SwarmService，供 compose 服务复用。
+// s 为 nil（Swarm 不可用）时安全返回 nil。
+func (s *Service) Raw() *pkgSwarm.SwarmService {
+	if s == nil {
+		return nil
+	}
+	return s.svc
+}
+
+// Info 获取 Swarm 集群概览
+func (s *Service) Info(ctx context.Context) (map[string]any, error) {
+	info, err := s.svc.Info(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("获取 Swarm 信息失败: %w", err)
+	}
+	return info, nil
+}
+
+// JoinToken 获取加入集群的 token
+func (s *Service) JoinToken(ctx context.Context) (map[string]string, error) {
+	tokens, err := s.svc.JoinToken(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("获取加入令牌失败: %w", err)
+	}
+	return tokens, nil
+}
+
+// NodeInfo Swarm 节点信息（列表项），保持前端稳定响应结构。
+type NodeInfo struct {
+	ID            string `json:"id"`            // 节点 ID
+	Hostname      string `json:"hostname"`      // 主机名
+	Role          string `json:"role"`          // 角色（manager/worker）
+	Availability  string `json:"availability"`  // 可用状态（active/pause/drain）
+	State         string `json:"state"`         // 节点状态（ready/down）
+	Addr          string `json:"addr"`          // 节点地址
+	EngineVersion string `json:"engineVersion"` // Docker 引擎版本
+	Leader        bool   `json:"leader"`        // 是否为 Leader 节点
+}
+
+// NodeList 获取节点列表
+func (s *Service) NodeList(ctx context.Context) ([]NodeInfo, error) {
+	list, err := s.svc.NodeList(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("获取节点列表失败: %w", err)
+	}
+	result := make([]NodeInfo, 0, len(list))
+	for _, node := range list {
+		result = append(result, nodeInfoFromRaw(node))
+	}
+	return result, nil
+}
+
+// NodeAction 节点操作
+func (s *Service) NodeAction(ctx context.Context, id, action string) error {
+	if id == "" {
+		return fmt.Errorf("节点 ID 不能为空")
+	}
+	if action == "" {
+		return fmt.Errorf("操作类型不能为空")
+	}
+	if err := s.svc.NodeAction(ctx, id, action); err != nil {
+		return fmt.Errorf("节点操作 %s 失败: %w", action, err)
+	}
+	return nil
+}
+
+// NodeDetail 节点详情，保持前端稳定响应结构。
+type NodeDetail struct {
+	ID            string            `json:"id"`            // 节点 ID
+	Hostname      string            `json:"hostname"`      // 主机名
+	Role          string            `json:"role"`          // 角色（manager/worker）
+	Availability  string            `json:"availability"`  // 可用状态
+	State         string            `json:"state"`         // 节点状态
+	Addr          string            `json:"addr"`          // 节点地址
+	EngineVersion string            `json:"engineVersion"` // Docker 引擎版本
+	Leader        bool              `json:"leader"`        // 是否为 Leader
+	OS            string            `json:"os"`            // 操作系统
+	Architecture  string            `json:"architecture"`  // CPU 架构
+	CPUs          int64             `json:"cpus"`          // CPU 核心数
+	MemoryBytes   int64             `json:"memoryBytes"`   // 内存大小（字节）
+	Labels        map[string]string `json:"labels"`        // 节点标签
+	CreatedAt     string            `json:"createdAt"`     // 创建时间
+	UpdatedAt     string            `json:"updatedAt"`     // 更新时间
+}
+
+// NodeInspect 获取节点详情
+func (s *Service) NodeInspect(ctx context.Context, id string) (*NodeDetail, error) {
+	if id == "" {
+		return nil, fmt.Errorf("缺少节点 ID")
+	}
+	node, err := s.svc.NodeInspect(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("获取节点详情失败: %w", err)
+	}
+	return nodeDetailFromRaw(node), nil
+}
+
+// ServicePort 服务端口信息。
+type ServicePort struct {
+	Protocol      string `json:"protocol"`      // 协议（tcp/udp）
+	TargetPort    uint32 `json:"targetPort"`    // 容器内端口
+	PublishedPort uint32 `json:"publishedPort"` // 对外发布端口
+	PublishMode   string `json:"publishMode"`   // 发布模式（ingress/host）
+}
+
+// ServiceInfo 服务列表信息（精简视图），保持前端稳定响应结构。
+type ServiceInfo struct {
+	ID           string        `json:"id"`           // 服务 ID
+	Name         string        `json:"name"`         // 服务名称
+	Image        string        `json:"image"`        // 镜像名称
+	Mode         string        `json:"mode"`         // 部署模式（replicated/global）
+	Replicas     *uint64       `json:"replicas"`     // 副本数
+	RunningTasks int           `json:"runningTasks"` // 运行中的任务数
+	Ports        []ServicePort `json:"ports"`        // 端口映射列表
+	CreatedAt    string        `json:"createdAt"`    // 创建时间
+	UpdatedAt    string        `json:"updatedAt"`    // 更新时间
+}
+
+// ServiceList 获取服务列表
+func (s *Service) ServiceList(ctx context.Context) ([]ServiceInfo, error) {
+	list, err := s.svc.ServiceList(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("获取服务列表失败: %w", err)
+	}
+	runningMap := s.svc.ServiceRunningTasksMap(ctx)
+	result := make([]ServiceInfo, 0, len(list))
+	for _, svc := range list {
+		result = append(result, serviceInfoFromRaw(svc, runningMap[svc.ID]))
+	}
+	return result, nil
+}
+
+// ServiceMount 服务挂载信息。
+type ServiceMount struct {
+	Type     string `json:"type"`     // 挂载类型（volume/bind）
+	Source   string `json:"source"`   // 来源（卷名或宿主机路径）
+	Target   string `json:"target"`   // 容器内挂载路径
+	ReadOnly bool   `json:"readOnly"` // 是否只读
+}
+
+// ServiceSpec 服务可写配置（创建/更新共用），保持 HTTP API 兼容。
+type ServiceSpec struct {
+	Name        string            `json:"name"`        // 服务名称
+	Image       string            `json:"image"`       // 镜像名称
+	Mode        string            `json:"mode"`        // 部署模式（replicated/global）
+	Replicas    *uint64           `json:"replicas"`    // 副本数
+	Env         []string          `json:"env"`         // 环境变量列表
+	Args        []string          `json:"args"`        // 启动参数
+	Networks    []string          `json:"networks"`    // 网络列表
+	Ports       []ServicePort     `json:"ports"`       // 端口映射
+	Mounts      []ServiceMount    `json:"mounts"`      // 挂载卷
+	Labels      map[string]string `json:"labels"`      // 标签
+	Constraints []string          `json:"constraints"` // 调度约束
+}
+
+// ServiceDetail 服务详情（完整视图）。
+type ServiceDetail struct {
+	ServiceSpec
+	ID           string `json:"id"`           // 服务 ID
+	RunningTasks int    `json:"runningTasks"` // 运行中的任务数
+	CreatedAt    string `json:"createdAt"`    // 创建时间
+	UpdatedAt    string `json:"updatedAt"`    // 更新时间
+}
+
+// ServiceInspect 获取服务详情
+func (s *Service) ServiceInspect(ctx context.Context, id string) (*ServiceDetail, error) {
+	if id == "" {
+		return nil, fmt.Errorf("缺少服务 ID")
+	}
+	detail, err := s.svc.ServiceInspect(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("获取服务详情失败: %w", err)
+	}
+	return serviceDetailFromRaw(detail, s.svc.ServiceRunningTasks(ctx, detail.ID)), nil
+}
+
+// ServiceCreate 创建服务。
+func (s *Service) ServiceCreate(ctx context.Context, req ServiceSpec) (string, error) {
+	if req.Name == "" {
+		return "", fmt.Errorf("服务名称不能为空")
+	}
+	if req.Image == "" {
+		return "", fmt.Errorf("镜像名称不能为空")
+	}
+	id, err := s.svc.ServiceCreate(ctx, serviceSpecToRaw(req))
+	if err != nil {
+		return "", fmt.Errorf("创建服务失败: %w", err)
+	}
+	return id, nil
+}
+
+// ServiceAction 服务操作
+func (s *Service) ServiceAction(ctx context.Context, id, action string, replicas *uint64) error {
+	if id == "" {
+		return fmt.Errorf("服务 ID 不能为空")
+	}
+	if action == "" {
+		return fmt.Errorf("操作类型不能为空")
+	}
+	if err := s.svc.ServiceAction(ctx, id, action, replicas); err != nil {
+		return fmt.Errorf("服务操作 %s 失败: %w", action, err)
+	}
+	return nil
+}
+
+// ServiceLogs 获取服务日志
+func (s *Service) ServiceLogs(ctx context.Context, serviceID, tail string) ([]string, error) {
+	if serviceID == "" {
+		return nil, fmt.Errorf("缺少服务 ID")
+	}
+	logs, err := s.svc.ServiceLogs(ctx, serviceID, tail)
+	if err != nil {
+		return nil, fmt.Errorf("获取服务日志失败: %w", err)
+	}
+	return logs, nil
+}
+
+// ServiceLogsStream 服务实时日志流
+func (s *Service) ServiceLogsStream(ctx context.Context, w io.Writer, serviceID, tail string) {
+	s.svc.ServiceLogsStream(ctx, w, serviceID, tail)
+}
+
+// Task Swarm 任务信息，保持前端稳定响应结构。
+type Task struct {
+	ID          string `json:"id"`          // 任务 ID
+	ServiceID   string `json:"serviceID"`   // 所属服务 ID
+	ServiceName string `json:"serviceName"` // 所属服务名称
+	NodeID      string `json:"nodeID"`      // 运行节点 ID
+	NodeName    string `json:"nodeName"`    // 运行节点名称
+	Slot        int    `json:"slot"`        // 任务槽位
+	Image       string `json:"image"`       // 镜像名称
+	State       string `json:"state"`       // 任务状态
+	Message     string `json:"message"`     // 状态消息
+	Err         string `json:"err"`         // 错误信息
+	UpdatedAt   string `json:"updatedAt"`   // 更新时间
+}
+
+// TaskList 获取任务列表
+func (s *Service) TaskList(ctx context.Context, serviceID string) ([]Task, error) {
+	tasks, err := s.svc.TaskList(ctx, serviceID)
+	if err != nil {
+		return nil, fmt.Errorf("获取任务列表失败: %w", err)
+	}
+	services, _ := s.svc.ServiceList(ctx)
+	nodes, _ := s.svc.NodeList(ctx)
+	return tasksFromRaw(tasks, services, nodes), nil
+}
+
+// ─── 内部方法 ───
+
+func serviceInfoFromRaw(svc swarm.Service, runningTasks int) ServiceInfo {
+	info := ServiceInfo{
+		ID:           svc.ID,
+		Name:         svc.Spec.Name,
+		Mode:         "replicated",
+		RunningTasks: runningTasks,
+		CreatedAt:    svc.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:    svc.UpdatedAt.Format(time.RFC3339),
+	}
+	if svc.Spec.TaskTemplate.ContainerSpec != nil {
+		info.Image = svc.Spec.TaskTemplate.ContainerSpec.Image
+	}
+	if svc.Spec.Mode.Global != nil {
+		info.Mode = "global"
+	} else if svc.Spec.Mode.Replicated != nil {
+		info.Replicas = svc.Spec.Mode.Replicated.Replicas
+	}
+	for _, p := range svc.Endpoint.Ports {
+		if p.PublishedPort == 0 && p.TargetPort == 0 {
+			continue
+		}
+		info.Ports = append(info.Ports, ServicePort{
+			Protocol:      string(p.Protocol),
+			TargetPort:    p.TargetPort,
+			PublishedPort: p.PublishedPort,
+			PublishMode:   string(p.PublishMode),
+		})
+	}
+	return info
+}
+
+func serviceDetailFromRaw(svc swarm.Service, runningTasks int) *ServiceDetail {
+	info := serviceInfoFromRaw(svc, runningTasks)
+	detail := &ServiceDetail{
+		ServiceSpec: ServiceSpec{
+			Name:     info.Name,
+			Image:    info.Image,
+			Mode:     info.Mode,
+			Replicas: info.Replicas,
+		},
+		ID:           info.ID,
+		RunningTasks: info.RunningTasks,
+		CreatedAt:    info.CreatedAt,
+		UpdatedAt:    info.UpdatedAt,
+	}
+	if svc.Spec.TaskTemplate.ContainerSpec != nil {
+		detail.Env = svc.Spec.TaskTemplate.ContainerSpec.Env
+		detail.Args = svc.Spec.TaskTemplate.ContainerSpec.Args
+		detail.Labels = svc.Spec.Labels
+		for _, mt := range svc.Spec.TaskTemplate.ContainerSpec.Mounts {
+			detail.Mounts = append(detail.Mounts, ServiceMount{
+				Type:     string(mt.Type),
+				Source:   mt.Source,
+				Target:   mt.Target,
+				ReadOnly: mt.ReadOnly,
+			})
+		}
+	}
+	for _, n := range svc.Spec.TaskTemplate.Networks {
+		detail.Networks = append(detail.Networks, n.Target)
+	}
+	if svc.Spec.TaskTemplate.Placement != nil {
+		detail.Constraints = svc.Spec.TaskTemplate.Placement.Constraints
+	}
+	detail.Ports = info.Ports
+	return detail
+}
+
+func serviceSpecToRaw(req ServiceSpec) swarm.ServiceSpec {
+	spec := swarm.ServiceSpec{
+		Annotations: swarm.Annotations{Name: req.Name, Labels: req.Labels},
+		TaskTemplate: swarm.TaskSpec{
+			ContainerSpec: &swarm.ContainerSpec{
+				Image: req.Image,
+				Env:   req.Env,
+				Args:  req.Args,
+			},
+		},
+		EndpointSpec: &swarm.EndpointSpec{},
+	}
+	if req.Mode == "global" {
+		spec.Mode = swarm.ServiceMode{Global: &swarm.GlobalService{}}
+	} else {
+		replicas := uint64(1)
+		if req.Replicas != nil && *req.Replicas > 0 {
+			replicas = *req.Replicas
+		}
+		spec.Mode = swarm.ServiceMode{Replicated: &swarm.ReplicatedService{Replicas: &replicas}}
+	}
+	for _, p := range req.Ports {
+		proto := swarm.PortConfigProtocolTCP
+		if strings.EqualFold(p.Protocol, "udp") {
+			proto = swarm.PortConfigProtocolUDP
+		}
+		publishMode := swarm.PortConfigPublishModeIngress
+		if strings.EqualFold(p.PublishMode, "host") {
+			publishMode = swarm.PortConfigPublishModeHost
+		}
+		spec.EndpointSpec.Ports = append(spec.EndpointSpec.Ports, swarm.PortConfig{
+			Protocol:      proto,
+			PublishedPort: p.PublishedPort,
+			TargetPort:    p.TargetPort,
+			PublishMode:   publishMode,
+		})
+	}
+	for _, mt := range req.Mounts {
+		mountType := mount.TypeBind
+		if mt.Type == "volume" {
+			mountType = mount.TypeVolume
+		}
+		spec.TaskTemplate.ContainerSpec.Mounts = append(spec.TaskTemplate.ContainerSpec.Mounts, mount.Mount{
+			Type:     mountType,
+			Source:   mt.Source,
+			Target:   mt.Target,
+			ReadOnly: mt.ReadOnly,
+		})
+	}
+	for _, n := range req.Networks {
+		spec.TaskTemplate.Networks = append(spec.TaskTemplate.Networks, swarm.NetworkAttachmentConfig{Target: n})
+	}
+	if len(req.Constraints) > 0 {
+		spec.TaskTemplate.Placement = &swarm.Placement{Constraints: req.Constraints}
+	}
+	return spec
+}
+
+func nodeInfoFromRaw(node swarm.Node) NodeInfo {
+	return NodeInfo{
+		ID:            node.ID,
+		Hostname:      node.Description.Hostname,
+		Role:          string(node.Spec.Role),
+		Availability:  string(node.Spec.Availability),
+		State:         string(node.Status.State),
+		Addr:          node.Status.Addr,
+		EngineVersion: node.Description.Engine.EngineVersion,
+		Leader:        node.ManagerStatus != nil && node.ManagerStatus.Leader,
+	}
+}
+
+func nodeDetailFromRaw(node swarm.Node) *NodeDetail {
+	info := nodeInfoFromRaw(node)
+	return &NodeDetail{
+		ID: info.ID, Hostname: info.Hostname, Role: info.Role, Availability: info.Availability, State: info.State,
+		Addr: info.Addr, EngineVersion: info.EngineVersion, Leader: info.Leader,
+		OS: node.Description.Platform.OS, Architecture: node.Description.Platform.Architecture,
+		CPUs: node.Description.Resources.NanoCPUs / 1e9, MemoryBytes: node.Description.Resources.MemoryBytes,
+		Labels: node.Spec.Labels, CreatedAt: node.Meta.CreatedAt.Format(time.RFC3339), UpdatedAt: node.Meta.UpdatedAt.Format(time.RFC3339),
+	}
+}
+
+func tasksFromRaw(tasks []swarm.Task, services []swarm.Service, nodes []swarm.Node) []Task {
+	svcNameMap := map[string]string{}
+	for _, svc := range services {
+		svcNameMap[svc.ID] = svc.Spec.Name
+	}
+	nodeNameMap := map[string]string{}
+	for _, node := range nodes {
+		nodeNameMap[node.ID] = node.Description.Hostname
+	}
+	result := make([]Task, 0, len(tasks))
+	for _, task := range tasks {
+		image := ""
+		if task.Spec.ContainerSpec != nil {
+			image = task.Spec.ContainerSpec.Image
+		}
+		result = append(result, Task{
+			ID: task.ID, ServiceID: task.ServiceID, ServiceName: svcNameMap[task.ServiceID],
+			NodeID: task.NodeID, NodeName: nodeNameMap[task.NodeID], Slot: task.Slot, Image: image,
+			State: string(task.Status.State), Message: task.Status.Message, Err: task.Status.Err, UpdatedAt: task.UpdatedAt.Format(time.RFC3339),
+		})
+	}
+	return result
+}
