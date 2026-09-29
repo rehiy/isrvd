@@ -34,10 +34,12 @@ var (
 	cfg          *ProjectConfig
 	structCache  = map[string]*SchemaInfo{} // "pkg.TypeName" -> schema
 	routes       []RouteDef
-	fileCache    = map[string]*ast.File{} // 缓存已解析的文件
-	fsetCache    = token.NewFileSet()     // 复用 FileSet
-	contentCache = map[string][]string{}  // 文件内容行缓存
-	ctrlEntries  []os.DirEntry            // ctrl 目录条目缓存
+	fileCache    = map[string]*ast.File{}    // 缓存已解析的文件
+	fsetCache    = token.NewFileSet()        // 复用 FileSet
+	contentCache = map[string][]string{}     // 文件内容行缓存
+	ctrlEntries  []os.DirEntry               // ctrl 目录条目缓存
+	inlineSeq    int                         // 内联 handler 序号
+	inlineFuncs  = map[string]*ast.FuncLit{} // 内联 handler 闭包，键为 inline:<id>
 )
 
 // 整数类型集合（用于 buildProperty 和 extractDefaultQueryParam 的快速判断）
@@ -92,11 +94,12 @@ type OpenAPIComponents struct {
 // ─── 路由中间表示 ────────────────────────────────────
 
 type RouteDef struct {
-	Method  string // GET/POST/PUT/PATCH/DELETE/ANY
-	Path    string // /overview/probe
-	Label   string // 中文描述
-	Module  string // 模块名
-	Handler string // 函数名，如 app.overviewProbe
+	Method      string // GET/POST/PUT/PATCH/DELETE/ANY
+	Path        string // /overview/probe
+	Label       string // 中文描述
+	Module      string // 模块名
+	Handler     string // 函数名，如 app.overviewProbe；内联 handler 为 inline:<id>
+	HandlerFile string // handler 所在 ctrl 文件
 
 	// 请求信息
 	JSONBody    *SchemaInfo // ShouldBindJSON 类型
@@ -334,6 +337,7 @@ func parseCtrlFile(filename string) {
 						continue
 					}
 					route := parseRouteLiteral(cl)
+					route.HandlerFile = filename
 					// AG-UI 是 CopilotKit 的内部流式协议，契约见 docs/references/copilot.md。
 					// 不加入通用 REST 文档，避免被当作普通 JSON 接口调用。
 					if route.Path == "/copilot/agui" {
@@ -382,7 +386,14 @@ func parseRouteLiteral(cl *ast.CompositeLit) RouteDef {
 			if sel, ok := kv.Value.(*ast.SelectorExpr); ok {
 				if x, ok := sel.X.(*ast.Ident); ok {
 					r.Handler = x.Name + "." + sel.Sel.Name
+					continue
 				}
+			}
+			if fn, ok := kv.Value.(*ast.FuncLit); ok {
+				inlineSeq++
+				id := fmt.Sprintf("inline:%d", inlineSeq)
+				inlineFuncs[id] = fn
+				r.Handler = id
 			}
 		}
 	}
@@ -523,6 +534,10 @@ func collectTypeDefinitionsFromFile(filename string) {
 			if len(buildSchemaFromStruct(pkgName, typeName, st, filename).Fields) == 0 {
 				continue
 			}
+			// 运行时配置快照只用于内部持久化和快照传递，不属于公开 API 契约。
+			if pkgName == "config" && typeName == "Snapshot" {
+				continue
+			}
 
 			// 构建完整的类型名 (包名.类型名)
 			if pkgName != "" {
@@ -621,6 +636,17 @@ func collectAllTypesFromFile(filename string) {
 // ─── 第 3 步：分析 handler 函数体 ─────────────────────
 
 func analyzeHandler(r *RouteDef) {
+	// 内联 handler：直接从路由定义所在文件分析闭包体
+	if fn, ok := inlineFuncs[r.Handler]; ok {
+		f := parseFile(r.HandlerFile)
+		var localTypes map[string]string
+		if f != nil {
+			localTypes = collectLocalTypes(f)
+		}
+		analyzeFuncBody(r, fn.Body, localTypes, r.HandlerFile)
+		return
+	}
+
 	// 找到 handler 对应的 ctrl_*.go 文件
 	handlerParts := strings.SplitN(r.Handler, ".", 2)
 	if len(handlerParts) != 2 {
@@ -937,7 +963,10 @@ func analyzeCallExprV2(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisSt
 		r.IsSSE = true
 	}
 
-	// 检测 WebSocket
+	// 检测 WebSocket：既支持直接的 wsConfig.Handler，也支持 serveWebSocket 封装
+	if sel.Sel.Name == "serveWebSocket" {
+		r.IsWS = true
+	}
 	if sel2, ok2 := sel.X.(*ast.SelectorExpr); ok2 && sel2.Sel.Name == "wsConfig" {
 		r.IsWS = true
 	}

@@ -7267,16 +7267,6 @@
     "/system/config": {
       "get": {
         "operationId": "get_system_config",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "reload",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "content": {

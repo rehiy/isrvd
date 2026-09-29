@@ -16,15 +16,15 @@ import (
 
 // JobLog 任务执行日志。
 type JobLog struct {
-	RunID     string    `json:"runId"`
-	JobID     string    `json:"jobId"`
-	JobName   string    `json:"jobName"`
-	StartTime time.Time `json:"startTime"`
-	EndTime   time.Time `json:"endTime"`
-	Duration  int64     `json:"duration"`
-	Success   bool      `json:"success"`
-	Output    string    `json:"output"`
-	Error     string    `json:"error,omitempty"`
+	RunID     string    `json:"runId"`           // 执行 ID
+	JobID     string    `json:"jobId"`           // 所属任务 ID
+	JobName   string    `json:"jobName"`         // 任务名称（冗余，便于展示）
+	StartTime time.Time `json:"startTime"`       // 开始时间
+	EndTime   time.Time `json:"endTime"`         // 结束时间
+	Duration  int64     `json:"duration"`        // 耗时（毫秒）
+	Success   bool      `json:"success"`         // 是否执行成功
+	Output    string    `json:"output"`          // 标准输出
+	Error     string    `json:"error,omitempty"` // 错误信息（失败时非空）
 }
 
 const (
