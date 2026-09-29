@@ -1,7 +1,6 @@
 package config
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 )
@@ -27,60 +26,11 @@ func PathToAbs(path string, rootDir string) string {
 // PathToRel 将绝对路径转为基于 rootDir 的相对路径（"./" 前缀），
 // 仅在 path 位于 rootDir 内部时转换，否则返回原绝对路径。
 func PathToRel(path string, rootDir string) string {
-	if rootDir == "" {
+	if rootDir == "" || path == "" || !filepath.IsAbs(path) {
 		return path
 	}
-
-	if path == "" || !filepath.IsAbs(path) {
-		return path
-	}
-	rootDirClean := filepath.Clean(rootDir)
-	target := filepath.Clean(path)
-
-	// 尝试获取真实路径（解析符号链接）
-	rootResolved := false
-	if r, err := filepath.EvalSymlinks(rootDirClean); err == nil {
-		rootDirClean = r
-		rootResolved = true
-	}
-	targetResolved := false
-	if t, err := filepath.EvalSymlinks(target); err == nil {
-		target = t
-		targetResolved = true
-	}
-
-	// 如果 root 解析失败，使用原始路径检查
-	if !rootResolved {
-		// 检查原始路径是否在原始 root 内部
-		origRoot := filepath.Clean(rootDir)
-		origTarget := filepath.Clean(path)
-		rootWithSep := origRoot + string(filepath.Separator)
-		if origTarget != origRoot && !strings.HasPrefix(origTarget, rootWithSep) {
-			return path
-		}
-		// 原始路径在 root 内部，继续处理
-		rootDirClean = origRoot
-		target = origTarget
-	}
-
-	// 如果 target 是符号链接但解析失败（可能指向不存在的路径），
-	// 应该返回原路径，因为无法判断真实路径是否在 root 内部
-	if !targetResolved {
-		if info, err := os.Lstat(path); err == nil && info.Mode()&os.ModeSymlink != 0 {
-			// 是符号链接但解析失败，返回原路径
-			return path
-		}
-	}
-
-	// 检查 target 是否在 root 内部
-	rootWithSep := rootDirClean + string(filepath.Separator)
-	if target != rootDirClean && !strings.HasPrefix(target, rootWithSep) {
-		return path
-	}
-
-	// 计算相对路径
-	rel, err := filepath.Rel(rootDirClean, target)
-	if err != nil {
+	rel, err := filepath.Rel(filepath.Clean(rootDir), filepath.Clean(path))
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		return path
 	}
 	if rel == "." {

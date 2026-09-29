@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"net/url"
 	"slices"
 	"strings"
 	"sync"
@@ -20,9 +19,12 @@ import (
 )
 
 const (
-	oidcStateTTL     = 10 * time.Minute
-	oidcLoginCodeTTL = 2 * time.Minute
-	oidcProviderTTL  = 10 * time.Minute
+	oidcStateTTL              = 10 * time.Minute
+	oidcLoginCodeTTL          = 2 * time.Minute
+	oidcProviderTTL           = 10 * time.Minute
+	oidcStateMaxSize          = 1000
+	oidcLoginCodeMaxSize      = 1000
+	oidcLoginCodeMaxPerMember = 10
 )
 
 // ─── 公开业务方法 ──────────
@@ -35,7 +37,7 @@ type oidcState struct {
 
 // OIDCLoginURL 生成 OIDC 授权跳转地址
 func (s *Service) OIDCLoginURL(c *gin.Context) (string, error) {
-	_, oauthConfig, err := s.newOAuthConfig(c.Request.Context(), c)
+	_, oauthConfig, err := s.newOAuthConfig(c.Request.Context(), c, config.Current().OIDC)
 	if err != nil {
 		return "", err
 	}
@@ -50,7 +52,17 @@ func (s *Service) OIDCLoginURL(c *gin.Context) (string, error) {
 	}
 
 	s.oidcMu.Lock()
-	s.oidcStates[state] = oidcState{Nonce: nonce, ExpiresAt: time.Now().Add(oidcStateTTL)}
+	now := time.Now()
+	for key, value := range s.oidcStates {
+		if value.ExpiresAt.Before(now) {
+			delete(s.oidcStates, key)
+		}
+	}
+	if len(s.oidcStates) >= oidcStateMaxSize {
+		s.oidcMu.Unlock()
+		return "", fmt.Errorf("OIDC 登录请求过多，请稍后重试")
+	}
+	s.oidcStates[state] = oidcState{Nonce: nonce, ExpiresAt: now.Add(oidcStateTTL)}
 	s.oidcMu.Unlock()
 
 	return oauthConfig.AuthCodeURL(state, oidc.Nonce(nonce)), nil
@@ -64,6 +76,7 @@ type oidcLoginCode struct {
 
 // OIDCCallback 校验 OIDC 回调，成功时返回一次性登录码
 func (s *Service) OIDCCallback(c *gin.Context) (string, error) {
+	snapshot := config.Current()
 	if errText := c.Query("error"); errText != "" {
 		logman.Warn("OIDC callback error from IdP", "error", errText,
 			"error_description", c.Query("error_description"))
@@ -83,7 +96,7 @@ func (s *Service) OIDCCallback(c *gin.Context) (string, error) {
 	}
 
 	// 根据 state 获取 OAuth 配置
-	provider, oauthConfig, err := s.newOAuthConfig(c.Request.Context(), c)
+	provider, oauthConfig, err := s.newOAuthConfig(c.Request.Context(), c, snapshot.OIDC)
 	if err != nil {
 		return "", err
 	}
@@ -102,7 +115,7 @@ func (s *Service) OIDCCallback(c *gin.Context) (string, error) {
 	}
 
 	// 验证 id_token 签名和 claims
-	idToken, err := provider.Verifier(&oidc.Config{ClientID: config.OIDC.ClientID}).Verify(c.Request.Context(), rawIDToken)
+	idToken, err := provider.Verifier(&oidc.Config{ClientID: snapshot.OIDC.ClientID}).Verify(c.Request.Context(), rawIDToken)
 	if err != nil {
 		logman.Warn("OIDC id_token verify failed", "error", err)
 		return "", fmt.Errorf("OIDC 登录失败，请重试")
@@ -115,13 +128,13 @@ func (s *Service) OIDCCallback(c *gin.Context) (string, error) {
 	}
 
 	// 提取用户名：优先从 id_token claims 读，回落到 UserInfo endpoint
-	username, err := oidcUsername(c.Request.Context(), provider, oauthConfig.TokenSource(c.Request.Context(), token), idToken, config.OIDC.UsernameClaim)
+	username, err := oidcUsername(c.Request.Context(), provider, oauthConfig.TokenSource(c.Request.Context(), token), idToken, snapshot.OIDC.UsernameClaim)
 	if err != nil {
-		logman.Warn("OIDC username claim error", "error", err, "claim", config.OIDC.UsernameClaim)
+		logman.Warn("OIDC username claim error", "error", err, "claim", snapshot.OIDC.UsernameClaim)
 		return "", fmt.Errorf("OIDC 登录失败，请重试")
 	}
 
-	if _, exists := config.Members[username]; !exists {
+	if _, exists := snapshot.Members[username]; !exists {
 		logman.Warn("OIDC user not in members", "username", username)
 		return "", fmt.Errorf("用户未配置，请联系管理员添加成员")
 	}
@@ -131,10 +144,25 @@ func (s *Service) OIDCCallback(c *gin.Context) (string, error) {
 		return "", fmt.Errorf("生成登录码失败: %w", err)
 	}
 
-	// 全流程验证通过，消费 state（一次性使用）并保存登录码
-	s.consumeOIDCState(state)
+	// 全流程验证通过，消费 state（一次性使用）并保存登录码。
 	s.oidcMu.Lock()
-	s.oidcLoginCodes[loginCode] = oidcLoginCode{Username: username, ExpiresAt: time.Now().Add(oidcLoginCodeTTL)}
+	now := time.Now()
+	memberCodes := 0
+	for key, value := range s.oidcLoginCodes {
+		if value.ExpiresAt.Before(now) {
+			delete(s.oidcLoginCodes, key)
+			continue
+		}
+		if value.Username == username {
+			memberCodes++
+		}
+	}
+	if len(s.oidcLoginCodes) >= oidcLoginCodeMaxSize || memberCodes >= oidcLoginCodeMaxPerMember {
+		s.oidcMu.Unlock()
+		return "", fmt.Errorf("OIDC 登录请求过多，请稍后重试")
+	}
+	delete(s.oidcStates, state)
+	s.oidcLoginCodes[loginCode] = oidcLoginCode{Username: username, ExpiresAt: now.Add(oidcLoginCodeTTL)}
 	s.oidcMu.Unlock()
 
 	return loginCode, nil
@@ -151,7 +179,7 @@ func (s *Service) OIDCExchange(code string) (*LoginResponse, error) {
 	if !ok {
 		return nil, fmt.Errorf("登录码无效或已过期")
 	}
-	return s.IssueLoginToken(username)
+	return s.issueLoginToken(config.Current(), username)
 }
 
 // ─── 内部方法 ──────────
@@ -183,9 +211,8 @@ func (c *oidcProviderCache) get(ctx context.Context, issuerURL string) (*oidc.Pr
 }
 
 // newOAuthConfig 构建 oauth2.Config，供 OIDCLoginURL 和 OIDCCallback 共用
-func (s *Service) newOAuthConfig(ctx context.Context, c *gin.Context) (*oidc.Provider, *oauth2.Config, error) {
-	conf := config.OIDC
-	if !conf.Enabled || conf.IssuerURL == "" || conf.ClientID == "" {
+func (s *Service) newOAuthConfig(ctx context.Context, c *gin.Context, conf *config.OIDCConfig) (*oidc.Provider, *oauth2.Config, error) {
+	if conf == nil || !conf.Enabled || conf.IssuerURL == "" || conf.ClientID == "" {
 		return nil, nil, fmt.Errorf("OIDC 未启用或配置不完整")
 	}
 	provider, err := s.oidcProvider.get(ctx, conf.IssuerURL)
@@ -195,7 +222,7 @@ func (s *Service) newOAuthConfig(ctx context.Context, c *gin.Context) (*oidc.Pro
 	oauthConfig := &oauth2.Config{
 		ClientID:     conf.ClientID,
 		ClientSecret: conf.ClientSecret,
-		RedirectURL:  oidcRedirectURL(c),
+		RedirectURL:  conf.RedirectURL,
 		Endpoint:     provider.Endpoint(),
 		Scopes:       oidcScopes(conf.Scopes),
 	}
@@ -218,16 +245,6 @@ func (s *Service) lookupOIDCState(state string) (string, bool) {
 		return "", false
 	}
 	return stored.Nonce, true
-}
-
-// consumeOIDCState 删除已使用的 state
-func (s *Service) consumeOIDCState(state string) {
-	if state == "" {
-		return
-	}
-	s.oidcMu.Lock()
-	delete(s.oidcStates, state)
-	s.oidcMu.Unlock()
 }
 
 // consumeOIDCLoginCode 消费一次性登录码，返回对应用户名
@@ -310,32 +327,6 @@ func oidcScopes(scopes []string) []string {
 		result = append([]string{"openid"}, result...)
 	}
 	return result
-}
-
-// oidcRedirectURL 返回 OIDC 回调地址。
-// 优先使用配置中的固定地址；未配置时从请求 Host 动态生成（需在可信代理后运行）。
-func oidcRedirectURL(c *gin.Context) string {
-	if config.OIDC.RedirectURL != "" {
-		return config.OIDC.RedirectURL
-	}
-
-	logman.Warn("OIDC redirectUrl not configured, generating from request headers. " +
-		"Ensure X-Forwarded-* headers are set only by trusted proxies.")
-
-	scheme := "http"
-	if c.Request.TLS != nil {
-		scheme = "https"
-	}
-	if proto := strings.TrimSpace(strings.SplitN(c.GetHeader("X-Forwarded-Proto"), ",", 2)[0]); proto == "http" || proto == "https" {
-		scheme = proto
-	}
-
-	host := c.Request.Host
-	if fh := strings.TrimSpace(strings.SplitN(c.GetHeader("X-Forwarded-Host"), ",", 2)[0]); fh != "" {
-		host = fh
-	}
-
-	return (&url.URL{Scheme: scheme, Host: host, Path: "/api/account/oidc/callback"}).String()
 }
 
 // randomToken 生成 32 字节的随机 URL-safe token

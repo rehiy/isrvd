@@ -19,16 +19,11 @@ import (
 // Auth 根据配置选择认证方式，返回用户名和错误原因。
 // 供中间件统一调用，避免在 server 层判断认证模式。
 func (s *Service) Auth(c *gin.Context) (username, errMsg string) {
-	if config.THA != nil && config.THA.Enabled {
-		return s.HeaderTokenCheck(c)
+	snapshot := config.Current()
+	if snapshot.THA != nil && snapshot.THA.Enabled {
+		return s.headerTokenCheck(snapshot, c)
 	}
-	return s.JWTCheck(c)
-}
-
-// AuthMix 可选认证：成功返回用户名，失败返回空字符串（不中断请求）。
-func (s *Service) AuthMix(c *gin.Context) string {
-	username, _ := s.Auth(c)
-	return username
+	return s.jwtCheck(snapshot, c)
 }
 
 // AuthInfoResponse 认证模式及当前用户信息
@@ -45,22 +40,23 @@ type AuthInfoResponse struct {
 
 // AuthInfo 返回当前认证模式及已登录用户信息
 func (s *Service) AuthInfo(username string) *AuthInfoResponse {
+	snapshot := config.Current()
 	mode := "jwt"
-	if config.THA != nil && config.THA.Enabled {
+	if snapshot.THA != nil && snapshot.THA.Enabled {
 		mode = "header"
 	}
-	oidcEnabled := mode == "jwt" && config.OIDC.Enabled && config.OIDC.IssuerURL != "" && config.OIDC.ClientID != ""
+	oidcEnabled := mode == "jwt" && snapshot.OIDC.Enabled && snapshot.OIDC.IssuerURL != "" && snapshot.OIDC.ClientID != ""
 	resp := &AuthInfoResponse{
 		Mode:              mode,
 		Username:          username,
 		Member:            s.MemberInspect(username),
 		OIDCEnabled:       oidcEnabled,
 		PasskeyEnabled:    s.PasskeyEnabled(),
-		PasswordDisabled:  mode == "jwt" && config.Password.Disabled,
-		PasswordMinLength: config.Password.MinLength,
+		PasswordDisabled:  mode == "jwt" && snapshot.Password.Disabled,
+		PasswordMinLength: snapshot.Password.MinLength,
 	}
 	if oidcEnabled {
-		resp.OIDCBtnLabel = config.OIDC.LoginLabel
+		resp.OIDCBtnLabel = snapshot.OIDC.LoginLabel
 	}
 	return resp
 }
@@ -83,10 +79,11 @@ type LoginResponse struct {
 
 // Login 校验用户名密码并签发 JWT Token
 func (s *Service) Login(req LoginRequest) (*LoginResponse, error) {
-	if config.Password.Disabled {
+	snapshot := config.Current()
+	if snapshot.Password.Disabled {
 		return nil, fmt.Errorf("密码登录已禁用")
 	}
-	member, exists := config.Members[req.Username]
+	member, exists := snapshot.Members[req.Username]
 	if !exists || !secure.BcryptVerify(req.Password, member.Password) {
 		logman.Warn("Login failed", "username", req.Username)
 		return nil, fmt.Errorf("用户名或密码错误")
@@ -100,7 +97,7 @@ func (s *Service) Login(req LoginRequest) (*LoginResponse, error) {
 			return nil, fmt.Errorf("验证码无效")
 		}
 	}
-	resp, err := s.IssueLoginToken(req.Username)
+	resp, err := s.issueLoginToken(snapshot, req.Username)
 	if err != nil {
 		return nil, err
 	}
@@ -108,10 +105,9 @@ func (s *Service) Login(req LoginRequest) (*LoginResponse, error) {
 	return resp, nil
 }
 
-// IssueLoginToken 为已存在成员签发登录 JWT Token
-func (s *Service) IssueLoginToken(username string) (*LoginResponse, error) {
-	tokenStr, err := s.signJWT(username, jwt.MapClaims{
-		"exp": time.Now().Add(time.Duration(config.Server.JWTExpiration) * time.Second).Unix(),
+func (s *Service) issueLoginToken(snapshot *config.Snapshot, username string) (*LoginResponse, error) {
+	tokenStr, err := s.createJWT(snapshot, username, jwt.MapClaims{
+		"exp": time.Now().Add(time.Duration(snapshot.Server.JWTExpiration) * time.Second).Unix(),
 	})
 	if err != nil {
 		return nil, err
@@ -140,7 +136,7 @@ func (s *Service) ApiTokenCreate(username string, req CreateApiTokenRequest) (*C
 	if req.ExpiresIn > 0 {
 		extra["exp"] = time.Now().Add(time.Duration(req.ExpiresIn) * time.Second).Unix()
 	}
-	tokenStr, err := s.signJWT(username, extra)
+	tokenStr, err := s.createJWT(config.Current(), username, extra)
 	if err != nil {
 		return nil, err
 	}
@@ -150,92 +146,64 @@ func (s *Service) ApiTokenCreate(username string, req CreateApiTokenRequest) (*C
 
 // ─── JWT 认证 ──────────────
 
-// JWTCheck 解析 JWT 并返回用户名；失败时返回空用户名和具体错误原因。
-func (s *Service) JWTCheck(c *gin.Context) (username, errMsg string) {
+func (s *Service) jwtCheck(snapshot *config.Snapshot, c *gin.Context) (string, string) {
 	tokenStr := s.extractJWT(c)
 	if tokenStr == "" {
 		return "", "未提供认证令牌"
 	}
-	username = s.JWTUsername(c)
-	if username == "" {
-		return "", "认证令牌无效"
-	}
-	return username, ""
-}
-
-// JWTUsername 从 JWT 中解析并返回有效用户名；无效时返回空字符串
-func (s *Service) JWTUsername(c *gin.Context) string {
-	tokenStr := s.extractJWT(c)
-	if tokenStr == "" {
-		return ""
-	}
-
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(config.Server.JWTSecret), nil
+		return []byte(snapshot.Server.JWTSecret), nil
 	})
 	if err != nil || !token.Valid {
-		return ""
+		return "", "认证令牌无效"
 	}
-
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return ""
+		return "", "认证令牌无效"
 	}
-
 	sub, _ := claims["sub"].(string)
-	member, exists := config.Members[sub]
+	member, exists := snapshot.Members[sub]
 	if !exists {
-		return ""
+		return "", "认证令牌无效"
 	}
-
-	// 校验密码 hash 后 8 位（修改密码后自动失效）
-	pwd, _ := claims["pwd"].(string)
-	if pwd != "" && len(member.Password) >= 8 && pwd != member.Password[len(member.Password)-8:] {
-		return ""
+	pwd, ok := claims["pwd"].(string)
+	if !ok {
+		return "", "认证令牌无效"
 	}
-
-	return sub
+	expectedPwd := ""
+	if len(member.Password) >= 8 {
+		expectedPwd = member.Password[len(member.Password)-8:]
+	}
+	if pwd != expectedPwd {
+		return "", "认证令牌无效"
+	}
+	return sub, ""
 }
 
 // ─── 代理 Header 登录 ────────────────
 
-// HeaderTokenCheck 从上游代理传入的 Header 读取用户名；失败时返回空用户名和具体错误原因。
-func (s *Service) HeaderTokenCheck(c *gin.Context) (username, errMsg string) {
-	if !s.headerSourceTrusted(c) {
+func (s *Service) headerTokenCheck(snapshot *config.Snapshot, c *gin.Context) (string, string) {
+	if !s.headerSourceTrusted(snapshot, c) {
 		return "", "代理 Header 来源不可信"
 	}
-
-	raw := c.GetHeader(config.THA.HeaderName)
-	if raw == "" {
+	username := c.GetHeader(snapshot.THA.HeaderName)
+	if username == "" {
 		return "", "代理 Header 缺失"
 	}
-	username = s.HeaderUsernameExtract(c)
-	if username == "" {
+	if _, exists := snapshot.Members[username]; !exists {
 		return "", "用户不存在"
 	}
 	return username, ""
 }
 
-// HeaderUsernameExtract 从代理 Header 中读取并验证用户名
-func (s *Service) HeaderUsernameExtract(c *gin.Context) string {
-	username := c.GetHeader(config.THA.HeaderName)
-	if username == "" {
-		return ""
-	}
-	if _, exists := config.Members[username]; !exists {
-		return ""
-	}
-	return username
-}
-
 // ─── 内部方法 ───
 
-// signJWT 为指定用户签发 JWT，extra 中的 claims 会合并到标准 claims 中
-func (s *Service) signJWT(username string, extra jwt.MapClaims) (string, error) {
-	member, exists := config.Members[username]
+// createJWT 使用指定配置快照构造并签发 JWT。
+func (s *Service) createJWT(snapshot *config.Snapshot, username string, extra jwt.MapClaims) (string, error) {
+	member, exists := snapshot.Members[username]
 	if !exists {
 		return "", fmt.Errorf("用户不存在")
 	}
@@ -257,7 +225,7 @@ func (s *Service) signJWT(username string, extra jwt.MapClaims) (string, error) 
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString([]byte(config.Server.JWTSecret))
+	tokenStr, err := token.SignedString([]byte(snapshot.Server.JWTSecret))
 	if err != nil {
 		return "", fmt.Errorf("token 生成失败: %w", err)
 	}
@@ -280,9 +248,9 @@ func (s *Service) extractJWT(c *gin.Context) string {
 	return ""
 }
 
-func (s *Service) headerSourceTrusted(c *gin.Context) bool {
+func (s *Service) headerSourceTrusted(snapshot *config.Snapshot, c *gin.Context) bool {
 	// 未配置 TrustedCIDRs 时，向后兼容：不做来源限制
-	if config.THA == nil || len(config.THA.TrustedCIDRs) == 0 {
+	if snapshot.THA == nil || len(snapshot.THA.TrustedCIDRs) == 0 {
 		return true
 	}
 	host, _, err := net.SplitHostPort(c.Request.RemoteAddr)
@@ -293,7 +261,7 @@ func (s *Service) headerSourceTrusted(c *gin.Context) bool {
 	if ip == nil {
 		return false
 	}
-	for _, cidr := range config.THA.TrustedCIDRs {
+	for _, cidr := range snapshot.THA.TrustedCIDRs {
 		if trustedIP := net.ParseIP(cidr); trustedIP != nil && trustedIP.Equal(ip) {
 			return true
 		}

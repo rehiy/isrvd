@@ -54,36 +54,51 @@ func (s *Service) RegistryList() []*RegistryInfo {
 	return result
 }
 
-// registriesConfigSync 将当前 DockerService 的仓库同步到全局 config 并落盘
-func (s *Service) registriesConfigSync() error {
-	regs := s.docker.Registries()
-	cfgRegs := make([]*config.DockerRegistry, 0, len(regs))
-	for _, r := range regs {
-		cfgRegs = append(cfgRegs, &config.DockerRegistry{
-			Name:        r.Name,
-			Description: r.Description,
-			URL:         r.URL,
-			Username:    r.Username,
-			Password:    r.Password,
-		})
+func registryIndex(registries []*config.DockerRegistry, url string) int {
+	for i, registry := range registries {
+		if registry != nil && registry.URL == url {
+			return i
+		}
 	}
-	config.Docker.Registries = cfgRegs
-	return config.Save()
+	return -1
+}
+
+func (s *Service) updateRegistries(mutate func(*config.DockerConfig) error) error {
+	var committed []*pkgDocker.RegistryConfig
+	return config.Update(func(draft *config.Snapshot) error {
+		if err := mutate(draft.Docker); err != nil {
+			return err
+		}
+		committed = make([]*pkgDocker.RegistryConfig, 0, len(draft.Docker.Registries))
+		for _, registry := range draft.Docker.Registries {
+			if registry != nil {
+				committed = append(committed, &pkgDocker.RegistryConfig{
+					Name: registry.Name, Description: registry.Description, URL: registry.URL,
+					Username: registry.Username, Password: registry.Password,
+				})
+			}
+		}
+		return nil
+	}, func(_ *config.Snapshot) {
+		s.docker.ReplaceRegistries(committed)
+	})
 }
 
 // RegistryCreate 新建镜像仓库
 func (s *Service) RegistryCreate(req RegistryUpsertRequest) error {
-	reg := &pkgDocker.RegistryConfig{
-		Name:        req.Name,
-		URL:         req.URL,
-		Username:    req.Username,
-		Password:    req.Password,
-		Description: req.Description,
+	if req.Name == "" || req.URL == "" {
+		return fmt.Errorf("仓库名称和地址不能为空")
 	}
-	if err := s.docker.RegistryCreate(reg); err != nil {
-		return fmt.Errorf("创建镜像仓库失败: %w", err)
-	}
-	return s.registriesConfigSync()
+	return s.updateRegistries(func(dockerConfig *config.DockerConfig) error {
+		if registryIndex(dockerConfig.Registries, req.URL) >= 0 {
+			return fmt.Errorf("仓库地址已存在: %s", req.URL)
+		}
+		dockerConfig.Registries = append(dockerConfig.Registries, &config.DockerRegistry{
+			Name: req.Name, URL: req.URL, Username: req.Username,
+			Password: req.Password, Description: req.Description,
+		})
+		return nil
+	})
 }
 
 // RegistryUpdate 更新镜像仓库
@@ -91,21 +106,27 @@ func (s *Service) RegistryUpdate(originalURL string, req RegistryUpsertRequest) 
 	if originalURL == "" {
 		return fmt.Errorf("缺少 url 参数")
 	}
-	reg := &pkgDocker.RegistryConfig{
-		Name:        req.Name,
-		URL:         req.URL,
-		Username:    req.Username,
-		Password:    req.Password,
-		Description: req.Description,
+	if req.Name == "" || req.URL == "" {
+		return fmt.Errorf("仓库名称和地址不能为空")
 	}
-	// 密码为空时保留原密码（前端编辑时不回显密码，空值表示不修改）
-	if reg.Password == "" {
-		reg.Password = s.docker.RegistryGetPassword(originalURL)
-	}
-	if err := s.docker.RegistryUpdate(originalURL, reg); err != nil {
-		return fmt.Errorf("更新镜像仓库失败: %w", err)
-	}
-	return s.registriesConfigSync()
+	return s.updateRegistries(func(dockerConfig *config.DockerConfig) error {
+		index := registryIndex(dockerConfig.Registries, originalURL)
+		if index < 0 {
+			return fmt.Errorf("仓库不存在: %s", originalURL)
+		}
+		if req.URL != originalURL && registryIndex(dockerConfig.Registries, req.URL) >= 0 {
+			return fmt.Errorf("仓库地址已存在: %s", req.URL)
+		}
+		password := req.Password
+		if password == "" {
+			password = dockerConfig.Registries[index].Password
+		}
+		dockerConfig.Registries[index] = &config.DockerRegistry{
+			Name: req.Name, URL: req.URL, Username: req.Username,
+			Password: password, Description: req.Description,
+		}
+		return nil
+	})
 }
 
 // RegistryDelete 删除镜像仓库
@@ -113,10 +134,14 @@ func (s *Service) RegistryDelete(url string) error {
 	if url == "" {
 		return fmt.Errorf("缺少 url 参数")
 	}
-	if err := s.docker.RegistryDelete(url); err != nil {
-		return fmt.Errorf("删除镜像仓库失败: %w", err)
-	}
-	return s.registriesConfigSync()
+	return s.updateRegistries(func(dockerConfig *config.DockerConfig) error {
+		index := registryIndex(dockerConfig.Registries, url)
+		if index < 0 {
+			return fmt.Errorf("仓库不存在: %s", url)
+		}
+		dockerConfig.Registries = append(dockerConfig.Registries[:index], dockerConfig.Registries[index+1:]...)
+		return nil
+	})
 }
 
 // ImagePush 推送镜像到仓库

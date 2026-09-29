@@ -15,19 +15,23 @@ import (
 	"isrvd/config"
 )
 
-const passkeySessionMaxSize = 100
+const (
+	passkeySessionMaxSize    = 100
+	passkeySessionMaxPerUser = 5
+)
 
 // initPasskey 初始化 WebAuthn 单例并构建内存索引，由 NewService 调用
 func (s *Service) initPasskey() {
-	if config.Passkey != nil && config.Passkey.Enabled {
-		timeout := time.Duration(config.Passkey.Timeout) * time.Millisecond
+	snapshot := config.Current()
+	if snapshot.Passkey != nil && snapshot.Passkey.Enabled {
+		timeout := time.Duration(snapshot.Passkey.Timeout) * time.Millisecond
 		if timeout <= 0 {
 			timeout = 60 * time.Second
 		}
 		w, err := webauthn.New(&webauthn.Config{
-			RPDisplayName: config.Passkey.RPName,
-			RPID:          config.Passkey.RPID,
-			RPOrigins:     config.Passkey.RPOrigins,
+			RPDisplayName: snapshot.Passkey.RPName,
+			RPID:          snapshot.Passkey.RPID,
+			RPOrigins:     snapshot.Passkey.RPOrigins,
 			Timeouts: webauthn.TimeoutsConfig{
 				Login:        webauthn.TimeoutConfig{Timeout: timeout},
 				Registration: webauthn.TimeoutConfig{Timeout: timeout},
@@ -38,7 +42,7 @@ func (s *Service) initPasskey() {
 		} else {
 			s.webAuthn = w
 			// 从配置构建内存索引
-			for username, member := range config.Members {
+			for username, member := range snapshot.Members {
 				for _, pk := range member.Passkeys {
 					s.credIndex[pk.IDBase64] = username
 					s.signCounts[pk.IDBase64] = pk.SignCount
@@ -107,12 +111,26 @@ func (s *passkeySessionStore) Stop() {
 	close(s.done)
 }
 
-func (s *passkeySessionStore) save(id string, sess *passkeySession) {
+func (s *passkeySessionStore) save(id string, sess *passkeySession) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if len(s.sessions) < passkeySessionMaxSize {
-		s.sessions[id] = sess
+	now := time.Now()
+	userSessions := 0
+	for key, value := range s.sessions {
+		if value.ExpiresAt.Before(now) {
+			delete(s.sessions, key)
+			continue
+		}
+		if sess.Username != "" && value.Username == sess.Username {
+			userSessions++
+		}
 	}
+	if len(s.sessions) >= passkeySessionMaxSize ||
+		(sess.Username != "" && userSessions >= passkeySessionMaxPerUser) {
+		return fmt.Errorf("Passkey 会话过多，请稍后重试")
+	}
+	s.sessions[id] = sess
+	return nil
 }
 
 // pop 取出并删除会话（一次性消费，防重放）
@@ -134,7 +152,7 @@ func (s *Service) PasskeyBeginRegistration(c *gin.Context, displayName string) (
 		return nil, fmt.Errorf("Passkey 未启用")
 	}
 	username := c.GetString("username")
-	member, exists := config.Members[username]
+	member, exists := config.Current().Members[username]
 	if !exists {
 		return nil, fmt.Errorf("用户不存在")
 	}
@@ -145,12 +163,14 @@ func (s *Service) PasskeyBeginRegistration(c *gin.Context, displayName string) (
 	}
 
 	sessionID := newSessionID()
-	s.passkeyStore.save(sessionID, &passkeySession{
+	if err := s.passkeyStore.save(sessionID, &passkeySession{
 		Data:        *sessionData,
 		Username:    username,
 		DisplayName: displayName,
 		ExpiresAt:   time.Now().Add(5 * time.Minute),
-	})
+	}); err != nil {
+		return nil, err
+	}
 	return &PasskeyBeginData{SessionID: sessionID, Options: options}, nil
 }
 
@@ -160,8 +180,11 @@ func (s *Service) PasskeyFinishRegistration(c *gin.Context, sessionID string) er
 	if session == nil {
 		return fmt.Errorf("注册会话不存在或已过期")
 	}
+	if c.GetString("username") != session.Username {
+		return fmt.Errorf("注册会话与当前用户不匹配")
+	}
 
-	member, exists := config.Members[session.Username]
+	member, exists := config.Current().Members[session.Username]
 	if !exists {
 		return fmt.Errorf("用户不存在")
 	}
@@ -173,19 +196,11 @@ func (s *Service) PasskeyFinishRegistration(c *gin.Context, sessionID string) er
 
 	credIDStr := base64.RawURLEncoding.EncodeToString(credential.ID)
 
-	// 防止重复注册
-	for _, pk := range member.Passkeys {
-		if pk.IDBase64 == credIDStr {
-			return fmt.Errorf("该凭证已注册")
-		}
-	}
-
 	displayName := session.DisplayName
 	if displayName == "" {
-		displayName = fmt.Sprintf("Passkey #%s", credIDStr[:8])
+		displayName = fmt.Sprintf("Passkey #%s", safePrefix(credIDStr))
 	}
-
-	member.Passkeys = append(member.Passkeys, &config.PasskeyCredential{
+	newCredential := &config.PasskeyCredential{
 		IDBase64:        credIDStr,
 		PublicKeyBase64: base64.RawURLEncoding.EncodeToString(credential.PublicKey),
 		AAGUIDBase64:    base64.RawURLEncoding.EncodeToString(credential.Authenticator.AAGUID),
@@ -194,10 +209,22 @@ func (s *Service) PasskeyFinishRegistration(c *gin.Context, sessionID string) er
 		BackupState:     credential.Flags.BackupState,
 		DisplayName:     displayName,
 		AddedAt:         time.Now(),
-	})
-	config.Members[session.Username] = member
-
-	if err := config.Save(); err != nil {
+	}
+	s.credentialMu.Lock()
+	defer s.credentialMu.Unlock()
+	if err := config.Update(func(draft *config.Snapshot) error {
+		currentMember, exists := draft.Members[session.Username]
+		if !exists {
+			return fmt.Errorf("用户不存在")
+		}
+		for _, pk := range currentMember.Passkeys {
+			if pk != nil && pk.IDBase64 == credIDStr {
+				return fmt.Errorf("该凭证已注册")
+			}
+		}
+		currentMember.Passkeys = append(currentMember.Passkeys, newCredential)
+		return nil
+	}); err != nil {
 		return fmt.Errorf("保存凭证失败: %w", err)
 	}
 
@@ -219,7 +246,7 @@ func (s *Service) PasskeyBeginLogin(username string) (*PasskeyBeginData, error) 
 	sessionID := newSessionID()
 
 	if username != "" {
-		member, exists := config.Members[username]
+		member, exists := config.Current().Members[username]
 		if !exists {
 			return nil, fmt.Errorf("用户验证失败")
 		}
@@ -227,10 +254,12 @@ func (s *Service) PasskeyBeginLogin(username string) (*PasskeyBeginData, error) 
 		if err != nil {
 			return nil, fmt.Errorf("开始登录失败: %w", err)
 		}
-		s.passkeyStore.save(sessionID, &passkeySession{
+		if err := s.passkeyStore.save(sessionID, &passkeySession{
 			Data: *sessionData, Username: username,
 			ExpiresAt: time.Now().Add(5 * time.Minute),
-		})
+		}); err != nil {
+			return nil, err
+		}
 		return &PasskeyBeginData{SessionID: sessionID, Options: options}, nil
 	}
 
@@ -239,10 +268,12 @@ func (s *Service) PasskeyBeginLogin(username string) (*PasskeyBeginData, error) 
 	if err != nil {
 		return nil, fmt.Errorf("开始登录失败: %w", err)
 	}
-	s.passkeyStore.save(sessionID, &passkeySession{
+	if err := s.passkeyStore.save(sessionID, &passkeySession{
 		Data:      *sessionData,
 		ExpiresAt: time.Now().Add(5 * time.Minute),
-	})
+	}); err != nil {
+		return nil, err
+	}
 	return &PasskeyBeginData{SessionID: sessionID, Options: options}, nil
 }
 
@@ -260,7 +291,7 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginRe
 
 	if session.Username != "" {
 		username = session.Username
-		member, exists := config.Members[username]
+		member, exists := config.Current().Members[username]
 		if !exists {
 			return nil, fmt.Errorf("用户不存在")
 		}
@@ -270,23 +301,10 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginRe
 		}
 		credID = credential.ID
 
-		// 更新内存 signCount（取最大值，并做克隆检测）
 		credIDStr := base64.RawURLEncoding.EncodeToString(credID)
-		newCount := credential.Authenticator.SignCount
-
-		s.indexMu.Lock()
-		stored := s.signCounts[credIDStr]
-		if newCount > stored {
-			s.signCounts[credIDStr] = newCount
-		} else if newCount != 0 && newCount <= stored {
-			// 克隆检测：signCount 未增长或倒退，凭证可能被克隆
-			s.indexMu.Unlock()
-			return nil, fmt.Errorf("凭证可能被克隆，登录被拒绝")
+		if err := s.verifyAndUpdateCredentialState(username, credIDStr, credential.Authenticator.SignCount, credential.Flags.BackupState); err != nil {
+			return nil, err
 		}
-		s.indexMu.Unlock()
-
-		// 同步更新 BackupState（BS 标志可能随设备备份状态变化）
-		s.updateBackupState(username, credIDStr, credential.Flags.BackupState)
 	} else {
 		// Discoverable login：通过 credIndex 查找用户
 		credential, err := s.webAuthn.FinishDiscoverableLogin(func(rawID, _ []byte) (webauthn.User, error) {
@@ -297,7 +315,7 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginRe
 				return nil, fmt.Errorf("验证失败")
 			}
 			username = uname
-			member, exists := config.Members[uname]
+			member, exists := config.Current().Members[uname]
 			if !exists {
 				return nil, fmt.Errorf("验证失败")
 			}
@@ -308,26 +326,13 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginRe
 		}
 		credID = credential.ID
 
-		// 更新内存 signCount（取最大值，并做克隆检测）
 		credIDStr := base64.RawURLEncoding.EncodeToString(credID)
-		newCount := credential.Authenticator.SignCount
-
-		s.indexMu.Lock()
-		stored := s.signCounts[credIDStr]
-		if newCount > stored {
-			s.signCounts[credIDStr] = newCount
-		} else if newCount != 0 && newCount <= stored {
-			// 克隆检测：signCount 未增长或倒退，凭证可能被克隆
-			s.indexMu.Unlock()
-			return nil, fmt.Errorf("凭证可能被克隆，登录被拒绝")
+		if err := s.verifyAndUpdateCredentialState(username, credIDStr, credential.Authenticator.SignCount, credential.Flags.BackupState); err != nil {
+			return nil, err
 		}
-		s.indexMu.Unlock()
-
-		// 同步更新 BackupState（BS 标志可能随设备备份状态变化）
-		s.updateBackupState(username, credIDStr, credential.Flags.BackupState)
 	}
 
-	resp, err := s.IssueLoginToken(username)
+	resp, err := s.issueLoginToken(config.Current(), username)
 	if err != nil {
 		return nil, err
 	}
@@ -337,33 +342,41 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginRe
 
 // PasskeyListCredentials 查询用户的 Passkey 凭证列表
 func (s *Service) PasskeyListCredentials(username string) ([]*config.PasskeyCredential, error) {
-	member, exists := config.Members[username]
+	member, exists := config.Current().Members[username]
 	if !exists {
 		return nil, fmt.Errorf("用户不存在")
 	}
-	return member.Passkeys, nil
+	result := make([]*config.PasskeyCredential, 0, len(member.Passkeys))
+	for _, credential := range member.Passkeys {
+		if credential != nil {
+			copy := *credential
+			result = append(result, &copy)
+		}
+	}
+	return result, nil
 }
 
 // PasskeyDeleteCredential 删除用户的指定 Passkey 凭证
 func (s *Service) PasskeyDeleteCredential(username, credentialID string) error {
-	member, exists := config.Members[username]
-	if !exists {
-		return fmt.Errorf("用户不存在")
-	}
-
-	newPasskeys := make([]*config.PasskeyCredential, 0, len(member.Passkeys))
-	for _, pk := range member.Passkeys {
-		if pk.IDBase64 != credentialID {
-			newPasskeys = append(newPasskeys, pk)
+	s.credentialMu.Lock()
+	defer s.credentialMu.Unlock()
+	if err := config.Update(func(draft *config.Snapshot) error {
+		member, exists := draft.Members[username]
+		if !exists {
+			return fmt.Errorf("用户不存在")
 		}
-	}
-	if len(newPasskeys) == len(member.Passkeys) {
-		return ErrPasskeyNotFound
-	}
-
-	member.Passkeys = newPasskeys
-	config.Members[username] = member
-	if err := config.Save(); err != nil {
+		passkeys := make([]*config.PasskeyCredential, 0, len(member.Passkeys))
+		for _, pk := range member.Passkeys {
+			if pk != nil && pk.IDBase64 != credentialID {
+				passkeys = append(passkeys, pk)
+			}
+		}
+		if len(passkeys) == len(member.Passkeys) {
+			return ErrPasskeyNotFound
+		}
+		member.Passkeys = passkeys
+		return nil
+	}); err != nil {
 		return fmt.Errorf("保存配置失败: %w", err)
 	}
 
@@ -377,18 +390,19 @@ func (s *Service) PasskeyDeleteCredential(username, credentialID string) error {
 
 // PasskeyUpdateCredentialName 更新凭证显示名称
 func (s *Service) PasskeyUpdateCredentialName(username, credentialID, displayName string) error {
-	member, exists := config.Members[username]
-	if !exists {
-		return fmt.Errorf("用户不存在")
-	}
-	for _, pk := range member.Passkeys {
-		if pk.IDBase64 == credentialID {
-			pk.DisplayName = displayName
-			config.Members[username] = member
-			return config.Save()
+	return config.Update(func(draft *config.Snapshot) error {
+		member, exists := draft.Members[username]
+		if !exists {
+			return fmt.Errorf("用户不存在")
 		}
-	}
-	return ErrPasskeyNotFound
+		for _, pk := range member.Passkeys {
+			if pk != nil && pk.IDBase64 == credentialID {
+				pk.DisplayName = displayName
+				return nil
+			}
+		}
+		return ErrPasskeyNotFound
+	})
 }
 
 // ─── 内部方法 ───
@@ -406,20 +420,65 @@ func (u *passkeyUser) WebAuthnName() string                       { return u.nam
 func (u *passkeyUser) WebAuthnDisplayName() string                { return u.displayName }
 func (u *passkeyUser) WebAuthnCredentials() []webauthn.Credential { return u.credentials }
 
-// updateBackupState 在登录成功后同步更新凭证的 BackupState（BS 标志可能随设备备份状态变化）
-func (s *Service) updateBackupState(username, credIDStr string, backupState bool) {
-	member, exists := config.Members[username]
-	if !exists {
-		return
+func (s *Service) verifyAndUpdateCredentialState(username, credIDStr string, signCount uint32, backupState bool) error {
+	s.credentialMu.Lock()
+	defer s.credentialMu.Unlock()
+
+	s.indexMu.RLock()
+	stored := s.signCounts[credIDStr]
+	s.indexMu.RUnlock()
+	if signCount != 0 && signCount <= stored {
+		return fmt.Errorf("凭证可能被克隆，登录被拒绝")
 	}
-	for _, pk := range member.Passkeys {
-		if pk.IDBase64 == credIDStr && pk.BackupState != backupState {
-			pk.BackupState = backupState
-			config.Members[username] = member
-			_ = config.Save()
+	if err := s.updateCredentialState(username, credIDStr, signCount, backupState); err != nil {
+		return fmt.Errorf("保存 Passkey 状态失败: %w", err)
+	}
+	if signCount > stored {
+		s.indexMu.Lock()
+		s.signCounts[credIDStr] = signCount
+		s.indexMu.Unlock()
+	}
+	return nil
+}
+
+// updateCredentialState 持久化认证器签名计数与备份状态。调用前须持有 indexMu 写锁。
+func (s *Service) updateCredentialState(username, credIDStr string, signCount uint32, backupState bool) error {
+	snapshot := config.Current()
+	member := snapshot.Members[username]
+	if member == nil {
+		return ErrMemberNotFound
+	}
+	needsUpdate := false
+	credentialExists := false
+	for _, credential := range member.Passkeys {
+		if credential != nil && credential.IDBase64 == credIDStr {
+			credentialExists = true
+			needsUpdate = signCount > credential.SignCount || backupState != credential.BackupState
 			break
 		}
 	}
+	if !credentialExists {
+		return ErrPasskeyNotFound
+	}
+	if !needsUpdate {
+		return nil
+	}
+	return config.Update(func(draft *config.Snapshot) error {
+		member := draft.Members[username]
+		if member == nil {
+			return ErrMemberNotFound
+		}
+		for _, credential := range member.Passkeys {
+			if credential != nil && credential.IDBase64 == credIDStr {
+				if signCount > credential.SignCount {
+					credential.SignCount = signCount
+				}
+				credential.BackupState = backupState
+				return nil
+			}
+		}
+		return ErrPasskeyNotFound
+	})
 }
 
 // buildPasskeyUser 构建 webauthn.User 实例，从配置和内存索引读取凭证信息

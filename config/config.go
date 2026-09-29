@@ -2,97 +2,8 @@ package config
 
 import "path/filepath"
 
-var (
-	// Server 服务器配置
-	Server = ServerNormalize(nil)
-	// Password 密码登录配置
-	Password = PasswordNormalize(nil)
-	// Passkey 配置
-	Passkey = &PasskeyConfig{}
-	// OIDC 配置
-	OIDC = OIDCNormalize(nil)
-	// THA 代理 Header 登录配置
-	THA = &THAConfig{}
-	// Copilot LLM 配置
-	Copilot = &CopilotConfig{}
-	// 告警通知配置
-	Notify = NotifyNormalize(nil)
-	// Apisix 配置
-	Apisix = &ApisixConfig{}
-	// Caddy 配置
-	Caddy = &CaddyConfig{}
-	// Docker 配置
-	Docker = &DockerConfig{}
-	// Monitor 监控配置
-	Monitor = MonitorNormalize(nil)
-	// 应用市场配置
-	Marketplace = &MarketplaceConfig{}
-	// 工具栏链接配置
-	Links []*LinkConfig
-	// 成员配置
-	Members = map[string]*MemberConfig{}
-	// 版本信息（编译时通过脚本注入）
-	Version = "v0.0.0"
-)
-
-// Apply 应用配置到全局变量（不存储）
-func Apply(conf *Config) {
-	if conf == nil {
-		return
-	}
-
-	Server = ServerNormalize(conf.Server)
-
-	Password = PasswordNormalize(conf.Password)
-
-	Passkey = PasskeyNormalize(conf.Passkey)
-
-	OIDC = OIDCNormalize(conf.OIDC)
-
-	THA = THANormalize(conf.THA)
-
-	Copilot = conf.Copilot
-	if Copilot == nil {
-		Copilot = &CopilotConfig{}
-	}
-
-	Notify = NotifyNormalize(conf.Notify)
-
-	Apisix = conf.Apisix
-	if Apisix == nil {
-		Apisix = &ApisixConfig{}
-	}
-
-	Caddy = conf.Caddy
-	if Caddy == nil {
-		Caddy = &CaddyConfig{}
-	}
-
-	Docker = conf.Docker
-	if Docker == nil {
-		Docker = &DockerConfig{}
-	} else {
-		Docker.ContainerRoot = PathToAbs(Docker.ContainerRoot, Server.RootDirectory)
-	}
-
-	Monitor = MonitorNormalize(conf.Monitor)
-
-	Marketplace = conf.Marketplace
-	if Marketplace == nil {
-		Marketplace = &MarketplaceConfig{}
-	}
-
-	Links = conf.Links
-
-	Members = make(map[string]*MemberConfig, len(conf.Members))
-	for _, m := range conf.Members {
-		if m == nil {
-			continue
-		}
-		m.HomeDirectory = PathToAbs(m.HomeDirectory, Server.RootDirectory)
-		Members[m.Username] = m
-	}
-}
+// Version 版本信息（编译时通过脚本注入）
+var Version = "v0.0.0"
 
 // ServerNormalize 填充 Server 默认值并归一化路径
 func ServerNormalize(server *ServerConfig) *ServerConfig {
@@ -171,17 +82,13 @@ func MonitorNormalize(monitor *MonitorConfig) *MonitorConfig {
 	if monitor == nil {
 		monitor = &MonitorConfig{}
 	}
-	// Interval 合法值：5、15、30、60；其他值均视为禁用，置 0
 	switch monitor.Interval {
 	case 5, 15, 30, 60:
-		// 合法值，保留
 	default:
 		monitor.Interval = 0
 	}
 	return monitor
 }
-
-// ─── 辅助函数 ───
 
 // FaultAlertNormalize 填充默认阈值；不自动开启告警。
 func FaultAlertNormalize(events *FaultAlertConfig) FaultAlertConfig {

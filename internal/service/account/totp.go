@@ -43,7 +43,7 @@ type TOTPVerifyRequest struct {
 
 // TwoFactorStatus 查询当前用户二次验证状态
 func (s *Service) TwoFactorStatus(username string) (*TwoFactorStatusResponse, error) {
-	member, exists := config.Members[username]
+	member, exists := config.Current().Members[username]
 	if !exists {
 		return nil, ErrMemberNotFound
 	}
@@ -57,7 +57,7 @@ func (s *Service) TOTPEnabled(member *config.MemberConfig) bool {
 
 // TOTPBegin 开始绑定 TOTP，生成临时密钥和 otpauth URI
 func (s *Service) TOTPBegin(username string) (*TOTPBeginResponse, error) {
-	member, exists := config.Members[username]
+	member, exists := config.Current().Members[username]
 	if !exists {
 		return nil, ErrMemberNotFound
 	}
@@ -75,7 +75,7 @@ func (s *Service) TOTPBegin(username string) (*TOTPBeginResponse, error) {
 
 // TOTPEnable 完成 TOTP 绑定，验证通过后保存密钥并启用
 func (s *Service) TOTPEnable(username string, req TOTPVerifyRequest) error {
-	member, exists := config.Members[username]
+	member, exists := config.Current().Members[username]
 	if !exists {
 		return ErrMemberNotFound
 	}
@@ -90,14 +90,20 @@ func (s *Service) TOTPEnable(username string, req TOTPVerifyRequest) error {
 		return fmt.Errorf("验证码无效")
 	}
 
-	if member.TwoFactor == nil {
-		member.TwoFactor = &config.TwoFactorConfig{}
-	}
-	member.TwoFactor.TOTP = &config.TOTPConfig{
-		Enabled: true,
-		Secret:  secret,
-	}
-	if err := config.Save(); err != nil {
+	if err := config.Update(func(draft *config.Snapshot) error {
+		currentMember, exists := draft.Members[username]
+		if !exists {
+			return ErrMemberNotFound
+		}
+		if s.TOTPEnabled(currentMember) {
+			return fmt.Errorf("TOTP 二次验证已启用")
+		}
+		if currentMember.TwoFactor == nil {
+			currentMember.TwoFactor = &config.TwoFactorConfig{}
+		}
+		currentMember.TwoFactor.TOTP = &config.TOTPConfig{Enabled: true, Secret: secret}
+		return nil
+	}); err != nil {
 		return fmt.Errorf("保存配置失败: %w", err)
 	}
 	logman.Info("TOTP enabled", "username", username)
@@ -106,7 +112,7 @@ func (s *Service) TOTPEnable(username string, req TOTPVerifyRequest) error {
 
 // TOTPDisable 禁用当前用户 TOTP 二次验证，需提供当前验证码
 func (s *Service) TOTPDisable(username string, req TOTPVerifyRequest) error {
-	member, exists := config.Members[username]
+	member, exists := config.Current().Members[username]
 	if !exists {
 		return ErrMemberNotFound
 	}
@@ -117,9 +123,21 @@ func (s *Service) TOTPDisable(username string, req TOTPVerifyRequest) error {
 		return fmt.Errorf("验证码无效")
 	}
 
-	member.TwoFactor.TOTP.Enabled = false
-	member.TwoFactor.TOTP.Secret = ""
-	if err := config.Save(); err != nil {
+	if err := config.Update(func(draft *config.Snapshot) error {
+		currentMember, exists := draft.Members[username]
+		if !exists {
+			return ErrMemberNotFound
+		}
+		if !s.TOTPEnabled(currentMember) {
+			return fmt.Errorf("TOTP 二次验证未启用")
+		}
+		if !s.TOTPValidate(currentMember.TwoFactor.TOTP.Secret, req.Code) {
+			return fmt.Errorf("验证码无效")
+		}
+		currentMember.TwoFactor.TOTP.Enabled = false
+		currentMember.TwoFactor.TOTP.Secret = ""
+		return nil
+	}); err != nil {
 		return fmt.Errorf("保存配置失败: %w", err)
 	}
 	logman.Info("TOTP disabled", "username", username)

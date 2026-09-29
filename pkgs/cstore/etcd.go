@@ -167,7 +167,8 @@ func (e *EtcdStore) Watch(ctx context.Context, key string) <-chan Event {
 				}
 				select {
 				case out <- event:
-				default:
+				case <-ctx.Done():
+					return
 				}
 			case _, ok := <-watchErrs:
 				// 错误由 libgo/etcd 内部重连处理，忽略

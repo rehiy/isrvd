@@ -10,6 +10,7 @@ func main() {
 	if err := config.Init(); err != nil {
 		panic(err)
 	}
+	defer config.Close()
 
 	registry.Init()
 	server.StartApp()

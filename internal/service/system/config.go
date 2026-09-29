@@ -39,28 +39,28 @@ func NewConfigService() *ConfigService {
 	return &ConfigService{}
 }
 
-// ConfigAll 获取全部配置：深拷贝隔离全局 config 后清空敏感字段
+// ConfigAll 获取全部配置：深拷贝隔离当前快照后清空敏感字段
 func (s *ConfigService) ConfigAll() *AllConfig {
+	snapshot := config.Current()
 	src := &AllConfig{
-		Server:      config.Server,
-		Password:    config.Password,
-		Passkey:     config.Passkey,
-		OIDC:        config.OIDC,
-		THA:         config.THA,
-		Copilot:     config.Copilot,
-		Notify:      config.Notify,
-		Apisix:      config.Apisix,
-		Caddy:       config.Caddy,
-		Docker:      config.Docker,
-		Monitor:     config.Monitor,
-		Marketplace: config.Marketplace,
-		Links:       config.Links,
+		Server:      snapshot.Server,
+		Password:    snapshot.Password,
+		Passkey:     snapshot.Passkey,
+		OIDC:        snapshot.OIDC,
+		THA:         snapshot.THA,
+		Copilot:     snapshot.Copilot,
+		Notify:      snapshot.Notify,
+		Apisix:      snapshot.Apisix,
+		Caddy:       snapshot.Caddy,
+		Docker:      snapshot.Docker,
+		Monitor:     snapshot.Monitor,
+		Marketplace: snapshot.Marketplace,
+		Links:       snapshot.Links,
 	}
 	dst, err := deepCopyJSON(src)
 	if err != nil || dst == nil {
 		return &AllConfig{}
 	}
-	// 脱敏：清空所有密钥/密码
 	if dst.Server != nil {
 		dst.Server.JWTSecret = ""
 	}
@@ -74,102 +74,110 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 		dst.Apisix.AdminKey = ""
 	}
 	if dst.Docker != nil {
-		for _, r := range dst.Docker.Registries {
-			if r != nil {
-				r.Password = ""
+		for _, registry := range dst.Docker.Registries {
+			if registry != nil {
+				registry.Password = ""
 			}
 		}
 	}
 	return dst
 }
 
-// ConfigUpdate 一次性更新全部配置（任何 nil 分区将跳过）
+// ConfigUpdate 一次性更新全部配置（任何 nil 分区将跳过）。
 func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 	if req.Notify != nil && req.Notify.Events != nil {
-		e := req.Notify.Events
-		if e.RestartThreshold < 0 || e.RestartThreshold > 10000 ||
-			e.RestartWindow < 0 || (e.RestartWindow > 0 && e.RestartWindow < 30) || e.RestartWindow > 86400 ||
-			e.CertificateDays < 0 || e.CertificateDays > 3650 {
+		events := req.Notify.Events
+		if events.RestartThreshold < 0 || events.RestartThreshold > 10000 ||
+			events.RestartWindow < 0 || (events.RestartWindow > 0 && events.RestartWindow < 30) || events.RestartWindow > 86400 ||
+			events.CertificateDays < 0 || events.CertificateDays > 3650 {
 			return fmt.Errorf("%w：重启次数为 1–10000，窗口为 30–86400 秒，证书提前天数为 1–3650；0 使用默认值", ErrInvalidNotifyConfig)
 		}
 	}
-	if req.Server != nil {
-		oldSecret := ""
-		if config.Server != nil {
-			oldSecret = config.Server.JWTSecret
+
+	if err := config.UpdateStored(func(draft *config.Snapshot) error {
+		oldRoot := draft.Server.RootDirectory
+		newRoot := oldRoot
+		if req.Server != nil {
+			req.Server.JWTSecret = pickSecret(req.Server.JWTSecret, draft.Server.JWTSecret)
+			req.Server = config.ServerNormalize(req.Server)
+			newRoot = req.Server.RootDirectory
+			if oldRoot != newRoot {
+				if req.Docker == nil && draft.Docker != nil {
+					draft.Docker.ContainerRoot = config.PathToAbs(
+						config.PathToRel(draft.Docker.ContainerRoot, oldRoot), newRoot,
+					)
+				}
+				for _, member := range draft.Members {
+					if member != nil {
+						member.HomeDirectory = config.PathToAbs(
+							config.PathToRel(member.HomeDirectory, oldRoot), newRoot,
+						)
+					}
+				}
+			}
+			draft.Server = req.Server
 		}
-		req.Server.JWTSecret = pickSecret(req.Server.JWTSecret, oldSecret)
-		config.Server = config.ServerNormalize(req.Server)
-	}
-	if req.Password != nil {
-		config.Password = config.PasswordNormalize(req.Password)
-	}
-	if req.Passkey != nil {
-		config.Passkey = config.PasskeyNormalize(req.Passkey)
-	}
-	if req.OIDC != nil {
-		oldSecret := ""
-		if config.OIDC != nil {
-			oldSecret = config.OIDC.ClientSecret
+		if req.Password != nil {
+			draft.Password = req.Password
 		}
-		req.OIDC.ClientSecret = pickSecret(req.OIDC.ClientSecret, oldSecret)
-		config.OIDC = config.OIDCNormalize(req.OIDC)
-	}
-	if req.THA != nil {
-		config.THA = config.THANormalize(req.THA)
-	}
-	if req.Copilot != nil {
-		oldSecret := ""
-		if config.Copilot != nil {
-			oldSecret = config.Copilot.APIKey
+		if req.Passkey != nil {
+			draft.Passkey = req.Passkey
 		}
-		req.Copilot.APIKey = pickSecret(req.Copilot.APIKey, oldSecret)
-		config.Copilot = req.Copilot
-	}
-	if req.Notify != nil {
-		config.Notify = config.NotifyNormalize(req.Notify)
-	}
-	if req.Apisix != nil {
-		oldSecret := ""
-		if config.Apisix != nil {
-			oldSecret = config.Apisix.AdminKey
+		if req.OIDC != nil {
+			req.OIDC.ClientSecret = pickSecret(req.OIDC.ClientSecret, draft.OIDC.ClientSecret)
+			draft.OIDC = req.OIDC
 		}
-		req.Apisix.AdminKey = pickSecret(req.Apisix.AdminKey, oldSecret)
-		config.Apisix = req.Apisix
-	}
-	if req.Caddy != nil {
-		config.Caddy = req.Caddy
-	}
-	if req.Docker != nil {
-		// Registries 密码：空值按 url+username 匹配保留原值，非空则更新（改 url/username 会丢匹配，需重填）
-		if config.Docker != nil {
-			for _, reg := range req.Docker.Registries {
-				if reg == nil || reg.Password != "" {
+		if req.THA != nil {
+			draft.THA = req.THA
+		}
+		if req.Copilot != nil {
+			req.Copilot.APIKey = pickSecret(req.Copilot.APIKey, draft.Copilot.APIKey)
+			draft.Copilot = req.Copilot
+		}
+		if req.Notify != nil {
+			draft.Notify = req.Notify
+		}
+		if req.Apisix != nil {
+			req.Apisix.AdminKey = pickSecret(req.Apisix.AdminKey, draft.Apisix.AdminKey)
+			draft.Apisix = req.Apisix
+		}
+		if req.Caddy != nil {
+			draft.Caddy = req.Caddy
+		}
+		if req.Docker != nil {
+			if oldRoot != newRoot && draft.Docker != nil &&
+				req.Docker.ContainerRoot == draft.Docker.ContainerRoot {
+				req.Docker.ContainerRoot = config.PathToAbs(
+					config.PathToRel(req.Docker.ContainerRoot, oldRoot), newRoot,
+				)
+			}
+			for _, registry := range req.Docker.Registries {
+				if registry == nil || registry.Password != "" {
 					continue
 				}
-				for _, old := range config.Docker.Registries {
-					if old != nil && old.URL == reg.URL && old.Username == reg.Username {
-						reg.Password = old.Password
+				for _, old := range draft.Docker.Registries {
+					if old != nil && old.URL == registry.URL && old.Username == registry.Username {
+						registry.Password = old.Password
 						break
 					}
 				}
 			}
+			draft.Docker = req.Docker
 		}
-		config.Docker = req.Docker
+		if req.Monitor != nil {
+			draft.Monitor = req.Monitor
+		}
+		if req.Marketplace != nil {
+			draft.Marketplace = req.Marketplace
+		}
+		if req.Links != nil {
+			draft.Links = req.Links
+		}
+		return nil
+	}); err != nil {
+		return err
 	}
-	if req.Monitor != nil {
-		config.Monitor = config.MonitorNormalize(req.Monitor)
-	}
-	if req.Marketplace != nil {
-		config.Marketplace = req.Marketplace
-	}
-	if req.Links != nil {
-		config.Links = req.Links
-	}
-	if err := config.Save(); err != nil {
-		return fmt.Errorf("保存配置失败: %w", err)
-	}
-	// 触发重载，使新配置立即生效
+
 	select {
 	case config.ReloadCh <- struct{}{}:
 	default:

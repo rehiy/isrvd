@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/secure"
@@ -35,7 +36,7 @@ type MemberInfo struct {
 
 // MemberInspect 获取单个成员信息
 func (s *Service) MemberInspect(username string) *MemberInfo {
-	m, exists := config.Members[username]
+	m, exists := config.Current().Members[username]
 	if !exists {
 		return nil
 	}
@@ -44,10 +45,11 @@ func (s *Service) MemberInspect(username string) *MemberInfo {
 
 // MemberList 列出所有成员
 func (s *Service) MemberList() []*MemberInfo {
-	list := make([]*MemberInfo, 0, len(config.Members))
-	for _, m := range config.Members {
+	list := make([]*MemberInfo, 0, len(config.Current().Members))
+	for _, m := range config.Current().Members {
 		list = append(list, s.memberInfoBuild(m))
 	}
+	sort.Slice(list, func(i, j int) bool { return list[i].Username < list[j].Username })
 	return list
 }
 
@@ -64,35 +66,48 @@ type MemberUpsertRequest struct {
 
 // MemberCreate 新建成员
 func (s *Service) MemberCreate(req MemberUpsertRequest) error {
+	s.memberMu.Lock()
+	defer s.memberMu.Unlock()
+
 	if req.Username == "" {
 		return ErrInvalidRequest
 	}
-	if _, exists := config.Members[req.Username]; exists {
+	snapshot := config.Current()
+	if _, exists := snapshot.Members[req.Username]; exists {
 		return ErrMemberExists
 	}
-	if minLen := config.Password.MinLength; len(req.Password) < minLen {
-		return fmt.Errorf("密码长度不能少于 %d 位", minLen)
+	if len(req.Password) < snapshot.Password.MinLength {
+		return fmt.Errorf("密码长度不能少于 %d 位", snapshot.Password.MinLength)
 	}
-
-	home, err := s.homeDirEnsure(req.HomeDirectory, req.Username)
-	if err != nil {
-		return fmt.Errorf("创建 home 目录失败: %w", err)
-	}
-
-	// 对密码进行 bcrypt 加密
 	hashedPassword, err := secure.BcryptHash(req.Password)
 	if err != nil {
 		return fmt.Errorf("密码加密失败: %w", err)
 	}
-
-	config.Members[req.Username] = &config.MemberConfig{
-		Username:      req.Username,
-		Password:      hashedPassword,
-		HomeDirectory: home,
-		Description:   req.Description,
-		Permissions:   req.Permissions,
+	home, homeCreated, err := s.homeDirEnsure(req.HomeDirectory, req.Username)
+	if err != nil {
+		return fmt.Errorf("创建 home 目录失败: %w", err)
 	}
-	if err := config.Save(); err != nil {
+	if err := config.Update(func(draft *config.Snapshot) error {
+		if _, exists := draft.Members[req.Username]; exists {
+			return ErrMemberExists
+		}
+		if len(req.Password) < draft.Password.MinLength {
+			return fmt.Errorf("密码长度不能少于 %d 位", draft.Password.MinLength)
+		}
+		draft.Members[req.Username] = &config.MemberConfig{
+			Username:      req.Username,
+			Password:      hashedPassword,
+			HomeDirectory: home,
+			Description:   req.Description,
+			Permissions:   append([]string(nil), req.Permissions...),
+		}
+		return nil
+	}); err != nil {
+		if homeCreated {
+			if removeErr := os.Remove(home); removeErr != nil && !os.IsNotExist(removeErr) {
+				logman.Warn("Rollback member home failed", "home", home, "error", removeErr)
+			}
+		}
 		return fmt.Errorf("保存配置失败: %w", err)
 	}
 	logman.Info("Member created", "username", req.Username)
@@ -101,34 +116,52 @@ func (s *Service) MemberCreate(req MemberUpsertRequest) error {
 
 // MemberUpdate 更新成员
 func (s *Service) MemberUpdate(username string, req MemberUpsertRequest) error {
-	member, exists := config.Members[username]
+	s.memberMu.Lock()
+	defer s.memberMu.Unlock()
+
+	snapshot := config.Current()
+	member, exists := snapshot.Members[username]
 	if !exists {
 		return ErrMemberNotFound
 	}
-	// 创始人不可修改
 	if member.Founder {
 		return ErrFounderProtected
 	}
-
-	home, err := s.homeDirEnsure(req.HomeDirectory, username)
-	if err != nil {
-		return fmt.Errorf("创建 home 目录失败: %w", err)
+	if req.Password != "" && len(req.Password) < snapshot.Password.MinLength {
+		return fmt.Errorf("密码长度不能少于 %d 位", snapshot.Password.MinLength)
 	}
-
-	// 密码为空时 Hash 返回空，保持原密码不变
 	hashedPassword, err := secure.BcryptHash(req.Password)
 	if err != nil {
 		return fmt.Errorf("密码加密失败: %w", err)
 	}
-	if hashedPassword != "" {
-		member.Password = hashedPassword
+	home, homeCreated, err := s.homeDirEnsure(req.HomeDirectory, username)
+	if err != nil {
+		return fmt.Errorf("创建 home 目录失败: %w", err)
 	}
-
-	member.HomeDirectory = home
-	member.Description = req.Description
-	member.Permissions = req.Permissions
-
-	if err := config.Save(); err != nil {
+	if err := config.Update(func(draft *config.Snapshot) error {
+		member, exists := draft.Members[username]
+		if !exists {
+			return ErrMemberNotFound
+		}
+		if member.Founder {
+			return ErrFounderProtected
+		}
+		if hashedPassword != "" {
+			if len(req.Password) < draft.Password.MinLength {
+				return fmt.Errorf("密码长度不能少于 %d 位", draft.Password.MinLength)
+			}
+			member.Password = hashedPassword
+		}
+		member.HomeDirectory = home
+		member.Description = req.Description
+		member.Permissions = append([]string(nil), req.Permissions...)
+		return nil
+	}); err != nil {
+		if homeCreated {
+			if removeErr := os.Remove(home); removeErr != nil && !os.IsNotExist(removeErr) {
+				logman.Warn("Rollback member home failed", "home", home, "error", removeErr)
+			}
+		}
 		return fmt.Errorf("保存配置失败: %w", err)
 	}
 	logman.Info("Member updated", "username", username)
@@ -137,16 +170,17 @@ func (s *Service) MemberUpdate(username string, req MemberUpsertRequest) error {
 
 // MemberDelete 删除成员
 func (s *Service) MemberDelete(username string) error {
-	member, exists := config.Members[username]
-	if !exists {
-		return ErrMemberNotFound
-	}
-	// 创始人不可删除
-	if member.Founder {
-		return ErrFounderProtected
-	}
-	delete(config.Members, username)
-	if err := config.Save(); err != nil {
+	if err := config.Update(func(draft *config.Snapshot) error {
+		member, exists := draft.Members[username]
+		if !exists {
+			return ErrMemberNotFound
+		}
+		if member.Founder {
+			return ErrFounderProtected
+		}
+		delete(draft.Members, username)
+		return nil
+	}); err != nil {
 		return fmt.Errorf("保存配置失败: %w", err)
 	}
 	logman.Info("Member deleted", "username", username)
@@ -163,7 +197,7 @@ type ChangePasswordRequest struct {
 
 // PasswordChange 修改当前用户密码
 func (s *Service) PasswordChange(username string, req ChangePasswordRequest) error {
-	member, exists := config.Members[username]
+	member, exists := config.Current().Members[username]
 	if !exists {
 		return ErrMemberNotFound
 	}
@@ -175,7 +209,7 @@ func (s *Service) PasswordChange(username string, req ChangePasswordRequest) err
 	if !secure.BcryptVerify(req.OldPassword, member.Password) {
 		return fmt.Errorf("原密码错误")
 	}
-	if minLen := config.Password.MinLength; len(req.NewPassword) < minLen {
+	if minLen := config.Current().Password.MinLength; len(req.NewPassword) < minLen {
 		return fmt.Errorf("密码长度不能少于 %d 位", minLen)
 	}
 
@@ -185,8 +219,20 @@ func (s *Service) PasswordChange(username string, req ChangePasswordRequest) err
 		return fmt.Errorf("密码加密失败: %w", err)
 	}
 
-	member.Password = hashedPassword
-	if err := config.Save(); err != nil {
+	if err := config.Update(func(draft *config.Snapshot) error {
+		currentMember, exists := draft.Members[username]
+		if !exists {
+			return ErrMemberNotFound
+		}
+		if !secure.BcryptVerify(req.OldPassword, currentMember.Password) {
+			return fmt.Errorf("原密码错误")
+		}
+		if len(req.NewPassword) < draft.Password.MinLength {
+			return fmt.Errorf("密码长度不能少于 %d 位", draft.Password.MinLength)
+		}
+		currentMember.Password = hashedPassword
+		return nil
+	}); err != nil {
 		return fmt.Errorf("保存配置失败: %w", err)
 	}
 
@@ -198,30 +244,50 @@ func (s *Service) PasswordChange(username string, req ChangePasswordRequest) err
 
 // memberInfoBuild 从配置构建成员信息（确保权限不为 nil）
 func (s *Service) memberInfoBuild(m *config.MemberConfig) *MemberInfo {
-	perms := m.Permissions
-	if perms == nil {
-		perms = []string{}
+	permissions := append([]string(nil), m.Permissions...)
+	if permissions == nil {
+		permissions = []string{}
+	}
+	var twoFactor *config.TwoFactorConfig
+	if m.TwoFactor != nil {
+		twoFactor = &config.TwoFactorConfig{}
+		if m.TwoFactor.TOTP != nil {
+			totp := *m.TwoFactor.TOTP
+			twoFactor.TOTP = &totp
+		}
 	}
 	return &MemberInfo{
 		Username:      m.Username,
 		HomeDirectory: m.HomeDirectory,
 		Founder:       m.Founder,
 		Description:   m.Description,
-		Permissions:   perms,
-		TwoFactor:     m.TwoFactor,
+		Permissions:   permissions,
+		TwoFactor:     twoFactor,
 	}
 }
 
-// homeDirEnsure 生成并创建成员 home 目录（空值时使用基础目录 + 用户名）
-func (s *Service) homeDirEnsure(home, username string) (string, error) {
+// homeDirEnsure 生成并创建成员 home 目录，并报告最终目录是否由本次调用原子创建。
+func (s *Service) homeDirEnsure(home, username string) (string, bool, error) {
 	if home == "" {
 		home = username
 	}
 	if !filepath.IsAbs(home) {
-		home = filepath.Join(config.Server.RootDirectory, home)
+		home = filepath.Join(config.Current().Server.RootDirectory, home)
 	}
-	if err := os.MkdirAll(home, 0755); err != nil {
-		return "", err
+	if err := os.MkdirAll(filepath.Dir(home), 0755); err != nil {
+		return "", false, err
 	}
-	return home, nil
+	if err := os.Mkdir(home, 0755); err == nil {
+		return home, true, nil
+	} else if !os.IsExist(err) {
+		return "", false, err
+	}
+	info, err := os.Stat(home)
+	if err != nil {
+		return "", false, err
+	}
+	if !info.IsDir() {
+		return "", false, fmt.Errorf("home 路径不是目录: %s", home)
+	}
+	return home, false, nil
 }

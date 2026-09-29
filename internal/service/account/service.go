@@ -16,7 +16,9 @@ import (
 
 // Service 账号业务服务
 type Service struct {
-	done chan struct{}
+	done         chan struct{}
+	memberMu     sync.Mutex
+	credentialMu sync.Mutex
 
 	// OIDC 临时状态存储（state/loginCode 均短期有效，内存存储即可）
 	oidcMu         sync.Mutex
@@ -72,7 +74,7 @@ func (s *Service) Close() {
 // PermCheck 校验用户是否有权访问指定路由（"METHOD /api/path"）。
 // label 用于错误提示；返回 nil 表示有权限，否则返回描述错误原因的 error。
 func (s *Service) PermCheck(username, label, method, path string) error {
-	member, exists := config.Members[username]
+	member, exists := config.Current().Members[username]
 	if !exists {
 		return fmt.Errorf("用户不存在")
 	}
@@ -91,7 +93,7 @@ func (s *Service) PermCheck(username, label, method, path string) error {
 
 // FounderCheck 限制高危本机操作仅能由创始人执行。
 func (s *Service) FounderCheck(username string) error {
-	member, exists := config.Members[username]
+	member, exists := config.Current().Members[username]
 	if !exists {
 		return fmt.Errorf("用户不存在")
 	}

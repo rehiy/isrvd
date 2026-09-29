@@ -4,7 +4,6 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/secure"
-	"github.com/rehiy/libgo/strutil"
 )
 
 // schema 当前配置格式定义，修改配置结构后需递增其 Version 并添加对应迁移函数
@@ -51,11 +50,15 @@ func migrateSchema(conf *Config, _ []byte) bool {
 // migrateJWTSecret 首次启动时自动生成 JWT 密钥，并替换示例占位密钥。
 func migrateJWTSecret(conf *Config, _ []byte) bool {
 	if conf.Server == nil {
-		return false
+		conf.Server = &ServerConfig{}
 	}
-
 	if conf.Server.JWTSecret == "" || conf.Server.JWTSecret == "your-jwt-secret" {
-		conf.Server.JWTSecret = strutil.Rand(32)
+		secret, err := generateJWTSecret()
+		if err != nil {
+			logman.Error("JWT 密钥生成失败", "error", err)
+			return false
+		}
+		conf.Server.JWTSecret = secret
 		logman.Info("JWT 密钥已自动生成")
 		return true
 	}
