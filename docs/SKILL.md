@@ -77,11 +77,13 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 | Caddy | [references/caddy/servers.md](references/caddy/servers.md) | 服务（srv0 等）增删改查 |
 | Caddy | [references/caddy/certs.md](references/caddy/certs.md) | SSL 证书管理 |
 | Caddy | [references/caddy/config.md](references/caddy/config.md) | 全局配置、原始 JSON 配置 |
-| 系统 | [references/system/config.md](references/system/config.md) | 系统配置、故障告警、审计日志 |
+| Caddy | [references/caddy/basic-auth.md](references/caddy/basic-auth.md) | 路由 Basic Auth 账号 |
+| 系统 | [references/system/config.md](references/system/config.md) | 系统配置、配置/业务数据存储、重载、故障告警、审计日志 |
 | 系统 | [references/system/account.md](references/system/account.md) | 登录、成员管理、API Token |
 | 系统 | [references/system/filer.md](references/system/filer.md) | 文件管理、上传下载、压缩解压 |
 | 系统 | [references/system/cron.md](references/system/cron.md) | 计划任务 |
-| 系统 | [references/system/ssh.md](references/system/ssh.md) | SSH 主机/凭据管理、SFTP、SSH 终端 |
+| SSH | [references/ssh/hosts.md](references/ssh/hosts.md) | SSH 主机/凭据管理、SSH 终端 |
+| SSH | [references/ssh/sftp.md](references/ssh/sftp.md) | SFTP 远程文件管理 |
 | 本机进程 | [references/local.md](references/local.md) | 进程列表、终止进程 |
 | 终端 | [references/shell.md](references/shell.md) | Web Shell（本地终端） |
 | Copilot | [references/copilot.md](references/copilot.md) | 接口目录与 AG-UI 对话 |
@@ -140,9 +142,10 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
     ├── 成员/权限/Token/OIDC/TOTP 2FA → references/system/account.md
     ├── 文件管理         → references/system/filer.md
     ├── 计划任务         → references/system/cron.md
-    ├── SSH 主机管理     → references/system/ssh.md
+    ├── SSH 主机管理     → references/ssh/hosts.md
+    ├── SFTP 远程文件    → references/ssh/sftp.md
     ├── Shell 终端       → references/shell.md (GET /shell WebSocket)
-    └── WebSSH 终端     → references/system/ssh.md (GET /ssh/to/:id WebSocket)
+    └── WebSSH 终端     → references/ssh/hosts.md (GET /ssh/to/:id WebSocket)
 ```
 
 ---
@@ -152,13 +155,14 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 isrvd 支持运行时重载，无需重启进程：
 
 - **etcd 配置变更**：自动触发重载，无需手动操作
+- **`PUT /system/config` 保存配置**：保存后自动触发重载
 - **SIGHUP 信号**：手动触发，适用于本地文件配置场景
 
 ```bash
 kill -HUP $(pgrep isrvd)
 ```
 
-触发行为：重新加载配置 → 重新初始化 registry 客户端 → 重新初始化各业务服务，服务恢复后 API 立即生效。
+触发行为：重新加载配置（失败则保留旧配置）→ 取消进行中的请求 → 重新初始化 registry 客户端 → 重新初始化各业务服务，服务恢复后 API 立即生效。
 
 ### 服务不可用时的行为
 
@@ -167,6 +171,8 @@ kill -HUP $(pgrep isrvd)
 ```json
 {"success": false, "message": "查询 APISIX 路由列表服务不可用"}
 ```
+
+重载进行中的新请求也会直接返回 `503`（`message` 为 `服务正在重载`），稍后重试即可。
 
 ---
 
@@ -248,8 +254,8 @@ isrvd_post "/apisix/whitelist" '{"route_id":"'"$ROUTE_ID"'","consumers":["<USERN
 
 # Caddy（反向代理）
 isrvd_post "/caddy/route" '{
-  "match": {"hosts": ["<DOMAIN>"], "paths": ["/*"]},
-  "handler": {"kind": "reverse_proxy", "upstreams": ["<HOST>:<PORT>"]}
+  "match": [{"host": ["<DOMAIN>"], "path": ["/*"]}],
+  "handle": [{"handler": "reverse_proxy", "upstreams": [{"dial": "<HOST>:<PORT>"}]}]
 }'
 ```
 

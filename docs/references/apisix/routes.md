@@ -24,8 +24,10 @@ Web 管理页支持“按路由”和“按 Host”两种展示方式；API 响�
 | upstream_id | string | 上游 ID |
 | upstream | object | 内联上游 |
 | plugins | object | 插件配置 |
-| consumers | string[] | 授权消费者（只读） |
+| consumers | string[] | 授权消费者（只读）；仅 `GET /apisix/whitelist` 响应会填充，路由列表/详情通常不返回 |
 | timeout | object | `{connect, send, read}`（秒） |
+| create_time | number | 创建时间（只读，Unix 秒） |
+| update_time | number | 更新时间（只读，Unix 秒） |
 
 ## 查看路由详情
 
@@ -34,6 +36,11 @@ isrvd_get "/apisix/route/<ROUTE_ID>"
 ```
 
 ## 创建路由
+
+- 必填：`name`，以及 `uri` / `uris` 之一
+- `status` 不传按 `0`（禁用）提交，需要启用时显式传 `1`；`priority` 不传为 `0`；`enable_websocket=false` 不下发
+- 同时传入时 `uris` 优先于 `uri`、`hosts` 优先于 `host`、`upstream_id` 优先于 `upstream`
+- 请求体绑定失败返回 400，其余业务错误返回 500；APISIX 不可用时 `/apisix/*` 返回 503
 
 ```bash
 # 最小
@@ -60,6 +67,8 @@ isrvd_post "/apisix/route" '{
 ```bash
 isrvd_put "/apisix/route/<ROUTE_ID>" '{"name":"<NAME>","uri":"<URI>","status":1,"upstream":{"type":"roundrobin","nodes":{"<HOST>:<PORT>":1}}}'
 ```
+
+更新调用 APISIX `PUT /routes/<ID>`，为**全量替换**：未传字段会被移除（含 `plugins`、`status`），应先 GET 详情再整体提交。更新仅校验 `name` 必填。
 
 ## 启用/禁用路由
 

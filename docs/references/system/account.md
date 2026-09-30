@@ -70,7 +70,12 @@ isrvd_get "/account/routes"
 isrvd_post "/account/token" '{"name":"<TOKEN_NAME>","expiresIn":2592000}'
 ```
 
-返回：`{"token": "长效token..."}`
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| name | string | 可选，令牌名称 |
+| expiresIn | number | 过期时间（秒）；不传或 ≤0 表示永不过期 |
+
+返回：`{"token": "长效token...", "name": "<TOKEN_NAME>"}`。需要 `POST /api/account/token` 路由权限。
 
 ## 修改密码
 
@@ -131,10 +136,10 @@ isrvd_post "/account/member" '{"username":"<USER>","password":"<PASS>","homeDire
 ## 更新成员
 
 ```bash
-isrvd_put "/account/member/<USER>" '{"description":"<DESC>","permissions":["GET /api/docker/containers","GET /api/docker/images","GET /api/swarm/services"]}'
+isrvd_put "/account/member/<USER>" '{"homeDirectory":"<HOME_DIR>","description":"<DESC>","permissions":["GET /api/docker/containers","GET /api/docker/images","GET /api/swarm/services"]}'
 ```
 
-> password 为空则不修改。
+> 更新会**整体覆盖** `homeDirectory`、`description`、`permissions`：不传 `homeDirectory` 会重置为 `<rootDirectory>/<username>` 并自动创建目录；不传 `permissions` 会清空权限。请先 `GET /account/members` 取得当前值再修改提交。`password` 为空则不修改。创始人不能被修改或删除。
 
 ## 删除成员
 
@@ -168,7 +173,8 @@ isrvd_post "/account/passkey/register/finish?sessionId=<SESSION_ID>" '<CREDENTIA
 
 # 列出当前用户的凭证
 isrvd_get "/account/passkey/credentials"
-# 返回：[{"idBase64":"...","aaguidBase64":"...","signCount":0,"displayName":"...","addedAt":"..."}]
+# 返回：[{"idBase64":"...","publicKeyBase64":"...","aaguidBase64":"...","signCount":0,"backupEligible":false,"backupState":false,"displayName":"...","addedAt":"..."}]
+# signCount 为配置中保存的初始值，运行时计数仅在内存维护
 
 # 重命名凭证
 isrvd_put "/account/passkey/credential/<CREDENTIAL_ID>" '{"displayName":"<NEW_NAME>"}'

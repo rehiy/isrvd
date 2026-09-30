@@ -33,13 +33,19 @@ isrvd_get "/caddy/global"
 | onDemandAsk | string | ask 鉴权端点 URL，Caddy 申请证书前向此发 GET 请求，返回 2xx 才允许；Caddy v2.8+ 必须配置，留空则不设（仅测试环境） |
 | gracePeriod | string | HTTP app 优雅关闭等待时间，例如 `10s` |
 
+> 所有字段均为 `omitempty`，GET 响应中空值字段会被省略。`localCerts=true` 时忽略 `email` / `acmeCA`；仅 `onDemandTLS=true` 时写入 `onDemandAsk`，关闭 on_demand 时保留原有 permission 配置。
+
 > 自动 HTTPS 与 HTTP→HTTPS 重定向属于 HTTP server 配置，不属于全局选项。请通过服务接口的 `automatic_https` 字段按服务设置，参见 [服务管理](servers.md)。
 
 ### 更新全局选项
 
 ```bash
-isrvd_put "/caddy/global" '{"email":"you@example.com","logLevel":"WARN"}'
+# 先 GET 当前值，再修改后整体提交
+GLOBAL=$(isrvd_get "/caddy/global")
+isrvd_put "/caddy/global" "$(echo "$GLOBAL" | jq '.email = "you@example.com" | .logLevel = "WARN"')"
 ```
+
+> ⚠️ `PUT /caddy/global` 为**全量替换**：未提交的字段会被清空（如日志级别、日志格式、ACME issuer、on_demand 开关、`gracePeriod`）。只传 `{"logLevel":"WARN"}` 会清掉 `email` / `acmeCA` / `gracePeriod` 等。
 
 ## 获取完整配置
 
@@ -83,8 +89,8 @@ isrvd_post "/caddy/config" "$(jq -n '{
 ### 启用 HTTPS 自动签发
 
 ```bash
-# 设置全局 ACME 邮箱
-isrvd_put "/caddy/global" '{"email":"you@example.com"}'
+# 设置全局 ACME 邮箱（全量替换，需基于当前值修改）
+isrvd_put "/caddy/global" "$(isrvd_get "/caddy/global" | jq '.email = "you@example.com"')"
 
 # 为指定服务启用自动 HTTPS 与重定向；listen 等字段按详情响应原样提交
 SERVER=$(isrvd_get "/caddy/server/<ID>")
@@ -95,7 +101,7 @@ echo "$SERVER" | jq 'del(.id, .name, .routeCount) | .automatic_https = null' \
 ### 调整日志级别
 
 ```bash
-isrvd_put "/caddy/global" '{"logLevel":"WARN"}'
+isrvd_put "/caddy/global" "$(isrvd_get "/caddy/global" | jq '.logLevel = "WARN"')"
 ```
 
 ### 备份并修改部分字段

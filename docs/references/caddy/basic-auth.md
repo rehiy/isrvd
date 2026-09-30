@@ -44,6 +44,10 @@ isrvd_get "/caddy/basic-auth?server=internal" # 指定非默认服务名称
 | `users` | 账号列表（不含密码 hash） |
 | `handlers` | 其余 handler 链（排除 authentication，只读展示） |
 
+> 没有匹配路由时 payload 为 `null`（而非 `[]`）。
+>
+> 添加账号、删除账号、更新配置都会重建整个 `authentication` handler，原 handler 中的其他字段（如 `hash` 设置、其他 provider）不会保留。
+
 ## 添加账号
 
 ```bash
@@ -88,5 +92,5 @@ isrvd_put "/caddy/basic-auth/0/config" '{
 
 | 字段 | 必填 | 说明 |
 |---|---|---|
-| `realm` | — | HTTP Basic realm |
+| `realm` | — | HTTP Basic realm；留空表示清除（使用 Caddy 默认值），与添加账号时"留空沿用"不同 |
 | `forwardHeader` | — | 透传用户名的请求头名；空表示关闭透传 |

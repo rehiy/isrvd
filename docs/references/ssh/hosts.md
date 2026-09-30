@@ -2,7 +2,9 @@
 
 > WebSSH 模块支持通过浏览器直接连接远程 SSH 主机，提供可复用认证凭据管理、主机配置管理（支持凭据复用、密码和私钥认证）和 WebSocket 终端会话。
 > 主机配置独立存储于 `{rootDirectory}/webssh-host.yml`，认证凭据独立存储于 `{rootDirectory}/webssh-cred.yml`，均不写入主配置文件；配置位于 etcd 时改存 `<配置 key>/<文件名>`，首次读取时自动迁移本地同名文件。
-> `password`、`privateKey` 加密落盘（密钥由 `server.jwtSecret` 派生），修改 `jwtSecret` 后需重新填写 SSH 认证信息。
+> `password`、`privateKey` 加密落盘（密钥由 `server.jwtSecret` 派生）。⚠️ 修改 `jwtSecret` 后已加密的认证信息无法解密，WebSSH 服务初始化失败，`/ssh/*`、`/sftp/*` 整体返回 `503`，无法通过 API 重新填写；需恢复原 `jwtSecret`，或手工清除 `webssh-host.yml` / `webssh-cred.yml` 中的 `password` / `privateKey` 后再重新填写。
+>
+> 权限按路由 `METHOD /api/path` 逐条授予（创始人不受限）。
 
 ---
 
@@ -22,9 +24,11 @@ isrvd_get "/ssh/credentials"
 | `name` | string | 凭据名称 |
 | `description` | string | 描述 |
 | `user` | string | SSH 用户名 |
-| `authType` | string | 认证方式（只读）：`"password"` \| `"privateKey"` \| `""`（未设置） |
+| `authType` | string | 认证方式（只读）：`"password"` \| `"privateKey"`；未设置认证时不返回该字段 |
 
 > `password` 和 `privateKey` 为敏感字段，不在响应中返回。
+>
+> 添加/更新凭据时：`name`、`user` 必填；填了 `privateKey` 会清空 `password`，只填 `password` 会清空 `privateKey`；更新时两者都留空则保留原值。
 
 ### 获取凭据详情
 
@@ -81,7 +85,7 @@ isrvd_get "/ssh/hosts"
 | `addr` | string | 地址（`host` 或 `host:port`，默认端口 22） |
 | `credentialId` | string | 绑定的认证凭据 ID（可选） |
 | `credentialName` | string | 绑定的认证凭据名称（只读，可选） |
-| `user` | string | SSH 用户名 |
+| `user` | string | SSH 用户名；绑定凭据时为保存时复制的凭据用户名快照，实际连接以凭据当前的 `user` 为准 |
 | `description` | string | 描述 |
 
 ---
@@ -130,7 +134,7 @@ isrvd_post "/ssh/host" '{
 |------|------|------|------|
 | `name` | string | ✓ | 主机名称 |
 | `addr` | string | ✓ | 地址（`host` 或 `host:port`） |
-| `credentialId` | string | | 绑定的认证凭据 ID；设置后优先使用该凭据认证 |
+| `credentialId` | string | | 绑定的认证凭据 ID；设置后校验凭据存在（不存在返回 400），使用凭据认证并丢弃主机上的 `password` / `privateKey` |
 | `user` | string | | SSH 用户名；`credentialId` 为空时使用 |
 | `password` | string | | SSH 密码；`credentialId` 为空时与 `privateKey` 二选一 |
 | `privateKey` | string | | SSH 私钥内容（PEM 格式）；`credentialId` 为空时优先于密码 |
