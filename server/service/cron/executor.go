@@ -129,6 +129,23 @@ func (s *Service) executeJob(ctx context.Context, job *Job) {
 	}
 }
 
+// runDockerJob 执行 DOCKER_TMP / DOCKER_CTR 类型任务
+func (s *Service) runDockerJob(ctx context.Context, job *Job) (string, error) {
+	if s.docker == nil {
+		return "", fmt.Errorf("Docker 服务未启用，无法执行该类型任务")
+	}
+	switch job.Type {
+	case "DOCKER_TMP":
+		vols := parseVolumeLines(job.Volumes)
+		return s.docker.ContainerRunScript(ctx, job.Image, "/bin/sh", job.Content, job.Timeout, vols)
+	case "DOCKER_CTR":
+		return s.docker.ContainerExecRun(ctx, job.Container, "/bin/sh", job.Content, job.Timeout)
+	}
+	return "", fmt.Errorf("未知的 Docker 任务类型: %s", job.Type)
+}
+
+// ─── 辅助函数 ───
+
 func normalizeScriptContent(content string) string {
 	content = strings.ReplaceAll(content, "\r\n", "\n")
 	content = strings.ReplaceAll(content, "\r", "\n")
@@ -233,21 +250,6 @@ func runLocalJob(parent context.Context, job *Job) (string, error) {
 		return output.String(), ctx.Err()
 	}
 	return output.String(), err
-}
-
-// runDockerJob 执行 DOCKER_TMP / DOCKER_CTR 类型任务
-func (s *Service) runDockerJob(ctx context.Context, job *Job) (string, error) {
-	if s.docker == nil {
-		return "", fmt.Errorf("Docker 服务未启用，无法执行该类型任务")
-	}
-	switch job.Type {
-	case "DOCKER_TMP":
-		vols := parseVolumeLines(job.Volumes)
-		return s.docker.ContainerRunScript(ctx, job.Image, "/bin/sh", job.Content, job.Timeout, vols)
-	case "DOCKER_CTR":
-		return s.docker.ContainerExecRun(ctx, job.Container, "/bin/sh", job.Content, job.Timeout)
-	}
-	return "", fmt.Errorf("未知的 Docker 任务类型: %s", job.Type)
 }
 
 // parseVolumeLines 将换行分隔的 /host:/container[:ro] 字符串转为 Docker mount 列表

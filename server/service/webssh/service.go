@@ -81,16 +81,6 @@ func (s *Service) CredentialUpdate(id string, req *CredentialUpsertRequest) (*Cr
 	return s.credentialStore.get(id), nil
 }
 
-func credentialFromRequest(req *CredentialUpsertRequest) *Credential {
-	return &Credential{
-		Name:        req.Name,
-		Description: req.Description,
-		User:        req.User,
-		Password:    req.Password,
-		PrivateKey:  req.PrivateKey,
-	}
-}
-
 // CredentialDelete 删除凭据
 func (s *Service) CredentialDelete(id string) error {
 	if err := s.credentialStore.delete(id); err != nil {
@@ -218,5 +208,17 @@ func (s *Service) RunTerminal(conn *websocket.ServerConn, hostID string) {
 		logger.Error("WebSSH 会话结束", "hostID", hostID, "error", err)
 	} else {
 		logger.Info("WebSSH 会话正常结束", "hostID", hostID)
+	}
+}
+
+// ─── 辅助函数 ───
+
+func credentialFromRequest(req *CredentialUpsertRequest) *Credential {
+	return &Credential{
+		Name:        req.Name,
+		Description: req.Description,
+		User:        req.User,
+		Password:    req.Password,
+		PrivateKey:  req.PrivateKey,
 	}
 }

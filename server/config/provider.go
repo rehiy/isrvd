@@ -96,45 +96,6 @@ func Load() error {
 	return nil
 }
 
-func readSnapshot() (*Snapshot, error) {
-	raw, err := store.Get(storeKey)
-	if err != nil {
-		return nil, fmt.Errorf("读取配置失败: %w", err)
-	}
-	if raw == nil {
-		logman.Warn("未找到配置文件", "key", storeKey)
-		return nil, nil
-	}
-	conf := &Config{}
-	if err := yaml.Unmarshal(raw, conf); err != nil {
-		return nil, fmt.Errorf("解析配置失败: %w", err)
-	}
-
-	migrated := migrate(conf, raw)
-	snapshot, err := buildSnapshot(conf)
-	if err != nil {
-		return nil, fmt.Errorf("构建配置快照失败: %w", err)
-	}
-	if conf.Server == nil || conf.Server.JWTSecret != snapshot.Server.JWTSecret {
-		if conf.Server == nil {
-			conf.Server = &ServerConfig{}
-		}
-		conf.Server.JWTSecret = snapshot.Server.JWTSecret
-		migrated = true
-	}
-	if migrated {
-		data, marshalErr := yaml.Marshal(conf)
-		if marshalErr != nil {
-			return nil, fmt.Errorf("配置迁移序列化失败: %w", marshalErr)
-		}
-		if err := setConfigBytes(data); err != nil {
-			return nil, fmt.Errorf("配置迁移保存失败: %w", err)
-		}
-		logman.Info("配置已自动更新（配置迁移）")
-	}
-	return snapshot, nil
-}
-
 // Update 在配置副本上串行修改，持久化成功后发布新快照；可选回调用于同步运行态派生数据。
 func Update(mutator func(*Snapshot) error, afterPublish ...func(*Snapshot)) error {
 	updateMu.Lock()
@@ -181,6 +142,47 @@ func UpdateStored(mutator func(*Snapshot) error) error {
 	}
 	_, err = updateSnapshot(base, mutator)
 	return err
+}
+
+// ─── 辅助函数 ───
+
+func readSnapshot() (*Snapshot, error) {
+	raw, err := store.Get(storeKey)
+	if err != nil {
+		return nil, fmt.Errorf("读取配置失败: %w", err)
+	}
+	if raw == nil {
+		logman.Warn("未找到配置文件", "key", storeKey)
+		return nil, nil
+	}
+	conf := &Config{}
+	if err := yaml.Unmarshal(raw, conf); err != nil {
+		return nil, fmt.Errorf("解析配置失败: %w", err)
+	}
+
+	migrated := migrate(conf, raw)
+	snapshot, err := buildSnapshot(conf)
+	if err != nil {
+		return nil, fmt.Errorf("构建配置快照失败: %w", err)
+	}
+	if conf.Server == nil || conf.Server.JWTSecret != snapshot.Server.JWTSecret {
+		if conf.Server == nil {
+			conf.Server = &ServerConfig{}
+		}
+		conf.Server.JWTSecret = snapshot.Server.JWTSecret
+		migrated = true
+	}
+	if migrated {
+		data, marshalErr := yaml.Marshal(conf)
+		if marshalErr != nil {
+			return nil, fmt.Errorf("配置迁移序列化失败: %w", marshalErr)
+		}
+		if err := setConfigBytes(data); err != nil {
+			return nil, fmt.Errorf("配置迁移保存失败: %w", err)
+		}
+		logman.Info("配置已自动更新（配置迁移）")
+	}
+	return snapshot, nil
 }
 
 func updateSnapshot(base *Snapshot, mutator func(*Snapshot) error) (*Snapshot, error) {

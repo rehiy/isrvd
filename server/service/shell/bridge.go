@@ -72,6 +72,30 @@ func Bridge(conn *websocket.ServerConn, stdin io.Writer, stdout io.Reader, opt B
 	}
 }
 
+type closerFunc func()
+
+func (fn closerFunc) Close() error {
+	fn()
+	return nil
+}
+
+type multiCloser []io.Closer
+
+func (closers multiCloser) Close() error {
+	var firstErr error
+	for _, closer := range closers {
+		if closer == nil {
+			continue
+		}
+		if err := closer.Close(); err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	return firstErr
+}
+
+// ─── 辅助函数 ───
+
 func parseTerminalResize(data []byte) (int, int, bool) {
 	msg := string(data)
 	if !strings.HasPrefix(msg, ResizeControlPrefix) {
@@ -94,28 +118,6 @@ func parseTerminalResize(data []byte) (int, int, bool) {
 		return 0, 0, true
 	}
 	return cols, rows, true
-}
-
-type closerFunc func()
-
-func (fn closerFunc) Close() error {
-	fn()
-	return nil
-}
-
-type multiCloser []io.Closer
-
-func (closers multiCloser) Close() error {
-	var firstErr error
-	for _, closer := range closers {
-		if closer == nil {
-			continue
-		}
-		if err := closer.Close(); err != nil && firstErr == nil {
-			firstErr = err
-		}
-	}
-	return firstErr
 }
 
 func terminalCloser(stdin io.Writer, stdout io.Reader, closeFn func()) io.Closer {

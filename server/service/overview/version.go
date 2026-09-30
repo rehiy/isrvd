@@ -105,6 +105,8 @@ func (s *Service) RestartSelf() error {
 	return u.Restart()
 }
 
+// ─── 辅助函数 ───
+
 func isNewerVersion(latest, current string) bool {
 	l := strings.TrimPrefix(latest, "v")
 	c := strings.TrimPrefix(current, "v")

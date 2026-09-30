@@ -202,6 +202,8 @@ func (s *Service) BasicAuthConfigUpdate(ctx context.Context, server string, rout
 	})
 }
 
+// ─── 辅助函数 ───
+
 func findAuthIndex(route *caddy.Route) int {
 	for i, h := range route.Handle {
 		if _, _, ok := caddy.BasicAuthFromHandler(h); ok {

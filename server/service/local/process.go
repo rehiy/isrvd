@@ -97,6 +97,26 @@ func ProcessList(includeCmdline bool) ([]*ProcessInfo, error) {
 	return list, nil
 }
 
+// ProcessKill 终止进程；force 为 true 时发送 SIGKILL，否则发送 SIGTERM
+func ProcessKill(pid int32, force bool) error {
+	// 保护 init 进程与 isrvd 自身，避免系统崩溃或面板自杀
+	if pid <= 1 || pid == int32(os.Getpid()) {
+		return ErrProtectedProcess
+	}
+
+	proc, err := process.NewProcess(pid)
+	if err != nil {
+		return err
+	}
+
+	if force {
+		return proc.Kill()
+	}
+	return proc.Terminate()
+}
+
+// ─── 辅助函数 ───
+
 // collect 采集单个进程的字段；任一字段失败时降级为零值，而不是丢弃整个进程
 func collect(proc *process.Process, includeCmdline bool) *ProcessInfo {
 	info := &ProcessInfo{PID: proc.Pid}
@@ -194,22 +214,4 @@ func ioRate(previous, current uint64, elapsed time.Duration) (uint64, bool) {
 		return 0, false
 	}
 	return uint64(float64(current-previous) / elapsed.Seconds()), true
-}
-
-// ProcessKill 终止进程；force 为 true 时发送 SIGKILL，否则发送 SIGTERM
-func ProcessKill(pid int32, force bool) error {
-	// 保护 init 进程与 isrvd 自身，避免系统崩溃或面板自杀
-	if pid <= 1 || pid == int32(os.Getpid()) {
-		return ErrProtectedProcess
-	}
-
-	proc, err := process.NewProcess(pid)
-	if err != nil {
-		return err
-	}
-
-	if force {
-		return proc.Kill()
-	}
-	return proc.Terminate()
 }

@@ -189,6 +189,8 @@ func (s *Service) VolumeInspect(ctx context.Context, name string) (*VolumeDetail
 	return volumeDetail(volInfo, containers), nil
 }
 
+// ─── 辅助函数 ───
+
 func networkDetail(netInfo network.Inspect) *NetworkDetail {
 	containers := make([]*NetworkContainerInfo, 0, len(netInfo.Containers))
 	for endpointID, ep := range netInfo.Containers {

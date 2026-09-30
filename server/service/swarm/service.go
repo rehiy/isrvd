@@ -291,6 +291,8 @@ func (s *Service) TaskList(ctx context.Context, serviceID string) ([]Task, error
 	return tasksFromRaw(tasks, services, nodes), nil
 }
 
+// ─── 辅助函数 ───
+
 // ─── 内部方法 ───
 
 func serviceInfoFromRaw(svc swarm.Service, runningTasks int) ServiceInfo {

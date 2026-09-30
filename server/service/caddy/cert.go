@@ -195,6 +195,54 @@ func (s *Service) CertDelete(ctx context.Context, key string) error {
 	})
 }
 
+// ─── 证书缓存（运行时已签发证书，内部方法）───
+
+// scanCertCache 扫描 Caddy storage root 下的证书缓存，返回 cached 类型的 CertForm 列表。
+// 接收已读取的 cfg 避免重复请求。
+//
+// Caddy ACME 证书存储路径：<storage_root>/certificates/<acme_server_host>/<domain>/<domain>.crt
+// 文件格式：PEM，包含私钥 + 证书链（多个 block），与 certify.certToPEM 输出格式一致。
+func (s *Service) scanCertCache(cfg *caddy.Config) ([]CertForm, error) {
+	if cfg.Storage == nil {
+		return nil, nil
+	}
+	storageRoot, _ := cfg.Storage["root"].(string)
+	if storageRoot == "" {
+		return nil, nil
+	}
+
+	certsDir := filepath.Join(storageRoot, "certificates")
+	var result []CertForm
+
+	err := filepath.Walk(certsDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info == nil || info.IsDir() {
+			return nil
+		}
+		if !strings.HasSuffix(path, ".crt") {
+			return nil
+		}
+		cert := parseCertFile(path)
+		if cert == nil {
+			return nil
+		}
+		rel, _ := filepath.Rel(storageRoot, path)
+		form := CertForm{
+			Key:    "cached-" + rel,
+			Source: CertSourceCached,
+		}
+		fillCertInfo(&form, cert)
+		result = append(result, form)
+		return nil
+	})
+
+	if err != nil && !os.IsNotExist(err) {
+		return nil, fmt.Errorf("扫描证书缓存失败: %w", err)
+	}
+	return result, nil
+}
+
+// ─── 辅助函数 ───
+
 // ─── 辅助：证书 ───
 
 func buildCertKey(source string, index int) string {
@@ -304,52 +352,6 @@ func removeAutomateSubject(tls *caddy.TLSApp, index int) bool {
 		}
 	}
 	return false
-}
-
-// ─── 证书缓存（运行时已签发证书，内部方法）───
-
-// scanCertCache 扫描 Caddy storage root 下的证书缓存，返回 cached 类型的 CertForm 列表。
-// 接收已读取的 cfg 避免重复请求。
-//
-// Caddy ACME 证书存储路径：<storage_root>/certificates/<acme_server_host>/<domain>/<domain>.crt
-// 文件格式：PEM，包含私钥 + 证书链（多个 block），与 certify.certToPEM 输出格式一致。
-func (s *Service) scanCertCache(cfg *caddy.Config) ([]CertForm, error) {
-	if cfg.Storage == nil {
-		return nil, nil
-	}
-	storageRoot, _ := cfg.Storage["root"].(string)
-	if storageRoot == "" {
-		return nil, nil
-	}
-
-	certsDir := filepath.Join(storageRoot, "certificates")
-	var result []CertForm
-
-	err := filepath.Walk(certsDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info == nil || info.IsDir() {
-			return nil
-		}
-		if !strings.HasSuffix(path, ".crt") {
-			return nil
-		}
-		cert := parseCertFile(path)
-		if cert == nil {
-			return nil
-		}
-		rel, _ := filepath.Rel(storageRoot, path)
-		form := CertForm{
-			Key:    "cached-" + rel,
-			Source: CertSourceCached,
-		}
-		fillCertInfo(&form, cert)
-		result = append(result, form)
-		return nil
-	})
-
-	if err != nil && !os.IsNotExist(err) {
-		return nil, fmt.Errorf("扫描证书缓存失败: %w", err)
-	}
-	return result, nil
 }
 
 // parseCertFile 从 PEM 文件中提取第一个 CERTIFICATE block 并解析。

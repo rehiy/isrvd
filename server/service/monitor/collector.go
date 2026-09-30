@@ -173,6 +173,8 @@ func (c *Collector) DataDir() string {
 	return c.dataDir
 }
 
+// ─── 辅助函数 ───
+
 // nextMidnight 返回下一个凌晨 00:05 的时间（留 5 分钟余量避免边界问题）
 func nextMidnight() time.Time {
 	now := time.Now()

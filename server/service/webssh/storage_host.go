@@ -31,25 +31,6 @@ type store struct {
 	mu    sync.RWMutex                // 保护 hosts 的并发访问
 }
 
-// newHostStore 创建主机配置存储
-func newHostStore() (*store, error) {
-	rootDir := config.Current().Server.RootDirectory
-	const key = "webssh-host.yml"
-
-	ts, err := cstore.NewTyped[[]*Host](rootDir, key)
-	if err != nil {
-		return nil, err
-	}
-	hosts, err := ts.Get()
-	if err != nil {
-		return nil, err
-	}
-	if hosts == nil {
-		hosts = []*Host{}
-	}
-	return &store{ts: ts, hosts: hosts}, nil
-}
-
 // hostList 返回所有主机列表（密码/私钥不序列化）
 func (s *store) hostList() []*Host {
 	s.mu.RLock()
@@ -170,14 +151,6 @@ func (s *store) hostGetOption(id string, credStore *credentialStore) (*webssh.SS
 	return opt, nil
 }
 
-func cloneHost(h *Host) *Host {
-	if h == nil {
-		return nil
-	}
-	copy := *h
-	return &copy
-}
-
 // findByID 按 ID 查找主机（调用方须持锁）
 func (s *store) findByID(id string) *Host {
 	for _, h := range s.hosts {
@@ -196,4 +169,33 @@ func (s *store) indexByID(id string) int {
 		}
 	}
 	return -1
+}
+
+// ─── 辅助函数 ───
+
+// newHostStore 创建主机配置存储
+func newHostStore() (*store, error) {
+	rootDir := config.Current().Server.RootDirectory
+	const key = "webssh-host.yml"
+
+	ts, err := cstore.NewTyped[[]*Host](rootDir, key)
+	if err != nil {
+		return nil, err
+	}
+	hosts, err := ts.Get()
+	if err != nil {
+		return nil, err
+	}
+	if hosts == nil {
+		hosts = []*Host{}
+	}
+	return &store{ts: ts, hosts: hosts}, nil
+}
+
+func cloneHost(h *Host) *Host {
+	if h == nil {
+		return nil
+	}
+	copy := *h
+	return &copy
 }

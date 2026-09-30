@@ -39,25 +39,6 @@ type credentialStore struct {
 	mu    sync.RWMutex                      // 保护 items 的并发访问
 }
 
-// newCredentialStore 创建凭据存储
-func newCredentialStore() (*credentialStore, error) {
-	rootDir := config.Current().Server.RootDirectory
-	const key = "webssh-cred.yml"
-
-	ts, err := cstore.NewTyped[[]*Credential](rootDir, key)
-	if err != nil {
-		return nil, err
-	}
-	items, err := ts.Get()
-	if err != nil {
-		return nil, err
-	}
-	if items == nil {
-		items = []*Credential{}
-	}
-	return &credentialStore{ts: ts, items: items}, nil
-}
-
 // list 返回所有凭据列表
 func (s *credentialStore) list() []*Credential {
 	s.mu.RLock()
@@ -143,14 +124,6 @@ func (s *credentialStore) update(id string, c *Credential) error {
 	return nil
 }
 
-func cloneCredential(c *Credential) *Credential {
-	if c == nil {
-		return nil
-	}
-	copy := *c
-	return &copy
-}
-
 // delete 删除凭据
 func (s *credentialStore) delete(id string) error {
 	s.mu.Lock()
@@ -177,4 +150,33 @@ func (s *credentialStore) indexOf(id string) int {
 		}
 	}
 	return -1
+}
+
+// ─── 辅助函数 ───
+
+// newCredentialStore 创建凭据存储
+func newCredentialStore() (*credentialStore, error) {
+	rootDir := config.Current().Server.RootDirectory
+	const key = "webssh-cred.yml"
+
+	ts, err := cstore.NewTyped[[]*Credential](rootDir, key)
+	if err != nil {
+		return nil, err
+	}
+	items, err := ts.Get()
+	if err != nil {
+		return nil, err
+	}
+	if items == nil {
+		items = []*Credential{}
+	}
+	return &credentialStore{ts: ts, items: items}, nil
+}
+
+func cloneCredential(c *Credential) *Credential {
+	if c == nil {
+		return nil
+	}
+	copy := *c
+	return &copy
 }

@@ -54,15 +54,6 @@ func (s *Service) RegistryList() []*RegistryInfo {
 	return result
 }
 
-func registryIndex(registries []*config.DockerRegistry, url string) int {
-	for i, registry := range registries {
-		if registry != nil && registry.URL == url {
-			return i
-		}
-	}
-	return -1
-}
-
 func (s *Service) updateRegistries(mutate func(*config.DockerConfig) error) error {
 	var committed []*docker.RegistryConfig
 	return config.Update(func(draft *config.Snapshot) error {
@@ -160,4 +151,15 @@ func (s *Service) ImagePull(ctx context.Context, req ImagePullRequest) (map[stri
 		return nil, err
 	}
 	return map[string]string{"image": imageRef, "message": msg}, nil
+}
+
+// ─── 辅助函数 ───
+
+func registryIndex(registries []*config.DockerRegistry, url string) int {
+	for i, registry := range registries {
+		if registry != nil && registry.URL == url {
+			return i
+		}
+	}
+	return -1
 }

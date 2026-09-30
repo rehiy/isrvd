@@ -331,6 +331,8 @@ func (s *Service) GlobalUpdate(ctx context.Context, req GlobalForm) error {
 	})
 }
 
+// ─── 辅助函数 ───
+
 // buildIssuer 根据表单构造 issuer map；无有效配置时返回 nil
 func buildIssuer(req GlobalForm) map[string]any {
 	if req.LocalCerts {

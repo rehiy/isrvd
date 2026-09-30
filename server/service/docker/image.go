@@ -194,6 +194,8 @@ func (s *Service) ImageInspect(ctx context.Context, id string) (*ImageDetail, er
 	return imageDetail(img, history), nil
 }
 
+// ─── 辅助函数 ───
+
 func imageSearchResults(results []registry.SearchResult) []*ImageSearchResult {
 	out := make([]*ImageSearchResult, 0, len(results))
 	for _, r := range results {

@@ -26,43 +26,6 @@ var (
 	stores   = make(map[string]*jsonl.Store)
 )
 
-// getStore 获取或创建指定 (dir, prefix) 的 Store
-func getStore(dir, prefix string) *jsonl.Store {
-	key := dir + "/" + prefix
-	storesMu.Lock()
-	defer storesMu.Unlock()
-
-	if s, ok := stores[key]; ok {
-		return s
-	}
-	s, err := jsonl.New(dir,
-		jsonl.Naming{Prefix: prefix, Sep: "_", Suffix: ".jsonl"},
-		jsonl.WithBufferSize(32*1024),          // 32KB 缓冲，减少 flush 次数
-		jsonl.WithAsync(256),                   // 异步写入，采集 goroutine 不被 IO 阻塞
-		jsonl.WithFlushInterval(5*time.Second), // 5s flush 一次，与最短采集间隔对齐
-	)
-	if err != nil {
-		logman.Warn("monitor: open jsonl store failed", "dir", dir, "prefix", prefix, "error", err)
-		return nil
-	}
-	stores[key] = s
-	return s
-}
-
-func closeStores(dir string) {
-	storesMu.Lock()
-	defer storesMu.Unlock()
-	for _, prefix := range []string{HostPrefix, ContainerPrefix} {
-		key := dir + "/" + prefix
-		if store := stores[key]; store != nil {
-			if err := store.Close(); err != nil {
-				logman.Warn("monitor: close jsonl store failed", "prefix", prefix, "error", err)
-			}
-			delete(stores, key)
-		}
-	}
-}
-
 // AppendRawRecord 直接追加已序列化的数据（避免重复序列化）
 // containerID 为空时表示主机监控
 func AppendRawRecord(dir, prefix, containerID string, ts int64, raw json.RawMessage) {
@@ -98,6 +61,45 @@ func CleanOldFiles(dir string) {
 			retainDays,
 		); err != nil {
 			logman.Warn("monitor: clean old files failed", "dir", dir, "prefix", prefix, "error", err)
+		}
+	}
+}
+
+// ─── 辅助函数 ───
+
+// getStore 获取或创建指定 (dir, prefix) 的 Store
+func getStore(dir, prefix string) *jsonl.Store {
+	key := dir + "/" + prefix
+	storesMu.Lock()
+	defer storesMu.Unlock()
+
+	if s, ok := stores[key]; ok {
+		return s
+	}
+	s, err := jsonl.New(dir,
+		jsonl.Naming{Prefix: prefix, Sep: "_", Suffix: ".jsonl"},
+		jsonl.WithBufferSize(32*1024),          // 32KB 缓冲，减少 flush 次数
+		jsonl.WithAsync(256),                   // 异步写入，采集 goroutine 不被 IO 阻塞
+		jsonl.WithFlushInterval(5*time.Second), // 5s flush 一次，与最短采集间隔对齐
+	)
+	if err != nil {
+		logman.Warn("monitor: open jsonl store failed", "dir", dir, "prefix", prefix, "error", err)
+		return nil
+	}
+	stores[key] = s
+	return s
+}
+
+func closeStores(dir string) {
+	storesMu.Lock()
+	defer storesMu.Unlock()
+	for _, prefix := range []string{HostPrefix, ContainerPrefix} {
+		key := dir + "/" + prefix
+		if store := stores[key]; store != nil {
+			if err := store.Close(); err != nil {
+				logman.Warn("monitor: close jsonl store failed", "prefix", prefix, "error", err)
+			}
+			delete(stores, key)
 		}
 	}
 }

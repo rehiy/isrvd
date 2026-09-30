@@ -60,6 +60,8 @@ func (s *Service) RunTerminal(ctx context.Context, conn *websocket.ServerConn, s
 	}
 }
 
+// ─── 辅助函数 ───
+
 func runWithPipe(conn *websocket.ServerConn, cmd *exec.Cmd) error {
 	stdin, err := cmd.StdinPipe()
 	if err != nil {

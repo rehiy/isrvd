@@ -138,18 +138,6 @@ func (s *Store) AppendJobLog(entry *JobLog) {
 	}
 }
 
-func truncateJobOutput(value string) string {
-	value = strings.ToValidUTF8(value, "?")
-	if len(value) <= maxStoredJobOutputBytes {
-		return value
-	}
-	end := maxStoredJobOutputBytes - len(jobOutputTruncatedMark)
-	for end > 0 && !utf8.RuneStart(value[end]) {
-		end--
-	}
-	return value[:end] + jobOutputTruncatedMark
-}
-
 // LoadJobLogs 按 jobID 倒序读取最近 limit 条执行日志。
 func (s *Store) LoadJobLogs(id string, limit int) []*JobLog {
 	if id == "" || limit <= 0 {
@@ -185,6 +173,20 @@ func (s *Store) Close() error {
 		return nil
 	}
 	return s.logStore.Close()
+}
+
+// ─── 辅助函数 ───
+
+func truncateJobOutput(value string) string {
+	value = strings.ToValidUTF8(value, "?")
+	if len(value) <= maxStoredJobOutputBytes {
+		return value
+	}
+	end := maxStoredJobOutputBytes - len(jobOutputTruncatedMark)
+	for end > 0 && !utf8.RuneStart(value[end]) {
+		end--
+	}
+	return value[:end] + jobOutputTruncatedMark
 }
 
 // cronLogNaming 日志文件命名规则：YYYY-MM-DD.jsonl

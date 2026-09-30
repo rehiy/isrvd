@@ -185,6 +185,8 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 	return nil
 }
 
+// ─── 辅助函数 ───
+
 // deepCopyJSON 通过 JSON 序列化-反序列化深拷贝，结果与源对象无共享指针
 func deepCopyJSON[T any](src T) (T, error) {
 	var dst T
