@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/rehiy/libgo/logman"
+
 	"isrvd/pkgs/docker"
 	"isrvd/server/config"
 )
@@ -70,6 +72,60 @@ type DockerInfo struct {
 	NetworksTotal      int64    `json:"networksTotal"`      // 网络总数
 	RegistryMirrors    []string `json:"registryMirrors"`    // 镜像加速器地址列表
 	IndexServerAddress string   `json:"indexServerAddress"` // 默认镜像仓库地址
+}
+
+// Info 获取 Docker 概览信息
+func (s *Service) Info(ctx context.Context) (*DockerInfo, error) {
+	daemonInfo, err := s.docker.Info(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("获取 Docker 信息失败: %w", err)
+	}
+
+	containers, err := s.docker.ContainerList(ctx, true)
+	if err != nil {
+		return nil, fmt.Errorf("获取容器列表失败: %w", err)
+	}
+
+	var running, stopped, paused int64
+	for _, ct := range containers {
+		switch ct.State {
+		case "running":
+			running++
+		case "paused":
+			paused++
+		default:
+			stopped++
+		}
+	}
+
+	images, err := s.docker.ImageList(ctx, true)
+	if err != nil {
+		logman.Warn("ImageList failed", "error", err)
+	}
+	volumes, err := s.docker.VolumeList(ctx)
+	if err != nil {
+		logman.Warn("VolumeList failed", "error", err)
+	}
+	networks, err := s.docker.NetworkList(ctx)
+	if err != nil {
+		logman.Warn("NetworkList failed", "error", err)
+	}
+
+	var mirrors []string
+	if daemonInfo.RegistryConfig != nil {
+		mirrors = daemonInfo.RegistryConfig.Mirrors
+	}
+
+	return &DockerInfo{
+		ContainersRunning:  running,
+		ContainersStopped:  stopped,
+		ContainersPaused:   paused,
+		ImagesTotal:        int64(len(images)),
+		VolumesTotal:       int64(len(volumes)),
+		NetworksTotal:      int64(len(networks)),
+		RegistryMirrors:    mirrors,
+		IndexServerAddress: daemonInfo.IndexServerAddress,
+	}, nil
 }
 
 // ActionRequest 资源操作请求（容器/镜像/网络/卷通用）。

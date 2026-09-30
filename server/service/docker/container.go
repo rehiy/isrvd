@@ -336,60 +336,6 @@ func (s *Service) ContainerExec(ctx context.Context, conn *websocket.ServerConn,
 	})
 }
 
-// Info 获取 Docker 概览信息
-func (s *Service) Info(ctx context.Context) (*DockerInfo, error) {
-	daemonInfo, err := s.docker.Info(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("获取 Docker 信息失败: %w", err)
-	}
-
-	containers, err := s.docker.ContainerList(ctx, true)
-	if err != nil {
-		return nil, fmt.Errorf("获取容器列表失败: %w", err)
-	}
-
-	var running, stopped, paused int64
-	for _, ct := range containers {
-		switch ct.State {
-		case "running":
-			running++
-		case "paused":
-			paused++
-		default:
-			stopped++
-		}
-	}
-
-	images, err := s.docker.ImageList(ctx, true)
-	if err != nil {
-		logman.Warn("ImageList failed", "error", err)
-	}
-	volumes, err := s.docker.VolumeList(ctx)
-	if err != nil {
-		logman.Warn("VolumeList failed", "error", err)
-	}
-	networks, err := s.docker.NetworkList(ctx)
-	if err != nil {
-		logman.Warn("NetworkList failed", "error", err)
-	}
-
-	var mirrors []string
-	if daemonInfo.RegistryConfig != nil {
-		mirrors = daemonInfo.RegistryConfig.Mirrors
-	}
-
-	return &DockerInfo{
-		ContainersRunning:  running,
-		ContainersStopped:  stopped,
-		ContainersPaused:   paused,
-		ImagesTotal:        int64(len(images)),
-		VolumesTotal:       int64(len(volumes)),
-		NetworksTotal:      int64(len(networks)),
-		RegistryMirrors:    mirrors,
-		IndexServerAddress: daemonInfo.IndexServerAddress,
-	}, nil
-}
-
 // ─── 内部方法 ───
 
 func (s *Service) containerCreateConfig(req ContainerSpec) (*container.Config, *container.HostConfig, error) {
