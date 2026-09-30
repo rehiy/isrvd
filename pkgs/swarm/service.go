@@ -214,8 +214,6 @@ func (s *SwarmService) ServiceInspect(ctx context.Context, id string) (swarm.Ser
 	return svc, nil
 }
 
-// ─── 辅助函数 ───
-
 func (s *SwarmService) serviceUpdateOptions(spec swarm.ServiceSpec) swarm.ServiceUpdateOptions {
 	return swarm.ServiceUpdateOptions{
 		EncodedRegistryAuth: s.serviceRegistryAuth(spec),
@@ -234,6 +232,8 @@ func (s *SwarmService) serviceRegistryAuth(spec swarm.ServiceSpec) string {
 	}
 	return s.registryAuth(imageRef)
 }
+
+// ─── 辅助函数 ───
 
 func serviceImageRef(spec swarm.ServiceSpec) string {
 	if spec.TaskTemplate.ContainerSpec != nil {

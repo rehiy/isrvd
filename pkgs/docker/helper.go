@@ -13,8 +13,6 @@ import (
 	"github.com/docker/docker/api/types/container"
 )
 
-// ─── 辅助函数 ───
-
 // ShortID 返回 ID 的前 12 字符，不足 12 则返回原值
 func ShortID(id string) string {
 	id = strings.TrimPrefix(id, "sha256:")
@@ -22,58 +20,6 @@ func ShortID(id string) string {
 		return id[:12]
 	}
 	return id
-}
-
-// buildDockerfileTar 构建 Dockerfile 的 tar 包
-func buildDockerfileTar(dockerfile string) (*bytes.Buffer, error) {
-	tarBuf := new(bytes.Buffer)
-	tw := tar.NewWriter(tarBuf)
-	hdr := &tar.Header{
-		Name: "Dockerfile",
-		Mode: 0644,
-		Size: int64(len(dockerfile)),
-	}
-	if err := tw.WriteHeader(hdr); err != nil {
-		return nil, err
-	}
-	if _, err := tw.Write([]byte(dockerfile)); err != nil {
-		return nil, err
-	}
-	tw.Close()
-	return tarBuf, nil
-}
-
-// registryHost 从仓库 URL 中提取 host 部分（去掉协议前缀和路径），用于拼接镜像引用
-// 例如：https://csighub.tencentyun.com -> csighub.tencentyun.com
-func registryHost(registryURL string) string {
-	host := strings.TrimPrefix(registryURL, "https://")
-	host = strings.TrimPrefix(host, "http://")
-	if idx := strings.Index(host, "/"); idx >= 0 {
-		host = host[:idx]
-	}
-	return host
-}
-
-// consumeImageStream 消费 Docker 镜像操作的 JSON 流，返回最后一条 status 消息。
-// 遇到流中 error 字段时立即返回错误。
-func consumeImageStream(dec *json.Decoder) (string, error) {
-	var lastMessage string
-	for {
-		var msg struct {
-			Status string `json:"status"`
-			Error  string `json:"error"`
-		}
-		if err := dec.Decode(&msg); err != nil {
-			break
-		}
-		if msg.Error != "" {
-			return "", errors.New(msg.Error)
-		}
-		if msg.Status != "" {
-			lastMessage = msg.Status
-		}
-	}
-	return lastMessage, nil
 }
 
 // SelfContainerID 获取并缓存当前容器的完整 ID。如果不在容器中，返回空字符串。
@@ -164,4 +110,58 @@ func (s *DockerService) resolveSelfContainerID(ctx context.Context) string {
 		}
 	}
 	return ""
+}
+
+// ─── 辅助函数 ───
+
+// buildDockerfileTar 构建 Dockerfile 的 tar 包
+func buildDockerfileTar(dockerfile string) (*bytes.Buffer, error) {
+	tarBuf := new(bytes.Buffer)
+	tw := tar.NewWriter(tarBuf)
+	hdr := &tar.Header{
+		Name: "Dockerfile",
+		Mode: 0644,
+		Size: int64(len(dockerfile)),
+	}
+	if err := tw.WriteHeader(hdr); err != nil {
+		return nil, err
+	}
+	if _, err := tw.Write([]byte(dockerfile)); err != nil {
+		return nil, err
+	}
+	tw.Close()
+	return tarBuf, nil
+}
+
+// registryHost 从仓库 URL 中提取 host 部分（去掉协议前缀和路径），用于拼接镜像引用
+// 例如：https://csighub.tencentyun.com -> csighub.tencentyun.com
+func registryHost(registryURL string) string {
+	host := strings.TrimPrefix(registryURL, "https://")
+	host = strings.TrimPrefix(host, "http://")
+	if idx := strings.Index(host, "/"); idx >= 0 {
+		host = host[:idx]
+	}
+	return host
+}
+
+// consumeImageStream 消费 Docker 镜像操作的 JSON 流，返回最后一条 status 消息。
+// 遇到流中 error 字段时立即返回错误。
+func consumeImageStream(dec *json.Decoder) (string, error) {
+	var lastMessage string
+	for {
+		var msg struct {
+			Status string `json:"status"`
+			Error  string `json:"error"`
+		}
+		if err := dec.Decode(&msg); err != nil {
+			break
+		}
+		if msg.Error != "" {
+			return "", errors.New(msg.Error)
+		}
+		if msg.Status != "" {
+			lastMessage = msg.Status
+		}
+	}
+	return lastMessage, nil
 }

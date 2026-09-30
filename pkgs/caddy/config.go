@@ -6,8 +6,6 @@ import (
 	"fmt"
 )
 
-// 本文件定义 Caddy 顶层配置结构体及内部 unknown fields 透传辅助函数。
-
 // ----- 顶层 -----
 
 var (
@@ -265,6 +263,8 @@ func (a *AppsConfig) UnmarshalJSON(data []byte) error {
 	a.Extras = extras
 	return nil
 }
+
+// ─── 辅助函数 ───
 
 // ----- 内部辅助：unknown fields 透传 -----
 

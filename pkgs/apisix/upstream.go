@@ -51,6 +51,24 @@ func (c *Client) UpstreamDelete(ctx context.Context, upstreamID string) error {
 	return err
 }
 
+// HasUpstreamNodes 判断 Upstream 是否配置了有效节点
+func HasUpstreamNodes(nodes any) bool {
+	switch v := nodes.(type) {
+	case []any:
+		return len(v) > 0
+	case []map[string]any:
+		return len(v) > 0
+	case map[string]any:
+		return len(v) > 0
+	case map[string]int:
+		return len(v) > 0
+	case map[string]float64:
+		return len(v) > 0
+	default:
+		return false
+	}
+}
+
 // ─── 辅助函数 ───
 
 // buildUpstreamBody 将 Upstream 转换为 Apisix API 请求体
@@ -88,22 +106,4 @@ func buildUpstreamBody(req Upstream) map[string]any {
 		body["timeout"] = req.Timeout
 	}
 	return body
-}
-
-// HasUpstreamNodes 判断 Upstream 是否配置了有效节点
-func HasUpstreamNodes(nodes any) bool {
-	switch v := nodes.(type) {
-	case []any:
-		return len(v) > 0
-	case []map[string]any:
-		return len(v) > 0
-	case map[string]any:
-		return len(v) > 0
-	case map[string]int:
-		return len(v) > 0
-	case map[string]float64:
-		return len(v) > 0
-	default:
-		return false
-	}
 }

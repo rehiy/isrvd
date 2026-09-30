@@ -83,31 +83,6 @@ func ReadLogSnapshot(reader io.Reader, tty bool) ([]string, error) {
 	return readLogSnapshot(reader, tty, maxLogSnapshotBytes)
 }
 
-func readLogSnapshot(reader io.Reader, tty bool, limit int64) ([]string, error) {
-	if limit < 0 {
-		return nil, fmt.Errorf("日志读取上限不能为负数")
-	}
-	writer := &logSnapshotWriter{remaining: limit}
-	var err error
-	if tty {
-		_, err = io.Copy(writer, reader)
-	} else {
-		_, err = stdcopy.StdCopy(writer, writer, reader)
-	}
-	truncated := errors.Is(err, errLogSnapshotFull) || writer.truncated
-	if err != nil && !truncated {
-		return nil, err
-	}
-	logs := writer.logs
-	if tty && len(logs) > 1 {
-		logs = []string{strings.Join(logs, "")}
-	}
-	if truncated {
-		logs = append(logs, fmt.Sprintf("\n[output truncated at %d bytes]\n", limit))
-	}
-	return logs, nil
-}
-
 // ContainerLogsStream 实时转发容器日志到 writer。
 // writer 可选实现 httpd.Writer 以区分 error 事件与普通 data 事件。
 func (s *DockerService) ContainerLogsStream(ctx context.Context, w io.Writer, id, tail string) {
@@ -141,8 +116,6 @@ func (s *DockerService) ContainerLogsStream(ctx context.Context, w io.Writer, id
 		logman.Info("Container logs stream cancelled by context", "id", id)
 	}
 }
-
-// ─── 辅助函数 ───
 
 // LogStream 转发 Docker 日志流、发送 SSE 心跳，并在上下文取消时关闭 reader。
 // tty 为 true 时直接复制文本，否则使用 Docker 多路复用帧格式解码。
@@ -187,4 +160,31 @@ func LogErrorWrite(w io.Writer, message string) {
 	} else {
 		_, _ = w.Write([]byte("[" + message + "]\n"))
 	}
+}
+
+// ─── 辅助函数 ───
+
+func readLogSnapshot(reader io.Reader, tty bool, limit int64) ([]string, error) {
+	if limit < 0 {
+		return nil, fmt.Errorf("日志读取上限不能为负数")
+	}
+	writer := &logSnapshotWriter{remaining: limit}
+	var err error
+	if tty {
+		_, err = io.Copy(writer, reader)
+	} else {
+		_, err = stdcopy.StdCopy(writer, writer, reader)
+	}
+	truncated := errors.Is(err, errLogSnapshotFull) || writer.truncated
+	if err != nil && !truncated {
+		return nil, err
+	}
+	logs := writer.logs
+	if tty && len(logs) > 1 {
+		logs = []string{strings.Join(logs, "")}
+	}
+	if truncated {
+		logs = append(logs, fmt.Sprintf("\n[output truncated at %d bytes]\n", limit))
+	}
+	return logs, nil
 }
