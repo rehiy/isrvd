@@ -8,7 +8,9 @@
 | snis | string[] | 域名列表 |
 | cert | string | 证书（PEM） |
 | key | string | 私钥（PEM） |
-| status | number | `1`=启用, `0`=禁用 |
+| status | number | 可选；`1`=启用, `0`=禁用，不传时由 APISIX 默认为 `1` |
+| create_time | number | 创建时间（只读，Unix 秒） |
+| update_time | number | 更新时间（只读，Unix 秒） |
 
 ```bash
 isrvd_get "/apisix/ssls"
@@ -17,6 +19,9 @@ isrvd_post "/apisix/ssl" '{"cert":"<CERT_PEM>","key":"<KEY_PEM>","snis":["<DOMAI
 isrvd_put "/apisix/ssl/<SSL_ID>" '{"cert":"<CERT_PEM>","key":"<KEY_PEM>","snis":["<DOMAIN>"]}'
 isrvd_delete "/apisix/ssl/<SSL_ID>"
 ```
+
+- 创建：`snis`、`cert`、`key` 均必填
+- 更新：实际调用 APISIX `PATCH /ssls/<ID>`（部分合并）；`snis` 必填，`cert` / `key` 留空则保留原值
 
 ---
 
@@ -38,7 +43,7 @@ isrvd_put "/apisix/plugin-config/<CONFIG_ID>" '{"desc":"<DESC>","plugins":{...}}
 isrvd_delete "/apisix/plugin-config/<CONFIG_ID>"
 ```
 
-创建时 `id` 由 isrvd 强制生成 UUID v7，传入请求体的 `id` 会被忽略；创建、更新均调用 APISIX `PUT /plugin_configs/<ID>`（全量替换，`plugins` 中未包含的插件会被移除）。
+创建、更新时 `plugins` 均必填且不能为空。创建时 `id` 由 isrvd 强制生成 UUID v7，传入请求体的 `id` 会被忽略；创建、更新均调用 APISIX `PUT /plugin_configs/<ID>`（全量替换，`plugins` 中未包含的插件会被移除）。
 
 ---
 

@@ -14,7 +14,7 @@ isrvd_get "/caddy/routes?server=srv0"          # 显式指定服务名称
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| index | number | 数组下标（路由主键，只读，由后端附加） |
+| index | number | 数组下标（路由主键，只读，由后端附加）；更新时需去掉该字段，否则会作为扩展字段写入 Caddy 配置 |
 | group | string | 路由分组（可选） |
 | match | MatchSet[] | 匹配条件数组，元素间为 OR 关系，同一元素内字段为 AND |
 | handle | Handler[] | 处理器数组，按顺序执行 |

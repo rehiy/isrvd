@@ -10,12 +10,14 @@
 isrvd_get "/sftp/<ID>/ls?path=/home/user"
 ```
 
-**响应字段（SFTPFileInfo[]）：**
+响应 `payload`：`{path, files: SFTPFileInfo[]}`；`path` 为解析后的实际路径（传空或 `~` 时为远程 home 目录，取不到时为 `/`）。
+
+**`files[]` 字段：**
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `name` | string | 文件/目录名称 |
-| `size` | int64 | 文件大小（字节），目录为 0 |
+| `size` | int64 | 文件大小（字节）；目录为文件系统返回的原始值（通常为 4096） |
 | `mode` | string | 权限字符串（如 `-rw-r--r--`） |
 | `modTime` | int64 | 修改时间（Unix 时间戳） |
 | `isDir` | bool | 是否为目录（软链接目录也为 true） |
@@ -30,7 +32,17 @@ isrvd_get "/sftp/<ID>/ls?path=/home/user"
 isrvd_get "/sftp/<ID>/read?path=/path/to/file"
 ```
 
-响应 `payload`：`{"content":"<FILE_CONTENT>"}`。
+响应 `payload`：`{"content":"<FILE_CONTENT>"}`。文件超过 4 MiB 返回 413。
+
+---
+
+## 写入文件
+
+```bash
+isrvd_post "/sftp/<ID>/write" '{"path":"/path/to/file","content":"<FILE_CONTENT>"}'
+```
+
+`path`、`content` 均必填（空字符串 `content` 返回 400）；`content` 超过 4 MiB 返回 413。
 
 ---
 
@@ -40,17 +52,19 @@ isrvd_get "/sftp/<ID>/read?path=/path/to/file"
 isrvd_get "/sftp/<ID>/download?path=/path/to/file"
 ```
 
-返回 attachment 文件流；浏览器直连下载可携带 `token` 查询参数认证。
+返回原始文件流（未设置 `Content-Disposition: attachment`）；浏览器直连下载可携带 `token` 查询参数认证。
 
 ---
 
 ## 上传文件
 
 ```bash
-isrvd_upload "/sftp/<ID>/upload" "file" "/local/file.txt" "path=/remote/dir"
+isrvd_upload "/sftp/<ID>/upload?path=/remote/dir" "file" "/local/file.txt"
 ```
 
-> 上传请求总大小受 `server.maxUploadSize` 限制。
+- 目标目录 `path` 必须通过 **URL Query** 传递，为空返回 400
+- 可重复提交多个 `file` 字段；可选表单字段 `relativePath` 与 `file` 按顺序对应，含子目录时自动在远端创建
+- 上传请求总大小受 `server.maxUploadSize` 限制
 
 ---
 
@@ -92,6 +106,8 @@ isrvd_post "/sftp/<ID>/chmod" '{"path":"/remote/file","mode":"0644"}'
 ```bash
 isrvd_post "/sftp/<ID>/chown" '{"path":"/remote/file","uid":1000,"gid":1000}'
 ```
+
+`path`、`uid`、`gid` 均必填；由于必填校验，`uid` / `gid` 为 `0`（root）时返回 400。
 
 ---
 

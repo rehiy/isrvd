@@ -32,7 +32,7 @@ isrvd_get "/copilot/catalog?path=/docker/containers&method=get"
 | 参数 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
 | `tag` | string | 否 | 模块标签，如 `docker`、`apisix`、`caddy`、`swarm` |
-| `q` | string | 否 | 关键词，匹配路径、摘要、operationId |
+| `q` | string | 否 | 关键词，匹配路径、摘要、operationId、tag |
 | `path` | string | 否 | 准确的 API 路径，如 `/docker/containers` 或 `docker/container/{id}`（也接受 `:id`）；模糊查找使用 `q` |
 | `method` | string | 否 | HTTP 方法：`get` / `post` / `put` / `patch` / `delete` |
 
@@ -45,7 +45,7 @@ isrvd_get "/copilot/catalog?path=/docker/containers&method=get"
 | `mode` | string | `catalog` / `list` / `detail` |
 | `hint` | string | 下一步查阅建议 |
 | `tags` | array | catalog：`{name, count}` |
-| `total` | number | list：匹配总数 |
+| `total` | number | list：匹配总数；为 0 时省略 |
 | `truncated` | boolean | list：是否截断 |
 | `operations` | array | list：`{method, path, summary, operationId, tag}` |
 | `method` | string | detail：HTTP 方法 |
@@ -87,16 +87,17 @@ POST /api/copilot/agui
 | `Content-Type` | `application/json` |
 | `Authorization` | `Bearer <YOUR_JWT>`；SSE 无法携带头时可用 `?token=<JWT>` 代替 |
 
-**请求体：**
+**请求体：**（大小受 `server.maxUploadSize` 限制；未配置 `copilot.baseUrl` 时返回 503；JSON 格式错误或缺少 `runId` 返回 400）
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `threadId` | string | 会话线程 ID |
 | `runId` | string | 本次运行 ID，**必填** |
-| `messages` | array | 会话历史，元素含 `id`、`role`、`content`；`tool` 角色可带 `toolCallId` |
+| `messages` | array | 会话历史，元素含 `id`、`role`、`content`，可选 `name`；`assistant` 角色可带 `toolCalls`（会转发给上游）；`tool` 角色可带 `toolCallId` |
 | `tools` | array | 前端工具声明，元素含 `name`、`description`、`parameters`（JSON Schema） |
 | `context` | array | 前端注入的页面上下文，元素含 `description`、`value`，会被合并为 system 消息 |
-| `forwardedProps` | object | 透传给上游的附加属性 |
+| `state` | object | 前端共享状态；当前接收但不转发给上游 |
+| `forwardedProps` | object | 附加属性；当前接收但不转发给上游 |
 
 **响应：** `text/event-stream`，每行一个 `data:` 帧，事件类型包括：
 
@@ -106,7 +107,7 @@ POST /api/copilot/agui
 | `TEXT_MESSAGE_START` | 文本消息开始，携带 `messageId`、`role` |
 | `TEXT_MESSAGE_CONTENT` | 文本增量，携带 `delta` |
 | `TEXT_MESSAGE_END` | 文本消息结束 |
-| `TOOL_CALL_START` | 工具调用开始，携带 `toolCallId`、`toolCallName` |
+| `TOOL_CALL_START` | 工具调用开始，携带 `toolCallId`、`toolCallName`、`parentMessageId` |
 | `TOOL_CALL_ARGS` | 工具参数增量，按 `toolCallId` 分别顺序拼接；保留首片参数并支持并行工具分片 |
 | `TOOL_CALL_END` | 工具参数发送完毕，前端据此执行工具 |
 | `RUN_FINISHED` | 运行正常结束 |

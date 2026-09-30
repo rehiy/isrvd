@@ -8,7 +8,7 @@
 GET /api/swarm/tasks?serviceID=<SVC_ID>
 ```
 
-返回 `Task[]`：
+`serviceID` 可选，不传时返回集群内全部任务。返回 `Task[]`：
 
 | 字段 | 类型 | 说明 |
 |------|------|------|

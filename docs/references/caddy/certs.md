@@ -13,7 +13,7 @@ isrvd_get "/caddy/certs"
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| key | string | 只读标识；可管理证书为 `<source>-<index>`，`cached` 为缓存文件相对路径标识 |
+| key | string | 只读标识；可管理证书为 `<source>-<index>`，`cached` 为 `cached-<相对 storage root 的 .crt 路径>` |
 | source | string | `file` / `pem` / `automate` / `cached` |
 | subject | string | 证书域名：`automate` / `cached` 为目标域名；`file` / `pem` 可从证书 CN 解析 |
 | certificate | string | `file`: 路径；`pem`: PEM 文本；`automate` / `cached`: 不返回 |
@@ -52,6 +52,14 @@ isrvd_post "/caddy/cert" '{
 }'
 ```
 
+| source | 必填字段 |
+|---|---|
+| `file` | `certificate`（证书路径）、`keyContent`（私钥路径） |
+| `pem` | `certificate`（证书 PEM）、`keyContent`（私钥 PEM） |
+| `automate` | `subject`（主机名） |
+
+`source` 必填，其他值返回"不支持的证书来源"。
+
 > ⚠️ 内联 PEM 会作为字符串写入 Caddy 完整配置，整体替换时一并下发；
 > 注意配置文件大小，敏感性较高时优先用 `file` 来源 + 文件系统权限控制。
 
@@ -67,6 +75,7 @@ isrvd_put "/caddy/cert/file-0" '{
 ```
 
 > 不允许跨来源更新（例如 `file-0 → pem`）；如果要换来源，请先删除再创建。
+> 更新为全量替换：`file` / `pem` 需提交 `certificate`，`automate` 需提交 `subject`；`tags`、`format` 按请求覆盖（不传即清空）；仅 `keyContent` 留空时保留原私钥。证书不存在返回 400。
 
 ## 删除证书
 
@@ -94,8 +103,8 @@ isrvd_post "/caddy/cert" '{
 
 # 3. 创建路由（同域名会自动匹配证书）
 isrvd_post "/caddy/route" '{
-  "match": {"hosts": ["api.example.com"]},
-  "handler": {"kind": "reverse_proxy", "upstreams": ["backend:8080"]}
+  "match": [{"host": ["api.example.com"]}],
+  "handle": [{"handler": "reverse_proxy", "upstreams": [{"dial": "backend:8080"}]}]
 }'
 ```
 

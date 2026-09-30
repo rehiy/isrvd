@@ -11,8 +11,8 @@ isrvd_get "/overview/bootstrap"
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `auth` | object | 当前认证信息（`mode`、`username`、`member`、`oidcEnabled`、`oidcBtnLabel`、`passkeyEnabled`、`passwordDisabled`、`passwordMinLength`） |
-| `probe` | object \| null | 服务可用性，已登录时返回（`copilot`、`apisix`、`caddy`、`docker`、`swarm`、`compose`） |
-| `config` | object \| null | 前端启动所需的最小配置，已登录时返回（`maxUploadSize`、`marketplaceUrl`、`openapiEnabled`、`links`） |
+| `probe` | object | 服务可用性，仅已登录时返回（未登录时不含该字段）：`copilot`、`apisix`、`caddy`、`docker`、`swarm`、`compose`；各项并发探活，整体 5 秒超时；`copilot` 需 `copilot.baseUrl` 与 `apiKey` 均已配置才为 `true` |
+| `config` | object | 前端启动所需的最小配置，仅已登录时返回（未登录时不含该字段）：`maxUploadSize`、`marketplaceUrl`、`openapiEnabled`、`links` |
 
 ---
 
@@ -22,7 +22,7 @@ isrvd_get "/overview/bootstrap"
 isrvd_get "/overview/version"
 ```
 
-获取当前版本及最新版本信息，登录即可访问（`AccessAuth`）。
+获取当前版本及最新版本信息，需要 `GET /api/overview/version` 路由权限（`AccessPerm`，创始人不受限）。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -56,42 +56,30 @@ isrvd_get "/overview/monitor?type=container&since=3600&id=<CONTAINER_ID>"
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `type` | string | ✅ | `host` 或 `container` |
-| `since` | number | ✅ | 时间范围（秒）：`0`=实时模式，`3600`=1小时，`21600`=6小时，`43200`=12小时，`86400`=24小时 |
-| `id` | string | 条件 | `type=container` 时必填，容器 ID |
+| `type` | string | | `host`（默认）或 `container`；非 `container` 的值一律按 `host` 处理 |
+| `since` | number | | 时间范围（秒），默认 `3600`：`0`=实时模式，`3600`=1小时，`21600`=6小时，`43200`=12小时，`86400`=24小时；非法值或负数按 `3600` 处理 |
+| `id` | string | 条件 | `type=container` 时必填（缺失返回 400），容器 ID |
 
-**响应字段（host）：**
+**记录格式：**
 
-历史查询（`since>0`）返回记录数组，服务端会按请求的 `since` 时间窗口降采样，返回点数控制在约 **300** 个以内；实时模式（`since=0`）返回单条记录且不写入文件。
-
-记录格式：`{ ts: number, data: HostStat }`；下表为 `data` 中的主机监控字段。
+历史查询（`since>0`）返回记录数组，服务端会按请求的 `since` 时间窗口降采样，返回点数控制在约 **300** 个以内；历史数据保留 3 天。实时模式（`since=0`）返回单条记录且不写入文件；实时查询容器时 Docker 不可用或采集失败，payload 为 `null`。监控采集器未启动时返回 `503`。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| timestamp | number | 时间戳（Unix 秒） |
+| ts | number | 采集时间戳（Unix 秒） |
+| data | object | host 为 `HostStat`；container 为 Docker 原生 `container.StatsResponse`（`/containers/<id>/stats` 原始结构） |
+| container_id | string | 仅容器历史记录返回 |
+
+**`HostStat`（host 的 `data`）：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| system | object | 系统资源明细：`hostName`、`os`、`platform`、`kernelArch`、`uptime`、`cpuCore`、`cpuCoreLogic`、`cpuModel[]`、`cpuPercent[]`、`memoryTotal`、`memoryUsed`、`swapTotal`、`swapUsed`、`diskTotal`、`diskUsed`、`diskPartition[]{device, mountpoint, fstype, total, used}`、`netBytesRecv`、`netBytesSent`、`netInterface[]{name, bytesRecv, bytesSent, dropin, dropout, ipv4List, ipv6List}` 等（字节单位） |
 | time | string | 系统当前本地时间，格式 `YYYY-MM-DD HH:mm:ss` |
 | timezone | string | 系统当前时区，包含 UTC 偏移，如 `CST UTC+08:00` 或 `UTC+00:00` |
-| cpu_percent | number | CPU 使用率（百分比） |
-| mem_percent | number | 内存使用率（百分比） |
-| mem_used | number | 已用内存（字节） |
-| mem_total | number | 总内存（字节） |
-| load1 | number | 1分钟负载 |
-| load5 | number | 5分钟负载 |
-| load15 | number | 15分钟负载 |
-| disk_root_percent | number | 根分区使用率（百分比） |
-| disk_root_used | number | 根分区已用空间（字节） |
-| disk_root_total | number | 根分区总空间（字节） |
-
-**响应字段（container）：**
-
-记录格式：`{ ts: number, data: ContainerStats }`；下表为 `data` 中的容器监控字段。
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| timestamp | number | 时间戳（Unix 秒） |
-| cpu_percent | number | CPU 使用率（百分比） |
-| mem_percent | number | 内存使用率（百分比） |
-| mem_used | number | 已用内存（字节） |
+| diskIO | object[] | `{name, readBytes, writeBytes, readCount, writeCount}`（累计值） |
+| gpu | object[] \| null | `{index, deviceKey, name, vendor, memoryUsed, memoryTotal, utilization, temperature, powerUsage, fanSpeed}`；无 GPU 时为 `null` |
+| go | object | Go 运行态：`version`、`numCPU`、`numGoroutine` 及内存统计 |
 
 ---
 

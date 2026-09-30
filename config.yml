@@ -36,7 +36,7 @@ oidc:
 tha:
   enabled: false                # 是否启用代理 Header 登录
   headerName: X-Username        # 上游代理传入登录用户名的 Header 名称
-  trustedCIDRs: [127.0.0.1/32]  # 允许传入登录 Header 的代理来源 CIDR；为空时不限制来源
+  trustedCIDRs: [127.0.0.1/32]  # 允许传入登录 Header 的代理来源 CIDR；为空时默认仅信任本机回环（127.0.0.1/32、::1/128）
 
 copilot:
   # model: your-model

@@ -12,7 +12,7 @@ Local 模块提供 isrvd 所在主机的进程查看与终止能力。接口按�
 GET /local/processes
 ```
 
-**响应字段：**
+响应 `payload`：`{"processes": [...]}`，`processes[]` 字段：
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -28,7 +28,7 @@ GET /local/processes
 | `ioReadBps` | number | 磁盘读取速率（字节/秒）；首次采样或不可用时不返回 |
 | `ioWriteBps` | number | 磁盘写入速率（字节/秒）；首次采样或不可用时不返回 |
 | `createTime` | number | 启动时间（Unix 毫秒） |
-| `cmdline` | string | 完整命令行 |
+| `cmdline` | string | 完整命令行；为空时不返回 |
 
 单个进程的某个字段采集失败时降级为零值或省略，不会导致该进程从列表中消失。
 
@@ -63,6 +63,8 @@ isrvd_post "/local/process/1234/kill" '{"force": true}'
 - PID ≤ 1 的进程不可终止
 - isrvd 自身进程不可终止（避免面板自杀）
 - 命中保护时返回 403
+
+**响应：** 成功时 payload 为 `{"pid": <PID>}`；PID 非法返回 400；其他失败（如进程不存在）返回 500。请求体可省略，此时按 SIGTERM 处理。
 
 接口只保证信号送达，进程是否退出取决于其对信号的处理；建议终止后复查列表确认。
 
