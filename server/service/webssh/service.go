@@ -17,22 +17,26 @@ var logger = logman.Named("webssh")
 
 // Service WebSSH 业务服务
 type Service struct {
-	store           *store             // 主机配置存储
+	hostStore       *hostStore         // 主机配置存储
 	credentialStore *credentialStore   // 凭据存储
 	sftpClient      *webssh.SFTPClient // SFTP 客户端（用于文件管理）
 }
 
 // NewService 创建 WebSSH 业务服务
 func NewService() (*Service, error) {
-	s, err := newHostStore()
+	aead, err := secretAEAD()
+	if err != nil {
+		return nil, fmt.Errorf("初始化 WebSSH 加密失败: %w", err)
+	}
+	hs, err := newItemStore[Host]("webssh-host.yml", "主机", aead, hostPrepare)
 	if err != nil {
 		return nil, fmt.Errorf("初始化 WebSSH 存储失败: %w", err)
 	}
-	cs, err := newCredentialStore()
+	cs, err := newItemStore[Credential]("webssh-cred.yml", "凭据", aead, credentialPrepare)
 	if err != nil {
 		return nil, fmt.Errorf("初始化凭据存储失败: %w", err)
 	}
-	return &Service{store: s, credentialStore: cs, sftpClient: webssh.NewSFTPClient(0)}, nil
+	return &Service{hostStore: hs, credentialStore: cs, sftpClient: webssh.NewSFTPClient(0)}, nil
 }
 
 // Close 释放 Service 持有的所有资源（连接池等），应在应用退出时调用
@@ -94,7 +98,7 @@ func (s *Service) CredentialDelete(id string) error {
 
 // HostList 列出所有主机（密码不回显，附凭据名称）
 func (s *Service) HostList() []*Host {
-	hosts := s.store.hostList()
+	hosts := s.hostStore.list()
 	credMap := make(map[string]string)
 	for _, c := range s.credentialStore.list() {
 		credMap[c.ID] = c.Name
@@ -107,7 +111,7 @@ func (s *Service) HostList() []*Host {
 
 // HostInspect 查看指定主机详情（密码不回显）
 func (s *Service) HostInspect(id string) *Host {
-	h := s.store.hostInspect(id)
+	h := s.hostStore.get(id)
 	if h == nil {
 		return nil
 	}
@@ -136,7 +140,7 @@ func (s *Service) HostCreate(req *HostUpsertRequest) (*Host, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := s.store.hostCreate(h); err != nil {
+	if err := s.hostStore.create(h); err != nil {
 		return nil, fmt.Errorf("创建主机失败: %w", err)
 	}
 	logger.Info("WebSSH 主机已创建", "id", h.ID, "name", h.Name, "addr", h.Addr)
@@ -150,7 +154,7 @@ func (s *Service) HostUpdate(id string, req *HostUpsertRequest) (*Host, error) {
 		return nil, err
 	}
 
-	if err := s.store.hostUpdate(id, h); err != nil {
+	if err := s.hostStore.update(id, h); err != nil {
 		return nil, fmt.Errorf("更新主机失败: %w", err)
 	}
 	logger.Info("WebSSH 主机已更新", "id", id, "name", req.Name)
@@ -181,7 +185,7 @@ func (s *Service) hostFromRequest(req *HostUpsertRequest) (*Host, error) {
 
 // HostDelete 删除主机配置
 func (s *Service) HostDelete(id string) error {
-	if err := s.store.hostDelete(id); err != nil {
+	if err := s.hostStore.delete(id); err != nil {
 		return fmt.Errorf("删除主机失败: %w", err)
 	}
 	logger.Info("WebSSH 主机已删除", "id", id)
@@ -190,7 +194,7 @@ func (s *Service) HostDelete(id string) error {
 
 // RunTerminal 建立到指定主机的 SSH 终端会话并与 WebSocket 连接桥接
 func (s *Service) RunTerminal(conn *websocket.ServerConn, hostID string) {
-	opt, err := s.store.hostGetOption(hostID, s.credentialStore)
+	opt, err := s.hostOption(hostID)
 	if err != nil {
 		conn.Die("[错误: " + err.Error() + "]\r\n")
 		return

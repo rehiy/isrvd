@@ -314,6 +314,7 @@ docs/
 3. 文件系统操作防目录遍历；解压防 Zip Slip
 4. WebSocket 必须经过认证链路
 5. 关键资源（内置角色等）前后端双重校验
+6. SSH 密码/私钥加密落盘（`server/service/webssh/secret.go`，密钥由 JWT 密钥派生）
 
 ---
 

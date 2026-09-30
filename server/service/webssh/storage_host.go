@@ -2,13 +2,8 @@ package webssh
 
 import (
 	"fmt"
-	"sync"
 
-	"github.com/rehiy/libgo/strutil"
 	"github.com/rehiy/libgo/webssh"
-
-	"isrvd/pkgs/cstore"
-	"isrvd/server/config"
 )
 
 // Host SSH 主机配置
@@ -24,178 +19,29 @@ type Host struct {
 	Description    string `yaml:"description" json:"description"`                       // 主机描述
 }
 
-// store 负责 WebSSH 主机配置的存储
-type store struct {
-	ts    *cstore.TypedStore[[]*Host] // 类型化存储实例
-	hosts []*Host                     // 内存中的主机列表
-	mu    sync.RWMutex                // 保护 hosts 的并发访问
-}
+func (h *Host) fields() (*string, *string, *string) { return &h.ID, &h.Password, &h.PrivateKey }
 
-// hostList 返回所有主机列表（密码/私钥不序列化）
-func (s *store) hostList() []*Host {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	result := make([]*Host, 0, len(s.hosts))
-	for _, h := range s.hosts {
-		if h != nil {
-			result = append(result, cloneHost(h))
-		}
-	}
-	return result
-}
+// hostStore 主机配置存储
+type hostStore = itemStore[Host, *Host]
 
-// hostInspect 返回指定 ID 的主机
-func (s *store) hostInspect(id string) *Host {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return cloneHost(s.findByID(id))
-}
-
-// hostCreate 新建主机配置
-func (s *store) hostCreate(h *Host) error {
-	item := cloneHost(h)
-	if item == nil {
-		return fmt.Errorf("主机不能为空")
-	}
-	item.ID = strutil.NewString()
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	next := make([]*Host, len(s.hosts), len(s.hosts)+1)
-	copy(next, s.hosts)
-	next = append(next, item)
-	if err := s.ts.Set(next); err != nil {
-		return err
-	}
-	s.hosts = next
-	h.ID = item.ID
-	return nil
-}
-
-// hostUpdate 更新主机配置
-func (s *store) hostUpdate(id string, h *Host) error {
-	item := cloneHost(h)
-	if item == nil {
-		return fmt.Errorf("主机不能为空")
-	}
-	item.ID = id
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	idx := s.indexByID(id)
-	if idx < 0 {
-		return fmt.Errorf("主机 %s 不存在", id)
-	}
-	old := s.hosts[idx]
+// hostPrepare 独立认证模式下处理密码/私钥（绑定凭据时不保存认证信息）
+func hostPrepare(item, old *Host) {
 	if item.CredentialID == "" {
-		switch {
-		case item.PrivateKey != "":
-			item.Password = ""
-		case item.Password != "":
-			item.PrivateKey = ""
-		case old != nil:
-			item.Password = old.Password
-			item.PrivateKey = old.PrivateKey
-		}
+		keepSecrets(item, old)
 	}
-	next := make([]*Host, len(s.hosts))
-	copy(next, s.hosts)
-	next[idx] = item
-	if err := s.ts.Set(next); err != nil {
-		return err
-	}
-	s.hosts = next
-	h.ID = item.ID
-	return nil
 }
 
-// hostDelete 删除主机配置
-func (s *store) hostDelete(id string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	idx := s.indexByID(id)
-	if idx < 0 {
-		return fmt.Errorf("主机 %s 不存在", id)
-	}
-	next := make([]*Host, 0, len(s.hosts)-1)
-	next = append(next, s.hosts[:idx]...)
-	next = append(next, s.hosts[idx+1:]...)
-	if err := s.ts.Set(next); err != nil {
-		return err
-	}
-	s.hosts = next
-	return nil
-}
-
-// hostGetOption 获取指定 ID 主机的 SSH 连接配置
-// 如果主机绑定了凭据，优先使用凭据中的认证信息
-func (s *store) hostGetOption(id string, credStore *credentialStore) (*webssh.SSHClientOption, error) {
-	h := s.hostInspect(id)
+// hostOption 获取指定主机的 SSH 连接配置；绑定凭据时使用凭据中的认证信息
+func (s *Service) hostOption(id string) (*webssh.SSHClientOption, error) {
+	h := s.hostStore.get(id)
 	if h == nil {
 		return nil, fmt.Errorf("主机 %s 不存在", id)
 	}
-	opt := &webssh.SSHClientOption{
-		Addr:       h.Addr,
-		User:       h.User,
-		Password:   h.Password,
-		PrivateKey: h.PrivateKey,
-	}
-	if h.CredentialID != "" && credStore != nil {
-		c := credStore.get(h.CredentialID)
-		if c != nil {
-			opt.User = c.User
-			opt.Password = c.Password
-			opt.PrivateKey = c.PrivateKey
+	opt := &webssh.SSHClientOption{Addr: h.Addr, User: h.User, Password: h.Password, PrivateKey: h.PrivateKey}
+	if h.CredentialID != "" {
+		if c := s.credentialStore.get(h.CredentialID); c != nil {
+			opt.User, opt.Password, opt.PrivateKey = c.User, c.Password, c.PrivateKey
 		}
 	}
 	return opt, nil
-}
-
-// findByID 按 ID 查找主机（调用方须持锁）
-func (s *store) findByID(id string) *Host {
-	for _, h := range s.hosts {
-		if h != nil && h.ID == id {
-			return h
-		}
-	}
-	return nil
-}
-
-// indexByID 按 ID 查找主机下标（调用方须持锁）
-func (s *store) indexByID(id string) int {
-	for i, h := range s.hosts {
-		if h != nil && h.ID == id {
-			return i
-		}
-	}
-	return -1
-}
-
-// ─── 辅助函数 ───
-
-// newHostStore 创建主机配置存储
-func newHostStore() (*store, error) {
-	rootDir := config.Current().Server.RootDirectory
-	const key = "webssh-host.yml"
-
-	ts, err := cstore.NewTyped[[]*Host](rootDir, key)
-	if err != nil {
-		return nil, err
-	}
-	hosts, err := ts.Get()
-	if err != nil {
-		return nil, err
-	}
-	if hosts == nil {
-		hosts = []*Host{}
-	}
-	return &store{ts: ts, hosts: hosts}, nil
-}
-
-func cloneHost(h *Host) *Host {
-	if h == nil {
-		return nil
-	}
-	copy := *h
-	return &copy
 }
