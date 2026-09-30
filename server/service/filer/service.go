@@ -47,9 +47,10 @@ type FileInfo struct {
 // AbsPath 解析用户相对路径为绝对路径，并防止目录遍历和符号链接逃逸
 // 安全策略：解析所有符号链接后，验证实际路径仍在 home 目录内
 func (s *Service) AbsPath(username, path string) (string, error) {
-	home := filepath.Clean(filepath.Join(config.Current().Server.RootDirectory, "share"))
+	snapshot := config.Current()
+	home := filepath.Clean(filepath.Join(snapshot.Server.RootDirectory, "share"))
 	if username != "" {
-		if member, ok := config.Current().Members[username]; ok {
+		if member, ok := snapshot.Members[username]; ok {
 			home = filepath.Clean(member.HomeDirectory)
 		}
 	}
@@ -174,6 +175,16 @@ func (s *Service) FileRead(absPath string) ([]byte, error) {
 // FileWrite 写入文件内容（覆盖）
 func (s *Service) FileWrite(absPath string, content []byte) error {
 	return os.WriteFile(absPath, content, 0644)
+}
+
+// FileWriteFrom 流式写入文件（覆盖），避免大文件整体读入内存
+func (s *Service) FileWriteFrom(absPath string, r io.Reader) error {
+	f, err := os.OpenFile(absPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(f, r)
+	return errors.Join(err, f.Close())
 }
 
 // FileCreate 创建文件（使用 pango/filer）

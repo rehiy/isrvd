@@ -2,7 +2,6 @@ package app
 
 import (
 	"errors"
-	"io"
 	"mime"
 	"net/http"
 	"path/filepath"
@@ -285,12 +284,7 @@ func (app *App) filerFileUpload(c *gin.Context) {
 		return
 	}
 
-	data, err := io.ReadAll(file)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, "无法读取上传文件")
-		return
-	}
-	if err := app.filerSvc.FileWrite(absPath, data); err != nil {
+	if err := app.filerSvc.FileWriteFrom(absPath, file); err != nil {
 		respondError(c, http.StatusInternalServerError, "无法写入文件")
 		return
 	}
