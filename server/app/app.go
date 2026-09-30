@@ -74,7 +74,8 @@ type App struct {
 	copilotSvc       *copilot.Service
 	shellSvc         *shell.Service
 	websshSvc        *webssh.Service
-	routeIndex       map[string]Route // METHOD+完整路径 → 路由索引
+	probes           map[string]func(context.Context) bool // 已就绪的外部依赖模块（key 为路由 Module）→ 探活函数
+	routeIndex       map[string]Route                      // METHOD+完整路径 → 路由索引
 }
 
 // RouteAccess 路由访问级别

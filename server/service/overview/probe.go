@@ -25,14 +25,16 @@ type probeTask struct {
 }
 
 // Probe 服务探活（并发检查，整体 5 秒超时）
-// probes 由调用方注入各服务的可用性检查函数，解耦对 registry 包的直接依赖
+// probes 由调用方注入各模块的可用性检查函数（key 为模块名，nil 表示无需探活）
 func (s *Service) Probe(ctx context.Context, probes map[string]func(context.Context) bool) *ProbeResponse {
 	probeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	tasks := make([]probeTask, 0, len(probes))
 	for name, fn := range probes {
-		tasks = append(tasks, probeTask{name: name, fn: fn})
+		if fn != nil {
+			tasks = append(tasks, probeTask{name: name, fn: fn})
+		}
 	}
 
 	copilot := config.Current().Copilot
@@ -52,15 +54,15 @@ func (s *Service) Probe(ctx context.Context, probes map[string]func(context.Cont
 			ok := t.fn(probeCtx)
 			mu.Lock()
 			switch t.name {
-			case "Apisix":
+			case "apisix":
 				resp.Apisix = ok
-			case "Caddy":
+			case "caddy":
 				resp.Caddy = ok
-			case "Docker":
+			case "docker":
 				resp.Docker = ok
-			case "Swarm":
+			case "swarm":
 				resp.Swarm = ok
-			case "Compose":
+			case "compose":
 				resp.Compose = ok
 			}
 			mu.Unlock()

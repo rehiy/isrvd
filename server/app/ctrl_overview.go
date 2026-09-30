@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -57,7 +56,7 @@ func (app *App) overviewBootstrap(c *gin.Context) {
 			OpenAPIEnabled: snapshot.Server.OpenAPI,
 			Links:          snapshot.Links,
 		}
-		resp.Probe = app.overviewSvc.Probe(ctx, app.collectProbes())
+		resp.Probe = app.overviewSvc.Probe(ctx, app.probes)
 	}
 
 	respondSuccess(c, "ok", resp)
@@ -140,25 +139,4 @@ func (app *App) overviewMonitorRealtime(c *gin.Context) {
 	default:
 		respondSuccess(c, "ok", app.monitorCollector.CollectHostStatNow(ctx))
 	}
-}
-
-// collectProbes 收集当前可用服务的探活函数映射
-func (app *App) collectProbes() map[string]func(context.Context) bool {
-	probes := map[string]func(context.Context) bool{}
-	if app.apisixSvc != nil {
-		probes["Apisix"] = app.apisixSvc.CheckAvailability
-	}
-	if app.caddySvc != nil {
-		probes["Caddy"] = app.caddySvc.CheckAvailability
-	}
-	if app.dockerSvc != nil {
-		probes["Docker"] = app.dockerSvc.CheckAvailability
-	}
-	if app.swarmSvc != nil {
-		probes["Swarm"] = app.swarmSvc.CheckAvailability
-	}
-	if app.composeSvc != nil {
-		probes["Compose"] = app.composeSvc.CheckAvailability
-	}
-	return probes
 }

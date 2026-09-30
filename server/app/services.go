@@ -39,6 +39,7 @@ func (app *App) initServices(ctx context.Context) {
 	app.accountSvc = account.NewService()
 	app.filerSvc = filer.NewService()
 	app.shellSvc = shell.NewService()
+	app.probes = map[string]func(context.Context) bool{}
 
 	app.copilotSvc = copilot.NewService()
 	if spec, err := public.Efs.ReadFile("openapi/data.json"); err != nil {
@@ -52,6 +53,7 @@ func (app *App) initServices(ctx context.Context) {
 		app.websshSvc = nil
 	} else {
 		app.websshSvc = websshSvc
+		app.probes["ssh"] = nil // 本地存储，无需探活
 	}
 
 	probeCtx, probeCancel := context.WithTimeout(ctx, 5*time.Second)
@@ -62,6 +64,7 @@ func (app *App) initServices(ctx context.Context) {
 		app.apisixSvc = nil
 	} else {
 		app.apisixSvc = apisixSvc
+		app.probes["apisix"] = apisixSvc.CheckAvailability
 	}
 
 	probeCtx, probeCancel = context.WithTimeout(ctx, 5*time.Second)
@@ -72,6 +75,7 @@ func (app *App) initServices(ctx context.Context) {
 		app.caddySvc = nil
 	} else {
 		app.caddySvc = caddySvc
+		app.probes["caddy"] = caddySvc.CheckAvailability
 	}
 
 	var dockerRaw *pkgDocker.DockerService
@@ -81,6 +85,7 @@ func (app *App) initServices(ctx context.Context) {
 		app.swarmSvc = nil
 	} else {
 		app.dockerSvc = dockerSvc
+		app.probes["docker"] = dockerSvc.CheckAvailability
 		dockerRaw = dockerSvc.Raw()
 		probeCtx, probeCancel = context.WithTimeout(ctx, 5*time.Second)
 		swarmSvc, err := swarm.NewService(probeCtx, dockerRaw)
@@ -90,6 +95,7 @@ func (app *App) initServices(ctx context.Context) {
 			app.swarmSvc = nil
 		} else {
 			app.swarmSvc = swarmSvc
+			app.probes["swarm"] = swarmSvc.CheckAvailability
 		}
 	}
 
@@ -98,6 +104,7 @@ func (app *App) initServices(ctx context.Context) {
 		app.composeSvc = nil
 	} else {
 		app.composeSvc = composeSvc
+		app.probes["compose"] = composeSvc.CheckAvailability
 	}
 
 	// Cron 任务跨服务重载继续执行，仅在整个进程生命周期结束时取消。
@@ -168,26 +175,14 @@ func (app *App) serviceAvailableMiddleware() gin.HandlerFunc {
 	}
 }
 
+// optionalModules 依赖外部服务、初始化失败时整体不可用的模块
+var optionalModules = map[string]bool{"ssh": true, "apisix": true, "caddy": true, "docker": true, "swarm": true, "compose": true}
+
 // isServiceAvailable 检查指定模块的服务是否可用
 func (app *App) isServiceAvailable(module string) bool {
-	switch module {
-	case "copilot":
+	if module == "copilot" {
 		return config.Current().Copilot.BaseURL != ""
-	case "apisix":
-		return app.apisixSvc != nil
-	case "caddy":
-		return app.caddySvc != nil
-	case "docker":
-		return app.dockerSvc != nil
-	case "shell":
-		return app.shellSvc != nil
-	case "swarm":
-		return app.dockerSvc != nil && app.swarmSvc != nil
-	case "compose":
-		return app.dockerSvc != nil && app.composeSvc != nil
-	case "ssh":
-		return app.websshSvc != nil
-	default:
-		return true
 	}
+	_, ready := app.probes[module]
+	return ready || !optionalModules[module]
 }
