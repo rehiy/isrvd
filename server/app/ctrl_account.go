@@ -22,9 +22,9 @@ func (app *App) defineAccountRoutes() []Route {
 		// Passkey 注册/绑定（需要 account 模块对应路由权限，可按成员授权/撤销）
 		{Method: "POST", Path: "/account/passkey/register/begin", Handler: app.accountPasskeyRegisterBegin, Module: "account", Label: "开始 Passkey 绑定"},
 		{Method: "POST", Path: "/account/passkey/register/finish", Handler: app.accountPasskeyRegisterFinish, Module: "account", Label: "完成 Passkey 绑定"},
-		{Method: "GET", Path: "/account/passkey/credentials", Handler: app.accountPasskeyListCredentials, Module: "account", Label: "查询 Passkey 凭证列表"},
+		{Method: "GET", Path: "/account/passkey/credentials", Handler: app.accountPasskeyCredentialList, Module: "account", Label: "查询 Passkey 凭证列表"},
 		{Method: "PUT", Path: "/account/passkey/credential/:id", Handler: app.accountPasskeyRenameCredential, Module: "account", Label: "重命名 Passkey 凭证"},
-		{Method: "DELETE", Path: "/account/passkey/credential/:id", Handler: app.accountPasskeyDeleteCredential, Module: "account", Label: "删除 Passkey 凭证"},
+		{Method: "DELETE", Path: "/account/passkey/credential/:id", Handler: app.accountPasskeyCredentialDelete, Module: "account", Label: "删除 Passkey 凭证"},
 		// OIDC 登录
 		{Method: "GET", Path: "/account/oidc/login", Handler: app.accountOIDCLogin, Module: "account", Label: "发起 OIDC 登录", Access: AccessAnon},
 		{Method: "GET", Path: "/account/oidc/callback", Handler: app.accountOIDCCallback, Module: "account", Label: "处理 OIDC 回调", Access: AccessAnon},
@@ -313,10 +313,10 @@ func (app *App) accountMemberDelete(c *gin.Context) {
 	respondSuccess(c, "成员删除成功", nil)
 }
 
-// accountPasskeyListCredentials 查询当前用户的 Passkey 凭证列表
-func (app *App) accountPasskeyListCredentials(c *gin.Context) {
+// accountPasskeyCredentialList 查询当前用户的 Passkey 凭证列表
+func (app *App) accountPasskeyCredentialList(c *gin.Context) {
 	username := c.GetString("username")
-	credentials, err := app.accountSvc.PasskeyListCredentials(username)
+	credentials, err := app.accountSvc.PasskeyCredentialList(username)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -335,7 +335,7 @@ func (app *App) accountPasskeyRenameCredential(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.accountSvc.PasskeyUpdateCredentialName(username, credentialID, req.DisplayName); err != nil {
+	if err := app.accountSvc.PasskeyCredentialNameUpdate(username, credentialID, req.DisplayName); err != nil {
 		switch {
 		case errors.Is(err, account.ErrPasskeyNotFound):
 			respondError(c, http.StatusNotFound, err.Error())
@@ -347,11 +347,11 @@ func (app *App) accountPasskeyRenameCredential(c *gin.Context) {
 	respondSuccess(c, "凭证重命名成功", nil)
 }
 
-// accountPasskeyDeleteCredential 删除当前用户的指定 Passkey 凭证
-func (app *App) accountPasskeyDeleteCredential(c *gin.Context) {
+// accountPasskeyCredentialDelete 删除当前用户的指定 Passkey 凭证
+func (app *App) accountPasskeyCredentialDelete(c *gin.Context) {
 	username := c.GetString("username")
 	credentialID := c.Param("id")
-	if err := app.accountSvc.PasskeyDeleteCredential(username, credentialID); err != nil {
+	if err := app.accountSvc.PasskeyCredentialDelete(username, credentialID); err != nil {
 		switch {
 		case errors.Is(err, account.ErrPasskeyNotFound):
 			respondError(c, http.StatusNotFound, err.Error())

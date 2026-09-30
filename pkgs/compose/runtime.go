@@ -223,8 +223,8 @@ func InitFilesHandle(installDir string, payload InitPayload) error {
 
 // ==================== Content mutation ====================
 
-// UpdateServiceImage 将 compose 内容中指定服务的镜像替换为 image，返回更新后的 YAML 文本。
-func UpdateServiceImage(ctx context.Context, name, content, serviceName, image, installDir string) (string, error) {
+// ServiceImageUpdate 将 compose 内容中指定服务的镜像替换为 image，返回更新后的 YAML 文本。
+func ServiceImageUpdate(ctx context.Context, name, content, serviceName, image, installDir string) (string, error) {
 	if content == "" {
 		return "", fmt.Errorf("compose 内容不能为空")
 	}

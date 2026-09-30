@@ -340,8 +340,8 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginRe
 	return resp, nil
 }
 
-// PasskeyListCredentials 查询用户的 Passkey 凭证列表
-func (s *Service) PasskeyListCredentials(username string) ([]*config.PasskeyCredential, error) {
+// PasskeyCredentialList 查询用户的 Passkey 凭证列表
+func (s *Service) PasskeyCredentialList(username string) ([]*config.PasskeyCredential, error) {
 	member, exists := config.Current().Members[username]
 	if !exists {
 		return nil, fmt.Errorf("用户不存在")
@@ -356,8 +356,8 @@ func (s *Service) PasskeyListCredentials(username string) ([]*config.PasskeyCred
 	return result, nil
 }
 
-// PasskeyDeleteCredential 删除用户的指定 Passkey 凭证
-func (s *Service) PasskeyDeleteCredential(username, credentialID string) error {
+// PasskeyCredentialDelete 删除用户的指定 Passkey 凭证
+func (s *Service) PasskeyCredentialDelete(username, credentialID string) error {
 	s.credentialMu.Lock()
 	defer s.credentialMu.Unlock()
 	if err := config.Update(func(draft *config.Snapshot) error {
@@ -388,8 +388,8 @@ func (s *Service) PasskeyDeleteCredential(username, credentialID string) error {
 	return nil
 }
 
-// PasskeyUpdateCredentialName 更新凭证显示名称
-func (s *Service) PasskeyUpdateCredentialName(username, credentialID, displayName string) error {
+// PasskeyCredentialNameUpdate 更新凭证显示名称
+func (s *Service) PasskeyCredentialNameUpdate(username, credentialID, displayName string) error {
 	return config.Update(func(draft *config.Snapshot) error {
 		member, exists := draft.Members[username]
 		if !exists {
