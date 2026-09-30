@@ -90,15 +90,3 @@ func (s *Service) PermCheck(username, label, method, path string) error {
 	}
 	return fmt.Errorf("无 %s 访问权限", label)
 }
-
-// FounderCheck 限制高危本机操作仅能由创始人执行。
-func (s *Service) FounderCheck(username string) error {
-	member, exists := config.Current().Members[username]
-	if !exists {
-		return fmt.Errorf("用户不存在")
-	}
-	if !member.Founder {
-		return fmt.Errorf("仅创始人可执行此操作")
-	}
-	return nil
-}

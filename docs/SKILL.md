@@ -133,7 +133,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 │   ├── 路由/消费者       → references/apisix/routes.md 或 references/apisix/consumers.md
 │   ├── Caddy 路由        → references/caddy/routes.md (DELETE /caddy/route/:index)
 │   ├── Caddy 服务        → references/caddy/servers.md (DELETE /caddy/server/:name)
-│   └── 终止进程          → references/local.md (POST /local/process/:pid/kill，仅创始人)
+│   └── 终止进程          → references/local.md (POST /local/process/:pid/kill)
 │
 └── 管理
     ├── 镜像仓库         → references/docker/registries.md

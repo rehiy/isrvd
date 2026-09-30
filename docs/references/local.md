@@ -28,7 +28,7 @@ GET /local/processes
 | `ioReadBps` | number | 磁盘读取速率（字节/秒）；首次采样或不可用时不返回 |
 | `ioWriteBps` | number | 磁盘写入速率（字节/秒）；首次采样或不可用时不返回 |
 | `createTime` | number | 启动时间（Unix 毫秒） |
-| `cmdline` | string | 完整命令行，仅创始人返回；普通成员不返回该字段以避免命令行凭据泄露 |
+| `cmdline` | string | 完整命令行 |
 
 单个进程的某个字段采集失败时降级为零值或省略，不会导致该进程从列表中消失。
 
@@ -70,8 +70,8 @@ isrvd_post "/local/process/1234/kill" '{"force": true}'
 
 ## 权限要求
 
-- 查询（`GET /api/local/processes`）：需要对应路由权限；完整命令行仅创始人可见
-- 终止（`POST /api/local/process/:pid/kill`）：除对应路由权限外，**仅创始人可执行**，且强制记入审计日志
+- 查询（`GET /api/local/processes`）：需要对应路由权限
+- 终止（`POST /api/local/process/:pid/kill`）：需要对应路由权限，且强制记入审计日志
 
 ---
 

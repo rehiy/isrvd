@@ -46,7 +46,7 @@ type ProcessInfo struct {
 	IOReadBPS     *uint64  `json:"ioReadBps,omitempty"`  // 磁盘读取速率（字节/秒），首次采样或不可用时省略
 	IOWriteBPS    *uint64  `json:"ioWriteBps,omitempty"` // 磁盘写入速率（字节/秒），首次采样或不可用时省略
 	CreateTime    int64    `json:"createTime"`           // 启动时间（Unix 毫秒）
-	Cmdline       string   `json:"cmdline,omitempty"`    // 完整命令行，仅创始人可见
+	Cmdline       string   `json:"cmdline,omitempty"`    // 完整命令行
 	cpuSeconds    float64  // 本轮累计 CPU 时间（秒），仅用于计算速率
 	cpuCollected  bool     // 本轮是否成功采集 CPU 时间
 	ioReadBytes   uint64   // 本轮累计读取字节，仅用于计算速率
@@ -55,8 +55,7 @@ type ProcessInfo struct {
 }
 
 // ProcessList 采集本机进程列表，按常驻内存降序排列。
-// 完整命令行可能携带凭据，仅向创始人返回。
-func ProcessList(includeCmdline bool) ([]*ProcessInfo, error) {
+func ProcessList() ([]*ProcessInfo, error) {
 	procs, err := process.Processes()
 	if err != nil {
 		return nil, err
@@ -77,7 +76,7 @@ func ProcessList(includeCmdline bool) ([]*ProcessInfo, error) {
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			info := collect(proc, includeCmdline)
+			info := collect(proc)
 			mu.Lock()
 			list = append(list, info)
 			mu.Unlock()
@@ -118,7 +117,7 @@ func ProcessKill(pid int32, force bool) error {
 // ─── 辅助函数 ───
 
 // collect 采集单个进程的字段；任一字段失败时降级为零值，而不是丢弃整个进程
-func collect(proc *process.Process, includeCmdline bool) *ProcessInfo {
+func collect(proc *process.Process) *ProcessInfo {
 	info := &ProcessInfo{PID: proc.Pid}
 
 	if ppid, err := proc.Ppid(); err == nil {
@@ -147,10 +146,8 @@ func collect(proc *process.Process, includeCmdline bool) *ProcessInfo {
 		info.ioWriteBytes = ioCounters.WriteBytes
 		info.ioCollected = true
 	}
-	if includeCmdline {
-		if cmdline, err := proc.Cmdline(); err == nil {
-			info.Cmdline = cmdline
-		}
+	if cmdline, err := proc.Cmdline(); err == nil {
+		info.Cmdline = cmdline
 	}
 
 	if times, err := proc.Times(); err == nil && times != nil {

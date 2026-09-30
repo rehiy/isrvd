@@ -62,7 +62,7 @@ class SystemProcessInfoView extends Vue {
     }
 
     get canKill() {
-        return this.portal.founder && this.portal.hasPerm('POST /api/local/process/:pid/kill')
+        return this.portal.hasPerm('POST /api/local/process/:pid/kill')
     }
 
     // ─── 展示辅助 ───

@@ -23,8 +23,7 @@ func (app *App) defineLocalRoutes() []Route {
 // ─── Handler 方法 ───
 
 func (app *App) localProcessList(c *gin.Context) {
-	includeCmdline := app.accountSvc.FounderCheck(c.GetString("username")) == nil
-	list, err := local.ProcessList(includeCmdline)
+	list, err := local.ProcessList()
 	if err != nil {
 		logman.Error("获取进程列表失败", "error", err)
 		respondError(c, http.StatusInternalServerError, "获取进程列表失败")
@@ -34,11 +33,6 @@ func (app *App) localProcessList(c *gin.Context) {
 }
 
 func (app *App) localProcessKill(c *gin.Context) {
-	if err := app.accountSvc.FounderCheck(c.GetString("username")); err != nil {
-		respondError(c, http.StatusForbidden, err.Error())
-		return
-	}
-
 	pid, err := strconv.ParseInt(c.Param("pid"), 10, 32)
 	if err != nil || pid <= 0 {
 		respondError(c, http.StatusBadRequest, "进程 ID 无效")
