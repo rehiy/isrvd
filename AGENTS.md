@@ -162,7 +162,7 @@ docs/
 | 状态切换 | `{module}{Resource}StatusPatch` | `apisixRouteStatusPatch` |
 | 日志/统计 | `{module}{Resource}Logs/Stats` | `dockerContainerLogs`、`dockerContainerStats` |
 
-**Service / Pkgs（`internal/{account,apisix,...}`、`pkgs/`）** — 格式：`{Resource}{Action}`（去掉类名前缀）
+**Service / Pkgs（`server/service/{account,apisix,...}`、`pkgs/`）** — 格式：`{Resource}{Action}`（去掉类名前缀）
 
 | 操作 | 命名模式 | 示例 |
 | --- | --- | --- |
@@ -200,6 +200,45 @@ docs/
 
 - handler 私有的 URI/query/body 小结构体放在 `server/app` 对应控制器；跨 handler 复用或参与业务校验的 Request/Response 放在对应 service 包（`server/service/{account,apisix,...}`）；SDK 转换模型放在 `pkgs`
 - 避免跨包重复定义语义相同结构体
+
+### 请求处理、权限与审计基线
+
+**错误处理与响应**：
+
+- 状态码一律使用 `net/http` 常量；成功用 `respondSuccess(c, "中文提示", data)`，service 调用结果统一用 `respondResult(c, data, err)`
+- **绑定错误分流**：handler 若设置了 `http.MaxBytesReader`（如在线编辑的 `maxEditableJSONBytes`），其 `ShouldBindJSON` 必须用 `respondBindError`（把 `MaxBytesError` 转成 413 并给出友好提示）；未设大小限制的普通绑定用 `respondError(c, http.StatusBadRequest, err.Error())`
+- 文件上传类接口走 `MaxUploadSize`：先用 `ContentLength` 预检，不走 `respondBindError`
+
+**context 来源**：
+
+- 请求处理路径一律使用 `c.Request.Context()`
+- `context.Background()` 仅允许用于生命周期根、后台 goroutine 与优雅退出（`server/app/app.go` 生命周期、`lifecycle.go` 信号监听与优雅退出、`config/provider.go` 的 watch、cron 父 context），禁止出现在请求处理路径
+
+**服务 nil 契约**（新增服务时最易遗漏）：
+
+- 外部依赖不可用时 `app.xxxSvc` 为 `nil`，而不是返回带错误的空对象
+- 会被 nil 接收者调用的访问器（如 `Raw()`）必须做**接收者** nil 安全判断（`if s == nil`），典型调用方 `app.swarmSvc.Raw()` 在服务不可用时会传入 nil
+- `CheckAvailability` 只校验内部字段，由调用点保证接收者非 nil（如 `collectProbes` 中的 `!= nil` 判断）；新增调用点必须先判空
+
+**服务构造函数签名按能力分级**：
+
+| 能力 | 签名 | 示例 |
+| --- | --- | --- |
+| 不会失败 | `NewService() *Service` | `account`、`filer`、`shell`、`overview`、`copilot` |
+| 可能失败 | `NewService(...) (*Service, error)` | `docker`、`webssh`、`apisix`、`caddy`、`compose`、`swarm` |
+| 需要探活 | 额外接收 `ctx context.Context` 首参 | `apisix`、`caddy`、`swarm` |
+
+**路由的 Module 与 Label**：
+
+- `Module` 驱动服务可用性判断（`isServiceAvailable`），`Label` 用于权限校验失败时的提示文案
+- 权限匹配依据是 `METHOD /api/path`（`PermCheck` 内 `routeKey := method + " " + path`），不是 `Label`；创始人（`Founder`）跳过全部权限校验
+- 路由条目可能跨行（Handler 为内联闭包时字段在后续行），核查完整性时不能只按单行匹配
+
+**访问级别与审计缺省值**：
+
+- `Access` 缺省为 `AccessPerm`（需具体权限）；匿名必须显式声明 `AccessAnon`（目前仅登录相关接口与 `/overview/bootstrap`）；`AccessAuth` 表示登录即可访问
+- `Audit` 缺省为 `AuditByMethod`：审计所有非 GET 请求**以及所有 WebSocket**；高频 GET 轮询天然豁免，需要豁免的写操作必须显式 `AuditIgnore`
+- 给 POST 路由设置 `AuditAlways` 是冗余的（POST 在 `AuditByMethod` 下本就会被审计），仅当该接口改为 GET 后仍需审计时才有意义
 
 ### 配置结构体与 Provider
 
