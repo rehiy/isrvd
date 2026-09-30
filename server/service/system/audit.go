@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/jsonl"
 	"github.com/rehiy/libgo/logman"
 
@@ -131,14 +130,13 @@ func (s *AuditService) LogList(username string, limit int) []AuditLog {
 	return result
 }
 
-// AuditRecord 根据请求类型记录审计日志，供中间件在 c.Next() 后调用。
+// AuditRecord 根据请求类型记录审计日志，供中间件在请求处理完成后调用。
 // WebSocket 升级请求记录 "WS" 方法；其余记录方法、URI、请求体、状态码。
-func (s *AuditService) AuditRecord(c *gin.Context, startTime time.Time, body string) {
-	username := auditUsername(c, body)
+func (s *AuditService) AuditRecord(r *http.Request, username, ip string, statusCode int, startTime time.Time, body string) {
+	username = auditUsername(username, body)
 
 	// WebSocket
-	if strings.EqualFold(c.GetHeader("Upgrade"), "websocket") {
-		statusCode := c.Writer.Status()
+	if strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
 		if statusCode == 0 || statusCode == http.StatusOK {
 			statusCode = http.StatusSwitchingProtocols
 		}
@@ -146,8 +144,8 @@ func (s *AuditService) AuditRecord(c *gin.Context, startTime time.Time, body str
 			Timestamp:  startTime,
 			Username:   username,
 			Method:     "WS",
-			URI:        maskSensitiveURI(c.Request.RequestURI),
-			IP:         c.ClientIP(),
+			URI:        maskSensitiveURI(r.RequestURI),
+			IP:         ip,
 			StatusCode: statusCode,
 			Success:    statusCode == http.StatusSwitchingProtocols,
 			Duration:   time.Since(startTime).Milliseconds(),
@@ -155,17 +153,16 @@ func (s *AuditService) AuditRecord(c *gin.Context, startTime time.Time, body str
 		return
 	}
 
-	statusCode := c.Writer.Status()
 	if statusCode == 0 {
 		statusCode = http.StatusOK
 	}
 	s.LogAdd(AuditLog{
 		Timestamp:  startTime,
 		Username:   username,
-		Method:     c.Request.Method,
-		URI:        maskSensitiveURI(c.Request.RequestURI),
+		Method:     r.Method,
+		URI:        maskSensitiveURI(r.RequestURI),
 		Body:       body,
-		IP:         c.ClientIP(),
+		IP:         ip,
 		StatusCode: statusCode,
 		Success:    statusCode >= http.StatusOK && statusCode < http.StatusMultipleChoices,
 		Duration:   time.Since(startTime).Milliseconds(),
@@ -174,8 +171,8 @@ func (s *AuditService) AuditRecord(c *gin.Context, startTime time.Time, body str
 
 // BodyRead 读取有限长度的请求体用于审计，并确保后续 handler 仍可读取完整内容。
 // 文件上传只记录占位符，避免审计层提前解析 multipart 并占用大量内存或临时磁盘。
-func (s *AuditService) BodyRead(c *gin.Context) string {
-	contentType := c.ContentType()
+func (s *AuditService) BodyRead(r *http.Request) string {
+	contentType := r.Header.Get("Content-Type")
 	switch {
 	case strings.HasPrefix(contentType, "application/octet-stream"):
 		return "[Binary Omitted]"
@@ -183,12 +180,12 @@ func (s *AuditService) BodyRead(c *gin.Context) string {
 		return "[Multipart Omitted]"
 	}
 
-	original := c.Request.Body
+	original := r.Body
 	if original == nil {
 		return ""
 	}
 	raw, err := io.ReadAll(io.LimitReader(original, maxAuditBodySize+1))
-	c.Request.Body = struct {
+	r.Body = struct {
 		io.Reader
 		io.Closer
 	}{
@@ -318,8 +315,8 @@ func maskValue(value any) any {
 
 // auditUsername 获取审计日志中的操作人。
 // 登录等匿名路由没有认证上下文时，尝试从 JSON 请求体读取 username，仍为空则标记为匿名。
-func auditUsername(c *gin.Context, body string) string {
-	if username := strings.TrimSpace(c.GetString("username")); username != "" {
+func auditUsername(authUsername, body string) string {
+	if username := strings.TrimSpace(authUsername); username != "" {
 		return username
 	}
 

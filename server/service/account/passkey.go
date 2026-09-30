@@ -5,10 +5,10 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/rehiy/libgo/logman"
 
@@ -147,11 +147,10 @@ func (s *passkeySessionStore) pop(id string) *passkeySession {
 }
 
 // PasskeyBeginRegistration 开始 Passkey 注册
-func (s *Service) PasskeyBeginRegistration(c *gin.Context, displayName string) (*PasskeyBeginData, error) {
+func (s *Service) PasskeyBeginRegistration(username, displayName string) (*PasskeyBeginData, error) {
 	if !s.PasskeyEnabled() {
 		return nil, fmt.Errorf("Passkey 未启用")
 	}
-	username := c.GetString("username")
 	member, exists := config.Current().Members[username]
 	if !exists {
 		return nil, fmt.Errorf("用户不存在")
@@ -174,13 +173,13 @@ func (s *Service) PasskeyBeginRegistration(c *gin.Context, displayName string) (
 	return &PasskeyBeginData{SessionID: sessionID, Options: options}, nil
 }
 
-// PasskeyFinishRegistration 完成 Passkey 注册，直接从 c.Request 读取凭证数据
-func (s *Service) PasskeyFinishRegistration(c *gin.Context, sessionID string) error {
+// PasskeyFinishRegistration 完成 Passkey 注册，直接从 r 读取凭证数据
+func (s *Service) PasskeyFinishRegistration(r *http.Request, username, sessionID string) error {
 	session := s.passkeyStore.pop(sessionID)
 	if session == nil {
 		return fmt.Errorf("注册会话不存在或已过期")
 	}
-	if c.GetString("username") != session.Username {
+	if username != session.Username {
 		return fmt.Errorf("注册会话与当前用户不匹配")
 	}
 
@@ -189,7 +188,7 @@ func (s *Service) PasskeyFinishRegistration(c *gin.Context, sessionID string) er
 		return fmt.Errorf("用户不存在")
 	}
 
-	credential, err := s.webAuthn.FinishRegistration(s.buildPasskeyUser(session.Username, member), session.Data, c.Request)
+	credential, err := s.webAuthn.FinishRegistration(s.buildPasskeyUser(session.Username, member), session.Data, r)
 	if err != nil {
 		return fmt.Errorf("完成注册失败: %w", err)
 	}
@@ -277,8 +276,8 @@ func (s *Service) PasskeyBeginLogin(username string) (*PasskeyBeginData, error) 
 	return &PasskeyBeginData{SessionID: sessionID, Options: options}, nil
 }
 
-// PasskeyFinishLogin 完成 Passkey 登录，直接从 c.Request 读取凭证数据
-func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginResponse, error) {
+// PasskeyFinishLogin 完成 Passkey 登录，直接从 r 读取凭证数据
+func (s *Service) PasskeyFinishLogin(r *http.Request, sessionID string) (*LoginResponse, error) {
 	session := s.passkeyStore.pop(sessionID)
 	if session == nil {
 		return nil, fmt.Errorf("登录会话不存在或已过期")
@@ -295,7 +294,7 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginRe
 		if !exists {
 			return nil, fmt.Errorf("用户不存在")
 		}
-		credential, err := s.webAuthn.FinishLogin(s.buildPasskeyUser(username, member), session.Data, c.Request)
+		credential, err := s.webAuthn.FinishLogin(s.buildPasskeyUser(username, member), session.Data, r)
 		if err != nil {
 			return nil, fmt.Errorf("验证失败: %w", err)
 		}
@@ -320,7 +319,7 @@ func (s *Service) PasskeyFinishLogin(c *gin.Context, sessionID string) (*LoginRe
 				return nil, fmt.Errorf("验证失败")
 			}
 			return s.buildPasskeyUser(uname, member), nil
-		}, session.Data, c.Request)
+		}, session.Data, r)
 		if err != nil {
 			return nil, fmt.Errorf("验证失败: %w", err)
 		}

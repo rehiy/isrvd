@@ -3,10 +3,10 @@ package account
 import (
 	"fmt"
 	"net"
+	"net/http"
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/secure"
@@ -17,13 +17,14 @@ import (
 // ─── 认证入口 ──────────────
 
 // Auth 根据配置选择认证方式，返回用户名和错误原因。
+// allowQueryToken 为 true 时允许从 query ?token= 读取 JWT（SSE、文件下载等无法携带 Header 的场景）。
 // 供中间件统一调用，避免在 server 层判断认证模式。
-func (s *Service) Auth(c *gin.Context) (username, errMsg string) {
+func (s *Service) Auth(r *http.Request, allowQueryToken bool) (username, errMsg string) {
 	snapshot := config.Current()
 	if snapshot.THA != nil && snapshot.THA.Enabled {
-		return s.headerTokenCheck(snapshot, c)
+		return s.headerTokenCheck(snapshot, r)
 	}
-	return s.jwtCheck(snapshot, c)
+	return s.jwtCheck(snapshot, r, allowQueryToken)
 }
 
 // AuthInfoResponse 认证模式及当前用户信息
@@ -146,8 +147,8 @@ func (s *Service) ApiTokenCreate(username string, req CreateApiTokenRequest) (*C
 
 // ─── JWT 认证 ──────────────
 
-func (s *Service) jwtCheck(snapshot *config.Snapshot, c *gin.Context) (string, string) {
-	tokenStr := s.extractJWT(c)
+func (s *Service) jwtCheck(snapshot *config.Snapshot, r *http.Request, allowQueryToken bool) (string, string) {
+	tokenStr := s.extractJWT(r, allowQueryToken)
 	if tokenStr == "" {
 		return "", "未提供认证令牌"
 	}
@@ -185,11 +186,11 @@ func (s *Service) jwtCheck(snapshot *config.Snapshot, c *gin.Context) (string, s
 
 // ─── 代理 Header 登录 ────────────────
 
-func (s *Service) headerTokenCheck(snapshot *config.Snapshot, c *gin.Context) (string, string) {
-	if !s.headerSourceTrusted(snapshot, c) {
+func (s *Service) headerTokenCheck(snapshot *config.Snapshot, r *http.Request) (string, string) {
+	if !s.headerSourceTrusted(snapshot, r) {
 		return "", "代理 Header 来源不可信"
 	}
-	username := c.GetHeader(snapshot.THA.HeaderName)
+	username := r.Header.Get(snapshot.THA.HeaderName)
 	if username == "" {
 		return "", "代理 Header 缺失"
 	}
@@ -233,29 +234,26 @@ func (s *Service) createJWT(snapshot *config.Snapshot, username string, extra jw
 }
 
 // extractJWT 从 Authorization Header 或（路由标记了 QueryToken 时）query ?token= 中提取原始 JWT 字符串。
-func (s *Service) extractJWT(c *gin.Context) string {
-	tokenStr := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
+func (s *Service) extractJWT(r *http.Request, allowQueryToken bool) string {
+	tokenStr := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 	if tokenStr != "" {
 		return tokenStr
 	}
 	// WebSocket 及标记了 QueryToken 的路由（SSE、文件预览下载）允许 query token
-	if c.GetHeader("Upgrade") == "websocket" {
-		return c.Query("token")
-	}
-	if v, exists := c.Get("routeQueryToken"); exists && v.(bool) {
-		return c.Query("token")
+	if allowQueryToken || r.Header.Get("Upgrade") == "websocket" {
+		return r.URL.Query().Get("token")
 	}
 	return ""
 }
 
-func (s *Service) headerSourceTrusted(snapshot *config.Snapshot, c *gin.Context) bool {
-	// 未配置 TrustedCIDRs 时，向后兼容：不做来源限制
+func (s *Service) headerSourceTrusted(snapshot *config.Snapshot, r *http.Request) bool {
+	// 默认可信来源由配置层 THANormalize 填充
 	if snapshot.THA == nil || len(snapshot.THA.TrustedCIDRs) == 0 {
 		return true
 	}
-	host, _, err := net.SplitHostPort(c.Request.RemoteAddr)
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
-		host = c.Request.RemoteAddr
+		host = r.RemoteAddr
 	}
 	ip := net.ParseIP(host)
 	if ip == nil {

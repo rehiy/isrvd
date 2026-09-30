@@ -31,11 +31,13 @@ server/cmd/server ────────────→ server/config + server
 server/config ────────────────→ pkgs/cstore
 server/service/{account,apisix,...} → server/config / pkgs/*
 server/service/{docker,webssh} → server/service/shell（终端桥接复用）
+server/service/{cron,monitor} → server/service/notify（任务失败与资源告警）
+server/service/notify ────────→ server/service/caddy + pkgs/{apisix,certutil}（证书到期检测，客户端由 app 注入）
 server/app ────────────────→ server/config + server/service/{account,apisix,...} + pkgs/* + public
 ```
 
 - `pkgs/`：底层客户端、存储适配和 SDK 类型转换；不依赖 `server/service/`、`server/app/`
-- `server/service/{account,apisix,...}`：业务组合、参数校验、稳定 API 类型转换；各服务在 `NewService()` 中直接构造底层客户端；不得依赖 `server/app`
+- `server/service/{account,apisix,...}`：业务组合、参数校验、稳定 API 类型转换；各服务在 `NewService()` 中直接构造底层客户端；不得依赖 `server/app`，**不得依赖 gin**（需要请求信息时接收 `*http.Request`、`context.Context` 或普通结构体）
 - `server/app/`：Gin HTTP/WebSocket 入口、路由索引、中间件、服务生命周期与响应封装
 - `server/cmd/server/`：仅执行 `config.Init → app.StartApp`
 

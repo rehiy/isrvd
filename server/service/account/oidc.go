@@ -5,13 +5,13 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"net/url"
 	"slices"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/logman"
 	"golang.org/x/oauth2"
 
@@ -36,8 +36,8 @@ type oidcState struct {
 }
 
 // OIDCLoginURL 生成 OIDC 授权跳转地址
-func (s *Service) OIDCLoginURL(c *gin.Context) (string, error) {
-	_, oauthConfig, err := s.newOAuthConfig(c.Request.Context(), c, config.Current().OIDC)
+func (s *Service) OIDCLoginURL(ctx context.Context) (string, error) {
+	_, oauthConfig, err := s.newOAuthConfig(ctx, config.Current().OIDC)
 	if err != nil {
 		return "", err
 	}
@@ -75,16 +75,16 @@ type oidcLoginCode struct {
 }
 
 // OIDCCallback 校验 OIDC 回调，成功时返回一次性登录码
-func (s *Service) OIDCCallback(c *gin.Context) (string, error) {
+func (s *Service) OIDCCallback(ctx context.Context, query url.Values) (string, error) {
 	snapshot := config.Current()
-	if errText := c.Query("error"); errText != "" {
+	if errText := query.Get("error"); errText != "" {
 		logman.Warn("OIDC callback error from IdP", "error", errText,
-			"error_description", c.Query("error_description"))
+			"error_description", query.Get("error_description"))
 		return "", fmt.Errorf("OIDC 登录失败，请重试")
 	}
 
-	code := c.Query("code")
-	state := c.Query("state")
+	code := query.Get("code")
+	state := query.Get("state")
 	if code == "" {
 		return "", fmt.Errorf("OIDC 登录失败，请重试")
 	}
@@ -96,13 +96,13 @@ func (s *Service) OIDCCallback(c *gin.Context) (string, error) {
 	}
 
 	// 根据 state 获取 OAuth 配置
-	provider, oauthConfig, err := s.newOAuthConfig(c.Request.Context(), c, snapshot.OIDC)
+	provider, oauthConfig, err := s.newOAuthConfig(ctx, snapshot.OIDC)
 	if err != nil {
 		return "", err
 	}
 
 	// 使用授权码换取 token
-	token, err := oauthConfig.Exchange(c.Request.Context(), code)
+	token, err := oauthConfig.Exchange(ctx, code)
 	if err != nil {
 		logman.Warn("OIDC code exchange failed", "error", err)
 		return "", fmt.Errorf("OIDC 登录失败，请重试")
@@ -115,7 +115,7 @@ func (s *Service) OIDCCallback(c *gin.Context) (string, error) {
 	}
 
 	// 验证 id_token 签名和 claims
-	idToken, err := provider.Verifier(&oidc.Config{ClientID: snapshot.OIDC.ClientID}).Verify(c.Request.Context(), rawIDToken)
+	idToken, err := provider.Verifier(&oidc.Config{ClientID: snapshot.OIDC.ClientID}).Verify(ctx, rawIDToken)
 	if err != nil {
 		logman.Warn("OIDC id_token verify failed", "error", err)
 		return "", fmt.Errorf("OIDC 登录失败，请重试")
@@ -128,7 +128,7 @@ func (s *Service) OIDCCallback(c *gin.Context) (string, error) {
 	}
 
 	// 提取用户名：优先从 id_token claims 读，回落到 UserInfo endpoint
-	username, err := oidcUsername(c.Request.Context(), provider, oauthConfig.TokenSource(c.Request.Context(), token), idToken, snapshot.OIDC.UsernameClaim)
+	username, err := oidcUsername(ctx, provider, oauthConfig.TokenSource(ctx, token), idToken, snapshot.OIDC.UsernameClaim)
 	if err != nil {
 		logman.Warn("OIDC username claim error", "error", err, "claim", snapshot.OIDC.UsernameClaim)
 		return "", fmt.Errorf("OIDC 登录失败，请重试")
@@ -211,7 +211,7 @@ func (c *oidcProviderCache) get(ctx context.Context, issuerURL string) (*oidc.Pr
 }
 
 // newOAuthConfig 构建 oauth2.Config，供 OIDCLoginURL 和 OIDCCallback 共用
-func (s *Service) newOAuthConfig(ctx context.Context, c *gin.Context, conf *config.OIDCConfig) (*oidc.Provider, *oauth2.Config, error) {
+func (s *Service) newOAuthConfig(ctx context.Context, conf *config.OIDCConfig) (*oidc.Provider, *oauth2.Config, error) {
 	if conf == nil || !conf.Enabled || conf.IssuerURL == "" || conf.ClientID == "" {
 		return nil, nil, fmt.Errorf("OIDC 未启用或配置不完整")
 	}

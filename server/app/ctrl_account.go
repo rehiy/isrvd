@@ -68,7 +68,7 @@ func (app *App) accountPasskeyRegisterBegin(c *gin.Context) {
 	}
 	// 允许空 body（displayName 可选）
 	_ = c.ShouldBindJSON(&req)
-	resp, err := app.accountSvc.PasskeyBeginRegistration(c, req.DisplayName)
+	resp, err := app.accountSvc.PasskeyBeginRegistration(c.GetString("username"), req.DisplayName)
 	if err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -84,7 +84,7 @@ func (app *App) accountPasskeyRegisterFinish(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "缺少 sessionId")
 		return
 	}
-	if err := app.accountSvc.PasskeyFinishRegistration(c, sessionID); err != nil {
+	if err := app.accountSvc.PasskeyFinishRegistration(c.Request, c.GetString("username"), sessionID); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -114,7 +114,7 @@ func (app *App) accountPasskeyLoginFinish(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, "缺少 sessionId")
 		return
 	}
-	resp, err := app.accountSvc.PasskeyFinishLogin(c, sessionID)
+	resp, err := app.accountSvc.PasskeyFinishLogin(c.Request, sessionID)
 	if err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -124,7 +124,7 @@ func (app *App) accountPasskeyLoginFinish(c *gin.Context) {
 
 // accountOIDCLogin 跳转到 OIDC Provider 登录页
 func (app *App) accountOIDCLogin(c *gin.Context) {
-	loginURL, err := app.accountSvc.OIDCLoginURL(c)
+	loginURL, err := app.accountSvc.OIDCLoginURL(c.Request.Context())
 	if err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -134,7 +134,7 @@ func (app *App) accountOIDCLogin(c *gin.Context) {
 
 // accountOIDCCallback 处理 OIDC Provider 回调
 func (app *App) accountOIDCCallback(c *gin.Context) {
-	code, err := app.accountSvc.OIDCCallback(c)
+	code, err := app.accountSvc.OIDCCallback(c.Request.Context(), c.Request.URL.Query())
 	if err != nil {
 		c.Redirect(http.StatusFound, "/?oidc_error="+url.QueryEscape(err.Error()))
 		return

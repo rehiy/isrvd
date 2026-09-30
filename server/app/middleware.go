@@ -40,20 +40,17 @@ func (app *App) serviceLifecycleMiddleware() gin.HandlerFunc {
 func (app *App) authMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		svc := app.accountSvc
-		if route, ok := lookupRoute(routeIndex, c); ok {
-			if route.QueryToken {
-				c.Set("routeQueryToken", true)
+		route, ok := lookupRoute(routeIndex, c)
+		allowQueryToken := ok && route.QueryToken
+		if ok && route.Access == AccessAnon {
+			if username, _ := svc.Auth(c.Request, allowQueryToken); username != "" {
+				c.Set("username", username)
 			}
-			if route.Access == AccessAnon {
-				if username, _ := svc.Auth(c); username != "" {
-					c.Set("username", username)
-				}
-				c.Next()
-				return
-			}
+			c.Next()
+			return
 		}
 
-		username, errMsg := svc.Auth(c)
+		username, errMsg := svc.Auth(c.Request, allowQueryToken)
 		if username == "" {
 			respondError(c, http.StatusUnauthorized, errMsg)
 			c.Abort()
@@ -114,11 +111,11 @@ func (app *App) auditMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 		startTime := time.Now()
 		var body string
 		if !isWS {
-			body = app.auditSvc.BodyRead(c)
+			body = app.auditSvc.BodyRead(c.Request)
 		}
 
 		c.Next()
-		app.auditSvc.AuditRecord(c, startTime, body)
+		app.auditSvc.AuditRecord(c.Request, c.GetString("username"), c.ClientIP(), c.Writer.Status(), startTime, body)
 	}
 }
 
