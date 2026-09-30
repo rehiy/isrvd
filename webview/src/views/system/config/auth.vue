@@ -125,7 +125,7 @@ export default toNative(ConfigAuth)
       <div>
         <label class="form-label">可信代理 CIDR</label>
         <textarea v-model="config.thaTrustedCIDRsText" rows="3" placeholder="请输入代理来源 CIDR，每行一个" class="input font-mono text-xs"></textarea>
-        <p class="mt-1 text-xs text-slate-400">示例：127.0.0.1/32、10.0.0.0/8；仅列出的代理来源 IP 允许传入用户名 Header；留空则不限制来源</p>
+        <p class="mt-1 text-xs text-slate-400">示例：127.0.0.1/32、10.0.0.0/8；仅列出的代理来源 IP 允许传入用户名 Header；留空保存时默认填充本机回环地址（127.0.0.1/32、::1/128）</p>
       </div>
     </section>
   </div>

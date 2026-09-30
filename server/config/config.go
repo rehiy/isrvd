@@ -38,6 +38,10 @@ func THANormalize(tha *THAConfig) *THAConfig {
 	if tha.HeaderName == "" {
 		tha.HeaderName = "X-Username"
 	}
+	// 未配置可信代理来源时默认仅信任本机，避免可直连服务端口的客户端伪造用户名 Header
+	if len(tha.TrustedCIDRs) == 0 {
+		tha.TrustedCIDRs = []string{"127.0.0.1/32", "::1/128"}
+	}
 	return tha
 }
 

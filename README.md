@@ -267,7 +267,7 @@ git diff --check
 | `schema` | 配置结构版本，用于自动迁移 |
 | `server` | 监听地址、数据根目录、上传限制、CORS、JWT 密钥/有效期、OpenAPI 开关和调试模式 |
 | `password` | 密码登录开关与最小密码长度 |
-| `tha` | 代理认证头登录（enabled / headerName / trustedCIDRs） |
+| `tha` | 代理认证头登录（enabled / headerName / trustedCIDRs；trustedCIDRs 为空时默认填充本机回环地址） |
 | `oidc` | OIDC 认证（enabled / issuerUrl / clientId / clientSecret / redirectUrl / usernameClaim / scopes / loginLabel） |
 | `passkey` | WebAuthn/Passkey 认证（enabled / rpName / rpId / rpOrigins / timeout） |
 | `copilot` | AI 助手模型接入（model / baseUrl / apiKey） |
@@ -437,7 +437,7 @@ server/app ────────────────────→ serve
 - WebSocket 连接需经过认证中间件
 - 基于路由的细粒度权限控制，路由访问级别支持 `0` 需权限、`1` 需登录、`-1` 匿名
 - 操作审计日志，路由审计级别支持 `0` 按 Method、`-1` 忽略、`1` 强制记录，默认记录非 GET 请求与 WebSocket 连接
-- 支持可限制代理来源 CIDR 的信任 Header 认证（`tha.headerName`）
+- 支持可限制代理来源 CIDR 的信任 Header 认证（`tha.headerName`），`tha.trustedCIDRs` 默认为本机回环地址
 
 ## 许可证
 

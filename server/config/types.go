@@ -48,7 +48,7 @@ type PasswordConfig struct {
 type THAConfig struct {
 	Enabled      bool     `yaml:"enabled" json:"enabled"`           // 是否启用代理 Header 登录
 	HeaderName   string   `yaml:"headerName" json:"headerName"`     // 上游代理传入登录用户名的 Header 名称
-	TrustedCIDRs []string `yaml:"trustedCIDRs" json:"trustedCIDRs"` // 允许传入登录 Header 的代理来源 CIDR；为空时不限制来源
+	TrustedCIDRs []string `yaml:"trustedCIDRs" json:"trustedCIDRs"` // 允许传入登录 Header 的代理来源 IP/CIDR；为空时默认填充本机回环地址
 }
 
 // OIDC 登陆配置
