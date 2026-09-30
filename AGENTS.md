@@ -183,10 +183,18 @@ docs/
 
 文件内顺序（自上而下）：
 
-1. **可复用的 const/var 定义** — 包级常量/变量放在 import 之后、类定义之前，禁止移到文件中间或末尾
+1. **共享的 const/var 定义** — 被多个函数或多个文件使用、无单一归属的包级常量/变量，放在 import 之后、类定义之前
 2. **类定义、初始化函数** — struct 定义及其 `New*` 构造函数紧随其后
-3. **类共有函数、私有函数** — 业务方法按逻辑分组排列；函数使用的类型定义紧贴在首个使用它的方法之上（就近定义），禁止集中到文件顶部，禁止定义在首次使用之后
+3. **类共有函数、私有函数** — 业务方法按逻辑分组排列
 4. **独立的辅助函数** — 非业务入口的内部工具函数统一放在文件末尾，用 `// ─── 辅助函数 ───` 注释标记
+
+**就近定义优先于上面的固定顺序**，判定标准是「该声明是否被共享」，而不是「它出现在文件第几个」：
+
+- 只服务单个函数的 const/var/类型**紧贴该函数**，不因「包级声明应在顶部」而上提（如 `server/service/filer/service.go` 的 `previewContentTypes` 紧贴 `PreviewContentType`，`server/service/overview/version.go` 的缓存变量紧贴 `CheckVersion`）
+- 类型专属枚举紧贴其类型定义，不移到文件顶部（如 `pkgs/cstore/store.go`、`server/service/copilot/agui/event.go` 的 `EventType` 枚举）
+- 禁止把函数专属的类型集中堆到文件顶部
+- 某声明已紧贴它所服务的函数时，即使文件中更靠前的函数也引用了它，仍保持就近；**不要**为消除「先引用后定义」而把它上提到顶部（Go 允许同包内声明顺序任意，不影响编译）。例如 `server/service/notify/fault.go` 的 `containerFaultState` 紧贴 `checkContainer`，但更靠前的 `NewFaultWatcher` 同样引用它
+- 不得以「声明出现在首个 type/func 之后」作为唯一判据——只有共享声明才适用第 1 条，函数专属声明适用就近原则
 
 其他规则：
 
