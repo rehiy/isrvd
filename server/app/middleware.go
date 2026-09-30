@@ -12,7 +12,12 @@ import (
 // serviceLifecycleMiddleware 固定一次请求使用的服务代际，并在重载时取消长请求。
 func (app *App) serviceLifecycleMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		app.servicesMu.RLock()
+		// 重载持有或等待写锁时快速失败，避免新请求排队导致整站挂起。
+		if !app.servicesMu.TryRLock() {
+			respondError(c, http.StatusServiceUnavailable, "服务正在重载")
+			c.Abort()
+			return
+		}
 		app.requestCtxMu.RLock()
 		requestGeneration := app.requestsCtx
 		app.requestCtxMu.RUnlock()
