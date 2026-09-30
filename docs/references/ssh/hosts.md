@@ -1,7 +1,7 @@
 # SSH 主机管理 API
 
 > WebSSH 模块支持通过浏览器直接连接远程 SSH 主机，提供可复用认证凭据管理、主机配置管理（支持凭据复用、密码和私钥认证）和 WebSocket 终端会话。
-> 主机配置独立存储于 `{rootDirectory}/webssh-host.yml`，认证凭据独立存储于 `{rootDirectory}/webssh-cred.yml`，均不写入主配置文件。
+> 主机配置独立存储于 `{rootDirectory}/webssh-host.yml`，认证凭据独立存储于 `{rootDirectory}/webssh-cred.yml`，均不写入主配置文件；配置位于 etcd 时改存 `<配置 key>/<文件名>`，首次读取时自动迁移本地同名文件。
 > `password`、`privateKey` 加密落盘（密钥由 `server.jwtSecret` 派生），修改 `jwtSecret` 后需重新填写 SSH 认证信息。
 
 ---

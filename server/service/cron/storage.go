@@ -39,7 +39,7 @@ type JobLog struct {
 
 // Store 负责计划任务配置和执行日志的存储。
 //
-// 任务配置：rootDirectory/cron.yml （yaml）
+// 任务配置：cron.yml（yaml，存储后端见 config.OpenData）
 // 执行日志：rootDirectory/cron/YYYY-MM-DD.jsonl （所有任务合并、按天滚动）
 type Store struct {
 	ts      *cstore.TypedStore[[]*Job]
@@ -52,7 +52,7 @@ type Store struct {
 
 // NewStore 创建绑定指定根目录的计划任务存储。
 func NewStore(rootDir string) *Store {
-	ts, err := cstore.NewTyped[[]*Job](rootDir, "cron.yml")
+	ts, err := config.OpenData[[]*Job]("cron.yml")
 	if err != nil {
 		logger.Warn("Cron config store init failed", "dir", rootDir, "error", err)
 	}

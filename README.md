@@ -201,7 +201,7 @@ CONFIG_PATH="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" .
 # etcd://user:pass@host1:2379,host2:2379/key?scheme=http&timeout=5s&fallback=/path/config.yml
 ```
 
-**etcd** 认证可省略，也可用 `ETCD_USERNAME` / `ETCD_PASSWORD` 补充或覆盖 URI 中的认证信息。etcd key 发生 PUT 变更时，isrvd 会重载配置、注册中心和业务服务。通过系统配置 API 保存的本地 YAML 也会立即触发重载；若直接在磁盘上修改 YAML，则需发送 `SIGHUP` 或重启进程。
+**etcd** 认证可省略，也可用 `ETCD_USERNAME` / `ETCD_PASSWORD` 补充或覆盖 URI 中的认证信息。etcd key 发生 PUT 变更时，isrvd 会重载配置、注册中心和业务服务。计划任务、SSH 主机与凭据等业务数据同样存入 etcd（key 为 `<配置 key>/cron.yml` 等），首次启动时自动迁移 `rootDirectory` 下的同名文件；审计与监控日志仍写本地。迁移后本地文件不再更新，回退到不支持该特性的旧版本会丢失升级期间对计划任务与 SSH 配置的修改。通过系统配置 API 保存的本地 YAML 也会立即触发重载；若直接在磁盘上修改 YAML，则需发送 `SIGHUP` 或重启进程。
 
 ## 本地开发
 

@@ -121,9 +121,9 @@ func (s *itemStore[T, P]) indexOf(id string) int {
 
 // ─── 辅助函数 ───
 
-// newItemStore 从 {rootDirectory}/file 加载条目并解密密码/私钥
+// newItemStore 从业务数据存储加载条目并解密密码/私钥
 func newItemStore[T any, P storeItem[T]](file, label string, aead cipher.AEAD, prepare func(item, old P)) (*itemStore[T, P], error) {
-	ts, err := cstore.NewTyped[[]P](config.Current().Server.RootDirectory, file)
+	ts, err := config.OpenData[[]P](file)
 	if err != nil {
 		return nil, err
 	}

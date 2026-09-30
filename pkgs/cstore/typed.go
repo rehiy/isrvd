@@ -35,6 +35,11 @@ func NewTypedFromPath[T any](path string) (*TypedStore[T], error) {
 	return &TypedStore[T]{store: s, key: key}, nil
 }
 
+// NewTypedWith 基于已打开的 Store 创建 TypedStore，多个 key 可共享同一后端连接。
+func NewTypedWith[T any](s Store, key string) *TypedStore[T] {
+	return &TypedStore[T]{store: s, key: key}
+}
+
 // Get 读取并反序列化值。key 不存在时返回零值和 nil error。
 func (t *TypedStore[T]) Get() (val T, err error) {
 	data, err := t.store.Get(t.key)
