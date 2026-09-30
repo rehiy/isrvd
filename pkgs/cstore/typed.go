@@ -118,6 +118,8 @@ func (t *TypedStore[T]) Store() Store {
 	return t.store
 }
 
+// ─── 辅助函数 ───
+
 // unmarshalVal 将 YAML 反序列化到 v。
 // T 为指针类型时自动分配内层对象，避免传 **T 给 go-yaml 导致类型不匹配。
 func unmarshalVal[T any](data []byte, v *T) error {

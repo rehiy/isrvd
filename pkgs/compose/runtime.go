@@ -47,16 +47,6 @@ func ProjectNameFromProject(project *types.Project, content string) (string, err
 	return projectNameOrHash(project.Name, content)
 }
 
-func projectNameOrHash(name, content string) (string, error) {
-	if name == "" || name == "." {
-		name = ShortHash(content)
-	}
-	if err := ValidateProjectName(name); err != nil {
-		return "", err
-	}
-	return name, nil
-}
-
 // ==================== Project loading and persistence ====================
 
 // ProjectLoad 写入 compose.yml 并以 installDir 为 WorkingDir 加载，确保相对路径正确展开。
@@ -302,6 +292,18 @@ func DockerComposeProjectName(info container.InspectResponse) string {
 		return ""
 	}
 	return info.Config.Labels[ComposeProjectLabel]
+}
+
+// ─── 辅助函数 ───
+
+func projectNameOrHash(name, content string) (string, error) {
+	if name == "" || name == "." {
+		name = ShortHash(content)
+	}
+	if err := ValidateProjectName(name); err != nil {
+		return "", err
+	}
+	return name, nil
 }
 
 // ==================== File helpers ====================

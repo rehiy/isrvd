@@ -102,6 +102,8 @@ func ProjectFromSwarmInspect(svc swarm.Service, containerDir string) (*types.Pro
 	}, nil
 }
 
+// ─── 辅助函数 ───
+
 func swarmMountSource(m mount.Mount, containerDir string) string {
 	switch m.Type {
 	case mount.TypeBind:

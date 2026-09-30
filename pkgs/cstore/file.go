@@ -15,18 +15,6 @@ type FileStore struct {
 	mu      sync.RWMutex
 }
 
-// newFileStore 创建 FileStore，baseDir 为配置文件所在目录。
-func newFileStore(baseDir string) (*FileStore, error) {
-	if baseDir == "" {
-		return nil, fmt.Errorf("cstore/file: baseDir 不能为空")
-	}
-	abs, err := filepath.Abs(baseDir)
-	if err != nil {
-		return nil, fmt.Errorf("cstore/file: 解析路径失败: %w", err)
-	}
-	return &FileStore{baseDir: abs}, nil
-}
-
 func (f *FileStore) path(key string) string {
 	return filepath.Join(f.baseDir, key)
 }
@@ -68,4 +56,18 @@ func (f *FileStore) Watch(_ context.Context, _ string) <-chan Event {
 
 func (f *FileStore) Close() error {
 	return nil
+}
+
+// ─── 辅助函数 ───
+
+// newFileStore 创建 FileStore，baseDir 为配置文件所在目录。
+func newFileStore(baseDir string) (*FileStore, error) {
+	if baseDir == "" {
+		return nil, fmt.Errorf("cstore/file: baseDir 不能为空")
+	}
+	abs, err := filepath.Abs(baseDir)
+	if err != nil {
+		return nil, fmt.Errorf("cstore/file: 解析路径失败: %w", err)
+	}
+	return &FileStore{baseDir: abs}, nil
 }

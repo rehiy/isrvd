@@ -22,59 +22,6 @@ type EtcdStore struct {
 	mu       sync.Mutex
 }
 
-func newEtcdStore(uri string) (*EtcdStore, error) {
-	u, err := url.Parse(uri)
-	if err != nil {
-		return nil, fmt.Errorf("cstore/etcd: URI 解析失败: %w", err)
-	}
-	if u.Host == "" {
-		return nil, fmt.Errorf("cstore/etcd: URI 缺少 endpoints")
-	}
-
-	q := u.Query()
-	scheme := q.Get("scheme")
-	if scheme == "" {
-		scheme = "http"
-	}
-
-	var endpoints []string
-	for _, host := range strings.Split(u.Host, ",") {
-		if host = strings.TrimSpace(host); host != "" {
-			endpoints = append(endpoints, scheme+"://"+host)
-		}
-	}
-
-	timeout := 5 * time.Second
-	if raw := q.Get("timeout"); raw != "" {
-		if timeout, err = time.ParseDuration(raw); err != nil {
-			return nil, fmt.Errorf("cstore/etcd: timeout 无效: %w", err)
-		}
-	}
-
-	username := envOrDefault("ETCD_USERNAME", u.User.Username())
-	password, _ := u.User.Password()
-	password = envOrDefault("ETCD_PASSWORD", password)
-
-	keyPath := u.Path
-	if keyPath == "" || keyPath == "/" {
-		return nil, fmt.Errorf("cstore/etcd: URI 缺少配置 key")
-	}
-
-	cli := etcd.New(etcd.Config{
-		Endpoints:   endpoints,
-		Username:    username,
-		Password:    password,
-		DialTimeout: timeout,
-	})
-
-	return &EtcdStore{
-		client:   cli,
-		keyPath:  keyPath,
-		fallback: q.Get("fallback"),
-		timeout:  timeout,
-	}, nil
-}
-
 func (e *EtcdStore) etcdKey(key string) string {
 	if key == "" {
 		return e.keyPath
@@ -185,6 +132,61 @@ func (e *EtcdStore) Watch(ctx context.Context, key string) <-chan Event {
 // Close 释放资源。
 func (e *EtcdStore) Close() error {
 	return nil
+}
+
+// ─── 辅助函数 ───
+
+func newEtcdStore(uri string) (*EtcdStore, error) {
+	u, err := url.Parse(uri)
+	if err != nil {
+		return nil, fmt.Errorf("cstore/etcd: URI 解析失败: %w", err)
+	}
+	if u.Host == "" {
+		return nil, fmt.Errorf("cstore/etcd: URI 缺少 endpoints")
+	}
+
+	q := u.Query()
+	scheme := q.Get("scheme")
+	if scheme == "" {
+		scheme = "http"
+	}
+
+	var endpoints []string
+	for _, host := range strings.Split(u.Host, ",") {
+		if host = strings.TrimSpace(host); host != "" {
+			endpoints = append(endpoints, scheme+"://"+host)
+		}
+	}
+
+	timeout := 5 * time.Second
+	if raw := q.Get("timeout"); raw != "" {
+		if timeout, err = time.ParseDuration(raw); err != nil {
+			return nil, fmt.Errorf("cstore/etcd: timeout 无效: %w", err)
+		}
+	}
+
+	username := envOrDefault("ETCD_USERNAME", u.User.Username())
+	password, _ := u.User.Password()
+	password = envOrDefault("ETCD_PASSWORD", password)
+
+	keyPath := u.Path
+	if keyPath == "" || keyPath == "/" {
+		return nil, fmt.Errorf("cstore/etcd: URI 缺少配置 key")
+	}
+
+	cli := etcd.New(etcd.Config{
+		Endpoints:   endpoints,
+		Username:    username,
+		Password:    password,
+		DialTimeout: timeout,
+	})
+
+	return &EtcdStore{
+		client:   cli,
+		keyPath:  keyPath,
+		fallback: q.Get("fallback"),
+		timeout:  timeout,
+	}, nil
 }
 
 func envOrDefault(key, fallback string) string {

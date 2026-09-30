@@ -55,6 +55,8 @@ func (s *DockerService) RegistryAuth(imageRef string) string {
 	return ""
 }
 
+// ─── 辅助函数 ───
+
 func cloneRegistry(registry *RegistryConfig) *RegistryConfig {
 	if registry == nil {
 		return nil

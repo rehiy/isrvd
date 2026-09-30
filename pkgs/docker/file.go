@@ -103,18 +103,6 @@ func (s *DockerService) resolveContainerLinkTargets(ctx context.Context, contain
 	}
 }
 
-// isFindOutput 检查输出是否为 find -printf 格式（每行至少含 4 个 | 分隔符）
-func isFindOutput(output string) bool {
-	for _, line := range strings.SplitN(strings.TrimSpace(output), "\n", 3) {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		return strings.Count(line, "|") >= 4
-	}
-	return true // 空目录也视为有效
-}
-
 // ContainerFileDownload 从容器内下载文件，写入 dst
 func (s *DockerService) ContainerFileDownload(ctx context.Context, containerID, filePath string, dst io.Writer) error {
 	rc, _, err := s.client.CopyFromContainer(ctx, containerID, filePath)
@@ -236,6 +224,20 @@ func (s *DockerService) ContainerFileChmod(ctx context.Context, containerID, tar
 		return fmt.Errorf("修改权限失败: %w", err)
 	}
 	return nil
+}
+
+// ─── 辅助函数 ───
+
+// isFindOutput 检查输出是否为 find -printf 格式（每行至少含 4 个 | 分隔符）
+func isFindOutput(output string) bool {
+	for _, line := range strings.SplitN(strings.TrimSpace(output), "\n", 3) {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		return strings.Count(line, "|") >= 4
+	}
+	return true // 空目录也视为有效
 }
 
 // containerLinkTargetPath 返回软链接目标在容器内的绝对路径。
