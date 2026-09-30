@@ -97,7 +97,7 @@ func (c *Client) ConfigRaw(ctx context.Context, path string) ([]byte, error) {
 	return c.configRaw(ctx, path)
 }
 
-// ─── 辅助函数 ───
+// ─── 内部方法 ───
 
 func (c *Client) configLoad(ctx context.Context, cfg *Config) error {
 	body, err := json.Marshal(cfg)

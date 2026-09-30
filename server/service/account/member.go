@@ -240,7 +240,7 @@ func (s *Service) PasswordChange(username string, req ChangePasswordRequest) err
 	return nil
 }
 
-// ─── 辅助函数 ──────────
+// ─── 内部方法 ───
 
 // memberInfoBuild 从配置构建成员信息（确保权限不为 nil）
 func (s *Service) memberInfoBuild(m *config.MemberConfig) *MemberInfo {

@@ -148,7 +148,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	return &DeployResult{ProjectName: name, Items: items, InstallDir: installDir}, nil
 }
 
-// ==================== 辅助函数 ====================
+// ==================== 内部方法 ====================
 
 // dockerServicesCreate 批量创建 project 中的所有容器，失败时回滚。
 func (s *Service) dockerServicesCreate(ctx context.Context, project *types.Project) ([]string, error) {

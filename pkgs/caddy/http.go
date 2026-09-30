@@ -362,7 +362,7 @@ func BasicAuthFromHandler(h Handler) (realm string, accounts []BasicAuthAccount,
 	return
 }
 
-// ─── 辅助函数 ───
+// ─── 内部方法 ───
 
 func (d Duration) value() (string, bool) {
 	value := string(d)

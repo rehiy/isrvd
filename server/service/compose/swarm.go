@@ -148,7 +148,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	return &DeployResult{ProjectName: name, Items: items, InstallDir: installDir}, nil
 }
 
-// ==================== 辅助函数 ====================
+// ==================== 内部方法 ====================
 
 // swarmServicesCreate 批量创建 project 中的所有 Swarm 服务，失败时回滚已创建的服务。
 // 调用前须先通过 imagesEnsure 完成预拉取。
