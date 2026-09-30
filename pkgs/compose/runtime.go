@@ -44,7 +44,14 @@ func ProjectNameFromProject(project *types.Project, content string) (string, err
 	if project == nil {
 		return "", fmt.Errorf("project 为空")
 	}
-	return projectNameOrHash(project.Name, content)
+	name := project.Name
+	if name == "" || name == "." {
+		name = ShortHash(content)
+	}
+	if err := ValidateProjectName(name); err != nil {
+		return "", err
+	}
+	return name, nil
 }
 
 // ==================== Project loading and persistence ====================
@@ -295,16 +302,6 @@ func DockerComposeProjectName(info container.InspectResponse) string {
 }
 
 // ─── 辅助函数 ───
-
-func projectNameOrHash(name, content string) (string, error) {
-	if name == "" || name == "." {
-		name = ShortHash(content)
-	}
-	if err := ValidateProjectName(name); err != nil {
-		return "", err
-	}
-	return name, nil
-}
 
 // ==================== File helpers ====================
 
