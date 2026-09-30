@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/registry"
 
 	"isrvd/pkgs/docker"
 )
@@ -151,7 +150,11 @@ func (s *Service) ImageSearch(ctx context.Context, term string) ([]*ImageSearchR
 	if err != nil {
 		return nil, fmt.Errorf("搜索镜像失败: %w", err)
 	}
-	return imageSearchResults(results), nil
+	out := make([]*ImageSearchResult, 0, len(results))
+	for _, r := range results {
+		out = append(out, &ImageSearchResult{Name: r.Name, Description: r.Description, IsOfficial: r.IsOfficial, StarCount: r.StarCount})
+	}
+	return out, nil
 }
 
 // ImageBuild 构建镜像
@@ -195,14 +198,6 @@ func (s *Service) ImageInspect(ctx context.Context, id string) (*ImageDetail, er
 }
 
 // ─── 辅助函数 ───
-
-func imageSearchResults(results []registry.SearchResult) []*ImageSearchResult {
-	out := make([]*ImageSearchResult, 0, len(results))
-	for _, r := range results {
-		out = append(out, &ImageSearchResult{Name: r.Name, Description: r.Description, IsOfficial: r.IsOfficial, StarCount: r.StarCount})
-	}
-	return out
-}
 
 func imageDetail(img *image.InspectResponse, history []image.HistoryResponseItem) *ImageDetail {
 	if img == nil {
