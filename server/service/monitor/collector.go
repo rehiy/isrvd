@@ -168,9 +168,13 @@ func (c *Collector) checkAlert(stat *HostStat) {
 	})
 }
 
-// DataDir 返回数据目录
-func (c *Collector) DataDir() string {
-	return c.dataDir
+// History 查询最近 sinceSeconds 秒的历史监控记录；containerID 为空时查询主机
+func (c *Collector) History(containerID string, sinceSeconds int64) ([]Record, error) {
+	prefix := HostPrefix
+	if containerID != "" {
+		prefix = ContainerPrefix
+	}
+	return ReadSince[Record](c.dataDir, prefix, containerID, sinceSeconds)
 }
 
 // ─── 辅助函数 ───

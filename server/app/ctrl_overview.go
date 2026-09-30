@@ -12,7 +12,6 @@ import (
 
 	"isrvd/server/config"
 	"isrvd/server/service/account"
-	"isrvd/server/service/monitor"
 	"isrvd/server/service/overview"
 )
 
@@ -113,37 +112,15 @@ func (app *App) overviewMonitor(c *gin.Context) {
 		since = 3600
 	}
 
-	switch c.DefaultQuery("type", "host") {
-	case "container":
-		id := c.Query("id")
-		if id == "" {
+	id := ""
+	if c.DefaultQuery("type", "host") == "container" {
+		if id = c.Query("id"); id == "" {
 			respondError(c, http.StatusBadRequest, "缺少容器 ID")
 			return
 		}
-		records, err := monitor.ReadSince[monitor.Record](
-			app.monitorCollector.DataDir(),
-			monitor.ContainerPrefix,
-			id,
-			since,
-		)
-		if err != nil {
-			respondError(c, http.StatusInternalServerError, err.Error())
-			return
-		}
-		respondSuccess(c, "ok", records)
-	default:
-		records, err := monitor.ReadSince[monitor.Record](
-			app.monitorCollector.DataDir(),
-			monitor.HostPrefix,
-			"", // containerID 为空表示查询主机
-			since,
-		)
-		if err != nil {
-			respondError(c, http.StatusInternalServerError, err.Error())
-			return
-		}
-		respondSuccess(c, "ok", records)
 	}
+	records, err := app.monitorCollector.History(id, since)
+	respondResult(c, records, err)
 }
 
 // ─── 内部方法 ───
