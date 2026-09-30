@@ -1,8 +1,6 @@
 package monitor
 
 import (
-	"encoding/json"
-	"sync"
 	"time"
 
 	"github.com/rehiy/libgo/jsonl"
@@ -20,46 +18,30 @@ const (
 	ContainerPrefix = "ctr"
 )
 
-// stores 缓存 dir+prefix -> Store，避免同一前缀重复打开句柄
-var (
-	storesMu sync.Mutex
-	stores   = make(map[string]*jsonl.Store)
-)
-
-// AppendRawRecord 直接追加已序列化的数据（避免重复序列化）
-// containerID 为空时表示主机监控
-func AppendRawRecord(dir, prefix, containerID string, ts int64, raw json.RawMessage) {
-	s := getStore(dir, prefix)
+// appendRecord 追加一条监控记录；store 为 nil 时忽略
+func appendRecord(s *jsonl.Store, record *Record) {
 	if s == nil {
 		return
 	}
-	if err := s.Append(&Record{Ts: ts, Data: raw, ContainerID: containerID}); err != nil {
-		logman.Warn("monitor: write record failed", "prefix", prefix, "error", err)
+	if err := s.Append(record); err != nil {
+		logman.Warn("monitor: write record failed", "error", err)
 	}
 }
 
-// ReadSince 读取 dir 下 prefix_*.jsonl 中 ts >= (now-sinceSeconds) 的所有行
-// 按时间窗口确定需要读哪几天的文件，合并后按 ts 顺序返回
-// containerID 为空时返回所有记录，非空时只返回指定容器的记录
-// 返回结果按请求时间窗口降采样到 samplePoints 左右
-func ReadSince[T any](dir, prefix, containerID string, sinceSeconds int64) ([]T, error) {
-	s := getStore(dir, prefix)
+// readSince 读取 ts >= (now-sinceSeconds) 的记录，containerID 非空时只返回指定容器；
+// 结果按时间窗口降采样到 samplePoints 左右
+func readSince(s *jsonl.Store, containerID string, sinceSeconds int64) ([]Record, error) {
 	if s == nil {
 		return nil, nil
 	}
 	cutoff := time.Now().Unix() - sinceSeconds
-	extra := jsonl.StrEq("container_id", containerID)
-	return jsonl.DecodeSinceSampled[T](s, cutoff, "ts", extra, samplePoints)
+	return jsonl.DecodeSinceSampled[Record](s, cutoff, "ts", jsonl.StrEq("container_id", containerID), samplePoints)
 }
 
 // CleanOldFiles 删除 dir 下所有 *_YYYY-MM-DD.jsonl 中超过 retainDays 天的旧文件
 func CleanOldFiles(dir string) {
 	for _, prefix := range []string{HostPrefix, ContainerPrefix} {
-		if err := jsonl.CleanOlderThan(
-			dir,
-			jsonl.Naming{Prefix: prefix, Sep: "_", Suffix: ".jsonl"},
-			retainDays,
-		); err != nil {
+		if err := jsonl.CleanOlderThan(dir, storeNaming(prefix), retainDays); err != nil {
 			logman.Warn("monitor: clean old files failed", "dir", dir, "prefix", prefix, "error", err)
 		}
 	}
@@ -67,17 +49,9 @@ func CleanOldFiles(dir string) {
 
 // ─── 辅助函数 ───
 
-// getStore 获取或创建指定 (dir, prefix) 的 Store
-func getStore(dir, prefix string) *jsonl.Store {
-	key := dir + "/" + prefix
-	storesMu.Lock()
-	defer storesMu.Unlock()
-
-	if s, ok := stores[key]; ok {
-		return s
-	}
-	s, err := jsonl.New(dir,
-		jsonl.Naming{Prefix: prefix, Sep: "_", Suffix: ".jsonl"},
+// openStore 打开指定前缀的监控数据存储，失败时返回 nil
+func openStore(dir, prefix string) *jsonl.Store {
+	s, err := jsonl.New(dir, storeNaming(prefix),
 		jsonl.WithBufferSize(32*1024),          // 32KB 缓冲，减少 flush 次数
 		jsonl.WithAsync(256),                   // 异步写入，采集 goroutine 不被 IO 阻塞
 		jsonl.WithFlushInterval(5*time.Second), // 5s flush 一次，与最短采集间隔对齐
@@ -86,20 +60,19 @@ func getStore(dir, prefix string) *jsonl.Store {
 		logman.Warn("monitor: open jsonl store failed", "dir", dir, "prefix", prefix, "error", err)
 		return nil
 	}
-	stores[key] = s
 	return s
 }
 
-func closeStores(dir string) {
-	storesMu.Lock()
-	defer storesMu.Unlock()
-	for _, prefix := range []string{HostPrefix, ContainerPrefix} {
-		key := dir + "/" + prefix
-		if store := stores[key]; store != nil {
-			if err := store.Close(); err != nil {
-				logman.Warn("monitor: close jsonl store failed", "prefix", prefix, "error", err)
-			}
-			delete(stores, key)
-		}
+// closeStore 刷盘并关闭存储
+func closeStore(s *jsonl.Store) {
+	if s == nil {
+		return
 	}
+	if err := s.Close(); err != nil {
+		logman.Warn("monitor: close jsonl store failed", "error", err)
+	}
+}
+
+func storeNaming(prefix string) jsonl.Naming {
+	return jsonl.Naming{Prefix: prefix, Sep: "_", Suffix: ".jsonl"}
 }

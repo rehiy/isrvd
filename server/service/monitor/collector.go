@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/rehiy/libgo/jsonl"
 	"github.com/rehiy/libgo/logman"
 
 	"isrvd/pkgs/docker"
@@ -25,15 +26,20 @@ type Record struct {
 type Collector struct {
 	dataDir string
 	docker  *docker.DockerService // 保留初始化时的实例，实时查询不读取重载中的全局指针
+	host    *jsonl.Store          // 主机监控数据
+	ctr     *jsonl.Store          // 容器监控数据
 	cancel  context.CancelFunc
 	done    chan struct{}
 }
 
 // NewCollector 创建采集器。dockerRaw 由调用方注入，为 nil 时跳过容器数据采集。
 func NewCollector(dockerRaw *docker.DockerService) *Collector {
+	dataDir := filepath.Join(config.Current().Server.RootDirectory, "monitor")
 	return &Collector{
-		dataDir: filepath.Join(config.Current().Server.RootDirectory, "monitor"),
+		dataDir: dataDir,
 		docker:  dockerRaw,
+		host:    openStore(dataDir, HostPrefix),
+		ctr:     openStore(dataDir, ContainerPrefix),
 	}
 }
 
@@ -80,14 +86,15 @@ func (c *Collector) Start(ctx context.Context) {
 	}()
 }
 
-// Stop 停止采集协程
+// Stop 停止采集协程并刷盘关闭存储
 func (c *Collector) Stop() {
 	if c.cancel != nil {
 		c.cancel()
 		<-c.done
 		c.cancel = nil
 	}
-	closeStores(c.dataDir)
+	closeStore(c.host)
+	closeStore(c.ctr)
 }
 
 // CollectHostStatNow 实时采集主机数据，不写入文件
@@ -127,7 +134,7 @@ func (c *Collector) collect(ctx context.Context) {
 		return
 	}
 	if raw, err := json.Marshal(stat); err == nil {
-		AppendRawRecord(c.dataDir, HostPrefix, "", time.Now().Unix(), raw)
+		appendRecord(c.host, &Record{Ts: time.Now().Unix(), Data: raw})
 		c.checkAlert(stat)
 	}
 
@@ -141,9 +148,9 @@ func (c *Collector) collect(ctx context.Context) {
 		return
 	}
 	for _, ct := range containers {
-		record := c.CollectContainerStatNow(ctx, ct.ID)
-		if record != nil {
-			AppendRawRecord(c.dataDir, ContainerPrefix, ct.ID, record.Ts, record.Data)
+		if record := c.CollectContainerStatNow(ctx, ct.ID); record != nil {
+			record.ContainerID = ct.ID
+			appendRecord(c.ctr, record)
 		}
 	}
 }
@@ -170,11 +177,10 @@ func (c *Collector) checkAlert(stat *HostStat) {
 
 // History 查询最近 sinceSeconds 秒的历史监控记录；containerID 为空时查询主机
 func (c *Collector) History(containerID string, sinceSeconds int64) ([]Record, error) {
-	prefix := HostPrefix
-	if containerID != "" {
-		prefix = ContainerPrefix
+	if containerID == "" {
+		return readSince(c.host, "", sinceSeconds)
 	}
-	return ReadSince[Record](c.dataDir, prefix, containerID, sinceSeconds)
+	return readSince(c.ctr, containerID, sinceSeconds)
 }
 
 // ─── 辅助函数 ───
