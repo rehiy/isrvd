@@ -137,12 +137,17 @@ func (e *EtcdStore) Close() error {
 // ─── 辅助函数 ───
 
 func newEtcdStore(uri string) (*EtcdStore, error) {
-	u, err := url.Parse(uri)
+	// url.Parse 不支持逗号分隔的多个 host:port，先取出 host 段，再用占位 host 解析其余部分
+	rest := uri[len("etcd://"):]
+	authority := rest[:strings.IndexAny(rest+"/", "/?")]
+	at := strings.LastIndex(authority, "@") + 1
+	userinfo, hosts := authority[:at], authority[at:]
+	if hosts == "" {
+		return nil, fmt.Errorf("cstore/etcd: URI 缺少 endpoints")
+	}
+	u, err := url.Parse("etcd://" + userinfo + "endpoints" + rest[len(authority):])
 	if err != nil {
 		return nil, fmt.Errorf("cstore/etcd: URI 解析失败: %w", err)
-	}
-	if u.Host == "" {
-		return nil, fmt.Errorf("cstore/etcd: URI 缺少 endpoints")
 	}
 
 	q := u.Query()
@@ -152,7 +157,7 @@ func newEtcdStore(uri string) (*EtcdStore, error) {
 	}
 
 	var endpoints []string
-	for _, host := range strings.Split(u.Host, ",") {
+	for _, host := range strings.Split(hosts, ",") {
 		if host = strings.TrimSpace(host); host != "" {
 			endpoints = append(endpoints, scheme+"://"+host)
 		}
