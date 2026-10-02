@@ -2,6 +2,14 @@
 
 export type ComposeDeployTarget = 'docker' | 'swarm'
 
+export interface ComposeHistoryInfo {
+    id: string
+    time: string
+    action: 'snapshot' | 'deploy' | 'redeploy'
+    success: boolean
+    hasSnapshot: boolean
+}
+
 export interface ComposeConfigDetail {
     content: string
     envContent?: string

@@ -96,6 +96,9 @@ import type {
     SwarmCreateService,
     SwarmServiceCompose,
     // Compose
+    ComposeConfigDetail,
+    ComposeDeployTarget,
+    ComposeHistoryInfo,
     ComposeDeployResult,
     ComposeDeploy,
     ComposeRedeploy,
@@ -606,6 +609,14 @@ class ApiService {
 
     composeDockerInspect(name: string, force = false) {
         return http.get<DockerContainerCompose>(`compose/docker/${name}`, { params: force ? { force: 'true' } : undefined })
+    }
+
+    composeHistoryList(target: ComposeDeployTarget, name: string) {
+        return http.get<ComposeHistoryInfo[]>(`compose/${target}/${encodeURIComponent(name)}/history`)
+    }
+
+    composeHistoryInspect(target: ComposeDeployTarget, name: string, revision: string) {
+        return http.get<ComposeConfigDetail>(`compose/${target}/${encodeURIComponent(name)}`, { params: { revision } })
     }
 
     // 镜像管理

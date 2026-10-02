@@ -11,6 +11,7 @@ class BaseModal extends Vue {
     @Prop({ type: Boolean, default: false }) readonly loading!: boolean
     @Prop({ type: Boolean, default: true }) readonly showFooter!: boolean
     @Prop({ type: Boolean, default: false }) readonly confirmDisabled!: boolean
+    @Prop({ type: Boolean, default: false }) readonly closeDisabled!: boolean
     @Prop({ type: String, default: 'btn-primary' }) readonly confirmClass!: string
     @Prop({ type: Boolean, default: true }) readonly showConfirm!: boolean
     @Prop({ type: String, default: 'max-w-3xl' }) readonly maxWidthClass!: string
@@ -46,6 +47,7 @@ class BaseModal extends Vue {
     }
 
     handleCancel() {
+        if (this.closeDisabled) return
         this.$emit('cancel')
         this.close()
     }
@@ -109,7 +111,7 @@ export default toNative(BaseModal)
             </div>
             <div class="action-group">
               <slot name="header-actions"></slot>
-              <button type="button" class="btn-icon-sm" :disabled="loading" @click="handleCancel">
+              <button type="button" class="btn-icon-sm" :disabled="loading || closeDisabled" @click="handleCancel">
                 <i class="fas fa-times"></i>
               </button>
             </div>
@@ -123,7 +125,7 @@ export default toNative(BaseModal)
           <!-- Footer -->
           <div v-if="showFooter" class="flex justify-end gap-3 px-6 py-4 border-t border-slate-200/50 bg-slate-50/50 flex-shrink-0">
             <slot name="footer">
-              <button type="button" class="btn btn-secondary" :disabled="loading" @click="handleCancel">
+              <button type="button" class="btn btn-secondary" :disabled="loading || closeDisabled" @click="handleCancel">
                 <slot name="cancel-text">取消</slot>
               </button>
               <button v-if="showConfirm" type="button" class="btn" :class="confirmClass" :disabled="loading || confirmDisabled" @click="handleConfirm">
