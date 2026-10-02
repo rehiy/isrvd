@@ -58,6 +58,8 @@ isrvd_get "/filer/files?path=<DIR>"
 isrvd_post "/filer/dir" '{"path":"<DIR>"}'
 ```
 
+不递归创建：父目录必须存在；目录已存在时返回 500。
+
 ## 创建文件
 
 ```bash
@@ -70,13 +72,15 @@ isrvd_post "/filer/file" '{"path":"<FILE>","content":"<CONTENT>"}'
 isrvd_get "/filer/file?path=<FILE>"
 ```
 
-返回：`{"content": "文件内容..."}`
+返回：`{"path": "<FILE>", "content": "文件内容..."}`。文件超过 4 MiB 返回 413（请使用下载接口）。
 
 ## 保存文件
 
 ```bash
 isrvd_put "/filer/file" '{"path":"<FILE>","content":"<CONTENT>"}'
 ```
+
+> 创建 / 保存文件时 `path`、`content` 均必填（空 `content` 返回 400）；`content` 超过 4 MiB、请求体超过 32 MiB 返回 413。
 
 ## 重命名 / 移动
 
@@ -108,6 +112,10 @@ isrvd_put "/filer/chmod" '{"path":"<FILE>","mode":"0644"}'
 ```bash
 isrvd_upload "/filer/upload" "file" "<LOCAL_FILE>" "path=<FILER_DIR>"
 ```
+
+- 只处理单个 `file` 字段；`path` 为**表单字段**（目标目录），文件写入 `<path>/<原文件名>`，已存在时覆盖（流式写入）
+- 目标父目录不会自动创建，不存在时返回 500
+- `Content-Length` 超过 `server.maxUploadSize` 时返回 400"文件大小超过限制"
 
 ## 下载文件
 

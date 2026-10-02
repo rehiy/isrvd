@@ -32,14 +32,14 @@ isrvd_get "/caddy/server/<ID>"
 |---|---|---|
 | `id` | string | 服务的不透明标识，用于详情、更新和删除 |
 | `name` | string | 非空 UTF-8 字符串；作为 Caddy 原始服务名保存，可包含中文、空格、点或斜杠 |
-| `listen` | string[] | 监听地址；创建和更新时至少一项 |
-| `protocols` | string[] | `h1`、`h2`、`h2c`、`h3`；`h2`/`h2c` 必须与 `h1` 同时启用 |
-| `automatic_https` | object | 仅包含 `disable` 与 `disable_redirects` |
+| `listen` | string[] | 监听地址；创建和更新时至少一项，每项 trim 后不能为空且不能重复 |
+| `protocols` | string[] | `h1`、`h2`、`h2c`、`h3`，不能重复；`h2`/`h2c` 必须与 `h1` 同时启用 |
+| `automatic_https` | object | 仅包含 `disable` 与 `disable_redirects`；未设置时不返回该字段 |
 | `strict_sni_host` | boolean | 严格校验 SNI Host；字段缺失表示使用 Caddy 默认规则 |
 | `idle_timeout` | string | 空闲超时 |
 | `read_timeout` | string | 读取超时 |
 | `write_timeout` | string | 写入超时 |
-| `max_header_bytes` | integer | 最大请求头字节数；`0` 表示使用默认值 |
+| `max_header_bytes` | integer | 最大请求头字节数；`0` 表示使用默认值，负数返回 400 |
 | `routeCount` | integer | 服务下的路由数量；只读 |
 
 ## 创建

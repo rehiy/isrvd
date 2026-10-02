@@ -1,6 +1,6 @@
 # 计划任务 API
 
-模块名：`cron`。除 `GET /api/cron/types` 仅需登录外，其余路由均需 `cron` 模块权限。
+模块名：`cron`。除 `GET /api/cron/types` 仅需登录外，其余路由需在成员 `permissions` 中逐条授予对应的 `METHOD /api/cron/...` 路由权限（创始人除外）。
 
 保存前会检查持久化内容是否与加载基线一致，变化时拒绝覆盖；需重载服务后重试。存储机制及进程内保障范围见[配置存储说明](config.md#保存一致性)。
 
@@ -15,12 +15,12 @@
 | `id` | string | 唯一标识（UUID，只读） |
 | `name` | string | 任务名称 |
 | `schedule` | string | Cron 表达式（5字段标准格式，如 `0 2 * * *`） |
-| `type` | string | 脚本类型；以服务器操作系统返回的 `/api/cron/types` 为准；所有系统均包含 `DOCKER` |
+| `type` | string | 脚本类型；以 `/api/cron/types` 返回为准；Docker 可用时额外包含 `DOCKER_TMP`（临时容器）与 `DOCKER_CTR`（exec 进现有容器） |
 | `content` | string | 脚本内容 |
-| `workDir` | string | 工作目录（可选，DOCKER 类型无效） |
-| `container` | string? | 目标容器名（DOCKER 类型，exec 进现有容器；与 `image` 二选一） |
-| `image` | string? | 镜像名（DOCKER 类型，创建临时容器运行脚本；与 `container` 二选一） |
-| `volumes` | string? | 额外挂载（DOCKER + image 临时容器模式，换行分隔，格式 `/host:/container[:ro]`） |
+| `workDir` | string | 工作目录（绝对路径；Docker 类型无效） |
+| `container` | string? | 目标容器名（`DOCKER_CTR` 必填） |
+| `image` | string? | 镜像名（`DOCKER_TMP` 必填，创建临时容器运行脚本） |
+| `volumes` | string? | 额外挂载（仅 `DOCKER_TMP`，换行分隔，格式 `/host:/container[:ro]`） |
 | `timeout` | number | 超时秒数，0 表示不限制 |
 | `enabled` | boolean | 是否启用（存储字段） |
 | `registered` | boolean | 当前是否已注册到内存调度器（运行时字段，只读） |
@@ -30,9 +30,11 @@
 | `nextRun` | string? | 下次预计执行时间（RFC3339，运行时字段，只读，仅已注册任务存在） |
 | `lastRun` | string? | 上次计划调度时间（RFC3339，运行时字段，只读） |
 
-计划任务配置存储在 `server.rootDirectory/cron.yml`；配置位于 etcd 时改存 `<配置 key>/<文件名>`，首次读取时自动迁移本地同名文件，由服务自动读写；`registered`、`entryId`、`runtimeStatus`、`nextRun`、`lastRun` 来自当前内存调度器状态，不写入存储文件。执行历史所有任务合并写入按天滚动的 JSONL 文件 `server.rootDirectory/logs/cron/YYYY-MM-DD.jsonl`，每次执行追加一行结构化记录（含 `jobId` 字段用于过滤）；保留最近 3 天，过期文件每日凌晨自动清理。
+计划任务配置存储在 `server.rootDirectory/cron.yml`；配置位于 etcd 时改存 `<配置 key>/<文件名>`，首次读取时自动迁移本地同名文件，由服务自动读写；`registered`、`entryId`、`runtimeStatus`、`nextRun`、`lastRun` 来自当前内存调度器状态，不写入存储文件。执行历史所有任务合并写入按天滚动的 JSONL 文件 `server.rootDirectory/cron/YYYY-MM-DD.jsonl`，每次执行追加一行结构化记录（含 `jobId` 字段用于过滤）；保留最近 3 天，过期文件每日凌晨自动清理。
 
-Webview 根据启动探测结果判断 Docker 支持状态。Docker 不可用时不展示 Docker 任务类型，并屏蔽已有 Docker 任务的运行、启用和编辑入口；已启用任务仍可禁用，执行日志与删除入口保留。
+旧版 `DOCKER` 类型任务加载时会自动迁移：有 `container` 的转为 `DOCKER_CTR`，有 `image` 的转为 `DOCKER_TMP`。
+
+Docker 不可用时，`/api/cron/types` 不返回 Docker 类型；已有的 `DOCKER_TMP` / `DOCKER_CTR` 任务在加载时校验失败会被**跳过**，不出现在 `GET /cron/jobs` 列表中（对其操作返回 404）。⚠️ 此时对其他任务的任何增删改都会把这些被跳过的任务从存储中移除。
 
 ### JobLog
 
@@ -45,7 +47,7 @@ Webview 根据启动探测结果判断 Docker 支持状态。Docker 不可用时
 | `endTime` | string | 结束时间（RFC3339） |
 | `duration` | number | 执行耗时（毫秒） |
 | `success` | boolean | 是否成功 |
-| `output` | string | 标准输出 |
+| `output` | string | 标准输出与标准错误合并记录；最多保存 4 MiB，超出截断并追加 `[output truncated]` |
 | `error` | string? | 错误信息（失败时存在） |
 
 ---
@@ -76,13 +78,15 @@ Webview 根据启动探测结果判断 Docker 支持状态。Docker 不可用时
 ```json
 {
   "types": [
-    { "value": "SHELL", "label": "SHELL（Shell 脚本）" },
-    { "value": "EXEC", "label": "EXEC（直接执行命令）" }
+    { "value": "SHELL", "label": "Shell 脚本" },
+    { "value": "EXEC", "label": "可执行文件" },
+    { "value": "DOCKER_TMP", "label": "Docker 临时容器" },
+    { "value": "DOCKER_CTR", "label": "Docker 现有容器" }
   ]
 }
 ```
 
-说明：Linux/macOS 返回 `SHELL`、`EXEC`；Windows 返回 `BAT`、`POWERSHELL`、`EXEC`。所有平台都额外返回 `DOCKER`。`DOCKER` 类型需指定 `image`（临时容器）或 `container`（exec），二选一；`image` 模式下还可通过 `volumes` 挂载宿主机目录。
+说明：Linux/macOS 返回 `SHELL`、`EXEC`；Windows 返回 `BAT`（BAT 批处理脚本）、`POWERSHELL`（PowerShell 脚本）、`EXEC`。仅当 Docker 可用时额外返回 `DOCKER_TMP`（需指定 `image`，可通过 `volumes` 挂载宿主机目录）与 `DOCKER_CTR`（需指定 `container`）。
 
 ---
 
@@ -112,13 +116,15 @@ Webview 根据启动探测结果判断 Docker 支持状态。Docker 不可用时
 | `schedule` | string | ✓ | Cron 表达式 |
 | `type` | string | ✓ | 取值以 `GET /api/cron/types` 返回为准 |
 | `content` | string | ✓ | 脚本内容 |
-| `workDir` | string | - | 工作目录（DOCKER 类型无效） |
-| `container` | string | DOCKER 类型必填 | 目标容器名，如 `my-python` |
+| `workDir` | string | - | 工作目录；留空为 `server.rootDirectory`，相对路径基于 `rootDirectory` 解析，响应返回绝对路径（Docker 类型无效） |
+| `image` | string | `DOCKER_TMP` 必填 | 临时容器镜像名 |
+| `container` | string | `DOCKER_CTR` 必填 | 目标容器名，如 `my-python` |
+| `volumes` | string | - | 仅 `DOCKER_TMP`：换行分隔，`/host:/container[:ro]` |
 | `timeout` | number | - | 超时秒数（默认 0） |
 | `enabled` | boolean | - | 创建后是否启用（默认 false） |
 | `description` | string | - | 描述 |
 
-响应 `payload`：`{ "job": <CronJob> }`
+响应 `payload`：`{ "job": <Job> }`，仅含存储字段，不含 `registered`、`entryId`、`runtimeStatus`、`nextRun`、`lastRun`；运行时状态请通过 `GET /cron/jobs` 查看。
 
 ---
 
@@ -126,7 +132,7 @@ Webview 根据启动探测结果判断 Docker 支持状态。Docker 不可用时
 
 **PUT** `/api/cron/jobs/:id`
 
-请求体同创建，响应 `payload`：`{ "job": <CronJob> }`
+请求体同创建，响应 `payload`：`{ "job": <Job> }`（同上，仅存储字段）
 
 ---
 
@@ -144,13 +150,17 @@ Webview 根据启动探测结果判断 Docker 支持状态。Docker 不可用时
 
 无请求体。任务在后台异步执行，立即返回 200，执行结果记录到日志。
 
+- 同一任务正在执行时返回 `409`
+- 任务不存在或调度器已停止返回 `404`
+- 定时触发时若上一次仍在执行，跳过本次
+
 ---
 
 ### 启用/禁用
 
 **PATCH** `/api/cron/jobs/:id`
 
-请求体（仅需传递要更新的字段）：
+请求体仅支持 `enabled`（boolean）；不传按 `false` 处理，即禁用任务：
 
 ```json
 { "enabled": true }
@@ -166,7 +176,7 @@ Query 参数：
 
 | 参数 | 说明 |
 |------|------|
-| `limit` | 返回最近 N 条，默认 50，最大 100 |
+| `limit` | 返回最近 N 条，默认 50；取值 1–100，≤0 或 >100 时按 50 处理 |
 
 响应 `payload`：
 
@@ -176,7 +186,7 @@ Query 参数：
 }
 ```
 
-日志从 `server.rootDirectory/logs/cron/YYYY-MM-DD.jsonl` 中按 `jobId` 过滤读取（从最近的当日文件向前回扫至多 3 天），按时间倒序排列（最新的在前）。
+日志从 `server.rootDirectory/cron/YYYY-MM-DD.jsonl` 中按 `jobId` 过滤读取（从最近的当日文件向前回扫至多 3 天），按时间倒序排列（最新的在前）。
 
 ---
 
@@ -221,4 +231,4 @@ isrvd_get "/cron/jobs/<id>/logs?limit=20"
 
 配置重载会停止旧调度器，防止重复调度；已经接受的手动执行和已经开始的定时任务继续执行，并按其调度器创建时的通知配置发送失败通知。旧实例停止后拒绝新增、修改、删除、启停和手动执行操作。
 
-收到 SIGTERM/SIGINT 退出信号后，HTTP 请求、当前及重载前仍在运行的计划任务、已发出的 Webhook 共用 5 秒宽限期；任务完成后刷盘，并等待通知请求结束。超过宽限时间仍未完成的任务不保证执行日志及失败通知。
+收到 SIGTERM/SIGINT 退出信号后分段等待：HTTP 请求最多 5 秒；随后当前及重载前仍在运行的计划任务最多 5 秒，超时后取消任务并额外等待 1 秒清理；已发出的 Webhook 最后再等待最多 1 秒。因进程退出而取消的任务不发送失败通知；超过宽限时间仍未完成的任务不保证执行日志。

@@ -15,8 +15,8 @@ Shell 模块提供 Web 终端功能，允许通过浏览器直接访问 isrvd �
 TOKEN=$(isrvd_login "$ISRVD_APIURL" "$ISRVD_USERNAME" "$ISRVD_PASSWORD" | jq -r '.payload.token')
 wscat -c "ws://<HOST>/api/shell?token=$TOKEN"
 
-# 指定 shell（可选，默认为用户默认 shell）
-wscat -c "ws://<HOST>/api/shell?token=$TOKEN&shell=/bin/bash"
+# 指定 shell（可选，仅支持白名单短名）
+wscat -c "ws://<HOST>/api/shell?token=$TOKEN&shell=bash"
 ```
 
 **查询参数：**
@@ -24,7 +24,7 @@ wscat -c "ws://<HOST>/api/shell?token=$TOKEN&shell=/bin/bash"
 | 参数 | 类型 | 说明 |
 |------|------|------|
 | `token` | string | JWT 认证令牌（必需） |
-| `shell` | string | 指定 shell 路径（可选，如 `/bin/bash`、`/bin/zsh`） |
+| `shell` | string | 可选，仅接受白名单短名：`bash`、`sh`、`zsh`、`powershell`、`pwsh`、`cmd`；传入路径（如 `/bin/bash`）、非白名单或不可用时回退为系统默认 shell（Linux 依次尝试 bash/sh/zsh，macOS 依次尝试 zsh/bash/sh，Windows 依次尝试 powershell/pwsh/cmd） |
 
 **说明：**
 - 终端工作目录为用户主目录（`member.homeDirectory`）
@@ -42,7 +42,7 @@ wscat -c "ws://<HOST>/api/shell?token=$TOKEN&shell=/bin/bash"
 ```javascript
 const ws = new WebSocket(`ws://${host}/api/shell?token=${token}`);
 // 或使用指定的 shell
-// const ws = new WebSocket(`ws://${host}/api/shell?token=${token}&shell=/bin/bash`);
+// const ws = new WebSocket(`ws://${host}/api/shell?token=${token}&shell=bash`);
 
 ws.onmessage = (event) => {
   // event.data 为终端输出（可能是字符串或 Blob）
@@ -63,7 +63,7 @@ terminal.onResize(({ cols, rows }) => {
 ## 权限要求
 
 - 需要登录（任意认证方式）
-- 需要 `shell` 模块权限（非 GET 请求）
+- 需要授予 `GET /api/shell` 路由权限（创始人除外）；当前用户在成员列表中不存在时返回 403
 - 实际 shell 权限取决于运行 isrvd 的系统用户权限
 
 ---
@@ -77,3 +77,4 @@ terminal.onResize(({ cols, rows }) => {
 | 认证方式 | isrvd JWT | SSH 密码/私钥 |
 | 适用场景 | 服务器本地管理 | 远程服务器管理 |
 | WebSocket 路径 | `/api/shell` | `/api/ssh/to/<ID>` |
+| 文件管理 | `/api/filer/*`（本地） | `/api/sftp/:id/*`（远程） |

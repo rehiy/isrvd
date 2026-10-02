@@ -82,15 +82,14 @@ docs/
     ├── docker/{containers,images,networks,volumes,registries}.md
     ├── swarm/{info,services,tasks}.md
     ├── apisix/{routes,upstreams,consumers,ssl}.md
-    ├── caddy/{routes,certs,config,basic-auth}.md
-    ├── system/{config,account,filer,cron,ssh}.md
+    ├── caddy/{routes,servers,certs,config,basic-auth}.md
+    ├── system/{config,account,filer,cron}.md
     ├── ssh/{hosts,sftp}.md
     ├── copilot.md
     ├── overview.md
     ├── compose.md
     ├── local.md
-    ├── shell.md
-    └── ...
+    └── shell.md
 ```
 
 ### 需要同步更新的文件
@@ -104,6 +103,7 @@ docs/
 | `server/app/ctrl_compose.go` | `docs/references/compose.md` |
 | `server/app/ctrl_cron.go` | `docs/references/system/cron.md` |
 | `server/app/ctrl_system.go` / `ctrl_account.go` | `docs/references/system/` 下对应文件 |
+| `server/app/ctrl_filer.go` | `docs/references/system/filer.md` |
 | `server/app/ctrl_webssh.go` | `docs/references/ssh/` 下对应文件 |
 | `server/app/ctrl_copilot.go` | `docs/references/copilot.md` |
 | `server/app/ctrl_overview.go` | `docs/references/overview.md` |
@@ -220,7 +220,8 @@ docs/
 
 - 外部依赖不可用时 `app.xxxSvc` 为 `nil`，而不是返回带错误的空对象
 - 会被 nil 接收者调用的访问器（如 `Raw()`）必须做**接收者** nil 安全判断（`if s == nil`），典型调用方 `app.swarmSvc.Raw()` 在服务不可用时会传入 nil
-- `CheckAvailability` 只校验内部字段，由调用点保证接收者非 nil（如 `collectProbes` 中的 `!= nil` 判断）；新增调用点必须先判空
+- `CheckAvailability` 只校验内部字段，由调用点保证接收者非 nil（`initServices` 仅在服务构造成功后才把 `xxxSvc.CheckAvailability` 注册进 `app.probes` 模块表）；新增调用点必须先判空
+- `app.probes` 同时承担可用性判断与探活：key 存在即模块已就绪（`isServiceAvailable`），value 为探活函数（无需探活的本地模块如 `ssh` 注册为 `nil`）；新增依赖外部服务的模块需同时加入 `optionalModules`
 
 **服务构造函数签名按能力分级**：
 

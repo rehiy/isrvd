@@ -57,3 +57,5 @@ isrvd_post "/swarm/node/NODE_ID/action" '{"action":"pause"}'
 isrvd_post "/swarm/node/NODE_ID/action" '{"action":"drain"}'
 isrvd_post "/swarm/node/NODE_ID/action" '{"action":"remove"}'
 ```
+
+`remove` 为强制移除（节点仍在线也会被移除）。
