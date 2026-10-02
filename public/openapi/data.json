@@ -2750,6 +2750,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "revision",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2830,6 +2838,37 @@
           }
         },
         "summary": "重新部署 Docker Compose 应用",
+        "tags": [
+          "compose"
+        ]
+      }
+    },
+    "/compose/docker/{name}/history": {
+      "get": {
+        "operationId": "get_compose_docker_name_history",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "读取 Docker Compose 部署记录",
         "tags": [
           "compose"
         ]
@@ -2918,6 +2957,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "revision",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2998,6 +3045,37 @@
           }
         },
         "summary": "重新部署 Swarm Stack 应用",
+        "tags": [
+          "compose"
+        ]
+      }
+    },
+    "/compose/swarm/{name}/history": {
+      "get": {
+        "operationId": "get_compose_swarm_name_history",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIResponse"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "读取 Swarm Stack 部署记录",
         "tags": [
           "compose"
         ]
@@ -8967,6 +9045,31 @@
           "Exists": {
             "description": ".env 是否存在",
             "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "compose.HistoryRecord": {
+        "properties": {
+          "action": {
+            "description": "action",
+            "type": "string"
+          },
+          "hasSnapshot": {
+            "description": "hasSnapshot",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "id",
+            "type": "string"
+          },
+          "success": {
+            "description": "success",
+            "type": "boolean"
+          },
+          "time": {
+            "description": "time",
+            "type": "string"
           }
         },
         "type": "object"

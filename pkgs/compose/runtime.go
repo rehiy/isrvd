@@ -78,8 +78,8 @@ func ProjectParse(ctx context.Context, name, content, installDir string) (*types
 	return LoadProjectFromContentInDir(ctx, content, installDir, name, nil)
 }
 
-// ContentSave 持久化 compose.yml；bak 非空时同时写 compose.yml.bak。
-func ContentSave(installDir, content, bak string) {
+// ContentSave 持久化 compose.yml。
+func ContentSave(installDir, content string) {
 	if installDir == "" {
 		return
 	}
@@ -87,14 +87,10 @@ func ContentSave(installDir, content, bak string) {
 	if content != "" {
 		_ = os.WriteFile(filepath.Join(installDir, ComposeFileName), []byte(content), 0644)
 	}
-	if bak != "" {
-		_ = os.WriteFile(filepath.Join(installDir, ComposeFileName+".bak"), []byte(bak), 0644)
-	}
 }
 
 // EnvSave 以 env 为准写入 .env，空串表示清空内容。
-// bak 非空时同时写 .env.bak。
-func EnvSave(installDir, env, bak string) error {
+func EnvSave(installDir, env string) error {
 	if installDir == "" {
 		return nil
 	}
@@ -103,11 +99,6 @@ func EnvSave(installDir, env, bak string) error {
 	}
 	if err := os.WriteFile(filepath.Join(installDir, EnvFileName), []byte(env), 0644); err != nil {
 		return fmt.Errorf("写入 .env 失败: %w", err)
-	}
-	if bak != "" {
-		if err := os.WriteFile(filepath.Join(installDir, EnvFileName+".bak"), []byte(bak), 0644); err != nil {
-			return fmt.Errorf("写入 .env.bak 失败: %w", err)
-		}
 	}
 	return nil
 }
@@ -177,7 +168,7 @@ func EnvStateRestore(installDir string, state EnvState) error {
 // EnvApply 统一 .env 写盘/兜底：显式内容非 nil 则以其为准写盘（空串即清空），nil 则确保 .env 存在（兜底空文件）。
 func EnvApply(installDir string, envContent *string) error {
 	if envContent != nil {
-		return EnvSave(installDir, *envContent, "")
+		return EnvSave(installDir, *envContent)
 	}
 	return EnvEnsure(installDir)
 }

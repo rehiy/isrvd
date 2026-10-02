@@ -68,7 +68,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 | Swarm | [references/swarm/info.md](references/swarm/info.md) | 集群、节点、令牌 |
 | Swarm | [references/swarm/services.md](references/swarm/services.md) | 服务部署/扩缩容/更新 |
 | Swarm | [references/swarm/tasks.md](references/swarm/tasks.md) | 任务列表 |
-| Compose | [references/compose.md](references/compose.md) | Docker Compose / Swarm Stack 部署与重部署 |
+| Compose | [references/compose.md](references/compose.md) | Docker Compose / Swarm Stack 部署、重部署、部署记录与历史配置 |
 | APISIX | [references/apisix/routes.md](references/apisix/routes.md) | 路由 CRUD、启用/禁用 |
 | APISIX | [references/apisix/upstreams.md](references/apisix/upstreams.md) | 上游、负载均衡 |
 | APISIX | [references/apisix/consumers.md](references/apisix/consumers.md) | Consumer、访问授权 |
@@ -107,6 +107,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 │
 ├── 更新/变更
 │   ├── 更新/接管 Compose 项目 → references/compose.md (project 标签聚合、redeploy + serviceName/image)
+│   ├── 恢复 Compose 历史配置 → references/compose.md（history + revision，确认后重部署）
 │   ├── 更新容器镜像     → references/docker/images.md (拉取) + references/docker/containers.md (重建)
 │   ├── 扩缩容           → references/swarm/services.md
 │   ├── 重新部署         → references/swarm/services.md (action: force-update)

@@ -17,6 +17,10 @@ import (
 
 // DockerDeploy 部署新的 Docker Compose 项目。
 func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployResult, error) {
+	if err := s.beginDeployment(ctx); err != nil {
+		return nil, err
+	}
+	defer s.deploymentMu.Unlock()
 	result, err := s.projectDeploy(ctx, req, "Restore compose env after failed deploy", func(project *types.Project) ([]string, error) {
 		for _, svc := range project.Services {
 			cname := compose.DockerContainerNameOf(svc)
@@ -31,6 +35,7 @@ func (s *Service) DockerDeploy(ctx context.Context, req DeployRequest) (*DeployR
 	})
 	if err == nil {
 		logman.Info("Compose deployed", "name", result.ProjectName, "dir", result.InstallDir)
+		s.historyFinish(ctx, "docker", result.ProjectName, "deploy", true)
 	}
 	return result, err
 }
@@ -64,7 +69,11 @@ func (s *Service) DockerInspect(ctx context.Context, name string, forceRuntime b
 // - ServiceName+Image：仅更新指定服务镜像后重建
 // - Content：替换 compose.yml 后重建
 // - EnvContent：替换 .env（空串即清空）后重建
-func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployRequest) (*DeployResult, error) {
+func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployRequest) (result *DeployResult, resultErr error) {
+	if err := s.beginDeployment(ctx); err != nil {
+		return nil, err
+	}
+	defer s.deploymentMu.Unlock()
 	if err := compose.ValidateProjectName(name); err != nil {
 		return nil, err
 	}
@@ -95,6 +104,10 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	if err != nil {
 		return nil, err
 	}
+	if err := s.historyBegin("docker", name, currentConfig); err != nil {
+		return nil, err
+	}
+	defer func() { s.historyFinish(ctx, "docker", name, "redeploy", resultErr == nil) }()
 
 	if err := s.dockerContainersRemove(ctx, name, oldContent, installDir, oldEnvState.Content); err != nil {
 		cleanupCtx, cleanupCancel := cleanupContext(ctx)
@@ -113,7 +126,7 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 
 	rollback := func() string {
 		// 先恢复旧 .env 再回滚容器；.env 失败不阻断容器回滚
-		compose.ContentSave(installDir, oldContent, "")
+		compose.ContentSave(installDir, oldContent)
 		envErr := compose.EnvStateRestore(installDir, oldEnvState)
 		if envErr != nil {
 			logman.Warn("Restore compose env before rollback failed", "name", name, "error", envErr)
@@ -141,8 +154,6 @@ func (s *Service) DockerRedeploy(ctx context.Context, name string, req RedeployR
 	if err != nil {
 		return nil, wrapRedeployError(err, rollback())
 	}
-
-	compose.ContentSave(installDir, content, oldContent)
 
 	logman.Info("Compose redeployed", "name", name)
 	return &DeployResult{ProjectName: name, Items: items, InstallDir: installDir}, nil
@@ -214,10 +225,8 @@ func (s *Service) dockerContainersRemove(ctx context.Context, name, content, ins
 	}
 
 	// 优先通过标签精确查找（ID 级别，无误删风险）
-	labelIDs := map[string]struct{}{}
 	if infos, err := s.docker.ContainerListByLabel(ctx, compose.ComposeProjectLabel, name); err == nil {
 		for _, info := range infos {
-			labelIDs[info.ID] = struct{}{}
 			removeByID(info.ID)
 		}
 	} else {
@@ -239,7 +248,7 @@ func (s *Service) dockerContainersRemove(ctx context.Context, name, content, ins
 					if err != nil {
 						continue
 					}
-					if _, ok := labelIDs[info.ID]; ok {
+					if _, ok := removed[info.ID]; ok {
 						continue
 					}
 					// 归属其他项目，拒绝删除

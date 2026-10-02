@@ -19,6 +19,10 @@ const swarmServiceRemoveTimeout = 10 * time.Second
 
 // SwarmDeploy 部署新的 Swarm Compose 项目。
 func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployResult, error) {
+	if err := s.beginDeployment(ctx); err != nil {
+		return nil, err
+	}
+	defer s.deploymentMu.Unlock()
 	result, err := s.projectDeploy(ctx, req, "Restore swarm compose env after failed deploy", func(project *types.Project) ([]string, error) {
 		for _, svc := range project.Services {
 			if _, err := s.swarm.ServiceInspect(ctx, svc.Name); err == nil {
@@ -32,6 +36,7 @@ func (s *Service) SwarmDeploy(ctx context.Context, req DeployRequest) (*DeployRe
 	})
 	if err == nil {
 		logman.Info("Swarm compose deployed", "name", result.ProjectName, "dir", result.InstallDir)
+		s.historyFinish(ctx, "swarm", result.ProjectName, "deploy", true)
 	}
 	return result, err
 }
@@ -66,7 +71,11 @@ func (s *Service) SwarmInspect(ctx context.Context, name string, forceRuntime bo
 // - ServiceName+Image：仅更新指定服务的镜像后全量重建
 // - Content：替换 compose.yml 后重建
 // - EnvContent：替换 .env（空串即清空）后重建
-func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRequest) (*DeployResult, error) {
+func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRequest) (result *DeployResult, resultErr error) {
+	if err := s.beginDeployment(ctx); err != nil {
+		return nil, err
+	}
+	defer s.deploymentMu.Unlock()
 	if err := compose.ValidateProjectName(name); err != nil {
 		return nil, err
 	}
@@ -94,6 +103,10 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	if err != nil {
 		return nil, err
 	}
+	if err := s.historyBegin("swarm", name, currentConfig); err != nil {
+		return nil, err
+	}
+	defer func() { s.historyFinish(ctx, "swarm", name, "redeploy", resultErr == nil) }()
 
 	// 旧服务尚未确认移除干净前不能进入创建阶段；部分移除失败时尝试恢复旧服务。
 	if err := s.swarmServicesRemove(ctx, name, oldContent, installDir, oldEnvState.Content); err != nil {
@@ -113,7 +126,7 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 
 	rollback := func() string {
 		// 先恢复旧 .env 再回滚服务；.env 失败不阻断服务回滚
-		compose.ContentSave(installDir, oldContent, "")
+		compose.ContentSave(installDir, oldContent)
 		envErr := compose.EnvStateRestore(installDir, oldEnvState)
 		if envErr != nil {
 			logman.Warn("Restore swarm compose env before rollback failed", "name", name, "error", envErr)
@@ -141,8 +154,6 @@ func (s *Service) SwarmRedeploy(ctx context.Context, name string, req RedeployRe
 	if err != nil {
 		return nil, wrapRedeployError(err, rollback())
 	}
-
-	compose.ContentSave(installDir, content, oldContent)
 
 	logman.Info("Swarm compose redeployed", "name", name)
 	return &DeployResult{ProjectName: name, Items: items, InstallDir: installDir}, nil

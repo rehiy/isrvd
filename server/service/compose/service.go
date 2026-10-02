@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/compose-spec/compose-go/v2/types"
@@ -21,8 +22,10 @@ import (
 const composeCleanupTimeout = 30 * time.Second
 
 type Service struct {
-	docker *docker.DockerService
-	swarm  *swarm.SwarmService
+	docker       *docker.DockerService
+	swarm        *swarm.SwarmService
+	deploymentMu sync.Mutex
+	historyMu    sync.Mutex
 }
 
 func cleanupContext(ctx context.Context) (context.Context, context.CancelFunc) {
@@ -92,6 +95,16 @@ func NewService(dockerRaw *docker.DockerService, swarmRaw *swarm.SwarmService) (
 		return nil, fmt.Errorf("docker 服务未初始化")
 	}
 	return &Service{docker: dockerRaw, swarm: swarmRaw}, nil
+}
+
+func (s *Service) beginDeployment(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if !s.deploymentMu.TryLock() {
+		return fmt.Errorf("已有 Compose 部署正在执行，请稍后重试")
+	}
+	return nil
 }
 
 // CheckAvailability 检测 Compose 可用性（等价于 Docker 可用）

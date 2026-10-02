@@ -17,10 +17,12 @@ func (app *App) defineComposeRoutes() []Route {
 	return []Route{
 		// Docker Compose
 		{Method: "GET", Path: "/compose/docker/:name", Handler: app.composeDockerInspect, Module: "compose", Label: "读取 Docker Compose 配置"},
+		{Method: "GET", Path: "/compose/docker/:name/history", Handler: app.composeDockerHistoryList, Module: "compose", Label: "读取 Docker Compose 部署记录"},
 		{Method: "POST", Path: "/compose/docker", Handler: app.composeDockerDeploy, Module: "compose", Label: "部署 Docker Compose 应用"},
 		{Method: "PUT", Path: "/compose/docker/:name", Handler: app.composeDockerRedeploy, Module: "compose", Label: "重新部署 Docker Compose 应用"},
 		// Swarm Compose
 		{Method: "GET", Path: "/compose/swarm/:name", Handler: app.composeSwarmInspect, Module: "compose", Label: "读取 Swarm Stack 配置"},
+		{Method: "GET", Path: "/compose/swarm/:name/history", Handler: app.composeSwarmHistoryList, Module: "compose", Label: "读取 Swarm Stack 部署记录"},
 		{Method: "POST", Path: "/compose/swarm", Handler: app.composeSwarmDeploy, Module: "compose", Label: "部署 Swarm Stack 应用"},
 		{Method: "PUT", Path: "/compose/swarm/:name", Handler: app.composeSwarmRedeploy, Module: "compose", Label: "重新部署 Swarm Stack 应用"},
 	}
@@ -33,6 +35,11 @@ func (app *App) composeDockerInspect(c *gin.Context) {
 	}
 
 	forceRuntime := c.Query("force") == "true"
+	if id := c.Query("revision"); id != "" {
+		detail, err := app.composeSvc.HistoryInspect(c.Request.Context(), "docker", name, id)
+		respondResult(c, detail, err)
+		return
+	}
 	detail, err := app.composeSvc.DockerInspect(c.Request.Context(), name, forceRuntime)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
@@ -48,12 +55,35 @@ func (app *App) composeSwarmInspect(c *gin.Context) {
 	}
 
 	forceRuntime := c.Query("force") == "true"
+	if id := c.Query("revision"); id != "" {
+		detail, err := app.composeSvc.HistoryInspect(c.Request.Context(), "swarm", name, id)
+		respondResult(c, detail, err)
+		return
+	}
 	detail, err := app.composeSvc.SwarmInspect(c.Request.Context(), name, forceRuntime)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	respondSuccess(c, "获取 compose 文件成功", detail)
+}
+
+func (app *App) composeDockerHistoryList(c *gin.Context) {
+	name, ok := composeNameParam(c)
+	if !ok {
+		return
+	}
+	records, err := app.composeSvc.HistoryList(c.Request.Context(), "docker", name)
+	respondResult(c, records, err)
+}
+
+func (app *App) composeSwarmHistoryList(c *gin.Context) {
+	name, ok := composeNameParam(c)
+	if !ok {
+		return
+	}
+	records, err := app.composeSvc.HistoryList(c.Request.Context(), "swarm", name)
+	respondResult(c, records, err)
 }
 
 func (app *App) composeDockerDeploy(c *gin.Context) {
