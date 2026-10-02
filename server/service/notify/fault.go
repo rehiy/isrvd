@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/rehiy/libgo/certify"
 	"github.com/rehiy/libgo/logman"
 
 	"isrvd/pkgs/apisix"
-	"isrvd/pkgs/certutil"
 	"isrvd/server/config"
 	"isrvd/server/service/caddy"
 )
@@ -274,7 +274,7 @@ func (w *FaultWatcher) pollCertificates(parent context.Context, now time.Time) {
 				if ssl.Status != nil && *ssl.Status == 0 {
 					continue
 				}
-				if cert := certutil.PEMParse([]byte(ssl.Cert)); cert != nil {
+				if cert := certify.PEMParse([]byte(ssl.Cert)); cert != nil {
 					certs = append(certs, certificateExpiry{id: ssl.ID, subject: strings.Join(ssl.Snis, ", "), notAfter: cert.NotAfter})
 				} else {
 					certs = append(certs, certificateExpiry{id: ssl.ID})
@@ -382,7 +382,7 @@ func caddyCertificateKey(cert caddy.CertForm) string {
 		return "file:" + cert.Certificate
 	case caddy.CertSourcePEM:
 		// 使用证书身份而非 PEM 内容，续期后仍可关联原告警。
-		parsed := certutil.PEMParse([]byte(cert.Certificate))
+		parsed := certify.PEMParse([]byte(cert.Certificate))
 		if parsed == nil {
 			return ""
 		}

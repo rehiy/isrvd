@@ -3,7 +3,7 @@ module isrvd
 go 1.26.0
 
 require (
-	github.com/compose-spec/compose-go/v2 v2.15.0
+	github.com/compose-spec/compose-go/v2 v2.16.1
 	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/creack/pty v1.1.24
 	github.com/docker/docker v28.5.2+incompatible
@@ -14,7 +14,7 @@ require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/moby/docker-image-spec v1.3.1
-	github.com/rehiy/libgo v0.19.1-0.20260708062553-73e441fb62a9
+	github.com/rehiy/libgo v0.20.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil/v3 v3.24.5
 	golang.org/x/crypto v0.57.0
@@ -28,7 +28,7 @@ require (
 	github.com/bytedance/sonic v1.15.2 // indirect
 	github.com/bytedance/sonic/loader v0.5.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/cheggaaa/pb/v3 v3.1.7 // indirect
+	github.com/cheggaaa/pb/v3 v3.2.1 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/cloudwego/base64x v0.1.7 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
@@ -47,23 +47,24 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.30.3 // indirect
-	github.com/go-think/openssl v1.20.0 // indirect
+	github.com/go-think/openssl v1.26.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/go-webauthn/x v0.3.1 // indirect
 	github.com/goccy/go-json v0.10.6 // indirect
 	github.com/google/go-tpm v0.9.8 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
-	github.com/jaypipes/ghw v0.24.0 // indirect
+	github.com/jaypipes/ghw v0.26.0 // indirect
 	github.com/jaypipes/pcidb v1.1.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/libdns/libdns v1.1.1 // indirect
 	github.com/lufia/plan9stats v0.0.0-20260627054121-477a66015f15 // indirect
 	github.com/mattn/go-colorable v0.1.15 // indirect
-	github.com/mattn/go-isatty v0.0.22 // indirect
-	github.com/mattn/go-runewidth v0.0.24 // indirect
+	github.com/mattn/go-isatty v0.0.24 // indirect
+	github.com/mattn/go-runewidth v0.0.27 // indirect
 	github.com/mattn/go-shellwords v1.0.13 // indirect
 	github.com/moby/sys/atomicwriter v0.1.0 // indirect
 	github.com/moby/term v0.5.2 // indirect
@@ -75,7 +76,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.4.2 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/pkg/sftp v1.13.10 // indirect
+	github.com/pkg/sftp v1.13.11 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/quic-go/quic-go v0.60.0 // indirect

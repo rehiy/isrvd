@@ -18,7 +18,7 @@ type storeItem[T any] interface {
 	fields() (id, password, privateKey *string)
 }
 
-// itemStore 基于 YAML 文件的条目存储；内存保存明文，落盘时加密密码/私钥
+// itemStore 类型化条目存储；内存保存明文，持久化时加密密码/私钥
 type itemStore[T any, P storeItem[T]] struct {
 	ts      *cstore.TypedStore[[]P]
 	aead    cipher.AEAD
@@ -102,7 +102,13 @@ func (s *itemStore[T, P]) commit(items []P) error {
 	for i, item := range items {
 		sealed[i] = clone[T](item)
 		_, password, privateKey := sealed[i].fields()
-		*password, *privateKey = sealSecret(s.aead, *password), sealSecret(s.aead, *privateKey)
+		var err error
+		if *password, err = sealSecret(s.aead, *password); err != nil {
+			return err
+		}
+		if *privateKey, err = sealSecret(s.aead, *privateKey); err != nil {
+			return err
+		}
 	}
 	if err := s.ts.Set(sealed); err != nil {
 		return err

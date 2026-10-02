@@ -32,7 +32,7 @@ server/config ────────────────→ pkgs/cstore
 server/service/{account,apisix,...} → server/config / pkgs/*
 server/service/{docker,webssh} → server/service/shell（终端桥接复用）
 server/service/{cron,monitor} → server/service/notify（任务失败与资源告警）
-server/service/notify ────────→ server/service/caddy + pkgs/{apisix,certutil}（证书到期检测，客户端由 app 注入）
+server/service/notify ────────→ server/service/caddy + pkgs/apisix + libgo/certify（证书到期检测，客户端由 app 注入）
 server/app ────────────────→ server/config + server/service/{account,apisix,...} + pkgs/* + public
 ```
 

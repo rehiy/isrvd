@@ -1,13 +1,13 @@
 package webssh
 
 import (
-	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
 	"strings"
+
+	"github.com/rehiy/libgo/secure"
 
 	"isrvd/server/config"
 )
@@ -18,20 +18,18 @@ const sealedPrefix = "enc:"
 
 func secretAEAD() (cipher.AEAD, error) {
 	key := sha256.Sum256([]byte("isrvd-webssh:" + config.Current().Server.JWTSecret))
-	block, err := aes.NewCipher(key[:])
-	if err != nil {
-		return nil, err
-	}
-	return cipher.NewGCM(block)
+	return secure.NewAESGCM(key[:])
 }
 
-func sealSecret(aead cipher.AEAD, plain string) string {
+func sealSecret(aead cipher.AEAD, plain string) (string, error) {
 	if plain == "" {
-		return ""
+		return "", nil
 	}
-	nonce := make([]byte, aead.NonceSize())
-	_, _ = rand.Read(nonce)
-	return sealedPrefix + base64.RawStdEncoding.EncodeToString(aead.Seal(nonce, nonce, []byte(plain), nil))
+	raw, err := secure.AEADSeal(aead, []byte(plain), nil)
+	if err != nil {
+		return "", err
+	}
+	return sealedPrefix + base64.RawStdEncoding.EncodeToString(raw), nil
 }
 
 func openSecret(aead cipher.AEAD, value string) (string, error) {
@@ -40,12 +38,12 @@ func openSecret(aead cipher.AEAD, value string) (string, error) {
 		return value, nil
 	}
 	raw, err := base64.RawStdEncoding.DecodeString(encoded)
-	n := aead.NonceSize()
-	if err == nil && len(raw) >= n {
-		var plain []byte
-		if plain, err = aead.Open(nil, raw[:n], raw[n:], nil); err == nil {
+	if err == nil {
+		plain, err := secure.AEADOpen(aead, raw, nil)
+		if err == nil {
 			return string(plain), nil
 		}
 	}
+
 	return "", errors.New("SSH 认证信息解密失败，JWT 密钥可能已变更")
 }

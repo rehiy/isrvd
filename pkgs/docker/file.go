@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/rehiy/libgo/command"
 	"github.com/rehiy/libgo/logman"
 )
 
@@ -64,7 +65,7 @@ func (s *DockerService) ContainerFileList(ctx context.Context, containerID, dirP
 	// format: type|targetType|name|size|mode|mtime|linkTarget
 	findScript := fmt.Sprintf(
 		`find %s -maxdepth 1 -mindepth 1 -printf '%%y|%%Y|%%f|%%s|%%#m|%%T@|%%l\n'`,
-		shellQuote(listPath),
+		command.POSIXQuote(listPath),
 	)
 	out, err := s.ContainerExecRun(ctx, containerID, "/bin/sh", findScript, 10)
 	// 判断是否为有效的 find -printf 输出（每行至少含 4 个 |）
@@ -75,7 +76,7 @@ func (s *DockerService) ContainerFileList(ctx context.Context, containerID, dirP
 	}
 
 	// 回退：ls -la（busybox / alpine 兼容）
-	lsScript := fmt.Sprintf(`ls -la %s`, shellQuote(listPath))
+	lsScript := fmt.Sprintf(`ls -la %s`, command.POSIXQuote(listPath))
 	out, err = s.ContainerExecRun(ctx, containerID, "/bin/sh", lsScript, 10)
 	if err != nil && out == "" {
 		return nil, fmt.Errorf("列出目录失败: %w", err)
@@ -165,9 +166,9 @@ func (s *DockerService) ContainerFileUpload(ctx context.Context, containerID, de
 
 // ContainerFileRemove 删除容器内文件或目录
 func (s *DockerService) ContainerFileRemove(ctx context.Context, containerID, targetPath string, recursive bool) error {
-	cmd := fmt.Sprintf("rm -f %s", shellQuote(targetPath))
+	cmd := fmt.Sprintf("rm -f %s", command.POSIXQuote(targetPath))
 	if recursive {
-		cmd = fmt.Sprintf("rm -rf %s", shellQuote(targetPath))
+		cmd = fmt.Sprintf("rm -rf %s", command.POSIXQuote(targetPath))
 	}
 	_, err := s.ContainerExecRun(ctx, containerID, "/bin/sh", cmd, 30)
 	if err != nil {
@@ -178,7 +179,7 @@ func (s *DockerService) ContainerFileRemove(ctx context.Context, containerID, ta
 
 // ContainerFileMkdir 在容器内创建目录
 func (s *DockerService) ContainerFileMkdir(ctx context.Context, containerID, dirPath string) error {
-	cmd := fmt.Sprintf("mkdir -p %s", shellQuote(dirPath))
+	cmd := fmt.Sprintf("mkdir -p %s", command.POSIXQuote(dirPath))
 	_, err := s.ContainerExecRun(ctx, containerID, "/bin/sh", cmd, 10)
 	if err != nil {
 		return fmt.Errorf("创建目录失败: %w", err)
@@ -188,7 +189,7 @@ func (s *DockerService) ContainerFileMkdir(ctx context.Context, containerID, dir
 
 // ContainerFileRename 重命名/移动容器内文件
 func (s *DockerService) ContainerFileRename(ctx context.Context, containerID, oldPath, newPath string) error {
-	cmd := fmt.Sprintf("mv %s %s", shellQuote(oldPath), shellQuote(newPath))
+	cmd := fmt.Sprintf("mv %s %s", command.POSIXQuote(oldPath), command.POSIXQuote(newPath))
 	_, err := s.ContainerExecRun(ctx, containerID, "/bin/sh", cmd, 10)
 	if err != nil {
 		return fmt.Errorf("重命名失败: %w", err)
@@ -218,7 +219,7 @@ func (s *DockerService) ContainerFileWrite(ctx context.Context, containerID, fil
 
 // ContainerFileChmod 修改容器内文件权限
 func (s *DockerService) ContainerFileChmod(ctx context.Context, containerID, targetPath, mode string) error {
-	cmd := fmt.Sprintf("chmod %s %s", shellQuote(mode), shellQuote(targetPath))
+	cmd := fmt.Sprintf("chmod %s %s", command.POSIXQuote(mode), command.POSIXQuote(targetPath))
 	_, err := s.ContainerExecRun(ctx, containerID, "/bin/sh", cmd, 10)
 	if err != nil {
 		return fmt.Errorf("修改权限失败: %w", err)
@@ -265,11 +266,6 @@ func containerDirListPath(dirPath string) string {
 		return "/"
 	}
 	return strings.TrimRight(cleaned, "/") + "/."
-}
-
-// shellQuote 对路径进行简单单引号转义，防止路径注入
-func shellQuote(s string) string {
-	return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
 }
 
 func fileModePerm(mode string) string {

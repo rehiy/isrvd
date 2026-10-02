@@ -23,23 +23,27 @@ func ProjectFromSwarmInspect(svc swarm.Service, containerDir string) (*types.Pro
 
 	name := defaultString(spec.Name, svc.ID)
 	composeSvc := types.ServiceConfig{
-		Name:        name,
-		Image:       cs.Image,
-		Environment: sliceToEnv(cs.Env),
-		Entrypoint:  types.ShellCommand(cs.Command),
-		Command:     types.ShellCommand(cs.Args),
-		WorkingDir:  cs.Dir,
-		User:        cs.User,
-		Hostname:    cs.Hostname,
-		ExtraHosts:  swarmExtraHostsToMap(cs.Hosts),
-		Tty:         cs.TTY,
-		StdinOpen:   cs.OpenStdin,
-		ReadOnly:    cs.ReadOnly,
-		StopSignal:  cs.StopSignal,
-		Sysctls:     types.Mapping(cs.Sysctls),
-		CapAdd:      cs.CapabilityAdd,
-		CapDrop:     cs.CapabilityDrop,
-		Labels:      spec.Labels,
+		Name: name,
+		ContainerSpec: types.ContainerSpec{
+			Image:       cs.Image,
+			Environment: sliceToEnv(cs.Env),
+			Entrypoint:  types.ShellCommand(cs.Command),
+			Command:     types.ShellCommand(cs.Args),
+			WorkingDir:  cs.Dir,
+			User:        cs.User,
+			Hostname:    cs.Hostname,
+			ExtraHosts:  swarmExtraHostsToMap(cs.Hosts),
+			ReadOnly:    cs.ReadOnly,
+			StopSignal:  cs.StopSignal,
+			Sysctls:     types.Mapping(cs.Sysctls),
+			CapAdd:      cs.CapabilityAdd,
+			CapDrop:     cs.CapabilityDrop,
+			Labels:      spec.Labels,
+		},
+		WorkloadSpec: types.WorkloadSpec{
+			Tty:       cs.TTY,
+			StdinOpen: cs.OpenStdin,
+		},
 	}
 
 	if cs.DNSConfig != nil {

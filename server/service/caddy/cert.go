@@ -10,8 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rehiy/libgo/certify"
+
 	"isrvd/pkgs/caddy"
-	"isrvd/pkgs/certutil"
 )
 
 // ─── SSL 证书 CRUD ───
@@ -71,7 +72,7 @@ func (s *Service) certListFromConfig(cfg *caddy.Config) []CertForm {
 					Certificate: p.Certificate,
 					Tags:        p.Tags,
 				}
-				fillCertInfo(&form, certutil.PEMParse([]byte(p.Certificate)))
+				fillCertInfo(&form, certify.PEMParse([]byte(p.Certificate)))
 				out = append(out, form)
 			}
 		}
@@ -361,7 +362,7 @@ func parseCertFile(path string) *x509.Certificate {
 	if err != nil {
 		return nil
 	}
-	return certutil.PEMParse(data)
+	return certify.PEMParse(data)
 }
 
 // fillCertInfo 将 x509.Certificate 中的证书信息填充到 CertForm

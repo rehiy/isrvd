@@ -93,7 +93,7 @@ func (s *Service) Login(req LoginRequest) (*LoginResponse, error) {
 		if req.TOTPCode == "" {
 			return &LoginResponse{Username: req.Username, TwoFactorRequired: true}, nil
 		}
-		if !s.TOTPValidate(member.TwoFactor.TOTP.Secret, req.TOTPCode) {
+		if !secure.TOTPValidate(member.TwoFactor.TOTP.Secret, req.TOTPCode) {
 			logman.Warn("TOTP login failed", "username", req.Username)
 			return nil, fmt.Errorf("验证码无效")
 		}
