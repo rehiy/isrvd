@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/rehiy/libgo/etcd"
+	"github.com/rehiy/libgo/logman"
 )
 
 // EtcdStore 基于 etcd 的配置存储。
@@ -148,6 +149,41 @@ func (e *EtcdStore) CheckAndSet(key string, expected, value []byte) error {
 		return ErrConflict
 	}
 	return nil
+}
+
+// Watch 将 etcd 最新状态转换为存储事件，ctx 取消时停止。
+func (e *EtcdStore) Watch(ctx context.Context, key string) <-chan Event {
+	out := make(chan Event, 8)
+	events, errs := e.client.Watch(ctx, e.etcdKey(key))
+	go func() {
+		defer close(out)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case err, ok := <-errs:
+				if !ok {
+					errs = nil
+				} else {
+					logman.Warn("cstore: Watch 错误", "key", key, "error", err)
+				}
+			case state, ok := <-events:
+				if !ok {
+					return
+				}
+				event := Event{Key: key, Type: EventDelete}
+				if state.Type == "PUT" {
+					event.Type, event.Value = EventPut, []byte(state.Value)
+				}
+				select {
+				case out <- event:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+	return out
 }
 
 // Close 释放资源。
