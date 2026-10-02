@@ -4,12 +4,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"net/url"
 	"os"
-	"path/filepath"
 	"reflect"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -19,13 +16,13 @@ import (
 	"isrvd/pkgs/cstore"
 )
 
-// ReloadCh 配置变更通知通道，etcd 变更时触发服务重载
+// ReloadCh 配置变更通知通道，存储变更时触发服务重载
 var ReloadCh = make(chan struct{}, 1)
 
 var (
 	store       cstore.Store
 	storeKey    string
-	dataStore   cstore.Store // 业务数据存储，仅配置位于 etcd 时使用
+	document    *cstore.Document
 	watchCancel context.CancelFunc
 	watchWG     sync.WaitGroup
 	watchMu     sync.Mutex
@@ -42,19 +39,11 @@ func Init() error {
 		return err
 	}
 
-	if !strings.Contains(uri, "://") {
-		if abs, err := filepath.Abs(uri); err == nil {
-			uri = abs
-		}
-	}
+	document = cstore.NewDocument(store, storeKey)
+
 	logman.Info("load config", "path", uri)
 	if err := Load(); err != nil {
 		return err
-	}
-	if strings.HasPrefix(strings.ToLower(uri), "etcd://") {
-		if dataStore, err = openEtcdDataStore(uri, Current().Server.RootDirectory); err != nil {
-			return err
-		}
 	}
 
 	watchCtx, cancel := context.WithCancel(context.Background())
@@ -73,23 +62,19 @@ func Close() error {
 	watching = false
 	clear(localWrites)
 	watchMu.Unlock()
-	if dataStore != nil {
-		_ = dataStore.Close()
-	}
 	if store != nil {
 		return store.Close()
 	}
 	return nil
 }
 
-// OpenData 打开业务数据（如计划任务、SSH 主机）的类型化存储。
-// 配置位于 etcd 时写入 <配置 key>/<file>，etcd 中不存在时读取 rootDirectory 下的同名文件并迁移；
-// 否则为 rootDirectory 下的本地文件。
+// OpenData 按当前数据目录派生业务数据存储，后端选择与迁移由 cstore 负责。
 func OpenData[T any](file string) (*cstore.TypedStore[T], error) {
-	if dataStore != nil {
-		return cstore.NewTypedWith[T](dataStore, file), nil
+	dataStore, err := cstore.OpenData(store, Current().Server.RootDirectory)
+	if err != nil {
+		return nil, err
 	}
-	return cstore.NewTyped[T](Current().Server.RootDirectory, file)
+	return cstore.NewTypedWith[T](dataStore, file), nil
 }
 
 // ReadStored 读取并验证持久化配置，但不发布运行时快照。
@@ -167,17 +152,19 @@ func UpdateStored(mutator func(*Snapshot) error) error {
 // ─── 辅助函数 ───
 
 func readSnapshot() (*Snapshot, error) {
-	raw, err := store.Get(storeKey)
+	conf := &Config{}
+	raw, err := document.Read(func(data []byte) error {
+		if data == nil {
+			return nil
+		}
+		return yaml.Unmarshal(data, conf)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("读取配置失败: %w", err)
 	}
 	if raw == nil {
 		logman.Warn("未找到配置文件", "key", storeKey)
 		return nil, nil
-	}
-	conf := &Config{}
-	if err := yaml.Unmarshal(raw, conf); err != nil {
-		return nil, fmt.Errorf("解析配置失败: %w", err)
 	}
 
 	migrated := migrate(conf, raw)
@@ -288,7 +275,7 @@ func setConfigBytes(data []byte) error {
 		localWrites[fingerprint]++
 	}
 	watchMu.Unlock()
-	if err := store.Set(storeKey, data); err != nil {
+	if err := document.Set(data); err != nil {
 		forgetLocalWrite(fingerprint)
 		return err
 	}
@@ -339,22 +326,10 @@ func watchConfigChanges(ctx context.Context) {
 				watchMu.Lock()
 				clear(localWrites)
 				watchMu.Unlock()
-				logman.Warn("Config deleted in etcd", "key", ev.Key)
+				logman.Warn("Config deleted", "key", ev.Key)
 			}
 		}
 	}()
-}
-
-// openEtcdDataStore 复用配置的 etcd 连接参数，fallback 指向本地数据目录以便首次迁移
-func openEtcdDataStore(uri, rootDir string) (cstore.Store, error) {
-	base, rawQuery, _ := strings.Cut(uri, "?")
-	q, err := url.ParseQuery(rawQuery)
-	if err != nil {
-		return nil, err
-	}
-	// 末尾补分隔符，避免目录名含点（如 /srv/isrvd.d）时被 cstore 按扩展名误判为文件
-	q.Set("fallback", strings.TrimRight(rootDir, `/\`)+string(filepath.Separator))
-	return cstore.Open(base + "?" + q.Encode())
 }
 
 func envOrDefault(key, fallback string) string {

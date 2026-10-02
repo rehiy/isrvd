@@ -4,6 +4,8 @@
 > 主机配置独立存储于 `{rootDirectory}/webssh-host.yml`，认证凭据独立存储于 `{rootDirectory}/webssh-cred.yml`，均不写入主配置文件；配置位于 etcd 时改存 `<配置 key>/<文件名>`，首次读取时自动迁移本地同名文件。
 > `password`、`privateKey` 加密落盘（密钥由 `server.jwtSecret` 派生），修改 `jwtSecret` 后需重新填写 SSH 认证信息。
 
+保存前会检查持久化内容是否与加载基线一致，变化时拒绝覆盖；需重载服务后重试。存储机制及进程内保障范围见[配置存储说明](../system/config.md#保存一致性)。
+
 ---
 
 ## 认证凭据管理

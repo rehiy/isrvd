@@ -40,6 +40,9 @@ type Store interface {
 	Get(key string) ([]byte, error)
 	// Set 写入 key-value
 	Set(key string, value []byte) error
+	// CheckAndSet 比较原始值并写入；nil expected 表示不存在。
+	// etcd 使用原子事务；文件后端仅在本进程协调。
+	CheckAndSet(key string, expected, value []byte) error
 	// Watch 监听 key 变更，ctx 取消时 channel 关闭；FileStore 返回 nil channel
 	Watch(ctx context.Context, key string) <-chan Event
 	// Close 释放资源
@@ -65,6 +68,26 @@ func Open(uri string) (Store, error) {
 	}
 }
 
+// OpenData 根据已打开的配置存储派生业务数据存储。
+// 文件后端使用 rootDir；etcd 后端复用连接，在配置 key 下存储业务数据，
+// 仅在业务 key 不存在时从 rootDir 读取同名文件。连接生命周期由 source 管理。
+func OpenData(source Store, rootDir string) (Store, error) {
+	switch s := source.(type) {
+	case *FileStore:
+		return newFileStore(rootDir)
+	case *EtcdStore:
+		return &EtcdStore{
+			client:  s.client,
+			keyPath: s.keyPath,
+			// 显式保留目录分隔符，避免带点的目录被 fallbackPath 误判为文件。
+			fallback: strings.TrimRight(rootDir, `/\`) + string(filepath.Separator),
+			timeout:  s.timeout,
+		}, nil
+	default:
+		return nil, fmt.Errorf("cstore: 不支持派生业务数据存储: %T", source)
+	}
+}
+
 // OpenWithKey 根据完整文件路径或 etcd URI 创建 Store，并返回对应的 key。
 // 调用方无需自行解析 URI，直接将 CONFIG_PATH 等环境变量传入即可。
 //
@@ -80,13 +103,10 @@ func OpenWithKey(uri string) (Store, string, error) {
 		s, err := newEtcdStore(uri)
 		return s, "", err
 	case strings.HasPrefix(lower, "file://"):
-		filePath := strings.TrimPrefix(uri, "file://")
-		s, err := newFileStore(filepath.Dir(filePath))
-		return s, filepath.Base(filePath), err
+		uri = strings.TrimPrefix(uri, "file://")
 	case strings.Contains(uri, "://"):
 		return nil, "", fmt.Errorf("cstore: 不支持的存储 URI: %s", uri)
-	default:
-		s, err := newFileStore(filepath.Dir(uri))
-		return s, filepath.Base(uri), err
 	}
+	s, err := newFileStore(filepath.Dir(uri))
+	return s, filepath.Base(uri), err
 }

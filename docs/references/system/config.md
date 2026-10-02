@@ -11,6 +11,18 @@ CONFIG_PATH="etcd://user:pass@127.0.0.1:2379/isrvd/config?fallback=/data/conf/is
 
 说明：etcd value 使用同款 YAML；`CONFIG_PATH` 中的 path 是完整 etcd key，必须显式提供；系统配置推荐 key 为 `/isrvd/config`；`fallback` 是本地 YAML 文件路径，且仅在 etcd key 不存在时用于初始化。
 
+业务数据存储由 cstore 从配置存储派生：本地后端使用当前 `rootDirectory`，etcd 后端复用配置连接，key 为 `<配置 key>/<文件名>`，缺失时从当前 `rootDirectory` 的同名文件迁移。修改 `rootDirectory` 并重载后，新建服务使用新的本地目录或 fallback 目录；已存在的 etcd 数据不被覆盖。
+
+### 保存一致性
+
+系统配置、计划任务和 SSH 主机/凭据通过 cstore 检查最近一次成功加载或保存的原始内容。保存前检查不触发 fallback 迁移；发现内容已变更（包括被删除）时拒绝覆盖；请重新加载后重试。加载失败的计划任务存储禁止写入，避免空任务表覆盖原有数据。
+
+本地文件采用同目录临时文件和原子替换，保留已有文件权限，新文件使用 `0600`；文件后端仅协调同目录 Store 的进程内更新。etcd 通过事务比较 key 的存在性和原始值，再条件写入，支持跨实例防覆盖；fallback 也只在 key 缺失时原子创建，竞争失败后读取已有数据。值比较不检测内容变更后又恢复原值的 ABA 情况，也不提供浏览器旧草稿版本校验或分布式任务执行锁；etcd 超时不代表服务端一定未提交。
+
+etcd 空字符串值视为已存在，不触发 fallback。需要 libgo 支持 `Lookup`、`CompareAndPut` 和 Watch 的 `SYNC` 事件：旧版缺少写入能力时明确报错，不退回无条件覆盖；缺少 `Lookup` 时，无法判定的空结果也明确报错。
+
+配置监听在首次连接、重连后重新读取最新状态，读取失败会重试，相同状态不重复触发重载。该机制补偿连接间隙的最终状态，不重放所有历史事件；本地文件仍通过 SIGHUP 手动重载，cron、webssh 的外部数据更新仍需重载服务。
+
 ## 配置重载
 
 isrvd 支持运行时重载配置和服务连接，无需重启进程。

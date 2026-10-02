@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -45,7 +44,6 @@ type Store struct {
 	ts      *cstore.TypedStore[[]*Job]
 	rootDir string // 创建该服务代际时的根目录
 	dataDir string // 日志目录绝对路径
-	jobMu   sync.Mutex
 
 	logStore *jsonl.Store
 }
@@ -105,7 +103,7 @@ func (s *Store) SaveJobs(jobs []*Job) error {
 		return fmt.Errorf("cron: 配置存储未初始化")
 	}
 
-	// 构造副本并还原相对路径，锁外执行，避免序列化期间长时间持锁
+	// 构造副本并还原相对路径，由 service 锁保护业务更新，cstore 检查持久化基线
 	snapshot := make([]*Job, 0, len(jobs))
 	for _, job := range jobs {
 		if job == nil {
@@ -115,9 +113,6 @@ func (s *Store) SaveJobs(jobs []*Job) error {
 		cp.WorkDir = config.PathToRel(job.WorkDir, s.rootDir)
 		snapshot = append(snapshot, &cp)
 	}
-
-	s.jobMu.Lock()
-	defer s.jobMu.Unlock()
 
 	logger.Debug("Save cron jobs", "key", "cron.yml", "count", len(jobs))
 	return s.ts.Set(snapshot)
