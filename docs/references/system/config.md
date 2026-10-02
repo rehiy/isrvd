@@ -19,7 +19,7 @@ CONFIG_PATH="etcd://user:pass@127.0.0.1:2379/isrvd/config?fallback=/data/conf/is
 
 本地文件采用同目录临时文件和原子替换，保留已有文件权限，新文件使用 `0600`；文件后端仅协调同目录 Store 的进程内更新。etcd 通过事务比较 key 的存在性和原始值，再条件写入，支持跨实例防覆盖；fallback 也只在 key 缺失时原子创建，竞争失败后读取已有数据。值比较不检测内容变更后又恢复原值的 ABA 情况，也不提供浏览器旧草稿版本校验或分布式任务执行锁；etcd 超时不代表服务端一定未提交。
 
-etcd 空字符串值视为已存在，不触发 fallback。需要 libgo 支持 `Lookup`、`CompareAndPut` 和 Watch 的 `SYNC` 事件：旧版缺少写入能力时明确报错，不退回无条件覆盖；缺少 `Lookup` 时，无法判定的空结果也明确报错。
+etcd 空字符串值视为已存在，不触发 fallback。使用 libgo v0.20.0 的 `Lookup`、`CompareAndPut` 和 Watch 的 `SYNC` 事件，分别实现存在性查询、条件写入和连接状态补偿。
 
 配置监听在首次连接、重连后重新读取最新状态，读取失败会重试，相同状态不重复触发重载。该机制补偿连接间隙的最终状态，不重放所有历史事件；本地文件仍通过 SIGHUP 手动重载，cron、webssh 的外部数据更新仍需重载服务。
 
