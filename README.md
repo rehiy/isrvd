@@ -273,7 +273,7 @@ git diff --check
 | `copilot` | AI 助手模型接入（model / baseUrl / apiKey） |
 | `apisix` | APISIX Admin API 地址和密钥 |
 | `caddy` | Caddy Admin API 地址 |
-| `docker` | Docker 守护进程地址、容器数据目录、镜像仓库账号 |
+| `docker` | Docker 守护进程地址（支持 `tcp://` + TLS 证书连接远程 Docker / Swarm）、容器数据目录、镜像仓库账号 |
 | `monitor` | 系统与容器监控的采集间隔（5/15/30/60 秒，其他值禁用自动采集） |
 | `notify` | Webhook 通道、CPU/内存/磁盘规则，以及容器异常、任务失败和网关证书到期告警；默认关闭应用故障告警 |
 | `marketplace` | 应用市场地址 |

@@ -249,6 +249,7 @@ docs/
 - `PUT /api/system/config` 支持按分区提交：`AllConfig` 中为 nil 的分区跳过更新，密钥类字段为空表示保留原值
 - `Server` 必须作为 `config.Server` 结构体统一访问，禁止重新展开为 `config.Debug`、`config.ListenAddr` 等包级散变量
 - 镜像仓库 `DockerRegistry`（含 `Name`、`URL`、`Username`、`Password`、`Description`）
+- 远程 Docker：`DockerConfig.TLS`（`DockerTLSConfig`，证书与私钥为 PEM 文本，不使用文件路径，以便随 etcd 配置同步）；`pkgs/docker.TLSConfig.Config(host)` 是唯一的校验与构造入口（`NewDockerService` 与 `system.dockerTLSMerge` 共用）；`DockerService.Remote()` 由 `Host` 地址决定（`tcp://` 且非回环，与 TLS 无关），为真时自身容器识别只用 overlay 路径、不按 IP/主机名匹配，并跳过 bind 源的本机检查
 - 顶层配置分区使用指针并带 YAML 标签；配置持久化以 YAML 结构为准，API 脱敏由 `service/system.ConfigAll` 的深拷贝负责
 
 **配置 Provider / cstore 规范（强制）**
@@ -311,7 +312,7 @@ docs/
 ## 9) 安全基线（必须遵守）
 
 1. 禁止硬编码密钥/密码/令牌
-2. 配置查询必须深拷贝后清空 JWT、OIDC、Copilot、APISIX 和 Registry 密钥；账户密码、TOTP secret、SSH 密码/私钥继续使用 `json:"-"`
+2. 配置查询必须深拷贝后清空 JWT、OIDC、Copilot、APISIX、Registry 和 Docker TLS 私钥（`docker.tls.key`）；账户密码、TOTP secret、SSH 密码/私钥继续使用 `json:"-"`
 3. 文件系统操作防目录遍历；解压防 Zip Slip
 4. WebSocket 必须经过认证链路
 5. 关键资源（内置角色等）前后端双重校验

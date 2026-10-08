@@ -107,7 +107,7 @@ isrvd_get "/system/config"
 | notify | object | `{webhooks, rules, events}`；资源与应用故障告警共用已配置 Webhook |
 | apisix | object | `{adminUrl}`（adminKey 不返回） |
 | caddy | object | `{adminUrl}` |
-| docker | object | `{host, containerRoot, registries}`（registry password 不返回） |
+| docker | object | `{host, tls, containerRoot, registries}`（registry password、`tls.key` 不返回） |
 | monitor | object | `{interval}`（采集间隔秒数，非法值表示禁用） |
 | marketplace | object | `{url}` |
 | links | object[] | `{label, url, icon}` |
@@ -128,6 +128,11 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 配置说明：
 
 - `clientSecret`、`jwtSecret`、`apiKey`、`adminKey`、`docker.registries[].password` 等敏感字段不会通过 GET 返回；PUT 时为空（含纯空白）表示保留原值，非空值会去除首尾空白后保存；`docker.registries[].password` 按 `url` + `username` 匹配旧仓库后保留原值。启动加载配置时，如果 `server.jwtSecret` 为空或仍为示例值 `your-jwt-secret`，系统会使用密码学安全随机源生成 256 位密钥并写回配置；手动配置的密钥不能少于 32 个字符。
+- 连接远程 Docker / Swarm：`docker.host` 设为 `tcp://host:2376`，并设置 `docker.tls`：`enabled`（启用 TLS）、`skipVerify`（跳过服务端证书校验，仅限测试）、`ca`（校验服务端证书的 CA，PEM 文本；留空使用系统根证书）、`cert` 与 `key`（客户端证书与私钥，PEM 文本，daemon 启用 `--tlsverify` 时需要，必须成对）。证书以 PEM 文本保存在配置中，使用 etcd 配置后端时随配置同步，无需在各节点放置证书文件。`tls.enabled` 为 `true` 时 `host` 必须是 `tcp://` 地址，保存时会校验 PEM 与证书私钥是否匹配，不通过则拒绝保存。`tls.key` 留空保留原值；清空 `tls.cert` 会同时清除私钥；请求未携带 `tls` 时沿用原值。Swarm 复用 Docker 连接，目标节点需为 manager。
+- 远程 Docker 的判定与限制：`docker.host`（留空时取环境变量 `DOCKER_HOST`）为 `tcp://` 且主机不是回环地址（`127.0.0.0/8`、`::1`、`localhost`）即视为远程，与是否启用 TLS 无关；`tcp://docker-proxy:2375` 这类无法确认是否同机的别名也按远程处理。远程时：
+  - 「自身容器」只按 isrvd 所在容器的 overlay 存储路径（`upperdir`/`workdir`）识别，不再按 IP、主机名匹配（不同主机的默认网桥都是 `172.17.0.x`，会把远程容器误判为自身）；存储驱动不是 overlay 时不识别自身容器，自身保护不生效。
+  - bind 挂载源与 `containerRoot` 是远程主机上的路径，isrvd 不检查其是否存在；通过界面创建容器时，相对路径会按 `containerRoot/<容器名>/` 展开并在远程主机上创建。
+  - Compose（Docker 模式）的项目文件、`.env` 与部署历史保存在 isrvd 所在主机；相对 bind 路径会展开为 isrvd 本机的绝对路径后原样交给远程 daemon，该路径在远程主机上不存在时容器启动会失败（`bind source path does not exist`），`./nginx.conf` 这类需要随项目一起存在的文件同样无法使用，请改用远程主机上真实存在的绝对路径或命名卷。
 - `password.disabled` 设为 `true` 后，密码登录接口（`POST /api/account/login`）将直接拒绝请求，前端也会隐藏密码登录表单，仅保留 Passkey、OIDC 或代理 Header（THA）登录方式。后端会拒绝关闭全部登录方式的配置。
 - `password.minLength` 密码最小长度，默认 6；创建成员和修改密码时后端同步校验，前端提示文案也会动态更新。
 - 启用 OIDC 时，`oidc.issuerUrl` 和 `oidc.redirectUrl` 必须显式配置为合法的 HTTP(S) 绝对地址，`oidc.clientId` 不能为空。

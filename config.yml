@@ -64,6 +64,23 @@ caddy:
 docker:
   # host: unix:///var/run/docker.sock
   # host: tcp://127.0.0.1:2375
+  # 远程 Docker / Swarm（需 daemon 开启 TLS，host 必须是 tcp:// 地址）；证书为 PEM 文本，也可在「系统配置」页面填写
+  # host: tcp://docker.example.com:2376
+  # tls:
+  #   enabled: true
+  #   skipVerify: false        # 跳过服务端证书校验，仅限测试
+  #   ca: |                    # 校验服务端证书的 CA；留空使用系统根证书
+  #     -----BEGIN CERTIFICATE-----
+  #     ...
+  #     -----END CERTIFICATE-----
+  #   cert: |                  # 客户端证书（daemon 启用 --tlsverify 时需要，与 key 成对）
+  #     -----BEGIN CERTIFICATE-----
+  #     ...
+  #     -----END CERTIFICATE-----
+  #   key: |
+  #     -----BEGIN PRIVATE KEY-----
+  #     ...
+  #     -----END PRIVATE KEY-----
   containerRoot: container/
   registries:
      # - name: Company Hub
