@@ -111,8 +111,18 @@ export interface DockerRegistry {
     password?: string
 }
 
+export interface DockerTLSConfig {
+    enabled: boolean
+    skipVerify: boolean   // 不校验服务端证书，仅用于测试环境
+    ca: string            // 校验服务端证书的 CA（PEM）
+    cert: string          // 客户端证书（PEM）
+    // 写入时为空表示保留原值（不通过 JSON 返回）
+    key?: string          // 客户端私钥（PEM）
+}
+
 export interface DockerConfig {
     host: string
+    tls: DockerTLSConfig
     containerRoot: string
     registries?: DockerRegistry[]
 }

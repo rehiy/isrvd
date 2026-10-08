@@ -3,7 +3,9 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 
 import { useConfigStore } from '@/stores'
 
-@Component
+import ToggleCard from '@/component/toggle-card.vue'
+
+@Component({ components: { ToggleCard } })
 class ConfigGateway extends Vue {
     config = useConfigStore()
 }
@@ -53,14 +55,34 @@ export default toNative(ConfigGateway)
       <div class="config-section-heading">
         <div>
           <h2 class="config-section-title">Docker</h2>
-          <p class="config-section-description">引擎连接与容器根目录</p>
+          <p class="config-section-description">引擎连接、TLS 证书与容器根目录</p>
         </div>
       </div>
       <div>
         <label class="form-label">Docker Host</label>
         <input v-model="config.draft.docker.host" type="text" placeholder="请输入 Docker Host" class="input" />
-        <p class="mt-1 text-xs text-slate-400">示例：unix:///var/run/docker.sock 或 tcp://host:2375；留空则使用环境变量 DOCKER_HOST</p>
+        <p class="mt-1 text-xs text-slate-400">示例：unix:///var/run/docker.sock、tcp://host:2375（明文）或 tcp://host:2376（配合下方 TLS）；留空则使用环境变量 DOCKER_HOST</p>
       </div>
+      <ToggleCard v-model="config.draft.docker.tls.enabled" label="启用 TLS" desc="连接远程 Docker / Swarm 时使用；Docker Host 必须是 tcp:// 地址。Swarm 与 Docker 共用此连接，目标节点需为 manager">
+        <div class="space-y-4">
+          <ToggleCard v-model="config.draft.docker.tls.skipVerify" label="跳过服务端证书校验" desc="仅用于测试环境；开启后无法防范中间人攻击" />
+          <div>
+            <label class="form-label">CA 证书</label>
+            <textarea v-model="config.draft.docker.tls.ca" rows="5" placeholder="-----BEGIN CERTIFICATE-----" class="input font-mono text-xs"></textarea>
+            <p class="mt-1 text-xs text-slate-400">用于校验服务端证书的 CA（PEM，即 ca.pem）；留空则使用系统根证书</p>
+          </div>
+          <div>
+            <label class="form-label">客户端证书</label>
+            <textarea v-model="config.draft.docker.tls.cert" rows="5" placeholder="-----BEGIN CERTIFICATE-----" class="input font-mono text-xs"></textarea>
+            <p class="mt-1 text-xs text-slate-400">双向认证（daemon 启用 --tlsverify）时填写（PEM，即 cert.pem），需与私钥成对；清空证书会同时清除私钥</p>
+          </div>
+          <div>
+            <label class="form-label">客户端私钥</label>
+            <textarea v-model="config.draft.docker.tls.key" rows="5" placeholder="留空则保持不变" class="input font-mono text-xs" autocomplete="off"></textarea>
+            <p class="mt-1 text-xs text-slate-400">客户端证书对应的私钥（PEM，即 key.pem）；保存后不会再显示</p>
+          </div>
+        </div>
+      </ToggleCard>
       <div>
         <label class="form-label">容器数据根目录</label>
         <input v-model="config.draft.docker.containerRoot" type="text" placeholder="请输入容器数据根目录" class="input" />
