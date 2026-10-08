@@ -65,7 +65,7 @@ export default toNative(CaddyRaw)
 </script>
 
 <template>
-  <div class="page">
+  <div class="page flex flex-col h-[calc(100vh-4rem)]">
     <div class="page-toolbar">
       <!-- 桌面端 -->
       <div class="toolbar-desktop">
@@ -99,11 +99,11 @@ export default toNative(CaddyRaw)
     </div>
 
     <div v-if="loading" class="card-body"><div class="empty-state"><div class="spinner-lg"></div><p class="text-slate-500">加载中...</p></div></div>
-    <div v-else class="card-body space-y-3">
-      <div class="editor-container">
-        <Codemirror v-model="raw" class="h-[65vh]" :extensions="extensions" />
+    <div v-else class="card-body flex-1 min-h-0 flex flex-col gap-3">
+      <div class="editor-container flex-1 min-h-[16rem]">
+        <Codemirror v-model="raw" :style="{ height: '100%' }" :extensions="extensions" />
       </div>
-      <p class="text-xs text-slate-400 flex items-start gap-1">
+      <p class="text-xs text-slate-400 flex items-start gap-1 flex-shrink-0">
         <i class="fas fa-circle-info mt-0.5 flex-shrink-0"></i>
         <span>提交将通过 <code class="px-1 bg-slate-100 rounded">POST /load</code> 整体替换 Caddy 运行配置，操作前请确保已备份。</span>
       </p>
