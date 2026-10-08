@@ -925,7 +925,7 @@ func analyzeDeclStmtV2(stmt *ast.DeclStmt, r *RouteDef, state *handlerAnalysisSt
 
 // analyzeCallExprV2 处理函数调用表达式
 func analyzeCallExprV2(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisState) {
-	// 处理直接函数调用（如 respondSuccess、respondError）
+	// 处理直接函数调用（如 respondSuccess、respondResult、respondResultMsg、respondError）
 	if ident, ok := stmt.Fun.(*ast.Ident); ok {
 		switch ident.Name {
 		case "respondSuccess":
@@ -937,6 +937,12 @@ func analyzeCallExprV2(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisSt
 			// respondResult(c, data, err)：data 位于第 2 个参数
 			if len(stmt.Args) >= 3 {
 				analyzeRespondData(stmt.Args[1], r, state)
+			}
+			return
+		case "respondResultMsg":
+			// respondResultMsg(c, msg, data, err)：data 位于第 3 个参数
+			if len(stmt.Args) >= 4 {
+				analyzeRespondData(stmt.Args[2], r, state)
 			}
 			return
 		case "respondError":

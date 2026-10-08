@@ -53,3 +53,13 @@ func respondResult(c *gin.Context, data any, err error) {
 	}
 	respondSuccess(c, "", data)
 }
+
+// respondResultMsg 与 respondResult 相同，但成功时携带自定义提示文案；
+// 无数据负载的操作类接口 data 传 nil。
+func respondResultMsg(c *gin.Context, message string, data any, err error) {
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondSuccess(c, message, data)
+}

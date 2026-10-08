@@ -137,7 +137,7 @@ docs/
 ### HTTP 与响应
 
 - 状态码用 `net/http` 常量；HTTP JSON 响应统一走 `server/app/response.go` 的 `respondSuccess`、`respondError`、`respondResult`
-- `respondResult` 仅用于“成功 200、service 错误 500”的标准查询；需要 400/404/503 或自定义成功文案时显式调用对应响应函数
+- `respondResult` 仅用于“成功 200、service 错误 500”的标准查询；需要自定义成功文案时用 `respondResultMsg(c, "中文提示", data, err)`（无数据负载传 `nil`）；需要 400/404/503 等其他状态码时显式调用对应响应函数。`server/cmd/openapi-gen` 识别 `respondSuccess`、`respondResult`、`respondResultMsg` 三者推断响应类型，新增响应封装函数时须同步更新生成器
 - 绑定优先 `ShouldBindJSON/ShouldBindQuery/ShouldBindURI`，绑定失败返回 `err.Error()`
 - WebSocket 统一用 `wsConfig.Handler()`，不在 handler 中定义私有配置
 
