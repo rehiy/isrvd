@@ -86,7 +86,7 @@ func (s *Service) RegistryCreate(req RegistryUpsertRequest) error {
 		}
 		dockerConfig.Registries = append(dockerConfig.Registries, &config.DockerRegistry{
 			Name: req.Name, URL: req.URL, Username: req.Username,
-			Password: req.Password, Description: req.Description,
+			Password: config.SecretKeep(req.Password, ""), Description: req.Description,
 		})
 		return nil
 	})
@@ -108,13 +108,10 @@ func (s *Service) RegistryUpdate(originalURL string, req RegistryUpsertRequest) 
 		if req.URL != originalURL && registryIndex(dockerConfig.Registries, req.URL) >= 0 {
 			return fmt.Errorf("仓库地址已存在: %s", req.URL)
 		}
-		password := req.Password
-		if password == "" {
-			password = dockerConfig.Registries[index].Password
-		}
 		dockerConfig.Registries[index] = &config.DockerRegistry{
 			Name: req.Name, URL: req.URL, Username: req.Username,
-			Password: password, Description: req.Description,
+			Password:    config.SecretKeep(req.Password, dockerConfig.Registries[index].Password),
+			Description: req.Description,
 		}
 		return nil
 	})

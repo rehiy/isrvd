@@ -9,7 +9,6 @@ package caddy
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"isrvd/pkgs/caddy"
 	"isrvd/server/config"
@@ -18,7 +17,11 @@ import (
 // DefaultServerName 默认 server 名（业务约定，唯一一份）
 const DefaultServerName = "srv0"
 
-// CertSource 证书来源类型
+// CertSource 证书来源类型。
+//
+// 注意：file / pem / automate 三个取值在 server/service/notify/fault.go 中有同值副本
+// （caddyCertSourceFile / caddyCertSourcePEM / caddyCertSourceAutomate），用于证书到期告警。
+// 修改这里的取值时必须同步修改那里。
 const (
 	CertSourceFile     = "file"     // load_files：磁盘文件路径
 	CertSourcePEM      = "pem"      // load_pem：内联 PEM
@@ -86,12 +89,4 @@ func ensureTLS(cfg *caddy.Config) *caddy.TLSApp {
 		cfg.Apps.TLS = &caddy.TLSApp{}
 	}
 	return cfg.Apps.TLS
-}
-
-// pickSecretStr 新值非空时用新值，否则保留旧值（与 system/config.go pickSecret 逻辑一致）
-func pickSecretStr(newVal, oldVal string) string {
-	if strings.TrimSpace(newVal) != "" {
-		return newVal
-	}
-	return oldVal
 }

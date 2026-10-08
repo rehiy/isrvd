@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 
 	"isrvd/server/config"
 )
@@ -98,7 +97,7 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 		oldRoot := draft.Server.RootDirectory
 		newRoot := oldRoot
 		if req.Server != nil {
-			req.Server.JWTSecret = pickSecret(req.Server.JWTSecret, draft.Server.JWTSecret)
+			req.Server.JWTSecret = config.SecretKeep(req.Server.JWTSecret, draft.Server.JWTSecret)
 			req.Server = config.ServerNormalize(req.Server)
 			newRoot = req.Server.RootDirectory
 			if oldRoot != newRoot {
@@ -124,21 +123,21 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 			draft.Passkey = req.Passkey
 		}
 		if req.OIDC != nil {
-			req.OIDC.ClientSecret = pickSecret(req.OIDC.ClientSecret, draft.OIDC.ClientSecret)
+			req.OIDC.ClientSecret = config.SecretKeep(req.OIDC.ClientSecret, draft.OIDC.ClientSecret)
 			draft.OIDC = req.OIDC
 		}
 		if req.THA != nil {
 			draft.THA = req.THA
 		}
 		if req.Copilot != nil {
-			req.Copilot.APIKey = pickSecret(req.Copilot.APIKey, draft.Copilot.APIKey)
+			req.Copilot.APIKey = config.SecretKeep(req.Copilot.APIKey, draft.Copilot.APIKey)
 			draft.Copilot = req.Copilot
 		}
 		if req.Notify != nil {
 			draft.Notify = req.Notify
 		}
 		if req.Apisix != nil {
-			req.Apisix.AdminKey = pickSecret(req.Apisix.AdminKey, draft.Apisix.AdminKey)
+			req.Apisix.AdminKey = config.SecretKeep(req.Apisix.AdminKey, draft.Apisix.AdminKey)
 			draft.Apisix = req.Apisix
 		}
 		if req.Caddy != nil {
@@ -152,15 +151,18 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 				)
 			}
 			for _, registry := range req.Docker.Registries {
-				if registry == nil || registry.Password != "" {
+				if registry == nil {
 					continue
 				}
+				// 按 url+username 匹配旧仓库；匹配不到时没有可保留的旧值
+				var oldPassword string
 				for _, old := range draft.Docker.Registries {
 					if old != nil && old.URL == registry.URL && old.Username == registry.Username {
-						registry.Password = old.Password
+						oldPassword = old.Password
 						break
 					}
 				}
+				registry.Password = config.SecretKeep(registry.Password, oldPassword)
 			}
 			draft.Docker = req.Docker
 		}
@@ -196,13 +198,4 @@ func deepCopyJSON[T any](src T) (T, error) {
 	}
 	err = json.Unmarshal(data, &dst)
 	return dst, err
-}
-
-// pickSecret 新值为空（含纯空白）时保留原值，否则用裁剪首尾空白后的新值
-func pickSecret(newVal, oldVal string) string {
-	newVal = strings.TrimSpace(newVal)
-	if newVal == "" {
-		return oldVal
-	}
-	return newVal
 }

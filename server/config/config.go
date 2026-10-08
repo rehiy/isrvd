@@ -1,9 +1,24 @@
 package config
 
-import "path/filepath"
+import (
+	"path/filepath"
+	"strings"
+)
 
 // Version 版本信息（编译时通过脚本注入）
 var Version = "v0.0.0"
+
+// SecretKeep 处理"留空保留原值"的密钥类字段：
+// newVal 去除首尾空白后为空则返回 oldVal，否则返回去除首尾空白后的 newVal。
+// 所有可由 API 写入且响应时不回显的密钥（JWT、OIDC、Copilot、APISIX、镜像仓库密码、Caddy 私钥等）
+// 统一使用本函数，避免各处对空白的处理不一致。
+func SecretKeep(newVal, oldVal string) string {
+	newVal = strings.TrimSpace(newVal)
+	if newVal == "" {
+		return oldVal
+	}
+	return newVal
+}
 
 // ServerNormalize 填充 Server 默认值并归一化路径
 func ServerNormalize(server *ServerConfig) *ServerConfig {

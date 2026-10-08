@@ -13,6 +13,7 @@ import (
 	"github.com/rehiy/libgo/certify"
 
 	"isrvd/pkgs/caddy"
+	"isrvd/server/config"
 )
 
 // ─── SSL 证书 CRUD ───
@@ -108,14 +109,14 @@ func (s *Service) CertCreate(ctx context.Context, req CertForm) error {
 		case CertSourceFile:
 			ensureCerts(tls).LoadFiles = append(tls.Certificates.LoadFiles, caddy.TLSLoadFile{
 				Certificate: req.Certificate,
-				Key:         req.KeyContent,
+				Key:         config.SecretKeep(req.KeyContent, ""),
 				Tags:        req.Tags,
 				Format:      req.Format,
 			})
 		case CertSourcePEM:
 			ensureCerts(tls).LoadPEM = append(tls.Certificates.LoadPEM, caddy.TLSLoadPEM{
 				Certificate: req.Certificate,
-				Key:         req.KeyContent,
+				Key:         config.SecretKeep(req.KeyContent, ""),
 				Tags:        req.Tags,
 			})
 		case CertSourceAutomate:
@@ -148,7 +149,7 @@ func (s *Service) CertUpdate(ctx context.Context, key string, req CertForm) erro
 			}
 			item := &tls.Certificates.LoadFiles[index]
 			item.Certificate = req.Certificate
-			item.Key = pickSecretStr(req.KeyContent, item.Key)
+			item.Key = config.SecretKeep(req.KeyContent, item.Key)
 			item.Tags = req.Tags
 			item.Format = req.Format
 		case CertSourcePEM:
@@ -157,7 +158,7 @@ func (s *Service) CertUpdate(ctx context.Context, key string, req CertForm) erro
 			}
 			item := &tls.Certificates.LoadPEM[index]
 			item.Certificate = req.Certificate
-			item.Key = pickSecretStr(req.KeyContent, item.Key)
+			item.Key = config.SecretKeep(req.KeyContent, item.Key)
 			item.Tags = req.Tags
 		case CertSourceAutomate:
 			if !replaceAutomateSubject(tls, index, req.Subject) {
