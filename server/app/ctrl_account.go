@@ -166,11 +166,7 @@ func (app *App) accountTokenCreate(c *gin.Context) {
 	}
 	username := c.GetString("username")
 	resp, err := app.accountSvc.ApiTokenCreate(username, req)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "令牌创建成功", resp)
+	respondResultMsg(c, "令牌创建成功", resp, err)
 }
 
 // accountPasswordChange 修改当前用户密码
@@ -317,11 +313,7 @@ func (app *App) accountMemberDelete(c *gin.Context) {
 func (app *App) accountPasskeyCredentialList(c *gin.Context) {
 	username := c.GetString("username")
 	credentials, err := app.accountSvc.PasskeyCredentialList(username)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "查询成功", credentials)
+	respondResultMsg(c, "查询成功", credentials, err)
 }
 
 // accountPasskeyRenameCredential 重命名当前用户的指定 Passkey 凭证

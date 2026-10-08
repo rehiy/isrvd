@@ -33,30 +33,18 @@ func (app *App) defineSwarmRoutes() []Route {
 
 func (app *App) swarmInfo(c *gin.Context) {
 	result, err := app.swarmSvc.Info(c.Request.Context())
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "获取 Swarm 信息成功", result)
+	respondResultMsg(c, "获取 Swarm 信息成功", result, err)
 }
 
 func (app *App) swarmNodeList(c *gin.Context) {
 	result, err := app.swarmSvc.NodeList(c.Request.Context())
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "获取节点列表成功", result)
+	respondResultMsg(c, "获取节点列表成功", result, err)
 }
 
 func (app *App) swarmNodeInspect(c *gin.Context) {
 	id := c.Param("id")
 	result, err := app.swarmSvc.NodeInspect(c.Request.Context(), id)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "获取节点详情成功", result)
+	respondResultMsg(c, "获取节点详情成功", result, err)
 }
 
 func (app *App) swarmNodeAction(c *gin.Context) {
@@ -67,30 +55,19 @@ func (app *App) swarmNodeAction(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.swarmSvc.NodeAction(c.Request.Context(), c.Param("id"), req.Action); err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "节点操作成功", nil)
+	err := app.swarmSvc.NodeAction(c.Request.Context(), c.Param("id"), req.Action)
+	respondResultMsg(c, "节点操作成功", nil, err)
 }
 
 func (app *App) swarmServiceList(c *gin.Context) {
 	result, err := app.swarmSvc.ServiceList(c.Request.Context())
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "获取服务列表成功", result)
+	respondResultMsg(c, "获取服务列表成功", result, err)
 }
 
 func (app *App) swarmServiceInspect(c *gin.Context) {
 	id := c.Param("id")
 	result, err := app.swarmSvc.ServiceInspect(c.Request.Context(), id)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "获取服务详情成功", result)
+	respondResultMsg(c, "获取服务详情成功", result, err)
 }
 
 func (app *App) swarmServiceCreate(c *gin.Context) {
@@ -116,11 +93,8 @@ func (app *App) swarmServiceAction(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := app.swarmSvc.ServiceAction(c.Request.Context(), c.Param("id"), req.Action, req.Replicas); err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "服务操作成功", nil)
+	err := app.swarmSvc.ServiceAction(c.Request.Context(), c.Param("id"), req.Action, req.Replicas)
+	respondResultMsg(c, "服务操作成功", nil, err)
 }
 
 func (app *App) swarmServiceLogs(c *gin.Context) {
@@ -152,18 +126,10 @@ func (app *App) swarmServiceLogsStream(c *gin.Context) {
 func (app *App) swarmTaskList(c *gin.Context) {
 	serviceID := c.Query("serviceID")
 	result, err := app.swarmSvc.TaskList(c.Request.Context(), serviceID)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "获取任务列表成功", result)
+	respondResultMsg(c, "获取任务列表成功", result, err)
 }
 
 func (app *App) swarmJoinToken(c *gin.Context) {
 	result, err := app.swarmSvc.JoinToken(c.Request.Context())
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "获取加入令牌成功", result)
+	respondResultMsg(c, "获取加入令牌成功", result, err)
 }

@@ -41,11 +41,7 @@ func (app *App) composeDockerInspect(c *gin.Context) {
 		return
 	}
 	detail, err := app.composeSvc.DockerInspect(c.Request.Context(), name, forceRuntime)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "获取 compose 文件成功", detail)
+	respondResultMsg(c, "获取 compose 文件成功", detail, err)
 }
 
 func (app *App) composeSwarmInspect(c *gin.Context) {
@@ -61,11 +57,7 @@ func (app *App) composeSwarmInspect(c *gin.Context) {
 		return
 	}
 	detail, err := app.composeSvc.SwarmInspect(c.Request.Context(), name, forceRuntime)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "获取 compose 文件成功", detail)
+	respondResultMsg(c, "获取 compose 文件成功", detail, err)
 }
 
 func (app *App) composeDockerHistoryList(c *gin.Context) {
@@ -92,11 +84,7 @@ func (app *App) composeDockerDeploy(c *gin.Context) {
 		return
 	}
 	result, err := app.composeSvc.DockerDeploy(c.Request.Context(), req)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "部署成功", result)
+	respondResultMsg(c, "部署成功", result, err)
 }
 
 func (app *App) composeSwarmDeploy(c *gin.Context) {
@@ -105,11 +93,7 @@ func (app *App) composeSwarmDeploy(c *gin.Context) {
 		return
 	}
 	result, err := app.composeSvc.SwarmDeploy(c.Request.Context(), req)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "部署成功", result)
+	respondResultMsg(c, "部署成功", result, err)
 }
 
 func (app *App) composeDockerRedeploy(c *gin.Context) {
@@ -123,11 +107,7 @@ func (app *App) composeDockerRedeploy(c *gin.Context) {
 		return
 	}
 	result, err := app.composeSvc.DockerRedeploy(c.Request.Context(), name, req)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "重建成功", result)
+	respondResultMsg(c, "重建成功", result, err)
 }
 
 func (app *App) composeSwarmRedeploy(c *gin.Context) {
@@ -141,11 +121,7 @@ func (app *App) composeSwarmRedeploy(c *gin.Context) {
 		return
 	}
 	result, err := app.composeSvc.SwarmRedeploy(c.Request.Context(), name, req)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondSuccess(c, "重建成功", result)
+	respondResultMsg(c, "重建成功", result, err)
 }
 
 // ─── 辅助函数 ───
