@@ -417,17 +417,18 @@
   }
   .toggle.toggle-on .toggle-thumb       { @apply translate-x-5; }
 
-  /* toggle-expand-card —— 收缩时是普通 toggle-row，展开时外层变 card */
+  /* toggle-expand-card —— 收缩时是普通 toggle-row，展开时外层变 card
+     注意必须用子选择器（>）：内容区里可以再放 ToggleCard，后代选择器会误伤内层的 toggle-row */
   .toggle-expand-card {
     @apply rounded-xl;
   }
-  .toggle-expand-card .toggle-row {
+  .toggle-expand-card > .toggle-row {
     @apply border border-slate-200;
   }
   .toggle-expand-card-open {
     @apply border border-slate-300 rounded-xl overflow-hidden;
   }
-  .toggle-expand-card-open .toggle-row {
+  .toggle-expand-card-open > .toggle-row {
     @apply border-0 rounded-none bg-slate-50;
   }
   .toggle-expand-body {

@@ -45,6 +45,7 @@ export default toNative(ToggleCard)
         :class="{ 'toggle-on': modelValue, 'toggle-violet': violet, 'opacity-50 cursor-not-allowed': disabled }"
         :disabled="disabled"
         role="switch"
+        :aria-label="label"
         :aria-checked="modelValue"
         @click="toggle"
       >
@@ -73,6 +74,7 @@ export default toNative(ToggleCard)
       :class="{ 'toggle-on': modelValue, 'toggle-violet': violet, 'opacity-50 cursor-not-allowed': disabled }"
       :disabled="disabled"
       role="switch"
+      :aria-label="label"
       :aria-checked="modelValue"
       @click="toggle"
     >

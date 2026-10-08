@@ -151,12 +151,12 @@ export default toNative(CaddyGlobalConfig)
           <ToggleCard v-model="localCerts" :violet="true" label="使用本地自签证书（internal issuer）" desc="不走 ACME，由 Caddy 自动签发本地信任证书；启用后 ACME 邮箱和目录设置将被忽略" />
           <ToggleCard v-model="onDemandTLS" :violet="true" label="启用 On-Demand TLS">
             <template #desc>连接时动态申请证书，适合域名数量不固定的多租户场景；生产环境需配合 <code class="px-1 bg-slate-100 rounded">ask</code> 端点防滥用</template>
+            <div>
+              <label class="form-label">Ask 鉴权端点</label>
+              <input v-model="onDemandAsk" type="text" class="input" placeholder="请输入 Ask 鉴权端点（可选）" />
+              <p class="text-xs text-slate-400 mt-1">Caddy 在申请证书前会向此 URL 发起 GET 请求，返回 2xx 则允许，例如：http://localhost:9090/tls-ask；留空时不配置鉴权（仅测试环境使用）</p>
+            </div>
           </ToggleCard>
-          <div v-if="onDemandTLS" class="form-row">
-            <label class="form-label">Ask 鉴权端点</label>
-            <input v-model="onDemandAsk" type="text" class="input" placeholder="请输入 Ask 鉴权端点（可选）" />
-            <p class="text-xs text-slate-400 mt-1">Caddy 在申请证书前会向此 URL 发起 GET 请求，返回 2xx 则允许，例如：http://localhost:9090/tls-ask；留空时不配置鉴权（仅测试环境使用）</p>
-          </div>
         </div>
       </div>
 
