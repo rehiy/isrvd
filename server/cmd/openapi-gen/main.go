@@ -933,6 +933,12 @@ func analyzeCallExprV2(stmt *ast.CallExpr, r *RouteDef, state *handlerAnalysisSt
 				analyzeRespondSuccessV2(stmt, r, state)
 			}
 			return
+		case "respondResult":
+			// respondResult(c, data, err)：data 位于第 2 个参数
+			if len(stmt.Args) >= 3 {
+				analyzeRespondData(stmt.Args[1], r, state)
+			}
+			return
 		case "respondError":
 			// 错误处理，无需特殊处理
 			return
@@ -1028,9 +1034,12 @@ func analyzeRespondSuccessV2(call *ast.CallExpr, r *RouteDef, state *handlerAnal
 	if len(call.Args) < 3 {
 		return
 	}
+	analyzeRespondData(call.Args[2], r, state)
+}
 
-	dataArg := call.Args[2]
-
+// analyzeRespondData 根据响应 data 参数表达式推断 payload 类型，
+// 供 respondSuccess(c, msg, data) 与 respondResult(c, data, err) 共用
+func analyzeRespondData(dataArg ast.Expr, r *RouteDef, state *handlerAnalysisState) {
 	// 情况 1: nil → 无 payload
 	if ident, ok := dataArg.(*ast.Ident); ok && ident.Name == "nil" {
 		return
