@@ -35,6 +35,10 @@ func (s *DockerService) SelfContainerID(ctx context.Context) string {
 // 1. 优先使用 mountinfo 匹配 overlay 存储驱动的 upperdir/workdir (最精准，兼容 host 网络)。
 // 2. 降级使用 IP 匹配网络端点 (兼容 btrfs/zfs 等非 overlay 存储驱动)。
 // 3. 降级使用 hostname 兜底。
+//
+// daemon 位于其他主机时（Remote），只采用第 1 种：upperdir/workdir 是宿主机上带层哈希的路径，
+// 不会与另一台主机的容器碰撞；而 IP、hostname 在不同主机间极易重复（默认网桥都是 172.17.0.x），
+// 会把远程容器误判为自身，进而被禁止停止或删除。
 func (s *DockerService) resolveSelfContainerID(ctx context.Context) string {
 	selfMounts := make(map[string]bool)
 	if data, err := os.ReadFile("/proc/self/mountinfo"); err == nil {
@@ -72,6 +76,11 @@ func (s *DockerService) resolveSelfContainerID(ctx context.Context) string {
 		}
 	}
 
+	remote := s.Remote()
+	if remote && len(selfMounts) == 0 {
+		return "" // 没有可靠的识别依据，宁可不识别
+	}
+
 	hostname, _ := os.Hostname()
 
 	containers, err := s.client.ContainerList(ctx, container.ListOptions{All: true})
@@ -88,6 +97,10 @@ func (s *DockerService) resolveSelfContainerID(ctx context.Context) string {
 					}
 				}
 			}
+		}
+
+		if remote {
+			continue
 		}
 
 		hasIP := false

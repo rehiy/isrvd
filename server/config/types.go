@@ -134,8 +134,18 @@ type CaddyConfig struct {
 // Docker 配置
 type DockerConfig struct {
 	Host          string            `yaml:"host" json:"host"`                       // Docker 连接地址
+	TLS           *DockerTLSConfig  `yaml:"tls,omitempty" json:"tls,omitempty"`     // 远程 daemon 的 TLS 连接参数
 	ContainerRoot string            `yaml:"containerRoot" json:"containerRoot"`     // 容器数据根目录
 	Registries    []*DockerRegistry `yaml:"registries" json:"registries,omitempty"` // 镜像仓库配置列表
+}
+
+// Docker TLS 连接配置；证书与私钥以 PEM 文本保存，随配置一同存入本地 YAML 或 etcd
+type DockerTLSConfig struct {
+	Enabled    bool   `yaml:"enabled" json:"enabled"`             // 是否启用 TLS（Host 必须为 tcp:// 地址）
+	SkipVerify bool   `yaml:"skipVerify" json:"skipVerify"`       // 不校验服务端证书，仅用于测试环境
+	CA         string `yaml:"ca,omitempty" json:"ca"`             // 校验服务端证书的 CA（PEM）；留空使用系统根证书
+	Cert       string `yaml:"cert,omitempty" json:"cert"`         // 客户端证书（PEM），双向认证时配置，需与私钥成对
+	Key        string `yaml:"key,omitempty" json:"key,omitempty"` // 客户端私钥（PEM）：写入时为空表示保留原值；响应时不返回
 }
 
 // 镜像仓库配置

@@ -33,8 +33,14 @@ func NewService() (*Service, error) {
 		})
 	}
 
+	var tlsConfig *docker.TLSConfig
+	if t := snapshot.Docker.TLS; t != nil && t.Enabled {
+		tlsConfig = &docker.TLSConfig{SkipVerify: t.SkipVerify, CA: t.CA, Cert: t.Cert, Key: t.Key}
+	}
+
 	svc, err := docker.NewDockerService(&docker.DockerConfig{
 		Host:          snapshot.Docker.Host,
+		TLS:           tlsConfig,
 		ContainerRoot: snapshot.Docker.ContainerRoot,
 		Registries:    registries,
 	})

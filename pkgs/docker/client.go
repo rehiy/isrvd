@@ -2,6 +2,10 @@ package docker
 
 import (
 	"context"
+	"fmt"
+	"net"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/docker/docker/api/types/system"
@@ -15,6 +19,8 @@ type DockerService struct {
 	config     *DockerConfig
 	registryMu sync.RWMutex // 保护 config.Registries 的并发读写
 
+	remote bool // daemon 是否位于 isrvd 之外的主机，见 isRemoteHost
+
 	selfID     string
 	selfIDOnce sync.Once
 	closeOnce  sync.Once
@@ -24,6 +30,7 @@ type DockerService struct {
 // DockerConfig Docker 配置（由外部注入，解除对 config 的依赖）
 type DockerConfig struct {
 	Host          string            // Docker 连接地址
+	TLS           *TLSConfig        // 远程 daemon 的 TLS 参数；为 nil 表示不使用 TLS
 	ContainerRoot string            // 容器数据根目录
 	Registries    []*RegistryConfig // 镜像仓库配置列表
 }
@@ -45,6 +52,13 @@ func NewDockerService(cfg *DockerConfig) (*DockerService, error) {
 	} else {
 		opts = append(opts, client.FromEnv)
 	}
+	if cfg.TLS != nil {
+		tlsConfig, err := cfg.TLS.Config(cfg.Host)
+		if err != nil {
+			return nil, fmt.Errorf("Docker TLS 配置无效: %w", err)
+		}
+		opts = append(opts, withTLSConfig(tlsConfig))
+	}
 
 	cli, err := client.NewClientWithOpts(opts...)
 	if err != nil {
@@ -52,7 +66,7 @@ func NewDockerService(cfg *DockerConfig) (*DockerService, error) {
 		return nil, err
 	}
 
-	return &DockerService{client: cli, config: cfg}, nil
+	return &DockerService{client: cli, config: cfg, remote: isRemoteHost(cfg.Host)}, nil
 }
 
 // Client 获取 Docker 客户端
@@ -68,6 +82,39 @@ func (s *DockerService) Close() error {
 		}
 	})
 	return s.closeErr
+}
+
+// Remote 返回 daemon 是否可能位于 isrvd 之外的主机（tcp:// 且不是回环地址）。
+// 这类 daemon 上的容器不能靠本机的 IP、主机名识别自身（两台主机常常都使用 172.17.0.x），
+// 也不能用本机文件系统检查 bind 挂载源。判定只看地址，与是否启用 TLS 无关。
+func (s *DockerService) Remote() bool {
+	return s != nil && s.remote
+}
+
+// isRemoteHost 判断 Docker Host 是否指向 isrvd 之外的主机。
+// host 为空时与 SDK 一致，回退到环境变量 DOCKER_HOST。
+// unix://、npipe:// 与回环地址的 tcp:// 视为本机；其余 tcp:// 视为远程，
+// 包括 tcp://docker-proxy:2375 这类容器网络内的别名：无法确认它与 isrvd 同机，按远程保守处理。
+func isRemoteHost(host string) bool {
+	if strings.TrimSpace(host) == "" {
+		host = os.Getenv(client.EnvOverrideHost)
+	}
+	proto, addr, ok := strings.Cut(strings.TrimSpace(host), "://")
+	if !ok || proto != "tcp" {
+		return false
+	}
+	name := addr
+	if h, _, err := net.SplitHostPort(addr); err == nil {
+		name = h
+	}
+	name = strings.Trim(name, "[]")
+	if strings.EqualFold(name, "localhost") {
+		return false
+	}
+	if ip := net.ParseIP(name); ip != nil && ip.IsLoopback() {
+		return false
+	}
+	return true
 }
 
 // ContainerRoot 获取容器数据根目录

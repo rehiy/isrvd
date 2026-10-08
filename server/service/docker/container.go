@@ -437,6 +437,9 @@ func (s *Service) resolveBindSource(containerName, source string) (string, error
 	if root := s.docker.ContainerRoot(); root != "" && !filepath.IsAbs(bindSource) {
 		bindSource = filepath.Join(root, containerName, bindSource)
 	}
+	if s.docker.Remote() {
+		return bindSource, nil // 挂载源位于远程主机，本机无法检查
+	}
 	if _, err := os.Stat(bindSource); err != nil && !os.IsNotExist(err) {
 		return "", fmt.Errorf("检查挂载源失败: %w", err)
 	}

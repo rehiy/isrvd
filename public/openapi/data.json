@@ -9544,6 +9544,10 @@
               "type": "object"
             },
             "type": "array"
+          },
+          "tls": {
+            "description": "远程 daemon 的 TLS 连接参数",
+            "type": "object"
           }
         },
         "type": "object"
@@ -9569,6 +9573,31 @@
           "username": {
             "description": "用户名（可选）",
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "config.DockerTLSConfig": {
+        "properties": {
+          "ca": {
+            "description": "校验服务端证书的 CA（PEM）；留空使用系统根证书",
+            "type": "string"
+          },
+          "cert": {
+            "description": "客户端证书（PEM），双向认证时配置，需与私钥成对",
+            "type": "string"
+          },
+          "enabled": {
+            "description": "是否启用 TLS（Host 必须为 tcp:// 地址）",
+            "type": "boolean"
+          },
+          "key": {
+            "description": "客户端私钥（PEM）：写入时为空表示保留原值；响应时不返回",
+            "type": "string"
+          },
+          "skipVerify": {
+            "description": "不校验服务端证书，仅用于测试环境",
+            "type": "boolean"
           }
         },
         "type": "object"
@@ -10711,6 +10740,10 @@
               "type": "object"
             },
             "type": "array"
+          },
+          "TLS": {
+            "description": "远程 daemon 的 TLS 参数；为 nil 表示不使用 TLS",
+            "type": "object"
           }
         },
         "type": "object"
@@ -11289,6 +11322,27 @@
           "txPackets": {
             "description": "发送包数",
             "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "docker.TLSConfig": {
+        "properties": {
+          "CA": {
+            "description": "校验服务端证书的 CA；为空时使用系统根证书",
+            "type": "string"
+          },
+          "Cert": {
+            "description": "客户端证书（双向认证，需与 Key 成对配置）",
+            "type": "string"
+          },
+          "Key": {
+            "description": "客户端私钥",
+            "type": "string"
+          },
+          "SkipVerify": {
+            "description": "不校验服务端证书（仅用于测试环境）",
+            "type": "boolean"
           }
         },
         "type": "object"

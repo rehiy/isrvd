@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
+	"isrvd/pkgs/docker"
 	"isrvd/server/config"
 )
 
@@ -73,6 +75,9 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 		dst.Apisix.AdminKey = ""
 	}
 	if dst.Docker != nil {
+		if dst.Docker.TLS != nil {
+			dst.Docker.TLS.Key = ""
+		}
 		for _, registry := range dst.Docker.Registries {
 			if registry != nil {
 				registry.Password = ""
@@ -144,6 +149,9 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 			draft.Caddy = req.Caddy
 		}
 		if req.Docker != nil {
+			if err := dockerTLSMerge(req.Docker, draft.Docker); err != nil {
+				return err
+			}
 			if oldRoot != newRoot && draft.Docker != nil &&
 				req.Docker.ContainerRoot == draft.Docker.ContainerRoot {
 				req.Docker.ContainerRoot = config.PathToAbs(
@@ -188,6 +196,33 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 }
 
 // ─── 辅助函数 ───
+
+// dockerTLSMerge 合并 Docker TLS 配置：私钥留空保留原值，并在保存前校验证书可用。
+// 未启用 TLS 时不校验，保留已填写的证书便于之后重新启用。
+func dockerTLSMerge(req, draft *config.DockerConfig) error {
+	t := req.TLS
+	var oldKey string
+	if draft != nil && draft.TLS != nil {
+		oldKey = draft.TLS.Key
+		if t == nil {
+			t = draft.TLS // 请求未携带 tls 子配置时沿用原值，避免旧调用方静默清空证书
+			req.TLS = t
+		}
+	}
+	if t == nil {
+		return nil
+	}
+	if strings.TrimSpace(t.Cert) == "" {
+		t.Key = "" // 没有客户端证书时私钥无意义，同时允许借此清除旧私钥
+	} else {
+		t.Key = config.SecretKeep(t.Key, oldKey)
+	}
+	if !t.Enabled {
+		return nil
+	}
+	_, err := (&docker.TLSConfig{SkipVerify: t.SkipVerify, CA: t.CA, Cert: t.Cert, Key: t.Key}).Config(req.Host)
+	return err
+}
 
 // deepCopyJSON 通过 JSON 序列化-反序列化深拷贝，结果与源对象无共享指针
 func deepCopyJSON[T any](src T) (T, error) {
