@@ -24,7 +24,7 @@ isrvd_get "/caddy/certs"
 | notAfter | string | 证书过期时间（RFC3339，`automate` 通常为空） |
 | sans | string[] | Subject Alternative Names（DNS） |
 
-> 列表接口不返回 `keyContent`；更新时留空表示保留原私钥。
+> 列表接口不返回 `keyContent`；更新时留空（含纯空白）表示保留原私钥。`keyContent` 非空时（新建与更新）均会去除首尾空白后保存。
 > `cached` 来源为 Caddy 自动签发后的运行时缓存证书，只读展示，不支持编辑/删除。
 
 ## 添加证书
@@ -75,7 +75,7 @@ isrvd_put "/caddy/cert/file-0" '{
 ```
 
 > 不允许跨来源更新（例如 `file-0 → pem`）；如果要换来源，请先删除再创建。
-> 更新为全量替换：`file` / `pem` 需提交 `certificate`，`automate` 需提交 `subject`；`tags`、`format` 按请求覆盖（不传即清空）；仅 `keyContent` 留空时保留原私钥。证书不存在返回 400。
+> 更新为全量替换：`file` / `pem` 需提交 `certificate`，`automate` 需提交 `subject`；`tags`、`format` 按请求覆盖（不传即清空）；仅 `keyContent` 留空（含纯空白）时保留原私钥。证书不存在返回 400。
 
 ## 删除证书
 

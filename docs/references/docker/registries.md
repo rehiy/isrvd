@@ -19,7 +19,7 @@ isrvd_get "/docker/registries"
 isrvd_post "/docker/registry" '{"name":"<NAME>","url":"<REGISTRY_URL>","username":"<USER>","password":"<PASS>","description":"<DESC>"}'
 ```
 
-`name`、`url` 必填；仓库以 `url` 作为唯一键，重复时返回 400"仓库地址已存在"。
+`name`、`url` 必填；仓库以 `url` 作为唯一键，重复时返回 400"仓库地址已存在"。密码会去除首尾空白后保存。
 
 ## 更新仓库
 
@@ -27,7 +27,7 @@ isrvd_post "/docker/registry" '{"name":"<NAME>","url":"<REGISTRY_URL>","username
 isrvd_put "/docker/registry?url=<REGISTRY_URL>" '{"name":"<NAME>","url":"<REGISTRY_URL>","username":"<USER>","password":"<PASS>","description":"<DESC>"}'
 ```
 
-> Query 中的 `url` 为原仓库地址（必填）；密码为空时保留原密码。原仓库不存在或新 `url` 与其他仓库冲突时返回 400。
+> Query 中的 `url` 为原仓库地址（必填）；密码为空（含纯空白）时保留原密码，非空密码会去除首尾空白后保存。原仓库不存在或新 `url` 与其他仓库冲突时返回 400。
 
 ## 删除仓库
 

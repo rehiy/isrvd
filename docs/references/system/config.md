@@ -127,7 +127,7 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 
 配置说明：
 
-- `clientSecret`、`jwtSecret`、`apiKey`、`adminKey`、`docker.registries[].password` 等敏感字段不会通过 GET 返回；PUT 时为空表示保留原值。启动加载配置时，如果 `server.jwtSecret` 为空或仍为示例值 `your-jwt-secret`，系统会使用密码学安全随机源生成 256 位密钥并写回配置；手动配置的密钥不能少于 32 个字符。
+- `clientSecret`、`jwtSecret`、`apiKey`、`adminKey`、`docker.registries[].password` 等敏感字段不会通过 GET 返回；PUT 时为空（含纯空白）表示保留原值，非空值会去除首尾空白后保存；`docker.registries[].password` 按 `url` + `username` 匹配旧仓库后保留原值。启动加载配置时，如果 `server.jwtSecret` 为空或仍为示例值 `your-jwt-secret`，系统会使用密码学安全随机源生成 256 位密钥并写回配置；手动配置的密钥不能少于 32 个字符。
 - `password.disabled` 设为 `true` 后，密码登录接口（`POST /api/account/login`）将直接拒绝请求，前端也会隐藏密码登录表单，仅保留 Passkey、OIDC 或代理 Header（THA）登录方式。后端会拒绝关闭全部登录方式的配置。
 - `password.minLength` 密码最小长度，默认 6；创建成员和修改密码时后端同步校验，前端提示文案也会动态更新。
 - 启用 OIDC 时，`oidc.issuerUrl` 和 `oidc.redirectUrl` 必须显式配置为合法的 HTTP(S) 绝对地址，`oidc.clientId` 不能为空。
