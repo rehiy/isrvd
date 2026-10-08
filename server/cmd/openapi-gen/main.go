@@ -1957,11 +1957,8 @@ func buildDataSchema(typeName string, allSchemas map[string]*SchemaInfo) map[str
 			} else {
 				// schema 不存在，返回基本 object 类型
 				return map[string]any{
-					"type": "array",
-					"items": map[string]any{
-						"type":        "object",
-						"description": "Schema not found: " + schemaName,
-					},
+					"type":  "array",
+					"items": missingSchema(schemaName),
 				}
 			}
 		}
@@ -1996,11 +1993,8 @@ func buildDataSchema(typeName string, allSchemas map[string]*SchemaInfo) map[str
 		if _, exists := allSchemas[schemaName]; !exists {
 			// schema 不存在，返回基本 object 类型
 			return map[string]any{
-				"type": "array",
-				"items": map[string]any{
-					"type":        "object",
-					"description": "Schema not found: " + schemaName,
-				},
+				"type":  "array",
+				"items": missingSchema(schemaName),
 			}
 		}
 
@@ -2037,14 +2031,59 @@ func buildDataSchema(typeName string, allSchemas map[string]*SchemaInfo) map[str
 	// 检查 schema 是否存在
 	if _, exists := allSchemas[schemaName]; !exists {
 		// schema 不存在，返回基本 object 类型
-		return map[string]any{
-			"type":        "object",
-			"description": "Schema not found: " + schemaName,
-		}
+		return missingSchema(schemaName)
 	}
 
 	return map[string]any{
 		"$ref": "#/components/schemas/" + schemaName,
+	}
+}
+
+// externalSchemas 无法从仓库源码解析的第三方类型（如 libgo 的类型别名）的手写描述。
+// 字段需与第三方定义保持一致，升级依赖时同步核对。
+var externalSchemas = map[string]map[string]any{
+	// github.com/rehiy/libgo/webssh.ListResult
+	"webssh.SFTPListResult": {
+		"type": "object",
+		"properties": map[string]any{
+			"path": map[string]any{"type": "string", "description": "实际目录路径"},
+			"files": map[string]any{
+				"type": "array",
+				"items": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name":       map[string]any{"type": "string"},
+						"size":       map[string]any{"type": "integer"},
+						"mode":       map[string]any{"type": "string"},
+						"modTime":    map[string]any{"type": "integer"},
+						"isDir":      map[string]any{"type": "boolean"},
+						"isLink":     map[string]any{"type": "boolean"},
+						"linkTarget": map[string]any{"type": "string"},
+					},
+				},
+			},
+		},
+	},
+}
+
+// missingSchema 为找不到定义的类型生成降级 schema：
+// 自由结构（gin.H、map、json.RawMessage）按任意对象处理，已登记的第三方类型使用手写描述，
+// 其余保留 "Schema not found" 提示，便于发现真正遗漏的类型。
+func missingSchema(schemaName string) map[string]any {
+	if ext, ok := externalSchemas[schemaName]; ok {
+		return ext
+	}
+	_, name, _ := strings.Cut(schemaName, ".")
+	if schemaName == "gin.H" || schemaName == "json.RawMessage" || name == "map" || strings.HasPrefix(name, "map[") {
+		return map[string]any{
+			"type":                 "object",
+			"description":          "任意 JSON 对象",
+			"additionalProperties": true,
+		}
+	}
+	return map[string]any{
+		"type":        "object",
+		"description": "Schema not found: " + schemaName,
 	}
 }
 
