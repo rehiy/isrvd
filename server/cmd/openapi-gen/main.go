@@ -1506,6 +1506,12 @@ func buildSearchDirs(serviceDir, pkgAlias string) []string {
 			dirs = append(dirs, filepath.Join(projectRoot, td, pkgAlias))
 		}
 		dirs = append(dirs, filepath.Join(projectRoot, pkgAlias)) // 根级包
+		// 类型目录自身即包目录（如 server/config → config）
+		for _, td := range cfg.TypeDirs {
+			if filepath.Base(td) == pkgAlias {
+				dirs = append(dirs, filepath.Join(projectRoot, td))
+			}
+		}
 	}
 
 	if normalized := normalizeAliasToDir(pkgAlias); normalized != "" && normalized != pkgAlias {
