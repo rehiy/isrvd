@@ -32,7 +32,7 @@ server/config ────────────────→ pkgs/cstore
 server/service/{account,apisix,...} → server/config / pkgs/*
 server/service/{docker,webssh} → server/service/shell（终端桥接复用）
 server/service/{cron,monitor} → server/service/notify（任务失败与资源告警）
-server/service/notify ────────→ server/service/caddy + pkgs/apisix + libgo/certify（证书到期检测，客户端由 app 注入）
+server/service/notify ────────→ pkgs/apisix + libgo/certify（证书到期检测，客户端由 app 注入；Caddy 证书经 `notify.CaddyCert` 由 app 适配，notify 不依赖 service/caddy）
 server/app ────────────────→ server/config + server/service/{account,apisix,...} + pkgs/* + public
 ```
 
@@ -221,7 +221,7 @@ docs/
 - 外部依赖不可用时 `app.xxxSvc` 为 `nil`，而不是返回带错误的空对象
 - 会被 nil 接收者调用的访问器（如 `Raw()`）必须做**接收者** nil 安全判断（`if s == nil`），典型调用方 `app.swarmSvc.Raw()` 在服务不可用时会传入 nil
 - `CheckAvailability` 只校验内部字段，由调用点保证接收者非 nil（`initServices` 仅在服务构造成功后才把 `xxxSvc.CheckAvailability` 注册进 `app.probes` 模块表）；新增调用点必须先判空
-- `app.probes` 同时承担可用性判断与探活：key 存在即模块已就绪（`isServiceAvailable`），value 为探活函数（无需探活的本地模块如 `ssh` 注册为 `nil`）；新增依赖外部服务的模块需同时加入 `optionalModules`
+- `app.probes` 同时承担可用性判断与探活：key 存在即模块已就绪（`isServiceAvailable`），value 为探活函数（无需探活的本地模块如 `ssh` 注册为 `nil`）；新增依赖外部服务的模块需先在 `optionalModules` 登记，再通过 `app.markReady(module, probe)` 标记就绪（未登记会告警）
 
 **服务构造函数签名按能力分级**：
 

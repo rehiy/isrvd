@@ -15,7 +15,6 @@ import (
 
 	"isrvd/pkgs/apisix"
 	"isrvd/server/config"
-	"isrvd/server/service/caddy"
 )
 
 const (
@@ -25,6 +24,28 @@ const (
 	certificatePollInterval     = time.Hour
 	certificateReminderInterval = 24 * time.Hour
 )
+
+// Caddy 证书来源类型。
+//
+// 注意：这三个取值是 server/service/caddy 的 CertSourceFile / CertSourcePEM / CertSourceAutomate
+// 的副本，用来避免 notify 依赖 service/caddy。两侧没有编译期约束，修改任一侧的取值
+// 都必须同步修改另一侧，否则证书到期告警会静默漏报（automate 会被当作普通证书、
+// file/pem 的去重标识会变成空）。
+const (
+	caddyCertSourceFile     = "file"
+	caddyCertSourcePEM      = "pem"
+	caddyCertSourceAutomate = "automate"
+)
+
+// CaddyCert 证书到期检测所需的 Caddy 证书字段，由注入方从具体服务转换而来，
+// 避免告警层依赖 server/service/caddy。
+type CaddyCert struct {
+	Key         string     // 列表复合主键，缓存证书用作稳定标识
+	Source      string     // file / pem / automate / cached
+	Subject     string     // 域名或证书 CN
+	Certificate string     // file：证书文件路径；pem：证书 PEM 文本
+	NotAfter    *time.Time // 证书过期时间，无法解析时为 nil
+}
 
 // FaultSources 由服务生命周期注入已初始化的客户端，不在告警层创建连接。
 type FaultSources struct {
@@ -36,7 +57,7 @@ type FaultSources struct {
 		ContainerInspect(context.Context, string) (container.InspectResponse, error)
 	} `json:"-"`
 	Caddy interface {
-		CertList(context.Context) ([]caddy.CertForm, error)
+		CertList(context.Context) ([]CaddyCert, error)
 	} `json:"-"`
 	Apisix interface {
 		SSLList(context.Context) ([]apisix.SSL, error)
@@ -245,7 +266,7 @@ func (w *FaultWatcher) pollCertificates(parent context.Context, now time.Time) {
 		if err == nil && parent.Err() == nil {
 			certs := make([]certificateExpiry, 0, len(list))
 			for _, cert := range list {
-				if cert.Source == caddy.CertSourceAutomate {
+				if cert.Source == caddyCertSourceAutomate {
 					continue // 自动签发策略本身没有证书有效期
 				}
 				key := caddyCertificateKey(cert)
@@ -376,11 +397,11 @@ func JobFailureNotifier(cfg *config.NotifyConfig) func(string, string, string, i
 
 // ─── 辅助函数 ───
 
-func caddyCertificateKey(cert caddy.CertForm) string {
+func caddyCertificateKey(cert CaddyCert) string {
 	switch cert.Source {
-	case caddy.CertSourceFile:
+	case caddyCertSourceFile:
 		return "file:" + cert.Certificate
-	case caddy.CertSourcePEM:
+	case caddyCertSourcePEM:
 		// 使用证书身份而非 PEM 内容，续期后仍可关联原告警。
 		parsed := certify.PEMParse([]byte(cert.Certificate))
 		if parsed == nil {

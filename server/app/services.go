@@ -53,7 +53,7 @@ func (app *App) initServices(ctx context.Context) {
 		app.websshSvc = nil
 	} else {
 		app.websshSvc = websshSvc
-		app.probes["ssh"] = nil // 本地存储，无需探活
+		app.markReady("ssh", nil) // 本地存储，无需探活
 	}
 
 	probeCtx, probeCancel := context.WithTimeout(ctx, 5*time.Second)
@@ -64,7 +64,7 @@ func (app *App) initServices(ctx context.Context) {
 		app.apisixSvc = nil
 	} else {
 		app.apisixSvc = apisixSvc
-		app.probes["apisix"] = apisixSvc.CheckAvailability
+		app.markReady("apisix", apisixSvc.CheckAvailability)
 	}
 
 	probeCtx, probeCancel = context.WithTimeout(ctx, 5*time.Second)
@@ -75,7 +75,7 @@ func (app *App) initServices(ctx context.Context) {
 		app.caddySvc = nil
 	} else {
 		app.caddySvc = caddySvc
-		app.probes["caddy"] = caddySvc.CheckAvailability
+		app.markReady("caddy", caddySvc.CheckAvailability)
 	}
 
 	var dockerRaw *pkgDocker.DockerService
@@ -85,7 +85,7 @@ func (app *App) initServices(ctx context.Context) {
 		app.swarmSvc = nil
 	} else {
 		app.dockerSvc = dockerSvc
-		app.probes["docker"] = dockerSvc.CheckAvailability
+		app.markReady("docker", dockerSvc.CheckAvailability)
 		dockerRaw = dockerSvc.Raw()
 		probeCtx, probeCancel = context.WithTimeout(ctx, 5*time.Second)
 		swarmSvc, err := swarm.NewService(probeCtx, dockerRaw)
@@ -95,7 +95,7 @@ func (app *App) initServices(ctx context.Context) {
 			app.swarmSvc = nil
 		} else {
 			app.swarmSvc = swarmSvc
-			app.probes["swarm"] = swarmSvc.CheckAvailability
+			app.markReady("swarm", swarmSvc.CheckAvailability)
 		}
 	}
 
@@ -104,7 +104,7 @@ func (app *App) initServices(ctx context.Context) {
 		app.composeSvc = nil
 	} else {
 		app.composeSvc = composeSvc
-		app.probes["compose"] = composeSvc.CheckAvailability
+		app.markReady("compose", composeSvc.CheckAvailability)
 	}
 
 	// Cron 任务跨服务重载继续执行，仅在整个进程生命周期结束时取消。
@@ -120,7 +120,7 @@ func (app *App) initServices(ctx context.Context) {
 		sources.Docker = dockerRaw
 	}
 	if app.caddySvc != nil {
-		sources.Caddy = app.caddySvc
+		sources.Caddy = caddyCertSource{app.caddySvc}
 	}
 	if app.apisixSvc != nil {
 		sources.Apisix = app.apisixSvc
@@ -175,8 +175,18 @@ func (app *App) serviceAvailableMiddleware() gin.HandlerFunc {
 	}
 }
 
-// optionalModules 依赖外部服务、初始化失败时整体不可用的模块
+// optionalModules 依赖外部服务、初始化失败时整体不可用的模块。
+// 新增此类模块时：在此登记，并在 initServices 构造成功后调用 markReady。
 var optionalModules = map[string]bool{"ssh": true, "apisix": true, "caddy": true, "docker": true, "swarm": true, "compose": true}
+
+// markReady 标记可选模块已就绪并登记探活函数（probe 为 nil 表示无需探活）。
+// 登记了未在 optionalModules 声明的模块会被忽略可用性判断，因此这里直接告警。
+func (app *App) markReady(module string, probe func(context.Context) bool) {
+	if !optionalModules[module] {
+		logman.Warn("module not declared in optionalModules", "module", module)
+	}
+	app.probes[module] = probe
+}
 
 // isServiceAvailable 检查指定模块的服务是否可用
 func (app *App) isServiceAvailable(module string) bool {
@@ -185,4 +195,21 @@ func (app *App) isServiceAvailable(module string) bool {
 	}
 	_, ready := app.probes[module]
 	return ready || !optionalModules[module]
+}
+
+// caddyCertSource 将 Caddy 服务的证书列表适配为告警层所需的精简结构。
+type caddyCertSource struct{ svc *caddy.Service }
+
+func (s caddyCertSource) CertList(ctx context.Context) ([]notify.CaddyCert, error) {
+	list, err := s.svc.CertList(ctx)
+	if err != nil {
+		return nil, err
+	}
+	certs := make([]notify.CaddyCert, 0, len(list))
+	for _, c := range list {
+		certs = append(certs, notify.CaddyCert{
+			Key: c.Key, Source: c.Source, Subject: c.Subject, Certificate: c.Certificate, NotAfter: c.NotAfter,
+		})
+	}
+	return certs, nil
 }
