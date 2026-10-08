@@ -882,7 +882,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -911,7 +912,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "items": {
+                        "$ref": "#/components/schemas/apisix.Consumer"
+                      },
+                      "type": "array"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1015,7 +1032,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "$ref": "#/components/schemas/apisix.PluginConfig"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1088,7 +1118,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "items": {
+                        "$ref": "#/components/schemas/apisix.PluginConfig"
+                      },
+                      "type": "array"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1213,7 +1259,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "$ref": "#/components/schemas/apisix.Route"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1327,7 +1386,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "items": {
+                        "$ref": "#/components/schemas/apisix.Route"
+                      },
+                      "type": "array"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1431,7 +1506,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "$ref": "#/components/schemas/apisix.SSL"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1504,7 +1592,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "items": {
+                        "$ref": "#/components/schemas/apisix.SSL"
+                      },
+                      "type": "array"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1608,7 +1712,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "$ref": "#/components/schemas/apisix.Upstream"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1681,7 +1798,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "items": {
+                        "$ref": "#/components/schemas/apisix.Upstream"
+                      },
+                      "type": "array"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -1702,7 +1835,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "items": {
+                        "$ref": "#/components/schemas/apisix.Route"
+                      },
+                      "type": "array"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2145,7 +2294,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: json.RawMessage",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -2266,7 +2416,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "$ref": "#/components/schemas/caddy.Info"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -2313,7 +2476,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -2861,7 +3025,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "items": {
+                        "$ref": "#/components/schemas/compose.HistoryRecord"
+                      },
+                      "type": "array"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3068,7 +3248,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "items": {
+                        "$ref": "#/components/schemas/compose.HistoryRecord"
+                      },
+                      "type": "array"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3163,7 +3359,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -3206,7 +3403,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -3329,7 +3527,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -3382,7 +3581,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -3448,7 +3648,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -3744,7 +3945,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APIResponse"
+                  "properties": {
+                    "message": {
+                      "description": "提示信息",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "$ref": "#/components/schemas/docker.ContainerFileListResult"
+                    },
+                    "success": {
+                      "description": "请求是否成功",
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
                 }
               }
             },
@@ -3830,7 +4044,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -4256,7 +4471,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: docker.map[string]string",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -4345,7 +4561,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: docker.map[string]string",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -4390,7 +4607,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: docker.map[string]string",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -4689,7 +4907,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: docker.map[string]string",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -4992,7 +5211,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: docker.map[string]string",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -5221,7 +5441,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -5334,7 +5555,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -5437,7 +5659,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -5625,7 +5848,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -5660,7 +5884,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -5931,7 +6156,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -6023,7 +6249,41 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: webssh.SFTPListResult",
+                      "properties": {
+                        "files": {
+                          "items": {
+                            "properties": {
+                              "isDir": {
+                                "type": "boolean"
+                              },
+                              "isLink": {
+                                "type": "boolean"
+                              },
+                              "linkTarget": {
+                                "type": "string"
+                              },
+                              "modTime": {
+                                "type": "integer"
+                              },
+                              "mode": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "size": {
+                                "type": "integer"
+                              }
+                            },
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "path": {
+                          "description": "实际目录路径",
+                          "type": "string"
+                        }
+                      },
                       "type": "object"
                     },
                     "success": {
@@ -6117,7 +6377,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -6818,7 +7079,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: swarm.map[string]any",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -6985,7 +7247,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -7123,7 +7386,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: gin.H",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -7282,7 +7546,8 @@
                       "type": "string"
                     },
                     "payload": {
-                      "description": "Schema not found: swarm.map[string]string",
+                      "additionalProperties": true,
+                      "description": "任意 JSON 对象",
                       "type": "object"
                     },
                     "success": {
@@ -9612,7 +9877,7 @@
             "type": "string"
           },
           "trustedCIDRs": {
-            "description": "允许传入登录 Header 的代理来源 CIDR；为空时不限制来源",
+            "description": "允许传入登录 Header 的代理来源 IP/CIDR；为空时默认填充本机回环地址",
             "items": {
               "type": "string"
             },
@@ -10020,27 +10285,6 @@
               "type": "integer"
             },
             "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "cstore.TypedEvent": {
-        "properties": {
-          "Key": {
-            "description": "变更的键",
-            "type": "string"
-          },
-          "Type": {
-            "description": "事件类型（PUT/DELETE）",
-            "type": "object"
-          },
-          "Valid": {
-            "description": "Value 是否成功反序列化",
-            "type": "boolean"
-          },
-          "Value": {
-            "description": "PUT 时有效",
-            "type": "object"
           }
         },
         "type": "object"
@@ -11389,7 +11633,7 @@
       "local.ProcessInfo": {
         "properties": {
           "cmdline": {
-            "description": "完整命令行，仅创始人可见",
+            "description": "完整命令行",
             "type": "string"
           },
           "cpuMillis": {
@@ -11586,6 +11830,31 @@
           },
           "vendor": {
             "description": "厂商",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "notify.CaddyCert": {
+        "properties": {
+          "Certificate": {
+            "description": "file：证书文件路径；pem：证书 PEM 文本",
+            "type": "string"
+          },
+          "Key": {
+            "description": "列表复合主键，缓存证书用作稳定标识",
+            "type": "string"
+          },
+          "NotAfter": {
+            "description": "证书过期时间，无法解析时为 nil",
+            "type": "string"
+          },
+          "Source": {
+            "description": "file / pem / automate / cached",
+            "type": "string"
+          },
+          "Subject": {
+            "description": "域名或证书 CN",
             "type": "string"
           }
         },

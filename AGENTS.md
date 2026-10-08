@@ -96,7 +96,7 @@ docs/
 
 | 代码变更位置 | 需同步更新的文档 |
 | --- | --- |
-| `server/app/ctrl_docker.go` | `docs/references/docker/` 下对应资源文件 |
+| `server/app/ctrl_docker*.go` | `docs/references/docker/` 下对应资源文件 |
 | `server/app/ctrl_swarm.go` | `docs/references/swarm/` 下对应资源文件 |
 | `server/app/ctrl_apisix.go` | `docs/references/apisix/` 下对应资源文件 |
 | `server/app/ctrl_caddy.go` | `docs/references/caddy/` 下对应资源文件 |
