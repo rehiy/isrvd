@@ -43,11 +43,26 @@ func NewService() (*Service, error) {
 		TLS:           tlsConfig,
 		ContainerRoot: snapshot.Docker.ContainerRoot,
 		Registries:    registries,
+
+		ContainerGuard: selfContainerGuard,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("Docker 服务初始化失败: %w", err)
 	}
 	return &Service{docker: svc}, nil
+}
+
+// selfContainerGuard 禁止对 iSrvd 自身所在容器执行会中断自身的操作。
+// 通过 DockerConfig.ContainerGuard 注入，所有复用同一 DockerService 的服务（compose 等）一并生效。
+func selfContainerGuard(ctx context.Context, s *docker.DockerService, id, action string) error {
+	switch action {
+	case "stop", "restart", "remove", "pause":
+		selfID := s.SelfContainerID(ctx)
+		if selfID != "" && (id == selfID || docker.ShortID(id) == docker.ShortID(selfID)) {
+			return fmt.Errorf("禁止操作当前 iSrvd 所在容器")
+		}
+	}
+	return nil
 }
 
 // Raw 返回底层 Docker 客户端，供 swarm/cron/monitor/compose 等依赖 Docker 的服务复用。

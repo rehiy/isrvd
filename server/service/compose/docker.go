@@ -60,7 +60,11 @@ func (s *Service) DockerInspect(ctx context.Context, name string, forceRuntime b
 		if err != nil {
 			return "", fmt.Errorf("compose 文件不存在且读取运行态失败: %w", err)
 		}
-		return compose.DockerProjectYAMLFromInspect(ctx, info, s.docker.ImageConfig, filepath.Join(root, name))
+		content, err := compose.DockerProjectYAMLFromInspect(ctx, info, s.docker.ImageConfig, filepath.Join(root, name))
+		if err != nil {
+			return "", err
+		}
+		return withGeneratedHeader(content), nil
 	})
 }
 
@@ -303,7 +307,7 @@ func (s *Service) dockerProjectContentFromContainers(ctx context.Context, projec
 	if err != nil {
 		return "", true, err
 	}
-	return content, true, nil
+	return withGeneratedHeader(content), true, nil
 }
 
 // dockerRollback 用指定配置内容重建容器（回滚用）

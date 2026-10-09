@@ -11,25 +11,44 @@ import (
 	"github.com/rehiy/libgo/logman"
 )
 
+// ScriptRunOptions 临时容器运行脚本的参数。
+type ScriptRunOptions struct {
+	Image      string        // 镜像名
+	Shell      string        // 容器内 shell，默认 /bin/sh
+	Script     string        // 脚本内容
+	Timeout    uint          // 超时秒数，0 不限
+	Mounts     []mount.Mount // 额外挂载
+	NamePrefix string        // 临时容器名前缀，默认 script
+	ScriptName string        // 脚本在容器根目录下的文件名，默认 script.sh
+}
+
 // ContainerRunScript 创建临时容器运行脚本，完成后收集日志并删除容器。
 // 脚本内容通过 Docker Copy API 写入容器，兼容远程 daemon 和容器化部署。
-// image: 镜像名；shell: 容器内 shell（默认 /bin/sh）；script: 脚本内容；timeout: 超时秒数（0 不限）。
-func (s *DockerService) ContainerRunScript(ctx context.Context, image, shell, script string, timeout uint, extraMounts []mount.Mount) (string, error) {
+func (s *DockerService) ContainerRunScript(ctx context.Context, opts ScriptRunOptions) (string, error) {
+	image, script, timeout := opts.Image, opts.Script, opts.Timeout
 	if err := s.ImageEnsure(ctx, image, false); err != nil {
 		return "", fmt.Errorf("镜像 %s 不可用: %w", image, err)
 	}
 
+	shell := opts.Shell
 	if shell == "" {
 		shell = "/bin/sh"
 	}
-	const scriptName = "isrvd-cron-script.sh"
+	namePrefix := opts.NamePrefix
+	if namePrefix == "" {
+		namePrefix = "script"
+	}
+	scriptName := opts.ScriptName
+	if scriptName == "" {
+		scriptName = "script.sh"
+	}
 	const scriptDir = "/"
-	const scriptInContainer = scriptDir + scriptName
+	scriptInContainer := scriptDir + scriptName
 
-	// 仅保留用户配置的挂载；脚本通过 Docker Copy API 写入，兼容容器化 iSrvd 和远程 daemon。
-	mounts := append([]mount.Mount(nil), extraMounts...)
+	// 仅保留调用方指定的挂载；脚本通过 Docker Copy API 写入，兼容容器化部署和远程 daemon。
+	mounts := append([]mount.Mount(nil), opts.Mounts...)
 
-	containerName := fmt.Sprintf("cron-%x", time.Now().UnixNano())
+	containerName := fmt.Sprintf("%s-%x", namePrefix, time.Now().UnixNano())
 	containerCfg := &container.Config{
 		Image:      image,
 		Entrypoint: []string{shell},
@@ -49,7 +68,7 @@ func (s *DockerService) ContainerRunScript(ctx context.Context, image, shell, sc
 		cleanupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		if err := s.client.ContainerRemove(cleanupCtx, resp.ID, container.RemoveOptions{Force: true}); err != nil {
-			logman.Warn("Remove temporary cron container failed", "container", resp.ID, "error", err)
+			logman.Warn("Remove temporary script container failed", "container", resp.ID, "error", err)
 		}
 	}()
 

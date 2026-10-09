@@ -62,7 +62,10 @@ func (s *Service) SwarmInspect(ctx context.Context, name string, forceRuntime bo
 			return "", err
 		}
 		data, err := compose.ProjectToYAML(project)
-		return string(data), err
+		if err != nil {
+			return "", err
+		}
+		return withGeneratedHeader(string(data)), nil
 	})
 }
 

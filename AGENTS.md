@@ -267,6 +267,7 @@ docs/
 - etcd URI 中的 path 表示完整配置 key，且必须显式提供；系统配置推荐 key 为 `/isrvd/config`，标准形式：`etcd://user:pass@host1:2379,host2:2379/isrvd/config?scheme=http&timeout=5s&fallback=/path/config.yml`
 - `fallback` 是本地 YAML 文件路径，且只在 etcd key 不存在时触发：读取该 YAML 后写入 etcd；etcd 连接失败、权限错误、超时、已有值解析失败均不得 fallback
 - etcd 认证优先从 URI userinfo 读取；生产场景可用 `ETCD_USERNAME`、`ETCD_PASSWORD` 补充或覆盖；特殊字符必须 URL encode。环境变量由 `server/config/provider.go` 读取并经 `cstore.WithEtcdCredentials` 注入，`pkgs/cstore` 不直接读取环境变量
+- `pkgs/` 不得硬编码 isrvd 业务策略（自身容器保护、文件头、命名前缀等）：此类策略由业务层通过注入点提供（如 `docker.DockerConfig.ContainerGuard`、`docker.ScriptRunOptions`），生成文件头由 `server/service/compose` 添加
 - etcd watch 只允许做变更检测并发送重载信号；服务重建必须走 `server/app/app.go` 的 reload 流程，禁止在 cstore 层自动 `Apply` 或静默重建 service
 - YAML 明文密码迁移属于 `server/config/migrate.go` 的兼容逻辑，禁止放入 `pkgs/cstore` 抽象或 etcd 存储适配
 

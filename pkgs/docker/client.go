@@ -19,7 +19,7 @@ type DockerService struct {
 	config     *DockerConfig
 	registryMu sync.RWMutex // 保护 config.Registries 的并发读写
 
-	remote bool // daemon 是否位于 isrvd 之外的主机，见 isRemoteHost
+	remote bool // daemon 是否位于当前进程所在主机之外，见 isRemoteHost
 
 	selfID     string
 	selfIDOnce sync.Once
@@ -33,6 +33,10 @@ type DockerConfig struct {
 	TLS           *TLSConfig        // 远程 daemon 的 TLS 参数；为 nil 表示不使用 TLS
 	ContainerRoot string            // 容器数据根目录
 	Registries    []*RegistryConfig // 镜像仓库配置列表
+
+	// ContainerGuard 容器操作前置校验（可选），由业务层注入；返回错误则拒绝执行该操作。
+	// 仅对 ContainerAction 生效，action 取值同 ContainerAction。
+	ContainerGuard func(ctx context.Context, s *DockerService, id, action string) error
 }
 
 // RegistryConfig 镜像仓库配置
@@ -84,17 +88,17 @@ func (s *DockerService) Close() error {
 	return s.closeErr
 }
 
-// Remote 返回 daemon 是否可能位于 isrvd 之外的主机（tcp:// 且不是回环地址）。
+// Remote 返回 daemon 是否可能位于当前进程所在主机之外（tcp:// 且不是回环地址）。
 // 这类 daemon 上的容器不能靠本机的 IP、主机名识别自身（两台主机常常都使用 172.17.0.x），
 // 也不能用本机文件系统检查 bind 挂载源。判定只看地址，与是否启用 TLS 无关。
 func (s *DockerService) Remote() bool {
 	return s != nil && s.remote
 }
 
-// isRemoteHost 判断 Docker Host 是否指向 isrvd 之外的主机。
+// isRemoteHost 判断 Docker Host 是否指向当前进程所在主机之外。
 // host 为空时与 SDK 一致，回退到环境变量 DOCKER_HOST。
 // unix://、npipe:// 与回环地址的 tcp:// 视为本机；其余 tcp:// 视为远程，
-// 包括 tcp://docker-proxy:2375 这类容器网络内的别名：无法确认它与 isrvd 同机，按远程保守处理。
+// 包括 tcp://docker-proxy:2375 这类容器网络内的别名：无法确认它与当前进程同机，按远程保守处理。
 func isRemoteHost(host string) bool {
 	if strings.TrimSpace(host) == "" {
 		host = os.Getenv(client.EnvOverrideHost)

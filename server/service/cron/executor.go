@@ -14,6 +14,8 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/rehiy/libgo/command"
 	"github.com/rehiy/libgo/strutil"
+
+	"isrvd/pkgs/docker"
 )
 
 type jobOutputBuffer struct {
@@ -137,7 +139,15 @@ func (s *Service) runDockerJob(ctx context.Context, job *Job) (string, error) {
 	switch job.Type {
 	case "DOCKER_TMP":
 		vols := parseVolumeLines(job.Volumes)
-		return s.docker.ContainerRunScript(ctx, job.Image, "/bin/sh", job.Content, job.Timeout, vols)
+		return s.docker.ContainerRunScript(ctx, docker.ScriptRunOptions{
+			Image:      job.Image,
+			Shell:      "/bin/sh",
+			Script:     job.Content,
+			Timeout:    job.Timeout,
+			Mounts:     vols,
+			NamePrefix: "cron",
+			ScriptName: "isrvd-cron-script.sh",
+		})
 	case "DOCKER_CTR":
 		return s.docker.ContainerExecRun(ctx, job.Container, "/bin/sh", job.Content, job.Timeout)
 	}

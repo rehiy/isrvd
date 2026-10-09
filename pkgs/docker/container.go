@@ -69,11 +69,9 @@ func (s *DockerService) ContainerInspect(ctx context.Context, id string) (contai
 
 // ContainerAction 容器操作（start/stop/restart/remove/pause/unpause）
 func (s *DockerService) ContainerAction(ctx context.Context, id, action string) error {
-	switch action {
-	case "stop", "restart", "remove", "pause":
-		selfID := s.SelfContainerID(ctx)
-		if selfID != "" && (id == selfID || ShortID(id) == ShortID(selfID)) {
-			return fmt.Errorf("禁止操作当前 iSrvd 所在容器")
+	if s.config != nil && s.config.ContainerGuard != nil {
+		if err := s.config.ContainerGuard(ctx, s, id, action); err != nil {
+			return err
 		}
 	}
 
