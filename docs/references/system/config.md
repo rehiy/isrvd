@@ -37,9 +37,31 @@ ETCD_USERNAME=user ETCD_PASSWORD=pass CONFIG_PATH="etcd://h1:2379,h2:2379,h3:237
 
 本地文件采用同目录临时文件和原子替换，保留已有文件权限，新文件使用 `0600`；文件后端仅协调同目录 Store 的进程内更新。etcd 通过事务比较 key 的存在性和原始值，再条件写入，支持跨实例防覆盖；fallback 也只在 key 缺失时原子创建，竞争失败后读取已有数据。值比较不检测内容变更后又恢复原值的 ABA 情况，也不提供浏览器旧草稿版本校验或分布式任务执行锁；etcd 超时不代表服务端一定未提交。
 
-etcd 空字符串值视为已存在，不触发 fallback。使用 libgo v0.20.0 的 `Lookup`、`CompareAndPut` 和 Watch 的 `SYNC` 事件，分别实现存在性查询、条件写入和连接状态补偿。
+etcd 空字符串值视为已存在，不触发 fallback。使用 libgo v0.21.0 的 `Lookup`、`CompareAndPut` 和 Watch 的 `SYNC` 事件，分别实现存在性查询、条件写入和连接状态补偿。
 
 配置监听在首次连接、重连后重新读取最新状态，读取失败会重试，相同状态不重复触发重载。该机制补偿连接间隙的最终状态，不重放所有历史事件；本地文件仍通过 SIGHUP 手动重载，cron、webssh 的外部数据更新仍需重载服务。
+
+## 配置段说明
+
+配置文件（`config.yml` 或 etcd value）的顶层配置段：
+
+| 配置段 | 说明 |
+| -------- | ------ |
+| `schema` | 配置结构版本，用于自动迁移 |
+| `server` | 监听地址、数据根目录、上传限制、CORS、JWT 密钥/有效期、OpenAPI 开关和调试模式 |
+| `password` | 密码登录开关与最小密码长度 |
+| `tha` | 代理认证头登录（enabled / headerName / trustedCIDRs；trustedCIDRs 为空时默认填充本机回环地址） |
+| `oidc` | OIDC 认证（enabled / issuerUrl / clientId / clientSecret / redirectUrl / usernameClaim / scopes / loginLabel） |
+| `passkey` | WebAuthn/Passkey 认证（enabled / rpName / rpId / rpOrigins / timeout） |
+| `copilot` | AI 助手模型接入（model / baseUrl / apiKey） |
+| `apisix` | APISIX Admin API 地址和密钥 |
+| `caddy` | Caddy Admin API 地址 |
+| `docker` | Docker 守护进程地址（支持 `tcp://` + TLS 证书连接远程 Docker / Swarm）、容器数据目录、镜像仓库账号 |
+| `monitor` | 系统与容器监控的采集间隔（5/15/30/60 秒，其他值禁用自动采集） |
+| `notify` | Webhook 通道、CPU/内存/磁盘规则，以及容器异常、任务失败和网关证书到期告警；默认关闭应用故障告警 |
+| `marketplace` | 应用市场地址 |
+| `links` | 自定义快捷链接（名称、URL、图标） |
+| `members` | 用户账号、家目录、Founder 标记、路由权限、Passkey 与 TOTP 信息 |
 
 ## 配置重载
 

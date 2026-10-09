@@ -4,6 +4,20 @@
 
 基于 Go + Vue 3 构建的轻量级运维面板，集成文件管理、Docker 容器编排、APISIX/Caddy 网关配置、Web 终端、GPU 监控、计划任务与 AI 助手，为个人服务器与中小型团队提供一站式管理体验。
 
+## 目录
+
+- [功能特性](#功能特性)
+- [技术栈](#技术栈)
+- [部署](#部署)
+- [集中管理](#集中管理)
+- [配置](#配置)
+- [权限](#权限)
+- [GPU 监控](#gpu-监控)
+- [本地开发](#本地开发)
+- [架构设计](#架构设计)
+- [安全特性](#安全特性)
+- [许可证](#许可证)
+
 ## 功能特性
 
 | 模块 | 功能 |
@@ -13,7 +27,7 @@
 | Web 终端 | 基于 xterm.js 的 Shell 终端，支持容器终端接入 |
 | 本机进程 | 查看主机进程列表（CPU、内存、命令行），终止指定进程（强制审计） |
 | SSH 远程管理 | 管理主机与可复用凭据，支持密码/私钥认证、浏览器终端和 SFTP 文件管理 |
-| 多服务器管理 | 同一个二进制按 `--mode` 作为单机、中控（center）或受管机（agent）运行；受管机主动出站连接中控，无需开放入站端口，创始人可在界面中接入、审批、吊销节点并切换到任一节点操作其 Docker、文件、终端、计划任务等，详见 [多服务器管理](docs/multi-node.md) |
+| 集中管理 | 同一个二进制按 `--mode` 作为单机、中控或受管机运行，一个控制台管理多台服务器，详见 [集中管理](#集中管理) |
 | AI 助手 | 内置 Copilot，基于 CopilotKit + AG-UI 协议，通过内置 OpenAPI 目录调用后端接口，支持页面上下文、工具卡片与写操作审批，兼容 OpenAI API 的 LLM 接入 |
 | 计划任务 | 定时任务调度；按运行平台提供 Shell 或 BAT/PowerShell 脚本及可执行文件任务，Docker 可用时还支持临时容器或已有容器执行 |
 | APISIX | 路由、Consumer、上游(Upstream)、SSL 证书、插件配置(PluginConfig)、插件列表、访问授权管理 |
@@ -35,9 +49,11 @@
 | 容器 | Docker / APISIX / Caddy |
 | AI | 兼容 OpenAI API 的 LLM 接入，前端基于 CopilotKit + AG-UI 协议 |
 
-## Docker 部署
+## 部署
 
-提供三个镜像版本：
+三种方式可选：安装脚本（推荐）、Docker 镜像、二进制安装包。安装脚本面向使用 systemd 的 Linux，需以 root 用户执行。
+
+### 镜像版本
 
 | 镜像 | 说明 |
 | ------ | ------ |
@@ -54,8 +70,6 @@ Docker 版默认管理员账号为 `admin` / `admin`，首次登录成功后会�
 
 安装脚本会自动安装 Docker、初始化单节点 Swarm、创建可挂载的 overlay 网络 `sdnet`，并根据参数启动对应的一体化镜像：
 
-> 该脚本面向使用 systemd 的 Linux，需以 root 用户执行。
-
 ```bash
 # slim / caddy / apisix 三选一
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --docker
@@ -65,7 +79,7 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) ins
 
 Docker 版统一使用容器名 `isrvd`，数据保存在 `/srv/data`；`update` 会按当前镜像类型重建容器，`uninstall` 删除容器但保留数据目录。
 
-### 创建网络
+### 准备网络
 
 使用安装脚本时无需手动操作。手动部署 Docker 版时，推荐先初始化 Swarm，再创建可挂载的 overlay 网络：
 
@@ -74,7 +88,15 @@ docker swarm init
 docker network create --driver=overlay --attachable sdnet
 ```
 
-### slim（默认）
+### 运行容器
+
+| 镜像 | 端口映射 | 说明 |
+| ------ | ---------- | ------ |
+| `slim` | 8080 → 8080 | isrvd Web 管理界面 |
+| `apisix` | 8080 → 8080、80 → 9080、443 → 9443 | isrvd 界面；APISIX HTTP / HTTPS 代理 |
+| `caddy` | 8080 → 8080、80 → 80、443 → 443 | isrvd 界面；Caddy HTTP / HTTPS 代理 |
+
+#### slim（默认）
 
 仅含 isrvd 本体，体积最小，适合只需要文件管理、Docker/Swarm/Compose、计划任务等功能的场景。
 
@@ -88,11 +110,7 @@ docker run -d \
   rehiy/isrvd:slim
 ```
 
-| 端口映射 | 服务 | 说明 |
-|----------|------|------|
-| 8080 → 8080 | isrvd | Web 管理界面 |
-
-### apisix（集成 API 网关）
+#### apisix（集成 API 网关）
 
 isrvd + APISIX，适合已使用 APISIX 作为 API 网关的场景。
 
@@ -108,13 +126,7 @@ docker run -d \
   rehiy/isrvd:apisix
 ```
 
-| 端口映射 | 服务 | 说明 |
-| ---------- | ------ | ------ |
-| 8080 → 8080 | isrvd | Web 管理界面 |
-| 80 → 9080 | APISIX | HTTP 代理端口 |
-| 443 → 9443 | APISIX | HTTPS 代理端口 |
-
-### caddy（集成反向代理）
+#### caddy（集成反向代理）
 
 isrvd + Caddy，适合需要反向代理、自动 HTTPS（ACME）或统一网关管理的场景。
 
@@ -129,12 +141,6 @@ docker run -d \
   -v /var/run/docker.sock:/var/run/docker.sock \
   rehiy/isrvd:caddy
 ```
-
-| 端口映射 | 服务 | 说明 |
-| ---------- | ------ | ------ |
-| 8080 → 8080 | isrvd | Web 管理界面 |
-| 80 → 80 | Caddy | HTTP 代理端口 |
-| 443 → 443 | Caddy | HTTPS 代理端口 |
 
 Caddy 默认 HTTP 服务监听 `:80` 和 `:443`，但禁用了自动 HTTPS 及重定向。如需 HTTPS，可在「Caddy → 服务」中编辑对应服务的 HTTPS 行为，或直接编辑「原始配置」。
 
@@ -161,14 +167,13 @@ networks:
 
 > **注意**：
 >
-> - 请先创建 `sdnet` 网络（见上方「创建网络」章节），Compose 中通过 `external: true` 引用已有网络
+> - 请先创建 `sdnet` 网络（见上方「准备网络」章节），Compose 中通过 `external: true` 引用已有网络
 > - 请始终挂载整个 `/data` 目录，避免容器重建时数据丢失
 
-## 二进制部署
+### 二进制部署
 
 - 目录：`/usr/local/isrvd/`，包含二进制和配置文件
 - 限制：无法通过容器内网访问其它容器
-- 安装脚本适用于使用 systemd 的 Linux，需以 root 用户执行
 
 ```bash
 # 一键安装（默认自动按 IP 选择 CNB/GitHub 源，可用 --cn / --global 手动指定）
@@ -182,27 +187,7 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) uni
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) download
 ```
 
-也可直接运行 `./isrvd`，通过 `CONFIG_PATH` 指定配置位置：
-
-```bash
-# 默认读取 ./config.yml
-./isrvd
-
-# 本地 YAML
-CONFIG_PATH=/data/conf/isrvd.yml ./isrvd
-
-# etcd（value 仍为 config.yml 同款 YAML）
-etcdctl put /isrvd/config "$(cat /data/conf/isrvd.yml)"
-CONFIG_PATH="etcd://user:pass@127.0.0.1:2379/isrvd/config?scheme=http&timeout=5s" ./isrvd
-
-# etcd key 不存在时，用 fallback YAML 初始化并写入 etcd
-CONFIG_PATH="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" ./isrvd
-
-# etcd 完整配置示例
-# etcd://user:pass@host1:2379,host2:2379/key?scheme=http&timeout=5s&fallback=/path/config.yml
-```
-
-**etcd** 认证可省略，也可用 `ETCD_USERNAME` / `ETCD_PASSWORD` 补充或覆盖 URI 中的认证信息。etcd key 发生 PUT 变更时，isrvd 会重载配置、注册中心和业务服务。计划任务、SSH 主机与凭据等业务数据同样存入 etcd（key 为 `<配置 key>/cron.yml` 等），首次启动时自动迁移 `rootDirectory` 下的同名文件；审计与监控日志仍写本地。迁移后本地文件不再更新，回退到不支持该特性的旧版本会丢失升级期间对计划任务与 SSH 配置的修改。通过系统配置 API 保存的本地 YAML 也会立即触发重载；若直接在磁盘上修改 YAML，则需发送 `SIGHUP` 或重启进程。
+配置文件位置通过 `CONFIG_PATH` 指定，详见 [配置](#配置)。
 
 ## 集中管理
 
@@ -234,7 +219,7 @@ CONFIG_PATH="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" .
 
 首次注册后节点凭据加密保存在受管机本地，重启不需要再带注册码。
 
-### Docker 部署
+### 容器部署
 
 镜像入口不带参数，用环境变量选择模式，不需要改镜像或配置文件：
 
@@ -278,7 +263,57 @@ systemctl restart isrvd
 - 注册码一次性使用、默认 1 小时过期；节点令牌只保存哈希，注册码短期有效、加密落盘，待接入期间可在列表中查看接入命令；节点可随时吊销，吊销后立即断开
 - 节点管理操作、节点上的写操作与终端会话都会记入中控的审计页面（操作人为中控登录用户），受管机本机的审计页面里则记录为其本地创始人
 - 中控为单实例设计，重启时节点短暂断开后自动重连；受管机与中控的版本需一致
-- 完整的参数表、接口与行为说明见 [多服务器管理](docs/multi-node.md)，接口字段见 [受管节点](docs/references/node/nodes.md) 与 [注册码](docs/references/node/codes.md)
+- 完整的参数表、接口与行为说明见 [docs/multi-node.md](docs/multi-node.md)，接口字段见 [受管节点](docs/references/node/nodes.md) 与 [注册码](docs/references/node/codes.md)
+
+## 配置
+
+### 配置来源
+
+配置位置由 `CONFIG_PATH` 指定，支持本地 YAML 与 etcd（value 仍为 config.yml 同款 YAML）：
+
+```bash
+# 默认读取 ./config.yml
+./isrvd
+
+# 本地 YAML
+CONFIG_PATH=/data/conf/isrvd.yml ./isrvd
+
+# etcd
+etcdctl put /isrvd/config "$(cat /data/conf/isrvd.yml)"
+CONFIG_PATH="etcd://user:pass@127.0.0.1:2379/isrvd/config?scheme=http&timeout=5s" ./isrvd
+
+# etcd key 不存在时，用 fallback YAML 初始化并写入 etcd
+CONFIG_PATH="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" ./isrvd
+
+# etcd 完整配置示例
+# etcd://user:pass@host1:2379,host2:2379/key?scheme=http&timeout=5s&fallback=/path/config.yml
+```
+
+**etcd** 认证可省略，也可用 `ETCD_USERNAME` / `ETCD_PASSWORD` 补充或覆盖 URI 中的认证信息。etcd key 发生 PUT 变更时，isrvd 会重载配置、注册中心和业务服务。计划任务、SSH 主机与凭据等业务数据同样存入 etcd（key 为 `<配置 key>/cron.yml` 等），首次启动时自动迁移 `rootDirectory` 下的同名文件；审计与监控日志仍写本地。迁移后本地文件不再更新，回退到不支持该特性的旧版本会丢失升级期间对计划任务与 SSH 配置的修改。通过系统配置 API 保存的本地 YAML 也会立即触发重载；若直接在磁盘上修改 YAML，则需发送 `SIGHUP` 或重启进程。
+
+### 配置项
+
+各配置段的含义见 [配置段说明](docs/references/system/config.md#配置段说明)。
+
+## 权限
+
+权限基于路由进行细粒度控制。默认的 `AccessPerm` 路由要求成员持有对应的完整路由权限，Founder 不受此限制；`AccessAuth` 路由只要登录即可访问，`AccessAnon` 路由允许匿名访问。
+
+**权限格式**：`<METHOD> /api/<模块>/<路由>`（如 `GET /api/docker/containers`、`POST /api/compose/docker`）
+
+**前端权限判断**：使用 `portal.hasPerm('<METHOD> /api/<路由>')` 控制按钮/操作的显示
+
+> 留空 = 无 `AccessPerm` 路由权限；具体可用路由可在登录后通过 `GET /api/account/routes` 获取。
+>
+> 集中管理的节点接口（`/api/node/*`、`/n/<节点ID>/…`）由中控网关提供，不在路由表中，**仅创始人可用**，无法授予普通成员。
+
+权限点完整清单见 [docs/permissions.md](docs/permissions.md)。
+
+## GPU 监控
+
+支持自动检测 NVIDIA / AMD / Intel / Apple Silicon 独立显卡，显示使用率、显存、温度、功耗、风扇转速。
+
+检测方式、采集指标与容器部署注意事项见 [docs/gpu-monitoring.md](docs/gpu-monitoring.md)。
 
 ## 本地开发
 
@@ -338,179 +373,9 @@ git diff --check
 
 > 贡献代码前请优先阅读 [AGENTS.md](AGENTS.md)。该文件是当前仓库的代码规范与协作约定入口，旧版 `CODE_STYLE` 不再作为规范来源。
 
-### 配置说明
-
-| 配置段 | 说明 |
-| -------- | ------ |
-| `schema` | 配置结构版本，用于自动迁移 |
-| `server` | 监听地址、数据根目录、上传限制、CORS、JWT 密钥/有效期、OpenAPI 开关和调试模式 |
-| `password` | 密码登录开关与最小密码长度 |
-| `tha` | 代理认证头登录（enabled / headerName / trustedCIDRs；trustedCIDRs 为空时默认填充本机回环地址） |
-| `oidc` | OIDC 认证（enabled / issuerUrl / clientId / clientSecret / redirectUrl / usernameClaim / scopes / loginLabel） |
-| `passkey` | WebAuthn/Passkey 认证（enabled / rpName / rpId / rpOrigins / timeout） |
-| `copilot` | AI 助手模型接入（model / baseUrl / apiKey） |
-| `apisix` | APISIX Admin API 地址和密钥 |
-| `caddy` | Caddy Admin API 地址 |
-| `docker` | Docker 守护进程地址（支持 `tcp://` + TLS 证书连接远程 Docker / Swarm）、容器数据目录、镜像仓库账号 |
-| `monitor` | 系统与容器监控的采集间隔（5/15/30/60 秒，其他值禁用自动采集） |
-| `notify` | Webhook 通道、CPU/内存/磁盘规则，以及容器异常、任务失败和网关证书到期告警；默认关闭应用故障告警 |
-| `marketplace` | 应用市场地址 |
-| `links` | 自定义快捷链接（名称、URL、图标） |
-| `members` | 用户账号、家目录、Founder 标记、路由权限、Passkey 与 TOTP 信息 |
-
-### 权限模块
-
-权限基于路由进行细粒度控制。默认的 `AccessPerm` 路由要求成员持有对应的完整路由权限，Founder 不受此限制；`AccessAuth` 路由只要登录即可访问，`AccessAnon` 路由允许匿名访问。
-
-**权限格式**：`<METHOD> /api/<模块>/<路由>`（如 `GET /api/docker/containers`、`POST /api/compose/docker`）
-
-**前端权限判断**：使用 `portal.hasPerm('<METHOD> /api/<路由>')` 控制按钮/操作的显示
-
-> 留空 = 无 `AccessPerm` 路由权限；具体可用路由可在登录后通过 `GET /api/account/routes` 获取。下表列出主要权限点示例。
->
-> 多服务器管理的节点接口（`/api/node/*`、`/n/<节点ID>/…`）由中控网关提供，不在上述路由表中，**仅创始人可用**，无法授予普通成员。
-
-| 模块 | 路由权限点示例 | 说明 |
-| ------ | --------------- | ------ |
-| `overview` | `GET /api/overview/version` | 系统概览（版本信息） |
-| `overview` | `GET /api/overview/monitor` | 系统概览（监控数据） |
-| `overview` | `POST /api/overview/upgrade` | 系统概览（在线升级） |
-| `system` | `GET /api/system/config` | 系统设置（获取配置） |
-| `system` | `PUT /api/system/config` | 系统设置（保存配置） |
-| `system` | `GET /api/system/audit/logs` | 系统设置（审计日志） |
-| `account` | `GET /api/account/members` | 成员管理（列出） |
-| `account` | `POST /api/account/member` | 成员管理（创建） |
-| `account` | `PUT /api/account/member/:username` | 成员管理（更新） |
-| `account` | `DELETE /api/account/member/:username` | 成员管理（删除） |
-| `account` | `POST /api/account/token` | 成员管理（创建 API 令牌） |
-| `account` | `GET /api/account/2fa/status` | 二次验证（查询状态） |
-| `account` | `POST /api/account/2fa/totp/begin` | 二次验证（开始绑定 TOTP） |
-| `account` | `POST /api/account/2fa/totp/enable` | 二次验证（启用 TOTP） |
-| `account` | `POST /api/account/2fa/totp/disable` | 二次验证（禁用 TOTP） |
-| `account` | `POST /api/account/passkey/register/begin` | Passkey（开始绑定） |
-| `account` | `POST /api/account/passkey/register/finish` | Passkey（完成绑定） |
-| `account` | `GET /api/account/passkey/credentials` | Passkey（查询凭证列表） |
-| `account` | `PUT /api/account/passkey/credential/:id` | Passkey（重命名凭证） |
-| `account` | `DELETE /api/account/passkey/credential/:id` | Passkey（删除凭证） |
-| `filer` | `GET /api/filer/files` | 文件管理（列出） |
-| `filer` | `GET /api/filer/file` | 文件管理（读取） |
-| `filer` | `POST /api/filer/file` | 文件管理（创建文件） |
-| `filer` | `PUT /api/filer/file` | 文件管理（修改） |
-| `filer` | `DELETE /api/filer/file` | 文件管理（删除） |
-| `filer` | `POST /api/filer/dir` | 文件管理（创建目录） |
-| `filer` | `POST /api/filer/upload` | 文件管理（上传） |
-| `filer` | `POST /api/filer/rename` | 文件管理（重命名/移动，后端校验目标路径边界） |
-| `filer` | `PUT /api/filer/chmod` | 文件管理（修改权限） |
-| `filer` | `POST /api/filer/zip` | 文件管理（压缩） |
-| `filer` | `POST /api/filer/unzip` | 文件管理（解压） |
-| `shell` | `GET /api/shell` | Web 终端 |
-| `local` | `GET /api/local/processes` | 本机进程（列出进程） |
-| `local` | `POST /api/local/process/:pid/kill` | 本机进程（终止进程，强制审计） |
-| `ssh` | `GET /api/ssh/hosts` | SSH 远程管理（列出主机） |
-| `ssh` | `GET /api/ssh/credentials` | SSH 远程管理（列出凭据） |
-| `ssh` | `POST /api/ssh/host` | SSH 远程管理（添加主机） |
-| `ssh` | `GET /api/ssh/to/:id` | SSH 远程管理（连接终端） |
-| `ssh` | `GET /api/sftp/:id/ls` | SSH 远程管理（SFTP 列出目录） |
-| `copilot` | `POST /api/copilot/agui` | AI 助手（AG-UI 协议对话） |
-| `cron` | `GET /api/cron/jobs` | 计划任务（列出） |
-| `cron` | `POST /api/cron/jobs` | 计划任务（创建） |
-| `cron` | `POST /api/cron/jobs/:id/run` | 计划任务（立即执行） |
-| `cron` | `GET /api/cron/jobs/:id/logs` | 计划任务（查看日志） |
-| `apisix` | `GET /api/apisix/routes` | APISIX 管理（路由列出） |
-| `apisix` | `GET /api/apisix/consumers` | APISIX 管理（消费者列出） |
-| `apisix` | `GET /api/apisix/upstreams` | APISIX 管理（上游列出） |
-| `apisix` | `GET /api/apisix/ssls` | APISIX 管理（证书列出） |
-| `apisix` | `GET /api/apisix/plugin-configs` | APISIX 管理（插件配置列出） |
-| `apisix` | `GET /api/apisix/whitelist` | APISIX 管理（访问授权列出） |
-| `docker` | `GET /api/docker/info` | Docker 管理（服务信息） |
-| `docker` | `GET /api/docker/containers` | Docker 管理（容器列出） |
-| `docker` | `GET /api/docker/images` | Docker 管理（镜像列出） |
-| `docker` | `GET /api/docker/networks` | Docker 管理（网络列出） |
-| `docker` | `GET /api/docker/volumes` | Docker 管理（卷列出） |
-| `docker` | `GET /api/docker/registries` | Docker 管理（镜像仓库列出） |
-| `swarm` | `GET /api/swarm/info` | Swarm 管理（集群信息） |
-| `swarm` | `GET /api/swarm/nodes` | Swarm 管理（节点列出） |
-| `swarm` | `GET /api/swarm/services` | Swarm 管理（服务列出） |
-| `swarm` | `GET /api/swarm/tasks` | Swarm 管理（任务列出） |
-| `compose` | `GET /api/compose/docker/:name` | Compose 管理（读取配置） |
-| `compose` | `POST /api/compose/docker` | Compose 管理（部署） |
-| `compose` | `PUT /api/compose/docker/:name` | Compose 管理（重部署） |
-| `compose` | `GET /api/compose/swarm/:name` | Compose 管理（读取配置） |
-| `compose` | `POST /api/compose/swarm` | Compose 管理（部署） |
-| `compose` | `PUT /api/compose/swarm/:name` | Compose 管理（重部署） |
-| `caddy` | `GET /api/caddy/info` | Caddy 管理（概览） |
-| `caddy` | `GET /api/caddy/config` | Caddy 管理（读取原始配置） |
-| `caddy` | `POST /api/caddy/config` | Caddy 管理（整体替换配置） |
-| `caddy` | `GET /api/caddy/global` | Caddy 管理（读取全局选项） |
-| `caddy` | `PUT /api/caddy/global` | Caddy 管理（更新全局选项） |
-| `caddy` | `GET /api/caddy/servers` | Caddy 管理（HTTP 服务列出） |
-| `caddy` | `GET /api/caddy/routes` | Caddy 管理（路由列出） |
-| `caddy` | `GET /api/caddy/basic-auth` | Caddy 管理（Basic Auth 路由列出） |
-| `caddy` | `GET /api/caddy/certs` | Caddy 管理（证书列出） |
-| `caddy` | `POST /api/caddy/cert` | Caddy 管理（创建证书） |
-| `caddy` | `PUT /api/caddy/cert/:key` | Caddy 管理（更新证书） |
-| `caddy` | `DELETE /api/caddy/cert/:key` | Caddy 管理（删除证书） |
-
-## GPU 监控
-
-支持自动检测 NVIDIA / AMD / Intel / Apple Silicon 独立显卡，显示使用率、显存、温度、功耗、风扇转速。
-
-| 厂商 | 首选方式 | 回退方式 |
-| ------ | --------- | --------- |
-| NVIDIA | nvidia-smi | — |
-| AMD | sysfs | rocm-smi |
-| Intel | sysfs | — |
-| Apple Silicon | ioreg | — |
-
-自动过滤虚拟显卡和 Intel 核显（Intel Arc 独显保留）；无独立显存的 AMD APU 通常会在采集时自然跳过。
-
-### Docker 部署注意事项
-
-**NVIDIA**：
-
-```bash
-docker run -d --gpus all rehiy/isrvd:slim
-```
-
-**AMD / Intel**：
-
-```bash
-docker run -d --device /dev/dri:/dev/dri rehiy/isrvd:slim
-```
-
 ## 架构设计
 
-### 分层架构
-
-```text
-server/cmd/server ────────────→ server/config + server/app + server/gateway + server/service/{account,node}
-server/gateway ───────────────→ server/service/node
-server/config ────────────────→ pkgs/cstore
-server/service/node ──────────→ server/config + pkgs/cstore + libgo/wstunnel
-server/service/{account,apisix,caddy,...} → server/config / pkgs/*
-server/app ────────────────────→ server/config + server/service/{account,apisix,...} + pkgs/* + public
-```
-
-- **server/cmd/server**：按 `--mode` 选择 `server`（单机，默认）、`center`（中控）或 `agent`（受管机），装配后调用 `app.StartApp`；详见 [多服务器管理](docs/multi-node.md)
-- **server/gateway**：中控模式的网关，提供节点管理 API 与 `/n/<节点ID>/` 转发，其余请求原样交给进程内的 isrvd
-- **server/config**：通过 `CONFIG_PATH` 加载和保存本地 YAML 或 etcd 配置
-- **pkgs**：底层客户端、存储适配和 SDK 类型转换，不依赖 `service`/`app`
-- **server/service/{account,apisix,...}**：业务组合、参数校验与稳定 API 类型转换；各服务按需从 `pkgs` 直接构造底层客户端
-- **server/app**：Gin HTTP/WebSocket 入口、路由、中间件、服务生命周期和响应封装
-
-### 设计原则
-
-- **高内聚**：同一领域功能聚合在同一包
-- **低耦合**：层间通过接口解耦
-- **单一职责**：Handler 只管 HTTP，Service 只管业务
-
-### 开发规范
-
-- **后端分层**：`pkgs` 保持原生客户端能力，`server/service` 负责业务组合与类型转换，`server/app` 只处理 HTTP 入出口
-- **前端结构**：`webview/src/service/types` 按域拆分类型，页面复用统一卡片、表格、移动端双视图和操作按钮语义色
-- **状态与权限**：全局状态通过 Pinia `usePortal()` 聚合访问，权限统一使用 `portal.hasPerm(moduleOrRoute)` 判断
-- **安全基线**：敏感字段不返回明文，文件路径与解压路径必须校验，WebSocket 必须经过认证链路
-- **完整规范**：根规范见 [AGENTS.md](AGENTS.md)，前端专项规范见 [webview/AGENTS.md](webview/AGENTS.md)
+分层边界、包级依赖方向与设计原则见 [AGENTS.md](AGENTS.md)「3) 项目架构」；前端专项规范见 [webview/AGENTS.md](webview/AGENTS.md)。
 
 ## 安全特性
 
