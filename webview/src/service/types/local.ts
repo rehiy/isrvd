@@ -18,6 +18,12 @@ export interface SystemProcessInfo {
     ioReadBps?: number
     /** 磁盘写入速率（字节/秒）；首次采样或不可用时省略 */
     ioWriteBps?: number
+    /** GPU 显存占用（字节）；未使用 GPU 时省略 */
+    gpuMemoryBytes?: number
+    /** GPU 利用率（%）；首次采样或不可用时省略 */
+    gpuUtilization?: number
+    /** 占用的 GPU 设备标识 */
+    gpuDevices?: string[]
     /** 启动时间（Unix 毫秒） */
     createTime: number
     cmdline?: string

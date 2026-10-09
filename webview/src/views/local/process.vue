@@ -10,7 +10,7 @@ import { formatFileSize, POLL_INTERVAL } from '@/helper/format'
 
 import PageSearch from '@/component/page-search.vue'
 
-type ProcessSortKey = 'memoryRss' | 'cpuPercent' | 'ioBPS' | 'createTime' | 'pid' | 'name'
+type ProcessSortKey = 'memoryRss' | 'cpuPercent' | 'ioBPS' | 'gpuMemoryBytes' | 'createTime' | 'pid' | 'name'
 
 interface ProcessTreeRow {
     process: SystemProcessInfo
@@ -29,6 +29,9 @@ class SystemProcessInfoView extends Vue {
     sortKey: ProcessSortKey = 'cpuPercent'
     sortDescending = true
     showParentTree = false
+    // 是否展示 GPU 列；一旦检测到占用 GPU 的进程便保持展示，
+    // 避免采集抖动（采样失败或进程瞬时释放设备）导致表格列反复显隐
+    showGPUColumn = false
     private pollTimer: ReturnType<typeof setInterval> | null = null
     private polling = false
 
@@ -81,6 +84,22 @@ class SystemProcessInfoView extends Vue {
 
     formatPercent(value?: number) {
         return value === undefined ? '-' : `${value.toFixed(1)}%`
+    }
+
+    // 仅持有设备句柄（显存与利用率均为 0，如桌面合成器）不算占用 GPU
+    usesGPU(process: SystemProcessInfo) {
+        return (process.gpuMemoryBytes || 0) > 0 || (process.gpuUtilization || 0) > 0
+    }
+
+    formatGPUMemory(process: SystemProcessInfo) {
+        return process.gpuMemoryBytes ? formatFileSize(process.gpuMemoryBytes) : '-'
+    }
+
+    // 显存之外的 GPU 信息：利用率与设备标识，设备较多时由容器截断展示
+    formatGPUDetail(process: SystemProcessInfo) {
+        const utilization = this.formatPercent(process.gpuUtilization)
+        const devices = process.gpuDevices?.length ? process.gpuDevices.join(', ') : ''
+        return devices ? `${utilization} · ${devices}` : utilization
     }
 
     formatCPUTime(milliseconds: number) {
@@ -174,6 +193,9 @@ class SystemProcessInfoView extends Vue {
         try {
             const res = await api.localProcessList()
             this.processes = res.payload?.processes || []
+            if (!this.showGPUColumn) {
+                this.showGPUColumn = this.processes.some(process => this.usesGPU(process))
+            }
         } catch {
             if (!silent) this.portal.showNotification('error', '获取进程列表失败')
         } finally {
@@ -261,6 +283,7 @@ export default toNative(SystemProcessInfoView)
             <option value="memoryRss">内存占用</option>
             <option value="cpuPercent">CPU 占用</option>
             <option value="ioBPS">I/O 速率</option>
+            <option v-if="showGPUColumn" value="gpuMemoryBytes">GPU 显存</option>
             <option value="createTime">启动时间</option>
             <option value="pid">进程 ID</option>
             <option value="name">进程名称</option>
@@ -294,6 +317,7 @@ export default toNative(SystemProcessInfoView)
               <option value="memoryRss">内存</option>
               <option value="cpuPercent">CPU</option>
               <option value="ioBPS">I/O</option>
+              <option v-if="showGPUColumn" value="gpuMemoryBytes">GPU</option>
               <option value="createTime">启动</option>
               <option value="pid">PID</option>
               <option value="name">名称</option>
@@ -340,6 +364,7 @@ export default toNative(SystemProcessInfoView)
               <th class="w-20 th">CPU</th>
               <th class="w-36 th">内存</th>
               <th class="w-36 th">I/O</th>
+              <th v-if="showGPUColumn" class="w-36 th">GPU</th>
               <th class="w-36 th">启动时间</th>
               <th v-if="canKill" class="w-40 th-right">操作</th>
             </tr>
@@ -374,6 +399,10 @@ export default toNative(SystemProcessInfoView)
               <td class="td-text">
                 <span class="block">读 {{ formatIORate(row.process.ioReadBps) }}</span>
                 <span class="block text-xs text-slate-400">写 {{ formatIORate(row.process.ioWriteBps) }}</span>
+              </td>
+              <td v-if="showGPUColumn" class="td-text max-w-[9rem]">
+                <span class="block whitespace-nowrap">{{ formatGPUMemory(row.process) }}</span>
+                <span class="block text-xs text-slate-400 truncate" :title="formatGPUDetail(row.process)">{{ formatGPUDetail(row.process) }}</span>
               </td>
               <td class="td-text">{{ formatStartTime(row.process.createTime) }}</td>
               <td v-if="canKill" class="px-4 py-3">
@@ -420,6 +449,10 @@ export default toNative(SystemProcessInfoView)
           <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">I/O</span>
             <span class="text-xs text-slate-500">读 {{ formatIORate(row.process.ioReadBps) }} · 写 {{ formatIORate(row.process.ioWriteBps) }}</span>
+          </div>
+          <div v-if="usesGPU(row.process)" class="card-prop-row">
+            <span class="text-xs text-slate-400 flex-shrink-0">GPU</span>
+            <span class="text-xs text-slate-500">{{ formatGPUMemory(row.process) }} · {{ formatGPUDetail(row.process) }}</span>
           </div>
           <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">启动</span>
