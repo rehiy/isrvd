@@ -2,6 +2,54 @@
 
 > 适用于 `webview/` 前端代码；通用规则仍以 `../AGENTS.md` 为准。
 
+## 0) 开工前：常见任务路径
+
+先按目录定位文件，再按任务读对应小节，改完执行该任务的自检命令（完整命令见文末 `2) 前端质量门禁`）。
+
+### 0.1 目录地图（新文件放哪里）
+
+```text
+webview/src/
+├── app.vue                 应用根组件（全局 header、侧边栏、路由出口）
+├── main.ts                 入口：createPinia() → portal = usePortal() → 注入路由守卫
+├── router/index.ts         路由表与守卫
+├── views/<模块>/           页面，按后端模块分目录：docker / swarm / apisix / caddy /
+│                           compose / cron / local / node / overview / ssh / system / account
+├── component/              跨页复用组件：modal.vue（BaseModal）、page-search.vue、
+│                           toggle-card.vue、confirm.vue、dropdown.vue、combobox.vue、
+│                           option-multi-select.vue、icon-select.vue、node-switcher.vue、
+│                           user-menu.vue、toolbar-links.vue、navigation.vue、notification.vue
+│                           子目录：terminal/、explorer/、copilot/
+├── service/
+│   ├── api.ts              ApiService 单例，后端调用的唯一出口
+│   ├── axios.ts            http / httpBlob 实例
+│   ├── client.ts           HttpClient 接口与 APIResponse<T>（响应拦截器已解包）
+│   ├── types.ts            统一 `export *`
+│   └── types/<域>.ts       按域拆分的类型：docker / swarm / apisix / caddy / compose /
+│                           cron / system / account / overview / filer / ssh / local / node
+├── helper/                 通用函数：format.ts（含 POLL_INTERVAL）、monitor.ts、chart.ts、
+│                           dom.ts、file.ts、node.ts、theme.ts、webauthn.ts、log.ts、
+│                           apisix.ts、split-pane.ts、copilot/
+├── stores/                 Pinia：index.ts（usePortal）、portal.ts、auth.ts、system.ts、
+│                           ui.ts、node.ts；config.ts 是页面级配置草稿 store，不进 portal
+└── assets/                 light.css（@theme 浅色变量）、light_base.css、
+                            light_components.css（CSS 组件类）、dark.css（暗黑覆盖）、style.css
+```
+
+归属判断顺序：跨页复用 → `component/`；只服务单个页面 → 就近放 `views/<模块>/`；后端数据结构 → `service/types/<域>.ts`；纯函数/格式化/轮询 → `helper/`；跨页共享状态 → `stores/`（先确认是否应聚合进 `portal`，见 1.2）。
+
+### 0.2 常见任务 → 读哪几节 → 改完自检
+
+| 任务 | 必读小节 | 改完自检 |
+| --- | --- | --- |
+| 新增一个资源列表页 | 1.4 类型命名、1.5 方法命名、1.6 页面容器与 toolbar、1.7 列表双视图与搜索、1.9 表格第一列、1.10 操作按钮色、1.17 CSS 类 | `npm run lint` + `python3 scripts/review-style.py` |
+| 新增/修改后端接口调用 | 1.3 API 服务层、1.4 类型定义、1.5 方法命名、1.14 import 排序 | `npm run lint` + `npm run format:check` |
+| 调整页面样式 / 新增组件 | 1.6–1.12（按场景）、1.16 暗黑模式、1.17 CSS 类清单（**先查有无现成类**） | `python3 scripts/review-style.py` + `npm run build` |
+| 表单、开关、多选类交互 | 1.11 表单与敏感字段（含 ToggleCard / Checkbox 规范） | `npm run lint` |
+| 新增概览 Widget | 1.12 概览统计卡片 | `npm run build` |
+| 改动 Explorer 或 SFTP | 1.18 强一致性规范（**两边必须同步改**） | `npm run lint` + 人工对照 1.18.5 清单 |
+| 集中管理（center 模式）相关 | 1.2 状态管理的多节点约定、`helper/node.ts` | `npm run lint` |
+
 ---
 
 ## 1) 前端编码规范（Vue/Tailwind）
@@ -23,7 +71,7 @@
 
 ### 1.3 API 服务层
 
-`service/api.ts` 单例 `class ApiService`，`export default new ApiService()`。请求统一通过 `http`/`httpBlob`（`service/axios.ts`），前者类型安全已解包为 `APIResponse`，后者 Blob 下载专用
+`service/api.ts` 单例 `class ApiService`，`export default new ApiService()`。请求统一通过 `http`/`httpBlob`（`service/client.ts`），前者类型安全已解包为 `APIResponse`，后者 Blob 下载专用；WebSocket 地址统一取 `wsUrl`
 
 ### 1.4 类型定义与命名（强制）
 
@@ -348,7 +396,7 @@
 
 ### 1.15 终端能力
 
-系统终端走 `helper/shell.ts`，容器终端走 `helper/container-exec.ts`，禁止页面直接创建 Terminal/WebSocket 实例
+系统终端与容器终端统一走 `@/component/terminal`（`TerminalPanel` 组件 + `WsTerminal` / `TerminalAdapter`），禁止页面直接创建 Terminal/WebSocket 实例
 
 ### 1.16 暗黑模式样式（强制）
 
