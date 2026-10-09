@@ -3,17 +3,19 @@ import { defineStore, storeToRefs } from 'pinia'
 import api from '@/service/api'
 import { interceptors } from '@/service/client'
 import type { BootstrapData } from '@/service/types'
+import { nodeLocation } from '@/helper/node'
 import { initTheme } from '@/helper/theme'
 
 import { useAuthStore } from './auth'
 import { useConfigStore } from './config'
+import { useNodeStore } from './node'
 import { useSystemStore } from './system'
 import { useUIStore } from './ui'
 
 /**
  * Portal Store - 统一入口
  *
- * 组合 auth、system、ui 三个子 store，提供统一的访问接口。
+ * 组合 auth、system、ui、node 四个子 store，提供统一的访问接口。
  * 主要职责：
  * 1. 调用 /overview/bootstrap，将数据分发到 auth/system store
  * 2. 注册 axios 拦截器
@@ -25,6 +27,7 @@ export const usePortalStore = defineStore('portal', () => {
     const authStore = useAuthStore()
     const systemStore = useSystemStore()
     const uiStore = useUIStore()
+    const nodeStore = useNodeStore()
 
     // ─── 分发启动数据到子 store ───
 
@@ -84,6 +87,7 @@ export const usePortalStore = defineStore('portal', () => {
     function clearAuth() {
         authStore.clearAuth()
         useConfigStore().reset()
+        nodeStore.reset()
     }
 
     // ─── 权限检查（组合 auth 和 system）───
@@ -104,6 +108,7 @@ export const usePortalStore = defineStore('portal', () => {
     const authRefs = storeToRefs(authStore)
     const systemRefs = storeToRefs(systemStore)
     const uiRefs = storeToRefs(uiStore)
+    const nodeRefs = storeToRefs(nodeStore)
 
     return {
         // Portal 方法
@@ -135,6 +140,12 @@ export const usePortalStore = defineStore('portal', () => {
         openapiEnabled: systemRefs.openapiEnabled,
         // System Store 方法
         hasPerm,
+
+        // Node Store 状态（响应式，仅中控模式有数据）；currentNodeId 取自页面路径，整页切换节点，不会变化
+        currentNodeId: nodeLocation().id,
+        nodes: nodeRefs.nodes,
+        // Node Store 方法
+        nodeLoad: nodeStore.load,
 
         // UI Store 状态（响应式）
         notifications: uiRefs.notifications,

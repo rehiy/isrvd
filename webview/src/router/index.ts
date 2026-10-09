@@ -60,6 +60,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/ssh/credentials.vue')
   },
   {
+    path: '/node',
+    name: 'node',
+    component: () => import('@/views/node/nodes.vue')
+  },
+  {
     path: '/apisix',
     name: 'apisix',
     redirect: '/apisix/routes'

@@ -10,6 +10,7 @@ interface ServiceAvailability {
     docker: boolean
     swarm: boolean
     compose: boolean
+    node: boolean
 }
 
 /**
@@ -29,6 +30,7 @@ export const useSystemStore = defineStore('system', () => {
         docker: false,
         swarm: false,
         compose: false,
+        node: false,
     })
     const toolbarLinks = ref<LinkConfig[]>([])
     const marketplaceUrl = ref<string>('')
@@ -48,6 +50,7 @@ export const useSystemStore = defineStore('system', () => {
                 docker: probe.docker || false,
                 swarm: probe.swarm || false,
                 compose: probe.compose || false,
+                node: probe.node || false,
             })
         }
 

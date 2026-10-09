@@ -34,6 +34,7 @@ export interface SystemProbe {
     docker: boolean
     swarm: boolean
     compose: boolean
+    node: boolean // 多节点管理是否启用（仅中控模式）
 }
 
 // ─── 系统统计 ───

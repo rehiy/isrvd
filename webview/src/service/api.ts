@@ -118,6 +118,11 @@ import type {
     SFTPMkdir,
     SFTPChmod,
     SFTPWrite,
+    // Node
+    NodeInfo,
+    NodeUpdate,
+    NodeCodeInfo,
+    NodeCodeCreate,
 } from './types'
 
 // API 服务类，统一管理所有 API 请求
@@ -877,6 +882,40 @@ class ApiService {
 
     sshHostDelete(id: string) {
         return http.delete<void>(`ssh/host/${id}`)
+    }
+
+    // ==================== Node 节点管理 ====================
+
+    nodeList() {
+        return http.get<NodeInfo[]>('node/nodes')
+    }
+
+    nodeUpdate(id: string, data: NodeUpdate) {
+        return http.put<NodeInfo>(`node/item/${id}`, data)
+    }
+
+    nodeApprove(id: string) {
+        return http.post<NodeInfo>(`node/item/${id}/approve`)
+    }
+
+    nodeRevoke(id: string) {
+        return http.post<void>(`node/item/${id}/revoke`)
+    }
+
+    nodeDelete(id: string) {
+        return http.delete<void>(`node/item/${id}`)
+    }
+
+    nodeCodeList() {
+        return http.get<NodeCodeInfo[]>('node/codes')
+    }
+
+    nodeCodeCreate(data: NodeCodeCreate) {
+        return http.post<NodeCodeInfo>('node/code', data)
+    }
+
+    nodeCodeDelete(id: string) {
+        return http.delete<void>(`node/code/${id}`)
     }
 
     // ==================== SFTP 文件管理 ====================

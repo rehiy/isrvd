@@ -550,6 +550,12 @@ export default toNative(NavigationBar)
         <span v-if="!collapsed">用户管理</span>
       </router-link>
 
+      <!-- 节点管理（仅中控模式的创始人可见） -->
+      <router-link v-if="portal.hasPerm('GET /api/node/nodes')" to="/node" class="nav-link" active-class="nav-link-active" :title="collapsed ? '节点管理' : ''">
+        <i class="fas fa-sitemap"></i>
+        <span v-if="!collapsed">节点管理</span>
+      </router-link>
+
       <!-- 系统配置折叠子菜单（GET 或 PUT 任一权限即显示，只读成员同样可查看） -->
       <div v-if="portal.hasPerm('GET /api/system/config') || portal.hasPerm('PUT /api/system/config')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->

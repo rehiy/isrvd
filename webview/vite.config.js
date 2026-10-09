@@ -33,6 +33,11 @@ export default defineConfig({
         changeOrigin: true,
         ws: true
       },
+      '/n/': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        ws: true
+      },
       '/api/docker/container': {
         target: 'ws://localhost:8080',
         changeOrigin: true,

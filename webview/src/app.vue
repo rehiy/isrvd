@@ -8,6 +8,7 @@ import api from '@/service/api'
 import ConfirmModal from '@/component/confirm.vue'
 import Copilot from '@/component/copilot/index.vue'
 import NavigationBar from '@/component/navigation.vue'
+import NodeSwitcher from '@/component/node-switcher.vue'
 import NotificationManager from '@/component/notification.vue'
 import ToolbarLinks from '@/component/toolbar-links.vue'
 import UserMenu from '@/component/user-menu.vue'
@@ -15,7 +16,7 @@ import UserMenu from '@/component/user-menu.vue'
 import AuthLogin from '@/views/account/login.vue'
 
 @Component({
-    components: { ConfirmModal, NavigationBar, NotificationManager, Copilot, ToolbarLinks, UserMenu, AuthLogin }
+    components: { ConfirmModal, NavigationBar, NodeSwitcher, NotificationManager, Copilot, ToolbarLinks, UserMenu, AuthLogin }
 })
 class App extends Vue {
     portal = usePortal()
@@ -102,6 +103,8 @@ export default toNative(App)
 
         <!-- 用户信息 -->
         <div class="flex items-center gap-1">
+          <!-- 节点切换：仅中控模式的创始人可见 -->
+          <NodeSwitcher />
           <button
             v-if="hasCopilot"
             title="AI 助手"
