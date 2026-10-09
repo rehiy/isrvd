@@ -9,7 +9,7 @@ Compose 接口用于单机 Docker Compose 与 Swarm Stack 的部署、读取配�
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
 | `content` | string | 是 | 完整 compose yaml 文本 |
-| `envContent` | string | 否 | `.env` 内容（`KEY=VALUE`）；省略则保留附加文件解压出的 `.env`，提交则以其为准写盘并合并进变量插值环境 |
+| `envContent` | string | 否 | `.env` 内容（`KEY=VALUE`）；省略则保留附加文件解压出的 `.env`（不存在时兜底创建空 `.env`，避免 `env_file` 因缺文件报错），提交则以其为准写盘并合并进变量插值环境 |
 | `initURL` | string | 否 | 附加运行文件 zip 下载地址 |
 | `initFile` | file | 否 | 附加运行文件 zip（仅 multipart）；与 `initURL` 同时提交不会报错，此时只使用 `initFile`，`initURL` 被忽略 |
 | `forcePull` | boolean | 否 | `true` 时强制拉取最新镜像（即使本地已存在），默认 `false`；**仅 JSON 请求生效**，multipart 表单中传入会被忽略 |
@@ -36,7 +36,7 @@ JSON 解析失败、`content` 为空、项目名不合法返回 `400`；其余�
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
 | `content` | string | 按需 | 完整 compose yaml 文本；省略表示沿用现有 compose.yml，提交空字符串会被拒绝 |
-| `envContent` | string | 按需 | `.env` 内容（`KEY=VALUE`）；省略表示保留现有 `.env`，提交空字符串表示清空，提交内容表示覆盖 |
+| `envContent` | string | 按需 | `.env` 内容（`KEY=VALUE`）；省略表示保留现有 `.env`（不存在时兜底创建空 `.env`），提交空字符串表示清空，提交内容表示覆盖 |
 | `serviceName` | string | 按需 | 要更新镜像的 compose 服务名（按服务更新） |
 | `image` | string | 按需 | 新镜像名，`serviceName` 非空时必填 |
 | `forcePull` | boolean | 否 | `true` 时强制拉取最新镜像，默认 `false` |

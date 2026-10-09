@@ -11,7 +11,7 @@ isrvd_get "/overview/bootstrap"
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `auth` | object | 当前认证信息（`mode`、`username`、`member`、`oidcEnabled`、`oidcBtnLabel`、`passkeyEnabled`、`passwordDisabled`、`passwordMinLength`） |
-| `probe` | object | 服务可用性，仅已登录时返回（未登录时不含该字段）：`copilot`、`apisix`、`caddy`、`docker`、`swarm`、`compose`；各项并发探活，整体 5 秒超时；`copilot` 需 `copilot.baseUrl` 与 `apiKey` 均已配置才为 `true` |
+| `probe` | object | 服务可用性，仅已登录时返回（未登录时不含该字段）：`copilot`、`apisix`、`caddy`、`docker`、`swarm`、`compose`、`node`；各项并发探活，整体 5 秒超时；`copilot` 需 `copilot.baseUrl` 与 `apiKey` 均已配置才为 `true`；`node` 仅在 `center` 模式注册，表示多节点管理可用 |
 | `config` | object | 前端启动所需的最小配置，仅已登录时返回（未登录时不含该字段）：`maxUploadSize`、`marketplaceUrl`、`openapiEnabled`、`links` |
 
 ---
@@ -62,7 +62,7 @@ isrvd_get "/overview/monitor?type=container&since=3600&id=<CONTAINER_ID>"
 
 **记录格式：**
 
-历史查询（`since>0`）返回记录数组，服务端会按请求的 `since` 时间窗口降采样，返回点数控制在约 **300** 个以内；历史数据保留 3 天。实时模式（`since=0`）返回单条记录且不写入文件；实时查询容器时 Docker 不可用或采集失败，payload 为 `null`。监控采集器未启动时返回 `503`。
+历史查询（`since>0`）返回记录数组，服务端会按请求的 `since` 时间窗口降采样，返回点数控制在约 **300** 个以内；历史数据保留 3 天。实时模式（`since=0`）返回单条记录且不写入文件；实时查询容器时 Docker 不可用或采集失败，响应中不含 `payload` 字段（`payload` 带 `omitempty`，`nil` 时被整体省略而非返回 `null`）。监控采集器未启动时返回 `503`。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|

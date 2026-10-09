@@ -27,10 +27,13 @@ GET /local/processes
 | `memoryRss` | number | 常驻内存（字节） |
 | `ioReadBps` | number | 磁盘读取速率（字节/秒）；首次采样或不可用时不返回 |
 | `ioWriteBps` | number | 磁盘写入速率（字节/秒）；首次采样或不可用时不返回 |
+| `gpuMemoryBytes` | number | GPU 显存占用（字节）；未使用 GPU 时不返回 |
+| `gpuUtilization` | number | GPU 利用率（%）；首次采样或不可用时不返回 |
+| `gpuDevices` | array | 占用的 GPU 设备标识；未使用 GPU 时不返回 |
 | `createTime` | number | 启动时间（Unix 毫秒） |
 | `cmdline` | string | 完整命令行；为空时不返回 |
 
-单个进程的某个字段采集失败时降级为零值或省略，不会导致该进程从列表中消失。
+单个进程的某个字段采集失败时降级为零值或省略，不会导致该进程从列表中消失。GPU 字段按进程逐个采集，Linux 下优先读取内核 DRM fdinfo，闭源驱动未暴露时回退 `nvidia-smi`；容器内需挂载 `/dev/dri` 才能采集，详见 [GPU 监控](../gpu-monitoring.md)。
 
 ```bash
 isrvd_get "/local/processes"

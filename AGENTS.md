@@ -30,7 +30,7 @@
 server/cmd/server ────────────→ server/config + server/app + server/gateway + server/service/{account,node}
 server/gateway ───────────────→ server/service/node
 server/config ────────────────→ pkgs/cstore
-server/service/node ──────────→ server/config + pkgs/cstore + libgo/wstunnel
+server/service/node ──────────→ server/config + pkgs/cstore + pkgs/secretbox + libgo/wstunnel
 server/service/{account,apisix,...} → server/config / pkgs/*
 server/service/{docker,webssh} → server/service/shell（终端桥接复用）
 server/service/{cron,monitor} → server/service/notify（任务失败与资源告警）
@@ -54,6 +54,8 @@ server/app ────────────────→ server/config + s
 
 - 同领域功能聚合同包（`pkgs/docker/`、`pkgs/swarm/`、`pkgs/caddy/`），类型就近定义，不集中 `types.go`
 - 层间通过接口或注入解耦；前端全局状态通过 Pinia `usePortal()` 聚合访问
+- 单一职责：Handler 只管 HTTP，Service 只管业务
+- 前端结构：`webview/src/service/types` 按域拆分类型，页面复用统一卡片、表格、移动端双视图和操作按钮语义色
 - 判定：改一个功能只需改一处；若需同时改多个包同名函数，说明内聚不足
 
 ---
@@ -77,7 +79,9 @@ server/app ────────────────→ server/config + s
 ```
 docs/
 ├── SKILL.md                      ← 索引 + 决策树 + 常见工作流
-├── multi-node.md                 ← 多服务器管理（部署、参数、行为与边界）
+├── multi-node.md                 ← 集中管理（部署、参数、行为与边界）
+├── permissions.md                ← 路由权限模型与权限点参考
+├── gpu-monitoring.md             ← GPU 检测方式、采集指标与容器部署注意事项
 ├── scripts/
 │   ├── api.sh                    ← Bash API 调用封装
 │   ├── api.js                    ← JavaScript API 调用封装
@@ -116,7 +120,7 @@ docs/
 | `server/app/ctrl_shell.go` | `docs/references/shell.md` |
 | `server/gateway/`、`server/service/node/` | `docs/references/node/` 下对应文件，部署与行为变化同步 `docs/multi-node.md` |
 | `pkgs/*/`（数据结构变更） | 对应 docs 文件中的字段表 |
-| 新增路由/模块 | `docs/SKILL.md` 索引表 + 决策树 |
+| 新增路由/模块 | `docs/SKILL.md` 索引表 + 决策树、`docs/permissions.md` 权限点表 |
 | API 调用脚本变更 | `docs/scripts/api.sh`、`api.js`、`api.py` 中受影响的实现 |
 | 构建/开发脚本用法变更 | `README.md` 中对应的构建或开发说明 |
 
