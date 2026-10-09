@@ -34,7 +34,11 @@ func Init() error {
 	uri := EnvOrDefault("CONFIG_PATH", "config.yml")
 
 	var err error
-	store, storeKey, err = cstore.OpenWithKey(uri)
+	// etcd 认证：ETCD_USERNAME / ETCD_PASSWORD 优先于 URI userinfo
+	store, storeKey, err = cstore.OpenWithKey(uri, cstore.WithEtcdCredentials(
+		os.Getenv("ETCD_USERNAME"),
+		os.Getenv("ETCD_PASSWORD"),
+	))
 	if err != nil {
 		return err
 	}

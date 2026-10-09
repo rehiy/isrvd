@@ -17,12 +17,12 @@ import (
 // EtcdStore 基于 etcd 的配置存储。
 type EtcdStore struct {
 	client   *etcd.Client
-	keyPath  string // etcd key，如 "/isrvd/config"
+	keyPath  string // etcd key，如 "/app/config"
 	fallback string // 可选：fallback YAML 文件路径，key 不存在时读取并写入 etcd
 	timeout  time.Duration
 }
 
-func newEtcdStore(uri string) (*EtcdStore, error) {
+func newEtcdStore(uri string, opt options) (*EtcdStore, error) {
 	// url.Parse 不支持逗号分隔的多个 host:port，先取出 host 段，再用占位 host 解析其余部分
 	rest := uri[len("etcd://"):]
 	authority := rest[:strings.IndexAny(rest+"/", "/?")]
@@ -56,9 +56,14 @@ func newEtcdStore(uri string) (*EtcdStore, error) {
 		}
 	}
 
-	username := envOrDefault("ETCD_USERNAME", u.User.Username())
+	username := u.User.Username()
+	if opt.etcdUsername != "" {
+		username = opt.etcdUsername
+	}
 	password, _ := u.User.Password()
-	password = envOrDefault("ETCD_PASSWORD", password)
+	if opt.etcdPassword != "" {
+		password = opt.etcdPassword
+	}
 
 	keyPath := u.Path
 	if keyPath == "" || keyPath == "/" {
@@ -205,11 +210,4 @@ func (e *EtcdStore) fallbackPath(key string) string {
 		return e.fallback
 	}
 	return filepath.Join(e.fallback, key)
-}
-
-func envOrDefault(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return fallback
 }

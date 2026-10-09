@@ -49,16 +49,40 @@ type Store interface {
 	Close() error
 }
 
+// Option 打开 Store 时的可选参数。
+type Option func(*options)
+
+type options struct {
+	etcdUsername string
+	etcdPassword string
+}
+
+// WithEtcdCredentials 为 etcd 后端指定认证信息；非空值覆盖 URI userinfo 中的对应字段。
+// 文件后端忽略该选项。
+func WithEtcdCredentials(username, password string) Option {
+	return func(o *options) {
+		o.etcdUsername, o.etcdPassword = username, password
+	}
+}
+
+func applyOptions(opts []Option) options {
+	var o options
+	for _, opt := range opts {
+		opt(&o)
+	}
+	return o
+}
+
 // Open 根据 URI 创建 Store，URI 指向目录（或 etcd 前缀）。
 //
 //   - etcd://...  → EtcdStore
 //   - file://...  → FileStore（取 path 部分作为 base 目录）
 //   - 其他        → FileStore（URI 直接作为 base 目录路径）
-func Open(uri string) (Store, error) {
+func Open(uri string, opts ...Option) (Store, error) {
 	lower := strings.ToLower(uri)
 	switch {
 	case strings.HasPrefix(lower, "etcd://"):
-		return newEtcdStore(uri)
+		return newEtcdStore(uri, applyOptions(opts))
 	case strings.HasPrefix(lower, "file://"):
 		return newFileStore(strings.TrimPrefix(uri, "file://"))
 	case strings.Contains(uri, "://"):
@@ -96,11 +120,11 @@ func OpenData(source Store, rootDir string) (Store, error) {
 //   - file:///path/to/file.yml  → FileStore(dir)，key = file.yml
 //   - /path/to/file.yml         → FileStore(dir)，key = file.yml
 //   - rel/file.yml              → FileStore(dir)，key = file.yml
-func OpenWithKey(uri string) (Store, string, error) {
+func OpenWithKey(uri string, opts ...Option) (Store, string, error) {
 	lower := strings.ToLower(uri)
 	switch {
 	case strings.HasPrefix(lower, "etcd://"):
-		s, err := newEtcdStore(uri)
+		s, err := newEtcdStore(uri, applyOptions(opts))
 		return s, "", err
 	case strings.HasPrefix(lower, "file://"):
 		uri = strings.TrimPrefix(uri, "file://")
