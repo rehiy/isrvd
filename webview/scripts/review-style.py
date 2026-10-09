@@ -571,6 +571,28 @@ def check_enum_badge_rounded(filepath, lines, tmpl, tmpl_line0):
                    f"badge 应用 rounded 或 rounded-lg，不得用 rounded-full: {stripped[:100]}")
 
 
+def check_checkbox_with_description(filepath, lines, tmpl, tmpl_line0):
+    """
+    1.11 Checkbox 仅用于多选列表或无描述的简单开关；带描述的单一功能开关必须使用 <ToggleCard>。
+    判定：包裹 checkbox 的 <label class="check-label"> 之后紧跟一段 text-slate-400 的描述 <p>。
+    """
+    tl = tmpl.splitlines()
+    for i, line in enumerate(tl, 1):
+        if '<label' not in line or 'check-label' not in line:
+            continue
+        end = i - 1
+        while end < len(tl) and '</label>' not in tl[end]:
+            end += 1
+        if 'type="checkbox"' not in '\n'.join(tl[i - 1:end + 1]):
+            continue
+        nxt = end + 1
+        while nxt < len(tl) and not tl[nxt].strip():
+            nxt += 1
+        if nxt < len(tl) and re.match(r'<p\b[^>]*text-slate-400', tl[nxt].strip()):
+            report(filepath, tmpl_line0 + i - 1, "WARN",
+                   "带描述的 checkbox：若是单一功能开关应改用 <ToggleCard>（多选列表项可忽略）")
+
+
 # ─── 主流程 ──────────
 
 def check_redundant_component_classes(filepath, lines, tmpl, tmpl_line0):
@@ -649,6 +671,8 @@ CHECKS = [
     check_enum_badge_rounded,
     check_redundant_component_classes,
     check_redundant_badge_classes,
+    # 1.11 Checkbox 与 Toggle 的使用边界
+    check_checkbox_with_description,
 ]
 
 

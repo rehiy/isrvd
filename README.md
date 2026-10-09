@@ -13,6 +13,7 @@
 | Web 终端 | 基于 xterm.js 的 Shell 终端，支持容器终端接入 |
 | 本机进程 | 查看主机进程列表（CPU、内存、命令行），终止指定进程（强制审计） |
 | SSH 远程管理 | 管理主机与可复用凭据，支持密码/私钥认证、浏览器终端和 SFTP 文件管理 |
+| 多服务器管理 | 同一个二进制按 `--mode` 作为单机、中控（center）或受管机（agent）运行；受管机主动出站连接中控，无需开放入站端口，创始人可在界面中接入、审批、吊销节点并切换到任一节点操作其 Docker、文件、终端、计划任务等，详见 [多服务器管理](docs/multi-node.md) |
 | AI 助手 | 内置 Copilot，基于 CopilotKit + AG-UI 协议，通过内置 OpenAPI 目录调用后端接口，支持页面上下文、工具卡片与写操作审批，兼容 OpenAI API 的 LLM 接入 |
 | 计划任务 | 定时任务调度；按运行平台提供 Shell 或 BAT/PowerShell 脚本及可执行文件任务，Docker 可用时还支持临时容器或已有容器执行 |
 | APISIX | 路由、Consumer、上游(Upstream)、SSL 证书、插件配置(PluginConfig)、插件列表、访问授权管理 |
@@ -203,6 +204,82 @@ CONFIG_PATH="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" .
 
 **etcd** 认证可省略，也可用 `ETCD_USERNAME` / `ETCD_PASSWORD` 补充或覆盖 URI 中的认证信息。etcd key 发生 PUT 变更时，isrvd 会重载配置、注册中心和业务服务。计划任务、SSH 主机与凭据等业务数据同样存入 etcd（key 为 `<配置 key>/cron.yml` 等），首次启动时自动迁移 `rootDirectory` 下的同名文件；审计与监控日志仍写本地。迁移后本地文件不再更新，回退到不支持该特性的旧版本会丢失升级期间对计划任务与 SSH 配置的修改。通过系统配置 API 保存的本地 YAML 也会立即触发重载；若直接在磁盘上修改 YAML，则需发送 `SIGHUP` 或重启进程。
 
+## 集中管理
+
+同一个二进制，用 `--mode`（或环境变量 `ISRVD_MODE`）选择角色，一个控制台管理多台服务器：
+
+| 模式 | 作用 |
+| ------ | ------ |
+| `server`（默认） | 单机，与以往完全一致 |
+| `center` | 中控：提供 Web 界面、账号与权限，接收受管机接入，并把请求按节点转发 |
+| `agent` | 受管机：不开放任何对外端口，主动连接中控，中控转发来的请求在本机执行 |
+
+```text
+浏览器 ──> center ──┬── 页面、账号、权限、审计 ──> 本进程内的 isrvd
+                    └── /n/<节点ID>/api/… ──隧道──> agent（本进程内的 isrvd）
+                                                  ▲ 受管机主动出站，中控从不主动外连
+```
+
+- **无需入站端口**：受管机只需要能访问中控，位于 NAT 或防火墙后也可以接入；断线后按指数退避自动重连
+- **切换节点即切换视角**：创始人在页面头部选择节点后，Docker、Swarm、Compose、文件、本机进程、终端、计划任务、APISIX、Caddy 和系统概览都作用于该节点，包括实时日志、终端和大文件上传下载
+- **账号与配置仍在中控**：成员、权限、系统配置、AI 助手和 SSH 远程管理始终由中控处理，节点上的操作使用中控的登录态
+- **按需出现**：节点切换器和侧边栏「节点管理」只在 `center` 模式且当前用户是创始人时显示，单机用户看不到任何变化
+
+### 接入节点
+
+1. 启动中控：`isrvd --mode center`，沿用原来的配置文件与 `listenAddr`
+2. 在「节点管理」页点击「接入节点」生成一次性注册码，界面会给出可直接复制的受管机启动命令；未使用的注册码在列表里显示为「待接入」，可随时撤销
+3. 在受管机启动：`isrvd --mode agent --center-url https://center.example.com --enroll-code <注册码>`
+4. 在同一页面审批该节点；勾选「自动通过审批」生成的注册码可跳过这一步，节点随即显示「在线」
+
+首次注册后节点凭据加密保存在受管机本地，重启不需要再带注册码。
+
+### Docker 部署
+
+镜像入口不带参数，用环境变量选择模式，不需要改镜像或配置文件：
+
+```bash
+# 中控：与单机部署相同，多一个环境变量，8080 为对外入口
+docker run -d --name isrvd-center --network sdnet -p 8080:8080 \
+  -e ISRVD_MODE=center \
+  -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock \
+  rehiy/isrvd:slim
+
+# 受管机：不监听对外端口，不需要 -p
+docker run -d --name isrvd-agent --network sdnet \
+  -e ISRVD_MODE=agent \
+  -e ISRVD_CENTER_URL=https://center.example.com \
+  -e ISRVD_ENROLL_CODE=<注册码> \
+  -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock \
+  rehiy/isrvd:slim
+```
+
+> - 受管机的节点凭据保存在 `/data` 下，请保持挂载，否则重建容器后需要新的注册码重新接入
+> - 受管机的 `isrvd.yml` 里必须有创始人成员（镜像默认的 `admin` 满足），且不能启用 `tha`
+> - 受管机配置里的 `listenAddr` 在此模式下不生效；`jwtSecret` 用于加密节点凭据，建议改掉镜像默认值，且之后不要再变更
+
+### systemd 部署
+
+安装脚本生成的是单机服务。作为中控或受管机运行时，用 drop-in 追加环境变量，无需修改脚本生成的单元文件（脚本升级后仍然有效）：
+
+```bash
+systemctl edit isrvd
+# 在编辑器中写入（受管机示例；中控只需 ISRVD_MODE=center）：
+#   [Service]
+#   Environment="ISRVD_MODE=agent"
+#   Environment="ISRVD_CENTER_URL=https://center.example.com"
+#   Environment="ISRVD_ENROLL_CODE=<注册码>"
+systemctl restart isrvd
+```
+
+### 安全与边界
+
+- 只有创始人可以管理和操作节点；节点上的请求以受管机本地的创始人身份执行，不能把节点权限下放给普通成员
+- 注册码一次性使用、默认 1 小时过期；节点令牌只保存哈希，注册码短期有效、加密落盘，待接入期间可在列表中查看接入命令；节点可随时吊销，吊销后立即断开
+- 节点管理操作、节点上的写操作与终端会话都会记入中控的审计页面（操作人为中控登录用户），受管机本机的审计页面里则记录为其本地创始人
+- 中控为单实例设计，重启时节点短暂断开后自动重连；受管机与中控的版本需一致
+- 完整的参数表、接口与行为说明见 [多服务器管理](docs/multi-node.md)，接口字段见 [受管节点](docs/references/node/nodes.md) 与 [注册码](docs/references/node/codes.md)
+
 ## 本地开发
 
 ### 环境要求
@@ -219,9 +296,10 @@ CONFIG_PATH="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" .
 
 开发脚本会自动：
 
-- **后端**：复制 `config.yml` 为 `.local.yml`（如不存在），并通过 `CONFIG_PATH=.local.yml go run server/cmd/server/main.go` 启动
+- **后端**：复制 `config.yml` 为 `.local.yml`（如不存在），并以**中控模式**启动（`ISRVD_MODE=center CONFIG_PATH=.local.yml go run ./server/cmd/server`），便于调试节点管理与节点切换；需要单机模式时用 `ISRVD_MODE=server ./develop.sh`
 - **前端**：进入 `webview`，安装依赖并执行 `npm run dev`
 - **端口清理**：启动前尝试释放 `8080` 和 `3000` 端口
+- **代理**：前端开发服务器（`3000`）把 `/api/`、`/openapi/` 和节点视角的 `/n/` 代理到 `8080`；`/n/<节点ID>/` 下的页面由后端内嵌的前端产物提供，修改前端后需 `npm run build` 才能在节点视角下看到
 
 Windows 环境可使用：
 
@@ -229,7 +307,7 @@ Windows 环境可使用：
 develop.bat
 ```
 
-Windows 脚本直接使用根目录的 `config.yml` 启动后端，并执行 `npm run dev`；需先在 `webview` 目录安装前端依赖。
+Windows 脚本直接使用根目录的 `config.yml` 以单机模式启动后端，并执行 `npm run dev`；需先在 `webview` 目录安装前端依赖。
 
 ### 构建与校验
 
@@ -289,6 +367,8 @@ git diff --check
 **前端权限判断**：使用 `portal.hasPerm('<METHOD> /api/<路由>')` 控制按钮/操作的显示
 
 > 留空 = 无 `AccessPerm` 路由权限；具体可用路由可在登录后通过 `GET /api/account/routes` 获取。下表列出主要权限点示例。
+>
+> 多服务器管理的节点接口（`/api/node/*`、`/n/<节点ID>/…`）由中控网关提供，不在上述路由表中，**仅创始人可用**，无法授予普通成员。
 
 | 模块 | 路由权限点示例 | 说明 |
 | ------ | --------------- | ------ |
@@ -403,13 +483,16 @@ docker run -d --device /dev/dri:/dev/dri rehiy/isrvd:slim
 ### 分层架构
 
 ```text
-server/cmd/server ────────────→ server/config + server/app
+server/cmd/server ────────────→ server/config + server/app + server/gateway + server/service/{account,node}
+server/gateway ───────────────→ server/service/node
 server/config ────────────────→ pkgs/cstore
+server/service/node ──────────→ server/config + pkgs/{cstore,tunnel}
 server/service/{account,apisix,caddy,...} → server/config / pkgs/*
 server/app ────────────────────→ server/config + server/service/{account,apisix,...} + pkgs/* + public
 ```
 
-- **server/cmd/server**：按 `config.Init → app.StartApp` 启动应用
+- **server/cmd/server**：按 `--mode` 选择 `server`（单机，默认）、`center`（中控）或 `agent`（受管机），装配后调用 `app.StartApp`；详见 [多服务器管理](docs/multi-node.md)
+- **server/gateway**：中控模式的网关，提供节点管理 API 与 `/n/<节点ID>/` 转发，其余请求原样交给进程内的 isrvd
 - **server/config**：通过 `CONFIG_PATH` 加载和保存本地 YAML 或 etcd 配置
 - **pkgs**：底层客户端、存储适配和 SDK 类型转换，不依赖 `service`/`app`
 - **server/service/{account,apisix,...}**：业务组合、参数校验与稳定 API 类型转换；各服务按需从 `pkgs` 直接构造底层客户端

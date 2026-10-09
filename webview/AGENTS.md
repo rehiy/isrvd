@@ -16,7 +16,8 @@
 
 - 全局状态使用 Pinia，入口为 `webview/src/stores/index.ts` 导出的 `usePortal()`
 - `main.ts` 中创建 `createPinia()`，再初始化 `portal = usePortal()` 并注入路由守卫
-- `portal` 聚合 `auth`、`system`、`ui`、`filer` 等子 store；组件内统一 `portal = usePortal()`
+- `portal` 聚合 `auth`、`system`、`ui`、`node` 等子 store；组件内统一 `portal = usePortal()`
+- 多节点（中控模式）：当前节点由页面路径 `/n/<节点ID>/` 决定，切换是整页跳转（`helper/node.ts` 的 `switchNode`）；节点入口（头部切换器、侧边栏「节点管理」、`/node` 页面）只在 `portal.hasPerm('GET /api/node/nodes')` 为真时出现，页面挂载须等 `portal.initialized` 后判断，不满足时回到概览，不得在未启用时发起节点请求；「节点管理」是单个列表页，同时展示节点与尚未使用的注册码（状态「待接入」），不要再拆成多个页面；侧边栏入口放在「用户管理」下方；头部切换器只负责切换节点，不放「节点管理」链接
 - 权限：`permissionsLoaded`（布尔）、`permissions`（`string[]`，格式为 `"METHOD /api/path"`），通过 `portal.hasPerm(moduleOrRoute)` 检查；支持模块名（如 `docker`）和精确路由（如 `GET /api/docker/containers`）
 - 页面级草稿 store（如 `stores/config.ts`）不进 `portal`，由 `stores/index.ts` 直接导出 `useConfigStore()`：嵌套路由下由父布局统一 `load`/`save`，子页面仅绑定草稿，保存只提交当前分组涉及的分区；登出时由 `portal.clearAuth()` 调用其 `reset()`
 
@@ -26,7 +27,7 @@
 
 ### 1.4 类型定义与命名（强制）
 
-`service/types/` 按域拆分（`docker`、`swarm`、`apisix`、`caddy`、`compose`、`cron`、`system`、`account`、`overview`、`filer`、`ssh`、`local`），`service/types.ts` 统一 `export *` 导出
+`service/types/` 按域拆分（`docker`、`swarm`、`apisix`、`caddy`、`compose`、`cron`、`system`、`account`、`overview`、`filer`、`ssh`、`local`、`node`），`service/types.ts` 统一 `export *` 导出
 
 | 场景 | 命名 | 示例 |
 | --- | --- | --- |
@@ -53,7 +54,7 @@
 | 状态切换 | `domainResourceStatus/StatusPatch(id, status)` | `apisixRouteStatus(id, 0)`、`cronJobStatusPatch(id, enabled)` |
 | 统计/日志 | `domainResourceStats/Logs(id)` | `dockerContainerStats(id)`、`cronJobLogs(id)` |
 
-- **域名前缀**：`docker`、`swarm`、`apisix`、`caddy`、`account`、`system`、`filer`、`compose`、`cron`、`local`
+- **域名前缀**：`docker`、`swarm`、`apisix`、`caddy`、`account`、`system`、`filer`、`compose`、`cron`、`local`、`node`、`ssh`
 - **资源名**：单数形式
 - **分组注释**：`// ==================== XXXX 相关 ====================`
 
@@ -195,7 +196,7 @@
 </td>
 ```
 
-图标配色跟随资源页主色（图标背景通常用 `400` 色阶，toolbar 用 `500` 色阶）：Docker 容器 `emerald/slate`（按状态）、镜像 `blue`、网络 `purple`、数据卷 `amber`、仓库 `purple`；Swarm 节点 `blue`、服务 `emerald`、任务 `cyan`；APISIX 路由 `indigo`、上游 `emerald`、消费者 `violet`、SSL `cyan`、插件配置 `rose`、访问授权 `amber`；Caddy 路由 `indigo`、证书 `cyan`、全局配置 `violet`、原始配置 `slate`；Compose `amber`、Cron `amber/violet`、用户 `blue`、Filer `primary`。新模块选未用色（`rose`/`cyan`/`lime` 等）
+图标配色跟随资源页主色（图标背景通常用 `400` 色阶，toolbar 用 `500` 色阶）：Docker 容器 `emerald/slate`（按状态）、镜像 `blue`、网络 `purple`、数据卷 `amber`、仓库 `purple`；Swarm 节点 `blue`、服务 `emerald`、任务 `cyan`；APISIX 路由 `indigo`、上游 `emerald`、消费者 `violet`、SSL `cyan`、插件配置 `rose`、访问授权 `amber`；Caddy 路由 `indigo`、证书 `cyan`、全局配置 `violet`、原始配置 `slate`；Compose `amber`、Cron `amber/violet`、用户 `blue`、Filer `primary`、节点管理 `orange`（工具栏与弹窗确认按钮用 `btn-orange`）。新模块选未用色（`rose`/`cyan`/`lime` 等）
 
 #### 1.9.1 状态文字颜色（强制）
 
@@ -424,7 +425,7 @@
 | --- | --- | --- |
 | `.btn` | 基础按钮（inline-flex，焦点&禁用处理） | — |
 | `.btn-square` | toolbar 中仅显示图标的 36×36 方形按钮，需与 `.btn` + 颜色类组合使用 | `w-9 h-9 !px-0` |
-| `.btn-{color}` | 颜色变体（primary/blue/cyan/indigo/amber/emerald/danger/rose/purple/violet/secondary） | — |
+| `.btn-{color}` | 颜色变体（primary/blue/cyan/indigo/amber/emerald/danger/rose/purple/violet/orange/secondary） | — |
 | `.btn-ghost` | 幽灵按钮（透明背景） | — |
 | `.btn-icon` | 图标按钮（正方形 padding，工具栏通用） | — |
 | `.btn-icon-{color}` | 图标按钮语义色（slate/blue/indigo/violet/cyan/teal/emerald/amber/rose/red） | `text-{color}-600 hover:bg-{color}-50` |
@@ -446,7 +447,8 @@
 | --- | --- |
 | `.nav-link` | 侧边栏导航链接 |
 | `.nav-link-active` | 侧边栏导航激活态 |
-| `.dropdown-item` | 下拉菜单项（普通） |
+| `.dropdown-item` | 下拉菜单项（普通）；`<button disabled>` 时自动呈现禁用态（`slate-300`、`cursor-not-allowed`、无悬停高亮），禁止再手写 `!text-*` / `hover:!bg-*` 覆盖 |
+| `.dropdown-item-active` | 下拉菜单项（当前选中），与 `.dropdown-item` 组合使用，禁止手写 `text-primary-600 bg-primary-50` |
 | `.dropdown-item-danger` | 下拉菜单项（危险/注销） |
 | `.breadcrumb-btn` | 面包屑路径按钮 |
 

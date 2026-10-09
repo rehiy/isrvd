@@ -29,6 +29,8 @@ Direct dependencies:
 | github.com/go-webauthn/webauthn              | BSD-3-Clause  |
 | github.com/goccy/go-yaml                     | MIT           |
 | github.com/golang-jwt/jwt/v5                 | MIT           |
+| github.com/gorilla/websocket                  | BSD-2-Clause  |
+| github.com/hashicorp/yamux                    | MPL-2.0       |
 | github.com/moby/docker-image-spec            | Apache-2.0    |
 | github.com/rehiy/libgo                       | Apache-2.0    |
 | github.com/robfig/cron/v3                    | MIT           |
@@ -69,7 +71,6 @@ Indirect and transitive dependencies:
 | github.com/go-viper/mapstructure/v2           | MIT           |
 | github.com/go-webauthn/x                      | BSD-3-Clause  |
 | github.com/goccy/go-json                      | MIT           |
-| github.com/gorilla/websocket                  | BSD-2-Clause  |
 | github.com/google/go-tpm                      | Apache-2.0    |
 | github.com/google/uuid                         | BSD-3-Clause  |
 | github.com/grpc-ecosystem/grpc-gateway/v2    | BSD-3-Clause  |
@@ -210,6 +211,17 @@ part of iSrvd's Linux binaries, but it is included in macOS binaries. Recipients
 of a macOS binary may obtain the corresponding MPL-2.0 source code from the
 source URL above. Any modifications made by iSrvd to MPL-covered files must
 also be made available under MPL-2.0; iSrvd's own files remain Apache-2.0.
+
+### github.com/hashicorp/yamux v0.1.2
+
+- License: MPL-2.0
+- Source: <https://github.com/hashicorp/yamux/tree/v0.1.2>
+- License text: <https://www.mozilla.org/MPL/2.0/>
+
+This package provides stream multiplexing for the center/agent tunnel
+(`pkgs/tunnel`) and is linked unmodified into all iSrvd binaries. Recipients may
+obtain the corresponding MPL-2.0 source code from the source URL above. iSrvd's
+own files remain Apache-2.0.
 
 ### @fortawesome/fontawesome-free
 

@@ -27,8 +27,10 @@
 仓库不是单一线性依赖链，当前 import 边界为：
 
 ```text
-server/cmd/server ────────────→ server/config + server/app
+server/cmd/server ────────────→ server/config + server/app + server/gateway + server/service/{account,node}
+server/gateway ───────────────→ server/service/node
 server/config ────────────────→ pkgs/cstore
+server/service/node ──────────→ server/config + pkgs/{cstore,tunnel}
 server/service/{account,apisix,...} → server/config / pkgs/*
 server/service/{docker,webssh} → server/service/shell（终端桥接复用）
 server/service/{cron,monitor} → server/service/notify（任务失败与资源告警）
@@ -39,7 +41,8 @@ server/app ────────────────→ server/config + s
 - `pkgs/`：底层客户端、存储适配和 SDK 类型转换；不依赖 `server/service/`、`server/app/`
 - `server/service/{account,apisix,...}`：业务组合、参数校验、稳定 API 类型转换；各服务在 `NewService()` 中直接构造底层客户端；不得依赖 `server/app`，**不得依赖 gin**（需要请求信息时接收 `*http.Request`、`context.Context` 或普通结构体）
 - `server/app/`：Gin HTTP/WebSocket 入口、路由索引、中间件、服务生命周期与响应封装
-- `server/cmd/server/`：仅执行 `config.Init → app.StartApp`
+- `server/gateway/`：中控模式的网关（节点管理 API、`/n/<节点ID>/` 转发、受管机隧道入口），以 `http.Handler` 形式由 `cmd/server` 装配；不依赖 `server/app`，页面一律由 webview 提供；`?token=` 的适用范围与 isrvd 保持一致，由 `cmd/server` 通过 `Options.QueryTokenRoutes`（来自 `app.QueryTokenRoutes()`）注入，不得在网关里另写一份路由清单；上游不可达返回 502，不得当作未登录（401）；操作经 `Options.Audit`（`app.Audit()`，写入 app 当前的审计服务，重载后自动指向新实例）按 isrvd 审计基线记录，不得另建 `AuditService` 写同一目录；会随配置重载变化的值（如 `allowedOrigins`）以函数传入、每次读取，不得在启动时固化
+- `server/cmd/server/`：`main.go` 先 `parse` 校验参数（参数错误或 `--help` 不得读取或回写配置），再 `config.Init → run`；`launch.go` 按 `--mode`（`server`/`center`/`agent`）装配并调用 `app.StartApp`，是唯一的组装点，业务逻辑不得写在这里。构建与运行一律用包路径 `./server/cmd/server`（含多个文件，不能再用单文件路径）
 
 ### 禁止
 
@@ -74,6 +77,7 @@ server/app ────────────────→ server/config + s
 ```
 docs/
 ├── SKILL.md                      ← 索引 + 决策树 + 常见工作流
+├── multi-node.md                 ← 多服务器管理（部署、参数、行为与边界）
 ├── scripts/
 │   ├── api.sh                    ← Bash API 调用封装
 │   ├── api.js                    ← JavaScript API 调用封装
@@ -85,6 +89,7 @@ docs/
     ├── caddy/{routes,servers,certs,config,basic-auth}.md
     ├── system/{config,account,filer,cron}.md
     ├── ssh/{hosts,sftp}.md
+    ├── node/{nodes,codes}.md
     ├── copilot.md
     ├── overview.md
     ├── compose.md
@@ -109,6 +114,7 @@ docs/
 | `server/app/ctrl_overview.go` | `docs/references/overview.md` |
 | `server/app/ctrl_local.go` | `docs/references/local.md` |
 | `server/app/ctrl_shell.go` | `docs/references/shell.md` |
+| `server/gateway/`、`server/service/node/` | `docs/references/node/` 下对应文件，部署与行为变化同步 `docs/multi-node.md` |
 | `pkgs/*/`（数据结构变更） | 对应 docs 文件中的字段表 |
 | 新增路由/模块 | `docs/SKILL.md` 索引表 + 决策树 |
 | API 调用脚本变更 | `docs/scripts/api.sh`、`api.js`、`api.py` 中受影响的实现 |
@@ -176,7 +182,7 @@ docs/
 
 - **查询接口不加 `Get` 后缀**：方法名本身已表达"获取"语义（`Stat()`、`Probe()`、`Info()`、`JoinToken()`、`ConfigAll()`），禁止改为 `StatGet()`、`probeGet()` 等形式
 - **`Get` 仅用于必要场景**：当方法名去掉 `Get` 后会与已有方法冲突或语义不明时，才可保留 `Get` 后缀
-- **模块前缀**：`docker`、`swarm`、`apisix`、`caddy`、`account`、`system`、`filer`、`compose`、`cron`
+- **模块前缀**：`docker`、`swarm`、`apisix`、`caddy`、`account`、`system`、`filer`、`compose`、`cron`、`node`（`server/gateway` 的处理函数同样遵循 `{module}{Resource}{Action}`，如 `nodeCodeCreate`）
 - **资源名**：单数形式，不重复模块语义
 - **禁止**：`动词+资源` 旧式命名（`CreateRoute`、`ListContainers`、`apisixCreateRoute`）
 - **注意**：类名为 `Docker` 时 `ContainerList` 不缩写为 `List`；类名为 `Apisix` 时 `RouteList` 不缩写为 `List`
@@ -214,7 +220,7 @@ docs/
 **context 来源**：
 
 - 请求处理路径一律使用 `c.Request.Context()`
-- `context.Background()` 仅允许用于生命周期根、后台 goroutine 与优雅退出（`server/app/app.go` 生命周期、`lifecycle.go` 信号监听与优雅退出、`config/provider.go` 的 watch、cron 父 context），禁止出现在请求处理路径
+- `context.Background()` 仅允许用于生命周期根、后台 goroutine 与优雅退出（`server/app/app.go` 生命周期、`lifecycle.go` 信号监听与优雅退出、`config/provider.go` 的 watch、cron 父 context、`server/cmd/server/launch.go` 的 agent 生命周期与网关优雅退出），禁止出现在请求处理路径
 
 **服务 nil 契约**（新增服务时最易遗漏）：
 
@@ -282,6 +288,7 @@ docs/
 - Caddy：`/caddy/servers`、`/caddy/routes`、`/caddy/certs`、`/caddy/global`、`/caddy/basic-auth`、`/caddy/raw`
 - Docker：`/docker/containers`、`/docker/images`、`/docker/networks`、`/docker/volumes`、`/docker/registries` 及对应详情页
 - Swarm：`/swarm/nodes`、`/swarm/services`、`/swarm/tasks` 及对应详情/日志页
+- 节点管理（仅 `center` 模式的创始人）：`/node`，单个列表页同时展示受管节点与待接入的注册码；节点视角为页面路径 `/n/<节点ID>/`
 - 系统模块：`/system/config`（父布局 + 5 个分组子路由 `/system/config/{service,auth,gateway,alert,integrations}`，默认跳转 `service`；侧边栏「系统配置」为折叠子菜单，项名与顺序来自 `webview/src/stores/config.ts` 的 `configGroups`，该常量同时定义分组与后端配置分区的映射）、`/system/audit/logs`；用户管理：`/account/members`；账户设置：`/account/password`、`/account/passkeys`、`/account/apikey`
 - 计划任务：`/cron/jobs`；Compose：`/compose/marketplace`、`/compose/deploy`
 - 折叠子菜单展开状态跟随当前路由（`@Watch` immediate）
@@ -293,7 +300,7 @@ docs/
 
 ## 8) 服务初始化
 
-启动顺序：`main → config.Init → app.StartApp`
+启动顺序：`main → parse → config.Init → run → app.StartApp`；`run` 按 `--mode` 选择 `server`（直接 `StartApp`）、`center`（先启动网关再 `StartApp`）或 `agent`（先启动隧道客户端再 `StartApp`），详见 `docs/multi-node.md`
 
 可用性检查：由各 `service` 层的 `CheckAvailability(ctx)` 方法负责（`server/service/docker`、`server/service/swarm`、`server/service/apisix`、`server/service/caddy`、`server/service/compose`）。
 
@@ -316,7 +323,7 @@ docs/
 3. 文件系统操作防目录遍历；解压防 Zip Slip
 4. WebSocket 必须经过认证链路
 5. 关键资源（内置角色等）前后端双重校验
-6. SSH 密码/私钥加密落盘（`server/service/webssh/secret.go`，密钥由 JWT 密钥派生）
+6. SSH 密码/私钥、节点注册码与受管机节点令牌加密落盘（`server/service/webssh/secret.go`、`server/service/node/secret.go`，密钥由 JWT 密钥派生）；节点令牌与领取密钥在中控侧只存哈希
 
 ---
 

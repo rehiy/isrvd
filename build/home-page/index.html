@@ -345,6 +345,7 @@
                     <a href="#features" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">功能特性</a>
                     <a href="#techstack" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">技术栈</a>
                     <a href="#quickstart" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">快速开始</a>
+                    <a href="#centralized" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">集中管理</a>
                     <a href="#cnb" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">CNB 镜像</a>
                     <a href="#architecture" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">架构设计</a>
                     <a href="#security" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">安全特性</a>
@@ -483,6 +484,15 @@
                     </div>
                     <h3 class="font-semibold text-slate-800 mb-1">SSH 远程管理</h3>
                     <p class="text-sm text-slate-500">通过 SSH 协议管理主机，支持密码与私钥认证</p>
+                </div>
+                <div class="feature-card">
+                    <div class="w-10 h-10 rounded-lg bg-cyan-600 flex items-center justify-center mb-4">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 mb-1">集中管理</h3>
+                    <p class="text-sm text-slate-500">一个控制台管理多台服务器，受管机主动出站接入，无需开放入站端口</p>
                 </div>
                 <div class="feature-card">
                     <div class="w-10 h-10 rounded-lg bg-violet-500 flex items-center justify-center mb-4">
@@ -774,6 +784,59 @@
                     <p class="text-xs text-slate-400 mt-1 text-center">CNB 镜像：<code class="bg-slate-100 px-1 rounded">docker.cnb.cool/rehiy/isrvd:slim</code></p>
                 </div>
             </div>
+    </section>
+
+    <!-- Centralized Management -->
+    <section id="centralized" class="py-20 border-b border-slate-200">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="section-title">集中管理</h2>
+            <p class="section-subtitle">同一个二进制，一个控制台管理多台服务器</p>
+
+            <div class="mt-12 bg-slate-50 rounded-xl p-8">
+                <div class="flex flex-wrap items-center justify-center gap-2 text-sm">
+                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 text-slate-600">浏览器</div>
+                    <span class="arch-arrow">→</span>
+                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">isrvd --mode center</div>
+                    <span class="arch-arrow">⇄</span>
+                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 text-slate-600">隧道</div>
+                    <span class="arch-arrow">⇠</span>
+                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">isrvd --mode agent</div>
+                    <span class="text-slate-400 text-xs">× N 台</span>
+                </div>
+                <p class="mt-4 text-xs text-slate-400 text-center">隧道由受管机主动发起，中控从不主动外连；受管机位于 NAT 或防火墙后也可以接入</p>
+            </div>
+
+            <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div class="bg-white border border-slate-200 rounded-lg p-4">
+                    <p class="font-semibold text-slate-700 mb-1">一个二进制，三种角色</p>
+                    <p class="text-slate-500"><code class="bg-slate-100 px-1 rounded">--mode</code> 选择 <code class="bg-slate-100 px-1 rounded">server</code>（默认单机）、<code class="bg-slate-100 px-1 rounded">center</code>（中控）或 <code class="bg-slate-100 px-1 rounded">agent</code>（受管机），无需额外程序，默认配置文件无需改动</p>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg p-4">
+                    <p class="font-semibold text-slate-700 mb-1">切换节点即切换视角</p>
+                    <p class="text-slate-500">在页头选择节点，Docker、Swarm、Compose、文件、终端、计划任务、APISIX、Caddy 与系统概览都作用于该节点，含实时日志与大文件传输</p>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg p-4">
+                    <p class="font-semibold text-slate-700 mb-1">账号与权限统一在中控</p>
+                    <p class="text-slate-500">成员、权限、系统配置和 AI 助手只维护一份；单机用户看不到任何节点界面，升级后行为不变</p>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg p-4">
+                    <p class="font-semibold text-slate-700 mb-1">接入可控，随时吊销</p>
+                    <p class="text-slate-500">一次性注册码、人工审批（或自动通过）、仅创始人可操作；节点令牌只存哈希，待接入的注册码可随时查看，吊销后立即断开</p>
+                </div>
+            </div>
+
+            <div class="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="code-block">
+                    <div class="code-header"><span>bash — 中控</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                    <div class="code-body"><span style="color:#64748b"># 二进制：加 --mode center 即可，沿用原有配置</span><br />./isrvd --mode center<br /><br /><span style="color:#64748b"># Docker：多一个环境变量，8080 为对外入口</span><br />docker run -d --name isrvd-center --network sdnet -p 8080:8080 \<br />&nbsp;&nbsp;-e ISRVD_MODE=center \<br />&nbsp;&nbsp;-v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock \<br />&nbsp;&nbsp;rehiy/isrvd:slim<br /><br /><span style="color:#64748b"># 然后在「节点管理」页点击「接入节点」生成一次性注册码</span></div>
+                </div>
+                <div class="code-block">
+                    <div class="code-header"><span>bash — 受管机</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                    <div class="code-body"><span style="color:#64748b"># 二进制</span><br />./isrvd --mode agent \<br />&nbsp;&nbsp;--center-url https://center.example.com \<br />&nbsp;&nbsp;--enroll-code &lt;注册码&gt;<br /><br /><span style="color:#64748b"># Docker：受管机不监听对外端口，不需要 -p</span><br />docker run -d --name isrvd-agent --network sdnet \<br />&nbsp;&nbsp;-e ISRVD_MODE=agent \<br />&nbsp;&nbsp;-e ISRVD_CENTER_URL=https://center.example.com \<br />&nbsp;&nbsp;-e ISRVD_ENROLL_CODE=&lt;注册码&gt; \<br />&nbsp;&nbsp;-v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock \<br />&nbsp;&nbsp;rehiy/isrvd:slim</div>
+                </div>
+            </div>
+            <p class="text-xs text-slate-400 mt-4 text-center">首次注册后凭据加密保存在受管机本地，重启无需再带注册码；受管机与中控的版本需一致。详见 <a href="https://github.com/rehiy/isrvd/blob/master/docs/multi-node.md" target="_blank" class="underline hover:text-slate-600">集中管理文档</a></p>
+        </div>
     </section>
 
     <!-- CNB Mirror -->
