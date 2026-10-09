@@ -56,6 +56,12 @@ func (app *App) initServices(ctx context.Context) {
 		app.markReady("ssh", nil) // 本地存储，无需探活
 	}
 
+	// 中控模式：节点管理由进程内的网关提供（不在本路由表中），这里只向前端声明该能力已启用，
+	// 前端据此显示节点切换与节点管理页面
+	if app.mode == ModeCenter {
+		app.markReady("node", func(context.Context) bool { return true })
+	}
+
 	probeCtx, probeCancel := context.WithTimeout(ctx, 5*time.Second)
 	apisixSvc, err := apisix.NewService(probeCtx)
 	probeCancel()
@@ -177,7 +183,7 @@ func (app *App) serviceAvailableMiddleware() gin.HandlerFunc {
 
 // optionalModules 依赖外部服务、初始化失败时整体不可用的模块。
 // 新增此类模块时：在此登记，并在 initServices 构造成功后调用 markReady。
-var optionalModules = map[string]bool{"ssh": true, "apisix": true, "caddy": true, "docker": true, "swarm": true, "compose": true}
+var optionalModules = map[string]bool{"ssh": true, "node": true, "apisix": true, "caddy": true, "docker": true, "swarm": true, "compose": true}
 
 // markReady 标记可选模块已就绪并登记探活函数（probe 为 nil 表示无需探活）。
 // 登记了未在 optionalModules 声明的模块会被忽略可用性判断，因此这里直接告警。

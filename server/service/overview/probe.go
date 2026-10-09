@@ -16,6 +16,7 @@ type ProbeResponse struct {
 	Docker  bool `json:"docker"`  // Docker 引擎是否可用
 	Swarm   bool `json:"swarm"`   // Docker Swarm 是否可用
 	Compose bool `json:"compose"` // Compose 服务是否可用
+	Node    bool `json:"node"`    // 多节点管理是否启用（仅中控模式）
 }
 
 // probeTask 定义一项探活任务
@@ -64,6 +65,8 @@ func (s *Service) Probe(ctx context.Context, probes map[string]func(context.Cont
 				resp.Swarm = ok
 			case "compose":
 				resp.Compose = ok
+			case "node":
+				resp.Node = ok
 			}
 			mu.Unlock()
 		}(t)

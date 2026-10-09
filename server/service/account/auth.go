@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -146,6 +147,23 @@ func (s *Service) ApiTokenCreate(username string, req CreateApiTokenRequest) (*C
 }
 
 // ─── JWT 认证 ──────────────
+
+// ServiceToken 为同进程的受管机隧道签发访问本机 isrvd 的令牌，以第一个创始人（按用户名排序）的身份执行。
+// 每次调用都基于当前配置签发，成员密码变更或配置重载后无需重启即可继续使用。
+func ServiceToken() (string, error) {
+	snapshot := config.Current()
+	var names []string
+	for name, m := range snapshot.Members {
+		if m != nil && m.Founder {
+			names = append(names, name)
+		}
+	}
+	if len(names) == 0 {
+		return "", fmt.Errorf("没有创始人成员，无法签发受管机令牌")
+	}
+	sort.Strings(names)
+	return (&Service{}).createJWT(snapshot, names[0], jwt.MapClaims{"type": "api", "name": "node-agent"})
+}
 
 func (s *Service) jwtCheck(snapshot *config.Snapshot, r *http.Request, allowQueryToken bool) (string, string) {
 	tokenStr := s.extractJWT(r, allowQueryToken)

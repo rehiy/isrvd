@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -33,6 +34,13 @@ import (
 
 const APINamespace = "/api"
 
+// 运行模式，由 cmd/server 在启动时确定
+const (
+	ModeServer = "server" // 单机
+	ModeCenter = "center" // 中控：节点管理与转发由进程内的网关提供
+	ModeAgent  = "agent"  // 受管机：请求只经中控隧道到达
+)
+
 const (
 	AccessAnon RouteAccess = -1 // 匿名
 	AccessPerm RouteAccess = 0  // 需要具体权限
@@ -48,6 +56,7 @@ const (
 // App 应用实例，持有各业务服务
 type App struct {
 	*gin.Engine
+	mode             string // 运行模式，启动时确定
 	servicesMu       sync.RWMutex
 	requestCtxMu     sync.RWMutex
 	cleanupWG        sync.WaitGroup
@@ -97,12 +106,20 @@ type Route struct {
 	QueryToken bool            `json:"-"`             // 允许从 query ?token= 提取 JWT（用于 SSE/文件下载等无法携带 Header 的场景）
 }
 
-func StartApp() {
+// StartApp 启动应用并阻塞到收到退出信号。
+//
+// listener 为 nil 时按配置的 listenAddr 监听；非 nil 时直接在它上面提供服务，
+// 用于中控与受管机模式：isrvd 只在回环端口上服务，对外入口由网关或隧道承担。
+//
+// mode 为 ModeServer / ModeCenter / ModeAgent。受管机的请求只会经中控隧道到达，来源已由中控校验并去掉了
+// Origin，因此放行空 Origin；带 Origin 的请求（浏览器直接访问回环端口）仍按 allowedOrigins 校验。
+func StartApp(listener net.Listener, mode string) {
 	lifecycleCtx, lifecycleCancel := context.WithCancel(context.Background())
 	servicesCtx, servicesCancel := context.WithCancel(lifecycleCtx)
 	requestsCtx, requestsCancel := context.WithCancel(lifecycleCtx)
 	app := &App{
 		Engine:          httpd.Engine(config.Current().Server.Debug),
+		mode:            mode,
 		lifecycleCtx:    lifecycleCtx,
 		lifecycleCancel: lifecycleCancel,
 		servicesCtx:     servicesCtx,
@@ -110,12 +127,16 @@ func StartApp() {
 		requestsCtx:     requestsCtx,
 		requestsCancel:  requestsCancel,
 		wsConfig: &websocket.ServerConfig{
-			AllowedOrigins: config.Current().Server.AllowedOrigins,
+			AllowedOrigins:   config.Current().Server.AllowedOrigins,
+			AllowEmptyOrigin: mode == ModeAgent,
 		},
 		routeIndex: make(map[string]Route),
 	}
 
 	app.initServices(app.servicesCtx)
+
+	running.Store(app)
+	defer running.Store(nil)
 
 	app.initRoutes()
 
@@ -125,7 +146,7 @@ func StartApp() {
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
-	app.watchReload(server)
+	app.watchReload(server, listener)
 }
 
 // initRoutes 注册所有路由，服务可用性由 serviceAvailableMiddleware 动态检查
@@ -163,6 +184,18 @@ func (app *App) initRoutes() {
 		}
 		staticHandler(c)
 	})
+}
+
+// QueryTokenRoutes 返回允许通过 ?token= 认证的 GET 路由（Gin 路径格式，含 /api 前缀）。
+// 中控网关据此对转发到节点的请求套用与 isrvd 相同的规则，避免令牌随意出现在 URL 中。
+func QueryTokenRoutes() []string {
+	var paths []string
+	for _, route := range (&App{}).collectRoutes() {
+		if route.QueryToken && route.Method == http.MethodGet {
+			paths = append(paths, APINamespace+route.Path)
+		}
+	}
+	return paths
 }
 
 // collectRoutes 收集所有模块的路由定义

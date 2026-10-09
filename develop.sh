@@ -37,7 +37,9 @@ kill_port 3000
 if [ ! -f .local.yml ]; then
     cp config.yml .local.yml
 fi
-CONFIG_PATH=.local.yml go run server/cmd/server/main.go &
+# 默认以中控模式启动（8080 为网关入口），便于调试节点管理与节点切换；
+# 需要单机模式时：ISRVD_MODE=server ./develop.sh
+ISRVD_MODE=${ISRVD_MODE:-center} CONFIG_PATH=.local.yml go run ./server/cmd/server &
 GO_PID=$!
 
 # 启动 NPM 服务

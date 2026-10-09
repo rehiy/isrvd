@@ -31,7 +31,7 @@ var (
 )
 
 func Init() error {
-	uri := envOrDefault("CONFIG_PATH", "config.yml")
+	uri := EnvOrDefault("CONFIG_PATH", "config.yml")
 
 	var err error
 	store, storeKey, err = cstore.OpenWithKey(uri)
@@ -332,7 +332,8 @@ func watchConfigChanges(ctx context.Context) {
 	}()
 }
 
-func envOrDefault(key, fallback string) string {
+// EnvOrDefault 返回环境变量的值，未设置或为空时返回 fallback。
+func EnvOrDefault(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
 	}

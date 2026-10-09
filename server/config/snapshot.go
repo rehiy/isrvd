@@ -129,7 +129,7 @@ func validateSnapshot(snapshot *Snapshot) error {
 			return fmt.Errorf("Passkey rpOrigins 不能为空")
 		}
 		for _, origin := range snapshot.Passkey.RPOrigins {
-			if err := validateHTTPURL("Passkey rpOrigin", origin); err != nil {
+			if err := ValidateHTTPURL("Passkey rpOrigin", origin); err != nil {
 				return err
 			}
 		}
@@ -138,10 +138,10 @@ func validateSnapshot(snapshot *Snapshot) error {
 		if snapshot.OIDC.ClientID == "" {
 			return fmt.Errorf("OIDC clientId 不能为空")
 		}
-		if err := validateHTTPURL("OIDC issuerUrl", snapshot.OIDC.IssuerURL); err != nil {
+		if err := ValidateHTTPURL("OIDC issuerUrl", snapshot.OIDC.IssuerURL); err != nil {
 			return err
 		}
-		if err := validateHTTPURL("OIDC redirectUrl", snapshot.OIDC.RedirectURL); err != nil {
+		if err := ValidateHTTPURL("OIDC redirectUrl", snapshot.OIDC.RedirectURL); err != nil {
 			return err
 		}
 	}
@@ -175,7 +175,8 @@ func validateSnapshot(snapshot *Snapshot) error {
 	return nil
 }
 
-func validateHTTPURL(name, value string) error {
+// ValidateHTTPURL 校验 value 是带主机的 HTTP(S) 绝对地址（不含用户信息）；name 用于错误提示。
+func ValidateHTTPURL(name, value string) error {
 	parsed, err := url.ParseRequestURI(strings.TrimSpace(value))
 	if err != nil || parsed.Host == "" || (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.User != nil {
 		return fmt.Errorf("%s 必须是合法的 HTTP(S) 绝对地址", name)

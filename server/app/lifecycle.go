@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,7 +17,7 @@ import (
 )
 
 // watchReload 统一持有 HTTP 服务与信号生命周期，避免多个退出回调抢先终止进程。
-func (app *App) watchReload(server *http.Server) {
+func (app *App) watchReload(server *http.Server, listener net.Listener) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
 
@@ -46,6 +47,11 @@ func (app *App) watchReload(server *http.Server) {
 
 	listenErr := make(chan error, 1)
 	go func() {
+		if listener != nil {
+			logman.Info("httpd start", "address", listener.Addr().String())
+			listenErr <- server.Serve(listener)
+			return
+		}
 		logman.Info("httpd start", "address", server.Addr)
 		listenErr <- server.ListenAndServe()
 	}()

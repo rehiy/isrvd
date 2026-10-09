@@ -42,7 +42,7 @@ build() {
     fi
     GOOS=$1 GOARCH=$2 go build \
         -tags netgo -trimpath -buildvcs=false \
-        -ldflags="-s -w -buildid=" -o "$target" server/cmd/server/main.go
+        -ldflags="-s -w -buildid=" -o "$target" ./server/cmd/server
 }
 
 ###########################################
