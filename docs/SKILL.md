@@ -65,7 +65,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 | 网络 | [references/docker/networks.md](references/docker/networks.md) | Docker 网络管理 |
 | 数据卷 | [references/docker/volumes.md](references/docker/volumes.md) | Docker 数据卷管理 |
 | 仓库 | [references/docker/registries.md](references/docker/registries.md) | 镜像仓库配置 |
-| Swarm | [references/swarm/info.md](references/swarm/info.md) | 集群、节点、令牌 |
+| Swarm | [references/swarm/info.md](references/swarm/info.md) | 集群、节点、节点运行服务、令牌 |
 | Swarm | [references/swarm/services.md](references/swarm/services.md) | 服务部署/扩缩容/更新 |
 | Swarm | [references/swarm/tasks.md](references/swarm/tasks.md) | 任务列表 |
 | Compose | [references/compose.md](references/compose.md) | Docker Compose / Swarm Stack 部署、重部署、部署记录与历史配置 |
@@ -123,6 +123,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 ├── 查询/监控
 │   ├── 容器/镜像/网络/卷 → references/docker/ 下对应文件
 │   ├── 集群/服务/任务    → references/swarm/ 下对应文件
+│   ├── 节点运行服务     → references/swarm/info.md（/swarm/node/NODE_ID/services）
 │   ├── 路由/上游/插件    → references/apisix/ 下对应文件
 │   ├── Caddy 服务/路由/配置 → references/caddy/ 下对应文件
 │   ├── 系统状态          → references/overview.md
