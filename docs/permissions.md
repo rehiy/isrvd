@@ -72,6 +72,7 @@
 | `docker` | `GET /api/docker/registries` | Docker 管理（镜像仓库列出） |
 | `swarm` | `GET /api/swarm/info` | Swarm 管理（集群信息） |
 | `swarm` | `GET /api/swarm/nodes` | Swarm 管理（节点列出） |
+| `swarm` | `GET /api/swarm/node/:id/services` | Swarm 管理（节点运行服务及本节点副本数） |
 | `swarm` | `GET /api/swarm/services` | Swarm 管理（服务列出） |
 | `swarm` | `GET /api/swarm/tasks` | Swarm 管理（任务列出） |
 | `compose` | `GET /api/compose/docker/:name` | Compose 管理（读取配置） |

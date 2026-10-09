@@ -3,6 +3,7 @@ package swarm
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/docker/docker/api/types/swarm"
@@ -77,6 +78,44 @@ func (s *Service) NodeInspect(ctx context.Context, id string) (*NodeDetail, erro
 	}
 	return nodeDetailFromRaw(node), nil
 }
+
+// NodeServiceList 列出节点上实际运行的服务，runningTasks 仅统计当前节点。
+func (s *Service) NodeServiceList(ctx context.Context, id string) ([]ServiceInfo, error) {
+	if id == "" {
+		return nil, fmt.Errorf("缺少节点 ID")
+	}
+	node, err := s.svc.NodeInspect(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("获取节点详情失败: %w", err)
+	}
+	tasks, err := s.svc.NodeTaskList(ctx, node.ID)
+	if err != nil {
+		return nil, fmt.Errorf("获取节点任务失败: %w", err)
+	}
+	running := make(map[string]int)
+	for _, task := range tasks {
+		if task.NodeID == node.ID && task.Status.State == swarm.TaskStateRunning && task.ServiceID != "" {
+			running[task.ServiceID]++
+		}
+	}
+	result := make([]ServiceInfo, 0, len(running))
+	if len(running) == 0 {
+		return result, nil
+	}
+	services, err := s.svc.ServiceList(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("获取服务列表失败: %w", err)
+	}
+	for _, service := range services {
+		if count := running[service.ID]; count > 0 {
+			result = append(result, serviceInfoFromRaw(service, count))
+		}
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i].Name < result[j].Name })
+	return result, nil
+}
+
+// ─── 辅助函数 ───
 
 func nodeInfoFromRaw(node swarm.Node) NodeInfo {
 	return NodeInfo{

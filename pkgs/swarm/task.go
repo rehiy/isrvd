@@ -8,6 +8,13 @@ import (
 	"github.com/rehiy/libgo/logman"
 )
 
+// NodeTaskList 获取指定节点上的任务，保留实际状态供业务层判断。
+func (s *SwarmService) NodeTaskList(ctx context.Context, nodeID string) ([]swarm.Task, error) {
+	return s.client.TaskList(ctx, swarm.TaskListOptions{
+		Filters: filters.NewArgs(filters.Arg("node", nodeID)),
+	})
+}
+
 // TaskList 获取任务列表，直接返回 Docker SDK 原始任务结构。
 func (s *SwarmService) TaskList(ctx context.Context, serviceID string) ([]swarm.Task, error) {
 	opts := swarm.TaskListOptions{}

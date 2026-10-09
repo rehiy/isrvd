@@ -734,6 +734,10 @@ class ApiService {
         return http.post<void>(`swarm/node/${id}/action`, { action })
     }
 
+    swarmNodeServiceList(id: string) {
+        return http.get<SwarmServiceInfo[]>(`swarm/node/${id}/services`)
+    }
+
     // 服务管理
     swarmServiceList() {
         return http.get<SwarmServiceInfo[]>('swarm/services')
