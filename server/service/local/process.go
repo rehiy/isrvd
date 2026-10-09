@@ -2,6 +2,7 @@
 package local
 
 import (
+	"context"
 	"errors"
 	"os"
 	"runtime"
@@ -9,11 +10,22 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rehiy/libgo/gpu"
 	"github.com/shirou/gopsutil/v3/process"
 )
 
 // ErrProtectedProcess 受保护的进程不允许终止
 var ErrProtectedProcess = errors.New("该进程受保护，不允许终止")
+
+// gpuProcessCacheTTL GPU 占用缓存时长
+// 采集需要遍历 /proc 或调用 nvidia-smi，缓存可避免每次轮询都重复执行
+const gpuProcessCacheTTL = 2 * time.Second
+
+var gpuProcessCache = struct {
+	sync.Mutex
+	at     time.Time
+	values map[int32]*gpu.ProcessStat
+}{}
 
 var processMetricSamples = struct {
 	sync.Mutex
@@ -34,28 +46,31 @@ type processMetricSample struct {
 
 // ProcessInfo 进程信息
 type ProcessInfo struct {
-	PID           int32    `json:"pid"`                  // 进程 ID
-	PPID          int32    `json:"ppid"`                 // 父进程 ID
-	Name          string   `json:"name"`                 // 进程名
-	Username      string   `json:"username"`             // 运行用户
-	Status        string   `json:"status"`               // 运行状态
-	CPUMillis     uint64   `json:"cpuMillis"`            // 累计 CPU 时间（毫秒）
-	CPUPercent    *float64 `json:"cpuPercent,omitempty"` // CPU 占用（%，相邻采样区间均值，可超过 100）
-	MemoryPercent float32  `json:"memoryPercent"`        // 内存占用（%）
-	MemoryRSS     uint64   `json:"memoryRss"`            // 常驻内存（字节）
-	IOReadBPS     *uint64  `json:"ioReadBps,omitempty"`  // 磁盘读取速率（字节/秒），首次采样或不可用时省略
-	IOWriteBPS    *uint64  `json:"ioWriteBps,omitempty"` // 磁盘写入速率（字节/秒），首次采样或不可用时省略
-	CreateTime    int64    `json:"createTime"`           // 启动时间（Unix 毫秒）
-	Cmdline       string   `json:"cmdline,omitempty"`    // 完整命令行
-	cpuSeconds    float64  // 本轮累计 CPU 时间（秒），仅用于计算速率
-	cpuCollected  bool     // 本轮是否成功采集 CPU 时间
-	ioReadBytes   uint64   // 本轮累计读取字节，仅用于计算速率
-	ioWriteBytes  uint64   // 本轮累计写入字节，仅用于计算速率
-	ioCollected   bool     // 本轮是否成功采集 I/O 计数
+	PID            int32    `json:"pid"`                      // 进程 ID
+	PPID           int32    `json:"ppid"`                     // 父进程 ID
+	Name           string   `json:"name"`                     // 进程名
+	Username       string   `json:"username"`                 // 运行用户
+	Status         string   `json:"status"`                   // 运行状态
+	CPUMillis      uint64   `json:"cpuMillis"`                // 累计 CPU 时间（毫秒）
+	CPUPercent     *float64 `json:"cpuPercent,omitempty"`     // CPU 占用（%，相邻采样区间均值，可超过 100）
+	MemoryPercent  float32  `json:"memoryPercent"`            // 内存占用（%）
+	MemoryRSS      uint64   `json:"memoryRss"`                // 常驻内存（字节）
+	IOReadBPS      *uint64  `json:"ioReadBps,omitempty"`      // 磁盘读取速率（字节/秒），首次采样或不可用时省略
+	IOWriteBPS     *uint64  `json:"ioWriteBps,omitempty"`     // 磁盘写入速率（字节/秒），首次采样或不可用时省略
+	GPUMemory      uint64   `json:"gpuMemoryBytes,omitempty"` // GPU 显存占用（字节），未使用 GPU 时省略
+	GPUUtilization *float64 `json:"gpuUtilization,omitempty"` // GPU 利用率（%），首次采样或不可用时省略
+	GPUDevices     []string `json:"gpuDevices,omitempty"`     // 占用的 GPU 设备标识
+	CreateTime     int64    `json:"createTime"`               // 启动时间（Unix 毫秒）
+	Cmdline        string   `json:"cmdline,omitempty"`        // 完整命令行
+	cpuSeconds     float64  // 本轮累计 CPU 时间（秒），仅用于计算速率
+	cpuCollected   bool     // 本轮是否成功采集 CPU 时间
+	ioReadBytes    uint64   // 本轮累计读取字节，仅用于计算速率
+	ioWriteBytes   uint64   // 本轮累计写入字节，仅用于计算速率
+	ioCollected    bool     // 本轮是否成功采集 I/O 计数
 }
 
 // ProcessList 采集本机进程列表，按常驻内存降序排列。
-func ProcessList() ([]*ProcessInfo, error) {
+func ProcessList(ctx context.Context) ([]*ProcessInfo, error) {
 	procs, err := process.Processes()
 	if err != nil {
 		return nil, err
@@ -85,6 +100,7 @@ func ProcessList() ([]*ProcessInfo, error) {
 
 	wg.Wait()
 	applyProcessRates(list, time.Now())
+	applyGPUUsage(ctx, list)
 
 	sort.Slice(list, func(i, j int) bool {
 		if list[i].MemoryRSS == list[j].MemoryRSS {
@@ -197,6 +213,50 @@ func applyProcessRates(list []*ProcessInfo, now time.Time) {
 		}
 	}
 	processMetricSamples.values = next
+}
+
+// applyGPUUsage 为使用 GPU 的进程填充显存占用与利用率
+func applyGPUUsage(ctx context.Context, list []*ProcessInfo) {
+	stats := gpuProcessStats(ctx)
+	if len(stats) == 0 {
+		return
+	}
+
+	for _, info := range list {
+		stat, exists := stats[info.PID]
+		if !exists {
+			continue
+		}
+		info.GPUMemory = stat.MemoryUsed
+		info.GPUDevices = stat.Devices
+		if stat.Utilization >= 0 {
+			utilization := stat.Utilization
+			info.GPUUtilization = &utilization
+		}
+	}
+}
+
+// gpuProcessStats 采集进程级 GPU 占用，并在缓存期内复用结果
+func gpuProcessStats(ctx context.Context) map[int32]*gpu.ProcessStat {
+	gpuProcessCache.Lock()
+	defer gpuProcessCache.Unlock()
+
+	if gpuProcessCache.values != nil && time.Since(gpuProcessCache.at) < gpuProcessCacheTTL {
+		return gpuProcessCache.values
+	}
+
+	values := make(map[int32]*gpu.ProcessStat)
+	if stats, err := gpu.GetProcessStats(ctx); err == nil {
+		for _, stat := range stats {
+			values[stat.PID] = stat
+		}
+	}
+
+	// 采集失败同样写入空结果，避免缓存期内反复重试
+	gpuProcessCache.at = time.Now()
+	gpuProcessCache.values = values
+
+	return values
 }
 
 func cpuRate(previous, current float64, elapsed time.Duration) (float64, bool) {

@@ -23,7 +23,7 @@ func (app *App) defineLocalRoutes() []Route {
 // ─── Handler 方法 ───
 
 func (app *App) localProcessList(c *gin.Context) {
-	list, err := local.ProcessList()
+	list, err := local.ProcessList(c.Request.Context())
 	if err != nil {
 		logman.Error("获取进程列表失败", "error", err)
 		respondError(c, http.StatusInternalServerError, "获取进程列表失败")
