@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"isrvd/pkgs/tunnel"
+	"github.com/rehiy/libgo/wstunnel"
 )
 
 // AgentInfo agent 自身的版本与平台信息，供中控做协议协商
@@ -28,7 +28,7 @@ type AgentInfo struct {
 // nodeConn 一个在线节点的会话及其到该节点的 HTTP 代理
 type nodeConn struct {
 	nodeID      string
-	sess        *tunnel.Session
+	sess        *wstunnel.Session
 	transport   *http.Transport
 	proxy       *httputil.ReverseProxy
 	remote      string
@@ -38,7 +38,7 @@ type nodeConn struct {
 	compatible  bool         // 协议版本一致才允许转发
 }
 
-func newNodeConn(nodeID string, sess *tunnel.Session, remote string) *nodeConn {
+func newNodeConn(nodeID string, sess *wstunnel.Session, remote string) *nodeConn {
 	c := &nodeConn{
 		nodeID:      nodeID,
 		sess:        sess,
@@ -154,7 +154,7 @@ func (s *Service) Authenticate(r *http.Request, ip string) (*Node, error) {
 // 且由 libgo 的 websocket.ServerConfig 完成升级。ctx 取消（如服务重载）时主动断开。
 // 同一节点的新连接会顶替旧连接。
 func (s *Service) Serve(ctx context.Context, ws io.ReadWriteCloser, remote string, n *Node) {
-	sess, err := tunnel.Attach(ws)
+	sess, err := wstunnel.Attach(ws)
 	if err != nil {
 		logger.Warn("节点隧道建立失败", "id", n.ID, "error", err)
 		return

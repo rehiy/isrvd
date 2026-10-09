@@ -30,7 +30,7 @@
 server/cmd/server ────────────→ server/config + server/app + server/gateway + server/service/{account,node}
 server/gateway ───────────────→ server/service/node
 server/config ────────────────→ pkgs/cstore
-server/service/node ──────────→ server/config + pkgs/{cstore,tunnel}
+server/service/node ──────────→ server/config + pkgs/cstore + libgo/wstunnel
 server/service/{account,apisix,...} → server/config / pkgs/*
 server/service/{docker,webssh} → server/service/shell（终端桥接复用）
 server/service/{cron,monitor} → server/service/notify（任务失败与资源告警）

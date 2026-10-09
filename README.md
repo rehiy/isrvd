@@ -486,7 +486,7 @@ docker run -d --device /dev/dri:/dev/dri rehiy/isrvd:slim
 server/cmd/server ────────────→ server/config + server/app + server/gateway + server/service/{account,node}
 server/gateway ───────────────→ server/service/node
 server/config ────────────────→ pkgs/cstore
-server/service/node ──────────→ server/config + pkgs/{cstore,tunnel}
+server/service/node ──────────→ server/config + pkgs/cstore + libgo/wstunnel
 server/service/{account,apisix,caddy,...} → server/config / pkgs/*
 server/app ────────────────────→ server/config + server/service/{account,apisix,...} + pkgs/* + public
 ```

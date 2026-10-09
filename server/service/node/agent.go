@@ -16,9 +16,9 @@ import (
 	"time"
 
 	"github.com/goccy/go-yaml"
+	"github.com/rehiy/libgo/wstunnel"
 
 	"isrvd/pkgs/secretbox"
-	"isrvd/pkgs/tunnel"
 )
 
 const (
@@ -68,26 +68,26 @@ func (a *Agent) Run(ctx context.Context) {
 				return
 			}
 			logger.Error("节点注册失败", "error", err)
-			if !tunnel.Sleep(ctx, enrollRetryDelay) {
+			if !wstunnel.Sleep(ctx, enrollRetryDelay) {
 				return
 			}
 			continue
 		}
 
 		logger.Info("正在连接中控", "center", a.opt.CenterURL, "id", state.NodeID)
-		err = tunnel.Maintain(ctx, tunnel.MaintainOptions{
-			Dial: func(ctx context.Context) (*tunnel.Session, error) {
-				return tunnel.Dial(ctx, tunnel.DialOptions{
+		err = wstunnel.Maintain(ctx, wstunnel.MaintainOptions{
+			Dial: func(ctx context.Context) (*wstunnel.Session, error) {
+				return wstunnel.Dial(ctx, wstunnel.DialOptions{
 					URL:    a.opt.CenterURL + "/api/node/connect",
 					Header: http.Header{"Authorization": {"Bearer " + state.Token}},
 				})
 			},
 			Serve:        a.serve,
-			OnConnect:    func(*tunnel.Session) { logger.Info("已连接中控", "center", a.opt.CenterURL) },
-			OnDisconnect: func(*tunnel.Session) { logger.Warn("与中控的连接已断开，将自动重连") },
+			OnConnect:    func(*wstunnel.Session) { logger.Info("已连接中控", "center", a.opt.CenterURL) },
+			OnDisconnect: func(*wstunnel.Session) { logger.Warn("与中控的连接已断开，将自动重连") },
 			OnError:      func(err error) { logger.Warn("连接中控失败", "error", err) },
 		})
-		if errors.Is(err, tunnel.ErrUnauthorized) {
+		if errors.Is(err, wstunnel.ErrUnauthorized) {
 			// 不能据此删除本地凭据：节点被吊销或删除，与中控的数据被重置、恢复了旧备份，
 			// 在这里看起来完全一样。删掉后后者将永久失联，保留则在中控数据恢复后自动重连。
 			if a.opt.EnrollCode != "" && !a.codeSpent {
@@ -97,7 +97,7 @@ func (a *Agent) Run(ctx context.Context) {
 			}
 			logger.Error("中控拒绝了节点令牌：节点可能已被吊销或删除，或中控数据被重置。本地凭据已保留并每分钟重试；"+
 				"如需重新接入，请使用新的注册码重启", "center", a.opt.CenterURL, "id", state.NodeID)
-			if !tunnel.Sleep(ctx, enrollRetryDelay) {
+			if !wstunnel.Sleep(ctx, enrollRetryDelay) {
 				return
 			}
 			continue
@@ -107,7 +107,7 @@ func (a *Agent) Run(ctx context.Context) {
 }
 
 // serve 在隧道上提供 HTTP 服务，直到会话关闭
-func (a *Agent) serve(sess *tunnel.Session) {
+func (a *Agent) serve(sess *wstunnel.Session) {
 	srv := &http.Server{
 		Handler:           a.handler,
 		ReadHeaderTimeout: 10 * time.Second,
@@ -243,7 +243,7 @@ func (a *Agent) enroll(ctx context.Context) (*agentState, error) {
 		default:
 			logger.Info("等待管理员审批", "id", enrolled.NodeID)
 		}
-		if !tunnel.Sleep(ctx, enrollPollPeriod) {
+		if !wstunnel.Sleep(ctx, enrollPollPeriod) {
 			return nil, ctx.Err()
 		}
 	}
