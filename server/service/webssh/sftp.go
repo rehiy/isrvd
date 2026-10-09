@@ -1,8 +1,6 @@
 package webssh
 
 import (
-	"bytes"
-	"errors"
 	"io"
 	"mime/multipart"
 	"os"
@@ -10,27 +8,9 @@ import (
 	"strings"
 
 	"github.com/rehiy/libgo/webssh"
+
+	"isrvd/pkgs/iobuf"
 )
-
-const MaxEditableFileBytes int64 = 4 << 20
-
-var ErrEditableFileTooLarge = errors.New("文件超过在线编辑上限")
-
-type editableFileBuffer struct {
-	bytes.Buffer
-}
-
-func (b *editableFileBuffer) Write(p []byte) (int, error) {
-	remaining := MaxEditableFileBytes + 1 - int64(b.Len())
-	if remaining <= 0 {
-		return 0, ErrEditableFileTooLarge
-	}
-	if int64(len(p)) > remaining {
-		n, _ := b.Buffer.Write(p[:int(remaining)])
-		return n, ErrEditableFileTooLarge
-	}
-	return b.Buffer.Write(p)
-}
 
 // SFTPListResult SFTP 目录列表结果
 type SFTPListResult = webssh.ListResult
@@ -124,10 +104,10 @@ func (s *Service) SFTPRead(hostID, filePath string) (string, error) {
 		return "", err
 	}
 
-	buf := &editableFileBuffer{}
+	buf := &iobuf.EditBuffer{}
 	err = s.sftpClient.Download(opt, filePath, buf)
-	if int64(buf.Len()) > MaxEditableFileBytes {
-		return "", ErrEditableFileTooLarge
+	if buf.Exceeded() {
+		return "", iobuf.ErrTooLarge
 	}
 	if err != nil {
 		return "", err

@@ -9,8 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/logman"
 
+	"isrvd/pkgs/iobuf"
 	"isrvd/server/config"
-	"isrvd/server/service/filer"
 )
 
 // defineFilerRoutes 定义 Filer 模块路由（RESTful）
@@ -135,7 +135,7 @@ func (app *App) filerFileCreate(c *gin.Context) {
 		respondBindError(c, err)
 		return
 	}
-	if int64(len(req.Content)) > filer.MaxEditableFileBytes {
+	if int64(len(req.Content)) > iobuf.MaxEditableFileBytes {
 		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
 		return
 	}
@@ -165,7 +165,7 @@ func (app *App) filerFileRead(c *gin.Context) {
 	}
 
 	content, err := app.filerSvc.FileRead(absPath)
-	if errors.Is(err, filer.ErrEditableFileTooLarge) {
+	if errors.Is(err, iobuf.ErrTooLarge) {
 		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用下载功能")
 		return
 	}
@@ -183,7 +183,7 @@ func (app *App) filerFileModify(c *gin.Context) {
 		respondBindError(c, err)
 		return
 	}
-	if int64(len(req.Content)) > filer.MaxEditableFileBytes {
+	if int64(len(req.Content)) > iobuf.MaxEditableFileBytes {
 		respondError(c, http.StatusRequestEntityTooLarge, "文件超过在线编辑上限，请使用上传功能")
 		return
 	}

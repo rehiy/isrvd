@@ -16,12 +16,9 @@ import (
 	"github.com/rehiy/libgo/filer"
 	"github.com/rehiy/libgo/logman"
 
+	"isrvd/pkgs/iobuf"
 	"isrvd/server/config"
 )
-
-const MaxEditableFileBytes int64 = 4 << 20
-
-var ErrEditableFileTooLarge = errors.New("文件超过在线编辑上限")
 
 // Service 文件管理业务服务
 type Service struct{}
@@ -162,12 +159,12 @@ func (s *Service) FileRead(absPath string) ([]byte, error) {
 		return nil, err
 	}
 	defer file.Close()
-	data, err := io.ReadAll(io.LimitReader(file, MaxEditableFileBytes+1))
+	data, err := io.ReadAll(io.LimitReader(file, iobuf.MaxEditableFileBytes+1))
 	if err != nil {
 		return nil, err
 	}
-	if int64(len(data)) > MaxEditableFileBytes {
-		return nil, ErrEditableFileTooLarge
+	if int64(len(data)) > iobuf.MaxEditableFileBytes {
+		return nil, iobuf.ErrTooLarge
 	}
 	return data, nil
 }
