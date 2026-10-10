@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"isrvd/server/i18n"
 )
 
 const maxEditableJSONBytes int64 = 32 << 20
@@ -20,7 +22,7 @@ type APIResponse struct {
 func respondSuccess(c *gin.Context, message string, data any) {
 	c.JSON(http.StatusOK, APIResponse{
 		Success: true,
-		Message: message,
+		Message: i18n.T(c, message),
 		Payload: data,
 	})
 }
@@ -32,7 +34,7 @@ func respondError(c *gin.Context, statusCode int, message string) {
 	}
 	c.JSON(statusCode, APIResponse{
 		Success: false,
-		Message: message,
+		Message: i18n.T(c, message),
 	})
 }
 

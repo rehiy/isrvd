@@ -20,6 +20,7 @@ import (
 	"github.com/shirou/gopsutil/v3/cpu"
 
 	"isrvd/pkgs/docker"
+	"isrvd/server/i18n"
 	"isrvd/server/service/shell"
 )
 
@@ -318,13 +319,13 @@ func (s *Service) ContainerLogsStream(ctx context.Context, w io.Writer, req Cont
 func (s *Service) ContainerExec(ctx context.Context, conn *websocket.ServerConn, containerID, shellCmd string) {
 	session, err := s.docker.ContainerExecAttach(ctx, containerID, shellCmd)
 	if err != nil {
-		conn.Write([]byte("[" + err.Error() + "]\r\n"))
+		conn.Write([]byte("[" + i18n.TC(ctx, err.Error()) + "]\r\n"))
 		return
 	}
 
 	shell.Bridge(conn, session, session, shell.BridgeOptions{
 		Name:    "container exec",
-		Welcome: "[容器终端已连接]\r\n",
+		Welcome: i18n.TC(ctx, "[容器终端已连接]") + "\r\n",
 		Resize: func(cols, rows int) {
 			if err := session.Resize(cols, rows); err != nil {
 				logman.Warn("container exec resize failed", "container", containerID, "cols", cols, "rows", rows, "error", err)

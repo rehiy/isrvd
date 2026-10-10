@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"isrvd/server/i18n"
+
 	"github.com/rehiy/libgo/jsonl"
 	"github.com/rehiy/libgo/logman"
 
@@ -133,7 +135,7 @@ func (s *AuditService) LogList(username string, limit int) []AuditLog {
 // AuditRecord 根据请求类型记录审计日志，供中间件在请求处理完成后调用。
 // WebSocket 升级请求记录 "WS" 方法；其余记录方法、URI、请求体、状态码。
 func (s *AuditService) AuditRecord(r *http.Request, username, ip string, statusCode int, startTime time.Time, body string) {
-	username = auditUsername(username, body)
+	username = auditUsername(username, body, r)
 
 	// WebSocket
 	if strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
@@ -314,8 +316,8 @@ func maskValue(value any) any {
 }
 
 // auditUsername 获取审计日志中的操作人。
-// 登录等匿名路由没有认证上下文时，尝试从 JSON 请求体读取 username，仍为空则标记为匿名。
-func auditUsername(authUsername, body string) string {
+// 登录等匿名路由没有认证上下文时，尝试从 JSON 请求体读取 username，仍为空则按请求语言标记为匿名。
+func auditUsername(authUsername, body string, r *http.Request) string {
 	if username := strings.TrimSpace(authUsername); username != "" {
 		return username
 	}
@@ -327,7 +329,7 @@ func auditUsername(authUsername, body string) string {
 		}
 	}
 
-	return "匿名"
+	return i18n.Translate(i18n.Parse(r.Header.Get("Accept-Language")), "匿名")
 }
 
 // ─── 辅助函数 ───

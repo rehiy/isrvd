@@ -21,6 +21,7 @@ import (
 	"github.com/rehiy/libgo/ttlcache"
 	"github.com/rehiy/libgo/websocket"
 
+	"isrvd/server/i18n"
 	"isrvd/server/service/node"
 )
 
@@ -111,7 +112,7 @@ func newGateway(opt Options) *gateway {
 				return
 			}
 			logman.Warn("转发到中控 isrvd 失败", "path", r.URL.Path, "error", err)
-			fail(w, http.StatusBadGateway, "中控 isrvd 不可用")
+			fail(w, r, http.StatusBadGateway, "中控 isrvd 不可用")
 		},
 	}
 	return g
@@ -188,7 +189,7 @@ func (g *gateway) nodeForward(w http.ResponseWriter, r *http.Request, id string)
 	g.audited(w, r, ident.user, func(w http.ResponseWriter, r *http.Request) {
 		// 与 isrvd 本机终端一致，WebSocket 必须校验 Origin；受管机转发时会去掉 Origin，所以只能在这里把关
 		if strings.EqualFold(r.Header.Get("Upgrade"), "websocket") && !g.originAllowed(r) {
-			fail(w, http.StatusForbidden, "不允许的跨站来源")
+			fail(w, r, http.StatusForbidden, "不允许的跨站来源")
 			return
 		}
 		g.nodes.ProxyServe(w, r, id)
@@ -218,7 +219,7 @@ func (g *gateway) originAllowed(r *http.Request) bool {
 func (g *gateway) nodeBootstrap(w http.ResponseWriter, r *http.Request, id string) {
 	status, body, err := g.bootstrapCall(r)
 	if err != nil {
-		fail(w, http.StatusBadGateway, "中控 isrvd 不可用")
+		fail(w, r, http.StatusBadGateway, "中控 isrvd 不可用")
 		return
 	}
 	ident := parseIdentity(body)
@@ -312,13 +313,13 @@ func (g *gateway) authorize(w http.ResponseWriter, r *http.Request) (identity, b
 	ident, err := g.identify(r)
 	switch {
 	case err != nil:
-		fail(w, http.StatusBadGateway, "中控 isrvd 不可用")
+		fail(w, r, http.StatusBadGateway, "中控 isrvd 不可用")
 		return ident, false
 	case ident.user == "":
-		fail(w, http.StatusUnauthorized, "未登录或登录已过期")
+		fail(w, r, http.StatusUnauthorized, "未登录或登录已过期")
 		return ident, false
 	case !ident.founder:
-		fail(w, http.StatusForbidden, "仅创始人可管理和操作节点")
+		fail(w, r, http.StatusForbidden, "仅创始人可管理和操作节点")
 		return ident, false
 	}
 	return ident, true
@@ -505,10 +506,17 @@ func respond(w http.ResponseWriter, status int, body map[string]any) {
 	_ = json.NewEncoder(w).Encode(body)
 }
 
-func success(w http.ResponseWriter, message string, payload any) {
-	respond(w, http.StatusOK, map[string]any{"success": true, "message": message, "payload": payload})
+func success(w http.ResponseWriter, r *http.Request, message string, payload any) {
+	// 与 fail 一致：按请求语言翻译提示文案
+	respond(w, http.StatusOK, map[string]any{
+		"success": true,
+		"message": i18n.Translate(i18n.Parse(r.Header.Get("Accept-Language")), message),
+		"payload": payload,
+	})
 }
 
-func fail(w http.ResponseWriter, status int, message string) {
-	respond(w, status, map[string]any{"success": false, "message": message})
+func fail(w http.ResponseWriter, r *http.Request, status int, message string) {
+	// 网关是原生 http.Handler，没有 gin 上下文，按请求头直接协商语言
+	lang := i18n.Parse(r.Header.Get("Accept-Language"))
+	respond(w, status, map[string]any{"success": false, "message": i18n.Translate(lang, message)})
 }

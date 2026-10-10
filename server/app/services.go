@@ -2,12 +2,14 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/logman"
 
+	"isrvd/server/i18n"
 	"isrvd/server/service/account"
 	"isrvd/server/service/apisix"
 	"isrvd/server/service/caddy"
@@ -177,7 +179,9 @@ func (app *App) serviceAvailableMiddleware() gin.HandlerFunc {
 			return
 		}
 		c.Abort()
-		respondError(c, http.StatusServiceUnavailable, route.Label+"服务不可用")
+		// 操作名与提示都按请求语言翻译：先译操作名，再用 %s 套入「服务不可用」
+		respondError(c, http.StatusServiceUnavailable,
+			fmt.Sprintf(i18n.T(c, "%s服务不可用"), i18n.T(c, route.Label)))
 	}
 }
 

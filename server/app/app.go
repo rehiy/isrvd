@@ -30,6 +30,7 @@ import (
 
 	"isrvd/public"
 	"isrvd/server/config"
+	"isrvd/server/i18n"
 )
 
 const APINamespace = "/api"
@@ -153,7 +154,9 @@ func StartApp(listener net.Listener, mode string) {
 func (app *App) initRoutes() {
 	r := app.Group(APINamespace)
 
-	// 全局中间件。生命周期锁必须先于读取可热更新的 WebSocket/CORS 配置。
+	// 全局中间件。语言协商最先执行，后续中间件与 handler 的提示文案才能按语言翻译。
+	r.Use(i18n.Middleware())
+	// 生命周期锁必须先于读取可热更新的 WebSocket/CORS 配置。
 	r.Use(app.serviceLifecycleMiddleware())
 	r.Use(app.wsConfig.CorsMiddleware())
 	r.Use(securityHeadersMiddleware())

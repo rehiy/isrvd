@@ -17,8 +17,8 @@ import (
 
 // ─── 节点管理（仅创始人，由 founderOnly 包装） ───
 
-func (g *gateway) nodeList(w http.ResponseWriter, _ *http.Request, _ string) {
-	success(w, "", g.nodes.NodeList())
+func (g *gateway) nodeList(w http.ResponseWriter, r *http.Request, _ string) {
+	success(w, r, "", g.nodes.NodeList())
 }
 
 func (g *gateway) nodeUpdate(w http.ResponseWriter, r *http.Request, _ string) {
@@ -28,41 +28,41 @@ func (g *gateway) nodeUpdate(w http.ResponseWriter, r *http.Request, _ string) {
 	}
 	n, err := g.nodes.NodeUpdate(r.PathValue("id"), &req)
 	if err != nil {
-		nodeFail(w, err)
+		nodeFail(w, r, err)
 		return
 	}
-	success(w, "节点更新成功", n)
+	success(w, r, "节点更新成功", n)
 }
 
 func (g *gateway) nodeApprove(w http.ResponseWriter, r *http.Request, _ string) {
 	n, err := g.nodes.NodeApprove(r.PathValue("id"))
 	if err != nil {
-		nodeFail(w, err)
+		nodeFail(w, r, err)
 		return
 	}
-	success(w, "节点已审批", n)
+	success(w, r, "节点已审批", n)
 }
 
 func (g *gateway) nodeRevoke(w http.ResponseWriter, r *http.Request, _ string) {
 	if err := g.nodes.NodeRevoke(r.PathValue("id")); err != nil {
-		nodeFail(w, err)
+		nodeFail(w, r, err)
 		return
 	}
-	success(w, "节点已吊销", nil)
+	success(w, r, "节点已吊销", nil)
 }
 
 func (g *gateway) nodeDelete(w http.ResponseWriter, r *http.Request, _ string) {
 	if err := g.nodes.NodeDelete(r.PathValue("id")); err != nil {
-		nodeFail(w, err)
+		nodeFail(w, r, err)
 		return
 	}
-	success(w, "节点删除成功", nil)
+	success(w, r, "节点删除成功", nil)
 }
 
 // ─── 注册码 ───
 
-func (g *gateway) nodeCodeList(w http.ResponseWriter, _ *http.Request, _ string) {
-	success(w, "", g.nodes.EnrollCodeList())
+func (g *gateway) nodeCodeList(w http.ResponseWriter, r *http.Request, _ string) {
+	success(w, r, "", g.nodes.EnrollCodeList())
 }
 
 func (g *gateway) nodeCodeCreate(w http.ResponseWriter, r *http.Request, user string) {
@@ -72,18 +72,18 @@ func (g *gateway) nodeCodeCreate(w http.ResponseWriter, r *http.Request, user st
 	}
 	resp, err := g.nodes.EnrollCodeCreate(user, &req)
 	if err != nil {
-		nodeFail(w, err)
+		nodeFail(w, r, err)
 		return
 	}
-	success(w, "注册码创建成功", resp)
+	success(w, r, "注册码创建成功", resp)
 }
 
 func (g *gateway) nodeCodeDelete(w http.ResponseWriter, r *http.Request, _ string) {
 	if err := g.nodes.EnrollCodeDelete(r.PathValue("id")); err != nil {
-		nodeFail(w, err)
+		nodeFail(w, r, err)
 		return
 	}
-	success(w, "注册码已撤销", nil)
+	success(w, r, "注册码已撤销", nil)
 }
 
 // ─── 受管机接入（匿名，由一次性凭据、节点令牌与按 IP 限流保护） ───
@@ -95,10 +95,10 @@ func (g *gateway) nodeEnroll(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := g.nodes.Enroll(g.clientIP(r), &req)
 	if err != nil {
-		nodeFail(w, err)
+		nodeFail(w, r, err)
 		return
 	}
-	success(w, "注册已提交", resp)
+	success(w, r, "注册已提交", resp)
 }
 
 func (g *gateway) nodeClaim(w http.ResponseWriter, r *http.Request) {
@@ -108,10 +108,10 @@ func (g *gateway) nodeClaim(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := g.nodes.EnrollClaim(g.clientIP(r), &req)
 	if err != nil {
-		nodeFail(w, err)
+		nodeFail(w, r, err)
 		return
 	}
-	success(w, "", resp)
+	success(w, r, "", resp)
 }
 
 // nodeConnect 受管机建立隧道的入口。WebSocket 升级与二进制流适配交给 libgo 的 websocket.ServerConfig，
@@ -124,13 +124,13 @@ func (g *gateway) nodeConnect() http.Handler {
 		// 浏览器发起的 WebSocket 必带 Origin；受管机不是浏览器，带 Origin 的一律拒绝，
 		// 这样即使令牌泄漏，也无法被跨站页面利用
 		if c.GetHeader("Origin") != "" {
-			fail(c.Writer, http.StatusForbidden, "不接受浏览器发起的隧道连接")
+			fail(c.Writer, c.Request, http.StatusForbidden, "不接受浏览器发起的隧道连接")
 			c.Abort()
 			return
 		}
 		n, err := g.nodes.Authenticate(c.Request, g.clientIP(c.Request))
 		if err != nil {
-			nodeFail(c.Writer, err)
+			nodeFail(c.Writer, c.Request, err)
 			c.Abort()
 			return
 		}
@@ -150,25 +150,25 @@ func decode(w http.ResponseWriter, r *http.Request, v any) bool {
 	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
 		var tooLarge *http.MaxBytesError
 		if errors.As(err, &tooLarge) {
-			fail(w, http.StatusRequestEntityTooLarge, "请求体过大")
+			fail(w, r, http.StatusRequestEntityTooLarge, "请求体过大")
 			return false
 		}
-		fail(w, http.StatusBadRequest, "请求体无效: "+err.Error())
+		fail(w, r, http.StatusBadRequest, "请求体无效: "+err.Error())
 		return false
 	}
 	return true
 }
 
 // nodeFail 把节点服务错误映射为 HTTP 状态码
-func nodeFail(w http.ResponseWriter, err error) {
+func nodeFail(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, node.ErrNotFound):
-		fail(w, http.StatusNotFound, err.Error())
+		fail(w, r, http.StatusNotFound, err.Error())
 	case errors.Is(err, node.ErrRateLimited):
-		fail(w, http.StatusTooManyRequests, err.Error())
+		fail(w, r, http.StatusTooManyRequests, err.Error())
 	case errors.Is(err, node.ErrInvalidCode), errors.Is(err, node.ErrUnauthorized):
-		fail(w, http.StatusForbidden, err.Error())
+		fail(w, r, http.StatusForbidden, err.Error())
 	default:
-		fail(w, http.StatusBadRequest, err.Error())
+		fail(w, r, http.StatusBadRequest, err.Error())
 	}
 }
