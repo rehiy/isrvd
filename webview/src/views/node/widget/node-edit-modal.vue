@@ -36,7 +36,7 @@ class NodeEditModal extends Vue {
         this.modalLoading = true
         try {
             await api.nodeUpdate(this.editId, { name })
-            this.portal.showNotification('success', '节点已重命名')
+            this.portal.showNotification('success', this.$t('节点已重命名'))
             this.isOpen = false
             this.$emit('success')
         } catch {}
@@ -48,15 +48,15 @@ export default toNative(NodeEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" title="重命名节点" :loading="modalLoading" :confirm-disabled="!name.trim()" max-width-class="max-w-lg" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('重命名节点')" :loading="modalLoading" :confirm-disabled="!name.trim()" max-width-class="max-w-lg" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
-        <label class="form-label">节点名称 <span class="text-red-500">*</span></label>
-        <input v-model="name" type="text" maxlength="64" placeholder="请输入节点名称" required class="input" />
-        <p class="text-xs text-slate-400 mt-1">1–64 个字符，仅用于在界面中区分节点</p>
+        <label class="form-label">{{ $t('节点名称') }} <span class="text-red-500">*</span></label>
+        <input v-model="name" type="text" maxlength="64" :placeholder="$t('请输入节点名称')" required class="input" />
+        <p class="text-xs text-slate-400 mt-1">{{ $t('1–64 个字符，仅用于在界面中区分节点') }}</p>
       </div>
     </form>
 
-    <template #confirm-text>保存修改</template>
+    <template #confirm-text>{{ $t('保存修改') }}</template>
   </BaseModal>
 </template>

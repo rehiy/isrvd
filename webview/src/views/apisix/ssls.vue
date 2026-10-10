@@ -63,7 +63,7 @@ class SSLs extends Vue {
         const snis = ssl.snis || []
         if (snis.length === 0) return '-'
         if (snis.length === 1) return snis[0]
-        return `${snis[0]} 等 ${snis.length} 个域名`
+        return this.$t('{0} 等 {1} 个域名', snis[0], snis.length)
     }
 
     getStatusClass(ssl: ApisixSSL) {
@@ -71,7 +71,7 @@ class SSLs extends Vue {
     }
 
     getStatusText(ssl: ApisixSSL) {
-        return (ssl.status ?? 1) === 0 ? '禁用' : '启用'
+        return (ssl.status ?? 1) === 0 ? this.$t('禁用') : this.$t('启用')
     }
 
     formatTs = formatUnixDateTime
@@ -80,15 +80,15 @@ class SSLs extends Vue {
         const id = ssl.id
         if (!id) return
         this.portal.showConfirm({
-            title: '删除证书',
-            message: `确定要删除证书 <strong class="text-slate-900">${this.getPrimarySNI(ssl)}</strong> 吗？正在被 SNI 使用时可能影响 HTTPS 访问。`,
+            title: this.$t('删除证书'),
+            message: this.$t('确定要删除证书 <strong class="text-slate-900">{0}</strong> 吗？正在被 SNI 使用时可能影响 HTTPS 访问。', this.getPrimarySNI(ssl)),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认删除',
+            confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 await api.apisixSSLDelete(id)
-                this.portal.showNotification('success', '删除成功')
+                this.portal.showNotification('success', this.$t('删除成功'))
                 this.loadSSLs()
             }
         })
@@ -111,17 +111,17 @@ export default toNative(SSLs)
             <i class="fas fa-certificate text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">SSL 证书</h1>
-            <p class="text-xs text-slate-500">管理 APISIX 的 SSL 证书绑定与 SNI 配置</p>
+            <h1 class="title-text">{{ $t('SSL 证书') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('管理 APISIX 的 SSL 证书绑定与 SNI 配置') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="apisix-ssls" placeholder="搜索证书、SNI 或 ID..." focus-color="cyan" type-to-search />
+          <PageSearch v-model="searchText" search-key="apisix-ssls" :placeholder="$t('搜索证书、SNI 或 ID...')" focus-color="cyan" type-to-search />
           <button class="btn btn-secondary" @click="loadSSLs()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
           <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="btn btn-cyan" @click="openCreateModal()">
-            <i class="fas fa-plus"></i>新建证书
+            <i class="fas fa-plus"></i>{{ $t('新建证书') }}
           </button>
         </div>
       </div>
@@ -132,15 +132,15 @@ export default toNative(SSLs)
             <i class="fas fa-certificate text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">SSL 证书</h1>
-            <p class="text-xs text-slate-500 truncate">管理证书与 SNI 绑定</p>
+            <h1 class="title-text">{{ $t('SSL 证书') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('管理证书与 SNI 绑定') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" title="刷新" @click="loadSSLs()">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadSSLs()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="btn btn-cyan btn-square" title="新建证书" @click="openCreateModal()">
+          <button v-if="portal.hasPerm('POST /api/apisix/ssl')" class="btn btn-cyan btn-square" :title="$t('新建证书')" @click="openCreateModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -148,13 +148,13 @@ export default toNative(SSLs)
     </div>
 
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="apisix-ssls" placeholder="搜索证书或 SNI..." width-class="w-full" focus-color="cyan" />
+      <PageSearch v-model="searchText" search-key="apisix-ssls" :placeholder="$t('搜索证书或 SNI...')" width-class="w-full" focus-color="cyan" />
     </div>
 
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -163,8 +163,8 @@ export default toNative(SSLs)
         <div class="empty-state-icon">
           <i class="fas fa-certificate text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ ssls.length === 0 ? '暂无证书' : '未找到匹配证书' }}</p>
-        <p class="text-sm text-slate-400">{{ ssls.length === 0 ? '点击「新建证书」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ ssls.length === 0 ? $t('暂无证书') : $t('未找到匹配证书') }}</p>
+        <p class="text-sm text-slate-400">{{ ssls.length === 0 ? $t('点击「新建证书」开始创建') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
 
@@ -174,9 +174,9 @@ export default toNative(SSLs)
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
               <th class="th">SNI</th>
-              <th class="th">状态</th>
-              <th class="th">更新时间</th>
-              <th class="w-32 th-right">操作</th>
+              <th class="th">{{ $t('状态') }}</th>
+              <th class="th">{{ $t('更新时间') }}</th>
+              <th class="w-32 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -198,10 +198,10 @@ export default toNative(SSLs)
               <td class="td-text-nowrap">{{ formatTs(ssl.update_time || ssl.create_time) }}</td>
               <td class="px-4 py-3">
                 <div class="table-actions">
-                  <button v-if="portal.hasPerm('PUT /api/apisix/ssl/:id')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(ssl)">
+                  <button v-if="portal.hasPerm('PUT /api/apisix/ssl/:id')" class="btn-icon btn-icon-cyan" :title="$t('编辑')" @click="openEditModal(ssl)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
-                  <button v-if="portal.hasPerm('DELETE /api/apisix/ssl/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteSSL(ssl)">
+                  <button v-if="portal.hasPerm('DELETE /api/apisix/ssl/:id')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteSSL(ssl)">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
@@ -231,16 +231,16 @@ export default toNative(SSLs)
             <span class="text-xs text-slate-500 break-all">{{ getSNISummary(ssl) }}</span>
           </div>
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">更新</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('更新') }}</span>
             <span class="text-xs text-slate-500">{{ formatTs(ssl.update_time || ssl.create_time) }}</span>
           </div>
 
           <div class="card-actions">
-            <button v-if="portal.hasPerm('PUT /api/apisix/ssl/:id')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(ssl)">
-              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
+            <button v-if="portal.hasPerm('PUT /api/apisix/ssl/:id')" class="btn-icon btn-icon-cyan" :title="$t('编辑')" @click="openEditModal(ssl)">
+              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">{{ $t('编辑') }}</span>
             </button>
-            <button v-if="portal.hasPerm('DELETE /api/apisix/ssl/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteSSL(ssl)">
-              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+            <button v-if="portal.hasPerm('DELETE /api/apisix/ssl/:id')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteSSL(ssl)">
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
             </button>
           </div>
         </div>

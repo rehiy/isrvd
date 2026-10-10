@@ -46,7 +46,7 @@ class ContainerCreateModal extends Vue {
 
     // ─── 计算属性 ───
     get networkOptions() {
-        const options: { value: string; label: string }[] = [{ value: '', label: '不指定' }]
+        const options: { value: string; label: string }[] = [{ value: '', label: this.$t('不指定') }]
         this.networks.forEach(net => {
             options.push({ value: net.name, label: `${net.name} (${net.driver})` })
         })
@@ -151,7 +151,7 @@ class ContainerCreateModal extends Vue {
     async handleConfirm() {
         const projectName = this.formData.name.trim()
         if (!projectName) {
-            this.portal.showNotification('error', '请填写容器名称')
+            this.portal.showNotification('error', this.$t('请填写容器名称'))
             return
         }
 
@@ -161,7 +161,7 @@ class ContainerCreateModal extends Vue {
         this.modalLoading = true
         try {
             await api.composeDockerDeploy({ content })
-            this.portal.showNotification('success', '容器创建成功')
+            this.portal.showNotification('success', this.$t('容器创建成功'))
             this.isOpen = false
             this.$emit('success')
         } catch {}
@@ -173,88 +173,88 @@ export default toNative(ContainerCreateModal)
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" title="新建容器" :loading="modalLoading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" :title="$t('新建容器')" :loading="modalLoading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <!-- 基础设置 -->
       <div class="grid grid-cols-2 gap-3">
         <div class="col-span-2">
-          <label class="form-label">镜像 <span class="text-red-500">*</span></label>
-          <ImageSelect v-model="formData.image" :images="images" placeholder="请输入或选择镜像名" />
+          <label class="form-label">{{ $t('镜像') }} <span class="text-red-500">*</span></label>
+          <ImageSelect v-model="formData.image" :images="images" :placeholder="$t('请输入或选择镜像名')" />
         </div>
         <div>
-          <label class="form-label">容器名称 <span class="text-red-500">*</span></label>
-          <input v-model="formData.name" type="text" placeholder="请输入容器名称" required class="input" />
+          <label class="form-label">{{ $t('容器名称') }} <span class="text-red-500">*</span></label>
+          <input v-model="formData.name" type="text" :placeholder="$t('请输入容器名称')" required class="input" />
         </div>
         <div>
-          <label class="form-label">网络模式</label>
+          <label class="form-label">{{ $t('网络模式') }}</label>
           <select v-model="formData.network" class="input">
-            <option v-for="opt in networkOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            <option v-for="opt in networkOptions" :key="opt.value" :value="opt.value">{{ $t(opt.label) }}</option>
           </select>
         </div>
       </div>
 
       <!-- 端口映射 -->
       <div>
-        <label class="form-label">端口映射</label>
-        <textarea v-model="formData.portsStr" rows="2" placeholder="请输入端口映射" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">格式：主机端口:容器端口，如 8080:80，每行一条</p>
+        <label class="form-label">{{ $t('端口映射') }}</label>
+        <textarea v-model="formData.portsStr" rows="2" :placeholder="$t('请输入端口映射')" class="input font-mono text-sm"></textarea>
+        <p class="mt-1 text-xs text-slate-400">{{ $t('格式：主机端口:容器端口，如 8080:80，每行一条') }}</p>
       </div>
 
       <!-- 挂载映射 -->
       <div>
-        <label class="form-label">挂载映射</label>
-        <textarea v-model="formData.volumesStr" rows="3" placeholder="请输入挂载映射" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">格式：来源:容器路径[:ro]，如 ./data:/app/data:ro，每行一条</p>
+        <label class="form-label">{{ $t('挂载映射') }}</label>
+        <textarea v-model="formData.volumesStr" rows="3" :placeholder="$t('请输入挂载映射')" class="input font-mono text-sm"></textarea>
+        <p class="mt-1 text-xs text-slate-400">{{ $t('格式：来源:容器路径[:ro]，如 ./data:/app/data:ro，每行一条') }}</p>
       </div>
 
       <!-- 环境变量 -->
       <div>
-        <label class="form-label">环境变量</label>
-        <textarea v-model="formData.envStr" rows="2" placeholder="请输入环境变量" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">每行一条，支持 KEY=value 或 KEY: value 格式</p>
+        <label class="form-label">{{ $t('环境变量') }}</label>
+        <textarea v-model="formData.envStr" rows="2" :placeholder="$t('请输入环境变量')" class="input font-mono text-sm"></textarea>
+        <p class="mt-1 text-xs text-slate-400">{{ $t('每行一条，支持 KEY=value 或 KEY: value 格式') }}</p>
       </div>
 
       <!-- 高级选项 -->
       <div class="border-t border-slate-200 pt-4">
         <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" @click="showAdvanced = !showAdvanced">
           <i :class="['fas fa-chevron-down text-xs transition-transform', showAdvanced ? 'rotate-180' : '']"></i>
-          高级选项
+          {{ $t('高级选项') }}
         </button>
         <div v-if="showAdvanced" class="mt-4 space-y-4">
           <div>
-            <label class="form-label">启动命令</label>
-            <input v-model="formData.cmd" type="text" placeholder="请输入启动命令" class="input font-mono text-sm" />
+            <label class="form-label">{{ $t('启动命令') }}</label>
+            <input v-model="formData.cmd" type="text" :placeholder="$t('请输入启动命令')" class="input font-mono text-sm" />
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="form-label">重启策略</label>
+              <label class="form-label">{{ $t('重启策略') }}</label>
               <select v-model="formData.restart" class="input">
-                <option v-for="opt in restartOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                <option v-for="opt in restartOptions" :key="opt.value" :value="opt.value">{{ $t(opt.label) }}</option>
               </select>
             </div>
             <div>
-              <label class="form-label">主机名</label>
-              <input v-model="formData.hostname" type="text" placeholder="请输入容器主机名" class="input" />
+              <label class="form-label">{{ $t('主机名') }}</label>
+              <input v-model="formData.hostname" type="text" :placeholder="$t('请输入容器主机名')" class="input" />
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="form-label">内存限制 (MB)</label>
-              <input v-model="formData.memory" type="number" placeholder="请输入内存限制（MB）" class="input" />
+              <label class="form-label">{{ $t('内存限制 (MB)') }}</label>
+              <input v-model="formData.memory" type="number" :placeholder="$t('请输入内存限制（MB）')" class="input" />
             </div>
             <div>
-              <label class="form-label">CPU 限制 (核心)</label>
-              <input v-model="formData.cpus" type="number" step="0.1" placeholder="请输入 CPU 限制（核心数）" class="input" />
+              <label class="form-label">{{ $t('CPU 限制 (核心)') }}</label>
+              <input v-model="formData.cpus" type="number" step="0.1" :placeholder="$t('请输入 CPU 限制（核心数）')" class="input" />
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="form-label">工作目录</label>
-              <input v-model="formData.workdir" type="text" placeholder="请输入工作目录" class="input" />
+              <label class="form-label">{{ $t('工作目录') }}</label>
+              <input v-model="formData.workdir" type="text" :placeholder="$t('请输入工作目录')" class="input" />
             </div>
             <div>
-              <label class="form-label">运行用户</label>
-              <input v-model="formData.user" type="text" placeholder="请输入运行用户" class="input" />
+              <label class="form-label">{{ $t('运行用户') }}</label>
+              <input v-model="formData.user" type="text" :placeholder="$t('请输入运行用户')" class="input" />
             </div>
           </div>
         </div>
@@ -264,25 +264,25 @@ export default toNative(ContainerCreateModal)
       <div class="border-t border-slate-200 pt-4">
         <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" @click="showSecurity = !showSecurity">
           <i :class="['fas fa-chevron-down text-xs transition-transform', showSecurity ? 'rotate-180' : '']"></i>
-          安全配置
+          {{ $t('安全配置') }}
           <span v-if="formData.privileged || formData.capAdd?.length || formData.capDrop?.length" class="badge-xs bg-amber-100 text-amber-700">
-            {{ [formData.privileged ? '特权' : '', formData.capAdd?.length ? `+${formData.capAdd.length}` : '', formData.capDrop?.length ? `-${formData.capDrop.length}` : ''].filter(Boolean).join(' ') }}
+            {{ [formData.privileged ? $t('特权') : '', formData.capAdd?.length ? `+${formData.capAdd.length}` : '', formData.capDrop?.length ? `-${formData.capDrop.length}` : ''].filter(Boolean).join(' ') }}
           </span>
         </button>
         <div v-if="showSecurity" class="mt-4 space-y-4">
-          <ToggleCard v-model="formData.privileged" label="特权模式" desc="⚠️ 赋予容器所有主机权限，谨慎使用" />
+          <ToggleCard v-model="formData.privileged" :label="$t('特权模式')" :desc="$t('⚠️ 赋予容器所有主机权限，谨慎使用')" />
           <div>
-            <label class="form-label">添加权限 (CapAdd)</label>
+            <label class="form-label">{{ $t('添加权限 (CapAdd)') }}</label>
             <CapSelect v-model="formData.capAdd" />
           </div>
           <div>
-            <label class="form-label">移除权限 (CapDrop)</label>
+            <label class="form-label">{{ $t('移除权限 (CapDrop)') }}</label>
             <CapSelect v-model="formData.capDrop" />
           </div>
         </div>
       </div>
     </form>
 
-    <template #confirm-text>确认新建</template>
+    <template #confirm-text>{{ $t('确认新建') }}</template>
   </BaseModal>
 </template>

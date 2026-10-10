@@ -99,15 +99,15 @@ class RouteEditModal extends Vue {
 
     get routeValidationMessage() {
         const mode = this.formData.upstream_mode
-        if (mode === 'upstream_id') return this.formData.upstream_id.trim() ? '' : '请选择要引用的上游对象'
+        if (mode === 'upstream_id') return this.formData.upstream_id.trim() ? '' : this.$t('请选择要引用的上游对象')
         if (mode !== 'nodes') return ''
 
         const node = this.formData.upstream_nodes[0] || this.createUpstreamNode()
         const hasHost = !!node.host.trim()
         const hasPort = !!String(node.port).trim()
-        if (!hasHost && !hasPort) return '请填写上游主机和端口'
-        if (hasHost !== hasPort) return '上游主机和端口需要同时填写'
-        if (hasPort && !/^\d+$/.test(String(node.port).trim())) return '上游端口必须为数字'
+        if (!hasHost && !hasPort) return this.$t('请填写上游主机和端口')
+        if (hasHost !== hasPort) return this.$t('上游主机和端口需要同时填写')
+        if (hasPort && !/^\d+$/.test(String(node.port).trim())) return this.$t('上游端口必须为数字')
 
         return ''
     }
@@ -127,20 +127,20 @@ class RouteEditModal extends Vue {
         const nodes = upstream.nodes
         if (Array.isArray(nodes)) {
             const labels = nodes.map(node => `${node.host || '-'}:${node.port || '-'}`)
-            return labels.length > 2 ? `${labels.slice(0, 2).join(', ')} 等 ${labels.length} 个节点` : labels.join(', ')
+            return labels.length > 2 ? this.$t('{0} 等 {1} 个节点', labels.slice(0, 2).join(', '), labels.length) : labels.join(', ')
         }
         if (nodes && typeof nodes === 'object') {
             const labels = Object.keys(nodes)
-            return labels.length > 2 ? `${labels.slice(0, 2).join(', ')} 等 ${labels.length} 个节点` : labels.join(', ')
+            return labels.length > 2 ? this.$t('{0} 等 {1} 个节点', labels.slice(0, 2).join(', '), labels.length) : labels.join(', ')
         }
-        return '无节点'
+        return this.$t('无节点')
     }
 
     upstreamOptionLabel(upstream: ApisixUpstream) {
-        const name = upstream.name || upstream.id || '未命名上游'
+        const name = upstream.name || upstream.id || this.$t('未命名上游')
         const type = upstream.type || 'roundrobin'
-        const desc = upstream.desc ? `描述: ${upstream.desc}` : ''
-        return [name, `类型: ${type}`, `节点: ${this.upstreamNodeSummary(upstream)}`, desc].filter(Boolean).join(' ｜ ')
+        const desc = upstream.desc ? this.$t('描述: {0}', upstream.desc) : ''
+        return [name, this.$t('类型: {0}', type), this.$t('节点: {0}', this.upstreamNodeSummary(upstream)), desc].filter(Boolean).join(' ｜ ')
     }
 
     // ─── 方法 ───
@@ -210,7 +210,7 @@ class RouteEditModal extends Vue {
             try {
                 const r = (await api.apisixRouteInspect(route.id)).payload
                 if (!r) {
-                    this.portal.showNotification('error', '加载路由详情失败')
+                    this.portal.showNotification('error', this.$t('加载路由详情失败'))
                     this.isOpen = false
                     return
                 }
@@ -251,9 +251,9 @@ class RouteEditModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.formData.name.trim()) return this.portal.showNotification('error', '路由名称不能为空')
-        if (!this.formData.uris.split('\n').map(s => s.trim()).filter(Boolean).length) return this.portal.showNotification('error', 'URI 不能为空')
-        if (this.$refs.pluginPanel?.pluginsJsonError) return this.portal.showNotification('error', '请修正 Plugin JSON 格式错误')
+        if (!this.formData.name.trim()) return this.portal.showNotification('error', this.$t('路由名称不能为空'))
+        if (!this.formData.uris.split('\n').map(s => s.trim()).filter(Boolean).length) return this.portal.showNotification('error', this.$t('URI 不能为空'))
+        if (this.$refs.pluginPanel?.pluginsJsonError) return this.portal.showNotification('error', this.$t('请修正 Plugin JSON 格式错误'))
         if (this.routeValidationMessage) return this.portal.showNotification('error', this.routeValidationMessage)
 
         this.modalLoading = true
@@ -261,10 +261,10 @@ class RouteEditModal extends Vue {
             const payload = buildRoutePayload(this.formData, this.originalUpstream)
             if (this.isEditMode) {
                 await api.apisixRouteUpdate(this.editingRouteId, payload)
-                this.portal.showNotification('success', '路由更新成功')
+                this.portal.showNotification('success', this.$t('路由更新成功'))
             } else {
                 await api.apisixRouteCreate(payload)
-                this.portal.showNotification('success', '路由创建成功')
+                this.portal.showNotification('success', this.$t('路由创建成功'))
             }
             this.isOpen = false
             this.$emit('success')
@@ -278,40 +278,40 @@ export default toNative(RouteEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑路由' : '新建路由'" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑路由') : $t('新建路由')" :loading="modalLoading" confirm-class="btn-indigo" @confirm="handleConfirm">
     <div class="space-y-4 p-1">
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="form-label">名称 <span class="text-red-500">*</span></label>
-          <input v-model="formData.name" type="text" class="input" placeholder="请输入路由名称" />
+          <label class="form-label">{{ $t('名称') }} <span class="text-red-500">*</span></label>
+          <input v-model="formData.name" type="text" class="input" :placeholder="$t('请输入路由名称')" />
         </div>
         <div>
-          <label class="form-label">优先级</label>
-          <input v-model.number="formData.priority" type="number" class="input" placeholder="请输入优先级（可选）" min="0" />
+          <label class="form-label">{{ $t('优先级') }}</label>
+          <input v-model.number="formData.priority" type="number" class="input" :placeholder="$t('请输入优先级（可选）')" min="0" />
         </div>
       </div>
       <div>
-        <label class="form-label">描述</label>
-        <textarea v-model="formData.desc" rows="2" class="input" placeholder="请输入路由描述（可选）"></textarea>
+        <label class="form-label">{{ $t('描述') }}</label>
+        <textarea v-model="formData.desc" rows="2" class="input" :placeholder="$t('请输入路由描述（可选）')"></textarea>
       </div>
       <div>
-        <label class="form-label">URI（每行一个）<span class="text-red-500">*</span></label>
-        <textarea v-model="formData.uris" rows="3" class="input font-mono text-sm" placeholder="请输入 URI（支持通配符）"></textarea>
-        <p class="text-xs text-slate-400 mt-1">例如：/api/v1/* 或 /api/v2/*</p>
+        <label class="form-label">{{ $t('URI（每行一个）') }}<span class="text-red-500">*</span></label>
+        <textarea v-model="formData.uris" rows="3" class="input font-mono text-sm" :placeholder="$t('请输入 URI（支持通配符）')"></textarea>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('例如：/api/v1/* 或 /api/v2/*') }}</p>
       </div>
       <div>
-        <label class="form-label">Host（每行一个，留空匹配所有）</label>
-        <textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" placeholder="请输入 Host（可选）"></textarea>
-        <p class="text-xs text-slate-400 mt-1">例如：example.com 或 *.example.com</p>
+        <label class="form-label">{{ $t('Host（每行一个，留空匹配所有）') }}</label>
+        <textarea v-model="formData.hosts" rows="2" class="input font-mono text-sm" :placeholder="$t('请输入 Host（可选）')"></textarea>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('例如：example.com 或 *.example.com') }}</p>
       </div>
 
-      <ToggleCard v-model="formData.enable_websocket" label="WebSocket 代理" desc="启用后支持 WebSocket 协议升级（ws:// / wss://）" />
+      <ToggleCard v-model="formData.enable_websocket" :label="$t('WebSocket 代理')" :desc="$t('启用后支持 WebSocket 协议升级（ws:// / wss://）')" />
 
       <div class="border border-slate-200 rounded-xl p-4">
         <div class="flex items-center justify-between mb-3">
           <div>
-            <label class="form-label">上游配置</label>
-            <p class="text-xs text-slate-400 mt-1">支持直接输入单个上游、引用已有上游或暂不配置上游</p>
+            <label class="form-label">{{ $t('上游配置') }}</label>
+            <p class="text-xs text-slate-400 mt-1">{{ $t('支持直接输入单个上游、引用已有上游或暂不配置上游') }}</p>
           </div>
         </div>
 
@@ -319,34 +319,34 @@ export default toNative(RouteEditModal)
           <button v-for="item in upstreamModeCards" :key="item.value" type="button" :class="modeCardClass(item)" @click="setUpstreamMode(item.value)">
             <div class="flex items-center gap-2 mb-1">
               <div :class="modeCardIconClass(item)"><i class="fas text-sm" :class="item.icon"></i></div>
-              <span class="text-sm font-semibold">{{ item.title }}</span>
+              <span class="text-sm font-semibold">{{ $t(item.title) }}</span>
             </div>
-            <div class="text-xs opacity-80 leading-5">{{ item.desc }}</div>
+            <div class="text-xs opacity-80 leading-5">{{ $t(item.desc) }}</div>
           </button>
         </div>
 
         <div v-if="formData.upstream_mode === 'nodes'" class="space-y-3">
           <div>
             <div class="grid grid-cols-[2fr_1fr] gap-2 items-center">
-              <ContainerSelect v-if="canLoadDockerContainers" :model-value="formData.upstream_nodes[0]?.host || ''" :containers="containers" placeholder="请输入 Host（IP 或容器名）" @update:model-value="updateUpstreamNode(0, 'host', $event)" />
-              <input v-else :value="formData.upstream_nodes[0]?.host || ''" type="text" class="input" placeholder="请输入 Host（IP 或域名）" @input="updateUpstreamNode(0, 'host', ($event.target as HTMLInputElement).value)" />
-              <ContainerPortSelect v-if="canLoadDockerContainers" :model-value="formData.upstream_nodes[0]?.port || ''" :ports="getPortsByHost(formData.upstream_nodes[0]?.host || '')" placeholder="请输入端口" @update:model-value="updateUpstreamNode(0, 'port', $event)" />
-              <input v-else :value="formData.upstream_nodes[0]?.port || ''" type="text" class="input" placeholder="请输入端口" @input="updateUpstreamNode(0, 'port', ($event.target as HTMLInputElement).value)" />
+              <ContainerSelect v-if="canLoadDockerContainers" :model-value="formData.upstream_nodes[0]?.host || ''" :containers="containers" :placeholder="$t('请输入 Host（IP 或容器名）')" @update:model-value="updateUpstreamNode(0, 'host', $event)" />
+              <input v-else :value="formData.upstream_nodes[0]?.host || ''" type="text" class="input" :placeholder="$t('请输入 Host（IP 或域名）')" @input="updateUpstreamNode(0, 'host', ($event.target as HTMLInputElement).value)" />
+              <ContainerPortSelect v-if="canLoadDockerContainers" :model-value="formData.upstream_nodes[0]?.port || ''" :ports="getPortsByHost(formData.upstream_nodes[0]?.host || '')" :placeholder="$t('请输入端口')" @update:model-value="updateUpstreamNode(0, 'port', $event)" />
+              <input v-else :value="formData.upstream_nodes[0]?.port || ''" type="text" class="input" :placeholder="$t('请输入端口')" @input="updateUpstreamNode(0, 'port', ($event.target as HTMLInputElement).value)" />
             </div>
-            <p class="text-xs text-slate-400 mt-2">例如：Host 填写 127.0.0.1 或 nginx，Port 填写 8080</p>
-            <p class="text-xs text-slate-400 mt-1">直接输入模式仅提交一个上游节点；如需多节点负载均衡，请先在「上游管理」中创建后再引用。</p>
+            <p class="text-xs text-slate-400 mt-2">{{ $t('例如：Host 填写 127.0.0.1 或 nginx，Port 填写 8080') }}</p>
+            <p class="text-xs text-slate-400 mt-1">{{ $t('直接输入模式仅提交一个上游节点；如需多节点负载均衡，请先在「上游管理」中创建后再引用。') }}</p>
           </div>
 
-          <ToggleCard :model-value="formData.upstream_scheme === 'https'" label="HTTPS 回源" desc="启用后以 HTTPS 协议转发到该上游节点（默认 HTTP）" @update:model-value="formData.upstream_scheme = $event ? 'https' : 'http'" />
+          <ToggleCard :model-value="formData.upstream_scheme === 'https'" :label="$t('HTTPS 回源')" :desc="$t('启用后以 HTTPS 协议转发到该上游节点（默认 HTTP）')" @update:model-value="formData.upstream_scheme = $event ? 'https' : 'http'" />
 
           <div>
-            <label class="form-label">超时时间（秒）</label>
+            <label class="form-label">{{ $t('超时时间（秒）') }}</label>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-              <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" placeholder="请输入连接超时（可选）" />
-              <input v-model.number="formData.timeout_send" type="number" min="0" class="input" placeholder="请输入发送超时（可选）" />
-              <input v-model.number="formData.timeout_read" type="number" min="0" class="input" placeholder="请输入读取超时（可选）" />
+              <input v-model.number="formData.timeout_connect" type="number" min="0" class="input" :placeholder="$t('请输入连接超时（可选）')" />
+              <input v-model.number="formData.timeout_send" type="number" min="0" class="input" :placeholder="$t('请输入发送超时（可选）')" />
+              <input v-model.number="formData.timeout_read" type="number" min="0" class="input" :placeholder="$t('请输入读取超时（可选）')" />
             </div>
-            <p class="text-xs text-slate-400 mt-1">留空或 0 表示使用 APISIX 默认超时（单位：秒）。</p>
+            <p class="text-xs text-slate-400 mt-1">{{ $t('留空或 0 表示使用 APISIX 默认超时（单位：秒）。') }}</p>
           </div>
           <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
         </div>
@@ -354,20 +354,20 @@ export default toNative(RouteEditModal)
         <div v-else-if="formData.upstream_mode === 'upstream_id'" class="space-y-3">
           <div>
             <select v-model="formData.upstream_id" class="input">
-              <option value="">请选择已有上游</option>
+              <option value="">{{ $t('请选择已有上游') }}</option>
               <option v-for="upstream in upstreams" :key="upstream.id" :value="upstream.id">{{ upstreamOptionLabel(upstream) }}</option>
             </select>
           </div>
           <div v-if="routeValidationMessage" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{{ routeValidationMessage }}</div>
         </div>
-        <div v-else class="text-sm text-slate-500 leading-6">当前保存只会提交路由匹配规则、状态和插件配置，不会附带内联节点，也不会引用已有上游。</div>
+        <div v-else class="text-sm text-slate-500 leading-6">{{ $t('当前保存只会提交路由匹配规则、状态和插件配置，不会附带内联节点，也不会引用已有上游。') }}</div>
       </div>
       <div class="border border-slate-200 rounded-xl p-4">
         <div class="mb-3">
-          <label class="form-label">引用插件配置</label>
-          <p class="text-xs text-slate-400 mt-1 mb-2">选择已有的插件配置对象，与独立插件配置合并生效</p>
+          <label class="form-label">{{ $t('引用插件配置') }}</label>
+          <p class="text-xs text-slate-400 mt-1 mb-2">{{ $t('选择已有的插件配置对象，与独立插件配置合并生效') }}</p>
           <select v-model="formData.plugin_config_id" class="input">
-            <option value="">不使用</option>
+            <option value="">{{ $t('不使用') }}</option>
             <option v-for="pc in pluginConfigs" :key="pc.id" :value="pc.id">{{ pc.desc || pc.id }}</option>
           </select>
         </div>
@@ -379,7 +379,7 @@ export default toNative(RouteEditModal)
     </div>
 
     <template #confirm-text>
-      确认{{ isEditMode ? '更新' : '新建' }}
+      {{ $t('确认') }} {{ isEditMode ? $t('更新') : $t('新建') }}
     </template>
   </BaseModal>
 </template>

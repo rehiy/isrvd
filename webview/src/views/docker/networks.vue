@@ -50,15 +50,15 @@ class Networks extends Vue {
 
     handleNetworkAction(net: DockerNetworkInfo, action: string) {
         this.portal.showConfirm({
-            title: '删除网络',
-            message: `确定要删除网络 <strong class="text-slate-900">${net.name}</strong> 吗？`,
+            title: this.$t('删除网络'),
+            message: this.$t('确定要删除网络 <strong class="text-slate-900">{0}</strong> 吗？', net.name),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认删除',
+            confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 await api.dockerNetworkAction(net.id, action)
-                this.portal.showNotification('success', '网络删除成功')
+                this.portal.showNotification('success', this.$t('网络删除成功'))
                 this.loadNetworks()
             }
         })
@@ -75,11 +75,11 @@ class Networks extends Vue {
 
     getDeleteDisabledReason(net: DockerNetworkInfo) {
         const networkNames: Record<string, string> = {
-            bridge: '默认桥接网络',
-            host: '主机网络',
-            none: '空网络'
+            bridge: this.$t('默认桥接网络'),
+            host: this.$t('主机网络'),
+            none: this.$t('空网络')
         }
-        return `${networkNames[net.name] || '系统网络'}不可删除`
+        return this.$t('{0}不可删除', networkNames[net.name] || '系统网络')
     }
 
     // ─── 生命周期 ───
@@ -102,17 +102,17 @@ export default toNative(Networks)
             <i class="fas fa-network-wired text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">网络</h1>
-            <p class="text-xs text-slate-500">管理 Docker 网络，配置容器间通信</p>
+            <h1 class="title-text">{{ $t('网络') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('管理 Docker 网络，配置容器间通信') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="docker-networks" placeholder="搜索网络名称、ID、驱动或子网..." focus-color="purple" type-to-search />
+          <PageSearch v-model="searchText" search-key="docker-networks" :placeholder="$t('搜索网络名称、ID、驱动或子网...')" focus-color="purple" type-to-search />
           <button class="btn btn-secondary" @click="loadNetworks()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
           <button v-if="portal.hasPerm('POST /api/docker/network')" class="btn btn-purple" @click="createModalRef?.show()">
-            <i class="fas fa-plus"></i>新建网络
+            <i class="fas fa-plus"></i>{{ $t('新建网络') }}
           </button>
         </div>
       </div>
@@ -123,15 +123,15 @@ export default toNative(Networks)
             <i class="fas fa-network-wired text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">网络</h1>
-            <p class="text-xs text-slate-500 truncate">管理容器网络</p>
+            <h1 class="title-text">{{ $t('网络') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('管理容器网络') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" title="刷新" @click="loadNetworks()">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadNetworks()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/docker/network')" class="btn btn-purple btn-square" title="新建网络" @click="createModalRef?.show()">
+          <button v-if="portal.hasPerm('POST /api/docker/network')" class="btn btn-purple btn-square" :title="$t('新建网络')" @click="createModalRef?.show()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -139,14 +139,14 @@ export default toNative(Networks)
     </div>
 
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="docker-networks" placeholder="搜索网络名称、ID、驱动..." width-class="w-full" focus-color="purple" />
+      <PageSearch v-model="searchText" search-key="docker-networks" :placeholder="$t('搜索网络名称、ID、驱动...')" width-class="w-full" focus-color="purple" />
     </div>
 
     <!-- Loading State -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -157,11 +157,11 @@ export default toNative(Networks)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
-              <th class="th">名称</th>
-              <th class="w-24 th">驱动</th>
-              <th class="th">子网</th>
-              <th class="w-24 th">范围</th>
-              <th class="w-32 th-right">操作</th>
+              <th class="th">{{ $t('名称') }}</th>
+              <th class="w-24 th">{{ $t('驱动') }}</th>
+              <th class="th">{{ $t('子网') }}</th>
+              <th class="w-24 th">{{ $t('范围') }}</th>
+              <th class="w-32 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -183,10 +183,10 @@ export default toNative(Networks)
               <td class="td-text">{{ net.scope }}</td>
               <td class="px-4 py-3">
                 <div class="table-actions">
-                  <button v-if="portal.hasPerm('GET /api/docker/network/:id')" class="btn-icon btn-icon-slate" title="详情" @click="viewNetworkDetail(net)">
+                  <button v-if="portal.hasPerm('GET /api/docker/network/:id')" class="btn-icon btn-icon-slate" :title="$t('详情')" @click="viewNetworkDetail(net)">
                     <i class="fas fa-circle-info text-xs"></i>
                   </button>
-                  <button v-if="canDeleteNetwork(net) && portal.hasPerm('POST /api/docker/network/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleNetworkAction(net, 'remove')">
+                  <button v-if="canDeleteNetwork(net) && portal.hasPerm('POST /api/docker/network/:id/action')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleNetworkAction(net, 'remove')">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                   <button v-else disabled class="btn-icon text-slate-300 cursor-not-allowed" :title="getDeleteDisabledReason(net)">
@@ -216,29 +216,29 @@ export default toNative(Networks)
 
           <!-- 驱动 / 范围 -->
           <div class="card-prop-row-start">
-            <span class="prop-label-start">驱动</span>
+            <span class="prop-label-start">{{ $t('驱动') }}</span>
             <span class="badge-sm bg-purple-50 text-purple-700">{{ net.driver }}</span>
           </div>
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">范围</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('范围') }}</span>
             <span class="text-xs text-slate-500">{{ net.scope }}</span>
           </div>
 
           <div class="card-prop-row-start">
-            <span class="prop-label-start">子网</span>
+            <span class="prop-label-start">{{ $t('子网') }}</span>
             <code class="font-mono text-xs text-slate-500">{{ net.subnet || '-' }}</code>
           </div>
           
           <!-- 底部：操作按钮 -->
           <div class="card-actions">
-            <button v-if="portal.hasPerm('GET /api/docker/network/:id')" class="btn-icon btn-icon-slate" title="详情" @click="viewNetworkDetail(net)">
-              <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
+            <button v-if="portal.hasPerm('GET /api/docker/network/:id')" class="btn-icon btn-icon-slate" :title="$t('详情')" @click="viewNetworkDetail(net)">
+              <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">{{ $t('详情') }}</span>
             </button>
-            <button v-if="canDeleteNetwork(net) && portal.hasPerm('POST /api/docker/network/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleNetworkAction(net, 'remove')">
-              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+            <button v-if="canDeleteNetwork(net) && portal.hasPerm('POST /api/docker/network/:id/action')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleNetworkAction(net, 'remove')">
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
             </button>
             <button v-else disabled class="btn-icon text-slate-300 cursor-not-allowed" :title="getDeleteDisabledReason(net)">
-              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
             </button>
           </div>
         </div>
@@ -251,8 +251,8 @@ export default toNative(Networks)
         <div class="empty-state-icon">
           <i class="fas fa-network-wired text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ networks.length === 0 ? '暂无自定义网络' : '未找到匹配网络' }}</p>
-        <p class="text-sm text-slate-400">{{ networks.length === 0 ? '点击「新建网络」添加自定义网络' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ networks.length === 0 ? $t('暂无自定义网络') : $t('未找到匹配网络') }}</p>
+        <p class="text-sm text-slate-400">{{ networks.length === 0 ? $t('点击「新建网络」添加自定义网络') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
   </div>

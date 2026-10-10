@@ -45,7 +45,7 @@ class ContainerTerminal extends Vue {
             const res = await api.dockerContainerList(true)
             this.container = (res.payload || []).find((c: DockerContainerInfo) => c.id === this.containerId) ?? null
             if (!this.container) {
-                this.portal.showNotification('error', '容器不存在')
+                this.portal.showNotification('error', this.$t('容器不存在'))
                 this.$router.push('/docker/containers')
                 return
             }
@@ -85,8 +85,8 @@ export default toNative(ContainerTerminal)
               <i class="fas fa-terminal text-white text-sm"></i>
             </div>
             <div>
-              <h1 class="text-lg font-semibold text-slate-800">容器终端</h1>
-              <p class="text-xs text-slate-500 font-mono truncate max-w-xs">{{ container ? `${container.name || container.id} · ${container.image}` : '加载中...' }}</p>
+              <h1 class="text-lg font-semibold text-slate-800">{{ $t('容器终端') }}</h1>
+              <p class="text-xs text-slate-500 font-mono truncate max-w-xs">{{ container ? `${container.name || container.id} · ${container.image}` : $t('加载中...') }}</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -96,10 +96,10 @@ export default toNative(ContainerTerminal)
               <option value="/bin/ash">/bin/ash</option>
             </select>
             <button v-if="!connected" type="button" class="btn btn-emerald" @click="handleConnect()">
-              <i class="fas fa-plug"></i>连接
+              <i class="fas fa-plug"></i>{{ $t('连接') }}
             </button>
             <button v-else type="button" class="btn btn-secondary" @click="handleDisconnect()">
-              <i class="fas fa-plug-circle-xmark"></i>断开
+              <i class="fas fa-plug-circle-xmark"></i>{{ $t('断开') }}
             </button>
           </div>
         </div>
@@ -109,8 +109,8 @@ export default toNative(ContainerTerminal)
               <i class="fas fa-terminal text-white text-sm"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="title-text">容器终端</h1>
-              <p class="text-xs text-slate-500 font-mono truncate">{{ container ? `${container.name || container.id} · ${container.image}` : '加载中...' }}</p>
+              <h1 class="title-text">{{ $t('容器终端') }}</h1>
+              <p class="text-xs text-slate-500 font-mono truncate">{{ container ? `${container.name || container.id} · ${container.image}` : $t('加载中...') }}</p>
             </div>
           </div>
           <div class="action-group-sm">
@@ -119,10 +119,10 @@ export default toNative(ContainerTerminal)
               <option value="/bin/bash">/bin/bash</option>
               <option value="/bin/ash">/bin/ash</option>
             </select>
-            <button v-if="!connected" type="button" class="btn btn-emerald btn-square" title="连接" @click="handleConnect()">
+            <button v-if="!connected" type="button" class="btn btn-emerald btn-square" :title="$t('连接')" @click="handleConnect()">
               <i class="fas fa-plug text-sm"></i>
             </button>
-            <button v-else type="button" class="btn btn-secondary btn-square" title="断开" @click="handleDisconnect()">
+            <button v-else type="button" class="btn btn-secondary btn-square" :title="$t('断开')" @click="handleDisconnect()">
               <i class="fas fa-plug-circle-xmark text-sm"></i>
             </button>
           </div>

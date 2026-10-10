@@ -30,7 +30,7 @@ class AccountTokens extends Vue {
 
     async handleCreateToken() {
         if (!this.tokenForm.name.trim()) {
-            this.portal.showNotification('error', '请输入令牌名称')
+            this.portal.showNotification('error', this.$t('请输入令牌名称'))
             return
         }
         this.tokenLoading = true
@@ -41,7 +41,7 @@ class AccountTokens extends Vue {
             })
             this.newToken = res.payload ?? null
             this.tokenForm.name = ''
-            this.portal.showNotification('success', '令牌创建成功')
+            this.portal.showNotification('success', this.$t('令牌创建成功'))
         } finally {
             this.tokenLoading = false
         }
@@ -49,7 +49,7 @@ class AccountTokens extends Vue {
 
     async copyToken(token: string) {
         const ok = await copyToClipboard(token)
-        this.portal.showNotification(ok ? 'success' : 'error', ok ? '令牌已复制到剪贴板' : '复制失败，请手动复制')
+        this.portal.showNotification(ok ? 'success' : 'error', ok ? this.$t('令牌已复制到剪贴板') : this.$t('复制失败，请手动复制'))
     }
 
     dismissNewToken() {
@@ -70,7 +70,7 @@ export default toNative(AccountTokens)
           </div>
           <div class="min-w-0">
             <h1 class="title-text">API Key</h1>
-            <p class="text-xs text-slate-500 truncate">创建用于自动化调用的账号令牌</p>
+            <p class="text-xs text-slate-500 truncate">{{ $t('创建用于自动化调用的账号令牌') }}</p>
           </div>
         </div>
         <div class="action-group">
@@ -81,7 +81,7 @@ export default toNative(AccountTokens)
             @click="copyToken(newToken.token)"
           >
             <i class="fas fa-copy"></i>
-            复制令牌
+            {{ $t('复制令牌') }}
           </button>
           <button
             v-else-if="portal.hasPerm('POST /api/account/token')"
@@ -92,7 +92,7 @@ export default toNative(AccountTokens)
           >
             <i v-if="!tokenLoading" class="fas fa-plus"></i>
             <i v-else class="fas fa-spinner fa-spin"></i>
-            创建令牌
+            {{ $t('创建令牌') }}
           </button>
         </div>
       </div>
@@ -104,7 +104,7 @@ export default toNative(AccountTokens)
           </div>
           <div class="min-w-0">
             <h1 class="title-text">API Key</h1>
-            <p class="text-xs text-slate-500 truncate">自动化调用令牌</p>
+            <p class="text-xs text-slate-500 truncate">{{ $t('自动化调用令牌') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
@@ -112,7 +112,7 @@ export default toNative(AccountTokens)
             v-if="portal.hasPerm('POST /api/account/token') && newToken"
             type="button"
             class="btn-icon-sm"
-            title="复制令牌"
+            :title="$t('复制令牌')"
             @click="copyToken(newToken.token)"
           >
             <i class="fas fa-copy text-sm"></i>
@@ -123,7 +123,7 @@ export default toNative(AccountTokens)
             form="apikey-form"
             :disabled="tokenLoading || !tokenForm.name.trim()"
             class="btn-icon-sm"
-            title="创建令牌"
+            :title="$t('创建令牌')"
           >
             <i v-if="!tokenLoading" class="fas fa-plus text-sm"></i>
             <i v-else class="fas fa-spinner fa-spin text-sm"></i>
@@ -138,14 +138,14 @@ export default toNative(AccountTokens)
           <section class="max-w-4xl">
             <form id="apikey-form" class="space-y-4" @submit.prevent="handleCreateToken">
               <div>
-                <label class="form-label">令牌名称</label>
-                <input v-model="tokenForm.name" type="text" class="input" placeholder="请输入令牌名称" maxlength="64" />
+                <label class="form-label">{{ $t('令牌名称') }}</label>
+                <input v-model="tokenForm.name" type="text" class="input" :placeholder="$t('请输入令牌名称')" maxlength="64" />
               </div>
 
               <div>
-                <label class="form-label">有效期</label>
+                <label class="form-label">{{ $t('有效期') }}</label>
                 <select v-model="tokenForm.expiresIn" class="input">
-                  <option v-for="opt in expiryOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                  <option v-for="opt in expiryOptions" :key="opt.value" :value="opt.value">{{ $t(opt.label) }}</option>
                 </select>
               </div>
             </form>
@@ -158,11 +158,11 @@ export default toNative(AccountTokens)
                   <i class="fas" :class="newToken ? 'fa-check' : 'fa-key'"></i>
                 </span>
                 <div class="min-w-0">
-                  <h2 class="text-sm font-semibold text-slate-700 truncate">生成结果</h2>
-                  <p class="text-xs text-slate-400 mt-0.5 truncate">令牌只在创建后显示一次。</p>
+                  <h2 class="text-sm font-semibold text-slate-700 truncate">{{ $t('生成结果') }}</h2>
+                  <p class="text-xs text-slate-400 mt-0.5 truncate">{{ $t('令牌只在创建后显示一次。') }}</p>
                 </div>
               </div>
-              <button v-if="newToken" class="btn-icon btn-icon-slate flex-shrink-0" title="关闭" @click="dismissNewToken()">
+              <button v-if="newToken" class="btn-icon btn-icon-slate flex-shrink-0" :title="$t('关闭')" @click="dismissNewToken()">
                 <i class="fas fa-times"></i>
               </button>
             </div>
@@ -175,14 +175,14 @@ export default toNative(AccountTokens)
 
             <div v-else class="flex items-center gap-3 rounded-lg border border-dashed border-slate-200 px-4 py-5 text-slate-400">
               <i class="fas fa-arrow-up-right-from-square text-sm"></i>
-              <span class="text-sm">填写名称后点击创建，生成的令牌会显示在这里。</span>
+              <span class="text-sm">{{ $t('填写名称后点击创建，生成的令牌会显示在这里。') }}</span>
             </div>
           </section>
         </div>
 
         <aside class="space-y-5 lg:border-l lg:border-slate-200 lg:pl-6">
           <section class="space-y-3">
-            <h2 class="section-title">调用方式</h2>
+            <h2 class="section-title">{{ $t('调用方式') }}</h2>
             <div class="flex items-start gap-2">
               <span class="card-icon bg-indigo-100 text-indigo-600 flex-shrink-0"><i class="fas fa-code"></i></span>
               <code class="text-xs bg-slate-100 px-2 py-1 rounded-lg break-all text-slate-600">Authorization: Bearer &lt;token&gt;</code>
@@ -190,19 +190,19 @@ export default toNative(AccountTokens)
           </section>
 
           <section class="space-y-3 border-t border-slate-200 pt-5">
-            <h2 class="section-title">安全策略</h2>
+            <h2 class="section-title">{{ $t('安全策略') }}</h2>
             <div class="space-y-3 text-xs text-slate-500">
               <div class="flex items-start gap-2">
                 <i class="fas fa-eye-slash text-slate-400 mt-0.5"></i>
-                <span>创建后仅显示一次，请立即复制保存。</span>
+                <span>{{ $t('创建后仅显示一次，请立即复制保存。') }}</span>
               </div>
               <div class="flex items-start gap-2">
                 <i class="fas fa-rotate text-slate-400 mt-0.5"></i>
-                <span>修改密码后，已签发的 API Key 自动失效。</span>
+                <span>{{ $t('修改密码后，已签发的 API Key 自动失效。') }}</span>
               </div>
               <div class="flex items-start gap-2">
                 <i class="fas fa-clock text-slate-400 mt-0.5"></i>
-                <span>按任务选择最短可用有效期。</span>
+                <span>{{ $t('按任务选择最短可用有效期。') }}</span>
               </div>
             </div>
           </section>
@@ -215,8 +215,8 @@ export default toNative(AccountTokens)
         <div class="empty-state-icon">
           <i class="fas fa-lock text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">无权限创建 API Key</p>
-        <p class="text-sm text-slate-400">请联系管理员调整账号权限</p>
+        <p class="text-slate-600 font-medium mb-1">{{ $t('无权限创建 API Key') }}</p>
+        <p class="text-sm text-slate-400">{{ $t('请联系管理员调整账号权限') }}</p>
       </div>
     </div>
   </div>

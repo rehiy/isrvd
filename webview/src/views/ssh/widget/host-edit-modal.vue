@@ -30,7 +30,7 @@ class HostEditModal extends Vue {
     }
 
     get title() {
-        return this.isEdit ? '编辑 SSH 主机' : '添加 SSH 主机'
+        return this.isEdit ? this.$t('编辑 SSH 主机') : this.$t('添加 SSH 主机')
     }
 
     // ─── 方法 ───
@@ -97,10 +97,10 @@ class HostEditModal extends Vue {
             
             if (this.isEdit) {
                 await api.sshHostUpdate(this.editId, submitData)
-                this.portal.showNotification('success', '主机更新成功')
+                this.portal.showNotification('success', this.$t('主机更新成功'))
             } else {
                 await api.sshHostCreate(submitData)
-                this.portal.showNotification('success', '主机添加成功')
+                this.portal.showNotification('success', this.$t('主机添加成功'))
             }
             this.isOpen = false
             this.$emit('success')
@@ -116,60 +116,60 @@ export default toNative(HostEditModal)
   <BaseModal v-model="isOpen" :title="title" :loading="modalLoading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
-        <label class="form-label">名称 <span class="text-red-500">*</span></label>
-        <input v-model="formData.name" type="text" placeholder="请输入主机名称" required class="input" />
+        <label class="form-label">{{ $t('名称') }} <span class="text-red-500">*</span></label>
+        <input v-model="formData.name" type="text" :placeholder="$t('请输入主机名称')" required class="input" />
       </div>
       <div>
-        <label class="form-label">地址 <span class="text-red-500">*</span></label>
-        <input v-model="formData.addr" type="text" placeholder="请输入主机地址" required class="input" />
-        <p class="text-xs text-slate-400 mt-1">格式：主机名或 IP [:端口]，如 192.168.1.100:2222，默认端口 22</p>
+        <label class="form-label">{{ $t('地址') }} <span class="text-red-500">*</span></label>
+        <input v-model="formData.addr" type="text" :placeholder="$t('请输入主机地址')" required class="input" />
+        <p class="text-xs text-slate-400 mt-1">{{ $t('格式：主机名或 IP [:端口]，如 192.168.1.100:2222，默认端口 22') }}</p>
       </div>
       <div>
-        <label class="form-label">描述 <span class="text-slate-400 font-normal">(可选)</span></label>
-        <input v-model="formData.description" type="text" placeholder="请输入主机描述" class="input" />
+        <label class="form-label">{{ $t('描述') }} <span class="text-slate-400 font-normal">{{ $t('(可选)') }}</span></label>
+        <input v-model="formData.description" type="text" :placeholder="$t('请输入主机描述')" class="input" />
       </div>
 
       <!-- 认证信息 -->
       <div class="pt-2 border-t border-slate-100 space-y-3">
         <div>
-          <label class="form-label">选择凭据</label>
+          <label class="form-label">{{ $t('选择凭据') }}</label>
           <select v-model="formData.credentialId" class="input" :disabled="credentialsLoading" @change="onCredentialChange">
-            <option value="">{{ credentialsLoading ? '加载中...' : '手动输入' }}</option>
+            <option value="">{{ credentialsLoading ? $t('加载中...') : $t('手动输入') }}</option>
             <option v-for="cred in credentials" :key="cred.id" :value="cred.id">
               {{ cred.name }} ({{ cred.user }})
             </option>
           </select>
         </div>
         <div v-if="formData.credentialId">
-          <label class="form-label">用户名</label>
+          <label class="form-label">{{ $t('用户名') }}</label>
           <input :value="credentials.find(c => c.id === formData.credentialId)?.user || ''" type="text" class="input bg-slate-50" disabled />
-          <p class="text-xs text-slate-400 mt-1">使用凭据中保存的用户名</p>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('使用凭据中保存的用户名') }}</p>
         </div>
       </div>
 
       <!-- 手动输入认证信息 -->
       <div v-if="!formData.credentialId" class="space-y-3">
         <div>
-          <label class="form-label">用户名 <span class="text-red-500">*</span></label>
-          <input v-model="formData.user" type="text" placeholder="请输入用户名" required class="input" autocomplete="off" />
+          <label class="form-label">{{ $t('用户名') }} <span class="text-red-500">*</span></label>
+          <input v-model="formData.user" type="text" :placeholder="$t('请输入用户名')" required class="input" autocomplete="off" />
         </div>
         <div>
-          <label class="form-label">密码 <span class="text-slate-400 font-normal">(可选)</span></label>
-          <input v-model="formData.password" type="password" :placeholder="isEdit ? '留空则保持不变' : '请输入登录密码'" class="input" autocomplete="new-password" />
+          <label class="form-label">{{ $t('密码') }} <span class="text-slate-400 font-normal">{{ $t('(可选)') }}</span></label>
+          <input v-model="formData.password" type="password" :placeholder="isEdit ? $t('留空则保持不变') : $t('请输入登录密码')" class="input" autocomplete="new-password" />
         </div>
         <div>
-          <label class="form-label">SSH 私钥 <span class="text-slate-400 font-normal">(可选，优先于密码)</span></label>
+          <label class="form-label">{{ $t('SSH 私钥') }} <span class="text-slate-400 font-normal">{{ $t('(可选，优先于密码)') }}</span></label>
           <textarea
             v-model="formData.privateKey"
             rows="5"
-            :placeholder="isEdit ? '留空则保持不变' : '请输入 SSH 私钥'"
+            :placeholder="isEdit ? $t('留空则保持不变') : $t('请输入 SSH 私钥')"
             class="input font-mono text-xs"
           />
-          <p class="text-xs text-slate-400 mt-1">PEM 格式私钥，以 "-----BEGIN" 开头，设置后优先使用私钥认证</p>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('PEM 格式私钥，以 "-----BEGIN" 开头，设置后优先使用私钥认证') }}</p>
         </div>
       </div>
     </form>
 
-    <template #confirm-text>{{ isEdit ? '保存修改' : '确认添加' }}</template>
+    <template #confirm-text>{{ isEdit ? $t('保存修改') : $t('确认添加') }}</template>
   </BaseModal>
 </template>

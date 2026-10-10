@@ -62,7 +62,7 @@ class CaddyGlobalConfig extends Vue {
         this.saving = true
         try {
             await api.caddyGlobalUpdate(payload)
-            this.portal.showNotification('success', '全局选项已保存')
+            this.portal.showNotification('success', this.$t('全局选项已保存'))
             this.load()
         } finally {
             this.saving = false
@@ -84,18 +84,18 @@ export default toNative(CaddyGlobalConfig)
             <i class="fas fa-sliders text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">全局选项</h1>
-            <p class="text-xs text-slate-500 truncate">配置 TLS 自动化、日志级别与服务参数</p>
+            <h1 class="title-text">{{ $t('全局选项') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('配置 TLS 自动化、日志级别与服务参数') }}</p>
           </div>
         </div>
         <div class="action-group">
           <button class="btn btn-secondary" @click="load()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
           <button v-if="portal.hasPerm('PUT /api/caddy/global')" :disabled="saving || loading" class="btn btn-violet" @click="save()">
             <i v-if="saving" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-floppy-disk"></i>
-            {{ saving ? '保存中...' : '保存配置' }}
+            {{ saving ? $t('保存中...') : $t('保存配置') }}
           </button>
         </div>
       </div>
@@ -106,15 +106,15 @@ export default toNative(CaddyGlobalConfig)
             <i class="fas fa-sliders text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">全局选项</h1>
-            <p class="text-xs text-slate-500 truncate">TLS、日志与服务参数</p>
+            <h1 class="title-text">{{ $t('全局选项') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('TLS、日志与服务参数') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" title="刷新" @click="load()">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="load()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('PUT /api/caddy/global')" :disabled="saving || loading" class="btn btn-violet btn-square" title="保存" @click="save()">
+          <button v-if="portal.hasPerm('PUT /api/caddy/global')" :disabled="saving || loading" class="btn btn-violet btn-square" :title="$t('保存')" @click="save()">
             <i class="fas fa-floppy-disk text-sm"></i>
           </button>
         </div>
@@ -125,7 +125,7 @@ export default toNative(CaddyGlobalConfig)
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -133,28 +133,28 @@ export default toNative(CaddyGlobalConfig)
       <!-- 证书签发 -->
       <div class="pb-6">
         <h2 class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-          <i class="fas fa-certificate text-violet-500"></i>证书签发
+          <i class="fas fa-certificate text-violet-500"></i>{{ $t('证书签发') }}
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4" :class="{ 'opacity-50 pointer-events-none': localCerts }">
           <div>
-            <label class="form-label">ACME 邮箱</label>
-            <input v-model="email" type="email" class="input" placeholder="请输入 ACME 邮箱" />
-            <p class="text-xs text-slate-400 mt-1">Let's Encrypt 证书申请邮箱，启用 HTTPS 自动签发时必填，例如：your@email.com</p>
+            <label class="form-label">{{ $t('ACME 邮箱') }}</label>
+            <input v-model="email" type="email" class="input" :placeholder="$t('请输入 ACME 邮箱')" />
+            <p class="text-xs text-slate-400 mt-1">{{ $t("Let's Encrypt 证书申请邮箱，启用 HTTPS 自动签发时必填，例如：your@email.com") }}</p>
           </div>
           <div>
-            <label class="form-label">ACME 目录 URL</label>
-            <input v-model="acmeCA" type="text" class="input" placeholder="请输入 ACME 目录 URL（可选）" />
-            <p class="text-xs text-slate-400 mt-1">自定义 CA 目录，如 ZeroSSL 或私有 ACME CA，留空则使用 Let's Encrypt</p>
+            <label class="form-label">{{ $t('ACME 目录 URL') }}</label>
+            <input v-model="acmeCA" type="text" class="input" :placeholder="$t('请输入 ACME 目录 URL（可选）')" />
+            <p class="text-xs text-slate-400 mt-1">{{ $t("自定义 CA 目录，如 ZeroSSL 或私有 ACME CA，留空则使用 Let's Encrypt") }}</p>
           </div>
         </div>
         <div class="space-y-3">
-          <ToggleCard v-model="localCerts" :violet="true" label="使用本地自签证书（internal issuer）" desc="不走 ACME，由 Caddy 自动签发本地信任证书；启用后 ACME 邮箱和目录设置将被忽略" />
-          <ToggleCard v-model="onDemandTLS" :violet="true" label="启用 On-Demand TLS">
-            <template #desc>连接时动态申请证书，适合域名数量不固定的多租户场景；生产环境需配合 <code class="px-1 bg-slate-100 rounded">ask</code> 端点防滥用</template>
+          <ToggleCard v-model="localCerts" :violet="true" :label="$t('使用本地自签证书（internal issuer）')" :desc="$t('不走 ACME，由 Caddy 自动签发本地信任证书；启用后 ACME 邮箱和目录设置将被忽略')" />
+          <ToggleCard v-model="onDemandTLS" :violet="true" :label="$t('启用 On-Demand TLS')">
+            <template #desc>{{ $t('连接时动态申请证书，适合域名数量不固定的多租户场景；生产环境需配合') }} <code class="px-1 bg-slate-100 rounded">ask</code> {{ $t('端点防滥用') }}</template>
             <div>
-              <label class="form-label">Ask 鉴权端点</label>
-              <input v-model="onDemandAsk" type="text" class="input" placeholder="请输入 Ask 鉴权端点（可选）" />
-              <p class="text-xs text-slate-400 mt-1">Caddy 在申请证书前会向此 URL 发起 GET 请求，返回 2xx 则允许，例如：http://localhost:9090/tls-ask；留空时不配置鉴权（仅测试环境使用）</p>
+              <label class="form-label">{{ $t('Ask 鉴权端点') }}</label>
+              <input v-model="onDemandAsk" type="text" class="input" :placeholder="$t('请输入 Ask 鉴权端点（可选）')" />
+              <p class="text-xs text-slate-400 mt-1">{{ $t('Caddy 在申请证书前会向此 URL 发起 GET 请求，返回 2xx 则允许，例如：http://localhost:9090/tls-ask；留空时不配置鉴权（仅测试环境使用）') }}</p>
             </div>
           </ToggleCard>
         </div>
@@ -163,33 +163,33 @@ export default toNative(CaddyGlobalConfig)
       <!-- 系统 -->
       <div class="pt-6">
         <h2 class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-          <i class="fas fa-gear text-violet-500"></i>系统
+          <i class="fas fa-gear text-violet-500"></i>{{ $t('系统') }}
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label class="form-label">日志级别</label>
+            <label class="form-label">{{ $t('日志级别') }}</label>
             <select v-model="logLevel" class="input">
-              <option value="">默认（INFO）</option>
+              <option value="">{{ $t('默认（INFO）') }}</option>
               <option value="DEBUG">DEBUG</option>
               <option value="INFO">INFO</option>
               <option value="WARN">WARN</option>
               <option value="ERROR">ERROR</option>
             </select>
-            <p class="text-xs text-slate-400 mt-1">全局默认日志级别</p>
+            <p class="text-xs text-slate-400 mt-1">{{ $t('全局默认日志级别') }}</p>
           </div>
           <div>
-            <label class="form-label">日志格式</label>
+            <label class="form-label">{{ $t('日志格式') }}</label>
             <select v-model="logFormat" class="input">
-              <option value="">默认（console）</option>
+              <option value="">{{ $t('默认（console）') }}</option>
               <option value="console">console</option>
               <option value="json">json</option>
             </select>
-            <p class="text-xs text-slate-400 mt-1">结构化日志输出格式</p>
+            <p class="text-xs text-slate-400 mt-1">{{ $t('结构化日志输出格式') }}</p>
           </div>
           <div>
-            <label class="form-label">优雅关闭等待</label>
-            <input v-model="gracePeriod" type="text" class="input" placeholder="请输入优雅关闭等待时间（可选）" />
-            <p class="text-xs text-slate-400 mt-1">重载/关闭时等待现有连接结束的最长时间</p>
+            <label class="form-label">{{ $t('优雅关闭等待') }}</label>
+            <input v-model="gracePeriod" type="text" class="input" :placeholder="$t('请输入优雅关闭等待时间（可选）')" />
+            <p class="text-xs text-slate-400 mt-1">{{ $t('重载/关闭时等待现有连接结束的最长时间') }}</p>
           </div>
         </div>
       </div>
@@ -197,7 +197,7 @@ export default toNative(CaddyGlobalConfig)
       <!-- 底部提示 -->
       <p class="text-xs text-slate-400 flex items-start gap-1.5 pt-4">
         <i class="fas fa-circle-info mt-0.5 flex-shrink-0"></i>
-        <span>保存后通过 <code class="px-1 bg-slate-100 rounded">POST /load</code> 整体原子替换 Caddy 运行配置，立即生效。</span>
+        <span>{{ $t('保存后通过') }} <code class="px-1 bg-slate-100 rounded">POST /load</code> {{ $t('整体原子替换 Caddy 运行配置，立即生效。') }}</span>
       </p>
     </div>
   </div>

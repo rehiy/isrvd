@@ -53,7 +53,7 @@ class ModifyModal extends Vue {
         this.loading = true
         try {
             await this.adapter.writeFile(this.formData.path, this.formData.content)
-            this.portal.showNotification('success', '文件保存成功')
+            this.portal.showNotification('success', this.$t('文件保存成功'))
             this.$emit('success')
             this.isOpen = false
         } catch {} finally {
@@ -66,10 +66,10 @@ export default toNative(ModifyModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="'编辑: ' + formData.filename" :loading="loading" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('编辑: ') + formData.filename" :loading="loading" @confirm="handleConfirm">
     <div class="editor-container">
       <Codemirror v-model="formData.content" class="h-[60vh]" :extensions="extensions" :disabled="loading" />
     </div>
-    <template #confirm-text>{{ loading ? '保存中...' : '保存文件' }}</template>
+    <template #confirm-text>{{ loading ? $t('保存中...') : $t('保存文件') }}</template>
   </BaseModal>
 </template>

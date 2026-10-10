@@ -71,7 +71,7 @@ class ImagePullModal extends Vue {
         this.modalLoading = true
         try {
             await api.dockerImagePull(imageRef, this.formData.source, '')
-            this.portal.showNotification('success', '镜像拉取成功')
+            this.portal.showNotification('success', this.$t('镜像拉取成功'))
             this.isOpen = false
             this.$emit('success')
         } catch {
@@ -106,14 +106,14 @@ export default toNative(ImagePullModal)
 </script>
 
 <template>
-  <BaseModal ref="modalRef" v-model="isOpen" title="拉取镜像" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
+  <BaseModal ref="modalRef" v-model="isOpen" :title="$t('拉取镜像')" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <section>
         <div class="space-y-3">
           <div>
-            <label class="form-label">镜像源</label>
+            <label class="form-label">{{ $t('镜像源') }}</label>
             <select v-model="formData.source" class="input">
-              <option value="">Docker Hub（默认）</option>
+              <option value="">{{ $t('Docker Hub（默认）') }}</option>
               <option v-for="reg in registries" :key="reg.url" :value="reg.url">
                 {{ reg.name }} ({{ reg.url }}){{ reg.description ? ' - ' + reg.description : '' }}
               </option>
@@ -132,7 +132,7 @@ export default toNative(ImagePullModal)
             </div>
             <div v-else class="flex items-center gap-1.5 text-slate-500">
               {{ indexServerAddress || 'https://index.docker.io/v1/' }}
-              <span class="text-slate-400">（未配置加速器）</span>
+              <span class="text-slate-400">{{ $t('（未配置加速器）') }}</span>
             </div>
           </div>
         </div>
@@ -141,10 +141,10 @@ export default toNative(ImagePullModal)
       <section v-if="!isRegistryMode">
         <div class="space-y-3">
           <div class="flex gap-2">
-            <input v-model="searchKeyword" type="text" placeholder="请输入要搜索的镜像名称" class="input flex-1" @keydown.enter.prevent="handleSearchImage" />
+            <input v-model="searchKeyword" type="text" :placeholder="$t('请输入要搜索的镜像名称')" class="input flex-1" @keydown.enter.prevent="handleSearchImage" />
             <button type="button" :disabled="searchLoading" class="btn btn-secondary" @click="handleSearchImage">
               <i :class="['fas', searchLoading ? 'fa-spinner fa-spin' : 'fa-search']"></i>
-              {{ searchLoading ? '搜索中' : '搜索' }}
+              {{ searchLoading ? $t('搜索中') : $t('搜索') }}
             </button>
           </div>
 
@@ -158,11 +158,11 @@ export default toNative(ImagePullModal)
             >
               <div class="flex items-center justify-between gap-3">
                 <div class="min-w-0 flex items-center gap-2">
-                  <i v-if="item.isOfficial" class="fas fa-certificate text-slate-400 text-xs flex-shrink-0" title="官方镜像"></i>
+                  <i v-if="item.isOfficial" class="fas fa-certificate text-slate-400 text-xs flex-shrink-0" :title="$t('官方镜像')"></i>
                   <span class="text-sm font-medium text-slate-800 truncate">{{ item.name }}</span>
                 </div>
                 <div class="action-group">
-                  <span v-if="item.isOfficial" class="badge-xs bg-slate-100 text-slate-600">官方</span>
+                  <span v-if="item.isOfficial" class="badge-xs bg-slate-100 text-slate-600">{{ $t('官方') }}</span>
                   <span class="text-xs text-slate-400"><i class="fas fa-star text-slate-400 mr-0.5"></i>{{ item.starCount }}</span>
                 </div>
               </div>
@@ -175,21 +175,21 @@ export default toNative(ImagePullModal)
       <section>
         <div class="space-y-4">
           <div>
-            <label class="form-label">镜像引用</label>
-            <input v-model="formData.image" type="text" placeholder="请输入镜像引用" required class="input font-mono" />
+            <label class="form-label">{{ $t('镜像引用') }}</label>
+            <input v-model="formData.image" type="text" :placeholder="$t('请输入镜像引用')" required class="input font-mono" />
             <p class="text-xs text-slate-400 mt-1">
-              未指定 tag 时默认拉取 latest；选择私有仓库时不需要重复填写仓库地址。
+              {{ $t('未指定 tag 时默认拉取 latest；选择私有仓库时不需要重复填写仓库地址。') }}
             </p>
           </div>
 
           <div class="border-l-2 border-slate-300 bg-slate-50 px-3 py-2.5">
-            <p class="text-xs font-semibold text-slate-600 mb-1">最终将拉取</p>
+            <p class="text-xs font-semibold text-slate-600 mb-1">{{ $t('最终将拉取') }}</p>
             <code class="block text-sm text-slate-700 font-mono break-all">{{ pullPreview }}</code>
           </div>
         </div>
       </section>
     </form>
 
-    <template #confirm-text>开始拉取</template>
+    <template #confirm-text>{{ $t('开始拉取') }}</template>
   </BaseModal>
 </template>

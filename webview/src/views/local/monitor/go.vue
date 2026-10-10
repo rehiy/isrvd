@@ -33,7 +33,7 @@ class SystemGo extends Vue {
     formatMonitorBytes = formatMonitorBytes
 
     fmtGCTime(ts: number) {
-        if (!ts) return '从未'
+        if (!ts) return this.$t('从未')
         this.lastGCTime = new Date(ts * 1000).toLocaleString('zh-CN')
         return this.lastGCTime
     }
@@ -156,12 +156,12 @@ class SystemGo extends Vue {
                 data: {
                     labels: [...this.memHistory.labels],
                     datasets: [
-                        makeLineDataset(this.memHistory.alloc, '#3b82f6', '已分配'),
-                        makeLineDataset(this.memHistory.heapAlloc, '#10b981', '堆已分配'),
-                        makeLineDataset(this.memHistory.heapInuse, '#f59e0b', '堆使用中'),
-                        makeLineDataset(this.memHistory.heapIdle, '#a8a29e', '堆空闲'),
-                        makeLineDataset(this.memHistory.heapReleased, '#f43f5e', '堆已释放'),
-                        makeLineDataset(this.memHistory.heapSys, '#8b5cf6', '堆已申请')
+                        makeLineDataset(this.memHistory.alloc, '#3b82f6', this.$t('已分配')),
+                        makeLineDataset(this.memHistory.heapAlloc, '#10b981', this.$t('堆已分配')),
+                        makeLineDataset(this.memHistory.heapInuse, '#f59e0b', this.$t('堆使用中')),
+                        makeLineDataset(this.memHistory.heapIdle, '#a8a29e', this.$t('堆空闲')),
+                        makeLineDataset(this.memHistory.heapReleased, '#f43f5e', this.$t('堆已释放')),
+                        makeLineDataset(this.memHistory.heapSys, '#8b5cf6', this.$t('堆已申请'))
                     ]
                 },
                 options: this.goChartOptions()
@@ -175,8 +175,8 @@ class SystemGo extends Vue {
                     labels: [...this.goroutineHistory.labels],
                     datasets: [
                         makeLineDataset(this.goroutineHistory.goroutine, '#8b5cf6', 'Goroutine'),
-                        { ...makeLineDataset(this.goroutineHistory.heapObjects, '#22c55e', '堆对象'), yAxisID: 'y1' },
-                        { ...makeLineDataset(this.goroutineHistory.gc, '#ef4444', 'GC 次数'), yAxisID: 'y2' }
+                        { ...makeLineDataset(this.goroutineHistory.heapObjects, '#22c55e', this.$t('堆对象')), yAxisID: 'y1' },
+                        { ...makeLineDataset(this.goroutineHistory.gc, '#ef4444', this.$t('GC 次数')), yAxisID: 'y2' }
                     ]
                 },
                 options: {
@@ -231,8 +231,8 @@ class SystemGo extends Vue {
                 data: {
                     labels: [...this.stackHistory.labels],
                     datasets: [
-                        makeLineDataset(this.stackHistory.stackInuse, '#f59e0b', '栈已使用'),
-                        makeLineDataset(this.stackHistory.stackSys, '#8b5cf6', '栈已申请')
+                        makeLineDataset(this.stackHistory.stackInuse, '#f59e0b', this.$t('栈已使用')),
+                        makeLineDataset(this.stackHistory.stackSys, '#8b5cf6', this.$t('栈已申请'))
                     ]
                 },
                 options: this.goChartOptions()
@@ -245,8 +245,8 @@ class SystemGo extends Vue {
                 data: {
                     labels: [...this.sysHistory.labels],
                     datasets: [
-                        makeLineDataset(this.sysHistory.totalAlloc, '#3b82f6', '累计分配'),
-                        makeLineDataset(this.sysHistory.sys, '#10b981', '系统申请')
+                        makeLineDataset(this.sysHistory.totalAlloc, '#3b82f6', this.$t('累计分配')),
+                        makeLineDataset(this.sysHistory.sys, '#10b981', this.$t('系统申请'))
                     ]
                 },
                 options: this.goChartOptions()
@@ -300,7 +300,7 @@ class SystemGo extends Vue {
 
     clearData() {
         this.current = null
-        this.lastGCTime = '从未'
+        this.lastGCTime = this.$t('从未')
         this.memHistory = { ts: [], labels: [], alloc: [], heapAlloc: [], heapInuse: [], heapIdle: [], heapReleased: [], heapSys: [] }
         this.goroutineHistory = { ts: [], labels: [], goroutine: [], gc: [], heapObjects: [] }
         this.stackHistory = { ts: [], labels: [], stackInuse: [], stackSys: [] }
@@ -332,15 +332,15 @@ export default toNative(SystemGo)
       <div class="card-icon bg-sky-500">
         <i class="fas fa-code text-white text-xs"></i>
       </div>
-      <span class="text-sm font-semibold text-slate-700">Go 运行态</span>
+      <span class="text-sm font-semibold text-slate-700">{{ $t('Go 运行态') }}</span>
       <span v-if="current" class="ml-auto text-xs text-slate-400 font-mono">{{ current.version }}</span>
-      <span v-else class="ml-auto text-xs text-slate-400">加载中...</span>
+      <span v-else class="ml-auto text-xs text-slate-400">{{ $t('加载中...') }}</span>
     </div>
     <div v-if="current" ref="goContainerRef" class="divide-y divide-slate-100">
       <!-- 系统内存折线图 -->
       <div class="px-4 py-3">
         <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
-          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">系统内存</span>
+          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">{{ $t('系统内存') }}</span>
           <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
             <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-blue-500 rounded-full"></span>
@@ -360,7 +360,7 @@ export default toNative(SystemGo)
       <!-- 堆内存折线图 -->
       <div class="px-4 py-3">
         <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
-          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">堆内存</span>
+          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">{{ $t('堆内存') }}</span>
           <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
             <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-blue-500 rounded-full"></span>
@@ -396,7 +396,7 @@ export default toNative(SystemGo)
       <!-- 栈内存折线图 -->
       <div class="px-4 py-3">
         <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
-          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">栈内存</span>
+          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">{{ $t('栈内存') }}</span>
           <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
             <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-amber-500 rounded-full"></span>
@@ -416,11 +416,11 @@ export default toNative(SystemGo)
       <!-- Goroutine & GC & 堆对象折线图 -->
       <div class="px-4 py-3">
         <div class="flex items-center justify-between gap-x-3 gap-y-1 mb-2 flex-wrap">
-          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">计数器</span>
+          <span class="text-xs font-medium text-slate-500 shrink-0 whitespace-nowrap">{{ $t('计数器') }}</span>
           <div v-if="current" class="flex items-center justify-end gap-x-3 gap-y-1 text-xs flex-wrap flex-1 min-w-0">
-            <span class="monitor-legend-item" title="最后 GC 时间">
+            <span class="monitor-legend-item" :title="$t('最后 GC 时间')">
               <i class="fas fa-clock mr-1"></i>
-              <span class="font-mono text-slate-600">{{ lastGCTime }}</span>
+              <span class="font-mono text-slate-600">{{ $t(lastGCTime) }}</span>
             </span>
             <span class="monitor-legend-item">
               <span class="w-3 h-0.5 bg-purple-500 rounded-full"></span>

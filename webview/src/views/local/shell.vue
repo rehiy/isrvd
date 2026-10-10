@@ -58,8 +58,8 @@ export default toNative(Shell)
               <i class="fas fa-terminal text-white text-sm"></i>
             </div>
             <div>
-              <h1 class="text-lg font-semibold text-slate-800">Shell 终端</h1>
-              <p class="text-xs text-slate-500">通过 Web 终端连接到远程服务器</p>
+              <h1 class="text-lg font-semibold text-slate-800">{{ $t('Shell 终端') }}</h1>
+              <p class="text-xs text-slate-500">{{ $t('通过 Web 终端连接到远程服务器') }}</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -72,10 +72,10 @@ export default toNative(Shell)
               <option value="cmd">cmd</option>
             </select>
             <button v-if="!connected" class="btn btn-primary" @click="handleConnect()">
-              <i class="fas fa-plug"></i>连接
+              <i class="fas fa-plug"></i>{{ $t('连接') }}
             </button>
             <button v-else class="btn btn-secondary" @click="handleDisconnect()">
-              <i class="fas fa-plug-circle-xmark"></i>断开
+              <i class="fas fa-plug-circle-xmark"></i>{{ $t('断开') }}
             </button>
           </div>
         </div>
@@ -85,8 +85,8 @@ export default toNative(Shell)
               <i class="fas fa-terminal text-white text-sm"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="title-text">Shell 终端</h1>
-              <p class="text-xs text-slate-500 truncate">Web 终端连接</p>
+              <h1 class="title-text">{{ $t('Shell 终端') }}</h1>
+              <p class="text-xs text-slate-500 truncate">{{ $t('Web 终端连接') }}</p>
             </div>
           </div>
           <div class="action-group">
@@ -98,10 +98,10 @@ export default toNative(Shell)
               <option value="powershell">powershell</option>
               <option value="cmd">cmd</option>
             </select>
-            <button v-if="!connected" class="btn btn-primary btn-square" title="连接" @click="handleConnect()">
+            <button v-if="!connected" class="btn btn-primary btn-square" :title="$t('连接')" @click="handleConnect()">
               <i class="fas fa-plug text-sm"></i>
             </button>
-            <button v-else class="btn btn-secondary btn-square" title="断开连接" @click="handleDisconnect()">
+            <button v-else class="btn btn-secondary btn-square" :title="$t('断开连接')" @click="handleDisconnect()">
               <i class="fas fa-plug-circle-xmark text-sm"></i>
             </button>
           </div>

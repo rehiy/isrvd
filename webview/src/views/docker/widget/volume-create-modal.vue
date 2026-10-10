@@ -31,7 +31,7 @@ class VolumeCreateModal extends Vue {
         this.modalLoading = true
         try {
             await api.dockerVolumeCreate(this.formData)
-            this.portal.showNotification('success', '数据卷创建成功')
+            this.portal.showNotification('success', this.$t('数据卷创建成功'))
             this.isOpen = false
             this.$emit('success')
         } catch {}
@@ -43,20 +43,20 @@ export default toNative(VolumeCreateModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" title="新建数据卷" :loading="modalLoading" show-footer confirm-class="btn-amber" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('新建数据卷')" :loading="modalLoading" show-footer confirm-class="btn-amber" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
-        <label class="form-label">卷名称</label>
-        <input v-model="formData.name" type="text" placeholder="请输入数据卷名称" required class="input" />
+        <label class="form-label">{{ $t('卷名称') }}</label>
+        <input v-model="formData.name" type="text" :placeholder="$t('请输入数据卷名称')" required class="input" />
       </div>
       <div>
-        <label class="form-label">驱动类型</label>
+        <label class="form-label">{{ $t('驱动类型') }}</label>
         <select v-model="formData.driver" class="input">
-          <option value="local">local (本地)</option>
+          <option value="local">{{ $t('local (本地)') }}</option>
         </select>
       </div>
     </form>
 
-    <template #confirm-text>确认新建</template>
+    <template #confirm-text>{{ $t('确认新建') }}</template>
   </BaseModal>
 </template>

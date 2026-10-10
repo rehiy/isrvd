@@ -22,7 +22,7 @@ export default toNative(ToolbarLinks)
   <div class="hidden md:flex items-center gap-2 overflow-x-auto ml-auto mr-2">
     <a v-for="link in portal.toolbarLinks" :key="link.url" :href="link.url" target="_blank" rel="noopener noreferrer" class="btn btn-ghost px-4 py-2 text-sm gap-2 whitespace-nowrap">
       <i v-if="link.icon" :class="link.icon.includes(' ') ? link.icon : `fas ${link.icon}`"></i>
-      <span class="whitespace-nowrap">{{ link.label }}</span>
+      <span class="whitespace-nowrap">{{ $t(link.label) }}</span>
     </a>
   </div>
 
@@ -30,18 +30,18 @@ export default toNative(ToolbarLinks)
   <div class="flex md:hidden items-center ml-auto mr-2">
     <Dropdown v-model:open="menuOpen" placement="bottom" align="right" :close-on-click="true" max-height="320px">
       <template #trigger="{ toggle }">
-        <button class="btn-icon btn-icon-slate" title="快捷链接" @click="toggle">
+        <button class="btn-icon btn-icon-slate" :title="$t('快捷链接')" @click="toggle">
           <i class="fas fa-star"></i>
         </button>
       </template>
 
       <template v-if="portal.toolbarLinks.length === 0">
-        <div class="px-4 py-3 text-sm text-slate-400">无快捷链接</div>
+        <div class="px-4 py-3 text-sm text-slate-400">{{ $t('无快捷链接') }}</div>
       </template>
 
       <a v-for="link in portal.toolbarLinks" :key="link.url" :href="link.url" target="_blank" rel="noopener noreferrer" class="dropdown-item" @click="menuOpen = false">
         <i v-if="link.icon" :class="link.icon.includes(' ') ? link.icon : `fas ${link.icon}`"></i>
-        <span>{{ link.label }}</span>
+        <span>{{ $t(link.label) }}</span>
       </a>
     </Dropdown>
   </div>

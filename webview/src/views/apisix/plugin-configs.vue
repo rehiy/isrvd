@@ -69,15 +69,15 @@ class PluginConfigs extends Vue {
         const id = config.id
         if (!id) return
         this.portal.showConfirm({
-            title: '删除插件配置',
-            message: `确定要删除插件配置 <strong class="text-slate-900">${id}</strong> 吗？仍被路由引用时 APISIX 可能拒绝删除。`,
+            title: this.$t('删除插件配置'),
+            message: this.$t('确定要删除插件配置 <strong class="text-slate-900">{0}</strong> 吗？仍被路由引用时 APISIX 可能拒绝删除。', id),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认删除',
+            confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 await api.apisixPluginConfigDelete(id)
-                this.portal.showNotification('success', '删除成功')
+                this.portal.showNotification('success', this.$t('删除成功'))
                 this.loadConfigs()
             }
         })
@@ -100,17 +100,17 @@ export default toNative(PluginConfigs)
             <i class="fas fa-puzzle-piece text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">插件配置</h1>
-            <p class="text-xs text-slate-500">管理可复用的插件集合，供路由引用</p>
+            <h1 class="title-text">{{ $t('插件配置') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('管理可复用的插件集合，供路由引用') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="apisix-plugin-configs" placeholder="请输入搜索关键词..." focus-color="rose" type-to-search />
+          <PageSearch v-model="searchText" search-key="apisix-plugin-configs" :placeholder="$t('请输入搜索关键词...')" focus-color="rose" type-to-search />
           <button class="btn btn-secondary" @click="loadConfigs()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
           <button v-if="portal.hasPerm('POST /api/apisix/plugin-config')" class="btn btn-rose" @click="openCreateModal()">
-            <i class="fas fa-plus"></i>新建配置
+            <i class="fas fa-plus"></i>{{ $t('新建配置') }}
           </button>
         </div>
       </div>
@@ -121,15 +121,15 @@ export default toNative(PluginConfigs)
             <i class="fas fa-puzzle-piece text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">插件配置</h1>
-            <p class="text-xs text-slate-500 truncate">管理可复用插件集合</p>
+            <h1 class="title-text">{{ $t('插件配置') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('管理可复用插件集合') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" title="刷新" @click="loadConfigs()">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadConfigs()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/apisix/plugin-config')" class="btn btn-rose btn-square" title="创建" @click="openCreateModal()">
+          <button v-if="portal.hasPerm('POST /api/apisix/plugin-config')" class="btn btn-rose btn-square" :title="$t('创建')" @click="openCreateModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -137,13 +137,13 @@ export default toNative(PluginConfigs)
     </div>
 
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="apisix-plugin-configs" placeholder="请输入搜索关键词..." width-class="w-full" focus-color="rose" />
+      <PageSearch v-model="searchText" search-key="apisix-plugin-configs" :placeholder="$t('请输入搜索关键词...')" width-class="w-full" focus-color="rose" />
     </div>
 
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -152,8 +152,8 @@ export default toNative(PluginConfigs)
         <div class="empty-state-icon">
           <i class="fas fa-puzzle-piece text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ configs.length === 0 ? '暂无插件配置' : '未找到匹配插件配置' }}</p>
-        <p class="text-sm text-slate-400">{{ configs.length === 0 ? '点击「新建配置」添加可复用 Plugin Config' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ configs.length === 0 ? $t('暂无插件配置') : $t('未找到匹配插件配置') }}</p>
+        <p class="text-sm text-slate-400">{{ configs.length === 0 ? $t('点击「新建配置」添加可复用 Plugin Config') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
 
@@ -162,10 +162,10 @@ export default toNative(PluginConfigs)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
-              <th class="th">配置</th>
-              <th class="th">插件</th>
-              <th class="th">创建时间</th>
-              <th class="w-32 th-right">操作</th>
+              <th class="th">{{ $t('配置') }}</th>
+              <th class="th">{{ $t('插件') }}</th>
+              <th class="th">{{ $t('创建时间') }}</th>
+              <th class="w-32 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -177,7 +177,7 @@ export default toNative(PluginConfigs)
                   </div>
                   <div class="min-w-0">
                     <span class="item-title font-mono">{{ config.id || '-' }}</span>
-                    <span v-if="config.desc" class="item-subtitle">{{ config.desc }}</span>
+                    <span v-if="config.desc" class="item-subtitle">{{ $t(config.desc) }}</span>
                   </div>
                 </div>
               </td>
@@ -185,15 +185,15 @@ export default toNative(PluginConfigs)
                 <div v-if="getPluginNames(config).length > 0" class="flex flex-wrap gap-1">
                   <span v-for="name in getPluginNames(config)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded-lg text-xs">{{ name }}</span>
                 </div>
-                <span v-else class="text-xs text-slate-400">未配置</span>
+                <span v-else class="text-xs text-slate-400">{{ $t('未配置') }}</span>
               </td>
               <td class="td-text-nowrap">{{ formatTs(config.create_time) }}</td>
               <td class="px-4 py-3">
                 <div class="table-actions">
-                  <button v-if="portal.hasPerm('PUT /api/apisix/plugin-config/:id')" class="btn-icon btn-icon-rose" title="编辑" @click="openEditModal(config)">
+                  <button v-if="portal.hasPerm('PUT /api/apisix/plugin-config/:id')" class="btn-icon btn-icon-rose" :title="$t('编辑')" @click="openEditModal(config)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
-                  <button v-if="portal.hasPerm('DELETE /api/apisix/plugin-config/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteConfig(config)">
+                  <button v-if="portal.hasPerm('DELETE /api/apisix/plugin-config/:id')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteConfig(config)">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
@@ -212,29 +212,29 @@ export default toNative(PluginConfigs)
               </div>
               <div class="min-w-0">
                 <div class="font-medium text-sm text-slate-800 truncate font-mono">{{ config.id || '-' }}</div>
-                <div v-if="config.desc" class="text-xs text-slate-400 mt-0.5 truncate">{{ config.desc }}</div>
+                <div v-if="config.desc" class="text-xs text-slate-400 mt-0.5 truncate">{{ $t(config.desc) }}</div>
               </div>
             </div>
           </div>
 
           <div class="card-prop-row-start">
-            <span class="prop-label-start">插件</span>
+            <span class="prop-label-start">{{ $t('插件') }}</span>
             <div v-if="getPluginNames(config).length > 0" class="flex flex-wrap gap-1">
               <span v-for="name in getPluginNames(config)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded-lg text-xs">{{ name }}</span>
             </div>
-            <span v-else class="text-xs text-slate-400">未配置</span>
+            <span v-else class="text-xs text-slate-400">{{ $t('未配置') }}</span>
           </div>
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">创建</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('创建') }}</span>
             <span class="text-xs text-slate-500">{{ formatTs(config.create_time) }}</span>
           </div>
 
           <div class="card-actions">
-            <button v-if="portal.hasPerm('PUT /api/apisix/plugin-config/:id')" class="btn-icon btn-icon-rose" title="编辑" @click="openEditModal(config)">
-              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
+            <button v-if="portal.hasPerm('PUT /api/apisix/plugin-config/:id')" class="btn-icon btn-icon-rose" :title="$t('编辑')" @click="openEditModal(config)">
+              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">{{ $t('编辑') }}</span>
             </button>
-            <button v-if="portal.hasPerm('DELETE /api/apisix/plugin-config/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteConfig(config)">
-              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+            <button v-if="portal.hasPerm('DELETE /api/apisix/plugin-config/:id')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteConfig(config)">
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
             </button>
           </div>
         </div>

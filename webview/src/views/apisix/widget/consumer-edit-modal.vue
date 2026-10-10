@@ -67,11 +67,11 @@ class ConsumerEditModal extends Vue {
 
     async handleConfirm() {
         if (!this.formData.username) {
-            this.portal.showNotification('error', '消费者名称不能为空')
+            this.portal.showNotification('error', this.$t('消费者名称不能为空'))
             return
         }
         if (this.$refs.pluginPanel?.pluginsJsonError) {
-            this.portal.showNotification('error', '请修正 Plugin JSON 格式错误')
+            this.portal.showNotification('error', this.$t('请修正 Plugin JSON 格式错误'))
             return
         }
         this.modalLoading = true
@@ -97,16 +97,16 @@ export default toNative(ConsumerEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑消费者' : '新建消费者'" :loading="modalLoading" confirm-class="btn-violet" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑消费者') : $t('新建消费者')" :loading="modalLoading" confirm-class="btn-violet" @confirm="handleConfirm">
     <div class="space-y-4 p-1">
       <div class="space-y-3">
         <div>
-          <label class="form-label">名称 <span class="text-red-500">*</span></label>
-          <input v-model="formData.username" type="text" :disabled="isEditMode" class="input" :class="{ 'disabled:bg-slate-50 disabled:text-slate-500': isEditMode }" placeholder="请输入消费者名称" />
+          <label class="form-label">{{ $t('名称') }} <span class="text-red-500">*</span></label>
+          <input v-model="formData.username" type="text" :disabled="isEditMode" class="input" :class="{ 'disabled:bg-slate-50 disabled:text-slate-500': isEditMode }" :placeholder="$t('请输入消费者名称')" />
         </div>
         <div>
-          <label class="form-label">描述</label>
-          <textarea v-model="formData.desc" rows="3" class="input" placeholder="请输入消费者描述（可选）"></textarea>
+          <label class="form-label">{{ $t('描述') }}</label>
+          <textarea v-model="formData.desc" rows="3" class="input" :placeholder="$t('请输入消费者描述（可选）')"></textarea>
         </div>
       </div>
 
@@ -114,7 +114,7 @@ export default toNative(ConsumerEditModal)
     </div>
 
     <template #confirm-text>
-      确认{{ isEditMode ? '更新' : '新建' }}
+      {{ $t('确认') }} {{ isEditMode ? $t('更新') : $t('新建') }}
     </template>
   </BaseModal>
 </template>

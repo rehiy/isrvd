@@ -57,7 +57,7 @@ class CaddyCerts extends Vue {
     }
 
     sourceLabel(source: string) {
-        const map: Record<string, string> = { file: '磁盘文件', pem: '内联 PEM', automate: '自动签发', cached: '已签发' }
+        const map: Record<string, string> = { file: this.$t('磁盘文件'), pem: this.$t('内联 PEM'), automate: this.$t('自动签发'), cached: this.$t('已签发') }
         return map[source] || source
     }
 
@@ -74,7 +74,7 @@ class CaddyCerts extends Vue {
     certSummary(cert: CaddyCert) {
         if (cert.subject) return cert.subject
         if (cert.source === 'file') return cert.certificate || '-'
-        return cert.certificate?.split('\n')[0].trim() || '(空)'
+        return cert.certificate?.split('\n')[0].trim() || this.$t('(空)')
     }
 
     certExpireClass(notAfter?: string) {
@@ -88,24 +88,24 @@ class CaddyCerts extends Vue {
     certExpireLabel(notAfter?: string) {
         if (!notAfter) return '-'
         const days = Math.floor((new Date(notAfter).getTime() - Date.now()) / 86400000)
-        if (days < 0) return `已过期 ${-days} 天`
-        if (days === 0) return '今日过期'
-        return `${days} 天后到期`
+        if (days < 0) return this.$t('已过期 {0} 天', -days)
+        if (days === 0) return this.$t('今日过期')
+        return this.$t('{0} 天后到期', days)
     }
 
     deleteCert(cert: CaddyCert) {
         if (!cert.key) return
         this.portal.showConfirm({
-            title: '删除证书',
-            message: `确定要删除证书 <strong class="text-slate-900">${this.certSummary(cert)}</strong> 吗？此操作不可恢复。`,
+            title: this.$t('删除证书'),
+            message: this.$t('确定要删除证书 <strong class="text-slate-900">{0}</strong> 吗？此操作不可恢复。', this.certSummary(cert)),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认删除',
+            confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 try {
                     await api.caddyCertDelete(cert.key as string)
-                    this.portal.showNotification('success', '删除成功')
+                    this.portal.showNotification('success', this.$t('删除成功'))
                     this.loadCerts()
                 } catch {}
             }        })
@@ -126,12 +126,12 @@ export default toNative(CaddyCerts)
       <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-cyan-500"><i class="fas fa-certificate text-white"></i></div>
-          <div class="min-w-0"><h1 class="title-text">SSL 证书</h1><p class="text-xs text-slate-500 truncate">管理 Caddy 证书来源：文件、PEM、自动签发；已签发证书只读</p></div>
+          <div class="min-w-0"><h1 class="title-text">{{ $t('SSL 证书') }}</h1><p class="text-xs text-slate-500 truncate">{{ $t('管理 Caddy 证书来源：文件、PEM、自动签发；已签发证书只读') }}</p></div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="请输入搜索关键词..." focus-color="cyan" type-to-search />
-          <button class="btn btn-secondary" @click="loadCerts()"><i class="fas fa-rotate"></i>刷新</button>
-          <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="btn btn-cyan" @click="openCreateModal()"><i class="fas fa-plus"></i>新建证书</button>
+          <PageSearch v-model="searchText" search-key="caddy-certs" :placeholder="$t('请输入搜索关键词...')" focus-color="cyan" type-to-search />
+          <button class="btn btn-secondary" @click="loadCerts()"><i class="fas fa-rotate"></i>{{ $t('刷新') }}</button>
+          <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="btn btn-cyan" @click="openCreateModal()"><i class="fas fa-plus"></i>{{ $t('新建证书') }}</button>
         </div>
       </div>
       <!-- 移动端 -->
@@ -139,15 +139,15 @@ export default toNative(CaddyCerts)
         <div class="title-group">
           <div class="page-icon bg-cyan-500"><i class="fas fa-certificate text-white"></i></div>
           <div class="min-w-0">
-            <h1 class="title-text">SSL 证书</h1>
-            <p class="text-xs text-slate-500 truncate">管理证书来源</p>
+            <h1 class="title-text">{{ $t('SSL 证书') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('管理证书来源') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" title="刷新" @click="loadCerts()">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadCerts()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="btn btn-cyan btn-square" title="新建证书" @click="openCreateModal()">
+          <button v-if="portal.hasPerm('POST /api/caddy/cert')" class="btn btn-cyan btn-square" :title="$t('新建证书')" @click="openCreateModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -155,16 +155,16 @@ export default toNative(CaddyCerts)
     </div>
     <!-- 移动端搜索栏 -->
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="caddy-certs" placeholder="请输入搜索关键词..." width-class="w-full" focus-color="cyan" />
+      <PageSearch v-model="searchText" search-key="caddy-certs" :placeholder="$t('请输入搜索关键词...')" width-class="w-full" focus-color="cyan" />
     </div>
     <div v-if="loading" class="card-body">
-      <div class="empty-state"><div class="spinner-lg"></div><p class="text-slate-500">加载中...</p></div>
+      <div class="empty-state"><div class="spinner-lg"></div><p class="text-slate-500">{{ $t('加载中...') }}</p></div>
     </div>
     <div v-else-if="filteredCerts.length === 0" class="card-body">
       <div class="empty-state">
         <div class="empty-state-icon"><i class="fas fa-certificate text-4xl text-slate-300"></i></div>
-        <p class="text-slate-600 font-medium mb-1">{{ certs.length === 0 ? '暂无证书' : '未找到匹配证书' }}</p>
-        <p class="text-sm text-slate-400">{{ certs.length === 0 ? '点击「新建证书」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ certs.length === 0 ? $t('暂无证书') : $t('未找到匹配证书') }}</p>
+        <p class="text-sm text-slate-400">{{ certs.length === 0 ? $t('点击「新建证书」开始创建') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
     <template v-else>
@@ -173,12 +173,12 @@ export default toNative(CaddyCerts)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
-              <th class="th">来源</th>
-              <th class="th">主体</th>
-              <th class="th">签发机构</th>
-              <th class="th">有效期</th>
-              <th class="th">标签</th>
-              <th class="w-32 th-right">操作</th>
+              <th class="th">{{ $t('来源') }}</th>
+              <th class="th">{{ $t('主体') }}</th>
+              <th class="th">{{ $t('签发机构') }}</th>
+              <th class="th">{{ $t('有效期') }}</th>
+              <th class="th">{{ $t('标签') }}</th>
+              <th class="w-32 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -203,10 +203,10 @@ export default toNative(CaddyCerts)
               </td>
               <td class="px-4 py-3">
                 <div class="table-actions">
-                  <button class="btn-icon btn-icon-slate" title="详情" @click="openDetailModal(cert)"><i class="fas fa-circle-info text-xs"></i></button>
-                  <button v-if="cert.source !== 'cached' && portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(cert)"><i class="fas fa-pen text-xs"></i></button>
-                  <button v-if="cert.source !== 'cached' && portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon btn-icon-red" title="删除" @click="deleteCert(cert)"><i class="fas fa-trash text-xs"></i></button>
-                  <span v-if="cert.source === 'cached'" class="text-xs text-slate-400 pr-1">只读</span>
+                  <button class="btn-icon btn-icon-slate" :title="$t('详情')" @click="openDetailModal(cert)"><i class="fas fa-circle-info text-xs"></i></button>
+                  <button v-if="cert.source !== 'cached' && portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-cyan" :title="$t('编辑')" @click="openEditModal(cert)"><i class="fas fa-pen text-xs"></i></button>
+                  <button v-if="cert.source !== 'cached' && portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteCert(cert)"><i class="fas fa-trash text-xs"></i></button>
+                  <span v-if="cert.source === 'cached'" class="text-xs text-slate-400 pr-1">{{ $t('只读') }}</span>
                 </div>
               </td>
             </tr>
@@ -228,31 +228,31 @@ export default toNative(CaddyCerts)
           </div>
 
           <div v-if="cert.issuer" class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">签发机构</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('签发机构') }}</span>
             <span class="text-xs text-slate-500">{{ cert.issuer }}</span>
           </div>
           <div v-if="cert.notAfter" class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">有效期</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('有效期') }}</span>
             <span :class="certExpireClass(cert.notAfter)" class="text-xs">{{ certExpireLabel(cert.notAfter) }}</span>
           </div>
           <div v-if="cert.tags && cert.tags.length" class="card-prop-row-start">
-            <span class="prop-label-start">标签</span>
+            <span class="prop-label-start">{{ $t('标签') }}</span>
             <span class="flex flex-wrap gap-1">
               <span v-for="tag in cert.tags" :key="tag" class="inline-block text-xs px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600">{{ tag }}</span>
             </span>
           </div>
 
           <div class="card-actions">
-            <button class="btn-icon btn-icon-slate" title="详情" @click="openDetailModal(cert)">
-              <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
+            <button class="btn-icon btn-icon-slate" :title="$t('详情')" @click="openDetailModal(cert)">
+              <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">{{ $t('详情') }}</span>
             </button>
-            <button v-if="cert.source !== 'cached' && portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-cyan" title="编辑" @click="openEditModal(cert)">
-              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
+            <button v-if="cert.source !== 'cached' && portal.hasPerm('PUT /api/caddy/cert/:key')" class="btn-icon btn-icon-cyan" :title="$t('编辑')" @click="openEditModal(cert)">
+              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">{{ $t('编辑') }}</span>
             </button>
-            <button v-if="cert.source !== 'cached' && portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon btn-icon-red" title="删除" @click="deleteCert(cert)">
-              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+            <button v-if="cert.source !== 'cached' && portal.hasPerm('DELETE /api/caddy/cert/:key')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteCert(cert)">
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
             </button>
-            <span v-if="cert.source === 'cached'" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs text-slate-400 bg-slate-100">只读</span>
+            <span v-if="cert.source === 'cached'" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs text-slate-400 bg-slate-100">{{ $t('只读') }}</span>
           </div>
         </div>
       </div>

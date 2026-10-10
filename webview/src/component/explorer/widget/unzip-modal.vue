@@ -43,7 +43,7 @@ export default toNative(UnzipModal)
 <template>
   <BaseModal
     v-model="isOpen"
-    title="解压确认"
+    :title="$t('解压确认')"
     :loading="loading"
     :confirm-disabled="!file"
     @confirm="handleConfirm"
@@ -54,13 +54,13 @@ export default toNative(UnzipModal)
           <i class="fas fa-expand-arrows-alt text-3xl text-white"></i>
         </div>
         <p class="text-lg text-slate-700 mb-2">
-          确定要解压 <strong class="text-slate-900">{{ file.name }}</strong> 吗？
+          {{ $t('确定要解压') }} <strong class="text-slate-900">{{ file.name }}</strong> {{ $t('吗？') }}
         </p>
-        <p class="text-sm text-slate-500">目标目录留空时，文件将解压到当前目录</p>
+        <p class="text-sm text-slate-500">{{ $t('目标目录留空时，文件将解压到当前目录') }}</p>
       </div>
       <form class="space-y-4" @submit.prevent="handleConfirm">
         <div>
-          <label for="fmUnzipTarget" class="form-label">目标目录</label>
+          <label for="fmUnzipTarget" class="form-label">{{ $t('目标目录') }}</label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <i class="fas fa-folder text-slate-400"></i>
@@ -71,13 +71,13 @@ export default toNative(UnzipModal)
               type="text"
               :disabled="loading"
               class="input pl-11"
-              placeholder="请输入目录名，如：output"
+              :placeholder="$t('请输入目录名，如：output')"
             >
           </div>
-          <p class="text-xs text-slate-400 mt-1">只能输入目录名，不允许包含 / 等路径分隔符</p>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('只能输入目录名，不允许包含 / 等路径分隔符') }}</p>
         </div>
       </form>
     </div>
-    <template #confirm-text>{{ loading ? '解压中...' : '开始解压' }}</template>
+    <template #confirm-text>{{ loading ? $t('解压中...') : $t('开始解压') }}</template>
   </BaseModal>
 </template>

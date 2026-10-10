@@ -65,15 +65,15 @@ class Consumers extends Vue {
 
     deleteConsumer(consumer: ApisixConsumer) {
         this.portal.showConfirm({
-            title: '删除消费者',
-            message: `确定要删除消费者 <strong class="text-slate-900">${consumer.username}</strong> 吗？此操作不可恢复。`,
+            title: this.$t('删除消费者'),
+            message: this.$t('确定要删除消费者 <strong class="text-slate-900">{0}</strong> 吗？此操作不可恢复。', consumer.username),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认删除',
+            confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 await api.apisixConsumerDelete(consumer.username)
-                this.portal.showNotification('success', '删除成功')
+                this.portal.showNotification('success', this.$t('删除成功'))
                 this.loadConsumers()
             }
         })
@@ -99,17 +99,17 @@ export default toNative(Consumers)
             <i class="fas fa-users text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">消费者</h1>
-            <p class="text-xs text-slate-500">管理 APISIX Consumer 及其认证凭据</p>
+            <h1 class="title-text">{{ $t('消费者') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('管理 APISIX Consumer 及其认证凭据') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="apisix-consumers" placeholder="搜索消费者..." focus-color="violet" type-to-search />
+          <PageSearch v-model="searchText" search-key="apisix-consumers" :placeholder="$t('搜索消费者...')" focus-color="violet" type-to-search />
           <button class="btn btn-secondary" @click="loadConsumers()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
           <button v-if="portal.hasPerm('POST /api/apisix/consumer')" class="btn btn-violet" @click="openCreateModal()">
-            <i class="fas fa-plus"></i>新建消费者
+            <i class="fas fa-plus"></i>{{ $t('新建消费者') }}
           </button>
         </div>
       </div>
@@ -120,15 +120,15 @@ export default toNative(Consumers)
             <i class="fas fa-users text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">消费者</h1>
-            <p class="text-xs text-slate-500 truncate">管理 Consumer 与凭据</p>
+            <h1 class="title-text">{{ $t('消费者') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('管理 Consumer 与凭据') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" title="刷新" @click="loadConsumers()">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadConsumers()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/apisix/consumer')" class="btn btn-violet btn-square" title="新建消费者" @click="openCreateModal()">
+          <button v-if="portal.hasPerm('POST /api/apisix/consumer')" class="btn btn-violet btn-square" :title="$t('新建消费者')" @click="openCreateModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -136,14 +136,14 @@ export default toNative(Consumers)
     </div>
     <!-- 移动端搜索栏 -->
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="apisix-consumers" placeholder="搜索消费者..." width-class="w-full" focus-color="violet" />
+      <PageSearch v-model="searchText" search-key="apisix-consumers" :placeholder="$t('搜索消费者...')" width-class="w-full" focus-color="violet" />
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -153,8 +153,8 @@ export default toNative(Consumers)
         <div class="empty-state-icon">
           <i class="fas fa-users text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ consumers.length === 0 ? '暂无消费者' : '未找到匹配消费者' }}</p>
-        <p class="text-sm text-slate-400">{{ consumers.length === 0 ? '点击「新建消费者」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ consumers.length === 0 ? $t('暂无消费者') : $t('未找到匹配消费者') }}</p>
+        <p class="text-sm text-slate-400">{{ consumers.length === 0 ? $t('点击「新建消费者」开始创建') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
 
@@ -165,11 +165,11 @@ export default toNative(Consumers)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
-              <th class="th">名称</th>
-              <th class="th">插件配置</th>
-              <th class="th">授权路由</th>
-              <th class="th">创建时间</th>
-              <th class="w-32 th-right">操作</th>
+              <th class="th">{{ $t('名称') }}</th>
+              <th class="th">{{ $t('插件配置') }}</th>
+              <th class="th">{{ $t('授权路由') }}</th>
+              <th class="th">{{ $t('创建时间') }}</th>
+              <th class="w-32 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -181,7 +181,7 @@ export default toNative(Consumers)
                   </div>
                   <div class="min-w-0">
                     <span class="item-title">{{ consumer.username }}</span>
-                    <span v-if="consumer.desc" class="item-subtitle">{{ consumer.desc }}</span>
+                    <span v-if="consumer.desc" class="item-subtitle">{{ $t(consumer.desc) }}</span>
                   </div>
                 </div>
               </td>
@@ -202,10 +202,10 @@ export default toNative(Consumers)
               </td>
               <td class="px-4 py-3">
                 <div class="table-actions">
-                  <button v-if="portal.hasPerm('PUT /api/apisix/consumer/:username')" class="btn-icon btn-icon-violet" title="编辑" @click="openEditModal(consumer)">
+                  <button v-if="portal.hasPerm('PUT /api/apisix/consumer/:username')" class="btn-icon btn-icon-violet" :title="$t('编辑')" @click="openEditModal(consumer)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
-                  <button v-if="portal.hasPerm('DELETE /api/apisix/consumer/:username')" class="btn-icon btn-icon-red" title="删除" @click="deleteConsumer(consumer)">
+                  <button v-if="portal.hasPerm('DELETE /api/apisix/consumer/:username')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteConsumer(consumer)">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
@@ -225,18 +225,18 @@ export default toNative(Consumers)
             </div>
             <div class="min-w-0">
               <span class="item-title-sm">{{ consumer.username }}</span>
-              <span v-if="consumer.desc" class="item-subtitle">{{ consumer.desc }}</span>
+              <span v-if="consumer.desc" class="item-subtitle">{{ $t(consumer.desc) }}</span>
             </div>
           </div>
           
           <!-- 中间：API Key和创建时间 -->
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">创建</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('创建') }}</span>
             <span class="text-xs text-slate-500">{{ formatTs(consumer.create_time) }}</span>
           </div>
           
           <div class="card-prop-row-start">
-            <span class="prop-label-start">插件</span>
+            <span class="prop-label-start">{{ $t('插件') }}</span>
             <div v-if="Object.keys(consumer.plugins || {}).length > 0" class="flex flex-wrap gap-1">
               <span v-for="(_, name) in consumer.plugins" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-lg text-xs">{{ name }}</span>
             </div>
@@ -245,7 +245,7 @@ export default toNative(Consumers)
 
           <!-- 授权路由 -->
           <div class="card-prop-row-start">
-            <span class="prop-label-start">路由</span>
+            <span class="prop-label-start">{{ $t('路由') }}</span>
             <div v-if="getConsumerRoutes(consumer.username).length > 0" class="flex flex-wrap gap-1">
               <span v-for="name in getConsumerRoutes(consumer.username)" :key="name" class="inline-flex items-center px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded-lg text-xs">{{ name }}</span>
             </div>
@@ -254,11 +254,11 @@ export default toNative(Consumers)
           
           <!-- 底部：操作按钮 -->
           <div class="card-actions">
-            <button v-if="portal.hasPerm('PUT /api/apisix/consumer/:username')" class="btn-icon btn-icon-violet" title="编辑" @click="openEditModal(consumer)">
-              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
+            <button v-if="portal.hasPerm('PUT /api/apisix/consumer/:username')" class="btn-icon btn-icon-violet" :title="$t('编辑')" @click="openEditModal(consumer)">
+              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">{{ $t('编辑') }}</span>
             </button>
-            <button v-if="portal.hasPerm('DELETE /api/apisix/consumer/:username')" class="btn-icon btn-icon-red" title="删除" @click="deleteConsumer(consumer)">
-              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+            <button v-if="portal.hasPerm('DELETE /api/apisix/consumer/:username')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteConsumer(consumer)">
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
             </button>
           </div>
         </div>

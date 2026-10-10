@@ -48,7 +48,7 @@ class PreviewModal extends Vue {
     }
 
     handleLoaded() { this.loading = false }
-    handleError() { this.loading = false; this.error = '文件加载失败' }
+    handleError() { this.loading = false; this.error = this.$t('文件加载失败') }
 
     resetPreview() {
         this.previewUrl = ''
@@ -65,7 +65,7 @@ export default toNative(PreviewModal)
 <template>
   <BaseModal
     v-model="isOpen"
-    :title="'预览: ' + filename"
+    :title="$t('预览: ') + filename"
     :show-footer="false"
     max-width-class="max-w-5xl"
     :body-class="previewType === 'pdf' ? 'p-0 overflow-hidden' : 'px-6 py-6 overflow-y-auto'"
@@ -73,7 +73,7 @@ export default toNative(PreviewModal)
   >
     <div v-if="loading" class="flex flex-col items-center gap-3 py-10">
       <div class="w-12 h-12 spinner"></div>
-      <span class="text-sm text-slate-500">加载中...</span>
+      <span class="text-sm text-slate-500">{{ $t('加载中...') }}</span>
     </div>
 
     <div v-if="error" class="flex flex-col items-center gap-3 py-10">
@@ -128,8 +128,8 @@ export default toNative(PreviewModal)
         <div class="empty-state-icon !mb-0">
           <i class="fas fa-file-pdf text-4xl text-slate-400"></i>
         </div>
-        <span class="text-sm text-slate-500">浏览器不支持 PDF 预览</span>
-        <a :href="previewUrl" target="_blank" class="text-sm text-blue-500 hover:underline">在新标签页打开</a>
+        <span class="text-sm text-slate-500">{{ $t('浏览器不支持 PDF 预览') }}</span>
+        <a :href="previewUrl" target="_blank" class="text-sm text-blue-500 hover:underline">{{ $t('在新标签页打开') }}</a>
       </div>
     </object>
   </BaseModal>

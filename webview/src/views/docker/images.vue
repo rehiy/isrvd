@@ -121,7 +121,7 @@ class Images extends Vue {
     async pullImage(image: DockerImageInfo) {
         const tag = image.repoTags.find(t => t && t !== '<none>:<none>')
         if (!tag) {
-            this.portal.showNotification('error', '镜像无标签，无法拉取')
+            this.portal.showNotification('error', this.$t('镜像无标签，无法拉取'))
             return
         }
 
@@ -145,16 +145,16 @@ class Images extends Vue {
         const registryUrl = matchedRegistry?.url || ''
 
         this.portal.showConfirm({
-            title: '拉取镜像',
-            message: `确定要重新拉取镜像 <strong class="text-slate-900">${tag || image.shortId}</strong> 吗？`,
+            title: this.$t('拉取镜像'),
+            message: this.$t('确定要重新拉取镜像 <strong class="text-slate-900">{0}</strong> 吗？', tag || image.shortId),
             icon: 'fa-download',
             iconColor: 'blue',
-            confirmText: '确认拉取',
+            confirmText: this.$t('确认拉取'),
             danger: false,
             onConfirm: async () => {
                 try {
                     await api.dockerImagePull(pullImageRef, registryUrl, '')
-                    this.portal.showNotification('success', '镜像拉取成功')
+                    this.portal.showNotification('success', this.$t('镜像拉取成功'))
                     this.loadImages()
                 } catch {}
             }
@@ -164,15 +164,15 @@ class Images extends Vue {
     handleImageAction(image: DockerImageInfo, action: string) {
         const tag = image.repoTags.find(t => t && t !== '<none>:<none>')
         this.portal.showConfirm({
-            title: '删除镜像',
-            message: `确定要删除镜像 <strong class="text-slate-900">${tag || image.shortId}</strong> 吗？`,
+            title: this.$t('删除镜像'),
+            message: this.$t('确定要删除镜像 <strong class="text-slate-900">{0}</strong> 吗？', tag || image.shortId),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认删除',
+            confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 await api.dockerImageAction(image.id, action)
-                this.portal.showNotification('success', '镜像删除成功')
+                this.portal.showNotification('success', this.$t('镜像删除成功'))
                 this.loadImages()
             }
         })
@@ -187,7 +187,7 @@ class Images extends Vue {
         this.pruneLoading = true
         try {
             const { payload } = await api.dockerImagePrune({ all: this.pruneAll })
-            this.portal.showNotification('success', `镜像清理完成，回收 ${formatFileSize(payload?.spaceReclaimed || 0)}`)
+            this.portal.showNotification('success', this.$t('镜像清理完成，回收 {0}', formatFileSize(payload?.spaceReclaimed || 0)))
             this.pruneModalOpen = false
             this.loadImages()
         } finally {
@@ -216,31 +216,31 @@ export default toNative(Images)
             <i class="fas fa-layer-group text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">镜像</h1>
-            <p class="text-xs text-slate-500">拉取、导入、导出和删除 Docker 镜像</p>
+            <h1 class="title-text">{{ $t('镜像') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('拉取、导入、导出和删除 Docker 镜像') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="docker-images" placeholder="搜索镜像名称、标签、ID..." focus-color="blue" type-to-search />
+          <PageSearch v-model="searchText" search-key="docker-images" :placeholder="$t('搜索镜像名称、标签、ID...')" focus-color="blue" type-to-search />
           <div class="tab-group">
             <button :class="['tab-btn', !showAllImages ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="showAllImages = false; loadImages()">
-              <i class="fas fa-cube"></i><span>顶层</span>
+              <i class="fas fa-cube"></i><span>{{ $t('顶层') }}</span>
             </button>
             <button :class="['tab-btn', showAllImages ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="showAllImages = true; loadImages()">
-              <i class="fas fa-layer-group"></i><span>全部</span>
+              <i class="fas fa-layer-group"></i><span>{{ $t('全部') }}</span>
             </button>
           </div>
           <button class="btn btn-secondary" @click="loadImages()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
           <button v-if="portal.hasPerm('POST /api/docker/image/prune')" class="btn btn-danger" @click="handleImagePrune()">
-            <i class="fas fa-broom"></i>清理
+            <i class="fas fa-broom"></i>{{ $t('清理') }}
           </button>
           <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn btn-blue" @click="buildModalRef?.show()">
-            <i class="fas fa-hammer"></i>构建
+            <i class="fas fa-hammer"></i>{{ $t('构建') }}
           </button>
           <button v-if="portal.hasPerm('POST /api/docker/image/pull')" class="btn btn-blue" @click="pullModalRef?.show()">
-            <i class="fas fa-download"></i>拉取
+            <i class="fas fa-download"></i>{{ $t('拉取') }}
           </button>
         </div>
       </div>
@@ -252,45 +252,45 @@ export default toNative(Images)
               <i class="fas fa-layer-group text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="title-text">镜像</h1>
-              <p class="text-xs text-slate-500 truncate">拉取与管理镜像</p>
+              <h1 class="title-text">{{ $t('镜像') }}</h1>
+              <p class="text-xs text-slate-500 truncate">{{ $t('拉取与管理镜像') }}</p>
             </div>
           </div>
           <div class="action-group-sm">
-            <button class="btn btn-secondary btn-square" title="刷新" @click="loadImages()">
+            <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadImages()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/image/prune')" class="btn btn-danger btn-square" title="清理镜像" @click="handleImagePrune()">
+            <button v-if="portal.hasPerm('POST /api/docker/image/prune')" class="btn btn-danger btn-square" :title="$t('清理镜像')" @click="handleImagePrune()">
               <i class="fas fa-broom text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn btn-blue btn-square" title="构建" @click="buildModalRef?.show()">
+            <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn btn-blue btn-square" :title="$t('构建')" @click="buildModalRef?.show()">
               <i class="fas fa-hammer text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/image/pull')" class="btn btn-blue btn-square" title="拉取" @click="pullModalRef?.show()">
+            <button v-if="portal.hasPerm('POST /api/docker/image/pull')" class="btn btn-blue btn-square" :title="$t('拉取')" @click="pullModalRef?.show()">
               <i class="fas fa-download text-sm"></i>
             </button>
           </div>
         </div>
         <div class="tab-group w-full justify-center">
           <button :class="['tab-btn flex-1 justify-center', !showAllImages ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="showAllImages = false; loadImages()">
-            <i class="fas fa-cube"></i><span>顶层</span>
+            <i class="fas fa-cube"></i><span>{{ $t('顶层') }}</span>
           </button>
           <button :class="['tab-btn flex-1 justify-center', showAllImages ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']" @click="showAllImages = true; loadImages()">
-            <i class="fas fa-layer-group"></i><span>全部</span>
+            <i class="fas fa-layer-group"></i><span>{{ $t('全部') }}</span>
           </button>
         </div>
       </div>
     </div>
 
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="docker-images" placeholder="搜索镜像名称、标签或 ID..." width-class="w-full" focus-color="blue" />
+      <PageSearch v-model="searchText" search-key="docker-images" :placeholder="$t('搜索镜像名称、标签或 ID...')" width-class="w-full" focus-color="blue" />
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -301,11 +301,11 @@ export default toNative(Images)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
-              <th class="th">镜像</th>
-              <th class="th">标签</th>
-              <th class="w-32 th">大小</th>
-              <th class="w-36 th">创建时间</th>
-              <th class="w-40 th-right">操作</th>
+              <th class="th">{{ $t('镜像') }}</th>
+              <th class="th">{{ $t('标签') }}</th>
+              <th class="w-32 th">{{ $t('大小') }}</th>
+              <th class="w-36 th">{{ $t('创建时间') }}</th>
+              <th class="w-40 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -332,19 +332,19 @@ export default toNative(Images)
               <td class="td-text-nowrap">{{ formatTime(new Date(img.created * 1000).toISOString()) }}</td>
               <td class="px-4 py-3">
                 <div class="table-actions">
-                  <button v-if="portal.hasPerm('GET /api/docker/image/:id')" class="btn-icon btn-icon-slate" title="查看详情" @click="$router.push('/docker/image/' + img.id)">
+                  <button v-if="portal.hasPerm('GET /api/docker/image/:id')" class="btn-icon btn-icon-slate" :title="$t('查看详情')" @click="$router.push('/docker/image/' + img.id)">
                     <i class="fas fa-circle-info text-xs"></i>
                   </button>
-                  <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn-icon btn-icon-blue" title="打标签" @click="tagModalRef?.show(img)">
+                  <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn-icon btn-icon-blue" :title="$t('打标签')" @click="tagModalRef?.show(img)">
                     <i class="fas fa-tag text-xs"></i>
                   </button>
-                  <button v-if="portal.hasPerm('POST /api/docker/image/pull')" class="btn-icon btn-icon-blue" title="拉取（更新）" @click="pullImage(img)">
+                  <button v-if="portal.hasPerm('POST /api/docker/image/pull')" class="btn-icon btn-icon-blue" :title="$t('拉取（更新）')" @click="pullImage(img)">
                     <i class="fas fa-download text-xs"></i>
                   </button>
-                  <button v-if="portal.hasPerm('POST /api/docker/image/push')" :disabled="registries.length === 0" class="btn-icon btn-icon-indigo disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'" @click="openPush(img)">
+                  <button v-if="portal.hasPerm('POST /api/docker/image/push')" :disabled="registries.length === 0" class="btn-icon btn-icon-indigo disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? $t('暂无可用私有仓库') : $t('推送到仓库')" @click="openPush(img)">
                     <i class="fas fa-upload text-xs"></i>
                   </button>
-                  <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleImageAction(img, 'remove')">
+                  <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleImageAction(img, 'remove')">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
@@ -371,7 +371,7 @@ export default toNative(Images)
 
           <!-- 标签 -->
           <div v-if="img.repoTags && img.repoTags.length > 0" class="card-prop-row-start">
-            <span class="prop-label-start">标签</span>
+            <span class="prop-label-start">{{ $t('标签') }}</span>
             <div class="flex flex-wrap gap-1">
               <span v-for="(tag, idx) in img.repoTags" :key="idx" class="inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-mono bg-blue-50 text-blue-600">{{ tag }}</span>
             </div>
@@ -379,31 +379,31 @@ export default toNative(Images)
 
           <!-- 创建时间 -->
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">创建时间</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('创建时间') }}</span>
             <span class="text-xs text-slate-500">{{ formatTime(new Date(img.created * 1000).toISOString()) }}</span>
           </div>
           <!-- 大小 -->
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">大小</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('大小') }}</span>
             <span class="text-xs text-slate-500">{{ formatFileSize(img.size) }}</span>
           </div>
         
           <!-- 底部：操作按钮 -->
           <div class="card-actions">
-            <button v-if="portal.hasPerm('GET /api/docker/image/:id')" class="btn-icon btn-icon-slate" title="查看详情" @click="$router.push('/docker/image/' + img.id)">
-              <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
+            <button v-if="portal.hasPerm('GET /api/docker/image/:id')" class="btn-icon btn-icon-slate" :title="$t('查看详情')" @click="$router.push('/docker/image/' + img.id)">
+              <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">{{ $t('详情') }}</span>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn-icon btn-icon-blue" title="打标签" @click="tagModalRef?.show(img)">
-              <i class="fas fa-tag text-xs"></i><span class="text-xs ml-1">标签</span>
+            <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn-icon btn-icon-blue" :title="$t('打标签')" @click="tagModalRef?.show(img)">
+              <i class="fas fa-tag text-xs"></i><span class="text-xs ml-1">{{ $t('标签') }}</span>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/image/pull')" class="btn-icon btn-icon-blue" title="拉取（更新）" @click="pullImage(img)">
-              <i class="fas fa-download text-xs"></i><span class="text-xs ml-1">拉取</span>
+            <button v-if="portal.hasPerm('POST /api/docker/image/pull')" class="btn-icon btn-icon-blue" :title="$t('拉取（更新）')" @click="pullImage(img)">
+              <i class="fas fa-download text-xs"></i><span class="text-xs ml-1">{{ $t('拉取') }}</span>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/image/push')" :disabled="registries.length === 0" class="btn-icon btn-icon-indigo disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? '暂无可用私有仓库' : '推送到仓库'" @click="openPush(img)">
-              <i class="fas fa-upload text-xs"></i><span class="text-xs ml-1">推送</span>
+            <button v-if="portal.hasPerm('POST /api/docker/image/push')" :disabled="registries.length === 0" class="btn-icon btn-icon-indigo disabled:opacity-40 disabled:cursor-not-allowed" :title="registries.length === 0 ? $t('暂无可用私有仓库') : $t('推送到仓库')" @click="openPush(img)">
+              <i class="fas fa-upload text-xs"></i><span class="text-xs ml-1">{{ $t('推送') }}</span>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn-icon btn-icon-red" title="删除" @click="handleImageAction(img, 'remove')">
-              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+            <button v-if="portal.hasPerm('POST /api/docker/image/:id/action')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleImageAction(img, 'remove')">
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
             </button>
           </div>
         </div>
@@ -415,8 +415,8 @@ export default toNative(Images)
         <div class="empty-state-icon">
           <i class="fas fa-compact-disc text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ images.length === 0 ? '暂无镜像' : '未找到匹配镜像' }}</p>
-        <p class="text-sm text-slate-400">{{ images.length === 0 ? '点击「拉取」从 Registry 获取' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ images.length === 0 ? $t('暂无镜像') : $t('未找到匹配镜像') }}</p>
+        <p class="text-sm text-slate-400">{{ images.length === 0 ? $t('点击「拉取」从 Registry 获取') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
   </div>
@@ -429,16 +429,16 @@ export default toNative(Images)
   <!-- 清理镜像确认 -->
   <Modal
     v-model="pruneModalOpen"
-    title="清理镜像"
+    :title="$t('清理镜像')"
     confirm-class="btn-danger"
     :loading="pruneLoading"
     @confirm="confirmPrune"
   >
-    <template #confirm-text>确认清理</template>
+    <template #confirm-text>{{ $t('确认清理') }}</template>
     <div class="space-y-4">
-      <p class="text-sm text-slate-600">将清理未被任何容器使用的悬空镜像层，不会删除正在被容器使用的镜像。</p>
-      <ToggleCard v-model="pruneAll" label="同时清理有标签但未被使用的镜像">
-        <template #desc>等同于 <code class="font-mono bg-slate-100 px-1 rounded">docker image prune -a</code>，会删除更多空间</template>
+      <p class="text-sm text-slate-600">{{ $t('将清理未被任何容器使用的悬空镜像层，不会删除正在被容器使用的镜像。') }}</p>
+      <ToggleCard v-model="pruneAll" :label="$t('同时清理有标签但未被使用的镜像')">
+        <template #desc>{{ $t('等同于') }} <code class="font-mono bg-slate-100 px-1 rounded">docker image prune -a</code>{{ $t('，会删除更多空间') }}</template>
       </ToggleCard>
     </div>
   </Modal>

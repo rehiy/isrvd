@@ -82,7 +82,7 @@ class MemberEditModal extends Vue {
     }
 
     get title() {
-        return this.isEdit ? '编辑成员' : '新建成员'
+        return this.isEdit ? this.$t('编辑成员') : this.$t('新建成员')
     }
 
     // ─── 方法 ───
@@ -236,17 +236,17 @@ class MemberEditModal extends Vue {
     async handleConfirm() {
         if (!this.formData.username?.trim()) return
         if (!this.isEdit && !this.formData.password?.trim()) {
-            this.portal.showNotification('warning', '请填写登录密码')
+            this.portal.showNotification('warning', this.$t('请填写登录密码'))
             return
         }
         this.modalLoading = true
         try {
             if (this.isEdit) {
                 await api.accountMemberUpdate(this.originalUsername, this.formData)
-                this.portal.showNotification('success', '成员更新成功')
+                this.portal.showNotification('success', this.$t('成员更新成功'))
             } else {
                 await api.accountMemberCreate(this.formData)
-                this.portal.showNotification('success', '成员添加成功')
+                this.portal.showNotification('success', this.$t('成员添加成功'))
             }
             this.isOpen = false
             this.$emit('success')
@@ -264,36 +264,36 @@ export default toNative(MemberEditModal)
   <BaseModal v-model="isOpen" :title="title" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
-        <label class="form-label">用户名 <span class="text-red-500">*</span></label>
-        <input v-model="formData.username" type="text" placeholder="请输入用户名" required :disabled="isEdit" class="input disabled:bg-slate-50 disabled:text-slate-500" autocomplete="off" />
-        <p v-if="isEdit" class="mt-1 text-xs text-slate-400">用户名不可修改</p>
+        <label class="form-label">{{ $t('用户名') }} <span class="text-red-500">*</span></label>
+        <input v-model="formData.username" type="text" :placeholder="$t('请输入用户名')" required :disabled="isEdit" class="input disabled:bg-slate-50 disabled:text-slate-500" autocomplete="off" />
+        <p v-if="isEdit" class="mt-1 text-xs text-slate-400">{{ $t('用户名不可修改') }}</p>
       </div>
       <div>
         <label class="form-label">
-          密码
+          {{ $t('密码') }}
           <span v-if="!isEdit" class="text-red-500">*</span>
-          <span v-else class="text-slate-400 font-normal">(留空则保持不变)</span>
+          <span v-else class="text-slate-400 font-normal">{{ $t('(留空则保持不变)') }}</span>
         </label>
-        <input v-model="formData.password" type="password" :placeholder="isEdit ? '留空则保持不变' : '请输入登录密码'" class="input" autocomplete="new-password" />
+        <input v-model="formData.password" type="password" :placeholder="isEdit ? $t('留空则保持不变') : $t('请输入登录密码')" class="input" autocomplete="new-password" />
       </div>
       <div>
-        <label class="form-label">家目录 <span class="text-slate-400 font-normal">(可选)</span></label>
-        <input v-model="formData.homeDirectory" type="text" placeholder="请输入家目录（可选）" class="input" />
-        <p class="mt-1 text-xs text-slate-400">相对路径基于"基础目录"，留空则自动创建为 基础目录/用户名</p>
+        <label class="form-label">{{ $t('家目录') }} <span class="text-slate-400 font-normal">{{ $t('(可选)') }}</span></label>
+        <input v-model="formData.homeDirectory" type="text" :placeholder="$t('请输入家目录（可选）')" class="input" />
+        <p class="mt-1 text-xs text-slate-400">{{ $t('相对路径基于"基础目录"，留空则自动创建为 基础目录/用户名') }}</p>
       </div>
       <div>
-        <label class="form-label">描述 <span class="text-slate-400 font-normal">(可选)</span></label>
-        <input v-model="formData.description" type="text" placeholder="请输入成员描述（可选）" class="input" maxlength="64" />
-        <p class="mt-1 text-xs text-slate-400">用于标识成员用途，最长 64 字符</p>
+        <label class="form-label">{{ $t('描述') }} <span class="text-slate-400 font-normal">{{ $t('(可选)') }}</span></label>
+        <input v-model="formData.description" type="text" :placeholder="$t('请输入成员描述（可选）')" class="input" maxlength="64" />
+        <p class="mt-1 text-xs text-slate-400">{{ $t('用于标识成员用途，最长 64 字符') }}</p>
       </div>
       <!-- 路由权限 -->
       <div>
         <div class="flex items-center gap-2 mb-2">
-          <label class="form-label">路由权限</label>
+          <label class="form-label">{{ $t('路由权限') }}</label>
           <div class="ml-auto flex items-center gap-1">
-            <button type="button" class="tab-btn tab-btn-text bg-blue-50 text-blue-600 hover:bg-blue-100" @click="selectAllRoutes">全选</button>
-            <button type="button" class="tab-btn tab-btn-text bg-slate-50 text-slate-600 hover:bg-slate-100" @click="selectReadOnlyRoutes">只读</button>
-            <button type="button" class="tab-btn tab-btn-text bg-red-50 text-red-600 hover:bg-red-100" @click="clearRoutes">清空</button>
+            <button type="button" class="tab-btn tab-btn-text bg-blue-50 text-blue-600 hover:bg-blue-100" @click="selectAllRoutes">{{ $t('全选') }}</button>
+            <button type="button" class="tab-btn tab-btn-text bg-slate-50 text-slate-600 hover:bg-slate-100" @click="selectReadOnlyRoutes">{{ $t('只读') }}</button>
+            <button type="button" class="tab-btn tab-btn-text bg-red-50 text-red-600 hover:bg-red-100" @click="clearRoutes">{{ $t('清空') }}</button>
           </div>
         </div>
         <div class="space-y-2">
@@ -311,7 +311,7 @@ export default toNative(MemberEditModal)
                 readonly
               />
               <i :class="[group.icon, 'text-slate-400 w-4 text-center text-xs']"></i>
-              <span class="text-xs font-semibold text-slate-700">{{ group.label }}</span>
+              <span class="text-xs font-semibold text-slate-700">{{ $t(group.label) }}</span>
               <span class="ml-auto text-xs text-slate-400">
                 {{ group.routes.filter(r => isChecked(r.key)).length }} / {{ group.routes.length }}
               </span>
@@ -328,10 +328,10 @@ export default toNative(MemberEditModal)
                   {{ methodOf(item.key) }}
                 </span>
                 <span class="min-w-0 flex-1 flex items-center gap-2">
-                  <span class="text-xs text-slate-700 truncate">{{ item.label }}</span>
+                  <span class="text-xs text-slate-700 truncate">{{ $t(item.label) }}</span>
                   <code class="hidden sm:inline text-xs text-slate-400 font-mono truncate">{{ pathOf(item.key) }}</code>
                 </span>
-                <span v-if="isAuto(item.key)" class="ml-auto text-xs text-slate-400 flex-shrink-0">自动</span>
+                <span v-if="isAuto(item.key)" class="ml-auto text-xs text-slate-400 flex-shrink-0">{{ $t('自动') }}</span>
               </label>
             </div>
           </div>

@@ -80,7 +80,7 @@ class SystemNetwork extends Vue {
         this.netHistory[name] = h
         const chart = new Chart(canvas, {
             type: 'line' as const,
-            data: { labels: [...h.labels], datasets: [makeLineDataset(h.recv, '#10b981', '下行'), makeLineDataset(h.sent, '#3b82f6', '上行')] },
+            data: { labels: [...h.labels], datasets: [makeLineDataset(h.recv, '#10b981', this.$t('下行')), makeLineDataset(h.sent, '#3b82f6', this.$t('上行'))] },
             options: this.netChartOptions()
         })
         this.netCharts[name] = markRaw(chart)
@@ -177,7 +177,7 @@ export default toNative(SystemNetwork)
       <div class="card-icon bg-cyan-500">
         <i class="fas fa-network-wired text-white text-xs"></i>
       </div>
-      <span class="text-sm font-semibold text-slate-700">网络接口</span>
+      <span class="text-sm font-semibold text-slate-700">{{ $t('网络接口') }}</span>
     </div>
     <div ref="netContainerRef" class="divide-y divide-slate-100">
       <div v-for="ni in currentIfaces" :key="ni.name" class="px-4 py-3">
@@ -197,12 +197,12 @@ export default toNative(SystemNetwork)
         <div class="monitor-chart-box">
           <canvas :data-iface="ni.name" class="w-full h-full"></canvas>
           <div v-if="!netHistory[ni.name]?.labels?.length" class="absolute inset-0 flex items-center justify-center">
-            <span class="text-xs text-slate-300">等待数据...</span>
+            <span class="text-xs text-slate-300">{{ $t('等待数据...') }}</span>
           </div>
         </div>
         <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-slate-400">
-          <span class="shrink-0 whitespace-nowrap">累计收: {{ formatMonitorBytes(ni.bytesRecv) }}</span>
-          <span class="shrink-0 whitespace-nowrap">累计发: {{ formatMonitorBytes(ni.bytesSent) }}</span>
+          <span class="shrink-0 whitespace-nowrap">{{ $t('累计收:') }} {{ formatMonitorBytes(ni.bytesRecv) }}</span>
+          <span class="shrink-0 whitespace-nowrap">{{ $t('累计发:') }} {{ formatMonitorBytes(ni.bytesSent) }}</span>
         </div>
       </div>
     </div>

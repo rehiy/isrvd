@@ -70,7 +70,7 @@ class CodeCreateModal extends Vue {
 
     async copyCommand() {
         const ok = await copyToClipboard(this.command)
-        this.portal.showNotification(ok ? 'success' : 'error', ok ? '命令已复制到剪贴板' : '复制失败，请手动复制')
+        this.portal.showNotification(ok ? 'success' : 'error', ok ? this.$t('命令已复制到剪贴板') : this.$t('复制失败，请手动复制'))
     }
 }
 
@@ -78,16 +78,15 @@ export default toNative(CodeCreateModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" title="接入节点" :loading="modalLoading" :show-confirm="!created" confirm-class="btn-orange" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('接入节点')" :loading="modalLoading" :show-confirm="!created" confirm-class="btn-orange" show-footer @confirm="handleConfirm">
     <!-- 接入命令：生成后或从列表查看 -->
     <div v-if="created" class="space-y-4">
-      <p class="text-sm text-slate-600">注册码只能使用一次，{{ expiresText }} 过期；未使用前可在节点管理列表中再次查看。</p>
+      <p class="text-sm text-slate-600">{{ $t('注册码只能使用一次，') }} {{ expiresText }} {{ $t('过期；未使用前可在节点管理列表中再次查看。') }}</p>
       <div>
-        <label class="form-label">在受管机上执行</label>
+        <label class="form-label">{{ $t('在受管机上执行') }}</label>
         <code class="detail-value-mono">{{ command }}</code>
         <p class="text-xs text-slate-400 mt-1">
-          {{ created.autoApprove ? '该注册码已设置自动审批，节点启动后会直接上线。' : '节点启动后会出现在「节点管理」列表中，审批通过后上线。' }}
-          首次注册成功后，重启受管机无需再带注册码。
+          {{ created.autoApprove ? $t('该注册码已设置自动审批，节点启动后会直接上线。') : $t('节点启动后会出现在「节点管理」列表中，审批通过后上线。') }} {{ $t('首次注册成功后，重启受管机无需再带注册码。') }}
         </p>
       </div>
     </div>
@@ -95,27 +94,27 @@ export default toNative(CodeCreateModal)
     <!-- 创建表单 -->
     <form v-else class="space-y-4" @submit.prevent="handleConfirm">
       <div>
-        <label class="form-label">备注 <span class="text-slate-400 font-normal">(可选)</span></label>
-        <input v-model="formData.name" type="text" maxlength="64" placeholder="如：杭州机房 web-01" class="input" />
+        <label class="form-label">{{ $t('备注') }} <span class="text-slate-400 font-normal">{{ $t('(可选)') }}</span></label>
+        <input v-model="formData.name" type="text" maxlength="64" :placeholder="$t('如：杭州机房 web-01')" class="input" />
       </div>
       <div>
-        <label class="form-label">有效期</label>
+        <label class="form-label">{{ $t('有效期') }}</label>
         <select v-model="formData.ttlMinutes" class="input">
-          <option v-for="opt in ttlOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+          <option v-for="opt in ttlOptions" :key="opt.value" :value="opt.value">{{ $t(opt.label) }}</option>
         </select>
-        <p class="text-xs text-slate-400 mt-1">注册码只能使用一次，过期或使用后自动失效</p>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('注册码只能使用一次，过期或使用后自动失效') }}</p>
       </div>
-      <ToggleCard v-model="formData.autoApprove" label="自动通过审批" desc="使用该注册码接入的节点无需人工审批，直接上线。仅建议在可信网络内使用" />
+      <ToggleCard v-model="formData.autoApprove" :label="$t('自动通过审批')" :desc="$t('使用该注册码接入的节点无需人工审批，直接上线。仅建议在可信网络内使用')" />
     </form>
 
     <!-- 生成后：底部改为「关闭」与「复制命令」 -->
     <template v-if="created" #footer>
-      <button type="button" class="btn btn-secondary" @click="isOpen = false">关闭</button>
+      <button type="button" class="btn btn-secondary" @click="isOpen = false">{{ $t('关闭') }}</button>
       <button type="button" class="btn btn-orange" @click="copyCommand">
-        <i class="fas fa-copy"></i>复制命令
+        <i class="fas fa-copy"></i>{{ $t('复制命令') }}
       </button>
     </template>
 
-    <template #confirm-text>生成注册码</template>
+    <template #confirm-text>{{ $t('生成注册码') }}</template>
   </BaseModal>
 </template>

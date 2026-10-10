@@ -35,7 +35,7 @@ class ImageSelect extends Vue {
     }
 
     domainOf(repoTag: string) {
-        if (!repoTag) return '本地镜像'
+        if (!repoTag) return this.$t('本地镜像')
         const parts = repoTag.split('/')
         if (parts.length >= 3) return parts[0]
         if (parts.length === 2 && parts[0].includes('.')) return parts[0]
@@ -55,8 +55,8 @@ class ImageSelect extends Vue {
 
     domainLabel(domain: string) {
         if (domain === 'docker.io') return 'Docker Hub'
-        if (domain.includes('aliyuncs.com')) return '阿里云'
-        if (domain.includes('tencentyun.com')) return '腾讯云'
+        if (domain.includes('aliyuncs.com')) return this.$t('阿里云')
+        if (domain.includes('tencentyun.com')) return this.$t('腾讯云')
         if (domain === 'ghcr.io') return 'GitHub'
         if (domain === 'gcr.io') return 'Google'
         if (domain === 'quay.io') return 'Quay'
@@ -98,9 +98,9 @@ export default toNative(ImageSelect)
 </script>
 
 <template>
-  <Combobox :model-value="modelValue" :placeholder="placeholder" :disabled="disabled" max-height="360px" @update:model-value="$emit('update:modelValue', $event)">
+  <Combobox :model-value="modelValue" :placeholder="$t(placeholder)" :disabled="disabled" max-height="360px" @update:model-value="$emit('update:modelValue', $event)">
     <template #hint-extra="{ query }">
-      <span class="text-xs text-slate-400">{{ matchCount(query.toLowerCase()) }} 个匹配</span>
+      <span class="text-xs text-slate-400">{{ matchCount(query.toLowerCase()) }} {{ $t('个匹配') }}</span>
     </template>
 
     <template #default="{ query, select }">
@@ -137,13 +137,13 @@ export default toNative(ImageSelect)
     <template #empty="{ query }">
       <div v-if="groupedBy(query.toLowerCase()).length === 0" class="py-8 text-center">
         <i class="fas fa-search text-slate-300 text-2xl mb-2"></i>
-        <p class="text-sm text-slate-400">{{ images.length === 0 ? '无可用镜像' : '无匹配镜像' }}</p>
+        <p class="text-sm text-slate-400">{{ images.length === 0 ? $t('无可用镜像') : $t('无匹配镜像') }}</p>
       </div>
     </template>
 
     <template #footer>
       <div v-if="images.length > 0" class="select-footer">
-        <span class="text-xs text-slate-400">共 <strong class="text-slate-700">{{ images.length }}</strong> 个镜像</span>
+        <span class="text-xs text-slate-400">{{ $t('共') }} <strong class="text-slate-700">{{ images.length }}</strong> {{ $t('个镜像') }}</span>
       </div>
     </template>
   </Combobox>

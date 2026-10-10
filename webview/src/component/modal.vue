@@ -126,11 +126,11 @@ export default toNative(BaseModal)
           <div v-if="showFooter" class="flex justify-end gap-3 px-6 py-4 border-t border-slate-200/50 bg-slate-50/50 flex-shrink-0">
             <slot name="footer">
               <button type="button" class="btn btn-secondary" :disabled="loading || closeDisabled" @click="handleCancel">
-                <slot name="cancel-text">取消</slot>
+                <slot name="cancel-text">{{ $t('取消') }}</slot>
               </button>
               <button v-if="showConfirm" type="button" class="btn" :class="confirmClass" :disabled="loading || confirmDisabled" @click="handleConfirm">
                 <i v-if="loading" class="fas fa-spinner fa-spin"></i>
-                <slot name="confirm-text">确认</slot>
+                <slot name="confirm-text">{{ $t('确认') }}</slot>
               </button>
             </slot>
           </div>

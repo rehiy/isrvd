@@ -43,7 +43,7 @@ class Registries extends Vue {
             'docker.io',
             'index.docker.io',
             'anonymous',
-            '匿名',
+            this.$t('匿名'),
             this.indexServerAddress,
             ...this.daemonMirrors
         ]
@@ -79,16 +79,16 @@ class Registries extends Vue {
 
     handleDelete(reg: DockerRegistryInfo) {
         this.portal.showConfirm({
-            title: '删除镜像仓库',
-            message: `确定要删除仓库 <strong class="text-slate-900">${reg.name}</strong> (${reg.url}) 吗？`,
+            title: this.$t('删除镜像仓库'),
+            message: this.$t('确定要删除仓库 <strong class="text-slate-900">{0}</strong> ({1}) 吗？', reg.name, reg.url),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认删除',
+            confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 try {
                     await api.dockerRegistryDelete(reg.url)
-                    this.portal.showNotification('success', '仓库删除成功')
+                    this.portal.showNotification('success', this.$t('仓库删除成功'))
                     this.loadRegistries()
                 } catch {}
             }
@@ -117,17 +117,17 @@ export default toNative(Registries)
               <i class="fas fa-warehouse text-white"></i>
             </div>
             <div>
-              <h1 class="title-text">镜像仓库</h1>
-              <p class="text-xs text-slate-500">管理私有镜像仓库认证信息与镜像加速器</p>
+              <h1 class="title-text">{{ $t('镜像仓库') }}</h1>
+              <p class="text-xs text-slate-500">{{ $t('管理私有镜像仓库认证信息与镜像加速器') }}</p>
             </div>
           </div>
           <div class="action-group">
-            <PageSearch v-model="searchText" search-key="docker-registries" placeholder="搜索仓库名称、地址或账号..." focus-color="purple" type-to-search />
+            <PageSearch v-model="searchText" search-key="docker-registries" :placeholder="$t('搜索仓库名称、地址或账号...')" focus-color="purple" type-to-search />
             <button class="btn btn-secondary" @click="loadRegistries()">
-              <i class="fas fa-rotate"></i>刷新
+              <i class="fas fa-rotate"></i>{{ $t('刷新') }}
             </button>
             <button v-if="portal.hasPerm('POST /api/docker/registry')" class="btn btn-purple" @click="openAdd">
-              <i class="fas fa-plus"></i>添加仓库
+              <i class="fas fa-plus"></i>{{ $t('添加仓库') }}
             </button>
           </div>
         </div>
@@ -138,15 +138,15 @@ export default toNative(Registries)
               <i class="fas fa-warehouse text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="title-text">镜像仓库</h1>
-              <p class="text-xs text-slate-500 truncate">管理仓库账号与加速器</p>
+              <h1 class="title-text">{{ $t('镜像仓库') }}</h1>
+              <p class="text-xs text-slate-500 truncate">{{ $t('管理仓库账号与加速器') }}</p>
             </div>
           </div>
           <div class="action-group-sm">
-            <button class="btn btn-secondary btn-square" title="刷新" @click="loadRegistries()">
+            <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadRegistries()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/registry')" class="btn btn-purple btn-square" title="添加" @click="openAdd">
+            <button v-if="portal.hasPerm('POST /api/docker/registry')" class="btn btn-purple btn-square" :title="$t('添加')" @click="openAdd">
               <i class="fas fa-plus text-sm"></i>
             </button>
           </div>
@@ -154,14 +154,14 @@ export default toNative(Registries)
       </div>
 
       <div class="mobile-search">
-        <PageSearch v-model="searchText" search-key="docker-registries" placeholder="搜索仓库名称、地址或账号..." width-class="w-full" focus-color="purple" />
+        <PageSearch v-model="searchText" search-key="docker-registries" :placeholder="$t('搜索仓库名称、地址或账号...')" width-class="w-full" focus-color="purple" />
       </div>
 
       <!-- Loading -->
       <div v-if="loading" class="card-body">
         <div class="empty-state">
           <div class="spinner-lg"></div>
-          <p class="text-slate-500">加载中...</p>
+          <p class="text-slate-500">{{ $t('加载中...') }}</p>
         </div>
       </div>
 
@@ -172,10 +172,10 @@ export default toNative(Registries)
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-slate-100 border-b border-slate-200">
-                <th class="th">名称</th>
-                <th class="th">地址</th>
-                <th class="w-28 th">认证</th>
-                <th class="w-28 th-right">操作</th>
+                <th class="th">{{ $t('名称') }}</th>
+                <th class="th">{{ $t('地址') }}</th>
+                <th class="w-28 th">{{ $t('认证') }}</th>
+                <th class="w-28 th-right">{{ $t('操作') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -188,7 +188,7 @@ export default toNative(Registries)
                     </div>
                     <div class="min-w-0">
                       <span class="item-title">Docker Hub</span>
-                      <span class="item-subtitle">默认</span>
+                      <span class="item-subtitle">{{ $t('默认') }}</span>
                     </div>
                   </div>
                 </td>
@@ -203,7 +203,7 @@ export default toNative(Registries)
                   </div>
                 </td>
                 <td class="td-text">
-                  <i class="fas fa-lock-open text-slate-400 mr-1"></i>匿名
+                  <i class="fas fa-lock-open text-slate-400 mr-1"></i>{{ $t('匿名') }}
                 </td>
                 <td class="px-4 py-3 text-right text-xs text-slate-400">—</td>
               </tr>
@@ -226,15 +226,15 @@ export default toNative(Registries)
                     <i class="fas fa-user text-slate-400 mr-1"></i>{{ reg.username }}
                   </template>
                   <template v-else>
-                    <i class="fas fa-lock-open text-slate-400 mr-1"></i>匿名
+                    <i class="fas fa-lock-open text-slate-400 mr-1"></i>{{ $t('匿名') }}
                   </template>
                 </td>
                 <td class="px-4 py-3">
                   <div class="table-actions">
-                    <button v-if="portal.hasPerm('PUT /api/docker/registry')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(reg)">
+                    <button v-if="portal.hasPerm('PUT /api/docker/registry')" class="btn-icon btn-icon-blue" :title="$t('编辑')" @click="openEdit(reg)">
                       <i class="fas fa-pen text-xs"></i>
                     </button>
-                    <button v-if="portal.hasPerm('DELETE /api/docker/registry')" class="btn-icon btn-icon-red" title="删除" @click="handleDelete(reg)">
+                    <button v-if="portal.hasPerm('DELETE /api/docker/registry')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleDelete(reg)">
                       <i class="fas fa-trash text-xs"></i>
                     </button>
                   </div>
@@ -255,26 +255,26 @@ export default toNative(Registries)
                 </div>
                 <div class="min-w-0">
                   <span class="item-title-sm">Docker Hub</span>
-                  <span class="item-subtitle">默认</span>
+                  <span class="item-subtitle">{{ $t('默认') }}</span>
                 </div>
               </div>
             </div>
 
             <div class="card-prop-row-start">
-              <span class="prop-label-start">地址</span>
+              <span class="prop-label-start">{{ $t('地址') }}</span>
               <code class="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded break-all">{{ indexServerAddress || 'https://index.docker.io/v1/' }}</code>
             </div>
             <template v-if="daemonMirrors.length > 0">
               <div v-for="mirror in daemonMirrors" :key="mirror" class="card-prop-row">
-                <span class="text-xs text-slate-400 flex-shrink-0">加速</span>
+                <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('加速') }}</span>
                 <code class="text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded truncate flex items-center gap-1">
                   <i class="fas fa-bolt text-sky-400 text-xs"></i>{{ mirror }}
                 </code>
               </div>
             </template>
             <div class="card-prop-row">
-              <span class="text-xs text-slate-400 flex-shrink-0">认证</span>
-              <span class="text-xs text-slate-500"><i class="fas fa-lock-open text-slate-400 mr-1"></i>匿名</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('认证') }}</span>
+              <span class="text-xs text-slate-500"><i class="fas fa-lock-open text-slate-400 mr-1"></i>{{ $t('匿名') }}</span>
             </div>
           </div>
 
@@ -293,30 +293,30 @@ export default toNative(Registries)
             </div>
 
             <div class="card-prop-row-start">
-              <span class="prop-label-start">地址</span>
+              <span class="prop-label-start">{{ $t('地址') }}</span>
               <code class="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded truncate">{{ reg.url }}</code>
             </div>
             <div class="card-prop-row">
-              <span class="text-xs text-slate-400 flex-shrink-0">认证</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('认证') }}</span>
               <span class="text-xs text-slate-500">
                 <template v-if="reg.username"><i class="fas fa-user text-slate-400 mr-1"></i>{{ reg.username }}</template>
-                <template v-else><i class="fas fa-lock-open text-slate-400 mr-1"></i>匿名</template>
+                <template v-else><i class="fas fa-lock-open text-slate-400 mr-1"></i>{{ $t('匿名') }}</template>
               </span>
             </div>
 
             <!-- 底部：操作按钮 -->
             <div class="card-actions">
-              <button v-if="portal.hasPerm('PUT /api/docker/registry')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(reg)">
-                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
+              <button v-if="portal.hasPerm('PUT /api/docker/registry')" class="btn-icon btn-icon-blue" :title="$t('编辑')" @click="openEdit(reg)">
+                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">{{ $t('编辑') }}</span>
               </button>
-              <button v-if="portal.hasPerm('DELETE /api/docker/registry')" class="btn-icon btn-icon-red" title="删除" @click="handleDelete(reg)">
-                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+              <button v-if="portal.hasPerm('DELETE /api/docker/registry')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleDelete(reg)">
+                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
               </button>
             </div>
           </div>
 
           <div v-if="!showDockerHub && filteredRegistries.length === 0" class="rounded-xl border border-slate-200 py-10 px-4 text-center">
-            <p class="text-sm text-slate-500">{{ registries.length === 0 ? '暂无镜像仓库' : '未找到匹配仓库' }}</p>
+            <p class="text-sm text-slate-500">{{ registries.length === 0 ? $t('暂无镜像仓库') : $t('未找到匹配仓库') }}</p>
           </div>
         </div>
 
@@ -324,8 +324,8 @@ export default toNative(Registries)
           <div class="empty-state-icon">
             <i class="fas fa-warehouse text-4xl text-slate-300"></i>
           </div>
-          <p class="text-slate-600 font-medium mb-1">{{ registries.length === 0 ? '暂无镜像仓库' : '未找到匹配仓库' }}</p>
-          <p class="text-sm text-slate-400">{{ registries.length === 0 ? '点击「新建仓库」创建私有镜像仓库' : '尝试更换关键词或清空搜索条件' }}</p>
+          <p class="text-slate-600 font-medium mb-1">{{ registries.length === 0 ? $t('暂无镜像仓库') : $t('未找到匹配仓库') }}</p>
+          <p class="text-sm text-slate-400">{{ registries.length === 0 ? $t('点击「新建仓库」创建私有镜像仓库') : $t('尝试更换关键词或清空搜索条件') }}</p>
         </div>
       </template>
     </div>

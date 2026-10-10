@@ -90,9 +90,9 @@ class SystemGpu extends Vue {
             data: {
                 labels: [...h.labels],
                 datasets: [
-                    makeLineDataset(h.util, '#10b981', '使用率'),
-                    makeLineDataset(h.vram, '#8b5cf6', '显存'),
-                    makeLineDataset(h.power, '#f59e0b', '功耗')
+                    makeLineDataset(h.util, '#10b981', this.$t('使用率')),
+                    makeLineDataset(h.vram, '#8b5cf6', this.$t('显存')),
+                    makeLineDataset(h.power, '#f59e0b', this.$t('功耗'))
                 ]
             },
             options: this.gpuChartOptions()
@@ -177,7 +177,7 @@ export default toNative(SystemGpu)
         <div class="card-icon bg-emerald-500">
           <i class="fas fa-microchip text-white text-xs"></i>
         </div>
-        <span class="text-sm font-semibold text-slate-700">显卡<template v-if="currentGpus.length > 1"> {{ gpu.index }}</template></span>
+        <span class="text-sm font-semibold text-slate-700">{{ $t('显卡') }}<template v-if="currentGpus.length > 1"> {{ gpu.index }}</template></span>
         <span class="ml-auto text-xs text-slate-400 font-mono">{{ gpu.name }}</span>
       </div>
       <div class="px-4 py-3">
@@ -204,7 +204,7 @@ export default toNative(SystemGpu)
         <div class="monitor-chart-box">
           <canvas :data-gpu="gpuKey(gpu)" class="w-full h-full"></canvas>
           <div v-if="!gpuHistories[gpuKey(gpu)]?.labels?.length" class="absolute inset-0 flex items-center justify-center">
-            <span class="text-xs text-slate-300">等待数据...</span>
+            <span class="text-xs text-slate-300">{{ $t('等待数据...') }}</span>
           </div>
         </div>
       </div>

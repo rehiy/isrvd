@@ -97,7 +97,7 @@ class CaddyBasicAuth extends Vue {
     }
 
     getRouteName(r: CaddyBasicAuthRoute) {
-        return r.name || `路由 #${r.index}`
+        return r.name || this.$t('路由 #{0}', r.index)
     }
 
     getRouteDesc(r: CaddyBasicAuthRoute) {
@@ -142,20 +142,20 @@ export default toNative(CaddyBasicAuth)
             <i class="fas fa-lock text-white text-sm"></i>
           </div>
           <div>
-            <h1 class="title-text">基础认证</h1>
-            <p class="text-xs text-slate-500">基于用户名 + 密码的路由 HTTP Basic 认证</p>
+            <h1 class="title-text">{{ $t('基础认证') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('基于用户名 + 密码的路由 HTTP Basic 认证') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <select v-if="showServerSelect" v-model="selectedServer" class="select-sm max-w-40" title="服务" aria-label="服务">
+          <select v-if="showServerSelect" v-model="selectedServer" class="select-sm max-w-40" :title="$t('服务')" :aria-label="$t('服务')">
             <option v-for="server in servers" :key="serverID(server)" :value="serverID(server)">{{ server.name }}</option>
           </select>
-          <PageSearch v-model="searchText" search-key="caddy-basic-auth" placeholder="搜索路由或用户名..." focus-color="cyan" type-to-search />
+          <PageSearch v-model="searchText" search-key="caddy-basic-auth" :placeholder="$t('搜索路由或用户名...')" focus-color="cyan" type-to-search />
           <button class="btn btn-secondary" @click="load()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
           <button v-if="portal.hasPerm('POST /api/caddy/basic-auth/:index/users')" class="btn btn-cyan" @click="openAddModal()">
-            <i class="fas fa-plus"></i>配置认证
+            <i class="fas fa-plus"></i>{{ $t('配置认证') }}
           </button>
         </div>
       </div>
@@ -166,18 +166,18 @@ export default toNative(CaddyBasicAuth)
             <i class="fas fa-lock text-white text-sm"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">基础认证</h1>
-            <p class="text-xs text-slate-500 truncate">路由 HTTP Basic 认证</p>
+            <h1 class="title-text">{{ $t('基础认证') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('路由 HTTP Basic 认证') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <select v-if="showServerSelect" v-model="selectedServer" class="select-sm max-w-28" title="服务" aria-label="服务">
+          <select v-if="showServerSelect" v-model="selectedServer" class="select-sm max-w-28" :title="$t('服务')" :aria-label="$t('服务')">
             <option v-for="server in servers" :key="serverID(server)" :value="serverID(server)">{{ server.name }}</option>
           </select>
-          <button class="btn btn-secondary btn-square" title="刷新" @click="load()">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="load()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/caddy/basic-auth/:index/users')" class="btn btn-cyan btn-square" title="配置认证" @click="openAddModal()">
+          <button v-if="portal.hasPerm('POST /api/caddy/basic-auth/:index/users')" class="btn btn-cyan btn-square" :title="$t('配置认证')" @click="openAddModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -186,14 +186,14 @@ export default toNative(CaddyBasicAuth)
 
     <!-- 移动端搜索 -->
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="caddy-basic-auth" placeholder="搜索路由或用户名..." width-class="w-full" focus-color="cyan" />
+      <PageSearch v-model="searchText" search-key="caddy-basic-auth" :placeholder="$t('搜索路由或用户名...')" width-class="w-full" focus-color="cyan" />
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -204,10 +204,10 @@ export default toNative(CaddyBasicAuth)
           <i class="fas fa-lock text-4xl text-slate-300"></i>
         </div>
         <p class="text-slate-600 font-medium mb-1">
-          {{ routes.length === 0 ? '暂无基础认证' : '未找到匹配路由' }}
+          {{ routes.length === 0 ? $t('暂无基础认证') : $t('未找到匹配路由') }}
         </p>
         <p class="text-sm text-slate-400">
-          {{ routes.length === 0 ? '点击「配置认证」为任意路由启用 HTTP Basic 认证' : '尝试更换关键词或清空搜索条件' }}
+          {{ routes.length === 0 ? $t('点击「配置认证」为任意路由启用 HTTP Basic 认证') : $t('尝试更换关键词或清空搜索条件') }}
         </p>
       </div>
     </div>
@@ -219,11 +219,11 @@ export default toNative(CaddyBasicAuth)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
-              <th class="th">路由</th>
-              <th class="th">转发头</th>
-              <th class="th">账号</th>
-              <th class="w-16 th-right">数量</th>
-              <th class="w-24 th-right">操作</th>
+              <th class="th">{{ $t('路由') }}</th>
+              <th class="th">{{ $t('转发头') }}</th>
+              <th class="th">{{ $t('账号') }}</th>
+              <th class="w-16 th-right">{{ $t('数量') }}</th>
+              <th class="w-24 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -261,7 +261,7 @@ export default toNative(CaddyBasicAuth)
                   <button
                     v-if="portal.hasPerm('PUT /api/caddy/basic-auth/:index/config')"
                     class="btn-icon btn-icon-blue"
-                    title="编辑配置"
+                    :title="$t('编辑配置')"
                     @click="openEditModal(route)"
                   >
                     <i class="fas fa-pen text-xs"></i>
@@ -269,7 +269,7 @@ export default toNative(CaddyBasicAuth)
                   <button
                     v-if="portal.hasPerm('POST /api/caddy/basic-auth/:index/users')"
                     class="btn-icon btn-icon-cyan"
-                    title="添加账号"
+                    :title="$t('添加账号')"
                     @click="openAddUserModal(route)"
                   >
                     <i class="fas fa-user-plus text-xs"></i>
@@ -295,12 +295,12 @@ export default toNative(CaddyBasicAuth)
           </div>
 
           <div v-if="route.forwardHeader" class="card-prop-row-start">
-            <span class="prop-label-start">转发头</span>
+            <span class="prop-label-start">{{ $t('转发头') }}</span>
             <code class="text-xs bg-slate-100 px-2 py-0.5 rounded-lg text-slate-600 font-mono break-all">{{ route.forwardHeader }}</code>
           </div>
 
           <div class="card-prop-row-start">
-            <span class="prop-label-start">账号</span>
+            <span class="prop-label-start">{{ $t('账号') }}</span>
             <div class="flex flex-wrap gap-1.5">
               <span
                 v-for="user in route.users"
@@ -317,20 +317,20 @@ export default toNative(CaddyBasicAuth)
             <button
               v-if="portal.hasPerm('PUT /api/caddy/basic-auth/:index/config')"
               class="btn-icon btn-icon-blue"
-              title="编辑配置"
+              :title="$t('编辑配置')"
               @click="openEditModal(route)"
             >
               <i class="fas fa-pen text-xs"></i>
-              <span class="text-xs ml-1">编辑配置</span>
+              <span class="text-xs ml-1">{{ $t('编辑配置') }}</span>
             </button>
             <button
               v-if="portal.hasPerm('POST /api/caddy/basic-auth/:index/users')"
               class="btn-icon btn-icon-cyan"
-              title="添加账号"
+              :title="$t('添加账号')"
               @click="openAddUserModal(route)"
             >
               <i class="fas fa-user-plus text-xs"></i>
-              <span class="text-xs ml-1">添加账号</span>
+              <span class="text-xs ml-1">{{ $t('添加账号') }}</span>
             </button>
           </div>
         </div>

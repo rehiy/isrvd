@@ -229,8 +229,8 @@ export default toNative(MonitorPage)
             <i class="fas fa-desktop text-white text-sm"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">系统监控</h1>
-            <p class="text-xs text-slate-500">实时系统资源监控</p>
+            <h1 class="text-lg font-semibold text-slate-800">{{ $t('系统监控') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('实时系统资源监控') }}</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -242,7 +242,7 @@ export default toNative(MonitorPage)
               :class="['tab-btn', selectedRange === range.value ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']"
               @click="switchTimeRange(range.value)"
             >
-              {{ range.label }}
+              {{ $t(range.label) }}
             </button>
           </div>
         </div>
@@ -254,8 +254,8 @@ export default toNative(MonitorPage)
             <i class="fas fa-desktop text-white text-sm"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">系统监控</h1>
-            <p class="text-xs text-slate-500 truncate">实时系统资源监控</p>
+            <h1 class="title-text">{{ $t('系统监控') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('实时系统资源监控') }}</p>
           </div>
         </div>
       </div>
@@ -268,7 +268,7 @@ export default toNative(MonitorPage)
           :class="['tab-btn flex-1 justify-center whitespace-nowrap', selectedRange === range.value ? 'tab-btn-active text-blue-600' : 'tab-btn-inactive']"
           @click="switchTimeRange(range.value)"
         >
-          {{ range.label }}
+          {{ $t(range.label) }}
         </button>
       </div>
     </div>
@@ -276,7 +276,7 @@ export default toNative(MonitorPage)
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -285,8 +285,8 @@ export default toNative(MonitorPage)
         <div class="empty-state-icon">
           <i class="fas fa-triangle-exclamation text-3xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">获取系统信息失败</p>
-        <p class="text-sm text-slate-400">请检查服务状态后刷新重试</p>
+        <p class="text-slate-600 font-medium mb-1">{{ $t('获取系统信息失败') }}</p>
+        <p class="text-sm text-slate-400">{{ $t('请检查服务状态后刷新重试') }}</p>
       </div>
     </div>
 

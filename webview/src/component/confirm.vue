@@ -37,7 +37,7 @@ export default toNative(ConfirmModal)
 <template>
   <BaseModal
     :model-value="portal.confirm.show"
-    :title="portal.confirm.title"
+    :title="$t(portal.confirm.title)"
     :loading="portal.confirm.loading"
     :confirm-class="portal.confirm.danger ? 'btn-danger' : 'btn-primary'"
     @cancel="portal.closeConfirm"
@@ -53,12 +53,12 @@ export default toNative(ConfirmModal)
       <p class="text-lg text-slate-700" v-html="safeMessage"></p>
       <p v-if="portal.confirm.danger" class="text-sm text-red-600 flex items-center justify-center mt-3">
         <i class="fas fa-exclamation-triangle mr-2"></i>
-        此操作不可恢复！
+        {{ $t('此操作不可恢复！') }}
       </p>
     </div>
 
     <template #confirm-text>
-      {{ portal.confirm.loading ? '处理中...' : portal.confirm.confirmText }}
+      {{ portal.confirm.loading ? $t('处理中...') : $t(portal.confirm.confirmText) }}
     </template>
   </BaseModal>
 </template>

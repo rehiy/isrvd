@@ -5,6 +5,8 @@ import type { CopilotChatLabels } from '@copilotkit/vue'
 import { computed, h, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 
+import { useLocaleStore } from '@/stores'
+
 import { http } from '@/service/client'
 
 import { executeCopilotAPI, registerCopilotAPILookup, resetCopilotAPICallRefs } from '@/helper/copilot/api'
@@ -15,6 +17,7 @@ import APICard from '@/component/copilot/api-card.vue'
 import InspectorButton from '@/component/copilot/inspector-button.vue'
 import SidebarBridge from '@/component/copilot/sidebar-bridge.vue'
 
+const t = useLocaleStore().t
 const route = useRoute()
 
 // ─── 页面上下文 ───
@@ -52,7 +55,7 @@ useFrontendTool({
             })
             return { success: res?.success ?? true, message: res?.message ?? '', payload: registerCopilotAPILookup(res?.payload ?? null) }
         } catch (e) {
-            return { success: false, message: e instanceof Error ? e.message : '查阅 API 文档失败' }
+            return { success: false, message: e instanceof Error ? e.message : t('查阅 API 文档失败') }
         }
     },
 })
@@ -108,29 +111,29 @@ useFrontendTool({
 })
 
 // CopilotKit 1.70 将 labels 类型声明为英文字面量，运行时实际接受任意字符串。
-// 用 unknown 只绕过上游类型限制，不改变配置结构。
-const chineseLabels = {
-    chatInputPlaceholder: '请输入消息...',
-    chatInputToolbarStartTranscribeButtonLabel: '开始语音输入',
-    chatInputToolbarCancelTranscribeButtonLabel: '取消语音输入',
-    chatInputToolbarFinishTranscribeButtonLabel: '完成语音输入',
-    chatInputToolbarAddButtonLabel: '添加图片或文件',
-    chatInputToolbarToolsButtonLabel: '工具',
-    assistantMessageToolbarCopyCodeLabel: '复制代码',
-    assistantMessageToolbarCopyCodeCopiedLabel: '已复制',
-    assistantMessageToolbarCopyMessageLabel: '复制消息',
-    assistantMessageToolbarThumbsUpLabel: '有帮助',
-    assistantMessageToolbarThumbsDownLabel: '没帮助',
-    assistantMessageToolbarReadAloudLabel: '朗读',
-    assistantMessageToolbarRegenerateLabel: '重新生成',
-    userMessageToolbarCopyMessageLabel: '复制消息',
-    userMessageToolbarEditMessageLabel: '编辑消息',
-    chatDisclaimerText: 'AI 可能出错，请核实重要信息。',
-    chatToggleOpenLabel: '打开聊天',
-    chatToggleCloseLabel: '关闭聊天',
-    modalHeaderTitle: 'Chat iSrvd',
-    welcomeMessageText: '你好，我能帮你做什么？',
-} as unknown as Partial<CopilotChatLabels>
+// 用 unknown 只绕过上游类型限制，不改变配置结构；文案以中文为 key，随语言切换重算。
+const chatLabels = computed(() => ({
+    chatInputPlaceholder: t('请输入消息...'),
+    chatInputToolbarStartTranscribeButtonLabel: t('开始语音输入'),
+    chatInputToolbarCancelTranscribeButtonLabel: t('取消语音输入'),
+    chatInputToolbarFinishTranscribeButtonLabel: t('完成语音输入'),
+    chatInputToolbarAddButtonLabel: t('添加图片或文件'),
+    chatInputToolbarToolsButtonLabel: t('工具'),
+    assistantMessageToolbarCopyCodeLabel: t('复制代码'),
+    assistantMessageToolbarCopyCodeCopiedLabel: t('已复制'),
+    assistantMessageToolbarCopyMessageLabel: t('复制消息'),
+    assistantMessageToolbarThumbsUpLabel: t('有帮助'),
+    assistantMessageToolbarThumbsDownLabel: t('没帮助'),
+    assistantMessageToolbarReadAloudLabel: t('朗读'),
+    assistantMessageToolbarRegenerateLabel: t('重新生成'),
+    userMessageToolbarCopyMessageLabel: t('复制消息'),
+    userMessageToolbarEditMessageLabel: t('编辑消息'),
+    chatDisclaimerText: t('AI 可能出错，请核实重要信息。'),
+    chatToggleOpenLabel: t('打开聊天'),
+    chatToggleCloseLabel: t('关闭聊天'),
+    modalHeaderTitle: t('Chat iSrvd'),
+    welcomeMessageText: t('你好，我能帮你做什么？'),
+}) as unknown as Partial<CopilotChatLabels>)
 
 // 卸载时释放会话级 API 调用引用。
 onUnmounted(() => {
@@ -139,14 +142,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <CopilotChatConfigurationProvider :labels="chineseLabels">
+  <CopilotChatConfigurationProvider :labels="chatLabels">
     <CopilotSidebar :default-open="false">
       <template #header="{ title, onClose }">
         <header class="flex items-center justify-between px-4 py-3 border-b border-slate-200">
           <span class="text-sm font-semibold text-slate-700 truncate">{{ title }}</span>
           <div class="flex items-center gap-1">
             <InspectorButton />
-            <button type="button" title="关闭助手" aria-label="关闭助手" class="btn btn-icon btn-icon-slate" @click="onClose">
+            <button type="button" :title="$t('关闭助手')" :aria-label="$t('关闭助手')" class="btn btn-icon btn-icon-slate" @click="onClose">
               <i class="fas fa-xmark"></i>
             </button>
           </div>

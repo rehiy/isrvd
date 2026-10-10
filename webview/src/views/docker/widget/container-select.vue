@@ -46,7 +46,7 @@ class ContainerSelect extends Vue {
             : this.containers
         const groups: Record<string, HostGroup> = {}
         for (const c of list) {
-            const nets = c.networks?.length ? c.networks : ['默认']
+            const nets = c.networks?.length ? c.networks : [this.$t('默认')]
             for (const net of nets) {
                 (groups[net] ||= { network: net, containers: [] }).containers.push(c)
             }
@@ -67,9 +67,9 @@ export default toNative(ContainerSelect)
 </script>
 
 <template>
-  <Combobox :model-value="modelValue" :placeholder="placeholder" :disabled="disabled" @update:model-value="$emit('update:modelValue', $event)">
+  <Combobox :model-value="modelValue" :placeholder="$t(placeholder)" :disabled="disabled" @update:model-value="$emit('update:modelValue', $event)">
     <template #hint-extra="{ query }">
-      <span class="text-xs text-slate-400">{{ matchCount(query.toLowerCase()) }} 个匹配</span>
+      <span class="text-xs text-slate-400">{{ matchCount(query.toLowerCase()) }} {{ $t('个匹配') }}</span>
     </template>
 
     <template #default="{ query, select }">
@@ -109,13 +109,13 @@ export default toNative(ContainerSelect)
     <template #empty="{ query }">
       <div v-if="groupedBy(query.toLowerCase()).length === 0" class="py-8 text-center">
         <i class="fas fa-search text-slate-300 text-2xl mb-2"></i>
-        <p class="text-sm text-slate-400">{{ containers.length === 0 ? '无可用容器' : '无匹配容器' }}</p>
+        <p class="text-sm text-slate-400">{{ containers.length === 0 ? $t('无可用容器') : $t('无匹配容器') }}</p>
       </div>
     </template>
 
     <template #footer>
       <div v-if="containers.length > 0" class="select-footer">
-        <span class="text-xs text-slate-400">共 <strong class="text-slate-700">{{ containers.length }}</strong> 个运行中容器</span>
+        <span class="text-xs text-slate-400">{{ $t('共') }} <strong class="text-slate-700">{{ containers.length }}</strong> {{ $t('个运行中容器') }}</span>
       </div>
     </template>
   </Combobox>

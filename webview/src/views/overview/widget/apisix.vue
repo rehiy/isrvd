@@ -99,7 +99,7 @@ export default toNative(ApisixOverview)
   <div>
     <div v-if="loading" class="overview-loading">
       <div class="spinner-md"></div>
-      <span class="text-slate-400 text-sm">加载中...</span>
+      <span class="text-slate-400 text-sm">{{ $t('加载中...') }}</span>
     </div>
 
     <div v-else-if="info" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -108,7 +108,7 @@ export default toNative(ApisixOverview)
           <i :class="['fas', card.icon, 'text-white']"></i>
         </div>
         <div class="min-w-0 flex-1">
-          <p class="text-xs text-slate-400 mb-0.5">{{ card.label }}</p>
+          <p class="text-xs text-slate-400 mb-0.5">{{ $t(card.label) }}</p>
           <p class="font-semibold text-slate-800">{{ info[card.key] ?? 0 }}</p>
         </div>
       </div>
@@ -117,8 +117,8 @@ export default toNative(ApisixOverview)
     <div v-else class="overview-unavailable">
       <i class="fas fa-route text-2xl text-slate-300"></i>
       <div>
-        <p class="text-sm font-medium text-slate-600">无法获取 APISIX 信息</p>
-        <p class="text-xs text-slate-400">请确认 APISIX 服务是否正常运行</p>
+        <p class="text-sm font-medium text-slate-600">{{ $t('无法获取 APISIX 信息') }}</p>
+        <p class="text-xs text-slate-400">{{ $t('请确认 APISIX 服务是否正常运行') }}</p>
       </div>
     </div>
   </div>

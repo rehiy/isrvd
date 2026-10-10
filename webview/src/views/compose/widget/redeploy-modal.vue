@@ -73,23 +73,23 @@ class RedeployModal extends Vue {
     }
 
     get confirmText() {
-        if (this.submitting) return '重建中...'
-        if (this.modalLoading) return '读取中...'
-        return this.loadedRevision ? '使用此配置重建' : '更新并重建'
+        if (this.submitting) return this.$t('重建中...')
+        if (this.modalLoading) return this.$t('读取中...')
+        return this.loadedRevision ? this.$t('使用此配置重建') : this.$t('更新并重建')
     }
 
     historyLabel(record: ComposeHistoryInfo) {
-        const actions = { snapshot: '变更前', deploy: '部署', redeploy: '重部署' }
-        return `${new Date(record.time).toLocaleString('zh-CN', { hour12: false })} · ${actions[record.action]} · ${record.success ? '成功' : '失败'}${record.hasSnapshot ? '' : ' · 无快照'}`
+        const actions = { snapshot: this.$t('变更前'), deploy: this.$t('部署'), redeploy: this.$t('重部署') }
+        return `${new Date(record.time).toLocaleString('zh-CN', { hour12: false })} · ${actions[record.action]} · ${record.success ? this.$t('成功') : this.$t('失败')}${record.hasSnapshot ? '' : this.$t(' · 无快照')}`
     }
 
     get composeWarning() {
         const parts = [this.warning]
         if (this.composeSource === 'runtime') {
-            parts.push('当前为运行态反推结果，建议核对后再提交')
+            parts.push(this.$t('当前为运行态反推结果，建议核对后再提交'))
         }
         if (this.composeFileModTime) {
-            parts.push(`文件更新时间：${new Date(this.composeFileModTime * 1000).toLocaleString('zh-CN', { hour12: false })}`)
+            parts.push(this.$t('文件更新时间：{0}', new Date(this.composeFileModTime * 1000).toLocaleString('zh-CN', { hour12: false })))
         }
         return parts.join('；')
     }
@@ -158,7 +158,7 @@ class RedeployModal extends Vue {
             this.composeFileModTime = payload.fileModTime || 0
             this.composeSource = payload.source || ''
             if (this.target === 'docker') this.resolvedName = payload.projectName || this.resolvedName
-            if (force) this.portal.showNotification('success', '已从运行态重新反推 Compose 配置')
+            if (force) this.portal.showNotification('success', this.$t('已从运行态重新反推 Compose 配置'))
         } catch {
             if (generation !== this.loadGeneration || !this.isOpen) return
             this.selectedRevision = this.loadedRevision
@@ -233,36 +233,36 @@ export default toNative(RedeployModal)
 
     <div v-if="canReadHistory" class="mb-3">
       <div class="flex items-center justify-between gap-2 mb-1">
-        <label class="form-label mb-0">配置版本</label>
+        <label class="form-label mb-0">{{ $t('配置版本') }}</label>
         <div class="action-group-sm">
-          <span v-if="dirty" class="text-xs text-amber-600">未提交修改</span>
-          <button type="button" class="btn-icon-sm" :disabled="modalLoading || historyLoading" :title="historyError ? '重试加载部署记录' : '刷新部署记录'" @click="loadHistory">
+          <span v-if="dirty" class="text-xs text-amber-600">{{ $t('未提交修改') }}</span>
+          <button type="button" class="btn-icon-sm" :disabled="modalLoading || historyLoading" :title="historyError ? $t('重试加载部署记录') : $t('刷新部署记录')" @click="loadHistory">
             <i :class="historyLoading ? 'fas fa-spinner fa-spin' : 'fas fa-clock-rotate-left'"></i>
           </button>
         </div>
       </div>
       <select v-model="selectedRevision" class="input" :disabled="modalLoading || historyLoading || !!pendingSwitch" @change="requestLoad(false, selectedRevision)">
-        <option value="">当前配置</option>
-        <option v-if="loadedVersionMissing" :value="loadedRevision" disabled>已加载的历史配置</option>
+        <option value="">{{ $t('当前配置') }}</option>
+        <option v-if="loadedVersionMissing" :value="loadedRevision" disabled>{{ $t('已加载的历史配置') }}</option>
         <option v-for="record in history" :key="record.id" :value="record.id" :disabled="!record.hasSnapshot">{{ historyLabel(record) }}</option>
       </select>
-      <p v-if="historyLoading" class="text-xs text-slate-500 mt-1" role="status">正在加载部署记录...</p>
-      <p v-else-if="historyError" class="text-sm text-red-500 mt-1" role="alert">部署记录加载失败</p>
-      <p v-else-if="history.length === 0" class="text-xs text-slate-400 mt-1">暂无部署记录</p>
-      <p v-if="loadedRevision" class="text-sm text-amber-600 mt-1">历史配置将替换当前配置并重建实例；数据卷与数据库内容不会恢复。</p>
+      <p v-if="historyLoading" class="text-xs text-slate-500 mt-1" role="status">{{ $t('正在加载部署记录...') }}</p>
+      <p v-else-if="historyError" class="text-sm text-red-500 mt-1" role="alert">{{ $t('部署记录加载失败') }}</p>
+      <p v-else-if="history.length === 0" class="text-xs text-slate-400 mt-1">{{ $t('暂无部署记录') }}</p>
+      <p v-if="loadedRevision" class="text-sm text-amber-600 mt-1">{{ $t('历史配置将替换当前配置并重建实例；数据卷与数据库内容不会恢复。') }}</p>
     </div>
     <div v-if="pendingSwitch" class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3" role="alert">
-      <p class="text-sm text-amber-700 mb-2">当前修改尚未提交，切换配置将丢弃这些修改。</p>
+      <p class="text-sm text-amber-700 mb-2">{{ $t('当前修改尚未提交，切换配置将丢弃这些修改。') }}</p>
       <div class="flex flex-wrap gap-2">
-        <button type="button" class="btn btn-secondary" @click="pendingSwitch = null">保留编辑</button>
-        <button type="button" class="btn btn-amber" @click="discardAndLoad"><i class="fas fa-rotate-left"></i>放弃修改并切换</button>
+        <button type="button" class="btn btn-secondary" @click="pendingSwitch = null">{{ $t('保留编辑') }}</button>
+        <button type="button" class="btn btn-amber" @click="discardAndLoad"><i class="fas fa-rotate-left"></i>{{ $t('放弃修改并切换') }}</button>
       </div>
     </div>
     <div v-if="loadError" class="flex flex-wrap items-center gap-2 mb-3" role="alert">
-      <span class="text-sm text-red-500">{{ loadedContent ? '配置加载失败，已保留原内容' : '配置加载失败' }}</span>
-      <button type="button" class="btn-icon-sm" title="重试加载配置" @click="requestLoad(lastLoad.force, lastLoad.revision)"><i class="fas fa-rotate"></i></button>
+      <span class="text-sm text-red-500">{{ loadedContent ? $t('配置加载失败，已保留原内容') : $t('配置加载失败') }}</span>
+      <button type="button" class="btn-icon-sm" :title="$t('重试加载配置')" @click="requestLoad(lastLoad.force, lastLoad.revision)"><i class="fas fa-rotate"></i></button>
     </div>
-    <p v-if="modalLoading" class="text-sm text-slate-500 mb-3" role="status">{{ submitting ? '正在重建应用...' : '正在读取配置...' }}</p>
+    <p v-if="modalLoading" class="text-sm text-slate-500 mb-3" role="status">{{ submitting ? $t('正在重建应用...') : $t('正在读取配置...') }}</p>
     <div class="grid gap-3 sm:grid-cols-2">
       <div class="min-w-0">
         <ComposeEditor v-model="composeContent" :disabled="modalLoading" height="min(42vh, 360px)" />

@@ -30,9 +30,9 @@ class ConfigLayout extends Vue {
     async reloadConfig() {
         try {
             await this.config.load(true)
-            this.portal.showNotification('success', '配置已重载')
+            this.portal.showNotification('success', this.$t('配置已重载'))
         } catch {
-            this.portal.showNotification('error', this.config.error || '配置重载失败')
+            this.portal.showNotification('error', this.config.error || this.$t('配置重载失败'))
         }
     }
 
@@ -41,9 +41,9 @@ class ConfigLayout extends Vue {
         try {
             await this.config.saveAll()
             await this.portal.refresh()
-            this.portal.showNotification('success', '配置已保存，监听地址变更需重启生效')
+            this.portal.showNotification('success', this.$t('配置已保存，监听地址变更需重启生效'))
         } catch {
-            this.portal.showNotification('error', this.config.error || '保存配置失败')
+            this.portal.showNotification('error', this.config.error || this.$t('保存配置失败'))
         }
     }
 
@@ -73,18 +73,18 @@ export default toNative(ConfigLayout)
             <i class="fas fa-gear text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">系统配置</h1>
-            <p class="text-xs text-slate-500">按分组管理服务器、认证、网关与容器参数</p>
+            <h1 class="title-text">{{ $t('系统配置') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('按分组管理服务器、认证、网关与容器参数') }}</p>
           </div>
         </div>
         <div class="action-group">
           <button type="button" class="btn btn-secondary" :disabled="config.loading || config.saving" @click="reloadConfig">
-            <i :class="config.loading ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i>重载
+            <i :class="config.loading ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i>{{ $t('重载') }}
           </button>
           <button v-if="canUpdate" type="submit" form="config-form" class="btn btn-indigo rounded-xl whitespace-nowrap" :disabled="config.saving || config.loading">
             <i v-if="config.saving" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-save"></i>
-            <span>{{ config.saving ? '保存中...' : '保存配置' }}</span>
+            <span>{{ config.saving ? $t('保存中...') : $t('保存配置') }}</span>
           </button>
         </div>
       </div>
@@ -95,15 +95,15 @@ export default toNative(ConfigLayout)
             <i class="fas fa-gear text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">系统配置</h1>
-            <p class="text-xs text-slate-500 truncate">服务器、认证、网关与容器参数</p>
+            <h1 class="title-text">{{ $t('系统配置') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('服务器、认证、网关与容器参数') }}</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <button type="button" class="btn btn-secondary btn-square" title="重载" :disabled="config.loading || config.saving" @click="reloadConfig">
+          <button type="button" class="btn btn-secondary btn-square" :title="$t('重载')" :disabled="config.loading || config.saving" @click="reloadConfig">
             <i :class="config.loading ? 'fas fa-spinner fa-spin text-sm' : 'fas fa-rotate text-sm'"></i>
           </button>
-          <button v-if="canUpdate" type="submit" form="config-form" class="btn btn-indigo btn-square" title="保存配置" :disabled="config.saving || config.loading">
+          <button v-if="canUpdate" type="submit" form="config-form" class="btn btn-indigo btn-square" :title="$t('保存配置')" :disabled="config.saving || config.loading">
             <i v-if="config.saving" class="fas fa-spinner fa-spin text-sm"></i>
             <i v-else class="fas fa-save text-sm"></i>
           </button>
@@ -117,8 +117,8 @@ export default toNative(ConfigLayout)
         <div class="empty-state-icon">
           <i class="fas fa-lock text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">无权限查看系统配置</p>
-        <p class="text-sm text-slate-400">请联系管理员调整账号权限</p>
+        <p class="text-slate-600 font-medium mb-1">{{ $t('无权限查看系统配置') }}</p>
+        <p class="text-sm text-slate-400">{{ $t('请联系管理员调整账号权限') }}</p>
       </div>
     </div>
 
@@ -126,7 +126,7 @@ export default toNative(ConfigLayout)
     <div v-else-if="config.loading && !config.loaded" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -136,10 +136,10 @@ export default toNative(ConfigLayout)
         <div class="empty-state-icon">
           <i class="fas fa-triangle-exclamation text-4xl text-red-400"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">加载系统配置失败</p>
-        <p class="text-sm text-slate-400 mb-4">请检查网络或权限后重试</p>
+        <p class="text-slate-600 font-medium mb-1">{{ $t('加载系统配置失败') }}</p>
+        <p class="text-sm text-slate-400 mb-4">{{ $t('请检查网络或权限后重试') }}</p>
         <button type="button" class="btn btn-secondary" @click="config.load()">
-          <i class="fas fa-rotate"></i>重新加载
+          <i class="fas fa-rotate"></i>{{ $t('重新加载') }}
         </button>
       </div>
     </div>
@@ -150,7 +150,7 @@ export default toNative(ConfigLayout)
       <div v-if="!canUpdate" class="card-body pb-0">
         <div class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-sm">
           <i class="fas fa-eye"></i>
-          <span>当前账号仅有查看权限，配置项不可修改</span>
+          <span>{{ $t('当前账号仅有查看权限，配置项不可修改') }}</span>
         </div>
       </div>
       <form id="config-form" class="card-body" @submit.prevent="saveConfig">

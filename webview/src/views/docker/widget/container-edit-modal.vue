@@ -18,7 +18,7 @@ class ContainerEditModal extends Vue {
     displayName = ''
 
     get modalTitle() {
-        return this.displayName ? `编辑配置：${this.displayName}` : '编辑容器配置'
+        return this.displayName ? this.$t('编辑配置：{0}', this.displayName) : this.$t('编辑容器配置')
     }
 
     async show(container: DockerContainerInfo) {
@@ -42,9 +42,9 @@ export default toNative(ContainerEditModal)
     target="docker"
     :resource-name="projectName"
     :title="modalTitle"
-    warning="更新配置后将会按 Compose 项目重建关联容器，旧容器将被停止并删除"
-    refresh-title="跳过 compose.yml，按当前容器运行态重新反推 Compose"
-    success-message="Compose 配置更新成功，已重建关联容器"
+    :warning="$t('更新配置后将会按 Compose 项目重建关联容器，旧容器将被停止并删除')"
+    :refresh-title="$t('跳过 compose.yml，按当前容器运行态重新反推 Compose')"
+    :success-message="$t('Compose 配置更新成功，已重建关联容器')"
     @success="$emit('success')"
   />
 </template>

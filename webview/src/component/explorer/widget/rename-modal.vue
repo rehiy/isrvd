@@ -52,8 +52,8 @@ class RenameModal extends Vue {
 
     get title() {
         return this.files.length > 1
-            ? `重命名 / 移动 ${this.files.length} 项`
-            : '重命名 / 移动'
+            ? this.$t('重命名 / 移动 {0} 项', this.files.length)
+            : this.$t('重命名 / 移动')
     }
 
     get previewTargets(): { src: string; abs: string }[] {
@@ -98,7 +98,7 @@ export default toNative(RenameModal)
   <BaseModal v-model="isOpen" :title="title" :loading="loading" :confirm-disabled="!isValidInput" @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
-        <label for="fmRenameInput" class="form-label">目标路径</label>
+        <label for="fmRenameInput" class="form-label">{{ $t('目标路径') }}</label>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <i :class="inputIsDir ? 'fas fa-folder text-blue-400' : 'fas fa-file-export text-slate-400'"></i>
@@ -110,19 +110,19 @@ export default toNative(RenameModal)
             :disabled="loading"
             autofocus
             class="input pl-9"
-            :placeholder="files.length > 1 ? '目标目录，如：/backup/' : '如：new.txt、/backup/new.txt、/backup/'"
+            :placeholder="files.length > 1 ? $t('目标目录，如：/backup/') : $t('如：new.txt、/backup/new.txt、/backup/')"
           >
         </div>
         <p class="text-xs text-slate-400 mt-1.5">
-          以 <code class="bg-slate-100 px-1 rounded">/</code> 结尾 → 移入该目录并保持原名；否则 → 完整目标路径（仅单文件）
+          {{ $t('以') }} <code class="bg-slate-100 px-1 rounded">/</code> {{ $t('结尾 → 移入该目录并保持原名；否则 → 完整目标路径（仅单文件）') }}
         </p>
       </div>
 
       <div>
-        <p class="text-xs font-medium text-slate-500 mb-1.5">操作预览（共 {{ files.length }} 项）</p>
+        <p class="text-xs font-medium text-slate-500 mb-1.5">{{ $t('操作预览（共') }} {{ files.length }} {{ $t('项）') }}</p>
         <div class="rounded-lg border border-slate-200 overflow-hidden">
           <div class="grid grid-cols-[1fr_auto_1fr] bg-slate-100 border-b border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500">
-            <span>原路径</span><span></span><span>目标路径</span>
+            <span>{{ $t('原路径') }}</span><span></span><span>{{ $t('目标路径') }}</span>
           </div>
           <div class="max-h-52 overflow-auto divide-y divide-slate-100">
             <div
@@ -136,12 +136,12 @@ export default toNative(RenameModal)
                 class="font-mono truncate"
                 :class="item.abs ? 'text-blue-600' : 'text-slate-300 italic'"
                 :title="item.abs"
-              >{{ item.abs || '请输入目标路径' }}</span>
+              >{{ item.abs || $t('请输入目标路径') }}</span>
             </div>
           </div>
         </div>
       </div>
     </form>
-    <template #confirm-text>{{ loading ? '处理中...' : '确认' }}</template>
+    <template #confirm-text>{{ loading ? $t('处理中...') : $t('确认') }}</template>
   </BaseModal>
 </template>

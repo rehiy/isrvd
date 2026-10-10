@@ -78,12 +78,12 @@ export default toNative(Overview)
             <i class="fas fa-gauge-high text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">概览</h1>
-            <p class="text-xs text-slate-500">服务状态总览</p>
+            <h1 class="text-lg font-semibold text-slate-800">{{ $t('概览') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('服务状态总览') }}</p>
           </div>
         </div>
         <button class="btn btn-secondary" @click="refreshAll">
-          <i class="fas fa-rotate"></i>刷新
+          <i class="fas fa-rotate"></i>{{ $t('刷新') }}
         </button>
       </div>
       <!-- 移动端 -->
@@ -93,11 +93,11 @@ export default toNative(Overview)
             <i class="fas fa-gauge-high text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">概览</h1>
-            <p class="text-xs text-slate-500 truncate">服务状态总览</p>
+            <h1 class="title-text">{{ $t('概览') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('服务状态总览') }}</p>
           </div>
         </div>
-        <button class="btn btn-secondary btn-square" title="刷新" @click="refreshAll">
+        <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="refreshAll">
           <i class="fas fa-rotate text-sm"></i>
         </button>
       </div>
@@ -114,7 +114,7 @@ export default toNative(Overview)
       <div v-if="portal.hasPerm('GET /api/apisix/routes')" class="p-6">
         <div class="flex items-center gap-2 mb-4">
           <i class="fas fa-route text-orange-500 text-lg"></i>
-          <h1 class="text-lg font-semibold text-slate-700">APISIX 网关</h1>
+          <h1 class="text-lg font-semibold text-slate-700">{{ $t('APISIX 网关') }}</h1>
         </div>
         <ApisixOverview ref="apisixRef" />
       </div>
@@ -123,7 +123,7 @@ export default toNative(Overview)
       <div v-if="portal.hasPerm('GET /api/caddy/info')" class="p-6">
         <div class="flex items-center gap-2 mb-4">
           <i class="fas fa-shield text-indigo-500 text-lg"></i>
-          <h1 class="text-lg font-semibold text-slate-700">Caddy 网关</h1>
+          <h1 class="text-lg font-semibold text-slate-700">{{ $t('Caddy 网关') }}</h1>
         </div>
         <CaddyOverview ref="caddyRef" />
       </div>
@@ -132,7 +132,7 @@ export default toNative(Overview)
       <div v-if="portal.hasPerm('GET /api/docker/containers')" class="p-6">
         <div class="flex items-center gap-2 mb-4">
           <i class="fab fa-docker text-blue-500 text-lg"></i>
-          <h1 class="text-lg font-semibold text-slate-700">Docker 服务</h1>
+          <h1 class="text-lg font-semibold text-slate-700">{{ $t('Docker 服务') }}</h1>
         </div>
         <DockerOverview ref="dockerRef" />
       </div>
@@ -141,7 +141,7 @@ export default toNative(Overview)
       <div v-if="portal.hasPerm('GET /api/swarm/info')" class="p-6">
         <div class="flex items-center gap-2 mb-4">
           <i class="fas fa-circle-nodes text-cyan-600 text-lg"></i>
-          <h1 class="text-lg font-semibold text-slate-700">Swarm 集群</h1>
+          <h1 class="text-lg font-semibold text-slate-700">{{ $t('Swarm 集群') }}</h1>
         </div>
         <SwarmOverview ref="swarmRef" />
       </div>
@@ -150,8 +150,8 @@ export default toNative(Overview)
     <!-- 无任何权限时的空状态 -->
     <div v-if="!hasAnyBlock" class="flex flex-col items-center justify-center py-16 text-slate-400">
       <i class="fas fa-lock text-4xl mb-4"></i>
-      <p class="text-sm font-medium">暂无可查看的模块</p>
-      <p class="text-xs mt-1">当前账号未分配任何模块权限</p>
+      <p class="text-sm font-medium">{{ $t('暂无可查看的模块') }}</p>
+      <p class="text-xs mt-1">{{ $t('当前账号未分配任何模块权限') }}</p>
     </div>
   </div>
 </template>

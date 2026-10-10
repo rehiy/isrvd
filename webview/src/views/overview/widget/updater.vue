@@ -67,7 +67,7 @@ class SystemUpdater extends Vue {
 
         const containerName = this.updaterContainer.trim()
         if (!containerName) {
-            this.portal.showNotification('error', '请填写当前 Docker 容器名称')
+            this.portal.showNotification('error', this.$t('请填写当前 Docker 容器名称'))
             return
         }
 
@@ -135,7 +135,7 @@ class SystemUpdater extends Vue {
 
         if (succeeded) {
             // 保持 upgrading = true，按钮继续显示"等待重启..."直到页面刷新
-            this.portal.showNotification('success', `升级成功，即将刷新页面...`)
+            this.portal.showNotification('success', this.$t('升级成功，即将刷新页面...'))
             setTimeout(() => {
                 this.upgradeType = null
                 window.location.reload()
@@ -144,7 +144,7 @@ class SystemUpdater extends Vue {
             // 超时
             this.upgrading = false
             this.upgradeType = null
-            this.portal.showNotification('error', '升级超时，请手动检查服务状态')
+            this.portal.showNotification('error', this.$t('升级超时，请手动检查服务状态'))
         }
     }
 }
@@ -162,7 +162,7 @@ export default toNative(SystemUpdater)
           <i class="fas fa-arrow-up text-xs"></i>
         </div>
         <div class="min-w-0">
-          <p class="text-xs font-semibold text-emerald-700">发现新版本</p>
+          <p class="text-xs font-semibold text-emerald-700">{{ $t('发现新版本') }}</p>
           <p class="flex items-center gap-1 text-xs text-slate-500 mt-0.5">
             <span class="text-slate-400 line-through">{{ version?.current }}</span>
             <i class="fas fa-arrow-right text-[9px] text-slate-400"></i>
@@ -178,32 +178,32 @@ export default toNative(SystemUpdater)
           target="_blank"
           rel="noopener noreferrer"
           class="btn btn-secondary w-full xs:w-auto"
-          title="查看更新日志"
+          :title="$t('查看更新日志')"
         >
           <i class="fas fa-file-alt"></i>
-          <span>更新日志</span>
+          <span>{{ $t('更新日志') }}</span>
         </a>
         <!-- Docker 容器升级（仅 Docker 环境） -->
         <button
           v-if="inDocker && portal.hasPerm('POST /api/docker/container') && (upgradeType === 'docker' || (!deploying && !upgrading))"
           class="btn btn-emerald w-full xs:w-auto"
-          title="升级当前容器"
+          :title="$t('升级当前容器')"
           :disabled="deploying || upgrading"
           @click="openUpdaterModal"
         >
           <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying || upgrading }"></i>
-          <span>{{ deploying ? '升级中...' : upgrading ? '等待重启...' : '升级容器' }}</span>
+          <span>{{ deploying ? $t('升级中...') : upgrading ? $t('等待重启...') : $t('升级容器') }}</span>
         </button>
         <!-- 二进制原地升级 -->
         <button
           v-if="portal.hasPerm('POST /api/overview/upgrade') && (upgradeType === 'binary' || (!deploying && !upgrading))"
           class="btn btn-primary w-full xs:w-auto"
-          title="下载最新版本并重启"
+          :title="$t('下载最新版本并重启')"
           :disabled="deploying || upgrading"
           @click="handleBinaryUpgrade"
         >
           <i class="fas fa-rotate-right" :class="{ 'fa-spin': deploying || upgrading }"></i>
-          <span>{{ deploying ? '升级中...' : upgrading ? '等待重启...' : '升级二进制' }}</span>
+          <span>{{ deploying ? $t('升级中...') : upgrading ? $t('等待重启...') : $t('升级二进制') }}</span>
         </button>
       </div>
     </div>
@@ -211,7 +211,7 @@ export default toNative(SystemUpdater)
     <!-- Docker 升级确认 Modal -->
     <BaseModal
       v-model="updaterModalOpen"
-      title="升级当前 Docker 容器"
+      :title="$t('升级当前 Docker 容器')"
       :loading="deploying"
       :confirm-disabled="!updaterContainer.trim()"
       confirm-class="btn-primary"
@@ -219,7 +219,7 @@ export default toNative(SystemUpdater)
     >
       <form class="space-y-4" @submit.prevent="handleDeployUpdater">
         <div>
-          <label for="updaterContainer" class="form-label">当前容器名称</label>
+          <label for="updaterContainer" class="form-label">{{ $t('当前容器名称') }}</label>
           <input
             id="updaterContainer"
             v-model="updaterContainer"
@@ -227,20 +227,20 @@ export default toNative(SystemUpdater)
             :disabled="deploying"
             :readonly="!!selfContainerName"
             class="input"
-            placeholder="请输入容器名称"
+            :placeholder="$t('请输入容器名称')"
             autocomplete="off"
             required
           />
         </div>
-        <ToggleCard v-model="updaterAutoRemove" label="升级完成后自动销毁容器" desc="关闭后可通过容器日志查看升级过程" />
+        <ToggleCard v-model="updaterAutoRemove" :label="$t('升级完成后自动销毁容器')" :desc="$t('关闭后可通过容器日志查看升级过程')" />
         <p class="text-sm text-slate-600">
-          将通过 <code class="px-1 py-0.5 rounded bg-slate-100 font-mono text-xs">{{ version?.updaterImage || 'rehiy/docker-updater:latest' }}</code>
-          临时容器拉取最新镜像并重启，升级期间服务会短暂中断。
+          {{ $t('将通过') }} <code class="px-1 py-0.5 rounded bg-slate-100 font-mono text-xs">{{ version?.updaterImage || 'rehiy/docker-updater:latest' }}</code>
+          {{ $t('临时容器拉取最新镜像并重启，升级期间服务会短暂中断。') }}
         </p>
       </form>
 
       <template #confirm-text>
-        {{ deploying ? '升级中...' : upgrading ? '等待重启...' : '部署并升级' }}
+        {{ deploying ? $t('升级中...') : upgrading ? $t('等待重启...') : $t('部署并升级') }}
       </template>
     </BaseModal>
   </template>

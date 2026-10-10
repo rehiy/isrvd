@@ -17,47 +17,47 @@ export default toNative(ConfigService)
   <section class="max-w-4xl space-y-4">
     <div class="config-section-heading">
       <div>
-        <h2 class="config-section-title">基础服务</h2>
-        <p class="config-section-description">端口、目录、上传、跨域与 JWT</p>
+        <h2 class="config-section-title">{{ $t('基础服务') }}</h2>
+        <p class="config-section-description">{{ $t('端口、目录、上传、跨域与 JWT') }}</p>
       </div>
     </div>
     <div>
-      <label class="form-label">监听地址</label>
-      <input v-model="config.draft.server.listenAddr" type="text" placeholder="请输入监听地址" class="input" />
-      <p class="mt-1 text-xs text-slate-400">HTTP 服务监听地址，如 :8080 或 127.0.0.1:8080（重启生效）</p>
+      <label class="form-label">{{ $t('监听地址') }}</label>
+      <input v-model="config.draft.server.listenAddr" type="text" :placeholder="$t('请输入监听地址')" class="input" />
+      <p class="mt-1 text-xs text-slate-400">{{ $t('HTTP 服务监听地址，如 :8080 或 127.0.0.1:8080（重启生效）') }}</p>
     </div>
 
     <div>
-      <label class="form-label">基础目录</label>
-      <input v-model="config.draft.server.rootDirectory" type="text" placeholder="请输入基础目录" class="input" />
-      <p class="mt-1 text-xs text-slate-400">成员家目录及容器数据的基础目录，默认当前目录（.）</p>
+      <label class="form-label">{{ $t('基础目录') }}</label>
+      <input v-model="config.draft.server.rootDirectory" type="text" :placeholder="$t('请输入基础目录')" class="input" />
+      <p class="mt-1 text-xs text-slate-400">{{ $t('成员家目录及容器数据的基础目录，默认当前目录（.）') }}</p>
     </div>
 
     <div>
-      <label class="form-label">文件上传大小限制（字节）</label>
-      <input v-model.number="config.draft.server.maxUploadSize" type="number" min="0" placeholder="请输入文件上传大小限制" class="input" />
-      <p class="mt-1 text-xs text-slate-400">单次上传的最大文件大小，默认 104857600（100 MB）</p>
+      <label class="form-label">{{ $t('文件上传大小限制（字节）') }}</label>
+      <input v-model.number="config.draft.server.maxUploadSize" type="number" min="0" :placeholder="$t('请输入文件上传大小限制')" class="input" />
+      <p class="mt-1 text-xs text-slate-400">{{ $t('单次上传的最大文件大小，默认 104857600（100 MB）') }}</p>
     </div>
 
     <div>
-      <label class="form-label">允许的跨域 Origin</label>
-      <textarea v-model="config.allowedOriginsText" rows="3" placeholder="请输入，每行一个" class="input font-mono text-xs"></textarea>
-      <p class="mt-1 text-xs text-slate-400">示例：https://example.com、https://*.example.com；支持通配符 *；留空则不限制</p>
+      <label class="form-label">{{ $t('允许的跨域 Origin') }}</label>
+      <textarea v-model="config.allowedOriginsText" rows="3" :placeholder="$t('请输入，每行一个')" class="input font-mono text-xs"></textarea>
+      <p class="mt-1 text-xs text-slate-400">{{ $t('示例：https://example.com、https://*.example.com；支持通配符 *；留空则不限制') }}</p>
     </div>
 
     <div>
-      <label class="form-label">JWT 认证密钥</label>
-      <input v-model="config.draft.server.jwtSecret" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
-      <p class="mt-1 text-xs text-slate-400">用于签名登录令牌，修改后所有用户需要重新登录</p>
+      <label class="form-label">{{ $t('JWT 认证密钥') }}</label>
+      <input v-model="config.draft.server.jwtSecret" type="password" :placeholder="$t('留空则保持不变')" class="input" autocomplete="new-password" />
+      <p class="mt-1 text-xs text-slate-400">{{ $t('用于签名登录令牌，修改后所有用户需要重新登录') }}</p>
     </div>
 
     <div>
-      <label class="form-label">JWT 有效期（秒）</label>
-      <input v-model.number="config.draft.server.jwtExpiration" type="number" min="60" placeholder="请输入 JWT 有效期" class="input" />
-      <p class="mt-1 text-xs text-slate-400">登录令牌的有效期，默认 86400（24 小时）</p>
+      <label class="form-label">{{ $t('JWT 有效期（秒）') }}</label>
+      <input v-model.number="config.draft.server.jwtExpiration" type="number" min="60" :placeholder="$t('请输入 JWT 有效期')" class="input" />
+      <p class="mt-1 text-xs text-slate-400">{{ $t('登录令牌的有效期，默认 86400（24 小时）') }}</p>
     </div>
 
-    <ToggleCard v-model="config.draft.server.openapi" label="API 文档" desc="开启后对外提供 /openapi/ 接口文档页（含全部接口结构，建议生产环境关闭）" />
-    <ToggleCard v-model="config.draft.server.debug" label="Debug 模式" desc="开启后输出详细调试日志" />
+    <ToggleCard v-model="config.draft.server.openapi" :label="$t('API 文档')" :desc="$t('开启后对外提供 /openapi/ 接口文档页（含全部接口结构，建议生产环境关闭）')" />
+    <ToggleCard v-model="config.draft.server.debug" :label="$t('Debug 模式')" :desc="$t('开启后输出详细调试日志')" />
   </section>
 </template>

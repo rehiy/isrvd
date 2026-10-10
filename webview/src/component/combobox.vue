@@ -40,7 +40,7 @@ class Combobox extends Vue {
     get effectivePlaceholder(): string {
         if (!this.multiple) return this.placeholder
         if (this.selected.length === 0) return this.placeholder
-        return this.searchPlaceholder || '搜索...'
+        return this.searchPlaceholder || this.$t('搜索...')
     }
 
     // ─── 生命周期 ───
@@ -161,7 +161,7 @@ export default toNative(Combobox)
               class="btn-tag-remove"
               :class="disabled || tagDisabled(tag) ? 'cursor-not-allowed opacity-50' : ''"
               :disabled="disabled || tagDisabled(tag)"
-              :aria-label="`移除 ${tag}`"
+              :aria-label="$t(`移除 ${tag}`)"
               @click.stop="removeTag(tag)"
             >
               <i class="fas fa-times text-[8px]"></i>
@@ -174,9 +174,9 @@ export default toNative(Combobox)
           v-model="searchQuery"
           type="text"
           class="flex-1 min-w-[80px] border-0 outline-none bg-transparent text-sm text-slate-700 placeholder:text-slate-400 p-0 focus:ring-0 focus:border-0 focus:shadow-none"
-          :placeholder="effectivePlaceholder"
+          :placeholder="$t(effectivePlaceholder)"
           :disabled="disabled"
-          :aria-label="ariaLabel || searchPlaceholder || placeholder || '搜索选项'"
+          :aria-label="$t(ariaLabel || searchPlaceholder || placeholder || $t('搜索选项'))"
           :aria-expanded="dropdownOpen"
           @focus="dropdownOpen = true"
           @input="handleInput"
@@ -190,8 +190,8 @@ export default toNative(Combobox)
     <template #search-hint>
       <div v-if="searchQuery.trim() && allowCustom" class="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
         <span class="text-xs text-slate-500">
-          <template v-if="multiple">按 Enter 添加: </template>
-          <template v-else>使用: </template>
+          <template v-if="multiple">{{ $t('按 Enter 添加:') }} </template>
+          <template v-else>{{ $t('使用:') }} </template>
           <code class="bg-slate-200 px-1.5 py-0.5 rounded text-slate-700">{{ searchQuery.trim() }}</code>
         </span>
         <slot name="hint-extra" :query="searchQuery.trim()" />

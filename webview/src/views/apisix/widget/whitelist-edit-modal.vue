@@ -42,12 +42,12 @@ class WhitelistEditModal extends Vue {
     }
 
     get modalTitle() {
-        return this.isEdit ? '编辑路由访问授权' : '配置路由访问授权'
+        return this.isEdit ? this.$t('编辑路由访问授权') : this.$t('配置路由访问授权')
     }
 
     get confirmText() {
-        if (this.isEdit && this.whitelistConsumers.length === 0) return '删除授权'
-        return this.isEdit ? '保存配置' : '确认配置'
+        if (this.isEdit && this.whitelistConsumers.length === 0) return this.$t('删除授权')
+        return this.isEdit ? this.$t('保存配置') : this.$t('确认配置')
     }
 
     get selectableRoutes() {
@@ -132,8 +132,8 @@ class WhitelistEditModal extends Vue {
     }
 
     async handleConfirm() {
-        if (!this.formData.routeId) return this.portal.showNotification('error', '请选择要配置访问授权的路由')
-        if (!this.isEdit && this.whitelistConsumers.length === 0) return this.portal.showNotification('error', '授权用户不能为空')
+        if (!this.formData.routeId) return this.portal.showNotification('error', this.$t('请选择要配置访问授权的路由'))
+        if (!this.isEdit && this.whitelistConsumers.length === 0) return this.portal.showNotification('error', this.$t('授权用户不能为空'))
 
         this.modalLoading = true
         try {
@@ -142,7 +142,7 @@ class WhitelistEditModal extends Vue {
                 consumers: this.whitelistConsumers,
                 key_auth: this.whitelistConsumers.length > 0 ? this.keyAuthConfig : ({} as ApisixKeyAuthConfig),
             })
-            this.portal.showNotification('success', this.whitelistConsumers.length > 0 ? '访问授权更新成功' : '访问授权删除成功')
+            this.portal.showNotification('success', this.whitelistConsumers.length > 0 ? this.$t('访问授权更新成功') : this.$t('访问授权删除成功'))
             this.isOpen = false
             this.$emit('success')
         } catch {} finally {
@@ -158,64 +158,64 @@ export default toNative(WhitelistEditModal)
   <BaseModal v-model="isOpen" :title="modalTitle" :loading="modalLoading" confirm-class="btn-amber" @confirm="handleConfirm">
     <div class="space-y-4 p-1">
       <div v-if="isEdit">
-        <label class="form-label">路由</label>
+        <label class="form-label">{{ $t('路由') }}</label>
         <div class="detail-value text-sm text-slate-700">
           {{ editingRoute ? getRouteLabel(editingRoute) : '' }}
         </div>
-        <p class="text-xs text-slate-400 mt-1">编辑当前路由的 key-auth 和 consumer-restriction.whitelist 配置</p>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('编辑当前路由的 key-auth 和 consumer-restriction.whitelist 配置') }}</p>
       </div>
       <div v-else>
-        <label class="form-label">路由 <span class="text-red-500">*</span></label>
+        <label class="form-label">{{ $t('路由') }} <span class="text-red-500">*</span></label>
         <select v-model="formData.routeId" class="input">
-          <option value="">请选择未配置访问授权的路由</option>
+          <option value="">{{ $t('请选择未配置访问授权的路由') }}</option>
           <option v-for="route in selectableRoutes" :key="route.id" :value="route.id">
             {{ getRouteLabel(route) }}
           </option>
         </select>
         <p v-if="selectedRoute" class="text-xs text-slate-400 mt-1">
-          保存后会为所选路由配置 key-auth 和 consumer-restriction.whitelist 插件
+          {{ $t('保存后会为所选路由配置 key-auth 和 consumer-restriction.whitelist 插件') }}
         </p>
-        <p v-else class="text-xs text-slate-400 mt-1">仅展示尚未配置访问授权的路由</p>
+        <p v-else class="text-xs text-slate-400 mt-1">{{ $t('仅展示尚未配置访问授权的路由') }}</p>
       </div>
 
       <div v-if="!isEdit && selectableRoutes.length === 0" class="rounded-lg border border-amber-100 bg-amber-50/50 px-3 py-2 text-xs text-amber-700">
-        暂无可配置访问授权的路由
+        {{ $t('暂无可配置访问授权的路由') }}
       </div>
 
       <div class="space-y-3">
         <div>
-          <label class="form-label">key-auth 插件配置</label>
-          <p class="mt-1 text-xs text-slate-400">配置路由认证插件参数</p>
+          <label class="form-label">{{ $t('key-auth 插件配置') }}</label>
+          <p class="mt-1 text-xs text-slate-400">{{ $t('配置路由认证插件参数') }}</p>
         </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
-            <label class="form-label">请求头名称 <span class="text-red-500">*</span></label>
-            <input v-model="formData.keyAuthHeader" type="text" class="input" placeholder="例如：token" />
-            <p class="mt-1 text-xs text-slate-400">客户端通过该 Header 传递 Consumer API Key</p>
+            <label class="form-label">{{ $t('请求头名称') }} <span class="text-red-500">*</span></label>
+            <input v-model="formData.keyAuthHeader" type="text" class="input" :placeholder="$t('例如：token')" />
+            <p class="mt-1 text-xs text-slate-400">{{ $t('客户端通过该 Header 传递 Consumer API Key') }}</p>
           </div>
           <div>
-            <label class="form-label">查询参数名称</label>
-            <input v-model="formData.keyAuthQuery" type="text" class="input" placeholder="例如：token（可选）" />
-            <p class="mt-1 text-xs text-slate-400">留空表示不启用 Query 参数取 key</p>
+            <label class="form-label">{{ $t('查询参数名称') }}</label>
+            <input v-model="formData.keyAuthQuery" type="text" class="input" :placeholder="$t('例如：token（可选）')" />
+            <p class="mt-1 text-xs text-slate-400">{{ $t('留空表示不启用 Query 参数取 key') }}</p>
           </div>
         </div>
-        <ToggleCard v-model="formData.hideCredentials" label="隐藏认证凭据" desc="开启后转发到上游前移除请求中的认证凭据" />
+        <ToggleCard v-model="formData.hideCredentials" :label="$t('隐藏认证凭据')" :desc="$t('开启后转发到上游前移除请求中的认证凭据')" />
       </div>
 
       <div class="space-y-3">
         <div>
-          <label class="form-label">授权用户 <span class="text-red-500">*</span></label>
+          <label class="form-label">{{ $t('授权用户') }} <span class="text-red-500">*</span></label>
           <Combobox
             :model-value="whitelistConsumers"
             multiple
-            placeholder="搜索并选择 Consumer，可多选"
-            search-placeholder="搜索 Consumer"
+            :placeholder="$t('搜索并选择 Consumer，可多选')"
+            :search-placeholder="$t('搜索 Consumer')"
             max-height="320px"
             :tag-class="consumerTagClass"
             @update:model-value="updateWhitelistConsumers"
           >
             <template #hint-extra="{ query }">
-              <span class="text-xs text-slate-400">{{ filteredConsumers(query).length }} 个可选</span>
+              <span class="text-xs text-slate-400">{{ filteredConsumers(query).length }} {{ $t('个可选') }}</span>
             </template>
 
             <template #default="{ query, select }">
@@ -232,7 +232,7 @@ export default toNative(WhitelistEditModal)
                   </span>
                   <span class="min-w-0 flex-1">
                     <span class="block truncate text-sm font-medium text-slate-700">{{ consumer.username }}</span>
-                    <span v-if="consumer.desc" class="mt-0.5 block truncate text-xs text-slate-400">{{ consumer.desc }}</span>
+                    <span v-if="consumer.desc" class="mt-0.5 block truncate text-xs text-slate-400">{{ $t(consumer.desc) }}</span>
                   </span>
                   <span class="rounded-lg bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700">key-auth</span>
                 </button>
@@ -242,11 +242,11 @@ export default toNative(WhitelistEditModal)
             <template #empty>
               <div v-if="filteredConsumers('').length === 0" class="py-8 text-center">
                 <i class="fas fa-search text-2xl text-slate-300 mb-2"></i>
-                <p class="text-sm text-slate-400">{{ keyAuthConsumers.length === 0 ? '暂无已配置 key-auth 的 Consumer' : '全部已选' }}</p>
+                <p class="text-sm text-slate-400">{{ keyAuthConsumers.length === 0 ? $t('暂无已配置 key-auth 的 Consumer') : $t('全部已选') }}</p>
               </div>
             </template>
           </Combobox>
-          <p class="text-xs text-slate-400 mt-1">仅展示已配置 key-auth 插件的 Consumer；如需添加新用户，请先在 Consumer 管理中创建</p>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('仅展示已配置 key-auth 插件的 Consumer；如需添加新用户，请先在 Consumer 管理中创建') }}</p>
         </div>
       </div>
     </div>

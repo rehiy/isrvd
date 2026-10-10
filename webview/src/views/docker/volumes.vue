@@ -51,15 +51,15 @@ class Volumes extends Vue {
 
     handleVolumeAction(vol: DockerVolumeInfo, action: string) {
         this.portal.showConfirm({
-            title: '删除数据卷',
-            message: `确定要删除数据卷 <strong class="text-slate-900">${vol.name}</strong> 吗？`,
+            title: this.$t('删除数据卷'),
+            message: this.$t('确定要删除数据卷 <strong class="text-slate-900">{0}</strong> 吗？', vol.name),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认删除',
+            confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 await api.dockerVolumeAction(vol.name, action)
-                this.portal.showNotification('success', '数据卷删除成功')
+                this.portal.showNotification('success', this.$t('数据卷删除成功'))
                 this.loadVolumes()
             }
         })
@@ -89,17 +89,17 @@ export default toNative(Volumes)
             <i class="fas fa-database text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">数据卷</h1>
-            <p class="text-xs text-slate-500">管理 Docker 数据卷，持久化容器数据</p>
+            <h1 class="title-text">{{ $t('数据卷') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('管理 Docker 数据卷，持久化容器数据') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="docker-volumes" placeholder="搜索卷名称、驱动或挂载点..." focus-color="amber" type-to-search />
+          <PageSearch v-model="searchText" search-key="docker-volumes" :placeholder="$t('搜索卷名称、驱动或挂载点...')" focus-color="amber" type-to-search />
           <button class="btn btn-secondary" @click="loadVolumes()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
           <button v-if="portal.hasPerm('POST /api/docker/volume')" class="btn btn-amber" @click="createModalRef?.show()">
-            <i class="fas fa-plus"></i>新建卷
+            <i class="fas fa-plus"></i>{{ $t('新建卷') }}
           </button>
         </div>
       </div>
@@ -110,15 +110,15 @@ export default toNative(Volumes)
             <i class="fas fa-database text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">数据卷</h1>
-            <p class="text-xs text-slate-500 truncate">管理容器数据卷</p>
+            <h1 class="title-text">{{ $t('数据卷') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('管理容器数据卷') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" title="刷新" @click="loadVolumes()">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadVolumes()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/docker/volume')" class="btn btn-amber btn-square" title="新建卷" @click="createModalRef?.show()">
+          <button v-if="portal.hasPerm('POST /api/docker/volume')" class="btn btn-amber btn-square" :title="$t('新建卷')" @click="createModalRef?.show()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -126,14 +126,14 @@ export default toNative(Volumes)
     </div>
 
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="docker-volumes" placeholder="搜索卷名称、驱动或挂载点..." width-class="w-full" focus-color="amber" />
+      <PageSearch v-model="searchText" search-key="docker-volumes" :placeholder="$t('搜索卷名称、驱动或挂载点...')" width-class="w-full" focus-color="amber" />
     </div>
 
     <!-- Loading State -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -144,10 +144,10 @@ export default toNative(Volumes)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
-              <th class="th">名称</th>
-              <th class="th">挂载点</th>
-              <th class="w-36 th">创建时间</th>
-              <th class="w-32 th-right">操作</th>
+              <th class="th">{{ $t('名称') }}</th>
+              <th class="th">{{ $t('挂载点') }}</th>
+              <th class="w-36 th">{{ $t('创建时间') }}</th>
+              <th class="w-32 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -168,10 +168,10 @@ export default toNative(Volumes)
               <td class="td-text-nowrap">{{ formatTime(vol.createdAt) }}</td>
               <td class="px-4 py-3">
                 <div class="table-actions">
-                  <button v-if="portal.hasPerm('GET /api/docker/volume/:name')" class="btn-icon btn-icon-slate" title="详情" @click="viewVolumeDetail(vol)">
+                  <button v-if="portal.hasPerm('GET /api/docker/volume/:name')" class="btn-icon btn-icon-slate" :title="$t('详情')" @click="viewVolumeDetail(vol)">
                     <i class="fas fa-circle-info text-xs"></i>
                   </button>
-                  <button v-if="portal.hasPerm('POST /api/docker/volume/:name/action')" class="btn-icon btn-icon-red" title="删除" @click="handleVolumeAction(vol, 'remove')">
+                  <button v-if="portal.hasPerm('POST /api/docker/volume/:name/action')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleVolumeAction(vol, 'remove')">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
@@ -198,23 +198,23 @@ export default toNative(Volumes)
 
           <!-- 挂载点 -->
           <div class="card-prop-row-start">
-            <span class="prop-label-start">挂载点</span>
+            <span class="prop-label-start">{{ $t('挂载点') }}</span>
             <code class="font-mono text-xs text-slate-500 break-all" :title="vol.mountpoint">{{ vol.mountpoint }}</code>
           </div>
 
           <!-- 创建时间 -->
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">创建时间</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('创建时间') }}</span>
             <span class="text-xs text-slate-500">{{ formatTime(vol.createdAt) }}</span>
           </div>
           
           <!-- 底部：操作按钮 -->
           <div class="card-actions">
-            <button v-if="portal.hasPerm('GET /api/docker/volume/:name')" class="btn-icon btn-icon-slate" title="详情" @click="viewVolumeDetail(vol)">
-              <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">详情</span>
+            <button v-if="portal.hasPerm('GET /api/docker/volume/:name')" class="btn-icon btn-icon-slate" :title="$t('详情')" @click="viewVolumeDetail(vol)">
+              <i class="fas fa-circle-info text-xs"></i><span class="text-xs ml-1">{{ $t('详情') }}</span>
             </button>
-            <button v-if="portal.hasPerm('POST /api/docker/volume/:name/action')" class="btn-icon btn-icon-red" title="删除" @click="handleVolumeAction(vol, 'remove')">
-              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+            <button v-if="portal.hasPerm('POST /api/docker/volume/:name/action')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleVolumeAction(vol, 'remove')">
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
             </button>
           </div>
         </div>
@@ -227,8 +227,8 @@ export default toNative(Volumes)
         <div class="empty-state-icon">
           <i class="fas fa-database text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ volumes.length === 0 ? '暂无数据卷' : '未找到匹配数据卷' }}</p>
-        <p class="text-sm text-slate-400">{{ volumes.length === 0 ? '点击「新建卷」创建数据卷' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ volumes.length === 0 ? $t('暂无数据卷') : $t('未找到匹配数据卷') }}</p>
+        <p class="text-sm text-slate-400">{{ volumes.length === 0 ? $t('点击「新建卷」创建数据卷') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
   </div>

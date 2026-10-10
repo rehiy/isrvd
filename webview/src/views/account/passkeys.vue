@@ -55,7 +55,7 @@ class AccountPasskeys extends Vue {
 
     openRegisterDialog() {
         if (!isWebAuthnSupported()) {
-            this.portal.showNotification('error', '当前浏览器或环境不支持 Passkey（需要 HTTPS 且浏览器支持 WebAuthn）')
+            this.portal.showNotification('error', this.$t('当前浏览器或环境不支持 Passkey（需要 HTTPS 且浏览器支持 WebAuthn）'))
             return
         }
         this.registerDisplayName = ''
@@ -71,7 +71,7 @@ class AccountPasskeys extends Vue {
         this.registerLoading = true
         try {
             await registerPasskey(this.registerDisplayName || undefined)
-            this.portal.showNotification('success', 'Passkey 绑定成功！')
+            this.portal.showNotification('success', this.$t('Passkey 绑定成功！'))
             this.showRegisterDialog = false
             await this.loadPasskeyCredentials()
         } finally {
@@ -99,7 +99,7 @@ class AccountPasskeys extends Vue {
         try {
             await api.accountPasskeyRenameCredential(cred.idBase64, name)
             cred.displayName = name
-            this.portal.showNotification('success', '凭证已重命名')
+            this.portal.showNotification('success', this.$t('凭证已重命名'))
         } finally {
             this.cancelRename()
         }
@@ -108,16 +108,16 @@ class AccountPasskeys extends Vue {
     // ─── 删除 ───
     handleDeletePasskey(credentialId: string) {
         this.portal.showConfirm({
-            title: '删除 Passkey',
-            message: '确定要删除这个 Passkey 凭证吗？',
+            title: this.$t('删除 Passkey'),
+            message: this.$t('确定要删除这个 Passkey 凭证吗？'),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认删除',
+            confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 try {
                     await api.accountPasskeyDeleteCredential(credentialId)
-                    this.portal.showNotification('success', 'Passkey 凭证已删除')
+                    this.portal.showNotification('success', this.$t('Passkey 凭证已删除'))
                     await this.loadPasskeyCredentials()
                 } catch {}
             }
@@ -137,7 +137,7 @@ export default toNative(AccountPasskeys)
           </div>
           <div class="min-w-0">
             <h1 class="title-text">Passkey</h1>
-            <p class="text-xs text-slate-500 truncate">绑定或移除用于免密登录的 Passkey</p>
+            <p class="text-xs text-slate-500 truncate">{{ $t('绑定或移除用于免密登录的 Passkey') }}</p>
           </div>
         </div>
         <button
@@ -148,7 +148,7 @@ export default toNative(AccountPasskeys)
           @click="openRegisterDialog"
         >
           <i class="fas fa-plus mr-2"></i>
-          绑定新 Passkey
+          {{ $t('绑定新 Passkey') }}
         </button>
       </div>
     </div>
@@ -157,7 +157,7 @@ export default toNative(AccountPasskeys)
       <div v-if="passkeyLoading" class="card-body">
         <div class="empty-state">
           <div class="spinner-lg"></div>
-          <p class="text-slate-500">加载中...</p>
+          <p class="text-slate-500">{{ $t('加载中...') }}</p>
         </div>
       </div>
 
@@ -165,8 +165,8 @@ export default toNative(AccountPasskeys)
         <div class="empty-state-icon">
           <i class="fas fa-fingerprint text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">暂无 Passkey</p>
-        <p class="text-sm text-slate-400">点击上方「绑定新 Passkey」开始设置</p>
+        <p class="text-slate-600 font-medium mb-1">{{ $t('暂无 Passkey') }}</p>
+        <p class="text-sm text-slate-400">{{ $t('点击上方「绑定新 Passkey」开始设置') }}</p>
       </div>
 
       <div v-else class="space-y-4">
@@ -204,21 +204,21 @@ export default toNative(AccountPasskeys)
                 <button
                   v-if="canRename"
                   class="btn-icon btn-icon-slate"
-                  title="重命名"
+                  :title="$t('重命名')"
                   @click="startRename(cred)"
                 >
                   <i class="fas fa-pen text-xs"></i>
                 </button>
               </div>
               <div class="flex items-center gap-3 text-xs text-slate-500 mt-1">
-                <span>添加于 {{ new Date(cred.addedAt).toLocaleDateString() }}</span>
+                <span>{{ $t('添加于') }} {{ new Date(cred.addedAt).toLocaleDateString() }}</span>
               </div>
             </div>
           </div>
           <button
             v-if="canDelete"
             class="btn-icon btn-icon-red flex-shrink-0"
-            title="删除"
+            :title="$t('删除')"
             @click="handleDeletePasskey(cred.idBase64)"
           >
             <i class="fas fa-trash-alt text-xs"></i>
@@ -230,7 +230,7 @@ export default toNative(AccountPasskeys)
     <!-- 注册弹窗 -->
     <BaseModal
       v-model="showRegisterDialog"
-      title="绑定新 Passkey"
+      :title="$t('绑定新 Passkey')"
       :loading="registerLoading"
       confirm-class="btn-purple"
       @confirm="handleRegisterPasskey"
@@ -238,22 +238,22 @@ export default toNative(AccountPasskeys)
     >
       <div class="space-y-4">
         <div>
-          <label class="form-label">凭证名称 <span class="text-slate-400 font-normal">（可选）</span></label>
+          <label class="form-label">{{ $t('凭证名称') }} <span class="text-slate-400 font-normal">{{ $t('（可选）') }}</span></label>
           <input
             v-model="registerDisplayName"
             type="text"
             class="input"
-            placeholder="如：MacBook Touch ID"
+            :placeholder="$t('如：MacBook Touch ID')"
             maxlength="50"
             @keyup.enter="handleRegisterPasskey"
           />
         </div>
         <p class="text-sm text-slate-500">
-          请确保您的设备支持 Passkey（如 Touch ID、Face ID 或安全密钥）。
+          {{ $t('请确保您的设备支持 Passkey（如 Touch ID、Face ID 或安全密钥）。') }}
         </p>
       </div>
       <template #confirm-text>
-        {{ registerLoading ? '绑定中...' : '开始绑定' }}
+        {{ registerLoading ? $t('绑定中...') : $t('开始绑定') }}
       </template>
     </BaseModal>
   </div>

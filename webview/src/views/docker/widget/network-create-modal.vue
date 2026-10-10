@@ -31,7 +31,7 @@ class NetworkCreateModal extends Vue {
         this.modalLoading = true
         try {
             await api.dockerNetworkCreate(this.formData)
-            this.portal.showNotification('success', '网络创建成功')
+            this.portal.showNotification('success', this.$t('网络创建成功'))
             this.isOpen = false
             this.$emit('success')
         } catch {}
@@ -42,27 +42,27 @@ export default toNative(NetworkCreateModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" title="新建网络" :loading="modalLoading" confirm-class="btn-purple" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('新建网络')" :loading="modalLoading" confirm-class="btn-purple" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
-        <label class="form-label">网络名称</label>
-        <input v-model="formData.name" type="text" placeholder="请输入网络名称" required class="input" />
+        <label class="form-label">{{ $t('网络名称') }}</label>
+        <input v-model="formData.name" type="text" :placeholder="$t('请输入网络名称')" required class="input" />
       </div>
       <div>
-        <label class="form-label">驱动类型</label>
+        <label class="form-label">{{ $t('驱动类型') }}</label>
         <select v-model="formData.driver" class="input">
-          <option value="bridge">bridge (桥接)</option>
-          <option value="host">host (主机)</option>
-          <option value="overlay">overlay (覆盖)</option>
+          <option value="bridge">{{ $t('bridge (桥接)') }}</option>
+          <option value="host">{{ $t('host (主机)') }}</option>
+          <option value="overlay">{{ $t('overlay (覆盖)') }}</option>
           <option value="macvlan">macvlan</option>
         </select>
       </div>
       <div>
-        <label class="form-label">子网 CIDR（可选）</label>
-        <input v-model="formData.subnet" type="text" placeholder="请输入子网 CIDR" class="input" />
+        <label class="form-label">{{ $t('子网 CIDR（可选）') }}</label>
+        <input v-model="formData.subnet" type="text" :placeholder="$t('请输入子网 CIDR')" class="input" />
       </div>
     </form>
 
-    <template #confirm-text>确认新建</template>
+    <template #confirm-text>{{ $t('确认新建') }}</template>
   </BaseModal>
 </template>

@@ -70,15 +70,15 @@ class SSLEditModal extends Vue {
     async handleConfirm() {
         const snis = this.parseSnis()
         if (snis.length === 0) {
-            this.portal.showNotification('error', '至少需要填写一个 SNI 域名')
+            this.portal.showNotification('error', this.$t('至少需要填写一个 SNI 域名'))
             return
         }
         if (!this.isEditMode && !this.formData.cert.trim()) {
-            this.portal.showNotification('error', '证书内容不能为空')
+            this.portal.showNotification('error', this.$t('证书内容不能为空'))
             return
         }
         if (!this.isEditMode && !this.formData.key.trim()) {
-            this.portal.showNotification('error', '私钥内容不能为空')
+            this.portal.showNotification('error', this.$t('私钥内容不能为空'))
             return
         }
 
@@ -102,32 +102,32 @@ export default toNative(SSLEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑证书' : '新建证书'" :loading="modalLoading" confirm-class="btn-cyan" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑证书') : $t('新建证书')" :loading="modalLoading" confirm-class="btn-cyan" @confirm="handleConfirm">
     <div class="space-y-4 p-1">
       <div>
-        <label class="form-label">SNI 域名 <span class="text-red-500">*</span></label>
-        <textarea v-model="formData.snisText" rows="3" class="input font-mono" placeholder="请输入 SNI（每行一个）"></textarea>
-        <p class="text-xs text-slate-400 mt-1">每行一个域名，支持通配符，例如：example.com 或 *.example.com</p>
-        <p class="text-xs text-slate-400 mt-1">每行一个域名，也支持用英文逗号分隔。</p>
+        <label class="form-label">{{ $t('SNI 域名') }} <span class="text-red-500">*</span></label>
+        <textarea v-model="formData.snisText" rows="3" class="input font-mono" :placeholder="$t('请输入 SNI（每行一个）')"></textarea>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个域名，支持通配符，例如：example.com 或 *.example.com') }}</p>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('每行一个域名，也支持用英文逗号分隔。') }}</p>
       </div>
 
       <div>
-        <label class="form-label">证书内容 <span v-if="!isEditMode" class="text-red-500">*</span></label>
-        <textarea v-model="formData.cert" rows="8" class="input font-mono text-xs" :placeholder="isEditMode ? '留空则保持不变' : '请输入 PEM 格式证书内容'" autocomplete="new-password"></textarea>
-        <p class="text-xs text-slate-400 mt-1">PEM 格式证书，以 -----BEGIN CERTIFICATE----- 开头。编辑时留空表示不修改当前证书。</p>
+        <label class="form-label">{{ $t('证书内容') }} <span v-if="!isEditMode" class="text-red-500">*</span></label>
+        <textarea v-model="formData.cert" rows="8" class="input font-mono text-xs" :placeholder="isEditMode ? $t('留空则保持不变') : $t('请输入 PEM 格式证书内容')" autocomplete="new-password"></textarea>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('PEM 格式证书，以 -----BEGIN CERTIFICATE----- 开头。编辑时留空表示不修改当前证书。') }}</p>
       </div>
 
       <div>
-        <label class="form-label">私钥内容 <span v-if="!isEditMode" class="text-red-500">*</span></label>
-        <textarea v-model="formData.key" rows="8" class="input font-mono text-xs" :placeholder="isEditMode ? '留空则保持不变' : '请输入 PEM 格式私钥内容'" autocomplete="new-password"></textarea>
-        <p class="text-xs text-slate-400 mt-1">PEM 格式私钥，以 -----BEGIN PRIVATE KEY----- 开头。编辑时留空表示不修改当前私钥。</p>
+        <label class="form-label">{{ $t('私钥内容') }} <span v-if="!isEditMode" class="text-red-500">*</span></label>
+        <textarea v-model="formData.key" rows="8" class="input font-mono text-xs" :placeholder="isEditMode ? $t('留空则保持不变') : $t('请输入 PEM 格式私钥内容')" autocomplete="new-password"></textarea>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('PEM 格式私钥，以 -----BEGIN PRIVATE KEY----- 开头。编辑时留空表示不修改当前私钥。') }}</p>
       </div>
 
-      <ToggleCard :model-value="formData.status === 1" label="状态" desc="启用后证书生效" @update:model-value="(v: boolean) => formData.status = v ? 1 : 0" />
+      <ToggleCard :model-value="formData.status === 1" :label="$t('状态')" :desc="$t('启用后证书生效')" @update:model-value="(v: boolean) => formData.status = v ? 1 : 0" />
     </div>
 
     <template #confirm-text>
-      确认{{ isEditMode ? '更新' : '新建' }}
+      {{ $t('确认') }} {{ isEditMode ? $t('更新') : $t('新建') }}
     </template>
   </BaseModal>
 </template>

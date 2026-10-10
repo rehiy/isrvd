@@ -34,8 +34,8 @@ class NodeSwitcher extends Vue {
     }
 
     get label() {
-        if (!this.viewingNode) return '本机'
-        return this.portal.nodes.find(n => n.id === this.portal.currentNodeId)?.name || '节点'
+        if (!this.viewingNode) return this.$t('本机')
+        return this.portal.nodes.find(n => n.id === this.portal.currentNodeId)?.name || this.$t('节点')
     }
 
     // ─── 监听器 ───
@@ -74,7 +74,7 @@ export default toNative(NodeSwitcher)
         :class="viewingNode
           ? 'text-primary-600 bg-primary-50 hover:bg-primary-100'
           : 'text-slate-600 hover:text-primary-600 hover:bg-primary-50'"
-        :title="viewingNode ? `当前节点：${label}` : '切换节点'"
+        :title="viewingNode ? $t(`当前节点：${label}`) : $t('切换节点')"
         @click="toggle"
       >
         <i class="fas fa-sitemap"></i>
@@ -86,7 +86,7 @@ export default toNative(NodeSwitcher)
     <!-- 本机（中控） -->
     <button class="dropdown-item" :class="{ 'dropdown-item-active': !viewingNode }" @click="select('')">
       <i class="fas fa-circle text-[8px] text-emerald-500"></i>
-      <span>本机（中控）</span>
+      <span>{{ $t('本机（中控）') }}</span>
       <i v-if="!viewingNode" class="fas fa-check text-xs ml-auto"></i>
     </button>
 
@@ -101,11 +101,11 @@ export default toNative(NodeSwitcher)
     >
       <i class="fas fa-circle text-[8px]" :class="usable(node) ? 'text-emerald-500' : 'text-slate-300'"></i>
       <span class="truncate max-w-48">{{ node.name }}</span>
-      <span v-if="!node.online" class="text-xs ml-auto">离线</span>
-      <span v-else-if="!node.compatible" class="text-xs text-amber-600 ml-auto">版本不兼容</span>
+      <span v-if="!node.online" class="text-xs ml-auto">{{ $t('离线') }}</span>
+      <span v-else-if="!node.compatible" class="text-xs text-amber-600 ml-auto">{{ $t('版本不兼容') }}</span>
       <i v-else-if="node.id === portal.currentNodeId" class="fas fa-check text-xs ml-auto"></i>
     </button>
 
-    <div v-if="approvedNodes.length === 0" class="px-4 py-3 text-xs text-slate-400">暂无已接入的节点</div>
+    <div v-if="approvedNodes.length === 0" class="px-4 py-3 text-xs text-slate-400">{{ $t('暂无已接入的节点') }}</div>
   </Dropdown>
 </template>

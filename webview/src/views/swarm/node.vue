@@ -53,13 +53,13 @@ export default toNative(NodeDetail)
             <i class="fas fa-server text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">节点详情</h1>
+            <h1 class="text-lg font-semibold text-slate-800">{{ $t('节点详情') }}</h1>
             <p class="text-xs text-slate-600 font-mono truncate max-w-xs">Node ID: {{ nodeId }}</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
           <button class="btn btn-secondary" @click="loadDetail()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
         </div>
       </div>
@@ -70,11 +70,11 @@ export default toNative(NodeDetail)
             <i class="fas fa-server text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">节点详情</h1>
+            <h1 class="title-text">{{ $t('节点详情') }}</h1>
             <p class="text-xs text-slate-600 font-mono truncate">{{ nodeId }}</p>
           </div>
         </div>
-        <button class="btn btn-secondary btn-square" title="刷新" @click="loadDetail()">
+        <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadDetail()">
           <i class="fas fa-rotate text-sm"></i>
         </button>
       </div>
@@ -84,7 +84,7 @@ export default toNative(NodeDetail)
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -92,37 +92,37 @@ export default toNative(NodeDetail)
     <div v-else-if="nodeData" class="card-body space-y-4 text-sm">
       <!-- 基本信息 -->
       <div>
-        <h2 class="section-title">基本信息</h2>
+        <h2 class="section-title">{{ $t('基本信息') }}</h2>
         <div class="grid grid-cols-2 gap-3">
           <div class="col-span-2">
-            <label class="form-label">节点 ID</label>
+            <label class="form-label">{{ $t('节点 ID') }}</label>
             <code class="detail-value-mono">{{ nodeData.id }}</code>
           </div>
           <div>
-            <label class="form-label">主机名</label>
+            <label class="form-label">{{ $t('主机名') }}</label>
             <div class="detail-value flex items-center gap-2">
               {{ nodeData.hostname }}
               <span v-if="nodeData.leader" class="text-xs text-indigo-600"><i class="fas fa-crown mr-1"></i>Leader</span>
             </div>
           </div>
           <div>
-            <label class="form-label">地址</label>
+            <label class="form-label">{{ $t('地址') }}</label>
             <div class="detail-value">{{ nodeData.addr || '-' }}</div>
           </div>
           <div>
-            <label class="form-label">角色</label>
+            <label class="form-label">{{ $t('角色') }}</label>
             <div class="detail-value capitalize">{{ nodeData.role }}</div>
           </div>
           <div>
-            <label class="form-label">状态</label>
+            <label class="form-label">{{ $t('状态') }}</label>
             <div class="detail-value capitalize">{{ nodeData.state }}</div>
           </div>
           <div>
-            <label class="form-label">可用性</label>
+            <label class="form-label">{{ $t('可用性') }}</label>
             <div class="detail-value capitalize">{{ nodeData.availability }}</div>
           </div>
           <div>
-            <label class="form-label">引擎版本</label>
+            <label class="form-label">{{ $t('引擎版本') }}</label>
             <div class="detail-value">{{ nodeData.engineVersion || '-' }}</div>
           </div>
         </div>
@@ -130,22 +130,22 @@ export default toNative(NodeDetail)
 
       <!-- 硬件资源 -->
       <div>
-        <h2 class="section-title">硬件资源</h2>
+        <h2 class="section-title">{{ $t('硬件资源') }}</h2>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="form-label">操作系统</label>
+            <label class="form-label">{{ $t('操作系统') }}</label>
             <div class="detail-value capitalize">{{ nodeData.os || '-' }}</div>
           </div>
           <div>
-            <label class="form-label">架构</label>
+            <label class="form-label">{{ $t('架构') }}</label>
             <div class="detail-value">{{ nodeData.architecture || '-' }}</div>
           </div>
           <div>
-            <label class="form-label">CPU 核数</label>
+            <label class="form-label">{{ $t('CPU 核数') }}</label>
             <div class="detail-value">{{ nodeData.cpus || '-' }}</div>
           </div>
           <div>
-            <label class="form-label">内存</label>
+            <label class="form-label">{{ $t('内存') }}</label>
             <div class="detail-value">{{ nodeData.memoryBytes ? formatFileSize(nodeData.memoryBytes) : '-' }}</div>
           </div>
         </div>
@@ -153,14 +153,14 @@ export default toNative(NodeDetail)
 
       <!-- 时间信息 -->
       <div>
-        <h2 class="section-title">时间信息</h2>
+        <h2 class="section-title">{{ $t('时间信息') }}</h2>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="form-label">创建时间</label>
+            <label class="form-label">{{ $t('创建时间') }}</label>
             <div class="detail-value">{{ formatTime(nodeData.createdAt) }}</div>
           </div>
           <div>
-            <label class="form-label">更新时间</label>
+            <label class="form-label">{{ $t('更新时间') }}</label>
             <div class="detail-value">{{ formatTime(nodeData.updatedAt) }}</div>
           </div>
         </div>
@@ -194,7 +194,7 @@ export default toNative(NodeDetail)
         <div class="empty-state-icon">
           <i class="fas fa-server text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium">未找到节点详情</p>
+        <p class="text-slate-600 font-medium">{{ $t('未找到节点详情') }}</p>
       </div>
     </div>
   </div>

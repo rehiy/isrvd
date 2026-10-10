@@ -60,7 +60,7 @@ class CaddyServers extends Vue {
         try {
             const detail = (await api.caddyServerInspect(id)).payload
             if (!detail) {
-                this.portal.showNotification('error', '服务详情不存在')
+                this.portal.showNotification('error', this.$t('服务详情不存在'))
                 return
             }
             this.editModalRef?.show(detail)
@@ -82,12 +82,12 @@ class CaddyServers extends Vue {
     }
 
     deleteDisabledTitle(server: CaddyServerInfo) {
-        return this.isDefaultServer(server) ? 'srv0 是结构化 API 的默认服务，不可删除' : '至少保留一个服务'
+        return this.isDefaultServer(server) ? this.$t('srv0 是结构化 API 的默认服务，不可删除') : this.$t('至少保留一个服务')
     }
 
     autoHTTPSLabel(server: CaddyServerInfo) {
-        if (!server.automatic_https) return '默认'
-        return server.automatic_https.disable ? '已禁用' : '已启用'
+        if (!server.automatic_https) return this.$t('默认')
+        return server.automatic_https.disable ? this.$t('已禁用') : this.$t('已启用')
     }
 
     autoHTTPSClass(server: CaddyServerInfo) {
@@ -99,16 +99,16 @@ class CaddyServers extends Vue {
         if (!this.canDeleteServer(server)) return
         const id = this.serverID(server)
         this.portal.showConfirm({
-            title: '删除服务',
-            message: '确定删除这个服务吗？其下全部路由也会被删除。',
+            title: this.$t('删除服务'),
+            message: this.$t('确定删除这个服务吗？其下全部路由也会被删除。'),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认删除',
+            confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 try {
                     await api.caddyServerDelete(id)
-                    this.portal.showNotification('success', '服务删除成功')
+                    this.portal.showNotification('success', this.$t('服务删除成功'))
                     this.loadServers()
                 } catch {}
             }
@@ -130,14 +130,14 @@ export default toNative(CaddyServers)
         <div class="title-group-static">
           <div class="page-icon bg-rose-500"><i class="fas fa-server text-white"></i></div>
           <div class="min-w-0">
-            <h1 class="title-text">服务</h1>
-            <p class="text-xs text-slate-500 truncate">管理 srv0 等命名服务、监听地址和协议</p>
+            <h1 class="title-text">{{ $t('服务') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('管理 srv0 等命名服务、监听地址和协议') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="caddy-servers" placeholder="搜索名称、监听或协议..." focus-color="rose" type-to-search />
-          <button class="btn btn-secondary" @click="loadServers()"><i class="fas fa-rotate"></i>刷新</button>
-          <button v-if="portal.hasPerm('POST /api/caddy/server')" class="btn btn-rose" @click="openCreateModal()"><i class="fas fa-plus"></i>新建服务</button>
+          <PageSearch v-model="searchText" search-key="caddy-servers" :placeholder="$t('搜索名称、监听或协议...')" focus-color="rose" type-to-search />
+          <button class="btn btn-secondary" @click="loadServers()"><i class="fas fa-rotate"></i>{{ $t('刷新') }}</button>
+          <button v-if="portal.hasPerm('POST /api/caddy/server')" class="btn btn-rose" @click="openCreateModal()"><i class="fas fa-plus"></i>{{ $t('新建服务') }}</button>
         </div>
       </div>
 
@@ -145,33 +145,33 @@ export default toNative(CaddyServers)
         <div class="title-group">
           <div class="page-icon bg-rose-500"><i class="fas fa-server text-white"></i></div>
           <div class="min-w-0">
-            <h1 class="title-text">服务</h1>
-            <p class="text-xs text-slate-500 truncate">管理监听地址和协议</p>
+            <h1 class="title-text">{{ $t('服务') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('管理监听地址和协议') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" title="刷新" @click="loadServers()"><i class="fas fa-rotate text-sm"></i></button>
-          <button v-if="portal.hasPerm('POST /api/caddy/server')" class="btn btn-rose btn-square" title="新建服务" @click="openCreateModal()"><i class="fas fa-plus text-sm"></i></button>
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadServers()"><i class="fas fa-rotate text-sm"></i></button>
+          <button v-if="portal.hasPerm('POST /api/caddy/server')" class="btn btn-rose btn-square" :title="$t('新建服务')" @click="openCreateModal()"><i class="fas fa-plus text-sm"></i></button>
         </div>
       </div>
     </div>
 
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="caddy-servers" placeholder="搜索服务..." width-class="w-full" focus-color="rose" />
+      <PageSearch v-model="searchText" search-key="caddy-servers" :placeholder="$t('搜索服务...')" width-class="w-full" focus-color="rose" />
     </div>
 
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
     <div v-else-if="filteredServers.length === 0" class="card-body">
       <div class="empty-state">
         <div class="empty-state-icon"><i class="fas fa-server text-4xl text-slate-300"></i></div>
-        <p class="text-slate-600 font-medium mb-1">{{ servers.length === 0 ? '暂无服务' : '未找到匹配服务' }}</p>
-        <p class="text-sm text-slate-400">{{ servers.length === 0 ? '点击「新建服务」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ servers.length === 0 ? $t('暂无服务') : $t('未找到匹配服务') }}</p>
+        <p class="text-sm text-slate-400">{{ servers.length === 0 ? $t('点击「新建服务」开始创建') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
 
@@ -180,11 +180,11 @@ export default toNative(CaddyServers)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
-              <th class="th">服务</th>
-              <th class="th">协议</th>
-              <th class="w-28 th">自动 HTTPS</th>
-              <th class="w-24 th">路由</th>
-              <th class="w-32 th-right">操作</th>
+              <th class="th">{{ $t('服务') }}</th>
+              <th class="th">{{ $t('协议') }}</th>
+              <th class="w-28 th">{{ $t('自动 HTTPS') }}</th>
+              <th class="w-24 th">{{ $t('路由') }}</th>
+              <th class="w-32 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -196,7 +196,7 @@ export default toNative(CaddyServers)
                   </div>
                   <div class="min-w-0">
                     <span class="item-title font-mono">{{ server.name }}</span>
-                    <span class="item-subtitle-mono">{{ (server.listen || []).join(', ') || '无监听地址' }}</span>
+                    <span class="item-subtitle-mono">{{ (server.listen || []).join(', ') || $t('无监听地址') }}</span>
                   </div>
                 </div>
               </td>
@@ -204,7 +204,7 @@ export default toNative(CaddyServers)
                 <div v-if="server.protocols?.length" class="flex flex-wrap gap-1">
                   <span v-for="protocol in server.protocols" :key="protocol" class="badge-sm bg-rose-50 text-rose-700">{{ protocol }}</span>
                 </div>
-                <span v-else class="text-slate-400">默认</span>
+                <span v-else class="text-slate-400">{{ $t('默认') }}</span>
               </td>
               <td class="td-text"><span :class="autoHTTPSClass(server)">{{ autoHTTPSLabel(server) }}</span></td>
               <td class="td-text"><span class="text-emerald-600 font-medium">{{ server.routeCount }}</span></td>
@@ -214,12 +214,12 @@ export default toNative(CaddyServers)
                     v-if="canEditServer"
                     class="btn-icon btn-icon-blue disabled:opacity-50 disabled:cursor-not-allowed"
                     :disabled="Boolean(editingServer)"
-                    title="编辑"
+                    :title="$t('编辑')"
                     @click="openEditModal(server)"
                   >
                     <i :class="['fas text-xs', editingServer === serverID(server) ? 'fa-spinner fa-spin' : 'fa-pen']"></i>
                   </button>
-                  <button v-if="canDeleteServer(server) && canDeleteServers" class="btn-icon btn-icon-red" title="删除" @click="deleteServer(server)">
+                  <button v-if="canDeleteServer(server) && canDeleteServers" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteServer(server)">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                   <span v-else-if="canDeleteServers" :title="deleteDisabledTitle(server)">
@@ -242,23 +242,23 @@ export default toNative(CaddyServers)
             </div>
             <div class="min-w-0">
               <span class="item-title-sm font-mono">{{ server.name }}</span>
-              <span class="item-subtitle-mono">{{ (server.listen || []).join(', ') || '无监听地址' }}</span>
+              <span class="item-subtitle-mono">{{ (server.listen || []).join(', ') || $t('无监听地址') }}</span>
             </div>
           </div>
 
           <div class="card-prop-row-start">
-            <span class="prop-label-start">协议</span>
+            <span class="prop-label-start">{{ $t('协议') }}</span>
             <span v-if="server.protocols?.length" class="flex flex-wrap gap-1">
               <span v-for="protocol in server.protocols" :key="protocol" class="badge-sm bg-rose-50 text-rose-700">{{ protocol }}</span>
             </span>
-            <span v-else class="text-xs text-slate-400">默认</span>
+            <span v-else class="text-xs text-slate-400">{{ $t('默认') }}</span>
           </div>
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">自动 HTTPS</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('自动 HTTPS') }}</span>
             <span :class="autoHTTPSClass(server)" class="text-xs">{{ autoHTTPSLabel(server) }}</span>
           </div>
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">路由</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('路由') }}</span>
             <span class="text-emerald-600 text-xs font-medium">{{ server.routeCount }}</span>
           </div>
 
@@ -267,17 +267,17 @@ export default toNative(CaddyServers)
               v-if="canEditServer"
               class="btn-icon btn-icon-blue disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="Boolean(editingServer)"
-              title="编辑"
+              :title="$t('编辑')"
               @click="openEditModal(server)"
             >
-              <i :class="['fas text-xs', editingServer === serverID(server) ? 'fa-spinner fa-spin' : 'fa-pen']"></i><span class="text-xs ml-1">编辑</span>
+              <i :class="['fas text-xs', editingServer === serverID(server) ? 'fa-spinner fa-spin' : 'fa-pen']"></i><span class="text-xs ml-1">{{ $t('编辑') }}</span>
             </button>
-            <button v-if="canDeleteServer(server) && canDeleteServers" class="btn-icon btn-icon-red" title="删除" @click="deleteServer(server)">
-              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+            <button v-if="canDeleteServer(server) && canDeleteServers" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteServer(server)">
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
             </button>
             <span v-else-if="canDeleteServers" :title="deleteDisabledTitle(server)">
               <button disabled class="btn-icon text-slate-300 cursor-not-allowed" :aria-label="deleteDisabledTitle(server)">
-                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
               </button>
             </span>
           </div>

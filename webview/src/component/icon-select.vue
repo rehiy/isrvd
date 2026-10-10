@@ -124,27 +124,27 @@ export default toNative(IconSelect)
     <!-- 触发按钮 -->
     <div
       class="input flex items-center gap-2 cursor-pointer hover:border-primary-400 transition-colors min-w-0 w-full min-h-[46px]"
-      :title="modelValue || placeholder"
+      :title="$t(modelValue || placeholder)"
       @click="openModal"
     >
       <i :class="[modelValue || 'fas fa-icons', 'w-4 flex-shrink-0 text-center', modelValue ? 'text-slate-500' : 'text-slate-300']"></i>
       <span class="truncate text-sm flex-1 text-left" :class="modelValue ? 'text-slate-600' : 'text-slate-400'">
-        {{ modelValue || placeholder }}
+        {{ $t(modelValue || placeholder) }}
       </span>
       <i class="fas fa-chevron-right text-slate-300 text-xs flex-shrink-0"></i>
     </div>
 
     <!-- 图标选择 Modal -->
-    <BaseModal v-model="isOpen" title="选择图标" :show-footer="false">
+    <BaseModal v-model="isOpen" :title="$t('选择图标')" :show-footer="false">
       <!-- 搜索框 -->
       <div class="mb-3">
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <i class="fas fa-search text-slate-400 text-sm"></i>
           </div>
-          <input v-model="searchQuery" type="text" class="input pl-9" placeholder="搜索图标名称..." autofocus />
+          <input v-model="searchQuery" type="text" class="input pl-9" :placeholder="$t('搜索图标名称...')" autofocus />
           <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <span class="text-xs text-slate-400">{{ filteredIcons.length }} 个</span>
+            <span class="text-xs text-slate-400">{{ filteredIcons.length }} {{ $t('个') }}</span>
           </div>
         </div>
       </div>
@@ -153,7 +153,7 @@ export default toNative(IconSelect)
       <div v-if="!searchQuery" class="mb-3">
         <div class="flex flex-wrap gap-1.5">
           <button type="button" class="btn-category" :class="!activeCategory ? 'btn-category-active' : 'btn-category-inactive'" @click="activeCategory = ''">
-            全部
+            {{ $t('全部') }}
           </button>
           <button
             v-for="cat in visibleCategories"
@@ -163,11 +163,11 @@ export default toNative(IconSelect)
             :class="activeCategory === cat.key ? 'btn-category-active' : 'btn-category-inactive'"
             @click="setCategory(cat.key)"
           >
-            {{ cat.label }}
+            {{ $t(cat.label) }}
           </button>
           <button v-if="hasMoreCategories" type="button" class="btn-category btn-category-inactive" @click="categoryExpanded = !categoryExpanded">
             <i :class="categoryExpanded ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-[10px]"></i>
-            {{ categoryExpanded ? '收起' : '更多' }}
+            {{ categoryExpanded ? $t('收起') : $t('更多') }}
           </button>
         </div>
       </div>
@@ -186,14 +186,14 @@ export default toNative(IconSelect)
           @click="selectIcon(icon)"
         >
           <i :class="[icon.name, 'text-xl leading-none']"></i>
-          <span class="truncate w-full text-center text-[10px] leading-tight text-slate-400">{{ icon.label }}</span>
+          <span class="truncate w-full text-center text-[10px] leading-tight text-slate-400">{{ $t(icon.label) }}</span>
         </button>
       </div>
 
       <!-- 空状态 -->
       <div v-if="filteredIcons.length === 0" class="py-12 text-center text-slate-400">
         <i class="fas fa-search text-3xl mb-3 block opacity-30"></i>
-        <p class="text-sm">未找到匹配的图标</p>
+        <p class="text-sm">{{ $t('未找到匹配的图标') }}</p>
       </div>
     </BaseModal>
   </div>

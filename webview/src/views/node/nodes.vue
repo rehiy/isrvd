@@ -57,9 +57,9 @@ class NodeManage extends Vue {
         const codeRows = this.codes.map((code): NodeRow => ({
             key: `code-${code.id}`,
             icon: 'fa-ticket',
-            title: code.name || '未命名注册码',
-            subtitle: '一次性注册码',
-            statusText: '待接入',
+            title: code.name || this.$t('未命名注册码'),
+            subtitle: this.$t('一次性注册码'),
+            statusText: this.$t('待接入'),
             statusClass: 'text-slate-500',
             code
         }))
@@ -96,10 +96,10 @@ class NodeManage extends Vue {
 
     // ─── 展示辅助 ───
     statusText(node: NodeInfo) {
-        if (node.status === 'pending') return '待审批'
-        if (node.status === 'revoked') return '已吊销'
-        if (!node.online) return '离线'
-        return node.compatible ? '在线' : '版本不兼容'
+        if (node.status === 'pending') return this.$t('待审批')
+        if (node.status === 'revoked') return this.$t('已吊销')
+        if (!node.online) return this.$t('离线')
+        return node.compatible ? this.$t('在线') : this.$t('版本不兼容')
     }
 
     statusClass(node: NodeInfo) {
@@ -122,7 +122,7 @@ class NodeManage extends Vue {
     }
 
     approveText(code: NodeCodeInfo) {
-        return code.autoApprove ? '自动审批' : '需人工审批'
+        return code.autoApprove ? this.$t('自动审批') : this.$t('需人工审批')
     }
 
     timeText(value?: string) {
@@ -175,23 +175,23 @@ class NodeManage extends Vue {
     async handleApprove(node: NodeInfo) {
         try {
             await api.nodeApprove(node.id)
-            this.portal.showNotification('success', '节点已通过审批')
+            this.portal.showNotification('success', this.$t('节点已通过审批'))
             this.load(true)
         } catch {}
     }
 
     handleRevoke(node: NodeInfo) {
         this.portal.showConfirm({
-            title: '吊销节点',
-            message: `确定要吊销节点 <strong class="text-slate-900">${node.name}</strong> 吗？吊销后令牌立即失效并断开连接，需要删除后重新注册才能再次接入。`,
+            title: this.$t('吊销节点'),
+            message: this.$t('确定要吊销节点 <strong class="text-slate-900">{0}</strong> 吗？吊销后令牌立即失效并断开连接，需要删除后重新注册才能再次接入。', node.name),
             icon: 'fa-ban',
             iconColor: 'amber',
-            confirmText: '确认吊销',
+            confirmText: this.$t('确认吊销'),
             danger: true,
             onConfirm: async () => {
                 try {
                     await api.nodeRevoke(node.id)
-                    this.portal.showNotification('success', '节点已吊销')
+                    this.portal.showNotification('success', this.$t('节点已吊销'))
                     this.load(true)
                 } catch {}
             }
@@ -200,16 +200,16 @@ class NodeManage extends Vue {
 
     handleDelete(node: NodeInfo) {
         this.portal.showConfirm({
-            title: '删除节点',
-            message: `确定要删除节点 <strong class="text-slate-900">${node.name}</strong> 吗？在线的节点会被立即断开。`,
+            title: this.$t('删除节点'),
+            message: this.$t('确定要删除节点 <strong class="text-slate-900">{0}</strong> 吗？在线的节点会被立即断开。', node.name),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认删除',
+            confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 try {
                     await api.nodeDelete(node.id)
-                    this.portal.showNotification('success', '节点已删除')
+                    this.portal.showNotification('success', this.$t('节点已删除'))
                     this.load(true)
                 } catch {}
             }
@@ -218,16 +218,16 @@ class NodeManage extends Vue {
 
     handleCodeDelete(code: NodeCodeInfo) {
         this.portal.showConfirm({
-            title: '撤销注册码',
-            message: `确定要撤销注册码 <strong class="text-slate-900">${code.name || '未命名注册码'}</strong> 吗？撤销后尚未使用该码接入的受管机将无法注册。`,
+            title: this.$t('撤销注册码'),
+            message: this.$t('确定要撤销注册码 <strong class="text-slate-900">{0}</strong> 吗？撤销后尚未使用该码接入的受管机将无法注册。', code.name || '未命名注册码'),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认撤销',
+            confirmText: this.$t('确认撤销'),
             danger: true,
             onConfirm: async () => {
                 try {
                     await api.nodeCodeDelete(code.id)
-                    this.portal.showNotification('success', '注册码已撤销')
+                    this.portal.showNotification('success', this.$t('注册码已撤销'))
                     this.load(true)
                 } catch {}
             }
@@ -253,17 +253,17 @@ export default toNative(NodeManage)
             <i class="fas fa-sitemap text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">节点管理</h1>
-            <p class="text-xs text-slate-500">接入受管机，并切换到节点进行管理</p>
+            <h1 class="title-text">{{ $t('节点管理') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('接入受管机，并切换到节点进行管理') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="node" placeholder="搜索节点名、主机名、系统或创建人..." focus-color="orange" type-to-search />
+          <PageSearch v-model="searchText" search-key="node" :placeholder="$t('搜索节点名、主机名、系统或创建人...')" focus-color="orange" type-to-search />
           <button class="btn btn-secondary" @click="load()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
           <button v-if="portal.hasPerm('POST /api/node/code')" class="btn btn-orange" @click="openAdd">
-            <i class="fas fa-plus"></i>接入节点
+            <i class="fas fa-plus"></i>{{ $t('接入节点') }}
           </button>
         </div>
       </div>
@@ -274,15 +274,15 @@ export default toNative(NodeManage)
             <i class="fas fa-sitemap text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">节点管理</h1>
-            <p class="text-xs text-slate-500 truncate">接入并管理受管机</p>
+            <h1 class="title-text">{{ $t('节点管理') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('接入并管理受管机') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" title="刷新" @click="load()">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="load()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/node/code')" class="btn btn-orange btn-square" title="接入节点" @click="openAdd">
+          <button v-if="portal.hasPerm('POST /api/node/code')" class="btn btn-orange btn-square" :title="$t('接入节点')" @click="openAdd">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -291,14 +291,14 @@ export default toNative(NodeManage)
 
     <!-- 移动端搜索 -->
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="node" placeholder="搜索节点名、主机名、系统或创建人..." width-class="w-full" focus-color="orange" />
+      <PageSearch v-model="searchText" search-key="node" :placeholder="$t('搜索节点名、主机名、系统或创建人...')" width-class="w-full" focus-color="orange" />
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -307,8 +307,8 @@ export default toNative(NodeManage)
         <div class="empty-state-icon">
           <i class="fas fa-sitemap text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ rows.length === 0 ? '暂无受管节点' : '未找到匹配节点' }}</p>
-        <p class="text-sm text-slate-400">{{ rows.length === 0 ? '点击右上角「接入节点」生成注册码，并在受管机上以 agent 模式启动' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ rows.length === 0 ? $t('暂无受管节点') : $t('未找到匹配节点') }}</p>
+        <p class="text-sm text-slate-400">{{ rows.length === 0 ? $t('点击右上角「接入节点」生成注册码，并在受管机上以 agent 模式启动') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
 
@@ -318,12 +318,12 @@ export default toNative(NodeManage)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
-              <th class="th">节点</th>
-              <th class="w-32 th">状态</th>
-              <th class="th">系统</th>
-              <th class="th">版本</th>
-              <th class="w-24 th">延迟</th>
-              <th class="w-44 th-right">操作</th>
+              <th class="th">{{ $t('节点') }}</th>
+              <th class="w-32 th">{{ $t('状态') }}</th>
+              <th class="th">{{ $t('系统') }}</th>
+              <th class="th">{{ $t('版本') }}</th>
+              <th class="w-24 th">{{ $t('延迟') }}</th>
+              <th class="w-44 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -334,7 +334,7 @@ export default toNative(NodeManage)
                     <i class="fas text-white text-sm" :class="row.icon"></i>
                   </div>
                   <div class="min-w-0">
-                    <span class="item-title">{{ row.title }}</span>
+                    <span class="item-title">{{ $t(row.title) }}</span>
                     <span class="item-subtitle">{{ row.subtitle }}</span>
                   </div>
                 </div>
@@ -348,32 +348,32 @@ export default toNative(NodeManage)
                 <td class="td-text">{{ latencyText(row.node) }}</td>
               </template>
               <td v-else-if="row.code" class="td-text" colspan="3">
-                {{ approveText(row.code) }} · 创建人 {{ row.code.createdBy }} · {{ timeText(row.code.expiresAt) }} 过期
+                {{ approveText(row.code) }} {{ $t('· 创建人') }} {{ row.code.createdBy }}  ·  {{ timeText(row.code.expiresAt) }} {{ $t('过期') }}
               </td>
               <td class="px-4 py-3">
                 <div class="table-actions">
                   <template v-if="row.node">
-                    <button v-if="canOpen(row.node)" class="btn-icon btn-icon-slate" title="进入节点" @click="openNode(row.node)">
+                    <button v-if="canOpen(row.node)" class="btn-icon btn-icon-slate" :title="$t('进入节点')" @click="openNode(row.node)">
                       <i class="fas fa-arrow-right-to-bracket text-xs"></i>
                     </button>
-                    <button v-if="row.node.status === 'pending' && portal.hasPerm('POST /api/node/item/:id/approve')" class="btn-icon btn-icon-emerald" title="审批通过" @click="handleApprove(row.node)">
+                    <button v-if="row.node.status === 'pending' && portal.hasPerm('POST /api/node/item/:id/approve')" class="btn-icon btn-icon-emerald" :title="$t('审批通过')" @click="handleApprove(row.node)">
                       <i class="fas fa-check text-xs"></i>
                     </button>
-                    <button v-if="portal.hasPerm('PUT /api/node/item/:id')" class="btn-icon btn-icon-blue" title="重命名" @click="openEdit(row.node)">
+                    <button v-if="portal.hasPerm('PUT /api/node/item/:id')" class="btn-icon btn-icon-blue" :title="$t('重命名')" @click="openEdit(row.node)">
                       <i class="fas fa-pen text-xs"></i>
                     </button>
-                    <button v-if="row.node.status === 'approved' && portal.hasPerm('POST /api/node/item/:id/revoke')" class="btn-icon btn-icon-amber" title="吊销" @click="handleRevoke(row.node)">
+                    <button v-if="row.node.status === 'approved' && portal.hasPerm('POST /api/node/item/:id/revoke')" class="btn-icon btn-icon-amber" :title="$t('吊销')" @click="handleRevoke(row.node)">
                       <i class="fas fa-ban text-xs"></i>
                     </button>
-                    <button v-if="portal.hasPerm('DELETE /api/node/item/:id')" class="btn-icon btn-icon-red" title="删除" @click="handleDelete(row.node)">
+                    <button v-if="portal.hasPerm('DELETE /api/node/item/:id')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleDelete(row.node)">
                       <i class="fas fa-trash text-xs"></i>
                     </button>
                   </template>
                   <template v-else-if="row.code">
-                    <button v-if="portal.hasPerm('GET /api/node/codes')" class="btn-icon btn-icon-slate" title="查看接入命令" @click="openCode(row.code)">
+                    <button v-if="portal.hasPerm('GET /api/node/codes')" class="btn-icon btn-icon-slate" :title="$t('查看接入命令')" @click="openCode(row.code)">
                       <i class="fas fa-eye text-xs"></i>
                     </button>
-                    <button v-if="portal.hasPerm('DELETE /api/node/code/:id')" class="btn-icon btn-icon-red" title="撤销" @click="handleCodeDelete(row.code)">
+                    <button v-if="portal.hasPerm('DELETE /api/node/code/:id')" class="btn-icon btn-icon-red" :title="$t('撤销')" @click="handleCodeDelete(row.code)">
                       <i class="fas fa-trash text-xs"></i>
                     </button>
                   </template>
@@ -392,68 +392,68 @@ export default toNative(NodeManage)
               <i class="fas text-white text-base" :class="row.icon"></i>
             </div>
             <div class="min-w-0">
-              <span class="item-title-sm">{{ row.title }}</span>
+              <span class="item-title-sm">{{ $t(row.title) }}</span>
               <span class="item-subtitle">{{ row.subtitle }}</span>
             </div>
           </div>
 
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">状态</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('状态') }}</span>
             <span class="text-xs" :class="row.statusClass">{{ row.statusText }}</span>
           </div>
           <template v-if="row.node">
             <div class="card-prop-row">
-              <span class="text-xs text-slate-400 flex-shrink-0">系统</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('系统') }}</span>
               <span class="text-xs text-slate-500">{{ platformText(row.node) }}</span>
             </div>
             <div class="card-prop-row">
-              <span class="text-xs text-slate-400 flex-shrink-0">版本</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('版本') }}</span>
               <span class="text-xs text-slate-500">{{ row.node.agentVersion || '-' }}</span>
             </div>
             <div class="card-prop-row">
-              <span class="text-xs text-slate-400 flex-shrink-0">延迟</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('延迟') }}</span>
               <span class="text-xs text-slate-500">{{ latencyText(row.node) }}</span>
             </div>
           </template>
           <template v-else-if="row.code">
             <div class="card-prop-row">
-              <span class="text-xs text-slate-400 flex-shrink-0">审批</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('审批') }}</span>
               <span class="text-xs text-slate-500">{{ approveText(row.code) }}</span>
             </div>
             <div class="card-prop-row">
-              <span class="text-xs text-slate-400 flex-shrink-0">创建人</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('创建人') }}</span>
               <span class="text-xs text-slate-500">{{ row.code.createdBy }}</span>
             </div>
             <div class="card-prop-row">
-              <span class="text-xs text-slate-400 flex-shrink-0">过期</span>
+              <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('过期') }}</span>
               <span class="text-xs text-slate-500">{{ timeText(row.code.expiresAt) }}</span>
             </div>
           </template>
 
           <div class="card-actions">
             <template v-if="row.node">
-              <button v-if="canOpen(row.node)" class="btn-icon btn-icon-slate" title="进入节点" @click="openNode(row.node)">
-                <i class="fas fa-arrow-right-to-bracket text-xs"></i><span class="text-xs ml-1">进入</span>
+              <button v-if="canOpen(row.node)" class="btn-icon btn-icon-slate" :title="$t('进入节点')" @click="openNode(row.node)">
+                <i class="fas fa-arrow-right-to-bracket text-xs"></i><span class="text-xs ml-1">{{ $t('进入') }}</span>
               </button>
-              <button v-if="row.node.status === 'pending' && portal.hasPerm('POST /api/node/item/:id/approve')" class="btn-icon btn-icon-emerald" title="审批通过" @click="handleApprove(row.node)">
-                <i class="fas fa-check text-xs"></i><span class="text-xs ml-1">审批</span>
+              <button v-if="row.node.status === 'pending' && portal.hasPerm('POST /api/node/item/:id/approve')" class="btn-icon btn-icon-emerald" :title="$t('审批通过')" @click="handleApprove(row.node)">
+                <i class="fas fa-check text-xs"></i><span class="text-xs ml-1">{{ $t('审批') }}</span>
               </button>
-              <button v-if="portal.hasPerm('PUT /api/node/item/:id')" class="btn-icon btn-icon-blue" title="重命名" @click="openEdit(row.node)">
-                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">重命名</span>
+              <button v-if="portal.hasPerm('PUT /api/node/item/:id')" class="btn-icon btn-icon-blue" :title="$t('重命名')" @click="openEdit(row.node)">
+                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">{{ $t('重命名') }}</span>
               </button>
-              <button v-if="row.node.status === 'approved' && portal.hasPerm('POST /api/node/item/:id/revoke')" class="btn-icon btn-icon-amber" title="吊销" @click="handleRevoke(row.node)">
-                <i class="fas fa-ban text-xs"></i><span class="text-xs ml-1">吊销</span>
+              <button v-if="row.node.status === 'approved' && portal.hasPerm('POST /api/node/item/:id/revoke')" class="btn-icon btn-icon-amber" :title="$t('吊销')" @click="handleRevoke(row.node)">
+                <i class="fas fa-ban text-xs"></i><span class="text-xs ml-1">{{ $t('吊销') }}</span>
               </button>
-              <button v-if="portal.hasPerm('DELETE /api/node/item/:id')" class="btn-icon btn-icon-red" title="删除" @click="handleDelete(row.node)">
-                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+              <button v-if="portal.hasPerm('DELETE /api/node/item/:id')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleDelete(row.node)">
+                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
               </button>
             </template>
             <template v-else-if="row.code">
-              <button v-if="portal.hasPerm('GET /api/node/codes')" class="btn-icon btn-icon-slate" title="查看接入命令" @click="openCode(row.code)">
-                <i class="fas fa-eye text-xs"></i><span class="text-xs ml-1">查看命令</span>
+              <button v-if="portal.hasPerm('GET /api/node/codes')" class="btn-icon btn-icon-slate" :title="$t('查看接入命令')" @click="openCode(row.code)">
+                <i class="fas fa-eye text-xs"></i><span class="text-xs ml-1">{{ $t('查看命令') }}</span>
               </button>
-              <button v-if="portal.hasPerm('DELETE /api/node/code/:id')" class="btn-icon btn-icon-red" title="撤销" @click="handleCodeDelete(row.code)">
-                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">撤销</span>
+              <button v-if="portal.hasPerm('DELETE /api/node/code/:id')" class="btn-icon btn-icon-red" :title="$t('撤销')" @click="handleCodeDelete(row.code)">
+                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('撤销') }}</span>
               </button>
             </template>
           </div>

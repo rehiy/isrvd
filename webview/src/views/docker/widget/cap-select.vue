@@ -123,7 +123,7 @@ class CapSelect extends Vue {
     }
 
     get placeholder() {
-        return (this.modelValue?.length ?? 0) === 0 ? '点击选择或输入权限名称...' : ''
+        return (this.modelValue?.length ?? 0) === 0 ? this.$t('点击选择或输入权限名称...') : ''
     }
 
     get tagClass() {
@@ -151,7 +151,7 @@ export default toNative(CapSelect)
     multiple
     :model-value="modelValue"
     :placeholder="placeholder"
-    search-placeholder="搜索..."
+    :search-placeholder="$t('搜索...')"
     :tag-class="tagClass"
     max-height="320px"
     @update:model-value="$emit('update:modelValue', $event)"
@@ -160,7 +160,7 @@ export default toNative(CapSelect)
       <div v-for="cat in filteredCategories(query)" :key="cat.name" class="border-b border-slate-100 last:border-0">
         <div class="select-search-header">
           <i :class="['fas text-xs', cat.icon, iconColor(cat.tone)]"></i>
-          <span class="text-xs font-semibold text-slate-600">{{ cat.name }}</span>
+          <span class="text-xs font-semibold text-slate-600">{{ $t(cat.name) }}</span>
           <span class="text-xs text-slate-400">{{ selectedCountIn(cat, selected) }}/{{ cat.caps.length }}</span>
         </div>
         <div class="select-list">
@@ -188,7 +188,7 @@ export default toNative(CapSelect)
             </span>
             <div class="flex-1 min-w-0">
               <div class="text-sm font-medium" :class="isSelected(cap.name) ? 'text-slate-800' : 'text-slate-700'">{{ cap.name }}</div>
-              <div class="text-xs text-slate-400 truncate">{{ cap.desc }}</div>
+              <div class="text-xs text-slate-400 truncate">{{ $t(cap.desc) }}</div>
             </div>
           </button>
         </div>
@@ -198,15 +198,15 @@ export default toNative(CapSelect)
     <template #empty="{ query }">
       <div v-if="filteredCategories(query.toLowerCase()).length === 0" class="py-8 text-center">
         <i class="fas fa-search text-slate-300 text-2xl mb-2"></i>
-        <p class="text-sm text-slate-400">未找到匹配的权限</p>
-        <p class="text-xs text-slate-400 mt-1">按 Enter 可添加自定义权限</p>
+        <p class="text-sm text-slate-400">{{ $t('未找到匹配的权限') }}</p>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('按 Enter 可添加自定义权限') }}</p>
       </div>
     </template>
 
     <template #footer="{ selected, clearAll }">
       <div class="select-footer">
         <span class="text-xs text-slate-400">
-          已选 <strong :class="selected.length > 0 ? 'text-slate-700' : 'text-slate-400'">{{ selected.length }}</strong> 项权限
+          {{ $t('已选') }} <strong :class="selected.length > 0 ? 'text-slate-700' : 'text-slate-400'">{{ selected.length }}</strong> {{ $t('项权限') }}
         </span>
         <button
           v-if="selected.length> 0"
@@ -214,7 +214,7 @@ export default toNative(CapSelect)
           class="text-xs text-red-500 hover:text-red-600 font-medium"
           @click="clearAll"
         >
-          <i class="fas fa-trash-alt mr-1"></i>清空
+          <i class="fas fa-trash-alt mr-1"></i>{{ $t('清空') }}
         </button>
       </div>
     </template>

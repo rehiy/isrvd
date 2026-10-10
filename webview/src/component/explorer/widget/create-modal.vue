@@ -44,14 +44,14 @@ export default toNative(CreateModal)
 <template>
   <BaseModal
     v-model="isOpen"
-    title="新建文件"
+    :title="$t('新建文件')"
     :loading="loading"
     :confirm-disabled="!formData.name.trim()"
     @confirm="handleConfirm"
   >
     <form class="space-y-5" @submit.prevent="handleConfirm">
       <div>
-        <label for="fmCreateName" class="form-label">文件名称</label>
+        <label for="fmCreateName" class="form-label">{{ $t('文件名称') }}</label>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <i class="fas fa-file text-slate-400"></i>
@@ -64,22 +64,22 @@ export default toNative(CreateModal)
             required
             autofocus
             class="input pl-11"
-            placeholder="请输入文件名称"
+            :placeholder="$t('请输入文件名称')"
           >
         </div>
       </div>
       <div>
-        <label for="fmCreateContent" class="form-label">文件内容</label>
+        <label for="fmCreateContent" class="form-label">{{ $t('文件内容') }}</label>
         <textarea
           id="fmCreateContent"
           v-model="formData.content"
           rows="10"
           :disabled="loading"
           class="input font-mono text-sm"
-          placeholder="请输入文件内容..."
+          :placeholder="$t('请输入文件内容...')"
         ></textarea>
       </div>
     </form>
-    <template #confirm-text>{{ loading ? '新建中...' : '新建文件' }}</template>
+    <template #confirm-text>{{ loading ? $t('新建中...') : $t('新建文件') }}</template>
   </BaseModal>
 </template>

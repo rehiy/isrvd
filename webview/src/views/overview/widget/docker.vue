@@ -61,7 +61,7 @@ export default toNative(DockerOverview)
     <!-- Loading -->
     <div v-if="loading" class="overview-loading">
       <div class="spinner-md"></div>
-      <span class="text-slate-400 text-sm">加载中...</span>
+      <span class="text-slate-400 text-sm">{{ $t('加载中...') }}</span>
     </div>
 
     <!-- Stats Grid -->
@@ -71,7 +71,7 @@ export default toNative(DockerOverview)
           <i :class="['fas', card.icon, 'text-white']"></i>
         </div>
         <div class="min-w-0 flex-1">
-          <p class="text-xs text-slate-400 mb-0.5">{{ card.label }}</p>
+          <p class="text-xs text-slate-400 mb-0.5">{{ $t(card.label) }}</p>
           <p class="font-semibold text-slate-800 truncate">{{ cardValue(card.key) }}</p>
         </div>
       </div>
@@ -81,8 +81,8 @@ export default toNative(DockerOverview)
     <div v-else class="overview-unavailable">
       <i class="fab fa-docker text-2xl text-slate-300"></i>
       <div>
-        <p class="text-sm font-medium text-slate-600">无法获取 Docker 信息</p>
-        <p class="text-xs text-slate-400">请确认 Docker 服务是否正常运行</p>
+        <p class="text-sm font-medium text-slate-600">{{ $t('无法获取 Docker 信息') }}</p>
+        <p class="text-xs text-slate-400">{{ $t('请确认 Docker 服务是否正常运行') }}</p>
       </div>
     </div>
   </div>

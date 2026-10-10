@@ -68,9 +68,9 @@ export default toNative(OptionMultiSelect)
     multiple
     :allow-custom="false"
     :disabled="disabled"
-    :aria-label="ariaLabel"
-    :placeholder="placeholder"
-    :search-placeholder="searchPlaceholder"
+    :aria-label="$t(ariaLabel)"
+    :placeholder="$t(placeholder)"
+    :search-placeholder="$t(searchPlaceholder)"
     :tag-class="tagClass"
     :tag-disabled="isOptionDisabled"
     @update:model-value="updateValue"
@@ -78,7 +78,7 @@ export default toNative(OptionMultiSelect)
     <template #tag="{ value }">{{ labelFor(value) }}</template>
 
     <template #default="{ query, isSelected }">
-      <div class="select-list" role="group" :aria-label="ariaLabel">
+      <div class="select-list" role="group" :aria-label="$t(ariaLabel)">
         <label
           v-for="option in filteredOptions(query)"
           :key="option.value"
@@ -98,19 +98,19 @@ export default toNative(OptionMultiSelect)
             :disabled="disabled || option.disabled"
             @change="toggleOption(option.value)"
           />
-          <span class="text-sm font-medium text-slate-700">{{ option.label }}</span>
+          <span class="text-sm font-medium text-slate-700">{{ $t(option.label) }}</span>
         </label>
       </div>
     </template>
 
     <template #empty="{ query }">
-      <div v-if="filteredOptions(query.toLowerCase()).length === 0" class="empty-note">{{ emptyText }}</div>
+      <div v-if="filteredOptions(query.toLowerCase()).length === 0" class="empty-note">{{ $t(emptyText) }}</div>
     </template>
 
     <template #footer="{ selected, clearAll }">
       <div class="select-footer">
-        <span class="text-xs text-slate-400" aria-live="polite">已选 {{ selected.length }} 项</span>
-        <button v-if="!disabled && hasClearableSelection(selected)" type="button" class="btn-icon btn-icon-slate" title="清空" aria-label="清空已选项" @click="clearAll">
+        <span class="text-xs text-slate-400" aria-live="polite">{{ $t('已选') }} {{ selected.length }} {{ $t('项') }}</span>
+        <button v-if="!disabled && hasClearableSelection(selected)" type="button" class="btn-icon btn-icon-slate" :title="$t('清空')" :aria-label="$t('清空已选项')" @click="clearAll">
           <i class="fas fa-xmark text-xs"></i>
         </button>
       </div>

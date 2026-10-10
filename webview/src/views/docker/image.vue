@@ -23,7 +23,7 @@ class ImageDetail extends Vue {
         if (tag) return tag
 
         const digestName = this.digestImageName(this.repoDigests[0] || '')
-        return digestName || this.shortHash(this.inspectData?.shortId || this.inspectData?.id || this.imageId) || '镜像详情'
+        return digestName || this.shortHash(this.inspectData?.shortId || this.inspectData?.id || this.imageId) || this.$t('镜像详情')
     }
 
     get imageSubtitle() {
@@ -123,7 +123,7 @@ export default toNative(ImageDetail)
         </div>
         <div class="flex items-center gap-2">
           <button class="btn btn-secondary" :disabled="loading" @click="loadDetail">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
         </div>
       </div>
@@ -139,7 +139,7 @@ export default toNative(ImageDetail)
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" title="刷新" :disabled="loading" @click="loadDetail">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" :disabled="loading" @click="loadDetail">
             <i class="fas fa-rotate text-sm"></i>
           </button>
         </div>
@@ -148,59 +148,59 @@ export default toNative(ImageDetail)
 
     <div v-if="loading" class="empty-state">
       <div class="spinner-lg"></div>
-      <p class="text-slate-500">加载中...</p>
+      <p class="text-slate-500">{{ $t('加载中...') }}</p>
     </div>
 
     <div v-else-if="inspectData" class="card-body space-y-4 text-sm">
       <!-- 基本信息 & 平台信息 -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <h2 class="section-title">基本信息</h2>
+          <h2 class="section-title">{{ $t('基本信息') }}</h2>
           <div class="space-y-3">
             <div>
-              <label class="form-label">镜像 ID</label>
+              <label class="form-label">{{ $t('镜像 ID') }}</label>
               <code class="detail-value-mono">{{ inspectData.id }}</code>
             </div>
             <div>
-              <label class="form-label">短 ID</label>
+              <label class="form-label">{{ $t('短 ID') }}</label>
               <code class="detail-value-mono">{{ shortHash(inspectData.shortId || inspectData.id) }}</code>
             </div>
             <div>
-              <label class="form-label">创建时间</label>
+              <label class="form-label">{{ $t('创建时间') }}</label>
               <div class="detail-value">{{ formatTime(inspectData.created) }}</div>
             </div>
             <div>
-              <label class="form-label">大小</label>
+              <label class="form-label">{{ $t('大小') }}</label>
               <div class="detail-value">{{ formatFileSize(inspectData.size) }}</div>
             </div>
             <div>
-              <label class="form-label">层数</label>
+              <label class="form-label">{{ $t('层数') }}</label>
               <div class="detail-value">{{ inspectData.layers }}</div>
             </div>
             <div v-if="inspectData.author">
-              <label class="form-label">作者</label>
+              <label class="form-label">{{ $t('作者') }}</label>
               <div class="detail-value">{{ inspectData.author }}</div>
             </div>
           </div>
         </div>
 
         <div>
-          <h2 class="section-title">平台信息</h2>
+          <h2 class="section-title">{{ $t('平台信息') }}</h2>
           <div class="space-y-3">
             <div>
-              <label class="form-label">操作系统</label>
+              <label class="form-label">{{ $t('操作系统') }}</label>
               <div class="detail-value">{{ inspectData.os || '-' }}</div>
             </div>
             <div>
-              <label class="form-label">架构</label>
+              <label class="form-label">{{ $t('架构') }}</label>
               <div class="detail-value">{{ inspectData.architecture || '-' }}</div>
             </div>
             <div>
-              <label class="form-label">标签数</label>
+              <label class="form-label">{{ $t('标签数') }}</label>
               <div class="detail-value">{{ repoTags.length }}</div>
             </div>
             <div>
-              <label class="form-label">Digest 数</label>
+              <label class="form-label">{{ $t('Digest 数') }}</label>
               <div class="detail-value">{{ repoDigests.length }}</div>
             </div>
           </div>
@@ -210,11 +210,11 @@ export default toNative(ImageDetail)
       <!-- 标签 & Digest -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <h2 class="section-title">标签</h2>
+          <h2 class="section-title">{{ $t('标签') }}</h2>
           <div v-if="repoTags.length" class="space-y-2">
             <code v-for="tag in repoTags" :key="tag" class="detail-value-mono">{{ tag }}</code>
           </div>
-          <div v-else class="detail-value text-slate-400 text-sm">无标签</div>
+          <div v-else class="detail-value text-slate-400 text-sm">{{ $t('无标签') }}</div>
         </div>
 
         <div>
@@ -222,16 +222,16 @@ export default toNative(ImageDetail)
           <div v-if="repoDigests.length" class="space-y-2">
             <code v-for="digest in repoDigests" :key="digest" class="detail-value-mono" :title="digest">{{ formatDigest(digest) }}</code>
           </div>
-          <div v-else class="detail-value text-slate-400 text-sm">无 Digest</div>
+          <div v-else class="detail-value text-slate-400 text-sm">{{ $t('无 Digest') }}</div>
         </div>
       </div>
 
       <!-- 运行配置 -->
       <div>
-        <h2 class="section-title">运行配置</h2>
+        <h2 class="section-title">{{ $t('运行配置') }}</h2>
         <div class="space-y-3">
           <div>
-            <label class="form-label">工作目录</label>
+            <label class="form-label">{{ $t('工作目录') }}</label>
             <code class="detail-value-mono">{{ inspectData.workingDir || '-' }}</code>
           </div>
           <div>
@@ -243,7 +243,7 @@ export default toNative(ImageDetail)
             <code class="detail-value-mono">{{ cmdText || '-' }}</code>
           </div>
           <div>
-            <label class="form-label">暴露端口</label>
+            <label class="form-label">{{ $t('暴露端口') }}</label>
             <code class="detail-value-mono">{{ exposedPortsText || '-' }}</code>
           </div>
         </div>
@@ -251,11 +251,11 @@ export default toNative(ImageDetail)
 
       <!-- 环境变量 -->
       <div>
-        <h2 class="section-title">环境变量</h2>
+        <h2 class="section-title">{{ $t('环境变量') }}</h2>
         <div v-if="envList.length" class="space-y-2">
           <code v-for="env in envList" :key="env" class="detail-value-mono">{{ env }}</code>
         </div>
-        <div v-else class="detail-value text-slate-400 text-sm">无环境变量</div>
+        <div v-else class="detail-value text-slate-400 text-sm">{{ $t('无环境变量') }}</div>
       </div>
 
       <!-- Labels -->
@@ -266,22 +266,22 @@ export default toNative(ImageDetail)
             <span class="text-slate-500">{{ key }}</span><span class="text-slate-300 mx-1">=</span><span class="text-slate-700">{{ value }}</span>
           </div>
         </div>
-        <div v-else class="detail-value text-slate-400 text-sm">无标签</div>
+        <div v-else class="detail-value text-slate-400 text-sm">{{ $t('无标签') }}</div>
       </div>
 
       <!-- 层信息 -->
       <div>
         <h2 class="section-title section-title-table">
-          层信息
-          <span class="text-slate-400 normal-case font-normal ml-1">（{{ inspectData.layers }} 个实际层，共 {{ layerDetails.length }} 步）</span>
+          {{ $t('层信息') }}
+          <span class="text-slate-400 normal-case font-normal ml-1">（ {{ inspectData.layers }} {{ $t('个实际层，共') }} {{ layerDetails.length }} {{ $t('步）') }}</span>
         </h2>
         <div v-if="layerDetails.length" class="border-x border-b border-slate-200 rounded-b-xl overflow-hidden">
           <table class="w-full">
             <thead>
               <tr class="bg-slate-100 border-b border-slate-200">
                 <th class="th-sm w-10">#</th>
-                <th class="th-sm w-28">大小</th>
-                <th class="th-sm">命令</th>
+                <th class="th-sm w-28">{{ $t('大小') }}</th>
+                <th class="th-sm">{{ $t('命令') }}</th>
                 <th class="th-sm w-36">Digest</th>
               </tr>
             </thead>
@@ -292,10 +292,10 @@ export default toNative(ImageDetail)
                 </td>
                 <td class="px-3 py-2 text-right">
                   <span v-if="!layer.empty" class="text-xs text-slate-500 tabular-nums">{{ formatFileSize(layer.size) }}</span>
-                  <span v-else class="text-xs text-slate-400">空层</span>
+                  <span v-else class="text-xs text-slate-400">{{ $t('空层') }}</span>
                 </td>
                 <td class="px-3 py-2">
-                  <code class="text-xs font-mono text-slate-700 truncate block max-w-xs">{{ layer.createdBy || '(无命令)' }}</code>
+                  <code class="text-xs font-mono text-slate-700 truncate block max-w-xs">{{ layer.createdBy || $t('(无命令)') }}</code>
                 </td>
                 <td class="px-3 py-2 text-right">
                   <code v-if="!layer.empty && layer.digest" class="text-xs font-mono text-slate-400 truncate block" :title="layer.digest">{{ formatDigest(layer.digest) }}</code>
@@ -305,7 +305,7 @@ export default toNative(ImageDetail)
             </tbody>
           </table>
         </div>
-        <div v-else class="detail-value text-slate-400 text-sm">无层信息</div>
+        <div v-else class="detail-value text-slate-400 text-sm">{{ $t('无层信息') }}</div>
       </div>
     </div>
 
@@ -313,7 +313,7 @@ export default toNative(ImageDetail)
       <div class="empty-state-icon">
         <i class="fas fa-compact-disc text-4xl text-slate-300"></i>
       </div>
-      <p class="text-slate-600 font-medium">未找到镜像详情</p>
+      <p class="text-slate-600 font-medium">{{ $t('未找到镜像详情') }}</p>
     </div>
   </div>
 </template>

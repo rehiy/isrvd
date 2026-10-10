@@ -94,31 +94,31 @@ export default toNative(ServiceCreateModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" title="新建服务" :loading="loading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('新建服务')" :loading="loading" confirm-class="btn-emerald" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <!-- 基础设置 -->
       <div class="grid grid-cols-2 gap-3">
         <div class="col-span-2">
-          <label class="form-label">镜像 <span class="text-red-500">*</span></label>
-          <ImageSelect v-model="form.image" :images="images" placeholder="请输入或选择镜像名" />
+          <label class="form-label">{{ $t('镜像') }} <span class="text-red-500">*</span></label>
+          <ImageSelect v-model="form.image" :images="images" :placeholder="$t('请输入或选择镜像名')" />
         </div>
         <div>
-          <label class="form-label">服务名 <span class="text-red-500">*</span></label>
-          <input v-model="form.name" type="text" placeholder="请输入服务名" class="input" />
+          <label class="form-label">{{ $t('服务名') }} <span class="text-red-500">*</span></label>
+          <input v-model="form.name" type="text" :placeholder="$t('请输入服务名')" class="input" />
         </div>
         <div>
-          <label class="form-label">运行节点</label>
+          <label class="form-label">{{ $t('运行节点') }}</label>
           <select v-model="form.node" class="input">
-            <option value="">不指定</option>
+            <option value="">{{ $t('不指定') }}</option>
             <option v-for="node in nodes" :key="node.id" :value="node.hostname">
               {{ node.hostname }} ({{ node.role }})
             </option>
           </select>
         </div>
         <div class="col-span-2">
-          <label class="form-label">网络</label>
+          <label class="form-label">{{ $t('网络') }}</label>
           <select v-model="form.network" class="input">
-            <option value="">不指定</option>
+            <option value="">{{ $t('不指定') }}</option>
             <option v-for="net in networks" :key="net.id" :value="net.name">
               {{ net.name }} ({{ net.driver }})
             </option>
@@ -128,53 +128,53 @@ export default toNative(ServiceCreateModal)
 
       <!-- 端口映射 -->
       <div>
-        <label class="form-label">端口映射</label>
-        <textarea v-model="form.ports" rows="2" placeholder="请输入端口映射（可选）" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">每行一条，格式：宿主端口:容器端口/协议，例如：8080:80/tcp</p>
+        <label class="form-label">{{ $t('端口映射') }}</label>
+        <textarea v-model="form.ports" rows="2" :placeholder="$t('请输入端口映射（可选）')" class="input font-mono text-sm"></textarea>
+        <p class="mt-1 text-xs text-slate-400">{{ $t('每行一条，格式：宿主端口:容器端口/协议，例如：8080:80/tcp') }}</p>
       </div>
 
       <!-- 目录挂载 -->
       <div>
-        <label class="form-label">目录挂载</label>
-        <textarea v-model="form.mounts" rows="2" placeholder="请输入目录挂载（可选）" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">每行一条，格式：宿主路径:容器路径，例如：/data:/app/data</p>
+        <label class="form-label">{{ $t('目录挂载') }}</label>
+        <textarea v-model="form.mounts" rows="2" :placeholder="$t('请输入目录挂载（可选）')" class="input font-mono text-sm"></textarea>
+        <p class="mt-1 text-xs text-slate-400">{{ $t('每行一条，格式：宿主路径:容器路径，例如：/data:/app/data') }}</p>
       </div>
 
       <!-- 环境变量 -->
       <div>
-        <label class="form-label">环境变量</label>
-        <textarea v-model="form.env" rows="2" placeholder="请输入环境变量（可选）" class="input font-mono text-sm"></textarea>
-        <p class="mt-1 text-xs text-slate-400">每行一条，格式：KEY=value，例如：APP_ENV=production</p>
+        <label class="form-label">{{ $t('环境变量') }}</label>
+        <textarea v-model="form.env" rows="2" :placeholder="$t('请输入环境变量（可选）')" class="input font-mono text-sm"></textarea>
+        <p class="mt-1 text-xs text-slate-400">{{ $t('每行一条，格式：KEY=value，例如：APP_ENV=production') }}</p>
       </div>
 
       <!-- 高级选项 -->
       <div class="border-t border-slate-200 pt-4">
         <button type="button" class="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800" @click="showAdvanced = !showAdvanced">
           <i :class="['fas fa-chevron-down text-xs transition-transform', showAdvanced ? 'rotate-180' : '']"></i>
-          高级选项
+          {{ $t('高级选项') }}
         </button>
         <div v-if="showAdvanced" class="mt-4 space-y-4">
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="form-label">模式</label>
+              <label class="form-label">{{ $t('模式') }}</label>
               <select v-model="form.mode" class="input">
                 <option value="replicated">Replicated</option>
                 <option value="global">Global</option>
               </select>
             </div>
             <div v-if="form.mode === 'replicated'">
-              <label class="form-label">副本数</label>
+              <label class="form-label">{{ $t('副本数') }}</label>
               <input v-model.number="form.replicas" type="number" min="1" class="input" />
             </div>
           </div>
           <div>
-            <label class="form-label">启动参数</label>
-            <input v-model="form.args" type="text" placeholder="请输入启动参数（可选）" class="input font-mono text-sm" />
+            <label class="form-label">{{ $t('启动参数') }}</label>
+            <input v-model="form.args" type="text" :placeholder="$t('请输入启动参数（可选）')" class="input font-mono text-sm" />
           </div>
         </div>
       </div>
     </form>
 
-    <template #confirm-text>确认新建</template>
+    <template #confirm-text>{{ $t('确认新建') }}</template>
   </BaseModal>
 </template>

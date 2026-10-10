@@ -73,7 +73,7 @@ class PluginConfigPanel extends Vue {
                 this.$emit('update:plugins', parsed)
             }
         } catch (e: unknown) {
-            this.pluginsJsonError = 'JSON 格式错误: ' + (e instanceof Error ? e.message : String(e))
+            this.pluginsJsonError = this.$t('JSON 格式错误: ') + (e instanceof Error ? e.message : String(e))
         }
     }
 
@@ -98,7 +98,7 @@ class PluginConfigPanel extends Vue {
 
     addPresetPlugin(name: string) {
         if (this.plugins[name] !== undefined) {
-            return this.portal.showNotification('warning', `插件 ${name} 已存在`)
+            return this.portal.showNotification('warning', this.$t('插件 {0} 已存在', name))
         }
         const p = { ...this.plugins, [name]: this.buildPluginDefault(this.availablePlugins[name]?.schema) }
         this.$emit('update:plugins', p)
@@ -142,8 +142,8 @@ class PluginConfigPanel extends Vue {
     }
 
     importPluginsFromRoute() {
-        if (!this.importRouteId) return this.portal.showNotification('warning', '请先选择要导入的路由')
-        if (!this.selectedImportPlugins.size) return this.portal.showNotification('warning', '请至少勾选一个插件')
+        if (!this.importRouteId) return this.portal.showNotification('warning', this.$t('请先选择要导入的路由'))
+        if (!this.selectedImportPlugins.size) return this.portal.showNotification('warning', this.$t('请至少勾选一个插件'))
         const toImport = Object.fromEntries(
             [...this.selectedImportPlugins]
                 .filter(n => this.importRoutePlugins[n] !== undefined)
@@ -155,7 +155,7 @@ class PluginConfigPanel extends Vue {
         this.importRouteId = ''
         this.importRoutePlugins = {}
         this.selectedImportPlugins = new Set()
-        this.portal.showNotification('success', `已导入 ${Object.keys(toImport).length} 个插件`)
+        this.portal.showNotification('success', this.$t('已导入 {0} 个插件', Object.keys(toImport).length))
     }
 }
 
@@ -167,12 +167,12 @@ export default toNative(PluginConfigPanel)
     <!-- 标题行 -->
     <div class="flex items-center justify-between">
       <div>
-        <label class="form-label">插件配置</label>
-        <p class="text-xs text-slate-400 mt-1">{{ showImport ? '可直接编辑 JSON，也支持从现有路由导入' : '可直接编辑 JSON，或从插件列表添加' }}</p>
+        <label class="form-label">{{ $t('插件配置') }}</label>
+        <p class="text-xs text-slate-400 mt-1">{{ showImport ? $t('可直接编辑 JSON，也支持从现有路由导入') : $t('可直接编辑 JSON，或从插件列表添加') }}</p>
       </div>
       <div class="flex items-center gap-2">
-        <button class="btn-panel-toggle" :class="showPluginPanel ? 'btn-panel-toggle-active' : 'btn-panel-toggle-inactive'" @click="openPluginPanel"><i class="fas fa-puzzle-piece mr-1"></i>添加插件</button>
-        <button v-if="showImport" class="btn-panel-toggle" :class="showImportPanel ? 'btn-panel-toggle-active' : 'btn-panel-toggle-inactive'" @click="openImportPanel"><i class="fas fa-file-import mr-1"></i>从路由导入</button>
+        <button class="btn-panel-toggle" :class="showPluginPanel ? 'btn-panel-toggle-active' : 'btn-panel-toggle-inactive'" @click="openPluginPanel"><i class="fas fa-puzzle-piece mr-1"></i>{{ $t('添加插件') }}</button>
+        <button v-if="showImport" class="btn-panel-toggle" :class="showImportPanel ? 'btn-panel-toggle-active' : 'btn-panel-toggle-inactive'" @click="openImportPanel"><i class="fas fa-file-import mr-1"></i>{{ $t('从路由导入') }}</button>
       </div>
     </div>
 
@@ -181,7 +181,7 @@ export default toNative(PluginConfigPanel)
       <div class="px-3 py-2 bg-slate-50 border-b border-slate-100">
         <div class="relative">
           <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
-          <input v-model="pluginSearchKeyword" type="text" placeholder="请输入插件名称..." class="w-full pl-7 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-300" />
+          <input v-model="pluginSearchKeyword" type="text" :placeholder="$t('请输入插件名称...')" class="w-full pl-7 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-300" />
         </div>
       </div>
       <div class="max-h-44 overflow-y-auto p-2 grid grid-cols-2 md:grid-cols-3 gap-1">
@@ -201,11 +201,11 @@ export default toNative(PluginConfigPanel)
     <div v-if="showImportPanel" class="rounded-lg border border-slate-200 overflow-hidden mt-3">
       <div class="px-3 py-2 bg-slate-50 border-b border-slate-100">
         <select v-model="importRouteId" class="w-full text-xs bg-white border border-slate-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-300" @change="onImportRouteChange">
-          <option value="">选择来源路由...</option>
+          <option value="">{{ $t('选择来源路由...') }}</option>
           <option v-for="r in routes" :key="r.id" :value="r.id">{{ r.name || r.id }}</option>
         </select>
       </div>
-      <div v-if="importRoutePluginsLoading" class="py-5 text-center text-xs text-slate-400"><i class="fas fa-spinner fa-spin mr-1"></i>加载中...</div>
+      <div v-if="importRoutePluginsLoading" class="py-5 text-center text-xs text-slate-400"><i class="fas fa-spinner fa-spin mr-1"></i>{{ $t('加载中...') }}</div>
       <div v-else-if="Object.keys(importRoutePlugins).length > 0" class="p-2 space-y-2">
         <div class="max-h-32 overflow-y-auto space-y-0.5">
           <label v-for="(_, name) in importRoutePlugins" :key="name" class="check-label text-xs rounded-lg px-2.5 py-1.5 hover:bg-slate-50 transition-colors">
@@ -213,9 +213,9 @@ export default toNative(PluginConfigPanel)
             <span class="text-slate-700">{{ name }}</span>
           </label>
         </div>
-        <button class="btn btn-indigo w-full text-xs" @click="importPluginsFromRoute">导入选中 {{ selectedImportPlugins.size }} 个插件</button>
+        <button class="btn btn-indigo w-full text-xs" @click="importPluginsFromRoute">{{ $t('导入选中') }} {{ selectedImportPlugins.size }} {{ $t('个插件') }}</button>
       </div>
-      <div v-else-if="importRouteId" class="py-5 text-center text-xs text-slate-400">该路由没有插件配置</div>
+      <div v-else-if="importRouteId" class="py-5 text-center text-xs text-slate-400">{{ $t('该路由没有插件配置') }}</div>
     </div>
 
     <!-- 已添加插件 tags -->
@@ -224,7 +224,7 @@ export default toNative(PluginConfigPanel)
     </div>
 
     <!-- JSON 编辑器 -->
-    <textarea :value="pluginsJson" rows="8" :class="['input font-mono text-sm mt-3', pluginsJsonError ? 'border-red-300 bg-red-50' : '']" placeholder='请输入插件配置 JSON...' @blur="syncPluginsFromJson" @input="onPluginsJsonInput"></textarea>
+    <textarea :value="pluginsJson" rows="8" :class="['input font-mono text-sm mt-3', pluginsJsonError ? 'border-red-300 bg-red-50' : '']" :placeholder="$t('请输入插件配置 JSON...')" @blur="syncPluginsFromJson" @input="onPluginsJsonInput"></textarea>
     <p class="mt-1 text-xs text-slate-400">示例：{"key-auth": {"key": "your-api-key"}}</p>
     <p v-if="pluginsJsonError" class="text-xs text-red-500 mt-1">{{ pluginsJsonError }}</p>
   </div>

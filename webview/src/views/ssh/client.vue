@@ -69,16 +69,16 @@ export default toNative(SSHClientPage)
               <i class="fas fa-terminal text-white text-sm"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="title-text">{{ host?.name || 'SSH 终端' }}</h1>
-              <p class="text-xs text-slate-500 truncate">{{ host ? `${host.user} @ ${host.addr}` : '正在加载主机信息...' }}</p>
+              <h1 class="title-text">{{ host?.name || $t('SSH 终端') }}</h1>
+              <p class="text-xs text-slate-500 truncate">{{ host ? `${host.user} @ ${host.addr}` : $t('正在加载主机信息...') }}</p>
             </div>
           </div>
           <div class="action-group">
             <button v-if="!connected" class="btn btn-emerald" @click="handleReconnect()">
-              <i class="fas fa-plug"></i><span class="hidden md:inline">连接终端</span>
+              <i class="fas fa-plug"></i><span class="hidden md:inline">{{ $t('连接终端') }}</span>
             </button>
             <button v-else class="btn btn-secondary" @click="handleDisconnect()">
-              <i class="fas fa-plug-circle-xmark"></i><span class="hidden md:inline">断开连接</span>
+              <i class="fas fa-plug-circle-xmark"></i><span class="hidden md:inline">{{ $t('断开连接') }}</span>
             </button>
           </div>
         </div>

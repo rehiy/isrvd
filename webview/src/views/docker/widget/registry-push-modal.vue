@@ -67,7 +67,7 @@ class RegistryPushModal extends Vue {
         this.modalLoading = true
         try {
             await api.dockerImagePush(this.pushForm.image, this.pushForm.registryUrl, this.pushForm.namespace.trim())
-            this.portal.showNotification('success', '镜像推送成功')
+            this.portal.showNotification('success', this.$t('镜像推送成功'))
             this.isOpen = false
             this.$emit('success')
         } catch {}
@@ -79,29 +79,29 @@ export default toNative(RegistryPushModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" title="推送镜像到仓库" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('推送镜像到仓库')" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
     <form class="space-y-4" @submit.prevent="handleConfirm">
       <div>
-        <label class="form-label">本地镜像</label>
+        <label class="form-label">{{ $t('本地镜像') }}</label>
         <select v-model="pushForm.image" class="input" required>
-          <option value="" disabled>请选择镜像</option>
+          <option value="" disabled>{{ $t('请选择镜像') }}</option>
           <option v-for="tag in imageTagOptions" :key="tag" :value="tag">{{ tag }}</option>
         </select>
       </div>
       <div>
-        <label class="form-label">目标仓库地址</label>
+        <label class="form-label">{{ $t('目标仓库地址') }}</label>
         <select v-model="pushForm.registryUrl" class="input" required>
-          <option value="" disabled>请选择仓库</option>
+          <option value="" disabled>{{ $t('请选择仓库') }}</option>
           <option v-for="reg in registries" :key="reg.url" :value="reg.url">{{ reg.name }} ({{ reg.url }}){{ reg.description ? ' - ' + reg.description : '' }}</option>
         </select>
       </div>
       <div>
-        <label class="form-label">命名空间 <span class="text-slate-400 font-normal">(可选)</span></label>
-        <input v-model="pushForm.namespace" type="text" placeholder="请输入命名空间（可选）" class="input" />
-        <p class="mt-1 text-xs text-slate-400">镜像将被推送为: {{ pushTargetPreview }}</p>
+        <label class="form-label">{{ $t('命名空间') }} <span class="text-slate-400 font-normal">{{ $t('(可选)') }}</span></label>
+        <input v-model="pushForm.namespace" type="text" :placeholder="$t('请输入命名空间（可选）')" class="input" />
+        <p class="mt-1 text-xs text-slate-400">{{ $t('镜像将被推送为:') }} {{ pushTargetPreview }}</p>
       </div>
     </form>
 
-    <template #confirm-text>开始推送</template>
+    <template #confirm-text>{{ $t('开始推送') }}</template>
   </BaseModal>
 </template>

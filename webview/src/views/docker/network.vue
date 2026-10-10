@@ -47,13 +47,13 @@ export default toNative(NetworkDetail)
             <i class="fas fa-network-wired text-white"></i>
           </div>
           <div>
-            <h1 class="text-lg font-semibold text-slate-800">网络详情</h1>
+            <h1 class="text-lg font-semibold text-slate-800">{{ $t('网络详情') }}</h1>
             <p class="text-xs text-slate-600 font-mono truncate max-w-xs">{{ detailData?.name || networkId }}</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
           <button class="btn btn-secondary" @click="loadDetail()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
         </div>
       </div>
@@ -64,12 +64,12 @@ export default toNative(NetworkDetail)
             <i class="fas fa-network-wired text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">网络详情</h1>
+            <h1 class="title-text">{{ $t('网络详情') }}</h1>
             <p class="text-xs text-slate-600 font-mono truncate">{{ detailData?.name || networkId }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" title="刷新" @click="loadDetail()">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadDetail()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
         </div>
@@ -80,7 +80,7 @@ export default toNative(NetworkDetail)
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -88,10 +88,10 @@ export default toNative(NetworkDetail)
     <div v-else-if="detailData" class="card-body space-y-4 text-sm">
       <!-- 基本信息 -->
       <div>
-        <h2 class="section-title">基本信息</h2>
+        <h2 class="section-title">{{ $t('基本信息') }}</h2>
         <div class="grid grid-cols-2 gap-3">
           <div class="col-span-2">
-            <label class="form-label">名称</label>
+            <label class="form-label">{{ $t('名称') }}</label>
             <div class="detail-value">{{ detailData.name }}</div>
           </div>
           <div class="col-span-2">
@@ -99,28 +99,28 @@ export default toNative(NetworkDetail)
             <code class="detail-value-mono">{{ detailData.id }}</code>
           </div>
           <div>
-            <label class="form-label">驱动</label>
+            <label class="form-label">{{ $t('驱动') }}</label>
             <div class="detail-value">{{ detailData.driver }}</div>
           </div>
           <div>
-            <label class="form-label">范围</label>
+            <label class="form-label">{{ $t('范围') }}</label>
             <div class="detail-value">{{ detailData.scope }}</div>
           </div>
           <div>
-            <label class="form-label">子网</label>
+            <label class="form-label">{{ $t('子网') }}</label>
             <div class="detail-value">{{ detailData.subnet || '-' }}</div>
           </div>
           <div>
-            <label class="form-label">网关</label>
+            <label class="form-label">{{ $t('网关') }}</label>
             <div class="detail-value">{{ detailData.gateway || '-' }}</div>
           </div>
           <div>
-            <label class="form-label">内部网络</label>
-            <div class="detail-value">{{ detailData.internal ? '是' : '否' }}</div>
+            <label class="form-label">{{ $t('内部网络') }}</label>
+            <div class="detail-value">{{ detailData.internal ? $t('是') : $t('否') }}</div>
           </div>
           <div>
             <label class="form-label">IPv6</label>
-            <div class="detail-value">{{ detailData.enableIPv6 ? '已启用' : '未启用' }}</div>
+            <div class="detail-value">{{ detailData.enableIPv6 ? $t('已启用') : $t('未启用') }}</div>
           </div>
         </div>
       </div>
@@ -128,16 +128,16 @@ export default toNative(NetworkDetail)
       <!-- 已连接的容器 -->
       <div>
         <h2 class="section-title section-title-table">
-          已连接容器
+          {{ $t('已连接容器') }}
           <span v-if="detailData.containers" class="text-slate-400 normal-case font-normal ml-1">({{ detailData.containers.length }})</span>
         </h2>
         <div v-if="detailData.containers && detailData.containers.length > 0" class="border-x border-b border-slate-200 rounded-b-xl overflow-hidden">
           <table class="w-full">
             <thead>
               <tr class="bg-slate-100 border-b border-slate-200">
-                <th class="th-sm">名称</th>
+                <th class="th-sm">{{ $t('名称') }}</th>
                 <th class="th-sm">IPv4</th>
-                <th class="th-sm">MAC 地址</th>
+                <th class="th-sm">{{ $t('MAC 地址') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -157,7 +157,7 @@ export default toNative(NetworkDetail)
           </table>
         </div>
         <div v-else class="detail-value text-slate-400 py-8 text-center rounded-xl">
-          暂无容器连接到此网络
+          {{ $t('暂无容器连接到此网络') }}
         </div>
       </div>
     </div>
@@ -168,7 +168,7 @@ export default toNative(NetworkDetail)
         <div class="empty-state-icon">
           <i class="fas fa-network-wired text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium">未找到网络详情</p>
+        <p class="text-slate-600 font-medium">{{ $t('未找到网络详情') }}</p>
       </div>
     </div>
   </div>

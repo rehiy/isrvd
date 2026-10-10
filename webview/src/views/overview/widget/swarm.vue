@@ -61,7 +61,7 @@ export default toNative(SwarmOverview)
   <div>
     <div v-if="loading" class="overview-loading">
       <div class="spinner-md"></div>
-      <span class="text-slate-400 text-sm">加载中...</span>
+      <span class="text-slate-400 text-sm">{{ $t('加载中...') }}</span>
     </div>
     <div v-else-if="swarmInfo" class="space-y-4">
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -70,7 +70,7 @@ export default toNative(SwarmOverview)
             <i :class="['fas', card.icon, 'text-white']"></i>
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-xs text-slate-400 mb-0.5">{{ card.label }}</p>
+            <p class="text-xs text-slate-400 mb-0.5">{{ $t(card.label) }}</p>
             <p class="font-semibold text-slate-800 truncate">{{ cardValue(card.key) }}</p>
           </div>
         </div>
@@ -79,8 +79,8 @@ export default toNative(SwarmOverview)
     <div v-else class="overview-unavailable">
       <i class="fas fa-circle-nodes text-2xl text-slate-300"></i>
       <div>
-        <p class="text-sm font-medium text-slate-600">Swarm 集群未初始化</p>
-        <p class="text-xs text-slate-400">请先执行 <code class="bg-slate-200 px-1 rounded">docker swarm init</code></p>
+        <p class="text-sm font-medium text-slate-600">{{ $t('Swarm 集群未初始化') }}</p>
+        <p class="text-xs text-slate-400">{{ $t('请先执行') }} <code class="bg-slate-200 px-1 rounded">docker swarm init</code></p>
       </div>
     </div>
   </div>

@@ -90,9 +90,9 @@ class Whitelist extends Vue {
 
         const username = this.addUser.newUsername.trim()
         const key = this.addUser.newKey.trim()
-        if (!username) return this.portal.showNotification('error', '请输入用户名')
-        if (!key) return this.portal.showNotification('error', '请输入 key-auth key')
-        if ((route.consumers || []).includes(username)) return this.portal.showNotification('error', `用户 "${username}" 已在授权列表中`)
+        if (!username) return this.portal.showNotification('error', this.$t('请输入用户名'))
+        if (!key) return this.portal.showNotification('error', this.$t('请输入 key-auth key'))
+        if ((route.consumers || []).includes(username)) return this.portal.showNotification('error', this.$t('用户 "{0}" 已在授权列表中', username))
 
         const routeKeyAuth = (route.plugins?.['key-auth'] as Record<string, unknown>) || {}
         const keyAuthConfig = {
@@ -104,7 +104,7 @@ class Whitelist extends Vue {
         this.addUser.loading = true
         try {
             await api.apisixWhitelistUserCreate({ route_id: route.id, username, key, key_auth: keyAuthConfig })
-            this.portal.showNotification('success', `用户 "${username}" 已创建并加入授权列表`)
+            this.portal.showNotification('success', this.$t('用户 "{0}" 已创建并加入授权列表', username))
             this.addUser.open = false
             this.loadWhitelist()
         } catch {} finally {
@@ -132,17 +132,17 @@ export default toNative(Whitelist)
             <i class="fas fa-shield-halved text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">访问授权</h1>
-            <p class="text-xs text-slate-500">配置路由级别的 Consumer 访问授权</p>
+            <h1 class="title-text">{{ $t('访问授权') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('配置路由级别的 Consumer 访问授权') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="apisix-whitelist" placeholder="搜索路由或用户..." focus-color="amber" type-to-search />
+          <PageSearch v-model="searchText" search-key="apisix-whitelist" :placeholder="$t('搜索路由或用户...')" focus-color="amber" type-to-search />
           <button class="btn btn-secondary" @click="loadWhitelist()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
           <button v-if="portal.hasPerm('POST /api/apisix/whitelist')" class="btn btn-amber" @click="openCreateModal()">
-            <i class="fas fa-plus"></i>配置授权
+            <i class="fas fa-plus"></i>{{ $t('配置授权') }}
           </button>
         </div>
       </div>
@@ -153,15 +153,15 @@ export default toNative(Whitelist)
             <i class="fas fa-shield-halved text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">访问授权</h1>
-            <p class="text-xs text-slate-500 truncate">路由级 Consumer 访问授权</p>
+            <h1 class="title-text">{{ $t('访问授权') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('路由级 Consumer 访问授权') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" title="刷新" @click="loadWhitelist()">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadWhitelist()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/apisix/whitelist')" class="btn btn-amber btn-square" title="配置授权" @click="openCreateModal()">
+          <button v-if="portal.hasPerm('POST /api/apisix/whitelist')" class="btn btn-amber btn-square" :title="$t('配置授权')" @click="openCreateModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -170,14 +170,14 @@ export default toNative(Whitelist)
 
     <!-- 移动端搜索 -->
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="apisix-whitelist" placeholder="搜索路由或用户..." width-class="w-full" focus-color="amber" />
+      <PageSearch v-model="searchText" search-key="apisix-whitelist" :placeholder="$t('搜索路由或用户...')" width-class="w-full" focus-color="amber" />
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -187,8 +187,8 @@ export default toNative(Whitelist)
         <div class="empty-state-icon">
           <i class="fas fa-shield-halved text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ whitelist.length === 0 ? '暂无访问授权数据' : '未找到匹配的访问授权' }}</p>
-        <p class="text-sm text-slate-400">{{ whitelist.length === 0 ? '配置路由的 Consumer 访问授权后将在此显示' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ whitelist.length === 0 ? $t('暂无访问授权数据') : $t('未找到匹配的访问授权') }}</p>
+        <p class="text-sm text-slate-400">{{ whitelist.length === 0 ? $t('配置路由的 Consumer 访问授权后将在此显示') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
 
@@ -199,11 +199,11 @@ export default toNative(Whitelist)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
-              <th class="th">路由</th>
-              <th class="th">描述</th>
-              <th class="th">授权用户</th>
-              <th class="w-24 th-right">用户数</th>
-              <th class="w-24 th-right">操作</th>
+              <th class="th">{{ $t('路由') }}</th>
+              <th class="th">{{ $t('描述') }}</th>
+              <th class="th">{{ $t('授权用户') }}</th>
+              <th class="w-24 th-right">{{ $t('用户数') }}</th>
+              <th class="w-24 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -234,7 +234,7 @@ export default toNative(Whitelist)
                   <button
                     v-if="portal.hasPerm('POST /api/apisix/whitelist')"
                     class="btn-icon btn-icon-blue"
-                    title="编辑授权"
+                    :title="$t('编辑授权')"
                     @click="openEditModal(route)"
                   >
                     <i class="fas fa-pen text-xs"></i>
@@ -242,7 +242,7 @@ export default toNative(Whitelist)
                   <button
                     v-if="portal.hasPerm('POST /api/apisix/whitelist/user')"
                     class="btn-icon btn-icon-amber"
-                    title="新建用户"
+                    :title="$t('新建用户')"
                     @click="openAddUserModal(route)"
                   >
                     <i class="fas fa-user-plus text-xs"></i>
@@ -268,12 +268,12 @@ export default toNative(Whitelist)
           </div>
 
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">描述</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('描述') }}</span>
             <span class="text-xs text-slate-500">{{ route.name || route.id }}</span>
           </div>
 
           <div class="card-prop-row-start">
-            <span class="prop-label-start">用户</span>
+            <span class="prop-label-start">{{ $t('用户') }}</span>
             <div class="flex flex-wrap gap-1.5">
               <span v-for="consumer in (route.consumers || [])" :key="consumer" class="badge bg-amber-50 text-amber-800 gap-1.5">
                 <i class="fas fa-user text-amber-500 text-[10px]"></i>
@@ -283,11 +283,11 @@ export default toNative(Whitelist)
           </div>
 
           <div class="card-actions">
-            <button v-if="portal.hasPerm('POST /api/apisix/whitelist')" class="btn-icon btn-icon-blue" title="编辑授权" @click="openEditModal(route)">
-              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑授权</span>
+            <button v-if="portal.hasPerm('POST /api/apisix/whitelist')" class="btn-icon btn-icon-blue" :title="$t('编辑授权')" @click="openEditModal(route)">
+              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">{{ $t('编辑授权') }}</span>
             </button>
-            <button v-if="portal.hasPerm('POST /api/apisix/whitelist/user')" class="btn-icon btn-icon-amber" title="新建用户" @click="openAddUserModal(route)">
-              <i class="fas fa-user-plus text-xs"></i><span class="text-xs ml-1">新建用户</span>
+            <button v-if="portal.hasPerm('POST /api/apisix/whitelist/user')" class="btn-icon btn-icon-amber" :title="$t('新建用户')" @click="openAddUserModal(route)">
+              <i class="fas fa-user-plus text-xs"></i><span class="text-xs ml-1">{{ $t('新建用户') }}</span>
             </button>
           </div>
         </div>
@@ -297,31 +297,31 @@ export default toNative(Whitelist)
 
   <WhitelistEditModal ref="editModalRef" @success="loadWhitelist" />
 
-  <BaseModal v-model="addUser.open" title="新建授权用户" :loading="addUser.loading" confirm-class="btn-amber" @confirm="handleAddUser">
+  <BaseModal v-model="addUser.open" :title="$t('新建授权用户')" :loading="addUser.loading" confirm-class="btn-amber" @confirm="handleAddUser">
     <div class="space-y-4 p-1">
       <div v-if="addUser.route">
-        <label class="form-label">路由</label>
+        <label class="form-label">{{ $t('路由') }}</label>
         <div class="detail-value text-sm text-slate-700">
           {{ addUser.route.name || addUser.route.id }} - {{ getRouteUri(addUser.route) }}
         </div>
-        <p class="text-xs text-slate-400 mt-1">新建 Consumer 并加入当前路由访问授权</p>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('新建 Consumer 并加入当前路由访问授权') }}</p>
       </div>
 
       <div class="space-y-3">
         <div>
-          <label class="form-label">用户名 <span class="text-red-500">*</span></label>
-          <input v-model="addUser.newUsername" type="text" class="input" placeholder="请输入 Consumer 用户名" />
+          <label class="form-label">{{ $t('用户名') }} <span class="text-red-500">*</span></label>
+          <input v-model="addUser.newUsername" type="text" class="input" :placeholder="$t('请输入 Consumer 用户名')" />
         </div>
         <div>
           <label class="form-label">key-auth key <span class="text-red-500">*</span></label>
-          <input v-model="addUser.newKey" type="text" class="input" placeholder="请输入 API Key" />
-          <p class="mt-1 text-xs text-slate-400">提交后会先创建 Consumer 并配置 key-auth，再加入路由访问授权</p>
+          <input v-model="addUser.newKey" type="text" class="input" :placeholder="$t('请输入 API Key')" />
+          <p class="mt-1 text-xs text-slate-400">{{ $t('提交后会先创建 Consumer 并配置 key-auth，再加入路由访问授权') }}</p>
         </div>
       </div>
     </div>
 
     <template #confirm-text>
-      创建并加入
+      {{ $t('创建并加入') }}
     </template>
   </BaseModal>
 </template>

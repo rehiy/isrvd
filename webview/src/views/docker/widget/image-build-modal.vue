@@ -33,7 +33,7 @@ class ImageBuildModal extends Vue {
         this.modalLoading = true
         try {
             await api.dockerImageBuild(this.buildDockerfile, this.buildTag)
-            this.portal.showNotification('success', '镜像构建成功')
+            this.portal.showNotification('success', this.$t('镜像构建成功'))
             this.isOpen = false
             this.$emit('success')
         } catch {}
@@ -45,19 +45,19 @@ export default toNative(ImageBuildModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" title="构建镜像" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('构建镜像')" :loading="modalLoading" confirm-class="btn-blue" show-footer @confirm="handleConfirm">
     <div class="space-y-4">
       <div>
-        <label class="form-label">镜像标签</label>
-        <input v-model="buildTag" type="text" placeholder="请输入镜像标签" class="input" />
-        <p class="mt-1 text-xs text-slate-400">留空则使用 custom:latest</p>
+        <label class="form-label">{{ $t('镜像标签') }}</label>
+        <input v-model="buildTag" type="text" :placeholder="$t('请输入镜像标签')" class="input" />
+        <p class="mt-1 text-xs text-slate-400">{{ $t('留空则使用 custom:latest') }}</p>
       </div>
       <div>
         <label class="form-label">Dockerfile</label>
-        <textarea v-model="buildDockerfile" rows="14" class="input font-mono text-sm" placeholder="请输入 Dockerfile 内容" spellcheck="false"></textarea>
+        <textarea v-model="buildDockerfile" rows="14" class="input font-mono text-sm" :placeholder="$t('请输入 Dockerfile 内容')" spellcheck="false"></textarea>
       </div>
     </div>
 
-    <template #confirm-text>开始构建</template>
+    <template #confirm-text>{{ $t('开始构建') }}</template>
   </BaseModal>
 </template>

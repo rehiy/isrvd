@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import { useLocaleStore } from '@/stores'
+
 import { executeCopilotAPI, previewCopilotAPICall } from '@/helper/copilot/api'
 import type { CopilotAPIArgs } from '@/helper/copilot/api'
 import { sanitizeCopilotValue as sanitizeValue } from '@/helper/copilot/sanitize'
+
+const t = useLocaleStore().t
 
 type ToolStatus = 'inProgress' | 'executing' | 'complete'
 
@@ -45,11 +49,11 @@ const methodClass = computed(() => {
     return 'bg-amber-50 text-amber-700'
 })
 const cardTitle = computed(() => {
-    if (props.approval && props.status === 'executing') return '等待确认'
-    if (props.status === 'inProgress') return '正在准备操作'
-    if (props.status === 'executing') return method.value === 'GET' ? '正在查询资源' : '正在执行变更'
-    if (resultCanceled.value) return '操作已取消'
-    return resultSuccess.value ? '操作完成' : '操作失败'
+    if (props.approval && props.status === 'executing') return t('等待确认')
+    if (props.status === 'inProgress') return t('正在准备操作')
+    if (props.status === 'executing') return method.value === 'GET' ? t('正在查询资源') : t('正在执行变更')
+    if (resultCanceled.value) return t('操作已取消')
+    return resultSuccess.value ? t('操作完成') : t('操作失败')
 })
 
 const parsedResult = computed(() => parseResult(props.result))
@@ -96,7 +100,7 @@ async function approve() {
         const result = await executeCopilotAPI(normalizeArgs(props.args), 'mutation')
         await props.respond(result)
     } catch (e) {
-        localError.value = e instanceof Error ? e.message : '执行失败'
+        localError.value = e instanceof Error ? e.message : t('执行失败')
     } finally {
         submitting.value = false
     }
@@ -106,9 +110,9 @@ async function cancel() {
     if (!props.respond || submitting.value) return
     submitting.value = true
     try {
-        await props.respond({ success: false, canceled: true, message: '用户取消了操作' })
+        await props.respond({ success: false, canceled: true, message: t('用户取消了操作') })
     } catch (e) {
-        localError.value = e instanceof Error ? e.message : '取消失败'
+        localError.value = e instanceof Error ? e.message : t('取消失败')
         submitting.value = false
     }
 }
@@ -169,7 +173,7 @@ function formatValue(value: unknown): string {
         </div>
         <div class="min-w-0">
           <span class="item-title-sm">{{ cardTitle }}</span>
-          <code class="item-subtitle-mono">{{ path || props.args.callRef || '等待调用引用' }}</code>
+          <code class="item-subtitle-mono">{{ path || props.args.callRef || $t('等待调用引用') }}</code>
         </div>
       </div>
       <span v-if="method" class="inline-flex px-2 py-0.5 rounded-lg text-xs font-semibold" :class="methodClass">{{ method }}</span>
@@ -178,7 +182,7 @@ function formatValue(value: unknown): string {
     <div class="card-body space-y-3">
       <div v-if="status === 'inProgress'" class="flex items-center gap-2 text-sm text-slate-500">
         <span class="spinner w-4 h-4"></span>
-        <span>正在生成请求参数…</span>
+        <span>{{ $t('正在生成请求参数…') }}</span>
       </div>
 
       <template v-else-if="approval && status === 'executing'">
@@ -186,11 +190,11 @@ function formatValue(value: unknown): string {
           <p class="text-sm font-medium text-red-600">{{ previewError }}</p>
         </div>
         <div class="rounded-lg bg-amber-50 border border-amber-200 p-3">
-          <p class="text-sm font-medium text-amber-700">此请求会修改服务器状态，请确认后执行。</p>
+          <p class="text-sm font-medium text-amber-700">{{ $t('此请求会修改服务器状态，请确认后执行。') }}</p>
         </div>
 
         <details v-if="paramsPreview || bodyPreview" class="rounded-lg border border-slate-200 bg-slate-50">
-          <summary class="px-3 py-2 text-xs font-medium text-slate-600 cursor-pointer">查看请求参数</summary>
+          <summary class="px-3 py-2 text-xs font-medium text-slate-600 cursor-pointer">{{ $t('查看请求参数') }}</summary>
           <div class="border-t border-slate-200 p-3 space-y-3">
             <div v-if="paramsPreview">
               <p class="text-xs text-slate-400 mb-1">Query</p>
@@ -206,41 +210,41 @@ function formatValue(value: unknown): string {
         <p v-if="localError" class="text-xs text-red-600">{{ localError }}</p>
         <div class="flex items-center justify-end gap-2 pt-1">
           <button type="button" class="btn btn-secondary" :disabled="submitting" @click="cancel">
-            取消
+            {{ $t('取消') }}
           </button>
           <button type="button" class="btn" :class="isDanger ? 'btn-danger' : 'btn-primary'" :disabled="submitting || !!previewError" @click="approve">
             <span v-if="submitting" class="spinner w-3.5 h-3.5"></span>
-            {{ submitting ? '执行中…' : '确认执行' }}
+            {{ submitting ? $t('执行中…') : $t('确认执行') }}
           </button>
         </div>
       </template>
 
       <div v-else-if="status === 'executing'" class="flex items-center gap-2 text-sm text-slate-500">
         <span class="spinner w-4 h-4"></span>
-        <span>{{ method === 'GET' ? '正在读取资源…' : '正在执行操作…' }}</span>
+        <span>{{ method === 'GET' ? $t('正在读取资源…') : $t('正在执行操作…') }}</span>
       </div>
 
       <template v-else>
         <div v-if="resultCanceled" class="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-500">
-          {{ resultMessage || '用户取消了操作' }}
+          {{ resultMessage || $t('用户取消了操作') }}
         </div>
         <div v-else-if="!resultSuccess" class="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
-          {{ resultMessage || '请求失败' }}
+          {{ resultMessage || $t('请求失败') }}
         </div>
         <p v-else-if="resultMessage" class="text-sm text-emerald-600 font-medium">{{ resultMessage }}</p>
 
         <template v-if="resultSuccess && Array.isArray(payload)">
           <div class="flex items-center justify-between text-xs text-slate-400">
-            <span>资源列表</span>
-            <span>共 {{ payload.length }} 项</span>
+            <span>{{ $t('资源列表') }}</span>
+            <span>{{ $t('共') }} {{ payload.length }} {{ $t('项') }}</span>
           </div>
           <div v-if="resourceItems.length" class="divide-y divide-slate-100 rounded-lg border border-slate-200 overflow-hidden">
             <div v-for="(item, index) in resourceItems" :key="index" class="px-3 py-2 min-w-0">
-              <span class="item-title-sm">{{ item.title }}</span>
+              <span class="item-title-sm">{{ $t(item.title) }}</span>
               <span v-if="item.subtitle" class="item-subtitle">{{ item.subtitle }}</span>
             </div>
           </div>
-          <p v-if="payload.length > resourceItems.length" class="text-xs text-slate-400">仅展示前 {{ resourceItems.length }} 项，完整结果仍会提供给 AI 助手。</p>
+          <p v-if="payload.length > resourceItems.length" class="text-xs text-slate-400">{{ $t('仅展示前') }} {{ resourceItems.length }} {{ $t('项，完整结果仍会提供给 AI 助手。') }}</p>
         </template>
 
         <dl v-else-if="resultSuccess && resourceRows.length" class="divide-y divide-slate-100 rounded-lg border border-slate-200 overflow-hidden">
@@ -251,7 +255,7 @@ function formatValue(value: unknown): string {
         </dl>
 
         <p v-else-if="resultSuccess && resourceText" class="text-sm text-slate-600 break-words">{{ resourceText }}</p>
-        <p v-else-if="resultSuccess && !resultMessage" class="text-sm text-emerald-600 font-medium">请求执行成功</p>
+        <p v-else-if="resultSuccess && !resultMessage" class="text-sm text-emerald-600 font-medium">{{ $t('请求执行成功') }}</p>
       </template>
     </div>
   </div>

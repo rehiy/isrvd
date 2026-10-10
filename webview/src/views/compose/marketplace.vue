@@ -119,7 +119,7 @@ class ComposeMarketplace extends Vue {
         try {
             sessionStorage.setItem(MARKETPLACE_PICK_STORAGE_KEY, JSON.stringify(pick))
         } catch {
-            this.portal.showNotification('error', '暂存模板失败，请重试')
+            this.portal.showNotification('error', this.$t('暂存模板失败，请重试'))
             return
         }
         this.$router.push('/compose/deploy')
@@ -143,13 +143,13 @@ export default toNative(ComposeMarketplace)
         <div class="flex items-center gap-3">
           <div class="page-icon bg-amber-500"><i class="fas fa-store text-white"></i></div>
           <div class="min-w-0">
-            <h1 class="title-text">应用市场</h1>
-            <p class="text-xs text-slate-500 truncate">选择应用后将自动跳转到部署页并回填模板</p>
+            <h1 class="title-text">{{ $t('应用市场') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('选择应用后将自动跳转到部署页并回填模板') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <button type="button" class="btn btn-secondary" title="刷新" @click="refreshMarketplace()">
-            <i :class="iframeLoading ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i><span>刷新</span>
+          <button type="button" class="btn btn-secondary" :title="$t('刷新')" @click="refreshMarketplace()">
+            <i :class="iframeLoading ? 'fas fa-spinner fa-spin' : 'fas fa-rotate'"></i><span>{{ $t('刷新') }}</span>
           </button>
         </div>
       </div>
@@ -158,12 +158,12 @@ export default toNative(ComposeMarketplace)
         <div class="title-group">
           <div class="page-icon bg-amber-500"><i class="fas fa-store text-white"></i></div>
           <div class="min-w-0">
-            <h1 class="title-text">应用市场</h1>
-            <p class="text-xs text-slate-500 truncate">选择后跳转部署页回填</p>
+            <h1 class="title-text">{{ $t('应用市场') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('选择后跳转部署页回填') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button type="button" class="btn btn-secondary btn-square" title="刷新" @click="refreshMarketplace()">
+          <button type="button" class="btn btn-secondary btn-square" :title="$t('刷新')" @click="refreshMarketplace()">
             <i :class="iframeLoading ? 'fas fa-spinner fa-spin text-sm' : 'fas fa-rotate text-sm'"></i>
           </button>
         </div>
@@ -177,10 +177,10 @@ export default toNative(ComposeMarketplace)
         <div class="empty-state-icon bg-amber-100">
           <i class="fas fa-store text-amber-500 text-2xl"></i>
         </div>
-        <h1 class="text-lg font-semibold text-slate-800 mb-1">尚未配置应用市场</h1>
-        <p class="text-sm text-slate-500 mb-4">请前往「系统设置 → 应用市场」配置站点 URL</p>
+        <h1 class="text-lg font-semibold text-slate-800 mb-1">{{ $t('尚未配置应用市场') }}</h1>
+        <p class="text-sm text-slate-500 mb-4">{{ $t('请前往「系统设置 → 应用市场」配置站点 URL') }}</p>
         <button type="button" class="btn btn-blue" @click="goConfig()">
-          <i class="fas fa-gear"></i>前往配置
+          <i class="fas fa-gear"></i>{{ $t('前往配置') }}
         </button>
       </div>
 
@@ -188,7 +188,7 @@ export default toNative(ComposeMarketplace)
       <div v-if="iframeUrl && iframeLoading" class="absolute inset-0 z-10 bg-white/80">
         <div class="empty-state h-full py-0">
           <div class="spinner-lg"></div>
-          <p class="text-slate-500">加载中...</p>
+          <p class="text-slate-500">{{ $t('加载中...') }}</p>
         </div>
       </div>
 

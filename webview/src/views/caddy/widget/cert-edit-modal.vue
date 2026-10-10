@@ -94,11 +94,11 @@ class CertEditModal extends Vue {
         switch (f.source) {
             case 'file':
                 if (!f.certificate.trim()) {
-                    this.portal.showNotification('error', '请填写证书文件路径')
+                    this.portal.showNotification('error', this.$t('请填写证书文件路径'))
                     return null
                 }
                 if (!this.isEditMode && !f.keyContent.trim()) {
-                    this.portal.showNotification('error', '请填写私钥文件路径')
+                    this.portal.showNotification('error', this.$t('请填写私钥文件路径'))
                     return null
                 }
                 cert.certificate = f.certificate.trim()
@@ -108,11 +108,11 @@ class CertEditModal extends Vue {
                 break
             case 'pem':
                 if (!f.certificate.trim()) {
-                    this.portal.showNotification('error', '请填写证书 PEM 内容')
+                    this.portal.showNotification('error', this.$t('请填写证书 PEM 内容'))
                     return null
                 }
                 if (!this.isEditMode && !f.keyContent.trim()) {
-                    this.portal.showNotification('error', '请填写私钥 PEM 内容')
+                    this.portal.showNotification('error', this.$t('请填写私钥 PEM 内容'))
                     return null
                 }
                 cert.certificate = f.certificate
@@ -121,7 +121,7 @@ class CertEditModal extends Vue {
                 break
             case 'automate':
                 if (!f.subject.trim()) {
-                    this.portal.showNotification('error', '请填写需要自动签发的主机名')
+                    this.portal.showNotification('error', this.$t('请填写需要自动签发的主机名'))
                     return null
                 }
                 cert.subject = f.subject.trim()
@@ -138,10 +138,10 @@ class CertEditModal extends Vue {
         try {
             if (this.isEditMode) {
                 await api.caddyCertUpdate(this.editingKey, payload)
-                this.portal.showNotification('success', '证书更新成功')
+                this.portal.showNotification('success', this.$t('证书更新成功'))
             } else {
                 await api.caddyCertCreate(payload)
-                this.portal.showNotification('success', '证书创建成功')
+                this.portal.showNotification('success', this.$t('证书创建成功'))
             }
             this.isOpen = false
             this.$emit('success')
@@ -155,82 +155,82 @@ export default toNative(CertEditModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" :title="isEditMode ? '编辑证书' : '新建证书'" :loading="modalLoading" confirm-class="btn-cyan" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="isEditMode ? $t('编辑证书') : $t('新建证书')" :loading="modalLoading" confirm-class="btn-cyan" @confirm="handleConfirm">
     <div class="space-y-4 p-1">
       <!-- 来源选择：mode cards，直接平铺 -->
       <div>
-        <h2 class="section-title">证书来源</h2>
+        <h2 class="section-title">{{ $t('证书来源') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <button v-for="item in sourceCards" :key="item.value" type="button" :class="sourceCardClass(item)" :disabled="isEditMode && formData.source !== item.value" @click="setSource(item.value)">
             <div class="flex items-center gap-2 mb-1">
               <div :class="sourceCardIconClass(item)"><i class="fas text-sm" :class="item.icon"></i></div>
-              <span class="text-sm font-semibold">{{ item.title }}</span>
+              <span class="text-sm font-semibold">{{ $t(item.title) }}</span>
             </div>
-            <div class="text-xs opacity-80 leading-5">{{ item.desc }}</div>
+            <div class="text-xs opacity-80 leading-5">{{ $t(item.desc) }}</div>
           </button>
         </div>
-        <p v-if="isEditMode" class="text-xs text-slate-400 mt-2"><i class="fas fa-circle-info mr-1"></i>编辑时不允许切换证书来源类型</p>
+        <p v-if="isEditMode" class="text-xs text-slate-400 mt-2"><i class="fas fa-circle-info mr-1"></i>{{ $t('编辑时不允许切换证书来源类型') }}</p>
       </div>
 
       <!-- file -->
       <div v-if="formData.source === 'file'" class="space-y-3">
         <div>
-          <label class="form-label">证书路径 <span class="text-red-500">*</span></label>
-          <input v-model="formData.certificate" type="text" class="input font-mono text-sm" placeholder="请输入证书路径" />
-          <p class="text-xs text-slate-400 mt-1">证书文件绝对路径，例如：/etc/caddy/cert.pem</p>
+          <label class="form-label">{{ $t('证书路径') }} <span class="text-red-500">*</span></label>
+          <input v-model="formData.certificate" type="text" class="input font-mono text-sm" :placeholder="$t('请输入证书路径')" />
+          <p class="text-xs text-slate-400 mt-1">{{ $t('证书文件绝对路径，例如：/etc/caddy/cert.pem') }}</p>
         </div>
         <div>
           <label class="form-label">
-            私钥路径 <span v-if="!isEditMode" class="text-red-500">*</span>
+            {{ $t('私钥路径') }} <span v-if="!isEditMode" class="text-red-500">*</span>
           </label>
-          <input v-model="formData.keyContent" type="text" class="input font-mono text-sm" :placeholder="isEditMode ? '留空则保持不变' : '请输入私钥路径'" />
-          <p v-if="!isEditMode" class="text-xs text-slate-400 mt-1">私钥文件绝对路径，例如：/etc/caddy/key.pem</p>
+          <input v-model="formData.keyContent" type="text" class="input font-mono text-sm" :placeholder="isEditMode ? $t('留空则保持不变') : $t('请输入私钥路径')" />
+          <p v-if="!isEditMode" class="text-xs text-slate-400 mt-1">{{ $t('私钥文件绝对路径，例如：/etc/caddy/key.pem') }}</p>
         </div>
         <div>
-          <label class="form-label">格式</label>
-          <input v-model="formData.format" type="text" class="input" placeholder="请输入证书格式（可选）" />
-          <p class="text-xs text-slate-400 mt-1">证书格式，留空使用默认 PEM</p>
+          <label class="form-label">{{ $t('格式') }}</label>
+          <input v-model="formData.format" type="text" class="input" :placeholder="$t('请输入证书格式（可选）')" />
+          <p class="text-xs text-slate-400 mt-1">{{ $t('证书格式，留空使用默认 PEM') }}</p>
         </div>
         <div>
-          <label class="form-label">标签</label>
-          <input v-model="formData.tags" type="text" class="input" placeholder="请输入标签（可选）" />
-          <p class="text-xs text-slate-400 mt-1">多个标签用逗号分隔，例如：example,prod</p>
+          <label class="form-label">{{ $t('标签') }}</label>
+          <input v-model="formData.tags" type="text" class="input" :placeholder="$t('请输入标签（可选）')" />
+          <p class="text-xs text-slate-400 mt-1">{{ $t('多个标签用逗号分隔，例如：example,prod') }}</p>
         </div>
       </div>
 
       <!-- pem -->
       <div v-else-if="formData.source === 'pem'" class="space-y-3">
         <div>
-          <label class="form-label">证书 PEM <span class="text-red-500">*</span></label>
-          <textarea v-model="formData.certificate" rows="6" class="input font-mono text-xs leading-5" placeholder="请输入证书 PEM 内容"></textarea>
-          <p class="text-xs text-slate-400 mt-1">格式：-----BEGIN CERTIFICATE----- ... -----END CERTIFICATE-----</p>
+          <label class="form-label">{{ $t('证书 PEM') }} <span class="text-red-500">*</span></label>
+          <textarea v-model="formData.certificate" rows="6" class="input font-mono text-xs leading-5" :placeholder="$t('请输入证书 PEM 内容')"></textarea>
+          <p class="text-xs text-slate-400 mt-1">{{ $t('格式：-----BEGIN CERTIFICATE----- ... -----END CERTIFICATE-----') }}</p>
         </div>
         <div>
           <label class="form-label">
-            私钥 PEM <span v-if="!isEditMode" class="text-red-500">*</span>
+            {{ $t('私钥 PEM') }} <span v-if="!isEditMode" class="text-red-500">*</span>
           </label>
-          <textarea v-model="formData.keyContent" rows="6" class="input font-mono text-xs leading-5" :placeholder="isEditMode ? '留空则保持不变' : '请输入私钥 PEM 内容'"></textarea>
-          <p v-if="!isEditMode" class="text-xs text-slate-400 mt-1">格式：-----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----</p>
+          <textarea v-model="formData.keyContent" rows="6" class="input font-mono text-xs leading-5" :placeholder="isEditMode ? $t('留空则保持不变') : $t('请输入私钥 PEM 内容')"></textarea>
+          <p v-if="!isEditMode" class="text-xs text-slate-400 mt-1">{{ $t('格式：-----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----') }}</p>
         </div>
         <div>
-          <label class="form-label">标签</label>
-          <input v-model="formData.tags" type="text" class="input" placeholder="请输入标签（可选）" />
-          <p class="text-xs text-slate-400 mt-1">多个标签用逗号分隔，例如：example,prod</p>
+          <label class="form-label">{{ $t('标签') }}</label>
+          <input v-model="formData.tags" type="text" class="input" :placeholder="$t('请输入标签（可选）')" />
+          <p class="text-xs text-slate-400 mt-1">{{ $t('多个标签用逗号分隔，例如：example,prod') }}</p>
         </div>
       </div>
 
       <!-- automate -->
       <div v-else-if="formData.source === 'automate'" class="space-y-3">
         <div>
-          <label class="form-label">主机名 <span class="text-red-500">*</span></label>
-          <input v-model="formData.subject" type="text" class="input font-mono text-sm" placeholder="请输入主机名" />
-          <p class="text-xs text-slate-400 mt-1">Caddy 将通过 ACME 自动为该主机申请并续期证书，例如：example.com</p>
+          <label class="form-label">{{ $t('主机名') }} <span class="text-red-500">*</span></label>
+          <input v-model="formData.subject" type="text" class="input font-mono text-sm" :placeholder="$t('请输入主机名')" />
+          <p class="text-xs text-slate-400 mt-1">{{ $t('Caddy 将通过 ACME 自动为该主机申请并续期证书，例如：example.com') }}</p>
         </div>
       </div>
     </div>
 
     <template #confirm-text>
-      确认{{ isEditMode ? '更新' : '提交' }}
+      {{ $t('确认') }} {{ isEditMode ? $t('更新') : $t('提交') }}
     </template>
   </BaseModal>
 </template>

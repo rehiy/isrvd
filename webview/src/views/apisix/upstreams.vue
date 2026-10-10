@@ -64,11 +64,11 @@ class Upstreams extends Vue {
 
     getUpstreamNodes(upstream: ApisixUpstream) {
         const nodes = normalizeUpstreamNodes(upstream)
-        if (nodes.length === 0) return '未配置'
+        if (nodes.length === 0) return this.$t('未配置')
         const first = nodes[0]
         const firstLabel = `${first.host || '-'}:${first.port || '-'}`
         if (nodes.length === 1) return firstLabel
-        return `${firstLabel} 等 ${nodes.length} 个节点`
+        return this.$t('{0} 等 {1} 个节点', firstLabel, nodes.length)
     }
 
     getUpstreamTypeClass(type?: string) {
@@ -84,15 +84,15 @@ class Upstreams extends Vue {
         const id = upstream.id
         if (!id) return
         this.portal.showConfirm({
-            title: '删除上游',
-            message: `确定要删除上游 <strong class="text-slate-900">${upstream.name || id}</strong> 吗？仍被路由引用时 APISIX 可能拒绝删除。`,
+            title: this.$t('删除上游'),
+            message: this.$t('确定要删除上游 <strong class="text-slate-900">{0}</strong> 吗？仍被路由引用时 APISIX 可能拒绝删除。', upstream.name || id),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认删除',
+            confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 await api.apisixUpstreamDelete(id)
-                this.portal.showNotification('success', '删除成功')
+                this.portal.showNotification('success', this.$t('删除成功'))
                 this.loadUpstreams()
             }
         })
@@ -115,17 +115,17 @@ export default toNative(Upstreams)
             <i class="fas fa-diagram-project text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">上游</h1>
-            <p class="text-xs text-slate-500">管理可复用的后端上游对象与负载均衡策略</p>
+            <h1 class="title-text">{{ $t('上游') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('管理可复用的后端上游对象与负载均衡策略') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="apisix-upstreams" placeholder="搜索上游、节点或策略..." focus-color="emerald" type-to-search />
+          <PageSearch v-model="searchText" search-key="apisix-upstreams" :placeholder="$t('搜索上游、节点或策略...')" focus-color="emerald" type-to-search />
           <button class="btn btn-secondary" @click="loadUpstreams()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
           <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="btn btn-emerald" @click="openCreateModal()">
-            <i class="fas fa-plus"></i>新建上游
+            <i class="fas fa-plus"></i>{{ $t('新建上游') }}
           </button>
         </div>
       </div>
@@ -136,15 +136,15 @@ export default toNative(Upstreams)
             <i class="fas fa-diagram-project text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">上游</h1>
-            <p class="text-xs text-slate-500 truncate">管理可复用上游对象</p>
+            <h1 class="title-text">{{ $t('上游') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('管理可复用上游对象') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" title="刷新" @click="loadUpstreams()">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadUpstreams()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="btn btn-emerald btn-square" title="新建上游" @click="openCreateModal()">
+          <button v-if="portal.hasPerm('POST /api/apisix/upstream')" class="btn btn-emerald btn-square" :title="$t('新建上游')" @click="openCreateModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -152,13 +152,13 @@ export default toNative(Upstreams)
     </div>
 
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="apisix-upstreams" placeholder="搜索上游、节点..." width-class="w-full" focus-color="emerald" />
+      <PageSearch v-model="searchText" search-key="apisix-upstreams" :placeholder="$t('搜索上游、节点...')" width-class="w-full" focus-color="emerald" />
     </div>
 
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -167,8 +167,8 @@ export default toNative(Upstreams)
         <div class="empty-state-icon">
           <i class="fas fa-diagram-project text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ upstreams.length === 0 ? '暂无上游' : '未找到匹配上游' }}</p>
-        <p class="text-sm text-slate-400">{{ upstreams.length === 0 ? '点击「新建上游」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ upstreams.length === 0 ? $t('暂无上游') : $t('未找到匹配上游') }}</p>
+        <p class="text-sm text-slate-400">{{ upstreams.length === 0 ? $t('点击「新建上游」开始创建') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
 
@@ -177,11 +177,11 @@ export default toNative(Upstreams)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
-              <th class="th">名称</th>
-              <th class="th">策略</th>
-              <th class="th">节点</th>
-              <th class="th">创建时间</th>
-              <th class="w-32 th-right">操作</th>
+              <th class="th">{{ $t('名称') }}</th>
+              <th class="th">{{ $t('策略') }}</th>
+              <th class="th">{{ $t('节点') }}</th>
+              <th class="th">{{ $t('创建时间') }}</th>
+              <th class="w-32 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -193,7 +193,7 @@ export default toNative(Upstreams)
                   </div>
                   <div class="min-w-0">
                     <span class="item-title">{{ upstream.name || upstream.id }}</span>
-                    <span v-if="upstream.desc" class="item-subtitle">{{ upstream.desc }}</span>
+                    <span v-if="upstream.desc" class="item-subtitle">{{ $t(upstream.desc) }}</span>
                   </div>
                 </div>
               </td>
@@ -205,10 +205,10 @@ export default toNative(Upstreams)
               <td class="td-text-nowrap">{{ formatTs(upstream.create_time) }}</td>
               <td class="px-4 py-3">
                 <div class="table-actions">
-                  <button v-if="portal.hasPerm('PUT /api/apisix/upstream/:id')" class="btn-icon btn-icon-emerald" title="编辑" @click="openEditModal(upstream)">
+                  <button v-if="portal.hasPerm('PUT /api/apisix/upstream/:id')" class="btn-icon btn-icon-emerald" :title="$t('编辑')" @click="openEditModal(upstream)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
-                  <button v-if="portal.hasPerm('DELETE /api/apisix/upstream/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteUpstream(upstream)">
+                  <button v-if="portal.hasPerm('DELETE /api/apisix/upstream/:id')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteUpstream(upstream)">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
@@ -227,34 +227,34 @@ export default toNative(Upstreams)
               </div>
               <div class="min-w-0">
                 <div class="font-medium text-sm text-slate-800 truncate">{{ upstream.name || upstream.id }}</div>
-                <div v-if="upstream.desc" class="text-xs text-slate-400 mt-0.5 truncate">{{ upstream.desc }}</div>
+                <div v-if="upstream.desc" class="text-xs text-slate-400 mt-0.5 truncate">{{ $t(upstream.desc) }}</div>
               </div>
             </div>
           </div>
 
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">策略</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('策略') }}</span>
             <span class="text-xs text-slate-600">{{ upstream.type || '-' }}</span>
           </div>
           <div v-if="upstream.type === 'chash' && upstream.key" class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">哈希</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('哈希') }}</span>
             <span class="text-xs text-slate-500 break-all">{{ upstream.hash_on }}: {{ upstream.key }}</span>
           </div>
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">节点</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('节点') }}</span>
             <span class="text-xs text-slate-600 break-all">{{ getUpstreamNodes(upstream) }}</span>
           </div>
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">创建</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('创建') }}</span>
             <span class="text-xs text-slate-500">{{ formatTs(upstream.create_time) }}</span>
           </div>
 
           <div class="card-actions">
-            <button v-if="portal.hasPerm('PUT /api/apisix/upstream/:id')" class="btn-icon btn-icon-emerald" title="编辑" @click="openEditModal(upstream)">
-              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
+            <button v-if="portal.hasPerm('PUT /api/apisix/upstream/:id')" class="btn-icon btn-icon-emerald" :title="$t('编辑')" @click="openEditModal(upstream)">
+              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">{{ $t('编辑') }}</span>
             </button>
-            <button v-if="portal.hasPerm('DELETE /api/apisix/upstream/:id')" class="btn-icon btn-icon-red" title="删除" @click="deleteUpstream(upstream)">
-              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+            <button v-if="portal.hasPerm('DELETE /api/apisix/upstream/:id')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteUpstream(upstream)">
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
             </button>
           </div>
         </div>

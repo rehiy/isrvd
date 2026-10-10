@@ -12,7 +12,7 @@ import axios from 'axios'
 import { defineComponent, h, resolveComponent, type VNodeChild } from 'vue'
 import { Component, Prop, Ref, Vue, toNative } from 'vue-facing-decorator'
 
-import { usePortal } from '@/stores'
+import { useLocaleStore, usePortal } from '@/stores'
 
 import { buildUploadTree, type UploadDirNode, type UploadFileNode, type UploadNode, flattenUploadTree } from './upload-ssh'
 
@@ -28,6 +28,7 @@ const UploadNodeItem = defineComponent({
     },
     emits: ['cancel', 'retry', 'clearCancelled'],
     setup(props, { emit }): () => VNodeChild {
+        const t = useLocaleStore().t
         return (): VNodeChild => {
             const node = props.node
             const depth = props.depth
@@ -67,17 +68,17 @@ const UploadNodeItem = defineComponent({
                         h('span', { class: 'text-sm text-slate-700 font-medium flex-1 truncate' }, node.name),
                         h('span', { class: 'text-xs text-slate-400 flex-shrink-0' }, [
                             `${done}/${total}`,
-                            fail > 0 ? h('span', { class: 'text-red-400 ml-1.5' }, `${fail} 失败`) : null,
-                            cancelled > 0 ? h('span', { class: 'text-slate-300 ml-1.5' }, `${cancelled} 已取消`) : null,
+                            fail > 0 ? h('span', { class: 'text-red-400 ml-1.5' }, t('{0} 失败', fail)) : null,
+                            cancelled > 0 ? h('span', { class: 'text-slate-300 ml-1.5' }, t('{0} 已取消', cancelled)) : null,
                         ]),
                         depth === 0 && !allFinished
-                            ? actionBtn('取消上传', 'fa-xmark', (e) => { e.stopPropagation(); emit('cancel') })
+                            ? actionBtn(t('取消上传'), 'fa-xmark', (e) => { e.stopPropagation(); emit('cancel') })
                             : null,
                         depth === 0 && hasFailed
-                            ? actionBtn('重试失败项', 'fa-rotate-right', (e) => { e.stopPropagation(); emit('retry') })
+                            ? actionBtn(t('重试失败项'), 'fa-rotate-right', (e) => { e.stopPropagation(); emit('retry') })
                             : null,
                         depth === 0 && hasCancelled
-                            ? actionBtn('清理已取消', 'fa-broom', (e) => { e.stopPropagation(); emit('clearCancelled') })
+                            ? actionBtn(t('清理已取消'), 'fa-broom', (e) => { e.stopPropagation(); emit('clearCancelled') })
                             : null,
                     ]),
                     dir.expanded
@@ -129,16 +130,16 @@ const UploadNodeItem = defineComponent({
                             ])
                             : h('p', {
                                 class: `text-xs mt-0.5 ${file.error ? 'text-red-400' : 'text-slate-300'}`,
-                            }, file.error ? file.error : '已取消'),
+                            }, file.error ? file.error : t('已取消')),
                     ]),
                     depth === 0 && !file.done && !file.cancelled
-                        ? actionBtn('取消上传', 'fa-xmark', () => emit('cancel'))
+                        ? actionBtn(t('取消上传'), 'fa-xmark', () => emit('cancel'))
                         : null,
                     depth === 0 && !!file.error
-                        ? actionBtn('重试', 'fa-rotate-right', () => emit('retry'))
+                        ? actionBtn(t('重试'), 'fa-rotate-right', () => emit('retry'))
                         : null,
                     depth === 0 && file.cancelled
-                        ? actionBtn('清理', 'fa-broom', () => emit('clearCancelled'))
+                        ? actionBtn(t('清理'), 'fa-broom', () => emit('clearCancelled'))
                         : null,
                 ])
             }
@@ -214,7 +215,7 @@ class Upload extends Vue {
         const existingNames = new Set(this.uploadNodes.map(n => n.name))
         const newNodes = nodes.filter(n => {
             if (existingNames.has(n.name)) {
-                this.portal.showNotification('error', `「${n.name}」已在上传队列中`)
+                this.portal.showNotification('error', this.$t('「{0}」已在上传队列中', n.name))
                 return false
             }
             return true
@@ -362,8 +363,8 @@ class Upload extends Vue {
                     const ok = await this.cleanupPartialFile(fileNode)
                     if (!ok) cleanupFailCount++
                     fileNode.error = ok
-                        ? ((err instanceof Error ? err.message : '') || '上传失败，已尝试清理残留文件')
-                        : ((err instanceof Error ? err.message : '') || '上传失败，可能残留不完整文件')
+                        ? ((err instanceof Error ? err.message : '') || this.$t('上传失败，已尝试清理残留文件'))
+                        : ((err instanceof Error ? err.message : '') || this.$t('上传失败，可能残留不完整文件'))
                     fileNode.done = true; failCount++
                 }
             } finally { fileNode.controller = undefined }
@@ -382,8 +383,8 @@ class Upload extends Vue {
         const total = files.length - cancelCount
         if (total > 0) {
             failCount === 0
-                ? this.portal.showNotification('success', `上传成功（${total} 个文件）`)
-                : this.portal.showNotification('error', `${total - failCount} 个成功，${failCount} 个失败${cleanupFailCount > 0 ? '，部分残留文件清理失败' : ''}`)
+                ? this.portal.showNotification('success', this.$t('上传成功（{0} 个文件）', total))
+                : this.portal.showNotification('error', this.$t('{0} 个成功，{1} 个失败{2}', total - failCount, failCount, cleanupFailCount > 0 ? '，部分残留文件清理失败' : ''))
         }
         this.finishBatch()
     }
@@ -427,8 +428,8 @@ export default toNative(Upload)
       <div class="w-5 h-5 rounded bg-primary-500 flex items-center justify-center flex-shrink-0">
         <i class="fas fa-arrow-up-from-bracket text-white text-[10px]"></i>
       </div>
-      <span class="text-xs font-medium text-slate-600 flex-1">上传队列</span>
-      <span class="text-xs text-slate-400">{{ uploadNodes.length }} 项</span>
+      <span class="text-xs font-medium text-slate-600 flex-1">{{ $t('上传队列') }}</span>
+      <span class="text-xs text-slate-400">{{ uploadNodes.length }} {{ $t('项') }}</span>
     </div>
     <!-- 列表（最大高度 240px，超出滚动） -->
     <div class="max-h-60 overflow-y-auto divide-y divide-slate-100">

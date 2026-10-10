@@ -56,16 +56,16 @@ class Members extends Vue {
 
     handleDeleteMember(m: MemberInfo) {
         this.portal.showConfirm({
-            title: '删除成员',
-            message: `确定要删除成员 <strong class="text-slate-900">${m.username}</strong> 吗？此操作仅从配置文件移除，不删除家目录。`,
+            title: this.$t('删除成员'),
+            message: this.$t('确定要删除成员 <strong class="text-slate-900">{0}</strong> 吗？此操作仅从配置文件移除，不删除家目录。', m.username),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认删除',
+            confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 try {
                     await api.accountMemberDelete(m.username)
-                    this.portal.showNotification('success', '成员删除成功')
+                    this.portal.showNotification('success', this.$t('成员删除成功'))
                     this.loadMembers()
                 } catch {}
             }
@@ -92,17 +92,17 @@ export default toNative(Members)
             <i class="fas fa-users text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">用户管理</h1>
-            <p class="text-xs text-slate-500">管理可登录系统的成员与权限</p>
+            <h1 class="title-text">{{ $t('用户管理') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('管理可登录系统的成员与权限') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="account-members" placeholder="请输入搜索关键词..." focus-color="blue" type-to-search />
+          <PageSearch v-model="searchText" search-key="account-members" :placeholder="$t('请输入搜索关键词...')" focus-color="blue" type-to-search />
           <button type="button" class="btn btn-secondary" @click="loadMembers">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
           <button v-if="portal.hasPerm('POST /api/account/member')" type="button" class="btn btn-blue" @click="openAddMember">
-            <i class="fas fa-plus"></i>新建用户
+            <i class="fas fa-plus"></i>{{ $t('新建用户') }}
           </button>
         </div>
       </div>
@@ -113,29 +113,29 @@ export default toNative(Members)
             <i class="fas fa-users text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">用户管理</h1>
-            <p class="text-xs text-slate-500 truncate">管理可登录系统的成员与权限</p>
+            <h1 class="title-text">{{ $t('用户管理') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('管理可登录系统的成员与权限') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button type="button" class="btn-icon-sm" title="刷新" @click="loadMembers">
+          <button type="button" class="btn-icon-sm" :title="$t('刷新')" @click="loadMembers">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/account/member')" type="button" class="btn-icon-sm" title="新建用户" @click="openAddMember">
+          <button v-if="portal.hasPerm('POST /api/account/member')" type="button" class="btn-icon-sm" :title="$t('新建用户')" @click="openAddMember">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
       </div>
     </div>
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="account-members" placeholder="请输入搜索关键词..." width-class="w-full" focus-color="blue" />
+      <PageSearch v-model="searchText" search-key="account-members" :placeholder="$t('请输入搜索关键词...')" width-class="w-full" focus-color="blue" />
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -145,8 +145,8 @@ export default toNative(Members)
         <div class="empty-state-icon">
           <i class="fas fa-users text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ members.length === 0 ? '暂无成员' : '未找到匹配成员' }}</p>
-        <p class="text-sm text-slate-400">{{ members.length === 0 ? '点击「新建用户」创建成员' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ members.length === 0 ? $t('暂无成员') : $t('未找到匹配成员') }}</p>
+        <p class="text-sm text-slate-400">{{ members.length === 0 ? $t('点击「新建用户」创建成员') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
 
@@ -157,10 +157,10 @@ export default toNative(Members)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
-              <th class="th">用户名</th>
-              <th class="th">家目录</th>
-              <th class="th">权限</th>
-              <th class="w-28 th-right">操作</th>
+              <th class="th">{{ $t('用户名') }}</th>
+              <th class="th">{{ $t('家目录') }}</th>
+              <th class="th">{{ $t('权限') }}</th>
+              <th class="w-28 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -180,16 +180,16 @@ export default toNative(Members)
                 <code class="text-xs text-slate-600 font-mono">{{ m.homeDirectory }}</code>
               </td>
               <td class="td-text">
-                <template v-if="m.founder"><i class="fas fa-crown text-violet-400 mr-1"></i>创始人</template>
-                <template v-else-if="m.permissions && m.permissions.length > 0"><i class="fas fa-key text-amber-400 mr-1"></i>{{ m.permissions.length }} 条</template>
+                <template v-if="m.founder"><i class="fas fa-crown text-violet-400 mr-1"></i>{{ $t('创始人') }}</template>
+                <template v-else-if="m.permissions && m.permissions.length > 0"><i class="fas fa-key text-amber-400 mr-1"></i>{{ m.permissions.length }} {{ $t('条') }}</template>
                 <span v-else class="text-slate-400">-</span>
               </td>
               <td class="px-4 py-3">
                 <div class="table-actions">
-                  <button v-if="!m.founder && portal.hasPerm('PUT /api/account/member/:username')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditMember(m)">
+                  <button v-if="!m.founder && portal.hasPerm('PUT /api/account/member/:username')" class="btn-icon btn-icon-blue" :title="$t('编辑')" @click="openEditMember(m)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
-                  <button v-if="!m.founder && portal.hasPerm('DELETE /api/account/member/:username')" class="btn-icon btn-icon-red" title="删除" @click="handleDeleteMember(m)">
+                  <button v-if="!m.founder && portal.hasPerm('DELETE /api/account/member/:username')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleDeleteMember(m)">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
@@ -216,27 +216,27 @@ export default toNative(Members)
           </div>
           <!-- 创始人标识 -->
           <div v-if="m.founder" class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">身份</span>
-            <span class="text-xs text-slate-500"><i class="fas fa-crown text-violet-400 mr-1"></i>创始人</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('身份') }}</span>
+            <span class="text-xs text-slate-500"><i class="fas fa-crown text-violet-400 mr-1"></i>{{ $t('创始人') }}</span>
           </div>
           <!-- 家目录 -->
           <div class="card-prop-row-start">
-            <span class="prop-label-start">家目录</span>
+            <span class="prop-label-start">{{ $t('家目录') }}</span>
             <code class="text-xs bg-slate-100 px-2 py-0.5 rounded break-all">{{ m.homeDirectory }}</code>
           </div>
           <!-- 路由权限 -->
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">权限</span>
-            <span v-if="m.permissions && m.permissions.length > 0" class="text-xs text-slate-500"><i class="fas fa-key text-amber-400 mr-1"></i>{{ m.permissions.length }} 条</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('权限') }}</span>
+            <span v-if="m.permissions && m.permissions.length > 0" class="text-xs text-slate-500"><i class="fas fa-key text-amber-400 mr-1"></i>{{ m.permissions.length }} {{ $t('条') }}</span>
             <span v-else class="text-xs text-slate-400">-</span>
           </div>
           <!-- 底部：操作按鈕 -->
           <div class="card-actions">
-            <button v-if="!m.founder && portal.hasPerm('PUT /api/account/member/:username')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditMember(m)">
-              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
+            <button v-if="!m.founder && portal.hasPerm('PUT /api/account/member/:username')" class="btn-icon btn-icon-blue" :title="$t('编辑')" @click="openEditMember(m)">
+              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">{{ $t('编辑') }}</span>
             </button>
-            <button v-if="!m.founder && portal.hasPerm('DELETE /api/account/member/:username')" class="btn-icon btn-icon-red" title="删除" @click="handleDeleteMember(m)">
-              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+            <button v-if="!m.founder && portal.hasPerm('DELETE /api/account/member/:username')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleDeleteMember(m)">
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
             </button>
           </div>
         </div>

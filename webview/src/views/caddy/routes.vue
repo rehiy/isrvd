@@ -194,7 +194,7 @@ class CaddyRoutes extends Vue {
             case 'file_server': return (h.root as string) || '-'
             case 'static_response': return `${h.status_code || 200}${h.body ? ' +' : ''}`
         }
-        return '(自定义)'
+        return this.$t('(自定义)')
     }
 
     getHandlerTagClass(r: CaddyRoute) {
@@ -208,16 +208,16 @@ class CaddyRoutes extends Vue {
     deleteRoute(route: RouteWithServer) {
         const serverName = escapeHTML(route.serverName)
         this.portal.showConfirm({
-            title: '删除路由',
-            message: `确定要删除服务 <strong class="text-slate-900">${serverName}</strong> 下的路由 <strong class="text-slate-900">#${route.index}</strong> 吗？此操作不可恢复。`,
+            title: this.$t('删除路由'),
+            message: this.$t('确定要删除服务 <strong class="text-slate-900">{0}</strong> 下的路由 <strong class="text-slate-900">#{1}</strong> 吗？此操作不可恢复。', serverName, route.index),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认删除',
+            confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 try {
                     await api.caddyRouteDelete(route.index, route.serverName)
-                    this.portal.showNotification('success', '删除成功')
+                    this.portal.showNotification('success', this.$t('删除成功'))
                     this.loadRoutes()
                 } catch {}
             }
@@ -239,12 +239,12 @@ export default toNative(CaddyRoutes)
       <div class="toolbar-desktop">
         <div class="flex items-center gap-3">
           <div class="page-icon bg-indigo-500"><i class="fas fa-route text-white"></i></div>
-          <div class="min-w-0"><h1 class="title-text">路由</h1><p class="text-xs text-slate-500 truncate">配置请求匹配规则与处理器，支持多种转发方式</p></div>
+          <div class="min-w-0"><h1 class="title-text">{{ $t('路由') }}</h1><p class="text-xs text-slate-500 truncate">{{ $t('配置请求匹配规则与处理器，支持多种转发方式') }}</p></div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="caddy-routes" placeholder="请输入搜索关键词..." focus-color="indigo" type-to-search />
-          <button class="btn btn-secondary" @click="loadRoutes()"><i class="fas fa-rotate"></i>刷新</button>
-          <button v-if="portal.hasPerm('POST /api/caddy/route')" class="btn btn-indigo" @click="openCreateModal()"><i class="fas fa-plus"></i>新建路由</button>
+          <PageSearch v-model="searchText" search-key="caddy-routes" :placeholder="$t('请输入搜索关键词...')" focus-color="indigo" type-to-search />
+          <button class="btn btn-secondary" @click="loadRoutes()"><i class="fas fa-rotate"></i>{{ $t('刷新') }}</button>
+          <button v-if="portal.hasPerm('POST /api/caddy/route')" class="btn btn-indigo" @click="openCreateModal()"><i class="fas fa-plus"></i>{{ $t('新建路由') }}</button>
         </div>
       </div>
       <!-- 移动端 -->
@@ -252,15 +252,15 @@ export default toNative(CaddyRoutes)
         <div class="title-group">
           <div class="page-icon bg-indigo-500"><i class="fas fa-route text-white"></i></div>
           <div class="min-w-0">
-            <h1 class="title-text">路由</h1>
-            <p class="text-xs text-slate-500 truncate">配置匹配规则与处理器</p>
+            <h1 class="title-text">{{ $t('路由') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('配置匹配规则与处理器') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" title="刷新" @click="loadRoutes()">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadRoutes()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/caddy/route')" class="btn btn-indigo btn-square" title="新建路由" @click="openCreateModal()">
+          <button v-if="portal.hasPerm('POST /api/caddy/route')" class="btn btn-indigo btn-square" :title="$t('新建路由')" @click="openCreateModal()">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -268,16 +268,16 @@ export default toNative(CaddyRoutes)
     </div>
     <!-- 移动端搜索栏 -->
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="caddy-routes" placeholder="请输入搜索关键词..." width-class="w-full" focus-color="indigo" />
+      <PageSearch v-model="searchText" search-key="caddy-routes" :placeholder="$t('请输入搜索关键词...')" width-class="w-full" focus-color="indigo" />
     </div>
     <div v-if="loading" class="card-body">
-      <div class="empty-state"><div class="spinner-lg"></div><p class="text-slate-500">加载中...</p></div>
+      <div class="empty-state"><div class="spinner-lg"></div><p class="text-slate-500">{{ $t('加载中...') }}</p></div>
     </div>
     <div v-else-if="filteredRoutes.length === 0" class="card-body">
       <div class="empty-state">
         <div class="empty-state-icon"><i class="fas fa-route text-4xl text-slate-300"></i></div>
-        <p class="text-slate-600 font-medium mb-1">{{ routes.length === 0 ? '暂无路由' : '未找到匹配路由' }}</p>
-        <p class="text-sm text-slate-400">{{ routes.length === 0 ? '点击「新建路由」开始创建' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ routes.length === 0 ? $t('暂无路由') : $t('未找到匹配路由') }}</p>
+        <p class="text-sm text-slate-400">{{ routes.length === 0 ? $t('点击「新建路由」开始创建') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
     <template v-else>
@@ -287,12 +287,12 @@ export default toNative(CaddyRoutes)
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
               <th class="th">Host</th>
-              <th class="th">服务</th>
+              <th class="th">{{ $t('服务') }}</th>
               <th class="th">Path</th>
               <th class="th">Method</th>
-              <th class="th">类型</th>
-              <th class="th">处理器</th>
-              <th class="w-32 th-right">操作</th>
+              <th class="th">{{ $t('类型') }}</th>
+              <th class="th">{{ $t('处理器') }}</th>
+              <th class="w-32 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -304,7 +304,7 @@ export default toNative(CaddyRoutes)
                     <i class="fas fa-globe text-teal-500 text-xs"></i>
                     <span class="text-xs text-slate-400">Host</span>
                     <span :class="row.host === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm">{{ row.host }}</span>
-                    <span class="ml-auto text-xs text-slate-400">共 <span class="font-medium text-slate-600">{{ row.count }}</span> 条</span>
+                    <span class="ml-auto text-xs text-slate-400">{{ $t('共') }} <span class="font-medium text-slate-600">{{ row.count }}</span> {{ $t('条') }}</span>
                   </button>
                 </td>
               </tr>
@@ -324,8 +324,8 @@ export default toNative(CaddyRoutes)
                 <td class="px-4 py-3"><code class="text-xs font-mono text-slate-700 break-all">{{ getHandlerSummary(row.route) }}</code></td>
                 <td class="px-4 py-3">
                   <div class="table-actions">
-                    <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(row.route)"><i class="fas fa-pen text-xs"></i></button>
-                    <button v-if="portal.hasPerm('DELETE /api/caddy/route/:index')" class="btn-icon btn-icon-red" title="删除" @click="deleteRoute(row.route)"><i class="fas fa-trash text-xs"></i></button>
+                    <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-blue" :title="$t('编辑')" @click="openEditModal(row.route)"><i class="fas fa-pen text-xs"></i></button>
+                    <button v-if="portal.hasPerm('DELETE /api/caddy/route/:index')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteRoute(row.route)"><i class="fas fa-trash text-xs"></i></button>
                   </div>
                 </td>
               </tr>
@@ -342,7 +342,7 @@ export default toNative(CaddyRoutes)
             <i class="fas fa-globe text-teal-500 text-xs"></i>
             <span class="text-xs text-slate-400">Host</span>
             <span :class="row.host === '*' ? 'text-slate-400' : 'text-teal-600 font-medium'" class="text-sm truncate">{{ row.host }}</span>
-            <span class="ml-auto text-xs text-slate-400 whitespace-nowrap">共 <span class="font-medium text-slate-600">{{ row.count }}</span> 条</span>
+            <span class="ml-auto text-xs text-slate-400 whitespace-nowrap">{{ $t('共') }} <span class="font-medium text-slate-600">{{ row.count }}</span> {{ $t('条') }}</span>
           </button>
           <div v-else v-show="!row.grouped || !collapsedHosts.includes(row.host)" class="card-interactive">
             <div class="card-info-row">
@@ -356,7 +356,7 @@ export default toNative(CaddyRoutes)
             </div>
 
             <div class="card-prop-row-start">
-              <span class="prop-label-start">服务</span>
+              <span class="prop-label-start">{{ $t('服务') }}</span>
               <code class="text-xs font-mono text-slate-700 break-all">{{ row.route.serverName }}</code>
             </div>
             <div class="card-prop-row-start">
@@ -368,16 +368,16 @@ export default toNative(CaddyRoutes)
               <span class="text-xs text-slate-500">{{ getRouteMethods(row.route) }}</span>
             </div>
             <div class="card-prop-row-start">
-              <span class="prop-label-start">后端</span>
+              <span class="prop-label-start">{{ $t('后端') }}</span>
               <code :class="getHandlerTagClass(row.route)" class="code-chip">{{ getHandlerSummary(row.route) }}</code>
             </div>
 
             <div class="card-actions">
-              <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-blue" title="编辑" @click="openEditModal(row.route)">
-                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
+              <button v-if="portal.hasPerm('PUT /api/caddy/route/:index')" class="btn-icon btn-icon-blue" :title="$t('编辑')" @click="openEditModal(row.route)">
+                <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">{{ $t('编辑') }}</span>
               </button>
-              <button v-if="portal.hasPerm('DELETE /api/caddy/route/:index')" class="btn-icon btn-icon-red" title="删除" @click="deleteRoute(row.route)">
-                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+              <button v-if="portal.hasPerm('DELETE /api/caddy/route/:index')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="deleteRoute(row.route)">
+                <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
               </button>
             </div>
           </div>

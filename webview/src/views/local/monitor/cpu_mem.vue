@@ -169,7 +169,7 @@ export default toNative(SystemCpuMem)
             <div class="w-7 h-7 rounded-lg bg-blue-500/90 flex items-center justify-center">
               <i class="fas fa-microchip text-white text-xs"></i>
             </div>
-            <span class="text-sm font-semibold text-slate-700">CPU 使用率</span>
+            <span class="text-sm font-semibold text-slate-700">{{ $t('CPU 使用率') }}</span>
           </div>
           <span :class="['text-2xl font-bold tabular-nums', semanticColor(cpuVal)]">
             {{ cpuVal }}<span class="text-sm font-medium ml-0.5">%</span>
@@ -190,7 +190,7 @@ export default toNative(SystemCpuMem)
             <div class="w-7 h-7 rounded-lg bg-indigo-500/90 flex items-center justify-center">
               <i class="fas fa-memory text-white text-xs"></i>
             </div>
-            <span class="text-sm font-semibold text-slate-700">内存使用</span>
+            <span class="text-sm font-semibold text-slate-700">{{ $t('内存使用') }}</span>
           </div>
           <span :class="['text-2xl font-bold tabular-nums', semanticColor(memVal)]">
             {{ memVal }}<span class="text-sm font-medium ml-0.5">%</span>

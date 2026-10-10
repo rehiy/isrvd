@@ -197,7 +197,7 @@ class SystemProcessInfoView extends Vue {
                 this.showGPUColumn = this.processes.some(process => this.usesGPU(process))
             }
         } catch {
-            if (!silent) this.portal.showNotification('error', '获取进程列表失败')
+            if (!silent) this.portal.showNotification('error', this.$t('获取进程列表失败'))
         } finally {
             this.loading = false
             this.polling = false
@@ -221,22 +221,22 @@ class SystemProcessInfoView extends Vue {
         if (!this.canKill) return
 
         const tip = force
-            ? '强制终止不会给进程清理资源的机会，可能导致数据丢失。'
-            : '进程会收到终止信号，允许其自行清理后退出。'
+            ? this.$t('强制终止不会给进程清理资源的机会，可能导致数据丢失。')
+            : this.$t('进程会收到终止信号，允许其自行清理后退出。')
         this.portal.showConfirm({
-            title: force ? '强制终止进程' : '终止进程',
-            message: `确定要${force ? '强制' : ''}终止 <strong class="text-slate-900">${proc.name}</strong>（PID ${proc.pid}）吗？${tip}`,
+            title: force ? this.$t('强制终止进程') : this.$t('终止进程'),
+            message: this.$t('确定要{0}终止 <strong class="text-slate-900">{1}</strong>（PID {2}）吗？{3}', force ? '强制' : '', proc.name, proc.pid, tip),
             icon: 'fa-skull-crossbones',
             iconColor: 'red',
-            confirmText: force ? '强制终止' : '确认终止',
+            confirmText: force ? this.$t('强制终止') : this.$t('确认终止'),
             danger: true,
             onConfirm: async () => {
                 try {
                     await api.localProcessKill(proc.pid, force)
-                    this.portal.showNotification('success', '已发送终止信号')
+                    this.portal.showNotification('success', this.$t('已发送终止信号'))
                     await this.loadProcesses()
                 } catch {
-                    this.portal.showNotification('error', '终止进程失败')
+                    this.portal.showNotification('error', this.$t('终止进程失败'))
                 }
             }
         })
@@ -269,30 +269,30 @@ export default toNative(SystemProcessInfoView)
             <i class="fas fa-microchip text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">进程管理</h1>
-            <p class="text-xs text-slate-500">查看本机进程与资源占用，并可按需终止</p>
+            <h1 class="title-text">{{ $t('进程管理') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('查看本机进程与资源占用，并可按需终止') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="local-process" placeholder="搜索进程名、PID、父 PID、用户、命令行..." aria-label="搜索本机进程" type-to-search />
-          <select v-model="showParentTree" class="select-sm min-w-[110px]" aria-label="展示方式">
-            <option :value="true">父子树</option>
-            <option :value="false">平铺列表</option>
+          <PageSearch v-model="searchText" search-key="local-process" :placeholder="$t('搜索进程名、PID、父 PID、用户、命令行...')" :aria-label="$t('搜索本机进程')" type-to-search />
+          <select v-model="showParentTree" class="select-sm min-w-[110px]" :aria-label="$t('展示方式')">
+            <option :value="true">{{ $t('父子树') }}</option>
+            <option :value="false">{{ $t('平铺列表') }}</option>
           </select>
-          <select v-model="sortKey" class="select-sm min-w-[130px]" aria-label="排序字段">
-            <option value="memoryRss">内存占用</option>
-            <option value="cpuPercent">CPU 占用</option>
-            <option value="ioBPS">I/O 速率</option>
-            <option v-if="showGPUColumn" value="gpuMemoryBytes">GPU 显存</option>
-            <option value="createTime">启动时间</option>
-            <option value="pid">进程 ID</option>
-            <option value="name">进程名称</option>
+          <select v-model="sortKey" class="select-sm min-w-[130px]" :aria-label="$t('排序字段')">
+            <option value="memoryRss">{{ $t('内存占用') }}</option>
+            <option value="cpuPercent">{{ $t('CPU 占用') }}</option>
+            <option value="ioBPS">{{ $t('I/O 速率') }}</option>
+            <option v-if="showGPUColumn" value="gpuMemoryBytes">{{ $t('GPU 显存') }}</option>
+            <option value="createTime">{{ $t('启动时间') }}</option>
+            <option value="pid">{{ $t('进程 ID') }}</option>
+            <option value="name">{{ $t('进程名称') }}</option>
           </select>
-          <button class="btn btn-secondary btn-square" :title="sortDescending ? '降序排列' : '升序排列'" @click="toggleSortDirection()">
+          <button class="btn btn-secondary btn-square" :title="sortDescending ? $t('降序排列') : $t('升序排列')" @click="toggleSortDirection()">
             <i :class="['fas', sortDescending ? 'fa-arrow-down' : 'fa-arrow-up', 'text-sm']"></i>
           </button>
           <button class="btn btn-secondary" @click="loadProcesses()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
         </div>
       </div>
@@ -304,28 +304,28 @@ export default toNative(SystemProcessInfoView)
               <i class="fas fa-microchip text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="title-text">进程管理</h1>
-              <p class="text-xs text-slate-500 truncate">本机进程</p>
+              <h1 class="title-text">{{ $t('进程管理') }}</h1>
+              <p class="text-xs text-slate-500 truncate">{{ $t('本机进程') }}</p>
             </div>
           </div>
           <div class="action-group-sm">
-            <select v-model="showParentTree" class="w-20 select-sm" aria-label="展示方式">
-              <option :value="true">父子树</option>
-              <option :value="false">平铺</option>
+            <select v-model="showParentTree" class="w-20 select-sm" :aria-label="$t('展示方式')">
+              <option :value="true">{{ $t('父子树') }}</option>
+              <option :value="false">{{ $t('平铺') }}</option>
             </select>
-            <select v-model="sortKey" class="w-24 select-sm" aria-label="排序字段">
-              <option value="memoryRss">内存</option>
+            <select v-model="sortKey" class="w-24 select-sm" :aria-label="$t('排序字段')">
+              <option value="memoryRss">{{ $t('内存') }}</option>
               <option value="cpuPercent">CPU</option>
               <option value="ioBPS">I/O</option>
               <option v-if="showGPUColumn" value="gpuMemoryBytes">GPU</option>
-              <option value="createTime">启动</option>
+              <option value="createTime">{{ $t('启动') }}</option>
               <option value="pid">PID</option>
-              <option value="name">名称</option>
+              <option value="name">{{ $t('名称') }}</option>
             </select>
-            <button class="btn btn-secondary btn-square" :title="sortDescending ? '降序排列' : '升序排列'" @click="toggleSortDirection()">
+            <button class="btn btn-secondary btn-square" :title="sortDescending ? $t('降序排列') : $t('升序排列')" @click="toggleSortDirection()">
               <i :class="['fas', sortDescending ? 'fa-arrow-down' : 'fa-arrow-up', 'text-sm']"></i>
             </button>
-            <button class="btn btn-secondary btn-square" title="刷新" @click="loadProcesses()">
+            <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadProcesses()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
           </div>
@@ -333,13 +333,13 @@ export default toNative(SystemProcessInfoView)
       </div>
     </div>
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="local-process" placeholder="搜索进程..." aria-label="搜索本机进程" width-class="w-full" />
+      <PageSearch v-model="searchText" search-key="local-process" :placeholder="$t('搜索进程...')" :aria-label="$t('搜索本机进程')" width-class="w-full" />
     </div>
 
     <div v-if="loading && processes.length === 0" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -348,8 +348,8 @@ export default toNative(SystemProcessInfoView)
         <div class="empty-state-icon">
           <i class="fas fa-microchip text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ processes.length === 0 ? '未获取到进程' : '未找到匹配进程' }}</p>
-        <p class="text-sm text-slate-400">{{ processes.length === 0 ? '请刷新重试' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ processes.length === 0 ? $t('未获取到进程') : $t('未找到匹配进程') }}</p>
+        <p class="text-sm text-slate-400">{{ processes.length === 0 ? $t('请刷新重试') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
 
@@ -359,14 +359,14 @@ export default toNative(SystemProcessInfoView)
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
               <th class="w-28 th">{{ showParentTree ? 'PID / PPID' : 'PID' }}</th>
-              <th class="th">{{ showParentTree ? '进程树' : '进程' }}</th>
-              <th class="w-24 th">用户</th>
+              <th class="th">{{ showParentTree ? $t('进程树') : $t('进程') }}</th>
+              <th class="w-24 th">{{ $t('用户') }}</th>
               <th class="w-20 th">CPU</th>
-              <th class="w-36 th">内存</th>
+              <th class="w-36 th">{{ $t('内存') }}</th>
               <th class="w-36 th">I/O</th>
               <th v-if="showGPUColumn" class="w-36 th">GPU</th>
-              <th class="w-36 th">启动时间</th>
-              <th v-if="canKill" class="w-40 th-right">操作</th>
+              <th class="w-36 th">{{ $t('启动时间') }}</th>
+              <th v-if="canKill" class="w-40 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -397,8 +397,8 @@ export default toNative(SystemProcessInfoView)
                 <span class="block text-xs text-slate-400">{{ formatPercent(row.process.memoryPercent) }}</span>
               </td>
               <td class="td-text">
-                <span class="block">读 {{ formatIORate(row.process.ioReadBps) }}</span>
-                <span class="block text-xs text-slate-400">写 {{ formatIORate(row.process.ioWriteBps) }}</span>
+                <span class="block">{{ $t('读') }} {{ formatIORate(row.process.ioReadBps) }}</span>
+                <span class="block text-xs text-slate-400">{{ $t('写') }} {{ formatIORate(row.process.ioWriteBps) }}</span>
               </td>
               <td v-if="showGPUColumn" class="td-text max-w-[9rem]">
                 <span class="block whitespace-nowrap">{{ formatGPUMemory(row.process) }}</span>
@@ -407,10 +407,10 @@ export default toNative(SystemProcessInfoView)
               <td class="td-text">{{ formatStartTime(row.process.createTime) }}</td>
               <td v-if="canKill" class="px-4 py-3">
                 <div class="table-actions">
-                  <button class="btn-icon btn-icon-amber" title="终止进程" @click="openKill(row.process)">
+                  <button class="btn-icon btn-icon-amber" :title="$t('终止进程')" @click="openKill(row.process)">
                     <i class="fas fa-stop text-xs"></i>
                   </button>
-                  <button class="btn-icon btn-icon-red" title="强制终止" @click="openKill(row.process, true)">
+                  <button class="btn-icon btn-icon-red" :title="$t('强制终止')" @click="openKill(row.process, true)">
                     <i class="fas fa-skull-crossbones text-xs"></i>
                   </button>
                 </div>
@@ -440,7 +440,7 @@ export default toNative(SystemProcessInfoView)
             </span>
           </div>
           <div class="card-prop-row-start">
-            <span class="prop-label-start">内存</span>
+            <span class="prop-label-start">{{ $t('内存') }}</span>
             <span class="text-xs text-slate-500">
               <span class="block">{{ formatMemory(row.process.memoryRss) }}</span>
               <span class="block text-slate-400 mt-0.5">{{ formatPercent(row.process.memoryPercent) }}</span>
@@ -448,22 +448,22 @@ export default toNative(SystemProcessInfoView)
           </div>
           <div class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">I/O</span>
-            <span class="text-xs text-slate-500">读 {{ formatIORate(row.process.ioReadBps) }} · 写 {{ formatIORate(row.process.ioWriteBps) }}</span>
+            <span class="text-xs text-slate-500">{{ $t('读') }} {{ formatIORate(row.process.ioReadBps) }} {{ $t('· 写') }} {{ formatIORate(row.process.ioWriteBps) }}</span>
           </div>
           <div v-if="usesGPU(row.process)" class="card-prop-row">
             <span class="text-xs text-slate-400 flex-shrink-0">GPU</span>
             <span class="text-xs text-slate-500">{{ formatGPUMemory(row.process) }} · {{ formatGPUDetail(row.process) }}</span>
           </div>
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">启动</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('启动') }}</span>
             <span class="text-xs text-slate-500">{{ formatStartTime(row.process.createTime) }}</span>
           </div>
           <div v-if="canKill" class="card-actions">
-            <button class="btn-icon btn-icon-amber" title="终止进程" @click="openKill(row.process)">
-              <i class="fas fa-stop text-xs"></i><span class="text-xs ml-1">终止</span>
+            <button class="btn-icon btn-icon-amber" :title="$t('终止进程')" @click="openKill(row.process)">
+              <i class="fas fa-stop text-xs"></i><span class="text-xs ml-1">{{ $t('终止') }}</span>
             </button>
-            <button class="btn-icon btn-icon-red" title="强制终止" @click="openKill(row.process, true)">
-              <i class="fas fa-skull-crossbones text-xs"></i><span class="text-xs ml-1">强制终止</span>
+            <button class="btn-icon btn-icon-red" :title="$t('强制终止')" @click="openKill(row.process, true)">
+              <i class="fas fa-skull-crossbones text-xs"></i><span class="text-xs ml-1">{{ $t('强制终止') }}</span>
             </button>
           </div>
         </div>

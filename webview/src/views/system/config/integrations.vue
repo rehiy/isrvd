@@ -27,24 +27,24 @@ export default toNative(ConfigIntegrations)
     <section class="space-y-4">
       <div class="config-section-heading">
         <div>
-          <h2 class="config-section-title">AI 助手</h2>
-          <p class="config-section-description">LLM 代理与模型改写</p>
+          <h2 class="config-section-title">{{ $t('AI 助手') }}</h2>
+          <p class="config-section-description">{{ $t('LLM 代理与模型改写') }}</p>
         </div>
       </div>
       <div>
-        <label class="form-label">模型名称</label>
-        <input v-model="config.draft.copilot.model" type="text" placeholder="请输入模型名称" class="input" />
-        <p class="mt-1 text-xs text-slate-400">代理转发时强制改写请求体中的 model 字段，留空则不改写</p>
+        <label class="form-label">{{ $t('模型名称') }}</label>
+        <input v-model="config.draft.copilot.model" type="text" :placeholder="$t('请输入模型名称')" class="input" />
+        <p class="mt-1 text-xs text-slate-400">{{ $t('代理转发时强制改写请求体中的 model 字段，留空则不改写') }}</p>
       </div>
       <div>
-        <label class="form-label">基础地址</label>
-        <input v-model="config.draft.copilot.baseUrl" type="text" placeholder="请输入基础地址" class="input" />
-        <p class="mt-1 text-xs text-slate-400">示例：https://api.openai.com/v1；OpenAI 兼容的 LLM API 基础地址，留空则禁用代理</p>
+        <label class="form-label">{{ $t('基础地址') }}</label>
+        <input v-model="config.draft.copilot.baseUrl" type="text" :placeholder="$t('请输入基础地址')" class="input" />
+        <p class="mt-1 text-xs text-slate-400">{{ $t('示例：https://api.openai.com/v1；OpenAI 兼容的 LLM API 基础地址，留空则禁用代理') }}</p>
       </div>
       <div>
-        <label class="form-label">API 密钥</label>
-        <input v-model="config.draft.copilot.apiKey" type="password" placeholder="留空则保持不变" class="input" autocomplete="new-password" />
-        <p class="mt-1 text-xs text-slate-400">代理转发时以 Bearer 形式注入 Authorization 请求头</p>
+        <label class="form-label">{{ $t('API 密钥') }}</label>
+        <input v-model="config.draft.copilot.apiKey" type="password" :placeholder="$t('留空则保持不变')" class="input" autocomplete="new-password" />
+        <p class="mt-1 text-xs text-slate-400">{{ $t('代理转发时以 Bearer 形式注入 Authorization 请求头') }}</p>
       </div>
     </section>
 
@@ -52,14 +52,14 @@ export default toNative(ConfigIntegrations)
     <section class="space-y-4">
       <div class="config-section-heading">
         <div>
-          <h2 class="config-section-title">应用市场</h2>
-          <p class="config-section-description">市场 iframe 站点地址</p>
+          <h2 class="config-section-title">{{ $t('应用市场') }}</h2>
+          <p class="config-section-description">{{ $t('市场 iframe 站点地址') }}</p>
         </div>
       </div>
       <div>
-        <label class="form-label">站点 URL</label>
-        <input v-model="config.draft.marketplace.url" type="text" placeholder="请输入应用市场 URL" class="input" />
-        <p class="mt-1 text-xs text-slate-400">应用市场页面以 iframe 方式嵌入，并通过 postMessage 协议接收安装事件</p>
+        <label class="form-label">{{ $t('站点 URL') }}</label>
+        <input v-model="config.draft.marketplace.url" type="text" :placeholder="$t('请输入应用市场 URL')" class="input" />
+        <p class="mt-1 text-xs text-slate-400">{{ $t('应用市场页面以 iframe 方式嵌入，并通过 postMessage 协议接收安装事件') }}</p>
       </div>
     </section>
 
@@ -67,31 +67,31 @@ export default toNative(ConfigIntegrations)
     <section class="space-y-4">
       <div class="config-section-heading">
         <div>
-          <h2 class="config-section-title">导航链接</h2>
-          <p class="config-section-description">顶部工具栏外部链接</p>
+          <h2 class="config-section-title">{{ $t('导航链接') }}</h2>
+          <p class="config-section-description">{{ $t('顶部工具栏外部链接') }}</p>
         </div>
       </div>
-      <div v-if="config.draft.links.length === 0" class="empty-note">暂无链接，点击下方按钮添加</div>
+      <div v-if="config.draft.links.length === 0" class="empty-note">{{ $t('暂无链接，点击下方按钮添加') }}</div>
       <div v-else class="space-y-4">
         <div v-for="(link, index) in config.draft.links" :key="index" class="panel-frame">
           <div class="card-body space-y-4">
             <div class="flex items-center justify-between">
-              <span class="text-sm font-semibold text-slate-700">链接 {{ index + 1 }}</span>
-              <button type="button" class="btn-icon btn-icon-red" title="删除链接" @click="removeLink(index)">
+              <span class="text-sm font-semibold text-slate-700">{{ $t('链接') }} {{ index + 1 }}</span>
+              <button type="button" class="btn-icon btn-icon-red" :title="$t('删除链接')" @click="removeLink(index)">
                 <i class="fas fa-trash-can text-xs"></i>
               </button>
             </div>
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
-                <label class="form-label">名称</label>
-                <input v-model="link.label" type="text" required placeholder="如：工具箱" class="input" />
+                <label class="form-label">{{ $t('名称') }}</label>
+                <input v-model="link.label" type="text" required :placeholder="$t('如：工具箱')" class="input" />
               </div>
               <div>
-                <label class="form-label">链接地址</label>
+                <label class="form-label">{{ $t('链接地址') }}</label>
                 <input v-model="link.url" type="url" required pattern="https?://.*" placeholder="https://example.com" class="input" />
               </div>
               <div>
-                <label class="form-label">图标</label>
+                <label class="form-label">{{ $t('图标') }}</label>
                 <IconSelect v-model="link.icon" />
               </div>
             </div>
@@ -99,7 +99,7 @@ export default toNative(ConfigIntegrations)
         </div>
       </div>
       <button type="button" class="btn-add-row" @click="addLink">
-        <i class="fas fa-plus text-xs"></i>添加链接
+        <i class="fas fa-plus text-xs"></i>{{ $t('添加链接') }}
       </button>
     </section>
   </div>

@@ -30,10 +30,10 @@ export default toNative(ServiceEditModal)
     ref="modalRef"
     target="swarm"
     :resource-name="serviceName"
-    :title="`编辑服务：${serviceName}`"
-    warning="更新配置后将会删除旧服务并重新创建，期间服务短暂不可用"
-    refresh-title="跳过 compose.yml，按当前服务运行态重新反推 Compose"
-    success-message="Swarm 服务配置更新成功，已重建服务"
+    :title="$t(`编辑服务：${serviceName}`)"
+    :warning="$t('更新配置后将会删除旧服务并重新创建，期间服务短暂不可用')"
+    :refresh-title="$t('跳过 compose.yml，按当前服务运行态重新反推 Compose')"
+    :success-message="$t('Swarm 服务配置更新成功，已重建服务')"
     @success="$emit('success')"
   />
 </template>

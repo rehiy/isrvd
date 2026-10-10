@@ -41,10 +41,10 @@ export default toNative(ChmodModal)
 </script>
 
 <template>
-  <BaseModal v-model="isOpen" title="修改权限" :loading="loading" :confirm-disabled="!formData.mode.trim()" @confirm="handleConfirm">
+  <BaseModal v-model="isOpen" :title="$t('修改权限')" :loading="loading" :confirm-disabled="!formData.mode.trim()" @confirm="handleConfirm">
     <form @submit.prevent="handleConfirm">
       <div>
-        <label for="fmFileMode" class="form-label">权限 (八进制)</label>
+        <label for="fmFileMode" class="form-label">{{ $t('权限 (八进制)') }}</label>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <i class="fas fa-key text-slate-400"></i>
@@ -55,13 +55,13 @@ export default toNative(ChmodModal)
             type="text"
             :disabled="loading"
             required
-            placeholder="请输入文件权限"
+            :placeholder="$t('请输入文件权限')"
             class="input pl-11"
           >
         </div>
-        <p class="text-xs text-slate-400 mt-1">三位八进制数，例如：755、644</p>
+        <p class="text-xs text-slate-400 mt-1">{{ $t('三位八进制数，例如：755、644') }}</p>
         <div class="mt-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
-          <p class="text-sm font-medium text-slate-700 mb-2">常用权限:</p>
+          <p class="text-sm font-medium text-slate-700 mb-2">{{ $t('常用权限:') }}</p>
           <div class="flex flex-wrap gap-2">
             <span class="badge-primary cursor-pointer" @click="formData.mode = '755'">755 - rwxr-xr-x</span>
             <span class="badge-primary cursor-pointer" @click="formData.mode = '644'">644 - rw-r--r--</span>
@@ -70,6 +70,6 @@ export default toNative(ChmodModal)
         </div>
       </div>
     </form>
-    <template #confirm-text>{{ loading ? '修改中...' : '确认修改' }}</template>
+    <template #confirm-text>{{ loading ? $t('修改中...') : $t('确认修改') }}</template>
   </BaseModal>
 </template>

@@ -301,8 +301,8 @@ class ContainerStats extends Vue {
                 data: {
                     labels: [...this.labels],
                     datasets: [
-                        { ...this.makeDataset(this.netRxData, '#14b8a6'), label: '接收' },
-                        { ...this.makeDataset(this.netTxData, '#0d9488'), label: '发送' }
+                        { ...this.makeDataset(this.netRxData, '#14b8a6'), label: this.$t('接收') },
+                        { ...this.makeDataset(this.netTxData, '#0d9488'), label: this.$t('发送') }
                     ]
                 },
                 options: this.makeIOChartOptions(ioTooltipCb)
@@ -315,8 +315,8 @@ class ContainerStats extends Vue {
                 data: {
                     labels: [...this.labels],
                     datasets: [
-                        { ...this.makeDataset(this.blkRData, '#f59e0b'), label: '读取' },
-                        { ...this.makeDataset(this.blkWData, '#d97706'), label: '写入' }
+                        { ...this.makeDataset(this.blkRData, '#f59e0b'), label: this.$t('读取') },
+                        { ...this.makeDataset(this.blkWData, '#d97706'), label: this.$t('写入') }
                     ]
                 },
                 options: this.makeIOChartOptions(ioTooltipCb)
@@ -356,7 +356,7 @@ class ContainerStats extends Vue {
             const res = await api.dockerContainerList(true)
             const ct = (res.payload || []).find((c: DockerContainerInfo) => c.id === this.containerId) ?? null
             if (!ct) {
-                this.portal.showNotification('error', '容器不存在')
+                this.portal.showNotification('error', this.$t('容器不存在'))
                 this.$router.push('/docker/containers')
                 return
             }
@@ -406,7 +406,7 @@ export default toNative(ContainerStats)
             <i class="fas fa-cube text-white text-sm"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
+            <h1 class="title-text">{{ container ? (container.name || container.id) : $t('加载中...') }}</h1>
             <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
           </div>
         </div>
@@ -418,7 +418,7 @@ export default toNative(ContainerStats)
             <i class="fas fa-cube text-white text-sm"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">{{ container ? (container.name || container.id) : '加载中...' }}</h1>
+            <h1 class="title-text">{{ container ? (container.name || container.id) : $t('加载中...') }}</h1>
             <p class="text-xs text-slate-600 font-mono truncate">{{ container?.image }}</p>
           </div>
         </div>
@@ -429,7 +429,7 @@ export default toNative(ContainerStats)
       <!-- 加载状态 -->
       <div v-if="statsLoading && !statsData" class="empty-state gap-3 text-slate-400 text-sm">
         <div class="w-8 h-8 spinner"></div>
-        <span>正在采集数据...</span>
+        <span>{{ $t('正在采集数据...') }}</span>
       </div>
 
       <template v-else-if="statsData">
@@ -448,10 +448,10 @@ export default toNative(ContainerStats)
               </span>
             </div>
             <div class="metric-legend">
-              <span v-if="statsData.cpuCores">核心 <span class="text-slate-600 font-medium">{{ statsData.cpuCores }} 核</span></span>
-              <span v-if="statsData.cpuFreq">频率 <span class="text-slate-600 font-medium">{{ statsData.cpuFreq.toFixed(0) }} MHz</span></span>
+              <span v-if="statsData.cpuCores">{{ $t('核心') }} <span class="text-slate-600 font-medium">{{ statsData.cpuCores }} {{ $t('核') }}</span></span>
+              <span v-if="statsData.cpuFreq">{{ $t('频率') }} <span class="text-slate-600 font-medium">{{ statsData.cpuFreq.toFixed(0) }} MHz</span></span>
               <span v-if="statsData.cpuThrottled && statsData.cpuThrottled.throttledPeriods > 0" class="text-amber-500">
-                <i class="fas fa-bolt"></i> 节流 <span class="font-medium">{{ statsData.cpuThrottled.throttledPeriods }}</span>
+                <i class="fas fa-bolt"></i> {{ $t('节流') }} <span class="font-medium">{{ statsData.cpuThrottled.throttledPeriods }}</span>
               </span>
             </div>
             <div class="h-28"><canvas ref="cpuRef" class="w-full h-full"></canvas></div>
@@ -464,14 +464,14 @@ export default toNative(ContainerStats)
               <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
                 <i class="fas fa-memory text-white text-[9px]"></i>
               </div>
-              <span class="text-sm font-semibold text-slate-700">内存</span>
+              <span class="text-sm font-semibold text-slate-700">{{ $t('内存') }}</span>
               <span class="ml-auto text-lg font-bold font-mono" :class="statsData.memoryPercent > 80 ? 'text-red-500' : statsData.memoryPercent > 60 ? 'text-amber-500' : 'text-purple-600'">
                 {{ statsData.memoryPercent }}%
               </span>
             </div>
             <div class="metric-legend">
-              <span>内存 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryUsage) }}</span></span>
-              <span>限制 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryLimit) }}</span></span>
+              <span>{{ $t('内存') }} <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryUsage) }}</span></span>
+              <span>{{ $t('限制') }} <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.memoryLimit) }}</span></span>
             </div>
             <div class="h-28"><canvas ref="memRef" class="w-full h-full"></canvas></div>
           </div>
@@ -486,7 +486,7 @@ export default toNative(ContainerStats)
               <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
                 <i class="fas fa-network-wired text-white text-[9px]"></i>
               </div>
-              <span class="text-sm font-semibold text-slate-700">网络</span>
+              <span class="text-sm font-semibold text-slate-700">{{ $t('网络') }}</span>
               <span class="ml-auto text-xs font-mono text-teal-600">
                 <span class="text-teal-500">↓</span> {{ formatFileSize(netRxRate) }}/s
                 <span class="mx-1 text-slate-300">·</span>
@@ -494,9 +494,9 @@ export default toNative(ContainerStats)
               </span>
             </div>
             <div class="metric-legend">
-              <span v-if="statsData.networkDetail">网卡 <span class="text-slate-600 font-medium">{{ Object.keys(statsData.networkDetail).length }} 块</span></span>
-              <span>累计收 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkRx) }}</span></span>
-              <span>累计发 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkTx) }}</span></span>
+              <span v-if="statsData.networkDetail">{{ $t('网卡') }} <span class="text-slate-600 font-medium">{{ Object.keys(statsData.networkDetail).length }} {{ $t('块') }}</span></span>
+              <span>{{ $t('累计收') }} <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkRx) }}</span></span>
+              <span>{{ $t('累计发') }} <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.networkTx) }}</span></span>
             </div>
             <div class="h-28"><canvas ref="netRef" class="w-full h-full"></canvas></div>
           </div>
@@ -508,7 +508,7 @@ export default toNative(ContainerStats)
               <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
                 <i class="fas fa-hard-drive text-white text-[9px]"></i>
               </div>
-              <span class="text-sm font-semibold text-slate-700">硬盘</span>
+              <span class="text-sm font-semibold text-slate-700">{{ $t('硬盘') }}</span>
               <span class="ml-auto text-xs font-mono text-amber-600">
                 <span class="text-amber-500">↓</span> {{ formatFileSize(blkRRate) }}/s
                 <span class="mx-1 text-slate-300">·</span>
@@ -516,9 +516,9 @@ export default toNative(ContainerStats)
               </span>
             </div>
             <div class="metric-legend">
-              <span v-if="statsData.blockDetail">设备 <span class="text-slate-600 font-medium">{{ Object.keys(statsData.blockDetail).length }} 个</span></span>
-              <span>累计读 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockRead) }}</span></span>
-              <span>累计写 <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockWrite) }}</span></span>
+              <span v-if="statsData.blockDetail">{{ $t('设备') }} <span class="text-slate-600 font-medium">{{ Object.keys(statsData.blockDetail).length }} {{ $t('个') }}</span></span>
+              <span>{{ $t('累计读') }} <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockRead) }}</span></span>
+              <span>{{ $t('累计写') }} <span class="text-slate-600 font-medium">{{ formatFileSize(statsData.blockWrite) }}</span></span>
             </div>
             <div class="h-28"><canvas ref="blkRef" class="w-full h-full"></canvas></div>
           </div>
@@ -531,10 +531,10 @@ export default toNative(ContainerStats)
             <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center">
               <i class="fas fa-list-ol text-white text-[10px]"></i>
             </div>
-            <span class="text-sm font-semibold text-slate-700">进程信息</span>
+            <span class="text-sm font-semibold text-slate-700">{{ $t('进程信息') }}</span>
             <span class="ml-auto text-xs text-slate-400">
-              <span class="font-semibold text-slate-700">{{ statsData.pids }}</span> 运行中
-              <span v-if="statsData.pidsLimit > 0"> / 限制 {{ statsData.pidsLimit }}</span>
+              <span class="font-semibold text-slate-700">{{ statsData.pids }}</span> {{ $t('运行中') }}
+              <span v-if="statsData.pidsLimit > 0"> {{ $t('/ 限制') }} {{ statsData.pidsLimit }}</span>
             </span>
             <div v-if="statsData.pidsLimit > 0" class="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden">
               <div
@@ -560,7 +560,7 @@ export default toNative(ContainerStats)
               </tbody>
             </table>
           </div>
-          <div v-else class="text-xs text-slate-400">暂无进程信息</div>
+          <div v-else class="text-xs text-slate-400">{{ $t('暂无进程信息') }}</div>
         </div>
       </template>
 
@@ -569,7 +569,7 @@ export default toNative(ContainerStats)
         <div class="empty-state-icon !mb-0">
           <i class="fas fa-stop text-slate-400 text-lg"></i>
         </div>
-        <span>容器未运行，无法采集监控数据</span>
+        <span>{{ $t('容器未运行，无法采集监控数据') }}</span>
       </div>
     </div>
   </div>

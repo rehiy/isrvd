@@ -143,21 +143,21 @@ export default toNative(AuditLogs)
             <i class="fas fa-clipboard-list text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">操作审计</h1>
-            <p class="text-xs text-slate-500">查看和检索所有用户的操作记录</p>
+            <h1 class="title-text">{{ $t('操作审计') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('查看和检索所有用户的操作记录') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="system-audit-logs" placeholder="搜索用户、方法、URI、IP 或状态..." focus-color="rose" type-to-search />
+          <PageSearch v-model="searchText" search-key="system-audit-logs" :placeholder="$t('搜索用户、方法、URI、IP 或状态...')" focus-color="rose" type-to-search />
           <select v-model="selectedUsername" class="select-sm min-w-[140px]">
-            <option value="">所有用户</option>
+            <option value="">{{ $t('所有用户') }}</option>
             <option v-for="username in uniqueUsernames" :key="username" :value="username">{{ username }}</option>
           </select>
           <button class="btn" :class="hideAGUIRequests ? 'btn-rose' : 'btn-secondary'" :aria-pressed="hideAGUIRequests" @click="hideAGUIRequests = !hideAGUIRequests">
-            <i class="fas fa-eye-slash"></i>{{ hideAGUIRequests ? '已屏蔽 AI 助手' : '不看 AI 助手' }}
+            <i class="fas fa-eye-slash"></i>{{ hideAGUIRequests ? $t('已屏蔽 AI 助手') : $t('不看 AI 助手') }}
           </button>
           <button class="btn btn-secondary" @click="loadLogs()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
         </div>
       </div>
@@ -169,19 +169,19 @@ export default toNative(AuditLogs)
               <i class="fas fa-clipboard-list text-white"></i>
             </div>
             <div class="min-w-0">
-              <h1 class="title-text">操作审计</h1>
-              <p class="text-xs text-slate-500 truncate">查看用户操作记录</p>
+              <h1 class="title-text">{{ $t('操作审计') }}</h1>
+              <p class="text-xs text-slate-500 truncate">{{ $t('查看用户操作记录') }}</p>
             </div>
           </div>
           <div class="action-group-sm">
             <select v-model="selectedUsername" class="w-28 select-sm">
-              <option value="">所有用户</option>
+              <option value="">{{ $t('所有用户') }}</option>
               <option v-for="username in uniqueUsernames" :key="username" :value="username">{{ username }}</option>
             </select>
-            <button class="btn btn-square" :class="hideAGUIRequests ? 'btn-rose' : 'btn-secondary'" :aria-pressed="hideAGUIRequests" :title="hideAGUIRequests ? '显示 /api/copilot/agui 请求' : '屏蔽 /api/copilot/agui 请求'" @click="hideAGUIRequests = !hideAGUIRequests">
+            <button class="btn btn-square" :class="hideAGUIRequests ? 'btn-rose' : 'btn-secondary'" :aria-pressed="hideAGUIRequests" :title="hideAGUIRequests ? $t('显示 /api/copilot/agui 请求') : $t('屏蔽 /api/copilot/agui 请求')" @click="hideAGUIRequests = !hideAGUIRequests">
               <i class="fas fa-eye-slash text-sm"></i>
             </button>
-            <button class="btn btn-secondary btn-square" title="刷新" @click="loadLogs()">
+            <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadLogs()">
               <i class="fas fa-rotate text-sm"></i>
             </button>
           </div>
@@ -189,14 +189,14 @@ export default toNative(AuditLogs)
       </div>
     </div>
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="system-audit-logs" placeholder="搜索用户、方法、URI、IP 或状态..." width-class="w-full" focus-color="rose" />
+      <PageSearch v-model="searchText" search-key="system-audit-logs" :placeholder="$t('搜索用户、方法、URI、IP 或状态...')" width-class="w-full" focus-color="rose" />
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -206,8 +206,8 @@ export default toNative(AuditLogs)
         <div class="empty-state-icon">
           <i class="fas fa-clipboard-list text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ logs.length === 0 ? '暂无审计日志' : '未找到匹配日志' }}</p>
-        <p class="text-sm text-slate-400">{{ logs.length === 0 ? '用户操作记录将在此展示' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ logs.length === 0 ? $t('暂无审计日志') : $t('未找到匹配日志') }}</p>
+        <p class="text-sm text-slate-400">{{ logs.length === 0 ? $t('用户操作记录将在此展示') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
 
@@ -218,13 +218,13 @@ export default toNative(AuditLogs)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
-              <th class="th">用户</th>
-              <th class="w-20 th">方法</th>
+              <th class="th">{{ $t('用户') }}</th>
+              <th class="w-20 th">{{ $t('方法') }}</th>
               <th class="th">URI</th>
               <th class="th">Body</th>
-              <th class="w-24 th">状态</th>
-              <th class="w-20 th">耗时</th>
-              <th class="w-36 th">时间</th>
+              <th class="w-24 th">{{ $t('状态') }}</th>
+              <th class="w-20 th">{{ $t('耗时') }}</th>
+              <th class="w-36 th">{{ $t('时间') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">

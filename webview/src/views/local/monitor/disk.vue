@@ -93,7 +93,7 @@ class SystemDisk extends Vue {
                     callbacks: {
                         label: (ctx: ChartCallbackContext) => {
                             if (ctx.dataset.yAxisID === 'y1') {
-                                return '使用率: ' + (ctx.parsed.y ?? 0).toFixed(1) + '%'
+                                return this.$t('使用率: ') + (ctx.parsed.y ?? 0).toFixed(1) + '%'
                             }
                             return (ctx.dataset.label ?? '') + ': ' + formatMonitorBytes(ctx.parsed.y ?? 0, true)
                         }
@@ -139,9 +139,9 @@ class SystemDisk extends Vue {
             data: {
                 labels: [...h.labels],
                 datasets: [
-                    this.makeDataset(h.read, '#f59e0b', '读取', 'y'),
-                    this.makeDataset(h.write, '#8b5cf6', '写入', 'y'),
-                    this.makeDataset(h.pct, pctColor, '使用率', 'y1'),
+                    this.makeDataset(h.read, '#f59e0b', this.$t('读取'), 'y'),
+                    this.makeDataset(h.write, '#8b5cf6', this.$t('写入'), 'y'),
+                    this.makeDataset(h.pct, pctColor, this.$t('使用率'), 'y1'),
                 ]
             },
             options: this.diskChartOptions(pctColor)
@@ -254,9 +254,9 @@ export default toNative(SystemDisk)
       <div class="card-icon bg-amber-500">
         <i class="fas fa-hard-drive text-white text-xs"></i>
       </div>
-      <span class="text-sm font-semibold text-slate-700">硬盘 I/O</span>
+      <span class="text-sm font-semibold text-slate-700">{{ $t('硬盘 I/O') }}</span>
       <span class="ml-auto text-xs text-slate-400">
-        总计 {{ formatMonitorBytes(current.diskTotal) }}，已用 {{ formatMonitorBytes(current.diskUsed) }}
+        {{ $t('总计') }} {{ formatMonitorBytes(current.diskTotal) }} {{ $t('，已用') }} {{ formatMonitorBytes(current.diskUsed) }}
       </span>
     </div>
     <div ref="diskIOContainerRef" class="divide-y divide-slate-100">
@@ -285,12 +285,12 @@ export default toNative(SystemDisk)
             <div class="monitor-chart-box">
               <canvas :data-disk="diskIOHistoryKey(dp.device)" class="w-full h-full"></canvas>
               <div v-if="!diskIOHistory[diskIOHistoryKey(dp.device)]?.read?.length" class="absolute inset-0 flex items-center justify-center">
-                <span class="text-xs text-slate-300">等待数据...</span>
+                <span class="text-xs text-slate-300">{{ $t('等待数据...') }}</span>
               </div>
             </div>
             <div class="flex gap-4 text-xs text-slate-400">
-              <span>累计读: {{ formatMonitorBytes(diskIOByDevice(dp.device)?.readBytes ?? 0) }}</span>
-              <span>累计写: {{ formatMonitorBytes(diskIOByDevice(dp.device)?.writeBytes ?? 0) }}</span>
+              <span>{{ $t('累计读:') }} {{ formatMonitorBytes(diskIOByDevice(dp.device)?.readBytes ?? 0) }}</span>
+              <span>{{ $t('累计写:') }} {{ formatMonitorBytes(diskIOByDevice(dp.device)?.writeBytes ?? 0) }}</span>
             </div>
           </template>
         </div>

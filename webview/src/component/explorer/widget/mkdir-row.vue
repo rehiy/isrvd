@@ -47,7 +47,7 @@ export default toNative(MkdirRow)
         <input
           v-model="name"
           class="input text-sm py-1 flex-1"
-          placeholder="请输入目录名称"
+          :placeholder="$t('请输入目录名称')"
           autofocus
           @keyup.enter="handleConfirm()"
           @keyup.esc="handleCancel()"
@@ -58,10 +58,10 @@ export default toNative(MkdirRow)
     <td class="px-4 py-3 whitespace-nowrap">
       <div class="table-actions">
         <button class="btn btn-primary" @click="handleConfirm()">
-          <i class="fas fa-check"></i><span>确认</span>
+          <i class="fas fa-check"></i><span>{{ $t('确认') }}</span>
         </button>
         <button class="btn btn-secondary" @click="handleCancel()">
-          <i class="fas fa-xmark"></i><span>取消</span>
+          <i class="fas fa-xmark"></i><span>{{ $t('取消') }}</span>
         </button>
       </div>
     </td>

@@ -240,39 +240,39 @@ export default toNative(NavigationBar)
 
     <!-- 导航链接 -->
     <nav v-if="portal.username" class="flex-1 py-4 px-3 space-y-1 overflow-y-auto" @click="closeMobileSidebar">
-      <router-link to="/overview" class="nav-link" active-class="nav-link-active" :title="collapsed ? '概览' : ''">
+      <router-link to="/overview" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('概览') : ''">
         <i class="fas fa-gauge-high"></i>
-        <span v-if="!collapsed">概览</span>
+        <span v-if="!collapsed">{{ $t('概览') }}</span>
       </router-link>
       <!-- 本机管理折叠子菜单 -->
       <div v-if="portal.hasPerm('GET /api/overview/monitor') || portal.hasPerm('GET /api/filer/files') || portal.hasPerm('GET /api/local/processes') || portal.hasPerm('GET /api/shell')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isLocalActive }" title="本机管理" @click.stop="toggleLocal">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isLocalActive }" :title="$t('本机管理')" @click.stop="toggleLocal">
           <i class="fas fa-computer"></i>
         </button>
         <!-- 展开状态：显示完整子菜单 -->
         <template v-else>
           <button class="nav-link w-full" :class="{ 'nav-link-active': isLocalActive }" @click.stop="toggleLocal">
             <i class="fas fa-computer"></i>
-            <span>本机管理</span>
+            <span>{{ $t('本机管理') }}</span>
             <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': localExpanded }"></i>
           </button>
           <div v-show="localExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
             <router-link v-if="portal.hasPerm('GET /api/overview/monitor')" to="/local/monitor" class="nav-link" :class="{ 'nav-link-active': isActive('/local/monitor') }">
               <i class="fas fa-desktop"></i>
-              <span>系统监控</span>
+              <span>{{ $t('系统监控') }}</span>
             </router-link>
             <router-link v-if="portal.hasPerm('GET /api/filer/files')" to="/local/explorer" class="nav-link" :class="{ 'nav-link-active': isActive('/local/explorer') }">
               <i class="fas fa-folder-open"></i>
-              <span>文件管理</span>
+              <span>{{ $t('文件管理') }}</span>
             </router-link>
             <router-link v-if="portal.hasPerm('GET /api/local/processes')" to="/local/process" class="nav-link" :class="{ 'nav-link-active': isActive('/local/process') }">
               <i class="fas fa-microchip"></i>
-              <span>进程管理</span>
+              <span>{{ $t('进程管理') }}</span>
             </router-link>
             <router-link v-if="portal.hasPerm('GET /api/shell')" to="/local/shell" class="nav-link" :class="{ 'nav-link-active': isActive('/local/shell') }">
               <i class="fas fa-terminal"></i>
-              <span>Shell 终端</span>
+              <span>{{ $t('Shell 终端') }}</span>
             </router-link>
           </div>
         </template>
@@ -291,11 +291,11 @@ export default toNative(NavigationBar)
           <div v-show="sshExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
             <router-link v-if="portal.hasPerm('GET /api/ssh/hosts')" to="/ssh/hosts" class="nav-link" :class="{ 'nav-link-active': isActive('/ssh/hosts') || isActive('/ssh/host/') }">
               <i class="fas fa-server"></i>
-              <span>主机连接</span>
+              <span>{{ $t('主机连接') }}</span>
             </router-link>
             <router-link v-if="portal.hasPerm('GET /api/ssh/credentials')" to="/ssh/credentials" class="nav-link" :class="{ 'nav-link-active': isActive('/ssh/credentials') }">
               <i class="fas fa-id-card"></i>
-              <span>认证凭据</span>
+              <span>{{ $t('认证凭据') }}</span>
             </router-link>
           </div>
         </template>
@@ -304,14 +304,14 @@ export default toNative(NavigationBar)
       <!-- APISIX 折叠子菜单 -->
       <div v-if="portal.hasPerm('apisix')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isApisixActive }" title="APISIX 网关" @click.stop="toggleApisix">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isApisixActive }" :title="$t('APISIX 网关')" @click.stop="toggleApisix">
           <i class="fas fa-cloud"></i>
         </button>
         <!-- 有权限：展开状态显示完整子菜单 -->
         <template v-else>
           <button class="nav-link w-full" :class="{ 'nav-link-active': isApisixActive }" @click.stop="toggleApisix">
             <i class="fas fa-cloud"></i>
-            <span>APISIX 网关</span>
+            <span>{{ $t('APISIX 网关') }}</span>
             <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': apisixExpanded }"></i>
           </button>
           <div v-show="apisixExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
@@ -322,7 +322,7 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/apisix/route') }"
             >
               <i class="fas fa-route"></i>
-              <span>路由</span>
+              <span>{{ $t('路由') }}</span>
             </router-link>
             <router-link
               v-if="portal.hasPerm('GET /api/apisix/upstreams')"
@@ -331,7 +331,7 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/apisix/upstream') }"
             >
               <i class="fas fa-diagram-project"></i>
-              <span>上游</span>
+              <span>{{ $t('上游') }}</span>
             </router-link>
             <router-link
               v-if="portal.hasPerm('GET /api/apisix/consumers')"
@@ -340,7 +340,7 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/apisix/consumer') }"
             >
               <i class="fas fa-users"></i>
-              <span>消费者</span>
+              <span>{{ $t('消费者') }}</span>
             </router-link>
             <router-link
               v-if="portal.hasPerm('GET /api/apisix/whitelist')"
@@ -349,11 +349,11 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/apisix/whitelist') }"
             >
               <i class="fas fa-shield-halved"></i>
-              <span>访问授权</span>
+              <span>{{ $t('访问授权') }}</span>
             </router-link>
             <router-link v-if="portal.hasPerm('GET /api/apisix/ssls')" to="/apisix/ssls" class="nav-link" :class="{ 'nav-link-active': isActive('/apisix/ssl') }">
               <i class="fas fa-certificate"></i>
-              <span>SSL 证书</span>
+              <span>{{ $t('SSL 证书') }}</span>
             </router-link>
             <router-link
               v-if="portal.hasPerm('GET /api/apisix/plugin-configs')"
@@ -362,7 +362,7 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/apisix/plugin-config') }"
             >
               <i class="fas fa-puzzle-piece"></i>
-              <span>插件配置</span>
+              <span>{{ $t('插件配置') }}</span>
             </router-link>
           </div>
         </template>
@@ -370,18 +370,18 @@ export default toNative(NavigationBar)
 
       <!-- Caddy 折叠子菜单 -->
       <div v-if="portal.hasPerm('caddy')">
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isCaddyActive }" title="Caddy 网关" @click.stop="toggleCaddy">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isCaddyActive }" :title="$t('Caddy 网关')" @click.stop="toggleCaddy">
           <i class="fas fa-shield"></i>
         </button>
         <template v-else>
           <button class="nav-link w-full" :class="{ 'nav-link-active': isCaddyActive }" @click.stop="toggleCaddy">
             <i class="fas fa-shield"></i>
-            <span>Caddy 网关</span>
+            <span>{{ $t('Caddy 网关') }}</span>
             <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': caddyExpanded }"></i>
           </button>
           <div v-show="caddyExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
             <router-link v-if="portal.hasPerm('GET /api/caddy/servers')" to="/caddy/servers" class="nav-link" :class="{ 'nav-link-active': isActive('/caddy/servers') }">
-              <i class="fas fa-server"></i><span>服务</span>
+              <i class="fas fa-server"></i><span>{{ $t('服务') }}</span>
             </router-link>
             <router-link
               v-if="portal.hasPerm('GET /api/caddy/routes')"
@@ -390,15 +390,15 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/caddy/route') }"
             >
               <i class="fas fa-route"></i>
-              <span>路由</span>
+              <span>{{ $t('路由') }}</span>
             </router-link>
             <router-link v-if="portal.hasPerm('GET /api/caddy/basic-auth')" to="/caddy/basic-auth" class="nav-link" :class="{ 'nav-link-active': isActive('/caddy/basic-auth') }">
               <i class="fas fa-lock"></i>
-              <span>基础认证</span>
+              <span>{{ $t('基础认证') }}</span>
             </router-link>
             <router-link v-if="portal.hasPerm('GET /api/caddy/certs')" to="/caddy/certs" class="nav-link" :class="{ 'nav-link-active': isActive('/caddy/cert') }">
               <i class="fas fa-certificate"></i>
-              <span>SSL 证书</span>
+              <span>{{ $t('SSL 证书') }}</span>
             </router-link>
             <router-link
               v-if="portal.hasPerm('GET /api/caddy/global')"
@@ -407,11 +407,11 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/caddy/global') }"
             >
               <i class="fas fa-sliders"></i>
-              <span>全局选项</span>
+              <span>{{ $t('全局选项') }}</span>
             </router-link>
             <router-link v-if="portal.hasPerm('GET /api/caddy/config')" to="/caddy/raw" class="nav-link" :class="{ 'nav-link-active': isActive('/caddy/raw') }">
               <i class="fas fa-code"></i>
-              <span>原始配置</span>
+              <span>{{ $t('原始配置') }}</span>
             </router-link>
           </div>
         </template>
@@ -420,14 +420,14 @@ export default toNative(NavigationBar)
       <!-- Docker 折叠子菜单 -->
       <div v-if="portal.hasPerm('docker')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isDockerActive }" title="Docker 服务" @click.stop="toggleDocker">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isDockerActive }" :title="$t('Docker 服务')" @click.stop="toggleDocker">
           <i class="fab fa-docker"></i>
         </button>
         <!-- 展开状态：显示完整子菜单 -->
         <template v-else>
           <button class="nav-link w-full" :class="{ 'nav-link-active': isDockerActive }" @click.stop="toggleDocker">
             <i class="fab fa-docker"></i>
-            <span>Docker 服务</span>
+            <span>{{ $t('Docker 服务') }}</span>
             <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': dockerExpanded }"></i>
           </button>
           <div v-show="dockerExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
@@ -438,7 +438,7 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/docker/container') }"
             >
               <i class="fas fa-cube"></i>
-              <span>容器</span>
+              <span>{{ $t('容器') }}</span>
             </router-link>
             <router-link
               v-if="portal.hasPerm('GET /api/docker/networks')"
@@ -447,7 +447,7 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/docker/network') }"
             >
               <i class="fas fa-network-wired"></i>
-              <span>网络</span>
+              <span>{{ $t('网络') }}</span>
             </router-link>
             <router-link
               v-if="portal.hasPerm('GET /api/docker/volumes')"
@@ -456,7 +456,7 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/docker/volume') }"
             >
               <i class="fas fa-database"></i>
-              <span>数据卷</span>
+              <span>{{ $t('数据卷') }}</span>
             </router-link>
             <router-link
               v-if="portal.hasPerm('GET /api/docker/images')"
@@ -465,7 +465,7 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/docker/image') }"
             >
               <i class="fas fa-layer-group"></i>
-              <span>镜像</span>
+              <span>{{ $t('镜像') }}</span>
             </router-link>
             <router-link
               v-if="portal.hasPerm('GET /api/docker/registries')"
@@ -474,7 +474,7 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/docker/registr') }"
             >
               <i class="fas fa-warehouse"></i>
-              <span>镜像仓库</span>
+              <span>{{ $t('镜像仓库') }}</span>
             </router-link>
           </div>
         </template>
@@ -483,20 +483,20 @@ export default toNative(NavigationBar)
       <!-- Swarm 折叠子菜单 -->
       <div v-if="portal.hasPerm('swarm')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isSwarmSubActive }" title="Swarm 集群" @click.stop="toggleSwarm">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isSwarmSubActive }" :title="$t('Swarm 集群')" @click.stop="toggleSwarm">
           <i class="fas fa-circle-nodes"></i>
         </button>
         <!-- 有权限：展开状态显示完整子菜单 -->
         <template v-else>
           <button class="nav-link w-full" :class="{ 'nav-link-active': isSwarmSubActive }" @click.stop="toggleSwarm">
             <i class="fas fa-circle-nodes"></i>
-            <span>Swarm 集群</span>
+            <span>{{ $t('Swarm 集群') }}</span>
             <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': swarmExpanded }"></i>
           </button>
           <div v-show="swarmExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
             <router-link v-if="portal.hasPerm('GET /api/swarm/nodes')" to="/swarm/nodes" class="nav-link" :class="{ 'nav-link-active': isActive('/swarm/node') }">
               <i class="fas fa-server"></i>
-              <span>节点</span>
+              <span>{{ $t('节点') }}</span>
             </router-link>
             <router-link
               v-if="portal.hasPerm('GET /api/swarm/services')"
@@ -505,7 +505,7 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive('/swarm/service') }"
             >
               <i class="fas fa-cubes"></i>
-              <span>服务</span>
+              <span>{{ $t('服务') }}</span>
             </router-link>
             <router-link
               v-if="portal.hasPerm('GET /api/swarm/tasks')"
@@ -514,58 +514,58 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': $route.path === '/swarm/tasks' }"
             >
               <i class="fas fa-list-check"></i>
-              <span>任务</span>
+              <span>{{ $t('任务') }}</span>
             </router-link>
           </div>
         </template>
       </div>
 
       <!-- Compose 部署 -->
-      <router-link v-if="composeDeployVisible" to="/compose/deploy" class="nav-link" active-class="nav-link-active" :title="collapsed ? 'Compose 部署' : ''">
+      <router-link v-if="composeDeployVisible" to="/compose/deploy" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('Compose 部署') : ''">
         <i class="fas fa-file-code"></i>
-        <span v-if="!collapsed">Compose 部署</span>
+        <span v-if="!collapsed">{{ $t('Compose 部署') }}</span>
       </router-link>
 
       <!-- 应用市场 -->
-      <router-link v-if="composeDeployVisible" to="/compose/marketplace" class="nav-link" active-class="nav-link-active" :title="collapsed ? '应用市场' : ''">
+      <router-link v-if="composeDeployVisible" to="/compose/marketplace" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('应用市场') : ''">
         <i class="fas fa-store"></i>
-        <span v-if="!collapsed">应用市场</span>
+        <span v-if="!collapsed">{{ $t('应用市场') }}</span>
       </router-link>
 
       <!-- 计划任务 -->
-      <router-link v-if="portal.hasPerm('GET /api/cron/jobs')" to="/cron/jobs" class="nav-link" active-class="nav-link-active" :title="collapsed ? '计划任务' : ''">
+      <router-link v-if="portal.hasPerm('GET /api/cron/jobs')" to="/cron/jobs" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('计划任务') : ''">
         <i class="fas fa-clock"></i>
-        <span v-if="!collapsed">计划任务</span>
+        <span v-if="!collapsed">{{ $t('计划任务') }}</span>
       </router-link>
 
       <!-- 操作审计 -->
-      <router-link v-if="portal.hasPerm('GET /api/system/audit/logs')" to="/system/audit/logs" class="nav-link" active-class="nav-link-active" :title="collapsed ? '操作审计' : ''">
+      <router-link v-if="portal.hasPerm('GET /api/system/audit/logs')" to="/system/audit/logs" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('操作审计') : ''">
         <i class="fas fa-clipboard-list"></i>
-        <span v-if="!collapsed">操作审计</span>
+        <span v-if="!collapsed">{{ $t('操作审计') }}</span>
       </router-link>
 
       <!-- 用户管理 -->
-      <router-link v-if="portal.hasPerm('GET /api/account/members')" to="/account/members" class="nav-link" active-class="nav-link-active" :title="collapsed ? '用户管理' : ''">
+      <router-link v-if="portal.hasPerm('GET /api/account/members')" to="/account/members" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('用户管理') : ''">
         <i class="fas fa-users"></i>
-        <span v-if="!collapsed">用户管理</span>
+        <span v-if="!collapsed">{{ $t('用户管理') }}</span>
       </router-link>
 
       <!-- 节点管理（仅中控模式的创始人可见） -->
-      <router-link v-if="portal.hasPerm('GET /api/node/nodes')" to="/node" class="nav-link" active-class="nav-link-active" :title="collapsed ? '节点管理' : ''">
+      <router-link v-if="portal.hasPerm('GET /api/node/nodes')" to="/node" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('节点管理') : ''">
         <i class="fas fa-sitemap"></i>
-        <span v-if="!collapsed">节点管理</span>
+        <span v-if="!collapsed">{{ $t('节点管理') }}</span>
       </router-link>
 
       <!-- 系统配置折叠子菜单（GET 或 PUT 任一权限即显示，只读成员同样可查看） -->
       <div v-if="portal.hasPerm('GET /api/system/config') || portal.hasPerm('PUT /api/system/config')">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
-        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isConfigActive }" title="系统配置" @click.stop="toggleConfig">
+        <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isConfigActive }" :title="$t('系统配置')" @click.stop="toggleConfig">
           <i class="fas fa-gear"></i>
         </button>
         <template v-else>
           <button class="nav-link w-full" :class="{ 'nav-link-active': isConfigActive }" @click.stop="toggleConfig">
             <i class="fas fa-gear"></i>
-            <span>系统配置</span>
+            <span>{{ $t('系统配置') }}</span>
             <i class="fas fa-chevron-down ml-auto text-xs transition-transform duration-200" :class="{ 'rotate-180': configExpanded }"></i>
           </button>
           <div v-show="configExpanded" class="mt-1 ml-4 pl-3 border-l-2 border-slate-200 space-y-1">
@@ -577,7 +577,7 @@ export default toNative(NavigationBar)
               :class="{ 'nav-link-active': isActive(`/system/config/${item.id}`) }"
             >
               <i class="fas" :class="item.icon"></i>
-              <span>{{ item.label }}</span>
+              <span>{{ $t(item.label) }}</span>
             </router-link>
           </div>
         </template>
@@ -592,7 +592,7 @@ export default toNative(NavigationBar)
         rel="noopener noreferrer"
         class="btn-icon btn-icon-slate"
         :class="collapsed ? 'w-full h-10' : 'w-10 h-10 flex-shrink-0'"
-        title="GitHub 仓库"
+        :title="$t('GitHub 仓库')"
       >
         <i class="fab fa-github text-base"></i>
       </a>
@@ -603,18 +603,18 @@ export default toNative(NavigationBar)
         rel="noopener noreferrer"
         class="btn-icon btn-icon-slate"
         :class="collapsed ? 'w-full h-10' : 'w-10 h-10 flex-shrink-0'"
-        title="API 文档"
+        :title="$t('API 文档')"
       >
         <i class="fas fa-code text-base"></i>
       </a>
       <button
         class="btn-icon btn-icon-slate"
         :class="collapsed ? 'w-full h-10' : 'flex-1 h-10 text-xs font-medium'"
-        :title="collapsed ? '展开菜单' : '收起菜单'"
+        :title="collapsed ? $t('展开菜单') : $t('收起菜单')"
         @click="$emit('update:collapsed', !collapsed)"
       >
         <i :class="collapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"></i>
-        <span v-if="!collapsed">收起菜单</span>
+        <span v-if="!collapsed">{{ $t('收起菜单') }}</span>
       </button>
     </div>
   </aside>

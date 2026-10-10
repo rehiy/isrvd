@@ -47,9 +47,9 @@ class ComposeDeploy extends Vue {
 
     /** 编辑器提示文案（整行展示） */
     get dynamicWarning(): string {
-        const parts = ['项目名来自 compose 文件的 name 字段；如 compose 中引用了环境变量，请在 .env 中填写对应变量']
+        const parts = [this.$t('项目名来自 compose 文件的 name 字段；如 compose 中引用了环境变量，请在 .env 中填写对应变量')]
         if (this.fromMarketplace) {
-            parts.push('已从应用市场预填模板，可在此基础上直接部署或调整后再部署')
+            parts.push(this.$t('已从应用市场预填模板，可在此基础上直接部署或调整后再部署'))
         }
         return parts.join('；')
     }
@@ -92,8 +92,8 @@ class ComposeDeploy extends Vue {
                 composeContent = `name: ${nameValue}\n` + composeContent
             }
         } catch (e) {
-            const msg = e instanceof Error ? e.message : '未知错误'
-            this.portal.showNotification('warning', `模板格式异常，已按原文加载：${msg}`)
+            const msg = e instanceof Error ? e.message : this.$t('未知错误')
+            this.portal.showNotification('warning', this.$t('模板格式异常，已按原文加载：{0}', msg))
         }
         this.content = composeContent
         this.initURL = payload.initURL || ''
@@ -139,8 +139,8 @@ class ComposeDeploy extends Vue {
                 })
             const projectName = res.payload?.projectName || ''
             const created = res.payload?.items || []
-            const label = this.target === 'swarm' ? '服务' : '容器'
-            this.portal.showNotification('success', `${projectName} 部署成功，已创建 ${created.length} 个${label}`)
+            const label = this.target === 'swarm' ? this.$t('服务') : this.$t('容器')
+            this.portal.showNotification('success', this.$t('{0} 部署成功，已创建 {1} 个{2}', projectName, created.length, label))
 
             // 成功后跳转到对应列表页
             if (this.target === 'swarm') {
@@ -181,18 +181,18 @@ export default toNative(ComposeDeploy)
               <i class="fas fa-file-code text-white"></i>
             </div>
             <div>
-              <h1 class="title-text">Compose 部署</h1>
-              <p class="text-xs text-slate-500">直接粘贴 compose.yml，或从左侧应用市场选择模板后回填</p>
+              <h1 class="title-text">{{ $t('Compose 部署') }}</h1>
+              <p class="text-xs text-slate-500">{{ $t('直接粘贴 compose.yml，或从左侧应用市场选择模板后回填') }}</p>
             </div>
           </div>
           <div class="action-group">
             <button type="button" :disabled="loading" class="btn btn-secondary" @click="resetForm()">
-              <i class="fas fa-rotate-left"></i>清空
+              <i class="fas fa-rotate-left"></i>{{ $t('清空') }}
             </button>
             <button type="button" :disabled="!canSubmit" class="btn btn-amber" @click="handleDeploy()">
               <i v-if="loading" class="fas fa-spinner fa-spin"></i>
               <i v-else class="fas fa-rocket"></i>
-              <span>{{ loading ? '部署中...' : '部署' }}</span>
+              <span>{{ loading ? $t('部署中...') : $t('部署') }}</span>
             </button>
           </div>
         </div>
@@ -202,15 +202,15 @@ export default toNative(ComposeDeploy)
               <i class="fas fa-file-code text-white"></i>
             </div>
             <div class="min-w-0 flex-1">
-              <h1 class="title-text">Compose 部署</h1>
-              <p class="text-xs text-slate-500 truncate">粘贴 compose.yml，或从应用市场回填</p>
+              <h1 class="title-text">{{ $t('Compose 部署') }}</h1>
+              <p class="text-xs text-slate-500 truncate">{{ $t('粘贴 compose.yml，或从应用市场回填') }}</p>
             </div>
           </div>
           <div class="action-group-sm">
-            <button type="button" :disabled="loading" class="btn btn-secondary btn-square" title="清空" @click="resetForm()">
+            <button type="button" :disabled="loading" class="btn btn-secondary btn-square" :title="$t('清空')" @click="resetForm()">
               <i class="fas fa-rotate-left"></i>
             </button>
-            <button type="button" :disabled="!canSubmit" class="btn btn-amber btn-square" :title="loading ? '部署中...' : '部署'" @click="handleDeploy()">
+            <button type="button" :disabled="!canSubmit" class="btn btn-amber btn-square" :title="loading ? $t('部署中...') : $t('部署')" @click="handleDeploy()">
               <i v-if="loading" class="fas fa-spinner fa-spin"></i>
               <i v-else class="fas fa-rocket"></i>
             </button>
@@ -223,7 +223,7 @@ export default toNative(ComposeDeploy)
         <!-- 部署目标 -->
         <div class="tab-group inline-flex">
           <button type="button" :class="['tab-btn', target === 'docker' ? 'tab-btn-active text-amber-600' : 'tab-btn-inactive']" @click="selectTarget('docker')">
-            <i class="fab fa-docker"></i><span>单机容器</span>
+            <i class="fab fa-docker"></i><span>{{ $t('单机容器') }}</span>
           </button>
           <button
             type="button"
@@ -231,10 +231,10 @@ export default toNative(ComposeDeploy)
             :class="['tab-btn',
                      target === 'swarm' ? 'tab-btn-active text-amber-600'
                      : (swarmAvailable ? 'tab-btn-inactive' : 'text-slate-300 cursor-not-allowed')]"
-            :title="swarmAvailable ? '' : '当前节点未启用 Swarm'"
+            :title="swarmAvailable ? '' : $t('当前节点未启用 Swarm')"
             @click="selectTarget('swarm')"
           >
-            <i class="fas fa-cubes"></i><span>Swarm 服务</span>
+            <i class="fas fa-cubes"></i><span>{{ $t('Swarm 服务') }}</span>
           </button>
         </div>
 
@@ -257,12 +257,12 @@ export default toNative(ComposeDeploy)
 
         <!-- 附加文件 -->
         <div>
-          <label class="form-label">附加文件
-            <span class="text-xs font-normal text-slate-400">（选填，部署前解压到项目目录）</span>
+          <label class="form-label">{{ $t('附加文件') }}
+            <span class="text-xs font-normal text-slate-400">{{ $t('（选填，部署前解压到项目目录）') }}</span>
           </label>
           <div class="flex items-center gap-2">
-            <input v-model="initURL" type="text" placeholder="请输入 zip 下载 URL" class="input flex-1" :disabled="loading || !!initFile" />
-            <span class="text-xs text-slate-400 flex-shrink-0">或</span>
+            <input v-model="initURL" type="text" :placeholder="$t('请输入 zip 下载 URL')" class="input flex-1" :disabled="loading || !!initFile" />
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('或') }}</span>
             <!-- 隐藏真实 input，用自定义按钮触发 -->
             <label
               :class="['inline-flex items-center gap-1.5 h-[46px] px-4 rounded-xl border text-sm font-medium cursor-pointer transition-colors select-none',
@@ -270,17 +270,17 @@ export default toNative(ComposeDeploy)
                        initFile ? 'border-blue-300 bg-blue-50 text-blue-600' : '']"
             >
               <i class="fas fa-paperclip"></i>
-              <span>{{ initFile ? initFile.name : '上传 zip' }}</span>
+              <span>{{ initFile ? initFile.name : $t('上传 zip') }}</span>
               <i v-if="initFile" class="fas fa-xmark ml-1 hover:text-red-500" @click.prevent="clearInitFile()"></i>
               <input ref="fileInput" type="file" accept=".zip,application/zip" class="hidden" :disabled="loading" @change="onInitFileChange" />
             </label>
           </div>
           <p class="mt-1 text-xs text-slate-400">
-            URL 与上传文件二选一，仅支持 .zip 格式
+            {{ $t('URL 与上传文件二选一，仅支持 .zip 格式') }}
             <template v-if="target === 'swarm'">
               ；
               <span class="mt-1 text-xs text-amber-600">
-                Swarm 模式下，附加文件仅落盘到管理节点；如需各节点共享，请将容器数据根目录配置为 NFS 等共享存储
+                {{ $t('Swarm 模式下，附加文件仅落盘到管理节点；如需各节点共享，请将容器数据根目录配置为 NFS 等共享存储') }}
               </span>
             </template>
           </p>

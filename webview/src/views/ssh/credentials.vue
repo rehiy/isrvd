@@ -54,16 +54,16 @@ class SSHCredentials extends Vue {
 
     handleDelete(cred: SSHCredentialInfo) {
         this.portal.showConfirm({
-            title: '删除 SSH 凭据',
-            message: `确定要删除凭据 <strong class="text-slate-900">${cred.name}</strong> (${cred.user}) 吗？`,
+            title: this.$t('删除 SSH 凭据'),
+            message: this.$t('确定要删除凭据 <strong class="text-slate-900">{0}</strong> ({1}) 吗？', cred.name, cred.user),
             icon: 'fa-trash',
             iconColor: 'red',
-            confirmText: '确认删除',
+            confirmText: this.$t('确认删除'),
             danger: true,
             onConfirm: async () => {
                 try {
                     await api.sshCredentialDelete(cred.id)
-                    this.portal.showNotification('success', '凭据删除成功')
+                    this.portal.showNotification('success', this.$t('凭据删除成功'))
                     this.loadCredentials()
                 } catch {}
             }
@@ -90,17 +90,17 @@ export default toNative(SSHCredentials)
             <i class="fas fa-id-card text-white"></i>
           </div>
           <div>
-            <h1 class="title-text">认证凭据</h1>
-            <p class="text-xs text-slate-500">管理 SSH 认证凭据，可被多台主机复用</p>
+            <h1 class="title-text">{{ $t('认证凭据') }}</h1>
+            <p class="text-xs text-slate-500">{{ $t('管理 SSH 认证凭据，可被多台主机复用') }}</p>
           </div>
         </div>
         <div class="action-group">
-          <PageSearch v-model="searchText" search-key="ssh-credentials" placeholder="搜索凭据名或用户名..." focus-color="purple" type-to-search />
+          <PageSearch v-model="searchText" search-key="ssh-credentials" :placeholder="$t('搜索凭据名或用户名...')" focus-color="purple" type-to-search />
           <button class="btn btn-secondary" @click="loadCredentials()">
-            <i class="fas fa-rotate"></i>刷新
+            <i class="fas fa-rotate"></i>{{ $t('刷新') }}
           </button>
           <button v-if="portal.hasPerm('POST /api/ssh/credential')" class="btn btn-purple" @click="openAdd">
-            <i class="fas fa-plus"></i>添加凭据
+            <i class="fas fa-plus"></i>{{ $t('添加凭据') }}
           </button>
         </div>
       </div>
@@ -111,15 +111,15 @@ export default toNative(SSHCredentials)
             <i class="fas fa-id-card text-white"></i>
           </div>
           <div class="min-w-0">
-            <h1 class="title-text">认证凭据</h1>
-            <p class="text-xs text-slate-500 truncate">可被多台主机复用</p>
+            <h1 class="title-text">{{ $t('认证凭据') }}</h1>
+            <p class="text-xs text-slate-500 truncate">{{ $t('可被多台主机复用') }}</p>
           </div>
         </div>
         <div class="action-group-sm">
-          <button class="btn btn-secondary btn-square" title="刷新" @click="loadCredentials()">
+          <button class="btn btn-secondary btn-square" :title="$t('刷新')" @click="loadCredentials()">
             <i class="fas fa-rotate text-sm"></i>
           </button>
-          <button v-if="portal.hasPerm('POST /api/ssh/credential')" class="btn btn-purple btn-square" title="添加凭据" @click="openAdd">
+          <button v-if="portal.hasPerm('POST /api/ssh/credential')" class="btn btn-purple btn-square" :title="$t('添加凭据')" @click="openAdd">
             <i class="fas fa-plus text-sm"></i>
           </button>
         </div>
@@ -128,14 +128,14 @@ export default toNative(SSHCredentials)
 
     <!-- 移动端搜索 -->
     <div class="mobile-search">
-      <PageSearch v-model="searchText" search-key="ssh-credentials" placeholder="搜索凭据名或用户名..." width-class="w-full" focus-color="purple" />
+      <PageSearch v-model="searchText" search-key="ssh-credentials" :placeholder="$t('搜索凭据名或用户名...')" width-class="w-full" focus-color="purple" />
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="card-body">
       <div class="empty-state">
         <div class="spinner-lg"></div>
-        <p class="text-slate-500">加载中...</p>
+        <p class="text-slate-500">{{ $t('加载中...') }}</p>
       </div>
     </div>
 
@@ -144,8 +144,8 @@ export default toNative(SSHCredentials)
         <div class="empty-state-icon">
           <i class="fas fa-id-card text-4xl text-slate-300"></i>
         </div>
-        <p class="text-slate-600 font-medium mb-1">{{ credentials.length === 0 ? '暂无认证凭据' : '未找到匹配凭据' }}</p>
-        <p class="text-sm text-slate-400">{{ credentials.length === 0 ? '点击右上角「添加凭据」创建可复用的认证凭据' : '尝试更换关键词或清空搜索条件' }}</p>
+        <p class="text-slate-600 font-medium mb-1">{{ credentials.length === 0 ? $t('暂无认证凭据') : $t('未找到匹配凭据') }}</p>
+        <p class="text-sm text-slate-400">{{ credentials.length === 0 ? $t('点击右上角「添加凭据」创建可复用的认证凭据') : $t('尝试更换关键词或清空搜索条件') }}</p>
       </div>
     </div>
 
@@ -155,11 +155,11 @@ export default toNative(SSHCredentials)
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-200">
-              <th class="th">凭据名称</th>
-              <th class="w-36 th">用户名</th>
-              <th class="th">认证方式</th>
-              <th class="th">描述</th>
-              <th class="w-32 th-right">操作</th>
+              <th class="th">{{ $t('凭据名称') }}</th>
+              <th class="w-36 th">{{ $t('用户名') }}</th>
+              <th class="th">{{ $t('认证方式') }}</th>
+              <th class="th">{{ $t('描述') }}</th>
+              <th class="w-32 th-right">{{ $t('操作') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -175,20 +175,20 @@ export default toNative(SSHCredentials)
               <td class="td-text"><code class="text-xs bg-slate-100 px-2 py-0.5 rounded-lg text-slate-600">{{ cred.user }}</code></td>
               <td class="td-text">
                 <span v-if="cred.authType === 'privateKey'" class="inline-flex items-center gap-1 text-xs">
-                  <i class="fas fa-key text-amber-400"></i>私钥
+                  <i class="fas fa-key text-amber-400"></i>{{ $t('私钥') }}
                 </span>
                 <span v-else-if="cred.authType === 'password'" class="inline-flex items-center gap-1 text-xs">
-                  <i class="fas fa-lock text-slate-400"></i>密码
+                  <i class="fas fa-lock text-slate-400"></i>{{ $t('密码') }}
                 </span>
-                <span v-else class="text-xs text-slate-400">未设置</span>
+                <span v-else class="text-xs text-slate-400">{{ $t('未设置') }}</span>
               </td>
               <td class="td-text truncate max-w-[200px]">{{ cred.description || '-' }}</td>
               <td class="px-4 py-3">
                 <div class="table-actions">
-                  <button v-if="portal.hasPerm('PUT /api/ssh/credential/:id')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(cred)">
+                  <button v-if="portal.hasPerm('PUT /api/ssh/credential/:id')" class="btn-icon btn-icon-blue" :title="$t('编辑')" @click="openEdit(cred)">
                     <i class="fas fa-pen text-xs"></i>
                   </button>
-                  <button v-if="portal.hasPerm('DELETE /api/ssh/credential/:id')" class="btn-icon btn-icon-red" title="删除" @click="handleDelete(cred)">
+                  <button v-if="portal.hasPerm('DELETE /api/ssh/credential/:id')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleDelete(cred)">
                     <i class="fas fa-trash text-xs"></i>
                   </button>
                 </div>
@@ -212,24 +212,24 @@ export default toNative(SSHCredentials)
           </div>
 
           <div class="card-prop-row-start">
-            <span class="prop-label-start">用户</span>
+            <span class="prop-label-start">{{ $t('用户') }}</span>
             <code class="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-lg break-all">{{ cred.user }}</code>
           </div>
           <div class="card-prop-row">
-            <span class="text-xs text-slate-400 flex-shrink-0">认证</span>
+            <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('认证') }}</span>
             <span class="text-xs text-slate-500">
-              <span v-if="cred.authType === 'privateKey'"><i class="fas fa-key text-amber-400 mr-1"></i>私钥</span>
-              <span v-else-if="cred.authType === 'password'"><i class="fas fa-lock text-slate-400 mr-1"></i>密码</span>
-              <span v-else class="text-slate-400">未设置</span>
+              <span v-if="cred.authType === 'privateKey'"><i class="fas fa-key text-amber-400 mr-1"></i>{{ $t('私钥') }}</span>
+              <span v-else-if="cred.authType === 'password'"><i class="fas fa-lock text-slate-400 mr-1"></i>{{ $t('密码') }}</span>
+              <span v-else class="text-slate-400">{{ $t('未设置') }}</span>
             </span>
           </div>
 
           <div class="card-actions">
-            <button v-if="portal.hasPerm('PUT /api/ssh/credential/:id')" class="btn-icon btn-icon-blue" title="编辑" @click="openEdit(cred)">
-              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">编辑</span>
+            <button v-if="portal.hasPerm('PUT /api/ssh/credential/:id')" class="btn-icon btn-icon-blue" :title="$t('编辑')" @click="openEdit(cred)">
+              <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">{{ $t('编辑') }}</span>
             </button>
-            <button v-if="portal.hasPerm('DELETE /api/ssh/credential/:id')" class="btn-icon btn-icon-red" title="删除" @click="handleDelete(cred)">
-              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">删除</span>
+            <button v-if="portal.hasPerm('DELETE /api/ssh/credential/:id')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleDelete(cred)">
+              <i class="fas fa-trash text-xs"></i><span class="text-xs ml-1">{{ $t('删除') }}</span>
             </button>
           </div>
         </div>

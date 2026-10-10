@@ -62,8 +62,8 @@ onUnmounted(() => {
   <button
     v-if="enabled"
     type="button"
-    title="打开 Copilot 调试面板"
-    aria-label="打开 Copilot 调试面板"
+    :title="$t('打开 Copilot 调试面板')"
+    :aria-label="$t('打开 Copilot 调试面板')"
     class="btn btn-icon btn-icon-slate"
     @click="openInspector"
   >
