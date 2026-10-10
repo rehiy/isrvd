@@ -3,8 +3,14 @@ import type { LanguageModule } from '../types'
 /**
  * 日本語訳：キーは中国語原文（簡体字）
  *
- * 現在は常用語のみ登録済み。未登録の文案は中国語原文にフォールバックするため、
- * 空白やキーの漏洩は発生しない。訳文を追加するときは本ファイルに追記する。
+ * よく使われる UI 文言のみ登録済み（44/1897）。未登録の文案は中国語原文に
+ * フォールバックするため、空白やキーの漏洩は発生しない。
+ *
+ * 訳文を追加するときは、未訳リストを書き出して埋めるのが早い：
+ *   node scripts/check-locales.mjs --worklist ja > tmp/ja-ui.jsonl
+ * 登録後は node scripts/check-locales.mjs で取りこぼしを確認する。
+ * このファイルは手書きでもよいが、scripts/apply-translations.mjs で取り込むと
+ * 英文コメントと並び順が保たれる。
  */
 
 const messages: Record<string, string> = {
@@ -28,7 +34,7 @@ const messages: Record<string, string> = {
     'Passkey': 'Passkey',
     '登录': 'ログイン',
     '退出': 'ログアウト',
-    '保存': '保存',
+    '保存': '保存する',
     '取消': 'キャンセル',
     '删除': '削除',
     '确定': '確定',
@@ -37,7 +43,7 @@ const messages: Record<string, string> = {
     '刷新': '更新',
     '搜索': '検索',
     '启动': '起動',
-    '停止': '停止',
+    '停止': '停止する',
     '重启': '再起動',
     '暂停': '一時停止',
     '恢复': '再開',

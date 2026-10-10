@@ -652,7 +652,8 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 - 语言代码用 BCP 47（`zh-Hant`、`en`、`ja`），前端直接把它作为 `Accept-Language` / `?lang=` 的取值，后端按同一套标签解析
 - 首次访问按浏览器语言选择（`matchLocale`，逐级去掉末尾子标签匹配），用户主动切换后才写入 localStorage（`app-locale`）并从此固定
 - `locales/messages/zh-Hant.ts` 由仓库根目录 `scripts/gen-zh-hant.mjs` 生成（术语表 + OpenCC 字形转换），不要手工编辑；改术语或英文词典后重新执行脚本
-- `locales/messages/ja.ts` 目前只登记了常用词，其余文案会回落中文原文
+- `locales/messages/ja.ts` 目前只登记了常用词（覆盖 2%），其余文案会回落中文原文，界面是中日混排；完整译文待人工或机翻录入
+- 补全译文：先 `npm run locales:worklist -- ja > /tmp/ja.jsonl` 导出未译清单（每行 `{"key","en"}`），填入译文后再写回词典文件；`npm run locales:check` 报告各语言覆盖与多余/空值/占位符不一致的词条，不会自动改文件
 - 模板与类组件方法用 `$t('中文原文')`（`this.$t`），`.ts` 里用 `useLocaleStore().t('中文原文')`；未登记译文时回落中文原文，不会出现空白或 key 泄漏
 - 语言状态在 `stores/locale.ts`（`locale` / `meta` / `locales` / `t` / `setLocale`）；组件经 `usePortal()` 读取 `locale` / `localeMeta` / `locales` 并调用 `setLocale`
 - 类组件的字段初始化器在构造函数中执行，此时实例上还没有 `$t`：字段里只保留中文字面量，在渲染处（模板 `$t(x.label)` 或方法内 `this.$t(x)`）再翻译；需要翻译的派生值用 getter

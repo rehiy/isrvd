@@ -280,7 +280,8 @@ docs/
 
 - 中文（简体，`zh-Hans`）是源语言：代码里统一用中文书写提示文案，也是所有语言词典共同的 key；每种语言登记「中文原文 → 译文」，未登记的文案回落中文原文
 - **新增语言只需新建 `server/i18n/lang_<code>.go`**，在 `init` 里调用 `i18n.Register(i18n.Language{Code, Tags}, map[string]string{...})`，不需要改动其他代码；`Tags` 是能匹配到它的 BCP 47 标签（小写），匹配时逐级去掉末尾子标签（`zh-hant-tw` → `zh-hant`）
-- 现有语言：`lang_zh_hans.go`（源语言，只登记标签）、`lang_en.go` + `lang_en_service.go`（英文，是完整集：其他语言的 key 都应出现在其中）、`lang_ja.go`（日文，只登记了常用提示）、`lang_zh_hant_messages.go`（繁體，生成物）
+- 补全译文：`node scripts/check-locales.mjs [--go]` 报告各语言相对英文词典的缺口、多余词条、空译文与占位符不一致；`node scripts/check-locales.mjs [--go] --worklist ja` 导出未译清单（每行 `{"key","en"}`），交给人工或机翻
+- 现有语言：`lang_zh_hans.go`（源语言，只登记标签）、`lang_en.go` + `lang_en_service.go`（英文，是完整集：其他语言的 key 都应出现在其中）、`lang_ja.go`（日文，只登记了常用提示，覆盖 2%）、`lang_zh_hant_messages.go`（繁體，生成物）
 - 繁體不手工翻译：`scripts/gen-zh-hant.mjs` 以英文词典的 key 为全集，经术语表 + 上下文规则 + OpenCC 字形转换，同时生成前端 `locales/messages/zh-Hant.ts` 与后端 `lang_zh_hant_messages.go`；改了英文词典或术语后重新执行（需先在 `webview` 目录 `npm install`，用到 devDependency `opencc-js`），`node scripts/gen-zh-hant.mjs --check` 校验生成物是否最新
 - 语言协商顺序：`?lang=` 查询参数 → `Accept-Language` 请求头；由 `i18n.Middleware()` 写入请求 context，响应统一带 `Vary: Accept-Language`
 - `server/app` 的响应文案统一经 `server/app/response.go` 的 `i18n.T(c, message)` 翻译；网关是原生 `http.Handler`，用 `i18n.Translate(i18n.Parse(r.Header.Get("Accept-Language")), message)`

@@ -20,7 +20,10 @@
     "lint": "vue-tsc --noEmit && eslint src --ext .ts,.vue",
     "lint:fix": "vue-tsc --noEmit && eslint src --ext .ts,.vue --fix",
     "format": "python3 scripts/format.py",
-    "format:check": "python3 scripts/format.py --dry-run"
+    "format:check": "python3 scripts/format.py --dry-run",
+    "locales:check": "node ../scripts/check-locales.mjs",
+    "locales:worklist": "node ../scripts/check-locales.mjs --worklist",
+    "locales:gen": "node ../scripts/gen-zh-hant.mjs"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
