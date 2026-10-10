@@ -18,7 +18,13 @@ class UserMenu extends Vue {
   themeMode: ThemeMode = getThemeMode()
 
   get themeIcon() { return THEME_META[this.themeMode].icon }
-  get themeLabel() { return THEME_META[this.themeMode].label }
+  get themeLabel() { return this.$t(THEME_META[this.themeMode].label) }
+
+  get localeLabel() { return this.portal.localeMeta.label }
+
+  // 两种入口的鼠标提示：展示当前取值并说明点击可切换
+  get themeTitle() { return this.$t('当前：') + this.themeLabel + this.$t('，点击切换') }
+  get localeTitle() { return this.$t('当前：') + this.localeLabel + this.$t('，点击切换') }
 
   // Passkey 入口：功能已启用且具备查看权限时显示
   get showPasskeyEntry() { return this.portal.passkeyEnabled && this.portal.hasPerm('GET /api/account/passkey/credentials') }
@@ -26,6 +32,10 @@ class UserMenu extends Vue {
   // ─── 方法 ───
   toggleTheme() {
     this.themeMode = cycleTheme()
+  }
+
+  toggleLocale() {
+    this.portal.toggleLocale()
   }
 
   handleLogout() {
@@ -38,15 +48,22 @@ export default toNative(UserMenu)
 
 <template>
   <!-- header 认证模式：仅显示用户名，无注销入口 -->
-  <div v-if="portal.authMode === 'header'" class="px-2 py-2 text-sm font-medium text-slate-500 flex items-center gap-2 cursor-default select-none" :title="portal.username || '未登录'">
-    <i class="fas fa-user-tie"></i>
-    <span class="hidden sm:inline">{{ portal.username }}</span>
+  <div v-if="portal.authMode === 'header'" class="flex items-center gap-1">
+    <div class="px-2 py-2 text-sm font-medium text-slate-500 flex items-center gap-2 cursor-default select-none" :title="portal.username || $t('未登录')">
+      <i class="fas fa-user-tie"></i>
+      <span class="hidden sm:inline">{{ portal.username }}</span>
+    </div>
+    <!-- 语言切换：该模式没有下拉菜单，直接提供入口 -->
+    <button type="button" class="btn btn-ghost !px-2 text-xs gap-1.5" :title="localeTitle" @click="toggleLocale">
+      <i class="fas fa-globe"></i>
+      <span>{{ portal.localeMeta.short }}</span>
+    </button>
   </div>
 
   <!-- jwt 认证模式：用户名 + 下拉菜单 -->
   <Dropdown v-else v-model:open="menuOpen" placement="bottom" align="right" :close-on-click="true" max-height="320px">
     <template #trigger="{ toggle }">
-      <button class="btn btn-ghost !px-2" :title="portal.username || '未登录'" @click="toggle">
+      <button class="btn btn-ghost !px-2" :title="portal.username || $t('未登录')" @click="toggle">
         <i class="fas fa-user-tie"></i>
         <span class="hidden sm:inline">{{ portal.username }}</span>
         <i class="fas fa-chevron-down text-xs text-slate-400 hidden sm:inline transition-transform duration-200" :class="{ 'rotate-180': menuOpen }"></i>
@@ -54,15 +71,21 @@ export default toNative(UserMenu)
     </template>
 
     <!-- 主题切换：浅色 / 深色 / 跟随系统 -->
-    <button class="dropdown-item" :title="`当前：${themeLabel}，点击切换`" @click.stop="toggleTheme">
+    <button class="dropdown-item" :title="themeTitle" @click.stop="toggleTheme">
       <i :class="themeIcon" class="w-4 text-center"></i>
       <span>{{ themeLabel }}</span>
+    </button>
+
+    <!-- 语言切换：简体中文 / English -->
+    <button class="dropdown-item" :title="localeTitle" @click.stop="toggleLocale">
+      <i class="fas fa-globe w-4 text-center"></i>
+      <span>{{ localeLabel }}</span>
     </button>
 
     <!-- 账户设置 -->
     <router-link to="/account/password" class="dropdown-item" @click="menuOpen = false">
       <i class="fas fa-lock"></i>
-      账号安全
+      {{ $t('账号安全') }}
     </router-link>
     <router-link v-if="showPasskeyEntry" to="/account/passkeys" class="dropdown-item" @click="menuOpen = false">
       <i class="fas fa-fingerprint"></i>
@@ -79,7 +102,7 @@ export default toNative(UserMenu)
     <!-- 注销选项 -->
     <button class="dropdown-item-danger" @click="handleLogout">
       <i class="fas fa-sign-out-alt"></i>
-      退出
+      {{ $t('退出') }}
     </button>
   </Dropdown>
 </template>

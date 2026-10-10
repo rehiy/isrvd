@@ -78,7 +78,7 @@ export default toNative(App)
     <div v-if="!portal.initialized" class="flex items-center justify-center min-h-screen">
       <div class="flex flex-col items-center gap-4">
         <div class="w-12 h-12 spinner"></div>
-        <span class="text-slate-500 text-sm">加载中...</span>
+        <span class="text-slate-500 text-sm">{{ $t('加载中...') }}</span>
       </div>
     </div>
 
@@ -107,7 +107,7 @@ export default toNative(App)
           <NodeSwitcher />
           <button
             v-if="hasCopilot"
-            title="AI 助手"
+            :title="$t('AI 助手')"
             class="btn btn-ghost gap-2"
             :class="copilotStore.sidebarOpen
               ? 'text-primary-600 bg-primary-50 hover:bg-primary-100'
@@ -115,7 +115,7 @@ export default toNative(App)
             @click="copilotStore.toggleSidebar()"
           >
             <i class="fas fa-wand-magic-sparkles"></i>
-            <span class="hidden sm:inline">AI 助手</span>
+            <span class="hidden sm:inline">{{ $t('AI 助手') }}</span>
           </button>
           <div v-if="hasCopilot" class="hidden sm:block w-px h-5 bg-slate-200 mx-1"></div>
           <UserMenu />

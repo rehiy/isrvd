@@ -58,6 +58,11 @@ class Login extends Vue {
         }
     }
 
+    // 语言切换入口的鼠标提示：展示当前语言并说明点击可切换
+    get localeTitle() {
+        return this.$t('当前：') + this.portal.localeMeta.label + this.$t('，点击切换')
+    }
+
     resetTwoFactor() {
         this.twoFactorRequired = false
         this.totpForm.code = ''
@@ -99,8 +104,8 @@ export default toNative(Login)
         <!-- Header -->
         <div class="text-center mb-8">
           <img src="@/assets/logo.svg" alt="iSrvd" class="inline-flex w-28 object-contain my-5 transform hover:scale-105 transition-transform duration-300">
-          <h1 class="text-2xl font-bold text-slate-800 mb-2">欢迎回来</h1>
-          <p class="text-slate-500">登录到 iSrvd 管理面板</p>
+          <h1 class="text-2xl font-bold text-slate-800 mb-2">{{ $t('欢迎回来') }}</h1>
+          <p class="text-slate-500">{{ $t('登录到 iSrvd 管理面板') }}</p>
         </div>
 
         <!-- Form -->
@@ -108,45 +113,45 @@ export default toNative(Login)
           <template v-if="!portal.passwordDisabled">
             <div>
               <label for="username" class="form-label">
-                用户名
+                {{ $t('用户名') }}
               </label>
               <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <i class="fas fa-user text-slate-400"></i>
                 </div>
-                <input id="username" v-model="loginForm.username" type="text" required class="input pl-11" placeholder="请输入用户名" @input="resetTwoFactor">
+                <input id="username" v-model="loginForm.username" type="text" required class="input pl-11" :placeholder="$t('请输入用户名')" @input="resetTwoFactor">
               </div>
             </div>
 
             <div>
               <label for="password" class="form-label">
-                密码
+                {{ $t('密码') }}
               </label>
               <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <i class="fas fa-lock text-slate-400"></i>
                 </div>
-                <input id="password" v-model="loginForm.password" type="password" required class="input pl-11" placeholder="请输入密码" @input="resetTwoFactor">
+                <input id="password" v-model="loginForm.password" type="password" required class="input pl-11" :placeholder="$t('请输入密码')" @input="resetTwoFactor">
               </div>
             </div>
 
             <div v-if="twoFactorRequired">
               <label for="totp-code" class="form-label">
-                二次验证码
+                {{ $t('二次验证码') }}
               </label>
               <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <i class="fas fa-shield-halved text-slate-400"></i>
                 </div>
-                <input id="totp-code" v-model="totpForm.code" type="text" inputmode="numeric" autocomplete="one-time-code" required class="input pl-11" placeholder="请输入 6 位验证码">
+                <input id="totp-code" v-model="totpForm.code" type="text" inputmode="numeric" autocomplete="one-time-code" required class="input pl-11" :placeholder="$t('请输入 6 位验证码')">
               </div>
-              <p class="text-xs text-slate-400 mt-1">该账户已启用 TOTP 二次验证，请输入认证器 App 中的动态验证码。</p>
+              <p class="text-xs text-slate-400 mt-1">{{ $t('该账户已启用 TOTP 二次验证，请输入认证器 App 中的动态验证码。') }}</p>
             </div>
 
             <button type="submit" :disabled="loading || (twoFactorRequired && !totpForm.code)" class="btn btn-primary w-full mt-6">
               <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
               <i v-else class="fas fa-sign-in-alt mr-2"></i>
-              {{ loading ? '登录中...' : (twoFactorRequired ? '验证并登录' : '登录') }}
+              {{ loading ? $t('登录中...') : (twoFactorRequired ? $t('验证并登录') : $t('登录')) }}
             </button>
           </template>
 
@@ -161,17 +166,17 @@ export default toNative(Login)
               >
                 <i v-if="passkeyLoading" class="fas fa-spinner fa-spin mr-2"></i>
                 <i v-else class="fas fa-fingerprint mr-2"></i>
-                {{ passkeyLoading ? 'Passkey 认证中...' : '使用 Passkey 登录' }}
+                {{ passkeyLoading ? $t('Passkey 认证中...') : $t('使用 Passkey 登录') }}
               </button>
               <button v-if="portal.oidcEnabled" type="button" class="btn btn-indigo w-full" @click="handleOIDCLogin">
                 <i class="fas fa-id-badge mr-2"></i>
-                {{ portal.oidcLoginLabel || '使用 OIDC 登录' }}
+                {{ portal.oidcLoginLabel || $t('使用 OIDC 登录') }}
               </button>
             </div>
           </template>
 
           <div v-if="portal.passwordDisabled && !portal.oidcEnabled && !portal.passkeyEnabled" class="text-center text-slate-400 text-sm py-4">
-            <i class="fas fa-lock mr-2"></i>密码登录已禁用，请联系管理员配置其他登录方式。
+            <i class="fas fa-lock mr-2"></i>{{ $t('密码登录已禁用，请联系管理员配置其他登录方式。') }}
           </div>
         </form>
       </div>
@@ -179,6 +184,11 @@ export default toNative(Login)
       <!-- Footer -->
       <p class="text-center text-sm text-slate-400 mt-6 flex items-center justify-center gap-2">
         <span>© 2024 - {{ new Date().getFullYear() }} <a href="https://isrvd.rehiy.com" target="_blank">iSrvd</a>. All rights reserved.</span>
+        <!-- 语言切换：登录页没有顶部菜单入口 -->
+        <button type="button" class="btn btn-ghost px-2 py-1 text-xs gap-1.5" :title="localeTitle" @click="portal.toggleLocale()">
+          <i class="fas fa-globe"></i>
+          <span>{{ portal.localeMeta.short }}</span>
+        </button>
       </p>
     </div>
   </div>

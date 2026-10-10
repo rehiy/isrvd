@@ -1,9 +1,14 @@
 import axios from 'axios'
 
+import { useLocaleStore } from '@/stores'
+
 import { http } from '@/service/client'
 
 import { packToolResult } from './blob'
 import { sanitizeCopilotValue } from './sanitize'
+
+/** 工具错误提示也展示给用户，按当前语言输出 */
+const t = (key: string, ...args: (string | number)[]): string => useLocaleStore().t(key, ...args)
 
 export interface CopilotAPIArgs {
     callRef: string
@@ -92,7 +97,7 @@ export function resetCopilotAPICallRefs() {
 export function previewCopilotAPICall(args: Partial<CopilotAPIArgs>): CopilotAPIPreview {
     const operation = getOperation(String(args.callRef || ''))
     if (!operation) {
-        return { method: '', path: '', summary: '', error: '调用引用不存在或已过期，请重新调用 lookup_api。' }
+        return { method: '', path: '', summary: '', error: t('调用引用不存在或已过期，请重新调用 lookup_api。') }
     }
     const parsed = parseBusinessArguments(args.arguments)
     if ('error' in parsed) {
@@ -114,12 +119,12 @@ export function previewCopilotAPICall(args: Partial<CopilotAPIArgs>): CopilotAPI
 export async function executeCopilotAPI(args: CopilotAPIArgs, mode: CopilotAPIMode): Promise<unknown> {
     const operation = getOperation(String(args.callRef || ''))
     if (!operation) {
-        return copilotError('UNKNOWN_CALL_REF', '调用引用不存在或已过期，请重新调用 lookup_api。', true)
+        return copilotError('UNKNOWN_CALL_REF', t('调用引用不存在或已过期，请重新调用 lookup_api。'), true)
     }
 
     const failureKey = canonicalArguments(args.arguments)
     if ((operation.failures.get(failureKey) || 0) >= maxIdenticalFailures) {
-        return copilotError('RETRY_LIMIT', '相同调用已连续失败两次，请重新查询接口或调整参数后再试。', false)
+        return copilotError('RETRY_LIMIT', t('相同调用已连续失败两次，请重新查询接口或调整参数后再试。'), false)
     }
 
     const detail = await ensureOperationDetail(operation)
@@ -151,11 +156,11 @@ export async function executeCopilotAPI(args: CopilotAPIArgs, mode: CopilotAPIMo
                 res = await http.post(resolved.value.path, resolved.value.body ?? {}, config)
                 break
             default:
-                return recordFailure(operation, failureKey, copilotError('UNKNOWN_OPERATION', 'OpenAPI 中的 HTTP 方法不受支持。', false))
+                return recordFailure(operation, failureKey, copilotError('UNKNOWN_OPERATION', t('OpenAPI 中的 HTTP 方法不受支持。'), false))
         }
 
         if (!isRecord(res) || typeof res.success !== 'boolean') {
-            return recordFailure(operation, failureKey, copilotError('UNSUPPORTED_RESPONSE', '接口未返回标准 JSON 响应，请改用页面操作。', false))
+            return recordFailure(operation, failureKey, copilotError('UNSUPPORTED_RESPONSE', t('接口未返回标准 JSON 响应，请改用页面操作。'), false))
         }
         operation.failures.delete(failureKey)
         return packToolResult({
@@ -216,11 +221,11 @@ async function ensureOperationDetail(operation: RegisteredOperation): Promise<{ 
         const res = await http.get('copilot/catalog', { params: { path: operation.path, method: operation.method } })
         const payload = res?.payload
         if (!isRecord(payload)) {
-            return { error: copilotError('OPERATION_CHANGED', '接口定义已变化，请重新调用 lookup_api。', true) }
+            return { error: copilotError('OPERATION_CHANGED', t('接口定义已变化，请重新调用 lookup_api。'), true) }
         }
         const detail = operationFromPayload(payload)
         if (!detail || payload.mode !== 'detail' || detail.operationId !== operation.operationId) {
-            return { error: copilotError('OPERATION_CHANGED', '接口定义已变化，请重新调用 lookup_api。', true) }
+            return { error: copilotError('OPERATION_CHANGED', t('接口定义已变化，请重新调用 lookup_api。'), true) }
         }
         Object.assign(operation, detail)
         operation.loaded = true
@@ -234,7 +239,7 @@ function resolveCall(operation: RegisteredOperation, source: string | undefined,
     const isQuery = operation.method === 'get'
     if ((mode === 'query') !== isQuery) {
         const expected = isQuery ? 'isrvd_api' : 'isrvd_mutation'
-        return { error: copilotError('WRONG_TOOL', `该操作必须使用 ${expected}。`, true) }
+        return { error: copilotError('WRONG_TOOL', t('该操作必须使用 {0}。', expected), true) }
     }
 
     const parsed = parseBusinessArguments(source)
@@ -255,7 +260,7 @@ function resolveCall(operation: RegisteredOperation, source: string | undefined,
     if ('error' in path) return { error: copilotError('INVALID_ARGUMENTS', path.error, true) }
     const target = path.value.replace(/^\/+/, '')
     if (!target || target.includes('://') || target.split('/').includes('..')) {
-        return { error: copilotError('INVALID_ARGUMENTS', '解析后的 API 路径不是合法的站内路径。', false) }
+        return { error: copilotError('INVALID_ARGUMENTS', t('解析后的 API 路径不是合法的站内路径。'), false) }
     }
 
     return {
@@ -274,13 +279,13 @@ function parseBusinessArguments(source?: string): { value: BusinessArguments } |
     try {
         parsed = JSON.parse(source)
     } catch {
-        return { error: 'arguments 不是合法 JSON。' }
+        return { error: t('arguments 不是合法 JSON。') }
     }
-    if (!isRecord(parsed)) return { error: 'arguments 必须是 JSON 对象。' }
+    if (!isRecord(parsed)) return { error: t('arguments 必须是 JSON 对象。') }
     const unknown = Object.keys(parsed).filter(key => !['path', 'query', 'body'].includes(key))
     if (unknown.length) return { error: `arguments 包含未知字段：${unknown.join(', ')}。` }
-    if (parsed.path !== undefined && !isRecord(parsed.path)) return { error: 'arguments.path 必须是对象。' }
-    if (parsed.query !== undefined && !isRecord(parsed.query)) return { error: 'arguments.query 必须是对象。' }
+    if (parsed.path !== undefined && !isRecord(parsed.path)) return { error: t('arguments.path 必须是对象。') }
+    if (parsed.query !== undefined && !isRecord(parsed.query)) return { error: t('arguments.query 必须是对象。') }
     return {
         value: {
             path: isRecord(parsed.path) ? parsed.path : {},

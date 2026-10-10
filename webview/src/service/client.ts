@@ -1,5 +1,7 @@
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 
+import { useLocaleStore } from '@/stores/locale'
+
 export interface APIResponse<T = unknown> {
     success: boolean
     message?: string
@@ -38,9 +40,15 @@ export const absUrl = (path: string): string =>
 /**
  * 将 api/ 相对路径转换为 WebSocket 绝对 URL
  * 兼容部署在 / 或 /xxx/ 子路径下的场景
+ *
+ * 浏览器的 WebSocket 无法自定义请求头，界面语言通过 lang 查询参数告知服务端，
+ * 终端里服务端直接输出的提示文案才能与界面语言一致。
  */
-export const wsUrl = (path: string): string =>
-    absUrl(path).replace(/^https?:/, m => m === 'https:' ? 'wss:' : 'ws:')
+export const wsUrl = (path: string): string => {
+    const url = new URL(absUrl(path))
+    url.searchParams.set('lang', useLocaleStore().locale)
+    return url.toString().replace(/^https?:/, m => m === 'https:' ? 'wss:' : 'ws:')
+}
 
 // 类型断言反映响应拦截器解包后的实际返回值。
 export const http = axiosInstance as unknown as HttpClient
@@ -51,17 +59,22 @@ export const interceptors = (
     state: { token: string | null },
     actions: { showNotification: (type: NotificationType, message: string) => void; clearAuth: () => void }
 ) => {
+    // 提示文案以中文为 key，英文下取 locales/en.ts 的译文
+    const t = (key: string): string => useLocaleStore().t(key)
+
     const attachAuth = (config: InternalAxiosRequestConfig) => {
         if (state.token) {
             config.headers['Authorization'] = state.token
         }
+        // 服务端按该头选择响应文案的语言
+        config.headers['Accept-Language'] = useLocaleStore().locale === 'en' ? 'en-US' : 'zh-CN'
         return config
     }
 
     const handleError = async (error: unknown, isBlob = false) => {
         if (axios.isCancel(error)) return Promise.reject(error)
         if (!axios.isAxiosError<APIResponse | Blob>(error)) {
-            actions.showNotification('error', '发生未知错误')
+            actions.showNotification('error', t('发生未知错误'))
             return Promise.reject(error)
         }
         let message = ''
@@ -77,15 +90,15 @@ export const interceptors = (
         // 登录接口本身返回的 401（用户名/密码错误等）是登录失败，不是会话过期，走下方通用错误提示
         const isLoginRequest = error.config?.url?.includes('account/login')
         if (error.response?.status === 401 && !isLoginRequest) {
-            actions.showNotification('error', message || '登录已过期，请重新登录')
+            actions.showNotification('error', message || t('登录已过期，请重新登录'))
             actions.clearAuth()
         } else if (error.response) {
-            const fallback = isBlob ? `下载失败: ${error.response.status}` : `请求失败: ${error.response.status}`
-            actions.showNotification('error', message || fallback)
+            const prefix = isBlob ? t('下载失败') : t('请求失败')
+            actions.showNotification('error', message || `${prefix}: ${error.response.status}`)
         } else if (error.request) {
-            actions.showNotification('error', '网络连接失败，请检查网络')
+            actions.showNotification('error', t('网络连接失败，请检查网络'))
         } else {
-            actions.showNotification('error', '发生未知错误')
+            actions.showNotification('error', t('发生未知错误'))
         }
         return Promise.reject(error)
     }

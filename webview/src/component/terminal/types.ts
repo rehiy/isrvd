@@ -1,4 +1,6 @@
 import { Terminal } from '@xterm/xterm'
+
+import { useLocaleStore } from '@/stores'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 
@@ -52,12 +54,12 @@ export class WsTerminal implements TerminalAdapter {
         term.onData(data => socket.readyState === WebSocket.OPEN && socket.send(data))
         term.onResize(() => this.sendResize())
         socket.onopen = () => {
-            this.term?.write('[连接中...]\r\n')
+            this.term?.write(useLocaleStore().t('[连接中...]') + '\r\n')
             this.sendResize(true)
         }
         socket.onmessage = e => this.term?.write(e.data)
-        socket.onclose = () => this.term?.write('\r\n[连接已关闭]\r\n')
-        socket.onerror = (e: Event) => this.term?.write(`\r\n[连接错误: ${(e as ErrorEvent).message ?? ''}]\r\n`)
+        socket.onclose = () => this.term?.write('\r\n' + useLocaleStore().t('[连接已关闭]') + '\r\n')
+        socket.onerror = (e: Event) => this.term?.write(`\r\n${useLocaleStore().t('[连接错误: {0}]', (e as ErrorEvent).message ?? '')}\r\n`)
 
         term.focus()
     }

@@ -9,6 +9,7 @@
 
 export { useConfigStore, configGroups } from './config'
 export { useCopilotStore } from './copilot'
+export { useLocaleStore } from './locale'
 export { usePortalStore as usePortal } from './portal'
 
 export type { ConfigGroupMeta } from './config'

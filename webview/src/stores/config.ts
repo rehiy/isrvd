@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+import { useLocaleStore } from './locale'
+
 import api from '@/service/api'
 import type {
     AllConfig,
@@ -185,7 +187,7 @@ export const useConfigStore = defineStore('config', () => {
             baseline.value = clone(draft.value)
             loaded.value = true
         } catch (e) {
-            error.value = e instanceof Error ? e.message : '加载系统配置失败'
+            error.value = e instanceof Error ? e.message : useLocaleStore().t('加载系统配置失败')
             throw e
         } finally {
             loading.value = false
@@ -202,7 +204,7 @@ export const useConfigStore = defineStore('config', () => {
             // 后端对密钥类字段返回空值，重新加载以刷新基线
             await load()
         } catch (e) {
-            error.value = e instanceof Error ? e.message : '保存系统配置失败'
+            error.value = e instanceof Error ? e.message : useLocaleStore().t('保存系统配置失败')
             throw e
         } finally {
             saving.value = false

@@ -1,5 +1,7 @@
 import { nextTick } from 'vue'
 
+import { useLocaleStore } from '@/stores'
+
 import { absUrl } from '@/service/client'
 
 const MAX_LOG_LENGTH = 300000
@@ -25,7 +27,7 @@ export class LogStream {
         try {
             this.content = (await fetchLogs()).join('')
         } catch {
-            this.content = '加载日志失败'
+            this.content = useLocaleStore().t('加载日志失败')
         }
         this.loading = false
     }
@@ -35,7 +37,8 @@ export class LogStream {
         this.loading = false
         this.content = ''
         this.state = 'connecting'
-        const params = new URLSearchParams({ token, tail: this.tail })
+        // EventSource 同样无法自定义请求头，用 lang 查询参数携带界面语言
+        const params = new URLSearchParams({ token, tail: this.tail, lang: useLocaleStore().locale })
         this.source = new EventSource(absUrl(`${path}?${params.toString()}`))
         this.source.onopen = () => {
             this.state = 'streaming'
@@ -44,7 +47,7 @@ export class LogStream {
         this.source.addEventListener('error', event => {
             const message = (event as MessageEvent).data ?? ''
             this.stop()
-            onError(message || '实时日志连接失败')
+            onError(message || useLocaleStore().t('实时日志连接失败'))
         })
     }
 

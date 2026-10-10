@@ -10,6 +10,8 @@
  * 因此序列化格式必须与 go-webauthn 期望的 JSON 结构完全一致。
  */
 
+import { useLocaleStore } from '@/stores'
+
 import api from '@/service/api'
 import type { PasskeyLoginCredential, PasskeyRegisterCredential } from '@/service/types/account'
 
@@ -46,14 +48,15 @@ export function isWebAuthnSupported(): boolean {
  * @returns 注册成功时 resolve，失败时 reject（含用户友好的错误信息）
  */
 export async function registerPasskey(displayName?: string): Promise<void> {
+    const t = useLocaleStore().t
     if (!isWebAuthnSupported()) {
-        throw new Error('当前浏览器或环境不支持 Passkey（需要 HTTPS 且浏览器支持 WebAuthn）')
+        throw new Error(t('当前浏览器或环境不支持 Passkey（需要 HTTPS 且浏览器支持 WebAuthn）'))
     }
 
     // 1. 向后端请求注册参数
     const { payload: beginData } = await api.accountPasskeyRegisterBegin(displayName ? { displayName } : {})
     if (!beginData) {
-        throw new Error('无法开始 Passkey 注册')
+        throw new Error(t('无法开始 Passkey 注册'))
     }
 
     // 2. 将 base64url 字段转为 ArrayBuffer（WebAuthn API 要求）
@@ -77,7 +80,7 @@ export async function registerPasskey(displayName?: string): Promise<void> {
     // 3. 调用浏览器 WebAuthn API（此处必须在用户手势中调用，确保扩展能识别）
     const credential = await navigator.credentials.create(creationOptions) as PublicKeyCredential | null
     if (!credential) {
-        throw new Error('用户取消了 Passkey 注册')
+        throw new Error(t('用户取消了 Passkey 注册'))
     }
 
     // 4. 序列化凭证数据，发送给后端完成注册
@@ -103,14 +106,15 @@ export async function registerPasskey(displayName?: string): Promise<void> {
  * @returns 登录成功时返回 { token, username }
  */
 export async function loginWithPasskey(username?: string): Promise<{ token: string; username: string }> {
+    const t = useLocaleStore().t
     if (!isWebAuthnSupported()) {
-        throw new Error('当前浏览器或环境不支持 Passkey（需要 HTTPS 且浏览器支持 WebAuthn）')
+        throw new Error(t('当前浏览器或环境不支持 Passkey（需要 HTTPS 且浏览器支持 WebAuthn）'))
     }
 
     // 1. 向后端请求登录参数
     const { payload: beginData } = await api.accountPasskeyLoginBegin({ username })
     if (!beginData) {
-        throw new Error('无法开始 Passkey 登录')
+        throw new Error(t('无法开始 Passkey 登录'))
     }
 
     // 2. 将 base64url 字段转为 ArrayBuffer
@@ -130,7 +134,7 @@ export async function loginWithPasskey(username?: string): Promise<{ token: stri
     // 3. 调用浏览器 WebAuthn API
     const credential = await navigator.credentials.get(requestOptions) as PublicKeyCredential | null
     if (!credential) {
-        throw new Error('用户取消了 Passkey 认证')
+        throw new Error(t('用户取消了 Passkey 认证'))
     }
 
     // 4. 序列化断言数据，发送给后端完成登录
@@ -150,7 +154,7 @@ export async function loginWithPasskey(username?: string): Promise<{ token: stri
     const { payload: loginResult } = await api.accountPasskeyLoginFinish(beginData.sessionId, credentialJSON)
 
     if (!loginResult) {
-        throw new Error('登录失败')
+        throw new Error(t('登录失败'))
     }
 
     return loginResult

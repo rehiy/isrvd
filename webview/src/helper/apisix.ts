@@ -8,6 +8,8 @@ import type {
     ApisixUpstreamNode
 } from '@/service/types'
 
+import { useLocaleStore } from '@/stores'
+
 import { parseHostPort } from '@/helper/format'
 
 const parseNodeKey = (key: string): ApisixUpstreamNode => {
@@ -82,27 +84,29 @@ export const detectRouteUpstreamMode = (route?: Pick<ApisixRoute, 'upstream_id' 
 }
 
 export const formatRouteUpstreamSummary = (route: Pick<ApisixRoute, 'upstream_id' | 'upstream'>): string => {
-    if (route.upstream_id) return `引用上游 #${route.upstream_id}`
+    const t = useLocaleStore().t
+    if (route.upstream_id) return t('引用上游 #{0}', route.upstream_id)
 
     const nodes = normalizeUpstreamNodes(route.upstream)
-    if (nodes.length === 0) return '未配置'
+    if (nodes.length === 0) return t('未配置')
 
     const upstreamType = normalizeUpstreamType(route.upstream?.type)
     const first = nodes[0]
     const firstLabel = `${first.host || '-'}:${first.port || '-'}`
     if (nodes.length === 1) return `${upstreamType} · ${firstLabel}`
-    return `${upstreamType} · ${firstLabel} 等 ${nodes.length} 个节点`
+    return t('{0} · {1} 等 {2} 个节点', upstreamType, firstLabel, nodes.length)
 }
 
 /** 仅返回节点信息，引用上游时返回完整摘要 */
 export const formatRouteUpstreamNodes = (route: Pick<ApisixRoute, 'upstream_id' | 'upstream'>): string => {
-    if (route.upstream_id) return `引用上游 #${route.upstream_id}`
+    const t = useLocaleStore().t
+    if (route.upstream_id) return t('引用上游 #{0}', route.upstream_id)
     const nodes = normalizeUpstreamNodes(route.upstream)
-    if (nodes.length === 0) return '未配置'
+    if (nodes.length === 0) return t('未配置')
     const first = nodes[0]
     const firstLabel = `${first.host || '-'}:${first.port || '-'}`
     if (nodes.length === 1) return firstLabel
-    return `${firstLabel} 等 ${nodes.length} 个节点`
+    return t('{0} 等 {1} 个节点', firstLabel, nodes.length)
 }
 
 interface RouteFormData {

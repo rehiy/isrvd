@@ -1,13 +1,14 @@
 import { defineStore, storeToRefs } from 'pinia'
 
+import { nodeLocation } from '@/helper/node'
+import { initTheme } from '@/helper/theme'
 import api from '@/service/api'
 import { interceptors } from '@/service/client'
 import type { BootstrapData } from '@/service/types'
-import { nodeLocation } from '@/helper/node'
-import { initTheme } from '@/helper/theme'
 
 import { useAuthStore } from './auth'
 import { useConfigStore } from './config'
+import { useLocaleStore } from './locale'
 import { useNodeStore } from './node'
 import { useSystemStore } from './system'
 import { useUIStore } from './ui'
@@ -28,6 +29,7 @@ export const usePortalStore = defineStore('portal', () => {
     const systemStore = useSystemStore()
     const uiStore = useUIStore()
     const nodeStore = useNodeStore()
+    const localeStore = useLocaleStore()
 
     // ─── 分发启动数据到子 store ───
 
@@ -46,6 +48,7 @@ export const usePortalStore = defineStore('portal', () => {
         systemStore.initialized = false
 
         initTheme()
+        localeStore.initLocale()
         authStore.restoreToken()
 
         try {
@@ -109,6 +112,7 @@ export const usePortalStore = defineStore('portal', () => {
     const systemRefs = storeToRefs(systemStore)
     const uiRefs = storeToRefs(uiStore)
     const nodeRefs = storeToRefs(nodeStore)
+    const localeRefs = storeToRefs(localeStore)
 
     return {
         // Portal 方法
@@ -156,5 +160,12 @@ export const usePortalStore = defineStore('portal', () => {
         showConfirm: uiStore.showConfirm,
         closeConfirm: uiStore.closeConfirm,
         handleConfirm: uiStore.handleConfirm,
+
+        // Locale Store 状态（响应式）
+        locale: localeRefs.locale,
+        localeMeta: localeRefs.meta,
+        // Locale Store 方法
+        setLocale: localeStore.setLocale,
+        toggleLocale: localeStore.toggleLocale,
     }
 })
