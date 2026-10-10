@@ -4,7 +4,7 @@ import { Component, Vue, toNative } from 'vue-facing-decorator'
 import { usePortal } from '@/stores'
 
 import api from '@/service/api'
-import type { SwarmNodeDetail } from '@/service/types'
+import type { SwarmNodeDetail, SwarmServiceInfo } from '@/service/types'
 
 import { formatFileSize, formatTime } from '@/helper/format'
 
@@ -15,6 +15,8 @@ class NodeDetail extends Vue {
     // ─── 数据属性 ───
     nodeData: SwarmNodeDetail | null = null
     loading = false
+    services: SwarmServiceInfo[] = []
+    servicesError = false
     formatFileSize = formatFileSize
     formatTime = formatTime
 
@@ -24,12 +26,30 @@ class NodeDetail extends Vue {
 
     // ─── 方法 ───
     async loadDetail() {
+        if (this.loading) return
         this.loading = true
         try {
-            const res = await api.swarmNodeInspect(this.nodeId)
-            this.nodeData = res.payload ?? null
+            await Promise.allSettled([this.loadNode(), this.loadServices()])
         } finally {
             this.loading = false
+        }
+    }
+
+    async loadNode() {
+        this.nodeData = null
+        const res = await api.swarmNodeInspect(this.nodeId)
+        this.nodeData = res.payload ?? null
+    }
+
+    async loadServices() {
+        this.services = []
+        this.servicesError = false
+        if (!this.portal.hasPerm('GET /api/swarm/node/:id/services')) return
+        try {
+            const res = await api.swarmNodeServiceList(this.nodeId)
+            this.services = res.payload ?? []
+        } catch {
+            this.servicesError = true
         }
     }
 
@@ -149,6 +169,57 @@ export default toNative(NodeDetail)
             <div class="detail-value">{{ nodeData.memoryBytes ? formatFileSize(nodeData.memoryBytes) : '-' }}</div>
           </div>
         </div>
+      </div>
+
+      <div v-if="portal.hasPerm('GET /api/swarm/node/:id/services')">
+        <h2 class="section-title">运行中的服务（{{ services.length }}）</h2>
+        <p class="text-xs text-slate-500 mb-3">运行副本仅统计当前节点。</p>
+        <p v-if="servicesError" class="empty-note">服务列表加载失败，请刷新重试</p>
+        <p v-else-if="services.length === 0" class="empty-note">当前节点暂无运行中的服务</p>
+        <template v-else>
+          <div class="card-table hidden md:block">
+            <table class="w-full">
+              <thead>
+                <tr class="bg-slate-100 border-b border-slate-200">
+                  <th class="th">服务</th>
+                  <th class="th">模式</th>
+                  <th class="th">本节点运行副本</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr v-for="svc in services" :key="svc.id" class="hover:bg-slate-50 transition-colors">
+                  <td class="px-4 py-3 max-w-[280px]">
+                    <router-link v-if="portal.hasPerm('GET /api/swarm/service/:id')" :to="{ name: 'swarm-service', params: { id: svc.id } }" class="item-title hover:text-emerald-600">{{ svc.name }}</router-link>
+                    <span v-else class="item-title">{{ svc.name }}</span>
+                    <code class="item-subtitle-mono">{{ svc.image }}</code>
+                  </td>
+                  <td class="td-text capitalize">{{ svc.mode }}</td>
+                  <td class="td-text">{{ svc.runningTasks }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card-body md:hidden space-y-3">
+            <div v-for="svc in services" :key="svc.id" class="card-interactive">
+              <div class="card-info-row">
+                <div class="list-icon bg-emerald-400"><i class="fas fa-cubes text-white text-base"></i></div>
+                <div class="min-w-0">
+                  <router-link v-if="portal.hasPerm('GET /api/swarm/service/:id')" :to="{ name: 'swarm-service', params: { id: svc.id } }" class="item-title-sm hover:text-emerald-600">{{ svc.name }}</router-link>
+                  <span v-else class="item-title-sm">{{ svc.name }}</span>
+                  <code class="item-subtitle-mono">{{ svc.image }}</code>
+                </div>
+              </div>
+              <div class="card-prop-row">
+                <span class="text-xs text-slate-400">模式</span>
+                <span class="text-xs text-slate-500 capitalize">{{ svc.mode }}</span>
+              </div>
+              <div class="card-prop-row">
+                <span class="text-xs text-slate-400">本节点运行副本</span>
+                <span class="text-xs text-slate-500">{{ svc.runningTasks }}</span>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
 
       <!-- 时间信息 -->

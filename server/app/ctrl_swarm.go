@@ -17,6 +17,7 @@ func (app *App) defineSwarmRoutes() []Route {
 		// 节点管理
 		{Method: "GET", Path: "/swarm/nodes", Handler: app.swarmNodeList, Module: "swarm", Label: "查询 Swarm 节点列表"},
 		{Method: "GET", Path: "/swarm/node/:id", Handler: app.swarmNodeInspect, Module: "swarm", Label: "获取 Swarm 节点详情"},
+		{Method: "GET", Path: "/swarm/node/:id/services", Handler: app.swarmNodeServiceList, Module: "swarm", Label: "查询 Swarm 节点运行服务"},
 		{Method: "POST", Path: "/swarm/node/:id/action", Handler: app.swarmNodeAction, Module: "swarm", Label: "执行 Swarm 节点操作"},
 		{Method: "GET", Path: "/swarm/token", Handler: app.swarmJoinToken, Module: "swarm", Label: "获取 Swarm 加入令牌"},
 		// 服务管理
@@ -45,6 +46,11 @@ func (app *App) swarmNodeInspect(c *gin.Context) {
 	id := c.Param("id")
 	result, err := app.swarmSvc.NodeInspect(c.Request.Context(), id)
 	respondResultMsg(c, "获取节点详情成功", result, err)
+}
+
+func (app *App) swarmNodeServiceList(c *gin.Context) {
+	result, err := app.swarmSvc.NodeServiceList(c.Request.Context(), c.Param("id"))
+	respondResultMsg(c, "获取节点运行服务成功", result, err)
 }
 
 func (app *App) swarmNodeAction(c *gin.Context) {
