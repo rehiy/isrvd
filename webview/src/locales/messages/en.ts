@@ -1,10 +1,13 @@
+import type { LanguageModule } from '../types'
+
 /**
- * 英文译文：以中文原文（默认语言里的文案）为 key
+ * 英文译文：以中文原文（源语言里的文案）为 key
  *
- * 只登记跨页复用的通用文案，页面独有文案可按需补充；未登记的文案在英文下仍显示中文。
+ * 未登记的文案在英文下仍显示中文。新增语言：照本文件新建 messages/<code>.ts 即可，
+ * 语言的名称、标签都声明在文件里，无需改动其他代码。
  */
 
-const enMessages: Record<string, string> = {
+const messages: Record<string, string> = {
 
     // ─── 全局与头部 ───
     '加载中...': 'Loading...',
@@ -1918,4 +1921,13 @@ const enMessages: Record<string, string> = {
     '生成注册码': 'Generate Registration Code',
 }
 
-export default enMessages
+const language: LanguageModule = {
+    code: 'en',
+    label: 'English',
+    short: 'EN',
+    htmlLang: 'en-US',
+    tags: ['en'],
+    messages
+}
+
+export default language

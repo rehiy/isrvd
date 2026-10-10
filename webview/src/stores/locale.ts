@@ -1,32 +1,37 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-import { LOCALE_META, translate, type Locale } from '@/locales'
+import { isLocale, localeMeta, LOCALES, matchLocale, SOURCE, translate, type Locale } from '@/locales'
 
 // ─── 本地存储 ───
 
 const LOCALE_KEY = 'app-locale'
 
-/** 读取已保存的语言，未保存时回落中文 */
-const readLocale = (): Locale => (localStorage.getItem(LOCALE_KEY) === 'en' ? 'en' : 'zh')
-
-/** 中文是默认语言，不写入存储；其他语言持久化 */
-const writeLocale = (locale: Locale): void => {
-    if (locale === 'zh') {
-        localStorage.removeItem(LOCALE_KEY)
-    } else {
-        localStorage.setItem(LOCALE_KEY, locale)
-    }
+/**
+ * 读取界面语言：已保存的选择优先，其次按浏览器语言，最后回落源语言（中文）
+ *
+ * 只有用户主动切换过才会写入存储，所以未切换时始终跟随浏览器语言。
+ */
+const readLocale = (): Locale => {
+    const saved = localStorage.getItem(LOCALE_KEY)
+    if (isLocale(saved)) return saved
+    return matchLocale(navigator.languages ?? [navigator.language]) ?? SOURCE
 }
 
+/** 保存用户的选择 */
+const writeLocale = (locale: Locale): void => {
+    localStorage.setItem(LOCALE_KEY, locale)
+}
+
+/** 同步 <html lang> */
 const applyLocale = (locale: Locale): void => {
-    document.documentElement.lang = locale === 'en' ? 'en-US' : 'zh-CN'
+    document.documentElement.lang = localeMeta(locale).tag
 }
 
 /**
  * Locale Store - 语言设置
  *
- * 中文为默认语言，也是文案的 key；切换语言后所有经 t 输出的文案与请求语言同步生效。
+ * 中文是源语言，也是文案的 key；切换语言后所有经 t 输出的文案与请求语言同步生效。
  */
 export const useLocaleStore = defineStore('locale', () => {
     // ─── 状态定义 ───
@@ -34,7 +39,10 @@ export const useLocaleStore = defineStore('locale', () => {
     const locale = ref<Locale>(readLocale())
 
     /** 当前语言的展示信息 */
-    const meta = computed(() => LOCALE_META[locale.value])
+    const meta = computed(() => localeMeta(locale.value))
+
+    /** 全部可选语言，供切换入口渲染 */
+    const locales = LOCALES
 
     // ─── 翻译 ───
 
@@ -50,22 +58,16 @@ export const useLocaleStore = defineStore('locale', () => {
     // ─── 切换 ───
 
     function setLocale(next: Locale): void {
+        if (!isLocale(next)) return
         writeLocale(next)
         locale.value = next
         applyLocale(next)
     }
 
-    /** 在中英之间切换，返回切换后的语言 */
-    function toggleLocale(): Locale {
-        const next: Locale = locale.value === 'zh' ? 'en' : 'zh'
-        setLocale(next)
-        return next
-    }
-
-    /** 启动时按本地记录生效（同步 <html lang>） */
+    /** 启动时生效（同步 <html lang>） */
     function initLocale(): void {
         applyLocale(locale.value)
     }
 
-    return { locale, meta, t, setLocale, toggleLocale, initLocale }
+    return { locale, meta, locales, t, setLocale, initLocale }
 })

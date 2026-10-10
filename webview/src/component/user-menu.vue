@@ -6,9 +6,10 @@ import { usePortal } from '@/stores'
 import { cycleTheme, getThemeMode, THEME_META, type ThemeMode } from '@/helper/theme'
 
 import Dropdown from '@/component/dropdown.vue'
+import LocaleSwitch from '@/component/locale-switch.vue'
 
 @Component({
-  components: { Dropdown }
+  components: { Dropdown, LocaleSwitch }
 })
 class UserMenu extends Vue {
   portal = usePortal()
@@ -20,11 +21,8 @@ class UserMenu extends Vue {
   get themeIcon() { return THEME_META[this.themeMode].icon }
   get themeLabel() { return this.$t(THEME_META[this.themeMode].label) }
 
-  get localeLabel() { return this.portal.localeMeta.label }
-
   // 两种入口的鼠标提示：展示当前取值并说明点击可切换
   get themeTitle() { return this.$t('当前：') + this.themeLabel + this.$t('，点击切换') }
-  get localeTitle() { return this.$t('当前：') + this.localeLabel + this.$t('，点击切换') }
 
   // Passkey 入口：功能已启用且具备查看权限时显示
   get showPasskeyEntry() { return this.portal.passkeyEnabled && this.portal.hasPerm('GET /api/account/passkey/credentials') }
@@ -32,10 +30,6 @@ class UserMenu extends Vue {
   // ─── 方法 ───
   toggleTheme() {
     this.themeMode = cycleTheme()
-  }
-
-  toggleLocale() {
-    this.portal.toggleLocale()
   }
 
   handleLogout() {
@@ -54,10 +48,7 @@ export default toNative(UserMenu)
       <span class="hidden sm:inline">{{ portal.username }}</span>
     </div>
     <!-- 语言切换：该模式没有下拉菜单，直接提供入口 -->
-    <button type="button" class="btn btn-ghost !px-2 text-xs gap-1.5" :title="localeTitle" @click="toggleLocale">
-      <i class="fas fa-globe"></i>
-      <span>{{ portal.localeMeta.short }}</span>
-    </button>
+    <LocaleSwitch />
   </div>
 
   <!-- jwt 认证模式：用户名 + 下拉菜单 -->
@@ -76,11 +67,19 @@ export default toNative(UserMenu)
       <span>{{ themeLabel }}</span>
     </button>
 
-    <!-- 语言切换：简体中文 / English -->
-    <button class="dropdown-item" :title="localeTitle" @click.stop="toggleLocale">
-      <i class="fas fa-globe w-4 text-center"></i>
-      <span>{{ localeLabel }}</span>
+    <!-- 语言切换：语言平铺在菜单里，避免下拉套下拉；列表来自 locales/messages，新增语言自动出现 -->
+    <div class="border-t border-slate-100 my-1"></div>
+    <button
+      v-for="item in portal.locales"
+      :key="item.code"
+      class="dropdown-item"
+      :class="{ 'dropdown-item-active': item.code === portal.locale }"
+      @click="portal.setLocale(item.code)"
+    >
+      <i class="fas w-4 text-center" :class="item.code === portal.locale ? 'fa-check' : 'fa-globe text-slate-300'"></i>
+      <span>{{ item.label }}</span>
     </button>
+    <div class="border-t border-slate-100 my-1"></div>
 
     <!-- 账户设置 -->
     <router-link to="/account/password" class="dropdown-item" @click="menuOpen = false">

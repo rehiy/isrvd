@@ -164,8 +164,8 @@ export const usePortalStore = defineStore('portal', () => {
         // Locale Store 状态（响应式）
         locale: localeRefs.locale,
         localeMeta: localeRefs.meta,
+        locales: localeStore.locales,
         // Locale Store 方法
         setLocale: localeStore.setLocale,
-        toggleLocale: localeStore.toggleLocale,
     }
 })

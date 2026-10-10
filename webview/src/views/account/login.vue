@@ -8,7 +8,11 @@ import { absUrl } from '@/service/client'
 
 import { loginWithPasskey } from '@/helper/webauthn'
 
-@Component
+import LocaleSwitch from '@/component/locale-switch.vue'
+
+@Component({
+    components: { LocaleSwitch }
+})
 class Login extends Vue {
     portal = usePortal()
 
@@ -56,11 +60,6 @@ class Login extends Vue {
         } finally {
             this.loading = false
         }
-    }
-
-    // 语言切换入口的鼠标提示：展示当前语言并说明点击可切换
-    get localeTitle() {
-        return this.$t('当前：') + this.portal.localeMeta.label + this.$t('，点击切换')
     }
 
     resetTwoFactor() {
@@ -185,10 +184,7 @@ export default toNative(Login)
       <p class="text-center text-sm text-slate-400 mt-6 flex items-center justify-center gap-2">
         <span>© 2024 - {{ new Date().getFullYear() }} <a href="https://isrvd.rehiy.com" target="_blank">iSrvd</a>. All rights reserved.</span>
         <!-- 语言切换：登录页没有顶部菜单入口 -->
-        <button type="button" class="btn btn-ghost px-2 py-1 text-xs gap-1.5" :title="localeTitle" @click="portal.toggleLocale()">
-          <i class="fas fa-globe"></i>
-          <span>{{ portal.localeMeta.short }}</span>
-        </button>
+        <LocaleSwitch compact placement="top" />
       </p>
     </div>
   </div>

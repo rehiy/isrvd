@@ -59,7 +59,7 @@ export const interceptors = (
     state: { token: string | null },
     actions: { showNotification: (type: NotificationType, message: string) => void; clearAuth: () => void }
 ) => {
-    // 提示文案以中文为 key，英文下取 locales/en.ts 的译文
+    // 提示文案以中文为 key，其他语言取 locales/<lang>.ts 的译文
     const t = (key: string): string => useLocaleStore().t(key)
 
     const attachAuth = (config: InternalAxiosRequestConfig) => {
@@ -67,7 +67,7 @@ export const interceptors = (
             config.headers['Authorization'] = state.token
         }
         // 服务端按该头选择响应文案的语言
-        config.headers['Accept-Language'] = useLocaleStore().locale === 'en' ? 'en-US' : 'zh-CN'
+        config.headers['Accept-Language'] = useLocaleStore().locale
         return config
     }
 
