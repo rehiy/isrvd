@@ -177,7 +177,7 @@ func (app *App) initRoutes() {
 		path := c.Request.URL.Path
 		// 非 API 路径，直接返回 404
 		if strings.HasPrefix(path, APINamespace) {
-			respondError(c, http.StatusNotFound, "api not found")
+			respondError(c, http.StatusNotFound, "接口不存在")
 			return
 		}
 		// OpenAPI 文档默认关闭，未在配置中显式开启时不对外提供
