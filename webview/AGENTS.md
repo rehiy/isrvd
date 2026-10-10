@@ -30,7 +30,7 @@ webview/src/
 ├── helper/                 通用函数：format.ts（含 POLL_INTERVAL）、monitor.ts、chart.ts、
 │                           dom.ts、file.ts、node.ts、theme.ts、webauthn.ts、log.ts、
 │                           apisix.ts、split-pane.ts、copilot/
-├── locales/                国际化：en.ts（英文译文，以中文原文为 key）、index.ts（Locale、翻译入口）
+├── locales/                国际化：index.ts（翻译入口，自动发现语言）、types.ts（LanguageModule）、messages/<code>.ts（一种语言一个文件）
 ├── stores/                 Pinia：index.ts（usePortal）、portal.ts、auth.ts、system.ts、
 │                           ui.ts、node.ts、locale.ts；config.ts 是页面级配置草稿 store，不进 portal
 └── assets/                 light.css（@theme 浅色变量）、light_base.css、
@@ -647,13 +647,18 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 
 ## 1.19 国际化（以中文为 key）
 
-- 中文是默认语言，也是文案的 key：模板与代码里直接写中文，英文译文登记在 `locales/en.ts`（中文原文 → 英文）
+- 中文（简体，`zh-Hans`）是源语言，也是文案的 key：模板与代码里直接写中文，各语言译文登记在 `locales/messages/<code>.ts`（中文原文 → 译文）
+- **新增语言只需新建 `locales/messages/<code>.ts`**，默认导出 `LanguageModule`（`code` / `label` / `short` / `htmlLang` / `tags` / `messages`）：`locales/index.ts` 用 `import.meta.glob` 自动发现，切换入口、`Accept-Language`、`?lang=`、浏览器语言匹配都随之生效，不需要改其他代码；后端同时要新建 `server/i18n/lang_<code>.go`（见根 `AGENTS.md`）
+- 语言代码用 BCP 47（`zh-Hant`、`en`、`ja`），前端直接把它作为 `Accept-Language` / `?lang=` 的取值，后端按同一套标签解析
+- 首次访问按浏览器语言选择（`matchLocale`，逐级去掉末尾子标签匹配），用户主动切换后才写入 localStorage（`app-locale`）并从此固定
+- `locales/messages/zh-Hant.ts` 由仓库根目录 `scripts/gen-zh-hant.mjs` 生成（术语表 + OpenCC 字形转换），不要手工编辑；改术语或英文词典后重新执行脚本
+- `locales/messages/ja.ts` 目前只登记了常用词，其余文案会回落中文原文
 - 模板与类组件方法用 `$t('中文原文')`（`this.$t`），`.ts` 里用 `useLocaleStore().t('中文原文')`；未登记译文时回落中文原文，不会出现空白或 key 泄漏
-- 语言状态在 `stores/locale.ts`（`locale` / `meta` / `t` / `setLocale` / `toggleLocale`）；组件经 `usePortal()` 读取 `locale` / `localeMeta` 并调用 `setLocale` / `toggleLocale`
+- 语言状态在 `stores/locale.ts`（`locale` / `meta` / `locales` / `t` / `setLocale`）；组件经 `usePortal()` 读取 `locale` / `localeMeta` / `locales` 并调用 `setLocale`
 - 类组件的字段初始化器在构造函数中执行，此时实例上还没有 `$t`：字段里只保留中文字面量，在渲染处（模板 `$t(x.label)` 或方法内 `this.$t(x)`）再翻译；需要翻译的派生值用 getter
-- 切换入口：头部 `user-menu.vue`（`header` 认证模式为独立按钮）与登录页底部按钮；切换后写 localStorage（`app-locale`）并同步 `<html lang>`
+- 切换入口：`component/locale-switch.vue`（下拉，登录页与 `header` 认证模式使用）与 `user-menu.vue` 内平铺的语言列表，语言列表都来自 `portal.locales`；切换后写 localStorage 并同步 `<html lang>`
 - 请求语言由 `service/client.ts` 的 `Accept-Language` 头带给后端，后端按同一语言返回提示文案（见根 `AGENTS.md` 的 i18n 小节）
-- 新增可翻译文案：保持中文原文书写，只在 `locales/en.ts` 补一条译文；不要引入语义化的英文 key，也不要为同一含义重复造词
+- 新增可翻译文案：保持中文原文书写，只在 `locales/messages/en.ts` 补一条译文；繁體由生成脚本补齐，其他语言按需补；不要引入语义化的英文 key，也不要为同一含义重复造词
 - 不翻译：代码注释、`console`/`throw` 的内部异常、Webhook 模板等数据、状态与枚举的比较值、用户数据（文件名/容器名/镜像名）、发给 LLM 的提示词与工具说明（`helper/copilot/instructions.ts`、`chat.vue` 的 tool description）；工具执行失败等展示给用户的提示仍需翻译
 
 ---

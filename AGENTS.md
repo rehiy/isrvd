@@ -278,17 +278,21 @@ docs/
 
 ### 国际化（server/i18n）
 
-- 中文（ZH）是默认语言，也是代码里书写提示文案的语言；英文（EN）由词典反查得到
+- 中文（简体，`zh-Hans`）是源语言：代码里统一用中文书写提示文案，也是所有语言词典共同的 key；每种语言登记「中文原文 → 译文」，未登记的文案回落中文原文
+- **新增语言只需新建 `server/i18n/lang_<code>.go`**，在 `init` 里调用 `i18n.Register(i18n.Language{Code, Tags}, map[string]string{...})`，不需要改动其他代码；`Tags` 是能匹配到它的 BCP 47 标签（小写），匹配时逐级去掉末尾子标签（`zh-hant-tw` → `zh-hant`）
+- 现有语言：`lang_zh_hans.go`（源语言，只登记标签）、`lang_en.go` + `lang_en_service.go`（英文，是完整集：其他语言的 key 都应出现在其中）、`lang_ja.go`（日文，只登记了常用提示）、`lang_zh_hant_messages.go`（繁體，生成物）
+- 繁體不手工翻译：`scripts/gen-zh-hant.mjs` 以英文词典的 key 为全集，经术语表 + 上下文规则 + OpenCC 字形转换，同时生成前端 `locales/messages/zh-Hant.ts` 与后端 `lang_zh_hant_messages.go`；改了英文词典或术语后重新执行（需先在 `webview` 目录 `npm install`，用到 devDependency `opencc-js`），`node scripts/gen-zh-hant.mjs --check` 校验生成物是否最新
 - 语言协商顺序：`?lang=` 查询参数 → `Accept-Language` 请求头；由 `i18n.Middleware()` 写入请求 context，响应统一带 `Vary: Accept-Language`
 - `server/app` 的响应文案统一经 `server/app/response.go` 的 `i18n.T(c, message)` 翻译；网关是原生 `http.Handler`，用 `i18n.Translate(i18n.Parse(r.Header.Get("Accept-Language")), message)`
-- 词典以「英文原文 → 中文译文」登记（`i18n.Register`）：ZH 方向正向查表，EN 方向按中文原文反查；未命中时保留原文
-- 通用词典在 `server/i18n/messages.go`，各模块返回给前端的提示文案在 `server/i18n/messages_service.go`；一次性文案可不登记（英文下保持中文，不会丢信息）
-- 匹配顺序：先按整条（含占位符模板）匹配，未命中再按 `": "` 分段逐段翻译，因此 `fmt.Errorf("...: %w")` 包装出的错误链与 `"xxx: %s"` 都能命中；登记时 `"xxx failed: %w"` 也可只写 `"xxx failed"`
-- 含占位符的条目按模板匹配，字面量越长的模板越具体、优先命中；动词支持 `%s`/`%d`/`%v`/`%w`/`%q`，且中英文序列必须一致（由 `TestDictionary` 自检）
+- 匹配时 `i18n.Translate(lang, 中文)`：源语言原样返回；其他语言查该语言词典，未命中返回原文，不会丢信息
+- 通用提示在 `lang_en.go`，各模块返回给前端的提示在 `lang_en_service.go`；一次性文案可不登记（其他语言下保持中文）
+- 新增或修改词条后，用 `node scripts/gen-zh-hant.mjs --check` 校验繁體是否与英文词典同步；仓库不提交 `*_test.*`（`.gitignore` 已忽略），其余自检（占位符序列一致、key 在英文词典里、扫描源码里未登记的文案）需要时在仓库外临时编写
+- 匹配顺序：先按整条（含占位符模板）匹配，未命中再按 `": "` 分段逐段翻译，因此 `fmt.Errorf("...: %w")` 包装出的错误链与 `"xxx: %s"` 都能命中；登记时 `"xxx失败: %w"` 也可只写 `"xxx失败"`
+- 含占位符的条目按模板匹配，字面量越长的模板越具体、优先命中；动词只支持 `%s`/`%d`/`%v`/`%w`/`%q`/`%T`，且译文的动词序列必须与中文原文一致，不使用索引动词（`%[1]s`）
 - `server/gateway` 的 `success` / `fail`（原生 `http.Handler`）与 `server/app` 的 `respondSuccess` / `respondError` 是 JSON 响应的唯二出口，新增响应必须走它们，否则提示文案不会翻译
 - 服务层拿不到 `gin.Context` 时（如 WebSocket 终端直接输出的提示），用 `i18n.TC(ctx, "中文")`：`Middleware` 已把语言写入 `c.Request.Context()`，服务方法传入请求 `ctx` 即可
 - 浏览器的 WebSocket / EventSource 无法自定义请求头，前端通过 `?lang=` 查询参数携带界面语言（`service/client.ts` 的 `wsUrl`、`helper/log.ts`）；新增这类连接必须同样带上 `lang`
-- `pkgs/` 的中文错误会经 `fmt.Errorf("...: %w")` 冒泡到响应，同样需要登记词典；`TestMessageCoverage` 同时扫描 `server/` 与 `pkgs/`，新增未登记文案会被 `go test` 拦下
+- `pkgs/` 的中文错误会经 `fmt.Errorf("...: %w")` 冒泡到响应，同样需要在英文词典里登记；新增文案后自行扫描 `server/` 与 `pkgs/` 里的 `errors.New` / `fmt.Errorf` / `respond*` / 路由 `Label` / `i18n.T(C)`，确认英文词典都已覆盖
 - 全角分隔符拼成的复合文案（如 `%w；回滚：%s`）不参与分段，英文下保留中文原文
 - 响应 payload 里的枚举与名称（如计划任务脚本类型 `Label`）不在 message 上，由前端 `$t()` 翻译；后端只保证 message 走 `i18n.T`
 
