@@ -6,10 +6,9 @@ import { usePortal } from '@/stores'
 import { cycleTheme, getThemeMode, THEME_META, type ThemeMode } from '@/helper/theme'
 
 import Dropdown from '@/component/dropdown.vue'
-import LocaleSwitch from '@/component/locale-switch.vue'
 
 @Component({
-  components: { Dropdown, LocaleSwitch }
+  components: { Dropdown }
 })
 class UserMenu extends Vue {
   portal = usePortal()
@@ -42,13 +41,10 @@ export default toNative(UserMenu)
 
 <template>
   <!-- header 认证模式：仅显示用户名，无注销入口 -->
-  <div v-if="portal.authMode === 'header'" class="flex items-center gap-1">
-    <div class="px-2 py-2 text-sm font-medium text-slate-500 flex items-center gap-2 cursor-default select-none" :title="portal.username || $t('未登录')">
-      <i class="fas fa-user-tie"></i>
-      <span class="hidden sm:inline">{{ portal.username }}</span>
-    </div>
-    <!-- 语言切换：该模式没有下拉菜单，直接提供入口 -->
-    <LocaleSwitch />
+  <!-- header 认证模式：仅显示用户名，无下拉菜单（语言切换在头部独立下拉） -->
+  <div v-if="portal.authMode === 'header'" class="px-2 py-2 text-sm font-medium text-slate-500 flex items-center gap-2 cursor-default select-none" :title="portal.username || $t('未登录')">
+    <i class="fas fa-user-tie"></i>
+    <span class="hidden sm:inline">{{ portal.username }}</span>
   </div>
 
   <!-- jwt 认证模式：用户名 + 下拉菜单 -->
@@ -66,20 +62,6 @@ export default toNative(UserMenu)
       <i :class="themeIcon" class="w-4 text-center"></i>
       <span>{{ themeLabel }}</span>
     </button>
-
-    <!-- 语言切换：语言平铺在菜单里，避免下拉套下拉；列表来自 locales/messages，新增语言自动出现 -->
-    <div class="border-t border-slate-100 my-1"></div>
-    <button
-      v-for="item in portal.locales"
-      :key="item.code"
-      class="dropdown-item"
-      :class="{ 'dropdown-item-active': item.code === portal.locale }"
-      @click="portal.setLocale(item.code)"
-    >
-      <i class="fas w-4 text-center" :class="item.code === portal.locale ? 'fa-check' : 'fa-globe text-slate-300'"></i>
-      <span>{{ item.label }}</span>
-    </button>
-    <div class="border-t border-slate-100 my-1"></div>
 
     <!-- 账户设置 -->
     <router-link to="/account/password" class="dropdown-item" @click="menuOpen = false">

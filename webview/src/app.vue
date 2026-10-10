@@ -11,12 +11,13 @@ import NavigationBar from '@/component/navigation.vue'
 import NodeSwitcher from '@/component/node-switcher.vue'
 import NotificationManager from '@/component/notification.vue'
 import ToolbarLinks from '@/component/toolbar-links.vue'
+import LocaleSwitch from '@/component/locale-switch.vue'
 import UserMenu from '@/component/user-menu.vue'
 
 import AuthLogin from '@/views/account/login.vue'
 
 @Component({
-    components: { ConfirmModal, NavigationBar, NodeSwitcher, NotificationManager, Copilot, ToolbarLinks, UserMenu, AuthLogin }
+    components: { ConfirmModal, NavigationBar, NodeSwitcher, NotificationManager, Copilot, ToolbarLinks, LocaleSwitch, UserMenu, AuthLogin }
 })
 class App extends Vue {
     portal = usePortal()
@@ -117,7 +118,9 @@ export default toNative(App)
             <i class="fas fa-wand-magic-sparkles"></i>
             <span class="hidden sm:inline">{{ $t('AI 助手') }}</span>
           </button>
-          <div v-if="hasCopilot" class="hidden sm:block w-px h-5 bg-slate-200 mx-1"></div>
+          <div class="hidden sm:block w-px h-5 bg-slate-200 mx-1"></div>
+          <!-- 语言切换：头部独立下拉，所有认证模式统一 -->
+          <LocaleSwitch />
           <UserMenu />
         </div>
       </header>

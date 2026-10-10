@@ -184,7 +184,7 @@ export default toNative(Login)
       <p class="text-center text-sm text-slate-400 mt-6 flex items-center justify-center gap-2">
         <span>© 2024 - {{ new Date().getFullYear() }} <a href="https://isrvd.rehiy.com" target="_blank">iSrvd</a>. All rights reserved.</span>
         <!-- 语言切换：登录页没有顶部菜单入口 -->
-        <LocaleSwitch compact placement="top" />
+        <LocaleSwitch placement="top" />
       </p>
     </div>
   </div>

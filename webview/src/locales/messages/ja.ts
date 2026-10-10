@@ -172,6 +172,8 @@ const messages: Record<string, string> = {
     '密码登录已禁用，请联系管理员配置其他登录方式。': 'パスワードログインは無効です。他のログイン方法を設定するよう管理者にお問い合わせください。',
     // Language
     '语言': '言語',
+    // Switch language
+    '切换语言': '言語を切り替え',
     // Confirm
     '确认操作': '確認',
     // Confirm

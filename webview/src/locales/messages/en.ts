@@ -95,6 +95,7 @@ const messages: Record<string, string> = {
     '使用 OIDC 登录': 'Sign in with OIDC',
     '密码登录已禁用，请联系管理员配置其他登录方式。': 'Password login is disabled, contact the administrator to configure another method.',
     '语言': 'Language',
+    '切换语言': 'Switch language',
 
     // ─── 通用交互 ───
     '确认操作': 'Confirm',
