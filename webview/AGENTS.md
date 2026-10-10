@@ -30,8 +30,9 @@ webview/src/
 ├── helper/                 通用函数：format.ts（含 POLL_INTERVAL）、monitor.ts、chart.ts、
 │                           dom.ts、file.ts、node.ts、theme.ts、webauthn.ts、log.ts、
 │                           apisix.ts、split-pane.ts、copilot/
+├── locales/                国际化：en.ts（英文译文，以中文原文为 key）、index.ts（Locale、翻译入口）
 ├── stores/                 Pinia：index.ts（usePortal）、portal.ts、auth.ts、system.ts、
-│                           ui.ts、node.ts；config.ts 是页面级配置草稿 store，不进 portal
+│                           ui.ts、node.ts、locale.ts；config.ts 是页面级配置草稿 store，不进 portal
 └── assets/                 light.css（@theme 浅色变量）、light_base.css、
                             light_components.css（CSS 组件类）、dark.css（暗黑覆盖）、style.css
 ```
@@ -49,6 +50,7 @@ webview/src/
 | 新增概览 Widget | 1.12 概览统计卡片 | `npm run build` |
 | 改动 Explorer 或 SFTP | 1.18 强一致性规范（**两边必须同步改**） | `npm run lint` + 人工对照 1.18.5 清单 |
 | 集中管理（center 模式）相关 | 1.2 状态管理的多节点约定、`helper/node.ts` | `npm run lint` |
+| 新增/翻译前端文案 | 1.19 国际化（以中文为 key） | `npm run lint` |
 
 ---
 
@@ -640,6 +642,19 @@ Explorer（文件管理器）与 SFTP（SSH 文件传输）是两个功能相似
 - [ ] 路径构建逻辑是否一致
 
 **违反强一致性的代码将被视为不规范，需要在合并前修复。**
+
+---
+
+## 1.19 国际化（以中文为 key）
+
+- 中文是默认语言，也是文案的 key：模板与代码里直接写中文，英文译文登记在 `locales/en.ts`（中文原文 → 英文）
+- 模板与类组件方法用 `$t('中文原文')`（`this.$t`），`.ts` 里用 `useLocaleStore().t('中文原文')`；未登记译文时回落中文原文，不会出现空白或 key 泄漏
+- 语言状态在 `stores/locale.ts`（`locale` / `meta` / `t` / `setLocale` / `toggleLocale`）；组件经 `usePortal()` 读取 `locale` / `localeMeta` 并调用 `setLocale` / `toggleLocale`
+- 类组件的字段初始化器在构造函数中执行，此时实例上还没有 `$t`：字段里只保留中文字面量，在渲染处（模板 `$t(x.label)` 或方法内 `this.$t(x)`）再翻译；需要翻译的派生值用 getter
+- 切换入口：头部 `user-menu.vue`（`header` 认证模式为独立按钮）与登录页底部按钮；切换后写 localStorage（`app-locale`）并同步 `<html lang>`
+- 请求语言由 `service/client.ts` 的 `Accept-Language` 头带给后端，后端按同一语言返回提示文案（见根 `AGENTS.md` 的 i18n 小节）
+- 新增可翻译文案：保持中文原文书写，只在 `locales/en.ts` 补一条译文；不要引入语义化的英文 key，也不要为同一含义重复造词
+- 不翻译：代码注释、`console`/`throw` 的内部异常、Webhook 模板等数据、状态与枚举的比较值、用户数据（文件名/容器名/镜像名）、发给 LLM 的提示词与工具说明（`helper/copilot/instructions.ts`、`chat.vue` 的 tool description）；工具执行失败等展示给用户的提示仍需翻译
 
 ---
 
