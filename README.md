@@ -1,104 +1,106 @@
 # iSrvd
 
-> 名称源自 *"it is a server daemon"*，`srv` 对应 Linux 惯例目录 `/srv`，`d` 代表 daemon。**发音**：读作 **"I served"**（/ˈaɪ sɜːrvd/），谐音"爱服务"。
+English | [简体中文](README_CN.md)
 
-基于 Go + Vue 3 构建的轻量级运维面板，集成文件管理、Docker 容器编排、APISIX/Caddy 网关配置、Web 终端、GPU 监控、计划任务与 AI 助手，为个人服务器与中小型团队提供一站式管理体验。
+> The name comes from *"it is a server daemon"*: `srv` follows the Linux convention of `/srv`, and `d` stands for daemon. **Pronunciation**: **"I served"** (/ˈaɪ sɜːrvd/).
 
-## 目录
+A lightweight operations panel built with Go + Vue 3. It integrates file management, Docker container orchestration, APISIX/Caddy gateway configuration, a web terminal, GPU monitoring, scheduled tasks and an AI assistant, providing an all-in-one management experience for personal servers and small to medium-sized teams.
 
-- [功能特性](#功能特性)
-- [技术栈](#技术栈)
-- [部署](#部署)
-- [集中管理](#集中管理)
-- [配置](#配置)
-- [权限](#权限)
-- [GPU 监控](#gpu-监控)
-- [本地开发](#本地开发)
-- [架构设计](#架构设计)
-- [安全特性](#安全特性)
-- [许可证](#许可证)
+## Contents
 
-## 功能特性
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Deployment](#deployment)
+- [Centralized Management](#centralized-management)
+- [Configuration](#configuration)
+- [Permissions](#permissions)
+- [GPU Monitoring](#gpu-monitoring)
+- [Local Development](#local-development)
+- [Architecture](#architecture)
+- [Security Features](#security-features)
+- [License](#license)
 
-| 模块 | 功能 |
+## Features
+
+| Module | Capabilities |
 | ------ | ------ |
-| 系统概览 | CPU、内存、磁盘、网络、Go 运行时与 GPU 监控，支持历史数据采集、服务可用性探测和在线升级 |
-| 文件管理 | 浏览、上传、下载、编辑、创建/删除目录、重命名、权限修改、压缩/解压 |
-| Web 终端 | 基于 xterm.js 的 Shell 终端，支持容器终端接入 |
-| 本机进程 | 查看主机进程列表（CPU、内存、命令行），终止指定进程（强制审计） |
-| SSH 远程管理 | 管理主机与可复用凭据，支持密码/私钥认证、浏览器终端和 SFTP 文件管理 |
-| 集中管理 | 同一个二进制按 `--mode` 作为单机、中控或受管机运行，一个控制台管理多台服务器，详见 [集中管理](#集中管理) |
-| AI 助手 | 内置 Copilot，基于 CopilotKit + AG-UI 协议，通过内置 OpenAPI 目录调用后端接口，支持页面上下文、工具卡片与写操作审批，兼容 OpenAI API 的 LLM 接入 |
-| 计划任务 | 定时任务调度；按运行平台提供 Shell 或 BAT/PowerShell 脚本及可执行文件任务，Docker 可用时还支持临时容器或已有容器执行 |
-| APISIX | 路由、Consumer、上游(Upstream)、SSL 证书、插件配置(PluginConfig)、插件列表、访问授权管理 |
-| Caddy | HTTP 服务、路由、Basic Auth、SSL 证书、全局选项管理，支持原始配置编辑 |
-| Docker | 容器、镜像、网络、卷、镜像仓库管理，容器文件、实时日志、资源统计、终端接入、镜像构建/推送/拉取 |
-| Swarm | 集群信息、节点、服务、任务管理，服务日志、强制更新、加入令牌管理 |
-| Compose | 文件编辑、Docker Compose / Swarm Stack 部署与重部署，最多 10 条部署记录与加密配置快照，支持加载历史配置重新部署 |
-| 成员管理 | 多用户、家目录隔离、路由级权限控制、API 令牌、TOTP 二次验证和 Passkey 无密码登录 |
-| 系统管理 | 分组配置管理、操作审计日志、资源及应用故障告警与 Webhook 通知、OIDC 认证集成、代理认证头登录 |
-| 移动端 | 响应式布局，适配移动设备 |
+| System Overview | CPU, memory, disk, network, Go runtime and GPU monitoring, with history collection, service availability probing and online upgrade |
+| File Management | Browse, upload, download, edit, create/delete directories, rename, change permissions, compress/extract |
+| Web Terminal | Shell terminal based on xterm.js, with container terminal access |
+| Local Processes | View the host process list (CPU, memory, command line) and kill a process (audited, forced) |
+| SSH Remote Management | Manage hosts and reusable credentials, with password/private key auth, browser terminal and SFTP file management |
+| Centralized Management | The same binary runs as standalone, center or managed node via `--mode`; one console manages many servers, see [Centralized Management](#centralized-management) |
+| AI Assistant | Built-in Copilot based on CopilotKit + AG-UI, calling backend APIs through the built-in OpenAPI catalog, with page context, tool cards and write-operation approval; works with any OpenAI-compatible LLM |
+| Scheduled Tasks | Cron scheduling; Shell or BAT/PowerShell scripts and executables depending on the platform, plus ephemeral or existing container execution when Docker is available |
+| APISIX | Routes, consumers, upstreams, SSL certificates, plugin configs (PluginConfig), plugin list, access authorization |
+| Caddy | HTTP services, routes, Basic Auth, SSL certificates, global options, with raw config editing |
+| Docker | Containers, images, networks, volumes, registry management; container files, live logs, resource stats, terminal access; image build/push/pull |
+| Swarm | Cluster info, nodes, services, tasks; service logs, forced update, join token management |
+| Compose | File editing, Docker Compose / Swarm Stack deploy and redeploy, up to 10 deployment records with encrypted config snapshots, redeploy from historical config |
+| Member Management | Multiple users, isolated home directories, route-level permissions, API tokens, TOTP two-factor and passwordless Passkey login |
+| System Management | Grouped configuration, operation audit log, resource and application failure alerts with Webhook notifications, OIDC integration, proxy header authentication |
+| Mobile | Responsive layout adapted for mobile devices |
 
-## 技术栈
+## Tech Stack
 
-| 层级 | 技术 |
+| Layer | Technology |
 | ------ | ------ |
-| 后端 | Go 1.26+ / Gin / golang-jwt |
-| 前端 | Vue 3 / TypeScript / Tailwind CSS / Pinia |
-| 终端 | xterm.js |
-| 容器 | Docker / APISIX / Caddy |
-| AI | 兼容 OpenAI API 的 LLM 接入，前端基于 CopilotKit + AG-UI 协议 |
+| Backend | Go 1.26+ / Gin / golang-jwt |
+| Frontend | Vue 3 / TypeScript / Tailwind CSS / Pinia |
+| Terminal | xterm.js |
+| Containers | Docker / APISIX / Caddy |
+| AI | Any OpenAI-compatible LLM; frontend based on CopilotKit + AG-UI |
 
-## 部署
+## Deployment
 
-三种方式可选：安装脚本（推荐）、Docker 镜像、二进制安装包。安装脚本面向使用 systemd 的 Linux，需以 root 用户执行。
+Three options: install script (recommended), Docker image, or binary package. The install script targets Linux with systemd and must be run as root.
 
-### 镜像版本
+### Image Variants
 
-| 镜像 | 说明 |
+| Image | Description |
 | ------ | ------ |
-| `rehiy/isrvd:slim` | **默认版本**，仅含 isrvd，适合大多数场景 |
-| `rehiy/isrvd:apisix` | isrvd + APISIX，集成 API 网关 |
-| `rehiy/isrvd:caddy` | isrvd + Caddy，集成反向代理与 TLS 管理 |
+| `rehiy/isrvd:slim` | **Default**, isrvd only, suitable for most use cases |
+| `rehiy/isrvd:apisix` | isrvd + APISIX, with the API gateway integrated |
+| `rehiy/isrvd:caddy` | isrvd + Caddy, with reverse proxy and TLS management integrated |
 
-CNB 流水线会同步推送到 CNB Docker 制品库，镜像路径为 `docker.cnb.cool/<repo-slug>:<tag>`，支持 `slim`、`caddy`、`apisix` 三个标签，其中 `slim` 同时作为 `latest`。
-国内 Docker 部署可将下方示例中的 `rehiy/isrvd:<tag>` 替换为 `docker.cnb.cool/rehiy/isrvd:<tag>`。
+The CNB pipeline also pushes to the CNB Docker registry at `docker.cnb.cool/<repo-slug>:<tag>`, with the `slim`, `caddy` and `apisix` tags; `slim` also serves as `latest`.
+For Docker deployments in mainland China, replace `rehiy/isrvd:<tag>` in the examples below with `docker.cnb.cool/rehiy/isrvd:<tag>`.
 
-Docker 版默认管理员账号为 `admin` / `admin`，首次登录成功后会自动跳转至修改密码页面。
+The Docker edition ships with the default admin account `admin` / `admin`; the first successful login redirects to the change-password page.
 
-### 脚本安装（推荐）
+### Script Install (recommended)
 
-安装脚本会自动安装 Docker、初始化单节点 Swarm、创建可挂载的 overlay 网络 `sdnet`，并根据参数启动对应的一体化镜像：
+The install script installs Docker, initializes a single-node Swarm, creates the attachable overlay network `sdnet`, and starts the matching all-in-one image:
 
 ```bash
-# slim / caddy / apisix 三选一
+# pick one: slim / caddy / apisix
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --docker
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --caddy
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --apisix
 ```
 
-Docker 版统一使用容器名 `isrvd`，数据保存在 `/srv/data`；`update` 会按当前镜像类型重建容器，`uninstall` 删除容器但保留数据目录。
+The Docker edition always uses the container name `isrvd` and stores data in `/srv/data`; `update` rebuilds the container with the current image variant, and `uninstall` removes the container while keeping the data directory.
 
-### 准备网络
+### Prepare the Network
 
-使用安装脚本时无需手动操作。手动部署 Docker 版时，推荐先初始化 Swarm，再创建可挂载的 overlay 网络：
+Not needed when using the install script. For a manual Docker deployment, initialize Swarm first and then create the attachable overlay network:
 
 ```bash
 docker swarm init
 docker network create --driver=overlay --attachable sdnet
 ```
 
-### 运行容器
+### Run the Container
 
-| 镜像 | 端口映射 | 说明 |
+| Image | Port mapping | Description |
 | ------ | ---------- | ------ |
-| `slim` | 8080 → 8080 | isrvd Web 管理界面 |
-| `apisix` | 8080 → 8080、80 → 9080、443 → 9443 | isrvd 界面；APISIX HTTP / HTTPS 代理 |
-| `caddy` | 8080 → 8080、80 → 80、443 → 443 | isrvd 界面；Caddy HTTP / HTTPS 代理 |
+| `slim` | 8080 → 8080 | isrvd web UI |
+| `apisix` | 8080 → 8080、80 → 9080、443 → 9443 | isrvd UI; APISIX HTTP / HTTPS proxy |
+| `caddy` | 8080 → 8080、80 → 80、443 → 443 | isrvd UI; Caddy HTTP / HTTPS proxy |
 
-#### slim（默认）
+#### slim (default)
 
-仅含 isrvd 本体，体积最小，适合只需要文件管理、Docker/Swarm/Compose、计划任务等功能的场景。
+isrvd only, the smallest image, for setups that need file management, Docker/Swarm/Compose, scheduled tasks and the like.
 
 ```bash
 docker run -d \
@@ -110,9 +112,9 @@ docker run -d \
   rehiy/isrvd:slim
 ```
 
-#### apisix（集成 API 网关）
+#### apisix (API gateway integrated)
 
-isrvd + APISIX，适合已使用 APISIX 作为 API 网关的场景。
+isrvd + APISIX, for setups already using APISIX as the API gateway.
 
 ```bash
 docker run -d \
@@ -126,9 +128,9 @@ docker run -d \
   rehiy/isrvd:apisix
 ```
 
-#### caddy（集成反向代理）
+#### caddy (reverse proxy integrated)
 
-isrvd + Caddy，适合需要反向代理、自动 HTTPS（ACME）或统一网关管理的场景。
+isrvd + Caddy, for setups needing a reverse proxy, automatic HTTPS (ACME) or unified gateway management.
 
 ```bash
 docker run -d \
@@ -142,7 +144,7 @@ docker run -d \
   rehiy/isrvd:caddy
 ```
 
-Caddy 默认 HTTP 服务监听 `:80` 和 `:443`，但禁用了自动 HTTPS 及重定向。如需 HTTPS，可在「Caddy → 服务」中编辑对应服务的 HTTPS 行为，或直接编辑「原始配置」。
+Caddy's default HTTP service listens on `:80` and `:443`, with automatic HTTPS and redirects disabled. To enable HTTPS, edit the HTTPS behavior of the service under **Caddy → Services**, or edit the **raw config** directly.
 
 ### Docker Compose
 
@@ -165,39 +167,39 @@ networks:
     external: true
 ```
 
-> **注意**：
+> **Note**:
 >
-> - 请先创建 `sdnet` 网络（见上方「准备网络」章节），Compose 中通过 `external: true` 引用已有网络
-> - 请始终挂载整个 `/data` 目录，避免容器重建时数据丢失
+> - Create the `sdnet` network first (see "Prepare the Network" above); Compose references the existing network via `external: true`
+> - Always mount the whole `/data` directory to avoid data loss when the container is recreated
 
-### 二进制部署
+### Binary Deployment
 
-- 目录：`/usr/local/isrvd/`，包含二进制和配置文件
-- 限制：无法通过容器内网访问其它容器
+- Directory: `/usr/local/isrvd/`, containing the binary and the config file
+- Limitation: cannot reach other containers through the container network
 
 ```bash
-# 一键安装（默认自动按 IP 选择 CNB/GitHub 源，可用 --cn / --global 手动指定）
+# one-line install (picks the CNB or GitHub source by IP; use --cn / --global to force)
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --cn
 
-# 更新/卸载/仅下载
+# update / uninstall / download only
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) update
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) update --global
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) uninstall
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) download
 ```
 
-配置文件位置通过 `CONFIG_PATH` 指定，详见 [配置](#配置)。
+The config file location is set via `CONFIG_PATH`, see [Configuration](#configuration).
 
-## 集中管理
+## Centralized Management
 
-同一个二进制，用 `--mode`（或环境变量 `ISRVD_MODE`）选择角色，一个控制台管理多台服务器：
+One binary, one role selected with `--mode` (or the `ISRVD_MODE` environment variable), one console for many servers:
 
-| 模式 | 作用 |
+| Mode | Role |
 | ------ | ------ |
-| `server`（默认） | 单机，与以往完全一致 |
-| `center` | 中控：提供 Web 界面、账号与权限，接收受管机接入，并把请求按节点转发 |
-| `agent` | 受管机：不开放任何对外端口，主动连接中控，中控转发来的请求在本机执行 |
+| `server` (default) | Standalone, exactly as before |
+| `center` | Center: serves the web UI, accounts and permissions, accepts managed nodes and forwards requests per node |
+| `agent` | Managed node: exposes no inbound port, connects out to the center and executes forwarded requests locally |
 
 ```text
 浏览器 ──> center ──┬── 页面、账号、权限、审计 ──> 本进程内的 isrvd
@@ -205,190 +207,192 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) dow
                                                   ▲ 受管机主动出站，中控从不主动外连
 ```
 
-- **无需入站端口**：受管机只需要能访问中控，位于 NAT 或防火墙后也可以接入；断线后按指数退避自动重连
-- **切换节点即切换视角**：创始人在页面头部选择节点后，Docker、Swarm、Compose、文件、本机进程、终端、计划任务、APISIX、Caddy 和系统概览都作用于该节点，包括实时日志、终端和大文件上传下载
-- **账号与配置仍在中控**：成员、权限、系统配置、AI 助手和 SSH 远程管理始终由中控处理，节点上的操作使用中控的登录态
-- **按需出现**：节点切换器和侧边栏「节点管理」只在 `center` 模式且当前用户是创始人时显示，单机用户看不到任何变化
+> Diagram legend (from top to bottom): the browser reaches `center`; pages, accounts, permissions and audit are handled by the in-process isrvd; `/n/<nodeID>/api/…` goes through the tunnel to the agent's in-process isrvd; the managed node dials out, the center never connects out to it.
 
-### 接入节点
+- **No inbound port needed**: a managed node only needs to reach the center, so it can sit behind NAT or a firewall; after a disconnect it reconnects with exponential backoff
+- **Switching node switches the view**: once the founder picks a node in the page header, Docker, Swarm, Compose, files, local processes, terminal, scheduled tasks, APISIX, Caddy and the system overview all act on that node, including live logs, terminal and large file upload/download
+- **Accounts and config stay on the center**: members, permissions, system config, the AI assistant and SSH remote management are always handled by the center; operations on a node use the center's login session
+- **Shown only when relevant**: the node switcher and the sidebar "节点管理" entry appear only in `center` mode for the founder; standalone users see no change
 
-1. 启动中控：`isrvd --mode center`，沿用原来的配置文件与 `listenAddr`
-2. 在「节点管理」页点击「接入节点」生成一次性注册码，界面会给出可直接复制的受管机启动命令；未使用的注册码在列表里显示为「待接入」，可随时撤销
-3. 在受管机启动：`isrvd --mode agent --center-url https://center.example.com --enroll-code <注册码>`
-4. 在同一页面审批该节点；勾选「自动通过审批」生成的注册码可跳过这一步，节点随即显示「在线」
+### Enrolling a Node
 
-首次注册后节点凭据加密保存在受管机本地，重启不需要再带注册码。
+1. Start the center: `isrvd --mode center`, keeping the existing config file and `listenAddr`
+2. Click "接入节点" on the node management page to generate a one-time enrollment code; the UI shows a ready-to-copy startup command for the managed node. Unused codes appear as "待接入" in the list and can be revoked at any time
+3. Start the managed node: `isrvd --mode agent --center-url https://center.example.com --enroll-code <code>`
+4. Approve the node on the same page. Codes generated with "自动通过审批" skip this step, and the node shows as "在线" immediately
 
-### 容器部署
+After the first enrollment, node credentials are stored encrypted on the managed node, so restarts do not need the code again.
 
-镜像入口不带参数，用环境变量选择模式，不需要改镜像或配置文件：
+### Container Deployment
+
+The image entrypoint takes no arguments; the mode comes from environment variables, with no need to change the image or the config file:
 
 ```bash
-# 中控：与单机部署相同，多一个环境变量，8080 为对外入口
+# center: same as standalone plus one env var; 8080 is the public entrypoint
 docker run -d --name isrvd-center --network sdnet -p 8080:8080 \
   -e ISRVD_MODE=center \
   -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock \
   rehiy/isrvd:slim
 
-# 受管机：不监听对外端口，不需要 -p
+# managed node: listens on no public port, no -p needed
 docker run -d --name isrvd-agent --network sdnet \
   -e ISRVD_MODE=agent \
   -e ISRVD_CENTER_URL=https://center.example.com \
-  -e ISRVD_ENROLL_CODE=<注册码> \
+  -e ISRVD_ENROLL_CODE=<code> \
   -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock \
   rehiy/isrvd:slim
 ```
 
-> - 受管机的节点凭据保存在 `/data` 下，请保持挂载，否则重建容器后需要新的注册码重新接入
-> - 受管机的 `isrvd.yml` 里必须有创始人成员（镜像默认的 `admin` 满足），且不能启用 `tha`
-> - 受管机配置里的 `listenAddr` 在此模式下不生效；`jwtSecret` 用于加密节点凭据，建议改掉镜像默认值，且之后不要再变更
+> - Node credentials on a managed node live under `/data`; keep the mount, otherwise a recreated container needs a new enrollment code
+> - The managed node's `isrvd.yml` must contain a founder member (the image default `admin` qualifies) and must not enable `tha`
+> - `listenAddr` is ignored in this mode; `jwtSecret` encrypts the node credentials, so change it from the image default and never change it afterwards
 
-### systemd 部署
+### systemd Deployment
 
-安装脚本生成的是单机服务。作为中控或受管机运行时，用 drop-in 追加环境变量，无需修改脚本生成的单元文件（脚本升级后仍然有效）：
+The install script creates a standalone service. To run as center or managed node, append environment variables with a drop-in, without editing the generated unit file (so it survives script upgrades):
 
 ```bash
 systemctl edit isrvd
-# 在编辑器中写入（受管机示例；中控只需 ISRVD_MODE=center）：
+# write in the editor (managed node example; the center only needs ISRVD_MODE=center):
 #   [Service]
 #   Environment="ISRVD_MODE=agent"
 #   Environment="ISRVD_CENTER_URL=https://center.example.com"
-#   Environment="ISRVD_ENROLL_CODE=<注册码>"
+#   Environment="ISRVD_ENROLL_CODE=<code>"
 systemctl restart isrvd
 ```
 
-### 安全与边界
+### Security and Boundaries
 
-- 只有创始人可以管理和操作节点；节点上的请求以受管机本地的创始人身份执行，不能把节点权限下放给普通成员
-- 注册码一次性使用、默认 1 小时过期；节点令牌只保存哈希，注册码短期有效、加密落盘，待接入期间可在列表中查看接入命令；节点可随时吊销，吊销后立即断开
-- 节点管理操作、节点上的写操作与终端会话都会记入中控的审计页面（操作人为中控登录用户），受管机本机的审计页面里则记录为其本地创始人
-- 中控为单实例设计，重启时节点短暂断开后自动重连；受管机与中控的版本需一致
-- 完整的参数表、接口与行为说明见 [docs/multi-node.md](docs/multi-node.md)，接口字段见 [受管节点](docs/references/node/nodes.md) 与 [注册码](docs/references/node/codes.md)
+- Only the founder can manage and operate nodes; requests on a node run as the managed node's local founder, so node permissions cannot be delegated to ordinary members
+- Enrollment codes are single-use and expire after 1 hour by default; node tokens are stored as hashes only, codes are short-lived and encrypted at rest, and the enrollment command stays visible in the list while pending. A node can be revoked at any time and disconnects immediately
+- Node management operations, write operations on nodes and terminal sessions are all recorded in the center's audit page (attributed to the center's logged-in user); the managed node's own audit page attributes them to its local founder
+- The center is designed as a single instance; nodes disconnect briefly on restart and reconnect automatically. The managed node and the center must run the same version
+- Full parameter lists, APIs and behavior are documented in [docs/multi-node.md](docs/multi-node.md); API fields are in [受管节点](docs/references/node/nodes.md) and [注册码](docs/references/node/codes.md)
 
-## 配置
+## Configuration
 
-### 配置来源
+### Config Sources
 
-配置位置由 `CONFIG_PATH` 指定，支持本地 YAML 与 etcd（value 仍为 config.yml 同款 YAML）：
+The config location is set by `CONFIG_PATH`, supporting local YAML and etcd (the value remains the same YAML as `config.yml`):
 
 ```bash
-# 默认读取 ./config.yml
+# reads ./config.yml by default
 ./isrvd
 
-# 本地 YAML
+# local YAML
 CONFIG_PATH=/data/conf/isrvd.yml ./isrvd
 
 # etcd
 etcdctl put /isrvd/config "$(cat /data/conf/isrvd.yml)"
 CONFIG_PATH="etcd://user:pass@127.0.0.1:2379/isrvd/config?scheme=http&timeout=5s" ./isrvd
 
-# etcd key 不存在时，用 fallback YAML 初始化并写入 etcd
+# when the etcd key is missing, initialize from the fallback YAML and write it to etcd
 CONFIG_PATH="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" ./isrvd
 
-# etcd 完整配置示例
+# full etcd config example
 # etcd://user:pass@host1:2379,host2:2379/key?scheme=http&timeout=5s&fallback=/path/config.yml
 ```
 
-**etcd** 认证可省略，也可用 `ETCD_USERNAME` / `ETCD_PASSWORD` 补充或覆盖 URI 中的认证信息。etcd key 发生 PUT 变更时，isrvd 会重载配置、注册中心和业务服务。计划任务、SSH 主机与凭据等业务数据同样存入 etcd（key 为 `<配置 key>/cron.yml` 等），首次启动时自动迁移 `rootDirectory` 下的同名文件；审计与监控日志仍写本地。迁移后本地文件不再更新，回退到不支持该特性的旧版本会丢失升级期间对计划任务与 SSH 配置的修改。通过系统配置 API 保存的本地 YAML 也会立即触发重载；若直接在磁盘上修改 YAML，则需发送 `SIGHUP` 或重启进程。
+**etcd** credentials are optional and can also be supplied or overridden with `ETCD_USERNAME` / `ETCD_PASSWORD`. When the etcd key receives a PUT, isrvd reloads the config, registry and business services. Business data such as scheduled tasks and SSH hosts/credentials is also stored in etcd (keys like `<config key>/cron.yml`); on first start, files of the same name under `rootDirectory` are migrated automatically. Audit and monitoring logs still go to local disk. After migration the local files are no longer updated, so downgrading to an older version without this feature loses changes made to scheduled tasks and SSH config in the meantime. Saving the local YAML through the system config API also triggers a reload immediately; editing the YAML on disk directly requires `SIGHUP` or a process restart.
 
-### 配置项
+### Config Items
 
-各配置段的含义见 [配置段说明](docs/references/system/config.md#配置段说明)。
+See [配置段说明](docs/references/system/config.md#配置段说明) for the meaning of each config section.
 
-## 权限
+## Permissions
 
-权限基于路由进行细粒度控制。默认的 `AccessPerm` 路由要求成员持有对应的完整路由权限，Founder 不受此限制；`AccessAuth` 路由只要登录即可访问，`AccessAnon` 路由允许匿名访问。
+Permissions are controlled per route at a fine granularity. The default `AccessPerm` routes require the member to hold the matching full route permission; the Founder is exempt. `AccessAuth` routes only require a login, and `AccessAnon` routes allow anonymous access.
 
-**权限格式**：`<METHOD> /api/<模块>/<路由>`（如 `GET /api/docker/containers`、`POST /api/compose/docker`）
+**Permission format**: `<METHOD> /api/<module>/<route>` (e.g. `GET /api/docker/containers`, `POST /api/compose/docker`)
 
-**前端权限判断**：使用 `portal.hasPerm('<METHOD> /api/<路由>')` 控制按钮/操作的显示
+**Frontend checks**: use `portal.hasPerm('<METHOD> /api/<route>')` to control the visibility of buttons and actions
 
-> 留空 = 无 `AccessPerm` 路由权限；具体可用路由可在登录后通过 `GET /api/account/routes` 获取。
+> Empty = no `AccessPerm` route permission; the available routes can be listed after login via `GET /api/account/routes`.
 >
-> 集中管理的节点接口（`/api/node/*`、`/n/<节点ID>/…`）由中控网关提供，不在路由表中，**仅创始人可用**，无法授予普通成员。
+> Centralized-management node APIs (`/api/node/*`, `/n/<节点ID>/…`) are served by the center gateway and are not part of the route table; they are **founder-only** and cannot be granted to ordinary members.
 
-权限点完整清单见 [docs/permissions.md](docs/permissions.md)。
+The full permission list is in [docs/permissions.md](docs/permissions.md).
 
-## GPU 监控
+## GPU Monitoring
 
-支持自动检测 NVIDIA / AMD / Intel / Apple Silicon 独立显卡，显示使用率、显存、温度、功耗、风扇转速。
+Automatically detects NVIDIA / AMD / Intel / Apple Silicon discrete GPUs and shows utilization, memory, temperature, power draw and fan speed.
 
-检测方式、采集指标与容器部署注意事项见 [docs/gpu-monitoring.md](docs/gpu-monitoring.md)。
+Detection methods, collected metrics and container deployment notes are in [docs/gpu-monitoring.md](docs/gpu-monitoring.md).
 
-## 本地开发
+## Local Development
 
-### 环境要求
+### Requirements
 
-- **Go**：1.26.0 或更高版本，最低版本以 `go.mod` 为准，用于后端服务与命令行构建
-- **Node.js / npm**：用于 `webview` 前端开发与构建（持续集成环境使用 Node.js 24）
-- **Docker**：可选，用于 Docker、Swarm、Compose 相关功能调试
+- **Go**: 1.26.0 or newer; the minimum version follows `go.mod`. Used for backend services and the CLI build
+- **Node.js / npm**: for `webview` frontend development and build (CI uses Node.js 24)
+- **Docker**: optional, for debugging Docker, Swarm and Compose features
 
-### 启动开发环境
+### Start the Dev Environment
 
 ```bash
 ./develop.sh
 ```
 
-开发脚本会自动：
+The dev script automatically:
 
-- **后端**：复制 `config.yml` 为 `.local.yml`（如不存在），并以**中控模式**启动（`ISRVD_MODE=center CONFIG_PATH=.local.yml go run ./server/cmd/server`），便于调试节点管理与节点切换；需要单机模式时用 `ISRVD_MODE=server ./develop.sh`
-- **前端**：进入 `webview`，安装依赖并执行 `npm run dev`
-- **端口清理**：启动前尝试释放 `8080` 和 `3000` 端口
-- **代理**：前端开发服务器（`3000`）把 `/api/`、`/openapi/` 和节点视角的 `/n/` 代理到 `8080`；`/n/<节点ID>/` 下的页面由后端内嵌的前端产物提供，修改前端后需 `npm run build` 才能在节点视角下看到
+- **Backend**: copies `config.yml` to `.local.yml` if missing and starts in **center mode** (`ISRVD_MODE=center CONFIG_PATH=.local.yml go run ./server/cmd/server`) for easier node management and node switching; use `ISRVD_MODE=server ./develop.sh` for standalone mode
+- **Frontend**: enters `webview`, installs dependencies and runs `npm run dev`
+- **Port cleanup**: tries to free ports `8080` and `3000` before starting
+- **Proxy**: the frontend dev server (`3000`) proxies `/api/`, `/openapi/` and the node-scoped `/n/` to `8080`; pages under `/n/<节点ID>/` are served by the frontend build embedded in the backend, so run `npm run build` to see frontend changes in the node view
 
-Windows 环境可使用：
+On Windows:
 
 ```bat
 develop.bat
 ```
 
-Windows 脚本直接使用根目录的 `config.yml` 以单机模式启动后端，并执行 `npm run dev`；需先在 `webview` 目录安装前端依赖。
+The Windows script starts the backend in standalone mode using the root `config.yml` and runs `npm run dev`; install the frontend dependencies in `webview` first.
 
-### 构建与校验
+### Build and Checks
 
-GitHub Actions 从 `go.mod` 读取 Go 版本，CNB 使用 `golang:1.26-bookworm` 构建镜像。若设置了 `GOTOOLCHAIN=local`，本地已安装的 Go 必须满足 `go.mod` 的最低版本要求。
+GitHub Actions reads the Go version from `go.mod`; CNB builds images with `golang:1.26-bookworm`. If `GOTOOLCHAIN=local` is set, the locally installed Go must satisfy the minimum version in `go.mod`.
 
 ```bash
-# 完整分发构建
+# full distribution build
 ./build.sh
 
-# 后端全包编译检查
+# compile check for all backend packages
 go test ./...
 
-# Go 静态检查
+# Go static analysis
 go vet ./...
 
-# 前端类型检查
+# frontend type check
 (cd webview && npm run lint)
 
-# 前端格式与 import 排序检查
+# frontend format and import order check
 (cd webview && npm run format:check)
 
-# 前端样式一致性检查
+# frontend style consistency check
 (cd webview && python3 scripts/review-style.py)
 
-# 空白与冲突标记检查（在仓库根目录执行）
+# whitespace and conflict marker check (run in the repository root)
 git diff --check
 ```
 
-> 贡献代码前请优先阅读 [AGENTS.md](AGENTS.md)。该文件是当前仓库的代码规范与协作约定入口，旧版 `CODE_STYLE` 不再作为规范来源。
+> Please read [AGENTS.md](AGENTS.md) before contributing. It is the entry point for this repository's code conventions and collaboration guidelines; the legacy `CODE_STYLE` is no longer normative.
 
-## 架构设计
+## Architecture
 
-分层边界、包级依赖方向与设计原则见 [AGENTS.md](AGENTS.md)「3) 项目架构」；前端专项规范见 [webview/AGENTS.md](webview/AGENTS.md)。
+Layering boundaries, package-level dependency direction and design principles are in [AGENTS.md](AGENTS.md) section "3) 项目架构"; frontend-specific conventions are in [webview/AGENTS.md](webview/AGENTS.md).
 
-## 安全特性
+## Security Features
 
-- JWT 认证，敏感字段（密钥、密码）不返回前端；SSH 密码/私钥加密落盘
-- 文件路径校验，防止目录遍历攻击
-- 解压校验路径，防止 Zip Slip 攻击
-- WebSocket 连接需经过认证中间件
-- 基于路由的细粒度权限控制，路由访问级别支持 `0` 需权限、`1` 需登录、`-1` 匿名
-- 操作审计日志，路由审计级别支持 `0` 按 Method、`-1` 忽略、`1` 强制记录，默认记录非 GET 请求与 WebSocket 连接
-- 支持可限制代理来源 CIDR 的信任 Header 认证（`tha.headerName`），`tha.trustedCIDRs` 默认为本机回环地址
+- JWT authentication; sensitive fields (secrets, passwords) are never returned to the frontend; SSH passwords/private keys are encrypted at rest
+- File path validation to prevent directory traversal
+- Archive extraction path validation to prevent Zip Slip attacks
+- WebSocket connections go through the authentication middleware
+- Fine-grained route-based permissions; route access levels support `0` permission required, `1` login required, `-1` anonymous
+- Operation audit log; route audit levels support `0` by method, `-1` ignore, `1` always record; non-GET requests and WebSocket connections are recorded by default
+- Trusted header authentication with an optional source CIDR allowlist (`tha.headerName`); `tha.trustedCIDRs` defaults to the loopback address
 
-## 许可证
+## License
 
-本项目基于 **Apache License 2.0** 发布，详见 [LICENSE](LICENSE)。
+Released under the **Apache License 2.0**, see [LICENSE](LICENSE).
 
-第三方组件协议详见 [NOTICE](NOTICE)。
+Third-party component licenses are listed in [NOTICE](NOTICE).
