@@ -104,8 +104,6 @@ export default toNative(App)
 
         <!-- 用户信息 -->
         <div class="flex items-center gap-1">
-          <!-- 节点切换：仅中控模式的创始人可见 -->
-          <NodeSwitcher />
           <button
             v-if="hasCopilot"
             :title="$t('AI 助手')"
@@ -118,6 +116,8 @@ export default toNative(App)
             <i class="fas fa-wand-magic-sparkles"></i>
             <span class="hidden sm:inline">{{ $t('AI 助手') }}</span>
           </button>
+          <!-- 节点切换：仅中控模式的创始人可见 -->
+          <NodeSwitcher />
           <div class="hidden sm:block w-px h-5 bg-slate-200 mx-1"></div>
           <!-- 语言切换：头部独立下拉，所有认证模式统一 -->
           <LocaleSwitch />
