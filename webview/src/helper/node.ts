@@ -18,6 +18,10 @@ export const nodeLocation = (): { root: string; id: string } => {
 export const centerUrl = (): string =>
     window.location.origin + nodeLocation().root.replace(/\/+$/, '')
 
+/** 仅在中控视角展示的管理页面；个人账户设置仍可在节点视角访问 */
+export const isCenterPage = (path: string): boolean =>
+    /^\/(?:node|ssh|system\/config|system\/audit\/logs|account\/members)(?:\/|$)/.test(path)
+
 /** 切换到指定节点（空字符串为本机）。整页刷新，使登录态之外的页面状态按新节点重新初始化 */
 export const switchNode = (id: string, hash = '') => {
     window.location.href = nodeLocation().root + (id ? `n/${id}/` : '') + hash

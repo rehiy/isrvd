@@ -5,7 +5,7 @@ import { usePortal } from '@/stores'
 
 import type { NodeInfo } from '@/service/types'
 
-import { switchNode } from '@/helper/node'
+import { isCenterPage, switchNode } from '@/helper/node'
 
 import Dropdown from '@/component/dropdown.vue'
 
@@ -57,8 +57,9 @@ class NodeSwitcher extends Vue {
     select(id: string) {
         this.menuOpen = false
         if (id === this.portal.currentNodeId) return
-        // 详情页（带路由参数）的资源只存在于原来的节点，切换后回到概览；列表页保持原位
-        const hash = Object.keys(this.$route.params).length === 0 ? window.location.hash : '#/overview'
+        // 详情页资源属于原节点；中控管理页面切到子节点时也回到概览
+        const resetPage = Object.keys(this.$route.params).length > 0 || (id !== '' && isCenterPage(this.$route.path))
+        const hash = resetPage ? '#/overview' : window.location.hash
         switchNode(id, hash)
     }
 }

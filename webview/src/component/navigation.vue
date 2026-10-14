@@ -278,7 +278,7 @@ export default toNative(NavigationBar)
         </template>
       </div>
       <!-- SSH/SFTP 折叠子菜单 -->
-      <div v-if="portal.hasPerm('GET /api/ssh/hosts') || portal.hasPerm('GET /api/ssh/credentials')">
+      <div v-if="!portal.currentNodeId && (portal.hasPerm('GET /api/ssh/hosts') || portal.hasPerm('GET /api/ssh/credentials'))">
         <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isSshActive }" title="SSH / SFTP" @click.stop="toggleSsh">
           <i class="fas fa-server"></i>
         </button>
@@ -539,25 +539,25 @@ export default toNative(NavigationBar)
       </router-link>
 
       <!-- 操作审计 -->
-      <router-link v-if="portal.hasPerm('GET /api/system/audit/logs')" to="/system/audit/logs" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('操作审计') : ''">
+      <router-link v-if="!portal.currentNodeId && portal.hasPerm('GET /api/system/audit/logs')" to="/system/audit/logs" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('操作审计') : ''">
         <i class="fas fa-clipboard-list"></i>
         <span v-if="!collapsed">{{ $t('操作审计') }}</span>
       </router-link>
 
       <!-- 用户管理 -->
-      <router-link v-if="portal.hasPerm('GET /api/account/members')" to="/account/members" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('用户管理') : ''">
+      <router-link v-if="!portal.currentNodeId && portal.hasPerm('GET /api/account/members')" to="/account/members" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('用户管理') : ''">
         <i class="fas fa-users"></i>
         <span v-if="!collapsed">{{ $t('用户管理') }}</span>
       </router-link>
 
-      <!-- 节点管理（仅中控模式的创始人可见） -->
-      <router-link v-if="portal.hasPerm('GET /api/node/nodes')" to="/node" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('节点管理') : ''">
+      <!-- 节点管理（仅本机中控视角的创始人可见） -->
+      <router-link v-if="!portal.currentNodeId && portal.hasPerm('GET /api/node/nodes')" to="/node" class="nav-link" active-class="nav-link-active" :title="collapsed ? $t('节点管理') : ''">
         <i class="fas fa-sitemap"></i>
         <span v-if="!collapsed">{{ $t('节点管理') }}</span>
       </router-link>
 
       <!-- 系统配置折叠子菜单（GET 或 PUT 任一权限即显示，只读成员同样可查看） -->
-      <div v-if="portal.hasPerm('GET /api/system/config') || portal.hasPerm('PUT /api/system/config')">
+      <div v-if="!portal.currentNodeId && (portal.hasPerm('GET /api/system/config') || portal.hasPerm('PUT /api/system/config'))">
         <!-- 折叠状态只显示图标，点击展开侧边栏 -->
         <button v-if="collapsed" class="nav-link justify-center" :class="{ 'nav-link-active': isConfigActive }" :title="$t('系统配置')" @click.stop="toggleConfig">
           <i class="fas fa-gear"></i>
