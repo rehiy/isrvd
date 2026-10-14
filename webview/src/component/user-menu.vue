@@ -43,19 +43,22 @@ export default toNative(UserMenu)
   <!-- header 认证模式：仅显示用户名，无注销入口 -->
   <!-- header 认证模式：仅显示用户名，无下拉菜单（语言切换在头部独立下拉） -->
   <div v-if="portal.authMode === 'header'" class="px-2 py-2 text-sm font-medium text-slate-500 flex items-center gap-2 cursor-default select-none" :title="portal.username || $t('未登录')">
-    <i class="fas fa-user-tie"></i>
+    <i class="far fa-circle-user text-lg" aria-hidden="true"></i>
     <span class="hidden sm:inline">{{ portal.username }}</span>
   </div>
 
   <!-- jwt 认证模式：用户名 + 下拉菜单 -->
   <Dropdown v-else v-model:open="menuOpen" placement="bottom" align="right" :close-on-click="true" max-height="320px">
     <template #trigger="{ toggle }">
-      <button class="btn btn-ghost !px-2" :title="portal.username || $t('未登录')" @click="toggle">
-        <i class="fas fa-user-tie"></i>
-        <span class="hidden sm:inline">{{ portal.username }}</span>
+      <button class="btn btn-ghost !px-2" :title="$t('用户')" :aria-label="$t('用户')" :aria-expanded="menuOpen" @click="toggle">
+        <i class="far fa-circle-user text-lg" aria-hidden="true"></i>
         <i class="fas fa-chevron-down text-xs text-slate-400 hidden sm:inline transition-transform duration-200" :class="{ 'rotate-180': menuOpen }"></i>
       </button>
     </template>
+
+    <div class="px-4 py-3 text-sm font-medium text-slate-700 border-b border-slate-100 break-all max-w-64">
+      {{ portal.username || $t('未登录') }}
+    </div>
 
     <!-- 主题切换：浅色 / 深色 / 跟随系统 -->
     <button class="dropdown-item" :title="themeTitle" @click.stop="toggleTheme">
