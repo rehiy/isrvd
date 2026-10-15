@@ -87,7 +87,10 @@ func (s *Service) Enroll(ip string, req *EnrollRequest) (*EnrollResponse, error)
 		status = StatusApproved
 	}
 	hostname := clip(req.Hostname, 128)
-	name := clip(strings.TrimSpace(req.Name), 64)
+	name := clip(matched.Name, 64)
+	if name == "" {
+		name = clip(req.Name, 64)
+	}
 	if name == "" {
 		name = hostname
 	}

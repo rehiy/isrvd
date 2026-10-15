@@ -65,7 +65,7 @@ docker run -d --name isrvd-agent --network sdnet \
 | `--mode` | `ISRVD_MODE` | 全部 | `server`（默认）/ `center` / `agent` |
 | `--center-url` | `ISRVD_CENTER_URL` | agent，必填 | 中控地址，不含 `/api` |
 | `--enroll-code` | `ISRVD_ENROLL_CODE` | agent | 首次注册的注册码；本地已有凭据后可省略 |
-| `--node-name` | `ISRVD_NODE_NAME` | agent | 节点名称，默认取主机名 |
+| `--node-name` | `ISRVD_NODE_NAME` | agent | 注册码备注为空时使用的节点名称，默认取主机名 |
 | | `ISRVD_CENTER_TRUST_PROXY` | center | 设为 `1` 时按 `X-Forwarded-For` 识别来源 IP；仅在网关前还有可信反向代理时设置 |
 
 接入流程：在「节点管理」页点击「接入节点」生成注册码（列表中显示为「待接入」）→ 受管机携带注册码启动 → 该行变为节点，状态为「待审批」→ 审批 → 节点领取令牌并建立常连，状态变为「在线」。节点与待接入的注册码在同一个列表里，用状态区分。勾选「自动通过审批」生成的注册码可跳过审批步骤。
