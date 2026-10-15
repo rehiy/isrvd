@@ -499,7 +499,7 @@
     <section id="quickstart" class="py-20">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="section-title">快速开始</h2>
-            <p class="section-subtitle">一条命令即可安装，或按需选择部署方式、镜像版本、软件源与运行角色</p>
+            <p class="section-subtitle">一条命令即可安装，或按需选择部署方式、集成组件、软件源与运行角色</p>
 
             <!-- 默认安装命令 -->
             <div class="mt-10 max-w-3xl mx-auto">
@@ -552,27 +552,31 @@
                 </div>
             </div>
 
-            <!-- Step 2: 镜像版本（仅 Docker 类部署） -->
+            <!-- Step 2: 集成组件（仅 Docker 类部署） -->
             <div class="mt-8 hidden" id="step-variant">
                 <div class="flex flex-wrap items-center gap-2 mb-3">
                     <span class="step-num" id="stepnum-variant">2</span>
-                    <span class="font-semibold text-slate-800">镜像版本</span>
+                    <span class="font-semibold text-slate-800">集成组件</span>
+                    <span class="text-xs text-slate-400">需要反向代理或 API 网关时选对应组件，会自动使用一体化镜像</span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="variant-cards">
                     <button type="button" class="option-card" id="opt-variant-slim" onclick="setInstall('variant','slim')">
                         <span class="badge badge-blue">默认</span>
-                        <p class="font-semibold text-slate-800 mt-1">slim</p>
-                        <p class="text-xs text-slate-500 mt-1">仅 isrvd 本体，体积最小</p>
+                        <p class="font-semibold text-slate-800 mt-1">不集成</p>
+                        <p class="text-xs text-slate-500 mt-1">仅 isrvd，体积最小；网关可日后单独部署</p>
+                        <p class="text-xs text-slate-400 mt-1.5">镜像 <code class="bg-slate-100 px-1 rounded">rehiy/isrvd:slim</code></p>
                     </button>
                     <button type="button" class="option-card" id="opt-variant-caddy" onclick="setInstall('variant','caddy')">
-                        <span class="badge badge-rose">集成 Caddy</span>
-                        <p class="font-semibold text-slate-800 mt-1">caddy</p>
-                        <p class="text-xs text-slate-500 mt-1">反向代理、自动 HTTPS（ACME）</p>
+                        <span class="badge badge-rose">反向代理</span>
+                        <p class="font-semibold text-slate-800 mt-1">Caddy</p>
+                        <p class="text-xs text-slate-500 mt-1">反向代理与自动 HTTPS（ACME）</p>
+                        <p class="text-xs text-slate-400 mt-1.5">镜像 <code class="bg-slate-100 px-1 rounded">rehiy/isrvd:caddy</code></p>
                     </button>
                     <button type="button" class="option-card" id="opt-variant-apisix" onclick="setInstall('variant','apisix')">
-                        <span class="badge badge-cyan">集成 APISIX</span>
-                        <p class="font-semibold text-slate-800 mt-1">apisix</p>
-                        <p class="text-xs text-slate-500 mt-1">API 网关</p>
+                        <span class="badge badge-cyan">API 网关</span>
+                        <p class="font-semibold text-slate-800 mt-1">APISIX</p>
+                        <p class="text-xs text-slate-500 mt-1">API 网关（含 etcd），适合 API 场景</p>
+                        <p class="text-xs text-slate-400 mt-1.5">镜像 <code class="bg-slate-100 px-1 rounded">rehiy/isrvd:apisix</code></p>
                     </button>
                 </div>
             </div>
@@ -667,7 +671,7 @@
                     <table class="w-full text-sm text-left">
                         <thead>
                             <tr class="bg-slate-100">
-                                <th class="px-4 py-2 rounded-tl-lg">镜像版本</th>
+                                <th class="px-4 py-2 rounded-tl-lg">集成组件</th>
                                 <th class="px-4 py-2">端口 8080<br><span class="text-xs font-normal text-slate-400">isrvd Web 管理</span></th>
                                 <th class="px-4 py-2">端口 80<br><span class="text-xs font-normal text-slate-400">HTTP 服务</span></th>
                                 <th class="px-4 py-2 rounded-tr-lg">端口 443<br><span class="text-xs font-normal text-slate-400">HTTPS 服务</span></th>
@@ -675,26 +679,26 @@
                         </thead>
                         <tbody>
                             <tr class="border-t border-slate-200">
-                                <td class="px-4 py-2 font-medium">slim</td>
+                                <td class="px-4 py-2 font-medium">不集成（slim）</td>
                                 <td class="px-4 py-2 text-slate-500">✓ isrvd Web</td>
                                 <td class="px-4 py-2 text-slate-400">—</td>
                                 <td class="px-4 py-2 text-slate-400">—</td>
                             </tr>
                             <tr class="border-t border-slate-200">
-                                <td class="px-4 py-2 font-medium">apisix</td>
+                                <td class="px-4 py-2 font-medium">APISIX</td>
                                 <td class="px-4 py-2 text-slate-500">✓ isrvd Web</td>
                                 <td class="px-4 py-2 text-slate-500">APISIX HTTP (9080)</td>
                                 <td class="px-4 py-2 text-slate-500">APISIX HTTPS (9443)</td>
                             </tr>
                             <tr class="border-t border-slate-200">
-                                <td class="px-4 py-2 font-medium">caddy</td>
+                                <td class="px-4 py-2 font-medium">Caddy</td>
                                 <td class="px-4 py-2 text-slate-500">✓ isrvd Web</td>
                                 <td class="px-4 py-2 text-slate-500">Caddy HTTP (80)</td>
                                 <td class="px-4 py-2 text-slate-500">Caddy HTTPS (443)</td>
                             </tr>
                         </tbody>
                     </table>
-                    <p class="mt-2 text-xs text-slate-400">说明：所有版本均提供 Web 管理界面（端口 8080），集成网关的版本额外暴露 HTTP/HTTPS 端口</p>
+                    <p class="mt-2 text-xs text-slate-400">说明：所有版本均提供 Web 管理界面（端口 8080），集成网关组件的版本额外暴露 HTTP/HTTPS 端口</p>
                 </div>
             </div>
 
@@ -1324,7 +1328,7 @@ CONFIG_PATH="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" .
                 mainLabel.textContent = 'bash';
                 main = '# 一键安装（自动安装 Docker、初始化 Swarm、创建 sdnet 网络）\n'
                     + 'bash <(curl -sL ' + SCRIPT_URL + ') install ' + flag + sourceOpt() + '\n\n'
-                    + '# 容器名 isrvd，数据保存在 /srv/data，端口映射由镜像版本决定';
+                    + '# 容器名 isrvd，数据保存在 /srv/data，端口映射由所选组件决定';
                 manageCmd = '# 更新（按当前镜像类型重建容器）\n'
                     + 'bash <(curl -sL ' + SCRIPT_URL + ') update' + sourceOpt() + '\n\n'
                     + '# 卸载（删除容器，保留 /srv/data 数据目录）\n'
@@ -1432,6 +1436,17 @@ CONFIG_PATH="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" .
                 notes.push('受管机与中控的版本需一致；systemd 部署可用 <code class="bg-slate-100 px-1 rounded">systemctl edit isrvd</code> 以 drop-in 追加环境变量');
             } else {
                 modeEl.classList.add('hidden');
+            }
+
+            // component notes
+            if (s.method !== 'script-binary') {
+                if (s.variant === 'caddy') {
+                    notes.push('Caddy 默认监听 <code class="bg-slate-100 px-1 rounded">:80</code> / <code class="bg-slate-100 px-1 rounded">:443</code>，自动 HTTPS 与跳转默认关闭；可在「Caddy → 服务」中配置，或编辑原始配置');
+                } else if (s.variant === 'apisix') {
+                    notes.push('APISIX 镜像内置 etcd，无需单独部署；管理入口在页面的「APISIX」模块');
+                } else {
+                    notes.push('未集成网关组件：如需反向代理 / API 网关，可日后单独部署 Caddy / APISIX，或重新运行安装命令切换镜像');
+                }
             }
 
             // source notes
