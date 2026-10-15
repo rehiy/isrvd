@@ -328,6 +328,59 @@
         .dark .bg-gradient-to-b.from-slate-50.to-white {
             background: linear-gradient(to bottom, #0f172a, #1e293b) !important
         }
+
+        /* Install manager */
+        .step-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 9999px;
+            background: #2563eb;
+            color: #fff;
+            font-size: .75rem;
+            font-weight: 600
+        }
+
+        .option-card {
+            text-align: left;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            border-radius: .75rem;
+            padding: .875rem 1rem;
+            cursor: pointer;
+            transition: border-color .2s, box-shadow .2s
+        }
+
+        .option-card:hover {
+            border-color: #93c5fd;
+            box-shadow: 0 2px 12px rgba(37, 99, 235, .12)
+        }
+
+        .option-card.selected {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, .35)
+        }
+
+        .dark .option-card {
+            background: #1e293b;
+            border-color: #334155
+        }
+
+        .dark .option-card:hover {
+            border-color: #3b82f6
+        }
+
+        .dark .option-card.selected {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, .4)
+        }
+
+        .code-body.generated {
+            white-space: pre-wrap;
+            word-break: break-word
+        }
     </style>
 </head>
 
@@ -342,11 +395,10 @@
                 </div>
                 <div class="hidden md:flex items-center gap-6 text-sm">
                     <a href="#hero" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">首页</a>
+                    <a href="#quickstart" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">快速开始</a>
                     <a href="#features" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">功能特性</a>
                     <a href="#techstack" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">技术栈</a>
-                    <a href="#quickstart" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">快速开始</a>
                     <a href="#centralized" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">集中管理</a>
-                    <a href="#cnb" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">CNB 镜像</a>
                     <a href="#architecture" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">架构设计</a>
                     <a href="#security" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">安全特性</a>
                     <a href="#gpu" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition">GPU 监控</a>
@@ -425,12 +477,12 @@
 
             <!-- CTA Buttons -->
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="#quickstart"
+                <a href="#install-wizard-anchor"
                     class="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200 dark:bg-blue-500 dark:hover:bg-blue-600 dark:shadow-none">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M13 10V3l4 14h7v7l9-11h-7z" />
+                        <path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    快速开始
+                    立即安装
                 </a>
                 <a href="https://github.com/rehiy/isrvd" target="_blank"
                     class="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-slate-700 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600">
@@ -443,6 +495,243 @@
             </div>
         </div>
     </section>
+    <!-- Quick Start -->
+    <section id="quickstart" class="py-20">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="section-title">快速开始</h2>
+            <p class="section-subtitle">一条命令即可安装，或按需选择部署方式、镜像版本、软件源与运行角色</p>
+
+            <!-- 默认安装命令 -->
+            <div class="mt-10 max-w-3xl mx-auto">
+                <div class="code-block shadow-lg shadow-slate-200/60 dark:shadow-none">
+                    <div class="code-header">
+                        <span class="flex items-center gap-1.5">
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                            <span class="ml-2">bash — 一键安装（推荐）</span>
+                        </span>
+                        <span class="copy-btn" onclick="copyCode(this)">复制</span>
+                    </div>
+                    <div class="code-body">bash &lt;(curl -sL https://isrvd.rehiy.com/install/) install</div>
+                </div>
+                <p class="mt-3 text-xs text-slate-400 text-center">安装 systemd 服务，自动按 IP 选择下载源；装完访问 <code class="bg-slate-100 px-1 rounded">http://服务器IP:8080</code>，默认账号 <code class="bg-slate-100 px-1 rounded">admin</code> / <code class="bg-slate-100 px-1 rounded">admin</code></p>
+            </div>
+
+            <!-- 更多选项 -->
+            <div class="mt-12 flex items-center gap-3" id="install-wizard-anchor">
+                <span class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></span>
+                <span class="text-sm text-slate-400">更多部署选项</span>
+                <span class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></span>
+            </div>
+
+            <!-- Step 1: 部署方式 -->
+            <div class="mt-8">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="step-num">1</span>
+                    <span class="font-semibold text-slate-800">部署方式</span>
+                </div>                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <button type="button" class="option-card" id="opt-method-script-binary" onclick="setInstall('method','script-binary')">
+                        <span class="badge badge-blue">推荐</span>
+                        <p class="font-semibold text-slate-800 mt-1">一键脚本 · 二进制</p>
+                        <p class="text-xs text-slate-500 mt-1">安装 systemd 服务，无需 Docker</p>
+                    </button>
+                    <button type="button" class="option-card" id="opt-method-script-docker" onclick="setInstall('method','script-docker')">
+                        <span class="badge badge-blue">一体化</span>
+                        <p class="font-semibold text-slate-800 mt-1">一键脚本 · Docker</p>
+                        <p class="text-xs text-slate-500 mt-1">自动安装 Docker、Swarm 与 sdnet 网络</p>
+                    </button>
+                    <button type="button" class="option-card" id="opt-method-docker" onclick="setInstall('method','docker')">
+                        <p class="font-semibold text-slate-800">手动 Docker</p>
+                        <p class="text-xs text-slate-500 mt-1">docker run 手动管理容器</p>
+                    </button>
+                    <button type="button" class="option-card" id="opt-method-compose" onclick="setInstall('method','compose')">
+                        <p class="font-semibold text-slate-800">Docker Compose</p>
+                        <p class="text-xs text-slate-500 mt-1">用 compose 文件管理容器生命周期</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: 镜像版本（仅 Docker 类部署） -->
+            <div class="mt-8 hidden" id="step-variant">
+                <div class="flex flex-wrap items-center gap-2 mb-3">
+                    <span class="step-num" id="stepnum-variant">2</span>
+                    <span class="font-semibold text-slate-800">镜像版本</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="variant-cards">
+                    <button type="button" class="option-card" id="opt-variant-slim" onclick="setInstall('variant','slim')">
+                        <span class="badge badge-blue">默认</span>
+                        <p class="font-semibold text-slate-800 mt-1">slim</p>
+                        <p class="text-xs text-slate-500 mt-1">仅 isrvd 本体，体积最小</p>
+                    </button>
+                    <button type="button" class="option-card" id="opt-variant-caddy" onclick="setInstall('variant','caddy')">
+                        <span class="badge badge-rose">集成 Caddy</span>
+                        <p class="font-semibold text-slate-800 mt-1">caddy</p>
+                        <p class="text-xs text-slate-500 mt-1">反向代理、自动 HTTPS（ACME）</p>
+                    </button>
+                    <button type="button" class="option-card" id="opt-variant-apisix" onclick="setInstall('variant','apisix')">
+                        <span class="badge badge-cyan">集成 APISIX</span>
+                        <p class="font-semibold text-slate-800 mt-1">apisix</p>
+                        <p class="text-xs text-slate-500 mt-1">API 网关</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: 软件源 -->
+            <div class="mt-8 hidden" id="step-source">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="step-num" id="stepnum-source">3</span>
+                    <span class="font-semibold text-slate-800">软件源</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button type="button" class="option-card" id="opt-source-auto" onclick="setInstall('source','auto')">
+                        <span class="badge badge-emerald">默认</span>
+                        <p class="font-semibold text-slate-800 mt-1">自动</p>
+                        <p class="text-xs text-slate-500 mt-1" id="source-auto-desc">按 IP 自动选择下载源</p>
+                    </button>
+                    <button type="button" class="option-card" id="opt-source-cn" onclick="setInstall('source','cn')">
+                        <p class="font-semibold text-slate-800">国内 CNB</p>
+                        <p class="text-xs text-slate-500 mt-1" id="source-cn-desc">CNB Releases / docker.cnb.cool 镜像</p>
+                    </button>
+                    <button type="button" class="option-card" id="opt-source-global" onclick="setInstall('source','global')">
+                        <p class="font-semibold text-slate-800">国际</p>
+                        <p class="text-xs text-slate-500 mt-1" id="source-global-desc">GitHub Releases / Docker Hub</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 4: 运行角色 -->
+            <div class="mt-8 hidden" id="step-role">
+                <div class="flex flex-wrap items-center gap-2 mb-3">
+                    <span class="step-num" id="stepnum-role">4</span>
+                    <span class="font-semibold text-slate-800">运行角色</span>
+                    <span class="text-xs text-slate-400">同一个二进制，以 --mode 切换单机 / 中控 / 受管机</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button type="button" class="option-card" id="opt-role-server" onclick="setInstall('role','server')">
+                        <span class="badge badge-blue">默认</span>
+                        <p class="font-semibold text-slate-800 mt-1">单机</p>
+                        <p class="text-xs text-slate-500 mt-1">--mode server，与以往完全一致</p>
+                    </button>
+                    <button type="button" class="option-card" id="opt-role-center" onclick="setInstall('role','center')">
+                        <p class="font-semibold text-slate-800">中控</p>
+                        <p class="text-xs text-slate-500 mt-1">--mode center，一个控制台管理多台服务器</p>
+                    </button>
+                    <button type="button" class="option-card" id="opt-role-agent" onclick="setInstall('role','agent')">
+                        <p class="font-semibold text-slate-800">受管机</p>
+                        <p class="text-xs text-slate-500 mt-1">--mode agent，主动出站接入中控</p>
+                    </button>
+                </div>
+                <div id="agent-inputs" class="hidden mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="block text-sm text-slate-600 dark:text-slate-300">
+                        <span class="block mb-1">中控地址</span>
+                        <input id="input-center-url" type="text" value="https://center.example.com" oninput="renderInstall()"
+                            class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm">
+                    </label>
+                    <label class="block text-sm text-slate-600 dark:text-slate-300">
+                        <span class="block mb-1">注册码</span>
+                        <input id="input-enroll-code" type="text" placeholder="在中控「节点管理」页生成" oninput="renderInstall()"
+                            class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm">
+                    </label>
+                </div>
+            </div>
+
+            <!-- 向导提示（未完成选择时显示） -->
+            <div id="install-wizard-hint" class="mt-10 text-center text-sm text-slate-400">
+                <svg class="w-5 h-5 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                按需选择以下选项，即时生成对应的部署命令
+            </div>
+
+            <!-- Generate Results -->
+            <div id="install-results" class="mt-10 space-y-6 hidden">
+                <div id="install-prep" class="hidden">
+                    <div class="code-block">
+                        <div class="code-header"><span>bash — 安装 Docker / 创建网络</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                        <div class="code-body generated" id="install-prep-body"></div>
+                    </div>
+                </div>
+                <div class="code-block">
+                    <div class="code-header"><span id="install-main-label">bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                    <div class="code-body generated" id="install-main"></div>
+                </div>
+                <div id="install-mode" class="hidden">
+                    <div class="code-block">
+                        <div class="code-header"><span id="install-mode-label">bash — 切换运行角色</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                        <div class="code-body generated" id="install-mode-body"></div>
+                    </div>
+                </div>
+                <ul id="install-notes" class="text-xs text-slate-500 dark:text-slate-400 space-y-1 list-disc pl-5"></ul>
+                <div id="install-ports" class="hidden overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead>
+                            <tr class="bg-slate-100">
+                                <th class="px-4 py-2 rounded-tl-lg">镜像版本</th>
+                                <th class="px-4 py-2">端口 8080<br><span class="text-xs font-normal text-slate-400">isrvd Web 管理</span></th>
+                                <th class="px-4 py-2">端口 80<br><span class="text-xs font-normal text-slate-400">HTTP 服务</span></th>
+                                <th class="px-4 py-2 rounded-tr-lg">端口 443<br><span class="text-xs font-normal text-slate-400">HTTPS 服务</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-t border-slate-200">
+                                <td class="px-4 py-2 font-medium">slim</td>
+                                <td class="px-4 py-2 text-slate-500">✓ isrvd Web</td>
+                                <td class="px-4 py-2 text-slate-400">—</td>
+                                <td class="px-4 py-2 text-slate-400">—</td>
+                            </tr>
+                            <tr class="border-t border-slate-200">
+                                <td class="px-4 py-2 font-medium">apisix</td>
+                                <td class="px-4 py-2 text-slate-500">✓ isrvd Web</td>
+                                <td class="px-4 py-2 text-slate-500">APISIX HTTP (9080)</td>
+                                <td class="px-4 py-2 text-slate-500">APISIX HTTPS (9443)</td>
+                            </tr>
+                            <tr class="border-t border-slate-200">
+                                <td class="px-4 py-2 font-medium">caddy</td>
+                                <td class="px-4 py-2 text-slate-500">✓ isrvd Web</td>
+                                <td class="px-4 py-2 text-slate-500">Caddy HTTP (80)</td>
+                                <td class="px-4 py-2 text-slate-500">Caddy HTTPS (443)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="mt-2 text-xs text-slate-400">说明：所有版本均提供 Web 管理界面（端口 8080），集成网关的版本额外暴露 HTTP/HTTPS 端口</p>
+                </div>
+            </div>
+
+            <!-- 管理命令 -->
+            <div id="install-manage-block" class="mt-8 hidden">
+                <div class="flex flex-wrap items-center gap-2 mb-3">
+                    <h3 class="font-semibold text-slate-800">管理命令</h3>
+                    <span class="text-xs text-slate-400">update 自动识别二进制或 Docker 部署；uninstall 删除容器与二进制但保留数据目录</span>
+                </div>
+                <div class="code-block">
+                    <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                    <div class="code-body generated" id="install-manage"></div>
+                </div>
+            </div>
+
+            <!-- 高级配置 -->
+            <details id="install-advanced" class="mt-6 hidden">
+                <summary class="cursor-pointer text-sm font-medium text-slate-600 dark:text-slate-300">高级：直接运行与配置来源（本地 YAML / etcd）</summary>
+                <div class="code-block mt-3">
+                    <div class="code-header"><span>bash — 直接运行</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
+                    <div class="code-body"># 默认读取 ./config.yml
+./isrvd
+
+# 本地 YAML
+CONFIG_PATH=/data/conf/isrvd.yml ./isrvd
+
+# etcd 配置（value 为 YAML 格式）
+CONFIG_PATH="etcd://user:pass@127.0.0.1:2379/isrvd/config?scheme=http&timeout=5s" ./isrvd
+
+# etcd key 不存在时，用 fallback YAML 初始化并写入 etcd
+CONFIG_PATH="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" ./isrvd</div>
+                </div>
+                <p class="text-xs text-slate-400 mt-2">etcd 认证可省略或用 <code class="bg-slate-100 px-1 rounded">ETCD_USERNAME</code> / <code class="bg-slate-100 px-1 rounded">ETCD_PASSWORD</code> 补充；详见 README「配置」章节</p>
+            </details>
+        </div>
+    </section>
+
     <!-- Features -->
     <section id="features" class="py-20 bg-slate-50 dark:bg-slate-800">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -643,148 +932,6 @@
         </div>
     </section>
 
-    <!-- Quick Start -->
-    <section id="quickstart" class="py-20 bg-slate-50 dark:bg-slate-800">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="section-title">快速开始</h2>
-            <p class="section-subtitle">一键脚本快速安装，或使用 Docker / Compose 方式部署</p>
-            <div class="mt-10 flex gap-2 bg-slate-200 p-1 rounded-lg w-fit mx-auto tab-group">
-                <button class="tab-btn tab-active" onclick="switchTab('binary', this)">快速安装</button>
-                <button class="tab-btn" onclick="switchTab('docker', this)">Docker</button>
-                <button class="tab-btn" onclick="switchTab('compose', this)">Compose</button>
-            </div>
-
-            <!-- Binary Tab -->
-            <div id="tab-binary" class="tab-content active mt-8">
-                <p class="text-sm text-slate-500 mb-6 text-center">安装 systemd 服务，也可通过选项切换为 Docker 容器部署</p>
-                <p class="text-xs text-slate-400 mb-4 text-center">二进制安装目录：<code class="bg-slate-100 px-1 rounded">/usr/local/isrvd/</code>；<code class="bg-slate-100 px-1 rounded">--docker</code> / <code class="bg-slate-100 px-1 rounded">--caddy</code> / <code class="bg-slate-100 px-1 rounded">--apisix</code> 会改为 Docker 容器部署（含 Swarm 初始化 + sdnet 网络）</p>
-                <div class="code-block mb-6">
-                    <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
-                    <div class="code-body"><span style="color:#64748b"># 安装 systemd 服务（二进制版）</span><br />bash
-                        <(curl -sL https://isrvd.rehiy.com/install/) install<br /><br /><span style="color:#64748b"># 以 Docker 方式部署（slim 镜像，含 Swarm + sdnet 网络）</span><br />bash
-                        <(curl -sL https://isrvd.rehiy.com/install/) install --docker<br /><br /><span style="color:#64748b"># 以 Docker 方式部署（caddy 镜像，含 Caddy 网关）</span><br />bash
-                        <(curl -sL https://isrvd.rehiy.com/install/) install --caddy<br /><br /><span style="color:#64748b"># 以 Docker 方式部署（apisix 镜像，含 APISIX 网关）</span><br />bash
-                        <(curl -sL https://isrvd.rehiy.com/install/) install --apisix<br /><br /><span style="color:#64748b"># 更新（自动识别二进制或 Docker 部署）</span><br />bash
-                        <(curl -sL https://isrvd.rehiy.com/install/) update<br /><br /><span style="color:#64748b"># 卸载（清理二进制文件和 Docker 容器，保留数据目录）</span><br />bash
-                        <(curl -sL https://isrvd.rehiy.com/install/) uninstall<br /><br /><span style="color:#64748b"># 仅下载二进制包（不安装）</span><br />bash <(curl -sL https://isrvd.rehiy.com/install/)
-                            download</div>
-                    </div>
-                    <div class="code-block">
-                        <div class="code-header"><span>bash — 直接运行</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
-                        <div class="code-body"><span style="color:#64748b"># 默认读取 ./config.yml</span><br />./isrvd<br /><br /><span style="color:#64748b"># 本地 YAML</span><br />CONFIG_PATH=/data/conf/isrvd.yml ./isrvd<br /><br /><span
-                                style="color:#64748b"># etcd 配置（value 为 YAML 格式）</span><br />CONFIG_PATH=<span style="color:#34d399">"etcd://user:pass@127.0.0.1:2379/isrvd/config?scheme=http&timeout=5s"</span> ./isrvd<br /><br /><span
-                                style="color:#64748b"># etcd key 不存在时，用 fallback YAML 初始化并写入 etcd</span><br />CONFIG_PATH=<span style="color:#34d399">"etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml"</span> ./isrvd</div>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-2 text-center">etcd 认证可省略或用 <code class="bg-slate-100 px-1 rounded">ETCD_USERNAME</code> / <code class="bg-slate-100 px-1 rounded">ETCD_PASSWORD</code> 补充</p>
-                </div>
-
-            <!-- Docker Tab -->
-            <div id="tab-docker" class="tab-content mt-8">
-                <p class="text-sm text-slate-500 mb-6 text-center">提供三个镜像版本，按需求选择</p>
-
-                <!-- Create Network -->
-                <div class="mb-6">
-                    <div class="code-block">
-                        <div class="code-header"><span>bash — 安装 Docker / 创建网络</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
-                        <div class="code-body"><span style="color:#64748b"># 未安装 Docker 时执行；已安装可跳过</span><br />curl -fsSL https://get.docker.com -o get-docker.sh && \<br />sh get-docker.sh --mirror Aliyun && \<br />echo '{"registry-mirrors":["https://docker.1ms.run"]}' | tee /etc/docker/daemon.json && \<br />systemctl restart docker<br /><br /><span style="color:#64748b"># 创建网络：本地通信和跨主机通信二选一</span><br /><br /><span style="color:#64748b"># 本地通信</span><br />docker network create --driver=bridge sdnet<br /><br /><span style="color:#64748b"># 跨主机通信</span><br />docker network create --driver=overlay
-                            --attachable
-                            sdnet</div>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-2">Docker 已安装时跳过安装命令；根据实际网络环境在本地通信和跨主机通信中选择一种创建网络，并将容器加入该网络</p>
-                </div>
-
-                <div class="mb-8">
-                    <div class="flex items-center gap-2 mb-3"><span class="badge badge-blue">默认</span>
-                        <h3 class="font-semibold text-slate-800">slim — 仅含 isrvd 本体</h3>
-                    </div>
-                    <p class="text-xs text-slate-500 mb-2">体积最小，适合文件管理、Docker/Swarm/Compose、计划任务等功能</p>
-                    <div class="code-block">
-                        <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
-                        <div class="code-body">docker run -d \<br />&nbsp; --name isrvd \<br />&nbsp; --network sdnet \<br />&nbsp; -p 8080:8080 \<br />&nbsp; -v /srv/data:/data \<br />&nbsp; -v /var/run/docker.sock:/var/run/docker.sock
-                            \<br />&nbsp;
-                            rehiy/isrvd:slim</div>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-2">默认管理员账号为 <code class="bg-slate-100 px-1 rounded">admin</code> / <code class="bg-slate-100 px-1 rounded">admin</code>，首次登录后自动跳转修改密码</p>
-                    <p class="text-xs text-slate-400 mt-1">CNB 镜像：<code class="bg-slate-100 px-1 rounded">docker.cnb.cool/rehiy/isrvd:slim</code></p>
-                </div>
-                <div class="mb-8">
-                    <div class="flex items-center gap-2 mb-3"><span class="badge badge-cyan">集成 APISIX</span>
-                        <h3 class="font-semibold text-slate-800">apisix — 集成 API 网关</h3>
-                    </div>
-                    <p class="text-xs text-slate-500 mb-2">适合已使用 APISIX 作为 API 网关的场景</p>
-                    <div class="code-block">
-                        <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
-                        <div class="code-body">docker run -d \<br />&nbsp; --name isrvd \<br />&nbsp; --network sdnet \<br />&nbsp; -p 8080:8080 \<br />&nbsp; -p 80:9080 \<br />&nbsp; -p 443:9443 \<br />&nbsp; -v /srv/data:/data
-                            \<br />&nbsp; -v
-                            /var/run/docker.sock:/var/run/docker.sock \<br />&nbsp; rehiy/isrvd:apisix</div>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-2">CNB 镜像：<code class="bg-slate-100 px-1 rounded">docker.cnb.cool/rehiy/isrvd:apisix</code></p>
-                </div>
-                <div class="mb-8">
-                    <div class="flex items-center gap-2 mb-3"><span class="badge badge-rose">集成 Caddy</span>
-                        <h3 class="font-semibold text-slate-800">caddy — 集成反向代理与 TLS</h3>
-                    </div>
-                    <p class="text-xs text-slate-500 mb-2">适合需要反向代理、配置自动 HTTPS（ACME）或统一网关管理的场景</p>
-                    <div class="code-block">
-                        <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
-                        <div class="code-body">docker run -d \<br />&nbsp; --name isrvd \<br />&nbsp; --network sdnet \<br />&nbsp; -p 8080:8080 \<br />&nbsp; -p 80:80 \<br />&nbsp; -p 443:443 \<br />&nbsp; -v /srv/data:/data \<br />&nbsp;
-                            -v
-                            /var/run/docker.sock:/var/run/docker.sock \<br />&nbsp; rehiy/isrvd:caddy</div>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-2">CNB 镜像：<code class="bg-slate-100 px-1 rounded">docker.cnb.cool/rehiy/isrvd:caddy</code></p>
-                    <p class="text-xs text-slate-400 mt-1">Caddy 默认监听 <code class="bg-slate-100 px-1 rounded">:80</code> 和 <code class="bg-slate-100 px-1 rounded">:443</code>，但关闭自动 HTTPS 与 HTTP 跳转；可在「Caddy → 服务」中配置 HTTPS，或编辑原始配置</p>
-                </div>
-                <div class="mt-6 overflow-x-auto">
-                    <table class="w-full text-sm text-left">
-                        <thead>
-                            <tr class="bg-slate-100">
-                                <th class="px-4 py-2 rounded-tl-lg">镜像版本</th>
-                                <th class="px-4 py-2">端口 8080<br><span class="text-xs font-normal text-slate-400">isrvd Web 管理</span></th>
-                                <th class="px-4 py-2">端口 80<br><span class="text-xs font-normal text-slate-400">HTTP 服务</span></th>
-                                <th class="px-4 py-2 rounded-tr-lg">端口 443<br><span class="text-xs font-normal text-slate-400">HTTPS 服务</span></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="border-t border-slate-200">
-                                <td class="px-4 py-2 font-medium">slim</td>
-                                <td class="px-4 py-2 text-slate-500">✓ isrvd Web</td>
-                                <td class="px-4 py-2 text-slate-400">—</td>
-                                <td class="px-4 py-2 text-slate-400">—</td>
-                            </tr>
-                            <tr class="border-t border-slate-200">
-                                <td class="px-4 py-2 font-medium">apisix</td>
-                                <td class="px-4 py-2 text-slate-500">✓ isrvd Web</td>
-                                <td class="px-4 py-2 text-slate-500">APISIX HTTP (9080)</td>
-                                <td class="px-4 py-2 text-slate-500">APISIX HTTPS (9443)</td>
-                            </tr>
-                            <tr class="border-t border-slate-200">
-                                <td class="px-4 py-2 font-medium">caddy</td>
-                                <td class="px-4 py-2 text-slate-500">✓ isrvd Web</td>
-                                <td class="px-4 py-2 text-slate-500">Caddy HTTP (80)</td>
-                                <td class="px-4 py-2 text-slate-500">Caddy HTTPS (443)</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <p class="mt-2 text-xs text-slate-400">说明：所有版本均提供 Web 管理界面（端口 8080），集成 API 网关的版本额外暴露 HTTP/HTTPS 端口</p>
-                </div>
-            </div>
-
-                <!-- Compose Tab -->
-                <div id="tab-compose" class="tab-content mt-8">
-                    <p class="text-sm text-slate-500 mb-6 text-center">使用 Docker Compose 管理容器生命周期</p>
-                    <div class="code-block">
-                        <div class="code-header"><span>docker-compose.yml</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
-                        <div class="code-body">networks:<br />&nbsp; sdnet:<br />&nbsp;&nbsp;&nbsp; driver: bridge<br /><br />services:<br />&nbsp; isrvd:<br />&nbsp;&nbsp;&nbsp; image: rehiy/isrvd:slim<br />&nbsp;&nbsp;&nbsp;
-                            container_name:
-                            isrvd<br />&nbsp;&nbsp;&nbsp; restart: unless-stopped<br />&nbsp;&nbsp;&nbsp; networks:<br />&nbsp;&nbsp;&nbsp;&nbsp; - sdnet<br />&nbsp;&nbsp;&nbsp; ports:<br />&nbsp;&nbsp;&nbsp;&nbsp; -
-                            "8080:8080"<br />&nbsp;&nbsp;&nbsp;
-                            volumes:<br />&nbsp;&nbsp;&nbsp;&nbsp; - /srv/data:/data<br />&nbsp;&nbsp;&nbsp;&nbsp; - /var/run/docker.sock:/var/run/docker.sock</div>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-2 text-center">注意：请始终挂载整个 <code class="bg-slate-100 px-1 rounded">/data</code> 目录，避免容器重建时数据丢失</p>
-                    <p class="text-xs text-slate-400 mt-1 text-center">CNB 镜像：<code class="bg-slate-100 px-1 rounded">docker.cnb.cool/rehiy/isrvd:slim</code></p>
-                </div>
-            </div>
-    </section>
 
     <!-- Centralized Management -->
     <section id="centralized" class="py-20 border-b border-slate-200">
@@ -825,33 +972,15 @@
                 </div>
             </div>
 
-            <div class="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="code-block">
-                    <div class="code-header"><span>bash — 中控</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
-                    <div class="code-body"><span style="color:#64748b"># 二进制：加 --mode center 即可，沿用原有配置</span><br />./isrvd --mode center<br /><br /><span style="color:#64748b"># Docker：多一个环境变量，8080 为对外入口</span><br />docker run -d --name isrvd-center --network sdnet -p 8080:8080 \<br />&nbsp;&nbsp;-e ISRVD_MODE=center \<br />&nbsp;&nbsp;-v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock \<br />&nbsp;&nbsp;rehiy/isrvd:slim<br /><br /><span style="color:#64748b"># 然后在「节点管理」页点击「接入节点」生成一次性注册码</span></div>
-                </div>
-                <div class="code-block">
-                    <div class="code-header"><span>bash — 受管机</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
-                    <div class="code-body"><span style="color:#64748b"># 二进制</span><br />./isrvd --mode agent \<br />&nbsp;&nbsp;--center-url https://center.example.com \<br />&nbsp;&nbsp;--enroll-code &lt;注册码&gt;<br /><br /><span style="color:#64748b"># Docker：受管机不监听对外端口，不需要 -p</span><br />docker run -d --name isrvd-agent --network sdnet \<br />&nbsp;&nbsp;-e ISRVD_MODE=agent \<br />&nbsp;&nbsp;-e ISRVD_CENTER_URL=https://center.example.com \<br />&nbsp;&nbsp;-e ISRVD_ENROLL_CODE=&lt;注册码&gt; \<br />&nbsp;&nbsp;-v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock \<br />&nbsp;&nbsp;rehiy/isrvd:slim</div>
-                </div>
-            </div>
             <p class="text-xs text-slate-400 mt-4 text-center">首次注册后凭据加密保存在受管机本地，重启无需再带注册码；受管机与中控的版本需一致。详见 <a href="https://github.com/rehiy/isrvd/blob/master/docs/multi-node.md" target="_blank" class="underline hover:text-slate-600">集中管理文档</a></p>
-        </div>
-    </section>
 
-    <!-- CNB Mirror -->
-    <section id="cnb" class="py-20">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="section-title">CNB 镜像仓库</h2>
-            <p class="section-subtitle">CNB 流水线同步推送，国内访问更快速</p>
-            <div class="mt-8 bg-white border border-slate-200 rounded-xl p-6">
-                <p class="text-sm text-slate-500 mb-4">镜像路径格式：<code class="bg-slate-100 px-1.5 py-0.5 rounded">docker.cnb.cool/&lt;repo-slug&gt;:&lt;tag&gt;</code></p>
-                <div class="code-block">
-                    <div class="code-header"><span>bash</span><span class="copy-btn" onclick="copyCode(this)">复制</span></div>
-                    <div class="code-body">docker pull docker.cnb.cool/rehiy/isrvd:slim<br />docker pull docker.cnb.cool/rehiy/isrvd:caddy<br />docker pull docker.cnb.cool/rehiy/isrvd:apisix</div>
-                </div>
-                <p class="text-xs text-slate-400 mt-4">支持 <code class="bg-slate-100 px-1 rounded">slim</code>、<code class="bg-slate-100 px-1 rounded">caddy</code>、<code class="bg-slate-100 px-1 rounded">apisix</code> 三个标签，其中 <code
-                        class="bg-slate-100 px-1 rounded">slim</code> 同时作为 <code class="bg-slate-100 px-1 rounded">latest</code></p>
+            <div class="mt-10 bg-white border border-slate-200 rounded-xl p-6 sm:p-8 text-center">
+                <h3 class="font-semibold text-slate-800 mb-2">部署中控或受管机</h3>
+                <p class="text-sm text-slate-500 max-w-2xl mx-auto">在快速开始中将「运行角色」切换为中控或受管机，即会生成对应的启动命令——中控只需一个环境变量；受管机可填入中控地址与注册码，自动生成即复即用的接入命令。</p>
+                <a href="#quickstart" class="mt-4 inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition">
+                    前往快速开始
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 5l7 7-7 7M3 12h18" /></svg>
+                </a>
             </div>
         </div>
     </section>
@@ -1078,13 +1207,258 @@
             // Update GPU table borders after DOM is ready
             // GPU table borders are now handled by pure CSS
         })();
-        // Tab switch
-        function switchTab(name, btn) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('tab-active'));
-            document.getElementById('tab-' + name).classList.add('active');
-            btn.classList.add('tab-active');
+        // Install manager
+        var installState = { method: '', variant: '', source: '', role: '' };
+        var SCRIPT_URL = 'https://isrvd.rehiy.com/install/';
+
+        function setInstall(key, value) {
+            installState[key] = value;
+            // choosing a method resets downstream steps
+            if (key === 'method') {
+                installState.variant = '';
+                installState.source = '';
+                installState.role = '';
+            }
+            if (key === 'source') {
+                installState.role = '';
+            }
+            renderInstall();
         }
+
+        function esc(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function highlight(cmd) {
+            return esc(cmd).replace(/^#.*$/gm, function (m) { return '<span style="color:#64748b">' + m + '</span>'; })
+                .replace(/(https?:\/\/[^\s"']+)/g, '<span style="color:#34d399">$1</span>');
+        }
+
+        function show(el, on) {
+            el.classList[on ? 'remove' : 'add']('hidden');
+        }
+
+        function variantImage() {
+            return installState.source === 'cn'
+                ? 'docker.cnb.cool/rehiy/isrvd:' + installState.variant
+                : 'rehiy/isrvd:' + installState.variant;
+        }
+
+        function sourceOpt() {
+            return installState.source === 'auto' ? '' : ' --' + installState.source;
+        }
+
+        function renderInstall() {
+            var s = installState;
+
+            // highlight option cards
+            document.querySelectorAll('.option-card').forEach(function (el) {
+                el.classList.remove('selected');
+            });
+            if (s.method) document.getElementById('opt-method-' + s.method.replace(/_/g, '-')).classList.add('selected');
+            if (s.variant) document.getElementById('opt-variant-' + s.variant).classList.add('selected');
+            if (s.source) document.getElementById('opt-source-' + s.source).classList.add('selected');
+            if (s.role) document.getElementById('opt-role-' + s.role).classList.add('selected');
+
+            // which steps apply
+            var useVariant = s.method && s.method !== 'script-binary';
+
+            // source descriptions adapt to method
+            var srcAuto = document.getElementById('source-auto-desc');
+            var srcCn = document.getElementById('source-cn-desc');
+            var srcGlobal = document.getElementById('source-global-desc');
+            if (s.method === 'script-binary') {
+                srcAuto.textContent = '按 IP 自动选择下载源';
+                srcCn.textContent = '二进制包取 CNB Releases';
+                srcGlobal.textContent = '二进制包取 GitHub Releases';
+            } else {
+                srcAuto.textContent = '按 IP 自动选择下载源；镜像用 Docker Hub';
+                srcCn.textContent = '二进制取 CNB Releases，镜像取 docker.cnb.cool';
+                srcGlobal.textContent = '二进制取 GitHub Releases，镜像取 Docker Hub';
+            }
+
+            // step visibility & numbering
+            document.getElementById('step-variant').classList[useVariant ? 'remove' : 'add']('hidden');
+            var showSource = !!s.method && (s.method === 'script-binary' || !!s.variant);
+            show(document.getElementById('step-source'), showSource);
+            if (s.method === 'script-binary') {
+                document.getElementById('stepnum-source').textContent = '2';
+                document.getElementById('stepnum-role').textContent = '3';
+            } else {
+                document.getElementById('stepnum-source').textContent = '3';
+                document.getElementById('stepnum-role').textContent = '4';
+            }
+            show(document.getElementById('step-role'), !!s.source);
+            var done = !!s.role;
+
+            // agent inputs
+            document.getElementById('agent-inputs').classList[s.role === 'agent' ? 'remove' : 'add']('hidden');
+
+            // results only after role chosen
+            show(document.getElementById('install-results'), done);
+            show(document.getElementById('install-manage-block'), done);
+            show(document.getElementById('install-advanced'), done);
+            show(document.getElementById('install-wizard-hint'), !done);
+            if (!done) return;
+
+            var main = '', notes = [], modeCmd = '', manageCmd = '';
+            var prepEl = document.getElementById('install-prep');
+            var portsEl = document.getElementById('install-ports');
+            var modeEl = document.getElementById('install-mode');
+            var mainLabel = document.getElementById('install-main-label');
+
+            if (s.method === 'script-binary') {
+                mainLabel.textContent = 'bash';
+                main = '# 一键安装（systemd 二进制版）\n'
+                    + 'bash <(curl -sL ' + SCRIPT_URL + ') install' + sourceOpt() + '\n\n'
+                    + '# 安装目录 /usr/local/isrvd/，配置文件同目录 config.yml\n'
+                    + '# 二进制版无法通过容器内网访问其它容器';
+                manageCmd = '# 更新（自动识别二进制或 Docker 部署）\n'
+                    + 'bash <(curl -sL ' + SCRIPT_URL + ') update' + sourceOpt() + '\n\n'
+                    + '# 卸载（清理二进制文件和 Docker 容器，保留数据目录）\n'
+                    + 'bash <(curl -sL ' + SCRIPT_URL + ') uninstall\n\n'
+                    + '# 仅下载二进制包（不安装）\n'
+                    + 'bash <(curl -sL ' + SCRIPT_URL + ') download' + sourceOpt();
+            } else if (s.method === 'script-docker') {
+                var flag = { slim: '--docker', caddy: '--caddy', apisix: '--apisix' }[s.variant];
+                mainLabel.textContent = 'bash';
+                main = '# 一键安装（自动安装 Docker、初始化 Swarm、创建 sdnet 网络）\n'
+                    + 'bash <(curl -sL ' + SCRIPT_URL + ') install ' + flag + sourceOpt() + '\n\n'
+                    + '# 容器名 isrvd，数据保存在 /srv/data，端口映射由镜像版本决定';
+                manageCmd = '# 更新（按当前镜像类型重建容器）\n'
+                    + 'bash <(curl -sL ' + SCRIPT_URL + ') update' + sourceOpt() + '\n\n'
+                    + '# 卸载（删除容器，保留 /srv/data 数据目录）\n'
+                    + 'bash <(curl -sL ' + SCRIPT_URL + ') uninstall\n\n'
+                    + '# 仅下载二进制包（不安装）\n'
+                    + 'bash <(curl -sL ' + SCRIPT_URL + ') download' + sourceOpt();
+                notes.push('默认管理员账号 <code class="bg-slate-100 px-1 rounded">admin</code> / <code class="bg-slate-100 px-1 rounded">admin</code>，首次登录后自动跳转修改密码');
+            } else if (s.method === 'docker') {
+                mainLabel.textContent = 'bash — docker run';
+                var ports = ['-p 8080:8080'];
+                if (s.variant === 'caddy') ports.push('-p 80:80', '-p 443:443');
+                if (s.variant === 'apisix') ports.push('-p 80:9080', '-p 443:9443');
+                main = 'docker run -d \\\n'
+                    + '  --name isrvd \\\n'
+                    + '  --network sdnet \\\n'
+                    + ports.map(function (p) { return '  ' + p + ' \\\n'; }).join('')
+                    + '  -v /srv/data:/data \\\n'
+                    + '  -v /var/run/docker.sock:/var/run/docker.sock \\\n'
+                    + '  ' + variantImage();
+                manageCmd = '# 更新：拉取新镜像并重建容器\n'
+                    + 'docker pull ' + variantImage() + '\n'
+                    + 'docker rm -f isrvd\n'
+                    + '# 然后重新执行上面的 docker run 命令\n\n'
+                    + '# 卸载（保留 /srv/data 数据目录）\n'
+                    + 'docker rm -f isrvd';
+                prepEl.classList.remove('hidden');
+                document.getElementById('install-prep-body').innerHTML = highlight(
+                    '# 未安装 Docker 时执行；已安装可跳过\n'
+                    + 'curl -fsSL https://get.docker.com -o get-docker.sh && \\\n'
+                    + 'sh get-docker.sh --mirror Aliyun && \\\n'
+                    + 'echo \'{"registry-mirrors":["https://docker.1ms.run"]}\' | tee /etc/docker/daemon.json && \\\n'
+                    + 'systemctl restart docker\n\n'
+                    + '# 创建网络：本地通信和跨主机通信二选一\n\n'
+                    + '# 本地通信\ndocker network create --driver=bridge sdnet\n\n'
+                    + '# 跨主机通信\ndocker network create --driver=overlay --attachable sdnet'
+                );
+                notes.push('请根据网络环境选择 bridge（单机）或 overlay（跨主机）网络');
+                notes.push('默认管理员账号 <code class="bg-slate-100 px-1 rounded">admin</code> / <code class="bg-slate-100 px-1 rounded">admin</code>，首次登录后自动跳转修改密码');
+            } else {
+                mainLabel.textContent = 'docker-compose.yml';
+                main = 'networks:\n'
+                    + '  sdnet:\n'
+                    + '    driver: bridge\n\n'
+                    + 'services:\n'
+                    + '  isrvd:\n'
+                    + '    image: ' + variantImage() + '\n'
+                    + '    container_name: isrvd\n'
+                    + '    restart: unless-stopped\n'
+                    + '    networks:\n'
+                    + '      - sdnet\n'
+                    + '    ports:\n'
+                    + '      - "8080:8080"\n'
+                    + (s.variant !== 'slim'
+                        ? '      - "80:' + (s.variant === 'caddy' ? '80' : '9080') + '"\n      - "443:' + (s.variant === 'caddy' ? '443' : '9443') + '"\n'
+                        : '')
+                    + '    volumes:\n'
+                    + '      - /srv/data:/data\n'
+                    + '      - /var/run/docker.sock:/var/run/docker.sock';
+                manageCmd = '# 部署 / 更新\n'
+                    + 'docker compose up -d\n\n'
+                    + '# 查看状态与日志\n'
+                    + 'docker compose ps\n'
+                    + 'docker compose logs -f\n\n'
+                    + '# 卸载（保留 /srv/data 数据目录）\n'
+                    + 'docker compose down';
+                notes.push('请先创建 <code class="bg-slate-100 px-1 rounded">sdnet</code> 网络（上方「安装 Docker / 创建网络」），或改用 compose 内建网络');
+                notes.push('始终挂载整个 <code class="bg-slate-100 px-1 rounded">/data</code> 目录，避免容器重建时数据丢失');
+            }
+
+            // port table visibility
+            if (s.method === 'docker' || s.method === 'compose' || s.method === 'script-docker') {
+                portsEl.classList.remove('hidden');
+            } else { portsEl.classList.add('hidden'); }
+
+            // role commands
+            if (s.role !== 'server') {
+                modeEl.classList.remove('hidden');
+                var centerUrl = (document.getElementById('input-center-url').value || 'https://center.example.com').trim();
+                var enrollCode = (document.getElementById('input-enroll-code').value || '<注册码>').trim();
+                if (s.role === 'center') {
+                    modeCmd = '# 二进制：加 --mode center 即可，沿用原有配置\n'
+                        + 'isrvd --mode center\n\n'
+                        + '# Docker：多一个环境变量，8080 为对外入口\n'
+                        + 'docker run -d --name isrvd-center --network sdnet -p 8080:8080 \\\n'
+                        + '  -e ISRVD_MODE=center \\\n'
+                        + '  -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock \\\n'
+                        + '  ' + variantImage() + '\n\n'
+                        + '# 然后在「节点管理」页点击「接入节点」生成一次性注册码';
+                    document.getElementById('install-mode-label').textContent = 'bash — 中控（center）';
+                } else {
+                    modeCmd = '# 二进制（受管机不监听对外端口，主动出站连接中控）\n'
+                        + 'isrvd --mode agent \\\n'
+                        + '  --center-url ' + centerUrl + ' \\\n'
+                        + '  --enroll-code ' + enrollCode + '\n\n'
+                        + '# Docker：不需要 -p\n'
+                        + 'docker run -d --name isrvd-agent --network sdnet \\\n'
+                        + '  -e ISRVD_MODE=agent \\\n'
+                        + '  -e ISRVD_CENTER_URL=' + centerUrl + ' \\\n'
+                        + '  -e ISRVD_ENROLL_CODE=' + enrollCode + ' \\\n'
+                        + '  -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock \\\n'
+                        + '  ' + variantImage();
+                    document.getElementById('install-mode-label').textContent = 'bash — 受管机（agent）';
+                }
+                notes.push('受管机凭据加密保存在 <code class="bg-slate-100 px-1 rounded">/data</code> 下，保持挂载，否则重建后需重新注册');
+                notes.push('受管机与中控的版本需一致；systemd 部署可用 <code class="bg-slate-100 px-1 rounded">systemctl edit isrvd</code> 以 drop-in 追加环境变量');
+            } else {
+                modeEl.classList.add('hidden');
+            }
+
+            // source notes
+            if (s.source === 'cn') {
+                notes.push('国内源：' + (s.method === 'script-binary'
+                    ? '二进制包取 CNB Releases'
+                    : '二进制取 CNB Releases，镜像取 <code class="bg-slate-100 px-1 rounded">docker.cnb.cool/rehiy/isrvd:&lt;tag&gt;</code>（slim / caddy / apisix，slim 同时为 latest）'));
+            } else if (s.source === 'global') {
+                notes.push('国际源：' + (s.method === 'script-binary'
+                    ? '二进制包取 GitHub Releases'
+                    : '二进制取 GitHub Releases，镜像取 Docker Hub（rehiy/isrvd）'));
+            } else {
+                notes.push('自动源：按 IP 国家代码选择 CNB 或 GitHub' + (s.method === 'script-binary' ? '' : '；Docker 部署使用 Docker Hub，国内可切换「国内 CNB」'));
+            }
+
+            document.getElementById('install-main').innerHTML = highlight(main);
+            document.getElementById('install-mode-body').innerHTML = highlight(modeCmd);
+            document.getElementById('install-manage').innerHTML = highlight(manageCmd);
+            document.getElementById('install-notes').innerHTML = notes.map(function (n) { return '<li>' + n + '</li>'; }).join('');
+
+            if (s.method === 'docker' || s.method === 'compose') {
+                prepEl.classList.remove('hidden');
+            } else {
+                prepEl.classList.add('hidden');
+            }
+        }
+        renderInstall();
         // Copy code
         function copyCode(btn) {
             const codeBody = btn.parentElement.nextElementSibling;
