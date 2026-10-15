@@ -219,7 +219,7 @@ One binary, one role selected with `--mode` (or the `ISRVD_MODE` environment var
 1. Start the center: `isrvd --mode center`, keeping the existing config file and `listenAddr`
 2. Click "接入节点" on the node management page to generate a one-time enrollment code; the UI shows a ready-to-copy startup command for the managed node. Unused codes appear as "待接入" in the list and can be revoked at any time
 3. Start the managed node: `isrvd --mode agent --center-url https://center.example.com --enroll-code <code>`
-4. Approve the node on the same page. Codes generated with "自动通过审批" skip this step, and the node shows as "在线" immediately
+4. The node joins automatically after registration and shows as "在线" once connected
 
 After the first enrollment, node credentials are stored encrypted on the managed node, so restarts do not need the code again.
 

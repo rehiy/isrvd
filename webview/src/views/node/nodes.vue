@@ -7,7 +7,6 @@ import api from '@/service/api'
 import type { NodeCodeInfo, NodeInfo } from '@/service/types'
 
 import { POLL_INTERVAL, formatTime } from '@/helper/format'
-import { switchNode } from '@/helper/node'
 
 import PageSearch from '@/component/page-search.vue'
 
@@ -96,7 +95,6 @@ class NodeManage extends Vue {
 
     // ─── 展示辅助 ───
     statusText(node: NodeInfo) {
-        if (node.status === 'pending') return this.$t('待审批')
         if (node.status === 'revoked') return this.$t('已吊销')
         if (!node.online) return this.$t('离线')
         return node.compatible ? this.$t('在线') : this.$t('版本不兼容')
@@ -104,13 +102,8 @@ class NodeManage extends Vue {
 
     statusClass(node: NodeInfo) {
         if (node.status === 'revoked') return 'text-slate-500'
-        if (node.status === 'pending') return 'text-amber-600 font-medium'
         if (!node.online) return 'text-red-500 font-medium'
         return node.compatible ? 'text-emerald-600 font-medium' : 'text-amber-600 font-medium'
-    }
-
-    canOpen(node: NodeInfo) {
-        return node.status === 'approved' && node.online && node.compatible
     }
 
     platformText(node: NodeInfo) {
@@ -119,10 +112,6 @@ class NodeManage extends Vue {
 
     latencyText(node: NodeInfo) {
         return node.online ? `${node.latency} ms` : '-'
-    }
-
-    approveText(code: NodeCodeInfo) {
-        return code.autoApprove ? this.$t('自动审批') : this.$t('需人工审批')
     }
 
     timeText(value?: string) {
@@ -156,10 +145,6 @@ class NodeManage extends Vue {
     }
 
     // ─── 操作 ───
-    openNode(node: NodeInfo) {
-        switchNode(node.id, '#/overview')
-    }
-
     openAdd() {
         this.codeModalRef?.show()
     }
@@ -170,14 +155,6 @@ class NodeManage extends Vue {
 
     openEdit(node: NodeInfo) {
         this.editModalRef?.show(node)
-    }
-
-    async handleApprove(node: NodeInfo) {
-        try {
-            await api.nodeApprove(node.id)
-            this.portal.showNotification('success', this.$t('节点已通过审批'))
-            this.load(true)
-        } catch {}
     }
 
     handleRevoke(node: NodeInfo) {
@@ -348,21 +325,15 @@ export default toNative(NodeManage)
                 <td class="td-text">{{ latencyText(row.node) }}</td>
               </template>
               <td v-else-if="row.code" class="td-text" colspan="3">
-                {{ approveText(row.code) }} {{ $t('· 创建人') }} {{ row.code.createdBy }}  ·  {{ timeText(row.code.expiresAt) }} {{ $t('过期') }}
+                {{ $t('创建人') }} {{ row.code.createdBy }}  ·  {{ timeText(row.code.expiresAt) }} {{ $t('过期') }}
               </td>
               <td class="px-4 py-3">
                 <div class="table-actions">
                   <template v-if="row.node">
-                    <button v-if="canOpen(row.node)" class="btn-icon btn-icon-slate" :title="$t('进入节点')" @click="openNode(row.node)">
-                      <i class="fas fa-arrow-right-to-bracket text-xs"></i>
-                    </button>
-                    <button v-if="row.node.status === 'pending' && portal.hasPerm('POST /api/node/item/:id/approve')" class="btn-icon btn-icon-emerald" :title="$t('审批通过')" @click="handleApprove(row.node)">
-                      <i class="fas fa-check text-xs"></i>
-                    </button>
                     <button v-if="portal.hasPerm('PUT /api/node/item/:id')" class="btn-icon btn-icon-blue" :title="$t('重命名')" @click="openEdit(row.node)">
                       <i class="fas fa-pen text-xs"></i>
                     </button>
-                    <button v-if="row.node.status === 'approved' && portal.hasPerm('POST /api/node/item/:id/revoke')" class="btn-icon btn-icon-amber" :title="$t('吊销')" @click="handleRevoke(row.node)">
+                    <button v-if="row.node.status === 'active' && portal.hasPerm('POST /api/node/item/:id/revoke')" class="btn-icon btn-icon-amber" :title="$t('吊销')" @click="handleRevoke(row.node)">
                       <i class="fas fa-ban text-xs"></i>
                     </button>
                     <button v-if="portal.hasPerm('DELETE /api/node/item/:id')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleDelete(row.node)">
@@ -417,10 +388,6 @@ export default toNative(NodeManage)
           </template>
           <template v-else-if="row.code">
             <div class="card-prop-row">
-              <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('审批') }}</span>
-              <span class="text-xs text-slate-500">{{ approveText(row.code) }}</span>
-            </div>
-            <div class="card-prop-row">
               <span class="text-xs text-slate-400 flex-shrink-0">{{ $t('创建人') }}</span>
               <span class="text-xs text-slate-500">{{ row.code.createdBy }}</span>
             </div>
@@ -432,16 +399,10 @@ export default toNative(NodeManage)
 
           <div class="card-actions">
             <template v-if="row.node">
-              <button v-if="canOpen(row.node)" class="btn-icon btn-icon-slate" :title="$t('进入节点')" @click="openNode(row.node)">
-                <i class="fas fa-arrow-right-to-bracket text-xs"></i><span class="text-xs ml-1">{{ $t('进入') }}</span>
-              </button>
-              <button v-if="row.node.status === 'pending' && portal.hasPerm('POST /api/node/item/:id/approve')" class="btn-icon btn-icon-emerald" :title="$t('审批通过')" @click="handleApprove(row.node)">
-                <i class="fas fa-check text-xs"></i><span class="text-xs ml-1">{{ $t('审批') }}</span>
-              </button>
               <button v-if="portal.hasPerm('PUT /api/node/item/:id')" class="btn-icon btn-icon-blue" :title="$t('重命名')" @click="openEdit(row.node)">
                 <i class="fas fa-pen text-xs"></i><span class="text-xs ml-1">{{ $t('重命名') }}</span>
               </button>
-              <button v-if="row.node.status === 'approved' && portal.hasPerm('POST /api/node/item/:id/revoke')" class="btn-icon btn-icon-amber" :title="$t('吊销')" @click="handleRevoke(row.node)">
+              <button v-if="row.node.status === 'active' && portal.hasPerm('POST /api/node/item/:id/revoke')" class="btn-icon btn-icon-amber" :title="$t('吊销')" @click="handleRevoke(row.node)">
                 <i class="fas fa-ban text-xs"></i><span class="text-xs ml-1">{{ $t('吊销') }}</span>
               </button>
               <button v-if="portal.hasPerm('DELETE /api/node/item/:id')" class="btn-icon btn-icon-red" :title="$t('删除')" @click="handleDelete(row.node)">

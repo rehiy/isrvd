@@ -23,7 +23,7 @@ isrvd_get "/node/nodes"
 |------|------|------|
 | `id` | string | 节点 ID（UUID，只读） |
 | `name` | string | 节点名称 |
-| `status` | string | `pending` 待审批 \| `approved` 已审批 \| `revoked` 已吊销 |
+| `status` | string | `active` 可连接 \| `revoked` 已吊销 |
 | `hostname` | string | 注册时上报的主机名 |
 | `os` | string | 注册时上报的操作系统 |
 | `arch` | string | 注册时上报的 CPU 架构 |
@@ -35,7 +35,7 @@ isrvd_get "/node/nodes"
 | `connectedAt` | string | 本次连接时间，离线时不返回 |
 | `remoteAddr` | string | 受管机连接来源地址，离线时不返回 |
 
-> 节点令牌与领取密钥只保存哈希，任何接口都不返回。`online`、`latency`、`agentVersion`、`compatible`、`connectedAt`、`remoteAddr` 是运行时状态，不持久化。
+> 节点令牌仅保存哈希；令牌只在注册成功时返回一次，列表接口不返回。`online`、`latency`、`agentVersion`、`compatible`、`connectedAt`、`remoteAddr` 是运行时状态，不持久化。
 
 ### 重命名节点
 
@@ -44,14 +44,6 @@ isrvd_put "/node/item/<ID>" '{"name":"杭州机房 web-01"}'
 ```
 
 `name` 必填，1–64 个字符。
-
-### 审批节点
-
-```bash
-isrvd_post "/node/item/<ID>/approve"
-```
-
-仅 `pending` 状态的节点可审批。审批后受管机在下一个轮询周期（约 10 秒）领取令牌并建立连接。
 
 ### 吊销节点
 
@@ -115,15 +107,7 @@ isrvd_post "/node/enroll" '{
 }'
 ```
 
-`code` 必填；`name` 缺省取主机名。响应：`nodeId`、`claimSecret`（一次性领取密钥）、`status`（`pending` 或 `approved`）。按来源 IP 限流（60 次/分钟）；注册码使用一次即失效，无效或过期返回 `403`。
-
-### 领取节点令牌
-
-```bash
-isrvd_post "/node/enroll/claim" '{"nodeId": "<节点ID>", "claimSecret": "<领取密钥>"}'
-```
-
-响应：`status`；审批通过后同时返回 `token`（节点令牌）。审批前返回 `pending`，节点首次成功连接前允许重复领取。同样按来源 IP 限流。
+`code` 必填；`name` 缺省取主机名。注册成功直接返回 `nodeId` 和 `token`（节点令牌）。按来源 IP 限流（60 次/分钟）；注册码使用一次即失效，无效或过期返回 `403`。
 
 ### 建立隧道
 

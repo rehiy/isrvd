@@ -898,10 +898,6 @@ class ApiService {
         return http.put<NodeInfo>(`node/item/${id}`, data)
     }
 
-    nodeApprove(id: string) {
-        return http.post<NodeInfo>(`node/item/${id}/approve`)
-    }
-
     nodeRevoke(id: string) {
         return http.post<void>(`node/item/${id}/revoke`)
     }

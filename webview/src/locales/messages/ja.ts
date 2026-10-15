@@ -1102,14 +1102,10 @@ const messages: Record<string, string> = {
     '延迟': '遅延',
     // Expired
     '过期': '期限切れ',
-    // Enter Node
-    '进入节点': 'ノードを開く',
-    // Approve
-    '审批通过': '承認',
     // View join command
     '查看接入命令': '参加コマンドを表示',
-    // Review
-    '审批': '審査',
+    '直接运行': '直接実行',
+    'Docker 运行': 'Docker で実行',
     // Press Enter to add:
     '按 Enter 添加:': 'Enter で追加:',
     // Usage:

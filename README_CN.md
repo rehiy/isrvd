@@ -217,7 +217,7 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) dow
 1. 启动中控：`isrvd --mode center`，沿用原来的配置文件与 `listenAddr`
 2. 在「节点管理」页点击「接入节点」生成一次性注册码，界面会给出可直接复制的受管机启动命令；未使用的注册码在列表里显示为「待接入」，可随时撤销
 3. 在受管机启动：`isrvd --mode agent --center-url https://center.example.com --enroll-code <注册码>`
-4. 在同一页面审批该节点；勾选「自动通过审批」生成的注册码可跳过这一步，节点随即显示「在线」
+4. 节点注册后自动接入，连接建立后在列表中显示「在线」
 
 首次注册后节点凭据加密保存在受管机本地，重启不需要再带注册码。
 

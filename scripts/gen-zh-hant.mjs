@@ -55,7 +55,11 @@ const TERMS = [
  * 依赖上下文的规则：「获取+宾语」在台湾习惯说「取得」，
  * 但「获取列表」这类固定搭配保持不变，所以排除后接「列」的情况。
  */
-const RULES = [[/获取(?=[\u4e00-\u9fff])(?!列)/g, '取得']]
+const RULES = [
+    [/获取(?=[\u4e00-\u9fff])(?!列)/g, '取得'],
+    [/^直接运行$/, '直接執行'],
+    [/^Docker 运行$/, '使用 Docker 執行'],
+]
 
 const toTW = OpenCC.Converter({ from: 'cn', to: 'tw' })
 

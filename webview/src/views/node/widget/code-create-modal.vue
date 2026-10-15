@@ -11,11 +11,10 @@ import { formatTime } from '@/helper/format'
 import { centerUrl } from '@/helper/node'
 
 import BaseModal from '@/component/modal.vue'
-import ToggleCard from '@/component/toggle-card.vue'
 
 @Component({
     expose: ['show', 'view'],
-    components: { BaseModal, ToggleCard },
+    components: { BaseModal },
     emits: ['success']
 })
 class CodeCreateModal extends Vue {
@@ -24,7 +23,7 @@ class CodeCreateModal extends Vue {
     // ─── 数据属性 ───
     isOpen = false
     modalLoading = false
-    formData: NodeCodeCreate = { name: '', ttlMinutes: 60, autoApprove: false }
+    formData: NodeCodeCreate = { name: '', ttlMinutes: 60 }
     // 要展示的注册码：创建成功后，或从列表中查看已有的待接入注册码
     created: NodeCodeInfo | null = null
 
@@ -38,7 +37,16 @@ class CodeCreateModal extends Vue {
     // ─── 计算属性 ───
     get command() {
         if (!this.created) return ''
-        return `isrvd --mode agent --center-url ${centerUrl()} --enroll-code ${this.created.code}`
+        return `isrvd --mode agent --center-url ${this.shellArg(centerUrl())} --enroll-code ${this.shellArg(this.created.code)}`
+    }
+
+    get dockerCommand() {
+        if (!this.created) return ''
+        return `docker run -d --name isrvd-agent --restart unless-stopped -e ISRVD_MODE=agent -e ISRVD_CENTER_URL=${this.shellArg(centerUrl())} -e ISRVD_ENROLL_CODE=${this.shellArg(this.created.code)} -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim`
+    }
+
+    shellArg(value: string) {
+        return `'${value.replace(/'/g, "'\\''")}'`
     }
 
     get expiresText() {
@@ -47,7 +55,7 @@ class CodeCreateModal extends Vue {
 
     // ─── 方法 ───
     show() {
-        this.formData = { name: '', ttlMinutes: 60, autoApprove: false }
+        this.formData = { name: '', ttlMinutes: 60 }
         this.created = null
         this.isOpen = true
     }
@@ -68,8 +76,8 @@ class CodeCreateModal extends Vue {
         this.modalLoading = false
     }
 
-    async copyCommand() {
-        const ok = await copyToClipboard(this.command)
+    async copyCommand(command: string) {
+        const ok = await copyToClipboard(command)
         this.portal.showNotification(ok ? 'success' : 'error', ok ? this.$t('命令已复制到剪贴板') : this.$t('复制失败，请手动复制'))
     }
 }
@@ -83,11 +91,22 @@ export default toNative(CodeCreateModal)
     <div v-if="created" class="space-y-4">
       <p class="text-sm text-slate-600">{{ $t('注册码只能使用一次，') }} {{ expiresText }} {{ $t('过期；未使用前可在节点管理列表中再次查看。') }}</p>
       <div>
-        <label class="form-label">{{ $t('在受管机上执行') }}</label>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-medium text-slate-700">{{ $t('直接运行') }}</span>
+          <button type="button" class="btn btn-secondary" @click="copyCommand(command)">
+            <i class="fas fa-copy"></i>{{ $t('复制命令') }}
+          </button>
+        </div>
         <code class="detail-value-mono">{{ command }}</code>
-        <p class="text-xs text-slate-400 mt-1">
-          {{ created.autoApprove ? $t('该注册码已设置自动审批，节点启动后会直接上线。') : $t('节点启动后会出现在「节点管理」列表中，审批通过后上线。') }} {{ $t('首次注册成功后，重启受管机无需再带注册码。') }}
-        </p>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-medium text-slate-700">{{ $t('Docker 运行') }}</span>
+          <button type="button" class="btn btn-secondary" @click="copyCommand(dockerCommand)">
+            <i class="fas fa-copy"></i>{{ $t('复制命令') }}
+          </button>
+        </div>
+        <code class="detail-value-mono">{{ dockerCommand }}</code>
       </div>
     </div>
 
@@ -104,15 +123,10 @@ export default toNative(CodeCreateModal)
         </select>
         <p class="text-xs text-slate-400 mt-1">{{ $t('注册码只能使用一次，过期或使用后自动失效') }}</p>
       </div>
-      <ToggleCard v-model="formData.autoApprove" :label="$t('自动通过审批')" :desc="$t('使用该注册码接入的节点无需人工审批，直接上线。仅建议在可信网络内使用')" />
     </form>
 
-    <!-- 生成后：底部改为「关闭」与「复制命令」 -->
     <template v-if="created" #footer>
       <button type="button" class="btn btn-secondary" @click="isOpen = false">{{ $t('关闭') }}</button>
-      <button type="button" class="btn btn-orange" @click="copyCommand">
-        <i class="fas fa-copy"></i>{{ $t('复制命令') }}
-      </button>
     </template>
 
     <template #confirm-text>{{ $t('生成注册码') }}</template>

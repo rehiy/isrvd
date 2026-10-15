@@ -25,8 +25,8 @@ class NodeSwitcher extends Vue {
         return this.portal.hasPerm('GET /api/node/nodes')
     }
 
-    get approvedNodes() {
-        return this.portal.nodes.filter(n => n.status === 'approved')
+    get activeNodes() {
+        return this.portal.nodes.filter(n => n.status === 'active')
     }
 
     get viewingNode() {
@@ -91,9 +91,9 @@ export default toNative(NodeSwitcher)
       <i v-if="!viewingNode" class="fas fa-check text-xs ml-auto"></i>
     </button>
 
-    <!-- 已审批的受管机 -->
+    <!-- 已接入的受管机 -->
     <button
-      v-for="node in approvedNodes"
+      v-for="node in activeNodes"
       :key="node.id"
       class="dropdown-item"
       :class="{ 'dropdown-item-active': node.id === portal.currentNodeId }"
@@ -107,6 +107,6 @@ export default toNative(NodeSwitcher)
       <i v-else-if="node.id === portal.currentNodeId" class="fas fa-check text-xs ml-auto"></i>
     </button>
 
-    <div v-if="approvedNodes.length === 0" class="px-4 py-3 text-xs text-slate-400">{{ $t('暂无已接入的节点') }}</div>
+    <div v-if="activeNodes.length === 0" class="px-4 py-3 text-xs text-slate-400">{{ $t('暂无已接入的节点') }}</div>
   </Dropdown>
 </template>

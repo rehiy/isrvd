@@ -2,7 +2,7 @@
 export interface NodeInfo {
     id: string
     name: string
-    status: 'pending' | 'approved' | 'revoked' // 待审批 / 已审批 / 已吊销
+    status: 'active' | 'revoked' // 可连接 / 已吊销
     hostname: string
     os: string
     arch: string
@@ -25,7 +25,6 @@ export interface NodeCodeInfo {
     id: string
     name: string
     code: string
-    autoApprove: boolean
     createdBy: string
     createdAt: string
     expiresAt: string
@@ -35,5 +34,4 @@ export interface NodeCodeInfo {
 export interface NodeCodeCreate {
     name: string
     ttlMinutes: number
-    autoApprove: boolean
 }

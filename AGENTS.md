@@ -350,7 +350,7 @@ docs/
 3. 文件系统操作防目录遍历；解压防 Zip Slip
 4. WebSocket 必须经过认证链路
 5. 关键资源（内置角色等）前后端双重校验
-6. SSH 密码/私钥、节点注册码与受管机节点令牌加密落盘（`server/service/webssh/secret.go`、`server/service/node/secret.go`，密钥由 JWT 密钥派生）；节点令牌与领取密钥在中控侧只存哈希
+6. SSH 密码/私钥、节点注册码与受管机节点令牌加密落盘（分别见 `server/service/webssh/secret.go`、`server/service/node/service.go`、`server/service/node/agent.go`，密钥由 JWT 密钥派生）；中控侧仅保存节点令牌哈希
 
 ---
 

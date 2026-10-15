@@ -7,11 +7,11 @@ import api from '@/service/api'
 
 import ConfirmModal from '@/component/confirm.vue'
 import Copilot from '@/component/copilot/index.vue'
+import LocaleSwitch from '@/component/locale-switch.vue'
 import NavigationBar from '@/component/navigation.vue'
 import NodeSwitcher from '@/component/node-switcher.vue'
 import NotificationManager from '@/component/notification.vue'
 import ToolbarLinks from '@/component/toolbar-links.vue'
-import LocaleSwitch from '@/component/locale-switch.vue'
 import UserMenu from '@/component/user-menu.vue'
 
 import AuthLogin from '@/views/account/login.vue'
