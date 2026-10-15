@@ -45,7 +45,7 @@ func Init() error {
 
 	document = cstore.NewDocument(store, storeKey)
 
-	logman.Info("load config", "path", uri)
+	logman.Info("load config")
 	if err := Load(); err != nil {
 		return err
 	}

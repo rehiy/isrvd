@@ -86,7 +86,7 @@ func Open(uri string, opts ...Option) (Store, error) {
 	case strings.HasPrefix(lower, "file://"):
 		return newFileStore(strings.TrimPrefix(uri, "file://"))
 	case strings.Contains(uri, "://"):
-		return nil, fmt.Errorf("cstore: 不支持的存储 URI: %s", uri)
+		return nil, fmt.Errorf("cstore: 不支持的存储 URI")
 	default:
 		return newFileStore(uri)
 	}
@@ -129,7 +129,7 @@ func OpenWithKey(uri string, opts ...Option) (Store, string, error) {
 	case strings.HasPrefix(lower, "file://"):
 		uri = strings.TrimPrefix(uri, "file://")
 	case strings.Contains(uri, "://"):
-		return nil, "", fmt.Errorf("cstore: 不支持的存储 URI: %s", uri)
+		return nil, "", fmt.Errorf("cstore: 不支持的存储 URI")
 	}
 	s, err := newFileStore(filepath.Dir(uri))
 	return s, filepath.Base(uri), err
