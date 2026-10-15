@@ -12,24 +12,22 @@ import (
 
 // 节点状态
 const (
-	StatusPending  = "pending"  // 已提交注册，等待管理员审批
-	StatusApproved = "approved" // 已审批，可连接
-	StatusRevoked  = "revoked"  // 已吊销，令牌失效
+	StatusActive  = "active"  // 可连接
+	StatusRevoked = "revoked" // 已吊销，令牌失效
 )
 
 // ErrNotFound 表示节点或注册码不存在。
 var ErrNotFound = errors.New("记录不存在")
 
-// Node 受管机记录。令牌与领取密钥只保存 SHA-256 哈希，任何接口都不回显。
+// Node 受管机记录。令牌只保存 SHA-256 哈希，任何接口都不回显。
 type Node struct {
 	ID        string    `yaml:"id" json:"id"`                 // 节点 ID（自动生成）
 	Name      string    `yaml:"name" json:"name"`             // 节点名称
-	Status    string    `yaml:"status" json:"status"`         // pending / approved / revoked
+	Status    string    `yaml:"status" json:"status"`         // active / revoked
 	Hostname  string    `yaml:"hostname" json:"hostname"`     // 注册时上报的主机名
 	OS        string    `yaml:"os" json:"os"`                 // 注册时上报的操作系统
 	Arch      string    `yaml:"arch" json:"arch"`             // 注册时上报的 CPU 架构
 	CreatedAt time.Time `yaml:"createdAt" json:"createdAt"`   // 注册时间
-	ClaimHash string    `yaml:"claimHash,omitempty" json:"-"` // 一次性领取密钥哈希；节点首次成功连接后清除
 	TokenHash string    `yaml:"tokenHash,omitempty" json:"-"` // 节点令牌哈希
 
 	// 以下为运行时状态，不持久化
@@ -43,16 +41,15 @@ type Node struct {
 
 // EnrollCode 注册码。使用一次即失效、最长 7 天过期；创始人可在待接入期间随时查看接入命令，
 // 所以不能只存哈希，而是与 SSH 凭据一样用 JWT 密钥派生的密钥加密落盘（见 pkgs/secretbox）。
-// 长期有效的节点令牌与领取密钥仍然只保存哈希。
+// 节点令牌仍然只保存哈希。
 type EnrollCode struct {
-	ID          string    `yaml:"id" json:"id"`                   // 注册码 ID
-	Name        string    `yaml:"name" json:"name"`               // 备注
-	Sealed      string    `yaml:"code" json:"-"`                  // 注册码密文（落盘）
-	Code        string    `yaml:"-" json:"code"`                  // 注册码明文，由服务从密文解出后填入，不落盘
-	AutoApprove bool      `yaml:"autoApprove" json:"autoApprove"` // 使用该码注册的节点是否自动审批
-	CreatedBy   string    `yaml:"createdBy" json:"createdBy"`     // 创建人
-	CreatedAt   time.Time `yaml:"createdAt" json:"createdAt"`     // 创建时间
-	ExpiresAt   time.Time `yaml:"expiresAt" json:"expiresAt"`     // 过期时间
+	ID        string    `yaml:"id" json:"id"`               // 注册码 ID
+	Name      string    `yaml:"name" json:"name"`           // 备注
+	Sealed    string    `yaml:"code" json:"-"`              // 注册码密文（落盘）
+	Code      string    `yaml:"-" json:"code"`              // 注册码明文，由服务从密文解出后填入，不落盘
+	CreatedBy string    `yaml:"createdBy" json:"createdBy"` // 创建人
+	CreatedAt time.Time `yaml:"createdAt" json:"createdAt"` // 创建时间
+	ExpiresAt time.Time `yaml:"expiresAt" json:"expiresAt"` // 过期时间
 }
 
 // listStore 带互斥的类型化列表。持久化交给业务数据存储（config.OpenData），

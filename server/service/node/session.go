@@ -134,18 +134,9 @@ func (s *Service) Authenticate(r *http.Request, ip string) (*Node, error) {
 	if n != nil {
 		tokenHash = n.TokenHash
 	}
-	if n == nil || n.Status != StatusApproved || !secretsEqual(tokenHash, hashSecret(secret)) {
+	if n == nil || n.Status != StatusActive || !secretsEqual(tokenHash, hashSecret(secret)) {
 		s.authLimit.record(ip)
 		return nil, ErrUnauthorized
-	}
-	// 首次成功连接后领取密钥作废
-	if n.ClaimHash != "" {
-		if err := s.nodes.update(n.ID, func(x *Node) error {
-			x.ClaimHash = ""
-			return nil
-		}); err != nil {
-			logger.Warn("清除领取密钥失败", "id", n.ID, "error", err)
-		}
 	}
 	return n, nil
 }
@@ -162,7 +153,7 @@ func (s *Service) Serve(ctx context.Context, ws io.ReadWriteCloser, remote strin
 	conn := newNodeConn(n.ID, sess, remote)
 	conn.negotiate()
 
-	if !s.attach(conn) {
+	if !s.attach(conn, n.TokenHash) {
 		conn.close()
 		return
 	}
@@ -177,10 +168,11 @@ func (s *Service) Serve(ctx context.Context, ws io.ReadWriteCloser, remote strin
 	logger.Info("节点已离线", "id", n.ID, "name", n.Name)
 }
 
-// attach 登记在线会话，返回 false 表示服务已关闭
-func (s *Service) attach(c *nodeConn) bool {
+// attach 在吊销/删除使用的同一把锁内复核令牌与状态，再登记在线会话。
+func (s *Service) attach(c *nodeConn, tokenHash string) bool {
 	s.mu.Lock()
-	if s.closed {
+	n := s.nodes.get(c.nodeID)
+	if s.closed || n == nil || n.Status != StatusActive || n.TokenHash != tokenHash {
 		s.mu.Unlock()
 		return false
 	}

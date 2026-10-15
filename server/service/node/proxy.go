@@ -9,6 +9,8 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+
+	"isrvd/server/i18n"
 )
 
 var errOffline = errors.New("节点离线")
@@ -20,13 +22,13 @@ func (s *Service) ProxyServe(w http.ResponseWriter, r *http.Request, id string) 
 	c, err := s.connFor(id)
 	switch {
 	case errors.Is(err, ErrNotFound):
-		writeError(w, http.StatusNotFound, "节点不存在")
+		writeError(w, r, http.StatusNotFound, "节点不存在")
 		return
 	case errors.Is(err, errOffline):
-		writeError(w, http.StatusServiceUnavailable, "节点离线")
+		writeError(w, r, http.StatusServiceUnavailable, "节点离线")
 		return
 	case err != nil:
-		writeError(w, http.StatusBadGateway, err.Error())
+		writeError(w, r, http.StatusBadGateway, err.Error())
 		return
 	}
 	c.proxy.ServeHTTP(w, r)
@@ -84,11 +86,15 @@ func proxyError(w http.ResponseWriter, r *http.Request, err error) {
 		status, message = http.StatusGatewayTimeout, "节点响应超时"
 	}
 	logger.Warn("节点代理失败", "method", r.Method, "path", r.URL.Path, "error", err)
-	writeError(w, status, message)
+	writeError(w, r, status, message)
 }
 
-func writeError(w http.ResponseWriter, status int, message string) {
+func writeError(w http.ResponseWriter, r *http.Request, status int, message string) {
+	lang := r.URL.Query().Get("lang")
+	if lang == "" {
+		lang = r.Header.Get("Accept-Language")
+	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]any{"success": false, "message": message})
+	_ = json.NewEncoder(w).Encode(map[string]any{"success": false, "message": i18n.Translate(i18n.Parse(lang), message)})
 }

@@ -26,7 +26,6 @@ const (
 	// 该路径不在 /api/ 下，中控只会把 /api/ 下的请求经隧道转发，用户无法访问到它。
 	AgentInfoPath = "/__agent/info"
 
-	enrollPollPeriod = 10 * time.Second
 	enrollRetryDelay = time.Minute
 )
 
@@ -140,7 +139,7 @@ func (a *Agent) newHandler() http.Handler {
 				return
 			}
 			logger.Warn("转发到本机 isrvd 失败", "path", r.URL.Path, "error", err)
-			writeError(w, http.StatusBadGateway, "本机 isrvd 不可用")
+			writeError(w, r, http.StatusBadGateway, "本机 isrvd 不可用")
 		},
 	}
 
@@ -172,14 +171,14 @@ func LocalAgentInfo(version string) *AgentInfo {
 type agentState struct {
 	NodeID    string `yaml:"nodeId"`
 	Token     string `yaml:"token"`     // 加密落盘
-	CenterURL string `yaml:"centerUrl"` // 令牌所属的中控
+	CenterURL string `yaml:"centerUrl"` // 凭据所属的中控
 }
 
-// credential 读取本地凭据；没有（或要求重新注册）时使用注册码向中控注册并等待审批。
+// credential 读取本地凭据；没有（或要求重新注册）时使用注册码向中控注册。
 // 注册码只能用一次：成功或被中控明确拒绝后不再重试，之后沿用本地凭据。
 func (a *Agent) credential(ctx context.Context, reenroll bool) (*agentState, error) {
 	state := a.stateLoad()
-	usable := state != nil && state.CenterURL == a.opt.CenterURL
+	usable := state != nil && state.CenterURL == a.opt.CenterURL && state.Token != ""
 	if usable && !reenroll {
 		return state, nil
 	}
@@ -191,7 +190,7 @@ func (a *Agent) credential(ctx context.Context, reenroll bool) (*agentState, err
 	}
 
 	enrolled, err := a.enroll(ctx)
-	if err == nil || rejected(err) {
+	if rejected(err) {
 		a.codeSpent = true
 	}
 	if err != nil && usable {
@@ -201,6 +200,7 @@ func (a *Agent) credential(ctx context.Context, reenroll bool) (*agentState, err
 	return enrolled, err
 }
 
+// enroll 使用注册码注册节点并加密保存令牌。
 func (a *Agent) enroll(ctx context.Context) (*agentState, error) {
 	client := &http.Client{
 		Timeout: 20 * time.Second,
@@ -212,41 +212,19 @@ func (a *Agent) enroll(ctx context.Context) (*agentState, error) {
 	if name == "" {
 		name = info.Hostname
 	}
-
 	var enrolled EnrollResponse
 	if err := postJSON(ctx, client, a.opt.CenterURL+"/api/node/enroll", &EnrollRequest{
 		Code: a.opt.EnrollCode, Name: name, Hostname: info.Hostname, OS: info.OS, Arch: info.Arch,
 	}, &enrolled); err != nil {
 		return nil, fmt.Errorf("提交注册失败: %w", err)
 	}
-	logger.Info("已向中控提交注册", "id", enrolled.NodeID, "status", enrolled.Status)
-
-	for {
-		var claimed ClaimResponse
-		err := postJSON(ctx, client, a.opt.CenterURL+"/api/node/enroll/claim", &ClaimRequest{
-			NodeID: enrolled.NodeID, ClaimSecret: enrolled.ClaimSecret,
-		}, &claimed)
-		switch {
-		case ctx.Err() != nil:
-			return nil, ctx.Err()
-		case rejected(err):
-			return nil, fmt.Errorf("领取令牌被拒绝: %w", err) // 节点被删除或吊销，重试没有意义
-		case err != nil:
-			logger.Warn("领取令牌失败，稍后重试", "error", err)
-		case claimed.Status == StatusApproved && claimed.Token != "":
-			state := &agentState{NodeID: enrolled.NodeID, Token: claimed.Token, CenterURL: a.opt.CenterURL}
-			if err := a.stateSave(state); err != nil {
-				return nil, fmt.Errorf("保存节点令牌失败: %w", err)
-			}
-			logger.Info("节点已通过审批", "id", enrolled.NodeID)
-			return state, nil
-		default:
-			logger.Info("等待管理员审批", "id", enrolled.NodeID)
-		}
-		if !wstunnel.Sleep(ctx, enrollPollPeriod) {
-			return nil, ctx.Err()
-		}
+	a.codeSpent = true
+	state := &agentState{NodeID: enrolled.NodeID, Token: enrolled.Token, CenterURL: a.opt.CenterURL}
+	if err := a.stateSave(state); err != nil {
+		return nil, fmt.Errorf("保存节点令牌失败: %w", err)
 	}
+	logger.Info("节点已注册", "id", state.NodeID)
+	return state, nil
 }
 
 // httpError 中控返回的非成功响应
@@ -303,7 +281,7 @@ func postJSON(ctx context.Context, client *http.Client, url string, in, out any)
 
 // ─── 本地凭据存储 ───
 
-// aead 令牌落盘加密：密钥由 StateKey 派生（同进程运行时用 JWT 密钥），无需另配密钥；
+// aead 节点凭据落盘加密：密钥由 StateKey 派生（同进程运行时用 JWT 密钥），无需另配密钥；
 // 密钥变更后旧凭据无法解密，会重新注册。
 func (a *Agent) aead() (cipher.AEAD, error) {
 	return secretbox.NewAEAD("isrvd-node-agent", a.opt.StateKey)
@@ -323,19 +301,18 @@ func (a *Agent) stateLoad() *agentState {
 		logger.Warn("节点凭据文件格式无效", "error", err)
 		return nil
 	}
-	if state.NodeID == "" {
+	if state.NodeID == "" || state.Token == "" {
 		return nil
 	}
 	aead, err := a.aead()
 	if err != nil {
 		return nil
 	}
-	token, err := secretbox.Open(aead, state.Token)
+	state.Token, err = secretbox.Open(aead, state.Token)
 	if err != nil {
 		logger.Warn("节点令牌解密失败，JWT 密钥可能已变更，将重新注册")
 		return nil
 	}
-	state.Token = token
 	return &state
 }
 

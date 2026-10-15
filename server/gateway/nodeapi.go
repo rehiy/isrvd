@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/httpd"
+	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/websocket"
 
 	"isrvd/server/service/node"
@@ -32,15 +33,6 @@ func (g *gateway) nodeUpdate(w http.ResponseWriter, r *http.Request, _ string) {
 		return
 	}
 	success(w, r, "节点更新成功", n)
-}
-
-func (g *gateway) nodeApprove(w http.ResponseWriter, r *http.Request, _ string) {
-	n, err := g.nodes.NodeApprove(r.PathValue("id"))
-	if err != nil {
-		nodeFail(w, r, err)
-		return
-	}
-	success(w, r, "节点已审批", n)
 }
 
 func (g *gateway) nodeRevoke(w http.ResponseWriter, r *http.Request, _ string) {
@@ -95,23 +87,10 @@ func (g *gateway) nodeEnroll(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := g.nodes.Enroll(g.clientIP(r), &req)
 	if err != nil {
-		nodeFail(w, r, err)
+		enrollFail(w, r, err)
 		return
 	}
-	success(w, r, "注册已提交", resp)
-}
-
-func (g *gateway) nodeClaim(w http.ResponseWriter, r *http.Request) {
-	var req node.ClaimRequest
-	if !decode(w, r, &req) {
-		return
-	}
-	resp, err := g.nodes.EnrollClaim(g.clientIP(r), &req)
-	if err != nil {
-		nodeFail(w, r, err)
-		return
-	}
-	success(w, r, "", resp)
+	success(w, r, "节点注册成功", resp)
 }
 
 // nodeConnect 受管机建立隧道的入口。WebSocket 升级与二进制流适配交给 libgo 的 websocket.ServerConfig，
@@ -157,6 +136,16 @@ func decode(w http.ResponseWriter, r *http.Request, v any) bool {
 		return false
 	}
 	return true
+}
+
+// enrollFail 区分无效注册码与临时故障，避免 agent 因存储错误永久停止接入。
+func enrollFail(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, node.ErrNotFound) || errors.Is(err, node.ErrRateLimited) || errors.Is(err, node.ErrInvalidCode) {
+		nodeFail(w, r, err)
+		return
+	}
+	logman.Warn("节点接入暂不可用", "path", r.URL.Path, "error", err)
+	fail(w, r, http.StatusServiceUnavailable, "节点接入暂不可用")
 }
 
 // nodeFail 把节点服务错误映射为 HTTP 状态码

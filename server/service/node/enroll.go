@@ -33,26 +33,13 @@ type EnrollRequest struct {
 	Arch     string `json:"arch"`                    // CPU 架构
 }
 
-// EnrollResponse 注册结果。ClaimSecret 仅此一次返回，用于后续领取令牌。
+// EnrollResponse 注册结果，令牌仅返回一次。
 type EnrollResponse struct {
-	NodeID      string `json:"nodeId"`      // 节点 ID
-	ClaimSecret string `json:"claimSecret"` // 一次性领取密钥
-	Status      string `json:"status"`      // pending / approved
+	NodeID string `json:"nodeId"` // 节点 ID
+	Token  string `json:"token"`  // 节点令牌
 }
 
-// ClaimRequest agent 领取令牌
-type ClaimRequest struct {
-	NodeID      string `json:"nodeId" binding:"required"`      // 节点 ID
-	ClaimSecret string `json:"claimSecret" binding:"required"` // 领取密钥
-}
-
-// ClaimResponse 领取结果。审批前 Status 为 pending 且不含令牌。
-type ClaimResponse struct {
-	Status string `json:"status"`          // pending / approved
-	Token  string `json:"token,omitempty"` // 节点令牌，审批通过后返回
-}
-
-// Enroll 用注册码注册新节点。注册码使用一次即失效；默认进入待审批状态。
+// Enroll 用注册码注册新节点并签发令牌；注册码使用一次即失效。
 func (s *Service) Enroll(ip string, req *EnrollRequest) (*EnrollResponse, error) {
 	if !s.enrollLimit.allow(ip) {
 		return nil, ErrRateLimited
@@ -69,23 +56,21 @@ func (s *Service) Enroll(ip string, req *EnrollRequest) (*EnrollResponse, error)
 	if matched == nil {
 		return nil, ErrInvalidCode
 	}
-	// 先核销再创建节点；并发使用同一注册码时只有一个能核销成功
-	if err := s.codes.remove(matched.ID); err != nil {
-		return nil, ErrInvalidCode
-	}
 	if time.Now().After(matched.ExpiresAt) {
 		return nil, ErrInvalidCode
 	}
-
-	claim, err := randToken(24)
+	secret, err := randToken(32)
 	if err != nil {
 		return nil, err
 	}
-	id := strutil.NewString()
-	status := StatusPending
-	if matched.AutoApprove {
-		status = StatusApproved
+	// 先核销再创建节点；并发使用同一注册码时只有一个能核销成功
+	if err := s.codes.remove(matched.ID); err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return nil, ErrInvalidCode
+		}
+		return nil, err
 	}
+	id := strutil.NewString()
 	hostname := clip(req.Hostname, 128)
 	name := clip(matched.Name, 64)
 	if name == "" {
@@ -100,59 +85,18 @@ func (s *Service) Enroll(ip string, req *EnrollRequest) (*EnrollResponse, error)
 	n := &Node{
 		ID:        id,
 		Name:      name,
-		Status:    status,
+		Status:    StatusActive,
 		Hostname:  hostname,
 		OS:        clip(req.OS, 64),
 		Arch:      clip(req.Arch, 64),
 		CreatedAt: time.Now(),
-		ClaimHash: hashSecret(claim),
+		TokenHash: hashSecret(secret),
 	}
 	if err := s.nodes.insert(n); err != nil {
 		return nil, err
 	}
-	logger.Info("节点已提交注册", "id", id, "name", name, "status", status, "ip", ip)
-	return &EnrollResponse{NodeID: id, ClaimSecret: claim, Status: status}, nil
-}
-
-// EnrollClaim 领取令牌。节点首次成功连接前允许重复领取（每次领取令牌会更换），
-// 避免领取响应在网络中丢失后节点无法恢复。
-func (s *Service) EnrollClaim(ip string, req *ClaimRequest) (*ClaimResponse, error) {
-	if !s.enrollLimit.allow(ip) {
-		return nil, ErrRateLimited
-	}
-	s.enrollLimit.record(ip)
-
-	n := s.nodes.get(req.NodeID)
-	claimHash := ""
-	if n != nil {
-		claimHash = n.ClaimHash
-	}
-	if n == nil || claimHash == "" || !secretsEqual(claimHash, hashSecret(req.ClaimSecret)) {
-		return nil, ErrUnauthorized
-	}
-	switch n.Status {
-	case StatusPending:
-		return &ClaimResponse{Status: StatusPending}, nil
-	case StatusApproved:
-	default:
-		return nil, ErrUnauthorized
-	}
-
-	secret, err := randToken(32)
-	if err != nil {
-		return nil, err
-	}
-	if err := s.nodes.update(n.ID, func(x *Node) error {
-		if x.Status != StatusApproved || x.ClaimHash == "" {
-			return ErrUnauthorized
-		}
-		x.TokenHash = hashSecret(secret)
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-	logger.Info("节点已领取令牌", "id", n.ID, "name", n.Name)
-	return &ClaimResponse{Status: StatusApproved, Token: n.ID + "." + secret}, nil
+	logger.Info("节点已注册", "id", id, "name", name, "ip", ip)
+	return &EnrollResponse{NodeID: id, Token: id + "." + secret}, nil
 }
 
 // ─── 限流 ───

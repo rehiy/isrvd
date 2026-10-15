@@ -1,4 +1,4 @@
-// Package node 提供多节点管理：中控侧的节点注册表、注册审批、隧道会话与请求代理，
+// Package node 提供多节点管理：中控侧的节点注册表、隧道会话与请求代理，
 // 以及受管机（agent）侧的注册与常连客户端。
 package node
 
@@ -37,7 +37,7 @@ type Service struct {
 	conns  map[string]*nodeConn // 节点 ID → 当前在线会话
 	closed bool
 
-	enrollLimit *rateLimiter // 注册与领取：按来源 IP 限制请求频率
+	enrollLimit *rateLimiter // 注册：按来源 IP 限制请求频率
 	authLimit   *rateLimiter // 令牌认证：按来源 IP 限制失败次数
 }
 
@@ -115,42 +115,40 @@ func (s *Service) NodeUpdate(id string, req *NodeUpdateRequest) (*Node, error) {
 	return s.NodeInspect(id), nil
 }
 
-// NodeApprove 审批待接入的节点
-func (s *Service) NodeApprove(id string) (*Node, error) {
-	if err := s.nodes.update(id, func(n *Node) error {
-		if n.Status != StatusPending {
-			return fmt.Errorf("仅待审批的节点可以审批")
-		}
-		n.Status = StatusApproved
-		return nil
-	}); err != nil {
-		return nil, fmt.Errorf("审批节点失败: %w", err)
-	}
-	logger.Info("节点已审批", "id", id)
-	return s.NodeInspect(id), nil
-}
-
 // NodeRevoke 吊销节点：令牌立即失效并断开在线会话
 func (s *Service) NodeRevoke(id string) error {
-	if err := s.nodes.update(id, func(n *Node) error {
+	s.mu.Lock()
+	err := s.nodes.update(id, func(n *Node) error {
 		n.Status = StatusRevoked
 		n.TokenHash = ""
-		n.ClaimHash = ""
 		return nil
-	}); err != nil {
+	})
+	if err != nil {
+		s.mu.Unlock()
 		return fmt.Errorf("吊销节点失败: %w", err)
 	}
-	s.disconnect(id)
+	c := s.disconnectLocked(id)
+	s.mu.Unlock()
+	if c != nil {
+		c.close()
+	}
 	logger.Info("节点已吊销", "id", id)
 	return nil
 }
 
 // NodeDelete 删除节点并断开在线会话
 func (s *Service) NodeDelete(id string) error {
-	if err := s.nodes.remove(id); err != nil {
+	s.mu.Lock()
+	err := s.nodes.remove(id)
+	if err != nil {
+		s.mu.Unlock()
 		return fmt.Errorf("删除节点失败: %w", err)
 	}
-	s.disconnect(id)
+	c := s.disconnectLocked(id)
+	s.mu.Unlock()
+	if c != nil {
+		c.close()
+	}
 	logger.Info("节点已删除", "id", id)
 	return nil
 }
@@ -159,9 +157,8 @@ func (s *Service) NodeDelete(id string) error {
 
 // EnrollCodeCreateRequest 注册码创建请求
 type EnrollCodeCreateRequest struct {
-	Name        string `json:"name"`        // 备注
-	TTLMinutes  int    `json:"ttlMinutes"`  // 有效期（分钟），默认 60，最长 10080
-	AutoApprove bool   `json:"autoApprove"` // 使用该码注册的节点是否自动审批
+	Name       string `json:"name"`       // 备注
+	TTLMinutes int    `json:"ttlMinutes"` // 有效期（分钟），默认 60，最长 10080
 }
 
 // EnrollCodeList 列出尚未使用且未过期的注册码（含可用于接入的明文）
@@ -196,18 +193,17 @@ func (s *Service) EnrollCodeCreate(creator string, req *EnrollCodeCreateRequest)
 	id := strutil.NewString()
 	now := time.Now()
 	item := &EnrollCode{
-		ID:          id,
-		Name:        clip(req.Name, 64),
-		Sealed:      sealed,
-		AutoApprove: req.AutoApprove,
-		CreatedBy:   creator,
-		CreatedAt:   now,
-		ExpiresAt:   now.Add(ttl),
+		ID:        id,
+		Name:      clip(req.Name, 64),
+		Sealed:    sealed,
+		CreatedBy: creator,
+		CreatedAt: now,
+		ExpiresAt: now.Add(ttl),
 	}
 	if err := s.codes.insert(item); err != nil {
 		return nil, fmt.Errorf("保存注册码失败: %w", err)
 	}
-	logger.Info("注册码已创建", "id", id, "by", creator, "autoApprove", item.AutoApprove, "expiresAt", item.ExpiresAt)
+	logger.Info("注册码已创建", "id", id, "by", creator, "expiresAt", item.ExpiresAt)
 	created := *item
 	created.Code = code
 	return &created, nil
@@ -288,13 +284,9 @@ func (s *Service) decorate(n *Node) {
 	n.RemoteAddr = c.remote
 }
 
-// disconnect 断开指定节点的在线会话
-func (s *Service) disconnect(id string) {
-	s.mu.Lock()
+// disconnectLocked 在 s.mu 持锁期间摘除节点连接；调用方在解锁后关闭会话。
+func (s *Service) disconnectLocked(id string) *nodeConn {
 	c := s.conns[id]
 	delete(s.conns, id)
-	s.mu.Unlock()
-	if c != nil {
-		c.close()
-	}
+	return c
 }

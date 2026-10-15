@@ -124,16 +124,14 @@ func (g *gateway) routes() http.Handler {
 	// 节点管理（仅创始人）
 	mux.HandleFunc("GET /api/node/nodes", g.founderOnly(g.nodeList))
 	mux.HandleFunc("PUT /api/node/item/{id}", g.founderOnly(g.nodeUpdate))
-	mux.HandleFunc("POST /api/node/item/{id}/approve", g.founderOnly(g.nodeApprove))
 	mux.HandleFunc("POST /api/node/item/{id}/revoke", g.founderOnly(g.nodeRevoke))
 	mux.HandleFunc("DELETE /api/node/item/{id}", g.founderOnly(g.nodeDelete))
 	mux.HandleFunc("GET /api/node/codes", g.founderOnly(g.nodeCodeList))
 	mux.HandleFunc("POST /api/node/code", g.founderOnly(g.nodeCodeCreate))
 	mux.HandleFunc("DELETE /api/node/code/{id}", g.founderOnly(g.nodeCodeDelete))
 
-	// 受管机接入：注册与领取凭一次性凭据，连接凭节点令牌
+	// 受管机接入：注册凭一次性注册码，连接凭节点令牌
 	mux.HandleFunc("POST /api/node/enroll", g.nodeEnroll)
-	mux.HandleFunc("POST /api/node/enroll/claim", g.nodeClaim)
 	mux.Handle("GET /api/node/connect", g.connect)
 
 	// 以某个节点的视角访问：/n/<节点ID>/ 提供页面，/n/<节点ID>/api/ 转发业务接口
@@ -415,9 +413,8 @@ func (g *gateway) credential(r *http.Request) string {
 	return ""
 }
 
-// allowQueryToken 判断该请求能否用 ?token= 认证，规则与 isrvd 一致：
-// WebSocket 升级，或 isrvd 声明了 QueryToken 的 GET 路由（SSE、文件下载）。
-// 其余请求（尤其是写操作与节点管理接口）必须用 Authorization 头，避免令牌进入访问日志、历史记录与 Referer。
+// allowQueryToken 与 isrvd 一样，根据 Upgrade 头或声明了 QueryToken 的 GET 路由读取 ?token=。
+// 这里不校验 WebSocket 握手；凭据是否有效及是否为创始人仍由中控统一验证。
 func (g *gateway) allowQueryToken(r *http.Request) bool {
 	if strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
 		return true

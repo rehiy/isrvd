@@ -130,7 +130,6 @@ func init() {
 		"凭据不存在":             "credential not found",
 		"主机不存在":             "host not found",
 		"节点离线":              "node offline",
-		"节点已审批":             "node approved",
 		"节点已吊销":             "node revoked",
 		"注册码已撤销":            "registration code revoked",
 		"该路由未配置 Basic Auth": "basic auth not configured",
