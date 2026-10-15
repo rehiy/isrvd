@@ -62,7 +62,7 @@ class SystemGo extends Vue {
                 x: { display: false },
                 y: {
                     display: true, beginAtZero: true, grid: { color: 'rgba(148,163,184,0.08)' }, border: { display: false },
-                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4 }
+                    ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => formatMonitorBytes(Number(v)) }
                 }
             },
             elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 1.5 } }

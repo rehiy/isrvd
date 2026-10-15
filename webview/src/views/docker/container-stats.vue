@@ -9,7 +9,7 @@ import { usePortal } from '@/stores'
 import api from '@/service/api'
 import type { DockerContainerInfo, DockerContainerStats } from '@/service/types'
 
-import { formatFileSize, hexToRgba, POLL_INTERVAL } from '@/helper/format'
+import { formatFileSize, formatMonitorBytes, hexToRgba, POLL_INTERVAL } from '@/helper/format'
 
 Chart.register(...registerables)
 
@@ -261,7 +261,7 @@ class ContainerStats extends Vue {
 
     makeIOChartOptions(tooltipCb: (ctx: ChartCallbackContext) => string): ChartOptions<'line'> {
         return {
-            ...this.baseOptions({}),
+            ...this.baseOptions({ ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => formatMonitorBytes(Number(v), true) } }),
             plugins: {
                 legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 8, font: { size: 10 }, color: '#64748b' } },
                 tooltip: {
@@ -277,7 +277,7 @@ class ContainerStats extends Vue {
 
         const pctYOptions = { max: 100, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => v + '%' } }
         const pctTooltipCb = (ctx: ChartCallbackContext) => (ctx.parsed.y ?? 0).toFixed(1) + '%'
-        const ioTooltipCb = (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatFileSize(ctx.parsed.y ?? 0) + '/s'
+        const ioTooltipCb = (ctx: ChartCallbackContext) => ctx.dataset.label + ': ' + formatMonitorBytes(ctx.parsed.y ?? 0, true)
 
         if (this.cpuRef) {
             this.cpuChart = markRaw(new Chart(this.cpuRef, {

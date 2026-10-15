@@ -18,7 +18,7 @@ interface GpuHistory {
 
 interface ChartCallbackContext {
     parsed: { y: number | null }
-    dataset: { label?: string }
+    dataset: { label?: string; yAxisID?: string }
 }
 
 @Component
@@ -58,7 +58,7 @@ class SystemGpu extends Vue {
                         label: (ctx: ChartCallbackContext) => {
                             const v = (ctx.parsed.y ?? 0).toFixed(1)
                             const label = ctx.dataset.label ?? ''
-                            const unit = label === '功耗' ? 'W' : '%'
+                            const unit = ctx.dataset.yAxisID === 'y1' ? ' W' : '%'
                             return label + ': ' + v + unit
                         }
                     }
@@ -67,9 +67,14 @@ class SystemGpu extends Vue {
             scales: {
                 x: { display: false },
                 y: {
-                    display: true, beginAtZero: true, max: 100,
+                    display: true, beginAtZero: true, max: 100, position: 'left' as const,
                     grid: { color: 'rgba(148,163,184,0.08)' }, border: { display: false },
                     ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => Number(v).toFixed(0) + '%' }
+                },
+                y1: {
+                    display: true, beginAtZero: true, position: 'right' as const,
+                    grid: { drawOnChartArea: false }, border: { display: false },
+                    ticks: { font: { size: 9 }, color: '#f59e0b', maxTicksLimit: 4, padding: 4, callback: (v: string | number) => Number(v) + ' W' }
                 }
             },
             elements: { point: { radius: 0, hoverRadius: 3 }, line: { tension: 0.4, borderWidth: 1.5 } }
@@ -92,7 +97,7 @@ class SystemGpu extends Vue {
                 datasets: [
                     makeLineDataset(h.util, '#10b981', this.$t('使用率')),
                     makeLineDataset(h.vram, '#8b5cf6', this.$t('显存')),
-                    makeLineDataset(h.power, '#f59e0b', this.$t('功耗'))
+                    { ...makeLineDataset(h.power, '#f59e0b', this.$t('功耗')), yAxisID: 'y1', fill: false }
                 ]
             },
             options: this.gpuChartOptions()
