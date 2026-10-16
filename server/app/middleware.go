@@ -2,11 +2,14 @@ package app
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"isrvd/server/service/account"
 )
 
 // serviceLifecycleMiddleware 固定一次请求使用的服务代际，并在重载时取消长请求。
@@ -127,6 +130,29 @@ func (app *App) auditMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 	}
 }
 
+// ─── 辅助函数 ───
+
+var errGatewayUnavailable = errors.New("中控 isrvd 不可用")
+
+// GatewayAuth 为进程内网关复用当前账户服务；网关须先校验 THA 来源并清理外部身份头。
+// nil 成员表示未登录，error 表示应用未就绪或正在重载。
+func GatewayAuth(r *http.Request, allowQueryToken bool) (*account.MemberInfo, error) {
+	app := running.Load()
+	if app == nil || !app.servicesMu.TryRLock() {
+		return nil, errGatewayUnavailable
+	}
+	defer app.servicesMu.RUnlock()
+
+	app.requestCtxMu.RLock()
+	ready := app.requestsCtx != nil && app.requestsCtx.Err() == nil
+	app.requestCtxMu.RUnlock()
+	if !ready || app.mode != ModeCenter || app.accountSvc == nil {
+		return nil, errGatewayUnavailable
+	}
+
+	return app.accountSvc.GatewayMember(r, allowQueryToken), nil
+}
+
 // securityHeadersMiddleware 安全响应头中间件
 func securityHeadersMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -144,8 +170,6 @@ func securityHeadersMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
-
-// ─── 辅助函数 ───
 
 func lookupRoute(routeIndex map[string]Route, c *gin.Context) (Route, bool) {
 	if route, ok := matchRoute(routeIndex, c.Request.Method, c.Request.URL.Path); ok {

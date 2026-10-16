@@ -15,6 +15,8 @@ import (
 	"isrvd/server/config"
 )
 
+const GatewayUserHeader = "X-Isrvd-Gateway-User"
+
 // ─── 认证入口 ──────────────
 
 // Auth 根据配置选择认证方式，返回用户名和错误原因。
@@ -28,8 +30,6 @@ func (s *Service) Auth(r *http.Request, allowQueryToken bool) (username, errMsg 
 	return s.jwtCheck(snapshot, r, allowQueryToken)
 }
 
-const GatewayUserHeader = "X-Isrvd-Gateway-User"
-
 // AuthFromGateway 仅在私有回环监听器接收网关校验后写入的内部身份。
 func (s *Service) AuthFromGateway(r *http.Request, allowQueryToken bool) (string, string) {
 	snapshot := config.Current()
@@ -41,6 +41,21 @@ func (s *Service) AuthFromGateway(r *http.Request, allowQueryToken bool) (string
 		return headerUsername(snapshot, r.Header.Get(GatewayUserHeader))
 	}
 	return s.Auth(r, allowQueryToken)
+}
+
+// GatewayMember 认证进程内网关已清理的请求，返回成员信息；认证失败返回 nil。
+// 调用方须先移除外部 GatewayUserHeader，校验 THA 来源后再写入内部身份。
+func (s *Service) GatewayMember(r *http.Request, allowQueryToken bool) *MemberInfo {
+	snapshot := config.Current()
+	username := r.Header.Get(GatewayUserHeader)
+	if !snapshot.THA.Enabled {
+		username, _ = s.jwtCheck(snapshot, r, allowQueryToken)
+	}
+	member := snapshot.Members[username]
+	if username == "" || member == nil {
+		return nil
+	}
+	return s.memberInfoBuild(member)
 }
 
 // AuthInfoResponse 认证模式及当前用户信息

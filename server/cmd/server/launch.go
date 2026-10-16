@@ -65,6 +65,7 @@ func runCenter() error {
 			AllowedOrigins:   func() []string { return config.Current().Server.AllowedOrigins },
 			QueryTokenRoutes: app.QueryTokenRoutes(),
 			Audit:            app.Audit(),
+			Authenticate:     app.GatewayAuth,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       120 * time.Second,
