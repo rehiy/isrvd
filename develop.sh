@@ -37,8 +37,10 @@ kill_port 3000
 if [ ! -f .local.yml ]; then
     cp config.yml .local.yml
 fi
-# 运行模式由 ISRVD_MODE 决定；例如 ISRVD_MODE=center ./develop.sh。
-ISRVD_CONFIG=.local.yml go run ./server/cmd/server &
+
+export ISRVD_MODE=center
+export ISRVD_CONFIG=.local.yml
+go run ./server/cmd/server &
 GO_PID=$!
 
 # 启动 NPM 服务

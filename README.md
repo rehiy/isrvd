@@ -332,7 +332,7 @@ Detection methods, collected metrics and container deployment notes are in [docs
 
 The dev script automatically:
 
-- **Backend**: copies `config.yml` to `.local.yml` if missing and runs `ISRVD_CONFIG=.local.yml go run ./server/cmd/server`; use `ISRVD_MODE=center ./develop.sh` to develop node management and switching
+- **Backend**: copies `config.yml` to `.local.yml` if missing and runs `ISRVD_MODE=center ISRVD_CONFIG=.local.yml go run ./server/cmd/server`, enabling node management and switching during development
 - **Frontend**: enters `webview`, installs dependencies and runs `npm run dev`
 - **Port cleanup**: tries to free ports `8080` and `3000` before starting
 - **Proxy**: the frontend dev server (`3000`) proxies `/api/`, `/openapi/` and the node-scoped `/n/` to `8080`; pages under `/n/<节点ID>/` are served by the frontend build embedded in the backend, so run `npm run build` to see frontend changes in the node view
