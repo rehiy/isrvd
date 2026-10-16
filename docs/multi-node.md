@@ -30,10 +30,10 @@ isrvd
 - 每个进程内部仍是完整的 isrvd：`center` 与 `agent` 模式下，isrvd 只监听 `127.0.0.1` 的随机端口。`center` 另起网关占用配置里的 `listenAddr` 作为对外入口；`agent` 不监听任何对外端口，配置里的 `listenAddr` 不生效。
 - 浏览器访问 `/n/<节点ID>/`，页面仍由中控提供；其中的 Docker、Swarm、Compose、文件、本机进程、Shell 终端、计划任务、APISIX、Caddy、系统概览接口经隧道转发到该节点，包括流式日志、终端和文件上传下载。
 - 账号、系统配置、AI 助手、SSH 远程管理始终由中控自己处理，即使在 `/n/<节点ID>/` 下访问也一样。
-- 节点切换与节点管理是 webview 的一部分，**按需启用**：只有 `center` 模式（`/api/overview/bootstrap` 的 `probe.node` 为 `true`）且当前用户是创始人时，才会出现头部的节点切换器；侧边栏「节点管理」还要求当前处于本机（中控）视角（位于「用户管理」下方，一个页面）。单机模式、`agent` 模式和非创始人看不到任何节点界面，也不会发出节点接口请求，直接访问 `#/node` 会回到概览。
+- 节点切换与节点管理是 webview 的一部分，**按需启用**：只有 `center` 模式（`/api/overview/bootstrap` 的 `probe.node` 为 `true`）且当前用户有 `GET /api/node/nodes` 权限时，才会出现头部的节点切换器；侧边栏「节点管理」还要求当前处于本机（中控）视角（位于「用户管理」下方，一个页面）。单机模式、`agent` 模式和无节点列表权限的成员看不到任何节点界面，也不会发出节点接口请求，直接访问 `#/node` 会回到概览。
 - 切换节点是一次整页跳转：地址变为 `/n/<节点ID>/`，页面停留在原来的功能页（带资源参数的详情页回到概览，从中控管理页面切换到子节点时也回到概览）。子节点视角隐藏「节点管理」「用户管理」「系统配置」「操作审计」与「SSH 远程管理」，直接访问这些页面会回到概览；头部节点切换器与个人账户设置保留。此限制仅影响前端页面，相关接口仍按原规则作用于中控，并保持原有认证与权限校验。
-- 认证与权限复用中控当前的账户服务：网关在进程内验证调用者凭据并检查创始人身份。成员权限、密码或 JWT 密钥变更在配置发布后对新请求立即生效；已建立的长连接不会逐条消息重新认证。应用未就绪或正在重载时，节点管理与转发返回 `502`，避免前端误判为登录过期。节点视角的页面启动仍聚合中控身份与节点服务能力，中控上游不可达时同样返回 `502`。
-- 中控网关在请求带 `Upgrade: websocket` 或命中声明了 `QueryToken` 的 `GET` 路由时可从 `?token=` 读取令牌；无论凭据来自哪里，节点管理和转发仍须通过中控创始人身份校验。普通请求不要把令牌放进 URL，避免进入访问日志、浏览器历史记录或 Referer。
+- 认证与权限复用中控当前的账户服务：网关在进程内验证调用者凭据并检查请求对应的路由权限。成员权限、密码或 JWT 密钥变更在配置发布后对新请求立即生效；已建立的长连接不会逐条消息重新认证。应用未就绪或正在重载时，节点管理与转发返回 `502`，避免前端误判为登录过期。节点视角的页面启动仍聚合中控身份与节点服务能力，中控上游不可达时同样返回 `502`。
+- 中控网关在请求带 `Upgrade: websocket` 或命中声明了 `QueryToken` 的 `GET` 路由时可从 `?token=` 读取令牌；无论凭据来自哪里，节点管理和转发仍须通过中控身份认证与路由权限校验。普通请求不要把令牌放进 URL，避免进入访问日志、浏览器历史记录或 Referer。
 
 ## 部署
 
@@ -89,11 +89,11 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 
 ## 权限与边界
 
-- **只有创始人可以管理和操作节点。** 节点上的请求以受管机本地的创始人身份执行，与调用者无关，所以不能把节点权限下放给只有部分路由权限的成员。
+- **节点管理和业务操作按路由权限授权，创始人默认拥有全部权限。** 节点管理权限在中控的 `GET /account/routes` 中以 `node` 模块列出，可在成员管理中分配。转发业务请求先按中控成员的实际业务权限检查（去掉 `/n/<节点ID>` 前缀，例如 `GET /api/docker/containers`），再以受管机本地服务令牌执行；未授权请求返回 `403`。业务权限对所有受管节点生效，目前不按节点 ID 单独授权；节点列表权限只允许发现与切换节点，不额外赋予业务操作权限。
 - 受管机用**用户名排序后的第一个创始人**签发访问令牌，文件管理与终端使用该成员的家目录。受管机上必须至少有一个创始人，且不能启用代理 Header 登录（`tha.enabled`），否则启动失败。
 - 中控模式允许代理 Header 登录（`center + tha.enabled`）。网关按连接对端 IP 和 `tha.trustedCIDRs` 校验身份头，不采信转发头；可信代理必须覆盖客户端传入的身份头。THA 与 JWT 均使用当前配置判断权限，普通成员仍不能管理节点。中控的私有回环服务只接收网关写入的内部身份，外部同名头会先被删除；THA 头名重载不会重新信任原始请求头。本机进程属于可信边界，用户身份不下发给受控节点。
 - 受管机转发 WebSocket 时没有 `Origin`，`agent` 模式会放行空 `Origin`；跨站来源已由中控网关按 `allowedOrigins` 校验（未配置时仅允许同源）。
-- 节点令牌只保存哈希；注册码一次性使用、默认 1 小时过期（最长 7 天），用 `server.jwtSecret` 派生的密钥加密保存在 `node-code.yml` 中，创始人在其待接入期间可随时从列表查看接入命令（修改 `jwtSecret` 后未使用的注册码会被清除）；首次连接成功即激活为节点并核销待接入记录，之后令牌可按节点吊销。
+- 节点令牌只保存哈希；注册码一次性使用、默认 1 小时过期（最长 7 天），用 `server.jwtSecret` 派生的密钥加密保存在 `node-code.yml` 中，有 `GET /api/node/codes` 权限的成员在其待接入期间可随时从列表查看接入命令（修改 `jwtSecret` 后未使用的注册码会被清除）；首次连接成功即激活为节点并核销待接入记录，之后令牌可按节点吊销。
 - 网关把请求转发给节点前会剥离 `Authorization`、`Cookie`、`token` 查询参数。
 - 节点管理操作（生成注册码、吊销、删除等）、节点上的写操作与 WebSocket 都会记入中控的审计页面，规则与 isrvd 一致：非 GET 与全部 WebSocket 记录，WebSocket 在会话结束时记录；操作人是中控登录用户，URI 带 `/n/<节点ID>/` 前缀，请求体按 isrvd 的规则脱敏。受管机本机的审计页面里同一操作记录为其本地创始人。
 - 网关审计和节点 token 认证失败限流统一使用连接对端 IP，不采信客户端的 `X-Forwarded-For` 或 `X-Real-IP`；向中控内部服务转发时重新生成来源 IP 头，不透传外部来源链。部署在反向代理后，审计记录代理 IP，同一代理后的客户端共享节点认证失败限流额度。
@@ -104,16 +104,16 @@ ISRVD_MODE=agent ISRVD_CENTER_URL=https://center.example.com ISRVD_NODE_TOKEN="<
 
 ## 网关接口
 
-以下接口由 `center` 模式的网关提供（不在 isrvd 的 `/api/*` 路由表中，也不出现在 OpenAPI 目录里）。响应格式与 isrvd 一致：`{"success":bool,"message":string,"payload":any}`。需要创始人的接口使用 `Authorization` 头认证。详细的请求与响应字段见 [受管节点](references/node/nodes.md) 与 [注册码](references/node/codes.md)。
+以下接口由 `center` 模式的网关提供（不在 isrvd 的 HTTP handler 注册表中，也不出现在 OpenAPI 目录里；成员权限列表会列出节点管理接口）。响应格式与 isrvd 一致：`{"success":bool,"message":string,"payload":any}`。节点管理接口需要对应的路由权限，使用 `Authorization` 头认证。详细的请求与响应字段见 [受管节点](references/node/nodes.md) 与 [注册码](references/node/codes.md)。
 
 | 方法与路径 | 认证 | 说明 |
 |------------|------|------|
-| `GET /api/node/nodes` | 创始人 | 节点列表，含 `status`（`active`/`revoked`）、`online`、`latency`、`agentVersion`、`compatible` 等 |
-| `PUT /api/node/item/{id}` | 创始人 | 重命名，body `{"name":"…"}`（1–64 个字符） |
-| `POST /api/node/item/{id}/revoke` | 创始人 | 吊销：令牌立即失效并断开连接，需删除后用新令牌重新接入 |
-| `DELETE /api/node/item/{id}` | 创始人 | 删除并断开连接 |
-| `GET /api/node/codes` | 创始人 | 尚未使用且未过期的注册码（含明文，用于查看接入命令） |
-| `POST /api/node/code` | 创始人 | 生成注册码，body `{"name":"","ttlMinutes":60}`；响应与 `GET /api/node/codes` 都包含 `code` 明文 |
-| `DELETE /api/node/code/{id}` | 创始人 | 撤销注册码 |
+| `GET /api/node/nodes` | 对应路由权限 | 节点列表，含 `status`（`active`/`revoked`）、`online`、`latency`、`agentVersion`、`compatible` 等 |
+| `PUT /api/node/item/{id}` | 对应路由权限 | 重命名，body `{"name":"…"}`（1–64 个字符） |
+| `POST /api/node/item/{id}/revoke` | 对应路由权限 | 吊销：令牌立即失效并断开连接，需删除后用新令牌重新接入 |
+| `DELETE /api/node/item/{id}` | 对应路由权限 | 删除并断开连接 |
+| `GET /api/node/codes` | 对应路由权限 | 尚未使用且未过期的注册码（含明文，用于查看接入命令） |
+| `POST /api/node/code` | 对应路由权限 | 生成注册码，body `{"name":"","ttlMinutes":60}`；响应与 `GET /api/node/codes` 都包含 `code` 明文 |
+| `DELETE /api/node/code/{id}` | 对应路由权限 | 撤销注册码 |
 | `GET /api/node/connect` | 节点令牌 | 受管机建立 WebSocket 隧道，首次连接时激活待接入的令牌；令牌只经 `Authorization: Bearer` 头传递，带 `Origin` 的浏览器请求会被拒绝 |
-| `/n/{id}/…` | 创始人 | 以某个节点的视角访问，见上文「工作方式」 |
+| `/n/{id}/…` | 对应路由权限 | 以某个节点的视角访问，见上文「工作方式」 |

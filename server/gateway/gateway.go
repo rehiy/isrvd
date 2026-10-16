@@ -39,6 +39,9 @@ type Options struct {
 
 	// Authenticate 复用应用当前账户服务；nil 成员表示未登录，error 表示服务不可用。
 	Authenticate func(*http.Request, bool) (*account.MemberInfo, error)
+
+	// CheckPermission 复用中控当前路由与账户权限；返回 HTTP 状态码及错误。
+	CheckPermission func(*http.Request, string) (int, error)
 }
 
 // Handler 返回中控网关：节点管理接口与 /n/<节点ID>/ 下的节点转发由它处理，
@@ -54,9 +57,10 @@ type gateway struct {
 	proxy    *httputil.ReverseProxy // 转发到中控自己的 isrvd
 	client   *http.Client           // 仅用于页面 bootstrap 聚合
 
-	allowedOrigins func() []string // 额外允许的 WebSocket Origin（isrvd 的 allowedOrigins），默认仅同源
-	audit          Auditor
-	authenticate   func(*http.Request, bool) (*account.MemberInfo, error)
+	allowedOrigins  func() []string // 额外允许的 WebSocket Origin（isrvd 的 allowedOrigins），默认仅同源
+	audit           Auditor
+	authenticate    func(*http.Request, bool) (*account.MemberInfo, error)
+	checkPermission func(*http.Request, string) (int, error)
 
 	connect http.Handler   // 受管机建立隧道的入口
 	mux     *http.ServeMux // 对外路由表；节点视角下的 /api/node/* 也经它分发
@@ -67,11 +71,12 @@ type gateway struct {
 func newGateway(opt Options) *gateway {
 	upstream := opt.Upstream
 	g := &gateway{
-		nodes:          opt.Nodes,
-		upstream:       upstream,
-		allowedOrigins: opt.AllowedOrigins,
-		audit:          opt.Audit,
-		authenticate:   opt.Authenticate,
+		nodes:           opt.Nodes,
+		upstream:        upstream,
+		allowedOrigins:  opt.AllowedOrigins,
+		audit:           opt.Audit,
+		authenticate:    opt.Authenticate,
+		checkPermission: opt.CheckPermission,
 		client: &http.Client{
 			Timeout:       15 * time.Second,
 			CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
@@ -104,14 +109,20 @@ func newGateway(opt Options) *gateway {
 func (g *gateway) routes() http.Handler {
 	mux := http.NewServeMux()
 
-	// 节点管理（仅创始人）
-	mux.HandleFunc("GET /api/node/nodes", g.founderOnly(g.nodeList))
-	mux.HandleFunc("PUT /api/node/item/{id}", g.founderOnly(g.nodeUpdate))
-	mux.HandleFunc("POST /api/node/item/{id}/revoke", g.founderOnly(g.nodeRevoke))
-	mux.HandleFunc("DELETE /api/node/item/{id}", g.founderOnly(g.nodeDelete))
-	mux.HandleFunc("GET /api/node/codes", g.founderOnly(g.nodeCodeList))
-	mux.HandleFunc("POST /api/node/code", g.founderOnly(g.nodeCodeCreate))
-	mux.HandleFunc("DELETE /api/node/code/{id}", g.founderOnly(g.nodeCodeDelete))
+	// 节点管理：路由与可分配权限共用 service/node 的元信息。
+	handlers := map[string]func(http.ResponseWriter, *http.Request, string){
+		"GET /api/node/nodes":            g.nodeList,
+		"PUT /api/node/item/:id":         g.nodeUpdate,
+		"POST /api/node/item/:id/revoke": g.nodeRevoke,
+		"DELETE /api/node/item/:id":      g.nodeDelete,
+		"GET /api/node/codes":            g.nodeCodeList,
+		"POST /api/node/code":            g.nodeCodeCreate,
+		"DELETE /api/node/code/:id":      g.nodeCodeDelete,
+	}
+	for _, route := range node.PermissionRoutes() {
+		key := route.Method + " " + route.Path
+		mux.HandleFunc(strings.ReplaceAll(key, ":id", "{id}"), g.permissionOnly(handlers[key]))
+	}
 
 	// 受管机接入：凭节点令牌连接，首次连接时待接入的令牌自动激活为节点
 	mux.Handle("GET /api/node/connect", g.connect)
@@ -179,8 +190,7 @@ func (g *gateway) nodePath(w http.ResponseWriter, r *http.Request) {
 }
 
 // nodeForward 校验调用者后把请求经隧道转发到节点。
-// 只有创始人可以操作节点：节点上的请求以受管机本地签发的创始人令牌身份执行，不区分调用者，
-// 因此不能把节点权限下放给只有部分路由权限的成员。
+// 转发前按中控的业务路由权限校验；受管机内部仍使用本地服务令牌。
 func (g *gateway) nodeForward(w http.ResponseWriter, r *http.Request, id string) {
 	member, ok := g.authorize(w, r)
 	if !ok {
@@ -242,8 +252,7 @@ func (g *gateway) nodeBootstrap(w http.ResponseWriter, r *http.Request, id strin
 	// bootstrap 已完成可选认证，直接使用返回的身份，不再重复校验凭据。
 	auth, _ := payload["auth"].(map[string]any)
 	username, _ := auth["username"].(string)
-	member, _ := auth["member"].(map[string]any)
-	if username == "" || member["founder"] != true {
+	if username == "" {
 		writeRaw(w, status, body)
 		return
 	}
@@ -284,8 +293,8 @@ func (g *gateway) nodeBootstrap(w http.ResponseWriter, r *http.Request, id strin
 
 // ─── 身份 ───
 
-// founderOnly 要求调用者是中控 isrvd 的创始人
-func (g *gateway) founderOnly(h func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+// permissionOnly 认证并校验节点管理路由权限
+func (g *gateway) permissionOnly(h func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		member, ok := g.authorize(w, r)
 		if !ok {
@@ -316,7 +325,7 @@ func (g *gateway) audited(w http.ResponseWriter, r *http.Request, user string, h
 	g.audit.AuditRecord(r, user, g.clientIP(r), rec.status, start, body)
 }
 
-// authorize 要求调用者是创始人；不满足时已写出响应。
+// authorize 认证调用者并检查请求路由权限；不满足时已写出响应。
 // 中控 isrvd 不可用与令牌无效必须区分：前者返回 502，否则前端会把一次上游抖动当成登录过期而清掉登录态。
 func (g *gateway) authorize(w http.ResponseWriter, r *http.Request) (*account.MemberInfo, bool) {
 	if g.authenticate == nil {
@@ -331,8 +340,13 @@ func (g *gateway) authorize(w http.ResponseWriter, r *http.Request) (*account.Me
 	case member == nil:
 		fail(w, r, http.StatusUnauthorized, "未登录或登录已过期")
 		return nil, false
-	case !member.Founder:
-		fail(w, r, http.StatusForbidden, "仅创始人可管理和操作节点")
+	}
+	if g.checkPermission == nil {
+		fail(w, r, http.StatusBadGateway, "中控 isrvd 不可用")
+		return nil, false
+	}
+	if status, err := g.checkPermission(r, member.Username); err != nil {
+		fail(w, r, status, err.Error())
 		return nil, false
 	}
 	return member, true

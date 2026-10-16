@@ -15,7 +15,7 @@ import (
 
 // 响应沿用 isrvd 的统一格式：{"success":bool,"message":string,"payload":any}
 
-// ─── 节点管理（仅创始人，由 founderOnly 包装） ───
+// ─── 节点管理（由 permissionOnly 校验路由权限） ───
 
 func (g *gateway) nodeList(w http.ResponseWriter, r *http.Request, _ string) {
 	success(w, r, "", g.nodes.NodeList())

@@ -212,9 +212,9 @@ One binary, one role selected by the `ISRVD_MODE` environment variable, one cons
 > Diagram legend (from top to bottom): the browser reaches `center`; pages, accounts, permissions and audit are handled by the in-process isrvd; `/n/<nodeID>/api/…` goes through the tunnel to the agent's in-process isrvd; the managed node dials out, the center never connects out to it.
 
 - **No inbound port needed**: a managed node only needs to reach the center, so it can sit behind NAT or a firewall; after a disconnect it reconnects with exponential backoff
-- **Switching node switches the view**: once the founder picks a node in the page header, Docker, Swarm, Compose, files, local processes, terminal, scheduled tasks, APISIX, Caddy and the system overview all act on that node, including live logs, terminal and large file upload/download
+- **Switching node switches the view**: once an authorized member picks a node in the page header, Docker, Swarm, Compose, files, local processes, terminal, scheduled tasks, APISIX, Caddy and the system overview all act on that node, including live logs, terminal and large file upload/download
 - **Accounts and config stay on the center**: members, permissions, system config, the AI assistant and SSH remote management are always handled by the center; operations on a node use the center's login session
-- **Shown only when relevant**: the node switcher and the sidebar "节点管理" entry appear only in `center` mode for the founder
+- **Shown only when relevant**: the node switcher and the sidebar "节点管理" entry appear in `center` mode for members with `GET /api/node/nodes` permission
 
 ### Enrolling a Node
 
@@ -256,7 +256,7 @@ Use `systemctl edit isrvd` and add `Environment="ISRVD_MODE=center"` under `[Ser
 
 ### Security and Boundaries
 
-- Only the founder can manage and operate nodes; requests on a node run as the managed node's local founder, so node permissions cannot be delegated to ordinary members
+- Node management uses assignable `/api/node/...` route permissions; forwarded operations check the caller's business route permissions at the center before using the managed node's local service token. Founders retain full access. Permissions apply to all nodes; per-node grants are not supported
 - Enrollment codes are single-use and expire after 1 hour by default; node tokens are stored as hashes only, codes are short-lived and encrypted at rest, and the enrollment command stays visible in the list while pending. A node can be revoked at any time and disconnects immediately
 - Node management operations, write operations on nodes and terminal sessions are all recorded in the center's audit page (attributed to the center's logged-in user); the managed node's own audit page attributes them to its local founder
 - The center is designed as a single instance; nodes disconnect briefly on restart and reconnect automatically. The managed node and the center must run the same version
@@ -304,7 +304,7 @@ Permissions are controlled per route at a fine granularity. The default `AccessP
 
 > Empty = no `AccessPerm` route permission; the available routes can be listed after login via `GET /api/account/routes`.
 >
-> Centralized-management node APIs (`/api/node/*`, `/n/<节点ID>/…`) are served by the center gateway and are not part of the route table; they are **founder-only** and cannot be granted to ordinary members.
+> Centralized-management node APIs are served by the center gateway. In center mode, `/api/node/...` permissions are listed by `/account/routes` and can be granted to members. Requests forwarded through `/n/<nodeID>/api/...` require the corresponding business route permission; grants apply to all nodes.
 
 The full permission list is in [docs/permissions.md](docs/permissions.md).
 

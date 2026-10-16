@@ -84,7 +84,7 @@ class NodeManage extends Vue {
     @Watch('ready', { immediate: true })
     onReadyChange(ready: boolean) {
         if (!ready) return
-        // 未启用中控模式或不是创始人：直接用地址访问时回到概览，而不是展示一个只会报错的页面
+        // 未启用中控模式或无节点列表权限：直接用地址访问时回到概览，而不是展示一个只会报错的页面
         if (!this.portal.hasPerm('GET /api/node/nodes')) {
             this.$router.replace('/overview')
             return
@@ -124,7 +124,10 @@ class NodeManage extends Vue {
         this.polling = true
         if (!silent) this.loading = true
         try {
-            const [nodes, codes] = await Promise.all([api.nodeList(), api.nodeCodeList()])
+            const [nodes, codes] = await Promise.all([
+                api.nodeList(),
+                this.portal.hasPerm('GET /api/node/codes') ? api.nodeCodeList() : Promise.resolve({ payload: [] }),
+            ])
             this.nodes = nodes.payload || []
             this.codes = codes.payload || []
         } catch {} finally {

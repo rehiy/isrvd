@@ -66,6 +66,7 @@ func runCenter() error {
 			QueryTokenRoutes: app.QueryTokenRoutes(),
 			Audit:            app.Audit(),
 			Authenticate:     app.GatewayAuth,
+			CheckPermission:  app.GatewayPermission,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       120 * time.Second,

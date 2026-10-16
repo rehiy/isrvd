@@ -57,35 +57,37 @@ const (
 // App 应用实例，持有各业务服务
 type App struct {
 	*gin.Engine
-	mode             string // 运行模式，启动时确定
-	servicesMu       sync.RWMutex
-	requestCtxMu     sync.RWMutex
-	cleanupWG        sync.WaitGroup
-	lifecycleCtx     context.Context
-	lifecycleCancel  context.CancelFunc
-	servicesCtx      context.Context
-	servicesCancel   context.CancelFunc
-	requestsCtx      context.Context
-	requestsCancel   context.CancelFunc
-	wsConfig         *websocket.ServerConfig
-	monitorCollector *monitor.Collector
-	faultWatcher     *notify.FaultWatcher
-	overviewSvc      *overview.Service
-	configSvc        *system.ConfigService
-	auditSvc         *system.AuditService
-	accountSvc       *account.Service
-	filerSvc         *filer.Service
-	apisixSvc        *apisix.Service
-	caddySvc         *caddy.Service
-	dockerSvc        *docker.Service
-	swarmSvc         *swarm.Service
-	composeSvc       *compose.Service
-	cronSvc          *cron.Service
-	copilotSvc       *copilot.Service
-	shellSvc         *shell.Service
-	websshSvc        *webssh.Service
-	probes           map[string]func(context.Context) bool // 已就绪的外部依赖模块（key 为路由 Module）→ 探活函数
-	routeIndex       map[string]Route                      // METHOD+完整路径 → 路由索引
+	mode               string // 运行模式，启动时确定
+	servicesMu         sync.RWMutex
+	requestCtxMu       sync.RWMutex
+	cleanupWG          sync.WaitGroup
+	lifecycleCtx       context.Context
+	lifecycleCancel    context.CancelFunc
+	servicesCtx        context.Context
+	servicesCancel     context.CancelFunc
+	requestsCtx        context.Context
+	requestsCancel     context.CancelFunc
+	wsConfig           *websocket.ServerConfig
+	monitorCollector   *monitor.Collector
+	faultWatcher       *notify.FaultWatcher
+	overviewSvc        *overview.Service
+	configSvc          *system.ConfigService
+	auditSvc           *system.AuditService
+	accountSvc         *account.Service
+	filerSvc           *filer.Service
+	apisixSvc          *apisix.Service
+	caddySvc           *caddy.Service
+	dockerSvc          *docker.Service
+	swarmSvc           *swarm.Service
+	composeSvc         *compose.Service
+	cronSvc            *cron.Service
+	copilotSvc         *copilot.Service
+	shellSvc           *shell.Service
+	websshSvc          *webssh.Service
+	probes             map[string]func(context.Context) bool // 已就绪的外部依赖模块（key 为路由 Module）→ 探活函数
+	gatewayPermissions *http.ServeMux
+	gatewayRouteIndex  map[string]Route
+	routeIndex         map[string]Route // METHOD+完整路径 → 路由索引
 }
 
 // RouteAccess 路由访问级别
@@ -135,11 +137,11 @@ func StartApp(listener net.Listener, mode string) {
 	}
 
 	app.initServices(app.servicesCtx)
+	app.initRoutes()
 
+	// 路由与权限索引完整初始化后才对网关发布，避免启动期间并发读写索引。
 	running.Store(app)
 	defer running.Store(nil)
-
-	app.initRoutes()
 
 	server := &http.Server{
 		Addr:              config.Current().Server.ListenAddr,
@@ -170,6 +172,8 @@ func (app *App) initRoutes() {
 	for _, route := range app.collectRoutes() {
 		app.registerRoute(r, route)
 	}
+
+	app.initGatewayPermissions()
 
 	// NoRoute: /api/* 返回 JSON 404，其他路径走静态文件 + SPA fallback
 	staticHandler := httpd.StaticServe(http.FS(public.Efs), "")
