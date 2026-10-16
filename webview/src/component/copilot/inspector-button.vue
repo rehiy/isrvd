@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
 
-// Inspector 仅在开发构建加载。CopilotKit 未提供关闭浮动启动器的配置，
-// 将其隐藏并由聊天标题栏的同一入口替代。
+// Inspector 仅在开发构建加载，入口位于聊天标题栏；其内置浮动启动器保持隐藏。
 const enabled = import.meta.env.DEV
 const inspectorSelector = 'cpk-web-inspector'
 const launcherStyleID = 'isrvd-copilot-inspector-launcher'

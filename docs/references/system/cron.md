@@ -30,9 +30,9 @@
 | `nextRun` | string? | 下次预计执行时间（RFC3339，运行时字段，只读，仅已注册任务存在） |
 | `lastRun` | string? | 上次计划调度时间（RFC3339，运行时字段，只读） |
 
-计划任务配置存储在 `server.rootDirectory/cron.yml`；配置位于 etcd 时改存 `<配置 key>/<文件名>`，首次读取时自动迁移本地同名文件，由服务自动读写；`registered`、`entryId`、`runtimeStatus`、`nextRun`、`lastRun` 来自当前内存调度器状态，不写入存储文件。执行历史所有任务合并写入按天滚动的 JSONL 文件 `server.rootDirectory/cron/YYYY-MM-DD.jsonl`，每次执行追加一行结构化记录（含 `jobId` 字段用于过滤）；保留最近 3 天，过期文件每日凌晨自动清理。
+计划任务配置存储在 `server.rootDirectory/cron.yml`；配置位于 etcd 时使用 `<配置 key>/<文件名>`，key 缺失时自动导入本地同名文件，由服务自动读写；`registered`、`entryId`、`runtimeStatus`、`nextRun`、`lastRun` 来自当前内存调度器状态，不写入存储文件。执行历史所有任务合并写入按天滚动的 JSONL 文件 `server.rootDirectory/cron/YYYY-MM-DD.jsonl`，每次执行追加一行结构化记录（含 `jobId` 字段用于过滤）；保留最近 3 天，过期文件每日凌晨自动清理。
 
-旧版 `DOCKER` 类型任务加载时会自动迁移：有 `container` 的转为 `DOCKER_CTR`，有 `image` 的转为 `DOCKER_TMP`。
+加载 `DOCKER` 类型任务时，按执行目标规范化类型：包含 `container` 的使用 `DOCKER_CTR`，包含 `image` 的使用 `DOCKER_TMP`。
 
 Docker 不可用时，`/api/cron/types` 不返回 Docker 类型；已有的 `DOCKER_TMP` / `DOCKER_CTR` 任务在加载时校验失败会被**跳过**，不出现在 `GET /cron/jobs` 列表中（对其操作返回 404）。⚠️ 此时对其他任务的任何增删改都会把这些被跳过的任务从存储中移除。
 

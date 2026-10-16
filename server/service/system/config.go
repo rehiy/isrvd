@@ -205,7 +205,7 @@ func dockerTLSMerge(req, draft *config.DockerConfig) error {
 	if draft != nil && draft.TLS != nil {
 		oldKey = draft.TLS.Key
 		if t == nil {
-			t = draft.TLS // 请求未携带 tls 子配置时沿用原值，避免旧调用方静默清空证书
+			t = draft.TLS // 请求未携带 tls 子配置时保留已配置的证书与密钥
 			req.TLS = t
 		}
 	}

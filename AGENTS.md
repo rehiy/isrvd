@@ -159,7 +159,7 @@ docs/
 
 ### 命名与日志
 
-- 缩写全大写：`CPU`、`ID`、`URL`、`HTTP`、`JWT`、`CORS`；`JWTToken` 冗余，改用 `JWT`、`JWTCheck`、`JWTUsername`
+- 缩写全大写：`CPU`、`ID`、`URL`、`HTTP`、`JWT`、`CORS`；JWT 相关标识使用 `JWT`、`JWTCheck`、`JWTUsername`
 - 日志统一 `logman`，禁止 `log.Println`/`fmt.Println`；使用键值对不拼接字符串
 
 ### 方法命名规范（强制）
@@ -185,11 +185,11 @@ docs/
 | 状态切换 | `{Resource}StatusPatch` | `RouteStatusPatch(id, status)` |
 | 特殊操作 | `{Resource}{Verb}` | `ContainerAction(id, action)`、`WhitelistUserCreate(...)` |
 
-- **查询接口不加 `Get` 后缀**：方法名本身已表达"获取"语义（`Stat()`、`Probe()`、`Info()`、`JoinToken()`、`ConfigAll()`），禁止改为 `StatGet()`、`probeGet()` 等形式
+- **查询接口不加 `Get` 后缀**：方法名本身已表达"获取"语义（`Stat()`、`Probe()`、`Info()`、`JoinToken()`、`ConfigAll()`），查询方法保持 `Stat()`、`Probe()` 等形式
 - **`Get` 仅用于必要场景**：当方法名去掉 `Get` 后会与已有方法冲突或语义不明时，才可保留 `Get` 后缀
 - **模块前缀**：`docker`、`swarm`、`apisix`、`caddy`、`account`、`system`、`filer`、`compose`、`cron`、`node`（`server/gateway` 的处理函数同样遵循 `{module}{Resource}{Action}`，如 `nodeCodeCreate`）
 - **资源名**：单数形式，不重复模块语义
-- **禁止**：`动词+资源` 旧式命名（`CreateRoute`、`ListContainers`、`apisixCreateRoute`）
+- **禁止**：`动词+资源` 命名（`CreateRoute`、`ListContainers`、`apisixCreateRoute`）
 - **注意**：类名为 `Docker` 时 `ContainerList` 不缩写为 `List`；类名为 `Apisix` 时 `RouteList` 不缩写为 `List`
 
 ### 文件内组织
@@ -252,7 +252,7 @@ docs/
 
 - `Access` 缺省为 `AccessPerm`（需具体权限）；匿名必须显式声明 `AccessAnon`（目前仅登录相关接口与 `/overview/bootstrap`）；`AccessAuth` 表示登录即可访问
 - `Audit` 缺省为 `AuditByMethod`：审计所有非 GET 请求**以及所有 WebSocket**；高频 GET 轮询天然豁免，需要豁免的写操作必须显式 `AuditIgnore`
-- 给 POST 路由设置 `AuditAlways` 是冗余的（POST 在 `AuditByMethod` 下本就会被审计），仅当该接口改为 GET 后仍需审计时才有意义
+- 给 POST 路由设置 `AuditAlways` 是冗余的（POST 在 `AuditByMethod` 下本就会被审计），GET 路由需要强制审计时使用 `AuditAlways`
 
 ### 配置结构体与 Provider
 

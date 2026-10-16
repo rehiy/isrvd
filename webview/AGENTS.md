@@ -113,7 +113,7 @@ webview/src/
 - 列表/详情页最外层统一使用 `.page`，页面内部独立内容块才使用 `.card`
 - 标题栏统一使用 `.page-toolbar` 类（定义于 `light_components.css`），固定在全局 header 下方；容器不写 `flex/justify-between`
 - 内嵌面板使用 `.page-toolbar-static` 取消吸顶
-- 分组式页面（如系统配置）：分组切换入口统一放侧边栏折叠子菜单，页面内不重复提供目录/标签导航；内容区不再分栏，表单按页面级限宽展示
+- 分组式页面（如系统配置）：分组切换入口统一放侧边栏折叠子菜单，页面内不重复提供目录/标签导航；内容区使用单栏布局，表单按页面级限宽展示
 - 必须提供桌面 `hidden md:flex` 与移动布局；移动端可用 `flex md:hidden`，也可用 `block md:hidden` 外层 + 内部 `flex items-center justify-between`
 - 详情页右侧仅保留刷新等功能按钮，**不添加返回按钮**
 - 嵌套路由页面（如 `/system/config/*`）：父布局负责 `.page`、`.page-toolbar`、权限/加载/失败态与保存动作，子页面只输出 `max-w-4xl` 表单片段，不得重复编写 `.page`/`.page-toolbar`；子页文件名与分组 id 一致
@@ -330,7 +330,7 @@ webview/src/
   | `v-model` | `boolean` | 开关状态 |
   | `label` | `string`（必填） | 开关标题 |
   | `desc` | `string` | 描述文字（可选，也可用 `#desc` slot 传入富文本） |
-  | `violet` | `boolean` | 激活色改为 violet（如 Caddy Global 场景） |
+  | `violet` | `boolean` | 激活色为 violet（如 Caddy Global 场景） |
   | `disabled` | `boolean` | 禁用状态 |
 
   ```html
@@ -567,7 +567,7 @@ webview/src/
 - **协议/枚举选择按钮**：使用 `.btn-proto` + `.btn-proto-active` / `.btn-proto-inactive`
 - **虚线添加行按钮**：使用 `.btn-add-row`（表格式编辑区底部）
 - **概览统计卡片**：使用 `.stat-card`（规范 1.12）
-- **独立详情页 toolbar**：去掉 `<ContainerNav>` Tab 导航，改用独立 `.page-toolbar`（图标+标题在左，操作控件在右），不添加返回按钮
+- **独立详情页 toolbar**：使用独立 `.page-toolbar`，图标与标题居左，操作控件居右，保持无返回按钮
 - **header 区域文字按钮统一**：`app.vue` header 中的文字按钮（如工具箱链接、AI 助手）统一使用 `btn btn-ghost px-4 py-2 text-sm gap-2`，禁止个别按钮手写冗余 inline class
 - **`.section-title` 强制规范**：
   - 文字颜色 `text-slate-700`、字号 `text-sm`、加底部边框 `border-b border-slate-200 pb-2`

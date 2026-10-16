@@ -29,7 +29,7 @@
 | Web 终端 | 基于 xterm.js 的 Shell 终端，支持容器终端接入 |
 | 本机进程 | 查看主机进程列表（CPU、内存、命令行），终止指定进程（强制审计） |
 | SSH 远程管理 | 管理主机与可复用凭据，支持密码/私钥认证、浏览器终端和 SFTP 文件管理 |
-| 集中管理 | 同一个二进制按 `--mode` 作为单机、中控或受管机运行，一个控制台管理多台服务器，详见 [集中管理](#集中管理) |
+| 集中管理 | 同一个二进制通过 `ISRVD_MODE` 作为单机、中控或受管机运行，一个控制台管理多台服务器，详见 [集中管理](#集中管理) |
 | AI 助手 | 内置 Copilot，基于 CopilotKit + AG-UI 协议，通过内置 OpenAPI 目录调用后端接口，支持页面上下文、工具卡片与写操作审批，兼容 OpenAI API 的 LLM 接入 |
 | 计划任务 | 定时任务调度；按运行平台提供 Shell 或 BAT/PowerShell 脚本及可执行文件任务，Docker 可用时还支持临时容器或已有容器执行 |
 | APISIX | 路由、Consumer、上游(Upstream)、SSL 证书、插件配置(PluginConfig)、插件列表、访问授权管理 |
@@ -79,7 +79,7 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) ins
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) install --apisix
 ```
 
-Docker 版统一使用容器名 `isrvd`，数据保存在 `/srv/data`；`update` 会按当前镜像类型重建容器，`uninstall` 删除容器但保留数据目录。
+Docker 版统一使用容器名 `isrvd`，数据保存在 `/srv/data`；`update` 会按当前镜像类型重建容器，并保留 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN`，`uninstall` 删除容器但保留数据目录。
 
 ### 准备网络
 
@@ -193,11 +193,11 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) dow
 
 ## 集中管理
 
-同一个二进制，用 `config.yml` 的 `server.mode` 或控制台「系统配置 / 基础服务」选择角色，一个控制台管理多台服务器：
+同一个二进制，通过环境变量 `ISRVD_MODE` 选择角色，一个控制台管理多台服务器：
 
 | 模式 | 作用 |
 | ------ | ------ |
-| `server`（默认） | 单机，与以往完全一致 |
+| `server`（默认） | 单机 |
 | `center` | 中控：提供 Web 界面、账号与权限，接收受管机接入，并把请求按节点转发 |
 | `agent` | 受管机：不开放任何对外端口，主动连接中控，中控转发来的请求在本机执行 |
 
@@ -208,50 +208,51 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) dow
 ```
 
 - **无需入站端口**：受管机只需要能访问中控，位于 NAT 或防火墙后也可以接入；断线后按指数退避自动重连
-- **切换节点即切换视角**：创始人在页面头部选择节点后，Docker、Swarm、Compose、文件、本机进程、终端、计划任务、APISIX、Caddy 和系统概览都作用于该节点，包括实时日志、终端和大文件上传下载
-- **账号与配置仍在中控**：成员、权限、系统配置、AI 助手和 SSH 远程管理始终由中控处理，节点上的操作使用中控的登录态
-- **按需出现**：节点切换器和侧边栏「节点管理」只在 `center` 模式且当前用户是创始人时显示，单机用户看不到任何变化
+- **切换节点即切换视角**：有权限的成员在页面头部选择节点后，Docker、Swarm、Compose、文件、本机进程、终端、计划任务、APISIX、Caddy 和系统概览都作用于该节点，包括实时日志、终端和大文件上传下载
+- **账号与配置在中控**：成员、权限、系统配置、AI 助手和 SSH 远程管理始终由中控处理，节点上的操作使用中控的登录态
+- **按需出现**：节点切换器和侧边栏「节点管理」在 `center` 模式且当前用户有 `GET /api/node/nodes` 权限时显示
 
 ### 接入节点
 
-1. 在控制台「系统配置 / 基础服务」设置中控模式，或在 `config.yml` 设置 `server.mode: center`，重启服务。
-2. 在中控「接入节点」生成 token，弹窗可复制受控机配置；未接入的 token 显示为「待接入」。
-3. 在受控机控制台填写受控模式、服务器地址与连接 token，或合并以下字段到原配置：
+1. 在中控进程环境中设置 `ISRVD_MODE=center`，重启服务。
+2. 在中控「接入节点」生成 token，弹窗可复制受控机环境变量；未接入的 token 显示为「待接入」。
+3. 在受控机进程环境中设置：
 
-```yaml
-server:
-  mode: agent
-  centerUrl: https://center.example.com
-  nodeToken: "<中控生成的 token>"
+```bash
+export ISRVD_MODE=agent
+export ISRVD_CENTER_URL=https://center.example.com
+export ISRVD_NODE_TOKEN="<中控生成的 token>"
 ```
 
 4. 重启后直接用 token 连接。首次接入前 token 有有效期；接入后同一 token 可用于重启与重连。已在线时拒绝重复连接（409），不会顶替旧会话。
 
-模式、服务器地址与 token 统一保存在主配置，原运行参数和对应环境变量已移除，不再保存 `node-agent.yml`。旧部署升级前应迁移配置并移除旧参数、环境变量；残留旧运行变量时会拒绝启动。二进制更新保留现有 `config.yml`。中控支持 `tha`，网关按 `tha.trustedCIDRs` 校验真实连接来源；受控模式仍禁止启用 `tha`。配置查询不回显 token，控制台留空保留旧值。配置文件应限制权限为 `0600`。
+部署参数由进程环境提供，YAML、etcd 与配置 API 管理业务配置。中控支持 `tha`，网关按 `tha.trustedCIDRs` 校验真实连接来源；受控模式要求 `tha.enabled=false`。保存 token 的环境文件应限制权限为 `0600`。
 
 ### 容器部署
 
-提前准备完整的 `/srv/data/conf/isrvd.yml` 并填写角色配置，中控与受控机分别部署在各自机器上：
+提前准备完整的 `/srv/data/conf/isrvd.yml` 保存业务配置，通过 `-e` 传入部署参数，中控与受控机分别部署在各自机器上：
 
 ```bash
-# 中控配置 mode: center
-docker run -d --name isrvd-center --network sdnet -p 8080:8080 \
+# 中控（8080 为对外入口）
+docker run -d --name isrvd-center -e ISRVD_MODE=center --network sdnet -p 8080:8080 \
   -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
 
-# 受控机配置 mode: agent，不需要 -p
+# 受控机（不需要 -p）
 docker run -d --name isrvd-agent --network sdnet \
+  -e ISRVD_MODE=agent -e ISRVD_CENTER_URL=https://center.example.com \
+  -e ISRVD_NODE_TOKEN="<中控生成的 token>" \
   -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
 ```
 
-受控机必须有创始人成员，不能启用 `tha`；受控模式下 `listenAddr` 不生效。切换后只能经中控访问，错误的地址或 token 需直接编辑受控机配置恢复。
+受控机必须有创始人成员，不能启用 `tha`；受控模式下 `listenAddr` 不生效。切换后只能经中控访问，地址或 token 错误时，需修改受控机环境变量并重启。
 
 ### systemd 部署
 
-编辑安装目录下的 `config.yml` 或在控制台保存模式设置，再执行 `systemctl restart isrvd`。安装脚本只负责安装和升级，不接受角色或连接参数；默认单机启动，角色和连接信息在控制台或主配置中填写。
+通过 `systemctl edit isrvd` 在 `[Service]` 中设置 `Environment="ISRVD_MODE=center"`；受控机还需设置 `ISRVD_CENTER_URL` 和 `ISRVD_NODE_TOKEN`。保存后执行 `systemctl daemon-reload` 与 `systemctl restart isrvd`。安装默认以单机模式启动。
 
 ### 安全与边界
 
-- 只有创始人可以管理和操作节点；节点上的请求以受管机本地的创始人身份执行，不能把节点权限下放给普通成员
+- 节点管理按 `/api/node/...` 路由权限授权；业务转发先在中控校验成员的业务路由权限，再以受管机本地服务令牌执行。创始人拥有全部权限。授权对所有节点生效，当前按路由而非节点 ID 分配权限
 - 注册码一次性使用、默认 1 小时过期；节点令牌只保存哈希，注册码短期有效、加密落盘，待接入期间可在列表中查看接入命令；节点可随时吊销，吊销后立即断开
 - 节点管理操作、节点上的写操作与终端会话都会记入中控的审计页面（操作人为中控登录用户），受管机本机的审计页面里则记录为其本地创始人
 - 中控为单实例设计，重启时节点短暂断开后自动重连；受管机与中控的版本需一致
@@ -260,6 +261,8 @@ docker run -d --name isrvd-agent --network sdnet \
 ## 配置
 
 ### 配置来源
+
+配置加载器统一去除环境变量值的首尾空白，空白值使用默认值。
 
 配置位置由 `ISRVD_CONFIG` 指定，支持本地 YAML 与 etcd（value 仍为 config.yml 同款 YAML）：
 
@@ -281,7 +284,7 @@ ISRVD_CONFIG="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" 
 # etcd://user:pass@host1:2379,host2:2379/key?scheme=http&timeout=5s&fallback=/path/config.yml
 ```
 
-**etcd** 认证可省略，也可用 `ETCD_USERNAME` / `ETCD_PASSWORD` 补充或覆盖 URI 中的认证信息。etcd key 发生 PUT 变更时，isrvd 会重载配置、注册中心和业务服务。计划任务、SSH 主机与凭据等业务数据同样存入 etcd（key 为 `<配置 key>/cron.yml` 等），首次启动时自动迁移 `rootDirectory` 下的同名文件；审计与监控日志仍写本地。迁移后本地文件不再更新，回退到不支持该特性的旧版本会丢失升级期间对计划任务与 SSH 配置的修改。通过系统配置 API 保存的本地 YAML 也会立即触发重载；若直接在磁盘上修改 YAML，则需发送 `SIGHUP` 或重启进程。
+**etcd** 认证可省略，也可用 `ETCD_USERNAME` / `ETCD_PASSWORD` 补充或覆盖 URI 中的认证信息。etcd key 发生 PUT 变更时，isrvd 会重载配置、注册中心和业务服务。计划任务、SSH 主机与凭据等业务数据同样存入 etcd（key 为 `<配置 key>/cron.yml` 等），业务数据 key 缺失时导入 `rootDirectory` 下的同名文件，后续读写使用 etcd，本地来源文件作为导入副本保留；审计与监控日志写本地。通过系统配置 API 保存的本地 YAML 也会立即触发重载；若直接在磁盘上修改 YAML，则需发送 `SIGHUP` 或重启进程。
 
 ### 配置项
 
@@ -297,7 +300,7 @@ ISRVD_CONFIG="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" 
 
 > 留空 = 无 `AccessPerm` 路由权限；具体可用路由可在登录后通过 `GET /api/account/routes` 获取。
 >
-> 集中管理的节点接口（`/api/node/*`、`/n/<节点ID>/…`）由中控网关提供，不在路由表中，**仅创始人可用**，无法授予普通成员。
+> 集中管理的节点接口由中控网关提供。中控模式下，节点管理权限列入 `/account/routes`，可在成员管理中分配；`/n/<节点ID>/api/...` 转发请求检查对应的业务路由权限，授权对所有节点生效。
 
 权限点完整清单见 [docs/permissions.md](docs/permissions.md)。
 
@@ -323,7 +326,7 @@ ISRVD_CONFIG="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" 
 
 开发脚本会自动：
 
-- **后端**：复制 `config.yml` 为 `.local.yml`（如不存在），运行 `ISRVD_CONFIG=.local.yml go run ./server/cmd/server`；模式由 `.local.yml` 的 `server.mode` 决定，调试节点管理时设置为 `center`
+- **后端**：复制 `config.yml` 为 `.local.yml`（如不存在），运行 `ISRVD_CONFIG=.local.yml go run ./server/cmd/server`；使用 `ISRVD_MODE=center ./develop.sh` 调试节点管理与切换
 - **前端**：进入 `webview`，安装依赖并执行 `npm run dev`
 - **端口清理**：启动前尝试释放 `8080` 和 `3000` 端口
 - **代理**：前端开发服务器（`3000`）把 `/api/`、`/openapi/` 和节点视角的 `/n/` 代理到 `8080`；`/n/<节点ID>/` 下的页面由后端内嵌的前端产物提供，修改前端后需 `npm run build` 才能在节点视角下看到
@@ -363,7 +366,7 @@ go vet ./...
 git diff --check
 ```
 
-> 贡献代码前请优先阅读 [AGENTS.md](AGENTS.md)。该文件是当前仓库的代码规范与协作约定入口，旧版 `CODE_STYLE` 不再作为规范来源。
+> 贡献代码前请优先阅读 [AGENTS.md](AGENTS.md)。该文件定义仓库的代码规范与协作约定。
 
 ## 架构设计
 

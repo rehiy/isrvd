@@ -27,7 +27,7 @@ node ./scripts/api.js get "/docker/containers"
 node ./scripts/api.js post "/docker/container" '{"image":"...","name":"..."}'
 ```
 
-**兜底兼容：Bash 版**（仅当 `python3` 与 `node` 都不可用时使用；保留给旧文档中的 `isrvd_get` / `source` 交互式用法）
+**备选：Bash 版**（`python3` 与 `node` 都不可用时使用，支持 `isrvd_get` / `source` 交互式调用）
 
 ```bash
 source ./scripts/api.sh
@@ -41,7 +41,7 @@ isrvd_get "/docker/containers"
 isrvd_post "/docker/container" '{"image":"...","name":"..."}'
 ```
 
-脚本默认提取统一响应中的 `.payload`；数组对象会自动转为紧凑表格，降低输出噪音。Python/Node 版支持简单 selector（如 `.content`、`.username`）。Bash 版只作为 Python/Node 都不可用时的兜底兼容方案。
+脚本默认提取统一响应中的 `.payload`；数组对象会自动转为紧凑表格，降低输出噪音。Python/Node 版支持简单 selector（如 `.content`、`.username`）。Python/Node 都不可用时可使用 Bash 版。
 
 Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '<RunAgentInput JSON>' --raw`），直接输出 SSE/文本，不经过 JSON 解析，需 curl 7.76.0+。
 
@@ -292,7 +292,7 @@ EOF
 isrvd_upload "/filer/upload" "file" "/tmp/<FILE>" "path=<FILER_PATH>"
 ```
 
-> filer 路径是 isrvd 内部路径，非宿主机路径。初次创建容器挂载卷时，需先查出宿主机真实路径（见 references/system/filer.md），之后文件更新不再需要重建容器。
+> filer 路径是 isrvd 内部路径，非宿主机路径。初次创建容器挂载卷时，需先查出宿主机真实路径（见 references/system/filer.md），之后可通过文件接口直接更新文件。
 
 ### 其他文件操作
 

@@ -54,7 +54,7 @@ type EnrollCode struct {
 
 // listStore 带互斥的类型化列表。持久化交给业务数据存储（config.OpenData），
 // 与计划任务、SSH 主机一致：后端选择、原子写入与 etcd 同步都由 cstore 负责。
-// 数据目录（rootDirectory）随配置重载变化时，下一次访问会自动改用新位置，与其他业务数据的重载行为一致。
+// 数据目录（rootDirectory）随配置重载变化时，下一次访问会使用对应位置，与其他业务数据的重载行为一致。
 type listStore[T any] struct {
 	mu    sync.RWMutex
 	file  string
@@ -85,7 +85,7 @@ func openList[T any](file string) (*cstore.TypedStore[[]*T], []*T, error) {
 	return ts, slices.DeleteFunc(items, func(item *T) bool { return item == nil }), nil
 }
 
-// refresh 在 rootDirectory 变化后改用新位置的数据。打开失败时保留旧数据并只告警一次（重启后生效）。
+// refresh 在 rootDirectory 变化后加载对应位置的数据。打开失败时保留旧数据并只告警一次（重启后生效）。
 func (s *listStore[T]) refresh() {
 	root := config.Current().Server.RootDirectory
 	s.mu.RLock()

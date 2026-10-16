@@ -113,7 +113,7 @@ type ServiceMount struct {
 	ReadOnly bool   `json:"readOnly"` // 是否只读
 }
 
-// ServiceSpec 服务可写配置（创建/更新共用），保持 HTTP API 兼容。
+// ServiceSpec 表示创建与更新 Swarm 服务共用的可写配置。
 type ServiceSpec struct {
 	Name        string            `json:"name"`        // 服务名称
 	Image       string            `json:"image"`       // 镜像名称

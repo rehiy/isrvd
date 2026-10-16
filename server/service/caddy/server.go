@@ -26,7 +26,7 @@ var (
 
 // ServerAutomaticHTTPSForm 是服务接口允许编辑的 automatic_https 字段。
 type ServerAutomaticHTTPSForm struct {
-	Disable          bool `json:"disable"`           // 禁用自动 HTTPS（不再自动申请证书）
+	Disable          bool `json:"disable"`           // 禁用自动 HTTPS
 	DisableRedirects bool `json:"disable_redirects"` // 禁用 HTTP 到 HTTPS 自动跳转
 }
 

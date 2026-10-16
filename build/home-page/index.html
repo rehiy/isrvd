@@ -574,21 +574,21 @@
                 <div class="flex flex-wrap items-center gap-2 mb-3">
                     <span class="step-num">2</span>
                     <span class="font-semibold text-slate-800">运行角色</span>
-                    <span class="text-xs text-slate-400" id="role-hint">通过配置中的 cluster 段设置单机 / 中控 / 受管机模式</span>
+                    <span class="text-xs text-slate-400" id="role-hint">通过 ISRVD_MODE 环境变量设置单机 / 中控 / 受管机模式</span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <button type="button" class="option-card" data-opt="role" data-val="server" onclick="setOpt('role','server')">
                         <span class="badge badge-blue">默认</span>
                         <p class="font-semibold text-slate-800 mt-1">单机</p>
-                        <p class="text-xs text-slate-500 mt-1">cluster.mode: server，独立管理本机</p>
+                        <p class="text-xs text-slate-500 mt-1">ISRVD_MODE=server，独立管理本机</p>
                     </button>
                     <button type="button" class="option-card" data-opt="role" data-val="center" onclick="setOpt('role','center')">
                         <p class="font-semibold text-slate-800">中控</p>
-                        <p class="text-xs text-slate-500 mt-1">cluster.mode: center，一个控制台管理多台服务器</p>
+                        <p class="text-xs text-slate-500 mt-1">ISRVD_MODE=center，一个控制台管理多台服务器</p>
                     </button>
                     <button type="button" class="option-card" data-opt="role" data-val="agent" onclick="setOpt('role','agent')">
                         <p class="font-semibold text-slate-800">受管机</p>
-                        <p class="text-xs text-slate-500 mt-1">cluster.mode: agent，主动出站接入中控，不监听端口</p>
+                        <p class="text-xs text-slate-500 mt-1">ISRVD_MODE=agent，主动出站接入中控，不监听端口</p>
                     </button>
                 </div>
                 <div id="role-agent-inputs" class="hidden mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -947,11 +947,11 @@
                 <div class="flex flex-wrap items-center justify-center gap-2 text-sm">
                     <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 text-slate-600">浏览器</div>
                     <span class="arch-arrow">→</span>
-                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">cluster.mode: center</div>
+                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">ISRVD_MODE=center</div>
                     <span class="arch-arrow">⇄</span>
                     <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 text-slate-600">隧道</div>
                     <span class="arch-arrow">⇠</span>
-                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">cluster.mode: agent</div>
+                    <div class="bg-white border border-slate-200 rounded-lg px-4 py-2 font-mono text-slate-600">ISRVD_MODE=agent</div>
                     <span class="text-slate-400 text-xs">× N 台</span>
                 </div>
                 <p class="mt-4 text-xs text-slate-400 text-center">隧道由受管机主动发起，中控从不主动外连；受管机位于 NAT 或防火墙后也可以接入</p>
@@ -960,7 +960,7 @@
             <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div class="bg-white border border-slate-200 rounded-lg p-4">
                     <p class="font-semibold text-slate-700 mb-1">一个二进制，三种角色</p>
-                    <p class="text-slate-500">通过配置中的 <code class="bg-slate-100 px-1 rounded">cluster.mode</code> 选择 <code class="bg-slate-100 px-1 rounded">server</code>（默认单机）、<code class="bg-slate-100 px-1 rounded">center</code>（中控）或 <code class="bg-slate-100 px-1 rounded">agent</code>（受管机），修改后重启服务生效</p>
+                    <p class="text-slate-500">通过环境变量 <code class="bg-slate-100 px-1 rounded">ISRVD_MODE</code> 选择 <code class="bg-slate-100 px-1 rounded">server</code>（默认单机）、<code class="bg-slate-100 px-1 rounded">center</code>（中控）或 <code class="bg-slate-100 px-1 rounded">agent</code>（受管机），修改后重启服务生效</p>
                 </div>
                 <div class="bg-white border border-slate-200 rounded-lg p-4">
                     <p class="font-semibold text-slate-700 mb-1">切换节点即切换视角</p>
@@ -972,11 +972,11 @@
                 </div>
                 <div class="bg-white border border-slate-200 rounded-lg p-4">
                     <p class="font-semibold text-slate-700 mb-1">接入可控，随时吊销</p>
-                    <p class="text-slate-500">一次性注册码自动接入、仅创始人可操作；节点令牌只存哈希，待接入的注册码可随时查看，吊销后立即断开</p>
+                    <p class="text-slate-500">一次性注册码自动接入，节点管理和操作按路由权限授权；中控保存节点令牌哈希，有注册码读取权限的成员可查看待接入凭据，吊销后立即断开</p>
                 </div>
             </div>
 
-            <p class="text-xs text-slate-400 mt-4 text-center">首次注册后凭据加密保存在受管机本地，重启无需再带注册码；受管机与中控的版本需一致。详见 <a href="https://github.com/rehiy/isrvd/blob/master/docs/multi-node.md" target="_blank" class="underline hover:text-slate-600">集中管理文档</a></p>
+            <p class="text-xs text-slate-400 mt-4 text-center">受管机通过 ISRVD_NODE_TOKEN 环境变量提供接入凭据，重启与重连使用同一 token；受管机与中控的版本需一致。详见 <a href="https://github.com/rehiy/isrvd/blob/master/docs/multi-node.md" target="_blank" class="underline hover:text-slate-600">集中管理文档</a></p>
 
             <div class="mt-10 bg-white border border-slate-200 rounded-xl p-6 sm:p-8 text-center">
                 <h3 class="font-semibold text-slate-800 mb-2">部署中控或受管机</h3>
@@ -1193,8 +1193,6 @@
                 nav.classList.remove('bg-slate-900/80', 'border-slate-700/60');
                 nav.classList.add('bg-white/80', 'border-slate-200/60');
             }
-            // Update GPU table borders
-            // GPU table borders are now handled by pure CSS
         }
         // Init theme
         (function () {
@@ -1208,8 +1206,6 @@
                 nav.classList.remove('bg-white/80', 'border-slate-200/60');
                 nav.classList.add('bg-slate-900/80', 'border-slate-700/60');
             }
-            // Update GPU table borders after DOM is ready
-            // GPU table borders are now handled by pure CSS
         })();
         // Command builder：所有选项实时生成一条 bash / docker run 命令
         var SCRIPT_URL = 'https://isrvd.rehiy.com/install/';
@@ -1349,6 +1345,10 @@
             }
 
             var run = ['docker run -d', '--name ' + shq(v.cname), '--restart unless-stopped'];
+            run.push('-e ISRVD_MODE=' + shq(s.role));
+            if (s.role === 'agent') {
+                run.push('-e ' + shq('ISRVD_CENTER_URL=' + v.centerUrl), '-e ' + shq('ISRVD_NODE_TOKEN=' + v.code));
+            }
             if (netName) run.push('--network ' + shq(netName));
             if (s.role !== 'agent') {
                 run.push('-p ' + v.pWeb + ':8080');
@@ -1358,6 +1358,19 @@
             run.push('-v ' + shq(v.data + ':/data'), '-v /var/run/docker.sock:/var/run/docker.sock', dockerImage(s, v));
             segments.push(run);
             return segments;
+        }
+
+        // 二进制安装使用 systemd 环境变量设置运行角色。
+        function buildRoleConfig(s, v) {
+            if (s.method !== 'script-binary' || s.role === 'server') return '';
+            var env = ['ISRVD_MODE=' + s.role];
+            if (s.role === 'agent') env.push('ISRVD_CENTER_URL=' + v.centerUrl, 'ISRVD_NODE_TOKEN=' + v.code);
+            var lines = ['# 安装后执行 systemctl edit isrvd，在 [Service] 中设置：'];
+            env.forEach(function (value) {
+                lines.push('# Environment=' + JSON.stringify(value.replace(/%/g, '%%')));
+            });
+            lines.push('# 保存后执行 systemctl daemon-reload && systemctl restart isrvd');
+            return lines.join('\n');
         }
 
         function buildManage(s, v) {
@@ -1389,7 +1402,7 @@
                 if (v.installDocker) notes.push('自动安装 Docker 需以 root 身份执行整条命令。');
             }
             if (s.method !== 'script-binary') notes.push('挂载 Docker socket 相当于授予宿主机高权限，请勿向不可信用户开放管理界面。');
-            if (s.role === 'agent') notes.push('配置中的节点令牌长期有效，请勿分享；配置文件建议限制为 0600 权限。');
+            if (s.role === 'agent') notes.push('节点令牌由 ISRVD_NODE_TOKEN 环境变量提供，请勿分享；保存令牌的环境文件应限制为 0600 权限。');
             else notes.push('登录后立即修改默认账号 admin 的密码。');
             return notes;
         }
@@ -1416,7 +1429,7 @@
             });
             byId('role-hint').textContent = s.method === 'script-docker'
                 ? '安装脚本的 Docker 模式固定为单机；中控 / 受管机请选二进制或 docker run'
-                : '通过配置中的 cluster 段设置单机 / 中控 / 受管机模式';
+                : '通过 ISRVD_MODE 环境变量设置单机 / 中控 / 受管机模式';
 
             var desc = SOURCE_DESC[s.method];
             byId('source-auto-desc').textContent = desc[0];
@@ -1463,13 +1476,8 @@
             else segments = buildDockerRun(s, v);
 
             var command = joinSegments(segments);
-            if (s.role !== 'server') {
-                var configPath = isDocker ? v.data + '/conf/isrvd.yml' : '/usr/local/isrvd/config.yml';
-                var configLines = ['# ' + (isDocker ? '启动前' : '安装后') + '将以下字段合并到完整配置 ' + configPath, '# cluster:', '#   mode: ' + s.role];
-                if (isAgent) configLines.push('#   centerUrl: ' + JSON.stringify(v.centerUrl), '#   nodeToken: ' + JSON.stringify(v.code));
-                if (!isDocker) configLines.push('# 保存配置后执行 systemctl restart isrvd；安装默认以单机模式启动');
-                command = configLines.join('\n') + '\n\n' + command;
-            }
+            var roleConfig = buildRoleConfig(s, v);
+            if (roleConfig) command += '\n\n' + roleConfig;
             byId('build-label').textContent = isDocker ? 'bash — docker run' : 'bash';
             byId('build-cmd').innerHTML = highlight(command);
             byId('install-manage').innerHTML = highlight(buildManage(s, v));

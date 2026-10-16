@@ -82,7 +82,7 @@ func (s *Service) ContainerList(ctx context.Context, all bool, filterJSON ...str
 	return result, nil
 }
 
-// VolumeMapping 挂载映射，保持 HTTP API 兼容。
+// VolumeMapping 表示 HTTP API 的挂载映射。
 type VolumeMapping struct {
 	Type          string `json:"type,omitempty"`     // 挂载类型（volume/bind）
 	Source        string `json:"source,omitempty"`   // 卷名（volume 类型）
@@ -91,7 +91,7 @@ type VolumeMapping struct {
 	ReadOnly      bool   `json:"readOnly"`           // 是否只读
 }
 
-// ContainerSpec 容器可写配置（创建/更新共用），保持 HTTP API 兼容。
+// ContainerSpec 表示创建与更新容器共用的可写配置。
 type ContainerSpec struct {
 	Image      string            `json:"image" binding:"required"` // 镜像名称（含 tag）
 	Name       string            `json:"name" binding:"required"`  // 容器名称
@@ -286,7 +286,7 @@ func (s *Service) ContainerAction(ctx context.Context, req ActionRequest) error 
 	return nil
 }
 
-// ContainerLogsRequest 日志请求，保持 HTTP API 兼容。
+// ContainerLogsRequest 表示容器日志查询参数。
 type ContainerLogsRequest struct {
 	ID   string `json:"id" binding:"required"` // 容器 ID
 	Tail string `json:"tail"`                  // 返回末尾行数（如 "100"，空表示全部）

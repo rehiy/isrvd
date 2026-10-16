@@ -36,7 +36,7 @@ func (s *Service) RunAGUI(ctx context.Context, w io.Writer, input AGUIInput) err
 }
 
 // WriteAGUIError 向已提交响应头的 SSE 流补发 RUN_ERROR 事件。
-// 用于运行开始后失败的场景，此时无法再改用 HTTP 错误码。
+// 用于流式响应开始后的错误，通过 AG-UI 事件传递失败信息。
 func WriteAGUIError(w io.Writer, input AGUIInput, err error) error {
 	return agui.NewEncoder(w).Write(agui.Event{
 		Type:     agui.RunError,

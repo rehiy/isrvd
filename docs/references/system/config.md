@@ -29,11 +29,11 @@ ETCD_USERNAME=user ETCD_PASSWORD=pass ISRVD_CONFIG="etcd://h1:2379,h2:2379,h3:23
 
 计划任务执行日志、审计日志、监控历史等日志类数据仍写本地磁盘。
 
-业务数据存储由 cstore 从配置存储派生：本地后端使用当前 `rootDirectory`，etcd 后端复用配置连接，key 为 `<配置 key>/<文件名>`，缺失时从当前 `rootDirectory` 的同名文件迁移。修改 `rootDirectory` 并重载后，新建服务使用新的本地目录或 fallback 目录；已存在的 etcd 数据不被覆盖。
+业务数据存储由 cstore 从配置存储派生：本地后端使用当前 `rootDirectory`，etcd 后端复用配置连接，key 为 `<配置 key>/<文件名>`，key 缺失时导入当前 `rootDirectory` 下的同名文件。修改 `rootDirectory` 并重载后，新建服务使用新的本地目录或 fallback 目录；已存在的 etcd 数据不被覆盖。
 
 ### 保存一致性
 
-系统配置、计划任务和 SSH 主机/凭据通过 cstore 检查最近一次成功加载或保存的原始内容。保存前检查不触发 fallback 迁移；发现内容已变更（包括被删除）时拒绝覆盖；请重新加载后重试。加载失败的计划任务存储禁止写入，避免空任务表覆盖原有数据。
+系统配置、计划任务和 SSH 主机/凭据通过 cstore 检查最近一次成功加载或保存的原始内容。保存前仅检查目标存储中的现有内容；发现内容已变更（包括被删除）时拒绝覆盖；请重新加载后重试。加载失败的计划任务存储禁止写入，避免空任务表覆盖原有数据。
 
 本地文件采用同目录临时文件和原子替换，保留已有文件权限，新文件使用 `0600`；文件后端仅协调同目录 Store 的进程内更新。etcd 通过事务比较 key 的存在性和原始值，再条件写入，支持跨实例防覆盖；fallback 也只在 key 缺失时原子创建，竞争失败后读取已有数据。值比较不检测内容变更后又恢复原值的 ABA 情况，也不提供浏览器旧草稿版本校验或分布式任务执行锁；etcd 超时不代表服务端一定未提交。
 
@@ -47,7 +47,7 @@ etcd 空字符串值视为已存在，不触发 fallback。使用 libgo v0.21.0 
 
 | 配置段 | 说明 |
 | -------- | ------ |
-| `schema` | 配置结构版本，用于自动迁移 |
+| `schema` | 配置结构版本，用于格式转换 |
 | `server` | 监听地址、数据根目录、上传限制、CORS、JWT 密钥/有效期、OpenAPI 开关和调试模式 |
 | `password` | 密码登录开关与最小密码长度 |
 | `tha` | 代理认证头登录（enabled / headerName / trustedCIDRs；trustedCIDRs 为空时默认填充本机回环地址） |
@@ -134,9 +134,9 @@ isrvd_get "/system/config"
 | marketplace | object | `{url}` |
 | links | object[] | `{label, url, icon}` |
 
-> 配置文件 / etcd 中的 `schema.version` 由系统维护（用于版本化迁移），不通过该接口返回或修改。
+> 配置文件 / etcd 中的 `schema.version` 由系统维护（用于版本化格式转换），不通过该接口返回或修改。
 
-多节点部署仅通过环境变量设置，配置 API 不再返回或修改 `cluster`，详见 [集中管理](../../multi-node.md)。受控模式仍禁止启用 `tha.enabled`。
+多节点部署参数通过 `ISRVD_MODE`、`ISRVD_CENTER_URL`、`ISRVD_NODE_TOKEN` 环境变量设置；配置 API 管理业务配置，详见 [集中管理](../../multi-node.md)。受控模式要求 `tha.enabled=false`。
 
 网关没有代理信任开关：审计和节点认证失败限流仅使用连接对端 IP。反向代理后的客户端会共享限流额度，网关审计记录代理 IP。中控模式允许 THA，网关按 `tha.trustedCIDRs` 校验连接来源，拒绝不可信身份头。
 
@@ -156,7 +156,7 @@ isrvd_put "/system/config" '<CURRENT_CONFIG_WITH_CHANGES>'
 - `clientSecret`、`jwtSecret`、`apiKey`、`adminKey`、`docker.registries[].password` 等敏感字段不会通过 GET 返回；PUT 时为空（含纯空白）表示保留原值，非空值会去除首尾空白后保存；`docker.registries[].password` 按 `url` + `username` 匹配旧仓库后保留原值。启动加载配置时，如果 `server.jwtSecret` 为空或仍为示例值 `your-jwt-secret`，系统会使用密码学安全随机源生成 256 位密钥并写回配置；手动配置的密钥不能少于 32 个字符。
 - 连接远程 Docker / Swarm：`docker.host` 设为 `tcp://host:2376`，并设置 `docker.tls`：`enabled`（启用 TLS）、`skipVerify`（跳过服务端证书校验，仅限测试）、`ca`（校验服务端证书的 CA，PEM 文本；留空使用系统根证书）、`cert` 与 `key`（客户端证书与私钥，PEM 文本，daemon 启用 `--tlsverify` 时需要，必须成对）。证书以 PEM 文本保存在配置中，使用 etcd 配置后端时随配置同步，无需在各节点放置证书文件。`tls.enabled` 为 `true` 时 `host` 必须是 `tcp://` 地址，保存时会校验 PEM 与证书私钥是否匹配，不通过则拒绝保存。`tls.key` 留空保留原值；清空 `tls.cert` 会同时清除私钥；请求未携带 `tls` 时沿用原值。Swarm 复用 Docker 连接，目标节点需为 manager。
 - 远程 Docker 的判定与限制：`docker.host`（留空时取环境变量 `DOCKER_HOST`）为 `tcp://` 且主机不是回环地址（`127.0.0.0/8`、`::1`、`localhost`）即视为远程，与是否启用 TLS 无关；`tcp://docker-proxy:2375` 这类无法确认是否同机的别名也按远程处理。远程时：
-  - 「自身容器」只按 isrvd 所在容器的 overlay 存储路径（`upperdir`/`workdir`）识别，不再按 IP、主机名匹配（不同主机的默认网桥都是 `172.17.0.x`，会把远程容器误判为自身）；存储驱动不是 overlay 时不识别自身容器，自身保护不生效。
+  - 「自身容器」只按 isrvd 所在容器的 overlay 存储路径（`upperdir`/`workdir`）识别，以区分不同主机上使用相同网桥 IP 或主机名的容器；存储驱动不是 overlay 时不识别自身容器，自身保护不生效。
   - bind 挂载源与 `containerRoot` 是远程主机上的路径，isrvd 不检查其是否存在；通过界面创建容器时，相对路径会按 `containerRoot/<容器名>/` 展开并在远程主机上创建。
   - Compose（Docker 模式）的项目文件、`.env` 与部署历史保存在 isrvd 所在主机；相对 bind 路径会展开为 isrvd 本机的绝对路径后原样交给远程 daemon，该路径在远程主机上不存在时容器启动会失败（`bind source path does not exist`），`./nginx.conf` 这类需要随项目一起存在的文件同样无法使用，请改用远程主机上真实存在的绝对路径或命名卷。
 - `password.disabled` 设为 `true` 后，密码登录接口（`POST /api/account/login`）将直接拒绝请求，前端也会隐藏密码登录表单，仅保留 Passkey、OIDC 或代理 Header（THA）登录方式。后端会拒绝关闭全部登录方式的配置。

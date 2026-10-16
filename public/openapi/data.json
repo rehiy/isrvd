@@ -8875,7 +8875,7 @@
       "caddy.ServerAutomaticHTTPSForm": {
         "properties": {
           "disable": {
-            "description": "禁用自动 HTTPS（不再自动申请证书）",
+            "description": "禁用自动 HTTPS",
             "type": "boolean"
           },
           "disable_redirects": {

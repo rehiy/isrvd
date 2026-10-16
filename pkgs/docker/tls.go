@@ -53,7 +53,7 @@ func (c *TLSConfig) Config(host string) (*tls.Config, error) {
 
 // withTLSConfig 将 TLS 配置应用到 SDK 客户端的传输层。
 // SDK 自带的 WithTLSClientConfig 只接受文件路径，而这里的证书以 PEM 文本保存。
-// 必须排在 WithHost 之后，且需要在 SDK 推导 scheme 前生效，才会改用 https。
+// 在 WithHost 之后、SDK 推导 scheme 之前设置，确保使用 https。
 func withTLSConfig(cfg *tls.Config) client.Opt {
 	return func(c *client.Client) error {
 		transport, ok := c.HTTPClient().Transport.(*http.Transport)

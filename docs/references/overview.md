@@ -6,7 +6,7 @@
 isrvd_get "/overview/bootstrap"
 ```
 
-前端启动专用接口，**无需登录即可调用**（`AccessAnon`）。一次返回 auth、probe、config 三段数据，替代原来串行的三次请求。
+前端启动专用接口，**无需登录即可调用**（`AccessAnon`）。一次返回 auth、probe、config 三段启动数据。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -91,7 +91,7 @@ isrvd_post "/overview/upgrade"
 
 触发 isrvd 程序自升级至最新版本（通过 `upgrade` 包实现，二进制原地替换并重启）。
 
-Docker 容器部署场景下，前端改用 `GET /api/overview/version` 返回的 `updaterImage` 字段，通过临时 docker-updater 容器拉取最新镜像并重启当前容器；该镜像按国家代码自动选择（CN 使用 CNB 镜像源）。
+Docker 容器部署场景下，前端使用 `GET /api/overview/version` 返回的 `updaterImage` 字段，通过临时 docker-updater 容器拉取最新镜像并重启当前容器；该镜像按国家代码自动选择（CN 使用 CNB 镜像源）。
 
 > ⚠️ 升级操作会重启服务，请确保已保存所有工作。
 

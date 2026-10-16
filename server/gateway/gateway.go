@@ -46,7 +46,7 @@ type Options struct {
 
 // Handler 返回中控网关：节点管理接口与 /n/<节点ID>/ 下的节点转发由它处理，
 // 其余请求（含全部页面）原样转发给 upstream（同进程的 isrvd，只监听回环地址）。
-// 节点切换与节点管理页面是 webview 的一部分，由 isrvd 提供，网关不再注入或托管任何页面。
+// 节点切换与节点管理页面由 webview 实现，通过 isrvd 提供。
 func Handler(opt Options) http.Handler {
 	return newGateway(opt).routes()
 }
@@ -249,7 +249,7 @@ func (g *gateway) nodeBootstrap(w http.ResponseWriter, r *http.Request, id strin
 		return
 	}
 
-	// bootstrap 已完成可选认证，直接使用返回的身份，不再重复校验凭据。
+	// 使用 bootstrap 可选认证返回的身份组合节点启动数据。
 	auth, _ := payload["auth"].(map[string]any)
 	username, _ := auth["username"].(string)
 	if username == "" {

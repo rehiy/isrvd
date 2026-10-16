@@ -32,7 +32,7 @@ func migrate(conf *Config, data []byte) bool {
 	return migrated
 }
 
-// migrateSchema 设置配置格式版本号，用于后续版本化迁移
+// migrateSchema 将配置格式版本号设置为 schema.Version
 func migrateSchema(conf *Config, _ []byte) bool {
 	if conf.Schema != nil && conf.Schema.Version == schema.Version {
 		return false
@@ -65,7 +65,7 @@ func migrateJWTSecret(conf *Config, _ []byte) bool {
 	return false
 }
 
-// migratePasswords 迁移历史明文密码为加密格式
+// migratePasswords 将配置中的明文密码转换为 bcrypt 哈希
 func migratePasswords(conf *Config, _ []byte) bool {
 	migrated := false
 
@@ -88,14 +88,14 @@ func migratePasswords(conf *Config, _ []byte) bool {
 	return migrated
 }
 
-// migrateTHA 将旧版 server.proxyHeaderName/proxyTrustedCIDRs 迁移到 tha 配置段
+// migrateTHA 在 tha 分区缺失时，从 server.proxyHeaderName/proxyTrustedCIDRs 构造配置
 func migrateTHA(conf *Config, data []byte) bool {
 	// 已有 THA 配置段（无论是否启用），跳过迁移避免覆盖用户配置
 	if conf.THA != nil {
 		return false
 	}
 
-	// 用兼容结构解析旧字段
+	// 解析输入配置中的来源字段
 	legacy := &struct {
 		Server *struct {
 			ProxyHeaderName   string   `yaml:"proxyHeaderName"`
@@ -124,14 +124,14 @@ func migrateTHA(conf *Config, data []byte) bool {
 	return true
 }
 
-// migrateCopilot 将旧版 agent 配置段迁移到 copilot 配置段
+// migrateCopilot 在 copilot 分区缺失时，从 agent 分区构造配置
 func migrateCopilot(conf *Config, data []byte) bool {
 	// 已有 copilot 配置段，跳过迁移避免覆盖用户配置
 	if conf.Copilot != nil {
 		return false
 	}
 
-	// 用兼容结构解析旧字段
+	// 解析输入配置中的来源字段
 	legacy := &struct {
 		Agent *CopilotConfig `yaml:"agent"`
 	}{}

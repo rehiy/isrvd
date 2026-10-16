@@ -1,7 +1,7 @@
 // 启动入口：同一个二进制三种模式，由环境变量 ISRVD_MODE 选择：
 //
-//	server  单机，默认。与以往完全一致。
-//	center  中控。isrvd 改为只监听回环端口，网关接管 listenAddr 作为对外入口，
+//	server  单机，默认。直接提供 Web 与 API 服务。
+//	center  中控。isrvd 只监听回环端口，网关接管 listenAddr 作为对外入口，
 //	        负责节点注册、按节点转发请求。
 //	agent   受管机。不监听任何对外端口，主动连接中控，中控转发来的请求交给同进程的 isrvd。
 package main

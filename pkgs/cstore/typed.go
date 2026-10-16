@@ -8,7 +8,7 @@ import (
 )
 
 // TypedStore 在 Store 之上封装了 YAML 序列化/反序列化，
-// 业务层直接操作类型化的值，不再感知 []byte 和 yaml 细节。
+// 业务层通过类型化的值读写数据，由 TypedStore 处理字节与 YAML 转换。
 type TypedStore[T any] struct {
 	document *Document
 }
