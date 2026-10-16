@@ -14,18 +14,26 @@ import (
 	"github.com/rehiy/libgo/wstunnel"
 )
 
-const (
-	// AgentInfoPath 受管机隧道客户端自身的信息接口，不会转发到本机 isrvd。
-	// 该路径不在 /api/ 下，中控只会把 /api/ 下的请求经隧道转发，用户无法访问到它。
-	AgentInfoPath = "/__agent/info"
+// ProtocolVersion 中控与受管机的隧道协议版本。
+const ProtocolVersion = 1
 
-	retryDelay = time.Minute
-)
+// AgentInfoPath 仅供隧道内协议协商，不经 /api/ 转发或暴露给页面。
+const AgentInfoPath = "/__agent/info"
+
+// AgentInfo agent 自身的版本与平台信息，供中控做协议协商
+type AgentInfo struct {
+	Mode     string `json:"mode"`     // 运行模式，agent 恒为 agent
+	Version  string `json:"version"`  // 程序版本
+	Protocol int    `json:"protocol"` // 协议版本，须与中控一致
+	Hostname string `json:"hostname"` // 主机名
+	OS       string `json:"os"`       // 操作系统
+	Arch     string `json:"arch"`     // CPU 架构
+}
 
 // AgentOptions 受管机隧道客户端配置
 type AgentOptions struct {
 	CenterURL string                 // 中控地址（http(s)://host:port，不含 /api）
-	NodeToken string                 // 节点令牌，由中控生成并从主配置传入；不另存凭据文件
+	NodeToken string                 // 节点令牌，由中控生成并从环境变量传入；不另存凭据文件
 	Upstream  *url.URL               // 本机 isrvd 的回环地址
 	Token     func() (string, error) // 返回访问本机 isrvd 的 API 令牌；每个转发的请求都会取一次，转发的请求以令牌所属成员身份执行
 	Version   string                 // 程序版本
@@ -45,6 +53,8 @@ func NewAgent(opt AgentOptions) *Agent {
 	return a
 }
 
+const retryDelay = time.Minute
+
 // Run 阻塞运行常连循环，ctx 取消后返回
 func (a *Agent) Run(ctx context.Context) {
 	for ctx.Err() == nil {
@@ -62,9 +72,9 @@ func (a *Agent) Run(ctx context.Context) {
 			OnError:      func(err error) { logger.Warn("连接中控失败", "error", err) },
 		})
 		if errors.Is(err, wstunnel.ErrUnauthorized) {
-			// 节点被吊销或删除、令牌过期未用，与中控数据被重置、恢复了旧备份，在这里看起来完全一样，
+			// 节点被吊销或删除，与中控数据被重置、恢复了旧备份，在这里看起来完全一样，
 			// 所以只记录错误并重试：中控数据恢复后自动重连。
-			logger.Error("中控拒绝了节点令牌：节点可能已被吊销或删除、令牌已过期，或中控数据被重置。每分钟重试；"+
+			logger.Error("中控拒绝了节点令牌：节点可能已被吊销或删除，或中控数据被重置。每分钟重试；"+
 				"如需重新接入，请在中控生成新的令牌后重启", "center", a.opt.CenterURL)
 			if !wstunnel.Sleep(ctx, retryDelay) {
 				return
@@ -116,14 +126,14 @@ func (a *Agent) newHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET "+AgentInfoPath, func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		_ = json.NewEncoder(w).Encode(map[string]any{"success": true, "payload": LocalAgentInfo(a.opt.Version)})
+		_ = json.NewEncoder(w).Encode(map[string]any{"success": true, "payload": localAgentInfo(a.opt.Version)})
 	})
 	mux.Handle("/api/", proxy)
 	return mux
 }
 
-// LocalAgentInfo 返回本机作为受管机对外报告的信息
-func LocalAgentInfo(version string) *AgentInfo {
+// localAgentInfo 返回本机作为受管机对外报告的信息
+func localAgentInfo(version string) *AgentInfo {
 	hostname, _ := os.Hostname()
 	return &AgentInfo{
 		Mode:     "agent",

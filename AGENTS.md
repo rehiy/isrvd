@@ -28,9 +28,9 @@
 
 ```text
 server/cmd/server ────────────→ server/config + server/app + server/gateway + server/service/{account,node}
-server/gateway ───────────────→ server/service/node + server/i18n
+server/gateway ───────────────→ server/config + server/service/{node,account} + server/i18n
 server/config ────────────────→ pkgs/cstore
-server/service/node ──────────→ server/config + pkgs/cstore + pkgs/secretbox + libgo/wstunnel
+server/service/node ──────────→ server/config + server/i18n + server/service/account + pkgs/cstore + libgo/wstunnel
 server/service/{account,apisix,...} → server/config / pkgs/*
 server/service/{docker,webssh} → server/service/shell（终端桥接复用）
 server/service/{cron,monitor} → server/service/notify（任务失败与资源告警）
@@ -43,6 +43,7 @@ server/service/{shell,docker,system} → server/i18n（仅 TC / Translate，i18n
 - `server/service/{account,apisix,...}`：业务组合、参数校验、稳定 API 类型转换；各服务在 `NewService()` 中直接构造底层客户端；不得依赖 `server/app`，**不得依赖 gin**（需要请求信息时接收 `*http.Request`、`context.Context` 或普通结构体）
 - `server/app/`：Gin HTTP/WebSocket 入口、路由索引、中间件、服务生命周期与响应封装
 - `server/gateway/`：中控模式的网关（节点管理 API、`/n/<节点ID>/` 转发、受管机隧道入口），以 `http.Handler` 形式由 `cmd/server` 装配；不依赖 `server/app`，页面一律由 webview 提供；`?token=` 的适用范围与 isrvd 保持一致，由 `cmd/server` 通过 `Options.QueryTokenRoutes`（来自 `app.QueryTokenRoutes()`）注入，不得在网关里另写一份路由清单；节点管理路由元信息统一由 `service/node.PermissionRoutes()` 提供，中控权限目录与网关注册共用；节点管理及业务转发经 `Options.CheckPermission`（`app.GatewayPermission`）校验当前成员路由权限，禁止仅以是否登录放行；上游不可达返回 502，不得当作未登录（401）；操作经 `Options.Audit`（`app.Audit()`，写入 app 当前的审计服务，重载后自动指向新实例）按 isrvd 审计基线记录，不得另建 `AuditService` 写同一目录；会随配置重载变化的值（如 `allowedOrigins`）以函数传入、每次读取，不得在启动时固化
+- 节点模块按职责组织：`service/node/node.go` 定义持久化实体 `Node` 与在线响应 `NodeInfo`，`store.go` 只持久化 `Node` 并返回提交快照，`auth.go` 聚合认证、限流与 token 处理，`session.go` 管理会话与传输，`agent.go` 包含受管机客户端及协议数据。网关的节点 HTTP/WebSocket 接入、转发与启动数据聚合、中间件、响应分别放在 `gateway/{node,proxy,middleware,response}.go`，`gateway.go` 只负责装配与路由。部署环境配置在 `server/config/cluster.go` 定义、读取与校验。
 - `server/cmd/server/`：`main.go` 按 `config.Init → run` 初始化并启动；`launch.go` 按环境变量 `ISRVD_MODE`（`server`/`center`/`agent`）装配并调用 `app.StartApp`，是唯一的组装点，业务逻辑不得写在这里。构建与运行一律用包路径 `./server/cmd/server`（含多个文件，不能再用单文件路径）
 
 ### 禁止
@@ -94,7 +95,7 @@ docs/
     ├── caddy/{routes,servers,certs,config,basic-auth}.md
     ├── system/{config,account,filer,cron}.md
     ├── ssh/{hosts,sftp}.md
-    ├── node/{nodes,codes}.md
+    ├── node/nodes.md
     ├── copilot.md
     ├── overview.md
     ├── compose.md
@@ -187,7 +188,7 @@ docs/
 
 - **查询接口不加 `Get` 后缀**：方法名本身已表达"获取"语义（`Stat()`、`Probe()`、`Info()`、`JoinToken()`、`ConfigAll()`），查询方法保持 `Stat()`、`Probe()` 等形式
 - **`Get` 仅用于必要场景**：当方法名去掉 `Get` 后会与已有方法冲突或语义不明时，才可保留 `Get` 后缀
-- **模块前缀**：`docker`、`swarm`、`apisix`、`caddy`、`account`、`system`、`filer`、`compose`、`cron`、`node`（`server/gateway` 的处理函数同样遵循 `{module}{Resource}{Action}`，如 `nodeCodeCreate`）
+- **模块前缀**：`docker`、`swarm`、`apisix`、`caddy`、`account`、`system`、`filer`、`compose`、`cron`、`node`（`server/gateway` 的处理函数同样遵循 `{module}{Resource}{Action}`，如 `nodeCreate`）
 - **资源名**：单数形式，不重复模块语义
 - **禁止**：`动词+资源` 命名（`CreateRoute`、`ListContainers`、`apisixCreateRoute`）
 - **注意**：类名为 `Docker` 时 `ContainerList` 不缩写为 `List`；类名为 `Apisix` 时 `RouteList` 不缩写为 `List`
@@ -316,7 +317,7 @@ docs/
 - Caddy：`/caddy/servers`、`/caddy/routes`、`/caddy/certs`、`/caddy/global`、`/caddy/basic-auth`、`/caddy/raw`
 - Docker：`/docker/containers`、`/docker/images`、`/docker/networks`、`/docker/volumes`、`/docker/registries` 及对应详情页
 - Swarm：`/swarm/nodes`、`/swarm/services`、`/swarm/tasks` 及对应详情/日志页
-- 节点管理（仅 `center` 模式且有节点列表路由权限）：`/node`，单个列表页同时展示受管节点与待接入的注册码；节点视角为页面路径 `/n/<节点ID>/`
+- 节点管理（仅 `center` 模式且有节点列表路由权限）：`/node`，单个列表页展示全部节点，通过 pending/active/revoked 状态区分待接入、已激活和已吊销；节点视角为页面路径 `/n/<节点ID>/`
 - 系统模块：`/system/config`（父布局 + 5 个分组子路由 `/system/config/{service,auth,gateway,alert,integrations}`，默认跳转 `service`；侧边栏「系统配置」为折叠子菜单，项名与顺序来自 `webview/src/stores/config.ts` 的 `configGroups`，该常量同时定义分组与后端配置分区的映射）、`/system/audit/logs`；用户管理：`/account/members`；账户设置：`/account/password`、`/account/passkeys`、`/account/apikey`
 - 计划任务：`/cron/jobs`；Compose：`/compose/marketplace`、`/compose/deploy`
 - 折叠子菜单展开状态跟随当前路由（`@Watch` immediate）
@@ -351,7 +352,7 @@ docs/
 3. 文件系统操作防目录遍历；解压防 Zip Slip
 4. WebSocket 必须经过认证链路
 5. 关键资源（内置角色等）前后端双重校验
-6. SSH 密码/私钥、节点注册码与受管机节点令牌加密落盘（分别见 `server/service/webssh/secret.go`、`server/service/node/service.go`、`server/service/node/agent.go`，密钥由 JWT 密钥派生）；中控侧仅保存节点令牌哈希
+6. SSH 密码/私钥加密落盘（`server/service/webssh/secret.go`，密钥由 JWT 密钥派生）；节点 token 为 86 字符随机串，仅创建时返回，中控 `node-list.yml` 只保存 SHA-256 哈希，受管机从 `ISRVD_NODE_TOKEN` 读取
 
 ---
 

@@ -13,16 +13,25 @@ import (
 	"isrvd/server/service/node"
 )
 
-// 响应沿用 isrvd 的统一格式：{"success":bool,"message":string,"payload":any}
-
-// ─── 节点管理（由 permissionOnly 校验路由权限） ───
-
-func (g *gateway) nodeList(w http.ResponseWriter, r *http.Request, _ string) {
+func (g *gateway) nodeList(w http.ResponseWriter, r *http.Request) {
 	success(w, r, "", g.nodes.NodeList())
 }
 
-func (g *gateway) nodeUpdate(w http.ResponseWriter, r *http.Request, _ string) {
-	var req node.NodeUpdateRequest
+func (g *gateway) nodeCreate(w http.ResponseWriter, r *http.Request) {
+	var req node.NodeRequest
+	if !decode(w, r, &req) {
+		return
+	}
+	resp, err := g.nodes.NodeCreate(&req)
+	if err != nil {
+		nodeFail(w, r, err)
+		return
+	}
+	success(w, r, "创建成功", resp)
+}
+
+func (g *gateway) nodeUpdate(w http.ResponseWriter, r *http.Request) {
+	var req node.NodeRequest
 	if !decode(w, r, &req) {
 		return
 	}
@@ -34,7 +43,7 @@ func (g *gateway) nodeUpdate(w http.ResponseWriter, r *http.Request, _ string) {
 	success(w, r, "节点更新成功", n)
 }
 
-func (g *gateway) nodeRevoke(w http.ResponseWriter, r *http.Request, _ string) {
+func (g *gateway) nodeRevoke(w http.ResponseWriter, r *http.Request) {
 	if err := g.nodes.NodeRevoke(r.PathValue("id")); err != nil {
 		nodeFail(w, r, err)
 		return
@@ -42,42 +51,13 @@ func (g *gateway) nodeRevoke(w http.ResponseWriter, r *http.Request, _ string) {
 	success(w, r, "节点已吊销", nil)
 }
 
-func (g *gateway) nodeDelete(w http.ResponseWriter, r *http.Request, _ string) {
+func (g *gateway) nodeDelete(w http.ResponseWriter, r *http.Request) {
 	if err := g.nodes.NodeDelete(r.PathValue("id")); err != nil {
 		nodeFail(w, r, err)
 		return
 	}
 	success(w, r, "节点删除成功", nil)
 }
-
-// ─── 注册码 ───
-
-func (g *gateway) nodeCodeList(w http.ResponseWriter, r *http.Request, _ string) {
-	success(w, r, "", g.nodes.EnrollCodeList())
-}
-
-func (g *gateway) nodeCodeCreate(w http.ResponseWriter, r *http.Request, user string) {
-	var req node.EnrollCodeCreateRequest
-	if !decode(w, r, &req) {
-		return
-	}
-	resp, err := g.nodes.EnrollCodeCreate(user, &req)
-	if err != nil {
-		nodeFail(w, r, err)
-		return
-	}
-	success(w, r, "注册码创建成功", resp)
-}
-
-func (g *gateway) nodeCodeDelete(w http.ResponseWriter, r *http.Request, _ string) {
-	if err := g.nodes.EnrollCodeDelete(r.PathValue("id")); err != nil {
-		nodeFail(w, r, err)
-		return
-	}
-	success(w, r, "注册码已撤销", nil)
-}
-
-// ─── 受管机接入（匿名，由节点令牌与按 IP 限流保护） ───
 
 // nodeConnect 受管机建立隧道的入口。WebSocket 升级与二进制流适配交给 libgo 的 websocket.ServerConfig，
 // 这里只做它不负责的两件事：拒绝浏览器发起的连接、校验节点令牌（令牌只经 Authorization 头传递，不进 URL）。

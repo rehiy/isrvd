@@ -5,7 +5,7 @@
 >
 > **按路由权限调用**：节点管理检查对应的 `METHOD /api/node/...` 权限，业务转发检查去掉 `/n/<节点ID>` 前缀后的业务路由权限（参数使用 `:id` 等规范路径）。创始人默认拥有全部权限；普通成员可在成员管理中授权。权限不足返回 `403`，未登录返回 `401`，中控应用未就绪或正在重载时返回 `502`。身份与权限由进程内当前账户服务验证，权限变更对新请求立即生效，已建立的长连接不会逐条消息重新认证。权限对所有节点生效，目前不支持按节点 ID 单独授权。
 >
-> 部署、接入流程与安全边界见 [集中管理](../../multi-node.md)；注册码接口见 [注册码](codes.md)。
+> 部署、接入流程与安全边界见 [集中管理](../../multi-node.md)。
 
 ---
 
@@ -17,17 +17,19 @@
 isrvd_get "/node/nodes"
 ```
 
+返回全部节点，通过 `status` 区分待接入、已激活和已吊销。
+
 **响应字段（节点）：**
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `id` | string | 节点 ID（UUID，只读） |
 | `name` | string | 节点名称 |
-| `status` | string | `active` 可连接 \| `revoked` 已吊销 |
+| `status` | string | `pending` 待接入 \| `active` 已激活 \| `revoked` 已吊销 |
 | `hostname` | string | 注册时上报的主机名 |
 | `os` | string | 注册时上报的操作系统 |
 | `arch` | string | 注册时上报的 CPU 架构 |
-| `createdAt` | string | 注册时间 |
+| `createdAt` | string | 节点创建时间（只读） |
 | `online` | bool | 当前是否在线 |
 | `latency` | number | 隧道往返延迟（毫秒），离线为 `0` |
 | `agentVersion` | string | 受管机程序版本，离线时不返回 |
@@ -35,7 +37,40 @@ isrvd_get "/node/nodes"
 | `connectedAt` | string | 本次连接时间，离线时不返回 |
 | `remoteAddr` | string | 受管机连接来源地址，离线时不返回 |
 
-> 节点令牌仅保存哈希；令牌只在注册成功时返回一次，列表接口不返回。`online`、`latency`、`agentVersion`、`compatible`、`connectedAt`、`remoteAddr` 是运行时状态，不持久化。
+> 节点令牌仅保存哈希；令牌只在创建节点时返回一次，列表接口不返回。`online`、`latency`、`agentVersion`、`compatible`、`connectedAt`、`remoteAddr` 是运行时状态，不持久化。
+
+### 创建节点并生成 token
+
+```bash
+isrvd_post "/node/item" '{"name":"杭州机房 web-01"}'
+```
+
+| 请求字段 | 类型 | 说明 |
+|------|------|------|
+| `name` | string | 备注，必填；去除首尾空白后须为 1–64 个字符，作为节点名称 |
+
+| 响应字段 | 类型 | 说明 |
+|------|------|------|
+| `node` | object | 上表中的节点对象，初始 `status` 为 `pending` |
+| `token` | string | 86 字符的密码学安全随机 token，无时效限制，仅在创建时返回 |
+
+中控在 `node-list.yml` 中只保存 token 的 SHA-256 哈希（`tokenHash`），不保存明文或可解密密文。列表和更新响应均不返回 token；遗失后删除节点并重新创建。JWT 密钥变更不影响节点 token。
+
+创建后在受管机以 root 身份任选一种方式安装：
+
+```bash
+export ISRVD_MODE=agent
+export ISRVD_CENTER_URL=https://center.example.com
+export ISRVD_NODE_TOKEN="<创建时返回的 token>"
+# 裸机安装（systemd）
+bash <(curl -sL https://isrvd.rehiy.com/install/) install
+# 或使用 Docker 安装
+bash <(curl -sL https://isrvd.rehiy.com/install/) install --docker
+```
+
+安装脚本会保存这些环境变量。已有服务需更新启动环境并重启。首次认证通过后节点状态变为 `active`，重启和重连继续使用同一 token。
+
+> 旧版含节点 ID 的 token 与授权码接口已移除。升级后需重新创建节点、更新受管机的 `ISRVD_NODE_TOKEN` 并重启；普通成员需授权新的 `POST /api/node/item` 权限。
 
 ### 重命名节点
 
@@ -53,7 +88,7 @@ isrvd_post "/node/item/<ID>/revoke"
 
 令牌立即失效并断开在线连接，之后经隧道的请求返回 `503 节点离线`。已吊销的节点需删除后用新令牌重新接入。
 
-> 受管机被拒绝后每分钟重试一次并记录错误日志；需要重新接入时，生成新的注册码（令牌）并重启受管机即可。
+> 受管机被拒绝后每分钟重试一次并记录错误日志；需要重新接入时，创建新节点并更新受管机 token 后重启即可。
 
 ### 删除节点
 
@@ -61,7 +96,7 @@ isrvd_post "/node/item/<ID>/revoke"
 isrvd_delete "/node/item/<ID>"
 ```
 
-删除记录并断开在线连接，同时清理同 ID 的残留接入记录，原 token 无法再次激活。接入记录清理失败时保留节点并返回错误，可重试删除。
+删除记录并断开在线连接，原 token 立即失效。待接入节点同样可重命名、吊销或删除；保存失败时保留原记录并返回错误，可重试操作。
 
 ---
 
@@ -83,7 +118,7 @@ python3 ./scripts/api.py get "/docker/containers"
 
 - `GET /n/<ID>/api/overview/bootstrap` 的认证信息取自中控，`probe` 中的 `docker`、`swarm`、`compose`、`apisix`、`caddy` 取自节点，`node`、`copilot` 取自中控；节点不可达时这几项全部为 `false`。
 - 节点不存在返回 `404`；离线或已吊销返回 `503`；协议版本不一致、隧道故障返回 `502`；节点响应超时返回 `504`。
-- 节点管理操作、节点上的写操作与 WebSocket 会记入中控的审计页面（`GET /system/audit/logs`），URI 带 `/n/<节点ID>/` 前缀，请求体按 isrvd 的规则脱敏；受管机本机的审计页面里同一操作记录为其本地创始人。
+- 节点管理操作、节点上的写操作与 WebSocket 会记入中控的审计页面（`GET /system/audit/logs`），URI 带 `/n/<节点ID>/` 前缀，请求体按 isrvd 的规则脱敏；空成功响应记为 `200`，WebSocket 升级成功记为 `101`；受管机本机的审计页面里同一操作记录为其本地创始人。
 
 ### `?token=` 的适用范围
 
@@ -97,4 +132,4 @@ python3 ./scripts/api.py get "/docker/containers"
 
 ### 建立隧道
 
-`GET /node/connect` 是 WebSocket 升级请求，无法用 `isrvd_*` 调用。令牌只经 `Authorization: Bearer <节点ID>.<密钥>` 头传递，不放在 URL 中；待接入的令牌在首次连接成功时自动激活为节点；认证失败按连接对端 IP 限流（10 次/分钟），忽略 `X-Forwarded-For` 等转发头；通过反向代理接入时，同一代理后的客户端共享限流额度；带 `Origin` 的浏览器请求一律拒绝。同一 token 已在线或握手中时返回 `409`，不会断开旧连接；升级失败会释放握手占用，断线后相同 token 可再次连接。
+`GET /node/connect` 是 WebSocket 升级请求，无法用 `isrvd_*` 调用。令牌只经 `Authorization: Bearer <token>` 头传递，不放在 URL 中；中控按完整 token 的 SHA-256 哈希查找节点，待接入节点在首次认证通过时更新为 `active`；认证失败按连接对端 IP 限流（10 次/分钟），忽略 `X-Forwarded-For` 等转发头；通过反向代理接入时，同一代理后的客户端共享限流额度；带 `Origin` 的浏览器请求一律拒绝。同一 token 已在线或握手中时返回 `409`，不会断开旧连接；升级失败会释放握手占用，断线后相同 token 可再次连接。

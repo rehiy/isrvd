@@ -1,19 +1,12 @@
 package config
 
 import (
-	"encoding/base64"
-	"errors"
-	"fmt"
 	"path/filepath"
-	"regexp"
 	"strings"
 )
 
 // Version 版本信息（编译时通过脚本注入）
 var Version = "v0.0.0"
-
-// ErrInvalidClusterConfig 表示多节点部署配置无效。
-var ErrInvalidClusterConfig = errors.New("运行模式配置无效")
 
 // SecretKeep 处理"留空保留原值"的密钥类字段：
 // newVal 去除首尾空白后为空则返回 oldVal，否则返回去除首尾空白后的 newVal。
@@ -50,59 +43,6 @@ func ServerNormalize(server *ServerConfig) *ServerConfig {
 		}
 	}
 	return server
-}
-
-// ClusterConfig 是仅从环境变量读取的进程启动配置，不参与持久化或配置 API。
-type ClusterConfig struct {
-	Mode      string
-	CenterURL string
-	NodeToken string
-}
-
-var clusterConfig = ClusterConfig{Mode: "server"}
-
-// Cluster 返回启动时确定的部署配置副本，修改环境变量后需重启。
-func Cluster() ClusterConfig {
-	return clusterConfig
-}
-
-func loadClusterEnv() error {
-	cluster := ClusterConfig{
-		Mode:      strings.ToLower(EnvOrDefault("ISRVD_MODE", "server")),
-		CenterURL: strings.TrimRight(EnvOrDefault("ISRVD_CENTER_URL", ""), "/"),
-		NodeToken: EnvOrDefault("ISRVD_NODE_TOKEN", ""),
-	}
-	if err := ClusterValidate(&cluster); err != nil {
-		return err
-	}
-	clusterConfig = cluster
-	return nil
-}
-
-var nodeIDPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
-
-// ClusterValidate 校验环境变量中的多节点部署配置，不回显连接凭据。
-func ClusterValidate(cluster *ClusterConfig) error {
-	switch cluster.Mode {
-	case "server", "center":
-		return nil
-	case "agent":
-		u, err := parseHTTPURL("ISRVD_CENTER_URL", cluster.CenterURL)
-		if err != nil {
-			return fmt.Errorf("%w：%v", ErrInvalidClusterConfig, err)
-		}
-		if u.Path != "" || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
-			return fmt.Errorf("%w：服务器地址不能包含路径、查询参数或片段", ErrInvalidClusterConfig)
-		}
-		id, secret, ok := strings.Cut(cluster.NodeToken, ".")
-		decoded, err := base64.RawURLEncoding.DecodeString(secret)
-		if !ok || !nodeIDPattern.MatchString(id) || err != nil || len(decoded) != 32 {
-			return fmt.Errorf("%w：请填写中控生成的有效连接 token", ErrInvalidClusterConfig)
-		}
-		return nil
-	default:
-		return fmt.Errorf("%w：mode 只能是 server、center 或 agent", ErrInvalidClusterConfig)
-	}
 }
 
 // THANormalize 填充 THA 默认值

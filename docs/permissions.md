@@ -14,13 +14,11 @@
 
 | 模块 | 路由权限点示例 | 说明 |
 | ------ | --------------- | ------ |
+| `node` | `POST /api/node/item` | 创建节点并生成 token（仅创建时返回） |
 | `node` | `GET /api/node/nodes` | 节点列表与切换入口 |
 | `node` | `PUT /api/node/item/:id` | 重命名节点 |
 | `node` | `POST /api/node/item/:id/revoke` | 吊销节点 |
 | `node` | `DELETE /api/node/item/:id` | 删除节点 |
-| `node` | `GET /api/node/codes` | 注册码列表（含明文 token） |
-| `node` | `POST /api/node/code` | 创建注册码 |
-| `node` | `DELETE /api/node/code/:id` | 撤销注册码 |
 | `overview` | `GET /api/overview/version` | 系统概览（版本信息） |
 | `overview` | `GET /api/overview/monitor` | 系统概览（监控数据） |
 | `overview` | `POST /api/overview/upgrade` | 系统概览（在线升级） |

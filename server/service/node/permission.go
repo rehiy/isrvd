@@ -15,8 +15,6 @@ func PermissionRoutes() []PermissionRoute {
 		{"PUT", "/api/node/item/:id", "更新节点"},
 		{"POST", "/api/node/item/:id/revoke", "吊销节点"},
 		{"DELETE", "/api/node/item/:id", "删除节点"},
-		{"GET", "/api/node/codes", "查询注册码列表"},
-		{"POST", "/api/node/code", "创建注册码"},
-		{"DELETE", "/api/node/code/:id", "撤销注册码"},
+		{"POST", "/api/node/item", "创建节点"},
 	}
 }

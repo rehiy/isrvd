@@ -3716,10 +3716,6 @@ const messages: Record<string, string> = {
     '请输入容器数据根目录': 'コンテナデータのルートディレクトリを入力してください',
     // Base directory for container volumes (relative to the base directory), defaults to containers
     '用于存放容器数据卷的基础目录（相对于基础目录），默认 containers': 'コンテナ データ ボリューム (ベース ディレクトリを基準とした相対値)、デフォルト コンテナの保存に使用されるベース ディレクトリ',
-    // Unnamed Registration Code
-    '未命名注册码': '名前のない登録コード',
-    // One-time Registration Code
-    '一次性注册码': 'ワンタイム登録コード',
     // Pending
     '待接入': 'アクセス待ちです',
     // Revoked
@@ -3738,26 +3734,12 @@ const messages: Record<string, string> = {
     '确定要删除节点 <strong class="text-slate-900">{0}</strong> 吗？在线的节点会被立即断开。': 'ノード <strong class="text-slate-900">{0}</strong> を削除してもよろしいですか?オンライン ノードはすぐに切断されます。',
     // Node deleted
     '节点已删除': 'ノードが削除されました',
-    // Revoke Registration Code
-    '撤销注册码': '登録コードを取り消す',
-    // Revoke registration code <strong class="text-slate-900">{0}</strong>? Managed hosts that have not used it can no longer register.
-    '确定要撤销注册码 <strong class="text-slate-900">{0}</strong> 吗？撤销后尚未使用该码接入的受管机将无法注册。': '登録コード <strong class="text-slate-900">{0}</strong> を取り消してもよろしいですか?取り消し後は、コードを使用してアクセスしていない管理対象マシンは登録できなくなります。',
-    // Confirm Revoke
-    '确认撤销': '失効の確認',
-    // Registration code revoked
-    '注册码已撤销': '登録コードが取り消されました',
     // Connect managed hosts and switch to a node to manage it
     '接入受管机，并切换到节点进行管理': '管理対象マシンに接続し、管理用ノードに切り替えます',
     // Connect and Manage Hosts
     '接入并管理受管机': '管理対象マシンへのアクセスと管理',
     // No managed node yet
     '暂无受管节点': '管理対象ノードはまだありません',
-    // Click "Add Node" in the top right to generate a registration code and start the managed host in agent mode
-    '点击右上角「接入节点」生成注册码，并在受管机上以 agent 模式启动': '右上隅の「アクセスノード」をクリックして登録コードを生成し、管理対象マシン上でエージェントモードで起動します。',
-    // Creator
-    '创建人': 'クリエイター',
-    // View Command
-    '查看命令': '表示コマンド',
     // Node renamed
     '节点已重命名': 'ノードの名前が変更されました',
     // Rename Node
@@ -3766,26 +3748,12 @@ const messages: Record<string, string> = {
     '请输入节点名称': 'ノード名を入力してください',
     // 1–64 characters, only used to tell nodes apart in the UI
     '1–64 个字符，仅用于在界面中区分节点': '1 ～ 64 文字。インターフェイス内のノードを区別するためにのみ使用されます。',
-    // 10 minutes
-    '10 分钟': '10分',
-    // 1 day
-    '1 天': '1日',
     // Command copied to clipboard
     '命令已复制到剪贴板': 'コマンドがクリップボードにコピーされました',
-    // The registration code can be used only once and expires at {0}. You can view it again in the node list before it is used.
-    '注册码仅可使用一次，将于 {0} 过期；使用前可在节点管理列表中再次查看。': '登録コードは一度だけ使用でき、{0} に期限切れになります。使用前であれば、ノード管理一覧から再度確認できます。',
-    // Run Directly
-    '直接运行': '直接実行',
-    // Run with Docker
-    'Docker 运行': 'Docker で実行',
     // Note
     '备注': '備考',
     // e.g. Hangzhou IDC web-01
     '如：杭州机房 web-01': '例: 杭州コンピューター室 web-01',
-    // The registration code can be used once and expires or becomes invalid after use
-    '注册码只能使用一次，过期或使用后自动失效': '登録コードは 1 回のみ使用でき、期限切れまたは使用後は自動的に期限切れになります。',
-    // Generate Registration Code
-    '生成注册码': '登録コードを生成する',
 }
 
 const language: LanguageModule = {

@@ -121,8 +121,8 @@ import type {
     // Node
     NodeInfo,
     NodeUpdate,
-    NodeCodeInfo,
-    NodeCodeCreate,
+    NodeCreate,
+    NodeCreateResult,
 } from './types'
 
 // API 服务类，统一管理所有 API 请求
@@ -906,16 +906,8 @@ class ApiService {
         return http.delete<void>(`node/item/${id}`)
     }
 
-    nodeCodeList() {
-        return http.get<NodeCodeInfo[]>('node/codes')
-    }
-
-    nodeCodeCreate(data: NodeCodeCreate) {
-        return http.post<NodeCodeInfo>('node/code', data)
-    }
-
-    nodeCodeDelete(id: string) {
-        return http.delete<void>(`node/code/${id}`)
+    nodeCreate(data: NodeCreate) {
+        return http.post<NodeCreateResult>('node/item', data)
     }
 
     // ==================== SFTP 文件管理 ====================

@@ -3,7 +3,6 @@ package node
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -12,21 +11,10 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+	"unicode/utf8"
 
 	"github.com/rehiy/libgo/wstunnel"
-
-	"isrvd/pkgs/secretbox"
 )
-
-// AgentInfo agent 自身的版本与平台信息，供中控做协议协商
-type AgentInfo struct {
-	Mode     string `json:"mode"`     // 运行模式，agent 恒为 agent
-	Version  string `json:"version"`  // 程序版本
-	Protocol int    `json:"protocol"` // 协议版本，须与中控一致
-	Hostname string `json:"hostname"` // 主机名
-	OS       string `json:"os"`       // 操作系统
-	Arch     string `json:"arch"`     // CPU 架构
-}
 
 // nodeConn 一个在线节点的会话及其到该节点的 HTTP 代理
 type nodeConn struct {
@@ -76,8 +64,8 @@ func (c *nodeConn) get(ctx context.Context, path string) (*http.Response, error)
 }
 
 // negotiate 请求 agent 自身信息并判定协议是否兼容；失败时保持不兼容，但仍保持连接以便界面提示
-func (c *nodeConn) negotiate() {
-	resp, err := c.get(context.Background(), AgentInfoPath)
+func (c *nodeConn) negotiate(ctx context.Context) {
+	resp, err := c.get(ctx, AgentInfoPath)
 	if err != nil {
 		logger.Warn("节点协议协商失败", "id", c.nodeID, "error", err)
 		return
@@ -120,86 +108,6 @@ func (c *nodeConn) pingLoop() {
 	}
 }
 
-// Authenticate 校验 agent 握手时携带的节点令牌（Authorization: Bearer <id>.<secret>）。
-// 令牌不放在 URL 中，避免进入访问日志；浏览器无法设置该头，天然无法被跨站页面利用。
-// 令牌首次出现时对应一个待接入的注册码：校验通过后就地激活为节点，之后继续用同一令牌连接。
-func (s *Service) Authenticate(r *http.Request, ip string) (*Node, error) {
-	if !s.authLimit.allow(ip) {
-		return nil, ErrRateLimited
-	}
-	raw := strings.TrimSpace(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
-	id, secret, ok := strings.Cut(raw, ".")
-
-	tokenHash := hashSecret(secret)
-	var n *Node
-	if ok {
-		n = s.nodes.get(id)
-		if n == nil {
-			n = s.activate(id, raw, tokenHash)
-		}
-	}
-	if n == nil || n.Status != StatusActive || !secretsEqual(n.TokenHash, tokenHash) {
-		s.authLimit.record(ip)
-		return nil, ErrUnauthorized
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.closed {
-		return nil, ErrUnauthorized
-	}
-	if s.conns[n.ID] != nil || s.connecting[n.ID] != nil {
-		return nil, ErrAlreadyOnline
-	}
-	s.connecting[n.ID] = n
-	return n, nil
-}
-
-// ReleaseConnection 释放握手预占；调用方在认证成功后 defer，包含升级失败和会话退出。
-func (s *Service) ReleaseConnection(n *Node) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.connecting[n.ID] == n {
-		delete(s.connecting, n.ID)
-	}
-}
-
-// activate 用待接入的注册码（即完整令牌 raw）创建节点并核销该码；码不存在、已过期或不匹配返回 nil。
-func (s *Service) activate(id, raw, tokenHash string) *Node {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if n := s.nodes.get(id); n != nil { // 并发连接中已有一个完成了激活
-		return n
-	}
-	c := s.codes.get(id)
-	if c == nil || time.Now().After(c.ExpiresAt) {
-		return nil
-	}
-	aead, err := s.codeAEAD()
-	if err != nil {
-		return nil
-	}
-	plain, err := secretbox.Open(aead, c.Sealed)
-	if err != nil || !secretsEqual(plain, raw) {
-		return nil
-	}
-	n := &Node{
-		ID:        id,
-		Name:      clip(c.Name, 64),
-		Status:    StatusActive,
-		CreatedAt: time.Now(),
-		TokenHash: tokenHash,
-	}
-	if err := s.nodes.insert(n); err != nil {
-		logger.Warn("节点激活失败", "id", id, "error", err)
-		return nil
-	}
-	if err := s.codes.remove(id); err != nil && !errors.Is(err, ErrNotFound) {
-		logger.Warn("清理已接入令牌失败", "id", id, "error", err)
-	}
-	logger.Info("节点已接入", "id", id, "name", n.Name)
-	return n
-}
-
 // Serve 在已升级的 WebSocket 连接上建立隧道会话并阻塞到会话结束。调用方须先通过 Authenticate，
 // 且由 libgo 的 websocket.ServerConfig 完成升级。ctx 取消（如服务重载）时主动断开。
 // 同一节点只允许一个在线或正在握手的连接。
@@ -210,7 +118,7 @@ func (s *Service) Serve(ctx context.Context, ws io.ReadWriteCloser, remote strin
 		return
 	}
 	conn := newNodeConn(n.ID, sess, remote)
-	conn.negotiate()
+	conn.negotiate(ctx)
 	s.syncInfo(n, conn.info)
 
 	if !s.attach(conn, n.TokenHash) {
@@ -228,23 +136,17 @@ func (s *Service) Serve(ctx context.Context, ws io.ReadWriteCloser, remote strin
 	logger.Info("节点已离线", "id", n.ID, "name", n.Name)
 }
 
-// syncInfo 把节点上报的主机名与平台信息写入节点记录；名称为空时取主机名。
+// syncInfo 把节点上报的主机名与平台信息写入记录，名称始终由用户维护。
 func (s *Service) syncInfo(n *Node, info *AgentInfo) {
-	hostname, osName, arch := n.Hostname, n.OS, n.Arch
-	if info != nil {
-		hostname, osName, arch = clip(info.Hostname, 128), clip(info.OS, 64), clip(info.Arch, 64)
-	}
-	if n.Name != "" && n.Hostname == hostname && n.OS == osName && n.Arch == arch {
+	if info == nil {
 		return
 	}
-	if err := s.nodes.update(n.ID, func(m *Node) error {
+	hostname, osName, arch := clip(info.Hostname, 128), clip(info.OS, 64), clip(info.Arch, 64)
+	if n.Hostname == hostname && n.OS == osName && n.Arch == arch {
+		return
+	}
+	if _, err := s.nodes.update(n.ID, func(m *Node) error {
 		m.Hostname, m.OS, m.Arch = hostname, osName, arch
-		if m.Name == "" {
-			if m.Name = hostname; m.Name == "" {
-				m.Name = "node-" + m.ID[:4]
-			}
-		}
-		n.Name = m.Name
 		return nil
 	}); err != nil {
 		logger.Warn("更新节点信息失败", "id", n.ID, "error", err)
@@ -293,4 +195,43 @@ func (s *Service) connFor(id string) (*nodeConn, error) {
 		return nil, ErrNotFound
 	}
 	return nil, errOffline
+}
+
+// nodeInfo 将持久化快照与当前连接合并为响应，在线字段不进入存储。
+func (s *Service) nodeInfo(n *Node) *NodeInfo {
+	if n == nil {
+		return nil
+	}
+	info := &NodeInfo{Node: *n}
+	s.mu.RLock()
+	c := s.conns[n.ID]
+	s.mu.RUnlock()
+	if c == nil {
+		return info
+	}
+	info.Online, info.Latency, info.Compatible = true, c.latency.Load(), c.compatible
+	if c.info != nil {
+		info.AgentVersion = c.info.Version
+	}
+	connectedAt := c.connectedAt
+	info.ConnectedAt, info.RemoteAddr = &connectedAt, c.remote
+	return info
+}
+
+// disconnectLocked 在 s.mu 持锁期间摘除节点连接；调用方在解锁后关闭会话。
+func (s *Service) disconnectLocked(id string) *nodeConn {
+	c := s.conns[id]
+	delete(s.conns, id)
+	return c
+}
+
+// ─── 辅助函数 ───
+
+// clip 去除首尾空白并按字符数截断
+func clip(s string, max int) string {
+	s = strings.TrimSpace(s)
+	if utf8.RuneCountInString(s) <= max {
+		return s
+	}
+	return string([]rune(s)[:max])
 }

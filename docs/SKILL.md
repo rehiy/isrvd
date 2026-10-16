@@ -84,8 +84,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
 | 系统 | [references/system/cron.md](references/system/cron.md) | 计划任务 |
 | SSH | [references/ssh/hosts.md](references/ssh/hosts.md) | SSH 主机/凭据管理、SSH 终端 |
 | SSH | [references/ssh/sftp.md](references/ssh/sftp.md) | SFTP 远程文件管理 |
-| 节点 | [references/node/nodes.md](references/node/nodes.md) | 集中管理：受管节点接入/吊销/删除、以节点视角访问（仅 center 模式，按路由权限授权） |
-| 节点 | [references/node/codes.md](references/node/codes.md) | 集中管理：受管机接入用的一次性注册码（仅 center 模式，按路由权限授权） |
+| 节点 | [references/node/nodes.md](references/node/nodes.md) | 集中管理：创建节点与 token、接入/吊销/删除、以节点视角访问（仅 center 模式，按路由权限授权） |
 | 本机进程 | [references/local.md](references/local.md) | 进程列表、终止进程 |
 | 终端 | [references/shell.md](references/shell.md) | Web Shell（本地终端） |
 | Copilot | [references/copilot.md](references/copilot.md) | 接口目录与 AG-UI 对话 |
@@ -149,8 +148,7 @@ Bash 版可在 selector 位置传 `--raw`（例如 `isrvd_post "/copilot/agui" '
     ├── 计划任务         → references/system/cron.md
     ├── SSH 主机管理     → references/ssh/hosts.md
     ├── SFTP 远程文件    → references/ssh/sftp.md
-    ├── 接入/吊销受管节点 → references/node/nodes.md
-    ├── 受管机注册码     → references/node/codes.md
+    ├── 创建/接入/吊销受管节点 → references/node/nodes.md
     ├── 操作某个受管节点 → references/node/nodes.md §以节点视角访问（API 根路径加 /n/<节点ID>）
     ├── Shell 终端       → references/shell.md (GET /shell WebSocket)
     └── WebSSH 终端     → references/ssh/hosts.md (GET /ssh/to/:id WebSocket)

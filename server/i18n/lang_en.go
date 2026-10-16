@@ -120,7 +120,6 @@ func init() {
 
 		// ─── 中控网关 ───
 		"不允许的跨站来源":      "cross-site origin not allowed",
-		"仅创始人可管理和操作节点":  "only the founder can manage nodes",
 		"不接受浏览器发起的隧道连接": "tunnel connections from browsers are not accepted",
 		"请求体过大":         "request body too large",
 		"请求体无效":         "invalid request body",
@@ -131,7 +130,6 @@ func init() {
 		"主机不存在":             "host not found",
 		"节点离线":              "node offline",
 		"节点已吊销":             "node revoked",
-		"注册码已撤销":            "registration code revoked",
 		"该路由未配置 Basic Auth": "basic auth not configured",
 		"获取进程列表失败":          "failed to get process list",
 		"获取进程列表成功":          "process list retrieved",

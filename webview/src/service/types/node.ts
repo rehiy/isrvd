@@ -2,7 +2,7 @@
 export interface NodeInfo {
     id: string
     name: string
-    status: 'active' | 'revoked' // 可连接 / 已吊销
+    status: 'pending' | 'active' | 'revoked' // 待接入 / 可连接 / 已吊销
     hostname: string
     os: string
     arch: string
@@ -20,18 +20,11 @@ export interface NodeUpdate {
     name: string
 }
 
-// 注册码信息（创建结果同此类型；待接入期间可随时查看接入命令）
-export interface NodeCodeInfo {
-    id: string
-    name: string
-    code: string
-    createdBy: string
-    createdAt: string
-    expiresAt: string
-}
+// 节点创建请求，备注必填。
+export type NodeCreate = NodeUpdate
 
-// 注册码创建请求
-export interface NodeCodeCreate {
-    name: string
-    ttlMinutes: number
+// token 仅在创建时返回，节点列表不返回。
+export interface NodeCreateResult {
+    node: NodeInfo
+    token: string
 }
