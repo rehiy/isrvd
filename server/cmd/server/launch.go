@@ -1,4 +1,4 @@
-// 启动入口：同一个二进制三种模式，由 --mode（或环境变量 ISRVD_MODE）选择：
+// 启动入口：同一个二进制三种模式，由 config.yml 的 server.mode 选择：
 //
 //	server  单机，默认。与以往完全一致。
 //	center  中控。isrvd 改为只监听回环端口，网关接管 listenAddr 作为对外入口，
@@ -14,8 +14,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/rehiy/libgo/httpd"
@@ -28,65 +26,42 @@ import (
 	"isrvd/server/service/node"
 )
 
-type options struct {
-	mode       string
-	centerURL  string // agent：中控地址
-	enrollCode string // agent：首次注册的注册码
-	nodeName   string // agent：节点名称
-}
-
-// run 按模式运行，阻塞到收到退出信号。调用前须已完成 parse 与 config.Init。
-func run(opt options) error {
-	switch opt.mode {
+// run 按配置中的模式运行，阻塞到收到退出信号。
+func run() error {
+	switch config.Current().Server.Mode {
 	case app.ModeCenter:
 		return runCenter()
 	case app.ModeAgent:
-		return runAgent(opt)
+		return runAgent()
 	default:
 		app.StartApp(nil, app.ModeServer)
 		return nil
 	}
 }
 
-// parse 解析并校验命令行与环境变量，不读取配置，也不产生任何副作用。
-func parse(args []string) (options, error) {
-	var opt options
+// parse 仅处理帮助与未知参数；运行参数统一来自配置文件。
+func parse(args []string) error {
 	fs := flag.NewFlagSet("isrvd", flag.ContinueOnError)
-	fs.StringVar(&opt.mode, "mode", config.EnvOrDefault("ISRVD_MODE", app.ModeServer), "运行模式：server（默认）、center（中控）、agent（受管机）")
-	fs.StringVar(&opt.centerURL, "center-url", config.EnvOrDefault("ISRVD_CENTER_URL", ""), "agent 模式：中控地址，如 https://center.example.com")
-	fs.StringVar(&opt.enrollCode, "enroll-code", config.EnvOrDefault("ISRVD_ENROLL_CODE", ""), "agent 模式：首次注册的注册码，已有本地凭据后可省略")
-	fs.StringVar(&opt.nodeName, "node-name", config.EnvOrDefault("ISRVD_NODE_NAME", ""), "agent 模式：节点名称，默认取主机名")
+	fs.Usage = func() {
+		fmt.Fprintln(fs.Output(), "用法：isrvd；请在 config.yml 的 server 分区配置 mode、centerUrl 和 nodeToken。")
+	}
 	if err := fs.Parse(args); err != nil {
-		return opt, err
+		return err
 	}
 	if fs.NArg() > 0 {
-		return opt, fmt.Errorf("未知参数 %q", fs.Arg(0))
+		return errors.New("不接受位置参数，请使用配置文件")
 	}
-
-	opt.mode = strings.ToLower(strings.TrimSpace(opt.mode))
-	opt.centerURL = strings.TrimRight(strings.TrimSpace(opt.centerURL), "/")
-	opt.enrollCode = strings.TrimSpace(opt.enrollCode)
-	opt.nodeName = strings.TrimSpace(opt.nodeName)
-
-	switch opt.mode {
-	case app.ModeServer, app.ModeCenter:
-		return opt, nil
-	case app.ModeAgent:
-		if err := config.ValidateHTTPURL("--center-url", opt.centerURL); err != nil {
-			return opt, err
+	for _, name := range []string{"ISRVD_MODE", "ISRVD_CENTER_URL", "ISRVD_ENROLL_CODE", "ISRVD_NODE_TOKEN", "ISRVD_NODE_NAME"} {
+		if config.EnvOrDefault(name, "") != "" {
+			return errors.New("旧运行环境变量已移除，请迁移到 config.yml 后删除旧变量")
 		}
-		return opt, nil
-	default:
-		return opt, fmt.Errorf("--mode 无效: %q（可选 server / center / agent）", opt.mode)
 	}
+	return nil
 }
 
 // runCenter 中控：isrvd 在回环端口上服务，网关占用配置的 listenAddr 作为对外入口
 func runCenter() error {
 	snapshot := config.Current()
-	if snapshot.THA != nil && snapshot.THA.Enabled {
-		logman.Warn("center 模式下不应启用代理 Header 登录：网关转发的请求在 isrvd 看来都来自本机，客户端可伪造登录头")
-	}
 
 	// 先初始化 gin（模式与日志输出），网关内的 gin 路由随之生效；app 再次调用时复用同一实例
 	httpd.Engine(snapshot.Server.Debug)
@@ -108,7 +83,6 @@ func runCenter() error {
 		Handler: gateway.Handler(gateway.Options{
 			Upstream:         &url.URL{Scheme: "http", Host: private.Addr().String()},
 			Nodes:            nodes,
-			TrustProxy:       config.EnvOrDefault("ISRVD_CENTER_TRUST_PROXY", "0") == "1",
 			AllowedOrigins:   func() []string { return config.Current().Server.AllowedOrigins },
 			QueryTokenRoutes: app.QueryTokenRoutes(),
 			Audit:            app.Audit(),
@@ -134,32 +108,25 @@ func runCenter() error {
 }
 
 // runAgent 受管机：isrvd 只在回环端口上服务，隧道客户端主动连接中控
-func runAgent(opt options) error {
+func runAgent() error {
 	snapshot := config.Current()
-	if snapshot.THA != nil && snapshot.THA.Enabled {
-		return errors.New("agent 模式需要 JWT 登录，请关闭代理 Header 登录（tha.enabled）")
-	}
-
 	private, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return fmt.Errorf("监听回环端口失败: %w", err)
 	}
 	agent := node.NewAgent(node.AgentOptions{
-		CenterURL:  opt.centerURL,
-		EnrollCode: opt.enrollCode,
-		Name:       opt.nodeName,
-		Upstream:   &url.URL{Scheme: "http", Host: private.Addr().String()},
-		Token:      account.ServiceToken,
-		StateKey:   snapshot.Server.JWTSecret,
-		StatePath:  filepath.Join(snapshot.Server.RootDirectory, "node-agent.yml"),
-		Version:    config.Version,
+		CenterURL: snapshot.Server.CenterURL,
+		NodeToken: snapshot.Server.NodeToken,
+		Upstream:  &url.URL{Scheme: "http", Host: private.Addr().String()},
+		Token:     account.ServiceToken,
+		Version:   config.Version,
 	})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		logman.Info("agent start", "center", opt.centerURL)
+		logman.Info("agent start", "center", snapshot.Server.CenterURL)
 		agent.Run(ctx)
 	}()
 

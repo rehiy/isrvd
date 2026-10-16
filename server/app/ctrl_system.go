@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"isrvd/server/config"
 	"isrvd/server/service/system"
 )
 
@@ -31,7 +32,7 @@ func (app *App) systemConfigUpdate(c *gin.Context) {
 	}
 	if err := app.configSvc.ConfigUpdate(req); err != nil {
 		status := http.StatusInternalServerError
-		if errors.Is(err, system.ErrInvalidNotifyConfig) {
+		if errors.Is(err, system.ErrInvalidNotifyConfig) || errors.Is(err, config.ErrInvalidServerMode) {
 			status = http.StatusBadRequest
 		}
 		respondError(c, status, err.Error())

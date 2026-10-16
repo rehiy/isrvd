@@ -64,6 +64,7 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 	}
 	if dst.Server != nil {
 		dst.Server.JWTSecret = ""
+		dst.Server.NodeToken = ""
 	}
 	if dst.OIDC != nil {
 		dst.OIDC.ClientSecret = ""
@@ -103,6 +104,7 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 		newRoot := oldRoot
 		if req.Server != nil {
 			req.Server.JWTSecret = config.SecretKeep(req.Server.JWTSecret, draft.Server.JWTSecret)
+			req.Server.NodeToken = config.SecretKeep(req.Server.NodeToken, draft.Server.NodeToken)
 			req.Server = config.ServerNormalize(req.Server)
 			newRoot = req.Server.RootDirectory
 			if oldRoot != newRoot {

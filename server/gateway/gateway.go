@@ -21,7 +21,9 @@ import (
 	"github.com/rehiy/libgo/ttlcache"
 	"github.com/rehiy/libgo/websocket"
 
+	"isrvd/server/config"
 	"isrvd/server/i18n"
+	"isrvd/server/service/account"
 	"isrvd/server/service/node"
 )
 
@@ -35,7 +37,6 @@ type Auditor interface {
 type Options struct {
 	Upstream         *url.URL        // 同进程 isrvd 的回环地址
 	Nodes            *node.Service   // 节点服务
-	TrustProxy       bool            // 前面还有可信反向代理时按 X-Forwarded-For 识别来源 IP
 	AllowedOrigins   func() []string // isrvd 配置的跨域白名单，用于校验转发到节点的 WebSocket；每次校验时读取，配置重载后即时生效
 	QueryTokenRoutes []string        // 允许 ?token= 认证的 GET 路由，来自 app.QueryTokenRoutes
 	Audit            Auditor         // 审计入口；节点管理与节点上的写操作、终端会话按 isrvd 的审计基线记录
@@ -65,11 +66,10 @@ type identity struct {
 }
 
 type gateway struct {
-	nodes      *node.Service
-	upstream   *url.URL
-	proxy      *httputil.ReverseProxy // 转发到中控自己的 isrvd
-	client     *http.Client           // 向中控 isrvd 查询身份
-	trustProxy bool
+	nodes    *node.Service
+	upstream *url.URL
+	proxy    *httputil.ReverseProxy // 转发到中控自己的 isrvd
+	client   *http.Client           // 向中控 isrvd 查询身份
 
 	allowedOrigins func() []string // 额外允许的 WebSocket Origin（isrvd 的 allowedOrigins），默认仅同源
 	audit          Auditor
@@ -86,7 +86,6 @@ func newGateway(opt Options) *gateway {
 	g := &gateway{
 		nodes:          opt.Nodes,
 		upstream:       upstream,
-		trustProxy:     opt.TrustProxy,
 		allowedOrigins: opt.AllowedOrigins,
 		audit:          opt.Audit,
 		cache:          ttlcache.NewTimedCache(identityTTL),
@@ -101,10 +100,11 @@ func newGateway(opt Options) *gateway {
 	g.connect = g.nodeConnect()
 	g.proxy = &httputil.ReverseProxy{
 		Rewrite: func(pr *httputil.ProxyRequest) {
-			// 保留链路上已有的 X-Forwarded-For，让 isrvd 的审计记录真实来源
-			pr.Out.Header["X-Forwarded-For"] = pr.In.Header["X-Forwarded-For"]
 			pr.SetURL(upstream)
 			pr.SetXForwarded()
+			if user := pr.In.Header.Get(account.GatewayUserHeader); user != "" {
+				pr.Out.Header.Set(account.GatewayUserHeader, user)
+			}
 		},
 		FlushInterval: -1, // SSE、日志流与 WebSocket 需要立即刷新
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
@@ -130,8 +130,7 @@ func (g *gateway) routes() http.Handler {
 	mux.HandleFunc("POST /api/node/code", g.founderOnly(g.nodeCodeCreate))
 	mux.HandleFunc("DELETE /api/node/code/{id}", g.founderOnly(g.nodeCodeDelete))
 
-	// 受管机接入：注册凭一次性注册码，连接凭节点令牌
-	mux.HandleFunc("POST /api/node/enroll", g.nodeEnroll)
+	// 受管机接入：凭节点令牌连接，首次连接时待接入的令牌自动激活为节点
 	mux.Handle("GET /api/node/connect", g.connect)
 
 	// 以某个节点的视角访问：/n/<节点ID>/ 提供页面，/n/<节点ID>/api/ 转发业务接口
@@ -142,7 +141,19 @@ func (g *gateway) routes() http.Handler {
 
 	mux.Handle("/", g.proxy)
 	g.mux = mux
-	return mux
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		snapshot := config.Current()
+		r = r.Clone(r.Context())
+		r.Header.Del(account.GatewayUserHeader)
+		if snapshot.THA.Enabled {
+			user, _ := account.HeaderAuth(snapshot, r)
+			r.Header.Del(snapshot.THA.HeaderName)
+			if user != "" {
+				r.Header.Set(account.GatewayUserHeader, user)
+			}
+		}
+		mux.ServeHTTP(w, r)
+	})
 }
 
 // ─── 节点视角 ───
@@ -326,6 +337,15 @@ func (g *gateway) authorize(w http.ResponseWriter, r *http.Request) (identity, b
 // identify 把调用者的凭据交给中控 isrvd 验证并取回身份；err 表示上游不可用，而不是凭据无效。
 // 带令牌的结果缓存 identityTTL，避免每个请求都触发一次启动聚合（含服务探活）。
 func (g *gateway) identify(r *http.Request) (identity, error) {
+	snapshot := config.Current()
+	if snapshot.THA.Enabled {
+		user := r.Header.Get(account.GatewayUserHeader)
+		member := snapshot.Members[user]
+		if user == "" || member == nil {
+			return identity{}, nil
+		}
+		return identity{user: user, founder: member.Founder}, nil
+	}
 	key := ""
 	if token := g.credential(r); token != "" {
 		sum := sha256.Sum256([]byte(token))
@@ -432,13 +452,8 @@ func (g *gateway) allowQueryToken(r *http.Request) bool {
 
 // ─── 辅助函数 ───
 
-// clientIP 返回请求来源 IP，仅在明确声明前面有可信代理时才采信 X-Forwarded-For
+// clientIP 只取连接对端 IP，不信任客户端提供的转发头。
 func (g *gateway) clientIP(r *http.Request) string {
-	if g.trustProxy {
-		if first, _, _ := strings.Cut(r.Header.Get("X-Forwarded-For"), ","); strings.TrimSpace(first) != "" {
-			return strings.TrimSpace(first)
-		}
-	}
 	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
 		return host
 	}

@@ -1,7 +1,11 @@
 package config
 
 import (
+	"encoding/base64"
+	"errors"
+	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -25,6 +29,12 @@ func ServerNormalize(server *ServerConfig) *ServerConfig {
 	if server == nil {
 		server = &ServerConfig{}
 	}
+	server.Mode = strings.ToLower(strings.TrimSpace(server.Mode))
+	if server.Mode == "" {
+		server.Mode = "server"
+	}
+	server.CenterURL = strings.TrimRight(strings.TrimSpace(server.CenterURL), "/")
+	server.NodeToken = strings.TrimSpace(server.NodeToken)
 	if server.ListenAddr == "" {
 		server.ListenAddr = ":8080"
 	}
@@ -43,6 +53,35 @@ func ServerNormalize(server *ServerConfig) *ServerConfig {
 		}
 	}
 	return server
+}
+
+var (
+	ErrInvalidServerMode = errors.New("运行模式配置无效")
+	nodeIDPattern        = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+)
+
+// ValidateServerMode 统一校验启动及控制台提交的运行配置，不回显连接凭据。
+func ValidateServerMode(server *ServerConfig) error {
+	switch server.Mode {
+	case "server", "center":
+		return nil
+	case "agent":
+		u, err := parseHTTPURL("server.centerUrl", server.CenterURL)
+		if err != nil {
+			return fmt.Errorf("%w：%v", ErrInvalidServerMode, err)
+		}
+		if u.Path != "" || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
+			return fmt.Errorf("%w：服务器地址不能包含路径、查询参数或片段", ErrInvalidServerMode)
+		}
+		id, secret, ok := strings.Cut(server.NodeToken, ".")
+		decoded, err := base64.RawURLEncoding.DecodeString(secret)
+		if !ok || !nodeIDPattern.MatchString(id) || err != nil || len(decoded) != 32 {
+			return fmt.Errorf("%w：请填写中控生成的有效连接 token", ErrInvalidServerMode)
+		}
+		return nil
+	default:
+		return fmt.Errorf("%w：mode 只能是 server、center 或 agent", ErrInvalidServerMode)
+	}
 }
 
 // THANormalize 填充 THA 默认值

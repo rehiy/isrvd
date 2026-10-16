@@ -12,7 +12,7 @@ import (
 func main() {
 	// 先解析并校验参数：config.Init 会补全默认值并回写配置文件，
 	// 参数错误或 --help 不应产生这个副作用
-	opt, err := parse(os.Args[1:])
+	err := parse(os.Args[1:])
 	if errors.Is(err, flag.ErrHelp) {
 		return
 	}
@@ -26,7 +26,7 @@ func main() {
 	}
 	defer config.Close()
 
-	if err := run(opt); err != nil {
+	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, "isrvd:", err)
 		config.Close()
 		os.Exit(1)

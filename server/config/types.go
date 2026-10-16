@@ -28,6 +28,9 @@ type SchemaConfig struct {
 
 // 服务器配置
 type ServerConfig struct {
+	Mode           string   `yaml:"mode" json:"mode"`                     // server / center / agent，重启生效
+	CenterURL      string   `yaml:"centerUrl" json:"centerUrl"`           // agent 中控地址，重启生效
+	NodeToken      string   `yaml:"nodeToken" json:"nodeToken,omitempty"` // 节点连接令牌；响应不返回，写入为空保留
 	ListenAddr     string   `yaml:"listenAddr" json:"listenAddr"`         // 监听地址（如 :8080）
 	RootDirectory  string   `yaml:"rootDirectory" json:"rootDirectory"`   // 根目录路径
 	MaxUploadSize  int64    `yaml:"maxUploadSize" json:"maxUploadSize"`   // 文件上传最大大小（字节），默认 100MB

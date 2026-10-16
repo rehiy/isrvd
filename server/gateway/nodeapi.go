@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rehiy/libgo/httpd"
-	"github.com/rehiy/libgo/logman"
 	"github.com/rehiy/libgo/websocket"
 
 	"isrvd/server/service/node"
@@ -78,20 +77,7 @@ func (g *gateway) nodeCodeDelete(w http.ResponseWriter, r *http.Request, _ strin
 	success(w, r, "注册码已撤销", nil)
 }
 
-// ─── 受管机接入（匿名，由一次性凭据、节点令牌与按 IP 限流保护） ───
-
-func (g *gateway) nodeEnroll(w http.ResponseWriter, r *http.Request) {
-	var req node.EnrollRequest
-	if !decode(w, r, &req) {
-		return
-	}
-	resp, err := g.nodes.Enroll(g.clientIP(r), &req)
-	if err != nil {
-		enrollFail(w, r, err)
-		return
-	}
-	success(w, r, "节点注册成功", resp)
-}
+// ─── 受管机接入（匿名，由节点令牌与按 IP 限流保护） ───
 
 // nodeConnect 受管机建立隧道的入口。WebSocket 升级与二进制流适配交给 libgo 的 websocket.ServerConfig，
 // 这里只做它不负责的两件事：拒绝浏览器发起的连接、校验节点令牌（令牌只经 Authorization 头传递，不进 URL）。
@@ -113,6 +99,7 @@ func (g *gateway) nodeConnect() http.Handler {
 			c.Abort()
 			return
 		}
+		defer g.nodes.ReleaseConnection(n)
 		ws.Handler(func(conn *websocket.ServerConn) {
 			conn.SetMessageType(websocket.BinaryMessage)
 			g.nodes.Serve(c.Request.Context(), conn, c.Request.RemoteAddr, n)
@@ -138,24 +125,16 @@ func decode(w http.ResponseWriter, r *http.Request, v any) bool {
 	return true
 }
 
-// enrollFail 区分无效注册码与临时故障，避免 agent 因存储错误永久停止接入。
-func enrollFail(w http.ResponseWriter, r *http.Request, err error) {
-	if errors.Is(err, node.ErrNotFound) || errors.Is(err, node.ErrRateLimited) || errors.Is(err, node.ErrInvalidCode) {
-		nodeFail(w, r, err)
-		return
-	}
-	logman.Warn("节点接入暂不可用", "path", r.URL.Path, "error", err)
-	fail(w, r, http.StatusServiceUnavailable, "节点接入暂不可用")
-}
-
 // nodeFail 把节点服务错误映射为 HTTP 状态码
 func nodeFail(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, node.ErrNotFound):
 		fail(w, r, http.StatusNotFound, err.Error())
+	case errors.Is(err, node.ErrAlreadyOnline):
+		fail(w, r, http.StatusConflict, err.Error())
 	case errors.Is(err, node.ErrRateLimited):
 		fail(w, r, http.StatusTooManyRequests, err.Error())
-	case errors.Is(err, node.ErrInvalidCode), errors.Is(err, node.ErrUnauthorized):
+	case errors.Is(err, node.ErrUnauthorized):
 		fail(w, r, http.StatusForbidden, err.Error())
 	default:
 		fail(w, r, http.StatusBadRequest, err.Error())

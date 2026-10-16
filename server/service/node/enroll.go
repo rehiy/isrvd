@@ -11,93 +11,15 @@ import (
 	"sync"
 	"time"
 	"unicode/utf8"
-
-	"github.com/rehiy/libgo/strutil"
 )
 
 var (
-	// ErrInvalidCode 注册码无效、已使用或已过期
-	ErrInvalidCode = errors.New("注册码无效或已过期")
+	ErrAlreadyOnline = errors.New("节点已在线，请勿重复连接")
 	// ErrUnauthorized 节点凭据无效
 	ErrUnauthorized = errors.New("节点凭据无效")
 	// ErrRateLimited 请求过于频繁
 	ErrRateLimited = errors.New("请求过于频繁，请稍后再试")
 )
-
-// EnrollRequest agent 使用注册码发起注册
-type EnrollRequest struct {
-	Code     string `json:"code" binding:"required"` // 注册码
-	Name     string `json:"name"`                    // 节点名称（可选，默认取主机名）
-	Hostname string `json:"hostname"`                // 主机名
-	OS       string `json:"os"`                      // 操作系统
-	Arch     string `json:"arch"`                    // CPU 架构
-}
-
-// EnrollResponse 注册结果，令牌仅返回一次。
-type EnrollResponse struct {
-	NodeID string `json:"nodeId"` // 节点 ID
-	Token  string `json:"token"`  // 节点令牌
-}
-
-// Enroll 用注册码注册新节点并签发令牌；注册码使用一次即失效。
-func (s *Service) Enroll(ip string, req *EnrollRequest) (*EnrollResponse, error) {
-	if !s.enrollLimit.allow(ip) {
-		return nil, ErrRateLimited
-	}
-	s.enrollLimit.record(ip)
-
-	submitted := strings.TrimSpace(req.Code)
-	var matched *EnrollCode
-	for _, code := range s.codeOpenAll(s.codes.list()) {
-		if secretsEqual(code.Code, submitted) {
-			matched = code
-		}
-	}
-	if matched == nil {
-		return nil, ErrInvalidCode
-	}
-	if time.Now().After(matched.ExpiresAt) {
-		return nil, ErrInvalidCode
-	}
-	secret, err := randToken(32)
-	if err != nil {
-		return nil, err
-	}
-	// 先核销再创建节点；并发使用同一注册码时只有一个能核销成功
-	if err := s.codes.remove(matched.ID); err != nil {
-		if errors.Is(err, ErrNotFound) {
-			return nil, ErrInvalidCode
-		}
-		return nil, err
-	}
-	id := strutil.NewString()
-	hostname := clip(req.Hostname, 128)
-	name := clip(matched.Name, 64)
-	if name == "" {
-		name = clip(req.Name, 64)
-	}
-	if name == "" {
-		name = hostname
-	}
-	if name == "" {
-		name = "node-" + id[:4]
-	}
-	n := &Node{
-		ID:        id,
-		Name:      name,
-		Status:    StatusActive,
-		Hostname:  hostname,
-		OS:        clip(req.OS, 64),
-		Arch:      clip(req.Arch, 64),
-		CreatedAt: time.Now(),
-		TokenHash: hashSecret(secret),
-	}
-	if err := s.nodes.insert(n); err != nil {
-		return nil, err
-	}
-	logger.Info("节点已注册", "id", id, "name", name, "ip", ip)
-	return &EnrollResponse{NodeID: id, Token: id + "." + secret}, nil
-}
 
 // ─── 限流 ───
 

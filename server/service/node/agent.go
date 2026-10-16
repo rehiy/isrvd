@@ -1,13 +1,9 @@
 package node
 
 import (
-	"bytes"
 	"context"
-	"crypto/cipher"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -15,10 +11,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/goccy/go-yaml"
 	"github.com/rehiy/libgo/wstunnel"
-
-	"isrvd/pkgs/secretbox"
 )
 
 const (
@@ -26,27 +19,23 @@ const (
 	// 该路径不在 /api/ 下，中控只会把 /api/ 下的请求经隧道转发，用户无法访问到它。
 	AgentInfoPath = "/__agent/info"
 
-	enrollRetryDelay = time.Minute
+	retryDelay = time.Minute
 )
 
 // AgentOptions 受管机隧道客户端配置
 type AgentOptions struct {
-	CenterURL  string                 // 中控地址（http(s)://host:port，不含 /api）
-	EnrollCode string                 // 首次注册使用的注册码；本地已有节点令牌时可为空
-	Name       string                 // 节点显示名称，默认取主机名
-	Upstream   *url.URL               // 本机 isrvd 的回环地址
-	Token      func() (string, error) // 返回访问本机 isrvd 的 API 令牌；每个转发的请求都会取一次，转发的请求以令牌所属成员身份执行
-	StateKey   string                 // 加密本地凭据的密钥材料，需保持稳定（如 JWT 密钥）；变更后旧凭据无法解密，会重新注册
-	StatePath  string                 // 本地凭据文件路径
-	Version    string                 // 程序版本
+	CenterURL string                 // 中控地址（http(s)://host:port，不含 /api）
+	NodeToken string                 // 节点令牌，由中控生成并从主配置传入；不另存凭据文件
+	Upstream  *url.URL               // 本机 isrvd 的回环地址
+	Token     func() (string, error) // 返回访问本机 isrvd 的 API 令牌；每个转发的请求都会取一次，转发的请求以令牌所属成员身份执行
+	Version   string                 // 程序版本
 }
 
-// Agent 受管机侧隧道客户端：向中控注册、保持常连，并把中控经隧道转发来的请求交给本机 isrvd。
+// Agent 受管机侧隧道客户端：用节点令牌连接中控、保持常连，并把中控经隧道转发来的请求交给本机 isrvd。
 // 自身不监听任何端口。
 type Agent struct {
-	opt       AgentOptions
-	handler   http.Handler
-	codeSpent bool // 启动时给的注册码已经用过（成功或被中控明确拒绝），不再重试
+	opt     AgentOptions
+	handler http.Handler
 }
 
 // NewAgent 创建隧道客户端
@@ -56,29 +45,15 @@ func NewAgent(opt AgentOptions) *Agent {
 	return a
 }
 
-// Run 阻塞运行注册与常连循环，ctx 取消后返回
+// Run 阻塞运行常连循环，ctx 取消后返回
 func (a *Agent) Run(ctx context.Context) {
-	reenroll := false // 中控拒绝了本地令牌，且还有可用的注册码时置位
 	for ctx.Err() == nil {
-		state, err := a.credential(ctx, reenroll)
-		reenroll = false
-		if err != nil {
-			if ctx.Err() != nil {
-				return
-			}
-			logger.Error("节点注册失败", "error", err)
-			if !wstunnel.Sleep(ctx, enrollRetryDelay) {
-				return
-			}
-			continue
-		}
-
-		logger.Info("正在连接中控", "center", a.opt.CenterURL, "id", state.NodeID)
-		err = wstunnel.Maintain(ctx, wstunnel.MaintainOptions{
+		logger.Info("正在连接中控", "center", a.opt.CenterURL)
+		err := wstunnel.Maintain(ctx, wstunnel.MaintainOptions{
 			Dial: func(ctx context.Context) (*wstunnel.Session, error) {
 				return wstunnel.Dial(ctx, wstunnel.DialOptions{
 					URL:    a.opt.CenterURL + "/api/node/connect",
-					Header: http.Header{"Authorization": {"Bearer " + state.Token}},
+					Header: http.Header{"Authorization": {"Bearer " + a.opt.NodeToken}},
 				})
 			},
 			Serve:        a.serve,
@@ -87,16 +62,11 @@ func (a *Agent) Run(ctx context.Context) {
 			OnError:      func(err error) { logger.Warn("连接中控失败", "error", err) },
 		})
 		if errors.Is(err, wstunnel.ErrUnauthorized) {
-			// 不能据此删除本地凭据：节点被吊销或删除，与中控的数据被重置、恢复了旧备份，
-			// 在这里看起来完全一样。删掉后后者将永久失联，保留则在中控数据恢复后自动重连。
-			if a.opt.EnrollCode != "" && !a.codeSpent {
-				logger.Warn("中控拒绝了节点令牌，改用注册码重新注册（注册成功后才会替换本地凭据）")
-				reenroll = true
-				continue
-			}
-			logger.Error("中控拒绝了节点令牌：节点可能已被吊销或删除，或中控数据被重置。本地凭据已保留并每分钟重试；"+
-				"如需重新接入，请使用新的注册码重启", "center", a.opt.CenterURL, "id", state.NodeID)
-			if !wstunnel.Sleep(ctx, enrollRetryDelay) {
+			// 节点被吊销或删除、令牌过期未用，与中控数据被重置、恢复了旧备份，在这里看起来完全一样，
+			// 所以只记录错误并重试：中控数据恢复后自动重连。
+			logger.Error("中控拒绝了节点令牌：节点可能已被吊销或删除、令牌已过期，或中控数据被重置。每分钟重试；"+
+				"如需重新接入，请在中控生成新的令牌后重启", "center", a.opt.CenterURL)
+			if !wstunnel.Sleep(ctx, retryDelay) {
 				return
 			}
 			continue
@@ -163,176 +133,4 @@ func LocalAgentInfo(version string) *AgentInfo {
 		OS:       runtime.GOOS,
 		Arch:     runtime.GOARCH,
 	}
-}
-
-// ─── 注册与凭据 ───
-
-// agentState 本节点私有的凭据，保存在本地文件
-type agentState struct {
-	NodeID    string `yaml:"nodeId"`
-	Token     string `yaml:"token"`     // 加密落盘
-	CenterURL string `yaml:"centerUrl"` // 凭据所属的中控
-}
-
-// credential 读取本地凭据；没有（或要求重新注册）时使用注册码向中控注册。
-// 注册码只能用一次：成功或被中控明确拒绝后不再重试，之后沿用本地凭据。
-func (a *Agent) credential(ctx context.Context, reenroll bool) (*agentState, error) {
-	state := a.stateLoad()
-	usable := state != nil && state.CenterURL == a.opt.CenterURL && state.Token != ""
-	if usable && !reenroll {
-		return state, nil
-	}
-	if a.opt.EnrollCode == "" || a.codeSpent {
-		if usable {
-			return state, nil
-		}
-		return nil, errors.New("本地没有可用的节点令牌且没有可用的注册码（--enroll-code 或 ISRVD_ENROLL_CODE），无法向中控注册")
-	}
-
-	enrolled, err := a.enroll(ctx)
-	if rejected(err) {
-		a.codeSpent = true
-	}
-	if err != nil && usable {
-		logger.Warn("重新注册失败，继续使用本地凭据", "error", err)
-		return state, nil
-	}
-	return enrolled, err
-}
-
-// enroll 使用注册码注册节点并加密保存令牌。
-func (a *Agent) enroll(ctx context.Context) (*agentState, error) {
-	client := &http.Client{
-		Timeout: 20 * time.Second,
-		// 不跟随重定向，避免注册码被转发到非预期的主机
-		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
-	}
-	info := LocalAgentInfo(a.opt.Version)
-	name := a.opt.Name
-	if name == "" {
-		name = info.Hostname
-	}
-	var enrolled EnrollResponse
-	if err := postJSON(ctx, client, a.opt.CenterURL+"/api/node/enroll", &EnrollRequest{
-		Code: a.opt.EnrollCode, Name: name, Hostname: info.Hostname, OS: info.OS, Arch: info.Arch,
-	}, &enrolled); err != nil {
-		return nil, fmt.Errorf("提交注册失败: %w", err)
-	}
-	a.codeSpent = true
-	state := &agentState{NodeID: enrolled.NodeID, Token: enrolled.Token, CenterURL: a.opt.CenterURL}
-	if err := a.stateSave(state); err != nil {
-		return nil, fmt.Errorf("保存节点令牌失败: %w", err)
-	}
-	logger.Info("节点已注册", "id", state.NodeID)
-	return state, nil
-}
-
-// httpError 中控返回的非成功响应
-type httpError struct {
-	Status  int
-	Message string
-}
-
-// rejected 判断中控是否明确拒绝了请求（4xx，限流除外）；5xx 与网络错误值得重试，不算拒绝
-func rejected(err error) bool {
-	var e *httpError
-	return errors.As(err, &e) && e.Status >= 400 && e.Status < 500 && e.Status != http.StatusTooManyRequests
-}
-
-func (e *httpError) Error() string {
-	if e.Message == "" {
-		return fmt.Sprintf("HTTP %d", e.Status)
-	}
-	return fmt.Sprintf("HTTP %d: %s", e.Status, e.Message)
-}
-
-// postJSON 向中控提交 JSON，并把统一响应中的 payload 解码到 out
-func postJSON(ctx context.Context, client *http.Client, url string, in, out any) error {
-	body, err := json.Marshal(in)
-	if err != nil {
-		return err
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return err
-	}
-	var envelope struct {
-		Success bool            `json:"success"`
-		Message string          `json:"message"`
-		Payload json.RawMessage `json:"payload"`
-	}
-	_ = json.Unmarshal(raw, &envelope)
-	if resp.StatusCode != http.StatusOK || !envelope.Success {
-		return &httpError{Status: resp.StatusCode, Message: envelope.Message}
-	}
-	return json.Unmarshal(envelope.Payload, out)
-}
-
-// ─── 本地凭据存储 ───
-
-// aead 节点凭据落盘加密：密钥由 StateKey 派生（同进程运行时用 JWT 密钥），无需另配密钥；
-// 密钥变更后旧凭据无法解密，会重新注册。
-func (a *Agent) aead() (cipher.AEAD, error) {
-	return secretbox.NewAEAD("isrvd-node-agent", a.opt.StateKey)
-}
-
-// stateLoad 读取并解密本地凭据；缺失或无法解密返回 nil
-func (a *Agent) stateLoad() *agentState {
-	data, err := os.ReadFile(a.opt.StatePath)
-	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			logger.Warn("读取节点凭据失败", "error", err)
-		}
-		return nil
-	}
-	var state agentState
-	if err := yaml.Unmarshal(data, &state); err != nil {
-		logger.Warn("节点凭据文件格式无效", "error", err)
-		return nil
-	}
-	if state.NodeID == "" || state.Token == "" {
-		return nil
-	}
-	aead, err := a.aead()
-	if err != nil {
-		return nil
-	}
-	state.Token, err = secretbox.Open(aead, state.Token)
-	if err != nil {
-		logger.Warn("节点令牌解密失败，JWT 密钥可能已变更，将重新注册")
-		return nil
-	}
-	return &state
-}
-
-// stateSave 加密令牌后原子写入，文件权限 0600
-func (a *Agent) stateSave(state *agentState) error {
-	aead, err := a.aead()
-	if err != nil {
-		return err
-	}
-	sealed, err := secretbox.Seal(aead, state.Token)
-	if err != nil {
-		return err
-	}
-	data, err := yaml.Marshal(&agentState{NodeID: state.NodeID, Token: sealed, CenterURL: state.CenterURL})
-	if err != nil {
-		return err
-	}
-	tmp := a.opt.StatePath + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o600); err != nil {
-		return err
-	}
-	return os.Rename(tmp, a.opt.StatePath)
 }

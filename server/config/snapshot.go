@@ -114,6 +114,12 @@ func cloneSnapshot(snapshot *Snapshot) (*Snapshot, error) {
 }
 
 func validateSnapshot(snapshot *Snapshot) error {
+	if err := ValidateServerMode(snapshot.Server); err != nil {
+		return err
+	}
+	if snapshot.Server.Mode == "agent" && snapshot.THA.Enabled {
+		return fmt.Errorf("%w：受控模式不能启用代理 Header 登录", ErrInvalidServerMode)
+	}
 	if len(strings.TrimSpace(snapshot.Server.JWTSecret)) < 32 {
 		return fmt.Errorf("JWT 密钥长度不能少于 32 个字符")
 	}
@@ -177,11 +183,16 @@ func validateSnapshot(snapshot *Snapshot) error {
 
 // ValidateHTTPURL 校验 value 是带主机的 HTTP(S) 绝对地址（不含用户信息）；name 用于错误提示。
 func ValidateHTTPURL(name, value string) error {
+	_, err := parseHTTPURL(name, value)
+	return err
+}
+
+func parseHTTPURL(name, value string) (*url.URL, error) {
 	parsed, err := url.ParseRequestURI(strings.TrimSpace(value))
 	if err != nil || parsed.Host == "" || (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.User != nil {
-		return fmt.Errorf("%s 必须是合法的 HTTP(S) 绝对地址", name)
+		return nil, fmt.Errorf("%s 必须是合法的 HTTP(S) 绝对地址", name)
 	}
-	return nil
+	return parsed, nil
 }
 
 func generateJWTSecret() (string, error) {

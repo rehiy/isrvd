@@ -39,9 +39,9 @@ type Node struct {
 	RemoteAddr   string     `yaml:"-" json:"remoteAddr,omitempty"`   // 节点连接来源地址
 }
 
-// EnrollCode 注册码。使用一次即失效、最长 7 天过期；创始人可在待接入期间随时查看接入命令，
-// 所以不能只存哈希，而是与 SSH 凭据一样用 JWT 密钥派生的密钥加密落盘（见 pkgs/secretbox）。
-// 节点令牌仍然只保存哈希。
+// EnrollCode 待接入的节点令牌。最长 7 天内须首次接入，激活后核销记录，但令牌继续有效。
+// 创始人可在待接入期间查看明文，所以用 JWT 密钥派生的密钥加密落盘（见 pkgs/secretbox）。
+// 激活后的节点只保存令牌哈希。
 type EnrollCode struct {
 	ID        string    `yaml:"id" json:"id"`               // 注册码 ID
 	Name      string    `yaml:"name" json:"name"`           // 备注

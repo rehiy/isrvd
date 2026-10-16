@@ -44,18 +44,21 @@ func (app *App) serviceLifecycleMiddleware() gin.HandlerFunc {
 // - 其他路由：强制认证，失败时返回 401
 func (app *App) authMiddleware(routeIndex map[string]Route) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		svc := app.accountSvc
+		auth := app.accountSvc.Auth
+		if app.mode == ModeCenter {
+			auth = app.accountSvc.AuthFromGateway
+		}
 		route, ok := lookupRoute(routeIndex, c)
 		allowQueryToken := ok && route.QueryToken
 		if ok && route.Access == AccessAnon {
-			if username, _ := svc.Auth(c.Request, allowQueryToken); username != "" {
+			if username, _ := auth(c.Request, allowQueryToken); username != "" {
 				c.Set("username", username)
 			}
 			c.Next()
 			return
 		}
 
-		username, errMsg := svc.Auth(c.Request, allowQueryToken)
+		username, errMsg := auth(c.Request, allowQueryToken)
 		if username == "" {
 			respondError(c, http.StatusUnauthorized, errMsg)
 			c.Abort()

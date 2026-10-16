@@ -10,7 +10,9 @@ import (
 	"net/http"
 	"net/http/httputil"
 
+	"isrvd/server/config"
 	"isrvd/server/i18n"
+	"isrvd/server/service/account"
 )
 
 var errOffline = errors.New("节点离线")
@@ -61,6 +63,8 @@ func newProxy(transport *http.Transport) *httputil.ReverseProxy {
 			// 用户凭据只属于中控，不下发给节点
 			out.Header.Del("Authorization")
 			out.Header.Del("Cookie")
+			out.Header.Del(config.Current().THA.HeaderName)
+			out.Header.Del(account.GatewayUserHeader)
 			q := out.URL.Query()
 			if q.Has("token") {
 				q.Del("token")

@@ -23,9 +23,24 @@ import (
 func (s *Service) Auth(r *http.Request, allowQueryToken bool) (username, errMsg string) {
 	snapshot := config.Current()
 	if snapshot.THA != nil && snapshot.THA.Enabled {
-		return s.headerTokenCheck(snapshot, r)
+		return HeaderAuth(snapshot, r)
 	}
 	return s.jwtCheck(snapshot, r, allowQueryToken)
+}
+
+const GatewayUserHeader = "X-Isrvd-Gateway-User"
+
+// AuthFromGateway 仅在私有回环监听器接收网关校验后写入的内部身份。
+func (s *Service) AuthFromGateway(r *http.Request, allowQueryToken bool) (string, string) {
+	snapshot := config.Current()
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		host = r.RemoteAddr
+	}
+	if ip := net.ParseIP(host); snapshot.THA.Enabled && ip != nil && ip.IsLoopback() {
+		return headerUsername(snapshot, r.Header.Get(GatewayUserHeader))
+	}
+	return s.Auth(r, allowQueryToken)
 }
 
 // AuthInfoResponse 认证模式及当前用户信息
@@ -204,11 +219,15 @@ func (s *Service) jwtCheck(snapshot *config.Snapshot, r *http.Request, allowQuer
 
 // ─── 代理 Header 登录 ────────────────
 
-func (s *Service) headerTokenCheck(snapshot *config.Snapshot, r *http.Request) (string, string) {
-	if !s.headerSourceTrusted(snapshot, r) {
+// HeaderAuth 校验真实连接来源及 THA 用户，供单机应用和中控网关共用。
+func HeaderAuth(snapshot *config.Snapshot, r *http.Request) (string, string) {
+	if !headerSourceTrusted(snapshot, r) {
 		return "", "代理 Header 来源不可信"
 	}
-	username := r.Header.Get(snapshot.THA.HeaderName)
+	return headerUsername(snapshot, r.Header.Get(snapshot.THA.HeaderName))
+}
+
+func headerUsername(snapshot *config.Snapshot, username string) (string, string) {
 	if username == "" {
 		return "", "代理 Header 缺失"
 	}
@@ -264,7 +283,7 @@ func (s *Service) extractJWT(r *http.Request, allowQueryToken bool) string {
 	return ""
 }
 
-func (s *Service) headerSourceTrusted(snapshot *config.Snapshot, r *http.Request) bool {
+func headerSourceTrusted(snapshot *config.Snapshot, r *http.Request) bool {
 	// 默认可信来源由配置层 THANormalize 填充
 	if snapshot.THA == nil || len(snapshot.THA.TrustedCIDRs) == 0 {
 		return true

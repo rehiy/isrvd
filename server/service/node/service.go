@@ -1,9 +1,10 @@
-// Package node 提供多节点管理：中控侧的节点注册表、隧道会话与请求代理，
-// 以及受管机（agent）侧的注册与常连客户端。
+// Package node 提供多节点管理：中控侧的节点令牌、隧道会话与请求代理，
+// 以及受管机（agent）侧的常连客户端。
 package node
 
 import (
 	"crypto/cipher"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -33,12 +34,12 @@ type Service struct {
 	nodes *listStore[Node]
 	codes *listStore[EnrollCode]
 
-	mu     sync.RWMutex
-	conns  map[string]*nodeConn // 节点 ID → 当前在线会话
-	closed bool
+	mu         sync.RWMutex
+	conns      map[string]*nodeConn // 节点 ID → 当前在线会话
+	connecting map[string]*Node     // 握手期间预占，防止并发连接
+	closed     bool
 
-	enrollLimit *rateLimiter // 注册：按来源 IP 限制请求频率
-	authLimit   *rateLimiter // 令牌认证：按来源 IP 限制失败次数
+	authLimit *rateLimiter // 令牌认证：按来源 IP 限制失败次数
 }
 
 // NewService 创建中控侧节点服务；节点表与注册码保存在业务数据存储中（后端见 config.OpenData）
@@ -52,11 +53,11 @@ func NewService() (*Service, error) {
 		return nil, fmt.Errorf("初始化注册码存储失败: %w", err)
 	}
 	return &Service{
-		nodes:       nodes,
-		codes:       codes,
-		conns:       map[string]*nodeConn{},
-		enrollLimit: newRateLimiter(60, time.Minute),
-		authLimit:   newRateLimiter(10, time.Minute),
+		nodes:      nodes,
+		codes:      codes,
+		conns:      map[string]*nodeConn{},
+		connecting: map[string]*Node{},
+		authLimit:  newRateLimiter(10, time.Minute),
 	}, nil
 }
 
@@ -66,6 +67,7 @@ func (s *Service) Close() {
 	s.closed = true
 	conns := s.conns
 	s.conns = map[string]*nodeConn{}
+	clear(s.connecting)
 	s.mu.Unlock()
 	for _, c := range conns {
 		c.close()
@@ -96,7 +98,7 @@ func (s *Service) NodeInspect(id string) *Node {
 
 // NodeUpdateRequest 节点更新请求
 type NodeUpdateRequest struct {
-	Name string `json:"name" binding:"required"` // 节点名称
+	Name string `json:"name"` // 节点名称
 }
 
 // NodeUpdate 重命名节点
@@ -139,6 +141,10 @@ func (s *Service) NodeRevoke(id string) error {
 // NodeDelete 删除节点并断开在线会话
 func (s *Service) NodeDelete(id string) error {
 	s.mu.Lock()
+	if err := s.codes.remove(id); err != nil && !errors.Is(err, ErrNotFound) {
+		s.mu.Unlock()
+		return fmt.Errorf("删除节点失败: %w", err)
+	}
 	err := s.nodes.remove(id)
 	if err != nil {
 		s.mu.Unlock()
@@ -163,8 +169,29 @@ type EnrollCodeCreateRequest struct {
 
 // EnrollCodeList 列出尚未使用且未过期的注册码（含可用于接入的明文）
 func (s *Service) EnrollCodeList() []*EnrollCode {
-	s.codesPrune()
-	list := s.codeOpenAll(s.codes.list())
+	aead, err := s.codeAEAD()
+	if err != nil {
+		logger.Warn("清理注册码失败", "error", err)
+		return nil
+	}
+	now := time.Now()
+	list := []*EnrollCode{}
+	if err := s.codes.removeIf(func(c *EnrollCode) bool {
+		if now.After(c.ExpiresAt) || s.nodes.get(c.ID) != nil {
+			return true
+		}
+		plain, err := secretbox.Open(aead, c.Sealed)
+		if err != nil {
+			logger.Warn("注册码无法解密（JWT 密钥可能已变更），已清除", "id", c.ID)
+			return true
+		}
+		opened := *c
+		opened.Code = plain
+		list = append(list, &opened)
+		return false
+	}); err != nil {
+		logger.Warn("清理注册码失败", "error", err)
+	}
 	slices.SortFunc(list, func(a, b *EnrollCode) int { return a.CreatedAt.Compare(b.CreatedAt) })
 	return list
 }
@@ -178,10 +205,13 @@ func (s *Service) EnrollCodeCreate(creator string, req *EnrollCodeCreateRequest)
 	case ttl > maxCodeTTL:
 		ttl = maxCodeTTL
 	}
-	code, err := randToken(18)
+	id := strutil.NewString()
+	secret, err := randToken(32)
 	if err != nil {
 		return nil, fmt.Errorf("生成注册码失败: %w", err)
 	}
+	// 注册码即节点令牌（<节点ID>.<密钥>）：受管机首次连接时激活为节点，之后继续沿用
+	code := id + "." + secret
 	aead, err := s.codeAEAD()
 	if err != nil {
 		return nil, fmt.Errorf("加密注册码失败: %w", err)
@@ -190,7 +220,6 @@ func (s *Service) EnrollCodeCreate(creator string, req *EnrollCodeCreateRequest)
 	if err != nil {
 		return nil, fmt.Errorf("加密注册码失败: %w", err)
 	}
-	id := strutil.NewString()
 	now := time.Now()
 	item := &EnrollCode{
 		ID:        id,
@@ -220,49 +249,9 @@ func (s *Service) EnrollCodeDelete(id string) error {
 
 // ─── 辅助函数 ───
 
-// codesPrune 清理已过期、或因 JWT 密钥变更而无法解密（再也无法使用）的注册码
-func (s *Service) codesPrune() {
-	now := time.Now()
-	aead, err := s.codeAEAD()
-	if err != nil {
-		logger.Warn("清理注册码失败", "error", err)
-		return
-	}
-	if err := s.codes.removeIf(func(c *EnrollCode) bool {
-		if now.After(c.ExpiresAt) {
-			return true
-		}
-		if _, err := secretbox.Open(aead, c.Sealed); err != nil {
-			logger.Warn("注册码无法解密（JWT 密钥可能已变更），已清除", "id", c.ID)
-			return true
-		}
-		return false
-	}); err != nil {
-		logger.Warn("清理注册码失败", "error", err)
-	}
-}
-
 // codeAEAD 每次按当前 JWT 密钥派生，配置重载后无需重建服务
 func (s *Service) codeAEAD() (cipher.AEAD, error) {
 	return secretbox.NewAEAD("isrvd-node-code", config.Current().Server.JWTSecret)
-}
-
-// codeOpenAll 把密文解出明文填入各条目；无法解密的条目被丢弃
-func (s *Service) codeOpenAll(list []*EnrollCode) []*EnrollCode {
-	aead, err := s.codeAEAD()
-	if err != nil {
-		return nil
-	}
-	opened := list[:0]
-	for _, c := range list {
-		plain, err := secretbox.Open(aead, c.Sealed)
-		if err != nil {
-			continue
-		}
-		c.Code = plain
-		opened = append(opened, c)
-	}
-	return opened
 }
 
 // decorate 把在线状态合并到节点副本
