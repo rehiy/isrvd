@@ -32,7 +32,7 @@ func (app *App) systemConfigUpdate(c *gin.Context) {
 	}
 	if err := app.configSvc.ConfigUpdate(req); err != nil {
 		status := http.StatusInternalServerError
-		if errors.Is(err, system.ErrInvalidNotifyConfig) || errors.Is(err, config.ErrInvalidServerMode) {
+		if errors.Is(err, system.ErrInvalidNotifyConfig) || errors.Is(err, config.ErrInvalidClusterConfig) {
 			status = http.StatusBadRequest
 		}
 		respondError(c, status, err.Error())

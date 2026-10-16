@@ -9440,6 +9440,23 @@
         },
         "type": "object"
       },
+      "config.ClusterConfig": {
+        "properties": {
+          "centerUrl": {
+            "description": "agent 中控地址，重启生效",
+            "type": "string"
+          },
+          "mode": {
+            "description": "server / center / agent，重启生效",
+            "type": "string"
+          },
+          "nodeToken": {
+            "description": "节点连接令牌；响应不返回，写入为空保留",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "config.Config": {
         "properties": {
           "Apisix": {
@@ -9448,6 +9465,10 @@
           },
           "Caddy": {
             "description": "Caddy 配置",
+            "type": "object"
+          },
+          "Cluster": {
+            "description": "多节点部署配置",
             "type": "object"
           },
           "Copilot": {
@@ -9849,7 +9870,7 @@
       "config.SchemaConfig": {
         "properties": {
           "Version": {
-            "description": "配置结构版本号，当前: 2",
+            "description": "配置结构版本号，当前: 3",
             "type": "integer"
           }
         },
@@ -12484,6 +12505,10 @@
           "caddy": {
             "$ref": "#/components/schemas/config.CaddyConfig",
             "description": "Caddy 配置"
+          },
+          "cluster": {
+            "$ref": "#/components/schemas/config.ClusterConfig",
+            "description": "多节点部署配置（NodeToken：响应脱敏 / 请求空保留）"
           },
           "copilot": {
             "$ref": "#/components/schemas/config.CopilotConfig",

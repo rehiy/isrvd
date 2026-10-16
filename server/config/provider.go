@@ -236,6 +236,7 @@ func persistSnapshot(snapshot *Snapshot) error {
 
 	conf := &Config{
 		Schema:      schema,
+		Cluster:     snapshot.Cluster,
 		Server:      snapshot.Server,
 		Password:    snapshot.Password,
 		Passkey:     snapshot.Passkey,

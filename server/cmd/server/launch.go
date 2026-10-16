@@ -1,4 +1,4 @@
-// 启动入口：同一个二进制三种模式，由 config.yml 的 server.mode 选择：
+// 启动入口：同一个二进制三种模式，由 config.yml 的 cluster.mode 选择：
 //
 //	server  单机，默认。与以往完全一致。
 //	center  中控。isrvd 改为只监听回环端口，网关接管 listenAddr 作为对外入口，
@@ -27,7 +27,7 @@ import (
 
 // run 按配置中的模式运行，阻塞到收到退出信号。
 func run() error {
-	switch config.Current().Server.Mode {
+	switch config.Current().Cluster.Mode {
 	case app.ModeCenter:
 		return runCenter()
 	case app.ModeAgent:
@@ -95,8 +95,8 @@ func runAgent() error {
 		return fmt.Errorf("监听回环端口失败: %w", err)
 	}
 	agent := node.NewAgent(node.AgentOptions{
-		CenterURL: snapshot.Server.CenterURL,
-		NodeToken: snapshot.Server.NodeToken,
+		CenterURL: snapshot.Cluster.CenterURL,
+		NodeToken: snapshot.Cluster.NodeToken,
 		Upstream:  &url.URL{Scheme: "http", Host: private.Addr().String()},
 		Token:     account.ServiceToken,
 		Version:   config.Version,
@@ -106,7 +106,7 @@ func runAgent() error {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		logman.Info("agent start", "center", snapshot.Server.CenterURL)
+		logman.Info("agent start", "center", snapshot.Cluster.CenterURL)
 		agent.Run(ctx)
 	}()
 

@@ -12,6 +12,9 @@ import (
 // Version 版本信息（编译时通过脚本注入）
 var Version = "v0.0.0"
 
+// ErrInvalidClusterConfig 表示多节点部署配置无效。
+var ErrInvalidClusterConfig = errors.New("运行模式配置无效")
+
 // SecretKeep 处理"留空保留原值"的密钥类字段：
 // newVal 去除首尾空白后为空则返回 oldVal，否则返回去除首尾空白后的 newVal。
 // 所有可由 API 写入且响应时不回显的密钥（JWT、OIDC、Copilot、APISIX、镜像仓库密码、Caddy 私钥等）
@@ -29,12 +32,6 @@ func ServerNormalize(server *ServerConfig) *ServerConfig {
 	if server == nil {
 		server = &ServerConfig{}
 	}
-	server.Mode = strings.ToLower(strings.TrimSpace(server.Mode))
-	if server.Mode == "" {
-		server.Mode = "server"
-	}
-	server.CenterURL = strings.TrimRight(strings.TrimSpace(server.CenterURL), "/")
-	server.NodeToken = strings.TrimSpace(server.NodeToken)
 	if server.ListenAddr == "" {
 		server.ListenAddr = ":8080"
 	}
@@ -55,32 +52,43 @@ func ServerNormalize(server *ServerConfig) *ServerConfig {
 	return server
 }
 
-var (
-	ErrInvalidServerMode = errors.New("运行模式配置无效")
-	nodeIDPattern        = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
-)
+// ClusterNormalize 填充多节点部署默认值并归一化连接信息
+func ClusterNormalize(cluster *ClusterConfig) *ClusterConfig {
+	if cluster == nil {
+		cluster = &ClusterConfig{}
+	}
+	cluster.Mode = strings.ToLower(strings.TrimSpace(cluster.Mode))
+	if cluster.Mode == "" {
+		cluster.Mode = "server"
+	}
+	cluster.CenterURL = strings.TrimRight(strings.TrimSpace(cluster.CenterURL), "/")
+	cluster.NodeToken = strings.TrimSpace(cluster.NodeToken)
+	return cluster
+}
 
-// ValidateServerMode 统一校验启动及控制台提交的运行配置，不回显连接凭据。
-func ValidateServerMode(server *ServerConfig) error {
-	switch server.Mode {
+var nodeIDPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+
+// ClusterValidate 统一校验启动及控制台提交的多节点部署配置，不回显连接凭据。
+func ClusterValidate(cluster *ClusterConfig) error {
+	switch cluster.Mode {
 	case "server", "center":
 		return nil
 	case "agent":
-		u, err := parseHTTPURL("server.centerUrl", server.CenterURL)
+		u, err := parseHTTPURL("cluster.centerUrl", cluster.CenterURL)
 		if err != nil {
-			return fmt.Errorf("%w：%v", ErrInvalidServerMode, err)
+			return fmt.Errorf("%w：%v", ErrInvalidClusterConfig, err)
 		}
 		if u.Path != "" || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
-			return fmt.Errorf("%w：服务器地址不能包含路径、查询参数或片段", ErrInvalidServerMode)
+			return fmt.Errorf("%w：服务器地址不能包含路径、查询参数或片段", ErrInvalidClusterConfig)
 		}
-		id, secret, ok := strings.Cut(server.NodeToken, ".")
+		id, secret, ok := strings.Cut(cluster.NodeToken, ".")
 		decoded, err := base64.RawURLEncoding.DecodeString(secret)
 		if !ok || !nodeIDPattern.MatchString(id) || err != nil || len(decoded) != 32 {
-			return fmt.Errorf("%w：请填写中控生成的有效连接 token", ErrInvalidServerMode)
+			return fmt.Errorf("%w：请填写中控生成的有效连接 token", ErrInvalidClusterConfig)
 		}
 		return nil
 	default:
-		return fmt.Errorf("%w：mode 只能是 server、center 或 agent", ErrInvalidServerMode)
+		return fmt.Errorf("%w：mode 只能是 server、center 或 agent", ErrInvalidClusterConfig)
 	}
 }
 

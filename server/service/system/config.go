@@ -17,6 +17,7 @@ var ErrInvalidNotifyConfig = errors.New("故障告警配置无效")
 // AllConfig 全部配置聚合（请求/响应共用）。
 // 作 GET 响应时：敏感字段已脱敏；作 PUT 请求时：nil 分区跳过更新，密钥为空保留原值。
 type AllConfig struct {
+	Cluster     *config.ClusterConfig     `json:"cluster"`     // 多节点部署配置（NodeToken：响应脱敏 / 请求空保留）
 	Server      *config.ServerConfig      `json:"server"`      // 服务配置（JWTSecret：响应脱敏 / 请求空保留）
 	Password    *config.PasswordConfig    `json:"password"`    // 密码登录配置
 	Passkey     *config.PasskeyConfig     `json:"passkey"`     // Passkey 认证配置
@@ -44,6 +45,7 @@ func NewConfigService() *ConfigService {
 func (s *ConfigService) ConfigAll() *AllConfig {
 	snapshot := config.Current()
 	src := &AllConfig{
+		Cluster:     snapshot.Cluster,
 		Server:      snapshot.Server,
 		Password:    snapshot.Password,
 		Passkey:     snapshot.Passkey,
@@ -64,7 +66,9 @@ func (s *ConfigService) ConfigAll() *AllConfig {
 	}
 	if dst.Server != nil {
 		dst.Server.JWTSecret = ""
-		dst.Server.NodeToken = ""
+	}
+	if dst.Cluster != nil {
+		dst.Cluster.NodeToken = ""
 	}
 	if dst.OIDC != nil {
 		dst.OIDC.ClientSecret = ""
@@ -104,7 +108,6 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 		newRoot := oldRoot
 		if req.Server != nil {
 			req.Server.JWTSecret = config.SecretKeep(req.Server.JWTSecret, draft.Server.JWTSecret)
-			req.Server.NodeToken = config.SecretKeep(req.Server.NodeToken, draft.Server.NodeToken)
 			req.Server = config.ServerNormalize(req.Server)
 			newRoot = req.Server.RootDirectory
 			if oldRoot != newRoot {
@@ -122,6 +125,10 @@ func (s *ConfigService) ConfigUpdate(req AllConfig) error {
 				}
 			}
 			draft.Server = req.Server
+		}
+		if req.Cluster != nil {
+			req.Cluster.NodeToken = config.SecretKeep(req.Cluster.NodeToken, draft.Cluster.NodeToken)
+			draft.Cluster = req.Cluster
 		}
 		if req.Password != nil {
 			draft.Password = req.Password
