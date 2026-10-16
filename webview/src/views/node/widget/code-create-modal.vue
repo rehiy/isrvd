@@ -38,7 +38,7 @@ class CodeCreateModal extends Vue {
     // ─── 计算属性 ───
     get connectionConfig() {
         if (!this.created) return ''
-        return dump({ server: { mode: 'agent', centerUrl: centerUrl(), nodeToken: this.created.code } })
+        return dump({ cluster: { mode: 'agent', centerUrl: centerUrl(), nodeToken: this.created.code } })
     }
 
     get dockerCommand() {
@@ -94,7 +94,7 @@ export default toNative(CodeCreateModal)
           </button>
         </div>
         <pre class="detail-value-mono whitespace-pre-wrap">{{ connectionConfig }}</pre>
-        <p class="mt-2 text-xs text-slate-400">{{ $t('将这些字段合并到受控机 config.yml 的 server 分区，或在控制台「系统配置 / 基础服务」填写，然后重启服务。Docker 配置位置为 /srv/data/conf/isrvd.yml。') }}</p>
+        <p class="mt-2 text-xs text-slate-400">{{ $t('将这些字段合并到受控机 config.yml 的 cluster 分区，或在控制台「系统配置 / 基础服务」填写，然后重启服务。Docker 配置位置为 /srv/data/conf/isrvd.yml。') }}</p>
       </div>
       <div>
         <div class="flex items-center justify-between mb-2">

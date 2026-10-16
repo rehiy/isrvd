@@ -1922,7 +1922,7 @@ const messages: Record<string, string> = {
     'token 首次接入前将于 {0} 过期；接入后沿用同一 token，仅允许一个客户端在线。': 'token 首次接入前將於 {0} 過期；接入後沿用同一 token，僅允許一個客戶端在線。',
     '受控机配置': '受控機配置',
     '复制配置': '複製配置',
-    '将这些字段合并到受控机 config.yml 的 server 分区，或在控制台「系统配置 / 基础服务」填写，然后重启服务。Docker 配置位置为 /srv/data/conf/isrvd.yml。': '將這些字段合併到受控機 config.yml 的 server 分區，或在控制台「系統配置 / 基礎服務」填寫，然後重啟服務。Docker 配置位置為 /srv/data/conf/isrvd.yml。',
+    '将这些字段合并到受控机 config.yml 的 cluster 分区，或在控制台「系统配置 / 基础服务」填写，然后重启服务。Docker 配置位置为 /srv/data/conf/isrvd.yml。': '將這些字段合併到受控機 config.yml 的 cluster 分區，或在控制台「系統配置 / 基礎服務」填寫，然後重啟服務。Docker 配置位置為 /srv/data/conf/isrvd.yml。',
     '有效期仅限制首次接入；连接后同一 token 可用于重启和重连': '有效期僅限制首次接入；連接後同一 token 可用於重啟和重連',
 }
 
