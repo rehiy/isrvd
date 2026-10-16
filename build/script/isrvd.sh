@@ -126,7 +126,7 @@ Wants=docker.service
 Type=simple
 User=root
 WorkingDirectory=$INSTALL_DIR
-Environment="CONFIG_PATH=$CONFIG_FILE"
+Environment="ISRVD_CONFIG=$CONFIG_FILE"
 ExecStart=$bin_file
 ExecReload=/bin/kill -HUP \$MAINPID
 Restart=on-failure

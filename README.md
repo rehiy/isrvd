@@ -189,7 +189,7 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) uni
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) download
 ```
 
-The config file location is set via `CONFIG_PATH`, see [Configuration](#configuration).
+The config file location is set via `ISRVD_CONFIG`, see [Configuration](#configuration).
 
 ## Centralized Management
 
@@ -273,21 +273,21 @@ systemctl restart isrvd
 
 ### Config Sources
 
-The config location is set by `CONFIG_PATH`, supporting local YAML and etcd (the value remains the same YAML as `config.yml`):
+The config location is set by `ISRVD_CONFIG`, supporting local YAML and etcd (the value remains the same YAML as `config.yml`):
 
 ```bash
 # reads ./config.yml by default
 ./isrvd
 
 # local YAML
-CONFIG_PATH=/data/conf/isrvd.yml ./isrvd
+ISRVD_CONFIG=/data/conf/isrvd.yml ./isrvd
 
 # etcd
 etcdctl put /isrvd/config "$(cat /data/conf/isrvd.yml)"
-CONFIG_PATH="etcd://user:pass@127.0.0.1:2379/isrvd/config?scheme=http&timeout=5s" ./isrvd
+ISRVD_CONFIG="etcd://user:pass@127.0.0.1:2379/isrvd/config?scheme=http&timeout=5s" ./isrvd
 
 # when the etcd key is missing, initialize from the fallback YAML and write it to etcd
-CONFIG_PATH="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" ./isrvd
+ISRVD_CONFIG="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" ./isrvd
 
 # full etcd config example
 # etcd://user:pass@host1:2379,host2:2379/key?scheme=http&timeout=5s&fallback=/path/config.yml
@@ -335,7 +335,7 @@ Detection methods, collected metrics and container deployment notes are in [docs
 
 The dev script automatically:
 
-- **Backend**: copies `config.yml` to `.local.yml` if missing and starts in **center mode** (`ISRVD_MODE=center CONFIG_PATH=.local.yml go run ./server/cmd/server`) for easier node management and node switching; use `ISRVD_MODE=server ./develop.sh` for standalone mode
+- **Backend**: copies `config.yml` to `.local.yml` if missing and starts in **center mode** (`ISRVD_MODE=center ISRVD_CONFIG=.local.yml go run ./server/cmd/server`) for easier node management and node switching; use `ISRVD_MODE=server ./develop.sh` for standalone mode
 - **Frontend**: enters `webview`, installs dependencies and runs `npm run dev`
 - **Port cleanup**: tries to free ports `8080` and `3000` before starting
 - **Proxy**: the frontend dev server (`3000`) proxies `/api/`, `/openapi/` and the node-scoped `/n/` to `8080`; pages under `/n/<节点ID>/` are served by the frontend build embedded in the backend, so run `npm run build` to see frontend changes in the node view

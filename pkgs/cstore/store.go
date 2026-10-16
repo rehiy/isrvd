@@ -113,7 +113,7 @@ func OpenData(source Store, rootDir string) (Store, error) {
 }
 
 // OpenWithKey 根据完整文件路径或 etcd URI 创建 Store，并返回对应的 key。
-// 调用方无需自行解析 URI，直接将 CONFIG_PATH 等环境变量传入即可。
+// 调用方无需自行解析 URI，直接将 ISRVD_CONFIG 等环境变量传入即可。
 //
 // 解析规则：
 //   - etcd://...                → EtcdStore，key = URI path（必填）

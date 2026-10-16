@@ -83,7 +83,7 @@ docker run -d --name isrvd-agent --network sdnet \
 要在本机调试一个受管机，另开终端用另一份配置（不同的 `rootDirectory`）启动：
 
 ```bash
-CONFIG_PATH=./agent.yml go run ./server/cmd/server --mode agent --center-url http://127.0.0.1:8080 --enroll-code <注册码>
+ISRVD_CONFIG=./agent.yml go run ./server/cmd/server --mode agent --center-url http://127.0.0.1:8080 --enroll-code <注册码>
 ```
 
 `/n/<节点ID>/` 下的页面由后端内嵌的前端产物提供，修改前端后需执行 `npm run build`，才能在节点视角下看到变化。

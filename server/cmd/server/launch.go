@@ -14,7 +14,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -109,7 +108,7 @@ func runCenter() error {
 		Handler: gateway.Handler(gateway.Options{
 			Upstream:         &url.URL{Scheme: "http", Host: private.Addr().String()},
 			Nodes:            nodes,
-			TrustProxy:       os.Getenv("ISRVD_CENTER_TRUST_PROXY") == "1",
+			TrustProxy:       config.EnvOrDefault("ISRVD_CENTER_TRUST_PROXY", "0") == "1",
 			AllowedOrigins:   func() []string { return config.Current().Server.AllowedOrigins },
 			QueryTokenRoutes: app.QueryTokenRoutes(),
 			Audit:            app.Audit(),

@@ -50,6 +50,6 @@ if grep -q 'password: admin' "$CONF_DIR/isrvd.yml" 2>/dev/null; then
     echo "=========================================="
 fi
 
-echo "[init] Using CONFIG_PATH: $CONFIG_PATH"
+echo "[init] Using ISRVD_CONFIG: $ISRVD_CONFIG"
 echo "[init] Starting isrvd..."
 exec /usr/local/bin/isrvd

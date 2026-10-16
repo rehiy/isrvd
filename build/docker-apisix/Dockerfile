@@ -45,7 +45,7 @@ COPY build/docker-apisix/runit /etc/sv
 COPY --from=builder /usr/local/lua-resty-openssl /usr/local/openresty/lualib/resty/
 
 # 设置环境变量
-ENV CONFIG_PATH=/data/conf/isrvd.yml
+ENV ISRVD_CONFIG=/data/conf/isrvd.yml
 
 # 暴露端口
 # 8080: isrvd Web UI

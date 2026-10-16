@@ -723,13 +723,13 @@
 ./isrvd
 
 # 本地 YAML
-CONFIG_PATH=/data/conf/isrvd.yml ./isrvd
+ISRVD_CONFIG=/data/conf/isrvd.yml ./isrvd
 
 # etcd 配置（value 为 YAML 格式）
-CONFIG_PATH="etcd://user:pass@127.0.0.1:2379/isrvd/config?scheme=http&timeout=5s" ./isrvd
+ISRVD_CONFIG="etcd://user:pass@127.0.0.1:2379/isrvd/config?scheme=http&timeout=5s" ./isrvd
 
 # etcd key 不存在时，用 fallback YAML 初始化并写入 etcd
-CONFIG_PATH="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" ./isrvd</div>
+ISRVD_CONFIG="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" ./isrvd</div>
                 </div>
                 <p class="text-xs text-slate-400 mt-2">etcd 认证可省略或用 <code class="bg-slate-100 px-1 rounded">ETCD_USERNAME</code> / <code class="bg-slate-100 px-1 rounded">ETCD_PASSWORD</code> 补充；详见 README「配置」章节</p>
             </details>

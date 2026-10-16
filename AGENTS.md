@@ -265,9 +265,9 @@ docs/
 
 **配置 Provider / cstore 规范（强制）**
 
-- `server/config/provider.go` 负责基于 `CONFIG_PATH` 初始化全局 `cstore.TypedStore[*Config]`、加载/保存配置、监听变更并发送 `ReloadCh`；禁止在业务层绕过 `config.Load/Save` 直接读写配置存储；业务数据（计划任务、SSH 主机/凭据）统一通过 `config.OpenData` 打开，随配置后端切换本地文件或 etcd，日志类数据仍写本地
+- `server/config/provider.go` 负责基于 `ISRVD_CONFIG` 初始化全局 `cstore.TypedStore[*Config]`、加载/保存配置、监听变更并发送 `ReloadCh`；禁止在业务层绕过 `config.Load/Save` 直接读写配置存储；业务数据（计划任务、SSH 主机/凭据）统一通过 `config.OpenData` 打开，随配置后端切换本地文件或 etcd，日志类数据仍写本地
 - 存储适配由 `pkgs/cstore/` 负责：`store.go` 定义统一 `Store` 抽象和 URI 分发，`file.go` 处理本地 YAML 文件，`etcd.go` 处理 etcd URI，`typed.go` 负责 YAML 序列化/反序列化
-- `CONFIG_PATH` 是唯一入口：普通路径/`file://` 使用本地 YAML；`etcd://` 使用 etcd；禁止新增 `CONFIG_PROVIDER`、`ETCD_ENDPOINTS`、`ETCD_CONFIG_KEY` 等平行入口
+- `ISRVD_CONFIG` 是唯一入口：普通路径/`file://` 使用本地 YAML；`etcd://` 使用 etcd；禁止新增 `CONFIG_PROVIDER`、`ETCD_ENDPOINTS`、`ETCD_CONFIG_KEY` 等平行入口
 - etcd value 存储完整 `config.yml` 同款 YAML 文本，便于本地 YAML 与 etcd 互迁；禁止改为 JSON，避免敏感字段因 `json:"-"` 丢失
 - etcd URI 中的 path 表示完整配置 key，且必须显式提供；系统配置推荐 key 为 `/isrvd/config`，标准形式：`etcd://user:pass@host1:2379,host2:2379/isrvd/config?scheme=http&timeout=5s&fallback=/path/config.yml`
 - `fallback` 是本地 YAML 文件路径，且只在 etcd key 不存在时触发：读取该 YAML 后写入 etcd；etcd 连接失败、权限错误、超时、已有值解析失败均不得 fallback

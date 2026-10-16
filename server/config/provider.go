@@ -31,13 +31,13 @@ var (
 )
 
 func Init() error {
-	uri := EnvOrDefault("CONFIG_PATH", "config.yml")
+	uri := EnvOrDefault("ISRVD_CONFIG", EnvOrDefault("CONFIG_PATH", "config.yml"))
 
 	var err error
 	// etcd 认证：ETCD_USERNAME / ETCD_PASSWORD 优先于 URI userinfo
 	store, storeKey, err = cstore.OpenWithKey(uri, cstore.WithEtcdCredentials(
-		os.Getenv("ETCD_USERNAME"),
-		os.Getenv("ETCD_PASSWORD"),
+		EnvOrDefault("ETCD_USERNAME", ""),
+		EnvOrDefault("ETCD_PASSWORD", ""),
 	))
 	if err != nil {
 		return err

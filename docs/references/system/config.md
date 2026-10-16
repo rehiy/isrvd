@@ -2,18 +2,18 @@
 
 ## 配置存储
 
-`CONFIG_PATH` 指定配置位置，未设置时读取 `./config.yml`。
+`ISRVD_CONFIG` 指定配置位置，未设置时读取 `./config.yml`。
 
 ```bash
-CONFIG_PATH=/data/conf/isrvd.yml ./isrvd
-CONFIG_PATH="etcd://user:pass@127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" ./isrvd
+ISRVD_CONFIG=/data/conf/isrvd.yml ./isrvd
+ISRVD_CONFIG="etcd://user:pass@127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" ./isrvd
 # 多节点 + 凭据通过环境变量传入
-ETCD_USERNAME=user ETCD_PASSWORD=pass CONFIG_PATH="etcd://h1:2379,h2:2379,h3:2379/isrvd/config?scheme=https&timeout=5s" ./isrvd
+ETCD_USERNAME=user ETCD_PASSWORD=pass ISRVD_CONFIG="etcd://h1:2379,h2:2379,h3:2379/isrvd/config?scheme=https&timeout=5s" ./isrvd
 ```
 
 说明：
 
-- etcd value 使用同款 YAML；`CONFIG_PATH` 中的 path 是完整 etcd key，必须显式提供；系统配置推荐 key 为 `/isrvd/config`
+- etcd value 使用同款 YAML；`ISRVD_CONFIG` 中的 path 是完整 etcd key，必须显式提供；系统配置推荐 key 为 `/isrvd/config`
 - 支持多个节点，用逗号分隔 `host:port`
 - 可选查询参数：`scheme`（默认 `http`，TLS 时用 `https`）、`timeout`（Go 时长格式，默认 `5s`）、`fallback`（本地 YAML 文件路径，仅在 etcd key 不存在时用于初始化）
 - `ETCD_USERNAME` / `ETCD_PASSWORD` 环境变量优先于 URI 中的账号密码，生产环境建议用环境变量传入凭据；URI 中的特殊字符需 URL encode

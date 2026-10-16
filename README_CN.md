@@ -189,7 +189,7 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) uni
 bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) download
 ```
 
-配置文件位置通过 `CONFIG_PATH` 指定，详见 [配置](#配置)。
+配置文件位置通过 `ISRVD_CONFIG` 指定，详见 [配置](#配置)。
 
 ## 集中管理
 
@@ -271,21 +271,21 @@ systemctl restart isrvd
 
 ### 配置来源
 
-配置位置由 `CONFIG_PATH` 指定，支持本地 YAML 与 etcd（value 仍为 config.yml 同款 YAML）：
+配置位置由 `ISRVD_CONFIG` 指定，支持本地 YAML 与 etcd（value 仍为 config.yml 同款 YAML）：
 
 ```bash
 # 默认读取 ./config.yml
 ./isrvd
 
 # 本地 YAML
-CONFIG_PATH=/data/conf/isrvd.yml ./isrvd
+ISRVD_CONFIG=/data/conf/isrvd.yml ./isrvd
 
 # etcd
 etcdctl put /isrvd/config "$(cat /data/conf/isrvd.yml)"
-CONFIG_PATH="etcd://user:pass@127.0.0.1:2379/isrvd/config?scheme=http&timeout=5s" ./isrvd
+ISRVD_CONFIG="etcd://user:pass@127.0.0.1:2379/isrvd/config?scheme=http&timeout=5s" ./isrvd
 
 # etcd key 不存在时，用 fallback YAML 初始化并写入 etcd
-CONFIG_PATH="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" ./isrvd
+ISRVD_CONFIG="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" ./isrvd
 
 # etcd 完整配置示例
 # etcd://user:pass@host1:2379,host2:2379/key?scheme=http&timeout=5s&fallback=/path/config.yml
@@ -333,7 +333,7 @@ CONFIG_PATH="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" .
 
 开发脚本会自动：
 
-- **后端**：复制 `config.yml` 为 `.local.yml`（如不存在），并以**中控模式**启动（`ISRVD_MODE=center CONFIG_PATH=.local.yml go run ./server/cmd/server`），便于调试节点管理与节点切换；需要单机模式时用 `ISRVD_MODE=server ./develop.sh`
+- **后端**：复制 `config.yml` 为 `.local.yml`（如不存在），并以**中控模式**启动（`ISRVD_MODE=center ISRVD_CONFIG=.local.yml go run ./server/cmd/server`），便于调试节点管理与节点切换；需要单机模式时用 `ISRVD_MODE=server ./develop.sh`
 - **前端**：进入 `webview`，安装依赖并执行 `npm run dev`
 - **端口清理**：启动前尝试释放 `8080` 和 `3000` 端口
 - **代理**：前端开发服务器（`3000`）把 `/api/`、`/openapi/` 和节点视角的 `/n/` 代理到 `8080`；`/n/<节点ID>/` 下的页面由后端内嵌的前端产物提供，修改前端后需 `npm run build` 才能在节点视角下看到
