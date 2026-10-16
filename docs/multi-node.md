@@ -1,6 +1,6 @@
 # 集中管理（多服务器）
 
-同一个 `isrvd` 二进制，通过 `--mode` 选择角色，不需要额外的程序：
+同一个 `isrvd` 二进制，通过 `config.yml` 的 `server.mode` 选择角色，也可在控制台「系统配置 / 基础服务」配置，不需要额外的程序。模式与连接参数保存后重启生效：
 
 | 模式 | 作用 |
 |------|------|
@@ -14,10 +14,16 @@
                                                   ▲ 受管机主动出站，中控从不主动外连
 ```
 
-```bash
-isrvd --mode center
-isrvd --mode agent --center-url https://center.example.com --enroll-code <注册码>
+中控在原配置的 `server` 分区设置 `mode: center`；受控机设置：
+
+```yaml
+server:
+  mode: agent
+  centerUrl: https://center.example.com
+  nodeToken: "<中控生成的 token>"
 ```
+
+以上字段合并进已有配置，保留其他设置，启动只需执行 `isrvd`。
 
 ## 工作方式
 
@@ -31,59 +37,48 @@ isrvd --mode agent --center-url https://center.example.com --enroll-code <注册
 
 ## 部署
 
-**中控**：无需额外配置，加上 `--mode center` 启动即可，沿用原来的 `config.yml` 与 `listenAddr`。
+**中控**：在控制台设置中控模式（或编辑 `server.mode: center`），沿用原来的 `listenAddr`，然后重启。
 
-**受管机**：先在中控界面生成注册码，再启动（生成后会直接给出完整命令，可一键复制）：
+**受控机**：先在中控「接入节点」生成 token，将弹窗中的配置片段合并到受控机原有配置，或在受控机切换模式前的控制台填写受控模式、服务器地址及 token，然后重启。切换后不再开放对外管理端口，只能经中控访问；地址填错时需要直接编辑受控机配置恢复。
 
-```bash
-isrvd --mode agent --center-url https://center.example.com --enroll-code <注册码>
-```
+token 在激活前有有效期，首次连接时激活为节点；之后沿用相同 token，直到吊销或删除。**同一 token 只允许一个在线或正在握手的客户端**；重复连接返回 `409`，不会顶替已有会话，断线后可用同一 token 重连。
 
-首次注册成功后，节点令牌加密保存到本机 `<rootDirectory>/node-agent.yml`，之后重启可省略 `--enroll-code`。建议注册成功后从启动参数或环境变量中移除注册码。
-
-参数会在读取配置之前校验：参数错误或 `--help` 不会读取、更不会改写配置文件。
-
-**Docker**：镜像入口不带参数，用环境变量选择模式即可，不需要改镜像或配置文件：
+**Docker**：提前准备完整的 `/srv/data/conf/isrvd.yml`，在其 `server` 分区填写模式与连接信息。中控和受控机应使用各自的数据目录：
 
 ```bash
-# 中控（8080 为对外入口）
-docker run -d --name isrvd-center --network sdnet -p 8080:8080 -e ISRVD_MODE=center \
+# 中控（配置 mode: center，8080 为对外入口）
+docker run -d --name isrvd-center --network sdnet -p 8080:8080 \
   -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
 
-# 受管机（不需要 -p）
+# 受控机（配置 mode: agent，不需要 -p）
 docker run -d --name isrvd-agent --network sdnet \
-  -e ISRVD_MODE=agent -e ISRVD_CENTER_URL=https://center.example.com -e ISRVD_ENROLL_CODE=<注册码> \
   -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
 ```
 
-**systemd**（安装脚本生成的单元文件不带模式）：用 `systemctl edit isrvd` 添加 drop-in，写入 `[Service]` 与对应的 `Environment="ISRVD_MODE=agent"` 等变量，再 `systemctl restart isrvd`。
+**systemd**：编辑安装目录下的 `config.yml` 或在控制台保存配置，再执行 `systemctl restart isrvd`。安装脚本只负责安装和升级，不接受角色或连接参数；默认单机启动，安装后在控制台或主配置填写运行设置。
 
-**默认配置文件无需改动**：模式只由命令行或环境变量决定，不在 `config.yml` 中；`center` 沿用 `listenAddr` 作为对外入口，`agent` 用 `jwtSecret` 加密本地凭据。
+| 配置字段 | 适用 | 说明 |
+|----------|------|------|
+| `server.mode` | 全部 | `server`（默认）/ `center` / `agent` |
+| `server.centerUrl` | agent，必填 | HTTP(S) 中控地址，不含路径、查询参数、片段或账号密码 |
+| `server.nodeToken` | agent，必填 | 中控直接生成的 token；配置查询不回显，控制台留空保留旧值 |
 
-| 参数 | 环境变量 | 适用 | 说明 |
-|------|----------|------|------|
-| `--mode` | `ISRVD_MODE` | 全部 | `server`（默认）/ `center` / `agent` |
-| `--center-url` | `ISRVD_CENTER_URL` | agent，必填 | 中控地址，不含 `/api` |
-| `--enroll-code` | `ISRVD_ENROLL_CODE` | agent | 首次注册的注册码；本地已有凭据后可省略 |
-| `--node-name` | `ISRVD_NODE_NAME` | agent | 注册码备注为空时使用的节点名称，默认取主机名 |
-| | `ISRVD_CENTER_TRUST_PROXY` | center | 设为 `1` 时按 `X-Forwarded-For` 识别来源 IP；仅在网关前还有可信反向代理时设置 |
+原模式/连接命令行参数与对应环境变量已移除；`ISRVD_CONFIG` 仍用于指定配置文件或 etcd 位置。旧运行环境变量存在时会拒绝启动，不会静默回退为单机模式。升级前请将角色和连接信息写入主配置，并删除旧 unit/drop-in 或容器中的运行参数和变量；不自动读取旧的 `node-agent.yml`，需要重新生成 token 时请在中控操作。二进制更新会保留现有 `config.yml`。配置含长期 token，应限制文件权限为 `0600`，不要提交或公开。
 
-接入流程：在「节点管理」页点击「接入节点」生成注册码（列表中显示为「待接入」）→ 受管机携带注册码启动 → 注册时立即取得节点令牌并建立常连，连接后状态变为「在线」。节点与待接入的注册码在同一个列表里，用状态区分。
+接入流程：在「节点管理」页点击「接入节点」生成令牌（列表中显示为「待接入」）→ 受管机携带令牌启动 → 首次连接时中控校验并激活该令牌，节点建立常连，状态变为「在线」。节点与待接入的令牌在同一个列表里，用状态区分。
 
-**受管机被中控拒绝时**（节点被吊销、删除，或中控数据被重置、恢复了旧备份）不会删除本地凭据：
-- 启动时给了尚未用过的注册码：用它重新注册，成功后才替换本地凭据；
-- 否则保留凭据，每分钟重试并记录错误日志。中控数据恢复后自动重连；确实要重新接入时，用新的注册码重启受管机。
+**受管机被中控拒绝时**（节点被吊销、删除、令牌已过期未激活，或中控数据被重置、恢复了旧备份）受管机每分钟重试并记录错误日志。中控数据恢复后自动重连；确实要重新接入时，生成新的令牌并重启受管机。
 
-数据位置：中控的节点表与注册码（`node-list.yml`、`node-code.yml`）与计划任务、SSH 主机等业务数据一样，保存在 `rootDirectory` 下，使用 etcd 时随配置一起同步。受管机的节点令牌加密保存在本机 `<rootDirectory>/node-agent.yml`，权限 `0600`。
+数据位置：中控的节点表与注册码（`node-list.yml`、`node-code.yml`）与计划任务、SSH 主机等业务数据一样，保存在 `rootDirectory` 下，使用 etcd 时随配置一起同步。受控机的 token 保存在主配置 `server.nodeToken`，不再读写 `node-agent.yml`。
 
 ## 本地调试
 
-仓库的 `./develop.sh` 默认以 `center` 模式启动后端（`8080` 为网关入口），前端开发服务器（`3000`）同时代理 `/api/`、`/openapi/` 和节点视角的 `/n/`。需要调试单机模式时用 `ISRVD_MODE=server ./develop.sh`。
+仓库的 `./develop.sh` 读取 `.local.yml` 中的 `server.mode`；需调试节点管理时设置为 `center`。前端开发服务器（`3000`）同时代理 `/api/`、`/openapi/` 和节点视角的 `/n/`。
 
 要在本机调试一个受管机，另开终端用另一份配置（不同的 `rootDirectory`）启动：
 
 ```bash
-ISRVD_CONFIG=./agent.yml go run ./server/cmd/server --mode agent --center-url http://127.0.0.1:8080 --enroll-code <注册码>
+ISRVD_CONFIG=./agent.yml go run ./server/cmd/server
 ```
 
 `/n/<节点ID>/` 下的页面由后端内嵌的前端产物提供，修改前端后需执行 `npm run build`，才能在节点视角下看到变化。
@@ -92,14 +87,14 @@ ISRVD_CONFIG=./agent.yml go run ./server/cmd/server --mode agent --center-url ht
 
 - **只有创始人可以管理和操作节点。** 节点上的请求以受管机本地的创始人身份执行，与调用者无关，所以不能把节点权限下放给只有部分路由权限的成员。
 - 受管机用**用户名排序后的第一个创始人**签发访问令牌，文件管理与终端使用该成员的家目录。受管机上必须至少有一个创始人，且不能启用代理 Header 登录（`tha.enabled`），否则启动失败。
-- 中控模式下也不应启用代理 Header 登录：网关转发的请求在 isrvd 看来都来自本机，客户端可借此伪造登录头。启动时会给出警告。
-- 受管机用 `server.jwtSecret` 加密本地凭据；修改该密钥后旧凭据无法解密，需要用新的注册码重新注册。
+- 中控模式允许代理 Header 登录（`center + tha.enabled`）。网关按连接对端 IP 和 `tha.trustedCIDRs` 校验身份头，不采信转发头；可信代理必须覆盖客户端传入的身份头。THA 身份不使用 JWT 缓存，普通成员仍不能管理节点。中控的私有回环服务只接收网关写入的内部身份，外部同名头会先被删除；THA 头名重载不会重新信任原始请求头。本机进程属于可信边界，用户身份不下发给受控节点。
 - 受管机转发 WebSocket 时没有 `Origin`，`agent` 模式会放行空 `Origin`；跨站来源已由中控网关按 `allowedOrigins` 校验（未配置时仅允许同源）。
-- 节点令牌只保存哈希；注册码一次性使用、默认 1 小时过期（最长 7 天），用 `server.jwtSecret` 派生的密钥加密保存在 `node-code.yml` 中，创始人在其待接入期间可随时从列表查看接入命令（修改 `jwtSecret` 后未使用的注册码会被清除）；节点注册后自动接入，令牌可按节点吊销。
+- 节点令牌只保存哈希；注册码一次性使用、默认 1 小时过期（最长 7 天），用 `server.jwtSecret` 派生的密钥加密保存在 `node-code.yml` 中，创始人在其待接入期间可随时从列表查看接入命令（修改 `jwtSecret` 后未使用的注册码会被清除）；首次连接成功即激活为节点并核销待接入记录，之后令牌可按节点吊销。
 - 网关把请求转发给节点前会剥离 `Authorization`、`Cookie`、`token` 查询参数。
 - 节点管理操作（生成注册码、吊销、删除等）、节点上的写操作与 WebSocket 都会记入中控的审计页面，规则与 isrvd 一致：非 GET 与全部 WebSocket 记录，WebSocket 在会话结束时记录；操作人是中控登录用户，URI 带 `/n/<节点ID>/` 前缀，请求体按 isrvd 的规则脱敏。受管机本机的审计页面里同一操作记录为其本地创始人。
+- 网关审计和节点 token 认证失败限流统一使用连接对端 IP，不采信客户端的 `X-Forwarded-For` 或 `X-Real-IP`；向中控内部服务转发时重新生成来源 IP 头，不透传外部来源链。部署在反向代理后，审计记录代理 IP，同一代理后的客户端共享节点认证失败限流额度。
 - AI 助手在节点页面下仍作用于中控本机。
-- 配置重载（SIGHUP、保存系统配置或 etcd 变更）后，`allowedOrigins` 与 `rootDirectory` 的变化对中控即时生效（节点表与注册码随 `rootDirectory` 切换到新位置，与计划任务等业务数据一致）；`listenAddr`、`ISRVD_CENTER_TRUST_PROXY` 仍需重启。
+- 配置重载（SIGHUP、保存系统配置或 etcd 变更）后，`allowedOrigins` 与 `rootDirectory` 的变化对中控即时生效（节点表与注册码随 `rootDirectory` 切换到新位置，与计划任务等业务数据一致）；`mode`、`centerUrl`、`nodeToken`、`listenAddr` 仍需重启。
 - 中控为单实例设计；重启时所有节点会短暂断开，受管机按 1 秒起步的指数退避加抖动自动重连。
 - 受管机与中控的版本需一致；协议版本不一致时节点显示「版本不兼容」并拒绝转发。
 
@@ -111,11 +106,10 @@ ISRVD_CONFIG=./agent.yml go run ./server/cmd/server --mode agent --center-url ht
 |------------|------|------|
 | `GET /api/node/nodes` | 创始人 | 节点列表，含 `status`（`active`/`revoked`）、`online`、`latency`、`agentVersion`、`compatible` 等 |
 | `PUT /api/node/item/{id}` | 创始人 | 重命名，body `{"name":"…"}`（1–64 个字符） |
-| `POST /api/node/item/{id}/revoke` | 创始人 | 吊销：令牌立即失效并断开连接，需删除后重新注册才能接入 |
+| `POST /api/node/item/{id}/revoke` | 创始人 | 吊销：令牌立即失效并断开连接，需删除后用新令牌重新接入 |
 | `DELETE /api/node/item/{id}` | 创始人 | 删除并断开连接 |
 | `GET /api/node/codes` | 创始人 | 尚未使用且未过期的注册码（含明文，用于查看接入命令） |
 | `POST /api/node/code` | 创始人 | 生成注册码，body `{"name":"","ttlMinutes":60}`；响应与 `GET /api/node/codes` 都包含 `code` 明文 |
 | `DELETE /api/node/code/{id}` | 创始人 | 撤销注册码 |
-| `POST /api/node/enroll` | 注册码 | 受管机注册并取得节点令牌，按来源 IP 限流 |
-| `GET /api/node/connect` | 节点令牌 | 受管机建立 WebSocket 隧道；令牌只经 `Authorization: Bearer` 头传递，带 `Origin` 的浏览器请求会被拒绝 |
+| `GET /api/node/connect` | 节点令牌 | 受管机建立 WebSocket 隧道，首次连接时激活待接入的令牌；令牌只经 `Authorization: Bearer` 头传递，带 `Origin` 的浏览器请求会被拒绝 |
 | `/n/{id}/…` | 创始人 | 以某个节点的视角访问，见上文「工作方式」 |

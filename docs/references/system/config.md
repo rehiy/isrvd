@@ -120,7 +120,7 @@ isrvd_get "/system/config"
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| server | object | `{listenAddr, rootDirectory, maxUploadSize, allowedOrigins, jwtExpiration, debug, openapi}`（jwtSecret 不返回，写入时位于 JWT 配置项；`openapi`=是否对外提供 `/openapi/` 文档，默认 false） |
+| server | object | `{mode, centerUrl, listenAddr, rootDirectory, maxUploadSize, allowedOrigins, jwtExpiration, debug, openapi}`（jwtSecret、nodeToken 不返回；`openapi` 默认 false） |
 | password | object | `{disabled, minLength}`（密码登录配置；`minLength` 默认 6） |
 | passkey | object | `{enabled, rpName, rpId, rpOrigins, timeout}` |
 | oidc | object | `{enabled, issuerUrl, clientId, redirectUrl, usernameClaim, scopes, loginLabel}`（clientSecret 不返回） |
@@ -135,6 +135,18 @@ isrvd_get "/system/config"
 | links | object[] | `{label, url, icon}` |
 
 > 配置文件 / etcd 中的 `schema.version` 由系统维护（用于版本化迁移），不通过该接口返回或修改。
+
+`server` 的运行配置：
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `mode` | string | `server` | `server` 单机、`center` 中控、`agent` 受控；重启生效 |
+| `centerUrl` | string | 空 | 受控模式必填 HTTP(S) 中控地址，不含路径、查询参数、片段及账号密码；重启生效 |
+| `nodeToken` | string | 空 | 中控生成的连接 token，受控模式必填；GET 不回显，PUT 留空保留；重启生效 |
+
+网关没有代理信任开关：审计和节点认证失败限流仅使用连接对端 IP。反向代理后的客户端会共享限流额度，网关审计记录代理 IP。
+
+运行配置无效时返回 `400`，不保存；受控模式不能启用 `tha.enabled`；中控模式允许 THA，网关按 `tha.trustedCIDRs` 校验连接来源，拒绝不可信身份头。token 与其他配置一起保存，不另写凭据文件，且审计请求体会脱敏。切换为受控模式后无对外端口，应先确认中控地址和 token 正确。
 
 ## 更新配置
 

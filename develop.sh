@@ -37,9 +37,8 @@ kill_port 3000
 if [ ! -f .local.yml ]; then
     cp config.yml .local.yml
 fi
-# 默认以中控模式启动（8080 为网关入口），便于调试节点管理与节点切换；
-# 需要单机模式时：ISRVD_MODE=server ./develop.sh
-ISRVD_MODE=${ISRVD_MODE:-center} ISRVD_CONFIG=.local.yml go run ./server/cmd/server &
+# 运行模式由 .local.yml 的 server.mode 决定，可在控制台修改后重启。
+ISRVD_CONFIG=.local.yml go run ./server/cmd/server &
 GO_PID=$!
 
 # 启动 NPM 服务

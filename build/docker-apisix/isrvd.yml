@@ -2,6 +2,9 @@ schema:
   version: 2
 
 server:
+  mode: server
+  centerUrl: ""
+  nodeToken: ""
   listenAddr: :8080
   rootDirectory: /data/
   maxUploadSize: 104857600

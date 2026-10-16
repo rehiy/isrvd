@@ -20,6 +20,8 @@ INSTALL_DIR="/usr/local/isrvd"
 CONFIG_FILE="$INSTALL_DIR/config.yml"
 BIN_LINK="/usr/local/bin/isrvd"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+ROLE_DIR="/etc/systemd/system/${SERVICE_NAME}.service.d"
+ROLE_FILE="$ROLE_DIR/installer.conf"
 DOCKER_NETWORK="sdnet"
 DOCKER_DATA_DIR="/srv/data"
 SERVICE_AREA="auto"
@@ -159,6 +161,8 @@ service_uninstall() {
     fi
     echo "[info] Removing service file"
     rm -f "$SERVICE_FILE"
+    rm -f "$ROLE_FILE"
+    rmdir "$ROLE_DIR" 2>/dev/null || true
     systemctl daemon-reload
 }
 
@@ -204,7 +208,7 @@ files_install() {
 
 files_update() {
     echo "[info] Extracting to: $INSTALL_DIR"
-    tar xzf "$1" -C "$INSTALL_DIR"
+    tar xzf "$1" --exclude='config.yml' -C "$INSTALL_DIR"
 
     # 更新符号链接
     local bin_file
@@ -484,10 +488,14 @@ install_binary() {
     print_release_info
     echo "=========================================="
 
-    if [ -d "$INSTALL_DIR" ]; then
+    if [ -d "$INSTALL_DIR" ] || [ -e "$SERVICE_FILE" ]; then
         echo "[error] Already installed: $INSTALL_DIR"
         echo "[info] Use 'update' to upgrade"
         exit 1
+    fi
+    if [ -e "$ROLE_FILE" ] || [ -L "$ROLE_FILE" ] || [ -e "$ROLE_DIR/role.conf" ] || [ -L "$ROLE_DIR/role.conf" ]; then
+        echo "[error] Existing role configuration found; refusing to overwrite it" >&2
+        return 1
     fi
 
     if ! download_package "$RELEASE_URL"; then

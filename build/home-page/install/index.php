@@ -4,15 +4,15 @@
  * 部署于 https://isrvd.rehiy.com/install/
  *
  * 用于代理 GitHub 上的 isrvd.sh 安装脚本，提供缓存加速。
- * 缓存 12 小时，过期后重新拉取。
+ * 缓存 5 分钟，过期后重新拉取（安装参数需与主页保持同步）。
  */
 
 header('Content-Type: text/plain; charset=utf-8');
 
 // ── 常量配置 ──────────────────────────────────────────────
 
-const CACHE_FILE    = __DIR__ . '/isrvd.sh';
-const CACHE_TTL     = 12 * 3600; // 12 小时
+const CACHE_FILE    = __DIR__ . '/isrvd-v2.sh';
+const CACHE_TTL     = 5 * 60; // 5 分钟；换缓存文件避免旧脚本不识别新参数
 
 const SCRIPT_URL    = 'https://raw.githubusercontent.com/rehiy/isrvd/refs/heads/master/build/script/isrvd.sh';
 

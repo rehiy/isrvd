@@ -193,7 +193,7 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) dow
 
 ## 集中管理
 
-同一个二进制，用 `--mode`（或环境变量 `ISRVD_MODE`）选择角色，一个控制台管理多台服务器：
+同一个二进制，用 `config.yml` 的 `server.mode` 或控制台「系统配置 / 基础服务」选择角色，一个控制台管理多台服务器：
 
 | 模式 | 作用 |
 | ------ | ------ |
@@ -214,50 +214,40 @@ bash <(curl -sL https://jscdn.rehi.org/gh/rehiy/isrvd/build/script/isrvd.sh) dow
 
 ### 接入节点
 
-1. 启动中控：`isrvd --mode center`，沿用原来的配置文件与 `listenAddr`
-2. 在「节点管理」页点击「接入节点」生成一次性注册码，界面会给出可直接复制的受管机启动命令；未使用的注册码在列表里显示为「待接入」，可随时撤销
-3. 在受管机启动：`isrvd --mode agent --center-url https://center.example.com --enroll-code <注册码>`
-4. 节点注册后自动接入，连接建立后在列表中显示「在线」
+1. 在控制台「系统配置 / 基础服务」设置中控模式，或在 `config.yml` 设置 `server.mode: center`，重启服务。
+2. 在中控「接入节点」生成 token，弹窗可复制受控机配置；未接入的 token 显示为「待接入」。
+3. 在受控机控制台填写受控模式、服务器地址与连接 token，或合并以下字段到原配置：
 
-首次注册后节点凭据加密保存在受管机本地，重启不需要再带注册码。
+```yaml
+server:
+  mode: agent
+  centerUrl: https://center.example.com
+  nodeToken: "<中控生成的 token>"
+```
+
+4. 重启后直接用 token 连接。首次接入前 token 有有效期；接入后同一 token 可用于重启与重连。已在线时拒绝重复连接（409），不会顶替旧会话。
+
+模式、服务器地址与 token 统一保存在主配置，原运行参数和对应环境变量已移除，不再保存 `node-agent.yml`。旧部署升级前应迁移配置并移除旧参数、环境变量；残留旧运行变量时会拒绝启动。二进制更新保留现有 `config.yml`。中控支持 `tha`，网关按 `tha.trustedCIDRs` 校验真实连接来源；受控模式仍禁止启用 `tha`。配置查询不回显 token，控制台留空保留旧值。配置文件应限制权限为 `0600`。
 
 ### 容器部署
 
-镜像入口不带参数，用环境变量选择模式，不需要改镜像或配置文件：
+提前准备完整的 `/srv/data/conf/isrvd.yml` 并填写角色配置，中控与受控机分别部署在各自机器上：
 
 ```bash
-# 中控：与单机部署相同，多一个环境变量，8080 为对外入口
+# 中控配置 mode: center
 docker run -d --name isrvd-center --network sdnet -p 8080:8080 \
-  -e ISRVD_MODE=center \
-  -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock \
-  rehiy/isrvd:slim
+  -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
 
-# 受管机：不监听对外端口，不需要 -p
+# 受控机配置 mode: agent，不需要 -p
 docker run -d --name isrvd-agent --network sdnet \
-  -e ISRVD_MODE=agent \
-  -e ISRVD_CENTER_URL=https://center.example.com \
-  -e ISRVD_ENROLL_CODE=<注册码> \
-  -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock \
-  rehiy/isrvd:slim
+  -v /srv/data:/data -v /var/run/docker.sock:/var/run/docker.sock rehiy/isrvd:slim
 ```
 
-> - 受管机的节点凭据保存在 `/data` 下，请保持挂载，否则重建容器后需要新的注册码重新接入
-> - 受管机的 `isrvd.yml` 里必须有创始人成员（镜像默认的 `admin` 满足），且不能启用 `tha`
-> - 受管机配置里的 `listenAddr` 在此模式下不生效；`jwtSecret` 用于加密节点凭据，建议改掉镜像默认值，且之后不要再变更
+受控机必须有创始人成员，不能启用 `tha`；受控模式下 `listenAddr` 不生效。切换后只能经中控访问，错误的地址或 token 需直接编辑受控机配置恢复。
 
 ### systemd 部署
 
-安装脚本生成的是单机服务。作为中控或受管机运行时，用 drop-in 追加环境变量，无需修改脚本生成的单元文件（脚本升级后仍然有效）：
-
-```bash
-systemctl edit isrvd
-# 在编辑器中写入（受管机示例；中控只需 ISRVD_MODE=center）：
-#   [Service]
-#   Environment="ISRVD_MODE=agent"
-#   Environment="ISRVD_CENTER_URL=https://center.example.com"
-#   Environment="ISRVD_ENROLL_CODE=<注册码>"
-systemctl restart isrvd
-```
+编辑安装目录下的 `config.yml` 或在控制台保存模式设置，再执行 `systemctl restart isrvd`。安装脚本只负责安装和升级，不接受角色或连接参数；默认单机启动，角色和连接信息在控制台或主配置中填写。
 
 ### 安全与边界
 
@@ -333,7 +323,7 @@ ISRVD_CONFIG="etcd://127.0.0.1:2379/isrvd/config?fallback=/data/conf/isrvd.yml" 
 
 开发脚本会自动：
 
-- **后端**：复制 `config.yml` 为 `.local.yml`（如不存在），并以**中控模式**启动（`ISRVD_MODE=center ISRVD_CONFIG=.local.yml go run ./server/cmd/server`），便于调试节点管理与节点切换；需要单机模式时用 `ISRVD_MODE=server ./develop.sh`
+- **后端**：复制 `config.yml` 为 `.local.yml`（如不存在），运行 `ISRVD_CONFIG=.local.yml go run ./server/cmd/server`；模式由 `.local.yml` 的 `server.mode` 决定，调试节点管理时设置为 `center`
 - **前端**：进入 `webview`，安装依赖并执行 `npm run dev`
 - **端口清理**：启动前尝试释放 `8080` 和 `3000` 端口
 - **代理**：前端开发服务器（`3000`）把 `/api/`、`/openapi/` 和节点视角的 `/n/` 代理到 `8080`；`/n/<节点ID>/` 下的页面由后端内嵌的前端产物提供，修改前端后需 `npm run build` 才能在节点视角下看到
